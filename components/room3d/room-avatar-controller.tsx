@@ -7,9 +7,10 @@ import type { HumanParts } from "@/components/three/human-avatar";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
-import { arrowAnywhere, moveInRoom, ROOM_TURN_EVENT, RoomInteraction, type Arm } from "@/lib/room3d/interaction";
+import { arrowAnywhere, CHAIR, moveInRoom, ROOM_TURN_EVENT, RoomInteraction, thighDrop, type Arm } from "@/lib/room3d/interaction";
 import { inputYaw, reachPlane, ROOM, viewYaw } from "@/lib/room3d/room-bounds";
-import { MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionPose } from "@/lib/room3d/mirror-session";
+import { MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionChoreo, reactionKindOf, type ReactionChoreo } from "@/lib/room3d/mirror-session";
+import { stepSwing, SWING_REST, type Swing } from "@/lib/room3d/cloth-motion";
 export interface RoomGameplay {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction;
   /** prova no espelho dentro do quarto (lib/room3d/mirror-session.ts): fase pela distância, trocas e reação */
@@ -40,6 +41,10 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
   const actor = useRef<THREE.Group>(null), parts = useRef<HumanParts | null>(null);
   const pointer = useRef(new THREE.Vector2(0, 0)), desired = useRef(new THREE.Vector3(0, 1.5, .3));
   const phase = useRef(0), yaw = useRef(Math.PI), lastState = useRef("");
+  // comprimentos da perna deste esqueleto (coxa, canela, altura do tornozelo), medidos em pé na primeira vez que senta
+  const legs = useRef<{ thigh: number; shin: number; ankle: number } | null>(null);
+  // peça na mão: posição e velocidade da mão no quadro anterior (para a aceleração) e o balanço do pano no gancho
+  const carried = useRef<{ id: string; hand: THREE.Vector3; vel: THREE.Vector3; swing: Swing } | null>(null);
   const look = useRef(new THREE.Vector3(closetRight * .25, 1.1, .85));   // alvo da câmera, interpolado (sem salto ao abrir a prova)
   // giro das setas (rad): segue a vista escolhida, mas fica preso enquanto alguma seta está apertada — trocar a vista no
   // meio da caminhada não inverte a direção
@@ -106,12 +111,22 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
         yaw.current += Math.atan2(Math.sin(want - yaw.current), Math.cos(want - yaw.current)) * Math.min(1, dt * 6);
       }
     }
-    actor.current.position.copy(engine.seated ?? engine.actor); actor.current.rotation.y = engine.seated ? Math.PI + .61 : yaw.current;
-    applyIdle(p.human, p.pose, clock.elapsedTime, moving ? 0 : .3);
+    // sentado: de frente para onde o assento olha (de costas para o espaldar), com o quadril sobre o assento
+    if (engine.seated) actor.current.position.set(engine.seated.x, engine.actor.y, engine.seated.z); else actor.current.position.copy(engine.actor);
+    actor.current.rotation.y = engine.seated ? engine.seatYaw : yaw.current;
+    applyIdle(p.human, p.pose, clock.elapsedTime, moving ? 0 : engine.seated ? .08 : .3);
     if (engine.seated && !moving) {
       actor.current.updateWorldMatrix(true, true);
-      const hips = p.human.bone("Hips"); hips.position.y -= hips.getWorldPosition(new THREE.Vector3()).y - (engine.seated.y + .45);
-      for (const side of ["Left", "Right"]) { p.human.bone(`${side}UpLeg`).rotateX(-Math.PI / 2); p.human.bone(`${side}Leg`).rotateX(Math.PI / 2); }
+      const at = (bone: string) => p.human.bone(bone).getWorldPosition(new THREE.Vector3());
+      const L = legs.current ?? (legs.current = { thigh: at("LeftUpLeg").distanceTo(at("LeftLeg")), shin: at("LeftLeg").distanceTo(at("LeftFoot")), ankle: at("LeftFoot").y - engine.actor.y });
+      const hipY = engine.seated.y + CHAIR.hip, hips = p.human.bone("Hips");
+      hips.position.y -= at("Hips").y - hipY;
+      // coxa quase na horizontal (o quanto falta para o pé chegar ao chão) e canela na vertical
+      const drop = thighDrop(hipY - engine.actor.y, L.thigh, L.shin, L.ankle);
+      for (const side of ["Left", "Right"]) { p.human.bone(`${side}UpLeg`).rotateX(-(Math.PI / 2 - drop)); p.human.bone(`${side}Leg`).rotateX(Math.PI / 2 - drop); }
+      actor.current.updateWorldMatrix(true, true);
+      // mãos apoiadas nas coxas, um palmo antes do joelho
+      if (!engine.held) for (const side of ["Left", "Right"] as const) reachHand(p, side, at(`${side}UpLeg`).lerp(at(`${side}Leg`), .62).add(new THREE.Vector3(0, .07, 0)));
     }
     phase.current += moving ? dt * 7 : 0;
     if (moving) for (const [side, offset] of [["Left", 0], ["Right", Math.PI]] as const) {
@@ -119,20 +134,40 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
       p.human.bone(`${side}UpLeg`).rotateX(swing); p.human.bone(`${side}Leg`).rotateX(Math.max(0, -swing) * .8);
       if (!(engine.held && engine.heldArm === side)) p.human.bone(`${side}Arm`).rotateX(-swing * .6);
     }
-    // reação à troca de roupa, por lugar do corpo, sobre a pose parada; com movimento reduzido é menor e mais curta
+    // reação ao vestir no espelho (alívio, alegria, ajuste ou conferir, variando entre trocas), sobre a pose parada;
+    // com movimento reduzido é menor e mais curta (mirror-session.ts)
     const reaction = session?.reaction;
+    let handsTo: { kind: NonNullable<ReactionChoreo["hands"]>; w: number } | null = null;
     if (reaction && !moving) {
       const reduced = !!gameplay.reduced, tt = (now - reaction.at) / (reduced ? REACTION_MS.reduced : REACTION_MS.normal);
       if (tt < 1) {
-        const r = reactionPose(reaction.slot, tt, reduced);
-        for (const [side, sign] of [["Left", 1], ["Right", -1]] as const) if (!(engine.held && engine.heldArm === side)) p.human.bone(`${side}Arm`).rotateZ(sign * r.arms);
-        p.human.bone("Spine1").rotateY(r.spine);
+        const r = reactionChoreo(reactionKindOf(reaction.slot, reaction.n), reaction.slot, tt, reduced);
+        for (const [side, sign] of [["Left", 1], ["Right", -1]] as const) if (!(engine.held && engine.heldArm === side)) {
+          p.human.bone(`${side}Arm`).rotateZ(sign * r.arms); p.human.bone(`${side}Shoulder`).rotateZ(sign * r.shoulders);
+        }
+        p.human.bone("Spine1").rotateY(r.spine); p.human.bone("Spine2").rotateX(-r.breath);
         p.human.bone("RightUpLeg").rotateX(-r.knee); p.human.bone("RightLeg").rotateX(r.knee * 1.5);
         p.human.bone("RightFoot").rotateX(-r.foot);
-        p.human.bone("Head").rotateZ(r.head);
+        p.human.bone("Head").rotateZ(r.head); p.human.bone("Head").rotateX(r.look);
+        p.human.bone("Hips").position.y += r.bounce;
+        actor.current.rotation.y += r.turn;
+        if (r.hands && r.handsWeight > 0.02) handsTo = { kind: r.hands, w: r.handsWeight };
       }
     }
     actor.current.updateWorldMatrix(true, true);
+    // frente e esquerda do personagem no chão (as mãos da reação e o balanço da peça na mão usam o espaço dele)
+    const facing = actor.current.rotation.y, fwd = new THREE.Vector3(Math.sin(facing), 0, Math.cos(facing)), leftward = new THREE.Vector3(Math.cos(facing), 0, -Math.sin(facing));
+    if (handsTo && !engine.aiming && !engine.grip) {
+      const at = (b: string) => p.human.bone(b).getWorldPosition(new THREE.Vector3());
+      for (const [side, s] of [["Left", 1], ["Right", -1]] as const) {
+        if (engine.held && engine.heldArm === side) continue;
+        const target = handsTo.kind === "chest" ? at("Spine2").addScaledVector(fwd, 0.16).addScaledVector(leftward, s * 0.04)
+          : handsTo.kind === "collar" ? at("Neck").addScaledVector(fwd, 0.08).addScaledVector(leftward, s * 0.07).add(new THREE.Vector3(0, -0.03, 0))
+          : handsTo.kind === "hips" ? at("Hips").addScaledVector(fwd, 0.04).addScaledVector(leftward, s * 0.17).add(new THREE.Vector3(0, 0.04, 0))
+          : at("Hips").addScaledVector(fwd, 0.11).addScaledVector(leftward, s * 0.15).add(new THREE.Vector3(0, -0.07, 0));   // barra
+        reachHand(p, side, at(`${side}Hand`).lerp(target, handsTo.w));
+      }
+    }
     if (engine.aiming) {
       const ray = new THREE.Raycaster(); ray.setFromCamera(pointer.current, camera);
       // Reach plane in front of the nearest wardrobe (1 on the north wall, 2 on the west wall), including low drawer handles.
@@ -150,7 +185,9 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
       actor.current.updateWorldMatrix(true, true); reachHand(p, engine.aiming, target);
     } else if (engine.grip) reachHand(p, engine.gripArm, engine.grip.object.getWorldPosition(new THREE.Vector3()));
     if (engine.held && !engine.aiming) {
-      const carry = actor.current.localToWorld(new THREE.Vector3(engine.heldArm === "Left" ? .32 : -.32, 1.05, .3)); reachHand(p, engine.heldArm, carry);
+      // segura o cabide pelo gancho na altura do peito, um pouco à frente e do lado do braço: a roupa pende livre
+      const shoulder = actor.current.worldToLocal(p.human.bone(`${engine.heldArm}Arm`).getWorldPosition(new THREE.Vector3()));
+      reachHand(p, engine.heldArm, actor.current.localToWorld(new THREE.Vector3(engine.heldArm === "Left" ? .24 : -.24, shoulder.y - .12, .24)));
     }
     for (const side of ["Left", "Right"] as const) if ((engine.held && engine.heldArm === side) || (engine.grip && engine.gripArm === side)) {
       for (const finger of ["Index", "Middle", "Ring", "Pinky"]) for (let i = 1; i <= 3; i++) p.human.bone(`${side}Hand${finger}${i}`).rotateX(.55);
@@ -159,9 +196,18 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     engine.hover = engine.aiming ? engine.nearest(p.human.bone(`${engine.aiming}Hand`).getWorldPosition(new THREE.Vector3()))?.id ?? null : null;
     if (engine.held) {
       const target = engine.targets.get(`carry:${engine.held}`);
-      target?.object.position.copy(p.human.bone(`${engine.heldArm}Hand`).getWorldPosition(new THREE.Vector3()));
-      if (target) { target.object.rotation.set(0, Math.atan2(camera.position.x - target.object.position.x, camera.position.z - target.object.position.z), Math.sin(clock.elapsedTime * 4) * (moving ? .045 : .008)); }
-    }
+      if (target) {
+        // a peça pende do gancho na mão: pêndulo guiado pela aceleração da mão (andar, parar e virar balançam o pano)
+        const hand = p.human.bone(`${engine.heldArm}Hand`).getWorldPosition(new THREE.Vector3());
+        if (carried.current?.id !== engine.held) carried.current = { id: engine.held, hand: hand.clone(), vel: new THREE.Vector3(), swing: { ...SWING_REST } };
+        const c = carried.current, h = Math.max(dt, 1e-3);
+        const vel = hand.clone().sub(c.hand).divideScalar(h), acc = vel.clone().sub(c.vel).divideScalar(h).clampLength(0, 30);
+        c.hand.copy(hand); c.vel.lerp(vel, 0.5);
+        c.swing = gameplay.reduced ? { ...SWING_REST } : stepSwing(c.swing, { x: acc.dot(leftward), z: acc.dot(fwd) }, dt);
+        target.object.position.copy(hand);
+        target.object.rotation.set(c.swing.ax, facing, c.swing.az, "YXZ");
+      }
+    } else carried.current = null;
     // câmera: a vista do quarto (guarda-roupa, personagem e espelho; Q/E giram de 90° em 90°); na prova, de frente para
     // o espelho com o personagem no quadro — sempre por interpolação (com movimento reduzido, direto, sem o percurso)
     const k = gameplay.reduced ? 1 : Math.min(1, dt * 3);

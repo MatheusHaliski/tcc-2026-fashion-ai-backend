@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { MIRROR_COLLIDER, MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, awayPoint, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, mirrorFront, mirrorRoute, reactionPose } from "./mirror-session";
+import { MIRROR_COLLIDER, MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, awayPoint, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, mirrorFront, mirrorRoute, reactionChoreo, reactionKindOf, type ReactionKind } from "./mirror-session";
 import { BODY_RADIUS, penetration } from "./interaction";
 import { ROOM, walkArea } from "./room-bounds";
 
@@ -42,7 +42,7 @@ describe("trocas", () => {
     expect(s.busy).toBe("upper");
     expect(s.settle(a, true, "upper", 1000)).toBe(false); expect(s.busy).toBe("upper"); expect(s.reaction).toBeNull();
     expect(s.settle(b, true, "upper", 1200)).toBe(true); expect(s.busy).toBeNull(); expect(s.applied).toBe(b);
-    expect(s.reaction).toEqual({ slot: "upper", at: 1200 });
+    expect(s.reaction).toEqual({ slot: "upper", at: 1200, n: 2 });
   });
   it("falha: sem reação, com a mensagem, e nada do estado anterior muda (a roupa anterior continua)", () => {
     const s = new MirrorSession(); s.settle(s.request("shoes"), true, "shoes", 10);
@@ -101,16 +101,23 @@ describe("câmera, orientação e reação", () => {
     // o personagem vira para o espelho: frente = (sin yaw, 0, cos yaw)
     const yaw = facingYaw(actor, mirror); expect(Math.sin(yaw)).toBeCloseTo(0.6 / Math.hypot(0.6, -0.5)); expect(Math.cos(yaw)).toBeCloseTo(-0.5 / Math.hypot(0.6, -0.5));
   });
-  it("reação por lugar do corpo, que começa e termina em zero e fica bem menor com movimento reduzido", () => {
-    for (const slot of ["upper", "lower", "shoes", "accessory"] as const) {
-      const start = reactionPose(slot, 0, false), end = reactionPose(slot, 1, false);
-      const size = (p: ReturnType<typeof reactionPose>) => Math.abs(p.arms) + Math.abs(p.spine) + Math.abs(p.knee) + Math.abs(p.foot) + Math.abs(p.head);
-      const peak = (reduced: boolean) => Math.max(...[0.15, 0.25, 0.35, 0.5, 0.75].map((t) => size(reactionPose(slot, t, reduced))));
-      expect(peak(false)).toBeGreaterThan(0.2); expect(size(start)).toBeLessThan(1e-9); expect(size(end)).toBeLessThan(1e-9);
-      expect(peak(true)).toBeLessThan(peak(false) * 0.5);
+  it("reação ao vestir: alívio, alegria, ajuste e conferir variam entre trocas, voltam a zero e encolhem com movimento reduzido", () => {
+    const size = (p: ReturnType<typeof reactionChoreo>) => Math.abs(p.arms) + Math.abs(p.spine) + Math.abs(p.knee) + Math.abs(p.foot) + Math.abs(p.head)
+      + Math.abs(p.breath) + Math.abs(p.shoulders) + Math.abs(p.look) + Math.abs(p.bounce) * 4 + Math.abs(p.turn) + p.handsWeight;
+    for (const slot of ["upper", "lower", "shoes", "accessory"] as const) for (const kind of ["alivio", "alegria", "ajuste", "conferir"] as ReactionKind[]) {
+      const peak = (reduced: boolean) => Math.max(...[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8].map((t) => size(reactionChoreo(kind, slot, t, reduced))));
+      expect(peak(false)).toBeGreaterThan(0.15);
+      expect(size(reactionChoreo(kind, slot, 0, false))).toBeLessThan(1e-9); expect(size(reactionChoreo(kind, slot, 1, false))).toBeLessThan(1e-9);
+      expect(peak(true)).toBeLessThan(peak(false) * 0.6);
+      for (const t of [0.25, 0.5, 0.75]) expect(reactionChoreo(kind, slot, t, true).bounce).toBe(0);              // sem pulo
     }
-    expect(reactionPose("upper", 0.5, false).arms).toBeGreaterThan(0); expect(reactionPose("lower", 0.5, false).knee).toBeGreaterThan(0);
-    expect(reactionPose("shoes", 1 / 6, false).foot).toBeGreaterThan(0); expect(reactionPose("accessory", 0.25, false).head).toBeGreaterThan(0);
+    expect(reactionChoreo("alivio", "upper", 0.25, false).breath).toBeGreaterThan(0);                            // inspira
+    expect(reactionChoreo("alivio", "upper", 0.8, false).shoulders).toBeLessThan(0);                             // ombros caem
+    expect(reactionChoreo("alegria", "upper", 0.4, false).hands).toBe("chest");
+    expect(reactionChoreo("ajuste", "accessory", 0.5, false).hands).toBe("collar");
+    expect(reactionChoreo("conferir", "shoes", 0.4, false).look).toBeGreaterThan(0);                            // olha os pés
+    // trocas seguidas no mesmo lugar do corpo nunca repetem a reação
+    for (const slot of ["upper", "lower", "shoes", "accessory"] as const) for (let n = 0; n < 6; n++) expect(reactionKindOf(slot, n)).not.toBe(reactionKindOf(slot, n + 1));
   });
 });
 

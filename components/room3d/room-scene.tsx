@@ -14,10 +14,12 @@ import {
 } from "@/components/room3d/room-props";
 import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
 import { MIRROR_COLLIDER } from "@/lib/room3d/mirror-session";
-import { ROOM_CAMERA_EVENT, ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
+import { CHAIR, ROOM_CAMERA_EVENT, ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction, seatOf } from "@/lib/room3d/interaction";
 import { dropPoint, insideW2, ROOM, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
 import { useI18n } from "@/lib/i18n/i18n";
 import { ApprovedAsset } from "./approved-asset";
+import { hangJitter, hungKindOf, HungGarment, ShelfPiece } from "./hung-garment";
+import { fallPose, stepFall, type Fall } from "@/lib/room3d/cloth-motion";
 
 /* RF27/RF32 — Meu Quarto 3D (React Three Fiber). Quarto de quatro paredes (lib/room3d/room-bounds.ts): móvel FAI Origem
  * paramétrico (molde = função de parâmetros, acabamento = dado) na parede norte, 2º guarda-roupa na oeste, porta e duas
@@ -114,13 +116,18 @@ interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced:
 
 /** Register actual world anchors, not screen-space click areas. */
 function InteractionAnchor({ ctx, id, kind, available = true, position = [0, 0, 0], children, progress }: {
-  ctx: Ctx; id: string; kind: "handle" | "piece"; available?: boolean; position?: [number, number, number]; children?: React.ReactNode; progress?: (delta: number) => void;
+  ctx: Ctx; id: string; kind: "handle" | "piece" | "rail"; available?: boolean; position?: [number, number, number]; children?: React.ReactNode; progress?: (delta: number) => void;
 }) {
   const object = useRef<THREE.Group>(null), marker = useRef<THREE.Mesh>(null);
-  useFrame(() => { if (marker.current) { const near = ctx.engine?.hover === id; marker.current.scale.setScalar(near ? 1.6 : 1); (marker.current.material as THREE.MeshBasicMaterial).color.set(near ? "#4ade80" : "#fbbf24"); } });
+  useFrame(() => {
+    if (!marker.current) return;
+    const near = ctx.engine?.hover === id; marker.current.scale.setScalar(near ? 1.6 : 1); (marker.current.material as THREE.MeshBasicMaterial).color.set(near ? "#4ade80" : "#fbbf24");
+    marker.current.visible = kind !== "rail" || !!ctx.engine?.held;          // o varão só vira alvo com uma peça na mão
+  });
   useEffect(() => {
     if (!ctx.engine || !object.current) return;
-    const target = { id, kind, object: object.current, available: () => available && (kind !== "piece" || !ctx.engine!.hidden.has(id)), progress };
+    const engine = ctx.engine;
+    const target = { id, kind, object: object.current, available: () => available && (kind === "rail" ? !!engine.held : kind !== "piece" || !engine.hidden.has(id)), progress };
     ctx.engine.targets.set(id, target);
     return () => { if (ctx.engine?.targets.get(id) === target) ctx.engine.targets.delete(id); };
   }, [ctx.engine, id, kind, available, progress]);
@@ -177,33 +184,17 @@ function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w:
   );
 }
 
-function Hanger({ gold, finish, modelUrl }: { gold?: boolean; finish?: THREE.MeshStandardMaterialParameters; modelUrl?: string | null }) {
-  const mat = gold ? <meshStandardMaterial color="#C9A227" metalness={0.9} roughness={0.25} /> : <meshStandardMaterial color={finish?.color ?? "#6b5a4a"} metalness={finish?.metalness ?? 0.2} roughness={finish?.roughness ?? 0.6} />;
-  return (
-    <ApprovedAsset url={modelUrl} size={[.4, .17, .04]} centered><group>
-      <mesh position={[0, 0.03, 0]}><torusGeometry args={[0.022, 0.004, 8, 16, Math.PI * 1.4]} />{mat}</mesh>
-      <mesh position={[0, -0.03, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.005, 0.005, 0.4, 8]} />{mat}</mesh>
-      {/* cabide especial da favorita: ombreiras de veludo */}
-      {gold && [-0.16, 0.16].map((x) => <mesh key={x} position={[x, -0.03, 0]}><sphereGeometry args={[0.018, 10, 8]} /><meshStandardMaterial color="#7a1f3d" roughness={1} /></mesh>)}
-    </group></ApprovedAsset>
-  );
-}
 
-/** Cabide que balança quando a peça esquecida volta (DET-D03). */
-function HangingPiece({ p, x, z, pw, ph, ctx }: { p: RoomPiece3D; x: number; z: number; pw: number; ph: number; ctx: Ctx }) {
-  const g = useRef<THREE.Group>(null); const swing = useRef(-1);
-  useFrame(() => { if (!g.current) return; const t = swing.current < 0 ? 99 : (performance.now() - swing.current) / 1000; g.current.rotation.z = t < 1.6 ? Math.sin(t * 14) * 0.12 * (1 - t / 1.6) : 0; });
-  return (
-    <group ref={g} position={[x, 0, z]} visible={!ctx.engine?.hidden.has(p.id)}>
-      <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={!!p.moduleId && !!ctx.engine?.progress.get(p.moduleId) && ctx.engine.progress.get(p.moduleId)! > .6} />
-      <Hanger gold={p.states?.includes("FAVORITA")} finish={ctx.hanger} modelUrl={ctx.hangerModel} />
-      <group position={[0, -ph / 2 - 0.05, 0.01]}><PieceMesh p={p} w={pw} h={ph} ctx={ctx} onPuff={() => { if (!ctx.reduced) swing.current = performance.now(); }} /></group>
-    </group>
-  );
-}
-
+/** Altura do gancho da peça deitada no chão (o pano assentado tem ~3 cm). */
+const FLOOR_Y = 0.03;
+/**
+ * Peça na mão ou solta no chão: a mesma roupa no cabide das araras. Na mão, o controlador do personagem move e gira
+ * este grupo (pêndulo no gancho, room-avatar-controller.tsx); solta, ela cai com o arrasto do tecido, deita ao chegar
+ * ao chão girando um pouco, quica de leve e assenta (cloth-motion.ts).
+ */
 function LoosePiece({ engine, p, ctx, drop }: { engine: RoomInteraction; p: RoomPiece3D; ctx: Ctx; drop: ReturnType<typeof walkArea> }) {
-  const object = useRef<THREE.Group>(null), velocity = useRef(0);
+  const object = useRef<THREE.Group>(null), cloth = useRef<THREE.Group>(null);
+  const fall = useRef<{ f: Fall; start: number; spin: number; key: THREE.Vector3 } | null>(null);
   useEffect(() => {
     if (!object.current) return;
     const carry = { id: `carry:${p.id}`, kind: "piece" as const, object: object.current, available: () => false };
@@ -213,14 +204,17 @@ function LoosePiece({ engine, p, ctx, drop }: { engine: RoomInteraction; p: Room
     return () => { engine.targets.delete(carry.id); if (engine.targets.get(p.id) === ground) { if (original) engine.targets.set(p.id, original); else engine.targets.delete(p.id); } };
   }, [engine, p.id]);
   useFrame((_, dt) => {
-    const dropped = engine.dropped.get(p.id); if (!object.current || !dropped) { velocity.current = 0; return; }
-    velocity.current += Math.min(dt, .05) * 9.8;
-    dropped.y = Math.max(.035, dropped.y - velocity.current * Math.min(dt, .05));
-    dropPoint(dropped, drop);   // cai dentro do quarto, fora dos dois guarda-roupas
-    object.current.position.copy(dropped); object.current.rotation.set(-Math.PI / 2, 0, 0);
+    const dropped = engine.dropped.get(p.id), g = object.current; if (!g) return;
+    if (!dropped) { fall.current = null; if (cloth.current) cloth.current.scale.z = 1; return; }   // na mão: o controlador cuida
+    if (!fall.current || fall.current.key !== dropped) fall.current = { f: { y: dropped.y, vy: 0, landed: -1 }, start: dropped.y, spin: (Math.random() - 0.5) * 1.1, key: dropped };
+    const st = fall.current; st.f = ctx.reduced ? { y: FLOOR_Y, vy: 0, landed: 1 } : stepFall(st.f, FLOOR_Y, dt);
+    dropped.y = st.f.y; dropPoint(dropped, drop);   // cai dentro do quarto, fora dos dois guarda-roupas
+    const pose = fallPose(st.start, st.f.y, FLOOR_Y, st.f.landed, st.spin);
+    g.position.copy(dropped); g.rotation.set(pose.tiltX, g.rotation.y, pose.spinZ, "YXZ");
+    if (cloth.current) cloth.current.scale.z = pose.squash;
   });
   return <group ref={object} name={`room-carried-${p.id}`} position={engine.dropped.get(p.id)?.toArray() ?? [0, 1, 1]}>
-    <Hanger finish={ctx.hanger} modelUrl={ctx.hangerModel} /><group position={[0, -.32, 0]}><PieceMesh p={p} w={.38} h={.52} ctx={{ ...ctx, engine: undefined }} /></group>
+    <group ref={cloth}><HungGarment p={p} ctx={{ ...ctx, engine: undefined }} along="z" /></group>
   </group>;
 }
 function LoosePieces({ engine, pieces, ctx, drop }: { engine: RoomInteraction; pieces: Record<string, RoomPiece3D>; ctx: Ctx; drop: ReturnType<typeof walkArea> }) {
@@ -256,13 +250,20 @@ function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle,
     if (door.current) door.current.rotation.y = ctx.reduced ? angle : THREE.MathUtils.damp(door.current.rotation.y, angle, 7, dt);
     if (front.current) (front.current.material as THREE.MeshStandardMaterial).emissiveIntensity = lit ? 0.35 + 0.15 * Math.sin(clock.elapsedTime * 3) : 0;
   });
-  const pieces = (m.pieces ?? []).filter(p => !ctx.engine?.hidden.has(p.id)); const n = Math.min(doorW > 0.7 ? 8 : 6, pieces.length);
+  // varão de lado a lado do vão, 10 cm abaixo do maleiro; as peças de lado no varão, a cada ~10 cm (5 no vão de 60 cm,
+  // 8 no de 90), como num closet de verdade — peças longas dobram no cabide para não bater no fundo do vão
+  const railY = h - 0.1, cap = Math.max(1, Math.floor((doorW - 0.06) / 0.1));
+  const pieces = (m.pieces ?? []).filter(p => !ctx.engine?.hidden.has(p.id)).slice(0, cap);
+  const step = (doorW - 0.08) / Math.max(1, pieces.length), first = 0.04 + step / 2;
+  const reach = (ctx.engine?.progress.get(m.id) ?? Number(open)) > .6;
   return (
     <group position={[x0, Y.drawers1, 0]}>
-      <mesh position={[doorW / 2, h - .45, 0]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.012, 0.012, D - .08, 12]} /><meshStandardMaterial color={ctx.hanger?.color ? String(ctx.hanger.color) : "#b7b7b7"} metalness={ctx.hanger?.metalness ?? 0.8} roughness={ctx.hanger?.roughness ?? 0.3} /></mesh>
-      {pieces.slice(0, n).map((p, i) => (
-        <group key={p.id} position={[0, h - .48, 0]}>
-          <HangingPiece p={{ ...p, moduleId: m.id }} x={doorW / 2} z={.16 - i * .32 / Math.max(1, n - 1)} pw={Math.min(.42, doorW - .08)} ph={0.62} ctx={ctx} />
+      <mesh position={[doorW / 2, railY, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.012, 0.012, doorW - 0.03, 12]} /><meshStandardMaterial color={ctx.hanger?.color ? String(ctx.hanger.color) : "#b7b7b7"} metalness={ctx.hanger?.metalness ?? 0.8} roughness={ctx.hanger?.roughness ?? 0.3} /></mesh>
+      <InteractionAnchor ctx={ctx} id={`rail:${m.id}`} kind="rail" available={reach} position={[doorW / 2, railY, 0]} />
+      {pieces.map((p, i) => (
+        <group key={p.id} position={[first + i * step, railY, 0]}>
+          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={reach} position={[0, 0.02, 0]} />
+          <HungGarment p={p} ctx={ctx} along="x" jitter={hangJitter(p.id) * 0.5} maxLength={railY - 0.04} swingKey={ctx.engine?.hungBack?.id === p.id ? ctx.engine.hungBack.at : 0} />
         </group>
       ))}
       {(open || lit) && <pointLight position={[doorW / 2, h - 0.05, 0]} intensity={lit ? 1.4 : 0.8} distance={1.4} color={lit ? "#ffe6a0" : light} />}
@@ -415,15 +416,17 @@ function Basket({ position, pieces, ctx }: { position: [number, number, number];
   );
 }
 
+/** Alturas da arara (m): varão onde os ganchos encaixam e o tampo da prateleira de baixo (as mesmas do modelo aprovado). */
+const RACK = { rail: 1.27, shelf: 0.17 } as const;
 /**
  * Arara do Desapego: encostada na parede sul, de frente para o centro do quarto e longe das portas do 2º guarda-roupa
- * (a porta 5 abre até x = −1,90). Placa FashionAI no alto (logo + nome), peças de frente para quem olha, etiqueta de
- * preço e selo Garimpo nas peças de brechó; acima de 6 peças, as demais viram "+N" na placa.
+ * (a porta 5 abre até x = −1,90): peças de lado no varão (até 12), sapatos e acessórios na prateleira, etiqueta de
+ * preço e selo Garimpo nas peças de brechó.
  */
 function SaleRack({ position, rack, ctx, modelUrl }: { modelUrl?: string | null; position: [number, number, number]; rack: { name: string; pieces: RoomPiece3D[] }; ctx: Ctx }) {
-  const { t } = useI18n(); const logo = useTex("/brand/fai-logo.png");
-  const shown = rack.pieces.slice(0, 6), more = rack.pieces.length - shown.length;
-  const x = (i: number) => (shown.length === 1 ? 0 : -.6 + i * 1.2 / (shown.length - 1));
+  const hung = rack.pieces.filter((p) => hungKindOf(p) !== "shelf"), shelf = rack.pieces.filter((p) => hungKindOf(p) === "shelf");
+  const shown = hung.slice(0, 12), feet = shelf.slice(0, 4);
+  const step = Math.min(0.11, 1.3 / Math.max(1, shown.length)), first = -((shown.length - 1) * step) / 2;
   return <RoomFixture engine={ctx.engine} id="support-rack" position={position} yaw={Math.PI} collider={[.82, .4]}>
     <ApprovedAsset url={modelUrl} size={[1.6, 1.55, .8]}><group>
       {[-.73, .73].map(x => <group key={x}><mesh position={[x, .72, 0]}><boxGeometry args={[.045, 1.42, .045]} /><meshStandardMaterial color="#1245a8" metalness={.4} /></mesh>{[-.24, .24].map(z => <mesh key={z} position={[x, .06, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.06, .06, .045, 16]} /><meshStandardMaterial color="#423a30" /></mesh>)}</group>)}
@@ -431,24 +434,18 @@ function SaleRack({ position, rack, ctx, modelUrl }: { modelUrl?: string | null;
       <mesh position={[0, 1.43, 0]}><boxGeometry args={[1.53, .12, .055]} /><meshStandardMaterial color="#1245a8" /></mesh>
       <mesh position={[0, .14, 0]}><boxGeometry args={[1.56, .04, .52]} /><meshStandardMaterial color="#f58220" /></mesh>
     </group></ApprovedAsset>
-    <group position={[0, 1.67, .03]}>
-      <RoundedBox args={[1.24, .2, .03]} radius={.03} smoothness={4}><meshStandardMaterial color="#14213d" roughness={.5} /></RoundedBox>
-      <mesh position={[-.51, 0, .017]}><circleGeometry args={[.085, 40]} /><meshBasicMaterial map={logo ?? undefined} color={logo ? "#ffffff" : "#f58220"} transparent toneMapped={false} /></mesh>
-      <Label3D text={more > 0 ? `${rack.name} · +${more}` : rack.name} w={.9} h={.11} px={512} fg="#fff3e6" position={[.07, 0, .017]} />
-    </group>
-    {shown.map((p, i) => <group key={p.id} position={[x(i), 1.15, .02 + (i % 2) * .03]}>
-      <Hanger finish={ctx.hanger} modelUrl={ctx.hangerModel} /><group position={[0, -.34, .01]}><PieceMesh p={p} w={.36} h={.55} ctx={ctx} /></group>
-      {p.salePrice != null && <HangTag text={`R$ ${Math.round(Number(p.salePrice))}`} position={[.12, -.12, .04]} />}
-      {p.states?.includes("GARIMPO") && <HangTag text={t("common.garimpo")} color="#1F7A76" fg="#fff" position={[-.1, -.24, .04]} w={.11} />}
-    </group>)}
+    {/* peças de lado no varão, uma ao lado da outra (como numa arara de loja); sapatos e acessórios na prateleira */}
+    <InteractionAnchor ctx={ctx} id="rail:sale" kind="rail" position={[0, RACK.rail, 0]} />
+    {shown.map((p, i) => <group key={p.id} position={[first + i * step, RACK.rail, 0]}><HungGarment p={p} ctx={ctx} along="x" jitter={hangJitter(p.id)} swingKey={ctx.engine?.hungBack?.id === p.id ? ctx.engine.hungBack.at : 0} /></group>)}
+    {feet.map((p, i) => <ShelfPiece key={p.id} p={p} ctx={ctx} position={[-0.48 + i * 0.32, RACK.shelf, 0.02]} />)}
   </RoomFixture>;
 }
 
 function Chair({ position, pieces, ctx }: { position: [number, number, number]; pieces: RoomPiece3D[]; ctx: Ctx }) {
   const wood = <meshStandardMaterial color="#8a6a4a" roughness={0.7} />;
   return (
-    <group position={position} rotation={[0, deg(35), 0]}>
-      <mesh position={[0, 0.45, 0]} castShadow><boxGeometry args={[0.45, 0.05, 0.45]} />{wood}</mesh>
+    <group position={position} rotation={[0, CHAIR.yaw, 0]}>
+      <mesh position={[0, CHAIR.seatTop - 0.025, 0]} castShadow><boxGeometry args={[0.45, 0.05, 0.45]} />{wood}</mesh>
       <mesh position={[0, 0.72, -0.2]} castShadow><boxGeometry args={[0.45, 0.5, 0.04]} />{wood}</mesh>
       {[[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]].map(([x, z]) => <mesh key={`${x}${z}`} position={[x, 0.22, z]}><boxGeometry args={[0.04, 0.45, 0.04]} />{wood}</mesh>)}
       {pieces.slice(0, 3).map((p, i) => <group key={p.id} position={[-0.05 + i * 0.05, 0.62 + i * 0.03, -0.15]} rotation={[-0.2, 0, 0.1 * i]}><PieceMesh p={p} w={0.4} h={0.4} ctx={ctx} /></group>)}
@@ -872,7 +869,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} live={!!gameplay} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />
       <SaleRack position={L.sale} rack={{ name: data.saleRack?.name ?? t("room.support_rack"), pieces: [...new Map([...(data.saleRack?.pieces ?? []), ...(data.chair ?? []), ...(data.basket ?? [])].map(p => [p.id, p])).values()] }} ctx={ctx} modelUrl={byId["saleRack"]?.finish?.model3dUrl ?? "/models/fai-room/rack-fai.glb"} />
-      <RoomFixture engine={gameplay?.engine} id="chair" position={L.chair} collider={[.32, .32]} kind="sit" run={() => { if (gameplay) { gameplay.engine.seated = gameplay.engine.seated ? null : new THREE.Vector3(...L.chair); gameplay.engine.notify(); } }}>
+      <RoomFixture engine={gameplay?.engine} id="chair" position={L.chair} collider={[.32, .32]} kind="sit" run={() => { if (gameplay) { const e = gameplay.engine; e.seated = e.seated ? null : seatOf(L.chair); e.seatYaw = CHAIR.yaw; e.notify(); } }}>
         <Chair position={[0, 0, 0]} pieces={[]} ctx={ctx} />
       </RoomFixture>
       <DoubleBed engine={gameplay?.engine} modelUrl={byId["bed"]?.finish?.model3dUrl ?? "/models/fai-room/bed-fai.glb"} lit={ceilingOn} intensity={brightness} />

@@ -430,7 +430,29 @@ export function FaiNeonSign({ position, w = 0.95 }: { position: [number, number,
   return <mesh position={position} name="fai-neon"><planeGeometry args={[w, w / 4]} /><meshBasicMaterial map={tex} transparent depthWrite={false} toneMapped={false} /></mesh>;
 }
 
-/** Tapete redondo FashionAI: o desenho do logo no chão (anel escuro com a rede de pontos, anel laranja, miolo creme e "FAI"). */
+/**
+ * A bolsa do logo FashionAI desenhada no canvas: sacola preta com alça, corpo em trapézio de cantos arredondados, brilho
+ * suave de volume e "FAI" em branco — o miolo do logo. (cx, cy) é o centro do corpo e `w` a largura da boca da sacola.
+ */
+function faiBag(g: CanvasRenderingContext2D, cx: number, cy: number, w: number) {
+  const top = cy - w * 0.3, bottom = cy + w * 0.36, half = w / 2, base = w * 0.4, r = w * 0.07;
+  g.save();
+  g.strokeStyle = "#1c1916"; g.lineWidth = w * 0.085; g.lineCap = "round";
+  g.beginPath(); g.moveTo(cx - w * 0.2, top + w * 0.02); g.bezierCurveTo(cx - w * 0.2, top - w * 0.36, cx + w * 0.2, top - w * 0.36, cx + w * 0.2, top + w * 0.02); g.stroke();
+  g.beginPath();
+  g.moveTo(cx - half + r, top); g.lineTo(cx + half - r, top); g.quadraticCurveTo(cx + half, top, cx + half - r * 0.3, top + r);
+  g.lineTo(cx + base, bottom - r); g.quadraticCurveTo(cx + base - r * 0.2, bottom, cx + base - r, bottom);
+  g.lineTo(cx - base + r, bottom); g.quadraticCurveTo(cx - base + r * 0.2, bottom, cx - base, bottom - r);
+  g.lineTo(cx - half + r * 0.3, top + r); g.quadraticCurveTo(cx - half, top, cx - half + r, top); g.closePath();
+  const shade = g.createLinearGradient(cx - half, top, cx + half, bottom); shade.addColorStop(0, "#3a3430"); shade.addColorStop(0.45, "#1f1b18"); shade.addColorStop(1, "#141210");
+  g.fillStyle = shade; g.fill();
+  g.fillStyle = "rgba(255,255,255,.08)"; g.fillRect(cx - half + r, top + r * 0.4, w - 2 * r, w * 0.05);   // aba da boca da sacola
+  g.fillStyle = "#f7f1e6"; g.font = `900 ${Math.round(w * 0.3)}px Inter, Arial, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(BRAND.short, cx, cy + w * 0.06);
+  g.restore();
+}
+
+/** Tapete redondo FashionAI: o desenho do logo no chão (anel escuro com a rede de pontos, anel laranja, miolo creme e a bolsa FAI). */
 export function FaiRug({ position, radius = 1.1, night }: { position: [number, number, number]; radius?: number; night?: boolean }) {
   const tex = useCanvasTex(`fai-rug-${night ? "n" : "d"}`, 512, 512, (g, w) => {
     const c = w / 2, ring = (r: number, color: string) => { g.fillStyle = color; g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); g.fill(); };
@@ -441,7 +463,7 @@ export function FaiRug({ position, radius = 1.1, night }: { position: [number, n
     nodes.forEach(([x, y], i) => { const [nx, ny] = nodes[(i + 1) % nodes.length]; g.moveTo(x, y); g.lineTo(nx, ny); const [ox, oy] = nodes[(i + 7) % nodes.length]; g.moveTo(x, y); g.lineTo(ox, oy); });
     g.stroke();
     nodes.forEach(([x, y], i) => { g.fillStyle = BRAND.dots[i % BRAND.dots.length]; g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill(); });
-    g.fillStyle = BRAND.dark; g.font = "900 64px Inter, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(BRAND.short, c, c + 4);
+    faiBag(g, c, c + 6, c * 0.46);
     if (night) { g.fillStyle = "rgba(20,18,30,.35)"; g.beginPath(); g.arc(c, c, c, 0, Math.PI * 2); g.fill(); }
   });
   return <mesh rotation={[-Math.PI / 2, 0, 0]} position={position} receiveShadow name="fai-tapete"><circleGeometry args={[radius, 64]} /><meshStandardMaterial map={tex} roughness={1} /></mesh>;

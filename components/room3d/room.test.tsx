@@ -276,7 +276,7 @@ describe("quarto 3D — móveis no lugar, identidade FashionAI e espelho de verd
   });
 
   it("arara encostada na parede sul, de frente para o quarto e fora do giro das portas do 2º guarda-roupa; medalhão, neon e tapete FashionAI", async () => {
-    const r = await mount3d(<RoomScene data={{ ...room("LOFT"), modules: [...room("LOFT").modules, { id: "rug", slotType: "RUG", label: "Tapete" }] }} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} />);
+    const r = await mount3d(<RoomScene data={{ ...room("LOFT"), saleRack: { name: "Bazar", pieces: [PIECES.a, PIECES.d] }, modules: [...room("LOFT").modules, { id: "rug", slotType: "RUG", label: "Tapete" }] }} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} />);
     await frames(r, 2);
     const rack = fixture(r, "support-rack"); rack.updateWorldMatrix(true, true);
     const p = rack.getWorldPosition(new THREE.Vector3());
@@ -285,6 +285,11 @@ describe("quarto 3D — móveis no lugar, identidade FashionAI e espelho de verd
     expect(p.x - 0.82).toBeGreaterThan(W2.x + W2.collider.hz + 0.9);                      // a porta do 2º guarda-roupa (0,9 m) abre livre
     expect(moduleFacing("sale")).toEqual([0, -1]);
     for (const name of ["fai-medalhao", "fai-neon", "fai-tapete"]) expect(r.scene.findAll((n) => n.instance.name === name)).toHaveLength(1);
+    // peças de lado no varão (perpendiculares a ele), como numa arara de verdade
+    const hung = r.scene.findAll((n) => typeof n.instance.name === "string" && n.instance.name.startsWith("hung-"));
+    expect(hung.length).toBeGreaterThan(0);
+    for (const n of hung) expect(Math.abs(Math.abs(n.instance.rotation.y) - Math.PI / 2)).toBeLessThanOrEqual(0.18);
+    expect(r.scene.findAll((n) => n.instance.name === "shelf-d")).toHaveLength(1);                // acessório vai para a prateleira
     await r.unmount();
   });
 
