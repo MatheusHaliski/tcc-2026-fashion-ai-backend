@@ -1,7 +1,7 @@
 /*
- * Meu Avatar — retrato estilizado na GPU (SDXL + InstantID, POST /api/me/avatar3d/stylized-portrait). A foto do rosto
- * vira um desenho 3D semirrealista da pessoa, e volta junto a semelhança medida pelo ArcFace entre a foto e o retrato.
- * Nada é guardado: nem a foto (backend, worker e GPU) nem o retrato, que fica só nesta tela para ver e baixar.
+ * Meu Avatar — desenho semirrealista na GPU (SDXL + InstantID, POST /api/me/avatar3d/stylized-portrait). A foto do
+ * rosto vira um desenho 3D da pessoa, com a semelhança medida pelo ArcFace, e esse desenho monta o avatar 3D (rosto,
+ * cabelo e textura) no envio de foto do topo da página. A foto não é guardada (backend, worker e GPU).
  */
 import { api } from "@/lib/api/client";
 import { loadOriented } from "@/lib/avatar3d/pipeline";
