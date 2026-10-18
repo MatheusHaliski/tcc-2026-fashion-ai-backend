@@ -10,6 +10,7 @@ import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Follow;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Scheme;
+import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
@@ -133,10 +134,15 @@ public class ProfileService {
         }
         out.put("self", self);
         out.put("relation", rel == null ? "NENHUMA" : rel.name());
-        out.put("counters", counters(u.getId(), published.size()));
         out.put("visibility", u.getProfileVisibility().name());
         out.put("contentVisible", canSee);
+        if (self) {
+            out.put("pendingFollowRequests", follows.countByFollowingIdAndStatus(u.getId(), FollowStatus.PENDENTE));
+        }
         if (!canSee) {
+            // sem acesso, os contadores de peças e looks ficam de fora: contariam itens privados e rascunhos
+            out.put("counters", Map.of("followers", follows.countByFollowingIdAndStatus(u.getId(), FollowStatus.ACEITO),
+                    "following", follows.countByFollowerIdAndStatus(u.getId(), FollowStatus.ACEITO), "published", 0L));
             out.put("invite", Map.of("message", u.getProfileVisibility() == Visibility.FOLLOWERS
                     ? Msg.t("profile.este_perfil_mostra_as_publicacoes") : Msg.t("profile.perfil_privado"), "action", "SEGUIR"));
             out.put("schemes", List.of());
@@ -145,17 +151,24 @@ public class ProfileService {
         }
         if (levelProgress != null) out.put("levelProgress", levelProgress.progress(u.getId()));
         String order = LookbookService.lookSort(sort);
-        out.put("schemes", publishedLooks(viewer, u, self, published, order).stream()
+        List<Scheme> looks = publishedLooks(viewer, u, self, published, order);
+        out.put("schemes", looks.stream().limit(60)
                 .map(s -> schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());
         out.put("sort", order);
-        out.put("pieces", pieces.findByUserIdOrderByCreatedAtDesc(u.getId()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
+        List<WardrobeItem> visiblePieces = pieces.findByUserIdOrderByCreatedAtDesc(u.getId()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
                 .filter(w -> self || guard.canView(viewer, u.getId(), SchemeService.moreRestrictive(w.getVisibility(), u.getProfileVisibility())))
-                .limit(60).map(w -> Views.piece(w, null, null)).toList());
+                .toList();
+        out.put("pieces", visiblePieces.stream().limit(60).map(w -> Views.piece(w, null, null)).toList());
+        // o dono vê tudo o que tem (inclusive rascunhos); quem visita conta só o que consegue abrir
+        out.put("counters", self ? counters(u.getId(), published.size())
+                : Map.of("followers", follows.countByFollowingIdAndStatus(u.getId(), FollowStatus.ACEITO),
+                "following", follows.countByFollowerIdAndStatus(u.getId(), FollowStatus.ACEITO), "published", (long) looks.size(),
+                "pieces", (long) visiblePieces.size(), "schemes", (long) looks.size()));
         return out;
     }
 
     /**
-     * Looks publicados que quem vê pode ver (até 60), na ordem pedida. Pelo Hype: o dono usa o próprio Hype pessoal;
+     * Todos os looks publicados que quem vê pode ver, na ordem pedida (o perfil mostra os 60 primeiros e conta todos). Pelo Hype: o dono usa o próprio Hype pessoal;
      * terceiros, só o público elegível. Sem Hype = por último (nunca 0); empate segue a ordem recente.
      */
     List<Scheme> publishedLooks(CurrentUser viewer, User owner, boolean self, List<Scheme> published, String order) {
@@ -163,12 +176,12 @@ public class ProfileService {
                 .filter(s -> self || guard.canView(viewer, owner.getId(), SchemeService.moreRestrictive(s.getVisibility(), owner.getProfileVisibility())))
                 .toList();
         if ("recent".equals(order)) {
-            return visible.stream().limit(60).toList();
+            return visible;
         }
         Map<UUID, HypeScoreCurrent> h = LookbookService.rankable(LookbookService.hypeV2Of(hypeV2, hypeV2Config, HypeEntityType.SCHEME,
                 visible.stream().map(Scheme::getId).toList()), viewer == null ? null : viewer.id());
         // a lista chega da mais recente para a mais antiga: o sort estável mantém essa ordem nos empates
-        return visible.stream().sorted(LookbookService.<Scheme>hypeOrder(order, s -> h.get(s.getId()))).limit(60).toList();
+        return visible.stream().sorted(LookbookService.<Scheme>hypeOrder(order, s -> h.get(s.getId()))).toList();
     }
 
     /** Header do perfil (estilo Instagram, RF14/RF22): seguidores, seguindo, peças e esquemas criados. */
@@ -249,7 +262,8 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public Map<String, Object> connections(CurrentUser viewer, UUID userId) {
         User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Perfil"));
-        if (!viewer.id().equals(userId) && !guard.canView(viewer, userId, u.getProfileVisibility())) {
+        // sem login também chega aqui (perfil público): viewer nulo não pode derrubar a rota com erro 500
+        if (!(viewer != null && viewer.id().equals(userId)) && !guard.canView(viewer, userId, u.getProfileVisibility())) {
             throw guard.deny(viewer, "connections:" + userId, Msg.t("profile.as_conexoes_deste_perfil_nao"));
         }
         return Map.of("followers", follows.findByFollowingIdAndStatus(userId, FollowStatus.ACEITO).stream().map(f -> Views.user(f.getFollower())).toList(),

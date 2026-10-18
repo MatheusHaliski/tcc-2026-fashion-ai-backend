@@ -21,6 +21,8 @@ class AnatomicalTryOnAdapterTest {
         assertThat(adapter.available()).isFalse();
         assertThatThrownBy(() -> adapter.measureBody(new byte[]{1}))
                 .isInstanceOfSatisfying(br.com.fashionai.application.common.ApiException.class, e -> assertThat(e.code()).isEqualTo("VTON_NOT_CONFIGURED"));
+        assertThatThrownBy(() -> adapter.stylizedPortrait(new byte[]{1}, 42))
+                .isInstanceOfSatisfying(br.com.fashionai.application.common.ApiException.class, e -> assertThat(e.code()).isEqualTo("VTON_NOT_CONFIGURED"));
     }
 
     @Test void anythingElseIsDropped() {

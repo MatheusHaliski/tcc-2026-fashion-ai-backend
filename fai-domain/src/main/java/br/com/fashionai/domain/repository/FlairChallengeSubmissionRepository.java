@@ -15,4 +15,6 @@ public interface FlairChallengeSubmissionRepository extends JpaRepository<FlairC
     List<FlairChallengeSubmission> findByUserIdAndChallengeIdIn(UUID userId, Collection<UUID> challengeIds);
 
     List<FlairChallengeSubmission> findByChallengeIdIn(Collection<UUID> challengeIds);
+
+    List<FlairChallengeSubmission> findByUserIdAndChallengeIdNot(UUID userId, UUID challengeId);
 }

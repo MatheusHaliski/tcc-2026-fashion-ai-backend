@@ -119,7 +119,7 @@ public class SecurityConfig {
         cors.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList());
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Correlation-Id", "Accept-Language", "X-Dev-Gate",
-                "X-FAI-Platform", "X-FAI-Quality", "X-FAI-App-Version", "If-Match"));
+                "X-FAI-Platform", "X-FAI-Quality", "X-FAI-App-Version", "If-Match", "Idempotency-Key"));
         cors.setExposedHeaders(List.of("X-Correlation-Id", "Content-Disposition", "X-Dev-Gate-Required", "ETag"));
         cors.setAllowCredentials(true);
         cors.setMaxAge(3600L);

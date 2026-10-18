@@ -1,6 +1,7 @@
 package br.com.fashionai.infrastructure.ai.image;
 import br.com.fashionai.application.ports.AnatomicalTryOnPort;
 import br.com.fashionai.application.ports.BodyMeasurementPort;
+import br.com.fashionai.application.ports.StylizedPortraitPort;
 import br.com.fashionai.application.common.*;
 import br.com.fashionai.infrastructure.platform.Http;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import java.util.*;
 @Component
-public class AnatomicalTryOnAdapter implements AnatomicalTryOnPort,BodyMeasurementPort {
+public class AnatomicalTryOnAdapter implements AnatomicalTryOnPort,BodyMeasurementPort,StylizedPortraitPort {
  private final String token;private final String url;private final RestClient client;
  public AnatomicalTryOnAdapter(@Value("${fashionai.vton.worker-url:${VTON_WORKER_URL:}}")String url,@Value("${fashionai.vton.worker-token:${VTON_WORKER_TOKEN:}}")String token,@Value("${fashionai.vton.worker-timeout-seconds:${VTON_WORKER_TIMEOUT_SECONDS:650}}")int timeout){if(timeout<75||timeout>650)throw new IllegalArgumentException("Invalid VTON timeout");this.url=url==null?"":url.trim();this.token=token==null?"":token.trim();this.client=this.url.isBlank()?null:Http.client(this.url,timeout);}
  public boolean available(){return client!=null&&!token.isBlank();}
@@ -36,6 +37,10 @@ public class AnatomicalTryOnAdapter implements AnatomicalTryOnPort,BodyMeasureme
  public Map<String,Object> measureBody(byte[] person){
   if(!available())throw new ApiException(503,"VTON_NOT_CONFIGURED","Worker anatômico não configurado.");
   return post("/v1/body/measure",Map.of("person_image",Base64.getEncoder().encodeToString(person)));
+ }
+ public Map<String,Object> stylizedPortrait(byte[] person,int seed){
+  if(!available())throw new ApiException(503,"VTON_NOT_CONFIGURED","Worker anatômico não configurado.");
+  return post("/v1/avatar/portrait",Map.of("person_image",Base64.getEncoder().encodeToString(person),"seed",seed));
  }
  public Map<String,Object> render(String id,byte[] garment,byte[] person,String category,Map<String,Object> evidence,boolean mirror){
   if(!available())throw new ApiException(503,"VTON_NOT_CONFIGURED","Worker anatômico não configurado.");

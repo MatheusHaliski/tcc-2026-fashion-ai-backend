@@ -116,7 +116,27 @@ class NativeFashnRuntime:
         if any('CUDAExecutionProvider' not in session.get_providers() for session in (sessions.session_det,sessions.session_pose)):
             raise AlignmentError('DWPOSE_CUDA_PROVIDER_REQUIRED')
         if next(self.pipeline.tryon_model.parameters()).device.type!='cuda':raise AlignmentError('VTON_MODEL_NOT_ON_GPU')
-        self.ready=True
+        self.parked=False;self.ready=True
+
+    def park(self):
+        """Leva o modelo da prova (o maior da FASHN) para a RAM, liberando a T4 para o retrato estilizado."""
+        if not self.parked:
+            self.pipeline.tryon_model.to('cpu');self.parked=True;self.torch.cuda.empty_cache()
+
+    def restore(self):
+        if self.parked:
+            self.pipeline.tryon_model.to('cuda:0');self.parked=False
+
+    def person_evidence(self,rgb):
+        """Caixas e poses DWPose das pessoas da foto, para outra tarefa da mesma GPU (medidas do corpo) não carregar um
+        segundo detector. Mesma regra de detected_pose: sem pessoa detectada, nada de pose da imagem inteira."""
+        estimator=self.pipeline.pose_model.pose_estimation
+        bgr=np.ascontiguousarray(rgb[:,:,::-1])
+        boxes=np.asarray(self.detector(estimator.session_det,bgr),float)
+        if boxes.size==0:return np.empty((0,4)),np.empty((0,134,2)),np.empty((0,134))
+        if boxes.ndim!=2 or boxes.shape[1]!=4 or not np.isfinite(boxes).all():raise AlignmentError('INVALID_PERSON_DETECTION')
+        points,scores=estimator(bgr)
+        return boxes,points,scores
 
     def person_evidence(self,rgb):
         """Caixas e poses DWPose das pessoas da foto, para outra tarefa da mesma GPU (medidas do corpo) não carregar um
@@ -131,6 +151,7 @@ class NativeFashnRuntime:
 
     def predict(self,instance):
         request=FashnInput.model_validate(instance)
+        self.restore()
         person=decoded_image(request.person_image);garment=decoded_image(request.garment_image)
         torch=self.torch;torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats();started=time.monotonic()
         try:

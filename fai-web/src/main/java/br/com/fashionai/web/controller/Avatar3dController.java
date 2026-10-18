@@ -6,6 +6,7 @@ import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.Avatar3dService;
 import br.com.fashionai.application.service.AvatarBodyScanService;
+import br.com.fashionai.application.service.AvatarPortraitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.CacheControl;
@@ -26,10 +27,12 @@ import java.util.concurrent.TimeUnit;
 public class Avatar3dController {
     private final Avatar3dService avatars;
     private final AvatarBodyScanService bodyScan;
+    private final AvatarPortraitService portraits;
 
-    public Avatar3dController(Avatar3dService avatars, AvatarBodyScanService bodyScan) {
+    public Avatar3dController(Avatar3dService avatars, AvatarBodyScanService bodyScan, AvatarPortraitService portraits) {
         this.avatars = avatars;
         this.bodyScan = bodyScan;
+        this.portraits = portraits;
     }
 
     @GetMapping("/api/me/avatar3d")
@@ -80,6 +83,20 @@ public class Avatar3dController {
             throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
         }
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(bodyScan.measure(user, bytes, consent));
+    }
+
+    @PostMapping(value = "/api/me/avatar3d/stylized-portrait", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "RF40 — Retrato estilizado na GPU (SDXL + InstantID): parte 'photo' (rosto) + consent=true [+ seed]; volta o retrato semirrealista e a semelhança medida, nada é guardado")
+    public ResponseEntity<Map<String, Object>> stylizedPortrait(CurrentUser user, @RequestPart("photo") MultipartFile photo,
+                                                                @RequestParam(name = "consent", defaultValue = "false") boolean consent,
+                                                                @RequestParam(name = "seed", required = false) Integer seed) {
+        byte[] bytes;
+        try {
+            bytes = photo == null ? null : photo.getBytes();
+        } catch (IOException e) {
+            throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
+        }
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(portraits.generate(user, bytes, consent, seed));
     }
 
     @GetMapping("/api/me/avatar3d/versions")

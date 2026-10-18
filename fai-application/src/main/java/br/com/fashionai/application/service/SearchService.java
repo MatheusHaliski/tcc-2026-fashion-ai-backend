@@ -217,7 +217,9 @@ public class SearchService {
     }
 
     boolean visible(CurrentUser viewer, Scheme s, Set<UUID> blocked) {
-        return !blocked.contains(s.getUser().getId()) && s.getUser().getStatus() == AccountStatus.ACTIVE && showcaseAllows(viewer, s.getUser())
+        // o índice de busca (OpenSearch) guarda também rascunhos: busca só mostra look publicado, até para o dono
+        return s.getStatus() == SchemeStatus.PUBLISHED
+                && !blocked.contains(s.getUser().getId()) && s.getUser().getStatus() == AccountStatus.ACTIVE && showcaseAllows(viewer, s.getUser())
                 && schemeService.canView(viewer, s);
     }
 

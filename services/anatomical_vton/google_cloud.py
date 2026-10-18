@@ -23,6 +23,8 @@ SERVER_CODES=frozenset({
     # Medidas do corpo (sam3d_runtime.py, body_measure.py).
     'FULL_BODY_NOT_VISIBLE','ONE_BODY_RECONSTRUCTION_REQUIRED','INVALID_BODY_MESH','INVALID_BODY_KEYPOINTS',
     'IMPLAUSIBLE_BODY_SCALE','IMPLAUSIBLE_BODY_PROPORTIONS','DEGENERATE_BODY_FRAME',
+    # Retrato estilizado (portrait_face.py, portrait_runtime.py).
+    'FACE_NOT_FOUND','MULTIPLE_FACES_REJECTED','FACE_TOO_SMALL','DEGENERATE_FACE_LANDMARKS','GENERATED_FACE_REJECTED',
 })
 
 
@@ -136,3 +138,8 @@ def predict_fashn(person_image,garment_image,category,garment_photo_type='auto')
 def predict_body_measurement(person_image):
     # Same T4 container as the try-on (engine fashn+sam3d_body); the photo is not stored anywhere on the way.
     return dedicated_gpu_client().predict({'task':'body_measurement','person_image':person_image},max_response_bytes=64_000)
+
+
+def predict_stylized_portrait(person_image,seed=42):
+    # Same T4 container (engine with +portrait); the photo is not stored anywhere on the way. JPEG ~0.3 MB back.
+    return dedicated_gpu_client().predict({'task':'stylized_portrait','person_image':person_image,'seed':seed},max_response_bytes=4_000_000)

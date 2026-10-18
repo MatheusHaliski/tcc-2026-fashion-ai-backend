@@ -131,6 +131,14 @@ class SearchHypeV2Test {
         return w;
     }
 
+    @Test
+    void buscaNuncaMostraRascunhoNemParaQuemPoderiaVerOLook() {
+        Scheme draft = look("Rascunho indexado");
+        draft.setStatus(SchemeStatus.DRAFT);
+        assertThat(search.visible(null, draft, java.util.Set.of())).isFalse();
+        assertThat(search.visible(null, look("Publicado"), java.util.Set.of())).isTrue();
+    }
+
     static HypeScoreCurrent row(HypeEntityType type, UUID id, double score, boolean eligible) {
         HypeScoreCurrent c = new HypeScoreCurrent();
         c.setEntityType(type);

@@ -91,13 +91,15 @@ public class FlairChallengeService {
     private final UserRepository users;
     private final FlairCollectionService collection;
     private final Guard guard;
+    private final AtelierRewardSystem atelier;
     private Clock clock = Clock.systemUTC();
 
     public FlairChallengeService(FlairChallengeRepository challenges, FlairChallengeGroupRepository groups,
                                  FlairChallengeSubmissionRepository submissions, FlairCardInstanceRepository cards,
                                  WardrobeItemRepository pieces, MomentRepository moments, MomentService momentService,
                                  FaiPointsService points, UserAchievementRepository achievements, UserRepository users,
-                                 FlairCollectionService collection, Guard guard) {
+                                 FlairCollectionService collection, Guard guard, AtelierRewardSystem atelier) {
+        this.atelier = atelier;
         this.challenges = challenges;
         this.groups = groups;
         this.submissions = submissions;
@@ -487,6 +489,7 @@ public class FlairChallengeService {
             throw ApiException.conflict("DESAFIO_ENCERRADO", Msg.t("cbc.desafio_encerrado"));
         }
         List<FlairChallengeSubmission> prior = submissions.findByChallengeIdAndUserIdOrderByAttemptDesc(c.getId(), user.id());
+        Set<UUID> playedElsewhere = cardsPlayedElsewhere(user.id(), c.getId());
         if (prior.size() >= c.getRepeatLimit()) {
             throw ApiException.conflict("LIMITE_DE_ENTREGAS", Msg.t("cbc.limite_de_entregas"));
         }
@@ -535,6 +538,12 @@ public class FlairChallengeService {
         if (m != null) {
             momentService.recordCardChallenge(m, user.id());
         }
+        String challengeName = MomentViews.localized(c.getName(), c.getNamesJson());
+        for (FlairCardInstance card : b.placed().values()) {
+            if (playedElsewhere.contains(card.getId())) {
+                atelier.grant(AtelierGrants.chapter(user.id(), c.getId(), challengeName, card.getId(), card.getName(), card.getOriginId()));
+            }
+        }
         s.setPoints(total);
         s.setBonusJson(Json.write(granted));
         submissions.save(s);
@@ -565,6 +574,7 @@ public class FlairChallengeService {
                 line.put("capReached", a.capReached());
                 granted.add(line);
             }
+            atelier.grant(AtelierGrants.groupCompleted(user.id(), g.getCode(), MomentViews.localized(g.getName(), g.getNamesJson())));
             if (g.getBadgeCode() != null && !achievements.existsByUserIdAndAchievementCode(user.id(), g.getBadgeCode())) {
                 UserAchievement ach = new UserAchievement();
                 ach.setUserId(user.id());
@@ -582,6 +592,21 @@ public class FlairChallengeService {
         v.put("completed", complete);
         v.put("badgeCode", g.getBadgeCode());
         return v;
+    }
+
+    /** Cartas que a pessoa já entregou em OUTROS desafios: reutilizá-las aqui escreve um capítulo na Memória da peça (Atelier). */
+    Set<UUID> cardsPlayedElsewhere(UUID userId, UUID challengeId) {
+        Set<UUID> out = new HashSet<>();
+        for (FlairChallengeSubmission prev : submissions.findByUserIdAndChallengeIdNot(userId, challengeId)) {
+            for (Map<String, Object> card : Json.list(prev.getCardsJson())) {
+                try {
+                    out.add(UUID.fromString(String.valueOf(card.get("cardId"))));
+                } catch (IllegalArgumentException ignored) {
+                    // entrega antiga sem cardId válido: não conta como reutilização
+                }
+            }
+        }
+        return out;
     }
 
     Build build(CurrentUser user, FlairChallenge c, BuildRequest req) {
