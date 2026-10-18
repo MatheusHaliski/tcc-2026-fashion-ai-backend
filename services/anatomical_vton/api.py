@@ -2,7 +2,9 @@
 import base64
 import hmac
 import json
+import math
 import os
+import re
 import threading
 from typing import Annotated
 import httpx
@@ -30,6 +32,68 @@ class BodyEvidence(BaseModel):
 class PersonInput(BaseModel):
     model_config=ConfigDict(extra='forbid')
     person_image:str=Field(max_length=8_000_000)
+
+
+# Proporções do Avatar 3D (lib/avatar3d/body-spec.ts) que a medida do corpo na GPU pode devolver.
+BODY_RATIOS=frozenset({'shoulderW','chestW','waistW','hipW','legLen','armLen','chestD','waistD','hipD'})
+SHORT_CODE=re.compile(r'[A-Z][A-Z0-9_]{2,63}')
+
+
+def body_measurement_response(result):
+    """Só proporções, recusas e avisos com nomes conhecidos saem do worker; nada de imagem, malha ou pontos."""
+    measurement=result.get('measurement');diagnostics=result.get('diagnostics')
+    if result.get('status')!='READY' or not isinstance(measurement,dict) or not isinstance(diagnostics,dict) \
+            or diagnostics.get('engine')!='SAM_3D_BODY_DINOV3' or diagnostics.get('device')!='cuda:0':
+        raise AlignmentError('REAL_GPU_MEASUREMENT_EVIDENCE_REQUIRED')
+    ratios,refused,warnings=(measurement.get(key) for key in ('ratios','refused','warnings'))
+    if not isinstance(ratios,dict) or not isinstance(refused,dict) or not isinstance(warnings,list):
+        raise AlignmentError('INVALID_BODY_MEASUREMENT_CONTRACT')
+    def ratio(value):return isinstance(value,(int,float)) and not isinstance(value,bool) and math.isfinite(value) and 0<value<1
+    if any(key not in BODY_RATIOS or not ratio(value) for key,value in ratios.items()) \
+            or any(key not in BODY_RATIOS or not isinstance(code,str) or not SHORT_CODE.fullmatch(code) for key,code in refused.items()) \
+            or any(not isinstance(code,str) or not SHORT_CODE.fullmatch(code) for code in warnings):
+        raise AlignmentError('INVALID_BODY_MEASUREMENT_CONTRACT')
+    return {'status':'READY','ratios':{key:float(value) for key,value in ratios.items()},'refused':dict(refused),
+            'warnings':sorted(set(warnings)),
+            'diagnostics':{key:diagnostics.get(key) for key in ('engine','modelRevision','device','gpuName','dtype','latencyMs')}
+                          |{'photoStored':False,'meshReturned':False,'metrologyCertified':False}}
+
+
+class PortraitRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    person_image:str=Field(max_length=8_000_000)
+    seed:int=Field(default=42,ge=0,le=2**31-1)
+
+
+PORTRAIT_ENGINE='SDXL_INSTANTID_STYLIZED_PORTRAIT'
+PORTRAIT_MAX_BYTES=3_000_000
+
+
+def portrait_response(result):
+    """Só o retrato (JPEG que decodifica no tamanho anunciado), a semelhança e diagnósticos conhecidos saem do worker."""
+    diagnostics=result.get('diagnostics')
+    if result.get('status')!='READY' or not isinstance(diagnostics,dict) or diagnostics.get('engine')!=PORTRAIT_ENGINE \
+            or diagnostics.get('device')!='cuda:0':
+        raise AlignmentError('REAL_GPU_PORTRAIT_EVIDENCE_REQUIRED')
+    width,height,similarity=result.get('width'),result.get('height'),result.get('identitySimilarity')
+    if not all(isinstance(v,int) and not isinstance(v,bool) and 256<=v<=1536 for v in (width,height)) \
+            or not isinstance(similarity,(int,float)) or isinstance(similarity,bool) or not math.isfinite(similarity) or not -1<=similarity<=1:
+        raise AlignmentError('INVALID_PORTRAIT_CONTRACT')
+    encoded=result.get('image_jpeg')
+    try:
+        data=base64.b64decode(encoded,validate=True)
+        if len(data)>PORTRAIT_MAX_BYTES or not data.startswith(b'\xff\xd8'):raise ValueError
+        from PIL import Image
+        import io
+        with Image.open(io.BytesIO(data)) as image:
+            if image.format!='JPEG' or image.size!=(width,height):raise ValueError
+    except Exception as error:
+        raise AlignmentError('INVALID_PORTRAIT_CONTRACT') from error
+    seed=diagnostics.get('seed')
+    return {'status':'READY','image_jpeg':encoded,'width':width,'height':height,'identitySimilarity':float(similarity),
+            'identityMetric':'ARCFACE_GLINTR100_COSINE',
+            'diagnostics':{key:diagnostics.get(key) for key in ('engine','style','device','gpuName','latencyMs') if isinstance(diagnostics.get(key),(str,int,float))}
+                          |({'seed':seed} if isinstance(seed,int) else {})|{'photoStored':False,'identityCertified':False}}
 
 
 class CatalogInput(BaseModel):
@@ -122,6 +186,30 @@ def create_app(store=None,annotator=None,token=None,pose_probe=None):
             return JSONResponse(pose_state['probe'].detect(b64_image(body.person_image,'RGB')),
                                 headers={'Cache-Control':'no-store'})
         finally:pose_capacity.release()
+    @app.post('/v1/body/measure',dependencies=[Depends(authenticate)])
+    def body_measure(body:PersonInput):
+        # Foto de corpo inteiro com consentimento explícito (o backend Java confere): vai à GPU em memória e não é
+        # gravada aqui nem no Vertex. Só as proporções voltam.
+        if os.getenv('VTON_RENDER_PROVIDER')!='vertex_fashn':raise HTTPException(503,'BODY_MEASUREMENT_NOT_CONFIGURED')
+        if not capacity.acquire(blocking=False):raise HTTPException(429,'WORKER_BUSY')
+        try:
+            b64_image(body.person_image,'RGB')
+            from .google_cloud import predict_body_measurement
+            return JSONResponse(body_measurement_response(predict_body_measurement(body.person_image)),
+                                headers={'Cache-Control':'no-store'})
+        finally:capacity.release()
+    @app.post('/v1/avatar/portrait',dependencies=[Depends(authenticate)])
+    def avatar_portrait(body:PortraitRequest):
+        # Foto do rosto com consentimento explícito (o backend Java confere): vai à GPU em memória e não é gravada aqui
+        # nem no Vertex. Volta só o retrato estilizado e a semelhança medida.
+        if os.getenv('VTON_RENDER_PROVIDER')!='vertex_fashn':raise HTTPException(503,'PORTRAIT_NOT_CONFIGURED')
+        if not capacity.acquire(blocking=False):raise HTTPException(429,'WORKER_BUSY')
+        try:
+            b64_image(body.person_image,'RGB')
+            from .google_cloud import predict_stylized_portrait
+            return JSONResponse(portrait_response(predict_stylized_portrait(body.person_image,body.seed)),
+                                headers={'Cache-Control':'no-store'})
+        finally:capacity.release()
     @app.post('/try-on',dependencies=[Depends(authenticate)])
     def try_on(body:TryOnInput):
         if not capacity.acquire(blocking=False):raise HTTPException(429,'WORKER_BUSY')

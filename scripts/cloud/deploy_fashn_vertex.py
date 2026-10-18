@@ -4,6 +4,9 @@
 Run in authenticated Cloud Shell. No credentials are written or printed.
 Without --apply, only a local plan is emitted. By default the smoke deployment
 is undeployed afterwards; --keep-deployed retains a billed serving replica.
+--with-sam3d builds the same container with SAM 3D Body (Avatar 3D body measurements) on the same T4; its gated
+Hugging Face weights are read at build time from the Secret Manager secret named by --hf-secret.
+--with-portrait adds the stylized avatar portrait (SDXL + InstantID, public weights, no token) to the same container.
 """
 import argparse
 import base64
@@ -23,11 +26,12 @@ ROOT=Path(__file__).resolve().parents[2]
 PROJECT='project-14023673-32d6-4bf2-8b7'
 REGION='southamerica-east1'
 NAME='fashionai-fashn-gpu'
+HF_SECRET='fashionai-hf-token'
 # Códigos curtos que o servidor da GPU devolve (vertex_runtime/server.py e fashn_runtime.py). Só eles são mostrados:
 # o corpo bruto de um erro pode ecoar a entrada (imagens em base64) e nunca é impresso.
 SERVER_HINTS={
     'INVALID_PREDICTION_INPUT':'o corpo da requisição não segue o contrato do /predict',
-    'TASK_NOT_SUPPORTED_BY_MODEL':'a imagem implantada não atende virtual_try_on; confira VTON_MODEL_ENGINE=fashn',
+    'TASK_NOT_SUPPORTED_BY_MODEL':'a imagem implantada não atende esta tarefa: a prova pede VTON_MODEL_ENGINE=fashn, as medidas do corpo uma imagem construída com --with-sam3d e o retrato uma com --with-portrait',
     'INVALID_VTON_IMAGE':'a foto não pôde ser lida: use JPG, PNG ou WebP com até 1536 px no maior lado e até 6 MB',
     'EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED':'a foto da pessoa precisa ter exatamente uma pessoa detectada (sem reflexo, pôster ou gente ao fundo)',
     'INSUFFICIENT_SHARED_BODY_LANDMARKS':'corpo pouco visível: use foto de frente, em pé, com ombros, cotovelos, punhos e quadril aparecendo',
@@ -49,6 +53,13 @@ SERVER_HINTS={
     'REAL_CUDA_DEVICE_REQUIRED':'o contêiner não encontrou CUDA',
     'DWPOSE_CUDA_PROVIDER_REQUIRED':'o ONNX Runtime não carregou o provedor CUDA',
     'VTON_MODEL_NOT_ON_GPU':'o modelo não foi carregado na GPU',
+    'FULL_BODY_NOT_VISIBLE':'para medir o corpo, a foto precisa mostrar a pessoa inteira, da cabeça aos pés (tornozelos visíveis), de frente e em pé',
+    'ONE_BODY_RECONSTRUCTION_REQUIRED':'o SAM 3D Body não reconstruiu exatamente um corpo; tente outra foto',
+    'INVALID_BODY_MESH':'a malha do corpo reconstruída veio inválida; tente outra foto',
+    'INVALID_BODY_KEYPOINTS':'os pontos 3D do corpo vieram inválidos; tente outra foto',
+    'IMPLAUSIBLE_BODY_SCALE':'a reconstrução do corpo saiu degenerada; use foto de frente, em pé, corpo inteiro',
+    'IMPLAUSIBLE_BODY_PROPORTIONS':'a reconstrução do corpo saiu implausível (pose torta ou corpo cortado); use foto de frente, em pé, braços levemente afastados',
+    'DEGENERATE_BODY_FRAME':'não deu para orientar o corpo (ombros, quadris e tornozelos); use foto de frente, em pé',
 }
 # Máquina padrão por GPU de serving no Vertex (1 GPU por réplica).
 MACHINE_FOR={'NVIDIA_TESLA_T4':'n1-standard-8','NVIDIA_L4':'g2-standard-8'}
@@ -212,6 +223,36 @@ def stage_context(destination):
     shutil.copyfile(ROOT/'services/anatomical_vton/deploy/google-cloud/Dockerfile.fashn',Path(destination)/'Dockerfile')
 
 
+def engine_name(with_sam3d=False,with_portrait=False):
+    return 'fashn'+('+sam3d_body' if with_sam3d else '')+('+portrait' if with_portrait else '')
+
+
+def release_tag(source,with_sam3d=False,with_portrait=False):
+    """12 hex do commit; cada variante (SAM 3D Body, retrato) ganha outra tag no mesmo formato, para nunca sobrescrever
+    nem ser confundida com a imagem só FASHN do mesmo commit."""
+    extras=engine_name(with_sam3d,with_portrait)[len('fashn'):]
+    return hashlib.sha256((source+extras).encode()).hexdigest()[:12] if extras else source[:12]
+
+
+def build_config(image,service_account,project,hf_secret=None,engine=None):
+    engine=engine or ('fashn+sam3d_body' if hf_secret else 'fashn')
+    if bool(hf_secret)!=('sam3d_body' in engine):raise ValueError('HF_SECRET_ONLY_FOR_SAM3D_BUILDS')
+    arguments=['build',*([] if engine=='fashn' else ['--build-arg','VTON_ENGINE='+engine]),'-t',image,'.']
+    step={'name':'gcr.io/cloud-builders/docker','env':['DOCKER_BUILDKIT=1'],'args':arguments}
+    config={'steps':[step],'images':[image],'timeout':'2400s','serviceAccount':service_account,
+            'options':{'machineType':'E2_HIGHCPU_8','diskSizeGb':100,'logging':'CLOUD_LOGGING_ONLY'}}
+    if hf_secret:
+        # Cloud Build puts the secret only in this step's environment. It reaches BuildKit as a file in a private temp
+        # directory removed when the step ends, and is never echoed. "$$" escapes Cloud Build substitutions.
+        script=('set -eu; umask 077; t=$$(mktemp -d); trap \'rm -rf "$$t"\' EXIT; printf %s "$$HF_TOKEN" > "$$t/hf_token"; '
+                f'docker build --build-arg VTON_ENGINE={engine} --secret id=hf_token,src="$$t/hf_token" -t {image} .')
+        step.update(entrypoint='bash',args=['-c',script],secretEnv=['HF_TOKEN'])
+        config['availableSecrets']={'secretManager':[{'versionName':f'projects/{project}/secrets/{hf_secret}/versions/latest','env':'HF_TOKEN'}]}
+        config['timeout']='3600s'
+    if 'portrait' in engine:config['timeout']='5400s'  # +11 GB de pesos baixados, conferidos e enviados ao registro
+    return config
+
+
 def iam_command(*args,attempts=8):
     """Retry only identity propagation/concurrent-policy failures; never hide 403."""
     for attempt in range(attempts):
@@ -244,6 +285,17 @@ def ensure_build_account(project,email):
     account=json.loads(iam_command(*args))
     if account.get('email')!=email or account.get('disabled'):
         raise RuntimeError('BUILD_SERVICE_ACCOUNT_DISABLED_OR_MISMATCHED')
+
+
+def grant_build_secret(project,secret,email):
+    """O build lê só este segredo (o token do Hugging Face); o valor nunca passa por este script."""
+    if not re.fullmatch(r'[A-Za-z0-9_-]{1,255}',secret):raise ValueError('INVALID_SECRET_NAME')
+    found=subprocess.run(['gcloud','secrets','describe',secret,'--project='+project,'--format=value(name)'],text=True,capture_output=True)
+    if found.returncode:
+        raise RuntimeError(f'HF_SECRET_NOT_FOUND: crie o segredo {secret} no Secret Manager com um token de leitura do Hugging Face '
+                           'de uma conta com acesso aprovado a facebook/sam-3d-body-dinov3, e rode de novo')
+    iam_command('secrets','add-iam-policy-binding',secret,'--project='+project,'--member=serviceAccount:'+email,
+                '--role=roles/secretmanager.secretAccessor','--condition=None','--quiet')
 
 
 def resumed_state(state,project,image):
@@ -318,8 +370,8 @@ def adopted_build(state,build,build_id,project,region,current_image,restart_canc
     return {**state,'project':project,'image':image,'buildId':build_id},image
 
 
-def wait_build(project,region,build_id,image):
-    deadline=time.monotonic()+3000
+def wait_build(project,region,build_id,image,seconds=3000):
+    deadline=time.monotonic()+seconds
     while True:
         build=describe_build(project,region,build_id)
         if build_image_reference(build,project,region)!=image:raise RuntimeError('CLOUD_BUILD_IMAGE_MISMATCH')
@@ -332,16 +384,14 @@ def wait_build(project,region,build_id,image):
         time.sleep(20)
 
 
-def build_image(project,region,image,state,state_file):
+def build_image(project,region,image,state,state_file,hf_secret=None,engine=None):
     build_id=state.get('buildId')
     if not build_id:
         service_account,staging=prepare_build_identity(project,region)
+        if hf_secret:grant_build_secret(project,hf_secret,service_account.rsplit('/',1)[-1])
         with tempfile.TemporaryDirectory(prefix='fashionai-cloud-build-') as directory:
             stage_context(directory)
-            config={'steps':[{'name':'gcr.io/cloud-builders/docker','env':['DOCKER_BUILDKIT=1'],
-                              'args':['build','-t',image,'.']}],
-                    'images':[image],'timeout':'2400s','serviceAccount':service_account,
-                    'options':{'machineType':'E2_HIGHCPU_8','diskSizeGb':100,'logging':'CLOUD_LOGGING_ONLY'}}
+            config=build_config(image,service_account,project,hf_secret,engine)
             path=Path(directory)/'cloudbuild.json';path.write_text(json.dumps(config))
             # Submit once, checkpoint the server ID, then poll separately. Ctrl+C
             # during polling cannot invoke gcloud submit's cancellation handler.
@@ -352,7 +402,7 @@ def build_image(project,region,image,state,state_file):
                 raise RuntimeError('CLOUD_BUILD_ID_NOT_RETURNED_CHECK_CONSOLE_BEFORE_RESUBMIT')
             state['buildId']=build_id;save_json(state_file,state)
     print(f'Logs: https://console.cloud.google.com/cloud-build/builds;region={region}/{build_id}?project={project}',flush=True)
-    return wait_build(project,region,build_id,image)
+    return wait_build(project,region,build_id,image,6000 if 'portrait' in (engine or '') else 4200 if hf_secret else 3000)
 
 
 def resume_deployment(cloud,state,state_file,retry_failed=False):
@@ -450,15 +500,17 @@ def reregister_model(cloud,state,state_file,endpoint):
     return {key:state[key] for key in ('project','image','buildId','endpoint')}
 
 
-def build_only_release(project,region,image,output,apply=False):
+def build_only_release(project,region,image,output,apply=False,hf_secret=None,engine=None):
     """Publish a container, without creating endpoints, models or GPU replicas."""
-    plan={'executed':False,'image':image,'project':project,'region':region,'gpuReplicas':0}
+    engine=engine or ('fashn+sam3d_body' if hf_secret else 'fashn')
+    plan={'executed':False,'image':image,'project':project,'region':region,'gpuReplicas':0,'withSam3d':bool(hf_secret),
+          'withPortrait':'portrait' in engine,'engine':engine}
     if not apply:
         print(json.dumps(plan,indent=2));return plan
     # Read-only authentication/project check before enabling services or uploading.
     command('projects','describe',project,'--format=value(projectId)',capture=True)
     command('services','enable','artifactregistry.googleapis.com','cloudbuild.googleapis.com',
-            'iam.googleapis.com','--project='+project)
+            'iam.googleapis.com',*(['secretmanager.googleapis.com'] if hf_secret else []),'--project='+project)
     repositories=json.loads(command('artifacts','repositories','list','--location='+region,
                                     '--project='+project,'--format=json',capture=True))
     if not any(r['name'].endswith('/fashionai-vton') for r in repositories):
@@ -472,8 +524,8 @@ def build_only_release(project,region,image,output,apply=False):
         raise RuntimeError('IMAGE_BUILD_STATE_MISMATCH')
     state.update(project=project,image=image)
     save_json(state_file,state)
-    build_image(project,region,image,state,state_file)
-    result={'executed':True,'status':'IMAGE_BUILD_SUCCEEDED','image':image,
+    build_image(project,region,image,state,state_file,hf_secret,engine)
+    result={'executed':True,'status':'IMAGE_BUILD_SUCCEEDED','image':image,'withSam3d':bool(hf_secret),'withPortrait':'portrait' in engine,
             'buildId':state['buildId'],'gpuReplicas':0,'gpuInferenceValidated':False}
     save_json(directory/'result.json',result)
     print(json.dumps(result,indent=2),flush=True)
@@ -497,6 +549,35 @@ def undeploy_ours(cloud,state_file):
     if state.get('project')!=cloud.project:raise RuntimeError('STATE_BELONGS_TO_ANOTHER_PROJECT')
     if not state.get('endpoint') or not state.get('model'):raise RuntimeError('NO_SAVED_ENDPOINT_OR_MODEL')
     return remove_replica(cloud,state['endpoint'],state['model'])
+
+
+def body_measurement_smoke(cloud,endpoint_name,host,person):
+    """Medidas do corpo na mesma réplica: só proporções e diagnósticos voltam (a foto não é gravada na GPU)."""
+    result=cloud.request('POST',endpoint_name+':predict',{'instances':[{'task':'body_measurement','person_image':person}]},host=host)
+    predictions=result.get('predictions',[])
+    if len(predictions)!=1:raise RuntimeError('INVALID_GPU_PREDICTION_CONTRACT')
+    prediction=predictions[0];diagnostics=prediction.get('diagnostics',{});measurement=prediction.get('measurement',{})
+    if prediction.get('status')!='READY' or diagnostics.get('device')!='cuda:0' or diagnostics.get('engine')!='SAM_3D_BODY_DINOV3' \
+            or not isinstance(measurement.get('ratios'),dict) or not diagnostics.get('peakCudaBytes'):
+        raise RuntimeError('REAL_CUDA_BODY_MEASUREMENT_EVIDENCE_REQUIRED')
+    return {'ratios':measurement['ratios'],'refused':measurement.get('refused',{}),'warnings':measurement.get('warnings',[]),
+            'diagnostics':diagnostics}
+
+
+def portrait_smoke(cloud,endpoint_name,host,person,output):
+    """Retrato estilizado na mesma réplica: o JPEG vai para a pasta de saída (só no Cloud Shell de quem roda)."""
+    result=cloud.request('POST',endpoint_name+':predict',{'instances':[{'task':'stylized_portrait','person_image':person,'seed':42}]},host=host)
+    predictions=result.get('predictions',[])
+    if len(predictions)!=1:raise RuntimeError('INVALID_GPU_PREDICTION_CONTRACT')
+    prediction=predictions[0];diagnostics=prediction.get('diagnostics',{})
+    similarity=prediction.get('identitySimilarity')
+    if prediction.get('status')!='READY' or diagnostics.get('device')!='cuda:0' or diagnostics.get('engine')!='SDXL_INSTANTID_STYLIZED_PORTRAIT' \
+            or not isinstance(similarity,(int,float)) or not diagnostics.get('peakCudaBytes'):
+        raise RuntimeError('REAL_CUDA_PORTRAIT_EVIDENCE_REQUIRED')
+    jpeg=base64.b64decode(prediction.get('image_jpeg',''),validate=True)
+    if not jpeg.startswith(b'\xff\xd8'):raise RuntimeError('INVALID_GPU_OUTPUT_JPEG')
+    (Path(output)/'stylized-portrait.jpg').write_bytes(jpeg)
+    return {'identitySimilarity':similarity,'outputSha256':hashlib.sha256(jpeg).hexdigest(),'diagnostics':diagnostics}
 
 
 def save_json(path,value):
@@ -532,14 +613,19 @@ def main():
     parser.add_argument('--retry-failed-deploy',action='store_true',help='Retry a confirmed failed deployment after its cause was corrected')
     parser.add_argument('--resume-build',help='Resume this existing build without submitting another one')
     parser.add_argument('--restart-cancelled-build',action='store_true',help='Start a replacement only if the selected build is confirmed CANCELLED')
+    parser.add_argument('--with-sam3d',action='store_true',help='Same container plus SAM 3D Body (Avatar 3D body measurements); the smoke also measures --person, which must show the whole body')
+    parser.add_argument('--with-portrait',action='store_true',help='Same container plus the stylized avatar portrait (SDXL + InstantID, public weights); the smoke also draws --person, whose face must be visible')
+    parser.add_argument('--hf-secret',default=HF_SECRET,help='Secret Manager secret with a Hugging Face read token approved for facebook/sam-3d-body-dinov3 (used with --with-sam3d at build time only)')
     args=parser.parse_args()
+    hf_secret=args.hf_secret if args.with_sam3d else None
+    engine=engine_name(args.with_sam3d,args.with_portrait)
     if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]',args.project) or not re.fullmatch(r'[a-z]+-[a-z]+[0-9]',args.region):parser.error('Invalid project/region')
     if args.build_only:
         if args.diagnose or args.new_release or args.reregister_model or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build or args.keep_deployed:
             parser.error('--build-only cannot be combined with deployment/resume options; repeat it to resume its saved build')
         source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
-        image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{source[:12]}'
-        build_only_release(args.project,args.region,image,args.output,args.apply);return
+        image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{release_tag(source,args.with_sam3d,args.with_portrait)}'
+        build_only_release(args.project,args.region,image,args.output,args.apply,hf_secret,engine);return
     if args.diagnose:
         diagnose_deployment(args.project,args.region,args.output);return
     if args.undeploy:
@@ -559,7 +645,7 @@ def main():
         if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference (or use --deploy-only)')
         person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
     source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
-    tag=source[:12];image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
+    tag=release_tag(source,args.with_sam3d,args.with_portrait);image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
     if args.source_image:
         # Same image, any region: Vertex pulls it from the project's Artifact Registry; no new Cloud Build.
         image=args.source_image;tag=image.rsplit(':',1)[-1]
@@ -569,7 +655,7 @@ def main():
         saved=json.loads(saved_file.read_text())
         image=build_image_reference({'projectId':saved.get('project'),'images':[saved.get('image','')]},args.project,args.region)
         tag=image.rsplit(':',1)[-1]
-    plan={'executed':False,'engine':'FASHN_VTON_1_5','project':args.project,'region':args.region,
+    plan={'executed':False,'engine':'FASHN_VTON_1_5'+('+SAM_3D_BODY' if args.with_sam3d else '')+('+SDXL_INSTANTID_PORTRAIT' if args.with_portrait else ''),'project':args.project,'region':args.region,
           'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':args.accelerator,
           'machineType':machine,'deployOnly':args.deploy_only,'sourceImage':bool(args.source_image),
           'keepDeployed':args.keep_deployed,'newRelease':args.new_release,
@@ -584,7 +670,8 @@ def main():
             raise RuntimeError('OTHER_MODELS_ALREADY_DEPLOYED_CHECK_SHARED_T4_QUOTA')
     output=Path(args.output);output.mkdir(parents=True,exist_ok=True)
     if matches and not matches[0].get('dedicatedEndpointEnabled'):raise RuntimeError('DEDICATED_ENDPOINT_REQUIRED')
-    command('services','enable','aiplatform.googleapis.com','artifactregistry.googleapis.com','cloudbuild.googleapis.com','iam.googleapis.com','--project='+args.project)
+    command('services','enable','aiplatform.googleapis.com','artifactregistry.googleapis.com','cloudbuild.googleapis.com','iam.googleapis.com',
+            *(['secretmanager.googleapis.com'] if hf_secret else []),'--project='+args.project)
     repositories=json.loads(command('artifacts','repositories','list','--location='+args.region,'--project='+args.project,'--format=json',capture=True))
     if not any(r['name'].endswith('/fashionai-vton') for r in repositories):
         command('artifacts','repositories','create','fashionai-vton','--repository-format=docker','--location='+args.region,'--project='+args.project,'--quiet')
@@ -629,7 +716,7 @@ def main():
     if len(deployed)>1:raise RuntimeError('MORE_THAN_ONE_REPLICA_MODEL_NOT_ALLOWED')
     if deployed and deployed[0].get('model')!=state.get('model'):raise RuntimeError('ENDPOINT_CONTAINS_DIFFERENT_MODEL_NO_REPLACEMENT_PERFORMED')
     if not state.get('model'):
-        if not args.source_image:build_image(args.project,args.region,image,state,state_file)
+        if not args.source_image:build_image(args.project,args.region,image,state,state_file,hf_secret,engine)
         result=cloud.wait(cloud.request('POST',cloud.parent+'/models:upload',{'model':{
             'displayName':'fashionai-fashn-'+tag,'containerSpec':fashn_container_spec(image)}}))
         state['model']=result['model'];save_json(state_file,state)
@@ -667,10 +754,18 @@ def main():
         png=base64.b64decode(prediction.get('image_png',''),validate=True)
         if not png.startswith(b'\x89PNG\r\n\x1a\n'):raise RuntimeError('INVALID_GPU_OUTPUT_PNG')
         (output/'try-on-gpu.png').write_bytes(png)
-        save_json(output/'evidence.json',{'status':'GPU_SMOKE_PASSED','installerCommit':source,
-            'containerSourceCommitPrefix':tag,'containerImage':image,
+        evidence={'status':'GPU_SMOKE_PASSED','installerCommit':source,
+            'containerSourceCommitPrefix':tag,'containerImage':image,'withSam3d':args.with_sam3d,'withPortrait':args.with_portrait,
             'personSha256':person_hash,'garmentSha256':garment_hash,'outputSha256':hashlib.sha256(png).hexdigest(),
-            'diagnostics':diagnostics,'model':state['model'],'endpoint':endpoint_name})
+            'diagnostics':diagnostics,'model':state['model'],'endpoint':endpoint_name}
+        save_json(output/'evidence.json',evidence)
+        if args.with_sam3d:
+            # Saved after the try-on evidence, so a photo without the feet does not lose the render proof.
+            evidence['bodyMeasurement']=body_measurement_smoke(cloud,endpoint_name,host,person)
+            save_json(output/'evidence.json',evidence)
+        if args.with_portrait:
+            evidence['stylizedPortrait']=portrait_smoke(cloud,endpoint_name,host,person,output)
+            save_json(output/'evidence.json',evidence)
         configuration={'VTON_RENDER_PROVIDER':'vertex_fashn','GOOGLE_CLOUD_PROJECT':args.project,
             'GOOGLE_CLOUD_LOCATION':args.region,'VTON_VERTEX_TRYON_ENDPOINT_ID':endpoint_name.rsplit('/',1)[-1],
             'VTON_VERTEX_TRYON_DEDICATED_HOST':host,'VTON_WORKER_TIMEOUT_SECONDS':'650'}

@@ -25,6 +25,7 @@ import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
 import { validateBody, type BodyModel } from "@/lib/avatar3d/body-spec";
 import { BodyEditor } from "@/components/avatar3d/body-editor";
+import { StylizedPortraitCard } from "@/components/avatar3d/stylized-portrait";
 import type { FaceFidelity } from "@/lib/avatar3d/identity/metrics";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
@@ -531,6 +532,7 @@ export default function MyAvatar() {
       ) : (
         <Create sex={sex} onSaved={done} onCancel={s.exists ? () => setRedo(false) : undefined} initialPublic={s.exists ? !!s.publicOnRunway : true} />
       )}
+      <div className="mt-4"><StylizedPortraitCard /></div>
     </div>
   );
 }

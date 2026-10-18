@@ -38,6 +38,35 @@ abaixo; um endpoint Gemini/texto ou um modelo sem esses adaptadores não é comp
 | --- | --- | --- |
 | `garment_annotation` | `image_png` base64, `response_schema`, `quality_feedback` | `Annotation`: atributos, keypoints, curva de gola, placket, máscara PNG, provedor e versão |
 | `body_evidence` | `person_image` base64, `attributes`, `response_schema` | `BodyEvidence`: anchors, máscaras corporal/pele/região vestível, curvas e proveniência |
+| `virtual_try_on` | `person_image`, `garment_image`, `category` | imagem gerada pela FASHN VTON 1.5 + diagnósticos de CUDA e da triagem de pose |
+| `body_measurement` | só `person_image` (corpo inteiro) | proporções do Avatar 3D (`ratios`), recusas e avisos; sem imagem, malha nem pontos |
+
+### Medidas do corpo (SAM 3D Body) na mesma T4
+
+`deploy_fashn_vertex.py --with-sam3d` constrói o contêiner da FASHN com o SAM 3D Body
+(`VTON_MODEL_ENGINE=fashn+sam3d_body`). A FASHN continua sempre carregada; o SAM 3D Body
+sobe no primeiro pedido de medida e sai da GPU se a prova estourar a memória (a prova
+é repetida uma vez). O detector de pessoa é o DWPose da própria FASHN: a foto precisa
+ter uma pessoa só, da cabeça aos tornozelos, senão volta `FULL_BODY_NOT_VISIBLE`.
+
+Os pesos ficam num repositório fechado do Hugging Face (`facebook/sam-3d-body-dinov3`,
+SAM License; backbone sob a DINOv3 License). Antes do build:
+
+1. peça acesso ao repositório com a conta do Hugging Face e espere a aprovação;
+2. crie um token de leitura dessa conta e guarde-o no Secret Manager do projeto com o
+   nome `fashionai-hf-token` (ou passe outro nome em `--hf-secret`), pelo console ou por
+   `gcloud secrets create fashionai-hf-token --replication-policy=automatic --data-file=-`
+   colando o token no terminal (nunca em chat, arquivo versionado ou log).
+
+O script dá à conta do build acesso só a esse segredo; o Cloud Build entrega o token ao
+BuildKit como segredo de um único `RUN` e ele não fica em nenhuma camada da imagem. O
+commit e o SHA-256 de cada peso são impressos no log do build e gravados na imagem; o
+servidor confere tudo de novo ao subir. Para fixar a versão, copie o commit e os hashes
+impressos para `services/anatomical_vton/sam3d_assets.json`.
+
+A foto de corpo inteiro só existe em memória durante a inferência (nem o worker nem o
+Vertex a gravam) e a resposta leva apenas as proporções. O consentimento explícito é
+conferido pelo backend Java antes de chamar `/v1/body/measure` do worker.
 
 A segmentação e os landmarks devem vir de modelos reais. A validação geométrica
 do worker continua obrigatória após a inferência. Uma resposta do VLM não prova
@@ -48,6 +77,29 @@ Reconstrução FLAME/SMPL-X, textura UV, identificação de cabelo e transferên
 movimento requerem seus próprios adaptadores e pesos licenciados. As interfaces
 numéricas em `services/digital_twin` não instalam esses modelos. Não os publique
 sob um endpoint de anotação fingindo que produzem um avatar ou vídeo completo.
+
+### Retrato estilizado do Avatar (SDXL + InstantID) na mesma T4
+
+`deploy_fashn_vertex.py --with-portrait` acrescenta ao contêiner da FASHN o retrato estilizado do Meu Avatar
+(`VTON_MODEL_ENGINE=fashn+portrait`, ou `fashn+sam3d_body+portrait` junto com `--with-sam3d`). A partir de uma foto do
+rosto, o SDXL desenha um personagem 3D semirrealista; o InstantID mantém a identidade com o vetor do ArcFace
+(antelopev2) e com os 5 pontos do rosto levados a um enquadramento de busto. O próprio ArcFace mede a semelhança entre a
+foto e o retrato (cosseno), que volta junto para o app; o valor orienta, não certifica identidade.
+
+- **Pesos e licenças** (todos públicos, sem token): SDXL base 1.0 (CreativeML Open RAIL++-M), VAE fp16-fix (MIT),
+  InstantID (Apache-2.0) e o código do InstantID num commit fixo. O antelopev2 da InsightFace vem do release oficial
+  e é **só para pesquisa não comercial**: serve ao TCC, mas num uso comercial precisa ser trocado. Tudo é conferido por
+  SHA-256 no build (`portrait_assets.json`); a subida confere tamanho e o primeiro retrato confere os hashes.
+- **Memória:** o retrato é exclusivo na T4. Enquanto ele gera, o modelo da prova vai para a RAM, o SAM 3D Body sai da
+  GPU e o SDXL usa offload por partes; a FASHN volta no próximo pedido de prova. O primeiro retrato carrega o modelo
+  (cerca de 2 a 3 minutos); os seguintes levam cerca de um minuto.
+- **Privacidade:** a foto só existe em memória; o retrato não é guardado (volta para a tela, que deixa baixar).
+
+Para montar só a imagem (sem ligar a T4):
+
+```bash
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --build-only --with-portrait --region us-central1 --output work/fashn-portrait-build
+```
 
 ## Plano de capacidade GPU
 

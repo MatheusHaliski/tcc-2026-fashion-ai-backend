@@ -12,11 +12,13 @@ from ..models import AlignmentError
 from .bundle import SharedGpuBundle
 
 PAYLOAD_LIMIT=1_400_000  # Headroom below the shared endpoint's 1.5 MB limit.
+# Fields each task's runtime receives; the others keep the Instance defaults and are not forwarded.
+TASK_FIELDS={'body_measurement':{'task','person_image'},'stylized_portrait':{'task','person_image','seed'}}
 
 
 class Instance(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    task:Literal['garment_annotation','body_evidence','virtual_try_on']
+    task:Literal['garment_annotation','body_evidence','virtual_try_on','body_measurement','stylized_portrait']
     garment_image:str|None=None
     category:Literal['tops','bottoms','one-pieces']|None=None
     garment_photo_type:Literal['auto','model','flat-lay']='auto'
@@ -34,6 +36,10 @@ class Instance(BaseModel):
                 raise ValueError('PERSON_GARMENT_AND_CATEGORY_REQUIRED')
             return self
         if self.garment_image is not None or self.category is not None:raise ValueError('UNEXPECTED_GARMENT_INPUT')
+        if self.task in ('body_measurement','stylized_portrait'):
+            if not self.person_image or self.image_png is not None or self.attributes is not None or self.response_schema is not None or self.quality_feedback is not None:
+                raise ValueError('PERSON_IMAGE_ONLY')
+            return self
         if self.task=='garment_annotation':
             if not self.image_png or self.person_image is not None or self.attributes is not None:
                 raise ValueError('GARMENT_IMAGE_REQUIRED')
@@ -59,6 +65,9 @@ def create_app(runtime=None,loader=None):
                 from ..fashn_runtime import NativeFashnRuntime
                 from ..fashn_download import DEFAULT_WEIGHTS_DIR
                 factory=lambda:NativeFashnRuntime(os.getenv('VTON_FASHN_WEIGHTS',DEFAULT_WEIGHTS_DIR))
+            elif (os.getenv('VTON_MODEL_ENGINE') or '').startswith('fashn+'):
+                from ..shared_runtime import shared_t4_runtime
+                factory=lambda:shared_t4_runtime(os.getenv('VTON_MODEL_ENGINE'))
             else:factory=lambda:SharedGpuBundle(os.getenv('VTON_MODEL_BUNDLE','/models'))
             # Missing/untrusted weights or unavailable CUDA fail startup. Never serve a mock.
             state['runtime']=await run_in_threadpool(factory)
@@ -79,10 +88,11 @@ def create_app(runtime=None,loader=None):
             if len(data)>payload_limit:raise HTTPException(413,'VERTEX_PAYLOAD_LIMIT')
         try:body=PredictionRequest.model_validate_json(data)
         except (ValidationError,ValueError):raise HTTPException(422,'INVALID_PREDICTION_INPUT')
-        if body.instances[0].task not in getattr(model,'tasks',('garment_annotation','body_evidence')):raise HTTPException(422,'TASK_NOT_SUPPORTED_BY_MODEL')
+        instance=body.instances[0]
+        if instance.task not in getattr(model,'tasks',('garment_annotation','body_evidence')):raise HTTPException(422,'TASK_NOT_SUPPORTED_BY_MODEL')
         if not capacity.acquire(blocking=False):raise HTTPException(429,'GPU_BUSY_RETRY_LATER')
         try:
-            result=await run_in_threadpool(model.predict,body.instances[0].model_dump(exclude_none=True))
+            result=await run_in_threadpool(model.predict,instance.model_dump(exclude_none=True,include=TASK_FIELDS.get(instance.task)))
             encoded=json.dumps({'predictions':[result]},separators=(',',':'),allow_nan=False).encode()
             if len(encoded)>payload_limit:raise HTTPException(413,'VERTEX_RESPONSE_LIMIT')
             return Response(encoded,media_type='application/json')
