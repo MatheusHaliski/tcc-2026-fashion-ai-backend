@@ -18,7 +18,7 @@ export function AuraGuide() {
   const key = `fai.aura.guide.v2:${user?.id ?? 'anon'}`;
   useEffect(() => { if (!user) return; try { setOpen(localStorage.getItem(key) !== 'seen'); } catch { setOpen(true); } },[key,!!user]);
   const close = () => { try { localStorage.setItem(key,'seen'); } catch {} setOpen(false); };
-  return <><Button size="sm" onClick={() => setOpen(true)}>{t('auraGuide.help')}</Button><Dialog open={open} onClose={close} title={t('auraGuide.title')} footer={<Button onClick={close}>{t('common.close')}</Button>}>
+  return <><Button size="icon" className="btn-sm justify-self-start" aria-label={t('auraGuide.help')} title={t('auraGuide.help')} onClick={() => setOpen(true)}><span aria-hidden>?</span></Button><Dialog open={open} onClose={close} title={t('auraGuide.title')} footer={<Button onClick={close}>{t('common.close')}</Button>}>
     <div className="grid gap-3 sm:grid-cols-2">
       {GUIDE_FAMILIES.map(family => <section key={family} className="rounded-lg border border-line-soft p-3">
         <AuraDiagram family={family} color={AURA_COLORS[family]} label={t(`auraGuide.${family}.text`)} artLabel={t('auraGuide.diagram.art')} photoLabel={t(family === 'impersonation' ? 'auraGuide.impersonation.diagram' : 'auraGuide.diagram.photo')} />
