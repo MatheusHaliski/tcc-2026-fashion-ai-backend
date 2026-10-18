@@ -1,0 +1,3 @@
+-r requirements-images.txt
+# segmentador local da Peça inteira (u2net_cloth_seg e isnet-general-use rodam na máquina do lote, sem serviço externo)
+rembg[cpu]>=2.0.57,<3

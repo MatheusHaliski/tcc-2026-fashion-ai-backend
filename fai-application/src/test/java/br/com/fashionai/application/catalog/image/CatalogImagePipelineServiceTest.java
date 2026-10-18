@@ -156,6 +156,30 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void pecaInteiraProcessadaValeAteParaFotoComModeloENuncaUsaAFotoOriginal() {
+        CatalogImage jeans = new CatalogImage();
+        jeans.setImageUrl("https://img.brand.com/jeans-modelo.jpg");
+        jeans.setMetricsJson(Json.write(Map.of("debug", Map.of("productFrame", Map.of("model", true), "sourceHumanEvidence", 0.04))));
+        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+
+        jeans.setWholeUrl("https://media.fashion-ai.app/catalog/whole/a/b.jpg");
+        jeans.setWholeStatus("DONE");
+        jeans.setWholeJson(Json.write(Map.of("box", Map.of("x", 0.24, "y", 0.13, "w", 0.52, "h", 0.74), "background", "#F4F5F7",
+                "width", 900, "height", 1200, "truncated", List.of("bottom"))));
+        Map<String, Object> whole = CatalogImagePipelineService.wholeFrame(jeans);
+        assertThat(whole).containsEntry("url", "https://media.fashion-ai.app/catalog/whole/a/b.jpg").containsEntry("processed", true)
+                .containsEntry("version", CatalogImagePipelineService.WHOLE_PROCESSED_VERSION).containsEntry("width", 900).containsEntry("height", 1200);
+        assertThat(whole.get("truncated")).isEqualTo(List.of("bottom"));
+
+        // processamento com falha ou caixa inválida: sem Peça inteira (a interface mostra o enquadramento de tecido)
+        jeans.setWholeStatus("FAILED");
+        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        jeans.setWholeStatus("DONE");
+        jeans.setWholeJson(Json.write(Map.of("box", Map.of("x", 0.6, "y", 0.1, "w", 0.6, "h", 0.5))));
+        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+    }
+
+    @Test
     void previewAutomaticoReutilizaRecorteSemNovoDownload() {
         product.setCategory("upper_piece"); product.setSubcategory("t_shirt");
         CatalogImage front = image("https://img.brand.com/preview.jpg", CatalogImageType.FRONT,
