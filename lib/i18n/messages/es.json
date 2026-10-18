@@ -748,6 +748,8 @@
   "avatar3d.page.gpu_gerando": "Dibujando tu avatar en la GPU… puede tardar hasta dos minutos.",
   "avatar3d.page.gpu_desligada": "La GPU está apagada ahora: el avatar se armó directamente desde la foto.",
   "avatar3d.page.gpu_semelhanca": "Parecido con la foto: {pct}%",
+  "avatar3d.page.privacidade_gpu": "Con la GPU, la foto se envía a nuestro servidor de GPU solo para dibujar el avatar y no se guarda allí; el resto del procesamiento ocurre en tu dispositivo.",
+  "avatar3d.page.gpu_pouco_parecido": "El dibujo se parece poco a ti y no se puede guardar. Genera de nuevo o usa otra foto.",
   "avatar3d.page.glb_aguarde_roupa": "El avatar todavía se está vistiendo. Inténtalo de nuevo en un momento.",
   "avatar3d.page.lead": "Tu rostro, cabello y busto en 3D, hechos a partir de tu foto de perfil, para vestir los looks en el maniquí.",
   "avatar3d.page.marca": "Los perfiles de marca usan el maniquí estándar: el avatar no aparece en la Pasarela.",

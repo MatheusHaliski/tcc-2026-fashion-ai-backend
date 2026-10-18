@@ -748,6 +748,8 @@
   "avatar3d.page.gpu_gerando": "Drawing your avatar on the GPU… it can take up to two minutes.",
   "avatar3d.page.gpu_desligada": "The GPU is off right now: the avatar was built straight from the photo.",
   "avatar3d.page.gpu_semelhanca": "Similarity to the photo: {pct}%",
+  "avatar3d.page.privacidade_gpu": "With the GPU, the photo is sent to our GPU server only to draw the avatar and is not stored there; the rest of the processing happens on your device.",
+  "avatar3d.page.gpu_pouco_parecido": "The drawing does not look enough like you and cannot be saved. Generate again or use another photo.",
   "avatar3d.page.glb_aguarde_roupa": "Your avatar is still putting on the clothes. Try again in a moment.",
   "avatar3d.page.lead": "Your face, hair and bust in 3D, made from your profile photo, to wear looks on the mannequin.",
   "avatar3d.page.marca": "Brand profiles use the default mannequin: the avatar doesn't appear on the Runway.",

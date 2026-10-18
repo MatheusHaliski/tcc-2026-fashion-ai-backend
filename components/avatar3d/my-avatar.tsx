@@ -21,7 +21,7 @@ import { HAIR_CUTS, HAIR_FRINGES } from "@/lib/avatar3d/hair-cut";
 import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
 import { validateBody } from "@/lib/avatar3d/body-spec";
-import { portraitRefusalKey, stylizedPortraitOnGpu } from "@/lib/avatar3d/portrait-gpu";
+import { portraitRefusalKey, similarityBand, stylizedPortraitOnGpu } from "@/lib/avatar3d/portrait-gpu";
 import type { FaceFidelity } from "@/lib/avatar3d/identity/metrics";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
@@ -248,7 +248,7 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
 
   function pick(f: File | null) {
     if (!f) return;
-    setFile(f); setSource("upload"); setBuilt(null); setFailed(false); setPhoto(null); setGpu(null);
+    setFile(f); setSource("upload"); setBuilt(null); setFailed(false); setPhoto(null); setGpu(null); setGpuConsent(false);
   }
 
   /**
@@ -280,12 +280,12 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
       setBuilt(b); setFailed(!b); setAdjust({ ...DEFAULT_ADJUST }); setConsent(false);
     } catch {
       toast.error(t("avatar3d.page.erro_processar"));
-    } finally { setBusy(""); }
+    } finally { setBusy(""); setGpuConsent(false); }   // consentimento vale para um envio só (LGPD art. 11)
   }
 
   async function save() {
     const m = measured.current;
-    if (!built || !consent || m?.built !== built || !isMeasured(m.parts)) return;
+    if (!built || !consent || m?.built !== built || !isMeasured(m.parts) || (gpu?.similarity !== undefined && similarityBand(gpu.similarity) === "baixa")) return;
     setBusy("save");
     try {
       const fd = new FormData();
@@ -297,7 +297,7 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
       onChanged();
     } catch (e) { toast.fromError(e); } finally { setBusy(""); }
   }
-  function discard() { setBuilt(null); setPhoto(null); setGpu(null); setConsent(false); setAdjust(saved.exists ? clampAdjust(saved.adjust) : { ...DEFAULT_ADJUST }); }
+  function discard() { setBuilt(null); setPhoto(null); setGpu(null); setConsent(false); setAdjust(saved.exists ? clampAdjust(saved.adjust) : { ...DEFAULT_ADJUST }); setPub(saved.exists ? !!saved.publicOnRunway : true); }
   async function patch(body: { adjust?: AvatarAdjust; publicOnRunway?: boolean }) {
     setBusy("patch");
     try { await api.patch("/api/me/avatar3d", body); toast.success(t("avatar3d.page.ajustes_salvos")); onChanged(); }
@@ -315,6 +315,8 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
   const dirty = showingSaved && JSON.stringify(clampAdjust(saved.adjust)) !== JSON.stringify(adjust);
   const setIssues = built?.set.issues ?? [];
   const working = busy === "gpu" || busy === "analyze";
+  // desenho da GPU que não se parece mais com a pessoa (semelhança baixa no ArcFace) não vira avatar: gerar de novo
+  const unlike = !!built && gpu?.similarity !== undefined && similarityBand(gpu.similarity) === "baixa";
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
       <div className="grid content-start gap-3">
@@ -348,6 +350,7 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
           {gpu?.note && <p className="mt-2 type-caption text-muted">{gpu.note}</p>}
           {failed && <p role="alert" className="mt-2 type-body-sm text-critical">{t("avatar3d.page.nao_montou")}</p>}
           {built && gpu?.similarity !== undefined && <p className="mt-2 type-caption text-muted">{t("avatar3d.page.gpu_semelhanca", { pct: Math.round(Math.max(0, gpu.similarity) * 100) })}</p>}
+          {unlike && <p role="alert" className="mt-1 type-caption text-critical">{t("avatar3d.page.gpu_pouco_parecido")}</p>}
           {setIssues.length > 0 && <ul className="fai-list mt-2">{setIssues.map((x) => <li key={x.code} className="type-caption text-muted">⚠ {issueText(x)}</li>)}</ul>}
           {built && (
             <>
@@ -356,14 +359,14 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
                 <span>{t("avatar3d.page.consentimento")}</span>
               </label>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Button variant="primary" loading={busy === "save"} disabled={!consent || !!busy || !qualityReady} onClick={save}>{t("avatar3d.page.salvar")}</Button>
+                <Button variant="primary" loading={busy === "save"} disabled={!consent || !!busy || !qualityReady || unlike} onClick={save}>{t("avatar3d.page.salvar")}</Button>
                 {!qualityReady && <span className="flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.page.medindo")}</span>}
               </div>
             </>
           )}
           <div className="mt-3"><Switch checked={pub} onChange={(v) => { setPub(v); if (showingSaved) void patch({ publicOnRunway: v }); }} label={t("avatar3d.page.publico")} hint={t("avatar3d.page.publico_hint")} /></div>
           {showingSaved && <div className="mt-3"><Button variant="ghost" onClick={() => setConfirm(true)} disabled={!!busy}>{t("avatar3d.page.excluir")}</Button></div>}
-          <p className="mt-3 type-caption text-faint">{t("avatar3d.page.privacidade")}</p>
+          <p className="mt-3 type-caption text-faint">{t(gpuConsent || gpu ? "avatar3d.page.privacidade_gpu" : "avatar3d.page.privacidade")}</p>
         </Card>
         {model && (
           <Card>
