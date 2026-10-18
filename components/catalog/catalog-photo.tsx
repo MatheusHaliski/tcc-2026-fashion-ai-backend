@@ -57,12 +57,14 @@ export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, al
   /** WHOLE = Total frame: a peça inteira no quadro (nunca o recorte de tecido); sem a caixa da peça, a foto original inteira contida */
   framing?: PhotoFraming;
 }) {
-  const wholeMode = framing === "WHOLE";
-  const whole = wholeMode ? catalogWholeFrame(image) : null;
+  const whole = framing === "WHOLE" ? catalogWholeFrame(image) : null;
+  // Peça inteira sem a peça recortada (foto com modelo, sem caixa): mostra o enquadramento de tecido — nunca a foto
+  // original da marca, que traz a pessoa e deixa a peça minúscula no quadro
+  const wholeMode = framing === "WHOLE" && (!!whole || !image);
   const crop = !wholeMode && image?.mode === "SEMANTIC_CROP" && image.crop ? image : null;
-  // Total frame sem caixa: a foto original (o master processado já vem recortado no tecido)
   const first = wholeMode ? [image?.sourceUrl, image?.mode === "PROCESSED" ? null : image?.url] : [crop ? null : image?.url];
-  const chain = Array.from(new Set([...first, ...(requiredFrame && !wholeMode ? [] : [fallbackUrl,image?.sourceUrl,...(alternatives ?? [])])]
+  const original = framing === "WHOLE" && !wholeMode ? [] : [image?.sourceUrl];
+  const chain = Array.from(new Set([...first, ...(requiredFrame && !wholeMode ? [] : [fallbackUrl,...original,...(alternatives ?? [])])]
     .map(url => mediaUrl(url?.trim())).filter((u): u is string => !!u && u !== mediaUrl(crop?.url))));
   const key = [image?.url, fallbackUrl, image?.sourceUrl, framing, ...(alternatives ?? [])].join("|");
   const [failed, setFailed] = useState(0);

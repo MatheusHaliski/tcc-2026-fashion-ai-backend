@@ -37,7 +37,8 @@ import type { CatalogCardImage } from "@/lib/api/catalog";
 export function pieceWholeSources(piece: PieceView): { image: CatalogCardImage | null; sources: string[] } {
   const ci = (piece.flatLayMetadata as { catalogImage?: CatalogCardImage } | undefined)?.catalogImage;
   const image = ci?.url && ci.url === piece.imageUrl ? ci : null;
-  const sources = [thumbUrl(piece.imageUrl?.trim(), 640), piece.imageUrl, piece.studioImageUrl, piece.thumbnailUrl, pieceCatalogSource(piece)]
+  // sem a foto original da marca: em foto com modelo ela traz a pessoa e deixa a peça minúscula no quadro
+  const sources = [thumbUrl(piece.imageUrl?.trim(), 640), piece.imageUrl, piece.studioImageUrl, piece.thumbnailUrl]
     .map((url) => url?.trim()).filter((url): url is string => !!url);
   return { image, sources: Array.from(new Set(sources)) };
 }

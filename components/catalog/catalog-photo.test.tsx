@@ -44,11 +44,15 @@ describe("CatalogPhoto", () => {
     expect(fabric.container.querySelector("[data-mode='processed']")).not.toBeNull();
   });
 
-  it("Total frame sem caixa (ou com erro na foto) mostra a foto original inteira contida, nunca o recorte", () => {
-    const crop = { url: "https://img.brand.com/a.jpg", mode: "SEMANTIC_CROP" as const, crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 } };
+  it("Peça inteira sem a peça recortada (foto com modelo) mostra o enquadramento de tecido, nunca a foto original com a pessoa", () => {
+    const crop = { url: "https://img.brand.com/a.jpg", sourceUrl: "https://img.brand.com/modelo.jpg", mode: "SEMANTIC_CROP" as const, crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 } };
     const a = render(<CatalogPhoto alt="" image={crop} framing="WHOLE" requiredFrame />);
-    expect(a.container.querySelector("[data-mode='whole-original']")).not.toBeNull();
-    expect(a.container.querySelector("[data-mode='semantic-crop']")).toBeNull();
+    expect(a.container.querySelector("[data-mode='semantic-crop']")).not.toBeNull();
+    expect(a.container.querySelector("[data-mode='whole-original']")).toBeNull();
+    const processed = render(<CatalogPhoto alt="" image={{ url: "https://media.fashion-ai.app/card.jpg", sourceUrl: "https://img.brand.com/modelo.jpg", mode: "PROCESSED" }} framing="WHOLE" />);
+    expect(processed.container.querySelector("img")?.getAttribute("src")).toContain("card.jpg");
+    fireEvent.error(processed.container.querySelector("img")!);
+    expect(processed.container.querySelector("img[src*='modelo.jpg']")).toBeNull();
     const withWhole = { ...crop, whole: { url: "https://img.brand.com/a.jpg", box: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 }, background: "#eeeeee", width: 800, height: 800 } };
     const b = render(<CatalogPhoto alt="" image={withWhole} framing="WHOLE" />);
     fireEvent.error(b.container.querySelector("img")!);
