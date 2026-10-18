@@ -2236,6 +2236,9 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 .fcard-face.is-front > .fai-card { flex: 1; }
 .fcard-face.is-back { position: absolute; inset: 0; transform: rotateY(180deg); display: flex; }
 .fcard-face.is-back > .fai-card { flex: 1; min-height: 0; }
+/* a face escondida não recebe clique (o verso fica posicionado sobre a frente) e a carta Hype não inclina dentro do giro */
+.fcard:not(.is-flipped) .fcard-face.is-back, .fcard.is-flipped .fcard-face.is-front { pointer-events: none; }
+.fcard .is-fashion-hype { transform: none; transform-style: flat; }
 @media (prefers-reduced-motion: reduce) {
   .fcard-inner, .fcard.is-flipped .fcard-inner { transform: none; transition: none; }
   .fcard-face { -webkit-backface-visibility: visible; backface-visibility: visible; }
