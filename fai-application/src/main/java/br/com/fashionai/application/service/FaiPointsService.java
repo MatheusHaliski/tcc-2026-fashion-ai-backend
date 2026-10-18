@@ -264,17 +264,31 @@ public class FaiPointsService {
      * usuário em fila — nada de duas compras gastando o mesmo saldo), depois a do item (edição limitada não passa do
      * estoque); a ordem fixa carteiras ordenadas → item evita deadlock entre compras cruzadas.
      */
-    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Map<String, Object> buy(CurrentUser user, String sku) {
+        return buy(user, sku, null);
+    }
+
+    /**
+     * {@code requestKey}: a chave que o diálogo de compra gera uma vez por compra (cabeçalho Idempotency-Key). O mesmo
+     * pedido repetido — clique duplo, reenvio depois de um timeout — devolve a compra já feita, sem cobrar nem entregar
+     * de novo. A conferência acontece depois da trava da carteira, então dois pedidos iguais nunca passam juntos.
+     */
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public Map<String, Object> buy(CurrentUser user, String sku, String requestKey) {
         // Read creator identity without loading a managed SKU, then lock all wallets in UUID order.
         UUID seller = catalog.sellerOf(sku).orElse(null);
-        if (user.id().equals(seller)) throw new ApiException(409, "COMPRA_PROPRIA", "Você não pode comprar seu próprio item.");
+        if (user.id().equals(seller)) throw new ApiException(409, "COMPRA_PROPRIA", Msg.t("faiPoints.compra_propria"));
         java.util.stream.Stream.of(user.id(), seller).filter(java.util.Objects::nonNull).distinct().sorted()
                 .forEach(id -> ledger.lockOwner(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
+        String requestRef = requestRef(requestKey);
+        if (requestRef != null) {
+            var done = ledger.findByIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + requestRef);
+            if (done.isPresent()) return repeatedPurchase(user, done.get().getRefId());
+        }
         RoomCatalogItem c = catalog.lockBySku(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
         if (!java.util.Objects.equals(seller, c.getCreatorUserId()))
-            throw new ApiException(409, "OFERTA_ALTERADA", "O vendedor mudou. Atualize a oferta antes de confirmar novamente.");
-        String purchaseRef = UUID.randomUUID().toString();
+            throw new ApiException(409, "OFERTA_ALTERADA", Msg.t("faiPoints.oferta_alterada"));
+        String purchaseRef = requestRef != null ? requestRef : UUID.randomUUID().toString();
         Level lvl = level(user.id());
         if (!lvl.atLeast(Level.valueOf(c.getRequiredLevel()))) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("faiPoints.disponivel_a_partir_do_nivel", c.getRequiredLevel()));
@@ -290,7 +304,8 @@ public class FaiPointsService {
         if (bal < c.getPricePoints()) {
             throw new ApiException(409, "SALDO_INSUFICIENTE", Msg.t("faiPoints.saldo_de_fai_pts_o", bal, c.getPricePoints()));
         }
-        if (c.getPricePoints() > 0) {
+        // item gratuito também deixa o lançamento (de 0 pontos) quando há chave: é ele que reconhece o pedido repetido
+        if (c.getPricePoints() > 0 || requestRef != null) {
             FaiPointsLedgerEntry e = new FaiPointsLedgerEntry();
             e.setUserId(user.id());
             e.setDelta(-c.getPricePoints());
@@ -300,7 +315,7 @@ public class FaiPointsService {
             e.setIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + purchaseRef);
             e.setCountsLifetime(false);
             ledger.save(e);
-            statement(e, c.getName());
+            if (c.getPricePoints() > 0) statement(e, c.getName());
         }
         c.setSoldCount(c.getSoldCount() + 1);
         RoomInventoryItem item = new RoomInventoryItem();
@@ -324,6 +339,20 @@ public class FaiPointsService {
         }
         return Map.of("inventoryId", item.getId(), "sku", sku, "balance", balance(user.id()), "lifetime", lifetime(user.id()),
                 "level", level(user.id()).name(), "serial", String.valueOf(item.getSerial()));
+    }
+
+    /** Chave de pedido aceita: só letras, números e hífen (um UUID do navegador cabe), para caber na chave do ledger. */
+    static String requestRef(String key) {
+        return key != null && key.matches("[A-Za-z0-9-]{16,64}") ? key : null;
+    }
+
+    /** Resposta da compra já feita: o item mais recente desse SKU no inventário da pessoa e o saldo atual. */
+    private Map<String, Object> repeatedPurchase(CurrentUser user, String sku) {
+        RoomInventoryItem item = inventory.findByUserId(user.id()).stream().filter(i -> sku.equals(i.getSku()))
+                .max(java.util.Comparator.comparing(RoomInventoryItem::getAcquiredAt, java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                .orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
+        return Map.of("inventoryId", item.getId(), "sku", sku, "balance", balance(user.id()), "lifetime", lifetime(user.id()),
+                "level", level(user.id()).name(), "serial", String.valueOf(item.getSerial()), "repeated", true);
     }
 
     @Transactional

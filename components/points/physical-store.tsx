@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
+import { PurchaseKeys } from "@/lib/api/purchase-key";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Badge, Button, Dialog, EmptyState, ErrorState, Field, Input, SegmentPicker, Select, SkeletonGrid, Textarea, useToast } from "@/components/ui";
@@ -39,6 +40,7 @@ export function PhysicalStore({ creatorSlug }: { creatorSlug?: string }) {
   const [checkout, setCheckout] = useState<Listing | null>(null);
   const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [busy, setBusy] = useState(false);
+  const purchaseKeys = useRef(new PurchaseKeys());
   const [query, setQuery] = useState("");
   const listings = useApi<Listing[]>((signal) => api.get(`/api/physical-store?segment=${segment}`, { signal }), [segment]);
   const visible = useMemo(() => (listings.data ?? []).filter((entry) => !creatorSlug || entry.seller?.slug === creatorSlug)
@@ -48,10 +50,11 @@ export function PhysicalStore({ creatorSlug }: { creatorSlug?: string }) {
     if (!checkout || busy) return;
     setBusy(true);
     try {
-      await api.post(`/api/physical-store/listings/${checkout.id}/redeem`, { shippingAddress: address });
+      await api.post(`/api/physical-store/listings/${checkout.id}/redeem`, { shippingAddress: address }, { headers: purchaseKeys.current.headers(checkout.id) });
+      purchaseKeys.current.settle();
       toast.success(t("physicalStore.orderPlaced"));
       setCheckout(null); setAddress(EMPTY_ADDRESS); listings.reload();
-    } catch (error) { toast.fromError(error); listings.reload(); }
+    } catch (error) { purchaseKeys.current.settle(error); toast.fromError(error); listings.reload(); }
     finally { setBusy(false); }
   }
 
