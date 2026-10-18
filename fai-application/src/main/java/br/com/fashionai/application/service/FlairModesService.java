@@ -90,11 +90,14 @@ public class FlairModesService {
     private final NotificationService notifications;
     private final Guard guard;
     private final FaiPointsService faiPoints;
+    private final AtelierRewardSystem atelier;
 
     public FlairModesService(FlairService flair, SchemeService schemeService, SchemeRepository schemes, SchemeItemRepository schemeItems,
                              WardrobeItemRepository pieces, UserRepository users, FlairMatchRepository matches, FlairMatchEntryRepository entries,
                              FlairModeStateRepository states, FlairTerritoryRepository territories, FlairTrophyRepository trophies,
-                             FlairCoinEntryRepository coins, NotificationService notifications, Guard guard, FaiPointsService faiPoints) {
+                             FlairCoinEntryRepository coins, NotificationService notifications, Guard guard, FaiPointsService faiPoints,
+                             AtelierRewardSystem atelier) {
+        this.atelier = atelier;
         this.faiPoints = faiPoints;
         this.flair = flair;
         this.schemeService = schemeService;
@@ -406,7 +409,24 @@ public class FlairModesService {
         out.put("coins", coinsWon);
         out.put("rewardCapReached", !rewarded);
         out.put("faiPoints", faiPoints.game(user.id(), "FLAIR_" + mode, m.getId().toString(), outcome));   // RF41
+        discoverSynergies(user, mode, mine, m);
         return out;
+    }
+
+    /** Atelier: cada sinergia que a pessoa ativa com os PRÓPRIOS looks numa partida vira uma Assinatura de Aura (uma por sinergia). */
+    void discoverSynergies(CurrentUser user, String mode, List<Look> mine, FlairMatch m) {
+        String modeLabel = MODES.stream().filter(x -> x.code().equals(mode)).map(Mode::name).findFirst().orElse(mode);
+        Set<String> seen = new HashSet<>();
+        for (Look l : mine == null ? List.<Look>of() : mine) {
+            if (l == null || l.synergies() == null || !Objects.equals(user.username(), l.owner())) {
+                continue;
+            }
+            for (FlairLooks.Synergy x : l.synergies()) {
+                if (seen.add(x.code())) {
+                    atelier.grant(AtelierGrants.synergy(user.id(), x.code(), x.label(), modeLabel, m.getId()));
+                }
+            }
+        }
     }
 
     private void entry(FlairMatch m, User u, List<Look> looks, String side, Object score) {
@@ -434,6 +454,7 @@ public class FlairModesService {
         t.setSeasonKey(season);
         t.setDetailJson(Json.write(detail));
         trophies.save(t);
+        atelier.grant(AtelierGrants.trophy(userId, t.getId(), mode, title, season));
         notifications.notify(userId, null, NotificationType.ACHIEVEMENT_UNLOCKED, "FLAIR_TROPHY", t.getId(), "🏆 " + title, Msg.k("flairModes.novo_trofeu_flair_no_seu"), Map.of("href", "/flair?tab=modos"));
     }
 

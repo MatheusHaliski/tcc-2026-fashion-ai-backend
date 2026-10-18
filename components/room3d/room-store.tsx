@@ -1,8 +1,9 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api, ApiError, mediaUrl } from "@/lib/api/client";
+import { PurchaseKeys } from "@/lib/api/purchase-key";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { Badge, Button, Chip, Dialog, EmptyState, ErrorState, SkeletonGrid, UiIcon, useToast } from "@/components/ui";
@@ -34,6 +35,7 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
   const [confirmPurchase, setConfirmPurchase] = useState<ShopItem | null>(null);
   const [info, setInfo] = useState<ShopItem | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const purchaseKeys = useRef(new PurchaseKeys());
   const [modelPreview, setModelPreview] = useState<ShopItem | null>(null);
   const [kind, setKind] = useState(""); const [slot, setSlot] = useState(""); const [material, setMaterial] = useState(""); const [origin, setOrigin] = useState("");
   const [creator, setCreator] = useState(creatorSlug ?? ""); const [q, setQ] = useState(""); const [onlyBuyable, setOnlyBuyable] = useState(false); const [sort, setSort] = useState("price");
@@ -55,10 +57,11 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
     if (busy) return;
     setBusy(i.sku);
     try {
-      const r = await api.post<{ inventoryId: string; balance: number; serial?: string }>(`/api/points/shop/${i.sku}/purchase`);
+      const r = await api.post<{ inventoryId: string; balance: number; serial?: string }>(`/api/points/shop/${i.sku}/purchase`, undefined, { headers: purchaseKeys.current.headers(i.sku) });
+      purchaseKeys.current.settle();
       toast.success(t("room3d.roomStore.comprado_saldo_pts", { name: i.name, value: r.serial && r.serial !== "null" ? ` (nº ${r.serial})` : "", balance: r.balance }));
       setConfirmPurchase(null); openApply(i, r.inventoryId); shop.reload(); onChanged?.();
-    } catch (e) { setConfirmPurchase(null); setPurchaseError(e instanceof ApiError ? e.message : t("store.purchaseFailed")); shop.reload(); } finally { setBusy(null); }
+    } catch (e) { purchaseKeys.current.settle(e); setConfirmPurchase(null); setPurchaseError(e instanceof ApiError ? e.message : t("store.purchaseFailed")); shop.reload(); } finally { setBusy(null); }
   }
   async function tryOn(i: ShopItem) {
     try { const r = await api.post<{ module?: string; note?: string }>(`/api/points/shop/${i.sku}/try-on`, {}); toast.info(t("room3d.roomStore.previa_em", { moduleLabel: moduleLabel(r.module), value: r.note ?? t("room3d.roomStore.nada_foi_comprado") })); } catch (e) { toast.fromError(e); }

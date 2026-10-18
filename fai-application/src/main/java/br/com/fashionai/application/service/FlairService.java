@@ -123,6 +123,7 @@ public class FlairService {
     private final FaiPointsService faiPoints;
     private final HypeScoreCurrentRepository hypeScores;
     private final HypeScoreConfig hypeConfig;
+    private final AtelierRewardSystem atelier;
 
     public FlairService(FlairProfileRepository profiles, FlairCoinEntryRepository coins, FlairCombinationRepository combinations,
                         FlairRedemptionRepository redemptions, FlairTeamRepository teams, FlairTeamMemberRepository members,
@@ -130,7 +131,9 @@ public class FlairService {
                         WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                         BrandProfileRepository brands, ReactionRepository reactions, SchemeService schemeService,
                         InstitutionalService institutional, Guard guard, org.springframework.context.ApplicationEventPublisher events,
-                        FaiPointsService faiPoints, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig) {
+                        FaiPointsService faiPoints, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig,
+                        AtelierRewardSystem atelier) {
+        this.atelier = atelier;
         this.hypeScores = hypeScores;
         this.hypeConfig = hypeConfig;
         this.events = events;
@@ -420,6 +423,7 @@ public class FlairService {
             throw ApiException.conflict("QUEST_JA_RESGATADA", Msg.t("flair.recompensa_ja_resgatada_neste_periodo"));
         }
         faiPoints.award(user.id(), "FLAIR_QUEST", "QUEST", "QUEST_" + code + ":" + ref, null);   // RF41
+        atelier.grant(AtelierGrants.quest(user.id(), code, (String) q.get("label"), (String) q.get("period"), ref, Instant.now()));
         return me(user);
     }
 
@@ -758,6 +762,10 @@ public class FlairService {
             // RF41: a vitória vale FAI Points para cada integrante do time vencedor (idempotente para quem disparou)
             members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x ->
                     faiPoints.award(x.getUser().getId(), "GAME_WON", "GAME", "FLAIR_TEAM:" + m.getId(), null));
+            // Atelier: cada integrante do time vencedor ganha um fragmento da obra coletiva (idempotente por partida)
+            FlairTeam lost = w == mine ? rival : mine;
+            members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x ->
+                    atelier.grant(AtelierGrants.teamWin(x.getUser().getId(), m.getId(), w.getId(), w.getName(), lost.getName())));
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("matchId", m.getId());
@@ -1030,6 +1038,8 @@ public class FlairService {
         redemptions.save(r);
         c.setRedeemed(c.getRedeemed() + 1);
         award(user.id(), 0, 50, "REDEMPTION", c.getId().toString());
+        // Atelier: concluir a jornada da marca/celebridade vale um convite de temporada daquele perfil
+        atelier.grant(AtelierGrants.brandJourney(user.id(), c.getId(), c.getName(), c.getBrand().getId(), brandNameOf(c.getBrand()), Instant.now()));
         return redemptionView(r);
     }
 

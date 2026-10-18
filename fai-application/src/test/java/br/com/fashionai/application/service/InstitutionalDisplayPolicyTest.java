@@ -153,7 +153,8 @@ class InstitutionalDisplayPolicyTest {
     @Test
     void perfilAdicionaItensElegiveisSemInventarSelosConquistados() {
         Scheme look = look("Elegível", tenis);
-        when(sealPolicies.hasProfilePolicies(brand.getId())).thenReturn(true);
+        when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.LOOK)).thenReturn(true);
+        when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.PECA)).thenReturn(true);
         when(sealPolicies.profileSchemes(eq(brand.getId()), any(), eq(60))).thenReturn(List.of(look));
         when(sealPolicies.profilePieces(eq(brand.getId()), any(), eq(60))).thenReturn(List.of(tenis));
         List<Map<String, Object>> looks = service.highlightedSchemes(visitor, brand, null, null);
@@ -167,8 +168,35 @@ class InstitutionalDisplayPolicyTest {
     @Test
     void perfilComPoliticaAtivaFiltraDestaquesAntigosQueNaoAtendemMais() {
         Scheme old = look("Antigo", jeans); approved(old);
-        when(sealPolicies.hasProfilePolicies(brand.getId())).thenReturn(true);
+        when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.LOOK)).thenReturn(true);
+        when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.PECA)).thenReturn(true);
         assertThat(service.highlightedSchemes(visitor, brand, null, null)).isEmpty();
+        assertThat(service.highlightedPieces(visitor, brand, null, null)).isEmpty();
+    }
+
+    @Test
+    void politicaPerfilSoDePecasNaoApagaOsLooksEmDestaque() {
+        Scheme premiado = look("Premiado", jeans); approved(premiado);
+        when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.PECA)).thenReturn(true);   // só peças
+        assertThat(ids(service.highlightedSchemes(visitor, brand, null, null))).containsExactly(premiado.getId());
+        // e o contrário: política só de looks não apaga o selo que a peça ganhou direto
+        direct(tenis, now.plus(10, ChronoUnit.DAYS));
+        when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.PECA)).thenReturn(false);
+        when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.LOOK)).thenReturn(true);
+        assertThat(service.highlightedPieces(visitor, brand, null, null))
+                .extracting(e -> ((Views.PieceView) e.get("piece")).id()).containsExactly(tenis.getId());
+    }
+
+    @Test
+    void seloHypeDiretoNaPecaApareceNasPecasEmDestaqueEnquantoVigente() {
+        SealBond hype = direct(tenis, now.plus(10, ChronoUnit.DAYS));
+        List<Map<String, Object>> pieces = service.highlightedPieces(visitor, brand, null, null);
+        assertThat(pieces).extracting(e -> ((Views.PieceView) e.get("piece")).id()).containsExactly(tenis.getId());
+        assertThat(pieces.get(0)).containsEntry("schemeId", null);
+        assertThat((List<?>) pieces.get(0).get("seals")).hasSize(1);
+        assertThat(service.highlighted(visitor, brand, null, null).get("pieces")).asList().hasSize(1);
+        assertThat(service.highlightedPieces(visitor, brand, null, java.util.UUID.randomUUID())).isEmpty();   // agrupamento é de look
+        hype.setExpiresAt(now.minus(1, ChronoUnit.DAYS));
         assertThat(service.highlightedPieces(visitor, brand, null, null)).isEmpty();
     }
 
@@ -228,6 +256,23 @@ class InstitutionalDisplayPolicyTest {
         b.setExpiresAt(expiresAt);
         List<WardrobeItem> pieces = linked.length > 0 ? List.of(linked) : itemsByScheme.get(s.getId()).stream().map(SchemeItem::getWardrobeItem).toList();
         b.setLinkedPieceIdsJson(Json.write(pieces.stream().map(w -> w.getId().toString()).toList()));
+        allBonds.add(b);
+        return b;
+    }
+
+    /** Vínculo direto numa peça, sem look (é assim que o selo Hype de peça nasce). */
+    private SealBond direct(WardrobeItem w, Instant expiresAt) {
+        SealBond b = new SealBond();
+        b.assignId(UUID.randomUUID());
+        b.setPiece(w);
+        b.setTargetOwner(brand);
+        b.setRequestedBy(ana);
+        b.setSeal(seal);
+        b.setTier(SealTier.PECA);
+        b.setStatus(SealBondStatus.APPROVED);
+        b.setIssuedAt(now.minus(1, ChronoUnit.DAYS));
+        b.setExpiresAt(expiresAt);
+        b.setLinkedPieceIdsJson(Json.write(List.of(w.getId().toString())));
         allBonds.add(b);
         return b;
     }
