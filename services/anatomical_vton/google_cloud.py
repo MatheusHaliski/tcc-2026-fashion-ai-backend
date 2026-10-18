@@ -20,6 +20,9 @@ SERVER_CODES=frozenset({
     'GENERATED_POSE_DRIFT_REJECTED','DEGENERATE_GENERATED_IMAGE','ONE_GENERATED_IMAGE_REQUIRED','INVALID_GARMENT_POSE',
     'MULTIPLE_GARMENT_MODELS_REJECTED','FASHN_CATEGORY_NOT_SUPPORTED','GPU_MEMORY_EXHAUSTED_REDUCE_WORKLOAD',
     'GPU_BUSY_RETRY_LATER','GPU_PREDICTION_FAILED','MODEL_NOT_READY',
+    # Medidas do corpo (sam3d_runtime.py, body_measure.py).
+    'FULL_BODY_NOT_VISIBLE','ONE_BODY_RECONSTRUCTION_REQUIRED','INVALID_BODY_MESH','INVALID_BODY_KEYPOINTS',
+    'IMPLAUSIBLE_BODY_SCALE','IMPLAUSIBLE_BODY_PROPORTIONS','DEGENERATE_BODY_FRAME',
 })
 
 
@@ -118,10 +121,18 @@ def predict_body(person_image, attributes, schema):
         'attributes': attributes, 'response_schema': schema})
 
 
-def predict_fashn(person_image,garment_image,category,garment_photo_type='auto'):
+def dedicated_gpu_client():
     endpoint=os.getenv('VTON_VERTEX_TRYON_ENDPOINT_ID')
     host=os.getenv('VTON_VERTEX_TRYON_DEDICATED_HOST')
     if not host:raise AlignmentError('FASHN_DEDICATED_ENDPOINT_REQUIRED')
-    client=VertexPredictionClient(os.getenv('GOOGLE_CLOUD_PROJECT'),os.getenv('GOOGLE_CLOUD_LOCATION'),endpoint,dedicated_host=host)
-    return client.predict({'task':'virtual_try_on','person_image':person_image,'garment_image':garment_image,
+    return VertexPredictionClient(os.getenv('GOOGLE_CLOUD_PROJECT'),os.getenv('GOOGLE_CLOUD_LOCATION'),endpoint,dedicated_host=host)
+
+
+def predict_fashn(person_image,garment_image,category,garment_photo_type='auto'):
+    return dedicated_gpu_client().predict({'task':'virtual_try_on','person_image':person_image,'garment_image':garment_image,
                            'category':category,'garment_photo_type':garment_photo_type})
+
+
+def predict_body_measurement(person_image):
+    # Same T4 container as the try-on (engine fashn+sam3d_body); the photo is not stored anywhere on the way.
+    return dedicated_gpu_client().predict({'task':'body_measurement','person_image':person_image},max_response_bytes=64_000)

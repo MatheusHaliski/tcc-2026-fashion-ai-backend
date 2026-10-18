@@ -38,6 +38,35 @@ abaixo; um endpoint Gemini/texto ou um modelo sem esses adaptadores não é comp
 | --- | --- | --- |
 | `garment_annotation` | `image_png` base64, `response_schema`, `quality_feedback` | `Annotation`: atributos, keypoints, curva de gola, placket, máscara PNG, provedor e versão |
 | `body_evidence` | `person_image` base64, `attributes`, `response_schema` | `BodyEvidence`: anchors, máscaras corporal/pele/região vestível, curvas e proveniência |
+| `virtual_try_on` | `person_image`, `garment_image`, `category` | imagem gerada pela FASHN VTON 1.5 + diagnósticos de CUDA e da triagem de pose |
+| `body_measurement` | só `person_image` (corpo inteiro) | proporções do Avatar 3D (`ratios`), recusas e avisos; sem imagem, malha nem pontos |
+
+### Medidas do corpo (SAM 3D Body) na mesma T4
+
+`deploy_fashn_vertex.py --with-sam3d` constrói o contêiner da FASHN com o SAM 3D Body
+(`VTON_MODEL_ENGINE=fashn+sam3d_body`). A FASHN continua sempre carregada; o SAM 3D Body
+sobe no primeiro pedido de medida e sai da GPU se a prova estourar a memória (a prova
+é repetida uma vez). O detector de pessoa é o DWPose da própria FASHN: a foto precisa
+ter uma pessoa só, da cabeça aos tornozelos, senão volta `FULL_BODY_NOT_VISIBLE`.
+
+Os pesos ficam num repositório fechado do Hugging Face (`facebook/sam-3d-body-dinov3`,
+SAM License; backbone sob a DINOv3 License). Antes do build:
+
+1. peça acesso ao repositório com a conta do Hugging Face e espere a aprovação;
+2. crie um token de leitura dessa conta e guarde-o no Secret Manager do projeto com o
+   nome `fashionai-hf-token` (ou passe outro nome em `--hf-secret`), pelo console ou por
+   `gcloud secrets create fashionai-hf-token --replication-policy=automatic --data-file=-`
+   colando o token no terminal (nunca em chat, arquivo versionado ou log).
+
+O script dá à conta do build acesso só a esse segredo; o Cloud Build entrega o token ao
+BuildKit como segredo de um único `RUN` e ele não fica em nenhuma camada da imagem. O
+commit e o SHA-256 de cada peso são impressos no log do build e gravados na imagem; o
+servidor confere tudo de novo ao subir. Para fixar a versão, copie o commit e os hashes
+impressos para `services/anatomical_vton/sam3d_assets.json`.
+
+A foto de corpo inteiro só existe em memória durante a inferência (nem o worker nem o
+Vertex a gravam) e a resposta leva apenas as proporções. O consentimento explícito é
+conferido pelo backend Java antes de chamar `/v1/body/measure` do worker.
 
 A segmentação e os landmarks devem vir de modelos reais. A validação geométrica
 do worker continua obrigatória após a inferência. Uma resposta do VLM não prova

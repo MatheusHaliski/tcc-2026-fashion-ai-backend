@@ -1,18 +1,30 @@
 # syntax=docker/dockerfile:1
 FROM pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
+# VTON_ENGINE=fashn+sam3d_body adds SAM 3D Body (Avatar 3D body measurements) to the same T4 container. Its weights
+# are gated on Hugging Face: that build needs the BuildKit secret hf_token (deploy_fashn_vertex.py --with-sam3d reads
+# it from Secret Manager). The token exists only while that RUN executes and never lands in a layer.
+ARG VTON_ENGINE=fashn
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
-    VTON_MODEL_ENGINE=fashn VTON_FASHN_WEIGHTS=/opt/fashionai/weights/fashn \
+    VTON_MODEL_ENGINE=$VTON_ENGINE VTON_FASHN_WEIGHTS=/opt/fashionai/weights/fashn \
+    VTON_SAM3D_WEIGHTS=/opt/fashionai/weights/sam3d VTON_SAM3D_CODE=/opt/fashionai/src MOMENTUM_ENABLED=0 \
     VTON_VERTEX_MAX_PAYLOAD=9000000 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 RUN apt-get update && apt-get install -y --no-install-recommends git libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
-COPY services/anatomical_vton/requirements-fashn.lock /app/requirements-fashn.lock
+COPY services/anatomical_vton/requirements-fashn.lock services/anatomical_vton/requirements-sam3d.lock /app/
 RUN --mount=type=secret,id=proxy_ca \
+    case "$VTON_ENGINE" in fashn) lock=/app/requirements-fashn.lock;; fashn+sam3d_body) lock=/app/requirements-sam3d.lock;; \
+      *) echo "VTON_ENGINE must be fashn or fashn+sam3d_body" >&2; exit 2;; esac; \
     if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi; \
-    python -m pip install --no-cache-dir -r /app/requirements-fashn.lock
+    python -m pip install --no-cache-dir -r "$lock"
 COPY services/anatomical_vton /app/services/anatomical_vton
-RUN python -m services.anatomical_vton.fashn_download --output "$VTON_FASHN_WEIGHTS" \
-    && useradd --uid 10001 --create-home --home-dir /tmp/vton vton \
+RUN python -m services.anatomical_vton.fashn_download --output "$VTON_FASHN_WEIGHTS"
+RUN --mount=type=secret,id=hf_token \
+    if [ "$VTON_ENGINE" = fashn+sam3d_body ]; then \
+      python -m services.anatomical_vton.sam3d_download --checkout-code "$VTON_SAM3D_CODE" \
+      && HF_HUB_OFFLINE=0 HF_HUB_DISABLE_TELEMETRY=1 python -m services.anatomical_vton.sam3d_download --output "$VTON_SAM3D_WEIGHTS"; \
+    fi
+RUN useradd --uid 10001 --create-home --home-dir /tmp/vton vton \
     && chmod -R a+rX /app/services /opt/fashionai \
     && chmod -R a-w /opt/fashionai
 USER 10001:10001
@@ -20,6 +32,10 @@ ENV HOME=/tmp/vton
 # Build MUST read/hash all actual weights as the inference UID, without a GPU.
 # A root-only verification cannot detect unreadable artifacts after USER changes.
 RUN python -m services.anatomical_vton.fashn_download --verify-only --output "$VTON_FASHN_WEIGHTS" \
-    && python -c "from fashn_vton import TryOnPipeline; from fashn_human_parser import FashnHumanParser; import onnxruntime; print('RUNTIME_IMPORTS_VERIFIED_NO_GPU_INFERENCE')"
+    && python -c "from fashn_vton import TryOnPipeline; from fashn_human_parser import FashnHumanParser; import onnxruntime; print('RUNTIME_IMPORTS_VERIFIED_NO_GPU_INFERENCE')" \
+    && if [ "$VTON_ENGINE" = fashn+sam3d_body ]; then \
+      python -m services.anatomical_vton.sam3d_download --verify-only --output "$VTON_SAM3D_WEIGHTS" \
+      && python -c "import sys; sys.path[:0]=['$VTON_SAM3D_CODE/sam-3d-body','$VTON_SAM3D_CODE/dinov3']; import sam_3d_body; from sam_3d_body.models.meta_arch import SAM3DBody; from sam_3d_body.utils.config import get_config; from dinov3.hub import backbones; import services.anatomical_vton.sam3d_runtime; print('SAM3D_IMPORTS_VERIFIED_NO_GPU_INFERENCE')"; \
+    fi
 EXPOSE 8080
 CMD ["python", "-m", "uvicorn", "services.anatomical_vton.vertex_runtime.server:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]

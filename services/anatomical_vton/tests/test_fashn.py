@@ -212,7 +212,7 @@ def test_cloud_build_resume_never_submits_again_or_recreates_identity(tmp_path):
     with patch('scripts.cloud.deploy_fashn_vertex.prepare_build_identity') as identity,patch('scripts.cloud.deploy_fashn_vertex.command') as command,patch('scripts.cloud.deploy_fashn_vertex.wait_build',return_value={'status':'SUCCESS'}) as wait:
         assert build_image('fashionai-test','southamerica-east1','IMAGE',state,tmp_path/'state.json')['status']=='SUCCESS'
         identity.assert_not_called();command.assert_not_called()
-        wait.assert_called_once_with('fashionai-test','southamerica-east1',state['buildId'],'IMAGE')
+        wait.assert_called_once_with('fashionai-test','southamerica-east1',state['buildId'],'IMAGE',3000)
 
 
 def test_cloud_build_waits_for_same_image_and_rejects_cancelled_without_resubmit():
@@ -380,8 +380,8 @@ def test_image_only_build_checkpoints_and_never_deploys(tmp_path):
         if args[:3]==('artifacts','repositories','list'):
             return json.dumps([{'name':'projects/test/locations/southamerica-east1/repositories/fashionai-vton'}])
         return 'fashionai-test'
-    def fake_build(project,region,image,state,state_file):
-        assert state_file.name=='build.json'
+    def fake_build(project,region,image,state,state_file,hf_secret=None):
+        assert state_file.name=='build.json' and hf_secret is None
         assert json.loads(state_file.read_text())['image']==image
         state['buildId']='TEST_ONLY_BUILD'
         installer.save_json(state_file,state)
