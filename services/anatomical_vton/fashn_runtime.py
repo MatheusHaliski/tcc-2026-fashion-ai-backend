@@ -70,6 +70,13 @@ def inferred_photo_type(garment_pose):
     return 'model' if points.shape[0]==1 and np.count_nonzero(scores[0,:18]>=.5)>=3 else 'flat-lay'
 
 
+def serving_dtype(torch):
+    # torch>=2.3 reports bf16 as supported on Turing (T4) by emulation. There SDPA has no fused bf16 kernel and falls
+    # back to the math path, whose 6912x6912 person+garment attention exhausts the 16 GB on the first step. FASHN's
+    # README asks for bf16 on Ampere+ and float32 below it; float32 keeps the memory-efficient kernel on the T4.
+    return torch.bfloat16 if torch.cuda.is_bf16_supported(including_emulation=False) else torch.float32
+
+
 def detected_pose(rgb,estimator,detector):
     # Upstream DWPose deliberately estimates a whole-image pose when detection
     # finds nobody. Never treat that fallback as evidence of a person.
@@ -98,6 +105,9 @@ class NativeFashnRuntime:
         self.detector=inference_detector
         from fashn_human_parser import FashnHumanParser
         class OfflinePipeline(TryOnPipeline):
+            def _setup_tryon_model(self):
+                self.inference_dtype=serving_dtype(torch)
+                super()._setup_tryon_model()
             def _setup_hp_model(self):
                 self.hp_model=FashnHumanParser(model_id=str(root/'parser'),device='cuda')
         self.torch=torch
@@ -139,5 +149,6 @@ class NativeFashnRuntime:
                     'renderKind':'GENERATIVE_2D','physicalFitCertified':False,
                     'garmentFidelityCertified':False,'millimetricAccuracyCertified':False}}
         except torch.cuda.OutOfMemoryError as error:
+            print(json.dumps({'event':'fashn_cuda_oom','dtype':str(self.pipeline.inference_dtype),'detail':str(error)[:600]}),flush=True)
             torch.cuda.empty_cache()
             raise AlignmentError('GPU_MEMORY_EXHAUSTED_REDUCE_WORKLOAD') from error

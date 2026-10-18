@@ -1,0 +1,77 @@
+@startuml RF18_ProvaIA_Recusa_Sequencia
+' v5: escrito à mão — o caminho passa pelo worker e pela GPU em Python (services/anatomical_vton), que scripts/diagramas/v5 não lê
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF18 — Prova com IA: o motivo da recusa vai da GPU até a mensagem na tela (só códigos curtos, nunca o texto do servidor)\nDiagrama de sequência — escrito à mão e conferido com o código em 2026-10-18
+
+actor "Pessoa usuária" as U
+boundary "GpuLookDialog\nmessage() · refusalKey()" as P
+participant "AnatomicalTryOnService\n(render / renderLook)" as S
+participant "AnatomicalTryOnAdapter\npost() · reasonOf()" as A
+participant "Worker VTON · Cloud Run\napi.py · google_cloud.py" as W
+participant "Vertex AI\nvertex_runtime/server.py" as V
+participant "NativeFashnRuntime\nfashn_runtime.py" as R
+
+P -> S : POST /api/try-on/look-renders (ou /anatomical-renders)
+S -> A : render("piece:{id}", garment, person, category)
+A -> W : POST /try-on (Bearer)
+alt categoria que o FASHN não veste
+  W -> W : fashion_category() → AlignmentError(FASHN_CATEGORY_NOT_SUPPORTED)
+else segue para a GPU
+  W -> V : POST :predict {task: virtual_try_on, …}
+  alt modelo carregando · contrato inválido · GPU ocupada
+    V --> W : 503 MODEL_NOT_READY · 422 INVALID_PREDICTION_INPUT\n· 422 TASK_NOT_SUPPORTED_BY_MODEL · 429 GPU_BUSY_RETRY_LATER
+  else inferência
+    V -> R : predict(instance)
+    alt foto ou peça recusada (antes da difusão)
+      R --> V : AlignmentError: INVALID_VTON_IMAGE · EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED\n· INVALID_PERSON_DETECTION · NONFINITE_DWPOSE · INSUFFICIENT_SHARED_BODY_LANDMARKS\n· VISIBLE_LANDMARK_OUTSIDE_IMAGE · INVALID_GARMENT_POSE · MULTIPLE_GARMENT_MODELS_REJECTED
+    else resultado descartado (depois da difusão)
+      R --> V : AlignmentError: ONE_GENERATED_IMAGE_REQUIRED · DEGENERATE_GENERATED_IMAGE\n· GENERATED_POSE_DRIFT_REJECTED (pose_screen, RMSE > 0,08)
+    else torch.cuda.OutOfMemoryError
+      R -> R : log fashn_cuda_oom {dtype, detalhe do PyTorch}\n(sem dados da foto) · empty_cache()
+      R --> V : AlignmentError(GPU_MEMORY_EXHAUSTED_REDUCE_WORKLOAD)
+    end
+    V --> W : 422 {"detail": CÓDIGO}  (outra exceção → 503 GPU_PREDICTION_FAILED)
+  end
+  W -> W : server_code(): lê no máximo 2 KB; "detail" está em SERVER_CODES?\nsim → AlignmentError(CÓDIGO) · não → AlignmentError(VERTEX_PREDICTION_HTTP_{status})
+end
+W --> A : 422 {"code": CÓDIGO}  (corpo da Vertex descartado: pode ecoar a foto em base64)
+A -> A : reasonOf(): corpo ≤ 4 KB e "code" casa [A-Z][A-Z0-9_]{2,63}
+A --> S : ApiException 422 VTON_WORKER_REJECTED, details = {reason: CÓDIGO}\n(outro status do worker → 503, mesma regra para reason)
+S --> P : 422 {code: VTON_WORKER_REJECTED, message, details: {reason}}\n(no look, a etapa que falha encerra a prova; nenhuma foto é trocada)
+P -> P : refusalKey(details.reason) → tryOn.ia_motivo.<chave>\n(código desconhecido → mensagem geral pelo status)
+P --> U : mensagem traduzida (pt-BR · en · es)
+
+legend bottom
+  |= details.reason (código da GPU ou do worker) |= chave i18n |= mensagem (pt-BR) |
+  | EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED, INVALID_PERSON_DETECTION | tryOn.ia_motivo.pessoa | A foto precisa mostrar exatamente uma pessoa, com o corpo visível. |
+  | INSUFFICIENT_SHARED_BODY_LANDMARKS, NONFINITE_DWPOSE | tryOn.ia_motivo.corpo | O corpo não aparece o bastante. Use uma foto de frente, do quadril para cima ou de corpo inteiro. |
+  | VISIBLE_LANDMARK_OUTSIDE_IMAGE | tryOn.ia_motivo.fora | Parte do corpo ficou fora da foto. Afaste a câmera e tente de novo. |
+  | INVALID_VTON_IMAGE, INVALID_PREDICTION_INPUT | tryOn.ia_motivo.foto | Não foi possível ler a foto. Use um JPG ou PNG nítido. |
+  | GENERATED_POSE_DRIFT_REJECTED, DEGENERATE_GENERATED_IMAGE, ONE_GENERATED_IMAGE_REQUIRED | tryOn.ia_motivo.resultado | O resultado saiu distorcido e foi descartado. Tente outra foto, com boa luz e postura reta. |
+  | INVALID_GARMENT_POSE, MULTIPLE_GARMENT_MODELS_REJECTED | tryOn.ia_motivo.peca | A foto da peça não serve para a prova: ela precisa mostrar só a peça, sem pessoa. |
+  | FASHN_CATEGORY_NOT_SUPPORTED, TASK_NOT_SUPPORTED_BY_MODEL (e o código VTON_LOOK_WITHOUT_GARMENT da API) | tryOn.ia_motivo.categoria | A IA veste parte de cima, de baixo ou peça inteira; calçados e acessórios ficam de fora. |
+  | GPU_BUSY_RETRY_LATER, GPU_MEMORY_EXHAUSTED_REDUCE_WORKLOAD, GPU_PREDICTION_FAILED, MODEL_NOT_READY | tryOn.ia_motivo.gpu | A GPU está ocupada ou iniciando. Tente de novo em alguns minutos. |
+  | sem reason: VTON_NOT_CONFIGURED · VTON_IMAGE_SMALL · 404 · outro 422 | tryOn.ia_erro_gpu_desligada · …_foto_pequena · …_indisponivel · …_recusada | mensagens gerais do diálogo |
+endlegend
+@enduml

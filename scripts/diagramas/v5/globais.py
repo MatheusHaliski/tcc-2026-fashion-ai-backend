@@ -58,7 +58,7 @@ def classes_by_area(name, title, compact=False, max_fields=6):
 GROUPS = [
     ('Conta, perfil e social', ('Auth', 'Me', 'Preferences', 'Profile', 'Account', 'Social', 'Comment', 'Notification', 'Admin', 'Dashboard', 'IssuerReview', 'MediaProxy')),
     ('Guarda-roupa, looks e fotos', ('Wardrobe', 'Scheme', 'Lookbook', 'Photo', 'Background', 'Dna', 'Autopilot', 'Mirror', 'Room', 'RoomCreator')),
-    ('Catálogo, marcas, provador e 3D', ('Catalog', 'BrandLogo', 'TryOn', 'Avatar3d', 'Showcase', 'Discovery', 'Lens', 'Insights')),
+    ('Catálogo, marcas, provador e 3D', ('Catalog', 'BrandLogo', 'TryOn', 'AnatomicalTryOn', 'VtonCatalog', 'Avatar3d', 'Showcase', 'Discovery', 'Lens', 'Insights')),
     ('Selos, cupons, jogos e Hype', ('Seal', 'Coupon', 'Flair', 'FlairModes', 'Challenge', 'Highlights', 'Hype', 'Institutional', 'Points')),
 ]
 
@@ -126,6 +126,10 @@ def components_global(name, title):
     for st in adapters:
         if st not in dbs and st != 'Adaptadores locais':
             out.append(f'cloud "{esc(st, 30)}" as CL_{alias(st)}')
+    # o worker de prova virtual (Python, fora do que o gerador lê) chama a GPU da Vertex AI: services/anatomical_vton
+    worker = next((st for st in adapters if st.startswith('Worker VTON')), None)
+    if worker:
+        out.append('cloud "Vertex AI · GPU T4\\n(FASHN VTON 1.5)" as CL_Vertex_GPU')
     out.append('PAGES --> APIC')
     out.append('PAGES --> BFF')
     out.append('MW ..> PAGES : protege')
@@ -145,5 +149,7 @@ def components_global(name, title):
             out.append(f'AD_{alias(st)} --> DB_{st}')
         elif st != 'Adaptadores locais':
             out.append(f'AD_{alias(st)} --> CL_{alias(st)}')
+    if worker:
+        out.append(f'CL_{alias(worker)} --> CL_Vertex_GPU : predict')
     out.append('@enduml')
     return '\n'.join(out)

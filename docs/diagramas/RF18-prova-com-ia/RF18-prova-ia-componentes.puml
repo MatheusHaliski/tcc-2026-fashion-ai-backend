@@ -1,0 +1,91 @@
+@startuml RF18_ProvaIA_Componentes
+' v5: escrito à mão — o caminho passa pelo worker e pela GPU em Python (services/anatomical_vton), que scripts/diagramas/v5 não lê
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+skinparam node {
+  BackgroundColor #FAF8F5
+  BorderColor #4A4852
+}
+title RF18 — Prova com IA: componentes e onde cada um roda (Vercel → Railway → Cloud Run → Vertex AI com GPU)\nDiagrama de componentes — escrito à mão e conferido com o código em 2026-10-18
+
+package "Frontend (Next.js · Vercel)" {
+  component "components/try-on/fitting-room.tsx\n(Provador /try-on · botão Provar com IA)" as FR
+  component "AiTryOnDialog\n(ai-try-on-dialog.tsx · só peças do guarda-roupa)" as AID
+  component "GpuLookDialog\n(gpu-look-dialog.tsx · gpuLook · refusalKey · fitted)" as GLD
+  component "lib/api/client.ts\n(ApiError: code · details.reason)" as APIC
+  component "lib/i18n/messages/*.json\n(tryOn.ia_* · tryOn.ia_motivo.*)" as I18N
+}
+package "API (Spring Boot · Java 21 · Railway)" {
+  component "TryOnPersonPhotoController\nPOST /api/try-on/person-photos" as PCTRL
+  component "TryOnPersonPhotoService\n(até 6 MB · 1536 px · escopo PRIVATE_TRY_ON)" as PSVC
+  component "AnatomicalTryOnController\nPOST /api/try-on/look-renders\nPOST /api/try-on/anatomical-renders" as CTRL
+  component "AnatomicalTryOnService\n(renderLook · render)" as SVC
+  component "WardrobeService.owned()\nTryOnService.imageBytes()" as WS
+  component "MediaService\n(escopos OWNER · PRIVATE_TRY_ON)" as MS
+  component "AnatomicalTryOnAdapter\n(implementa AnatomicalTryOnPort ·\nBearer · timeout 650 s · reasonOf)" as AD
+}
+database "Mídia (S3)\nrestricted/users/{id}/tryon/person/ (foto)\nusers/{id}/tryon/ (resultados)" as S3
+node "Google Cloud Run · us-central1\nfashionai-vton-worker (0–1 instância · 1 vCPU · 1 GiB)" as RUN {
+  component "api.py (FastAPI)\nPOST /v1/catalog/{id} · POST /try-on · GET /health" as W
+  component "google_cloud.py\nVertexPredictionClient · server_code() · SERVER_CODES" as GC
+}
+node "Vertex AI · endpoint dedicado fashionai-fashn-gpu\nn1-standard-8 + 1× NVIDIA T4 16 GB · 1 réplica" as VX {
+  component "vertex_runtime/server.py\nGET /health · POST /predict (uma por vez)" as VS
+  component "fashn_runtime.py · NativeFashnRuntime\nDWPose → pose_screen → FASHN VTON 1.5 → pose_screen" as RT
+}
+cloud "Secret Manager\nvton-worker-token" as SM
+cloud "Artifact Registry · fashionai-vton\n(imagens fashn e vton-worker)" as AR
+package "Operação (scripts/cloud)" {
+  component "deploy_fashn_vertex.py\n(opções build-only · deploy-only · new-release ·\nkeep-deployed · undeploy · smoke test)" as DEP1
+  component "deploy_vton_worker_cloudrun.sh" as DEP2
+}
+
+FR --> AID : abre
+AID --> GLD : peças do guarda-roupa
+GLD --> APIC
+GLD ..> I18N : refusalKey → chave
+APIC --> PCTRL : foto (multipart)
+PCTRL --> PSVC
+PSVC --> MS
+APIC --> CTRL : HTTPS/JSON
+CTRL --> SVC
+SVC --> WS : peça do dono
+SVC --> MS
+MS --> S3 : grava/lê
+SVC --> AD : AnatomicalTryOnPort
+AD --> W : HTTPS · Bearer VTON_WORKER_TOKEN
+W --> GC : vertex_fashn
+GC --> VS : POST :predict (ADC · timeout 600 s)
+VS --> RT
+SM ..> W : VTON_WORKER_TOKEN
+DEP1 ..> AR : Cloud Build
+DEP1 ..> VX : models:upload · deployModel · smoke
+DEP2 ..> RUN : gcloud run deploy
+@enduml
