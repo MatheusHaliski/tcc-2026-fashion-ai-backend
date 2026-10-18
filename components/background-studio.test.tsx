@@ -36,6 +36,7 @@ describe("Background Studio — Cartela sazonal", () => {
       mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
       const onChange = vi.fn();
       renderApp(<AuraMaterialPanel value={{ photo: { url: "/piece.jpg" } }} onChange={onChange} />);
+      fireEvent.click(screen.getByRole("button", { name: /AURA Metamorfose/ }));
       fireEvent.click(await screen.findByRole("button", { name: /Nike · Prisma laranja/ }));
       expect(onChange).toHaveBeenLastCalledWith({ auraMetamorphose: "PRISMA", auraMetamorphosePreset: "NIKE_ORANGE" });
       expect(onChange.mock.calls[0][0]).not.toHaveProperty("photo");
@@ -110,9 +111,30 @@ describe("Background Studio — prévia das variações Aura em vídeo", () => {
     mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
     const { container } = renderApp(<Studio onBg={() => undefined} initialBg={{ aura: { variantId } }} />);
     fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: variantId.includes("splash") ? /AURA Splash/ : /AURA comum/ }));
     const variations = await screen.findByRole("group", { name: /Variação/ });
     await waitFor(() => expect(variations.querySelectorAll("video")).toHaveLength(6));
     await waitFor(() => expect(variations.querySelector(`video[poster="${poster}"]`)?.getAttribute("src")).toBe(src));
-    expect(container.querySelectorAll("video")).toHaveLength(6);
+    expect(variations.querySelectorAll("video")).toHaveLength(6);
+  });
+});
+
+
+describe("Studio — Hype integrado à cartela", () => {
+  it("abrir Hype não altera a peça e mostra todos os tratamentos sem buscar fundos", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    const onChange = vi.fn();
+    renderApp(<AuraMaterialPanel value={{ photo: { url: "/piece.jpg" }, compositionPreset: {id:"old-hype", name:"Old", family:"HYPE", image:"/aura/fashion-curated/old-hype.webp",palette:["#ffffff","#000000"]} }} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: /AURA Hype/ }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.querySelectorAll(".aura-hype-preset")).toHaveLength(40);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+    const choice = dialog.querySelectorAll<HTMLButtonElement>(".aura-hype-preset")[11];
+    fireEvent.click(choice);
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({compositionPreset:null}));
+    expect(onChange.mock.calls[0][0].auraHype).not.toBe("SCANNER");
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty("photo");
   });
 });

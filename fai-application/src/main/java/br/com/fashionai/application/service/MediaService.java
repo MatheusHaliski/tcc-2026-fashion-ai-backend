@@ -38,6 +38,8 @@ public class MediaService {
     public enum MediaScope {
         /** {@code users/{dono}/…}: arquivos que a própria pessoa enviou ou gerou. */
         OWNER,
+        /** Only private input photographs for try-on; never identity documents or avatar biometrics. */
+        PRIVATE_TRY_ON,
         /** {@code pending/{uuid}/{avatar|logo|official-photo}.jpg}: envio do formulário de cadastro (POST /api/auth/uploads). */
         PENDING,
         /** {@code restricted/pending/{uuid}/{identity|activity-proof}.jpg}: documentos do cadastro (só ADMIN lê). */
@@ -96,6 +98,7 @@ public class MediaService {
         }
         String k = key.get();
         boolean ok = scopes.contains(MediaScope.OWNER) && owner != null && k.startsWith("users/" + owner + "/")
+                || scopes.contains(MediaScope.PRIVATE_TRY_ON) && owner != null && k.startsWith("restricted/users/" + owner + "/tryon/person/")
                 || scopes.contains(MediaScope.PENDING) && PENDING_KEY.matcher(k).matches()
                 || scopes.contains(MediaScope.PENDING_RESTRICTED) && PENDING_RESTRICTED_KEY.matcher(k).matches();
         return ok ? Optional.of(new OwnedMedia(k, storage.publicUrl(k).toString())) : Optional.empty();

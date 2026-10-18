@@ -85,7 +85,7 @@ describe("Prova com IA", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Trocar foto" })).toBeTruthy());
     fireEvent.click(screen.getByRole("switch", { name: /Autorizo/ }));
     fireEvent.click(generate());
-    expect((await screen.findByRole("alert")).textContent).toBe("A GPU da prova com IA está desligada agora. Tente mais tarde.");
+    expect((await screen.findByRole("alert")).textContent).toBe("O serviço de prova com IA não está disponível agora. Tente mais tarde.");
     expect(screen.queryByAltText(/Prova com IA:/)).toBeNull();
   });
 

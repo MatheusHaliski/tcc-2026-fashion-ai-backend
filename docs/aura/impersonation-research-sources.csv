@@ -1,0 +1,9 @@
+name,approach,status,license_declared,url,queried_at,gpu_benchmark_executed
+Wan2.1 I2V,IMAGE_TO_VIDEO,FETCHED,apache-2.0,https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P/raw/main/README.md,2026-10-17T23:00:39.505755+00:00,False
+LTX Video,IMAGE_TO_VIDEO,FETCHED,other,https://huggingface.co/Lightricks/LTX-Video/raw/main/README.md,2026-10-17T23:00:39.506632+00:00,False
+HunyuanVideo I2V,IMAGE_TO_VIDEO,FETCHED,other,https://huggingface.co/tencent/HunyuanVideo-I2V/raw/main/README.md,2026-10-17T23:00:39.507257+00:00,False
+CogVideoX I2V,IMAGE_TO_VIDEO,FETCHED,other,https://huggingface.co/THUDM/CogVideoX-5b-I2V/raw/main/README.md,2026-10-17T23:00:39.507764+00:00,False
+AnimateDiff,MOTION_CONTROL,FETCHED,,https://raw.githubusercontent.com/guoyww/AnimateDiff/main/README.md,2026-10-17T23:00:39.772583+00:00,False
+LivePortrait,PORTRAIT_ONLY,FETCHED,,https://raw.githubusercontent.com/KwaiVGI/LivePortrait/main/readme.md,2026-10-17T23:00:39.775527+00:00,False
+Veo on Vertex,MANAGED_VIDEO,FETCHED,,https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/veo-video-generation,2026-10-17T23:00:39.807263+00:00,False
+FASHN VTON,VIRTUAL_TRY_ON_STILL,FETCHED,apache-2.0,https://huggingface.co/fashn-ai/fashn-vton-1.5/raw/main/README.md,2026-10-17T23:00:40.029921+00:00,False
