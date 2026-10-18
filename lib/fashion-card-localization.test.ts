@@ -13,11 +13,11 @@ describe("fashion catalog localization", () => {
     setCurrentLocale("pt-BR");
     expect(style.mood).toBe("Discreto e atemporal");
     expect(RARITY_INFO.LEGENDARY.label).toBe("Lendária");
-    expect(reward.how).toBe("Descobrir combinações em partidas");
+    expect(reward.how).toBe("Ativar uma sinergia nova numa partida dos modos FLAIR");
     setCurrentLocale("en");
     expect(style.mood).toBe("Understated and timeless");
     expect(RARITY_INFO.LEGENDARY.label).toBe("Legendary");
-    expect(reward.how).toBe("Discover combinations in matches");
+    expect(reward.how).toBe("Trigger a new synergy in a FLAIR mode match");
     expect(SAMPLE_PROJECT.name).toBe("FAI Constellation Mirror");
     setCurrentLocale("es");
     expect(RARITY_INFO.LEGENDARY.label).toBe("Legendaria");
