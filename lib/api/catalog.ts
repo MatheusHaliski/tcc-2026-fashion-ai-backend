@@ -18,8 +18,8 @@ export interface NormRect { x: number; y: number; w: number; h: number }
  * Foto canônica escolhida pelo pipeline de imagens do catálogo. SEMANTIC_CROP: URL original da marca com o recorte 4:5
  * aplicado na exibição (nada é copiado — RN47.03). PROCESSED: master processado no storage (fonte com permissão).
  */
-/** Total frame: foto original + caixa da peça nela (normalizada), para encaixar a peça inteira no quadro (null com pessoa/sem fundo de estúdio). */
-export interface CatalogWholeFrame { url: string; box: NormRect; background?: string | null; width?: number | null; height?: number | null; truncated?: string[] | null; alpha?: boolean; version?: string }
+/** Total frame: foto original + caixa da peça nela (V1, só foto de produto) ou a peça já recortada sem pessoa em 900×1200 (V2, `processed`). */
+export interface CatalogWholeFrame { url: string; box: NormRect; background?: string | null; width?: number | null; height?: number | null; truncated?: string[] | null; alpha?: boolean; processed?: boolean; version?: string }
 export interface CatalogCardImage { url: string; sourceUrl?: string | null; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null; whole?: CatalogWholeFrame | null }
 export interface CatalogProductImage { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
 
