@@ -135,8 +135,10 @@ function useReflection(url?: string | null) {
 interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced: boolean; tagged: Set<string>; hanger?: THREE.MeshStandardMaterialParameters; hangerModel?: string | null; engine?: RoomInteraction; }
 
 /** Register actual world anchors, not screen-space click areas. */
-function InteractionAnchor({ ctx, id, kind, available = true, position = [0, 0, 0], children, progress }: {
+function InteractionAnchor({ ctx, id, kind, available = true, position = [0, 0, 0], children, progress, label }: {
   ctx: Ctx; id: string; kind: "handle" | "piece" | "rail"; available?: boolean; position?: [number, number, number]; children?: React.ReactNode; progress?: (delta: number) => void;
+  /** nome da peça no aviso "Aperte X para pegar …" */
+  label?: string;
 }) {
   const object = useRef<THREE.Group>(null), marker = useRef<THREE.Mesh>(null);
   useFrame(() => {
@@ -147,10 +149,10 @@ function InteractionAnchor({ ctx, id, kind, available = true, position = [0, 0, 
   useEffect(() => {
     if (!ctx.engine || !object.current) return;
     const engine = ctx.engine;
-    const target = { id, kind, object: object.current, available: () => available && (kind === "rail" ? !!engine.held : kind !== "piece" || !engine.hidden.has(id)), progress };
+    const target = { id, kind, object: object.current, label, available: () => available && (kind === "rail" ? !!engine.held : kind !== "piece" || !engine.hidden.has(id)), progress };
     ctx.engine.targets.set(id, target);
     return () => { if (ctx.engine?.targets.get(id) === target) ctx.engine.targets.delete(id); };
-  }, [ctx.engine, id, kind, available, progress]);
+  }, [ctx.engine, id, kind, available, progress, label]);
   return <group ref={object} position={position}>{children}{ctx.engine && available && <mesh ref={marker}><sphereGeometry args={[.016, 8, 6]} /><meshBasicMaterial color="#fbbf24" transparent opacity={.85} /></mesh>}</group>;
 }
 
@@ -282,7 +284,8 @@ function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle,
       <InteractionAnchor ctx={ctx} id={`rail:${m.id}`} kind="rail" available={reach} position={[doorW / 2, railY, 0]} />
       {pieces.map((p, i) => (
         <group key={p.id} position={[first + i * step, railY, 0]}>
-          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={reach} position={[0, 0.02, 0]} />
+          {/* pegar pelo ombro da roupa, na borda da frente do vão (o gancho fica alto e no fundo, fora do alcance do braço) */}
+          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={reach} label={p.name} position={GRAB} />
           <HungGarment p={p} ctx={ctx} along="x" jitter={hangJitter(p.id) * 0.5} maxLength={railY - 0.04} swingKey={ctx.engine?.hungBack?.id === p.id ? ctx.engine.hungBack.at : 0} />
         </group>
       ))}
@@ -326,7 +329,7 @@ function Drawer({ m, x, y, w, open, lit, onToggle, finish, handle, taped, onAdd,
       {open && pieces.length === 0 && <group position={[0, -DRAWER_H / 2 + 0.03, D / 2 - 0.12]}><EmptyDrawerCharm width={w} onAdd={onAdd} /></group>}
       {(open || (ctx.engine?.progress.get(m.id) ?? 0) > .6) && pieces.slice(0, 4).map((p, i) => (
         <group key={p.id} position={[(i % 2 ? 1 : -1) * w / 4, -DRAWER_H / 2 + .04, -.08 + Math.floor(i / 2) * .18]}>
-          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={(ctx.engine?.progress.get(m.id) ?? Number(open)) > .6} />
+          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" label={p.name} available={(ctx.engine?.progress.get(m.id) ?? Number(open)) > .6} />
           <PieceMesh p={p} w={(w - .06) / 2} h={.15} ctx={ctx} lying />
         </group>))}
       {lit && <pointLight position={[0, 0, D / 2 + 0.2]} intensity={0.6} distance={0.6} color="#ffe6a0" />}
@@ -441,13 +444,16 @@ function Basket({ position, pieces, ctx }: { position: [number, number, number];
 
 /** Alturas da arara (m): varão onde os ganchos encaixam e o tampo da prateleira de baixo (as mesmas do modelo aprovado). */
 const RACK = { rail: 1.27, shelf: 0.17 } as const;
+/** Onde a mão pega a peça pendurada (relativo ao gancho): o ombro da roupa, na borda virada para fora do varão. */
+const GRAB: [number, number, number] = [0, -0.15, 0.14];
 /**
  * Arara do Desapego: encostada na parede sul, de frente para o centro do quarto e longe das portas do 2º guarda-roupa
  * (a porta 5 abre até x = −1,90): peças de lado no varão (até 12), sapatos e acessórios na prateleira, etiqueta de
  * preço e selo Garimpo nas peças de brechó.
  */
 function SaleRack({ position, rack, ctx, modelUrl }: { modelUrl?: string | null; position: [number, number, number]; rack: { name: string; pieces: RoomPiece3D[] }; ctx: Ctx }) {
-  const hung = rack.pieces.filter((p) => hungKindOf(p) !== "shelf"), shelf = rack.pieces.filter((p) => hungKindOf(p) === "shelf");
+  // a peça pega (na mão ou no chão) sai do varão; pendurada de volta, reaparece no lugar dela
+  const hung = rack.pieces.filter((p) => hungKindOf(p) !== "shelf" && !ctx.engine?.hidden.has(p.id)), shelf = rack.pieces.filter((p) => hungKindOf(p) === "shelf");
   const shown = hung.slice(0, 12), feet = shelf.slice(0, 4);
   const step = Math.min(0.11, 1.3 / Math.max(1, shown.length)), first = -((shown.length - 1) * step) / 2;
   return <RoomFixture engine={ctx.engine} id="support-rack" position={position} yaw={Math.PI} collider={[.82, .4]}>
@@ -459,7 +465,10 @@ function SaleRack({ position, rack, ctx, modelUrl }: { modelUrl?: string | null;
     </group></ApprovedAsset>
     {/* peças de lado no varão, uma ao lado da outra (como numa arara de loja); sapatos e acessórios na prateleira */}
     <InteractionAnchor ctx={ctx} id="rail:sale" kind="rail" position={[0, RACK.rail, 0]} />
-    {shown.map((p, i) => <group key={p.id} position={[first + i * step, RACK.rail, 0]}><HungGarment p={p} ctx={ctx} along="x" jitter={hangJitter(p.id)} swingKey={ctx.engine?.hungBack?.id === p.id ? ctx.engine.hungBack.at : 0} /></group>)}
+    {shown.map((p, i) => <group key={p.id} position={[first + i * step, RACK.rail, 0]}>
+      <InteractionAnchor ctx={ctx} id={p.id} kind="piece" label={p.name} position={GRAB} />
+      <HungGarment p={p} ctx={ctx} along="x" jitter={hangJitter(p.id)} swingKey={ctx.engine?.hungBack?.id === p.id ? ctx.engine.hungBack.at : 0} />
+    </group>)}
     {feet.map((p, i) => <ShelfPiece key={p.id} p={p} ctx={ctx} position={[-0.48 + i * 0.32, RACK.shelf, 0.02]} />)}
   </RoomFixture>;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { arrowAnywhere, BODY_RADIUS, GOAL_REACHED, moveInRoom, penetration, RoomInteraction, stepToward, WALK_SPEED, type GoalOutcome, CHAIR, seatOf, thighDrop } from "./interaction";
+import { arrowAnywhere, BODY_RADIUS, GOAL_REACHED, HAND_REACH, keepInFront, moveInRoom, nudgeHand, penetration, PICK_RADIUS, RoomInteraction, stepToward, WALK_SPEED, type GoalOutcome, CHAIR, seatOf, thighDrop } from "./interaction";
 import { MIRROR_COLLIDER, MirrorSession, mirrorDistance, mirrorFront, mirrorRoute } from "./mirror-session";
 import { ROOM, walkArea } from "./room-bounds";
 function target(engine: RoomInteraction, id: string, kind: "handle" | "piece", available = true) {
@@ -182,5 +182,81 @@ describe("sentar na cadeira do quarto", () => {
     expect(hipY - thigh * Math.sin(drop) - shin).toBeCloseTo(ankle, 6);
     expect(thighDrop(hipY, thigh, 0.1, 0.05)).toBeCloseTo(Math.asin(0.6), 6);                   // perna curta: limite
     expect(thighDrop(hipY, thigh, 0.7, 0.08)).toBeCloseTo(Math.asin(-0.35), 6);                 // perna longa: limite
+  });
+});
+
+describe("pegar e pendurar com X", () => {
+  const at = (engine: RoomInteraction, id: string, kind: "piece" | "rail", x: number, z: number, available: () => boolean = () => true) => {
+    const object = new THREE.Group(); object.position.set(x, 1.8, z);
+    engine.targets.set(id, { id, kind, object, available, label: id === "shirt" ? "Camisa de linho" : undefined }); return object;
+  };
+  it("perto de uma peça disponível o X oferece pegá-la (com o nome) e a mão vai até ela antes de pegar", () => {
+    const engine = new RoomInteraction(); engine.actor.set(0, 0, 1);
+    at(engine, "longe", "piece", 0, 1 + PICK_RADIUS + .2); at(engine, "fechada", "piece", 0, .9, () => false); at(engine, "shirt", "piece", .3, .4);
+    engine.updateNearby();
+    expect(engine.nearAction).toMatchObject({ kind: "pick", id: "pick:shirt", label: "Camisa de linho" });
+    engine.interact();
+    expect(engine.reach?.target.id).toBe("shirt"); expect(engine.held).toBeNull();   // ainda a caminho
+    engine.finishReach();
+    expect(engine.held).toBe("shirt"); expect(engine.hidden.has("shirt")).toBe(true);
+  });
+  it("pega com o braço do lado da peça e, com ela na mão, oferece pendurar no varão de volta", () => {
+    const engine = new RoomInteraction(); engine.actor.set(0, 0, 1); engine.facing = 0;   // olhando para +z: a esquerda é +x
+    at(engine, "shirt", "piece", .4, 1.3); at(engine, "rail:w1", "rail", -.3, 1.4, () => !!engine.held);
+    engine.updateNearby(); engine.interact(); engine.finishReach();
+    expect(engine.heldArm).toBe("Left");
+    engine.updateNearby(); expect(engine.nearAction).toMatchObject({ kind: "hang", id: "hang:rail:w1" });
+    engine.interact(); engine.finishReach();
+    expect(engine.held).toBeNull(); expect(engine.hidden.has("shirt")).toBe(false); expect(engine.hungBack?.id).toBe("shirt");
+  });
+  it("pegar vale mais que abrir a porta; sem peça ao alcance, o X volta a abrir", () => {
+    const engine = new RoomInteraction(); engine.actor.set(0, 0, 1);
+    const door = new THREE.Group(); door.position.set(0, 1.55, .5);
+    engine.actions.set("door", { id: "door", object: door, kind: "open", radius: 1, run: () => undefined });
+    const shirt = at(engine, "shirt", "piece", 0, .5);
+    engine.updateNearby(); expect(engine.nearAction?.kind).toBe("pick");
+    shirt.position.z = -1; engine.updateNearby(); expect(engine.nearAction?.id).toBe("door");
+  });
+  it("mirando com A/D o X não pega (o braço já está ocupado) e a peça some do alvo enquanto está na mão", () => {
+    const engine = new RoomInteraction(); engine.actor.set(0, 0, 1); at(engine, "shirt", "piece", 0, .6, () => !engine.hidden.has("shirt"));
+    engine.keyDown("KeyD"); engine.updateNearby(); expect(engine.nearAction).toBeNull();
+    engine.keyUp("KeyD", new THREE.Vector3(0, 1.8, .6)); expect(engine.held).toBe("shirt");
+    engine.updateNearby(); expect(engine.nearAction).toBeNull();
+  });
+});
+
+describe("braço pelo lado da tela e mão por teclas", () => {
+  it("A move o braço que a câmera mostra à esquerda e soltar A pega com esse mesmo braço", () => {
+    const engine = new RoomInteraction(); engine.armFor = (code) => (code === "KeyA" ? "Right" : "Left");   // de frente para a câmera
+    const object = new THREE.Group(); object.position.set(0, 1, 0); engine.targets.set("shirt", { id: "shirt", kind: "piece", object, available: () => true });
+    engine.keyDown("KeyA"); expect(engine.aiming).toBe("Right");
+    const asked: string[] = [];
+    engine.keyUp("KeyA", (arm) => { asked.push(arm); return new THREE.Vector3(0, 1, .1); });
+    expect(asked).toEqual(["Right"]); expect(engine.held).toBe("shirt"); expect(engine.heldArm).toBe("Right");
+  });
+  it("a mão alcança a peça pelo pano (até 22 cm), mas o puxador continua exigindo 15 cm", () => {
+    const engine = new RoomInteraction();
+    const piece = new THREE.Group(); piece.position.set(0, 1, 0); engine.targets.set("p", { id: "p", kind: "piece", object: piece, available: () => true });
+    const handle = new THREE.Group(); handle.position.set(1, 1, 0); engine.targets.set("h", { id: "h", kind: "handle", object: handle, available: () => true });
+    expect(engine.nearest(new THREE.Vector3(0, 1, .2))?.id).toBe("p");
+    expect(engine.nearest(new THREE.Vector3(1, 1, .2))).toBeNull();
+  });
+  it("com A/D apertado as setas e W/S movem a mão e as setas não contam como andar", () => {
+    const engine = new RoomInteraction(); engine.keyDown("KeyD"); engine.keyDown("ArrowUp");
+    expect(engine.handKeysDown).toBe(true);
+    const target = new THREE.Vector3(0, 1.3, .4), shoulder = new THREE.Vector3(0, 1.4, 0);
+    const view = { right: new THREE.Vector3(-1, 0, 0), forward: new THREE.Vector3(0, 0, 1) };
+    nudgeHand(target, engine.keys, .05, view, shoulder, 0);
+    expect(target.y).toBeCloseTo(1.3 + .05 * .55, 5);
+    engine.keyUp("ArrowUp"); engine.keyDown("KeyW");
+    for (let i = 0; i < 40; i++) nudgeHand(target, engine.keys, .05, view, shoulder, 0);
+    expect(target.distanceTo(shoulder)).toBeCloseTo(HAND_REACH, 5);                 // esticou até o limite do braço
+  });
+  it("um alvo atrás das costas vai para a frente do corpo (o braço não torce para trás)", () => {
+    const shoulder = new THREE.Vector3(0, 1.4, 0);
+    const behind = keepInFront(new THREE.Vector3(.1, 1.5, -.5), shoulder, 0);
+    expect(behind.z - shoulder.z).toBeCloseTo(.12, 5); expect(behind.x).toBeCloseTo(.1, 5);
+    const ahead = keepInFront(new THREE.Vector3(0, 1.5, .5), shoulder, 0);
+    expect(ahead.z).toBeCloseTo(.5, 5);
   });
 });
