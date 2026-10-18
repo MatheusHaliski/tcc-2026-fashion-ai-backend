@@ -32,7 +32,7 @@ export function FashionCardComponent({item,access,footer,onGenerate}:{item:Fashi
     {data&&<p className="hero-fashion-power">{t(`impersonation.power.${data.powerVfx}`)}</p>}
     {mock&&<p role="status" className="hero-fashion-demo-note">{t('impersonation.mockNotice')}</p>}
     <div className="fashion-hype-tags">{(card.contextBadges??item.styles??[]).slice(0,4).map((tag,i)=><span key={`${tag}-${i}`}>{tag}</span>)}</div>
-    <dl className="fashion-hype-matrix" aria-label={t('fashionHype.attributes')}>{stats.map(([key,raw])=>{const value=validStat(raw)?Math.round(raw as number):null;const full=t(`impersonation.stat.${key}`);return <div className="fashion-hype-cell" key={key} data-tone={value===null?undefined:value>=70?'high':value>=40?'mid':'low'} title={`${full}: ${value??'—'}`}><dt><abbr title={full}>{t(`fashionHype.short.${key}`)}</abbr></dt><dd>{value??'—'}</dd></div>;})}</dl>
+    <dl className="fashion-hype-matrix" aria-label={t('fashionHype.attributes')}>{stats.map(([key,raw])=>{const value=validStat(raw)&&raw!==null?Math.round(raw):null;const full=t(`impersonation.stat.${key}`);return <div className="fashion-hype-cell" key={key} data-tone={value===null?undefined:value>=70?'high':value>=40?'mid':'low'} title={`${full}: ${value??'—'}`}><dt><abbr title={full}>{t(`fashionHype.short.${key}`)}</abbr></dt><dd>{value??'—'}</dd></div>;})}</dl>
     {!locked&&media&&<button className="btn btn-sm" type="button" disabled={reduced} onClick={()=>setPlaying(p=>!p)}>{t(reduced?'impersonation.staticMode':playing?'impersonation.pause':'impersonation.play')}</button>}
     {onGenerate&&<button className="btn btn-primary" type="button" disabled={!!locked} onClick={()=>{if(!locked)onGenerate();}}>{t('impersonation.generate')}</button>}{footer}
    </div>

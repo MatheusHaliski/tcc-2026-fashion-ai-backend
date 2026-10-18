@@ -20,7 +20,7 @@ const SEGMENTS: { id: Segment; label: string }[] = [
   { id: "SHOES", label: "physicalStore.shoes" },
   { id: "ACCESSORIES", label: "physicalStore.accessories" },
 ];
-const LEVELS = ["ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"];
+const LEVELS = ["ESTREIA", "STUDIO", "LOFT"];
 const EMPTY_ADDRESS = { fullName: "", phone: "", postalCode: "", state: "", city: "", neighborhood: "", street: "", number: "", complement: "" };
 const addressFields = ["fullName", "phone", "postalCode", "state", "city", "neighborhood", "street", "number", "complement"] as const;
 

@@ -225,7 +225,7 @@ describe("utilitários de URL", () => {
     const asset = "/assets_pecas/01_Parte_superior/01_camiseta_referencia.png";
     expect(thumbUrl(asset, 320)).toMatch(/-320\.webp$/);
     expect(thumbUrl(`${asset}?v=2`)).toMatch(/-640\.webp$/);
-    expect(thumbSrcSet(asset)).toMatch(/320w, .*640w$/);
+    expect(thumbSrcSet(asset)).toMatch(/320w, .*640w, .*1280w$/);
     expect(thumbUrl("/media/x.png")).toMatch(/\/media\/x\.png$/);
     expect(thumbSrcSet("/media/x.png")).toBeUndefined();
     expect(thumbUrl(null)).toBeUndefined();

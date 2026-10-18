@@ -74,7 +74,7 @@ export interface SceneView {
   reduced: boolean;
 }
 
-export const LEVELS = ["ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"];
+export const LEVELS = ["ESTREIA", "STUDIO", "LOFT"];
 const atLeast = (level: string | undefined, want: string) => LEVELS.indexOf(level ?? "ESTREIA") >= LEVELS.indexOf(want);
 
 const W = 2.4, D = 0.6, DOOR_W = 0.6, EXT_W = 1.8;
@@ -749,7 +749,7 @@ function LockedWardrobe({ carcass, finish, onOpen }: { carcass: THREE.MeshStanda
 
 /** Posições fixas dos objetos (dependem do nível). O guarda-roupa 1 tem sempre 2,4 m; o 2º fica na parede oeste (W2). */
 function layoutFor(level?: string) {
-  const xr = W / 2, closet = atLeast(level, "CLOSET");
+  const xr = W / 2, closet = atLeast(level, "STUDIO");
   return {
     xr, loft: atLeast(level, "LOFT"),
     showcase: [xr + 0.35, 0, -0.08] as [number, number, number],
@@ -822,7 +822,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   useEffect(() => { gameplay?.engine.mirror.set(...L.mirror); }, [gameplay?.engine, L]);
   const byId = useMemo(() => Object.fromEntries(data.modules.map((m) => [m.id, m])), [data.modules]);
   const doorFinish = byId["door:1"]?.finish ?? { color: "#F4F2EF", roughness: 0.8 };
-  const signature = atLeast(level, "MAISON") && !!byId["signature"];
+  const signature = atLeast(level, "LOFT") && !!byId["signature"];
   const finishOf = (m?: RoomModule3D): THREE.MeshStandardMaterialParameters => {
     const f: NonNullable<RoomModule3D["finish"]> = m?.finish ?? doorFinish; const glass = f?.material === "VIDRO" || f?.material === "ACRILICO";
     return { color: f?.color ?? doorFinish.color ?? "#F4F2EF", roughness: f?.roughness ?? doorFinish.roughness ?? 0.8, metalness: f?.metalness ?? 0.02, transparent: glass, opacity: glass ? 0.6 : 1 };
@@ -841,7 +841,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const facing = focusModule ? moduleFacing(focusModule) : null;
   const homeDist = 5.3;
   const shoes = [...(byId["base"]?.pieces ?? []), ...(byId["shoe"]?.pieces ?? [])];
-  const shoeCap = atLeast(level, "CLOSET") ? 16 : 10;          // 10 na base do guarda-roupa 1; o excedente vai para a base do 2º
+  const shoeCap = atLeast(level, "STUDIO") ? 16 : 10;          // 10 na base do guarda-roupa 1; o excedente vai para a base do 2º
   const showcase = Array.isArray(data.showcase) ? (data.showcase as RoomPiece3D[]) : [];
   const decos = data.decorations ?? [];
   const deco = (t: string) => decos.find((d) => d.type === t);
@@ -850,7 +850,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const taped = (m?: RoomModule3D) => !!m && tapedIds.size > 0 && (m.pieces ?? []).some((p) => tapedIds.has(p.id));
   const ctx: Ctx = { highlight, onPick, reduced, tagged, hanger: hangerFinish, hangerModel: byId["hangers"]?.finish?.model3dUrl, engine: gameplay?.engine };
   const boxes: NonNullable<RoomModule3D["lookBoxes"]> = [];
-  const penthouse = atLeast(level, "PENTHOUSE") && !!byId["season"];
+  const penthouse = atLeast(level, "LOFT") && !!byId["season"];
   const pointAt = copilotPoint ? moduleAnchor(copilotPoint, level) : null;
   const litAny = (ids: string[]) => ids.some((i) => lit.has(i));
   // 2º guarda-roupa: funciona com os módulos do Loft (portas 5–6 e gavetas 25–36); sem eles, móvel fechado com a placa
@@ -910,11 +910,11 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         {tapedIds.size > 0 && <group position={[-W / 2 + 0.16 + 7 * 0.3, 0, 0]}><LookBox x={0} season={t("room3d.roomScene.fora_da_capsula")} count={tapedIds.size} /><TailorTape width={0.3} position={[0, Y.doors1 + 0.16, 0.225]} rotation={[0, 0, 0.6]} /></group>}
 
         {/* base de calçados (vira Sapateira no Closet) com LED que acende no Vista-me; até 10 aqui, o resto no 2º guarda-roupa */}
-        {atLeast(level, "CLOSET") && <mesh position={[0, 0.16, 0.05]} rotation={[-0.25, 0, 0]}><boxGeometry args={[W - 0.04, 0.012, 0.36]} /><meshStandardMaterial color="#d9cbb5" /></mesh>}
+        {atLeast(level, "STUDIO") && <mesh position={[0, 0.16, 0.05]} rotation={[-0.25, 0, 0]}><boxGeometry args={[W - 0.04, 0.012, 0.36]} /><meshStandardMaterial color="#d9cbb5" /></mesh>}
         {shoes.slice(0, 10).map((p, i) => <group key={p.id} position={[-W / 2 + 0.16 + i * 0.23, 0.14, 0.12]}><PieceMesh p={p} w={0.22} h={0.2} ctx={ctx} /></group>)}
         <mesh position={[0, 0.02, D / 2 - 0.01]}><boxGeometry args={[W - 0.04, 0.01, 0.01]} /><meshBasicMaterial color={litAny(["base", "shoe"]) ? "#ffd27a" : "#9b958a"} toneMapped={false} /></mesh>
         {litAny(["base", "shoe"]) && <pointLight position={[0, 0.2, 0.6]} intensity={1} distance={1.6} color="#ffe6a0" />}
-        {atLeast(level, "CLOSET") && <Label3D text={t("room3d.roomScene.sapateira")} w={0.34} h={0.05} fg="#6b5a4a" position={[0, 0.26, D / 2 + 0.005]} />}
+        {atLeast(level, "STUDIO") && <Label3D text={t("room3d.roomScene.sapateira")} w={0.34} h={0.05} fg="#6b5a4a" position={[0, 0.26, D / 2 + 0.005]} />}
 
         {/* luzes do closet: marcos do Inventory Score */}
         {data.closetLights && data.closetLights.milestones.length > 0 && <ClosetLights y={Y.top1 + 0.1} width={W} milestones={data.closetLights.milestones} celebrate={!!mirror?.celebrate} reduced={reduced} />}
@@ -944,7 +944,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
             {Array.from({ length: 12 }, (_, i) => i + 25).map((n) => { const m = byId[`drawer:${n}`]; if (!m) return null; const k = n - 25;
               return <Drawer key={n} m={m} x={-EXT_W / 2 + (k % 4) * EXT_DRAWER_W + EXT_DRAWER_W / 2} y={Y.drawers1 - (Math.floor(k / 4) + 0.5) * DRAWER_H} w={EXT_DRAWER_W} open={open.has(m.id)} lit={lit.has(m.id)} onToggle={() => onToggle(m.id)} finish={finishOf(m)} handle={handle} taped={taped(m)} onAdd={() => onAddToDrawer?.(m.id)} ctx={ctx} />; })}
             {boxes.slice(8, 13).map((b, i) => <LookBox key={b.id} b={b} x={-EXT_W / 2 + 0.2 + i * 0.32} />)}
-            {atLeast(level, "CLOSET") && <mesh position={[0, 0.16, 0.05]} rotation={[-0.25, 0, 0]}><boxGeometry args={[EXT_W - 0.02, 0.012, 0.36]} /><meshStandardMaterial color="#d9cbb5" /></mesh>}
+            {atLeast(level, "STUDIO") && <mesh position={[0, 0.16, 0.05]} rotation={[-0.25, 0, 0]}><boxGeometry args={[EXT_W - 0.02, 0.012, 0.36]} /><meshStandardMaterial color="#d9cbb5" /></mesh>}
             {shoes.slice(10, shoeCap).map((p, i) => <group key={p.id} position={[-EXT_W / 2 + 0.16 + i * 0.23, 0.14, 0.12]}><PieceMesh p={p} w={0.22} h={0.2} ctx={ctx} /></group>)}
             <mesh position={[0, 0.02, D / 2 - 0.01]}><boxGeometry args={[EXT_W - 0.02, 0.01, 0.01]} /><meshBasicMaterial color={litAny(["base", "shoe"]) ? "#ffd27a" : "#9b958a"} toneMapped={false} /></mesh>
           </> : <LockedWardrobe carcass={carcass} finish={finishOf(byId["door:1"])} onOpen={() => router.push("/points")} />}
@@ -967,8 +967,8 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         <group position={[0, 1.1, 0]}><PieceMesh p={showcase[0]} w={0.26} h={0.26} ctx={ctx} /></group>
         <Label3D text={t("room3d.roomScene.peca_icone")} w={0.3} h={0.05} fg="#6b5a4a" position={[0, 0.8, 0.185]} />
       </group>}
-      {atLeast(level, "CLOSET") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bagModel={byId["bags"]?.finish?.model3dUrl} jewelryModel={byId["jewelry"]?.finish?.model3dUrl} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
-      {atLeast(level, "ATELIER") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} modelUrl={byId["island"]?.finish?.model3dUrl} />}
+      {atLeast(level, "STUDIO") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bagModel={byId["bags"]?.finish?.model3dUrl} jewelryModel={byId["jewelry"]?.finish?.model3dUrl} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
+      {atLeast(level, "LOFT") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} modelUrl={byId["island"]?.finish?.model3dUrl} />}
 
       {data.modules.filter(m => m.slotType === "DOOR" || m.slotType === "DRAWER").map(m => {
         const anchor = moduleAnchor(m.id, level); return anchor ? <RoomFixture key={m.id} engine={gameplay?.engine} id={`action:${m.id}`} position={anchor} kind="open" run={() => onToggle(m.id)} /> : null;

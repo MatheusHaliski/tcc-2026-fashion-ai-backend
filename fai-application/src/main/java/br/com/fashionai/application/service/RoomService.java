@@ -215,18 +215,18 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, "Gaveta " + n, null, white));
             }
         }
-        if (level.atLeast(FaiPointsService.Level.CLOSET)) {
+        if (level.atLeast(FaiPointsService.Level.STUDIO)) {
             mods.add(module("shoe", "SHOE_RACK", "SAP-MOD90", 90, SHOE_RACK_CAPACITY, "Sapateira", null, white));
             mods.add(module("bags", "BAG_DISPLAY", "VIT-BOL", 60, 8, Msg.t("common.vitrine_de_bolsas"), null, null));
             mods.add(module("jewelry", "JEWELRY", "JOI-POR", 30, 12, "Porta-joias", null, null));
         }
-        if (level.atLeast(FaiPointsService.Level.ATELIER)) {
+        if (level.atLeast(FaiPointsService.Level.LOFT)) {
             mods.add(module("island", "ISLAND", "ILH-BAN", 120, 3, Msg.t("room.ilha_central_bancada_de_looks"), null, null));
         }
-        if (level.atLeast(FaiPointsService.Level.PENTHOUSE)) {
+        if (level.atLeast(FaiPointsService.Level.LOFT)) {
             mods.add(module("season", "SEASON_STORAGE", null, 0, 60, Msg.t("common.maleiro_de_estacao"), null, null));
         }
-        if (level.atLeast(FaiPointsService.Level.MAISON)) {
+        if (level.atLeast(FaiPointsService.Level.LOFT)) {
             mods.add(module("signature", "SIGNATURE", null, 0, 0, Msg.t("room.closet_de_assinatura"), null, null));
         }
         return mods;
@@ -255,7 +255,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             l.setDrawerLabelsJson(Json.write(labels));
             return l;
         });
-        FaiPointsService.Level level = FaiPointsService.Level.valueOf(layout.getLevel());
+        FaiPointsService.Level level = FaiPointsService.Level.parse(layout.getLevel());
         List<Map<String, Object>> existing = Json.list(layout.getModulesJson());
         Set<String> ids = existing.stream().map(m -> String.valueOf(m.get("id"))).collect(Collectors.toSet());
         boolean changed = false;
@@ -322,7 +322,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public void setLevel(UUID userId, String level) {
         RoomLayout l = layout(userId);
-        l.setLevel(level);
+        l.setLevel(FaiPointsService.Level.parse(level).name());   // nomes antigos (Closet…Maison) viram Loft
         layouts.save(l);
         layout(userId); // mescla os módulos liberados pelo nível
     }
@@ -999,8 +999,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("owner", owner);
         out.put("level", layout.getLevel());
-        out.put("levelInfo", Map.of("unlocks", FaiPointsService.Level.valueOf(layout.getLevel()).unlocks,
-                "aesthetic", FaiPointsService.Level.valueOf(layout.getLevel()).aesthetic));
+        out.put("levelInfo", Map.of("unlocks", FaiPointsService.Level.parse(layout.getLevel()).unlocks,
+                "aesthetic", FaiPointsService.Level.parse(layout.getLevel()).aesthetic));
         out.put("modules", modules);
         out.put("drawerLabels", labels);
         out.put("pieces", byId);
@@ -1176,10 +1176,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 "camera", Map.of("target", loc.moduleId(), "highlight", loc.address().toString(), "lighting", "spot", "open", true));
     }
 
-    /** Penthouse — guardar/retirar peças do maleiro de estação (RF35 §5.3). */
+    /** Loft — guardar/retirar peças do maleiro de estação (RF35 §5.3). */
     @Transactional
     public Map<String, Object> seasonStorage(CurrentUser user, List<UUID> pieceIds, boolean store) {
-        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.PENTHOUSE)) {
+        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.LOFT)) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_troca_de_estacao_e"));
         }
         RoomLayout layout = layout(user.id());
@@ -1462,10 +1462,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         return pieceTag(user, pieceId);
     }
 
-    /** Atelier — bancada de looks: comparar 2–3 esquemas lado a lado. */
+    /** Loft — bancada de looks: comparar 2–3 esquemas lado a lado. */
     @Transactional(readOnly = true)
     public Map<String, Object> island(CurrentUser user, List<UUID> schemeIds) {
-        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.ATELIER)) {
+        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.LOFT)) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_ilha_central_e_liberada"));
         }
         if (schemeIds == null || schemeIds.size() < 2 || schemeIds.size() > 3) {

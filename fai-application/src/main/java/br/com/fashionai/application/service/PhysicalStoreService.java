@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 public class PhysicalStoreService {
     private static final Set<String> CLOTHING = Set.of("upper_piece", "lower_piece", "full_body_piece");
     private static final Set<String> CATEGORIES = Set.of("upper_piece", "lower_piece", "full_body_piece", "shoes_piece", "accessory_piece");
-    private static final Set<String> LEVELS = Set.of("ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON");
+    private static final Set<String> LEVELS = Set.of("ESTREIA", "STUDIO", "LOFT");
 
     public record ListingForm(UUID productId, String description, Integer pricePoints, String requiredLevel, Boolean active) { }
     public record ShippingAddress(String fullName, String phone, String postalCode, String state, String city,
@@ -197,7 +197,7 @@ public class PhysicalStoreService {
         }
         if (listing.getStockQuantity() < 1) throw ApiException.conflict("ESGOTADO", Msg.t("physicalStore.esgotado"));
         FaiPointsService.Level currentLevel = FaiPointsService.Level.of(ledger.lifetime(buyer.id()));
-        if (!currentLevel.atLeast(FaiPointsService.Level.valueOf(listing.getRequiredLevel()))) {
+        if (!currentLevel.atLeast(FaiPointsService.Level.parse(listing.getRequiredLevel()))) {
             throw ApiException.conflict("NIVEL_INSUFICIENTE", Msg.t("physicalStore.nivel_insuficiente", listing.getRequiredLevel()));
         }
         long balance = ledger.balance(buyer.id());
@@ -296,7 +296,7 @@ public class PhysicalStoreService {
         out.put("description", listing.getDescription());
         out.put("pricePoints", listing.getPricePoints());
         out.put("requiredLevel", listing.getRequiredLevel());
-        out.put("levelOk", level.atLeast(FaiPointsService.Level.valueOf(listing.getRequiredLevel())));
+        out.put("levelOk", level.atLeast(FaiPointsService.Level.parse(listing.getRequiredLevel())));
         out.put("affordable", balance >= listing.getPricePoints());
         out.put("stock", listing.getStockQuantity());
         out.put("active", listing.isActive());

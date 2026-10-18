@@ -126,11 +126,14 @@ describe("Studio — Hype integrado à cartela", () => {
     const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
     const onChange = vi.fn();
     renderApp(<AuraMaterialPanel value={{ photo: { url: "/piece.jpg" }, compositionPreset: {id:"old-hype", name:"Old", family:"HYPE", image:"/aura/fashion-curated/old-hype.webp",palette:["#ffffff","#000000"]} }} onChange={onChange} />);
+    // o catálogo curado é lido uma vez ao montar (imagem de cada família no bloquinho); abrir o Hype não busca fundos
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/aura/fashion-curated/catalog.json", expect.anything()));
+    fetch.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /AURA Hype/ }));
     const dialog = screen.getByRole("dialog");
     expect(dialog.querySelectorAll(".aura-hype-preset")).toHaveLength(40);
     expect(onChange).not.toHaveBeenCalled();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(fetch.mock.calls.filter(([url]) => String(url).includes("/aura/fashion-curated/") || String(url).includes("/api/backgrounds"))).toHaveLength(0);
     const choice = dialog.querySelectorAll<HTMLButtonElement>(".aura-hype-preset")[11];
     fireEvent.click(choice);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({compositionPreset:null}));

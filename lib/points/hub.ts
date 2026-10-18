@@ -31,16 +31,25 @@ export interface PointsAccount {
   rules?: { action: string; points: number; description?: string; dailyCap?: number | string | null }[];
 }
 
-export const FAI_LEVELS = ["ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"] as const;
+/** Os três níveis de FAI XP do app: Básico (ESTREIA) → Studio → Loft. */
+export const FAI_LEVELS = ["ESTREIA", "STUDIO", "LOFT"] as const;
 export type FaiLevel = (typeof FAI_LEVELS)[number];
 
+const LEGACY_LOFT = new Set(["CLOSET", "ATELIER", "PENTHOUSE", "MAISON"]);
+/** Nível vindo da API ou de dado antigo: os nomes antigos acima de Loft contam como Loft; desconhecido, null. */
+export function normalizeLevel(level: unknown): FaiLevel | null {
+  const name = typeof level === "string" ? level.trim().toUpperCase() : "";
+  return FAI_LEVELS.includes(name as FaiLevel) ? name as FaiLevel : LEGACY_LOFT.has(name) ? "LOFT" : null;
+}
+
 export function hasReachedLevel(current: unknown, required: FaiLevel): boolean {
-  const currentIndex = FAI_LEVELS.indexOf(current as FaiLevel);
-  return currentIndex >= FAI_LEVELS.indexOf(required);
+  const level = normalizeLevel(current);
+  return level !== null && FAI_LEVELS.indexOf(level) >= FAI_LEVELS.indexOf(required);
 }
 
 export function levelNameKey(level: string): string {
-  return FAI_LEVELS.includes(level as FaiLevel) ? `levelProgress.name.${level}` : level;
+  const known = normalizeLevel(level);
+  return known ? `levelProgress.name.${known}` : level;
 }
 
 export interface PointsSummary { account?: PointsAccount | null; shop?: { items: number; affordable: number } | null; statement?: number | null }

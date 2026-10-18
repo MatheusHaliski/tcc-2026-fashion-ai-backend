@@ -243,5 +243,6 @@ export function thumbUrl(url?: string | null, size: 320 | 640 = 640): string | u
 export function thumbSrcSet(url?: string | null): string | undefined {
   if (!url) return undefined;
   const hit = (PIECE_THUMBS as Record<string, Record<string, string>>)[decodeURI(url.split("?")[0])];
-  return hit ? `${hit["320"]} 320w, ${hit["640"]} 640w` : undefined;
+  // o original entra como candidato grande: o card de peça chega a 620 px (1240 px em tela de alta densidade)
+  return hit ? `${hit["320"]} 320w, ${hit["640"]} 640w, ${url} 1280w` : undefined;
 }

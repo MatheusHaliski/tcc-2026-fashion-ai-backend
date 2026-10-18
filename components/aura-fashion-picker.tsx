@@ -20,7 +20,7 @@ export function AuraFashionPicker({ value, onChange, brandName, colorHex, colorN
   const exclusive = family !== null && exclusiveFamilies.includes(family);
   useEffect(() => {
     const controller = new AbortController(); setStatus('loading'); setPresets([]);
-    fetch('/aura/fashion-curated/catalog.json', { cache: 'no-store', signal: controller.signal })
+    Promise.resolve().then(() => fetch('/aura/fashion-curated/catalog.json', { cache: 'no-store', signal: controller.signal }))
       .then(r => { if (!r.ok) throw new Error('catalog'); return r.json(); })
       .then(data => {
         if (controller.signal.aborted) return;

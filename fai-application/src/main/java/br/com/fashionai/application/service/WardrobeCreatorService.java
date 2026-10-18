@@ -72,16 +72,16 @@ public class WardrobeCreatorService {
             new Block("BED", "BED-DBL", 280, Msg.k("room.double_bed"), 650, "ESTREIA", List.of("MADEIRA", "LACA")),
             new Block("SALE_RACK", "RACK-MOB", 160, Msg.k("room.support_rack"), 220, "ESTREIA", List.of("METAL", "ACO")),
             new Block("RUG", "TAP-RND", 0, Msg.k("wardrobeCreator.tapete_redondo"), 60, "ESTREIA", List.of("LA", "LINHO", "RATTAN")),
-            new Block("SHOE_RACK", "SAP-MOD90", 90, "Sapateira", 240, "CLOSET", List.of("FOSCO", "MADEIRA", "METAL", "ACO", "RATTAN")),
-            new Block("BAG_DISPLAY", "VIT-BOL", 60, Msg.k("common.vitrine_de_bolsas"), 300, "CLOSET", List.of("VIDRO", "ESPELHO", "MADEIRA", "OURO")),
-            new Block("JEWELRY", "JOI-POR", 30, "Porta-joias", 260, "CLOSET", List.of("VELUDO", "COURO", "MADEIRA", "OURO", "PRATA", "VIDRO")),
-            new Block("ISLAND", "ILH-BAN", 120, Msg.k("wardrobeCreator.ilha_central"), 600, "ATELIER", List.of("MARMORE", "GRANITO", "MADEIRA", "LACA", "VIDRO", "CONCRETO")),
+            new Block("SHOE_RACK", "SAP-MOD90", 90, "Sapateira", 240, "STUDIO", List.of("FOSCO", "MADEIRA", "METAL", "ACO", "RATTAN")),
+            new Block("BAG_DISPLAY", "VIT-BOL", 60, Msg.k("common.vitrine_de_bolsas"), 300, "STUDIO", List.of("VIDRO", "ESPELHO", "MADEIRA", "OURO")),
+            new Block("JEWELRY", "JOI-POR", 30, "Porta-joias", 260, "STUDIO", List.of("VELUDO", "COURO", "MADEIRA", "OURO", "PRATA", "VIDRO")),
+            new Block("ISLAND", "ILH-BAN", 120, Msg.k("wardrobeCreator.ilha_central"), 600, "LOFT", List.of("MARMORE", "GRANITO", "MADEIRA", "LACA", "VIDRO", "CONCRETO")),
             // Smart Mirror (RF28) como item modular: o formato vem do molde; o material e a cor são da moldura
             new Block("MIRROR", "ESP-RET", 0, Msg.k("wardrobeCreator.espelho_retangular"), 90, "ESTREIA", List.of("FOSCO", "LACA", "MADEIRA", "METAL", "RATTAN")),
             new Block("MIRROR", "ESP-ARC", 0, Msg.k("wardrobeCreator.espelho_arco"), 160, "STUDIO", List.of("MADEIRA", "METAL", "LACA", "OURO", "PRATA", "BRONZE")),
             new Block("MIRROR", "ESP-OVL", 0, Msg.k("wardrobeCreator.espelho_oval"), 140, "STUDIO", List.of("MADEIRA", "METAL", "VELUDO", "RATTAN", "OURO", "PRATA")),
             new Block("MIRROR", "ESP-CAM", 0, Msg.k("wardrobeCreator.espelho_camarim"), 280, "LOFT", List.of("LACA", "METAL", "ACRILICO", "OURO")));
-    public static final List<String> LEVELS = List.of("ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON");
+    public static final List<String> LEVELS = List.of("ESTREIA", "STUDIO", "LOFT");
 
     static {
         String[][] c = {{"Branco", "#F4F2EF"}, {"Off-white", "#EDE6DA"}, {"Areia", "#D8C8B0"}, {"Grafite", "#3A3A3A"}, {"Preto", "#151515"},
@@ -106,23 +106,23 @@ public class WardrobeCreatorService {
         material("MARMORE", Msg.k("wardrobeCreator.marmore"), 0.2, 0, 2.2, "LOFT", List.of("Carrara", Msg.k("wardrobeCreator.nero_marquina"), Msg.k("wardrobeCreator.rosa_portugal")));
         material("VIDRO", "Vidro", 0.05, 0, 1.8, "LOFT", List.of("Transparente", Msg.k("wardrobeCreator.fume"), Msg.k("wardrobeCreator.vidro_verde"), Msg.k("wardrobeCreator.vidro_ambar")));
         material("METAL", "Metal", 0.3, 0.85, 1.3, "STUDIO", List.of("Dourado", "Prata", "Bronze", "Preto"));
-        material("COURO", "Couro", 0.55, 0, 1.9, "CLOSET", List.of("Caramelo", "Cognac", "Preto"));
-        material("VELUDO", "Veludo", 0.95, 0, 1.7, "CLOSET", List.of("Esmeralda", "Vinho", "Azul-noite"));
+        material("COURO", "Couro", 0.55, 0, 1.9, "STUDIO", List.of("Caramelo", "Cognac", "Preto"));
+        material("VELUDO", "Veludo", 0.95, 0, 1.7, "STUDIO", List.of("Esmeralda", "Vinho", "Azul-noite"));
         material("LINHO", "Linho", 0.9, 0, 1.2, "STUDIO", List.of("Off-white", "Areia", "Terracota", "Verde-oliva"));
         material("ACRILICO", Msg.k("wardrobeCreator.acrilico"), 0.15, 0, 1.1, "STUDIO", List.of("Transparente", Msg.k("wardrobeCreator.fume"), "Rosa-blush"));
         material("LA", Msg.k("wardrobeCreator.la"), 1.0, 0, 1.0, "ESTREIA", List.of("Off-white", "Areia", "Terracota", "Verde-oliva", "Grafite"));
         material("LED", "LED", 0.5, 0, 1.0, "STUDIO", List.of(Msg.k("wardrobeCreator.quente_2700_k"), Msg.k("wardrobeCreator.neutra_4000_k"), Msg.k("wardrobeCreator.fria_6000_k")));
         material("GRANITO", "Granito", 0.25, 0, 2.0, "LOFT", List.of(Msg.k("wardrobeCreator.sao_gabriel"), Msg.k("wardrobeCreator.branco_itaunas"), Msg.k("wardrobeCreator.verde_ubatuba"), Msg.k("wardrobeCreator.vermelho_brasilia")));
-        material("OURO", "Ouro", 0.22, 1.0, 3.0, "PENTHOUSE", List.of(Msg.k("wardrobeCreator.ouro_amarelo"), Msg.k("wardrobeCreator.ouro_rose"), Msg.k("wardrobeCreator.ouro_branco")));
-        material("PRATA", "Prata", 0.2, 1.0, 2.4, "CLOSET", List.of(Msg.k("wardrobeCreator.prata_polida"), Msg.k("wardrobeCreator.prata_envelhecida")));
-        material("BRONZE", "Bronze", 0.35, 0.95, 2.0, "CLOSET", List.of(Msg.k("wardrobeCreator.bronze_antigo"), Msg.k("wardrobeCreator.bronze_escovado")));
-        material("COBRE", "Cobre", 0.3, 0.95, 1.9, "CLOSET", List.of("Cobre", Msg.k("wardrobeCreator.cobre_oxidado")));
+        material("OURO", "Ouro", 0.22, 1.0, 3.0, "LOFT", List.of(Msg.k("wardrobeCreator.ouro_amarelo"), Msg.k("wardrobeCreator.ouro_rose"), Msg.k("wardrobeCreator.ouro_branco")));
+        material("PRATA", "Prata", 0.2, 1.0, 2.4, "STUDIO", List.of(Msg.k("wardrobeCreator.prata_polida"), Msg.k("wardrobeCreator.prata_envelhecida")));
+        material("BRONZE", "Bronze", 0.35, 0.95, 2.0, "STUDIO", List.of(Msg.k("wardrobeCreator.bronze_antigo"), Msg.k("wardrobeCreator.bronze_escovado")));
+        material("COBRE", "Cobre", 0.3, 0.95, 1.9, "STUDIO", List.of("Cobre", Msg.k("wardrobeCreator.cobre_oxidado")));
         material("ESPELHO", "Espelho", 0.02, 1.0, 2.1, "LOFT", List.of(Msg.k("wardrobeCreator.espelho_prata"), Msg.k("wardrobeCreator.espelho_bronze")));
         material("CONCRETO", "Concreto", 0.95, 0, 1.3, "STUDIO", List.of(Msg.k("wardrobeCreator.concreto_claro"), Msg.k("wardrobeCreator.concreto_escuro")));
         material("RATTAN", "Rattan", 0.85, 0, 1.4, "STUDIO", List.of(Msg.k("wardrobeCreator.rattan_natural"), Msg.k("wardrobeCreator.rattan_escuro")));
         material("ACO", Msg.k("wardrobeCreator.aco_escovado"), 0.4, 0.9, 1.6, "LOFT", List.of(Msg.k("wardrobeCreator.aco_escovado"), Msg.k("wardrobeCreator.aco_grafite")));
         // exclusivo da edição limitada de fábrica (não aparece no criador de marcas)
-        material("HOLOGRAFICO", Msg.k("common.holografico"), 0.1, 0.6, 3.0, "PENTHOUSE", List.of(Msg.k("wardrobeCreator.holografico_lilas")));
+        material("HOLOGRAFICO", Msg.k("common.holografico"), 0.1, 0.6, 3.0, "LOFT", List.of(Msg.k("wardrobeCreator.holografico_lilas")));
     }
 
     static void material(String code, String label, double r, double m, double f, String lvl, List<String> colors) {
@@ -572,7 +572,7 @@ public class WardrobeCreatorService {
     }
 
     static String level(String l) {
-        return l != null && LEVELS.contains(l.toUpperCase(Locale.ROOT)) ? l.toUpperCase(Locale.ROOT) : "ESTREIA";
+        return FaiPointsService.Level.parse(l).name();   // nomes antigos (Closet…Maison) viram Loft
     }
 
     static String url(String u) {

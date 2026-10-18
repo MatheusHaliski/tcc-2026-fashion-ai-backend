@@ -1,5 +1,7 @@
+import {hasReachedLevel} from '@/lib/points/hub';
 import {tr} from '@/lib/i18n/core';
-export const ROOM_TIERS=['ESTREIA','STUDIO','LOFT','CLOSET','ATELIER','PENTHOUSE','MAISON'] as const;
+/** Os três níveis de FAI XP: Básico (ESTREIA) → Studio → Loft. */
+export const ROOM_TIERS=['ESTREIA','STUDIO','LOFT'] as const;
 export type RoomTier=typeof ROOM_TIERS[number];
 export type GatedAuraType='AURA_BASIC'|'AURA_DYNAMIC'|'AURA_METAMORPHOSE'|'AURA_IMPERSONATION';
 export const AuraGatingConfig:Record<GatedAuraType,{requiredTier:RoomTier}>={AURA_BASIC:{requiredTier:'ESTREIA'},AURA_DYNAMIC:{requiredTier:'STUDIO'},AURA_METAMORPHOSE:{requiredTier:'LOFT'},AURA_IMPERSONATION:{requiredTier:'LOFT'}};
@@ -13,4 +15,4 @@ export function getLockedAuraMessage(auraType:GatedAuraType){return tr(`auraGate
 export class AuraLockedError extends Error {readonly code='AURA_LEVEL_REQUIRED';readonly requiredTier:RoomTier;constructor(auraType:GatedAuraType){super(getLockedAuraMessage(auraType));this.requiredTier=AuraGatingConfig[auraType].requiredTier;}}
 /** Nível de FAI XP (Básico → Studio → Loft) para cada nível de carta AURA Hype: Comum é livre; Rara abre no Studio; Lendária e Collab/Drop no Loft. */
 export const CARD_LEVEL_TIER:Record<'COMMON'|'RARE'|'LEGENDARY'|'COLLAB_DROP',RoomTier>={COMMON:'ESTREIA',RARE:'STUDIO',LEGENDARY:'LOFT',COLLAB_DROP:'LOFT'};
-export function cardLevelUnlocked(level:keyof typeof CARD_LEVEL_TIER,current:RoomTier|null|undefined){return level==='COMMON'||(!!current&&ROOM_TIERS.indexOf(current)>=ROOM_TIERS.indexOf(CARD_LEVEL_TIER[level]));}
+export function cardLevelUnlocked(level:keyof typeof CARD_LEVEL_TIER,current:string|null|undefined){return level==='COMMON'||hasReachedLevel(current,CARD_LEVEL_TIER[level]);}
