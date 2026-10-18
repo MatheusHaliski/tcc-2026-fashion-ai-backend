@@ -69,11 +69,12 @@ describe("grade de marcas na busca catalogada", () => {
     mockApi({ "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/stores": stores, "GET /api/catalog/brands": { brands: [] },
       "GET /api/catalog/summary": SUMMARY, "GET /api/catalog/products": (url: URL) => page(0, url.searchParams.get("brand") ?? "") });
     renderApp(<CatalogSearch onPick={vi.fn()} category="upper_piece" />);
-    const group = await screen.findByRole("group", { name: /Marcas do catálogo \(13\)/ });
-    expect(group.querySelectorAll("button")).toHaveLength(12);
+    // no CI carregado a grade (lojas + resumo + produtos) pode passar de 1 s para montar: espera explícita maior
+    const group = await screen.findByRole("group", { name: /Marcas do catálogo \(13\)/ }, { timeout: 5000 });
+    await waitFor(() => expect(group.querySelectorAll("button")).toHaveLength(12), { timeout: 5000 });
     const navigation = screen.getByRole("navigation", { name: "paginação" });
-    fireEvent.click(screen.getByRole("button", { name: "Avançar →" }));
-    expect(await screen.findByRole("button", { name: /Marca 13/ })).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", { name: "Avançar →" }, { timeout: 5000 }));
+    expect(await screen.findByRole("button", { name: /Marca 13/ }, { timeout: 5000 })).toBeTruthy();
     expect(group.querySelectorAll("button")).toHaveLength(1);
     expect(navigation.textContent).toContain("Página 2 de 2");
   });
