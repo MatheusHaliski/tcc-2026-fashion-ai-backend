@@ -70,7 +70,7 @@ import {FashionCardStats} from "@/components/hype/fashion-card-panel";
 import {PieceCardPanels} from "@/components/piece-card-panels";
 import {fashionCardLevel} from "@/lib/hype/fashion-card";
 
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming }: {
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming, expanded = false }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   /** legendas e ações extras da lista — renderizadas DENTRO do card (nunca soltas abaixo dele) */
   extra?: ReactNode;
@@ -78,6 +78,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   flip?: boolean;
   /** enquadramento forçado (prévia do criador); sem ele vale o da peça e depois o padrão de quem vê */
   framing?: PhotoFraming;
+  /** prévia ampliada: usa o enquadramento final do card, sem depender da proporção da peça */
+  expanded?: boolean;
 }) {
   const detail = useDetailModal();
   const { t, fmtMoney } = useI18n(); const { user } = useAuth();
@@ -100,7 +102,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const [defaultFraming] = usePhotoFraming();
   const framing = forcedFraming ?? resolveFraming(piece.background?.photoFraming, defaultFraming);
   const whole = framing === "WHOLE" ? pieceWholeSources(piece) : null;
-  const mediaStyle = { aspectRatio: whole ? "3 / 4" : piecePhotoAspect(piece) };
+  const mediaStyle = { aspectRatio: expanded ? "4 / 5" : whole ? "3 / 4" : piecePhotoAspect(piece) };
   // sem foto de estúdio, a peça do catálogo mostra a foto oficial com o mesmo recorte do card da busca
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);

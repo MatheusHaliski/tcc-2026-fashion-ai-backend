@@ -177,7 +177,7 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
         <CardPreviewModeToggle expanded={view === "expanded"} onToggle={() => setView(current => current === "feed" ? "expanded" : "feed")} feedLabel={t("pieceArt.previa_feed")} expandedLabel={t("pieceArt.previa_ampliado")}>
           {view === "feed"
             ? <div className="pae-preview-card"><PieceCard piece={preview} href="#" /></div>
-            : <div className="pae-expanded-card" aria-label={t("pieceArt.previa_ampliada")}><PieceCard piece={preview} href="#" flip={false} /></div>}
+            : <div className="pae-expanded-card" aria-label={t("pieceArt.previa_ampliada")}><PieceCard piece={preview} href="#" flip={false} expanded /></div>}
         </CardPreviewModeToggle>
         <p className="type-caption text-muted">{t("pieceArt.camadas_legenda")}</p>
       </aside>
