@@ -1445,6 +1445,8 @@ a .fai-coupon, button .fai-coupon { transition: transform .15s ease, box-shadow 
 .fm-card-locked { border-style: dashed; }
 .fm-card-emoji { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); font-size: 22px; }
 .fm-card .type-h3, .fm-card .type-body-sm, .fm-card .type-caption { min-width: 0; }
+/* todo texto do card fica na coluna do texto: uma 3ª linha (ex.: o aviso de nível) não cai na coluna do ícone, que esticava e espremia o título letra por letra */
+.fm-card > :not(.fm-card-emoji) { grid-column: 2; }
 .fm-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
 .mode-trophy { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--chalk-soft); color: var(--chalk-ink); border: 1px solid color-mix(in srgb, var(--chalk) 45%, transparent); }
 .mode-trophy-card { display: grid; justify-items: center; gap: 4px; padding: 16px; border-radius: 16px; background: var(--chalk-soft); color: var(--chalk-ink); border: 1.5px solid color-mix(in srgb, var(--chalk) 45%, transparent); text-align: center; }
