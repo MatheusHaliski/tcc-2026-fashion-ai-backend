@@ -113,6 +113,9 @@ let generated = 0;
 
 for (const { directory, sequenceFiles } of diagramDirectories) {
   const relativeDirectory = path.relative(diagramsRoot, directory);
+  if (!relativeDirectory.startsWith("RF")) {
+    continue;
+  }
   if (["RF1", "RF2"].includes(relativeDirectory)) {
     continue;
   }
