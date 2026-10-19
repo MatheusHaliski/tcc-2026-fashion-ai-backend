@@ -51,6 +51,8 @@ export function checkPhoto(p: PhotoCheck): Issue[] {
     else if (s.balance > L.balanceWarn) out.push({ code: "SIDE_LIGHT", severity: "warn", params: { ratio: +s.balance.toFixed(2) } });
     if (s.sharpness < L.sharpBlock) out.push({ code: "BLURRY", severity: "block" });
     else if (s.sharpness < L.sharpWarn) out.push({ code: "BLURRY", severity: "warn" });
+    if (s.detailCoverage < L.detailBlock) out.push({ code: "DETAIL_SPARSE", severity: "block", params: { pct: Math.round(s.detailCoverage * 100) } });
+    else if (s.detailCoverage < L.detailWarn) out.push({ code: "DETAIL_SPARSE", severity: "warn", params: { pct: Math.round(s.detailCoverage * 100) } });
   }
   const q = p.pose;
   if (q) {
