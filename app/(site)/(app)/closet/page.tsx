@@ -72,7 +72,7 @@ function Closet() {
   }
   return (
     <>
-      <PageHeader title={t("closet.title")} kicker={t("closet.rf7_rf31")} lead={data ? `${data.total} ${t("common.pieces")}` : undefined}
+      <PageHeader title={t("closet.title")} kicker={t("closet.rf7_rf31")} lead={data ? `${data.total} ${t("common.pieces")}` : "\u00a0"}
         actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Button aria-pressed={remixMode} onClick={() => startSelect("remix")}><FaiIcon id="SOC-04" size={24} decorative />{t("closet.remix.varias")}</Button><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link><Button aria-pressed={selectMode === "studio"} onClick={() => startSelect("studio")} title={t("closet.gera_a_foto_de_produto")}><FaiIcon id="ACT-08" size={24} decorative />{t("closet.levar_pecas_ao_estudio")}</Button></>} />
       <Tabs label={t("common.category")} value={parseTab(f.category)} onChange={changeTab}
         tabs={CATEGORY_TABS.map((c) => ({ id: c, label: c ? label(c) : t("closet.tab.all") }))} />
