@@ -7014,6 +7014,7 @@
   "catalog.acervo_indisponivel": "El servidor no ofrece el catálogo paginado. Actualiza el backend para consultar el total real.",
   "catalog.resumo_indisponivel": "No se pudo consultar el total del catálogo.",
   "catalog.selecao_total": "{total, number} prendas · {filters}",
+  "catalog.limpar_selecao": "Borrar selección",
   "catalog.sem_marca_total": "{count, number} prendas disponibles sin marca; incluidas en el catálogo completo.",
   "catalog.registrados_total": "{total, number} prendas registradas en la base; {pending, number} aún no disponibles en el catálogo.",
   "catalog.grade_total": "Suma de las marcas de la cuadrícula: {count, number} prendas · {category}",

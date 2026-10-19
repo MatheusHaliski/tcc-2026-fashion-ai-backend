@@ -299,6 +299,26 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     expect(calls.filter((call) => call.path.startsWith("/api/catalog/products") && call.path.includes("brand=Nike"))).toHaveLength(1);
   });
 
+  it("Limpar seleção ao lado do resumo (peças · loja · categoria): desmarca a loja e a categoria do provador", async () => {
+    loggedAs(ME, {
+      ...baseRoutes(),
+      "GET /api/catalog/products": (url: URL) => {
+        const items = url.searchParams.get("brand") === "Nike" ? SHIRTS : [];
+        return { items, total: items.length, page: 0, size: 48, hasMore: false };
+      },
+    });
+    renderApp(<TryOnPage />);
+    const stores = within(await screen.findByRole("group", { name: "Lojas em destaque" }));
+    fireEvent.click(stores.getByRole("button", { name: /Nike/ }));
+    fireEvent.click(within(screen.getByRole("group", { name: "O que provar" })).getByRole("button", { name: "Parte superior" }));
+    expect(await screen.findByRole("heading", { name: /peças · Nike · Parte superior/ }, { timeout: 4000 })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Limpar seleção" }));
+    await waitFor(() => expect(screen.queryByRole("heading", { name: /Nike · Parte superior/ })).toBeNull(), { timeout: 4000 });
+    expect(stores.getByRole("button", { name: /Nike/ }).getAttribute("aria-pressed")).not.toBe("true");
+    expect(within(screen.getByRole("group", { name: "O que provar" })).getByRole("button", { name: "Tudo" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByRole("button", { name: "Limpar seleção" })).toBeNull();
+  });
+
   it("volta à primeira página ao filtrar o catálogo, trocar categoria ou escolher outra marca", async () => {
     loggedAs(ME, {
       ...baseRoutes(),
