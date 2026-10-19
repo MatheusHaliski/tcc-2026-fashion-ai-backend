@@ -127,6 +127,17 @@ export function FittingRoom() {
             avatar={data.avatar ?? null} mannequin={data.mannequin} pieces={shown}
             environment={environment} scene={scene} light={light} view={view}
             sex={selectedTipoLook} onCanvas={share.onCanvas}
+            mirrorPanel={({ back }) => (
+              <div className="grid gap-3">
+                <h2 className="type-h3">{t("tryOn.no_espelho")}</h2>
+                {session.items.length
+                  ? <ul className="fitting-mirror-list">{session.items.map((item) => <li key={item.key}>{item.name}</li>)}</ul>
+                  : <p className="type-body-sm text-muted">{t("tryOn.espelho_vazio")}</p>}
+                <Button variant="primary" onClick={() => setAiOpen(true)} disabled={!session.items.length}>{t("tryOn.espelho_provar_ia")}</Button>
+                <Link href={mirrorHref({ vista: "2d" })} className="btn btn-sm">{t("tryOn.espelho_do_quarto_2d")}</Link>
+                <Button onClick={back}>{t("tryOn.voltar_ao_centro")}</Button>
+              </div>
+            )}
           >
             <FittingControls
               sex={selectedTipoLook} onSexChange={changeTipoLook} view={view} onViewChange={setView}

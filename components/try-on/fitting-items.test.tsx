@@ -3,7 +3,8 @@
  * "Provando agora" no formato do card compacto de peça (docs/anatomias): miniatura de 56 px, rótulo do lugar, identidade,
  * nome que é o link e UMA linha de estado — o botão "Ver prévia 2D no espelho" e a barra do 3D com as etapas que faltam
  * (porcentagem só quando é real). No máximo três ações visíveis e o resto no menu ⋯. Peça do guarda-roupa sem 3D entra
- * na fila sozinha (uma vez); peça da loja fica em 0 de 4 até "Guardar a peça e gerar o 3D"; falhou: "Tentar de novo
+ * na fila sozinha (uma vez); peça da loja diz "3D começa ao guardar a peça" e, guardada (Já tenho ou menu ⋯), entra na fila sozinha; recurso desligado:
+ * "3D pausado" com o motivo; falhou: "Tentar de novo
  * (grátis)"; pedido recusado: "3D pausado" com o motivo acessível.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -74,13 +75,13 @@ describe("FittingItems — card compacto de peça", () => {
     expect(posts(calls, "/api/pieces/w1/model3d")).toBe(1);
   });
 
-  it("peça da loja: 0 de 4 e, no menu ⋯, Guardar a peça e gerar o 3D (guarda e pede o 3D da peça guardada)", async () => {
+  it("peça da loja: espera ser guardada e, no menu ⋯, Guardar a peça e gerar o 3D (guarda e pede o 3D da peça guardada)", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/pieces/w9/model3d": { status: null, featureEnabled: true }, "POST /api/pieces/w9/model3d": { status: "QUEUED" } });
     const onOwn = vi.fn();
     const props = { ...base(), items: [catalog], onOwn };
     const { rerender } = renderApp(<FittingItems {...props} />);
     const top = row("Parte de cima");
-    expect(top.getByText("3D não iniciado · 0 de 4")).toBeTruthy();
+    expect(top.getByText("3D começa ao guardar a peça")).toBeTruthy();
     fireEvent.click(top.getByRole("button", { name: "Mais ações · Blazer de alfaiataria" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "Guardar a peça e gerar o 3D" }));
     expect(onOwn).toHaveBeenCalledWith(expect.objectContaining({ key: "c:p1" }));
@@ -88,6 +89,25 @@ describe("FittingItems — card compacto de peça", () => {
     await waitFor(() => expect(posts(calls, "/api/pieces/w9/model3d")).toBe(1));
     await waitFor(() => expect(row("Parte de cima").getByText("Na fila do 3D · 1 de 4")).toBeTruthy());
     expect(row("Parte de cima").getByRole("link", { name: /No seu guarda-roupa/ }).getAttribute("href")).toBe("/pieces/w9");
+  });
+
+  it("guardada pelo Já tenho (sem o menu): o 3D da peça guardada entra na fila sozinho, uma vez", async () => {
+    const { calls } = loggedAs(undefined, { "GET /api/pieces/w9/model3d": { status: null, featureEnabled: true }, "POST /api/pieces/w9/model3d": { status: "QUEUED" } });
+    const props = { ...base(), items: [catalog] };
+    const { rerender } = renderApp(<FittingItems {...props} />);
+    fireEvent.click(row("Parte de cima").getByRole("button", { name: /Já tenho/ }));
+    rerender(<FittingItems {...props} owned={{ "c:p1": "w9" }} />);
+    await waitFor(() => expect(row("Parte de cima").getByText("Na fila do 3D · 1 de 4")).toBeTruthy());
+    expect(posts(calls, "/api/pieces/w9/model3d")).toBe(1);
+  });
+
+  it("3D desligado no servidor: 3D pausado com o motivo, nunca um 0 de 4 mudo", async () => {
+    const { calls } = loggedAs(undefined, { "GET /api/pieces/w1/model3d": { status: null, featureEnabled: false } });
+    renderApp(<FittingItems {...base()} items={[wardrobe]} />);
+    const bottom = row("Parte de baixo");
+    await waitFor(() => expect(bottom.getByText("3D pausado")).toBeTruthy());
+    expect(bottom.getByRole("progressbar").getAttribute("aria-valuetext")).toContain("o 3D está desligado no momento");
+    expect(posts(calls, "/api/pieces/w1/model3d")).toBe(0);
   });
 
   it("falhou: o vocabulário do detalhe da peça e Tentar de novo (grátis)", async () => {

@@ -4241,6 +4241,9 @@
   "tryOn.gerar_precisa_peca": "Ponte al menos una prenda para generar la imagen.",
   "tryOn.girar_dica": "Arrastra para girar; desplaza o pellizca para acercar.",
   "tryOn.camera_grupo": "Girar y acercar la escena",
+  "tryOn.andar_ate_espelho": "Ir al espejo",
+  "tryOn.voltar_ao_centro": "Volver al centro",
+  "tryOn.andar_dica": "Haz clic en la escena y usa las flechas o WASD para caminar; con un mando de PlayStation, el stick izquierdo camina, el derecho y L1/R1 giran la cámara, × va al espejo y ○ vuelve al centro. Frente al espejo el avatar se ve en el cristal.",
   "tryOn.girar_esquerda": "Girar a la izquierda",
   "tryOn.girar_direita": "Girar a la derecha",
   "tryOn.aproximar": "Acercar",
@@ -6909,6 +6912,9 @@
   "tryOn.m3d.pausado": "3D en pausa",
   "tryOn.m3d.pausado_motivo": "El 3D de esta prenda no empezó: {reason}",
   "tryOn.m3d.tentar_de_novo": "Intentar generar el 3D otra vez",
+  "tryOn.m3d.desligado": "el 3D está desactivado en este momento",
+  "tryOn.m3d.guarde_para_gerar": "El 3D empieza al guardar la prenda",
+  "tryOn.nao_deu_para_guardar": "No se pudo guardar {name}: {reason}",
   "tryOn.levar_ao_espelho": "Llevar al espejo de Mi Cuarto",
   "tryOn.detalhes_previa": "Detalles de la vista previa",
   "tryOn.detalhes_previa_titulo": "Vista previa de {name}",
@@ -7870,5 +7876,8 @@
   "pieceCard.tabs": "Info y Hype de {name}",
   "fashionHype.sample": "Valores de ejemplo",
   "fashionHype.sampleHint": "Los números de las vistas previas son ejemplos para mostrar la forma y los colores; la carta de la prenda muestra solo los atributos calculados.",
-  "levelProgress.abrirMaximo": "Nivel {level}, nivel máximo alcanzado. Abrir progreso"
+  "levelProgress.abrirMaximo": "Nivel {level}, nivel máximo alcanzado. Abrir progreso",
+  "tryOn.no_espelho": "En el espejo",
+  "tryOn.espelho_vazio": "Elige prendas de las tiendas o del armario para probarte.",
+  "tryOn.espelho_provar_ia": "Ver con foto realista (IA)"
 }

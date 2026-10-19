@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { MIRROR_COLLIDER, MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, awayPoint, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, mirrorFront, mirrorRoute, reactionChoreo, reactionKindOf, type ReactionKind } from "./mirror-session";
+import { EYE_HEIGHT, MIRROR_COLLIDER, MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, awayPoint, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, mirrorFront, mirrorRoute, reactionChoreo, reactionKindOf, type ReactionKind } from "./mirror-session";
 import { BODY_RADIUS, penetration } from "./interaction";
 import { ROOM, walkArea } from "./room-bounds";
 
@@ -92,12 +92,19 @@ describe("câmera, orientação e reação", () => {
   it("na prova a câmera fica de frente para o espelho com o personagem no quadro; no quarto, a visão geral", () => {
     const mirror = new THREE.Vector3(2.0, 0, 1.1), actor = new THREE.Vector3(1.4, 0, 1.6);
     const room = cameraFor("room", actor, mirror, 1.2); expect(room.position.y).toBeCloseTo(2.65); expect(room.target.z).toBeCloseTo(0.85);
-    const tryon = cameraFor("tryon", actor, mirror, 1.2);
-    expect(tryon.target.x).toBeCloseTo(1.7); expect(tryon.target.z).toBeCloseTo(1.35);
-    expect(tryon.position.z).toBeGreaterThan(mirror.z + 2);                                   // na frente do vidro (normal +z girada 28°)
-    expect(tryon.position.x).toBeGreaterThan(tryon.target.x);
-    expect(tryon.position.distanceTo(tryon.target)).toBeGreaterThan(2.5);
-    expect(cameraFor("approach", actor, mirror, 1.2).position).toEqual(tryon.position);
+    // chegando: de frente para o espelho com os dois no quadro
+    const approach = cameraFor("approach", actor, mirror, 1.2);
+    expect(approach.target.x).toBeCloseTo(1.7); expect(approach.target.z).toBeCloseTo(1.35);
+    expect(approach.position.z).toBeGreaterThan(mirror.z + 2);                                // na frente do vidro (normal +z girada 28°)
+    expect(approach.position.distanceTo(approach.target)).toBeGreaterThan(2.5);
+    // na prova: primeira pessoa — nos olhos do personagem, olhando o vidro (vê a roupa vestida no reflexo)
+    const front = mirror.clone().addScaledVector(MIRROR_NORMAL, 0.95);                        // onde o personagem para no espelho
+    const tryon = cameraFor("tryon", front, mirror, 1.2);
+    expect(tryon.position.y).toBeCloseTo(EYE_HEIGHT);
+    expect(Math.hypot(tryon.position.x - front.x, tryon.position.z - front.z)).toBeLessThan(0.2);
+    expect(tryon.target.x).toBeCloseTo(mirror.x); expect(tryon.target.z).toBeCloseTo(mirror.z);
+    const look = tryon.target.clone().sub(tryon.position).setY(0).normalize();
+    expect(look.dot(MIRROR_NORMAL)).toBeLessThan(-0.5);                                       // olha para o vidro
     // o personagem vira para o espelho: frente = (sin yaw, 0, cos yaw)
     const yaw = facingYaw(actor, mirror); expect(Math.sin(yaw)).toBeCloseTo(0.6 / Math.hypot(0.6, -0.5)); expect(Math.cos(yaw)).toBeCloseTo(-0.5 / Math.hypot(0.6, -0.5));
   });

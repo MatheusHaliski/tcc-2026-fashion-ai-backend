@@ -150,6 +150,8 @@ export class MirrorSession {
 export function facingYaw(actor: THREE.Vector3, mirror: THREE.Vector3): number { return Math.atan2(mirror.x - actor.x, mirror.z - actor.z); }
 
 /** Normal do vidro do espelho do quarto: ele fica girado 28° em Y (room-scene.tsx). */
+/** Altura dos olhos do personagem (m) para a câmera em primeira pessoa no espelho. */
+export const EYE_HEIGHT = 1.58;
 export const MIRROR_NORMAL = new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(28)), 0, Math.cos(THREE.MathUtils.degToRad(28)));
 
 /** Meias-medidas da colisão do espelho (caixa orientada; `userData.collider` em room-scene.tsx). */
@@ -233,7 +235,13 @@ export function mirrorDistance(actor: THREE.Vector3, mirror: THREE.Vector3): num
  * e o olhar o acompanha (roomView em room-bounds.ts).
  */
 export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number, view = 0, bounds?: RoomBounds, prev?: { x: number; z: number }, track?: number): { position: THREE.Vector3; target: THREE.Vector3 } {
-  if (phase === "tryon" || phase === "approach") {
+  if (phase === "tryon") {
+    // primeira pessoa: os olhos do personagem, um palmo à frente do rosto, olhando o centro do vidro — a pessoa vê a roupa
+    // vestida no reflexo (o Reflector desenha o personagem de frente)
+    const position = new THREE.Vector3(actor.x, EYE_HEIGHT, actor.z).addScaledVector(MIRROR_NORMAL, -0.16);
+    return { position, target: new THREE.Vector3(mirror.x, 1.15, mirror.z) };
+  }
+  if (phase === "approach") {
     const mid = new THREE.Vector3((actor.x + mirror.x) / 2, 1.05, (actor.z + mirror.z) / 2);
     const side = new THREE.Vector3(-MIRROR_NORMAL.z, 0, MIRROR_NORMAL.x); // paralelo ao vidro, para enquadrar os dois
     const position = mid.clone().add(MIRROR_NORMAL.clone().multiplyScalar(3.1)).add(side.multiplyScalar(-0.35)).setY(1.75);

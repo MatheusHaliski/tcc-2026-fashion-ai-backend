@@ -416,6 +416,12 @@ function Mirror({ position, look, overlay, reduced, module, engine, live, glass 
     <group ref={body} name="espelho" position={position} rotation={[0, deg(28), 0]}>
       <mesh geometry={frameGeo} position={[0, 0.95, -0.02]} castShadow><meshStandardMaterial color={f.color ?? "#2b2622"} metalness={f.metalness ?? 0.4} roughness={f.roughness ?? 0.35} /></mesh>
       <MirrorGlass geometry={glassGeo} size={glass} />
+      {/* luminária acoplada ao espelho: barra de luz quente no topo da moldura, iluminando quem está na frente */}
+      <group name="espelho-luminaria" position={[0, 1.93, 0.06]}>
+        <mesh><boxGeometry args={[0.62, 0.05, 0.06]} /><meshStandardMaterial color="#2b2622" metalness={0.5} roughness={0.35} /></mesh>
+        <mesh position={[0, -0.028, 0.012]}><boxGeometry args={[0.56, 0.012, 0.03]} /><meshStandardMaterial color="#fff6e4" emissive="#ffe2b8" emissiveIntensity={1.6} toneMapped={false} /></mesh>
+        <pointLight position={[0, -0.12, 0.45]} intensity={5} distance={4} decay={2} color="#fff1dc" />
+      </group>
       {vanity && [-1, 1].flatMap((side) => [0, 1, 2, 3, 4].map((i) => <mesh key={`${side}-${i}`} position={[side * 0.28, 0.3 + i * 0.32, 0.04]}><sphereGeometry args={[0.024, 16, 12]} /><meshStandardMaterial color="#fff4d6" emissive="#ffd9a0" emissiveIntensity={1.2} toneMapped={false} /></mesh>))}
       {reflection && <mesh position={[0, 1.2, 0.024]}><planeGeometry args={[0.5, 1.0]} /><meshBasicMaterial map={reflection} color="#ececec" transparent alphaTest={0.02} /></mesh>}
       {/* cartões do espelho inteligente, por dentro do contorno de qualquer molde (oval e arco inclusive) */}
