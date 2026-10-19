@@ -22,7 +22,7 @@ describe("uma foto", () => {
     expect(codes(checkPhoto({ ...front, stats: { ...good, clipHigh: 0.3 } }))).toContain("TOO_BRIGHT:block");
     expect(codes(checkPhoto({ ...front, stats: { ...good, clipLow: 0.2 } }))).toContain("DEEP_SHADOWS:block");
     expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 2.8 } }))).toContain("SIDE_LIGHT:block");
-    expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 2.2 } }))).toContain("SIDE_LIGHT:warn");
+    expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 2.2 } }))).toContain("SIDE_LIGHT:block");   // luz lateral forte: a sombra assada na textura não sai mais
     expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 1.5 } }))).toContain("SIDE_LIGHT:warn");
     expect(codes(checkPhoto({ ...front, stats: { ...good, sharpness: 3 } }))).toContain("BLURRY:block");
   });
@@ -45,6 +45,7 @@ describe("uma foto", () => {
     expect(codes(checkPhoto({ ...front, occlusion: 0.13 }))).toContain("FACE_OCCLUDED:warn");   // armação de óculos
     expect(codes(checkPhoto({ ...front, occlusion: 0.25 }))).toContain("FACE_OCCLUDED:warn");   // mão e manga na testa: avisa
     expect(codes(checkPhoto({ ...front, occlusion: 0.51 }))).toContain("FACE_OCCLUDED:warn");   // barba grisalha: avisa, não recusa
+    expect(codes(checkPhoto({ ...front, occlusion: 0.6 }))).toContain("FACE_OCCLUDED:block");   // quase todo coberto: a textura sairia inventada
     expect(codes(checkPhoto({ ...front, occlusion: 0.08 }))).toEqual([]);
   });
 });

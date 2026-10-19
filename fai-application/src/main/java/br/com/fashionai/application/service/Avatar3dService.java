@@ -598,6 +598,9 @@ public class Avatar3dService {
         // volume medido (fator 0,5–2,5) e a classe dele
         if (h.containsKey("volume") && !(h.get("volume") instanceof Number vn && Double.isFinite(vn.doubleValue()) && vn.doubleValue() >= 0.5 && vn.doubleValue() <= 2.5)) h.remove("volume");
         if (h.containsKey("volumeLevel") && !HAIR_VOLUMES.contains(h.get("volumeLevel"))) h.remove("volumeLevel");
+        // risca medida na foto (−1 … 1) e variação de tom medida (0–1), hair-flow.ts e hair-tone.ts no cliente
+        if (h.containsKey("part") && !(h.get("part") instanceof Number pn && Double.isFinite(pn.doubleValue()) && Math.abs(pn.doubleValue()) <= 1)) h.remove("part");
+        if (h.containsKey("variation") && !(h.get("variation") instanceof Number vv && Double.isFinite(vv.doubleValue()) && vv.doubleValue() >= 0 && vv.doubleValue() <= 1)) h.remove("variation");
         h.keySet().retainAll(HAIR_KEYS);
         Map<String, Object> out = new LinkedHashMap<>();
         if (m.get("body") instanceof Map<?, ?> body) {
@@ -612,6 +615,10 @@ public class Avatar3dService {
         // corpo base do avatar (estimado pelo rosto no aparelho ou escolhido pela pessoa); valor desconhecido é descartado
         if ("FEMININO".equals(m.get("sex")) || "MASCULINO".equals(m.get("sex"))) {
             out.put("sex", m.get("sex"));
+        }
+        // pele do corpo medida na foto (opcional): só hex válido passa
+        if (m.get("bodySkin") instanceof String bs && HEX.matcher(bs).matches()) {
+            out.put("bodySkin", bs);
         }
         out.put("hair", h);
         // olhos (AVATAR-ID I4): opcionais; fora das regras são descartados, o avatar continua (como no app)
@@ -642,6 +649,26 @@ public class Avatar3dService {
             out.put(e.getKey(), n.doubleValue());
         }
         out.put("shape", b.get("shape"));
+        // medidas por fatia, de dentro para fora (opcional, clientes novos): 5 espessuras 0–1 e 5 cores hex ou nulas
+        if (b.get("zones") instanceof Map<?, ?> z && z.get("thickness") instanceof List<?> zt && zt.size() == 5
+                && z.get("color") instanceof List<?> zc && zc.size() == 5) {
+            boolean ok = true;
+            List<Object> th = new ArrayList<>(), co = new ArrayList<>();
+            for (Object t : zt) {
+                if (!(t instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < 0 || n.doubleValue() > 1) { ok = false; break; }
+                th.add(n.doubleValue());
+            }
+            for (Object cc : zc) {
+                if (cc != null && !isHex(cc)) { ok = false; break; }
+                co.add(cc);
+            }
+            if (ok) {
+                Map<String, Object> zones = new LinkedHashMap<>();
+                zones.put("thickness", th);
+                zones.put("color", co);
+                out.put("zones", zones);
+            }
+        }
         return out;
     }
 
@@ -696,7 +723,7 @@ public class Avatar3dService {
     /** Cabelo: comprimento e textura medidos na foto (lib/avatar3d/hair.ts) e a silhueta por altura. */
     static final List<String> HAIR_LENGTHS = List.of("bald", "buzz", "short", "medium", "long");
     static final List<String> HAIR_TEXTURES = List.of("straight", "wavy", "curly", "coily");
-    static final java.util.Set<String> HAIR_KEYS = java.util.Set.of("present", "color", "top", "side", "bottom", "fringe", "cut", "length", "texture", "cover", "outline", "tone", "volume", "volumeLevel");
+    static final java.util.Set<String> HAIR_KEYS = java.util.Set.of("present", "color", "top", "side", "bottom", "fringe", "cut", "length", "texture", "cover", "outline", "tone", "volume", "volumeLevel", "part", "variation");
     static final List<String> HAIR_VOLUMES = List.of("flat", "normal", "full", "big");
     static final List<String> HAIR_FAMILIES = List.of("natural", "ash", "golden", "copper", "red", "gray", "white");
 

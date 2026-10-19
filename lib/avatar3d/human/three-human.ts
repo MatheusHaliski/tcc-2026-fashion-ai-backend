@@ -176,8 +176,9 @@ export function clipEyeGeometryForExport(h: Human): THREE.BufferGeometry | null 
 
 export function skinMaterial(look: HumanLook): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
-    color: look.skinMap ? "#ffffff" : look.skin, map: look.skinMap ?? null, roughness: 0.58, metalness: 0,
-    sheen: 0.35, sheenRoughness: 0.7, sheenColor: new THREE.Color(look.skin).lerp(new THREE.Color("#ffd9c8"), 0.35),
+    color: look.skinMap ? "#ffffff" : look.skin, map: look.skinMap ?? null, roughness: 0.55, metalness: 0,
+    // sheen discreto e quase na cor da própria pele: o véu claro de antes esbranquiçava o corpo sob a luz do estúdio
+    sheen: 0.22, sheenRoughness: 0.6, sheenColor: new THREE.Color(look.skin).lerp(new THREE.Color("#ffd9c8"), 0.18),
   });
   m.name = "pele";
   return m;
