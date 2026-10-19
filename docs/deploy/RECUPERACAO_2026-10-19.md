@@ -7,13 +7,13 @@ Auditadas as 540 execuções GitHub Actions retornadas entre 12 e 19/10. O CSV r
 1. `quality.ts` usava `detailBlock/detailWarn` não definidos. Foram declarados os dois limiares heurísticos de cobertura de detalhe, correspondendo aos estados de bloqueio/aviso já testados. Isso não comprova realismo nem preservação de identidade.
 2. `test_audit_tryon_rendering.py` dependia da ordem de importação dos outros testes. Agora declara explicitamente o diretório do CLI, como os demais testes do catálogo.
 3. O componente da frente da peça perdeu o badge de Hype enquanto testes/selos ainda esperavam seus estados. O badge vivo foi integrado ao label Info, com carregamento, valor real, tendência real e indisponibilidade. Removido o score duplicado no botão de virar; o teste de selos verifica a nova posição.
-4. A prévia estática Electro usava o GIF animado embora existisse PNG no índice. Agora usa a imagem estática correspondente.
+4. A prévia estática Electro usava o GIF animado embora existisse PNG no índice. Agora usa a imagem estática correspondente, preservando a prévia animada em campo separado. A espera do teste Splash foi sincronizada com o carregamento lazy dos seis src; a falha intermitente foi reproduzida antes do ajuste.
 
 ## Verificação
 
 - TypeScript aprovado após restaurar os limites ausentes.
 - Suíte completa antes dos últimos ajustes: 1713 testes aprovados, 6 falhas reproduzidas, 2 ignorados (218 arquivos). As seis falhas correspondem aos componentes/preview acima.
-- Regressões depois dos ajustes: 67 testes aprovados, cobrindo qualidade fotográfica, arte e Hype/selos.
+- Regressões depois dos ajustes: 79 testes aprovados, cobrindo qualidade fotográfica, arte e Hype/selos.
 - Catálogo: 225 testes executados, 13 ignorados, sem falhas.
 - Build de produção Next.js aprovado. A primeira tentativa local falhou pelo link externo de node_modules do worktree; dependências locais corrigidas e build repetido, sem alterar configuração de produção.
 - Nenhum dado do MySQL, chave de criptografia, migração aplicada ou variável secreta foi alterado.
