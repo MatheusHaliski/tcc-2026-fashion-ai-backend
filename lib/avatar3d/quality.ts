@@ -19,7 +19,7 @@ export const LIMITS = {
   sideYawMin: 18, sideYawMax: 62,
   lumBlock: 50, lumWarn: 75, lumHigh: 215, clipHighBlock: 0.25, clipHighWarn: 0.1, clipLowBlock: 0.15,
   balanceWarn: 1.4, balanceBlock: 1.9,
-  sharpBlock: 6, sharpWarn: 14, detailBlock: 0.08, detailWarn: 0.16,
+  sharpBlock: 6, sharpWarn: 14,
   blink: 0.55, jawOpen: 0.35, rmsWarn: 0.9, occWarn: 0.115, occBlock: 0.55,
 } as const;
 
