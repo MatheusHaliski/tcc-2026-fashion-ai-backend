@@ -143,7 +143,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
       <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} animate={preview} />
       <div className="pc-frame">
         <div className="pc-content">
-          {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" trailing={flippable ? <CardFlipButton side="front" scoreState={hypeState} /> : undefined} />}
+          {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" trailing={flippable ? <CardFlipButton side="front" /> : undefined} />}
           {tilt&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
 
           {selectable ? (
@@ -164,7 +164,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 </span>
                 {zone === "META_BLOCK" && <span className="pc-sub"><SealSlot inline size="sm" seals={seals} /></span>}
                 {/* atributos da peça (Info) e dados do Hype em abas separadas: uma de cada vez, sem misturar */}
-                <PieceCardPanels piece={piece} summary={hype.summary} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} />
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} />
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
                 {/* no feed, o espaço do selo só aparece quando há selo (o lugar reservado vazio fica na prévia) */}
                 {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}

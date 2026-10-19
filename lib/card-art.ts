@@ -79,7 +79,7 @@ export function bundledAuraPresets(): AuraPresetOption[] {
       const v = ART_INDEX.variants[vid];
       const video = isVideo(v.animated);
       return { id: vid, code: v.code, theme: v.theme, animatedUrl: video ? media(v.animated) : undefined,
-        static: { previewUrl: media(video ? v.preview ?? v.card : v.animated ?? v.preview ?? v.card) } };
+        static: { previewUrl: media(v.preview ?? v.card) } };
     }),
   }));
   return [{ id: "aura_hype", name: tr("lib.cardArt.aura_hype"), archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],
