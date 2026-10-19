@@ -69,10 +69,11 @@ export function useInView<T extends Element>(): [(el: T | null) => void, boolean
  */
 const CONTAIN = { position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit", pointerEvents: "none", zIndex: 0 } as const;
 
-export function ArtStage({ bg, art, density, pieceHex }: { bg?: Record<string, unknown> | null; art: PieceArt; density: "compact" | "expanded"; pieceHex?: string | null }) {
+export function ArtStage({ bg, art, density, pieceHex, animate = false }: { bg?: Record<string, unknown> | null; art: PieceArt; density: "compact" | "expanded"; pieceHex?: string | null; animate?: boolean }) {
   const resolved = resolveCardArt(bg);
-  // feed leve: no card compacto a arte é estática (sem animação de preset e, no lugar do vídeo, o pôster dele)
-  const user = density === "expanded" || resolved.kind === "none" || !!fashionPreset(studioOf(bg).compositionPreset)?.video ? resolved
+  // O feed permanece leve, mas o preview do Background Studio precisa mostrar a Aura selecionada em movimento.
+  const user = animate || density === "expanded" || resolved.kind === "none" || !!fashionPreset(studioOf(bg).compositionPreset)?.video
+    ? resolved
     : { ...resolved, animation: null, video: undefined, image: resolved.image ?? resolved.video?.poster ?? undefined };
   const { family, variant, season } = art.template;
   const fx = art.effects;

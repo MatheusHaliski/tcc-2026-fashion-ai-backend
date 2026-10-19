@@ -1,0 +1,631 @@
+{
+  "summary": {
+    "products": 13304,
+    "taxonomy_updates": 62,
+    "image_pipeline_candidates": 9830,
+    "whole_frame_candidates": 10833,
+    "manual_source_required": 547
+  },
+  "taxonomy_updates": [
+    {
+      "product_id": "01374de6-e4bb-440d-9a0f-139b7dafe4e4",
+      "brand": "Dickies",
+      "product_name": "FLEX Cooling Regular Fit Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "02306525-7671-45b7-bca0-ce6e2abe0e00",
+      "brand": "Jack & Jones",
+      "product_name": "Tapered Fit Chino Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "04451e99-26b7-4a0e-9940-6698c384bacf",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's® 468 Stay Loose Bege",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "05e08529-8ca5-4cb1-a382-9a2702cc8c43",
+      "brand": "Carhartt WIP",
+      "product_name": "Regular Cargo Short",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "0817b1df-229d-40e7-abc3-cc88bf0cad89",
+      "brand": "Rip Curl",
+      "product_name": "Hyped Up 20\" Denim Walkshort",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "0a2ddfd2-aad5-4404-83e7-a7e985333bb1",
+      "brand": "Rip Curl",
+      "product_name": "Hyped Up Denim Short",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "0b6e0250-35ac-4f4f-894e-c56695f4b537",
+      "brand": "Rip Curl",
+      "product_name": "Classic Surf Trail Cargo Short",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "0d434bbc-938c-49de-8597-9a4045b9ed15",
+      "brand": "J.Crew",
+      "product_name": "Denim bermuda short",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "0f4ea719-f2e1-48a8-b8fd-201b9a344428",
+      "brand": "Rip Curl",
+      "product_name": "Classic Surf Chino Walkshort",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "12b6965c-4f4f-4a78-8501-ba0d5d1b4877",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's® 412 Slim",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "17b54fcd-29bc-48e5-9d79-a8526a17e31f",
+      "brand": "J.Crew",
+      "product_name": "Relaxed denim short in chestnut wash",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "1b8d9d39-d981-4428-82f7-e157de3e8558",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's® 412 Slim Lavagem Escura",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "2ab80671-70e1-4bd8-9a1a-ddc06055293c",
+      "brand": "Quiksilver",
+      "product_name": "Waterman Maldive Atoll 20\" Cargo Shorts - Silver Birch",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "2f272dce-b837-4633-a4ba-31b1516b5f84",
+      "brand": "J.Crew",
+      "product_name": "Mid-rise denim short in Squash wash",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "32c32688-c496-41ef-93e7-8c1572e40fdb",
+      "brand": "Rip Curl",
+      "product_name": "Nu Dose 22\" Denim Walkshort",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "33da7814-a389-40e1-9909-ed197b2c1991",
+      "brand": "Rip Curl",
+      "product_name": "Classic Surf Trail Cargo Short",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "3450d0b8-2250-4729-8fa1-41afc6659504",
+      "brand": "J.Crew",
+      "product_name": "3\" pleated heritage chino short",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "424191bf-5d42-4131-84ea-a30be74b2351",
+      "brand": "Champion",
+      "product_name": "8\" Fleece Cargo Short, C Logo",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "47f04b8e-3d5e-455f-8832-5c7de10bd97e",
+      "brand": "Levi's",
+      "product_name": "Bermuda Levi's XX Chino Ez",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "4a395ba4-93c4-4dc9-805b-a1c8f941eecc",
+      "brand": "Jack & Jones",
+      "product_name": "Tapered Fit Chino Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "4d3a83ef-ea4f-4a24-a64c-410aa49a031b",
+      "brand": "Dickies",
+      "product_name": "FLEX Cooling Regular Fit Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "4ecf86ac-e0d9-4bb3-b7bc-1eb60846720f",
+      "brand": "Rip Curl",
+      "product_name": "Hyped Up 20\" Denim Walkshort",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "4fb2914e-9998-4965-82a3-53086e8829a0",
+      "brand": "Dickies",
+      "product_name": "FLEX Cooling Regular Fit Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "53a927ff-e268-418f-b05e-f95e9ec70ca7",
+      "brand": "Rip Curl",
+      "product_name": "Super Computer Denim Walkshort",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "5708a379-94ce-4b1c-8bff-f269de29ff76",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's® 468 Stay Loose Preta",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "5772b221-e641-4607-9957-6bfc67aac842",
+      "brand": "J.Crew",
+      "product_name": "Mid-rise denim short",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "63714159-9935-42a6-9795-5a9b4bfbceb2",
+      "brand": "Dickies",
+      "product_name": "FLEX Relaxed Fit Duck Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "65031d78-069d-4d4f-8dd4-bc815f7f1c5a",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's® 405® Standard Preta",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "684d15b6-bb28-446e-8064-93f3ab469361",
+      "brand": "Jack & Jones",
+      "product_name": "Tapered Fit Chino Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "69e411d3-ff21-471c-bd00-9697cc3ac0f6",
+      "brand": "Dickies",
+      "product_name": "FLEX Relaxed Fit Duck Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "6af691d8-a86c-435f-8a0a-2f740092da32",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's® 405 Standard",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "6fb9446e-aeef-485a-a14b-1d16ec7beae8",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's 468 Stay Loose Lavagem Escura",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "75db63cc-1ff5-46bc-b1e3-9cb40abf0558",
+      "brand": "Jack & Jones",
+      "product_name": "Plus Size Regular Fit Chino Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "774144d4-5526-4ae6-9fe8-62e12f8f908b",
+      "brand": "Dickies",
+      "product_name": "Pro Series Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "78e8c672-5a2f-44d6-ac36-a0c7a0677bc8",
+      "brand": "Dickies",
+      "product_name": "Pro Series Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "7e5e51dc-2b36-4d47-a924-4c92309aa346",
+      "brand": "J.Crew",
+      "product_name": "High-rise denim short",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "8787ce58-7d06-44c8-a434-e2ecf90b991a",
+      "brand": "Rip Curl",
+      "product_name": "Hyped Up 20\" Denim Walkshort",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "9469a989-940b-49b4-a5bd-843108b6c2d7",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's 501 Original Lavagem Clara",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "95291fc3-7353-4127-92bc-9534fbaf4f10",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's® 405 Standard",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "9c93dc26-0ae4-4df4-bfa7-9beb9b80a4a7",
+      "brand": "Armani",
+      "product_name": "Flat front chino shorts in stretch cotton satin Essential",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "9cead989-f20f-4bde-ab15-77c14a19b483",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's® XX Authentic Lavagem Clara",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "9d87fd48-aff2-4d67-b0c4-a84a1319dc66",
+      "brand": "Dickies",
+      "product_name": "FLEX Cooling Regular Fit Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "a098f583-045d-4722-8a67-7a13fe17528e",
+      "brand": "Rip Curl",
+      "product_name": "Tabby Denim Short",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "a6d31d59-889c-4710-81a0-21a8d5228921",
+      "brand": "Dickies",
+      "product_name": "FLEX Relaxed Fit Duck Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "a7978775-c904-4bd8-ae4f-bfa24b5b5cb2",
+      "brand": "Levi's",
+      "product_name": "Bermuda Levi's® XX Chino II Marrom",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "af9c25fc-9ba3-45ba-95c7-ce1edb483f74",
+      "brand": "Dickies",
+      "product_name": "FLEX Relaxed Fit Duck Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "b8c84b88-f975-473b-a27c-dd290bd65bc8",
+      "brand": "Champion",
+      "product_name": "8\" Fleece Cargo Short, C Logo",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "c1c8195d-adcb-47c4-9f5b-d38aec047962",
+      "brand": "Jack & Jones",
+      "product_name": "Tapered Fit Chino Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "c1ec1cfc-c105-4a53-84c4-c2850864dd9b",
+      "brand": "Rip Curl",
+      "product_name": "Nu Dose 22\" Denim Walkshort",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "c4e9d60d-0724-40fd-b11f-ef744efafafe",
+      "brand": "Jack & Jones",
+      "product_name": "Relaxed Fit Jeans-Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "cb339e7c-4433-4ee5-ab32-61266fa0a9dc",
+      "brand": "Levi's",
+      "product_name": "Bermuda Jeans Levi's 501® Hemmed",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "d14245bc-e0fe-41d3-93ea-79cda2fb5567",
+      "brand": "Jack & Jones",
+      "product_name": "Regular Fit Chino Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "d702922c-4b78-4ba0-b31b-9ad678254433",
+      "brand": "Jack & Jones",
+      "product_name": "Baggy fit Jeans-Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "da2eb032-889a-41dd-b2b7-86a4cf0e9427",
+      "brand": "Rip Curl",
+      "product_name": "Las Dalias Relaxed Denim Short",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "dae95fef-78ea-4985-ab28-3131d249b1ea",
+      "brand": "Dickies",
+      "product_name": "Pro Series Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "e0d7fc29-8950-4904-ad68-341f2f63a639",
+      "brand": "Dickies",
+      "product_name": "FLEX Cooling Regular Fit Cargo Shorts, 11\"",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "e37131fc-4ff2-47bf-a7d7-650d2e064d60",
+      "brand": "Jack & Jones",
+      "product_name": "Relaxed Fit Jeans-Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "e4c3749c-67c1-49d8-83a8-6152d8348387",
+      "brand": "J.Crew",
+      "product_name": "Utility-pocket denim short",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "e93095b0-1c6e-4c10-974a-674251dc33c5",
+      "brand": "Rip Curl",
+      "product_name": "Pacific Rider Denim Short",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "f6dfee94-f65d-4f44-b50c-e45bfffd1f45",
+      "brand": "Rip Curl",
+      "product_name": "Classic Surf Trail Cargo Short",
+      "old_category": "lower_piece",
+      "old_subcategory": "cargo_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "fb53ef70-b312-4a0f-beff-186a08ba6304",
+      "brand": "Vero Moda",
+      "product_name": "VMTESS Jeans-Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "jeans",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    },
+    {
+      "product_id": "ff6dc976-f5de-455b-8fd2-3979a56de5d1",
+      "brand": "Jack & Jones",
+      "product_name": "Plus Size Regular Fit Chino Shorts",
+      "old_category": "lower_piece",
+      "old_subcategory": "chino_pants",
+      "new_category": "lower_piece",
+      "new_subcategory": "shorts",
+      "version": 0
+    }
+  ]
+}

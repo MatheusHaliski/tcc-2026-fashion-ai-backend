@@ -117,6 +117,21 @@ describe("Background Studio — prévia das variações Aura em vídeo", () => {
     await waitFor(() => expect(variations.querySelector(`video[poster="${poster}"]`)?.getAttribute("src")).toBe(src));
     expect(variations.querySelectorAll("video")).toHaveLength(6);
   });
+
+  it("mostra o formato dentro das variações da AURA comum e preserva a variação ativa", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    const onBg = vi.fn();
+    renderApp(<Studio onBg={onBg} initialBg={{ aura: { variantId: "aura_geometry__geometry_01" } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: /AURA comum/ }));
+
+    const format = await screen.findByRole("group", { name: /Formato/ });
+    fireEvent.click(within(format).getByRole("button", { name: /Imagem variada/ }));
+
+    expect(onBg).toHaveBeenLastCalledWith(expect.objectContaining({
+      aura: { variantId: "aura_geometry__geometry_01", format: "MOSAICO" },
+    }));
+  });
 });
 
 
