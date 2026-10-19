@@ -16,6 +16,7 @@ beforeEach(() => resetAutoQueue());
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const NAMES: Record<FittingSlot, string> = { upper_piece: "Parte de cima", lower_piece: "Parte de baixo", shoes_piece: "Calçado", accessory_piece: "Acessório" };
 const catalog: FittingItem = { key: "c:p1", source: "catalog", slot: "upper_piece", wear: "TOP", name: "Blazer de alfaiataria", brand: { name: "Animale", logoUrl: null }, category: "upper_piece", subcategory: "blazer", imageUrl: "/media/b.png", officialUrl: "https://animale.com.br/x", sourceDomain: "animale.com.br", productId: "p1", colorHex: "#aabbcc", addedAt: 1 };
+const catalogBottom: FittingItem = { ...catalog, key: "c:p2", slot: "lower_piece", wear: "BOTTOM", name: "Calça de alfaiataria", category: "lower_piece", subcategory: "tailored_pants", productId: "p2" };
 const wardrobe: FittingItem = { key: "w:w1", source: "wardrobe", slot: "lower_piece", wear: "BOTTOM", name: "Calça chevron", brand: null, category: "lower_piece", subcategory: "tailored_pants", imageUrl: "/media/c.png", pieceId: "w1", addedAt: 2 };
 const base = () => ({ items: [catalog, wardrobe], products: {}, owned: {}, busyOwn: null, status: "", slotNames: NAMES, onVariantChange: vi.fn(), onOwn: vi.fn(), onRemove: vi.fn() });
 const row = (slot: string) => within(screen.getByText(slot, { selector: ".piece-row-kicker" }).closest("li")!);
@@ -89,6 +90,17 @@ describe("FittingItems — card compacto de peça", () => {
     await waitFor(() => expect(posts(calls, "/api/pieces/w9/model3d")).toBe(1));
     await waitFor(() => expect(row("Parte de cima").getByText("Na fila do 3D · 1 de 4")).toBeTruthy());
     expect(row("Parte de cima").getByRole("link", { name: /No seu guarda-roupa/ }).getAttribute("href")).toBe("/pieces/w9");
+  });
+
+  it("peça inferior: Guardar e gerar usa imediatamente o ID devolvido pelo salvamento", async () => {
+    const { calls } = loggedAs(undefined, { "POST /api/pieces/w-bottom/model3d": { status: "QUEUED" } });
+    const onOwn = vi.fn().mockResolvedValue("w-bottom");
+    renderApp(<FittingItems {...base()} items={[catalogBottom]} onOwn={onOwn} />);
+    const bottom = row("Parte de baixo");
+    fireEvent.click(bottom.getByRole("button", { name: "Mais ações · Calça de alfaiataria" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Guardar a peça e gerar o 3D" }));
+    await waitFor(() => expect(posts(calls, "/api/pieces/w-bottom/model3d")).toBe(1));
+    expect(onOwn).toHaveBeenCalledWith(expect.objectContaining({ key: "c:p2", category: "lower_piece" }));
   });
 
   it("guardada pelo Já tenho (sem o menu): o 3D da peça guardada entra na fila sozinho, uma vez", async () => {
