@@ -34,9 +34,11 @@ const BRAND_PAGE_SIZE = 12;
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true, onClearCategory }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true, onClearCategory, onClearBrand }: {
   /** Modo embutido: limpa também a categoria controlada pelo formulário. */
   onClearCategory?: () => void;
+  /** a loja escolhida pertence a quem embute a busca (Provador): "Limpar seleção" também a desmarca lá */
+  onClearBrand?: () => void;
   initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void | Promise<void>;
   /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
@@ -250,7 +252,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const hasFilters = !!(category || subcategory || brand || query || color || gender || showAll || allForText);
   const clearFilters = () => {
     setOwnCategory(""); setSubcategoryState(""); onContext?.({ subcategory: "" }); onClearCategory?.();
-    setBrand(""); setBrandRef(null); setBrandPage(0); setQuery(""); setColor(""); setGender("");
+    setBrand(""); setBrandRef(null); setBrandPage(0); onClearBrand?.(); setQuery(""); setColor(""); setGender("");
     setShowAll(false); setAllForText(false); setRes(null); setError(null);
   };
   const brandLabel = brandRef?.name ?? res?.intent.brand ?? brand.trim();
@@ -278,6 +280,8 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
                 : filtered.length ? t("catalog.encontramos", { count: filtered.length, tipo: subcategory ? subcategoryLabel(subcategory).toLowerCase() : t("common.pieces").toLowerCase(), marca: res?.intent.brand ?? "" }) : res?.message ?? t("catalog.nao_encontramos")}
             </h2>
             {brandRef && <BrandLogo name={brandRef.name} src={brandRef.logoUrl} size={22} />}
+            {browsing && acervo && selectionLabels.length > 0 && hasFilters &&
+              <Button size="sm" onClick={clearFilters} data-testid="catalog-clear-selection">{t("catalog.limpar_selecao")}</Button>}
             <PhotoFramingToggle compact value={photoFraming} onChange={setPhotoFraming} className="ml-auto" />
           </div>
           {!browsing && !!res && !!params.q && !params.color && !discover.result?.results.length && (

@@ -63,6 +63,8 @@ export function StoreBrowser({
         key={store}
         initial={{ brand: store }}
         category={category}
+        onClearCategory={() => onCategoryChange("")}
+        onClearBrand={() => onStoreChange("")}
         browse
         onPick={onPick}
         onResults={onResults}
