@@ -1,0 +1,4 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /search;GET /api/feed (direto);GET /api/feed;DiscoveryController;SearchService.communityFeed()
+Tela /search;GET /api/search (direto);GET /api/search;DiscoveryController;SearchService.search()
+Tela /feed;POST /api/interactions/{type}/{id}/reactions (direto);POST /api/interactions/{type}/{id}/reactions;SocialController;SocialService.react()

@@ -18,7 +18,6 @@ import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
 import { useTheme } from "@/lib/theme/theme";
-import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { CardBorder } from "@/components/card-border";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
@@ -67,11 +66,11 @@ export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: strin
 import {ImpersonationMedia,impersonationMedia} from "@/components/impersonation-media";
 import {useFashionDepth} from "@/lib/hype/use-fashion-depth";
 import {FashionMotionButton} from "@/components/hype/fashion-motion-button";
-import {FashionCardHeader,FashionCardStats} from "@/components/hype/fashion-card-panel";
+import {FashionCardStats} from "@/components/hype/fashion-card-panel";
 import {PieceCardPanels} from "@/components/piece-card-panels";
 import {fashionCardLevel} from "@/lib/hype/fashion-card";
 
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming }: {
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming, expanded = false }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   /** legendas e ações extras da lista — renderizadas DENTRO do card (nunca soltas abaixo dele) */
   extra?: ReactNode;
@@ -79,6 +78,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   flip?: boolean;
   /** enquadramento forçado (prévia do criador); sem ele vale o da peça e depois o padrão de quem vê */
   framing?: PhotoFraming;
+  /** prévia ampliada: usa o enquadramento final do card, sem depender da proporção da peça */
+  expanded?: boolean;
 }) {
   const detail = useDetailModal();
   const { t, fmtMoney } = useI18n(); const { user } = useAuth();
@@ -139,12 +140,12 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
     <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled?(fashionCardLevel(hype.summary)??"PENDING"):undefined} className={`fai-card piece-card ${auraEnabled?"is-fashion-hype":""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
       <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState}/>
       {tilt&&<span className="fashion-depth-glare" aria-hidden/>}
-      <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} />
+      <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} animate={preview} />
       <div className="pc-frame">
         <div className="pc-content">
-          {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" />}
+          {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" trailing={flippable ? <CardFlipButton side="front" scoreState={hypeState} /> : undefined} />}
           {tilt&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
-          {auraEnabled && <FashionCardHeader summary={hype.summary} state={hypeState}/>}
+
           {selectable ? (
             <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
               <span className="pc-media" style={mediaStyle}>{media}</span>
@@ -167,7 +168,6 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
                 {/* no feed, o espaço do selo só aparece quando há selo (o lugar reservado vazio fica na prévia) */}
                 {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
-                {!preview && <span className="pc-hype-row"><HypeBadge state={hypeState} summary={hype.summary} />{flippable && <CardFlipButton side="front" />}</span>}
               </div>
             </>
           )}

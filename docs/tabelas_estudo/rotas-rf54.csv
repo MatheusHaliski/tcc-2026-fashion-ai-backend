@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela (Next.js);POST /api/lens/scans (direto);POST /api/lens/scans;LensController;LensService.create()

@@ -14,6 +14,9 @@ it("previews each AURA Hype model as a full card with its own effect, colors and
 
   const presets = [...document.querySelectorAll<HTMLElement>(".aura-hype-preset")];
   expect(presets).toHaveLength(HYPE_PRESETS.length);
+  expect(document.querySelector('[data-preset-kind="static"]')).toBeTruthy();
+  expect(document.querySelector('[data-preset-kind="dynamic"]')).toBeTruthy();
+  expect(document.querySelectorAll('.aura-hype-preset-band')).toHaveLength(2);
   const effects = [...document.querySelectorAll(".aura-hype-preset .aura-hype")];
   expect(new Set(effects.map((e) => e.getAttribute("data-preset"))).size).toBe(HYPE_PRESETS.length);
   expect(new Set(presets.map((p) => p.style.getPropertyValue("--hype-ink"))).size).toBeGreaterThan(1);

@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /points/ganhar;GET /api/me/points (direto);GET /api/me/points;HighlightsController;FaiPointsService.account()

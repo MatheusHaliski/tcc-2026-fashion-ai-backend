@@ -178,6 +178,15 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
             : v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
           <span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
       </OptionStrip>}
+      {family === "COMMON" && auraPreset && legacyAuraFamily(auraPreset.id) === "COMMON" && value.aura && <OptionStrip title={t("backgroundStudio.formato_rf11_7_6")}>
+        {(["IMAGEM_UNICA", "MOSAICO"] as const).map((format) => <button key={format} type="button" className="opt-tile aura-format-tile"
+          aria-pressed={(value.aura?.format ?? "IMAGEM_UNICA") === format} onClick={() => onChange({ aura: { ...value.aura!, format } })}>
+          <span className={`opt-thumb aura-format-thumb ${format === "MOSAICO" ? "is-mosaic" : "is-single"}`} aria-hidden>
+            {format === "MOSAICO" ? <><i /><i /><i /><i /></> : <i />}
+          </span>
+          <span className="opt-name">{format === "MOSAICO" ? t("backgroundStudio.mosaico_modelagem_11") : t("backgroundStudio.imagem_unica")}</span>
+        </button>)}
+      </OptionStrip>}
           </div>);
   return (
     <div className="grid gap-3">
@@ -216,9 +225,6 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
         {(cat?.materials ?? []).map((m) => <button key={m.id} type="button" aria-pressed={value.materialId === m.id} className="opt-tile" title={m.finish} onClick={() => onChange({ materialId: value.materialId === m.id ? null : m.id })}>
           {m.static?.previewUrl ? <img src={m.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}<span className="opt-name">{m.name}{auraPreset?.recommendedMaterials?.includes(m.id) && " ★"}</span></button>)}
       </OptionStrip>
-      {value.aura && value.materialId && <OptionStrip title={t("backgroundStudio.formato_rf11_7_6")} kind="row">
-        {(["IMAGEM_UNICA", "MOSAICO"] as const).map((f) => <Chip key={f} active={value.aura?.format === f} onClick={() => onChange({ aura: { ...value.aura!, format: f } })}>{f === "MOSAICO" ? t("backgroundStudio.mosaico_modelagem_11") : t("backgroundStudio.imagem_unica")}</Chip>)}
-      </OptionStrip>}
     </div>
   );
 }

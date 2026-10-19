@@ -1,0 +1,4 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /brands/[slug];POST /api/seals/uploads (direto);POST /api/seals/uploads;SealController;SealDesignService.uploadCore()
+Tela /brands/[slug];POST /api/seals/draft (direto);POST /api/seals/draft;SealController;SealService.draft()
+Tela /brands/[slug];POST /api/seals (direto);POST /api/seals;SealController;SealService.createSeal()
