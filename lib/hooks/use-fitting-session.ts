@@ -120,7 +120,7 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
   }
 
   /** Guarda a peça da loja no guarda-roupa; devolve se guardou (a linha do provador só pede o 3D da peça guardada). */
-  async function ownIt(item: FittingItem): Promise<boolean> {
+  async function ownIt(item: FittingItem): Promise<string | false> {
     if (!item.productId || busyOwn) return false;
     setBusyOwn(item.key);
     try {
@@ -130,7 +130,7 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
       setOwned((current) => ({ ...current, [item.key]: piece.id }));
       toast.success(t("tryOn.adicionada_ao_guarda_roupa", { name: item.name }));
       onOwned();
-      return true;
+      return piece.id;
     } catch (error) {
       // o Provador não tem formulário: "Corrija os campos destacados" não aponta nada — mostra o que o servidor recusou
       const fields = error instanceof ApiError && error.code === "FORMULARIO_INVALIDO" ? Object.values(error.fields).filter((v) => typeof v === "string") : [];

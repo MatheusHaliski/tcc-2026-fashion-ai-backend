@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { api } from "@/lib/api/client";
 import { FaiIcon } from "@/components/fai-icon";
 import { Button, Card, Dialog, cn, type MenuItem } from "@/components/ui";
 import { useModel3d } from "@/components/model3d-panel";
@@ -24,7 +25,7 @@ export interface FittingItemsProps {
   slotNames: Record<FittingSlot, string>;
   onVariantChange: (item: FittingItem, variant: CatalogVariant) => void;
   /** guarda a peça da loja no guarda-roupa; `false` quando não guardou (erro, ou outra peça sendo guardada) */
-  onOwn: (item: FittingItem) => void | Promise<boolean | void>;
+  onOwn: (item: FittingItem) => void | Promise<string | false | void>;
   onRemove: (slot: FittingSlot) => void;
   /** abre a prévia 2D no espelho (o mesmo avatar, de frente e parado) com o look atual */
   onPreview2d?: (item: FittingItem) => void;
@@ -101,7 +102,20 @@ function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn
   }, [pieceId, model.st]); // eslint-disable-line react-hooks/exhaustive-deps
   // antes da primeira resposta, o estado que veio com a peça (sem piscar "0 de 4" numa peça que já tem 3D)
   const progress = model3dProgress(model.st ?? { status: item.model3dStatus, modelUrl: item.model3dUrl });
-  const saveAndGenerate = () => { wantAfterOwn.current = true; onOwn(item); };
+  const saveAndGenerate = async () => {
+    wantAfterOwn.current = true;
+    const savedId = await onOwn(item);
+    if (typeof savedId !== "string") return;
+    wantAfterOwn.current = false;
+    AUTO_QUEUED.set(savedId, null);
+    try {
+      await api.post(`/api/pieces/${savedId}/model3d`);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      AUTO_QUEUED.set(savedId, reason);
+      setPaused(reason);
+    }
+  };
   // peça da loja ainda não guardada: o 3D não "travou", ele espera a peça entrar no guarda-roupa
   const idle = !pieceId ? t("tryOn.m3d.guarde_para_gerar") : null;
   return { pieceId, model, progress, paused: progress.phase === "none" ? paused : null, idle, queue, saveAndGenerate };
