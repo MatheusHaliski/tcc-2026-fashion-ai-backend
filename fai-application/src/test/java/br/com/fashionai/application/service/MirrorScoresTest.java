@@ -53,12 +53,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * RF53 · Lote Final (P3-07) — Espelho com LookScores: o look montado no espelho (manual ou pelo Vista-me) traz os mesmos
- * seis números do Copilot e do Autopiloto (LookScorer): compatibilidade com o DNA, Hype (média do v2 das peças, Hype
- * pessoal do dono), novidade, reutilização, uso comprovado e sustentabilidade. Só peças do próprio dono entram; dimensão
- * sem base fica nula ("—", nunca 0); o GET só lê o Hype gravado — nada recalcula nem vira sinal.
- */
 @SuppressWarnings("unchecked")
 class MirrorScoresTest {
     private final UUID uid = UUID.randomUUID();
