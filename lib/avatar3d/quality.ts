@@ -19,7 +19,7 @@ export const LIMITS = {
   sideYawMin: 18, sideYawMax: 62,
   lumBlock: 50, lumWarn: 75, lumHigh: 215, clipHighBlock: 0.25, clipHighWarn: 0.1, clipLowBlock: 0.15,
   balanceWarn: 1.4, balanceBlock: 1.9,
-  sharpBlock: 6, sharpWarn: 14,
+  sharpBlock: 6, sharpWarn: 14, detailBlock: 0.08, detailWarn: 0.16,
   blink: 0.55, jawOpen: 0.35, rmsWarn: 0.9, occWarn: 0.115, occBlock: 0.55,
 } as const;
 
@@ -51,6 +51,8 @@ export function checkPhoto(p: PhotoCheck): Issue[] {
     else if (s.balance > L.balanceWarn) out.push({ code: "SIDE_LIGHT", severity: "warn", params: { ratio: +s.balance.toFixed(2) } });
     if (s.sharpness < L.sharpBlock) out.push({ code: "BLURRY", severity: "block" });
     else if (s.sharpness < L.sharpWarn) out.push({ code: "BLURRY", severity: "warn" });
+    if (s.detailCoverage < L.detailBlock) out.push({ code: "DETAIL_SPARSE", severity: "block", params: { pct: Math.round(s.detailCoverage * 100) } });
+    else if (s.detailCoverage < L.detailWarn) out.push({ code: "DETAIL_SPARSE", severity: "warn", params: { pct: Math.round(s.detailCoverage * 100) } });
   }
   const q = p.pose;
   if (q) {

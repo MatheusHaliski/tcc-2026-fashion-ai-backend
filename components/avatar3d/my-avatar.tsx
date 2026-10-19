@@ -21,10 +21,11 @@ import { HAIR_CUTS, HAIR_FRINGES } from "@/lib/avatar3d/hair-cut";
 import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
 import { validateBody } from "@/lib/avatar3d/body-spec";
+import { NEUTRAL_ENVIRONMENT } from "@/lib/tryon/fitting-room";
 import { portraitRefusalKey, similarityBand, stylizedPortraitOnGpu } from "@/lib/avatar3d/portrait-gpu";
 import type { FaceFidelity } from "@/lib/avatar3d/identity/metrics";
 
-const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
+const FittingRoomScene = dynamic(() => retryImport(() => import("@/components/three/fitting-room-scene")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
 interface GateView { passed: boolean; failed: string[]; notMeasured?: string[] }
 /** AVATAR-ID I1: identidade versionada (versão atual, status do gate, versão aprovada que outras pessoas veem). */
@@ -378,8 +379,8 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
       </div>
       <Card>
         <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-          {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view="front" onHuman={(p) => { onPreviewHuman(built, p); setTextureEyes(p.eyes ?? null); }} />
-            : showingSaved ? <AvatarViewer avatar={{ model: saved.model!, adjust, textureUrl: saved.textureUrl }} sex={saved.model!.sex ?? sex} view="front" body={body?.params} onHuman={(p) => setTextureEyes(p.eyes ?? null)} />
+          {built && texture ? <FittingRoomScene avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view="front" body={body?.params} pieces={[]} environment={{ kind: "neutral", featured: NEUTRAL_ENVIRONMENT, others: [], brands: [] }} scene={null} light="daylight" walkable={false} onHuman={(p) => { onPreviewHuman(built, p); setTextureEyes(p.eyes ?? null); }} />
+            : showingSaved ? <FittingRoomScene avatar={{ model: saved.model!, adjust, textureUrl: saved.textureUrl }} sex={saved.model!.sex ?? sex} view="front" body={body?.params} pieces={[]} environment={{ kind: "neutral", featured: NEUTRAL_ENVIRONMENT, others: [], brands: [] }} scene={null} light="daylight" walkable={false} onHuman={(p) => setTextureEyes(p.eyes ?? null)} />
             : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
         </div>
       </Card>

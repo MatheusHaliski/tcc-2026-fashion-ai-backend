@@ -3,7 +3,7 @@ import { blocking, checkPhoto, checkSet, type Issue } from "./quality";
 import { clampAdjust, roundShape, skinWithLight, validateModel, MODEL_VERSION } from "./model";
 import { N } from "./geometry";
 
-const good = { lum: 140, contrast: 30, clipHigh: 0, clipLow: 0, balance: 1.1, sharpness: 40, faceWidthPx: 400 };
+const good = { lum: 140, contrast: 30, clipHigh: 0, clipLow: 0, balance: 1.1, sharpness: 40, detailCoverage: 0.7, faceWidthPx: 400 };
 const front = { role: "front" as const, faces: 1, width: 1000, height: 1300, inFrame: true, pose: { yaw: 2, pitch: -3, roll: 1 }, stats: good, blend: { eyeBlinkLeft: 0.1, eyeBlinkRight: 0.1, jawOpen: 0.05 }, rms: 0.3 };
 const codes = (is: Issue[]) => is.map((i) => `${i.code}:${i.severity}`);
 
@@ -25,6 +25,8 @@ describe("uma foto", () => {
     expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 2.2 } }))).toContain("SIDE_LIGHT:block");   // luz lateral forte: a sombra assada na textura não sai mais
     expect(codes(checkPhoto({ ...front, stats: { ...good, balance: 1.5 } }))).toContain("SIDE_LIGHT:warn");
     expect(codes(checkPhoto({ ...front, stats: { ...good, sharpness: 3 } }))).toContain("BLURRY:block");
+    expect(codes(checkPhoto({ ...front, stats: { ...good, detailCoverage: 0.04 } }))).toContain("DETAIL_SPARSE:block");
+    expect(codes(checkPhoto({ ...front, stats: { ...good, detailCoverage: 0.12 } }))).toContain("DETAIL_SPARSE:warn");
   });
   test("pose: de frente exige olhar para a câmera; de 3/4 exige virar o bastante, não demais", () => {
     expect(codes(checkPhoto({ ...front, pose: { yaw: 30, pitch: 0, roll: 0 } }))).toContain("LOOK_AT_CAMERA:block");
