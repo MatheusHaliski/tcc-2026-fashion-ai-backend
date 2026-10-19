@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /admin/users;POST /api/admin/approvals/{userId} (direto);POST /api/admin/approvals/{userId};AdminController;IssuerReviewService.decide()

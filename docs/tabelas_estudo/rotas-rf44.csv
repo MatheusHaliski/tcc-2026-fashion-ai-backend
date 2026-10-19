@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /brands/[slug];POST /api/points/shop/{sku}/purchase (direto);POST /api/points/shop/{sku}/purchase;HighlightsController;FaiPointsService.buy()

@@ -1,0 +1,3 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /dna-schemes/[id]/edit;PATCH /api/pieces/{id}/flags (direto);PATCH /api/pieces/{id}/flags;WardrobeController;WardrobeService.toggles()
+Tela /dna-schemes/[id]/edit;PUT /api/pieces/{id} (direto);PUT /api/pieces/{id};WardrobeController;WardrobeService.update()

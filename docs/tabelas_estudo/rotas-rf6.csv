@@ -1,0 +1,4 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /u/[username];GET /api/users/{ownerId}/lookbook (direto);GET /api/users/{ownerId}/lookbook;LookbookController;LookbookService.overview()
+Tela /u/[username];POST /api/me/daily-look (direto);POST /api/me/daily-look;LookbookController;LookbookService.markDailyLook()
+Tela /u/[username];PUT /api/interactions/{type}/{id}/saves/favorite (direto);PUT /api/interactions/{type}/{id}/saves/favorite;SocialController;SocialService.favoriteSaved()

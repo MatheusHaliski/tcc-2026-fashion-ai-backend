@@ -1,0 +1,6 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela (Next.js);GET /api/hype/looks/{id} (direto);GET /api/hype/looks/{id};HypeController;HypeQueryService.detail()
+Tela (Next.js);GET /api/hype/ranking (direto);GET /api/hype/ranking;HypeController;HypeQueryService.ranking()
+Tela (Next.js);GET /api/pieces/seals (direto);GET /api/pieces/seals;SealController;SealService.pieceSeals()
+Tela (Next.js);POST /api/seals (direto);POST /api/seals;SealController;SealService.createSeal()
+Tela (Next.js);PUT /api/interactions/{type}/{id}/saves/favorite (direto);PUT /api/interactions/{type}/{id}/saves/favorite;SocialController;SocialService.favoriteSaved()

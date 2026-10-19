@@ -118,6 +118,30 @@ describe("Background Studio — prévia das variações Aura em vídeo", () => {
     expect(variations.querySelectorAll("video")).toHaveLength(6);
   });
 
+  it("carrega as 12 imagens dinâmicas da AURA Electro", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    renderApp(<Studio onBg={() => undefined} initialBg={{ aura: { variantId: "aura_electro__01_cyan_pulse" } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: /AURA Electro/ }));
+
+    const variations = await screen.findByRole("group", { name: /Variação/ });
+    const dynamicImages = [...variations.querySelectorAll<HTMLImageElement>('img[src*="/aura/electro/"][src$="loading_10s.gif"]')];
+    expect(dynamicImages).toHaveLength(12);
+    expect(new Set(dynamicImages.map((image) => image.getAttribute("src"))).size).toBe(12);
+  });
+
+  it("carrega os 6 vídeos dinâmicos da AURA Splash", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    renderApp(<Studio onBg={() => undefined} initialBg={{ aura: { variantId: "aura_splash__splash_01" } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: /AURA Splash/ }));
+
+    const variations = await screen.findByRole("group", { name: /Variação/ });
+    const videos = [...variations.querySelectorAll<HTMLVideoElement>('video[poster*="/aura/splash/"]')];
+    expect(videos).toHaveLength(6);
+    expect(new Set(videos.map((video) => video.getAttribute("src"))).size).toBe(6);
+  });
+
   it("mostra o formato dentro das variações da AURA comum e preserva a variação ativa", async () => {
     mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
     const onBg = vi.fn();

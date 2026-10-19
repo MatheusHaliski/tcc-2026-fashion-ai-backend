@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /challenges;POST /api/challenges (direto);POST /api/challenges;ChallengeController;ChallengeService.start()

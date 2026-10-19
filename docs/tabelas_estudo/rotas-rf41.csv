@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /flair/cartas;POST /api/flair/duels (direto);POST /api/flair/duels;FlairController;FlairService.duel()

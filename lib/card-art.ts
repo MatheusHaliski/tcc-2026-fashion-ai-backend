@@ -77,7 +77,9 @@ export function bundledAuraPresets(): AuraPresetOption[] {
     id, name: p.name, archetype: p.archetype ?? undefined, palette: p.palette, recommendedMaterials: p.recommendedMaterials,
     variants: p.variants.filter((vid) => ART_INDEX.variants[vid]).map((vid) => {
       const v = ART_INDEX.variants[vid];
-      return { id: vid, code: v.code, theme: v.theme, animatedUrl: isVideo(v.animated) ? media(v.animated) : undefined, static: { previewUrl: media(v.preview ?? v.card) } };
+      const video = isVideo(v.animated);
+      return { id: vid, code: v.code, theme: v.theme, animatedUrl: video ? media(v.animated) : undefined,
+        static: { previewUrl: media(video ? v.preview ?? v.card : v.animated ?? v.preview ?? v.card) } };
     }),
   }));
   return [{ id: "aura_hype", name: tr("lib.cardArt.aura_hype"), archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],

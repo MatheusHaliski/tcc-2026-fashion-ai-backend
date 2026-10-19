@@ -1,0 +1,3 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela (Next.js);GET /api/celebrities (direto);GET /api/celebrities;ProfileController;InstitutionalService.celebrityFeed()
+Tela (Next.js);PATCH /api/me/celebrity-profile (direto);PATCH /api/me/celebrity-profile;ProfileController;InstitutionalService.updateCelebrity()
