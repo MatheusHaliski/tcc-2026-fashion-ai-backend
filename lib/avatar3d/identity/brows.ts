@@ -16,7 +16,7 @@
  */
 import type { Pt, Raster } from "../image-stats";
 import { luma, median, polygonMask } from "../image-stats";
-import { rgbToLab } from "./metrics";
+import { rgbToLab, type Lab } from "./metrics";
 import { labToHex } from "../hair-tone";
 
 /** Linha de cima e de baixo de cada sobrancelha (MediaPipe), do lado de dentro (nariz) para fora. */
@@ -28,7 +28,7 @@ export const BROW_LINES = {
 export const BROW_SHAPES = ["STRAIGHT", "SOFT_ARCH", "HIGH_ARCH"] as const;
 export type BrowShape = (typeof BROW_SHAPES)[number];
 
-export interface BrowSample { thickness: number; arch: number; density: number; lab: { L: number; a: number; b: number } | null; samples: number; confidence: number }
+export interface BrowSample { thickness: number; arch: number; density: number; lab: { L: number; a: number; b: number } | null; samples: number; confidence: number; thicknessBy: number[]; labBy: (Lab | null)[] }
 export interface AvatarBrows {
   color: string;          // "#rrggbb"
   thickness: number;      // espessura / largura do olho (típico 0,15–0,35)
@@ -36,6 +36,7 @@ export interface AvatarBrows {
   shape: BrowShape;
   density: number;        // 0–1
   confidence: number;     // 0–1
+  zones?: { thickness: number[]; color: (string | null)[] };   // 5 fatias (dentro → fora): espessura e cor locais
 }
 
 const dist = (p: Pt, q: Pt) => Math.hypot(p[0] - q[0], p[1] - q[1]);
@@ -76,12 +77,12 @@ export function measureBrow(img: Raster, px: Pt[], side: "right" | "left", hairM
   const x1 = Math.min(img.width - 1, Math.ceil(Math.max(...xs))), y1 = Math.min(img.height - 1, Math.ceil(Math.max(...ys)));
   const w = x1 - x0 + 1, h = y1 - y0 + 1; if (w < 3 || h < 2) return null;
   const mask = polygonMask(w, h, poly.map(([x, y]) => [x - x0, y - y0] as Pt));
-  let n = 0, fringe = 0; const hair: [number, number, number][] = [];
+  let n = 0, fringe = 0; const hair: [number, number, number][] = []; const hairPos: Pt[] = [];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (!mask[y * w + x]) continue;
     const i = (y + y0) * img.width + x + x0; if (hairMask && hairMask[i] > 0.5) fringe++;
     const o = i * 4; const q: [number, number, number] = [img.data[o], img.data[o + 1], img.data[o + 2]]; n++;
-    if (luma(...q) < 0.82 * Lr || Math.hypot(q[0] / T(q) - cr, q[1] / T(q) - cg) > 0.05) hair.push(q);
+    if (luma(...q) < 0.82 * Lr || Math.hypot(q[0] / T(q) - cr, q[1] / T(q) - cg) > 0.05) { hair.push(q); hairPos.push([x + x0, y + y0]); }
   }
   if (n < 6) return null;
   const density = hair.length / n;
@@ -94,7 +95,18 @@ export function measureBrow(img: Raster, px: Pt[], side: "right" | "left", hairM
   if (hm && luma(...hm) / Lr > 0.8 && Math.hypot(hm[0] / T(hm) - cr, hm[1] / T(hm) - cg) < 0.04) confidence *= 0.5;
   if (fringe / n > 0.3) confidence *= 0.4;                // franja por cima da sobrancelha
   const r2 = (v: number) => Math.round(v * 1000) / 1000;
-  return { thickness: r2(thickness), arch: r2(arch), density: r2(density), lab, samples: hair.length, confidence: Math.round(confidence * 100) / 100 };
+  // por fatia (os 5 pares de pontos, de dentro para fora): espessura local e cor local do pelo (o rabinho costuma ser
+  // mais fino e claro que a cabeça da sobrancelha)
+  const thicknessBy = up.map((p, k) => r2(dist(p, lo[k]) / ew));
+  const mids = up.map((p, k) => [(p[0] + lo[k][0]) / 2, (p[1] + lo[k][1]) / 2] as Pt);
+  const zonePx: [number, number, number][][] = mids.map(() => []);
+  hair.forEach((q, i) => {
+    let bk = 0, bd = Infinity;
+    mids.forEach((m, k) => { const d = Math.hypot(hairPos[i][0] - m[0], hairPos[i][1] - m[1]); if (d < bd) { bd = d; bk = k; } });
+    zonePx[bk].push(q);
+  });
+  const labBy: (Lab | null)[] = zonePx.map((zs) => (zs.length >= 4 ? rgbToLab(median(zs.map((q) => q[0])), median(zs.map((q) => q[1])), median(zs.map((q) => q[2]))) : null));
+  return { thickness: r2(thickness), arch: r2(arch), density: r2(density), lab, samples: hair.length, confidence: Math.round(confidence * 100) / 100, thicknessBy, labBy };
 }
 
 /** As duas sobrancelhas num perfil (média pesada pela confiança). null sem pontos ou sem pelo visível. */
@@ -104,9 +116,18 @@ export function browsProfile(img: Raster, px: Pt[], hairMask?: ArrayLike<number>
   const W = s.reduce((a, x) => a + x.confidence, 0) || 1;
   const avg = (f: (x: BrowSample) => number) => s.reduce((a, x) => a + f(x) * x.confidence, 0) / W;
   const arch = avg((x) => x.arch); const r3 = (v: number) => Math.round(v * 1000) / 1000;
-  return {
+  const out: AvatarBrows = {
     color: labToHex(avg((x) => x.lab!.L), avg((x) => x.lab!.a), avg((x) => x.lab!.b)),
     thickness: r3(avg((x) => x.thickness)), arch: r3(arch), shape: browShape(arch), density: r3(avg((x) => x.density)),
     confidence: Math.round(Math.min(0.95, W / s.length) * 100) / 100,
   };
+  // fatias: média pesada pela confiança; cor só onde alguma das duas mediu pelo naquela fatia
+  const zoneT = [0, 1, 2, 3, 4].map((k) => r3(s.reduce((a2, x) => a2 + x.thicknessBy[k] * x.confidence, 0) / W));
+  const zoneC: (string | null)[] = [0, 1, 2, 3, 4].map((k) => {
+    const ok = s.filter((x) => x.labBy[k]); if (!ok.length) return null;
+    const wk = ok.reduce((a2, x) => a2 + x.confidence, 0) || 1;
+    return labToHex(ok.reduce((a2, x) => a2 + x.labBy[k]!.L * x.confidence, 0) / wk, ok.reduce((a2, x) => a2 + x.labBy[k]!.a * x.confidence, 0) / wk, ok.reduce((a2, x) => a2 + x.labBy[k]!.b * x.confidence, 0) / wk);
+  });
+  if (zoneC.some(Boolean)) out.zones = { thickness: zoneT, color: zoneC };
+  return out;
 }

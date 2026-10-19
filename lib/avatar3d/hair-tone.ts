@@ -70,7 +70,7 @@ const median = (v: number[]) => { const s = [...v].sort((p, q) => p - q); return
 
 // ------------------------------------------------------------------ medição
 
-export interface ToneMeasure { tone: HairTone; lab: [number, number, number]; color: string }
+export interface ToneMeasure { tone: HairTone; lab: [number, number, number]; color: string; spread: number; highlight: number }
 
 /** Nível (1–10) pela luminância dos meios-tons. */
 export function levelOf(L: number): number {
@@ -100,7 +100,11 @@ export function measureTone(pixels: number[][]): ToneMeasure | null {
   const mid = labs.slice(Math.floor(labs.length * 0.3), Math.max(Math.floor(labs.length * 0.3) + 1, Math.ceil(labs.length * 0.8)));
   const lab: [number, number, number] = [median(mid.map((l) => l[0])), median(mid.map((l) => l[1])), median(mid.map((l) => l[2]))];
   const tone = { level: levelOf(lab[0]), family: familyOf(...lab) };
-  return { tone, lab, color: renderColor(tone, lab) };
+  // espalhamento da luminância (p90 − p10 sobre todos os pixels): quanto o cabelo varia entre sombra e reflexo —
+  // guia a variação de tom por fio no render (hair.variation)
+  const at = (f: number) => labs[Math.min(labs.length - 1, Math.floor(f * labs.length))][0];
+  const spread = Math.round((at(0.9) - at(0.1)) * 10) / 10;
+  return { tone, lab, color: renderColor(tone, lab), spread, highlight: Math.round(at(0.9) * 10) / 10 };
 }
 
 /** Id do ajuste (paleta) para um tom medido: copper/red/gray/white têm entradas próprias; o resto, o nível. */

@@ -266,11 +266,13 @@ function Lights({ light }: { light: LightMode }) {
   </>;
 }
 
-export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, debug, cameraYaw, closeUp = false, onCamera, onWalk }: {
+export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, onHuman, debug, cameraYaw, closeUp = false, onCamera, onWalk, walkable = true }: {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; body?: BodyParams | null;
   pieces: Look3dPiece[]; environment: ResolvedEnvironment; scene?: StoreScene | null; light?: LightMode; view?: AvatarView; onCanvas?: (c: HTMLCanvasElement) => void;
   /** o perfil do estúdio desenhado (objetos com função, paleta, fotos de referência) — inventário da auditoria */
   onProfile?: (profile: FittingStudioProfile) => void;
+  /** recebe o humano já montado para métricas/GLB da prévia */
+  onHuman?: (parts: HumanParts) => void;
   /** laboratório/auditoria: wireframe, corpo oculto, pesos e poses de verificação (components/three/scene-debug.tsx) */
   debug?: SceneDebugOptions | null;
   /** laboratório: ângulo livre da câmera (graus) para o giro de 360°, e enquadramento só do avatar */
@@ -279,12 +281,14 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
   onCamera?: (api: FittingCameraApi | null) => void;
   /** botões "Ir ao espelho"/"Voltar ao centro": andar até um ponto e acompanhar onde o avatar está */
   onWalk?: (api: FittingWalkApi | null) => void;
+  /** quando falso, mantém o avatar no centro e usa a cena apenas como ambiente */
+  walkable?: boolean;
 }) {
   const { t } = useI18n(), asset = useBodyAsset(), reduced = useReducedMotion(), controls = useRef<Controls>(null);
   const [parts, setParts] = useState<HumanParts | null>(null);
   const actor = useRef<THREE.Group>(null), [mirrorLive, setMirrorLive] = useState(false);
   // laboratório e auditoria (pose de verificação, giro de 360°) ficam com o avatar parado no centro
-  const walking = !debug && cameraYaw === undefined;
+  const walking = walkable && !debug && cameraYaw === undefined;
   sex = avatar?.model?.sex ?? sex;
   const params = body ?? bodyParamsOf({ sex, build, avatar }), height = buildSpec(params).stature;
   // alvo estável: um array novo a cada render fazia o Rig recolocar a câmera no preset e desfazer o giro da pessoa
@@ -302,7 +306,7 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
       <Lights light={light} /><Room key={env.key} profile={profile} target={target} mirrorLive={mirrorLive} />
       <group ref={actor} name="fitting-avatar">
         <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params}
-          fallback={null} still={!!debug?.pose} externalPose={walking} onHuman={setParts} />
+          fallback={null} still={!!debug?.pose} externalPose={walking} onHuman={(p) => { setParts(p); onHuman?.(p); }} />
       </group>
       {walking && <Walker actor={actor} parts={parts} controls={controls} height={height} reduced={reduced} onPlace={(p) => setMirrorLive(p === "mirror")} onWalk={onWalk} />}
       {debug && <SceneDebug parts={parts} options={debug} />}
