@@ -25,6 +25,8 @@ export interface AvatarHair {
   volume?: number;                                       // volume medido como fator da geometria (0,7 rente … 1,9 muito volumoso)
   volumeLevel?: HairVolume;                              // o mesmo em classe: rente, normal, volumoso, muito volumoso
   fringeStyle?: FringeStyle;                             // franja escolhida pela pessoa (ajuste "Franja", hair-cut.ts); ausente = a medida
+  part?: number;                                         // risca medida na foto (−1 … 1, relativa à meia-largura do rosto; 0 = ao meio)
+  variation?: number;                                    // variação de tom medida no cabelo (0–1: espalhamento de L*, hair-tone.ts)
 }
 /**
  * Franja: nenhuma; reta (cobre a testa até a sobrancelha, corte reto e simétrico); lateral (varrida para um lado, corte
@@ -44,6 +46,7 @@ export interface AvatarModel {
   sex?: Sex;                                // corpo base: estimado pelo rosto (sex-detect.ts) ou escolhido pela pessoa
   eyes?: AvatarEyes;                        // cor da íris medida e óculos vistos na foto (lib/avatar3d/iris.ts); antigos não têm
   brows?: AvatarBrows;                      // sobrancelhas medidas: cor, espessura, arco, densidade (identity/brows.ts)
+  bodySkin?: string;                        // "#rrggbb" da pele do corpo (braços/peito) medida na foto, quando visível
 }
 /**
  * hairTone: 0 = o tom medido na foto; 1–14 = um tom da paleta (HAIR_TONES), escolhido pela pessoa.
@@ -85,10 +88,13 @@ export function validateModel(x: unknown): AvatarModel | null {
   if (hair.tone !== undefined && hair.tone !== null && !(typeof hair.tone === "object" && Number.isInteger(hair.tone.level) && hair.tone.level >= 1 && hair.tone.level <= 10 && HAIR_FAMILIES.includes(hair.tone.family))) delete hair.tone;
   if (hair.volume !== undefined && !(typeof hair.volume === "number" && Number.isFinite(hair.volume) && hair.volume >= 0.5 && hair.volume <= 2.5)) delete hair.volume;
   if (hair.volumeLevel !== undefined && !HAIR_VOLUMES.includes(hair.volumeLevel)) delete hair.volumeLevel;
+  if (hair.part !== undefined && !(typeof hair.part === "number" && Number.isFinite(hair.part) && Math.abs(hair.part) <= 1)) delete hair.part;
+  if (hair.variation !== undefined && !(typeof hair.variation === "number" && Number.isFinite(hair.variation) && hair.variation >= 0 && hair.variation <= 1)) delete hair.variation;
   if (hair.fringeStyle !== undefined && !FRINGE_STYLES.includes(hair.fringeStyle)) delete hair.fringeStyle;
   if (hair.outline !== undefined && (!Array.isArray(hair.outline) || hair.outline.length > 32 || !hair.outline.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 30))) delete hair.outline;
   const out: AvatarModel = { ...m, hair };
   if (out.sex !== undefined && out.sex !== "FEMININO" && out.sex !== "MASCULINO") delete out.sex;
+  if (out.bodySkin !== undefined && !HEX.test(String(out.bodySkin))) delete out.bodySkin;
   if (out.eyes !== undefined) { const e = validateEyes(out.eyes); if (e) out.eyes = e; else delete out.eyes; }
   if (out.brows !== undefined) { const b = validateBrows(out.brows); if (b) out.brows = b; else delete out.brows; }
   return out;
@@ -100,7 +106,15 @@ export function validateBrows(x: unknown): AvatarBrows | null {
   const inRange = (v: unknown, lo: number, hi: number) => typeof v === "number" && Number.isFinite(v) && v >= lo && v <= hi;
   if (!b || typeof b !== "object" || !HEX.test(String(b.color)) || !BROW_SHAPES.includes(b.shape)) return null;
   if (!inRange(b.thickness, 0, 1) || !inRange(b.arch, 0, 0.5) || !inRange(b.density, 0, 1) || !inRange(b.confidence, 0, 1)) return null;
-  return { color: b.color, thickness: b.thickness, arch: b.arch, shape: b.shape, density: b.density, confidence: b.confidence };
+  const out: AvatarBrows = { color: b.color, thickness: b.thickness, arch: b.arch, shape: b.shape, density: b.density, confidence: b.confidence };
+  // medidas por fatia (dentro → fora): 5 espessuras 0–1 e 5 cores hex ou nulas; inválidas, só as fatias caem
+  const z = b.zones;
+  if (z && typeof z === "object" && Array.isArray(z.thickness) && Array.isArray(z.color)) {
+    const th = z.thickness.filter((v) => inRange(v, 0, 1));
+    const co = z.color.slice(0, 5).map((v) => (typeof v === "string" && HEX.test(v) ? v : null));
+    if (th.length === 5 && co.length === 5 && co.some(Boolean)) out.zones = { thickness: th, color: co };
+  }
+  return out;
 }
 
 /** Olhos: só cores "#rrggbb", valores das listas e confiança 0–1. Fora disso os olhos são descartados (o avatar fica). */

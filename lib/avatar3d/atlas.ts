@@ -11,6 +11,7 @@
 import { CANON_TRI, CANON_UV, FACE_OVAL } from "./canonical-face";
 import { visibility, type Role, type Similarity } from "./geometry";
 import { luma, polygonMask, type Pt } from "./image-stats";
+import { EYES } from "./iris";
 
 export interface AtlasView { role: Role; canvas: HTMLCanvasElement; px: Pt[]; sim: Similarity }
 
@@ -106,6 +107,25 @@ function featherMask(size: number, conf: Float32Array): HTMLCanvasElement {
 
 export interface AtlasResult { canvas: HTMLCanvasElement; source: Role[]; light: { left: number; right: number; applied: boolean } }
 
+/**
+ * Raiz dos cílios (pálpebra de cima, mais marcada) e a linha da pálpebra de baixo (discreta): o contorno escuro que
+ * "cola" o globo do olho no rosto. A equalização de luz da foto apaga essa linha; sem ela o olho parece solto na
+ * órbita. Traço suave em dois passes, nos pontos do contorno do olho (MediaPipe) já no UV canônico.
+ */
+function drawLidLines(g: CanvasRenderingContext2D, size: number): void {
+  const at = (i: number): Pt => [CANON_UV[i * 2] * size, CANON_UV[i * 2 + 1] * size];
+  g.save(); g.lineCap = "round"; g.lineJoin = "round";
+  for (const side of ["right", "left"] as const) {
+    const c = EYES[side].contour;
+    const up = c.slice(0, 8).map(at), low = c.slice(8).map(at);
+    for (const [pts, w, a] of [[up, 0.006, 0.2], [up, 0.0026, 0.32], [low, 0.0022, 0.1]] as const) {
+      g.strokeStyle = `rgba(38,24,16,${a})`; g.lineWidth = Math.max(1, size * w);
+      g.beginPath(); pts.forEach(([x, y], k) => (k ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+    }
+  }
+  g.restore();
+}
+
 export function bakeAtlas(views: AtlasView[], skinHex: string, size = 1024): AtlasResult {
   const front = views.find((v) => v.role === "front") ?? views[0];
   const vis = views.map((v) => visibility(v.sim)); const vf = vis[views.indexOf(front)];
@@ -141,6 +161,8 @@ export function bakeAtlas(views: AtlasView[], skinHex: string, size = 1024): Atl
   const oval: Pt[] = FACE_OVAL.map((i) => dst(i));
   const light = evenSideLight(id, polygonMask(size, size, oval));
   g.putImageData(id, 0, 0);
+  // a linha dos cílios some na equalização: redesenhada por cima, ainda dentro da máscara suave do rosto
+  drawLidLines(g, size);
   // borda do rosto → pele medida na foto (a textura some suavemente; o crânio, as orelhas e o pescoço têm a mesma cor)
   const face = canvas(size, size); const fg = ctx2d(face); fg.drawImage(raw, 0, 0); fg.globalCompositeOperation = "destination-in"; fg.drawImage(featherMask(size, conf), 0, 0);
   const out = canvas(size, size); const og = ctx2d(out); og.fillStyle = skinHex; og.fillRect(0, 0, size, size); og.drawImage(face, 0, 0);

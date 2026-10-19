@@ -48,6 +48,7 @@ export interface FaceStats {
   clipLow: number;      // fração preta (< 8)
   balance: number;      // razão entre o lado mais claro e o mais escuro do rosto (1 = luz por igual)
   sharpness: number;    // variância do laplaciano no rosto reduzido a 256 px de largura
+  detailCoverage: number; // fração das células do rosto com detalhe distribuído, não apenas contorno
   faceWidthPx: number;  // largura do rosto na foto (234↔454)
 }
 
@@ -72,6 +73,7 @@ export function faceStats(img: Raster, px: Pt[]): FaceStats {
   return {
     lum, contrast: n ? Math.sqrt(Math.max(0, s2 / n - lum * lum)) : 0, clipHigh: n ? hi / n : 0, clipLow: n ? lo / n : 0,
     balance: Math.max(ml, mr) / Math.max(1, Math.min(ml, mr)), sharpness: n ? laplacianVariance(img, mask, x0, y0, x1, y1) : 0,
+    detailCoverage: n ? detailCoverage(img, mask, x0, y0, x1, y1) : 0,
     faceWidthPx: Math.hypot(px[234][0] - px[454][0], px[234][1] - px[454][1]),
   };
 }
@@ -96,6 +98,27 @@ export function laplacianVariance(img: Raster, mask: Uint8Array | null, x0: numb
     const l = g[i - 1] + g[i + 1] + g[i - W] + g[i + W] - 4 * g[i]; n++; s += l; s2 += l * l;
   }
   return n ? s2 / n - (s / n) ** 2 : 0;
+}
+
+/** Distribuição de detalhe: quantas células do rosto têm gradiente local suficiente para preservar textura. */
+export function detailCoverage(img: Raster, mask: Uint8Array | null, x0: number, y0: number, x1: number, y1: number): number {
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1; if (bw < 12 || bh < 12) return 0;
+  const cols = 8, rows = 10; let valid = 0, detailed = 0;
+  for (let cy = 1; cy < rows - 1; cy++) for (let cx = 1; cx < cols - 1; cx++) {
+    const xa = Math.floor(x0 + (cx * bw) / cols), xb = Math.min(x1 - 1, Math.floor(x0 + ((cx + 1) * bw) / cols));
+    const ya = Math.floor(y0 + (cy * bh) / rows), yb = Math.min(y1 - 1, Math.floor(y0 + ((cy + 1) * bh) / rows));
+    let energy = 0, count = 0, inside = 0;
+    for (let y = ya; y < yb; y += 2) for (let x = xa; x < xb; x += 2) {
+      const i = y * img.width + x; if (mask && !mask[i]) continue;
+      const o = i * 4, l = luma(img.data[o], img.data[o + 1], img.data[o + 2]);
+      const r = i * 4 + 4, d = (i + img.width) * 4;
+      if (x + 1 >= img.width || y + 1 >= img.height) continue;
+      energy += Math.abs(l - luma(img.data[r], img.data[r + 1], img.data[r + 2])) + Math.abs(l - luma(img.data[d], img.data[d + 1], img.data[d + 2]));
+      count++; inside++;
+    }
+    if (inside >= 3) { valid++; if (energy / Math.max(1, count) >= 5) detailed++; }
+  }
+  return valid ? detailed / valid : 0;
 }
 
 /** Pontos de pele (bochechas, maçãs, testa, entre os olhos e o nariz, lados do queixo). */

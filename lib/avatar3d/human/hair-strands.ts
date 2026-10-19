@@ -222,6 +222,7 @@ export interface StrandContext {
   /** ponto deitado na pele nua (testa, têmpora, bochecha — abaixo da linha do cabelo): fio ali vira risco no rosto */
   onSkin: (q: V3) => boolean;
   browY: number;
+  variation: number;          // 0–1: variação de tom medida no cabelo (AvatarHair.variation) → amplitude do tom por fio
 }
 
 /** Prepara o que penteado e fios precisam. Sem fios (raspado, careca, cobertura, base sem calota): null. */
@@ -257,7 +258,7 @@ export function strandContext(a: BodyAsset, c: Composed, hair: AvatarHair, base:
     const phi = Math.atan2(q[0] - fr.cx, q[2] - fr.cz); if (Math.abs(phi) > 1.75) return false;     // nuca: cabelo deitado é normal
     return q[1] < hairline(fr, hair, phi, false) - 0.004 && shell.skinGap(q) < 0.007;
   };
-  return { fr, shell, O, k: fr.k, hv, texture, long, yBottom, shoulderY, bones: { head: headB, neck: neckB, spine2: bone("Spine2") }, inFace, onSkin, browY };
+  return { fr, shell, O, k: fr.k, hv, texture, long, yBottom, shoulderY, bones: { head: headB, neck: neckB, spine2: bone("Spine2") }, inFace, onSkin, browY, variation: Math.min(1, Math.max(0, hair.variation ?? 0)) };
 }
 
 // ------------------------------------------------------------------ penteado (guias)
@@ -284,7 +285,9 @@ export function growGroom(ctx: StrandContext, hair: AvatarHair, base: HairBuild,
 
   const density = Math.min(1.5, Math.max(0.2, opts.density ?? 1));
   const guides = Math.round((long ? 620 : 820) * density);
-  const partX = fr.cx + (long ? 0 : 0.026);
+  // a risca medida na foto (hair-flow.ts, AvatarHair.part: −1…1 da meia-largura do rosto); sem medida: lateral no curto
+  const partRel = typeof hair.part === "number" ? Math.max(-1, Math.min(1, hair.part)) : long ? 0 : 0.36;
+  const partX = fr.cx + partRel * fr.halfW;
   const fringe = Math.min(1, hair.fringe ?? 0);
   // franja escolhida (reta/lateral/cortina) cresce à parte, depois do resto; a desfiada é a franja medida de antes
   const fstyle: FringeStyle = hair.fringeStyle ?? (fringe > 0.3 ? "wispy" : "none");
@@ -520,7 +523,7 @@ export function strandsFromGroom(ctx: StrandContext, groom: HairGroom, lod: 0 | 
       const ob = cards ? 0 : (rand() - 0.5) * (styled ? 0.016 : 0.012), on = cards ? 0 : (rand() - 0.2) * (styled ? 0.0025 : 0.004);
       const lf = blunt ? 1 : styled ? 0.93 + rand() * 0.07 : isStray ? 0.95 + rand() * 0.15 : 0.78 + rand() * 0.26;
       const w0 = (0.0032 + rand() * 0.0028) * (texture === "coily" && !styled ? 1.4 : 1) * spec.width * (isStray ? 0.35 : 1) * (styled ? 1.3 : baby ? 0.45 : 1);
-      const tone = 0.95 + rand() * 0.1;                                         // ±5% por fio (plano A3.3)
+      const tone = 1 + (rand() * 2 - 1) * (0.05 + 0.09 * ctx.variation);    // tom por fio: ±5% … ±14% conforme a variação medida
       const ao = cards ? 0.92 : 0.74 + 0.26 * smooth(-0.0012, 0.0028, on);     // oclusão: o interior da mecha escurece
       // Todas as larguras/LODs usam uma coluna inteira. Cortar metade no nível alto ou atravessar três colunas
       // nos cards alterava a densidade e criava descontinuidades de brilho no meio de uma mesma mecha.
@@ -660,10 +663,12 @@ export function strandMaterial(color: string, lod: HairLod = 1): THREE.MeshPhysi
     // A geometria já tem folga. Viés dependente da inclinação trazia fios de trás para a frente da bochecha.
     polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -1,
   });
+  // cabelo escuro (níveis 1–3): o brilho de fio é o que revela a forma — sem reforço, vira uma massa preta na cena
+  const cc = new THREE.Color(color); const darkHair = 0.2126 * cc.r + 0.7152 * cc.g + 0.0722 * cc.b < 0.025;
   const uniforms = {
     hairShift1: { value: -0.12 }, hairShift2: { value: 0.2 },                // primário para a raiz, secundário para a ponta
     hairExp1: { value: lod === 2 ? 48 : 64 }, hairExp2: { value: 18 },
-    hairSpec1: { value: 0.18 }, hairSpec2: { value: 0.22 }, hairEnvSpec: { value: 0.18 },
+    hairSpec1: { value: 0.18 }, hairSpec2: { value: darkHair ? 0.34 : 0.22 }, hairEnvSpec: { value: darkHair ? 0.3 : 0.18 },
   };
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
