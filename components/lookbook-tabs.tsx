@@ -122,7 +122,7 @@ function ClosetTab({ ownerId, self, empty }: { ownerId: string; self: boolean; e
       </div>
       {loading ? <SkeletonGrid /> : !data || data.items.length === 0
         ? <EmptyState title={hypeLevel ? t("hypeLookbook.pecas.vazio_faixa") : filtered ? t("common.empty") : empty?.message ?? t("closet.empty")} action={self && !filtered ? <Link href="/pieces/new" className="btn btn-primary">{empty?.action?.label ?? t("closet.addPiece")}</Link> : undefined} />
-        : <><div className="grid-cards">{data.items.map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div><Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} /></>}
+        : <><div className="grid-cards is-pieces">{data.items.map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div><Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} /></>}
     </>
   );
 }
@@ -179,7 +179,7 @@ function PublicationsTab({ ownerId }: { ownerId: string }) {
   if (!data || items.length === 0) return <EmptyState title={t("lookbook.noPublications")} hint={t("lookbook.publicationsHint")} />;
   return (
     <>
-      <div className="grid-cards">{items.map((x) => x.type === "LOOK"
+      <div className="grid-cards is-pieces">{items.map((x) => x.type === "LOOK"
         ? <SchemeCard key={`look-${x.scheme!.id}`} scheme={x.scheme!} compact />
         : <PieceCard key={`piece-${x.piece!.id}`} piece={x.piece!} />)}</div>
       <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} />
@@ -202,7 +202,7 @@ function FavoritesTab({ ownerId }: { ownerId: string }) {
         options={[{ id: "looks", label: t("lookbook.looks"), count: looks.length }, { id: "pieces", label: t("lookbook.closet"), count: pieces.length }]} />
       {view === "looks"
         ? looks.length === 0 ? <EmptyState title={t("lookbook.noFavoriteLooks")} /> : <div className="grid-looks">{looks.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
-        : pieces.length === 0 ? <EmptyState title={t("lookbook.noFavoritePieces")} /> : <div className="grid-cards">{pieces.map((p) => <PieceCard key={p.id} piece={p} />)}</div>}
+        : pieces.length === 0 ? <EmptyState title={t("lookbook.noFavoritePieces")} /> : <div className="grid-cards is-pieces">{pieces.map((p) => <PieceCard key={p.id} piece={p} />)}</div>}
     </>
   );
 }
@@ -228,7 +228,7 @@ function SavedPiecesTab() {
   return (
     <>
       <div className="mb-3"><SegmentPicker label={t("common.category")} value={category} onChange={(v) => { setCategory(v); setPage(0); }} options={["", ...CATEGORIES].map((c) => ({ id: c, label: c ? label(c) : t("common.all") }))} /></div>
-      {loading ? <SkeletonGrid /> : (data?.items.length ?? 0) === 0 ? <EmptyState title={t("common.nenhuma_peca_salva")} hint={t("lookbookTabs.salve_pecas_de_outras_pessoas")} /> : <div className="grid-cards">{data!.items.map((x) => <PieceCard key={x.piece.id} piece={x.piece} extra={<><span className="caption">{x.originLabel}{x.snapshot ? t("lookbookTabs.arquivada") : ""}</span><Button size="sm" aria-pressed={x.favorite} onClick={async () => { try { await api.put(`/api/interactions/PIECE/${x.piece.id}/saves/favorite`, { favorite: !x.favorite }); reload(); } catch (e) { toast.fromError(e); } }}><FaiIcon id="SOC-06" size={24} active={x.favorite} decorative />{t("common.favorite")}</Button><Button size="sm" onClick={async () => { try { await api.post(`/api/interactions/PIECE/${x.piece.id}/saves`); reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</Button></>} />)}</div>}
+      {loading ? <SkeletonGrid /> : (data?.items.length ?? 0) === 0 ? <EmptyState title={t("common.nenhuma_peca_salva")} hint={t("lookbookTabs.salve_pecas_de_outras_pessoas")} /> : <div className="grid-cards is-pieces">{data!.items.map((x) => <PieceCard key={x.piece.id} piece={x.piece} extra={<><span className="caption">{x.originLabel}{x.snapshot ? t("lookbookTabs.arquivada") : ""}</span><Button size="sm" aria-pressed={x.favorite} onClick={async () => { try { await api.put(`/api/interactions/PIECE/${x.piece.id}/saves/favorite`, { favorite: !x.favorite }); reload(); } catch (e) { toast.fromError(e); } }}><FaiIcon id="SOC-06" size={24} active={x.favorite} decorative />{t("common.favorite")}</Button><Button size="sm" onClick={async () => { try { await api.post(`/api/interactions/PIECE/${x.piece.id}/saves`); reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</Button></>} />)}</div>}
       {data && data.total > data.size && <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} />}
     </>
   );
