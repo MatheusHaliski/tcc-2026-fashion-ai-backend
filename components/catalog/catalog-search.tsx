@@ -486,15 +486,12 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
     onVariantChange?.(next);
   };
   const img = p.catalogImage?.url ?? p.imageUrl;
-  // A peça sempre mostra uma foto: sem o enquadramento verificado (preview.failed), o card degrada para a foto
-  // original da marca (e daí para as alternativas e a ilustração da categoria) em vez da mensagem de erro.
-  const hasPhoto = !!(img || p.imageSource?.imageUrl);
   const [framing] = usePhotoFraming();
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (
     <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
       <div className="catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
-        {preview.pending ? <span role="status" className="type-caption text-muted p-4">{t("catalog.preparingPhoto")}</span> : hasPhoto ? <CatalogPhoto requiredFrame={!preview.failed} framing={framing} image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
+        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto requiredFrame framing={framing} image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
           placeholder={<GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />} />
           : <span role="alert" className="type-caption text-muted p-4">{t(p.imageProcessingStatus === "PENDING" ? "catalog.preparingPhoto" : "catalog.framingRequiredError")}<button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button></span>}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}
