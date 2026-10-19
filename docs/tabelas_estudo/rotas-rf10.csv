@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /copilot;POST /api/copilot/messages (direto);POST /api/copilot/messages;AutopilotController;CopilotService.ask()

@@ -1,0 +1,11 @@
+{
+  "scope": "Real UI, simulated authenticated API and inventory. Not production grants, real purchases or motion transfer.",
+  "legacyPhotosRedirect": true,
+  "tabs": 4,
+  "mockPreviewLabeled": true,
+  "installationConfirmed": true,
+  "mobileNoPageOverflow": true,
+  "reducedMotion": "none",
+  "loftGate": true,
+  "pageErrors": []
+}

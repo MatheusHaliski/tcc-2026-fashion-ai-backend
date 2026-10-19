@@ -37,6 +37,13 @@ Se não existe no código um campo, enum ou método de estado equivalente (por e
 não foi implementado), o arquivo do time **não é reescrito**: recebe uma legenda na imagem dizendo que não foi gerado nem
 verificado contra o código, e o índice marca o link com †. Assim nada inventado entra no lugar do diagrama.
 
+## Diagramas escritos à mão
+
+Quando o fluxo passa por código que o gerador não lê (o worker e a GPU em Python de `services/anatomical_vton`, os
+scripts de `scripts/cloud`), o diagrama é escrito à mão, conferido contra o código e leva na segunda linha do `.puml` a
+marca `' v5: escrito à mão`. `gerar.py` não reescreve esses arquivos (só os renderiza com `--render`) e o índice marca
+os links com ‡. Exemplo: `docs/diagramas/RF18-prova-com-ia/` (Prova com IA na GPU).
+
 ## Diagramas novos
 
 Para um RF novo, crie o `.puml` na pasta do RF citando o que ele cobre (entidades, rotas, serviços, valores de enum),

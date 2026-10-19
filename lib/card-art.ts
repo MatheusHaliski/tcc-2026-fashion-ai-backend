@@ -29,6 +29,7 @@ interface Studio {
   compositionPreset?: FashionPreset | null;
   border?: import("@/lib/card-border").CardBorderConfig | null;
   auraMetamorphose?: string | null;
+  auraMetamorphosePreset?: string | null;
   auraHype?: string | null;
   color?: string | null; gradient?: unknown; gradientPresetId?: string | null; seasonalPresetId?: string | null; seasonalAuto?: boolean;
   aura?: { variantId?: string; format?: string } | null; materialId?: string | null; aiArt?: { url?: string } | null; uploadUrl?: string | null;
@@ -69,14 +70,16 @@ export function auraVariantId(id?: string | null): string | undefined {
  *  mais antigo (que listaria variantes cujos arquivos já não existem). */
 export interface AuraPresetOption {
   id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[];
-  variants: { id: string; code?: string; theme?: string; description?: string; static?: { previewUrl?: string } }[];
+  variants: { id: string; code?: string; theme?: string; description?: string; animatedUrl?: string; animatedPreviewUrl?: string; static?: { previewUrl?: string } }[];
 }
 export function bundledAuraPresets(): AuraPresetOption[] {
   const indexed = Object.entries(ART_INDEX.presets).map(([id, p]) => ({
     id, name: p.name, archetype: p.archetype ?? undefined, palette: p.palette, recommendedMaterials: p.recommendedMaterials,
     variants: p.variants.filter((vid) => ART_INDEX.variants[vid]).map((vid) => {
       const v = ART_INDEX.variants[vid];
-      return { id: vid, code: v.code, theme: v.theme, static: { previewUrl: media(v.preview ?? v.card) } };
+      const video = isVideo(v.animated);
+      return { id: vid, code: v.code, theme: v.theme, animatedUrl: video ? media(v.animated) : undefined, animatedPreviewUrl: !video && v.animated ? media(v.animated) : undefined,
+        static: { previewUrl: media(v.preview ?? v.card) } };
     }),
   }));
   return [{ id: "aura_hype", name: tr("lib.cardArt.aura_hype"), archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],
@@ -158,7 +161,7 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
   const ai = s.aiArt?.url; const upload = s.uploadUrl;
   if (ai || upload) return { ...art, kind: ai ? "ai" : "upload", image: media(ai ?? upload), label: ai ? tr("lib.cardArt.arte_com_ia") : tr("lib.cardArt.imagem_enviada") };
   const curated = fashionPreset(s.compositionPreset);
-  if (curated) return { ...art, kind:"aura", image:curated.image, label:curated.name, presetId:curated.id };
+  if (curated) return { ...art, kind:"aura", image:curated.video ? undefined : curated.image, video:curated.video ? {src:curated.video,poster:curated.image} : undefined, label:curated.name, presetId:curated.id };
   const variantId = auraVariantId(s.aura?.variantId);
   if (s.aura?.variantId?.startsWith("aura_hype")) {
     return { ...art, kind: "aura", base: "linear-gradient(135deg, #07152c, #0d2e58 52%, #321450)", presetId: "aura_hype", animation: "shimmer", label: tr("lib.cardArt.aura_hype_scanner") };

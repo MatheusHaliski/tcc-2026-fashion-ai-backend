@@ -29,6 +29,36 @@ describe("CatalogPhoto", () => {
     expect(container.querySelector("img")?.getAttribute("src")).toBe("https://img.brand.com/a.jpg");
   });
 
+  it("Total frame: a peça inteira no quadro a partir da caixa da peça, sem o recorte de tecido", () => {
+    const image = { url: "https://media.fashion-ai.app/card.jpg", mode: "PROCESSED" as const, sourceUrl: "https://img.brand.com/s.jpg",
+      whole: { url: "https://img.brand.com/s.jpg", box: { x: 0.12, y: 0.19, w: 0.75, h: 0.6 }, background: "#ffffff", width: 864, height: 1152 } };
+    const { container } = render(<CatalogPhoto alt="" image={image} framing="WHOLE" />);
+    const wrap = container.querySelector("[data-mode='whole']") as HTMLElement;
+    expect(wrap.className).toContain("is-blend");                       // fundo branco se funde ao fundo do quadro
+    const img = container.querySelector("img") as HTMLImageElement;
+    expect(img.getAttribute("src")).toBe("https://img.brand.com/s.jpg");
+    expect(img.style.position).toBe("absolute");
+    expect(parseFloat(img.style.width)).toBeGreaterThan(100);           // a foto inteira, escalada para a peça caber
+    // o mesmo card no modo de sempre continua no master recortado
+    const fabric = render(<CatalogPhoto alt="" image={image} />);
+    expect(fabric.container.querySelector("[data-mode='processed']")).not.toBeNull();
+  });
+
+  it("Peça inteira sem a peça recortada (foto com modelo) mostra o enquadramento de tecido, nunca a foto original com a pessoa", () => {
+    const crop = { url: "https://img.brand.com/a.jpg", sourceUrl: "https://img.brand.com/modelo.jpg", mode: "SEMANTIC_CROP" as const, crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 } };
+    const a = render(<CatalogPhoto alt="" image={crop} framing="WHOLE" requiredFrame />);
+    expect(a.container.querySelector("[data-mode='semantic-crop']")).not.toBeNull();
+    expect(a.container.querySelector("[data-mode='whole-original']")).toBeNull();
+    const processed = render(<CatalogPhoto alt="" image={{ url: "https://media.fashion-ai.app/card.jpg", sourceUrl: "https://img.brand.com/modelo.jpg", mode: "PROCESSED" }} framing="WHOLE" />);
+    expect(processed.container.querySelector("img")?.getAttribute("src")).toContain("card.jpg");
+    fireEvent.error(processed.container.querySelector("img")!);
+    expect(processed.container.querySelector("img[src*='modelo.jpg']")).toBeNull();
+    const withWhole = { ...crop, whole: { url: "https://img.brand.com/a.jpg", box: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 }, background: "#eeeeee", width: 800, height: 800 } };
+    const b = render(<CatalogPhoto alt="" image={withWhole} framing="WHOLE" />);
+    fireEvent.error(b.container.querySelector("img")!);
+    expect(b.container.querySelector("[data-mode='whole-original']")).not.toBeNull();
+  });
+
   it("sem canônica mostra a foto inteira contida; master processado também", () => {
     const a = render(<CatalogPhoto alt="" fallbackUrl="https://img.brand.com/b.jpg" />);
     expect(a.container.querySelector("[data-mode='original']")).not.toBeNull();
@@ -119,4 +149,12 @@ describe("foto oficial preservada", () => {
     expect(pieceCatalogSource(piece)).toBe("official.jpg");
     expect(pieceCatalogSource({ ...piece, imageUrl: "user.jpg" })).toBeUndefined();
   });
+});
+
+// Required catalog framing never falls back to an unprocessed source.
+it("enquadramento obrigatório oculta a original ao falhar",()=>{
+ const {container}=render(<CatalogPhoto requiredFrame alt="Peça" image={{url:"/media/framed.jpg",mode:"PROCESSED",sourceUrl:"https://brand.example/raw.jpg"}} fallbackUrl="https://brand.example/raw.jpg"/>);
+ fireEvent.error(container.querySelector('img')!);
+ expect(container.querySelector('img')).toBeNull();
+ expect(container.querySelector('[role="alert"]')).toBeTruthy();
 });

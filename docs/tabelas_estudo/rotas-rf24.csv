@@ -1,0 +1,6 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+c/coupons/brand-coupons-tab.tsx;GET /api/me/coupons/admin (direto);GET /api/me/coupons/admin;Não identificado no diagrama;Não identificado no diagrama
+c/coupons/brand-coupons-tab.tsx;GET /api/users/${ownerId}/seals (direto);GET /api/users/${ownerId}/seals;Não identificado no diagrama;Não identificado no diagrama
+c/coupons/brand-coupons-tab.tsx;PUT /api/promotions/${form.id} (direto);PUT /api/promotions/${form.id};Não identificado no diagrama;Não identificado no diagrama
+c/coupons/brand-coupons-tab.tsx;POST /api/promotions (direto);POST /api/promotions;Não identificado no diagrama;Não identificado no diagrama
+c/coupons/brand-coupons-tab.tsx;PUT /api/promotions/${p.id}/status (direto);PUT /api/promotions/${p.id}/status;Não identificado no diagrama;Não identificado no diagrama

@@ -79,7 +79,7 @@ public class CatalogImagePipelineService {
         this.tx = tx;
         this.pipeline = new CatalogImagePipeline(SemanticRegionRegistry.get(), persons.getIfAvailable());
         this.enabled = enabled;
-        this.batch = Math.max(1, batch);
+        this.batch = Math.min(32, Math.max(1, batch));
         this.maxAttempts = Math.max(1, maxAttempts);
     }
 
@@ -574,14 +574,16 @@ public class CatalogImagePipelineService {
 
     /**
      * Imagem que o card deve mostrar e como: master processado (nível B) ou URL original com o recorte semântico (nível A).
-     * null = sem canônica aprovada (o card segue com a foto principal, inteira).
+     * null = sem enquadramento aprovado; a interface deve mostrar estado de processamento/erro, nunca foto crua.
      */
     public static Map<String, Object> cardImage(CatalogImage canonical) {
-        if (canonical == null || !canonical.isCanonical()) {
+        if (canonical == null || !canonical.isCanonical() || !"APPROVED".equals(canonical.getProcessingStatus())
+                || canonical.getUsageStatus() == CatalogImageUsage.REJECTED || "REJECTED".equals(canonical.getReviewStatus())) {
             return null;
         }
         Map<String, Object> m = new LinkedHashMap<>();
         Map<String, Object> selectionCrop = canonical.getCropJson() == null ? Map.of() : Json.map(canonical.getCropJson());
+        if (!Boolean.TRUE.equals(selectionCrop.get("ruleCompliant")) || !(selectionCrop.get("crop") instanceof Map<?, ?>)) return null;
         boolean automaticFrame = selectionCrop.get("selectionFrame") instanceof Map<?, ?> frame
                 && Boolean.TRUE.equals(frame.get("automatic"));
         if (canonical.getAssetsJson() != null && (!selectionCrop.containsKey("selectionFrame") || automaticFrame)) {
@@ -610,6 +612,91 @@ public class CatalogImagePipelineService {
         m.put("imageId", canonical.getId());
         m.put("qualityScore", canonical.getQualityScore());
         m.put("pipelineVersion", canonical.getPipelineVersion());
+        Map<String, Object> whole = wholeFrame(canonical);
+        if (whole != null) m.put("whole", whole);
         return m;
+    }
+
+    /** Versão do Total frame: a interface encaixa a caixa da peça num quadro 3:4 com margem uniforme. */
+    public static final String WHOLE_FRAME_VERSION = "WHOLE_FRAME_V1";
+
+    /**
+     * Total frame (nível A, nada é copiado): a foto original da marca e a caixa da peça nela ({@code crop_json.product},
+     * normalizada), para a interface mostrar a peça INTEIRA no quadro em vez do recorte de tecido. Só vale para foto de
+     * produto em fundo de estúdio: com modelo/pessoa (rosto, braços) ou sem fundo uniforme devolve null e o card continua
+     * no recorte de sempre — o Total frame nunca enquadra uma pessoa.
+     */
+    static Map<String, Object> wholeFrame(CatalogImage canonical) {
+        Map<String, Object> processed = processedWhole(canonical);
+        if (processed != null) return processed;
+        if (canonical == null || canonical.getCropJson() == null || canonical.getImageUrl() == null) return null;
+        Map<String, Object> crop = Json.map(canonical.getCropJson());
+        Map<String, Object> metrics = canonical.getMetricsJson() == null ? Map.of() : Json.map(canonical.getMetricsJson());
+        Map<?, ?> debug = metrics.get("debug") instanceof Map<?, ?> d ? d : Map.of();
+        Map<?, ?> productFrame = debug.get("productFrame") instanceof Map<?, ?> p ? p : Map.of();
+        if (Boolean.TRUE.equals(productFrame.get("model"))) return null;
+        if (debug.get("sourceHumanEvidence") instanceof Number human && human.doubleValue() >= ProductRuleFrame.MIN_PERSON_SKIN) return null;
+        if (!(crop.get("background") instanceof String background) || background.isBlank()) return null;
+        if (!(crop.get("product") instanceof Map<?, ?> product)) return null;
+        double x = number(product.get("x")), y = number(product.get("y")), w = number(product.get("w")), h = number(product.get("h"));
+        if (!(w > 0.02 && h > 0.02 && w <= 1.001 && h <= 1.001 && x >= -0.001 && y >= -0.001 && x + w <= 1.001 && y + h <= 1.001)) return null;
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("url", canonical.getImageUrl());
+        m.put("box", Map.of("x", x, "y", y, "w", w, "h", h));
+        m.put("background", background);
+        m.put("width", canonical.getWidth());
+        m.put("height", canonical.getHeight());
+        m.put("truncated", debug.get("truncated") instanceof List<?> sides ? sides : List.of());
+        m.put("alpha", false);
+        m.put("version", WHOLE_FRAME_VERSION);
+        return m;
+    }
+
+    /** Versão da Peça inteira processada (lote process_whole_frames): a peça recortada sem pessoa, 900×1200. */
+    public static final String WHOLE_PROCESSED_VERSION = "WHOLE_FRAME_V2";
+
+    /**
+     * Peça inteira processada: o JPEG 900×1200 com a peça recortada (sem pessoa, sem fundo da marca) e a caixa dela no
+     * quadro. Vale também para foto com modelo — é a peça isolada, não a foto original. null sem o processamento.
+     */
+    static Map<String, Object> processedWhole(CatalogImage canonical) {
+        if (canonical == null || canonical.getWholeUrl() == null || canonical.getWholeUrl().isBlank()
+                || !"DONE".equals(canonical.getWholeStatus()) || canonical.getWholeJson() == null) return null;
+        Map<String, Object> info = Json.map(canonical.getWholeJson());
+        if (!(info.get("box") instanceof Map<?, ?> box)) return null;
+        double x = number(box.get("x")), y = number(box.get("y")), w = number(box.get("w")), h = number(box.get("h"));
+        if (!(w > 0.02 && h > 0.02 && w <= 1.001 && h <= 1.001 && x >= -0.001 && y >= -0.001 && x + w <= 1.001 && y + h <= 1.001)) return null;
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("url", canonical.getWholeUrl());
+        m.put("box", Map.of("x", x, "y", y, "w", w, "h", h));
+        m.put("background", info.getOrDefault("background", "#F4F5F7"));
+        m.put("width", info.getOrDefault("width", 900));
+        m.put("height", info.getOrDefault("height", 1200));
+        m.put("truncated", info.get("truncated") instanceof List<?> sides ? sides : List.of());
+        m.put("alpha", false);
+        m.put("processed", true);
+        m.put("version", WHOLE_PROCESSED_VERSION);
+        return m;
+    }
+
+    private static double number(Object value) {
+        return value instanceof Number n ? n.doubleValue() : Double.NaN;
+    }
+
+    /**
+     * Foto do catálogo que pode ir à GPU na Prova com IA: a canônica aprovada e gravada com autorização da fonte (nunca a
+     * cópia forçada pelo responsável) e comprovadamente sem pessoa — sem modelo vestindo e com a evidência de pele medida
+     * abaixo do limite. Sem essa medição, fica de fora: foto de marca com gente não vai à GPU.
+     */
+    public static boolean vtonGarment(CatalogImage image) {
+        if (image == null || !image.isCanonical() || !"APPROVED".equals(image.getProcessingStatus())
+                || image.getUsageStatus() != CatalogImageUsage.PERSISTED || image.getStoredUrl() == null) return false;
+        Map<String, Object> assets = image.getAssetsJson() == null ? Map.of() : Json.map(image.getAssetsJson());
+        if (assets.get("persistenceDecision") instanceof Map<?, ?> decision && "FORCED_CATEGORY_FRAME".equals(decision.get("mode"))) return false;
+        Map<String, Object> metrics = image.getMetricsJson() == null ? Map.of() : Json.map(image.getMetricsJson());
+        Map<?, ?> debug = metrics.get("debug") instanceof Map<?, ?> d ? d : Map.of();
+        Map<?, ?> productFrame = debug.get("productFrame") instanceof Map<?, ?> f ? f : Map.of();
+        if (Boolean.TRUE.equals(productFrame.get("model"))) return false;
+        return debug.get("sourceHumanEvidence") instanceof Number human && human.doubleValue() < ProductRuleFrame.MIN_PERSON_SKIN;
     }
 }

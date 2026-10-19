@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /brands/[slug];POST /api/seal-bonds/{bondId}/review (direto);POST /api/seal-bonds/{bondId}/review;SealController;SealService.review()

@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /settings;PUT /api/me/preferences (direto);PUT /api/me/preferences;PreferencesController;PreferencesService.update()

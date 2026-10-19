@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /highlights;GET /api/me/highlights (direto);GET /api/me/highlights;HighlightsController;InventoryScoreService.highlightsTab()

@@ -1,0 +1,78 @@
+@startuml RF18_ProvaIA_Estados
+' v5: escrito à mão — o caminho passa pelo worker e pela GPU em Python (services/anatomical_vton), que scripts/diagramas/v5 não lê
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF18 — Prova com IA: ciclo de vida de um pedido de prova (do diálogo ao resultado, etapa por etapa na GPU)\nDiagrama de máquina de estados — escrito à mão e conferido com o código em 2026-10-18
+
+state "Sem peça vestível" as SemPeca : nenhuma candidata isGpuCategory()\ntryOn.ia_sem_peca
+state "Montando o look" as Montando : look = gpuLook(candidatas)\nmode = look | piece
+state "Enviando a foto" as Enviando : busy = upload\nPOST /api/try-on/person-photos
+state "Foto pronta" as Foto : photo.url em restricted/users/{id}/tryon/person/\nconsent = false
+state "Pronta para gerar" as Pronta : ready = foto && consent && peças
+state "Vestindo na GPU" as Render {
+  state "Etapa do look" as Etapa {
+    state "No worker" as Wk : Bearer · fashion_category()
+    state "Pose da pessoa" as Pose0 : DWPose + pose_screen()
+    state "Difusão" as Dif : FASHN VTON 1.5 · 30 passos\nserving_dtype(): float32 no T4
+    state "Pose do resultado" as Pose1 : pose_screen() · RMSE ≤ 0,08
+    state "PNG gravado" as Png : validateOutput()\nusers/{id}/tryon/anatomical-*.png
+    [*] --> Wk : POST /try-on
+    Wk --> Pose0 : POST :predict
+    Pose0 --> Dif
+    Dif --> Pose1
+    Pose1 --> Png : READY
+    Png --> [*]
+  }
+  state "falta peça?" as Prox <<choice>>
+  [*] --> Etapa : LOOK_ORDER\nfull_body → lower → upper
+  Etapa --> Prox
+  Prox --> Etapa : sim · a imagem desta etapa\nvira a foto da próxima
+  Prox --> [*] : não (última peça do look)
+}
+state "Prova pronta" as Ok : status READY · url · steps[] · skipped[]\nphysicalFitCertified = false
+state "Recusada" as Recusa : 422 VTON_WORKER_REJECTED\ndetails.reason → tryOn.ia_motivo.*
+state "Indisponível" as Indisp : 503 VTON_NOT_CONFIGURED\nou worker sem resposta válida
+
+[*] --> SemPeca : abre "Provar com IA"\nsem candidata
+[*] --> Montando : abre com peças de cima,\nde baixo ou inteiras
+SemPeca --> [*] : "Escolher no guarda-roupa"
+Montando --> Enviando : escolhe a foto · fitted() ≤ 1536 px
+Enviando --> Montando : 400 VTON_IMAGE_SMALL /\nimagem recusada
+Enviando --> Foto : 201 {url, width, height}
+Foto --> Pronta : marca o consentimento
+Pronta --> Foto : desmarca o consentimento
+Pronta --> Render : "Gerar prova"\nlook-renders ou anatomical-renders
+Render --> Ok : 200 READY
+Render --> Recusa : código da GPU ou do worker\n(pessoa, corpo, fora, foto,\nresultado, peça, categoria, gpu)
+Render --> Indisp : 503
+Render --> Pronta : "Cancelar" (AbortController)
+Recusa --> Enviando : troca a foto
+Recusa --> Render : tenta de novo
+Indisp --> Render : tenta mais tarde
+Ok --> Montando : troca o modo ou a peça
+Ok --> [*] : fecha o diálogo
+note right of Render
+  Uma etapa por peça: o look só volta READY
+  se todas passarem; a etapa que falha encerra
+  o pedido e a foto original nunca é trocada.
+  No modo "Uma peça" há uma única etapa.
+end note
+@enduml

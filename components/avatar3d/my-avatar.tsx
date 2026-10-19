@@ -5,29 +5,27 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { retryImport } from "@/lib/chunk-recovery";
 import * as THREE from "three";
-import { api, mediaUrl } from "@/lib/api/client";
+import { api, ApiError, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
-import { Badge, Button, Card, Chip, Dialog, ErrorState, FileButton, PageHeader, SegmentPicker, Skeleton, Spinner, Switch, useToast } from "@/components/ui";
+import { Badge, Button, Card, Chip, Dialog, ErrorState, FileButton, PageHeader, Skeleton, Spinner, Switch, useToast } from "@/components/ui";
 import { useWebGL } from "@/components/three/common";
-import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { HumanParts } from "@/components/three/human-avatar";
-import { AVATAR_NOT_DRESSED, downloadBlob, exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { analyzePhoto, atlasBlob, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import { ADJUST_RANGE, DEFAULT_ADJUST, SLIDER_ADJUSTS, clampAdjust, type AvatarAdjust, type AvatarHair, type AvatarModel } from "@/lib/avatar3d/model";
 import type { AvatarEyes } from "@/lib/avatar3d/iris";
 import type { AvatarBrows } from "@/lib/avatar3d/identity/brows";
 import { HAIR_TONES, paletteId } from "@/lib/avatar3d/hair-tone";
 import { HAIR_CUTS, HAIR_FRINGES } from "@/lib/avatar3d/hair-cut";
-import { SEX_CONFIDENT, type SexGuess } from "@/lib/avatar3d/sex-detect";
 import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
-import { validateBody, type BodyModel } from "@/lib/avatar3d/body-spec";
-import { BodyEditor } from "@/components/avatar3d/body-editor";
+import { validateBody } from "@/lib/avatar3d/body-spec";
+import { NEUTRAL_ENVIRONMENT } from "@/lib/tryon/fitting-room";
+import { portraitRefusalKey, similarityBand, stylizedPortraitOnGpu } from "@/lib/avatar3d/portrait-gpu";
 import type { FaceFidelity } from "@/lib/avatar3d/identity/metrics";
 
-const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
+const FittingRoomScene = dynamic(() => retryImport(() => import("@/components/three/fitting-room-scene")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
 interface GateView { passed: boolean; failed: string[]; notMeasured?: string[] }
 /** AVATAR-ID I1: identidade versionada (versão atual, status do gate, versão aprovada que outras pessoas veem). */
@@ -53,7 +51,6 @@ function isMeasured(p: HumanParts) {
   return p.identity != null && ud.skin === "baked" && ud.skinReport != null;
 }
 
-const VIEWS: AvatarView[] = ["front", "left34", "right34", "profile"];
 /** Avisos cujo texto na hora da foto leva um número (px, graus, %): o avatar salvo guarda só o código. */
 const SAVED_TEXT = new Set(["FACE_SMALL", "LOOK_AT_CAMERA", "HEAD_UP_DOWN", "HEAD_TILT", "FACE_OCCLUDED", "MULTIPLE_FACES", "TURN_MORE", "TURN_LESS"]);
 
@@ -190,62 +187,41 @@ function HairFringePicker({ value, onChange }: { value: number; onChange: (v: nu
   );
 }
 
-/**
- * Corpo base (feminino/masculino): estimado pelo rosto, no aparelho (lib/avatar3d/sex-detect.ts); quando a estimativa
- * não é segura, vale o do cadastro. A pessoa troca quando quiser — a escolha dela vence as duas.
- */
-function BodySexPicker({ value, guess, chosen, onChange }: { value: Sex; guess: SexGuess | null; chosen: boolean; onChange: (s: Sex) => void }) {
-  const { t } = useI18n();
-  const hint = chosen ? t("avatar3d.sex.escolhido")
-    : guess && guess.confidence >= SEX_CONFIDENT && guess.sex === value ? t("avatar3d.sex.detectado", { pct: Math.round(guess.confidence * 100) })
-    : guess ? t("avatar3d.sex.cadastro_incerto") : t("avatar3d.sex.cadastro");
-  return (
-    <div className="grid gap-1.5">
-      <span className="type-body-sm" id="avatar-sex">{t("avatar3d.sex.titulo")}</span>
-      <SegmentPicker label={t("avatar3d.sex.titulo")} value={value} onChange={onChange}
-        options={[{ id: "FEMININO" as Sex, label: t("avatar3d.sex.FEMININO") }, { id: "MASCULINO" as Sex, label: t("avatar3d.sex.MASCULINO") }]} />
-      <span className="type-caption text-muted">{hint}</span>
-    </div>
-  );
-}
 
-function ViewButtons({ view, onView }: { view: AvatarView; onView: (v: AvatarView) => void }) {
-  const { t } = useI18n();
-  return (
-    <div role="group" aria-label={t("avatar3d.view.label")} className="flex flex-wrap gap-2">
-      {VIEWS.map((v) => <Button key={v} size="sm" variant={v === view ? "primary" : "default"} aria-pressed={v === view} onClick={() => onView(v)}>{t(`avatar3d.view.${v}`)}</Button>)}
-    </div>
-  );
-}
 
 /**
- * Criação/refação (RF40.CA01–CA07): o avatar sai de UMA foto — a foto de perfil (RF1). Se ela não servir (sem rosto,
- * rosto pequeno, virado), a pessoa escolhe outra foto aqui mesmo. Análise no aparelho → prévia → consentimento → salvar.
+ * Meu Avatar 3D numa função só (RF40): "Seu avatar" recebe a foto — a de perfil já vem escolhida — e a GPU desenha a
+ * versão 3D semirrealista dela (SDXL + InstantID, o mesmo rosto medido pelo ArcFace); esse desenho monta o avatar
+ * (rosto, cabelo e textura) que aparece na prévia ao lado. "Ajustes finos" mexe no resultado. Com a GPU desligada, o
+ * avatar sai da própria foto e um aviso diz isso. A foto não é guardada; o avatar só é salvo com o consentimento.
+ * Sem foto nova, a prévia é o avatar salvo (visibilidade, ajustes, GLB e excluir valem para ele).
  */
-function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "MASCULINO"; onSaved: () => void; onCancel?: () => void; initialPublic: boolean }) {
-  const { t } = useI18n(); const toast = useToast(); const issueText = useIssueText(); const { user } = useAuth();
+function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO" | "MASCULINO"; onChanged: () => void }) {
+  const { t, fmtDateTime } = useI18n(); const toast = useToast(); const issueText = useIssueText(); const { user } = useAuth();
   const profileUrl = mediaUrl(user?.avatarUrl);
   const [file, setFile] = useState<Blob | null>(null);
   const [source, setSource] = useState<"profile" | "upload" | null>(null);
   const [profileState, setProfileState] = useState<"loading" | "ok" | "none" | "failed">(profileUrl ? "loading" : "none");
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
-  const [busy, setBusy] = useState<"" | "analyze" | "save">("");
+  const [busy, setBusy] = useState<"" | "gpu" | "analyze" | "save" | "patch" | "delete">("");
   const [photo, setPhoto] = useState<AnalyzedPhoto | null>(null);
   const [built, setBuilt] = useState<BuiltAvatar | null>(null);
   const [failed, setFailed] = useState(false);
-  const [adjust, setAdjust] = useState<AvatarAdjust>({ ...DEFAULT_ADJUST });
-  const [view, setView] = useState<AvatarView>("front");
+  const [gpuConsent, setGpuConsent] = useState(false);
+  const [gpu, setGpu] = useState<{ similarity?: number; note?: string } | null>(null);
   const [consent, setConsent] = useState(false);
-  const [pub, setPub] = useState(initialPublic);
-  const [sexChoice, setSexChoice] = useState<Sex | null>(null);        // null = automático (rosto; senão o cadastro)
+  const [pub, setPub] = useState(saved.exists ? !!saved.publicOnRunway : true);
+  const [adjust, setAdjust] = useState<AvatarAdjust>(saved.exists ? clampAdjust(saved.adjust) : { ...DEFAULT_ADJUST });
+  const [confirm, setConfirm] = useState(false);
+  const [textureEyes, setTextureEyes] = useState<AvatarEyes | null>(null);
   // medidas da prévia (fidelidade do rosto e, depois do bake, a pele): presas à prévia que as mediu, para o gate de
   // identidade nunca receber o relatório da prévia anterior nem sair sem ele
   const measured = useRef<{ built: BuiltAvatar; parts: HumanParts } | null>(null);
-  const [ready, setReady] = useState<BuiltAvatar | null>(null);         // a prévia cujas medidas já estão prontas
+  const [ready, setReady] = useState<BuiltAvatar | null>(null);
   const bakeWait = useRef(0);
   useEffect(() => () => cancelAnimationFrame(bakeWait.current), []);
-  function onHuman(b: BuiltAvatar, p: HumanParts) {
+  function onPreviewHuman(b: BuiltAvatar, p: HumanParts) {
     measured.current = { built: b, parts: p }; setReady(null); cancelAnimationFrame(bakeWait.current);
     const wait = () => {
       if (measured.current?.parts !== p) return;
@@ -271,32 +247,46 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
     return () => ctl.abort();
   }, [profileUrl]);
 
-  function chooseSex(s: Sex) {
-    setSexChoice(s);
-    if (photo) { const b = buildAvatar([photo], { sex: s, profileSex: sex }); if (b) setBuilt(b); }
-  }
-
   function pick(f: File | null) {
     if (!f) return;
-    setFile(f); setSource("upload"); setBuilt(null); setFailed(false); setPhoto(null);
+    setFile(f); setSource("upload"); setBuilt(null); setFailed(false); setPhoto(null); setGpu(null); setGpuConsent(false);
   }
 
+  /**
+   * Com o consentimento da GPU, a foto vira o desenho 3D semirrealista e é ele que monta o avatar; recusa da foto (sem
+   * rosto, vários rostos) para aqui com o motivo. O sexo do corpo é sempre o detectado no rosto (ou o do cadastro).
+   */
   async function analyze() {
     if (!file) return;
-    setBusy("analyze"); setBuilt(null); setFailed(false);
+    setBusy(gpuConsent ? "gpu" : "analyze"); setBuilt(null); setFailed(false); setGpu(null);
     try {
-      const p = await analyzePhoto(file, "front");
+      let src: Blob = file;
+      if (gpuConsent) {
+        try {
+          const r = await stylizedPortraitOnGpu(file);
+          src = await (await fetch(r.image)).blob();
+          setGpu({ similarity: r.identitySimilarity });
+        } catch (e) {
+          const reason = e instanceof ApiError ? portraitRefusalKey(e.details?.reason) : null;
+          if (e instanceof ApiError && e.code === "RETRATO_GPU_RECUSADO" && reason && reason !== "avatar3d.portrait.motivo.indisponivel" && reason !== "avatar3d.portrait.motivo.ocupada") {
+            toast.error(t(reason)); return;
+          }
+          setGpu({ note: t(reason === "avatar3d.portrait.motivo.ocupada" ? reason : "avatar3d.page.gpu_desligada") });
+        }
+      }
+      setBusy("analyze");
+      const p = await analyzePhoto(src, "front");
       setPhoto(p);
-      const b = buildAvatar([p], { sex: sexChoice, profileSex: sex });
-      setBuilt(b); setFailed(!b); setView("front");
+      const b = buildAvatar([p], { sex: null, profileSex: sex });
+      setBuilt(b); setFailed(!b); setAdjust({ ...DEFAULT_ADJUST }); setConsent(false);
     } catch {
       toast.error(t("avatar3d.page.erro_processar"));
-    } finally { setBusy(""); }
+    } finally { setBusy(""); setGpuConsent(false); }   // consentimento vale para um envio só (LGPD art. 11)
   }
 
   async function save() {
     const m = measured.current;
-    if (!built || !consent || m?.built !== built || !isMeasured(m.parts)) return;
+    if (!built || !consent || m?.built !== built || !isMeasured(m.parts) || (gpu?.similarity !== undefined && similarityBand(gpu.similarity) === "baixa")) return;
     setBusy("save");
     try {
       const fd = new FormData();
@@ -304,20 +294,39 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
       fd.append("texture", await atlasBlob(built.atlas), "avatar.jpg");
       await api.upload("/api/me/avatar3d", fd);
       toast.success(t("avatar3d.page.salvo"));
-      onSaved();
+      setBuilt(null); setPhoto(null); setGpu(null); setConsent(false);
+      onChanged();
     } catch (e) { toast.fromError(e); } finally { setBusy(""); }
   }
+  function discard() { setBuilt(null); setPhoto(null); setGpu(null); setConsent(false); setAdjust(saved.exists ? clampAdjust(saved.adjust) : { ...DEFAULT_ADJUST }); setPub(saved.exists ? !!saved.publicOnRunway : true); }
+  async function patch(body: { adjust?: AvatarAdjust; publicOnRunway?: boolean }) {
+    setBusy("patch");
+    try { await api.patch("/api/me/avatar3d", body); toast.success(t("avatar3d.page.ajustes_salvos")); onChanged(); }
+    catch (e) { toast.fromError(e); } finally { setBusy(""); }
+  }
+  async function remove() {
+    setBusy("delete");
+    try { await api.delete("/api/me/avatar3d"); setConfirm(false); toast.success(t("avatar3d.page.excluido")); onChanged(); }
+    catch (e) { toast.fromError(e); } finally { setBusy(""); }
+  }
 
+  const showingSaved = !built && saved.exists && !!saved.model;
+  const model = built?.model ?? (showingSaved ? saved.model : undefined);
+  const body = validateBody(saved.model?.body);
+  const dirty = showingSaved && JSON.stringify(clampAdjust(saved.adjust)) !== JSON.stringify(adjust);
   const setIssues = built?.set.issues ?? [];
+  const working = busy === "gpu" || busy === "analyze";
+  // desenho da GPU que não se parece mais com a pessoa (semelhança baixa no ArcFace) não vira avatar: gerar de novo
+  const unlike = !!built && gpu?.similarity !== undefined && similarityBand(gpu.similarity) === "baixa";
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
       <div className="grid content-start gap-3">
         <Card>
-          <p className="label">{t("avatar3d.page.foto_do_avatar")}</p>
-          <p className="mb-2 type-body-sm text-muted">{t("avatar3d.page.uma_foto")}</p>
-          <ul className="fai-list mb-3 type-body-sm text-muted">
-            <li>{t("avatar3d.page.dica_luz")}</li><li>{t("avatar3d.page.dica_rosto")}</li>
-          </ul>
+          <p className="label">{t("avatar3d.page.seu_avatar")}</p>
+          {showingSaved && <p className="type-body-sm">{t("avatar3d.page.feito_com", { n: saved.photos ?? 1 })}{saved.updatedAt ? ` · ${fmtDateTime(saved.updatedAt)}` : ""}</p>}
+          {showingSaved && (saved.warnings ?? []).length > 0 && <ul className="fai-list mt-2">{saved.warnings!.map((c) => <li key={c} className="type-caption text-muted">⚠ {SAVED_TEXT.has(c) ? t(`avatar3d.saved.${c}`) : issueText({ code: c })}</li>)}</ul>}
+          {showingSaved && saved.identity && <IdentityPanel identity={saved.identity} onChanged={onChanged} />}
+          <p className="mt-2 mb-2 type-body-sm text-muted">{t("avatar3d.page.uma_foto")}</p>
           <div className="flex items-start gap-3">
             <div className="grid aspect-square w-28 shrink-0 place-items-center overflow-hidden rounded-md border border-line bg-surface-2">
               {preview ? <img src={preview} alt={t(source === "profile" ? "avatar3d.page.foto_de_perfil" : "avatar3d.page.foto_escolhida")} className="h-full w-full object-cover" />
@@ -333,121 +342,48 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
               {photo?.issues.filter((x) => x.severity === "warn").map((x) => <span key={x.code} className="type-caption text-muted">⚠ {issueText(x)}</span>)}
             </div>
           </div>
+          <div className="mt-3"><Switch checked={gpuConsent} onChange={setGpuConsent} disabled={!!busy} label={t("avatar3d.page.gpu_consentimento")} hint={t("avatar3d.page.gpu_dica")} /></div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="primary" loading={busy === "analyze"} disabled={!file || !!busy} onClick={analyze}>{t("avatar3d.page.gerar_previa")}</Button>
-            {onCancel && <Button variant="ghost" disabled={!!busy} onClick={onCancel}>{t("common.cancel")}</Button>}
+            <Button variant="primary" loading={working} disabled={!file || !!busy} onClick={analyze}>{t(gpuConsent ? "avatar3d.page.gerar_com_gpu" : "avatar3d.page.gerar_previa")}</Button>
+            {built && saved.exists && <Button variant="ghost" disabled={!!busy} onClick={discard}>{t("common.cancel")}</Button>}
           </div>
-          {busy === "analyze" && <p className="mt-2 flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.page.processando")}</p>}
+          {working && <p className="mt-2 flex items-center gap-2 type-caption text-muted" role="status"><Spinner size={14} />{t(busy === "gpu" ? "avatar3d.page.gpu_gerando" : "avatar3d.page.processando")}</p>}
+          {gpu?.note && <p className="mt-2 type-caption text-muted">{gpu.note}</p>}
           {failed && <p role="alert" className="mt-2 type-body-sm text-critical">{t("avatar3d.page.nao_montou")}</p>}
-          <p className="mt-3 type-caption text-faint">{t("avatar3d.page.privacidade")}</p>
+          {built && gpu?.similarity !== undefined && <p className="mt-2 type-caption text-muted">{t("avatar3d.page.gpu_semelhanca", { pct: Math.round(Math.max(0, gpu.similarity) * 100) })}</p>}
+          {unlike && <p role="alert" className="mt-1 type-caption text-critical">{t("avatar3d.page.gpu_pouco_parecido")}</p>}
+          {setIssues.length > 0 && <ul className="fai-list mt-2">{setIssues.map((x) => <li key={x.code} className="type-caption text-muted">⚠ {issueText(x)}</li>)}</ul>}
+          {built && (
+            <>
+              <label className="mt-3 flex items-start gap-2 type-body-sm">
+                <input type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                <span>{t("avatar3d.page.consentimento")}</span>
+              </label>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button variant="primary" loading={busy === "save"} disabled={!consent || !!busy || !qualityReady || unlike} onClick={save}>{t("avatar3d.page.salvar")}</Button>
+                {!qualityReady && <span className="flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.page.medindo")}</span>}
+              </div>
+            </>
+          )}
+          <div className="mt-3"><Switch checked={pub} onChange={(v) => { setPub(v); if (showingSaved) void patch({ publicOnRunway: v }); }} label={t("avatar3d.page.publico")} hint={t("avatar3d.page.publico_hint")} /></div>
+          {showingSaved && <div className="mt-3"><Button variant="ghost" onClick={() => setConfirm(true)} disabled={!!busy}>{t("avatar3d.page.excluir")}</Button></div>}
+          <p className="mt-3 type-caption text-faint">{t(gpuConsent || gpu ? "avatar3d.page.privacidade_gpu" : "avatar3d.page.privacidade")}</p>
         </Card>
-        {built && (
+        {model && (
           <Card>
             <p className="label">{t("avatar3d.page.ajustes")}</p>
-            <div className="mb-3"><BodySexPicker value={built.model.sex ?? sex} guess={built.sexGuess} chosen={!!sexChoice} onChange={chooseSex} /></div>
-            <AdjustSliders value={adjust} onChange={setAdjust} hair={built?.model.hair} eyes={built?.model.eyes} brows={built?.model.brows} />
+            <AdjustSliders value={adjust} onChange={setAdjust} hair={model.hair} eyes={textureEyes ?? model.eyes} brows={model.brows} />
+            {showingSaved && <Button className="mt-3" variant="primary" size="sm" loading={busy === "patch"} disabled={!dirty || !!busy} onClick={() => patch({ adjust })}>{t("avatar3d.page.salvar_ajustes")}</Button>}
           </Card>
         )}
-      </div>
-      <div className="grid content-start gap-3">
-        <Card>
-          <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view={view} onHuman={(p) => onHuman(built, p)} />
-              : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
-          </div>
-          {built && <div className="mt-3"><ViewButtons view={view} onView={setView} /></div>}
-          {setIssues.length > 0 && <ul className="fai-list mt-3">{setIssues.map((x) => <li key={x.code} className="type-body-sm text-muted">⚠ {issueText(x)}</li>)}</ul>}
-        </Card>
-        {built && (
-          <Card>
-            <label className="flex items-start gap-2 type-body-sm">
-              <input type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-              <span>{t("avatar3d.page.consentimento")}</span>
-            </label>
-            <div className="mt-3"><Switch checked={pub} onChange={setPub} label={t("avatar3d.page.publico")} hint={t("avatar3d.page.publico_hint")} /></div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="primary" loading={busy === "save"} disabled={!consent || !!busy || !qualityReady} onClick={save}>{t("avatar3d.page.salvar")}</Button>
-              {!qualityReady && <span className="flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.page.medindo")}</span>}
-            </div>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** Avatar salvo: prévia, ajustes, visibilidade, refazer e excluir (RF40.CA06, CA08, CA09). */
-function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO" | "MASCULINO"; onRedo: () => void; onChanged: () => void }) {
-  const { t, fmtDateTime } = useI18n(); const toast = useToast(); const issueText = useIssueText();
-  const [view, setView] = useState<AvatarView>("front");
-  const [framing, setFraming] = useState<"bust" | "full">("bust"); const human = useRef<HumanParts | null>(null);
-  const [adjust, setAdjust] = useState<AvatarAdjust>(clampAdjust(saved.adjust));
-  const [pub, setPub] = useState(!!saved.publicOnRunway);
-  const [busy, setBusy] = useState<"" | "patch" | "delete" | "body" | "glb">("");
-  const [confirm, setConfirm] = useState(false);
-  const [textureEyes, setTextureEyes] = useState<AvatarEyes | null>(null);
-  const body = validateBody(saved.model?.body);
-  const dirty = JSON.stringify(clampAdjust(saved.adjust)) !== JSON.stringify(adjust);
-
-  async function saveBody(b: BodyModel | null) {
-    setBusy("body");
-    try { await api.patch("/api/me/avatar3d", { body: b ?? {} }); toast.success(t("avatar3d.body.salvo")); onChanged(); }
-    catch (e) { toast.fromError(e); } finally { setBusy(""); }
-  }
-  const bodySex: Sex = saved.model?.sex ?? sex;
-  async function patch(body: { adjust?: AvatarAdjust; publicOnRunway?: boolean; sex?: Sex }) {
-    setBusy("patch");
-    try { await api.patch("/api/me/avatar3d", body); toast.success(t("avatar3d.page.ajustes_salvos")); onChanged(); }
-    catch (e) { toast.fromError(e); } finally { setBusy(""); }
-  }
-  async function downloadGlb() {
-    const p = human.current; if (!p) return;
-    setBusy("glb");
-    try { downloadBlob(await exportAvatarGlb(p.human, p.pose, { hair: { live: p.hair, build: p.exportHair } }), "fashionai-avatar.glb"); }
-    catch (e) { if (e instanceof Error && e.message === AVATAR_NOT_DRESSED) toast.info(t("avatar3d.page.glb_aguarde_roupa")); else toast.fromError(e); } finally { setBusy(""); }
-  }
-  async function remove() {
-    setBusy("delete");
-    try { await api.delete("/api/me/avatar3d"); setConfirm(false); toast.success(t("avatar3d.page.excluido")); onChanged(); }
-    catch (e) { toast.fromError(e); } finally { setBusy(""); }
-  }
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
-      <div className="grid content-start gap-3">
-        <Card>
-          <p className="label">{t("avatar3d.page.seu_avatar")}</p>
-          <p className="type-body-sm">{t("avatar3d.page.feito_com", { n: saved.photos ?? 1 })}{saved.updatedAt ? ` · ${fmtDateTime(saved.updatedAt)}` : ""}</p>
-          {(saved.warnings ?? []).length > 0 && <ul className="fai-list mt-2">{saved.warnings!.map((c) => <li key={c} className="type-caption text-muted">⚠ {SAVED_TEXT.has(c) ? t(`avatar3d.saved.${c}`) : issueText({ code: c })}</li>)}</ul>}
-          {saved.identity && <IdentityPanel identity={saved.identity} onChanged={onChanged} />}
-          <div className="mt-3"><Switch checked={pub} onChange={(v) => { setPub(v); void patch({ publicOnRunway: v }); }} label={t("avatar3d.page.publico")} hint={t("avatar3d.page.publico_hint")} /></div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button onClick={onRedo} disabled={!!busy}>{t("avatar3d.page.refazer")}</Button>
-            <Button variant="ghost" onClick={() => setConfirm(true)} disabled={!!busy}>{t("avatar3d.page.excluir")}</Button>
-          </div>
-        </Card>
-        <Card>
-          <p className="label">{t("avatar3d.page.ajustes")}</p>
-          <div className="mb-3"><BodySexPicker value={bodySex} guess={null} chosen={!!saved.model?.sex} onChange={(v) => { if (v !== bodySex) void patch({ sex: v }); }} /></div>
-          <AdjustSliders value={adjust} onChange={setAdjust} hair={saved.model?.hair} eyes={textureEyes ?? saved.model?.eyes} brows={saved.model?.brows} />
-          <Button className="mt-3" variant="primary" size="sm" loading={busy === "patch"} disabled={!dirty || !!busy} onClick={() => patch({ adjust })}>{t("avatar3d.page.salvar_ajustes")}</Button>
-        </Card>
       </div>
       <Card>
         <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={bodySex} view={view} body={body?.params} framing={framing} onHuman={(p) => { human.current = p; setTextureEyes(p.eyes ?? null); }} />}
+          {built && texture ? <FittingRoomScene avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view="front" body={body?.params} pieces={[]} environment={{ kind: "neutral", featured: NEUTRAL_ENVIRONMENT, others: [], brands: [] }} scene={null} light="daylight" walkable={false} onHuman={(p) => { onPreviewHuman(built, p); setTextureEyes(p.eyes ?? null); }} />
+            : showingSaved ? <FittingRoomScene avatar={{ model: saved.model!, adjust, textureUrl: saved.textureUrl }} sex={saved.model!.sex ?? sex} view="front" body={body?.params} pieces={[]} environment={{ kind: "neutral", featured: NEUTRAL_ENVIRONMENT, others: [], brands: [] }} scene={null} light="daylight" walkable={false} onHuman={(p) => setTextureEyes(p.eyes ?? null)} />
+            : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <ViewButtons view={view} onView={setView} />
-          <Button size="sm" variant={framing === "full" ? "primary" : "ghost"} aria-pressed={framing === "full"} onClick={() => setFraming(framing === "full" ? "bust" : "full")}>{t("avatar3d.page.corpo_inteiro")}</Button>
-          <Button size="sm" variant="ghost" loading={busy === "glb"} disabled={!!busy} onClick={downloadGlb}>{t("avatar3d.page.baixar_glb")}</Button>
-        </div>
-        <p className="mt-1 type-caption text-faint">{t("avatar3d.page.baixar_glb_hint")}</p>
-        <p className="mt-2 type-caption text-faint">{t("avatar3d.page.onde_aparece")}</p>
       </Card>
-      <div className="lg:col-span-2">
-        {saved.model && <BodyEditor sex={bodySex} initial={body} avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} saving={busy === "body"} onSave={saveBody} />}
-      </div>
       <Dialog open={confirm} onClose={() => setConfirm(false)} title={t("avatar3d.page.excluir_titulo")}
         footer={<><Button variant="ghost" onClick={() => setConfirm(false)}>{t("common.cancel")}</Button><Button variant="danger" loading={busy === "delete"} onClick={remove}>{t("avatar3d.page.excluir")}</Button></>}>
         <p className="type-body">{t("avatar3d.page.excluir_texto")}</p>
@@ -512,24 +448,21 @@ function IdentityPanel({ identity, onChanged }: { identity: IdentityView; onChan
 export default function MyAvatar() {
   const { t } = useI18n(); const { me, user } = useAuth(); const webgl = useWebGL();
   const saved = useApi<Saved>((signal) => api.get("/api/me/avatar3d", { signal }), []);
-  const [redo, setRedo] = useState(false);
   const top = useRef<HTMLDivElement>(null);
   const sex: "FEMININO" | "MASCULINO" = me?.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
   const header = <PageHeader title={t("avatar3d.page.titulo")} kicker="RF40" lead={t("avatar3d.page.lead")} />;
   if (saved.error) return <>{header}<ErrorState error={saved.error} onRetry={saved.reload} /></>;
   if (saved.loading || !saved.data) return <>{header}<Skeleton className="h-96" /></>;
   const s = saved.data;
-  const done = () => { setRedo(false); saved.reload(); top.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const done = () => { saved.reload(); top.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   return (
     <div ref={top}>
       {header}
       {user?.profileType === "MARCA" && <p className="mb-3"><Badge tone="chalk">{t("avatar3d.page.marca")}</Badge></p>}
       {webgl === false ? (
         <Card><p className="type-body">{t("avatar3d.page.sem_webgl")}</p></Card>
-      ) : s.exists && !redo ? (
-        <Saved saved={s} sex={sex} onRedo={() => setRedo(true)} onChanged={done} />
       ) : (
-        <Create sex={sex} onSaved={done} onCancel={s.exists ? () => setRedo(false) : undefined} initialPublic={s.exists ? !!s.publicOnRunway : true} />
+        <AvatarStudio saved={s} sex={sex} onChanged={done} />
       )}
     </div>
   );

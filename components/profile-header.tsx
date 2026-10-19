@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 
+import {ProfileLevelChip,type LevelProgress} from "./profile-level-progress";
+
 export interface ProfileCounts { pieces?: number; schemes?: number; followers?: number; following?: number }
 
 /**
@@ -13,10 +15,10 @@ export interface ProfileCounts { pieces?: number; schemes?: number; followers?: 
  * `hype` (RF53 · Lote A1): o Hype agregado do criador ou da marca (HypeGroupBadge "header"), logo abaixo da categoria;
  * quando o agregado não tem base, o próprio componente não desenha nada.
  */
-export function ProfileHeader({ photoUrl, photo, username, displayName, verified, kindLabel, category, bio, link, counts, actions, onCounts, cover, hype }: {
+export function ProfileHeader({ photoUrl, photo, username, displayName, verified, kindLabel, category, bio, link, counts, actions, onCounts, cover, hype, levelProgress }: {
   photoUrl?: string | null; photo?: ReactNode; username: string; displayName: string; verified?: boolean; kindLabel?: string; category?: string | null;
   bio?: string | null; link?: { href: string; label: string } | null; counts: ProfileCounts; actions?: ReactNode;
-  onCounts?: (which: "followers" | "following") => void; cover?: string | null; hype?: ReactNode;
+  onCounts?: (which: "followers" | "following") => void; cover?: string | null; hype?: ReactNode; levelProgress?: LevelProgress | null;
 }) {
   const { fmtNumber, t } = useI18n();
   const stat = (n: number | undefined, label: string, which?: "followers" | "following") => {
@@ -41,6 +43,7 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
             <h1 className="type-h1 break-words text-ink">{username}</h1>
             {verified && <span title={t("profileHeader.verificado")} aria-label={t("profileHeader.verificado")} className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0067ac] text-xs font-bold text-white">✓</span>}
             {kindLabel && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-ink">{kindLabel}</span>}
+            {levelProgress && <ProfileLevelChip progress={levelProgress} />}
             <div className="hidden flex-wrap gap-2 sm:flex">{actions}</div>
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 sm:gap-x-8" role="list" aria-label={t("profileHeader.contadores_do_perfil")}>

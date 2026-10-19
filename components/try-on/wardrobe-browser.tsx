@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Card, cn } from "@/components/ui";
-import { mediaUrl } from "@/lib/api/client";
+import { PieceImage, useImageBatch } from "@/components/piece-image";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FITTING_SLOTS, type FittingItem, type FittingSlot } from "@/lib/tryon/fitting-room";
@@ -22,6 +22,7 @@ export function WardrobeBrowser({
   pieces, needsReview, items, slotNames, onRemove, onTryOnEntry,
 }: WardrobeBrowserProps) {
   const { t } = useI18n();
+  const batchReady = useImageBatch(FITTING_SLOTS.flatMap((slot) => (pieces?.[slot] ?? []).map((e) => [e.piece.thumbnailUrl, e.piece.imageUrl])));
   const wardrobeCount = FITTING_SLOTS.reduce((count, slot) => count + (pieces?.[slot]?.length ?? 0), 0);
 
   return (
@@ -53,7 +54,7 @@ export function WardrobeBrowser({
               {slotNames[slot]} <span className="type-caption text-muted">· {entries.length}</span>
             </h3>
             <div className="flex flex-wrap gap-2">
-              {entries.map((entry) => {
+              {entries.map((entry, index) => {
                 const worn = items.some((item) => item.key === `w:${entry.piece.id}`);
                 return (
                   <button
@@ -63,12 +64,7 @@ export function WardrobeBrowser({
                     onClick={() => worn ? onRemove(slot) : onTryOnEntry(entry)}
                     className={cn("tryon-rack-item", worn && "is-worn")}
                   >
-                    <img
-                      src={mediaUrl(entry.piece.thumbnailUrl ?? entry.piece.imageUrl) ?? undefined}
-                      alt=""
-                      className="aspect-square w-full object-contain"
-                      draggable={false}
-                    />
+                    <PieceImage sources={[entry.piece.thumbnailUrl, entry.piece.imageUrl]} className="aspect-square w-full" priority={index < 4} hold={!batchReady} />
                     <span className="block truncate type-caption">{entry.piece.name}</span>
                     {worn && <span className="tryon-worn-flag">{t("tryOn.vestida")}</span>}
                   </button>

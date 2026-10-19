@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { FittingCameraApi, OrbitAction, OrbitLimitState } from "@/lib/scene3d/orbit-steps";
+import type { FittingPlace, FittingWalkApi } from "@/lib/scene3d/fitting-walk";
 
 /** Glifos 24×24 em traço (setas circulares, mais/menos e o avatar de frente). */
 const GLYPH: Record<OrbitAction, string> = {
@@ -19,10 +20,12 @@ const GROUPS: OrbitAction[][] = [["left", "right"], ["in", "out"], ["front"]];
  * Botões de verdade (Tab, Enter/Espaço, foco visível); no limite de distância o botão fica `aria-disabled` em vez de
  * `disabled`, para o foco do teclado não se perder.
  */
-export function FittingOrbitButtons({ api }: { api: FittingCameraApi }) {
+export function FittingOrbitButtons({ api, walk }: { api: FittingCameraApi; walk?: FittingWalkApi | null }) {
   const { t } = useI18n();
   const [limits, setLimits] = useState<OrbitLimitState>({ atMin: false, atMax: false });
+  const [place, setPlace] = useState<FittingPlace>("center");
   useEffect(() => api.subscribe(setLimits), [api]);
+  useEffect(() => walk?.subscribe(setPlace), [walk]);
   const label: Record<OrbitAction, string> = {
     left: t("tryOn.girar_esquerda"), right: t("tryOn.girar_direita"), in: t("tryOn.aproximar"), out: t("tryOn.afastar"), front: t("tryOn.voltar_frente"),
   };
@@ -50,6 +53,15 @@ export function FittingOrbitButtons({ api }: { api: FittingCameraApi }) {
           ))}
         </Fragment>
       ))}
+      {walk && (
+        <>
+          <span className="fitting-orbit-sep" aria-hidden />
+          {/* andar sem teclado nem controle: o avatar caminha até o espelho (e se vê no vidro) ou volta ao centro */}
+          <button type="button" className="btn btn-sm" onClick={() => walk.to(place === "mirror" ? "center" : "mirror")}>
+            {place === "mirror" ? t("tryOn.voltar_ao_centro") : t("tryOn.andar_ate_espelho")}
+          </button>
+        </>
+      )}
     </div>
   );
 }

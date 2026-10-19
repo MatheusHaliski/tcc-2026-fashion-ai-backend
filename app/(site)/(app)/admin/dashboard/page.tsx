@@ -190,7 +190,7 @@ function AdminDashboard() {
   return (
     <>
       <PageHeader title={t("dashboard.title")} kicker={t("admin.dashboard.admin")} lead={t("adminDash.lead")}
-        actions={<><Button onClick={exportCsv}>{t("dashboard.export")}</Button><Button onClick={() => setCustom(true)}>{t("dashboard.customize")}</Button></>} />
+        actions={<><Link href="/admin/physical-store" className="btn">{t("physicalStore.manage")}</Link><Button onClick={exportCsv}>{t("dashboard.export")}</Button><Button onClick={() => setCustom(true)}>{t("dashboard.customize")}</Button></>} />
       <form className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto]" onSubmit={(e) => { e.preventDefault(); setApplied(f); }}>
         <Field label={t("dashboard.from")} id="from"><Input id="from" type="date" value={f.from} max={f.to} onChange={(e) => setF({ ...f, from: e.target.value })} /></Field>
         <Field label={t("dashboard.to")} id="to"><Input id="to" type="date" value={f.to} min={f.from} onChange={(e) => setF({ ...f, to: e.target.value })} /></Field>

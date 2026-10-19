@@ -1,0 +1,30 @@
+name: VTON Python contracts and geometry
+
+on:
+  pull_request:
+    paths:
+      - "services/anatomical_vton/**"
+      - "services/digital_twin/**"
+      - "scripts/cloud/**"
+      - ".github/workflows/vton-python.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r services/anatomical_vton/requirements.txt
+      - name: VTON geometry, queue and Vertex contracts (test doubles, CPU)
+        run: python -m pytest services/anatomical_vton/tests -q
+      - name: Digital twin numerical constraints (no model weights or CUDA)
+        run: python -m pytest services/digital_twin/tests -q
+      - name: Python syntax
+        run: python -m compileall -q services/anatomical_vton services/digital_twin scripts/cloud

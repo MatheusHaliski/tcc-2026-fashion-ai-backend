@@ -5,7 +5,7 @@
  */
 import { detectFace, segmentHair } from "./detect";
 import { N, faceMetrics, fitView, fuseShape, type Landmark, type Role, type ViewFit } from "./geometry";
-import { faceStats, fit2D, hairStats, hex, occlusion, rgbOf, sampleSkin, type FaceStats, type HairStats, type Pt } from "./image-stats";
+import { faceStats, fit2D, hairStats, hex, luma, median, occlusion, rgbOf, sampleSkin, type FaceStats, type HairStats, type Pt } from "./image-stats";
 import { applyGains, balanceRaster, estimateIlluminant, type Gains, type Illuminant } from "./skin-tone";
 import { detectGlasses, NO_GLASSES, removeGlasses, type GlassesDetection } from "./glasses";
 import { eyesProfile, type AvatarEyes } from "./iris";
@@ -14,9 +14,10 @@ import { checkPhoto, checkSet, blocking, type Issue } from "./quality";
 import { bakeAtlas } from "./atlas";
 import { MODEL_VERSION, roundShape, type AvatarModel } from "./model";
 import { HAIR_FALLBACK, hairProfile, type HairProfile } from "./hair";
+import { measureHairPart } from "./hair-flow";
 import { renderColor } from "./hair-tone";
 import { segmentClasses } from "./body-detect";
-import type { ClassMask } from "./body";
+import { CLS, type ClassMask } from "./body";
 import { bodySex, detectSex, type SexGuess } from "./sex-detect";
 import type { Sex } from "./body-spec";
 
@@ -36,6 +37,7 @@ export interface AnalyzedPhoto {
   faces: number; lm: Landmark[] | null; px: Pt[] | null; fit: ViewFit | null; stats: FaceStats | null;
   blend: Record<string, number>; issues: Issue[]; hairMask: Float32Array | null;
   skin: [number, number, number] | null; occlusion: number | null; classMask: ClassMask | null;
+  bodySkin: [number, number, number] | null;              // pele do corpo (braços/peito) pela classe "pele do corpo"
   sex: SexGuess | null;                                   // sexo estimado pelo rosto (lib/avatar3d/sex-detect.ts)
   glasses: GlassesDetection | null;                       // óculos vistos na foto (AVATAR-ID I4, glasses.ts)
 }
@@ -80,6 +82,22 @@ async function headMasks(canvas: HTMLCanvasElement, px: Pt[]): Promise<{ hair: F
   return { hair, classes };
 }
 
+/** Pele do corpo (braços, peito, pescoço) pela classe "pele do corpo" do segmentador: mediana dos meios-tons. */
+function sampleBodySkin(canvas: HTMLCanvasElement, cls: ClassMask): [number, number, number] | null {
+  const g = canvas.getContext("2d", { willReadFrequently: true })!; const img = g.getImageData(0, 0, canvas.width, canvas.height);
+  const cand: number[][] = [];
+  const step = Math.max(1, Math.round(Math.sqrt((cls.width * cls.height) / 60000)));
+  for (let y = 0; y < cls.height; y += step) for (let x = 0; x < cls.width; x += step) {
+    if (cls.data[y * cls.width + x] !== CLS.bodySkin) continue;
+    const X = Math.min(canvas.width - 1, Math.round((x * canvas.width) / cls.width)), Y = Math.min(canvas.height - 1, Math.round((y * canvas.height) / cls.height));
+    const o = (Y * canvas.width + X) * 4; const L = luma(img.data[o], img.data[o + 1], img.data[o + 2]);
+    if (L < 15 || L > 245) continue;
+    cand.push([img.data[o], img.data[o + 1], img.data[o + 2]]);
+  }
+  if (cand.length < 60) return null;
+  return [median(cand.map((c) => c[0])), median(cand.map((c) => c[1])), median(cand.map((c) => c[2]))];
+}
+
 /**
  * Analisa uma foto. Para as fotos de lado o papel (esquerdo/direito) vem da própria pose: yaw > 0 mostra o lado
  * direito do rosto da pessoa.
@@ -103,7 +121,8 @@ export async function analyzePhoto(src: Blob | HTMLCanvasElement, role: Role | "
   const issues = checkPhoto({ role: r, faces: det.faces, width, height, inFrame, pose: fit?.pose, stats: stats ?? undefined, blend: det.blend, rms: fit?.rms, occlusion: occ ?? undefined, glasses: glasses?.kind });
   const masks = r === "front" && det.faces === 1 && px ? await headMasks(canvas, px) : { hair: null, classes: null };
   const sex = r === "front" && det.faces === 1 && px ? await detectSex(canvas, px) : null;
-  return { role: r, canvas, width, height, faces: det.faces, lm: det.lm, px, fit, stats, blend: det.blend, issues, hairMask: masks.hair, skin, occlusion: occ, classMask: masks.classes, sex, glasses };
+  const bodySkin = masks.classes ? sampleBodySkin(canvas, masks.classes) : null;
+  return { role: r, canvas, width, height, faces: det.faces, lm: det.lm, px, fit, stats, blend: det.blend, issues, hairMask: masks.hair, skin, occlusion: occ, classMask: masks.classes, bodySkin, sex, glasses };
 }
 
 /** Máscara de cabelo (0/1, do tamanho da foto) a partir da classe "cabelo" do segmentador de classes. */
@@ -165,11 +184,15 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
   const sexGuess = front?.sex ?? null;
   const sex: Sex = opts.sex ?? bodySex(sexGuess, opts.profileSex);
   const profile: HairProfile | null = hair && img0 && toCanon && skin0 ? hairProfile(img0, hairMask!, front!.classMask, front!.px!, toCanon, front!.fit!.shape[10 * 3 + 1], skin0, hair, HAIR_FALLBACK[sex].length) : null;
+  // a risca medida na foto (hair-flow.ts): entra no modelo quando há evidência; sem ela vale o padrão do penteado
+  const hairPart = front && img0 && hairMask && hair?.present ? measureHairPart(img0, hairMask, front.px!) : null;
   const set = checkSet(photos.map((p) => ({ role: p.role, issues: p.issues })), hair);
   if (!front || !g0) return null;
   const views = [front, ...sides];
   const shape = fuseShape(views.map((v) => v.fit!));
   const skin = sampleSkin(g0.getImageData(0, 0, front.width, front.height), front.px!);
+  // a pele do corpo com a mesma correção de luz aplicada à pele do rosto (AVATAR-ID I3)
+  const bodySkin = front.bodySkin ? (wb0 ? applyGains(front.bodySkin, wb0.gains) : front.bodySkin) : null;
   const baked = bakeAtlas(views.map((v) => ({ role: v.role, canvas: fixed.get(v)?.canvas ?? v.canvas, px: v.px!, sim: v.fit!.sim })), skin.hex);
   // cabelo presente: o que o perfil decidiu (cabelo medido, raspado visto pela classe, ou suposto sem evidência de
   // careca). Antes valia só o segmentador fino — e cabelo que ele não via virava cabeça careca.
@@ -178,9 +201,11 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
   const bottom = profile?.estimated ? HAIR_FALLBACK[sex].bottom : hair?.bottom ?? null;
   const model: AvatarModel = {
     v: MODEL_VERSION, shape: roundShape(shape), skin: skin.hex, sex,
+    ...(bodySkin ? { bodySkin: hex(bodySkin) } : {}),
     hair: hair ? { present, color: hairColor, top: +hair.top.toFixed(2), side: +hair.side.toFixed(2), bottom: bottom === null ? null : +bottom.toFixed(2), fringe: +hair.fringe.toFixed(2), cut: hair.cutTop,
       ...(profile ? { length: profile.length, texture: profile.texture, cover: profile.cover, outline: profile.outline, tone: profile.tone } : {}),
-      ...(profile?.volumeLevel ? { volume: profile.volumeFactor, volumeLevel: profile.volumeLevel } : {}) }
+      ...(profile?.volumeLevel ? { volume: profile.volumeFactor, volumeLevel: profile.volumeLevel } : {}),
+      ...(profile?.variation !== undefined ? { variation: profile.variation } : {}), ...(hairPart && hairPart.confidence >= 0.3 ? { part: hairPart.part } : {}) }
       : { present: false, color: null, top: 0, side: 0, bottom: null, fringe: 0, cut: false },
     metrics: faceMetrics(shape),
     views: views.map((v) => ({ role: v.role, yaw: +v.fit!.pose.yaw.toFixed(1), pitch: +v.fit!.pose.pitch.toFixed(1), roll: +v.fit!.pose.roll.toFixed(1) })),

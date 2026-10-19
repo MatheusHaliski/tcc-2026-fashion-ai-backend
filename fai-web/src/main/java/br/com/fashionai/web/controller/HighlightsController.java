@@ -100,8 +100,9 @@ public class HighlightsController {
 
     @PostMapping("/api/points/shop/{sku}/purchase")
     @Operation(summary = "RF35.CA04 — Comprar com FAI Points")
-    public Map<String, Object> buy(CurrentUser user, @PathVariable String sku) {
-        return points.buy(user, sku);
+    public Map<String, Object> buy(CurrentUser user, @PathVariable String sku,
+                                   @RequestHeader(name = "Idempotency-Key", required = false) String requestKey) {
+        return points.buy(user, sku, requestKey);
     }
 
     @PostMapping("/api/me/room-inventory/{inventoryId}/apply")

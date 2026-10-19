@@ -38,15 +38,17 @@ import java.util.UUID;
 public class FaiPointsService {
     public static final ZoneId ZONE = ZoneId.of("America/Sao_Paulo");
 
-    /** §5.3 — nível, limiar de pontos vitalícios (calibração inicial: ~1 semana até Studio, ~2 meses até Closet). */
+    /**
+     * §5.3 — os três níveis do app (Básico → Studio → Loft) e o limiar de pontos vitalícios. O que cada um libera:
+     * Básico: quarto base em branco de fábrica, Smart Mirror/Vista-me, AURA estática e carta Hype Comum;
+     * Studio: iluminação guiada, primeiros acabamentos, sapateira/vitrine de bolsas/porta-joias, couro, veludo e metais,
+     * AURA animada e carta Rara; Loft: quarto maior, ilha central, troca de estação, closet de assinatura, ouro e
+     * holográfico, AURA Metamorfose/Impersonation, jogo FLAIR Metamorfose e cartas Lendária e Collab/Drop.
+     */
     public enum Level {
         ESTREIA(0, Msg.k("faiPoints.fai_origem_smart_mirror_vista"), Msg.k("faiPoints.branco_de_fabrica")),
         STUDIO(300, Msg.k("faiPoints.iluminacao_guiada_personalizavel_e"), Msg.k("faiPoints.primeiros_acabamentos_e_materiais")),
-        LOFT(900, Msg.k("faiPoints.n2_modulos_e_mais_categorias"), "quarto maior"),
-        CLOSET(2000, Msg.k("faiPoints.sapateira_vitrine_de_bolsas_e"), Msg.k("faiPoints.modulos_especializados")),
-        ATELIER(4000, Msg.k("faiPoints.ilha_central_bancada_de_looks"), "ilha central"),
-        PENTHOUSE(7500, Msg.k("faiPoints.troca_de_estacao_pecas_fora"), "ambiente premium"),
-        MAISON(12000, Msg.k("faiPoints.closet_de_assinatura_itens_exclusivos"), Msg.k("faiPoints.closet_de_assinatura"));
+        LOFT(900, Msg.k("faiPoints.n2_modulos_e_mais_categorias"), "quarto maior");
 
         public final int threshold;
         public final String unlocks;
@@ -66,6 +68,20 @@ public class FaiPointsService {
                 }
             }
             return result;
+        }
+
+        /** Lê um nível gravado; os nomes antigos (Closet, Atelier, Penthouse, Maison) viraram Loft. */
+        public static Level parse(String name) {
+            if (name == null || name.isBlank()) {
+                return ESTREIA;
+            }
+            String n = name.trim().toUpperCase(java.util.Locale.ROOT);
+            for (Level l : values()) {
+                if (l.name().equals(n)) {
+                    return l;
+                }
+            }
+            return java.util.Set.of("CLOSET", "ATELIER", "PENTHOUSE", "MAISON").contains(n) ? LOFT : ESTREIA;
         }
 
         public boolean atLeast(Level other) {
@@ -239,7 +255,7 @@ public class FaiPointsService {
                 .filter(c -> mine.containsKey(c.getSku()) || creator.sellerActive(c))   // criador pendente/suspenso sai da vitrine
                 .map(c -> {
                     Map<String, Object> m = creator.view(c, user.id());
-                    m.put("levelOk", lvl.atLeast(Level.valueOf(c.getRequiredLevel())));
+                    m.put("levelOk", lvl.atLeast(Level.parse(c.getRequiredLevel())));
                     m.put("affordable", bal >= c.getPricePoints());
                     m.put("owned", mine.containsKey(c.getSku()));
                     m.put("inventory", mine.getOrDefault(c.getSku(), List.of()));   // unidades compradas e onde estão aplicadas
@@ -260,16 +276,37 @@ public class FaiPointsService {
     }
 
     /**
-     * Compra na loja do quarto. Saldo e estoque são conferidos sob trava: primeiro a linha do comprador (débitos do mesmo
+     * Compra na loja do quarto. Saldo e estoque são conferidos sob trava: primeiro as carteiras em ordem de UUID (débitos do mesmo
      * usuário em fila — nada de duas compras gastando o mesmo saldo), depois a do item (edição limitada não passa do
-     * estoque); a ordem fixa usuário → item evita deadlock entre compras.
+     * estoque); a ordem fixa carteiras ordenadas → item evita deadlock entre compras cruzadas.
      */
-    @Transactional
     public Map<String, Object> buy(CurrentUser user, String sku) {
-        ledger.lockOwner(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        return buy(user, sku, null);
+    }
+
+    /**
+     * {@code requestKey}: a chave que o diálogo de compra gera uma vez por compra (cabeçalho Idempotency-Key). O mesmo
+     * pedido repetido — clique duplo, reenvio depois de um timeout — devolve a compra já feita, sem cobrar nem entregar
+     * de novo. A conferência acontece depois da trava da carteira, então dois pedidos iguais nunca passam juntos.
+     */
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public Map<String, Object> buy(CurrentUser user, String sku, String requestKey) {
+        // Read creator identity without loading a managed SKU, then lock all wallets in UUID order.
+        UUID seller = catalog.sellerOf(sku).orElse(null);
+        if (user.id().equals(seller)) throw new ApiException(409, "COMPRA_PROPRIA", Msg.t("faiPoints.compra_propria"));
+        java.util.stream.Stream.of(user.id(), seller).filter(java.util.Objects::nonNull).distinct().sorted()
+                .forEach(id -> ledger.lockOwner(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
+        String requestRef = requestRef(requestKey);
+        if (requestRef != null) {
+            var done = ledger.findByIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + requestRef);
+            if (done.isPresent()) return repeatedPurchase(user, done.get().getRefId());
+        }
         RoomCatalogItem c = catalog.lockBySku(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
+        if (!java.util.Objects.equals(seller, c.getCreatorUserId()))
+            throw new ApiException(409, "OFERTA_ALTERADA", Msg.t("faiPoints.oferta_alterada"));
+        String purchaseRef = requestRef != null ? requestRef : UUID.randomUUID().toString();
         Level lvl = level(user.id());
-        if (!lvl.atLeast(Level.valueOf(c.getRequiredLevel()))) {
+        if (!lvl.atLeast(Level.parse(c.getRequiredLevel()))) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("faiPoints.disponivel_a_partir_do_nivel", c.getRequiredLevel()));
         }
         if (c.getStockLimit() != null && c.getSoldCount() >= c.getStockLimit()) {
@@ -283,17 +320,18 @@ public class FaiPointsService {
         if (bal < c.getPricePoints()) {
             throw new ApiException(409, "SALDO_INSUFICIENTE", Msg.t("faiPoints.saldo_de_fai_pts_o", bal, c.getPricePoints()));
         }
-        if (c.getPricePoints() > 0) {
+        // item gratuito também deixa o lançamento (de 0 pontos) quando há chave: é ele que reconhece o pedido repetido
+        if (c.getPricePoints() > 0 || requestRef != null) {
             FaiPointsLedgerEntry e = new FaiPointsLedgerEntry();
             e.setUserId(user.id());
             e.setDelta(-c.getPricePoints());
             e.setActionCode("SHOP_PURCHASE");
             e.setRefType("SKU");
             e.setRefId(sku);
-            e.setIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + sku + ":" + UUID.randomUUID());
+            e.setIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + purchaseRef);
             e.setCountsLifetime(false);
             ledger.save(e);
-            statement(e, c.getName());
+            if (c.getPricePoints() > 0) statement(e, c.getName());
         }
         c.setSoldCount(c.getSoldCount() + 1);
         RoomInventoryItem item = new RoomInventoryItem();
@@ -303,8 +341,34 @@ public class FaiPointsService {
         item.setSource("PURCHASE");
         item.setAcquiredAt(Instant.now());
         inventory.save(item);
+        if (seller != null && c.getPricePoints() > 0) {
+            FaiPointsLedgerEntry credit = new FaiPointsLedgerEntry();
+            credit.setUserId(seller);
+            credit.setDelta(c.getPricePoints()); // zero platform fee; no cash conversion
+            credit.setActionCode("SHOP_SALE");
+            credit.setRefType("SHOP_PURCHASE");
+            credit.setRefId(purchaseRef);
+            credit.setIdempotencyKey(seller + ":SHOP_SALE:" + purchaseRef);
+            credit.setCountsLifetime(false); // sales never farm progression levels
+            ledger.save(credit);
+            statement(credit, c.getName());
+        }
         return Map.of("inventoryId", item.getId(), "sku", sku, "balance", balance(user.id()), "lifetime", lifetime(user.id()),
                 "level", level(user.id()).name(), "serial", String.valueOf(item.getSerial()));
+    }
+
+    /** Chave de pedido aceita: só letras, números e hífen (um UUID do navegador cabe), para caber na chave do ledger. */
+    static String requestRef(String key) {
+        return key != null && key.matches("[A-Za-z0-9-]{16,64}") ? key : null;
+    }
+
+    /** Resposta da compra já feita: o item mais recente desse SKU no inventário da pessoa e o saldo atual. */
+    private Map<String, Object> repeatedPurchase(CurrentUser user, String sku) {
+        RoomInventoryItem item = inventory.findByUserId(user.id()).stream().filter(i -> sku.equals(i.getSku()))
+                .max(java.util.Comparator.comparing(RoomInventoryItem::getAcquiredAt, java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                .orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
+        return Map.of("inventoryId", item.getId(), "sku", sku, "balance", balance(user.id()), "lifetime", lifetime(user.id()),
+                "level", level(user.id()).name(), "serial", String.valueOf(item.getSerial()), "repeated", true);
     }
 
     @Transactional

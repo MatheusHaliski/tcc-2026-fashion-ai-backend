@@ -37,7 +37,7 @@ cp .env.example .env
 set -a; . ./.env; set +a
 export DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)   # chave AES para campos sensíveis
 
-# 3) build + run (o Flyway cria e atualiza o schema sozinho na subida: V1..V54)
+# 3) build + run (o Flyway cria e atualiza o schema sozinho na subida)
 mvn -DskipTests package            # rode na raiz do repositório (onde está o pom.xml)
 ls fai-bootstrap/target/fai-bootstrap-*.jar   # o jar só existe se o build terminar com BUILD SUCCESS
 java -jar fai-bootstrap/target/fai-bootstrap-*.jar
@@ -143,7 +143,7 @@ Temas claro, escuro e alto contraste; textos, datas, números e moeda internacio
 
 ## Banco de dados
 
-* Schema 100% versionado com Flyway em `fai-infrastructure/persistence-mysql/src/main/resources/db/migration` (V1..V54),
+* Schema 100% versionado com Flyway em `fai-infrastructure/persistence-mysql/src/main/resources/db/migration`,
   uma migração por mudança; o Hibernate não altera o schema.
 * Regras de negócio reforçadas por índices `UNIQUE` (username/e-mail, seguir 1×, 1 Look do Dia por dia, 1 voto por entrada, ledger idempotente de FAI Points).
 * Dashboard gerencial com `GROUP BY` (`MysqlAnalyticsAdapter`), views `vw_country_insights`/`vw_brand_usage` e procedures

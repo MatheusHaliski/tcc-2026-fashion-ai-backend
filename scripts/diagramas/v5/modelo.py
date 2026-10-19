@@ -328,8 +328,10 @@ for _n, _t in TYPES.items():
 def store_of_adapter(name):
     """Onde um adaptador guarda ou busca os dados (pelo nome e pelo código)."""
     t = TYPES.get(name)
-    s = (name + ' ' + (t.file if t else '')).lower()
-    for key, label in (('cassandra', 'Cassandra'), ('opensearch', 'OpenSearch'), ('elastic', 'OpenSearch'),
+    # caminho relativo à raiz: o absoluto pode citar 'claude', 's3'… no nome da pasta onde o repositório está
+    s = (name + ' ' + (os.path.relpath(t.file, ROOT) if t else '')).lower()
+    for key, label in (('anatomicaltryon', 'Worker VTON (Cloud Run)'),
+                       ('cassandra', 'Cassandra'), ('opensearch', 'OpenSearch'), ('elastic', 'OpenSearch'),
                        ('redis', 'Redis'), ('s3', 'S3'), ('mysql', 'MySQL'), ('resend', 'Resend'), ('replicate', 'Replicate'),
                        ('anthropic', 'Anthropic'), ('claude', 'Anthropic'), ('openai', 'OpenAI'), ('gemini', 'Gemini'),
                        ('vision', 'Google Vision'), ('meshy', 'Meshy'), ('runpod', 'RunPod'), ('wikidata', 'Wikidata')):

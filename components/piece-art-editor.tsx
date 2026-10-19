@@ -9,6 +9,7 @@ import { ArtSegments, AuraMaterialPanel, CLEAR_CARTELA, ColorPanel, ContainerCol
 import { useUndo } from "@/lib/hooks/use-undo";
 import { ART_INDEX } from "@/lib/card-art";
 import { PieceCard } from "@/components/piece-card";
+import { CardPreviewModeToggle } from "@/components/card-preview-mode-toggle";
 import { ArtStage, artSurfaceProps } from "@/components/piece-art";
 import {
   AURA_MAX, EFFECT_LIMIT, FAMILIES, FAMILY_EFFECTS, FAMILY_EMPHASIS, SEASONS, STUDIO_KEYS, activeEffects, constrainEffects, defaultArt, readPieceArt, studioPart, writePieceArt,
@@ -79,7 +80,7 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
         <ArtSegments value={seg} onChange={setSeg} />
         {/* cartela sazonal e animação moram no modal da família Cartela sazonal (Layout & Estilo), como no look e no DNA */}
         {seg === "cor" && <ColorPanel value={studio} onChange={setStudio} hideSeasonal keepCartela={family === "seasonal"} />}
-        {seg === "aura" && <AuraMaterialPanel value={studio} onChange={setStudio} onSkin={(s) => emit(art, { skin: s })} styles={styles} occasions={occasions} />}
+        {seg === "aura" && <AuraMaterialPanel pieceId={piece.id} value={studio} onChange={setStudio} onSkin={(s) => emit(art, { skin: s })} styles={styles} occasions={occasions} brandName={piece.brandName} colorHex={piece.colorHex} colorName={piece.color} />}
 
         {seg === "layout" && (
           <div className="grid gap-3">
@@ -173,10 +174,11 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
       <aside className="pae-preview" aria-label={view === "feed" ? t("pieceArt.previa_no_feed") : t("pieceArt.previa_ampliada")}>
         {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, cor do container); família, efeitos e skin ficam */}
         <span className="flex justify-end gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={!hasStudioArt && !art.surface.color} onClick={() => emit({ ...art, surface: { ...art.surface, color: null } }, clearStudio)}>{t("backgroundStudio.limpar_arte")}</Button></span>
-        <SegmentPicker label={t("pieceArt.step.preview")} value={view} onChange={setView} options={[{ id: "feed", label: t("pieceArt.previa_feed") }, { id: "expanded", label: t("pieceArt.previa_ampliado") }]} />
-        {view === "feed"
-          ? <div className="pae-preview-card"><PieceCard piece={preview} href="#" /></div>
-          : <div className="pae-expanded" aria-label={t("pieceArt.previa_ampliada")} role="img"><Swatch art={art} bg={value} pieceHex={piece.colorHex} density="expanded" photo={pieceImage(piece)} /></div>}
+        <CardPreviewModeToggle expanded={view === "expanded"} onToggle={() => setView(current => current === "feed" ? "expanded" : "feed")} feedLabel={t("pieceArt.previa_feed")} expandedLabel={t("pieceArt.previa_ampliado")}>
+          {view === "feed"
+            ? <div className="pae-preview-card"><PieceCard piece={preview} href="#" /></div>
+            : <div className="pae-expanded-card" aria-label={t("pieceArt.previa_ampliada")}><PieceCard piece={preview} href="#" flip={false} expanded /></div>}
+        </CardPreviewModeToggle>
         <p className="type-caption text-muted">{t("pieceArt.camadas_legenda")}</p>
       </aside>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { api } from "@/lib/api/client";
 import { FaiIcon } from "@/components/fai-icon";
 import { Button, Card, Dialog, cn, type MenuItem } from "@/components/ui";
 import { useModel3d } from "@/components/model3d-panel";
@@ -24,7 +25,7 @@ export interface FittingItemsProps {
   slotNames: Record<FittingSlot, string>;
   onVariantChange: (item: FittingItem, variant: CatalogVariant) => void;
   /** guarda a peça da loja no guarda-roupa; `false` quando não guardou (erro, ou outra peça sendo guardada) */
-  onOwn: (item: FittingItem) => void | Promise<boolean | void>;
+  onOwn: (item: FittingItem) => void | Promise<string | false | void>;
   onRemove: (slot: FittingSlot) => void;
   /** abre a prévia 2D no espelho (o mesmo avatar, de frente e parado) com o look atual */
   onPreview2d?: (item: FittingItem) => void;
@@ -78,10 +79,11 @@ export function resetAutoQueue() { AUTO_QUEUED.clear(); }
 
 /**
  * O modelo 3D da peça na linha do slot: peça do guarda-roupa sem pedido entra na fila sozinha (uma vez); peça da loja
- * fica em 0 de 4 até ser guardada ("Guardar a peça e gerar o 3D" no menu ⋯). Falha ao pedir (sem foto, cota, recurso
- * desligado) vira "3D pausado", com o motivo acessível — sem aviso solto na tela.
+ * espera ser guardada ("Já tenho" ou "Guardar a peça e gerar o 3D" no menu ⋯) e, guardada, entra na fila do mesmo jeito.
+ * Falha ao pedir (sem foto, cota) ou recurso desligado vira "3D pausado", com o motivo acessível — nunca um "0 de 4" mudo.
  */
 function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn: (item: FittingItem) => void) {
+  const { t } = useI18n();
   const pieceId = item.pieceId ?? ownedId ?? "";
   const model = useModel3d(pieceId, { enabled: !!pieceId });
   const [paused, setPaused] = useState<string | null>(() => (pieceId ? AUTO_QUEUED.get(pieceId) ?? null : null));
@@ -89,8 +91,10 @@ function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn
   const queue = async () => { if (!pieceId) return; const e = await model.queue(); const reason = e ? e.message : null; AUTO_QUEUED.set(pieceId, reason); setPaused(reason); };
   useEffect(() => {
     const st = model.st;
-    if (!pieceId || !st || st.status != null || st.featureEnabled === false) return;
-    const auto = item.source === "wardrobe" && !AUTO_QUEUED.has(pieceId);
+    if (!pieceId || !st || st.status != null) return;
+    if (st.featureEnabled === false) { setPaused(t("tryOn.m3d.desligado")); return; }
+    // guardada pelo Provador (ownedId) conta como do guarda-roupa: antes só o item do menu pedia o 3D depois de guardar
+    const auto = (item.source === "wardrobe" || !!ownedId) && !AUTO_QUEUED.has(pieceId);
     if (!auto && !wantAfterOwn.current) return;
     wantAfterOwn.current = false;
     AUTO_QUEUED.set(pieceId, null);
@@ -98,8 +102,23 @@ function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn
   }, [pieceId, model.st]); // eslint-disable-line react-hooks/exhaustive-deps
   // antes da primeira resposta, o estado que veio com a peça (sem piscar "0 de 4" numa peça que já tem 3D)
   const progress = model3dProgress(model.st ?? { status: item.model3dStatus, modelUrl: item.model3dUrl });
-  const saveAndGenerate = () => { wantAfterOwn.current = true; onOwn(item); };
-  return { pieceId, model, progress, paused: progress.phase === "none" ? paused : null, queue, saveAndGenerate };
+  const saveAndGenerate = async () => {
+    wantAfterOwn.current = true;
+    const savedId = await onOwn(item);
+    if (typeof savedId !== "string") return;
+    wantAfterOwn.current = false;
+    AUTO_QUEUED.set(savedId, null);
+    try {
+      await api.post(`/api/pieces/${savedId}/model3d`);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      AUTO_QUEUED.set(savedId, reason);
+      setPaused(reason);
+    }
+  };
+  // peça da loja ainda não guardada: o 3D não "travou", ele espera a peça entrar no guarda-roupa
+  const idle = !pieceId ? t("tryOn.m3d.guarde_para_gerar") : null;
+  return { pieceId, model, progress, paused: progress.phase === "none" ? paused : null, idle, queue, saveAndGenerate };
 }
 
 function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, coveredBy, onVariantChange, onOwn, onRemove, onPreview2d }: {
@@ -139,7 +158,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
           {coveredBy
             ? <span className="piece-row-note"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.coberta_curto", { name: coveredBy })}</span>
             : <Button size="sm" onClick={() => onPreview2d?.(item)}><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.ver_previa_2d")}</Button>}
-          <Model3dStepBar progress={m3d.progress} paused={m3d.paused} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
+          <Model3dStepBar progress={m3d.progress} paused={m3d.paused} idle={m3d.idle} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
             onRetry={() => void m3d.model.request()} />
         </>}
         actions={catalog ? <>
@@ -157,7 +176,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
       <Dialog open={details} onClose={() => setDetails(false)} title={t("tryOn.detalhes_previa_titulo", { name: item.name })}>
         <div className="grid gap-3">
           <GarmentState item={item} photo={garment.photos[item.key]} />
-          <p className="type-body">{m3d.paused ? t("tryOn.m3d.pausado_motivo", { reason: m3d.paused }) : model3dLabel(t, m3d.progress)}</p>
+          <p className="type-body">{m3d.paused ? t("tryOn.m3d.pausado_motivo", { reason: m3d.paused }) : m3d.idle ?? model3dLabel(t, m3d.progress)}</p>
         </div>
       </Dialog>
     </>
@@ -178,7 +197,9 @@ function model3dLabel(t: T, p: Model3dProgress): string {
  * informa de verdade. Falhou: "Não deu para gerar o 3D." + "Tentar de novo (grátis)". Pausado: a barra esmaece e o
  * motivo fica no nome acessível e na dica (e em "Detalhes da prévia").
  */
-export function Model3dStepBar({ progress, paused, canRetryFree, busy, onRetry }: { progress: Model3dProgress; paused?: string | null; canRetryFree?: boolean; busy?: boolean; onRetry?: () => void }) {
+export function Model3dStepBar({ progress, paused, idle, canRetryFree, busy, onRetry }: { progress: Model3dProgress; paused?: string | null;
+  /** sem pedido possível ainda (peça da loja não guardada): o texto no lugar de "0 de 4" */
+  idle?: string | null; canRetryFree?: boolean; busy?: boolean; onRetry?: () => void }) {
   const { t } = useI18n();
   if (progress.phase === "failed") {
     return (
@@ -188,7 +209,7 @@ export function Model3dStepBar({ progress, paused, canRetryFree, busy, onRetry }
       </span>
     );
   }
-  const label = paused ? t("tryOn.m3d.pausado") : model3dLabel(t, progress);
+  const label = paused ? t("tryOn.m3d.pausado") : idle && progress.phase === "none" ? idle : model3dLabel(t, progress);
   const fill = paused ? 0 : model3dFill(progress);
   const real = progress.pct != null;
   return (

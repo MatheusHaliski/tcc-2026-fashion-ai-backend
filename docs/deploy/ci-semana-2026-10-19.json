@@ -1,0 +1,14 @@
+{
+  "runs": 540,
+  "failedRuns": 175,
+  "failureGroups": {
+    "Front (typecheck \u00b7 vitest \u00b7 build \u00b7 audit) / Typecheck": 39,
+    "Cat\u00e1logo (Python \u00b7 ingest\u00e3o e recupera\u00e7\u00e3o de conex\u00e3o) / Run python -m unittest discover -s scripts/catalog/tests": 2,
+    "Front (typecheck \u00b7 vitest \u00b7 build \u00b7 audit) / Auditoria de telas (Chromium \u00b7 WCAG \u00b7 overflow \u00b7 CLS)": 33,
+    "Front (typecheck \u00b7 vitest \u00b7 build \u00b7 audit) / Testes (vitest)": 74,
+    "Segredos (gitleaks) / gitleaks (hist\u00f3rico inteiro)": 24,
+    "contracts / VTON geometry, queue and Vertex contracts (test doubles, CPU)": 2,
+    "API (Java 21 \u00b7 mvn verify) / Build e testes": 36,
+    "Front (typecheck \u00b7 vitest \u00b7 build \u00b7 audit) / Build de produ\u00e7\u00e3o (inclui as checagens de i18n)": 1
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "model_version": "SAM_3D_BODY_DINOV3",
+  "repo": "facebook/sam-3d-body-dinov3",
+  "revision": null,
+  "license": "SAM License (Meta); DINOv3 License for the backbone code; MHR Apache-2.0",
+  "code": {
+    "sam-3d-body": {"url": "https://github.com/facebookresearch/sam-3d-body.git", "commit": "b5c765a0d89d789985e186d396315e7590887b94"},
+    "dinov3": {"url": "https://github.com/facebookresearch/dinov3.git", "commit": "6876159a11b4df116f30f667f8c9888617df0751"}
+  },
+  "files": [
+    {"path": "model.ckpt"},
+    {"path": "model_config.yaml"},
+    {"path": "assets/mhr_model.pt"}
+  ]
+}

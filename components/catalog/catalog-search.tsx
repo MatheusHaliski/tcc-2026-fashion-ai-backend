@@ -15,6 +15,8 @@ import { BrandLogo } from "@/components/brand-logo";
 import { CatalogBrandGrid } from "./catalog-brand-grid";
 import { useCatalogPreview } from "./use-catalog-preview";
 import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
+import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
+import { usePhotoFraming } from "@/lib/photo-framing";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
@@ -32,7 +34,11 @@ const BRAND_PAGE_SIZE = 12;
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true, onClearCategory, onClearBrand }: {
+  /** Modo embutido: limpa também a categoria controlada pelo formulário. */
+  onClearCategory?: () => void;
+  /** a loja escolhida pertence a quem embute a busca (Provador): "Limpar seleção" também a desmarca lá */
+  onClearBrand?: () => void;
   initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void | Promise<void>;
   /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
@@ -243,6 +249,12 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
     reportRef.current?.({ category: p?.category ?? "", subcategory: p?.subcategory ?? "", brand: p?.brand ?? "", query: p?.q ?? "" }, p ? filtered : []);
   }, [res, acervo, ranWith, discover.result, gender, enough, browsing]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const hasFilters = !!(category || subcategory || brand || query || color || gender || showAll || allForText);
+  const clearFilters = () => {
+    setOwnCategory(""); setSubcategoryState(""); onContext?.({ subcategory: "" }); onClearCategory?.();
+    setBrand(""); setBrandRef(null); setBrandPage(0); onClearBrand?.(); setQuery(""); setColor(""); setGender("");
+    setShowAll(false); setAllForText(false); setRes(null); setError(null);
+  };
   const brandLabel = brandRef?.name ?? res?.intent.brand ?? brand.trim();
   const selectionLabels = [ranWith?.brand, ranWith?.category ? CATEGORY_LABEL[ranWith.category] ?? label(ranWith.category) : "",
     ranWith?.subcategory ? subcategoryLabel(ranWith.subcategory) : "", params.color ? label(params.color) : "",
@@ -254,6 +266,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const brandGridTotal = storeList.reduce((total, store) => total + storeCount(store, category), 0);
 
 
+  const [photoFraming, setPhotoFraming] = usePhotoFraming();
   const results = (
     <>
       {error && <p role="alert" className="error-text">{error}</p>}
@@ -267,6 +280,9 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
                 : filtered.length ? t("catalog.encontramos", { count: filtered.length, tipo: subcategory ? subcategoryLabel(subcategory).toLowerCase() : t("common.pieces").toLowerCase(), marca: res?.intent.brand ?? "" }) : res?.message ?? t("catalog.nao_encontramos")}
             </h2>
             {brandRef && <BrandLogo name={brandRef.name} src={brandRef.logoUrl} size={22} />}
+            {browsing && acervo && selectionLabels.length > 0 && hasFilters &&
+              <Button size="sm" onClick={clearFilters} data-testid="catalog-clear-selection">{t("catalog.limpar_selecao")}</Button>}
+            <PhotoFramingToggle compact value={photoFraming} onChange={setPhotoFraming} className="ml-auto" />
           </div>
           {!browsing && !!res && !!params.q && !params.color && !discover.result?.results.length && (
             <p className="mb-2 flex flex-wrap items-center gap-2 type-body-sm text-muted">
@@ -339,6 +355,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
 
   return (
     <div className="grid gap-4">
+      {hasFilters && <div><Button size="sm" onClick={clearFilters} data-testid="catalog-clear-filters">{t("catalog.limparFiltros")}</Button></div>}
       {!embedded && <section aria-labelledby="cs-cat" className={resultsLayout === "matrix" ? "fitting-category-controls" : undefined}>
         <p id="cs-cat" className="label">{t("catalog.q_categoria")}</p>
         <CategoryCards compact columns={3} options={CATEGORY_CARDS} value={(category as CaptureCategory) || null} label={t("catalog.q_categoria")}
@@ -469,13 +486,14 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
     onVariantChange?.(next);
   };
   const img = p.catalogImage?.url ?? p.imageUrl;
+  const [framing] = usePhotoFraming();
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (
     <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
-      <div className="catalog-card-media" style={{ aspectRatio: photoAspect(p.catalogImage?.aspect) }} aria-hidden={!img}>
-        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
+      <div className="catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
+        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto requiredFrame framing={framing} image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
           placeholder={<GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />} />
-          : <GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />}
+          : <span role="alert" className="type-caption text-muted p-4">{t(p.imageProcessingStatus === "PENDING" ? "catalog.preparingPhoto" : "catalog.framingRequiredError")}<button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button></span>}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}
         {p.ingestionStatus === "DISCOVERED" && <Badge tone="chalk" className="catalog-card-new">{t("catalog.loja_oficial")}</Badge>}
       </div>

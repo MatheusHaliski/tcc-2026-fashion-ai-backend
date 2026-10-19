@@ -45,6 +45,7 @@ class Model3dServiceTest {
         final List<UUID> quotaUsers = new ArrayList<>();
         final WardrobeItem piece = new WardrobeItem();
         final Map<String, byte[]> storage = new java.util.HashMap<>();
+        final Map<String, byte[]> webStorage = new java.util.HashMap<>();
         Model3dService service;
     }
 
@@ -100,7 +101,8 @@ class Model3dServiceTest {
                 return action.doInTransaction(null);
             }
         };
-        WebFetchPort web = (url, max, accept) -> Optional.empty();
+        WebFetchPort web = (url, max, accept) -> Optional.ofNullable(e.webStorage.get(url))
+            .map(bytes -> new WebFetchPort.Fetched(url, "image/png", bytes));
         e.service = new Model3dService(pieces, jobs, media, List.of(), web, ai, mock(FaiPointsService.class),
                 mock(NotificationService.class), tx, true, 10);
         return e;
@@ -124,6 +126,22 @@ class Model3dServiceTest {
         List<String> stages = Json.list(e.saved.get(0).getStagesJson()).stream().map(m -> String.valueOf(((Map<?, ?>) m).get("name"))).toList();
         assertThat(stages).contains("FOTO", "SILHUETA", "MALHA", "TEXTURA", "ARMAZENAMENTO");
         assertThat(e.quotaUsers).containsExactly(e.piece.getUser().getId());   // pedido normal consome cota
+    }
+
+    @Test
+    void catalogPieceCanGenerateFromItsOfficialExternalImage() {
+        Env e = env();
+        byte[] png = e.storage.remove(e.piece.getImageUrl());
+        e.piece.setImageUrl("https://catalog.example/pants.png");
+        e.piece.setCategory("lower_piece");
+        e.piece.setSubcategory("tailored_pants");
+        e.webStorage.put(e.piece.getImageUrl(), png);
+
+        e.service.request(e.piece);
+        e.service.tick();
+
+        assertThat(e.piece.getModel3dStatus()).isEqualTo(Model3dStatus.COMPLETED);
+        assertThat(e.piece.getModel3dUrl()).endsWith(".glb");
     }
 
     @Test

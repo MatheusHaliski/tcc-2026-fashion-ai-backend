@@ -1,0 +1,14 @@
+{
+  "scope": "Real interface; API simulated. Does not prove production classification, grant or printing.",
+  "levels": [
+    "COMMON",
+    "RARE",
+    "LEGENDARY",
+    "COLLAB_DROP"
+  ],
+  "score": 84,
+  "scoreHeaderInsideCard": true,
+  "editionOnlyConfirmedDrop": true,
+  "reducedMotion": "none",
+  "pageErrors": []
+}

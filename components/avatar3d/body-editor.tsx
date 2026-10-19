@@ -4,7 +4,7 @@ import { rangeFill } from "@/lib/range-fill";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { retryImport } from "@/lib/chunk-recovery";
-import { Badge, Button, Card, Skeleton, Spinner } from "@/components/ui";
+import { Badge, Button, Card, Skeleton, Spinner, Switch } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { Avatar3dRef } from "@/components/three/common";
@@ -12,6 +12,8 @@ import { loadOriented } from "@/lib/avatar3d/pipeline";
 import { CLS, mergeObservation, observeBody, observeProfile, type BodyObservation, type ClassMask, type PosePoint, type Region } from "@/lib/avatar3d/body";
 import { BODY_RANGE, DEPTH_KEYS, applyUserData, buildSpec, defaultBodyModel, effectiveDepth, setParam, validateBody, type BodyKey, type BodyModel, type Sex } from "@/lib/avatar3d/body-spec";
 import { qualityReport } from "@/lib/avatar3d/metrics";
+import { ApiError } from "@/lib/api/client";
+import { gpuRefusalKey, gpuRefusedKey, measureBodyOnGpu, mergeGpuMeasurement, type GpuMeasurement } from "@/lib/avatar3d/body-gpu";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
 
@@ -36,6 +38,11 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
   const [side, setSide] = useState<SideAnalysis | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<AvatarView>("front");
+  // medida na GPU: a mesma foto de corpo inteiro, só com consentimento a cada envio (a foto não é guardada)
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [gpuConsent, setGpuConsent] = useState(false);
+  const [gpu, setGpu] = useState<GpuMeasurement | null>(null);
+  const [gpuBusy, setGpuBusy] = useState(false); const [gpuError, setGpuError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const sideInput = useRef<HTMLInputElement>(null);
   useEffect(() => () => { if (analysis) URL.revokeObjectURL(analysis.photoUrl); }, [analysis]);
@@ -43,6 +50,7 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
 
   async function analyze(file: File) {
     setBusy(true); setError(null);
+    setPhoto(file); setGpuConsent(false); setGpu(null); setGpuError(null);
     try {
       const img = await loadOriented(file);
       const { detectBody } = await import("@/lib/avatar3d/body-detect");
@@ -68,6 +76,18 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
       setSide({ obs, photoUrl: URL.createObjectURL(file) });
       setModel((m) => mergeObservation(m, obs, { keepWarnings: true }));
     } catch { setError(t("avatar3d.body.falhou")); } finally { setBusy(false); }
+  }
+  async function measureGpu() {
+    if (!photo || !gpuConsent) return;
+    setGpuBusy(true); setGpuError(null);
+    try {
+      const g = await measureBodyOnGpu(photo);
+      setGpu(g);
+      setModel((m) => applyUserData(mergeGpuMeasurement(m, g), m.heightCm, m.weightKg));
+    } catch (e) {
+      const key = e instanceof ApiError ? gpuRefusalKey(e.details?.reason) : null;
+      setGpuError(key ? t(key) : e instanceof ApiError && e.message ? e.message : t("avatar3d.body.gpu.falhou"));
+    } finally { setGpuBusy(false); setGpuConsent(false); }
   }
   function userData(h: string, w: string) {
     const hc = Number(h) || null, wk = Number(w) || null;
@@ -105,6 +125,22 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
             {busy && <p className="flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.body.analisando")}</p>}
             {error && <p role="alert" className="type-body-sm text-critical">{error}</p>}
             {analysis && analysis.obs.warnings.length > 0 && <ul className="fai-list">{analysis.obs.warnings.filter((w) => !w.startsWith("OUT_OF_RANGE")).map((w) => <li key={w} className="type-caption text-muted">⚠ {t(`avatar3d.body.aviso.${w}`)}</li>)}</ul>}
+            <div className="grid gap-2 border-t border-line-soft pt-2">
+              <p className="type-body-sm font-semibold">{t("avatar3d.body.gpu.titulo")}</p>
+              <p className="type-caption text-muted">{t("avatar3d.body.gpu.explica")}</p>
+              <Switch checked={gpuConsent} onChange={setGpuConsent} label={t("avatar3d.body.gpu.consentimento")} disabled={!photo || gpuBusy} />
+              <Button size="sm" onClick={() => void measureGpu()} loading={gpuBusy} disabled={!photo || !gpuConsent}>{t("avatar3d.body.gpu.medir")}</Button>
+              {!photo && <p className="type-caption text-faint">{t("avatar3d.body.gpu.precisa_foto")}</p>}
+              {gpuBusy && <p className="flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.body.gpu.medindo")}</p>}
+              {gpuError && <p role="alert" className="type-body-sm text-critical">{gpuError}</p>}
+              {gpu && (
+                <ul className="fai-list type-caption">
+                  <li>✓ {t("avatar3d.body.gpu.aplicadas", { n: Object.keys(gpu.ratios).length })}</li>
+                  {Object.entries(gpu.refused).map(([k, code]) => <li key={k} className="text-muted">· {t(`avatar3d.body.param.${k}`)}: {t(gpuRefusedKey(String(code)))}</li>)}
+                  {gpu.warnings.includes("ARMS_CLOSE_TO_BODY") && <li className="text-muted">⚠ {t("avatar3d.body.gpu.aviso_bracos")}</li>}
+                </ul>
+              )}
+            </div>
           </div>
           <div className="grid gap-2 rounded-md border border-line-soft p-3">
             <p className="type-body-sm font-semibold">{t("avatar3d.body.perfil")}</p>
@@ -124,12 +160,12 @@ export function BodyEditor({ sex, initial, avatar, onSave, saving }: { sex: Sex;
           <div className="grid gap-3">{EDITABLE.map(slider)}</div>
           <div className="grid gap-3 rounded-md border border-line-soft p-3">
             <p className="type-body-sm font-semibold">{t("avatar3d.body.profundidade")}</p>
-            <p className="type-caption text-muted">{side ? t("avatar3d.body.profundidade_medida") : t("avatar3d.body.profundidade_estimada")}</p>
+            <p className="type-caption text-muted">{side ? t("avatar3d.body.profundidade_medida") : gpu && DEPTH_KEYS.some((k) => gpu.ratios[k] !== undefined) ? t("avatar3d.body.profundidade_gpu") : t("avatar3d.body.profundidade_estimada")}</p>
             {DEPTH_KEYS.map(slider)}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="primary" size="sm" loading={saving} onClick={() => onSave(model)}>{t("avatar3d.body.salvar")}</Button>
-            <Button variant="ghost" size="sm" disabled={saving} onClick={() => { setModel(defaultBodyModel(sex)); setAnalysis(null); setSide(null); setHeight(""); setWeight(""); onSave(null); }}>{t("avatar3d.body.voltar_referencia")}</Button>
+            <Button variant="ghost" size="sm" disabled={saving} onClick={() => { setModel(defaultBodyModel(sex)); setAnalysis(null); setSide(null); setPhoto(null); setGpu(null); setGpuError(null); setGpuConsent(false); setHeight(""); setWeight(""); onSave(null); }}>{t("avatar3d.body.voltar_referencia")}</Button>
           </div>
         </div>
         <div className="grid content-start gap-3">

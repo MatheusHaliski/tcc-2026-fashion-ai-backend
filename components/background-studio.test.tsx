@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { cleanup, fireEvent, mockApi, renderApp, renderHook, screen, waitFor, within } from "@/test-utils/render";
-import { BackgroundStudio, useLeaveCartela, type BgCatalog, type BgConfig } from "./background-studio";
+import { AuraMaterialPanel, BackgroundStudio, useLeaveCartela, type BgCatalog, type BgConfig } from "./background-studio";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -29,6 +29,18 @@ describe("Background Studio — Cartela sazonal", () => {
     await screen.findByRole("group", { name: "Cor" });
     expect(screen.queryByRole("group", { name: "Cartela sazonal" })).toBeNull();
     expect(screen.queryByRole("group", { name: "Animação" })).toBeNull();
+  });
+
+  describe("Background Studio — presets de marca da Metamorfose", () => {
+    it("aplica as direções de marca/cor sem reprocessar a foto", async () => {
+      mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+      const onChange = vi.fn();
+      renderApp(<AuraMaterialPanel value={{ photo: { url: "/piece.jpg" } }} onChange={onChange} />);
+      fireEvent.click(screen.getByRole("button", { name: /AURA Metamorfose/ }));
+      fireEvent.click(await screen.findByRole("button", { name: /Nike · Prisma laranja/ }));
+      expect(onChange).toHaveBeenLastCalledWith({ auraMetamorphose: "PRISMA", auraMetamorphosePreset: "NIKE_ORANGE" });
+      expect(onChange.mock.calls[0][0]).not.toHaveProperty("photo");
+    });
   });
 
   it("Cancelar na primeira escolha não troca o layout nem a arte", async () => {
@@ -88,5 +100,87 @@ describe("Background Studio — Cartela sazonal", () => {
     expect(clear).toHaveBeenCalledTimes(1);
     rerender({ active: false });
     expect(clear).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Background Studio — prévia das variações Aura em vídeo", () => {
+  it.each([
+    ["Aura Geometry", "aura_geometry__geometry_01", "/aura/geometry/geometry_01/animacao.mp4", "/aura/geometry/geometry_01/imagem.png"],
+    ["Aura Splash", "aura_splash__splash_01", "/aura/splash/splash_01/animacao.mp4", "/aura/splash/splash_01/imagem.png"],
+  ])("carrega os vídeos de %s nos cards de variação", async (_name, variantId, src, poster) => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    const { container } = renderApp(<Studio onBg={() => undefined} initialBg={{ aura: { variantId } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: variantId.includes("splash") ? /AURA Splash/ : /AURA comum/ }));
+    const variations = await screen.findByRole("group", { name: /Variação/ });
+    await waitFor(() => expect(variations.querySelectorAll("video")).toHaveLength(6));
+    await waitFor(() => expect(variations.querySelector(`video[poster="${poster}"]`)?.getAttribute("src")).toBe(src));
+    expect(variations.querySelectorAll("video")).toHaveLength(6);
+  });
+
+  it("carrega as 12 imagens dinâmicas da AURA Electro", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    renderApp(<Studio onBg={() => undefined} initialBg={{ aura: { variantId: "aura_electro__01_cyan_pulse" } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: /AURA Electro/ }));
+
+    const variations = await screen.findByRole("group", { name: /Variação/ });
+    const dynamicImages = [...variations.querySelectorAll<HTMLImageElement>('img[src*="/aura/electro/"][src$="loading_10s.gif"]')];
+    expect(dynamicImages).toHaveLength(12);
+    expect(new Set(dynamicImages.map((image) => image.getAttribute("src"))).size).toBe(12);
+  });
+
+  it("carrega os 6 vídeos dinâmicos da AURA Splash", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    renderApp(<Studio onBg={() => undefined} initialBg={{ aura: { variantId: "aura_splash__splash_01" } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: /AURA Splash/ }));
+
+    const variations = await screen.findByRole("group", { name: /Variação/ });
+    const videos = [...variations.querySelectorAll<HTMLVideoElement>('video[poster*="/aura/splash/"]')];
+    expect(videos).toHaveLength(6);
+    await waitFor(() => expect(videos.every(video=>!!video.getAttribute("src"))).toBe(true));
+    expect(new Set(videos.map((video) => video.getAttribute("src"))).size).toBe(6);
+  });
+
+  it("mostra o formato dentro das variações da AURA comum e preserva a variação ativa", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    const onBg = vi.fn();
+    renderApp(<Studio onBg={onBg} initialBg={{ aura: { variantId: "aura_geometry__geometry_01" } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: /AURA comum/ }));
+
+    const format = await screen.findByRole("group", { name: /Formato/ });
+    expect(format.querySelectorAll(".opt-tile.aura-format-tile")).toHaveLength(2);
+    expect(format.querySelector(".aura-format-thumb.is-single")).toBeTruthy();
+    expect(format.querySelector(".aura-format-thumb.is-mosaic")?.children).toHaveLength(4);
+    fireEvent.click(within(format).getByRole("button", { name: /Imagem variada/ }));
+
+    expect(onBg).toHaveBeenLastCalledWith(expect.objectContaining({
+      aura: { variantId: "aura_geometry__geometry_01", format: "MOSAICO" },
+    }));
+  });
+});
+
+
+describe("Studio — Hype integrado à cartela", () => {
+  it("abrir Hype não altera a peça e mostra todos os tratamentos sem buscar fundos", async () => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    const onChange = vi.fn();
+    renderApp(<AuraMaterialPanel value={{ photo: { url: "/piece.jpg" }, compositionPreset: {id:"old-hype", name:"Old", family:"HYPE", image:"/aura/fashion-curated/old-hype.webp",palette:["#ffffff","#000000"]} }} onChange={onChange} />);
+    // o catálogo curado é lido uma vez ao montar (imagem de cada família no bloquinho); abrir o Hype não busca fundos
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/aura/fashion-curated/catalog.json", expect.anything()));
+    fetch.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: /AURA Hype/ }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.querySelectorAll(".aura-hype-preset")).toHaveLength(40);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(fetch.mock.calls.filter(([url]) => String(url).includes("/aura/fashion-curated/") || String(url).includes("/api/backgrounds"))).toHaveLength(0);
+    const choice = dialog.querySelectorAll<HTMLButtonElement>(".aura-hype-preset")[11];
+    fireEvent.click(choice);
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({compositionPreset:null}));
+    expect(onChange.mock.calls[0][0].auraHype).not.toBe("SCANNER");
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty("photo");
   });
 });

@@ -1,0 +1,5 @@
+numpy>=1.26,<3
+scipy>=1.11,<2
+torch>=2.5,<3
+trimesh>=4.5,<5
+# FLAME / SMPL-X weights and a differentiable UV baker must be provisioned with their licenses.

@@ -65,6 +65,8 @@ public class BackgroundStudioService {
      */
     /** Famílias de silhueta que a pessoa pode declarar no look (anatomias v18, prancha 07). */
     public static final Set<String> SILHOUETTES = Set.of("AMPULHETA", "RETA", "TRAPEZIO", "TRIANGULO_INVERTIDO", "OVERSIZED");
+    /** Enquadramento da foto da peça no card: recorte de tecido (padrão) ou Total frame (a peça inteira no quadro). */
+    public static final Set<String> PHOTO_FRAMINGS = Set.of("FABRIC", "WHOLE");
     public static final Map<String, Map<String, Object>> SEAL_PLACEMENT = new LinkedHashMap<>();
     public static final Map<String, Map<String, Object>> PIECE_SEAL_PLACEMENT = new LinkedHashMap<>();
 
@@ -136,6 +138,26 @@ public class BackgroundStudioService {
     private final AiEngine ai;
     private final MediaService media;
     private final Guard guard;
+
+    private AuraPermissionsService auraPermissions;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setAuraPermissions(AuraPermissionsService permissions) { this.auraPermissions = permissions; }
+    private void requireAuraAccess(CurrentUser user, Object config) {
+        if (auraPermissions == null) return; // legacy unit constructors; managed runtime always injects the guard
+        if (!(config instanceof Map<?,?> outer)) return;
+        Map<?,?> m = outer.get("scheme") instanceof Map<?,?> nested ? nested : outer;
+        Object type = m.get("auraType");
+        if ("IMPERSONATION".equals(type)) auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_IMPERSONATION);
+        else {
+            if (m.get("auraMetamorphose") instanceof String meta && !"OFF".equals(meta)) {
+                auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_METAMORPHOSE);
+            }
+            if (m.get("compositionPreset") instanceof Map<?,?> p && p.get("video") != null
+                    || m.get("auraHype") instanceof String mode && !"OFF".equals(mode)) {
+                auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
+            }
+        }
+    }
 
     public BackgroundStudioService(AssetCatalogService assets, AssetPresetRepository presets, SchemeRepository schemes,
                                    WardrobeItemRepository pieces, UserRepository users, CelebrityProfileRepository celebrities,
@@ -386,7 +408,7 @@ public class BackgroundStudioService {
             throw ApiException.badRequest("PRESET_INVALIDO", Msg.t("backgroundStudio.preset_sazonal_desconhecido", sid));
         }
         Object auraHype = scheme.get("auraHype");
-        if (auraHype != null && !List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(auraHype)) {
+        if (auraHype != null && !validHypeMode(auraHype)) {
             throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
         }
         Map<String, Object> aura = scheme.get("aura") instanceof Map<?, ?> a ? (Map<String, Object>) a : null;
@@ -553,6 +575,7 @@ public class BackgroundStudioService {
 
     @Transactional
     public Map<String, Object> saveScheme(CurrentUser user, UUID schemeId, Map<String, Object> config, boolean applyDirection) {
+        requireAuraAccess(user, config);
         guard.requireCanCreate(user);
         Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
         guard.requireOwner(user, s.getUser().getId(), "scheme:" + schemeId);
@@ -585,11 +608,13 @@ public class BackgroundStudioService {
     /** Modo 3 (4.2) — fundo de uma peça. */
     @Transactional
     public Map<String, Object> savePiece(CurrentUser user, UUID pieceId, Object cfg) {
+        requireAuraAccess(user, cfg);
         guard.requireCanCreate(user);
         return savePieceInternal(user, pieceId, cfg);
     }
 
     private Map<String, Object> savePieceInternal(CurrentUser user, UUID pieceId, Object cfg) {
+        requireAuraAccess(user, cfg);
         WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireOwner(user, w.getUser().getId(), "piece:" + pieceId);
         Object saved = withRevision(w.getBackgroundConfigJson(), cfg);
@@ -603,6 +628,12 @@ public class BackgroundStudioService {
      * com 409 em vez de sobrescrever em silêncio. Sem {@code baseRev} (clientes antigos, criação da peça) grava como antes.
      */
     /** Structured border paint only: arbitrary CSS and unknown visual modes are not accepted. */
+    static boolean validHypeMode(Object value) {
+        if (!(value instanceof String mode)) return false;
+        if (List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(mode)) return true;
+        return mode.matches("(SCAN|CONTOUR|MESH|HOLO|FIBER|PRISM|PARTICLES|SPOTLIGHT)_(GRAPHITE|CHROME|ROSE|VIOLET|CHAMPAGNE)");
+    }
+
     static void validateArtwork(Map<?, ?> config) {
         if (config == null) return;
         Object composition = config.get("compositionPreset");
@@ -612,16 +643,32 @@ public class BackgroundStudioService {
                     || !(preset.get("name") instanceof String name) || name.length() > 160
                     || !List.of("COMMON", "ELECTRO", "SPLASH", "HYPE", "METAMORPHOSE").contains(preset.get("family"))
                     || !("/aura/fashion-curated/" + id + ".webp").equals(preset.get("image"))
+                    || preset.get("video") != null && !("/aura/fashion-curated/" + id + ".mp4").equals(preset.get("video"))
                     || !(preset.get("palette") instanceof List<?> palette) || palette.size() != 2
                     || palette.stream().anyMatch(c -> !(c instanceof String hex) || !hex.matches("#[0-9a-fA-F]{6}")))
                 throw ApiException.badRequest("AURA_COMPOSITION_INVALID", "Composição AURA inválida.");
         }
         Object hype = config.get("auraHype");
-        if (hype != null && !List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(hype))
+        if (hype != null && !validHypeMode(hype))
             throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
         Object metamorphose = config.get("auraMetamorphose");
         if (metamorphose != null && !List.of("OFF", "PRISMA", "CONSTELACAO", "FIO_VIVO", "HOLOGRAFIA").contains(metamorphose))
             throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");
+        Object metamorphosePreset = config.get("auraMetamorphosePreset");
+        if (metamorphosePreset != null) {
+            String requiredMode = switch (metamorphosePreset instanceof String id ? id : "") {
+                case "NIKE_ORANGE" -> "PRISMA";
+                case "ADIDAS_BLUE" -> "FIO_VIVO";
+                case "ASICS_WHITE" -> "HOLOGRAFIA";
+                default -> null;
+            };
+            if (requiredMode == null || !requiredMode.equals(metamorphose))
+                throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");
+        }
+        // enquadramento da foto no card: FABRIC (recorte de tecido, o de sempre) ou WHOLE (Total frame: a peça inteira)
+        Object framing = config.get("photoFraming");
+        if (framing != null && !PHOTO_FRAMINGS.contains(framing))
+            throw ApiException.badRequest("PHOTO_FRAMING_INVALID", Msg.t("backgroundStudio.enquadramento_invalido"));
         Object value = config.get("border");
         if (value == null) return;
         if (!(value instanceof Map<?, ?> border)) throw ApiException.badRequest("CARD_BORDER_INVALID", "Borda inválida.");
@@ -636,7 +683,16 @@ public class BackgroundStudioService {
         }
     }
 
+    /** Clients may retain/remove server-issued motion, never forge or replace it. */
+    static void validateMotionWrite(String currentJson, Object cfg) {
+        if (!(cfg instanceof Map<?,?> incoming) || incoming.get("impersonationData") == null) return;
+        Object existing = Json.map(currentJson).get("impersonationData");
+        if (existing == null || !existing.equals(incoming.get("impersonationData")))
+            throw ApiException.badRequest("AURA_MOTION_SERVER_ONLY", Msg.t("auraMotion.notReady"));
+    }
+
     static Object withRevision(String currentJson, Object cfg) {
+        validateMotionWrite(currentJson, cfg);
         if (!(cfg instanceof Map<?, ?> in)) return cfg;
         validateArtwork(in);
         Map<String, Object> current = currentJson == null || currentJson.isBlank() ? Map.of() : Json.map(currentJson);

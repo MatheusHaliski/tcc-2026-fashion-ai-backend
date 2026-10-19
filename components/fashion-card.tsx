@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/i18n";
 import { cn } from "@/components/ui";
+import { displayScore, type HypeViewState } from "@/lib/hype/model";
 
 /**
  * Card com frente e verso (FashionCard). A FRENTE é identidade + moda + social (o card de sempre); o VERSO é dados +
@@ -72,16 +73,18 @@ export function FashionCardBack({ children }: { children: ReactNode }) {
 }
 
 /** Botão ↻ de virar o card (um em cada face). Não é um interruptor de configuração: é uma ação de navegação do card. */
-export function CardFlipButton({ side, className, showLabel }: { side: "front" | "back"; className?: string; showLabel?: boolean }) {
+export function CardFlipButton({ side, className, showLabel, scoreState }: { side: "front" | "back"; className?: string; showLabel?: boolean; scoreState?: HypeViewState }) {
   const ctx = useCardFlip();
   const { t } = useI18n();
   if (!ctx) return null;
   const label = side === "front" ? t("hype.card.flip_to_back", { name: ctx.name }) : t("hype.card.flip_to_front", { name: ctx.name });
+  const score = scoreState?.kind === "available" ? displayScore(scoreState.score) : "—";
   return (
-    <button type="button" ref={(el) => ctx.register(side, el)} className={cn("card-flip-btn", showLabel && "has-label", className)} aria-label={label} title={label}
+    <button type="button" ref={(el) => ctx.register(side, el)} className={cn("card-flip-btn", scoreState && "has-score", showLabel && "has-label", className)} aria-label={label} title={label}
       aria-controls={ctx.backId} data-side={side}
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); ctx.flip(side === "front"); }}>
       <span aria-hidden className="card-flip-icon">↻</span>
+      {scoreState && <b aria-hidden className="card-flip-score">🔥 {score}</b>}
       {showLabel && <span aria-hidden>{side === "front" ? t("hype.card.see_hype") : t("hype.card.see_front")}</span>}
     </button>
   );

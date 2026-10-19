@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { MIRROR_COLLIDER, MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, awayPoint, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, mirrorFront, mirrorRoute, reactionPose, snapshotCrop } from "./mirror-session";
+import { EYE_HEIGHT, MIRROR_COLLIDER, MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, awayPoint, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, mirrorFront, mirrorRoute, reactionChoreo, reactionKindOf, type ReactionKind } from "./mirror-session";
 import { BODY_RADIUS, penetration } from "./interaction";
 import { ROOM, walkArea } from "./room-bounds";
 
@@ -42,7 +42,7 @@ describe("trocas", () => {
     expect(s.busy).toBe("upper");
     expect(s.settle(a, true, "upper", 1000)).toBe(false); expect(s.busy).toBe("upper"); expect(s.reaction).toBeNull();
     expect(s.settle(b, true, "upper", 1200)).toBe(true); expect(s.busy).toBeNull(); expect(s.applied).toBe(b);
-    expect(s.reaction).toEqual({ slot: "upper", at: 1200 });
+    expect(s.reaction).toEqual({ slot: "upper", at: 1200, n: 2 });
   });
   it("falha: sem reação, com a mensagem, e nada do estado anterior muda (a roupa anterior continua)", () => {
     const s = new MirrorSession(); s.settle(s.request("shoes"), true, "shoes", 10);
@@ -92,25 +92,39 @@ describe("câmera, orientação e reação", () => {
   it("na prova a câmera fica de frente para o espelho com o personagem no quadro; no quarto, a visão geral", () => {
     const mirror = new THREE.Vector3(2.0, 0, 1.1), actor = new THREE.Vector3(1.4, 0, 1.6);
     const room = cameraFor("room", actor, mirror, 1.2); expect(room.position.y).toBeCloseTo(2.65); expect(room.target.z).toBeCloseTo(0.85);
-    const tryon = cameraFor("tryon", actor, mirror, 1.2);
-    expect(tryon.target.x).toBeCloseTo(1.7); expect(tryon.target.z).toBeCloseTo(1.35);
-    expect(tryon.position.z).toBeGreaterThan(mirror.z + 2);                                   // na frente do vidro (normal +z girada 28°)
-    expect(tryon.position.x).toBeGreaterThan(tryon.target.x);
-    expect(tryon.position.distanceTo(tryon.target)).toBeGreaterThan(2.5);
-    expect(cameraFor("approach", actor, mirror, 1.2).position).toEqual(tryon.position);
+    // chegando: de frente para o espelho com os dois no quadro
+    const approach = cameraFor("approach", actor, mirror, 1.2);
+    expect(approach.target.x).toBeCloseTo(1.7); expect(approach.target.z).toBeCloseTo(1.35);
+    expect(approach.position.z).toBeGreaterThan(mirror.z + 2);                                // na frente do vidro (normal +z girada 28°)
+    expect(approach.position.distanceTo(approach.target)).toBeGreaterThan(2.5);
+    // na prova: primeira pessoa — nos olhos do personagem, olhando o vidro (vê a roupa vestida no reflexo)
+    const front = mirror.clone().addScaledVector(MIRROR_NORMAL, 0.95);                        // onde o personagem para no espelho
+    const tryon = cameraFor("tryon", front, mirror, 1.2);
+    expect(tryon.position.y).toBeCloseTo(EYE_HEIGHT);
+    expect(Math.hypot(tryon.position.x - front.x, tryon.position.z - front.z)).toBeLessThan(0.2);
+    expect(tryon.target.x).toBeCloseTo(mirror.x); expect(tryon.target.z).toBeCloseTo(mirror.z);
+    const look = tryon.target.clone().sub(tryon.position).setY(0).normalize();
+    expect(look.dot(MIRROR_NORMAL)).toBeLessThan(-0.5);                                       // olha para o vidro
     // o personagem vira para o espelho: frente = (sin yaw, 0, cos yaw)
     const yaw = facingYaw(actor, mirror); expect(Math.sin(yaw)).toBeCloseTo(0.6 / Math.hypot(0.6, -0.5)); expect(Math.cos(yaw)).toBeCloseTo(-0.5 / Math.hypot(0.6, -0.5));
   });
-  it("reação por lugar do corpo, que começa e termina em zero e fica bem menor com movimento reduzido", () => {
-    for (const slot of ["upper", "lower", "shoes", "accessory"] as const) {
-      const start = reactionPose(slot, 0, false), end = reactionPose(slot, 1, false);
-      const size = (p: ReturnType<typeof reactionPose>) => Math.abs(p.arms) + Math.abs(p.spine) + Math.abs(p.knee) + Math.abs(p.foot) + Math.abs(p.head);
-      const peak = (reduced: boolean) => Math.max(...[0.15, 0.25, 0.35, 0.5, 0.75].map((t) => size(reactionPose(slot, t, reduced))));
-      expect(peak(false)).toBeGreaterThan(0.2); expect(size(start)).toBeLessThan(1e-9); expect(size(end)).toBeLessThan(1e-9);
-      expect(peak(true)).toBeLessThan(peak(false) * 0.5);
+  it("reação ao vestir: alívio, alegria, ajuste e conferir variam entre trocas, voltam a zero e encolhem com movimento reduzido", () => {
+    const size = (p: ReturnType<typeof reactionChoreo>) => Math.abs(p.arms) + Math.abs(p.spine) + Math.abs(p.knee) + Math.abs(p.foot) + Math.abs(p.head)
+      + Math.abs(p.breath) + Math.abs(p.shoulders) + Math.abs(p.look) + Math.abs(p.bounce) * 4 + Math.abs(p.turn) + p.handsWeight;
+    for (const slot of ["upper", "lower", "shoes", "accessory"] as const) for (const kind of ["alivio", "alegria", "ajuste", "conferir"] as ReactionKind[]) {
+      const peak = (reduced: boolean) => Math.max(...[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8].map((t) => size(reactionChoreo(kind, slot, t, reduced))));
+      expect(peak(false)).toBeGreaterThan(0.15);
+      expect(size(reactionChoreo(kind, slot, 0, false))).toBeLessThan(1e-9); expect(size(reactionChoreo(kind, slot, 1, false))).toBeLessThan(1e-9);
+      expect(peak(true)).toBeLessThan(peak(false) * 0.6);
+      for (const t of [0.25, 0.5, 0.75]) expect(reactionChoreo(kind, slot, t, true).bounce).toBe(0);              // sem pulo
     }
-    expect(reactionPose("upper", 0.5, false).arms).toBeGreaterThan(0); expect(reactionPose("lower", 0.5, false).knee).toBeGreaterThan(0);
-    expect(reactionPose("shoes", 1 / 6, false).foot).toBeGreaterThan(0); expect(reactionPose("accessory", 0.25, false).head).toBeGreaterThan(0);
+    expect(reactionChoreo("alivio", "upper", 0.25, false).breath).toBeGreaterThan(0);                            // inspira
+    expect(reactionChoreo("alivio", "upper", 0.8, false).shoulders).toBeLessThan(0);                             // ombros caem
+    expect(reactionChoreo("alegria", "upper", 0.4, false).hands).toBe("chest");
+    expect(reactionChoreo("ajuste", "accessory", 0.5, false).hands).toBe("collar");
+    expect(reactionChoreo("conferir", "shoes", 0.4, false).look).toBeGreaterThan(0);                            // olha os pés
+    // trocas seguidas no mesmo lugar do corpo nunca repetem a reação
+    for (const slot of ["upper", "lower", "shoes", "accessory"] as const) for (let n = 0; n < 6; n++) expect(reactionKindOf(slot, n)).not.toBe(reactionKindOf(slot, n + 1));
   });
 });
 
@@ -135,27 +149,6 @@ describe("sair do espelho pelas setas (QUARTO-ESPELHO)", () => {
     s.update(1.0, 300); s.update(1.0, 300 + MIRROR_ZONE.dwellMs); expect(s.phase).toBe("tryon"); // chegar de novo reabre sozinha
   });
 });
-describe("foto do quarto no vidro (QUARTO-ESPELHO)", () => {
-  it("a foto tirada ao abrir a prova fica na sessão e some ao sair do espelho pelas setas ou por Voltar ao quarto", () => {
-    const s = new MirrorSession(); let changes = 0; s.listeners.add(() => changes++);
-    s.update(1.0, 0); s.update(1.0, MIRROR_ZONE.dwellMs); expect(s.phase).toBe("tryon");
-    s.setSnapshot({ url: "data:image/jpeg;base64,AAA", aspect: 16 / 9, at: 10 });
-    expect(s.snapshot?.url).toBe("data:image/jpeg;base64,AAA"); expect(changes).toBe(3);
-    s.update(1.8, 1000); expect(s.phase).toBe("exit"); expect(s.snapshot).not.toBeNull();     // na divisa a foto ainda vale
-    s.update(2.5, 1000 + MIRROR_ZONE.exitMs); expect(s.phase).toBe("room"); expect(s.snapshot).toBeNull();
-    s.open(); s.setSnapshot({ url: "x", aspect: 1, at: 20 }); s.back(3); expect(s.snapshot).toBeNull();
-  });
-  it("o recorte mantém o miolo da foto sem esticar: foto larga perde as laterais, foto alta perde topo e base", () => {
-    const wide = snapshotCrop(0.82 / 1.7, 16 / 9);                                               // canvas paisagem no vidro estreito
-    expect(wide.repeat[1]).toBe(1); expect(wide.repeat[0]).toBeCloseTo((0.82 / 1.7) / (16 / 9), 6);
-    expect(wide.offset[0]).toBeCloseTo((1 - wide.repeat[0]) / 2, 6); expect(wide.offset[1]).toBe(0);
-    const tall = snapshotCrop(0.82 / 1.7, 0.3);
-    expect(tall.repeat[0]).toBe(1); expect(tall.repeat[1]).toBeCloseTo(0.3 / (0.82 / 1.7), 6); expect(tall.offset[1]).toBeCloseTo((1 - tall.repeat[1]) / 2, 6);
-    expect(snapshotCrop(0.5, 0.5)).toEqual({ repeat: [1, 1], offset: [0, 0] });
-    expect(snapshotCrop(0, 1)).toEqual({ repeat: [1, 1], offset: [0, 0] });                     // proporção inválida: sem recorte
-  });
-});
-
 describe("Espelho pelo movimento: caminhar até o espelho e para longe dele", () => {
   // o espelho do quarto (layout de room-scene.tsx) com a mesma caixa orientada da colisão
   const MIRROR = new THREE.Vector3(1.95, 0, 1.1);

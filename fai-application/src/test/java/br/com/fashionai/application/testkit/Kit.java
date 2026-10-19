@@ -60,6 +60,24 @@ public final class Kit {
         return t;
     }
 
+    /**
+     * Atelier de verdade (validação e idempotência das recompensas), gravando no repositório em memória. Só o lock do dono,
+     * que é consulta com bloqueio no banco, vira um mock que sempre encontra a pessoa.
+     */
+    public br.com.fashionai.application.service.AtelierRewardSystem atelier() {
+        var ledger = mock(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        Mockito.when(ledger.lockOwner(Mockito.any())).thenReturn(java.util.Optional.of(new User()));
+        var atelier = new br.com.fashionai.application.service.AtelierRewardSystem(dep(br.com.fashionai.domain.repository.AtelierRewardGrantRepository.class),
+                ledger, dep(br.com.fashionai.application.service.LevelProgressService.class), dep(br.com.fashionai.application.security.Guard.class));
+        deps.put(br.com.fashionai.application.service.AtelierRewardSystem.class, atelier);
+        return atelier;
+    }
+
+    /** As recompensas do Atelier gravadas até agora (com {@link #atelier()}). */
+    public java.util.List<br.com.fashionai.domain.model.AtelierRewardGrant> atelierGrants() {
+        return MemoryRepository.rows(dep(br.com.fashionai.domain.repository.AtelierRewardGrantRepository.class));
+    }
+
     /** A dependência do tipo dado (criada na primeira vez): repositório em memória, real ou mock. */
     @SuppressWarnings("unchecked")
     public <D> D dep(Class<D> type) {

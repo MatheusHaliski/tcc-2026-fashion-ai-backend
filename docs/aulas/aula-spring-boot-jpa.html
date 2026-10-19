@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aula: Spring Boot + Hibernate/JPA — Arquitetura Completa</title>
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root{
+  --color-bg:#0f1220; --color-surface:#181c30; --color-surface-2:#222845;
+  --color-text:#e9ecf8; --color-muted:#98a0c4; --color-primary:#7c5cff;
+  --color-accent:#2dd4bf; --color-warn:#fbbf24; --color-ok:#22c55e; --color-err:#ef4444;
+  --space-1:.25rem; --space-2:.5rem; --space-3:1rem; --space-4:1.5rem; --space-5:2.5rem;
+  --radius-s:6px; --radius-m:12px; --radius-l:20px;
+  --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:ui-monospace,"Cascadia Code",Menlo,monospace;
+  --fs-s:.875rem; --fs-m:1rem; --fs-l:1.25rem; --fs-xl:2rem;
+  --shadow:0 10px 30px rgba(0,0,0,.4); --menu-w:260px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-sans);background:var(--color-bg);color:var(--color-text);line-height:1.65}
+.layout{display:grid;grid-template-columns:var(--menu-w) 1fr;min-height:100vh}
+nav.menu{position:sticky;top:0;height:100vh;overflow:auto;background:var(--color-surface);padding:var(--space-4) var(--space-3);border-right:1px solid var(--color-surface-2)}
+nav.menu h1{font-size:var(--fs-l);margin:0 0 var(--space-3);color:var(--color-accent)}
+nav.menu button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--color-muted);padding:var(--space-2) var(--space-3);border-radius:var(--radius-s);cursor:pointer;font:inherit;font-size:var(--fs-s)}
+nav.menu button:hover{background:var(--color-surface-2);color:var(--color-text)}
+nav.menu button[aria-current=page]{background:var(--color-primary);color:#fff}
+main{padding:var(--space-5);max-width:960px}
+section.page{display:none;animation:fade .25s}
+section.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+h2{font-size:var(--fs-xl);margin-top:0}
+h3{color:var(--color-accent)}
+pre,code{font-family:var(--font-mono)}
+pre{background:#0a0c18;padding:var(--space-3);border-radius:var(--radius-m);overflow:auto;font-size:var(--fs-s);border:1px solid var(--color-surface-2)}
+code{background:var(--color-surface-2);padding:0 var(--space-1);border-radius:4px}
+pre code{background:none;padding:0}
+.card{background:var(--color-surface);border-radius:var(--radius-m);padding:var(--space-3) var(--space-4);margin:var(--space-3) 0;box-shadow:var(--shadow)}
+.diagram{font-family:var(--font-mono);white-space:pre;overflow:auto;background:var(--color-surface-2);padding:var(--space-3);border-radius:var(--radius-m);font-size:var(--fs-s)}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid var(--color-surface-2);padding:var(--space-2) var(--space-3);text-align:left;font-size:var(--fs-s)}
+th{background:var(--color-surface-2)}
+.pager{display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-5);gap:var(--space-3)}
+.btn{background:var(--color-primary);color:#fff;border:0;border-radius:var(--radius-s);padding:var(--space-2) var(--space-4);cursor:pointer;font:inherit}
+.btn.secondary{background:var(--color-surface-2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,nav.menu button:focus-visible{outline:2px solid var(--color-warn);outline-offset:2px}
+.dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.dots span{width:10px;height:10px;border-radius:50%;background:var(--color-surface-2)}
+.dots span.on{background:var(--color-primary)}
+/* quiz */
+.q{background:var(--color-surface);border-radius:var(--radius-m);padding:var(--space-3) var(--space-4);margin:var(--space-3) 0}
+.q .enun{font-weight:600}
+.q label{display:block;padding:var(--space-2);border-radius:var(--radius-s);cursor:pointer}
+.q label:hover{background:var(--color-surface-2)}
+.q.right{border-left:5px solid var(--color-ok)} .q.wrong{border-left:5px solid var(--color-err)}
+.q .focus-btn{margin-top:var(--space-2)}
+.score{font-size:var(--fs-l);font-weight:700}
+/* modais FOCO ENADE */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:var(--space-3);z-index:50}
+.modal-back.open{display:flex}
+.modal{background:var(--color-surface);border-radius:var(--radius-l);max-width:680px;width:100%;max-height:90vh;overflow:auto;padding:var(--space-4);box-shadow:var(--shadow);border-top:6px solid var(--color-warn)}
+.modal .tag{display:inline-block;background:var(--color-warn);color:#000;font-weight:700;font-size:var(--fs-s);padding:2px 10px;border-radius:99px}
+.modal h4{font-size:var(--fs-l);margin:var(--space-2) 0}
+.modal .rows li{margin:var(--space-2) 0}
+@media(max-width:800px){.layout{grid-template-columns:1fr}nav.menu{position:static;height:auto}main{padding:var(--space-3)}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="menu" id="menu" aria-label="Menu da aula"><h1>Spring Boot + JPA</h1></nav>
+<main>
+
+<section class="page" data-title="1. Visão geral">
+<h2>1. Visão geral da arquitetura</h2>
+<p>Uma aplicação Spring Boot web é organizada em <strong>camadas</strong>, cada uma com uma única responsabilidade. O pedido HTTP entra pela borda e desce até o banco; a resposta faz o caminho inverso.</p>
+<div class="diagram">Navegador / Frontend (HTML, React, Next.js)
+        │  HTTP  GET /api/pecas/7
+        ▼
+ DispatcherServlet ──► HandlerMapping (sistema de rotas)
+        ▼
+ @RestController   → recebe/valida request, devolve DTO + status HTTP
+        ▼
+ @Service          → regras de negócio, @Transactional
+        ▼
+ @Repository (Spring Data JPA) → consultas sem boilerplate
+        ▼
+ Hibernate (ORM) ──► JDBC / HikariCP (pool) ──► Banco (MySQL)</div>
+<div class="card"><h3>Por que camadas?</h3><ul>
+<li><strong>Baixo acoplamento:</strong> trocar o banco não altera o controller.</li>
+<li><strong>Testabilidade:</strong> cada camada é testada isoladamente (mocks).</li>
+<li><strong>Inversão de Controle (IoC):</strong> o Spring instancia e injeta os beans.</li></ul></div>
+<div class="card"><h3>Estrutura de pacotes típica</h3><pre><code>br.com.exemplo
+ ├─ controller/   PecaController
+ ├─ service/      PecaService
+ ├─ repository/   PecaRepository
+ ├─ domain/       Peca (@Entity)
+ ├─ dto/          PecaRequest, PecaResponse
+ └─ Application.java  (@SpringBootApplication)</code></pre></div>
+</section>
+
+<section class="page" data-title="2. Spring Boot e IoC">
+<h2>2. Spring Boot, IoC e Injeção de Dependência</h2>
+<p><code>@SpringBootApplication</code> combina <code>@Configuration</code>, <code>@EnableAutoConfiguration</code> e <code>@ComponentScan</code>. O Spring varre os pacotes, cria os <em>beans</em> (<code>@Component</code>, <code>@Service</code>, <code>@Repository</code>, <code>@RestController</code>) e os conecta.</p>
+<pre><code>@SpringBootApplication
+public class Application {
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
+}</code></pre>
+<div class="card"><h3>Injeção por construtor (recomendada)</h3>
+<pre><code>@Service
+public class PecaService {
+  private final PecaRepository repo;
+  public PecaService(PecaRepository repo) { this.repo = repo; }
+}</code></pre>
+<p>Imutável, fácil de testar e não depende de reflexão (<code>@Autowired</code> em campo).</p></div>
+<div class="card"><h3>application.yml (conexão com o banco)</h3>
+<pre><code>spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/fashionai
+    username: app
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate.ddl-auto: validate   # nunca "create" em produção
+    open-in-view: false
+    properties.hibernate.format_sql: true</code></pre>
+<p>Segredos vêm de variáveis de ambiente, nunca do código.</p></div>
+</section>
+
+<section class="page" data-title="3. Entidade e Hibernate">
+<h2>3. Entidades JPA e Hibernate</h2>
+<p><strong>JPA</strong> é a especificação (Jakarta Persistence); <strong>Hibernate</strong> é a implementação padrão. O ORM mapeia classes para tabelas.</p>
+<pre><code>@Entity
+@Table(name = "peca")
+public class Peca {
+  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(nullable = false, length = 120)
+  private String nome;
+
+  @Enumerated(EnumType.STRING)
+  private Categoria categoria;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "marca_id")
+  private Marca marca;
+
+  @Version private Long versao;   // lock otimista
+}</code></pre>
+<div class="card"><h3>Relacionamentos</h3>
+<table><tr><th>Anotação</th><th>Uso</th><th>Fetch padrão</th></tr>
+<tr><td>@OneToOne</td><td>Usuário ↔ Perfil</td><td>EAGER</td></tr>
+<tr><td>@ManyToOne</td><td>Peça → Marca (FK na peça)</td><td>EAGER</td></tr>
+<tr><td>@OneToMany</td><td>Marca → Peças (mappedBy)</td><td>LAZY</td></tr>
+<tr><td>@ManyToMany</td><td>Peça ↔ Tag (tabela de junção)</td><td>LAZY</td></tr></table>
+<p>Boa prática: declare <code>LAZY</code> em tudo e busque o necessário com <code>JOIN FETCH</code> ou <code>@EntityGraph</code>.</p></div>
+<div class="card"><h3>Ciclo de vida</h3><p><code>transient → managed (persist/find) → detached (fim da sessão) → removed</code>. Entidades <em>managed</em> sofrem <strong>dirty checking</strong>: alterações são gravadas no <code>flush</code>/commit sem chamar <code>save</code>.</p></div>
+</section>
+
+<section class="page" data-title="4. Repository">
+<h2>4. Repository (Spring Data JPA)</h2>
+<p>Você declara uma interface; o Spring gera a implementação em tempo de execução.</p>
+<pre><code>public interface PecaRepository extends JpaRepository&lt;Peca, Long&gt; {
+
+  List&lt;Peca&gt; findByCategoria(Categoria c);              // query derivada
+
+  Page&lt;Peca&gt; findByNomeContainingIgnoreCase(String n, Pageable p);
+
+  @Query("select p from Peca p join fetch p.marca where p.id = :id")
+  Optional&lt;Peca&gt; buscarComMarca(@Param("id") Long id);   // JPQL
+
+  @Query(value = "select * from peca where preco &gt; ?1", nativeQuery = true)
+  List&lt;Peca&gt; caras(BigDecimal min);                      // SQL nativo
+}</code></pre>
+<div class="card"><h3>Hierarquia</h3><p><code>Repository → CrudRepository → PagingAndSortingRepository → JpaRepository</code>. Métodos prontos: <code>save, findById, findAll, deleteById, count, existsById</code>.</p></div>
+<div class="card"><h3>Problema N+1</h3><p>Listar 100 peças e acessar <code>peca.getMarca()</code> LAZY gera 1 + 100 consultas. Solução: <code>JOIN FETCH</code>, <code>@EntityGraph</code> ou <code>@BatchSize</code>.</p></div>
+</section>
+
+<section class="page" data-title="5. Banco de dados">
+<h2>5. Banco de dados e conexões</h2>
+<p>O Hibernate converte operações em SQL e usa JDBC. O <strong>HikariCP</strong> mantém um pool de conexões reutilizáveis (abrir conexão por requisição seria caro).</p>
+<pre><code>CREATE TABLE marca (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(120) NOT NULL UNIQUE
+);
+CREATE TABLE peca (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(120) NOT NULL,
+  categoria VARCHAR(30) NOT NULL,
+  marca_id BIGINT,
+  versao BIGINT NOT NULL DEFAULT 0,
+  CONSTRAINT fk_peca_marca FOREIGN KEY (marca_id) REFERENCES marca(id)
+);
+CREATE INDEX idx_peca_categoria ON peca(categoria);</code></pre>
+<div class="card"><h3>Migrações com Flyway</h3><p>Em vez de <code>ddl-auto=update</code>, versione o schema em <code>db/migration/V1__criar_tabelas.sql</code>. As versões devem ser únicas; o Hibernate apenas <em>valida</em> (<code>ddl-auto: validate</code>).</p></div>
+<div class="card"><h3>Transações (ACID)</h3><p>Atomicidade, Consistência, Isolamento, Durabilidade. No Spring: <code>@Transactional</code> abre a transação, faz commit no sucesso e rollback em <code>RuntimeException</code>.</p></div>
+</section>
+
+<section class="page" data-title="6. Service">
+<h2>6. Service — regras de negócio</h2>
+<p>É onde vivem as regras, a orquestração de repositórios e as fronteiras transacionais. O controller não deve conhecer o repositório.</p>
+<pre><code>@Service
+public class PecaService {
+  private final PecaRepository repo;
+  private final MarcaRepository marcas;
+  public PecaService(PecaRepository repo, MarcaRepository marcas){...}
+
+  @Transactional
+  public PecaResponse criar(PecaRequest req) {
+    Marca m = marcas.findById(req.marcaId())
+        .orElseThrow(() -&gt; new RecursoNaoEncontradoException("Marca"));
+    Peca p = new Peca(req.nome(), req.categoria(), m);
+    return PecaResponse.de(repo.save(p));
+  }
+
+  @Transactional(readOnly = true)
+  public Page&lt;PecaResponse&gt; listar(Pageable pg) {
+    return repo.findAll(pg).map(PecaResponse::de);
+  }
+}</code></pre>
+<div class="card"><h3>DTO vs Entidade</h3><p>Nunca exponha a entidade na API: evita vazamento de campos, loops de serialização e <code>LazyInitializationException</code>. Use <code>record</code> como DTO.</p></div>
+</section>
+
+<section class="page" data-title="7. Controller e rotas">
+<h2>7. Controller e sistema de rotas</h2>
+<pre><code>@RestController
+@RequestMapping("/api/pecas")
+public class PecaController {
+  private final PecaService service;
+  public PecaController(PecaService s){ this.service = s; }
+
+  @GetMapping                       // GET /api/pecas?page=0&amp;size=20
+  public Page&lt;PecaResponse&gt; listar(Pageable pg){ return service.listar(pg); }
+
+  @GetMapping("/{id}")              // GET /api/pecas/7
+  public PecaResponse buscar(@PathVariable Long id){ return service.buscar(id); }
+
+  @PostMapping @ResponseStatus(HttpStatus.CREATED)
+  public PecaResponse criar(@Valid @RequestBody PecaRequest req){ return service.criar(req); }
+
+  @PutMapping("/{id}")    public PecaResponse atualizar(...){...}
+  @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void remover(@PathVariable Long id){ service.remover(id); }
+}</code></pre>
+<div class="card"><h3>Como a rota é resolvida</h3><ol>
+<li>O <code>DispatcherServlet</code> recebe toda requisição.</li>
+<li>O <code>HandlerMapping</code> casa método HTTP + caminho com um método do controller.</li>
+<li>Argumentos são resolvidos (<code>@PathVariable</code>, <code>@RequestParam</code>, <code>@RequestBody</code> via Jackson).</li>
+<li>O retorno é serializado em JSON (<code>HttpMessageConverter</code>) com o status.</li></ol></div>
+<table><tr><th>Verbo</th><th>Rota</th><th>Ação</th><th>Status</th></tr>
+<tr><td>GET</td><td>/api/pecas</td><td>listar</td><td>200</td></tr>
+<tr><td>GET</td><td>/api/pecas/{id}</td><td>buscar</td><td>200 / 404</td></tr>
+<tr><td>POST</td><td>/api/pecas</td><td>criar</td><td>201 / 400</td></tr>
+<tr><td>PUT</td><td>/api/pecas/{id}</td><td>atualizar</td><td>200</td></tr>
+<tr><td>DELETE</td><td>/api/pecas/{id}</td><td>remover</td><td>204</td></tr></table>
+<div class="card"><h3>Tratamento global de erros</h3><pre><code>@RestControllerAdvice
+class ErroHandler {
+  @ExceptionHandler(RecursoNaoEncontradoException.class)
+  ResponseEntity&lt;?&gt; nf(RuntimeException e){
+    return ResponseEntity.status(404).body(Map.of("erro", e.getMessage()));
+  }
+}</code></pre></div>
+</section>
+
+<section class="page" data-title="8. Frontend e conexões">
+<h2>8. Interface frontend e conexão completa</h2>
+<p>O frontend (React/Next.js, HTML+JS) consome a API REST por HTTP/JSON.</p>
+<pre><code>// frontend
+const res = await fetch("/api/pecas?page=0&amp;size=20", {
+  headers: { Authorization: "Bearer " + token }
+});
+if (!res.ok) throw new Error(await res.text());
+const pagina = await res.json();   // { content:[...], totalPages, number }</code></pre>
+<div class="card"><h3>CORS</h3><p>Se o frontend roda em outra origem, configure <code>WebMvcConfigurer#addCorsMappings</code> permitindo apenas origens conhecidas. Alternativa: <em>proxy/rewrites</em> do Next.js para <code>/api</code>.</p></div>
+<div class="card"><h3>Fluxo ponta a ponta (POST /api/pecas)</h3>
+<div class="diagram">1. Formulário → fetch POST JSON
+2. Filtro de segurança valida JWT (Spring Security)
+3. Controller: @Valid (Bean Validation) → 400 se inválido
+4. Service: abre transação, aplica regras
+5. Repository.save → Hibernate agenda INSERT
+6. Commit → INSERT via Hikari → MySQL
+7. Service devolve DTO → Controller 201 + JSON
+8. Frontend atualiza estado/UI</div></div>
+<div class="card"><h3>Rotas do frontend vs backend</h3><p>As rotas de páginas (ex.: <code>/pecas/[id]</code> no Next.js) são do navegador; as rotas <code>/api/**</code> são do Spring. Não confunda: a página chama a API, e a API nunca renderiza a tela.</p></div>
+</section>
+
+<section class="page" data-title="9. Boas práticas">
+<h2>9. Boas práticas e testes</h2>
+<ul>
+<li>Controller fino, Service com regra, Repository só com acesso a dados.</li>
+<li>Use DTOs e Bean Validation (<code>@NotBlank</code>, <code>@Size</code>).</li>
+<li>Paginação obrigatória em listagens (<code>Pageable</code>).</li>
+<li><code>open-in-view: false</code> e <code>fetch = LAZY</code>.</li>
+<li>Migrações versionadas (Flyway); <code>ddl-auto: validate</code>.</li>
+<li>Segredos em variáveis de ambiente; consultas parametrizadas (evita SQL injection).</li>
+</ul>
+<pre><code>@WebMvcTest(PecaController.class)   // teste de camada web
+@DataJpaTest                        // teste do repositório (H2/Testcontainers)
+@SpringBootTest                     // integração completa</code></pre>
+</section>
+
+<section class="page" data-title="10. Simulado (40 questões)">
+<h2>10. Simulado — 40 questões</h2>
+<p>Responda todas e clique em <strong>Corrigir</strong>. Cada questão tem um botão <strong>FOCO ENADE</strong> com o modal de aprofundamento.</p>
+<div id="quiz"></div>
+<div class="pager"><button class="btn" id="grade">Corrigir simulado</button><span class="score" id="score" aria-live="polite"></span><button class="btn secondary" id="reset">Refazer</button></div>
+</section>
+
+<div class="pager" id="pager">
+  <button class="btn secondary" id="prev">← Anterior</button>
+  <div class="dots" id="dots" aria-hidden="true"></div>
+  <button class="btn" id="next">Próxima →</button>
+</div>
+</main>
+</div>
+
+<div class="modal-back" id="modalBack" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="modal">
+    <span class="tag">FOCO ENADE</span>
+    <h4 id="mTitle"></h4>
+    <ul class="rows" id="mBody"></ul>
+    <p style="text-align:right"><button class="btn" id="mClose">Fechar</button></p>
+  </div>
+</div>
+
+<script>
+/* Navegação por menu + paginação */
+const pages=[...document.querySelectorAll('section.page')];
+const menu=document.getElementById('menu'), dots=document.getElementById('dots');
+const prev=document.getElementById('prev'), next=document.getElementById('next');
+let cur=0;
+pages.forEach((p,i)=>{
+  const b=document.createElement('button');b.textContent=p.dataset.title;
+  b.onclick=()=>go(i);menu.appendChild(b);
+  dots.appendChild(document.createElement('span'));
+});
+function go(i){
+  cur=Math.max(0,Math.min(pages.length-1,i));
+  pages.forEach((p,k)=>p.classList.toggle('active',k===cur));
+  [...menu.querySelectorAll('button')].forEach((b,k)=>k===cur?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
+  prev.disabled=cur===0;next.disabled=cur===pages.length-1;
+  history.replaceState(null,'','#p'+(cur+1));window.scrollTo(0,0);
+}
+prev.onclick=()=>go(cur-1);next.onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{
+  if(modalBack.classList.contains('open')){if(e.key==='Escape')closeModal();return;}
+  if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1);
+});
+
+/* Simulado: [enunciado, [alternativas], índice correto, explicação, pegadinha/foco] */
+const Q=[
+["Qual anotação marca a classe principal que habilita auto-configuração e component scan?",["@SpringBootApplication","@Entity","@RestController","@Service"],0,"Combina @Configuration, @EnableAutoConfiguration e @ComponentScan.","Confundir com @Component: ela só registra um bean."],
+["Qual camada deve concentrar as regras de negócio?",["Controller","Service","Entity apenas","Frontend"],1,"O Service orquestra regras e transações.","Regra no controller dificulta reuso e testes."],
+["Qual interface do Spring Data oferece paginação e ordenação além do CRUD?",["CrudRepository","Repository","JpaRepository","EntityManager"],2,"JpaRepository estende PagingAndSortingRepository.","CrudRepository não tem Pageable."],
+["JPA é:",["Uma implementação","Uma especificação","Um banco de dados","Um servidor web"],1,"JPA (Jakarta Persistence) é a especificação; Hibernate implementa.","Não confundir especificação e implementação."],
+["Qual é o provedor JPA padrão do Spring Boot?",["EclipseLink","OpenJPA","Hibernate","MyBatis"],2,"spring-boot-starter-data-jpa traz Hibernate.","MyBatis não é JPA."],
+["Qual anotação mapeia a chave primária?",["@Key","@Id","@PrimaryColumn","@Column(pk=true)"],1,"@Id, com @GeneratedValue para geração.","@Key não existe em JPA."],
+["O fetch padrão de @OneToMany é:",["EAGER","LAZY","NONE","BATCH"],1,"Coleções são LAZY por padrão.","@ManyToOne é EAGER por padrão."],
+["O fetch padrão de @ManyToOne é:",["LAZY","EAGER","NONE","SELECT"],1,"Associações para-um são EAGER por padrão; recomenda-se declarar LAZY.","Inverter com @OneToMany."],
+["O problema N+1 ocorre quando:",["Há 1 consulta única","Uma consulta carrega a lista e N consultas carregam associações","O banco cai","Há N índices"],1,"Cada associação LAZY gera uma consulta extra.","Solução: JOIN FETCH/@EntityGraph."],
+["Qual solução mitiga o N+1?",["JOIN FETCH","@Transient","ddl-auto=create","@Lob"],0,"JOIN FETCH carrega a associação na mesma consulta.","@Transient apenas ignora o campo."],
+["Qual anotação define um endpoint GET?",["@GetMapping","@Read","@Fetch","@Select"],0,"@GetMapping é atalho para @RequestMapping(method=GET).","@Select é do MyBatis."],
+["@RestController equivale a:",["@Controller + @ResponseBody","@Service + @Entity","@Component + @Repository","@Controller + @Transactional"],0,"Serializa o retorno direto no corpo da resposta.","@Controller sozinho tenta resolver views."],
+["Qual anotação extrai um valor do caminho /pecas/7?",["@RequestParam","@PathVariable","@RequestBody","@Header"],1,"@PathVariable lê segmentos da URL.","@RequestParam lê a query string."],
+["Qual anotação lê o JSON do corpo da requisição?",["@RequestBody","@PathVariable","@ModelAttribute","@Value"],0,"Usa Jackson para desserializar.","@Value injeta propriedades."],
+["Qual status HTTP é adequado para criação bem-sucedida?",["200","201","204","302"],1,"201 Created.","204 é sem conteúdo (ex.: DELETE)."],
+["Qual status é adequado para recurso inexistente?",["400","401","404","500"],2,"404 Not Found.","401 é não autenticado."],
+["Qual componente recebe todas as requisições HTTP no Spring MVC?",["DispatcherServlet","EntityManager","HikariCP","JpaRepository"],0,"É o front controller.","HikariCP é pool de conexões."],
+["@Transactional faz rollback por padrão para:",["Qualquer Exception","RuntimeException e Error","Apenas checked","Nunca"],1,"Checked exceptions não causam rollback por padrão.","Use rollbackFor para checked."],
+["Para consultas apenas de leitura, usa-se:",["@Transactional(readOnly = true)","@ReadOnly","@Cacheable","@Lazy"],0,"Permite otimizações do provedor.","@Lazy trata inicialização de beans."],
+["Qual é a vantagem da injeção por construtor?",["Permite campos finais e facilita testes","É mais lenta","Exige reflexão","Impede IoC"],0,"Dependências imutáveis e explícitas.","@Autowired em campo dificulta testes."],
+["O HikariCP serve para:",["Pool de conexões JDBC","Gerar JSON","Rotear URLs","Criptografar senhas"],0,"Reutiliza conexões, reduzindo custo.","Não é parte do MVC."],
+["Qual valor de ddl-auto é seguro em produção com Flyway?",["create-drop","update","validate","create"],2,"validate só confere o schema.","create apaga os dados."],
+["Qual ferramenta versiona migrações SQL?",["Flyway","Jackson","Lombok","Thymeleaf"],0,"Arquivos V1__x.sql aplicados em ordem.","Versões duplicadas quebram a migração."],
+["Por que não expor entidades diretamente na API?",["Vazamento de campos, loops e LazyInitializationException","Entidades não compilam","JSON não suporta","Não há motivo"],0,"DTOs isolam o contrato da API do modelo.","Serialização cíclica é comum em bidirecionais."],
+["Qual anotação habilita validação do corpo no controller?",["@Valid","@Check","@Verify","@Assert"],0,"Aciona Bean Validation; falha gera 400.","Exige starter-validation."],
+["O que faz @JoinColumn?",["Define a coluna de chave estrangeira","Cria índice","Define o ID","Mapeia enum"],0,"Indica a FK do lado dono da relação.","mappedBy fica no lado inverso."],
+["Em @OneToMany(mappedBy=\"marca\"), o lado dono é:",["A coleção","A entidade com a FK (@ManyToOne)","Ambos","Nenhum"],1,"mappedBy aponta para o lado dono.","Só o lado dono grava a FK."],
+["Qual estratégia de enum é mais segura contra reordenação?",["EnumType.ORDINAL","EnumType.STRING","@Lob","@Transient"],1,"STRING grava o nome.","ORDINAL quebra se a ordem mudar."],
+["@Version implementa:",["Lock otimista","Lock pessimista","Cache L2","Paginação"],0,"Detecta atualizações concorrentes.","Lança OptimisticLockException."],
+["Dirty checking significa:",["Hibernate detecta mudanças em entidades managed e grava no flush","Limpar o banco","Validar SQL","Apagar cache"],0,"Não é preciso chamar save após alterar entidade gerenciada em transação.","Entidade detached não é monitorada."],
+["LazyInitializationException ocorre quando:",["Associação LAZY é acessada fora da sessão","O banco está lento","A FK é nula","Falta @Id"],0,"Sessão fechada ao acessar proxy.","Evite com DTOs/fetch join, não com open-in-view."],
+["Qual objeto de paginação é passado ao repositório?",["Pageable","Sort apenas","Specification","Example"],0,"PageRequest.of(page,size).","Page é o retorno."],
+["Qual anotação trata exceções globalmente?",["@RestControllerAdvice","@Aspect","@Filter","@Configuration"],0,"Centraliza respostas de erro.","Combine com @ExceptionHandler."],
+["Para query SQL nativa com Spring Data usa-se:",["@Query(nativeQuery = true)","@Native","@Sql","@Raw"],0,"Perde portabilidade entre bancos.","Use parâmetros para evitar SQL injection."],
+["Qual prática previne SQL injection?",["Concatenar strings","Consultas parametrizadas","Desativar HTTPS","Usar ddl-auto"],1,"Parâmetros ligados (:id, ?1).","Concatenação é a causa da vulnerabilidade."],
+["CORS é necessário quando:",["Frontend e API têm origens diferentes","Usa-se MySQL","Usa-se JPA","Há DTO"],0,"Política do navegador entre origens.","Não substitui autenticação."],
+["Qual cabeçalho comum carrega um token JWT?",["Authorization: Bearer","Content-Length","Accept","Host"],0,"Padrão Bearer.","Nunca coloque segredos na URL."],
+["Qual é o papel do Repository?",["Acesso a dados","Regras de negócio","Renderizar telas","Rotear requisições"],0,"Abstrai a persistência.","Não deve conter regra de negócio."],
+["Qual teste carrega só a camada JPA?",["@DataJpaTest","@WebMvcTest","@JsonTest","@RestClientTest"],0,"Configura repositórios e banco em memória.","@WebMvcTest é para controllers."],
+["Em uma aplicação em camadas, o fluxo correto de dependências é:",["Controller → Service → Repository","Repository → Controller → Service","Service → Controller → Repository","Frontend → Repository"],0,"Cada camada só conhece a imediatamente inferior.","Frontend nunca acessa o banco diretamente."]
+];
+const quiz=document.getElementById('quiz');
+Q.forEach((q,i)=>{
+  const d=document.createElement('div');d.className='q';d.id='q'+i;
+  d.innerHTML=`<div class="enun">${i+1}. ${q[0]}</div>`+q[1].map((a,k)=>`<label><input type="radio" name="q${i}" value="${k}"> ${'ABCD'[k]}) ${a}</label>`).join('')+
+  `<button class="btn secondary focus-btn" data-i="${i}">FOCO ENADE</button>`;
+  quiz.appendChild(d);
+});
+const modalBack=document.getElementById('modalBack');let lastFocus=null;
+function openModal(i){
+  const q=Q[i];lastFocus=document.activeElement;
+  document.getElementById('mTitle').textContent=`Questão ${i+1}`;
+  document.getElementById('mBody').innerHTML=`<li><strong>Enunciado:</strong> ${q[0]}</li><li><strong>Gabarito:</strong> ${'ABCD'[q[2]]}) ${q[1][q[2]]}</li><li><strong>Justificativa:</strong> ${q[3]}</li><li><strong>Ponto de atenção (distrator):</strong> ${q[4]}</li>`;
+  modalBack.classList.add('open');document.getElementById('mClose').focus();
+}
+function closeModal(){modalBack.classList.remove('open');if(lastFocus)lastFocus.focus();}
+quiz.addEventListener('click',e=>{const b=e.target.closest('.focus-btn');if(b)openModal(+b.dataset.i);});
+document.getElementById('mClose').onclick=closeModal;
+modalBack.addEventListener('click',e=>{if(e.target===modalBack)closeModal();});
+document.getElementById('grade').onclick=()=>{
+  let ok=0,blank=0;
+  Q.forEach((q,i)=>{
+    const s=document.querySelector(`input[name=q${i}]:checked`),el=document.getElementById('q'+i);
+    el.classList.remove('right','wrong');
+    if(!s){blank++;return;}
+    if(+s.value===q[2]){ok++;el.classList.add('right');}else el.classList.add('wrong');
+  });
+  document.getElementById('score').textContent=`Acertos: ${ok}/${Q.length}`+(blank?` (${blank} em branco)`:'');
+};
+document.getElementById('reset').onclick=()=>{
+  document.querySelectorAll('#quiz input').forEach(i=>i.checked=false);
+  document.querySelectorAll('.q').forEach(q=>q.classList.remove('right','wrong'));
+  document.getElementById('score').textContent='';
+};
+go((parseInt(location.hash.replace('#p',''))||1)-1);
+</script>
+</body>
+</html>

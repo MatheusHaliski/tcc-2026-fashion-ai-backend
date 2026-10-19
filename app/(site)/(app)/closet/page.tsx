@@ -72,7 +72,7 @@ function Closet() {
   }
   return (
     <>
-      <PageHeader title={t("closet.title")} kicker={t("closet.rf7_rf31")} lead={data ? `${data.total} ${t("common.pieces")}` : undefined}
+      <PageHeader title={t("closet.title")} kicker={t("closet.rf7_rf31")} lead={data ? `${data.total} ${t("common.pieces")}` : "\u00a0"}
         actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Button aria-pressed={remixMode} onClick={() => startSelect("remix")}><FaiIcon id="SOC-04" size={24} decorative />{t("closet.remix.varias")}</Button><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link><Button aria-pressed={selectMode === "studio"} onClick={() => startSelect("studio")} title={t("closet.gera_a_foto_de_produto")}><FaiIcon id="ACT-08" size={24} decorative />{t("closet.levar_pecas_ao_estudio")}</Button></>} />
       <Tabs label={t("common.category")} value={parseTab(f.category)} onChange={changeTab}
         tabs={CATEGORY_TABS.map((c) => ({ id: c, label: c ? label(c) : t("closet.tab.all") }))} />
@@ -115,7 +115,7 @@ function Closet() {
               </div>
             </div>
           )}
-          <div className="grid-cards">{data.items.map((p) => selectMode
+          <div className="grid-cards is-pieces">{data.items.map((p) => selectMode
             ? <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} selectable selected={picked.includes(p.id)} onSelect={togglePick} />
             : <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>
           <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={(p) => set("page", p)} />

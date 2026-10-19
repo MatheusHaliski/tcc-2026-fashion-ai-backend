@@ -1442,6 +1442,7 @@ public class WardrobeService {
     }
 
     private void apply(WardrobeItem w, PieceForm f, boolean creating, Map<?, ?> aiPrefill) {
+        BackgroundStudioService.validateMotionWrite(w.getBackgroundConfigJson(), f.background());
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());
         w.setSubcategory(f.subcategory());

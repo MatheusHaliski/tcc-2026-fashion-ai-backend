@@ -8,6 +8,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton, Switch, Tabs, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { FollowRequests } from "@/components/follow-requests";
 
 const CATEGORY_ICON: Record<string, string> = { ACHIEVEMENT: "ACT-39", SOCIAL: "SOC-12", SECURITY: "ACT-04", SYSTEM: "NAV-14", POINTS: "ACT-40" };
 /** Categorias que viram um item só por dia na caixa (conquistas e o extrato dos FAI Points), para não soterrar o resto. */
@@ -18,7 +19,7 @@ interface Inbox { unread: number; items: Notification[]; groups?: Record<string,
 interface Pref { type: string; enabled: boolean; category?: string; label?: string; }
 /** Destino de "Ver": o link que o servidor mandou no payload (caminho interno) ou o recurso da notificação. */
 const payloadHref = (n: Notification) => (typeof n.payload?.href === "string" && n.payload.href.startsWith("/") && !n.payload.href.startsWith("//") ? n.payload.href : null);
-const hrefFor = (n: Notification) => n.resourceType === "COUPON_RIGHT" ? String(n.payload?.href ?? `/coupons?right=${n.resourceId}`) : payloadHref(n) ? payloadHref(n) : n.resourceType === "SCHEME" ? `/schemes/${n.resourceId}` : n.resourceType === "PIECE" ? `/pieces/${n.resourceId}` : n.resourceType === "CHALLENGE" ? `/challenges/${n.resourceId}` : n.resourceType === "MOMENT" ? `/moments/${n.resourceId}` : n.resourceType === "USER" && n.actor ? `/u/${n.actor.username}` : null;
+const hrefFor = (n: Notification) => n.resourceType === "COUPON_RIGHT" ? String(n.payload?.href ?? `/coupons?right=${n.resourceId}`) : payloadHref(n) ? payloadHref(n) : n.resourceType === "SCHEME" ? `/schemes/${n.resourceId}` : n.resourceType === "PIECE" ? `/pieces/${n.resourceId}` : n.resourceType === "CHALLENGE" ? `/challenges/${n.resourceId}` : n.resourceType === "MOMENT" ? `/moments/${n.resourceId}` : n.type === "FOLLOW_REQUEST" ? "/notifications#follow-requests" : n.resourceType === "USER" && n.actor ? `/u/${n.actor.username}` : null;
 
 function Inbox() {
   const { t, relative, fmtNumber } = useI18n(); const toast = useToast(); const [tab, setTab] = useState<"inbox" | "prefs">("inbox"); const [cat, setCat] = useState("ALL");
@@ -56,6 +57,7 @@ function Inbox() {
       <Tabs tabs={[{ id: "inbox", label: t("notifications.caixa_de_entrada"), count: data?.unread }, { id: "prefs", label: t("settings.notifications") }]} value={tab} onChange={setTab} />
       {tab === "inbox" && (
         <>
+          <div className="mb-3"><FollowRequests onChange={reload} /></div>
           <div className="chip-scroll mb-3" role="group" aria-label={t("notifications.filterLabel")}>{["ALL", ...cats].map((c) => <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c === "ALL" ? t("common.all") : catLabel(c)}</button>)}</div>
           {error && <ErrorState error={error} onRetry={reload} />}
           {loading && <Skeleton className="h-64" />}

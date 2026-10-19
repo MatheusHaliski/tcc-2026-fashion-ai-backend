@@ -314,15 +314,19 @@ public class SealService {
         return f == null ? null : f.view();
     }
 
-    /** PERFIL publica conteúdo elegível na vitrine; não cria vínculos nem selos conquistados. */
-    boolean hasProfilePolicies(UUID ownerId) { return !profilePolicies(ownerId).isEmpty(); }
+    /**
+     * PERFIL publica conteúdo elegível na vitrine; não cria vínculos nem selos conquistados. Vale por tipo: uma política
+     * só de peças não decide a vitrine de looks (antes, qualquer política PERFIL esvaziava a lista do outro tipo).
+     */
+    boolean hasProfilePolicies(UUID ownerId, SealTier subject) { return !profilePolicies(ownerId, subject).isEmpty(); }
 
-    private List<SealPolicies.Policy> profilePolicies(UUID ownerId) {
+    private List<SealPolicies.Policy> profilePolicies(UUID ownerId, SealTier subject) {
         Instant now = Instant.now();
+        Set<Object> targets = subject == SealTier.LOOK ? Set.of("LOOK", "BOTH") : Set.of("PECA", "BOTH");
         return seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(ownerId, SealStatus.ACTIVE).stream()
                 .filter(s -> s.getTier() == SealTier.PERFIL && available(s, now) && issuer(s.getOwner()) != null)
                 .map(s -> SealPolicies.parse(Json.map(s.getBackgroundConfigJson()).get("policy")))
-                .filter(p -> p != null && p.referenceModel() != null).toList();
+                .filter(p -> p != null && p.referenceModel() != null && targets.contains(p.referenceModel().get("target"))).toList();
     }
 
     private boolean profileMatch(List<SealPolicies.Policy> policies, SealTier subject, List<WardrobeItem> items, Scheme scheme) {
@@ -335,7 +339,7 @@ public class SealService {
     }
 
     List<Scheme> profileSchemes(UUID ownerId, Predicate<Scheme> visible, int limit) {
-        List<SealPolicies.Policy> policies = profilePolicies(ownerId).stream().filter(p -> Set.of("LOOK", "BOTH").contains(p.referenceModel().get("target"))).toList();
+        List<SealPolicies.Policy> policies = profilePolicies(ownerId, SealTier.LOOK);
         if (policies.isEmpty()) return List.of();
         List<Scheme> out = new ArrayList<>();
         for (int page = 0; ; page++) {
@@ -353,7 +357,7 @@ public class SealService {
     }
 
     List<WardrobeItem> profilePieces(UUID ownerId, Predicate<WardrobeItem> visible, int limit) {
-        List<SealPolicies.Policy> policies = profilePolicies(ownerId).stream().filter(p -> Set.of("PECA", "BOTH").contains(p.referenceModel().get("target"))).toList();
+        List<SealPolicies.Policy> policies = profilePolicies(ownerId, SealTier.PECA);
         if (policies.isEmpty()) return List.of();
         List<WardrobeItem> out = new ArrayList<>();
         for (int page = 0; ; page++) {
@@ -1777,6 +1781,21 @@ public class SealService {
         applyPromotion(user, p, f);
         promotions.save(p);
         return promotionView(p, null);
+    }
+
+    /** Administration creates a coupon for its verified issuer; participant eligibility remains unchanged. */
+    @Transactional
+    public Map<String, Object> createAdminPromotion(CurrentUser admin, UUID issuerId, PromotionForm form) {
+        guard.requireAdmin(admin);
+        if (issuerId == null || form == null || form.type() == null
+                || !List.of(PromotionType.CUPOM_LOJA, PromotionType.DESCONTO_ECOMMERCE, PromotionType.FRETE_GRATIS).contains(form.type()))
+            throw ApiException.badRequest("CUPOM_INVALIDO", "Informe emissor e tipo de cupom.");
+        User owner = users.findById(issuerId).orElseThrow(() -> ApiException.notFound("Emissor"));
+        CurrentUser issuer = CurrentUser.of(owner, admin.ip(), admin.userAgent());
+        guard.requireApprovedInstitutional(issuer, "admin:coupon", "O cupom precisa de marca ou celebridade aprovada.");
+        Map<String, Object> created = createPromotion(issuer, form);
+        audit.log(admin, AuditActions.SELO_EDITADO, "promotion:" + created.get("id"), Map.of("op", "admin-create-coupon", "issuerId", issuerId));
+        return created;
     }
 
     @Transactional

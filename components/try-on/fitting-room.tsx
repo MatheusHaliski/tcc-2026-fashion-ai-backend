@@ -27,6 +27,7 @@ import { StoreBrowser } from "./store-browser";
 import { mirrorHref } from "@/lib/nav/mirror-href";
 import { WardrobeBrowser } from "./wardrobe-browser";
 import { SavedTries } from "./saved-tries";
+import { AiTryOnDialog } from "./ai-try-on-dialog";
 
 /** RF18 coordinator: composes controlled views and delegates fitting/persistence use cases to hooks. */
 export function FittingRoom() {
@@ -46,6 +47,8 @@ export function FittingRoom() {
   const [category, setCategory] = useState("");
   // prévia 2D no espelho (o mesmo avatar, de frente e parado) com o look atual, aberta pelo botão do slot
   const [preview2d, setPreview2d] = useState<FittingItem | null>(null);
+  // prova com IA (GPU): a peça do guarda-roupa vestida na foto da própria pessoa
+  const [aiOpen, setAiOpen] = useState(false);
   const [store, setStore] = useState(searchParams.get("marca") ?? "");
   const [confirmClear, setConfirmClear] = useState(false);
   const [status, setStatus] = useState("");
@@ -111,7 +114,12 @@ export function FittingRoom() {
         title={t("tryOn.titulo_lojas")}
         kicker="RF18"
         lead={t("tryOn.lead_lojas")}
-        actions={<Link href={mirrorHref()} className="btn btn-sm btn-ghost">{t("tryOn.ir_ao_espelho")}</Link>}
+        actions={(
+          <>
+            <Button size="sm" onClick={() => setAiOpen(true)}>{t("tryOn.ia_botao")}</Button>
+            <Link href={mirrorHref()} className="btn btn-sm btn-ghost">{t("tryOn.ir_ao_espelho")}</Link>
+          </>
+        )}
       />
       <div className="fitting-workspace">
         <div className="fitting-preview">
@@ -119,6 +127,17 @@ export function FittingRoom() {
             avatar={data.avatar ?? null} mannequin={data.mannequin} pieces={shown}
             environment={environment} scene={scene} light={light} view={view}
             sex={selectedTipoLook} onCanvas={share.onCanvas}
+            mirrorPanel={({ back }) => (
+              <div className="grid gap-3">
+                <h2 className="type-h3">{t("tryOn.no_espelho")}</h2>
+                {session.items.length
+                  ? <ul className="fitting-mirror-list">{session.items.map((item) => <li key={item.key}>{item.name}</li>)}</ul>
+                  : <p className="type-body-sm text-muted">{t("tryOn.espelho_vazio")}</p>}
+                <Button variant="primary" onClick={() => setAiOpen(true)} disabled={!session.items.length}>{t("tryOn.espelho_provar_ia")}</Button>
+                <Link href={mirrorHref({ vista: "2d" })} className="btn btn-sm">{t("tryOn.espelho_do_quarto_2d")}</Link>
+                <Button onClick={back}>{t("tryOn.voltar_ao_centro")}</Button>
+              </div>
+            )}
           >
             <FittingControls
               sex={selectedTipoLook} onSexChange={changeTipoLook} view={view} onViewChange={setView}
@@ -179,6 +198,7 @@ export function FittingRoom() {
           </div>
         )}
       </Dialog>
+      <AiTryOnDialog open={aiOpen} onClose={() => setAiOpen(false)} items={session.items} onPickFromWardrobe={() => setTab("wardrobe")} />
       <Dialog
         open={confirmClear} onClose={() => setConfirmClear(false)} title={t("tryOn.limpar_o_provador")}
         footer={(

@@ -31,7 +31,7 @@ export interface HandPiece {
 /** Zona do espelho em metros: entra a menos de `enter`, sai só a mais de `exit`; tempos mínimos em cada borda (ms). */
 export const MIRROR_ZONE = { enter: 1.15, exit: 1.7, dwellMs: 350, exitMs: 250 } as const;
 /** Duração da reação à troca (ms) — normal e com movimento reduzido. */
-export const REACTION_MS = { normal: 1100, reduced: 320 } as const;
+export const REACTION_MS = { normal: 2200, reduced: 600 } as const;
 
 const API_TO_HAND: Record<string, HandSlot> = { outer_layer: "upper", upper: "upper", dress: "upper", lower: "lower", shoes: "shoes", accessory: "accessory" };
 const CATEGORY_TO_HAND: Record<string, HandSlot> = { upper_piece: "upper", full_body_piece: "upper", lower_piece: "lower", shoes_piece: "shoes", accessory_piece: "accessory" };
@@ -78,20 +78,7 @@ export function handsOf(slots: MirrorSlots, held: SourcePiece | null, lookup: (i
   return hands;
 }
 
-export interface Reaction { slot: HandSlot; at: number }
-/** Foto da vista do guarda-roupa tirada do ponto de vista do espelho ao abrir a prova (fundo do reflexo). */
-export interface MirrorSnapshot { url: string; aspect: number; at: number }
-
-/**
- * Recorte da foto do quarto para o vidro do espelho: a foto tem a proporção do canvas; o vidro é alto e estreito. Fica
- * o miolo da foto (repeat/offset de textura), sem esticar.
- */
-export function snapshotCrop(glassAspect: number, imageAspect: number): { repeat: [number, number]; offset: [number, number] } {
-  if (!(glassAspect > 0) || !(imageAspect > 0)) return { repeat: [1, 1], offset: [0, 0] };
-  if (imageAspect >= glassAspect) { const rx = glassAspect / imageAspect; return { repeat: [rx, 1], offset: [(1 - rx) / 2, 0] }; }
-  const ry = imageAspect / glassAspect; return { repeat: [1, ry], offset: [0, (1 - ry) / 2] };
-}
-
+export interface Reaction { slot: HandSlot; at: number; n: number }
 export class MirrorSession {
   phase: MirrorPhase = "room";
   /** aberta à mão (botão): parada, fica aberta a qualquer distância; andar para fora da zona fecha como na prova automática */
@@ -101,11 +88,8 @@ export class MirrorSession {
   private since = 0;
   /** número do último pedido de troca e do último aplicado; `busy` é o lugar em troca */
   seq = 0; applied = 0; busy: HandSlot | null = null; error: string | null = null; reaction: Reaction | null = null;
-  /** a vista do guarda-roupa no espelho (tirada ao entrar na prova; some ao voltar ao quarto) */
-  snapshot: MirrorSnapshot | null = null;
   listeners = new Set<() => void>();
   notify() { this.listeners.forEach((l) => l()); }
-  setSnapshot(s: MirrorSnapshot | null) { this.snapshot = s; this.notify(); }
 
   /**
    * Avança a fase pela distância do personagem ao espelho (m) no instante `now` (ms). Devolve true se a fase mudou.
@@ -125,7 +109,7 @@ export class MirrorSession {
       case "tryon": if (!this.manual && distance > MIRROR_ZONE.exit) { this.phase = "exit"; this.since = now; } break;
       case "exit":
         if (distance < MIRROR_ZONE.enter) this.phase = "tryon";
-        else if (now - this.since >= MIRROR_ZONE.exitMs) { this.phase = "room"; this.error = null; this.snapshot = null; }
+        else if (now - this.since >= MIRROR_ZONE.exitMs) { this.phase = "room"; this.error = null; }
         break;
     }
     if (before !== this.phase) { this.notify(); return true; }
@@ -135,7 +119,7 @@ export class MirrorSession {
   open() { this.manual = true; this.latched = false; if (this.phase !== "tryon") { this.phase = "tryon"; this.notify(); } }
   /** "Voltar ao quarto": fecha e, se o personagem ainda estiver na zona, não reabre sozinha até ele sair dela. */
   back(distance: number) {
-    this.manual = false; this.latched = distance <= MIRROR_ZONE.exit; this.error = null; this.snapshot = null;
+    this.manual = false; this.latched = distance <= MIRROR_ZONE.exit; this.error = null;
     if (this.phase !== "room") { this.phase = "room"; this.notify(); }
   }
   /**
@@ -155,7 +139,7 @@ export class MirrorSession {
   settle(n: number, ok: boolean, slot: HandSlot, now: number, error?: string | null): boolean {
     if (n !== this.seq) return false;
     this.busy = null;
-    if (ok) { this.applied = n; this.reaction = { slot, at: now }; this.error = null; }
+    if (ok) { this.applied = n; this.reaction = { slot, at: now, n }; this.error = null; }
     else this.error = error ?? "";
     this.notify(); return true;
   }
@@ -166,6 +150,8 @@ export class MirrorSession {
 export function facingYaw(actor: THREE.Vector3, mirror: THREE.Vector3): number { return Math.atan2(mirror.x - actor.x, mirror.z - actor.z); }
 
 /** Normal do vidro do espelho do quarto: ele fica girado 28° em Y (room-scene.tsx). */
+/** Altura dos olhos do personagem (m) para a câmera em primeira pessoa no espelho. */
+export const EYE_HEIGHT = 1.58;
 export const MIRROR_NORMAL = new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(28)), 0, Math.cos(THREE.MathUtils.degToRad(28)));
 
 /** Meias-medidas da colisão do espelho (caixa orientada; `userData.collider` em room-scene.tsx). */
@@ -248,25 +234,64 @@ export function mirrorDistance(actor: THREE.Vector3, mirror: THREE.Vector3): num
  * girar a cena). Com `bounds` (as paredes do quarto), a câmera fica sempre dentro dele, a uma distância mínima do personagem,
  * e o olhar o acompanha (roomView em room-bounds.ts).
  */
-export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number, view = 0, bounds?: RoomBounds, prev?: { x: number; z: number }): { position: THREE.Vector3; target: THREE.Vector3 } {
-  if (phase === "tryon" || phase === "approach") {
+export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number, view = 0, bounds?: RoomBounds, prev?: { x: number; z: number }, track?: number): { position: THREE.Vector3; target: THREE.Vector3 } {
+  if (phase === "tryon") {
+    // primeira pessoa: os olhos do personagem, um palmo à frente do rosto, olhando o centro do vidro — a pessoa vê a roupa
+    // vestida no reflexo (o Reflector desenha o personagem de frente)
+    const position = new THREE.Vector3(actor.x, EYE_HEIGHT, actor.z).addScaledVector(MIRROR_NORMAL, -0.16);
+    return { position, target: new THREE.Vector3(mirror.x, 1.15, mirror.z) };
+  }
+  if (phase === "approach") {
     const mid = new THREE.Vector3((actor.x + mirror.x) / 2, 1.05, (actor.z + mirror.z) / 2);
     const side = new THREE.Vector3(-MIRROR_NORMAL.z, 0, MIRROR_NORMAL.x); // paralelo ao vidro, para enquadrar os dois
     const position = mid.clone().add(MIRROR_NORMAL.clone().multiplyScalar(3.1)).add(side.multiplyScalar(-0.35)).setY(1.75);
     return { position: bounds ? clampCamera(position, mid, bounds, 0.25) : position, target: mid };
   }
   const base = { position: new THREE.Vector3(1 + closetRight * 0.25, 2.65, 5.8), target: new THREE.Vector3(closetRight * 0.25, 1.1, 0.85) };
-  if (bounds) return roomView(base.position, base.target, actor, view, bounds, prev);
+  if (bounds) return roomView(base.position, base.target, actor, view, bounds, prev, track);
   return view ? rotateView(base.position, base.target, view) : base;
 }
 
-/** Reação à troca por lugar do corpo, em t ∈ [0,1): ângulos (rad) para o controlador aplicar — sem julgamento, só o gesto. */
-export function reactionPose(slot: HandSlot, t: number, reduced: boolean): { arms: number; spine: number; knee: number; foot: number; head: number } {
-  const k = reduced ? 0.35 : 1;                                    // movimento reduzido: o mesmo gesto, bem menor
-  const bell = Math.sin(Math.min(1, Math.max(0, t)) * Math.PI);   // sobe e volta
-  const z = { arms: 0, spine: 0, knee: 0, foot: 0, head: 0 };
-  if (slot === "upper") return { ...z, arms: 0.55 * bell * k, spine: 0.18 * Math.sin(t * Math.PI * 2) * k };   // abre os braços e gira o tronco
-  if (slot === "lower") return { ...z, knee: 0.5 * bell * k, spine: 0.12 * Math.sin(t * Math.PI * 2) * k };    // levanta o joelho e vira
-  if (slot === "shoes") return { ...z, foot: 0.45 * Math.abs(Math.sin(t * Math.PI * 3)) * k };                   // bate o pé
-  return { ...z, head: 0.28 * Math.sin(t * Math.PI * 2) * k };                                                   // acessório: inclina a cabeça
+/** Como a pessoa reage ao ver a peça nova no espelho — varia de uma troca para a outra (nunca a mesma em sequência). */
+export type ReactionKind = "alivio" | "alegria" | "ajuste" | "conferir";
+const REACTIONS: Record<HandSlot, ReactionKind[]> = {
+  upper: ["alegria", "ajuste", "alivio", "conferir"], lower: ["conferir", "ajuste", "alegria"],
+  shoes: ["conferir", "alegria", "alivio"], accessory: ["ajuste", "alivio", "conferir"],
+};
+/** A reação da troca número `n` naquele lugar do corpo. */
+export function reactionKindOf(slot: HandSlot, n: number): ReactionKind {
+  const list = REACTIONS[slot]; return list[((Math.trunc(n) % list.length) + list.length) % list.length];
+}
+/** Canais da reação para o controlador aplicar (rad; `bounce` e `turn` em m e rad) e para onde vão as mãos. */
+export interface ReactionChoreo {
+  arms: number; spine: number; knee: number; foot: number; head: number; breath: number; shoulders: number; look: number; bounce: number; turn: number;
+  hands: "chest" | "hips" | "hem" | "collar" | null; handsWeight: number;
+}
+/**
+ * Coreografia da reação ao vestir, em t ∈ [0,1) — sem julgamento, só o gesto, e tudo volta a zero no fim:
+ *  - alívio: inspira (peito e ombros sobem, cabeça ergue) e solta o ar (ombros caem relaxados);
+ *  - alegria: mãos juntas no peito, um pulinho duplo e o tronco balançando;
+ *  - ajuste: olha a peça e ajeita (barra da camisa/calça; gola, no acessório), apoiando o peso;
+ *  - conferir: vira de um lado e do outro para ver o caimento (sapato: olha os pés e bate o pé; calça: dobra o joelho).
+ * Movimento reduzido: o mesmo gesto bem menor, sem pulo e quase sem giro.
+ */
+export function reactionChoreo(kind: ReactionKind, slot: HandSlot, t: number, reduced: boolean): ReactionChoreo {
+  const u = Math.min(1, Math.max(0, t)), k = reduced ? 0.35 : 1, motion = reduced ? 0 : 1, bell = Math.sin(u * Math.PI);
+  const win = (a: number, b: number) => (u <= a || u >= b ? 0 : Math.sin(((u - a) / (b - a)) * Math.PI));
+  const zero: ReactionChoreo = { arms: 0, spine: 0, knee: 0, foot: 0, head: 0, breath: 0, shoulders: 0, look: 0, bounce: 0, turn: 0, hands: null, handsWeight: 0 };
+  switch (kind) {
+    case "alivio": {
+      const inhale = win(0, 0.55), exhale = win(0.45, 1);
+      return { ...zero, breath: 0.12 * inhale * k, shoulders: (0.16 * inhale - 0.08 * exhale) * k, look: (-0.12 * inhale + 0.08 * exhale) * k, arms: 0.1 * exhale * k, head: 0.04 * Math.sin(u * Math.PI * 2) * k };
+    }
+    case "alegria":
+      return { ...zero, hands: "chest", handsWeight: win(0.05, 0.8) * (reduced ? 0.5 : 1), bounce: 0.035 * Math.abs(Math.sin(u * Math.PI * 2)) * bell * motion,
+        spine: 0.16 * Math.sin(u * Math.PI * 3) * bell * k, head: 0.12 * Math.sin(u * Math.PI * 2) * k, shoulders: 0.06 * bell * k };
+    case "ajuste":
+      return { ...zero, hands: slot === "accessory" ? "collar" : "hem", handsWeight: win(0.1, 0.85) * (reduced ? 0.5 : 1),
+        look: 0.28 * win(0, 0.75) * k, spine: 0.06 * Math.sin(u * Math.PI * 2) * k, knee: slot === "lower" ? 0.18 * win(0.4, 0.9) * k : 0 };
+    default:
+      return { ...zero, turn: (motion ? 0.42 : 0.12) * Math.sin(u * Math.PI * 2) * bell, look: (slot === "shoes" ? 0.38 : 0.12) * win(0, 0.8) * k,
+        foot: slot === "shoes" ? 0.4 * Math.abs(Math.sin(u * Math.PI * 3)) * win(0.3, 1) * k : 0, knee: slot === "lower" ? 0.4 * win(0.5, 1) * k : 0, arms: 0.08 * bell * k };
+  }
 }

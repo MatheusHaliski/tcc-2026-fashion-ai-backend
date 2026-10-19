@@ -498,9 +498,16 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
 // ================================================================== pose de exibição (CPU) e textura
 
 /** Posições de uma geometria presa ao esqueleto na pose atual dos ossos (skinning linear, como no shader). */
-export function posedPositions(skeleton: THREE.Skeleton, bindMatrix: THREE.Matrix4, position: Float32Array, skinIndex: ArrayLike<number>, skinWeight: ArrayLike<number>): Float32Array {
+/**
+ * Posições na pose atual do esqueleto. Com `space` (a malha do corpo), no espaço dela — frente do corpo em +z, como a
+ * projeção da foto espera —, e não no da cena: com o personagem girado (no Meu Quarto ele começa de costas para a
+ * câmera), a matriz de mundo dos ossos virava o corpo e a foto da peça ia para as costas.
+ */
+export function posedPositions(skeleton: THREE.Skeleton, bindMatrix: THREE.Matrix4, position: Float32Array, skinIndex: ArrayLike<number>, skinWeight: ArrayLike<number>, space?: THREE.Object3D): Float32Array {
   skeleton.bones.forEach((b) => b.updateMatrixWorld(true));
-  const M = skeleton.bones.map((b, i) => new THREE.Matrix4().multiplyMatrices(b.matrixWorld, skeleton.boneInverses[i]).multiply(bindMatrix));
+  let toSpace: THREE.Matrix4 | null = null;
+  if (space) { space.updateWorldMatrix(true, false); toSpace = space.matrixWorld.clone().invert(); }
+  const M = skeleton.bones.map((b, i) => { const m = new THREE.Matrix4().multiplyMatrices(b.matrixWorld, skeleton.boneInverses[i]).multiply(bindMatrix); return toSpace ? m.premultiply(toSpace) : m; });
   const out = new Float32Array(position.length); const p = new THREE.Vector3(), q = new THREE.Vector3();
   for (let v = 0; v < position.length / 3; v++) {
     p.set(position[v * 3], position[v * 3 + 1], position[v * 3 + 2]); let x = 0, y = 0, z = 0;

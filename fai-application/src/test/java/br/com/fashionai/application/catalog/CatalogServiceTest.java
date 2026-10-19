@@ -195,6 +195,28 @@ class CatalogServiceTest {
     }
 
     @Test
+    void pecaGuardadaPeloProvadorSemTamanhoPassaNaValidacao() {
+        // o Provador manda só produto e variante: o tamanho tem de sair válido, senão "Corrija os campos destacados"
+        assertThat(CatalogService.sizeOf(null, "upper_piece")).isEqualTo("m");
+        assertThat(CatalogService.sizeOf(" ", "shoes_piece")).isEqualTo("one_size");
+        assertThat(CatalogService.sizeOf(null, "accessory_piece")).isEqualTo("one_size");
+        assertThat(CatalogService.sizeOf("M", "upper_piece")).isEqualTo("m");
+        assertThat(CatalogService.sizeOf("40", "shoes_piece")).isEqualTo("shoe_40");
+        assertThat(CatalogService.sizeOf("40", "lower_piece")).isEqualTo("br_40");
+        assertThat(CatalogService.sizeOf("br_38", "lower_piece")).isEqualTo("br_38");
+        assertThat(CatalogService.sizeOf("gigante", "lower_piece")).isEqualTo("m");
+        org.mockito.ArgumentCaptor<WardrobeService.PieceForm> form = org.mockito.ArgumentCaptor.forClass(WardrobeService.PieceForm.class);
+        CatalogProduct p = MemoryRepository.<CatalogProduct>rows(kit.dep(CatalogProductRepository.class)).get(0);
+        WardrobeService wardrobe = kit.dep(WardrobeService.class);
+        when(wardrobe.createFromCatalog(any(), form.capture(), any())).thenReturn(Views.piece(Kit.piece(user, "x", "shoes_piece", "casual_sneakers", "white"), null, null));
+        catalog.addToWardrobe(ana, new CatalogService.AddRequest(p.getId(), null, null, null, null, null, null, null, null, null,
+                br.com.fashionai.domain.model.enums.Visibility.PRIVATE, null, null, null, null, null, null, null));
+        WardrobeService.PieceForm f = form.getValue();
+        assertThat(br.com.fashionai.application.taxonomy.Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
+                f.material(), f.size(), f.occasion(), f.style())).doesNotContainKey("size");
+    }
+
+    @Test
     void acervoInteiroPaginadoComTotalRealEResumo() {
         CatalogProductRepository products = kit.dep(CatalogProductRepository.class);
         List<CatalogProduct> all = MemoryRepository.rows(products);

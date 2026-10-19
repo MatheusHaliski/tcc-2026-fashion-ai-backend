@@ -10,6 +10,7 @@ import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import { eyeRig, eyeApertures, isCorneaCap, lowerLidLine, type EyeApertures } from "./eyes";
 import { openEyeSockets } from "./eye-sockets";
+import { earVertexMask } from "./hair-geometry";
 
 export interface Human {
   root: THREE.Group;
@@ -176,11 +177,35 @@ export function clipEyeGeometryForExport(h: Human): THREE.BufferGeometry | null 
 
 export function skinMaterial(look: HumanLook): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
-    color: look.skinMap ? "#ffffff" : look.skin, map: look.skinMap ?? null, roughness: 0.58, metalness: 0,
-    sheen: 0.35, sheenRoughness: 0.7, sheenColor: new THREE.Color(look.skin).lerp(new THREE.Color("#ffd9c8"), 0.35),
+    color: look.skinMap ? "#ffffff" : look.skin, map: look.skinMap ?? null, roughness: 0.55, metalness: 0,
+    // sheen discreto e quase na cor da própria pele: o véu claro de antes esbranquiçava o corpo sob a luz do estúdio
+    sheen: 0.22, sheenRoughness: 0.6, sheenColor: new THREE.Color(look.skin).lerp(new THREE.Color("#ffd9c8"), 0.18),
   });
   m.name = "pele";
   return m;
+}
+
+/**
+ * Pele da orelha: a pinna é fina e vascularizada, portanto precisa de uma resposta quente quando recebe luz de
+ * contraluz. A máscara vem da topologia do asset, não de uma heurística por UV, para acompanhar a forma do rosto.
+ */
+export function installEarScattering(material: THREE.MeshPhysicalMaterial): void {
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>\nattribute float earMask;\nvarying float vEarMask;`);
+    shader.vertexShader = shader.vertexShader.replace("#include <project_vertex>", `#include <project_vertex>\n  vEarMask = earMask;`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>\nvarying float vEarMask;`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <opaque_fragment>", `
+      #if NUM_DIR_LIGHTS > 0
+        vec3 earTransmission = vec3(0.0);
+        for (int earLight = 0; earLight < NUM_DIR_LIGHTS; earLight++) {
+          float earBacklight = pow(max(dot(-normal, directionalLights[earLight].direction), 0.0), 2.0);
+          earTransmission += directionalLights[earLight].color * earBacklight;
+        }
+        outgoingLight += vEarMask * diffuseColor.rgb * vec3(1.0, 0.28, 0.14) * earTransmission * 0.18;
+      #endif
+      #include <opaque_fragment>`);
+  };
+  material.customProgramCacheKey = () => "avatar-skin-ear-scattering-v2";
 }
 
 export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
@@ -195,13 +220,17 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   g.setAttribute("position", new THREE.BufferAttribute(expand(c.body, b.renderVertex, 3, Float32Array), 3));
   g.setAttribute("normal", new THREE.BufferAttribute(expand(normals, b.renderVertex, 3, Float32Array), 3));
   g.setAttribute("uv", new THREE.BufferAttribute(b.renderUv, 2));
+  const earMask = earVertexMask(a);
+  g.setAttribute("earMask", new THREE.BufferAttribute(Uint8Array.from(b.renderVertex, (v) => earMask[v]), 1, true));
   g.setAttribute("skinIndex", new THREE.BufferAttribute(cleanJoints(expand(b.skinIndex, b.renderVertex, 4, Uint16Array) as Uint16Array, expand(b.skinWeight, b.renderVertex, 4, Uint8Array) as Uint8Array), 4));
   g.setAttribute("skinWeight", new THREE.BufferAttribute(expand(b.skinWeight, b.renderVertex, 4, Uint8Array), 4, true));
   g.setIndex(new THREE.BufferAttribute(b.index, 1));
   if (aperture) openEyeSockets(g, aperture, rig);
   g.computeBoundingSphere();
   void nr;
-  const body = new THREE.SkinnedMesh(g, skinMaterial(look)); body.name = "corpo"; body.castShadow = true; body.receiveShadow = true;
+  const bodyMaterial = skinMaterial(look);
+  installEarScattering(bodyMaterial);
+  const body = new THREE.SkinnedMesh(g, bodyMaterial); body.name = "corpo"; body.castShadow = true; body.receiveShadow = true;
   body.add(bones[0]);
   // ---- olhos (textura CC0 do MakeHuman). AVATAR-ID I4: ossos LeftEye/RightEye (filhos do Head, no centro de cada globo,
   // nomes do Mixamo) — cada globo gira no próprio centro; a córnea vira uma malha à parte, só de reflexo

@@ -6,6 +6,8 @@ import br.com.fashionai.application.moments.MomentService;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.testkit.Kit;
+import br.com.fashionai.domain.model.AtelierRewardGrant;
+import br.com.fashionai.domain.model.AtelierRewardGrant.Category;
 import br.com.fashionai.domain.model.FlairCardInstance;
 import br.com.fashionai.domain.model.FlairChallenge;
 import br.com.fashionai.domain.model.FlairChallengeGroup;
@@ -89,6 +91,7 @@ class FlairChallengeServiceTest {
         lenient().when(collection.visible(any(), any())).thenReturn(true);
         Guard guard = kit.dep(Guard.class);
         lenient().when(guard.deny(any(), any(), any())).thenAnswer(i -> ApiException.forbidden(i.getArgument(2)));
+        kit.atelier();
         service = kit.build(FlairChallengeService.class);
         service.useClock(Clock.fixed(NOW, ZoneOffset.UTC));
         halloween = moment("halloween-2026", MomentNature.CULTURAL, "2026-10-20T03:00:00Z", "2026-11-01T03:00:00Z", READINGS);
@@ -342,6 +345,35 @@ class FlairChallengeServiceTest {
         verify(points).award(ana.getId(), "FLAIR_CBC_GROUP", "FLAIR_CHALLENGE_GROUP", "group:lenda-do-estilo", 150);
         assertThat(kit.dep(UserAchievementRepository.class).existsByUserIdAndAchievementCode(ana.getId(), "CBC_LENDA_DO_ESTILO")).isTrue();
         assertThat((Integer) ((Map<String, Object>) second.get("points")).get("total")).isEqualTo(200);
+        // Atelier: o grupo concluído vira um Troféu habitável (cartas novas em cada desafio: nenhum capítulo de memória)
+        assertThat(kit.atelierGrants()).singleElement().satisfies(r -> {
+            assertThat(r.getCategory()).isEqualTo(Category.habitableTrofeus);
+            assertThat(r.getRewardCode()).isEqualTo("CBC_GROUP");
+            assertThat(r.getSourceType()).isEqualTo("SEASON");
+            assertThat(r.getSourceReference()).isEqualTo("cbc-group:lenda-do-estilo");
+        });
+    }
+
+    @Test
+    void cartaReutilizadaEmOutroDesafioGanhaCapituloNaMemoriaDaPeca() {
+        FlairChallenge paris = challenge("viagem-a-paris", null, THREE, "[]", 30);
+        FlairChallenge gala = challenge("noite-de-gala", null, THREE, "[]", 50);
+        paris.setLocksCards(false);
+        gala.setLocksCards(false);
+        FlairCardInstance rua = card(ana, "CAL", "black", "edgy", 30, 5);
+        FlairCardInstance festa = card(ana, "SUP", "black", "edgy", 30, 5);
+        service.submit(anaU, paris.getSlug(), build(null, "rua", rua, "festa", festa, "pista", card(ana, "INF", "black", "edgy", 30, 5)));
+        assertThat(kit.atelierGrants()).isEmpty();   // a primeira participação ainda não é reutilização
+
+        service.submit(anaU, gala.getSlug(), build(null, "rua", rua, "festa", festa, "pista", card(ana, "INF", "black", "edgy", 30, 5)));
+        List<AtelierRewardGrant> chapters = kit.atelierGrants();
+        assertThat(chapters).extracting(AtelierRewardGrant::getReferenceId)
+                .containsExactlyInAnyOrder(rua.getOriginId().toString(), festa.getOriginId().toString());
+        assertThat(chapters).allSatisfy(r -> {
+            assertThat(r.getOwnerId()).isEqualTo(ana.getId());
+            assertThat(r.getCategory()).isEqualTo(Category.garmentMemory);
+            assertThat(r.getSourceReference()).startsWith("challenge:" + gala.getId() + ":card:");
+        });
     }
 
     // ------------------------------------------------------------------ administração (R1, P2, A1)

@@ -1,0 +1,9 @@
+# SAM 3D Body (medidas do Avatar 3D) no mesmo contêiner da FASHN. Só o que o pacote importa na inferência: sem
+# detectron2, pyrender, wandb nem o pacote mhr (o detector de pessoa é o DWPose da FASHN e o MHR vem em TorchScript).
+# Lock: uv pip compile --python-version 3.11 services/anatomical_vton/requirements-sam3d.txt -c services/anatomical_vton/requirements-fashn.lock -o services/anatomical_vton/requirements-sam3d.lock
+-r requirements-fashn.txt
+pytorch-lightning>=2.4
+yacs>=0.1.8
+roma>=1.5
+omegaconf>=2.3
+braceexpand>=0.1.7

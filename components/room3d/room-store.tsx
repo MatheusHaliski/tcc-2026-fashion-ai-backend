@@ -1,13 +1,16 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { api, mediaUrl } from "@/lib/api/client";
+import { api, ApiError, mediaUrl } from "@/lib/api/client";
+import { PurchaseKeys } from "@/lib/api/purchase-key";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n, tr } from "@/lib/i18n/i18n";
-import { Badge, Button, Chip, Dialog, EmptyState, ErrorState, SkeletonGrid, useToast } from "@/components/ui";
+import { Badge, Button, Chip, Dialog, EmptyState, ErrorState, SkeletonGrid, UiIcon, useToast } from "@/components/ui";
 import { FilterBar } from "@/components/filter-bar";
 import { AVAILABILITY, SLOT_LABELS, StoreSwatch, type StoreItem } from "@/components/room3d/wardrobe-creator";
+
+import { FaiIcon } from "@/components/fai-icon";
 
 const ModelViewer = dynamic(() => import("./piece-model-viewer"), { ssr: false });
 
@@ -29,6 +32,10 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
   const { fmtDate, t } = useI18n(); const toast = useToast();
   const shop = useApi<ShopItem[]>((signal) => api.get("/api/points/shop", { signal }), []);
   const [shown, setShown] = useState(PAGE);
+  const [confirmPurchase, setConfirmPurchase] = useState<ShopItem | null>(null);
+  const [info, setInfo] = useState<ShopItem | null>(null);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const purchaseKeys = useRef(new PurchaseKeys());
   const [modelPreview, setModelPreview] = useState<ShopItem | null>(null);
   const [kind, setKind] = useState(""); const [slot, setSlot] = useState(""); const [material, setMaterial] = useState(""); const [origin, setOrigin] = useState("");
   const [creator, setCreator] = useState(creatorSlug ?? ""); const [q, setQ] = useState(""); const [onlyBuyable, setOnlyBuyable] = useState(false); const [sort, setSort] = useState("price");
@@ -47,12 +54,14 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
   }, [all, kind, slot, material, origin, creator, onlyBuyable, q, sort]);
 
   async function buy(i: ShopItem) {
+    if (busy) return;
     setBusy(i.sku);
     try {
-      const r = await api.post<{ inventoryId: string; balance: number; serial?: string }>(`/api/points/shop/${i.sku}/purchase`);
+      const r = await api.post<{ inventoryId: string; balance: number; serial?: string }>(`/api/points/shop/${i.sku}/purchase`, undefined, { headers: purchaseKeys.current.headers(i.sku) });
+      purchaseKeys.current.settle();
       toast.success(t("room3d.roomStore.comprado_saldo_pts", { name: i.name, value: r.serial && r.serial !== "null" ? ` (nº ${r.serial})` : "", balance: r.balance }));
-      openApply(i, r.inventoryId); shop.reload(); onChanged?.();
-    } catch (e) { toast.fromError(e); } finally { setBusy(null); }
+      setConfirmPurchase(null); openApply(i, r.inventoryId); shop.reload(); onChanged?.();
+    } catch (e) { purchaseKeys.current.settle(e); setConfirmPurchase(null); setPurchaseError(e instanceof ApiError ? e.message : t("store.purchaseFailed")); shop.reload(); } finally { setBusy(null); }
   }
   async function tryOn(i: ShopItem) {
     try { const r = await api.post<{ module?: string; note?: string }>(`/api/points/shop/${i.sku}/try-on`, {}); toast.info(t("room3d.roomStore.previa_em", { moduleLabel: moduleLabel(r.module), value: r.note ?? t("room3d.roomStore.nada_foi_comprado") })); } catch (e) { toast.fromError(e); }
@@ -85,7 +94,8 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
           return (
             <div key={i.sku} className="surface flex flex-col p-3">
               <StoreSwatch item={i} />
-              <div className="mt-2 flex items-start justify-between gap-2"><p className="type-body"><b>{i.name}</b></p><span className="type-data whitespace-nowrap">{t("common.pts_2", { pricePoints: i.pricePoints })}</span></div>
+              <span className="type-caption text-muted"><UiIcon name="box" size={18} /> {i.kind === "WARDROBE" ? t("room3d.roomStore.guarda_roupas_inteiros") : i.blockLabel}</span>
+              <div className="mt-2 flex items-start justify-between gap-2"><p className="type-body"><b>{i.name}</b></p><span className="type-data whitespace-nowrap"><FaiIcon id="ACT-40" size={20} decorative /> {i.pricePoints} {t("nav.points")}</span></div>
               <p className="type-caption text-muted">{i.kind === "WARDROBE" ? t("common.guarda_roupa_inteiro_blocos", { value: i.bundle?.length ?? 0 }) : `${i.blockLabel} · ${i.materialLabel ?? ""} · ${i.colorName ?? ""}`}</p>
               {i.kind === "WARDROBE" && <p className="type-caption text-faint">{(i.bundle ?? []).map((b) => `${SLOT_LABELS[b.slotType] ?? b.slotType}: ${b.colorName}`).join(" · ")}</p>}
               {i.creator ? <Link href={i.creator.slug ? `/brands/${i.creator.slug}` : "#"} className="mt-1 flex items-center gap-1 type-caption underline-offset-2 hover:underline">{i.creator.logoUrl && <img src={mediaUrl(i.creator.logoUrl)} alt="" className="h-4 w-4 rounded-full object-contain" />}{i.creator.kind === "CELEBRIDADE" ? t("auth.profileCelebrity") : t("common.brand")} · {i.creator.name}</Link> : <p className="mt-1 type-caption text-faint">{t("room3d.roomStore.fabrica_fai")}</p>}
@@ -100,14 +110,23 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
               {units.length > 0 && <p className="type-caption text-muted">{t("room3d.roomStore.voce_tem", { unitsCount: units.length })}{" "}{units.map((u) => moduleLabel(u.appliedModule) === "—" ? t("room3d.roomStore.na_caixa") : moduleLabel(u.appliedModule)).join(", ")}</p>}
               {i.blocker && <p className="type-caption" style={{ color: "var(--mark)" }}>{i.blocker}</p>}
               <div className="mt-auto flex flex-wrap gap-1 pt-2">
+                <Button size="sm" onClick={() => setInfo(i)}><UiIcon name="info" size={18} />{t("store.moreInfo")}</Button>
                 {loose && <Button size="sm" variant="accent" onClick={() => openApply(i, loose.inventoryId)}>{t("room3d.roomStore.montar_no_quarto")}</Button>}
                 {i.finish?.model3dUrl && <Button size="sm" onClick={() => setModelPreview(i)}>{t("roomAssets.preview")}</Button>}
                 <Button size="sm" onClick={() => tryOn(i)}>{t("scheme.tryOn")}</Button>
-                <Button size="sm" variant="primary" loading={busy === i.sku} disabled={!!i.blocker || i.levelOk === false || i.affordable === false} onClick={() => buy(i)} title={i.levelOk === false ? t("room3d.roomStore.disponivel_a_partir_do_nivel", { requiredLevel: i.requiredLevel }) : i.affordable === false ? t("room3d.roomStore.saldo_insuficiente") : i.blocker ?? undefined}>{units.length ? t("room3d.roomStore.comprar_outro") : t("room3d.roomStore.comprar")}</Button>
+                <Button size="sm" variant="primary" loading={busy === i.sku} disabled={!!busy || !!i.blocker || i.levelOk === false} onClick={() => { if (i.affordable === false) setPurchaseError(t("store.insufficient")); else setConfirmPurchase(i); }} title={i.levelOk === false ? t("room3d.roomStore.disponivel_a_partir_do_nivel", { requiredLevel: i.requiredLevel }) : i.affordable === false ? t("room3d.roomStore.saldo_insuficiente") : i.blocker ?? undefined}>{units.length ? t("room3d.roomStore.comprar_outro") : t("room3d.roomStore.comprar")}</Button>
               </div>
             </div>);
         })}</div>
         {!compact && list.length > shown && <div className="mt-4 flex justify-center"><Button onClick={() => setShown((n) => n + PAGE)}>{t("room3d.roomStore.showMore", { count: Math.min(PAGE, list.length - shown), shown, total: list.length })}</Button></div>}</>)}
+      <Dialog open={!!confirmPurchase} onClose={() => { if (!busy) setConfirmPurchase(null); }} title={t("store.confirmTitle")} footer={<><Button disabled={!!busy} onClick={() => setConfirmPurchase(null)}>{t("common.cancel")}</Button><Button variant="primary" loading={!!busy} disabled={!!busy} onClick={() => { if (confirmPurchase) void buy(confirmPurchase); }}>{t("myArts.confirm")}</Button></>}>
+        <p>{confirmPurchase?.name} · <FaiIcon id="ACT-40" size={20} decorative /> {confirmPurchase?.pricePoints} {t("nav.points")}</p><p>{t("store.confirmHint")}</p>
+      </Dialog>
+      <Dialog open={!!purchaseError} onClose={() => setPurchaseError(null)} title={t("store.purchaseRejected")}><p role="alert">{purchaseError}</p></Dialog>
+      <Dialog open={!!info} onClose={() => setInfo(null)} title={info?.name ?? t("store.moreInfo")}>
+        <p>{t(info?.kind === "WARDROBE" ? "store.wardrobePurpose" : "store.componentPurpose", { module: info?.blockLabel ?? "" })}</p>
+        <p>{t("store.deliveryHint")}</p><p>{t("store.compatible")}: {(info?.compatibleModules ?? []).map(moduleLabel).join(", ") || t("room3d.roomStore.nenhum_modulo_compativel_no_seu")}</p>
+      </Dialog>
       <Dialog open={!!modelPreview} title={modelPreview?.name ?? t("roomAssets.preview")} onClose={() => setModelPreview(null)}><div className="h-96">{modelPreview?.finish?.model3dUrl && <ModelViewer url={mediaUrl(modelPreview.finish.model3dUrl) ?? modelPreview.finish.model3dUrl} name={modelPreview.name} />}</div></Dialog>
       <Dialog open={!!apply} onClose={() => setApply(null)} title={t("room3d.roomStore.montar", { value: apply?.item.name ?? "" })} footer={<><Button onClick={() => setApply(null)}>{t("room3d.roomStore.deixar_na_caixa")}</Button><Button variant="primary" disabled={!target} onClick={doApply}>{t("room3d.roomStore.montar_2")}</Button></>}>
         {apply && ((apply.item.compatibleModules ?? []).length === 0 ? <p className="type-body">{t("room3d.roomStore.nenhum_modulo_compativel_no_seu")}</p> : <>

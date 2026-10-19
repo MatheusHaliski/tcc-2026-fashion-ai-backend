@@ -1,0 +1,90 @@
+@startuml RF18_ProvaIA_Sequencia
+' v5: escrito à mão — o caminho passa pelo worker e pela GPU em Python (services/anatomical_vton), que scripts/diagramas/v5 não lê
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF18 — Prova com IA: o look vestido em etapas na GPU (a saída de cada etapa é a entrada da próxima)\nDiagrama de sequência — escrito à mão e conferido com o código em 2026-10-18
+
+actor "Pessoa usuária" as U
+boundary "GpuLookDialog\n(components/try-on)" as P
+control "TryOnPersonPhotoController\n/api/try-on" as PC
+participant "TryOnPersonPhotoService" as PS
+control "AnatomicalTryOnController\n/api/try-on" as C
+participant "AnatomicalTryOnService" as S
+participant "MediaService\n(S3)" as M
+participant "AnatomicalTryOnAdapter\n(AnatomicalTryOnPort)" as A
+participant "Worker VTON\napi.py · Cloud Run" as W
+participant "Vertex AI\nvertex_runtime/server.py" as V
+participant "NativeFashnRuntime\nfashn_runtime.py · T4" as R
+
+== Foto da pessoa ==
+U -> P : escolhe a foto
+P -> P : fitted(): até 1536 px, JPEG 0,9
+P -> PC : POST /api/try-on/person-photos (multipart "file")
+PC -> PS : upload(user, bytes)
+PS -> PS : até 6 MB · requireAcceptedImage · menor lado ≥ 256 px\nscaleToFit(1536) · JPEG
+PS -> M : put("restricted/users/{id}/tryon/person/{uuid}/person.jpg")\n(escopo PRIVATE_TRY_ON; o original fica ao lado)
+PC --> P : 200 {url, width, height}
+U -> P : marca o consentimento e toca "Gerar prova"
+
+== Look inteiro (modo "Look inteiro · n peças") ==
+P -> C : POST /api/try-on/look-renders\n{pieceIds: gpuLook(), personMediaUrl, processingConsent: true}
+C -> S : renderLook(user, LookRequest)
+S -> S : até 8 peças, do próprio guarda-roupa (wardrobe.owned)\numa por categoria; calçados e acessórios → skipped[]
+loop LOOK_ORDER: full_body_piece → lower_piece → upper_piece (só as que o look tem)
+  S -> S : render(user, Request(pieceId, person, mirror=false, consent=true))
+  S -> M : requireOwnedMedia(person, OWNER · PRIVATE_TRY_ON) e read()
+  S -> A : render("piece:{id}", garment, person, category)
+  A -> W : POST /v1/catalog/piece:{id} {garment_image}\nAuthorization: Bearer VTON_WORKER_TOKEN
+  W --> A : peça no catálogo local do worker
+  A -> W : POST /try-on {garment_id, person_image, garment_category, mirror}\n(timeout 650 s)
+  W -> W : fashion_category(): tops · bottoms · one-pieces
+  W -> V : POST …/endpoints/{id}:predict no host dedicado (ADC, timeout 600 s)\n{task: virtual_try_on, person_image, garment_image, category}
+  V -> R : predict(instance) — uma inferência por vez
+  R -> R : DWPose → pose_screen() antes da difusão
+  R -> R : FASHN VTON 1.5 · 30 passos · seed 42\ndtype = serving_dtype() (float32 no T4)
+  R -> R : pose_screen() na imagem gerada (RMSE ≤ 0,08)
+  R --> V : {status: READY, image_png, diagnostics}
+  V --> W : 200 {predictions: [ … ]}
+  W -> W : exige device cuda:0 e engine FASHN_VTON_1_5
+  W --> A : 200 {status: READY, image_png, diagnostics}
+  A --> S : resultado
+  S -> S : validateOutput(): PNG válido, até 1536 px
+  S -> M : put("users/{id}/tryon/anatomical-{uuid}.png")
+  S -> S : person = url desta etapa\nsteps[] += {pieceId, category, url}
+end
+S --> C : {status: READY, url, steps[], skipped[], physicalFitCertified: false}
+C --> P : 200 (Cache-Control: no-store)
+P --> U : foto gerada · "Gerada em {s} s na GPU {gpuName}"\n· "Vestido em {n} etapas na GPU"
+note over P, S
+  Modo "Uma peça": POST /api/try-on/anatomical-renders
+  {pieceId, personMediaUrl, processingConsent, mirror: false}
+  → render() uma vez (o mesmo caminho de uma etapa do laço).
+  Recusa em qualquer etapa: ver RF18_ProvaIA_Recusa_Sequencia.
+end note
+note over V, R
+  diagnostics: engine, modelVersion, device, gpuName,
+  dtype, latencyMs, peakCudaBytes, category,
+  garmentPhotoType, qualityScreen (pose_screen),
+  renderKind GENERATIVE_2D, physicalFitCertified false
+end note
+@enduml

@@ -31,6 +31,27 @@ export interface PointsAccount {
   rules?: { action: string; points: number; description?: string; dailyCap?: number | string | null }[];
 }
 
+/** Os três níveis de FAI XP do app: Básico (ESTREIA) → Studio → Loft. */
+export const FAI_LEVELS = ["ESTREIA", "STUDIO", "LOFT"] as const;
+export type FaiLevel = (typeof FAI_LEVELS)[number];
+
+const LEGACY_LOFT = new Set(["CLOSET", "ATELIER", "PENTHOUSE", "MAISON"]);
+/** Nível vindo da API ou de dado antigo: os nomes antigos acima de Loft contam como Loft; desconhecido, null. */
+export function normalizeLevel(level: unknown): FaiLevel | null {
+  const name = typeof level === "string" ? level.trim().toUpperCase() : "";
+  return FAI_LEVELS.includes(name as FaiLevel) ? name as FaiLevel : LEGACY_LOFT.has(name) ? "LOFT" : null;
+}
+
+export function hasReachedLevel(current: unknown, required: FaiLevel): boolean {
+  const level = normalizeLevel(current);
+  return level !== null && FAI_LEVELS.indexOf(level) >= FAI_LEVELS.indexOf(required);
+}
+
+export function levelNameKey(level: string): string {
+  const known = normalizeLevel(level);
+  return known ? `levelProgress.name.${known}` : level;
+}
+
 export interface PointsSummary { account?: PointsAccount | null; shop?: { items: number; affordable: number } | null; statement?: number | null }
 
 export function pointsAvailability(id: PointsModeId, s: PointsSummary): HubAvailability {

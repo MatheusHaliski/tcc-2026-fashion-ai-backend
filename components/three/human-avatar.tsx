@@ -114,7 +114,7 @@ function irisTexture(src: CanvasImageSource & { width: number; height: number },
   const c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
   const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return null;
   g.drawImage(src, 0, 0); const id = g.getImageData(0, 0, c.width, c.height);
-  recolorIris(id, { left: irisColorOf(eyes, "left"), right: irisColorOf(eyes, "right") }); shadeSclera(id); g.putImageData(id, 0, 0);
+  recolorIris(id, { left: irisColorOf(eyes, "left"), right: irisColorOf(eyes, "right") }, { pattern: eyes.pattern }); shadeSclera(id); g.putImageData(id, 0, 0);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
@@ -237,7 +237,7 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     const id = window.setTimeout(() => {
       if (!alive) return;
       // relatório da pele (erro de cor e costura): números agregados para o gate, nunca em log
-      const tex = new THREE.CanvasTexture(bakeSkin(built.asset, skin, preparedAtlas?.canvas ?? imageOf(atlas), 2048, (r) => { ud.skinReport = r; })); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      const tex = new THREE.CanvasTexture(bakeSkin(built.asset, skin, preparedAtlas?.canvas ?? imageOf(atlas), 2048, (r) => { ud.skinReport = r; }, { bodyHex: face?.bodySkin ?? null })); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
       m.map?.dispose(); ownSkin = tex; m.map = tex; m.color.set("#ffffff"); m.needsUpdate = true; ud.skin = "baked";
     }, 0);
     return () => {

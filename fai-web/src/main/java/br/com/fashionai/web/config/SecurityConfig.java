@@ -45,7 +45,7 @@ public class SecurityConfig {
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",
-            "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
+            "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/aura-media/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
             "/api/interactions/*/*/comments", "/api/interactions/*/*/counters",
             "/api/users/*/lookbook", "/api/users/*/closet", "/api/users/*/seals", "/api/users/*/promotions",
             "/api/users/*/publications", "/api/users/*/favorites", "/api/users/*/flair/cards",
@@ -119,7 +119,7 @@ public class SecurityConfig {
         cors.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList());
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Correlation-Id", "Accept-Language", "X-Dev-Gate",
-                "X-FAI-Platform", "X-FAI-Quality", "X-FAI-App-Version", "If-Match"));
+                "X-FAI-Platform", "X-FAI-Quality", "X-FAI-App-Version", "If-Match", "Idempotency-Key"));
         cors.setExposedHeaders(List.of("X-Correlation-Id", "Content-Disposition", "X-Dev-Gate-Required", "ETag"));
         cors.setAllowCredentials(true);
         cors.setMaxAge(3600L);

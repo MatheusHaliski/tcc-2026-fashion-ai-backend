@@ -30,3 +30,13 @@ describe("pedidos de selos de Hype dos emissores", () => {
     expect(api.calls.some((call) => call.method === "POST" && call.path.endsWith("/request"))).toBe(false);
   });
 });
+
+it("explica separadamente selos automáticos, aprovação e expiração", async () => {
+ loggedAs(ME, { [`GET ${PATH}`]: {...DATA, items:[{...OFFER, bond:{id:"bond-1",status:"APPROVED",expiresAt:"2027-01-15T00:00:00Z"}}]} });
+ renderApp(<HypeIssuerSealOffers type="PIECE" id="p1" enabled />);
+ await screen.findByText(/Selo válido até:/);
+ fireEvent.click(screen.getByRole("button",{name:"Como obter selos Hype e até quando valem?"}));
+ expect(screen.getByRole("dialog")).toBeTruthy();
+ expect(screen.getByText(/Não possuem prazo fixo/)).toBeTruthy();
+ expect(screen.getByText(/365 dias após a emissão/)).toBeTruthy();
+});

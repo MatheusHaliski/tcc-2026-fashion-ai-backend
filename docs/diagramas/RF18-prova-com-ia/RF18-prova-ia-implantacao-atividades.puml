@@ -1,0 +1,82 @@
+@startuml RF18_ProvaIA_Implantacao_Atividades
+' v5: escrito à mão — o caminho passa pelo worker e pela GPU em Python (services/anatomical_vton), que scripts/diagramas/v5 não lê
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF18 — Prova com IA: implantação da GPU na Vertex AI e do worker no Cloud Run (scripts/cloud)\nDiagrama de atividades — escrito à mão e conferido com o código em 2026-10-18
+
+|Responsável (Cloud Shell)|
+start
+:Roda deploy_fashn_vertex.py ~--apply\n(~--region us-central1, ~--accelerator NVIDIA_TESLA_T4);
+note right
+  Sem ~--apply só imprime o plano (JSON);
+  nada muda na nuvem.
+end note
+|scripts/cloud|
+switch (opção?)
+case (build-only)
+  :Cloud Build publica fashn:{commit}\nno Artifact Registry (sem endpoint,\nmodelo nem réplica de GPU);
+  stop
+case (undeploy)
+  :Remove só a réplica do modelo salvo\nem deployment.json (imagem e modelo ficam);
+  stop
+case (deploy-only, new-release\nou smoke padrão)
+  :Confere autenticação e projeto antes de mudar algo;\nrecusa se outro modelo ocupa a cota de T4;
+  :Constrói a imagem no Cloud Build ou reaproveita o build\nsalvo / ~--source-image (new-release: arquiva o estado\nanterior; os recursos antigos ficam preservados);
+endswitch
+|Google Cloud|
+:models:upload da imagem fashn (Dockerfile.fashn:\nVTON_MODEL_ENGINE=fashn, /health, /predict,\nstartup probe de até ~10 min);
+:Endpoint dedicado fashionai-fashn-gpu\n(inferenceTimeout 600 s);
+:deployModel: n1-standard-8 + 1× NVIDIA T4 16 GB\n(ou g2-standard-8 + L4) · min = max = 1 réplica;
+:Contêiner confere os pesos (verify_assets), exige CUDA\ne carrega o FASHN na GPU com serving_dtype()\n(float32 no T4): sem CUDA ou pesos, a partida falha;
+|scripts/cloud|
+if (deploy-only?) then (sim)
+  :Grava backend-config.json e mantém a réplica;
+else (não)
+  :Smoke test: POST :predict com ~--person, ~--garment\ne ~--category (30 passos, seed 42);
+  if (READY, device cuda:0, peakCudaBytes\ne qualityScreen presentes?) then (sim)
+    :Grava try-on-gpu.png e evidence.json\n(SHA-256 da pessoa, da peça e da saída + diagnostics)\ne backend-config.json;
+  else (não)
+    :Mostra só o código curto da GPU com a dica em pt-BR\n(SERVER_HINTS; o corpo do erro nunca é impresso);
+  endif
+  if (keep-deployed?) then (sim)
+    :Réplica T4 continua ativa e faturável\n(próximas fotos sem novo cold start de 15–20 min);
+  else (não)
+    :Remove a réplica, mesmo se o smoke falhar;
+  endif
+endif
+|Responsável (Cloud Shell)|
+:Roda deploy_vton_worker_cloudrun.sh\n(ENDPOINT_ID e DEDICATED_HOST da GPU);
+|scripts/cloud|
+:Conta de serviço fashionai-vton-worker com\nroles/aiplatform.user (sem chave JSON: ADC pelo metadata);
+:VTON_WORKER_TOKEN no Secret Manager\n(o mesmo valor do Railway, ≥ 32 caracteres);
+:Cloud Build da imagem vton-worker\n(só services/anatomical_vton);
+|Google Cloud|
+:gcloud run deploy fashionai-vton-worker (us-central1)\n0–1 instância · 1 vCPU · 1 GiB · timeout 900 s · concurrency 4\nVTON_RENDER_PROVIDER=vertex_fashn + endpoint e host da GPU;
+:GET /health do worker → imprime WORKER_URL;
+|Responsável (Cloud Shell)|
+:No Railway (serviço api): VTON_WORKER_URL = URL do Cloud Run\n(VTON_WORKER_TOKEN continua o mesmo);
+stop
+@enduml
