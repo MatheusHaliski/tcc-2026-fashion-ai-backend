@@ -4,6 +4,7 @@ import type { UserCard } from "@/lib/api/types";
 import { Button, Dialog } from "@/components/ui";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
+import { fmtOriginal } from "@/lib/i18n/money";
 
 /** Tipos e utilitários do FLAIR compartilhados entre a página /flair e a aba da loja (RF14/RF22). */
 export interface Check { kind: string; value: string; label: string; ok: boolean; }
@@ -22,8 +23,8 @@ export interface Combination {
 export const GAME_TYPE_LABEL: Record<string, string> = { get COMBINACAO() { return tr("flair.flairShared.combinacao_um_deck"); }, get COLECAO() { return tr("common.colecao_guarda_roupa"); }, get DUELO_PATROCINADO() { return tr("common.duelo_patrocinado"); } };
 
 export function couponText(c: { discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | "" }) {
-  const off = c.discountPercent !== "" ? `${c.discountPercent}% off` : c.discountAmount !== "" ? `R$ ${Number(c.discountAmount).toFixed(0)} off` : "";
-  return `${off}${c.minPurchase !== "" ? tr("flair.flairShared.compra_minima_r", { toFixed: Number(c.minPurchase).toFixed(0) }) : ""}`;
+  const off = c.discountPercent !== "" ? `${c.discountPercent}% off` : c.discountAmount !== "" ? `${fmtOriginal(Number(c.discountAmount), "BRL", 0)} off` : "";
+  return `${off}${c.minPurchase !== "" ? tr("flair.flairShared.compra_minima_r", { value: fmtOriginal(Number(c.minPurchase), "BRL", 0) }) : ""}`;
 }
 
 export function checkLabel(c: Check) {
