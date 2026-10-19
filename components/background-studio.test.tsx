@@ -126,6 +126,9 @@ describe("Background Studio — prévia das variações Aura em vídeo", () => {
     fireEvent.click(screen.getByRole("button", { name: /AURA comum/ }));
 
     const format = await screen.findByRole("group", { name: /Formato/ });
+    expect(format.querySelectorAll(".opt-tile.aura-format-tile")).toHaveLength(2);
+    expect(format.querySelector(".aura-format-thumb.is-single")).toBeTruthy();
+    expect(format.querySelector(".aura-format-thumb.is-mosaic")?.children).toHaveLength(4);
     fireEvent.click(within(format).getByRole("button", { name: /Imagem variada/ }));
 
     expect(onBg).toHaveBeenLastCalledWith(expect.objectContaining({

@@ -3970,6 +3970,10 @@ html[data-theme="contrast"] .fashion-hype-header { background: #000; color: #fff
 .aura-hype-preset-card .fashion-hype-cell[data-tone="high"] dd, .aura-hype-preset-card .fashion-hype-cell[data-tone="mid"] dd { color: var(--hype-ink); }
 .aura-hype-preset-card .fashion-hype-cell[data-tone="mid"] { border-color: color-mix(in srgb, var(--hype-secondary) 60%, transparent); }
 .aura-hype-preset .opt-name { padding: .55rem .65rem .65rem; }
+.aura-format-thumb { display: grid; gap: 5px; padding: 10px; background: var(--surface-3); }
+.aura-format-thumb i { display: block; min-width: 0; min-height: 0; border: 1px solid color-mix(in srgb, var(--thread) 55%, var(--line-soft)); border-radius: 5px; background: linear-gradient(145deg, color-mix(in srgb, var(--thread) 24%, var(--surface)), var(--surface)); }
+.aura-format-thumb.is-single { grid-template-columns: 1fr; }
+.aura-format-thumb.is-mosaic { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
 .fashion-hype-piece-name { font-size: clamp(1.15rem, 2vw, 1.6rem); line-height: 1.15; }
 /* 2.5D presentation: background, photograph and front glass; no asset reprocessing. */
 .is-fashion-hype { transform: perspective(1100px) rotateX(var(--fashion-tilt-x, 0deg)) rotateY(var(--fashion-tilt-y, 0deg)); transform-style: preserve-3d; transition: transform 180ms ease-out; }
