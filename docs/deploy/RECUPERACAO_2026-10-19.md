@@ -9,12 +9,15 @@ Auditadas as 540 execuções GitHub Actions retornadas entre 12 e 19/10. O CSV r
 3. O componente da frente da peça perdeu o badge de Hype enquanto testes/selos ainda esperavam seus estados. O badge vivo foi integrado ao label Info, com carregamento, valor real, tendência real e indisponibilidade. Removido o score duplicado no botão de virar; o teste de selos verifica a nova posição.
 4. A prévia estática Electro usava o GIF animado embora existisse PNG no índice. Agora usa a imagem estática correspondente, preservando a prévia animada em campo separado. A espera do teste Splash foi sincronizada com o carregamento lazy dos seis src; a falha intermitente foi reproduzida antes do ajuste.
 
+5. O CI remoto confirmou incompatibilidade de Playwright 1.55.1 com Ubuntu 26.04 após a mudança de `ubuntu-latest`. O job frontend foi fixado em `ubuntu-24.04`, preservando a auditoria e os demais checks.
+
 ## Verificação
 
 - TypeScript aprovado após restaurar os limites ausentes.
 - Suíte completa antes dos últimos ajustes: 1713 testes aprovados, 6 falhas reproduzidas, 2 ignorados (218 arquivos). As seis falhas correspondem aos componentes/preview acima.
 - Regressões depois dos ajustes: 79 testes aprovados, cobrindo qualidade fotográfica, arte e Hype/selos.
 - Catálogo: 225 testes executados, 13 ignorados, sem falhas.
+- A segunda execução remota passou nos testes e build e parou apenas na instalação do Chromium no runner incompatível; a correção de runner foi enviada para nova validação.
 - Build de produção Next.js aprovado. A primeira tentativa local falhou pelo link externo de node_modules do worktree; dependências locais corrigidas e build repetido, sem alterar configuração de produção.
 - Nenhum dado do MySQL, chave de criptografia, migração aplicada ou variável secreta foi alterado.
 
