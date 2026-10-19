@@ -49,35 +49,64 @@ function lipProtection(width: number, height: number): Uint8Array {
   return mask;
 }
 
-/** Equalize illumination in place; the original lip pixels remain untouched inside the measured lip region. */
-export function evenShadingPixels(image: Raster, blurred: Raster, skinHex: string, strength = 0.8): void {
-  const sk = [1, 3, 5].map((i) => parseInt(skinHex.slice(i, i + 2), 16)); const target = lum(sk[0], sk[1], sk[2]);
-  const protection = lipProtection(image.width, image.height), bd = blurred.data;
+/**
+ * Equalize illumination in place, em CIELAB: só o L* é normalizado contra a baixa frequência (teto 1,6 — a sombra
+ * profunda de uma foto noturna sai da textura em vez de virar mancha preta no 3D), a matiz é puxada de leve para a
+ * da pele e os lábios ficam intactos.
+ */
+export function evenShadingPixels(image: Raster, skinBlurred: Raster, skinHex: string, strength = 0.8): void {
+  const sk = hexRgb(skinHex); const skinLab = rgbToLab(sk[0], sk[1], sk[2]);
+  const protection = lipProtection(image.width, image.height), bd = skinBlurred.data;
   for (let i = 0; i < image.data.length; i += 4) {
     const amount = strength * (1 - protection[i / 4] / 255);
-    const lf = lum(bd[i], bd[i + 1], bd[i + 2]); if (lf < 8 || amount === 0) continue;
-    const gain = 1 + (Math.min(1.3, Math.max(0.78, target / lf)) - 1) * amount;
-    for (let k = 0; k < 3; k++) {
-      const cg = 1 + (Math.min(1.18, Math.max(0.85, (sk[k] / Math.max(1, target)) / (bd[i + k] / lf))) - 1) * amount * 0.8;
-      image.data[i + k] = Math.min(255, image.data[i + k] * gain * cg);
-    }
+    if (amount === 0) continue;
+    const low = rgbToLab(bd[i], bd[i + 1], bd[i + 2]); if (low.L < 6) continue;
+    const px = rgbToLab(image.data[i], image.data[i + 1], image.data[i + 2]);
+    const gL = 1 + (Math.min(1.6, Math.max(0.6, skinLab.L / low.L)) - 1) * amount;
+    const L = Math.min(100, Math.max(0, px.L * gL));
+    const a = px.a + (skinLab.a - px.a) * 0.22 * amount, b = px.b + (skinLab.b - px.b) * 0.22 * amount;
+    const [r, g2, b2] = labToRgb(L, a, b);
+    image.data[i] = r; image.data[i + 1] = g2; image.data[i + 2] = b2;
   }
 }
 
-/** Atlas com a luz e a matiz de baixa frequência puxadas para o tom de pele (ganhos limitados; detalhes preservados). */
+/** Atlas com a luz de baixa frequência puxada para o tom de pele, em duas escalas (32² e 10², misturadas): a sombra
+ *  ampla e a média (degrado de um lado ao outro, halo de flash) saem sem levar o detalhe (sobrancelhas, lábios, barba). */
 export function evenShading(atlas: HTMLCanvasElement, skinHex: string, strength = 0.8): HTMLCanvasElement {
-  const S = atlas.width; const out = document.createElement("canvas"); out.width = S; out.height = atlas.height;
+  const S = atlas.width, H = atlas.height; const out = document.createElement("canvas"); out.width = S; out.height = H;
   const g = out.getContext("2d", { willReadFrequently: true })!; g.drawImage(atlas, 0, 0);
-  const small = document.createElement("canvas"); small.width = 32; small.height = 32; const sg = small.getContext("2d", { willReadFrequently: true })!;
-  sg.imageSmoothingQuality = "high"; sg.drawImage(atlas, 0, 0, 32, 32);
-  const blur = document.createElement("canvas"); blur.width = S; blur.height = atlas.height; const bg = blur.getContext("2d", { willReadFrequently: true })!;
-  bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = "high"; bg.filter = "blur(12px)"; bg.drawImage(small, 0, 0, S, atlas.height);
-  const id = g.getImageData(0, 0, S, atlas.height), blurred = bg.getImageData(0, 0, S, atlas.height);
+  const lowAt = (n: number, blurPx: number): Uint8ClampedArray => {
+    const small = document.createElement("canvas"); small.width = n; small.height = Math.max(2, Math.round((n * H) / S));
+    const sg = small.getContext("2d", { willReadFrequently: true })!; sg.imageSmoothingQuality = "high"; sg.drawImage(atlas, 0, 0, small.width, small.height);
+    const big = document.createElement("canvas"); big.width = S; big.height = H; const bg = big.getContext("2d", { willReadFrequently: true })!;
+    bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = "high"; bg.filter = `blur(${blurPx}px)`; bg.drawImage(small, 0, 0, S, H);
+    return bg.getImageData(0, 0, S, H).data;
+  };
+  const la = lowAt(32, 12), lb = lowAt(10, 4);
+  const blurred: Raster = { width: S, height: H, data: new Uint8ClampedArray(la.length) };
+  for (let i = 0; i < la.length; i++) blurred.data[i] = (la[i] + lb[i]) / 2;
+  const id = g.getImageData(0, 0, S, H);
   evenShadingPixels(id, blurred, skinHex, strength);
   g.putImageData(id, 0, 0); return out;
 }
 
 const hexRgb = (h: string): [number, number, number] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number];
+
+/** CIELAB (D65) → sRGB 0–255, numérico (o caminho de volta de rgbToLab, por pixel, sem string). */
+function labToRgb(L: number, a: number, b: number): [number, number, number] {
+  const fy = (L + 16) / 116, fx = fy + a / 500, fz = fy - b / 200;
+  const fi = (t: number) => (t ** 3 > 216 / 24389 ? t ** 3 : (116 * t - 16) / 24389);
+  const x = fi(fx) * 0.95047, y = fi(fy), z = fi(fz) * 1.08883;
+  const R = 3.2406 * x - 1.5372 * y - 0.4986 * z, G = -0.9689 * x + 1.8758 * y + 0.0415 * z, B = 0.0557 * x - 0.204 * y + 1.057 * z;
+  const gam = (v: number) => Math.round(Math.max(0, Math.min(1, v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055)) * 255);
+  return [gam(R), gam(G), gam(B)];
+}
+
+/** Mistura por canal (t = fração de b). */
+function mixHex(a: string, b: string, t: number): string {
+  const A = hexRgb(a), B = hexRgb(b);
+  return "#" + A.map((v, k) => Math.max(0, Math.min(255, Math.round(v + (B[k] - v) * t))).toString(16).padStart(2, "0")).join("");
+}
 
 /** Média da pele do atlas (UV canônico) em discos nos pontos de pele, sem pixels estourados nem sombra funda. */
 function atlasMean(img: Raster, pts: readonly number[], r: number, inward = 0): [number, number, number] | null {
@@ -124,17 +153,42 @@ export function matchFaceToBodyPixels(id: Raster, skinHex: string): SkinReport {
 }
 export interface SkinReport { skinColorError: number | null; seamDeltaE: number | null; seams: number }
 
+/** Microvariação determinística da pele (±2,5% de luminância e leve mottling quente/frio em manchas grandes):
+ *  a pele de verdade não é uma cor chapada; sem isso o corpo fica com aspecto de plástico. */
+function skinNoise(g: CanvasRenderingContext2D, size: number): void {
+  const id = g.getImageData(0, 0, size, size); const d = id.data;
+  const val = (i: number, j: number) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
+  const noise = (x: number, y: number) => {
+    const gx = (x / size) * 9, gy = (y / size) * 9; const i = Math.floor(gx), j = Math.floor(gy);
+    const fx = gx - i, fy = gy - j; const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const a = val(i, j), b = val(i + 1, j), c2 = val(i, j + 1), e = val(i + 1, j + 1);
+    return a + (b - a) * sx + (c2 - a) * sy + (a - b - c2 + e) * sx * sy;
+  };
+  for (let p = 0; p + 2 < d.length; p += 4) {
+    const px = (p >> 2) % size, py = ((p >> 2) / size) | 0;
+    const n = noise(px, py) - 0.5, m = noise(px + 53, py + 97) - 0.5;
+    d[p] = Math.max(0, Math.min(255, d[p] * (1 + n * 0.05 + m * 0.015)));
+    d[p + 1] = Math.max(0, Math.min(255, d[p + 1] * (1 + n * 0.05)));
+    d[p + 2] = Math.max(0, Math.min(255, d[p + 2] * (1 + n * 0.05 - m * 0.015)));
+  }
+  g.putImageData(id, 0, 0);
+}
+
 /**
  * Textura de pele no UV do MakeHuman (tamanho `size`²): tom de pele em tudo; o rosto vem do atlas (UV canônico, v para
  * baixo). Só os triângulos inteiramente sobre o rosto canônico recebem o atlas; o atlas já termina no tom de pele e a
  * pele dele é levada ao tom do corpo (matchFaceToBody), então não há costura.
+ * `opts.bodyHex`: a pele medida no corpo (braços/peito, pipeline.ts) — o preenchimento vai 60% para ela, e o rosto é
+ * igualado a essa mistura, para rosto e corpo lerem a mesma pessoa.
  */
-export function bakeSkin(a: BodyAsset, skinHex: string, atlas: HTMLCanvasElement | null, size = 2048, onReport?: (r: SkinReport) => void): HTMLCanvasElement {
+export function bakeSkin(a: BodyAsset, skinHex: string, atlas: HTMLCanvasElement | null, size = 2048, onReport?: (r: SkinReport) => void, opts: { bodyHex?: string | null } = {}): HTMLCanvasElement {
+  const baseHex = opts.bodyHex ? mixHex(skinHex, opts.bodyHex, 0.6) : skinHex;
   const c = document.createElement("canvas"); c.width = size; c.height = size;
-  const g = c.getContext("2d")!; g.fillStyle = skinHex; g.fillRect(0, 0, size, size);
+  const g = c.getContext("2d")!; g.fillStyle = baseHex; g.fillRect(0, 0, size, size);
+  skinNoise(g, size);
   if (!atlas) return c;
-  const src = evenShading(atlas, skinHex); const AS = src.width;
-  const report = matchFaceToBody(src, skinHex); onReport?.(report);
+  const src = evenShading(atlas, baseHex); const AS = src.width;
+  const report = matchFaceToBody(src, baseHex); onReport?.(report);
   const { renderVertex: rv, renderUv: ruv, index, faceUv, faceWeight } = a.body;
   const dst = (r: number): Pt => [ruv[r * 2] * size, (1 - ruv[r * 2 + 1]) * size];
   const from = (v: number): Pt => [faceUv[v * 2] * AS, faceUv[v * 2 + 1] * AS];

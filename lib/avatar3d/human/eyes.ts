@@ -11,7 +11,7 @@
  */
 import type { BodyAsset } from "./asset";
 import type { Raster } from "../image-stats";
-import { EYES, type IrisColor } from "../iris";
+import { EYES, type IrisColor, type IrisPattern } from "../iris";
 
 /** Textura do olho (512 px): centro da íris de cada globo, raio da íris e da pupila, e o círculo da córnea. */
 export const EYE_TEX = { size: 512, iris: 57, pupil: 17, cornea: { c: [478, 478] as const, r: 40 } };
@@ -199,7 +199,8 @@ const smooth = (a: number, b: number, x: number) => { const t = Math.max(0, Math
  * da pupila, base no resto) vezes a luminância relativa do pixel original: o desenho das fibras e o anel escuro da
  * borda continuam, e a média da íris fica na cor medida.
  */
-export function recolorIris(img: Raster, colors: { left: IrisColor; right: IrisColor }): void {
+export function recolorIris(img: Raster, colors: { left: IrisColor; right: IrisColor }, opts: { pattern?: IrisPattern } = {}): void {
+  const pattern = opts.pattern ?? "UNIFORM";
   const k = img.width / EYE_TEX.size; const R = EYE_TEX.iris * k, P = EYE_TEX.pupil * k;
   for (const side of ["left", "right"] as const) {
     const [cx, cy] = IRIS_CIRCLES[side].map((v) => v * k);
@@ -216,9 +217,13 @@ export function recolorIris(img: Raster, colors: { left: IrisColor; right: IrisC
         const r = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
         const a = smooth(P * 0.9, P * 1.25, r) * (1 - smooth(R * 0.97, R * 1.07, r)); if (a <= 0) continue;
         const o = (y * img.width + x) * 4; const s = [lin(img.data[o]), lin(img.data[o + 1]), lin(img.data[o + 2])];
-        const t = Math.max(0.2, Math.min(2.4, Y(s[0], s[1], s[2]) / (mean || 1)));
-        const w = smooth(R * 0.42, R * 0.68, r);
-        for (let ch = 0; ch < 3; ch++) img.data[o + ch] = gam(s[ch] * (1 - a) + (sec[ch] * (1 - w) + base[ch] * w) * t * a);
+        // padrão medido na foto (iris.ts): RADIAL realça o desenho das fibras, UNIFORM o suaviza; RING troca de cor
+        // num raio mais nítido. O anel limbar (a borda escura que toda íris de verdade tem) fecha o desenho.
+        const t0 = Math.max(0.2, Math.min(2.4, Y(s[0], s[1], s[2]) / (mean || 1)));
+        const t = pattern === "RADIAL" ? Math.max(0.1, Math.min(3, 1 + (t0 - 1) * 1.5)) : pattern === "UNIFORM" ? 1 + (t0 - 1) * 0.7 : t0;
+        const w = pattern === "RING" ? smooth(R * 0.52, R * 0.6, r) : smooth(R * 0.42, R * 0.68, r);
+        const limbal = 1 - (pattern === "RING" ? 0.38 : 0.24) * smooth(R * 0.78, R * 0.97, r);
+        for (let ch = 0; ch < 3; ch++) img.data[o + ch] = gam(s[ch] * (1 - a) + (sec[ch] * (1 - w) + base[ch] * w) * t * limbal * a);
       }
     }
   }

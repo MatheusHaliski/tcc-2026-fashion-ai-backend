@@ -111,7 +111,7 @@ function hairlineBase(fr: HeadFrame, hair: AvatarHair, phi: number, covered: boo
   return nape;
 }
 
-function strandTexture(color: string, texture: string, cover: boolean): THREE.CanvasTexture {
+function strandTexture(color: string, texture: string, cover: boolean, variation = 0): THREE.CanvasTexture {
   const W = 256, H = 512; const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d")!;
   const base = new THREE.Color(color); g.fillStyle = `#${base.getHexString()}`; g.fillRect(0, 0, W, H);
   let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -119,7 +119,8 @@ function strandTexture(color: string, texture: string, cover: boolean): THREE.Ca
     for (let y = 0; y < H; y += 3) { g.fillStyle = `rgba(0,0,0,${0.05 + rnd() * 0.04})`; g.fillRect(0, y, W, 1); }
     for (let x = 0; x < W; x += 3) { g.fillStyle = `rgba(255,255,255,${0.03 + rnd() * 0.03})`; g.fillRect(x, 0, 1, H); }
   } else {
-    const dark = base.clone().multiplyScalar(0.78), light = base.clone().lerp(new THREE.Color("#fff3dc"), 0.08);
+    // variação medida na foto (hair.variation): cabelo com muito contraste sombra/reflexo ganha mechas mais separadas
+    const dark = base.clone().multiplyScalar(0.78 - 0.14 * variation), light = base.clone().lerp(new THREE.Color("#fff3dc"), 0.08 + 0.2 * variation);
     // raízes um pouco mais escuras (alto do mapa)
     const grad = g.createLinearGradient(0, 0, 0, H * 0.3); grad.addColorStop(0, `#${base.clone().multiplyScalar(0.8).getHexString()}`); grad.addColorStop(1, `#${base.getHexString()}`);
     g.fillStyle = grad; g.fillRect(0, 0, W, H * 0.3);
@@ -145,7 +146,7 @@ function strandTexture(color: string, texture: string, cover: boolean): THREE.Ca
 const bump = (x: number, y: number, z: number, f: number) =>
   (Math.sin(x * f * 1.7 + Math.sin(y * f * 1.3)) + Math.sin(y * f * 2.1 + Math.sin(z * f * 1.1)) + Math.sin(z * f * 1.9 + Math.sin(x * f * 0.9))) / 3;
 
-function finish(pos: number[], uv: number[], col: number[], si: number[], sw: number[], index: number[], colHex: string, texture: string, covered: boolean, base = false): HairBuild {
+function finish(pos: number[], uv: number[], col: number[], si: number[], sw: number[], index: number[], colHex: string, texture: string, covered: boolean, base = false, variation = 0): HairBuild {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
@@ -156,12 +157,14 @@ function finish(pos: number[], uv: number[], col: number[], si: number[], sw: nu
   g.setIndex(index); g.computeVertexNormals();
   // com fios por cima (hair-strands.ts) esta malha é a base: mais escura, é o "fundo" entre as mechas
   const baseHex = base && !covered ? `#${new THREE.Color(colHex).multiplyScalar(0.62).getHexString()}` : colHex;
-  const tex = typeof document !== "undefined" ? strandTexture(baseHex, texture, covered) : null;
+  const tex = typeof document !== "undefined" ? strandTexture(baseHex, texture, covered, variation) : null;
+  // cabelo escuro (níveis 1–3) sem brilho próprio vira silhueta preta na cena: sheen mais alto e mais frio revela a forma
+  const bc = new THREE.Color(baseHex); const darkHair = 0.2126 * bc.r + 0.7152 * bc.g + 0.0722 * bc.b < 0.025;
   const mat = new THREE.MeshPhysicalMaterial({
     // base sob os fios: fosca e escura (a profundidade entre as mechas, não uma superfície com brilho), e a linha do
     // cabelo some aos poucos (alpha-to-coverage com MSAA) em vez do recorte duro que serrilhava nos triângulos da testa
     color: tex ? "#ffffff" : baseHex, map: tex, vertexColors: true, alphaTest: base && !covered ? 0.3 : 0.5, alphaToCoverage: !covered, side: THREE.DoubleSide,
-    roughness: covered ? 0.9 : base ? 0.92 : 0.58, sheen: covered ? 0.2 : base ? 0.05 : 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color(baseHex).lerp(new THREE.Color("#ffffff"), 0.25),
+    roughness: covered ? 0.9 : base ? 0.92 : 0.58, sheen: covered ? 0.2 : base ? 0.05 : darkHair ? 0.55 : 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color(baseHex).lerp(new THREE.Color("#ffffff"), darkHair ? 0.45 : 0.25),
     // fio: o brilho é uma faixa em anel em volta da cabeça (reflexo anisotrópico ao longo de u), não um ponto de plástico
     anisotropy: covered || base ? 0 : 0.3,
     // A folga geométrica mantém o cabelo fora da pele/roupa. O viés de inclinação atravessava o rosto em perfil.
@@ -195,7 +198,7 @@ function buzzShell(a: BodyAsset, c: Composed, normals: Float32Array, hair: Avata
     return i;
   };
   for (let t = 0; t < idx.length; t += 3) { const p = rv[idx[t]], q = rv[idx[t + 1]], r = rv[idx[t + 2]]; if (inScalp[p] && inScalp[q] && inScalp[r]) index.push(add(p), add(q), add(r)); }
-  return index.length ? finish(pos, uv, col, si, sw, index, hair.color!, "straight", false) : null;
+  return index.length ? finish(pos, uv, col, si, sw, index, hair.color!, "straight", false, false, hair.variation ?? 0) : null;
 }
 
 /** Meia-largura (cm, canônico) da silhueta numa altura do canônico, interpolando HAIR_LEVELS (16, 14, …, −24). */
@@ -395,7 +398,7 @@ export function buildHair(a: BodyAsset, c: Composed, normals: Float32Array, hair
     }
   }
   if (index.length < 30) return null;
-  return { ...finish(pos, uv, col, si, sw, index, covered ? hair.cover! : hair.color!, texture, covered, !!opts.base), calotaIndex };
+  return { ...finish(pos, uv, col, si, sw, index, covered ? hair.cover! : hair.color!, texture, covered, !!opts.base, hair.variation ?? 0), calotaIndex };
 }
 
 /** Alturas (cm, canônico) em que a silhueta ainda tem largura — a mais alta é o topo da cobertura. */
