@@ -56,7 +56,7 @@ function topN(rows: Row[], n: number): Row[] {
 
 function AdminDashboard() {
   const { t, fmtNumber, fmtMoney, fmtDateTime, rich } = useI18n(); const toast = useToast();
-  const usd = (v: number) => (v > 0 && v < 1 ? `US$ ${v.toFixed(4)}` : fmtMoney(v, "USD"));
+  const usd = (v: number) => (v > 0 && v < 1 ? fmtNumber(v, { style: "currency", currency: "USD", minimumFractionDigits: 4, maximumFractionDigits: 4 }) : fmtMoney(v, "USD"));
   const iso = (d: Date) => d.toISOString().slice(0, 10);
   const range = (days: number) => ({ from: iso(new Date(Date.now() - (days - 1) * 86400000)), to: iso(new Date()) });
   const [f, setF] = useState({ ...range(30), country: "", profileType: "" }); const [applied, setApplied] = useState(f);

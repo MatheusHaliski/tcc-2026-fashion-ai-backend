@@ -331,7 +331,7 @@ public class FaiPointsService {
             e.setIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + purchaseRef);
             e.setCountsLifetime(false);
             ledger.save(e);
-            if (c.getPricePoints() > 0) statement(e, c.getName());
+            if (c.getPricePoints() > 0) statement(e, WardrobeCreatorService.displayName(c));
         }
         c.setSoldCount(c.getSoldCount() + 1);
         RoomInventoryItem item = new RoomInventoryItem();
@@ -351,7 +351,7 @@ public class FaiPointsService {
             credit.setIdempotencyKey(seller + ":SHOP_SALE:" + purchaseRef);
             credit.setCountsLifetime(false); // sales never farm progression levels
             ledger.save(credit);
-            statement(credit, c.getName());
+            statement(credit, WardrobeCreatorService.displayName(c));
         }
         return Map.of("inventoryId", item.getId(), "sku", sku, "balance", balance(user.id()), "lifetime", lifetime(user.id()),
                 "level", level(user.id()).name(), "serial", String.valueOf(item.getSerial()));
