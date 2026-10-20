@@ -70,7 +70,7 @@ export function auraVariantId(id?: string | null): string | undefined {
  *  mais antigo (que listaria variantes cujos arquivos já não existem). */
 export interface AuraPresetOption {
   id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[];
-  variants: { id: string; code?: string; theme?: string; description?: string; animatedUrl?: string; static?: { previewUrl?: string } }[];
+  variants: { id: string; code?: string; theme?: string; description?: string; animatedUrl?: string; animatedPreviewUrl?: string; static?: { previewUrl?: string } }[];
 }
 export function bundledAuraPresets(): AuraPresetOption[] {
   const indexed = Object.entries(ART_INDEX.presets).map(([id, p]) => ({
@@ -78,8 +78,8 @@ export function bundledAuraPresets(): AuraPresetOption[] {
     variants: p.variants.filter((vid) => ART_INDEX.variants[vid]).map((vid) => {
       const v = ART_INDEX.variants[vid];
       const video = isVideo(v.animated);
-      return { id: vid, code: v.code, theme: v.theme, animatedUrl: video ? media(v.animated) : undefined,
-        static: { previewUrl: media(video ? v.preview ?? v.card : v.animated ?? v.preview ?? v.card) } };
+      return { id: vid, code: v.code, theme: v.theme, animatedUrl: video ? media(v.animated) : undefined, animatedPreviewUrl: !video && v.animated ? media(v.animated) : undefined,
+        static: { previewUrl: media(v.preview ?? v.card) } };
     }),
   }));
   return [{ id: "aura_hype", name: tr("lib.cardArt.aura_hype"), archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],
