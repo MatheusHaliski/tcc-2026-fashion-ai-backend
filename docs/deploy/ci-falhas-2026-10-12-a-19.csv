@@ -1,0 +1,176 @@
+run,data,branch,commit,jobs_com_falha
+39289713665,2026-10-19T16:55:41Z,main,c238a2635f465c5535b3382b97c95047012ec573,Front (typecheck · vitest · build · audit) / Typecheck; Catálogo (Python · ingestão e recuperação de conexão) / Run python -m unittest discover -s scripts/catalog/tests
+39289688390,2026-10-19T16:55:31Z,fix/try-on-lower-piece-3d,f78f6ade6bfd313fc97fc0730e49b13445b1b0ab,Front (typecheck · vitest · build · audit) / Typecheck; Catálogo (Python · ingestão e recuperação de conexão) / Run python -m unittest discover -s scripts/catalog/tests
+39261578266,2026-10-19T13:36:17Z,main,96e6c1ebab6b03c822bb17e21acf65657c134e00,Front (typecheck · vitest · build · audit) / Typecheck
+39260150695,2026-10-19T13:26:20Z,feat/avatar3d-gpu-pipeline-quality,ceb382db1d9fe5f553414a98be65d35cac9cab85,Front (typecheck · vitest · build · audit) / Typecheck
+39250091822,2026-10-19T12:11:13Z,feat/avatar3d-ultrarealistic-fitting,5793c4313c7438d96baeccb602b9b2fb3d6df108,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39197930618,2026-10-19T04:07:50Z,feat/avatar3d-gpu-pipeline-quality,f06049144c724b814412344df23e8739d421b75a,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39196881605,2026-10-19T03:54:26Z,main,ccb0ef2cbbf6f3a715dc7116d435bcac0d0a6218,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39178999099,2026-10-19T00:02:47Z,claude/closet-cls,25494278852e40482c6855682880eec39a57e00c,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39178511809,2026-10-18T23:55:33Z,claude/espelho-primeira-pessoa,7616ac6bba334c363bfdf0a4cb84072b574798d3,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39178491925,2026-10-18T23:55:14Z,claude/espelho-primeira-pessoa,7616ac6bba334c363bfdf0a4cb84072b574798d3,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39177644775,2026-10-18T23:42:31Z,claude/perfil-pecas-largas,5ab524e38a0e11ac89d8360688e13eb430287f24,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39177634006,2026-10-18T23:42:20Z,claude/perfil-pecas-largas,5ab524e38a0e11ac89d8360688e13eb430287f24,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39176375325,2026-10-18T23:24:20Z,main,25a45e7717417e99fa0d09ac7ed09636e44edfee,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39175969140,2026-10-18T23:18:38Z,claude/peca-inteira-lote,f4adc6ac9bf838dc2c16f2fb23a651784aa8c63f,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39175953497,2026-10-18T23:18:23Z,claude/peca-inteira-lote,f4adc6ac9bf838dc2c16f2fb23a651784aa8c63f,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39175889813,2026-10-18T23:17:30Z,claude/peca-inteira-pipeline,3db8d9d4fb9a69fb6cf4d5519a552822d5ab8763,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39175551503,2026-10-18T23:12:45Z,main,15d065ab7bd6aa608d14a6f1339184fb6649b8f4,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39175480700,2026-10-18T23:11:47Z,claude/atelier-sem-azul,770bdfefcea43b386b66b360a49193f2965e2600,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39175480938,2026-10-18T23:11:47Z,claude/peca-inteira-pipeline,93e73bc287f49095e0d127427d09a69f86e6f9e2,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39175478388,2026-10-18T23:11:45Z,claude/peca-inteira-pipeline,93e73bc287f49095e0d127427d09a69f86e6f9e2,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39175476339,2026-10-18T23:11:43Z,claude/atelier-sem-azul,770bdfefcea43b386b66b360a49193f2965e2600,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39174768398,2026-10-18T23:01:57Z,claude/atelier-sem-azul,ec067d385b2c3e818db7a4ca9d1264b00e56d0a4,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39174753602,2026-10-18T23:01:45Z,claude/atelier-sem-azul,ec067d385b2c3e818db7a4ca9d1264b00e56d0a4,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39174185553,2026-10-18T22:53:32Z,main,089c685227402f5e9d2a456403568f1fda00dfea,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39174041264,2026-10-18T22:51:27Z,claude/niveis-basico-studio-loft,64e7d9bec6d72d5c1bc79aca0aac14b00fd9cd23,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39174010326,2026-10-18T22:51:02Z,claude/niveis-basico-studio-loft,64e7d9bec6d72d5c1bc79aca0aac14b00fd9cd23,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39173186792,2026-10-18T22:39:28Z,main,fb490677dfc52dd9bd9344695b1630bdc96dcddc,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39172796115,2026-10-18T22:34:05Z,claude/studio-variacoes-imagem,386051f2e821d1be1beee9d25c28ecf745bde460,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39172791963,2026-10-18T22:34:02Z,claude/studio-variacoes-imagem,386051f2e821d1be1beee9d25c28ecf745bde460,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39171795568,2026-10-18T22:20:27Z,claude/feed-virar-carta-hype,39cd070d54f56c228fcc22cc43d7bea88f03bae4,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39170780409,2026-10-18T22:06:30Z,claude/avatar-retrato-no-3d,8719982e426b87c3693bdd03c9b1c97846a35554,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39170727401,2026-10-18T22:05:49Z,claude/perfil-nivel-discreto,3c85d302a9d6b20186c4cc5dde08d41288be21c9,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39169946509,2026-10-18T21:55:18Z,claude/perfil-capsula,9e1184b9ec8967358658ceb54096a6dcb21e53ea,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39169931052,2026-10-18T21:55:05Z,claude/perfil-capsula,9e1184b9ec8967358658ceb54096a6dcb21e53ea,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39161827883,2026-10-18T20:06:55Z,main,bb261633365d2958f3cf8048f35230ec224c70e2,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Testes (vitest)
+39161820953,2026-10-18T20:06:50Z,claude/avatar-gpu-corpo,b31548b0f711ab0db512f7bab0f0f941a708c330,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Testes (vitest)
+39161816877,2026-10-18T20:06:47Z,claude/avatar-gpu-corpo,b31548b0f711ab0db512f7bab0f0f941a708c330,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+39160918968,2026-10-18T19:55:02Z,claude/avatar-retrato-estilizado,9f0fbffa8b1f5e0f415abcf94697b28dfa597959,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+39160665197,2026-10-18T19:51:30Z,claude/avatar-retrato-estilizado,9f0fbffa8b1f5e0f415abcf94697b28dfa597959,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Testes (vitest)
+39158628184,2026-10-18T19:24:31Z,main,047e51ffc8bb94f50c43ecf39da2c8aabefaebb0,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Testes (vitest)
+39158513898,2026-10-18T19:23:03Z,claude/avatar-gpu-corpo,fbb6ae299cf7135c26c1ca0f5f180d910db87396,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+39158500998,2026-10-18T19:22:53Z,claude/gpu-provador-lojas,0e4edb3bae49d41d51e6bc7f6f32474d9608e690,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Testes (vitest)
+39158493855,2026-10-18T19:22:47Z,claude/atelier-recompensas,d881bb4608edd8de6384a5c92edad22ff48a9c0b,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Testes (vitest)
+39158483445,2026-10-18T19:22:38Z,claude/lojas-sem-cobranca-dupla,867cd8e720c1a73fa2a4c82e8fc83cbe3603c44d,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+39158481585,2026-10-18T19:22:36Z,claude/selos-vitrine-perfil,12e7efc2ef5b9e3073039bd8786958a0193a09d7,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+39158475757,2026-10-18T19:22:31Z,claude/privacidade-perfil-rascunho,6c39bc21ad239ca9e9583a1bfc93ccedc1ce63d1,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+39158457635,2026-10-18T19:22:17Z,claude/atelier-recompensas,d881bb4608edd8de6384a5c92edad22ff48a9c0b,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+39155784866,2026-10-18T18:47:35Z,claude/atelier-recompensas,d881bb4608edd8de6384a5c92edad22ff48a9c0b,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Testes (vitest)
+39154672125,2026-10-18T18:33:11Z,claude/lojas-sem-cobranca-dupla,867cd8e720c1a73fa2a4c82e8fc83cbe3603c44d,Segredos (gitleaks) / gitleaks (histórico inteiro)
+39151050809,2026-10-18T17:45:35Z,claude/avatar-gpu-corpo,fbb6ae299cf7135c26c1ca0f5f180d910db87396,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39145065265,2026-10-18T16:27:18Z,claude/hotfix-person-photos,db9e87e407bb254b6bb7af8d858e24affb4d246c,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39143947712,2026-10-18T16:12:28Z,claude/fashn-t4-fp32,9f24475aa76b740dd5d8eb211383988b2ee9578e,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39139272314,2026-10-18T15:10:22Z,claude/gpu-quarto-provador,310e60e9037037027c0e2e703af154e503eaed9b,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39089308520,2026-10-18T02:13:18Z,main,a653b456c623a9fa673d8dd3c1332d5ffb4a953d,Front (typecheck · vitest · build · audit) / Typecheck
+39089300714,2026-10-18T02:13:10Z,claude/vton-worker-cloudrun,c79df5a72d4b0dd349228faeb1d2b52cb7c3c83f,Front (typecheck · vitest · build · audit) / Typecheck
+39089300796,2026-10-18T02:13:10Z,claude/vton-worker-cloudrun,c79df5a72d4b0dd349228faeb1d2b52cb7c3c83f,"contracts / VTON geometry, queue and Vertex contracts (test doubles, CPU)"
+39089281871,2026-10-18T02:12:51Z,claude/quarto-moveis-espelho,cd26f9a0e7405497bfbc53cd3c5aeb69ca797629,Front (typecheck · vitest · build · audit) / Typecheck
+39089280697,2026-10-18T02:12:49Z,claude/quarto-moveis-espelho,cd26f9a0e7405497bfbc53cd3c5aeb69ca797629,Front (typecheck · vitest · build · audit) / Typecheck
+39088404223,2026-10-18T01:58:39Z,main,5681ad40172cf881b87e8d821e636ed83b101a6c,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39088386791,2026-10-18T01:58:21Z,claude/fix-flyway-v60,b666f005c71f9a876001ce27533248b43a12c345,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39086332528,2026-10-18T01:23:53Z,claude/vton-worker-cloudrun,c79df5a72d4b0dd349228faeb1d2b52cb7c3c83f,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39084959288,2026-10-18T01:01:48Z,claude/quarto-moveis-espelho,35e4ec61cca556d271d867786b37e000f2f000dd,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39077346646,2026-10-17T23:00:51Z,main,48d0782204de35cd1f8114d75463ab3df15cc0c8,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39077274804,2026-10-17T22:59:55Z,claude/ai-try-on-dialog,c29aacdcf16e20064d71a561514f00e01d59f792,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39077272912,2026-10-17T22:59:53Z,claude/ai-try-on-dialog,c29aacdcf16e20064d71a561514f00e01d59f792,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39075554472,2026-10-17T22:33:24Z,claude/ai-try-on-dialog,bfba05349e913f7f5ea6f48fd41b36e1206fd70d,Segredos (gitleaks) / gitleaks (histórico inteiro); Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+39074999836,2026-10-17T22:25:18Z,claude/ai-try-on-dialog,9e5243046daed131a5a76c3c92b2ed7fed110cf2,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS); Segredos (gitleaks) / gitleaks (histórico inteiro)
+39073511557,2026-10-17T22:03:45Z,claude/vertex-predict-diagnostics,7c3d50a180ee32f71160f93ce8a7942feecf09f3,Front (typecheck · vitest · build · audit) / Testes (vitest)
+39055466895,2026-10-17T17:50:02Z,claude/vertex-predict-diagnostics,b220866ec2146613f9b54aad23ac4829fe52cd8b,"contracts / VTON geometry, queue and Vertex contracts (test doubles, CPU)"
+39055463860,2026-10-17T17:50:00Z,claude/vertex-predict-diagnostics,b220866ec2146613f9b54aad23ac4829fe52cd8b,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38986671723,2026-10-17T00:30:21Z,codex/vton-build-resume-2026-10-16,f0f251cd0721f8de0a738dbf026e8747aac45322,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38944811034,2026-10-16T18:06:44Z,codex/vton-build-resume-2026-10-16,a7da0de480c47f79e9a75e595361757164388ad1,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Typecheck
+38941997804,2026-10-16T17:44:28Z,codex/vton-build-resume-2026-10-16,769945d7e4191c08b6263d609d9aa78ba3118f21,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38940793827,2026-10-16T17:35:00Z,codex/vton-build-resume-2026-10-16,7a38fd931e7d5f26cb773aab1cb53e28f2efa7b4,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38909306229,2026-10-16T13:37:40Z,codex/vton-build-resume-2026-10-16,c208de6f2050d64a8262f6df97f7d4c583d25204,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38902262218,2026-10-16T12:41:09Z,main,78893f9858f31da6f597164ab2ea9f0d409a5d58,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Typecheck
+38899536208,2026-10-16T12:17:56Z,codex/vton-real-gpu-2026-10-16,16bca02470e06c1aed1b85be614e78821fd46630,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Typecheck
+38826512998,2026-10-15T23:56:01Z,main,fd9e307ef2617c7c807b036efd057d4cf12bddcf,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Typecheck
+38826170731,2026-10-15T23:52:32Z,codex/vton-backend-integration-2026-10-15,dc390bf2aa8985896dd530ba8318659a867af422,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38824296783,2026-10-15T23:33:32Z,main,02bd78d6b2d1bbb8e8afbdc74cbdc365fe198723,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Typecheck
+38822644903,2026-10-15T23:17:06Z,codex/vertex-vton-gpu-2026-10-15,7bce38bf2420fff3fa7aab18037d562178f40171,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38783392424,2026-10-15T18:10:18Z,main,95dc8402b667001960a24e46522a3482ed6a91cd,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38783365254,2026-10-15T18:10:07Z,copilot/explore-codebase-for-implementation,9bfd031f847262db2de0f6ef2ca7ef512db8c86e,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38776247618,2026-10-15T17:18:34Z,main,4605aa81ce7ed6b5e444935435721da28fc1ae62,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38772540164,2026-10-15T16:51:59Z,codex/fai-atelier-holografico-2026-10-15,fda929fb3f9c61c1d2ba9e20eeea580beb77d67f,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38770851123,2026-10-15T16:39:38Z,main,66f691735482e0c761548c9308c5e1e37ebe106e,Front (typecheck · vitest · build · audit) / Typecheck
+38770831802,2026-10-15T16:39:29Z,copilot/fix-readme-developer-docs,74951856cf4c0c31245476ef736900a9dabb8dde,
+38769437844,2026-10-15T16:29:34Z,copilot/create-admin-routes-for-catalogs,9586eac7b336712f41e8cbeb9c6bc766b2f2ab21,Front (typecheck · vitest · build · audit) / Typecheck
+38768504872,2026-10-15T16:22:53Z,main,f70ff6413c84f2d2cc773a23700b074de4550d4c,Front (typecheck · vitest · build · audit) / Typecheck
+38768431356,2026-10-15T16:22:21Z,copilot/update-documentation-fai-points,30e72aa14fcda7d743ea59eb9c71c015246464c7,Front (typecheck · vitest · build · audit) / Typecheck
+38767120946,2026-10-15T16:13:09Z,main,9f87dd23622c709aa8d4e4162a7d0d1c3f4cf665,Front (typecheck · vitest · build · audit) / Typecheck
+38766925433,2026-10-15T16:11:47Z,copilot/add-fai-xp-system,d37c1cb75a8c4e303f95a455946cb431db201ad1,Front (typecheck · vitest · build · audit) / Typecheck
+38762636475,2026-10-15T15:42:08Z,main,9e8af17d15a859bacd6a53c522afc78411abb29b,Front (typecheck · vitest · build · audit) / Typecheck
+38762384086,2026-10-15T15:40:23Z,copilot/xp-points-standardization,a26f68600266da629f9eaabff26b9ff619f317d3,
+38759701135,2026-10-15T15:22:11Z,main,a71882bad5e6948bc913b6503a8ff9fee591a0be,Front (typecheck · vitest · build · audit) / Typecheck
+38759671155,2026-10-15T15:21:59Z,copilot/realizar-itens-aura-hype,2ce177491756caefb253773eb10364290a2b0a4d,Front (typecheck · vitest · build · audit) / Typecheck
+38756181729,2026-10-15T14:58:26Z,main,6be4a6624fcdc969ed5581ed7bcd559e39faa481,Front (typecheck · vitest · build · audit) / Typecheck
+38756159483,2026-10-15T14:58:17Z,copilot/criar-aula-css-spring-boot,b2b25a87981340422ee93d8426e0b66c66aaf7a8,
+38753865258,2026-10-15T14:42:59Z,main,9915316e3017612d4c12349e51bd636952d0b608,Front (typecheck · vitest · build · audit) / Typecheck
+38753733964,2026-10-15T14:42:07Z,copilot/update-aura-presets,f392d14df2ce5141f6d2bee3b07aa1944153a45a,
+38752818282,2026-10-15T14:35:52Z,copilot/fix-video-loading-in-card-preview,4941bf77cdcb6236a396ec07344c105003a9468e,Front (typecheck · vitest · build · audit) / Typecheck
+38750039218,2026-10-15T14:17:16Z,main,7609f6d84b636463d01e4fe80b256439042df8ff,Front (typecheck · vitest · build · audit) / Typecheck
+38750015579,2026-10-15T14:17:07Z,copilot/aura-hype-score-visual-effects,01c334815cc6afc19cf5b1a2a01a5d6f999ef2fc,
+38749915013,2026-10-15T14:16:25Z,copilot/add-clear-filters-button,8c8993be9f7dcda0b44f9b62be3d6c1df60fd527,
+38749849655,2026-10-15T14:15:58Z,copilot/brainstorm-fashion-ideas,070622ecc55c5ca0aaaf7a8337ee522a335cbe4b,
+38749592435,2026-10-15T14:14:15Z,copilot/expansao-modulo-aura-impersonation,87ae533a0d7b38064249be4aeec2fd7fca9ec14d,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38749417284,2026-10-15T14:13:04Z,copilot/arrume-guarda-roupa,dc9c44823ec353284137946199fd1354b7188069,
+38748020382,2026-10-15T14:03:32Z,main,6375f37735d263c1cca95be75b6bcfcc3ecea1e8,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38739200924,2026-10-15T13:01:14Z,main,3331bee6d69b7d49d6bfcc256656ad3ef486c905,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38738662849,2026-10-15T12:57:20Z,codex/hype-enquadramento-automatico-2026-10-14,8c27f57549b644e1ec885cde209fa381eb660225,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38727615265,2026-10-15T11:28:46Z,main,226499674ada719e6d9812c52e7c6846f26fa5a6,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38648553011,2026-10-14T22:34:18Z,codex/hype-enquadramento-automatico-2026-10-14,5bd4493fc03c6770c33ff84e9a6a1eba679e5ce4,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38616329909,2026-10-14T18:34:41Z,copilot/improve-image-loading-uniformity,5db589728959e5b804921a9d1ce12cc6ea74c2ef,
+38616167823,2026-10-14T18:33:29Z,copilot/add-automated-test-coverage-seal-creators,4e673f0227f518a427eb2986c06b03ffaca0fd0b,
+38613431211,2026-10-14T18:14:15Z,copilot/revise-privacy-policy-documents,aa92aa6d8b28410cb8b7adeb49b8c37a1c364dde,
+38568015198,2026-10-14T12:58:47Z,fix/main-ci,7cb7bda2dc9e6e42e750aa4a04691f86dbd5f4f8,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38565915720,2026-10-14T12:42:46Z,main,ab0c521d1fc484f32785197630a2a521c94f47a0,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+38565691508,2026-10-14T12:41:03Z,fix/aura-hype-import,9e14af1ec09cc46ef7b1655526f95e08062034b7,Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+38564668600,2026-10-14T12:33:07Z,main,4002125e8b8e20927f46cb516037a7e0622d298c,Front (typecheck · vitest · build · audit) / Typecheck; Segredos (gitleaks) / gitleaks (histórico inteiro)
+38564421801,2026-10-14T12:31:13Z,dependabot/maven/com.anthropic-anthropic-java-2.71.0,d7d7a5c7305f725cb97a74c61b96eb4ea3685a2c,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Testes (vitest); Segredos (gitleaks) / gitleaks (histórico inteiro)
+38564413044,2026-10-14T12:31:09Z,fix/aura-hype-build,038cf7549b46b21e3ad53d6e9f6066e17ff179a6,Front (typecheck · vitest · build · audit) / Typecheck; Segredos (gitleaks) / gitleaks (histórico inteiro)
+38561198731,2026-10-14T12:05:12Z,codex/referencias-auras-2026-10-14,5a75867cc4c13c4ce4132eb448e700f28a183d99,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Typecheck; Segredos (gitleaks) / gitleaks (histórico inteiro)
+38559030848,2026-10-14T11:47:12Z,codex/fix-fotos-pecas-2026-10-14,41fb23eec8f788397137acaeece19cc6a905b404,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Testes (vitest)
+38508321224,2026-10-14T03:50:29Z,main,f26086da1095ee03719c90d4268939e405672b60,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38508311655,2026-10-14T03:50:23Z,feature/catalog-aura-hype,9b411ca3690710f6b9eb98f346c2023474d4a1ff,Front (typecheck · vitest · build · audit) / Typecheck; API (Java 21 · mvn verify) / Build e testes
+38504070069,2026-10-14T03:01:08Z,main,fb00650adc02e6fd0d262620bc3eb63ffee306c7,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38501794097,2026-10-14T02:35:04Z,main,6fe96fe39f3831b133b529f6266447df1d99ea36,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479564276,2026-10-13T22:42:25Z,dependabot/npm_and_yarn/mediapipe/tasks-vision-1.1.0,129025aef7af333fccc65d665350ffbc0ec378d6,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479535230,2026-10-13T22:42:09Z,dependabot/npm_and_yarn/types/node-26.6.5,b78f7c5e894739021419336b9416a74a1309f7f3,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479517916,2026-10-13T22:42:00Z,dependabot/npm_and_yarn/stylelint-17.16.0,a0a8cc95cc28b795792608383357d435bac6174a,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479501951,2026-10-13T22:41:51Z,dependabot/npm_and_yarn/jsdom-30.1.2,92b0e027a2cc1a31f8268353308a3ff7c44b67e0,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479490876,2026-10-13T22:41:45Z,dependabot/npm_and_yarn/next-react-debe27fdd7,195ed621b05920cda15e36713311418c83ec7aa7,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479405262,2026-10-13T22:40:57Z,dependabot/maven/org.projectlombok-lombok-1.18.48,0692cb5529dfcc6800f2a3f10b77d2f86180b004,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479398320,2026-10-13T22:40:53Z,dependabot/maven/com.twelvemonkeys.imageio-imageio-webp-3.15.3,b3c8b7754f3dd5aee7efb3c56b4fdd1b5fd026da,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479383696,2026-10-13T22:40:45Z,dependabot/maven/com.anthropic-anthropic-java-2.71.0,b296ef12399080441fb6237b5055b8003d660f2b,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479374367,2026-10-13T22:40:40Z,dependabot/maven/software.amazon.awssdk-bom-2.55.14,f61b6b34a86576934c1af822eeaf3bfde879d4b2,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38479367825,2026-10-13T22:40:37Z,dependabot/maven/com.microsoft.onnxruntime-onnxruntime-1.31.0,6243ba5ed04de6f487967de4f6206e854feb57e4,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38475888670,2026-10-13T22:10:02Z,main,08185fa954a62bb960d49a0206714fe45e13129d,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38472032803,2026-10-13T21:37:45Z,main,013c54f662fbc288ff2e12877a06e45deda7a919,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38471990458,2026-10-13T21:37:25Z,codex/fashionai-retomada-2026-10-13,aba5e6fa1dda606b2b19a92269b993a245496ff1,Front (typecheck · vitest · build · audit) / Testes (vitest)
+38434934983,2026-10-13T16:58:58Z,main,20abe8025d025e17c92df58526693f317d22e786,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38434920856,2026-10-13T16:58:52Z,codex/rf-atelier-vision-my-store,c8da7df4634fe5aa0a2927fc7c18eb5058163384,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38434436053,2026-10-13T16:55:19Z,codex/fashionai-retomada-2026-10-13,855348c82ab6378fa304ea02fc0d2131c45fb4a3,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38434387399,2026-10-13T16:54:59Z,codex/rf-atelier-vision-my-store,c8da7df4634fe5aa0a2927fc7c18eb5058163384,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38332792090,2026-10-13T01:34:44Z,main,4786de6c0f9a19b789dd68fd215882a39f81079e,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38331709516,2026-10-13T01:21:04Z,main,ded650d7dc336a48180f0f6ecec5a5d929e1a167,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38324924616,2026-10-12T23:58:48Z,main,a9012e073345ca8a6a14622f341103ebd111d1df,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38324914183,2026-10-12T23:58:41Z,claude/fashion-ai-interfaces-config-id7naj,a56ab8b9d9cc719b8b63c47aefb51e938c77e4f2,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38324910973,2026-10-12T23:58:39Z,claude/fashion-ai-interfaces-config-id7naj,a56ab8b9d9cc719b8b63c47aefb51e938c77e4f2,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38297897307,2026-10-12T19:28:37Z,main,9e049ae204e4ff2cfbe54f81f5014429d39bdf93,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38297866929,2026-10-12T19:28:20Z,fix/room-storage-duplicate-500,91ee419713dfe02690ea7241761fc51618c7d64e,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38290766154,2026-10-12T18:25:09Z,fix/settings-info-dialogs,2c88ae2bd18da6d45e6b816d121ae0b87ae48f55,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38262654913,2026-10-12T14:24:16Z,main,ee03e9f70491fe1b0e1913a4cc17ed13a51e634b,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38262302185,2026-10-12T14:21:23Z,fix/room-storage-duplicate-500,91ee419713dfe02690ea7241761fc51618c7d64e,Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38260724852,2026-10-12T14:08:22Z,main,6faba159e2c7594d7ad0a83885797a55921704c6,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38258095150,2026-10-12T13:46:51Z,fix/room-gameplay-fai-assets,bd2239ee945315acde72990e51e6b4cbbefc03db,Front (typecheck · vitest · build · audit) / Testes (vitest); API (Java 21 · mvn verify) / Build e testes
+38257881615,2026-10-12T13:45:07Z,fix/catalog-auto-framing-aura-hype,9e86d7a147ad2909c17e319ceca2677893323d5a,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Auditoria de telas (Chromium · WCAG · overflow · CLS)
+38209493526,2026-10-12T05:47:32Z,feature/catalog-aura-hype,577b527e4b205bc76b621ff6498f1f4cba176a76,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Build de produção (inclui as checagens de i18n)
+38200748667,2026-10-12T03:41:30Z,main,a7d998c9a8c621d2af864bc96fc30d3174617cd1,API (Java 21 · mvn verify) / Build e testes
+38200742120,2026-10-12T03:41:24Z,claude/fashion-ai-interfaces-config-id7naj,c642473fc929ce78efbb627547a66cba4d1d2d9d,API (Java 21 · mvn verify) / Build e testes
+38200701151,2026-10-12T03:40:46Z,fix/flyway-v60-tipolook-legado,eec8fa601288f5bfdd4e2fa2d34d7bf7ef9f0a59,API (Java 21 · mvn verify) / Build e testes
+38199461068,2026-10-12T03:21:55Z,main,af805d176af15d5de8ec8fe21fbd0ea1a839354b,API (Java 21 · mvn verify) / Build e testes
+38199422933,2026-10-12T03:21:20Z,fix/flyway-v60-idempotente,9a692895986947d70e82995cc4cf552aac840cb8,API (Java 21 · mvn verify) / Build e testes
+38197842212,2026-10-12T02:57:34Z,main,5d6b702133881271d1076b72f69e363c0d16bc5d,API (Java 21 · mvn verify) / Build e testes
+38197703387,2026-10-12T02:55:26Z,copilot/fix-github-actions-job-failure,6c1ac4c6365635d40a0668216be6bd9a8b6c5995,API (Java 21 · mvn verify) / Build e testes
+38197033082,2026-10-12T02:45:22Z,claude/fashion-ai-interfaces-config-id7naj,c642473fc929ce78efbb627547a66cba4d1d2d9d,API (Java 21 · mvn verify) / Build e testes
+38196716323,2026-10-12T02:40:34Z,copilot/fix-failing-github-actions-job,2e387cc075bd05add44cd11b8704df994a7c4adf,API (Java 21 · mvn verify) / Build e testes
+38196651591,2026-10-12T02:39:39Z,copilot/fix-github-actions-job-api-java-21,e0cfb8217637ce51f0470a05eea72866ce8ff468,API (Java 21 · mvn verify) / Build e testes
+38196603267,2026-10-12T02:38:55Z,main,b65ac75fc848d1f2e84fd99da9e42b5288161e2a,API (Java 21 · mvn verify) / Build e testes
+38196253401,2026-10-12T02:33:29Z,claude/fashion-ai-interfaces-config-id7naj,ae27ff8150c02372915c96fe29ac2cbbb896df28,
+38196251217,2026-10-12T02:33:27Z,claude/fashion-ai-interfaces-config-id7naj,ae27ff8150c02372915c96fe29ac2cbbb896df28,
+38195808755,2026-10-12T02:26:47Z,claude/fashion-ai-interfaces-config-id7naj,5ac12e3a00473ed3e189cde7ef9dd00587272b86,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Testes (vitest)
+38195776054,2026-10-12T02:26:15Z,railway/code-change-tSfFQ3,c30a056b0c4edcbf117cac1d7dc3c68b78fca0cf,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Testes (vitest)
+38195722025,2026-10-12T02:25:27Z,railway/fix-deploy-146ac5,4bfdc24a1ff0d2e4eb4f0313f7d03402b3c12e04,API (Java 21 · mvn verify) / Build e testes; Front (typecheck · vitest · build · audit) / Testes (vitest)
+38195088716,2026-10-12T02:15:43Z,copilot/fix-frontend-github-actions,23b8962485d7fd568c5e2a5018d846b543239c14,

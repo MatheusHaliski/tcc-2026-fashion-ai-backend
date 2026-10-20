@@ -60,7 +60,7 @@ describe("frente dos cards", () => {
     const slot = front.querySelector(".pc-sub .seal-slot") as HTMLElement;
     expect(slot.getAttribute("role")).toBe("img");
     expect(slot.getAttribute("aria-label")).toBe("selos: Selo de Hype: Viral, Selo de Hype: Tendência");
-    expect(front.querySelector(".pc-hype-row .hype-badge")).toBeTruthy();
+    expect(front.querySelector(".pc-tab-live-score .hype-badge")).toBeTruthy();
     expect(api.calls.filter((c) => c.path.startsWith("/api/hype"))).toHaveLength(1);   // só o resumo em lote de sempre
   });
 

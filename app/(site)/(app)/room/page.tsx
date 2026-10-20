@@ -64,7 +64,7 @@ const PHOTO_FILTERS: PhotoFilter[] = ["none", "editorial", "filme", "pb"];
 const FILTER_CSS: Record<PhotoFilter, string> = { none: "none", editorial: "contrast(1.1) saturate(0.88) brightness(1.02)", filme: "sepia(0.22) contrast(1.05) brightness(1.04) saturate(1.05)", pb: "grayscale(1) contrast(1.15)" };
 
 function RoomInner() {
-  const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams(); const router = useRouter();
+  const { t, fmtPriceShort } = useI18n(); const toast = useToast(); const sp = useSearchParams(); const router = useRouter();
   const { data, loading, error, reload } = useApi<Room>((signal) => api.get("/api/me/room", { signal }), []);
   const [gl, setGl] = useState<boolean | null>(null);
   const [openSet, setOpenSet] = useState<Set<string>>(new Set()); const [focusModule, setFocusModule] = useState<string | null>(null); const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -642,7 +642,7 @@ function RoomInner() {
             <dt>{t("room.composicao")}</dt><dd>{tag.composition ?? "—"}</dd>
             <dt>{t("room.lavagem")}</dt><dd>{tag.care ?? CARE[tag.composition ?? ""] ?? t("room.siga_a_etiqueta_original")}</dd>
             <dt>{t("room.origem")}</dt><dd>{tag.origin ? ORIGIN[tag.origin] ?? tag.origin.toLowerCase() : "—"}{tag.garimpo && <span className="sewn-tag-seal">{t("common.garimpo")}</span>}</dd>
-            <dt>{t("room.usos_2")}</dt><dd className="tabular">{tag.wearCount}{tag.thirtyWears && <span className="sewn-tag-dot" title={t("room.n30_usos")} />}{tag.costPerUse != null && <span className="text-muted">{t("room.r_por_uso_so_voce", { toFixed: Number(tag.costPerUse).toFixed(2) })}</span>}</dd>
+            <dt>{t("room.usos_2")}</dt><dd className="tabular">{tag.wearCount}{tag.thirtyWears && <span className="sewn-tag-dot" title={t("room.n30_usos")} />}{tag.costPerUse != null && <span className="text-muted">{t("room.r_por_uso_so_voce", { value: fmtPriceShort(Number(tag.costPerUse)) })}</span>}</dd>
             <dt>{t("room.no_quarto")}</dt><dd>{tag.location?.label ?? "—"}</dd>
           </dl>
           {tag.diary.length > 0 && <p className="type-caption text-muted mt-2">{t("room.ultimo_uso", { date: tag.diary[0].date, value: tag.diary[0].occasion !== "null" ? ` · ${tag.diary[0].occasion}` : "" })}</p>}
