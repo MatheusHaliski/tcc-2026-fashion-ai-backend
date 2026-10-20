@@ -181,7 +181,7 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guid
   const base = `guide.${guideKey}`;
   const steps = Array.from({ length: Math.min(3, def.steps) }, (_, i) => t(`${base}.step${i + 1}`));
   return (
-    <Suspense fallback={null}><Dialog open title={t(`${base}.title`)} onClose={() => onClose(hide, false)} size="lg"
+    <Dialog open title={t(`${base}.title`)} onClose={() => onClose(hide, false)} size="lg"
       footer={<>
         <label className="guide-hide"><input type="checkbox" checked={hide} onChange={(e) => setHide(e.target.checked)} />{t("guide.dont_show_again")}</label>
         <Button variant="primary" onClick={() => onClose(hide, true)} data-autofocus>{gate ? t("guide.got_it_start") : t("guide.got_it")}</Button>
@@ -200,12 +200,12 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guid
           </div>
           {/* palco inerte: nada ali dentro recebe foco, clique ou chamada à API */}
           <div className="guide-demo-stage" data-playing={playing ? "true" : "false"} inert aria-hidden>
-            <GuideDemo demo={def.demo} />
+            <Suspense fallback={null}><GuideDemo demo={def.demo} /></Suspense>
           </div>
           <figcaption className="type-body-sm text-muted">{t(`${base}.demo`)}</figcaption>
         </figure>
         {steps.length > 0 && <ol className="guide-steps">{steps.map((s, i) => <li key={i}><span className="guide-step-n" aria-hidden>{i + 1}</span><span>{s}</span></li>)}</ol>}
       </div>
-    </Dialog></Suspense>
+    </Dialog>
   );
 }
