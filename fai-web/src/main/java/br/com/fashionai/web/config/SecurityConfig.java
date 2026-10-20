@@ -41,7 +41,7 @@ import java.util.List;
 public class SecurityConfig {
     private static final String[] PUBLIC_GET = {
             "/actuator/health", "/actuator/info", "/media/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-            "/api/usernames/*/availability", "/api/preferences/options", "/api/client/config", "/api/taxonomy", "/api/assets/**",
+            "/api/usernames/*/availability", "/api/preferences/options", "/api/exchange-rates", "/api/client/config", "/api/taxonomy", "/api/assets/**",
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",

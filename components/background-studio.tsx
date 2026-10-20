@@ -175,7 +175,7 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
       {auraPreset && legacyAuraFamily(auraPreset.id) === family && (auraPreset.variants ?? []).length > 1 && <OptionStrip title={t("backgroundStudio.variacao", { name: auraPreset.name })}>
         {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={currentVariant === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ compositionPreset:null, aura: { variantId: v.id, format: value.aura?.format } })}>
           {v.animatedUrl ? <span className="opt-thumb relative overflow-hidden"><ArtVideo src={v.animatedUrl} poster={v.static?.previewUrl} /></span>
-            : v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
+            : v.animatedPreviewUrl || v.static?.previewUrl ? <img src={v.animatedPreviewUrl ?? v.static?.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
           <span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
       </OptionStrip>}
       {family === "COMMON" && auraPreset && legacyAuraFamily(auraPreset.id) === "COMMON" && value.aura && <OptionStrip title={t("backgroundStudio.formato_rf11_7_6")}>
