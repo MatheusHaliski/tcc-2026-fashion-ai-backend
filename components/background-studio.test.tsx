@@ -139,6 +139,7 @@ describe("Background Studio — prévia das variações Aura em vídeo", () => {
     const variations = await screen.findByRole("group", { name: /Variação/ });
     const videos = [...variations.querySelectorAll<HTMLVideoElement>('video[poster*="/aura/splash/"]')];
     expect(videos).toHaveLength(6);
+    await waitFor(() => expect(videos.every(video=>!!video.getAttribute("src"))).toBe(true));
     expect(new Set(videos.map((video) => video.getAttribute("src"))).size).toBe(6);
   });
 
