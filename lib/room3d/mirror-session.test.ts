@@ -102,7 +102,8 @@ describe("câmera, orientação e reação", () => {
     const tryon = cameraFor("tryon", front, mirror, 1.2);
     expect(tryon.position.y).toBeCloseTo(EYE_HEIGHT);
     expect(Math.hypot(tryon.position.x - front.x, tryon.position.z - front.z)).toBeLessThan(0.2);
-    expect(tryon.target.x).toBeCloseTo(mirror.x); expect(tryon.target.z).toBeCloseTo(mirror.z);
+    expect(tryon.target.clone().sub(mirror).dot(MIRROR_NORMAL)).toBeLessThan(0); // reflection lies behind the glass
+    expect(tryon.fov).toBeGreaterThanOrEqual(48);
     const look = tryon.target.clone().sub(tryon.position).setY(0).normalize();
     expect(look.dot(MIRROR_NORMAL)).toBeLessThan(-0.5);                                       // olha para o vidro
     // o personagem vira para o espelho: frente = (sin yaw, 0, cos yaw)

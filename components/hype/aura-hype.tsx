@@ -14,8 +14,8 @@ export function AuraHype({ state, mode, preview = false, summary, previewTier, s
   const preset = hypePreset(mode);
   const tier = (preview && previewTier) || fashionCardLevel(summary);
   const effect = ["SCANNER", "XRAY", "DOTS", "STARS", "METRICS"].includes(mode ?? "") ? mode : preset.effect;
-  return <span className="aura-hype" data-fashion-level={tier??"PENDING"} data-preset={preset.id} data-tech={preset.tech} style={{"--hype-ink":preset.color,"--hype-secondary":preset.secondary,"--hype-period":`${preset.duration}s`,"--hype-spacing":`${preset.spacing}px`,"--hype-angle":`${preset.angle}deg`} as CSSProperties} data-effect={effect} data-level={state.kind === "available" ? state.level : undefined}>
-    <span className="aura-hype-field" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+  return <span className="aura-hype" data-fashion-level={tier??"PENDING"} data-preset={preset.id} data-preset-kind={preset.kind} data-tech={preset.tech} style={{"--hype-ink":preset.color,"--hype-secondary":preset.secondary,"--hype-period":`${preset.duration}s`,"--hype-spacing":`${preset.spacing}px`,"--hype-angle":`${preset.angle}deg`} as CSSProperties} data-effect={effect} data-level={state.kind === "available" ? state.level : undefined}>
+    {!/^(COMMON|RARE|LEGENDARY|COLLAB_DROP)_/.test(mode??'')&&<span className="aura-hype-field" aria-hidden="true"><i /><i /><i /><i /><i /></span>}
     {/* sem score calculado não há aviso na foto: esperar o cálculo é estado do sistema, não informação da peça */}
     {showScore && (state.kind === "available" || preview) && <span className="aura-hype-score" title={t("auraHype.global")}>{state.kind === "available" ? <><span className="sr-only">{`HYPE ${displayScore(state.score)}${state.stale ? " · ↻" : ""}`}</span><span className="aura-hype-global" aria-hidden="true"><small>HYPE</small><span className="aura-hype-total"><LedNumber value={displayScore(state.score)} />{state.stale && <span className="aura-hype-stale" aria-label={t("auraHype.stale")}>↻</span>}</span></span></> : t("auraHype.preview")}</span>}
   </span>;

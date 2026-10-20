@@ -282,12 +282,12 @@ h1, h2, h3, h4 { margin: 0; }
 .hscroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 290px); gap: 12px; overflow-x: auto; padding-bottom: 6px; align-items: start; scroll-snap-type: x proximity; }
 .hscroll > * { scroll-snap-align: start; }
 .detail-card-expanded { width: 100%; max-width: 440px; }
-.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 1fr)); gap: .9rem; }
-@media (max-width: 639px) { .grid-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; } }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); gap: .9rem; }
+@media (max-width: 639px) { .grid-cards { grid-template-columns: minmax(0, 1fr); gap: .6rem; } }
 /* cards de peça (guarda-roupa, busca): o dobro da largura; uma coluna no celular */
 .grid-cards.is-pieces { grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); }
 @media (max-width: 639px) { .grid-cards.is-pieces { grid-template-columns: minmax(0, 1fr); } }
-.grid-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1rem; }
+.grid-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr)); gap: 1rem; }
 /* Lookbook › Looks: atalho discreto do dono para a gestão dos looks (/looks), à direita, acima da vitrine */
 .lookbook-manage { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
 .lookbook-manage-link { display: inline-flex; align-items: center; min-height: 32px; padding: 0 2px; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
@@ -1593,8 +1593,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .dialog.dialog-card { max-width: 560px; padding: 0; border: 0; background: transparent; box-shadow: none; overflow: auto; }
 .dialog.dialog-card > .fai-card, .dialog.dialog-card .fai-card.is-expanded { box-shadow: var(--shadow); }
 /* No detalhe aberto pelo Closet, o conteúdo é estático: não aplicar o hover da lista ao passar o mouse. */
-.dialog.dialog-card .piece2.is-action:hover { background: inherit; }
-.dialog.dialog-card .c-link:hover { text-decoration: none; }
+.dialog.dialog-card.is-piece .piece-detail { transform: none; }
 .c-modal-controls { display: inline-flex; gap: 2px; margin-left: 2px; }
 .expanded-page { max-width: 560px; margin: 0 auto; }
 .fai-card .c-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; padding: 4px 12px 10px; }
@@ -4139,3 +4138,62 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .atelier-trend-delta[data-direction="up"] { color: var(--ink); }
 .atelier-trend-delta[data-direction="down"] { color: var(--ink); }
 .atelier-hub .tab { color: var(--ink); }
+
+/* Eight Hype layouts; each band contains four genuinely distinct reading modes. */
+.aura-hype-preset-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 300px); grid-template-columns: none; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 4px 4px 12px; }
+.aura-hype-preset { scroll-snap-align: start; }
+.aura-hype-preset:disabled { opacity: .45; cursor: not-allowed; }
+.aura-hype-preset-art { aspect-ratio: 2 / 1; }
+.aura-hype[data-preset-kind="static"] *, .aura-hype[data-preset-kind="static"]::before, .aura-hype[data-preset-kind="static"]::after { animation: none !important; }
+.fashion-hype-level-preview:disabled { opacity: .6; cursor: not-allowed; }
+.hype-demo-label { padding: 4px 8px; }
+.fashion-hype-matrix[data-layout="static-horizontal"] { display: flex; overflow-x: auto; }
+.fashion-hype-matrix[data-layout="static-horizontal"] > div { flex: 0 0 54px; }
+.fashion-hype-matrix[data-layout="static-vertical"], .fashion-hype-matrix[data-layout="ranked-bars"], .fashion-hype-matrix[data-layout="extremes"], .fashion-hype-matrix[data-layout="momentum"] { grid-template-columns: minmax(0, 1fr); }
+.fashion-hype-matrix[data-layout="static-columns"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fashion-hype-matrix[data-layout="static-vertical"] .fashion-hype-cell { grid-template-columns: 1fr auto; justify-items: start; }
+.fashion-hype-matrix[data-layout="static-vertical"] dd { justify-self: end; }
+.hype-global-only { display: grid; justify-items: center; gap: 8px; padding: 16px; }
+.hype-global-only strong { font: 600 48px/1 var(--font-data); }
+.fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell { grid-template-columns: 1fr auto; justify-items: start; }
+.hype-led-track { grid-column: 1 / -1; width: 100%; height: 8px; border-radius: 4px; background: #ffffff20; overflow: hidden; }
+.hype-led-track i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--hype-ink, #6dccc1) 0 6px, transparent 6px 8px); transition: width 700ms ease; }
+.fashion-hype-cell[data-tone="max"] { color: #ffe080; border-color: #ffe080; }
+.fashion-hype-cell[data-tone="min"] { color: #ff9393; border-color: #ff9393; }
+.fashion-hype-matrix[data-layout="momentum"] dd { font-size: 36px; }
+.fashion-hype-matrix[data-layout="key-triad"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fashion-hype-matrix[data-layout="key-triad"] small, .hype-dimension-trend { white-space: normal; font-size: 12px; }
+.hype-mini-stars { display: block; animation: hype-star-pulse 2s ease-in-out infinite alternate; }
+@keyframes hype-star-pulse { from { opacity: .4; } to { opacity: 1; } }
+.pc-tab-live-score { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+/* The expanded preview changes the actual content layout, not just the photograph. */
+.piece-card-expanded .pc-content { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+.piece-card-expanded .pc-header, .piece-card-expanded .c-actions { grid-column: 1 / -1; }
+.piece-card-expanded .pc-media { grid-column: 1; }
+.piece-card-expanded .pc-id { grid-column: 2; grid-row: 2; align-self: stretch; padding: 12px; }
+.pae-expanded-card { width: 100%; }
+.card-preview-mode-toggle { z-index: 12; }
+@media (prefers-reduced-motion: reduce) { .hype-mini-stars { animation: none; } .hype-led-track i { transition: none; } }
+/* Preview stays before controls on mobile; scrolling inside it keeps the entire final card reachable. */
+.piece-create-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.piece-create-preview, .pae-preview { position: sticky; top: 64px; max-height: calc(100dvh - 80px); overflow: auto; min-width: 0; }
+.piece-create-preview { grid-row: 1; }
+.piece-create-main { grid-row: 2; }
+.pae-preview { grid-row: 1; max-height: 58dvh; z-index: 8; background: var(--surface); }
+.pae-main { grid-row: 2; min-width: 0; }
+@media (min-width: 900px) {
+  .piece-create-layout:not(.is-art) { grid-template-columns: minmax(0, 1fr) minmax(352px, 44%); }
+  .piece-create-main, .pae-main { grid-row: 1; grid-column: 1; }
+  .piece-create-preview, .pae-preview { grid-row: 1; grid-column: 2; max-height: calc(100dvh - 80px); }
+}
+@media (max-width: 639px) {
+  .piece-card-expanded .pc-content { display: block; }
+  .piece-card-expanded .c-facts { gap: 10px 16px; }
+  .piece-card-expanded .pc-seg { flex-wrap: wrap; }
+  .piece-card-expanded .pc-seg-btn { min-width: 0; flex: 1; }
+}
+.card-preview-mode > .pae-expanded-card { width: 100%; }
+.piece-card-expanded .c-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); }
+.fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dt { order: 0; grid-column: 1; }
+.fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dd { order: 0; grid-column: 2; justify-self: end; }
+.fashion-hype-matrix[data-layout="ranked-bars"] .hype-led-track { grid-row: 2; }

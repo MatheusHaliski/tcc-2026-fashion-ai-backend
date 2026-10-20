@@ -15,6 +15,7 @@ const TTL_MS = 5 * 60_000;
 const MAX_ENTRIES = 600;
 const BATCH = 100;
 const entries = new Map<string, Entry>();
+const awaitingRecalculation = new Map<string,string>();
 const listeners = new Map<string, Set<() => void>>();
 const pending: Record<HypeEntity, Set<string>> = { PIECE: new Set(), SCHEME: new Set() };
 let timer: ReturnType<typeof setTimeout> | null = null;
@@ -30,6 +31,11 @@ function put(key: string, entry: Entry) {
   if(current?.status === "AVAILABLE" && entry.summary?.status === "AVAILABLE" && current.calculatedAt && entry.summary.calculatedAt
       && Date.parse(entry.summary.calculatedAt) < Date.parse(current.calculatedAt)) {
     entry = { ...entry, summary: current };
+  }
+  const waiting=awaitingRecalculation.get(key);
+  if(waiting&&entry.summary){
+    if(entry.summary.calculatedAt&&Date.parse(entry.summary.calculatedAt)>Date.parse(waiting))awaitingRecalculation.delete(key);
+    else entry={...entry,summary:{...entry.summary,stale:true}};
   }
   entries.set(key, entry);
   if (entries.size > MAX_ENTRIES) {
@@ -76,6 +82,14 @@ export function requestHype(type: HypeEntity, id: string) {
   if (!timer) timer = setTimeout(flush, 0);
 }
 
+/** Editing invalidates the cached snapshot; only a newer server snapshot clears stale. */
+export function invalidateHype(type:HypeEntity,id:string){
+ const key=keyOf(type,id),old=entries.get(key);
+ awaitingRecalculation.set(key,old?.summary?.calculatedAt??"1970-01-01T00:00:00Z");
+ if(old)put(key,{...old,summary:old.summary?{...old.summary,stale:true}:undefined,at:0});
+ requestHype(type,id);
+}
+
 /** Respostas que já trazem o Hype (ranking, insights) alimentam o cache — o card não pede de novo. */
 export function primeHype(type: HypeEntity, items: Record<string, HypeSummary | undefined>) {
   const now = Date.now();
@@ -108,7 +122,7 @@ function watchLive(type: HypeEntity, id: string) {
 export function __resetHypeStore() {
   if(liveTimer) clearInterval(liveTimer);
   liveTimer=null; live.clear();
-  entries.clear();
+  entries.clear(); awaitingRecalculation.clear();
   pending.PIECE.clear();
   pending.SCHEME.clear();
   if (timer) clearTimeout(timer);
@@ -126,6 +140,7 @@ export function useHypeSummary(type: HypeEntity, id: string | null | undefined, 
   }, [key]);
   const entry = useSyncExternalStore(subscribe, () => (key ? entries.get(key) : undefined), () => undefined);
   useEffect(() => { if (enabled && id) requestHype(type, id); }, [type, id, enabled]);
-  useEffect(()=>{ if(enabled && liveUpdates && id && !id.startsWith(DEMO_ID_PREFIX)) return watchLive(type,id); },[enabled,liveUpdates,type,id]);
+  useEffect(()=>{if(!enabled||!id)return;const changed=(event:Event)=>{const value=(event as CustomEvent<{type:HypeEntity;id:string}>).detail;if(value?.type===type&&value.id===id)invalidateHype(type,id);};window.addEventListener('fai:hype-source-updated',changed);return ()=>window.removeEventListener('fai:hype-source-updated',changed);},[type,id,enabled]);
+  useEffect(()=>{ if(enabled && (liveUpdates || entry?.summary?.stale) && id && !id.startsWith(DEMO_ID_PREFIX)) return watchLive(type,id); },[enabled,liveUpdates,type,id,entry?.summary?.stale]);
   return { summary: entry?.summary, loading: entry ? entry.loading && !entry.summary : enabled && !!id, error: !!entry?.error && !entry?.summary };
 }

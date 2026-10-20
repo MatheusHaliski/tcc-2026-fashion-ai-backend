@@ -31,15 +31,20 @@ describe("Background Studio — Cartela sazonal", () => {
     expect(screen.queryByRole("group", { name: "Animação" })).toBeNull();
   });
 
-  describe("Background Studio — presets de marca da Metamorfose", () => {
-    it("aplica as direções de marca/cor sem reprocessar a foto", async () => {
-      mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
-      const onChange = vi.fn();
-      renderApp(<AuraMaterialPanel value={{ photo: { url: "/piece.jpg" } }} onChange={onChange} />);
+  describe("Metamorfose — somente inventário adquirido", () => {
+    it("não oferece os presets genéricos nem marcas fictícias sem direito", async () => {
+      mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {}, "GET /api/me/arts/metamorphoses": [] });
+      renderApp(<AuraMaterialPanel value={{}} onChange={vi.fn()} />);
       fireEvent.click(screen.getByRole("button", { name: /AURA Metamorfose/ }));
-      fireEvent.click(await screen.findByRole("button", { name: /Nike · Prisma laranja/ }));
-      expect(onChange).toHaveBeenLastCalledWith({ auraMetamorphose: "PRISMA", auraMetamorphosePreset: "NIKE_ORANGE" });
-      expect(onChange.mock.calls[0][0]).not.toHaveProperty("photo");
+      expect(await screen.findByText(/ainda não possui artes Metamorfose/)).toBeTruthy();
+      expect(screen.queryByRole("button", {name:/Nike|Adidas|Asics|Constelação/})).toBeNull();
+    });
+    it("aplica somente a arte retornada pelo inventário com seu comprovante", async () => {
+      mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {}, "GET /api/me/arts/metamorphoses": [{code:"CREATOR_PRISMA",name:"Arte conquistada",config:{auraMetamorphose:"PRISMA"},source:"FLAIR"}] });
+      const onChange=vi.fn();renderApp(<AuraMaterialPanel value={{}} onChange={onChange} />);
+      fireEvent.click(screen.getByRole("button", { name: /AURA Metamorfose/ }));
+      fireEvent.click(await screen.findByRole("button",{name:/Arte conquistada/}));
+      expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({auraMetamorphose:"PRISMA",auraEntitlementCode:"CREATOR_PRISMA"}));
     });
   });
 
@@ -174,10 +179,10 @@ describe("Studio — Hype integrado à cartela", () => {
     fetch.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /AURA Hype/ }));
     const dialog = screen.getByRole("dialog");
-    expect(dialog.querySelectorAll(".aura-hype-preset")).toHaveLength(40);
+    expect(dialog.querySelectorAll(".aura-hype-preset")).toHaveLength(8);
     expect(onChange).not.toHaveBeenCalled();
     expect(fetch.mock.calls.filter(([url]) => String(url).includes("/aura/fashion-curated/") || String(url).includes("/api/backgrounds"))).toHaveLength(0);
-    const choice = dialog.querySelectorAll<HTMLButtonElement>(".aura-hype-preset")[11];
+    const choice = dialog.querySelectorAll<HTMLButtonElement>(".aura-hype-preset")[7];
     fireEvent.click(choice);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({compositionPreset:null}));
     expect(onChange.mock.calls[0][0].auraHype).not.toBe("SCANNER");

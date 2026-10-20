@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import type { PieceView } from "@/lib/api/types";
-import { HypeBadge } from "@/components/hype/hype-badge";
-import { hypeViewState } from "@/lib/hype/model";
-import type { HypeSummary } from "@/lib/hype/types";
+import {HypeBadge} from "@/components/hype/hype-badge";
+import {hypeViewState} from "@/lib/hype/model";
+import type { HypeEntity, HypeSummary } from "@/lib/hype/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label, CATEGORY_LABEL, subcategoryLabel } from "@/lib/api/taxonomy";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
@@ -22,9 +22,9 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading = false, error = false }: { piece: PieceView; summary?: HypeSummary | null; initial?: Tab;
-  /** modelo AURA Hype escolhido na peça: dá a cor e a forma da lista de atributos */
-  auraMode?: string | null; loading?: boolean; error?: boolean }) {
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE" }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion">>; summary?: HypeSummary | null; initial?: Tab;
+  /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
+  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>(initial);
   // a aba inicial acompanha a preferência (a AURA Hype salva no navegador chega depois do 1º render) até a pessoa escolher
@@ -34,7 +34,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
   const list = (values?: string[] | null) => (values ?? []).filter(Boolean).map((v) => label(v)).join(" · ");
   const rows: [string, ReactNode][] = ([
     [t("common.brand"), piece.brandName ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={18} withName /> : null],
-    [t("common.category"), subcategoryLabel(piece.subcategory) || CATEGORY_LABEL[piece.category]],
+    [t("common.category"), subcategoryLabel(piece.subcategory) || (piece.category ? CATEGORY_LABEL[piece.category] : null)],
     [t("common.color"), piece.color ? <span className="pc-info-color">{piece.colorHex && <i style={{ background: piece.colorHex }} aria-hidden />}{label(piece.color)}</span> : null],
     [t("common.style"), list(piece.style)],
     [t("common.occasion"), list(piece.occasion)],
@@ -58,14 +58,14 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
         {tabs.map((x) => (
           <button key={x.key} type="button" role="tab" data-tab={x.key} id={`${id}-${x.key}`} aria-selected={tab === x.key} aria-controls={`${id}-panel`}
             tabIndex={tab === x.key ? 0 : -1} className="pc-seg-btn" onClick={(e) => { e.stopPropagation(); touched.current = true; setTab(x.key); }}>
-            {x.icon}<span>{x.text}{x.key === "info" && <span className="pc-tab-live-score"><HypeBadge state={hypeViewState(summary, { loading, error })} summary={summary} /></span>}</span>
+            {x.icon}<span>{x.text}{x.key==="info"&&<span className="pc-tab-live-score"><HypeBadge state={hypeViewState(summary,{loading,error})} summary={summary}/></span>}</span>
           </button>
         ))}
       </div>
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="pc-panel">
         {tab === "info"
           ? <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
-          : <FashionCardStats summary={summary} layout={preset?.layout} />}
+          : <FashionCardStats summary={summary} type={type} layout={preset?.layout} context={piece} />}
       </div>
     </div>
   );

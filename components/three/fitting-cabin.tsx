@@ -124,7 +124,7 @@ export function useCutaway(root: RefObject<THREE.Object3D | null>, target: V3) {
     const c = camera.position;
     for (const { o, cut } of cache.current.walls) o.visible = cut.n[0] * c.x + cut.n[1] * c.z - cut.at > cut.margin;
     seg.set(c, tgt);
-    for (const { o, s } of cache.current.props) o.visible = seg.closestPointToPoint(s.center, true, tmp).distanceTo(s.center) > s.radius + CLEARANCE;
+    for (const { o, s } of cache.current.props) o.visible = o.userData.keepVisible === true || seg.closestPointToPoint(s.center, true, tmp).distanceTo(s.center) > s.radius + CLEARANCE;
   });
 }
 

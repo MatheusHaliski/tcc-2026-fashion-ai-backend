@@ -71,10 +71,11 @@ const CONTAIN = { position: "absolute", inset: 0, overflow: "hidden", borderRadi
 
 export function ArtStage({ bg, art, density, pieceHex, animate = false }: { bg?: Record<string, unknown> | null; art: PieceArt; density: "compact" | "expanded"; pieceHex?: string | null; animate?: boolean }) {
   const resolved = resolveCardArt(bg);
-  // O feed permanece leve, mas o preview do Background Studio precisa mostrar a Aura selecionada em movimento.
-  const user = animate || density === "expanded" || resolved.kind === "none" || !!fashionPreset(studioOf(bg).compositionPreset)?.video
+  // Vídeos selecionados continuam vídeos em qualquer card. ArtVideo pausa/descarrega fora da tela;
+  // a densidade do layout não deve substituir a escolha animada por um pôster.
+  const user = animate || density === "expanded" || resolved.kind === "none" || !!resolved.video
     ? resolved
-    : { ...resolved, animation: null, video: undefined, image: resolved.image ?? resolved.video?.poster ?? undefined };
+    : { ...resolved, animation: null, video: undefined, image: resolved.image };
   const { family, variant, season } = art.template;
   const fx = art.effects;
   const base = family === "seasonal" ? SEASON_BASE[season] : FAMILY_BASE[family];

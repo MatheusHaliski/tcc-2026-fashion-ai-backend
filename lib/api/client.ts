@@ -189,6 +189,10 @@ async function request<T>(method: string, path: string, body?: unknown, opts: Re
     void fetch("/gate/verify", { method: "DELETE" }).finally(() => window.location.assign(`/?next=${next}`));
   }
   if (!res.ok) throw await parseError(res);
+  if (method !== "GET" && typeof window !== "undefined") {
+    const resource=path.match(/^\/api\/(pieces|schemes)\/([a-f0-9-]{36})(?:[/?]|$)/i);
+    if(resource)window.dispatchEvent(new CustomEvent("fai:hype-source-updated",{detail:{type:resource[1]==="pieces"?"PIECE":"SCHEME",id:resource[2]}}));
+  }
   if (res.status === 204) return undefined as T;
   const ct = res.headers.get("content-type") ?? "";
   if (ct.includes("application/json")) return (await res.json()) as T;

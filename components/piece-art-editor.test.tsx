@@ -82,3 +82,19 @@ describe("arte da peça — Cartela sazonal no padrão do Background Studio", ()
     expect(onBg.mock.lastCall![0]).toMatchObject({ color: "#FFFFFF", gradientPresetId: "g1" });
   });
 });
+
+
+describe("Aura Comum — vídeo no card final", () => {
+  it("trocar a variação troca o vídeo na prévia Feed", async () => {
+    api();
+    const { container } = renderApp(<Editor onBg={() => undefined} initial={{ aura: { variantId: "aura_geometry__geometry_01" }, uploadUrl:"/custom.png" }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    fireEvent.click(screen.getByRole("button", { name: /AURA comum/ }));
+    const variations = await screen.findByRole("group", { name: /Variação/ });
+    fireEvent.click(within(variations).getAllByRole("button")[1]);
+    const video = () => container.querySelector<HTMLVideoElement>(".pae-preview .card-art video");
+    await waitFor(() => expect(video()?.getAttribute("src")).toContain("/geometry_02/animacao.mp4"));
+    expect(video()?.loop).toBe(true);
+    expect(video()?.muted).toBe(true);
+  });
+});

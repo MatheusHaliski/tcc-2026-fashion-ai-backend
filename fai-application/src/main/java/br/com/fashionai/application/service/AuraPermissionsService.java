@@ -11,6 +11,12 @@ public class AuraPermissionsService {
  private final FaiPointsLedgerEntryRepository ledger;
  public AuraPermissionsService(FaiPointsLedgerEntryRepository ledger){this.ledger=ledger;}
  @Transactional(readOnly=true) public boolean canUserEquipAura(UUID userId,AuraType type){return userId!=null&&type!=null&&FaiPointsService.Level.of(ledger.lifetime(userId)).atLeast(AuraGatingConfig.get(type));}
+ public static final Map<String,FaiPointsService.Level> HYPE_FINISH_TIERS=Map.of("COMMON",FaiPointsService.Level.ESTREIA,"RARE",FaiPointsService.Level.STUDIO,"LEGENDARY",FaiPointsService.Level.LOFT,"COLLAB_DROP",FaiPointsService.Level.LOFT);
+ @Transactional(readOnly=true) public void requireHypeFinish(UUID userId,String finish){
+  var required=HYPE_FINISH_TIERS.get(finish);
+  if(required==null)throw ApiException.badRequest("AURA_HYPE_INVALID","AURA Hype inválida.");
+  if(userId==null||!FaiPointsService.Level.of(ledger.lifetime(userId)).atLeast(required))throw new ApiException(403,"AURA_LEVEL_REQUIRED",Msg.t("auraHype.finishLocked",required.name()),Map.of("requiredTier",required.name()));
+ }
  public String getLockedAuraMessage(AuraType type){return Msg.t("auraGate.locked."+type.name());}
  @Transactional(readOnly=true) public void require(UUID userId,AuraType type){if(!canUserEquipAura(userId,type))throw new ApiException(403,"AURA_LEVEL_REQUIRED",getLockedAuraMessage(type),Map.of("requiredTier",AuraGatingConfig.get(type).name()));}
  @Transactional(readOnly=true) public Map<String,Object> permissions(UUID userId){
