@@ -4,6 +4,7 @@ import { CATEGORY_LABEL, label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { Badge } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
+import { Price } from "@/components/price";
 
 /** Tamanho legível (br_40 → 40, shoe_39 → 39, one_size → Único). */
 export const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ? tr("common.unico") : s.replace(/^(br|shoe)_/i, "").toUpperCase());
@@ -13,7 +14,7 @@ export const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ?
  * publicação, marcado como "peça não mais disponível", sem ações de edição nem de cópia.
  */
 export function PieceSnapshot({ snapshot }: { snapshot: Record<string, unknown> }) {
-  const { fmtMoney, fmtDate, t } = useI18n();
+  const { fmtDate, t } = useI18n();
   const s = snapshot as { name?: string; brandName?: string; category?: string; subcategory?: string; size?: string; color?: string; imageUrl?: string; thumbnailUrl?: string; price?: number; capturedAt?: string };
   return (
     <div className="grid gap-5 md:grid-cols-[minmax(260px,380px)_1fr]" aria-label={t("pieceSnapshot.snapshot_da_peca")}>
@@ -29,7 +30,7 @@ export function PieceSnapshot({ snapshot }: { snapshot: Record<string, unknown> 
           <div><dt className="label">{t("common.brand")}</dt><dd>{s.brandName ? <BrandLogo name={s.brandName} size={22} withName /> : "—"}</dd></div>
           <div><dt className="label">{t("common.color")}</dt><dd>{s.color ? label(s.color) : "—"}</dd></div>
           <div><dt className="label">{t("common.size")}</dt><dd className="type-data">{sizeLabel(s.size)}</dd></div>
-          <div><dt className="label">{t("common.price")}</dt><dd className="type-data">{s.price != null ? fmtMoney(Number(s.price), "BRL") : "—"}</dd></div>
+          <div><dt className="label">{t("common.price")}</dt><dd className="type-data"><Price value={s.price} /></dd></div>
         </dl>
       </div>
     </div>

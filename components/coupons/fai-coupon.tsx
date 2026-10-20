@@ -4,6 +4,7 @@ import type { UserCard } from "@/lib/api/types";
 import { cn } from "@/components/ui";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
+import { fmtOriginal } from "@/lib/i18n/money";
 
 /** Card Trello RF38 — Cupom Fashion AI (tipos compartilhados pela carteira do usuário e pela aba da marca). */
 export interface CouponOwner { user: UserCard; name: string; kind: "MARCA" | "CELEBRIDADE" | "PESSOAL"; logoUrl?: string | null; slug?: string | null; storeUrl?: string | null; }
@@ -17,10 +18,10 @@ export interface CouponRight { id: string; source: "SELO" | "FLAIR"; title: stri
 const SOURCE_LABEL: Record<string, string> = { get SELO() { return tr("coupons.faiCoupon.selo"); }, get FLAIR() { return tr("common.jogo_flair"); } };
 const date = (s?: string | null) => (s ? new Date(s).toLocaleDateString(currentIntl()) : tr("coupons.faiCoupon.sem_validade"));
 
-/** Valor em destaque: "15%", "R$ 60" ou o texto do benefício. */
+/** Valor em destaque: "15%", "R$ 60" (na moeda da loja, no formato do idioma) ou o texto do benefício. */
 function bigValue(c: Pick<Coupon, "discountPercent" | "discountAmount" | "discount">) {
   if (c.discountPercent != null) return { v: `${c.discountPercent}%`, unit: "OFF" };
-  if (c.discountAmount != null) return { v: `R$ ${Math.round(Number(c.discountAmount))}`, unit: "OFF" };
+  if (c.discountAmount != null) return { v: fmtOriginal(Number(c.discountAmount), "BRL", 0), unit: "OFF" };
   return { v: "★", unit: c.discount };
 }
 

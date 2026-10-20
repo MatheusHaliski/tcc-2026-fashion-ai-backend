@@ -2042,7 +2042,7 @@
   "flair.flairCard.versatilidade_20_por_ocasiao": "Versatility — 20 per occasion",
   "flair.flairShared.codigo": "Code {join}",
   "flair.flairShared.combinacao_um_deck": "Combination (one deck)",
-  "flair.flairShared.compra_minima_r": " · minimum purchase R$ {toFixed}",
+  "flair.flairShared.compra_minima_r": " · minimum purchase {value}",
   "flair.flairShared.cupom": "{brandName} coupon",
   "flair.flairShared.mostre_este_codigo_no_caixa": "Show this code at the register (or use it on the site) of the store. Status: <0>{status}</0>{value}",
   "flair.flairShared.ocasiao": "Occasion: {label}",
@@ -3517,7 +3517,7 @@
   "room.porta": "Door",
   "room.quarto_organizado": "Room organized!",
   "room.quem_tem_a_chave_pode": "Whoever has the key can visit your room (Room Tour) and be invited to challenges.",
-  "room.r_por_uso_so_voce": "· R$ {toFixed} per wear (only you see this)",
+  "room.r_por_uso_so_voce": "· {value} per wear (only you see this)",
   "room.renomear": "Rename",
   "room.rotulo_da_gaveta": "drawer label",
   "room.rotulo_ex_jeans": "Label (e.g.: Jeans)",
@@ -4034,6 +4034,8 @@
   "settings.haptico_dica": "A short tap when opening room doors and drawers.",
   "settings.imagem_de_capa": "Cover image",
   "settings.language": "Language",
+  "settings.currency": "Price currency",
+  "settings.currency_auto": "Automatic, from the language ({currency})",
   "settings.lgpd_rf24": "{txt} (LGPD)",
   "settings.light": "Light",
   "settings.nao_confirmado": "not confirmed",
@@ -7099,6 +7101,7 @@
   "settingsHelp.container": "Changes the color of content areas. Text adapts for contrast; the outer interface background is a separate choice.",
   "settingsHelp.theme": "Automatic follows your device theme. Light, dark and high contrast keep the selected appearance.",
   "settingsHelp.language": "Choose the language of interface text and controls.",
+  "settingsHelp.currency": "Prices are stored in Brazilian reais. In another currency you see the value converted at the European Central Bank reference rate, with the original price next to it.",
   "settingsHelp.density": "Comfortable gives elements more space. Compact reduces spacing to show more content.",
   "settingsHelp.fontScale": "Changes interface text size, without changing photos.",
   "settingsHelp.contrast": "Increases contrast between text, controls and background for readability.",
@@ -7884,5 +7887,7 @@
   "levelProgress.abrirMaximo": "Level {level}, maximum level reached. Open progress",
   "tryOn.no_espelho": "At the mirror",
   "tryOn.espelho_vazio": "Pick pieces from stores or your wardrobe to try on.",
-  "tryOn.espelho_provar_ia": "See a realistic photo (AI)"
+  "tryOn.espelho_provar_ia": "See a realistic photo (AI)",
+  "money.converted": "Converted at the ECB reference rate of {date}. Original price: {original}.",
+  "money.convertedFallback": "Approximate conversion (today's rate unavailable). Original price: {original}."
 }
