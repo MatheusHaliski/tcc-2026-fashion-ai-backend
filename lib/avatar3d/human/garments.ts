@@ -1,4 +1,4 @@
-import { silhouetteLandmarks, landmarkProjection, type GarmentLandmarks } from "./photo-landmarks";
+import { silhouetteLandmarks, separatedLegRows, landmarkProjection, type GarmentLandmarks, type PhotoLegRow } from "./photo-landmarks";
 /*
  * Avatar 3D (RF40) / Provador — roupa que veste. Cada peça vira uma malha presa ao MESMO esqueleto do corpo:
  *
@@ -521,6 +521,7 @@ export function posedPositions(skeleton: THREE.Skeleton, bindMatrix: THREE.Matri
 
 export interface PhotoInfo {
   landmarks?: GarmentLandmarks | null;
+  legRows?: PhotoLegRow[];
   width: number; height: number; box: { x0: number; y0: number; x1: number; y1: number }; widthAt: (fy: number) => { x0: number; x1: number } | null;
   /** fim da gola da frente no centro da foto (fração da altura da caixa), quando a gola difere do tecido; senão null */
   collarRow: number | null;
@@ -615,6 +616,7 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
   return {
     landmarks: (() => { const points = silhouetteLandmarks(mask, W, H, { x0, y0, x1, y1 }); if (!points) return null;
       return Object.fromEntries(Object.entries(points).map(([name, p]) => [name, { x: p.x * k, y: p.y * k }])) as unknown as GarmentLandmarks; })(),
+    legRows: separatedLegRows(mask,W,H,{x0,y0,x1,y1}).map(row=>({y:row.y*k,left:{x0:row.left.x0*k,x1:row.left.x1*k},right:{x0:row.right.x0*k,x1:row.right.x1*k}})),
     collarRow, neckDrop, cutout: pm.cutout, backdrop: pm.backdrop,
     width: img.width, height: img.height, box: { x0: x0 * k, y0: y0 * k, x1: (x1 + 1) * k, y1: (y1 + 1) * k },
     widthAt: (fy) => {
@@ -675,6 +677,31 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         photoScaleY = sy;
         map = (x, y) => [(cxP + (x - cxG) * sx) / photo.width, 1 - (box.y0 + (yTop - y) * sy) / photo.height];
       }
+      if (photo.legRows?.length && sp.leg>0 && Number.isNaN(sp.hem)) {
+        // Independent panels keep a pocket/logo on its original leg, even when the photo and avatar have different stances.
+        const whole=map!;
+        const makeLeg=(side:"left"|"right")=>{
+          const rows=photo.legRows!.flatMap(row=>{
+            const modelY=yTop-(row.y-box.y0)/Math.max(1,bh)*(yTop-yBot);
+            const candidates=front.filter(v=>Math.abs(posed[v*3+1]-modelY)<.025 && (side==="left"?posed[v*3]<cxG:posed[v*3]>=cxG));
+            if(candidates.length<2)return [];
+            const modelLeft=Math.min(...candidates.map(v=>posed[v*3])),modelRight=Math.max(...candidates.map(v=>posed[v*3]));
+            if(modelRight-modelLeft<.005)return [];
+            return [{modelY,modelLeft,modelRight,photoY:row.y,photoLeft:row[side].x0,photoRight:row[side].x1}];
+          });
+          return rows.length>=4?landmarkProjection(rows,photo.width,photo.height):null;
+        };
+        const left=makeLeg("left"),right=makeLeg("right");
+        if(left&&right){
+          const start=photo.legRows[0].y;
+          map=(x,y)=>{
+            const base=whole(x,y),photoY=(1-base[1])*photo.height;
+            const f=Math.min(1,Math.max(0,(photoY-start)/Math.max(1,bh*.06)));
+            const leg=(x<cxG?left:right)(x,y);
+            return [base[0]*(1-f)+leg[0]*f,base[1]];
+          };
+        }
+      }
       if (photo.landmarks && ["tee", "shirt", "tank", "dress", "jacket", "coat", "sweater"].includes(sp.kind)) {
         const lm = photo.landmarks;
         const shouldersY = yTop - .02;
@@ -708,7 +735,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         pos.push(gg.position[v * 3], gg.position[v * 3 + 1], gg.position[v * 3 + 2]);
         // camisa também recebe a foto na frente (cor, xadrez, listras REAIS): a carcela, os botões e a gola 3D vêm por
         // cima, alinhados ao centro — antes a frente ficava só com o painel do tecido (repetição ou degradê por linhas)
-        const blend = sp.construction !== "cargo" && isFront && !noPhoto?.(v) ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
+        const blend = isFront && !noPhoto?.(v) ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
         if (blend > 0 && map) {
           const [u, w] = map(posed[v * 3], posed[v * 3 + 1]);
           uv.push(0.5 * Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w)));

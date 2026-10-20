@@ -155,7 +155,7 @@ export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: Garmen
 }
 
 /** Barra do tronco e barras/punhos das mangas da peça (faixas 3D). */
-export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry): TrimBand[] {
+export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry, options: { preservePhotoDetails?: boolean } = {}): TrimBand[] {
   const sp = gg.spec; const out: TrimBand[] = []; const nb = P.h.length;
   const torsoCand: number[] = [], armCand: { L: number[]; R: number[] } = { L: [], R: [] };
   for (let v = 0; v < nb; v++) { if (P.group[v] === 1 || P.group[v] === 3) torsoCand.push(v); if (P.group[v] === 2) (P.side[v] > 0 ? armCand.L : armCand.R).push(v); }
@@ -179,5 +179,7 @@ export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: Garmen
       const tEnd = sp.sleeve * L; const b = tube(a, c, armCand[s], S, d, tEnd - w + 0.004, tEnd + 0.006, R, "punho"); if (b) out.push(b);
     }
   }
-  return [...out, ...shirtPlacket(a, c, P, gg)];
+  // A photograph already contains the product's buttons, seams and collar tips.
+  // Do not paint seven invented buttons or plain collar triangles over the brand's actual design.
+  return options.preservePhotoDetails ? out : [...out, ...shirtPlacket(a, c, P, gg)];
 }
