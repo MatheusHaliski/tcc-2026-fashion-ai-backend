@@ -26,7 +26,7 @@ import { useDetailModal } from "@/components/detail-modal";
 import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
 import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
-import { HypeBadge } from "@/components/hype/hype-badge";
+import {PieceCardPanels} from "@/components/piece-card-panels";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
@@ -194,7 +194,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const studio = studioOf(scheme.background);
   const auraMode = studio.auraHype ?? undefined;
   const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
-  const hype = useHypeSummary("SCHEME", scheme.id, !preview, auraEnabled);
+  const hype = useHypeSummary("SCHEME", scheme.id, !scheme.id.startsWith("preview"), auraEnabled);
   const hypeState = hypeViewState(hype.summary, hype);
   const [analysis, setAnalysis] = useState(false);
   // Clique no título abre o modal com o esquema ampliado (RF7); a página continua acessível por nova aba.
@@ -240,7 +240,6 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
     <p className="c-priceline">
       {placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={lookSeals} />}
       <span className="c-total tabular">{total != null ? <Price value={total} /> : t("anatomy.noPrice")}</span>
-      {!preview && <HypeBadge state={hypeState} summary={hype.summary} className="c-hype" />}
       {flippable && <CardFlipButton side="front" className="c-flip" />}
       {expanded && !preview && <button type="button" className="btn btn-ghost btn-sm c-hype-more" onClick={() => setAnalysis(true)} aria-haspopup="dialog">{t("hype.card.full_analysis")}</button>}
     </p>
@@ -257,12 +256,13 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`}>{cover && <MediaImage src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
   const chips = [...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).concat(scheme.season ? [label(scheme.season.toLowerCase())] : []);
 
+  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode}/>;
   const card = (
     <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
         trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
       <CardBorder entityId={`SCHEME:${scheme.id}`} background={{...scheme.background,...studio}} auraHype={auraEnabled} hype={hypeState}/>
-      <div className="scheme-stage"><AuraMetamorphose mode={studio.auraMetamorphose} presetId={studio.auraMetamorphosePreset} preview={!expanded}/>{auraEnabled&&<AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview}/>}
+      <div className="scheme-stage"><AuraMetamorphose mode={studio.auraMetamorphose} presetId={studio.auraMetamorphosePreset} preview={!expanded}/>{auraEnabled&&<AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false}/>}
         {hasArt && art && <CardArtLayer art={art} />}
         {compact ? (
           <div className="scheme-container is-compact" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone}>
@@ -274,7 +274,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
                 {priceLine}
               </div>
             </div>
-            <CompactSignature scheme={scheme} pieces={detailPieces} />
+            <CompactSignature scheme={scheme} pieces={detailPieces} />{hypePanel}
           </div>
         ) : (
           <div className="scheme-container" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
@@ -287,7 +287,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
                 {pieceLayout ? <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 4)} side sealsOf={pieceSeals} /> : <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><span className="p-thumb">{p.img && <img src={p.img} alt="" loading="lazy" />}</span><span className="min-w-0"><b>{p.name}</b><span>{p.brand ?? label(p.slot.toLowerCase())}</span></span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>}
               </div>
             ) : photo()}
-            {titleBlock}
+            {titleBlock}{hypePanel}
             {!ownArt && !expanded && l === "grade" && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 6)} sealsOf={pieceSeals} />}
             {!ownArt && !expanded && l === "grade" && !pieceLayout && <div className="grid-pieces">
               {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtPriceShort(p.price) : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}

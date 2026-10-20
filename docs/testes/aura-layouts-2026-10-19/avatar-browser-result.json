@@ -1,0 +1,10 @@
+{
+  "genericAvatar": true,
+  "gpuInference": false,
+  "render": "CHROMIUM_WEBGL_SOFTWARE",
+  "mask": {
+    "max": "1",
+    "vertices": "752"
+  },
+  "errors": []
+}

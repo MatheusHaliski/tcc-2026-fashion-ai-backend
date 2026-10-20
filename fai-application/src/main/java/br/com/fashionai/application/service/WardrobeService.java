@@ -1212,8 +1212,16 @@ public class WardrobeService {
         return createInternal(user, form, Objects.requireNonNull(pick));
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private BackgroundStudioService backgroundStudioAccess;
+
+    private void requireBackgroundAuraAccess(CurrentUser user, Object config) {
+        if (backgroundStudioAccess != null) backgroundStudioAccess.requireAuraAccess(user, config);
+    }
+
     private Views.PieceView createInternal(CurrentUser user, PieceForm form, CatalogPick pick) {
         guard.requireCanCreate(user);
+        requireBackgroundAuraAccess(user, form.background());
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         form = form.resolveTaxonomy();
         validate(form);
@@ -1892,6 +1900,7 @@ public class WardrobeService {
     @Transactional
     public Views.PieceView update(CurrentUser user, UUID id, PieceForm form) {
         guard.requireCanCreate(user);
+        requireBackgroundAuraAccess(user, form.background());
         WardrobeItem w = owned(user, id);
         form = form.resolveTaxonomy();
         validate(form);

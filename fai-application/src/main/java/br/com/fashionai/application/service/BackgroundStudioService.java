@@ -139,22 +139,32 @@ public class BackgroundStudioService {
     private final MediaService media;
     private final Guard guard;
 
+    private MetamorphoseInventoryService metamorphoseInventory;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setMetamorphoseInventory(MetamorphoseInventoryService inventory) { this.metamorphoseInventory = inventory; }
     private AuraPermissionsService auraPermissions;
     @org.springframework.beans.factory.annotation.Autowired
     public void setAuraPermissions(AuraPermissionsService permissions) { this.auraPermissions = permissions; }
-    private void requireAuraAccess(CurrentUser user, Object config) {
+    void requireAuraAccess(CurrentUser user, Object config) {
         if (auraPermissions == null) return; // legacy unit constructors; managed runtime always injects the guard
         if (!(config instanceof Map<?,?> outer)) return;
-        Map<?,?> m = outer.get("scheme") instanceof Map<?,?> nested ? nested : outer;
+        if (outer.get("scheme") instanceof Map<?,?> nested) requireAuraAccess(user,nested);
+        Map<?,?> m = outer;
+        if (metamorphoseInventory != null) metamorphoseInventory.require(user, m);
         Object type = m.get("auraType");
         if ("IMPERSONATION".equals(type)) auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_IMPERSONATION);
         else {
             if (m.get("auraMetamorphose") instanceof String meta && !"OFF".equals(meta)) {
                 auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_METAMORPHOSE);
             }
-            if (m.get("compositionPreset") instanceof Map<?,?> p && p.get("video") != null
-                    || m.get("auraHype") instanceof String mode && !"OFF".equals(mode)) {
+            if (m.get("compositionPreset") instanceof Map<?,?> p && p.get("video") != null) {
                 auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
+            }
+            if (m.get("auraHype") instanceof String mode && !"OFF".equals(mode)) {
+                if (!validHypeMode(mode)) throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
+                if (mode.startsWith("COLLAB_DROP_")) auraPermissions.requireHypeFinish(user.id(), "COLLAB_DROP");
+                else if (mode.startsWith("COMMON_") || mode.startsWith("RARE_") || mode.startsWith("LEGENDARY_")) auraPermissions.requireHypeFinish(user.id(),mode.substring(0,mode.indexOf('_')));
+                else auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
             }
         }
     }
@@ -631,7 +641,7 @@ public class BackgroundStudioService {
     static boolean validHypeMode(Object value) {
         if (!(value instanceof String mode)) return false;
         if (List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(mode)) return true;
-        return mode.matches("(SCAN|CONTOUR|MESH|HOLO|FIBER|PRISM|PARTICLES|SPOTLIGHT)_(GRAPHITE|CHROME|ROSE|VIOLET|CHAMPAGNE)");
+        return mode.matches("(COMMON|RARE|LEGENDARY|COLLAB_DROP)_(STATIC_HORIZONTAL|STATIC_VERTICAL|STATIC_COLUMNS|STATIC_GLOBAL|RANKED_BARS|EXTREMES|MOMENTUM|KEY_TRIAD)") || mode.matches("(SCAN|CONTOUR|MESH|HOLO|FIBER|PRISM|PARTICLES|SPOTLIGHT)_(GRAPHITE|CHROME|ROSE|VIOLET|CHAMPAGNE)");
     }
 
     static void validateArtwork(Map<?, ?> config) {
