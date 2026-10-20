@@ -172,14 +172,14 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
           <span className="opt-name">{a.name}</span></button>)}
       </OptionStrip>
       {auraPreset && legacyAuraFamily(auraPreset.id) === family && (auraPreset.variants ?? []).length > 1 && <OptionStrip title={t("backgroundStudio.variacao", { name: auraPreset.name })}>
-        {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={currentVariant === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ compositionPreset:null, aura: { variantId: v.id, format: value.aura?.format } })}>
+        {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={currentVariant === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ compositionPreset:null, aura: { variantId: v.id, format: value.aura?.format }, aiArt:null, uploadUrl:null })}>
           {v.animatedUrl ? <span className="opt-thumb relative overflow-hidden"><ArtVideo src={v.animatedUrl} poster={v.static?.previewUrl} /></span>
             : v.animatedPreviewUrl || v.static?.previewUrl ? <img src={v.animatedPreviewUrl ?? v.static?.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
           <span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
       </OptionStrip>}
       {family === "COMMON" && auraPreset && legacyAuraFamily(auraPreset.id) === "COMMON" && value.aura && <OptionStrip title={t("backgroundStudio.formato_rf11_7_6")}>
         {(["IMAGEM_UNICA", "MOSAICO"] as const).map((format) => <button key={format} type="button" className="opt-tile aura-format-tile"
-          aria-pressed={(value.aura?.format ?? "IMAGEM_UNICA") === format} onClick={() => onChange({ aura: { ...value.aura!, format } })}>
+          aria-pressed={(value.aura?.format ?? "IMAGEM_UNICA") === format} onClick={() => onChange({ compositionPreset:null, aura: { ...value.aura!, format }, aiArt:null, uploadUrl:null })}>
           <span className={`opt-thumb aura-format-thumb ${format === "MOSAICO" ? "is-mosaic" : "is-single"}`} aria-hidden>
             {format === "MOSAICO" ? <><i /><i /><i /><i /></> : <i />}
           </span>

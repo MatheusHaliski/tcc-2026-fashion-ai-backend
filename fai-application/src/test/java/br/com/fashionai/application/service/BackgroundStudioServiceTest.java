@@ -268,4 +268,20 @@ class BackgroundStudioServiceTest {
         assertThatThrownBy(()->studio.requireAuraAccess(ana,Map.of("auraHype","LEGENDARY_STATIC_GLOBAL"))).isInstanceOf(ApiException.class);
         studio.requireAuraAccess(ana,Map.of("scheme",Map.of("auraHype","RARE_RANKED_BARS")));
     }
+    @Test void nestedEmptyStudioCannotHideALockedOuterHypeFinish() {
+        var ledger=org.mockito.Mockito.mock(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        when(ledger.lifetime(ana.id())).thenReturn(0L);studio.setAuraPermissions(new AuraPermissionsService(ledger));
+        assertThatThrownBy(()->studio.requireAuraAccess(ana,Map.of("scheme",Map.of(),"auraHype","LEGENDARY_STATIC_GLOBAL"))).isInstanceOf(ApiException.class);
+    }
+    @Test void creatingOrUpdatingAPieceCannotBypassTheStudioLevelGuard() {
+        var ledger=org.mockito.Mockito.mock(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        when(ledger.lifetime(ana.id())).thenReturn(0L);studio.setAuraPermissions(new AuraPermissionsService(ledger));
+        var wardrobe=org.mockito.Mockito.mock(WardrobeService.class,org.mockito.Mockito.CALLS_REAL_METHODS);
+        org.springframework.test.util.ReflectionTestUtils.setField(wardrobe,"guard",org.mockito.Mockito.mock(br.com.fashionai.application.security.Guard.class));
+        org.springframework.test.util.ReflectionTestUtils.setField(wardrobe,"backgroundStudioAccess",studio);
+        var form=org.mockito.Mockito.mock(WardrobeService.PieceForm.class);
+        when(form.background()).thenReturn(Map.of("auraHype","LEGENDARY_STATIC_GLOBAL"));
+        assertThatThrownBy(()->wardrobe.create(ana,form)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(()->wardrobe.update(ana,java.util.UUID.randomUUID(),form)).isInstanceOf(ApiException.class);
+    }
 }

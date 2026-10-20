@@ -87,7 +87,7 @@ describe("arte da peça — Cartela sazonal no padrão do Background Studio", ()
 describe("Aura Comum — vídeo no card final", () => {
   it("trocar a variação troca o vídeo na prévia Feed", async () => {
     api();
-    const { container } = renderApp(<Editor onBg={() => undefined} initial={{ aura: { variantId: "aura_geometry__geometry_01" } }} />);
+    const { container } = renderApp(<Editor onBg={() => undefined} initial={{ aura: { variantId: "aura_geometry__geometry_01" }, uploadUrl:"/custom.png" }} />);
     fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
     fireEvent.click(screen.getByRole("button", { name: /AURA comum/ }));
     const variations = await screen.findByRole("group", { name: /Variação/ });

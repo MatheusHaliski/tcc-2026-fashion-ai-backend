@@ -148,7 +148,8 @@ public class BackgroundStudioService {
     void requireAuraAccess(CurrentUser user, Object config) {
         if (auraPermissions == null) return; // legacy unit constructors; managed runtime always injects the guard
         if (!(config instanceof Map<?,?> outer)) return;
-        Map<?,?> m = outer.get("scheme") instanceof Map<?,?> nested ? nested : outer;
+        if (outer.get("scheme") instanceof Map<?,?> nested) requireAuraAccess(user,nested);
+        Map<?,?> m = outer;
         if (metamorphoseInventory != null) metamorphoseInventory.require(user, m);
         Object type = m.get("auraType");
         if ("IMPERSONATION".equals(type)) auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_IMPERSONATION);
