@@ -19,7 +19,7 @@ const tax={subcategories:{upper_piece:['t_shirt'],lower_piece:['jeans'],shoes_pi
 const out=process.env.UI_AUDIT_OUTPUT || '/tmp/fashionai-ux-audit';fs.mkdirSync(out,{recursive:true});
 (async()=>{
  // All API writes and reads are intercepted; this audit never accesses production data.
- const browser=await chromium.launch({headless:true,args:['--no-sandbox']});const results=[];
+ const browser=await chromium.launch({headless:true,executablePath:process.env.UI_AUDIT_CHROMIUM_PATH||undefined,args:['--no-sandbox']});const results=[];
  for(const [device,width,height] of [['mobile',390,844],['tablet',820,1180],['desktop',1440,900]]){
   const context=await browser.newContext({viewport:{width,height},hasTouch:device==='mobile',isMobile:device==='mobile'});
   await context.addCookies([{name:'fai_rt_h',value:'1',url:BASE}]);

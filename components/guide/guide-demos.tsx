@@ -1,8 +1,7 @@
 "use client";
 import { useEffect } from "react";
-import type { Counters, PieceView, SchemeView, UserCard, ViewerState } from "@/lib/api/types";
-import type { HypeSummary } from "@/lib/hype/types";
-import { DEMO_ID_PREFIX, primeHype } from "@/lib/hype/use-hype";
+import type { PieceView, SchemeView } from "@/lib/api/types";
+import { primeHype } from "@/lib/hype/use-hype";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { GuideDemo as DemoId } from "@/lib/guides/registry";
 import { FaiIcon } from "@/components/fai-icon";
@@ -19,45 +18,9 @@ import type { HubModeId } from "@/lib/flair/hub";
  * permissão de edição e palco inerte no diálogo — nada aqui chama a API, consome carta ou concede ponto.
  * A animação é só CSS (pausável; com movimento reduzido fica no quadro final).
  */
-const DEMO_OWNER: UserCard = { id: `${DEMO_ID_PREFIX}owner`, username: "exemplo", displayName: "Exemplo", profileType: "PESSOAL", verified: false, privateAccount: false, country: "BR" };
-const DEMO_COUNTERS: Counters = { likes: 24, comments: 5, shares: 2, remixes: 1, views: 180, saves: 7, reactions: {} };
-const DEMO_VIEWER: ViewerState = { liked: false, reactions: [], saved: false, canEdit: false, following: false };
-const AT = "2026-10-01T12:00:00Z";
-/** nomes próprios do exemplo (marca fictícia e o nome do produto FAI Points): não se traduzem */
-const DEMO_BRAND = "Atelier Lumi";
-const POINTS_NAME = "FAI Points";
-/** dados fictícios do exemplo ilustrado (não vão à API nem viram conteúdo de ninguém) */
-const DEMO_PIECE_NAME = "Jaqueta jeans";
-const DEMO_PIECE_NAME_2 = "Camisa de linho";
-const DEMO_SEAL_NAME = "Selo de exemplo";
-
-export function demoPiece(over: Partial<PieceView> = {}): PieceView {
-  return {
-    id: `${DEMO_ID_PREFIX}piece`, owner: DEMO_OWNER, name: DEMO_PIECE_NAME, category: "upper_piece", subcategory: "jacket", sex: "UNISSEX",
-    brandName: null, brandLogoUrl: null, color: "denim", colorHex: "#4a6a8c", material: "DENIM", size: "m", style: ["streetwear"], occasion: ["casual"],
-    seals: [], price: null, imageUrl: "/assets_pecas/14_jacket_jaqueta.png", originalImageUrl: null, thumbnailUrl: "/assets_pecas/14_jacket_jaqueta.png",
-    defaultImage: true, aiGeneratedImage: false, visibility: "PUBLIC", disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: false,
-    wearCount: 3, moderationStatus: "APPROVED", photoProcessingStatus: "COMPLETED", flatLayMetadata: {}, background: { skin: "atelier" },
-    hypeScore: null, hypeScoreGlobal: null, tags: [], counters: DEMO_COUNTERS, viewer: DEMO_VIEWER, notAvailableAnymore: false, createdAt: AT, updatedAt: AT,
-    ...over,
-  } as PieceView;
-}
-
-export function demoCard(over: Partial<FlairCollectionCard> = {}): FlairCollectionCard {
-  return {
-    id: `${DEMO_ID_PREFIX}card`, originType: "PIECE", originId: `${DEMO_ID_PREFIX}piece`, season: "SPRING", tier: "OURO", ovr: 78, rare: false, position: "SUP",
-    name: DEMO_PIECE_NAME, brandName: DEMO_BRAND, imageUrl: "/assets_pecas/14_jacket_jaqueta.png", category: "upper_piece", subcategory: "jacket",
-    hype: { POP: 71, RAR: 40, ENG: 66, LON: 58, TRD: 74, NOV: 62, ORI: 55, HYP: 68 }, priceVerified: true, state: "AVAILABLE", tradeable: true, acquiredVia: "GENERATED",
-    ...over,
-  };
-}
-
-export const DEMO_SCHEME_SEAL = { label: "LOOK", name: DEMO_SEAL_NAME, kind: "BRAND" as const, premium: false, design: null };
-// o Hype dos exemplos nasce no cache (nunca é pedido à API): um com números de exemplo, outro sem dados
-const DEMO_HYPE: Record<string, HypeSummary> = {
-  [`${DEMO_ID_PREFIX}piece`]: { status: "INSUFFICIENT_DATA", score: null },
-  [`${DEMO_ID_PREFIX}piece-hype`]: { status: "AVAILABLE", score: 68, level: "HOT", direction: "UP", calculatedAt: AT },
-};
+import { demoPiece, demoCard, DEMO_SCHEME_SEAL, DEMO_HYPE, DEMO_BRAND, POINTS_NAME, DEMO_PIECE_NAME_2 } from "./demo-data";
+export { demoPiece, demoCard, DEMO_SCHEME_SEAL } from "./demo-data";
+import { FeedGuideDemo } from "./feed-guide-demo";
 
 export function GuideDemo({ demo }: { demo: DemoId }) {
   useEffect(() => { primeHype("PIECE", DEMO_HYPE); }, []);
@@ -66,7 +29,7 @@ export function GuideDemo({ demo }: { demo: DemoId }) {
     case "cbc": return <CbcDemo />;
     case "calendar": return <CalendarDemo />;
     case "challenge": return <ChallengeDemo />;
-    case "feed": return <FeedDemo />;
+    case "feed": return <FeedGuideDemo />;
     case "schemeSeal": return <SchemeSealDemo />;
     case "seal": return <SealDemo />;
     case "copilot": return <CopilotDemo />;
@@ -273,19 +236,6 @@ function ChallengeDemo() {
   );
 }
 
-function FeedDemo() {
-  const { t } = useI18n();
-  return (
-    <div className="gd-feed">
-      <div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} /></div>
-      <ul className="gd-callouts">
-        <li><span className="gd-dot">1</span>{t("guide.demo.feed.open")}</li>
-        <li><span className="gd-dot">2</span>{t("guide.demo.feed.piece")}</li>
-        <li><span className="gd-dot">3</span>{t("guide.demo.feed.actions")}</li>
-      </ul>
-    </div>
-  );
-}
 
 function SchemeSealDemo() {
   const { t } = useI18n();
