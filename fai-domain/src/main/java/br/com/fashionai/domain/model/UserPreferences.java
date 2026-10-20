@@ -44,6 +44,10 @@ public class UserPreferences extends VersionedAuditableEntity {
     @Column(nullable = false, length = 10)
     private UiLanguage language = UiLanguage.PT_BR;
 
+    /** RF23.CA13 — moeda dos preços na interface (BRL · USD · EUR); nulo = a do idioma. */
+    @Column(length = 3)
+    private String currency;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UiDensity density = UiDensity.COMFORTABLE;

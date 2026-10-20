@@ -5,6 +5,7 @@ import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import { useTheme } from "@/lib/theme/theme";
 import Link from "next/link";
 import { MediaImage } from "@/components/media-image";
+import { Price } from "@/components/price";
 import { useState, type ReactNode } from "react";
 import type { SchemeView } from "@/lib/api/types";
 import { api, mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
@@ -117,11 +118,11 @@ function pieceAction(id: string, onPiece?: (pieceId: string) => void) {
  * A Peça ampliada (padrão) continua nas linhas .piece2 do próprio card.
  */
 function PieceLayout({ anatomy, pieces, side, sealsOf, onPiece }: { anatomy: PieceAnatomyId; pieces: AnatomyPiece[]; side?: boolean; sealsOf: (id?: string) => SealBadge[]; onPiece?: (pieceId: string) => void }) {
-  const { t, fmtMoney } = useI18n();
+  const { t, fmtPriceShort } = useI18n();
   const zone = pieceSealPlacement(anatomy).zone;
   const headerSeal = zone === "HEADER" && (anatomy === "ETIQUETA" || anatomy === "CUSTO_POR_USO");
   const thumbSeal = zone === "COVER_CORNER" || (zone === "HEADER" && !headerSeal);
-  const money = (v?: number | null) => fmtMoney(v, "BRL");
+  const money = (v?: number | null) => fmtPriceShort(v);
   const size = (p: AnatomyPiece) => (p.size ? p.size.replace(/^(br|shoe)_/i, "").toUpperCase() : null);
   const colorName = (p: AnatomyPiece) => (p.color ? label(p.color) : null);
   const hex = (p: AnatomyPiece) => (p.colorHex?.startsWith("#") ? p.colorHex : undefined);
@@ -198,7 +199,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const [analysis, setAnalysis] = useState(false);
   // Clique no título abre o modal com o esquema ampliado (RF7); a página continua acessível por nova aba.
   const openModal = (e: React.MouseEvent) => { if (!detail || expanded || preview || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openScheme(scheme.id); };
-  const { t, fmtMoney, relative } = useI18n();
+  const { t, fmtPriceShort, relative } = useI18n();
   // ampliado: cada peça da lista abre a peça ampliada, com "voltar" para este look (RF7.CA01/CA03)
   const pieceClick = onPiece ?? (expanded && detail && !preview ? (pid: string) => detail.openPiece(pid, scheme.id) : undefined);
   const anatomy = effectiveAnatomy(scheme);
@@ -238,7 +239,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const priceLine = (
     <p className="c-priceline">
       {placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={lookSeals} />}
-      <span className="c-total tabular">{total != null ? fmtMoney(total, "BRL") : t("anatomy.noPrice")}</span>
+      <span className="c-total tabular">{total != null ? <Price value={total} /> : t("anatomy.noPrice")}</span>
       {flippable && <CardFlipButton side="front" className="c-flip" />}
       {expanded && !preview && <button type="button" className="btn btn-ghost btn-sm c-hype-more" onClick={() => setAnalysis(true)} aria-haspopup="dialog">{t("hype.card.full_analysis")}</button>}
     </p>
@@ -289,7 +290,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
             {titleBlock}{hypePanel}
             {!ownArt && !expanded && l === "grade" && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 6)} sealsOf={pieceSeals} />}
             {!ownArt && !expanded && l === "grade" && !pieceLayout && <div className="grid-pieces">
-              {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtMoney(p.price, "BRL") : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}
+              {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtPriceShort(p.price) : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}
             </div>}
             {((!ownArt && l === "lista") || expanded) && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, expanded || preview ? detailPieces.length : 4)} sealsOf={pieceSeals} onPiece={pieceClick} />}
             {((!ownArt && l === "lista") || expanded) && !pieceLayout && pieces.slice(0, expanded || preview ? pieces.length : 4).map((p, i) => (
@@ -297,7 +298,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
                 onClick={pieceClick ? (e) => { e.preventDefault(); e.stopPropagation(); pieceClick(p.id); } : undefined} onKeyDown={pieceClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pieceClick(p.id); } } : undefined}>
                 <span className="p-thumb">{p.img ? <img src={p.img} alt="" loading="lazy" /> : null}</span>
                 <span className="ptxt"><span className="l1">{p.name}</span><span className="l2">{[p.brand, p.size ? p.size.replace(/^(br|shoe)_/i, "").toUpperCase() : null, p.color ? label(p.color) : null].filter(Boolean).join(" · ") || label(p.slot.toLowerCase())}</span></span>
-                <span className="p-price tabular">{p.price != null ? fmtMoney(p.price, "BRL") : "—"}</span>
+                <span className="p-price tabular">{p.price != null ? fmtPriceShort(p.price) : "—"}</span>
                 {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
               </div>
             ))}

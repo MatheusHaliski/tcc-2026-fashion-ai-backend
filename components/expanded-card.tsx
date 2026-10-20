@@ -7,6 +7,7 @@ import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
 import type { CatalogCardImage } from "@/lib/api/catalog";
 import { MediaImage } from "@/components/media-image";
+import { Price } from "@/components/price";
 import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, photoAspect } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
@@ -176,7 +177,7 @@ import { AuraHype } from "@/components/hype/aura-hype";
 import { useTheme } from "@/lib/theme/theme";
 
 export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
-  const { t, fmtMoney, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
+  const { t, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
   const [editImage, setEditImage] = useState(false); const [editArt, setEditArt] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false); const [view3d, setView3d] = useState(false); const [mannequin3d, setMannequin3d] = useState(false); const [mannequinPhoto, setMannequinPhoto] = useState(false);
@@ -255,7 +256,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     [t("common.material"), label((p.material ?? "").toLowerCase()) || null],
     [t("common.occasion"), (p.occasion ?? []).map(label).join(", ") || null],
     [t("common.style"), (p.style ?? []).map(label).join(", ") || null],
-    [t("common.price"), p.price != null && !p.forSale ? fmtMoney(p.price, "BRL") : null],
+    [t("common.price"), p.price != null && !p.forSale ? <Price key="price" value={p.price} /> : null],
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
     [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
     [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],
@@ -303,7 +304,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
             <section className="pd-id" aria-labelledby={`pd-name-${p.id}`}>
               <h2 id={`pd-name-${p.id}`} className="pd-name">{p.name}</h2>
               {p.brandName && <p className="pd-brand"><BrandLogo name={p.brandName} src={p.brandLogoUrl} size={20} withName /></p>}
-              {p.forSale && p.price != null && <p className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(p.price, "BRL")}</b></p>}
+              {p.forSale && p.price != null && <p className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular"><Price value={p.price} /></b></p>}
               {primary}
             </section>
             <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />

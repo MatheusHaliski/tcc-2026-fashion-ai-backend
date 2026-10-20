@@ -12,7 +12,7 @@ import { usePiecesHype, type PieceHype } from "@/components/hype/look-hype-previ
 import { LEVELS, displayScore, hypeViewState, levelTone, type HypeViewState } from "@/lib/hype/model";
 import type { HypeLevel } from "@/lib/hype/types";
 import { tr, useI18n } from "@/lib/i18n/i18n";
-import { currentIntl } from "@/lib/i18n/state";
+import { fmtPriceShort } from "@/lib/i18n/money";
 
 /** Anatomias oficiais do card (docs/anatomias/anatomias_card_v18.html; v17_1 como histórico): seção A (base) e seção B (variações com arte própria). */
 export const SCHEME_ANATOMIES: { id: string; label: string; section: "A" | "B"; ownArt?: boolean; hint: string }[] = [
@@ -154,8 +154,9 @@ const SEASON_NAME: Record<string, { label: string; palette: string[] }> = {
   WINTER: { get label() { return tr("common.inverno_frost"); }, palette: ["#E8F1F8", "#B9D4E8", "#5C7A99", "#2E4057"] }, SUMMER: { get label() { return tr("common.verao_solstice"); }, palette: ["#FFF3B0", "#FFC259", "#FF7A45", "#2FA3C2"] },
   AUTUMN: { get label() { return tr("common.outono_ember"); }, palette: ["#F2C879", "#C97C3D", "#7A3B1E", "#4A2511"] }, SPRING: { get label() { return tr("common.primavera_bloom"); }, palette: ["#FDE2EC", "#F9A8D4", "#C9EFCB", "#7BC67E"] },
 };
-const brl = (v: number, digits = 2) => new Intl.NumberFormat(currentIntl(), { style: "currency", currency: "BRL", minimumFractionDigits: digits, maximumFractionDigits: digits }).format(v);
-const money = (v?: number | null) => (v == null ? null : brl(v));
+/** RF23.CA13 — valores gravados em BRL, mostrados na moeda do usuário ("≈ $3.68" em inglês). */
+const cash = (v: number, digits = 2) => fmtPriceShort(v, "BRL", digits);
+const money = (v?: number | null) => (v == null ? null : cash(v));
 /** Tamanho legível (br_40 → 40, shoe_39 → 39, one_size → Único). */
 const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ? tr("common.unico") : s.replace(/^(br|shoe)_/i, "").toUpperCase());
 const stop = (e: { preventDefault: () => void; stopPropagation: () => void }) => { e.preventDefault(); e.stopPropagation(); };
@@ -256,7 +257,7 @@ function HangTags({ pieces }: { pieces: AnatomyPiece[] }) {
           {classic && <span className="tag-classic">{t("anatomy.classic", { count: p.wearCount ?? 0 })}</span>}
           <span className="tag-care"><CareIcons /></span>
         </div>); })}</div>
-      <p className="tag-total">{rich("schemeAnatomies.total_do_look_pecas", { money: brl(total), piecesCount: pieces.length }, { 0: ($c) => <b>{$c}</b> })}{priced.length < pieces.length ? ` · ${t("anatomy.withoutPrice", { count: pieces.length - priced.length })}` : ""}</p>
+      <p className="tag-total">{rich("schemeAnatomies.total_do_look_pecas", { money: cash(total), piecesCount: pieces.length }, { 0: ($c) => <b>{$c}</b> })}{priced.length < pieces.length ? ` · ${t("anatomy.withoutPrice", { count: pieces.length - priced.length })}` : ""}</p>
     </div>
   );
 }
@@ -292,7 +293,7 @@ function Bento({ pieces, scheme }: { pieces: AnatomyPiece[]; scheme: SchemeView 
   const total = pieces.reduce((a, p) => a + (p.price ?? 0), 0);
   const name = (x: Item) => (x.look ? t("anatomy.bento.wholeLook") : x.p!.name);
   const img = (x: Item) => (x.look ? cover : x.p!.img);
-  const sub = (x: Item) => (x.look ? t("anatomy.bento.lookSub", { count: pieces.length, money: brl(total) }) : [x.p!.brand, money(x.p!.price)].filter(Boolean).join(" · "));
+  const sub = (x: Item) => (x.look ? t("anatomy.bento.lookSub", { count: pieces.length, money: cash(total) }) : [x.p!.brand, money(x.p!.price)].filter(Boolean).join(" · "));
   return (
     <div className="bento" aria-label={t("schemeAnatomies.bento_assimetrico_2")}>
       <span className="sr-only" aria-live="polite">{said}</span>
@@ -345,20 +346,20 @@ function CostPerUse({ pieces }: { pieces: AnatomyPiece[] }) {
   const priced = rows.filter((r) => r.p.price != null), spent = priced.reduce((a, r) => a + (r.p.price ?? 0), 0), uses = priced.reduce((a, r) => a + r.uses, 0);
   return (
     <div className="cpu" aria-label={t("schemeAnatomies.custo_por_uso_2")}>
-      <p className="cpu-head"><span>{t("schemeAnatomies.meta_uso", { brl: brl(GOAL, 0) })}</span><em className="anat-lock">{t("anatomy.onlyYou")}</em></p>
+      <p className="cpu-head"><span>{t("schemeAnatomies.meta_uso", { brl: cash(GOAL, 0) })}</span><em className="anat-lock">{t("anatomy.onlyYou")}</em></p>
       {rows.map((r) => { const pct = r.cpu == null ? 0 : Math.min(100, (GOAL / r.cpu) * 100); const ok = r.cpu != null && r.cpu <= GOAL;
-        const sub = r.p.price == null ? t("anatomy.noPrice") : r.uses === 0 ? `${brl(r.p.price)} · ${t("anatomy.cpu.notUsed")}` : t("anatomy.cpu.division", { money: brl(r.p.price), count: r.uses });
+        const sub = r.p.price == null ? t("anatomy.noPrice") : r.uses === 0 ? `${cash(r.p.price)} · ${t("anatomy.cpu.notUsed")}` : t("anatomy.cpu.division", { money: cash(r.p.price), count: r.uses });
         return (
           <div key={r.p.id} className="cpu-row">
             <Thumb p={r.p} />
             <span className="cpu-name">
-              <span className="cpu-l1"><b>{r.p.name}</b><b className="cpu-value">{r.cpu != null ? brl(r.cpu) : "—"}</b></span>
+              <span className="cpu-l1"><b>{r.p.name}</b><b className="cpu-value">{r.cpu != null ? cash(r.cpu) : "—"}</b></span>
               <em>{sub}</em>
               {r.cpu != null && <span className="cpu-bar" role="img" aria-label={t("anatomy.cpu.goalPct", { pct: Math.round(pct) })}><i style={{ width: `${pct}%`, background: ok ? "var(--status-good)" : pct >= 50 ? "var(--status-warning)" : "var(--status-serious)" }} /></span>}
               {r.cpu != null && <span className="cpu-l3"><span>{r.need ? t("anatomy.cpu.need", { count: r.need }) : t("anatomy.cpu.reached")}</span>{r.p.id === best ? <span className="anat-badge good">{t("schemeAnatomies.melhor_custo")}</span> : r.p.id === worst ? <span className="anat-badge warn">{t("schemeAnatomies.use_mais")}</span> : null}</span>}
             </span>
           </div>); })}
-      <p className="cpu-foot">{uses ? t("anatomy.cpu.total", { spent: brl(spent), uses, value: brl(spent / uses) }) : t("anatomy.cpu.totalNone", { spent: brl(spent) })}{priced.length < rows.length ? ` · ${t("anatomy.cpu.outOfTotal")}` : ""}</p>
+      <p className="cpu-foot">{uses ? t("anatomy.cpu.total", { spent: cash(spent), uses, value: cash(spent / uses) }) : t("anatomy.cpu.totalNone", { spent: cash(spent) })}{priced.length < rows.length ? ` · ${t("anatomy.cpu.outOfTotal")}` : ""}</p>
     </div>
   );
 }
@@ -529,10 +530,10 @@ export function CompactSignature({ scheme, pieces }: { scheme: SchemeView; piece
   const { t, fmtNumber } = useI18n();
   const a = effectiveAnatomy(scheme);
   if (a === "PASSARELA") { const s = [...pieces].sort((x, y) => (y.likes ?? 0) - (x.likes ?? 0)).slice(0, 4); return <div className="csig"><span className="csig-strip dark">{s.map((p, i) => <span key={p.id}><Thumb p={p} size={36} /><i>#{i + 1}</i></span>)}</span><span className="csig-text">♥ {fmtNumber(s[0]?.likes ?? 0)} · {s[0]?.name}</span></div>; }
-  if (a === "ETIQUETA") return <div className="csig">{pieces.slice(0, 4).map((p) => <span key={p.id} className="csig-tag">{(p.brand ?? "—").slice(0, 6).toUpperCase()} {p.price != null ? brl(p.price, 0) : "—"}</span>)}</div>;
+  if (a === "ETIQUETA") return <div className="csig">{pieces.slice(0, 4).map((p) => <span key={p.id} className="csig-tag">{(p.brand ?? "—").slice(0, 6).toUpperCase()} {p.price != null ? cash(p.price, 0) : "—"}</span>)}</div>;
   if (a === "RAIO_X") { const k = anchorIndex(pieces); return <div className="csig"><span className="csig-text">{t("anatomy.xray.anchorOf", { name: pieces[k]?.name ?? "—" })}</span></div>; }
   if (a === "ESPECTRO") { const sh = areaShares(pieces); return <div className="csig"><span className="spectrum-band csig-band" role="img" aria-label={t("anatomy.spectrum.aria", { list: pieces.map((p, i) => `${p.color ? label(p.color) : "—"} ≈ ${sh[i]}%`).join(", ") })}>{pieces.map((p, i) => <i key={p.id} style={{ background: tint(p.colorHex), flexGrow: sh[i] }} />)}</span><span className="csig-text">{t("anatomy.spectrum.estimated")}</span></div>; }
-  if (a === "CUSTO_POR_USO") { const pr = pieces.filter((p) => p.price != null), spent = pr.reduce((x, p) => x + (p.price ?? 0), 0), uses = pr.reduce((x, p) => x + (p.wearCount ?? 0), 0); return <div className="csig"><b className="csig-text">{uses ? t("anatomy.cpu.perUse", { value: brl(spent / uses) }) : t("anatomy.cpu.notUsed")}</b><em className="anat-lock">{t("anatomy.onlyYou")}</em></div>; }
+  if (a === "CUSTO_POR_USO") { const pr = pieces.filter((p) => p.price != null), spent = pr.reduce((x, p) => x + (p.price ?? 0), 0), uses = pr.reduce((x, p) => x + (p.wearCount ?? 0), 0); return <div className="csig"><b className="csig-text">{uses ? t("anatomy.cpu.perUse", { value: cash(spent / uses) }) : t("anatomy.cpu.notUsed")}</b><em className="anat-lock">{t("anatomy.onlyYou")}</em></div>; }
   if (a === "SILHUETA_PROPORCAO") { const d = studioOf(scheme.background).silhouette as string | undefined; return <div className="csig"><span className="csig-text">{t("anatomy.silhouette.family")}: {silhouetteLabel(d) ?? t("anatomy.silhouette.notDeclared")}</span></div>; }
   if (a === "HYPE_FOCUS") return <CompactHype pieces={pieces} />;
   if (a === "CARTELA_SAZONAL") { const m = SEASON_NAME[cartelaSeason(scheme.background, scheme.season) ?? ""]; return m ? <div className="csig"><span className="csig-palette">{m.palette.map((c) => <i key={c} style={{ background: c }} />)}</span><span className="csig-text">{m.label}</span></div> : null; }

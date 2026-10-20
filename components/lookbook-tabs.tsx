@@ -310,7 +310,7 @@ function DailyTab() {
  * uso, cada card com o chip de categoria e o badge ×N (em quantos looks a peça aparece).
  */
 function CapsuleTab() {
-  const { t } = useI18n();
+  const { t, fmtNumber } = useI18n();
   const [category, setCategory] = useState("");
   const { data, loading } = useApi<{ empty?: { message: string }; basePieces: number; looks: number; factor: number; filters?: string[]; cards?: { piece?: PieceView; looks?: number; usage?: number; [k: string]: unknown }[]; note?: string }>((signal) => api.get(`/api/me/capsule${qs({ category })}`, { signal }), [category]);
   if (loading || !data) return <Skeleton className="h-48" />;
@@ -322,7 +322,7 @@ function CapsuleTab() {
     <div className="capsule-stats">
       <div className="capsule-stat"><span className="num tabular">{data.basePieces}</span><span className="lbl">{t("lookbookTabs.pecas_base")}</span></div>
       <div className="capsule-stat"><span className="num tabular">{data.looks}</span><span className="lbl">{t("lookbookTabs.looks_no_guarda_roupa")}</span></div>
-      <div className="capsule-stat"><span className="num tabular">{Number(data.factor).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span><span className="lbl">{t("lookbookTabs.fator_de_versatilidade")}</span></div>
+      <div className="capsule-stat"><span className="num tabular">{fmtNumber(Number(data.factor), { maximumFractionDigits: 1 })}</span><span className="lbl">{t("lookbookTabs.fator_de_versatilidade")}</span></div>
     </div>
     <div className="capsule-grid">{cards.map((c, i) => { const p = c.piece!; const n = c.looks ?? c.usage ?? 0; return (
       <Link key={p.id ?? i} href={`/pieces/${p.id}`} className="capsule-piece" aria-label={`${p.name} · ${t("lookbookTabs.looks_nesta_capsula", { value: n })}`}>

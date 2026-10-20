@@ -42,7 +42,7 @@ export function FlairCollectionTab({ ownerId, self }: { ownerId: string; self: b
  * Compartilhar.
  */
 export function FlairPieceBlock({ pieceId }: { pieceId: string }) {
-  const { t, fmtMoney } = useI18n(); const toast = useToast();
+  const { t, fmtPrice } = useI18n(); const toast = useToast();
   const mine = useApi<FlairCollection>((signal) => api.get(`/api/me/flair/cards?originId=${pieceId}`, { signal }), [pieceId]);
   const card = mine.data?.cards?.[0];
   const [open, setOpen] = useState(false); const [preview, setPreview] = useState<FlairPreview | null>(null); const [busy, setBusy] = useState(false);
@@ -69,7 +69,7 @@ export function FlairPieceBlock({ pieceId }: { pieceId: string }) {
             <div className="grid gap-2">
               <p className="type-h3">{t(`flairCard.tier.${preview.tier}`)} · <span className="tabular">{preview.ovr}</span></p>
               <p className="type-body-sm">{preview.basis?.priceUsed != null
-                ? t(preview.priceVerified ? "flairCard.priceVerified" : "flairCard.priceTyped", { price: fmtMoney(preview.basis.priceUsed, "BRL") })
+                ? t(preview.priceVerified ? "flairCard.priceVerified" : "flairCard.priceTyped", { price: fmtPrice(preview.basis.priceUsed) })
                 : t("flairCard.noPrice")}</p>
               {preview.cappedByUnverifiedPrice && <p className="type-body-sm" role="note">{t("flairCard.unverified")}</p>}
               <p className="type-caption text-muted">{t("flairCollection.copyNote")}</p>

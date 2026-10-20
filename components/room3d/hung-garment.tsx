@@ -5,6 +5,7 @@ import { RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { useTex } from "@/components/three/common";
 import { useI18n } from "@/lib/i18n/i18n";
+import { fmtPriceShort } from "@/lib/i18n/money";
 import { DustPuff, GoldDot, HangTag, pointer } from "./room-props";
 import { ApprovedAsset } from "./approved-asset";
 
@@ -184,7 +185,7 @@ export function HungGarment({ p, ctx, along = "x", jitter = 0, maxLength = Infin
       </group>
       {/* etiquetas no gancho, de frente para quem olha a fileira */}
       <group rotation={[0, -yaw, 0]} position={[0, -0.1, 0]}>
-        {p.salePrice != null && <HangTag text={`R$ ${Math.round(Number(p.salePrice))}`} position={[0.03, -0.02, 0.05]} />}
+        {p.salePrice != null && <HangTag text={fmtPriceShort(Number(p.salePrice), "BRL", 0)} position={[0.03, -0.02, 0.05]} />}
         {ctx.tagged.has(p.id) && <HangTag text={t("room3d.roomScene.n2_chance")} color="#fde2e4" fg="#9d174d" position={[-0.03, -0.12, 0.05]} />}
         {p.states?.includes("GARIMPO") && <HangTag text={t("common.garimpo")} color="#1F7A76" fg="#fff" position={[0.02, -0.22, 0.05]} w={0.11} />}
       </group>

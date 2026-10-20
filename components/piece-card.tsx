@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { MediaImage } from "@/components/media-image";
+import { Price } from "@/components/price";
 import type { PieceView } from "@/lib/api/types";
 import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -83,7 +84,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   expanded?: boolean;
 }) {
   const detail = useDetailModal();
-  const { t, fmtMoney } = useI18n(); const { user } = useAuth();
+  const { t } = useI18n(); const { user } = useAuth();
   const preview = href === "#";
   const flippable = flip && !preview && !selectable;
   const { prefs } = useTheme();
@@ -167,7 +168,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 {/* atributos da peça (Info) e dados do Hype em abas separadas: uma de cada vez, sem misturar */}
                 {expanded&&<PieceDetailFacts piece={piece}/>}
                 <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} />
-                {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
+                {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{<Price value={piece.price} />}</b></span>}
                 {/* no feed, o espaço do selo só aparece quando há selo (o lugar reservado vazio fica na prévia) */}
                 {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>
