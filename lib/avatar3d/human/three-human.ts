@@ -208,6 +208,11 @@ export function installEarScattering(material: THREE.MeshPhysicalMaterial): void
   material.customProgramCacheKey = () => "avatar-skin-ear-scattering-v2";
 }
 
+/** Binary topological masks need 255 when normalized as an unsigned-byte attribute. */
+export function earMaskAttribute(mask:Uint8Array,vertices:Uint32Array|Uint16Array){
+  return new THREE.BufferAttribute(Uint8Array.from(vertices,v=>mask[v]?255:0),1,true);
+}
+
 export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   const root = new THREE.Group(); root.name = "avatar";
   const rig = eyeRig(a, c.eye), aperture = eyeApertures(rig, look.eyeShape);
@@ -221,7 +226,7 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   g.setAttribute("normal", new THREE.BufferAttribute(expand(normals, b.renderVertex, 3, Float32Array), 3));
   g.setAttribute("uv", new THREE.BufferAttribute(b.renderUv, 2));
   const earMask = earVertexMask(a);
-  g.setAttribute("earMask", new THREE.BufferAttribute(Uint8Array.from(b.renderVertex, (v) => earMask[v]), 1, true));
+  g.setAttribute("earMask", earMaskAttribute(earMask,b.renderVertex));
   g.setAttribute("skinIndex", new THREE.BufferAttribute(cleanJoints(expand(b.skinIndex, b.renderVertex, 4, Uint16Array) as Uint16Array, expand(b.skinWeight, b.renderVertex, 4, Uint8Array) as Uint8Array), 4));
   g.setAttribute("skinWeight", new THREE.BufferAttribute(expand(b.skinWeight, b.renderVertex, 4, Uint8Array), 4, true));
   g.setIndex(new THREE.BufferAttribute(b.index, 1));

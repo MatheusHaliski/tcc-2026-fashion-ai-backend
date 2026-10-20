@@ -23,4 +23,17 @@ class AuraPermissionsServiceTest {
         assertThat(permissions.canUserEquipAura(userId, AuraPermissionsService.AuraType.AURA_METAMORPHOSE)).isTrue();
         assertThat(permissions.canUserEquipAura(userId, AuraPermissionsService.AuraType.AURA_IMPERSONATION)).isTrue();
     }
+    @Test
+    void hypeFinishChecksLifetimeXpInsteadOfSpendableBalance() {
+        var ledger=mock(FaiPointsLedgerEntryRepository.class);var owner=UUID.randomUUID();
+        var permission=new AuraPermissionsService(ledger);
+        when(ledger.lifetime(owner)).thenReturn(299L);
+        permission.requireHypeFinish(owner,"COMMON");
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->permission.requireHypeFinish(owner,"RARE")).isInstanceOf(br.com.fashionai.application.common.ApiException.class);
+        when(ledger.lifetime(owner)).thenReturn(300L);
+        permission.requireHypeFinish(owner,"RARE");
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->permission.requireHypeFinish(owner,"LEGENDARY")).isInstanceOf(br.com.fashionai.application.common.ApiException.class);
+        when(ledger.lifetime(owner)).thenReturn(900L);
+        permission.requireHypeFinish(owner,"LEGENDARY");permission.requireHypeFinish(owner,"COLLAB_DROP");
+    }
 }

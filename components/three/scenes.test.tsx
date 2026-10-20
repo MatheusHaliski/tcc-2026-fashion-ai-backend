@@ -10,6 +10,7 @@ import { render as renderDOM, waitFor } from "@testing-library/react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import { I18nProvider } from "@/lib/i18n/i18n";
+import {type FittingWalkApi} from "@/lib/scene3d/fitting-walk";
 import type { FittingCameraApi, OrbitLimitState } from "@/lib/scene3d/orbit-steps";
 
 const canvasCapture = vi.hoisted(() => ({ enabled: false, children: null as ReactNode }));
@@ -204,6 +205,18 @@ describe("cenas 3D", () => {
     stop(); await r.unmount();
     expect(api).toBeNull();
   }, 20000);
+
+  it("provador: espelho enquadra o corpo refletido e ignora a órbita externa", async()=>{
+    await serveBodyAsset();let walk:FittingWalkApi|null=null,cameraApi:FittingCameraApi|null=null;
+    const r=await mountFitting({onWalk:a=>{walk=a;},onCamera:a=>{cameraApi=a;}},<CameraProbe/>);
+    await frames(r,2);walk!.to("mirror");await frames(r,400);
+    const cam=probe.camera as THREE.PerspectiveCamera;
+    expect(cam.fov).toBeGreaterThanOrEqual(48);
+    const mirror=r.scene.findByProps({name:"studio-full-height-mirror"}).instance;expect(mirror.visible).toBe(true);
+    const before=cam.position.clone();cameraApi!.step("left");await frames(r,20);
+    expect(cam.position.distanceTo(before)).toBeLessThan(.01);
+    await r.unmount();
+  },20000);
 
   it("visualizador do avatar: busto, meio corpo e corpo inteiro em cada ângulo", async () => {
     await serveBodyAsset();

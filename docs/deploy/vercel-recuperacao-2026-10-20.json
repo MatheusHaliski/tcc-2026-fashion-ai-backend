@@ -1,0 +1,149 @@
+[
+  {
+    "pr": 373,
+    "branch": "dependabot/npm_and_yarn/react-three/fiber-9.8.2",
+    "sha": "a771205465898dd3c198ce0ea02e1efb5b241a0d",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "target_url": "https://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/7Xm9WYjJLePLeqGtP22YB4tAjaRX",
+        "description": "Deployment has completed"
+      }
+    ],
+    "checks": [
+      "API (Java 21 · mvn verify)\tpass\t5m46s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350437755/job/118393089974\t",
+      "Catálogo (Python · ingestão e recuperação de conexão)\tpass\t39s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350437755/job/118393090087\t",
+      "Front (typecheck · vitest · build · audit)\tpass\t6m53s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350437755/job/118393090092\t",
+      "Segredos (gitleaks)\tpass\t1m22s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350437755/job/118393089727\t",
+      "Vercel\tpass\t0\thttps://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/7Xm9WYjJLePLeqGtP22YB4tAjaRX\tDeployment has completed",
+      "Vercel Preview Comments\tpass\t0\thttps://vercel.com/github\t"
+    ]
+  },
+  {
+    "pr": 372,
+    "branch": "dependabot/npm_and_yarn/vitest/coverage-v8-5.0.5",
+    "sha": "faa21a3c1ca4de19de551e23ece15c7104ace585",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "target_url": "https://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/3gN65f87ggxP1UGBHpwQkzyDbAXN",
+        "description": "Deployment has completed"
+      }
+    ],
+    "checks": [
+      "API (Java 21 · mvn verify)\tpass\t5m39s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350510398/job/118393319808\t",
+      "Catálogo (Python · ingestão e recuperação de conexão)\tpass\t53s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350510398/job/118393319690\t",
+      "Front (typecheck · vitest · build · audit)\tpass\t5m3s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350510398/job/118393319728\t",
+      "Segredos (gitleaks)\tpass\t1m47s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350510398/job/118393319550\t",
+      "Vercel\tpass\t0\thttps://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/3gN65f87ggxP1UGBHpwQkzyDbAXN\tDeployment has completed",
+      "Vercel Preview Comments\tpass\t0\thttps://vercel.com/github\t"
+    ]
+  },
+  {
+    "pr": 371,
+    "branch": "dependabot/npm_and_yarn/jsdom-30.1.3",
+    "sha": "73a33c210ea5648215841f13df776d861bdf0038",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "target_url": "https://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/FnzA9sRo2YBxaA96y7zuytcz1H3h",
+        "description": "Deployment has completed"
+      }
+    ],
+    "checks": [
+      "API (Java 21 · mvn verify)\tpass\t6m3s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350511894/job/118393324946\t",
+      "Catálogo (Python · ingestão e recuperação de conexão)\tpass\t43s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350511894/job/118393325184\t",
+      "Front (typecheck · vitest · build · audit)\tpass\t5m4s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350511894/job/118393325219\t",
+      "Segredos (gitleaks)\tpass\t1m27s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350511894/job/118393326504\t",
+      "Vercel\tpass\t0\thttps://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/FnzA9sRo2YBxaA96y7zuytcz1H3h\tDeployment has completed",
+      "Vercel Preview Comments\tpass\t0\thttps://vercel.com/github\t"
+    ]
+  },
+  {
+    "pr": 370,
+    "branch": "dependabot/npm_and_yarn/mediapipe/tasks-vision-1.1.1",
+    "sha": "b62ebf4c122fe705728975a6889a4168090ad9f0",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "target_url": "https://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/2yWQrFqvPH43gpBqK9hYazmssP4t",
+        "description": "Deployment has completed"
+      }
+    ],
+    "checks": [
+      "API (Java 21 · mvn verify)\tpass\t6m10s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350513591/job/118393329891\t",
+      "Catálogo (Python · ingestão e recuperação de conexão)\tpass\t43s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350513591/job/118393330018\t",
+      "Front (typecheck · vitest · build · audit)\tpass\t6m20s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350513591/job/118393330029\t",
+      "Segredos (gitleaks)\tpass\t1m48s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350513591/job/118393330796\t",
+      "Vercel\tpass\t0\thttps://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/2yWQrFqvPH43gpBqK9hYazmssP4t\tDeployment has completed",
+      "Vercel Preview Comments\tpass\t0\thttps://vercel.com/github\t"
+    ]
+  },
+  {
+    "pr": 369,
+    "branch": "dependabot/maven/software.amazon.awssdk-bom-2.56.0",
+    "sha": "61399877f10df6883d363949cbaa9b1bfb6623cc",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "target_url": "https://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/GdYVdTF9x9eEYncKYaGDMRAwYhoB",
+        "description": "Deployment has completed"
+      }
+    ],
+    "checks": [
+      "API (Java 21 · mvn verify)\tpass\t5m34s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350517994/job/118393345855\t",
+      "Catálogo (Python · ingestão e recuperação de conexão)\tpass\t42s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350517994/job/118393345548\t",
+      "Front (typecheck · vitest · build · audit)\tpass\t6m48s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350517994/job/118393345812\t",
+      "Segredos (gitleaks)\tpass\t1m42s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350517994/job/118393345786\t",
+      "Vercel\tpass\t0\thttps://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/GdYVdTF9x9eEYncKYaGDMRAwYhoB\tDeployment has completed",
+      "Vercel Preview Comments\tpass\t0\thttps://vercel.com/github\t"
+    ]
+  },
+  {
+    "pr": 368,
+    "branch": "dependabot/npm_and_yarn/next-react-5f82055a37",
+    "sha": "ea1878018453a2a068612f7b76b0fa18252ee97f",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "target_url": "https://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/AAxmKtx5Hz2L2Xc4AxB4fCtu1X9k",
+        "description": "Deployment has completed"
+      }
+    ],
+    "checks": [
+      "API (Java 21 · mvn verify)\tpass\t5m18s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350520578/job/118393352667\t",
+      "Catálogo (Python · ingestão e recuperação de conexão)\tpass\t41s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350520578/job/118393352788\t",
+      "Front (typecheck · vitest · build · audit)\tpass\t6m17s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350520578/job/118393352665\t",
+      "Segredos (gitleaks)\tpass\t1m47s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350520578/job/118393352432\t",
+      "Vercel\tpass\t0\thttps://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/AAxmKtx5Hz2L2Xc4AxB4fCtu1X9k\tDeployment has completed",
+      "Vercel Preview Comments\tpass\t0\thttps://vercel.com/github\t"
+    ]
+  },
+  {
+    "pr": 367,
+    "branch": "dependabot/maven/com.anthropic-anthropic-java-2.73.0",
+    "sha": "36e109167170c2219a63007258ef6e7f79454099",
+    "statuses": [
+      {
+        "context": "Vercel",
+        "state": "success",
+        "target_url": "https://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/61CuthtDYApM3BD4Lhv8XZoF8WYV",
+        "description": "Deployment has completed"
+      }
+    ],
+    "checks": [
+      "API (Java 21 · mvn verify)\tpass\t4m28s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350524246/job/118393364234\t",
+      "Catálogo (Python · ingestão e recuperação de conexão)\tpass\t39s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350524246/job/118393364415\t",
+      "Front (typecheck · vitest · build · audit)\tpass\t4m59s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350524246/job/118393364485\t",
+      "Segredos (gitleaks)\tpass\t1m45s\thttps://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend/actions/runs/39350524246/job/118393364447\t",
+      "Vercel\tpass\t0\thttps://vercel.com/matheushaliskis-projects/fashion-ai-tcc-2026/61CuthtDYApM3BD4Lhv8XZoF8WYV\tDeployment has completed",
+      "Vercel Preview Comments\tpass\t0\thttps://vercel.com/github\t"
+    ]
+  }
+]

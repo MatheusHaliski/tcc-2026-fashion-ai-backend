@@ -1,0 +1,76 @@
+{
+  "api": "SIMULATED",
+  "gpuExecuted": false,
+  "results": [
+    {
+      "viewport": "desktop",
+      "count": 8,
+      "bandCount": 2,
+      "widths": [
+        {
+          "client": 1046,
+          "scroll": 1046,
+          "flow": "column"
+        },
+        {
+          "client": 1046,
+          "scroll": 1046,
+          "flow": "column"
+        }
+      ],
+      "before": {
+        "x": 884,
+        "y": 116,
+        "width": 480,
+        "height": 1169.984375
+      },
+      "expanded": "260.719px 217.266px",
+      "selected": "{\"auraHype\":\"LEGENDARY_STATIC_GLOBAL\",\"v\":2,\"template\":{\"family\":\"classic\",\"variant\":\"a\",\"season\":\"SPRING\"},\"composition\":{\"emphasis\":\"balanced\"},\"surface\":{\"color\":null,\"style\":\"solid\"},\"effects\":{\"aura\":{\"on\":false,\"intensity\":0.5,\"reach\":0.5},\"rim\":false,\"glow\":false,\"glass\":false,\"finish\":\"none\",\"relief\":false,\"texture\":\"none\",\"collage\":false,\"particles\":false,\"motion\":false},\"container\":{\"color\":null},\"anatomy\":\"PECA_AMPLIADO\"}",
+      "overflow": false,
+      "errors": [],
+      "media": {
+        "src": "http://localhost:3093/aura/geometry/geometry_02/animacao.mp4",
+        "time": 0.2207,
+        "ready": 4,
+        "muted": true,
+        "loop": true
+      },
+      "formatBlocks": 2
+    },
+    {
+      "viewport": "mobile",
+      "count": 8,
+      "bandCount": 2,
+      "widths": [
+        {
+          "client": 324,
+          "scroll": 1004,
+          "flow": "column"
+        },
+        {
+          "client": 324,
+          "scroll": 1004,
+          "flow": "column"
+        }
+      ],
+      "before": {
+        "x": 16,
+        "y": 141.5,
+        "width": 358,
+        "height": 1017.484375
+      },
+      "expanded": "minmax(0px, 1.2fr) minmax(0px, 1fr)",
+      "selected": "{\"auraHype\":\"LEGENDARY_STATIC_GLOBAL\",\"v\":2,\"template\":{\"family\":\"classic\",\"variant\":\"a\",\"season\":\"SPRING\"},\"composition\":{\"emphasis\":\"balanced\"},\"surface\":{\"color\":null,\"style\":\"solid\"},\"effects\":{\"aura\":{\"on\":false,\"intensity\":0.5,\"reach\":0.5},\"rim\":false,\"glow\":false,\"glass\":false,\"finish\":\"none\",\"relief\":false,\"texture\":\"none\",\"collage\":false,\"particles\":false,\"motion\":false},\"container\":{\"color\":null},\"anatomy\":\"PECA_AMPLIADO\"}",
+      "overflow": false,
+      "errors": [],
+      "media": {
+        "src": "http://localhost:3093/aura/geometry/geometry_02/animacao.mp4",
+        "time": 0.2108,
+        "ready": 4,
+        "muted": true,
+        "loop": true
+      },
+      "formatBlocks": 2
+    }
+  ]
+}

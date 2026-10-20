@@ -446,6 +446,7 @@ public class SchemeService {
         }
         schemes.save(s);
         List<SchemeItem> items = replaceItems(user, s, form.items());
+        studio.requireAuraAccess(user, form.background());
         studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
         applyLookPhoto(user, s, form.background(), items);
         if (Boolean.TRUE.equals(form.publish())) {
@@ -918,6 +919,7 @@ public class SchemeService {
         }
         Set<UUID> after = items.stream().map(si -> si.getWardrobeItem().getId()).collect(Collectors.toSet());
         if (form.background() != null || Boolean.TRUE.equals(form.applyRecommendedDirection())) {
+            studio.requireAuraAccess(user, form.background());
             studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
             applyLookPhoto(user, s, form.background(), items);
         }
@@ -1205,6 +1207,7 @@ public class SchemeService {
         s.setTitle(form.title() == null ? Msg.t("scheme.pre_visualizacao") : form.title());
         s.setOccasion(Json.csv(form.occasion()));
         s.setStyle(Json.csv(form.style()));
+        studio.requireAuraAccess(user, form.background());
         studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
         if (form.cardSkin() != null) {
             s.setCardSkin(form.cardSkin());

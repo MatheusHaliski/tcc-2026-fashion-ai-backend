@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import {mirrorCameraPose} from "@/lib/scene3d/mirror-camera";
 import { kindOf } from "@/lib/avatar3d/human/garments";
 import { BODY_RADIUS } from "./interaction";
 import { clampCamera, ROOM, roomCenter, roomView, rotateView, walkArea, type RoomBounds } from "./room-bounds";
@@ -234,12 +235,11 @@ export function mirrorDistance(actor: THREE.Vector3, mirror: THREE.Vector3): num
  * girar a cena). Com `bounds` (as paredes do quarto), a câmera fica sempre dentro dele, a uma distância mínima do personagem,
  * e o olhar o acompanha (roomView em room-bounds.ts).
  */
-export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number, view = 0, bounds?: RoomBounds, prev?: { x: number; z: number }, track?: number): { position: THREE.Vector3; target: THREE.Vector3 } {
+export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number, view = 0, bounds?: RoomBounds, prev?: { x: number; z: number }, track?: number, eyeHeight = EYE_HEIGHT): { position: THREE.Vector3; target: THREE.Vector3; fov?:number } {
   if (phase === "tryon") {
     // primeira pessoa: os olhos do personagem, um palmo à frente do rosto, olhando o centro do vidro — a pessoa vê a roupa
     // vestida no reflexo (o Reflector desenha o personagem de frente)
-    const position = new THREE.Vector3(actor.x, EYE_HEIGHT, actor.z).addScaledVector(MIRROR_NORMAL, -0.16);
-    return { position, target: new THREE.Vector3(mirror.x, 1.15, mirror.z) };
+    return mirrorCameraPose(actor,mirror,MIRROR_NORMAL,eyeHeight,mirror.y+1.85);
   }
   if (phase === "approach") {
     const mid = new THREE.Vector3((actor.x + mirror.x) / 2, 1.05, (actor.z + mirror.z) / 2);
