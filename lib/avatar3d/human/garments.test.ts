@@ -329,3 +329,29 @@ it("a foto da peça vai para a frente do corpo mesmo com o personagem girado na 
   expect(Math.abs(world[2] - still[2]) + Math.abs(world[0] - still[0])).toBeGreaterThan(0.1);      // sem o espaço do corpo, a pose vinha girada
   room.remove(h.root); h.dispose();
 });
+
+it("preserves the actual cargo photograph rather than discarding every pocket and logo",()=>{
+ const {c,h}=dressed("FEMININO",["pants"]),P=bodyParam(asset,c);
+ const gg=garmentGeometry(asset,c,baseNormals(c.body,asset.body.index,asset.body.renderVertex),P,specOf({subcategory:"cargo_pants"})!)!;
+ const photo={width:100,height:100,box:{x0:0,y0:0,x1:100,y1:100},collarRow:null,neckDrop:null,cutout:true,backdrop:null,widthAt:()=>({x0:0,x1:100})};
+ const mesh=texturedGeometry(gg,gg.position,photo);
+ expect([...mesh.getAttribute('photoWeight').array].filter(w=>w>.5).length).toBeGreaterThan(100);
+ expect([...mesh.getAttribute('fabricUv').array].every(Number.isFinite)).toBe(true);
+ mesh.dispose();h.dispose();
+});
+
+it("maps separated trouser photographs to the corresponding leg panel",()=>{
+ const pos:number[]=[],idx:number[]=[];
+ for(const side of [-1,1]){
+  const start=pos.length/3;
+  for(let row=0;row<=50;row++)for(let col=0;col<=2;col++)pos.push(side<0?-.3+col*.1:.1+col*.1,row*.02,0);
+  for(let row=0;row<50;row++)for(let col=0;col<2;col++){const i=start+row*3+col;idx.push(i,i+1,i+3,i+1,i+4,i+3);}
+ }
+ const gg={spec:SPECS.pants,position:Float32Array.from(pos),alpha:new Float32Array(pos.length/3).fill(1),index:Uint32Array.from(idx),source:new Int32Array(pos.length/3),skinIndex:new Uint16Array(pos.length/3*4),skinWeight:new Float32Array(pos.length/3*4)};
+ const photo={width:100,height:100,box:{x0:0,y0:0,x1:100,y1:100},collarRow:null,neckDrop:null,cutout:true,backdrop:null,widthAt:()=>({x0:10,x1:90}),legRows:[40,50,60,70,80,90].map(y=>({y,left:{x0:10,x1:35},right:{x0:65,x1:90}}))};
+ const mesh=texturedGeometry(gg,gg.position,photo),p=mesh.getAttribute('position'),uv=mesh.getAttribute('uv');let checked=0;
+ for(let v=0;v<p.count;v++)if(p.getY(v)>.15&&p.getY(v)<.45&&Math.abs(Math.abs(p.getX(v))-.2)<.001){
+  expect(uv.getX(v)).toBeCloseTo(p.getX(v)<0?.1125:.3875,3);checked++;
+ }
+ expect(checked).toBeGreaterThan(2);mesh.dispose();
+});

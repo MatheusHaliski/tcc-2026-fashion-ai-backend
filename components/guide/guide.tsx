@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { GUIDES, shouldAutoOpen, type GuidePref } from "@/lib/guides/registry";
 import { Button, Dialog, UiIcon } from "@/components/ui";
+import { FeedGuideDemo } from "./feed-guide-demo";
 const GuideDemo = lazy(() => import("@/components/guide/guide-demos").then(m => ({ default: m.GuideDemo })));
 import { FlairHubIcon } from "@/components/flair/hub-icons";
 import type { HubIconId } from "@/components/flair/hub-icons";
@@ -200,7 +201,7 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guid
           </div>
           {/* palco inerte: nada ali dentro recebe foco, clique ou chamada à API */}
           <div className="guide-demo-stage" data-playing={playing ? "true" : "false"} inert aria-hidden>
-            <Suspense fallback={null}><GuideDemo demo={def.demo} /></Suspense>
+            {def.demo === "feed" ? <FeedGuideDemo /> : <Suspense fallback={null}><GuideDemo demo={def.demo} /></Suspense>}
           </div>
           <figcaption className="type-body-sm text-muted">{t(`${base}.demo`)}</figcaption>
         </figure>

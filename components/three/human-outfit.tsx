@@ -11,6 +11,7 @@ import {
   HAS_COLLAR_BAND, type PhotoInfo,
 } from "@/lib/avatar3d/human/garments";
 import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered, type Zone } from "@/lib/avatar3d/human/default-outfit";
+import { isBundledGarmentPhoto } from "@/lib/tryon/reference-photo";
 import { specFor } from "@/lib/avatar3d/human/garment-fit";
 import { publishPhotoStates } from "@/lib/tryon/garment-status";
 import type { PhotoState } from "@/lib/tryon/garment-asset";
@@ -170,7 +171,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     // barra e manga com acabamento 3D (faixa com espessura dando a volta), na cor do acabamento da foto
     if (!shoe) {
       const tc = trimColors(img, fabric, info); const rib = ribColor(img, fabric, info, { wide: it.spec.kind === "shirt" });
-      for (const tb of garmentTrims(asset, cc, P, gg)) {
+      for (const tb of garmentTrims(asset, cc, P, gg, { preservePhotoDetails: !!info && !it.piece.defaultImage })) {
         if (tb.part === "barra" ? !finishes.hem : tb.part === "punho" ? !finishes.cuff : above.length > 0) continue;
         const tg = new THREE.BufferGeometry();
         tg.setAttribute("position", new THREE.Float32BufferAttribute(tb.position, 3));
@@ -248,11 +249,12 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
     let alive = true;
     Promise.all(all.map(async (i) => {
       let t: THREE.Texture | null = null;
-      for (const url of photoUrls(i.piece)) { const u = mediaUrl(url); t = u ? await loadTexture(u) : null; if (t) break; }
+      let loadedUrl: string | null = null;
+      for (const url of photoUrls(i.piece)) { const u = mediaUrl(url); t = u ? await loadTexture(u) : null; if (t) { loadedUrl = url; break; } }
       const img = t?.image as Img | undefined;
-      // These exact bundled reference assets contain only the product. Avoid
-      // three unnecessary person/pose analyses while the catalogue piece loads.
-      const bundled = Object.values(DEFAULT_PIECES).some(p => p.id === i.piece.id && p.imageUrl === i.piece.imageUrl);
+      // Exact bundled references contain only the product. Inspect the URL actually loaded,
+      // so a remote fallback never inherits trust from a failed local primary image.
+      const bundled = isBundledGarmentPhoto(loadedUrl);
       return [i.key, img ? bundled ? prepareGarmentPhoto(img) : await prepareOutfitPhoto(img, photoPart(i.spec.kind)) : null] as const;
     })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv), pieces }); });
     return () => { alive = false; };

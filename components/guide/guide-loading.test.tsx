@@ -14,3 +14,9 @@ it('mantém instruções e Escape disponíveis enquanto a demonstração suspend
  fireEvent.keyDown(dialog,{key:'Escape'});
  expect(screen.queryByRole('dialog')).toBeNull();
 });
+it('renders the feed card immediately even while the other demonstrations are suspended',async()=>{
+ renderApp(<GuideDialog guideKey="feed.posts" initiallyHidden={false} onClose={()=>undefined}/>);
+ const dialog=await screen.findByRole('dialog');
+ expect(dialog.querySelector('.gd-feed .piece-card')).not.toBeNull();
+ expect(screen.getByRole('button',{name:'Entendi'})).toBeTruthy();
+});

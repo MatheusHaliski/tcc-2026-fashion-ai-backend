@@ -36,3 +36,26 @@ export function landmarkProjection(rows: { modelY: number; modelLeft: number; mo
       1 - lerp(a.photoY, b.photoY) / height];
   };
 }
+
+export interface PhotoLegRow { y: number; left: { x0: number; x1: number }; right: { x0: number; x1: number } }
+
+/** Two separated opaque leg panels in an isolated photo; never guesses a hidden seam or pocket. */
+export function separatedLegRows(mask: Uint8Array, width: number, height: number,
+  box: { x0: number; x1: number; y0: number; y1: number }): PhotoLegRow[] {
+  if (box.x1-box.x0<24 || box.y1-box.y0<24) return [];
+  const rows: PhotoLegRow[]=[];
+  for(let y=Math.ceil(box.y0+(box.y1-box.y0)*.3);y<=Math.min(height-1,box.y1);y+=Math.max(1,Math.round((box.y1-box.y0)/32))) {
+    const runs:{x0:number;x1:number}[]=[];let start=-1;
+    for(let x=Math.max(0,box.x0);x<=Math.min(width-1,box.x1)+1;x++) {
+      const on=x<width&&x<=box.x1&&mask[y*width+x]>0;
+      if(on&&start<0)start=x;
+      if(!on&&start>=0){if(x-start>=Math.max(3,(box.x1-box.x0)*.08))runs.push({x0:start,x1:x});start=-1;}
+    }
+    if(runs.length!==2 || runs[1].x0-runs[0].x1<2)continue;
+    const center=(box.x0+box.x1)/2;
+    if(runs[0].x1>center || runs[1].x0<center)continue;
+    rows.push({y,left:runs[0],right:runs[1]});
+  }
+  // A single hole in a skirt or a noisy cutout is not evidence of two trouser legs.
+  return rows.length>=4 ? rows : [];
+}

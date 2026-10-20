@@ -1,0 +1,73 @@
+{
+  "scope": "Local reference garments, not brand-specific certified assets or GPU inference.",
+  "captures": [
+    {
+      "yaw": 0,
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_04_calca_cargo",
+            "cabedal-03_calcados_01_tenis_casual",
+            "sola-03_calcados_01_tenis_casual",
+            "cadarco-03_calcados_01_tenis_casual",
+            "peca-01_parte_superior_02_shirt_camisa",
+            "punho-01_parte_superior_02_shirt_camisa",
+            "punho-01_parte_superior_02_shirt_camisa",
+            "gola-01_parte_superior_02_shirt_camisa"
+          ]
+        }
+      ]
+    },
+    {
+      "yaw": 90,
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_04_calca_cargo",
+            "cabedal-03_calcados_01_tenis_casual",
+            "sola-03_calcados_01_tenis_casual",
+            "cadarco-03_calcados_01_tenis_casual",
+            "peca-01_parte_superior_02_shirt_camisa",
+            "punho-01_parte_superior_02_shirt_camisa",
+            "punho-01_parte_superior_02_shirt_camisa",
+            "gola-01_parte_superior_02_shirt_camisa"
+          ]
+        }
+      ]
+    },
+    {
+      "yaw": 180,
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_04_calca_cargo",
+            "cabedal-03_calcados_01_tenis_casual",
+            "sola-03_calcados_01_tenis_casual",
+            "cadarco-03_calcados_01_tenis_casual",
+            "peca-01_parte_superior_02_shirt_camisa",
+            "punho-01_parte_superior_02_shirt_camisa",
+            "punho-01_parte_superior_02_shirt_camisa",
+            "gola-01_parte_superior_02_shirt_camisa"
+          ]
+        }
+      ]
+    }
+  ],
+  "photoProjection": [
+    {
+      "name": "peca-02_parte_inferior_04_calca_cargo",
+      "photoVertices": 648
+    },
+    {
+      "name": "peca-01_parte_superior_02_shirt_camisa",
+      "photoVertices": 920
+    }
+  ],
+  "errors": []
+}

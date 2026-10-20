@@ -12,11 +12,12 @@
  * caso dos acessórios, que o avatar humano ainda não veste).
  */
 import type { Look3dPiece } from "@/components/three/common";
-import { SPECS, kindOf, type GarmentKind } from "@/lib/avatar3d/human/garments";
+import { kindOf, type GarmentKind } from "@/lib/avatar3d/human/garments";
+import { fitClassOf, specFor } from "@/lib/avatar3d/human/garment-fit";
 
 export const GARMENT_CONTRACT_VERSION = "1.0.0";
 /** Molde e corpo: mudar qualquer um invalida os resultados aprovados que dependem dele (§7). */
-export const MOULD_VERSION = "fai-mould-skinwrap-v2";
+export const MOULD_VERSION = "fai-mould-skinwrap-v3";
 export const BODY_RIG = "fai-body-v1";
 /** Margem de colisão corpo–roupa usada no teste de penetração (lib/avatar3d/human/garments.test.ts): 2 mm para dentro da pele. */
 export const COLLISION_MARGIN_MM = 2;
@@ -60,15 +61,20 @@ export const FAMILY_PARAMETERS: Record<GarmentFamily, string[]> = {
 };
 
 /** Comprimento, manga e decote que o molde da família assume para o tipo (do GarmentSpec), como estimativa declarada. */
-function cutOf(kind: GarmentKind | null): Pick<GarmentContract["cut"], "length" | "sleeve" | "neckline" | "opening" | "silhouette"> {
+function cutOf(piece: Look3dPiece, kind: GarmentKind | null): Pick<GarmentContract["cut"], "length" | "sleeve" | "neckline" | "opening" | "silhouette"> {
   if (!kind) return { length: missing("sem molde"), sleeve: missing("sem molde"), neckline: missing("sem molde"), opening: missing("sem molde"), silhouette: missing("sem molde") };
-  const sp = SPECS[kind]; const src = `molde ${kind} (SPECS)`;
+  const sp = specFor(piece)!; const src = `molde ajustado ${kind} (specFor)`;
   const length = kind === "pants" || kind === "leggings" ? "full_leg" : kind === "shorts" ? "above_knee" : kind === "crop" ? "cropped" : kind === "coat" || kind === "dress" ? "long" : "hip";
   const sleeve = sp.sleeve === 0 ? "sleeveless" : sp.sleeve > 0.8 ? "long" : "short";
-  const neckline = sp.vneck ? "v" : sp.neck > 0.5 ? "high" : "crew";
+  const neckline = sp.neckShape === "v" ? "v" : sp.neck > 1.04 ? "high" : sp.neckShape ?? "round";
   const opening = kind === "jacket" || kind === "coat" || kind === "shirt" ? "front" : "none";
-  const silhouette = sp.flare > 0.3 ? "flared" : sp.ease > 0.02 ? "relaxed" : "fitted";
-  return { length: estimated(length, src, 0.6), sleeve: estimated(sleeve, src, 0.6), neckline: estimated(neckline, src, 0.5), opening: estimated(opening, src, 0.7), silhouette: estimated(silhouette, src, 0.5) };
+  const silhouette = fitClassOf(piece);
+  const declared = (dimension: string, fallback: string, confidence: number): Attr<string> => {
+    const value = piece.attributes?.[dimension]?.[0];
+    return value ? confirmed(value, `atributo ${dimension} do cadastro`) : estimated(fallback, src, confidence);
+  };
+  return { length: declared("LENGTH", length, .6), sleeve: declared("SLEEVE_LENGTH", sleeve, .6), neckline: declared("NECKLINE", neckline, .5),
+    opening: declared("CLOSURE", opening, .7), silhouette: piece.variation ? confirmed(piece.variation, "modelagem do cadastro") : estimated(silhouette, src, .5) };
 }
 
 /**
@@ -78,6 +84,8 @@ function cutOf(kind: GarmentKind | null): Pick<GarmentContract["cut"], "length" 
 export function garmentContractOf(piece: Look3dPiece, extra: { material?: string | null; size?: string | null; catalogProductId?: string | null; variantId?: string | null; origin?: GarmentContract["quality"]["origin"] } = {}): GarmentContract {
   const bySub = piece.subcategory ? kindOf({ subcategory: piece.subcategory }) : null;
   const kind = kindOf(piece);
+  const spec = specFor(piece);
+  const material = extra.material ?? piece.material;
   const kindAttr: Attr<GarmentKind> = bySub ? confirmed(bySub, "subcategoria do cadastro") : kind ? estimated(kind, "categoria/lugar no look (subcategoria desconhecida)", 0.5) : missing("sem subcategoria conhecida: acessório ou tipo fora do molde");
   const family: GarmentFamily | null = kind ? FAMILY[kind] : piece.category?.toLowerCase().includes("accessory") || piece.slot === "accessory" ? "ACCESSORIES" : null;
   const path: BuildPath = kind ? "PARAMETRIC_MOULD" : "IMAGE_2D";
@@ -91,13 +99,13 @@ export function garmentContractOf(piece: Look3dPiece, extra: { material?: string
   return {
     version: GARMENT_CONTRACT_VERSION,
     identity: { pieceId: piece.id, catalogProductId: extra.catalogProductId ?? null, variantId: extra.variantId ?? null, category: piece.category ?? null, subcategory: piece.subcategory ?? null, family },
-    cut: { kind: kindAttr, ...cutOf(kind) },
+    cut: { kind: kindAttr, ...cutOf(piece, kind) },
     dimensions: { measurementsCm: missing("sem medidas no cadastro/catálogo"), commercialSize: extra.size ? confirmed(extra.size, "tamanho do cadastro") : missing("sem tamanho"), referenceBody: kind ? estimated(BODY_RIG, "corpo padrão do avatar", 1) : missing("sem molde") },
     surface: { color, print: photo.value ? estimated(piece.defaultImage ? "PLAIN" : "PRINT", "foto projetada na frente", 0.5) : missing("sem foto"), photo,
       uv: kind && photo.value && kind !== "shoes" && kind !== "boots" ? "FRONT_PROJECTION" : "NONE", maps: { baseColor: photo.value ? "foto + cor do tecido (canvas)" : "cor do tecido", normal: null, roughness: null } },
-    fabric: { material: extra.material ? confirmed(extra.material, "material do cadastro") : missing("sem composição"), physicalThicknessMm: missing("sem espessura física: nenhuma simulação"),
-      visualThicknessMm: kind ? Math.round(SPECS[kind].ease * 1000 * 10) / 10 : null, collisionMarginMm: COLLISION_MARGIN_MM, behaviour: { drape: kind ? SPECS[kind].drape : null, stiffness: missing("sem parâmetro de tecido") } },
-    fit: { easeM: kind ? SPECS[kind].ease : null, anchors: kind ? ["esqueleto do corpo (pesos copiados da pele)"] : [], bodyCompatibility: kind ? "ALL" : "UNKNOWN" },
+    fabric: { material: material ? confirmed(material, "material do cadastro") : missing("sem composição"), physicalThicknessMm: missing("sem espessura física: nenhuma simulação"),
+      visualThicknessMm: spec ? Math.round(spec.ease * 1000 * 10) / 10 : null, collisionMarginMm: COLLISION_MARGIN_MM, behaviour: { drape: spec?.drape ?? null, stiffness: missing("sem parâmetro de tecido") } },
+    fit: { easeM: spec?.ease ?? null, anchors: kind ? ["esqueleto do corpo (pesos copiados da pele)"] : [], bodyCompatibility: kind ? "ALL" : "UNKNOWN" },
     asset: { path, renderMesh: kind ? `molde:${kind}` : null, simulationMesh: null, rig: kind ? BODY_RIG : null, lods: kind ? [0] : [], assetVersion: null, mouldVersion: kind ? MOULD_VERSION : null },
     quality: { origin: extra.origin ?? (piece.id.startsWith("fai-padrao-") ? "DEFAULT" : "UNKNOWN"), approximation: path !== APPROVED, reviewed: false,
       confidence: kindAttr.provenance === "CONFIRMED" ? 0.8 : kindAttr.provenance === "ESTIMATED" ? 0.5 : 0.2, tests: [], approved: false, notes },
