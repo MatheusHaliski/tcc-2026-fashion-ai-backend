@@ -94,6 +94,19 @@ class CatalogServiceTest {
     }
 
     @Test
+    void productCardPreservesFittingAttributesAlreadyStoredInTheCatalogue() {
+        CatalogProduct p = visible(null).getFirst();
+        p.setVariationCode("SLIM");
+        br.com.fashionai.domain.model.TaxonomyAttribute.replace(p.getAttributes(), "RISE", List.of("HIGH_RISE"), "CATALOG", null);
+        br.com.fashionai.domain.model.TaxonomyAttribute.replace(p.getAttributes(), "CLOSURE", List.of("ZIPPER"), "CATALOG", null);
+        br.com.fashionai.domain.model.TaxonomyAttribute.replace(p.getAttributes(), "SLEEVE_LENGTH", List.of("SHORT_SLEEVE"), "CATALOG", null);
+        Map<String, Object> card = catalog.card(p, nike, null);
+        assertThat(card).containsEntry("variation", "SLIM");
+        assertThat(map(card.get("attributes"))).containsEntry("RISE", List.of("HIGH_RISE"))
+                .containsEntry("CLOSURE", List.of("ZIPPER")).containsEntry("SLEEVE_LENGTH", List.of("SHORT_SLEEVE"));
+    }
+
+    @Test
     void buscaEntendeMarcaSubtipoECorNoTexto() {
         Map<String, Object> r = catalog.search(new CatalogService.SearchRequest(null, null, null, "tênis nike air force branco", null, 10));
         assertThat(r).containsEntry("enoughInput", true).containsEntry("canSearchOfficial", true);

@@ -6,7 +6,7 @@
 import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import { garmentGeometry, underLayer, type BodyParam, type GarmentGeometry, type GarmentSpec, type UnderLayer } from "./garments";
-import { columnLegs, foldGarment, relaxGarment, smoothBody } from "./garment-relax";
+import { enforceGarmentClearance, columnLegs, foldGarment, relaxGarment, smoothBody } from "./garment-relax";
 
 /** Corpo suavizado (referência de folga do tecido: sem mamilos, clavícula e músculos desenhados). */
 export function softBodyOf(a: BodyAsset, c: Composed): Composed {
@@ -20,6 +20,6 @@ export function buildGarment(a: BodyAsset, c: Composed, soft: Composed, normals:
   const under = below.length ? underLayer(base, P, below) : null;
   const gg = garmentGeometry(a, base, normals, P, spec, under);
   // caimento: relaxa → perna em coluna (calça reta/ampla não segue a panturrilha) → dobras
-  if (gg) { relaxGarment(gg, base, normals, P, under); columnLegs(gg, base, P); foldGarment(gg, base, normals, P); }
+  if (gg) { relaxGarment(gg, base, normals, P, under); columnLegs(gg, base, P); foldGarment(gg, base, normals, P); if (!shoe) enforceGarmentClearance(gg, c, normals, P, under); }
   return { gg, base, under };
 }

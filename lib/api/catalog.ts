@@ -29,6 +29,7 @@ export interface CatalogProduct {
   id: string; brand: CatalogBrandRef | null; productName: string; modelName?: string | null; category: string; subcategory: string;
   color?: string | null; colorName?: string | null; colorHex?: string | null; material?: string | null; collection?: string | null; gender?: string | null;
   description?: string | null; design?: DesignTraits | null;
+  variation?: string | null; attributes?: Record<string, string[]> | null;
   productCode?: string | null; sku?: string | null; imageUrl?: string | null; imageSource?: ImageProvenance | null; catalogImage?: CatalogCardImage | null;
   source: { type: string; domain: string; productUrl: string; status: string; lastVerifiedAt: string }; ingestionStatus: string; ownersCount: number;
   matchScore?: MatchScore; matchPercent?: number; variants?: CatalogVariant[]; selectedVariant?: CatalogVariant | null;

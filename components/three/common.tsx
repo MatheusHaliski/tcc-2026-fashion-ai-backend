@@ -13,6 +13,7 @@ import type { HypeSummary } from "@/lib/hype/types";
 export interface Look3dPiece {
   id: string; name: string; slot: string; category?: string; subcategory?: string; imageUrl?: string | null; studioUrl?: string | null; colorHex?: string | null; model3dUrl?: string | null; model3dStatus?: string | null; defaultImage?: boolean;
   /** modelagem declarada (taxonomia: SKINNY, STRAIGHT, OVERSIZED…) e dimensões (LENGTH, SLEEVE_LENGTH, SHAFT_HEIGHT) → caimento no 3D */
+  material?: string | null;
   variation?: string | null; attributes?: Record<string, string[]> | null;
 }
 export interface FaceFit { offsetX?: number; offsetY?: number; scale?: number }
