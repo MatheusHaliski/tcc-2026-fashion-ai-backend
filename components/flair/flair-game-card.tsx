@@ -30,7 +30,7 @@ export interface FlairCollectionCard {
 }
 
 export function FlairGameCard({ card, size = "md", flip = true }: { card: FlairCollectionCard; size?: "sm" | "md" | "lg"; flip?: boolean }) {
-  const { t, fmtMoney } = useI18n();
+  const { t, fmtPrice } = useI18n();
   const [back, setBack] = useState(false);
   const tierName = t(`flairCard.tier.${card.tier}`);
   const label = t("flairCard.aria", { tier: tierName, rare: card.rare ? ` ${t("flairCard.rare")}` : "", ovr: card.ovr, name: card.name, brand: card.brandName ? `, ${card.brandName}` : "" });
@@ -61,7 +61,7 @@ export function FlairGameCard({ card, size = "md", flip = true }: { card: FlairC
           </dl>
           {card.ability?.name && <p className="fgc-ability"><b>{card.ability.name}</b>{card.ability.text ? ` · ${card.ability.text}` : ""}</p>}
           <p className="fgc-meta">{t("flairCard.season", { season: seasonName(t, card.season) })}</p>
-          {card.basis?.priceUsed != null && <p className="fgc-meta">{t(card.priceVerified ? "flairCard.priceVerified" : "flairCard.priceTyped", { price: fmtMoney(card.basis.priceUsed, "BRL") })}</p>}
+          {card.basis?.priceUsed != null && <p className="fgc-meta">{t(card.priceVerified ? "flairCard.priceVerified" : "flairCard.priceTyped", { price: fmtPrice(card.basis.priceUsed) })}</p>}
           {card.basis?.cappedByUnverifiedPrice && <p className="fgc-meta">{t("flairCard.unverified")}</p>}
           {card.state === "LOCKED_CHALLENGE" && <p className="fgc-meta">{t("flairCard.locked")}</p>}
         </div>

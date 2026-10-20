@@ -6,6 +6,7 @@ import type { Me, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { fromServerLanguage } from "@/lib/i18n/state";
+import { CURRENCIES, isCurrency } from "@/lib/i18n/money";
 import { CHROME_BACKGROUNDS, CONTAINER_PRESETS, chromeTile, useTheme } from "@/lib/theme/theme";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
@@ -13,12 +14,15 @@ import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleto
 import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 
+/** "Dólar americano (USD)" no idioma da interface. */
+const currencyName = (intl: string, c: string) => { try { return `${new Intl.DisplayNames(intl, { type: "currency" }).of(c) ?? c} (${c})`; } catch { return c; } };
+
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
 interface Prefs { auraImpersonation?: boolean; auraHype?: boolean; theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
 interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
-  const { t, locale, setLocale, locales, rich } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
+  const { t, locale, setLocale, locales, rich, intl, currency, currencyPref, setCurrency } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
   const [info, setInfo] = useState<{ title: string; paragraphs: ReactNode[] } | null>(null);
   const [impersonationBusy, setImpersonationBusy] = useState(false);
   const auraPermissions = useApi<{ currentTier: string; auras: Record<string, { allowed: boolean; requiredTier: string }> }>((signal) => api.get("/api/me/aura-permissions", { signal }), [me?.user.id]);
@@ -37,7 +41,7 @@ function Settings() {
   const [del, setDel] = useState<{ open: boolean; password: string }>({ open: false, password: "" }); const [emailCode, setEmailCode] = useState("");
   useEffect(() => { if (me) { setProfile({ displayName: me.user.displayName ?? "", bio: me.bio ?? "", country: me.user.country ?? "" }); setUsername(me.user.username); setSensitive((s) => ({ ...s, email: me.email ?? "", phone: me.phone ?? "", birthDate: me.birthDate ?? "", twoFactorEnabled: me.twoFactorEnabled })); } }, [me]);
   // sincroniza tema/idioma locais com a preferência salva no servidor (RF23.CA02: last-write-wins)
-  useEffect(() => { const p = server.data; if (!p) return; updateTheme({ theme: (p.theme as typeof theme.theme) ?? "AUTO", density: (p.density as typeof theme.density) ?? "COMFORTABLE", fontScale: p.fontScale ?? 100, ...(typeof p.auraImpersonation === "boolean" ? { auraImpersonation: p.auraImpersonation } : {}), ...(typeof p.auraHype === "boolean" ? { auraHype: p.auraHype } : {}), highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }); const serverLocale = fromServerLanguage(p.language); if (serverLocale && serverLocale !== locale) setLocale(serverLocale, { persist: false }); }, [server.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const p = server.data; if (!p) return; updateTheme({ theme: (p.theme as typeof theme.theme) ?? "AUTO", density: (p.density as typeof theme.density) ?? "COMFORTABLE", fontScale: p.fontScale ?? 100, ...(typeof p.auraImpersonation === "boolean" ? { auraImpersonation: p.auraImpersonation } : {}), ...(typeof p.auraHype === "boolean" ? { auraHype: p.auraHype } : {}), highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }); const serverLocale = fromServerLanguage(p.language); if (serverLocale && serverLocale !== locale) setLocale(serverLocale, { persist: false }); const serverCurrency = isCurrency(p.currency) ? p.currency : null; if (serverCurrency !== currencyPref) setCurrency(serverCurrency, { persist: false }); }, [server.data]); // eslint-disable-line react-hooks/exhaustive-deps
   async function savePrefs(patch: Partial<Prefs>): Promise<boolean> {
     try { server.setData(await api.put<Prefs>("/api/me/preferences", { ...patch, clientUpdatedAt: new Date().toISOString() })); notice.success(t("settings.saved")); return true; } catch (e) { notice.fromError(e); return false; }
   }
@@ -126,6 +130,7 @@ function Settings() {
             {heading(t("settings.appearance"), "appearance")}
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Field label={t("settings.theme")} id="theme"><Select id="theme" value={theme.theme} onChange={(e) => { updateTheme({ theme: e.target.value as typeof theme.theme }); savePrefs({ theme: e.target.value }); }}><option value="AUTO">{t("settings.auto")}</option><option value="LIGHT">{t("settings.light")}</option><option value="DARK">{t("settings.dark")}</option><option value="HIGH_CONTRAST">{t("settings.contrast")}</option></Select></Field></div>{infoButton(t("settings.theme"), [t("settingsHelp.theme")])}</div>
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Field label={t("settings.language")} id="language"><Select id="language" value={locale} onChange={(e) => setLocale(e.target.value as typeof locale)}>{locales.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}</Select></Field></div>{infoButton(t("settings.language"), [t("settingsHelp.language")])}</div>
+            <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Field label={t("settings.currency")} id="currency"><Select id="currency" value={currencyPref ?? "AUTO"} onChange={(e) => setCurrency(isCurrency(e.target.value) ? e.target.value : null)}><option value="AUTO">{t("settings.currency_auto", { currency })}</option>{CURRENCIES.map((c) => <option key={c} value={c}>{currencyName(intl, c)}</option>)}</Select></Field></div>{infoButton(t("settings.currency"), [t("settingsHelp.currency")])}</div>
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Switch checked={theme.highContrast} onChange={(v) => { updateTheme({ highContrast: v }); savePrefs({ highContrast: v }); }} label={t("settings.contrast")} /></div>{infoButton(t("settings.contrast"), [t("settingsHelp.contrast")])}</div>
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Switch checked={theme.reduceMotion} onChange={(v) => { updateTheme({ reduceMotion: v }); savePrefs({ reduceMotion: v }); }} label={t("settings.reduceMotion")} /></div>{infoButton(t("settings.reduceMotion"), [t("settingsHelp.reduceMotion")])}</div>
             {/* DET-D04 — som de tecido (desligado por padrão) e háptico (ligado) no Meu Quarto */}
