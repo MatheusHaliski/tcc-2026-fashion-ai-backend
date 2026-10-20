@@ -248,4 +248,24 @@ class BackgroundStudioServiceTest {
         assertThat(BackgroundStudioService.zero()).isZero();
         when(assets.list(eq("materials"))).thenReturn(List.of());
     }
+    @Test
+    void validatesAllEightLayoutsAndDelegatesFinishPermissionEvenWithoutPieceId() {
+        var permission=org.mockito.Mockito.mock(AuraPermissionsService.class);studio.setAuraPermissions(permission);
+        for(String finish:List.of("COMMON","RARE","LEGENDARY","COLLAB_DROP")) {
+            for(String layout:List.of("STATIC_HORIZONTAL","STATIC_VERTICAL","STATIC_COLUMNS","STATIC_GLOBAL","RANKED_BARS","EXTREMES","MOMENTUM","KEY_TRIAD")) {
+                var config=Map.of("auraHype",finish+"_"+layout);
+                BackgroundStudioService.validateArtwork(config);studio.requireAuraAccess(ana,config);
+            }
+            org.mockito.Mockito.verify(permission,org.mockito.Mockito.times(8)).requireHypeFinish(ana.id(),finish);
+        }
+        assertThat(BackgroundStudioService.validHypeMode("LEGENDARY_ARBITRARY_COLOR")).isFalse();
+    }
+
+    @Test
+    void rejectsDirectSubmissionOfLockedGoldWithoutRelyingOnClientThumbnails() {
+        var ledger=org.mockito.Mockito.mock(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        when(ledger.lifetime(ana.id())).thenReturn(300L);studio.setAuraPermissions(new AuraPermissionsService(ledger));
+        assertThatThrownBy(()->studio.requireAuraAccess(ana,Map.of("auraHype","LEGENDARY_STATIC_GLOBAL"))).isInstanceOf(ApiException.class);
+        studio.requireAuraAccess(ana,Map.of("scheme",Map.of("auraHype","RARE_RANKED_BARS")));
+    }
 }

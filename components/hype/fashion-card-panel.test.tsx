@@ -23,3 +23,26 @@ it('shows the same derived attributes as the back of the card (look adds influen
  expect(container.querySelectorAll('.fashion-hype-cell')).toHaveLength(9);
  expect(container.querySelector('[data-dimension="POPULARITY"]')?.getAttribute('data-tone')).toBe('low');expect(container.querySelector('[data-dimension="INFLUENCE"] dd')?.textContent).toBe('55');
 });
+
+it('ranked LED bars reorder when a genuinely newer snapshot arrives',()=>{
+ const first={status:'AVAILABLE' as const,score:40,calculatedAt:'2026-10-18T00:00:00Z',dimensions:{POPULARITY:20,TREND:80}};
+ const {container,rerender}=renderApp(<FashionCardStats summary={first} layout="ranked-bars"/>);
+ expect(container.querySelector('[data-dimension]')?.getAttribute('data-dimension')).toBe('TREND');
+ rerender(<FashionCardStats summary={{...first,calculatedAt:'2026-10-19T00:00:00Z',dimensions:{POPULARITY:90,TREND:30}}} layout="ranked-bars"/>);
+ expect(container.querySelector('[data-dimension]')?.getAttribute('data-dimension')).toBe('POPULARITY');
+ expect((container.querySelector('.hype-led-track i') as HTMLElement).style.width).toBe('90%');
+});
+it('separates current extremes from temporal direction without inventing a history',()=>{
+ const {container}=renderApp(<FashionCardStats layout="extremes" summary={{status:'AVAILABLE',dimensions:{POPULARITY:30,TREND:80}}}/>);
+ expect(container.querySelectorAll('.fashion-hype-cell')).toHaveLength(2);
+ expect(container.querySelector('[data-tone="max"]')?.textContent).toContain('80');
+ expect(container.querySelector('[data-tone="min"]')?.textContent).toContain('30');
+ expect(screen.getAllByText('Sem comparação temporal')).toHaveLength(2);
+});
+it('global-only layout does not turn missing data into zero',()=>{
+ const {container,rerender}=renderApp(<FashionCardStats layout="static-global" summary={{status:'NOT_CALCULATED'}}/>);
+ expect(container.querySelector('.hype-global-only strong')?.textContent).toBe('—');
+ expect(container.querySelector('dl')).toBeNull();
+ rerender(<FashionCardStats layout="static-global" summary={{status:'AVAILABLE',score:0}}/>);
+ expect(container.querySelector('.hype-global-only strong')?.textContent).toBe('0');
+});

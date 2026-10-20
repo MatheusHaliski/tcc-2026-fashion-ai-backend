@@ -169,7 +169,8 @@ import { CardBorder } from "@/components/card-border";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import {useFashionDepth} from "@/lib/hype/use-fashion-depth";
 import {FashionMotionButton} from "@/components/hype/fashion-motion-button";
-import {FashionCardHeader,FashionCardStats} from "@/components/hype/fashion-card-panel";
+import {PieceDetailFacts} from "@/components/piece-detail-facts";
+import {PieceCardPanels} from "@/components/piece-card-panels";
 import {fashionCardLevel} from "@/lib/hype/fashion-card";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { useTheme } from "@/lib/theme/theme";
@@ -186,7 +187,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const { prefs } = useTheme();
   const auraMode = data?.piece?.background?.auraHype as string | undefined;
   const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
-  const depth = useFashionDepth(auraEnabled);
+  const depth = useFashionDepth(auraEnabled && !headerExtra);
   const hype = useHypeSummary("PIECE", id, auraEnabled, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
@@ -295,9 +296,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
         <div className="pd-layout">
           <div className="pd-media relative">
             {auraEnabled&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
-            {auraEnabled&&<FashionCardHeader summary={hype.summary} state={hypeViewState(hype.summary,hype)}/>}
             <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined} presetId={p.background?.auraMetamorphosePreset as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} summary={hype.summary} mode={auraMode} showScore={false}/>}</>} />
-            {auraEnabled&&<FashionCardStats name={p.name} summary={hype.summary} styles={(p.style??[]).map(label)}/>}
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>
           <div className="pd-info">
@@ -308,10 +307,11 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               {primary}
             </section>
             <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />
-            <HypeInline type="PIECE" id={p.id} name={p.name} />
+            <PieceCardPanels piece={p} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} />
             <section className="pd-section" aria-labelledby={`pd-facts-${p.id}`}>
               <h3 id={`pd-facts-${p.id}`} className="pd-h">{t("pieceDetail.detalhes")}</h3>
-              <dl className="c-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+              <PieceDetailFacts piece={p}/>
+              <dl className="c-facts">{rows.filter(([key])=>[t("pieceDetail.usos"),t("pieceDetail.situacao"),t("pieceDetail.onde_esta")].includes(key)).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
             </section>
             {usedIn.length > 0 && (
               <section className="pd-section" aria-labelledby={`pd-looks-${p.id}`}>

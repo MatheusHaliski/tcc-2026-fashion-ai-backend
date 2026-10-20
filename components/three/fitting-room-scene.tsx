@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentRef, type RefObject
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import {mirrorCameraPose,protectAvatarCamera} from "@/lib/scene3d/mirror-camera";
 import { StudioLight, useCanvasTexture, useReducedMotion, useTex, type Avatar3dRef, type Look3dPiece } from "@/components/three/common";
 import { Mannequin, bodyParamsOf } from "@/components/three/mannequin";
 import { useBodyAsset, type HumanParts } from "@/components/three/human-avatar";
@@ -65,13 +66,14 @@ function CameraSteps({ controls, dist, view, yaw, reduced, onCamera }: {
     const cancel = () => { tween.current = null; };
     c.addEventListener("start", cancel); c.addEventListener("change", emit);
     onCamera({
-      step: (action) => { const pose = tween.current?.pose ?? poseNow(); tween.current = { pose, goal: orbitGoal(tween.current?.goal ?? pose, action, limits, home) }; },
+      step: (action) => { if(c.enabled === false)return; const pose = tween.current?.pose ?? poseNow(); tween.current = { pose, goal: orbitGoal(tween.current?.goal ?? pose, action, limits, home) }; },
       subscribe: (listener) => { listeners.add(listener); last = ""; emit(); return () => { listeners.delete(listener); }; },
     });
     return () => { c.removeEventListener("start", cancel); c.removeEventListener("change", emit); onCamera(null); };
   }, [controls, camera, dist, onCamera, sph, off]);
   useFrame((_, dt) => {
     const tw = tween.current, c = controls.current; if (!tw || !c) return;
+    if(c.enabled === false){tween.current=null;return;}
     tw.pose = approach(tw.pose, tw.goal, reduced ? 1 : 1 - Math.exp(-dt * 9));
     camera.position.setFromSpherical(sph.set(tw.pose.radius, tw.pose.phi, tw.pose.theta)).add(c.target); c.update();
     if (tw.pose === tw.goal) tween.current = null;
@@ -110,7 +112,7 @@ function Mirror({ kit, live }: { kit: StudioKit; live: boolean }) {
   const glass = useMemo(() => live ? new Reflector(geometry, { textureWidth: 512, textureHeight: 1024, clipBias: .003,
     color: new THREE.Color().setRGB(.46, .47, .48, THREE.LinearSRGBColorSpace) }) : null, [geometry, live]);
   useEffect(() => () => glass?.dispose(), [glass]);
-  return <group name="studio-full-height-mirror" position={[FITTING_MIRROR.x, FITTING_MIRROR.height, FITTING_MIRROR.z]} rotation={[0, FITTING_MIRROR.yaw, 0]} userData={PROP_CUT}>
+  return <group name="studio-full-height-mirror" position={[FITTING_MIRROR.x, FITTING_MIRROR.height, FITTING_MIRROR.z]} rotation={[0, FITTING_MIRROR.yaw, 0]} userData={{...PROP_CUT, keepVisible:live}}>
     <mesh geometry={frame} material={kit.wood} />
     {glass ? <primitive object={glass} position={[0, 0, .025]} />
       : <mesh geometry={geometry} position={[0, 0, .025]}><meshStandardMaterial color="#ECEEEB" metalness={1} roughness={.04} /></mesh>}
@@ -181,6 +183,7 @@ function Walker({ actor, parts, controls, height, reduced, onPlace, onWalk }: {
   const pad = useRef<{ move: Axis; look: Axis }>({ move: { x: 0, y: 0 }, look: { x: 0, y: 0 } });
   const goal = useRef<Floor | null>(null), place = useRef<FittingPlace>("center"), framed = useRef(false);
   const listeners = useRef(new Set<(p: FittingPlace) => void>());
+  const normalFov=useRef((camera as THREE.PerspectiveCamera).fov);
   const sph = useMemo(() => new THREE.Spherical(), []);
   // a câmera em primeira pessoa volta para trás do avatar sozinha quando ele começa a andar (ver useFrame)
   const go = (to: "mirror" | "center") => { goal.current = to === "mirror" ? mirrorSpot() : { x: 0, z: 0 }; };
@@ -225,9 +228,10 @@ function Walker({ actor, parts, controls, height, reduced, onPlace, onWalk }: {
     // no espelho e parado: primeira pessoa — olhos do avatar, um palmo à frente do rosto, olhando o centro do vidro
     if (mirror && !moving) {
       if (!framed.current) { framed.current = true; c.enabled = false; }
-      const eye = new THREE.Vector3(at.current.x - n.x * .16, height * .93, at.current.z - n.z * .16);
-      camera.position.lerp(eye, reduced ? 1 : Math.min(1, dt * 4));
-      camera.lookAt(FITTING_MIRROR.x, height * .55, FITTING_MIRROR.z);
+      const mirrorPose=mirrorCameraPose(at.current,FITTING_MIRROR,n,height*.93,FITTING_MIRROR.height+1.04);
+      camera.position.lerp(mirrorPose.position,reduced?1:1-Math.exp(-dt*12));
+      c.target.copy(mirrorPose.target);camera.lookAt(mirrorPose.target);
+      const lens=camera as THREE.PerspectiveCamera;lens.fov=mirrorPose.fov;lens.updateProjectionMatrix();
       const now = placeOf(at.current);
       if (now !== place.current) { place.current = now; onPlace(now); listeners.current.forEach((l) => l(now)); }
       return;
@@ -235,6 +239,7 @@ function Walker({ actor, parts, controls, height, reduced, onPlace, onWalk }: {
     if (framed.current) {
       // saiu do espelho: a câmera volta para trás do avatar, de frente para onde ele está
       framed.current = false; c.enabled = true;
+      const lens=camera as THREE.PerspectiveCamera;lens.fov=normalFov.current;lens.updateProjectionMatrix();
       c.target.set(at.current.x, height * .6, at.current.z);
       camera.position.set(at.current.x + n.x * 2.4, height * .8, at.current.z + n.z * 2.4);
     }
@@ -247,6 +252,7 @@ function Walker({ actor, parts, controls, height, reduced, onPlace, onWalk }: {
       sph.theta -= pad.current.look.x * dt * 1.6; sph.phi = THREE.MathUtils.clamp(sph.phi + pad.current.look.y * dt * .9, .35, Math.PI * .52);
       camera.position.setFromSpherical(sph).add(c.target);
     }
+    camera.position.copy(protectAvatarCamera(camera.position,at.current));
     c.update();
     const now = placeOf(at.current);
     if (now !== place.current) { place.current = now; onPlace(now); listeners.current.forEach((l) => l(now)); }

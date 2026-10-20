@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import {protectAvatarCamera} from "@/lib/scene3d/mirror-camera";
 import { Mannequin } from "@/components/three/mannequin";
 import type { HumanParts } from "@/components/three/human-avatar";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
@@ -106,16 +107,18 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     const opts = engine.camera, sx = (opts.invertX ? -1 : 1) * opts.speed, sy = (opts.invertY ? -1 : 1) * opts.speed;
     const first = ph === "room" && !opts.saved && opts.view === "primeira-pessoa";
     // em primeira pessoa o analógico direito vira o próprio corpo (não há câmera para orbitar)
-    if (first) { if (!engine.seated) yaw.current -= engine.cameraStick.x * dt * 1.6 * sx; }
-    else engine.cameraYaw += engine.cameraStick.x * dt * 1.1 * sx;
-    engine.cameraPitch = THREE.MathUtils.clamp(engine.cameraPitch + engine.cameraStick.y * dt * .7 * sy, -.6, .7);
-    const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM, camera.position, opts.follow ? undefined : 0);
+    if(ph === "room") {
+      if (first) { if (!engine.seated) yaw.current -= engine.cameraStick.x * dt * 1.6 * sx; }
+      else engine.cameraYaw += engine.cameraStick.x * dt * 1.1 * sx;
+      engine.cameraPitch = THREE.MathUtils.clamp(engine.cameraPitch + engine.cameraStick.y * dt * .7 * sy, -.6, .7);
+    }
+    const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM, camera.position, opts.follow ? undefined : 0, gameplay.body ? gameplay.body.stature*.93 : undefined);
     const pose: ViewPose | null = ph !== "room" ? null : opts.saved
       ? { position: new THREE.Vector3(...opts.saved.position), target: new THREE.Vector3(...opts.saved.target) }
       : viewPose(opts.view, { actor: engine.actor, facing: engine.seated ? engine.seatYaw : yaw.current, pitch: engine.cameraPitch, mirror: engine.mirror, mirrorNormal: MIRROR_NORMAL,
         head: first ? p.human.bone("Head").getWorldPosition(new THREE.Vector3()) : null, time: clock.elapsedTime, aspect: size.width / Math.max(1, size.height), still: opts.still });
     if (pose) { cam.position.copy(pose.position); cam.target.copy(pose.target); }
-    else {
+    else if (ph === "room") {
       const orbit = new THREE.Spherical().setFromVector3(cam.position.clone().sub(cam.target));
       orbit.theta += engine.cameraYaw; orbit.phi = THREE.MathUtils.clamp(orbit.phi + engine.cameraPitch, .3, Math.PI / 2 - .05);
       cam.position.copy(cam.target).add(new THREE.Vector3().setFromSpherical(orbit));
@@ -123,6 +126,7 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
       cam.position.z = THREE.MathUtils.clamp(cam.position.z, ROOM.minZ + .15, ROOM.maxZ - .15);
       cam.position.y = THREE.MathUtils.clamp(cam.position.y, .4, ROOM.height - .15);
     }
+    if(ph === "room" && !first)cam.position.copy(protectAvatarCamera(cam.position,engine.actor,ROOM));
     engine.updateNearby();
     // "para cima" anda para onde a câmera olha: na primeira pessoa, para a frente do corpo; nas vistas fixas, pelo olhar
     if (!moving) walkYaw.current = first ? yaw.current + Math.PI : pose ? poseYaw(pose) : ph === "room" ? viewYaw(engine.view) + engine.cameraYaw : inputYaw(cam.position, cam.target);
@@ -276,7 +280,8 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     // no quarto a lente abre um pouco (dentro das paredes a câmera fica mais perto); na prova, a abertura de sempre. A
     // lente escolhida nas Configurações vale em tudo; sem ela, cada ponto de vista tem a sua
     const lens = camera as THREE.PerspectiveCamera, base = opts.fov ?? lens.userData.baseFov ?? lens.fov;
-    const fov = opts.fov ?? pose?.fov ?? base + (ph === "room" ? Math.max(0, ROOM_FOV - base) : 0);
+    if(lens.userData.baseFov===undefined)lens.userData.baseFov=lens.fov;
+    const fov = ph === "tryon" ? cam.fov ?? base : opts.fov ?? pose?.fov ?? base + (ph === "room" ? Math.max(0, ROOM_FOV - base) : 0);
     if (Math.abs(lens.fov - fov) > .01) { lens.fov += (fov - lens.fov) * k; lens.updateProjectionMatrix(); }
     const state = JSON.stringify(engine.state); if (state !== lastState.current) { lastState.current = state; engine.notify(); }
   });

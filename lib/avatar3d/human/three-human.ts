@@ -10,6 +10,7 @@ import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import { eyeRig, eyeApertures, isCorneaCap, lowerLidLine, type EyeApertures } from "./eyes";
 import { openEyeSockets } from "./eye-sockets";
+import { earVertexMask } from "./hair-geometry";
 
 export interface Human {
   root: THREE.Group;
@@ -184,6 +185,34 @@ export function skinMaterial(look: HumanLook): THREE.MeshPhysicalMaterial {
   return m;
 }
 
+/**
+ * Pele da orelha: a pinna é fina e vascularizada, portanto precisa de uma resposta quente quando recebe luz de
+ * contraluz. A máscara vem da topologia do asset, não de uma heurística por UV, para acompanhar a forma do rosto.
+ */
+export function installEarScattering(material: THREE.MeshPhysicalMaterial): void {
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>\nattribute float earMask;\nvarying float vEarMask;`);
+    shader.vertexShader = shader.vertexShader.replace("#include <project_vertex>", `#include <project_vertex>\n  vEarMask = earMask;`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>\nvarying float vEarMask;`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <opaque_fragment>", `
+      #if NUM_DIR_LIGHTS > 0
+        vec3 earTransmission = vec3(0.0);
+        for (int earLight = 0; earLight < NUM_DIR_LIGHTS; earLight++) {
+          float earBacklight = pow(max(dot(-normal, directionalLights[earLight].direction), 0.0), 2.0);
+          earTransmission += directionalLights[earLight].color * earBacklight;
+        }
+        outgoingLight += vEarMask * diffuseColor.rgb * vec3(1.0, 0.28, 0.14) * earTransmission * 0.18;
+      #endif
+      #include <opaque_fragment>`);
+  };
+  material.customProgramCacheKey = () => "avatar-skin-ear-scattering-v2";
+}
+
+/** Binary topological masks need 255 when normalized as an unsigned-byte attribute. */
+export function earMaskAttribute(mask:Uint8Array,vertices:Uint32Array|Uint16Array){
+  return new THREE.BufferAttribute(Uint8Array.from(vertices,v=>mask[v]?255:0),1,true);
+}
+
 export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   const root = new THREE.Group(); root.name = "avatar";
   const rig = eyeRig(a, c.eye), aperture = eyeApertures(rig, look.eyeShape);
@@ -196,13 +225,17 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   g.setAttribute("position", new THREE.BufferAttribute(expand(c.body, b.renderVertex, 3, Float32Array), 3));
   g.setAttribute("normal", new THREE.BufferAttribute(expand(normals, b.renderVertex, 3, Float32Array), 3));
   g.setAttribute("uv", new THREE.BufferAttribute(b.renderUv, 2));
+  const earMask = earVertexMask(a);
+  g.setAttribute("earMask", earMaskAttribute(earMask,b.renderVertex));
   g.setAttribute("skinIndex", new THREE.BufferAttribute(cleanJoints(expand(b.skinIndex, b.renderVertex, 4, Uint16Array) as Uint16Array, expand(b.skinWeight, b.renderVertex, 4, Uint8Array) as Uint8Array), 4));
   g.setAttribute("skinWeight", new THREE.BufferAttribute(expand(b.skinWeight, b.renderVertex, 4, Uint8Array), 4, true));
   g.setIndex(new THREE.BufferAttribute(b.index, 1));
   if (aperture) openEyeSockets(g, aperture, rig);
   g.computeBoundingSphere();
   void nr;
-  const body = new THREE.SkinnedMesh(g, skinMaterial(look)); body.name = "corpo"; body.castShadow = true; body.receiveShadow = true;
+  const bodyMaterial = skinMaterial(look);
+  installEarScattering(bodyMaterial);
+  const body = new THREE.SkinnedMesh(g, bodyMaterial); body.name = "corpo"; body.castShadow = true; body.receiveShadow = true;
   body.add(bones[0]);
   // ---- olhos (textura CC0 do MakeHuman). AVATAR-ID I4: ossos LeftEye/RightEye (filhos do Head, no centro de cada globo,
   // nomes do Mixamo) — cada globo gira no próprio centro; a córnea vira uma malha à parte, só de reflexo

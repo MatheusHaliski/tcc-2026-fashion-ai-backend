@@ -1,4 +1,5 @@
 "use client";
+import { MetamorphoseInventory } from "@/components/metamorphose-inventory";
 import { AuraGuide } from "@/components/aura-guide";
 import { CreatorWelcome } from "@/components/creator-welcome";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -14,15 +15,13 @@ import { ArtVideo } from "@/components/card-art";
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SILHOUETTES, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement, silhouetteLabel } from "@/components/scheme-anatomies";
 
 import type { CardBorderConfig } from "@/lib/card-border";
-import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
-import { AURA_METAMORPHOSE_BRAND_PRESETS } from "@/lib/aura-metamorphose";
 import { AuraHypePicker } from "@/components/hype/aura-hype-picker";
 import { AuraHype } from "@/components/hype/aura-hype";
 
 import { AuraFashionPicker } from "@/components/aura-fashion-picker";
 import type { AuraFamily, FashionPreset } from "@/lib/aura-fashion";
 
-export interface BgConfig { auraImpersonation?: boolean | null; impersonationData?: Record<string,unknown> | null; compositionPreset?: FashionPreset | null; border?: CardBorderConfig | null; auraMetamorphose?: "OFF" | "PRISMA" | "CONSTELACAO" | "FIO_VIVO" | "HOLOGRAFIA" | null; auraMetamorphosePreset?: string | null; auraHype?: string | null; color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
+export interface BgConfig { auraImpersonation?: boolean | null; impersonationData?: Record<string,unknown> | null; compositionPreset?: FashionPreset | null; border?: CardBorderConfig | null; auraMetamorphose?: "OFF" | "PRISMA" | "CONSTELACAO" | "FIO_VIVO" | "HOLOGRAFIA" | null; auraMetamorphosePreset?: string | null; auraEntitlementCode?: string | null; auraHype?: string | null; color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
 interface Variant { id: string; theme?: string; description?: string; code?: string; static?: { previewUrl?: string; url?: string; cardUrl?: string }; }
 export interface BgCatalog { colors: string[]; gradients: { id: string; name: string; stops: string[]; type?: string; angle?: number }[]; seasonal: { id: string; name: string; season: string; stops: string[] }[]; auraPresets: { id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[]; variants?: Variant[] }[]; materials: { id: string; name: string; finish?: string; static?: { previewUrl?: string } }[]; skins: { id: string; displayName?: string }[]; directions: Record<string, { label: string; skin?: string; aura?: string; material?: string }>; anatomies: string[]; pieceAnatomies?: string[]; animations: string[]; imageGenerationAvailable: boolean; }
 
@@ -175,7 +174,7 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
       {auraPreset && legacyAuraFamily(auraPreset.id) === family && (auraPreset.variants ?? []).length > 1 && <OptionStrip title={t("backgroundStudio.variacao", { name: auraPreset.name })}>
         {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={currentVariant === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ compositionPreset:null, aura: { variantId: v.id, format: value.aura?.format } })}>
           {v.animatedUrl ? <span className="opt-thumb relative overflow-hidden"><ArtVideo src={v.animatedUrl} poster={v.static?.previewUrl} /></span>
-            : v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
+            : v.animatedPreviewUrl || v.static?.previewUrl ? <img src={v.animatedPreviewUrl ?? v.static?.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
           <span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
       </OptionStrip>}
       {family === "COMMON" && auraPreset && legacyAuraFamily(auraPreset.id) === "COMMON" && value.aura && <OptionStrip title={t("backgroundStudio.formato_rf11_7_6")}>
@@ -196,22 +195,11 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
         value={value.compositionPreset}
         activeFamilies={[...(auraPreset ? [legacyAuraFamily(auraPreset.id)] : []), ...(value.auraHype && value.auraHype !== "OFF" ? ["HYPE" as const] : []), ...(value.auraMetamorphose && value.auraMetamorphose !== "OFF" ? ["METAMORPHOSE" as const] : [])]}
         // Comum, Electro e Splash mostram só as opções de cima (presets e variações de antes), sem a grade de 40 do catálogo
-        exclusiveFamilies={["HYPE", "COMMON", "ELECTRO", "SPLASH"]}
+        exclusiveFamilies={["HYPE", "COMMON", "ELECTRO", "SPLASH", "METAMORPHOSE"]}
         onChange={preset=>onChange({compositionPreset:preset,aura:null,aiArt:null,uploadUrl:null})}
         familyContent={{
           HYPE:<AuraHypePicker inline value={value.auraHype ?? (auraPreset?.id === "aura_hype" ? "SCANNER" : null)} onChange={mode=>onChange({auraHype:mode,...(auraPreset?.id === "aura_hype" ? {aura:null} : {}),...(value.compositionPreset?.family === "HYPE" ? {compositionPreset:null} : {})})}/>,
-          METAMORPHOSE:<div className="grid gap-3">
-      <OptionStrip title={t("auraMetamorphose.title")} hint={<p className="type-caption text-muted">{t("auraMetamorphose.hint")}</p>}>
-        {(["OFF","PRISMA","CONSTELACAO","FIO_VIVO","HOLOGRAFIA"] as const).map(mode=><button key={mode} type="button" className="opt-tile" aria-pressed={(value.auraMetamorphose??"OFF")===mode&&!value.auraMetamorphosePreset} onClick={()=>onChange({auraMetamorphose:mode,auraMetamorphosePreset:null})}><span className="opt-thumb relative overflow-hidden bg-surface-3">{mode!=="OFF"&&<AuraMetamorphose mode={mode} preview/>}</span><span className="opt-name">{t(`auraMetamorphose.${mode}`)}</span></button>)}
-      </OptionStrip>
-      <OptionStrip title={t("auraMetamorphose.brandPresets")} hint={<p className="type-caption text-muted">{t("auraMetamorphose.brandPresetsHint")}</p>}>
-        {AURA_METAMORPHOSE_BRAND_PRESETS.map(preset=><button key={preset.id} type="button" className="opt-tile" aria-pressed={value.auraMetamorphosePreset===preset.id} onClick={()=>onChange({auraMetamorphose:preset.mode,auraMetamorphosePreset:preset.id})}>
-          <span className="opt-thumb relative overflow-hidden bg-surface-3"><AuraMetamorphose mode={preset.mode} presetId={preset.id} preview/></span>
-          <span className="opt-name">{t(`auraMetamorphose.brandPreset.${preset.id}`)}</span>
-          <span className="type-caption">{t("auraMetamorphose.brandPresetGarment",{brand:preset.brand,color:t(`auraMetamorphose.garmentColor.${preset.garmentColor}`)})}</span>
-        </button>)}
-      </OptionStrip>
-          </div>,
+          METAMORPHOSE:<MetamorphoseInventory value={value} onChange={onChange}/>,
           COMMON:legacyOptions("COMMON"),
           ELECTRO:legacyOptions("ELECTRO"),
           SPLASH:legacyOptions("SPLASH"),

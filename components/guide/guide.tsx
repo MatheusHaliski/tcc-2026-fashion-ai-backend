@@ -62,17 +62,18 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<{ key: string; mode: Mode; hidden: boolean; proceed?: () => void } | null>(null);
   const closed = useRef(new Set<string>());
   const autoThisView = useRef(false);
-  const pending = useRef<string | null>(null);
+  const [autoRequest,setAutoRequest]=useState<{key:string;path:string}|null>(null);
+  const loadedFor=useRef<string|null>(null);
   const userId = user?.id ?? null;
 
   // troca de conta: recomeça do zero com as preferências da outra pessoa
   useEffect(() => {
-    closed.current = new Set(); pending.current = null; setActive(null); setPrefs(null);
+    closed.current = new Set(); loadedFor.current=null; autoThisView.current=false; setActive(null); setPrefs(null);
     if (!authReady) return;
-    if (!userId) { setPrefs(readAnon()); return; }
+    if (!userId) { loadedFor.current="ANON"; setPrefs(readAnon()); return; }
     const ctrl = new AbortController();
     api.get<{ guides: Record<string, GuidePref> }>("/api/me/guides", { signal: ctrl.signal })
-      .then((r) => setPrefs(r?.guides ?? {})).catch(() => { if (!ctrl.signal.aborted) setPrefs({}); });
+      .then((r) => {if(!ctrl.signal.aborted){loadedFor.current=userId;setPrefs(r?.guides ?? {});}}).catch(() => { if (!ctrl.signal.aborted) {loadedFor.current=userId;setPrefs({});} });
     return () => ctrl.abort();
   }, [userId, authReady]);
 
@@ -100,14 +101,15 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     return true;
   }, [active, record]);
 
-  const requestAuto = useCallback((key: string) => {
-    if (!prefs) { pending.current = pending.current ?? key; return; }
-    tryAuto(key, prefs);
-  }, [prefs, tryAuto]);
-
-  useEffect(() => {
-    if (prefs && pending.current) { const k = pending.current; pending.current = null; tryAuto(k, prefs); }
-  }, [prefs, tryAuto]);
+  // Keep the page request in React state: a parent hydration effect must not erase
+  // a request made by a child effect. Account changes re-evaluate it against that account's preferences.
+  const requestAuto = useCallback((key:string)=>{
+    setAutoRequest(current=>current?.key===key&&current.path===pathname?current:{key,path:pathname});
+  },[pathname]);
+  useEffect(()=>{
+    if(authReady&&prefs&&autoRequest?.path===pathname&&loadedFor.current===(userId??"ANON"))
+      tryAuto(autoRequest.key,prefs);
+  },[authReady,prefs,autoRequest,pathname,userId,tryAuto]);
 
   const open = useCallback((key: string) => {
     const def = GUIDES[key]; if (!def) return;

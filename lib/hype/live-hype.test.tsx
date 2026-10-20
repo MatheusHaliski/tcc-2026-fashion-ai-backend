@@ -33,3 +33,15 @@ it('não troca o score por um snapshot mais antigo que chegou fora de ordem',()=
  act(()=>primeHype('PIECE',{p1:{...summary(50),calculatedAt:'2026-10-14T11:00:00Z'}}));
  expect(hook.result.current.summary?.score).toBe(80);
 });
+
+it('invalidates edits immediately and keeps polling stale snapshots until the backend publishes a new calculation',async()=>{
+ const old={...summary(50),calculatedAt:'2026-10-18T12:00:00Z'};
+ primeHype('PIECE',{p1:old});
+ const get=vi.spyOn(api,'get').mockResolvedValueOnce({items:{p1:old}}).mockResolvedValue({items:{p1:{...summary(63),calculatedAt:'2026-10-19T12:00:00Z'}}});
+ const hook=renderHook(()=>useHypeSummary('PIECE','p1',true,false));
+ await act(async()=>{window.dispatchEvent(new CustomEvent('fai:hype-source-updated',{detail:{type:'PIECE',id:'p1'}}));await vi.advanceTimersByTimeAsync(1);});
+ expect(get).toHaveBeenCalledTimes(1);expect(hook.result.current.summary?.stale).toBe(true);
+ expect(hook.result.current.summary?.score).toBe(50);
+ await act(async()=>{await vi.advanceTimersByTimeAsync(30_001);});
+ expect(hook.result.current.summary?.score).toBe(63);expect(hook.result.current.summary?.stale).toBe(false);
+});
