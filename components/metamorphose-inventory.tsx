@@ -8,7 +8,7 @@ import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import { ArtVideo } from "@/components/card-art";
 import { Button } from "@/components/ui";
 
-interface OwnedArt { code: string; name: string; config: Pick<BgConfig,"auraMetamorphose"|"auraMetamorphosePreset"|"compositionPreset">; source: string; expiresAt?: string | null; }
+interface OwnedArt { code: string; name: string; config: BgConfig; source: string; expiresAt?: string | null; }
 export function MetamorphoseInventory({ value, onChange }: { value: BgConfig; onChange: (p: Partial<BgConfig>) => void }) {
  const {t}=useI18n();
  const {data,loading,error,reload}=useApi<OwnedArt[]>(signal=>api.get("/api/me/arts/metamorphoses",{signal}),[]);
@@ -20,7 +20,7 @@ export function MetamorphoseInventory({ value, onChange }: { value: BgConfig; on
   {error&&<div role="alert"><p>{t("fashionAura.error")}</p><Button onClick={reload}>{t("sealHypeIssuer.retry")}</Button></div>}
   {!loading&&!error&&!arts.length&&<p role="status">{t("metamorphoseInventory.empty")}</p>}
   {!loading&&!error&&<div className="opt-grid">{arts.map(art=><button key={art.code} type="button" className="opt-tile" aria-pressed={value.auraEntitlementCode===art.code}
-   onClick={()=>onChange({auraMetamorphose:art.config.auraMetamorphose??"OFF",auraMetamorphosePreset:art.config.auraMetamorphosePreset??null,compositionPreset:art.config.compositionPreset??null,auraEntitlementCode:art.code,aura:null,aiArt:null,uploadUrl:null})}>
+   onClick={()=>onChange({auraMetamorphose:null,auraMetamorphosePreset:null,compositionPreset:null,aura:null,aiArt:null,uploadUrl:null,...art.config,auraEntitlementCode:art.code})}>
    <span className="opt-thumb relative overflow-hidden">{art.config.compositionPreset?.video?<ArtVideo src={art.config.compositionPreset.video} poster={art.config.compositionPreset.image}/>:art.config.compositionPreset?<img src={art.config.compositionPreset.image} alt=""/>:<AuraMetamorphose mode={art.config.auraMetamorphose} presetId={art.config.auraMetamorphosePreset} preview/>}</span>
    <span className="opt-name">{art.name}</span>
   </button>)}</div>}
