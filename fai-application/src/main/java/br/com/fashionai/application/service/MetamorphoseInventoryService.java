@@ -48,13 +48,19 @@ public class MetamorphoseInventoryService {
  @Transactional(readOnly=true) public void require(CurrentUser user,Map<?,?> config) {
   boolean active=config.get("auraMetamorphose") instanceof String m && !"OFF".equals(m);
   boolean composition=config.get("compositionPreset") instanceof Map<?,?> p && "METAMORPHOSE".equals(p.get("family"));
-  if (!active && !composition) return;
   Object code=config.get("auraEntitlementCode");
+  if (!active && !composition && code == null) return;
   for (Art art:mine(user)) {
    if (!art.code().equals(code)) continue;
    boolean matches=true;
-   for (String key:List.of("auraMetamorphose","auraMetamorphosePreset","compositionPreset"))
-    if (!Objects.equals(config.get(key),art.config().get(key))) matches=false;
+   // An offer owns every field it defines, including complete nested palettes/materials.
+   // Also reject adding a different Metamorphose mode/composition absent from the offer.
+   Set<String> keys=new HashSet<>(art.config().keySet());
+   keys.addAll(List.of("auraMetamorphose","auraMetamorphosePreset","compositionPreset"));
+   for (String key:keys) {
+    if (art.config().containsKey(key) && !config.containsKey(key)
+        || !Objects.equals(config.get(key),art.config().get(key))) matches=false;
+   }
    if (matches) return;
   }
   throw new ApiException(403,"AURA_ART_REQUIRED","Esta Metamorfose exige uma arte adquirida na loja ou recebida como recompensa válida.");

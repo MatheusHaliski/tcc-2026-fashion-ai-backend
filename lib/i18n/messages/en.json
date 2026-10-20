@@ -7918,5 +7918,6 @@
   "metamorphoseInventory.title": "Your Metamorphoses",
   "metamorphoseInventory.help": "Only brand and celebrity artwork acquired in the FAI store or received as a valid reward is available here.",
   "metamorphoseInventory.empty": "You have no available Metamorphose artwork yet.",
-  "metamorphoseInventory.store": "Visit the FAI store"
+  "metamorphoseInventory.store": "Visit the FAI store",
+  "auraGate.checkFailed": "Your level could not be verified. Advanced finishes remain locked. Try again."
 }

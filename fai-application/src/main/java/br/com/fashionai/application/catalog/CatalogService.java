@@ -11,6 +11,7 @@ import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.BrandAlias;
 import br.com.fashionai.domain.model.CatalogImage;
 import br.com.fashionai.domain.model.CatalogProduct;
+import br.com.fashionai.domain.model.TaxonomyAttribute;
 import br.com.fashionai.domain.model.CatalogProductAlias;
 import br.com.fashionai.domain.model.CatalogSource;
 import br.com.fashionai.domain.model.CatalogVariant;
@@ -477,6 +478,8 @@ public class CatalogService {
         m.put("colorName", p.getColorName());
         m.put("colorHex", p.getColor() == null ? null : Taxonomy.hex(p.getColor()));
         m.put("material", p.getMaterial());
+        m.put("variation", p.getVariationCode());
+        m.put("attributes", TaxonomyAttribute.toMap(p.getAttributes(), java.util.Set.of()));
         m.put("collection", p.getCollection());
         m.put("description", p.getDescription());
         DesignTraits design = designOf(p);

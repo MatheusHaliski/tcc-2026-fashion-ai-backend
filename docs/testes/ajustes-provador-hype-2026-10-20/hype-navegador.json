@@ -1,0 +1,266 @@
+[
+  {
+    "width": 1392,
+    "tier": "ESTREIA",
+    "overflow": false,
+    "buttons": [
+      {
+        "tier": "COMMON",
+        "disabled": false,
+        "lock": false,
+        "label": "Bronze",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "RARE",
+        "disabled": true,
+        "lock": true,
+        "label": "Prata · Requer nível Studio",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "LEGENDARY",
+        "disabled": true,
+        "lock": true,
+        "label": "Ouro · Requer nível Loft",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "COLLAB_DROP",
+        "disabled": true,
+        "lock": true,
+        "label": "Especial · Requer nível Loft",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1392,
+    "tier": "STUDIO",
+    "overflow": false,
+    "buttons": [
+      {
+        "tier": "COMMON",
+        "disabled": false,
+        "lock": false,
+        "label": "Bronze",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "RARE",
+        "disabled": false,
+        "lock": false,
+        "label": "Prata",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "LEGENDARY",
+        "disabled": true,
+        "lock": true,
+        "label": "Ouro · Requer nível Loft",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "COLLAB_DROP",
+        "disabled": true,
+        "lock": true,
+        "label": "Especial · Requer nível Loft",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1392,
+    "tier": "LOFT",
+    "overflow": false,
+    "buttons": [
+      {
+        "tier": "COMMON",
+        "disabled": false,
+        "lock": false,
+        "label": "Bronze",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "RARE",
+        "disabled": false,
+        "lock": false,
+        "label": "Prata",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "LEGENDARY",
+        "disabled": false,
+        "lock": false,
+        "label": "Ouro",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "COLLAB_DROP",
+        "disabled": false,
+        "lock": false,
+        "label": "Especial",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 342,
+    "tier": "ESTREIA",
+    "overflow": false,
+    "buttons": [
+      {
+        "tier": "COMMON",
+        "disabled": false,
+        "lock": false,
+        "label": "Bronze",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "RARE",
+        "disabled": true,
+        "lock": true,
+        "label": "Prata · Requer nível Studio",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "LEGENDARY",
+        "disabled": true,
+        "lock": true,
+        "label": "Ouro · Requer nível Loft",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "COLLAB_DROP",
+        "disabled": true,
+        "lock": true,
+        "label": "Especial · Requer nível Loft",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 342,
+    "tier": "STUDIO",
+    "overflow": false,
+    "buttons": [
+      {
+        "tier": "COMMON",
+        "disabled": false,
+        "lock": false,
+        "label": "Bronze",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "RARE",
+        "disabled": false,
+        "lock": false,
+        "label": "Prata",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "LEGENDARY",
+        "disabled": true,
+        "lock": true,
+        "label": "Ouro · Requer nível Loft",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "COLLAB_DROP",
+        "disabled": true,
+        "lock": true,
+        "label": "Especial · Requer nível Loft",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 342,
+    "tier": "LOFT",
+    "overflow": false,
+    "buttons": [
+      {
+        "tier": "COMMON",
+        "disabled": false,
+        "lock": false,
+        "label": "Bronze",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "RARE",
+        "disabled": false,
+        "lock": false,
+        "label": "Prata",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "LEGENDARY",
+        "disabled": false,
+        "lock": false,
+        "label": "Ouro",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      },
+      {
+        "tier": "COLLAB_DROP",
+        "disabled": false,
+        "lock": false,
+        "label": "Especial",
+        "color": "rgb(247, 247, 242)",
+        "background": "rgb(36, 36, 33)",
+        "missing": 0
+      }
+    ],
+    "errors": []
+  }
+]

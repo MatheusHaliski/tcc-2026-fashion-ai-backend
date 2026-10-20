@@ -34,6 +34,8 @@ export interface GarmentSpec {
   /** A blouse has no shirt buttons; a polo has a short button placket. */
   placket?: boolean;
   placketLength?: number;
+  /** Declared catalogue material; does not imply a measured physical fabric model. */
+  fabric?: string;
   ease: number;          // folga base (m)
   hem: number;           // barra do tronco em h (0 = articulação do quadril, 1 = base do pescoço); NaN = não cobre o tronco
   neck: number;          // gola: até onde sobe no tronco (h), na frente um pouco mais baixo
@@ -886,11 +888,24 @@ export function fabricColor(img: (CanvasImageSource & { width: number; height: n
   } catch { return base; }
 }
 
+/** Appearance estimates only: texture/color still come from the product photo. */
+export function fabricSurface(material?: string): { roughness: number; sheen: number } | null {
+  switch (material?.toUpperCase()) {
+    case "DENIM": case "CANVAS": return { roughness: .94, sheen: .08 };
+    case "COTTON": case "LINEN": return { roughness: .88, sheen: .25 };
+    case "WOOL": case "CASHMERE": case "FLEECE": case "KNIT": return { roughness: .93, sheen: .5 };
+    case "SILK": case "SATIN": return { roughness: .4, sheen: .65 };
+    case "LEATHER": return { roughness: .55, sheen: .08 };
+    default: return null;
+  }
+}
 export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
     map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: sp.construction === "cargo" ? .94 : sp.kind === "jacket" || sp.kind === "coat" ? 0.7 : 0.85,
     sheen: sp.construction === "cargo" ? .08 : sp.kind === "jacket" || sp.kind === "coat" ? 0.15 : 0.35, sheenRoughness: 0.8, sheenColor: new THREE.Color("#ffffff"), polygonOffset: true, polygonOffsetFactor: -sp.layer, polygonOffsetUnits: -sp.layer,
   });
+  const surface = fabricSurface(sp.fabric);
+  if (surface) { m.roughness = surface.roughness; m.sheen = surface.sheen; }
   m.name = `roupa-${sp.kind}`;
   m.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>

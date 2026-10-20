@@ -46,6 +46,14 @@ describe("Background Studio — Cartela sazonal", () => {
       fireEvent.click(await screen.findByRole("button",{name:/Arte conquistada/}));
       expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({auraMetamorphose:"PRISMA",auraEntitlementCode:"CREATOR_PRISMA"}));
     });
+    it("preserva toda a configuração licenciada, inclusive paleta e campos que substituem a limpeza", async () => {
+      const config: BgConfig={auraMetamorphose:"PRISMA",border:{mode:"GRADIENT",from:"#d8c4ab",to:"#eee5d9",effect:"SHIMMER"},materialId:"silk",animation:"SNOW",container:{color:"#ffffff"},aura:{variantId:"licensed-video"},uploadUrl:"/licensed.webp",gradient:null};
+      mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {}, "GET /api/me/arts/metamorphoses": [{code:"META_PRISMA_IVORY",name:"Prisma Marfim",config,source:"STORE"}] });
+      const onChange=vi.fn();renderApp(<AuraMaterialPanel value={{auraMetamorphosePreset:"NIKE_ORANGE",aiArt:{url:"/old.webp"}}} onChange={onChange} />);
+      fireEvent.click(screen.getByRole("button", { name: /AURA Metamorfose/ }));
+      fireEvent.click(await screen.findByRole("button",{name:/Prisma Marfim/}));
+      expect(onChange).toHaveBeenLastCalledWith({...config,auraMetamorphosePreset:null,compositionPreset:null,aiArt:null,auraEntitlementCode:"META_PRISMA_IVORY"});
+    });
   });
 
   it("Cancelar na primeira escolha não troca o layout nem a arte", async () => {

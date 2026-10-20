@@ -121,6 +121,25 @@ export function relaxGarment(gg: GarmentGeometry, c: Composed, normals: Float32A
   }
 }
 
+/** Reapply skin/layer clearance after column shaping and folds, which can move fabric inward.
+ * Source-vertex normal constraint in the rest pose; not a global mesh collision solver.
+ * Independent skirt tube vertices have no skin source and are deliberately left unchanged.
+ */
+export function enforceGarmentClearance(gg: GarmentGeometry, c: Composed, normals: Float32Array, P: BodyParam, under: UnderLayer | null = null): void {
+  for (let v = 0; v < gg.source.length; v++) {
+    const src = gg.source[v]; if (src < 0) continue;
+    const j = src * 3, i = v * 3;
+    const nx = normals[j], ny = normals[j + 1], nz = normals[j + 2];
+    const norm = Math.hypot(nx, ny, nz); if (norm < 1e-8) continue;
+    const distance = ((gg.position[i] - c.body[j]) * nx + (gg.position[i + 1] - c.body[j + 1]) * ny + (gg.position[i + 2] - c.body[j + 2]) * nz) / norm;
+    const correction = minEase(gg.spec, P, src, under) - distance;
+    if (correction <= 0) continue;
+    gg.position[i] += nx / norm * correction;
+    gg.position[i + 1] += ny / norm * correction;
+    gg.position[i + 2] += nz / norm * correction;
+  }
+}
+
 /** Ruído determinístico suave (−1…1) por ângulo, para as dobras não serem regulares. */
 const wob = (x: number) => Math.sin(x * 2.3 + 0.7) * 0.55 + Math.sin(x * 5.1 + 1.9) * 0.3 + Math.sin(x * 9.7) * 0.15;
 

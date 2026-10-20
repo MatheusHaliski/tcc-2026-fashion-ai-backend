@@ -7918,5 +7918,6 @@
   "metamorphoseInventory.title": "Tus Metamorfosis",
   "metamorphoseInventory.help": "Aquí solo aparecen artes de marcas y celebridades adquiridas en la tienda FAI o recibidas como recompensa válida.",
   "metamorphoseInventory.empty": "Todavía no tienes artes Metamorfosis disponibles.",
-  "metamorphoseInventory.store": "Visitar la tienda FAI"
+  "metamorphoseInventory.store": "Visitar la tienda FAI",
+  "auraGate.checkFailed": "No se pudo verificar tu nivel. Los acabados avanzados siguen bloqueados. Inténtalo de nuevo."
 }

@@ -15,7 +15,7 @@ import { SPECS, kindOf, specOf, type GarmentKind, type GarmentSpec } from "./gar
 
 export type FitClass = "justa" | "regular" | "oversized" | "estruturada" | "fluida";
 
-export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
+export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; material?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
 
 /** Variação de modelagem da taxonomia → classe de caimento. */
 export const VARIATION_FIT: Record<string, FitClass> = {
@@ -38,6 +38,12 @@ const SUB_FIT: Record<string, FitClass> = { bodysuit: "justa", kimono: "fluida",
 export function fitClassOf(p: FitPiece): FitClass {
   const v = (p.variation ?? "").toUpperCase();
   if (VARIATION_FIT[v]) return VARIATION_FIT[v];
+  // Catalogue items often have no variation column; use explicit model words, never brand stereotypes.
+  const name = (p.name ?? "").toLowerCase();
+  if (/\b(skinny|slim[ -]?fit|extra[ -]?slim|muscle[ -]?fit)\b/.test(name)) return "justa";
+  if (/\b(wide[ -]?leg|flare|pantalona)\b/.test(name)) return "fluida";
+  if (/\b(oversized|baggy|loose[ -]?fit)\b/.test(name)) return "oversized";
+  if (/\b(regular[ -]?fit|straight)\b/.test(name)) return "regular";
   const sub = (p.subcategory ?? "").toLowerCase();
   if (SUB_FIT[sub]) return SUB_FIT[sub];
   const k = kindOf(p); return k ? KIND_FIT[k] : "regular";
@@ -78,6 +84,18 @@ export function necklineOf(p: FitPiece): string | null {
   return null;
 }
 /** Início do cano da bota (0 quadril → 1 tornozelo) pela dimensão SHAFT_HEIGHT ou pela subcategoria. */
+// Same normalized torso coordinate as coverageOf: higher values put the waistband higher.
+const RISE: Record<string, number> = { LOW_RISE: .10, MID_RISE: .18, HIGH_RISE: .34, SUPER_HIGH_RISE: .43 };
+export function riseOf(p: FitPiece): string | null {
+  const declared = first(p, "RISE");
+  if (declared) return RISE[declared] === undefined ? null : declared;
+  const name = (p.name ?? "").toLowerCase();
+  if (/super[ -]?high[ -]?rise|cintura super alta/.test(name)) return "SUPER_HIGH_RISE";
+  if (/high[ -]?rise|cintura alta/.test(name)) return "HIGH_RISE";
+  if (/mid[ -]?rise|cintura m[eé]dia/.test(name)) return "MID_RISE";
+  if (/low[ -]?rise|cintura baixa/.test(name)) return "LOW_RISE";
+  return null;
+}
 const SHAFT: Record<string, number> = { ANKLE: 0.86, MID_TOP: 0.86, HIGH_TOP: 0.82, QUARTER: 0.88, CREW: 0.8, MID_CALF: 0.72, KNEE_HIGH: 0.55, OVER_THE_KNEE: 0.42, THIGH_HIGH: 0.25 };
 const SHAFT_SUB: Record<string, number> = { ankle_boots: 0.86, combat_boots: 0.8, boots: 0.72, long_boots: 0.56 };
 
@@ -125,8 +143,18 @@ export function specFor(p: FitPiece): GarmentSpec | null {
   if (sleeve && SLEEVE_LEN[sleeve] !== undefined && !Number.isNaN(base.hem)) sp.sleeve = SLEEVE_LEN[sleeve];
   if (k === "boots") sp.shaft = (shaft ? SHAFT[shaft] : undefined) ?? SHAFT_SUB[sub] ?? base.shaft;
   // decote (peças de cima e vestidos): dimensão NECKLINE ou o nome da peça
-  const neckline = !Number.isNaN(base.hem) && base.leg === 0 ? necklineOf(p) : null;
+  const neckline = !Number.isNaN(base.hem) ? necklineOf(p) : null;
   if (neckline) Object.assign(sp, NECKLINE[neckline]);
+  // Jumpsuits have a neckline too, but RISE must never truncate their upper body.
+  const rise = riseOf(p);
+  if (rise && Number.isNaN(base.hem) && Number.isFinite(base.waist)) sp.waist = RISE[rise];
+  const closure = first(p, "CLOSURE");
+  if (k === "shirt" && closure) {
+    // A zipper, tie or pullover must not acquire seven synthetic shirt buttons.
+    sp.placket = ["BUTTON", "SNAP", "SINGLE_BREASTED"].includes(closure);
+    if (!sp.placket) sp.placketLength = undefined;
+  }
+  sp.fabric = (p.material ?? first(p, "MATERIAL"))?.toUpperCase() ?? undefined;
   sp.ease = clamp(sp.ease, 0.0015, 0.05);
   return sp;
 }
