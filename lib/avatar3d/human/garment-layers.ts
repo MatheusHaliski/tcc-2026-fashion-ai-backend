@@ -1,5 +1,5 @@
 import type { Composed } from "./compose";
-import { coverageOf, necklineH, type BodyParam, type GarmentGeometry, type GarmentSpec } from "./garments";
+import { coverageOf, necklineH, frontPanelCoverage, type BodyParam, type GarmentGeometry, type GarmentSpec } from "./garments";
 
 const smooth = (a: number, b: number, value: number) => {
   const t = Math.min(1, Math.max(0, (value - a) / (b - a)));
@@ -8,11 +8,18 @@ const smooth = (a: number, b: number, value: number) => {
 
 /** The torso envelope extends over the hips as one tube, including the gaps between thighs. */
 function torsoCoverage(P: BodyParam, sp: GarmentSpec, x: number, y: number, z: number): number {
-  if (!Number.isFinite(sp.hem)) return 0;
+  if (!Number.isFinite(sp.hem)) {
+    // A tucked bodysuit can have a continuous hip envelope (source=-1).
+    // Lower garments must occlude that envelope too, not only body-derived vertices.
+    if (!Number.isFinite(sp.waist) || !(sp.leg > 0 || sp.skirt > 0)) return 0;
+    const top = P.hipY + sp.waist * (P.neckY - P.hipY);
+    const bottom = sp.skirt > 0 ? top - sp.skirt : P.hipY - sp.leg * (P.hipY - P.ankleY);
+    return smooth(bottom - .02, bottom + .02, y) * (1 - smooth(top - .02, top + .02, y));
+  }
   const span = P.neckY - P.hipY, h = (y - P.hipY) / span;
   const hem = sp.skirt > 0 ? (sp.kind === "coat" ? 0 : sp.hem) - sp.skirt / span : sp.hem;
   const neck = necklineH(sp, x, z - P.neckZ);
-  return smooth(hem - 0.03, hem + 0.03, h) * (1 - smooth(neck - 0.03, neck + 0.03, h));
+  return smooth(hem - 0.03, hem + 0.03, h) * (1 - smooth(neck - 0.03, neck + 0.03, h)) * frontPanelCoverage(sp, x, z - P.torsoZ);
 }
 
 /** Hide inner fabric only where a successfully constructed outer garment covers it.
@@ -41,8 +48,8 @@ export function visibleGarmentFinishes(sp: GarmentSpec, above: GarmentSpec[], P:
   const outer = above.filter((o) => o.layer > sp.layer && Number.isFinite(o.hem));
   const hem = (o: GarmentSpec) => o.skirt > 0 ? (o.kind === "coat" ? 0 : o.hem) - o.skirt / (P.neckY - P.hipY) : o.hem;
   return {
-    hem: !outer.some((o) => hem(o) <= sp.hem && o.neck - o.vneck > sp.hem + 0.03),
+    hem: !outer.some((o) => hem(o) <= sp.hem && o.neck - o.vneck > sp.hem + 0.03 && !o.frontOpening),
     cuff: !outer.some((o) => o.sleeve >= sp.sleeve),
-    collar: !outer.some((o) => o.neck >= sp.neck && o.neck - o.vneck >= sp.neck - sp.vneck),
+    collar: !outer.some((o) => o.neck >= sp.neck && o.neck - o.vneck >= sp.neck - sp.vneck && !o.frontOpening),
   };
 }

@@ -1,0 +1,20 @@
+subcategoria,nome,status_taxonomia,variacoes_com_spec_validado,barra_h,manga,camada,abertura_frontal_m,vertices
+t_shirt,Camiseta,ACTIVE,8,-0.06,0.33,3,0,2281
+shirt,Camisa,ACTIVE,9,-0.1,0.96,3,0,3078
+blouse,Blusa,ACTIVE,11,-0.1,0.96,3,0,3049
+tank_top,Regata,ACTIVE,8,-0.03,0,3,0,1861
+top,Top,ACTIVE,8,0.45,0,3,0,964
+crop_top,Cropped,LEGACY,0,0.45,0.28,3,0,1290
+polo_shirt,Camisa polo,ACTIVE,6,-0.06,0.33,3,0,2332
+bodysuit,Body,ACTIVE,7,-0.18,0,1,0,2245
+sweater,Suéter,ACTIVE,5,-0.07,0.97,4,0,3028
+sweatshirt,Moletom,ACTIVE,5,-0.12000000000000001,0.97,4,0,3137
+hoodie,Moletom com capuz,ACTIVE,5,-0.13,0.97,4,0,3211
+cardigan,Cardigã,ACTIVE,6,-0.08,0.98,4,0.035,2942
+vest,Colete,ACTIVE,5,-0.06,0,5,0,1813
+blazer,Blazer,ACTIVE,6,-0.08,0.98,5,0.026,2965
+jacket,Jaqueta,ACTIVE,14,-0.08,0.98,5,0,3070
+coat,Casaco,ACTIVE,9,-0.08,0.99,6,0,5347
+parka,Parka,ACTIVE,4,-0.08,0.99,6,0,4797
+windbreaker,Corta-vento,ACTIVE,4,-0.08,0.98,5,0,3070
+kimono,Quimono,ACTIVE,2,-0.25,0.72,5,0.05,3206

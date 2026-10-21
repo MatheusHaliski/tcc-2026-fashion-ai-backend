@@ -1,0 +1,127 @@
+{
+  "scope": "19 local reference garments on F-ref, fixed lab canvas; not production products or mobile device validation",
+  "results": [
+    {
+      "id": "01_parte_superior_01_camiseta_referencia",
+      "subcategory": "t_shirt",
+      "dressed": true,
+      "photoVertices": 752
+    },
+    {
+      "id": "01_parte_superior_02_shirt_camisa",
+      "subcategory": "shirt",
+      "dressed": true,
+      "photoVertices": 820
+    },
+    {
+      "id": "01_parte_superior_03_blouse_blusa",
+      "subcategory": "blouse",
+      "dressed": true,
+      "photoVertices": 799
+    },
+    {
+      "id": "01_parte_superior_04_tank_top_regata",
+      "subcategory": "tank_top",
+      "dressed": true,
+      "photoVertices": 724
+    },
+    {
+      "id": "fai-reference-top",
+      "subcategory": "top",
+      "dressed": true,
+      "photoVertices": 395
+    },
+    {
+      "id": "01_parte_superior_05_crop_top_cropped",
+      "subcategory": "crop_top",
+      "dressed": true,
+      "photoVertices": 396
+    },
+    {
+      "id": "01_parte_superior_06_polo_shirt_camisa_polo",
+      "subcategory": "polo_shirt",
+      "dressed": true,
+      "photoVertices": 772
+    },
+    {
+      "id": "01_parte_superior_07_bodysuit_body",
+      "subcategory": "bodysuit",
+      "dressed": true,
+      "photoVertices": 863
+    },
+    {
+      "id": "01_parte_superior_08_sweater_sueter",
+      "subcategory": "sweater",
+      "dressed": true,
+      "photoVertices": 811
+    },
+    {
+      "id": "01_parte_superior_09_sweatshirt_moletom_sem_capuz",
+      "subcategory": "sweatshirt",
+      "dressed": true,
+      "photoVertices": 849
+    },
+    {
+      "id": "01_parte_superior_10_hoodie_moletom_com_capuz",
+      "subcategory": "hoodie",
+      "dressed": true,
+      "photoVertices": 885
+    },
+    {
+      "id": "01_parte_superior_11_cardigan",
+      "subcategory": "cardigan",
+      "dressed": true,
+      "photoVertices": 688
+    },
+    {
+      "id": "01_parte_superior_12_vest_colete",
+      "subcategory": "vest",
+      "dressed": true,
+      "photoVertices": 694
+    },
+    {
+      "id": "01_parte_superior_13_blazer",
+      "subcategory": "blazer",
+      "dressed": true,
+      "photoVertices": 711
+    },
+    {
+      "id": "01_parte_superior_14_jacket_jaqueta",
+      "subcategory": "jacket",
+      "dressed": true,
+      "photoVertices": 816
+    },
+    {
+      "id": "01_parte_superior_15_coat_casaco",
+      "subcategory": "coat",
+      "dressed": true,
+      "photoVertices": 1649
+    },
+    {
+      "id": "01_parte_superior_16_parka",
+      "subcategory": "parka",
+      "dressed": true,
+      "photoVertices": 1474
+    },
+    {
+      "id": "01_parte_superior_17_windbreaker_corta_vento",
+      "subcategory": "windbreaker",
+      "dressed": true,
+      "photoVertices": 819
+    },
+    {
+      "id": "01_parte_superior_18_kimono_quimono",
+      "subcategory": "kimono",
+      "dressed": true,
+      "photoVertices": 886
+    }
+  ],
+  "errors": [],
+  "revalidatedAfterFinalChanges": [
+    "cardigan",
+    "blazer",
+    "kimono",
+    "bodysuit"
+  ],
+  "mouldVersion": "fai-mould-skinwrap-v4"
+}

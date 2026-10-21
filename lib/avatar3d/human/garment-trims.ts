@@ -1,3 +1,4 @@
+import { hasRibbing } from "./upperwear";
 /*
  * Avatar 3D (RF40) / Provador — acabamentos: barra do tronco e barra/punho das mangas como faixas 3D, com espessura,
  * dando a volta inteira na peça (frente, lados e costas), na cor do acabamento da foto. Sem elas a borda do tecido
@@ -14,12 +15,12 @@ import type { BodyParam, GarmentGeometry, GarmentSpec } from "./garments";
 
 export interface TrimBand { part: "barra" | "punho" | "carcela" | "costura" | "botoes" | "botoes-borda" | "gola-ponta"; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
 
-const RIB = new Set(["sweater", "hoodie"]);
+
 const TORSO_HEM = new Set(["tee", "longsleeve", "shirt", "sweater", "hoodie", "crop", "tank"]);
 
 /** Largura da faixa (m): ribana de moletom/suéter ou barra dobrada de camiseta/camisa. */
 export function trimWidth(sp: GarmentSpec, where: "hem" | "cuff"): number {
-  if (RIB.has(sp.kind)) return where === "hem" ? 0.05 : 0.045;
+  if (hasRibbing(sp)) return where === "hem" ? 0.05 : 0.045;
   return where === "hem" ? 0.016 : 0.014;
 }
 
@@ -100,7 +101,7 @@ function basis(d: number[]) {
  *  - gola: duas pontas (quadriláteros) deitadas no peito a partir do decote, na cor da gola da foto.
  */
 export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry): TrimBand[] {
-  if (gg.spec.kind !== "shirt" || gg.spec.placket === false) return [];
+  if (gg.spec.kind !== "shirt" || gg.spec.placket === false || gg.spec.frontOpening) return [];
   const candidates = Array.from(P.group.keys()).filter(v => P.group[v] === 1);
   const front = Array.from(gg.source.keys()).filter(v => gg.alpha[v] > .5 && gg.position[v * 3 + 2] > P.torsoZ && gg.source[v] >= 0 && P.group[gg.source[v]] === 1);
   const vertices = front.filter(v => Math.abs(gg.position[v * 3]) < .065);

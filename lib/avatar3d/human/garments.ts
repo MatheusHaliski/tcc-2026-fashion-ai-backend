@@ -1,3 +1,4 @@
+import { upperProfile } from "./upperwear";
 import { silhouetteLandmarks, separatedLegRows, landmarkProjection, type GarmentLandmarks, type PhotoLegRow } from "./photo-landmarks";
 /*
  * Avatar 3D (RF40) / Provador — roupa que veste. Cada peça vira uma malha presa ao MESMO esqueleto do corpo:
@@ -31,6 +32,10 @@ export type GarmentKind =
 export interface GarmentSpec {
   kind: GarmentKind;
   construction?: "cargo";
+  frontOpening?: number; // centre-front half-gap in metres (open cardigan/kimono)
+  sleeveEase?: number;   // extra radial sleeve allowance
+  hemFlare?: number;     // lower-torso expansion (estimated peplum)
+  ribbed?: boolean;
   /** A blouse has no shirt buttons; a polo has a short button placket. */
   placket?: boolean;
   placketLength?: number;
@@ -162,9 +167,12 @@ export function specOf(p: { name?: string; category?: string | null; subcategory
   const kind = kindOf(p);
   if (!kind) return null;
   const sub = (p.subcategory ?? "").toLowerCase();
-  if (sub === "blouse") return { ...SPECS.shirt, placket: false };
-  if (sub === "polo_shirt") return { ...SPECS.shirt, sleeve: .33, hem: -.06, placketLength: .16 };
-  if (sub === "top") return { ...SPECS.tank, hem: .45 };
+  const upper = upperProfile(p);
+  if (upper) {
+    const spec = { ...SPECS[kind], ...upper.spec };
+    if (/long[ _-]?sleeve|manga[ _-]?longa/i.test(p.name ?? "")) spec.sleeve = .96;
+    return spec;
+  }
   if (sub === "overalls") return { ...SPECS.jumpsuit, neck: 1.03, vneck: .3 };
   const description = `${p.subcategory ?? ""} ${p.name ?? ""}`.toLowerCase();
   if (kind === "pants" && /cargo/.test(description)) {
@@ -185,7 +193,7 @@ export function armOutFor(specs: GarmentSpec[]): number {
   for (const sp of [...specs].sort((a, b) => a.layer - b.layer)) {
     if (sp.skirt > 0) out = Math.max(out, 15);
     if (Number.isNaN(sp.hem)) continue;                                  // não cobre o tronco
-    const thick = sp.ease + under;
+    const thick = sp.ease + under + (sp.sleeveEase ?? 0) * .5;
     out = Math.max(out, Math.min(22, 10 + (thick - 0.012) * 350));    // casaco por cima: a axila abre até 22°
     under = Math.max(under, sp.ease + 0.004 + sp.flare * 0.3);
   }
@@ -253,6 +261,11 @@ export function necklineH(sp: GarmentSpec, x: number, dz: number): number {
   }
 }
 
+/** Shared by garment coverage and inner-layer occlusion; back panels remain intact. */
+export function frontPanelCoverage(sp: GarmentSpec, x: number, dz: number): number {
+  return sp.frontOpening && dz > 0 ? smooth(sp.frontOpening - .008, sp.frontOpening + .008, Math.abs(x)) : 1;
+}
+
 function coverage(sp: GarmentSpec, P: BodyParam, v: number, x: number, z: number): number {
   const g = P.group[v], h = P.h[v], arm = P.arm[v], leg = P.leg[v];
   const dh = 0.03, da = 0.035, dl = 0.02;
@@ -275,7 +288,7 @@ function coverage(sp: GarmentSpec, P: BodyParam, v: number, x: number, z: number
     if (g === 1) c = Math.max(c, below);
     if (g === 3 && sp.leg > 0) c = Math.max(c, 1 - smooth(sp.leg - dl, sp.leg + dl, leg));
   }
-  return c;
+  return c * frontPanelCoverage(sp, x, z - P.torsoZ);
 }
 
 export interface GarmentGeometry {
@@ -423,6 +436,8 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     const g = P.group[v]; const h = P.h[v];
     let e = sp.ease + (under ? under.ease[v] : 0);
     if (g === 2 && sp.sleeve > 0) e += sp.flare * smooth(sp.sleeve * 0.3, sp.sleeve, P.arm[v]) * (sp.sleeve < 0.6 ? 1 : 0.3) + 0.002;
+    if (g === 2 && sp.sleeve > 0) e += sp.sleeveEase ?? 0;
+    if ((g === 1 || g === 3) && sp.hemFlare) e += sp.hemFlare * smooth(sp.hem + .35, sp.hem, h);
     if (g === 3 && sp.leg > 0) e += legFlareOffset(sp, P.leg[v]);
     if (sp.kind === "shoes" || sp.kind === "boots") e += 0.004 * smooth(-0.02, -0.12, c.body[v * 3 + 2] - (P.torsoZ + 0.05));   // biqueira
     let x = c.body[v * 3] + normals[v * 3] * e, y = c.body[v * 3 + 1] + normals[v * 3 + 1] * e, z = c.body[v * 3 + 2] + normals[v * 3 + 2] * e;
@@ -475,7 +490,7 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
       for (let j = 0; j < TUBE_NA; j++) {
         const r = tube.r[i][j]; const phi = (j / TUBE_NA) * 2 * Math.PI - Math.PI;
         pos.push(Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
-        al.push(1); src.push(-1);
+        al.push(frontPanelCoverage(sp, Math.sin(phi) * r, Math.cos(phi) * r)); src.push(-1);
         // abaixo do quadril o tubo acompanha as coxas (frente e laterais mais que as costas), dividido entre as duas
         // pernas pelo lado: no agachamento as coxas sobem e levam a frente da saia, em vez de atravessá-la.
         // A barra curta de blusa (shortHem) é um envelope contínuo colado ao corpo: herda os pesos da pele mais próxima
@@ -975,7 +990,7 @@ export interface CollarBand { position: Float32Array; skinIndex: Uint16Array; sk
  * no perímetro acompanham o pescoço e o tronco sem separar as bordas da faixa.
  */
 export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null = null): CollarBand | null {
-  if (!HAS_COLLAR_BAND.has(sp.kind) || Number.isNaN(sp.hem)) return null;
+  if (!HAS_COLLAR_BAND.has(sp.kind) || Number.isNaN(sp.hem) || sp.frontOpening) return null;
   const NA = 72, nb = P.h.length, span = P.neckY - P.hipY;
   const band = sp.kind === "shirt" ? 0.026 : sp.kind === "hoodie" || sp.kind === "sweater" ? 0.02 : 0.016;
   const phiOf = (x: number, dz: number) => Math.atan2(x, dz);
