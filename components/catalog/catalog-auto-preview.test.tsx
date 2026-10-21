@@ -73,3 +73,42 @@ it("queues source-only products while the unframed display URL is withheld", asy
   await waitFor(() => expect(result.result.current.product.catalogImage?.mode).toBe("PROCESSED"));
   expect(request).toHaveBeenCalledWith(product.id);
 });
+
+it("retry invalidates persisted framing and requests a fresh preview", async () => {
+  const product = { id: "retry-persisted", imageUrl: "https://brand.example/retry.jpg" } as CatalogProduct;
+  const resultImage = { url: "/media/retry.webp", mode: "PROCESSED" as const };
+  const request = vi.spyOn(catalogApi, "previewImage").mockResolvedValue({ ...product, catalogImage: resultImage });
+  const result = renderHook(() => useCatalogPreview(product));
+  await waitFor(() => expect(result.result.current.product.catalogImage).toEqual(resultImage));
+  expect(localStorage.getItem("fai.catalogPreview.v2")).toContain("retry-persisted");
+  act(() => result.result.current.retry());
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+});
+it("does not reuse a previous source or replace current product colors and attributes", async () => {
+  const first = { id: "changed-photo", productName: "Cargo", colorHex: "#112233", imageUrl: "https://brand.example/old.jpg" } as CatalogProduct;
+  const request = vi.spyOn(catalogApi, "previewImage").mockImplementation(async () => ({ ...first, catalogImage: { url: `/media/framed-${request.mock.calls.length}.webp`, mode: "PROCESSED" } }));
+  const result = renderHook(({ product }) => useCatalogPreview(product), { initialProps: { product: first } });
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  const edited = { ...first, colorHex: "#445566", attributes: { RISE: ["HIGH_RISE"] } };
+  result.rerender({ product: edited });
+  expect(result.result.current.product.colorHex).toBe("#445566");
+  expect(result.result.current.product.attributes).toEqual(edited.attributes);
+  expect(request).toHaveBeenCalledTimes(1);
+  result.rerender({ product: { ...edited, imageUrl: "https://brand.example/new.jpg" } });
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(result.result.current.product.imageUrl).toContain("new.jpg");
+});
+
+it("limits framing to backend capacity instead of exhausting retries behind its own requests", async () => {
+  const finish: (() => void)[] = [];
+  const request = vi.spyOn(catalogApi, "previewImage").mockImplementation(id => new Promise(resolve => {
+    finish.push(() => resolve({ id, catalogImage: { url: `/media/${id}.webp`, mode: "PROCESSED" } } as CatalogProduct));
+  }));
+  const hooks = [0, 1, 2, 3].map(n => renderHook(() => useCatalogPreview({ id: `capacity-${n}`, imageUrl: `https://brand.example/${n}.jpg` } as CatalogProduct)));
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  await act(async () => { finish.splice(0).forEach(resolve => resolve()); });
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(4));
+  await act(async () => { finish.splice(0).forEach(resolve => resolve()); });
+  await waitFor(() => expect(hooks.every(hook => !hook.result.current.pending)).toBe(true));
+});

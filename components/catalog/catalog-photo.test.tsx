@@ -158,3 +158,16 @@ it("enquadramento obrigatório oculta a original ao falhar",()=>{
  expect(container.querySelector('img')).toBeNull();
  expect(container.querySelector('[role="alert"]')).toBeTruthy();
 });
+
+it("retries an unavailable required image without exposing an unframed source", () => {
+  let retries = 0;
+  const props = { requiredFrame: true, alt: "Cargo", image: { url: "/media/cargo.webp", mode: "PROCESSED" as const }, onRetry: () => { retries++; } };
+  const result = render(<CatalogPhoto {...props} />);
+  fireEvent.error(result.container.querySelector("img")!);
+  fireEvent.click(result.container.querySelector("button")!);
+  expect(retries).toBe(1);
+  expect(result.container.querySelector("img")?.getAttribute("src")).toBe(mediaUrl(props.image.url));
+  result.rerender(<CatalogPhoto {...props} framing="WHOLE" />);
+  result.rerender(<CatalogPhoto {...props} framing="FABRIC" />);
+  expect(result.container.querySelector("[role=alert]")).toBeNull();
+});

@@ -6165,7 +6165,7 @@
   "tryOn.motivo.acessorio_sem_molde_3d": "Accesorio aún sin modelo 3D: mira la foto.",
   "tryOn.motivo.malha_aprovada": "Malla de prenda validada para este cuerpo.",
   "tryOn.motivo.carregando_foto": "Cargando la foto de la prenda…",
-  "tryOn.motivo.foto_indisponivel_no_3d": "La foto de esta prenda no pudo usarse en 3D; el cuerpo muestra la prenda estándar en su lugar.",
+  "tryOn.motivo.foto_indisponivel_no_3d": "Esta foto no pudo usarse en 3D; el molde estimado sigue vestido con el color registrado, cuando está disponible.",
   "tryOn.motivo.sem_foto_cor_cadastrada": "Sin foto: el molde usa el color registrado.",
   "tryOn.motivo.molde_estimado_foto_frontal": "Molde estimado del cuerpo con la foto frontal; no es prueba de calce ni de talla.",
   "tryOn.limite.sandalia_como_sapato_fechado": "Sandalias y chanclas aparecen como zapato cerrado (la forma abierta aún no está modelada).",

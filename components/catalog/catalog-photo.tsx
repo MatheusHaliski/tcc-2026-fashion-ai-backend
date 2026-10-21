@@ -52,7 +52,8 @@ export function pieceCatalogCrop(p: PieceView): CatalogCardImage | null {
  * tenta a seguinte da lista — `fallbackUrl`, depois `alternatives` (ex.: a foto original da marca) — e só então o
  * `placeholder` (a ilustração da categoria).
  */
-export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className, requiredFrame = false, framing = "FABRIC" }: {
+export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className, requiredFrame = false, framing = "FABRIC", onRetry }: {
+  onRetry?: () => void;
   requiredFrame?: boolean; image?: CatalogCardImage | null; fallbackUrl?: string | null; alternatives?: (string | null | undefined)[]; placeholder?: ReactNode; alt: string; className?: string;
   /** WHOLE = Total frame: a peça inteira no quadro (nunca o recorte de tecido); sem a caixa da peça, a foto original inteira contida */
   framing?: PhotoFraming;
@@ -72,7 +73,7 @@ export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, al
   useEffect(() => { setFailed(0); setWholeFailed(false); }, [key]);
   const fail = () => setFailed((n) => n + 1);
   if (whole && !wholeFailed) return <WholeFramePhoto frame={whole} alt={alt} className={className} onFail={() => setWholeFailed(true)} />;
-  if (requiredFrame && !wholeMode && (!image || failed > 0 || image.mode === "SEMANTIC_CROP" && !crop)) return <span role="alert" className="type-caption text-muted p-4">{tr("catalog.framingRequiredError")}</span>;
+  if (requiredFrame && !wholeMode && (!image || failed > 0 || image.mode === "SEMANTIC_CROP" && !crop)) return <span role="alert" className="type-caption text-muted p-4">{tr("catalog.framingRequiredError")} <button type="button" className="btn btn-sm mt-2" onClick={() => { setFailed(0); setWholeFailed(false); onRetry?.(); }}>{tr("common.retry")}</button></span>;
   if (crop && failed === 0) {
     return (
       <span className={cn("catalog-photo is-cropped", className)} style={{ background: crop.background ?? undefined }} data-mode="semantic-crop">

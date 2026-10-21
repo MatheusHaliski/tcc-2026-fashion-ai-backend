@@ -55,9 +55,18 @@ export function loadTexture(url: string): Promise<THREE.Texture | null> {
   if (!p) {
     p = new Promise((resolve) => {
       const l = new THREE.TextureLoader(); l.setCrossOrigin("anonymous");
-      l.load(url, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; resolve(t); }, undefined, () => resolve(null));
+      let finished = false;
+      const timer = setTimeout(() => { finished = true; resolve(null); }, 15000);
+      l.load(url, (t) => {
+        if (finished) { t.dispose(); return; }
+        finished = true; clearTimeout(timer);
+        t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; resolve(t);
+      }, undefined, () => { finished = true; clearTimeout(timer); resolve(null); });
     });
     texCache.set(url, p);
+    const pending = p;
+    void pending.then(texture => { if (!texture && texCache.get(url) === pending) texCache.delete(url); });
+    if (texCache.size > 128) texCache.delete(texCache.keys().next().value!);
   }
   return p;
 }

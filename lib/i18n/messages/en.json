@@ -6165,7 +6165,7 @@
   "tryOn.motivo.acessorio_sem_molde_3d": "Accessory without a 3D model yet: see the photo.",
   "tryOn.motivo.malha_aprovada": "Garment mesh validated for this body.",
   "tryOn.motivo.carregando_foto": "Loading the piece photo…",
-  "tryOn.motivo.foto_indisponivel_no_3d": "This piece’s photo could not be used in 3D; the body shows the default piece instead.",
+  "tryOn.motivo.foto_indisponivel_no_3d": "This photo could not be used in 3D; the estimated garment remains dressed in its registered color, when available.",
   "tryOn.motivo.sem_foto_cor_cadastrada": "No photo: the mold uses the saved color.",
   "tryOn.motivo.molde_estimado_foto_frontal": "Mold estimated from the body with the front photo; not a fit or size check.",
   "tryOn.limite.sandalia_como_sapato_fechado": "Sandals and flip-flops appear as closed shoes (the open shape is not modeled yet).",

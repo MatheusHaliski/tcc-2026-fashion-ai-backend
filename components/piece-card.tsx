@@ -107,7 +107,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   // prévia do criador em Peça inteira: sem a caixa da peça na foto, mostra a foto inteira contida — nunca o recorte de tecido
   const wholeImage = whole?.image && (!preview || catalogWholeFrame(whole.image)) ? whole.image : null;
   // prévia do criador em Tecido: a peça preenche 100% do quadro (cover), como o recorte de tecido — nunca contida com margem
-  const fillFrame = preview && framing === "FABRIC" && !piece.defaultImage;
+  const fillFrame = preview && framing === "FABRIC";
   const mediaStyle = { aspectRatio: whole ? "3 / 4" : piecePhotoAspect(piece) };
   // sem foto de estúdio, a peça do catálogo mostra a foto oficial com o mesmo recorte do card da busca
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
