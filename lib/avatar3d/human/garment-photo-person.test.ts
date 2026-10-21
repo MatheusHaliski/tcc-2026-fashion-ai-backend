@@ -53,10 +53,10 @@ describe("verified model isolation before clothing projection", () => {
     expect(await prepareOutfitPhoto(photograph(), "upper")).toBeNull();
     expect(mocks.loadOriented).not.toHaveBeenCalled();
   });
-  it("sem esqueleto: a pessoa já saiu; peça de cima/baixo segue e a barra é achada pela cor; peça inteira não", async () => {
+  it("rejects a model photograph without part evidence rather than painting its shoes or another garment", async () => {
     mocks.stripPerson.mockResolvedValue(verified({ garments: null }));
-    expect(await prepareOutfitPhoto(photograph(), "upper")).toBeInstanceOf(HTMLCanvasElement);
-    expect(await prepareOutfitPhoto(photograph(), "lower")).toBeInstanceOf(HTMLCanvasElement);
+    expect(await prepareOutfitPhoto(photograph(), "upper")).toBeNull();
+    expect(await prepareOutfitPhoto(photograph(), "lower")).toBeNull();
     expect(await prepareOutfitPhoto(photograph(), "full")).toBeNull();
     expect(canUseOutfitPhoto(verified({ garments: { upper: .5, lower: .35, kept: "full", ambiguous: true } }), "full")).toBe(false);
   });

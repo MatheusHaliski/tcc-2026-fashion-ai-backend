@@ -22,6 +22,17 @@ describe("semanticCropStyle", () => {
 });
 
 describe("CatalogPhoto", () => {
+  it("displays the persisted Total frame directly, without a second browser crop or margin", () => {
+    const { container, rerender } = render(<CatalogPhoto requiredFrame alt="Camisa" framing="WHOLE" image={{ url: "/media/fabric.png", mode: "PROCESSED",
+      whole: { url: "/media/whole.png", rendered: true, box: { x: 0, y: 0, w: 1, h: 1 }, width: 900, height: 1200, background: "#ffffff" } }} />);
+    const image = container.querySelector("img")!;
+    expect(image.getAttribute("src")).toBe(mediaUrl("/media/whole.png"));
+    expect(image.style.objectFit).toBe("contain");
+    expect(image.style.width).toBe("100%");
+    expect(container.querySelector(".is-blend, .has-floor")).toBeNull();
+    rerender(<CatalogPhoto requiredFrame alt="Camisa" framing="FABRIC" image={{ url: "/media/fabric.png", mode: "PROCESSED" }} />);
+    expect(container.querySelector("img")!.getAttribute("src")).toBe(mediaUrl("/media/fabric.png"));
+  });
   it("usa a URL original da marca com o recorte e o fundo da foto", () => {
     const { container } = render(<CatalogPhoto alt="Camiseta" image={{ url: "https://img.brand.com/a.jpg", mode: "SEMANTIC_CROP", crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 }, background: "#f6f6f6" }} />);
     const wrap = container.querySelector("[data-mode='semantic-crop']") as HTMLElement;

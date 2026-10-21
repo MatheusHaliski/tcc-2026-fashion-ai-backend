@@ -1,0 +1,407 @@
+{
+  "scope": "Real /pieces/new > Arte de fundo > Aura & Material > AURA Hype, mocked auth/taxonomy/permissions, desktop and mobile viewport; not production account validation",
+  "results": [
+    {
+      "width": 1046,
+      "tier": "ESTREIA",
+      "overflow": false,
+      "columns": "252.5px 252.5px 252.5px 252.5px",
+      "buttons": [
+        {
+          "tier": "COMMON",
+          "disabled": false,
+          "lock": false,
+          "label": "Bronze",
+          "token": true,
+          "selected": true,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(57, 48, 36)",
+          "rect": {
+            "width": 249,
+            "height": 140
+          }
+        },
+        {
+          "tier": "RARE",
+          "disabled": true,
+          "lock": true,
+          "label": "Prata",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 140
+          }
+        },
+        {
+          "tier": "LEGENDARY",
+          "disabled": true,
+          "lock": true,
+          "label": "Ouro",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 140
+          }
+        },
+        {
+          "tier": "COLLAB_DROP",
+          "disabled": true,
+          "lock": true,
+          "label": "Especial",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 140
+          }
+        }
+      ],
+      "selectedAfterClick": "COMMON",
+      "writes": [],
+      "errors": []
+    },
+    {
+      "width": 1046,
+      "tier": "STUDIO",
+      "overflow": false,
+      "columns": "252.5px 252.5px 252.5px 252.5px",
+      "buttons": [
+        {
+          "tier": "COMMON",
+          "disabled": false,
+          "lock": false,
+          "label": "Bronze",
+          "token": true,
+          "selected": true,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(57, 48, 36)",
+          "rect": {
+            "width": 249,
+            "height": 140
+          }
+        },
+        {
+          "tier": "RARE",
+          "disabled": false,
+          "lock": false,
+          "label": "Prata",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 140
+          }
+        },
+        {
+          "tier": "LEGENDARY",
+          "disabled": true,
+          "lock": true,
+          "label": "Ouro",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 140
+          }
+        },
+        {
+          "tier": "COLLAB_DROP",
+          "disabled": true,
+          "lock": true,
+          "label": "Especial",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 140
+          }
+        }
+      ],
+      "selectedAfterClick": "RARE",
+      "writes": [],
+      "errors": []
+    },
+    {
+      "width": 1046,
+      "tier": "LOFT",
+      "overflow": false,
+      "columns": "252.5px 252.5px 252.5px 252.5px",
+      "buttons": [
+        {
+          "tier": "COMMON",
+          "disabled": false,
+          "lock": false,
+          "label": "Bronze",
+          "token": true,
+          "selected": true,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(57, 48, 36)",
+          "rect": {
+            "width": 249,
+            "height": 124
+          }
+        },
+        {
+          "tier": "RARE",
+          "disabled": false,
+          "lock": false,
+          "label": "Prata",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 124
+          }
+        },
+        {
+          "tier": "LEGENDARY",
+          "disabled": false,
+          "lock": false,
+          "label": "Ouro",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 124
+          }
+        },
+        {
+          "tier": "COLLAB_DROP",
+          "disabled": false,
+          "lock": false,
+          "label": "Especial",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 249,
+            "height": 124
+          }
+        }
+      ],
+      "selectedAfterClick": "LEGENDARY",
+      "writes": [],
+      "errors": []
+    },
+    {
+      "width": 324,
+      "tier": "ESTREIA",
+      "overflow": false,
+      "columns": "156px 156px",
+      "buttons": [
+        {
+          "tier": "COMMON",
+          "disabled": false,
+          "lock": false,
+          "label": "Bronze",
+          "token": true,
+          "selected": true,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(57, 48, 36)",
+          "rect": {
+            "width": 152,
+            "height": 140
+          }
+        },
+        {
+          "tier": "RARE",
+          "disabled": true,
+          "lock": true,
+          "label": "Prata",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 140
+          }
+        },
+        {
+          "tier": "LEGENDARY",
+          "disabled": true,
+          "lock": true,
+          "label": "Ouro",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 140
+          }
+        },
+        {
+          "tier": "COLLAB_DROP",
+          "disabled": true,
+          "lock": true,
+          "label": "Especial",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 140
+          }
+        }
+      ],
+      "selectedAfterClick": "COMMON",
+      "writes": [],
+      "errors": []
+    },
+    {
+      "width": 324,
+      "tier": "STUDIO",
+      "overflow": false,
+      "columns": "156px 156px",
+      "buttons": [
+        {
+          "tier": "COMMON",
+          "disabled": false,
+          "lock": false,
+          "label": "Bronze",
+          "token": true,
+          "selected": true,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(57, 48, 36)",
+          "rect": {
+            "width": 152,
+            "height": 124
+          }
+        },
+        {
+          "tier": "RARE",
+          "disabled": false,
+          "lock": false,
+          "label": "Prata",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 124
+          }
+        },
+        {
+          "tier": "LEGENDARY",
+          "disabled": true,
+          "lock": true,
+          "label": "Ouro",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 140
+          }
+        },
+        {
+          "tier": "COLLAB_DROP",
+          "disabled": true,
+          "lock": true,
+          "label": "Especial",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 140
+          }
+        }
+      ],
+      "selectedAfterClick": "RARE",
+      "writes": [],
+      "errors": []
+    },
+    {
+      "width": 324,
+      "tier": "LOFT",
+      "overflow": false,
+      "columns": "156px 156px",
+      "buttons": [
+        {
+          "tier": "COMMON",
+          "disabled": false,
+          "lock": false,
+          "label": "Bronze",
+          "token": true,
+          "selected": true,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(57, 48, 36)",
+          "rect": {
+            "width": 152,
+            "height": 124
+          }
+        },
+        {
+          "tier": "RARE",
+          "disabled": false,
+          "lock": false,
+          "label": "Prata",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 124
+          }
+        },
+        {
+          "tier": "LEGENDARY",
+          "disabled": false,
+          "lock": false,
+          "label": "Ouro",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 124
+          }
+        },
+        {
+          "tier": "COLLAB_DROP",
+          "disabled": false,
+          "lock": false,
+          "label": "Especial",
+          "token": true,
+          "selected": false,
+          "labelColor": "rgb(247, 247, 242)",
+          "background": "rgb(36, 36, 33)",
+          "rect": {
+            "width": 152,
+            "height": 124
+          }
+        }
+      ],
+      "selectedAfterClick": "LEGENDARY",
+      "writes": [],
+      "errors": []
+    }
+  ]
+}

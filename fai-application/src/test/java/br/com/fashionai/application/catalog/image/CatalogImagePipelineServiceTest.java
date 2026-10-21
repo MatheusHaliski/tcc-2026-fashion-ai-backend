@@ -81,6 +81,11 @@ class CatalogImagePipelineServiceTest {
             return null;
         });
         when(storage.publicUrl(anyString())).thenAnswer(inv -> URI.create("https://media.fashion-ai.app/" + inv.getArgument(0)));
+        when(storage.keyOf(anyString())).thenAnswer(inv -> {
+            String url = inv.getArgument(0), prefix = "https://media.fashion-ai.app/";
+            return url.startsWith(prefix) ? Optional.of(url.substring(prefix.length())) : Optional.empty();
+        });
+        when(storage.get(anyString())).thenAnswer(inv -> stored.get(inv.<String>getArgument(0)));
         TransactionTemplate tx = mock(TransactionTemplate.class);
         when(tx.execute(any())).thenAnswer(inv -> inv.<TransactionCallback<Object>>getArgument(0).doInTransaction(null));
         doAnswer(inv -> {
@@ -190,6 +195,96 @@ class CatalogImagePipelineServiceTest {
         service.ensurePreview(admin, product.getId());
         assertThat(front.getCropJson()).isEqualTo(crop);
         assertThat(stored).isEmpty();
+        Map<?, ?> preview = (Map<?, ?>) CatalogImagePipelineService.cardImage(front).get("previewCache");
+        assertThat(preview.get("persisted")).isEqualTo(false);
+        assertThat(preview.get("status")).isEqualTo("READY");
+    }
+
+    @Test
+    void textureTransportReadsOnlyTheApprovedOriginalWithoutRenderingOrPersistingAgain() {
+        byte[] original = CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0));
+        CatalogImage front = image("https://img.brand.com/texture.png", CatalogImageType.FRONT, original);
+        service.ensurePreview(admin, product.getId());
+        var photo = service.texturePhoto(admin, product.getId());
+        assertThat(photo.bytes()).isEqualTo(original);
+        assertThat(photo.mime()).isEqualTo("image/png");
+        assertThat(stored).isEmpty();
+        front.setReviewStatus("REJECTED");
+        assertThatThrownBy(() -> service.texturePhoto(admin, product.getId())).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void previewPersisteAsDuasUrlsUmaVezEReutilizaEntreAberturasSemBaixarFonte() {
+        CatalogSource source = new CatalogSource(); source.setDomain("brand.com"); source.setAllowsImagePersistence(true); sources.add(source);
+        CatalogImage front = image("https://img.brand.com/stable.jpg", CatalogImageType.PACKSHOT,
+                CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0)));
+        service.ensurePreview(admin, product.getId());
+        Map<String, Object> card = CatalogImagePipelineService.cardImage(front, product);
+        String fabricUrl = card.get("url").toString();
+        Map<?, ?> whole = (Map<?, ?>) card.get("whole");
+        assertThat(fabricUrl).endsWith("fabric.jpg");
+        assertThat(whole.get("url").toString()).endsWith("whole.png");
+        assertThat(whole.get("rendered")).isEqualTo(true);
+        assertThat(stored).hasSize(2);
+        String cached = front.getAssetsJson();
+        web.remove(front.getImageUrl());
+        service.ensurePreview(admin, product.getId());
+        service.ensurePreview(admin, product.getId());
+        assertThat(front.getAssetsJson()).isEqualTo(cached);
+        assertThat(CatalogImagePipelineService.cardImage(front, product).get("url")).isEqualTo(fabricUrl);
+        assertThat(stored).hasSize(2);
+        assertThat(service.texturePhoto(admin, product.getId()).mime()).isEqualTo("image/png");
+        assertThat(stored).hasSize(2); // The full garment is read from storage, with the original offline.
+    }
+
+    @Test
+    void trocaDaCategoriaOuUrlInvalidaCacheDePreviewSemServirArteAntiga() {
+        CatalogSource source = new CatalogSource(); source.setDomain("brand.com"); source.setAllowsImagePersistence(true); sources.add(source);
+        byte[] bytes = CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0));
+        CatalogImage front = image("https://img.brand.com/old-source.jpg", CatalogImageType.PACKSHOT, bytes);
+        service.ensurePreview(admin, product.getId());
+        String oldUrl = CatalogImagePipelineService.cardImage(front, product).get("url").toString();
+        product.setSubcategory("shirt");
+        assertThat(CatalogImagePipelineService.cardImage(front, product)).isNull();
+        service.ensurePreview(admin, product.getId());
+        assertThat(CatalogImagePipelineService.cardImage(front, product).get("url")).isNotEqualTo(oldUrl);
+        front.setImageUrl("https://img.brand.com/new-source.jpg");
+        web.put(front.getImageUrl(), bytes);
+        assertThat(CatalogImagePipelineService.cardImage(front, product)).isNull();
+        service.ensurePreview(admin, product.getId());
+        assertThat(CatalogImagePipelineService.cardImage(front, product)).containsEntry("sourceUrl", front.getImageUrl());
+    }
+
+    @Test
+    void retryForcadoRecuperaCanonicaEmCacheIndisponivelComAlternativaDoMesmoProduto() {
+        CatalogImage front = image("https://img.brand.com/cached.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.ensurePreview(admin, product.getId());
+        String oldFrame = front.getCropJson();
+        web.remove(front.getImageUrl());
+        CatalogImage alternate = image("https://img.brand.com/recovered.jpg", CatalogImageType.PACKSHOT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(220, 220, 1.0)));
+        service.ensurePreview(admin, product.getId());
+        assertThat(front.isCanonical()).isTrue();
+        assertThat(alternate.getCropJson()).isNull();
+        service.ensurePreview(admin, product.getId(), true);
+        assertThat(front.isCanonical()).isFalse();
+        assertThat(front.getCropJson()).isEqualTo(oldFrame);
+        assertThat(alternate.isCanonical()).isTrue();
+        assertThat(CatalogImagePipelineService.cardImage(alternate)).containsEntry("url", alternate.getImageUrl());
+    }
+
+    @Test
+    void retryForcadoNaoApagaUltimoEnquadramentoQuandoFontesEstaoIndisponiveis() {
+        CatalogImage front = image("https://img.brand.com/retry-unavailable.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.ensurePreview(admin, product.getId());
+        String oldFrame = front.getCropJson();
+        web.remove(front.getImageUrl());
+        assertThatThrownBy(() -> service.ensurePreview(admin, product.getId(), true))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("CATALOG_IMAGE_FETCH_FAILED"));
+        assertThat(front.getCropJson()).isEqualTo(oldFrame);
+        assertThat(front.isCanonical()).isTrue();
     }
 
     @Test
@@ -339,7 +434,8 @@ class CatalogImagePipelineServiceTest {
         assertThat(front.getStoredUrl()).endsWith("master.png");
         assertThat(stored.keySet()).anyMatch(k -> k.endsWith("card.jpg")).anyMatch(k -> k.endsWith("thumb.jpg"))
                 .anyMatch(k -> k.endsWith("white.jpg")).anyMatch(k -> k.endsWith("neutral.jpg"));
-        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED").containsEntry("aspect", "4:5").containsEntry("sourceUrl", front.getImageUrl());
+        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED").containsEntry("aspect", "3:4").containsEntry("sourceUrl", front.getImageUrl());
+        assertThat(CatalogImagePipelineService.cardImage(front).get("url").toString()).endsWith("fabric.jpg");
     }
 
     @Test

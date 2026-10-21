@@ -1,7 +1,6 @@
 'use client';
 import {useEffect,useId,useState,type CSSProperties} from 'react';
 import {Dialog,Button} from '@/components/ui';
-import {FaiIcon} from '@/components/fai-icon';
 import {useI18n} from '@/lib/i18n/i18n';
 import {api} from '@/lib/api/client';
 import {useApi} from '@/lib/hooks/use-api';
@@ -11,7 +10,7 @@ import {CARD_LEVEL_TIER,cardLevelUnlocked} from '@/lib/fashion-card/aura-gating'
 import type {AuraHypeCardLevel,HypeSummary} from '@/lib/hype/types';
 import {FashionCardStats} from './fashion-card-panel';
 import {AuraHype} from './aura-hype';
-const FINISH_ICONS:Record<AuraHypeCardLevel,string>={COMMON:'ACT-26',RARE:'ACT-39',LEGENDARY:'ACT-37',COLLAB_DROP:'SOC-06'};
+import {HypeFinishToken,HypeLockToken} from './hype-finish-token';
 const SAMPLE_PIECE='/_derived/pecas_thumb/02_shirt_camisa-640.webp';
 function ModelDemo({preset}:{preset:typeof HYPE_PRESETS[number]}){
  const [phase,setPhase]=useState(0);const {t}=useI18n();
@@ -42,10 +41,11 @@ export function AuraHypePicker({value,onChange,inline=false}:{value?:string|null
   const allowed=cardLevelUnlocked(tier,currentTier);
   const requirement=t('auraGate.requires',{level:t(`levelProgress.name.${CARD_LEVEL_TIER[tier]}`)});
   return <button type="button" key={tier} className="fashion-hype-level-preview" data-fashion-level={tier} data-locked={!allowed||undefined} aria-pressed={tier===level} disabled={!allowed} title={`${t(`hypeLayout.finish.${tier}`)}${!allowed?` · ${requirement}`:""}`} aria-label={`${t(`hypeLayout.finish.${tier}`)}${!allowed?` · ${requirement}`:""}`} onClick={()=>{if(allowed)setLevel(tier);}}>
+   {tier===level&&<span className="fashion-hype-level-selected" data-fai-selected aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="11" fill="#f5ebd7"/><path d="m6.5 12 3.5 3.5 7.5-7" fill="none" stroke="#2a211c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span>}
    <span className="fashion-hype-level-name">
-    <span className="fashion-hype-level-token" aria-hidden="true"><FaiIcon id={FINISH_ICONS[tier]} size={48} variant="medal" decorative />{tier==='COLLAB_DROP'&&<FaiIcon id="SOC-06" size={24} variant="medal" className="fashion-hype-level-extra-star" decorative />}</span>
-    <span className="sr-only">{t(`hypeLayout.finish.${tier}`)}</span>
-    {!allowed&&<span className="fashion-hype-level-lock-icon" data-fai-lock><FaiIcon id="ACT-04" size={24} decorative /></span>}
+    <span className="fashion-hype-level-token"><HypeFinishToken finish={tier}/></span>
+    <span className="fashion-hype-level-label">{t(`hypeLayout.finish.${tier}`)}</span>
+    {!allowed&&<span className="fashion-hype-level-lock-icon"><HypeLockToken/></span>}
    </span>
    {!allowed&&<small className="fashion-hype-level-requirement">{requirement}</small>}
   </button>;

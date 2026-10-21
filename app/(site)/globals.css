@@ -3943,19 +3943,23 @@ html[data-reduce-motion="true"] .era-beams { animation: none !important; }
 .aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field { opacity: .4; background: repeating-linear-gradient(45deg, transparent 0 23px, #cbc6e033 24px 25px), repeating-linear-gradient(-45deg, transparent 0 23px, #c3dce733 24px 25px); mask-image: linear-gradient(90deg, #000, transparent 26%, transparent 74%, #000); }
 .aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field::after { content: none; }
 html[data-theme="contrast"] .fashion-hype-header { background: #000; color: #fff; }
-.fashion-hype-level-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: .75rem; margin-block: 1rem; }
+.fashion-hype-level-previews { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-block: 1rem; }
 .fashion-hype-level-preview { overflow: hidden; border: 2px solid var(--line-soft); border-radius: 12px; }
-.fashion-hype-level-preview[aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: 2px; }
+.fashion-hype-level-preview[aria-pressed="true"] { background: #393024; border-color: #f5a350; outline: 2px solid #f5a350; outline-offset: 2px; }
 .fashion-hype-level-art { display: block; position: relative; aspect-ratio: 3 / 4; background: radial-gradient(ellipse at 50% 42%, #f4f1ea 0 30%, color-mix(in srgb, var(--fashion-metal, #8a8580) 55%, #3b3940) 85%); }
-.fashion-hype-level-preview { position: relative; display: grid; align-content: center; justify-items: center; gap: .35rem; min-height: 76px; padding: .75rem; background: #242421; color: #f7f7f2; border-color: #8b8980; cursor: pointer; }
-.fashion-hype-level-name { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-size: 16px; font-weight: 700; line-height: 1.4; }
+.fashion-hype-level-preview { position: relative; display: grid; align-content: center; justify-items: center; gap: .35rem; min-height: 128px; padding: .75rem; background: #242421; color: #f7f7f2; border-color: #8b8980; cursor: pointer; }
+.fashion-hype-level-name { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; font-size: 16px; font-weight: 700; line-height: 1.4; }
 .fashion-hype-level-token { position: relative; display: inline-flex; }
+.fashion-hype-level-token svg { display: block; flex-shrink: 0; }
+.fashion-hype-level-label { color: #f7f7f2; }
 .fashion-hype-level-extra-star { position: absolute; right: -10px; bottom: -2px; }
-.fashion-hype-level-lock-icon { flex-shrink: 0; display: inline-flex; width: 24px; height: 24px; }
+.fashion-hype-level-lock-icon { position: absolute; top: .5rem; right: .5rem; flex-shrink: 0; display: inline-flex; width: 28px; height: 28px; }
+.fashion-hype-level-selected { position: absolute; top: .5rem; left: .5rem; display: inline-flex; }
 .fashion-hype-level-requirement { color: inherit; font-size: 13px; line-height: 1.4; text-align: center; }
 .fashion-hype-level-preview[data-locked] { border-style: dashed; }
 .fashion-hype-level-preview:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
 .fashion-hype-level-preview:disabled { cursor: not-allowed; }
+@media (max-width: 480px) { .fashion-hype-level-previews { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .fashion-hype-level-preview[data-locked] .fashion-hype-level-art { filter: grayscale(.85) brightness(.55); }
 .fashion-hype-level-lock { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: inherit; background: #0008; color: #fff; font-size: 13px; font-weight: 700; text-align: center; }
 .fashion-hype-level-lock > span { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 999px; background: #000c; border: 2px solid var(--fashion-metal, #fff); font-size: 26px; line-height: 1; }
@@ -4188,6 +4192,9 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .piece-create-main { grid-row: 2; }
 .pae-preview { grid-row: 1; max-height: 58dvh; z-index: 8; background: var(--surface); }
 .pae-main { grid-row: 2; min-width: 0; }
+/* Keep the mobile sticky preview above the viewport centre so editor controls
+   scrolled into view remain clickable; the full card stays accessible inside it. */
+@media (max-width: 899px) { .pae-preview { max-height: min(36dvh, 320px); } }
 @media (min-width: 900px) {
   .piece-create-layout:not(.is-art) { grid-template-columns: minmax(0, 1fr) minmax(352px, 44%); }
   .piece-create-main, .pae-main { grid-row: 1; grid-column: 1; }

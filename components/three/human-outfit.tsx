@@ -2,7 +2,7 @@
 import { hasRibbing } from "@/lib/avatar3d/human/upperwear";
 import { useEffect, useLayoutEffect, useState } from "react";
 import * as THREE from "three";
-import { mediaUrl } from "@/lib/api/client";
+import { api, mediaUrl } from "@/lib/api/client";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import type { HumanParts } from "@/components/three/human-avatar";
 import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
@@ -196,17 +196,19 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   return { meshes, dressed: ZONES.every((z) => covered.has(z)) };
 }
 
-const photoUrls = (p: Look3dPiece) => [p.imageUrl, p.studioUrl].filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
+const photoUrls = (p: Look3dPiece) => (p.catalogProductId ? [`/api/catalog/products/${encodeURIComponent(p.catalogProductId)}/texture-image`] : [p.studioUrl, p.imageUrl])
+  .filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
 // Reusing an item in another look must not rerun segmentation. Failures remain retryable.
 const isolatedPhotos = new Map<string, Promise<Img | null>>();
 function outfitPhoto(i: OutfitItem): Promise<Img | null> {
-  const key = JSON.stringify([photoPart(i.spec.kind), photoUrls(i.piece)]);
+  const key = JSON.stringify([photoPart(i.spec.kind), photoUrls(i.piece), i.piece.imageUrl, i.piece.studioUrl]);
   const cached = isolatedPhotos.get(key);
   if (cached) return cached;
   const pending = (async () => {
     for (const url of photoUrls(i.piece)) {
+      let temporary: string | null = null;
       try {
-        const resolved = mediaUrl(url);
+        const resolved = url.startsWith("/api/catalog/products/") ? (temporary = await api.blobUrl(url)) : mediaUrl(url);
         const texture = resolved ? await loadTexture(resolved) : null;
         const image = texture?.image as Img | undefined;
         if (!image) continue;
@@ -214,6 +216,7 @@ function outfitPhoto(i: OutfitItem): Promise<Img | null> {
         const prepared = isBundledGarmentPhoto(url) ? prepareGarmentPhoto(image) : await prepareOutfitPhoto(image, photoPart(i.spec.kind));
         if (prepared) return prepared;
       } catch { /* Try the processed alternative, without projecting an unchecked image. */ }
+      finally { if (temporary) URL.revokeObjectURL(temporary); }
     }
     return null;
   })();
@@ -226,7 +229,7 @@ function outfitPhoto(i: OutfitItem): Promise<Img | null> {
 export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
   const [loaded, setLoaded] = useState<Record<string, Img | null>>({});
   const items = outfitOf(pieces);
-  const keyOf = (i: OutfitItem) => JSON.stringify([i.key, photoPart(i.spec.kind), photoUrls(i.piece)]);
+  const keyOf = (i: OutfitItem) => JSON.stringify([i.key, photoPart(i.spec.kind), photoUrls(i.piece), i.piece.imageUrl, i.piece.studioUrl]);
   const urlKey = JSON.stringify(items.map(keyOf));
   // Selection, fit and registered color apply immediately, including same-URL variant edits.
   // Only the isolated photograph waits; never keep a different garment dressed meanwhile.

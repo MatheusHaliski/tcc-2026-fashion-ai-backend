@@ -11,6 +11,7 @@ import type { HypeSummary } from "@/lib/hype/types";
 /* Vitrines 3D (Passarela, My Stage, mini lojas, "Gerar 3D"): utilitários compartilhados. Unidades em metros. */
 
 export interface Look3dPiece {
+  catalogProductId?: string | null;
   id: string; name: string; slot: string; category?: string; subcategory?: string; imageUrl?: string | null; studioUrl?: string | null; colorHex?: string | null; model3dUrl?: string | null; model3dStatus?: string | null; defaultImage?: boolean;
   /** modelagem declarada (taxonomia: SKINNY, STRAIGHT, OVERSIZED…) e dimensões (LENGTH, SLEEVE_LENGTH, SHAFT_HEIGHT) → caimento no 3D */
   material?: string | null;

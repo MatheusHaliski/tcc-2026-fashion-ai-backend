@@ -6,6 +6,8 @@ import br.com.fashionai.application.view.Views;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -81,8 +83,9 @@ public class CatalogController {
 
     @PostMapping("/api/catalog/products/{id}/preview-image")
     @Operation(summary = "Enquadramento automático em cache para exibir o card do catálogo")
-    public Map<String, Object> previewImage(CurrentUser user, @PathVariable UUID id) {
-        imagePipeline.ensurePreview(user, id);
+    public Map<String, Object> previewImage(CurrentUser user, @PathVariable UUID id,
+                                           @RequestParam(defaultValue = "false") boolean force) {
+        imagePipeline.ensurePreview(user, id, force);
         return catalog.product(id);
     }
 
@@ -91,6 +94,13 @@ public class CatalogController {
     public Map<String, Object> verifyImage(CurrentUser user, @PathVariable UUID id) {
         imagePipeline.verifySelection(user, id);
         return catalog.product(id);
+    }
+
+    @GetMapping("/api/catalog/products/{id}/texture-image")
+    public ResponseEntity<byte[]> textureImage(CurrentUser user, @PathVariable UUID id) {
+        var photo = imagePipeline.texturePhoto(user, id);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(photo.mime()))
+                .header("Cache-Control", "private, max-age=300").header("X-Content-Type-Options", "nosniff").body(photo.bytes());
     }
 
     @PostMapping("/api/catalog/discover")

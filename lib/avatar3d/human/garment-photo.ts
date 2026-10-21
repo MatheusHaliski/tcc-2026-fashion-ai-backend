@@ -75,7 +75,7 @@ export function medoid(px: ArrayLike<number>[]): [number, number, number] {
 }
 
 /** Robust wash/color at each fabric height, excluding the backdrop and the gap between trouser legs. */
-export function fabricRows(raster: GarmentRaster, opts: { fromY?: number; toY?: number; fromX?: number; toX?: number } = {}): { y: number; rgb: [number, number, number] }[] {
+export function fabricRows(raster: GarmentRaster, opts: { fromY?: number; toY?: number; fromX?: number; toX?: number; inset?: .1 | .25 } = {}): { y: number; rgb: [number, number, number] }[] {
   const { width: w, height: h, data } = raster;
   const out: { y: number; rgb: [number, number, number] }[] = [];
   const step = Math.max(1, Math.floor(h / 64));
@@ -87,9 +87,9 @@ export function fabricRows(raster: GarmentRaster, opts: { fromY?: number; toY?: 
     let a = -1, b = -1;
     for (let x = x0; x < x1; x++) if (data[(y * w + x) * 4 + 3] >= 240) { if (a < 0) a = x; b = x; }
     if (a < 0) continue;
-    // A leg's narrow central half can be dominated by one pocket logo. With
-    // explicit leg bounds, sample most of its fabric rather than enlarging that mark.
-    const inset = opts.fromX !== undefined || opts.toX !== undefined ? .1 : .25;
+    // Ranges also describe upperwear halves: do not mistake them for legs.
+    // Legs explicitly opt into a wider sample so a pocket logo does not dominate.
+    const inset = opts.inset ?? .25;
     const xa = Math.round(a + (b - a) * inset), xb = Math.round(a + (b - a) * (1 - inset));
     const channels: number[][] = [[], [], []];
     for (let x = xa; x <= xb; x += Math.max(1, Math.floor((xb - xa) / 80))) {
@@ -292,9 +292,9 @@ export type OutfitPhotoPart = "upper" | "lower" | "full" | "feet";
 export function canUseOutfitPhoto(result: import("@/lib/pieces/person-filter").PersonFilterResult, part: OutfitPhotoPart): boolean {
   if (!result.segmentationAvailable || result.people > 1) return false;
   if (!result.personFound) return result.people === 0;
-  // pessoa tirada pela segmentação mas sem esqueleto para separar as peças: a foto segue e a barra é achada pela cor
-  // (splitByHem) — a pessoa já não está na foto, só o(s) tecido(s)
-  if (!result.garments) return part === "upper" || part === "lower";
+  // Removing skin does not identify which surviving garment is the requested
+  // one. Without part evidence, shoes/another garment must not become a print.
+  if (!result.garments) return false;
   // With an explicit part, ‘ambiguous’ means both upper and lower garments exist,
   // not that the requested garment was left unfiltered.
   return result.garments.kept === part && (part !== "full" || !result.garments.ambiguous);

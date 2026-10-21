@@ -13,7 +13,7 @@ import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guid
 import { Badge, Button, Chip, Field, Input, Pagination, Skeleton, cn } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { CatalogBrandGrid } from "./catalog-brand-grid";
-import { useCatalogPreview } from "./use-catalog-preview";
+import { hasUsableCatalogPreview, useCatalogPreview } from "./use-catalog-preview";
 import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
 import { usePhotoFraming } from "@/lib/photo-framing";
@@ -491,7 +491,7 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   return (
     <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
       <div className="catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
-        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto requiredFrame onRetry={preview.retry} framing={framing} image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
+        {preview.pending && !hasUsableCatalogPreview(p) || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto requiredFrame onRetry={preview.retry} framing={framing} image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
           placeholder={<GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />} />
           : <span role="alert" className="type-caption text-muted p-4">{t(p.imageProcessingStatus === "PENDING" ? "catalog.preparingPhoto" : "catalog.framingRequiredError")}<button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button></span>}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}

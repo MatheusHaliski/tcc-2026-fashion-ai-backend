@@ -19,8 +19,9 @@ export interface NormRect { x: number; y: number; w: number; h: number }
  * aplicado na exibição (nada é copiado — RN47.03). PROCESSED: master processado no storage (fonte com permissão).
  */
 /** Total frame: foto original + caixa da peça nela (V1, só foto de produto) ou a peça já recortada sem pessoa em 900×1200 (V2, `processed`). */
-export interface CatalogWholeFrame { url: string; box: NormRect; background?: string | null; width?: number | null; height?: number | null; truncated?: string[] | null; alpha?: boolean; processed?: boolean; version?: string }
-export interface CatalogCardImage { url: string; sourceUrl?: string | null; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null; whole?: CatalogWholeFrame | null }
+export interface CatalogWholeFrame { url: string; box: NormRect; background?: string | null; width?: number | null; height?: number | null; truncated?: string[] | null; alpha?: boolean; processed?: boolean; rendered?: boolean; version?: string }
+export interface CatalogPreviewCache { version: string; status: string; persisted: boolean; sourceUrl?: string; sourceSha256?: string; contextHash?: string; wholeStatus?: string }
+export interface CatalogCardImage { url: string; sourceUrl?: string | null; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null; whole?: CatalogWholeFrame | null; previewCache?: CatalogPreviewCache | null }
 export interface CatalogProductImage { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
 
 export interface CatalogProduct {
@@ -57,12 +58,13 @@ export const catalogApi = {
   browse: (p: BrowseParams, signal?: AbortSignal) => api.get<BrowseResponse>(`/api/catalog/products${qs(p)}`, { signal }),
   summary: (signal?: AbortSignal) => api.get<CatalogSummary>("/api/catalog/summary", { signal }),
   suggestions: (p: SearchParams, signal?: AbortSignal) => api.get<{ suggestions: string[] }>(`/api/catalog/suggestions${qs(p)}`, { signal }),
-  previewImage: async (id: string): Promise<CatalogProduct> => {
-    try { return await api.post<CatalogProduct>(`/api/catalog/products/${id}/preview-image`, {}); }
+  previewImage: async (id: string, options?: { force?: boolean }): Promise<CatalogProduct> => {
+    const refresh = options?.force ? "?force=true" : "";
+    try { return await api.post<CatalogProduct>(`/api/catalog/products/${id}/preview-image${refresh}`, {}); }
     catch (error) {
       if (!(error instanceof ApiError) || error.status !== 404) throw error;
       // O endpoint de verificação aplica o mesmo pipeline em versões anteriores da API.
-      return await api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image`, {});
+      return await api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image${refresh}`, {});
     }
   },
   verifyImage: (id: string) => api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image`, {}),

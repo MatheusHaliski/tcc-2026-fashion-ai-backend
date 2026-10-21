@@ -2,7 +2,8 @@
 import {afterEach,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,loggedAs,renderApp,screen,waitFor} from '@/test-utils/render';
 import {AuraHypePicker} from './aura-hype-picker';
-afterEach(cleanup);
+import {api} from '@/lib/api/client';
+afterEach(()=>{cleanup();vi.restoreAllMocks();});
 it('shows only eight layouts in two bands, labeled as examples and without palette choices',()=>{
  const change=vi.fn();renderApp(<AuraHypePicker inline onChange={change}/>);
  expect(document.querySelectorAll('.aura-hype-preset')).toHaveLength(8);
@@ -20,6 +21,8 @@ it('cannot open Gold or Special areas below Loft, including when the form has no
  expect(level('LEGENDARY').disabled).toBe(true);expect(level('COLLAB_DROP').disabled).toBe(true);
  fireEvent.click(level('LEGENDARY'));expect(document.querySelector('[aria-pressed="true"][data-fashion-level]')?.getAttribute('data-fashion-level')).toBe('COMMON');
  fireEvent.click(level('RARE'));expect(document.querySelectorAll('.aura-hype-preset')).toHaveLength(8);
+ expect(level('RARE').querySelector('[data-fai-selected]')).toBeTruthy();
+ expect(level('COMMON').querySelector('[data-fai-selected]')).toBeNull();
 });
 it.each([
  ['ESTREIA',['RARE','LEGENDARY','COLLAB_DROP']],
@@ -46,12 +49,29 @@ it('fails closed with visible locks and a retry when the permissions request fai
  expect(screen.getByRole('button',{name:'Tentar novamente'})).toBeTruthy();
 });
 
-it('uses the FAI navigation icon tokens for finishes and stars for Special',()=>{
+it('represents each finish with its own visible FAI metal medal or special stars and a readable name',()=>{
  renderApp(<AuraHypePicker inline onChange={vi.fn()}/>);
- for(const [tier,id] of [['COMMON','act-26'],['RARE','act-39'],['LEGENDARY','act-37'],['COLLAB_DROP','soc-06']]) {
+ for(const [tier,label] of [['COMMON','Bronze'],['RARE','Prata'],['LEGENDARY','Ouro'],['COLLAB_DROP','Especial']]) {
   const button=document.querySelector<HTMLButtonElement>(`.fashion-hype-level-preview[data-fashion-level="${tier}"]`)!;
   expect(button.getAttribute('aria-label')).toBeTruthy();expect(button.title).toBeTruthy();
-  expect(button.querySelector('.fashion-hype-level-token img')?.getAttribute('src')).toContain(id);
+  expect(button.querySelector(`[data-fai-finish-token="${tier}"]`)).toBeTruthy();
+  const text=button.querySelector('.fashion-hype-level-label')!;
+  expect(text.textContent).toBe(label);expect(text.classList.contains('sr-only')).toBe(false);
+  expect(button.querySelector('[data-finish-shape]')?.getAttribute('data-finish-shape')).toBe(tier==='COLLAB_DROP'?'stars':'medal');
+  expect(button.querySelector('img')).toBeNull();
  }
- expect(document.querySelectorAll('[data-fashion-level="COLLAB_DROP"] .fashion-hype-level-token img')).toHaveLength(2);
+ expect(document.querySelectorAll('[data-fashion-level="COLLAB_DROP"] [data-finish-shape="stars"] path')).toHaveLength(3);
+});
+
+it('keeps advanced finishes locked and vectors visible while permissions are unresolved',()=>{
+ loggedAs();
+ const original=api.get;
+ vi.spyOn(api,'get').mockImplementation((path,options)=>path==='/api/me/aura-permissions'?new Promise<never>(()=>{}):original(path,options));
+ const change=vi.fn();renderApp(<AuraHypePicker inline onChange={change}/>);
+ for(const tier of ['RARE','LEGENDARY','COLLAB_DROP']){
+  const button=document.querySelector<HTMLButtonElement>(`[data-fashion-level="${tier}"]`)!;
+  expect(button.disabled).toBe(true);expect(button.querySelector('svg[data-fai-lock] path')).toBeTruthy();
+  fireEvent.click(button);
+ }
+ expect(change).not.toHaveBeenCalled();
 });
