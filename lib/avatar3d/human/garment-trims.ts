@@ -13,7 +13,7 @@ import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import type { BodyParam, GarmentGeometry, GarmentSpec } from "./garments";
 
-export interface TrimBand { part: "barra" | "punho" | "carcela" | "costura" | "botoes" | "botoes-borda" | "gola-ponta"; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
+export interface TrimBand { part: "barra" | "punho" | "carcela" | "costura" | "botoes" | "botoes-borda" | "gola-ponta"; side?: -1 | 1; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
 
 
 const TORSO_HEM = new Set(["tee", "longsleeve", "shirt", "sweater", "hoodie", "crop", "tank"]);
@@ -177,7 +177,7 @@ export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: Garmen
       const side = s === "L" ? 1 : -1;
       const arm = (v: number) => gg.source[v] >= 0 && P.group[gg.source[v]] === 2 && P.side[gg.source[v]] === side;
       const R = radiusFrom(gg, arm, S, d, e, 0.01);
-      const tEnd = sp.sleeve * L; const b = tube(a, c, armCand[s], S, d, tEnd - w + 0.004, tEnd + 0.006, R, "punho"); if (b) out.push(b);
+      const tEnd = sp.sleeve * L; const b = tube(a, c, armCand[s], S, d, tEnd - w + 0.004, tEnd + 0.006, R, "punho"); if (b) out.push({ ...b, side });
     }
   }
   // A photograph already contains the product's buttons, seams and collar tips.
