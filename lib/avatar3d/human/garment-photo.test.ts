@@ -12,6 +12,24 @@ function jeans(): GarmentRaster {
 }
 
 describe("product photo separated from its backdrop", () => {
+  it.each(["horizontal", "vertical"])("retains %s stripes without tiling a unique contrasting logo", axis => {
+    const width = 240, height = 320, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 20; y < 300; y++) for (let x = 30; x < 210; x++) {
+      const band = (axis === "horizontal" ? y : x) % 16 < 5;
+      data.set(band ? [240, 235, 225, 255] : [15, 45, 110, 255], (y * width + x) * 4);
+    }
+    for (let y = 60; y < 90; y++) for (let x = 75; x < 105; x++) data.set([230, 20, 40, 255], (y * width + x) * 4);
+    const tile = fabricTile({ width, height, data });
+    expect(tile).toMatchObject(axis === "horizontal" ? { width: 1, height: 16 } : { width: 16, height: 1 });
+    for (let y = tile!.y; y < tile!.y + tile!.height; y++) for (let x = tile!.x; x < tile!.x + tile!.width; x++) {
+      expect([...data.slice((y * width + x) * 4, (y * width + x) * 4 + 3)]).not.toEqual([230, 20, 40]);
+    }
+  });
+  it("does not treat a single side stripe as repeating branded fabric", () => {
+    const width = 240, height = 320, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 20; y < 300; y++) for (let x = 30; x < 210; x++) data.set(x < 40 ? [240, 240, 240, 255] : [20, 30, 40, 255], (y * width + x) * 4);
+    expect(fabricTile({ width, height, data })).toBeNull();
+  });
   it("extracts a repeat of plaid fabric without repeating the shirt or its label", () => {
     const width = 240, height = 320, data = new Uint8ClampedArray(width * height * 4);
     for (let y = 20; y < 300; y++) for (let x = 30; x < 210; x++) {

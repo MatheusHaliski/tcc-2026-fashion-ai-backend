@@ -51,10 +51,12 @@ export function fabricTile(raster: GarmentRaster): { x: number; y: number; width
       for (let lag = 4; lag <= Math.floor(size / 2); lag++) {
         if (errors[lag] < variance * 0.22 && errors[lag] + variance * 0.02 < Math.min(errors[lag - 1], errors[lag + 1])) return lag;
       }
-      return null;
+      // Stripes repeat in one direction and are constant in the other. A plain
+      // axis is not itself evidence of a pattern: require a real period on its mate.
+      return errors.slice(3).every(error => error < variance * .005) ? 1 : null;
     };
     const width = period(0), height = period(1);
-    if (width && height) return { x: px, y: py, width, height };
+    if (width && height && (width > 1 || height > 1)) return { x: px, y: py, width, height };
   }
   return null;
 }
@@ -243,7 +245,7 @@ export function splitByHem(raster: GarmentRaster, part: "upper" | "lower"): { he
 export function prepareGarmentPhoto(img: CanvasImageSource & { width: number; height: number }, opts: { keep?: "upper" | "lower" | null } = {}): HTMLCanvasElement | null {
   try {
     const c = document.createElement("canvas");
-    const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+    const scale = Math.min(1, 2048 / Math.max(img.width, img.height));
     c.width = Math.max(1, Math.round(img.width * scale)); c.height = Math.max(1, Math.round(img.height * scale));
     const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return null;
     g.drawImage(img, 0, 0, c.width, c.height);

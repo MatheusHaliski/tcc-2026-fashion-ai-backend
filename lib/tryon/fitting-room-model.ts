@@ -195,5 +195,5 @@ export const toLook3d = (i: FittingItem): Look3dPiece => ({
   colorHex: i.colorHex,
   model3dUrl: i.model3dUrl,
   model3dStatus: i.model3dStatus,
-  defaultImage: !i.imageUrl,
+  defaultImage: !i.imageUrl && !i.processedUrl,
 });
