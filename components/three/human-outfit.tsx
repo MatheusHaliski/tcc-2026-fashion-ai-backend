@@ -115,7 +115,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     const geo = texturedGeometry(gg, posed, info, it.spec.sleeve > 0 ? sleeveVert : undefined, visibleAlpha);
     const shoe = it.spec.kind === "shoes" || it.spec.kind === "boots";
     const fabric = fabricColor(img, it.piece.colorHex, info);
-    const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric, geo.userData.fabricMapping, info);
+    const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric, geo.userData.fabricMapping, info, it.spec);
     if (shoe) {                                                    // cabedal e sola nas cores da foto (cor por vértice)
       const sc = shoeColors(img, it.piece.colorHex, info); const up = new THREE.Color(sc.upper), so = new THREE.Color(sc.sole);
       const pos = geo.getAttribute("position"), col = geo.getAttribute("color");
@@ -158,8 +158,9 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
         // tecido escuro; pontas da gola na cor da gola da foto
         const fl = new THREE.Color(fabric); const light = 0.2126 * fl.r + 0.7152 * fl.g + 0.0722 * fl.b > 0.35;
         const thread = `#${(light ? fl.clone().multiplyScalar(0.62) : fl.clone().lerp(new THREE.Color("#ffffff"), 0.4)).getHexString()}`;
+        const cuff = tb.side === -1 ? tc.cuffLeft : tb.side === 1 ? tc.cuffRight : tc.cuff;
         const color = tb.part === "botoes" ? "#efe8da" : tb.part === "botoes-borda" ? "#3a332b" : tb.part === "costura" ? thread : tb.part === "gola-ponta" ? rib
-          : (tb.part === "barra" ? tc.hem : tb.part === "punho" ? tc.cuff : null) ?? (ribbed ? rib : `#${fl.clone().multiplyScalar(0.92).getHexString()}`);
+          : (tb.part === "barra" ? tc.hem : tb.part === "punho" ? cuff : null) ?? (ribbed ? rib : `#${fl.clone().multiplyScalar(0.92).getHexString()}`);
         const tm = new THREE.MeshPhysicalMaterial({ color, roughness: tb.part === "botoes" ? 0.45 : 0.9, sheen: tb.part === "botoes" ? 0.1 : 0.45, sheenRoughness: 0.8, side: THREE.DoubleSide,
           polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
         tm.name = `acabamento-${tb.part}`;

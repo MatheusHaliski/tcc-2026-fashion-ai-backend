@@ -811,7 +811,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
  * trama nem no degradê — o fundo de estúdio nunca aparece em volta da peça nem tinge o painel do tecido.
  */
 export function garmentTexture(img: (CanvasImageSource & { width: number; height: number }) | null, fabric: string,
-  mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number } | null, info?: PhotoInfo | null): THREE.CanvasTexture {
+  mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number } | null, info?: PhotoInfo | null, spec?: GarmentSpec): THREE.CanvasTexture {
   // Keep small lettering and logos up to 2K without unbounded atlases for tall
   // catalog images. Never upscale the product source or substitute brand artwork.
   const scale = img ? Math.min(1, 2048 / Math.max(img.width, img.height)) : 1;
@@ -827,9 +827,10 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
       for (let o = 0; o < d.length; o += 4) if (isBackdrop(d, o, info.backdrop)) d[o + 3] = 0;
       sg.putImageData(raster, 0, 0);
     }
-    // Separate evidence for each leg: a striped/coloured left panel must not
-    // become the right leg's material. Skirts and ambiguous silhouettes stay whole.
-    const split = info?.legRows?.length ? (info.box.x0 + info.box.x1) / 2 : null;
+    // Separate evidence for each leg or upper half: one striped/coloured side
+    // must not become the opposite side's material. Ambiguous silhouettes stay whole.
+    const upperPanels = spec && ["shirt", "hoodie", "sweater", "jacket", "coat"].includes(spec.kind) && info?.landmarks;
+    const split = info && (info.legRows?.length || upperPanels) ? (info.box.x0 + info.box.x1) / 2 : null;
     const panels = split === null ? [{}] : [{ fromX: 0, toX: split }, { fromX: split, toX: img.width }];
     for (const [panel, range] of panels.entries()) {
       const offset = W + panel * W / panels.length, panelWidth = W / panels.length;
@@ -908,16 +909,17 @@ function dominants(d: Uint8ClampedArray, W: number, ys: [number, number], allowN
  * Cores dos acabamentos na foto: barra (faixa de baixo, no centro) e manga (pontas laterais do alto da peça, onde a
  * manga termina na foto plana). Quando o acabamento é do mesmo tecido, null (a faixa sai no tecido um pouco mais escuro).
  */
-export function trimColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string, info?: PhotoInfo | null): { hem: string | null; cuff: string | null } {
-  if (!img || typeof document === "undefined") return { hem: null, cuff: null };
+export function trimColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string, info?: PhotoInfo | null): { hem: string | null; cuff: string | null; cuffLeft: string | null; cuffRight: string | null } {
+  const empty = { hem: null, cuff: null, cuffLeft: null, cuffRight: null };
+  if (!img || typeof document === "undefined") return empty;
   try {
     const W = 128, H = Math.max(8, Math.round((128 * img.height) / img.width));
-    const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d", { willReadFrequently: true }); if (!g) return { hem: null, cuff: null };
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d", { willReadFrequently: true }); if (!g) return empty;
     g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
     const backdrop = info?.backdrop ?? null;
     let x0 = W, y0 = H, x1 = -1, y1 = -1;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = (y * W + x) * 4; if (d[o + 3] > 128 && !isBackdrop(d, o, backdrop)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
-    if (x1 < 0) return { hem: null, cuff: null };
+    if (x1 < 0) return empty;
     const fr = srgbBytes(fabric);
     const med = (xs: [number, number], ys: [number, number]) => {
       const px: number[][] = [];
@@ -932,8 +934,9 @@ export function trimColors(img: (CanvasImageSource & { width: number; height: nu
     // barra: as 3 últimas linhas no centro; manga: as pontas das laterais na faixa de cima (onde a manga termina)
     let hem = null as string | null; for (let k = 1; k <= 3 && !hem; k++) hem = med([x0 + bw * 0.3, x0 + bw * 0.7], [y1 - k * 1.2, y1 - (k - 1) * 1.2]);
     const cuffL = med([x0, x0 + bw * 0.04], [y0 + bh * 0.05, y0 + bh * 0.45]); const cuffR = med([x1 - bw * 0.04, x1], [y0 + bh * 0.05, y0 + bh * 0.45]);
-    return { hem, cuff: cuffL ?? cuffR };
-  } catch { return { hem: null, cuff: null }; }
+    // Left/right refer to the product photograph, not the wearer's anatomical side.
+    return { hem, cuff: cuffL ?? cuffR, cuffLeft: cuffL, cuffRight: cuffR };
+  } catch { return empty; }
 }
 
 /**

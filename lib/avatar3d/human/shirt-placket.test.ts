@@ -39,4 +39,6 @@ it("preserves photographed buttons and seams instead of overlaying a generic pla
  expect(normal.some(t=>t.part==='botoes')).toBe(true);
  expect(photo.some(t=>['botoes','botoes-borda','carcela','costura','gola-ponta'].includes(t.part))).toBe(false);
  expect(photo.filter(t=>t.part==='punho').length).toBe(normal.filter(t=>t.part==='punho').length);
+ const cuffs=photo.filter(t=>t.part==='punho');expect(cuffs.map(t=>t.side).sort()).toEqual([-1,1]);
+ for(const cuff of cuffs)expect(Math.sign(cuff.position[0])).toBe(cuff.side);
 });
