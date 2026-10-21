@@ -1,0 +1,90 @@
+{
+  "scope": "14 local reference garments on F-ref, fixed lab canvas; not production products or mobile device validation",
+  "results": [
+    {
+      "id": "02_parte_inferior_01_jeans",
+      "subcategory": "jeans",
+      "dressed": true,
+      "photoVertices": 590
+    },
+    {
+      "id": "02_parte_inferior_02_calca_casual",
+      "subcategory": "casual_pants",
+      "dressed": true,
+      "photoVertices": 588
+    },
+    {
+      "id": "02_parte_inferior_03_calca_alfaiataria",
+      "subcategory": "tailored_pants",
+      "dressed": true,
+      "photoVertices": 592
+    },
+    {
+      "id": "02_parte_inferior_04_calca_cargo",
+      "subcategory": "cargo_pants",
+      "dressed": true,
+      "photoVertices": 624
+    },
+    {
+      "id": "02_parte_inferior_05_calca_chino",
+      "subcategory": "chino_pants",
+      "dressed": true,
+      "photoVertices": 581
+    },
+    {
+      "id": "02_parte_inferior_06_calca_moletom",
+      "subcategory": "sweatpants",
+      "dressed": true,
+      "photoVertices": 571
+    },
+    {
+      "id": "02_parte_inferior_07_calca_jogger",
+      "subcategory": "jogger_pants",
+      "dressed": true,
+      "photoVertices": 569
+    },
+    {
+      "id": "02_parte_inferior_08_legging",
+      "subcategory": "leggings",
+      "dressed": true,
+      "photoVertices": 578
+    },
+    {
+      "id": "02_parte_inferior_09_pantacourt",
+      "subcategory": "culottes",
+      "dressed": true,
+      "photoVertices": 491
+    },
+    {
+      "id": "02_parte_inferior_10_bermuda",
+      "subcategory": "bermuda_shorts",
+      "dressed": true,
+      "photoVertices": 389
+    },
+    {
+      "id": "02_parte_inferior_11_shorts_jeans",
+      "subcategory": "denim_shorts",
+      "dressed": true,
+      "photoVertices": 286
+    },
+    {
+      "id": "02_parte_inferior_12_saia",
+      "subcategory": "skirt",
+      "dressed": true,
+      "photoVertices": 867
+    },
+    {
+      "id": "02_parte_inferior_13_shorts",
+      "subcategory": "shorts",
+      "dressed": true,
+      "photoVertices": 298
+    },
+    {
+      "id": "02_parte_inferior_14_short_saia",
+      "subcategory": "skort",
+      "dressed": true,
+      "photoVertices": 681
+    }
+  ],
+  "errors": []
+}

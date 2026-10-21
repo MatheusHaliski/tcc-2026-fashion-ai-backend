@@ -78,6 +78,22 @@ it("fabric wash ignores transparent gaps and retains color along trouser height"
   for (const row of rows) expect(row.rgb).toEqual([35, 75, 120]);
 });
 
+it("keeps asymmetric trouser colours and stripes in their own leg, without repeating the logo", () => {
+  const width = 480, height = 640, data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 40; y < 600; y++) for (let x = 40; x < 440; x++) {
+    if (x >= 220 && x < 260) continue;
+    const rgb = x < 240 ? (y % 16 < 5 ? [235, 230, 220] : [20, 40, 110]) : [25, 120, 60];
+    data.set([...rgb, 255], (y * width + x) * 4);
+  }
+  for (let y = 80; y < 120; y++) for (let x = 300; x < 360; x++) data.set([240, 20, 40, 255], (y * width + x) * 4);
+  const raster = { width, height, data };
+  expect(fabricTile(raster, { toX: 240 })).toMatchObject({ width: 1, height: 16 });
+  expect(fabricTile(raster, { fromX: 240 })).toBeNull();
+  const right = fabricRows(raster, { fromX: 240 });
+  expect(right.length).toBeGreaterThan(30);
+  expect(right.every(row => row.rgb.join() === "25,120,60")).toBe(true);
+});
+
 
 it("samples the torso of a flat-lay shirt whose sleeves widen the photo bounds", () => {
   const width = 320, height = 400, data = new Uint8ClampedArray(width * height * 4);

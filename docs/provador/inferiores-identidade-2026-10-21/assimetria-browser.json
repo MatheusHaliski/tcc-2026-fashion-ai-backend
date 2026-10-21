@@ -1,0 +1,21 @@
+{
+  "scope": "Synthetic distinct garment fixtures, exact bundled URLs intercepted locally; not real brand catalogue certification",
+  "results": [
+    {
+      "rightFabric": [
+        25,
+        120,
+        60
+      ],
+      "id": "02_parte_inferior_04_calca_cargo",
+      "atlas": [
+        2400,
+        1600
+      ],
+      "frontLogoPixels": 10198,
+      "fabricLogoPixels": 0,
+      "photoVertices": 624
+    }
+  ],
+  "errors": []
+}
