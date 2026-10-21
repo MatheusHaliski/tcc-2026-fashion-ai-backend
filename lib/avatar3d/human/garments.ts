@@ -47,6 +47,7 @@ export interface GarmentSpec {
   leg: number;           // perna: até onde desce (0 = quadril, 1 = tornozelo); 0 = sem perna
   skirt: number;         // saia/vestido: comprimento abaixo da cintura (m); 0 = sem saia
   drape: number;         // 0–1: quanto cai reto do busto
+  legFlareStart?: number; // início declarado da abertura (0 quadril → 1 tornozelo)
   flare: number;         // abertura na barra (m por unidade de comprimento)
   layer: number;         // ordem de camada (maior = mais por fora)
   /** perna: 0 = acompanha a perna (legging, skinny); 1 = cai reta do joelho para baixo (jeans reto); >1 = mais ampla */
@@ -55,6 +56,14 @@ export interface GarmentSpec {
   bustFall: number;
   /** bota: onde começa o cano, ao longo da perna (0 = quadril, 1 = tornozelo) */
   shaft: number;
+}
+
+/** Radial opening along the leg; explicit silhouettes begin at their declared landmark. */
+export function legFlareOffset(sp: GarmentSpec, leg: number): number {
+  const start = sp.legFlareStart;
+  const opening = start === undefined ? Math.max(0, leg - .4)
+    : Math.max(0, Math.min(1, (leg - start) / Math.max(.05, sp.leg - start)));
+  return sp.flare * opening;
 }
 
 const S = (kind: GarmentKind, o: Partial<GarmentSpec>): GarmentSpec => ({ kind, ease: 0.006, hem: NaN, neck: 1, vneck: 0.04, waist: NaN, sleeve: 0, leg: 0, skirt: 0, drape: 0, flare: 0, layer: 3, legColumn: 0, bustFall: 0.965, shaft: 0.72, ...o });
@@ -414,7 +423,7 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     const g = P.group[v]; const h = P.h[v];
     let e = sp.ease + (under ? under.ease[v] : 0);
     if (g === 2 && sp.sleeve > 0) e += sp.flare * smooth(sp.sleeve * 0.3, sp.sleeve, P.arm[v]) * (sp.sleeve < 0.6 ? 1 : 0.3) + 0.002;
-    if (g === 3 && sp.leg > 0) e += sp.flare * Math.max(0, P.leg[v] - 0.4);
+    if (g === 3 && sp.leg > 0) e += legFlareOffset(sp, P.leg[v]);
     if (sp.kind === "shoes" || sp.kind === "boots") e += 0.004 * smooth(-0.02, -0.12, c.body[v * 3 + 2] - (P.torsoZ + 0.05));   // biqueira
     let x = c.body[v * 3] + normals[v * 3] * e, y = c.body[v * 3 + 1] + normals[v * 3 + 1] * e, z = c.body[v * 3 + 2] + normals[v * 3 + 2] * e;
     // cai reto do busto (não cola na cintura nem na barriga)

@@ -1,0 +1,120 @@
+{
+  "scope": "Local reference garments and synthetic variation overrides; not brand-approved assets or production API.",
+  "results": [
+    {
+      "variation": "STRAIGHT",
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_01_jeans",
+            "cabedal-fai-padrao-tenis",
+            "sola-fai-padrao-tenis",
+            "cadarco-fai-padrao-tenis",
+            "peca-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "gola-fai-padrao-camiseta"
+          ]
+        }
+      ]
+    },
+    {
+      "variation": "BOOTCUT",
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_01_jeans",
+            "cabedal-fai-padrao-tenis",
+            "sola-fai-padrao-tenis",
+            "cadarco-fai-padrao-tenis",
+            "peca-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "gola-fai-padrao-camiseta"
+          ]
+        }
+      ]
+    },
+    {
+      "variation": "FLARE",
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_01_jeans",
+            "cabedal-fai-padrao-tenis",
+            "sola-fai-padrao-tenis",
+            "cadarco-fai-padrao-tenis",
+            "peca-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "gola-fai-padrao-camiseta"
+          ]
+        }
+      ]
+    },
+    {
+      "variation": "TAPERED",
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_01_jeans",
+            "cabedal-fai-padrao-tenis",
+            "sola-fai-padrao-tenis",
+            "cadarco-fai-padrao-tenis",
+            "peca-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "gola-fai-padrao-camiseta"
+          ]
+        }
+      ]
+    },
+    {
+      "variation": "PENCIL",
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_12_saia",
+            "cabedal-fai-padrao-tenis",
+            "sola-fai-padrao-tenis",
+            "cadarco-fai-padrao-tenis",
+            "peca-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "gola-fai-padrao-camiseta"
+          ]
+        }
+      ]
+    },
+    {
+      "variation": "A_LINE",
+      "audit": [
+        {
+          "shown": true,
+          "dressed": true,
+          "garments": [
+            "peca-02_parte_inferior_12_saia",
+            "cabedal-fai-padrao-tenis",
+            "sola-fai-padrao-tenis",
+            "cadarco-fai-padrao-tenis",
+            "peca-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "punho-fai-padrao-camiseta",
+            "gola-fai-padrao-camiseta"
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -21,6 +21,7 @@ export interface FitPiece { name?: string | null; category?: string | null; subc
 export const VARIATION_FIT: Record<string, FitClass> = {
   SKINNY: "justa", EXTRA_SLIM: "justa", SLIM: "justa", MUSCLE_FIT: "justa",
   REGULAR: "regular", STRAIGHT: "regular", BOOTCUT: "regular", ATHLETIC_FIT: "regular",
+  TAPERED: "regular", RELAXED: "regular", PENCIL: "justa", A_LINE: "fluida",
   LOOSE: "oversized", BAGGY: "oversized", OVERSIZED: "oversized",
   WIDE_LEG: "fluida", FLARE: "fluida", FIT_AND_FLARE: "fluida",
 };
@@ -36,7 +37,7 @@ export const KIND_FIT: Record<GarmentKind, FitClass> = {
 const SUB_FIT: Record<string, FitClass> = { bodysuit: "justa", kimono: "fluida", windbreaker: "oversized", parka: "estruturada", blazer: "estruturada", tailored_pants: "estruturada", cargo_pants: "oversized", sweatshirt: "oversized" };
 
 export function fitClassOf(p: FitPiece): FitClass {
-  const v = (p.variation ?? "").toUpperCase();
+  const v = lowerSilhouetteOf(p) ?? (p.variation ?? "").toUpperCase();
   if (VARIATION_FIT[v]) return VARIATION_FIT[v];
   // Catalogue items often have no variation column; use explicit model words, never brand stereotypes.
   const name = (p.name ?? "").toLowerCase();
@@ -51,6 +52,42 @@ export function fitClassOf(p: FitPiece): FitClass {
 
 const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 const first = (p: FitPiece, dim: string) => (p.attributes?.[dim] ?? [])[0]?.toUpperCase() ?? null;
+
+/** Explicit catalogue variation wins over names, including a conflicting or unknown code. */
+export function lowerSilhouetteOf(p: FitPiece): string | null {
+  if (p.variation?.trim()) return p.variation.trim().toUpperCase();
+  const name = (p.name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  for (const [pattern, code] of [
+    [/\bboot[ -]?cut\b/, "BOOTCUT"], [/\bflare\b/, "FLARE"],
+    [/\bwide[ -]?leg\b|\bpantalona\b/, "WIDE_LEG"], [/\btapered\b|\bafunilad[ao]\b/, "TAPERED"],
+    [/\brelaxed(?:[ -]?fit)?\b/, "RELAXED"], [/\b(saia lapis|pencil skirt)\b/, "PENCIL"],
+    [/\b(evase|a[ -]?line)\b/, "A_LINE"],
+  ] as const) if (pattern.test(name)) return code;
+  return null;
+}
+
+/** Parametric silhouettes, not measured manufacturer patterns or physical cloth simulation. */
+function applyLowerSilhouette(sp: GarmentSpec, p: FitPiece): void {
+  const shape = lowerSilhouetteOf(p);
+  if (sp.kind === "pants" || sp.kind === "culottes") {
+    if (shape === "BOOTCUT" || shape === "FLARE") {
+      sp.legColumn = 1;
+      sp.legFlareStart = .52;
+      sp.flare = shape === "BOOTCUT" ? .04 : .075;
+    } else if (shape === "WIDE_LEG") {
+      sp.legColumn = 1.5; sp.legFlareStart = .18; sp.flare = .06;
+    } else if (shape === "TAPERED") {
+      sp.legColumn = .25; sp.flare = 0;
+    } else if (shape === "RELAXED") {
+      sp.ease *= 1.3; sp.legColumn = 1.12;
+    }
+  }
+  if (sp.kind === "skirt") {
+    if (shape === "PENCIL") { sp.flare = 0; sp.ease = .006; }
+    else if (shape === "STRAIGHT") sp.flare = .012;
+    else if (shape === "A_LINE") sp.flare = .17;
+  }
+}
 
 /** Comprimento da saia/vestido (m abaixo do início) pela dimensão LENGTH. */
 const SKIRT_LEN: Record<string, number> = { MICRO: 0.24, MINI: 0.32, MID_THIGH: 0.38, KNEE: 0.5, MIDI: 0.66, MAXI: 0.88, FLOOR_LENGTH: 0.95, ANKLE_LENGTH: 0.88 };
@@ -131,6 +168,7 @@ export function specFor(p: FitPiece): GarmentSpec | null {
     case "fluida":
       sp.ease = base.ease * 1.2; if (draped) sp.drape = 1; sp.bustFall = 1; sp.flare = base.flare * 1.5; if (legged) sp.legColumn = Math.max(base.legColumn, 1.3); break;
   }
+  applyLowerSilhouette(sp, p);
   // jogger e calça de moletom: punho na barra (afunila no tornozelo) — não é uma calça reta
   const sub = (p.subcategory ?? "").toLowerCase();
   if (sub === "jogger_pants" || sub === "sweatpants") { sp.legColumn = 0.6; sp.flare = 0; }

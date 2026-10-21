@@ -53,3 +53,34 @@ it("respects explicit model fits in catalogue titles without a brand-wide preset
   expect(fitClassOf({name:"Jeans Skinny",subcategory:"jeans",variation:"OVERSIZED"})).toBe("oversized");
   expect(specFor({name:"Macacão decote V",subcategory:"jumpsuit"})!.neckShape).toBe("v");
 });
+
+describe("silhuetas inferiores declaradas", () => {
+  const pants = (variation: string) => specFor({ subcategory: "jeans", variation })!;
+  it("abre bootcut e flare somente abaixo do joelho, com amplitudes distintas", () => {
+    expect(pants("BOOTCUT").legFlareStart).toBe(.52);
+    expect(pants("FLARE").legFlareStart).toBe(.52);
+    expect(pants("FLARE").flare).toBeGreaterThan(pants("BOOTCUT").flare);
+    expect(pants("BOOTCUT").legColumn).toBe(1);
+    expect(pants("WIDE_LEG").legFlareStart).toBeLessThan(.52);
+    expect(pants("WIDE_LEG").legColumn).toBeGreaterThan(pants("BOOTCUT").legColumn);
+  });
+  it("afunila tapered sem torná-la skinny, preservando cintura e comprimento", () => {
+    expect(pants("TAPERED").legColumn).toBeGreaterThan(pants("SKINNY").legColumn);
+    expect(pants("TAPERED").legColumn).toBeLessThan(pants("STRAIGHT").legColumn);
+    expect(pants("TAPERED").flare).toBe(0);
+    expect(pants("TAPERED").waist).toBe(pants("STRAIGHT").waist);
+    expect(pants("TAPERED").leg).toBe(pants("STRAIGHT").leg);
+  });
+  it("distingue saias lápis, reta e evasê, conservando comprimento midi e cintura", () => {
+    const skirts = ["PENCIL", "STRAIGHT", "A_LINE"].map(variation => specFor({ subcategory: "skirt", variation, attributes: { LENGTH: ["MIDI"], RISE: ["HIGH_RISE"] } })!);
+    expect(skirts.map(s => s.flare)).toEqual([0, .012, .17]);
+    expect(skirts.every(s => s.skirt === .66 && s.waist === .34)).toBe(true);
+  });
+  it("usa nomes explícitos apenas sem variação declarada e restringe a abertura à família de calças", () => {
+    expect(specFor({ name: "Saia lápis", subcategory: "skirt" })!.flare).toBe(0);
+    expect(specFor({ name: "Calça bootcut", subcategory: "jeans", variation: "STRAIGHT" })!.legFlareStart).toBeUndefined();
+    expect(specFor({ name: "Marca Flare", subcategory: "leggings", variation: "FLARE" })!.legFlareStart).toBeUndefined();
+    expect(specFor({ subcategory: "bermuda_shorts", variation: "FLARE" })!.legFlareStart).toBeUndefined();
+    expect(specFor({ name: "Marca", subcategory: "jeans" })!.legFlareStart).toBeUndefined();
+  });
+});

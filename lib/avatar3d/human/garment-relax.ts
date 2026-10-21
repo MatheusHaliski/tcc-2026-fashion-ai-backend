@@ -15,7 +15,7 @@
  */
 import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
-import type { BodyParam, GarmentGeometry, GarmentSpec, UnderLayer } from "./garments";
+import { legFlareOffset, type BodyParam, type GarmentGeometry, type GarmentSpec, type UnderLayer } from "./garments";
 
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const bell = (x: number, c: number, w: number) => Math.exp(-(((x - c) / w) ** 2));
@@ -222,7 +222,10 @@ export function columnLegs(gg: GarmentGeometry, c: Composed, P: BodyParam): void
     let col: number;
     if (l >= 0.5) { const t = Math.min(1, (l - 0.5) / Math.max(0.05, sp.leg - 0.5)); col = g.knee[j] * (1 + wide * (0.4 + 0.6 * t)) * (1 - 0.05 * t * (wide > 0 ? 0 : 1)); }
     else { const u = (l - 0.18) / 0.32; col = g.thigh[j] + (g.knee[j] * (1 + wide * 0.4) - g.thigh[j]) * Math.max(0, u); }
-    const target = col + ease * 1.2; const k = Math.min(1, Math.max(0, (l - 0.12) / 0.08));
+    // Keep the declared opening after column relaxation; otherwise the knee ring
+    // dominates and bootcut silently becomes the same straight trouser again.
+    const opening = sp.legFlareStart === undefined ? 0 : legFlareOffset(sp, l);
+    const target = col + ease * 1.2 + opening; const k = Math.min(1, Math.max(0, (l - 0.12) / 0.08));
     let nr = Math.max(r, r + (target - r) * k);
     // não passa do meio do corpo: a perna esquerda (x > 0) não cruza x = 4 mm, a direita idem
     const nx = ax + (dx * nr) / r; if (side * nx < 0.004) nr = r;
