@@ -3951,7 +3951,7 @@ html[data-theme="contrast"] .fashion-hype-header { background: #000; color: #fff
 .fashion-hype-level-name { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; font-size: 16px; font-weight: 700; line-height: 1.4; }
 .fashion-hype-level-token { position: relative; display: inline-flex; }
 .fashion-hype-level-token svg { display: block; flex-shrink: 0; }
-.fashion-hype-level-label { color: #f7f7f2; }
+.fashion-hype-level-label { display: block; color: #f7f7f2; text-align: center; }
 .fashion-hype-level-extra-star { position: absolute; right: -10px; bottom: -2px; }
 .fashion-hype-level-lock-icon { position: absolute; top: .5rem; right: .5rem; flex-shrink: 0; display: inline-flex; width: 28px; height: 28px; }
 .fashion-hype-level-selected { position: absolute; top: .5rem; left: .5rem; display: inline-flex; }

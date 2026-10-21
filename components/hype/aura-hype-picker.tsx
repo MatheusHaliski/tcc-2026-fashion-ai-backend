@@ -51,7 +51,7 @@ export function AuraHypePicker({value,onChange,inline=false}:{value?:string|null
   </button>;
  })}</div>
  {!unlocked&&<p role="status">{t('auraGate.requires',{level:t(`levelProgress.name.${CARD_LEVEL_TIER[level]}`)})}</p>}
- <Button variant="ghost" onClick={()=>onChange('OFF')}>{t('auraHype.OFF')}</Button>{band('static')}{band('dynamic')}</>;
+ {band('static')}{band('dynamic')}</>;
  if(inline)return <div className="grid gap-3">{content}</div>;
  return <div className="opt-group"><p className="label">{t('auraHype.title')}</p><Button onClick={()=>setOpen(true)}>{t('hypeLayout.explore')}</Button><Dialog open={open} onClose={()=>setOpen(false)} title={t('hypeLayout.explore')} size="xl">{content}</Dialog></div>;
 }

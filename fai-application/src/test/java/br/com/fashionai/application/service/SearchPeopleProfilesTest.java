@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,10 @@ class SearchPeopleProfilesTest {
         return u;
     }
 
+    private PublicPersonHeader header(User user) {
+        return new SpelAwareProxyProjectionFactory().createProjection(PublicPersonHeader.class, user);
+    }
+
     @Test
     void exposesPublicHeaderFieldsAndAggregatesWithoutAccountSecretsOrPrivateContent() {
         User u = person("ana", Visibility.PUBLIC);
@@ -72,7 +77,7 @@ class SearchPeopleProfilesTest {
         when(pieces.countByUserIdsAndAvailabilityStatusNot(anyCollection(), eq(AvailabilityStatus.ARCHIVED))).thenReturn(List.<Object[]>of(new Object[]{u.getId(), 8L}));
         when(schemes.countByUserIdsAndStatusNot(anyCollection(), eq(SchemeStatus.ARCHIVED))).thenReturn(List.<Object[]>of(new Object[]{u.getId(), 12L}));
 
-        var profile = service.personProfiles(null, List.of(u)).getFirst();
+        var profile = service.personProfiles(null, List.of(header(u))).getFirst();
 
         assertThat(profile.bio()).isEqualTo(u.getBio());
         assertThat(profile.coverUrl()).isEqualTo(u.getCoverUrl());
@@ -90,7 +95,7 @@ class SearchPeopleProfilesTest {
     void privateProfilesExposeOnlyTheirPublicHeaderAndMarkPostsRestricted() {
         User u = person("privada", Visibility.PRIVATE);
         u.setBio("Bio pública do cabeçalho");
-        var profile = service.personProfiles(null, List.of(u)).getFirst();
+        var profile = service.personProfiles(null, List.of(header(u))).getFirst();
         assertThat(profile.visibility()).isEqualTo("PRIVATE");
         assertThat(profile.contentVisible()).isFalse();
         assertThat(profile.bio()).isEqualTo(u.getBio());
@@ -107,7 +112,7 @@ class SearchPeopleProfilesTest {
         when(follows.findByFollowerIdAndFollowingIdIn(eq(viewer.getId()), anyCollection())).thenReturn(List.of(
                 new Follow(viewer, accepted, FollowStatus.ACEITO), new Follow(viewer, pending, FollowStatus.PENDENTE),
                 new Follow(viewer, privateUser, FollowStatus.ACEITO)));
-        var profiles = service.personProfiles(CurrentUser.of(viewer, "127.0.0.1", "test"), List.of(accepted, pending, privateUser, viewer));
+        var profiles = service.personProfiles(CurrentUser.of(viewer, "127.0.0.1", "test"), List.of(accepted, pending, privateUser, viewer).stream().map(this::header).toList());
         assertThat(profiles).extracting(SearchService.PersonProfile::contentVisible).containsExactly(true, false, false, true);
         assertThat(profiles).extracting(SearchService.PersonProfile::relation).containsExactly("ACEITO", "PENDENTE", "ACEITO", "SELF");
     }
@@ -115,7 +120,7 @@ class SearchPeopleProfilesTest {
     @Test
     void batchesCountsForTheCurrentPageOnlyAndKeepsCursorWithoutDuplicates() {
         List<User> candidates = IntStream.range(0, 7).mapToObj(i -> person("pessoa" + i, Visibility.PUBLIC)).toList();
-        when(users.searchPersonalProfiles(anyString(), anyBoolean(), anyCollection(), any())).thenReturn(candidates);
+        when(users.searchPersonalProfiles(anyString(), anyBoolean(), anyCollection(), any())).thenReturn(candidates.stream().map(this::header).toList());
         var out = service.search(null, "pessoa", "PESSOAS", null, 3, SearchService.encodeOffset(3));
         @SuppressWarnings("unchecked") var profiles = (List<SearchService.PersonProfile>) out.get("results");
         assertThat(profiles).extracting(SearchService.PersonProfile::id).containsExactly(candidates.get(3).getId(), candidates.get(4).getId(), candidates.get(5).getId());
@@ -139,7 +144,7 @@ class SearchPeopleProfilesTest {
         User second = person("blockedViewer", Visibility.PUBLIC);
         when(follows.findByFollowerIdAndStatus(viewer.getId(), FollowStatus.BLOQUEADO)).thenReturn(List.of(new Follow(viewer, first, FollowStatus.BLOQUEADO)));
         when(follows.findByFollowingIdAndStatus(viewer.getId(), FollowStatus.BLOQUEADO)).thenReturn(List.of(new Follow(second, viewer, FollowStatus.BLOQUEADO)));
-        when(users.searchPersonalProfiles(anyString(), anyBoolean(), anyCollection(), any())).thenReturn(List.of(person("normal", Visibility.PUBLIC)));
+        when(users.searchPersonalProfiles(anyString(), anyBoolean(), anyCollection(), any())).thenReturn(List.of(header(person("normal", Visibility.PUBLIC))));
         service.search(CurrentUser.of(viewer, "127.0.0.1", "test"), "", "PESSOAS", null, 24);
         verify(users).searchPersonalProfiles(eq(""), eq(false), argThat(ids -> ids.size() == 2 && ids.containsAll(List.of(first.getId(), second.getId()))), any());
     }
@@ -152,5 +157,6 @@ class SearchPeopleProfilesTest {
         verify(users).searchPersonalProfiles(eq(""), eq(true), anyCollection(), any());
         verify(follows, never()).countFollowersByIds(anyCollection(), any());
         verify(pieces, never()).countByUserIdsAndAvailabilityStatusNot(anyCollection(), any());
+        verify(schemes, never()).findPublicFeed(any());
     }
 }

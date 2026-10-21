@@ -35,3 +35,15 @@ As fontes configuradas como `REFERENCE_ONLY` conservam URL original e metadados 
 O provador continua sendo um molde paramétrico com projeção da frente e tecido estimado nas regiões sem imagem. Não há neste lote reconstrução dos bolsos, costuras, matelassê, corte industrial, gola social completa ou UVs de todas as mangas/costas. A correção impede fontes e regiões indevidas, mas não transforma uma única fotografia em um asset completo de cada marca. Onde a foto não é verificável, continua o fallback de cor indicado pela interface. Não houve inferência GPU, certificação de todos os SKUs nem teste em aparelho móvel físico.
 
 O serviço atual de melhoria do esquema altera título, descrição, ocasião, estilo, estação, humor e visibilidade; não substitui as peças vestidas. O diálogo agora reflete esse contrato.
+
+## Complementos: seletor Hype e busca de Pessoas
+
+Em `/pieces/new`, o seletor AURA Hype não oferece mais o botão Desligar. Bronze, Prata, Ouro e Especial ficam abaixo de seus ícones, com os cadeados e os requisitos de nível preservados. As seis combinações de viewport desktop/mobile e nível Estreia/Studio/Loft foram conferidas novamente; os relatórios incluem a posição do rótulo abaixo do ícone.
+
+A busca de Pessoas agora usa uma projeção JPA dos campos públicos. A consulta anterior carregava o `User` completo e tentava descriptografar também e-mail, telefone e nascimento, embora esses dados não façam parte da resposta. O teste de integração Hibernate/H2 grava uma linha com e-mail cifrado ilegível: carregar a entidade inteira falha com `Unable to decrypt sensitive attribute`, enquanto a busca pública devolve o nome/bio corretamente e seu SQL não seleciona os campos privados. Não houve alteração da chave, do banco ou dos dados de produção.
+
+Pessoas sem resultados mantém a resposta vazia e as alternativas, sem consultar looks e seus donos como conteúdo substituto. Paginação, contas de teste, bloqueios, contadores e restrições de conteúdo permanecem; uma visibilidade ausente assume PRIVATE.
+
+Validação adicional: sete testes Java de Pessoas, incluindo a consulta JPA real, e 15 testes frontend de Hype, busca e matriz 3D aprovados (um teste de geração de artefatos desativado por padrão). Duas referências antigas da matriz 3D foram atualizadas para os símbolos atuais após falharem no check remoto; o teste de rastreabilidade permanece ativo. O servidor de produção exige Google/PIN, portanto a exceção exata relatada pelo usuário não foi consultada nos logs de produção.
+
+O fluxo de Pessoas conferido foi: `/search` → clique em Pessoas → `GET /api/search?tab=PESSOAS` → resposta pública → card com link `/u/bia`; alternar para Marcas e voltar mantém a navegação funcional. Desktop (1440 px) e mobile (390 px) passaram sem exceções JavaScript nem overflow, com autenticação/API simuladas. Isso valida a integração de formato do cliente; a consulta ao banco foi validada separadamente pelo teste JPA, sem afirmar teste integrado contra Railway/produção. O script aguarda a restauração da sessão/hidratação antes do clique.

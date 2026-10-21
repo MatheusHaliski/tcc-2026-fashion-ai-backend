@@ -14,6 +14,7 @@
           "label": "Bronze",
           "token": true,
           "selected": true,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(57, 48, 36)",
           "rect": {
@@ -28,6 +29,7 @@
           "label": "Prata",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -42,6 +44,7 @@
           "label": "Ouro",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -56,6 +59,7 @@
           "label": "Especial",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -81,6 +85,7 @@
           "label": "Bronze",
           "token": true,
           "selected": true,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(57, 48, 36)",
           "rect": {
@@ -95,6 +100,7 @@
           "label": "Prata",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -109,6 +115,7 @@
           "label": "Ouro",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -123,6 +130,7 @@
           "label": "Especial",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -148,6 +156,7 @@
           "label": "Bronze",
           "token": true,
           "selected": true,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(57, 48, 36)",
           "rect": {
@@ -162,6 +171,7 @@
           "label": "Prata",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -176,6 +186,7 @@
           "label": "Ouro",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -190,6 +201,7 @@
           "label": "Especial",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -215,6 +227,7 @@
           "label": "Bronze",
           "token": true,
           "selected": true,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(57, 48, 36)",
           "rect": {
@@ -229,6 +242,7 @@
           "label": "Prata",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -243,6 +257,7 @@
           "label": "Ouro",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -257,6 +272,7 @@
           "label": "Especial",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -282,6 +298,7 @@
           "label": "Bronze",
           "token": true,
           "selected": true,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(57, 48, 36)",
           "rect": {
@@ -296,6 +313,7 @@
           "label": "Prata",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -310,6 +328,7 @@
           "label": "Ouro",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -324,6 +343,7 @@
           "label": "Especial",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -349,6 +369,7 @@
           "label": "Bronze",
           "token": true,
           "selected": true,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(57, 48, 36)",
           "rect": {
@@ -363,6 +384,7 @@
           "label": "Prata",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -377,6 +399,7 @@
           "label": "Ouro",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
@@ -391,6 +414,7 @@
           "label": "Especial",
           "token": true,
           "selected": false,
+          "labelBelowIcon": true,
           "labelColor": "rgb(247, 247, 242)",
           "background": "rgb(36, 36, 33)",
           "rect": {
