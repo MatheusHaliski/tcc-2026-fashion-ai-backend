@@ -55,6 +55,10 @@ it.each(["FEMININO", "MASCULINO"] as const)("gera as 14 famílias, punhos e forr
     const gg = build(sub.code); expect(gg, sub.code).toBeTruthy();
     expect([...gg.position].every(Number.isFinite), sub.code).toBe(true);
     expect(gg.alpha.some(a => a > .5), sub.code).toBe(true);
+    const photo = { width: 100, height: 100, box: { x0: 0, y0: 0, x1: 100, y1: 100 }, collarRow: null, neckDrop: null, cutout: true, backdrop: null, widthAt: () => ({ x0: 0, x1: 100 }) };
+    const mesh = texturedGeometry(gg, gg.position, photo);
+    expect([...mesh.getAttribute("photoWeight").array].some(w => w > .5), sub.code).toBe(true);
+    mesh.dispose();
     return { subcategory: sub.code, waist: gg.spec.waist, leg: gg.spec.leg, skirt: gg.spec.skirt, cuff: !!gg.spec.legCuff, vertices: gg.source.length };
   });
   const width = (gg: GarmentGeometry, start: number, end: number) => {

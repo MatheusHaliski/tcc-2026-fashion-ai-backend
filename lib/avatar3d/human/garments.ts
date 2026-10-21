@@ -740,7 +740,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
           };
         }
       }
-      if (photo.landmarks && ["tee", "shirt", "tank", "dress", "jacket", "coat", "sweater"].includes(sp.kind)) {
+      if (photo.landmarks && ["tee", "longsleeve", "crop", "hoodie", "shirt", "tank", "dress", "jacket", "coat", "sweater"].includes(sp.kind)) {
         const lm = photo.landmarks;
         const shouldersY = yTop - .02;
         const modelRow = (y: number) => {
@@ -812,7 +812,10 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
  */
 export function garmentTexture(img: (CanvasImageSource & { width: number; height: number }) | null, fabric: string,
   mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number } | null, info?: PhotoInfo | null): THREE.CanvasTexture {
-  const W = img ? Math.min(1024, img.width) : 16, H = img ? Math.round((W * img.height) / img.width) : 16;
+  // Keep small lettering and logos up to 2K without unbounded atlases for tall
+  // catalog images. Never upscale the product source or substitute brand artwork.
+  const scale = img ? Math.min(1, 2048 / Math.max(img.width, img.height)) : 1;
+  const W = img ? Math.max(1, Math.round(img.width * scale)) : 16, H = img ? Math.max(1, Math.round(img.height * scale)) : 16;
   const cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H; const g = cv.getContext("2d")!;
   g.fillStyle = fabric; g.fillRect(0, 0, W * 2, H);
   if (img) {

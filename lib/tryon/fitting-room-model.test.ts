@@ -18,4 +18,12 @@ describe("product data survives the fitting adapters",()=>{
     expect(render.imageUrl).toBe("/shirt.webp");expect(render.material).toBe("SILK");
     expect(specFor(render)).toMatchObject({placket:false,sleeve:.33,fabric:"SILK"});
   });
+  it("treats a processed-only product photograph as its own artwork, not a default", () => {
+    const product = { id: "logo-shirt", brand: null, productName: "Camisa", category: "upper_piece", subcategory: "shirt", imageUrl: null, processedUrl: "/media/unique-shirt.png" } as unknown as CatalogProduct;
+    const fitting = fromCatalog(product, null, undefined)!;
+    const render = toLook3d({ ...fitting, imageUrl: null, processedUrl: "/media/unique-shirt.png" });
+    expect(render.defaultImage).toBe(false);
+    expect(render.studioUrl).toBe("/media/unique-shirt.png");
+    expect(toLook3d({ ...fitting, imageUrl: null, processedUrl: null }).defaultImage).toBe(true);
+  });
 });
