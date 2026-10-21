@@ -17,7 +17,7 @@ import { fitClassOf, specFor } from "@/lib/avatar3d/human/garment-fit";
 
 export const GARMENT_CONTRACT_VERSION = "1.0.0";
 /** Molde e corpo: mudar qualquer um invalida os resultados aprovados que dependem dele (§7). */
-export const MOULD_VERSION = "fai-mould-skinwrap-v4";
+export const MOULD_VERSION = "fai-mould-skinwrap-v5";
 export const BODY_RIG = "fai-body-v1";
 /** Margem de colisão corpo–roupa usada no teste de penetração (lib/avatar3d/human/garments.test.ts): 2 mm para dentro da pele. */
 export const COLLISION_MARGIN_MM = 2;
@@ -53,8 +53,8 @@ const FAMILY: Record<GarmentKind, GarmentFamily> = {
 export const FAMILY_PARAMETERS: Record<GarmentFamily, string[]> = {
   TOPS: ["ombros (molde da pele)", "mangas (comprimento por tipo)", "gola (faixa 3D, decote por tipo)", "busto (anel)", "barra (comprimento por tipo)", "folga do tronco (ease)"],
   OUTERWEAR: ["estrutura (camada e folga)", "espessura visual (ease)", "fechamento (abertura frontal opcional; detalhes pela foto)", "espaço para sobreposição (underLayer)"],
-  BOTTOMS: ["cós (altura)", "quadril", "pernas (tubo por tipo)", "comprimento por tipo", "abertura: não modelada"],
-  SKIRTS: ["cintura", "volume (flare)", "comprimento por tipo", "barra: tubo rígido, sem simulação"],
+  BOTTOMS: ["cós (altura)", "quadril", "pernas (tubo por tipo)", "comprimento por tipo", "barra reta/afunilada/ampla", "fecho frontal dependente da foto"],
+  SKIRTS: ["cintura", "volume (flare)", "comprimento por tipo", "barra: tubo rígido, sem simulação", "shorts internos estimados no skort"],
   FULL_BODY: ["continuidade tronco–pernas", "decote", "comprimento", "cobertura entre regiões"],
   SHOES: ["fôrma por estilo (shoes.ts)", "sola com espessura", "cadarço e colarinho", "contato com o chão (SOLE_LIFT)", "cores do cabedal e da sola (foto)"],
   ACCESSORIES: [],
@@ -64,7 +64,10 @@ export const FAMILY_PARAMETERS: Record<GarmentFamily, string[]> = {
 function cutOf(piece: Look3dPiece, kind: GarmentKind | null): Pick<GarmentContract["cut"], "length" | "sleeve" | "neckline" | "opening" | "silhouette"> {
   if (!kind) return { length: missing("sem molde"), sleeve: missing("sem molde"), neckline: missing("sem molde"), opening: missing("sem molde"), silhouette: missing("sem molde") };
   const sp = specFor(piece)!; const src = `molde ajustado ${kind} (specFor)`;
-  const length = kind === "pants" || kind === "leggings" ? "full_leg" : kind === "shorts" ? "above_knee" : kind === "crop" ? "cropped" : kind === "coat" || kind === "dress" ? "long" : "hip";
+  const lowerLeg = ["pants", "leggings", "culottes", "shorts", "bermuda"].includes(kind);
+  const length = lowerLeg ? sp.leg > .85 ? "full_leg" : sp.leg > .6 ? "cropped_leg" : sp.leg > .44 ? "knee" : "above_knee"
+    : kind === "skirt" ? sp.skirt > .7 ? "long" : sp.skirt > .5 ? "midi" : "above_knee"
+    : kind === "crop" ? "cropped" : kind === "coat" || kind === "dress" ? "long" : "hip";
   const sleeve = sp.sleeve === 0 ? "sleeveless" : sp.sleeve > 0.8 ? "long" : "short";
   const neckline = sp.neckShape === "v" ? "v" : sp.neck > 1.04 ? "high" : sp.neckShape ?? "round";
   const opening = sp.frontOpening ? "open_front" : sp.placket ? "button_front" : "none";

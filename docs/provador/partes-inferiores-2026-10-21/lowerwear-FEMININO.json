@@ -1,0 +1,121 @@
+{
+  "sex": "FEMININO",
+  "scope": "Local estimated patterns, not brand certification",
+  "report": [
+    {
+      "subcategory": "jeans",
+      "waist": 0.18,
+      "leg": 0.985,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 1517
+    },
+    {
+      "subcategory": "tailored_pants",
+      "waist": 0.2,
+      "leg": 0.985,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 1532
+    },
+    {
+      "subcategory": "casual_pants",
+      "waist": 0.18,
+      "leg": 0.985,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 1517
+    },
+    {
+      "subcategory": "chino_pants",
+      "waist": 0.18,
+      "leg": 0.97,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 1495
+    },
+    {
+      "subcategory": "cargo_pants",
+      "waist": 0.29,
+      "leg": 0.985,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 1654
+    },
+    {
+      "subcategory": "jogger_pants",
+      "waist": 0.18,
+      "leg": 0.97,
+      "skirt": 0,
+      "cuff": true,
+      "vertices": 1495
+    },
+    {
+      "subcategory": "sweatpants",
+      "waist": 0.18,
+      "leg": 0.985,
+      "skirt": 0,
+      "cuff": true,
+      "vertices": 1517
+    },
+    {
+      "subcategory": "leggings",
+      "waist": 0.2,
+      "leg": 0.97,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 1510
+    },
+    {
+      "subcategory": "culottes",
+      "waist": 0.2,
+      "leg": 0.74,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 1288
+    },
+    {
+      "subcategory": "shorts",
+      "waist": 0.18,
+      "leg": 0.36,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 783
+    },
+    {
+      "subcategory": "bermuda_shorts",
+      "waist": 0.18,
+      "leg": 0.5,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 1019
+    },
+    {
+      "subcategory": "denim_shorts",
+      "waist": 0.18,
+      "leg": 0.32,
+      "skirt": 0,
+      "cuff": false,
+      "vertices": 739
+    },
+    {
+      "subcategory": "skirt",
+      "waist": 0.2,
+      "leg": 0,
+      "skirt": 0.42,
+      "cuff": false,
+      "vertices": 2421
+    },
+    {
+      "subcategory": "skort",
+      "waist": 0.2,
+      "leg": 0,
+      "skirt": 0.32,
+      "cuff": false,
+      "vertices": 2587
+    }
+  ],
+  "cuffHemWidth": 0.0644824206829071,
+  "straightHemWidth": 0.1459783986210823,
+  "estimatedLiningVertices": 678
+}

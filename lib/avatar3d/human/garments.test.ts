@@ -291,7 +291,7 @@ describe("cargo trouser construction", () => {
     expect(regular.ease).toBeGreaterThan(SPECS.pants.ease);
     expect(relaxed.ease).toBeGreaterThan(regular.ease);
     expect(relaxed.flare).toBeGreaterThan(regular.flare);
-    expect(specOf({ subcategory: "jeans" })).toBe(SPECS.pants);
+    expect(specOf({ subcategory: "jeans" })).toEqual(SPECS.pants);
     expect(SPECS.pants.waist).toBe(.18);
   });
   it("uses matte workwear material rather than glossy thin cloth", () => {

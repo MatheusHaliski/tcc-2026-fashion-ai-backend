@@ -1,3 +1,4 @@
+import { lowerProfile } from "./lowerwear";
 import { upperProfile } from "./upperwear";
 import { silhouetteLandmarks, separatedLegRows, landmarkProjection, type GarmentLandmarks, type PhotoLegRow } from "./photo-landmarks";
 /*
@@ -36,6 +37,9 @@ export interface GarmentSpec {
   sleeveEase?: number;   // extra radial sleeve allowance
   hemFlare?: number;     // lower-torso expansion (estimated peplum)
   ribbed?: boolean;
+  legCuff?: boolean;
+  liningLeg?: number; // estimated inner shorts for skort
+
   /** A blouse has no shirt buttons; a polo has a short button placket. */
   placket?: boolean;
   placketLength?: number;
@@ -175,6 +179,15 @@ export function specOf(p: { name?: string; category?: string | null; subcategory
   }
   if (sub === "overalls") return { ...SPECS.jumpsuit, neck: 1.03, vneck: .3 };
   const description = `${p.subcategory ?? ""} ${p.name ?? ""}`.toLowerCase();
+  const lower = lowerProfile(p);
+  if (lower) {
+    const spec = { ...SPECS[kind], ...lower.spec };
+    if (spec.construction === "cargo" && /loose|relaxed|wide|larga|ampla/.test(description)) {
+      spec.ease = .026; spec.flare = .045;
+    }
+    return spec;
+  }
+  // Preserve legacy/free-text cargo aliases outside the official subcategory codes.
   if (kind === "pants" && /cargo/.test(description)) {
     const loose = /loose|relaxed|wide|larga|ampla/.test(description);
     return { ...SPECS.pants, construction: "cargo", ease: loose ? .026 : .019, waist: .29, flare: loose ? .045 : .032 };
@@ -294,6 +307,7 @@ function coverage(sp: GarmentSpec, P: BodyParam, v: number, x: number, z: number
 export interface GarmentGeometry {
   spec: GarmentSpec;
   position: Float32Array; alpha: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array;
+  photoEligible?: Float32Array; // 0 = estimated lining, never project the outer photograph here
   source: Int32Array;         // vértice do corpo de onde nasceu (−1 = tubo da saia)
 }
 
@@ -668,11 +682,11 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
   }
   if (photo && sp.kind !== "shoes" && sp.kind !== "boots") {
     let yTop = -Infinity, yBot = Infinity; const front: number[] = [];
-    for (let v = 0; v < posed.length / 3; v++) if (gg.alpha[v] > 0.5 && !noPhoto?.(v)) { const y = posed[v * 3 + 1]; yTop = Math.max(yTop, y); yBot = Math.min(yBot, y); front.push(v); }
+    for (let v = 0; v < posed.length / 3; v++) if (gg.alpha[v] > 0.5 && !noPhoto?.(v) && gg.photoEligible?.[v] !== 0) { const y = posed[v * 3 + 1]; yTop = Math.max(yTop, y); yBot = Math.min(yBot, y); front.push(v); }
     // linha de referência da largura: calça no alto; peça de cima no busto (62%); manga longa deitada ao lado do corpo
     // na foto (flat lay ou vestida) alargava a "largura do tronco" e punha os punhos na barra do tronco 3D — com manga
     // longa a referência desce para perto da barra (93%), onde a foto só tem o tronco
-    const fy = sp.kind === "pants" || sp.kind === "shorts" || sp.kind === "skirt" || sp.kind === "leggings" ? 0.12 : sp.sleeve > 0.6 ? 0.93 : 0.62;
+    const fy = ["pants", "shorts", "bermuda", "culottes", "skirt", "leggings"].includes(sp.kind) ? 0.12 : sp.sleeve > 0.6 ? 0.93 : 0.62;
     const yRef = yTop - (yTop - yBot) * fy;
     let xl = Infinity, xr = -Infinity;
     for (const v of front) if (Math.abs(posed[v * 3 + 1] - yRef) < 0.012) { xl = Math.min(xl, posed[v * 3]); xr = Math.max(xr, posed[v * 3]); }
@@ -759,7 +773,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         pos.push(gg.position[v * 3], gg.position[v * 3 + 1], gg.position[v * 3 + 2]);
         // camisa também recebe a foto na frente (cor, xadrez, listras REAIS): a carcela, os botões e a gola 3D vêm por
         // cima, alinhados ao centro — antes a frente ficava só com o painel do tecido (repetição ou degradê por linhas)
-        const blend = isFront && !noPhoto?.(v) ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
+        const blend = isFront && !noPhoto?.(v) && gg.photoEligible?.[v] !== 0 ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
         if (blend > 0 && map) {
           const [u, w] = map(posed[v * 3], posed[v * 3 + 1]);
           uv.push(0.5 * Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w)));

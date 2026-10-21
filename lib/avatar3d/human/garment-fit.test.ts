@@ -79,7 +79,7 @@ describe("silhuetas inferiores declaradas", () => {
   it("usa nomes explícitos apenas sem variação declarada e restringe a abertura à família de calças", () => {
     expect(specFor({ name: "Saia lápis", subcategory: "skirt" })!.flare).toBe(0);
     expect(specFor({ name: "Calça bootcut", subcategory: "jeans", variation: "STRAIGHT" })!.legFlareStart).toBeUndefined();
-    expect(specFor({ name: "Marca Flare", subcategory: "leggings", variation: "FLARE" })!.legFlareStart).toBeUndefined();
+    expect(specFor({ name: "Legging", subcategory: "leggings", variation: "FLARE" })!.legFlareStart).toBe(.52);
     expect(specFor({ subcategory: "bermuda_shorts", variation: "FLARE" })!.legFlareStart).toBeUndefined();
     expect(specFor({ name: "Marca", subcategory: "jeans" })!.legFlareStart).toBeUndefined();
   });
