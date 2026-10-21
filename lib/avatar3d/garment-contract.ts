@@ -17,7 +17,7 @@ import { fitClassOf, specFor } from "@/lib/avatar3d/human/garment-fit";
 
 export const GARMENT_CONTRACT_VERSION = "1.0.0";
 /** Molde e corpo: mudar qualquer um invalida os resultados aprovados que dependem dele (§7). */
-export const MOULD_VERSION = "fai-mould-skinwrap-v3";
+export const MOULD_VERSION = "fai-mould-skinwrap-v4";
 export const BODY_RIG = "fai-body-v1";
 /** Margem de colisão corpo–roupa usada no teste de penetração (lib/avatar3d/human/garments.test.ts): 2 mm para dentro da pele. */
 export const COLLISION_MARGIN_MM = 2;
@@ -52,7 +52,7 @@ const FAMILY: Record<GarmentKind, GarmentFamily> = {
 /** O que cada família do molde controla hoje (§4); o que não está aqui é MISSING no contrato. */
 export const FAMILY_PARAMETERS: Record<GarmentFamily, string[]> = {
   TOPS: ["ombros (molde da pele)", "mangas (comprimento por tipo)", "gola (faixa 3D, decote por tipo)", "busto (anel)", "barra (comprimento por tipo)", "folga do tronco (ease)"],
-  OUTERWEAR: ["estrutura (camada e folga)", "espessura visual (ease)", "fechamento (aberto na frente, sem botões)", "espaço para sobreposição (underLayer)"],
+  OUTERWEAR: ["estrutura (camada e folga)", "espessura visual (ease)", "fechamento (abertura frontal opcional; detalhes pela foto)", "espaço para sobreposição (underLayer)"],
   BOTTOMS: ["cós (altura)", "quadril", "pernas (tubo por tipo)", "comprimento por tipo", "abertura: não modelada"],
   SKIRTS: ["cintura", "volume (flare)", "comprimento por tipo", "barra: tubo rígido, sem simulação"],
   FULL_BODY: ["continuidade tronco–pernas", "decote", "comprimento", "cobertura entre regiões"],
@@ -67,7 +67,7 @@ function cutOf(piece: Look3dPiece, kind: GarmentKind | null): Pick<GarmentContra
   const length = kind === "pants" || kind === "leggings" ? "full_leg" : kind === "shorts" ? "above_knee" : kind === "crop" ? "cropped" : kind === "coat" || kind === "dress" ? "long" : "hip";
   const sleeve = sp.sleeve === 0 ? "sleeveless" : sp.sleeve > 0.8 ? "long" : "short";
   const neckline = sp.neckShape === "v" ? "v" : sp.neck > 1.04 ? "high" : sp.neckShape ?? "round";
-  const opening = kind === "jacket" || kind === "coat" || kind === "shirt" ? "front" : "none";
+  const opening = sp.frontOpening ? "open_front" : sp.placket ? "button_front" : "none";
   const silhouette = fitClassOf(piece);
   const declared = (dimension: string, fallback: string, confidence: number): Attr<string> => {
     const value = piece.attributes?.[dimension]?.[0];

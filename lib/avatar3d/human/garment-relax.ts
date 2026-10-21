@@ -1,3 +1,4 @@
+import { hasRibbing } from "./upperwear";
 /*
  * Avatar 3D (RF40) / Provador — caimento natural da roupa (depois do molde de garments.ts).
  *
@@ -55,7 +56,7 @@ export const RELAX: Record<string, number> = {
 };
 
 /** Peças de malha com punho e barra de ribana. */
-const RIBBED = new Set(["sweater", "hoodie"]);
+
 
 function neighbors(n: number, index: Uint32Array): Int32Array[] {
   const sets: Set<number>[] = Array.from({ length: n }, () => new Set<number>());
@@ -70,7 +71,7 @@ function neighbors(n: number, index: Uint32Array): Int32Array[] {
 function minEase(sp: GarmentSpec, P: BodyParam, src: number, under: UnderLayer | null): number {
   const base = sp.kind === "leggings" ? sp.ease * 0.8 : Math.max(0.003, sp.ease * 0.55);
   let e = base + (under ? under.ease[src] : 0);
-  if (RIBBED.has(sp.kind)) {
+  if (hasRibbing(sp)) {
     // ribana: barra e punho encostam (só a espessura do tecido)
     const g = P.group[src];
     if ((g === 1 || g === 3) && P.h[src] < sp.hem + 0.07) e = Math.min(e, 0.0035 + (under ? under.ease[src] : 0));
@@ -98,7 +99,7 @@ export function relaxGarment(gg: GarmentGeometry, c: Composed, normals: Float32A
   const minE = new Float32Array(n);
   for (let v = 0; v < n; v++) { const s = gg.source[v]; minE[v] = s >= 0 ? minEase(sp, P, s, under) : 0; }
   // na ribana o tecido é puxado contra a pele antes de relaxar (a sobra acima vem das dobras)
-  if (RIBBED.has(sp.kind)) for (let v = 0; v < n; v++) {
+  if (hasRibbing(sp)) for (let v = 0; v < n; v++) {
     const s = gg.source[v]; if (s < 0) continue; const g = P.group[s];
     const rib = ((g === 1 || g === 3) && P.h[s] < sp.hem + 0.07) || (g === 2 && sp.sleeve > 0 && P.arm[s] > sp.sleeve - 0.07);
     if (!rib) continue;
@@ -158,8 +159,8 @@ export function foldGarment(gg: GarmentGeometry, c: Composed, normals: Float32Ar
       d += 0.0022 * bell(a, 0.52, 0.1) * Math.sin(a / 0.055 * Math.PI * 2 + wob(around)) * (0.6 + 0.4 * Math.cos(around));
       if (sp.sleeve > 0.8) {
         // manga longa: o tecido sobra e embolsa logo acima do punho
-        const cuff = sp.sleeve - (RIBBED.has(sp.kind) ? 0.07 : 0.03);
-        d += (RIBBED.has(sp.kind) ? 0.006 : 0.003) * bell(a, cuff - 0.09, 0.07);
+        const cuff = sp.sleeve - (hasRibbing(sp) ? 0.07 : 0.03);
+        d += (hasRibbing(sp) ? 0.006 : 0.003) * bell(a, cuff - 0.09, 0.07);
         d += 0.002 * bell(a, cuff - 0.1, 0.1) * Math.sin(a / 0.045 * Math.PI * 2 + wob(around * 1.7));
       } else {
         d += 0.0025 * smooth(sp.sleeve - 0.25, sp.sleeve, a);          // manga curta: a boca abre um pouco
@@ -172,7 +173,7 @@ export function foldGarment(gg: GarmentGeometry, c: Composed, normals: Float32Ar
         const k = smooth(0.62, 0.25, h) * (0.4 + 0.6 * Math.abs(Math.cos(ang)));
         d += 0.0021 * k * Math.sin(ang * 9 + wob(h * 6) * 1.4);
       }
-      if (RIBBED.has(sp.kind)) d += 0.008 * bell(h, sp.hem + 0.13, 0.06);   // embolsa acima da barra de ribana
+      if (hasRibbing(sp)) d += 0.008 * bell(h, sp.hem + 0.13, 0.06);   // embolsa acima da barra de ribana
     }
     if (g === 3 && sp.leg > 0.8) {
       const l = P.leg[s];

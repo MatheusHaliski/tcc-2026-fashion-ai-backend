@@ -7919,5 +7919,8 @@
   "metamorphoseInventory.help": "Aquí solo aparecen artes de marcas y celebridades adquiridas en la tienda FAI o recibidas como recompensa válida.",
   "metamorphoseInventory.empty": "Todavía no tienes artes Metamorfosis disponibles.",
   "metamorphoseInventory.store": "Visitar la tienda FAI",
-  "auraGate.checkFailed": "No se pudo verificar tu nivel. Los acabados avanzados siguen bloqueados. Inténtalo de nuevo."
+  "auraGate.checkFailed": "No se pudo verificar tu nivel. Los acabados avanzados siguen bloqueados. Inténtalo de nuevo.",
+  "tryOn.limite.quimono_estimado_sem_faixa": "Mangas amplias estimadas; la faja y la caída del kimono no se simulan.",
+  "tryOn.limite.capuz_nao_modelado": "El cuerpo de la sudadera es estimado; la capucha aún no tiene geometría propia.",
+  "tryOn.limite.body_inferior_estimado": "La parte superior del body es estimada; el corte inferior no tiene un molde propio."
 }

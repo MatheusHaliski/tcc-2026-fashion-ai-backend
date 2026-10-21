@@ -1,4 +1,5 @@
 "use client";
+import { hasRibbing } from "@/lib/avatar3d/human/upperwear";
 import { useEffect, useLayoutEffect, useState } from "react";
 import * as THREE from "three";
 import { mediaUrl } from "@/lib/api/client";
@@ -152,7 +153,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
         tg.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(tb.skinIndex, 4));
         tg.setAttribute("skinWeight", new THREE.Float32BufferAttribute(tb.skinWeight, 4));
         tg.setIndex(Array.from(tb.index)); tg.computeVertexNormals();
-        const ribbed = it.spec.kind === "hoodie" || it.spec.kind === "sweater";
+        const ribbed = hasRibbing(it.spec);
         // botão claro com aro escuro (nítido sobre qualquer tecido); linha do pesponto escura em tecido claro e clara em
         // tecido escuro; pontas da gola na cor da gola da foto
         const fl = new THREE.Color(fabric); const light = 0.2126 * fl.r + 0.7152 * fl.g + 0.0722 * fl.b > 0.35;

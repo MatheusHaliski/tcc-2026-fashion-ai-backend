@@ -1,3 +1,4 @@
+import { upperProfile, upperVariantFit, applyUpperVariation } from "./upperwear";
 /*
  * Caimento por classe (PROVADOR-3D): a mesma família de molde muda de folga, queda e comprimento conforme a modelagem
  * declarada da peça — sem inventar: a classe vem da VARIAÇÃO da taxonomia (SKINNY, STRAIGHT, OVERSIZED, WIDE_LEG…), e os
@@ -37,6 +38,7 @@ export const KIND_FIT: Record<GarmentKind, FitClass> = {
 const SUB_FIT: Record<string, FitClass> = { bodysuit: "justa", kimono: "fluida", windbreaker: "oversized", parka: "estruturada", blazer: "estruturada", tailored_pants: "estruturada", cargo_pants: "oversized", sweatshirt: "oversized" };
 
 export function fitClassOf(p: FitPiece): FitClass {
+  const upperFit = upperVariantFit(p); if (upperFit) return upperFit;
   const v = lowerSilhouetteOf(p) ?? (p.variation ?? "").toUpperCase();
   if (VARIATION_FIT[v]) return VARIATION_FIT[v];
   // Catalogue items often have no variation column; use explicit model words, never brand stereotypes.
@@ -46,6 +48,7 @@ export function fitClassOf(p: FitPiece): FitClass {
   if (/\b(oversized|baggy|loose[ -]?fit)\b/.test(name)) return "oversized";
   if (/\b(regular[ -]?fit|straight)\b/.test(name)) return "regular";
   const sub = (p.subcategory ?? "").toLowerCase();
+  if (upperProfile(p)) return upperProfile(p).fit;
   if (SUB_FIT[sub]) return SUB_FIT[sub];
   const k = kindOf(p); return k ? KIND_FIT[k] : "regular";
 }
@@ -169,6 +172,7 @@ export function specFor(p: FitPiece): GarmentSpec | null {
       sp.ease = base.ease * 1.2; if (draped) sp.drape = 1; sp.bustFall = 1; sp.flare = base.flare * 1.5; if (legged) sp.legColumn = Math.max(base.legColumn, 1.3); break;
   }
   applyLowerSilhouette(sp, p);
+  applyUpperVariation(sp, p);
   // jogger e calça de moletom: punho na barra (afunila no tornozelo) — não é uma calça reta
   const sub = (p.subcategory ?? "").toLowerCase();
   if (sub === "jogger_pants" || sub === "sweatpants") { sp.legColumn = 0.6; sp.flare = 0; }
@@ -176,7 +180,7 @@ export function specFor(p: FitPiece): GarmentSpec | null {
   const len = first(p, "LENGTH"), sleeve = first(p, "SLEEVE_LENGTH"), shaft = first(p, "SHAFT_HEIGHT");
   if (len && base.skirt > 0 && SKIRT_LEN[len] !== undefined) sp.skirt = SKIRT_LEN[len];
   if (len && legged && LEG_LEN[len] !== undefined) sp.leg = LEG_LEN[len];
-  if (len === "CROPPED" && !Number.isNaN(base.hem)) sp.hem = Math.max(base.hem, 0.45);
+  if (len === "CROPPED" && !Number.isNaN(base.hem)) { sp.hem = Math.max(base.hem, 0.45); sp.skirt = 0; }
   if (len === "LONGLINE" && !Number.isNaN(base.hem)) sp.hem = Math.min(base.hem, -0.16);
   if (sleeve && SLEEVE_LEN[sleeve] !== undefined && !Number.isNaN(base.hem)) sp.sleeve = SLEEVE_LEN[sleeve];
   if (k === "boots") sp.shaft = (shaft ? SHAFT[shaft] : undefined) ?? SHAFT_SUB[sub] ?? base.shaft;
@@ -187,6 +191,7 @@ export function specFor(p: FitPiece): GarmentSpec | null {
   const rise = riseOf(p);
   if (rise && Number.isNaN(base.hem) && Number.isFinite(base.waist)) sp.waist = RISE[rise];
   const closure = first(p, "CLOSURE");
+  if (upperProfile(p) && closure) sp.frontOpening = 0;
   if (k === "shirt" && closure) {
     // A zipper, tie or pullover must not acquire seven synthetic shirt buttons.
     sp.placket = ["BUTTON", "SNAP", "SINGLE_BREASTED"].includes(closure);
