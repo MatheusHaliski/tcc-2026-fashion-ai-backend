@@ -331,5 +331,7 @@ export function prepareOutfitPhoto(img: CanvasImageSource & { width: number; hei
     let out = await attempt(); if (out === "timeout") out = await attempt();
     return out === "timeout" ? null : out;
   })();
-  cache.set(part, task); return task;
+  cache.set(part, task);
+  void task.then(result => { if (!result && cache!.get(part) === task) cache!.delete(part); });
+  return task;
 }

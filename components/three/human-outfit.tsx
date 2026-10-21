@@ -10,7 +10,7 @@ import {
   type GarmentKind, type GarmentSpec,
   HAS_COLLAR_BAND, type PhotoInfo,
 } from "@/lib/avatar3d/human/garments";
-import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered, type Zone } from "@/lib/avatar3d/human/default-outfit";
+import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
 import { isBundledGarmentPhoto } from "@/lib/tryon/reference-photo";
 import { specFor } from "@/lib/avatar3d/human/garment-fit";
 import { publishPhotoStates } from "@/lib/tryon/garment-status";
@@ -52,17 +52,6 @@ export function photoPart(kind: GarmentKind): OutfitPhotoPart {
   return "upper";
 }
 
-/** Zona do corpo que a peça cobre (para trocar pela peça padrão se a foto dela não puder ser usada). */
-function zoneOf(spec: GarmentSpec): Zone | null {
-  const covered = zonesCovered([spec.kind]);
-  return covered.has("upper") ? "upper" : covered.has("lower") ? "lower" : covered.has("feet") ? "feet" : null;
-}
-
-/**
- * Peças cuja foto falhou no 3D (ex.: imagem externa sem CORS): nunca viram uma casca lisa "pintada" no corpo. A zona
- * recebe a peça padrão do FashionAI (a peça de cima por fora, como colete e jaqueta, simplesmente sai) e o estado vai
- * para a página como ERRO, com a foto 2D na lista.
- */
 /**
  * Decote pela foto: a profundidade (fração da altura da peça) vira h pela altura do molde (gola − barra); só aprofunda —
  * um decote declarado mais fundo que o da foto fica. Forma (V/redondo) continua a do nome/atributo.
@@ -72,21 +61,6 @@ export function withPhotoNeckline(sp: GarmentSpec, info: PhotoInfo | null): Garm
   const depth = info.neckDrop * (sp.neck - sp.hem);
   if (!(depth > sp.vneck + 0.03)) return sp;
   return { ...sp, vneck: Math.min(0.4, depth) };
-}
-
-function usable(items: OutfitItem[], images: Record<string, Img | null>, settled: boolean): OutfitItem[] {
-  if (!settled) return items;
-  const out: OutfitItem[] = []; const missing = new Set<Zone>();
-  for (const it of items) {
-    const url = it.piece.imageUrl ?? it.piece.studioUrl;
-    if (!it.piece.defaultImage && url && !images[it.key]) { const z = zoneOf(it.spec); if (z) missing.add(z); continue; }
-    out.push(it);
-  }
-  for (const z of missing) {
-    if (zonesCovered(out.map((i) => i.spec.kind)).has(z)) continue;
-    const p = DEFAULT_PIECES[z]; const spec = specFor(p); if (spec) out.push({ key: p.id, spec, piece: p });
-  }
-  return out.sort((a, b) => a.spec.layer - b.spec.layer);
 }
 
 type Img = CanvasImageSource & { width: number; height: number };
@@ -220,43 +194,63 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   return { meshes, dressed: ZONES.every((z) => covered.has(z)) };
 }
 
+const photoUrls = (p: Look3dPiece) => [p.imageUrl, p.studioUrl].filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
+// Reusing an item in another look must not rerun segmentation. Failures remain retryable.
+const isolatedPhotos = new Map<string, Promise<Img | null>>();
+function outfitPhoto(i: OutfitItem): Promise<Img | null> {
+  const key = JSON.stringify([photoPart(i.spec.kind), photoUrls(i.piece)]);
+  const cached = isolatedPhotos.get(key);
+  if (cached) return cached;
+  const pending = (async () => {
+    for (const url of photoUrls(i.piece)) {
+      try {
+        const resolved = mediaUrl(url);
+        const texture = resolved ? await loadTexture(resolved) : null;
+        const image = texture?.image as Img | undefined;
+        if (!image) continue;
+        // Trust only the exact bundled source that actually loaded; remote images still require isolation.
+        const prepared = isBundledGarmentPhoto(url) ? prepareGarmentPhoto(image) : await prepareOutfitPhoto(image, photoPart(i.spec.kind));
+        if (prepared) return prepared;
+      } catch { /* Try the processed alternative, without projecting an unchecked image. */ }
+    }
+    return null;
+  })();
+  isolatedPhotos.set(key, pending);
+  if (isolatedPhotos.size > 64) isolatedPhotos.delete(isolatedPhotos.keys().next().value!);
+  void pending.then(image => { if (!image && isolatedPhotos.get(key) === pending) isolatedPhotos.delete(key); });
+  return pending;
+}
+
 export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
-  // fotos das peças com a chave do look a que pertencem: a Prévia 2D só fotografa quando as fotos do look atual chegaram
-  const [loaded, setLoaded] = useState<{ key: string; images: Record<string, Img | null>; pieces: Look3dPiece[] }>({ key: "", images: {}, pieces: [] });
-  const all = outfitOf(pieces);
-  // a foto recortada (imageUrl: PNG com alfa) vem antes da de estúdio/processada (studioUrl): o molde projeta a peça pela
-  // caixa do alfa. Se a recortada não carrega no 3D (imagem externa sem CORS), entra a processada, servida por nós.
-  const photoUrls = (p: Look3dPiece) => [p.imageUrl, p.studioUrl].filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
-  const urlKey = all.map((i) => `${i.key}:${photoUrls(i.piece).join(",")}`).join("|");
-  const settled = loaded.key === urlKey;
-  // troca de look: o look anterior (peças E fotos dele, nunca misturadas) fica vestido até as fotos do novo ficarem
-  // prontas; só no primeiro look, sem anterior, as peças entram na cor do tecido enquanto as fotos carregam
-  const keepPrevious = !settled && loaded.key !== "";
-  const shown = keepPrevious ? outfitOf(loaded.pieces) : all;
-  const shownKey = keepPrevious ? loaded.key : urlKey;
-  const images = settled || keepPrevious ? loaded.images : {};
-  const items = usable(shown, images, settled || keepPrevious);
-  // estado da foto de cada peça do look (não as padrão) para a página: carregando, ok, falhou ou sem foto
+  const [loaded, setLoaded] = useState<Record<string, Img | null>>({});
+  const items = outfitOf(pieces);
+  const keyOf = (i: OutfitItem) => JSON.stringify([i.key, photoPart(i.spec.kind), photoUrls(i.piece)]);
+  const urlKey = JSON.stringify(items.map(keyOf));
+  // Selection, fit and registered color apply immediately, including same-URL variant edits.
+  // Only the isolated photograph waits; never keep a different garment dressed meanwhile.
+  const outfitKey = JSON.stringify(items.map(i => i.piece));
+  const images = Object.fromEntries(items.map(i => [i.key, loaded[keyOf(i)] ?? null]));
+  const settled = items.every(i => Object.hasOwn(loaded, keyOf(i)));
   useEffect(() => {
     const photos: Record<string, PhotoState> = {};
-    for (const i of all) {
+    for (const i of items) {
       if (i.piece.defaultImage && i.key.startsWith("fai-padrao-")) continue;
-      photos[i.key] = !photoUrls(i.piece).length ? "sem-foto" : !settled ? "carregando" : images[i.key] ? "ok" : "falhou";
+      photos[i.key] = !photoUrls(i.piece).length ? "sem-foto" : !Object.hasOwn(loaded, keyOf(i)) ? "carregando" : images[i.key] ? "ok" : "falhou";
     }
     publishPhotoStates(photos);
-  }, [urlKey, settled, images]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [urlKey, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     let alive = true;
-    Promise.all(all.map(async (i) => {
-      let t: THREE.Texture | null = null;
-      let loadedUrl: string | null = null;
-      for (const url of photoUrls(i.piece)) { const u = mediaUrl(url); t = u ? await loadTexture(u) : null; if (t) { loadedUrl = url; break; } }
-      const img = t?.image as Img | undefined;
-      // Exact bundled references contain only the product. Inspect the URL actually loaded,
-      // so a remote fallback never inherits trust from a failed local primary image.
-      const bundled = isBundledGarmentPhoto(loadedUrl);
-      return [i.key, img ? bundled ? prepareGarmentPhoto(img) : await prepareOutfitPhoto(img, photoPart(i.spec.kind)) : null] as const;
-    })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv), pieces }); });
+    // Commit each image separately: a slow/broken coat must not hold back trousers or shoes.
+    for (const i of items) {
+      const key = keyOf(i);
+      void outfitPhoto(i).then(image => {
+        if (alive) setLoaded(current => ({
+          ...Object.fromEntries(Object.entries(current).filter(([oldKey]) => items.some(item => keyOf(item) === oldKey))),
+          [key]: image,
+        }));
+      });
+    }
     return () => { alive = false; };
   }, [urlKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // antes da pintura: o corpo nunca é desenhado sem as peças (sem foto ainda, na cor do tecido)
@@ -264,7 +258,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
     const root = parts.human.root;
     const { meshes, dressed } = dress(parts, items, images);
     root.userData.dressed = dressed; root.visible = dressed;
-    root.userData.outfitReady = loaded.key === urlKey;
+    root.userData.outfitReady = settled;
     root.userData.garments = meshes.map((m) => m.name);
     // contrato de cada peça (origem de cada dado, caminho de construção, aproximação): diagnóstico e auditoria
     root.userData.garmentContracts = items.map((i) => garmentContractOf(i.piece, { origin: i.piece.id.startsWith("fai-padrao-") ? "DEFAULT" : "UNKNOWN" }));
@@ -275,8 +269,8 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       root.position.y = 0;
     };
     // só o corpo (não o cabelo): trocar o nível de detalhe do cabelo não refaz as roupas
-  }, [parts.human, parts.pose, parts.composed, parts.asset, shownKey, loaded, items.length]); // eslint-disable-line react-hooks/exhaustive-deps
-  // "pronto" é do look PEDIDO: enquanto o anterior segura a tela, a Prévia 2D e as capturas esperam
-  useLayoutEffect(() => { parts.human.root.userData.outfitReady = settled; }, [parts.human, settled, shownKey, loaded]);
+  }, [parts.human, parts.pose, parts.composed, parts.asset, outfitKey, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Captures wait for the requested photos, independently of the immediately visible mold.
+  useLayoutEffect(() => { parts.human.root.userData.outfitReady = settled; }, [parts.human, settled, urlKey]);
   return null;
 }
