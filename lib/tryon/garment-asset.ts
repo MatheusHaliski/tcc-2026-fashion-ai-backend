@@ -68,7 +68,7 @@ export interface GarmentContract {
 export const KNOWN_LIMITS: Record<string, string> = {
   sandals: "sandalia_como_sapato_fechado", flip_flops: "sandalia_como_sapato_fechado", heels: "salto_sem_salto_modelado", espadrilles: "sandalia_como_sapato_fechado",
   hoodie: "capuz_nao_modelado", bodysuit: "body_inferior_estimado",
-  matching_set: "conjunto_como_macacao", overalls: "jardineira_sem_peitilho", kimono: "quimono_estimado_sem_faixa", skort: "saia_short_sem_short_por_baixo",
+  matching_set: "conjunto_como_macacao", overalls: "jardineira_sem_peitilho", kimono: "quimono_estimado_sem_faixa", skort: "saia_short_forro_estimado",
 };
 
 export function familyOf(p: FitPiece): Family {

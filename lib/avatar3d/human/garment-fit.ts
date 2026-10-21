@@ -1,3 +1,4 @@
+import { lowerProfile, lowerVariantFit, applyLowerVariation } from "./lowerwear";
 import { upperProfile, upperVariantFit, applyUpperVariation } from "./upperwear";
 /*
  * Caimento por classe (PROVADOR-3D): a mesma família de molde muda de folga, queda e comprimento conforme a modelagem
@@ -39,6 +40,7 @@ const SUB_FIT: Record<string, FitClass> = { bodysuit: "justa", kimono: "fluida",
 
 export function fitClassOf(p: FitPiece): FitClass {
   const upperFit = upperVariantFit(p); if (upperFit) return upperFit;
+  const lowerFit = lowerVariantFit(p); if (lowerFit) return lowerFit;
   const v = lowerSilhouetteOf(p) ?? (p.variation ?? "").toUpperCase();
   if (VARIATION_FIT[v]) return VARIATION_FIT[v];
   // Catalogue items often have no variation column; use explicit model words, never brand stereotypes.
@@ -49,6 +51,7 @@ export function fitClassOf(p: FitPiece): FitClass {
   if (/\b(regular[ -]?fit|straight)\b/.test(name)) return "regular";
   const sub = (p.subcategory ?? "").toLowerCase();
   if (upperProfile(p)) return upperProfile(p).fit;
+  if (lowerProfile(p)) return lowerProfile(p).fit;
   if (SUB_FIT[sub]) return SUB_FIT[sub];
   const k = kindOf(p); return k ? KIND_FIT[k] : "regular";
 }
@@ -71,8 +74,9 @@ export function lowerSilhouetteOf(p: FitPiece): string | null {
 
 /** Parametric silhouettes, not measured manufacturer patterns or physical cloth simulation. */
 function applyLowerSilhouette(sp: GarmentSpec, p: FitPiece): void {
-  const shape = lowerSilhouetteOf(p);
-  if (sp.kind === "pants" || sp.kind === "culottes") {
+  const raw = lowerSilhouetteOf(p);
+  const shape = raw ? ({ PALAZZO: "WIDE_LEG", BELL_BOTTOM: "FLARE", CIGARETTE: "TAPERED", GAUCHO: "WIDE_LEG" } as Record<string, string>)[raw] ?? raw : null;
+  if (sp.kind === "pants" || sp.kind === "culottes" || sp.kind === "leggings") {
     if (shape === "BOOTCUT" || shape === "FLARE") {
       sp.legColumn = 1;
       sp.legFlareStart = .52;
@@ -173,13 +177,14 @@ export function specFor(p: FitPiece): GarmentSpec | null {
   }
   applyLowerSilhouette(sp, p);
   applyUpperVariation(sp, p);
-  // jogger e calça de moletom: punho na barra (afunila no tornozelo) — não é uma calça reta
+  // Cuffs depend on the declared variation, not every sweatpant sharing one taper.
   const sub = (p.subcategory ?? "").toLowerCase();
-  if (sub === "jogger_pants" || sub === "sweatpants") { sp.legColumn = 0.6; sp.flare = 0; }
+  applyLowerVariation(sp, p);
   // comprimentos declarados (dimensões da taxonomia)
   const len = first(p, "LENGTH"), sleeve = first(p, "SLEEVE_LENGTH"), shaft = first(p, "SHAFT_HEIGHT");
   if (len && base.skirt > 0 && SKIRT_LEN[len] !== undefined) sp.skirt = SKIRT_LEN[len];
   if (len && legged && LEG_LEN[len] !== undefined) sp.leg = LEG_LEN[len];
+  if (sp.liningLeg && len && SKIRT_LEN[len] !== undefined) sp.liningLeg = Math.min(sp.liningLeg, .26);
   if (len === "CROPPED" && !Number.isNaN(base.hem)) { sp.hem = Math.max(base.hem, 0.45); sp.skirt = 0; }
   if (len === "LONGLINE" && !Number.isNaN(base.hem)) sp.hem = Math.min(base.hem, -0.16);
   if (sleeve && SLEEVE_LEN[sleeve] !== undefined && !Number.isNaN(base.hem)) sp.sleeve = SLEEVE_LEN[sleeve];

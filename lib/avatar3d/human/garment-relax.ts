@@ -77,6 +77,7 @@ function minEase(sp: GarmentSpec, P: BodyParam, src: number, under: UnderLayer |
     if ((g === 1 || g === 3) && P.h[src] < sp.hem + 0.07) e = Math.min(e, 0.0035 + (under ? under.ease[src] : 0));
     if (g === 2 && P.arm[src] > sp.sleeve - 0.07) e = Math.min(e, 0.003 + (under ? under.ease[src] : 0));
   }
+  if (sp.legCuff && P.group[src] === 3 && P.leg[src] > sp.leg - .06) e = Math.min(e, .0035 + (under ? under.ease[src] : 0));
   return e;
 }
 
@@ -99,9 +100,9 @@ export function relaxGarment(gg: GarmentGeometry, c: Composed, normals: Float32A
   const minE = new Float32Array(n);
   for (let v = 0; v < n; v++) { const s = gg.source[v]; minE[v] = s >= 0 ? minEase(sp, P, s, under) : 0; }
   // na ribana o tecido é puxado contra a pele antes de relaxar (a sobra acima vem das dobras)
-  if (hasRibbing(sp)) for (let v = 0; v < n; v++) {
+  if (hasRibbing(sp) || sp.legCuff) for (let v = 0; v < n; v++) {
     const s = gg.source[v]; if (s < 0) continue; const g = P.group[s];
-    const rib = ((g === 1 || g === 3) && P.h[s] < sp.hem + 0.07) || (g === 2 && sp.sleeve > 0 && P.arm[s] > sp.sleeve - 0.07);
+    const rib = ((g === 1 || g === 3) && P.h[s] < sp.hem + 0.07) || (g === 2 && sp.sleeve > 0 && P.arm[s] > sp.sleeve - 0.07) || (sp.legCuff && g === 3 && P.leg[s] > sp.leg - .06);
     if (!rib) continue;
     const d = (p[v * 3] - B[s * 3]) * normals[s * 3] + (p[v * 3 + 1] - B[s * 3 + 1]) * normals[s * 3 + 1] + (p[v * 3 + 2] - B[s * 3 + 2]) * normals[s * 3 + 2];
     const k = d - minE[v]; if (k > 0) for (let j = 0; j < 3; j++) p[v * 3 + j] -= normals[s * 3 + j] * k;
@@ -228,6 +229,11 @@ export function columnLegs(gg: GarmentGeometry, c: Composed, P: BodyParam): void
     const opening = sp.legFlareStart === undefined ? 0 : legFlareOffset(sp, l);
     const target = col + ease * 1.2 + opening; const k = Math.min(1, Math.max(0, (l - 0.12) / 0.08));
     let nr = Math.max(r, r + (target - r) * k);
+    if (sp.legCuff) {
+      const cuff = smooth(sp.leg - .08, sp.leg - .015, l);
+      const bodyRadius = Math.hypot(c.body[s * 3] - ax, c.body[s * 3 + 2] - az);
+      nr += (bodyRadius + .004 - nr) * cuff;
+    }
     // não passa do meio do corpo: a perna esquerda (x > 0) não cruza x = 4 mm, a direita idem
     const nx = ax + (dx * nr) / r; if (side * nx < 0.004) nr = r;
     p[i * 3] = ax + (dx * nr) / r; p[i * 3 + 2] = az + (dz * nr) / r;

@@ -7922,5 +7922,6 @@
   "auraGate.checkFailed": "No se pudo verificar tu nivel. Los acabados avanzados siguen bloqueados. Inténtalo de nuevo.",
   "tryOn.limite.quimono_estimado_sem_faixa": "Mangas amplias estimadas; la faja y la caída del kimono no se simulan.",
   "tryOn.limite.capuz_nao_modelado": "El cuerpo de la sudadera es estimado; la capucha aún no tiene geometría propia.",
-  "tryOn.limite.body_inferior_estimado": "La parte superior del body es estimada; el corte inferior no tiene un molde propio."
+  "tryOn.limite.body_inferior_estimado": "La parte superior del body es estimada; el corte inferior no tiene un molde propio.",
+  "tryOn.limite.saia_short_forro_estimado": "La falda-pantalón tiene shorts interiores estimados; el forro usa tejido aproximado, sin copiar la foto exterior."
 }

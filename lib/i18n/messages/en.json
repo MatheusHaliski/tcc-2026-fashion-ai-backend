@@ -7922,5 +7922,6 @@
   "auraGate.checkFailed": "Your level could not be verified. Advanced finishes remain locked. Try again.",
   "tryOn.limite.quimono_estimado_sem_faixa": "Estimated wide sleeves; the kimono belt and drape are not simulated.",
   "tryOn.limite.capuz_nao_modelado": "The sweatshirt body is estimated; the hood does not yet have its own geometry.",
-  "tryOn.limite.body_inferior_estimado": "The upper bodysuit is estimated; the lower cut does not have its own pattern."
+  "tryOn.limite.body_inferior_estimado": "The upper bodysuit is estimated; the lower cut does not have its own pattern.",
+  "tryOn.limite.saia_short_forro_estimado": "The skort has estimated inner shorts; its lining uses approximate fabric, without copying the outer photograph."
 }
