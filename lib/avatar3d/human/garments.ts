@@ -827,34 +827,33 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
       for (let o = 0; o < d.length; o += 4) if (isBackdrop(d, o, info.backdrop)) d[o + 3] = 0;
       sg.putImageData(raster, 0, 0);
     }
-    const tile = fabricTile(raster);
-    if (!tile) {
-      // do fim da gola (collarRow) até a barra, sem os acabamentos
-      const bh = info ? info.box.y1 - info.box.y0 : img.height;
-      const rows = fabricRows(raster, info ? { fromY: info.box.y0 + bh * (info.collarRow ?? 0.02), toY: info.box.y1 - bh * 0.03 } : {});
-      if (rows.length) {
-        // A front photo of denim contains a wash gradient; carry that fabric tone around the leg.
-        const gradient = g.createLinearGradient(0, 0, 0, H);
-        for (const row of rows) gradient.addColorStop(row.y / img.height, `rgb(${row.rgb.join(",")})`);
-        g.fillStyle = gradient; g.fillRect(0, 0, W, H);
-        const back = g.createLinearGradient(0, 0, 0, H);
-        const photoHeight = mapping ? mapping.height * mapping.photoScaleY : img.height;
-        const first = rows[0].y, last = rows[rows.length - 1].y;
-        for (const row of rows) back.addColorStop(Math.min(1, Math.max(0, (row.y - first) / Math.max(1, Math.min(photoHeight, last - first)))), `rgb(${row.rgb.join(",")})`);
-        g.fillStyle = back; g.fillRect(W, 0, W, H);
-      }
-    }
-    if (tile) {
-      const sample = document.createElement("canvas"); sample.width = tile.width; sample.height = tile.height;
-      sample.getContext("2d")!.drawImage(source, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
-      const pattern = g.createPattern(sample, "repeat");
-      if (pattern) {
-        const fill = (x: number, sx: number, sy: number) => {
-          g.save(); g.translate(x, 0); g.scale(sx, sy); g.fillStyle = pattern; g.fillRect(0, 0, W / sx, H / sy); g.restore();
-        };
-        fill(0, W / img.width, H / img.height);
-        fill(W, mapping ? W / (mapping.width * mapping.photoScaleX) : W / img.width,
-          mapping ? H / (mapping.height * mapping.photoScaleY) : H / img.height);
+    // Separate evidence for each leg: a striped/coloured left panel must not
+    // become the right leg's material. Skirts and ambiguous silhouettes stay whole.
+    const split = info?.legRows?.length ? (info.box.x0 + info.box.x1) / 2 : null;
+    const panels = split === null ? [{}] : [{ fromX: 0, toX: split }, { fromX: split, toX: img.width }];
+    for (const [panel, range] of panels.entries()) {
+      const offset = W + panel * W / panels.length, panelWidth = W / panels.length;
+      const tile = fabricTile(raster, range);
+      if (!tile) {
+        const bh = info ? info.box.y1 - info.box.y0 : img.height;
+        const rows = fabricRows(raster, { ...range, ...(info ? { fromY: info.box.y0 + bh * (info.collarRow ?? 0.02), toY: info.box.y1 - bh * 0.03 } : {}) });
+        if (rows.length) {
+          const back = g.createLinearGradient(0, 0, 0, H);
+          const photoHeight = mapping ? mapping.height * mapping.photoScaleY : img.height;
+          const first = rows[0].y, last = rows[rows.length - 1].y;
+          for (const row of rows) back.addColorStop(Math.min(1, Math.max(0, (row.y - first) / Math.max(1, Math.min(photoHeight, last - first)))), `rgb(${row.rgb.join(",")})`);
+          g.fillStyle = back; g.fillRect(offset, 0, panelWidth, H);
+        }
+      } else {
+        const sample = document.createElement("canvas"); sample.width = tile.width; sample.height = tile.height;
+        sample.getContext("2d")!.drawImage(source, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
+        const pattern = g.createPattern(sample, "repeat");
+        if (pattern) {
+          const sx = mapping ? W / (mapping.width * mapping.photoScaleX) : W / img.width;
+          const sy = mapping ? H / (mapping.height * mapping.photoScaleY) : H / img.height;
+          g.save(); g.beginPath(); g.rect(offset, 0, panelWidth, H); g.clip();
+          g.translate(W, 0); g.scale(sx, sy); g.fillStyle = pattern; g.fillRect(0, 0, W / sx, H / sy); g.restore();
+        }
       }
     }
     g.drawImage(info?.backdrop ? source : img, 0, 0, W, H);

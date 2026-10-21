@@ -5,10 +5,11 @@
 export interface GarmentRaster { width: number; height: number; data: Uint8ClampedArray }
 
 /** A repeated textile sample, never the complete garment, label or background. */
-export function fabricTile(raster: GarmentRaster): { x: number; y: number; width: number; height: number } | null {
+export function fabricTile(raster: GarmentRaster, range: { fromX?: number; toX?: number } = {}): { x: number; y: number; width: number; height: number } | null {
   const { width: w, height: h, data } = raster;
+  const startX = Math.max(0, Math.floor(range.fromX ?? 0)), endX = Math.min(w, Math.ceil(range.toX ?? w));
   let x0 = w, x1 = 0, y0 = h, y1 = 0;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 240) {
+  for (let y = 0; y < h; y++) for (let x = startX; x < endX; x++) if (data[(y * w + x) * 4 + 3] > 240) {
     x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
   }
   const size = Math.min(128, Math.floor((x1 - x0) * 0.28), Math.floor((y1 - y0) * 0.25));
@@ -18,7 +19,7 @@ export function fabricTile(raster: GarmentRaster): { x: number; y: number; width
     // Flat-lay sleeves widen the global bounds. Sample the actual torso row,
     // otherwise every candidate straddles its transparent sides.
     let rowLeft = w, rowRight = -1;
-    for (let x = 0; x < w; x++) if (data[(py * w + x) * 4 + 3] > 240) { rowLeft = Math.min(rowLeft, x); rowRight = x; }
+    for (let x = startX; x < endX; x++) if (data[(py * w + x) * 4 + 3] > 240) { rowLeft = Math.min(rowLeft, x); rowRight = x; }
     if (rowRight - rowLeft < size) continue;
     const px = Math.round(rowLeft + (rowRight - rowLeft - size) * fx);
     if (px + size > w || py + size > h) continue;
@@ -74,18 +75,22 @@ export function medoid(px: ArrayLike<number>[]): [number, number, number] {
 }
 
 /** Robust wash/color at each fabric height, excluding the backdrop and the gap between trouser legs. */
-export function fabricRows(raster: GarmentRaster, opts: { fromY?: number; toY?: number } = {}): { y: number; rgb: [number, number, number] }[] {
+export function fabricRows(raster: GarmentRaster, opts: { fromY?: number; toY?: number; fromX?: number; toX?: number } = {}): { y: number; rgb: [number, number, number] }[] {
   const { width: w, height: h, data } = raster;
   const out: { y: number; rgb: [number, number, number] }[] = [];
   const step = Math.max(1, Math.floor(h / 64));
   // só o MIOLO de cada linha (metade central do que a linha tem de peça) e só entre a gola e a barra: os punhos nas
   // pontas e a gola em cima tingiam o painel do tecido (costas, laterais e mangas) com a cor dos acabamentos
   const y0 = Math.max(0, Math.floor(opts.fromY ?? 0)), y1 = Math.min(h, Math.ceil(opts.toY ?? h));
+  const x0 = Math.max(0, Math.floor(opts.fromX ?? 0)), x1 = Math.min(w, Math.ceil(opts.toX ?? w));
   for (let y = y0; y < y1; y += step) {
     let a = -1, b = -1;
-    for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] >= 240) { if (a < 0) a = x; b = x; }
+    for (let x = x0; x < x1; x++) if (data[(y * w + x) * 4 + 3] >= 240) { if (a < 0) a = x; b = x; }
     if (a < 0) continue;
-    const xa = Math.round(a + (b - a) * 0.25), xb = Math.round(a + (b - a) * 0.75);
+    // A leg's narrow central half can be dominated by one pocket logo. With
+    // explicit leg bounds, sample most of its fabric rather than enlarging that mark.
+    const inset = opts.fromX !== undefined || opts.toX !== undefined ? .1 : .25;
+    const xa = Math.round(a + (b - a) * inset), xb = Math.round(a + (b - a) * (1 - inset));
     const channels: number[][] = [[], [], []];
     for (let x = xa; x <= xb; x += Math.max(1, Math.floor((xb - xa) / 80))) {
       const k = (y * w + x) * 4;
