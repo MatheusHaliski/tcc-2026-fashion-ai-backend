@@ -23,7 +23,6 @@ import { WardrobeBrowser } from "./wardrobe-browser";
 import { SavedTries } from "./saved-tries";
 import { AiTryOnDialog } from "./ai-try-on-dialog";
 
-/** RF18 coordinator: composes controlled views and delegates fitting/persistence use cases to hooks. */
 export function FittingRoom() {
   const { t } = useI18n();
   const toast = useToast();
@@ -36,7 +35,6 @@ export function FittingRoom() {
   const [light, setLight] = useState<LightMode>("daylight");
   const [tab, setTab] = useState<Tab>("stores");
   const [category, setCategory] = useState("");
-  // prova com IA (GPU): a peça do guarda-roupa vestida na foto da própria pessoa
   const [aiOpen, setAiOpen] = useState(false);
   const [store, setStore] = useState(searchParams.get("marca") ?? "");
   const [confirmClear, setConfirmClear] = useState(false);
@@ -44,7 +42,7 @@ export function FittingRoom() {
   const [search, setSearch] = useState<FittingSearchResults | null>(null);
   const [catalogTarget, setCatalogTarget] = useState<HTMLDivElement | null>(null);
   const [heroId, setHeroId] = useState<string | null>(null);
-  // Presentation preference; the manual choice takes priority over the API's default.
+  
   const [tipoLook, setTipoLook] = useState<Sex | null>(null);
   const selectedTipoLook = tipoLook ?? data?.sex ?? "MASCULINO";
 
@@ -104,9 +102,7 @@ export function FittingRoom() {
         kicker="RF18"
         lead={t("tryOn.lead_lojas")}
         actions={(
-          <>
-            <Button size="sm" onClick={() => setAiOpen(true)}>{t("tryOn.ia_botao")}</Button>
-          </>
+          <Button size="sm" onClick={() => setAiOpen(true)}>{t("tryOn.ia_botao")}</Button>
         )}
       />
       <div className="fitting-workspace">
@@ -137,7 +133,7 @@ export function FittingRoom() {
             <StoreBrowser
               stores={stores.data?.stores ?? []} loading={stores.loading} store={store} category={category}
               onStoreChange={setStore} onCategoryChange={setCategory} onPick={pickProduct} onResults={onSearchResults}
-              resultsTarget={catalogTarget}
+              resultsTarget={catalogTarget} tipoLook={selectedTipoLook}
             />
           )}
           {tab === "wardrobe" && (
