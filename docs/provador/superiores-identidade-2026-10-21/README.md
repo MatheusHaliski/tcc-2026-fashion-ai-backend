@@ -1,5 +1,7 @@
 # Camisas, moletons, jaquetas e casacos: identidade visual
 
+Estas capturas registram o estado anterior à correção da junção de UVs no ombro e da espessura da gola. A análise e as novas capturas de camisa/casaco estão em [correções integradas](../../correcoes/2026-10-21-catalogo-ia-hype-provador/README.md).
+
 O material continua vindo da fotografia da peça/variante selecionada. Nome da marca não determina automaticamente cor, estampa ou logo.
 
 ## Correções

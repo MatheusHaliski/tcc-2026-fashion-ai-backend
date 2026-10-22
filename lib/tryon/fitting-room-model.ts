@@ -100,7 +100,7 @@ export function fromCatalog(
     material: p.material ?? null,
     variation: p.variation ?? null,
     attributes: p.attributes ?? null,
-    imageUrl: p.imageUrl ?? null,
+    imageUrl: p.catalogImage?.sourceUrl ?? p.imageSource?.imageUrl ?? p.imageUrl ?? null,
     colorHex: (color && colors?.[color]) || p.colorHex || null,
     colorName:
       variant?.colorName ??
@@ -159,10 +159,12 @@ export function fromWardrobe(e: Entry): FittingItem {
 /** Foto do catálogo que o 3D consegue ler: a processada no nosso armazenamento (servida por /media com CORS). A externa
  * (site da marca) normalmente não libera CORS: a textura falharia e a peça viraria uma casca lisa "pintada". */
 export function processedImageOf(p: CatalogProduct): string | null {
-  const ci = (p as { catalogImage?: { mode?: string; url?: string | null } }).catalogImage;
-  if (ci?.mode === "PROCESSED" && ci.url) return ci.url;
-  const imgs = ((p as { images?: { primary?: boolean; processedUrl?: string | null }[] }).images ?? []);
-  const img = imgs.find((x) => x.primary && x.processedUrl) ?? imgs.find((x) => x.processedUrl);
+  const ci = p.catalogImage;
+  if (ci?.whole?.processed && ci.whole.url) return ci.whole.url;
+  // A FABRIC card is a detail crop, not a full-garment texture. Nor may an
+  // arbitrary processed back/detail image replace the selected source.
+  const img = p.images?.find(x => x.processedUrl && (ci?.imageId ? x.id === ci.imageId
+    : ci?.sourceUrl ? (x.sourceUrl ?? x.provenance?.imageUrl) === ci.sourceUrl : x.canonical));
   return img?.processedUrl ?? null;
 }
 
@@ -182,6 +184,7 @@ export const toSceneProduct = (p: CatalogProduct): SceneProduct => ({
 });
 
 export const toLook3d = (i: FittingItem): Look3dPiece => ({
+  catalogProductId: i.source === "catalog" ? i.productId ?? null : null,
   id: i.key,
   name: i.name,
   slot: WEAR3D[i.wear] ?? "accessory",

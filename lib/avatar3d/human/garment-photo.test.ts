@@ -89,9 +89,22 @@ it("keeps asymmetric trouser colours and stripes in their own leg, without repea
   const raster = { width, height, data };
   expect(fabricTile(raster, { toX: 240 })).toMatchObject({ width: 1, height: 16 });
   expect(fabricTile(raster, { fromX: 240 })).toBeNull();
-  const right = fabricRows(raster, { fromX: 240 });
+  const right = fabricRows(raster, { fromX: 240, inset: .1 });
   expect(right.length).toBeGreaterThan(30);
   expect(right.every(row => row.rgb.join() === "25,120,60")).toBe(true);
+});
+
+it("keeps the torso inset for ranged upper panels; only legs explicitly request wider sampling", () => {
+  const width = 120, height = 80, data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) for (let x = 0; x < 100; x++) {
+    data.set(x < 30 || x >= 70 ? [230, 30, 70, 255] : [20, 40, 110, 255], (y * width + x) * 4);
+  }
+  const raster = { width, height, data };
+  const torso = fabricRows(raster, { fromX: 0, toX: 100 });
+  const leg = fabricRows(raster, { fromX: 0, toX: 100, inset: .1 });
+  expect(torso.length).toBeGreaterThan(30);
+  expect(torso.every(row => row.rgb.join() === "20,40,110")).toBe(true);
+  expect(leg.some(row => row.rgb.join() === "230,30,70")).toBe(true);
 });
 
 
@@ -165,4 +178,15 @@ describe("foto recortada com vazios e com mais de uma peça (catálogo com model
     const r = { width, height, data }; expect(splitByHem(r, "upper").hemRow).toBeNull();
     expect(data[(90 * width + 30) * 4 + 3]).toBe(255);
   });
+});
+
+it("retains broad plaid on jacket fabric panels instead of reducing it to a wash gradient", () => {
+  const width = 640, height = 960, data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 40; y < 900; y++) for (let x = 40; x < 600; x++) {
+    const rgb = x % 72 < 20 ? [35, 70, 110] : y % 80 < 24 ? [100, 150, 190] : [230, 225, 215];
+    data.set([...rgb, 255], (y * width + x) * 4);
+  }
+  // Each torso half must provide its own evidence; broad checks need more than
+  // the old 78-pixel window, which could not detect a 72/80-pixel repeat.
+  expect(fabricTile({ width, height, data }, { fromX: 40, toX: 320 })).toMatchObject({ width: 72, height: 80 });
 });

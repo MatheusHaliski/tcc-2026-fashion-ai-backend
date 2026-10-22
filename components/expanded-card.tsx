@@ -8,6 +8,7 @@ import type { PieceView, SchemeView } from "@/lib/api/types";
 import type { CatalogCardImage } from "@/lib/api/catalog";
 import { MediaImage } from "@/components/media-image";
 import { Price } from "@/components/price";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, photoAspect } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
@@ -39,6 +40,7 @@ import { PieceArtDialog } from "@/components/piece-art-editor";
 import { skinStyle } from "@/lib/skins";
 import { FlairPieceBlock } from "@/components/flair/flair-collection";
 import { mirrorHref } from "@/lib/nav/mirror-href";
+import { SchemeImprovementDialog } from "@/components/scheme-improvement-dialog";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -54,7 +56,7 @@ interface SchemeDetail { scheme: SchemeView; canEdit?: boolean }
 export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: ReactNode }) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast();
   const { data, error, loading, reload } = useApi<SchemeDetail>((signal) => api.get(`/api/schemes/${id}`, { signal, anonymous: !user }), [id, !!user]);
-  const [improve, setImprove] = useState(false); const [instruction, setInstruction] = useState(""); const [diff, setDiff] = useState<Record<string, unknown> | null>(null); const [busy, setBusy] = useState(false);
+  const [improve, setImprove] = useState(false);
   const [sealSuggest, setSealSuggest] = useState<{ candidates?: { bondId?: string; name: string; kind: string; confidence: number; reason?: string; targetOwnerId: string }[]; message?: string } | null>(null);
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
@@ -69,8 +71,6 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
     } catch (e) { toast.fromError(e); }
   }
   async function acceptBond(c: { bondId?: string; targetOwnerId: string }) { try { if (c.bondId) await api.post(`/api/seal-bonds/${c.bondId}/accept`, { imageRightsConsent: true }); else await api.post(`/api/schemes/${s.id}/seal-bonds`, { targetOwnerId: c.targetOwnerId, imageRightsConsent: true }); toast.success(t("schemes.id.vinculo_enviado_para_revisao_da")); setSealSuggest(null); reload(); } catch (e) { toast.fromError(e); } }
-  async function askImprove() { setBusy(true); try { setDiff(await api.post(`/api/schemes/${s.id}/improvements`, { instruction })); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
-  async function applyDiff() { if (!diff) return; setBusy(true); try { await api.post(`/api/schemes/${s.id}/improvements/apply`, diff); toast.success(t("common.saved")); setImprove(false); setDiff(null); reload(); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
   const footer = (
     <>
       {mine && s.status !== "PUBLISHED" && <Button size="sm" variant="primary" onClick={publish}><FaiIcon id="ACT-11" size={20} variant="glyph" decorative />{t("common.publish")}</Button>}
@@ -85,10 +85,7 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
   return (
     <>
       <SchemeCard scheme={s} href={`/schemes/${s.id}`} expanded footer={footer} headerExtra={headerExtra} />
-      <Dialog open={improve} onClose={() => setImprove(false)} title={t("scheme.improve")} footer={diff ? <><Button onClick={() => setDiff(null)}>{t("common.cancel")}</Button><Button variant="primary" onClick={applyDiff} loading={busy}>{t("dashboard.apply")}</Button></> : <Button variant="primary" onClick={askImprove} loading={busy} disabled={!instruction.trim()}>{t("scheme.generate")}</Button>}>
-        {!diff ? <Field label={t("scheme.instruction")} id="instruction"><Input id="instruction" value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder={t("schemes.id.ex_deixe_mais_formal_trocando")} /></Field>
-          : <div className="type-body"><p className="mb-2 text-muted">{String(diff.message ?? diff.explanation ?? t("schemes.id.mudancas_propostas"))}</p><ChangeList value={diff.diff ?? diff.changes ?? diff} /></div>}
-      </Dialog>
+      {improve && <SchemeImprovementDialog key={s.id} id={s.id} onClose={() => setImprove(false)} onSaved={reload} />}
       <Dialog open={!!sealSuggest} onClose={() => setSealSuggest(null)} title={t("schemes.id.vinculos_de_selo_sugeridos_rf21")}>
         {sealSuggest?.message && <p className="type-body text-muted mb-2">{sealSuggest.message}</p>}
         <div className="grid gap-2">{(sealSuggest?.candidates ?? []).map((c, i) => <div key={i} className="list-row flex items-center gap-3"><div className="flex-1"><p className="type-body"><b>{c.name}</b> <span className="text-faint">· {c.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}</span></p><p className="type-caption text-muted">{t("schemes.id.confianca", { Math: Math.round(c.confidence * 100), value: c.reason ? `· ${c.reason}` : "" })}</p></div><Button size="sm" variant="primary" onClick={() => acceptBond(c)}>{t("schemes.id.vincular")}</Button></div>)}</div>
@@ -96,16 +93,6 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
       </Dialog>
     </>
   );
-}
-
-/** Mostra as mudanças propostas pela IA como lista legível (campo → valor), em vez de JSON cru. */
-function ChangeList({ value }: { value: unknown }) {
-  const rows: [string, string][] = [];
-  const text = (v: unknown): string => v == null ? "—" : typeof v === "object" ? (Array.isArray(v) ? v.map(text).join(", ") : Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k}: ${text(x)}`).join(" · ")) : String(v);
-  if (Array.isArray(value)) value.forEach((v, i) => rows.push([String(i + 1), text(v)]));
-  else if (value && typeof value === "object") Object.entries(value as Record<string, unknown>).filter(([k]) => !["message", "explanation"].includes(k)).forEach(([k, v]) => rows.push([k, text(v)]));
-  else rows.push(["", text(value)]);
-  return <dl className="change-list">{rows.map(([k, v], i) => <div key={i}>{k && <dt>{k}</dt>}<dd>{v}</dd></div>)}</dl>;
 }
 
 interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }
@@ -242,6 +229,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const product: Slide = p.studioImageUrl
     ? { key: "product", src: mediaUrl(p.studioImageUrl)!, alt: t("pieces.id.estudio", { name: p.name }), caption: t("pieceDetail.slide_produto"), fit: "contain", alternatives: [p.imageUrl, p.thumbnailUrl, pieceCatalogSource(p)], backdrop: { center: backdropCenter(backdrops, p.studioBackdrop), edge } }
     : { key: "product", src: (mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl))!, alt: p.name, caption: t("pieceDetail.slide_produto"), fit: "contain", alternatives: [p.thumbnailUrl, p.imageUrl, pieceCatalogSource(p)], crop: pieceCatalogCrop(p) };
+  if(p.defaultImage) { product.src=defaultGarmentUrl(p.category,p.subcategory,p.colorHex,p.color,"WHOLE"); product.crop=null; product.alternatives=[]; }
   const slides: Slide[] = [product, ...(p.mannequinImageUrl ? [{ key: "mannequin", src: mediaUrl(p.mannequinImageUrl)!, alt: t("pieces.id.no_manequim", { name: p.name, value: "" }), caption: t("pieceDetail.slide_manequim"), fit: "contain" as const }] : [])];
   // tela cheia: as fotos do carrossel e, só quando há logo de marca de verdade, o detalhe do logo
   const gallery = [

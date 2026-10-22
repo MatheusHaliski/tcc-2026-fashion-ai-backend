@@ -1,0 +1,29 @@
+{
+  "scope": "Actual /schemes/s1 UI on production build; mocked BFF/auth/API; desktop and mobile viewport, not live backend/physical mobile",
+  "results": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "applied": {
+        "title": "Noite elegante"
+      },
+      "title": "Noite elegante",
+      "visibility": "PUBLIC",
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "applied": {
+        "title": "Noite elegante"
+      },
+      "title": "Noite elegante",
+      "visibility": "PUBLIC",
+      "errors": []
+    }
+  ]
+}

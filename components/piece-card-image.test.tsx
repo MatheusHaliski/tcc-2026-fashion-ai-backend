@@ -22,9 +22,11 @@ it("a imagem padrão da prévia acompanha Tecido e volta à peça inteira", asyn
   loggedAs(ME);
   const piece = { ...PIECE, id: "preview-default-fabric", defaultImage: true, studioFeedUrl: null, studioThumbUrl: null, studioImageUrl: null, imageUrl: "/assets/reference-shirt.webp", thumbnailUrl: null };
   const result = renderApp(<PieceCard piece={piece} href="#" framing="FABRIC" />);
-  expect(result.container.querySelector(".pc-media img.is-cover")).toBeTruthy();
+  const fabric = result.container.querySelector(".pc-media img")!;
+  expect(fabric.getAttribute("src")).toContain("/api/catalog/default-asset?");
+  expect(fabric.getAttribute("src")).toContain("framing=FABRIC");
   // The whole frame never inherits the fabric zoom.
   result.rerender(<PieceCard piece={piece} href="#" framing="WHOLE" />);
-  expect(result.container.querySelector(".pc-media img.is-cover")).toBeNull();
+  expect(result.container.querySelector(".pc-media img")?.getAttribute("src")).toContain("framing=WHOLE");
   result.unmount();
 });

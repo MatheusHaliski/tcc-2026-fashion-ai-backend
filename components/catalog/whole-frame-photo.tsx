@@ -15,15 +15,15 @@ export function WholeFramePhoto({ frame, alt, className, onFail }: { frame: Whol
   const known = frame.width && frame.height ? { w: frame.width, h: frame.height } : dimensions.get(frame.url) ?? null;
   const [size, setSize] = useState(known);
   useEffect(() => { setSize(frame.width && frame.height ? { w: frame.width, h: frame.height } : dimensions.get(frame.url) ?? null); }, [frame.url, frame.width, frame.height]);
-  const fit = size ? fitWhole(frame.box, size.w, size.h, frame.truncated) : null;
-  const blend = !frame.alpha && isLightBackground(frame.background);
+  const fit = !frame.rendered && size ? fitWhole(frame.box, size.w, size.h, frame.truncated) : null;
+  const blend = !frame.rendered && !frame.alpha && isLightBackground(frame.background);
   const background = frame.alpha || blend || !frame.background ? TOTAL_FRAME.background : frame.background;
   const vars = { background, "--tf-floor": fit ? `${fit.floor}%` : undefined, "--tf-span": fit ? `${fit.span}%` : undefined } as CSSProperties;
   return (
-    <span className={cn("catalog-photo is-whole", frame.alpha && "has-alpha", blend && "is-blend", fit && !fit.grounded && "has-floor", className)}
-      style={vars} data-mode="whole">
+    <span className={cn("catalog-photo is-whole", !frame.rendered && frame.alpha && "has-alpha", blend && "is-blend", fit && !fit.grounded && "has-floor", className)}
+      style={vars} data-mode="whole" data-rendered={frame.rendered || undefined}>
       <img src={mediaUrl(frame.url)} alt={alt} loading="lazy" decoding="async"
-        style={fit ? fit.style : { opacity: 0 }}
+        style={frame.rendered ? { inset: 0, width: "100%", height: "100%", objectFit: "contain" } : fit ? fit.style : { opacity: 0 }}
         onLoad={(e) => { if (!size) { const img = e.currentTarget; if (img.naturalWidth && img.naturalHeight) {
           const measured = { w: img.naturalWidth, h: img.naturalHeight };
           dimensions.set(frame.url, measured);

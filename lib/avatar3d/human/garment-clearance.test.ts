@@ -46,3 +46,16 @@ describe("final garment clearance on the actual avatar mesh", () => {
     denim.dispose();silk.dispose();tex.dispose();
   });
 });
+
+it("gives jeans a light-reactive twill relief without overwriting its unique photograph", () => {
+ const tex=new THREE.Texture(), jeans=specFor({subcategory:"jeans",material:"COTTON"})!;
+ expect(jeans.weave).toBe("denim");
+ expect(specFor({subcategory:"tailored_pants",material:"WOOL"})!.weave).toBeUndefined();
+ const denim=garmentMaterial(tex,jeans), plain=garmentMaterial(tex,specFor({subcategory:"leggings"})!);
+ const shader={vertexShader:THREE.ShaderLib.physical.vertexShader,fragmentShader:THREE.ShaderLib.physical.fragmentShader,uniforms:{}};
+ denim.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+ expect(shader.fragmentShader).toContain("denimHeight");expect(shader.fragmentShader).toContain("fwidth(denimPhase)");
+ expect(shader.fragmentShader).toContain("mix(garmentFabric, garmentPhoto");expect(denim.map).toBe(tex);
+ expect(denim.customProgramCacheKey()).not.toBe(plain.customProgramCacheKey());
+ denim.dispose();plain.dispose();tex.dispose();
+});

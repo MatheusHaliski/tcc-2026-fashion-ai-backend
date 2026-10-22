@@ -1,4 +1,5 @@
 "use client";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import { CreatorWelcome } from "@/components/creator-welcome";
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -211,7 +212,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   }
   // sem foto oficial: o asset da categoria (ou o genérico) é a imagem que a peça terá
   // (a subcategoria escolhida troca o asset: camiseta, camisa, regata… cada uma com a sua imagem)
-  const asset = (value.subcategory && tax?.defaultImagesBySubcategory?.[value.subcategory]) || tax?.defaultImages?.[value.category] || tax?.defaultImages?.generic || GENERIC_ASSET;
+  const asset = defaultGarmentUrl(value.category, value.subcategory, tax?.colors?.[value.color], value.color, photoFraming);
   const officialImg = mode === "photos" ? photoPick?.preview ?? null : pick?.product.imageUrl ?? null;
   const origin = mode === "photos" ? (photoPick ? t("pieces.new.origem_foto") : t("catalog.origem_sem_foto")) : pick && officialImg
     ? t("catalog.origem_catalogo", { fonte: pick.product.source?.domain && pick.product.source.domain !== "null" ? pick.product.source.domain : t("catalog.fonte_fashionai") })

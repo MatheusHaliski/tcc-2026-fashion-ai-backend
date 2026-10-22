@@ -7923,5 +7923,20 @@
   "tryOn.limite.quimono_estimado_sem_faixa": "Mangas amplias estimadas; la faja y la caída del kimono no se simulan.",
   "tryOn.limite.capuz_nao_modelado": "El cuerpo de la sudadera es estimado; la capucha aún no tiene geometría propia.",
   "tryOn.limite.body_inferior_estimado": "La parte superior del body es estimada; el corte inferior no tiene un molde propio.",
-  "tryOn.limite.saia_short_forro_estimado": "La falda-pantalón tiene shorts interiores estimados; el forro usa tejido aproximado, sin copiar la foto exterior."
+  "tryOn.limite.saia_short_forro_estimado": "La falda-pantalón tiene shorts interiores estimados; el forro usa tejido aproximado, sin copiar la foto exterior.",
+  "scheme.improvement.select": "Selecciona los cambios que deseas aplicar.",
+  "scheme.improvement.empty": "No hay cambios disponibles para esta instrucción. Ajusta tu solicitud e inténtalo de nuevo.",
+  "scheme.improvement.revise": "Revisar instrucción",
+  "scheme.improvement.current": "Actual",
+  "scheme.improvement.proposed": "Sugerencia",
+  "scheme.improvement.error": "No se pudo completar la mejora. Inténtalo de nuevo.",
+  "scheme.improvement.field.title": "Título",
+  "scheme.improvement.field.description": "Descripción",
+  "scheme.improvement.field.occasion": "Ocasiones",
+  "scheme.improvement.field.style": "Estilos",
+  "scheme.improvement.field.season": "Estación",
+  "scheme.improvement.field.mood": "Estado de ánimo",
+  "scheme.improvement.field.visibility": "Visibilidad",
+  "scheme.improvement.instructionPlaceholder": "Haz el título más elegante y ajusta el estilo para una cena.",
+  "catalog.defaultIllustration": "Ilustración FAI predeterminada en el color de la prenda"
 }

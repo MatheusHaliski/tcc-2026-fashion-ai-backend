@@ -22,6 +22,17 @@ describe("semanticCropStyle", () => {
 });
 
 describe("CatalogPhoto", () => {
+  it("displays the persisted Total frame directly, without a second browser crop or margin", () => {
+    const { container, rerender } = render(<CatalogPhoto requiredFrame alt="Camisa" framing="WHOLE" image={{ url: "/media/fabric.png", mode: "PROCESSED",
+      whole: { url: "/media/whole.png", rendered: true, box: { x: 0, y: 0, w: 1, h: 1 }, width: 900, height: 1200, background: "#ffffff" } }} />);
+    const image = container.querySelector("img")!;
+    expect(image.getAttribute("src")).toBe(mediaUrl("/media/whole.png"));
+    expect(image.style.objectFit).toBe("contain");
+    expect(image.style.width).toBe("100%");
+    expect(container.querySelector(".is-blend, .has-floor")).toBeNull();
+    rerender(<CatalogPhoto requiredFrame alt="Camisa" framing="FABRIC" image={{ url: "/media/fabric.png", mode: "PROCESSED" }} />);
+    expect(container.querySelector("img")!.getAttribute("src")).toBe(mediaUrl("/media/fabric.png"));
+  });
   it("usa a URL original da marca com o recorte e o fundo da foto", () => {
     const { container } = render(<CatalogPhoto alt="Camiseta" image={{ url: "https://img.brand.com/a.jpg", mode: "SEMANTIC_CROP", crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 }, background: "#f6f6f6" }} />);
     const wrap = container.querySelector("[data-mode='semantic-crop']") as HTMLElement;
@@ -44,10 +55,10 @@ describe("CatalogPhoto", () => {
     expect(fabric.container.querySelector("[data-mode='processed']")).not.toBeNull();
   });
 
-  it("Peça inteira sem a peça recortada (foto com modelo) mostra o enquadramento de tecido, nunca a foto original com a pessoa", () => {
+  it("Peça inteira obrigatória sem máscara mostra asset FAI, nunca a pessoa ou o crop de tecido", () => {
     const crop = { url: "https://img.brand.com/a.jpg", sourceUrl: "https://img.brand.com/modelo.jpg", mode: "SEMANTIC_CROP" as const, crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 } };
     const a = render(<CatalogPhoto alt="" image={crop} framing="WHOLE" requiredFrame />);
-    expect(a.container.querySelector("[data-mode='semantic-crop']")).not.toBeNull();
+    expect(a.container.querySelector("[data-mode='default']")).not.toBeNull();
     expect(a.container.querySelector("[data-mode='whole-original']")).toBeNull();
     const processed = render(<CatalogPhoto alt="" image={{ url: "https://media.fashion-ai.app/card.jpg", sourceUrl: "https://img.brand.com/modelo.jpg", mode: "PROCESSED" }} framing="WHOLE" />);
     expect(processed.container.querySelector("img")?.getAttribute("src")).toContain("card.jpg");
@@ -155,8 +166,8 @@ describe("foto oficial preservada", () => {
 it("enquadramento obrigatório oculta a original ao falhar",()=>{
  const {container}=render(<CatalogPhoto requiredFrame alt="Peça" image={{url:"/media/framed.jpg",mode:"PROCESSED",sourceUrl:"https://brand.example/raw.jpg"}} fallbackUrl="https://brand.example/raw.jpg"/>);
  fireEvent.error(container.querySelector('img')!);
- expect(container.querySelector('img')).toBeNull();
- expect(container.querySelector('[role="alert"]')).toBeTruthy();
+ expect(container.querySelector('img')?.getAttribute('src')).toContain('/api/catalog/default-asset?');
+ expect(container.querySelector('[role="alert"]')).toBeNull();
 });
 
 it("retries an unavailable required image without exposing an unframed source", () => {

@@ -21,6 +21,7 @@ import { silhouetteLandmarks, separatedLegRows, landmarkProjection, type Garment
  * A geometria é pura (testável em node); a textura precisa de canvas (navegador).
  */
 import * as THREE from "three";
+import { installDenimWeave } from "./denim-weave";
 import { fabricRows, fabricTile, medoid } from "./garment-photo";
 import { baseNormals } from "./three-human";
 import type { BodyAsset } from "./asset";
@@ -33,6 +34,7 @@ export type GarmentKind =
 export interface GarmentSpec {
   kind: GarmentKind;
   construction?: "cargo";
+  weave?: "denim"; // approximate textile relief, independent from the product photograph
   frontOpening?: number; // centre-front half-gap in metres (open cardigan/kimono)
   sleeveEase?: number;   // extra radial sleeve allowance
   hemFlare?: number;     // lower-torso expansion (estimated peplum)
@@ -558,6 +560,7 @@ export function posedPositions(skeleton: THREE.Skeleton, bindMatrix: THREE.Matri
 }
 
 export interface PhotoInfo {
+  torsoWidthAt?: (fy: number) => { x0: number; x1: number } | null;
   landmarks?: GarmentLandmarks | null;
   legRows?: PhotoLegRow[];
   width: number; height: number; box: { x0: number; y0: number; x1: number; y1: number }; widthAt: (fy: number) => { x0: number; x1: number } | null;
@@ -662,6 +665,17 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
       for (let x = 0; x < W; x++) if (mask[y * W + x]) { if (a < 0) a = x; b = x; }
       return a < 0 ? null : { x0: a * k, x1: (b + 1) * k };
     },
+    torsoWidthAt: (fy) => {
+      const y = Math.min(H - 1, Math.max(0, Math.round(y0 + (y1 - y0) * fy)));
+      const points = silhouetteLandmarks(mask, W, H, { x0, y0, x1, y1 });
+      if (!points) return null;
+      const center = Math.round((points.neckline.x + points.hem.x) / 2);
+      if (!mask[y * W + center]) return null; // an open front needs separate panels, not a guessed bridge
+      let a = center, b = center;
+      while (a > 0 && mask[y * W + a - 1]) a--;
+      while (b < W - 1 && mask[y * W + b + 1]) b++;
+      return b - a < 8 ? null : { x0: a * k, x1: (b + 1) * k };
+    },
   };
 }
 
@@ -690,7 +704,8 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
     const yRef = yTop - (yTop - yBot) * fy;
     let xl = Infinity, xr = -Infinity;
     for (const v of front) if (Math.abs(posed[v * 3 + 1] - yRef) < 0.012) { xl = Math.min(xl, posed[v * 3]); xr = Math.max(xr, posed[v * 3]); }
-    const pw = photo.widthAt(fy);
+    const upper = ["tee", "longsleeve", "crop", "hoodie", "shirt", "tank", "dress", "jacket", "coat", "sweater"].includes(sp.kind);
+    const pw = (upper ? photo.torsoWidthAt?.(fy) : null) ?? photo.widthAt(fy);
     if (Number.isFinite(xl) && pw && xr > xl) {
       const { box } = photo; const sx = (pw.x1 - pw.x0) / (xr - xl); const cxP = (pw.x0 + pw.x1) / 2, cxG = (xl + xr) / 2;
       photoScaleX = sx;
@@ -748,7 +763,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
           if (row.length < 2) return { left: xl, right: xr };
           return { left: Math.min(...row.map(v => posed[v * 3])), right: Math.max(...row.map(v => posed[v * 3])) };
         };
-        const top = modelRow(shouldersY), hem = modelRow(yBot + .02), ph = photo.widthAt(.98) ?? pw;
+        const top = modelRow(shouldersY), hem = modelRow(yBot + .02), ph = photo.torsoWidthAt?.(.98) ?? photo.widthAt(.98) ?? pw;
         map = landmarkProjection([
           { modelY: shouldersY, modelLeft: top.left, modelRight: top.right, photoY: (lm.leftShoulder.y + lm.rightShoulder.y) / 2, photoLeft: lm.leftShoulder.x, photoRight: lm.rightShoulder.x },
           { modelY: yRef, modelLeft: xl, modelRight: xr, photoY: box.y0 + bh * fy, photoLeft: pw.x0, photoRight: pw.x1 },
@@ -774,7 +789,11 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         // camisa também recebe a foto na frente (cor, xadrez, listras REAIS): a carcela, os botões e a gola 3D vêm por
         // cima, alinhados ao centro — antes a frente ficava só com o painel do tecido (repetição ou degradê por linhas)
         const blend = isFront && !noPhoto?.(v) && gg.photoEligible?.[v] !== 0 ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
-        if (blend > 0 && map) {
+        // Every vertex of a shoulder triangle needs coordinates in the same
+        // photographic panel, including its zero-weight sleeve vertices. Using
+        // fabric-panel UVs there interpolates across the atlas divider and makes
+        // a false diagonal seam. Fabric already has its own independent UVs.
+        if (map) {
           const [u, w] = map(posed[v * 3], posed[v * 3 + 1]);
           uv.push(0.5 * Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w)));
         } else {
@@ -830,14 +849,19 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
     // Separate evidence for each leg or upper half: one striped/coloured side
     // must not become the opposite side's material. Ambiguous silhouettes stay whole.
     const upperPanels = spec && ["shirt", "hoodie", "sweater", "jacket", "coat"].includes(spec.kind) && info?.landmarks;
-    const split = info && (info.legRows?.length || upperPanels) ? (info.box.x0 + info.box.x1) / 2 : null;
+    // Extended sleeves and side crops move the global box midpoint. The detected
+    // neckline/hem identify the torso seam independently of those outer bounds.
+    const torsoCenter = upperPanels ? (upperPanels.neckline.x + upperPanels.hem.x) / 2 : null;
+    const split = info && upperPanels ? torsoCenter
+      : info?.legRows?.length ? (info.box.x0 + info.box.x1) / 2 : null;
     const panels = split === null ? [{}] : [{ fromX: 0, toX: split }, { fromX: split, toX: img.width }];
     for (const [panel, range] of panels.entries()) {
       const offset = W + panel * W / panels.length, panelWidth = W / panels.length;
       const tile = fabricTile(raster, range);
       if (!tile) {
         const bh = info ? info.box.y1 - info.box.y0 : img.height;
-        const rows = fabricRows(raster, { ...range, ...(info ? { fromY: info.box.y0 + bh * (info.collarRow ?? 0.02), toY: info.box.y1 - bh * 0.03 } : {}) });
+        const rows = fabricRows(raster, { ...range, inset: !upperPanels && info?.legRows?.length ? .1 : .25,
+          ...(info ? { fromY: info.box.y0 + bh * (info.collarRow ?? 0.02), toY: info.box.y1 - bh * 0.03 } : {}) });
         if (rows.length) {
           const back = g.createLinearGradient(0, 0, 0, H);
           const photoHeight = mapping ? mapping.height * mapping.photoScaleY : img.height;
@@ -991,7 +1015,9 @@ export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.Mesh
         diffuseColor *= mix(garmentFabric, garmentPhoto, clamp(vGarmentPhotoWeight, 0.0, 1.0));
       #endif`);
   };
-  m.customProgramCacheKey = () => "garment-fabric-blend-v1";
+  const compile = m.onBeforeCompile;
+  if (sp.weave === "denim" || sp.fabric === "DENIM") m.onBeforeCompile = (shader, renderer) => { compile.call(m, shader, renderer); installDenimWeave(shader); };
+  m.customProgramCacheKey = () => `garment-fabric-blend-v2-${sp.weave === "denim" || sp.fabric === "DENIM" ? "denim" : "plain"}`;
   return m;
 }
 
@@ -1011,6 +1037,9 @@ export interface CollarBand { position: Float32Array; skinIndex: Uint16Array; sk
 export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null = null): CollarBand | null {
   if (!HAS_COLLAR_BAND.has(sp.kind) || Number.isNaN(sp.hem) || sp.frontOpening) return null;
   const NA = 72, nb = P.h.length, span = P.neckY - P.hipY;
+  // Torso ease describes the chest, not the thickness of a collar. Keep the
+  // neckline close to the body while retaining clearance for real inner layers.
+  const collarEase = Math.min(sp.ease, .004);
   const band = sp.kind === "shirt" ? 0.026 : sp.kind === "hoodie" || sp.kind === "sweater" ? 0.02 : 0.016;
   const phiOf = (x: number, dz: number) => Math.atan2(x, dz);
   const yN = (phi: number) => P.hipY + necklineH(sp, Math.sin(phi), Math.cos(phi)) * span;
@@ -1054,7 +1083,7 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
   // tilting the head cannot pull their edges apart into spikes.
   const influences = Array.from({ length: NA }, (_, j) => {
     const phi = j / NA * 2 * Math.PI - Math.PI;
-    const r = sm[j] + sp.ease + easeAt[j];
+    const r = sm[j] + collarEase + easeAt[j];
     const x = Math.sin(phi) * r, z = P.neckZ + Math.cos(phi) * r, y = yN(phi);
     const near = cand.map(v => ({ v, d: (c.body[v * 3] - x) ** 2 + (c.body[v * 3 + 1] - y) ** 2 + (c.body[v * 3 + 2] - z) ** 2 }))
       .sort((a, b) => a.d - b.d).slice(0, 8);
@@ -1071,7 +1100,7 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
     return weights;
   });
   let smoothInfluences = influences;
-  for (let pass = 0; pass < 6; pass++) smoothInfluences = smoothInfluences.map((_, j) => {
+  for (let pass = 0; pass < 10; pass++) smoothInfluences = smoothInfluences.map((_, j) => {
     const blend = new Map<number, number>();
     for (const [offset, factor] of [[-1, .25], [0, .5], [1, .25]])
       for (const [bone, weight] of smoothInfluences[(j + offset + NA) % NA])
@@ -1090,10 +1119,10 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
     return top.map(([bone, w]) => [bone, w / total]);
   });
   // 4 anéis: externo-cima, externo-baixo, interno-baixo, interno-cima
-  // a borda do tecido (alfa por vértice) é serrilhada: a faixa sobe 9 mm acima dela e fica 6 mm por fora para cobri-la
-  const rings: [number, number][] = [[0.006, 0.009], [0.006, -band], [-0.0015, -band], [-0.0015, 0.009]];
+  // A thin folded edge overlaps the fabric instead of a padded 7.5 mm shell.
+  const rings: [number, number][] = [[0.002, 0.009], [0.002, -band], [-0.001, -band], [-0.001, 0.009]];
   for (const [dr, dy] of rings) for (let j = 0; j < NA; j++) {
-    const phi = (j / NA) * 2 * Math.PI - Math.PI; const r = sm[j] + sp.ease + easeAt[j] + dr;
+    const phi = (j / NA) * 2 * Math.PI - Math.PI; const r = sm[j] + collarEase + easeAt[j] + dr;
     const x = Math.sin(phi) * r, z = P.neckZ + Math.cos(phi) * r, y = yN(phi) + dy;
     pos.push(x, y, z);
     for (let k = 0; k < 4; k++) { si.push(weightsAt[j][k]?.[0] ?? 0); sw.push(weightsAt[j][k]?.[1] ?? 0); }

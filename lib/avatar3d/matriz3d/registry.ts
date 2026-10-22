@@ -262,7 +262,7 @@ export const COMPONENTES: Componente[] = [
     lacuna: "camisa e polo sem pé de gola (a gola é faixa de ribana ou ponta plana)", impacto: 2,
   },
   {
-    id: "gola.polo", grupo: "Gola e decote", nome: "Gola polo (com vista de 2–3 botões)", familias: TOPO, refs: [{ file: GARMENTS, symbol: "placketLength: .16" }, { file: TRIMS, symbol: "shirtPlacket" }], aplica: isSub(S("polo_shirt")),
+    id: "gola.polo", grupo: "Gola e decote", nome: "Gola polo (com vista de 2–3 botões)", familias: TOPO, refs: [{ file: "lib/avatar3d/human/upperwear.ts", symbol: "placketLength: .16" }, { file: TRIMS, symbol: "shirtPlacket" }], aplica: isSub(S("polo_shirt")),
     produz: (o) => (o.acabamentos.botoes ?? 0) === 39 && (o.acabamentos["gola-ponta"] ?? 0) > 0,
     deps: ["gola.faixa"], testes: [{ file: "lib/avatar3d/human/mould-library.test.ts", testName: "polo has three buttons" }], validados: ["shirt"],
     parcial: () => "gola em pontas trianguladas; pé de gola e tecido dobrado espesso ainda não modelados",
@@ -306,7 +306,7 @@ export const COMPONENTES: Componente[] = [
   },
   {
     id: "fechamento.abertura", grupo: "Casas e fechamento", nome: "Abertura frontal (peça aberta na frente)", familias: ["sobreposicao"],
-    refs: [{ file: CONTRACT, symbol: "fechamento (aberto na frente, sem botões)" }], aplica: isSub(ABERTO_FRENTE), produz: (o) => !!o.molde && o.gola === 0,
+    refs: [{ file: CONTRACT, symbol: "fechamento (abertura frontal opcional; detalhes pela foto)" }], aplica: isSub(ABERTO_FRENTE), produz: (o) => !!o.molde && o.gola === 0,
     params: () => "sem faixa de gola; malha da frente contínua", deps: ["asset.molde"], testes: [{ file: T_GARMENTS, testName: "jaqueta e calçado não ganham faixa" }], validados: ["jacket"],
     parcial: () => "declarada aberta, mas a casca da frente é fechada (sem as duas bordas nem sobreposição)", lacuna: "frente aberta com bordas e sobreposição", impacto: 3,
   },

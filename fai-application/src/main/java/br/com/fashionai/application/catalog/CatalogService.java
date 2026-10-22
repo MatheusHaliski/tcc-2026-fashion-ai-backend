@@ -487,7 +487,7 @@ public class CatalogService {
         m.put("gender", p.getGender());
         m.put("productCode", p.getProductCode());
         m.put("sku", p.getSku());
-        Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img);
+        Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img, p);
         m.put("imageUrl", catalogImage == null ? null : catalogImage.get("url"));
         m.put("imageProcessingStatus", catalogImage != null ? "READY" : img != null && List.of("PENDING", "DOWNLOADING").contains(img.getProcessingStatus()) ? "PENDING" : "ERROR");
         m.put("catalogImage", catalogImage);
@@ -676,7 +676,7 @@ public class CatalogService {
                 .sorted(Comparator.comparing((CatalogImage i) -> !i.isCanonical())).findFirst().orElse(null);
         // a peça herda a foto do card: master processado (nível B) ou a URL oficial COM o recorte semântico (nível A) —
         // nunca a foto original inteira quando o pipeline já a enquadrou
-        Map<String, Object> card = CatalogImagePipelineService.cardImage(chosen);
+        Map<String, Object> card = CatalogImagePipelineService.cardImage(chosen, p);
         String image = card != null ? String.valueOf(card.get("url"))
                 : chosen == null ? null : chosen.getStoredUrl() != null ? chosen.getStoredUrl() : chosen.getImageUrl();
         WardrobeService.PieceForm form = new WardrobeService.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,

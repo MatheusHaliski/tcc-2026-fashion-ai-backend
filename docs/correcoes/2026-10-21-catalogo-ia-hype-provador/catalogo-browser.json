@@ -1,0 +1,13 @@
+{
+  "scope": "Real /try-on UI with mocked auth/catalog/media; backend persistence separately covered by Java tests",
+  "previewCalls": [
+    {
+      "path": "/api/catalog/products/fixture-jeans/preview-image",
+      "query": "?force=true",
+      "method": "POST"
+    }
+  ],
+  "reprocessOnToggle": 0,
+  "reprocessOnReload": 0,
+  "errors": []
+}

@@ -7923,5 +7923,20 @@
   "tryOn.limite.quimono_estimado_sem_faixa": "Estimated wide sleeves; the kimono belt and drape are not simulated.",
   "tryOn.limite.capuz_nao_modelado": "The sweatshirt body is estimated; the hood does not yet have its own geometry.",
   "tryOn.limite.body_inferior_estimado": "The upper bodysuit is estimated; the lower cut does not have its own pattern.",
-  "tryOn.limite.saia_short_forro_estimado": "The skort has estimated inner shorts; its lining uses approximate fabric, without copying the outer photograph."
+  "tryOn.limite.saia_short_forro_estimado": "The skort has estimated inner shorts; its lining uses approximate fabric, without copying the outer photograph.",
+  "scheme.improvement.select": "Select the changes you want to apply.",
+  "scheme.improvement.empty": "No changes are available for this instruction. Revise your request and try again.",
+  "scheme.improvement.revise": "Revise instruction",
+  "scheme.improvement.current": "Current",
+  "scheme.improvement.proposed": "Suggestion",
+  "scheme.improvement.error": "Could not complete the improvement. Try again.",
+  "scheme.improvement.field.title": "Title",
+  "scheme.improvement.field.description": "Description",
+  "scheme.improvement.field.occasion": "Occasions",
+  "scheme.improvement.field.style": "Styles",
+  "scheme.improvement.field.season": "Season",
+  "scheme.improvement.field.mood": "Mood",
+  "scheme.improvement.field.visibility": "Visibility",
+  "scheme.improvement.instructionPlaceholder": "Make the title more elegant and adjust the style for dinner.",
+  "catalog.defaultIllustration": "Default FAI illustration in the garment colour"
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, type CSSProperties, type PointerEvent } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import type { CatalogProduct } from "@/lib/api/catalog";
 import { clampStats, VFX_COLORS } from "@/lib/fashion-card";
 import { RARITY_INFO, type Rarity } from "@/lib/fashion-style";
@@ -26,11 +26,7 @@ export function FashionCardComponent({ product }: { product: CatalogProduct }) {
     el.style.setProperty("--rx", `${(-y * MAX_TILT).toFixed(2)}deg`);
     el.style.setProperty("--ry", `${(x * MAX_TILT).toFixed(2)}deg`);
   };
-  const reset = () => tilt(0, 0);
-  const onMove = (e: PointerEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    tilt(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
-  };
+
 
   useEffect(() => {   // giroscópio: só onde o navegador já libera o evento sem pedir permissão
     const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -46,7 +42,7 @@ export function FashionCardComponent({ product }: { product: CatalogProduct }) {
   const photo = product.catalogImage ? undefined : product.imageUrl;
 
   return (
-    <div ref={ref} className="fashion-card" style={style} data-aura-type={card?.auraType ?? "STATIC"} data-rarity={card?.rarity ?? "COMMON"} onPointerMove={onMove} onPointerLeave={reset}>
+    <div ref={ref} className="fashion-card" style={style} data-aura-type={card?.auraType ?? "STATIC"} data-rarity={card?.rarity ?? "COMMON"} >
       {imp && <div className="fashion-card-aura-oob" aria-hidden data-vfx={imp.powerVfx} style={{ position: "absolute", inset: -24, pointerEvents: "none", zIndex: 0, borderRadius: 32, background: `radial-gradient(closest-side, var(--aura), transparent 70%)`, filter: "blur(14px)", opacity: .7 }} />}
       <div style={{ position: "relative", zIndex: 1, transform: "rotateX(var(--rx)) rotateY(var(--ry))", transformStyle: "preserve-3d", transition: "transform .12s ease-out", border: `2px solid ${rarity.border}`, borderRadius: 16, boxShadow: `0 0 18px ${rarity.glow}`, background: "#0b0b10", overflow: "visible" }}>
         <div className="fashion-card-media" style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "3 / 4" }}>

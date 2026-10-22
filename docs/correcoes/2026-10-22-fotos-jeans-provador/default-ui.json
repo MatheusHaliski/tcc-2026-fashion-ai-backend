@@ -1,0 +1,57 @@
+{
+  "scope": "Real local /pieces/new, real Sharp asset route; mocked auth/taxonomy, no production database.",
+  "results": [
+    {
+      "width": 1440,
+      "fabric": {
+        "src": "/api/catalog/default-asset?category=lower_piece&subcategory=&color=%238c8a87&framing=FABRIC&v=FAI_DEFAULT_COLOURS_V1",
+        "fit": "cover",
+        "width": 480,
+        "height": 640
+      },
+      "whole": "/api/catalog/default-asset?category=lower_piece&subcategory=&color=%238c8a87&framing=WHOLE&v=FAI_DEFAULT_COLOURS_V1",
+      "hoverStable": true,
+      "assets": [
+        {
+          "color": "#dfcdb0",
+          "status": 200,
+          "bytes": 152186,
+          "etag": "\"104e3dc8905d42950ee4738bed0d03a27af452c872b48ed7e153885ca9488e5d\""
+        },
+        {
+          "color": "#2a5fa8",
+          "status": 200,
+          "bytes": 150684,
+          "etag": "\"47a671501b7cdc418009e2b18d7a30dee0d2533c672543fc2c79487e3698e18a\""
+        }
+      ],
+      "errors": []
+    },
+    {
+      "width": 390,
+      "fabric": {
+        "src": "/api/catalog/default-asset?category=lower_piece&subcategory=&color=%238c8a87&framing=FABRIC&v=FAI_DEFAULT_COLOURS_V1",
+        "fit": "cover",
+        "width": 480,
+        "height": 640
+      },
+      "whole": "/api/catalog/default-asset?category=lower_piece&subcategory=&color=%238c8a87&framing=WHOLE&v=FAI_DEFAULT_COLOURS_V1",
+      "hoverStable": true,
+      "assets": [
+        {
+          "color": "#dfcdb0",
+          "status": 200,
+          "bytes": 152186,
+          "etag": "\"104e3dc8905d42950ee4738bed0d03a27af452c872b48ed7e153885ca9488e5d\""
+        },
+        {
+          "color": "#2a5fa8",
+          "status": 200,
+          "bytes": 150684,
+          "etag": "\"47a671501b7cdc418009e2b18d7a30dee0d2533c672543fc2c79487e3698e18a\""
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

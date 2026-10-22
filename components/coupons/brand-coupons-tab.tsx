@@ -95,9 +95,9 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
 
       <Dialog open={chooser} onClose={() => setChooser(false)} title={t("coupons.brandCouponsTab.criar_promocao")}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <button type="button" className="surface p-3 text-left hover:ring-2 hover:ring-thread" onClick={() => { setChooser(false); setForm({ ...empty, open: true, type: "DESCONTO_ECOMMERCE" }); }}>
+          <button type="button" className="surface p-3 text-left" onClick={() => { setChooser(false); setForm({ ...empty, open: true, type: "DESCONTO_ECOMMERCE" }); }}>
             <p className="type-h3">{t("coupons.brandCouponsTab.politica_de_promocao_do_selo")}</p><p className="type-body-sm text-muted">{t("coupons.brandCouponsTab.formulario_do_rf25_quem_ganhar")}</p></button>
-          <button type="button" className="surface p-3 text-left hover:ring-2 hover:ring-thread" onClick={() => { setChooser(false); onCreateFlair(); }}>
+          <button type="button" className="surface p-3 text-left" onClick={() => { setChooser(false); onCreateFlair(); }}>
             <p className="type-h3">{t("common.jogo_flair")}</p><p className="type-body-sm text-muted">{t("coupons.brandCouponsTab.defina_a_combinacao_de_cartas")}</p></button>
         </div>
       </Dialog>

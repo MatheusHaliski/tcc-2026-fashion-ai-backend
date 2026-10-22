@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useEffect, type CSSProperties, type PointerEvent } from "react";
+import { useRef, useEffect, type CSSProperties } from "react";
 import type { FashionCardData } from "@/lib/catalog/fashion-card";
 import { clampStat } from "@/lib/catalog/fashion-card";
 
@@ -20,11 +20,7 @@ export function FashionCardComponent({ card }: { card: FashionCardData }) {
     el.style.setProperty("--tilt-x", `${(-y * MAX_TILT).toFixed(2)}deg`);
     el.style.setProperty("--tilt-y", `${(x * MAX_TILT).toFixed(2)}deg`);
   };
-  const reset = () => tilt(0, 0);
-  const onMove = (e: PointerEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    tilt(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
-  };
+
 
   useEffect(() => {   // giroscópio (mobile), só quando o navegador não exige permissão
     if (typeof window === "undefined" || typeof DeviceOrientationEvent === "undefined") return;
@@ -44,7 +40,7 @@ export function FashionCardComponent({ card }: { card: FashionCardData }) {
   return (
     <div ref={ref} className={`fcard-aura fcard-rarity-${card.rarity.toLowerCase()}${impersonation ? " is-impersonation" : ""}`}
       data-aura-type={card.auraType} data-vfx={impersonation ? card.impersonationData!.powerVfx : undefined}
-      onPointerMove={onMove} onPointerLeave={reset} style={{ "--tilt-x": "0deg", "--tilt-y": "0deg" } as CSSProperties}>
+       style={{ "--tilt-x": "0deg", "--tilt-y": "0deg" } as CSSProperties}>
       {impersonation && <div className="fcard-aura-glow" aria-hidden />}
       <div className="fcard-aura-media">
         {isVideo

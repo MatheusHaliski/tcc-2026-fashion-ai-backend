@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { I18nProvider } from "@/lib/i18n/i18n";
 import { mount3d, serveBodyAsset, untilReady, frames } from "@/test-utils/three";
 import { HumanAvatar, type HumanParts } from "./human-avatar";
+import { photoPart, photoUrls } from "./human-outfit";
 import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
 import type { Look3dPiece } from "./common";
 const processing = vi.hoisted(() => ({ colors: [] as string[], resolve: null as null | ((v: null) => void) }));
@@ -61,3 +62,15 @@ it("wears cargo immediately while its photo is pending, retains it on failure an
   }
   await r.unmount();
 }, 60000);
+
+ it("isolates coats and jackets as upperwear, without keeping trousers and shoes", () => {
+  expect(photoPart("coat")).toBe("upper");
+  expect(photoPart("jacket")).toBe("upper");
+  expect(photoPart("dress")).toBe("full");
+  expect(photoPart("shorts")).toBe("lower");
+});
+
+it("prefers this product's server-isolated texture and never uses a displayed fabric crop as a raw photo", () => {
+ const urls=photoUrls({id:"jeans",name:"Jeans",slot:"lower",catalogProductId:"catalog-jeans",imageUrl:"/unrelated-shoe.jpg",studioUrl:"/fabric-crop.jpg"});
+ expect(urls).toEqual(["/api/catalog/products/catalog-jeans/texture-image?isolated=true","/api/catalog/products/catalog-jeans/texture-image"]);
+});

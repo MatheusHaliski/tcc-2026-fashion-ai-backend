@@ -10,7 +10,6 @@ import { PieceRowCompact, SLOT_GLYPH } from "@/components/pieces/piece-row-compa
 import { GarmentState } from "@/components/try-on/garment-state";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { useI18n } from "@/lib/i18n/i18n";
-import { mirrorHref } from "@/lib/nav/mirror-href";
 import { FITTING_SLOTS, type FittingItem, type FittingSlot } from "@/lib/tryon/fitting-room";
 import { useGarmentStatus } from "@/lib/tryon/garment-status";
 import { model3dFill, model3dProgress, type Model3dProgress } from "@/lib/tryon/model3d-steps";
@@ -144,7 +143,6 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
     { label: t("tryOn.guardar_e_gerar_3d"), onSelect: m3d.saveAndGenerate, hidden: !catalog || !!ownedId || busyOwn },
     { label: t("tryOn.gerar_3d"), onSelect: () => void m3d.queue(), hidden: !m3d.pieceId || m3d.progress.phase !== "none" || !!m3d.paused || item.source === "wardrobe" },
     { label: t("tryOn.m3d.tentar_de_novo"), onSelect: () => void m3d.queue(), hidden: !m3d.paused },
-    { label: t("tryOn.levar_ao_espelho"), href: mirrorHref({ piece: m3d.pieceId }), hidden: !m3d.pieceId },
     { label: t("tryOn.detalhes_previa"), onSelect: () => setDetails(true) },
   ];
   return (
@@ -157,7 +155,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
         state={<>
           {coveredBy
             ? <span className="piece-row-note"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.coberta_curto", { name: coveredBy })}</span>
-            : <Button size="sm" onClick={() => onPreview2d?.(item)}><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.ver_previa_2d")}</Button>}
+            : onPreview2d ? <Button size="sm" onClick={() => onPreview2d(item)}><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.ver_previa_2d")}</Button> : null}
           <Model3dStepBar progress={m3d.progress} paused={m3d.paused} idle={m3d.idle} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
             onRetry={() => void m3d.model.request()} />
         </>}
