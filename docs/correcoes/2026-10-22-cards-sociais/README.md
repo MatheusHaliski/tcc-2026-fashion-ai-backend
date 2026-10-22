@@ -32,6 +32,6 @@ Capturas individuais ocultam apenas a barra fixa de navegação durante a captur
 
 - Build completo: `npm run build` passou no checkout final, incluindo Stylelint, design, i18n e TypeScript. O sandbox inicial impedia a porta local usada pelo Turbopack; a execução com acesso de rede do ambiente concluiu normalmente.
 - Regressões focadas de cards, selos, lotes, troca de usuário e listas: **80 testes passaram em 8 arquivos**.
-- A suíte completa foi executada durante a implementação. Duas expectativas antigas de posição de estilo/selo foram corrigidas; dois casos novos de Publicações detectaram o uso de `compact`, removido e revalidado nos sete testes do arquivo. A rodada final e os checks remotos constam no PR; não tratar as execuções anteriores à correção como verdes.
+- Na rodada completa após as correções: **1851 testes passaram, 3 foram ignorados e 1 excedeu o limite de 5 s**, em `lib/avatar3d/iris.test.ts:178` (textura de avatar antigo). Esse arquivo passou seus **21 testes** ao repetir com `--testTimeout=15000`, sem alterar o teste. Não declarar a suíte inteira verde com o limite padrão; conferir também os checks remotos do PR.
 
 Para reproduzir sem o backend, usar os fixtures de `test-utils/fixtures.ts` e interceptar as respostas das rotas documentadas. Para validar produção, repetir os mesmos caminhos com uma conta e peças que possuam selos aprovados reais; conferir também conteúdo privado/anônimo. Nenhum segredo ou sessão de produção é necessário para as capturas anexadas.
