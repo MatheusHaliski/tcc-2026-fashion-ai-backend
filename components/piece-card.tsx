@@ -6,7 +6,7 @@ import type { PieceView } from "@/lib/api/types";
 import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
-import { SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
+import { CardSealSummary, SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
 import { pieceSealPlacement } from "@/components/scheme-anatomies";
 import { useDetailModal } from "@/components/detail-modal";
 import { CardActions } from "@/components/interactions";
@@ -26,6 +26,7 @@ import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
+import { CardFashionMeta } from "@/components/card-fashion-meta";
 import { DefaultGarmentPhoto } from "@/components/catalog/default-garment-photo";
 import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, piecePhotoAspect } from "@/components/catalog/catalog-photo";
 import { catalogWholeFrame, resolveFraming, usePhotoFraming, type PhotoFraming } from "@/lib/photo-framing";
@@ -105,7 +106,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
     <>
       {impersonationMedia(piece.background, piece.owner.id) ? <ImpersonationMedia background={piece.background} ownerId={piece.owner.id}/> : piece.defaultImage ? <DefaultGarmentPhoto category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} framing={framing} alt=""/> : whole && (whole.image || whole.sources.length) ? <CatalogPhoto requiredFrame={!!wholeImage} category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} framing="WHOLE" image={wholeImage} fallbackUrl={whole.sources[0]} alternatives={whole.sources.slice(1)} alt="" /> : crop ? <CatalogPhoto category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} requiredFrame image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 100vw, 620px" alt="" loading="lazy" decoding="async" className={img.cover || fillFrame ? "is-cover" : "is-contain"} /> : null}
       <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} presetId={piece.background?.auraMetamorphosePreset as string | undefined} preview/>{auraEnabled && <AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false} />}
-      {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
+      {(expanded || selectable) && (zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
           {piece.aiGeneratedImage && <span className="pc-flag" title={t("pieceCard.gerada_por_ia")}><span aria-hidden>{t("multiPiece.selo_ia_curto")}</span><span className="sr-only">{t("pieceCard.gerada_por_ia")}</span></span>}
@@ -146,7 +147,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
               <div className="pc-id">
                 <span className="seal-row">
                   {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
-                  {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
+                  {expanded && zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
                 </span>
                 <span className="pc-sub">
                   {secondary}

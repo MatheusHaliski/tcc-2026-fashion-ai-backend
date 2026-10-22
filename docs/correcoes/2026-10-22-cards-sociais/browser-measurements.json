@@ -1,0 +1,3972 @@
+{
+  "scope": "Real local routes/components/CSS; mocked auth, catalogue, profile, Hype and seal responses. UI dimensions do not certify production data.",
+  "results": [
+    {
+      "width": 1440,
+      "page": "feed",
+      "cards": [
+        {
+          "name": "Camisa de algodão — coleção de teste",
+          "width": 470,
+          "height": 1098.375,
+          "radius": "18px",
+          "photo": {
+            "width": 428,
+            "height": 321,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Composição de teste — trabalho e lazer",
+          "width": 470,
+          "height": 1171.875,
+          "radius": "14px",
+          "photo": {
+            "width": 450,
+            "height": 337.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Jeans reto — coleção de teste",
+          "width": 470,
+          "height": 964,
+          "radius": "14px",
+          "photo": {
+            "width": 428,
+            "height": 321,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "page": "search-pieces",
+      "cards": [
+        {
+          "name": "Camisa de algodão — coleção de teste",
+          "width": 470,
+          "height": 1083.375,
+          "radius": "18px",
+          "photo": {
+            "width": 428,
+            "height": 321,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Jeans reto — coleção de teste",
+          "width": 470,
+          "height": 949,
+          "radius": "14px",
+          "photo": {
+            "width": 428,
+            "height": 321,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "page": "search-looks",
+      "cards": [
+        {
+          "name": "Composição de teste — trabalho e lazer",
+          "width": 470,
+          "height": 1171.875,
+          "radius": "14px",
+          "photo": {
+            "width": 450,
+            "height": 337.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Composição Bento de teste",
+          "width": 470,
+          "height": 1171.875,
+          "radius": "14px",
+          "photo": {
+            "width": 450,
+            "height": 337.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "page": "profile-pieces",
+      "cards": [
+        {
+          "name": "Camisa de algodão — coleção de teste",
+          "width": 470,
+          "height": 1083.375,
+          "radius": "18px",
+          "photo": {
+            "width": 428,
+            "height": 321,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Jeans reto — coleção de teste",
+          "width": 470,
+          "height": 949,
+          "radius": "14px",
+          "photo": {
+            "width": 428,
+            "height": 321,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "page": "profile-looks",
+      "cards": [
+        {
+          "name": "Composição de teste — trabalho e lazer",
+          "width": 470,
+          "height": 1171.875,
+          "radius": "14px",
+          "photo": {
+            "width": 450,
+            "height": 337.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Composição Bento de teste",
+          "width": 470,
+          "height": 1171.875,
+          "radius": "14px",
+          "photo": {
+            "width": 450,
+            "height": 337.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "page": "profile-publications",
+      "cards": [
+        {
+          "name": "Composição de teste — trabalho e lazer",
+          "width": 470,
+          "height": 1171.875,
+          "radius": "14px",
+          "photo": {
+            "width": 450,
+            "height": 337.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Camisa de algodão — coleção de teste",
+          "width": 470,
+          "height": 1083.375,
+          "radius": "18px",
+          "photo": {
+            "width": 428,
+            "height": 321,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 192,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 194,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 194.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Composição Bento de teste",
+          "width": 470,
+          "height": 1171.875,
+          "radius": "14px",
+          "photo": {
+            "width": 450,
+            "height": 337.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 203,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 205,
+              "height": 44,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 205.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "page": "feed",
+      "cards": [
+        {
+          "name": "Camisa de algodão — coleção de teste",
+          "width": 340,
+          "height": 1051.40625,
+          "radius": "18px",
+          "photo": {
+            "width": 298,
+            "height": 223.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Composição de teste — trabalho e lazer",
+          "width": 340,
+          "height": 1092.75,
+          "radius": "14px",
+          "photo": {
+            "width": 320,
+            "height": 240,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Jeans reto — coleção de teste",
+          "width": 340,
+          "height": 884.875,
+          "radius": "14px",
+          "photo": {
+            "width": 298,
+            "height": 223.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 127,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 127,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "page": "search-pieces",
+      "cards": [
+        {
+          "name": "Camisa de algodão — coleção de teste",
+          "width": 340,
+          "height": 1036.40625,
+          "radius": "18px",
+          "photo": {
+            "width": 298,
+            "height": 223.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Jeans reto — coleção de teste",
+          "width": 340,
+          "height": 869.875,
+          "radius": "14px",
+          "photo": {
+            "width": 298,
+            "height": 223.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 127,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 127,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "page": "search-looks",
+      "cards": [
+        {
+          "name": "Composição de teste — trabalho e lazer",
+          "width": 340,
+          "height": 1092.75,
+          "radius": "14px",
+          "photo": {
+            "width": 320,
+            "height": 240,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Composição Bento de teste",
+          "width": 340,
+          "height": 1092.75,
+          "radius": "14px",
+          "photo": {
+            "width": 320,
+            "height": 240,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "page": "profile-pieces",
+      "cards": [
+        {
+          "name": "Camisa de algodão — coleção de teste",
+          "width": 340,
+          "height": 1036.40625,
+          "radius": "18px",
+          "photo": {
+            "width": 298,
+            "height": 223.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Jeans reto — coleção de teste",
+          "width": 340,
+          "height": 869.875,
+          "radius": "14px",
+          "photo": {
+            "width": 298,
+            "height": 223.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 127,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 127,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "page": "profile-looks",
+      "cards": [
+        {
+          "name": "Composição de teste — trabalho e lazer",
+          "width": 340,
+          "height": 1092.75,
+          "radius": "14px",
+          "photo": {
+            "width": 320,
+            "height": 240,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Composição Bento de teste",
+          "width": 340,
+          "height": 1092.75,
+          "radius": "14px",
+          "photo": {
+            "width": 320,
+            "height": 240,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "page": "profile-publications",
+      "cards": [
+        {
+          "name": "Composição de teste — trabalho e lazer",
+          "width": 340,
+          "height": 1092.75,
+          "radius": "14px",
+          "photo": {
+            "width": 320,
+            "height": 240,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Camisa de algodão — coleção de teste",
+          "width": 340,
+          "height": 1036.40625,
+          "radius": "18px",
+          "photo": {
+            "width": 298,
+            "height": 223.5,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 127,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 129,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 129.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        },
+        {
+          "name": "Composição Bento de teste",
+          "width": 340,
+          "height": 1092.75,
+          "radius": "14px",
+          "photo": {
+            "width": 320,
+            "height": 240,
+            "radius": "0px"
+          },
+          "info": [
+            {
+              "label": "Marca",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Cor",
+              "width": 138,
+              "height": 85.375,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Ocasião",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            },
+            {
+              "label": "Estilo",
+              "width": 138,
+              "height": 76,
+              "radius": "12px",
+              "font": "16px",
+              "overflow": false
+            }
+          ],
+          "seals": [
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            },
+            {
+              "width": 44,
+              "height": 44,
+              "radius": "50%"
+            }
+          ],
+          "tabs": [
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            },
+            {
+              "width": 140,
+              "height": 53,
+              "radius": "10px",
+              "overflow": false
+            }
+          ],
+          "scores": [
+            {
+              "width": 79.828125,
+              "height": 28,
+              "radius": "8px",
+              "font": "16px"
+            }
+          ],
+          "hype": [
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            },
+            {
+              "width": 140.40625,
+              "height": 56,
+              "radius": "12px",
+              "font": "22px",
+              "color": "rgb(26, 23, 20)",
+              "ink": "rgb(26, 23, 20)"
+            }
+          ],
+          "transform": "none"
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "page": "hype-layout",
+      "layout": "static-horizontal",
+      "overflow": false,
+      "hiddenFacts": false
+    },
+    {
+      "width": 390,
+      "page": "hype-layout",
+      "layout": "static-vertical",
+      "overflow": false,
+      "hiddenFacts": false
+    },
+    {
+      "width": 390,
+      "page": "hype-layout",
+      "layout": "static-columns",
+      "overflow": false,
+      "hiddenFacts": false
+    },
+    {
+      "width": 390,
+      "page": "hype-layout",
+      "layout": "static-global",
+      "overflow": false,
+      "hiddenFacts": false
+    },
+    {
+      "width": 390,
+      "page": "hype-layout",
+      "layout": "ranked-bars",
+      "overflow": false,
+      "hiddenFacts": false
+    },
+    {
+      "width": 390,
+      "page": "hype-layout",
+      "layout": "extremes",
+      "overflow": false,
+      "hiddenFacts": false
+    },
+    {
+      "width": 390,
+      "page": "hype-layout",
+      "layout": "momentum",
+      "overflow": false,
+      "hiddenFacts": false
+    },
+    {
+      "width": 390,
+      "page": "hype-layout",
+      "layout": "key-triad",
+      "overflow": false,
+      "hiddenFacts": false
+    },
+    {
+      "width": 390,
+      "page": "info-and-dark",
+      "overflow": false
+    }
+  ]
+}

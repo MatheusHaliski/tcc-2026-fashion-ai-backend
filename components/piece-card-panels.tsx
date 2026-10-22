@@ -22,9 +22,9 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE" }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion">>; summary?: HypeSummary | null; initial?: Tab;
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[] }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size">>; summary?: HypeSummary | null; initial?: Tab;
   /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
-  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity }) {
+  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][] }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>(initial);
   // a aba inicial acompanha a preferência (a AURA Hype salva no navegador chega depois do 1º render) até a pessoa escolher
@@ -38,7 +38,12 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
     [t("common.color"), piece.color ? <span className="pc-info-color">{piece.colorHex && <i style={{ background: piece.colorHex }} aria-hidden />}{label(piece.color)}</span> : null],
     [t("common.style"), list(piece.style)],
     [t("common.occasion"), list(piece.occasion)],
-  ] as [string, ReactNode][]).filter(([, v]) => !!v);
+  ] as [string, ReactNode][]).filter(([key, value]) => !!value && (!summaryFacts || key===t("common.category")));
+  if(summaryFacts) {
+    if(piece.material) rows.push([t("common.material"),label(piece.material)]);
+    if(piece.size) rows.push([t("common.size"),label(piece.size)]);
+  }
+  rows.push(...infoRows);
   const tabs: { key: Tab; icon: ReactNode; text: string }[] = [
     { key: "info", icon: <InfoIcon />, text: t("pieceCard.tab_info") },
     { key: "hype", icon: <HypeGuideIcon kind="score" className="pc-seg-hype" />, text: t("pieceCard.tab_hype") },

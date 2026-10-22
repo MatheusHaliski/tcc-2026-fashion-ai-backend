@@ -284,10 +284,11 @@ h1, h2, h3, h4 { margin: 0; }
 .detail-card-expanded { width: 100%; max-width: 440px; }
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); gap: .9rem; }
 @media (max-width: 639px) { .grid-cards { grid-template-columns: minmax(0, 1fr); gap: .6rem; } }
-/* cards de peça (guarda-roupa, busca): o dobro da largura; uma coluna no celular */
-.grid-cards.is-pieces { grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); }
-@media (max-width: 639px) { .grid-cards.is-pieces { grid-template-columns: minmax(0, 1fr); } }
-.grid-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr)); gap: 1rem; }
+/* Peças e looks usam uma escala de post: até 470 px por card, sem esticar uma
+   publicação isolada por toda a página. Busca e perfil comportam até duas colunas. */
+.grid-looks, .grid-cards.is-pieces { display: grid; width: 100%; max-width: 956px; margin-inline: auto; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; justify-items: center; gap: 16px; }
+.grid-looks > *, .grid-cards.is-pieces > * { width: 100%; max-width: 470px; min-width: 0; }
+@media (max-width: 639px) { .grid-looks, .grid-cards.is-pieces { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
 /* Lookbook › Looks: atalho discreto do dono para a gestão dos looks (/looks), à direita, acima da vitrine */
 .lookbook-manage { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
 .lookbook-manage-link { display: inline-flex; align-items: center; min-height: 32px; padding: 0 2px; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
@@ -1152,9 +1153,11 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room-pad-actions button { width: 36px; height: 36px; border: 1px solid var(--line-soft); border-radius: 50%; background: var(--surface); color: var(--ink); }
 .room-context-prompt { position: absolute; bottom: calc(100% + 12px); right: 0; display: flex; align-items: center; gap: 12px; width: max-content; max-width: min(360px, 90vw); padding: 12px 16px; border: 1px solid #c9a227; border-radius: 6px; background: rgb(20 28 32 / 88%); color: #fff3ce; text-align: left; }
 .room-key { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 1px solid currentcolor; border-radius: 50%; }
-.feed-compact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); align-items: start; gap: 16px; }
-.feed-compact-grid .fai-card { width: 100%; max-width: 620px; justify-self: center; }
-.feed-compact-grid .pc-art { max-height: 520px; }
+/* O feed é uma sequência de posts, não uma grade de cards esticados. O limite
+   inclui o wrapper que alterna Info/Hype, mantendo a mesma largura nas duas faces. */
+.feed-compact-grid { display: grid; grid-template-columns: minmax(0, 470px); justify-content: center; align-items: start; gap: 24px; }
+.feed-compact-grid > * { width: 100%; max-width: 470px; min-width: 0; }
+.feed-compact-grid .fai-card { width: 100%; }
 .room3d-controls-row { display: grid; grid-template-columns: repeat(2, 44px); gap: 6px; }
 .room3d-dpad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 3px; }
 .room3d-dpad .is-up { grid-area: 1 / 2; } .room3d-dpad .is-left { grid-area: 2 / 1; } .room3d-dpad .is-right { grid-area: 2 / 3; } .room3d-dpad .is-down { grid-area: 3 / 2; }
@@ -1630,9 +1633,9 @@ a .fai-coupon, button .fai-coupon { transition: transform .15s ease, box-shadow 
 @media (pointer: coarse) { .c-act, .c-post.is-compact .c-act { min-height: var(--touch); } }
 :root[data-theme="contrast"] .c-act.is-like[aria-pressed="true"] { color: var(--mark); }
 
-/* ---------- Card de peça (feed e grades): cabeçalho compacto → foto 4:5 dominante → ações → nome e marca ---------- */
+/* ---------- Card de peça: cabeçalho → foto reduzida → identidade e informações → ações ---------- */
 .fai-card.piece-card { container-type: inline-size; }
-.piece-card .pc-header { min-height: 40px; padding: 4px 10px; gap: 8px; }
+.piece-card .pc-header { min-height: 48px; padding: 6px 12px; gap: 8px; }
 .fai-card .c-who-link { color: inherit; text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .piece-card .pc-media { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface-2); }
 .piece-card .pc-media img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; }
@@ -1645,9 +1648,53 @@ a .fai-coupon, button .fai-coupon { transition: transform .15s ease, box-shadow 
 .piece-card .pc-flags { flex-wrap: wrap; max-width: calc(100% - 16px); }
 .piece-card .pc-flag.is-donate { color: #165C58; }
 .piece-card .pc-seal { position: absolute; z-index: 2; right: 6px; top: 6px; }
-.piece-card .pc-id { display: grid; gap: 3px; padding: 2px 12px 12px; min-width: 0; }
-.piece-card .pc-name { font-family: var(--font-editorial); font-weight: var(--card-title-weight, 600); font-size: 15px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.piece-card .pc-id { display: grid; gap: 8px; padding: 10px 12px 12px; min-width: 0; }
+.piece-card .pc-name { font-family: var(--font-editorial); font-weight: var(--card-title-weight, 600); font-size: 16px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .piece-card .pc-name-link { color: inherit; text-decoration: none; min-width: 0; }
+/* Ocasião e estilo têm posição própria e leitura completa; não viram uma
+   legenda minúscula sobre a fotografia nem dependem da aba Hype estar aberta. */
+.fai-card { --card-info-radius: 12px; --card-info-min-height: 76px; --card-info-gap: 12px; --card-info-value-size: 16px; --card-detail-min-height: 56px; --card-tab-min-height: 44px; --card-hype-value-size: 22px; }
+.fai-card .card-fashion-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-info-gap); min-width: 0; margin: 0; padding: 0; }
+.card-fashion-meta > div { min-width: 0; min-height: var(--card-info-min-height); padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: var(--card-info-radius); }
+.card-fashion-meta dt { margin-bottom: 3px; font-family: var(--font-ui); font-size: 12px; line-height: 1.3; font-weight: 500; color: var(--card-muted, var(--muted)); }
+.card-fashion-meta dd { margin: 0; font-family: var(--font-ui); font-size: var(--card-info-value-size); line-height: 1.4; font-weight: 600; white-space: normal; overflow-wrap: anywhere; }
+.fai-card .card-seals { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.card-seals .seal-slot { position: static; flex-wrap: wrap; width: auto; max-width: 100%; height: auto; gap: 6px; }
+.card-seals .seal-slot .seal-medallion + .seal-medallion { margin-left: 0; }
+.card-seals .seal-medallion:not(.has-design) { flex: none; width: 44px; height: 44px; }
+
+/* A fotografia ocupa menos altura; o resumo abaixo permanece legível e estável. */
+.card-meta-colors { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.card-meta-more { font-size: 12px; font-weight: 600; color: var(--card-muted, var(--muted)); }
+.fai-card .card-fashion-meta .pc-info-color i { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #0003; }
+.piece-card[data-card-mode="feed"] .pc-id { padding: 14px 16px; gap: 12px; }
+.fai-card[data-card-mode="feed"] :is(.pc-name, .c-title) { min-height: 24px; font-size: 18px; line-height: 1.3; }
+.fai-card[data-card-mode="feed"] :is(.c-total, .pc-price) { min-height: 24px; font-size: 16px; line-height: 1.5; }
+.fai-card[data-card-mode="feed"] :is(.c-desc, .c-titleblock > .type-caption) { font-size: 14px; line-height: 1.4; }
+.fai-card[data-card-mode="feed"] .pc-info { gap: 12px; }
+.fai-card[data-card-mode="feed"] .pc-info > div { min-width: 0; min-height: var(--card-detail-min-height); padding: 6px 10px; border: 1px solid var(--line-soft); border-radius: 10px; }
+.fai-card[data-card-mode="feed"] .pc-info dd { font-size: 16px; line-height: 1.4; }
+.fai-card[data-card-mode="feed"] .pc-seg { border-radius: 12px; }
+.fai-card[data-card-mode="feed"] .pc-seg-btn { min-width: 0; min-height: var(--card-tab-min-height); padding-inline: 6px; border-radius: 10px; font-size: 14px; letter-spacing: 0; }
+.fai-card[data-card-mode="feed"] .pc-seg-btn > span { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
+.fai-card[data-card-mode="feed"] .pc-tab-live-score .hype-badge { min-width: 48px; min-height: 28px; border-radius: 8px; justify-content: center; }
+.fai-card[data-card-mode="feed"] .pc-tab-live-score .hype-badge b { font-size: 16px; }
+.fai-card[data-card-mode="feed"] .fashion-hype-cell { min-height: var(--card-detail-min-height); padding: 8px 6px; border-radius: var(--card-info-radius); }
+.fai-card[data-card-mode="feed"] .fashion-hype-cell dd { font-size: var(--card-hype-value-size); }
+/* O acabamento do preset pode ser claro: o número usa a tinta legível do
+   container, sem desaparecer em branco sobre branco nos atributos altos. */
+.fai-card[data-card-mode="feed"] .pc-panels .fashion-hype-cell[data-tone] dd { color: var(--card-ink, var(--ink)); }
+.card-fashion-meta .brand-logo-name { white-space: normal; overflow: visible; font-size: 16px; line-height: 1.4; }
+.fai-card.scheme-card-social .c-titleblock { gap: 10px; padding: 14px 16px; }
+.scheme-card-social .pc-panels { padding: 0 16px 14px; }
+.scheme-card-social .c-photo.is-look img { object-fit: contain; padding: 8px; }
+.scheme-card-social .scheme-container > :is(.runway, .bento) { aspect-ratio: 4 / 3; }
+/* As coordenadas antigas de Total frame foram calculadas em 3:4: manter esse
+   palco dentro da foto menor evita cortar a peça antes da renderização do lote. */
+.piece-card[data-card-mode="feed"] .pc-media[data-photo-framing="WHOLE"] .catalog-photo.is-whole:not([data-rendered]) {
+  inset: 0 auto 0 50%; width: auto; height: 100%; aspect-ratio: 3 / 4; max-width: 100%; transform: translateX(-50%);
+}
+
 .piece-card .pc-name-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
 .piece-card .pc-sub { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* tags essenciais (até dois estilos): uma linha pequena e discreta, cortada com reticências — nunca disputa com a foto */

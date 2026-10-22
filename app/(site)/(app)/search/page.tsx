@@ -16,6 +16,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { useDevRefs } from "@/lib/dev-refs";
 import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
+import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { FaiIcon } from "@/components/fai-icon";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
 import { hypeLevelFilter } from "@/components/hype/hype-filters";
@@ -86,6 +87,7 @@ function SearchInner() {
   const seeArchive = (brand: string) => { setTab("ACERVO"); setF({ ...NO_FILTERS, brand }); setTerm(""); setQ(""); router.replace("/search?tab=ACERVO"); };
   const useInCreator = (p: CatalogProduct) => router.push(`/pieces/new${qs({ brand: p.brand?.name, q: p.productName, category: p.category, subcategory: p.subcategory })}`);
   const empty = !loading && !error && items.length === 0;
+  const sealsOf = usePieceSeals(tab === "PECAS" ? items as PieceView[] : [], { anonymous: !user });
   return (
     <>
       <PageHeader title={t("nav.search")} kicker={t("search.rf8_rf15")} lead={community ? t("search.feed_da_comunidade_looks_por") : archive ? t("search.acervo_lead") : undefined} />
@@ -136,7 +138,7 @@ function SearchInner() {
       )}
       {items.length > 0 && (
         tab === "LOOKS" ? <div className="grid-looks">{(items as SchemeView[]).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
-        : tab === "PECAS" ? <div className="grid-cards is-pieces">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} />)}</div>
+        : tab === "PECAS" ? <div className="grid-cards is-pieces">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>
         : tab === "ACERVO" ? <ul className="grid-cards is-pieces" aria-label={t("search.acervo")}>
           {(items as CatalogProduct[]).map((p) => <li key={p.id}><CatalogResultCard product={p} pickLabel={t("search.usar_no_criador")} onPick={() => useInCreator(p)} /></li>)}</ul>
         : tab === "PESSOAS" ? <ul className="institutional-profile-feed" aria-label={t("publicProfile.results")}>
