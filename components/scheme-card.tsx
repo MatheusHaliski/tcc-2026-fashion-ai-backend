@@ -1,4 +1,5 @@
 "use client";
+import { CardFashionMeta } from "@/components/card-fashion-meta";
 import { CardBorder } from "@/components/card-border";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
@@ -54,6 +55,16 @@ export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; siz
       })}
     </span>
   );
+}
+
+/** Visible award row shared by garment and outfit posts. Missing awards never create placeholders. */
+export function CardSealSummary({seals}:{seals?:SealBadge[]}) {
+  const {t}=useI18n();
+  if(!seals?.length)return null;
+  return <div className="card-seals">
+    <SealSlot inline px={44} seals={seals}/>
+    {seals.length>3&&<span className="card-meta-more" title={seals.slice(3).map(s=>s.name??s.label).join(" · ")} aria-label={t("schemeCard.selos",{join:seals.map(s=>s.name??s.label).join(", ")})}>+{seals.length-3}</span>}
+  </div>;
 }
 
 /** Blocos: selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look, laranja Hype. */
@@ -189,6 +200,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   /** verso com o Hype (↻) nas grades e no feed; desligado na prévia e no card ampliado (lá a análise abre direto) */ flip?: boolean }) {
   const detail = useDetailModal();
   const preview = href === "#";
+  const social = !expanded && !compact;
   const flippable = flip && !preview && !expanded;
   const { prefs } = useTheme();
   const studio = studioOf(scheme.background);
@@ -238,7 +250,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const titleText = preview ? <span>{scheme.title}</span> : <Link href={link} onClick={openModal} className="c-link">{scheme.title}</Link>;
   const priceLine = (
     <p className="c-priceline">
-      {placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={lookSeals} />}
+      {!social && placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={lookSeals} />}
       <span className="c-total tabular">{total != null ? <Price value={total} /> : t("anatomy.noPrice")}</span>
       {flippable && <CardFlipButton side="front" className="c-flip" />}
       {expanded && !preview && <button type="button" className="btn btn-ghost btn-sm c-hype-more" onClick={() => setAnalysis(true)} aria-haspopup="dialog">{t("hype.card.full_analysis")}</button>}
@@ -249,16 +261,18 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       <span className="c-kicker">{t("anatomy.lookKicker", { count: items.length })}</span>
       <h3 className="c-title">{titleText}</h3>
       {priceLine}
+      {social && !!lookSeals.length && <CardSealSummary seals={lookSeals}/>}
+      {social && <CardFashionMeta brands={items.flatMap(it=>it.piece?.brandName?[{name:it.piece.brandName,logoUrl:it.piece.brandLogoUrl}]:[])} colors={items.flatMap(it=>it.piece?.color?[{name:it.piece.color,hex:it.piece.colorHex}]:[])} styles={scheme.style} occasions={scheme.occasion}/>}
       {scheme.tipoLook && <p className="type-caption text-muted">{t("lookType.label")}: {scheme.tipoLook.nome}</p>}
       {scheme.description && <p className={`c-desc ${expanded ? "is-full" : ""}`}>{scheme.description}</p>}
     </div>
   );
-  const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`}>{cover && <MediaImage src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
+  const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`} style={social?{aspectRatio:"4 / 3"}:undefined}>{cover && <MediaImage src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
   const chips = [...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).concat(scheme.season ? [label(scheme.season.toLowerCase())] : []);
 
-  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode}/>;
+  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} infoRows={social?[[t("common.pecas"),String(items.length)],...(scheme.season?[[t("common.season"),label(scheme.season.toLowerCase())] as [string,ReactNode]]:[])]:[]}/>;
   const card = (
-    <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
+    <article data-card-mode={expanded?"expanded":"feed"} className={`fai-card scheme-card ${social?"scheme-card-social":""} ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
         trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
       <CardBorder entityId={`SCHEME:${scheme.id}`} background={{...scheme.background,...studio}} auraHype={auraEnabled} hype={hypeState}/>
@@ -278,22 +292,22 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
           </div>
         ) : (
           <div className="scheme-container" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
-            {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={lookSeals} />}
+            {!social && (placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={lookSeals} />}
             {ownArt ? (
               <AnatomyBody scheme={scheme} pieces={detailPieces} />
-            ) : l === "lateral" && !expanded ? (
+            ) : l === "lateral" && !expanded && !social ? (
               <div className="hero-lateral-row">
                 {photo()}
                 {pieceLayout ? <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 4)} side sealsOf={pieceSeals} /> : <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><span className="p-thumb">{p.img && <img src={p.img} alt="" loading="lazy" />}</span><span className="min-w-0"><b>{p.name}</b><span>{p.brand ?? label(p.slot.toLowerCase())}</span></span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>}
               </div>
             ) : photo()}
             {titleBlock}{hypePanel}
-            {!ownArt && !expanded && l === "grade" && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 6)} sealsOf={pieceSeals} />}
-            {!ownArt && !expanded && l === "grade" && !pieceLayout && <div className="grid-pieces">
+            {!social && !ownArt && !expanded && l === "grade" && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 6)} sealsOf={pieceSeals} />}
+            {!social && !ownArt && !expanded && l === "grade" && !pieceLayout && <div className="grid-pieces">
               {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtPriceShort(p.price) : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}
             </div>}
-            {((!ownArt && l === "lista") || expanded) && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, expanded || preview ? detailPieces.length : 4)} sealsOf={pieceSeals} onPiece={pieceClick} />}
-            {((!ownArt && l === "lista") || expanded) && !pieceLayout && pieces.slice(0, expanded || preview ? pieces.length : 4).map((p, i) => (
+            {((!social && !ownArt && l === "lista") || expanded) && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, expanded || preview ? detailPieces.length : 4)} sealsOf={pieceSeals} onPiece={pieceClick} />}
+            {((!social && !ownArt && l === "lista") || expanded) && !pieceLayout && pieces.slice(0, expanded || preview ? pieces.length : 4).map((p, i) => (
               <div key={i} className={`piece2 ${pieceClick ? "is-action" : ""}`} role={pieceClick ? "button" : undefined} tabIndex={pieceClick ? 0 : undefined}
                 onClick={pieceClick ? (e) => { e.preventDefault(); e.stopPropagation(); pieceClick(p.id); } : undefined} onKeyDown={pieceClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pieceClick(p.id); } } : undefined}>
                 <span className="p-thumb">{p.img ? <img src={p.img} alt="" loading="lazy" /> : null}</span>
@@ -302,8 +316,8 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
                 {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
               </div>
             ))}
-            {placement.zone === "STUDS" && <SealStuds seals={lookSeals} />}
-            {(chips.length > 0 || placement.zone === "META_BLOCK") && <div className="c-chips">{chips.map((c) => <span key={c} className="c-chip">{c}</span>)}{placement.zone === "META_BLOCK" && <SealSlot inline px={28} seals={lookSeals} />}</div>}
+            {!social && placement.zone === "STUDS" && <SealStuds seals={lookSeals} />}
+            {!social && (chips.length > 0 || placement.zone === "META_BLOCK") && <div className="c-chips">{chips.map((c) => <span key={c} className="c-chip">{c}</span>)}{placement.zone === "META_BLOCK" && <SealSlot inline px={28} seals={lookSeals} />}</div>}
           </div>
         )}
       </div>

@@ -28,7 +28,7 @@ const closetCalls = (calls: { method: string; path: string }[], owner: string) =
 /** Títulos dos medalhões no SealSlot da frente do card da peça (mesmo lugar no /closet e no Lookbook). */
 const slotOf = (root: ParentNode, name: string) => {
   const card = Array.from(root.querySelectorAll<HTMLElement>(".fcard-face.is-front")).find((f) => f.textContent?.includes(name));
-  return Array.from(card?.querySelectorAll<HTMLElement>(".pc-sub .seal-slot [title]") ?? []).map((m) => m.title);
+  return Array.from(card?.querySelectorAll<HTMLElement>(".card-seals .seal-slot [title]") ?? []).map((m) => m.title);
 };
 
 beforeEach(() => { __resetHypeStore(); });

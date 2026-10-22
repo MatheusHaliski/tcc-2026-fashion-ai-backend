@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { Chip, EmptyState, ErrorState, PageHeader, SkeletonGrid, Tabs } from "@/components/ui";
 import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
+import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
 import { FeedDiscovery } from "@/components/feed-discovery";
 import { OnboardingChecklist } from "@/components/onboarding";
@@ -74,6 +75,7 @@ export default function FeedPage() {
     setPages((p) => (cursor ? mergeById(p, entries) : entries));
     return r;
   }, [tab, cursor, JSON.stringify(filters), !!user], { enabled: tab === "feed" || tab === "pieces" || (tab === "runway" && !!user) });
+  const sealsOf = usePieceSeals(pages.flatMap((entry) => entry.piece ? [entry.piece] : []), { anonymous: !user });
   const toggle = (k: string, v: string) => { setCursor(null); setFilters((f) => (f[k] === v ? Object.fromEntries(Object.entries(f).filter(([x]) => x !== k)) : { ...f, [k]: v })); };
   const hot = filters.hypeLevel === HOT;
   // o "Em alta" tem chip próprio; os demais chips são os filtros aplicados que o backend devolve (clicar remove)
@@ -103,7 +105,7 @@ export default function FeedPage() {
         : <EmptyState title={t("feed.empty")} action={user ? <Link href="/schemes/new" className="btn btn-primary">{t("scheme.create")}</Link> : <Link href="/register" className="btn btn-primary">{t("nav.register")}</Link>} />)}
       <div className="feed-compact-grid">{pages.map((e) => e.scheme
         ? <SchemeCard key={e.id} scheme={e.scheme} extra={e.sharedBy ? <SharedNote entry={e} /> : undefined} />
-        : e.piece ? <PieceCard key={e.id} piece={e.piece} extra={<SharedNote entry={e} />} /> : null)}</div>
+        : e.piece ? <PieceCard key={e.id} piece={e.piece} seals={sealsOf(e.piece.id)} extra={<SharedNote entry={e} />} /> : null)}</div>
       <InfiniteSentinel hasMore={!!data?.nextCursor} loading={loading} onMore={() => data?.nextCursor && setCursor(data.nextCursor)} label={t("common.more")} />
       </>}
     </>
