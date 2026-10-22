@@ -152,7 +152,26 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
           {selectable ? (
             <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
               <span className="pc-media" style={mediaStyle}>{media}</span>
-              <span className="pc-id">{name}<span className="pc-sub">{secondary}</span>{auraEnabled&&<FashionCardStats summary={hype.summary} styles={(piece.style??[]).map(label)}/>}</span>
+              <span className="pc-id">
+                {name}
+                <span className="pc-sub">
+                  {secondary}</span>
+                {auraEnabled&&<FashionCardStats summary={hype.summary} styles={(piece.style??[]).map(label)}/>}
+              </span>
+              <span className="seal-row">
+    {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
+    {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
+  </span>
+
+  <span className="pc-sub">
+    {secondary}
+    {/* ─── SEU CAMPO NOVO AQUI ─── */}
+    {piece.estadoDeConservacao && (
+      <span className="ml-2 font-medium text-muted">
+        · {piece.estadoDeConservacao}
+      </span>
+    )}
+  </span>
             </button>
           ) : (
             <>
