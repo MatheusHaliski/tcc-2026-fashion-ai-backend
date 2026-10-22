@@ -7937,5 +7937,6 @@
   "scheme.improvement.field.season": "Estação",
   "scheme.improvement.field.mood": "Humor",
   "scheme.improvement.field.visibility": "Visibilidade",
-  "scheme.improvement.instructionPlaceholder": "Deixe o título mais elegante e ajuste o estilo para um jantar."
+  "scheme.improvement.instructionPlaceholder": "Deixe o título mais elegante e ajuste o estilo para um jantar.",
+  "catalog.defaultIllustration": "Ilustração padrão FAI na cor da peça"
 }

@@ -208,6 +208,8 @@ class CatalogImagePipelineServiceTest {
         var photo = service.texturePhoto(admin, product.getId());
         assertThat(photo.bytes()).isEqualTo(original);
         assertThat(photo.mime()).isEqualTo("image/png");
+        assertThatThrownBy(() -> service.texturePhoto(admin, product.getId(), true)).isInstanceOf(ApiException.class)
+                .hasMessageContaining("Foto isolada");
         assertThat(stored).isEmpty();
         front.setReviewStatus("REJECTED");
         assertThatThrownBy(() -> service.texturePhoto(admin, product.getId())).isInstanceOf(ApiException.class);
@@ -218,7 +220,9 @@ class CatalogImagePipelineServiceTest {
         CatalogSource source = new CatalogSource(); source.setDomain("brand.com"); source.setAllowsImagePersistence(true); sources.add(source);
         CatalogImage front = image("https://img.brand.com/stable.jpg", CatalogImageType.PACKSHOT,
                 CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0)));
-        service.ensurePreview(admin, product.getId());
+        front.setAssetsJson(Json.write(Map.of("photoSet",Map.of("status","DEFAULT"))));
+        service.ensurePreview(admin, product.getId(), true);
+        assertThat(Json.map(front.getAssetsJson())).doesNotContainKey("photoSet");
         Map<String, Object> card = CatalogImagePipelineService.cardImage(front, product);
         String fabricUrl = card.get("url").toString();
         Map<?, ?> whole = (Map<?, ?>) card.get("whole");
@@ -544,5 +548,26 @@ class CatalogImagePipelineServiceTest {
         String jpql = queue.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
         assertThat(jpql).contains("i.pipelineVersion <> :version");
         assertThat(jpql).contains("i.pipelineVersion not like 'CATALOG_FRAME_%'");
+    }
+    @Test
+    void sanitizedPhotoSetIsReusedAndStaleCategoryNeverServesThePreviousGarment() {
+        CatalogImage i=image("https://brand.com/photo.png",CatalogImageType.FRONT,CatalogPhotos.png(CatalogPhotos.tee(200,200,1)));
+        i.setSourceSha256("source-hash");i.setCanonical(true);
+        Map<String,Object> cleaned=new LinkedHashMap<>();cleaned.put("version","CATALOG_PHOTO_SET_V1");cleaned.put("sourceUrl",i.getImageUrl());cleaned.put("sourceSha256",i.getSourceSha256());cleaned.put("category",product.getCategory());cleaned.put("subcategory",product.getSubcategory());cleaned.put("color",product.getColor());cleaned.put("status","READY");cleaned.put("wholeUrl","https://media.fashion-ai.app/whole.png");cleaned.put("fabricUrl","https://media.fashion-ai.app/fabric.png");cleaned.put("defaultAssetUrl","/api/catalog/default-asset?category=upper_piece");i.setAssetsJson(Json.write(Map.of("photoSet",cleaned)));
+        assertThat(CatalogImagePipelineService.cardImage(i,product)).containsEntry("url",cleaned.get("fabricUrl")).containsEntry("mode","PROCESSED");
+        i.setReviewStatus("REJECTED");assertThat(CatalogImagePipelineService.photoSet(i,product)).isEmpty();
+        i.setReviewStatus("APPROVED");
+        CatalogSource source = new CatalogSource(); source.setDomain("brand.com"); source.setAllowsImagePersistence(true); sources.add(source);
+        i.setProcessingStatus("APPROVED");
+        byte[] whole=CatalogPhotos.png(CatalogPhotos.tee(200,200,1));stored.put("whole.png",whole);
+        assertThat(service.texturePhoto(admin,product.getId(),true).bytes()).isEqualTo(whole);
+        product.setSubcategory("coat");assertThat(CatalogImagePipelineService.photoSet(i,product)).isEmpty();
+        assertThatThrownBy(() -> service.texturePhoto(admin,product.getId(),true)).isInstanceOf(ApiException.class);
+    }
+    @Test
+    void defaultOnlyPhotoSetDoesNotExposeARejectedSourceAsAnApprovedFrame() {
+        CatalogImage i=image("https://brand.com/photo.png",CatalogImageType.FRONT,CatalogPhotos.png(CatalogPhotos.tee(200,200,1)));i.setSourceSha256("source-hash");
+        Map<String,Object> cleaned=new LinkedHashMap<>();cleaned.put("version","CATALOG_PHOTO_SET_V1");cleaned.put("sourceUrl",i.getImageUrl());cleaned.put("sourceSha256",i.getSourceSha256());cleaned.put("category",product.getCategory());cleaned.put("subcategory",product.getSubcategory());cleaned.put("color",product.getColor());cleaned.put("status","DEFAULT");cleaned.put("defaultAssetUrl","/api/catalog/default-asset?category=upper_piece");i.setAssetsJson(Json.write(Map.of("photoSet",cleaned)));
+        assertThat(CatalogImagePipelineService.cardImage(i,product)).containsEntry("mode","DEFAULT").containsEntry("url",cleaned.get("defaultAssetUrl")).doesNotContainKey("whole");
     }
 }

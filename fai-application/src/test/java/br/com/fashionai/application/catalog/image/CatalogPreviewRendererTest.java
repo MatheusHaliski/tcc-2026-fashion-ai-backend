@@ -50,14 +50,15 @@ class CatalogPreviewRendererTest {
     }
 
     @Test
-    void earlyVerifiedFabricFrameCanBeRenderedWithoutANewSegmentation() {
-        BufferedImage source = CatalogPhotos.studio(300, 400, 240);
-        source.setRGB(150, 200, Color.RED.getRGB());
-        var frame = Map.of("ok", true, "crop", Map.of("x", 0.0, "y", 0.0, "w", 1.0, "h", 1.0));
-        BufferedImage result = CatalogPreviewRenderer.fabricFrom(CatalogPhotos.png(source), frame);
-        assertThat(result).isNotNull();
-        assertThat(result.getWidth()).isEqualTo(300); assertThat(result.getHeight()).isEqualTo(400);
-        assertThat(result.getRGB(150, 200) & 0xffffff).isEqualTo(Color.RED.getRGB() & 0xffffff);
-        assertThat(CatalogPreviewRenderer.fabricFrom(CatalogPhotos.png(source), Map.of("ok", false))).isNull();
+    void unverifiedEarlyCropCannotMasqueradeAsFabric() {
+        BufferedImage source=CatalogPhotos.studio(300,400,240);
+        assertThat(CatalogPreviewRenderer.fabricFrom(CatalogPhotos.png(source),Map.of("ok",true,"crop",Map.of("x",0,"y",0,"w",1,"h",1)))).isNull();
+    }
+    @Test
+    void fabricIsEntirelyInsideMaskEvenWhenCategoryCropIncludesBackground() {
+        BufferedImage source=new BufferedImage(300,400,BufferedImage.TYPE_INT_RGB),mask=new BufferedImage(300,400,BufferedImage.TYPE_INT_ARGB);
+        for(int y=0;y<400;y++)for(int x=0;x<300;x++) {source.setRGB(x,y,Color.WHITE.getRGB());if(x>60&&x<240&&y>70&&y<330) {source.setRGB(x,y,Color.BLUE.getRGB());mask.setRGB(x,y,Color.BLUE.getRGB());}}
+        BufferedImage out=CatalogPreviewRenderer.maskedFabric(source,mask,new NRect(0,0,1,1));assertThat(out).isNotNull();
+        for(int y=0;y<out.getHeight();y++)for(int x=0;x<out.getWidth();x++)assertThat(out.getRGB(x,y)&0xffffff).isEqualTo(Color.BLUE.getRGB()&0xffffff);
     }
 }

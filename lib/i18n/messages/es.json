@@ -7937,5 +7937,6 @@
   "scheme.improvement.field.season": "Estación",
   "scheme.improvement.field.mood": "Estado de ánimo",
   "scheme.improvement.field.visibility": "Visibilidad",
-  "scheme.improvement.instructionPlaceholder": "Haz el título más elegante y ajusta el estilo para una cena."
+  "scheme.improvement.instructionPlaceholder": "Haz el título más elegante y ajusta el estilo para una cena.",
+  "catalog.defaultIllustration": "Ilustración FAI predeterminada en el color de la prenda"
 }

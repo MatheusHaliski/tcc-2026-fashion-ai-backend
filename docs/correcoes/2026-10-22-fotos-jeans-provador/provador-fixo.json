@@ -1,0 +1,44 @@
+{
+  "scope": "Real /try-on with mocked API and reference avatar, WebGL enabled, not a production account test",
+  "before": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "mirror": false
+  },
+  "after": {
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "mirror": false
+  },
+  "results": [
+    {
+      "width": 1440,
+      "buttons": 4,
+      "mirror": false,
+      "walk": false
+    },
+    {
+      "width": 390,
+      "buttons": 4,
+      "mirror": false,
+      "walk": false
+    }
+  ],
+  "errors": []
+}

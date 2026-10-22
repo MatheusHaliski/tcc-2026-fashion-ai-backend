@@ -47,7 +47,7 @@ export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
 
 /** Garment category remains explicit throughout person/other-outfit isolation. */
 export function photoPart(kind: GarmentKind): OutfitPhotoPart {
-  if (kind === "dress" || kind === "jumpsuit" || kind === "romper" || kind === "coat") return "full";
+  if (kind === "dress" || kind === "jumpsuit" || kind === "romper") return "full";
   if (kind === "shoes" || kind === "boots") return "feet";
   if (["pants", "shorts", "bermuda", "culottes", "leggings", "skirt"].includes(kind)) return "lower";
   return "upper";
@@ -196,7 +196,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   return { meshes, dressed: ZONES.every((z) => covered.has(z)) };
 }
 
-const photoUrls = (p: Look3dPiece) => (p.catalogProductId ? [`/api/catalog/products/${encodeURIComponent(p.catalogProductId)}/texture-image`] : [p.studioUrl, p.imageUrl])
+export const photoUrls = (p: Look3dPiece) => (p.catalogProductId ? [`/api/catalog/products/${encodeURIComponent(p.catalogProductId)}/texture-image?isolated=true`, `/api/catalog/products/${encodeURIComponent(p.catalogProductId)}/texture-image`] : [p.studioUrl, p.imageUrl])
   .filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
 // Reusing an item in another look must not rerun segmentation. Failures remain retryable.
 const isolatedPhotos = new Map<string, Promise<Img | null>>();
@@ -213,7 +213,10 @@ function outfitPhoto(i: OutfitItem): Promise<Img | null> {
         const image = texture?.image as Img | undefined;
         if (!image) continue;
         // Trust only the exact bundled source that actually loaded; remote images still require isolation.
-        const prepared = isBundledGarmentPhoto(url) ? prepareGarmentPhoto(image) : await prepareOutfitPhoto(image, photoPart(i.spec.kind));
+        // This exact authenticated endpoint refuses raw photographs when isolation
+        // is unavailable. Do not segment its verified pixels a second time.
+        const isolated = !!i.piece.catalogProductId && url.endsWith("/texture-image?isolated=true");
+        const prepared = isBundledGarmentPhoto(url) || isolated ? prepareGarmentPhoto(image) : await prepareOutfitPhoto(image, photoPart(i.spec.kind));
         if (prepared) return prepared;
       } catch { /* Try the processed alternative, without projecting an unchecked image. */ }
       finally { if (temporary) URL.revokeObjectURL(temporary); }

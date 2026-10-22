@@ -203,6 +203,7 @@ export function specFor(p: FitPiece): GarmentSpec | null {
     if (!sp.placket) sp.placketLength = undefined;
   }
   sp.fabric = (p.material ?? first(p, "MATERIAL"))?.toUpperCase() ?? undefined;
+  if (["jeans", "denim_shorts"].includes(sub) && (!sp.fabric || ["COTTON", "DENIM"].includes(sp.fabric))) sp.weave = "denim";
   sp.ease = clamp(sp.ease, 0.0015, 0.05);
   return sp;
 }

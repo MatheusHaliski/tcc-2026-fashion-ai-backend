@@ -10,7 +10,6 @@ import { render as renderDOM, waitFor } from "@testing-library/react";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import { I18nProvider } from "@/lib/i18n/i18n";
-import {type FittingWalkApi} from "@/lib/scene3d/fitting-walk";
 import type { FittingCameraApi, OrbitLimitState } from "@/lib/scene3d/orbit-steps";
 
 const canvasCapture = vi.hoisted(() => ({ enabled: false, children: null as ReactNode }));
@@ -166,12 +165,12 @@ describe("cenas 3D", () => {
       await frames(r, 2);
       const byName = (n: string) => r.scene.instance.getObjectByName(n);
       for (const n of ["studio-front-wall", "studio-back-wall", "studio-side-wall-left", "studio-side-wall-right", "studio-cabin-entrance", "studio-cabin-door", "studio-cabin-sign", "studio-cabin-art",
-        "studio-cabin-bench", "studio-corner-plant", "studio-pouf", "studio-rug", "studio-ceiling-spots", "studio-full-height-mirror", "studio-bench-and-hangers"]) expect(byName(n), n).toBeTruthy();
+        "studio-cabin-bench", "studio-corner-plant", "studio-pouf", "studio-rug", "studio-ceiling-spots", "studio-bench-and-hangers"]) expect(byName(n), n).toBeTruthy();
       expect(byName("studio-front-wall")!.visible, `${view}: parede da frente`).toBe(front);
       expect(byName("studio-back-wall")!.visible, `${view}: parede do fundo`).toBe(back);
       expect(byName("studio-side-wall-left")!.visible).toBe(true);
       expect(byName("studio-side-wall-right")!.visible).toBe(view !== "profile");
-      expect(byName("studio-full-height-mirror")!.visible).toBe(view !== "profile");
+      expect(byName("studio-full-height-mirror")).toBeUndefined();
       expect(byName("studio-rug")!.visible).toBe(true);
       // enfeite não projeta sombra (só o avatar): a cabine não pesa no mapa de sombras
       byName("conceptual-fitting-studio")!.traverse((o) => { if ((o as THREE.Mesh).isMesh) expect((o as THREE.Mesh).castShadow, o.name).toBe(false); });
@@ -206,15 +205,18 @@ describe("cenas 3D", () => {
     expect(api).toBeNull();
   }, 20000);
 
-  it("provador: espelho enquadra o corpo refletido e ignora a órbita externa", async()=>{
-    await serveBodyAsset();let walk:FittingWalkApi|null=null,cameraApi:FittingCameraApi|null=null;
-    const r=await mountFitting({onWalk:a=>{walk=a;},onCamera:a=>{cameraApi=a;}},<CameraProbe/>);
-    await frames(r,2);walk!.to("mirror");await frames(r,400);
-    const cam=probe.camera as THREE.PerspectiveCamera;
-    expect(cam.fov).toBeGreaterThanOrEqual(48);
-    const mirror=r.scene.findByProps({name:"studio-full-height-mirror"}).instance;expect(mirror.visible).toBe(true);
-    const before=cam.position.clone();cameraApi!.step("left");await frames(r,20);
-    expect(cam.position.distanceTo(before)).toBeLessThan(.01);
+  it("provador: avatar fixo, sem espelho, com rotação e zoom da câmera", async()=>{
+    await serveBodyAsset();let cameraApi:FittingCameraApi|null=null;
+    const r=await mountFitting({onCamera:a=>{cameraApi=a;}},<CameraProbe/>);
+    await frames(r,2);
+    expect(r.scene.findAllByProps({name:"studio-full-height-mirror"})).toHaveLength(0);
+    const actor=r.scene.findByProps({name:"fitting-avatar"}).instance;
+    const at=actor.position.clone(),cam=probe.camera as THREE.PerspectiveCamera,before=cam.position.clone();
+    window.dispatchEvent(new KeyboardEvent("keydown",{code:"KeyW"}));await frames(r,120);
+    window.dispatchEvent(new KeyboardEvent("keyup",{code:"KeyW"}));
+    expect(actor.position.distanceTo(at)).toBe(0);
+    cameraApi!.step("left");await frames(r,30);expect(cam.position.distanceTo(before)).toBeGreaterThan(.1);
+    const distance=cam.position.length();cameraApi!.step("in");await frames(r,30);expect(cam.position.length()).toBeLessThan(distance);
     await r.unmount();
   },20000);
 

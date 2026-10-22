@@ -2,7 +2,6 @@
 
 import { FaiIcon } from "@/components/fai-icon";
 import { Button, Chip, SegmentPicker } from "@/components/ui";
-import type { AvatarView } from "@/components/three/avatar-viewer";
 import { useI18n } from "@/lib/i18n/i18n";
 import type {
   EnvironmentMode,
@@ -14,8 +13,6 @@ import { toDatabaseTipoLook, type Sex } from "@/lib/tryon/fitting-room-model";
 export interface FittingControlsProps {
   sex: Sex;
   onSexChange: (sex: Sex) => void;
-  view: AvatarView;
-  onViewChange: (view: AvatarView) => void;
   light: LightMode;
   onLightChange: (light: LightMode) => void;
   mode: EnvironmentMode;
@@ -32,8 +29,6 @@ export interface FittingControlsProps {
 export function FittingControls({
   sex,
   onSexChange,
-  view,
-  onViewChange,
   light,
   onLightChange,
   mode,
@@ -71,21 +66,6 @@ export function FittingControls({
           >
             {t("tryOn.look_tipo", { sex })}
           </span>
-        </div>
-
-        <div className="fitting-control-group">
-          <p className="label">{t("tryOn.vista")}</p>
-          <SegmentPicker
-            label={t("tryOn.vista")}
-            value={view}
-            onChange={onViewChange}
-            options={[
-              { id: "front", label: t("tryOn.vista_frente") },
-              { id: "right34", label: t("tryOn.vista_tres_quartos") },
-              { id: "profile", label: t("tryOn.vista_perfil") },
-              { id: "back", label: t("tryOn.vista_costas") },
-            ]}
-          />
         </div>
 
         <div className="fitting-control-group">

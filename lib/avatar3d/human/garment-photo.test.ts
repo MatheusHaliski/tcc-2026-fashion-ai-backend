@@ -179,3 +179,14 @@ describe("foto recortada com vazios e com mais de uma peça (catálogo com model
     expect(data[(90 * width + 30) * 4 + 3]).toBe(255);
   });
 });
+
+it("retains broad plaid on jacket fabric panels instead of reducing it to a wash gradient", () => {
+  const width = 640, height = 960, data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 40; y < 900; y++) for (let x = 40; x < 600; x++) {
+    const rgb = x % 72 < 20 ? [35, 70, 110] : y % 80 < 24 ? [100, 150, 190] : [230, 225, 215];
+    data.set([...rgb, 255], (y * width + x) * 4);
+  }
+  // Each torso half must provide its own evidence; broad checks need more than
+  // the old 78-pixel window, which could not detect a 72/80-pixel repeat.
+  expect(fabricTile({ width, height, data }, { fromX: 40, toX: 320 })).toMatchObject({ width: 72, height: 80 });
+});

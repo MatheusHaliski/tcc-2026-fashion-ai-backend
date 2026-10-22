@@ -18,7 +18,7 @@ export function AiCompositionCard({ title, items, why, slotLabel, onApply, score
   const { t } = useI18n();
   const palette = items.map((it) => it.piece?.colorHex).filter((c): c is string => !!c && /^#[0-9a-f]{6}$/i.test(c));
   return (
-    <button type="button" className="surface grid content-start gap-2 p-3 text-left hover:bg-surface-2" onClick={onApply} aria-label={t("schemeBuilder.usar_conjunto", { title })}>
+    <button type="button" className="surface grid content-start gap-2 p-3 text-left" onClick={onApply} aria-label={t("schemeBuilder.usar_conjunto", { title })}>
       <div className="flex items-start justify-between gap-2">
         <p className="type-h3 min-w-0">{title}</p>
         {palette.length > 0 && <span className="flex shrink-0 items-center -space-x-1" aria-hidden>{palette.map((c, i) => <i key={i} className="inline-block h-4 w-4 rounded-full border border-line-soft" style={{ background: c }} />)}</span>}

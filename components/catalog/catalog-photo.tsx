@@ -6,6 +6,7 @@ import { cn } from "@/components/ui";
 import { tr } from "@/lib/i18n/i18n";
 import { mediaUrl } from "@/lib/api/client";
 import { catalogWholeFrame, type PhotoFraming } from "@/lib/photo-framing";
+import { DefaultGarmentPhoto } from "./default-garment-photo";
 import { WholeFramePhoto } from "@/components/catalog/whole-frame-photo";
 
 /** Only ratios emitted by the image pipeline; malformed/legacy metadata keeps the portrait frame. */
@@ -52,8 +53,8 @@ export function pieceCatalogCrop(p: PieceView): CatalogCardImage | null {
  * tenta a seguinte da lista — `fallbackUrl`, depois `alternatives` (ex.: a foto original da marca) — e só então o
  * `placeholder` (a ilustração da categoria).
  */
-export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className, requiredFrame = false, framing = "FABRIC", onRetry }: {
-  onRetry?: () => void;
+export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className, requiredFrame = false, framing = "FABRIC", onRetry, category, subcategory, color, colorHex }: {
+  onRetry?: () => void; category?: string | null; subcategory?: string | null; color?: string | null; colorHex?: string | null;
   requiredFrame?: boolean; image?: CatalogCardImage | null; fallbackUrl?: string | null; alternatives?: (string | null | undefined)[]; placeholder?: ReactNode; alt: string; className?: string;
   /** WHOLE = Total frame: a peça inteira no quadro (nunca o recorte de tecido); sem a caixa da peça, a foto original inteira contida */
   framing?: PhotoFraming;
@@ -72,8 +73,10 @@ export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, al
   const [wholeFailed, setWholeFailed] = useState(false);
   useEffect(() => { setFailed(0); setWholeFailed(false); }, [key]);
   const fail = () => setFailed((n) => n + 1);
+  const defaultPhoto = placeholder ?? <DefaultGarmentPhoto category={category ?? image?.photoSet?.category} subcategory={subcategory ?? image?.photoSet?.subcategory} color={color ?? image?.photoSet?.color} colorHex={colorHex} framing={framing} alt={alt}/>;
+  if(image?.mode === "DEFAULT") return <>{defaultPhoto}</>;
   if (whole && !wholeFailed) return <WholeFramePhoto frame={whole} alt={alt} className={className} onFail={() => setWholeFailed(true)} />;
-  if (requiredFrame && !wholeMode && (!image || failed > 0 || image.mode === "SEMANTIC_CROP" && !crop)) return <span role="alert" className="type-caption text-muted p-4">{tr("catalog.framingRequiredError")} <button type="button" className="btn btn-sm mt-2" onClick={() => { setFailed(0); setWholeFailed(false); onRetry?.(); }}>{tr("common.retry")}</button></span>;
+  if (requiredFrame && (framing === "WHOLE" && (!whole || wholeFailed) || framing === "FABRIC" && (!image || failed > 0 || image.mode === "SEMANTIC_CROP" && !crop))) return <span className="catalog-default-fallback">{defaultPhoto}{onRetry&&<button type="button" className="btn btn-sm catalog-photo-retry" onClick={() => { setFailed(0); setWholeFailed(false); onRetry(); }}>{tr("common.retry")}</button>}</span>;
   if (crop && failed === 0) {
     return (
       <span className={cn("catalog-photo is-cropped", className)} style={{ background: crop.background ?? undefined }} data-mode="semantic-crop">
@@ -86,7 +89,7 @@ export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, al
   const processed = !wholeMode && src === mediaUrl(image?.url) && image?.mode === "PROCESSED";
   return (
     <span className={cn("catalog-photo", processed ? "is-processed" : "is-contained", wholeMode && "is-whole-fallback", className)} data-mode={processed ? "processed" : wholeMode ? "whole-original" : "original"}>
-      <img key={src} src={mediaUrl(src)} alt={alt} loading="lazy" onError={fail} />
+      <img key={src} style={processed && framing === "FABRIC" ? {objectFit:"cover"} : undefined} src={mediaUrl(src)} alt={alt} loading="lazy" onError={fail} />
     </span>
   );
 }

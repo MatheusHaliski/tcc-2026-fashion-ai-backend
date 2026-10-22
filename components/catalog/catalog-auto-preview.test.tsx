@@ -4,7 +4,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { catalogApi, type CatalogProduct } from "@/lib/api/catalog";
 import { ApiError } from "@/lib/api/client";
 import { useCatalogPreview } from "./use-catalog-preview";
-const previewCache = { version: "CATALOG_PREVIEW_FRAMES_V1", status: "READY", persisted: true };
+const previewCache = { version: "CATALOG_PREVIEW_FRAMES_V2", status: "READY", persisted: true };
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 it("frames on display without selection and deduplicates concurrent cards", async () => {

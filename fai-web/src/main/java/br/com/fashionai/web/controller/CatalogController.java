@@ -97,8 +97,8 @@ public class CatalogController {
     }
 
     @GetMapping("/api/catalog/products/{id}/texture-image")
-    public ResponseEntity<byte[]> textureImage(CurrentUser user, @PathVariable UUID id) {
-        var photo = imagePipeline.texturePhoto(user, id);
+    public ResponseEntity<byte[]> textureImage(CurrentUser user, @PathVariable UUID id, @RequestParam(defaultValue = "false") boolean isolated) {
+        var photo = imagePipeline.texturePhoto(user, id, isolated);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(photo.mime()))
                 .header("Cache-Control", "private, max-age=300").header("X-Content-Type-Options", "nosniff").body(photo.bytes());
     }

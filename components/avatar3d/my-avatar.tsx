@@ -379,8 +379,8 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
       </div>
       <Card>
         <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-          {built && texture ? <FittingRoomScene avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view="front" body={body?.params} pieces={[]} environment={{ kind: "neutral", featured: NEUTRAL_ENVIRONMENT, others: [], brands: [] }} scene={null} light="daylight" walkable={false} onHuman={(p) => { onPreviewHuman(built, p); setTextureEyes(p.eyes ?? null); }} />
-            : showingSaved ? <FittingRoomScene avatar={{ model: saved.model!, adjust, textureUrl: saved.textureUrl }} sex={saved.model!.sex ?? sex} view="front" body={body?.params} pieces={[]} environment={{ kind: "neutral", featured: NEUTRAL_ENVIRONMENT, others: [], brands: [] }} scene={null} light="daylight" walkable={false} onHuman={(p) => setTextureEyes(p.eyes ?? null)} />
+          {built && texture ? <FittingRoomScene avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view="front" body={body?.params} pieces={[]} environment={{ kind: "neutral", featured: NEUTRAL_ENVIRONMENT, others: [], brands: [] }} scene={null} light="daylight" onHuman={(p) => { onPreviewHuman(built, p); setTextureEyes(p.eyes ?? null); }} />
+            : showingSaved ? <FittingRoomScene avatar={{ model: saved.model!, adjust, textureUrl: saved.textureUrl }} sex={saved.model!.sex ?? sex} view="front" body={body?.params} pieces={[]} environment={{ kind: "neutral", featured: NEUTRAL_ENVIRONMENT, others: [], brands: [] }} scene={null} light="daylight" onHuman={(p) => setTextureEyes(p.eyes ?? null)} />
             : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
         </div>
       </Card>

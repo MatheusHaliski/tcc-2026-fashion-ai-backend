@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   // Os assets de /public (chrome, auras, peças padrão, ícones) são servidos como estáticos; o backend serve /media.
   images: { formats: ["image/avif", "image/webp"], deviceSizes: [390, 640, 820, 1024, 1440], imageSizes: [40, 80, 160, 256, 320] },
   poweredByHeader: false,
+  outputFileTracingIncludes: { "/api/catalog/default-asset": ["./public/_derived/pecas_thumb/*.webp", "./public/_derived/pecas_default/*.svg"] },
   // Next 16 gera AGENTS.md/CLAUDE.md na raiz a cada `next dev`; o projeto não versiona esses arquivos gerados
   agentRules: false,
   // OWASP A05 — cabeçalhos em todas as respostas (a CSP com nonce vem do middleware.ts, por requisição)

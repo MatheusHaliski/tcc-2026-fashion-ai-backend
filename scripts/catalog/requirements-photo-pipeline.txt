@@ -1,0 +1,2 @@
+-r requirements-photo-tests.txt
+-r requirements-whole.txt

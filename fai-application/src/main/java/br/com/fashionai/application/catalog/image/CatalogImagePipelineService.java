@@ -167,6 +167,11 @@ public class CatalogImagePipelineService {
 
     /** Authenticated transport for the approved original, not the display fabric crop or an arbitrary URL. */
     public TexturePhoto texturePhoto(CurrentUser user, UUID productId) {
+        return texturePhoto(user, productId, false);
+    }
+
+    /** isolated=true never falls back to an unsegmented catalogue/model photograph. */
+    public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated) {
         guard.requireCanCreate(user);
         CatalogProduct product = products.findById(productId).orElseThrow(() -> ApiException.notFound("catalog product"));
         if (product.getIngestionStatus() == br.com.fashionai.domain.model.enums.CatalogIngestionStatus.REJECTED)
@@ -174,6 +179,13 @@ public class CatalogImagePipelineService {
         CatalogImage selected = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
                 .filter(i -> i.isCanonical() && "APPROVED".equals(i.getProcessingStatus()) && i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
                 .findFirst().orElseThrow(() -> ApiException.notFound("catalog image"));
+        Map<String,Object> cleaned=photoSet(selected,product);
+        if("DEFAULT".equals(cleaned.get("status"))) throw new ApiException(422,"CATALOG_PHOTO_DEFAULT_ONLY","A peça usa uma ilustração padrão.");
+        if("READY".equals(cleaned.get("status")) && allowsPersistence(product,selected)) {
+            Optional<String> key=storage.keyOf((String)cleaned.get("wholeUrl"));
+            if(key.isPresent()) { byte[] data=storage.get(key.get()); return new TexturePhoto(data,ImageOps.requireAcceptedImage(data)); }
+        }
+        if (isolated) throw new ApiException(422,"CATALOG_ISOLATED_PHOTO_UNAVAILABLE","Foto isolada ainda não disponível.");
         if (allowsPersistence(product, selected) && currentPreview(product, selected, true)
                 && previewAssets(selected).get("whole") instanceof Map<?, ?> whole && whole.get("url") instanceof String url) {
             try {
@@ -200,7 +212,9 @@ public class CatalogImagePipelineService {
                     .filter(i -> i.isCanonical() && i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
                     .anyMatch(i -> currentPreview(product, i, allowsPersistence(product, i))
                             && "READY".equals(previewAssets(i).get("status")));
-            if (ready && !force) return;
+            boolean cleaned=images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream().filter(CatalogImage::isCanonical)
+                .map(i -> photoSet(i,product)).anyMatch(m -> "READY".equals(m.get("status")) || "DEFAULT".equals(m.get("status")));
+            if ((ready || cleaned) && !force) return;
             if (!previewCapacity.tryAcquire()) throw new ApiException(429, "CATALOG_PREVIEW_BUSY", "Enquadramento em andamento. Tente novamente.");
             try { verifySelection(user, productId); } finally { previewCapacity.release(); }
         }
@@ -262,7 +276,7 @@ public class CatalogImagePipelineService {
         throw new ApiException(422, "CATEGORY_FRAME_UNAVAILABLE", "As fotos disponíveis não permitem o enquadramento desta categoria. Escolha outra foto ou use sua própria foto.");
     }
 
-    public static final String PREVIEW_CACHE_VERSION = "CATALOG_PREVIEW_FRAMES_V1";
+    public static final String PREVIEW_CACHE_VERSION = "CATALOG_PREVIEW_FRAMES_V2";
 
     private static String previewContext(CatalogProduct product, CatalogImage image, boolean persist) {
         return CatalogImagePipeline.sha256(String.join("\n", PREVIEW_CACHE_VERSION, CatalogImagePipeline.VERSION,
@@ -328,6 +342,11 @@ public class CatalogImagePipelineService {
             preview.put("wholeStatus", "REFERENCE_ONLY");
         }
         Map<String, Object> assets = image.getAssetsJson() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(Json.map(image.getAssetsJson()));
+        // A successful explicit retry may replace a prior DEFAULT-only verdict.
+        // Keep it on errors or partial frames; only two persisted masked views qualify.
+        if (persist && preview.get("whole") instanceof Map<?, ?> whole && Boolean.TRUE.equals(whole.get("rendered"))
+                && assets.get("photoSet") instanceof Map<?, ?> previous && "DEFAULT".equals(previous.get("status")))
+            assets.remove("photoSet");
         assets.put("previewFrames", preview); image.setAssetsJson(Json.write(assets));
     }
 
@@ -723,8 +742,30 @@ public class CatalogImagePipelineService {
         return m;
     }
 
+    @SuppressWarnings("unchecked")
+    static Map<String,Object> photoSet(CatalogImage image, CatalogProduct product) {
+        if(image==null || product==null || image.getAssetsJson()==null || image.getUsageStatus()==CatalogImageUsage.REJECTED || "REJECTED".equals(image.getReviewStatus())) return Map.of();
+        Object raw=Json.map(image.getAssetsJson()).get("photoSet");
+        if(!(raw instanceof Map<?,?> m) || !"CATALOG_PHOTO_SET_V1".equals(m.get("version"))
+          || !Objects.equals(image.getImageUrl(),m.get("sourceUrl")) || !Objects.equals(image.getSourceSha256(),m.get("sourceSha256"))
+          || !Objects.equals(product.getCategory(),m.get("category")) || !Objects.equals(product.getSubcategory(),m.get("subcategory"))
+          || !Objects.equals(product.getColor(),m.get("color")) || !(m.get("defaultAssetUrl") instanceof String url) || !url.startsWith("/api/catalog/default-asset?")) return Map.of();
+        if("READY".equals(m.get("status")) && (!(m.get("wholeUrl") instanceof String) || !(m.get("fabricUrl") instanceof String))) return Map.of();
+        return (Map<String,Object>)m;
+    }
+
     /** Product edits invalidate the old derivative without downloading any photograph on a list/read request. */
     public static Map<String, Object> cardImage(CatalogImage canonical, CatalogProduct product) {
+        Map<String, Object> photo = photoSet(canonical, product);
+        if (!photo.isEmpty() && ("READY".equals(photo.get("status")) || "DEFAULT".equals(photo.get("status")))) {
+            Map<String, Object> card = new LinkedHashMap<>();
+            card.put("url", "READY".equals(photo.get("status")) ? photo.get("fabricUrl") : photo.get("defaultAssetUrl"));
+            card.put("mode", "READY".equals(photo.get("status")) ? "PROCESSED" : "DEFAULT");
+            card.put("sourceUrl", canonical.getImageUrl()); card.put("photoSet", photo); card.put("defaultAssetUrl", photo.get("defaultAssetUrl"));
+            card.put("aspect", "3:4"); card.put("imageId", canonical.getId());
+            if ("READY".equals(photo.get("status"))) card.put("whole", Map.of("url",photo.get("wholeUrl"),"box",Map.of("x",0,"y",0,"w",1,"h",1),"rendered",true,"processed",true,"version","CATALOG_PHOTO_SET_V1"));
+            return card;
+        }
         Map<String, Object> preview = previewAssets(canonical);
         if (!preview.isEmpty() && !currentPreview(product, canonical, Boolean.TRUE.equals(preview.get("persisted")))) return null;
         return cardImage(canonical);

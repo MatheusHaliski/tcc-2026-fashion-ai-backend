@@ -37,7 +37,7 @@ describe("botões de girar o palco 3D do provador (acessibilidade)", () => {
     const { api } = fakeApi();
     ui(<FittingOrbitButtons api={api} />);
     const group = screen.getByRole("group", { name: "Girar e aproximar a cena" });
-    const names: [string, string][] = [["Girar para a esquerda", "left"], ["Girar para a direita", "right"], ["Aproximar", "in"], ["Afastar", "out"], ["Voltar à frente", "front"]];
+    const names: [string, string][] = [["Girar para a esquerda", "left"], ["Girar para a direita", "right"], ["Aproximar", "in"], ["Afastar", "out"]];
     for (const [name, action] of names) {
       const button = within(group).getByRole("button", { name });
       expect(button.tagName).toBe("BUTTON"); expect(button.getAttribute("type")).toBe("button");
@@ -45,7 +45,7 @@ describe("botões de girar o palco 3D do provador (acessibilidade)", () => {
       fireEvent.click(button);
       expect(api.step).toHaveBeenLastCalledWith(action);
     }
-    expect(api.step).toHaveBeenCalledTimes(5);
+    expect(api.step).toHaveBeenCalledTimes(4);
     // alcançáveis pelo teclado (sem tabindex negativo)
     const left = screen.getByRole("button", { name: "Girar para a esquerda" }); left.focus();
     expect(document.activeElement).toBe(left);

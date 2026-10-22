@@ -8,6 +8,7 @@ import type { PieceView, SchemeView } from "@/lib/api/types";
 import type { CatalogCardImage } from "@/lib/api/catalog";
 import { MediaImage } from "@/components/media-image";
 import { Price } from "@/components/price";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, photoAspect } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
@@ -228,6 +229,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const product: Slide = p.studioImageUrl
     ? { key: "product", src: mediaUrl(p.studioImageUrl)!, alt: t("pieces.id.estudio", { name: p.name }), caption: t("pieceDetail.slide_produto"), fit: "contain", alternatives: [p.imageUrl, p.thumbnailUrl, pieceCatalogSource(p)], backdrop: { center: backdropCenter(backdrops, p.studioBackdrop), edge } }
     : { key: "product", src: (mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl))!, alt: p.name, caption: t("pieceDetail.slide_produto"), fit: "contain", alternatives: [p.thumbnailUrl, p.imageUrl, pieceCatalogSource(p)], crop: pieceCatalogCrop(p) };
+  if(p.defaultImage) { product.src=defaultGarmentUrl(p.category,p.subcategory,p.colorHex,p.color,"WHOLE"); product.crop=null; product.alternatives=[]; }
   const slides: Slide[] = [product, ...(p.mannequinImageUrl ? [{ key: "mannequin", src: mediaUrl(p.mannequinImageUrl)!, alt: t("pieces.id.no_manequim", { name: p.name, value: "" }), caption: t("pieceDetail.slide_manequim"), fit: "contain" as const }] : [])];
   // tela cheia: as fotos do carrossel e, só quando há logo de marca de verdade, o detalhe do logo
   const gallery = [

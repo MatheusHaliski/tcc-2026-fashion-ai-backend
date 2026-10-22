@@ -1,0 +1,17 @@
+# Dedicated background service; uses the same MySQL/storage configuration as the API.
+services:
+  catalog-photos:
+    build:
+      context: ../..
+      dockerfile: services/catalog_photos/Dockerfile
+    restart: unless-stopped
+    env_file: ../../.env
+    environment:
+      U2NET_HOME: /home/worker/.u2net
+      OMP_NUM_THREADS: '2'
+    volumes:
+      - models:/home/worker/.u2net
+      - audit:/app/work
+volumes:
+  models:
+  audit:

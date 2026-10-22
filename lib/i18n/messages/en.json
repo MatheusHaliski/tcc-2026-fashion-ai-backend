@@ -7937,5 +7937,6 @@
   "scheme.improvement.field.season": "Season",
   "scheme.improvement.field.mood": "Mood",
   "scheme.improvement.field.visibility": "Visibility",
-  "scheme.improvement.instructionPlaceholder": "Make the title more elegant and adjust the style for dinner."
+  "scheme.improvement.instructionPlaceholder": "Make the title more elegant and adjust the style for dinner.",
+  "catalog.defaultIllustration": "Default FAI illustration in the garment colour"
 }

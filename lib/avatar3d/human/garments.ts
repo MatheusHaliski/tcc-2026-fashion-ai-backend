@@ -21,6 +21,7 @@ import { silhouetteLandmarks, separatedLegRows, landmarkProjection, type Garment
  * A geometria é pura (testável em node); a textura precisa de canvas (navegador).
  */
 import * as THREE from "three";
+import { installDenimWeave } from "./denim-weave";
 import { fabricRows, fabricTile, medoid } from "./garment-photo";
 import { baseNormals } from "./three-human";
 import type { BodyAsset } from "./asset";
@@ -33,6 +34,7 @@ export type GarmentKind =
 export interface GarmentSpec {
   kind: GarmentKind;
   construction?: "cargo";
+  weave?: "denim"; // approximate textile relief, independent from the product photograph
   frontOpening?: number; // centre-front half-gap in metres (open cardigan/kimono)
   sleeveEase?: number;   // extra radial sleeve allowance
   hemFlare?: number;     // lower-torso expansion (estimated peplum)
@@ -1013,7 +1015,9 @@ export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.Mesh
         diffuseColor *= mix(garmentFabric, garmentPhoto, clamp(vGarmentPhotoWeight, 0.0, 1.0));
       #endif`);
   };
-  m.customProgramCacheKey = () => "garment-fabric-blend-v1";
+  const compile = m.onBeforeCompile;
+  if (sp.weave === "denim" || sp.fabric === "DENIM") m.onBeforeCompile = (shader, renderer) => { compile.call(m, shader, renderer); installDenimWeave(shader); };
+  m.customProgramCacheKey = () => `garment-fabric-blend-v2-${sp.weave === "denim" || sp.fabric === "DENIM" ? "denim" : "plain"}`;
   return m;
 }
 

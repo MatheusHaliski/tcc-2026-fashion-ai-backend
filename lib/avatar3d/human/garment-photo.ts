@@ -12,9 +12,13 @@ export function fabricTile(raster: GarmentRaster, range: { fromX?: number; toX?:
   for (let y = 0; y < h; y++) for (let x = startX; x < endX; x++) if (data[(y * w + x) * 4 + 3] > 240) {
     x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
   }
-  const size = Math.min(128, Math.floor((x1 - x0) * 0.28), Math.floor((y1 - y0) * 0.25));
-  if (size < 24) return null;
-  for (const fy of [0.56, 0.72]) for (const fx of [0.22, 0.6]) {
+  // A small window cannot contain two repeats of broad plaid. Try a larger
+  // torso-only window before falling back to wash colours; never tile the whole photo.
+  const sizes = [...new Set([
+    Math.min(128, Math.floor((x1 - x0) * .28), Math.floor((y1 - y0) * .25)),
+    Math.min(256, Math.floor((x1 - x0) * .85), Math.floor((y1 - y0) * .4)),
+  ])].filter(size => size >= 24);
+  for (const size of sizes) for (const fy of [0.56, 0.72]) for (const fx of [0.22, 0.6]) {
     const py = Math.round(y0 + (y1 - y0) * fy);
     // Flat-lay sleeves widen the global bounds. Sample the actual torso row,
     // otherwise every candidate straddles its transparent sides.
@@ -50,7 +54,7 @@ export function fabricTile(raster: GarmentRaster, range: { fromX?: number; toX?:
         errors[lag] = error / n;
       }
       for (let lag = 4; lag <= Math.floor(size / 2); lag++) {
-        if (errors[lag] < variance * 0.22 && errors[lag] + variance * 0.02 < Math.min(errors[lag - 1], errors[lag + 1])) return lag;
+        if (errors[lag] < variance * 0.22 && errors[lag] + variance * 0.002 < Math.min(errors[lag - 1], errors[lag + 1])) return lag;
       }
       // Stripes repeat in one direction and are constant in the other. A plain
       // axis is not itself evidence of a pattern: require a real period on its mate.

@@ -43,11 +43,12 @@ const queue: (() => Promise<void>)[] = [];
 let active = 0;
 export function hasUsableCatalogPreview(product: PreviewFields) {
   const image = product.catalogImage;
-  return !!image?.url && (image.mode === "PROCESSED" || (image?.mode === "SEMANTIC_CROP" && !!image.crop));
+  return !!image?.url && (image.mode === "DEFAULT" || image.mode === "PROCESSED" || (image?.mode === "SEMANTIC_CROP" && !!image.crop));
 }
 function hasCachedPreview(product: PreviewFields) {
   const state = product.catalogImage?.previewCache;
-  return hasUsableCatalogPreview(product) && state?.version === "CATALOG_PREVIEW_FRAMES_V1" && state.status === "READY";
+  if(product.catalogImage?.photoSet?.version === "CATALOG_PHOTO_SET_V1" && ["READY","DEFAULT"].includes(product.catalogImage.photoSet.status)) return hasUsableCatalogPreview(product);
+  return hasUsableCatalogPreview(product) && state?.version === "CATALOG_PREVIEW_FRAMES_V2" && state.status === "READY";
 }
 
 function drain() {

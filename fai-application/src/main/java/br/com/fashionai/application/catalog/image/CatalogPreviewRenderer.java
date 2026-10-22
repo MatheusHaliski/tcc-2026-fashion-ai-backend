@@ -11,7 +11,7 @@ import java.util.Map;
 
 /** Two immutable display derivatives from one analysis. Does not run AI or segmentation again. */
 public final class CatalogPreviewRenderer {
-    public static final String VERSION = "CATALOG_PREVIEW_FRAMES_V1";
+    public static final String VERSION = "CATALOG_PREVIEW_FRAMES_V2";
     private static final int MAX_WIDTH = 900;
     private static final double ASPECT = 3.0 / 4;
 
@@ -22,7 +22,7 @@ public final class CatalogPreviewRenderer {
 
     static Frames render(BufferedImage source, ProductSegmenter.Segmentation seg, BufferedImage product,
                          ProductRuleFrame.Result frame, double sourceHuman, boolean detailView) {
-        BufferedImage fabric = frame.ok() ? renderFabric(source, frame.crop(), frame.background()) : null;
+        BufferedImage fabric = frame.ok() ? maskedFabric(source, product, frame.crop()) : null;
         if (detailView) return withoutWhole(fabric, "DETAIL_SOURCE");
         if (!frame.ok()) return withoutWhole(fabric, "INVALID_PRODUCT_FRAME");
         if (frame.model() || !Double.isFinite(sourceHuman) || sourceHuman >= ProductRuleFrame.MIN_PERSON_SKIN)
@@ -60,17 +60,37 @@ public final class CatalogPreviewRenderer {
         return new Frames(fabric, null, Map.of(), reason);
     }
 
-    /** Early analyses can have a validated frame but no retained product mask. No second segmentation is needed. */
-    public static BufferedImage fabricFrom(byte[] source, Map<?, ?> productFrame) {
-        if (!Boolean.TRUE.equals(productFrame.get("ok")) || !(productFrame.get("crop") instanceof Map<?, ?> crop)) return null;
-        try {
-            NRect rect = new NRect(number(crop.get("x")), number(crop.get("y")), number(crop.get("w")), number(crop.get("h")));
-            return renderFabric(ImageOps.decode(source), rect, productFrame.get("background") instanceof String bg ? bg : null);
-        } catch (RuntimeException e) { return null; }
+    /** A crop without its segmentation mask is not proof of fabric coverage. */
+    public static BufferedImage fabricFrom(byte[] source, Map<?, ?> productFrame) { return null; }
+
+    /** Largest exact 3:4 rectangle within the selected mask and category ROI, with no background padding. */
+    static BufferedImage maskedFabric(BufferedImage source, BufferedImage product, NRect roi) {
+        if (product == null || !valid(roi)) return null;
+        int w=product.getWidth(), h=product.getHeight(), stride=w+1;
+        int[] sum=new int[(w+1)*(h+1)];
+        for(int y=0;y<h;y++) { int row=0; for(int x=0;x<w;x++) {
+            boolean opaque=x>0 && y>0 && x+1<w && y+1<h;
+            for(int dy=-1;opaque && dy<=1;dy++) for(int dx=-1;dx<=1;dx++) if((product.getRGB(x+dx,y+dy)>>>24)<248) {opaque=false;break;}
+            if(opaque) row++; sum[(y+1)*stride+x+1]=sum[y*stride+x+1]+row;
+        }}
+        int x0=Math.max(0,(int)Math.ceil(roi.x()*w)), y0=Math.max(0,(int)Math.ceil(roi.y()*h));
+        int x1=Math.min(w,(int)Math.floor(roi.x2()*w)), y1=Math.min(h,(int)Math.floor(roi.y2()*h));
+        int lo=1,hi=Math.min((x1-x0)/3,(y1-y0)/4),bx=-1,by=-1,bunit=0;
+        while(lo<=hi) { int unit=(lo+hi)/2,rw=unit*3,rh=unit*4,fx=-1,fy=-1;double best=Double.POSITIVE_INFINITY;
+            for(int y=y0;y+rh<=y1;y++) for(int x=x0;x+rw<=x1;x++) {
+                int area=sum[(y+rh)*stride+x+rw]-sum[y*stride+x+rw]-sum[(y+rh)*stride+x]+sum[y*stride+x];
+                if(area!=rw*rh) continue;
+                double d=Math.pow(x+rw/2.0-(x0+x1)/2.0,2)+Math.pow(y+rh/2.0-(y0+y1)/2.0,2);
+                if(d<best) {best=d;fx=x;fy=y;}
+            }
+            if(fx>=0) {bx=fx;by=fy;bunit=unit;lo=unit+1;}else hi=unit-1;
+        }
+        if(bunit<8) return null;
+        return renderFabric(source,new NRect(bx/(double)w,by/(double)h,bunit*3.0/w,bunit*4.0/h),null);
     }
 
     static BufferedImage renderFabric(BufferedImage source, NRect crop, String background) {
-        if (!valid(crop) || Math.abs(crop.x()) > 4 || Math.abs(crop.y()) > 4 || crop.w() > 4 || crop.h() > 4) return null;
+        if (!valid(crop) || crop.x()<0 || crop.y()<0 || crop.x2()>1.00001 || crop.y2()>1.00001 || Math.abs(crop.x()) > 4 || Math.abs(crop.y()) > 4 || crop.w() > 4 || crop.h() > 4) return null;
         int x0 = (int) Math.round(crop.x() * source.getWidth()), y0 = (int) Math.round(crop.y() * source.getHeight());
         int x1 = (int) Math.round(crop.x2() * source.getWidth()), y1 = (int) Math.round(crop.y2() * source.getHeight());
         if (x1 <= x0 || y1 <= y0) return null;
