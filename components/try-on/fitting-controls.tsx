@@ -46,27 +46,6 @@ export function FittingControls({
   return (
     <div className="fitting-controls">
       <div className="fitting-selectors">
-        <div className="fitting-control-group">
-          <p className="label">{t("lookType.label")}</p>
-          <SegmentPicker
-            label={t("lookType.label")}
-            value={sex}
-            onChange={onSexChange}
-            options={[
-              { id: "MASCULINO", label: t("common.masculino") },
-              { id: "FEMININO", label: t("common.feminino") },
-              { id: "UNISEX", label: t("tryOn.unisex") },
-            ]}
-          />
-          <span
-            className="type-caption text-muted"
-            role="status"
-            aria-live="polite"
-            data-tipo-look={toDatabaseTipoLook(sex)}
-          >
-            {t("tryOn.look_tipo", { sex })}
-          </span>
-        </div>
 
         <div className="fitting-control-group">
           <p className="label">{t("tryOn.luz")}</p>
