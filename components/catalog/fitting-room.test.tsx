@@ -191,7 +191,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     expect(screen.getByText("Camisa arquivada")).toBeTruthy();
   });
 
-  it("mantém a escolha manual de apresentação e envia vista/luz ao palco sem escrever na API", async () => {
+  it("mantém apresentação e iluminação sem reintroduzir vistas ou espelho e sem escrever na API", async () => {
     const { calls } = loggedAs(ME, { ...baseRoutes(), "GET /api/try-on": { ...STATE, avatar: { id: "a1", model: {} } } });
     renderApp(<TryOnPage />);
     const female = await screen.findByRole("radio", { name: "Feminino" });
@@ -203,9 +203,10 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Unisex" }));
     expect(screen.getByText("Look unisex", { selector: "[data-tipo-look]" }).getAttribute("data-tipo-look")).toBe("unisex");
     expect(screen.getByTestId("fitting-scene").getAttribute("data-sex")).toBe("FEMININO");
-    fireEvent.click(screen.getByRole("radio", { name: "Costas" }));
+    expect(screen.queryByRole("radio", { name: "Costas" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /espelho/i })).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: "Noite" }));
-    expect(screen.getByTestId("fitting-scene").getAttribute("data-view")).toBe("back");
+    expect(screen.getByTestId("fitting-scene").getAttribute("data-view")).toBe("front");
     expect(screen.getByTestId("fitting-scene").getAttribute("data-light")).toBe("night");
     expect(calls.filter((c) => c.path.startsWith("/api/") && c.method !== "GET")).toEqual([]);
   });
