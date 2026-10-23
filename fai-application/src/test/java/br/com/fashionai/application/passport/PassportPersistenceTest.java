@@ -34,15 +34,20 @@ class PassportPersistenceTest {
                 .setProperty("hibernate.connection.url","jdbc:h2:mem:passports;DB_CLOSE_DELAY=-1;MODE=MySQL;LOCK_TIMEOUT=10000")
                 .setProperty("hibernate.hbm2ddl.auto","create-drop")
                 .setProperty("hibernate.type.preferred_uuid_jdbc_type","CHAR").buildSessionFactory();
-        // Standalone Hibernate has no Spring auditing handler; fill audit timestamps just as production auditing does.
-        factory.unwrap(org.hibernate.engine.spi.SessionFactoryImplementor.class).getServiceRegistry()
-                .getService(org.hibernate.event.service.spi.EventListenerRegistry.class)
-                .appendListeners(org.hibernate.event.spi.EventType.PRE_INSERT, (org.hibernate.event.spi.PreInsertEventListener) event -> {
-                    if(event.getEntity() instanceof AuditableEntity entity) entity.markCreatedAt(NOW);
-                    String[] names=event.getPersister().getPropertyNames();
-                    for(int i=0;i<names.length;i++) if((names[i].equals("createdAt")||names[i].equals("updatedAt"))&&event.getState()[i]==null) event.getState()[i]=NOW;
-                    return false;
-                });
+        // Spring normally fills timestamps in @PrePersist, before Hibernate checks non-null properties.
+        // PRE_INSERT is too late: a failed insert rolls back JDBC while leaving the mocked source item archived.
+        var auditing=new org.hibernate.event.spi.PersistEventListener() {
+            @Override public void onPersist(org.hibernate.event.spi.PersistEvent event) {
+                if(event.getObject() instanceof AuditableEntity entity) entity.markCreatedAt(NOW);
+            }
+            @Override public void onPersist(org.hibernate.event.spi.PersistEvent event,org.hibernate.event.spi.PersistContext context) {
+                onPersist(event);
+            }
+        };
+        var listeners=factory.unwrap(org.hibernate.engine.spi.SessionFactoryImplementor.class).getServiceRegistry()
+                .getService(org.hibernate.event.service.spi.EventListenerRegistry.class);
+        listeners.prependListeners(org.hibernate.event.spi.EventType.PERSIST,auditing);
+        listeners.prependListeners(org.hibernate.event.spi.EventType.PERSIST_ONFLUSH,auditing);
     }
     @AfterAll static void close() {
         if(factory!=null) factory.close();
@@ -73,6 +78,43 @@ class PassportPersistenceTest {
             em.getTransaction().rollback();
         }
     }
+    @Test void purgingFormerOwnerRemovesStoredCiphertextAndPreservesCurrentOwnersData() {
+        UUID formerOwner=UUID.randomUUID(),currentOwner=UUID.randomUUID(),passportId,evidenceId,oldShareId,currentShareId;
+        try(EntityManager em=factory.createEntityManager()) {
+            em.getTransaction().begin(); GarmentPassport p=passport(); p.setOwnerId(currentOwner); p.setComposition("Cotton"); p.setCare("Cold wash");
+            em.persist(p); passportId=p.getId();
+            PassportEvidence document=new PassportEvidence(); document.setPassportId(p.getId()); document.setControllerId(formerOwner);
+            document.setKind("PURCHASE_RECEIPT"); document.setCommandKey("evidence_0001"); document.setContentBase64("PRIVATE FORMER OWNER RECEIPT");
+            document.setContentHash("f".repeat(64)); document.setExpiresAt(NOW.plusSeconds(3600)); em.persist(document); evidenceId=document.getId();
+            PassportEvent event=new PassportEvent(); event.setPassportId(p.getId()); event.setAuthorId(formerOwner); event.setKind("PURCHASE");
+            event.setOccurredOn(LocalDate.of(2026,10,1)); event.setCommandKey("event_0001"); event.setNotes("PRIVATE FORMER OWNER ADDRESS"); em.persist(event);
+            PassportShare oldShare=new PassportShare(); oldShare.setPassportId(p.getId()); oldShare.setOwnerId(formerOwner);
+            oldShare.setTokenHash(GarmentPassportService.hash(UUID.randomUUID().toString())); oldShare.setFields("NAME"); oldShare.setExpiresAt(NOW.plusSeconds(3600)); em.persist(oldShare); oldShareId=oldShare.getId();
+            PassportShare currentShare=new PassportShare(); currentShare.setPassportId(p.getId()); currentShare.setOwnerId(currentOwner);
+            currentShare.setTokenHash(GarmentPassportService.hash(UUID.randomUUID().toString())); currentShare.setFields("CARE"); currentShare.setExpiresAt(NOW.plusSeconds(3600)); em.persist(currentShare); currentShareId=currentShare.getId();
+            PassportHolding former=holding(p); former.setOwnerId(formerOwner); former.setActivePassportId(null); former.setEndedAt(NOW); em.persist(former);
+            em.persist(holding(p)); em.getTransaction().commit();
+        }
+        try(EntityManager em=factory.createEntityManager()) {
+            em.getTransaction().begin(); JpaRepositoryFactory repos=new JpaRepositoryFactory(em);
+            new PassportAccountDataCleanup(repos.getRepository(GarmentPassportRepository.class),repos.getRepository(PassportEventRepository.class),
+                    repos.getRepository(PassportEvidenceRepository.class),repos.getRepository(PassportShareRepository.class),
+                    repos.getRepository(PassportTransferRepository.class),repos.getRepository(PassportHoldingRepository.class)).purge(formerOwner);
+            em.flush();
+            assertThat(em.createNativeQuery("select content_ciphertext from passport_evidence where id=?1",String.class)
+                    .setParameter(1,evidenceId.toString()).getSingleResult()).isNull();
+            assertThat(em.find(PassportEvidence.class,evidenceId).getContentHash()).isNull();
+            assertThat(em.find(PassportShare.class,oldShareId).getRevokedAt()).isNotNull();
+            assertThat(em.find(PassportShare.class,currentShareId).getRevokedAt()).isNull();
+            assertThat(em.find(PassportShare.class,currentShareId).getOwnerId()).isEqualTo(currentOwner);
+            assertThat(em.find(GarmentPassport.class,passportId).getOwnerId()).isEqualTo(currentOwner);
+            assertThat(em.find(GarmentPassport.class,passportId).getComposition()).isEqualTo("Cotton");
+            assertThat(em.find(GarmentPassport.class,passportId).getCare()).isEqualTo("Cold wash");
+            assertThat(repos.getRepository(PassportEventRepository.class).findByAuthorId(formerOwner)).isEmpty();
+            assertThat(repos.getRepository(PassportHoldingRepository.class).findByActivePassportId(passportId).orElseThrow().getOwnerId()).isEqualTo(currentOwner);
+            em.getTransaction().commit();
+        }
+    }
     @Test void simultaneousAcceptRetriesCreateExactlyOneRecipientPieceAndHolding() throws Exception {
         UUID passportId,transferId; User sender=new User(),recipient=new User(); sender.assignId(UUID.randomUUID()); recipient.assignId(UUID.randomUUID());
         sender.setStatus(AccountStatus.ACTIVE); recipient.setStatus(AccountStatus.ACTIVE); recipient.setEmailVerified(true);
@@ -100,7 +142,14 @@ class PassportPersistenceTest {
         };
         try {
             Future<GarmentPassportService.TransferView> a=pool.submit(accept),b=pool.submit(accept); start.countDown();
-            var first=a.get(20,TimeUnit.SECONDS); var second=b.get(20,TimeUnit.SECONDS);
+            // Observe both attempts so an audit/insert error cannot be masked by the other attempt's item check.
+            var results=new ArrayList<GarmentPassportService.TransferView>(); var failures=new ArrayList<Throwable>();
+            for(var attempt:List.of(a,b)) {
+                try { results.add(attempt.get(20,TimeUnit.SECONDS)); }
+                catch(ExecutionException ex) { failures.add(ex.getCause()); }
+            }
+            assertThat(failures).as("both simultaneous accept transactions must commit").isEmpty();
+            assertThat(results).hasSize(2); var first=results.get(0); var second=results.get(1);
             assertThat(first.recipientPieceId()).isEqualTo(second.recipientPieceId()); assertThat(created.get()).isEqualTo(1);
             try(EntityManager em=factory.createEntityManager()) {
                 assertThat(em.createQuery("select count(h) from PassportHolding h where h.activePassportId=:id",Long.class).setParameter("id",passportId).getSingleResult()).isEqualTo(1);

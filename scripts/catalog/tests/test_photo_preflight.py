@@ -10,11 +10,12 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 from PIL import Image, ImageDraw
-from scripts.catalog.photo_set import PhotoMasks, PHOTO_SET_VERSION, process_photo, clean_target_mask
+from scripts.catalog.photo_set import PhotoMasks, PHOTO_SET_VERSION, LocalClothProvider, process_photo, clean_target_mask
 from scripts.catalog.photo_preflight import inspect_source, PREFLIGHT_VERSION
 from scripts.catalog.process_photo_sets import build_set
 from scripts.catalog.ingest_image_dataset import GarmentSanitizer, ProductImage, ImageFailure
-from scripts.catalog.quarantine_unsafe_products import eligible, report_for, validate_report, change
+from scripts.catalog.quarantine_unsafe_products import eligible, report_for, validate_report, change, main as quarantine_main
+from scripts.catalog.reviewed_photo_masks import ReviewedMaskProvider
 
 
 def fixture(height=300, *, size=(800,1000), top=350, category='upper_piece', subcategory='shirt', **kwargs):
@@ -75,6 +76,37 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual('PASS',result.status);self.assertEqual(1000,result.metrics['sourceGarmentHeightPixels'])
         self.assertEqual(.25,result.metrics['sourceGarmentHeightFraction'])
 
+    def test_thin_unclassified_extent_cannot_be_erased_into_small_garment_evidence(self):
+        image,masks=fixture(249)
+        # A strap or an exterior scratch is unresolved semantic evidence. Opening
+        # must not erase it and then assert the entire source garment is <25%.
+        ImageDraw.Draw(masks.target).line((400,300,400,350),fill=255,width=1)
+        with patch('scripts.catalog.photo_set.clean_target_mask') as cleanup:
+            result=process_photo(image,'upper_piece','shirt',masks=masks)
+        self.assertEqual(('REVIEW','SOURCE_EXTENT_UNCERTAIN'),(result.status,result.reason))
+        self.assertIsNone(result.metrics['sourceGarmentHeightFraction']);cleanup.assert_not_called()
+        ImageDraw.Draw(masks.forbidden).line((400,300,400,349),fill=255,width=1)
+        result=process_photo(image,'upper_piece','shirt',masks=masks)
+        self.assertEqual('INELIGIBLE',result.status)
+        self.assertEqual(.249,result.metrics['sourceGarmentHeightFraction'])
+
+    def test_uncalibrated_local_model_does_not_invent_measurement_or_confidence(self):
+        image,masks=fixture(249)
+        segmenter=Mock();segmenter.mask.return_value=masks.target
+        parser=Mock();parser.predict.return_value=np.full((image.height,image.width),3,dtype=np.uint8)
+        provider=LocalClothProvider(segmenter,parser)
+        local=provider.masks(image,'upper_piece','shirt')
+        self.assertIsNone(local.confidence);self.assertFalse(local.measurement_verified);self.assertIsNone(local.complete)
+        result=process_photo(image,'upper_piece','shirt',masks=local)
+        self.assertEqual('REVIEW',result.status)
+        self.assertFalse(result.metrics['preflight']['measurementReliable'])
+        self.assertIsNone(result.metrics['preflight']['segmentationConfidence'])
+
+    def test_malformed_confidence_and_human_assessment_remain_review(self):
+        for values in [dict(confidence='unknown'),dict(confidence=True),dict(human_present='unknown')]:
+            image,masks=fixture(249,**values)
+            self.assertEqual('REVIEW',process_photo(image,'upper_piece','shirt',masks=masks).status)
+
     def test_uniform_fit_centered_half_largest_normalized_edge_without_stretching(self):
         image,masks=fixture(600,top=150)
         result=process_photo(image,'upper_piece','shirt',masks=masks)
@@ -108,14 +140,14 @@ class PreflightTests(unittest.TestCase):
 
     def test_dataset_preflight_happens_before_cleanup_and_output(self):
         image,masks=fixture(249);data=io.BytesIO();image.save(data,'PNG')
-        provider=Mock();provider.masks.return_value=masks
+        provider=Mock(spec=['masks']);provider.masks.return_value=masks
         with patch('scripts.catalog.ingest_image_dataset.clean_target_mask') as cleanup:
             with self.assertRaises(ImageFailure) as error:
                 GarmentSanitizer(provider).sanitize(data.getvalue(),ProductImage('p','Brand','upper_piece','shirt','https://b.example/a'))
             self.assertEqual('INELIGIBLE',error.exception.status);cleanup.assert_not_called()
 
     def test_worker_never_uploads_ineligible_and_audits_source_hash(self):
-        image,masks=fixture(249);provider=Mock();provider.masks.return_value=masks
+        image,masks=fixture(249);provider=Mock(spec=['masks']);provider.masks.return_value=masks
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'image.png';image.save(path)
             expected=hashlib.sha256(path.read_bytes()).hexdigest();downloader=Mock();downloader.get.return_value=path;storage=Mock()
@@ -155,18 +187,24 @@ class QuarantineTests(unittest.TestCase):
         p=product();self.assertTrue(eligible(p,p['images']))
         for alternate in [image_row(250,'valid'),{**image_row(),'assets_json':None},image_row(700,'valid')]:
             self.assertFalse(eligible(p,p['images']+[alternate]))
-        for path,value in [('status','REVIEW'),('reason','TARGET_MASK_EMPTY')]:
+        for path,value in [('status','REVIEW'),('status','RETRY'),('reason','TARGET_MASK_EMPTY')]:
             altered=copy.deepcopy(p['images'][0]);altered['assets_json']['photoSet'][path]=value
             self.assertFalse(eligible(p,[altered]))
         unknown=copy.deepcopy(p['images'][0]);unknown['assets_json']['photoSet']['metrics']['preflight']['humanAssessmentComplete']=False
         self.assertFalse(eligible(p,[unknown]))
         stale={**p['images'][0],'source_sha256':'b'*64};self.assertFalse(eligible(p,[stale]))
+        for invalid in [None,'','a'*63,'A'*64]:
+            stale=copy.deepcopy(p['images'][0]);stale['source_sha256']=invalid
+            stale['assets_json']['photoSet']['sourceSha256']=invalid
+            self.assertFalse(eligible(p,[stale]))
+        self.assertFalse(eligible(p,[]))
         report=report_for([p],origin='FIXTURE');validate_report(report)
         report['products'][0]['images'][0]['sourceSha256']='b'*64
         with self.assertRaisesRegex(ValueError,'INVALID_OR_MODIFIED'):validate_report(report)
 
     def test_apply_and_restore_execute_real_updates_preserve_metadata_and_reject_replay(self):
-        p=product();report=report_for([p],origin='DATABASE_READ_ONLY');db=SqlDatabase(p);entry=report['products'][0]
+        p=product([image_row(249,'z-image'),image_row(200,'a-image')])
+        report=report_for([p],origin='DATABASE_READ_ONLY');db=SqlDatabase(p);entry=report['products'][0]
         self.assertEqual('QUARANTINED',change(db,entry,report_sha256=report['reportSha256']))
         actual=db.product();self.assertEqual('REJECTED',actual['ingestion_status']);metadata=json.loads(actual['metadata_json'])
         self.assertEqual('preserved',metadata['other']);self.assertEqual(report['reportSha256'],metadata['catalogPhotoEligibility']['reportSha256'])
@@ -181,6 +219,66 @@ class QuarantineTests(unittest.TestCase):
         self.assertEqual('SKIPPED_IMAGES_CHANGED',change(db,entry,report_sha256=report['reportSha256']));self.assertEqual('VALIDATED',db.product()['ingestion_status'])
         db=SqlDatabase(p);db.sql.execute("UPDATE catalog_images SET image_url='https://brand.example/edited'")
         self.assertEqual('SKIPPED_IMAGES_CHANGED',change(db,entry,report_sha256=report['reportSha256']))
+
+    def test_offline_report_is_reviewable_and_cannot_connect_for_apply(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            snapshot=Path(tmp)/'snapshot.json';report=Path(tmp)/'report.json'
+            snapshot.write_text(json.dumps({'products':[product()]}))
+            with patch('scripts.catalog.quarantine_unsafe_products.db.connect') as connect,patch('builtins.print'):
+                quarantine_main(['--snapshot',str(snapshot),'--report',str(report)])
+                audited=json.loads(report.read_text());validate_report(audited)
+                self.assertEqual(1,len(audited['products']))
+                self.assertTrue(audited['origin'].startswith('OFFLINE_SNAPSHOT:'))
+                with self.assertRaisesRegex(ValueError,'DATABASE_AUDIT_REQUIRED_FOR_APPLY'):
+                    quarantine_main(['--report',str(report),'--apply'])
+                connect.assert_not_called()
+
+
+class ReviewedMaskTests(unittest.TestCase):
+    def manifest(self, root, *, height=300):
+        image,masks=fixture(height)
+        source=io.BytesIO();image.save(source,'PNG')
+        source_sha=hashlib.sha256(source.getvalue()).hexdigest()
+        row={'sourceSha256':source_sha,'sourceUrl':'https://brand.example/photo.png',
+             'category':'upper_piece','subcategory':'shirt','reviewedBy':'test-reviewer','reviewedAt':'2026-10-23T00:00:00Z',
+             'analysisPixelSha256':hashlib.sha256(image.tobytes()).hexdigest(),
+             'semanticVerified':True,'measurementVerified':True,'isolationVerified':True,
+             'humanPresent':False,'complete':True,'occluded':False}
+        for kind in ['target','forbidden']:
+            path=root/(kind+'.png');getattr(masks,kind).save(path)
+            row[kind+'Mask']=path.name;row[kind+'MaskSha256']=hashlib.sha256(path.read_bytes()).hexdigest()
+        path=root/'reviewed.json';path.write_text(json.dumps({'version':'CATALOG_REVIEWED_MASKS_V1','images':[row]}))
+        return image,row,path
+
+    def test_reviewed_mask_requires_matching_original_pixels_masks_and_attestation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            image,row,path=self.manifest(Path(tmp))
+            provider=ReviewedMaskProvider(path).for_source(row['sourceSha256'],row['sourceUrl'])
+            masks=provider.masks(image,'upper_piece','shirt')
+            self.assertIsNone(masks.confidence)
+            self.assertEqual('READY',process_photo(image,'upper_piece','shirt',masks=masks).status)
+            with self.assertRaisesRegex(ValueError,'REVIEWED_SOURCE_NOT_FOUND'):
+                provider.for_source('b'*64,row['sourceUrl']).masks(image,'upper_piece','shirt')
+            with self.assertRaisesRegex(ValueError,'REVIEWED_SOURCE_NOT_FOUND'):
+                provider.masks(image,'lower_piece','jeans')
+            with self.assertRaisesRegex(ValueError,'REVIEWED_ANALYSIS_PIXELS_CHANGED'):
+                provider.masks(Image.new('RGB',image.size,'black'),'upper_piece','shirt')
+            (Path(tmp)/'target.png').write_bytes(b'changed mask')
+            with self.assertRaisesRegex(ValueError,'REVIEWED_MASK_HASH_MISMATCH'):
+                provider.masks(image,'upper_piece','shirt')
+
+    def test_unattested_or_missing_completeness_never_becomes_small_evidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            image,row,path=self.manifest(Path(tmp),height=249)
+            row.pop('reviewedBy')
+            path.write_text(json.dumps({'version':'CATALOG_REVIEWED_MASKS_V1','images':[row]}))
+            provider=ReviewedMaskProvider(path).for_source(row['sourceSha256'],row['sourceUrl'])
+            with self.assertRaisesRegex(ValueError,'ATTESTATION_REQUIRED'):
+                provider.masks(image,'upper_piece','shirt')
+            row['reviewedBy']='test-reviewer';row.pop('complete')
+            path.write_text(json.dumps({'version':'CATALOG_REVIEWED_MASKS_V1','images':[row]}))
+            provider=ReviewedMaskProvider(path).for_source(row['sourceSha256'],row['sourceUrl'])
+            self.assertEqual('REVIEW',process_photo(image,'upper_piece','shirt',provider=provider).status)
 
 
 if __name__=='__main__':unittest.main()

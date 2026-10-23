@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { loggedAs, renderApp, ME } from '@/test-utils/render';
-import { nav } from '@/test-utils/setup';
+import { nav, router } from '@/test-utils/setup';
 import { MESSAGES } from '@/lib/i18n/core';
 import additions from '@/work/atelier-i18n-pt-BR.json';
 import { AtelierWorkspace } from './atelier-workspace';
@@ -25,6 +25,21 @@ describe('Atelier project UI contracts', () => {
     expect(screen.getByRole('tab', { name: 'Projetos' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getAllByRole('tab')).toHaveLength(5);
     expect(screen.queryByTestId('legacy-atelier')).toBeNull();
+  });
+  it.each(['metamorphoses', 'timeline', 'trends', 'room'])('preserves the existing %s deep link', async tab => {
+    nav.search = new URLSearchParams({ tab });
+    const { calls } = loggedAs(ME);
+    renderApp(<AtelierWorkspace/>);
+    expect(await screen.findByTestId('legacy-atelier')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Voltar aos projetos' }).getAttribute('href')).toBe('/atelier');
+    expect(calls.some(c => c.path.startsWith('/api/atelier/projects'))).toBe(false);
+  });
+  it('accepts an invitation before opening its private project', async () => {
+    const { calls } = loggedAs(ME, { 'GET /api/atelier/projects': { items: [], page: 0, size: 24, hasMore: false }, 'GET /api/atelier/projects/invitations/me': [{ id: 'invite1', projectId: 'p1', projectTitle: 'Camisa do grupo', role: 'EDITOR', expiresAt: '2099-11-01T10:00:00Z' }], 'POST /api/atelier/projects/p1/invites/invite1/accept': project() });
+    renderApp(<AtelierWorkspace/>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Aceitar convite' }));
+    await waitFor(() => expect(calls.some(c => c.method === 'POST' && c.path === '/api/atelier/projects/p1/invites/invite1/accept')).toBe(true));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/atelier/projects/p1'));
   });
   it('creates a private garment project with full structured construction and explicit rights', async () => {
     const { calls } = loggedAs(ME, { 'GET /api/atelier/projects': { items: [], page: 0, size: 24, hasMore: false }, 'GET /api/atelier/projects/invitations/me': [], 'POST /api/atelier/projects': project() });
@@ -74,6 +89,27 @@ describe('Atelier project UI contracts', () => {
     await screen.findByRole('button', { name: 'Retirar meu interesse' });
     expect(calls.find(c => c.method === 'PUT')!.body).toEqual({ revisionId: 'r1', interested: true });
     expect(calls.some(c => /purchase|reward|checkout|license/.test(c.path))).toBe(false);
+  });
+  it('sends a reviewer decision for the current immutable revision and version', async () => {
+    const detail = project(); detail.project = { ...detail.project, ownerId: 'u2', state: 'IN_REVIEW', version: 4 }; detail.capabilities = { edit: false, manageMembers: false, review: true, vote: false };
+    detail.members = [{ id: 'm1', userId: 'u1', username: 'ana', role: 'REVIEWER', status: 'ACCEPTED', expiresAt: '2099-11-01T10:00:00Z' }];
+    const reviewed = structuredClone(detail); reviewed.project = { ...reviewed.project, state: 'CHANGES_REQUESTED', version: 5 };
+    const { calls } = loggedAs(ME, { ...routes(detail), 'POST /api/atelier/projects/p1/reviews': reviewed });
+    renderApp(<AtelierProjectDetail id="p1"/>);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Equipe e comentários' }));
+    fireEvent.change(screen.getByLabelText('Parecer e observações'), { target: { value: 'Ajustar largura da gola' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar análise' }));
+    await waitFor(() => expect(calls.some(c => c.method === 'POST' && c.path.endsWith('/reviews'))).toBe(true));
+    expect(calls.find(c => c.path.endsWith('/reviews'))!.body).toMatchObject({ expectedVersion: 4, revisionId: 'r1', decision: 'REQUEST_CHANGES', notes: 'Ajustar largura da gola' });
+    expect((calls.find(c => c.path.endsWith('/reviews'))!.body as { requestId: string }).requestId).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Registrar análise' })).toBeNull());
+  });
+  it('keeps archived project specifications and exports readable without edit actions', async () => {
+    const detail = project(); detail.project = { ...detail.project, state: 'ARCHIVED' }; detail.capabilities = { edit: false, manageMembers: true, review: false, vote: false };
+    loggedAs(ME, routes(detail)); renderApp(<AtelierProjectDetail id="p1"/>);
+    expect(await screen.findByText('Arquivado')).toBeTruthy();
+    expect(screen.getByText('Algodão')).toBeTruthy(); expect(screen.getByRole('link', { name: 'Abrir ficha para impressão' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Salvar rascunho' })).toBeNull(); expect(screen.queryByRole('button', { name: 'Publicar revisão para análise' })).toBeNull(); expect(screen.queryByRole('button', { name: 'Tenho interesse' })).toBeNull();
   });
   it('renders authenticated printable snapshots as escaped text with production limits', async () => {
     const malicious = { ...revision, specification: { ...revision.specification, printPlacement: '<script>window.stolen=true</script>' } };

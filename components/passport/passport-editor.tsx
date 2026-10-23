@@ -4,7 +4,7 @@ import Link from 'next/link';
 import QRCode from 'qrcode';
 import { ApiError } from '@/lib/api/client';
 import { passportApi, commandKey } from '@/lib/passport/api';
-import type { GarmentPassport, PassportEventKind, PassportField, PassportOrigin, ResaleDraft } from '@/lib/passport/types';
+import type { GarmentPassport, PassportEventKind, PassportEvidence, PassportField, PassportOrigin, ResaleDraft } from '@/lib/passport/types';
 import { useApi } from '@/lib/hooks/use-api';
 import { useI18n } from '@/lib/i18n/i18n';
 import { Button, Field, FileButton, Input, Select, Skeleton, Textarea } from '@/components/ui';
@@ -14,6 +14,37 @@ import styles from './passport.module.css';
 const origins: PassportOrigin[] = ['UNKNOWN', 'COMPRADA', 'GARIMPADA', 'HERDADA', 'PRESENTE', 'FEITA_A_MAO', 'TROCADA'];
 const fields: PassportField[] = ['NAME', 'ORIGIN', 'COMPOSITION', 'CARE', 'HISTORY'];
 const eventKinds: PassportEventKind[] = ['PURCHASE', 'CARE', 'REPAIR', 'ALTERATION', 'CORRECTION'];
+type EvidenceAction = (run: () => Promise<void>, refresh?: boolean) => Promise<void>;
+
+async function downloadDocument(id: string) {
+  const url = await passportApi.document(id); const anchor = document.createElement('a');
+  anchor.href = url; anchor.download = 'passport-evidence.png'; document.body.appendChild(anchor); anchor.click(); anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function EvidenceList({ evidence, busy, action }: { evidence: PassportEvidence[]; busy: boolean; action: EvidenceAction }) {
+  const { t, fmtDate } = useI18n();
+  return evidence.map(document => <div className={styles.document} key={document.id}><span>{t(`passport.document.${document.kind}`)} · {t(document.status === 'EXPIRED' ? 'passport.expired' : 'passport.presented')}</span>
+    <small>{t('passport.expires')}: {fmtDate(document.expiresAt)}</small>
+    <Button size="sm" disabled={busy || document.status === 'EXPIRED'} onClick={() => void action(() => downloadDocument(document.id), false)}>{t('passport.download')}</Button>
+    <Button size="sm" disabled={busy} onClick={() => void action(async () => { await passportApi.deleteDocument(document.id); })}>{t('passport.delete')}</Button>
+  </div>);
+}
+
+function HistoricalEvidence({ passportId }: { passportId: string }) {
+  const { t } = useI18n(); const query = useApi(signal => passportApi.myEvidence(passportId, signal), [passportId]);
+  const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const action: EvidenceAction = async (run, refresh = true) => {
+    if (busy) return; setBusy(true); setError('');
+    try { await run(); if (refresh) query.reload(); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : t('passport.failed')); }
+    finally { setBusy(false); }
+  };
+  return <section className={styles.panel}><h2>{t('passport.evidence')}</h2><p className={styles.note}>{t('passport.transferredHint')}</p>
+    {error && <p role="alert">{error}</p>}
+    {query.loading ? <Skeleton className="h-24" /> : query.error ? <p role="alert">{query.error.message}</p> : <EvidenceList evidence={query.data ?? []} busy={busy} action={action} />}
+  </section>;
+}
 
 function DeclarationSnapshot({ notes }: { notes: string }) {
   const { t } = useI18n();
@@ -39,11 +70,6 @@ function PassportForm({ data, reload }: { data: GarmentPassport; reload: () => v
     try { await run(); if (refresh) reload(); }
     catch (failure) { setError(failure instanceof Error ? failure.message : t('passport.failed')); if (failure instanceof ApiError && failure.status === 409) reload(); }
     finally { setBusy(false); }
-  }
-  async function download(id: string) {
-    const url = await passportApi.document(id); const anchor = document.createElement('a');
-    anchor.href = url; anchor.download = 'passport-evidence.png'; document.body.appendChild(anchor); anchor.click(); anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   return <>
     {error && <p className={styles.error} role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
@@ -77,11 +103,7 @@ function PassportForm({ data, reload }: { data: GarmentPassport; reload: () => v
         await passportApi.upload(data.id, file, documentKind, retryKey(`document:${file.name}:${file.size}:${file.lastModified}`));
         resetKey(`document:${file.name}:${file.size}:${file.lastModified}`); setNotice(t('passport.evidenceUploaded'));
       }); }}>{t('passport.uploadEvidence')}</FileButton>
-      {data.evidence.map(document => <div className={styles.document} key={document.id}><span>{t(`passport.document.${document.kind}`)} · {t(document.status === 'EXPIRED' ? 'passport.expired' : 'passport.presented')}</span>
-        <small>{t('passport.expires')}: {fmtDate(document.expiresAt)}</small>
-        <Button size="sm" disabled={busy || document.status === 'EXPIRED'} onClick={() => void action(() => download(document.id), false)}>{t('passport.download')}</Button>
-        <Button size="sm" disabled={busy} onClick={() => void action(async () => { await passportApi.deleteDocument(document.id); })}>{t('passport.delete')}</Button>
-      </div>)}
+      <EvidenceList evidence={data.evidence} busy={busy} action={action} />
     </section>
     <section className={styles.panel}><h2>{t('passport.sharing')}</h2><p className={styles.note}>{t('passport.sharingHint')}</p>
       <fieldset disabled={busy}><legend>{t('passport.publicFields')}</legend><div className={styles.grid}>{fields.map(field => <label key={field} className={styles.check}><input type="checkbox" checked={scope.includes(field)} onChange={event => setScope(previous => event.target.checked ? [...previous, field] : previous.filter(value => value !== field))} />{t(`passport.field.${field}`)}</label>)}</div></fieldset>
@@ -113,9 +135,10 @@ export function PassportEditor({ pieceId }: { pieceId: string }) {
   const { t } = useI18n(); const query = useApi(signal => passportApi.get(pieceId, signal), [pieceId]);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const createKey = useRef<string | null>(null);
   const missing = query.error?.code === 'PASSPORT_NOT_CREATED';
+  const formerPassportId = query.error?.code === 'PASSPORT_TRANSFERRED' && typeof query.error.details.passportId === 'string' ? query.error.details.passportId : null;
   return <main className={styles.page}>
     <header className={styles.header}><Link className="btn" href={`/pieces/${encodeURIComponent(pieceId)}`}>{t('passport.back')}</Link><p className={styles.status}>{t('passport.privateLabel')}</p><h1>{query.data?.pieceName ?? t('passport.title')}</h1><p>{t('passport.hint')}</p><p className={styles.note}>{t('passport.identityLimit')}</p></header>
-    {query.error ? missing ? <section className={styles.panel}><p>{t('passport.notCreated')}</p>{error && <p role="alert">{error}</p>}<Button loading={busy} onClick={async () => {
+    {formerPassportId ? <HistoricalEvidence key={formerPassportId} passportId={formerPassportId} /> : query.error ? missing ? <section className={styles.panel}><p>{t('passport.notCreated')}</p>{error && <p role="alert">{error}</p>}<Button loading={busy} onClick={async () => {
       setBusy(true); setError(''); createKey.current ??= commandKey();
       try { query.setData(await passportApi.create(pieceId, createKey.current)); createKey.current = null; query.reload(); }
       catch (failure) { setError(failure instanceof Error ? failure.message : t('passport.failed')); }

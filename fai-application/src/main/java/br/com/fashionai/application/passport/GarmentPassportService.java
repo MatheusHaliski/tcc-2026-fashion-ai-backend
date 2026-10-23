@@ -128,7 +128,11 @@ public class GarmentPassportService {
 
     public PrivateView get(CurrentUser user, UUID pieceId) {
         ownPiece(user,pieceId);
-        GarmentPassport p=passports.findByPieceId(pieceId).orElseThrow(()->new ApiException(404,"PASSPORT_NOT_CREATED","Esta peça ainda não tem passaporte."));
+        GarmentPassport p=passports.findByPieceId(pieceId).orElseThrow(()-> {
+            var former=holdings.findByOwnerId(user.id()).stream().filter(h->pieceId.equals(h.getPieceId())&&h.getEndedAt()!=null).findFirst();
+            if(former.isPresent()) return new ApiException(409,"PASSPORT_TRANSFERRED","Esta peça já foi transferida. Seus documentos continuam privados.",Map.of("passportId",former.get().getPassportId()));
+            return new ApiException(404,"PASSPORT_NOT_CREATED","Esta peça ainda não tem passaporte.");
+        });
         owner(user,p); return view(user,p);
     }
     public PrivateView create(CurrentUser user, UUID pieceId, String commandKey) {
@@ -212,7 +216,8 @@ public class GarmentPassportService {
     public void onPieceDeleted(DomainEvents.PieceDeleted event) {
         passports.findByPieceId(event.pieceId()).flatMap(p -> passports.lockById(p.getId())).ifPresent(p -> {
             // A historical item can be archived after the physical passport has moved to its next owner.
-            if(!p.getPieceId().equals(event.pieceId())||!p.getOwnerId().equals(event.userId())) return;
+            // The actor may be an administrator; the archived piece identity is authoritative.
+            if(!p.getPieceId().equals(event.pieceId())) return;
             for(PassportShare share:shares.findByPassportId(p.getId())) {
                 if(share.getRevokedAt()==null) { share.setRevokedAt(now()); shares.save(share); }
             }

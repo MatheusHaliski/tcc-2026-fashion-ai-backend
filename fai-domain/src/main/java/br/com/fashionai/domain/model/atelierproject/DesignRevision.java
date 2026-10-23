@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
 import java.util.UUID;
-@Getter @NoArgsConstructor @Entity @Table(name="atelier_project_revisions",uniqueConstraints=@UniqueConstraint(name="uq_atelier_revision_request",columnNames={"project_id","request_id"}))
+@Getter @NoArgsConstructor @Entity @Table(name="atelier_project_revisions",uniqueConstraints={@UniqueConstraint(name="uq_atelier_revision_request",columnNames={"project_id","request_id"}),@UniqueConstraint(name="uq_atelier_revision_number",columnNames={"project_id","number"})})
 public class DesignRevision extends AuditableEntity {
 @Column(nullable=false,length=36,updatable=false) private UUID projectId;
 @Column(length=36,updatable=false) private UUID parentRevisionId;

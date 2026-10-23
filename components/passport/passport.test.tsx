@@ -50,7 +50,7 @@ describe('garment passport', () => {
     data.evidence = [{ id: 'doc1', kind: 'PURCHASE_RECEIPT', status: 'PRESENTED_UNVERIFIED', expiresAt: '2027-01-01T00:00:00Z', version: 0 }];
     const { calls } = loggedAs(undefined, { 'GET /api/pieces/piece1/passport': () => data, 'GET /api/me/passport-transfers': [], 'DELETE /api/passports/pass1/shares/share1': () => { data.shares[0].revoked = true; } });
     renderApp(<PassportEditor pieceId="piece1" />);
-    await screen.findByText('Comprovante apresentado · não verificado');
+    await screen.findByText(/Comprovante apresentado · não verificado/);
     fireEvent.click(screen.getByRole('button', { name: 'Revogar link' }));
     await screen.findByRole('button', { name: 'Link revogado' });
     expect(calls.some(call => call.path === '/api/passports/pass1/shares/share1' && call.method === 'DELETE')).toBe(true);
@@ -78,6 +78,38 @@ describe('garment passport', () => {
     fireEvent.change(screen.getByLabelText('Código privado de aceite'), { target: { value: token } }); fireEvent.click(accept);
     const link = await screen.findByRole('link', { name: 'Abrir passaporte da peça recebida' }); expect(link.getAttribute('href')).toBe('/pieces/new-piece/passport');
     expect(calls.find(call => call.path === '/api/passport-transfers/transfer1/accept')?.body).toEqual({ version: 3, token });
+  });
+
+  it('lets a former owner manage only their historical documents without showing the current passport', async () => {
+    const documents = [{ id: 'old-doc', kind: 'PURCHASE_RECEIPT', status: 'PRESENTED_UNVERIFIED', expiresAt: '2027-01-01T00:00:00Z', version: 0 }];
+    const { calls } = loggedAs(undefined, {
+      'GET /api/pieces/piece1/passport': new Response(JSON.stringify({ status: 409, code: 'PASSPORT_TRANSFERRED', details: { passportId: 'pass1' } }), { status: 409, headers: { 'content-type': 'application/json' } }),
+      'GET /api/passports/pass1/my-evidence': () => documents,
+      'GET /api/me/passport-transfers': [],
+      'DELETE /api/passport-evidence/old-doc': () => { documents.splice(0); },
+    });
+    renderApp(<PassportEditor pieceId="piece1" />);
+    await screen.findByRole('button', { name: 'Baixar foto privada' });
+    expect(screen.getByText(/o passaporte atual pertence ao novo dono/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Criar passaporte' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Salvar declaração' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Enviar foto do comprovante' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Gerar link e QR' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar documento' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Apagar documento' })).toBeNull());
+    expect(calls.some(call => call.method === 'DELETE' && call.path === '/api/passport-evidence/old-doc')).toBe(true);
+    expect(calls.some(call => call.method === 'POST' && call.path.startsWith('/api/'))).toBe(false);
+  });
+
+  it('does not request historical evidence when the piece belongs to another account', async () => {
+    const { calls } = loggedAs(undefined, {
+      'GET /api/pieces/piece1/passport': new Response(JSON.stringify({ status: 403, code: 'ACESSO_NEGADO', message: 'Peça de outro proprietário.' }), { status: 403, headers: { 'content-type': 'application/json' } }),
+      'GET /api/me/passport-transfers': [],
+    });
+    renderApp(<PassportEditor pieceId="piece1" />);
+    await screen.findByRole('alert');
+    expect(calls.some(call => call.path.includes('my-evidence'))).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Baixar foto privada' })).toBeNull();
   });
 
   it('renders only the public response and makes an anonymous request', async () => {

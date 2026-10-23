@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
+import { useAuth } from "@/lib/auth/session";
 import { ApiError, api } from "@/lib/api/client";
 import { useVisibleRefresh } from "@/lib/hooks/use-visible-refresh";
 import { useApi } from "@/lib/hooks/use-api";
@@ -29,6 +31,7 @@ import { storeCount } from "./catalog-brand-grid";
 export { storeCount } from "./catalog-brand-grid";
 
 const BRAND_PAGE_SIZE = 12;
+const ProductFitDialog = dynamic(() => import("@/components/fit/ProductFitDialog").then(module => module.ProductFitDialog), { ssr: false });
 
 /**
  * RF47 · Busca catalogada: categoria → subcategoria → marca → nome/modelo. Duas ou três informações já disparam a busca
@@ -506,6 +509,8 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   onVariantChange?: (variant: CatalogVariant) => void;
 }) {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const [fitOpen, setFitOpen] = useState(false);
   const preview = useCatalogPreview(original);
   const p = preview.product;
   const tax = useTaxonomy();
@@ -548,8 +553,10 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
           </div>
         ) : p.colorName ? <p className="mt-1 flex items-center gap-1.5 type-body-sm"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: p.colorHex ?? undefined }} />{p.colorName}</p> : null}
         <p className="mt-1 type-caption text-faint">{t("catalog.fonte", { fonte: source })}</p>
+        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("fit.title")}</Button>}
         <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant)} loading={busy} disabled={disabled}>{busy ? t("catalog.verificando_foto") : pickLabel ?? t("catalog.e_esta")}</Button>
       </div>
+      {fitOpen && <ProductFitDialog productId={p.id} productName={p.productName} open onClose={() => setFitOpen(false)} />}
     </article>
   );
 }

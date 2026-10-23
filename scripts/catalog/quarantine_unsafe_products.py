@@ -69,6 +69,7 @@ def image_identity(image):
 def entry_for(product, images):
     if not eligible(product, images):
         return None
+    images = sorted(images, key=lambda image: str(image['id']))
     entry = {'productId': product['id'], 'previousStatus': product['ingestion_status'], 'version': product['version'],
              'category': product['category'], 'subcategory': product['subcategory'], 'color': product.get('color'),
              'previousEligibility': obj(product.get('metadata_json')).get('catalogPhotoEligibility'),

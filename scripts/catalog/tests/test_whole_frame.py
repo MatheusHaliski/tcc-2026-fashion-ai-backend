@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 from PIL import Image, ImageDraw
 
@@ -106,7 +107,7 @@ class BatchTest(unittest.TestCase):
             sha = hashlib.sha256(path.read_bytes()).hexdigest()
             seen = {}
             seg = GarmentSegmenter(backend=lambda image, klass, model: seen.update(klass=klass, model=model) or mask)
-            record = {"id": "img1", "product_id": "p1", "image_url": "https://brand.example/jeans.jpg", "source_sha256": sha,
+            record = {"id": "img1", "image_version": 3, "product_id": "p1", "image_url": "https://brand.example/jeans.jpg", "source_sha256": sha,
                       "category": "lower_piece", "subcategory": "jeans",
                       "metrics_json": json.dumps({"debug": {"productFrame": {"model": True}, "truncated": []}})}
             storage = Storage()
@@ -120,6 +121,8 @@ class BatchTest(unittest.TestCase):
             self.assertTrue((Path(tmp) / "out" / "img1.jpg").exists())
             patch = row["patch"]
             self.assertEqual((patch["status"], patch["version"], patch["sha"]), ("DONE", "WHOLE_FRAME_V3", sha))
+            self.assertEqual((patch["image_version"], patch["source_url"], patch["category"], patch["subcategory"], patch["source_sha"]),
+                             (3, record['image_url'], 'lower_piece', 'jeans', sha))
             info = json.loads(patch["json"])
             self.assertTrue(info["model"])
             self.assertIn("box", info)
@@ -133,6 +136,30 @@ class BatchTest(unittest.TestCase):
             record = {"id": "img1", "image_url": "https://brand.example/a.jpg", "source_sha256": "0" * 64, "category": "lower_piece"}
             row = batch.process(record, Downloader(path), GarmentSegmenter(backend=lambda *a, **k: mask))
             self.assertEqual(row["reason"], "SOURCE_CHANGED_SINCE_ANALYSIS")
+
+    def test_sub25_source_is_never_cleaned_rendered_written_or_uploaded(self):
+        im=Image.new('RGB',(800,1000),'white');mask=Image.new('L',im.size)
+        ImageDraw.Draw(mask).rectangle((250,300,550,548),fill=255)
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'src.png';im.save(path)
+            provider=Mock(spec=['masks']);provider.masks.return_value=evidence(im,mask)
+            storage=Mock();out=Path(tmp)/'out'
+            with patch.object(batch,'clean_target_mask') as cleanup,patch.object(batch,'render_whole') as render:
+                row=batch.process({'id':'img','category':'lower_piece','subcategory':'jeans','image_url':'https://brand.example/a'},
+                                  Downloader(path),None,out_dir=out,storage=storage,provider=provider)
+            self.assertEqual('INELIGIBLE',row['status']);self.assertEqual(.249,row['metrics']['preflight']['sourceGarmentHeightFraction'])
+            cleanup.assert_not_called();render.assert_not_called();storage.put.assert_not_called();self.assertFalse(out.exists())
+
+    def test_provider_timeout_or_unavailable_model_is_retry_with_unknown_measurement(self):
+        im,_=model_photo()
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'src.png';im.save(path)
+            for error in [TimeoutError('provider timeout'),ImportError('missing model'),RuntimeError('model failed')]:
+                provider=Mock(spec=['masks']);provider.masks.side_effect=error;storage=Mock()
+                row=batch.process({'id':'img','category':'lower_piece','subcategory':'jeans','image_url':'https://brand.example/a'},
+                                  Downloader(path),None,storage=storage,provider=provider)
+                self.assertEqual('RETRY',row['status']);self.assertIsNone(row['metrics']['sourceGarmentHeightFraction'])
+                storage.put.assert_not_called()
 
 
 if __name__ == "__main__":

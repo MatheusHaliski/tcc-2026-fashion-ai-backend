@@ -21,5 +21,6 @@ export const passportApi = {
     return api.upload<PassportEvidence>(`/api/passports/${part(id)}/evidence`, form, 'POST', headers(key));
   },
   document: (id: string) => api.blobUrl(`/api/passport-evidence/${part(id)}/content`),
+  myEvidence: (id: string, signal?: AbortSignal) => api.get<PassportEvidence[]>(`/api/passports/${part(id)}/my-evidence`, { signal }),
   deleteDocument: (id: string) => api.delete(`/api/passport-evidence/${part(id)}`),
 };

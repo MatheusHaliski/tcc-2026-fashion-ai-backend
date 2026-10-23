@@ -58,6 +58,10 @@ Feedback privado usa `TIGHT`, `COMFORTABLE` ou `LOOSE` por região do tamanho pr
 
 Conflitos de versão ou reutilização divergente de chave retornam 409. IDs de dono e resultados calculados não são aceitos do cliente. Escritas de perfil, recomendação e feedback serializam pelo usuário para não duplicar comandos concorrentes. Tabelas têm versão otimista, revisão e auditoria do editor.
 
+A interface reutiliza a chave de recomendação quando uma resposta falha; após sucesso, uma nova comparação usa uma nova chave e pode atualizar um resultado desatualizado. O mesmo vale para tentativas de envio de uma avaliação sem alterar seu conteúdo. Ao fechar o diálogo de um produto em `/fit`, o perfil privado é relido para refletir medidas alteradas ou apagadas dentro do diálogo.
+
 ## Validação
 
-`FitEngineTest` cobre ausência/expiração, protocolos, empate, ordem declarada, roupa de referência e folga explícita. `FitServiceTest` cobre dono/admin, marca errada, ausência sem dado inventado, polegadas, versão e exclusão. `components/fit/ProductFitDialog.test.tsx` cobre ausência sem pedir medidas, diálogo fechado, fonte/abstenção/retry idempotente, consentimento/exclusão e separação de protocolos. Nenhum teste com fixture demonstra acerto de caimento real; esse resultado depende de piloto com tabelas autorizadas e prova por pessoas.
+`FitEngineTest` cobre ausência/expiração, protocolos, empate, ordem declarada, roupa de referência, folga explícita e distinção de coxa/entreperna. `FitServiceTest` cobre dono/admin, marca errada, ausência sem dado inventado, polegadas, versão, exclusão, família real do catálogo e histórico limitado ao próprio produto/revisão. `FitAccountDataCleanupTest` cobre expurgo na ordem das dependências.
+
+Os 11 cenários de `components/fit/ProductFitDialog.test.tsx` cobrem ausência sem pedir medidas, diálogo fechado, fonte/abstenção/retry idempotente, nova chave após comparação concluída, consentimento/exclusão, separação de protocolos, coxa e entreperna, evidência qualitativa/experiência anterior, envio idempotente e exclusão de feedback, publicação autorizada com versão e releitura do perfil ao fechar o diálogo. Nenhum teste com fixture demonstra acerto de caimento real; esse resultado depende de piloto com tabelas autorizadas e prova por pessoas.

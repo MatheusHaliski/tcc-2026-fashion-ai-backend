@@ -66,6 +66,22 @@ class PieceReferenceAccessTest {
         mvc.perform(get("/api/me/closet")).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void newPrivateModulesDoNotInheritPublicPieceOrShareAccess() throws Exception {
+        String id = STATE_ID.toString();
+        for (String path : List.of("/api/pieces/" + id + "/passport",
+                "/api/passports/" + id + "/my-evidence", "/api/passport-evidence/" + id + "/content",
+                "/api/me/passport-transfers", "/api/me/fit-measurements",
+                "/api/catalog/products/" + id + "/size-chart", "/api/atelier/projects")) {
+            mvc.perform(get(path)).andExpect(status().isUnauthorized());
+        }
+        for (String path : List.of("/api/passport-shares/token", "/api/pieces/" + id + "/passport",
+                "/api/catalog/products/" + id + "/size-recommendations", "/api/atelier/projects")) {
+            mvc.perform(post(path)).andExpect(status().isUnauthorized());
+        }
+        mvc.perform(get("/api/passport-shares/token/private")).andExpect(status().isUnauthorized());
+    }
+
     @SpringBootConfiguration
     @EnableAutoConfiguration
     static class TestApplication {

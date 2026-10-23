@@ -126,13 +126,14 @@ class GarmentPassportServiceTest {
         assertThatThrownBy(()->service.downloadEvidence(actor(ana),stored.id())).isInstanceOf(ApiException.class);
         assertThatThrownBy(()->service.uploadEvidence(actor(ana),p.id(),"PURCHASE_RECEIPT",source,"evidence_0001")).isInstanceOf(ApiException.class);
     }
-    @Test void archivingPermanentlyRevokesLinksAndCancelsPendingTransferWithoutErasingDocuments() throws Exception {
+    @Test void administratorArchivingPermanentlyRevokesLinksAndCancelsPendingTransferWithoutErasingDocuments() throws Exception {
         var p=create();
         var document=service.uploadEvidence(actor(ana),p.id(),"PURCHASE_RECEIPT",photo(),"evidence_0001");
         var shared=service.share(actor(ana),p.id(),new GarmentPassportService.ShareCommand(0,Set.of("NAME"),24));
         var offered=offer(p.id(),"offer_0001");
         piece.setAvailabilityStatus(AvailabilityStatus.ARCHIVED);
-        service.onPieceDeleted(new DomainEvents.PieceDeleted(ana.getId(),piece.getId()));
+        other.setRole("ADMIN");
+        service.onPieceDeleted(new DomainEvents.PieceDeleted(other.getId(),piece.getId()));
         assertThat(shares.findById(shared.share().id()).orElseThrow().getRevokedAt()).isEqualTo(now);
         assertThat(transfers.findById(offered.transfer().id()).orElseThrow().getStatus()).isEqualTo("CANCELLED");
         assertThat(passports.findById(p.id()).orElseThrow().getPendingTransferId()).isNull();
@@ -153,6 +154,25 @@ class GarmentPassportServiceTest {
         assertThatThrownBy(()->GarmentPassportService.safeImage("%PDF-1.4 forged-image".getBytes())).isInstanceOf(ApiException.class);
         assertThatThrownBy(()->GarmentPassportService.safeImage(new byte[]{(byte)137,80,78,71,13,10,26,10})).isInstanceOf(ApiException.class);
         assertThatThrownBy(()->GarmentPassportService.safeImage(new byte[2*1024*1024+1])).isInstanceOf(ApiException.class);
+    }
+    @Test void jpegEvidenceIsReencodedAsPngWithoutTrailingPrivateContent() throws Exception {
+        ByteArrayOutputStream jpeg=new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(8,8,BufferedImage.TYPE_INT_RGB),"jpeg",jpeg);
+        jpeg.write("PRIVATE ORIGINAL FILE DATA".getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        byte[] sanitized=GarmentPassportService.safeImage(jpeg.toByteArray());
+        assertThat(Arrays.copyOf(sanitized,8)).containsExactly((byte)137,(byte)80,(byte)78,(byte)71,(byte)13,(byte)10,(byte)26,(byte)10);
+        assertThat(new String(sanitized,java.nio.charset.StandardCharsets.ISO_8859_1)).doesNotContain("PRIVATE ORIGINAL FILE DATA");
+        assertThat(ImageIO.read(new java.io.ByteArrayInputStream(sanitized)).getWidth()).isEqualTo(8);
+    }
+    @Test void expiredEvidenceIsUnavailableBeforeTheDailyJobAndItsPayloadIsPurged() throws Exception {
+        var p=create(); var uploaded=service.uploadEvidence(actor(ana),p.id(),"CARE_LABEL",photo(),"evidence_0001");
+        evidence.findById(uploaded.id()).orElseThrow().setExpiresAt(now.minusSeconds(1));
+        assertThat(service.myEvidence(actor(ana),p.id()).getFirst().status()).isEqualTo("EXPIRED");
+        assertThatThrownBy(()->service.downloadEvidence(actor(ana),uploaded.id())).isInstanceOf(ApiException.class);
+        service.purgeExpiredEvidence();
+        assertThat(evidence.findById(uploaded.id()).orElseThrow().getContentBase64()).isNull();
+        assertThat(evidence.findById(uploaded.id()).orElseThrow().getContentHash()).isNull();
+        assertThat(service.myEvidence(actor(ana),p.id())).isEmpty();
     }
     @Test void acceptanceIsRecipientAndTokenBound() {
         var p=create(); var offered=offer(p.id(),"offer_0001");
@@ -190,6 +210,30 @@ class GarmentPassportServiceTest {
         var third=offer(p.id(),"offer_0003"); service.cancelTransfer(actor(ana),p.id(),third.transfer().id());
         assertThatThrownBy(()->service.accept(actor(bia),third.transfer().id(),new GarmentPassportService.AcceptCommand(0,third.token()),"accept_0003")).isInstanceOf(ApiException.class);
         assertThat(passports.findById(p.id()).orElseThrow().getOwnerId()).isEqualTo(ana.getId());
+    }
+    @Test void formerOwnerCanFindOnlyTheirHistoricalDocumentsWithoutReadingNewOwnersData() throws Exception {
+        var p=create(); var formerDocument=service.uploadEvidence(actor(ana),p.id(),"PURCHASE_RECEIPT",photo(),"evidence_0001");
+        var offered=offer(p.id(),"offer_0001");
+        var accepted=service.accept(actor(bia),offered.transfer().id(),new GarmentPassportService.AcceptCommand(0,offered.token()),"accept_0001");
+        service.update(actor(bia),p.id(),new GarmentPassportService.Declaration(0,"PRESENTE","NEW OWNER COMPOSITION","NEW OWNER CARE"));
+        var currentDocument=service.uploadEvidence(actor(bia),p.id(),"REPAIR_RECEIPT",photo(),"evidence_0001");
+        assertThatThrownBy(()->service.get(actor(ana),piece.getId())).isInstanceOf(ApiException.class).satisfies(failure->{
+            ApiException error=(ApiException)failure;
+            assertThat(error.code()).isEqualTo("PASSPORT_TRANSFERRED");
+            assertThat(error.details()).containsExactlyEntriesOf(Map.of("passportId",p.id()));
+            assertThat(Json.write(error.details())).doesNotContain("NEW OWNER",accepted.recipientPieceId().toString());
+        });
+        assertThat(service.myEvidence(actor(ana),p.id())).extracting(GarmentPassportService.EvidenceView::id).containsExactly(formerDocument.id());
+        assertThat(service.myEvidence(actor(bia),p.id())).extracting(GarmentPassportService.EvidenceView::id).containsExactly(currentDocument.id());
+        assertThat(service.myEvidence(actor(other),p.id())).isEmpty();
+        assertThatThrownBy(()->service.get(actor(ana),accepted.recipientPieceId())).isInstanceOf(ApiException.class);
+        assertThatThrownBy(()->service.get(actor(bia),piece.getId())).isInstanceOf(ApiException.class);
+        assertThatThrownBy(()->service.downloadEvidence(actor(ana),currentDocument.id())).isInstanceOf(ApiException.class);
+        assertThatThrownBy(()->service.downloadEvidence(actor(bia),formerDocument.id())).isInstanceOf(ApiException.class);
+        assertThatThrownBy(()->service.deleteEvidence(actor(other),formerDocument.id())).isInstanceOf(ApiException.class);
+        service.deleteEvidence(actor(ana),formerDocument.id());
+        assertThat(service.myEvidence(actor(ana),p.id())).isEmpty();
+        assertThat(service.downloadEvidence(actor(bia),currentDocument.id())).isNotEmpty();
     }
     @Test void resaleUsesExistingListingStateAndCannotAdvertiseUnavailablePiece() {
         var p=create(); assertThatThrownBy(()->service.resale(actor(ana),p.id())).isInstanceOf(ApiException.class);

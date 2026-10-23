@@ -4,6 +4,8 @@ import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor } from "@/test-
 import { tr } from "@/lib/i18n/core";
 import { ProductFitDialog } from "./ProductFitDialog";
 import { FitMeasurementForm } from "./FitMeasurementForm";
+import { FitChartEditor } from "./FitChartEditor";
+import { FitPage } from "./FitPage";
 import type { FitChart, FitRecommendation } from "@/lib/api/fit";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -73,4 +75,97 @@ it("keeps protocol-specific values separate when switching to a reference garmen
   fireEvent.click(screen.getByLabelText(tr("fit.protocol")));
   fireEvent.click(screen.getByRole("option", { name: tr("fit.protocol.BODY_CIRCUMFERENCE_V1") }));
   expect((screen.getByLabelText(tr("fit.region.CHEST")) as HTMLInputElement).value).toBe("98");
+});
+
+it("starts a new comparison after success so a stale result can be refreshed", async () => {
+  let comparisons = 0;
+  const { calls } = mockApi({ [`GET ${path}/size-chart`]: chart, "GET /api/me/fit-measurements": undefined,
+    [`POST ${path}/size-recommendations`]: () => ({ ...recommendation, stale: ++comparisons === 1 }) });
+  renderApp(<ProductFitDialog productId={productId} open onClose={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: tr("fit.recommend") }));
+  await screen.findByText(tr("fit.stale"));
+  fireEvent.click(screen.getByRole("button", { name: tr("fit.recommend") }));
+  await waitFor(() => expect(screen.queryByText(tr("fit.stale"))).toBeNull());
+  const writes = calls.filter(call => call.path.endsWith("/size-recommendations"));
+  expect(writes).toHaveLength(2);
+  expect((writes[0].body as { requestKey: string }).requestKey).not.toBe((writes[1].body as { requestKey: string }).requestKey);
+});
+
+it("saves thigh circumference and inseam length with separate protocols", async () => {
+  const { calls } = mockApi({ "PUT /api/me/fit-measurements": { version: 0, measuredAt: "2026-10-01T00:00:00Z", source: "MANUAL", measurements: [] } });
+  renderApp(<FitMeasurementForm profile={null} onSaved={vi.fn()} />);
+  expect(screen.queryByLabelText(tr("fit.region.INSEAM"))).toBeNull();
+  fireEvent.change(screen.getByLabelText(tr("fit.region.THIGH")), { target: { value: "58" } });
+  fireEvent.click(screen.getByLabelText(tr("fit.protocol")));
+  fireEvent.click(screen.getByRole("option", { name: tr("fit.protocol.BODY_LENGTH_V1") }));
+  expect(screen.queryByLabelText(tr("fit.region.THIGH"))).toBeNull();
+  fireEvent.change(screen.getByLabelText(tr("fit.region.INSEAM")), { target: { value: "78" } });
+  fireEvent.click(screen.getByRole("checkbox", { name: tr("fit.consent") }));
+  fireEvent.click(screen.getByRole("button", { name: tr("fit.saveMeasurements") }));
+  await waitFor(() => expect(calls.find(call => call.method === "PUT")?.body).toMatchObject({ measurements: [
+    { region: "THIGH", protocol: "BODY_CIRCUMFERENCE_V1", value: 58, unit: "CM" },
+    { region: "INSEAM", protocol: "BODY_LENGTH_V1", value: 78, unit: "CM" },
+  ] }));
+});
+
+it("shows missing protocols and the person's prior experience as qualitative evidence", async () => {
+  mockApi({ [`GET ${path}/size-chart`]: chart, "GET /api/me/fit-measurements": undefined,
+    [`POST ${path}/size-recommendations`]: { ...recommendation, result: { ...recommendation.result, missingInformation: [
+      { region: "INSEAM", reason: "INCOMPATIBLE_PROTOCOL", requiredProtocol: "BODY_LENGTH_V1" },
+    ] }, priorExperience: [{ sizeLabel: "M", regions: { CHEST: "TIGHT" }, recordedAt: "2026-10-01T00:00:00Z", chartRevision: 1, explanation: "SAME_PRODUCT_SAME_CHART_SELF_REPORTED" }] } });
+  renderApp(<ProductFitDialog productId={productId} open onClose={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: tr("fit.recommend") }));
+  await screen.findByText(tr("fit.missingInformation"));
+  expect(screen.getByText(new RegExp(tr("fit.protocol.BODY_LENGTH_V1")))).toBeTruthy();
+  expect(screen.getByText(tr("fit.priorExperienceHelp"))).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("fit.evidence.INSUFFICIENT_EVIDENCE")))).toBeTruthy();
+  expect(screen.getByText(new RegExp(`${tr("fit.region.CHEST")}: ${tr("fit.rating.TIGHT")}`))).toBeTruthy();
+});
+
+it("retries private feedback with the same experience key and can remove it", async () => {
+  let attempts = 0;
+  const { calls } = mockApi({ [`GET ${path}/size-chart`]: chart, "GET /api/me/fit-measurements": undefined,
+    [`POST ${path}/size-recommendations`]: recommendation,
+    "POST /api/size-recommendations/r1/feedback": () => ++attempts === 1
+      ? new Response(JSON.stringify({ message: "Falha temporária" }), { status: 503, headers: { "content-type": "application/json" } })
+      : { id: "f1", triedSize: "M", regions: { CHEST: "COMFORTABLE" }, source: "SELF_REPORTED", version: 0 },
+    "DELETE /api/fit-feedback/f1": undefined });
+  renderApp(<ProductFitDialog productId={productId} open onClose={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: tr("fit.recommend") }));
+  fireEvent.click(await screen.findByText(tr("fit.feedback")));
+  fireEvent.click(screen.getByLabelText(tr("fit.region.CHEST"), { selector: "button" }));
+  fireEvent.click(screen.getByRole("option", { name: tr("fit.rating.COMFORTABLE") }));
+  fireEvent.click(screen.getByRole("button", { name: tr("fit.saveFeedback") }));
+  await screen.findByRole("alert");
+  fireEvent.click(screen.getByRole("button", { name: tr("fit.saveFeedback") }));
+  fireEvent.click(await screen.findByRole("button", { name: tr("fit.deleteFeedback") }));
+  await waitFor(() => expect(screen.queryByRole("button", { name: tr("fit.deleteFeedback") })).toBeNull());
+  const writes = calls.filter(call => call.method === "POST" && call.path.endsWith("/feedback"));
+  expect(writes).toHaveLength(2); expect(writes[0].body).toEqual(writes[1].body);
+  expect(writes[0].body).toMatchObject({ triedSize: "M", regions: { CHEST: "COMFORTABLE" } });
+  expect(writes[0].body).not.toHaveProperty("ownerId");
+  expect(calls.some(call => call.method === "DELETE" && call.path === "/api/fit-feedback/f1")).toBe(true);
+});
+
+it("publishes a reviewed source only after explicit authorization with the chart version", async () => {
+  const saved = vi.fn(); const { calls } = mockApi({ [`PUT ${path}/size-chart`]: chart });
+  renderApp(<FitChartEditor chart={{ ...chart, canEdit: true, version: 4 }} onSaved={saved} />);
+  fireEvent.click(screen.getByText(tr("fit.editChart")));
+  expect((screen.getByRole("button", { name: tr("fit.saveChart") }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole("checkbox", { name: tr("fit.chartAuthorization") }));
+  fireEvent.click(screen.getByRole("button", { name: tr("fit.saveChart") }));
+  await waitFor(() => expect(saved).toHaveBeenCalledWith(chart));
+  expect(calls.find(call => call.method === "PUT")?.body).toEqual({ expectedVersion: 4, chart: chart.chart });
+});
+
+it("reloads the private profile after closing a product dialog", async () => {
+  const { calls } = mockApi({ "GET /api/me/fit-measurements": undefined, [`GET ${path}/size-chart`]: { ...chart, chart: null } });
+  renderApp(<FitPage />);
+  await screen.findByRole("button", { name: tr("fit.saveMeasurements") });
+  fireEvent.change(screen.getByLabelText(tr("fit.productId")), { target: { value: productId } });
+  fireEvent.click(screen.getByRole("button", { name: tr("fit.openProduct") }));
+  await screen.findByText(tr("fit.status.NO_CHART"));
+  const readsBeforeClose = calls.filter(call => call.path === "/api/me/fit-measurements").length;
+  fireEvent.click(screen.getByRole("button", { name: tr("common.fechar") }));
+  await waitFor(() => expect(calls.filter(call => call.path === "/api/me/fit-measurements").length).toBeGreaterThan(readsBeforeClose));
 });

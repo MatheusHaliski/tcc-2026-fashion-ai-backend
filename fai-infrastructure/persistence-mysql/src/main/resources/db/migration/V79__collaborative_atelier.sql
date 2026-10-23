@@ -24,7 +24,7 @@ CREATE TABLE atelier_projects (
     CONSTRAINT uq_atelier_creation UNIQUE(owner_id, creation_key),
     CONSTRAINT fk_atelier_owner FOREIGN KEY(owner_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX ix_atelier_owner_activity(owner_id,activity_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE atelier_project_members (
     id CHAR(36) NOT NULL PRIMARY KEY,
@@ -43,7 +43,7 @@ CREATE TABLE atelier_project_members (
     CONSTRAINT fk_atelier_member_project FOREIGN KEY(project_id) REFERENCES atelier_projects(id) ON DELETE CASCADE,
     CONSTRAINT fk_atelier_member_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX ix_atelier_invites(user_id,status,created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE atelier_project_revisions (
     id CHAR(36) NOT NULL PRIMARY KEY,
@@ -67,7 +67,7 @@ CREATE TABLE atelier_project_revisions (
     CONSTRAINT uq_atelier_revision_request UNIQUE(project_id,request_id),
     CONSTRAINT fk_atelier_revision_project FOREIGN KEY(project_id) REFERENCES atelier_projects(id) ON DELETE CASCADE,
     INDEX ix_atelier_revision_author(author_id,created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE atelier_project_comments (
     id CHAR(36) NOT NULL PRIMARY KEY,
@@ -85,7 +85,7 @@ CREATE TABLE atelier_project_comments (
     CONSTRAINT fk_atelier_comment_project FOREIGN KEY(project_id) REFERENCES atelier_projects(id) ON DELETE CASCADE,
     CONSTRAINT fk_atelier_comment_revision FOREIGN KEY(revision_id) REFERENCES atelier_project_revisions(id) ON DELETE CASCADE,
     INDEX ix_atelier_comments(project_id,created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE atelier_project_reviews (
     id CHAR(36) NOT NULL PRIMARY KEY,
@@ -103,7 +103,7 @@ CREATE TABLE atelier_project_reviews (
     CONSTRAINT fk_atelier_review_project FOREIGN KEY(project_id) REFERENCES atelier_projects(id) ON DELETE CASCADE,
     CONSTRAINT fk_atelier_review_revision FOREIGN KEY(revision_id) REFERENCES atelier_project_revisions(id) ON DELETE CASCADE,
     INDEX ix_atelier_reviews(project_id,created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE atelier_project_votes (
     id CHAR(36) NOT NULL PRIMARY KEY,
@@ -121,4 +121,4 @@ CREATE TABLE atelier_project_votes (
     CONSTRAINT fk_atelier_vote_revision FOREIGN KEY(revision_id) REFERENCES atelier_project_revisions(id) ON DELETE CASCADE,
     CONSTRAINT fk_atelier_vote_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX ix_atelier_vote_count(revision_id,interested)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;

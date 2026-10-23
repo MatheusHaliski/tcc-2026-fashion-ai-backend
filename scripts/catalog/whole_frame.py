@@ -1,9 +1,9 @@
 """Peça inteira (Total frame): a peça recortada, sem pessoa, centralizada num quadro 3:4 de 900×1200.
 
-Equivalente ao enquadramento de Tecido (``category_frame``), mas mostra a peça INTEIRA: o segmentador de roupa separa a
-peça do corpo (pele, cabelo, outras roupas) e do fundo; a peça vai para um fundo claro com a margem do Total frame
-(``lib/photo-framing.ts`` TOTAL_FRAME: até 76% da largura e 74% da altura). Lado cortado na foto (``truncated``) encosta na
-borda do quadro, sem margem falsa. Foto com pessoa nunca sai daqui para serviço externo: o segmentador roda localmente.
+Mostra somente a peça semanticamente isolada, sem corpo, outras roupas ou fundo.
+Após o preflight da fonte, preserva a proporção e centraliza a peça com a maior
+aresta normalizada em 50% do quadro. Peças truncadas exigem revisão. O segmentador
+roda localmente; a fotografia original não é enviada a um modelo externo.
 """
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ def _bbox(mask: Image.Image, threshold: int = 128):
 
 
 def render_whole(image: Image.Image, mask: Image.Image, truncated=(), *, preflight=None) -> WholeResult:
-    """Recorta a peça pela máscara, compõe no fundo claro e encaixa no quadro 3:4 com a margem do Total frame.
+    """Compõe a peça completa no quadro 3:4, centralizada e com escala uniforme.
 
     ``mask``: L (0–255), 255 = peça. ``truncated``: lados cortados na foto original ("top", "bottom", "left", "right").
     """

@@ -181,7 +181,8 @@ describe("óculos na foto (I4)", () => {
     const repaired = prepareFaceTexture(f.img, f.skin, null, f.px);
     expect(repaired.eyes?.glasses).toBe("PRESCRIPTION");
     expect(repaired.removed).toBeGreaterThan(0);
-    expect(f.img.data).toEqual(before);
+    // Compare every byte without recursively visiting 640k typed-array properties in CI.
+    expect(Buffer.compare(Buffer.from(f.img.data), Buffer.from(before))).toBe(0);
     const k = (224 * W + 140) * 4;
     expect(repaired.image.data[k]).toBeGreaterThan(before[k] + 50);
     const eye = (180 * W + 140) * 4;

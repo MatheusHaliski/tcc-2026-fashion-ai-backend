@@ -185,6 +185,7 @@ public class CatalogImagePipelineService {
         CatalogImage selected = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
                 .filter(i -> (i.isCanonical() && "APPROVED".equals(i.getProcessingStatus()) || "READY".equals(photoSet(i,product).get("status")))
                         && i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
+                .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(photoSet(i,product).get("status"))))
                 .sorted(java.util.Comparator.comparing(i -> !"READY".equals(photoSet(i,product).get("status"))))
                 .findFirst().orElseThrow(() -> ApiException.notFound("catalog image"));
         Map<String,Object> cleaned=photoSet(selected,product);
@@ -787,12 +788,7 @@ public class CatalogImagePipelineService {
     /** Versão do Total frame: a interface encaixa a caixa da peça num quadro 3:4 com margem uniforme. */
     public static final String WHOLE_FRAME_VERSION = "WHOLE_FRAME_V1";
 
-    /**
-     * Total frame (nível A, nada é copiado): a foto original da marca e a caixa da peça nela ({@code crop_json.product},
-     * normalizada), para a interface mostrar a peça INTEIRA no quadro em vez do recorte de tecido. Só vale para foto de
-     * produto em fundo de estúdio: com modelo/pessoa (rosto, braços) ou sem fundo uniforme devolve null e o card continua
-     * no recorte de sempre — o Total frame nunca enquadra uma pessoa.
-     */
+    /** Total frame requires a source-bound derivative with measured, complete semantic isolation. */
     static Map<String, Object> wholeFrame(CatalogImage canonical) {
         // Legacy studio/background/skin heuristics cannot prove semantic isolation.
         // Only a derivative with current source-bound preflight evidence is exposed.
@@ -827,6 +823,7 @@ public class CatalogImagePipelineService {
                 || !Objects.equals(canonical.getImageUrl(),info.get("sourceUrl"))
                 || canonical.getSourceSha256() == null || !Objects.equals(canonical.getSourceSha256(),info.get("sourceSha256"))
                 || !validPreflight(info.get("preflight"))) return null;
+        if (info.get("truncated") instanceof List<?> sides && !sides.isEmpty()) return null;
         if (!(info.get("box") instanceof Map<?, ?> box)) return null;
         double x = number(box.get("x")), y = number(box.get("y")), w = number(box.get("w")), h = number(box.get("h"));
         if (!(w > 0 && h > 0 && w <= .501 && h <= .501 && Math.abs(Math.max(w,h)-.5) <= .001 && Math.abs(x-(1-w)/2) <= .001 && Math.abs(y-(1-h)/2) <= .001)) return null;

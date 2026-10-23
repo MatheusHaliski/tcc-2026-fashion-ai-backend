@@ -31,7 +31,7 @@ from photo_preflight import inspect_source  # noqa: E402
 from PIL import ImageOps
 
 SELECT = """
-SELECT i.id, i.product_id, i.image_url, i.source_sha256, i.metrics_json, i.crop_json, i.whole_pipeline_version,
+SELECT i.id, i.version AS image_version, i.product_id, i.image_url, i.source_sha256, i.metrics_json, i.crop_json, i.whole_pipeline_version,
        p.category, p.subcategory
   FROM catalog_images i JOIN catalog_products p ON p.id = i.product_id
  WHERE i.is_canonical = 1 AND i.processing_status = 'APPROVED' AND i.usage_status <> 'REJECTED'
@@ -42,9 +42,11 @@ SELECT i.id, i.product_id, i.image_url, i.source_sha256, i.metrics_json, i.crop_
 """
 
 UPDATE = """
-UPDATE catalog_images SET whole_url = %(url)s, whole_json = %(json)s, whole_status = %(status)s,
-       whole_pipeline_version = %(version)s, version = version + 1
- WHERE id = %(id)s AND (source_sha256 <=> %(sha)s)
+UPDATE catalog_images i JOIN catalog_products p ON p.id = i.product_id
+   SET i.whole_url = %(url)s, i.whole_json = %(json)s, i.whole_status = %(status)s,
+       i.whole_pipeline_version = %(version)s, i.source_sha256 = %(source_sha)s, i.version = i.version + 1
+ WHERE i.id = %(id)s AND i.version = %(image_version)s AND i.image_url = %(source_url)s
+   AND (i.source_sha256 <=> %(sha)s) AND p.category = %(category)s AND p.subcategory <=> %(subcategory)s
 """
 
 
@@ -81,8 +83,14 @@ def process(record, downloader, segmenter, *, out_dir: Path | None = None, stora
         image.thumbnail((MAX_ANALYSIS_SIDE,MAX_ANALYSIS_SIDE),Image.Resampling.LANCZOS)
         source_provider=provider or LocalClothProvider(segmenter=segmenter)
         if hasattr(source_provider,'for_source'):source_provider=source_provider.for_source(sha,record['image_url'])
-        masks = source_provider.masks(image, record.get("category"), record.get("subcategory"))
-        preflight = inspect_source(image, masks, record.get("category"), record.get("subcategory"), original_size=original_size)
+        try:
+            masks = source_provider.masks(image, record.get("category"), record.get("subcategory"))
+            preflight = inspect_source(image, masks, record.get("category"), record.get("subcategory"), original_size=original_size)
+        except (ImportError, OSError, ValueError, RuntimeError) as error:
+            reason = str(error) if isinstance(error, ValueError) and str(error).isupper() and len(str(error)) < 90 else 'SEGMENTATION_UNAVAILABLE'
+            return {"id":record["id"],"productId":record.get("product_id"),
+                    "status":"RETRY" if reason == 'SEGMENTATION_UNAVAILABLE' else 'REVIEW',"reason":reason,
+                    "sourceSha256":sha,"metrics":{"sourceGarmentHeightFraction":None}}
         if signals["truncated"] or preflight.status != "PASS":
             return {"id":record["id"],"productId":record.get("product_id"),
                     "status":"REVIEW" if signals["truncated"] else preflight.status,
@@ -104,7 +112,9 @@ def process(record, downloader, segmenter, *, out_dir: Path | None = None, stora
         url = storage.put(result.data)
         info["sha256"] = hashlib.sha256(result.data).hexdigest()
         row.update(status="STORED", url=url,
-                   patch={"id": record["id"], "sha": record.get("source_sha256"), "url": url, "status": "DONE",
+                   patch={"id": record["id"], "sha": record.get("source_sha256"), "source_sha": sha,
+                          "image_version": record["image_version"], "source_url": record["image_url"],
+                          "category": record.get("category"), "subcategory": record.get("subcategory"), "url": url, "status": "DONE",
                           "version": WHOLE_FRAME_VERSION, "json": json.dumps(info, ensure_ascii=False)})
     return row
 
@@ -182,7 +192,9 @@ def main(argv=None) -> int:
                 row = {"id": record["id"], "status": "FAILED", "reason": str(error)}
                 if args.apply and str(error).startswith("WHOLE_"):
                     with conn.cursor() as cur:
-                        cur.execute(UPDATE, {"id": record["id"], "sha": record.get("source_sha256"), "url": None,
+                        cur.execute(UPDATE, {"id": record["id"], "sha": record.get("source_sha256"), "source_sha": record.get("source_sha256"),
+                                             "image_version": record["image_version"], "source_url": record["image_url"],
+                                             "category": record.get("category"), "subcategory": record.get("subcategory"), "url": None,
                                              "json": json.dumps({"reason": str(error)}), "status": "FAILED",
                                              "version": WHOLE_FRAME_VERSION})
                     conn.commit()

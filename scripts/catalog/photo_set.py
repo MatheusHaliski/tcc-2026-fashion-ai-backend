@@ -2,8 +2,8 @@
 
 The local semantic segmenter selects garment classes; it never paints over people,
 reconstructs hidden garment pixels or uses skin colour as a human detector. A mask
-without semantic provenance, an ambiguous result or a missing model yields DEFAULT.
-The caller then supplies the category/colour-specific FAI reference asset.
+without semantic provenance or an ambiguous result yields REVIEW; missing model
+dependencies yield RETRY. Neither verdict is evidence for excluding a product.
 """
 from __future__ import annotations
 
@@ -245,7 +245,7 @@ def _render_whole(image: Image.Image, mask: Image.Image) -> tuple[bytes, dict]:
 
 def process_photo(image: Image.Image, category: str, subcategory: str | None = None, *,
                   masks: PhotoMasks | None = None, provider: PhotoMaskProvider | None = None) -> PhotoSet:
-    """Render a verified mask once or return DEFAULT with a machine-readable reason.
+    """Render a verified source once or return REVIEW/RETRY/INELIGIBLE with a reason.
 
     `verified` declares semantic mask provenance, not a claim of perfect model
     accuracy. Providers/models must be evaluated on the real catalog separately.

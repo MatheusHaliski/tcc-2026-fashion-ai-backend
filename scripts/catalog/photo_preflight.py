@@ -40,7 +40,7 @@ def inspect_source(image: Image.Image, masks, category: str, subcategory: str | 
                "measurementReliable": False, "minimumHeightFraction": MIN_SOURCE_HEIGHT,
                "quality": {"shortEdgePixels": min(original_size)},
                "maskSource": masks.source, "isolationVerified": masks.isolation_verified is True,
-               "humanAssessmentComplete": masks.human_present is not None and masks.forbidden is not None}
+               "humanAssessmentComplete": isinstance(masks.human_present, bool) and masks.forbidden is not None}
 
     def decision(status, reason=None):
         return Preflight(status, reason, {**metrics, "status": status, "reason": reason})
@@ -53,14 +53,21 @@ def inspect_source(image: Image.Image, masks, category: str, subcategory: str | 
     if normal(masks.target_subcategory) != normal(subcategory):
         return decision("REVIEW", "MASK_SUBCATEGORY_MISMATCH")
     confidence = masks.confidence
-    metrics["segmentationConfidence"] = confidence if isinstance(confidence, (int,float)) and math.isfinite(confidence) else None
-    if confidence is not None and (not math.isfinite(confidence) or not .8 <= confidence <= 1):
+    valid_confidence = not isinstance(confidence, bool) and isinstance(confidence, (int, float)) and math.isfinite(confidence)
+    metrics["segmentationConfidence"] = confidence if valid_confidence else None
+    if confidence is not None and (not valid_confidence or not .8 <= confidence <= 1):
         return decision("REVIEW", "LOW_SEGMENTATION_CONFIDENCE")
     if masks.target.size != image.size or (masks.forbidden is not None and masks.forbidden.size != image.size):
         return decision("REVIEW", "MASK_DIMENSIONS_MISMATCH")
     raw = np.asarray(masks.target.convert("L")) >= 192
     if not raw.any():
         return decision("REVIEW", "TARGET_MASK_EMPTY")
+    # An independently classified exterior line is not part of the garment.
+    # This measurement view never mutates the source photograph or output alpha.
+    prohibited = np.zeros(raw.shape, dtype=bool)
+    if masks.forbidden is not None:
+        prohibited = np.asarray(masks.forbidden.convert("L")) >= 192
+        raw = raw & ~prohibited
     # Single-pixel exterior scratches must not inflate the measured source bbox.
     supported = ndimage.binary_opening(raw, structure=np.ones((3, 3), dtype=bool))
     labels, _ = ndimage.label(supported)
@@ -70,6 +77,12 @@ def inspect_source(image: Image.Image, masks, category: str, subcategory: str | 
     if not len(keep):
         return decision("REVIEW", "SOURCE_EXTENT_UNCERTAIN")
     support = np.isin(labels, keep)
+    # Opening must never make a real thin strap disappear and turn a >=25%
+    # garment into deletion evidence. An unresolved appendage/detached contour
+    # makes the source extent unknown until semantic review identifies it.
+    classified_perimeter = ndimage.binary_dilation(prohibited, iterations=1) if prohibited.any() else prohibited
+    if (raw & ~support & ~classified_perimeter & (ndimage.distance_transform_edt(~support) > 3)).any():
+        return decision("REVIEW", "SOURCE_EXTENT_UNCERTAIN")
     ys, xs = np.where(support)
     left, top, right, bottom = int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
     height_fraction = (bottom - top) / image.height
@@ -90,7 +103,7 @@ def inspect_source(image: Image.Image, masks, category: str, subcategory: str | 
         return decision("REVIEW", "GARMENT_COMPLETENESS_UNCERTAIN")
     reliable = masks.measurement_verified is True
     metrics["measurementReliable"] = reliable
-    if not masks.isolation_verified or masks.forbidden is None or masks.human_present is None:
+    if masks.isolation_verified is not True or masks.forbidden is None or not isinstance(masks.human_present, bool):
         return decision("REVIEW", "HUMAN_EXCLUSION_UNVERIFIED")
     if height_fraction < MIN_SOURCE_HEIGHT:
         return decision("INELIGIBLE" if reliable else "REVIEW",
