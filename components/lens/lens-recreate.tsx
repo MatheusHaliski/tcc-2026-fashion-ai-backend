@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { lensApi } from "@/lib/lens/api";
 import { createLookHref } from "@/lib/lens/model";
-import type { LensMode, LensSlot, LensSlotKind } from "@/lib/lens/types";
+import type { LensMode, LensRecreatePlan, LensSlot, LensSlotKind } from "@/lib/lens/types";
 import type { PieceView } from "@/lib/api/types";
 import { PieceCard } from "@/components/piece-card";
 import { Button, EmptyState, ErrorState, SegmentPicker, SkeletonGrid, cn, useToast } from "@/components/ui";
@@ -82,22 +82,23 @@ export function LensRecreateTab() {
   const { scan, focusId, version } = useLens();
   const [mode, setMode] = useState<LensMode>("SAFE");
   const [locked, setLocked] = useState<Partial<Record<LensSlotKind, string>>>({});
-  const [choice, setChoice] = useState<Partial<Record<LensSlotKind, number>>>({});
+  const [selection, setSelection] = useState<{ plan: LensRecreatePlan | null; choices: Partial<Record<LensSlotKind, number>> }>({ plan: null, choices: {} });
   const [alt, setAlt] = useState<Partial<Record<LensSlotKind, boolean>>>({});
   const lockedRef = useRef(locked); lockedRef.current = locked;
   const plan = useApi((signal) => { void signal; return lensApi.recreate(scan.id, { mode, focus: focusId, locked: lockedRef.current }); }, [scan.id, mode, focusId, version]);
 
-  // plano novo: slots soltos voltam à primeira opção; os fixados ficam na peça presa
-  useEffect(() => {
-    if (!plan.data) return;
+  // Inicializa junto da resposta, antes de mostrar controles que um efeito tardio poderia sobrescrever.
+  // Plano novo: slots soltos voltam à primeira opção; os fixados ficam na peça presa.
+  if (selection.plan !== plan.data) {
     const next: Partial<Record<LensSlotKind, number>> = {};
-    plan.data.slots.forEach((s) => {
-      const id = lockedRef.current[s.slot];
+    plan.data?.slots.forEach((s) => {
+      const id = locked[s.slot];
       const i = id ? (s.state === "gap" ? s.alternatives : optionsOf(s)).findIndex((p) => p.id === id) : -1;
       next[s.slot] = Math.max(0, i);
     });
-    setChoice(next);
-  }, [plan.data]);
+    setSelection({ plan: plan.data, choices: next });
+  }
+  const choice = selection.choices;
 
   const selected = useMemo(() => {
     if (!plan.data) return [] as string[];
@@ -134,7 +135,7 @@ export function LensRecreateTab() {
             {plan.data.slots.length ? (
               <div className="lens-slots">
                 {plan.data.slots.map((s) => (
-                  <SlotCard key={s.slot} slot={s} index={choice[s.slot] ?? 0} onIndex={(i) => setChoice((c) => ({ ...c, [s.slot]: i }))}
+                  <SlotCard key={s.slot} slot={s} index={choice[s.slot] ?? 0} onIndex={(i) => setSelection((current) => ({ plan: plan.data, choices: { ...(current.plan === plan.data ? current.choices : choice), [s.slot]: i } }))}
                     locked={!!locked[s.slot]} onLock={() => toggleLock(s)} useAlt={!!alt[s.slot]} onUseAlt={() => setAlt((a) => ({ ...a, [s.slot]: true }))} />
                 ))}
               </div>
