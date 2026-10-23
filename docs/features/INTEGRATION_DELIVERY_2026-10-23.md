@@ -14,7 +14,7 @@
 
 ## Verificações
 
-- TypeScript, lint de estilos, design e traduções PT/EN/ES passaram.
+- Frontend: suíte completa final com 244 arquivos e 1.919 testes passando; dois arquivos e três testes ignorados. TypeScript, lint de estilos, design, traduções PT/EN/ES e build completo Next.js passaram.
 - Backend: 128 testes de aplicação passaram, incluindo persistência real H2/concorrência; três testes WebMvc de leitura pública e bloqueio de rotas privadas passaram. Pacote completo Java 21 passou.
 - Pipeline: 33 testes Python passaram; relatório offline de sete fixtures, uma candidata; quarentena/restauração demonstradas somente em SQLite de memória. SHA e controle de concorrência impedem aplicar relatório obsoleto.
 - Chromium desktop/mobile: Atelier 18 checkpoints; passaporte 18 estados; tamanho com medidas, tabela, recomendação, feedback, falta de tabela e entrada lazy no catálogo. Sem overflow ou erros de página nas execuções finais. APIs e autenticação eram fixtures explícitas; a acessibilidade examinada é parcial (nomes, foco, Tab/Escape), não certificação WCAG.
