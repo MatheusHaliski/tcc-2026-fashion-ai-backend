@@ -26,6 +26,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image  # noqa: E402
 
 from whole_frame import WHOLE_FRAME_VERSION, GarmentSegmenter, render_whole  # noqa: E402
+from photo_set import LocalClothProvider, clean_target_mask, MAX_INPUT_PIXELS, MAX_ANALYSIS_SIDE  # noqa: E402
+from photo_preflight import inspect_source  # noqa: E402
+from PIL import ImageOps
 
 SELECT = """
 SELECT i.id, i.product_id, i.image_url, i.source_sha256, i.metrics_json, i.crop_json, i.whole_pipeline_version,
@@ -61,7 +64,7 @@ def analysis_of(record) -> dict:
     return {"model": model, "truncated": truncated}
 
 
-def process(record, downloader, segmenter, *, out_dir: Path | None = None, storage=None) -> dict:
+def process(record, downloader, segmenter, *, out_dir: Path | None = None, storage=None, provider=None) -> dict:
     """Uma foto: baixa, recorta, renderiza; com ``storage`` envia e devolve o patch do banco."""
     signals = analysis_of(record)
     path = downloader.get(record["image_url"])
@@ -70,11 +73,29 @@ def process(record, downloader, segmenter, *, out_dir: Path | None = None, stora
     if record.get("source_sha256") and record["source_sha256"] != sha:
         return {"id": record["id"], "status": "SKIPPED", "reason": "SOURCE_CHANGED_SINCE_ANALYSIS"}
     with Image.open(path) as image:
+        if image.width*image.height>MAX_INPUT_PIXELS:
+            return {"id":record["id"],"status":"REVIEW","reason":"IMAGE_TOO_LARGE","sourceSha256":sha}
+        image = ImageOps.exif_transpose(image).convert("RGB")
         image.load()
-        mask = segmenter.mask(image, category=record.get("category"), subcategory=record.get("subcategory"),
-                              model=signals["model"])
-        result = render_whole(image, mask, signals["truncated"])
-    info = {**result.info, "model": signals["model"], "sourceSha256": sha, "sourceUrl": record["image_url"]}
+        original_size=image.size
+        image.thumbnail((MAX_ANALYSIS_SIDE,MAX_ANALYSIS_SIDE),Image.Resampling.LANCZOS)
+        source_provider=provider or LocalClothProvider(segmenter=segmenter)
+        if hasattr(source_provider,'for_source'):source_provider=source_provider.for_source(sha,record['image_url'])
+        masks = source_provider.masks(image, record.get("category"), record.get("subcategory"))
+        preflight = inspect_source(image, masks, record.get("category"), record.get("subcategory"), original_size=original_size)
+        if signals["truncated"] or preflight.status != "PASS":
+            return {"id":record["id"],"productId":record.get("product_id"),
+                    "status":"REVIEW" if signals["truncated"] else preflight.status,
+                    "reason":"GARMENT_COMPLETENESS_UNCERTAIN" if signals["truncated"] else preflight.reason,
+                    "sourceSha256":sha,"metrics":{"preflight":preflight.metrics}}
+        try:
+            mask, cleanup = clean_target_mask(masks.target, masks.forbidden, record.get("category"), record.get("subcategory"))
+        except ValueError as error:
+            return {"id":record["id"],"productId":record.get("product_id"),"status":"REVIEW", "reason":str(error),
+                    "sourceSha256":sha,"metrics":{"preflight":preflight.metrics}}
+        result = render_whole(image, mask, preflight=preflight)
+    info = {**result.info, "model": signals["model"], "sourceSha256": sha, "sourceUrl": record["image_url"],
+            "category":record.get("category"),"subcategory":record.get("subcategory"),"cleanup":cleanup}
     row = {"id": record["id"], "productId": record.get("product_id"), "status": "RENDERED", "info": info}
     if out_dir is not None:
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -118,6 +139,7 @@ def main(argv=None) -> int:
     parser.add_argument("--product-id", help="só um produto")
     parser.add_argument("--out-dir", type=Path, help="salva as prévias JPEG aqui (ensaio)")
     parser.add_argument("--audit", type=Path, default=Path("whole-frames-audit.jsonl"))
+    parser.add_argument("--reviewed-masks",type=Path)
     args = parser.parse_args(argv)
 
     import tempfile
@@ -130,6 +152,10 @@ def main(argv=None) -> int:
         from category_frame_storage import FrameStorage
         storage = WholeStorage(FrameStorage())
     segmenter = GarmentSegmenter()
+    provider=None
+    if args.reviewed_masks:
+        from reviewed_photo_masks import ReviewedMaskProvider
+        provider=ReviewedMaskProvider(args.reviewed_masks)
     conn = db.connect()
     sql = SELECT.format(product="AND i.product_id = %(product)s" if args.product_id else "")
     with conn.cursor() as cur:
@@ -142,7 +168,7 @@ def main(argv=None) -> int:
         downloader = ImageDownloader(Path(tmp))
         for record in records:
             try:
-                row = process(record, downloader, segmenter, out_dir=args.out_dir, storage=storage)
+                row = process(record, downloader, segmenter, out_dir=args.out_dir, storage=storage,provider=provider)
                 if row.get("patch"):
                     with conn.cursor() as cur:
                         cur.execute(UPDATE, row["patch"])

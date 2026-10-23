@@ -161,6 +161,16 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "item_condition", length = 20)
     private ItemCondition condition = ItemCondition.GOOD;
 
+    /** FK cadastrada pelo usuário; o enum condition continua legível para clientes antigos. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estado_de_conservacao")
+    private EstadoConservacao estadoConservacao;
+
+    /** Instrução estruturada, sem substituir o campo livre careInstructions. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_lavagem_id")
+    private TipoLavagem tipoLavagem;
+
     @Column(name = "is_favorite", nullable = false)
     private boolean favorite;
 

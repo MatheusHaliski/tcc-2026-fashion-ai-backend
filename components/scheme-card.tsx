@@ -63,7 +63,7 @@ export function CardSealSummary({seals}:{seals?:SealBadge[]}) {
   if(!seals?.length)return null;
   return <div className="card-seals">
     <SealSlot inline px={44} seals={seals}/>
-    {seals.length>3&&<span className="card-meta-more" title={seals.slice(3).map(s=>s.name??s.label).join(" · ")} aria-label={t("schemeCard.selos",{join:seals.map(s=>s.name??s.label).join(", ")})}>+{seals.length-3}</span>}
+    {seals.length>3&&<span className="card-meta-more" title={seals.slice(3).map(s=>s.name??s.label).join(" · ")} aria-label={t("schemeCard.selos",{join:seals.slice(3).map(s=>s.name??s.label).join(", ")})}>+{seals.length-3}</span>}
   </div>;
 }
 
@@ -272,7 +272,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
 
   const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} infoRows={social?[[t("common.pecas"),String(items.length)],...(scheme.season?[[t("common.season"),label(scheme.season.toLowerCase())] as [string,ReactNode]]:[])]:[]}/>;
   const card = (
-    <article data-card-mode={expanded?"expanded":"feed"} className={`fai-card scheme-card ${social?"scheme-card-social":""} ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
+    <article data-card-mode={expanded?"expanded":social?"feed":"compact"} className={`fai-card scheme-card ${social?"scheme-card-social":""} ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
         trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
       <CardBorder entityId={`SCHEME:${scheme.id}`} background={{...scheme.background,...studio}} auraHype={auraEnabled} hype={hypeState}/>

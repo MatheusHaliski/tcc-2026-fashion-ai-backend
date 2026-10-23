@@ -14,6 +14,8 @@ export interface StoreBrowserProps {
   loading: boolean;
   store: string;
   category: string;
+  gender?: string;
+  onGenderChange?: (gender: string) => void;
   onStoreChange: (store: string) => void;
   onCategoryChange: (category: string) => void;
   onPick: (product: CatalogProduct, variant: CatalogVariant | null) => void;
@@ -23,7 +25,7 @@ export interface StoreBrowserProps {
 
 /** Vitrine do catálogo; a seleção e os resultados pertencem ao coordenador do provador. */
 export function StoreBrowser({
-  stores, loading, store, category, onStoreChange, onCategoryChange, onPick, onResults, resultsTarget,
+  stores, loading, store, category, gender, onGenderChange, onStoreChange, onCategoryChange, onPick, onResults, resultsTarget,
 }: StoreBrowserProps) {
   const { t } = useI18n();
 
@@ -63,6 +65,8 @@ export function StoreBrowser({
         key={store}
         initial={{ brand: store }}
         category={category}
+        gender={gender}
+        onGenderChange={onGenderChange}
         onClearCategory={() => onCategoryChange("")}
         onClearBrand={() => onStoreChange("")}
         browse

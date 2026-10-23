@@ -16,6 +16,9 @@ import java.util.UUID;
 
 /** Repositório Spring Data de CatalogProduct (RF47 · catálogo global). */
 public interface CatalogProductRepository extends JpaRepository<CatalogProduct, UUID> {
+    /** Unknown/legacy measurements remain visible; only the audited product marker excludes. */
+    String VISIBLE_SQL = "p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
+            + "AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.metadata_json,'$.catalogPhotoEligibility.state')),'UNKNOWN') <> 'INELIGIBLE'";
     Optional<CatalogProduct> findByDedupKey(String dedupKey);
 
     Optional<CatalogProduct> findFirstByBrandIdAndSubcategoryAndModelNameIgnoreCase(UUID brandId, String subcategory, String modelName);
@@ -45,7 +48,7 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
      * texto (até três palavras, todas presentes no nome, modelo ou texto de busca): é o que "ver todas as peças" percorre —
      * sem pool, sem corte por pontuação. Cada {@code qN} já vem como padrão LIKE em minúsculas ("%camiseta%").
      */
-    @Query(value = "SELECT p.* FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
+    @Query(value = "SELECT p.* FROM catalog_products p WHERE " + VISIBLE_SQL + " "
             + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
             + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
             + "AND (:gender IS NULL OR p.gender = :gender) "
@@ -54,7 +57,7 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
             + "AND (:q2 IS NULL OR LOWER(p.product_name) LIKE :q2 OR LOWER(p.model_name) LIKE :q2 OR LOWER(p.search_text) LIKE :q2) "
             + "AND (:q3 IS NULL OR LOWER(p.product_name) LIKE :q3 OR LOWER(p.model_name) LIKE :q3 OR LOWER(p.search_text) LIKE :q3) "
             + "ORDER BY p.product_name, p.id",
-            countQuery = "SELECT COUNT(*) FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
+            countQuery = "SELECT COUNT(*) FROM catalog_products p WHERE " + VISIBLE_SQL + " "
                     + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
                     + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
             + "AND (:gender IS NULL OR p.gender = :gender) "
@@ -67,7 +70,7 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
                                 @Param("q1") String q1, @Param("q2") String q2, @Param("q3") String q3, @Param("color") String color, @Param("gender") String gender, Pageable pageable);
 
     /** Exact product/variant identifier; a variant SKU and color must match the same variant. */
-    @Query(value = "SELECT p.* FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) AND (:subcategory IS NULL OR p.subcategory = :subcategory) AND (:gender IS NULL OR p.gender = :gender) AND (((LOWER(p.product_code) = :code OR LOWER(p.sku) = :code OR LOWER(p.gtin) = :code) AND (:color IS NULL OR p.color = :color OR EXISTS (SELECT 1 FROM catalog_variants c WHERE c.product_id = p.id AND c.color = :color))) OR EXISTS (SELECT 1 FROM catalog_variants v WHERE v.product_id = p.id AND (LOWER(v.sku) = :code OR LOWER(v.variant_code) = :code OR LOWER(v.variant_key) = :code) AND (:color IS NULL OR v.color = :color))) ORDER BY p.product_name, p.id", countQuery = "SELECT COUNT(*) FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) AND (:subcategory IS NULL OR p.subcategory = :subcategory) AND (:gender IS NULL OR p.gender = :gender) AND (((LOWER(p.product_code) = :code OR LOWER(p.sku) = :code OR LOWER(p.gtin) = :code) AND (:color IS NULL OR p.color = :color OR EXISTS (SELECT 1 FROM catalog_variants c WHERE c.product_id = p.id AND c.color = :color))) OR EXISTS (SELECT 1 FROM catalog_variants v WHERE v.product_id = p.id AND (LOWER(v.sku) = :code OR LOWER(v.variant_code) = :code OR LOWER(v.variant_key) = :code) AND (:color IS NULL OR v.color = :color)))", nativeQuery = true)
+    @Query(value = "SELECT p.* FROM catalog_products p WHERE " + VISIBLE_SQL + " AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) AND (:subcategory IS NULL OR p.subcategory = :subcategory) AND (:gender IS NULL OR p.gender = :gender) AND (((LOWER(p.product_code) = :code OR LOWER(p.sku) = :code OR LOWER(p.gtin) = :code) AND (:color IS NULL OR p.color = :color OR EXISTS (SELECT 1 FROM catalog_variants c WHERE c.product_id = p.id AND c.color = :color))) OR EXISTS (SELECT 1 FROM catalog_variants v WHERE v.product_id = p.id AND (LOWER(v.sku) = :code OR LOWER(v.variant_code) = :code OR LOWER(v.variant_key) = :code) AND (:color IS NULL OR v.color = :color))) ORDER BY p.product_name, p.id", countQuery = "SELECT COUNT(*) FROM catalog_products p WHERE " + VISIBLE_SQL + " AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) AND (:subcategory IS NULL OR p.subcategory = :subcategory) AND (:gender IS NULL OR p.gender = :gender) AND (((LOWER(p.product_code) = :code OR LOWER(p.sku) = :code OR LOWER(p.gtin) = :code) AND (:color IS NULL OR p.color = :color OR EXISTS (SELECT 1 FROM catalog_variants c WHERE c.product_id = p.id AND c.color = :color))) OR EXISTS (SELECT 1 FROM catalog_variants v WHERE v.product_id = p.id AND (LOWER(v.sku) = :code OR LOWER(v.variant_code) = :code OR LOWER(v.variant_key) = :code) AND (:color IS NULL OR v.color = :color)))", nativeQuery = true)
     Page<CatalogProduct> browseByIdentifier(@Param("brandId") String brandId, @Param("category") String category, @Param("subcategory") String subcategory,
         @Param("code") String code, @Param("color") String color, @Param("gender") String gender, Pageable pageable);
 
@@ -76,20 +79,20 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
      * criador, do Provador e do Explorador sai daqui, sem carregar as peças de cada marca para contar.
      */
     @Query(value = "SELECT p.brand_id, p.category, COUNT(*) FROM catalog_products p "
-            + "WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') GROUP BY p.brand_id, p.category", nativeQuery = true)
+            + "WHERE " + VISIBLE_SQL + " GROUP BY p.brand_id, p.category", nativeQuery = true)
     List<Object[]> visibleCountsByBrandAndCategory();
 
     /** Peças visíveis com pelo menos uma foto utilizável (não recusada): deve bater com o total de peças. */
     @Query(value = "SELECT COUNT(DISTINCT i.product_id) FROM catalog_images i JOIN catalog_products p ON p.id = i.product_id "
-            + "WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') AND i.usage_status <> 'REJECTED'", nativeQuery = true)
+            + "WHERE " + VISIBLE_SQL + " AND i.usage_status <> 'REJECTED'", nativeQuery = true)
     long countVisibleWithImage();
 
     /** Quantas peças visíveis há no acervo (o total mostrado nas telas). */
-    @Query(value = "SELECT COUNT(*) FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY')", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM catalog_products p WHERE " + VISIBLE_SQL + "", nativeQuery = true)
     long countVisible();
 
     /** Candidatos pelo índice FULLTEXT (ngram), filtrados por marca/categoria/subcategoria quando informados. */
-    @Query(value = "SELECT p.* FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
+    @Query(value = "SELECT p.* FROM catalog_products p WHERE " + VISIBLE_SQL + " "
             + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
             + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
             + "AND (:terms IS NULL OR MATCH(p.search_text) AGAINST (:terms IN BOOLEAN MODE)) "
@@ -98,7 +101,7 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
                                     @Param("subcategory") String subcategory, @Param("terms") String terms);
 
     /** Candidatos que têm a cor pedida no produto ou numa variante ("camiseta azul": a que existe em azul). */
-    @Query(value = "SELECT p.* FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
+    @Query(value = "SELECT p.* FROM catalog_products p WHERE " + VISIBLE_SQL + " "
             + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
             + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
             + "AND (p.color = :color OR EXISTS (SELECT 1 FROM catalog_variants v WHERE v.product_id = p.id AND v.color = :color)) "

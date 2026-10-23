@@ -21,13 +21,15 @@ export interface Me {
 }
 export interface Counters { likes: number; comments: number; shares: number; remixes: number; views: number; saves: number; reactions: Record<string, number>; }
 export interface ViewerState { liked: boolean; reactions: string[]; saved: boolean; canEdit: boolean; following: boolean; }
+export interface ReferenceOption { id: string; codigo: string; nome: string; }
 export interface PieceView {
   fashionCard?: FashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null;
   id: string; owner: UserCard; name: string; category: string; subcategory: string; sex: string; brandName?: string | null; brandId?: string | null;
   brandLogoUrl?: string | null; brandSource?: string | null; color: string; colorHex?: string | null; material?: string; size?: string; market?: string; style: string[]; occasion: string[];
   seals: string[]; price?: number | null; imageUrl?: string | null; originalImageUrl?: string | null; thumbnailUrl?: string | null; defaultImage: boolean;
   /** RF4 · a foto da peça foi recriada por IA a pedido da pessoa: o card mostra o selo "IA" */ aiGeneratedImage?: boolean;
-  visibility: string; disponivel: boolean; availabilityStatus: string; condition?: string; favorite: boolean; forSale: boolean; wearCount: number;
+  visibility: string; disponivel: boolean; availabilityStatus: string; condition?: string | null; favorite: boolean; forSale: boolean; wearCount: number;
+  estadoConservacao?: ReferenceOption | null; tipoLavagem?: ReferenceOption | null; careInstructions?: string | null;
   /** "Para doar" (estado público, como "à venda"; os dois são exclusivos — o backend limpa o outro) */ forDonation?: boolean;
   /** variação da subcategoria e quem a escreveu: AI_SUGGESTED/AI até a pessoa trocar ou confirmar (USER_CONFIRMED/USER) */
   variation?: string | null; variationStatus?: string | null; variationSource?: string | null; attributes?: Record<string, string[]>;
@@ -45,7 +47,7 @@ export interface PieceView {
   counters: Counters; viewer: ViewerState; notAvailableAnymore: boolean; createdAt: string; updatedAt: string;
 }
 export interface SchemeItemView { id?: string; wardrobeItemId: string; slot: string; sortOrder?: number; zIndex?: number; piece?: PieceView | null; name?: string; imageUrl?: string | null; [k: string]: unknown; }
-export interface TipoLook { id: string; codigo: string; nome: string; }
+export interface TipoLook extends ReferenceOption {}
 export interface SchemeView {
   fashionCard?: FashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null;
   tipoLook?: TipoLook | null;

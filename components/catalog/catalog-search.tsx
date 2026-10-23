@@ -35,7 +35,7 @@ const BRAND_PAGE_SIZE = 12;
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true, onClearCategory, onClearBrand }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, gender: controlledGender, onGenderChange, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true, onClearCategory, onClearBrand }: {
   /** Modo embutido: limpa também a categoria controlada pelo formulário. */
   onClearCategory?: () => void;
   /** a loja escolhida pertence a quem embute a busca (Provador): "Limpar seleção" também a desmarca lá */
@@ -45,6 +45,9 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
   /** Embutida no criador (RF4): a categoria é a do formulário, escolhida fora — a busca não repete os cards de categoria. */
   category?: string;
+  /** Filtro de gênero do catálogo controlado pelo Tipo de Look do provador; não altera a identidade da pessoa. */
+  gender?: string;
+  onGenderChange?: (gender: string) => void;
   /** Tipo (subcategoria) escolhido na busca segue para o formulário. */
   onContext?: (ctx: Partial<CatalogSearchContext>) => void;
   /** Texto do botão de cada resultado (padrão "É esta"; no provador, "Provar"). */
@@ -102,7 +105,12 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   };
   const [query, setQuery] = useState(initial?.query ?? "");
   const [color, setColor] = useState("");
-  const [gender, setGender] = useState("");
+  const [ownGender, setOwnGender] = useState("");
+  const gender = controlledGender ?? ownGender;
+  const setGender = (next: string) => {
+    if (controlledGender === undefined) setOwnGender(next);
+    onGenderChange?.(next);
+  };
   const [res, setRes] = useState<SearchResponse | null>(null);
   // o acervo inteiro, paginado: sem texto digitado, marca/categoria/tipo escolhidos (ou "ver todo o acervo") percorrem
   // TODAS as peças, em páginas de 48, com o total real do banco — não as 24 mais parecidas da busca ranqueada
@@ -136,7 +144,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
     const ctl = new AbortController();
     const h = setTimeout(() => run(n, ctl.signal), 350);
     return () => { clearTimeout(h); ctl.abort(); };
-  }, [params.category, params.subcategory, params.brand, params.q, params.code, params.color, browsing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [params.category, params.subcategory, params.brand, params.q, params.code, params.color, params.gender, browsing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // acervo inteiro (paginado) sempre que a pessoa escolhe sem descrever
   useEffect(() => {
@@ -292,10 +300,10 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
             </p>
           )}
           {resultsLayout === "matrix" && <p className="mb-3 type-body-sm tabular" role="status">{t("catalog.pecas_na_selecao", { count: browsing && acervo ? acervo.total : filtered.length })}</p>}
-          {(colors.length > 1 || genders.length > 1) && (
+          {(colors.length > 1 || controlledGender === undefined && genders.length > 1) && (
             <div className="mb-3 flex flex-wrap items-center gap-1.5" aria-label={t("catalog.filtros_rapidos")}>
               {colors.length > 1 && <><span className="type-caption text-muted">{t("common.color")}:</span>{colors.map((c) => <Chip key={c} active={color === c} onClick={() => setColor(color === c ? "" : c)}><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: tax?.colors?.[c] ?? "#999" }} />{label(c)}</Chip>)}</>}
-              {genders.length > 1 && <><span className="type-caption text-muted ml-2">{t("catalog.genero")}:</span>{genders.map((g) => <Chip key={g} active={gender === g} onClick={() => setGender(gender === g ? "" : g)}>{label(g.toLowerCase())}</Chip>)}</>}
+              {controlledGender === undefined && genders.length > 1 && <><span className="type-caption text-muted ml-2">{t("catalog.genero")}:</span>{genders.map((g) => <Chip key={g} active={gender === g} onClick={() => setGender(gender === g ? "" : g)}>{label(g.toLowerCase())}</Chip>)}</>}
             </div>
           )}
           {filtered.length > 0 && (

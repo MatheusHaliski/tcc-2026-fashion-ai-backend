@@ -10,6 +10,7 @@ import { FashionCardStats } from "@/components/hype/fashion-card-panel";
 import { HypeGuideIcon } from "@/components/hype/hype-guide";
 import { BrandLogo } from "@/components/brand-logo";
 import { hypePreset } from "@/lib/hype/aura-hype-presets";
+import { conservationLabel } from "@/lib/api/piece-references";
 
 type Tab = "info" | "hype";
 
@@ -22,7 +23,7 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[] }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size">>; summary?: HypeSummary | null; initial?: Tab;
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[] }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao">>; summary?: HypeSummary | null; initial?: Tab;
   /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
   auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][] }) {
   const { t } = useI18n();
@@ -43,6 +44,8 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
     if(piece.material) rows.push([t("common.material"),label(piece.material)]);
     if(piece.size) rows.push([t("common.size"),label(piece.size)]);
   }
+  const condition = conservationLabel(piece, t);
+  if (condition) rows.push([t("pieceReferences.condition.label"), condition]);
   rows.push(...infoRows);
   const tabs: { key: Tab; icon: ReactNode; text: string }[] = [
     { key: "info", icon: <InfoIcon />, text: t("pieceCard.tab_info") },

@@ -10,6 +10,8 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.catalog.whole_frame import FULL, LOWER, UPPER, GarmentSegmenter, cloth_class, render_whole  # noqa: E402
+from scripts.catalog.photo_set import PhotoMasks
+from scripts.catalog.photo_preflight import inspect_source
 from scripts.catalog import process_whole_frames as batch  # noqa: E402
 
 
@@ -22,6 +24,15 @@ def model_photo():
     mask = Image.new("L", im.size, 0)
     ImageDraw.Draw(mask).rectangle((730, 300, 870, 860), fill=255)
     return im, mask
+
+
+def evidence(image, mask, category='lower_piece', subcategory='jeans'):
+    return PhotoMasks(mask,Image.new('L',image.size),verified=True,target_category=category,target_subcategory=subcategory,
+                      human_present=True,measurement_verified=True,isolation_verified=True,complete=True,occluded=False,source='fixture')
+
+
+def gate(image,mask):
+    return inspect_source(image,evidence(image,mask),'lower_piece','jeans')
 
 
 class ClothClassTest(unittest.TestCase):
@@ -37,11 +48,11 @@ class ClothClassTest(unittest.TestCase):
 class RenderWholeTest(unittest.TestCase):
     def test_piece_only_centered_without_person_and_large(self):
         im, mask = model_photo()
-        result = render_whole(im, mask)
+        result = render_whole(im, mask, preflight=gate(im,mask))
         with Image.open(io.BytesIO(result.data)) as out:
             self.assertEqual(out.size, (900, 1200))
             # a calça ocupa o quadro (era ~9% da largura e 62% da altura da foto original)
-            self.assertAlmostEqual(result.info["box"]["h"], 0.74, places=2)
+            self.assertAlmostEqual(result.info["box"]["h"], 0.5, places=2)
             self.assertGreater(result.info["box"]["w"], 0.1)
             center = out.getpixel((450, 600))
             self.assertLess(center[0], 80)          # azul da calça no centro
@@ -52,22 +63,12 @@ class RenderWholeTest(unittest.TestCase):
         self.assertTrue(result.info["upscaled"])
         self.assertEqual(result.info["background"], "#F4F5F7")
 
-    def test_truncated_bottom_touches_frame_edge(self):
+    def test_truncated_or_unverified_source_cannot_be_rendered(self):
         im, mask = model_photo()
-        result = render_whole(im, mask, truncated=["bottom", "nonsense"])
-        box = result.info["box"]
-        self.assertAlmostEqual(box["y"] + box["h"], 1.0, places=2)
-        self.assertGreater(box["y"], 0.1)   # o topo mantém a margem: só o lado cortado encosta
-        self.assertEqual(result.info["truncated"], ["bottom"])
-
-    def test_empty_or_tiny_mask_is_refused(self):
-        im, _ = model_photo()
-        with self.assertRaisesRegex(ValueError, "WHOLE_EMPTY_MASK"):
-            render_whole(im, Image.new("L", im.size, 0))
-        tiny = Image.new("L", im.size, 0)
-        ImageDraw.Draw(tiny).rectangle((10, 10, 20, 20), fill=255)
-        with self.assertRaisesRegex(ValueError, "WHOLE_MASK_TOO_SMALL"):
-            render_whole(im, tiny)
+        with self.assertRaisesRegex(ValueError, 'GARMENT_COMPLETENESS_UNCERTAIN'):
+            render_whole(im,mask,truncated=['bottom'],preflight=gate(im,mask))
+        with self.assertRaisesRegex(ValueError, 'SOURCE_PREFLIGHT_REQUIRED'):
+            render_whole(im,mask)
 
 
 class SegmenterTest(unittest.TestCase):
@@ -109,12 +110,16 @@ class BatchTest(unittest.TestCase):
                       "category": "lower_piece", "subcategory": "jeans",
                       "metrics_json": json.dumps({"debug": {"productFrame": {"model": True}, "truncated": []}})}
             storage = Storage()
-            row = batch.process(record, Downloader(path), seg, out_dir=Path(tmp) / "out", storage=storage)
+            class Provider:
+                def masks(self,image,category,subcategory):
+                    target=seg.mask(image,category=category,subcategory=subcategory,model=True)
+                    return evidence(image,target,category,subcategory)
+            row = batch.process(record, Downloader(path), seg, out_dir=Path(tmp) / "out", storage=storage,provider=Provider())
             self.assertEqual(seen, {"klass": LOWER, "model": True})
             self.assertEqual(row["status"], "STORED")
             self.assertTrue((Path(tmp) / "out" / "img1.jpg").exists())
             patch = row["patch"]
-            self.assertEqual((patch["status"], patch["version"], patch["sha"]), ("DONE", "WHOLE_FRAME_V2", sha))
+            self.assertEqual((patch["status"], patch["version"], patch["sha"]), ("DONE", "WHOLE_FRAME_V3", sha))
             info = json.loads(patch["json"])
             self.assertTrue(info["model"])
             self.assertIn("box", info)

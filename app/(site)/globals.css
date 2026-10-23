@@ -284,11 +284,15 @@ h1, h2, h3, h4 { margin: 0; }
 .detail-card-expanded { width: 100%; max-width: 440px; }
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); gap: .9rem; }
 @media (max-width: 639px) { .grid-cards { grid-template-columns: minmax(0, 1fr); gap: .6rem; } }
-/* Peças e looks usam uma escala de post: até 470 px por card, sem esticar uma
-   publicação isolada por toda a página. Busca e perfil comportam até duas colunas. */
-.grid-looks, .grid-cards.is-pieces { display: grid; width: 100%; max-width: 956px; margin-inline: auto; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; justify-items: center; gap: 16px; }
-.grid-looks > *, .grid-cards.is-pieces > * { width: 100%; max-width: 470px; min-width: 0; }
-@media (max-width: 639px) { .grid-looks, .grid-cards.is-pieces { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+/* Utilitários compartilhados também atendem catálogo, DNA, desafios e Momentos. */
+.grid-cards.is-pieces { grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); }
+@media (max-width: 639px) { .grid-cards.is-pieces { grid-template-columns: minmax(0, 1fr); } }
+.grid-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr)); gap: 1rem; }
+/* Só listas de posts de peça/look adotam a escala social; os demais utilitários
+   mantêm suas colunas e larguras originais. */
+.grid-looks.social-card-grid, .grid-cards.social-card-grid { display: grid; width: 100%; max-width: 956px; margin-inline: auto; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; justify-items: center; gap: 16px; }
+.social-card-grid > * { width: 100%; max-width: 470px; min-width: 0; }
+@media (max-width: 639px) { .grid-looks.social-card-grid, .grid-cards.social-card-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
 /* Lookbook › Looks: atalho discreto do dono para a gestão dos looks (/looks), à direita, acima da vitrine */
 .lookbook-manage { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
 .lookbook-manage-link { display: inline-flex; align-items: center; min-height: 32px; padding: 0 2px; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
