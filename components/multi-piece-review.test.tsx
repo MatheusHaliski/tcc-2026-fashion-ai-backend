@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor, within } from "@/test-utils/render";
+import { __setTaxonomyCache } from "@/lib/api/taxonomy";
 import { MultiPieceReview, MultiPieceUpload, type MultiDetection } from "./multi-piece-review";
 
 // O editor tem sua própria suíte; aqui testamos o contrato controlado e a persistência por slot.
@@ -368,23 +369,35 @@ describe("várias peças numa foto — revisão (RF4)", () => {
   });
 
   it("libera a primeira foto enquanto a segunda analisa e preserva edições ao trocar de foto", async () => {
+    __setTaxonomyCache(null);
     const second = { ...DETECTION, draftId: "d2", pieces: [{ ...DETECTION.pieces[0], name: "Outra camiseta" }] };
     const { fetchMock } = mockApi({ "GET /api/taxonomy": TAXONOMY, "POST /api/pieces/analysis/multi": DETECTION });
     const base = fetchMock.getMockImplementation()!;
     let resolveSecond!: (response: Response) => void;
+    const taxonomyRequests: ((response: Response) => void)[] = [];
     let n = 0;
     fetchMock.mockImplementation((input, init) => {
+      if (String(input).endsWith("/api/taxonomy")) return new Promise<Response>(resolve => { taxonomyRequests.push(resolve); });
       if (String(input).endsWith("/api/pieces/analysis/multi") && ++n === 2) return new Promise<Response>((resolve) => { resolveSecond = resolve; });
       return base(input, init);
     });
     const { container } = renderApp(<MultiPieceUpload onSaved={vi.fn()} />);
     fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [photo(), photo()] } });
     fireEvent.click(screen.getByRole("button", { name: /Analisar peças/ }));
-    await screen.findByRole("region", { name: /foto 1 de/ });
+    const first = await screen.findByRole("region", { name: /foto 1 de/ });
     await waitFor(() => expect(n).toBe(2));
     expect(screen.getByRole("progressbar").getAttribute("max")).toBe("2");
     expect(screen.getByRole("progressbar").getAttribute("value")).toBe("1");
-    fireEvent.change(screen.getByDisplayValue("Saia azul"), { target: { value: "Nome conferido" } });
+    // O contêiner precede os campos dependentes da taxonomia; sem linhas inicializadas, Avançar fica bloqueado.
+    expect(within(first).queryByDisplayValue("Saia azul")).toBeNull();
+    expect((within(first).getByRole("button", { name: "Avançar" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(taxonomyRequests.length).toBeGreaterThan(0);
+    taxonomyRequests.forEach(resolve => resolve(new Response(JSON.stringify(TAXONOMY), { headers: { "content-type": "application/json" } })));
+    fireEvent.change(await within(first).findByDisplayValue("Saia azul"), { target: { value: "Nome conferido" } });
+    expect((within(first).getByRole("button", { name: "Avançar" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByRole("progressbar").getAttribute("value")).toBe("1");
+    expect(screen.getAllByRole("button", { name: "Revisar" })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /^Salvar \d/ })).toBeNull();
     resolveSecond(new Response(JSON.stringify(second), { headers: { "content-type": "application/json" } }));
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Revisar" })).toHaveLength(2));
     expect(screen.getByRole("progressbar").getAttribute("value")).toBe("2");
