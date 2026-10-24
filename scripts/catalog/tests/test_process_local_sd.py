@@ -188,6 +188,31 @@ class DownloadTest(unittest.TestCase):
         self.assertEqual(str(c2.exception), "CORRUPT_IMAGE")
 
 
+class PoliteFetchTest(unittest.TestCase):
+    def test_intervalo_por_host_e_espera_em_429(self):
+        calls = []; slept = []; t = [0.0]
+        answers = {"https://cdn.loja.com/a.png": [(429, b"", "retry-after:2"), (200, b"ok", "image/png")],
+                   "https://cdn.loja.com/b.png": [(200, b"ok", "image/png")], "https://outra.com/c.png": [(200, b"ok", "image/png")]}
+        def raw(url):
+            calls.append((round(t[0], 2), url)); return answers[url].pop(0)
+        def sleep(s): slept.append(round(s, 2)); t[0] += s
+        fetch = sd.polite_fetch(raw, min_interval=1.0, retries=2, sleep=sleep, clock=lambda: t[0])
+        self.assertEqual(fetch("https://cdn.loja.com/a.png")[0], 200)        # 429 → espera Retry-After (2 s) → 200
+        self.assertEqual(fetch("https://outra.com/c.png")[0], 200)           # outro host: sem espera
+        self.assertEqual(fetch("https://cdn.loja.com/b.png")[0], 200)        # mesmo host: espera o intervalo
+        self.assertEqual([u.rsplit("/", 1)[1] for _, u in calls], ["a.png", "a.png", "c.png", "b.png"])
+        self.assertIn(2.0, slept)                                             # Retry-After respeitado
+        self.assertTrue(all(0 < s_ <= 2.0 for s_ in slept))
+        gaps = [c for c in calls if "cdn.loja.com" in c[1]]
+        self.assertGreaterEqual(gaps[-1][0] - gaps[-2][0], 1.0)              # intervalo mínimo entre pedidos ao mesmo host
+
+    def test_429_persistente_vira_retry_no_relatorio(self):
+        fetch = sd.polite_fetch(lambda u: (429, b"", "retry-after:"), min_interval=0, retries=1, sleep=lambda s: None, clock=lambda: 0.0)
+        with self.assertRaises(sd.PhotoSkip) as c:
+            sd.resolve_image("https://cdn.loja.com/a.png", fetch)
+        self.assertEqual(c.exception.status, "RETRY")
+
+
 class DeviceTest(unittest.TestCase):
     def test_cuda_mps_cpu(self):
         fake = lambda cuda, mps: SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: cuda),

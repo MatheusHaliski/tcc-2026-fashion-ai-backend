@@ -130,20 +130,49 @@ def og_image(page: bytes, page_url: str) -> Optional[str]:
     return None
 
 
-def requests_fetch(timeout: float = 20) -> Fetch:
-    """fetch(url) -> (status, corpo até MAX_BYTES, content-type) com requests; sem credenciais nos logs."""
+def polite_fetch(fetch: Fetch, min_interval: float = 1.0, retries: int = 2, sleep=time.sleep, clock=time.monotonic) -> Fetch:
+    """Polidez por host (os CDNs das lojas — vtexassets.com — devolvem 429 a quem baixa em rajada) e espera em 429/503:
+    respeita Retry-After quando vem, senão 5 s, até `retries` vezes; depois devolve o status para virar RETRY no relatório."""
+    last: dict[str, float] = {}
+
+    def fetch_polite(url: str) -> tuple[int, bytes, str]:
+        host = urlsplit(url).hostname or ""
+        for attempt in range(retries + 1):
+            wait = last.get(host, -1e9) + min_interval - clock()
+            if wait > 0:
+                sleep(wait)
+            last[host] = clock()
+            status, body, ctype = fetch(url)
+            if status not in (429, 503) or attempt == retries:
+                return status, body, ctype
+            retry_after = ctype if isinstance(ctype, str) and ctype.startswith("retry-after:") else ""
+            try:
+                pause = float(retry_after.split(":", 1)[1]) if retry_after else 5.0
+            except ValueError:
+                pause = 5.0
+            sleep(min(max(pause, 1.0), 60.0))
+        return status, body, ctype                                  # pragma: no cover
+
+    return fetch_polite
+
+
+def requests_fetch(timeout: float = 20, min_interval: float = 1.0) -> Fetch:
+    """fetch(url) -> (status, corpo até MAX_BYTES, content-type) com requests, polidez por host e espera em 429.
+    Em 429/503 o "content-type" devolvido é "retry-after:<s>" para o polite_fetch saber quanto esperar."""
     import requests
 
     def fetch(url: str) -> tuple[int, bytes, str]:
         with requests.get(url, headers={"User-Agent": UA, "Accept": "image/*,text/html;q=0.9,*/*;q=0.5"},
                           timeout=timeout, stream=True) as r:
+            if r.status_code in (429, 503):
+                return r.status_code, b"", "retry-after:" + (r.headers.get("Retry-After") or "")
             data = bytearray()
             for chunk in r.iter_content(64 * 1024):
                 data.extend(chunk)
                 if len(data) > MAX_BYTES:
                     raise PhotoSkip("IMAGE_TOO_LARGE", "REJECTED")
             return r.status_code, bytes(data), r.headers.get("Content-Type", "")
-    return fetch
+    return polite_fetch(fetch, min_interval)
 
 
 def resolve_image(url: str, fetch: Fetch) -> tuple[bytes, str]:
@@ -551,6 +580,7 @@ class Options:
     shadow: bool = True
     foreground_body: bool = True
     lenient_cleanup: bool = True
+    min_interval: float = 1.0
     report: Optional[Path] = None
     extra: dict = field(default_factory=dict)
 
@@ -561,7 +591,7 @@ class GhostPipeline:
     def __init__(self, renderer: Optional[SdGhostRenderer], options: Options, *, fetch: Optional[Fetch] = None,
                  provider=None, segmenter=None):
         self.renderer, self.options = renderer, options
-        self.fetch = fetch or requests_fetch()
+        self.fetch = fetch or requests_fetch(min_interval=options.min_interval)
         self.segmenter = segmenter or GarmentSegmenter()
         self.provider = provider or LocalClothProvider(segmenter=self.segmenter)
         self.rows: list[dict] = []
@@ -677,6 +707,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--no-shadow", action="store_true")
     ap.add_argument("--no-foreground-body", action="store_true", help="sem parser humano, NÃO deduzir o corpo do primeiro plano geral")
     ap.add_argument("--strict-cleanup", action="store_true", help="só a limpeza estrita do catálogo (contorno fino não classificado → REVIEW)")
+    ap.add_argument("--min-interval", type=float, default=1.0, help="segundos mínimos entre downloads no mesmo host (CDNs devolvem 429 em rajada)")
     ap.add_argument("--measure-only", action="store_true", help="só mede a altura da peça e escreve o relatório (nada gerado nem gravado)")
     ap.add_argument("--dry-run", action="store_true", help="gera os arquivos, mas não grava no banco")
     ap.add_argument("--no-ensure-column", action="store_true", help="não cria a coluna de saída se faltar")
@@ -693,7 +724,7 @@ def main(argv=None) -> int:
     spec = TableSpec(args.table, args.id_column, args.url_column, args.out_column)
     options = Options(out_dir=args.out_dir, public_base_url=args.public_base_url, dry_run=args.dry_run, measure_only=args.measure_only,
                       no_ai=args.no_ai, shadow=not args.no_shadow, foreground_body=not args.no_foreground_body,
-                      lenient_cleanup=not args.strict_cleanup)
+                      lenient_cleanup=not args.strict_cleanup, min_interval=args.min_interval)
     engine = None
     if args.input:
         raw = json.loads(args.input.read_text(encoding="utf-8"))
