@@ -111,7 +111,15 @@ Detalhes que já derrubaram marcas inteiras e hoje são tratados (com teste em `
 | robots.txt que redireciona para HTML, atributos HTML sem aspas, JSON-LD com entidades | ver histórico do arquivo |
 | 150 páginas seguidas sem dado estruturado | o domínio é largado (`GIVE_UP_AFTER`), sem gastar milhares de requisições |
 
-#### Parser humano local (recomendado para foto com modelo)
+#### Custo medido em CPU (2026-10-24, máquina de 4 núcleos / 15 GB)
+
+Por foto, sem GPU: segmentador de roupa (u2net_cloth_seg) 4–14 s, parser humano 11–22 s, download < 0,5 s. Cada
+processo ocupa ~5 GB (modelos + torch), então cabem **2 processos** em 15 GB (4 estouram a memória). `--measure-only`
+sem parser: ~13 s/foto por processo → ~6,5 s/foto com dois → ~7 h para 8 mil fotos. Com parser, ~3× isso. Para o
+catálogo inteiro, rode na máquina do lote com GPU (`CATALOG_PHOTO_DEVICE=cuda`; o parser cai para < 1 s) ou divida em
+fatias de JSON (`--input`) em máquinas diferentes; `report.jsonl` é retomável (basta tirar do JSON o que já tem linha).
+
+### Parser humano local (recomendado para foto com modelo)
 
 Sem ele, o segmentador de roupa pode incluir um antebraço na classe "superior" e a dedução pelo primeiro plano não corrige
 erro dentro da própria máscara da peça (visto na amostra de 2026-10-24: camiseta Converse com o braço do modelo). O parser
