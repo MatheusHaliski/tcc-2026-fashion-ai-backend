@@ -44,6 +44,8 @@ export function FittingRoom() {
   const [heroId, setHeroId] = useState<string | null>(null);
   
   const [tipoLook, setTipoLook] = useState<Sex | null>(null);
+  // Apenas a escolha explícita restringe o catálogo; limpar filtros conserva o avatar escolhido.
+  const [catalogGender, setCatalogGender] = useState("");
   const selectedTipoLook = tipoLook ?? data?.sex ?? "MASCULINO";
 
   const session = useFittingSession({
@@ -65,8 +67,9 @@ export function FittingRoom() {
   }
 
   function changeTipoLook(next: Sex) {
-    if (next === selectedTipoLook) return;
     setTipoLook(next);
+    // TipoLook.codigo usa UNISEX; o catálogo usa o código Taxonomy.SEXES UNISSEX.
+    setCatalogGender(next === "UNISEX" ? "UNISSEX" : next);
     setStatus(t("tryOn.look_tipo", { sex: next }));
   }
 
@@ -132,8 +135,9 @@ export function FittingRoom() {
           {tab === "stores" && (
             <StoreBrowser
               stores={stores.data?.stores ?? []} loading={stores.loading} store={store} category={category}
+              gender={catalogGender} onGenderChange={setCatalogGender}
               onStoreChange={setStore} onCategoryChange={setCategory} onPick={pickProduct} onResults={onSearchResults}
-              resultsTarget={catalogTarget} tipoLook={selectedTipoLook}
+              resultsTarget={catalogTarget} tipoLook={selectedTipoLook} onTipoLookChange={changeTipoLook}
             />
           )}
           {tab === "wardrobe" && (

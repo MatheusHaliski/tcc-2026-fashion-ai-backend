@@ -122,6 +122,12 @@ public class CatalogImagePipelineService {
     public void process(UUID imageId) {
         CatalogImage img = images.findById(imageId).orElseThrow(() -> ApiException.notFound("catalog image"));
         CatalogProduct product = products.findById(img.getProductId()).orElse(null);
+        Map<String,Object> sourceGate = photoSet(img,product);
+        if (Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(sourceGate.get("status")))) {
+            finish(img,"NEEDS_REPROCESSING",List.of("SOURCE_PREFLIGHT_REVIEW_REQUIRED"),null);
+            img.setReviewStatus("PENDING"); images.save(img); return;
+        }
+        if ("READY".equals(sourceGate.get("status"))) return;
         long t0 = System.nanoTime();
         Optional<WebFetchPort.Fetched> fetched = web.get(img.getImageUrl(), (int) ImageOps.MAX_UPLOAD_BYTES, "image/");
         if (fetched.isEmpty()) {
@@ -174,10 +180,13 @@ public class CatalogImagePipelineService {
     public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated) {
         guard.requireCanCreate(user);
         CatalogProduct product = products.findById(productId).orElseThrow(() -> ApiException.notFound("catalog product"));
-        if (product.getIngestionStatus() == br.com.fashionai.domain.model.enums.CatalogIngestionStatus.REJECTED)
+        if (br.com.fashionai.application.catalog.CatalogPhotoEligibility.excluded(product))
             throw ApiException.badRequest("PRODUTO_RECUSADO", "Este produto foi recusado.");
         CatalogImage selected = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
-                .filter(i -> i.isCanonical() && "APPROVED".equals(i.getProcessingStatus()) && i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
+                .filter(i -> (i.isCanonical() && "APPROVED".equals(i.getProcessingStatus()) || "READY".equals(photoSet(i,product).get("status")))
+                        && i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
+                .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(photoSet(i,product).get("status"))))
+                .sorted(java.util.Comparator.comparing(i -> !"READY".equals(photoSet(i,product).get("status"))))
                 .findFirst().orElseThrow(() -> ApiException.notFound("catalog image"));
         Map<String,Object> cleaned=photoSet(selected,product);
         if("DEFAULT".equals(cleaned.get("status"))) throw new ApiException(422,"CATALOG_PHOTO_DEFAULT_ONLY","A peça usa uma ilustração padrão.");
@@ -205,7 +214,7 @@ public class CatalogImagePipelineService {
     public void ensurePreview(CurrentUser user, UUID productId, boolean force) {
         guard.requireCanCreate(user);
         CatalogProduct product = products.findById(productId).orElseThrow(() -> ApiException.notFound("catalog product"));
-        if (product.getIngestionStatus() == br.com.fashionai.domain.model.enums.CatalogIngestionStatus.REJECTED)
+        if (br.com.fashionai.application.catalog.CatalogPhotoEligibility.excluded(product))
             throw ApiException.badRequest("PRODUTO_RECUSADO", "Este produto foi recusado.");
         synchronized (previewLocks[Math.floorMod(productId.hashCode(), previewLocks.length)]) {
             boolean ready = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
@@ -224,12 +233,13 @@ public class CatalogImagePipelineService {
     public void verifySelection(CurrentUser user, UUID productId) {
         guard.requireCanCreate(user);
         CatalogProduct product = products.findById(productId).orElseThrow(() -> ApiException.notFound("catalog product"));
-        if (product.getIngestionStatus() == br.com.fashionai.domain.model.enums.CatalogIngestionStatus.REJECTED) {
+        if (br.com.fashionai.application.catalog.CatalogPhotoEligibility.excluded(product)) {
             throw ApiException.badRequest("PRODUTO_RECUSADO", "Este produto foi recusado.");
         }
         List<CatalogImage> candidates = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
                 .filter(i -> i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
                 .filter(i -> i.getImageUrl() != null && !i.getImageUrl().isBlank())
+                .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(photoSet(i,product).get("status"))))
                 .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()))
                 .limit(3).toList();
         if (candidates.isEmpty()) throw new ApiException(422, "CATALOG_IMAGE_MISSING", "Esta peça não tem foto disponível para verificar.");
@@ -327,7 +337,10 @@ public class CatalogImagePipelineService {
             preview.put("fabricUrl", put(key + "fabric.jpg", ImageOps.jpeg(fabric, .92f), "image/jpeg"));
             image.setUsageStatus(CatalogImageUsage.PERSISTED);
             preview.put("width", fabric.getWidth()); preview.put("height", fabric.getHeight());
-            if (frames != null && frames.whole() != null) {
+            Map<String,Object> selectedPhotoSet = photoSet(image,product);
+            Object sourceMetrics = selectedPhotoSet.get("metrics");
+            if (frames != null && frames.whole() != null && sourceMetrics instanceof Map<?,?> verifiedMetrics
+                    && validPreflight(verifiedMetrics.get("preflight"))) {
                 String wholeUrl = put(key + "whole.png", ImageOps.png(frames.whole()), "image/png");
                 Map<String, Object> whole = new LinkedHashMap<>(frames.wholeMetadata());
                 whole.put("url", wholeUrl); whole.put("rendered", true); whole.put("processed", true);
@@ -743,27 +756,28 @@ public class CatalogImagePipelineService {
     }
 
     @SuppressWarnings("unchecked")
-    static Map<String,Object> photoSet(CatalogImage image, CatalogProduct product) {
+    public static Map<String,Object> photoSet(CatalogImage image, CatalogProduct product) {
         if(image==null || product==null || image.getAssetsJson()==null || image.getUsageStatus()==CatalogImageUsage.REJECTED || "REJECTED".equals(image.getReviewStatus())) return Map.of();
         Object raw=Json.map(image.getAssetsJson()).get("photoSet");
-        if(!(raw instanceof Map<?,?> m) || !"CATALOG_PHOTO_SET_V1".equals(m.get("version"))
+        if(!(raw instanceof Map<?,?> m) || !"CATALOG_PHOTO_SET_V2".equals(m.get("version"))
           || !Objects.equals(image.getImageUrl(),m.get("sourceUrl")) || !Objects.equals(image.getSourceSha256(),m.get("sourceSha256"))
           || !Objects.equals(product.getCategory(),m.get("category")) || !Objects.equals(product.getSubcategory(),m.get("subcategory"))
           || !Objects.equals(product.getColor(),m.get("color")) || !(m.get("defaultAssetUrl") instanceof String url) || !url.startsWith("/api/catalog/default-asset?")) return Map.of();
-        if("READY".equals(m.get("status")) && (!(m.get("wholeUrl") instanceof String) || !(m.get("fabricUrl") instanceof String))) return Map.of();
+        if("READY".equals(m.get("status")) && (!(m.get("wholeUrl") instanceof String) || !(m.get("fabricUrl") instanceof String)
+                || !(m.get("metrics") instanceof Map<?,?> metrics) || !validPreflight(metrics.get("preflight")))) return Map.of();
         return (Map<String,Object>)m;
     }
 
     /** Product edits invalidate the old derivative without downloading any photograph on a list/read request. */
     public static Map<String, Object> cardImage(CatalogImage canonical, CatalogProduct product) {
         Map<String, Object> photo = photoSet(canonical, product);
-        if (!photo.isEmpty() && ("READY".equals(photo.get("status")) || "DEFAULT".equals(photo.get("status")))) {
+        if (!photo.isEmpty() && Set.of("READY","DEFAULT","REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(photo.get("status")))) {
             Map<String, Object> card = new LinkedHashMap<>();
             card.put("url", "READY".equals(photo.get("status")) ? photo.get("fabricUrl") : photo.get("defaultAssetUrl"));
             card.put("mode", "READY".equals(photo.get("status")) ? "PROCESSED" : "DEFAULT");
             card.put("sourceUrl", canonical.getImageUrl()); card.put("photoSet", photo); card.put("defaultAssetUrl", photo.get("defaultAssetUrl"));
             card.put("aspect", "3:4"); card.put("imageId", canonical.getId());
-            if ("READY".equals(photo.get("status"))) card.put("whole", Map.of("url",photo.get("wholeUrl"),"box",Map.of("x",0,"y",0,"w",1,"h",1),"rendered",true,"processed",true,"version","CATALOG_PHOTO_SET_V1"));
+            if ("READY".equals(photo.get("status"))) card.put("whole", Map.of("url",photo.get("wholeUrl"),"box",Map.of("x",0,"y",0,"w",1,"h",1),"rendered",true,"processed",true,"version","CATALOG_PHOTO_SET_V2"));
             return card;
         }
         Map<String, Object> preview = previewAssets(canonical);
@@ -774,46 +788,27 @@ public class CatalogImagePipelineService {
     /** Versão do Total frame: a interface encaixa a caixa da peça num quadro 3:4 com margem uniforme. */
     public static final String WHOLE_FRAME_VERSION = "WHOLE_FRAME_V1";
 
-    /**
-     * Total frame (nível A, nada é copiado): a foto original da marca e a caixa da peça nela ({@code crop_json.product},
-     * normalizada), para a interface mostrar a peça INTEIRA no quadro em vez do recorte de tecido. Só vale para foto de
-     * produto em fundo de estúdio: com modelo/pessoa (rosto, braços) ou sem fundo uniforme devolve null e o card continua
-     * no recorte de sempre — o Total frame nunca enquadra uma pessoa.
-     */
+    /** Total frame requires a source-bound derivative with measured, complete semantic isolation. */
     static Map<String, Object> wholeFrame(CatalogImage canonical) {
-        Map<String, Object> preview = previewAssets(canonical);
-        if (!preview.isEmpty()) {
-            if (!currentPreviewSource(canonical)) return null;
-            if (preview.get("whole") instanceof Map<?, ?> whole) return new LinkedHashMap<>((Map<String, Object>) whole);
-            if (Boolean.TRUE.equals(preview.get("persisted"))) return null;
-        }
-        Map<String, Object> processed = processedWhole(canonical);
-        if (processed != null) return processed;
-        if (canonical == null || canonical.getCropJson() == null || canonical.getImageUrl() == null) return null;
-        Map<String, Object> crop = Json.map(canonical.getCropJson());
-        Map<String, Object> metrics = canonical.getMetricsJson() == null ? Map.of() : Json.map(canonical.getMetricsJson());
-        Map<?, ?> debug = metrics.get("debug") instanceof Map<?, ?> d ? d : Map.of();
-        Map<?, ?> productFrame = debug.get("productFrame") instanceof Map<?, ?> p ? p : Map.of();
-        if (Boolean.TRUE.equals(productFrame.get("model"))) return null;
-        if (debug.get("sourceHumanEvidence") instanceof Number human && human.doubleValue() >= ProductRuleFrame.MIN_PERSON_SKIN) return null;
-        if (!(crop.get("background") instanceof String background) || background.isBlank()) return null;
-        if (!(crop.get("product") instanceof Map<?, ?> product)) return null;
-        double x = number(product.get("x")), y = number(product.get("y")), w = number(product.get("w")), h = number(product.get("h"));
-        if (!(w > 0.02 && h > 0.02 && w <= 1.001 && h <= 1.001 && x >= -0.001 && y >= -0.001 && x + w <= 1.001 && y + h <= 1.001)) return null;
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("url", canonical.getImageUrl());
-        m.put("box", Map.of("x", x, "y", y, "w", w, "h", h));
-        m.put("background", background);
-        m.put("width", canonical.getWidth());
-        m.put("height", canonical.getHeight());
-        m.put("truncated", debug.get("truncated") instanceof List<?> sides ? sides : List.of());
-        m.put("alpha", false);
-        m.put("version", WHOLE_FRAME_VERSION);
-        return m;
+        // Legacy studio/background/skin heuristics cannot prove semantic isolation.
+        // Only a derivative with current source-bound preflight evidence is exposed.
+        return processedWhole(canonical);
+    }
+
+    static boolean validPreflight(Object raw) {
+        if (!(raw instanceof Map<?, ?> evidence)) return false;
+        double height = number(evidence.get("sourceGarmentHeightFraction"));
+        return "CATALOG_SOURCE_PREFLIGHT_V1".equals(evidence.get("version"))
+                && "PASS".equals(evidence.get("status"))
+                && Boolean.TRUE.equals(evidence.get("measurementReliable"))
+                && Boolean.TRUE.equals(evidence.get("complete")) && Boolean.FALSE.equals(evidence.get("occluded"))
+                && Boolean.TRUE.equals(evidence.get("isolationVerified"))
+                && Boolean.TRUE.equals(evidence.get("humanAssessmentComplete"))
+                && Double.isFinite(height) && height >= .25 && height <= 1;
     }
 
     /** Versão da Peça inteira processada (lote process_whole_frames): a peça recortada sem pessoa, 900×1200. */
-    public static final String WHOLE_PROCESSED_VERSION = "WHOLE_FRAME_V2";
+    public static final String WHOLE_PROCESSED_VERSION = "WHOLE_FRAME_V3";
 
     /**
      * Peça inteira processada: o JPEG 900×1200 com a peça recortada (sem pessoa, sem fundo da marca) e a caixa dela no
@@ -823,9 +818,15 @@ public class CatalogImagePipelineService {
         if (canonical == null || canonical.getWholeUrl() == null || canonical.getWholeUrl().isBlank()
                 || !"DONE".equals(canonical.getWholeStatus()) || canonical.getWholeJson() == null) return null;
         Map<String, Object> info = Json.map(canonical.getWholeJson());
+        if (!WHOLE_PROCESSED_VERSION.equals(canonical.getWholePipelineVersion())
+                || !WHOLE_PROCESSED_VERSION.equals(info.get("version"))
+                || !Objects.equals(canonical.getImageUrl(),info.get("sourceUrl"))
+                || canonical.getSourceSha256() == null || !Objects.equals(canonical.getSourceSha256(),info.get("sourceSha256"))
+                || !validPreflight(info.get("preflight"))) return null;
+        if (info.get("truncated") instanceof List<?> sides && !sides.isEmpty()) return null;
         if (!(info.get("box") instanceof Map<?, ?> box)) return null;
         double x = number(box.get("x")), y = number(box.get("y")), w = number(box.get("w")), h = number(box.get("h"));
-        if (!(w > 0.02 && h > 0.02 && w <= 1.001 && h <= 1.001 && x >= -0.001 && y >= -0.001 && x + w <= 1.001 && y + h <= 1.001)) return null;
+        if (!(w > 0 && h > 0 && w <= .501 && h <= .501 && Math.abs(Math.max(w,h)-.5) <= .001 && Math.abs(x-(1-w)/2) <= .001 && Math.abs(y-(1-h)/2) <= .001)) return null;
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("url", canonical.getWholeUrl());
         m.put("box", Map.of("x", x, "y", y, "w", w, "h", h));

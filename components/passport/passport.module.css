@@ -1,0 +1,19 @@
+.page { max-width: 62rem; margin: 0 auto; padding: 1.5rem; display: grid; gap: 1.5rem; }
+.header { display: grid; gap: .7rem; }
+.header h1 { font-family: var(--font-editorial), Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.15; }
+.panel { border: 1px solid var(--border, #bbb); border-radius: 1rem; padding: 1.5rem; display: grid; gap: 1rem; background: var(--surface, transparent); }
+.panel h2 { font-size: 1.2rem; font-weight: 600; }
+.form { display: grid; gap: 1rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
+.actions { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+.note { opacity: .8; font-size: .9rem; line-height: 1.6; }
+.timeline { display: grid; gap: 1rem; padding-left: 1.2rem; }
+.timeline li { border-left: 2px solid var(--border, #bbb); padding-left: .8rem; }
+.details { white-space: pre-wrap; overflow-wrap: anywhere; }
+.status { font-family: var(--font-data), monospace; font-size: .75rem; letter-spacing: .04em; }
+.qr { width: 12rem; height: 12rem; background: white; border-radius: .5rem; }
+.link { overflow-wrap: anywhere; }
+.check { display: flex; align-items: center; gap: .6rem; }
+.document { display: flex; align-items: center; flex-wrap: wrap; gap: .7rem; padding: .7rem 0; border-bottom: 1px solid var(--border, #bbb); }
+.error { color: var(--danger, #a32727); }
+@media (max-width: 40rem) { .page { padding: 1rem; } .panel { padding: 1rem; } }

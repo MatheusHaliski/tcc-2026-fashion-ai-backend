@@ -325,7 +325,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
       ...baseRoutes(),
       "GET /api/catalog/products": (url: URL) => {
         const brand = url.searchParams.get("brand") ?? "Nike";
-        const items = (brand === "Levi's" ? [L501] : SHIRTS).filter(p => !url.searchParams.get("gender") || p.gender === url.searchParams.get("gender"));
+        const items = (brand === "Levi's" ? [{ ...L501, gender: "FEMININO" }] : SHIRTS).filter(p => !url.searchParams.get("gender") || p.gender === url.searchParams.get("gender"));
         return { items, total: items.length, page: 0, size: 48, hasMore: false };
       },
     });
@@ -334,7 +334,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     await screen.findByRole("list", { name: "Resultados do catálogo" }, { timeout: 4000 });
     fireEvent.click(screen.getByRole("button", { name: "Avançar →" }));
     expect(screen.getByText("Página 2 de 3 · 10 resultados")).toBeTruthy();
-    fireEvent.click(within(screen.getByLabelText("Filtros rápidos")).getByRole("button", { name: "Feminino" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Feminino" }));
     expect(await screen.findByText("Página 1 de 2 · 5 resultados")).toBeTruthy();
     expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).getByText("Camiseta Nike 1")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Avançar →" }));
@@ -349,5 +349,41 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).getAllByRole("listitem")).toHaveLength(1);
     const previous = screen.queryByRole("button", { name: "← Voltar" }) as HTMLButtonElement | null;
     expect(previous === null || previous.disabled).toBe(true);
+  });
+
+  it("Tipo de Look filtra o catálogo com o código real, preserva os demais filtros e permite limpar a seleção", async () => {
+    const unisex = { ...SHIRTS[0], id: "unisex", productName: "Camisa inclusiva", gender: "UNISSEX" };
+    const { calls } = loggedAs(ME, {
+      ...baseRoutes(),
+      "GET /api/catalog/products": (url: URL) => {
+        const items = [...SHIRTS, unisex].filter(p => !url.searchParams.get("gender") || p.gender === url.searchParams.get("gender"));
+        return { items, total: items.length, page: Number(url.searchParams.get("page") ?? 0), size: 48, hasMore: false };
+      },
+    });
+    renderApp(<TryOnPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Nike/ }));
+    fireEvent.click(within(screen.getByRole("group", { name: "O que provar" })).getByRole("button", { name: "Parte superior" }));
+    fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "camisa" } });
+    await screen.findByRole("list", { name: "Resultados do catálogo" }, { timeout: 4000 });
+    fireEvent.click(within(screen.getByLabelText("Filtros rápidos")).getByRole("button", { name: "Preto" }));
+    // Mesmo o tipo já ativo no manequim passa a ser um filtro quando escolhido explicitamente.
+    fireEvent.click(screen.getByRole("radio", { name: "Feminino" }));
+    const lastBrowse = () => new URL(calls.filter(c => c.path.startsWith("/api/catalog/products?")).at(-1)!.path, "http://local.test").searchParams;
+    await waitFor(() => expect(lastBrowse().get("gender")).toBe("FEMININO"), { timeout: 4000 });
+    expect(Object.fromEntries(lastBrowse())).toMatchObject({ brand: "Nike", category: "upper_piece", q: "camisa", color: "black", page: "0" });
+    fireEvent.click(screen.getByRole("radio", { name: "Masculino" }));
+    await waitFor(() => expect(lastBrowse().get("gender")).toBe("MASCULINO"), { timeout: 4000 });
+    expect(Object.fromEntries(lastBrowse())).toMatchObject({ brand: "Nike", category: "upper_piece", q: "camisa", color: "black", page: "0" });
+    fireEvent.click(screen.getByRole("radio", { name: "Unisex" }));
+    await waitFor(() => expect(lastBrowse().get("gender")).toBe("UNISSEX"), { timeout: 4000 });
+    expect(await screen.findByRole("heading", { name: "Camisa inclusiva" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Limpar seleção" }));
+    await waitFor(() => expect(lastBrowse().has("gender")).toBe(false), { timeout: 4000 });
+    expect(lastBrowse().has("brand")).toBe(false);
+    expect(lastBrowse().has("category")).toBe(false);
+    expect(screen.getByRole("radio", { name: "Unisex" }).getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(screen.getByRole("radio", { name: "Unisex" }));
+    await waitFor(() => expect(lastBrowse().get("gender")).toBe("UNISSEX"), { timeout: 4000 });
+    expect(calls.filter(c => c.method !== "GET")).toEqual([]);
   });
 });

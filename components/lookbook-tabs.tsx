@@ -122,7 +122,7 @@ function ClosetTab({ ownerId, self, empty }: { ownerId: string; self: boolean; e
       </div>
       {loading ? <SkeletonGrid /> : !data || data.items.length === 0
         ? <EmptyState title={hypeLevel ? t("hypeLookbook.pecas.vazio_faixa") : filtered ? t("common.empty") : empty?.message ?? t("closet.empty")} action={self && !filtered ? <Link href="/pieces/new" className="btn btn-primary">{empty?.action?.label ?? t("closet.addPiece")}</Link> : undefined} />
-        : <><div className="grid-cards is-pieces">{data.items.map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div><Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} /></>}
+        : <><div className="grid-cards is-pieces social-card-grid">{data.items.map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div><Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} /></>}
     </>
   );
 }
@@ -161,7 +161,7 @@ function LooksTab({ ownerId, self }: { ownerId: string; self: boolean }) {
       </div>
       {error ? <ErrorState error={error} onRetry={reload} /> : loading ? <SkeletonGrid />
         : list.length === 0 ? <EmptyState title={t("lookbook.noPublishedLooks")} action={self ? <Link href="/schemes/new" className="btn btn-primary">{t("scheme.create")}</Link> : undefined} />
-        : <div className="grid-looks">{list.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>}
+        : <div className="grid-looks social-card-grid">{list.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>}
     </>
   );
 }
@@ -180,7 +180,7 @@ function PublicationsTab({ ownerId }: { ownerId: string }) {
   if (!data || items.length === 0) return <EmptyState title={t("lookbook.noPublications")} hint={t("lookbook.publicationsHint")} />;
   return (
     <>
-      <div className="grid-cards is-pieces">{items.map((x) => x.type === "LOOK"
+      <div className="grid-cards is-pieces social-card-grid">{items.map((x) => x.type === "LOOK"
         ? <SchemeCard key={`look-${x.scheme!.id}`} scheme={x.scheme!} />
         : <PieceCard key={`piece-${x.piece!.id}`} piece={x.piece!} seals={sealsOf(x.piece!.id)} />)}</div>
       <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} />
@@ -203,8 +203,8 @@ function FavoritesTab({ ownerId }: { ownerId: string }) {
       <SegmentPicker label={t("lookbook.favorites")} value={view} onChange={setPicked} className="mb-3"
         options={[{ id: "looks", label: t("lookbook.looks"), count: looks.length }, { id: "pieces", label: t("lookbook.closet"), count: pieces.length }]} />
       {view === "looks"
-        ? looks.length === 0 ? <EmptyState title={t("lookbook.noFavoriteLooks")} /> : <div className="grid-looks">{looks.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
-        : pieces.length === 0 ? <EmptyState title={t("lookbook.noFavoritePieces")} /> : <div className="grid-cards is-pieces">{pieces.map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>}
+        ? looks.length === 0 ? <EmptyState title={t("lookbook.noFavoriteLooks")} /> : <div className="grid-looks social-card-grid">{looks.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
+        : pieces.length === 0 ? <EmptyState title={t("lookbook.noFavoritePieces")} /> : <div className="grid-cards is-pieces social-card-grid">{pieces.map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>}
     </>
   );
 }
@@ -231,7 +231,7 @@ function SavedPiecesTab() {
   return (
     <>
       <div className="mb-3"><SegmentPicker label={t("common.category")} value={category} onChange={(v) => { setCategory(v); setPage(0); }} options={["", ...CATEGORIES].map((c) => ({ id: c, label: c ? label(c) : t("common.all") }))} /></div>
-      {loading ? <SkeletonGrid /> : (data?.items.length ?? 0) === 0 ? <EmptyState title={t("common.nenhuma_peca_salva")} hint={t("lookbookTabs.salve_pecas_de_outras_pessoas")} /> : <div className="grid-cards is-pieces">{data!.items.map((x) => <PieceCard key={x.piece.id} piece={x.piece} seals={sealsOf(x.piece.id)} extra={<><span className="caption">{x.originLabel}{x.snapshot ? t("lookbookTabs.arquivada") : ""}</span><Button size="sm" aria-pressed={x.favorite} onClick={async () => { try { await api.put(`/api/interactions/PIECE/${x.piece.id}/saves/favorite`, { favorite: !x.favorite }); reload(); } catch (e) { toast.fromError(e); } }}><FaiIcon id="SOC-06" size={24} active={x.favorite} decorative />{t("common.favorite")}</Button><Button size="sm" onClick={async () => { try { await api.post(`/api/interactions/PIECE/${x.piece.id}/saves`); reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</Button></>} />)}</div>}
+      {loading ? <SkeletonGrid /> : (data?.items.length ?? 0) === 0 ? <EmptyState title={t("common.nenhuma_peca_salva")} hint={t("lookbookTabs.salve_pecas_de_outras_pessoas")} /> : <div className="grid-cards is-pieces social-card-grid">{data!.items.map((x) => <PieceCard key={x.piece.id} piece={x.piece} seals={sealsOf(x.piece.id)} extra={<><span className="caption">{x.originLabel}{x.snapshot ? t("lookbookTabs.arquivada") : ""}</span><Button size="sm" aria-pressed={x.favorite} onClick={async () => { try { await api.put(`/api/interactions/PIECE/${x.piece.id}/saves/favorite`, { favorite: !x.favorite }); reload(); } catch (e) { toast.fromError(e); } }}><FaiIcon id="SOC-06" size={24} active={x.favorite} decorative />{t("common.favorite")}</Button><Button size="sm" onClick={async () => { try { await api.post(`/api/interactions/PIECE/${x.piece.id}/saves`); reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</Button></>} />)}</div>}
       {data && data.total > data.size && <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={setPage} />}
     </>
   );
@@ -373,7 +373,7 @@ function GroupsTab({ ownerId, self, suggestions }: { ownerId: string; self: bool
           <ul className="fai-list mt-2">{(similar.data ?? []).map((g) => <li key={g.id} className="flex items-center justify-between gap-2 py-1 type-body-sm"><span className="min-w-0"><span className="block truncate">{g.label ?? g.name}</span><SimilarityGroupHype hype={g.hype} /></span><button type="button" className="underline type-caption" onClick={async () => { try { await api.delete(`/api/me/similarity-groups/${g.id}`); similar.reload(); } catch (e) { toast.fromError(e); } }}>{t("common.remove")}</button></li>)}</ul></Card>}
         <ul className="fai-list surface">{(groups.data ?? []).map((g) => <li key={g.id}><button type="button" className={`flex w-full items-center gap-3 p-3 text-left hover:bg-surface-2 ${open === g.id ? "bg-surface-2" : ""}`} onClick={() => setOpen(g.id)}><Avatar src={mediaUrl(g.coverUrl)} name={g.label} size={36} /><span className="flex-1"><b>{g.label}</b><span className="block type-caption text-muted">{label(g.type.toLowerCase())}{g.count != null ? ` · ${g.count}` : ""}</span></span></button></li>)}{(groups.data ?? []).length === 0 && <li className="p-3 type-body text-muted">{t("common.empty")}</li>}</ul>
       </div>
-      <div>{open ? schemes.loading ? <SkeletonGrid /> : <div className="grid-looks">{(schemes.data ?? []).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div> : <p className="type-body text-muted">{t("lookbookTabs.selecione_um_agrupamento")}</p>}</div>
+      <div>{open ? schemes.loading ? <SkeletonGrid /> : <div className="grid-looks social-card-grid">{(schemes.data ?? []).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div> : <p className="type-body text-muted">{t("lookbookTabs.selecione_um_agrupamento")}</p>}</div>
     </div>
   );
 }

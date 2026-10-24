@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Profiler } from "react";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 import { nav, router } from "@/test-utils/setup";
 import { PIECE, PIECE_2 } from "@/test-utils/fixtures";
@@ -188,6 +189,41 @@ describe("Lens › Seu guarda-roupa", () => {
 });
 
 describe("Lens › Recriar", () => {
+  it("preserva a alternativa escolhida assim que o plano aparece, antes dos efeitos passivos", async () => {
+    nav.search = new URLSearchParams("tab=recreate");
+    loggedAs(undefined, { "GET /api/taxonomy": TAXONOMY, "GET /api/lens/scans/s1": scanOf(), "POST /api/lens/scans/s1/recreate": PLAN("SAFE") });
+    let selected = false;
+    renderApp(<Profiler id="early-plan-choice" onRender={() => {
+      const next = screen.queryByRole("button", { name: "Próxima alternativa para Parte de cima" });
+      if (!selected && next) { selected = true; next.click(); }
+    }}><LensResult scanId="s1" /></Profiler>);
+    await waitFor(() => expect(selected).toBe(true));
+    await waitFor(() => expect(screen.getByRole("link", { name: "Salvar como look" }).getAttribute("href")).toBe("/schemes/new?pieces=p3,p2"));
+    expect(within(screen.getByRole("region", { name: "Parte de cima" })).getByText("Camisa xadrez")).toBeTruthy();
+  });
+
+  it.each([false, true])("um plano novo reinicia slots soltos e conserva os fixados (fixado=%s)", async locked => {
+    nav.search = new URLSearchParams("tab=recreate");
+    const api = open({ "POST /api/lens/scans/s1/recreate": (_u: URL, init: RequestInit) => {
+      const mode = JSON.parse(String(init.body)).mode;
+      const plan = PLAN(mode);
+      if (mode === "EXPERIMENTAL") plan.slots[0] = { ...plan.slots[0], piece: { ...PIECE, id: "p4", name: "Jaqueta do novo plano" }, alternatives: [...plan.slots[0].alternatives, PIECE] };
+      return plan;
+    } });
+    const top = await screen.findByRole("region", { name: "Parte de cima" });
+    fireEvent.click(within(top).getByRole("button", { name: "Próxima alternativa para Parte de cima" }));
+    await waitFor(() => expect(screen.getByRole("link", { name: "Salvar como look" }).getAttribute("href")).toBe("/schemes/new?pieces=p3,p2"));
+    if (locked) fireEvent.click(within(top).getByRole("button", { name: "Fixar" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Experimental" }));
+    await within(top).findByText(locked ? "2 de 3" : "1 de 3");
+    expect(screen.getByRole("link", { name: "Salvar como look" }).getAttribute("href")).toBe(`/schemes/new?pieces=${locked ? "p3" : "p4"},p2`);
+    expect(api.calls.filter(call => call.path === "/api/lens/scans/s1/recreate")[1].body).toEqual(locked ? { mode: "EXPERIMENTAL", locked: { TOP: "p3" } } : { mode: "EXPERIMENTAL" });
+    if (locked) {
+      fireEvent.click(within(top).getByRole("button", { name: "Fixada" }));
+      expect(screen.getByRole("link", { name: "Salvar como look" }).getAttribute("href")).toBe("/schemes/new?pieces=p3,p2");
+    }
+  });
+
   it("trocar o modo refaz o plano; slot fixado vai como `locked`; Salvar como look usa o createHref", async () => {
     nav.search = new URLSearchParams("tab=recreate");
     const api = open({ "POST /api/lens/scans/s1/recreate": (_u: URL, init: RequestInit) => PLAN(JSON.parse(String(init.body)).mode) });

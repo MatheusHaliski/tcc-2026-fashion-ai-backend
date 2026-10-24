@@ -43,6 +43,8 @@ public class SecurityConfig {
             "/actuator/health", "/actuator/info", "/media/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
             "/api/usernames/*/availability", "/api/preferences/options", "/api/exchange-rates", "/api/client/config", "/api/taxonomy", "/api/assets/**",
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
+            "/api/estados-conservacao", "/api/tipos-lavagem",
+            "/api/passport-shares/*",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",
             "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/aura-media/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",

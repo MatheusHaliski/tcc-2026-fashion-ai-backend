@@ -1,9 +1,9 @@
 """Peça inteira (Total frame): a peça recortada, sem pessoa, centralizada num quadro 3:4 de 900×1200.
 
-Equivalente ao enquadramento de Tecido (``category_frame``), mas mostra a peça INTEIRA: o segmentador de roupa separa a
-peça do corpo (pele, cabelo, outras roupas) e do fundo; a peça vai para um fundo claro com a margem do Total frame
-(``lib/photo-framing.ts`` TOTAL_FRAME: até 76% da largura e 74% da altura). Lado cortado na foto (``truncated``) encosta na
-borda do quadro, sem margem falsa. Foto com pessoa nunca sai daqui para serviço externo: o segmentador roda localmente.
+Mostra somente a peça semanticamente isolada, sem corpo, outras roupas ou fundo.
+Após o preflight da fonte, preserva a proporção e centraliza a peça com a maior
+aresta normalizada em 50% do quadro. Peças truncadas exigem revisão. O segmentador
+roda localmente; a fotografia original não é enviada a um modelo externo.
 """
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from dataclasses import dataclass
 
 from PIL import Image, ImageChops, ImageFilter, ImageOps
 
-WHOLE_FRAME_VERSION = "WHOLE_FRAME_V2"
+WHOLE_FRAME_VERSION = "WHOLE_FRAME_V3"
 WIDTH, HEIGHT = 900, 1200
 BACKGROUND = (0xF4, 0xF5, 0xF7)
-MAX_W, MAX_H = 0.76, 0.74
+MAX_W, MAX_H = 0.5, 0.5
 # máscara menor que isto (fração da foto) não é uma peça: segmentação falhou ou a peça é um detalhe
 MIN_AREA = 0.01
 
@@ -48,46 +48,37 @@ def _bbox(mask: Image.Image, threshold: int = 128):
     return binary.getbbox(), binary
 
 
-def render_whole(image: Image.Image, mask: Image.Image, truncated=()) -> WholeResult:
-    """Recorta a peça pela máscara, compõe no fundo claro e encaixa no quadro 3:4 com a margem do Total frame.
+def render_whole(image: Image.Image, mask: Image.Image, truncated=(), *, preflight=None) -> WholeResult:
+    """Compõe a peça completa no quadro 3:4, centralizada e com escala uniforme.
 
     ``mask``: L (0–255), 255 = peça. ``truncated``: lados cortados na foto original ("top", "bottom", "left", "right").
     """
     image = ImageOps.exif_transpose(image).convert("RGB")
-    mask = mask.convert("L").resize(image.size, Image.LANCZOS)
+    if preflight is None or preflight.status != "PASS":
+        raise ValueError("SOURCE_PREFLIGHT_REQUIRED")
+    if truncated:
+        raise ValueError("GARMENT_COMPLETENESS_UNCERTAIN")
+    if mask.size != image.size:
+        raise ValueError("MASK_DIMENSIONS_MISMATCH")
+    mask = mask.convert("L")
     box, binary = _bbox(mask)
     if box is None:
         raise ValueError("WHOLE_EMPTY_MASK")
     area = sum(binary.histogram()[255:]) / float(image.width * image.height)
     if area < MIN_AREA:
         raise ValueError("WHOLE_MASK_TOO_SMALL")
-    # borda suave: tira serrilhado sem engordar a peça
-    soft = ImageChops.multiply(mask, binary.filter(ImageFilter.MaxFilter(3))).filter(ImageFilter.GaussianBlur(0.8))
     piece = image.crop(box)
-    alpha = soft.crop(box)
-    sides = {s for s in truncated or () if s in ("top", "bottom", "left", "right")}
+    alpha = binary.crop(box)
+    sides = set()
     pw, ph = piece.size
-    # só o lado cortado na foto encosta na borda; os outros lados mantêm a margem do Total frame
-    margin_x, margin_y = (1 - MAX_W) / 2, (1 - MAX_H) / 2
-    max_w = WIDTH * (1 - margin_x * (2 - len({"left", "right"} & sides)))
-    max_h = HEIGHT * (1 - margin_y * (2 - len({"top", "bottom"} & sides)))
-    scale = min(max_w / pw, max_h / ph)
-    tw, th = max(1, round(pw * scale)), max(1, round(ph * scale))
+    try:
+        from .photo_preflight import fit_box
+    except ImportError:
+        from photo_preflight import fit_box
+    x, y, tw, th, framing = fit_box((pw, ph), (WIDTH, HEIGHT))
+    scale = framing["scale"]
     resized = piece.resize((tw, th), Image.LANCZOS)
     resized_alpha = alpha.resize((tw, th), Image.LANCZOS)
-    if scale > 1.0:
-        # ampliada: nitidez leve para o tecido não ficar lavado (sem inventar detalhe)
-        resized = resized.filter(ImageFilter.UnsharpMask(radius=1.2, percent=60, threshold=2))
-    x = (WIDTH - tw) // 2
-    y = (HEIGHT - th) // 2
-    if "bottom" in sides:
-        y = HEIGHT - th
-    elif "top" in sides:
-        y = 0
-    if "left" in sides and "right" not in sides:
-        x = 0
-    elif "right" in sides and "left" not in sides:
-        x = WIDTH - tw
     canvas = Image.new("RGB", (WIDTH, HEIGHT), BACKGROUND)
     canvas.paste(resized, (x, y), resized_alpha)
     out = io.BytesIO()
@@ -100,6 +91,7 @@ def render_whole(image: Image.Image, mask: Image.Image, truncated=()) -> WholeRe
         "sourceBox": {"x": box[0], "y": box[1], "w": box[2] - box[0], "h": box[3] - box[1]},
         "maskArea": round(area, 4), "scale": round(scale, 4), "upscaled": scale > 1.0,
         "truncated": sorted(sides),
+        "preflight": preflight.metrics, "framing": framing,
     }
     return WholeResult(out.getvalue(), info)
 

@@ -133,12 +133,12 @@ function SearchInner() {
         <div className="surface p-4">
           <EmptyState title={meta?.empty?.message ?? (archive ? t("search.acervo_vazio") : active.length ? t("search.nenhum_resultado_com_esses_filtros") : t("common.empty"))} hint={active.length ? t("search.remova_um_dos_filtros_acima") : undefined} />
           {meta?.empty?.alternatives?.length ? <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5"><span className="type-caption text-muted">{t("search.tente")}</span>{meta.empty.alternatives.map((a) => <Chip key={a} onClick={() => submit(a.replace(/_/g, " "))}>{label(a)}</Chip>)}</div> : null}
-          {meta?.empty?.trending?.length ? <><h2 className="type-h3 mb-2">{t("search.em_alta_na_comunidade")}</h2><div className="grid-looks">{meta.empty.trending.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div></> : null}
+          {meta?.empty?.trending?.length ? <><h2 className="type-h3 mb-2">{t("search.em_alta_na_comunidade")}</h2><div className="grid-looks social-card-grid">{meta.empty.trending.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div></> : null}
         </div>
       )}
       {items.length > 0 && (
-        tab === "LOOKS" ? <div className="grid-looks">{(items as SchemeView[]).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
-        : tab === "PECAS" ? <div className="grid-cards is-pieces">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>
+        tab === "LOOKS" ? <div className="grid-looks social-card-grid">{(items as SchemeView[]).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
+        : tab === "PECAS" ? <div className="grid-cards is-pieces social-card-grid">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>
         : tab === "ACERVO" ? <ul className="grid-cards is-pieces" aria-label={t("search.acervo")}>
           {(items as CatalogProduct[]).map((p) => <li key={p.id}><CatalogResultCard product={p} pickLabel={t("search.usar_no_criador")} onPick={() => useInCreator(p)} /></li>)}</ul>
         : tab === "PESSOAS" ? <ul className="institutional-profile-feed" aria-label={t("publicProfile.results")}>

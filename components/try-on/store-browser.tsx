@@ -2,19 +2,22 @@
 
 import { CatalogBrandGrid } from "@/components/catalog/catalog-brand-grid";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
-import { Card, Chip, Skeleton } from "@/components/ui";
+import { Card, Chip, SegmentPicker, Skeleton } from "@/components/ui";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { useI18n } from "@/lib/i18n/i18n";
-import type { Sex, Store } from "@/lib/tryon/fitting-room-model";
+import { toDatabaseTipoLook, type Sex, type Store } from "@/lib/tryon/fitting-room-model";
 
 export interface StoreBrowserProps {
   stores: Store[];
   loading: boolean;
   store: string;
   category: string;
-  tipoLook: Sex | null;
+  tipoLook: Sex;
+  onTipoLookChange: (sex: Sex) => void;
+  gender?: string;
+  onGenderChange?: (gender: string) => void;
   onStoreChange: (store: string) => void;
   onCategoryChange: (category: string) => void;
   onPick: (product: CatalogProduct, variant: CatalogVariant | null) => void;
@@ -23,12 +26,28 @@ export interface StoreBrowserProps {
 }
 
 export function StoreBrowser({
-  stores, tipoLook, loading, store, category, onStoreChange, onCategoryChange, onPick, onResults, resultsTarget,
+  stores, loading, store, category, tipoLook, onTipoLookChange, gender, onGenderChange, onStoreChange, onCategoryChange, onPick, onResults, resultsTarget,
 }: StoreBrowserProps) {
   const { t } = useI18n();
 
   return (
     <Card className="fitting-store-filters">
+      <section className="fitting-control-group" aria-label={t("lookType.label")}>
+        <p className="label">{t("lookType.label")}</p>
+        <SegmentPicker
+          label={t("lookType.label")}
+          value={tipoLook}
+          onChange={onTipoLookChange}
+          options={[
+            { id: "MASCULINO", label: t("common.masculino") },
+            { id: "FEMININO", label: t("common.feminino") },
+            { id: "UNISEX", label: t("tryOn.unisex") },
+          ]}
+        />
+        <span className="type-caption text-muted" role="status" aria-live="polite" data-tipo-look={toDatabaseTipoLook(tipoLook)}>
+          {t("tryOn.look_tipo", { sex: tipoLook })}
+        </span>
+      </section>
       <section aria-label={t("tryOn.lojas_em_destaque")}>
         <p className="label">{t("tryOn.lojas_em_destaque")}</p>
         {loading ? (
@@ -61,10 +80,11 @@ export function StoreBrowser({
 
       <CatalogSearch
         brandGrid={false}
-        key={`${store}-${tipoLook}`}
+        key={store}
         initial={{ brand: store }}
         category={category}
-        tipoLook={tipoLook}
+        gender={gender}
+        onGenderChange={onGenderChange}
         onClearCategory={() => onCategoryChange("")}
         onClearBrand={() => onStoreChange("")}
         browse

@@ -2,8 +2,8 @@
 
 The local semantic segmenter selects garment classes; it never paints over people,
 reconstructs hidden garment pixels or uses skin colour as a human detector. A mask
-without semantic provenance, an ambiguous result or a missing model yields DEFAULT.
-The caller then supplies the category/colour-specific FAI reference asset.
+without semantic provenance or an ambiguous result yields REVIEW; missing model
+dependencies yield RETRY. Neither verdict is evidence for excluding a product.
 """
 from __future__ import annotations
 
@@ -19,11 +19,13 @@ from PIL import Image, ImageOps
 from scipy import ndimage
 
 try:
-    from .whole_frame import BACKGROUND, HEIGHT, MAX_H, MAX_W, WIDTH, cloth_class
+    from .whole_frame import BACKGROUND, HEIGHT, WIDTH, cloth_class
+    from .photo_preflight import inspect_source, fit_box
 except ImportError:  # standalone batch worker
-    from whole_frame import BACKGROUND, HEIGHT, MAX_H, MAX_W, WIDTH, cloth_class
+    from whole_frame import BACKGROUND, HEIGHT, WIDTH, cloth_class
+    from photo_preflight import inspect_source, fit_box
 
-PHOTO_SET_VERSION = "CATALOG_PHOTO_SET_V1"
+PHOTO_SET_VERSION = "CATALOG_PHOTO_SET_V2"
 MAX_INPUT_PIXELS = 40_000_000
 MAX_ANALYSIS_SIDE = 2048
 SET_SUBCATEGORIES = {"matching_set", "set", "two_piece_set", "bikini", "bikini_set"}
@@ -40,6 +42,10 @@ class PhotoMasks:
     target_subcategory: str | None = None
     human_present: bool | None = None
     source: str = "unspecified"
+    measurement_verified: bool = False
+    isolation_verified: bool = False
+    complete: bool | None = None
+    occluded: bool | None = None
 
 
 @dataclass
@@ -122,8 +128,11 @@ class LocalClothProvider:
             forbidden = Image.fromarray(np.where(np.isin(labels, list(HUMAN_LABELS | (set(range(1, 18)) - allowed))), 255, 0).astype(np.uint8))
             human = bool(np.isin(labels, list(HUMAN_LABELS)).any())
             source += "+fashn_human_parser"
+        # Semantic provenance is not calibrated confidence or proof of a complete
+        # garment. Production validation/review must attest those separately.
         return PhotoMasks(target, forbidden, verified=True, target_category=category,
-                          target_subcategory=subcategory, human_present=human, source=source)
+                          target_subcategory=subcategory, human_present=human, source=source,
+                          isolation_verified=parser is not None)
 
 
 def _array(mask: Image.Image, size: tuple[int, int]) -> np.ndarray:
@@ -136,8 +145,8 @@ def clean_target_mask(target: Image.Image, forbidden: Image.Image | None, catego
                       subcategory: str | None = None) -> tuple[Image.Image, dict]:
     """Clean alpha only: no RGB retouching, no hole-filling over skin/occlusions.
 
-    Opening removes thin connected scratches; component filtering removes isolated
-    dust, and a single pixel of inward cleanup prevents old human-coloured fringes.
+    Only an independently forbidden perimeter may trim attached lines. Unclassified
+    thin appendages go to review; blindly eroding them could remove straps or lace.
     Two separate pant legs are retained rather than taking only the largest blob.
     """
     a = _array(target, target.size)
@@ -148,7 +157,6 @@ def clean_target_mask(target: Image.Image, forbidden: Image.Image | None, catego
     # Dilating forbidden regions is conservative at fingers/hairline boundaries.
     exclude = ndimage.binary_dilation(prohibited, iterations=1) if prohibited.any() else prohibited
     a &= ~exclude
-    a = ndimage.binary_opening(a, structure=np.ones((3, 3), dtype=bool))
     labels, count = ndimage.label(a)
     areas = np.bincount(labels.ravel())
     areas[0] = 0
@@ -165,8 +173,12 @@ def clean_target_mask(target: Image.Image, forbidden: Image.Image | None, catego
         overlap = max(0, min(b[0].stop for b in boxes) - max(b[0].start for b in boxes))
         if overlap < .4 * min(b[0].stop - b[0].start for b in boxes):
             raise ValueError("AMBIGUOUS_TARGET_COMPONENTS")
-    cleaned = np.isin(labels, significant)
-    cleaned = ndimage.binary_erosion(cleaned, iterations=1) & ~exclude
+    cleaned = np.isin(labels, significant) & ~exclude
+    opened = ndimage.binary_opening(cleaned, structure=np.ones((3, 3), dtype=bool))
+    # Ordinary curved corners survive unchanged; long unclassified thin details
+    # are reviewed instead of being erased (a strap and a line can look alike).
+    if ((cleaned & ~opened) & (ndimage.distance_transform_edt(~opened) > 3)).any():
+        raise ValueError("UNCLASSIFIED_THIN_CONTOUR")
     kept = int(cleaned.sum())
     if kept < 64 or kept < .6 * before:
         raise ValueError("EXCESSIVE_MASK_REMOVAL")
@@ -179,7 +191,7 @@ def clean_target_mask(target: Image.Image, forbidden: Image.Image | None, catego
     return Image.fromarray((cleaned * 255).astype(np.uint8)), {
         "removedPixels": before - kept, "targetPixels": kept, "retainedParts": len(significant),
         "forbiddenPixels": int(prohibited.sum()), "removedFraction": round(1 - kept / before, 5),
-        "maskCoverage": round(kept / (height * width), 5), "contourInsetPx": 1,
+        "maskCoverage": round(kept / (height * width), 5), "contourInsetPx": 0,
     }
 
 
@@ -221,51 +233,45 @@ def _render_whole(image: Image.Image, mask: Image.Image) -> tuple[bytes, dict]:
     cutout = image.convert("RGBA")
     cutout.putalpha(mask)
     cutout = cutout.crop(box)
-    scale = min(WIDTH * MAX_W / cutout.width, HEIGHT * MAX_H / cutout.height)
-    w, h = max(1, round(cutout.width * scale)), max(1, round(cutout.height * scale))
+    x, y, w, h, framing = fit_box(cutout.size, (WIDTH, HEIGHT))
     cutout = cutout.resize((w, h), Image.Resampling.LANCZOS)
     canvas = Image.new("RGBA", (WIDTH, HEIGHT), (255,255,255,255))
-    x, y = (WIDTH - w) // 2, (HEIGHT - h) // 2
     canvas.alpha_composite(cutout, (x, y))
     return _png(canvas.convert("RGB")), {"width": WIDTH, "height": HEIGHT,
         "box": {"x": round(x / WIDTH, 5), "y": round(y / HEIGHT, 5), "w": round(w / WIDTH, 5), "h": round(h / HEIGHT, 5)},
         "sourceBox": {"x": box[0], "y": box[1], "w": box[2] - box[0], "h": box[3] - box[1]},
-        "upscaled": scale > 1, "background": "#FFFFFF", "rendered": True}
+        "upscaled": framing["scale"] > 1, "background": "#FFFFFF", "rendered": True, "framing": framing}
 
 
 def process_photo(image: Image.Image, category: str, subcategory: str | None = None, *,
                   masks: PhotoMasks | None = None, provider: PhotoMaskProvider | None = None) -> PhotoSet:
-    """Render a verified mask once or return DEFAULT with a machine-readable reason.
+    """Render a verified source once or return REVIEW/RETRY/INELIGIBLE with a reason.
 
     `verified` declares semantic mask provenance, not a claim of perfect model
     accuracy. Providers/models must be evaluated on the real catalog separately.
     """
-    metrics = {"version": PHOTO_SET_VERSION, "category": category, "subcategory": subcategory}
+    metrics = {"version": PHOTO_SET_VERSION, "category": category, "subcategory": subcategory,
+               "sourceGarmentHeightFraction": None, "sourceQuality": None}
     if image.width * image.height > MAX_INPUT_PIXELS:
-        return PhotoSet("DEFAULT", "IMAGE_TOO_LARGE", metrics=metrics)
+        return PhotoSet("REVIEW", "IMAGE_TOO_LARGE", metrics=metrics)
     try:
         source = ImageOps.exif_transpose(image).convert("RGB")
+        original_size = source.size
         if masks is None:
             source.thumbnail((MAX_ANALYSIS_SIDE, MAX_ANALYSIS_SIDE), Image.Resampling.LANCZOS)
             masks = (provider or LocalClothProvider()).masks(source, category, subcategory)
         metrics["maskSource"] = masks.source
-        if not masks.verified:
-            return PhotoSet("DEFAULT", "UNVERIFIED_SEMANTIC_MASK", metrics=metrics)
-        if masks.target_category and _normal(masks.target_category) != _normal(category):
-            return PhotoSet("DEFAULT", "MASK_CATEGORY_MISMATCH", metrics=metrics)
-        if masks.target_subcategory and _normal(masks.target_subcategory) != _normal(subcategory):
-            return PhotoSet("DEFAULT", "MASK_SUBCATEGORY_MISMATCH", metrics=metrics)
-        if masks.confidence is not None:
-            if not math.isfinite(masks.confidence) or not .8 <= masks.confidence <= 1:
-                return PhotoSet("DEFAULT", "LOW_SEGMENTATION_CONFIDENCE", metrics=metrics)
-            metrics["segmentationConfidence"] = masks.confidence
-        if masks.target.size != source.size:
-            return PhotoSet("DEFAULT", "MASK_DIMENSIONS_MISMATCH", metrics=metrics)
+        preflight = inspect_source(source, masks, category, subcategory, original_size=original_size)
+        metrics["preflight"] = preflight.metrics
+        metrics["sourceGarmentHeightFraction"] = preflight.metrics["sourceGarmentHeightFraction"]
+        metrics["sourceQuality"] = preflight.metrics["quality"]
+        if preflight.status != "PASS":
+            return PhotoSet(preflight.status, preflight.reason, metrics=metrics)
         mask, cleanup = clean_target_mask(masks.target, masks.forbidden, category, subcategory)
         metrics.update(cleanup)
         fabric_box = _fabric_box(mask)
         if fabric_box is None:
-            return PhotoSet("DEFAULT", "NO_SAFE_FABRIC_RECTANGLE", metrics=metrics)
+            return PhotoSet("REVIEW", "NO_SAFE_FABRIC_RECTANGLE", metrics=metrics)
         whole, metadata = _render_whole(source, mask)
         fabric = source.crop(fabric_box)
         # Avoid gratuitous enlargement; both dimensions retain an exact 3:4 ratio.
@@ -277,4 +283,4 @@ def process_photo(image: Image.Image, category: str, subcategory: str | None = N
     except (ImportError, OSError, ValueError, RuntimeError) as error:
         # Do not serialize URLs, model paths or exception details into audit logs.
         reason = str(error) if isinstance(error, ValueError) and str(error).isupper() and len(str(error)) < 90 else "SEGMENTATION_UNAVAILABLE"
-        return PhotoSet("DEFAULT", reason, metrics=metrics)
+        return PhotoSet("RETRY" if reason == "SEGMENTATION_UNAVAILABLE" else "REVIEW", reason, metrics=metrics)

@@ -1,0 +1,41 @@
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+.workspace > *, .stack > *, .layout > *, .formGrid > *, .measurement > * { min-width: 0; }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem; align-items: center; padding: 1.5rem; border: 1px solid var(--line-soft); border-radius: 1rem; background: var(--surface); }
+.hero p { max-width: 64ch; margin-top: .6rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
+.formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.full { grid-column: 1 / -1; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; align-items: start; gap: 1.5rem; }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; }
+.card { display: grid; gap: .7rem; height: 100%; }
+.meta { display: flex; flex-wrap: wrap; gap: .7rem; font-size: .875rem; }
+.note { padding: 1rem; border: 1px solid var(--line-soft); border-radius: .75rem; }
+.sketch { width: 100%; height: 190px; }
+.sketch path, .sketch rect { stroke: currentColor; fill: none; stroke-width: 1.8; }
+.sketch line { stroke: currentColor; stroke-dasharray: 4 5; opacity: .45; }
+.measurement { display: grid; grid-template-columns: 1fr 1.5fr 7rem auto; align-items: end; gap: .7rem; }
+.compare { width: 100%; border-collapse: collapse; }
+.compare th, .compare td { padding: .75rem; text-align: start; vertical-align: top; border-bottom: 1px solid var(--line-soft); white-space: pre-wrap; overflow-wrap: anywhere; }
+.compare td { width: 38%; }
+.comment { padding-block: .8rem; border-bottom: 1px solid var(--line-soft); white-space: pre-wrap; overflow-wrap: anywhere; }
+.check { display: flex; align-items: flex-start; gap: .7rem; margin-block: .75rem; }
+.check input { margin-top: .3rem; }
+.scroll { overflow-x: auto; }
+@media (max-width: 800px) { .layout, .hero, .formGrid { grid-template-columns: minmax(0, 1fr); } .measurement { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.printSheet { max-width: 75rem; margin-inline: auto; }
+.printActions { margin-bottom: 1rem; }
+@media print {
+  :global(body):has(.printSheet) :global(.app-header),
+  :global(body):has(.printSheet) :global(.app-sidebar),
+  :global(body):has(.printSheet) :global(.bottom-nav),
+  :global(body):has(.printSheet) :global(.skip-link) { display: none; }
+  :global(body):has(.printSheet) :global(.app-body) { display: block; max-width: none; margin: 0; padding: 0; }
+  :global(body):has(.printSheet) :global(.page-container) { min-height: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: #fff; color: #000; }
+  .printActions { display: none; }
+  .printSheet { max-width: none; margin: 0; color: #000; background: #fff; font-size: 11pt; }
+  .printSheet .formGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .printSheet .comment, .printSheet .compare tr { break-inside: avoid; }
+  .printSheet .note { border-color: #777; }
+  .printSheet .compare { font-size: 10pt; }
+}

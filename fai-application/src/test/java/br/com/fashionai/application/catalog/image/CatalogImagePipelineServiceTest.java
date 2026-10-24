@@ -121,6 +121,23 @@ class CatalogImagePipelineServiceTest {
         return i;
     }
 
+    private static Map<String, Object> sourcePreflight() {
+        return new LinkedHashMap<>(Map.of("version", "CATALOG_SOURCE_PREFLIGHT_V1", "status", "PASS",
+                "measurementReliable", true, "sourceGarmentHeightFraction", .25, "complete", true,
+                "occluded", false, "isolationVerified", true, "humanAssessmentComplete", true));
+    }
+
+    private Map<String, Object> photoEvidence(CatalogImage image, String status) {
+        Map<String,Object> state = new LinkedHashMap<>();
+        state.put("version", "CATALOG_PHOTO_SET_V2"); state.put("sourceUrl", image.getImageUrl());
+        state.put("sourceSha256", image.getSourceSha256()); state.put("category", product.getCategory());
+        state.put("subcategory", product.getSubcategory()); state.put("color", product.getColor()); state.put("status", status);
+        state.put("wholeUrl", "https://media.fashion-ai.app/whole.png"); state.put("fabricUrl", "https://media.fashion-ai.app/fabric.png");
+        state.put("defaultAssetUrl", "/api/catalog/default-asset?category=upper_piece");
+        state.put("metrics", Map.of("preflight", sourcePreflight()));
+        return state;
+    }
+
     @Test
     void somenteEnquadramentoAprovadoPodeSerExibidoSemFotoCruaEmFalha() {
         CatalogImage photo = image("https://img.brand.com/framed.jpg", CatalogImageType.FRONT,
@@ -137,16 +154,13 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
-    void totalFrameEntregaACaixaDaPecaSoParaFotoDeProdutoSemPessoa() {
+    void totalFrameLegadoSemIsolamentoSemanticoNuncaExpoeFotoOriginal() {
         CatalogImage packshot = new CatalogImage();
         packshot.setImageUrl("https://img.brand.com/shorts.jpg");
         packshot.setWidth(864); packshot.setHeight(1152);
         packshot.setCropJson(Json.write(Map.of("product", Map.of("x", 0.12, "y", 0.19, "w", 0.75, "h", 0.6), "background", "#f4f5f7")));
         packshot.setMetricsJson(Json.write(Map.of("debug", Map.of("productFrame", Map.of("model", false), "sourceHumanEvidence", 0.0, "truncated", List.of()))));
-        Map<String, Object> whole = CatalogImagePipelineService.wholeFrame(packshot);
-        assertThat(whole).containsEntry("url", "https://img.brand.com/shorts.jpg").containsEntry("background", "#f4f5f7")
-                .containsEntry("version", CatalogImagePipelineService.WHOLE_FRAME_VERSION).containsEntry("width", 864);
-        assertThat(whole.get("box")).isEqualTo(Map.of("x", 0.12, "y", 0.19, "w", 0.75, "h", 0.6));
+        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
 
         // foto com modelo, com pele de pessoa ou sem fundo de estúdio: o card continua no recorte de sempre
         packshot.setMetricsJson(Json.write(Map.of("debug", Map.of("productFrame", Map.of("model", true)))));
@@ -169,12 +183,24 @@ class CatalogImagePipelineServiceTest {
 
         jeans.setWholeUrl("https://media.fashion-ai.app/catalog/whole/a/b.jpg");
         jeans.setWholeStatus("DONE");
-        jeans.setWholeJson(Json.write(Map.of("box", Map.of("x", 0.24, "y", 0.13, "w", 0.52, "h", 0.74), "background", "#F4F5F7",
-                "width", 900, "height", 1200, "truncated", List.of("bottom"))));
+        jeans.setSourceSha256("a".repeat(64));
+        jeans.setWholePipelineVersion(CatalogImagePipelineService.WHOLE_PROCESSED_VERSION);
+        Map<String,Object> info = new LinkedHashMap<>(Map.of("box", Map.of("x", 0.375, "y", 0.25, "w", 0.25, "h", 0.5),
+                "background", "#F4F5F7", "width", 900, "height", 1200, "truncated", List.of(),
+                "version", CatalogImagePipelineService.WHOLE_PROCESSED_VERSION, "sourceUrl", jeans.getImageUrl(),
+                "sourceSha256", jeans.getSourceSha256(), "preflight", sourcePreflight()));
+        jeans.setWholeJson(Json.write(info));
         Map<String, Object> whole = CatalogImagePipelineService.wholeFrame(jeans);
         assertThat(whole).containsEntry("url", "https://media.fashion-ai.app/catalog/whole/a/b.jpg").containsEntry("processed", true)
                 .containsEntry("version", CatalogImagePipelineService.WHOLE_PROCESSED_VERSION).containsEntry("width", 900).containsEntry("height", 1200);
-        assertThat(whole.get("truncated")).isEqualTo(List.of("bottom"));
+        assertThat(whole.get("truncated")).isEqualTo(List.of());
+
+        info.put("truncated", List.of("bottom")); jeans.setWholeJson(Json.write(info));
+        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        info.put("truncated", List.of()); jeans.setWholeJson(Json.write(info));
+        jeans.setSourceSha256("b".repeat(64));
+        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        jeans.setSourceSha256("a".repeat(64));
 
         // processamento com falha ou caixa inválida: sem Peça inteira (a interface mostra o enquadramento de tecido)
         jeans.setWholeStatus("FAILED");
@@ -216,29 +242,26 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
-    void previewPersisteAsDuasUrlsUmaVezEReutilizaEntreAberturasSemBaixarFonte() {
+    void previewLegadoReutilizaTecidoMasNaoInventaWholeSemPreflight() {
         CatalogSource source = new CatalogSource(); source.setDomain("brand.com"); source.setAllowsImagePersistence(true); sources.add(source);
         CatalogImage front = image("https://img.brand.com/stable.jpg", CatalogImageType.PACKSHOT,
                 CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0)));
         front.setAssetsJson(Json.write(Map.of("photoSet",Map.of("status","DEFAULT"))));
         service.ensurePreview(admin, product.getId(), true);
-        assertThat(Json.map(front.getAssetsJson())).doesNotContainKey("photoSet");
+        assertThat(Json.map(front.getAssetsJson())).containsKey("photoSet");
         Map<String, Object> card = CatalogImagePipelineService.cardImage(front, product);
         String fabricUrl = card.get("url").toString();
-        Map<?, ?> whole = (Map<?, ?>) card.get("whole");
         assertThat(fabricUrl).endsWith("fabric.jpg");
-        assertThat(whole.get("url").toString()).endsWith("whole.png");
-        assertThat(whole.get("rendered")).isEqualTo(true);
-        assertThat(stored).hasSize(2);
+        assertThat(card).doesNotContainKey("whole");
+        assertThat(stored).hasSize(1);
         String cached = front.getAssetsJson();
         web.remove(front.getImageUrl());
         service.ensurePreview(admin, product.getId());
         service.ensurePreview(admin, product.getId());
         assertThat(front.getAssetsJson()).isEqualTo(cached);
         assertThat(CatalogImagePipelineService.cardImage(front, product).get("url")).isEqualTo(fabricUrl);
-        assertThat(stored).hasSize(2);
-        assertThat(service.texturePhoto(admin, product.getId()).mime()).isEqualTo("image/png");
-        assertThat(stored).hasSize(2); // The full garment is read from storage, with the original offline.
+        assertThat(stored).hasSize(1);
+        assertThatThrownBy(() -> service.texturePhoto(admin, product.getId(), true)).isInstanceOf(ApiException.class);
     }
 
     @Test
@@ -552,8 +575,8 @@ class CatalogImagePipelineServiceTest {
     @Test
     void sanitizedPhotoSetIsReusedAndStaleCategoryNeverServesThePreviousGarment() {
         CatalogImage i=image("https://brand.com/photo.png",CatalogImageType.FRONT,CatalogPhotos.png(CatalogPhotos.tee(200,200,1)));
-        i.setSourceSha256("source-hash");i.setCanonical(true);
-        Map<String,Object> cleaned=new LinkedHashMap<>();cleaned.put("version","CATALOG_PHOTO_SET_V1");cleaned.put("sourceUrl",i.getImageUrl());cleaned.put("sourceSha256",i.getSourceSha256());cleaned.put("category",product.getCategory());cleaned.put("subcategory",product.getSubcategory());cleaned.put("color",product.getColor());cleaned.put("status","READY");cleaned.put("wholeUrl","https://media.fashion-ai.app/whole.png");cleaned.put("fabricUrl","https://media.fashion-ai.app/fabric.png");cleaned.put("defaultAssetUrl","/api/catalog/default-asset?category=upper_piece");i.setAssetsJson(Json.write(Map.of("photoSet",cleaned)));
+        i.setSourceSha256("a".repeat(64));i.setCanonical(true);
+        Map<String,Object> cleaned=photoEvidence(i,"READY");i.setAssetsJson(Json.write(Map.of("photoSet",cleaned)));
         assertThat(CatalogImagePipelineService.cardImage(i,product)).containsEntry("url",cleaned.get("fabricUrl")).containsEntry("mode","PROCESSED");
         i.setReviewStatus("REJECTED");assertThat(CatalogImagePipelineService.photoSet(i,product)).isEmpty();
         i.setReviewStatus("APPROVED");
@@ -566,8 +589,42 @@ class CatalogImagePipelineServiceTest {
     }
     @Test
     void defaultOnlyPhotoSetDoesNotExposeARejectedSourceAsAnApprovedFrame() {
-        CatalogImage i=image("https://brand.com/photo.png",CatalogImageType.FRONT,CatalogPhotos.png(CatalogPhotos.tee(200,200,1)));i.setSourceSha256("source-hash");
-        Map<String,Object> cleaned=new LinkedHashMap<>();cleaned.put("version","CATALOG_PHOTO_SET_V1");cleaned.put("sourceUrl",i.getImageUrl());cleaned.put("sourceSha256",i.getSourceSha256());cleaned.put("category",product.getCategory());cleaned.put("subcategory",product.getSubcategory());cleaned.put("color",product.getColor());cleaned.put("status","DEFAULT");cleaned.put("defaultAssetUrl","/api/catalog/default-asset?category=upper_piece");i.setAssetsJson(Json.write(Map.of("photoSet",cleaned)));
+        CatalogImage i=image("https://brand.com/photo.png",CatalogImageType.FRONT,CatalogPhotos.png(CatalogPhotos.tee(200,200,1)));i.setSourceSha256("a".repeat(64));
+        Map<String,Object> cleaned=photoEvidence(i,"DEFAULT");i.setAssetsJson(Json.write(Map.of("photoSet",cleaned)));
         assertThat(CatalogImagePipelineService.cardImage(i,product)).containsEntry("mode","DEFAULT").containsEntry("url",cleaned.get("defaultAssetUrl")).doesNotContainKey("whole");
+    }
+
+    @Test
+    void readyRequiresMeasuredCompleteIsolationAtOrAboveExactly25Percent() {
+        assertThat(CatalogImagePipelineService.validPreflight(sourcePreflight())).isTrue();
+        for (Map.Entry<String,Object> invalid : Map.<String,Object>of("sourceGarmentHeightFraction", .249,
+                "measurementReliable", false, "isolationVerified", false, "humanAssessmentComplete", false,
+                "complete", false, "occluded", true, "status", "REVIEW").entrySet()) {
+            Map<String,Object> evidence=sourcePreflight(); evidence.put(invalid.getKey(),invalid.getValue());
+            assertThat(CatalogImagePipelineService.validPreflight(evidence)).as(invalid.getKey()).isFalse();
+        }
+        CatalogImage i=image("https://brand.com/proof.png",CatalogImageType.FRONT,null);
+        i.setSourceSha256("a".repeat(64));
+        Map<String,Object> state=photoEvidence(i,"READY");state.remove("metrics");
+        i.setAssetsJson(Json.write(Map.of("photoSet",state)));
+        assertThat(CatalogImagePipelineService.photoSet(i,product)).isEmpty();
+        state.put("version","CATALOG_PHOTO_SET_V1");state.put("metrics",Map.of("preflight",sourcePreflight()));
+        i.setAssetsJson(Json.write(Map.of("photoSet",state)));
+        assertThat(CatalogImagePipelineService.photoSet(i,product)).isEmpty();
+    }
+
+    @Test
+    void preflightReviewNeverReachesLegacyRendererUploadOrOriginalTexture() {
+        for (String status : List.of("REVIEW","INELIGIBLE","RETRY")) {
+            CatalogImage i=image("https://brand.com/"+status+".png",CatalogImageType.FRONT,null);
+            i.setSourceSha256("a".repeat(64)); i.setCanonical(true); i.setProcessingStatus("APPROVED");
+            i.setAssetsJson(Json.write(Map.of("photoSet",photoEvidence(i,status))));
+            assertThatThrownBy(() -> service.texturePhoto(admin,product.getId())).isInstanceOf(ApiException.class);
+            service.process(i.getId());
+            assertThat(i.getProcessingStatus()).isEqualTo("NEEDS_REPROCESSING");
+            assertThat(i.getReviewStatus()).isEqualTo("PENDING"); assertThat(i.getCropJson()).isNull();
+            assertThat(CatalogImagePipelineService.cardImage(i,product)).containsEntry("mode","DEFAULT").doesNotContainKey("whole");
+        }
+        assertThat(stored).isEmpty();
     }
 }

@@ -38,6 +38,7 @@ import { PieceDetailFacts } from "@/components/piece-detail-facts";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
 import { PieceCardPanels } from "@/components/piece-card-panels";
 import { fashionCardLevel } from "@/lib/hype/fashion-card";
+import { conservationLabel } from "@/lib/api/piece-references";
 
 export function pieceWholeSources(piece: PieceView): { image: CatalogCardImage | null; sources: string[] } {
   const ci = (piece.flatLayMetadata as { catalogImage?: CatalogCardImage } | undefined)?.catalogImage;
@@ -81,7 +82,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const whole = framing === "WHOLE" ? pieceWholeSources(piece) : null;
   const wholeImage = whole?.image && (!preview || catalogWholeFrame(whole.image)) ? whole.image : null;
   const fillFrame = preview && framing === "FABRIC";
-  const mediaStyle = { aspectRatio: whole ? "3 / 4" : piecePhotoAspect(piece) };
+  const mediaStyle = { aspectRatio: expanded ? (whole ? "3 / 4" : piecePhotoAspect(piece)) : "4 / 3" };
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
   const surface = artSurfaceProps(piece.background, art, expanded ? "expanded" : "compact");
@@ -91,9 +92,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const link = href ?? `/pieces/${piece.id}`;
   
   // Resolução do estado de conservação
-  const condition = (piece as unknown as { estadoDeConservacao?: string; condition?: string }).estadoDeConservacao 
-    ?? (piece as unknown as { condition?: string }).condition 
-    ?? null;
+  const condition = conservationLabel(piece, t);
 
   const secondary = (
     <>
@@ -132,7 +131,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
 
           {selectable ? (
             <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
-              <span className="pc-media" style={mediaStyle}>{media}</span>
+              <span className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</span>
               <span className="pc-id">
                 {name}
                 <span className="pc-sub">{secondary}</span>
@@ -142,8 +141,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
           ) : (
             <>
               {preview
-                ? <div className="pc-media" style={mediaStyle}>{media}</div>
-                : <Link href={link} onClick={openModal} className="pc-media" style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
+                ? <div className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</div>
+                : <Link href={link} onClick={openModal} className="pc-media" data-photo-framing={framing} style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <div className="pc-id">
                 <span className="seal-row">
                   {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
@@ -151,12 +150,14 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 </span>
                 <span className="pc-sub">
                   {secondary}
-                  {zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}
+                  {expanded && zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}
                 </span>
+                {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
+                {!expanded && <CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} />}
                 {expanded && <PieceDetailFacts piece={piece}/>}
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} />
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} />
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{<Price value={piece.price} />}</b></span>}
-                {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
+                {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>
             </>
           )}

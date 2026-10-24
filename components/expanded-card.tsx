@@ -311,6 +311,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
                     <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span><LookHype id={s.schemeId} /></button>))}</div>
               </section>
             )}
+            {mine && <section className="pd-section"><Link className="btn" href={`/pieces/${p.id}/passport`}>{t("passport.title")}</Link></section>}
             {mine && <FlairPieceBlock pieceId={p.id} />}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>
               {mine && studioNeedsReview(p) && (

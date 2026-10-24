@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
+import { useAuth } from "@/lib/auth/session";
 import { ApiError, api } from "@/lib/api/client";
 import { useVisibleRefresh } from "@/lib/hooks/use-visible-refresh";
 import { useApi } from "@/lib/hooks/use-api";
@@ -29,15 +31,26 @@ import { storeCount } from "./catalog-brand-grid";
 export { storeCount } from "./catalog-brand-grid";
 
 const BRAND_PAGE_SIZE = 12;
+const ProductFitDialog = dynamic(() => import("@/components/fit/ProductFitDialog").then(module => module.ProductFitDialog), { ssr: false });
 
-export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true, onClearCategory, onClearBrand }: {
+/**
+ * RF47 · Busca catalogada: categoria → subcategoria → marca → nome/modelo. Duas ou três informações já disparam a busca
+ * (e sugestões enquanto digita). Resultados em cards com a foto oficial e o "% compatível" (similaridade da busca, não
+ * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
+ * da marca ou cair para a própria foto.
+ */
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, gender: controlledGender, onGenderChange, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true, onClearCategory, onClearBrand }: {
+  /** Modo embutido: limpa também a categoria controlada pelo formulário. */
   onClearCategory?: () => void;
   onClearBrand?: () => void;
-  initial?: Partial<CatalogSearchContext>; 
+  initial?: Partial<CatalogSearchContext>;
   onPick: (p: CatalogProduct, v: CatalogVariant | null) => void | Promise<void>;
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
   category?: string;
-  tipoLook?: string | null;
+  /** Filtro de gênero do catálogo controlado pelo Tipo de Look do provador; não altera a identidade da pessoa. */
+  gender?: string;
+  onGenderChange?: (gender: string) => void;
+  /** Tipo (subcategoria) escolhido na busca segue para o formulário. */
   onContext?: (ctx: Partial<CatalogSearchContext>) => void;
   pickLabel?: string;
   noResultHint?: string;
@@ -92,9 +105,14 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category:
 
   const [query, setQuery] = useState(initial?.query ?? "");
   const [color, setColor] = useState("");
-  const [gender, setGender] = useState("");
+  const [ownGender, setOwnGender] = useState("");
+  const gender = controlledGender ?? ownGender;
+  const setGender = (next: string) => {
+    if (controlledGender === undefined) setOwnGender(next);
+    onGenderChange?.(next);
+  };
   const [res, setRes] = useState<SearchResponse | null>(null);
-  
+
   const [acervo, setAcervo] = useState<{ items: CatalogProduct[]; total: number; page: number; hasMore: boolean; brandKnown?: boolean; canSearchOfficial?: boolean } | null>(null);
   const [acervoLoading, setAcervoLoading] = useState(resultsLayout === "matrix");
   const [showAll, setShowAll] = useState(false);
@@ -110,16 +128,16 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category:
   const [selectedVariants, setSelectedVariants] = useState<Record<string, CatalogVariant>>({});
   const seq = useRef(0);
 
-  // Mapeia `tipoLook` para gender e inclui nos parâmetros de busca
-  const params = useMemo(() => ({ 
-    category: category || undefined, 
-    subcategory: subcategory || undefined, 
+  // O filtro controlado é independente da apresentação do avatar.
+  const params = useMemo(() => ({
+    category: category || undefined,
+    subcategory: subcategory || undefined,
     brand: brand.trim() || undefined,
-    q: query.trim() || undefined, 
-    code: code.trim() || undefined, 
-    color: color || undefined, 
-    gender: (gender || tipoLook || undefined)?.toUpperCase() 
-  }), [category, subcategory, brand, query, code, color, gender, tipoLook]);
+    q: query.trim() || undefined,
+    code: code.trim() || undefined,
+    color: color || undefined,
+    gender: gender ? (gender.toUpperCase() === "UNISEX" ? "UNISSEX" : gender.toUpperCase()) : undefined
+  }), [category, subcategory, brand, query, code, color, gender]);
 
   useEffect(() => { setAllForText(false); }, [params.q, params.code, params.color]);
   const browsing = resultsLayout === "matrix" || !params.color && (params.q ? allForText : (!!params.brand || !!params.subcategory || !!params.category || !!params.gender || showAll));
@@ -132,7 +150,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category:
     const ctl = new AbortController();
     const h = setTimeout(() => run(n, ctl.signal), 350);
     return () => { clearTimeout(h); ctl.abort(); };
-  }, [params.category, params.subcategory, params.brand, params.q, params.code, params.color, params.gender, browsing]);
+  }, [params.category, params.subcategory, params.brand, params.q, params.code, params.color, params.gender, browsing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!browsing) { setAcervo(null); return; }
@@ -149,19 +167,19 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category:
     if (page === 0) setRes(null);
     try {
       const brandId = brandRef && brandRef.name === params.brand ? brandRef.id : undefined;
-      const r = await catalogApi.browse({ 
-        brand: params.brand, 
-        brandId, 
-        category: params.category, 
-        subcategory: params.subcategory, 
-        q: resultsLayout === "matrix" || allForText ? params.q : undefined, 
-        color: params.color, 
-        gender: params.gender, 
-        code: params.code, 
-        page, 
-        size: 48 
+      const r = await catalogApi.browse({
+        brand: params.brand,
+        brandId,
+        category: params.category,
+        subcategory: params.subcategory,
+        q: resultsLayout === "matrix" || allForText ? params.q : undefined,
+        color: params.color,
+        gender: params.gender,
+        code: params.code,
+        page,
+        size: 48
       }, signal);
-      
+
       if (signal?.aborted || n !== seq.current) return;
       setAcervo((old) => ({ items: page === 0 || !old ? r.items : mergeById(old.items, r.items), total: r.total, page: r.page, hasMore: r.hasMore, brandKnown: r.brandKnown, canSearchOfficial: r.canSearchOfficial }));
       setRanWith(params);
@@ -191,11 +209,11 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category:
     if (browsing && acervo) {
       const pages = [];
       for (let page = 0; page <= acervo.page; page++) {
-        const r = await catalogApi.browse({ 
+        const r = await catalogApi.browse({
           brand: params.brand,
           brandId: brandRef && brandRef.name === params.brand ? brandRef.id : undefined,
           category: params.category, subcategory: params.subcategory,
-          q: resultsLayout === "matrix" || allForText ? params.q : undefined, color: params.color, gender: params.gender, code: params.code, page, size: 48 
+          q: resultsLayout === "matrix" || allForText ? params.q : undefined, color: params.color, gender: params.gender, code: params.code, page, size: 48
         }, signal);
         pages.push(r);
         if (!r.hasMore) break;
@@ -266,11 +284,11 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category:
 
   const brandLabel = brandRef?.name ?? res?.intent.brand ?? brand.trim();
   const selectionLabels = [
-    ranWith?.brand, 
+    ranWith?.brand,
     ranWith?.category ? CATEGORY_LABEL[ranWith.category] ?? label(ranWith.category) : "",
-    ranWith?.subcategory ? subcategoryLabel(ranWith.subcategory) : "", 
+    ranWith?.subcategory ? subcategoryLabel(ranWith.subcategory) : "",
     params.color ? label(params.color) : "",
-    params.gender ? label(params.gender.toLowerCase()) : "", 
+    params.gender ? label(params.gender.toLowerCase()) : "",
     ranWith?.q ? `“${ranWith.q}”` : ""
   ].filter(Boolean);
 
@@ -278,7 +296,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category:
     : params.brand ? t("catalog.todas_de", { total: acervo.total, marca: params.brand }) : t("catalog.todas", { total: acervo.total })) : acervo && (acervo.brandKnown === false ? t("catalog.marca_fora_do_acervo", { marca: ranWith?.brand ?? "" })
     : selectionLabels.length ? t("catalog.selecao_total", { total: acervo.total, filters: selectionLabels.join(" · ") })
     : t("catalog.todas", { total: acervo.total }));
-  
+
   const brandGridTotal = storeList.reduce((total, store) => total + storeCount(store, category), 0);
   const [photoFraming, setPhotoFraming] = usePhotoFraming();
 
@@ -306,10 +324,10 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, tipoLook, category:
             </p>
           )}
           {resultsLayout === "matrix" && <p className="mb-3 type-body-sm tabular" role="status">{t("catalog.pecas_na_selecao", { count: browsing && acervo ? acervo.total : filtered.length })}</p>}
-          {(colors.length > 1 || genders.length > 1) && (
+          {(colors.length > 1 || controlledGender === undefined && genders.length > 1) && (
             <div className="mb-3 flex flex-wrap items-center gap-1.5" aria-label={t("catalog.filtros_rapidos")}>
               {colors.length > 1 && <><span className="type-caption text-muted">{t("common.color")}:</span>{colors.map((c) => <Chip key={c} active={color === c} onClick={() => setColor(color === c ? "" : c)}><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: tax?.colors?.[c] ?? "#999" }} />{label(c)}</Chip>)}</>}
-              {genders.length > 1 && <><span className="type-caption text-muted ml-2">{t("catalog.genero")}:</span>{genders.map((g) => <Chip key={g} active={gender === g} onClick={() => setGender(gender === g ? "" : g)}>{label(g.toLowerCase())}</Chip>)}</>}
+              {controlledGender === undefined && genders.length > 1 && <><span className="type-caption text-muted ml-2">{t("catalog.genero")}:</span>{genders.map((g) => <Chip key={g} active={gender === g} onClick={() => setGender(gender === g ? "" : g)}>{label(g.toLowerCase())}</Chip>)}</>}
             </div>
           )}
           {filtered.length > 0 && (
@@ -491,6 +509,8 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   onVariantChange?: (variant: CatalogVariant) => void;
 }) {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const [fitOpen, setFitOpen] = useState(false);
   const preview = useCatalogPreview(original);
   const p = preview.product;
   const tax = useTaxonomy();
@@ -533,8 +553,10 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
           </div>
         ) : p.colorName ? <p className="mt-1 flex items-center gap-1.5 type-body-sm"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: p.colorHex ?? undefined }} />{p.colorName}</p> : null}
         <p className="mt-1 type-caption text-faint">{t("catalog.fonte", { fonte: source })}</p>
+        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("fit.title")}</Button>}
         <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant)} loading={busy} disabled={disabled}>{busy ? t("catalog.verificando_foto") : pickLabel ?? t("catalog.e_esta")}</Button>
       </div>
+      {fitOpen && <ProductFitDialog productId={p.id} productName={p.productName} open onClose={() => setFitOpen(false)} />}
     </article>
   );
 }

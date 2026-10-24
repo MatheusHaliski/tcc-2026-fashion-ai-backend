@@ -22,7 +22,7 @@ export function MomentFeed({ moment }: { moment: MomentDetail }) {
   const items = feed.data.items; const canVote = !!user && moment.competitive && moment.time.status === "ACTIVE";
   if (items.length === 0) return <EmptyState title={t("moments.community.empty")} hint={t("moments.community.empty_hint")} />;
   return (
-    <div className="grid-looks">
+    <div className="grid-looks social-card-grid">
       {items.map((s) => (
         <div key={s.id} className={cn("moment-entry", s.mine && "is-mine")}>
           {s.scheme ? <SchemeCard scheme={s.scheme} /> : <div className="surface p-3"><p className="type-body-sm">{t("moments.community.look_unavailable")}</p></div>}

@@ -26,15 +26,18 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from scipy.fft import dctn
 try:
     from .photo_set import LocalClothProvider, clean_target_mask
+    from .photo_preflight import inspect_source
 except ImportError:
     from photo_set import LocalClothProvider, clean_target_mask
+    from photo_preflight import inspect_source
 LOGGER=logging.getLogger('fashionai.images')
 MAX_BYTES=10*1024*1024
 MAX_PIXELS=40_000_000
-VERSION='FAI_ML_DATASET_512_V1'
+VERSION='FAI_ML_DATASET_512_V2'
 
 class ImageFailure(Exception):
-    pass
+    def __init__(self, reason, *, status='REJECTED', metrics=None):
+        super().__init__(reason);self.status=status;self.metrics=metrics
 
 def emit(event,**values):
     LOGGER.info(json.dumps({'event':event,**values},ensure_ascii=False))
@@ -112,12 +115,12 @@ class GarmentSanitizer:
         except (UnidentifiedImageError,OSError,Image.DecompressionBombError):raise ImageFailure('CORRUPT_IMAGE') from None
         original=image.size
         image.thumbnail((2048,2048),Image.Resampling.LANCZOS)
-        masks=self.provider.masks(image,item.category,item.subcategory)
-        if not masks.verified or masks.target.size!=image.size:raise ImageFailure('UNVERIFIED_GARMENT_MASK')
-        if masks.confidence is not None and not .8<=masks.confidence<=1:raise ImageFailure('LOW_SEGMENTATION_CONFIDENCE')
-        if masks.target_category and masks.target_category!=item.category:raise ImageFailure('MASK_CATEGORY_MISMATCH')
-        if masks.target_subcategory and masks.target_subcategory!=item.subcategory:raise ImageFailure('MASK_SUBCATEGORY_MISMATCH')
+        provider=self.provider.for_source(hashlib.sha256(data).hexdigest(),item.url) if hasattr(self.provider,'for_source') else self.provider
+        masks=provider.masks(image,item.category,item.subcategory)
+        preflight=inspect_source(image,masks,item.category,item.subcategory,original_size=original)
+        if preflight.status!='PASS':raise ImageFailure(preflight.reason,status=preflight.status,metrics={'preflight':preflight.metrics})
         mask,metrics=clean_target_mask(masks.target,masks.forbidden,item.category,item.subcategory)
+        metrics['preflight']=preflight.metrics
         piece=image.convert('RGBA');piece.putalpha(mask);piece=piece.crop(mask.getbbox());piece.thumbnail((480,480),Image.Resampling.LANCZOS)
         result=Image.new('RGBA',(512,512),'#FFFFFF');result.alpha_composite(piece,((512-piece.width)//2,(512-piece.height)//2));result=result.convert('RGB')
         return result,original,metrics
@@ -156,7 +159,8 @@ class ImageDatasetPipeline:
         except Exception as error:
             code='SEGMENTATION_DEPENDENCY_MISSING' if isinstance(error,ImportError) else str(error) if isinstance(error,(ImageFailure,ValueError)) and re.fullmatch('[A-Z0-9_]{1,100}',str(error)) else 'PROCESSING_FAILED'
             emit('image_rejected',product_id=item.product_id,reason=code)
-            return base,None,dict(status='REJECTED',reason=code)
+            return base,None,dict(status=error.status if isinstance(error,ImageFailure) else 'REVIEW',reason=code,
+                                 metrics=error.metrics if isinstance(error,ImageFailure) else None)
     async def run(self,items):
         self.output.mkdir(parents=True,exist_ok=True);rows=[];seen=[];filenames=set()
         timeout=aiohttp.ClientTimeout(total=30,connect=8,sock_read=10)
@@ -197,9 +201,14 @@ def parse_products(raw):
     return items
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--input',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--concurrency',type=int,default=4);args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--input',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--concurrency',type=int,default=4);parser.add_argument('--reviewed-masks',type=Path);args=parser.parse_args()
     logging.basicConfig(level=logging.INFO,format='%(message)s')
     items=parse_products(json.loads(args.input.read_text()));emit('pipeline_started',images=len(items),version=VERSION)
-    rows=asyncio.run(ImageDatasetPipeline(args.output,concurrency=args.concurrency).run(items));emit('pipeline_finished',valid=sum(r['status']=='VALID' for r in rows),rejected=sum(r['status']=='REJECTED' for r in rows),duplicates=sum(r['status']=='DUPLICATE' for r in rows))
+    sanitizer=None
+    if args.reviewed_masks:
+        try:from .reviewed_photo_masks import ReviewedMaskProvider
+        except ImportError:from reviewed_photo_masks import ReviewedMaskProvider
+        sanitizer=GarmentSanitizer(ReviewedMaskProvider(args.reviewed_masks))
+    rows=asyncio.run(ImageDatasetPipeline(args.output,concurrency=args.concurrency,sanitizer=sanitizer).run(items));emit('pipeline_finished',valid=sum(r['status']=='VALID' for r in rows),rejected=sum(r['status']=='REJECTED' for r in rows),duplicates=sum(r['status']=='DUPLICATE' for r in rows))
     return 0 if not rows or any(r['status']=='VALID' for r in rows) else 2
 if __name__=='__main__':raise SystemExit(main())

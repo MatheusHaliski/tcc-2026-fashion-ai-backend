@@ -122,7 +122,7 @@ function GroupingSearch({ slug, kind, admin }: { slug: string; kind: Kind; admin
       )}
       {items.loading ? <SkeletonGrid /> : !items.data || (items.data.schemes.length + items.data.pieces.length === 0) ? <EmptyState title={t("showcase.showcaseTabs.nada_nesta_com_esses_filtros", { one: w.one })} hint={t("showcase.showcaseTabs.tente_outro_ano_outro_termo")} /> : (
         <>
-          {items.data.schemes.length > 0 && <><p className="label mb-2">{t("showcase.showcaseTabs.esquemas", { schemesCount: items.data.schemes.length })}</p><div className="grid-looks mb-5">{items.data.schemes.map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} extra={!f.groupingId ? <span className="caption">{w.one}: {e.grouping}</span> : undefined} />)}</div></>}
+          {items.data.schemes.length > 0 && <><p className="label mb-2">{t("showcase.showcaseTabs.esquemas", { schemesCount: items.data.schemes.length })}</p><div className="grid-looks social-card-grid mb-5">{items.data.schemes.map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} extra={!f.groupingId ? <span className="caption">{w.one}: {e.grouping}</span> : undefined} />)}</div></>}
           {items.data.pieces.length > 0 && <><p className="label mb-2">{t("common.pecas_2", { piecesCount: items.data.pieces.length })}</p><div className="grid-cards">{items.data.pieces.map((e) => <PieceCard key={e.piece.id} piece={e.piece} extra={!f.groupingId ? <span className="caption">{w.one}: {e.grouping}</span> : undefined} />)}</div></>}
         </>
       )}
