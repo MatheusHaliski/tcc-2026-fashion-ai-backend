@@ -1,0 +1,15 @@
+subcategory,status,variations_validated_as_specs,geometry_bodies,browser_reference
+jeans,ACTIVE,21,FEMININO + MASCULINO,F-ref local
+tailored_pants,ACTIVE,13,FEMININO + MASCULINO,F-ref local
+casual_pants,ACTIVE,12,FEMININO + MASCULINO,F-ref local
+chino_pants,ACTIVE,7,FEMININO + MASCULINO,F-ref local
+cargo_pants,ACTIVE,8,FEMININO + MASCULINO,F-ref local
+jogger_pants,ACTIVE,4,FEMININO + MASCULINO,F-ref local
+sweatpants,ACTIVE,6,FEMININO + MASCULINO,F-ref local
+leggings,ACTIVE,6,FEMININO + MASCULINO,F-ref local
+culottes,ACTIVE,5,FEMININO + MASCULINO,F-ref local
+shorts,ACTIVE,10,FEMININO + MASCULINO,F-ref local
+bermuda_shorts,LEGACY,0,FEMININO + MASCULINO,F-ref local
+denim_shorts,LEGACY,0,FEMININO + MASCULINO,F-ref local
+skirt,ACTIVE,14,FEMININO + MASCULINO,F-ref local
+skort,ACTIVE,4,FEMININO + MASCULINO,F-ref local

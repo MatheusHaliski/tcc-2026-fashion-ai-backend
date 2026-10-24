@@ -53,14 +53,15 @@ public final class CatalogImagePipeline {
                            String mime, int width, int height, String sha256, String phash, PieceType pieceType,
                            NRect productBox, FramingStrategy.Focus focus, SemanticCropper.Result crop,
                            Map<String, Double> metrics, double qualityScore, String background, boolean detailView,
-                           BackgroundNormalizer.Rendered rendered, List<Stage> stages, Map<String, Object> debug) {
+                           BackgroundNormalizer.Rendered rendered, List<Stage> stages, Map<String, Object> debug,
+                           CatalogPreviewRenderer.Frames previewFrames) {
         public static Analysis rejected(String reason, String mime, int w, int h, String sha, List<Stage> stages) {
             return rejected(reason, mime, w, h, sha, stages, Map.of());
         }
 
         public static Analysis rejected(String reason, String mime, int w, int h, String sha, List<Stage> stages, Map<String, Object> debug) {
             return new Analysis(CatalogImageValidator.Outcome.REJECTED, List.of(reason), false, 0, mime, w, h, sha, null, null,
-                    null, null, null, Map.of(), 0, null, false, null, stages, debug);
+                    null, null, null, Map.of(), 0, null, false, null, stages, debug, null);
         }
 
         /** Metadados do recorte gravados em crop_json e lidos pelo card (coordenadas normalizadas da foto original). */
@@ -279,7 +280,8 @@ public final class CatalogImagePipeline {
         }
         return new Analysis(outcome, List.copyOf(reasons), verdict.manualReview() || outcome == CatalogImageValidator.Outcome.NEEDS_REPROCESSING,
                 verdict.confidence(), mime, w, h, sha, phash, type, seg.productBox(), focus, crop, report.metrics(), report.overall(),
-                String.format("#%06x", seg.backgroundRgb() & 0xFFFFFF), detailView, rendered, List.copyOf(stages), debug);
+                String.format("#%06x", seg.backgroundRgb() & 0xFFFFFF), detailView, rendered, List.copyOf(stages), debug,
+                req.persist() ? CatalogPreviewRenderer.render(src, seg, product, productFrame, sourceHuman, detailView) : null);
     }
 
     private static SemanticCropper.Result fabricCover(ProductSegmenter.Segmentation seg, BufferedImage product,

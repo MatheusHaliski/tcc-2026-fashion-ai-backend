@@ -3,6 +3,7 @@ package br.com.fashionai.application.service;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.privacy.AccountDataCleanup;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.MemoryRepository;
@@ -23,6 +24,7 @@ import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.VerificationCodeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +38,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 
 /**
  * Conta e LGPD (RF3): dados da conta, troca de e-mail confirmada por código no novo endereço, privacidade do perfil,
@@ -46,6 +51,7 @@ class AccountServiceTest {
     private Kit kit;
     private World world;
     private AccountService account;
+    private AccountDataCleanup moduleCleanup;
     private CurrentUser ana;
 
     @BeforeEach
@@ -56,6 +62,8 @@ class AccountServiceTest {
         when(storage.put(anyString(), any(), anyString())).thenAnswer(i -> new MediaStoragePort.StoredObject(i.getArgument(0), "/media/" + i.getArgument(0), 10, "application/json"));
         when(storage.get(anyString())).thenReturn("{}".getBytes());
         account = kit.build(AccountService.class);
+        moduleCleanup = mock(AccountDataCleanup.class);
+        ReflectionTestUtils.setField(account, "accountDataCleanup", List.of(moduleCleanup));
         ana = Kit.as(world.me);
     }
 
@@ -143,10 +151,33 @@ class AccountServiceTest {
         world.me.setDeletionScheduledFor(Instant.now().minusSeconds(60));
         when(kit.dep(UserRepository.class).findByStatus(AccountStatus.DELETION_SCHEDULED)).thenReturn(List.of(world.me));
         assertThat(account.purgeScheduledDeletions()).isEqualTo(1);
+        verify(moduleCleanup).purge(world.me.getId());
+        assertThat(world.me.getStatus()).isEqualTo(AccountStatus.DELETED);
         assertThat(world.me.getUsername()).startsWith("deleted_");
         assertThat(world.me.getEmail()).endsWith("@fashionai.invalid");
         assertThat(world.looksOf(world.me)).allMatch(s -> s.getStatus() == SchemeStatus.ARCHIVED);
         verify(kit.dep(Avatar3dService.class)).deleteAllFor(world.me.getId());
         assertThat(map(Map.of("x", 1))).isNotNull();
+    }
+
+    @Test
+    void falhaNaLimpezaDoModuloImpedeAnonimizacaoDaConta() {
+        account.requestDeletion(ana, "senha");
+        world.me.setDeletionScheduledFor(Instant.now().minusSeconds(60));
+        when(kit.dep(UserRepository.class).findByStatus(AccountStatus.DELETION_SCHEDULED)).thenReturn(List.of(world.me));
+        String username = world.me.getUsername();
+        String email = world.me.getEmail();
+        String displayName = world.me.getDisplayName();
+        RuntimeException failure = new IllegalStateException("module cleanup failed");
+        doThrow(failure).when(moduleCleanup).purge(world.me.getId());
+
+        assertThatThrownBy(account::purgeScheduledDeletions).isSameAs(failure);
+
+        verify(moduleCleanup).purge(world.me.getId());
+        assertThat(world.me.getStatus()).isEqualTo(AccountStatus.DELETION_SCHEDULED);
+        assertThat(world.me.getUsername()).isEqualTo(username);
+        assertThat(world.me.getEmail()).isEqualTo(email);
+        assertThat(world.me.getDisplayName()).isEqualTo(displayName);
+        verify(kit.dep(Avatar3dService.class), never()).deleteAllFor(world.me.getId());
     }
 }

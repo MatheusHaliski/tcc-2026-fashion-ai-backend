@@ -61,13 +61,14 @@ function CameraSteps({ controls, dist, view, yaw, reduced, onCamera }: {
     const cancel = () => { tween.current = null; };
     c.addEventListener("start", cancel); c.addEventListener("change", emit);
     onCamera({
-      step: (action) => { const pose = tween.current?.pose ?? poseNow(); tween.current = { pose, goal: orbitGoal(tween.current?.goal ?? pose, action, limits, home) }; },
+      step: (action) => { if(c.enabled === false)return; const pose = tween.current?.pose ?? poseNow(); tween.current = { pose, goal: orbitGoal(tween.current?.goal ?? pose, action, limits, home) }; },
       subscribe: (listener) => { listeners.add(listener); last = ""; emit(); return () => { listeners.delete(listener); }; },
     });
     return () => { c.removeEventListener("start", cancel); c.removeEventListener("change", emit); onCamera(null); };
   }, [controls, camera, dist, onCamera, sph, off]);
   useFrame((_, dt) => {
     const tw = tween.current, c = controls.current; if (!tw || !c) return;
+    if(c.enabled === false){tween.current=null;return;}
     tw.pose = approach(tw.pose, tw.goal, reduced ? 1 : 1 - Math.exp(-dt * 9));
     camera.position.setFromSpherical(sph.set(tw.pose.radius, tw.pose.phi, tw.pose.theta)).add(c.target); c.update();
     if (tw.pose === tw.goal) tween.current = null;
@@ -95,14 +96,6 @@ function IdentityPlaque({ env }: { env: BrandEnvironment }) {
   </group>;
 }
 
-/** Espelho de corpo inteiro em pé: moldura de madeira (de costas ele ainda é um móvel) e dois pés no chão. */
-function Mirror({ kit }: { kit: StudioKit }) {
-  const frame = useFused(() => [box(.82, 2.18, .04, [0, 0, 0]), box(.07, .1, .32, [-.33, -1.13, -.04]), box(.07, .1, .32, [.33, -1.13, -.04])], []);
-  return <group name="studio-full-height-mirror" position={[2.55, 1.18, -.6]} rotation={[0, -.7, 0]} userData={PROP_CUT}>
-    <mesh geometry={frame} material={kit.wood} />
-    <mesh position={[0, 0, .025]}><planeGeometry args={[.75, 2.1]} /><meshStandardMaterial color="#ECEEEB" metalness={1} roughness={.04} /></mesh>
-  </group>;
-}
 /** Banco e cabideiro junto à parede do fundo: madeira e metal escovado (a cor da marca fica só nos detalhes). */
 function BenchAndRail({ kit }: { kit: StudioKit }) {
   const wood = useFused(() => [box(1.05, .1, .43, [0, .46, 0]), box(.045, .41, .34, [-.43, .205, 0]), box(.045, .41, .34, [.43, .205, 0]), ...[-.3, 0, .3].flatMap((x): Part[] => [
@@ -145,9 +138,9 @@ function Room({ profile, target }: { profile: FittingStudioProfile; target: V3 }
     {[-1, 1].map(side => <group key={side} name={`studio-side-wall-${side < 0 ? "left" : "right"}`} userData={wallCut(-side, 0, -SIDE_X, .5)}>
       <PaintedWall kit={kit} palette={p} width={ROOM_D} position={[side * SIDE_X, 0, ROOM_CZ]} rotation={[0, -side * Math.PI / 2, 0]} />
     </group>)}
-    <Mirror kit={kit} />
   </group>;
 }
+
 /** All lights are neutral. Store identity never changes the apparel base colour. */
 function Lights({ light }: { light: LightMode }) {
   const night = light === "night", day = light === "daylight";
@@ -161,17 +154,20 @@ function Lights({ light }: { light: LightMode }) {
   </>;
 }
 
-export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, debug, cameraYaw, closeUp = false, onCamera }: {
+export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, onHuman, debug, cameraYaw, closeUp = false, onCamera }: {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; body?: BodyParams | null;
   pieces: Look3dPiece[]; environment: ResolvedEnvironment; scene?: StoreScene | null; light?: LightMode; view?: AvatarView; onCanvas?: (c: HTMLCanvasElement) => void;
   /** o perfil do estúdio desenhado (objetos com função, paleta, fotos de referência) — inventário da auditoria */
   onProfile?: (profile: FittingStudioProfile) => void;
+  /** recebe o humano já montado para métricas/GLB da prévia */
+  onHuman?: (parts: HumanParts) => void;
   /** laboratório/auditoria: wireframe, corpo oculto, pesos e poses de verificação (components/three/scene-debug.tsx) */
   debug?: SceneDebugOptions | null;
   /** laboratório: ângulo livre da câmera (graus) para o giro de 360°, e enquadramento só do avatar */
   cameraYaw?: number; closeUp?: boolean;
   /** botões de acessibilidade do palco: recebem os passos de câmera (girar 30°, aproximar, voltar à frente) */
   onCamera?: (api: FittingCameraApi | null) => void;
+
 }) {
   const { t } = useI18n(), asset = useBodyAsset(), reduced = useReducedMotion(), controls = useRef<Controls>(null);
   const [parts, setParts] = useState<HumanParts | null>(null);
@@ -190,8 +186,10 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
       onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; gl.toneMappingExposure = 1; onCanvas?.(gl.domElement); }} aria-label={t("tryOn.cena_aria", { marca: env.name })}>
       <color attach="background" args={[profile.palette.wall]} /><fog attach="fog" args={[profile.palette.wall, 9, 18]} />
       <Lights light={light} /><Room key={env.key} profile={profile} target={target} />
-      <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params}
-        fallback={null} still={!!debug?.pose} onHuman={setParts} />
+      <group name="fitting-avatar">
+        <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params}
+          fallback={null} still={!!debug?.pose} onHuman={(p) => { setParts(p); onHuman?.(p); }} />
+      </group>
       {debug && <SceneDebug parts={parts} options={debug} />}
       <Rig view={view} target={target} dist={dist} yaw={cameraYaw} /><OrbitControls ref={controls} target={target} enablePan={false} minDistance={1.4} maxDistance={dist * 1.25} maxPolarAngle={Math.PI * .52} />
       <CameraSteps controls={controls} dist={dist} view={view} yaw={cameraYaw} reduced={reduced} onCamera={onCamera} />

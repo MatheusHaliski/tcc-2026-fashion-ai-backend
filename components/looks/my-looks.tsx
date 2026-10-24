@@ -79,7 +79,7 @@ export function MyLooks({ kind, onKind }: { kind: LookKind; onKind: (k: LookKind
         : !data || data.items.length === 0
           ? <EmptyState title={filtered ? t("common.empty") : t("looks.empty")} hint={filtered ? undefined : t("nav.createLookHint")}
               action={filtered ? undefined : <Link href="/schemes/new" className="btn btn-primary">{t("scheme.create")}</Link>} />
-          : <><div className="grid-looks">{data.items.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
+          : <><div className="grid-looks social-card-grid">{data.items.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
             <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={(p) => setPaging({ filters, page: p })} /></>}
     </>
   );

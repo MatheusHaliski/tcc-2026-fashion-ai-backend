@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF29 — InventoryScoreService: elegibilidade e faixas de score\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nInventoryScoreService.BANDS · 7 faixas · calculado em computeNow()
+title RF29 — InventoryScoreService: elegibilidade e faixas de score\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nInventoryScoreService.BANDS · 7 faixas · calculado em computeNow()
 
 state "Inelegível\neligible = false (n < 10)" as INELEGIVEL
 state "Elegível — eligible = true (n ≥ MIN_PIECES = 10)" as ELEGIVEL {

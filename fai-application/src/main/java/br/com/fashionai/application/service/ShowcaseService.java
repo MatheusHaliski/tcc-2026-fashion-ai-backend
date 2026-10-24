@@ -658,6 +658,7 @@ public class ShowcaseService {
         m.put("periodFrom", g.getPeriodFrom());
         m.put("periodTo", g.getPeriodTo());
         m.put("period", period(g));
+        m.put("editorial", br.com.fashionai.application.common.Json.map(g.getEditorialJson()));
         m.put("accentColor", g.getAccentColor() == null ? "#2D55C9" : g.getAccentColor());
         String cover = g.getCoverUrl();
         String coverSource = "upload";

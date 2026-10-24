@@ -39,6 +39,7 @@ import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.FollowRepository;
 import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
+import br.com.fashionai.domain.repository.PublicPersonHeader;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.SealBondRepository;
@@ -217,7 +218,9 @@ public class SearchService {
     }
 
     boolean visible(CurrentUser viewer, Scheme s, Set<UUID> blocked) {
-        return !blocked.contains(s.getUser().getId()) && s.getUser().getStatus() == AccountStatus.ACTIVE && showcaseAllows(viewer, s.getUser())
+        // o índice de busca (OpenSearch) guarda também rascunhos: busca só mostra look publicado, até para o dono
+        return s.getStatus() == SchemeStatus.PUBLISHED
+                && !blocked.contains(s.getUser().getId()) && s.getUser().getStatus() == AccountStatus.ACTIVE && showcaseAllows(viewer, s.getUser())
                 && schemeService.canView(viewer, s);
     }
 
@@ -663,12 +666,13 @@ public class SearchService {
         out.put("term", term);
         out.put("tab", t);
         out.put("tabs", TABS);
-        out.put("results", "PESSOAS".equals(t) ? personProfiles(viewer, results.stream().map(User.class::cast).toList()) : results);
+        out.put("results", "PESSOAS".equals(t) ? personProfiles(viewer, results.stream().map(PublicPersonHeader.class::cast).toList()) : results);
         out.put("nextCursor", nextCursor);
         out.put("chips", filters == null ? List.of() : filters.chips());
         out.put("engine", searchIndex.getIfAvailable() != null && searchIndex.getIfAvailable().enabled() ? "opensearch" : "mysql");
         if (results.isEmpty() && offset == 0) {
-            List<Views.SchemeView> hot = trending(viewer, blocked);
+            // A people search has no reason to hydrate unrelated look owners (and their private account attributes).
+            List<Views.SchemeView> hot = "PESSOAS".equals(t) ? List.of() : trending(viewer, blocked);
             List<String> alts = alternatives(term);
             if (alts.isEmpty()) {
                 // nenhum termo parecido: sugere os estilos e ocasiões que mais aparecem nos looks em alta
@@ -688,9 +692,9 @@ public class SearchService {
                                 String relation, Map<String, Long> counters) { }
 
     /** Quatro consultas de contadores por página, em vez de quatro consultas para cada pessoa. */
-    List<PersonProfile> personProfiles(CurrentUser viewer, List<User> page) {
+    List<PersonProfile> personProfiles(CurrentUser viewer, List<PublicPersonHeader> page) {
         if (page.isEmpty()) return List.of();
-        List<UUID> ids = page.stream().map(User::getId).toList();
+        List<UUID> ids = page.stream().map(PublicPersonHeader::getId).toList();
         Map<UUID, Long> followers = groupedCounts(follows.countFollowersByIds(ids, FollowStatus.ACEITO));
         Map<UUID, Long> following = groupedCounts(follows.countFollowingByIds(ids, FollowStatus.ACEITO));
         Map<UUID, Long> wardrobe = groupedCounts(pieces.countByUserIdsAndAvailabilityStatusNot(ids, AvailabilityStatus.ARCHIVED));
@@ -700,7 +704,7 @@ public class SearchService {
         return page.stream().map(u -> {
             FollowStatus relation = relations.get(u.getId());
             boolean self = viewer != null && viewer.id().equals(u.getId());
-            Visibility visibility = u.getProfileVisibility();
+            Visibility visibility = u.getProfileVisibility() == null ? Visibility.PRIVATE : u.getProfileVisibility();
             boolean contentVisible = self || visibility == Visibility.PUBLIC
                     || (visibility == Visibility.FOLLOWERS && relation == FollowStatus.ACEITO);
             return new PersonProfile(u.getId(), u.getUsername(), u.getDisplayName(), u.getAvatarUrl(), u.getProfileType().name(),

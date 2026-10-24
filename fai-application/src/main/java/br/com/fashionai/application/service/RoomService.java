@@ -52,6 +52,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -84,6 +86,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class RoomService implements FaiPointsService.RoomLayoutAccess {
+    private static final Logger log = LoggerFactory.getLogger(RoomService.class);
     private SideEffectRunner sideEffects;
     public static final ZoneId ZONE = FaiPointsService.ZONE;
     /** Esquecida: sem uso há 60+ dias (FORGOTTEN_DAYS, MyWardrobeView.tsx:61). */
@@ -187,43 +190,43 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         Map<String, Object> white = Map.of("color", "#F4F2EF", "texture", "fosco", "roughness", 0.8);
         List<Map<String, Object>> mods = new ArrayList<>();
         for (int d = 1; d <= 4; d++) {
-            mods.add(module("door:" + d, "DOOR", "PRT-AB60", 60, HANGERS_PER_DOOR, "Porta " + d, "FAI-PRT-AB60-WHT-FOS", white));
+            mods.add(module("door:" + d, "DOOR", "PRT-AB60", 60, HANGERS_PER_DOOR, Msg.t("room.modulo.porta", d), "FAI-PRT-AB60-WHT-FOS", white));
         }
         for (int n = 1; n <= 24; n++) {
-            mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, "Gaveta " + n, null, white));
+            mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, Msg.t("room.modulo.gaveta", n), null, white));
         }
-        mods.add(module("top", "TOP", null, 0, TOP_CAPACITY, "Maleiro", null, null));
-        mods.add(module("base", "BASE", null, 0, BASE_CAPACITY, "Base", null, null));
-        mods.add(module("handles", "HANDLE", "PUX-CAV", 0, 0, "Puxadores", null, Map.of("color", "#F4F2EF", "texture", "cava")));
+        mods.add(module("top", "TOP", null, 0, TOP_CAPACITY, Msg.t("wardrobeCreator.maleiro"), null, null));
+        mods.add(module("base", "BASE", null, 0, BASE_CAPACITY, Msg.t("room.modulo.base"), null, null));
+        mods.add(module("handles", "HANDLE", "PUX-CAV", 0, 0, Msg.t("room.modulo.puxadores"), null, Map.of("color", "#F4F2EF", "texture", "cava")));
         mods.add(module("light", "LIGHT", "LUZ-LED", 0, 0, Msg.t("room.iluminacao"), null, Map.of("kelvin", 4000, "guided", false)));
-        mods.add(module("rug", "RUG", "TAP-RND", 0, 0, "Tapete", null, null));
+        mods.add(module("rug", "RUG", "TAP-RND", 0, 0, Msg.t("room.modulo.tapete"), null, null));
         mods.add(module("bed", "BED", "BED-DBL", 280, 0, Msg.t("room.double_bed"), null, Map.of()));
         mods.add(module("saleRack", "SALE_RACK", "RACK-MOB", 160, 0, Msg.t("room.support_rack"), null, Map.of()));
-        mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, "Cabides", null, Map.of("color", "#6B5A4A", "texture", "madeira")));
+        mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, Msg.t("wardrobeCreator.cabides"), null, Map.of("color", "#6B5A4A", "texture", "madeira")));
         mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, Msg.t("room.logo_das_portas"), null, null));
         // Smart Mirror (RF28) — módulo trocável na loja do quarto (retangular, arco, oval, camarim com luzes)
         mods.add(module("mirror", "MIRROR", "ESP-RET", 0, 0, Msg.t("room.espelho"), null,
                 Map.of("color", "#6B4A2F", "texture", "madeira", "material", "MADEIRA", "roughness", 0.6, "metalness", 0.0)));
         if (level.atLeast(FaiPointsService.Level.LOFT)) {
             for (int d = 5; d <= 6; d++) {
-                mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR, "Porta " + d, null, white));
+                mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR, Msg.t("room.modulo.porta", d), null, white));
             }
             for (int n = 25; n <= 36; n++) {
-                mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, "Gaveta " + n, null, white));
+                mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, Msg.t("room.modulo.gaveta", n), null, white));
             }
         }
-        if (level.atLeast(FaiPointsService.Level.CLOSET)) {
-            mods.add(module("shoe", "SHOE_RACK", "SAP-MOD90", 90, SHOE_RACK_CAPACITY, "Sapateira", null, white));
+        if (level.atLeast(FaiPointsService.Level.STUDIO)) {
+            mods.add(module("shoe", "SHOE_RACK", "SAP-MOD90", 90, SHOE_RACK_CAPACITY, Msg.t("wardrobeCreator.sapateira"), null, white));
             mods.add(module("bags", "BAG_DISPLAY", "VIT-BOL", 60, 8, Msg.t("common.vitrine_de_bolsas"), null, null));
-            mods.add(module("jewelry", "JEWELRY", "JOI-POR", 30, 12, "Porta-joias", null, null));
+            mods.add(module("jewelry", "JEWELRY", "JOI-POR", 30, 12, Msg.t("room.modulo.porta_joias"), null, null));
         }
-        if (level.atLeast(FaiPointsService.Level.ATELIER)) {
+        if (level.atLeast(FaiPointsService.Level.LOFT)) {
             mods.add(module("island", "ISLAND", "ILH-BAN", 120, 3, Msg.t("room.ilha_central_bancada_de_looks"), null, null));
         }
-        if (level.atLeast(FaiPointsService.Level.PENTHOUSE)) {
+        if (level.atLeast(FaiPointsService.Level.LOFT)) {
             mods.add(module("season", "SEASON_STORAGE", null, 0, 60, Msg.t("common.maleiro_de_estacao"), null, null));
         }
-        if (level.atLeast(FaiPointsService.Level.MAISON)) {
+        if (level.atLeast(FaiPointsService.Level.LOFT)) {
             mods.add(module("signature", "SIGNATURE", null, 0, 0, Msg.t("room.closet_de_assinatura"), null, null));
         }
         return mods;
@@ -252,7 +255,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             l.setDrawerLabelsJson(Json.write(labels));
             return l;
         });
-        FaiPointsService.Level level = FaiPointsService.Level.valueOf(layout.getLevel());
+        FaiPointsService.Level level = FaiPointsService.Level.parse(layout.getLevel());
         List<Map<String, Object>> existing = Json.list(layout.getModulesJson());
         Set<String> ids = existing.stream().map(m -> String.valueOf(m.get("id"))).collect(Collectors.toSet());
         boolean changed = false;
@@ -319,7 +322,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     @Transactional
     public void setLevel(UUID userId, String level) {
         RoomLayout l = layout(userId);
-        l.setLevel(level);
+        l.setLevel(FaiPointsService.Level.parse(level).name());   // nomes antigos (Closet…Maison) viram Loft
         layouts.save(l);
         layout(userId); // mescla os módulos liberados pelo nível
     }
@@ -420,7 +423,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         if (kelvin != null) { finish.put("kelvin", Math.max(2700, Math.min(6500, kelvin))); finish.put("guided", true); }
         if (intensity != null) finish.put("intensity", intensity);
         if (on != null) finish.put("on", on);
-        mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().ifPresent(m -> m.put("finish", finish));
+        Map<String, Object> lightModule = mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().orElse(null);
+        if (lightModule == null) { lightModule = new LinkedHashMap<>(); lightModule.put("id", "light"); mods.add(lightModule); }
+        lightModule.put("finish", finish);
         l.setModulesJson(Json.write(mods)); layouts.save(l);
         return finish;
     }
@@ -994,8 +999,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("owner", owner);
         out.put("level", layout.getLevel());
-        out.put("levelInfo", Map.of("unlocks", FaiPointsService.Level.valueOf(layout.getLevel()).unlocks,
-                "aesthetic", FaiPointsService.Level.valueOf(layout.getLevel()).aesthetic));
+        out.put("levelInfo", Map.of("unlocks", FaiPointsService.Level.parse(layout.getLevel()).unlocks,
+                "aesthetic", FaiPointsService.Level.parse(layout.getLevel()).aesthetic));
         out.put("modules", modules);
         out.put("drawerLabels", labels);
         out.put("pieces", byId);
@@ -1026,9 +1031,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             out.put("closetLights", closetLights(userId));
             out.put("unboxing", roomInventory.findByUserId(userId).stream().filter(i -> i.getAppliedModule() == null)
                     .sorted(Comparator.comparing(RoomInventoryItem::getAcquiredAt, Comparator.nullsLast(Comparator.reverseOrder()))).limit(6)
-                    .map(i -> Map.of("inventoryId", i.getId(), "sku", i.getSku(), "name", roomCatalog.findById(i.getSku()).map(RoomCatalogItem::getName).orElse(i.getSku()),
+                    .map(i -> Map.of("inventoryId", i.getId(), "sku", i.getSku(), "name", roomCatalog.findById(i.getSku()).map(WardrobeCreatorService::displayName).orElse(i.getSku()),
                             "slotType", roomCatalog.findById(i.getSku()).map(RoomCatalogItem::getSlotType).orElse(""))).toList());
-            List<UUID> keyIds = keys(layout).stream().map(UUID::fromString).toList();
+            List<UUID> keyIds = keyUserIds(layout);
             out.put("keys", users.findAllById(keyIds).stream().map(Views::user).toList());
             out.put("light", module(layout, "light").map(m -> m.get("finish")).orElse(Map.of("kelvin", 4000, "guided", false)));
         }
@@ -1038,6 +1043,19 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         out.put("photoMode", Map.of("framings", List.of("frontal", "tres_quartos", "detalhe_espelho", "gaveta_aberta"),
                 "filters", List.of("editorial", "quente", "pb"), "depthOfField", true, "exportWithoutUi", true));
         return out;
+    }
+
+    /** Um layout antigo não pode impedir o carregamento do quarto inteiro por uma chave já removida ou corrompida. */
+    private List<UUID> keyUserIds(RoomLayout layout) {
+        List<UUID> ids = new ArrayList<>();
+        for (String key : keys(layout)) {
+            try {
+                ids.add(UUID.fromString(key));
+            } catch (IllegalArgumentException e) {
+                log.warn("event=room_key_ignored reason=invalid_user_id key={}", key);
+            }
+        }
+        return ids;
     }
 
     int positions(RoomLayout layout) {
@@ -1158,10 +1176,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 "camera", Map.of("target", loc.moduleId(), "highlight", loc.address().toString(), "lighting", "spot", "open", true));
     }
 
-    /** Penthouse — guardar/retirar peças do maleiro de estação (RF35 §5.3). */
+    /** Loft — guardar/retirar peças do maleiro de estação (RF35 §5.3). */
     @Transactional
     public Map<String, Object> seasonStorage(CurrentUser user, List<UUID> pieceIds, boolean store) {
-        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.PENTHOUSE)) {
+        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.LOFT)) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_troca_de_estacao_e"));
         }
         RoomLayout layout = layout(user.id());
@@ -1444,10 +1462,10 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         return pieceTag(user, pieceId);
     }
 
-    /** Atelier — bancada de looks: comparar 2–3 esquemas lado a lado. */
+    /** Loft — bancada de looks: comparar 2–3 esquemas lado a lado. */
     @Transactional(readOnly = true)
     public Map<String, Object> island(CurrentUser user, List<UUID> schemeIds) {
-        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.ATELIER)) {
+        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.LOFT)) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_ilha_central_e_liberada"));
         }
         if (schemeIds == null || schemeIds.size() < 2 || schemeIds.size() > 3) {

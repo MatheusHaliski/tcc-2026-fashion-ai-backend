@@ -116,9 +116,10 @@ export const ROOM_CAMERA = { minDistance: 3.0, track: 0.45 };
  * 1 para o sul), desliza a câmera ao longo da parede de trás até ficar a `minDistance` dele — para o lado mais perto de
  * onde a câmera está (`prev`, a posição atual dela; sem ela, a da vista). Com `prev`, o lado não vira quando o
  * personagem cruza a linha da câmera: só muda se o lado de agora deixar de servir (a parede não deixa recuar).
- * O olhar acompanha o personagem pela metade: ele não sai do quadro e a parede da frente continua no enquadramento.
+ * O olhar acompanha o personagem pela metade (`track`; 0 com "seguir o personagem" desligado nas Configurações): ele
+ * não sai do quadro e a parede da frente continua no enquadramento.
  */
-export function roomView(position: THREE.Vector3, target: THREE.Vector3, actor: { x: number; z: number }, view: number, b: RoomBounds = ROOM, prev?: { x: number; z: number }) {
+export function roomView(position: THREE.Vector3, target: THREE.Vector3, actor: { x: number; z: number }, view: number, b: RoomBounds = ROOM, prev?: { x: number; z: number }, track: number = ROOM_CAMERA.track) {
   const v = rotateView(position, target, view, b), { lo, hi } = cameraBox(b), min = ROOM_CAMERA.minDistance;
   const yaw = viewYaw(view), front = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
   const gap = (q: THREE.Vector3) => Math.hypot(actor.x - q.x, actor.z - q.z);
@@ -131,7 +132,7 @@ export function roomView(position: THREE.Vector3, target: THREE.Vector3, actor: 
     const far = options.filter((q) => gap(q) >= min - 1e-3).sort((a, c) => near(a) - near(c));
     p = far[0] ?? (gap(options[0]) >= gap(options[1]) ? options[0] : options[1]);
   }
-  return { position: p, target: v.target.clone().lerp(new THREE.Vector3(actor.x, 1.0, actor.z), ROOM_CAMERA.track) };
+  return { position: p, target: v.target.clone().lerp(new THREE.Vector3(actor.x, 1.0, actor.z), track) };
 }
 /** Giro (rad) da câmera no chão, na convenção do three (olha para (−sen, 0, −cos)); arredondado para o múltiplo de 90°. */
 export function inputYaw(position: THREE.Vector3, target: THREE.Vector3): number {

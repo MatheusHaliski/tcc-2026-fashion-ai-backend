@@ -1,0 +1,5 @@
+{
+  "products": [
+    {"product_id":"blue-shorts-001","brand":"Example Brand","category":"lower_piece","subcategory":"shorts","image_urls":["https://images.example.org/blue-shorts.jpg"]}
+  ]
+}

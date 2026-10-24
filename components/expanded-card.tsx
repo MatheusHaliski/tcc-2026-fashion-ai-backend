@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
 import type { CatalogCardImage } from "@/lib/api/catalog";
-import { CatalogPhoto, pieceCatalogCrop, photoAspect } from "@/components/catalog/catalog-photo";
+import { MediaImage } from "@/components/media-image";
+import { Price } from "@/components/price";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
+import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, photoAspect } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
@@ -37,6 +40,7 @@ import { PieceArtDialog } from "@/components/piece-art-editor";
 import { skinStyle } from "@/lib/skins";
 import { FlairPieceBlock } from "@/components/flair/flair-collection";
 import { mirrorHref } from "@/lib/nav/mirror-href";
+import { SchemeImprovementDialog } from "@/components/scheme-improvement-dialog";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -52,7 +56,7 @@ interface SchemeDetail { scheme: SchemeView; canEdit?: boolean }
 export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: ReactNode }) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast();
   const { data, error, loading, reload } = useApi<SchemeDetail>((signal) => api.get(`/api/schemes/${id}`, { signal, anonymous: !user }), [id, !!user]);
-  const [improve, setImprove] = useState(false); const [instruction, setInstruction] = useState(""); const [diff, setDiff] = useState<Record<string, unknown> | null>(null); const [busy, setBusy] = useState(false);
+  const [improve, setImprove] = useState(false);
   const [sealSuggest, setSealSuggest] = useState<{ candidates?: { bondId?: string; name: string; kind: string; confidence: number; reason?: string; targetOwnerId: string }[]; message?: string } | null>(null);
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
@@ -67,8 +71,6 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
     } catch (e) { toast.fromError(e); }
   }
   async function acceptBond(c: { bondId?: string; targetOwnerId: string }) { try { if (c.bondId) await api.post(`/api/seal-bonds/${c.bondId}/accept`, { imageRightsConsent: true }); else await api.post(`/api/schemes/${s.id}/seal-bonds`, { targetOwnerId: c.targetOwnerId, imageRightsConsent: true }); toast.success(t("schemes.id.vinculo_enviado_para_revisao_da")); setSealSuggest(null); reload(); } catch (e) { toast.fromError(e); } }
-  async function askImprove() { setBusy(true); try { setDiff(await api.post(`/api/schemes/${s.id}/improvements`, { instruction })); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
-  async function applyDiff() { if (!diff) return; setBusy(true); try { await api.post(`/api/schemes/${s.id}/improvements/apply`, diff); toast.success(t("common.saved")); setImprove(false); setDiff(null); reload(); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
   const footer = (
     <>
       {mine && s.status !== "PUBLISHED" && <Button size="sm" variant="primary" onClick={publish}><FaiIcon id="ACT-11" size={20} variant="glyph" decorative />{t("common.publish")}</Button>}
@@ -83,10 +85,7 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
   return (
     <>
       <SchemeCard scheme={s} href={`/schemes/${s.id}`} expanded footer={footer} headerExtra={headerExtra} />
-      <Dialog open={improve} onClose={() => setImprove(false)} title={t("scheme.improve")} footer={diff ? <><Button onClick={() => setDiff(null)}>{t("common.cancel")}</Button><Button variant="primary" onClick={applyDiff} loading={busy}>{t("dashboard.apply")}</Button></> : <Button variant="primary" onClick={askImprove} loading={busy} disabled={!instruction.trim()}>{t("scheme.generate")}</Button>}>
-        {!diff ? <Field label={t("scheme.instruction")} id="instruction"><Input id="instruction" value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder={t("schemes.id.ex_deixe_mais_formal_trocando")} /></Field>
-          : <div className="type-body"><p className="mb-2 text-muted">{String(diff.message ?? diff.explanation ?? t("schemes.id.mudancas_propostas"))}</p><ChangeList value={diff.diff ?? diff.changes ?? diff} /></div>}
-      </Dialog>
+      {improve && <SchemeImprovementDialog key={s.id} id={s.id} onClose={() => setImprove(false)} onSaved={reload} />}
       <Dialog open={!!sealSuggest} onClose={() => setSealSuggest(null)} title={t("schemes.id.vinculos_de_selo_sugeridos_rf21")}>
         {sealSuggest?.message && <p className="type-body text-muted mb-2">{sealSuggest.message}</p>}
         <div className="grid gap-2">{(sealSuggest?.candidates ?? []).map((c, i) => <div key={i} className="list-row flex items-center gap-3"><div className="flex-1"><p className="type-body"><b>{c.name}</b> <span className="text-faint">· {c.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}</span></p><p className="type-caption text-muted">{t("schemes.id.confianca", { Math: Math.round(c.confidence * 100), value: c.reason ? `· ${c.reason}` : "" })}</p></div><Button size="sm" variant="primary" onClick={() => acceptBond(c)}>{t("schemes.id.vincular")}</Button></div>)}</div>
@@ -96,25 +95,15 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
   );
 }
 
-/** Mostra as mudanças propostas pela IA como lista legível (campo → valor), em vez de JSON cru. */
-function ChangeList({ value }: { value: unknown }) {
-  const rows: [string, string][] = [];
-  const text = (v: unknown): string => v == null ? "—" : typeof v === "object" ? (Array.isArray(v) ? v.map(text).join(", ") : Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k}: ${text(x)}`).join(" · ")) : String(v);
-  if (Array.isArray(value)) value.forEach((v, i) => rows.push([String(i + 1), text(v)]));
-  else if (value && typeof value === "object") Object.entries(value as Record<string, unknown>).filter(([k]) => !["message", "explanation"].includes(k)).forEach(([k, v]) => rows.push([k, text(v)]));
-  else rows.push(["", text(value)]);
-  return <dl className="change-list">{rows.map(([k, v], i) => <div key={i}>{k && <dt>{k}</dt>}<dd>{v}</dd></div>)}</dl>;
-}
-
 interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }
 
-type Slide = { key: string; src: string; alt: string; caption: string; fit: "contain" | "cover"; backdrop?: { center: string; edge: string }; crop?: CatalogCardImage | null };
+type Slide = { alternatives?: (string | null | undefined)[]; key: string; src: string; alt: string; caption: string; fit: "contain" | "cover"; backdrop?: { center: string; edge: string }; crop?: CatalogCardImage | null };
 
 /**
  * Fotos da peça: a foto de produto aprovada primeiro (inteira, sem corte); depois, se houver, a foto no manequim. A
  * foto de estúdio fica contida no quadro 4:5 e o degradê do estúdio continua além dela, sem emenda nem tarja.
  */
-function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number) => void }) {
+function PieceGallery({ slides, onOpen, overlay }: { slides: Slide[]; onOpen: (i: number) => void; overlay?: ReactNode }) {
   const { t } = useI18n();
   const [i, setI] = useState(0); const [bg, setBg] = useState<string | undefined>(undefined);
   const slideRef = useRef<HTMLButtonElement>(null); const imgRef = useRef<HTMLImageElement>(null);
@@ -133,7 +122,8 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
   return (
     <div className="pd-gallery" role="group" aria-roledescription={t("pieceDetail.carrossel")} aria-label={t("pieceDetail.fotos")}>
       <button ref={slideRef} type="button" className={s.crop ? "pd-slide is-catalog-crop" : "pd-slide"} style={{ ...(s.backdrop ? { background: bg ?? s.backdrop.edge } : {}), ...(s.crop ? { aspectRatio: photoAspect(s.crop.aspect) } : {}) }} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
-        {s.crop ? <CatalogPhoto image={s.crop} alt="" /> : <img ref={imgRef} src={s.src} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
+        {s.crop ? <CatalogPhoto requiredFrame image={s.crop} alternatives={s.alternatives} alt="" /> : <MediaImage ref={imgRef} src={s.src} fallbackSources={s.alternatives} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
+        {overlay}
       </button>
       {n > 1 && (
         <>
@@ -163,8 +153,18 @@ function LookHype({ id }: { id: string }) {
   return <HypeBadge state={hypeViewState(summary, { loading, error })} summary={summary} className="shrink-0" />;
 }
 
+import { CardBorder } from "@/components/card-border";
+import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
+import {useFashionDepth} from "@/lib/hype/use-fashion-depth";
+import {FashionMotionButton} from "@/components/hype/fashion-motion-button";
+import {PieceDetailFacts} from "@/components/piece-detail-facts";
+import {PieceCardPanels} from "@/components/piece-card-panels";
+import {fashionCardLevel} from "@/lib/hype/fashion-card";
+import { AuraHype } from "@/components/hype/aura-hype";
+import { useTheme } from "@/lib/theme/theme";
+
 export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
-  const { t, fmtMoney, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
+  const { t, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
   const [editImage, setEditImage] = useState(false); const [editArt, setEditArt] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false); const [view3d, setView3d] = useState(false); const [mannequin3d, setMannequin3d] = useState(false); const [mannequinPhoto, setMannequinPhoto] = useState(false);
@@ -172,6 +172,11 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null); const savingRef = useRef(false); const [editErrors, setEditErrors] = useState<Record<string, string>>({}); const tax = useTaxonomy();
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
   const replaceRef = useRef<HTMLInputElement>(null);
+  const { prefs } = useTheme();
+  const auraMode = data?.piece?.background?.auraHype as string | undefined;
+  const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
+  const depth = useFashionDepth(auraEnabled && !headerExtra);
+  const hype = useHypeSummary("PIECE", id, auraEnabled, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
   const [artRef, inView] = useInView<HTMLElement>();
@@ -222,8 +227,9 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const framing = ((p.flatLayMetadata as { studio?: { framing?: StudioInfo["framing"] } } | undefined)?.studio?.framing) ?? null;
   // a foto de produto aprovada, inteira (a variante enquadrada é só para o feed); sem estúdio, o recorte contido
   const product: Slide = p.studioImageUrl
-    ? { key: "product", src: mediaUrl(p.studioImageUrl)!, alt: t("pieces.id.estudio", { name: p.name }), caption: t("pieceDetail.slide_produto"), fit: "contain", backdrop: { center: backdropCenter(backdrops, p.studioBackdrop), edge } }
-    : { key: "product", src: (mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl))!, alt: p.name, caption: t("pieceDetail.slide_produto"), fit: "contain", crop: pieceCatalogCrop(p) };
+    ? { key: "product", src: mediaUrl(p.studioImageUrl)!, alt: t("pieces.id.estudio", { name: p.name }), caption: t("pieceDetail.slide_produto"), fit: "contain", alternatives: [p.imageUrl, p.thumbnailUrl, pieceCatalogSource(p)], backdrop: { center: backdropCenter(backdrops, p.studioBackdrop), edge } }
+    : { key: "product", src: (mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl))!, alt: p.name, caption: t("pieceDetail.slide_produto"), fit: "contain", alternatives: [p.thumbnailUrl, p.imageUrl, pieceCatalogSource(p)], crop: pieceCatalogCrop(p) };
+  if(p.defaultImage) { product.src=defaultGarmentUrl(p.category,p.subcategory,p.colorHex,p.color,"WHOLE"); product.crop=null; product.alternatives=[]; }
   const slides: Slide[] = [product, ...(p.mannequinImageUrl ? [{ key: "mannequin", src: mediaUrl(p.mannequinImageUrl)!, alt: t("pieces.id.no_manequim", { name: p.name, value: "" }), caption: t("pieceDetail.slide_manequim"), fit: "contain" as const }] : [])];
   // tela cheia: as fotos do carrossel e, só quando há logo de marca de verdade, o detalhe do logo
   const gallery = [
@@ -238,7 +244,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     [t("common.material"), label((p.material ?? "").toLowerCase()) || null],
     [t("common.occasion"), (p.occasion ?? []).map(label).join(", ") || null],
     [t("common.style"), (p.style ?? []).map(label).join(", ") || null],
-    [t("common.price"), p.price != null && !p.forSale ? fmtMoney(p.price, "BRL") : null],
+    [t("common.price"), p.price != null && !p.forSale ? <Price key="price" value={p.price} /> : null],
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
     [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
     [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],
@@ -249,7 +255,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     ? <><Link href={mirrorHref({ piece: p.id })} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
         <button type="button" className="pd-alt" onClick={() => setMannequin3d(true)}>{t("pieceDetail.ou_experimente")}</button></>
     : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
-        <button type="button" className="pd-alt" onClick={copyToWardrobe}>{t("pieceDetail.ou_guarde_copia")}</button></>;
+        </>;
   const more: MenuItem[] = [
     { label: t("pieceDetail.editar_dados"), icon: <FaiIcon id="SOC-11" size={20} decorative />, onSelect: startEdit, hidden: !mine },
     { label: t("pieceDetail.editar_imagem"), icon: <FaiIcon id="NAV-10" size={20} decorative />, onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
@@ -270,27 +276,31 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const skin = (p.background?.skin as string | undefined) ?? null;
   return (
     <>
-      <article {...surface} ref={artRef} data-inview={inView} className={`fai-card is-expanded piece-detail ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
+      <article {...surface} ref={node=>{artRef(node);depth.ref.current=node;}} {...depth.events} data-inview={inView} data-fashion-level={auraEnabled?(fashionCardLevel(hype.summary)??"PENDING"):undefined} className={`fai-card is-expanded piece-detail ${auraEnabled?"is-fashion-hype":""} ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
+        <CardBorder entityId={`PIECE:${p.id}`} background={p.background} auraHype={auraEnabled} hype={hypeViewState(hype.summary,hype)}/>
+        {auraEnabled&&<span className="fashion-depth-glare" aria-hidden/>}
         <ArtStage bg={p.background} art={art} density="expanded" pieceHex={p.colorHex} />
         <div className="pc-frame"><div className="pc-content">
         <CardHeader owner={p.owner} sub={vis} trailing={headerExtra} />
         <div className="pd-layout">
-          <div className="pd-media">
-            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} />
+          <div className="pd-media relative">
+            {auraEnabled&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
+            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined} presetId={p.background?.auraMetamorphosePreset as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} summary={hype.summary} mode={auraMode} showScore={false}/>}</>} />
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>
           <div className="pd-info">
             <section className="pd-id" aria-labelledby={`pd-name-${p.id}`}>
               <h2 id={`pd-name-${p.id}`} className="pd-name">{p.name}</h2>
               {p.brandName && <p className="pd-brand"><BrandLogo name={p.brandName} src={p.brandLogoUrl} size={20} withName /></p>}
-              {p.forSale && p.price != null && <p className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(p.price, "BRL")}</b></p>}
+              {p.forSale && p.price != null && <p className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular"><Price value={p.price} /></b></p>}
               {primary}
             </section>
             <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />
-            <HypeInline type="PIECE" id={p.id} name={p.name} />
+            <PieceCardPanels piece={p} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} />
             <section className="pd-section" aria-labelledby={`pd-facts-${p.id}`}>
               <h3 id={`pd-facts-${p.id}`} className="pd-h">{t("pieceDetail.detalhes")}</h3>
-              <dl className="c-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+              <PieceDetailFacts piece={p}/>
+              <dl className="c-facts">{rows.filter(([key])=>[t("pieceDetail.usos"),t("pieceDetail.situacao"),t("pieceDetail.onde_esta")].includes(key)).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
             </section>
             {usedIn.length > 0 && (
               <section className="pd-section" aria-labelledby={`pd-looks-${p.id}`}>
@@ -301,6 +311,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
                     <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span><LookHype id={s.schemeId} /></button>))}</div>
               </section>
             )}
+            {mine && <section className="pd-section"><Link className="btn" href={`/pieces/${p.id}/passport`}>{t("passport.title")}</Link></section>}
             {mine && <FlairPieceBlock pieceId={p.id} />}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>
               {mine && studioNeedsReview(p) && (

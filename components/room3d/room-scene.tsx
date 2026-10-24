@@ -1,22 +1,27 @@
 "use client";
-import { RoomFixture, DoubleBed, CeilingFixture } from "./room-furniture";
+import { RoomFixture, DoubleBed, CeilingFixture, BED_POSITION } from "./room-furniture";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Canvas, events as pointerEvents, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { ContactShadows, OrbitControls, RoundedBox } from "@react-three/drei";
+import { ContactShadows, OrbitControls, PerformanceMonitor, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { mediaUrl } from "@/lib/api/client";
 import {
-  ClosetLights, Cobweb, CorkBoard, deg, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch,
+  ClosetLights, Cobweb, CorkBoard, deg, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, FaiMedallion, FaiNeonSign, FaiRug, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch,
   pointer, RoomDoor, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar, WindowLight,
 } from "@/components/room3d/room-props";
 import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
-import { MIRROR_COLLIDER, snapshotCrop } from "@/lib/room3d/mirror-session";
-import { ROOM_CAMERA_EVENT, ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
-import { dropPoint, insideW2, ROOM, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
+import { MIRROR_COLLIDER, MIRROR_NORMAL } from "@/lib/room3d/mirror-session";
+import { CORNERS, cameraViewMeta, viewPose, wallsFor, type SavedView, type WallMode } from "@/lib/room3d/camera-views";
+import { DEFAULT_CAMERA_OPTIONS, graphicsOf, type CameraOptions, type GraphicsQuality } from "@/lib/room3d/room-settings";
+import { CHAIR, ROOM_CAMERA_EVENT, ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction, seatOf } from "@/lib/room3d/interaction";
+import { dropPoint, insideW2, ROOM, roomCenter, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
 import { useI18n } from "@/lib/i18n/i18n";
 import { ApprovedAsset } from "./approved-asset";
+import { hangJitter, hungKindOf, HungGarment, ShelfPiece } from "./hung-garment";
+import { fallPose, stepFall, type Fall } from "@/lib/room3d/cloth-motion";
 
 /* RF27/RF32 — Meu Quarto 3D (React Three Fiber). Quarto de quatro paredes (lib/room3d/room-bounds.ts): móvel FAI Origem
  * paramétrico (molde = função de parâmetros, acabamento = dado) na parede norte, 2º guarda-roupa na oeste, porta e duas
@@ -36,10 +41,11 @@ export interface RoomData3D {
 }
 /** Estado do espelho e do Vista-me vindo da página (RF28). */
 export interface MirrorOverlay { pieces: { id: string; imageUrl?: string | null }[]; postIt?: string | null; closingKey?: number; celebrate?: boolean;
-  /** PROV-2D — reflexo no vidro: a Prévia 2D do Avatar 3D vestindo as peças do espelho (só em memória) */
+  /** PROV-2D — a Prévia 2D do Avatar 3D vestindo as peças do espelho (só em memória): o reflexo quando não há personagem
+   * andando no quarto (modo foto/órbita); andando, o vidro reflete o próprio personagem */
   reflectionUrl?: string | null;
-  /** vista do guarda-roupa tirada do espelho ao abrir a prova (QUARTO-ESPELHO): fundo do reflexo */
-  snapshot?: { url: string; aspect: number } | null;
+  /** prova aberta (o personagem está no espelho): o vidro fica só com o reflexo, sem o painel do Look do Dia */
+  active?: boolean;
   /** RF28 — botões 3D dentro do vidro: usar o look pendurado, pedir outra sugestão, tirar uma peça */
   onUse?: () => void; onAnother?: () => void; onTakeOneOff?: () => void; }
 export interface RoomSceneProps {
@@ -48,9 +54,27 @@ export interface RoomSceneProps {
   onPick: (pieceId: string) => void; onReady?: (canvas: HTMLCanvasElement) => void;
   lit?: Set<string>; mirror?: MirrorOverlay; dark?: boolean; onToggleTheme?: () => void; lightOn?: boolean; lightIntensity?: number; onToggleLight?: () => void; onVistaMe?: () => void; onCopilot?: () => void;
   copilotPoint?: string | null; copilotTalking?: boolean; onKeys?: () => void; onUnbox?: () => void; unboxing?: boolean; onAddToDrawer?: (moduleId: string) => void;
+  /** aba Configurações do quarto: câmera e ponto de vista, paredes, ambiente e gráficos (lib/room3d/room-settings.ts) */
+  view?: SceneView;
+  /** num canto do teto, girar (Q/E, botões) passa ao canto vizinho: a página guarda a escolha */
+  onViewStep?: (step: number) => void;
+  /** a câmera de agora (para salvar como vista favorita, Shift+1–5) */
+  poseRef?: React.MutableRefObject<SavedView | null>;
 }
 
-export const LEVELS = ["ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"];
+/** O que a aba Configurações muda na cena. */
+export interface SceneView {
+  camera: CameraOptions; walls: WallMode;
+  /** hora do dia (null/auto = a do perfil) e temperatura da lâmpada do teto (null = a do quarto) */
+  period?: string | null; kelvin?: number | null;
+  quality: GraphicsQuality; dynamicRes: boolean;
+  /** textura do reflexo do espelho; null = sem reflexo ao vivo (a prévia 2D do avatar faz o papel) */
+  mirror: { width: number; height: number } | null;
+  /** movimento reduzido já resolvido (Configurações > sistema/perfil) */
+  reduced: boolean;
+}
+
+export const LEVELS = ["ESTREIA", "STUDIO", "LOFT"];
 const atLeast = (level: string | undefined, want: string) => LEVELS.indexOf(level ?? "ESTREIA") >= LEVELS.indexOf(want);
 
 const W = 2.4, D = 0.6, DOOR_W = 0.6, EXT_W = 1.8;
@@ -111,17 +135,24 @@ function useReflection(url?: string | null) {
 interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced: boolean; tagged: Set<string>; hanger?: THREE.MeshStandardMaterialParameters; hangerModel?: string | null; engine?: RoomInteraction; }
 
 /** Register actual world anchors, not screen-space click areas. */
-function InteractionAnchor({ ctx, id, kind, available = true, position = [0, 0, 0], children, progress }: {
-  ctx: Ctx; id: string; kind: "handle" | "piece"; available?: boolean; position?: [number, number, number]; children?: React.ReactNode; progress?: (delta: number) => void;
+function InteractionAnchor({ ctx, id, kind, available = true, position = [0, 0, 0], children, progress, label }: {
+  ctx: Ctx; id: string; kind: "handle" | "piece" | "rail"; available?: boolean; position?: [number, number, number]; children?: React.ReactNode; progress?: (delta: number) => void;
+  /** nome da peça no aviso "Aperte X para pegar …" */
+  label?: string;
 }) {
   const object = useRef<THREE.Group>(null), marker = useRef<THREE.Mesh>(null);
-  useFrame(() => { if (marker.current) { const near = ctx.engine?.hover === id; marker.current.scale.setScalar(near ? 1.6 : 1); (marker.current.material as THREE.MeshBasicMaterial).color.set(near ? "#4ade80" : "#fbbf24"); } });
+  useFrame(() => {
+    if (!marker.current) return;
+    const near = ctx.engine?.hover === id; marker.current.scale.setScalar(near ? 1.6 : 1); (marker.current.material as THREE.MeshBasicMaterial).color.set(near ? "#4ade80" : "#fbbf24");
+    marker.current.visible = kind !== "rail" || !!ctx.engine?.held;          // o varão só vira alvo com uma peça na mão
+  });
   useEffect(() => {
     if (!ctx.engine || !object.current) return;
-    const target = { id, kind, object: object.current, available: () => available && (kind !== "piece" || !ctx.engine!.hidden.has(id)), progress };
+    const engine = ctx.engine;
+    const target = { id, kind, object: object.current, label, available: () => available && (kind === "rail" ? !!engine.held : kind !== "piece" || !engine.hidden.has(id)), progress };
     ctx.engine.targets.set(id, target);
     return () => { if (ctx.engine?.targets.get(id) === target) ctx.engine.targets.delete(id); };
-  }, [ctx.engine, id, kind, available, progress]);
+  }, [ctx.engine, id, kind, available, progress, label]);
   return <group ref={object} position={position}>{children}{ctx.engine && available && <mesh ref={marker}><sphereGeometry args={[.016, 8, 6]} /><meshBasicMaterial color="#fbbf24" transparent opacity={.85} /></mesh>}</group>;
 }
 
@@ -175,33 +206,17 @@ function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w:
   );
 }
 
-function Hanger({ gold, finish, modelUrl }: { gold?: boolean; finish?: THREE.MeshStandardMaterialParameters; modelUrl?: string | null }) {
-  const mat = gold ? <meshStandardMaterial color="#C9A227" metalness={0.9} roughness={0.25} /> : <meshStandardMaterial color={finish?.color ?? "#6b5a4a"} metalness={finish?.metalness ?? 0.2} roughness={finish?.roughness ?? 0.6} />;
-  return (
-    <ApprovedAsset url={modelUrl} size={[.4, .17, .04]} centered><group>
-      <mesh position={[0, 0.03, 0]}><torusGeometry args={[0.022, 0.004, 8, 16, Math.PI * 1.4]} />{mat}</mesh>
-      <mesh position={[0, -0.03, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.005, 0.005, 0.4, 8]} />{mat}</mesh>
-      {/* cabide especial da favorita: ombreiras de veludo */}
-      {gold && [-0.16, 0.16].map((x) => <mesh key={x} position={[x, -0.03, 0]}><sphereGeometry args={[0.018, 10, 8]} /><meshStandardMaterial color="#7a1f3d" roughness={1} /></mesh>)}
-    </group></ApprovedAsset>
-  );
-}
 
-/** Cabide que balança quando a peça esquecida volta (DET-D03). */
-function HangingPiece({ p, x, z, pw, ph, ctx }: { p: RoomPiece3D; x: number; z: number; pw: number; ph: number; ctx: Ctx }) {
-  const g = useRef<THREE.Group>(null); const swing = useRef(-1);
-  useFrame(() => { if (!g.current) return; const t = swing.current < 0 ? 99 : (performance.now() - swing.current) / 1000; g.current.rotation.z = t < 1.6 ? Math.sin(t * 14) * 0.12 * (1 - t / 1.6) : 0; });
-  return (
-    <group ref={g} position={[x, 0, z]} visible={!ctx.engine?.hidden.has(p.id)}>
-      <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={!!p.moduleId && !!ctx.engine?.progress.get(p.moduleId) && ctx.engine.progress.get(p.moduleId)! > .6} />
-      <Hanger gold={p.states?.includes("FAVORITA")} finish={ctx.hanger} modelUrl={ctx.hangerModel} />
-      <group position={[0, -ph / 2 - 0.05, 0.01]}><PieceMesh p={p} w={pw} h={ph} ctx={ctx} onPuff={() => { if (!ctx.reduced) swing.current = performance.now(); }} /></group>
-    </group>
-  );
-}
-
+/** Altura do gancho da peça deitada no chão (o pano assentado tem ~3 cm). */
+const FLOOR_Y = 0.03;
+/**
+ * Peça na mão ou solta no chão: a mesma roupa no cabide das araras. Na mão, o controlador do personagem move e gira
+ * este grupo (pêndulo no gancho, room-avatar-controller.tsx); solta, ela cai com o arrasto do tecido, deita ao chegar
+ * ao chão girando um pouco, quica de leve e assenta (cloth-motion.ts).
+ */
 function LoosePiece({ engine, p, ctx, drop }: { engine: RoomInteraction; p: RoomPiece3D; ctx: Ctx; drop: ReturnType<typeof walkArea> }) {
-  const object = useRef<THREE.Group>(null), velocity = useRef(0);
+  const object = useRef<THREE.Group>(null), cloth = useRef<THREE.Group>(null);
+  const fall = useRef<{ f: Fall; start: number; spin: number; key: THREE.Vector3 } | null>(null);
   useEffect(() => {
     if (!object.current) return;
     const carry = { id: `carry:${p.id}`, kind: "piece" as const, object: object.current, available: () => false };
@@ -211,14 +226,17 @@ function LoosePiece({ engine, p, ctx, drop }: { engine: RoomInteraction; p: Room
     return () => { engine.targets.delete(carry.id); if (engine.targets.get(p.id) === ground) { if (original) engine.targets.set(p.id, original); else engine.targets.delete(p.id); } };
   }, [engine, p.id]);
   useFrame((_, dt) => {
-    const dropped = engine.dropped.get(p.id); if (!object.current || !dropped) { velocity.current = 0; return; }
-    velocity.current += Math.min(dt, .05) * 9.8;
-    dropped.y = Math.max(.035, dropped.y - velocity.current * Math.min(dt, .05));
-    dropPoint(dropped, drop);   // cai dentro do quarto, fora dos dois guarda-roupas
-    object.current.position.copy(dropped); object.current.rotation.set(-Math.PI / 2, 0, 0);
+    const dropped = engine.dropped.get(p.id), g = object.current; if (!g) return;
+    if (!dropped) { fall.current = null; if (cloth.current) cloth.current.scale.z = 1; return; }   // na mão: o controlador cuida
+    if (!fall.current || fall.current.key !== dropped) fall.current = { f: { y: dropped.y, vy: 0, landed: -1 }, start: dropped.y, spin: (Math.random() - 0.5) * 1.1, key: dropped };
+    const st = fall.current; st.f = ctx.reduced ? { y: FLOOR_Y, vy: 0, landed: 1 } : stepFall(st.f, FLOOR_Y, dt);
+    dropped.y = st.f.y; dropPoint(dropped, drop);   // cai dentro do quarto, fora dos dois guarda-roupas
+    const pose = fallPose(st.start, st.f.y, FLOOR_Y, st.f.landed, st.spin);
+    g.position.copy(dropped); g.rotation.set(pose.tiltX, g.rotation.y, pose.spinZ, "YXZ");
+    if (cloth.current) cloth.current.scale.z = pose.squash;
   });
   return <group ref={object} name={`room-carried-${p.id}`} position={engine.dropped.get(p.id)?.toArray() ?? [0, 1, 1]}>
-    <Hanger finish={ctx.hanger} modelUrl={ctx.hangerModel} /><group position={[0, -.32, 0]}><PieceMesh p={p} w={.38} h={.52} ctx={{ ...ctx, engine: undefined }} /></group>
+    <group ref={cloth}><HungGarment p={p} ctx={{ ...ctx, engine: undefined }} along="z" /></group>
   </group>;
 }
 function LoosePieces({ engine, pieces, ctx, drop }: { engine: RoomInteraction; pieces: Record<string, RoomPiece3D>; ctx: Ctx; drop: ReturnType<typeof walkArea> }) {
@@ -254,13 +272,21 @@ function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle,
     if (door.current) door.current.rotation.y = ctx.reduced ? angle : THREE.MathUtils.damp(door.current.rotation.y, angle, 7, dt);
     if (front.current) (front.current.material as THREE.MeshStandardMaterial).emissiveIntensity = lit ? 0.35 + 0.15 * Math.sin(clock.elapsedTime * 3) : 0;
   });
-  const pieces = (m.pieces ?? []).filter(p => !ctx.engine?.hidden.has(p.id)); const n = Math.min(doorW > 0.7 ? 8 : 6, pieces.length);
+  // varão de lado a lado do vão, 10 cm abaixo do maleiro; as peças de lado no varão, a cada ~10 cm (5 no vão de 60 cm,
+  // 8 no de 90), como num closet de verdade — peças longas dobram no cabide para não bater no fundo do vão
+  const railY = h - 0.1, cap = Math.max(1, Math.floor((doorW - 0.06) / 0.1));
+  const pieces = (m.pieces ?? []).filter(p => !ctx.engine?.hidden.has(p.id)).slice(0, cap);
+  const step = (doorW - 0.08) / Math.max(1, pieces.length), first = 0.04 + step / 2;
+  const reach = (ctx.engine?.progress.get(m.id) ?? Number(open)) > .6;
   return (
     <group position={[x0, Y.drawers1, 0]}>
-      <mesh position={[doorW / 2, h - .45, 0]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.012, 0.012, D - .08, 12]} /><meshStandardMaterial color={ctx.hanger?.color ? String(ctx.hanger.color) : "#b7b7b7"} metalness={ctx.hanger?.metalness ?? 0.8} roughness={ctx.hanger?.roughness ?? 0.3} /></mesh>
-      {pieces.slice(0, n).map((p, i) => (
-        <group key={p.id} position={[0, h - .48, 0]}>
-          <HangingPiece p={{ ...p, moduleId: m.id }} x={doorW / 2} z={.16 - i * .32 / Math.max(1, n - 1)} pw={Math.min(.42, doorW - .08)} ph={0.62} ctx={ctx} />
+      <mesh position={[doorW / 2, railY, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.012, 0.012, doorW - 0.03, 12]} /><meshStandardMaterial color={ctx.hanger?.color ? String(ctx.hanger.color) : "#b7b7b7"} metalness={ctx.hanger?.metalness ?? 0.8} roughness={ctx.hanger?.roughness ?? 0.3} /></mesh>
+      <InteractionAnchor ctx={ctx} id={`rail:${m.id}`} kind="rail" available={reach} position={[doorW / 2, railY, 0]} />
+      {pieces.map((p, i) => (
+        <group key={p.id} position={[first + i * step, railY, 0]}>
+          {/* pegar pelo ombro da roupa, na borda da frente do vão (o gancho fica alto e no fundo, fora do alcance do braço) */}
+          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={reach} label={p.name} position={GRAB} />
+          <HungGarment p={p} ctx={ctx} along="x" jitter={hangJitter(p.id) * 0.5} maxLength={railY - 0.04} swingKey={ctx.engine?.hungBack?.id === p.id ? ctx.engine.hungBack.at : 0} />
         </group>
       ))}
       {(open || lit) && <pointLight position={[doorW / 2, h - 0.05, 0]} intensity={lit ? 1.4 : 0.8} distance={1.4} color={lit ? "#ffe6a0" : light} />}
@@ -303,7 +329,7 @@ function Drawer({ m, x, y, w, open, lit, onToggle, finish, handle, taped, onAdd,
       {open && pieces.length === 0 && <group position={[0, -DRAWER_H / 2 + 0.03, D / 2 - 0.12]}><EmptyDrawerCharm width={w} onAdd={onAdd} /></group>}
       {(open || (ctx.engine?.progress.get(m.id) ?? 0) > .6) && pieces.slice(0, 4).map((p, i) => (
         <group key={p.id} position={[(i % 2 ? 1 : -1) * w / 4, -DRAWER_H / 2 + .04, -.08 + Math.floor(i / 2) * .18]}>
-          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={(ctx.engine?.progress.get(m.id) ?? Number(open)) > .6} />
+          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" label={p.name} available={(ctx.engine?.progress.get(m.id) ?? Number(open)) > .6} />
           <PieceMesh p={p} w={(w - .06) / 2} h={.15} ctx={ctx} lying />
         </group>))}
       {lit && <pointLight position={[0, 0, D / 2 + 0.2]} intensity={0.6} distance={0.6} color="#ffe6a0" />}
@@ -345,18 +371,30 @@ function GlassButton({ text, position, w, onClick, primary }: { text: string; po
 }
 
 /**
- * Smart Mirror (RF28): Look do Dia, peças penduradas com post-it do que falta, tema da Batalha na Passarela escrito no
- * vidro, fecho do Vista-me com a luz subindo, brilho de conquista das luzes do closet e os botões 3D dentro do vidro
- * (Vista-me, Usar este look, Outra sugestão, Tira uma coisa). O formato e a moldura vêm do módulo "mirror" do quarto,
- * trocável na loja como qualquer outro componente (retangular, arco, oval, camarim com luzes).
+ * Vidro com reflexo de verdade (Reflector do three): a cena desenhada de novo pela câmera espelhada em cada quadro em que
+ * o vidro aparece — o personagem com a roupa vestida, o movimento e o quarto atrás, invertidos como num espelho (fora da
+ * tela, nada é desenhado). Textura de 512 × 1024 para o vidro de ~1:2 e cor quase neutra (~92% de reflexo).
  */
-function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module, engine }: { engine?: RoomInteraction; position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D }) {
-  const { t } = useI18n();
+function MirrorGlass({ geometry, size = { width: 512, height: 1024 } }: { geometry: THREE.BufferGeometry; size?: { width: number; height: number } | null }) {
+  const w = size?.width ?? 0, h = size?.height ?? 0;
+  const glass = useMemo(() => (w ? new Reflector(geometry, { textureWidth: w, textureHeight: h, clipBias: 0.003, multisample: w >= 512 ? 2 : 0,
+    color: new THREE.Color().setRGB(0.46, 0.47, 0.48, THREE.LinearSRGBColorSpace) }) : null), [geometry, w, h]);
+  useEffect(() => () => glass?.dispose(), [glass]);
+  // reflexo desligado nas Configurações (aparelho fraco): vidro liso, sem desenhar a cena de novo
+  if (!glass) return <mesh geometry={geometry} position={[0, 0.95, 0.021]}><meshStandardMaterial color="#aab3b8" metalness={0.85} roughness={0.12} /></mesh>;
+  return <primitive object={glass} position={[0, 0.95, 0.021]} />;
+}
+
+/**
+ * Smart Mirror (RF28): o vidro reflete o personagem de verdade; o Look do Dia e as peças penduradas com post-it do que
+ * falta ficam em cartões nos cantos (o meio é do reflexo) e somem na prova; fecho do Vista-me com a luz subindo e brilho
+ * de conquista das luzes do closet. Sem personagem andando (modo foto/órbita), a Prévia 2D do avatar faz o papel do
+ * reflexo. O formato e a moldura vêm do módulo "mirror" do quarto, trocável na loja como qualquer outro componente
+ * (retangular, arco, oval, camarim com luzes).
+ */
+function Mirror({ position, look, overlay, reduced, module, engine, live, glass = { width: 512, height: 1024 } }: { engine?: RoomInteraction; position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D; live?: boolean; glass?: { width: number; height: number } | null }) {
   const tex = useTex(look?.coverImageUrl);
-  const reflection = useReflection(overlay?.reflectionUrl);
-  const snapshot = useReflection(overlay?.snapshot?.url);
-  // o vidro é alto e estreito; a foto tem a proporção do canvas: fica o miolo, sem esticar
-  useEffect(() => { if (!snapshot || !overlay?.snapshot) return; const c = snapshotCrop(0.82 / 1.7, overlay.snapshot.aspect); snapshot.repeat.set(...c.repeat); snapshot.offset.set(...c.offset); snapshot.needsUpdate = true; }, [snapshot, overlay?.snapshot]);
+  const reflection = useReflection(live && glass ? null : overlay?.reflectionUrl);
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
   // o espelho é um obstáculo: o personagem para na frente do vidro (e contorna pela lateral), nunca o atravessa
   const body = useRef<THREE.Group>(null);
@@ -373,17 +411,22 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module, en
   const glassGeo = useMemo(() => new THREE.ShapeGeometry(mirrorShape(mold, .82, 1.7), 48), [mold]);
   const hanging = overlay?.pieces ?? [];
   const vanity = mold === "ESP-CAM";
+  const hud = !overlay?.active;
   return (
     <group ref={body} name="espelho" position={position} rotation={[0, deg(28), 0]}>
       <mesh geometry={frameGeo} position={[0, 0.95, -0.02]} castShadow><meshStandardMaterial color={f.color ?? "#2b2622"} metalness={f.metalness ?? 0.4} roughness={f.roughness ?? 0.35} /></mesh>
-      <mesh geometry={glassGeo} position={[0, 0.95, 0.021]}><meshStandardMaterial color="#b7c3cb" metalness={0.55} roughness={0.12} /></mesh>
+      <MirrorGlass geometry={glassGeo} size={glass} />
+      {/* luminária acoplada ao espelho: barra de luz quente no topo da moldura, iluminando quem está na frente */}
+      <group name="espelho-luminaria" position={[0, 1.93, 0.06]}>
+        <mesh><boxGeometry args={[0.62, 0.05, 0.06]} /><meshStandardMaterial color="#2b2622" metalness={0.5} roughness={0.35} /></mesh>
+        <mesh position={[0, -0.028, 0.012]}><boxGeometry args={[0.56, 0.012, 0.03]} /><meshStandardMaterial color="#fff6e4" emissive="#ffe2b8" emissiveIntensity={1.6} toneMapped={false} /></mesh>
+        <pointLight position={[0, -0.12, 0.45]} intensity={5} distance={4} decay={2} color="#fff1dc" />
+      </group>
       {vanity && [-1, 1].flatMap((side) => [0, 1, 2, 3, 4].map((i) => <mesh key={`${side}-${i}`} position={[side * 0.28, 0.3 + i * 0.32, 0.04]}><sphereGeometry args={[0.024, 16, 12]} /><meshStandardMaterial color="#fff4d6" emissive="#ffd9a0" emissiveIntensity={1.2} toneMapped={false} /></mesh>))}
-      {/* reflexo: o avatar da pessoa vestindo o look do espelho; sem ele, a capa do Look do Dia ou as peças penduradas */}
-      {/* fundo do reflexo: a vista do guarda-roupa tirada do espelho ao abrir a prova; o avatar (PNG com alfa) por cima */}
-      {snapshot && <mesh position={[0, 0.95, 0.0225]}><planeGeometry args={[0.8, 1.66]} /><meshBasicMaterial map={snapshot} color="#dfe5e9" toneMapped={false} /></mesh>}
       {reflection && <mesh position={[0, 1.2, 0.024]}><planeGeometry args={[0.5, 1.0]} /><meshBasicMaterial map={reflection} color="#ececec" transparent alphaTest={0.02} /></mesh>}
-      {!reflection && tex && hanging.length === 0 && <mesh position={[0, 1.08, 0.024]}><planeGeometry args={[0.4, 0.8]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
-      {!reflection && hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.38 - Math.floor(i / 2) * 0.38, 0.026]} />)}
+      {/* cartões do espelho inteligente, por dentro do contorno de qualquer molde (oval e arco inclusive) */}
+      {hud && tex && <group position={[-0.25, 1.32, 0.025]}><mesh><planeGeometry args={[0.17, 0.23]} /><meshBasicMaterial color="#f6f1e7" /></mesh><mesh position={[0, 0.008, 0.001]}><planeGeometry args={[0.15, 0.19]} /><meshStandardMaterial map={tex} /></mesh></group>}
+      {hud && hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[0.27, 1.32 - i * 0.2, 0.026]} />)}
       <mesh ref={riser} position={[0, 0.1, 0.03]} visible={false}><planeGeometry args={[0.54, 1.7]} /><meshBasicMaterial color="#fff4cf" transparent opacity={0.5} depthWrite={false} /></mesh>
       {overlay?.celebrate && <group position={[0, 0.4, 0.03]}><Sparkles reduced={reduced} /></group>}
     </group>
@@ -391,7 +434,7 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module, en
 }
 function MirrorPiece({ url, position }: { url?: string | null; position: [number, number, number] }) {
   const tex = useTex(url);
-  return <mesh position={position}><planeGeometry args={[0.22, 0.34]} /><meshStandardMaterial map={tex ?? undefined} color={tex ? "#fff" : "#d8d2c6"} transparent alphaTest={0.05} /></mesh>;
+  return <mesh position={position}><planeGeometry args={[0.13, 0.18]} /><meshStandardMaterial map={tex ?? undefined} color={tex ? "#fff" : "#d8d2c6"} transparent alphaTest={0.05} /></mesh>;
 }
 
 function Basket({ position, pieces, ctx }: { position: [number, number, number]; pieces: RoomPiece3D[]; ctx: Ctx }) {
@@ -405,33 +448,42 @@ function Basket({ position, pieces, ctx }: { position: [number, number, number];
   );
 }
 
-/** Arara do Desapego: etiqueta de preço e selo Garimpo nas peças de brechó. */
+/** Alturas da arara (m): varão onde os ganchos encaixam e o tampo da prateleira de baixo (as mesmas do modelo aprovado). */
+const RACK = { rail: 1.27, shelf: 0.17 } as const;
+/** Onde a mão pega a peça pendurada (relativo ao gancho): o ombro da roupa, na borda virada para fora do varão. */
+const GRAB: [number, number, number] = [0, -0.15, 0.14];
+/**
+ * Arara do Desapego: encostada na parede sul, de frente para o centro do quarto e longe das portas do 2º guarda-roupa
+ * (a porta 5 abre até x = −1,90): peças de lado no varão (até 12), sapatos e acessórios na prateleira, etiqueta de
+ * preço e selo Garimpo nas peças de brechó.
+ */
 function SaleRack({ position, rack, ctx, modelUrl }: { modelUrl?: string | null; position: [number, number, number]; rack: { name: string; pieces: RoomPiece3D[] }; ctx: Ctx }) {
-  const { t } = useI18n(); const logo = useTex("/brand/fai-logo.png");
-  return <RoomFixture engine={ctx.engine} id="support-rack" position={position} collider={[.85, .42]}>
-    <group rotation={[0, -deg(25), 0]}>
-      <ApprovedAsset url={modelUrl} size={[1.6, 1.55, .8]}><group>
-        {[-.73, .73].map(x => <group key={x}><mesh position={[x, .72, 0]}><boxGeometry args={[.045, 1.42, .045]} /><meshStandardMaterial color="#1245a8" metalness={.4} /></mesh>{[-.24, .24].map(z => <mesh key={z} position={[x, .06, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.06, .06, .045, 16]} /><meshStandardMaterial color="#423a30" /></mesh>)}</group>)}
-        <mesh position={[0, 1.23, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.018, .018, 1.46, 12]} /><meshStandardMaterial color="#c9a227" metalness={.8} roughness={.3} /></mesh>
-        <mesh position={[0, 1.43, 0]}><boxGeometry args={[1.53, .12, .055]} /><meshStandardMaterial color="#1245a8" /></mesh>
-        <mesh position={[0, .14, 0]}><boxGeometry args={[1.56, .04, .52]} /><meshStandardMaterial color="#f58220" /></mesh>
-        <mesh position={[0, 1.46, .04]}><circleGeometry args={[.12, 32]} /><meshStandardMaterial map={logo ?? undefined} color={logo ? "#ffffff" : "#f58220"} transparent /></mesh>
-      </group></ApprovedAsset>
-      <Label3D text={rack.name} w={1.1} h={.1} px={512} position={[0, 1.65, 0]} />
-      {rack.pieces.map((p, i) => <group key={p.id} position={[-.63 + i * 1.26 / Math.max(1, rack.pieces.length - 1), 1.15, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <Hanger finish={ctx.hanger} modelUrl={ctx.hangerModel} /><group position={[0, -.34, .01]}><PieceMesh p={p} w={.36} h={.55} ctx={ctx} /></group>
-        {p.salePrice != null && <HangTag text={`R$ ${Math.round(Number(p.salePrice))}`} position={[.12, -.12, .04]} />}
-        {p.states?.includes("GARIMPO") && <HangTag text={t("common.garimpo")} color="#1F7A76" fg="#fff" position={[-.1, -.24, .04]} w={.11} />}
-      </group>)}
-    </group>
+  // a peça pega (na mão ou no chão) sai do varão; pendurada de volta, reaparece no lugar dela
+  const hung = rack.pieces.filter((p) => hungKindOf(p) !== "shelf" && !ctx.engine?.hidden.has(p.id)), shelf = rack.pieces.filter((p) => hungKindOf(p) === "shelf");
+  const shown = hung.slice(0, 12), feet = shelf.slice(0, 4);
+  const step = Math.min(0.11, 1.3 / Math.max(1, shown.length)), first = -((shown.length - 1) * step) / 2;
+  return <RoomFixture engine={ctx.engine} id="support-rack" position={position} yaw={Math.PI} collider={[.82, .4]}>
+    <ApprovedAsset url={modelUrl} size={[1.6, 1.55, .8]}><group>
+      {[-.73, .73].map(x => <group key={x}><mesh position={[x, .72, 0]}><boxGeometry args={[.045, 1.42, .045]} /><meshStandardMaterial color="#1245a8" metalness={.4} /></mesh>{[-.24, .24].map(z => <mesh key={z} position={[x, .06, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.06, .06, .045, 16]} /><meshStandardMaterial color="#423a30" /></mesh>)}</group>)}
+      <mesh position={[0, 1.23, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.018, .018, 1.46, 12]} /><meshStandardMaterial color="#c9a227" metalness={.8} roughness={.3} /></mesh>
+      <mesh position={[0, 1.43, 0]}><boxGeometry args={[1.53, .12, .055]} /><meshStandardMaterial color="#1245a8" /></mesh>
+      <mesh position={[0, .14, 0]}><boxGeometry args={[1.56, .04, .52]} /><meshStandardMaterial color="#f58220" /></mesh>
+    </group></ApprovedAsset>
+    {/* peças de lado no varão, uma ao lado da outra (como numa arara de loja); sapatos e acessórios na prateleira */}
+    <InteractionAnchor ctx={ctx} id="rail:sale" kind="rail" position={[0, RACK.rail, 0]} />
+    {shown.map((p, i) => <group key={p.id} position={[first + i * step, RACK.rail, 0]}>
+      <InteractionAnchor ctx={ctx} id={p.id} kind="piece" label={p.name} position={GRAB} />
+      <HungGarment p={p} ctx={ctx} along="x" jitter={hangJitter(p.id)} swingKey={ctx.engine?.hungBack?.id === p.id ? ctx.engine.hungBack.at : 0} />
+    </group>)}
+    {feet.map((p, i) => <ShelfPiece key={p.id} p={p} ctx={ctx} position={[-0.48 + i * 0.32, RACK.shelf, 0.02]} />)}
   </RoomFixture>;
 }
 
 function Chair({ position, pieces, ctx }: { position: [number, number, number]; pieces: RoomPiece3D[]; ctx: Ctx }) {
   const wood = <meshStandardMaterial color="#8a6a4a" roughness={0.7} />;
   return (
-    <group position={position} rotation={[0, deg(35), 0]}>
-      <mesh position={[0, 0.45, 0]} castShadow><boxGeometry args={[0.45, 0.05, 0.45]} />{wood}</mesh>
+    <group position={position} rotation={[0, CHAIR.yaw, 0]}>
+      <mesh position={[0, CHAIR.seatTop - 0.025, 0]} castShadow><boxGeometry args={[0.45, 0.05, 0.45]} />{wood}</mesh>
       <mesh position={[0, 0.72, -0.2]} castShadow><boxGeometry args={[0.45, 0.5, 0.04]} />{wood}</mesh>
       {[[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]].map(([x, z]) => <mesh key={`${x}${z}`} position={[x, 0.22, z]}><boxGeometry args={[0.04, 0.45, 0.04]} />{wood}</mesh>)}
       {pieces.slice(0, 3).map((p, i) => <group key={p.id} position={[-0.05 + i * 0.05, 0.62 + i * 0.03, -0.15]} rotation={[-0.2, 0, 0.1 * i]}><PieceMesh p={p} w={0.4} h={0.4} ctx={ctx} /></group>)}
@@ -521,7 +573,7 @@ function CameraRig({ focus, facing, home, homeDist, controls }: { focus: [number
  * Modo foto/órbita: os botões da interface (room-scene-controls.tsx) giram a cena de 45° em 45° em torno do alvo (volta
  * inteira, agora que as paredes somem por trás) e aproximam/afastam; Q/E também giram com o canvas focado.
  */
-function OrbitTurn({ controls, reduced }: { controls: React.RefObject<unknown>; reduced: boolean }) {
+function OrbitTurn({ controls, reduced, speed = 1, invertX = false, invertY = false }: { controls: React.RefObject<unknown>; reduced: boolean; speed?: number; invertX?: boolean; invertY?: boolean }) {
   const { gl, camera } = useThree();
   const pending = useRef(0); const axes = useRef({ x: 0, y: 0, zoom: 0 });
   useEffect(() => {
@@ -544,7 +596,8 @@ function OrbitTurn({ controls, reduced }: { controls: React.RefObject<unknown>; 
     if (axes.current.x || axes.current.y || axes.current.zoom) {
       const sphere = new THREE.Spherical().setFromVector3(camera.position.clone().sub(c.target));
       sphere.radius = THREE.MathUtils.clamp(sphere.radius * Math.exp((axes.current.zoom ?? 0) * dt), (c as { minDistance?: number }).minDistance ?? .7, (c as { maxDistance?: number }).maxDistance ?? 12);
-      sphere.theta += axes.current.x * dt * 1.1; sphere.phi = THREE.MathUtils.clamp(sphere.phi + axes.current.y * dt * .7, .2, Math.PI / 2 - .05);
+      // sensibilidade e eixos invertidos da aba Configurações
+      sphere.theta += axes.current.x * dt * 1.1 * speed * (invertX ? -1 : 1); sphere.phi = THREE.MathUtils.clamp(sphere.phi + axes.current.y * dt * .7 * speed * (invertY ? -1 : 1), .2, Math.PI / 2 - .05);
       camera.position.copy(c.target).add(new THREE.Vector3().setFromSpherical(sphere)); c.update();
     }
     if (Math.abs(pending.current) < 1e-4) return;
@@ -555,10 +608,67 @@ function OrbitTurn({ controls, reduced }: { controls: React.RefObject<unknown>; 
   return null;
 }
 
-function ResponsiveFov() {
+function ResponsiveFov({ fov }: { fov?: number | null }) {
   const { camera, size } = useThree();
-  // a abertura de base fica em userData.baseFov: o controle do avatar abre um pouco mais dentro do quarto (room-avatar-controller.tsx)
-  useEffect(() => { const cam = camera as THREE.PerspectiveCamera; const aspect = size.width / Math.max(1, size.height); cam.fov = cam.userData.baseFov = aspect < 0.8 ? 62 : aspect < 1.1 ? 48 : 38; cam.updateProjectionMatrix(); }, [camera, size.width, size.height]);
+  // a abertura de base fica em userData.baseFov: o controle do avatar abre um pouco mais dentro do quarto (room-avatar-controller.tsx);
+  // a lente escolhida nas Configurações vale no lugar da automática (pela proporção da tela)
+  useEffect(() => { const cam = camera as THREE.PerspectiveCamera; const aspect = size.width / Math.max(1, size.height); cam.fov = cam.userData.baseFov = fov ?? (aspect < 0.8 ? 62 : aspect < 1.1 ? 48 : 38); cam.updateProjectionMatrix(); }, [camera, size.width, size.height, fov]);
+  return null;
+}
+
+/**
+ * Ponto de vista da aba Configurações com a câmera livre desligada (fora do modo andar): canto do teto, planta, casa de
+ * bonecas, guarda-roupa, entrada, o que o espelho vê, cinematográfica ou uma vista salva. A câmera vai até a pose
+ * (corte seco com movimento reduzido) e a órbita fica parada; num canto, girar (Q/E, botões) passa ao canto vizinho.
+ */
+function PresetCamera({ options, mirror, door, onViewStep }: { options: CameraOptions; mirror: [number, number, number]; door: [number, number, number]; onViewStep?: (step: number) => void }) {
+  const { camera, size, gl } = useThree();
+  const look = useRef<THREE.Vector3 | null>(null);
+  const stepRef = useRef(onViewStep); stepRef.current = onViewStep;
+  const corner = !options.saved && CORNERS.includes(options.view);
+  useEffect(() => {
+    if (!corner) return;
+    const el = gl.domElement;
+    const turn = (e: Event) => { const d = Math.sign(Number((e as CustomEvent).detail) || 0); if (d) stepRef.current?.(-d); };
+    const key = (e: KeyboardEvent) => { if ((e.code === "KeyQ" || e.code === "KeyE") && !e.repeat) { e.preventDefault(); stepRef.current?.(e.code === "KeyQ" ? -1 : 1); } };
+    el.addEventListener(ROOM_TURN_EVENT, turn); el.addEventListener("keydown", key);
+    return () => { el.removeEventListener(ROOM_TURN_EVENT, turn); el.removeEventListener("keydown", key); };
+  }, [gl, corner]);
+  // ao voltar à câmera livre, a lente volta à de base (a órbita retoma dali)
+  useEffect(() => () => { const lens = camera as THREE.PerspectiveCamera; if (lens.userData.baseFov) { lens.fov = lens.userData.baseFov; lens.updateProjectionMatrix(); } }, [camera]);
+  useFrame(({ clock }, dt) => {
+    const pose = options.saved
+      ? { position: new THREE.Vector3(...options.saved.position), target: new THREE.Vector3(...options.saved.target), fov: undefined }
+      : viewPose(options.view, { mirror: { x: mirror[0], z: mirror[2] }, mirrorNormal: MIRROR_NORMAL, door: { x: door[0], z: door[2] }, time: clock.elapsedTime, aspect: size.width / Math.max(1, size.height), still: options.still });
+    if (!pose) return;
+    if (!look.current) look.current = camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3).add(camera.position);
+    const k = options.cut ? 1 : 1 - Math.exp(-3.2 * dt);
+    camera.position.lerp(pose.position, k); look.current.lerp(pose.target, k); camera.lookAt(look.current);
+    const lens = camera as THREE.PerspectiveCamera, want = options.fov ?? pose.fov ?? lens.userData.baseFov ?? lens.fov;
+    if (Math.abs(lens.fov - want) > 0.01) { lens.fov += (want - lens.fov) * k; lens.updateProjectionMatrix(); }
+  });
+  return null;
+}
+
+/** A névoa acompanha a distância da câmera: de longe (planta, casa de bonecas) o quarto não some no nevoeiro. */
+function FogFollow() {
+  const center = useMemo(() => roomCenter().setY(1), []);
+  useFrame(({ camera, scene }) => {
+    const fog = scene.fog as THREE.Fog | null; if (!fog) return;
+    const near = Math.max(8, camera.position.distanceTo(center) * 0.9);
+    fog.near = near; fog.far = near + 8;
+  });
+  return null;
+}
+
+/** Guarda a câmera de agora (posição e para onde olha) para salvar como vista favorita. */
+function CameraProbe({ poseRef }: { poseRef: React.MutableRefObject<SavedView | null> }) {
+  const dir = useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ camera }) => {
+    camera.getWorldDirection(dir);
+    const p = camera.position, round = (n: number) => Math.round(n * 1000) / 1000;
+    poseRef.current = { position: [round(p.x), round(p.y), round(p.z)], target: [round(p.x + dir.x * 3), round(p.y + dir.y * 3), round(p.z + dir.z * 3)] };
+  });
   return null;
 }
 
@@ -575,21 +685,23 @@ const visibleHits: NonNullable<React.ComponentProps<typeof Canvas>["events"]> = 
  * interruptor, quadro, guarda-roupas…) somem e deixam de receber cliques, e fica uma faixa baixa de 0,3 m para ler o
  * contorno do quarto. `userData.reveal()` mostra tudo por um instante (foto do espelho) e devolve como estava.
  */
-function Wall({ spec, color, strip, children }: { spec: WallSpec; color: string; strip: string; children?: React.ReactNode }) {
+function Wall({ spec, color, strip, mode = "recortadas", children }: { spec: WallSpec; color: string; strip: string; mode?: WallMode; children?: React.ReactNode }) {
   const group = useRef<THREE.Group>(null), plane = useRef<THREE.Mesh>(null), band = useRef<THREE.Mesh>(null), props = useRef<THREE.Group>(null);
-  const current = useRef(1);
-  const apply = (o: number) => {
-    current.current = o;
+  const current = useRef({ o: 1, low: false });
+  // paredes baixas (Configurações, planta, casa de bonecas): some o plano, ficam a faixa do rodapé e os móveis presos nela
+  const apply = (o: number, low = false) => {
+    current.current = { o, low };
     const mat = plane.current?.material as THREE.MeshStandardMaterial | undefined;
-    if (mat && plane.current) { const transparent = o < 0.999; if (mat.transparent !== transparent) { mat.transparent = transparent; mat.needsUpdate = true; } mat.opacity = o; mat.depthWrite = o > 0.5; plane.current.visible = o > 0.001; }
-    if (props.current) props.current.visible = o > 0.02;
-    if (band.current) band.current.visible = o < 0.98;
+    if (mat && plane.current) { const transparent = o < 0.999; if (mat.transparent !== transparent) { mat.transparent = transparent; mat.needsUpdate = true; } mat.opacity = o; mat.depthWrite = o > 0.5; plane.current.visible = !low && o > 0.001; }
+    if (props.current) props.current.visible = low || o > 0.02;
+    if (band.current) band.current.visible = low || o < 0.98;
   };
   useLayoutEffect(() => {
     const g = group.current; if (!g) return;
-    g.userData.wall = spec.id; g.userData.reveal = () => { const before = current.current; apply(1); return () => apply(before); };
+    g.userData.wall = spec.id; g.userData.reveal = () => { const before = current.current; apply(1); return () => apply(before.o, before.low); };
   }); // eslint-disable-line react-hooks/exhaustive-deps
-  useFrame(({ camera }) => apply(wallOpacity(wallSide(camera.position, spec))));
+  // inteiras: nunca somem (de fora, o plano de um lado só já não aparece); recortadas: somem as que tapam a vista
+  useFrame(({ camera }) => (mode === "baixas" ? apply(1, true) : apply(mode === "inteiras" ? 1 : wallOpacity(wallSide(camera.position, spec)))));
   return (
     <group ref={group} position={spec.center} rotation={[0, spec.yaw, 0]}>
       <mesh ref={plane} position={[0, spec.height / 2, 0]} receiveShadow><planeGeometry args={[spec.width, spec.height]} /><meshStandardMaterial color={color} roughness={1} /></mesh>
@@ -643,12 +755,12 @@ function LockedWardrobe({ carcass, finish, onOpen }: { carcass: THREE.MeshStanda
 
 /** Posições fixas dos objetos (dependem do nível). O guarda-roupa 1 tem sempre 2,4 m; o 2º fica na parede oeste (W2). */
 function layoutFor(level?: string) {
-  const xr = W / 2, closet = atLeast(level, "CLOSET");
+  const xr = W / 2, closet = atLeast(level, "STUDIO");
   return {
     xr, loft: atLeast(level, "LOFT"),
     showcase: [xr + 0.35, 0, -0.08] as [number, number, number],
     bags: [xr + 1.0, 0, -0.08] as [number, number, number],
-    sale: [-1.8, 0, 3.95] as [number, number, number],
+    sale: [-0.95, 0, ROOM.maxZ - 0.42] as [number, number, number],   // arara na parede sul, de frente para o quarto
     basket: [xr + 0.5, 0, 0.55] as [number, number, number],
     window: [xr + (closet ? 1.5 : 1.3), 2.05, -D / 2 - 0.005] as [number, number, number],
     window2: [ROOM.maxX - 0.015, 2.05, 2.45] as [number, number, number],
@@ -692,20 +804,22 @@ export function moduleAnchor(id: string, level?: string): [number, number, numbe
   if (id === "mirror") return [L.mirror[0], 1.1, L.mirror[2]];
   return [0, 1.2, 0];
 }
-/** Para onde a frente do módulo olha, no chão (x, z): o 2º guarda-roupa olha para leste (+x); o resto, para a câmera. */
-export function moduleFacing(id: string): [number, number] { return inW2(id) ? [1, 0] : [0, 1]; }
+/** Para onde a frente do módulo olha, no chão (x, z): o 2º guarda-roupa olha para leste (+x), a arara (parede sul) para o norte; o resto, para a câmera. */
+export function moduleFacing(id: string): [number, number] { return inW2(id) ? [1, 0] : id === "sale" ? [0, -1] : [0, 1]; }
 
 const NORTH = wallById("north"), EAST = wallById("east"), SOUTH = wallById("south"), WEST = wallById("west");
 
 export default function RoomScene({ data, open, onToggle, highlight, focusModule, onPick, onReady, lit = new Set(), mirror, dark, lightOn, lightIntensity, onToggleLight, onVistaMe, onCopilot,
-  copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer, gameplay }: RoomSceneProps) {
+  copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer, gameplay, view, onViewStep, poseRef }: RoomSceneProps) {
   const { t } = useI18n();
   const router = useRouter();
   const controls = useRef<unknown>(null);
+  const [dprCap, setDprCap] = useState<number | null>(null);
   const [, refreshInteractions] = useState(0);
   useEffect(() => { if (!gameplay) return; const refresh = () => refreshInteractions(n => n + 1); gameplay.engine.listeners.add(refresh); return () => { gameplay.engine.listeners.delete(refresh); }; }, [gameplay?.engine]);
-  const reduced = !!data.ambient?.reduceMotion;
-  const period = data.ambient?.period === "fixed" ? "afternoon" : data.ambient?.period ?? "afternoon";
+  const reduced = view?.reduced ?? !!data.ambient?.reduceMotion;
+  // hora do dia: a escolhida nas Configurações; "auto", a do perfil (fixa = tarde)
+  const period = view?.period && view.period !== "auto" ? view.period : data.ambient?.period === "fixed" ? "afternoon" : data.ambient?.period ?? "afternoon";
   const night = period === "night";
   const ceilingOn = lightOn ?? data.light?.on ?? night;
   const brightness = Math.max(0, Math.min(1, lightIntensity ?? data.light?.intensity ?? .75));
@@ -714,7 +828,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   useEffect(() => { gameplay?.engine.mirror.set(...L.mirror); }, [gameplay?.engine, L]);
   const byId = useMemo(() => Object.fromEntries(data.modules.map((m) => [m.id, m])), [data.modules]);
   const doorFinish = byId["door:1"]?.finish ?? { color: "#F4F2EF", roughness: 0.8 };
-  const signature = atLeast(level, "MAISON") && !!byId["signature"];
+  const signature = atLeast(level, "LOFT") && !!byId["signature"];
   const finishOf = (m?: RoomModule3D): THREE.MeshStandardMaterialParameters => {
     const f: NonNullable<RoomModule3D["finish"]> = m?.finish ?? doorFinish; const glass = f?.material === "VIDRO" || f?.material === "ACRILICO";
     return { color: f?.color ?? doorFinish.color ?? "#F4F2EF", roughness: f?.roughness ?? doorFinish.roughness ?? 0.8, metalness: f?.metalness ?? 0.02, transparent: glass, opacity: glass ? 0.6 : 1 };
@@ -725,13 +839,15 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const hangerFinish = byId["hangers"]?.finish ? finishOf(byId["hangers"]) : undefined;
   const kelvin = data.light?.guided ? data.light.kelvin ?? 4000 : 4000;
   const lightColor = kelvinColor(kelvin);
+  // temperatura da lâmpada do teto escolhida nas Configurações (para avaliar a cor das roupas); a fita de LED segue a guiada
+  const bulbColor = view?.kelvin ? kelvinColor(view.kelvin) : lightColor;
   const mark = atLeast(level, "STUDIO") && data.monogram ? data.monogram : "FAI";
   const cam = data.camera ?? {}; const po = cam.polar ?? [55, 80], zoom = cam.zoom ?? [0.8, 1.6];
   const focus = focusModule ? moduleAnchor(focusModule, level) : null;
   const facing = focusModule ? moduleFacing(focusModule) : null;
   const homeDist = 5.3;
   const shoes = [...(byId["base"]?.pieces ?? []), ...(byId["shoe"]?.pieces ?? [])];
-  const shoeCap = atLeast(level, "CLOSET") ? 16 : 10;          // 10 na base do guarda-roupa 1; o excedente vai para a base do 2º
+  const shoeCap = atLeast(level, "STUDIO") ? 16 : 10;          // 10 na base do guarda-roupa 1; o excedente vai para a base do 2º
   const showcase = Array.isArray(data.showcase) ? (data.showcase as RoomPiece3D[]) : [];
   const decos = data.decorations ?? [];
   const deco = (t: string) => decos.find((d) => d.type === t);
@@ -740,32 +856,43 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const taped = (m?: RoomModule3D) => !!m && tapedIds.size > 0 && (m.pieces ?? []).some((p) => tapedIds.has(p.id));
   const ctx: Ctx = { highlight, onPick, reduced, tagged, hanger: hangerFinish, hangerModel: byId["hangers"]?.finish?.model3dUrl, engine: gameplay?.engine };
   const boxes: NonNullable<RoomModule3D["lookBoxes"]> = [];
-  const penthouse = atLeast(level, "PENTHOUSE") && !!byId["season"];
+  const penthouse = atLeast(level, "LOFT") && !!byId["season"];
   const pointAt = copilotPoint ? moduleAnchor(copilotPoint, level) : null;
   const litAny = (ids: string[]) => ids.some((i) => lit.has(i));
   // 2º guarda-roupa: funciona com os módulos do Loft (portas 5–6 e gavetas 25–36); sem eles, móvel fechado com a placa
   const w2 = L.loft && (!!byId["door:5"] || !!byId["door:6"] || Array.from({ length: 12 }, (_, i) => byId[`drawer:${i + 25}`]).some(Boolean));
   const wallColor = (day: string, dusk: string) => (night ? dusk : day), strip = night ? "#4a4038" : "#d9cbb5";
   const drop = walkArea(ROOM);
+  // Configurações: qualidade (densidade de pixels, sombras), resolução dinâmica, paredes e ponto de vista
+  const camOpts = view?.camera ?? DEFAULT_CAMERA_OPTIONS;
+  const g = graphicsOf(view?.quality ?? "auto", !!gameplay);
+  const dpr: [number, number] = dprCap ? [1, Math.min(g.dpr[1], dprCap)] : g.dpr;
+  const walls = wallsFor(camOpts.saved ? "livre" : camOpts.view, view?.walls ?? "recortadas");
+  // fora do modo andar, um ponto de vista (ou uma vista salva) assume a câmera; mostrar um módulo volta à órbita
+  const preset = !gameplay && !focus && (camOpts.saved || (camOpts.view !== "livre" && !cameraViewMeta(camOpts.view).walkOnly)) ? camOpts : null;
   return (
-    <Canvas shadows dpr={gameplay ? [1, 1.5] : [1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ fov: 38, position: [1.75, 2.35, 4.8], near: 0.05, far: 40 }} events={visibleHits}
+    <Canvas shadows={g.shadows} dpr={dpr} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ fov: 38, position: [1.75, 2.35, 4.8], near: 0.05, far: 40 }} events={visibleHits}
       onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; onReady?.(gl.domElement); }} aria-label={t("room3d.roomScene.meu_quarto_em_3d")}>
+      {/* resolução dinâmica: a densidade de pixels cai quando o quadro fica lento e volta quando sobra fôlego */}
+      {view?.dynamicRes !== false && <PerformanceMonitor onDecline={() => setDprCap(1)} onIncline={() => setDprCap(null)} />}
+      <FogFollow />
+      {poseRef && <CameraProbe poseRef={poseRef} />}
       <color attach="background" args={[night ? "#1d1f2a" : "#efe9df"]} />
       <fog attach="fog" args={[night ? "#1d1f2a" : "#efe9df", 8, 16]} />
-      <CeilingFixture on={ceilingOn} intensity={brightness} color={lightColor} />
+      <CeilingFixture on={ceilingOn} intensity={brightness} color={bulbColor} />
       <hemisphereLight args={[night ? "#9aa0c8" : period === "morning" ? "#eef4ff" : "#fff6e8", night ? "#2a2433" : "#d9cbb5", night ? 0.55 : 0.9]} />
-      <directionalLight position={[3, 5, 4]} intensity={night ? 0.35 : period === "golden" ? 1.3 : 1.6} color={period === "golden" ? "#ffd2a0" : period === "morning" ? "#f1f6ff" : "#ffffff"} castShadow shadow-mapSize={gameplay ? [1024, 1024] : [2048, 2048]} shadow-camera-left={-6.5} shadow-camera-right={6} shadow-camera-top={4} shadow-camera-bottom={-5} />
+      <directionalLight position={[3, 5, 4]} intensity={night ? 0.35 : period === "golden" ? 1.3 : 1.6} color={period === "golden" ? "#ffd2a0" : period === "morning" ? "#f1f6ff" : "#ffffff"} castShadow={g.shadows} shadow-mapSize={[g.shadowMap, g.shadowMap]} shadow-camera-left={-6.5} shadow-camera-right={6} shadow-camera-top={4} shadow-camera-bottom={-5} />
       {/* luz de preenchimento do outro lado (sem sombra): as paredes de costas para o sol (leste e sul) não ficam cinzentas */}
       <directionalLight position={[-3, 4, -2]} intensity={night ? 0.12 : 0.45} color={night ? "#9aa0c8" : "#fff4e6"} />
       {/* quarto de quatro paredes (room-bounds.ts): piso do tamanho do quarto e teto de um lado só (virado para baixo: de
           cima, na órbita, some; não projeta sombra, então o sol continua entrando) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(ROOM.minX + ROOM.maxX) / 2, 0, (ROOM.minZ + ROOM.maxZ) / 2]} receiveShadow><planeGeometry args={[ROOM.maxX - ROOM.minX, ROOM.maxZ - ROOM.minZ]} /><meshStandardMaterial color={night ? "#5a4636" : "#b8906a"} roughness={0.75} /></mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[(ROOM.minX + ROOM.maxX) / 2, ROOM.height, (ROOM.minZ + ROOM.maxZ) / 2]}><planeGeometry args={[ROOM.maxX - ROOM.minX, ROOM.maxZ - ROOM.minZ]} /><meshStandardMaterial color={night ? "#2a2c38" : "#f6f2ec"} emissive={night ? "#000000" : "#f6f2ec"} emissiveIntensity={night ? 0 : 0.3} roughness={1} /></mesh>
-      {byId["rug"] && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 1.3]} receiveShadow><circleGeometry args={[1.1, 48]} /><meshStandardMaterial color={night ? "#6b4c5c" : "#d9b8a0"} roughness={1} /></mesh>}
+      {byId["rug"] && <FaiRug position={[0, 0.004, 1.3]} radius={1.1} night={night} />}
 
       {/* parede norte: guarda-roupa 1 (FAI Origem), porta, interruptor, gancho das chaves, janela, calendário e quadro de
           cortiça — em coordenadas da cena (o grupo desfaz o deslocamento da parede, que não gira) */}
-      <Wall spec={NORTH} color={wallColor("#e8e1d4", "#343747")} strip={strip}><group position={toWall(NORTH, [0, 0, 0])}>
+      <Wall spec={NORTH} color={wallColor("#e8e1d4", "#343747")} strip={strip} mode={walls}><group position={toWall(NORTH, [0, 0, 0])}>
         <group>
           <Carcass w={W} dividers={[1, 2, 3].map((i) => -W / 2 + i * DOOR_W)} carcass={carcass} />
           {/* closet de assinatura (Maison): filetes dourados e placa */}
@@ -789,17 +916,19 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         {tapedIds.size > 0 && <group position={[-W / 2 + 0.16 + 7 * 0.3, 0, 0]}><LookBox x={0} season={t("room3d.roomScene.fora_da_capsula")} count={tapedIds.size} /><TailorTape width={0.3} position={[0, Y.doors1 + 0.16, 0.225]} rotation={[0, 0, 0.6]} /></group>}
 
         {/* base de calçados (vira Sapateira no Closet) com LED que acende no Vista-me; até 10 aqui, o resto no 2º guarda-roupa */}
-        {atLeast(level, "CLOSET") && <mesh position={[0, 0.16, 0.05]} rotation={[-0.25, 0, 0]}><boxGeometry args={[W - 0.04, 0.012, 0.36]} /><meshStandardMaterial color="#d9cbb5" /></mesh>}
+        {atLeast(level, "STUDIO") && <mesh position={[0, 0.16, 0.05]} rotation={[-0.25, 0, 0]}><boxGeometry args={[W - 0.04, 0.012, 0.36]} /><meshStandardMaterial color="#d9cbb5" /></mesh>}
         {shoes.slice(0, 10).map((p, i) => <group key={p.id} position={[-W / 2 + 0.16 + i * 0.23, 0.14, 0.12]}><PieceMesh p={p} w={0.22} h={0.2} ctx={ctx} /></group>)}
         <mesh position={[0, 0.02, D / 2 - 0.01]}><boxGeometry args={[W - 0.04, 0.01, 0.01]} /><meshBasicMaterial color={litAny(["base", "shoe"]) ? "#ffd27a" : "#9b958a"} toneMapped={false} /></mesh>
         {litAny(["base", "shoe"]) && <pointLight position={[0, 0.2, 0.6]} intensity={1} distance={1.6} color="#ffe6a0" />}
-        {atLeast(level, "CLOSET") && <Label3D text={t("room3d.roomScene.sapateira")} w={0.34} h={0.05} fg="#6b5a4a" position={[0, 0.26, D / 2 + 0.005]} />}
+        {atLeast(level, "STUDIO") && <Label3D text={t("room3d.roomScene.sapateira")} w={0.34} h={0.05} fg="#6b5a4a" position={[0, 0.26, D / 2 + 0.005]} />}
 
         {/* luzes do closet: marcos do Inventory Score */}
         {data.closetLights && data.closetLights.milestones.length > 0 && <ClosetLights y={Y.top1 + 0.1} width={W} milestones={data.closetLights.milestones} celebrate={!!mirror?.celebrate} reduced={reduced} />}
 
         {/* parede: porta do quarto (a chave fica no gancho ao lado), interruptor (tema), janela, calendário e quadro de cortiça */}
         <RoomDoor position={L.door} night={night} onClick={onKeys ? () => onKeys() : undefined} />
+        {/* identidade FashionAI: letreiro de neon acima da porta (o batente termina em 2,11 m) */}
+        <FaiNeonSign position={[L.door[0] - 0.03, 2.47, -D / 2 - 0.004]} w={1.12} />
         <RoomFixture engine={gameplay?.engine} id="switch" position={L.switch} kind="light" run={onToggleLight}><LightSwitch position={[0, 0, 0]} on={ceilingOn} onToggle={() => onToggleLight?.()} /></RoomFixture>
         <KeyHook position={L.keys} keys={data.keys ?? []} onClick={() => onKeys?.()} />
         <RoomWindow position={L.window} period={period} light={false} seasonal={data.ambient?.seasonal && data.ambient.seasonal !== "null" ? data.ambient.seasonal : null} />
@@ -811,7 +940,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       <WindowLight position={L.window} period={period} />
 
       {/* parede oeste: o 2º guarda-roupa (a extensão do Loft: portas 5–6 e gavetas 25–36, mesmos endereços) */}
-      <Wall spec={WEST} color={wallColor("#e2dacb", "#2e3140")} strip={strip}>
+      <Wall spec={WEST} color={wallColor("#e2dacb", "#2e3140")} strip={strip} mode={walls}>
         <Wardrobe2Body position={toWall(WEST, [W2.x, 0, W2.z])} engine={gameplay?.engine}>
           {w2 ? <>
             <Carcass w={EXT_W + 0.02} dividers={[0]} carcass={carcass} />
@@ -821,19 +950,21 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
             {Array.from({ length: 12 }, (_, i) => i + 25).map((n) => { const m = byId[`drawer:${n}`]; if (!m) return null; const k = n - 25;
               return <Drawer key={n} m={m} x={-EXT_W / 2 + (k % 4) * EXT_DRAWER_W + EXT_DRAWER_W / 2} y={Y.drawers1 - (Math.floor(k / 4) + 0.5) * DRAWER_H} w={EXT_DRAWER_W} open={open.has(m.id)} lit={lit.has(m.id)} onToggle={() => onToggle(m.id)} finish={finishOf(m)} handle={handle} taped={taped(m)} onAdd={() => onAddToDrawer?.(m.id)} ctx={ctx} />; })}
             {boxes.slice(8, 13).map((b, i) => <LookBox key={b.id} b={b} x={-EXT_W / 2 + 0.2 + i * 0.32} />)}
-            {atLeast(level, "CLOSET") && <mesh position={[0, 0.16, 0.05]} rotation={[-0.25, 0, 0]}><boxGeometry args={[EXT_W - 0.02, 0.012, 0.36]} /><meshStandardMaterial color="#d9cbb5" /></mesh>}
+            {atLeast(level, "STUDIO") && <mesh position={[0, 0.16, 0.05]} rotation={[-0.25, 0, 0]}><boxGeometry args={[EXT_W - 0.02, 0.012, 0.36]} /><meshStandardMaterial color="#d9cbb5" /></mesh>}
             {shoes.slice(10, shoeCap).map((p, i) => <group key={p.id} position={[-EXT_W / 2 + 0.16 + i * 0.23, 0.14, 0.12]}><PieceMesh p={p} w={0.22} h={0.2} ctx={ctx} /></group>)}
             <mesh position={[0, 0.02, D / 2 - 0.01]}><boxGeometry args={[EXT_W - 0.02, 0.01, 0.01]} /><meshBasicMaterial color={litAny(["base", "shoe"]) ? "#ffd27a" : "#9b958a"} toneMapped={false} /></mesh>
           </> : <LockedWardrobe carcass={carcass} finish={finishOf(byId["door:1"])} onOpen={() => router.push("/points")} />}
         </Wardrobe2Body>
       </Wall>
 
-      {/* parede leste: a 2ª janela (sem holofote próprio: a luz do sol já vem da 1ª) */}
-      <Wall spec={EAST} color={wallColor("#e4dccd", "#30333f")} strip={strip}>
+      {/* parede leste: a 2ª janela (sem holofote próprio: a luz do sol já vem da 1ª), a cabeceira da cama e o medalhão FashionAI */}
+      <Wall spec={EAST} color={wallColor("#e4dccd", "#30333f")} strip={strip} mode={walls}>
         <RoomWindow position={toWall(EAST, L.window2)} period={period} light={false} seasonal={data.ambient?.seasonal && data.ambient.seasonal !== "null" ? data.ambient.seasonal : null} />
+        {/* identidade FashionAI: o medalhão do logo acima da cabeceira da cama (a cama encosta nesta parede) */}
+        <FaiMedallion position={toWall(EAST, [ROOM.maxX - 0.015, 2.12, BED_POSITION[2]])} />
       </Wall>
       {/* parede sul: livre (é a parede da câmera na visão geral) */}
-      <Wall spec={SOUTH} color={wallColor("#e6dfd2", "#32353f")} strip={strip} />
+      <Wall spec={SOUTH} color={wallColor("#e6dfd2", "#32353f")} strip={strip} mode={walls} />
 
       {/* vitrine da peça ícone */}
       {showcase.length > 0 && <group position={L.showcase}>
@@ -842,16 +973,16 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         <group position={[0, 1.1, 0]}><PieceMesh p={showcase[0]} w={0.26} h={0.26} ctx={ctx} /></group>
         <Label3D text={t("room3d.roomScene.peca_icone")} w={0.3} h={0.05} fg="#6b5a4a" position={[0, 0.8, 0.185]} />
       </group>}
-      {atLeast(level, "CLOSET") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bagModel={byId["bags"]?.finish?.model3dUrl} jewelryModel={byId["jewelry"]?.finish?.model3dUrl} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
-      {atLeast(level, "ATELIER") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} modelUrl={byId["island"]?.finish?.model3dUrl} />}
+      {atLeast(level, "STUDIO") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bagModel={byId["bags"]?.finish?.model3dUrl} jewelryModel={byId["jewelry"]?.finish?.model3dUrl} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
+      {atLeast(level, "LOFT") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} modelUrl={byId["island"]?.finish?.model3dUrl} />}
 
       {data.modules.filter(m => m.slotType === "DOOR" || m.slotType === "DRAWER").map(m => {
         const anchor = moduleAnchor(m.id, level); return anchor ? <RoomFixture key={m.id} engine={gameplay?.engine} id={`action:${m.id}`} position={anchor} kind="open" run={() => onToggle(m.id)} /> : null;
       })}
-      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} />
+      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} live={!!gameplay} glass={view ? view.mirror : undefined} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />
       <SaleRack position={L.sale} rack={{ name: data.saleRack?.name ?? t("room.support_rack"), pieces: [...new Map([...(data.saleRack?.pieces ?? []), ...(data.chair ?? []), ...(data.basket ?? [])].map(p => [p.id, p])).values()] }} ctx={ctx} modelUrl={byId["saleRack"]?.finish?.model3dUrl ?? "/models/fai-room/rack-fai.glb"} />
-      <RoomFixture engine={gameplay?.engine} id="chair" position={L.chair} collider={[.32, .32]} kind="sit" run={() => { if (gameplay) { gameplay.engine.seated = gameplay.engine.seated ? null : new THREE.Vector3(...L.chair); gameplay.engine.notify(); } }}>
+      <RoomFixture engine={gameplay?.engine} id="chair" position={L.chair} collider={[.32, .32]} kind="sit" run={() => { if (gameplay) { const e = gameplay.engine; e.seated = e.seated ? null : seatOf(L.chair); e.seatYaw = CHAIR.yaw; e.notify(); } }}>
         <Chair position={[0, 0, 0]} pieces={[]} ctx={ctx} />
       </RoomFixture>
       <DoubleBed engine={gameplay?.engine} modelUrl={byId["bed"]?.finish?.model3dUrl ?? "/models/fai-room/bed-fai.glb"} lit={ceilingOn} intensity={brightness} />
@@ -863,11 +994,12 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       <ContactShadows position={[0, 0.005, 0.4]} opacity={0.35} scale={10} blur={2.4} far={3} />
       {gameplay && <RoomAvatarController gameplay={gameplay} closetRight={W / 2} />}
       {gameplay && <LoosePieces engine={gameplay.engine} pieces={data.pieces} ctx={ctx} drop={drop} />}
-      {!gameplay && <OrbitControls ref={controls as never} makeDefault enablePan={false} target={[0, 1.2, 0]}
+      {!gameplay && <OrbitControls ref={controls as never} makeDefault enabled={!preset} enablePan={false} target={[0, 1.2, 0]}
         minPolarAngle={deg(po[0])} maxPolarAngle={deg(po[1])} minDistance={homeDist / zoom[1]} maxDistance={homeDist / zoom[0]} enableDamping dampingFactor={0.08} />}
-      {!gameplay && <CameraRig focus={focus} facing={facing} home={[0, 1.2, 0]} homeDist={homeDist} controls={controls} />}
-      {!gameplay && <OrbitTurn controls={controls} reduced={reduced} />}
-      <ResponsiveFov />
+      {!gameplay && !preset && <CameraRig focus={focus} facing={facing} home={[0, 1.2, 0]} homeDist={homeDist} controls={controls} />}
+      {!gameplay && !preset && <OrbitTurn controls={controls} reduced={reduced} speed={camOpts.speed} invertX={camOpts.invertX} invertY={camOpts.invertY} />}
+      {preset && <PresetCamera options={preset} mirror={L.mirror} door={L.door} onViewStep={onViewStep} />}
+      <ResponsiveFov fov={camOpts.fov} />
     </Canvas>
   );
 }

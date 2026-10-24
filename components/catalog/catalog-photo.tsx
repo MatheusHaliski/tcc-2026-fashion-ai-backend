@@ -3,6 +3,11 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type { CatalogCardImage, NormRect } from "@/lib/api/catalog";
 import type { PieceView } from "@/lib/api/types";
 import { cn } from "@/components/ui";
+import { tr } from "@/lib/i18n/i18n";
+import { mediaUrl } from "@/lib/api/client";
+import { catalogWholeFrame, type PhotoFraming } from "@/lib/photo-framing";
+import { DefaultGarmentPhoto } from "./default-garment-photo";
+import { WholeFramePhoto } from "@/components/catalog/whole-frame-photo";
 
 /** Only ratios emitted by the image pipeline; malformed/legacy metadata keeps the portrait frame. */
 export function photoAspect(aspect?: string | null): string {
@@ -48,29 +53,49 @@ export function pieceCatalogCrop(p: PieceView): CatalogCardImage | null {
  * tenta a seguinte da lista — `fallbackUrl`, depois `alternatives` (ex.: a foto original da marca) — e só então o
  * `placeholder` (a ilustração da categoria).
  */
-export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className }: {
-  image?: CatalogCardImage | null; fallbackUrl?: string | null; alternatives?: (string | null | undefined)[]; placeholder?: ReactNode; alt: string; className?: string;
+export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className, requiredFrame = false, framing = "FABRIC", onRetry, category, subcategory, color, colorHex }: {
+  onRetry?: () => void; category?: string | null; subcategory?: string | null; color?: string | null; colorHex?: string | null;
+  requiredFrame?: boolean; image?: CatalogCardImage | null; fallbackUrl?: string | null; alternatives?: (string | null | undefined)[]; placeholder?: ReactNode; alt: string; className?: string;
+  /** WHOLE = Total frame: a peça inteira no quadro (nunca o recorte de tecido); sem a caixa da peça, a foto original inteira contida */
+  framing?: PhotoFraming;
 }) {
-  const crop = image?.mode === "SEMANTIC_CROP" && image.crop ? image : null;
-  const chain = Array.from(new Set([crop ? null : image?.url, fallbackUrl, ...(alternatives ?? [])]
-    .filter((u): u is string => !!u && u !== crop?.url)));
-  const key = [image?.url, fallbackUrl, ...(alternatives ?? [])].join("|");
+  const whole = framing === "WHOLE" ? catalogWholeFrame(image) : null;
+  // Peça inteira sem a peça recortada (foto com modelo, sem caixa): mostra o enquadramento de tecido — nunca a foto
+  // original da marca, que traz a pessoa e deixa a peça minúscula no quadro
+  const wholeMode = framing === "WHOLE" && (!!whole || !image);
+  const crop = !wholeMode && image?.mode === "SEMANTIC_CROP" && image.crop ? image : null;
+  const first = wholeMode ? [image?.sourceUrl, image?.mode === "PROCESSED" ? null : image?.url] : [crop ? null : image?.url];
+  const original = framing === "WHOLE" && !wholeMode ? [] : [image?.sourceUrl];
+  const chain = Array.from(new Set([...first, ...(requiredFrame && !wholeMode ? [] : [fallbackUrl,...original,...(alternatives ?? [])])]
+    .map(url => mediaUrl(url?.trim())).filter((u): u is string => !!u && u !== mediaUrl(crop?.url))));
+  const key = [image?.url, fallbackUrl, image?.sourceUrl, framing, ...(alternatives ?? [])].join("|");
   const [failed, setFailed] = useState(0);
-  useEffect(() => { setFailed(0); }, [key]);
+  const [wholeFailed, setWholeFailed] = useState(false);
+  useEffect(() => { setFailed(0); setWholeFailed(false); }, [key]);
   const fail = () => setFailed((n) => n + 1);
+  const defaultPhoto = placeholder ?? <DefaultGarmentPhoto category={category ?? image?.photoSet?.category} subcategory={subcategory ?? image?.photoSet?.subcategory} color={color ?? image?.photoSet?.color} colorHex={colorHex} framing={framing} alt={alt}/>;
+  if(image?.mode === "DEFAULT") return <>{defaultPhoto}</>;
+  if (whole && !wholeFailed) return <WholeFramePhoto frame={whole} alt={alt} className={className} onFail={() => setWholeFailed(true)} />;
+  if (requiredFrame && (framing === "WHOLE" && (!whole || wholeFailed) || framing === "FABRIC" && (!image || failed > 0 || image.mode === "SEMANTIC_CROP" && !crop))) return <span className="catalog-default-fallback">{defaultPhoto}{onRetry&&<button type="button" className="btn btn-sm catalog-photo-retry" onClick={() => { setFailed(0); setWholeFailed(false); onRetry(); }}>{tr("common.retry")}</button>}</span>;
   if (crop && failed === 0) {
     return (
       <span className={cn("catalog-photo is-cropped", className)} style={{ background: crop.background ?? undefined }} data-mode="semantic-crop">
-        <img src={crop.url} alt={alt} loading="lazy" style={semanticCropStyle(crop.crop!)} onError={fail} />
+        <img src={mediaUrl(crop.url)} alt={alt} loading="lazy" style={semanticCropStyle(crop.crop!)} onError={fail} />
       </span>
     );
   }
   const src = chain[crop ? failed - 1 : failed];
   if (!src) return placeholder ? <>{placeholder}</> : null;
-  const processed = src === image?.url && image?.mode === "PROCESSED";
+  const processed = !wholeMode && src === mediaUrl(image?.url) && image?.mode === "PROCESSED";
   return (
-    <span className={cn("catalog-photo", processed ? "is-processed" : "is-contained", className)} data-mode={processed ? "processed" : "original"}>
-      <img key={src} src={src} alt={alt} loading="lazy" onError={fail} />
+    <span className={cn("catalog-photo", processed ? "is-processed" : "is-contained", wholeMode && "is-whole-fallback", className)} data-mode={processed ? "processed" : wholeMode ? "whole-original" : "original"}>
+      <img key={src} style={processed && framing === "FABRIC" ? {objectFit:"cover"} : undefined} src={mediaUrl(src)} alt={alt} loading="lazy" onError={fail} />
     </span>
   );
+}
+
+/** Official source only belongs to this piece while the selected catalogue image remains unchanged. */
+export function pieceCatalogSource(piece: PieceView): string | undefined {
+  const image = (piece.flatLayMetadata as { catalogImage?: CatalogCardImage } | undefined)?.catalogImage;
+  return image && image.url === piece.imageUrl ? image.sourceUrl ?? undefined : undefined;
 }

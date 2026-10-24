@@ -29,17 +29,21 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE0
-  component "/schemes/new\n(site)/(app)/schemes/new/page.tsx" as FE1
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE0
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE1
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE2
+  component "/pieces/[id]\n(site)/(app)/pieces/[id]/page.tsx" as FE3
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE4
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
   component "CommentController\n/api/comments/{…}" as CommentController
   component "SchemeController\n/api/schemes\n/api/schemes/{…}\n/api/schemes/{…}/card.png\n/api/schemes/{…}/remix" as SchemeController
-  component "SocialController\n/api/interactions/{…}/{…}/comments\n/api/interactions/{…}/{…}/counters\n/api/interactions/{…}/{…}/remixes\n/api/interactions/{…}/{…}/saves/favorite" as SocialController
+  component "SocialController\n/api/interactions/{…}/{…}/comments\n/api/interactions/{…}/{…}/counters\n/api/interactions/{…}/{…}/remixes\n/api/interactions/{…}/{…}/saves/favorite\n(+1 rotas)" as SocialController
   component "WardrobeController\n/api/pieces\n/api/pieces/{…}" as WardrobeController
 }
 package "fai-application (casos de uso)" {
@@ -70,6 +74,10 @@ APIC --> WardrobeController : HTTPS/JSON
 CommentController --> SocialService
 FE0 --> APIC
 FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
 REPO_MySQL --> DB_MySQL : JPA/Flyway
 SchemeController --> SchemeService
 SchemeService --> AI
@@ -92,6 +100,7 @@ SocialService --> REPO_MySQL
 SocialService ..> MediaService
 SocialService ..> NotificationService
 SocialService ..> SchemeService
+SocialService ..> WardrobeService
 WardrobeController --> WardrobeService
 WardrobeService --> AI
 WardrobeService --> EV

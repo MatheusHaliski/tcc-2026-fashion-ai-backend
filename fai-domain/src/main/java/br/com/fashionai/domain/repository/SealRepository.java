@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** Repositório Spring Data de Seal (MySQL — fonte da verdade). */
-public interface SealRepository extends JpaRepository<Seal, UUID> {
+public interface SealRepository extends JpaRepository<Seal, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Seal> {
     /** O teste da cota e o incremento da emissão compartilham o bloqueio do selo. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from Seal s where s.id = :id")

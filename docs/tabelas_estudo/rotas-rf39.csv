@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /admin/room-assets;POST /api/room-creator/items (direto);POST /api/room-creator/items;RoomCreatorController;WardrobeCreatorService.save()

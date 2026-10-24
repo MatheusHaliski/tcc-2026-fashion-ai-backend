@@ -37,6 +37,7 @@ export interface HairProfile {
   estimated?: boolean;        // a foto não mostrou o cabelo (nem pele no alto da cabeça): comprimento/cor supostos
   volumeLevel?: HairVolume;   // volume medido na foto (hairVolume)
   volumeFactor?: number;      // o mesmo, como fator da geometria (1 = normal; 0,7 rente … 1,9 muito volumoso)
+  variation?: number;         // variação de tom medida (0–1): espalhamento de L* dos pixels do cabelo (hair-tone.ts)
   debug?: unknown;
 }
 
@@ -214,6 +215,7 @@ export function hairVolume(stats: Pick<HairStats, "outline" | "top" | "cutTop" |
 export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMaskLike | null, px: Pt[], toCanon: Sim2D, foreheadY: number, skin: [number, number, number], stats: HairStats, fallback: HairLength = "short"): HairProfile {
   const cr = crown(img, mask, cls, toCanon, foreheadY, skin);
   let estimated = false;
+  let toneSpread: number | undefined;                       // espalhamento de L* da medida de tom usada (hair-tone.ts)
   const volume = stats.side ? stats.side / FACE_HALF : 0;
   const med = (cs: number[][]) => [0, 1, 2].map((k) => median(cs.map((c) => c[k])));
   let length: HairLength; let cover: string | null = null; let color = stats.color; let tone: HairTone | null = stats.tone?.tone ?? null;
@@ -231,22 +233,22 @@ export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMask
     // de luminância) puxava o preto e o castanho escuro para castanho médio: não é mais usada. Sem tom junto da cabeça,
     // o alto da cabeça (classe cabelo) mede.
     const m = stats.tone ?? measureTone(cr.hairC);
-    tone = m?.tone ?? null; color = m?.color ?? color;
+    tone = m?.tone ?? null; color = m?.color ?? color; toneSpread = m?.spread;
     length = b === null || b > EAR_LOBE_Y + 1 ? "short" : b > SHOULDER_Y ? "medium" : "long";
     if (length === "short" && stats.top - foreheadY < 5.2 && stats.coverage < 0.35) length = "buzz";
   } else if (cr.n > 30 && cr.hair > 0.3) {
     length = "buzz";                                                       // raspado: a classe vê cabelo, o segmentador fino não
-    const m = measureTone(cr.hairC); tone = m?.tone ?? null; color = m?.color ?? toHex(med(cr.hairC));
+    const m = measureTone(cr.hairC); tone = m?.tone ?? null; color = m?.color ?? toHex(med(cr.hairC)); toneSpread = m?.spread;
   } else if (cr.n > 30 && cr.other.length > cr.n * 0.4) {
     const m = med(cr.other);
-    if (luma(m[0], m[1], m[2]) < cr.skinL * 0.7) { length = "buzz"; const t = measureTone(cr.other); tone = t?.tone ?? null; color = t?.color ?? toHex(m); } else { length = "bald"; color = null; }
+    if (luma(m[0], m[1], m[2]) < cr.skinL * 0.7) { length = "buzz"; const t = measureTone(cr.other); tone = t?.tone ?? null; color = t?.color ?? toHex(m); toneSpread = t?.spread; } else { length = "bald"; color = null; }
   } else if (stats.present) {
     length = "short";
   } else {
     // nem cabelo nem pele no alto da cabeça (foto escura, cabeça pequena, cabelo da cor do fundo): cabelo suposto pelo
     // corpo base, com a cor medida no que a classe "cabelo" viu — ou castanho médio. A pessoa ajusta corte e tom.
     length = fallback; estimated = true;
-    const m = measureTone(cr.hairC); tone = m?.tone ?? HAIR_DEFAULT_TONE; color = m?.color ?? null;
+    const m = measureTone(cr.hairC); tone = m?.tone ?? HAIR_DEFAULT_TONE; color = m?.color ?? null; toneSpread = m?.spread;
   }
   const o = stats.present && length !== "buzz" && length !== "bald" ? hairOrientation(img, mask, cls, px, toCanon) : { coherence: NaN, flow: NaN, flows: [] as number[], vertical: NaN };
   let texture: HairTexture = "straight";
@@ -259,7 +261,8 @@ export function hairProfile(img: Raster, mask: ArrayLike<number>, cls: ClassMask
   if (length === "bald" || length === "buzz") texture = "straight";
   if (!color && !estimated) tone = null;
   const vol = hairVolume(stats); const measuredVol = !estimated && !cover && length !== "bald" && length !== "buzz";
-  return { length, texture, cover, color, tone, ...(estimated ? { estimated } : {}), ...(measuredVol ? { volumeLevel: vol.level, volumeFactor: vol.factor } : {}), coherence: Number.isFinite(o.coherence) ? +o.coherence.toFixed(3) : 0, flow: Number.isFinite(o.flow) ? +o.flow.toFixed(3) : 0, volume: +volume.toFixed(2), outline: cover ? coverOutline(img, cls, toCanon, foreheadY) : stats.outline ?? [], debug: { flows: o.flows.map((f) => +f.toFixed(3)), vertical: Number.isFinite(o.vertical) ? +o.vertical.toFixed(3) : null, crown: { n: cr.n, tSkin: +cr.tSkin.toFixed(2), tAmb: +cr.tAmb.toFixed(2), amb: cr.amb, skin: +cr.skin.toFixed(2), upperSkin: +cr.upperSkin.toFixed(2), hair: +cr.hair.toFixed(2), cover: +cr.cover.toFixed(2), upperCover: +cr.upperCover.toFixed(2) } } };
+  const variation = toneSpread !== undefined && Number.isFinite(toneSpread) ? +Math.min(1, Math.max(0, (toneSpread - 6) / 22)).toFixed(2) : undefined;
+  return { length, texture, cover, color, tone, ...(estimated ? { estimated } : {}), ...(measuredVol ? { volumeLevel: vol.level, volumeFactor: vol.factor } : {}), ...(variation !== undefined ? { variation } : {}), coherence: Number.isFinite(o.coherence) ? +o.coherence.toFixed(3) : 0, flow: Number.isFinite(o.flow) ? +o.flow.toFixed(3) : 0, volume: +volume.toFixed(2), outline: cover ? coverOutline(img, cls, toCanon, foreheadY) : stats.outline ?? [], debug: { flows: o.flows.map((f) => +f.toFixed(3)), vertical: Number.isFinite(o.vertical) ? +o.vertical.toFixed(3) : null, crown: { n: cr.n, tSkin: +cr.tSkin.toFixed(2), tAmb: +cr.tAmb.toFixed(2), amb: cr.amb, skin: +cr.skin.toFixed(2), upperSkin: +cr.upperSkin.toFixed(2), hair: +cr.hair.toFixed(2), cover: +cr.cover.toFixed(2), upperCover: +cr.upperCover.toFixed(2) } } };
 }
 
 /** Limiares do "fluxo" dos fios (calibrados nas fotos de teste de docs/testes; ver scripts/avatar3d). */

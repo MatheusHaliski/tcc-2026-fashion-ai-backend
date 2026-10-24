@@ -1,9 +1,16 @@
 @startuml RF27_Atividades_Organizar
-title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de atividades — organizar o quarto (prévia com ou sem IA, aplicar e desfazer)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,65 +19,72 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Toca em **Organizar** (com ou sem IA);
-|Frontend (room/page.tsx)|
-:GET /api/me/room/organization/preview?useAi=true|false;
-|Serviço (RoomService)|
-:organizePreview(): lê gavetas, rótulos e peças\n(room_layouts, room_storage_map, wardrobe_items);
-:Rótulo local por gaveta: categoria dominante\n(vale se ≥ 50% das peças concordam);
-if (useAi = true?) then (sim)
-  |Banco/IA|
-  :AiEngine.text(COPILOT): pede rótulos curtos (≤ 24)\nsó para gavetas com peças;
-  if (Provedor respondeu JSON válido?) then (sim)
-    :Usa os rótulos da IA;
-  else (não / cota / sem consentimento)
-    :Fallback local (rótulos por categoria),\nfallbackUsed = true;
-  endif
-  |Serviço (RoomService)|
+:Abre /room, /dna-schemes/[id]/edit,\n/dna-schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/room\nGET /api/me/room/organization/preview\nGET /api/pieces/{pieceId}/room-location\nGET /api/me/room/modules/{moduleId};
+|Pessoa usuária|
+:Mover peça para um endereço\n(door:1/hanger:3, drawer:2, sho…;
+|Tela (Next.js)|
+:PUT /api/pieces/{pieceId}/room-address;
+|API (Spring Boot)|
+:RoomController.move\n→ RoomService.move;
+if (categoria incompativel?) then (sim)
+  :400 CATEGORIA_INCOMPATIVEL\n«Este endereço não guarda peças\ndesta categoria.»\n→ a tela mostra o aviso;
+  stop
 endif
-:Mantém quem já está coerente e cabe;\nreposiciona o resto com place()\n(sem vaga → Cadeira);
-:Devolve prévia: labels, changedLabels, moves\n(de → para, motivo), summary, explanation;
-note right: nada é gravado na prévia
-|Pessoa|
-if (Aplica a prévia?) then (sim)
-  |Frontend (room/page.tsx)|
-  :POST /api/me/room/organization {labels, moves};
-  |Serviço (RoomService)|
-  :Guarda o mapa anterior em previous_map_json;
-  :Atualiza rótulos (source = AI) e endereços\n(assigned_by = AI);
-  :Publica RoomOrganized;
-  |Banco/IA|
-  :InventoryScoreService limpa o cache da nota (@EventListener);\napós o commit, WardrobeEventListeners\n→ FaiPointsService.award(ROOM_ORGANIZED) (+20, 1 por semana);
-  |Pessoa|
-  if (Quer desfazer?) then (sim)
-    |Frontend (room/page.tsx)|
-    :DELETE /api/me/room/organization;
-    |Serviço (RoomService)|
-    if (Há previous_map_json?) then (sim)
-      :Restaura rótulos e endereços\n(assigned_by = USER) e limpa o mapa anterior;
-    else (não)
-      #FFE3E3:409 NADA_A_DESFAZER;
-    endif
-  else (não)
-  endif
-else (não)
-  |Frontend (room/page.tsx)|
-  :Fecha a prévia sem mudar nada;
+if (gaveta categoria diferente?) then (sim)
+  :400 GAVETA_CATEGORIA_DIFERENTE\n«Esta gaveta guarda peças de outra\ncategoria.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Frontend (room/page.tsx)|
-:Recarrega o quarto;
+if (gaveta cheia?) then (sim)
+  :409 GAVETA_CHEIA\n«A gaveta … já tem … peças.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (posicao inválida?) then (sim)
+  :400 POSICAO_INVALIDA\n«A posição vai de 1 a ….»\n→ a tela mostra o aviso;
+  stop
+endif
+if (posicao ocupada?) then (sim)
+  :409 POSICAO_OCUPADA\n«Já existe uma peça nesta posição.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: wardrobe_items\nroom_layouts\nusers\nfai_points_ledger\nroom_storage_map;
+:Usa: Guard.requireOwner;
+:Grava: room_layouts\nroom_storage_map;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Aplicar organização [rótulos e mo…)
+    :POST /api/me/room/organization\n→ RoomService.applyOrganization\nlê: room_layouts, users, fai_points_ledger …\ngrava: room_layouts, room_storage_map\nevento: RoomOrganized;
+  case (Desfazer a última organização)
+    :DELETE /api/me/room/organization\n→ RoomService.undoOrganization\nvalida: NADA_A_DESFAZER\nlê: room_layouts, users, fai_points_ledger …\ngrava: room_layouts, room_storage_map;
+  case (Monograma do quarto)
+    :PUT /api/me/room/monogram\n→ RoomService.setMonogram\nvalida: NIVEL_INSUFICIENTE\nlê: room_layouts, users, fai_points_ledger\ngrava: room_layouts;
+  case (Renomear gaveta)
+    :PUT /api/me/room/drawers/{drawer}\n→ RoomService.renameDrawer\nlê: room_layouts, users, fai_points_ledger\ngrava: room_layouts\nevento: RoomOrganized;
+  case (Guardar/retirar peças do baú de e…)
+    :POST /api/me/room/season-storage\n→ RoomService.seasonStorage\nvalida: NIVEL_INSUFICIENTE\nlê: room_layouts, users, fai_points_ledger …\nusa: Guard.requireOwner\ngrava: room_layouts, room_storage_map;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Registrar uso da peça no diár…, Dar a chave do meu
+  quarto a u…, Ilha central: esquemas em des…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

@@ -5,20 +5,25 @@
 export interface GarmentRaster { width: number; height: number; data: Uint8ClampedArray }
 
 /** A repeated textile sample, never the complete garment, label or background. */
-export function fabricTile(raster: GarmentRaster): { x: number; y: number; width: number; height: number } | null {
+export function fabricTile(raster: GarmentRaster, range: { fromX?: number; toX?: number } = {}): { x: number; y: number; width: number; height: number } | null {
   const { width: w, height: h, data } = raster;
+  const startX = Math.max(0, Math.floor(range.fromX ?? 0)), endX = Math.min(w, Math.ceil(range.toX ?? w));
   let x0 = w, x1 = 0, y0 = h, y1 = 0;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 240) {
+  for (let y = 0; y < h; y++) for (let x = startX; x < endX; x++) if (data[(y * w + x) * 4 + 3] > 240) {
     x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
   }
-  const size = Math.min(128, Math.floor((x1 - x0) * 0.28), Math.floor((y1 - y0) * 0.25));
-  if (size < 24) return null;
-  for (const fy of [0.56, 0.72]) for (const fx of [0.22, 0.6]) {
+  // A small window cannot contain two repeats of broad plaid. Try a larger
+  // torso-only window before falling back to wash colours; never tile the whole photo.
+  const sizes = [...new Set([
+    Math.min(128, Math.floor((x1 - x0) * .28), Math.floor((y1 - y0) * .25)),
+    Math.min(256, Math.floor((x1 - x0) * .85), Math.floor((y1 - y0) * .4)),
+  ])].filter(size => size >= 24);
+  for (const size of sizes) for (const fy of [0.56, 0.72]) for (const fx of [0.22, 0.6]) {
     const py = Math.round(y0 + (y1 - y0) * fy);
     // Flat-lay sleeves widen the global bounds. Sample the actual torso row,
     // otherwise every candidate straddles its transparent sides.
     let rowLeft = w, rowRight = -1;
-    for (let x = 0; x < w; x++) if (data[(py * w + x) * 4 + 3] > 240) { rowLeft = Math.min(rowLeft, x); rowRight = x; }
+    for (let x = startX; x < endX; x++) if (data[(py * w + x) * 4 + 3] > 240) { rowLeft = Math.min(rowLeft, x); rowRight = x; }
     if (rowRight - rowLeft < size) continue;
     const px = Math.round(rowLeft + (rowRight - rowLeft - size) * fx);
     if (px + size > w || py + size > h) continue;
@@ -49,12 +54,14 @@ export function fabricTile(raster: GarmentRaster): { x: number; y: number; width
         errors[lag] = error / n;
       }
       for (let lag = 4; lag <= Math.floor(size / 2); lag++) {
-        if (errors[lag] < variance * 0.22 && errors[lag] + variance * 0.02 < Math.min(errors[lag - 1], errors[lag + 1])) return lag;
+        if (errors[lag] < variance * 0.22 && errors[lag] + variance * 0.002 < Math.min(errors[lag - 1], errors[lag + 1])) return lag;
       }
-      return null;
+      // Stripes repeat in one direction and are constant in the other. A plain
+      // axis is not itself evidence of a pattern: require a real period on its mate.
+      return errors.slice(3).every(error => error < variance * .005) ? 1 : null;
     };
     const width = period(0), height = period(1);
-    if (width && height) return { x: px, y: py, width, height };
+    if (width && height && (width > 1 || height > 1)) return { x: px, y: py, width, height };
   }
   return null;
 }
@@ -72,18 +79,22 @@ export function medoid(px: ArrayLike<number>[]): [number, number, number] {
 }
 
 /** Robust wash/color at each fabric height, excluding the backdrop and the gap between trouser legs. */
-export function fabricRows(raster: GarmentRaster, opts: { fromY?: number; toY?: number } = {}): { y: number; rgb: [number, number, number] }[] {
+export function fabricRows(raster: GarmentRaster, opts: { fromY?: number; toY?: number; fromX?: number; toX?: number; inset?: .1 | .25 } = {}): { y: number; rgb: [number, number, number] }[] {
   const { width: w, height: h, data } = raster;
   const out: { y: number; rgb: [number, number, number] }[] = [];
   const step = Math.max(1, Math.floor(h / 64));
   // só o MIOLO de cada linha (metade central do que a linha tem de peça) e só entre a gola e a barra: os punhos nas
   // pontas e a gola em cima tingiam o painel do tecido (costas, laterais e mangas) com a cor dos acabamentos
   const y0 = Math.max(0, Math.floor(opts.fromY ?? 0)), y1 = Math.min(h, Math.ceil(opts.toY ?? h));
+  const x0 = Math.max(0, Math.floor(opts.fromX ?? 0)), x1 = Math.min(w, Math.ceil(opts.toX ?? w));
   for (let y = y0; y < y1; y += step) {
     let a = -1, b = -1;
-    for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] >= 240) { if (a < 0) a = x; b = x; }
+    for (let x = x0; x < x1; x++) if (data[(y * w + x) * 4 + 3] >= 240) { if (a < 0) a = x; b = x; }
     if (a < 0) continue;
-    const xa = Math.round(a + (b - a) * 0.25), xb = Math.round(a + (b - a) * 0.75);
+    // Ranges also describe upperwear halves: do not mistake them for legs.
+    // Legs explicitly opt into a wider sample so a pocket logo does not dominate.
+    const inset = opts.inset ?? .25;
+    const xa = Math.round(a + (b - a) * inset), xb = Math.round(a + (b - a) * (1 - inset));
     const channels: number[][] = [[], [], []];
     for (let x = xa; x <= xb; x += Math.max(1, Math.floor((xb - xa) / 80))) {
       const k = (y * w + x) * 4;
@@ -243,7 +254,7 @@ export function splitByHem(raster: GarmentRaster, part: "upper" | "lower"): { he
 export function prepareGarmentPhoto(img: CanvasImageSource & { width: number; height: number }, opts: { keep?: "upper" | "lower" | null } = {}): HTMLCanvasElement | null {
   try {
     const c = document.createElement("canvas");
-    const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+    const scale = Math.min(1, 2048 / Math.max(img.width, img.height));
     c.width = Math.max(1, Math.round(img.width * scale)); c.height = Math.max(1, Math.round(img.height * scale));
     const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return null;
     g.drawImage(img, 0, 0, c.width, c.height);
@@ -285,9 +296,9 @@ export type OutfitPhotoPart = "upper" | "lower" | "full" | "feet";
 export function canUseOutfitPhoto(result: import("@/lib/pieces/person-filter").PersonFilterResult, part: OutfitPhotoPart): boolean {
   if (!result.segmentationAvailable || result.people > 1) return false;
   if (!result.personFound) return result.people === 0;
-  // pessoa tirada pela segmentação mas sem esqueleto para separar as peças: a foto segue e a barra é achada pela cor
-  // (splitByHem) — a pessoa já não está na foto, só o(s) tecido(s)
-  if (!result.garments) return part === "upper" || part === "lower";
+  // Removing skin does not identify which surviving garment is the requested
+  // one. Without part evidence, shoes/another garment must not become a print.
+  if (!result.garments) return false;
   // With an explicit part, ‘ambiguous’ means both upper and lower garments exist,
   // not that the requested garment was left unfiltered.
   return result.garments.kept === part && (part !== "full" || !result.garments.ambiguous);
@@ -331,5 +342,7 @@ export function prepareOutfitPhoto(img: CanvasImageSource & { width: number; hei
     let out = await attempt(); if (out === "timeout") out = await attempt();
     return out === "timeout" ? null : out;
   })();
-  cache.set(part, task); return task;
+  cache.set(part, task);
+  void task.then(result => { if (!result && cache!.get(part) === task) cache!.delete(part); });
+  return task;
 }

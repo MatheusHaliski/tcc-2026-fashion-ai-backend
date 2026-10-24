@@ -1,0 +1,40 @@
+{
+  "api": "SIMULATED",
+  "gpuExecuted": false,
+  "results": [
+    {
+      "viewport": "desktop",
+      "before": {
+        "x": 912.53125,
+        "y": 323.390625,
+        "width": 458.46875,
+        "height": 883.71875
+      },
+      "after": {
+        "x": 912.53125,
+        "y": 64,
+        "width": 458.46875,
+        "height": 883.71875
+      },
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "viewport": "mobile",
+      "before": {
+        "x": 25,
+        "y": 367.6875,
+        "width": 340,
+        "height": 753.6875
+      },
+      "after": {
+        "x": 25,
+        "y": 64,
+        "width": 340,
+        "height": 753.6875
+      },
+      "overflow": false,
+      "errors": []
+    }
+  ]
+}

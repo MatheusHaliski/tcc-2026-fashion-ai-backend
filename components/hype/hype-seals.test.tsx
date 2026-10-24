@@ -57,10 +57,10 @@ describe("frente dos cards", () => {
     expect(hypeMedals(front).map((m) => m.title)).toEqual(["Selo de Hype: Viral", "Selo de Hype: Tendência"]);
     expect(screen.queryByTitle("Selo de Hype: Raro")).toBeNull();
     // mesmo lugar do selo de marca (anatomia padrão: bloco "categoria · marca · selos"), layout do card intacto
-    const slot = front.querySelector(".pc-sub .seal-slot") as HTMLElement;
+    const slot = front.querySelector(".card-seals .seal-slot") as HTMLElement;
     expect(slot.getAttribute("role")).toBe("img");
     expect(slot.getAttribute("aria-label")).toBe("selos: Selo de Hype: Viral, Selo de Hype: Tendência");
-    expect(front.querySelector(".pc-hype-row .hype-badge")).toBeTruthy();
+    expect(front.querySelector(".pc-tab-live-score .hype-badge")).toBeTruthy();
     expect(api.calls.filter((c) => c.path.startsWith("/api/hype"))).toHaveLength(1);   // só o resumo em lote de sempre
   });
 
@@ -69,7 +69,7 @@ describe("frente dos cards", () => {
     const { container } = renderApp(<><PieceCard piece={PIECE} seals={[brand("Nike Verde"), brand("Nike Azul"), brand("Nike Ouro")]} /><PieceCard piece={PIECE_2} /></>);
     expect(await screen.findByTitle("Selo de Hype: Viral")).toBeTruthy();
     const [first, second] = Array.from(container.querySelectorAll<HTMLElement>(".fcard-face.is-front"));
-    expect(Array.from(first.querySelectorAll<HTMLElement>(".pc-sub .seal-medallion")).map((m) => m.title)).toEqual(["Nike Verde", "Nike Azul", "Selo de Hype: Viral"]);
+    expect(Array.from(first.querySelectorAll<HTMLElement>(".card-seals .seal-medallion")).map((m) => m.title)).toEqual(["Nike Verde", "Nike Azul", "Selo de Hype: Viral"]);
     await waitFor(() => expect(second.querySelector(".hype-badge.is-empty")).toBeTruthy());
     expect(hypeMedals(second)).toHaveLength(0);
   });
@@ -79,7 +79,7 @@ describe("frente dos cards", () => {
     const { container } = renderApp(<SchemeCard scheme={SCHEME} />);
     expect(await screen.findByTitle("Selo de Hype: Tendência")).toBeTruthy();
     const front = container.querySelector(".fcard-face.is-front") as HTMLElement;
-    const slot = front.querySelector(".c-priceline .seal-slot") as HTMLElement;
+    const slot = front.querySelector(".card-seals .seal-slot") as HTMLElement;
     expect(slot.getAttribute("aria-label")).toBe("selos: Selo de Hype: Tendência, Selo de Hype: Emergente");
     expect(hypeMedals(front)).toHaveLength(2);
   });

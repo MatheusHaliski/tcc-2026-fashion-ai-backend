@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class FaiPointsLedgerEntry <<fai_points_ledger>> {
@@ -83,7 +83,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
   class UserAchievement <<user_achievements>> {
     +id: UUID

@@ -10,6 +10,7 @@ import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.lens.LensService;
 import br.com.fashionai.application.ports.EmailSenderPort;
 import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.privacy.AccountDataCleanup;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.DataExportRequest;
@@ -144,6 +145,8 @@ public class AccountService {
     private final EmailSenderPort email;
     private final NotificationService notifications;
     private final Audit audit;
+    @Autowired(required = false)
+    private List<AccountDataCleanup> accountDataCleanup = List.of();
 
     public AccountService(UserRepository users, UserPreferencesRepository preferences, UserConsentRepository consents,
                           VerificationCodeRepository codes, DataExportRequestRepository exports, WardrobeItemRepository pieces,
@@ -240,6 +243,7 @@ public class AccountService {
         out.put("profileVisibility", u.getProfileVisibility());
         out.put("sex", u.getSex());
         out.put("runwayOptOut", u.isRunwayOptOut());
+        out.put("auraHypeEnabled", preferences.findByUserId(u.getId()).map(p -> p.isAuraHype()).orElse(false));
         out.put("pronouns", u.getPronouns());
         out.put("links", Json.list(u.getLinksJson()));
         if (u.getProfileType() == ProfileType.MARCA) {
@@ -689,6 +693,9 @@ public class AccountService {
         for (User u : users.findByStatus(AccountStatus.DELETION_SCHEDULED)) {
             if (u.getDeletionScheduledFor() == null || u.getDeletionScheduledFor().isAfter(Instant.now())) {
                 continue;
+            }
+            for (AccountDataCleanup cleanup : accountDataCleanup) {
+                cleanup.purge(u.getId());
             }
             String tag = u.getId().toString().substring(0, 8);
             for (WardrobeItem p : pieces.findByUserIdOrderByCreatedAtDesc(u.getId())) {

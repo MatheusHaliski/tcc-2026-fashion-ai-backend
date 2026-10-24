@@ -1,0 +1,4 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /settings;PATCH /api/me/sensitive (direto);PATCH /api/me/sensitive;MeController;AccountService.updateSensitive()
+Tela /settings;POST /api/me/exports (direto);POST /api/me/exports;MeController;AccountService.requestExport()
+Tela /settings;DELETE /api/auth/sessions/{sessionId} (direto);DELETE /api/auth/sessions/{sessionId};AuthController;IdentityService.revokeSession()

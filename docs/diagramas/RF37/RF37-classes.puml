@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class Brand <<brands>> {
@@ -34,7 +34,7 @@ package "fai-domain (entidades JPA)" {
     +fixtureKey: String
     +sourceConfidence: BigDecimal
     +verifiedAt: Instant
-    .. +2 campos ..
+    .. +3 campos ..
   }
   class BrandProfile <<brand_profiles>> {
     +id: UUID
@@ -159,12 +159,12 @@ package "fai-application" {
     +decks()
     +deckOf()
     +quests()
+    +duel()
     +combinationsFor()
     +checkCombination()
     +redeem()
     +vouchers()
-    +saveCombination()
-    +deleteCombination()
+    +brandTab()
   }
 }
 FlairService ..> BrandProfile : usa

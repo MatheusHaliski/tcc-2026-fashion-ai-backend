@@ -5,7 +5,7 @@ import { compose, fitBody } from "./compose";
 import { DEFAULT_BODY } from "../body-spec";
 import { baseNormals } from "./three-human";
 import { bodyParam, garmentGeometry, SPECS, texturedGeometry } from "./garments";
-import { shirtPlacket } from "./garment-trims";
+import { shirtPlacket, garmentTrims } from "./garment-trims";
 const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
 const meta = JSON.parse(readFileSync(new URL("fai-body-v1.json", dir), "utf8")) as BodyMeta;
 const bin = readFileSync(new URL("fai-body-v1.bin", dir));
@@ -31,4 +31,14 @@ it("places seven buttons on the fitted centre-front from neckline to hem on both
   const geometry=texturedGeometry(gg,gg.position,photo);
   expect([...geometry.getAttribute("photoWeight").array].some(w=>w>0.5)).toBe(true);geometry.dispose();
  }
+});
+it("preserves photographed buttons and seams instead of overlaying a generic placket",()=>{
+ const c=compose(asset,fitBody(asset,{sex:"FEMININO"}).z,null,DEFAULT_BODY.FEMININO.stature),P=bodyParam(asset,c);
+ const gg=garmentGeometry(asset,c,baseNormals(c.body,asset.body.index,asset.body.renderVertex),P,SPECS.shirt)!;
+ const normal=garmentTrims(asset,c,P,gg),photo=garmentTrims(asset,c,P,gg,{preservePhotoDetails:true});
+ expect(normal.some(t=>t.part==='botoes')).toBe(true);
+ expect(photo.some(t=>['botoes','botoes-borda','carcela','costura','gola-ponta'].includes(t.part))).toBe(false);
+ expect(photo.filter(t=>t.part==='punho').length).toBe(normal.filter(t=>t.part==='punho').length);
+ const cuffs=photo.filter(t=>t.part==='punho');expect(cuffs.map(t=>t.side).sort()).toEqual([-1,1]);
+ for(const cuff of cuffs)expect(Math.sign(cuff.position[0])).toBe(cuff.side);
 });

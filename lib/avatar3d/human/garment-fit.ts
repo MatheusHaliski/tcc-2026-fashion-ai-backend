@@ -1,3 +1,5 @@
+import { lowerProfile, lowerVariantFit, applyLowerVariation } from "./lowerwear";
+import { upperProfile, upperVariantFit, applyUpperVariation } from "./upperwear";
 /*
  * Caimento por classe (PROVADOR-3D): a mesma família de molde muda de folga, queda e comprimento conforme a modelagem
  * declarada da peça — sem inventar: a classe vem da VARIAÇÃO da taxonomia (SKINNY, STRAIGHT, OVERSIZED, WIDE_LEG…), e os
@@ -15,12 +17,13 @@ import { SPECS, kindOf, specOf, type GarmentKind, type GarmentSpec } from "./gar
 
 export type FitClass = "justa" | "regular" | "oversized" | "estruturada" | "fluida";
 
-export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
+export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; material?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
 
 /** Variação de modelagem da taxonomia → classe de caimento. */
 export const VARIATION_FIT: Record<string, FitClass> = {
   SKINNY: "justa", EXTRA_SLIM: "justa", SLIM: "justa", MUSCLE_FIT: "justa",
   REGULAR: "regular", STRAIGHT: "regular", BOOTCUT: "regular", ATHLETIC_FIT: "regular",
+  TAPERED: "regular", RELAXED: "regular", PENCIL: "justa", A_LINE: "fluida",
   LOOSE: "oversized", BAGGY: "oversized", OVERSIZED: "oversized",
   WIDE_LEG: "fluida", FLARE: "fluida", FIT_AND_FLARE: "fluida",
 };
@@ -36,15 +39,62 @@ export const KIND_FIT: Record<GarmentKind, FitClass> = {
 const SUB_FIT: Record<string, FitClass> = { bodysuit: "justa", kimono: "fluida", windbreaker: "oversized", parka: "estruturada", blazer: "estruturada", tailored_pants: "estruturada", cargo_pants: "oversized", sweatshirt: "oversized" };
 
 export function fitClassOf(p: FitPiece): FitClass {
-  const v = (p.variation ?? "").toUpperCase();
+  const upperFit = upperVariantFit(p); if (upperFit) return upperFit;
+  const lowerFit = lowerVariantFit(p); if (lowerFit) return lowerFit;
+  const v = lowerSilhouetteOf(p) ?? (p.variation ?? "").toUpperCase();
   if (VARIATION_FIT[v]) return VARIATION_FIT[v];
+  // Catalogue items often have no variation column; use explicit model words, never brand stereotypes.
+  const name = (p.name ?? "").toLowerCase();
+  if (/\b(skinny|slim[ -]?fit|extra[ -]?slim|muscle[ -]?fit)\b/.test(name)) return "justa";
+  if (/\b(wide[ -]?leg|flare|pantalona)\b/.test(name)) return "fluida";
+  if (/\b(oversized|baggy|loose[ -]?fit)\b/.test(name)) return "oversized";
+  if (/\b(regular[ -]?fit|straight)\b/.test(name)) return "regular";
   const sub = (p.subcategory ?? "").toLowerCase();
+  if (upperProfile(p)) return upperProfile(p).fit;
+  if (lowerProfile(p)) return lowerProfile(p).fit;
   if (SUB_FIT[sub]) return SUB_FIT[sub];
   const k = kindOf(p); return k ? KIND_FIT[k] : "regular";
 }
 
 const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 const first = (p: FitPiece, dim: string) => (p.attributes?.[dim] ?? [])[0]?.toUpperCase() ?? null;
+
+/** Explicit catalogue variation wins over names, including a conflicting or unknown code. */
+export function lowerSilhouetteOf(p: FitPiece): string | null {
+  if (p.variation?.trim()) return p.variation.trim().toUpperCase();
+  const name = (p.name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  for (const [pattern, code] of [
+    [/\bboot[ -]?cut\b/, "BOOTCUT"], [/\bflare\b/, "FLARE"],
+    [/\bwide[ -]?leg\b|\bpantalona\b/, "WIDE_LEG"], [/\btapered\b|\bafunilad[ao]\b/, "TAPERED"],
+    [/\brelaxed(?:[ -]?fit)?\b/, "RELAXED"], [/\b(saia lapis|pencil skirt)\b/, "PENCIL"],
+    [/\b(evase|a[ -]?line)\b/, "A_LINE"],
+  ] as const) if (pattern.test(name)) return code;
+  return null;
+}
+
+/** Parametric silhouettes, not measured manufacturer patterns or physical cloth simulation. */
+function applyLowerSilhouette(sp: GarmentSpec, p: FitPiece): void {
+  const raw = lowerSilhouetteOf(p);
+  const shape = raw ? ({ PALAZZO: "WIDE_LEG", BELL_BOTTOM: "FLARE", CIGARETTE: "TAPERED", GAUCHO: "WIDE_LEG" } as Record<string, string>)[raw] ?? raw : null;
+  if (sp.kind === "pants" || sp.kind === "culottes" || sp.kind === "leggings") {
+    if (shape === "BOOTCUT" || shape === "FLARE") {
+      sp.legColumn = 1;
+      sp.legFlareStart = .52;
+      sp.flare = shape === "BOOTCUT" ? .04 : .075;
+    } else if (shape === "WIDE_LEG") {
+      sp.legColumn = 1.5; sp.legFlareStart = .18; sp.flare = .06;
+    } else if (shape === "TAPERED") {
+      sp.legColumn = .25; sp.flare = 0;
+    } else if (shape === "RELAXED") {
+      sp.ease *= 1.3; sp.legColumn = 1.12;
+    }
+  }
+  if (sp.kind === "skirt") {
+    if (shape === "PENCIL") { sp.flare = 0; sp.ease = .006; }
+    else if (shape === "STRAIGHT") sp.flare = .012;
+    else if (shape === "A_LINE") sp.flare = .17;
+  }
+}
 
 /** Comprimento da saia/vestido (m abaixo do início) pela dimensão LENGTH. */
 const SKIRT_LEN: Record<string, number> = { MICRO: 0.24, MINI: 0.32, MID_THIGH: 0.38, KNEE: 0.5, MIDI: 0.66, MAXI: 0.88, FLOOR_LENGTH: 0.95, ANKLE_LENGTH: 0.88 };
@@ -78,6 +128,18 @@ export function necklineOf(p: FitPiece): string | null {
   return null;
 }
 /** Início do cano da bota (0 quadril → 1 tornozelo) pela dimensão SHAFT_HEIGHT ou pela subcategoria. */
+// Same normalized torso coordinate as coverageOf: higher values put the waistband higher.
+const RISE: Record<string, number> = { LOW_RISE: .10, MID_RISE: .18, HIGH_RISE: .34, SUPER_HIGH_RISE: .43 };
+export function riseOf(p: FitPiece): string | null {
+  const declared = first(p, "RISE");
+  if (declared) return RISE[declared] === undefined ? null : declared;
+  const name = (p.name ?? "").toLowerCase();
+  if (/super[ -]?high[ -]?rise|cintura super alta/.test(name)) return "SUPER_HIGH_RISE";
+  if (/high[ -]?rise|cintura alta/.test(name)) return "HIGH_RISE";
+  if (/mid[ -]?rise|cintura m[eé]dia/.test(name)) return "MID_RISE";
+  if (/low[ -]?rise|cintura baixa/.test(name)) return "LOW_RISE";
+  return null;
+}
 const SHAFT: Record<string, number> = { ANKLE: 0.86, MID_TOP: 0.86, HIGH_TOP: 0.82, QUARTER: 0.88, CREW: 0.8, MID_CALF: 0.72, KNEE_HIGH: 0.55, OVER_THE_KNEE: 0.42, THIGH_HIGH: 0.25 };
 const SHAFT_SUB: Record<string, number> = { ankle_boots: 0.86, combat_boots: 0.8, boots: 0.72, long_boots: 0.56 };
 
@@ -113,20 +175,35 @@ export function specFor(p: FitPiece): GarmentSpec | null {
     case "fluida":
       sp.ease = base.ease * 1.2; if (draped) sp.drape = 1; sp.bustFall = 1; sp.flare = base.flare * 1.5; if (legged) sp.legColumn = Math.max(base.legColumn, 1.3); break;
   }
-  // jogger e calça de moletom: punho na barra (afunila no tornozelo) — não é uma calça reta
+  applyLowerSilhouette(sp, p);
+  applyUpperVariation(sp, p);
+  // Cuffs depend on the declared variation, not every sweatpant sharing one taper.
   const sub = (p.subcategory ?? "").toLowerCase();
-  if (sub === "jogger_pants" || sub === "sweatpants") { sp.legColumn = 0.6; sp.flare = 0; }
+  applyLowerVariation(sp, p);
   // comprimentos declarados (dimensões da taxonomia)
   const len = first(p, "LENGTH"), sleeve = first(p, "SLEEVE_LENGTH"), shaft = first(p, "SHAFT_HEIGHT");
   if (len && base.skirt > 0 && SKIRT_LEN[len] !== undefined) sp.skirt = SKIRT_LEN[len];
   if (len && legged && LEG_LEN[len] !== undefined) sp.leg = LEG_LEN[len];
-  if (len === "CROPPED" && !Number.isNaN(base.hem)) sp.hem = Math.max(base.hem, 0.45);
+  if (sp.liningLeg && len && SKIRT_LEN[len] !== undefined) sp.liningLeg = Math.min(sp.liningLeg, .26);
+  if (len === "CROPPED" && !Number.isNaN(base.hem)) { sp.hem = Math.max(base.hem, 0.45); sp.skirt = 0; }
   if (len === "LONGLINE" && !Number.isNaN(base.hem)) sp.hem = Math.min(base.hem, -0.16);
   if (sleeve && SLEEVE_LEN[sleeve] !== undefined && !Number.isNaN(base.hem)) sp.sleeve = SLEEVE_LEN[sleeve];
   if (k === "boots") sp.shaft = (shaft ? SHAFT[shaft] : undefined) ?? SHAFT_SUB[sub] ?? base.shaft;
   // decote (peças de cima e vestidos): dimensão NECKLINE ou o nome da peça
-  const neckline = !Number.isNaN(base.hem) && base.leg === 0 ? necklineOf(p) : null;
+  const neckline = !Number.isNaN(base.hem) ? necklineOf(p) : null;
   if (neckline) Object.assign(sp, NECKLINE[neckline]);
+  // Jumpsuits have a neckline too, but RISE must never truncate their upper body.
+  const rise = riseOf(p);
+  if (rise && Number.isNaN(base.hem) && Number.isFinite(base.waist)) sp.waist = RISE[rise];
+  const closure = first(p, "CLOSURE");
+  if (upperProfile(p) && closure) sp.frontOpening = 0;
+  if (k === "shirt" && closure) {
+    // A zipper, tie or pullover must not acquire seven synthetic shirt buttons.
+    sp.placket = ["BUTTON", "SNAP", "SINGLE_BREASTED"].includes(closure);
+    if (!sp.placket) sp.placketLength = undefined;
+  }
+  sp.fabric = (p.material ?? first(p, "MATERIAL"))?.toUpperCase() ?? undefined;
+  if (["jeans", "denim_shorts"].includes(sub) && (!sp.fabric || ["COTTON", "DENIM"].includes(sp.fabric))) sp.weave = "denim";
   sp.ease = clamp(sp.ease, 0.0015, 0.05);
   return sp;
 }

@@ -5,7 +5,7 @@
  * camiseta encolhia para um "carimbo" no peito do manequim e o fundo da foto virava a cor do tecido.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BACKDROP_TOLERANCE, fabricColor, garmentTexture, kindOf, photoInfo, photoMask, shoeColors, trimColors } from "./garments";
+import { BACKDROP_TOLERANCE, fabricColor, garmentTexture, kindOf, photoInfo, photoMask, shoeColors, trimColors, SPECS } from "./garments";
 
 /** Imagem de teste: buffer RGBA com largura/altura, desenhável no canvas falso abaixo. */
 interface Img { width: number; height: number; pixels: Uint8ClampedArray }
@@ -140,6 +140,68 @@ describe("cores e textura vêm de dentro da peça", () => {
     const plain = opaque();
     expect(trimColors(plain as unknown as HTMLImageElement, "#dc1e1e", photoInfo(plain as unknown as HTMLImageElement)).hem).toBeNull();
   });
+});
+
+it("measures the torso rather than including disconnected long sleeves in the front projection", () => {
+  const img = rgba(320, 400, [0, 0, 0, 0]);
+  rect(img, 90, 20, 230, 380, [20, 40, 110, 255]);
+  rect(img, 10, 30, 310, 100, [20, 40, 110, 255]);
+  rect(img, 10, 100, 55, 380, [20, 40, 110, 255]);
+  rect(img, 265, 100, 310, 380, [20, 40, 110, 255]);
+  const info = photoInfo(img as unknown as HTMLImageElement)!;
+  expect(info.widthAt(.93)!.x1 - info.widthAt(.93)!.x0).toBeGreaterThan(290);
+  expect(info.torsoWidthAt!(.93)!.x1 - info.torsoWidthAt!(.93)!.x0).toBeCloseTo(140, 0);
+});
+
+it.each(["shirt", "hoodie", "sweater", "jacket", "coat"] as const)("keeps distinct fabric colours on both sides of %s", kind => {
+  const img = rgba(120, 160, [0, 0, 0, 0]);
+  rect(img, 20, 10, 60, 150, [20, 40, 110, 255]);
+  rect(img, 60, 10, 100, 150, [25, 120, 60, 255]);
+  const info = photoInfo(img as unknown as HTMLImageElement)!;
+  expect(info.landmarks).toBeTruthy();
+  const tex = garmentTexture(img as unknown as HTMLImageElement, "#14286e", null, info, SPECS[kind]);
+  const atlas = tex.image as FakeCanvas;
+  expect(atlas.pixel(150, 100).slice(0, 3)).toEqual([20, 40, 110]);
+  expect(atlas.pixel(210, 100).slice(0, 3)).toEqual([25, 120, 60]);
+  tex.dispose();
+});
+
+it("measures each photographed cuff independently instead of copying one contrasting cuff to the other", () => {
+  const img = rgba(200, 240, [0, 0, 0, 0]);
+  rect(img, 50, 15, 150, 220, [20, 40, 110, 255]);
+  rect(img, 10, 20, 55, 100, [230, 30, 70, 255]);
+  rect(img, 145, 20, 190, 100, [240, 190, 20, 255]);
+  const tc = trimColors(img as unknown as HTMLImageElement, "#14286e", photoInfo(img as unknown as HTMLImageElement));
+  expect(tc.cuffLeft).toBe("#e61e46");
+  expect(tc.cuffRight).toBe("#f0be14");
+});
+
+it.each(["shirt", "hoodie", "jacket", "coat"] as const)("uses the detected torso centre with one extended sleeve in %s", kind => {
+  const img = rgba(400, 200, [0, 0, 0, 0]);
+  rect(img, 220, 10, 270, 190, [20, 40, 110, 255]);
+  rect(img, 270, 10, 320, 190, [25, 120, 60, 255]);
+  rect(img, 10, 30, 220, 45, [230, 30, 70, 255]); // sleeve moves the global midpoint far left of the torso
+  const info = photoInfo(img as unknown as HTMLImageElement)!;
+  expect(info.landmarks!.neckline.x).toBeGreaterThan(250);
+  expect((info.box.x0 + info.box.x1) / 2).toBeLessThan(200);
+  const tex = garmentTexture(img as unknown as HTMLImageElement, "#14286e", null, info, SPECS[kind]);
+  const atlas = tex.image as FakeCanvas;
+  expect(atlas.pixel(500, 100).slice(0, 3)).toEqual([20, 40, 110]);
+  expect(atlas.pixel(700, 100).slice(0, 3)).toEqual([25, 120, 60]);
+  tex.dispose();
+});
+
+it("does not use the wider leg inset for an upper panel with contrasting edge trims", () => {
+  const img = rgba(200, 160, [0, 0, 0, 0]);
+  rect(img, 20, 10, 100, 150, [230, 30, 70, 255]);
+  rect(img, 44, 10, 76, 150, [20, 40, 110, 255]);
+  rect(img, 100, 10, 180, 150, [25, 120, 60, 255]);
+  const info = photoInfo(img as unknown as HTMLImageElement)!;
+  const tex = garmentTexture(img as unknown as HTMLImageElement, "#14286e", null, info, SPECS.shirt);
+  const atlas = tex.image as FakeCanvas;
+  expect(atlas.pixel(250, 100).slice(0, 3)).toEqual([20, 40, 110]);
+  expect(atlas.pixel(350, 100).slice(0, 3)).toEqual([25, 120, 60]);
+  tex.dispose();
 });
 
 describe("tipo de molde", () => {

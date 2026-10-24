@@ -2,6 +2,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { resolveCardArt, BRICKS, brickColor, ART_INDEX, studioOf } from "@/lib/card-art";
 import { CardArtLayer, Blossom, Leaf, Palm, Snowflake, Sun } from "@/components/card-art";
+import { fashionPreset } from "@/lib/aura-fashion";
 import type { ArtEffects, ArtFamily, ArtVariant, PieceArt, Season } from "@/lib/piece-art";
 
 /**
@@ -40,6 +41,8 @@ const SEASON_ACCENT: Record<Season, string> = { SPRING: "#F4A7C0", SUMMER: "#FFC
 
 export function accentOf(bg: Record<string, unknown> | null | undefined, art: PieceArt): string {
   const s = studioOf(bg);
+  const selected = fashionPreset(s.compositionPreset);
+  if (selected) return selected.palette[0];
   const variant = s.aura?.variantId ? ART_INDEX.variants[s.aura.variantId] : undefined;
   const palette = variant ? ART_INDEX.presets[variant.presetId]?.palette : undefined;
   if (palette?.length) return palette[Math.min(1, palette.length - 1)];
@@ -66,11 +69,13 @@ export function useInView<T extends Element>(): [(el: T | null) => void, boolean
  */
 const CONTAIN = { position: "absolute", inset: 0, overflow: "hidden", borderRadius: "inherit", pointerEvents: "none", zIndex: 0 } as const;
 
-export function ArtStage({ bg, art, density, pieceHex }: { bg?: Record<string, unknown> | null; art: PieceArt; density: "compact" | "expanded"; pieceHex?: string | null }) {
+export function ArtStage({ bg, art, density, pieceHex, animate = false }: { bg?: Record<string, unknown> | null; art: PieceArt; density: "compact" | "expanded"; pieceHex?: string | null; animate?: boolean }) {
   const resolved = resolveCardArt(bg);
-  // feed leve: no card compacto a arte é estática (sem animação de preset e, no lugar do vídeo, o pôster dele)
-  const user = density === "expanded" || resolved.kind === "none" ? resolved
-    : { ...resolved, animation: null, video: undefined, image: resolved.image ?? resolved.video?.poster ?? undefined };
+  // Vídeos selecionados continuam vídeos em qualquer card. ArtVideo pausa/descarrega fora da tela;
+  // a densidade do layout não deve substituir a escolha animada por um pôster.
+  const user = animate || density === "expanded" || resolved.kind === "none" || !!resolved.video
+    ? resolved
+    : { ...resolved, animation: null, video: undefined, image: resolved.image };
   const { family, variant, season } = art.template;
   const fx = art.effects;
   const base = family === "seasonal" ? SEASON_BASE[season] : FAMILY_BASE[family];

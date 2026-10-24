@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF13 — Criar um esquema de identidade pessoal de moda na página 'DNA de Estilo'\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF13 — Criar um esquema de identidade pessoal de moda na página 'DNA de Estilo'\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class DnaScheme <<dna_schemes>> {
@@ -34,7 +34,7 @@ package "fai-domain (entidades JPA)" {
     +colorPaletteJson: String
     +narrativeType: NarrativeType
     +seasonalTheme: Season
-    .. +25 campos ..
+    .. +24 campos ..
   }
   class DnaSchemeItem <<dna_scheme_items>> {
     +id: UUID
@@ -49,6 +49,7 @@ package "fai-domain (entidades JPA)" {
   }
   class Scheme <<schemes>> {
     +id: UUID
+    +tipoLook: TipoLook
     +user: User
     +originalScheme: Scheme
     +title: String
@@ -57,8 +58,7 @@ package "fai-domain (entidades JPA)" {
     +origin: SchemeOrigin
     +style: String
     +occasion: String
-    +season: Season
-    .. +46 campos ..
+    .. +44 campos ..
   }
   class StyleDna <<style_dna>> {
     +id: UUID
@@ -89,7 +89,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
 }
 package "fai-domain (enums)" {

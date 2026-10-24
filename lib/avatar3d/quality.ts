@@ -18,9 +18,11 @@ export const LIMITS = {
   frontYawWarn: 12, frontYawBlock: 22, pitchWarn: 14, pitchBlock: 24, rollWarn: 30,
   sideYawMin: 18, sideYawMax: 62,
   lumBlock: 50, lumWarn: 75, lumHigh: 215, clipHighBlock: 0.25, clipHighWarn: 0.1, clipLowBlock: 0.15,
-  balanceWarn: 1.4, balanceBlock: 2.6,
+  balanceWarn: 1.4, balanceBlock: 1.9,
   sharpBlock: 6, sharpWarn: 14,
-  blink: 0.55, jawOpen: 0.35, rmsWarn: 0.9, occWarn: 0.115,
+  // Fraction of detailed facial grid cells; conservative quality heuristics, not an identity score.
+  detailBlock: 0.08, detailWarn: 0.18,
+  blink: 0.55, jawOpen: 0.35, rmsWarn: 0.9, occWarn: 0.115, occBlock: 0.55,
 } as const;
 
 export interface PhotoCheck {
@@ -45,10 +47,14 @@ export function checkPhoto(p: PhotoCheck): Issue[] {
     if (s.clipHigh > L.clipHighBlock) out.push({ code: "TOO_BRIGHT", severity: "block" });
     else if (s.lum > L.lumHigh || s.clipHigh > L.clipHighWarn) out.push({ code: "TOO_BRIGHT", severity: "warn" });
     if (s.clipLow > L.clipLowBlock) out.push({ code: "DEEP_SHADOWS", severity: "block" });
+    // luz muito de um lado vira mancha escura assada na textura do rosto 3D (a equalização não a tira inteira):
+    // acima do bloqueio a foto não serve para o avatar e o app pede outra
     if (s.balance > L.balanceBlock) out.push({ code: "SIDE_LIGHT", severity: "block", params: { ratio: +s.balance.toFixed(2) } });
     else if (s.balance > L.balanceWarn) out.push({ code: "SIDE_LIGHT", severity: "warn", params: { ratio: +s.balance.toFixed(2) } });
     if (s.sharpness < L.sharpBlock) out.push({ code: "BLURRY", severity: "block" });
     else if (s.sharpness < L.sharpWarn) out.push({ code: "BLURRY", severity: "warn" });
+    if (s.detailCoverage < L.detailBlock) out.push({ code: "DETAIL_SPARSE", severity: "block", params: { pct: Math.round(s.detailCoverage * 100) } });
+    else if (s.detailCoverage < L.detailWarn) out.push({ code: "DETAIL_SPARSE", severity: "warn", params: { pct: Math.round(s.detailCoverage * 100) } });
   }
   const q = p.pose;
   if (q) {
@@ -71,9 +77,10 @@ export function checkPhoto(p: PhotoCheck): Issue[] {
     if ((b.jawOpen ?? 0) > L.jawOpen) out.push({ code: "MOUTH_OPEN", severity: "warn" });
   }
   const occ = p.occlusion ?? 0;
-  // Só avisa: o índice não separa barba, sombra e sardas de uma mão na frente do rosto (barba grisalha chega a 0,51;
-  // mão na testa, 0,25). Com o avatar feito de uma foto só, a pessoa vê a prévia antes de salvar e decide.
-  if (occ > L.occWarn || (p.rms !== undefined && p.rms > L.rmsWarn)) out.push({ code: "FACE_OCCLUDED", severity: "warn", params: { pct: Math.round(occ * 100) } });
+  // Aviso em qualquer cobertura; bloqueio só além do que uma barba alcança (barba grisalha chega a 0,51; mão na
+  // testa, 0,25): acima de 0,55 a maior parte do rosto não é pele visível e a textura sairia inventada.
+  if (occ > L.occBlock) out.push({ code: "FACE_OCCLUDED", severity: "block", params: { pct: Math.round(occ * 100) } });
+  else if (occ > L.occWarn || (p.rms !== undefined && p.rms > L.rmsWarn)) out.push({ code: "FACE_OCCLUDED", severity: "warn", params: { pct: Math.round(occ * 100) } });
   return out;
 }
 

@@ -1,0 +1,2413 @@
+{
+  "version": 5,
+  "presets": [
+    {
+      "id": "satin-ivory",
+      "name": "Cetim editorial",
+      "family": "COMMON",
+      "palette": [
+        "#dcc7a5",
+        "#faf1e1"
+      ],
+      "image": "/aura/fashion-curated/satin-ivory.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL",
+      "video": "/aura/fashion-curated/satin-ivory.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "liquid-chrome",
+      "name": "Cromo líquido",
+      "family": "COMMON",
+      "palette": [
+        "#b9a3d5",
+        "#c4dfef"
+      ],
+      "image": "/aura/fashion-curated/liquid-chrome.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL",
+      "video": "/aura/fashion-curated/liquid-chrome.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "cyan-thread",
+      "name": "Fios de luz ciano",
+      "family": "ELECTRO",
+      "palette": [
+        "#7edbe8",
+        "#566b8b"
+      ],
+      "image": "/aura/fashion-curated/cyan-thread.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL",
+      "video": "/aura/fashion-curated/cyan-thread.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "rose-thread",
+      "name": "Fios de luz rosé",
+      "family": "ELECTRO",
+      "palette": [
+        "#d49abd",
+        "#e1b591"
+      ],
+      "image": "/aura/fashion-curated/rose-thread.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL",
+      "video": "/aura/fashion-curated/rose-thread.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "violet-ink",
+      "name": "Tinta violeta",
+      "family": "SPLASH",
+      "palette": [
+        "#a48bcf",
+        "#ede3d6"
+      ],
+      "image": "/aura/fashion-curated/violet-ink.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL",
+      "video": "/aura/fashion-curated/violet-ink.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "coral-ink",
+      "name": "Tinta coral",
+      "family": "SPLASH",
+      "palette": [
+        "#d77858",
+        "#f2d2ba"
+      ],
+      "image": "/aura/fashion-curated/coral-ink.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL",
+      "video": "/aura/fashion-curated/coral-ink.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "couture-fiber-satin",
+      "name": "Cetim fotônico",
+      "family": "COMMON",
+      "palette": [
+        "#65d9ef",
+        "#86b7d7"
+      ],
+      "image": "/aura/fashion-curated/couture-fiber-satin.webp",
+      "license": "ORIGINAL",
+      "source": "Composição original gerada para FashionAI",
+      "video": "/aura/fashion-curated/couture-fiber-satin.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "couture-titanium",
+      "name": "Titânio violeta",
+      "family": "COMMON",
+      "palette": [
+        "#be94ee",
+        "#b9ccd8"
+      ],
+      "image": "/aura/fashion-curated/couture-titanium.webp",
+      "license": "ORIGINAL",
+      "source": "Composição original gerada para FashionAI",
+      "video": "/aura/fashion-curated/couture-titanium.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "couture-holo-organza",
+      "name": "Organza holográfica",
+      "family": "COMMON",
+      "palette": [
+        "#88def0",
+        "#bba9e3"
+      ],
+      "image": "/aura/fashion-curated/couture-holo-organza.webp",
+      "license": "ORIGINAL",
+      "source": "Composição original gerada para FashionAI",
+      "video": "/aura/fashion-curated/couture-holo-organza.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "couture-gold-pleats",
+      "name": "Plissado constelar",
+      "family": "COMMON",
+      "palette": [
+        "#e8c791",
+        "#a9987f"
+      ],
+      "image": "/aura/fashion-curated/couture-gold-pleats.webp",
+      "license": "ORIGINAL",
+      "source": "Composição original gerada para FashionAI",
+      "video": "/aura/fashion-curated/couture-gold-pleats.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "couture-mint-glass",
+      "name": "Vidro mint",
+      "family": "COMMON",
+      "palette": [
+        "#92d8c4",
+        "#c1d0ca"
+      ],
+      "image": "/aura/fashion-curated/couture-mint-glass.webp",
+      "license": "ORIGINAL",
+      "source": "Composição original gerada para FashionAI",
+      "video": "/aura/fashion-curated/couture-mint-glass.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "couture-holo-mesh",
+      "name": "Malha holográfica",
+      "family": "COMMON",
+      "palette": [
+        "#c4a0e6",
+        "#e7b0bd"
+      ],
+      "image": "/aura/fashion-curated/couture-holo-mesh.webp",
+      "license": "ORIGINAL",
+      "source": "Composição original gerada para FashionAI",
+      "video": "/aura/fashion-curated/couture-holo-mesh.mp4",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-01-ivory",
+      "name": "Cetim · Marfim couture",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-01-ivory.webp",
+      "video": "/aura/fashion-curated/common-01-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-01-chrome",
+      "name": "Cetim · Cromo editorial",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-01-chrome.webp",
+      "video": "/aura/fashion-curated/common-01-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-01-rose",
+      "name": "Cetim · Rosé têxtil",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-01-rose.webp",
+      "video": "/aura/fashion-curated/common-01-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-01-violet",
+      "name": "Cetim · Violeta prismático",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-01-violet.webp",
+      "video": "/aura/fashion-curated/common-01-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-01-mint",
+      "name": "Cetim · Mint holográfico",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-01-mint.webp",
+      "video": "/aura/fashion-curated/common-01-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-02-ivory",
+      "name": "Cromo líquido · Marfim couture",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-02-ivory.webp",
+      "video": "/aura/fashion-curated/common-02-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-02-chrome",
+      "name": "Cromo líquido · Cromo editorial",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-02-chrome.webp",
+      "video": "/aura/fashion-curated/common-02-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-02-rose",
+      "name": "Cromo líquido · Rosé têxtil",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-02-rose.webp",
+      "video": "/aura/fashion-curated/common-02-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-02-violet",
+      "name": "Cromo líquido · Violeta prismático",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-02-violet.webp",
+      "video": "/aura/fashion-curated/common-02-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-02-mint",
+      "name": "Cromo líquido · Mint holográfico",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-02-mint.webp",
+      "video": "/aura/fashion-curated/common-02-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-03-ivory",
+      "name": "Organza · Marfim couture",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-03-ivory.webp",
+      "video": "/aura/fashion-curated/common-03-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-03-chrome",
+      "name": "Organza · Cromo editorial",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-03-chrome.webp",
+      "video": "/aura/fashion-curated/common-03-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-03-rose",
+      "name": "Organza · Rosé têxtil",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-03-rose.webp",
+      "video": "/aura/fashion-curated/common-03-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-03-violet",
+      "name": "Organza · Violeta prismático",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-03-violet.webp",
+      "video": "/aura/fashion-curated/common-03-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-03-mint",
+      "name": "Organza · Mint holográfico",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-03-mint.webp",
+      "video": "/aura/fashion-curated/common-03-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-04-ivory",
+      "name": "Malha · Marfim couture",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-04-ivory.webp",
+      "video": "/aura/fashion-curated/common-04-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-04-chrome",
+      "name": "Malha · Cromo editorial",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-04-chrome.webp",
+      "video": "/aura/fashion-curated/common-04-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-04-rose",
+      "name": "Malha · Rosé têxtil",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-04-rose.webp",
+      "video": "/aura/fashion-curated/common-04-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-04-violet",
+      "name": "Malha · Violeta prismático",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-04-violet.webp",
+      "video": "/aura/fashion-curated/common-04-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-04-mint",
+      "name": "Malha · Mint holográfico",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-04-mint.webp",
+      "video": "/aura/fashion-curated/common-04-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-05-ivory",
+      "name": "Plissado · Marfim couture",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-05-ivory.webp",
+      "video": "/aura/fashion-curated/common-05-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-05-chrome",
+      "name": "Plissado · Cromo editorial",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-05-chrome.webp",
+      "video": "/aura/fashion-curated/common-05-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-05-rose",
+      "name": "Plissado · Rosé têxtil",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-05-rose.webp",
+      "video": "/aura/fashion-curated/common-05-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-05-violet",
+      "name": "Plissado · Violeta prismático",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-05-violet.webp",
+      "video": "/aura/fashion-curated/common-05-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-05-mint",
+      "name": "Plissado · Mint holográfico",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-05-mint.webp",
+      "video": "/aura/fashion-curated/common-05-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-06-ivory",
+      "name": "Vidro · Marfim couture",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-06-ivory.webp",
+      "video": "/aura/fashion-curated/common-06-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-06-chrome",
+      "name": "Vidro · Cromo editorial",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-06-chrome.webp",
+      "video": "/aura/fashion-curated/common-06-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-06-rose",
+      "name": "Vidro · Rosé têxtil",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-06-rose.webp",
+      "video": "/aura/fashion-curated/common-06-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-06-violet",
+      "name": "Vidro · Violeta prismático",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-06-violet.webp",
+      "video": "/aura/fashion-curated/common-06-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-06-mint",
+      "name": "Vidro · Mint holográfico",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-06-mint.webp",
+      "video": "/aura/fashion-curated/common-06-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-07-ivory",
+      "name": "Seda · Marfim couture",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-07-ivory.webp",
+      "video": "/aura/fashion-curated/common-07-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-07-chrome",
+      "name": "Seda · Cromo editorial",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-07-chrome.webp",
+      "video": "/aura/fashion-curated/common-07-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-07-rose",
+      "name": "Seda · Rosé têxtil",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-07-rose.webp",
+      "video": "/aura/fashion-curated/common-07-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-07-violet",
+      "name": "Seda · Violeta prismático",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-07-violet.webp",
+      "video": "/aura/fashion-curated/common-07-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-07-mint",
+      "name": "Seda · Mint holográfico",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-07-mint.webp",
+      "video": "/aura/fashion-curated/common-07-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-08-ivory",
+      "name": "Trama · Marfim couture",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-08-ivory.webp",
+      "video": "/aura/fashion-curated/common-08-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-08-chrome",
+      "name": "Trama · Cromo editorial",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-08-chrome.webp",
+      "video": "/aura/fashion-curated/common-08-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-08-rose",
+      "name": "Trama · Rosé têxtil",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-08-rose.webp",
+      "video": "/aura/fashion-curated/common-08-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-08-violet",
+      "name": "Trama · Violeta prismático",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-08-violet.webp",
+      "video": "/aura/fashion-curated/common-08-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "common-08-mint",
+      "name": "Trama · Mint holográfico",
+      "family": "COMMON",
+      "image": "/aura/fashion-curated/common-08-mint.webp",
+      "video": "/aura/fashion-curated/common-08-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-01-ivory",
+      "name": "Fibras · Marfim couture",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-01-ivory.webp",
+      "video": "/aura/fashion-curated/electro-01-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-01-chrome",
+      "name": "Fibras · Cromo editorial",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-01-chrome.webp",
+      "video": "/aura/fashion-curated/electro-01-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-01-rose",
+      "name": "Fibras · Rosé têxtil",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-01-rose.webp",
+      "video": "/aura/fashion-curated/electro-01-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-01-violet",
+      "name": "Fibras · Violeta prismático",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-01-violet.webp",
+      "video": "/aura/fashion-curated/electro-01-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-01-mint",
+      "name": "Fibras · Mint holográfico",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-01-mint.webp",
+      "video": "/aura/fashion-curated/electro-01-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-02-ivory",
+      "name": "Órbitas · Marfim couture",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-02-ivory.webp",
+      "video": "/aura/fashion-curated/electro-02-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-02-chrome",
+      "name": "Órbitas · Cromo editorial",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-02-chrome.webp",
+      "video": "/aura/fashion-curated/electro-02-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-02-rose",
+      "name": "Órbitas · Rosé têxtil",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-02-rose.webp",
+      "video": "/aura/fashion-curated/electro-02-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-02-violet",
+      "name": "Órbitas · Violeta prismático",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-02-violet.webp",
+      "video": "/aura/fashion-curated/electro-02-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-02-mint",
+      "name": "Órbitas · Mint holográfico",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-02-mint.webp",
+      "video": "/aura/fashion-curated/electro-02-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-03-ivory",
+      "name": "Circuitos · Marfim couture",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-03-ivory.webp",
+      "video": "/aura/fashion-curated/electro-03-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-03-chrome",
+      "name": "Circuitos · Cromo editorial",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-03-chrome.webp",
+      "video": "/aura/fashion-curated/electro-03-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-03-rose",
+      "name": "Circuitos · Rosé têxtil",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-03-rose.webp",
+      "video": "/aura/fashion-curated/electro-03-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-03-violet",
+      "name": "Circuitos · Violeta prismático",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-03-violet.webp",
+      "video": "/aura/fashion-curated/electro-03-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-03-mint",
+      "name": "Circuitos · Mint holográfico",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-03-mint.webp",
+      "video": "/aura/fashion-curated/electro-03-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-04-ivory",
+      "name": "Arcos · Marfim couture",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-04-ivory.webp",
+      "video": "/aura/fashion-curated/electro-04-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-04-chrome",
+      "name": "Arcos · Cromo editorial",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-04-chrome.webp",
+      "video": "/aura/fashion-curated/electro-04-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-04-rose",
+      "name": "Arcos · Rosé têxtil",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-04-rose.webp",
+      "video": "/aura/fashion-curated/electro-04-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-04-violet",
+      "name": "Arcos · Violeta prismático",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-04-violet.webp",
+      "video": "/aura/fashion-curated/electro-04-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-04-mint",
+      "name": "Arcos · Mint holográfico",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-04-mint.webp",
+      "video": "/aura/fashion-curated/electro-04-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-05-ivory",
+      "name": "Pulso · Marfim couture",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-05-ivory.webp",
+      "video": "/aura/fashion-curated/electro-05-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-05-chrome",
+      "name": "Pulso · Cromo editorial",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-05-chrome.webp",
+      "video": "/aura/fashion-curated/electro-05-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-05-rose",
+      "name": "Pulso · Rosé têxtil",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-05-rose.webp",
+      "video": "/aura/fashion-curated/electro-05-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-05-violet",
+      "name": "Pulso · Violeta prismático",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-05-violet.webp",
+      "video": "/aura/fashion-curated/electro-05-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-05-mint",
+      "name": "Pulso · Mint holográfico",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-05-mint.webp",
+      "video": "/aura/fashion-curated/electro-05-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-06-ivory",
+      "name": "Traços · Marfim couture",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-06-ivory.webp",
+      "video": "/aura/fashion-curated/electro-06-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-06-chrome",
+      "name": "Traços · Cromo editorial",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-06-chrome.webp",
+      "video": "/aura/fashion-curated/electro-06-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-06-rose",
+      "name": "Traços · Rosé têxtil",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-06-rose.webp",
+      "video": "/aura/fashion-curated/electro-06-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-06-violet",
+      "name": "Traços · Violeta prismático",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-06-violet.webp",
+      "video": "/aura/fashion-curated/electro-06-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-06-mint",
+      "name": "Traços · Mint holográfico",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-06-mint.webp",
+      "video": "/aura/fashion-curated/electro-06-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-07-ivory",
+      "name": "Rede · Marfim couture",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-07-ivory.webp",
+      "video": "/aura/fashion-curated/electro-07-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-07-chrome",
+      "name": "Rede · Cromo editorial",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-07-chrome.webp",
+      "video": "/aura/fashion-curated/electro-07-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-07-rose",
+      "name": "Rede · Rosé têxtil",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-07-rose.webp",
+      "video": "/aura/fashion-curated/electro-07-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-07-violet",
+      "name": "Rede · Violeta prismático",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-07-violet.webp",
+      "video": "/aura/fashion-curated/electro-07-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-07-mint",
+      "name": "Rede · Mint holográfico",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-07-mint.webp",
+      "video": "/aura/fashion-curated/electro-07-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-08-ivory",
+      "name": "Horizonte · Marfim couture",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-08-ivory.webp",
+      "video": "/aura/fashion-curated/electro-08-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-08-chrome",
+      "name": "Horizonte · Cromo editorial",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-08-chrome.webp",
+      "video": "/aura/fashion-curated/electro-08-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-08-rose",
+      "name": "Horizonte · Rosé têxtil",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-08-rose.webp",
+      "video": "/aura/fashion-curated/electro-08-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-08-violet",
+      "name": "Horizonte · Violeta prismático",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-08-violet.webp",
+      "video": "/aura/fashion-curated/electro-08-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "electro-08-mint",
+      "name": "Horizonte · Mint holográfico",
+      "family": "ELECTRO",
+      "image": "/aura/fashion-curated/electro-08-mint.webp",
+      "video": "/aura/fashion-curated/electro-08-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-01-ivory",
+      "name": "Tinta · Marfim couture",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-01-ivory.webp",
+      "video": "/aura/fashion-curated/splash-01-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-01-chrome",
+      "name": "Tinta · Cromo editorial",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-01-chrome.webp",
+      "video": "/aura/fashion-curated/splash-01-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-01-rose",
+      "name": "Tinta · Rosé têxtil",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-01-rose.webp",
+      "video": "/aura/fashion-curated/splash-01-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-01-violet",
+      "name": "Tinta · Violeta prismático",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-01-violet.webp",
+      "video": "/aura/fashion-curated/splash-01-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-01-mint",
+      "name": "Tinta · Mint holográfico",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-01-mint.webp",
+      "video": "/aura/fashion-curated/splash-01-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-02-ivory",
+      "name": "Pigmento · Marfim couture",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-02-ivory.webp",
+      "video": "/aura/fashion-curated/splash-02-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-02-chrome",
+      "name": "Pigmento · Cromo editorial",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-02-chrome.webp",
+      "video": "/aura/fashion-curated/splash-02-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-02-rose",
+      "name": "Pigmento · Rosé têxtil",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-02-rose.webp",
+      "video": "/aura/fashion-curated/splash-02-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-02-violet",
+      "name": "Pigmento · Violeta prismático",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-02-violet.webp",
+      "video": "/aura/fashion-curated/splash-02-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-02-mint",
+      "name": "Pigmento · Mint holográfico",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-02-mint.webp",
+      "video": "/aura/fashion-curated/splash-02-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-03-ivory",
+      "name": "Névoa · Marfim couture",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-03-ivory.webp",
+      "video": "/aura/fashion-curated/splash-03-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-03-chrome",
+      "name": "Névoa · Cromo editorial",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-03-chrome.webp",
+      "video": "/aura/fashion-curated/splash-03-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-03-rose",
+      "name": "Névoa · Rosé têxtil",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-03-rose.webp",
+      "video": "/aura/fashion-curated/splash-03-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-03-violet",
+      "name": "Névoa · Violeta prismático",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-03-violet.webp",
+      "video": "/aura/fashion-curated/splash-03-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-03-mint",
+      "name": "Névoa · Mint holográfico",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-03-mint.webp",
+      "video": "/aura/fashion-curated/splash-03-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-04-ivory",
+      "name": "Aquarela · Marfim couture",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-04-ivory.webp",
+      "video": "/aura/fashion-curated/splash-04-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-04-chrome",
+      "name": "Aquarela · Cromo editorial",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-04-chrome.webp",
+      "video": "/aura/fashion-curated/splash-04-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-04-rose",
+      "name": "Aquarela · Rosé têxtil",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-04-rose.webp",
+      "video": "/aura/fashion-curated/splash-04-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-04-violet",
+      "name": "Aquarela · Violeta prismático",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-04-violet.webp",
+      "video": "/aura/fashion-curated/splash-04-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-04-mint",
+      "name": "Aquarela · Mint holográfico",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-04-mint.webp",
+      "video": "/aura/fashion-curated/splash-04-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-05-ivory",
+      "name": "Vórtice · Marfim couture",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-05-ivory.webp",
+      "video": "/aura/fashion-curated/splash-05-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-05-chrome",
+      "name": "Vórtice · Cromo editorial",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-05-chrome.webp",
+      "video": "/aura/fashion-curated/splash-05-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-05-rose",
+      "name": "Vórtice · Rosé têxtil",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-05-rose.webp",
+      "video": "/aura/fashion-curated/splash-05-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-05-violet",
+      "name": "Vórtice · Violeta prismático",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-05-violet.webp",
+      "video": "/aura/fashion-curated/splash-05-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-05-mint",
+      "name": "Vórtice · Mint holográfico",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-05-mint.webp",
+      "video": "/aura/fashion-curated/splash-05-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-06-ivory",
+      "name": "Gotas · Marfim couture",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-06-ivory.webp",
+      "video": "/aura/fashion-curated/splash-06-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-06-chrome",
+      "name": "Gotas · Cromo editorial",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-06-chrome.webp",
+      "video": "/aura/fashion-curated/splash-06-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-06-rose",
+      "name": "Gotas · Rosé têxtil",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-06-rose.webp",
+      "video": "/aura/fashion-curated/splash-06-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-06-violet",
+      "name": "Gotas · Violeta prismático",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-06-violet.webp",
+      "video": "/aura/fashion-curated/splash-06-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-06-mint",
+      "name": "Gotas · Mint holográfico",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-06-mint.webp",
+      "video": "/aura/fashion-curated/splash-06-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-07-ivory",
+      "name": "Mármore · Marfim couture",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-07-ivory.webp",
+      "video": "/aura/fashion-curated/splash-07-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-07-chrome",
+      "name": "Mármore · Cromo editorial",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-07-chrome.webp",
+      "video": "/aura/fashion-curated/splash-07-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-07-rose",
+      "name": "Mármore · Rosé têxtil",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-07-rose.webp",
+      "video": "/aura/fashion-curated/splash-07-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-07-violet",
+      "name": "Mármore · Violeta prismático",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-07-violet.webp",
+      "video": "/aura/fashion-curated/splash-07-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-07-mint",
+      "name": "Mármore · Mint holográfico",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-07-mint.webp",
+      "video": "/aura/fashion-curated/splash-07-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-08-ivory",
+      "name": "Ondas · Marfim couture",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-08-ivory.webp",
+      "video": "/aura/fashion-curated/splash-08-ivory.mp4",
+      "palette": [
+        "#d0b08f",
+        "#f1e9dc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-08-chrome",
+      "name": "Ondas · Cromo editorial",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-08-chrome.webp",
+      "video": "/aura/fashion-curated/splash-08-chrome.mp4",
+      "palette": [
+        "#a9aecb",
+        "#edf1ef"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-08-rose",
+      "name": "Ondas · Rosé têxtil",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-08-rose.webp",
+      "video": "/aura/fashion-curated/splash-08-rose.mp4",
+      "palette": [
+        "#be859e",
+        "#f2d5cc"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-08-violet",
+      "name": "Ondas · Violeta prismático",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-08-violet.webp",
+      "video": "/aura/fashion-curated/splash-08-violet.mp4",
+      "palette": [
+        "#8b6eb5",
+        "#d3c9ed"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "splash-08-mint",
+      "name": "Ondas · Mint holográfico",
+      "family": "SPLASH",
+      "image": "/aura/fashion-curated/splash-08-mint.webp",
+      "video": "/aura/fashion-curated/splash-08-mint.mp4",
+      "palette": [
+        "#6aada5",
+        "#d6e8dd"
+      ],
+      "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-scanner-ciano",
+      "name": "Scanner · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-scanner-ciano.webp",
+      "video": "/aura/fashion-curated/hype-scanner-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-scanner-violeta",
+      "name": "Scanner · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-scanner-violeta.webp",
+      "video": "/aura/fashion-curated/hype-scanner-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-scanner-ouro",
+      "name": "Scanner · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-scanner-ouro.webp",
+      "video": "/aura/fashion-curated/hype-scanner-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-scanner-verde",
+      "name": "Scanner · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-scanner-verde.webp",
+      "video": "/aura/fashion-curated/hype-scanner-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-xray-ciano",
+      "name": "Raio-X · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-xray-ciano.webp",
+      "video": "/aura/fashion-curated/hype-xray-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-xray-violeta",
+      "name": "Raio-X · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-xray-violeta.webp",
+      "video": "/aura/fashion-curated/hype-xray-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-xray-ouro",
+      "name": "Raio-X · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-xray-ouro.webp",
+      "video": "/aura/fashion-curated/hype-xray-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-xray-verde",
+      "name": "Raio-X · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-xray-verde.webp",
+      "video": "/aura/fashion-curated/hype-xray-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-dots-ciano",
+      "name": "Pontos · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-dots-ciano.webp",
+      "video": "/aura/fashion-curated/hype-dots-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-dots-violeta",
+      "name": "Pontos · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-dots-violeta.webp",
+      "video": "/aura/fashion-curated/hype-dots-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-dots-ouro",
+      "name": "Pontos · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-dots-ouro.webp",
+      "video": "/aura/fashion-curated/hype-dots-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-dots-verde",
+      "name": "Pontos · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-dots-verde.webp",
+      "video": "/aura/fashion-curated/hype-dots-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-stars-ciano",
+      "name": "Estrelas · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-stars-ciano.webp",
+      "video": "/aura/fashion-curated/hype-stars-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-stars-violeta",
+      "name": "Estrelas · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-stars-violeta.webp",
+      "video": "/aura/fashion-curated/hype-stars-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-stars-ouro",
+      "name": "Estrelas · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-stars-ouro.webp",
+      "video": "/aura/fashion-curated/hype-stars-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-stars-verde",
+      "name": "Estrelas · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-stars-verde.webp",
+      "video": "/aura/fashion-curated/hype-stars-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-metrics-ciano",
+      "name": "Métricas · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-metrics-ciano.webp",
+      "video": "/aura/fashion-curated/hype-metrics-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-metrics-violeta",
+      "name": "Métricas · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-metrics-violeta.webp",
+      "video": "/aura/fashion-curated/hype-metrics-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-metrics-ouro",
+      "name": "Métricas · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-metrics-ouro.webp",
+      "video": "/aura/fashion-curated/hype-metrics-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-metrics-verde",
+      "name": "Métricas · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-metrics-verde.webp",
+      "video": "/aura/fashion-curated/hype-metrics-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-nike-preto",
+      "name": "Nike · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0b0b0b",
+        "#f5f5f5"
+      ],
+      "image": "/aura/fashion-curated/brand-nike-preto.webp",
+      "video": "/aura/fashion-curated/brand-nike-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-nike-laranja",
+      "name": "Nike · Laranja",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f4511e",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-nike-laranja.webp",
+      "video": "/aura/fashion-curated/brand-nike-laranja.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-nike-branco",
+      "name": "Nike · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f2f2f2",
+        "#111111"
+      ],
+      "image": "/aura/fashion-curated/brand-nike-branco.webp",
+      "video": "/aura/fashion-curated/brand-nike-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-nike-volt",
+      "name": "Nike · Volt",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#d7ff1f",
+        "#111111"
+      ],
+      "image": "/aura/fashion-curated/brand-nike-volt.webp",
+      "video": "/aura/fashion-curated/brand-nike-volt.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-adidas-preto",
+      "name": "Adidas · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0d0d0d",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-adidas-preto.webp",
+      "video": "/aura/fashion-curated/brand-adidas-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-adidas-branco",
+      "name": "Adidas · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f4f4f4",
+        "#111111"
+      ],
+      "image": "/aura/fashion-curated/brand-adidas-branco.webp",
+      "video": "/aura/fashion-curated/brand-adidas-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-adidas-azul",
+      "name": "Adidas · Azul",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#1e4fd8",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-adidas-azul.webp",
+      "video": "/aura/fashion-curated/brand-adidas-azul.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-adidas-vermelho",
+      "name": "Adidas · Vermelho",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#d62828",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-adidas-vermelho.webp",
+      "video": "/aura/fashion-curated/brand-adidas-vermelho.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-asics-azul",
+      "name": "Asics · Azul",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#14327a",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-asics-azul.webp",
+      "video": "/aura/fashion-curated/brand-asics-azul.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-asics-preto",
+      "name": "Asics · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0e0e0e",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-asics-preto.webp",
+      "video": "/aura/fashion-curated/brand-asics-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-asics-verde",
+      "name": "Asics · Verde",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0f7a4a",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-asics-verde.webp",
+      "video": "/aura/fashion-curated/brand-asics-verde.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-puma-preto",
+      "name": "Puma · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0b0b0b",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-puma-preto.webp",
+      "video": "/aura/fashion-curated/brand-puma-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-puma-vermelho",
+      "name": "Puma · Vermelho",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#e4002b",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-puma-vermelho.webp",
+      "video": "/aura/fashion-curated/brand-puma-vermelho.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-puma-branco",
+      "name": "Puma · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f3f3f3",
+        "#111111"
+      ],
+      "image": "/aura/fashion-curated/brand-puma-branco.webp",
+      "video": "/aura/fashion-curated/brand-puma-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-zara-preto",
+      "name": "Zara · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#101010",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-zara-preto.webp",
+      "video": "/aura/fashion-curated/brand-zara-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-zara-branco",
+      "name": "Zara · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f6f3ee",
+        "#101010"
+      ],
+      "image": "/aura/fashion-curated/brand-zara-branco.webp",
+      "video": "/aura/fashion-curated/brand-zara-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-zara-bege",
+      "name": "Zara · Bege",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#d8c3a5",
+        "#101010"
+      ],
+      "image": "/aura/fashion-curated/brand-zara-bege.webp",
+      "video": "/aura/fashion-curated/brand-zara-bege.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-new-balance-cinza",
+      "name": "New Balance · Cinza",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#7c7f86",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-new-balance-cinza.webp",
+      "video": "/aura/fashion-curated/brand-new-balance-cinza.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-new-balance-azul",
+      "name": "New Balance · Azul",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#1d2f6f",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-new-balance-azul.webp",
+      "video": "/aura/fashion-curated/brand-new-balance-azul.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-new-balance-branco",
+      "name": "New Balance · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f4f4f4",
+        "#1d2f6f"
+      ],
+      "image": "/aura/fashion-curated/brand-new-balance-branco.webp",
+      "video": "/aura/fashion-curated/brand-new-balance-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    }
+  ]
+}

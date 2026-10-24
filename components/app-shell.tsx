@@ -28,7 +28,7 @@ const GROUPS: { key: string; items: NavItem[] }[] = [
     { href: "/closet", key: "nav.closet", icon: "NAV-02", auth: true },
     { href: "/pieces/new", key: "nav.addPiece", icon: "ACT-06", auth: true },
     { href: "/room", key: "nav.room", icon: "NAV-16", auth: true },
-    { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },
+    { href: "/atelier", key: "nav.atelier", icon: "NAV-10", auth: true },
     { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
     { href: "/avatar", key: "nav.avatar3d", icon: "ACT-20", auth: true },
   ] },
@@ -58,6 +58,15 @@ const THEMES: { mode: ThemeMode; key: string }[] = [
   { mode: "AUTO", key: "settings.systemTheme" }, { mode: "LIGHT", key: "settings.light" },
   { mode: "DARK", key: "settings.dark" }, { mode: "HIGH_CONTRAST", key: "settings.contrast" },
 ];
+
+function FaiXpIcon() {
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+      <path d="M12 2.75 20.25 7.5v9L12 21.25 3.75 16.5v-9L12 2.75Z" stroke="currentColor" strokeWidth={1.5} />
+      <text x="12" y="16" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="800" letterSpacing="-.35">XP</text>
+    </svg>
+  );
+}
 
 function useIsActive() {
   const pathname = usePathname(); const { user } = useAuth();
@@ -201,7 +210,7 @@ const CREATE = [
   { href: "/pieces/new", key: "nav.createPiece", hint: "nav.createPieceHint", icon: "ACT-06" },
   { href: "/schemes/new", key: "nav.createLook", hint: "nav.createLookHint", icon: "NAV-03" },
   { href: "/dna-schemes/new", key: "nav.createDna", hint: "nav.createDnaHint", icon: "ACT-19" },
-  { href: "/photos", key: "nav.uploadPhotos", hint: "nav.uploadPhotosHint", icon: "ACT-07" },
+  { href: "/atelier/galeria", key: "nav.uploadPhotos", hint: "nav.uploadPhotosHint", icon: "ACT-07" },
 ];
 
 const SIDEBAR_KEY = "fai.sidebar";
@@ -284,9 +293,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           </form>
           <div className="header-actions">
             {!ready ? (
-              <><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-10 w-10 rounded-full" /></>
+              <>{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-10 w-10 rounded-full" />)}</>
             ) : user ? (
               <>
+                <Link href="/lookbook" className="btn btn-ghost btn-icon" aria-label={t("nav.xp")} title={t("nav.xp")}>
+                  <FaiXpIcon />
+                </Link>
+                <Link href="/points" className="btn btn-ghost btn-icon" aria-label={t("nav.points")} title={t("nav.points")}>
+                  <FaiIcon id="ACT-40" size={24} variant="glyph" decorative />
+                </Link>
                 <Link href="/notifications" className="btn btn-ghost btn-icon relative" aria-label={unread ? `${t("nav.notifications")} (${unread})` : t("nav.notifications")}>
                   <FaiIcon id="ACT-03" size={24} variant="glyph" decorative />
                   {unread > 0 && <span className="notif-badge tabular" aria-hidden>{unread > 99 ? "99+" : unread}</span>}

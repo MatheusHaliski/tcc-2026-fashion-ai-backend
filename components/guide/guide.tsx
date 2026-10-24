@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { GUIDES, shouldAutoOpen, type GuidePref } from "@/lib/guides/registry";
 import { Button, Dialog, UiIcon } from "@/components/ui";
+import { FeedGuideDemo } from "./feed-guide-demo";
 const GuideDemo = lazy(() => import("@/components/guide/guide-demos").then(m => ({ default: m.GuideDemo })));
 import { FlairHubIcon } from "@/components/flair/hub-icons";
 import type { HubIconId } from "@/components/flair/hub-icons";
@@ -62,17 +63,18 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<{ key: string; mode: Mode; hidden: boolean; proceed?: () => void } | null>(null);
   const closed = useRef(new Set<string>());
   const autoThisView = useRef(false);
-  const pending = useRef<string | null>(null);
+  const [autoRequest,setAutoRequest]=useState<{key:string;path:string}|null>(null);
+  const loadedFor=useRef<string|null>(null);
   const userId = user?.id ?? null;
 
   // troca de conta: recomeça do zero com as preferências da outra pessoa
   useEffect(() => {
-    closed.current = new Set(); pending.current = null; setActive(null); setPrefs(null);
+    closed.current = new Set(); loadedFor.current=null; autoThisView.current=false; setActive(null); setPrefs(null);
     if (!authReady) return;
-    if (!userId) { setPrefs(readAnon()); return; }
+    if (!userId) { loadedFor.current="ANON"; setPrefs(readAnon()); return; }
     const ctrl = new AbortController();
     api.get<{ guides: Record<string, GuidePref> }>("/api/me/guides", { signal: ctrl.signal })
-      .then((r) => setPrefs(r?.guides ?? {})).catch(() => { if (!ctrl.signal.aborted) setPrefs({}); });
+      .then((r) => {if(!ctrl.signal.aborted){loadedFor.current=userId;setPrefs(r?.guides ?? {});}}).catch(() => { if (!ctrl.signal.aborted) {loadedFor.current=userId;setPrefs({});} });
     return () => ctrl.abort();
   }, [userId, authReady]);
 
@@ -100,14 +102,15 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     return true;
   }, [active, record]);
 
-  const requestAuto = useCallback((key: string) => {
-    if (!prefs) { pending.current = pending.current ?? key; return; }
-    tryAuto(key, prefs);
-  }, [prefs, tryAuto]);
-
-  useEffect(() => {
-    if (prefs && pending.current) { const k = pending.current; pending.current = null; tryAuto(k, prefs); }
-  }, [prefs, tryAuto]);
+  // Keep the page request in React state: a parent hydration effect must not erase
+  // a request made by a child effect. Account changes re-evaluate it against that account's preferences.
+  const requestAuto = useCallback((key:string)=>{
+    setAutoRequest(current=>current?.key===key&&current.path===pathname?current:{key,path:pathname});
+  },[pathname]);
+  useEffect(()=>{
+    if(authReady&&prefs&&autoRequest?.path===pathname&&loadedFor.current===(userId??"ANON"))
+      tryAuto(autoRequest.key,prefs);
+  },[authReady,prefs,autoRequest,pathname,userId,tryAuto]);
 
   const open = useCallback((key: string) => {
     const def = GUIDES[key]; if (!def) return;
@@ -179,7 +182,7 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guid
   const base = `guide.${guideKey}`;
   const steps = Array.from({ length: Math.min(3, def.steps) }, (_, i) => t(`${base}.step${i + 1}`));
   return (
-    <Suspense fallback={null}><Dialog open title={t(`${base}.title`)} onClose={() => onClose(hide, false)} size="lg"
+    <Dialog open title={t(`${base}.title`)} onClose={() => onClose(hide, false)} size="lg"
       footer={<>
         <label className="guide-hide"><input type="checkbox" checked={hide} onChange={(e) => setHide(e.target.checked)} />{t("guide.dont_show_again")}</label>
         <Button variant="primary" onClick={() => onClose(hide, true)} data-autofocus>{gate ? t("guide.got_it_start") : t("guide.got_it")}</Button>
@@ -198,12 +201,12 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guid
           </div>
           {/* palco inerte: nada ali dentro recebe foco, clique ou chamada à API */}
           <div className="guide-demo-stage" data-playing={playing ? "true" : "false"} inert aria-hidden>
-            <GuideDemo demo={def.demo} />
+            {def.demo === "feed" ? <FeedGuideDemo /> : <Suspense fallback={null}><GuideDemo demo={def.demo} /></Suspense>}
           </div>
           <figcaption className="type-body-sm text-muted">{t(`${base}.demo`)}</figcaption>
         </figure>
         {steps.length > 0 && <ol className="guide-steps">{steps.map((s, i) => <li key={i}><span className="guide-step-n" aria-hidden>{i + 1}</span><span>{s}</span></li>)}</ol>}
       </div>
-    </Dialog></Suspense>
+    </Dialog>
   );
 }

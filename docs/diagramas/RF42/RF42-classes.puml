@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF42 — Marcar um look como 'Look do dia'\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF42 — Marcar um look como 'Look do dia'\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class DailyLook <<daily_looks>> {
@@ -45,6 +45,7 @@ package "fai-domain (entidades JPA)" {
   }
   class Scheme <<schemes>> {
     +id: UUID
+    +tipoLook: TipoLook
     +user: User
     +originalScheme: Scheme
     +title: String
@@ -53,8 +54,7 @@ package "fai-domain (entidades JPA)" {
     +origin: SchemeOrigin
     +style: String
     +occasion: String
-    +season: Season
-    .. +46 campos ..
+    .. +44 campos ..
   }
   class SchemeItem <<scheme_items>> {
     +id: UUID
@@ -80,7 +80,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
   class WardrobeItem <<wardrobe_items>> {
     +id: UUID
@@ -90,10 +90,10 @@ package "fai-domain (entidades JPA)" {
     +name: String
     +category: String
     +subcategory: String
-    +sex: String
-    +brandName: String
-    +brandLogoUrl: String
-    .. +70 campos ..
+    +variationCode: String
+    +variationStatus: String
+    +variationConfidence: BigDecimal
+    .. +73 campos ..
   }
 }
 package "fai-domain (enums)" {

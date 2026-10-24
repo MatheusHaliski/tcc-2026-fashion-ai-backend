@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF50 (evolução do RF25) — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF50 (evolução do RF25) — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "app/(site)" {
   component "page.tsx" as m_app__site__page_tsx
@@ -45,21 +45,16 @@ package "components" {
   component "seal-wizard.tsx" as m_components_seal_wizard_tsx
   component "seal-policy-editor.tsx" as m_components_seal_policy_editor_tsx
   component "seal-core-editor.tsx" as m_components_seal_core_editor_tsx
+  component "creator-welcome.tsx" as m_components_creator_welcome_tsx <<apoio>>
+  component "manual-seal-policy.tsx" as m_components_manual_seal_policy_tsx <<apoio>>
   component "seal-creator.tsx" as m_components_seal_creator_tsx <<apoio>>
-  component "seal-medallion.tsx" as m_components_seal_medallion_tsx <<apoio>>
+  component "seal-hype-editor.tsx" as m_components_seal_hype_editor_tsx <<apoio>>
 }
 package "lib" {
   component "dev-refs.ts" as m_lib_dev_refs_ts <<apoio>>
 }
-package "lib/api" {
-  component "taxonomy.ts" as m_lib_api_taxonomy_ts <<apoio>>
-}
-package "lib/hype" {
-  component "model.ts" as m_lib_hype_model_ts <<apoio>>
-}
 package "Backend (Spring Boot)" {
   component "SealController" as SealController
-  component "WardrobeController" as WardrobeController
   component "SealDesigns" as SealDesigns <<apoio>>
   component "SealDrafts" as SealDrafts <<apoio>>
   component "OwnMedia" as OwnMedia
@@ -73,23 +68,25 @@ SealController --> SealService
 SealDesignService --> DB_MySQL : users
 SealService --> DB_MySQL : brand_profiles, celebrity_profiles,\npromotion_redemptions, promotions,\nscheme_items, schemes
 SealService --> OwnMedia
-m_components_seal_core_editor_tsx --> m_components_seal_medallion_tsx
+m_components_creator_welcome_tsx --> m_components_ui_index_tsx
+m_components_manual_seal_policy_tsx --> SealController : HTTPS
+m_components_manual_seal_policy_tsx --> m_components_seal_policy_editor_tsx
+m_components_manual_seal_policy_tsx --> m_components_ui_index_tsx
 m_components_seal_core_editor_tsx --> m_components_ui_index_tsx
 m_components_seal_core_editor_tsx --> m_lib_seals_templates_ts
 m_components_seal_creator_tsx --> m_components_seal_core_editor_tsx
-m_components_seal_creator_tsx --> m_components_seal_medallion_tsx
 m_components_seal_creator_tsx --> m_components_ui_index_tsx
-m_components_seal_medallion_tsx --> m_lib_seals_templates_ts
+m_components_seal_hype_editor_tsx --> m_components_seal_policy_editor_tsx
+m_components_seal_hype_editor_tsx --> m_components_ui_index_tsx
 m_components_seal_policy_editor_tsx --> m_components_ui_index_tsx
-m_components_seal_policy_editor_tsx --> m_lib_api_taxonomy_ts
-m_components_seal_policy_editor_tsx --> m_lib_hype_model_ts
+m_components_seal_wizard_tsx --> m_components_creator_welcome_tsx
+m_components_seal_wizard_tsx --> m_components_manual_seal_policy_tsx
 m_components_seal_wizard_tsx --> m_components_seal_core_editor_tsx
 m_components_seal_wizard_tsx --> m_components_seal_creator_tsx
-m_components_seal_wizard_tsx --> m_components_seal_medallion_tsx
+m_components_seal_wizard_tsx --> m_components_seal_hype_editor_tsx
 m_components_seal_wizard_tsx --> m_components_seal_policy_editor_tsx
 m_components_seal_wizard_tsx --> m_components_ui_index_tsx
 m_components_seal_wizard_tsx --> m_lib_seals_templates_ts
 m_components_ui_index_tsx --> m_components_ui_icons_tsx
 m_components_ui_index_tsx --> m_lib_dev_refs_ts
-m_lib_api_taxonomy_ts --> WardrobeController : HTTPS
 @enduml

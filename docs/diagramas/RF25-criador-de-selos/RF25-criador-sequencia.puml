@@ -21,12 +21,11 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF25 — Criador de selo: sugestão 'Com IA', upload do núcleo e salvamento\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF25 — Criador de selo: sugestão 'Com IA', upload do núcleo e salvamento\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "c/seal-wizard.tsx" as c_seal_wizard_tsx
 participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
-participant "c/ui/index.tsx" as c_ui_index_tsx
 participant "c/seal-policy-editor.tsx" as c_seal_policy_editor_tsx
 participant "c/seal-medallion.tsx" as c_seal_medallion_tsx
 participant "lib/seals/templates.ts" as lib_seals_templates_ts
@@ -35,16 +34,19 @@ participant "ApiException" as ApiException
 U -> c_seal_wizard_tsx : SealWizard()
 activate c_seal_wizard_tsx
 c_seal_wizard_tsx -> lib_i18n_i18n_tsx : useI18n()
-c_seal_wizard_tsx -> c_ui_index_tsx : useToast()
-c_seal_wizard_tsx -> c_seal_wizard_tsx : setMode("AI")
-c_seal_wizard_tsx -> c_seal_wizard_tsx : setDrafting("true")
-c_seal_wizard_tsx -> c_seal_wizard_tsx : setMode("null")
-c_seal_wizard_tsx -> c_seal_wizard_tsx : setDrafting("false")
+c_seal_wizard_tsx -> c_seal_policy_editor_tsx : cleanHype()
+c_seal_wizard_tsx -> c_seal_policy_editor_tsx : cleanPolicy()
+opt draft.status !== 'VALID' || !draft.policy?.refere…
+c_seal_wizard_tsx --> U : encerra
+end
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setReady("true")
+opt next === creationMode || saving
+c_seal_wizard_tsx --> U : encerra
+end
 c_seal_wizard_tsx -> c_seal_wizard_tsx : setSaving("true")
 c_seal_wizard_tsx -> c_seal_wizard_tsx : setSaving("false")
-c_seal_wizard_tsx -> c_ui_index_tsx : cn() (×2)
-c_seal_wizard_tsx -> c_seal_wizard_tsx : setMode("MANUAL")
-c_seal_wizard_tsx -> c_seal_policy_editor_tsx : cleanPolicy()
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setReady("false")
+c_seal_wizard_tsx -> c_seal_policy_editor_tsx : describePolicy()
 deactivate c_seal_wizard_tsx
 c_seal_wizard_tsx --> U : resultado
 == c/seal-wizard.tsx · SealArt() ==

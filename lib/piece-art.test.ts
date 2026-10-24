@@ -52,3 +52,16 @@ describe("writePieceArt (gravação)", () => {
     expect(studioPart(out)).toEqual({ aura: null });
   });
 });
+
+it("preserva e relê o preset AURA Hype no mesmo config do Background Studio", () => {
+  const saved = writePieceArt({ auraHype: "SCANNER" }, defaultArt(), { auraHype: "STARS" });
+  expect(saved.auraHype).toBe("STARS");
+  expect(studioPart(saved).auraHype).toBe("STARS");
+  expect(studioPart({ auraHype: "OFF" }).auraHype).toBe("OFF");
+});
+
+it('preserva borda e modalidades AURA ao regravar a arte',()=>{
+ const bg={border:{mode:'GRADIENT',from:'#123456',to:'#abcdef',effect:'SHIMMER'},auraHype:'XRAY',auraMetamorphose:'HOLOGRAFIA'};
+ expect(studioPart(bg)).toEqual(bg);
+ expect(writePieceArt(bg,readPieceArt(bg))).toMatchObject(bg);
+});

@@ -34,7 +34,7 @@ class WardrobeCatalogTest {
         assertThat(WardrobeCreatorService.MATERIALS.keySet())
                 .contains("VIDRO", "MADEIRA", "MARMORE", "GRANITO", "PRATA", "OURO", "BRONZE", "COBRE", "ESPELHO", "CONCRETO", "RATTAN", "ACO");
         assertThat(WardrobeCreatorService.MATERIALS.get("OURO").metalness()).isGreaterThan(0.9);
-        assertThat(WardrobeCreatorService.MATERIALS.get("OURO").minLevel()).isEqualTo("PENTHOUSE");
+        assertThat(WardrobeCreatorService.MATERIALS.get("OURO").minLevel()).isEqualTo("LOFT");
         Set<String> slots = new java.util.HashSet<>();
         WardrobeCreatorService.BLOCKS.forEach(b -> slots.add(b.slotType()));
         assertThat(slots).contains("DOOR", "DRAWER", "HANDLE", "TOP", "BASE", "HANGER", "LOGO", "LIGHT", "RUG", "SHOE_RACK", "BAG_DISPLAY", "JEWELRY", "ISLAND");

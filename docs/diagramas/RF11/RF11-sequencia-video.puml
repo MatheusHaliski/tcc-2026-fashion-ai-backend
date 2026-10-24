@@ -1,67 +1,97 @@
 @startuml RF11_Sequencia_Video
-title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de sequência — Aura animada no card: resolveCardArt, CardArtLayer e ArtVideo
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as P
-participant "SchemeCard · DnaCard ·\nArtStage (piece-art)" as Card
-participant "lib/card-art.ts\nresolveCardArt" as Lib
-participant "CardArtLayer" as Layer
-participant "ArtVideo" as AV
-participant "IntersectionObserver\nnearIO (300 px) · seenIO" as IO
-participant "<video>\n(HTMLVideoElement)" as V
-participant "Next.js /public\n(MP4 e pôsteres)" as PUB
+autonumber "<b>0."
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
-P -> Card: abre o feed, o perfil ou a prévia do Studio
-Card -> Lib: resolveCardArt(background, {season})
-Lib -> Lib: card-art-index.json: variante com "animated" .mp4\nou combo aura|material (single / mosaic)
-Lib --> Card: CardArt {kind, image (pôster), video {src, poster}, still, motion}
-Card -> Layer: <CardArtLayer art>
-Layer -> AV: <ArtVideo src poster onStuck=setStuck>
-AV -> V: muted + playsinline (atributos), sem src, preload="metadata"
-alt navegador sem IntersectionObserver
-  AV -> V: autoplay = true; src = arquivo
-  V -> PUB: GET .mp4
-else com IntersectionObserver
-  AV -> IO: observe(nearIO, rootMargin 300px) · observe(seenIO)
-  AV -> AV: escuta visibilitychange · pageshow · canplay
-  P -> Card: rola a página
-  IO -> AV: nearIO: card a até 300 px
-  AV -> V: src = arquivo (só agora)
-  V -> PUB: GET .mp4
-  IO -> AV: seenIO: visível
-  AV -> V: play()
-  alt tocou
-    V --> AV: Promise resolvida
-    AV -> Layer: onStuck(false) · remove a nova tentativa
-  else NotAllowedError (economia de energia, limite de vídeos)
-    V --> AV: Promise rejeitada
-    AV -> Layer: onStuck(true)
-    Layer -> Layer: pôster com anim-<still> (padrão "drift")
-    AV -> AV: arma nova tentativa (pointerdown/keydown em captura)
-    P -> AV: primeiro toque ou tecla
-    AV -> V: play() de novo
-  else AbortError ou outro
-    AV -> AV: ignora (pausou ou trocou de arquivo)
-  end
-  IO -> AV: seenIO: saiu da vista
-  AV -> V: pause() (arquivo mantido)
-  IO -> AV: nearIO: card além de 300 px
-  AV -> V: pause(); removeAttribute("src"); load()
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "BackgroundController" as BackgroundController
+participant "BackgroundStudioService" as BackgroundStudioService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+== Aplicar configuração de fundo ao esquema ==
+U -> P : Aplicar configuração de fundo ao esquema
+P -> BackgroundController : PUT /api/schemes/{id}/background
+BackgroundController -> BackgroundStudioService : saveScheme()
+activate BackgroundStudioService
+BackgroundStudioService -> Guard : requireCanCreate()
+BackgroundStudioService -> DB_MySQL : SELECT schemes
+BackgroundStudioService -> Guard : requireOwner()
+alt aura composition invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_COMPOSITION_INVALID
+BackgroundController --> P : 400 + mensagem
 end
-opt Aura trocada ou card desmontado
-  AV -> IO: disconnect()
-  AV -> V: solta o arquivo (pause, sem src, load)
-  AV -> Layer: onStuck(false)
+alt aura hype invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_HYPE_INVALID
+BackgroundController --> P : 400 + mensagem
 end
-note over Card, PUB
-  Tudo roda no navegador: nenhuma chamada à API.
-  O servidor só guardou a escolha (studio_config_json e,
-  no look, background_video_url via applyToScheme).
-end note
+alt aura metamorphose invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_METAMORPHOSE_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt cor inválida
+BackgroundStudioService --> BackgroundController : 400 COR_INVALIDA
+BackgroundController --> P : 400 + mensagem
+end
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+BackgroundController --> P : 400 + mensagem
+end
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+BackgroundController --> P : 400 + mensagem
+end
+alt aura hype invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_HYPE_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+BackgroundController --> P : 400 + mensagem
+end
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+BackgroundController --> P : 400 + mensagem
+end
+note over BackgroundStudioService : … e mais 49 passos no código
+deactivate BackgroundStudioService
+BackgroundStudioService --> BackgroundController : resultado
+BackgroundController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

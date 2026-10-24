@@ -1,0 +1,42 @@
+CREATE TABLE physical_store_listings (
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    catalog_product_id CHAR(36) NOT NULL,
+    seller_user_id CHAR(36) NOT NULL,
+    description VARCHAR(1000) NULL,
+    price_points INT NOT NULL,
+    required_level VARCHAR(20) NOT NULL DEFAULT 'ESTREIA',
+    stock_quantity INT NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    version BIGINT NOT NULL DEFAULT 0,
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    created_by VARCHAR(80) NULL,
+    last_modified_by VARCHAR(80) NULL,
+    CONSTRAINT fk_physical_listing_product FOREIGN KEY (catalog_product_id) REFERENCES catalog_products(id),
+    CONSTRAINT fk_physical_listing_seller FOREIGN KEY (seller_user_id) REFERENCES users(id),
+    CONSTRAINT chk_physical_listing_price CHECK (price_points > 0),
+    CONSTRAINT chk_physical_listing_stock CHECK (stock_quantity >= 0),
+    INDEX idx_physical_listing_store (active, created_at),
+    INDEX idx_physical_listing_seller (seller_user_id, created_at)
+);
+
+CREATE TABLE physical_store_orders (
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    listing_id CHAR(36) NOT NULL,
+    buyer_user_id CHAR(36) NOT NULL,
+    price_points INT NOT NULL,
+    shipping_address_ciphertext VARCHAR(4096) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PROCESSING',
+    tracking_code VARCHAR(120) NULL,
+    tracking_url VARCHAR(1024) NULL,
+    shipped_at DATETIME(6) NULL,
+    delivered_at DATETIME(6) NULL,
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    created_by VARCHAR(80) NULL,
+    last_modified_by VARCHAR(80) NULL,
+    CONSTRAINT fk_physical_order_listing FOREIGN KEY (listing_id) REFERENCES physical_store_listings(id),
+    CONSTRAINT fk_physical_order_buyer FOREIGN KEY (buyer_user_id) REFERENCES users(id),
+    INDEX idx_physical_order_buyer (buyer_user_id, created_at),
+    INDEX idx_physical_order_status (status, created_at)
+);

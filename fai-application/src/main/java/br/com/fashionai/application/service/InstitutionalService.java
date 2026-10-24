@@ -71,6 +71,10 @@ import java.util.stream.Collectors;
  */
 @Service
 public class InstitutionalService {
+    private LevelProgressService levelProgress;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setLevelProgress(LevelProgressService progress) { this.levelProgress = progress; }
+
     private final UserRepository users;
     private final BrandProfileRepository brands;
     private final CelebrityProfileRepository celebrities;
@@ -299,6 +303,7 @@ public class InstitutionalService {
         }
         header.put("viewerFollows", viewer != null && follows.findByFollowerIdAndFollowingId(viewer.id(), u.getId()).map(f -> f.getStatus() == FollowStatus.ACEITO).orElse(false));
         header.put("metrics", metrics(u.getId()));
+        if (levelProgress != null) header.put("levelProgress", levelProgress.progress(u.getId()));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("header", header);
         out.put("mode", admin ? "ADMINISTRADOR" : "VISITANTE");
@@ -444,7 +449,7 @@ public class InstitutionalService {
             out.add(new Promoted(s, shown, issued, expires, isExpired, s.isRevalidationPending()));
         }
         List<Scheme> profileEligible = sealService.profileSchemes(u.getId(), s -> displayable(viewer, s), TAB_LIMIT);
-        if (!history && sealService.hasProfilePolicies(u.getId())) {
+        if (!history && sealService.hasProfilePolicies(u.getId(), SealTier.LOOK)) {
             Set<UUID> eligibleIds = profileEligible.stream().map(Scheme::getId).collect(Collectors.toSet());
             out.removeIf(p -> !eligibleIds.contains(p.scheme().getId()));
         }
@@ -516,9 +521,48 @@ public class InstitutionalService {
         return filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId).stream().map(p -> entry(viewer, p)).toList();
     }
 
-    /** Peças que os selos vigentes destacam (cada peça aponta para o look e traz só os selos que a cobrem). */
+    /**
+     * Peças que os selos vigentes destacam: as dos looks premiados (cada uma aponta para o look e traz só os selos que a
+     * cobrem) e as que ganharam selo direto, sem look (selo Hype de peça), que antes nunca chegavam ao perfil.
+     */
     List<Map<String, Object>> highlightedPieces(CurrentUser viewer, User u, String filter, UUID groupingId) {
-        return withProfilePieces(viewer, u, pieceEntries(viewer, filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId)), filter, groupingId);
+        List<Map<String, Object>> fromLooks = pieceEntries(viewer, filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId));
+        return withProfilePieces(viewer, u, withDirectPieces(viewer, u, fromLooks, filter, groupingId), filter, groupingId);
+    }
+
+    /** Agrupamentos e filtros de look não se aplicam a peças avulsas (sem look). */
+    private static boolean loosePiecesApply(String filter, UUID groupingId) {
+        return groupingId == null && (filter == null || filter.isBlank()
+                || Set.of("ALL", "RECENT", "RECENTES", "DESTAQUES", "HYPE", "GROWTH", "CRESCIMENTO").contains(filter.toUpperCase(Locale.ROOT)));
+    }
+
+    /** Vínculos APROVADOS e vigentes direto numa peça (o selo Hype de peça nasce assim), somados aos que vêm dos looks. */
+    List<Map<String, Object>> withDirectPieces(CurrentUser viewer, User owner, List<Map<String, Object>> existing, String filter, UUID groupingId) {
+        if (!loosePiecesApply(filter, groupingId)) return existing;
+        Map<Object, Map<String, Object>> out = new LinkedHashMap<>();
+        existing.forEach(e -> out.put(((Views.PieceView) e.get("piece")).id(), e));
+        Instant now = Instant.now();
+        for (SealBond b : bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(owner.getId(), SealBondStatus.APPROVED)) {
+            WardrobeItem w = b.getPiece();
+            if (w == null || b.getScheme() != null || expired(b, now) || !displayable(viewer, w)) continue;
+            Map<String, Object> badge = SealService.badge(b);
+            Map<String, Object> entry = out.get(w.getId());
+            if (entry != null) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> seals = new ArrayList<>((List<Map<String, Object>>) entry.get("seals"));
+                if (!seals.contains(badge)) seals.add(badge);
+                entry.put("seals", seals);
+                continue;
+            }
+            if (out.size() >= TAB_LIMIT) continue;
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("piece", Views.piece(w, null, null));
+            m.put("author", Views.user(w.getUser()));
+            m.put("schemeId", null);
+            m.put("seals", List.of(badge));
+            out.put(w.getId(), m);
+        }
+        return new ArrayList<>(out.values());
     }
 
     private List<Map<String, Object>> withProfilePieces(CurrentUser viewer, User owner, List<Map<String, Object>> existing,
@@ -526,9 +570,8 @@ public class InstitutionalService {
         List<WardrobeItem> eligible = sealService.profilePieces(owner.getId(), piece -> displayable(viewer, piece), TAB_LIMIT);
         Set<UUID> eligibleIds = eligible.stream().map(WardrobeItem::getId).collect(Collectors.toSet());
         List<Map<String, Object>> out = new ArrayList<>(existing);
-        if (sealService.hasProfilePolicies(owner.getId())) out.removeIf(e -> !eligibleIds.contains(((Views.PieceView) e.get("piece")).id()));
-        // Agrupamentos e filtros de look não se aplicam a peças avulsas.
-        if (groupingId != null || filter != null && !filter.isBlank() && !Set.of("ALL", "RECENT", "RECENTES", "DESTAQUES", "HYPE", "GROWTH", "CRESCIMENTO").contains(filter.toUpperCase(Locale.ROOT))) return out;
+        if (sealService.hasProfilePolicies(owner.getId(), SealTier.PECA)) out.removeIf(e -> !eligibleIds.contains(((Views.PieceView) e.get("piece")).id()));
+        if (!loosePiecesApply(filter, groupingId)) return out;
         Set<Object> ids = out.stream().map(e -> ((Views.PieceView) e.get("piece")).id()).collect(Collectors.toSet());
         for (WardrobeItem w : eligible) {
             if (!ids.add(w.getId()) || out.size() >= TAB_LIMIT) continue;
@@ -545,7 +588,7 @@ public class InstitutionalService {
         List<Promoted> looks = filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("schemes", looks.stream().map(p -> entry(viewer, p)).toList());
-        out.put("pieces", withProfilePieces(viewer, u, pieceEntries(viewer, looks), filter, groupingId));
+        out.put("pieces", withProfilePieces(viewer, u, withDirectPieces(viewer, u, pieceEntries(viewer, looks), filter, groupingId), filter, groupingId));
         out.put("empty", looks.isEmpty() ? Msg.t("institutional.nenhum_look_conquistou_um_selo") : null);
         return out;
     }

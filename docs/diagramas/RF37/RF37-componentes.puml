@@ -29,11 +29,15 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "/flair\n(site)/(app)/flair/page.tsx" as FE0
-  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE1
+  component "/flair/cartas\n(site)/(app)/flair/cartas/page.tsx" as FE0
+  component "/flair/carteira\n(site)/(app)/flair/carteira/page.tsx" as FE1
+  component "/flair/decks\n(site)/(app)/flair/decks/page.tsx" as FE2
+  component "/flair/lojas\n(site)/(app)/flair/lojas/page.tsx" as FE3
+  component "/flair/missoes\n(site)/(app)/flair/missoes/page.tsx" as FE4
+  component "/flair\n(site)/(app)/flair/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
@@ -57,6 +61,10 @@ APIC --> FlairController : HTTPS/JSON
 APIC --> FlairModesController : HTTPS/JSON
 FE0 --> APIC
 FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
 FlairController --> FlairService
 FlairModesController --> FlairModesService
 FlairModesService --> REPO_MySQL

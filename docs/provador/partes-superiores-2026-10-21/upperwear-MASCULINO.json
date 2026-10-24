@@ -1,0 +1,196 @@
+{
+  "sex": "MASCULINO",
+  "scope": "Local parametric models, not manufacturer fit certification",
+  "report": [
+    {
+      "subcategory": "t_shirt",
+      "spec": {
+        "hem": -0.06,
+        "sleeve": 0.33,
+        "layer": 3,
+        "frontOpening": 0
+      },
+      "vertices": 2412
+    },
+    {
+      "subcategory": "shirt",
+      "spec": {
+        "hem": -0.1,
+        "sleeve": 0.96,
+        "layer": 3,
+        "frontOpening": 0
+      },
+      "vertices": 3191
+    },
+    {
+      "subcategory": "blouse",
+      "spec": {
+        "hem": -0.1,
+        "sleeve": 0.96,
+        "layer": 3,
+        "frontOpening": 0
+      },
+      "vertices": 3167
+    },
+    {
+      "subcategory": "tank_top",
+      "spec": {
+        "hem": -0.03,
+        "sleeve": 0,
+        "layer": 3,
+        "frontOpening": 0
+      },
+      "vertices": 1945
+    },
+    {
+      "subcategory": "top",
+      "spec": {
+        "hem": 0.45,
+        "sleeve": 0,
+        "layer": 3,
+        "frontOpening": 0
+      },
+      "vertices": 1013
+    },
+    {
+      "subcategory": "crop_top",
+      "spec": {
+        "hem": 0.45,
+        "sleeve": 0.28,
+        "layer": 3,
+        "frontOpening": 0
+      },
+      "vertices": 1301
+    },
+    {
+      "subcategory": "polo_shirt",
+      "spec": {
+        "hem": -0.06,
+        "sleeve": 0.33,
+        "layer": 3,
+        "frontOpening": 0
+      },
+      "vertices": 2465
+    },
+    {
+      "subcategory": "bodysuit",
+      "spec": {
+        "hem": -0.18,
+        "sleeve": 0,
+        "layer": 1,
+        "frontOpening": 0
+      },
+      "vertices": 2393
+    },
+    {
+      "subcategory": "sweater",
+      "spec": {
+        "hem": -0.07,
+        "sleeve": 0.97,
+        "layer": 4,
+        "frontOpening": 0
+      },
+      "vertices": 3082
+    },
+    {
+      "subcategory": "sweatshirt",
+      "spec": {
+        "hem": -0.12000000000000001,
+        "sleeve": 0.97,
+        "layer": 4,
+        "frontOpening": 0
+      },
+      "vertices": 3253
+    },
+    {
+      "subcategory": "hoodie",
+      "spec": {
+        "hem": -0.13,
+        "sleeve": 0.97,
+        "layer": 4,
+        "frontOpening": 0
+      },
+      "vertices": 3339
+    },
+    {
+      "subcategory": "cardigan",
+      "spec": {
+        "hem": -0.08,
+        "sleeve": 0.98,
+        "layer": 4,
+        "frontOpening": 0.035
+      },
+      "vertices": 3064
+    },
+    {
+      "subcategory": "vest",
+      "spec": {
+        "hem": -0.06,
+        "sleeve": 0,
+        "layer": 5,
+        "frontOpening": 0
+      },
+      "vertices": 1953
+    },
+    {
+      "subcategory": "blazer",
+      "spec": {
+        "hem": -0.08,
+        "sleeve": 0.98,
+        "layer": 5,
+        "frontOpening": 0.026
+      },
+      "vertices": 3074
+    },
+    {
+      "subcategory": "jacket",
+      "spec": {
+        "hem": -0.08,
+        "sleeve": 0.98,
+        "layer": 5,
+        "frontOpening": 0
+      },
+      "vertices": 3191
+    },
+    {
+      "subcategory": "coat",
+      "spec": {
+        "hem": -0.08,
+        "sleeve": 0.99,
+        "layer": 6,
+        "frontOpening": 0
+      },
+      "vertices": 5415
+    },
+    {
+      "subcategory": "parka",
+      "spec": {
+        "hem": -0.08,
+        "sleeve": 0.99,
+        "layer": 6,
+        "frontOpening": 0
+      },
+      "vertices": 4869
+    },
+    {
+      "subcategory": "windbreaker",
+      "spec": {
+        "hem": -0.08,
+        "sleeve": 0.98,
+        "layer": 5,
+        "frontOpening": 0
+      },
+      "vertices": 3191
+    },
+    {
+      "subcategory": "kimono",
+      "spec": {
+        "hem": -0.25,
+        "sleeve": 0.72,
+        "layer": 5,
+        "frontOpening": 0.05
+      },
+      "vertices": 3321
+    }
+  ]
+}

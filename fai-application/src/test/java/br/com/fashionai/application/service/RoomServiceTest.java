@@ -124,8 +124,8 @@ class RoomServiceTest {
         RoomLayout l = room.layout(world.me.getId());
         assertThat(l.getLevel()).isEqualTo("ESTREIA");
         assertThat(RoomService.defaultModules(FaiPointsService.Level.ESTREIA)).noneMatch(m -> "shoe".equals(m.get("id")));
-        assertThat(RoomService.defaultModules(FaiPointsService.Level.MAISON)).anyMatch(m -> "signature".equals(m.get("id")));
-        room.setLevel(world.me.getId(), "CLOSET");
+        assertThat(RoomService.defaultModules(FaiPointsService.Level.LOFT)).anyMatch(m -> "signature".equals(m.get("id")));
+        room.setLevel(world.me.getId(), "STUDIO");
         assertThat(room.layout(world.me.getId()).getModulesJson()).contains("\"shoe\"");
         assertThatThrownBy(() -> room.layout(UUID.randomUUID())).isInstanceOf(ApiException.class);
     }

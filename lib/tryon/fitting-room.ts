@@ -37,6 +37,7 @@ export interface FittingItem {
   /** foto processada no nosso armazenamento (fundo removido, CORS): a única que o 3D consegue ler; null = só a externa */
   processedUrl?: string | null;
   /** modelagem e dimensões declaradas (caimento no 3D) */
+  material?: string | null;
   variation?: string | null;
   attributes?: Record<string, string[]> | null;
   addedAt: number;                              // ordem de escolha: a mais recente define a marca em destaque

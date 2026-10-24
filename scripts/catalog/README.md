@@ -33,7 +33,7 @@ python -m unittest discover -s scripts/catalog/tests      # testes sem banco (in
 
 A deduplicação reúne as buscas por identificadores do produto, variantes e chave normalizada em uma consulta
 `UNION ALL`, preservando a prioridade GTIN → EAN → UPC → SKU → código → URL → variantes → chave. A migração
-**V57** adiciona os índices de EAN/UPC e dos identificadores de variantes que faltavam. Atualize a API para executar
+**V61** adiciona os índices de EAN/UPC e dos identificadores de variantes que faltavam. Atualize a API para executar
 o Flyway antes de importar um acervo grande com essa versão; sem os índices, esses ramos podem varrer tabelas.
 `--skip-existing` mantém os caches de marca/fontes/apelidos e a leitura em lote dos filhos; fotos e variantes novas
 continuam sendo inseridas. `--batch-size` controla só o progresso no terminal, não a transação nem o paralelismo.
@@ -49,7 +49,7 @@ as milhares de linhas seguintes tentando usar o mesmo socket. A gravação final
 e usa o mesmo identificador em todas as tentativas, evitando dois registros se a resposta do COMMIT se perder.
 
 ```bash
-# Após atualizar o código e aplicar V57 pelo Flyway, execute novamente o mesmo comando:
+# Após atualizar o código e aplicar V61 pelo Flyway, execute novamente o mesmo comando:
 bash scripts/catalog/import_railway.sh HOST_DO_PROXY PORTA_DO_PROXY
 # Ou, com MYSQL_* já configuradas:
 python scripts/catalog/import_products.py data/catalog/acervo/*.jsonl.gz --skip-existing --batch-size 1000
@@ -207,6 +207,27 @@ O progresso distingue análises Java concluídas de resultados prontos para
 gravação, com motivos individuais e resumo `failure_reasons`. No Railway,
 o job precisa dos scripts, dependências Python e JAR compilado; o container
 da API não deve ser presumido como contendo essas ferramentas.
+
+## Peça inteira (Total frame processado — `WHOLE_FRAME_V2`)
+
+Equivalente ao quadro de Tecido, mas com a peça INTEIRA: o segmentador de roupa separa a peça do corpo (pele, cabelo,
+outras roupas) e do fundo da marca; a peça vai para um quadro 3:4 de 900×1200 em fundo claro, com a margem do Total frame
+(até 76% da largura e 74% da altura). Lado cortado na foto encosta só naquela borda. Vale também para foto com modelo.
+
+```bash
+pip install -r scripts/catalog/requirements-whole.txt   # rembg local (u2net_cloth_seg + isnet-general-use)
+python scripts/catalog/process_whole_frames.py --limit 20 --out-dir /tmp/whole-preview   # ensaio: só prévias + auditoria
+python scripts/catalog/process_whole_frames.py --apply --limit 500                      # envia e grava (com autorização)
+```
+
+- Entrada: foto canônica aprovada (`catalog_images`), categoria/subcategoria e os sinais da análise do Tecido
+  (`metrics_json.debug.productFrame.model`, `sourceHumanEvidence`, `truncated`).
+- Foto com pessoa usa só a classe de roupa da categoria (cima, baixo ou corpo inteiro); foto de produto e calçado/acessório
+  usam o recorte geral. Tudo roda na máquina do lote: foto com pessoa nunca vai para serviço externo.
+- Saída: `catalog/whole/<uuid>/<sha256>.jpg` (mesmo armazenamento e verificação do Tecido) em `catalog_images.whole_url`,
+  com `whole_json` (caixa da peça no quadro, fundo, lados cortados, escala), `whole_status` e `whole_pipeline_version` (V75).
+  A gravação confere `source_sha256` e incrementa `version` (a linha mudou desde a análise → pulada).
+- A API devolve `catalogImage.whole` com `processed: true`; a Peça inteira da interface usa essa imagem.
 
 ## Auditoria e direitos de persistência
 

@@ -221,6 +221,7 @@ export function PiecePhotoEditor({ pieceId }: { pieceId: string }) {
         <Badge tone={canonical ? "thread" : "mark"}>{canonical ? t("photoEdit.alvo.canonica") : t("photoEdit.alvo.apresentacao")}</Badge>
         {dirty && <span>{t("photoEdit.alteracoes_nao_salvas")}</span>}
       </p>
+      <Link href={`/atelier?tab=metamorphoses&pieceId=${encodeURIComponent(pieceId)}`} className="btn mb-3">{t("motionJobs.title")}</Link>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card>
           <div ref={stageRef} className={cn("photo-edit-stage", pointer !== "none" && "is-tool")} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp}

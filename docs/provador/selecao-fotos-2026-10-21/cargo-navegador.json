@@ -1,0 +1,82 @@
+[
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scope": "Local reference avatar and photographs; lab canvas has fixed dimensions, not a mobile UX certification.",
+    "pending": [
+      {
+        "shown": true,
+        "dressed": true,
+        "garments": [
+          "peca-02_parte_inferior_04_calca_cargo",
+          "cabedal-fai-padrao-tenis",
+          "sola-fai-padrao-tenis",
+          "cadarco-fai-padrao-tenis",
+          "peca-01_parte_superior_02_shirt_camisa",
+          "punho-01_parte_superior_02_shirt_camisa",
+          "punho-01_parte_superior_02_shirt_camisa",
+          "gola-01_parte_superior_02_shirt_camisa"
+        ]
+      }
+    ],
+    "ready": [
+      {
+        "shown": true,
+        "dressed": true,
+        "garments": [
+          "peca-02_parte_inferior_04_calca_cargo",
+          "cabedal-fai-padrao-tenis",
+          "sola-fai-padrao-tenis",
+          "cadarco-fai-padrao-tenis",
+          "peca-01_parte_superior_02_shirt_camisa",
+          "punho-01_parte_superior_02_shirt_camisa",
+          "punho-01_parte_superior_02_shirt_camisa",
+          "gola-01_parte_superior_02_shirt_camisa"
+        ]
+      }
+    ],
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "scope": "Local reference avatar and photographs; lab canvas has fixed dimensions, not a mobile UX certification.",
+    "pending": [
+      {
+        "shown": true,
+        "dressed": true,
+        "garments": [
+          "peca-02_parte_inferior_04_calca_cargo",
+          "cabedal-fai-padrao-tenis",
+          "sola-fai-padrao-tenis",
+          "cadarco-fai-padrao-tenis",
+          "peca-01_parte_superior_02_shirt_camisa",
+          "punho-01_parte_superior_02_shirt_camisa",
+          "punho-01_parte_superior_02_shirt_camisa",
+          "gola-01_parte_superior_02_shirt_camisa"
+        ]
+      }
+    ],
+    "ready": [
+      {
+        "shown": true,
+        "dressed": true,
+        "garments": [
+          "peca-02_parte_inferior_04_calca_cargo",
+          "cabedal-fai-padrao-tenis",
+          "sola-fai-padrao-tenis",
+          "cadarco-fai-padrao-tenis",
+          "peca-01_parte_superior_02_shirt_camisa",
+          "punho-01_parte_superior_02_shirt_camisa",
+          "punho-01_parte_superior_02_shirt_camisa",
+          "gola-01_parte_superior_02_shirt_camisa"
+        ]
+      }
+    ],
+    "errors": []
+  }
+]

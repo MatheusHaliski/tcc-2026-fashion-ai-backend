@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button, Dialog, ErrorState, PageHeader, SegmentPicker, Skeleton, useToast } from "@/components/ui";
-import type { AvatarView } from "@/components/three/avatar-viewer";
 import { api } from "@/lib/api/client";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import type { CatalogSearchContext } from "@/components/catalog/catalog-search";
@@ -20,19 +18,13 @@ import { fromWardrobe, nextTick, type SavedTry, type Sex, type State, type Store
 import { FittingStage } from "./fitting-stage";
 import { FittingControls } from "./fitting-controls";
 import { FittingItems } from "./fitting-items";
-import { MirrorStage, type MirrorPiece } from "@/components/mirror/mirror-stage";
-import { useWebGL } from "@/components/three/common";
-import type { FittingItem } from "@/lib/tryon/fitting-room";
 import { StoreBrowser } from "./store-browser";
-import { mirrorHref } from "@/lib/nav/mirror-href";
 import { WardrobeBrowser } from "./wardrobe-browser";
 import { SavedTries } from "./saved-tries";
+import { AiTryOnDialog } from "./ai-try-on-dialog";
 
-/** RF18 coordinator: composes controlled views and delegates fitting/persistence use cases to hooks. */
 export function FittingRoom() {
   const { t } = useI18n();
-  // sem WebGL a prévia 2D do espelho mostra as fotos das peças no vidro, sem Canvas (o MirrorStage 3D ficaria em branco)
-  const gl = useWebGL();
   const toast = useToast();
   const searchParams = useSearchParams();
   const taxonomy = useTaxonomy();
@@ -41,19 +33,19 @@ export function FittingRoom() {
 
   const [mode, setMode] = useState<EnvironmentMode>("auto");
   const [light, setLight] = useState<LightMode>("daylight");
-  const [view, setView] = useState<AvatarView>("front");
   const [tab, setTab] = useState<Tab>("stores");
   const [category, setCategory] = useState("");
-  // prévia 2D no espelho (o mesmo avatar, de frente e parado) com o look atual, aberta pelo botão do slot
-  const [preview2d, setPreview2d] = useState<FittingItem | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
   const [store, setStore] = useState(searchParams.get("marca") ?? "");
   const [confirmClear, setConfirmClear] = useState(false);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState<FittingSearchResults | null>(null);
   const [catalogTarget, setCatalogTarget] = useState<HTMLDivElement | null>(null);
   const [heroId, setHeroId] = useState<string | null>(null);
-  // Presentation preference; the manual choice takes priority over the API's default.
+  
   const [tipoLook, setTipoLook] = useState<Sex | null>(null);
+  // Apenas a escolha explícita restringe o catálogo; limpar filtros conserva o avatar escolhido.
+  const [catalogGender, setCatalogGender] = useState("");
   const selectedTipoLook = tipoLook ?? data?.sex ?? "MASCULINO";
 
   const session = useFittingSession({
@@ -75,8 +67,9 @@ export function FittingRoom() {
   }
 
   function changeTipoLook(next: Sex) {
-    if (next === selectedTipoLook) return;
     setTipoLook(next);
+    // TipoLook.codigo usa UNISEX; o catálogo usa o código Taxonomy.SEXES UNISSEX.
+    setCatalogGender(next === "UNISEX" ? "UNISSEX" : next);
     setStatus(t("tryOn.look_tipo", { sex: next }));
   }
 
@@ -111,17 +104,19 @@ export function FittingRoom() {
         title={t("tryOn.titulo_lojas")}
         kicker="RF18"
         lead={t("tryOn.lead_lojas")}
-        actions={<Link href={mirrorHref()} className="btn btn-sm btn-ghost">{t("tryOn.ir_ao_espelho")}</Link>}
+        actions={(
+          <Button size="sm" onClick={() => setAiOpen(true)}>{t("tryOn.ia_botao")}</Button>
+        )}
       />
       <div className="fitting-workspace">
         <div className="fitting-preview">
           <FittingStage
             avatar={data.avatar ?? null} mannequin={data.mannequin} pieces={shown}
-            environment={environment} scene={scene} light={light} view={view}
+            environment={environment} scene={scene} light={light} view="front"
             sex={selectedTipoLook} onCanvas={share.onCanvas}
           >
             <FittingControls
-              sex={selectedTipoLook} onSexChange={changeTipoLook} view={view} onViewChange={setView}
+              sex={selectedTipoLook} onSexChange={changeTipoLook}
               light={light} onLightChange={setLight} mode={mode} onModeChange={setMode}
               environment={environment} itemCount={session.items.length} onSnapshot={share.snapshot}
               onCopyLink={share.copyLink} onSave={saveTry} onClear={() => setConfirmClear(true)}
@@ -140,8 +135,9 @@ export function FittingRoom() {
           {tab === "stores" && (
             <StoreBrowser
               stores={stores.data?.stores ?? []} loading={stores.loading} store={store} category={category}
+              gender={catalogGender} onGenderChange={setCatalogGender}
               onStoreChange={setStore} onCategoryChange={setCategory} onPick={pickProduct} onResults={onSearchResults}
-              resultsTarget={catalogTarget}
+              resultsTarget={catalogTarget} tipoLook={selectedTipoLook} onTipoLookChange={changeTipoLook}
             />
           )}
           {tab === "wardrobe" && (
@@ -161,24 +157,12 @@ export function FittingRoom() {
             items={session.items} products={session.products} colors={taxonomy?.colors}
             owned={session.owned} busyOwn={session.busyOwn} status={status} slotNames={session.slotNames}
             onVariantChange={session.changeVariant} onOwn={session.ownIt} onRemove={session.remove}
-            onPreview2d={setPreview2d}
             onPickFromStores={(slot) => { setTab("stores"); setCategory(slot); }}
             onPickFromWardrobe={() => setTab("wardrobe")}
           />
         </div>
       </div>
-      <Dialog open={!!preview2d} onClose={() => setPreview2d(null)} title={t("tryOn.previa_2d_titulo")} size="lg"
-        footer={<Link href={mirrorHref({ vista: "2d" })} className="btn btn-sm">{t("tryOn.espelho_do_quarto_2d")}<span aria-hidden="true">→</span></Link>}>
-        {preview2d && (
-          <div className="grid gap-3 md:grid-cols-[minmax(240px,360px)_1fr]">
-            <MirrorStage slots={mirrorSlotsOf(session.items)} mode="2d" webgl={gl !== false} />
-            <div className="grid content-start gap-2">
-              <p className="type-body">{t("tryOn.previa_2d_de", { name: preview2d.name })}</p>
-              <p className="type-body-sm text-muted">{t("mirror.previa_2d_nota")}</p>
-            </div>
-          </div>
-        )}
-      </Dialog>
+      <AiTryOnDialog open={aiOpen} onClose={() => setAiOpen(false)} items={session.items} onPickFromWardrobe={() => setTab("wardrobe")} />
       <Dialog
         open={confirmClear} onClose={() => setConfirmClear(false)} title={t("tryOn.limpar_o_provador")}
         footer={(
@@ -192,14 +176,4 @@ export function FittingRoom() {
       </Dialog>
     </>
   );
-}
-
-const MIRROR_SLOT: Record<string, string> = { upper_piece: "upper", lower_piece: "lower", shoes_piece: "shoes", accessory_piece: "accessory" };
-/** As peças do provador no formato do espelho (mesmo contrato do 3D): peça inteira vai ao lugar "dress". */
-function mirrorSlotsOf(items: FittingItem[]): Record<string, MirrorPiece | null> {
-  const slots: Record<string, MirrorPiece | null> = {};
-  for (const i of items) {
-    slots[i.wear === "FULL_BODY" ? "dress" : MIRROR_SLOT[i.slot] ?? i.slot] = { id: i.key, name: i.name, imageUrl: i.processedUrl ?? i.imageUrl ?? null, category: i.category, subcategory: i.subcategory ?? null, colorHex: i.colorHex ?? null, variation: i.variation ?? null };
-  }
-  return slots;
 }

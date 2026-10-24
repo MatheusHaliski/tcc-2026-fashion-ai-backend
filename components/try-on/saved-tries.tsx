@@ -13,7 +13,7 @@ export interface SavedTriesProps {
 
 /** Provas salvas; restauração e persistência permanecem no coordenador. */
 export function SavedTries({ saved, onRestore, onDelete }: SavedTriesProps) {
-  const { t } = useI18n();
+  const { t, fmtDate } = useI18n();
 
   return (
     <Card>
@@ -37,7 +37,7 @@ export function SavedTries({ saved, onRestore, onDelete }: SavedTriesProps) {
               <div className="min-w-0 flex-1">
                 <p className="truncate type-body-sm font-medium">{entry.title}</p>
                 <p className="type-caption text-muted">
-                  {t("tryOn.n_pecas", { n: entry.items.length })} · {new Date(entry.createdAt).toLocaleDateString()}
+                  {t("tryOn.n_pecas", { n: entry.items.length })} · {fmtDate(new Date(entry.createdAt))}
                 </p>
               </div>
               <Button size="sm" onClick={() => onRestore(entry)}>{t("tryOn.vestir_de_novo")}</Button>

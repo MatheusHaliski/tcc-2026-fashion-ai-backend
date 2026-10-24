@@ -1,0 +1,3 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /schemes/[id]/edit;POST /api/backgrounds/art (direto);POST /api/backgrounds/art;BackgroundController;BackgroundStudioService.generateArt()
+Tela /schemes/[id]/edit;PUT /api/pieces/{id}/background (direto);PUT /api/pieces/{id}/background;BackgroundController;BackgroundStudioService.savePiece()

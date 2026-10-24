@@ -15,6 +15,10 @@ import java.util.UUID;
 
 /** Repositório Spring Data de CatalogImage (RF47 · catálogo global). */
 public interface CatalogImageRepository extends JpaRepository<CatalogImage, UUID> {
+    /** Feed da GPU: só cópias gravadas com autorização da fonte; a cópia forçada pelo responsável (--force-category-frame) fica só no card. */
+    @Query(value="SELECT * FROM catalog_images WHERE is_canonical = true AND processing_status = 'APPROVED' AND usage_status = 'PERSISTED' AND stored_url IS NOT NULL AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(assets_json, '$.persistenceDecision.mode')), '') <> 'FORCED_CATEGORY_FRAME' AND (updated_at > :after OR (updated_at = :after AND id > :afterId)) ORDER BY updated_at,id LIMIT :lim",nativeQuery=true)
+    List<CatalogImage> findVtonFeed(@Param("after")Instant after,@Param("afterId")String afterId,@Param("lim")int limit);
+
     List<CatalogImage> findByProductIdOrderByPrimaryDescCreatedAtAsc(UUID productId);
 
     List<CatalogImage> findByProductIdInAndPrimaryTrue(Collection<UUID> productIds);
@@ -30,9 +34,12 @@ public interface CatalogImageRepository extends JpaRepository<CatalogImage, UUID
      * categoria ({@code pipeline_version} {@code CATALOG_FRAME_*}, docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md) são uma
      * decisão editorial final: uma versão nova do pipeline não as refaz nem substitui a referência ativa.
      */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from CatalogImage i where i.usageStatus <> br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED "
+            + "and (i.reviewStatus is null or i.reviewStatus <> 'REJECTED') "
             + "and i.attempts < :maxAttempts and (i.processingStatus in ('PENDING', 'FAILED') "
             + "or (i.processingStatus = 'DOWNLOADING' and i.updatedAt < :stale) "
+            + "or (i.pipelineVersion is null and i.processingStatus <> 'DOWNLOADING' ) "
             + "or (i.pipelineVersion is not null and i.pipelineVersion <> :version and i.processingStatus <> 'DOWNLOADING' "
             + "and i.pipelineVersion not like 'CATALOG_FRAME_%')) "
             + "order by i.attempts asc, i.createdAt asc")

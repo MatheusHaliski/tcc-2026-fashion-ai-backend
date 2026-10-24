@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+FROM pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
+WORKDIR /app
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 VTON_MODEL_BUNDLE=/models
+COPY services/anatomical_vton/requirements.txt /app/requirements.txt
+# The optional secret is the session CA bundle when building through its proxy.
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi; \
+    python -m pip install --no-cache-dir -r /app/requirements.txt
+COPY services/anatomical_vton /app/services/anatomical_vton
+# Build context is a staging directory containing only approved, hash-verified artifacts.
+COPY model-bundle /models
+RUN python -m services.anatomical_vton.vertex_runtime.preflight /models \
+    && useradd --uid 10001 --create-home --home-dir /tmp/vton vton \
+    && chmod -R a-w /models
+USER 10001:10001
+EXPOSE 8080
+# Multiple workers would duplicate weights and defeat the single-GPU memory budget.
+CMD ["python", "-m", "uvicorn", "services.anatomical_vton.vertex_runtime.server:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]

@@ -4,7 +4,8 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { FAMILY_PARAMETERS, contractSummary, garmentContractOf } from "./garment-contract";
+import { MOULD_VERSION, FAMILY_PARAMETERS, contractSummary, garmentContractOf } from "./garment-contract";
+import { specFor } from "./human/garment-fit";
 import { kindOf } from "./human/garments";
 
 const taxonomy = JSON.parse(readFileSync(new URL("../../fai-application/src/main/resources/taxonomy/taxonomy.json", import.meta.url), "utf-8")) as { subcategories: { code: string; category: string; status?: string }[] };
@@ -60,4 +61,13 @@ describe("contrato de dados da vestimenta", () => {
     for (const family of ["TOPS", "BOTTOMS", "SKIRTS", "FULL_BODY", "OUTERWEAR", "SHOES"] as const) expect(FAMILY_PARAMETERS[family].length).toBeGreaterThan(0);
     expect(FAMILY_PARAMETERS.ACCESSORIES).toEqual([]);
   });
+});
+it("reports the fitted model and declared product attributes instead of the generic family defaults",()=>{
+ const p={id:'zara-shirt',name:'Camisa',slot:'upper',subcategory:'shirt',variation:'OVERSIZED',material:'LINEN',attributes:{SLEEVE_LENGTH:['SHORT_SLEEVE'],CLOSURE:['ZIPPER'],NECKLINE:['V_NECK']}};
+ const c=garmentContractOf(p),sp=specFor(p)!;
+ expect(c.fit.easeM).toBe(sp.ease);expect(c.fabric.behaviour.drape).toBe(sp.drape);
+ expect(c.fabric.material).toMatchObject({value:'LINEN',provenance:'CONFIRMED'});
+ expect(c.cut.sleeve).toMatchObject({value:'SHORT_SLEEVE',provenance:'CONFIRMED'});
+ expect(c.cut.opening.value).toBe('ZIPPER');expect(c.cut.silhouette.value).toBe('OVERSIZED');
+ expect(c.asset.mouldVersion).toBe(MOULD_VERSION);expect(c.quality.approved).toBe(false);
 });

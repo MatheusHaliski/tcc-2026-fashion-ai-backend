@@ -76,6 +76,10 @@ public class PreferencesService {
      * ele, nada a invalidar.
      */
     private HypeCache hypeCache;
+    private AuraPermissionsService auraPermissions;
+    @Autowired
+    public void setAuraPermissions(AuraPermissionsService permissions) { this.auraPermissions = permissions; }
+
 
     @Autowired(required = false)
     public void setHypeCache(HypeCache hypeCache) {
@@ -97,6 +101,7 @@ public class PreferencesService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("theme", p.getTheme());
         out.put("language", p.getLanguage());
+        out.put("currency", p.getCurrency());
         out.put("density", p.getDensity());
         out.put("fontScale", p.getFontScale());
         out.put("highContrast", p.isHighContrast());
@@ -115,6 +120,7 @@ public class PreferencesService {
         out.put("lookDoDiaPanelVersion", u.getLookDoDiaPanelVersion());
         out.put("hypeCreatorOptOut", p.isHypeCreatorOptOut());
         out.put("auraHype", p.isAuraHype());
+        out.put("auraImpersonation", p.isAuraImpersonation());
         out.put("clientUpdatedAt", p.getClientUpdatedAt());
         out.put("profile", Map.of("displayName", u.getDisplayName(), "username", u.getUsername(),
                 "bio", u.getBio() == null ? "" : u.getBio(), "avatarUrl", String.valueOf(u.getAvatarUrl()),
@@ -130,6 +136,7 @@ public class PreferencesService {
         out.put("skinTones", MannequinGeometry.SKIN_TONES);
         out.put("themes", ThemeMode.values());
         out.put("languages", UiLanguage.values());
+        out.put("currencies", ExchangeRateService.SUPPORTED);
         out.put("densities", UiDensity.values());
         out.put("panelVersions", HypeScorePanelVersion.values());
         out.put("bodyBuilds", BodyBuild.values());
@@ -141,7 +148,27 @@ public class PreferencesService {
                          MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
                          String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
                          String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic,
-                         Boolean hypeCreatorOptOut, Boolean auraHype) {
+                         Boolean hypeCreatorOptOut, Boolean auraHype, Boolean auraImpersonation, String currency) {
+        public Update(ThemeMode theme, UiLanguage language, UiDensity density, Integer fontScale, Boolean highContrast,
+                      Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
+                      MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
+                      String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
+                      String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic,
+                      Boolean hypeCreatorOptOut, Boolean auraHype, Boolean auraImpersonation) {
+            this(theme, language, density, fontScale, highContrast, reduceMotion, chromeBackgroundId, sizeSystem, unitSystem,
+                    mannequinSex, mannequinSkinTone, mannequinBuild, defaultCardSkin, lookDoDiaPanelVersion, clientUpdatedAt,
+                    contentContainerColor, soundEnabled, hapticsEnabled, coreAesthetic, hypeCreatorOptOut, auraHype, auraImpersonation, null);
+        }
+        public Update(ThemeMode theme, UiLanguage language, UiDensity density, Integer fontScale, Boolean highContrast,
+                      Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
+                      MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
+                      String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
+                      String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic,
+                      Boolean hypeCreatorOptOut, Boolean auraHype) {
+            this(theme, language, density, fontScale, highContrast, reduceMotion, chromeBackgroundId, sizeSystem, unitSystem,
+                    mannequinSex, mannequinSkinTone, mannequinBuild, defaultCardSkin, lookDoDiaPanelVersion, clientUpdatedAt,
+                    contentContainerColor, soundEnabled, hapticsEnabled, coreAesthetic, hypeCreatorOptOut, auraHype, null);
+        }
         public Update(ThemeMode theme, UiLanguage language, UiDensity density, Integer fontScale, Boolean highContrast,
                       Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
                       MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
@@ -164,11 +191,24 @@ public class PreferencesService {
             // sincronização entre dispositivos (RF23.CA02): a alteração mais recente vence.
             return get(user);
         }
+        if (Boolean.TRUE.equals(u.auraImpersonation())) {
+            if (auraPermissions == null) throw new ApiException(503, "AURA_PERMISSIONS_UNAVAILABLE", Msg.t("auraGate.locked.AURA_IMPERSONATION"));
+            auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_IMPERSONATION);
+        }
+        if (u.auraImpersonation() != null) p.setAuraImpersonation(u.auraImpersonation());
         if (u.theme() != null) {
             p.setTheme(u.theme());
         }
         if (u.language() != null) {
             p.setLanguage(u.language());
+        }
+        if (u.currency() != null) {
+            // "" ou AUTO volta à moeda do idioma
+            String c = u.currency().trim().toUpperCase(java.util.Locale.ROOT);
+            if (!c.isEmpty() && !"AUTO".equals(c) && !ExchangeRateService.supported(c)) {
+                throw ApiException.badRequest("MOEDA_INVALIDA", Msg.t("preferences.moeda_invalida"));
+            }
+            p.setCurrency(c.isEmpty() || "AUTO".equals(c) ? null : c);
         }
         if (u.density() != null) {
             p.setDensity(u.density());

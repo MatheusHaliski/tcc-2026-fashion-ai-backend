@@ -1,0 +1,17 @@
+{
+  "scope": "Real local WebGL, bundled FAI jeans reference, no brand fidelity certification; API mocked",
+  "result": {
+    "program": "garment-fabric-blend-v2-denim",
+    "atlas": [
+      1170,
+      640
+    ],
+    "photoVertices": 590,
+    "unmodifiedTint": "ffffff"
+  },
+  "viewports": [
+    1440,
+    390
+  ],
+  "errors": []
+}

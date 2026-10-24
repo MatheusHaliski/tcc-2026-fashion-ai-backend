@@ -1,0 +1,31 @@
+{
+  "sex": "FEMININO",
+  "measurements": {
+    "STRAIGHT": {
+      "hem": 0.13504090905189514,
+      "knee": 0.145155418664217
+    },
+    "TAPERED": {
+      "hem": 0.0741625428199768,
+      "knee": 0.1298409253358841
+    },
+    "BOOTCUT": {
+      "hem": 0.20556417107582092,
+      "knee": 0.14514635875821114
+    },
+    "FLARE": {
+      "hem": 0.26772626116871834,
+      "knee": 0.1442083604633808
+    },
+    "WIDE_LEG": {
+      "hem": 0.3034478388726711,
+      "knee": 0.2118877675384283
+    }
+  },
+  "skirtHemWidths": [
+    0.38601285219192505,
+    0.4140128493309021,
+    0.7332128286361694
+  ],
+  "scope": "Parametric local body asset; not real-world fit certification"
+}

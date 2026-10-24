@@ -1,4 +1,6 @@
 "use client";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
+import { CreatorWelcome } from "@/components/creator-welcome";
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -25,6 +27,9 @@ import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
+import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
+import { ProfileVisibilityNotice } from "@/components/follow-requests";
+import { resolveFraming, usePhotoFraming } from "@/lib/photo-framing";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
 type Step = PieceCreationStep;
@@ -86,6 +91,9 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   }, [tax]); // eslint-disable-line react-hooks/exhaustive-deps
   // arte do card (RF11 v2 + campos do Background Studio): um só config, o mesmo que o detalhe grava depois
   const [background, setBackground] = useState<Record<string, unknown>>({ skin: "atelier" });
+  // Total frame: o enquadramento escolhido aqui vai com a arte da peça (background.photoFraming) e vale em todo card dela
+  const [defaultFraming] = usePhotoFraming();
+  const photoFraming = resolveFraming(background.photoFraming, defaultFraming);
   const [done, setDone] = useState<string | null>(null);
   // Salvar: UMA tentativa por ação. A trava é síncrona (ref), então um segundo clique antes de a tela re-renderizar não
   // envia outro pedido.
@@ -110,8 +118,6 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   }
   /** "É esta" na busca: o produto preenche o formulário e a peça passa a referenciar o catálogo (a foto oficial vira a imagem). */
   async function applyCatalog(product: CatalogProduct, variant: CatalogVariant | null) {
-    try { product = await catalogApi.verifyImage(product.id); }
-    catch (error) { setSaveProblem(error instanceof Error ? error.message : t("catalog.verificacao_falhou")); return; }
     setPick({ product, variant });
     const color = variant?.color ?? product.color ?? "";
     const allowedOccasions = tax?.allowedOccasionsByCategory?.[product.category] ?? tax?.occasions;
@@ -206,7 +212,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   }
   // sem foto oficial: o asset da categoria (ou o genérico) é a imagem que a peça terá
   // (a subcategoria escolhida troca o asset: camiseta, camisa, regata… cada uma com a sua imagem)
-  const asset = (value.subcategory && tax?.defaultImagesBySubcategory?.[value.subcategory]) || tax?.defaultImages?.[value.category] || tax?.defaultImages?.generic || GENERIC_ASSET;
+  const asset = defaultGarmentUrl(value.category, value.subcategory, tax?.colors?.[value.color], value.color, photoFraming);
   const officialImg = mode === "photos" ? photoPick?.preview ?? null : pick?.product.imageUrl ?? null;
   const origin = mode === "photos" ? (photoPick ? t("pieces.new.origem_foto") : t("catalog.origem_sem_foto")) : pick && officialImg
     ? t("catalog.origem_catalogo", { fonte: pick.product.source?.domain && pick.product.source.domain !== "null" ? pick.product.source.domain : t("catalog.fonte_fashionai") })
@@ -223,7 +229,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
-      <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} />
+      <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} actions={<CreatorWelcome kind="piece" />} />
       {/* RF54 — veio do "É minha" do FashionAI Lens: o que a leitura viu já está no formulário, para conferir */}
       {pre.fromLens && (
         <p className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-thread-soft p-3 type-body-sm" role="note" data-prefill="lens">
@@ -235,8 +241,8 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
         options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
       <PieceCreationSteps value={step} onChange={go} />
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
-      <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
-        <div className="min-w-0">
+      <div className={step === "art" ? "piece-create-layout is-art" : "piece-create-layout"}>
+        <div className="piece-create-main min-w-0">
           {/* as fotos analisadas ficam montadas entre as etapas (só escondidas): voltar para a próxima peça não perde nada */}
           {mode === "photos" && (
             <div className="mb-4" hidden={step !== "piece"}><Card>
@@ -259,7 +265,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-catalog-label" className="type-h3">{t("catalog.buscar_no_catalogo")}</h2><Badge tone="thread">{t("catalog.recomendado")}</Badge><span className="type-caption text-muted">{t("catalog.lead_busca")}</span></div>
                 {pick ? (
                   <div className="catalog-pick" role="status">
-                    <span className="catalog-pick-art" aria-hidden>{pick.product.catalogImage ? <CatalogPhoto image={pick.product.catalogImage} fallbackUrl={officialImg} alt="" /> : <img src={officialImg ?? asset} alt="" />}</span>
+                    <span className="catalog-pick-art" aria-hidden>{pick.product.catalogImage ? <CatalogPhoto framing={photoFraming} image={pick.product.catalogImage} fallbackUrl={officialImg} alt="" /> : <img src={officialImg ?? asset} alt="" />}</span>
                     <div className="min-w-0">
                       <p className="type-caption text-muted">{t("catalog.peca_do_catalogo")}</p>
                       <p className="type-body font-medium truncate">{pick.product.brand?.name} · {pick.product.productName}{pick.variant?.colorName ? ` — ${pick.variant.colorName}` : ""}</p>
@@ -268,7 +274,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                     <Button size="sm" variant="ghost" onClick={clearCatalog}>{t("catalog.remover_referencia")}</Button>
                   </div>
                 ) : (
-                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog} resultsLayout="matrix" brandGrid
+                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onClearCategory={() => setValue((v) => ({ ...v, category: "", subcategory: "" }))} onPick={applyCatalog} resultsLayout="matrix" brandGrid
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
                 )}
               </section>}
@@ -302,6 +308,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h3 id="after-save-title" className="type-h3">{t("pieces.new.depois_de_salvar")}</h3>
                 <Switch checked={shareToFeed} onChange={setShareToFeed} label={t("pieces.new.opt_share")} hint={t(shareToFeed ? "pieces.new.opt_share_on" : "pieces.new.opt_share_off")} />
                 {shareToFeed && value.visibility === "PRIVATE" && <p role="note" className="after-save-detail type-caption">{t("pieces.new.opt_share_private")}</p>}
+                {shareToFeed && <ProfileVisibilityNotice />}
                 <Switch checked={toFlair} onChange={setToFlair} label={t("pieces.new.opt_flair")} hint={t("pieces.new.opt_flair_hint")} />
                 {toFlair && (
                   <div className="after-save-detail after-save-flair">
@@ -320,7 +327,9 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
             </Card>
           )}
         </div>
-        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{step === "review" && shareToFeed ? t("interactions.post_preview") : t("scheme.card")}</p><PieceCard piece={previewPiece} href="#"
+        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview piece-create-preview"><p className="label">{step === "review" && shareToFeed ? t("interactions.post_preview") : t("scheme.card")}</p>
+          <PhotoFramingToggle className="mb-3" value={photoFraming} onChange={(next) => setBackground((current) => ({ ...current, photoFraming: next }))} />
+          <PieceCard piece={previewPiece} href="#"
           extra={step === "review" && shareToFeed && user ? <span className="caption">{t("feed.shared_by", { username: user.username })}</span> : undefined} /></aside>}
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>

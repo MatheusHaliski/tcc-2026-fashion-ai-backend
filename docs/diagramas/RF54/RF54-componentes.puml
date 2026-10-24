@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF54 — FashionAI Lens (MVP)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF54 — FashionAI Lens (MVP)\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/lens\n(site)/(app)/lens/page.tsx" as FE0
@@ -40,20 +40,21 @@ package "Frontend (Next.js)" {
 package "fai-web (REST)" {
   component "LensController\n/api/lens/scans\n/api/lens/scans/from-app\n/api/lens/scans/{…}\n/api/lens/scans/{…}/detections\n(+8 rotas)" as LensController
   component "MeController\n/api/me" as MeController
-  component "WardrobeController\n/api/pieces\n/api/pieces/{…}/model3d\n/api/studio/backdrops" as WardrobeController
+  component "WardrobeController\n/api/pieces\n/api/pieces/analysis/multi\n/api/pieces/analysis/multi/{…}/ai-image\n/api/pieces/analysis/multi/{…}/ai-images/{…}/piece\n(+9 rotas)" as WardrobeController
 }
 package "fai-application (casos de uso)" {
   component "LensService" as LensService
   component "AccountService" as AccountService
+  component "MultiPieceService" as MultiPieceService
   component "WardrobeService" as WardrobeService
   component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
-  component "MultiPieceService" as MultiPieceService <<apoio>>
   component "MediaService" as MediaService <<apoio>>
   component "LensConfig" as LensConfig <<apoio>>
   component "IdentityService" as IdentityService <<apoio>>
   component "NotificationService" as NotificationService <<apoio>>
   component "Avatar3dService" as Avatar3dService <<apoio>>
   component "FlatLayPipeline" as FlatLayPipeline <<apoio>>
+  component "BrandReader" as BrandReader <<apoio>>
   component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
   component "RateLimitPort\n«InMemoryRateLimit»" as RateLimitPort <<port>>
   component "EmailSenderPort\n«LoggingEmailSender / ResendEmailSender»" as EmailSenderPort <<port>>
@@ -93,7 +94,14 @@ LensService ..> MultiPieceService
 LensService ..> WardrobeService
 MeController --> AccountService
 MediaStoragePort --> CL_S3
+MultiPieceService --> AI
+MultiPieceService --> REPO_MySQL
+MultiPieceService ..> BrandReader
+MultiPieceService ..> FlatLayPipeline
+MultiPieceService ..> MediaService
+MultiPieceService ..> WardrobeService
 REPO_MySQL --> DB_MySQL : JPA/Flyway
+WardrobeController --> MultiPieceService
 WardrobeController --> WardrobeService
 WardrobeService --> AI
 WardrobeService --> EV

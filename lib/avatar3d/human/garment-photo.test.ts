@@ -12,6 +12,24 @@ function jeans(): GarmentRaster {
 }
 
 describe("product photo separated from its backdrop", () => {
+  it.each(["horizontal", "vertical"])("retains %s stripes without tiling a unique contrasting logo", axis => {
+    const width = 240, height = 320, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 20; y < 300; y++) for (let x = 30; x < 210; x++) {
+      const band = (axis === "horizontal" ? y : x) % 16 < 5;
+      data.set(band ? [240, 235, 225, 255] : [15, 45, 110, 255], (y * width + x) * 4);
+    }
+    for (let y = 60; y < 90; y++) for (let x = 75; x < 105; x++) data.set([230, 20, 40, 255], (y * width + x) * 4);
+    const tile = fabricTile({ width, height, data });
+    expect(tile).toMatchObject(axis === "horizontal" ? { width: 1, height: 16 } : { width: 16, height: 1 });
+    for (let y = tile!.y; y < tile!.y + tile!.height; y++) for (let x = tile!.x; x < tile!.x + tile!.width; x++) {
+      expect([...data.slice((y * width + x) * 4, (y * width + x) * 4 + 3)]).not.toEqual([230, 20, 40]);
+    }
+  });
+  it("does not treat a single side stripe as repeating branded fabric", () => {
+    const width = 240, height = 320, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 20; y < 300; y++) for (let x = 30; x < 210; x++) data.set(x < 40 ? [240, 240, 240, 255] : [20, 30, 40, 255], (y * width + x) * 4);
+    expect(fabricTile({ width, height, data })).toBeNull();
+  });
   it("extracts a repeat of plaid fabric without repeating the shirt or its label", () => {
     const width = 240, height = 320, data = new Uint8ClampedArray(width * height * 4);
     for (let y = 20; y < 300; y++) for (let x = 30; x < 210; x++) {
@@ -58,6 +76,35 @@ it("fabric wash ignores transparent gaps and retains color along trouser height"
   const rows = fabricRows(raster);
   expect(rows.length).toBeGreaterThan(30);
   for (const row of rows) expect(row.rgb).toEqual([35, 75, 120]);
+});
+
+it("keeps asymmetric trouser colours and stripes in their own leg, without repeating the logo", () => {
+  const width = 480, height = 640, data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 40; y < 600; y++) for (let x = 40; x < 440; x++) {
+    if (x >= 220 && x < 260) continue;
+    const rgb = x < 240 ? (y % 16 < 5 ? [235, 230, 220] : [20, 40, 110]) : [25, 120, 60];
+    data.set([...rgb, 255], (y * width + x) * 4);
+  }
+  for (let y = 80; y < 120; y++) for (let x = 300; x < 360; x++) data.set([240, 20, 40, 255], (y * width + x) * 4);
+  const raster = { width, height, data };
+  expect(fabricTile(raster, { toX: 240 })).toMatchObject({ width: 1, height: 16 });
+  expect(fabricTile(raster, { fromX: 240 })).toBeNull();
+  const right = fabricRows(raster, { fromX: 240, inset: .1 });
+  expect(right.length).toBeGreaterThan(30);
+  expect(right.every(row => row.rgb.join() === "25,120,60")).toBe(true);
+});
+
+it("keeps the torso inset for ranged upper panels; only legs explicitly request wider sampling", () => {
+  const width = 120, height = 80, data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) for (let x = 0; x < 100; x++) {
+    data.set(x < 30 || x >= 70 ? [230, 30, 70, 255] : [20, 40, 110, 255], (y * width + x) * 4);
+  }
+  const raster = { width, height, data };
+  const torso = fabricRows(raster, { fromX: 0, toX: 100 });
+  const leg = fabricRows(raster, { fromX: 0, toX: 100, inset: .1 });
+  expect(torso.length).toBeGreaterThan(30);
+  expect(torso.every(row => row.rgb.join() === "20,40,110")).toBe(true);
+  expect(leg.some(row => row.rgb.join() === "230,30,70")).toBe(true);
 });
 
 
@@ -131,4 +178,15 @@ describe("foto recortada com vazios e com mais de uma peça (catálogo com model
     const r = { width, height, data }; expect(splitByHem(r, "upper").hemRow).toBeNull();
     expect(data[(90 * width + 30) * 4 + 3]).toBe(255);
   });
+});
+
+it("retains broad plaid on jacket fabric panels instead of reducing it to a wash gradient", () => {
+  const width = 640, height = 960, data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 40; y < 900; y++) for (let x = 40; x < 600; x++) {
+    const rgb = x % 72 < 20 ? [35, 70, 110] : y % 80 < 24 ? [100, 150, 190] : [230, 225, 215];
+    data.set([...rgb, 255], (y * width + x) * 4);
+  }
+  // Each torso half must provide its own evidence; broad checks need more than
+  // the old 78-pixel window, which could not detect a 72/80-pixel repeat.
+  expect(fabricTile({ width, height, data }, { fromX: 40, toX: 320 })).toMatchObject({ width: 72, height: 80 });
 });

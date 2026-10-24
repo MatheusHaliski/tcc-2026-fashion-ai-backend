@@ -1,0 +1,7 @@
+-r requirements-google-cloud.txt
+torch==2.7.1
+torchvision==0.22.1
+transformers==4.57.1
+onnxruntime-gpu==1.22.0
+fashn-human-parser @ git+https://github.com/fashn-AI/fashn-human-parser.git@f2771f2fb8655349e87e2869bbde7ace0bd06f2c
+fashn-vton @ git+https://github.com/fashn-AI/fashn-vton-1.5.git@7c0f10af3f91ad4048fe9729c470a13ef905d25a

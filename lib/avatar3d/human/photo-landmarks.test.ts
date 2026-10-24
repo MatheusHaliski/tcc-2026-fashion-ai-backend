@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { landmarkProjection, silhouetteLandmarks } from "./photo-landmarks";
+import { landmarkProjection, silhouetteLandmarks, separatedLegRows } from "./photo-landmarks";
 
 it("finds shoulder and neckline points in a garment with a neckline below both shoulders", () => {
   const mask = new Uint8Array(100 * 100);
@@ -21,4 +21,18 @@ it("maps both shoulder edges exactly while allowing an asymmetric waist and a di
 it("does not invent landmarks from an empty or tiny image", () => {
   expect(silhouetteLandmarks(new Uint8Array(10000), 100, 100, { x0: 10, x1: 80, y0: 10, y1: 90 })).toBeNull();
   expect(silhouetteLandmarks(new Uint8Array(100), 10, 10, { x0: 0, x1: 9, y0: 0, y1: 9 })).toBeNull();
+});
+it("extracts each leg separately without mistaking the gap for fabric",()=>{
+ const mask=new Uint8Array(100*120);
+ for(let y=10;y<110;y++)for(let x=15;x<85;x++)if(y<40||x<42||x>57)mask[y*100+x]=1;
+ const rows=separatedLegRows(mask,100,120,{x0:15,x1:84,y0:10,y1:109});
+ expect(rows.length).toBeGreaterThan(4);
+ for(const row of rows){expect(row.left).toEqual({x0:15,x1:42});expect(row.right).toEqual({x0:58,x1:85});expect(row.y).toBeGreaterThanOrEqual(40);}
+});
+it("does not invent separate trouser legs for a skirt, tiny mask or one isolated hole",()=>{
+ const mask=new Uint8Array(100*120);
+ for(let y=10;y<110;y++)for(let x=15;x<85;x++)mask[y*100+x]=1;
+ for(let x=43;x<57;x++)mask[70*100+x]=0;
+ expect(separatedLegRows(mask,100,120,{x0:15,x1:84,y0:10,y1:109})).toEqual([]);
+ expect(separatedLegRows(mask,100,120,{x0:15,x1:20,y0:10,y1:109})).toEqual([]);
 });

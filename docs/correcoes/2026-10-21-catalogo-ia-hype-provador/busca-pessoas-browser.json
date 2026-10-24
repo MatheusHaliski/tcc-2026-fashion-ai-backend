@@ -1,0 +1,47 @@
+{
+  "scope": "Real /search UI, mocked auth/API: clicking Pessoas, render public profiles, return from Marcas; not a production backend test",
+  "results": [
+    {
+      "width": 1440,
+      "peopleCalls": 2,
+      "requests": [
+        {
+          "tab": "PESSOAS",
+          "size": "24"
+        },
+        {
+          "tab": "MARCAS",
+          "size": "24"
+        },
+        {
+          "tab": "PESSOAS",
+          "size": "24"
+        }
+      ],
+      "errors": [],
+      "overflow": false,
+      "profileLink": "/u/bia"
+    },
+    {
+      "width": 390,
+      "peopleCalls": 2,
+      "requests": [
+        {
+          "tab": "PESSOAS",
+          "size": "24"
+        },
+        {
+          "tab": "MARCAS",
+          "size": "24"
+        },
+        {
+          "tab": "PESSOAS",
+          "size": "24"
+        }
+      ],
+      "errors": [],
+      "overflow": false,
+      "profileLink": "/u/bia"
+    }
+  ]
+}

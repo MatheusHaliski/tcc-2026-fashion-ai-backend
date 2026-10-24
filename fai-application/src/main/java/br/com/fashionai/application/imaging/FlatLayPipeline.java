@@ -51,6 +51,38 @@ public class FlatLayPipeline {
     /** Lado maior da fonte do estúdio: o Flat Lay (1024 px) jogaria fora o detalhe de uma foto de celular de 12 MP. */
     public static final int STUDIO_SOURCE_MAX = 2400;
 
+    /**
+     * Peça com ao menos esta fração de pele estranha a ela é vestida ou segurada por alguém. Metade do limiar do catálogo
+     * (ProductRuleFrame.OBJECT_PERSON_SKIN = 4%: rosto e braços passam de 5%; couro caramelo fica em ~1%): na dúvida, a foto
+     * fica no servidor — o custo é só o recorte local, nunca a foto de uma pessoa num provedor externo.
+     */
+    static final double PERSON_SKIN_GATE = 0.02;
+    /** Amostras da verificação (a foto de 12 MP não precisa ser lida pixel a pixel para achar um rosto ou um braço). */
+    private static final int PERSON_SAMPLES = 250_000;
+
+    /**
+     * A foto pode mostrar uma pessoa? Mede a pele estranha à peça dentro do recorte local; recorte pouco confiável (fundo
+     * confuso) mede na foto inteira.
+     */
+    static boolean mayShowPerson(ImageOps.Cutout local, BufferedImage original) {
+        boolean reliable = local.confidence() >= 0.45;
+        BufferedImage img = reliable ? local.image() : original;
+        int w = img.getWidth(), h = img.getHeight();
+        int step = Math.max(1, (int) Math.ceil(Math.sqrt(w * (double) h / PERSON_SAMPLES)));
+        int cols = (w + step - 1) / step, rows = (h + step - 1) / step;
+        int[] px = new int[cols * rows];
+        boolean[] mask = new boolean[px.length];
+        int i = 0;
+        for (int y = 0; y < h; y += step) {
+            for (int x = 0; x < w; x += step, i++) {
+                int argb = img.getRGB(x, y);
+                px[i] = argb & 0xFFFFFF;
+                mask[i] = !reliable || (argb >>> 24) > 128;
+            }
+        }
+        return LocalVision.foreignSkinShare(px, mask) >= PERSON_SKIN_GATE;
+    }
+
     public boolean externalAvailable() {
         return backgroundRemovers.stream().anyMatch(BackgroundRemovalPort::available)
                 || colorNormalizers.stream().anyMatch(ColorNormalizationPort::available);
@@ -63,6 +95,18 @@ public class FlatLayPipeline {
         String mime = ImageOps.requireAcceptedImage(bytes);
         BufferedImage original = ImageOps.decode(bytes);
         stages.add(new Stage("VALIDACAO", "local", ms(t), BigDecimal.ZERO, true, false, mime));
+
+        // privacidade: foto com pessoa (pele estranha à peça no recorte local) nunca sai do servidor — nem para a remoção de
+        // fundo (rembg/remove.bg) nem para a normalização de cor; o recorte e a cor ficam no motor local
+        ImageOps.Cutout local = null;
+        if (allowExternal && externalAvailable()) {
+            t = System.nanoTime();
+            local = ImageOps.removeBackgroundLocal(original);
+            if (mayShowPerson(local, original)) {
+                allowExternal = false;
+                stages.add(new Stage("PRIVACIDADE", "local", ms(t), BigDecimal.ZERO, true, false, Msg.t("flatLay.pessoa_sem_provedor_externo")));
+            }
+        }
 
         // 2 — remoção de fundo
         t = System.nanoTime();
@@ -91,7 +135,7 @@ public class FlatLayPipeline {
         }
         if (cutout == null) {
             t = System.nanoTime();
-            cutout = ImageOps.removeBackgroundLocal(original);
+            cutout = local != null ? local : ImageOps.removeBackgroundLocal(original);
             fallback = allowExternal && backgroundRemovers.stream().anyMatch(BackgroundRemovalPort::available);
             stages.add(new Stage("REMOCAO_FUNDO", "local-floodfill", ms(t), BigDecimal.ZERO, cutout.confidence() >= 0.45,
                     true, String.format(Msg.t("flatLay.confianca_2f"), cutout.confidence())

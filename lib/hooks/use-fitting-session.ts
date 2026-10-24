@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReadonlyURLSearchParams } from "next/navigation";
-import { api } from "@/lib/api/client";
+import { api, ApiError } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -120,7 +120,7 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
   }
 
   /** Guarda a peça da loja no guarda-roupa; devolve se guardou (a linha do provador só pede o 3D da peça guardada). */
-  async function ownIt(item: FittingItem): Promise<boolean> {
+  async function ownIt(item: FittingItem): Promise<string | false> {
     if (!item.productId || busyOwn) return false;
     setBusyOwn(item.key);
     try {
@@ -130,9 +130,12 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
       setOwned((current) => ({ ...current, [item.key]: piece.id }));
       toast.success(t("tryOn.adicionada_ao_guarda_roupa", { name: item.name }));
       onOwned();
-      return true;
+      return piece.id;
     } catch (error) {
-      toast.fromError(error);
+      // o Provador não tem formulário: "Corrija os campos destacados" não aponta nada — mostra o que o servidor recusou
+      const fields = error instanceof ApiError && error.code === "FORMULARIO_INVALIDO" ? Object.values(error.fields).filter((v) => typeof v === "string") : [];
+      if (fields.length) toast.error(t("tryOn.nao_deu_para_guardar", { name: item.name, reason: fields.join(" · ") }));
+      else toast.fromError(error);
       return false;
     } finally {
       setBusyOwn(null);

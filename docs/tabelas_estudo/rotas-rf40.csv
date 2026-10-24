@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+c/avatar3d/my-avatar.tsx;GET /api/me/avatar3d (direto);GET /api/me/avatar3d;Não identificado no diagrama;Não identificado no diagrama

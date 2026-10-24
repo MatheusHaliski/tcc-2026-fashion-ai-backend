@@ -192,6 +192,48 @@ class BackgroundStudioServiceTest {
     }
 
     @Test
+    void bordaEMetamorfoseSaoPreservadasNaArteComRevisao() {
+        WardrobeItem item = world.piecesOf(world.me).get(0);
+        Map<String, Object> border = cfg("mode", "GRADIENT", "from", "#123456", "to", "#abcdef", "effect", "SHIMMER");
+        Map<String, Object> saved = studio.savePiece(ana, item.getId(), cfg("border", border, "auraMetamorphose", "PRISMA", "auraMetamorphosePreset", "NIKE_ORANGE"));
+        assertThat(map(saved.get("background"))).containsEntry("border", border).containsEntry("auraMetamorphose", "PRISMA").containsEntry("auraMetamorphosePreset", "NIKE_ORANGE");
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("border", cfg("color", "url(secret)")))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("border", cfg("effect", "UNKNOWN")))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("auraMetamorphose", "UNKNOWN"))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("auraMetamorphose", "PRISMA", "auraMetamorphosePreset", "UNKNOWN"))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("auraMetamorphose", "PRISMA", "auraMetamorphosePreset", "ASICS_WHITE"))).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void enquadramentoTotalFrameFicaNaArteDaPecaESoAceitaTecidoOuPecaInteira() {
+        WardrobeItem item = world.piecesOf(world.me).get(0);
+        Map<String, Object> saved = studio.savePiece(ana, item.getId(), cfg("photoFraming", "WHOLE"));
+        assertThat(map(saved.get("background"))).containsEntry("photoFraming", "WHOLE");
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("photoFraming", "ZOOM"))).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void composicaoPublicadaPersisteERejeitaUrlExterna() {
+        WardrobeItem item = world.piecesOf(world.me).get(0);
+        Map<String, Object> preset = cfg("id", "satin-ivory", "name", "Cetim", "family", "COMMON",
+                "image", "/aura/fashion-curated/satin-ivory.webp", "palette", List.of("#dcc7a5", "#faf1e1"));
+        assertThat(map(studio.savePiece(ana, item.getId(), cfg("compositionPreset", preset)).get("background")))
+                .containsEntry("compositionPreset", preset);
+        preset.put("image", "https://example.com/asset.svg");
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("compositionPreset", preset)))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void quarentaModelosHypeSaoValidadosSemAceitarIdsArbitrarios() {
+        for (String tech : List.of("SCAN", "CONTOUR", "MESH", "HOLO", "FIBER", "PRISM", "PARTICLES", "SPOTLIGHT"))
+            for (String palette : List.of("GRAPHITE", "CHROME", "ROSE", "VIOLET", "CHAMPAGNE"))
+                assertThat(BackgroundStudioService.validHypeMode(tech + "_" + palette)).isTrue();
+        assertThat(BackgroundStudioService.validHypeMode("SCAN_UNKNOWN")).isFalse();
+        assertThat(BackgroundStudioService.validHypeMode("<script>")).isFalse();
+    }
+
+    @Test
     void fundoDaPecaComRevisao() {
         WardrobeItem w = world.piecesOf(world.me).get(0);
         Map<String, Object> first = studio.savePiece(ana, w.getId(), cfg("color", "#ffffff"));
@@ -205,5 +247,41 @@ class BackgroundStudioServiceTest {
         assertThat(studio.saveScheme(ana, look.getId(), cfg("pieces", pc), false)).containsKey("studio");
         assertThat(BackgroundStudioService.zero()).isZero();
         when(assets.list(eq("materials"))).thenReturn(List.of());
+    }
+    @Test
+    void validatesAllEightLayoutsAndDelegatesFinishPermissionEvenWithoutPieceId() {
+        var permission=org.mockito.Mockito.mock(AuraPermissionsService.class);studio.setAuraPermissions(permission);
+        for(String finish:List.of("COMMON","RARE","LEGENDARY","COLLAB_DROP")) {
+            for(String layout:List.of("STATIC_HORIZONTAL","STATIC_VERTICAL","STATIC_COLUMNS","STATIC_GLOBAL","RANKED_BARS","EXTREMES","MOMENTUM","KEY_TRIAD")) {
+                var config=Map.of("auraHype",finish+"_"+layout);
+                BackgroundStudioService.validateArtwork(config);studio.requireAuraAccess(ana,config);
+            }
+            org.mockito.Mockito.verify(permission,org.mockito.Mockito.times(8)).requireHypeFinish(ana.id(),finish);
+        }
+        assertThat(BackgroundStudioService.validHypeMode("LEGENDARY_ARBITRARY_COLOR")).isFalse();
+    }
+
+    @Test
+    void rejectsDirectSubmissionOfLockedGoldWithoutRelyingOnClientThumbnails() {
+        var ledger=org.mockito.Mockito.mock(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        when(ledger.lifetime(ana.id())).thenReturn(300L);studio.setAuraPermissions(new AuraPermissionsService(ledger));
+        assertThatThrownBy(()->studio.requireAuraAccess(ana,Map.of("auraHype","LEGENDARY_STATIC_GLOBAL"))).isInstanceOf(ApiException.class);
+        studio.requireAuraAccess(ana,Map.of("scheme",Map.of("auraHype","RARE_RANKED_BARS")));
+    }
+    @Test void nestedEmptyStudioCannotHideALockedOuterHypeFinish() {
+        var ledger=org.mockito.Mockito.mock(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        when(ledger.lifetime(ana.id())).thenReturn(0L);studio.setAuraPermissions(new AuraPermissionsService(ledger));
+        assertThatThrownBy(()->studio.requireAuraAccess(ana,Map.of("scheme",Map.of(),"auraHype","LEGENDARY_STATIC_GLOBAL"))).isInstanceOf(ApiException.class);
+    }
+    @Test void creatingOrUpdatingAPieceCannotBypassTheStudioLevelGuard() {
+        var ledger=org.mockito.Mockito.mock(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        when(ledger.lifetime(ana.id())).thenReturn(0L);studio.setAuraPermissions(new AuraPermissionsService(ledger));
+        var wardrobe=org.mockito.Mockito.mock(WardrobeService.class,org.mockito.Mockito.CALLS_REAL_METHODS);
+        org.springframework.test.util.ReflectionTestUtils.setField(wardrobe,"guard",org.mockito.Mockito.mock(br.com.fashionai.application.security.Guard.class));
+        org.springframework.test.util.ReflectionTestUtils.setField(wardrobe,"backgroundStudioAccess",studio);
+        var form=org.mockito.Mockito.mock(WardrobeService.PieceForm.class);
+        when(form.background()).thenReturn(Map.of("auraHype","LEGENDARY_STATIC_GLOBAL"));
+        assertThatThrownBy(()->wardrobe.create(ana,form)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(()->wardrobe.update(ana,java.util.UUID.randomUUID(),form)).isInstanceOf(ApiException.class);
     }
 }

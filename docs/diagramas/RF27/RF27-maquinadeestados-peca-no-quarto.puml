@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF27 — RoomService.statesOf(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nmarcadores acumuláveis · 10 regras no código
+title RF27 — RoomService.statesOf(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nmarcadores acumuláveis · 10 regras no código
 
 state "RoomService.statesOf()" as C_statesOf {
   state C_statesOf_avaliar <<choice>>

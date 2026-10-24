@@ -17,6 +17,7 @@ import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.BrandSource;
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
 import br.com.fashionai.domain.model.enums.CatalogImageUsage;
+import br.com.fashionai.domain.model.enums.CatalogImageType;
 import br.com.fashionai.domain.model.enums.CatalogSourceType;
 import br.com.fashionai.domain.repository.BrandAliasRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -94,6 +96,19 @@ class CatalogServiceTest {
     }
 
     @Test
+    void productCardPreservesFittingAttributesAlreadyStoredInTheCatalogue() {
+        CatalogProduct p = visible(null).getFirst();
+        p.setVariationCode("SLIM");
+        br.com.fashionai.domain.model.TaxonomyAttribute.replace(p.getAttributes(), "RISE", List.of("HIGH_RISE"), "CATALOG", null);
+        br.com.fashionai.domain.model.TaxonomyAttribute.replace(p.getAttributes(), "CLOSURE", List.of("ZIPPER"), "CATALOG", null);
+        br.com.fashionai.domain.model.TaxonomyAttribute.replace(p.getAttributes(), "SLEEVE_LENGTH", List.of("SHORT_SLEEVE"), "CATALOG", null);
+        Map<String, Object> card = catalog.card(p, nike, null);
+        assertThat(card).containsEntry("variation", "SLIM");
+        assertThat(map(card.get("attributes"))).containsEntry("RISE", List.of("HIGH_RISE"))
+                .containsEntry("CLOSURE", List.of("ZIPPER")).containsEntry("SLEEVE_LENGTH", List.of("SHORT_SLEEVE"));
+    }
+
+    @Test
     void buscaEntendeMarcaSubtipoECorNoTexto() {
         Map<String, Object> r = catalog.search(new CatalogService.SearchRequest(null, null, null, "tênis nike air force branco", null, 10));
         assertThat(r).containsEntry("enoughInput", true).containsEntry("canSearchOfficial", true);
@@ -106,6 +121,67 @@ class CatalogServiceTest {
         assertThat(catalog.search(new CatalogService.SearchRequest("upper_piece", "hoodie", "Nike", "moletom com capuz cinza", "gray", 100))).containsKey("results");
         assertThat(catalog.search(new CatalogService.SearchRequest(null, null, null, "camiseta preta estampa listrada", null, 5))).containsKey("results");
         assertThat(catalog.search(new CatalogService.SearchRequest(null, null, "Desconhecida", "jaqueta", null, 5))).containsEntry("canSearchOfficial", false);
+    }
+
+    @Test
+    void fotoRecusadaPelaRevisaoNaoApareceMesmoSePrincipalOuCanonica() {
+        UUID productId = UUID.randomUUID();
+        CatalogImage rejected = new CatalogImage();
+        rejected.setProductId(productId);
+        rejected.setImageUrl("https://nike.com.br/rejected.jpg");
+        rejected.setReviewStatus("REJECTED");
+        CatalogImage valid = new CatalogImage();
+        valid.setProductId(productId);
+        valid.setImageUrl("https://nike.com.br/valid.jpg");
+        CatalogImageRepository images = kit.dep(CatalogImageRepository.class);
+        when(images.findByProductIdInAndPrimaryTrue(anyList())).thenReturn(List.of(rejected));
+        when(images.findByProductIdInAndCanonicalTrue(anyList())).thenReturn(List.of(rejected));
+        when(images.findByProductIdIn(anyList())).thenReturn(List.of(rejected, valid));
+        assertThat(catalog.mainImages(List.of(productId))).containsEntry(productId, valid);
+    }
+
+    @Test
+    void validAlternativeWinsOverSmallCanonicalWithoutExcludingTheProduct() {
+        CatalogProduct p=visible(null).getFirst();
+        CatalogImage small=new CatalogImage(); small.assignId(UUID.randomUUID()); small.setProductId(p.getId());
+        small.setImageUrl("https://nike.com.br/small.jpg"); small.setSourceSha256("a".repeat(64)); small.setCanonical(true);
+        CatalogImage valid=new CatalogImage(); valid.assignId(UUID.randomUUID()); valid.setProductId(p.getId());
+        valid.setImageUrl("https://nike.com.br/valid.jpg"); valid.setSourceSha256("b".repeat(64));
+        for (CatalogImage image : List.of(small,valid)) {
+            image.setSourceType(CatalogSourceType.OFFICIAL_BRAND);
+            image.setSourceDomain("nike.com.br"); image.setSourceUrl(p.getOfficialProductUrl());
+            image.setImageType(CatalogImageType.PACKSHOT); image.setUsageStatus(CatalogImageUsage.PERSISTED);
+            image.setImageUrlHash(br.com.fashionai.application.catalog.image.CatalogImagePipeline.sha256(image.getImageUrl()));
+            image.setRetrievedAt(Instant.parse("2026-10-23T00:00:00Z")); image.setLastVerifiedAt(image.getRetrievedAt());
+            Map<String,Object> state=new java.util.LinkedHashMap<>();
+            state.put("version","CATALOG_PHOTO_SET_V2"); state.put("sourceUrl",image.getImageUrl());
+            state.put("sourceSha256",image.getSourceSha256()); state.put("category",p.getCategory());
+            state.put("subcategory",p.getSubcategory()); state.put("color",p.getColor());
+            state.put("status",image==valid ? "READY" : "INELIGIBLE");
+            state.put("defaultAssetUrl","/api/catalog/default-asset?category="+p.getCategory());
+            state.put("wholeUrl","https://media.example/whole.png");state.put("fabricUrl","https://media.example/fabric.png");
+            state.put("metrics",Map.of("preflight",Map.of("version","CATALOG_SOURCE_PREFLIGHT_V1","status","PASS",
+                    "sourceGarmentHeightFraction",.25,"measurementReliable",true,"complete",true,"occluded",false,
+                    "isolationVerified",true,"humanAssessmentComplete",true)));
+            image.setAssetsJson(br.com.fashionai.application.common.Json.write(Map.of("photoSet",state)));
+        }
+        CatalogImageRepository images=kit.dep(CatalogImageRepository.class);
+        when(images.findByProductIdInAndPrimaryTrue(anyList())).thenReturn(List.of(small));
+        when(images.findByProductIdInAndCanonicalTrue(anyList())).thenReturn(List.of(small));
+        when(images.findByProductIdIn(anyList())).thenReturn(List.of(small,valid));
+        assertThat(catalog.mainImagesFor(List.of(p))).containsEntry(p.getId(),valid);
+        assertThat(CatalogPhotoEligibility.excluded(p)).isFalse();
+        assertThat(catalog.product(p.getId())).containsEntry("id",p.getId());
+    }
+
+    @Test
+    void legacyProductStillOpensWhileAnAuditedProductExclusionBlocksItsDetail() {
+        CatalogProduct p=visible(null).getFirst();
+        assertThat(catalog.product(p.getId())).containsEntry("id",p.getId());
+        p.setMetadataJson(br.com.fashionai.application.common.Json.write(Map.of("catalogPhotoEligibility",Map.of("state","REVIEW"))));
+        assertThat(catalog.product(p.getId())).containsEntry("id",p.getId());
+        p.setMetadataJson(br.com.fashionai.application.common.Json.write(Map.of("catalogPhotoEligibility",Map.of("state","INELIGIBLE"))));
+        assertThatThrownBy(() -> catalog.product(p.getId())).isInstanceOf(ApiException.class);
     }
 
     @Test
@@ -175,6 +251,28 @@ class CatalogServiceTest {
         assertThatThrownBy(() -> catalog.addToWardrobe(ana, new CatalogService.AddRequest(p.getId(), null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null))).isInstanceOf(ApiException.class);
         assertThat(CatalogService.orderScore(Map.of("matchScore", Map.of("total", 0.8)))).isLessThan(0.8);
+    }
+
+    @Test
+    void pecaGuardadaPeloProvadorSemTamanhoPassaNaValidacao() {
+        // o Provador manda só produto e variante: o tamanho tem de sair válido, senão "Corrija os campos destacados"
+        assertThat(CatalogService.sizeOf(null, "upper_piece")).isEqualTo("m");
+        assertThat(CatalogService.sizeOf(" ", "shoes_piece")).isEqualTo("one_size");
+        assertThat(CatalogService.sizeOf(null, "accessory_piece")).isEqualTo("one_size");
+        assertThat(CatalogService.sizeOf("M", "upper_piece")).isEqualTo("m");
+        assertThat(CatalogService.sizeOf("40", "shoes_piece")).isEqualTo("shoe_40");
+        assertThat(CatalogService.sizeOf("40", "lower_piece")).isEqualTo("br_40");
+        assertThat(CatalogService.sizeOf("br_38", "lower_piece")).isEqualTo("br_38");
+        assertThat(CatalogService.sizeOf("gigante", "lower_piece")).isEqualTo("m");
+        org.mockito.ArgumentCaptor<WardrobeService.PieceForm> form = org.mockito.ArgumentCaptor.forClass(WardrobeService.PieceForm.class);
+        CatalogProduct p = MemoryRepository.<CatalogProduct>rows(kit.dep(CatalogProductRepository.class)).get(0);
+        WardrobeService wardrobe = kit.dep(WardrobeService.class);
+        when(wardrobe.createFromCatalog(any(), form.capture(), any())).thenReturn(Views.piece(Kit.piece(user, "x", "shoes_piece", "casual_sneakers", "white"), null, null));
+        catalog.addToWardrobe(ana, new CatalogService.AddRequest(p.getId(), null, null, null, null, null, null, null, null, null,
+                br.com.fashionai.domain.model.enums.Visibility.PRIVATE, null, null, null, null, null, null, null));
+        WardrobeService.PieceForm f = form.getValue();
+        assertThat(br.com.fashionai.application.taxonomy.Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
+                f.material(), f.size(), f.occasion(), f.style())).doesNotContainKey("size");
     }
 
     @Test

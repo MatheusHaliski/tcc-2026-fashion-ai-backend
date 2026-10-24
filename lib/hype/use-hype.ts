@@ -15,6 +15,7 @@ const TTL_MS = 5 * 60_000;
 const MAX_ENTRIES = 600;
 const BATCH = 100;
 const entries = new Map<string, Entry>();
+const awaitingRecalculation = new Map<string,string>();
 const listeners = new Map<string, Set<() => void>>();
 const pending: Record<HypeEntity, Set<string>> = { PIECE: new Set(), SCHEME: new Set() };
 let timer: ReturnType<typeof setTimeout> | null = null;
@@ -26,6 +27,16 @@ function emit(key: string) {
 }
 
 function put(key: string, entry: Entry) {
+  const current = entries.get(key)?.summary;
+  if(current?.status === "AVAILABLE" && entry.summary?.status === "AVAILABLE" && current.calculatedAt && entry.summary.calculatedAt
+      && Date.parse(entry.summary.calculatedAt) < Date.parse(current.calculatedAt)) {
+    entry = { ...entry, summary: current };
+  }
+  const waiting=awaitingRecalculation.get(key);
+  if(waiting&&entry.summary){
+    if(entry.summary.calculatedAt&&Date.parse(entry.summary.calculatedAt)>Date.parse(waiting))awaitingRecalculation.delete(key);
+    else entry={...entry,summary:{...entry.summary,stale:true}};
+  }
   entries.set(key, entry);
   if (entries.size > MAX_ENTRIES) {
     // descarta as mais antigas que ninguém está olhando (sem vazamento em listas longas/virtualizadas)
@@ -71,22 +82,54 @@ export function requestHype(type: HypeEntity, id: string) {
   if (!timer) timer = setTimeout(flush, 0);
 }
 
+/** Editing invalidates the cached snapshot; only a newer server snapshot clears stale. */
+export function invalidateHype(type:HypeEntity,id:string){
+ const key=keyOf(type,id),old=entries.get(key);
+ awaitingRecalculation.set(key,old?.summary?.calculatedAt??"1970-01-01T00:00:00Z");
+ if(old)put(key,{...old,summary:old.summary?{...old.summary,stale:true}:undefined,at:0});
+ requestHype(type,id);
+}
+
 /** Respostas que já trazem o Hype (ranking, insights) alimentam o cache — o card não pede de novo. */
 export function primeHype(type: HypeEntity, items: Record<string, HypeSummary | undefined>) {
   const now = Date.now();
   Object.entries(items).forEach(([id, summary]) => { if (summary) put(keyOf(type, id), { summary, loading: false, error: false, at: now }); });
 }
 
+// One live timer for all mounted AURA cards; requests still use the existing batched reader.
+const live = new Map<string, { type: HypeEntity; id: string; count: number }>();
+let liveTimer: ReturnType<typeof setInterval> | null = null;
+function watchLive(type: HypeEntity, id: string) {
+  const key = keyOf(type,id), old = live.get(key);
+  live.set(key,{type,id,count:(old?.count ?? 0)+1});
+  if(!liveTimer) liveTimer=setInterval(()=>{
+    if(typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    live.forEach(({type,id})=>{
+      const key=keyOf(type,id), old=entries.get(key);
+      if(old?.loading) return;
+      if(old) put(key,{...old,at:0});
+      requestHype(type,id);
+    });
+  },30_000);
+  return ()=>{
+    const current=live.get(key);
+    if(current && current.count>1) live.set(key,{...current,count:current.count-1}); else live.delete(key);
+    if(!live.size && liveTimer) { clearInterval(liveTimer); liveTimer=null; }
+  };
+}
+
 /** Só para testes: zera o cache e os lotes pendentes. */
 export function __resetHypeStore() {
-  entries.clear();
+  if(liveTimer) clearInterval(liveTimer);
+  liveTimer=null; live.clear();
+  entries.clear(); awaitingRecalculation.clear();
   pending.PIECE.clear();
   pending.SCHEME.clear();
   if (timer) clearTimeout(timer);
   timer = null;
 }
 
-export function useHypeSummary(type: HypeEntity, id: string | null | undefined, enabled = true) {
+export function useHypeSummary(type: HypeEntity, id: string | null | undefined, enabled = true, liveUpdates = false) {
   const key = id ? keyOf(type, id) : "";
   const subscribe = useCallback((cb: () => void) => {
     if (!key) return () => undefined;
@@ -97,5 +140,7 @@ export function useHypeSummary(type: HypeEntity, id: string | null | undefined, 
   }, [key]);
   const entry = useSyncExternalStore(subscribe, () => (key ? entries.get(key) : undefined), () => undefined);
   useEffect(() => { if (enabled && id) requestHype(type, id); }, [type, id, enabled]);
+  useEffect(()=>{if(!enabled||!id)return;const changed=(event:Event)=>{const value=(event as CustomEvent<{type:HypeEntity;id:string}>).detail;if(value?.type===type&&value.id===id)invalidateHype(type,id);};window.addEventListener('fai:hype-source-updated',changed);return ()=>window.removeEventListener('fai:hype-source-updated',changed);},[type,id,enabled]);
+  useEffect(()=>{ if(enabled && (liveUpdates || entry?.summary?.stale) && id && !id.startsWith(DEMO_ID_PREFIX)) return watchLive(type,id); },[enabled,liveUpdates,type,id,entry?.summary?.stale]);
   return { summary: entry?.summary, loading: entry ? entry.loading && !entry.summary : enabled && !!id, error: !!entry?.error && !entry?.summary };
 }

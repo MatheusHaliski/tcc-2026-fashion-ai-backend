@@ -21,10 +21,10 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
-boundary "Tela /flair" as P
+boundary "Tela /flair/cartas" as P
 control "FlairController" as FlairController
 participant "FlairService" as FlairService
 participant "Guard" as Guard

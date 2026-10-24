@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class AcervoGroup <<acervo_groups>> {
@@ -57,19 +57,6 @@ package "fai-domain (entidades JPA)" {
     +deltaPoints: BigDecimal
     .. +16 campos ..
   }
-  class HypeScoreMetric <<hype_score_metrics>> {
-    +id: UUID
-    +dailyLook: DailyLook
-    +scheme: Scheme
-    +user: User
-    +scoreDate: LocalDate
-    +likesCount: long
-    +commentsCount: long
-    +sharesCount: long
-    +remixesCount: long
-    +engagementRaw: BigDecimal
-    .. +14 campos ..
-  }
   class HypeScoreSnapshot <<hype_score_snapshots>> {
     +id: UUID
     +entityType: HypeEntityType
@@ -93,6 +80,7 @@ package "fai-domain (entidades JPA)" {
   }
   class Scheme <<schemes>> {
     +id: UUID
+    +tipoLook: TipoLook
     +user: User
     +originalScheme: Scheme
     +title: String
@@ -101,8 +89,7 @@ package "fai-domain (entidades JPA)" {
     +origin: SchemeOrigin
     +style: String
     +occasion: String
-    +season: Season
-    .. +46 campos ..
+    .. +44 campos ..
   }
   class SchemeGrouping <<scheme_groupings>> {
     +id: UUID
@@ -128,7 +115,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
 }
 package "fai-domain (enums)" {
@@ -197,9 +184,6 @@ DailyLook --> DailyLookSource
 HypeScoreCurrent --> HypeEntityType
 HypeScoreCurrent --> HypeStatus
 HypeScoreCurrent ..> User : ownerId
-HypeScoreMetric "*" --> "1" DailyLook : dailyLook
-HypeScoreMetric "*" --> "1" Scheme : scheme
-HypeScoreMetric "*" --> "1" User : user
 HypeScoreSnapshot --> HypeEntityType
 HypeScoreSnapshot --> HypeStatus
 SavedItem "*" --> "1" User : user

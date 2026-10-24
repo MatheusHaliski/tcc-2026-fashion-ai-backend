@@ -73,13 +73,19 @@ export function browFibers(a: BodyAsset, c: Composed, normals: Float32Array, bro
   const count = Math.round((atlas ? 32 + 88 * brows.density : 70 + 230 * brows.density) * Math.min(1, brows.confidence / 0.65));
   const sample = surface(a, c, normals), rng = random(options.seed ?? 1729);
   const baseColor = new THREE.Color(brows.color); const pos: number[] = [], normal: number[] = [], color: number[] = [], indices: number[] = [];
+  // cor e espessura medidas por fatia (de dentro para fora): a cabeça da sobrancelha costuma ser mais cheia e escura
+  const zoneColor = brows.zones?.color.map((z) => (z && /^#[0-9a-f]{6}$/i.test(z) ? new THREE.Color(z) : null));
+  const zoneT = brows.zones?.thickness;
   let fibers = 0;
   for (const side of ["right", "left"] as const) {
     const b = BROW_LINES[side];
     for (let h = 0; h < count; h++) {
       // Stratification avoids clusters or gaps. The measured contour supplies arch, thickness and asymmetry.
       const t = (h + rng()) / count; const v = 0.25 + rng() * 0.65;
-      const du = 0.018 + 0.04 * t + rng() * 0.015, dv = -(0.35 - 0.27 * t) * (0.7 + rng() * 0.6);
+      // a fatia medida (0 = junto do nariz): espessura e cor locais em vez da média da sobrancelha toda
+      const zk = Math.min(4, Math.floor(t * 5));
+      const tz = zoneT && brows.thickness > 1e-3 ? Math.min(1.5, Math.max(0.6, zoneT[zk] / brows.thickness)) : 1;
+      const du = 0.018 + 0.04 * t + rng() * 0.015, dv = -(0.35 - 0.27 * t) * (0.7 + rng() * 0.6) * tz;
       const path: { position: V3; normal: V3 }[] = [];
       for (let j = 0; j < 5; j++) {
         const s = j / 4, u = Math.min(1, t + du * s), w = Math.max(0, v + dv * s);
@@ -90,15 +96,16 @@ export function browFibers(a: BodyAsset, c: Composed, normals: Float32Array, bro
       }
       if (path.length < 5) continue;
       const start = pos.length / 3, variation = 0.92 + rng() * 0.16;
+      const fibColor = zoneColor?.[zk] ?? baseColor;
       // A real brow hair is fine; narrow tapered geometry supplies its silhouette without a hard rectangular card.
-      const width = (0.00007 + rng() * 0.000045) * c.stature / 1.7;
+      const width = (0.00007 + rng() * 0.000045) * c.stature / 1.7 * Math.sqrt(tz);
       for (let j = 0; j < path.length; j++) {
         const s = j / 4, p = path[j], q = path[j < 4 ? j + 1 : j - 1];
         const direction = p.position.map((x, k) => (q.position[k] - x) * (j < 4 ? 1 : -1)) as V3;
         const lateral = normalize(cross(p.normal, direction)); const radius = width * (1 - s * 0.88) / 2;
         for (const sign of [-1, 1]) {
           pos.push(...p.position.map((x, k) => x + sign * lateral[k] * radius)); normal.push(...p.normal);
-          const gain = variation * (0.94 + s * 0.06); color.push(baseColor.r * gain, baseColor.g * gain, baseColor.b * gain);
+          const gain = variation * (0.94 + s * 0.06); color.push(fibColor.r * gain, fibColor.g * gain, fibColor.b * gain);
         }
         if (j) { const x = start + (j - 1) * 2; indices.push(x, x + 1, x + 2, x + 1, x + 3, x + 2); }
       }

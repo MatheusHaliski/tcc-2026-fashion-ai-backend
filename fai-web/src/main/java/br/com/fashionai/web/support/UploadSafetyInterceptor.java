@@ -44,6 +44,8 @@ public class UploadSafetyInterceptor implements HandlerInterceptor {
     private static final Logger log = LoggerFactory.getLogger(UploadSafetyInterceptor.class);
     /** Rotas que não recebem foto de pessoa enviada pela própria pessoa: textura do rosto gerada pelo app (já em restricted/). */
     private static final List<String> EXEMPT = List.of("/api/me/avatar3d");
+    /** Sob o prefixo isento, mas com foto de pessoa enviada pela própria pessoa (corpo inteiro para medir, rosto para o retrato). */
+    private static final List<String> MODERATED = List.of("/api/me/avatar3d/body-scan", "/api/me/avatar3d/stylized-portrait");
     /** Motor do veredito quando não há classificador configurado (ImageSafety): não é sinal de conteúdo sensível. */
     static final String UNAVAILABLE = "indisponivel";
     /** Arquivos por requisição (o maior fluxo legítimo, a análise em lote de peças, aceita 12). */
@@ -81,7 +83,7 @@ public class UploadSafetyInterceptor implements HandlerInterceptor {
             return true;
         }
         String path = RequestPaths.normalized(request);
-        if (EXEMPT.stream().anyMatch(e -> path.equals(e) || path.startsWith(e + "/"))) {
+        if (!MODERATED.contains(path) && EXEMPT.stream().anyMatch(e -> path.equals(e) || path.startsWith(e + "/"))) {
             return true;
         }
         for (List<MultipartFile> files : multipart.getMultiFileMap().values()) {

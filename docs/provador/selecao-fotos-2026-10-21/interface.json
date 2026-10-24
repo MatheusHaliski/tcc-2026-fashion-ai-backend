@@ -1,0 +1,77 @@
+{
+  "scope": "Production frontend with synthetic read-only API fixtures; not production backend or physical-device validation.",
+  "results": [
+    {
+      "device": "mobile",
+      "path": "/pieces/new",
+      "overflow": 0,
+      "cls": 0.004244258975453243,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/try-on",
+      "overflow": 0,
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/search",
+      "overflow": 0,
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/pieces/new",
+      "overflow": 0,
+      "cls": 0.004130988081641805,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/try-on",
+      "overflow": 0,
+      "cls": 0.0037895702104105214,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/search",
+      "overflow": 0,
+      "cls": 0.003792597095031565,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/pieces/new",
+      "overflow": 0,
+      "cls": 0.004337953083472652,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/try-on",
+      "overflow": 0,
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/search",
+      "overflow": 0,
+      "cls": 0.00023270841370884776,
+      "errors": [],
+      "violations": []
+    }
+  ]
+}

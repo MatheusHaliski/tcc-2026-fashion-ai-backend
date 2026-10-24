@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "components/ui/index.tsx" {
   class FieldProps as "FieldProps" <<interface>> {
@@ -47,6 +47,11 @@ package "components/ui/index.tsx" {
     +action: { label: string; href?: string; onSelec…
     +onClose: () => void
   }
+  class TrailItem as "TrailItem" <<interface>> {
+    +label: string
+    +onClick: () => void
+    +href: string
+  }
   class NoticeItem as "NoticeItem" <<interface>> {
     +id: number
     +kind: NoticeKind
@@ -56,13 +61,6 @@ package "components/ui/index.tsx" {
     +id: number
     +kind: 'info' | 'success' | 'error'
     +text: string
-  }
-  enum Variant as "Variant" {
-    default
-    primary
-    accent
-    ghost
-    danger
   }
   class mod_index_tsx as "index.tsx" <<módulo>> {
     +cn()
@@ -134,12 +132,13 @@ package "lib/avatar3d/glasses.ts" {
   }
   class mod_glasses_ts as "glasses.ts" <<módulo>> {
     +narrowBand()
+    +prepareFaceTexture()
+    +removePhotographedEyes()
     +detectGlasses()
     +glassesMask()
     +erode()
     +dilate()
     +inpaint()
-    +removeGlasses()
   }
 }
 package "Backend (Java)" {
@@ -174,8 +173,8 @@ package "Backend (Java)" {
     +approve()
     +restore()
     +update()
+    +moderateApproved()
     +delete()
-    +deleteAllFor()
   }
   class ShowcaseService <<service>> {
     -guard: Guard

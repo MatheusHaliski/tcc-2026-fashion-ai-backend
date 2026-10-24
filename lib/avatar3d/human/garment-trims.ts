@@ -1,3 +1,4 @@
+import { hasRibbing } from "./upperwear";
 /*
  * Avatar 3D (RF40) / Provador — acabamentos: barra do tronco e barra/punho das mangas como faixas 3D, com espessura,
  * dando a volta inteira na peça (frente, lados e costas), na cor do acabamento da foto. Sem elas a borda do tecido
@@ -12,14 +13,14 @@ import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import type { BodyParam, GarmentGeometry, GarmentSpec } from "./garments";
 
-export interface TrimBand { part: "barra" | "punho" | "carcela" | "costura" | "botoes" | "botoes-borda" | "gola-ponta"; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
+export interface TrimBand { part: "barra" | "punho" | "carcela" | "costura" | "botoes" | "botoes-borda" | "gola-ponta"; side?: -1 | 1; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
 
-const RIB = new Set(["sweater", "hoodie"]);
+
 const TORSO_HEM = new Set(["tee", "longsleeve", "shirt", "sweater", "hoodie", "crop", "tank"]);
 
 /** Largura da faixa (m): ribana de moletom/suéter ou barra dobrada de camiseta/camisa. */
 export function trimWidth(sp: GarmentSpec, where: "hem" | "cuff"): number {
-  if (RIB.has(sp.kind)) return where === "hem" ? 0.05 : 0.045;
+  if (hasRibbing(sp)) return where === "hem" ? 0.05 : 0.045;
   return where === "hem" ? 0.016 : 0.014;
 }
 
@@ -100,7 +101,7 @@ function basis(d: number[]) {
  *  - gola: duas pontas (quadriláteros) deitadas no peito a partir do decote, na cor da gola da foto.
  */
 export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry): TrimBand[] {
-  if (gg.spec.kind !== "shirt" || gg.spec.placket === false) return [];
+  if (gg.spec.kind !== "shirt" || gg.spec.placket === false || gg.spec.frontOpening) return [];
   const candidates = Array.from(P.group.keys()).filter(v => P.group[v] === 1);
   const front = Array.from(gg.source.keys()).filter(v => gg.alpha[v] > .5 && gg.position[v * 3 + 2] > P.torsoZ && gg.source[v] >= 0 && P.group[gg.source[v]] === 1);
   const vertices = front.filter(v => Math.abs(gg.position[v * 3]) < .065);
@@ -155,7 +156,7 @@ export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: Garmen
 }
 
 /** Barra do tronco e barras/punhos das mangas da peça (faixas 3D). */
-export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry): TrimBand[] {
+export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry, options: { preservePhotoDetails?: boolean } = {}): TrimBand[] {
   const sp = gg.spec; const out: TrimBand[] = []; const nb = P.h.length;
   const torsoCand: number[] = [], armCand: { L: number[]; R: number[] } = { L: [], R: [] };
   for (let v = 0; v < nb; v++) { if (P.group[v] === 1 || P.group[v] === 3) torsoCand.push(v); if (P.group[v] === 2) (P.side[v] > 0 ? armCand.L : armCand.R).push(v); }
@@ -176,8 +177,10 @@ export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: Garmen
       const side = s === "L" ? 1 : -1;
       const arm = (v: number) => gg.source[v] >= 0 && P.group[gg.source[v]] === 2 && P.side[gg.source[v]] === side;
       const R = radiusFrom(gg, arm, S, d, e, 0.01);
-      const tEnd = sp.sleeve * L; const b = tube(a, c, armCand[s], S, d, tEnd - w + 0.004, tEnd + 0.006, R, "punho"); if (b) out.push(b);
+      const tEnd = sp.sleeve * L; const b = tube(a, c, armCand[s], S, d, tEnd - w + 0.004, tEnd + 0.006, R, "punho"); if (b) out.push({ ...b, side });
     }
   }
-  return [...out, ...shirtPlacket(a, c, P, gg)];
+  // A photograph already contains the product's buttons, seams and collar tips.
+  // Do not paint seven invented buttons or plain collar triangles over the brand's actual design.
+  return options.preservePhotoDetails ? out : [...out, ...shirtPlacket(a, c, P, gg)];
 }

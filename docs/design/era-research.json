@@ -1,0 +1,329 @@
+{
+  "scope": "Editorial research only; no endorsement or asset reuse rights implied",
+  "artists": [
+    {
+      "artist": "Taylor Swift",
+      "eras": "Lover Midnights",
+      "country": "US",
+      "references": [
+        {
+          "title": "The Official Website of Taylor Swift",
+          "url": "https://www.taylorswift.com/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Taylor Swift - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Taylor_Swift",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Taylor Swift - YouTube",
+          "url": "https://www.youtube.com/@taylorswift",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Taylor Swift Shares Personal Footage of Her Visiting Cleveland with ...",
+          "url": "https://people.com/taylor-swift-shares-personal-footage-of-her-visiting-cleveland-with-husband-travis-kelce-in-new-lyric-video-12141286",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        }
+      ],
+      "error": null
+    },
+    {
+      "artist": "Beyoncé",
+      "eras": "Renaissance Cowboy Carter",
+      "country": "US",
+      "references": [
+        {
+          "title": "Beyoncé - Wikipedia",
+          "url": "https://en.m.wikipedia.org/wiki/Beyonc%C3%A9",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Beyoncé",
+          "url": "https://beyonce.com/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Beyoncé - YouTube",
+          "url": "https://www.youtube.com/channel/UCuHzBCaKmtaLcRAOoazhCPA",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Tour - Beyoncé",
+          "url": "https://www.beyonce.com/tour",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Beyoncé (@beyonce) • Instagram photos and videos",
+          "url": "https://www.instagram.com/beyonce/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        }
+      ],
+      "error": null
+    },
+    {
+      "artist": "Lady Gaga",
+      "eras": "Chromatica Born This Way",
+      "country": "US",
+      "references": [],
+      "error": null
+    },
+    {
+      "artist": "Anitta",
+      "eras": "Funk Generation",
+      "country": "BR",
+      "references": [
+        {
+          "title": "Anitta (singer) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Anitta_(singer)",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Anitta - YouTube",
+          "url": "https://www.youtube.com/channel/UCqjjyPUghDSSKFBABM_CXMw",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Anitta (@anitta) • Instagram photos and videos",
+          "url": "https://www.instagram.com/anitta/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Anitta - Site Oficial",
+          "url": "https://anitta.com.br/en/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Anitta - EQUILIBRIVM II - YouTube",
+          "url": "https://www.youtube.com/watch?v=LgGZdtEQy24",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        }
+      ],
+      "error": null
+    },
+    {
+      "artist": "Rosalía",
+      "eras": "Motomami",
+      "country": "ES",
+      "references": [
+        {
+          "title": "Rosalía - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Rosal%C3%ADa",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Rosalia Official Site - :ROSALÍA:LUX:",
+          "url": "https://www.rosalia.com/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Rosalía Performs Song En Pointe on 'SNL,' Then Goes Singin ... - Variety",
+          "url": "https://variety.com/2026/music/news/rosalia-snl-en-pointe-performance-reliquia-magnolias-1236907983/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Biography, Songs, Euphoria, Lux, Berghain, & Facts - Britannica",
+          "url": "https://www.britannica.com/biography/Rosalia",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Rosalía discography - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Rosal%C3%ADa_discography",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        }
+      ],
+      "error": null
+    },
+    {
+      "artist": "The Weeknd",
+      "eras": "After Hours Dawn FM",
+      "country": "CA",
+      "references": [
+        {
+          "title": "The Weeknd - Wikipedia",
+          "url": "https://en.m.wikipedia.org/wiki/The_Weeknd",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Tour - The Weeknd",
+          "url": "https://www.theweeknd.com/tour/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "The Weeknd - YouTube",
+          "url": "https://www.youtube.com/channel/UC0WP5P-ufpRfjbNrmOWwLBQ",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "The Weeknd discography - Wikipedia",
+          "url": "https://en.m.wikipedia.org/wiki/The_Weeknd_discography",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "The Weeknd - Drive (Official Music Video) - YouTube",
+          "url": "https://m.youtube.com/watch?v=Fv2Y1odMjvE",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        }
+      ],
+      "error": null
+    },
+    {
+      "artist": "Dua Lipa",
+      "eras": "Future Nostalgia Radical Optimism",
+      "country": "UK",
+      "references": [],
+      "error": null
+    },
+    {
+      "artist": "BTS",
+      "eras": "Map of the Soul",
+      "country": "KR",
+      "references": [
+        {
+          "title": "BTS - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/BTS",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "BTS official (@bts.bighitofficial) • Instagram photos and videos",
+          "url": "https://www.instagram.com/bts.bighitofficial/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "BTS Members Profile (Updated!) - Kpop Profiles",
+          "url": "https://kprofiles.com/bts-bangtan-boys-members-profile/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        }
+      ],
+      "error": null
+    },
+    {
+      "artist": "BLACKPINK",
+      "eras": "Born Pink",
+      "country": "KR",
+      "references": [
+        {
+          "title": "Blackpink - Wikipedia",
+          "url": "https://en.m.wikipedia.org/wiki/Blackpink",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "BLACKPINK - YouTube",
+          "url": "https://www.youtube.com/channel/UCOmHUn--16B90oW2L6FRR3A",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "BLACKPINK Members Profile (Updated!) - Kpop Profiles",
+          "url": "https://kprofiles.com/black-pink-members-profile/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "YG Entertainment",
+          "url": "https://www.ygfamily.com/en/artists/blackpink/main",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "BLACKPINK Members’ Ages, Birthdays, & Bios (2026)",
+          "url": "https://www.wikihow.com/Blackpink-Ages",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        }
+      ],
+      "error": null
+    },
+    {
+      "artist": "Shakira",
+      "eras": "Las Mujeres Ya No Lloran",
+      "country": "CO",
+      "references": [
+        {
+          "title": "Shakira - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Shakira",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Shakira, Burna Boy - Dai Dai (Official Video) - YouTube",
+          "url": "https://www.youtube.com/watch?v=fcnDmrtj6Sk",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Shakira - YouTube",
+          "url": "https://www.youtube.com/channel/UCYLNGLIzMhRTi6ZOLjAPSmw",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Shakira – Official Site",
+          "url": "https://www.shakira.com/",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        },
+        {
+          "title": "Shakira | Songs, Age, Waka Waka, Biography, Full Name, & Facts | Britannica",
+          "url": "https://www.britannica.com/biography/Shakira",
+          "license": "UNVERIFIED",
+          "use": "REFERENCE_ONLY"
+        }
+      ],
+      "error": null
+    },
+    {
+      "artist": "Bad Bunny",
+      "eras": "Debí Tirar Más Fotos",
+      "country": "PR",
+      "references": [],
+      "error": null
+    },
+    {
+      "artist": "Ludmilla",
+      "eras": "Numanice",
+      "country": "BR",
+      "references": [],
+      "error": null
+    },
+    {
+      "artist": "Ivete Sangalo",
+      "eras": "turnê",
+      "country": "BR",
+      "references": [],
+      "error": null
+    }
+  ],
+  "seconds": 0.81,
+  "sources": 37,
+  "errors": 0
+}

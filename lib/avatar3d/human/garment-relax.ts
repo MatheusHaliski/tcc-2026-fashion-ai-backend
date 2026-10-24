@@ -1,3 +1,4 @@
+import { hasRibbing } from "./upperwear";
 /*
  * Avatar 3D (RF40) / Provador — caimento natural da roupa (depois do molde de garments.ts).
  *
@@ -15,7 +16,7 @@
  */
 import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
-import type { BodyParam, GarmentGeometry, GarmentSpec, UnderLayer } from "./garments";
+import { legFlareOffset, type BodyParam, type GarmentGeometry, type GarmentSpec, type UnderLayer } from "./garments";
 
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const bell = (x: number, c: number, w: number) => Math.exp(-(((x - c) / w) ** 2));
@@ -55,7 +56,7 @@ export const RELAX: Record<string, number> = {
 };
 
 /** Peças de malha com punho e barra de ribana. */
-const RIBBED = new Set(["sweater", "hoodie"]);
+
 
 function neighbors(n: number, index: Uint32Array): Int32Array[] {
   const sets: Set<number>[] = Array.from({ length: n }, () => new Set<number>());
@@ -70,12 +71,13 @@ function neighbors(n: number, index: Uint32Array): Int32Array[] {
 function minEase(sp: GarmentSpec, P: BodyParam, src: number, under: UnderLayer | null): number {
   const base = sp.kind === "leggings" ? sp.ease * 0.8 : Math.max(0.003, sp.ease * 0.55);
   let e = base + (under ? under.ease[src] : 0);
-  if (RIBBED.has(sp.kind)) {
+  if (hasRibbing(sp)) {
     // ribana: barra e punho encostam (só a espessura do tecido)
     const g = P.group[src];
     if ((g === 1 || g === 3) && P.h[src] < sp.hem + 0.07) e = Math.min(e, 0.0035 + (under ? under.ease[src] : 0));
     if (g === 2 && P.arm[src] > sp.sleeve - 0.07) e = Math.min(e, 0.003 + (under ? under.ease[src] : 0));
   }
+  if (sp.legCuff && P.group[src] === 3 && P.leg[src] > sp.leg - .06) e = Math.min(e, .0035 + (under ? under.ease[src] : 0));
   return e;
 }
 
@@ -98,9 +100,9 @@ export function relaxGarment(gg: GarmentGeometry, c: Composed, normals: Float32A
   const minE = new Float32Array(n);
   for (let v = 0; v < n; v++) { const s = gg.source[v]; minE[v] = s >= 0 ? minEase(sp, P, s, under) : 0; }
   // na ribana o tecido é puxado contra a pele antes de relaxar (a sobra acima vem das dobras)
-  if (RIBBED.has(sp.kind)) for (let v = 0; v < n; v++) {
+  if (hasRibbing(sp) || sp.legCuff) for (let v = 0; v < n; v++) {
     const s = gg.source[v]; if (s < 0) continue; const g = P.group[s];
-    const rib = ((g === 1 || g === 3) && P.h[s] < sp.hem + 0.07) || (g === 2 && sp.sleeve > 0 && P.arm[s] > sp.sleeve - 0.07);
+    const rib = ((g === 1 || g === 3) && P.h[s] < sp.hem + 0.07) || (g === 2 && sp.sleeve > 0 && P.arm[s] > sp.sleeve - 0.07) || (sp.legCuff && g === 3 && P.leg[s] > sp.leg - .06);
     if (!rib) continue;
     const d = (p[v * 3] - B[s * 3]) * normals[s * 3] + (p[v * 3 + 1] - B[s * 3 + 1]) * normals[s * 3 + 1] + (p[v * 3 + 2] - B[s * 3 + 2]) * normals[s * 3 + 2];
     const k = d - minE[v]; if (k > 0) for (let j = 0; j < 3; j++) p[v * 3 + j] -= normals[s * 3 + j] * k;
@@ -118,6 +120,25 @@ export function relaxGarment(gg: GarmentGeometry, c: Composed, normals: Float32A
       const d = (p[v * 3] - B[s * 3]) * normals[s * 3] + (p[v * 3 + 1] - B[s * 3 + 1]) * normals[s * 3 + 1] + (p[v * 3 + 2] - B[s * 3 + 2]) * normals[s * 3 + 2];
       if (d < minE[v]) { const m = minE[v] - d; p[v * 3] += normals[s * 3] * m; p[v * 3 + 1] += normals[s * 3 + 1] * m; p[v * 3 + 2] += normals[s * 3 + 2] * m; }
     }
+  }
+}
+
+/** Reapply skin/layer clearance after column shaping and folds, which can move fabric inward.
+ * Source-vertex normal constraint in the rest pose; not a global mesh collision solver.
+ * Independent skirt tube vertices have no skin source and are deliberately left unchanged.
+ */
+export function enforceGarmentClearance(gg: GarmentGeometry, c: Composed, normals: Float32Array, P: BodyParam, under: UnderLayer | null = null): void {
+  for (let v = 0; v < gg.source.length; v++) {
+    const src = gg.source[v]; if (src < 0) continue;
+    const j = src * 3, i = v * 3;
+    const nx = normals[j], ny = normals[j + 1], nz = normals[j + 2];
+    const norm = Math.hypot(nx, ny, nz); if (norm < 1e-8) continue;
+    const distance = ((gg.position[i] - c.body[j]) * nx + (gg.position[i + 1] - c.body[j + 1]) * ny + (gg.position[i + 2] - c.body[j + 2]) * nz) / norm;
+    const correction = minEase(gg.spec, P, src, under) - distance;
+    if (correction <= 0) continue;
+    gg.position[i] += nx / norm * correction;
+    gg.position[i + 1] += ny / norm * correction;
+    gg.position[i + 2] += nz / norm * correction;
   }
 }
 
@@ -139,8 +160,8 @@ export function foldGarment(gg: GarmentGeometry, c: Composed, normals: Float32Ar
       d += 0.0022 * bell(a, 0.52, 0.1) * Math.sin(a / 0.055 * Math.PI * 2 + wob(around)) * (0.6 + 0.4 * Math.cos(around));
       if (sp.sleeve > 0.8) {
         // manga longa: o tecido sobra e embolsa logo acima do punho
-        const cuff = sp.sleeve - (RIBBED.has(sp.kind) ? 0.07 : 0.03);
-        d += (RIBBED.has(sp.kind) ? 0.006 : 0.003) * bell(a, cuff - 0.09, 0.07);
+        const cuff = sp.sleeve - (hasRibbing(sp) ? 0.07 : 0.03);
+        d += (hasRibbing(sp) ? 0.006 : 0.003) * bell(a, cuff - 0.09, 0.07);
         d += 0.002 * bell(a, cuff - 0.1, 0.1) * Math.sin(a / 0.045 * Math.PI * 2 + wob(around * 1.7));
       } else {
         d += 0.0025 * smooth(sp.sleeve - 0.25, sp.sleeve, a);          // manga curta: a boca abre um pouco
@@ -153,7 +174,7 @@ export function foldGarment(gg: GarmentGeometry, c: Composed, normals: Float32Ar
         const k = smooth(0.62, 0.25, h) * (0.4 + 0.6 * Math.abs(Math.cos(ang)));
         d += 0.0021 * k * Math.sin(ang * 9 + wob(h * 6) * 1.4);
       }
-      if (RIBBED.has(sp.kind)) d += 0.008 * bell(h, sp.hem + 0.13, 0.06);   // embolsa acima da barra de ribana
+      if (hasRibbing(sp)) d += 0.008 * bell(h, sp.hem + 0.13, 0.06);   // embolsa acima da barra de ribana
     }
     if (g === 3 && sp.leg > 0.8) {
       const l = P.leg[s];
@@ -203,8 +224,16 @@ export function columnLegs(gg: GarmentGeometry, c: Composed, P: BodyParam): void
     let col: number;
     if (l >= 0.5) { const t = Math.min(1, (l - 0.5) / Math.max(0.05, sp.leg - 0.5)); col = g.knee[j] * (1 + wide * (0.4 + 0.6 * t)) * (1 - 0.05 * t * (wide > 0 ? 0 : 1)); }
     else { const u = (l - 0.18) / 0.32; col = g.thigh[j] + (g.knee[j] * (1 + wide * 0.4) - g.thigh[j]) * Math.max(0, u); }
-    const target = col + ease * 1.2; const k = Math.min(1, Math.max(0, (l - 0.12) / 0.08));
+    // Keep the declared opening after column relaxation; otherwise the knee ring
+    // dominates and bootcut silently becomes the same straight trouser again.
+    const opening = sp.legFlareStart === undefined ? 0 : legFlareOffset(sp, l);
+    const target = col + ease * 1.2 + opening; const k = Math.min(1, Math.max(0, (l - 0.12) / 0.08));
     let nr = Math.max(r, r + (target - r) * k);
+    if (sp.legCuff) {
+      const cuff = smooth(sp.leg - .08, sp.leg - .015, l);
+      const bodyRadius = Math.hypot(c.body[s * 3] - ax, c.body[s * 3 + 2] - az);
+      nr += (bodyRadius + .004 - nr) * cuff;
+    }
     // não passa do meio do corpo: a perna esquerda (x > 0) não cruza x = 4 mm, a direita idem
     const nx = ax + (dx * nr) / r; if (side * nx < 0.004) nr = r;
     p[i * 3] = ax + (dx * nr) / r; p[i * 3 + 2] = az + (dz * nr) / r;

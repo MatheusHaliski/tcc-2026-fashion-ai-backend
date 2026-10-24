@@ -157,7 +157,7 @@ public class SchemeService {
         // as indisponíveis/reprovadas ficam ocultas e o total informa quantas.
         out.put("source", "RF4");
         out.put("hiddenPieces", Math.max(0, total - eligible.size()));
-        if (eligible.size() < 2) {
+        if (eligible.size() < 2 && eligible.stream().noneMatch(w -> "full_body_piece".equals(w.getCategory()))) {
             out.put("status", "INSUFICIENTE");
             out.put("message", Msg.t("scheme.voce_precisa_de_ao_menos"));
             out.put("action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/pieces/new"));
@@ -446,6 +446,7 @@ public class SchemeService {
         }
         schemes.save(s);
         List<SchemeItem> items = replaceItems(user, s, form.items());
+        studio.requireAuraAccess(user, form.background());
         studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
         applyLookPhoto(user, s, form.background(), items);
         if (Boolean.TRUE.equals(form.publish())) {
@@ -706,17 +707,25 @@ public class SchemeService {
     /** RF3.CA13 — a visibilidade do esquema prevalece sobre a do perfil quando for mais restritiva. */
     public void requireView(CurrentUser viewer, Scheme s) {
         Visibility effective = moreRestrictive(s.getVisibility(), s.getUser().getProfileVisibility());
-        if (s.getStatus() == SchemeStatus.ARCHIVED && (viewer == null || !viewer.id().equals(s.getUser().getId()))) {
+        if (onlyForOwner(viewer, s)) {
             throw ApiException.notFound(Msg.t("entity.esquema"));
         }
         guard.requireView(viewer, s.getUser().getId(), effective, "scheme:" + s.getId());
     }
 
     public boolean canView(CurrentUser viewer, Scheme s) {
-        if (s.getStatus() == SchemeStatus.ARCHIVED && (viewer == null || !viewer.id().equals(s.getUser().getId()))) {
+        if (onlyForOwner(viewer, s)) {
             return false;
         }
         return guard.canView(viewer, s.getUser().getId(), moreRestrictive(s.getVisibility(), s.getUser().getProfileVisibility()));
+    }
+
+    /**
+     * Rascunho e arquivado são só do dono, qualquer que seja a visibilidade marcada: sem isso, um rascunho "público"
+     * abria pelo link direto e aparecia na busca antes de ser publicado. Quem não é o dono recebe "não encontrado".
+     */
+    private static boolean onlyForOwner(CurrentUser viewer, Scheme s) {
+        return s.getStatus() != SchemeStatus.PUBLISHED && (viewer == null || !viewer.id().equals(s.getUser().getId()));
     }
 
     public static Visibility moreRestrictive(Visibility a, Visibility b) {
@@ -910,6 +919,7 @@ public class SchemeService {
         }
         Set<UUID> after = items.stream().map(si -> si.getWardrobeItem().getId()).collect(Collectors.toSet());
         if (form.background() != null || Boolean.TRUE.equals(form.applyRecommendedDirection())) {
+            studio.requireAuraAccess(user, form.background());
             studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
             applyLookPhoto(user, s, form.background(), items);
         }
@@ -1197,6 +1207,7 @@ public class SchemeService {
         s.setTitle(form.title() == null ? Msg.t("scheme.pre_visualizacao") : form.title());
         s.setOccasion(Json.csv(form.occasion()));
         s.setStyle(Json.csv(form.style()));
+        studio.requireAuraAccess(user, form.background());
         studio.applyToScheme(s, form.background(), Boolean.TRUE.equals(form.applyRecommendedDirection()));
         if (form.cardSkin() != null) {
             s.setCardSkin(form.cardSkin());

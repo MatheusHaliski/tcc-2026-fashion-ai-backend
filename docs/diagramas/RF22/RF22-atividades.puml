@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF22 — Visualizar a aba 'Celebridades' — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF22 — Visualizar a aba 'Celebridades' — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -38,7 +38,7 @@ start
 |API (Spring Boot)|
 :ProfileController.celebrities\n→ InstitutionalService.celebrityFeed;
 |Dados e serviços|
-:Lê: celebrity_profiles\nstyle_dna\nseal_bonds\nfollows\nwardrobe_items;
+:Lê: celebrity_profiles\nstyle_dna\nfollows\nwardrobe_items\nschemes\nseals (+1);
 :Usa: HypeQueryService.groups;
 |Tela (Next.js)|
 :Atualiza a tela com a resposta;
@@ -46,7 +46,7 @@ start
 if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Celebridade edita seus dados inst…)
-    :PATCH /api/me/celebrity-profile\n→ InstitutionalService.updateCelebrity\nlê: celebrity_profiles, seal_bonds, follows\nusa: Guard.deny\ngrava: celebrity_profiles;
+    :PATCH /api/me/celebrity-profile\n→ InstitutionalService.updateCelebrity\nlê: celebrity_profiles, follows, wardrobe_items\n…\nusa: Guard.deny\ngrava: celebrity_profiles;
   case (Enviar foto de perfil [ou logo, f…)
     :POST /api/auth/uploads\n→ IdentityService.preRegistrationUpload\nvalida: ARQUIVO_GRANDE, LIMITE_ENVIOS, TIPO_INVALIDO\nusa: MediaStoragePort.put;
   endswitch

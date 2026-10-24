@@ -50,6 +50,7 @@ import java.util.UUID;
 public class Model3dService {
     private static final Logger log = LoggerFactory.getLogger(Model3dService.class);
     static final int MAX_GLB_BYTES = 40 * 1024 * 1024;
+    static final int MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
     private final WardrobeItemRepository pieces;
     private final PipelineJobRepository jobs;
@@ -204,7 +205,7 @@ public class Model3dService {
                 fail(job, "PECA_REMOVIDA", Msg.t("model3d.a_peca_foi_excluida_antes"));
                 return null;
             }
-            byte[] bytes = media.read(w.getImageUrl()).orElse(null);
+            byte[] bytes = imageBytes(w);
             if (bytes == null) {
                 fail(job, "SEM_ARQUIVO", Msg.t("model3d.a_foto_da_peca_nao"));
                 return null;
@@ -323,7 +324,7 @@ public class Model3dService {
             }
             // RNF8: o provedor falhou → relevo local, para o usuário não ficar sem modelo
             WardrobeItem w = pieces.findById(job.getInputResourceId()).orElse(null);
-            byte[] bytes = w == null ? null : media.read(w.getImageUrl()).orElse(null);
+            byte[] bytes = w == null ? null : imageBytes(w);
             if (bytes != null) {
                 try {
                     ReliefModelGenerator.Model m = ReliefModelGenerator.generate(ImageOps.toArgb(ImageOps.decode(bytes)),
@@ -376,6 +377,15 @@ public class Model3dService {
         } catch (RuntimeException e) {
             log.debug("FAI Points do 3D não concedidos: {}", e.getMessage());
         }
+    }
+
+    private byte[] imageBytes(WardrobeItem piece) {
+        String url = piece.getImageUrl();
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        return media.read(url).orElseGet(() -> web.get(url, MAX_IMAGE_BYTES, "image/*")
+                .map(WebFetchPort.Fetched::body).orElse(null));
     }
 
     private void fail(PipelineJob job, String code, String message) {

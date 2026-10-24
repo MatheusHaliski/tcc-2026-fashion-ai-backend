@@ -102,4 +102,62 @@ class FaiPointsShopTest {
                 .extracting("code").isEqualTo("CONDICAO_DE_COMPRA");
         verify(ledger, never()).save(any());
     }
+    @Test
+    void vendaCreditaCriadorSemGerarPontosVitalicios() {
+        UUID seller = UUID.randomUUID();
+        User creatorUser = new User(); creatorUser.assignId(seller);
+        when(catalog.sellerOf("BRD-X-1")).thenReturn(Optional.of(seller));
+        when(ledger.lockOwner(seller)).thenReturn(Optional.of(creatorUser));
+        item.setCreatorUserId(seller);
+        when(ledger.balance(buyer)).thenReturn(150L);
+        service.buy(me, "BRD-X-1");
+        var entries = org.mockito.ArgumentCaptor.forClass(FaiPointsLedgerEntry.class);
+        verify(ledger, org.mockito.Mockito.times(2)).save(entries.capture());
+        assertThat(entries.getAllValues()).extracting(FaiPointsLedgerEntry::getDelta).containsExactly(-100, 100);
+        assertThat(entries.getAllValues()).allMatch(e -> !e.isCountsLifetime());
+        assertThat(entries.getAllValues().get(1).getUserId()).isEqualTo(seller);
+        var ordered = inOrder(ledger, catalog);
+        UUID first = buyer.compareTo(seller) < 0 ? buyer : seller;
+        UUID second = first.equals(buyer) ? seller : buyer;
+        ordered.verify(ledger).lockOwner(first); ordered.verify(ledger).lockOwner(second);
+        ordered.verify(catalog).lockBySku("BRD-X-1");
+    }
+
+    @Test
+    void mesmoPedidoRepetidoDevolveACompraFeitaSemCobrarNemEntregarDeNovo() {
+        String key = "7f3c2a1e-9b8d-4c6e-a5f4-1d2e3f4a5b6c";
+        var saved = new java.util.ArrayList<FaiPointsLedgerEntry>();
+        var bought = new java.util.ArrayList<RoomInventoryItem>();
+        when(ledger.save(any(FaiPointsLedgerEntry.class))).thenAnswer(inv -> { saved.add(inv.getArgument(0)); return inv.getArgument(0); });
+        when(ledger.findByIdempotencyKey(anyString())).thenAnswer(inv -> saved.stream()
+                .filter(e -> e.getIdempotencyKey().equals(inv.getArgument(0))).findFirst());
+        org.mockito.Mockito.doAnswer(inv -> {
+            RoomInventoryItem it = inv.getArgument(0); it.setId(UUID.randomUUID()); bought.add(it); return it;
+        }).when(inventory).save(any());
+        when(inventory.findByUserId(buyer)).thenAnswer(inv -> bought);
+        when(ledger.balance(buyer)).thenReturn(150L, 50L, 50L, 50L);
+        var first = service.buy(me, "BRD-X-1", key);
+        var again = service.buy(me, "BRD-X-1", key);              // a resposta se perdeu e a pessoa tentou de novo
+        assertThat(again).containsEntry("inventoryId", first.get("inventoryId")).containsEntry("repeated", true);
+        assertThat(saved).hasSize(1);
+        assertThat(saved.get(0).getIdempotencyKey()).isEqualTo(buyer + ":SHOP_PURCHASE:" + key);
+        assertThat(bought).hasSize(1);
+        assertThat(item.getSoldCount()).isEqualTo(1);
+    }
+
+    @Test
+    void chaveForaDoFormatoEhIgnoradaECadaCompraGanhaReferenciaPropria() {
+        assertThat(FaiPointsService.requestRef("x' or 1=1 --")).isNull();
+        assertThat(FaiPointsService.requestRef("curta")).isNull();
+        assertThat(FaiPointsService.requestRef("7f3c2a1e-9b8d-4c6e-a5f4-1d2e3f4a5b6c")).isNotNull();
+    }
+
+    @Test
+    void compraPropriaNaoGeraDebitoCreditoOuEntrega() {
+        when(catalog.sellerOf("BRD-X-1")).thenReturn(Optional.of(buyer));
+        assertThatThrownBy(() -> service.buy(me, "BRD-X-1")).isInstanceOf(ApiException.class)
+            .extracting("code").isEqualTo("COMPRA_PROPRIA");
+        verify(ledger, never()).save(any()); verify(inventory, never()).save(any());
+    }
+
 }

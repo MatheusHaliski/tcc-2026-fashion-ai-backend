@@ -1,0 +1,20 @@
+CREATE TABLE aura_hype_drops (
+ id CHAR(36) NOT NULL PRIMARY KEY,
+ entity_type VARCHAR(10) NOT NULL,
+ entity_id CHAR(36) NOT NULL,
+ issuer_id CHAR(36) NOT NULL,
+ series_code VARCHAR(60) NOT NULL,
+ label VARCHAR(120) NOT NULL,
+ serial_number INT NOT NULL,
+ print_run INT NOT NULL,
+ active BOOLEAN NOT NULL DEFAULT TRUE,
+ created_at DATETIME(6) NOT NULL,
+ updated_at DATETIME(6) NOT NULL,
+ created_by VARCHAR(80),
+ last_modified_by VARCHAR(80),
+ version BIGINT NOT NULL DEFAULT 0,
+ CONSTRAINT uq_aura_hype_drop_card UNIQUE(entity_type,entity_id),
+ CONSTRAINT uq_aura_hype_drop_serial UNIQUE(issuer_id,series_code,serial_number),
+ CONSTRAINT fk_aura_hype_drop_issuer FOREIGN KEY(issuer_id) REFERENCES users(id),
+ CONSTRAINT ck_aura_hype_drop_serial CHECK(serial_number>=1 AND print_run>=serial_number)
+);

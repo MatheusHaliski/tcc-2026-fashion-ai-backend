@@ -61,14 +61,17 @@ describe("Minhas peças — categoria é aba, estado é filtro", () => {
 describe("PieceCard — \"Para doar\" e tags essenciais", () => {
   const donated: PieceView = { ...PIECE, forDonation: true, forSale: false, style: ["basic", "casual", "streetwear"] };
 
-  it("mostra o selo \"Para doar\" para quem visita (estado público) e no máximo duas tags de estilo", () => {
+  it("mostra o selo \"Para doar\" para quem visita e o resumo acessível dos estilos", () => {
     mockApi(HYPE);
     const { container } = renderApp(<PieceCard piece={donated} />);
     expect(container.querySelector(".pc-flags")?.textContent).toContain("Para doar");
-    const tags = container.querySelector(".pc-tags") as HTMLElement;
-    expect(tags.title).toBe(`${label("basic")} · ${label("casual")}`);
-    expect(tags.textContent).not.toContain(label("streetwear"));
-    expect(tags.title.split(" · ")).toHaveLength(2);
+    // O resumo é permanente: até dois estilos visíveis, contagem e lista completa acessível.
+    const info = container.querySelector(".card-fashion-meta") as HTMLElement;
+    const styles = Array.from(info.querySelectorAll("div")).find((row) => row.querySelector("dt")?.textContent === "Estilo")!;
+    expect(styles.textContent).toContain(`${label("basic")} · ${label("casual")}`);
+    expect(styles.querySelector(".card-meta-more")?.textContent).toContain("+1");
+    expect(styles.querySelector("[aria-label]")?.getAttribute("aria-label")).toBe(`${label("basic")} · ${label("casual")} · ${label("streetwear")}`);
+    expect(container.querySelector(".pc-tags")).toBeNull();
   });
 
   it("sem estilo não há linha de tags; peça comum não mostra \"Para doar\"; na seleção (montar look) as tags somem", () => {

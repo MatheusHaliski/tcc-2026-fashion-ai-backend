@@ -55,50 +55,41 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(nullable = false, length = 180)
     private String name;
 
-    /** upper_piece · lower_piece · shoes_piece · accessory_piece · full_body_piece */
     @Column(nullable = false, length = 80)
     private String category;
 
     @Column(nullable = false, length = 120)
     private String subcategory;
 
-    /** Variação (corte/silhueta/construção) da subcategoria — docs/taxonomia; null = não informada. */
     @Column(name = "variation_code", length = 60)
     private String variationCode;
 
-    /** USER_CONFIRMED · AI_SUGGESTED · NEEDS_REVIEW · UNKNOWN */
     @Column(name = "variation_status", length = 16)
     private String variationStatus;
 
     @Column(name = "variation_confidence", precision = 4, scale = 3)
     private BigDecimal variationConfidence;
 
-    /** Quem escreveu a variação: USER · AI · CATALOG · RULE (V45). */
     @Column(name = "variation_source", length = 12)
     private String variationSource;
 
-    /** Atributos por dimensão (acabamento, comprimento, cintura, estilo, ocasião…), tabela wardrobe_item_attributes (V43). */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "wardrobe_item_attributes", joinColumns = @JoinColumn(name = "item_id"))
     @BatchSize(size = 100)
     private Set<TaxonomyAttribute> attributes = new HashSet<>();
 
-    /** MASCULINO · FEMININO · UNISSEX — obrigatório (RF4.CA07), filtra o provador (RF18.CA08). */
     @Column(length = 40)
     private String sex;
 
     @Column(name = "brand_name", length = 160)
     private String brandName;
 
-    /** RF4 — logo da marca escolhido no buscador web, já filtrado (fundo branco, letras pretas nítidas) e guardado no storage próprio. */
     @Column(name = "brand_logo_url", length = 1024)
     private String brandLogoUrl;
 
-    /** RF4 — fonte da marca: WIKIDATA · SIMPLE_ICONS · IA_BUSCA_WEB · PLATAFORMA · TEXTO_LIVRE. */
     @Column(name = "brand_source", length = 40)
     private String brandSource;
 
-    /** RF4 — referência externa da marca (id do Wikidata, slug do Simple Icons ou URL de origem). */
     @Column(name = "brand_ref", length = 255)
     private String brandRef;
 
@@ -169,6 +160,16 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "item_condition", length = 20)
     private ItemCondition condition = ItemCondition.GOOD;
+
+    /** FK cadastrada pelo usuário; o enum condition continua legível para clientes antigos. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estado_de_conservacao")
+    private EstadoConservacao estadoConservacao;
+
+    /** Instrução estruturada, sem substituir o campo livre careInstructions. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_lavagem_id")
+    private TipoLavagem tipoLavagem;
 
     @Column(name = "is_favorite", nullable = false)
     private boolean favorite;

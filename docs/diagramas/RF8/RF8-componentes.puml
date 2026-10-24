@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba 'Buscar'\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba 'Buscar'\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/feed\n(site)/(app)/feed/page.tsx" as FE0
@@ -48,11 +48,11 @@ package "fai-application (casos de uso)" {
   component "SocialService" as SocialService
   component "SearchService" as SearchService
   component "SchemeService" as SchemeService
+  component "WardrobeService" as WardrobeService <<apoio>>
   component "NotificationService" as NotificationService <<apoio>>
   component "MediaService" as MediaService <<apoio>>
   component "ChallengeService" as ChallengeService <<apoio>>
   component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
-  component "WardrobeService" as WardrobeService <<apoio>>
   component "BackgroundStudioService" as BackgroundStudioService <<apoio>>
   component "SealService" as SealService <<apoio>>
   component "SchemeCardRenderer" as SchemeCardRenderer <<apoio>>
@@ -98,4 +98,5 @@ SocialService --> REPO_MySQL
 SocialService ..> MediaService
 SocialService ..> NotificationService
 SocialService ..> SchemeService
+SocialService ..> WardrobeService
 @enduml

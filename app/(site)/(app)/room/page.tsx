@@ -6,7 +6,7 @@ import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
-import { Badge, Button, Card, Chip, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useToast } from "@/components/ui";
+import { Button, Chip, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
 import { ActionMenu } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
@@ -20,7 +20,11 @@ import { setNavSub } from "@/lib/nav/active-override";
 import { MIRROR_ROOM_PATH } from "@/lib/nav/mirror-href";
 import { MirrorControls, useMirrorPins, vistaRequest, wornOf, type MirrorData, type MirrorHost, type MirrorPieceRef } from "@/components/mirror/mirror-controls";
 import { VistaMeCells } from "@/components/mirror/vista-me-cells";
-import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
+import type { MirrorOverlay, RoomData3D, SceneView } from "@/components/room3d/room-scene";
+import { RoomSettingsPanel } from "@/components/room3d/room-settings-panel";
+import { RoomStore } from "@/components/room3d/room-store";
+import { cameraOptionsOf, DEFAULT_ROOM_SETTINGS, loadRoomSettings, mirrorTextureOf, reducedMotionOf, saveRoomSettings, type RoomSettings } from "@/lib/room3d/room-settings";
+import { availableViews, nextCorner, nextView, type SavedView } from "@/lib/room3d/camera-views";
 import { feel, fabricOf } from "@/lib/sensory";
 import { newCanvas, saveCanvas } from "@/lib/export/canvas";
 import { MirrorStage, mirrorPieces as lookOf, useMirrorAvatar, type MirrorPiece } from "@/components/mirror/mirror-stage";
@@ -31,7 +35,7 @@ import { loadTexture, useReducedMotion } from "@/components/three/common";
 const RoomScene = dynamic(() => import("@/components/room3d/room-scene"), { ssr: false, loading: () => <div className="room3d-loading">{tr("room.montando_o_quarto_em_3d")}</div> });
 // Prévia 2D (PROV-2D): o mesmo Avatar 3D do espelho, parado e de frente, como imagem (reflexo no vidro e no Vista-me)
 const AvatarStill = dynamic(() => import("@/components/three/avatar-still"), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
-/** RF32.CA08 — sem WebGL (ou aparelho muito fraco) o quarto abre em 2.5D com as mesmas interações. */
+/** Sem WebGL o quarto não monta a cena: ficam as Configurações do quarto e o espelho plano (palco 2D). */
 function webglOk(): boolean {
   if (typeof window === "undefined") return false;
   try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; }
@@ -51,9 +55,6 @@ interface Unbox { inventoryId: string; sku: string; name: string; slotType: stri
 const CARE: Record<string, string> = { get COTTON() { return tr("room.n30_medio_secar_a_sombra"); }, get WOOL() { return tr("room.lavar_a_mao_secadora_baixo"); }, get SILK() { return tr("room.a_mao_torcer_baixo"); }, get LEATHER() { return tr("room.agua_pano_umido_hidratar"); }, get POLYESTER() { return tr("room.n40_baixo"); }, get SYNTHETIC() { return tr("room.n30_baixo"); }, get BLEND() { return tr("room.n30_medio"); } };
 const ORIGIN: Record<string, string> = { COMPRADA: "comprada", GARIMPADA: "garimpada", HERDADA: "herdada", PRESENTE: "presente", get FEITA_A_MAO() { return tr("room.feita_a_mao"); }, TROCADA: "trocada" };
 const mirrorPieces = (m?: MirrorState | null) => Object.values(m?.slots ?? {}).flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []));
-interface ListRow { moduleId: string; label: string; count: number; pieces: RoomPiece[]; actions: string[]; }
-
-const ZONE_ICON: Record<string, string> = { DOOR: "🚪", DRAWER: "🗄️", TOP: "🧢", BASE: "👜", SHOE: "👟", BAGS: "👜", JEWELRY: "💍", CHAIR: "🪑", SEASON: "📦" };
 
 /** DET-G04 — modo foto: 4 enquadramentos, profundidade de campo e 3 filtros; a exportação sai só com a cena (sem a interface). */
 type Framing = "overview" | "closet" | "mirror" | "shoes";
@@ -63,17 +64,17 @@ const PHOTO_FILTERS: PhotoFilter[] = ["none", "editorial", "filme", "pb"];
 const FILTER_CSS: Record<PhotoFilter, string> = { none: "none", editorial: "contrast(1.1) saturate(0.88) brightness(1.02)", filme: "sepia(0.22) contrast(1.05) brightness(1.04) saturate(1.05)", pb: "grayscale(1) contrast(1.15)" };
 
 function RoomInner() {
-  const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams(); const router = useRouter();
+  const { t, fmtPriceShort } = useI18n(); const toast = useToast(); const sp = useSearchParams(); const router = useRouter();
   const { data, loading, error, reload } = useApi<Room>((signal) => api.get("/api/me/room", { signal }), []);
-  const list = useApi<ListRow[]>((signal) => api.get("/api/me/room/list", { signal }), []);
-  const [tab, setTab] = useState<"3d" | "room" | "list">("room"); const [gl, setGl] = useState<boolean | null>(null);
+  const [gl, setGl] = useState<boolean | null>(null);
   const [openSet, setOpenSet] = useState<Set<string>>(new Set()); const [focusModule, setFocusModule] = useState<string | null>(null); const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const modal = useDetailModal();
   const [lightOn, setLightOn] = useState(false);
+  const [lightBusy, setLightBusy] = useState(false); const lightLock = useRef(false);
   const [lightIntensity, setLightIntensity] = useState(.75);
   const lightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lightPeriod = data?.ambient?.period;
-  useEffect(() => { if (data) { const light = (data as unknown as RoomData3D).light; setLightOn(lightPeriod === "night" || light?.on === true); setLightIntensity(light?.intensity ?? .75); } }, [lightPeriod, !!data]);
+  useEffect(() => { if (data) { const light = (data as unknown as RoomData3D).light; setLightOn(light?.on ?? lightPeriod === "night"); setLightIntensity(light?.intensity ?? .75); } }, [lightPeriod, !!data]);
   useEffect(() => () => { if (lightTimer.current) clearTimeout(lightTimer.current); }, []);
   const mirror = useApi<MirrorState>((signal) => api.get("/api/me/mirror", { signal }), []);
   // peças fixadas ("Manter") no painel do Espelho: valem também para o Vista-me da barra da cena e sobrevivem a fechar a prova
@@ -93,12 +94,12 @@ function RoomInner() {
   const [, mirrorTick] = useState(0);
   useEffect(() => { const update = () => mirrorTick((n) => n + 1); session.listeners.add(update); return () => { session.listeners.delete(update); }; }, [session]);
   const inMirror = session.phase === "tryon";                     // aba Espelho aberta dentro do quarto
-  // sem WebGL (ou na aba 2.5D): a vista do espelho embutida — palco 2D + o mesmo painel
+  // sem WebGL: a vista do espelho embutida — palco 2D + o mesmo painel
   const [flatMirror, setFlatMirror] = useState(false);
   // prévia 2D (foto parada do mesmo avatar) no painel do espelho; ?vista=2d abre com ela
   const [show2d, setShow2d] = useState(false);
-  // o Espelho só "está aberto" quando a prova está à vista: aba 3D na prova, ou a vista embutida na aba 2.5D
-  const mirrorOpen = (tab === "3d" && inMirror) || (tab === "room" && flatMirror);
+  // o Espelho só "está aberto" quando a prova está à vista: a cena 3D na prova, ou a vista embutida sem WebGL
+  const mirrorOpen = (gl === true && inMirror) || (gl === false && flatMirror);
   // navegação derivada: "Espelho" recuado sob "Meu Quarto" no menu lateral enquanto a prova está à vista
   useEffect(() => { setNavSub(mirrorOpen ? { parent: "/room", key: "nav.mirror", icon: "ACT-32" } : null); }, [mirrorOpen]);
   useEffect(() => () => setNavSub(null), []);
@@ -132,9 +133,29 @@ function RoomInner() {
   const [pendingWalk, setPendingWalk] = useState<number | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
-  /** O personagem pode andar agora: aba 3D, modo andar (não órbita/foto) e o avatar carregado na cena. */
-  const gameplayReady = () => tab === "3d" && walking && !photo && !me3d.loading && engine.ready;
-  const calm = () => reducedMotion || !!data?.ambient?.reduceMotion;
+  /**
+   * Configurações do quarto (componente ao lado da cena): câmera e pontos de vista, paredes, ambiente, gráficos,
+   * interface e acessibilidade — preferências deste aparelho, lidas depois de montar (o servidor não as conhece).
+   */
+  const [settings, setSettings] = useState<RoomSettings>(DEFAULT_ROOM_SETTINGS);
+  useEffect(() => { setSettings(loadRoomSettings()); }, []);
+  const updateSettings = (patch: Partial<RoomSettings> | ((s: RoomSettings) => Partial<RoomSettings>)) => setSettings((s) => {
+    const next = { ...s, ...(typeof patch === "function" ? patch(s) : patch) }; saveRoomSettings(next); return next;
+  });
+  const reduced = reducedMotionOf(settings, reducedMotion, !!data?.ambient?.reduceMotion);
+  const camOpts = useMemo(() => cameraOptionsOf(settings, reduced), [settings, reduced]);
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => { try { setCoarse(window.matchMedia("(pointer: coarse)").matches); } catch { /* sem matchMedia */ } }, []);
+  const sceneView: SceneView = { camera: camOpts, walls: settings.walls, period: settings.period === "auto" ? null : settings.period, kelvin: settings.kelvin,
+    quality: settings.quality, dynamicRes: settings.dynamicRes, mirror: mirrorTextureOf(settings.mirror, coarse), reduced };
+  // a câmera de agora (vista favorita) e as opções da câmera no modo andar; num canto do teto, girar passa ao vizinho
+  const poseRef = useRef<SavedView | null>(null);
+  useEffect(() => { engine.camera = camOpts; }, [engine, camOpts]);
+  const stepCorner = (step: number) => { const view = nextCorner(settings.view, step); updateSettings({ view, favorite: null }); flashView(t(`room.settings.view.${view}`)); };
+  engine.onViewStep = stepCorner;
+  /** O personagem pode andar agora: cena 3D, modo andar (não órbita/foto) e o avatar carregado na cena. */
+  const gameplayReady = () => gl === true && walking && !photo && !me3d.loading && engine.ready;
+  const calm = () => reduced;
   /** Sem caminhada possível: a prova abre direto e (fora do modo andar) a câmera enquadra o espelho. */
   function openMirrorDirect() {
     if (session.phase !== "tryon") session.open();
@@ -157,8 +178,7 @@ function RoomInner() {
    * Sem WebGL: a vista embutida do espelho na aba 2.5D.
    */
   function goToMirror() {
-    if (!gl) { setTab("room"); setFlatMirror(true); return; }
-    setTab("3d");
+    if (!gl) { setFlatMirror(true); return; }
     if (session.phase === "tryon" && walkRef.current !== "away") return;   // já na prova (e não saindo dela)
     if (gameplayReady()) { setPendingWalk(null); walkToMirror(); return; }
     if (walking && !photo) { setWalk("mirror"); setPendingWalk(Date.now()); return; }
@@ -166,14 +186,14 @@ function RoomInner() {
   }
   // espera da caminhada: avatar pronto → caminha; sem cena 3D (nem montando) ou passou do tempo → abre direto
   useEffect(() => {
-    if (pendingWalk === null || tab !== "3d") return;
+    if (pendingWalk === null || !gl) return;
     const giveUp = () => { setPendingWalk(null); if (walkRef.current === "mirror") setWalk(null); openMirrorDirect(); };
     if (!walking || photo) { giveUp(); return; }
     if (play.ready && !me3d.loading && engine.ready) { setPendingWalk(null); walkToMirror(); return; }
     if (!me3d.loading && !stageRef.current?.querySelector("canvas, .room3d-loading")) { giveUp(); return; }
     const timer = window.setTimeout(giveUp, Math.max(0, pendingWalk + WALK_WAIT_MS - Date.now()));
     return () => window.clearTimeout(timer);
-  }, [pendingWalk, tab, walking, photo, play.ready, me3d.loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pendingWalk, gl, walking, photo, play.ready, me3d.loading]); // eslint-disable-line react-hooks/exhaustive-deps
   /**
    * Sair do espelho (trilha "Meu Quarto", Voltar ao quarto, Mostrar no quarto). Com o personagem andando no quarto e
    * ainda na zona do espelho, ele caminha para longe e a zona fecha a prova; sem caminhada, a prova fecha direto.
@@ -269,8 +289,12 @@ function RoomInner() {
     } catch (e) { failed(n, p.slot, e); }
   }
   async function toggleLight() {
-    const next = !lightOn; setLightOn(next);
-    try { await api.put("/api/me/room/light", { on: next }); } catch (e) { setLightOn(!next); toast.fromError(e); }
+    if (lightLock.current) return;
+    lightLock.current = true; setLightBusy(true);
+    const next = !lightOn;
+    try { const saved = await api.put<{ on?: boolean }>("/api/me/room/light", { on: next }); setLightOn(saved.on ?? next); }
+    catch (error) { toast.fromError(error); }
+    finally { lightLock.current = false; setLightBusy(false); }
   }
   function dimLight(value: number) {
     setLightIntensity(value);
@@ -338,6 +362,27 @@ function RoomInner() {
       toast.success(t("room.photo.salva"));
     } catch (e) { toast.fromError(e); } finally { setShooting(false); }
   }
+  /** Vistas favoritas (Shift+1–5 salva a câmera de agora; 1–5 volta a ela), como os favoritos de câmera do The Sims. */
+  function saveFavorite(slot: number) {
+    const pose = poseRef.current; if (!pose) return;
+    updateSettings((s) => ({ favorites: s.favorites.map((f, i) => (i === slot - 1 ? pose : f)), favorite: slot }));
+    toast.success(t("room.settings.favorites.saved", { n: slot }));
+  }
+  function recallFavorite(slot: number) {
+    if (!settings.favorites[slot - 1]) { toast.info(t("room.settings.favorites.none", { n: slot })); return; }
+    setFocusModule(null); updateSettings({ favorite: slot }); flashView(t("room.settings.favorites.go", { n: slot }));
+  }
+  const clearFavorite = (slot: number) => updateSettings((s) => ({ favorites: s.favorites.map((f, i) => (i === slot - 1 ? null : f)), favorite: s.favorite === slot ? null : s.favorite }));
+  /** Próximo ponto de vista (V, Shift+V, o direcional ← → do controle): escolher uma vista larga o módulo em foco. */
+  function cycleView(step: number) {
+    const view = nextView(settings.view, step, walking);
+    setFocusModule(null); updateSettings({ view, favorite: null }); flashView(t(`room.settings.view.${view}`));
+  }
+  /** Mudança vinda da aba Configurações: trocar de vista (ou de vista salva) devolve a câmera a ela. */
+  function changeSettings(patch: Partial<RoomSettings>) {
+    if ("view" in patch || "favorite" in patch) { setFocusModule(null); if (patch.view && patch.view !== settings.view) flashView(t(`room.settings.view.${patch.view}`)); }
+    updateSettings(patch);
+  }
   async function openTag(pid: string) {
     if (!data?.owner) { modal?.openPiece(pid); return; }
     try { setTag(await api.get<PieceTag>(`/api/pieces/${pid}/tag`)); } catch { modal?.openPiece(pid); }
@@ -354,7 +399,35 @@ function RoomInner() {
       toast.success(t("room.montado_sozinho_em", { name: it.name, label: target.label })); reload();
     } catch (e) { toast.fromError(e); } finally { setUnboxing(false); }
   }
-  useEffect(() => { const ok = webglOk(); setGl(ok); setTab(ok ? "3d" : "room"); }, []); const [open, setOpen] = useState<Module | null>(null); const [movePiece, setMovePiece] = useState<RoomPiece | null>(null); const [address, setAddress] = useState("");
+  useEffect(() => { setGl(webglOk()); }, []);
+  const [furnitureOpen, setFurnitureOpen] = useState(false);
+  // atalhos do quarto no teclado: V/Shift+V trocam o ponto de vista, L acende/apaga, 1–5 voltam a uma vista salva e
+  // Shift+1–5 salvam a câmera de agora (Ctrl/⌘+número troca de aba no navegador: fica de fora). Nunca dentro de um
+  // campo de texto ou de um diálogo aberto.
+  const keyActions = useRef({ cycleView, toggleLight, saveFavorite, recallFavorite }); keyActions.current = { cycleView, toggleLight, saveFavorite, recallFavorite };
+  useEffect(() => {
+    if (!gl) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target instanceof HTMLElement ? e.target : null;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || el?.closest("input,textarea,select,[contenteditable=true],[role=dialog]")) return;
+      const k = keyActions.current, digit = /^Digit([1-5])$/.exec(e.code);
+      if (e.code === "KeyV") { e.preventDefault(); k.cycleView(e.shiftKey ? -1 : 1); }
+      else if (e.code === "KeyL") { e.preventDefault(); void k.toggleLight(); }
+      else if (digit) { e.preventDefault(); if (e.shiftKey) k.saveFavorite(Number(digit[1])); else k.recallFavorite(Number(digit[1])); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [gl]);
+  // aviso curto com o nome da vista ao trocar (Configurações > Interface): só nas trocas da pessoa, não ao abrir a página
+  const [viewFlash, setViewFlash] = useState<string | null>(null);
+  const flashTimer = useRef<number | null>(null);
+  function flashView(label: string) {
+    if (!settings.viewName) return;
+    setViewFlash(label);
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setViewFlash(null), 1400);
+  }
+  useEffect(() => () => { if (flashTimer.current) window.clearTimeout(flashTimer.current); }, []); const [open, setOpen] = useState<Module | null>(null); const [movePiece, setMovePiece] = useState<RoomPiece | null>(null); const [address, setAddress] = useState("");
   const [preview, setPreview] = useState<{ moves?: { pieceId: string; from?: string; to: string; why?: string }[]; labels?: Record<string, string>; message?: string; explanation?: unknown } | null>(null); const [highlight, setHighlight] = useState<string | null>(sp.get("piece"));
   // RF32.CA09 — "Mostrar no quarto": enquadra a posição, abre a porta/gaveta e destaca a peça com luz
   useEffect(() => {
@@ -389,7 +462,7 @@ function RoomInner() {
     } else goToMirror();
     if (vestirQ || vistaQ === "2d") { linkWrote.current.push(keyOfPath(MIRROR_ROOM_PATH)); router.replace(MIRROR_ROOM_PATH, { scroll: false }); }
   }, [data, gl, mirror.loading, espelhoQ, vestirQ, vistaQ]); // eslint-disable-line react-hooks/exhaustive-deps
-  const act = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) toast.success(ok); reload(); list.reload(); } catch (e) { toast.fromError(e); } };
+  const act = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) toast.success(ok); reload(); } catch (e) { toast.fromError(e); } };
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
   const modulePieces = (m: Module) => (m.hangers ?? m.slots ?? []).map((h) => ({ ...h, piece: h.pieceId ? data.pieces[h.pieceId] : null }));
@@ -411,6 +484,15 @@ function RoomInner() {
     use: acceptLook,
   };
   const mirrorEmpty = wornOf(mirror.data).length === 0;
+  // Configurações do quarto (no lugar das abas 2.5D/Lista e da lista de posições): luz, roupa, móvel, câmera e o resto
+  const settingsPanel = (
+    <RoomSettingsPanel settings={settings} onChange={changeSettings} gl={!!gl} walking={walking} onWalking={setWalking}
+      light={{ on: lightOn, busy: lightBusy, intensity: lightIntensity, onToggle: () => { void toggleLight(); }, onDim: dimLight }}
+      outfit={{ names: wornOf(mirror.data).map((w) => w.p.name).filter(Boolean), onChange: goToMirror, onVistaMe: () => setVista((v) => ({ ...v, open: true })) }}
+      onFurniture={() => setFurnitureOpen(true)} onPhoto={() => { setPhoto({ framing: "overview", filter: "none", dof: false }); frame("overview"); }} onKeys={() => setKeysOpen(true)}
+      onSaveFavorite={saveFavorite} onRecallFavorite={recallFavorite} onClearFavorite={clearFavorite}
+      help={gl ? <RoomControlsTutorial enabled={walking} /> : undefined} />
+  );
   return (
     <>
       <PageHeader title={mirrorOpen ? t("nav.mirror") : t("nav.room")} kicker="RF27"
@@ -418,9 +500,8 @@ function RoomInner() {
         lead={mirrorOpen ? (mirror.data?.restriction ? t("mirror.desafio_ativo_so_as_pecas", { challenge: mirror.data.restriction.challenge }) : t("room.espelho_lead")) : t("room.nivel_pecas_em_posicoes", { level: data.level, aesthetic: data.levelInfo.aesthetic, value: data.capacity?.pieces ?? 0, value2: data.capacity?.positions ?? 0, value3: data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : "" })}
         actions={<><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=false")))}><FaiIcon id="ACT-30" size={24} decorative />{t("room.organizar")}</Button>{!mirrorOpen && <Button onClick={goToMirror}><FaiIcon id="ACT-32" size={24} decorative />{t("room.ir_ao_espelho")}</Button>}<Link href="/points" className="btn"><FaiIcon id="ACT-41" size={24} decorative />{t("room.loja")}</Link></>} />
       {data.celebrations?.length ? <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">{t("room.conquista")}{" "}{data.celebrations.map((c) => c.code).join(", ")}</p> : null}
-      <Tabs tabs={[...(gl ? [{ id: "3d" as const, label: t("room.quarto_3d") }] : []), { id: "room" as const, label: gl ? "2.5D" : t("room.quarto_2_5d") }, { id: "list" as const, label: t("room.lista") }]} value={tab} onChange={setTab} />
       {gl === false && <p className="mb-2 rounded-md bg-surface-2 p-2 type-caption text-muted">{t("room.este_aparelho_nao_tem_webgl")}</p>}
-      {tab === "3d" && (<>
+      {gl && (<>
           {photo ? (
             <div className="photo-mode mb-2" role="region" aria-label={t("room.photo.modo_foto")}>
               <div className="photo-mode-row"><span className="label mr-1">{t("room.photo.enquadramento")}</span>{FRAMINGS.map((f) => <Chip key={f} active={photo.framing === f} onClick={() => frame(f)}>{t(`room.photo.framing.${f}`)}</Chip>)}</div>
@@ -434,71 +515,62 @@ function RoomInner() {
             <Button variant="primary" onClick={() => setVista((v) => ({ ...v, open: true }))}><FaiIcon id="ACT-32" size={20} decorative />{t("room.vista_me_2")}</Button>
             <Button onClick={() => setCopilot((c) => ({ ...c, open: true }))}><FaiIcon id="ACT-13" size={20} decorative />{t("room.busto_copilot")}</Button>
             {((data as unknown as RoomData3D).unboxing?.length ?? 0) > 0 && <Button loading={unboxing} onClick={() => { void unbox(); }}>{t("room.receive_purchase", { count: (data as unknown as RoomData3D).unboxing!.length })}</Button>}
-            <Button onClick={toggleLight} aria-pressed={lightOn}>{lightOn ? t("room.apagar") : t("room.acender")}</Button>
-            <label className="room3d-light type-body-sm">{t("room.light_intensity")}<input type="range" min={0} max={100} step={1} value={Math.round(lightIntensity * 100)} aria-label={t("room.light_intensity")} onChange={e => dimLight(Number(e.target.value) / 100)} /><output className="type-caption">{Math.round(lightIntensity * 100)}%</output></label>
-            <ActionMenu label={t("room.moreViews")} items={[
-              { label: t("room.vista_3_4"), onSelect: () => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); } },
-              { label: t("room.abrir_portas"), onSelect: () => setOpenSet(new Set(data.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id))) },
+            {/* atalho do ponto de vista (a lista completa e as vistas salvas ficam nas Configurações) */}
+            <ActionMenu label={t("room.settings.camera.quick", { view: settings.favorite ? t("room.settings.favorites.go", { n: settings.favorite }) : t(`room.settings.view.${settings.view}`) })} items={[
+              ...availableViews(walking).map((v) => ({ label: t(`room.settings.view.${v.id}`), onSelect: () => changeSettings({ view: v.id, favorite: null }) })),
               { label: t("room.photo.modo_foto"), onSelect: () => { setPhoto({ framing: "overview", filter: "none", dof: false }); frame("overview"); } },
             ]} />
           </div>)}
         <div className="room3d" data-mode={inMirror ? "mirror" : undefined}>
           <div ref={stageRef} className={`room3d-stage${photo ? " is-photo" : ""}`} data-filter={photo?.filter ?? undefined}>
-            <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: mirrorLook, engine, session, reduced: !!data.ambient?.reduceMotion } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
-              onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
+            <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: mirrorLook, engine, session, reduced } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
+              onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); if (settings.view === "livre" && !settings.favorite) setFocusModule(id); }}
               onPick={openTag} lit={lit} lightOn={lightOn} lightIntensity={lightIntensity} onToggleLight={toggleLight}
-              mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection, snapshot: session.snapshot,
+              mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection, active: inMirror,
                 onUse: acceptLook, onAnother: () => runVistaMe("another"), onTakeOneOff: () => act(async () => mirror.setData(await api.post<MirrorState>("/api/me/mirror/take-one-off"))) } satisfies MirrorOverlay}
               onVistaMe={() => setVista((v) => ({ ...v, open: true }))} onCopilot={() => setCopilot((c) => ({ ...c, open: true }))} copilotPoint={copilot.point} copilotTalking={copilot.busy || copilot.open}
-              onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }} />
+              onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }}
+              view={sceneView} onViewStep={stepCorner} poseRef={poseRef} />
             {photo?.dof && <div className="room3d-dof" aria-hidden />}
             {!me3d.loading && mirror.data && (me3d.avatar || mirrorLook.length > 0) && (
               <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="transparent" onStill={setReflection} />
             )}
-            <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
-            <RoomSceneControls engine={engine} canvas={canvas} walk={walking && !photo && !me3d.loading} onVistaMe={() => { void runVistaMe("vista-me"); }} onPhoto={() => setPhoto(p => p ? null : { framing: "overview", filter: "none", dof: false })} />
+            {settings.hud === "completo" && <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>}
+            {/* o que o avatar tem nas mãos (antes na seção "Controlar meu avatar"): aviso no alto da cena */}
+            {walking && !photo && settings.hud !== "oculto" && (play.held || play.grip) && <p className="room3d-play-status" role="status">{t(play.grip ? "room.play.handle" : "room.play.carrying")}{play.held && data.pieces[play.held] ? ` · ${data.pieces[play.held].name}` : ""}</p>}
+            {viewFlash && <p className="room3d-view-flash" aria-live="polite">{viewFlash}</p>}
+            <RoomSceneControls engine={engine} canvas={canvas} walk={walking && !photo && !me3d.loading} hud={photo ? "oculto" : settings.hud} onVistaMe={() => { void runVistaMe("vista-me"); }} onPhoto={() => setPhoto(p => p ? null : { framing: "overview", filter: "none", dof: false })}
+              onLight={() => { void toggleLight(); }} onView={cycleView} />
             {/* caminhada até/para longe do espelho: aviso curto, lido pelo leitor de tela (a prova aberta já é a chegada) */}
             <p className="room3d-walk-status" role="status" aria-live="polite">{walkStatus === "away" ? t("room.mirror.exit") : walkStatus === "mirror" && !inMirror ? t("room.mirror.going") : ""}</p>
           </div>
-          <nav className="room3d-positions" aria-label={inMirror ? t("nav.mirror") : t("room.posicoes_do_quarto")}>
-            <section className="mb-4 space-y-3 rounded-xl border p-3" aria-label={t("room.play.title")}>
-              <h2 className="font-semibold">{t("room.play.title")}</h2>
-              <RoomControlsTutorial enabled={walking} />
-              <Button onClick={() => setWalking(v => !v)}>{t(walking ? "room.play.orbit" : "room.play.start")}</Button>
-              {walking && <>
-                <p>{t("room.play.instructions")}</p>
-                <p className="font-semibold" role="status">{t(!play.ready ? "room.play.loading" : play.grip ? "room.play.handle" : play.held ? "room.play.carrying" : "room.play.ready")}</p>
-                {play.held && <p>{data.pieces[play.held]?.name}</p>}
-              </>}
-              <MirrorHands phase={session.phase} busy={session.busy} error={session.error} changed={changed} reduced={!!data.ambient?.reduceMotion} walking={walkStatus} onBack={leaveMirror} />
-            </section>
-            {/* QUARTO-ESPELHO: na prova, a aba Espelho abre aqui mesmo (as opções de vestimenta ao lado da cena); sair do
-                espelho com as setas devolve a lista de posições */}
-            {inMirror && mirror.data && (
-              <MirrorControls<MirrorState> compact data={mirror.data} setData={mirror.setData} reload={mirror.reload} host={roomHost} held={held} arrivedId={arrived} pins={pins}
-                preview2d={{ shown: show2d, onToggle: () => setShow2d((v) => !v) }}>
-                {show2d && !me3d.loading && (
-                  <figure className="mirror-panel-still" aria-label={t("mirror.previa_2d")} data-testid="mirror-preview-2d">
-                    <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="#EEEAE2" alt={t("mirror.previa_2d_alt", { n: mirrorLook.length })} />
-                    <figcaption>{t("mirror.previa_2d_nota_curta")}</figcaption>
-                  </figure>
-                )}
-                {mirrorEmpty && <p className="mirror-empty-hint">{t("mirror.vazio_dica")}</p>}
-              </MirrorControls>
-            )}
-            {!inMirror && <><p className="label mb-1">{t("room.posicoes")}</p>
-            <ul className="fai-list">{data.modules.filter((m) => ["DOOR", "DRAWER", "TOP", "BASE"].includes(m.slotType) && (m.slotType !== "DRAWER" || gridPieces(m).length > 0 || (m as { category?: string }).category)).map((m) => { const n = gridPieces(m).length; return (
-              <li key={m.id}><button type="button" aria-label={(m as { accessibleLabel?: string }).accessibleLabel ?? `${m.label}, ${n}`} aria-pressed={focusModule === m.id}
-                onClick={() => { setFocusModule(m.id); if (m.slotType === "DOOR" || m.slotType === "DRAWER") setOpenSet(new Set([m.id])); }}>
-                <span>{ZONE_ICON[m.slotType] ?? "▢"} {m.slotType === "DRAWER" ? t("room.gaveta", { item: m.id.split(":")[1], label: m.label }) : m.label}</span><b className="tabular">{n}</b></button></li>); })}
-              {(data.basket?.length ?? 0) > 0 && <li><button type="button" onClick={() => setFocusModule("basket")}><span>{t("room.cesto_indisponiveis")}</span><b>{data.basket!.length}</b></button></li>}
-              {(data.chair?.length ?? 0) > 0 && <li><button type="button" onClick={() => setFocusModule("chair")}><span>{t("room.cadeira_excedente")}</span><b>{data.chair!.length}</b></button></li>}
-              {(data.saleRack?.pieces.length ?? 0) > 0 && <li><button type="button" onClick={() => setFocusModule("sale")}><span>🏷️ {data.saleRack!.name}</span><b>{data.saleRack!.pieces.length}</b></button></li>}
-            </ul></>}
-          </nav>
+          {/* QUARTO-ESPELHO: na prova, a aba Espelho abre aqui mesmo (as opções de vestimenta ao lado da cena); sair do
+              espelho com as setas devolve as Configurações do quarto */}
+          {inMirror ? (
+            <nav className="room3d-positions" aria-label={t("nav.mirror")}>
+              <MirrorHands phase={session.phase} busy={session.busy} error={session.error} changed={changed} reduced={reduced} walking={walkStatus} onBack={leaveMirror} />
+              {mirror.data && (
+                <MirrorControls<MirrorState> compact data={mirror.data} setData={mirror.setData} reload={mirror.reload} host={roomHost} held={held} arrivedId={arrived} pins={pins}
+                  preview2d={{ shown: show2d, onToggle: () => setShow2d((v) => !v) }}>
+                  {show2d && !me3d.loading && (
+                    <figure className="mirror-panel-still" aria-label={t("mirror.previa_2d")} data-testid="mirror-preview-2d">
+                      <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="#EEEAE2" alt={t("mirror.previa_2d_alt", { n: mirrorLook.length })} />
+                      <figcaption>{t("mirror.previa_2d_nota_curta")}</figcaption>
+                    </figure>
+                  )}
+                  {mirrorEmpty && <p className="mirror-empty-hint">{t("mirror.vazio_dica")}</p>}
+                </MirrorControls>
+              )}
+            </nav>
+          ) : (
+            <aside className="room3d-side">
+              <MirrorHands phase={session.phase} busy={session.busy} error={session.error} changed={changed} reduced={reduced} walking={walkStatus} onBack={leaveMirror} />
+              {settingsPanel}
+            </aside>
+          )}
         </div>
       </>)}
-      {tab === "room" && flatMirror && (
+      {gl === false && flatMirror && (
         <div className="room-flat-mirror" role="region" aria-label={t("nav.mirror")}>
           {!mirror.data ? (
             // o estado do espelho não veio: o erro com tentar de novo (ou o carregamento) no lugar de uma vista vazia
@@ -520,26 +592,10 @@ function RoomInner() {
           </>)}
         </div>
       )}
-      {tab === "room" && !flatMirror && (
-        <div className="rounded-xl p-3" style={{ background: data.ambient?.period === "night" ? "linear-gradient(180deg,#1b1d2a,#2a2c3a)" : "linear-gradient(180deg,#f3efe6,#e6e0d2)", perspective: "900px" }} aria-label={t("nav.room")}>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6" style={{ transform: "rotateX(4deg)" }}>
-            {data.modules.map((m) => { const ps = gridPieces(m); const full = m.capacity ? ps.length / m.capacity : 0; return (
-              <button key={m.id} type="button" onClick={() => setOpen(m)} className={`flex flex-col rounded-md border-2 p-2 text-left shadow-md transition hover:-translate-y-0.5 ${highlight && ps.some((p) => p.id === highlight) ? "border-mark" : "border-black/10"}`} style={{ background: m.finish?.color ?? "#F4F2EF", minHeight: 140 }} aria-label={t("room.pecas", { label: m.label, psCount: ps.length })}>
-                <span className="type-caption text-black/60">{ZONE_ICON[m.slotType] ?? "▢"} {m.label}{m.slotType === "DRAWER" && data.drawerLabels[m.id.split(":")[1]] ? ` · ${data.drawerLabels[m.id.split(":")[1]]}` : ""}</span>
-                <span className="mt-1 grid flex-1 grid-cols-3 gap-0.5">{ps.slice(0, 6).map((p) => <img key={p.id} src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt={p.name} title={p.name} className={`aspect-square rounded bg-white/70 object-contain ${highlight === p.id ? "ring-2 ring-mark" : ""}`} />)}</span>
-                <span className="mt-1 h-1 rounded bg-black/10"><span className="block h-full rounded bg-thread" style={{ width: `${Math.min(100, full * 100)}%` }} /></span>
-                <span className="type-caption tabular text-black/50">{ps.length}{m.capacity ? `/${m.capacity}` : ""}</span>
-              </button>); })}
-            <div className="col-span-2 flex items-center justify-between rounded-md border-2 border-dashed border-black/15 p-3 sm:col-span-4 lg:col-span-6">
-              <div><p className="type-label text-black/60">{t("nav.mirror")}</p>{data.mirrorDailyLook ? <Link className="underline" href={`/schemes/${data.mirrorDailyLook.schemeId}`}>{data.mirrorDailyLook.title}</Link> : <button type="button" className="underline" onClick={goToMirror}>{t("room.monte_o_look_de_hoje")}</button>}</div>
-              {data.saleRack && <div><p className="type-label text-black/60">{data.saleRack.name}</p><p className="type-caption">{t("room.pecas_2", { piecesCount: data.saleRack.pieces.length })}</p></div>}
-              {data.chair?.length ? <div><p className="type-label text-black/60">{t("room.cadeira_excedente_2")}</p><p className="type-caption">{data.chair.length}</p></div> : null}
-              {data.monogram && <span className="hero-number text-3xl text-black/30">{data.monogram}</span>}
-            </div>
-          </div>
-        </div>
-      )}
-      {tab === "list" && (list.loading ? <Skeleton className="h-64" /> : <ul className="fai-list surface">{(list.data ?? []).map((r) => <li key={r.moduleId} className="p-3"><div className="flex items-center justify-between"><p className="type-body"><b>{r.label}</b></p><Button size="sm" onClick={() => { const m = data.modules.find((x) => x.id === r.moduleId); if (m) setOpen(m); }}>{t("room.abrir")}</Button></div><div className="mt-1 flex flex-wrap gap-2">{r.pieces.map((p) => <Link key={p.id} href={`/pieces/${p.id}`} className="chip"><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" className="h-6 w-6 object-contain" />{p.name}{p.states?.includes("forgotten") && <Badge tone="mark">{t("room.esquecida")}</Badge>}</Link>)}</div></li>)}</ul>)}
+      {gl === false && !flatMirror && <div className="room3d-side room3d-side-flat">{settingsPanel}</div>}
+      <Dialog open={furnitureOpen} onClose={() => setFurnitureOpen(false)} size="xl" title={t("room.settings.furniture.title")}>
+        <RoomStore compact onChanged={() => reload()} />
+      </Dialog>
       <Dialog open={!!open} onClose={() => setOpen(null)} title={open?.label ?? ""}>
         {open && (<>
           <p className="type-caption text-muted mb-2">{t("room.capacidade_acabamento", { value: open.mold ?? open.sku, value2: open.widthCm ? t("room.cm", { widthCm: open.widthCm }) : "", value3: open.capacity ?? "—", value4: open.finish?.texture ?? "—" })}</p>
@@ -586,7 +642,7 @@ function RoomInner() {
             <dt>{t("room.composicao")}</dt><dd>{tag.composition ?? "—"}</dd>
             <dt>{t("room.lavagem")}</dt><dd>{tag.care ?? CARE[tag.composition ?? ""] ?? t("room.siga_a_etiqueta_original")}</dd>
             <dt>{t("room.origem")}</dt><dd>{tag.origin ? ORIGIN[tag.origin] ?? tag.origin.toLowerCase() : "—"}{tag.garimpo && <span className="sewn-tag-seal">{t("common.garimpo")}</span>}</dd>
-            <dt>{t("room.usos_2")}</dt><dd className="tabular">{tag.wearCount}{tag.thirtyWears && <span className="sewn-tag-dot" title={t("room.n30_usos")} />}{tag.costPerUse != null && <span className="text-muted">{t("room.r_por_uso_so_voce", { toFixed: Number(tag.costPerUse).toFixed(2) })}</span>}</dd>
+            <dt>{t("room.usos_2")}</dt><dd className="tabular">{tag.wearCount}{tag.thirtyWears && <span className="sewn-tag-dot" title={t("room.n30_usos")} />}{tag.costPerUse != null && <span className="text-muted">{t("room.r_por_uso_so_voce", { value: fmtPriceShort(Number(tag.costPerUse)) })}</span>}</dd>
             <dt>{t("room.no_quarto")}</dt><dd>{tag.location?.label ?? "—"}</dd>
           </dl>
           {tag.diary.length > 0 && <p className="type-caption text-muted mt-2">{t("room.ultimo_uso", { date: tag.diary[0].date, value: tag.diary[0].occasion !== "null" ? ` · ${tag.diary[0].occasion}` : "" })}</p>}

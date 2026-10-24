@@ -12,7 +12,7 @@ const GLYPH: Record<OrbitAction, string> = {
   out: "M5 12h14",
   front: "M12 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20.5a7 7 0 0 1 14 0",
 };
-const GROUPS: OrbitAction[][] = [["left", "right"], ["in", "out"], ["front"]];
+const GROUPS: OrbitAction[][] = [["left", "right"], ["in", "out"]];
 
 /**
  * Acessibilidade do palco 3D: girar a cena 30° por clique, aproximar/afastar e voltar à frente sem precisar arrastar.

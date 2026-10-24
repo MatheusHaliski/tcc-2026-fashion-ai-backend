@@ -1212,8 +1212,16 @@ public class WardrobeService {
         return createInternal(user, form, Objects.requireNonNull(pick));
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private BackgroundStudioService backgroundStudioAccess;
+
+    private void requireBackgroundAuraAccess(CurrentUser user, Object config) {
+        if (backgroundStudioAccess != null) backgroundStudioAccess.requireAuraAccess(user, config);
+    }
+
     private Views.PieceView createInternal(CurrentUser user, PieceForm form, CatalogPick pick) {
         guard.requireCanCreate(user);
+        requireBackgroundAuraAccess(user, form.background());
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         form = form.resolveTaxonomy();
         validate(form);
@@ -1413,6 +1421,7 @@ public class WardrobeService {
     }
 
     private void validate(PieceForm f) {
+        BackgroundStudioService.validateArtwork(f.background());
         // uma resposta com TODOS os campos a corrigir (antes: primeiro a taxonomia, depois nome e preço, em duas rodadas)
         Map<String, Object> errors = new LinkedHashMap<>(Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
                 f.material(), f.size(), f.occasion(), f.style()));
@@ -1441,6 +1450,7 @@ public class WardrobeService {
     }
 
     private void apply(WardrobeItem w, PieceForm f, boolean creating, Map<?, ?> aiPrefill) {
+        BackgroundStudioService.validateMotionWrite(w.getBackgroundConfigJson(), f.background());
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());
         w.setSubcategory(f.subcategory());
@@ -1890,6 +1900,7 @@ public class WardrobeService {
     @Transactional
     public Views.PieceView update(CurrentUser user, UUID id, PieceForm form) {
         guard.requireCanCreate(user);
+        requireBackgroundAuraAccess(user, form.background());
         WardrobeItem w = owned(user, id);
         form = form.resolveTaxonomy();
         validate(form);

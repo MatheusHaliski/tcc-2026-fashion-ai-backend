@@ -140,8 +140,8 @@ public class AuthController {
     }
 
     @DeleteMapping("/sessions")
-    @Operation(summary = "RF3 — Sair de todos os outros dispositivos")
-    public Map<String, Object> revokeOthers(CurrentUser user, @AuthenticationPrincipal Jwt jwt) {
-        return Map.of("revokedSessions", identity.revokeOtherSessions(user.id(), UUID.fromString(jwt.getClaimAsString("sid"))));
+    @Operation(summary = "RF3 — Encerrar todas as sessões, incluindo a atual")
+    public Map<String, Object> revokeAll(CurrentUser user) {
+        return Map.of("revokedSessions", identity.revokeOtherSessions(user.id(), null));
     }
 }

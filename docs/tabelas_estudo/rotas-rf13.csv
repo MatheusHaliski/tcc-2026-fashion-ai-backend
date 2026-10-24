@@ -1,0 +1,2 @@
+Tela (rota frontend);Endpoint chamado pelo frontend;Endpoint do backend;Função Controller;Função Service
+Tela /dna-schemes/[id]/edit;POST /api/dna-schemes (direto);POST /api/dna-schemes;DnaController;DnaService.createDnaScheme()

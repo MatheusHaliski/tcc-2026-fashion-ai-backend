@@ -75,6 +75,33 @@ class PreferencesServiceTest {
     }
 
     @Test
+    void impersonationExigeLoftMesmoEmChamadaDireta() throws Exception {
+        var ledger = kit.dep(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        prefs.setAuraPermissions(new AuraPermissionsService(ledger));
+        when(ledger.lifetime(ana.id())).thenReturn(300L);
+        var enable = br.com.fashionai.application.common.Json.MAPPER.readValue("{\"auraImpersonation\":true}", PreferencesService.Update.class);
+        assertThatThrownBy(() -> prefs.update(ana, enable)).isInstanceOf(ApiException.class);
+        assertThat(prefs.get(ana)).containsEntry("auraImpersonation", false);
+        when(ledger.lifetime(ana.id())).thenReturn(900L);
+        assertThat(prefs.update(ana, enable)).containsEntry("auraImpersonation", true);
+        when(ledger.lifetime(ana.id())).thenReturn(0L);
+        var disable = br.com.fashionai.application.common.Json.MAPPER.readValue("{\"auraImpersonation\":false}", PreferencesService.Update.class);
+        assertThat(prefs.update(ana, disable)).containsEntry("auraImpersonation", false);
+    }
+
+    @Test
+    void moedaDosPrecosAceitaBrlUsdEurEVoltaAoAutomatico() throws Exception {
+        var mapper = br.com.fashionai.application.common.Json.MAPPER;
+        assertThat(prefs.get(ana).get("currency")).isNull();
+        assertThat(prefs.update(ana, mapper.readValue("{\"currency\":\"usd\"}", PreferencesService.Update.class))).containsEntry("currency", "USD");
+        assertThat(prefs.update(ana, mapper.readValue("{\"theme\":\"DARK\"}", PreferencesService.Update.class))).containsEntry("currency", "USD");
+        assertThatThrownBy(() -> prefs.update(ana, mapper.readValue("{\"currency\":\"JPY\"}", PreferencesService.Update.class)))
+                .isInstanceOf(ApiException.class);
+        assertThat(prefs.update(ana, mapper.readValue("{\"currency\":\"AUTO\"}", PreferencesService.Update.class)).get("currency")).isNull();
+        assertThat(prefs.options()).containsEntry("currencies", List.of("BRL", "USD", "EUR"));
+    }
+
+    @Test
     void auraHypePersisteSemAlterarTemaOuOptOut() throws Exception {
         var update = br.com.fashionai.application.common.Json.MAPPER.readValue("{\"auraHype\":true}", PreferencesService.Update.class);
         assertThat(prefs.update(ana, update)).containsEntry("auraHype", true).containsEntry("hypeCreatorOptOut", false);

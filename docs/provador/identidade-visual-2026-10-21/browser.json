@@ -1,0 +1,36 @@
+{
+  "scope": "Synthetic distinct garment fixtures, exact bundled URLs intercepted locally; not real brand catalogue certification",
+  "results": [
+    {
+      "id": "01_parte_superior_02_shirt_camisa",
+      "atlas": [
+        2400,
+        1600
+      ],
+      "frontLogoPixels": 10348,
+      "fabricLogoPixels": 0,
+      "photoVertices": 820
+    },
+    {
+      "id": "02_parte_inferior_04_calca_cargo",
+      "atlas": [
+        2400,
+        1600
+      ],
+      "frontLogoPixels": 10198,
+      "fabricLogoPixels": 0,
+      "photoVertices": 624
+    },
+    {
+      "id": "01_parte_superior_01_camiseta_referencia",
+      "atlas": [
+        2400,
+        1600
+      ],
+      "frontLogoPixels": 10357,
+      "fabricLogoPixels": 0,
+      "photoVertices": 752
+    }
+  ],
+  "errors": []
+}

@@ -1266,12 +1266,23 @@ def keep_team_diagram(src, dest):
     open(dest, 'w', encoding='utf-8').write(text)
 
 
+# Diagramas escritos à mão sobre código que o gerador não lê (o worker e a GPU em Python de services/): ficam como estão.
+MANUAL_MARK = "' v5: escrito à mão"
+
+
 def run(only=None, dry=False, saida=None):
     report = []
     for sc in E.all_scopes():
         if only and sc.key.split('/')[0] not in only and sc.key not in only:
             continue
         for f in sc.old_files:
+            if MANUAL_MARK in open(f, encoding='utf-8').read():
+                if not dry and saida:
+                    dest = os.path.join(saida, os.path.relpath(f, M.ROOT))
+                    os.makedirs(os.path.dirname(dest), exist_ok=True)
+                    open(dest, 'w', encoding='utf-8').write(open(f, encoding='utf-8').read())
+                report.append((f, 'mantido (escrito à mão)'))
+                continue
             kind = kind_of_file(f)
             if kind is None:
                 report.append((f, 'tipo desconhecido'))

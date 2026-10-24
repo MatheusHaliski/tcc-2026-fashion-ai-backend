@@ -1,0 +1,94 @@
+{
+  "scope": "4 local upper reference meshes with synthetic asymmetric photographs; mocked API, not real brand catalogue certification",
+  "results": [
+    {
+      "id": "01_parte_superior_02_shirt_camisa",
+      "subcategory": "shirt",
+      "rightFabric": [
+        25,
+        120,
+        60
+      ],
+      "frontLogoPixels": 11818,
+      "fabricLogoPixels": 0,
+      "cuffs": [
+        {
+          "side": 1,
+          "color": "f0be14"
+        },
+        {
+          "side": -1,
+          "color": "e61e46"
+        }
+      ],
+      "photoVertices": 820
+    },
+    {
+      "id": "01_parte_superior_10_hoodie_moletom_com_capuz",
+      "subcategory": "hoodie",
+      "rightFabric": [
+        25,
+        120,
+        60
+      ],
+      "frontLogoPixels": 11590,
+      "fabricLogoPixels": 0,
+      "cuffs": [
+        {
+          "side": 1,
+          "color": "f0be14"
+        },
+        {
+          "side": -1,
+          "color": "e61e46"
+        }
+      ],
+      "photoVertices": 885
+    },
+    {
+      "id": "01_parte_superior_14_jacket_jaqueta",
+      "subcategory": "jacket",
+      "rightFabric": [
+        25,
+        120,
+        60
+      ],
+      "frontLogoPixels": 11842,
+      "fabricLogoPixels": 0,
+      "cuffs": [
+        {
+          "side": 1,
+          "color": "f0be14"
+        },
+        {
+          "side": -1,
+          "color": "e61e46"
+        }
+      ],
+      "photoVertices": 816
+    },
+    {
+      "id": "01_parte_superior_15_coat_casaco",
+      "subcategory": "coat",
+      "rightFabric": [
+        25,
+        120,
+        60
+      ],
+      "frontLogoPixels": 11695,
+      "fabricLogoPixels": 0,
+      "cuffs": [
+        {
+          "side": 1,
+          "color": "f0be14"
+        },
+        {
+          "side": -1,
+          "color": "e61e46"
+        }
+      ],
+      "photoVertices": 1649
+    }
+  ],
+  "errors": []
+}

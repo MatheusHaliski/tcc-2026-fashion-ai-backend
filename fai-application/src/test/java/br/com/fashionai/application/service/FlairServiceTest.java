@@ -5,6 +5,8 @@ import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.MemoryRepository;
 import br.com.fashionai.application.testkit.World;
+import br.com.fashionai.domain.model.AtelierRewardGrant;
+import br.com.fashionai.domain.model.AtelierRewardGrant.Category;
 import br.com.fashionai.domain.model.FlairCombination;
 import br.com.fashionai.domain.model.FlairProfile;
 import br.com.fashionai.domain.model.FlairRedemption;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +48,7 @@ class FlairServiceTest {
     void setUp() {
         kit = new Kit();
         world = new World(kit);
+        kit.atelier();
         flair = kit.real(FlairService.class);
         ana = Kit.as(world.me);
         bia = Kit.as(world.rival);
@@ -140,6 +144,15 @@ class FlairServiceTest {
 
         Map<String, Object> battle = flair.teamBattle(ana, rivalCode);
         assertThat(battle).containsKeys("duels", "score", "winner", "teamA", "teamB");
+        // Atelier: só o time vencedor ganha o fragmento da obra coletiva, um por integrante e por partida
+        List<AtelierRewardGrant> fragments = kit.atelierGrants().stream().filter(g -> g.getCategory() == Category.collectiveWork).toList();
+        Object winner = battle.get("winner");
+        List<UUID> expected = "A".equals(winner) ? List.of(world.me.getId(), world.friend.getId()) : "B".equals(winner) ? List.of(world.rival.getId()) : List.of();
+        assertThat(fragments).extracting(AtelierRewardGrant::getOwnerId).containsExactlyInAnyOrderElementsOf(expected);
+        assertThat(fragments).allSatisfy(g -> {
+            assertThat(g.getSourceType()).isEqualTo("TEAM");
+            assertThat(g.getSourceReference()).isEqualTo("team-match:" + battle.get("matchId"));
+        });
         assertThatThrownBy(() -> flair.teamBattle(ana, rivalCode)).isInstanceOf(ApiException.class);
         Map<String, Object> league = flair.league(ana);
         assertThat((List<?>) league.get("battles")).hasSize(1);
@@ -169,6 +182,14 @@ class FlairServiceTest {
         assertThat(maven.get("done")).isEqualTo(true);
         assertThat(flair.claimQuest(ana, "WARDROBE_MAVEN")).containsKey("coins");
         assertThatThrownBy(() -> flair.claimQuest(ana, "WARDROBE_MAVEN")).isInstanceOf(ApiException.class);
+        // Atelier: missão cumprida vira Poder de direção temporário (semanal vale 30 dias), sem repetir no resgate negado
+        assertThat(kit.atelierGrants()).singleElement().satisfies(g -> {
+            assertThat(g.getOwnerId()).isEqualTo(world.me.getId());
+            assertThat(g.getCategory()).isEqualTo(Category.directorPower);
+            assertThat(g.getRewardCode()).isEqualTo("QUEST_WARDROBE_MAVEN");
+            assertThat(g.getSourceType()).isEqualTo("FLAIR");
+            assertThat(g.getExpiresAt()).isBetween(Instant.now().plus(Duration.ofDays(29)), Instant.now().plus(Duration.ofDays(31)));
+        });
         assertThatThrownBy(() -> flair.claimQuest(ana, "DUEL_CHAMPION")).isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> flair.claimQuest(ana, "NAO_EXISTE")).isInstanceOf(ApiException.class);
     }
@@ -204,6 +225,14 @@ class FlairServiceTest {
         String code = String.valueOf(voucher.get("code"));
         assertThat(code).startsWith("FLR-");
         assertThatThrownBy(() -> flair.redeem(ana, id, looks.get(5))).isInstanceOf(ApiException.class);
+        // Atelier: a jornada da loja concluída vale um convite de temporada daquele perfil (só uma vez)
+        assertThat(kit.atelierGrants()).singleElement().satisfies(g -> {
+            assertThat(g.getOwnerId()).isEqualTo(world.me.getId());
+            assertThat(g.getCategory()).isEqualTo(Category.seasonPasses);
+            assertThat(g.getSourceReference()).isEqualTo("combination:" + id);
+            assertThat(g.getReferenceId()).isEqualTo(loja.getId().toString());
+            assertThat(g.getExpiresAt()).isAfter(Instant.now().plus(Duration.ofDays(89)));
+        });
         assertThat(flair.vouchers(ana)).hasSize(1);
 
         // no caixa: a loja confere o código uma vez só; outra loja não enxerga o cupom

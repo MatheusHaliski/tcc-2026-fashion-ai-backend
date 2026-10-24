@@ -11,3 +11,13 @@ d7f283e708d9bbc57d4caf4a4e10c813916d8a6b:lib/gate/token.test.ts:generic-api-key:
 2bebea37f2314be9fe5415ccdf28e851ba09a63f:.gitleaksignore:generic-api-key:8
 # Segredo fixo de teste do middleware (assina o cookie do gate no teste; não é chave real)
 3eac4c4946220bfa7a629b0340ace576e3d284eb:middleware.test.ts:generic-api-key:12
+# references.json (#281): token CSRF da página de download do Adobe Reader dentro de uma URL de referência, não é chave do projeto.
+db73be8b8a295a5849c3c1fa4e9cde469df5b555:docs/design/referencias-aura/references.json:generic-api-key:136
+db73be8b8a295a5849c3c1fa4e9cde469df5b555:docs/design/referencias-aura/references.json:generic-api-key:950
+a87434db30a3e500c6f0c01ca2f802656c6f6674:docs/design/referencias-aura/references.json:generic-api-key:136
+a87434db30a3e500c6f0c01ca2f802656c6f6674:docs/design/referencias-aura/references.json:generic-api-key:950
+# Lojas (#333): UUIDs fixos de teste usados como chave de idempotência do pedido de compra, não são chaves.
+867cd8e720c1a73fa2a4c82e8fc83cbe3603c44d:fai-application/src/test/java/br/com/fashionai/application/service/FaiPointsShopTest.java:generic-api-key:128
+867cd8e720c1a73fa2a4c82e8fc83cbe3603c44d:fai-application/src/test/java/br/com/fashionai/application/service/PhysicalStorePurchaseTest.java:generic-api-key:85
+1c41e30cf39c57fbcfe3bd28aafb188adcada40d:fai-application/src/test/java/br/com/fashionai/application/service/FaiPointsShopTest.java:generic-api-key:128
+1c41e30cf39c57fbcfe3bd28aafb188adcada40d:fai-application/src/test/java/br/com/fashionai/application/service/PhysicalStorePurchaseTest.java:generic-api-key:85

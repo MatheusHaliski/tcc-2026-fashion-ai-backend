@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class AssetPreset <<asset_presets>> {
@@ -118,6 +118,7 @@ package "fai-domain (entidades JPA)" {
   class SealBond <<seal_bonds>> {
     +id: UUID
     +scheme: Scheme
+    +piece: WardrobeItem
     +targetOwner: User
     +requestedBy: User
     +tier: SealTier
@@ -125,8 +126,7 @@ package "fai-domain (entidades JPA)" {
     +confidence: BigDecimal
     +justification: String
     +basis: SealBondBasis
-    +status: SealBondStatus
-    .. +13 campos ..
+    .. +14 campos ..
   }
   class User <<users>> {
     +id: UUID
@@ -139,7 +139,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
 }
 package "fai-domain (enums)" {

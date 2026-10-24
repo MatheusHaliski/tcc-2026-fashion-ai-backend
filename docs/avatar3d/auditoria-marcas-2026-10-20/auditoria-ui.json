@@ -1,0 +1,248 @@
+{
+  "scope": "Production frontend with synthetic read-only API fixtures; not production backend or physical-device validation.",
+  "results": [
+    {
+      "device": "mobile",
+      "path": "/login",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/register",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/pieces/new",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/schemes/new",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/feed",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/closet",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/u/ana",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/points",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/design",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/login",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 3.563158189754837e-05,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/register",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00011179197525241556,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/pieces/new",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037895702104105214,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/schemes/new",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037895702104105214,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/feed",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037521545532892848,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/closet",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.004130988081641805,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/u/ana",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037895702104105214,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/points",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00545757202316933,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/design",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037895702104105214,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/login",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 2.1799447016460908e-05,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/register",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00010839334705075446,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/pieces/new",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.004337953083472652,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/schemes/new",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/feed",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/closet",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/u/ana",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/points",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0012474447619277263,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/design",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    }
+  ]
+}
