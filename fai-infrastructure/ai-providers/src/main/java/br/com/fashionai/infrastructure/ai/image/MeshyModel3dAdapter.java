@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -53,8 +54,10 @@ public class MeshyModel3dAdapter implements Model3dPort {
             Map<String, Object> res = ProviderCircuit.run(ID, () -> client.post().uri("/openapi/v1/image-to-3d")
                     .header("Authorization", "Bearer " + apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
+                    // só o GLB é usado: a Meshy gera apenas os formatos listados, o que encurta a tarefa (sem isso vinham
+                    // também FBX, OBJ, USDZ e STL)
                     .body(Map.of("image_url", ImageHttp.dataUri(image, "image/png"), "enable_pbr", true, "should_texture", true,
-                            "should_remesh", true, "topology", "triangle", "target_polycount", 30000))
+                            "should_remesh", true, "topology", "triangle", "target_polycount", 30000, "target_formats", List.of("glb")))
                     .retrieve().body(Map.class));
             Object id = res == null ? null : res.get("result");
             return id == null ? Optional.empty() : Optional.of(String.valueOf(id));

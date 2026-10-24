@@ -6,7 +6,7 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
-import { useModel3d } from "@/components/model3d-panel";
+import { Model3dTechnical, fmtDuration, useModel3d } from "@/components/model3d-panel";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -42,5 +42,22 @@ describe("useModel3d — troca de peça", () => {
     await waitFor(() => expect(shown()).toBe("b:COMPLETED"));
     await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
     expect(document.querySelector(".toast-success")).toBeNull();
+  });
+});
+
+describe("tempo da geração 3D", () => {
+  it("formata segundos, minutos e horas", () => {
+    expect(fmtDuration(900)).toBe("1 s"); expect(fmtDuration(12_400)).toBe("12 s"); expect(fmtDuration(185_000)).toBe("3 min 05 s");
+    expect(fmtDuration(3_720_000)).toBe("1 h 02 min"); expect(fmtDuration(null)).toBeNull(); expect(fmtDuration(-1)).toBeNull();
+  });
+
+  it("a área técnica mostra o tempo de cada etapa e o total do job", () => {
+    const model = { busy: false, request: async () => {}, queue: async () => null, st: { status: "COMPLETED", label: "concluído", provider: "meshy", totalTimeMs: 185_000,
+      stages: [{ name: "FOTO", provider: "local", elapsedMs: 1_200 }, { name: "ENVIO", provider: "meshy", elapsedMs: 800 }, { name: "RECONSTRUCAO", provider: "meshy", elapsedMs: 183_000 }] } } as unknown as ReturnType<typeof useModel3d>;
+    renderApp(<Model3dTechnical model={model} />);
+    expect(screen.getByTestId("m3d-total").textContent).toContain("3 min 05 s");
+    const items = Array.from(document.querySelectorAll("ol li")).map((li) => li.textContent ?? "");
+    expect(items.some((x) => x.includes("3 min 03 s"))).toBe(true);
+    expect(items.some((x) => x.includes("1 s"))).toBe(true);
   });
 });

@@ -229,6 +229,34 @@ python scripts/catalog/process_whole_frames.py --apply --limit 500              
   A gravação confere `source_sha256` e incrementa `version` (a linha mudou desde a análise → pulada).
 - A API devolve `catalogImage.whole` com `processed: true`; a Peça inteira da interface usa essa imagem.
 
+## Peça inteira LOCAL com Stable Diffusion — `process_local_sd.py` (sem API paga)
+
+O lote de packshot por API externa parou por falta de créditos; este é o substituto que roda na máquina do lote
+(CUDA em fp16, Apple Silicon/MPS e CPU em fp32), gravando `catalog_images.processed_image_url`. **A interface ainda não
+lê essa coluna** (decisão do responsável): o resultado fica disponível no banco e em `./output_images/` para revisão.
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu   # ou a build CUDA/MPS da sua máquina
+.venv/bin/pip install -r scripts/catalog/requirements-sd.txt
+export DATABASE_URL='mysql+pymysql://usuario:senha@host:3306/fashionai'      # ou as MYSQL_* do backend; nada no código
+.venv/bin/python scripts/catalog/process_local_sd.py --measure-only --limit 5000   # 1. só mede: ineligible.json para a quarentena
+.venv/bin/python scripts/catalog/process_local_sd.py --limit 20 --dry-run          # 2. ensaio: PNGs em ./output_images, sem UPDATE
+.venv/bin/python scripts/catalog/process_local_sd.py --limit 200                   # 3. gera e grava processed_image_url
+```
+
+Por foto: download (link direto ou `og:image` de página HTML) → rembg local pela classe de roupa (calçado/acessório: recorte
+geral; sem o parser humano configurado, o corpo é deduzido como primeiro plano geral menos a peça — `--no-foreground-body`
+desliga) → limpeza da máscara (pessoa, outras peças, riscos fora do perímetro) e medição — **altura da peça < 25% da foto =
+INELIGIBLE**, nada é gerado nem apagado (`ineligible.json` alimenta `quarantine_unsafe_products.py`) → inpainting SÓ na região
+fantasma (corpo visível por dentro da peça: gola entre os ombros, punhos, barra, entre as pernas) com
+`stable-diffusion-v1-5/stable-diffusion-inpainting` (o `runwayml/…` saiu do ar; `--model` aceita o SDXL inpainting e
+`--controlnet` o `control_v11p_sd15_inpaint`) → composição: tecido ORIGINAL preservado pixel a pixel, fundo branco, peça
+centralizada com a maior aresta em 50% do quadro 900×1200 e sombra suave → PNG `{marca}_{categoria}_{produto}_{imagem}.png`
++ `.json` de evidências → `UPDATE` só se a coluna ainda estiver vazia. `report.jsonl` e `metadata_clean.json` registram
+cada foto (RENDERED, REJECTED, REVIEW, INELIGIBLE, RETRY, FAILED); uma falha não para o lote e a memória do acelerador é
+liberada a cada foto. `--no-ai` dá só o recorte; `--public-base-url` grava URL em vez de caminho local; `--table products`
+atende a tabela genérica do roteiro original.
+
 ## Auditoria e direitos de persistência
 
 Consulte `docs/catalogo/AUDITORIA_PERSISTENCIA_PIPELINE.md` para a investigação,

@@ -2705,6 +2705,7 @@
   "model3dPanel.reprocessamento_gratis_nao_conta_na": "Reprocessamento grátis: não conta na sua cota de 3D.",
   "model3dPanel.reprocessar_gratis_1": "Reprocessar (grátis, 1×)",
   "model3dPanel.tempo_limite": "Tempo-limite",
+  "model3dPanel.tempo_total": "Tempo total: {tempo}",
   "model3dPanel.textura": "Textura",
   "model3dPanel.ver_em_3d": "Ver em 3D",
   "model3dPanel.vertices": " · {toLocaleString} vértices",

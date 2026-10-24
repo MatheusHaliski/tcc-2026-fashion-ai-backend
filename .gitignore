@@ -55,3 +55,7 @@ __pycache__/
 
 # Local Lighthouse measurement artifacts
 .lighthouseci/
+
+# ambiente virtual dos lotes Python (scripts/catalog/requirements-sd.txt) e saída do packshot local
+/.venv/
+/output_images/

@@ -814,10 +814,10 @@
   {
     "name": "Scotch & Soda",
     "country": "NL",
-    "website": "https://www.scotch-soda.com",
+    "website": "https://www.scotchandsoda.com",
     "sources": [
       {
-        "domain": "scotch-soda.com",
+        "domain": "scotchandsoda.com",
         "source_type": "OFFICIAL_BRAND",
         "country": "NL"
       }
