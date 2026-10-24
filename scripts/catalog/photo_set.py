@@ -46,6 +46,7 @@ class PhotoMasks:
     isolation_verified: bool = False
     complete: bool | None = None
     occluded: bool | None = None
+    automation: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -235,12 +236,12 @@ def _render_whole(image: Image.Image, mask: Image.Image) -> tuple[bytes, dict]:
     cutout = cutout.crop(box)
     x, y, w, h, framing = fit_box(cutout.size, (WIDTH, HEIGHT))
     cutout = cutout.resize((w, h), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGBA", (WIDTH, HEIGHT), (255,255,255,255))
+    canvas = Image.new("RGBA", (WIDTH, HEIGHT), (0,0,0,0))
     canvas.alpha_composite(cutout, (x, y))
-    return _png(canvas.convert("RGB")), {"width": WIDTH, "height": HEIGHT,
+    return _png(canvas), {"width": WIDTH, "height": HEIGHT, "alpha": True,
         "box": {"x": round(x / WIDTH, 5), "y": round(y / HEIGHT, 5), "w": round(w / WIDTH, 5), "h": round(h / HEIGHT, 5)},
         "sourceBox": {"x": box[0], "y": box[1], "w": box[2] - box[0], "h": box[3] - box[1]},
-        "upscaled": framing["scale"] > 1, "background": "#FFFFFF", "rendered": True, "framing": framing}
+        "upscaled": framing["scale"] > 1, "background": "transparent", "rendered": True, "framing": framing}
 
 
 def process_photo(image: Image.Image, category: str, subcategory: str | None = None, *,
@@ -259,7 +260,13 @@ def process_photo(image: Image.Image, category: str, subcategory: str | None = N
         original_size = source.size
         if masks is None:
             source.thumbnail((MAX_ANALYSIS_SIDE, MAX_ANALYSIS_SIDE), Image.Resampling.LANCZOS)
-            masks = (provider or LocalClothProvider()).masks(source, category, subcategory)
+            if provider is None:
+                try:
+                    from .semantic_photo_provider import AutomaticClothProvider
+                except ImportError:
+                    from semantic_photo_provider import AutomaticClothProvider
+                provider = AutomaticClothProvider()
+            masks = provider.masks(source, category, subcategory)
         metrics["maskSource"] = masks.source
         preflight = inspect_source(source, masks, category, subcategory, original_size=original_size)
         metrics["preflight"] = preflight.metrics
@@ -283,4 +290,4 @@ def process_photo(image: Image.Image, category: str, subcategory: str | None = N
     except (ImportError, OSError, ValueError, RuntimeError) as error:
         # Do not serialize URLs, model paths or exception details into audit logs.
         reason = str(error) if isinstance(error, ValueError) and str(error).isupper() and len(str(error)) < 90 else "SEGMENTATION_UNAVAILABLE"
-        return PhotoSet("RETRY" if reason == "SEGMENTATION_UNAVAILABLE" else "REVIEW", reason, metrics=metrics)
+        return PhotoSet("RETRY" if reason in {"SEGMENTATION_UNAVAILABLE", "PARSER_LOCAL_WEIGHTS_MISSING"} else "REVIEW", reason, metrics=metrics)

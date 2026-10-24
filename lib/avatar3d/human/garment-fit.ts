@@ -102,6 +102,17 @@ const SKIRT_LEN: Record<string, number> = { MICRO: 0.24, MINI: 0.32, MID_THIGH: 
 const LEG_LEN: Record<string, number> = { MICRO: 0.18, MINI: 0.24, MID_THIGH: 0.32, KNEE: 0.5, CAPRI: 0.72, PEDAL_PUSHER: 0.66, ANKLE_LENGTH: 0.93, FULL_LENGTH: 0.985 };
 /** Manga (0 ombro → 1 punho) pela dimensão SLEEVE_LENGTH. */
 const SLEEVE_LEN: Record<string, number> = { SLEEVELESS: 0, SHORT_SLEEVE: 0.33, ELBOW_SLEEVE: 0.5, THREE_QUARTER_SLEEVE: 0.72, LONG_SLEEVE: 0.96 };
+/** Explicit attributes override product-title declarations; a brand never determines sleeve length. */
+export function sleeveLengthOf(p: FitPiece): string | null {
+  const declared = first(p, "SLEEVE_LENGTH");
+  if (declared) return declared;
+  const name = (p.name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/\bsleeveless\b|\bsem mangas?\b/.test(name)) return "SLEEVELESS";
+  if (/\bshort[ _-]?sleeve[ds]?\b|\bmangas?[ _-]?curtas?\b/.test(name)) return "SHORT_SLEEVE";
+  if (/\b(?:three[ _-]?quarter|3\/4)[ _-]?sleeve[ds]?\b|\bmanga[ _-]?3\/4\b/.test(name)) return "THREE_QUARTER_SLEEVE";
+  if (/\blong[ _-]?sleeve[ds]?\b|\bmangas?[ _-]?longas?\b/.test(name)) return "LONG_SLEEVE";
+  return null;
+}
 /**
  * Decote pela dimensão NECKLINE ou pelo nome da peça (o catálogo não traz atributos: "T-Shirt De Malha Decote V").
  * Profundidade em h (quadril → pescoço = 1): V ≈ 10 cm abaixo da base do pescoço; careca ≈ 4 cm.
@@ -181,7 +192,7 @@ export function specFor(p: FitPiece): GarmentSpec | null {
   const sub = (p.subcategory ?? "").toLowerCase();
   applyLowerVariation(sp, p);
   // comprimentos declarados (dimensões da taxonomia)
-  const len = first(p, "LENGTH"), sleeve = first(p, "SLEEVE_LENGTH"), shaft = first(p, "SHAFT_HEIGHT");
+  const len = first(p, "LENGTH"), sleeve = sleeveLengthOf(p), shaft = first(p, "SHAFT_HEIGHT");
   if (len && base.skirt > 0 && SKIRT_LEN[len] !== undefined) sp.skirt = SKIRT_LEN[len];
   if (len && legged && LEG_LEN[len] !== undefined) sp.leg = LEG_LEN[len];
   if (sp.liningLeg && len && SKIRT_LEN[len] !== undefined) sp.liningLeg = Math.min(sp.liningLeg, .26);

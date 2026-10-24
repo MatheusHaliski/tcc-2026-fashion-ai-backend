@@ -13,6 +13,7 @@ import br.com.fashionai.domain.repository.*;
 import br.com.fashionai.domain.repository.passport.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -32,6 +33,7 @@ class GarmentPassportServiceTest {
     WardrobeItemRepository pieces=MemoryRepository.of(WardrobeItemRepository.class);
     UserRepository users=MemoryRepository.of(UserRepository.class);
     Guard guard=mock(Guard.class);
+    ApplicationEventPublisher lifecycle=mock(ApplicationEventPublisher.class);
     Instant now=Instant.parse("2026-10-22T12:00:00Z");
     GarmentPassportService service;
     User ana, bia, other;
@@ -46,7 +48,7 @@ class GarmentPassportServiceTest {
         when(pieces.findForSealRequest(any())).thenAnswer(call->pieces.findById(call.getArgument(0)));
         when(transfers.lockById(any())).thenAnswer(call->transfers.findById(call.getArgument(0)));
         when(transfers.passportIdOf(any())).thenAnswer(call->transfers.findById(call.getArgument(0)).map(PassportTransfer::getPassportId));
-        service=new GarmentPassportService(passports,holdings,events,shares,evidence,transfers,pieces,users,guard,true,Clock.fixed(now,ZoneOffset.UTC));
+        service=new GarmentPassportService(passports,holdings,events,shares,evidence,transfers,pieces,users,guard,lifecycle,true,Clock.fixed(now,ZoneOffset.UTC));
         ana=person("ana"); bia=person("bia"); other=person("other");
         piece=new WardrobeItem(); piece.setUser(ana); piece.setName("Jaqueta azul"); piece.setCategory("upper_piece"); piece.setSubcategory("jacket");
         piece.setColor("blue"); piece.setMaterial("Cotton"); piece.setCareInstructions("Cold wash"); piece.setImageUrl("/media/ana-private-photo.jpg");
@@ -181,6 +183,7 @@ class GarmentPassportServiceTest {
         assertThat(passports.findById(p.id()).orElseThrow().getOwnerId()).isEqualTo(ana.getId());
     }
     @Test void transferArchivesHistoricalItemPreservesDocumentsAndRevokesShares() throws Exception {
+        piece.setVisibility(Visibility.PUBLIC); piece.setModerationStatus(ModerationStatus.APPROVED);
         var p=create(); var document=service.uploadEvidence(actor(ana),p.id(),"PURCHASE_RECEIPT",photo(),"evidence_0001");
         service.addEvent(actor(ana),p.id(),new GarmentPassportService.EventCommand(0,"PURCHASE",LocalDate.of(2026,10,1),"PERSONAL PRIVATE PURCHASE",null),"event_0001");
         var shared=service.share(actor(ana),p.id(),new GarmentPassportService.ShareCommand(0,Set.of("NAME"),24));
@@ -189,8 +192,12 @@ class GarmentPassportServiceTest {
         assertThat(accepted.status()).isEqualTo("ACCEPTED");
         assertThat(service.accept(actor(bia),offered.transfer().id(),new GarmentPassportService.AcceptCommand(0,offered.token()),"accept_0001").recipientPieceId()).isEqualTo(accepted.recipientPieceId());
         assertThat(piece.getUser().getId()).isEqualTo(ana.getId()); assertThat(piece.getAvailabilityStatus()).isEqualTo(AvailabilityStatus.ARCHIVED);
+        assertThat(piece.getVisibility()).isEqualTo(Visibility.PRIVATE);
         WardrobeItem next=pieces.findById(accepted.recipientPieceId()).orElseThrow();
         assertThat(next.getUser().getId()).isEqualTo(bia.getId()); assertThat(next.getVisibility()).isEqualTo(Visibility.PRIVATE);
+        verify(lifecycle,times(1)).publishEvent(new DomainEvents.PieceDeleted(ana.getId(),piece.getId()));
+        verify(lifecycle,times(1)).publishEvent(new DomainEvents.PieceCreated(bia.getId(),next.getId(),false));
+        verifyNoMoreInteractions(lifecycle);
         assertThat(next.getNotes()).isNull(); assertThat(next.getPurchaseLocation()).isNull(); assertThat(next.getSealIdsJson()).isNull();
         assertThat(next.getImageUrl()).doesNotContain("ana-private-photo"); assertThat(next.getWearCount()).isZero();
         assertThat(MemoryRepository.<PassportHolding>rows(holdings).stream().filter(h->h.getActivePassportId()!=null).count()).isEqualTo(1);

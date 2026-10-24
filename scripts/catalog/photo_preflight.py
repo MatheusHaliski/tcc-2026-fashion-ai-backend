@@ -41,6 +41,9 @@ def inspect_source(image: Image.Image, masks, category: str, subcategory: str | 
                "quality": {"shortEdgePixels": min(original_size)},
                "maskSource": masks.source, "isolationVerified": masks.isolation_verified is True,
                "humanAssessmentComplete": isinstance(masks.human_present, bool) and masks.forbidden is not None}
+    automation = getattr(masks, 'automation', {}) or {}
+    if automation:
+        metrics['automaticEvidence'] = automation
 
     def decision(status, reason=None):
         return Preflight(status, reason, {**metrics, "status": status, "reason": reason})
@@ -97,6 +100,8 @@ def inspect_source(image: Image.Image, masks, category: str, subcategory: str | 
     max_parts = 4 if is_set else 2 if normal(category) in {"lower_piece", "shoes_piece"} else 1
     if len(keep) > max_parts:
         return decision("REVIEW", "AMBIGUOUS_TARGET_COMPONENTS")
+    if automation.get('reviewReason'):
+        return decision('REVIEW', automation['reviewReason'])
     if masks.occluded is not False:
         return decision("REVIEW", "GARMENT_OCCLUSION_UNCERTAIN" if masks.occluded is None else "GARMENT_OCCLUDED")
     if masks.complete is not True or left == 0 or top == 0 or right == image.width or bottom == image.height:
@@ -105,6 +110,16 @@ def inspect_source(image: Image.Image, masks, category: str, subcategory: str | 
     metrics["measurementReliable"] = reliable
     if masks.isolation_verified is not True or masks.forbidden is None or not isinstance(masks.human_present, bool):
         return decision("REVIEW", "HUMAN_EXCLUSION_UNVERIFIED")
+    bounds = automation.get('sourceHeightFractionBounds')
+    if bounds is not None:
+        if (not isinstance(bounds, (list, tuple)) or len(bounds) != 2
+                or any(isinstance(v, bool) or not isinstance(v, (int,float)) or not math.isfinite(v) for v in bounds)
+                or not 0 <= bounds[0] <= height_fraction <= bounds[1] <= 1):
+            metrics['measurementReliable'] = False
+            return decision('REVIEW', 'SOURCE_EXTENT_UNCERTAIN')
+        if bounds[0] < MIN_SOURCE_HEIGHT <= bounds[1]:
+            metrics['measurementReliable'] = False
+            return decision('REVIEW', 'SOURCE_HEIGHT_NEAR_THRESHOLD')
     if height_fraction < MIN_SOURCE_HEIGHT:
         return decision("INELIGIBLE" if reliable else "REVIEW",
                         "SOURCE_GARMENT_BELOW_MIN_HEIGHT" if reliable else "SOURCE_HEIGHT_UNCERTAIN")

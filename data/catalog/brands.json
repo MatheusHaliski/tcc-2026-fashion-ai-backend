@@ -71,6 +71,11 @@
         "domain": "puma.com",
         "source_type": "OFFICIAL_BRAND",
         "country": "DE"
+      },
+      {
+        "domain": "us.puma.com",
+        "source_type": "OFFICIAL_STORE",
+        "country": "US"
       }
     ]
   },
@@ -193,7 +198,8 @@
         "source_type": "OFFICIAL_BRAND",
         "country": "US"
       }
-    ]
+    ],
+    "collector": {"image_hosts": ["gapinc.com"]}
   },
   {
     "name": "Ralph Lauren",
@@ -617,7 +623,8 @@
         "source_type": "OFFICIAL_BRAND",
         "country": "GB"
       }
-    ]
+    ],
+    "collector": {"image_hosts": ["sd.co.uk"]}
   },
   {
     "name": "Benetton",
@@ -821,7 +828,8 @@
         "source_type": "OFFICIAL_BRAND",
         "country": "NL"
       }
-    ]
+    ],
+    "collector": {"accept_page_brands": ["United Legwear"]}
   },
   {
     "name": "Ted Baker",

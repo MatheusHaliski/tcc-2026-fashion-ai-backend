@@ -1,0 +1,29 @@
+# The worker needs only Python source, requirements and the default asset map.
+# Keep local photographs, weights, work reports and secrets out of the context.
+**
+!scripts/
+!scripts/catalog/
+!scripts/catalog/**
+!lib/
+!lib/assets/
+!lib/assets/default-garments.json
+!services/
+!services/catalog_photos/
+!services/catalog_photos/Dockerfile
+**/__pycache__/
+**/*.pyc
+**/.venv*/
+**/.env*
+**/*.pem
+**/*.key
+**/*.safetensors
+**/*.onnx
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.webp
+**/*.gif
+**/*.mp4

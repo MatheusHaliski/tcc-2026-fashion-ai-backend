@@ -18,7 +18,12 @@ import java.util.UUID;
 public interface CatalogProductRepository extends JpaRepository<CatalogProduct, UUID> {
     /** Unknown/legacy measurements remain visible; only the audited product marker excludes. */
     String VISIBLE_SQL = "p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
-            + "AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.metadata_json,'$.catalogPhotoEligibility.state')),'UNKNOWN') <> 'INELIGIBLE'";
+            + "AND NOT (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.metadata_json,'$.catalogPhotoEligibility.state')),'UNKNOWN') = 'INELIGIBLE' "
+            + "AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.metadata_json,'$.catalogPhotoEligibility.version')),'') = 'CATALOG_UNSAFE_QUARANTINE_V2' "
+            + "AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.metadata_json,'$.catalogPhotoEligibility.algorithmVersion')),'') = 'CATALOG_SOURCE_PREFLIGHT_V1' "
+            + "AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.metadata_json,'$.catalogPhotoEligibility.reason')),'') = 'SOURCE_GARMENT_BELOW_MIN_HEIGHT' "
+            + "AND REGEXP_LIKE(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.metadata_json,'$.catalogPhotoEligibility.reportSha256')),''),'^[0-9a-f]{64}$','c') "
+            + "AND REGEXP_LIKE(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.metadata_json,'$.catalogPhotoEligibility.evidenceSha256')),''),'^[0-9a-f]{64}$','c'))";
     Optional<CatalogProduct> findByDedupKey(String dedupKey);
 
     Optional<CatalogProduct> findFirstByBrandIdAndSubcategoryAndModelNameIgnoreCase(UUID brandId, String subcategory, String modelName);

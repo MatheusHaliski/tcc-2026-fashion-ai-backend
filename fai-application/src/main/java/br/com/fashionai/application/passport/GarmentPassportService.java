@@ -12,6 +12,7 @@ import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import br.com.fashionai.domain.repository.passport.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,22 +43,23 @@ public class GarmentPassportService {
     private final WardrobeItemRepository pieces;
     private final UserRepository users;
     private final Guard guard;
+    private final ApplicationEventPublisher lifecycle;
     private final boolean enabled;
     private final Clock clock;
 
     @org.springframework.beans.factory.annotation.Autowired
     public GarmentPassportService(GarmentPassportRepository passports, PassportHoldingRepository holdings,
             PassportEventRepository events, PassportShareRepository shares, PassportEvidenceRepository evidence,
-            PassportTransferRepository transfers, WardrobeItemRepository pieces, UserRepository users, Guard guard,
+            PassportTransferRepository transfers, WardrobeItemRepository pieces, UserRepository users, Guard guard, ApplicationEventPublisher lifecycle,
             @Value("${fashionai.passport.enabled:true}") boolean enabled) {
-        this(passports, holdings, events, shares, evidence, transfers, pieces, users, guard, enabled, Clock.systemUTC());
+        this(passports, holdings, events, shares, evidence, transfers, pieces, users, guard, lifecycle, enabled, Clock.systemUTC());
     }
     GarmentPassportService(GarmentPassportRepository passports, PassportHoldingRepository holdings,
             PassportEventRepository events, PassportShareRepository shares, PassportEvidenceRepository evidence,
-            PassportTransferRepository transfers, WardrobeItemRepository pieces, UserRepository users, Guard guard,
+            PassportTransferRepository transfers, WardrobeItemRepository pieces, UserRepository users, Guard guard, ApplicationEventPublisher lifecycle,
             boolean enabled, Clock clock) {
         this.passports=passports; this.holdings=holdings; this.events=events; this.shares=shares;
-        this.evidence=evidence; this.transfers=transfers; this.pieces=pieces; this.users=users; this.guard=guard;
+        this.evidence=evidence; this.transfers=transfers; this.pieces=pieces; this.users=users; this.guard=guard; this.lifecycle=lifecycle;
         this.enabled=enabled; this.clock=clock;
     }
     private Instant now() { return clock.instant(); }
@@ -323,7 +325,7 @@ public class GarmentPassportService {
         PassportHolding old=holdings.findByActivePassportId(p.getId()).orElseThrow(()->ApiException.conflict("PASSPORT_HOLDING_MISSING","Posse inconsistente."));
         old.setEndedAt(now()); old.setActivePassportId(null); holdings.saveAndFlush(old);
         // Keep the old item and all looks/photos with their historical author. No personal fields or seals follow.
-        original.markAvailable(false); original.setAvailabilityStatus(AvailabilityStatus.ARCHIVED);
+        original.markAvailable(false); original.setAvailabilityStatus(AvailabilityStatus.ARCHIVED); original.setVisibility(Visibility.PRIVATE);
         original.setForSale(false); original.setForDonation(false); pieces.save(original);
         WardrobeItem next=new WardrobeItem(); next.setUser(recipient); next.setName(original.getName()); next.setCategory(original.getCategory());
         next.setSubcategory(original.getSubcategory()); next.setColor(original.getColor()); next.setMaterial(original.getMaterial());
@@ -345,6 +347,8 @@ public class GarmentPassportService {
         t.setStatus("ACCEPTED"); t.setAcceptedAt(now()); t.setRecipientPieceId(next.getId()); transfers.saveAndFlush(t);
         PassportEvent e=new PassportEvent(); e.setPassportId(p.getId()); e.setAuthorId(user.id()); e.setKind("TRANSFER");
         e.setOccurredOn(LocalDate.now(clock)); e.setCommandKey("transfer_"+t.getId()); events.save(e);
+        lifecycle.publishEvent(new DomainEvents.PieceDeleted(sender.getId(),original.getId()));
+        lifecycle.publishEvent(new DomainEvents.PieceCreated(recipient.getId(),next.getId(),false));
         return transferView(t);
     }
 

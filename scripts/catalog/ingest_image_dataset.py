@@ -26,9 +26,11 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from scipy.fft import dctn
 try:
     from .photo_set import LocalClothProvider, clean_target_mask
+    from .semantic_photo_provider import AutomaticClothProvider
     from .photo_preflight import inspect_source
 except ImportError:
     from photo_set import LocalClothProvider, clean_target_mask
+    from semantic_photo_provider import AutomaticClothProvider
     from photo_preflight import inspect_source
 LOGGER=logging.getLogger('fashionai.images')
 MAX_BYTES=10*1024*1024
@@ -104,7 +106,7 @@ class AsyncDownloader:
 
 class GarmentSanitizer:
     """Semantic rembg U2-Net classes exclude other clothing and people; no generative reconstruction."""
-    def __init__(self,provider=None):self.provider=provider or LocalClothProvider()
+    def __init__(self,provider=None):self.provider=provider or AutomaticClothProvider()
     def sanitize(self,data,item):
         try:
             with Image.open(io.BytesIO(data)) as raw:
@@ -201,10 +203,10 @@ def parse_products(raw):
     return items
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--input',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--concurrency',type=int,default=4);parser.add_argument('--reviewed-masks',type=Path);args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--input',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--concurrency',type=int,default=4);parser.add_argument('--reviewed-masks',type=Path);parser.add_argument('--parser-weights',type=Path);args=parser.parse_args()
     logging.basicConfig(level=logging.INFO,format='%(message)s')
     items=parse_products(json.loads(args.input.read_text()));emit('pipeline_started',images=len(items),version=VERSION)
-    sanitizer=None
+    sanitizer=GarmentSanitizer(AutomaticClothProvider(weights=args.parser_weights))
     if args.reviewed_masks:
         try:from .reviewed_photo_masks import ReviewedMaskProvider
         except ImportError:from reviewed_photo_masks import ReviewedMaskProvider

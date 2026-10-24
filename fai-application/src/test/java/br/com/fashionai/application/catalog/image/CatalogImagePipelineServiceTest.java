@@ -14,6 +14,8 @@ import br.com.fashionai.domain.model.enums.CatalogImageUsage;
 import br.com.fashionai.domain.repository.CatalogImageRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
 import br.com.fashionai.domain.repository.CatalogSourceRepository;
+import br.com.fashionai.domain.repository.CatalogVariantRepository;
+import br.com.fashionai.domain.model.CatalogVariant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,9 +43,11 @@ class CatalogImagePipelineServiceTest {
     private final Map<String, byte[]> web = new HashMap<>();
     private final Map<String, byte[]> stored = new HashMap<>();
     private final List<CatalogSource> sources = new ArrayList<>();
+    private final List<CatalogVariant> productVariants = new ArrayList<>();
     private CatalogImagePipelineService service;
     private CatalogProduct product;
     private CatalogProductRepository products;
+    private CatalogVariantRepository variants;
     private final CurrentUser admin = new CurrentUser(UUID.randomUUID(), "admin", "ADMIN", null, true, null, null, null);
 
     @BeforeEach
@@ -66,6 +70,8 @@ class CatalogImagePipelineServiceTest {
         when(images.findByReviewStatusOrderByProcessedAtAsc(eq("PENDING"), any())).thenAnswer(inv ->
                 db.values().stream().filter(i -> "PENDING".equals(i.getReviewStatus())).toList());
         products = mock(CatalogProductRepository.class);
+        variants = mock(CatalogVariantRepository.class);
+        when(variants.findByProductIdOrderByVariantKey(any())).thenAnswer(inv->productVariants.stream().filter(v->v.getProductId().equals(inv.getArgument(0))).toList());
         product = new CatalogProduct();
         product.assignId(UUID.randomUUID());
         product.setBrandId(UUID.randomUUID());
@@ -101,7 +107,7 @@ class CatalogImagePipelineServiceTest {
             return null;
         }).when(guard).requireAdmin(any());
         ObjectProvider<br.com.fashionai.application.moderation.ImageSafetyPorts.PersonSegmentationPort> none = mock(ObjectProvider.class);
-        service = new CatalogImagePipelineService(images, products, sourceRepo, fetch, storage, guard, tx, none, true, 8, 3);
+        service = new CatalogImagePipelineService(images, products, sourceRepo, variants, fetch, storage, guard, tx, none, true, 8, 3);
     }
 
     private CatalogImage image(String url, CatalogImageType type, byte[] body) {
@@ -130,8 +136,11 @@ class CatalogImagePipelineServiceTest {
     private Map<String, Object> photoEvidence(CatalogImage image, String status) {
         Map<String,Object> state = new LinkedHashMap<>();
         state.put("version", "CATALOG_PHOTO_SET_V2"); state.put("sourceUrl", image.getImageUrl());
+        state.put("variantId",image.getVariantId());state.put("imageId",image.getId());
         state.put("sourceSha256", image.getSourceSha256()); state.put("category", product.getCategory());
-        state.put("subcategory", product.getSubcategory()); state.put("color", product.getColor()); state.put("status", status);
+        String color=productVariants.stream().filter(v->v.getId().equals(image.getVariantId())).map(CatalogVariant::getColor)
+                .filter(java.util.Objects::nonNull).findFirst().orElse(product.getColor());
+        state.put("subcategory", product.getSubcategory()); state.put("color", color); state.put("status", status);
         state.put("wholeUrl", "https://media.fashion-ai.app/whole.png"); state.put("fabricUrl", "https://media.fashion-ai.app/fabric.png");
         state.put("defaultAssetUrl", "/api/catalog/default-asset?category=upper_piece");
         state.put("metrics", Map.of("preflight", sourcePreflight()));
@@ -194,6 +203,15 @@ class CatalogImagePipelineServiceTest {
         assertThat(whole).containsEntry("url", "https://media.fashion-ai.app/catalog/whole/a/b.jpg").containsEntry("processed", true)
                 .containsEntry("version", CatalogImagePipelineService.WHOLE_PROCESSED_VERSION).containsEntry("width", 900).containsEntry("height", 1200);
         assertThat(whole.get("truncated")).isEqualTo(List.of());
+
+        jeans.setWholeUrl(jeans.getImageUrl());
+        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        jeans.setWholeUrl("data:image/png;base64,aGVsbG8=");
+        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        jeans.setWholeUrl("https://media.fashion-ai.app/catalog/whole/a/b.jpg");
+        jeans.setSourceSha256("invalid");info.put("sourceSha256","invalid");jeans.setWholeJson(Json.write(info));
+        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        jeans.setSourceSha256("a".repeat(64));info.put("sourceSha256",jeans.getSourceSha256());jeans.setWholeJson(Json.write(info));
 
         info.put("truncated", List.of("bottom")); jeans.setWholeJson(Json.write(info));
         assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
@@ -557,7 +575,7 @@ class CatalogImagePipelineServiceTest {
     void workerDesligadoNaoFazNada() {
         CatalogImage front = image("https://img.brand.com/front.jpg", CatalogImageType.FRONT, CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
         CatalogImagePipelineService off = new CatalogImagePipelineService(mock(CatalogImageRepository.class), mock(CatalogProductRepository.class),
-                mock(CatalogSourceRepository.class), (u, m, a) -> Optional.empty(), mock(MediaStoragePort.class), mock(Guard.class),
+                mock(CatalogSourceRepository.class), mock(CatalogVariantRepository.class), (u, m, a) -> Optional.empty(), mock(MediaStoragePort.class), mock(Guard.class),
                 mock(TransactionTemplate.class), mock(ObjectProvider.class), false, 8, 3);
         off.tick();
         assertThat(front.getProcessingStatus()).isEqualTo("PENDING");
@@ -627,4 +645,158 @@ class CatalogImagePipelineServiceTest {
         }
         assertThat(stored).isEmpty();
     }
+    @Test
+    void cachedSiblingAnalysisMustMatchTheCategoryAtAnalysisTime() {
+        byte[] body=CatalogPhotos.png(CatalogPhotos.tee(200,200,1));
+        CatalogImage first=image("https://img.brand.com/cache-first.png",CatalogImageType.FRONT,body);
+        service.process(first.getId());
+        CatalogImage sibling=image("https://img.brand.com/cache-second.png",CatalogImageType.FRONT,body);
+        assertThat(service.sameContext(first,sibling,product)).isTrue();
+        product.setSubcategory("coat");
+        assertThat(service.sameContext(first,sibling,product)).isFalse();
+        product.setSubcategory("t_shirt");
+        first.setImageUrl("https://img.brand.com/changed-source.png");
+        assertThat(service.sameContext(first,sibling,product)).isFalse();
+    }
+
+    @Test
+    void sanitizedDerivativesRequireARealDigestAndTheExactOwningProduct() {
+        CatalogImage image=image("https://brand.com/identity.png",CatalogImageType.FRONT,null);
+        image.setSourceSha256("a".repeat(64));
+        Map<String,Object> ready=photoEvidence(image,"READY");
+        image.setAssetsJson(Json.write(Map.of("photoSet",ready)));
+        assertThat(CatalogImagePipelineService.cardImage(image,product)).containsEntry("url",ready.get("fabricUrl"));
+        CatalogProduct stranger=new CatalogProduct();stranger.assignId(UUID.randomUUID());
+        stranger.setCategory(product.getCategory());stranger.setSubcategory(product.getSubcategory());stranger.setColor(product.getColor());
+        assertThat(CatalogImagePipelineService.photoSet(image,stranger)).isEmpty();
+        assertThat(CatalogImagePipelineService.cardImage(image,stranger)).isNull();
+        image.setSourceSha256(null);ready.put("sourceSha256",null);image.setAssetsJson(Json.write(Map.of("photoSet",ready)));
+        assertThat(CatalogImagePipelineService.photoSet(image,product)).isEmpty();
+        image.setSourceSha256("a".repeat(64));ready.put("sourceSha256",image.getSourceSha256());
+        ready.put("wholeUrl",image.getImageUrl());image.setAssetsJson(Json.write(Map.of("photoSet",ready)));
+        assertThat(CatalogImagePipelineService.photoSet(image,product)).isEmpty();
+        ready.put("wholeUrl",ready.get("fabricUrl"));image.setAssetsJson(Json.write(Map.of("photoSet",ready)));
+        assertThat(CatalogImagePipelineService.photoSet(image,product)).isEmpty();
+    }
+
+    @Test
+    void wholeBatchDerivativeCannotSurviveAChangeOfGarmentCategory() {
+        CatalogImage image=image("https://img.brand.com/whole-context.png",CatalogImageType.FRONT,
+                CatalogPhotos.png(CatalogPhotos.tee(200,200,1)));
+        service.process(image.getId());
+        image.setAssetsJson(null);image.setCanonical(true);
+        image.setWholeUrl("https://media.fashion-ai.app/isolated.png");image.setWholeStatus("DONE");
+        image.setWholePipelineVersion(CatalogImagePipelineService.WHOLE_PROCESSED_VERSION);
+        Map<String,Object> whole=new LinkedHashMap<>();
+        whole.put("version",CatalogImagePipelineService.WHOLE_PROCESSED_VERSION);whole.put("sourceUrl",image.getImageUrl());
+        whole.put("sourceSha256",image.getSourceSha256());whole.put("category",product.getCategory());whole.put("subcategory",product.getSubcategory());
+        whole.put("box",Map.of("x",.375,"y",.25,"w",.25,"h",.5));whole.put("truncated",List.of());whole.put("preflight",sourcePreflight());
+        image.setWholeJson(Json.write(whole));
+        assertThat(CatalogImagePipelineService.cardImage(image,product)).containsKey("whole");
+        CatalogSource source=new CatalogSource();source.setDomain("brand.com");source.setAllowsImagePersistence(true);sources.add(source);
+        byte[] isolatedPixels=CatalogPhotos.png(CatalogPhotos.tee(180,240,1));stored.put("isolated.png",isolatedPixels);
+        assertThat(service.texturePhoto(admin,product.getId(),true,null,image.getId()).bytes()).isEqualTo(isolatedPixels);
+        product.setSubcategory("coat");
+        assertThat(CatalogImagePipelineService.cardImage(image,product)).doesNotContainKey("whole");
+        assertThatThrownBy(()->service.texturePhoto(admin,product.getId(),true,null,image.getId())).isInstanceOf(ApiException.class);
+    }
+
+    private CatalogVariant variant(String color) {
+        CatalogVariant variant=new CatalogVariant();variant.assignId(UUID.randomUUID());variant.setProductId(product.getId());variant.setColor(color);
+        when(variants.findById(variant.getId())).thenReturn(Optional.of(variant));productVariants.add(variant);return variant;
+    }
+
+    private CatalogImage isolated(CatalogVariant variant,String name,byte[] pixels) {
+        CatalogImage image=image("https://img.brand.com/"+name+".png",CatalogImageType.FRONT,null);
+        image.setVariantId(variant.getId());image.setSourceSha256(CatalogImagePipeline.sha256(pixels));
+        Map<String,Object> ready=photoEvidence(image,"READY");
+        ready.put("wholeUrl","https://media.fashion-ai.app/"+name+"-whole.png");
+        ready.put("fabricUrl","https://media.fashion-ai.app/"+name+"-fabric.png");
+        image.setAssetsJson(Json.write(Map.of("photoSet",ready)));stored.put(name+"-whole.png",pixels);return image;
+    }
+
+    @Test
+    void textureSelectionKeepsVariantAndImageIdentityAcrossStorageAndFallback() {
+        CatalogSource source=new CatalogSource();source.setDomain("brand.com");source.setAllowsImagePersistence(true);sources.add(source);
+        CatalogVariant red=variant("red"),blue=variant("blue");
+        byte[] redPixels=CatalogPhotos.png(CatalogPhotos.tee(200,200,1));
+        byte[] bluePixels=CatalogPhotos.png(CatalogPhotos.tee(180,240,1));
+        CatalogImage canonical=isolated(blue,"canonical-blue",bluePixels);canonical.setCanonical(true);
+        CatalogImage chosen=isolated(red,"chosen-red",redPixels);
+        assertThat(service.texturePhoto(admin,product.getId(),true,red.getId(),chosen.getId()).bytes()).isEqualTo(redPixels);
+        assertThat(service.texturePhoto(admin,product.getId(),true,blue.getId(),canonical.getId()).bytes()).isEqualTo(bluePixels);
+        assertThatThrownBy(()->service.texturePhoto(admin,product.getId(),true,blue.getId(),chosen.getId()))
+                .isInstanceOfSatisfying(ApiException.class,e->assertThat(e.code()).isEqualTo("CATALOG_IMAGE_VARIANT_MISMATCH"));
+        CatalogVariant foreign=variant("white");foreign.setProductId(UUID.randomUUID());
+        assertThatThrownBy(()->service.texturePhoto(admin,product.getId(),true,foreign.getId(),null)).isInstanceOf(ApiException.class);
+        chosen.setCanonical(true);stored.remove("chosen-red-whole.png");
+        assertThatThrownBy(()->service.texturePhoto(admin,product.getId(),true,red.getId(),null))
+                .isInstanceOfSatisfying(ApiException.class,e->assertThat(e.code()).isEqualTo("CATALOG_ISOLATED_PHOTO_UNAVAILABLE"));
+        // The valid global canonical is blue and must never replace missing red pixels.
+        assertThat(stored).containsKey("canonical-blue-whole.png");
+        CatalogImage alternate=isolated(red,"alternate-red",redPixels);
+        assertThat(service.texturePhoto(admin,product.getId(),true,red.getId(),null).bytes()).isEqualTo(redPixels);
+        CatalogImage otherProduct=isolated(red,"other-product",bluePixels);otherProduct.setProductId(UUID.randomUUID());
+        assertThatThrownBy(()->service.texturePhoto(admin,product.getId(),true,null,otherProduct.getId())).isInstanceOf(ApiException.class);
+        assertThat(alternate.getAssetsJson()).contains("alternate-red-whole.png");
+    }
+
+    @Test
+    void variantPreviewAndVerificationNeverReuseOrChangeAnotherColorsCanonical() {
+        product.setColor("blue");CatalogVariant blue=variant("blue"),red=variant("red");
+        byte[] pixels=CatalogPhotos.png(CatalogPhotos.tee(200,200,1));
+        CatalogImage base=image("https://img.brand.com/base-blue.png",CatalogImageType.FRONT,pixels);
+        base.setPrimary(true);base.setCanonical(true);
+        service.ensurePreview(admin,product.getId(),false,blue.getId(),base.getId());
+        String baseCrop=base.getCropJson();
+        CatalogImage alternative=image("https://img.brand.com/red.png",CatalogImageType.FRONT,pixels);alternative.setVariantId(red.getId());
+        service.ensurePreview(admin,product.getId(),false,red.getId(),alternative.getId());
+        assertThat(base.isCanonical()).isTrue();assertThat(base.getCropJson()).isEqualTo(baseCrop);
+        assertThat(alternative.isCanonical()).isFalse();assertThat(alternative.getCropJson()).isNotBlank();
+        assertThat(CatalogImagePipelineService.cardImage(alternative,product,productVariants)).containsEntry("sourceUrl",alternative.getImageUrl());
+        assertThatThrownBy(()->service.verifySelection(admin,product.getId(),red.getId(),base.getId()))
+                .isInstanceOfSatisfying(ApiException.class,e->assertThat(e.code()).isEqualTo("CATALOG_IMAGE_VARIANT_MISMATCH"));
+        assertThat(base.getCropJson()).isEqualTo(baseCrop);
+        // A READY source-bound photo set survives origin outage and does not need a second crop/download.
+        CatalogImage ready=isolated(red,"already-isolated",pixels);ready.setCanonical(false);
+        service.verifySelection(admin,product.getId(),red.getId(),ready.getId());
+        assertThat(ready.getCropJson()).isNull();assertThat(ready.isCanonical()).isFalse();
+    }
+
+    @Test
+    void explicitVariantPhotoProofUsesItsOwnColorAndInvalidatesEditedBindings() {
+        product.setColor("blue");CatalogVariant red=variant("red"),otherRed=variant("red");
+        byte[] pixels=CatalogPhotos.png(CatalogPhotos.tee(200,200,1));
+        CatalogImage selected=isolated(red,"red-proof",pixels);
+        Map<String,Object> proof=photoEvidence(selected,"READY");
+        selected.setAssetsJson(Json.write(Map.of("photoSet",proof)));
+        assertThat(CatalogImagePipelineService.photoSet(selected,product,productVariants)).containsEntry("color","red");
+        assertThat(CatalogImagePipelineService.photoSet(selected,product)).isEmpty();
+        proof.put("color","blue");selected.setAssetsJson(Json.write(Map.of("photoSet",proof)));
+        assertThat(CatalogImagePipelineService.photoSet(selected,product,productVariants)).isEmpty();
+        proof.put("color","red");selected.setAssetsJson(Json.write(Map.of("photoSet",proof)));
+        selected.setVariantId(otherRed.getId());
+        assertThat(CatalogImagePipelineService.photoSet(selected,product,productVariants)).isEmpty();
+        selected.setVariantId(red.getId());red.setColor("green");
+        assertThat(CatalogImagePipelineService.photoSet(selected,product,productVariants)).isEmpty();
+        assertThat(CatalogImagePipelineService.cardImage(selected,product,productVariants)).isNull();
+        red.setColor("");proof.put("color","");selected.setAssetsJson(Json.write(Map.of("photoSet",proof)));
+        assertThat(CatalogImagePipelineService.photoSet(selected,product,productVariants)).containsEntry("color","");
+        red.setColor(null);proof.put("color","blue");selected.setAssetsJson(Json.write(Map.of("photoSet",proof)));
+        assertThat(CatalogImagePipelineService.photoSet(selected,product,productVariants)).containsEntry("color","blue");
+    }
+
+    @Test
+    void orphanImageVariantNeverProcessesOrServesItsSource() {
+        CatalogVariant foreign=variant("red");foreign.setProductId(UUID.randomUUID());
+        CatalogImage orphan=image("https://img.brand.com/orphan.png",CatalogImageType.FRONT,
+                CatalogPhotos.png(CatalogPhotos.tee(200,200,1)));
+        orphan.setVariantId(foreign.getId());orphan.setCanonical(true);
+        service.process(orphan.getId());
+        assertThat(orphan.getProcessingStatus()).isEqualTo("NEEDS_REPROCESSING");
+        assertThat(orphan.getGateReasons()).isEqualTo("CATALOG_IMAGE_VARIANT_MISMATCH");
+        assertThat(orphan.getCropJson()).isNull();assertThat(stored).isEmpty();
+        assertThatThrownBy(()->service.texturePhoto(admin,product.getId(),true,null,orphan.getId())).isInstanceOf(ApiException.class);
+    }
+
 }

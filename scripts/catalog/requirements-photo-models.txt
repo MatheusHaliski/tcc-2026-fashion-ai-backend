@@ -1,0 +1,7 @@
+-r requirements-photo-tests.txt
+-r requirements-whole.txt
+# Install the CPU torch wheel first on CPU workers (see catalog-photo-preflight.md).
+torch==2.7.1
+transformers==4.57.1
+rembg[cpu]==2.0.86
+fashn-human-parser @ git+https://github.com/fashn-AI/fashn-human-parser.git@f2771f2fb8655349e87e2869bbde7ace0bd06f2c

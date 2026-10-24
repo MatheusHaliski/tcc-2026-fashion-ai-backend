@@ -14,7 +14,8 @@ import {
 import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
 import { isBundledGarmentPhoto } from "@/lib/tryon/reference-photo";
 import { specFor } from "@/lib/avatar3d/human/garment-fit";
-import { publishPhotoStates } from "@/lib/tryon/garment-status";
+import { publishPhotoStates, useGarmentPhotoRetries } from "@/lib/tryon/garment-status";
+import { garmentPhotoKey, garmentPhotoUrls, isIsolatedCatalogPhoto } from "@/lib/tryon/garment-photo-source";
 import type { PhotoState } from "@/lib/tryon/garment-asset";
 import { buildGarment, softBodyOf } from "@/lib/avatar3d/human/dress";
 import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
@@ -159,7 +160,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
         const fl = new THREE.Color(fabric); const light = 0.2126 * fl.r + 0.7152 * fl.g + 0.0722 * fl.b > 0.35;
         const thread = `#${(light ? fl.clone().multiplyScalar(0.62) : fl.clone().lerp(new THREE.Color("#ffffff"), 0.4)).getHexString()}`;
         const cuff = tb.side === -1 ? tc.cuffLeft : tb.side === 1 ? tc.cuffRight : tc.cuff;
-        const color = tb.part === "botoes" ? "#efe8da" : tb.part === "botoes-borda" ? "#3a332b" : tb.part === "costura" ? thread : tb.part === "gola-ponta" ? rib
+        const color = tb.part === "capuz" ? fabric : tb.part === "botoes" ? "#efe8da" : tb.part === "botoes-borda" ? "#3a332b" : tb.part === "costura" ? thread : tb.part === "gola-ponta" ? rib
           : (tb.part === "barra" ? tc.hem : tb.part === "punho" ? cuff : null) ?? (ribbed ? rib : `#${fl.clone().multiplyScalar(0.92).getHexString()}`);
         const tm = new THREE.MeshPhysicalMaterial({ color, roughness: tb.part === "botoes" ? 0.45 : 0.9, sheen: tb.part === "botoes" ? 0.1 : 0.45, sheenRoughness: 0.8, side: THREE.DoubleSide,
           polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
@@ -196,43 +197,46 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   return { meshes, dressed: ZONES.every((z) => covered.has(z)) };
 }
 
-export const photoUrls = (p: Look3dPiece) => (p.catalogProductId ? [`/api/catalog/products/${encodeURIComponent(p.catalogProductId)}/texture-image?isolated=true`, `/api/catalog/products/${encodeURIComponent(p.catalogProductId)}/texture-image`] : [p.studioUrl, p.imageUrl])
-  .filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
+export const photoUrls = garmentPhotoUrls;
 // Reusing an item in another look must not rerun segmentation. Failures remain retryable.
-const isolatedPhotos = new Map<string, Promise<Img | null>>();
-function outfitPhoto(i: OutfitItem): Promise<Img | null> {
-  const key = JSON.stringify([photoPart(i.spec.kind), photoUrls(i.piece), i.piece.imageUrl, i.piece.studioUrl]);
+const isolatedPhotos = new Map<string, { pending: Promise<Img | null>; createdAt: number }>();
+function outfitPhoto(i: OutfitItem, retry = 0): Promise<Img | null> {
+  const key = garmentPhotoKey(photoPart(i.spec.kind), i.piece, retry);
   const cached = isolatedPhotos.get(key);
-  if (cached) return cached;
+  if (cached && Date.now() - cached.createdAt < 5 * 60_000) return cached.pending;
   const pending = (async () => {
-    for (const url of photoUrls(i.piece)) {
+    for (const url of photoUrls(i.piece, retry)) {
       let temporary: string | null = null;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20_000);
       try {
-        const resolved = url.startsWith("/api/catalog/products/") ? (temporary = await api.blobUrl(url)) : mediaUrl(url);
+        const resolved = url.startsWith("/api/catalog/products/") ? (temporary = await api.blobUrl(url, { signal: controller.signal })) : mediaUrl(url);
+        if (controller.signal.aborted) continue;
         const texture = resolved ? await loadTexture(resolved) : null;
         const image = texture?.image as Img | undefined;
-        if (!image) continue;
+        if (!image || controller.signal.aborted) continue;
         // Trust only the exact bundled source that actually loaded; remote images still require isolation.
         // This exact authenticated endpoint refuses raw photographs when isolation
         // is unavailable. Do not segment its verified pixels a second time.
-        const isolated = !!i.piece.catalogProductId && url.endsWith("/texture-image?isolated=true");
+        const isolated = isIsolatedCatalogPhoto(i.piece, url, retry);
         const prepared = isBundledGarmentPhoto(url) || isolated ? prepareGarmentPhoto(image) : await prepareOutfitPhoto(image, photoPart(i.spec.kind));
         if (prepared) return prepared;
       } catch { /* Try the processed alternative, without projecting an unchecked image. */ }
-      finally { if (temporary) URL.revokeObjectURL(temporary); }
+      finally { clearTimeout(timeout); if (temporary) URL.revokeObjectURL(temporary); }
     }
     return null;
   })();
-  isolatedPhotos.set(key, pending);
+  isolatedPhotos.set(key, { pending, createdAt: Date.now() });
   if (isolatedPhotos.size > 64) isolatedPhotos.delete(isolatedPhotos.keys().next().value!);
-  void pending.then(image => { if (!image && isolatedPhotos.get(key) === pending) isolatedPhotos.delete(key); });
+  void pending.then(image => { if (!image && isolatedPhotos.get(key)?.pending === pending) isolatedPhotos.delete(key); });
   return pending;
 }
 
 export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
+  const retries = useGarmentPhotoRetries();
   const [loaded, setLoaded] = useState<Record<string, Img | null>>({});
   const items = outfitOf(pieces);
-  const keyOf = (i: OutfitItem) => JSON.stringify([i.key, photoPart(i.spec.kind), photoUrls(i.piece), i.piece.imageUrl, i.piece.studioUrl]);
+  const keyOf = (i: OutfitItem) => JSON.stringify([i.key, garmentPhotoKey(photoPart(i.spec.kind), i.piece, retries[i.key] ?? 0)]);
   const urlKey = JSON.stringify(items.map(keyOf));
   // Selection, fit and registered color apply immediately, including same-URL variant edits.
   // Only the isolated photograph waits; never keep a different garment dressed meanwhile.
@@ -243,7 +247,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
     const photos: Record<string, PhotoState> = {};
     for (const i of items) {
       if (i.piece.defaultImage && i.key.startsWith("fai-padrao-")) continue;
-      photos[i.key] = !photoUrls(i.piece).length ? "sem-foto" : !Object.hasOwn(loaded, keyOf(i)) ? "carregando" : images[i.key] ? "ok" : "falhou";
+      photos[i.key] = !photoUrls(i.piece).length ? "sem-foto" : !Object.hasOwn(loaded, keyOf(i)) ? "carregando" : images[i.key] ? "ok" : !i.piece.imageUrl && !i.piece.studioUrl ? "sem-foto" : "falhou";
     }
     publishPhotoStates(photos);
   }, [urlKey, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -252,7 +256,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
     // Commit each image separately: a slow/broken coat must not hold back trousers or shoes.
     for (const i of items) {
       const key = keyOf(i);
-      void outfitPhoto(i).then(image => {
+      void outfitPhoto(i, retries[i.key] ?? 0).then(image => {
         if (alive) setLoaded(current => ({
           ...Object.fromEntries(Object.entries(current).filter(([oldKey]) => items.some(item => keyOf(item) === oldKey))),
           [key]: image,
