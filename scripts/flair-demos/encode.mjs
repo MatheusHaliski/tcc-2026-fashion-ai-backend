@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Converte as gravações brutas (out/<modo>.raw.webm, do record.mjs) nas mídias finais de public/flair/demos:
+ * Converte as gravações brutas (out/<modo>.raw.webm, do record.mjs) nas mídias finais de media/flair/demos:
  * MP4 (H.264, yuv420p, faststart) + WebM (VP9) otimizados, sem áudio, e uma capa JPG do primeiro quadro útil.
  * O começo da gravação (página ainda carregando) é cortado: a demonstração começa direto na interface.
  *
@@ -13,9 +13,9 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "out");
-/** clipes da central de FAI Points vão para public/points/demos; os demais, public/flair/demos */
+/** clipes da central de FAI Points vão para public/points/demos; os demais, media/flair/demos (servida em /flair/demos) */
 const POINTS = new Set(["balance", "earn", "store", "statement"]);
-const destOf = (id) => { const d = join(HERE, "..", "..", "public", POINTS.has(id) ? "points" : "flair", "demos"); mkdirSync(d, { recursive: true }); return d; };
+const destOf = (id) => { const d = POINTS.has(id) ? join(HERE, "..", "..", "public", "points", "demos") : join(HERE, "..", "..", "media", "flair", "demos"); mkdirSync(d, { recursive: true }); return d; };
 const TRIM_DEFAULT = Number(process.env.DEMO_TRIM ?? "1.6");   // corte do início quando a gravação não registrou o instante em que a interface ficou pronta
 const MAX = Number(process.env.DEMO_MAX ?? "19.5");    // duração máxima: acima disso o clipe é levemente acelerado (até 1,6×) para caber em 10–20 s
 const args = process.argv.slice(2);

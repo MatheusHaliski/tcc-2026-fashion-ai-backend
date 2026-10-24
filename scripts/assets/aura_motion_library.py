@@ -2,7 +2,7 @@
 """
 Fashion AI — biblioteca de animações dos presets AURA (uma linguagem de movimento por variante).
 
-Cada variante estática de /public/aura_sem_GIF ganha um vídeo próprio em /public/aura_com_GIF/<variante>.mp4
+Cada variante estática de /media/aura_sem_GIF ganha um vídeo próprio em /media/aura_com_GIF/<variante>.mp4
 (480 px, 20 fps, 8 s, loop perfeito), escolhido pela geometria e pelo conceito da imagem — nada de tratar toda
 imagem como líquido. Famílias usadas (ver FAMILIES):
 
@@ -40,8 +40,8 @@ from PIL import Image
 from scipy import ndimage as ndi
 
 ROOT = Path(__file__).resolve().parents[2]
-SRC = ROOT / "public" / "aura_sem_GIF"
-OUT = ROOT / "public" / "aura_com_GIF"
+SRC = ROOT / "media" / "aura_sem_GIF"
+OUT = ROOT / "media" / "aura_com_GIF"
 WIDTH, FPS, SECONDS = 480, 20, 8
 FRAMES = FPS * SECONDS
 TAU = 2 * np.pi

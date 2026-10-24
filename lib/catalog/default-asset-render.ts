@@ -1,6 +1,6 @@
 import sharp from 'sharp';
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { publicRoot, untracedFs } from '@/lib/server/untraced-fs';
 import { defaultGarmentSource } from './default-garment';
 /** Largest 3:4 rectangle wholly inside a binary material mask, never a bounding-box zoom. */
 export function fabricRectangle(mask: Uint8Array, width: number, height: number) {
@@ -31,8 +31,9 @@ export function recolorMaterial(data: Uint8Array, hex: string) {
 }
 export async function renderDefaultAsset(category:string,subcategory:string,color:string,framing:string) {
  const source=defaultGarmentSource(category,subcategory);
- // Source is selected from our compiled allowlist, never from a client-supplied URL/path.
- const {data,info}=await sharp(await readFile(path.join(process.cwd(),'public',source))).resize({width:640,height:640,fit:'inside',withoutEnlargement:true}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+ // Source is selected from our compiled allowlist, never from a client-supplied URL/path. The file is read through
+ // untracedFs so the bundler does not copy all of public/ into the function (outputFileTracingIncludes lists the thumbs).
+ const {data,info}=await sharp(await untracedFs.promises.readFile(path.join(publicRoot,source))).resize({width:640,height:640,fit:'inside',withoutEnlargement:true}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  const mask=recolorMaterial(data,color);
  const raw={width:info.width,height:info.height,channels:4 as const};
  const rectangle=framing==='FABRIC'?fabricRectangle(mask,info.width,info.height):null;

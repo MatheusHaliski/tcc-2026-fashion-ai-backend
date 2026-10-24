@@ -8,6 +8,7 @@ import br.com.fashionai.domain.repository.AssetPresetRepository;
 import tools.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,13 +36,18 @@ public class AssetCatalogService {
 
     private final AssetPresetRepository repository;
     private final Path publicDir;
+    /** Mídia pesada (auras, materiais, peças padrão) fora de /public — media/ do repositório; igual a publicDir no Docker. */
+    private final Path mediaDir;
     private final Map<String, Object> manifest;
     private final Map<String, Object> defaultLogos;
 
+    @Autowired
     public AssetCatalogService(AssetPresetRepository repository,
-                               @Value("${fashionai.assets.public-dir:public}") String publicDir) {
+                               @Value("${fashionai.assets.public-dir:public}") String publicDir,
+                               @Value("${fashionai.assets.media-dir:media}") String mediaDir) {
         this.repository = repository;
         this.publicDir = Path.of(publicDir).toAbsolutePath().normalize();
+        this.mediaDir = Path.of(mediaDir).toAbsolutePath().normalize();
         this.manifest = load("catalog/asset-manifest.json");
         this.defaultLogos = load("catalog/default-piece-logos.json");
     }
@@ -259,13 +265,23 @@ public class AssetCatalogService {
         return java.util.Optional.of(b.stream().mapToDouble(v -> ((Number) v).doubleValue()).toArray());
     }
 
-    /** Arquivo físico em /public para renderização no servidor (card RF5); vazio quando a pasta não existe. */
+    public AssetCatalogService(AssetPresetRepository repository, String publicDir) {
+        this(repository, publicDir, Path.of(publicDir).resolveSibling("media").toString());
+    }
+
+    /** Arquivo físico em /public ou /media para renderização no servidor (card RF5); vazio quando não existe. */
     public Optional<Path> publicFile(String url) {
         if (url == null || url.isBlank() || url.startsWith("http")) {
             return Optional.empty();
         }
-        Path p = publicDir.resolve(url.startsWith("/") ? url.substring(1) : url).normalize();
-        return p.startsWith(publicDir) && Files.isRegularFile(p) ? Optional.of(p) : Optional.empty();
+        String rel = url.startsWith("/") ? url.substring(1) : url;
+        for (Path root : List.of(publicDir, mediaDir)) {
+            Path p = root.resolve(rel).normalize();
+            if (p.startsWith(root) && Files.isRegularFile(p)) {
+                return Optional.of(p);
+            }
+        }
+        return Optional.empty();
     }
 
     @Transactional

@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--overwrite',action='store_true');args=parser.parse_args()
- folder=ROOT/'public/aura/fashion-curated';path=folder/'catalog.json';catalog=json.loads(path.read_text());created=[]
+ folder=ROOT/'media/aura/fashion-curated';path=folder/'catalog.json';catalog=json.loads(path.read_text());created=[]
  for preset in catalog['presets']:
   if preset.get('license')!='ORIGINAL':continue
   target=folder/f"{preset['id']}.mp4"

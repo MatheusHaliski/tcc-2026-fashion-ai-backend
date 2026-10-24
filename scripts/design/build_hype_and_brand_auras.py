@@ -2,14 +2,14 @@
 """Publish 20 AURA Hype presets (4 palettes x 5 hype categories) and 20 brand+color AURA Metamorfose presets.
 Everything is procedural and original: Hype motifs are generated per hype mode; brand presets float a typographic
 wordmark (no trademarked artwork is downloaded) over a color-matched field. Output: silent looping MP4 + WebP poster
-in public/aura/fashion-curated plus catalog.json entries (families HYPE and METAMORPHOSE).
+in media/aura/fashion-curated plus catalog.json entries (families HYPE and METAMORPHOSE).
 Requires: Pillow, numpy, imageio-ffmpeg (or ffmpeg on PATH).
 """
 import json,math,shutil,subprocess
 from pathlib import Path
 import numpy as np
 from PIL import Image,ImageDraw,ImageFilter,ImageFont
-ROOT=Path(__file__).resolve().parents[2];FOLDER=ROOT/'public/aura/fashion-curated'
+ROOT=Path(__file__).resolve().parents[2];FOLDER=ROOT/'media/aura/fashion-curated'
 W,H,FPS,SECONDS=432,648,12,6;FRAMES=FPS*SECONDS
 HYPE_MODES=[('scanner','Scanner'),('xray','Raio-X'),('dots','Pontos'),('stars','Estrelas'),('metrics','Métricas')]
 HYPE_PALETTES=[('ciano','Ciano','#65eddf','#1b4b66'),('violeta','Violeta','#b69bff','#2a1b5c'),('ouro','Ouro','#f5d38b','#5a3b12'),('verde','Verde','#91e6b8','#0f4a33')]

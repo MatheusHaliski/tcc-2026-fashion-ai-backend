@@ -27,9 +27,12 @@ RUN apt-get update \
 RUN useradd --system --uid 10001 fai && mkdir -p /app/data/media && chown -R fai /app
 WORKDIR /app
 COPY --from=build /src/fai-bootstrap/target/fai-bootstrap-*.jar app.jar
-# assets de /public (chrome, aura, materiais, ícones, peças padrão) usados pelo backend nos cards e no 3D
+# assets de /public (chrome, ícones, derivados) e de /media (auras, materiais, peças padrão — fora do deploy da Vercel,
+# lib/media/static-media.ts) usados pelo backend nos cards e no 3D: as duas árvores se fundem em /app/public
 COPY public /app/public
+COPY media /app/public
 ENV ASSETS_PUBLIC_DIR=/app/public \
+    ASSETS_MEDIA_DIR=/app/public \
     STORAGE_LOCAL_DIR=/app/data/media \
     JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError" \
     API_DOCS_ENABLED=false \

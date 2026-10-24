@@ -1,2 +1,4 @@
 
 assets/source-archives/
+# mídia estática pesada: servida pelo CDN no commit do deploy, nunca enviada à Vercel (lib/media/static-media.ts)
+media/

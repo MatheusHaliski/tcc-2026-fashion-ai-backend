@@ -135,7 +135,9 @@ circuit breaker por provedor (`ProviderCircuit`).
 app/          rotas do Next.js (App Router): páginas do site, área logada, admin e BFF de autenticação (app/bff)
 components/   componentes por área (ui/ base, three/ e room3d/ para as cenas 3D, telas de cada funcionalidade)
 lib/          cliente da API (lib/api), hooks, internacionalização (lib/i18n: pt-BR, en, es), avatar 3D e utilitários
-public/       assets servidos ao navegador (chrome, auras, materiais, skins, ícones, modelos 3D)
+public/       assets leves servidos ao navegador (chrome, ícones, modelos 3D, derivados) — entram em cada deployment
+media/        mídia pesada (auras, materiais, peças padrão, fundos, demos — ~1 GB) nas mesmas URLs (/aura/…), mas fora do
+              deployment: a Vercel serve pelo CDN no commit do deploy, dev serve do disco (lib/media/static-media.ts)
 test-utils/   utilitários de teste (renderização com providers, mocks da API e das cenas 3D)
 ```
 
@@ -196,7 +198,7 @@ Detalhes de deploy em `docs/deploy/DEPLOY.md`.
 ## Estrutura do repositório
 
 * `fai-*` — módulos Maven do backend (veja Arquitetura).
-* `app/`, `components/`, `lib/`, `public/`, `test-utils/` — frontend Next.js.
+* `app/`, `components/`, `lib/`, `public/`, `media/`, `test-utils/` — frontend Next.js (`media/` é a mídia pesada fora do deployment).
 * `docs/` — rubricas (`docs/rubricas/`), testes ponta a ponta e evidências (`docs/testes/`), deploy, diagramas, anatomias de cards, tipografia, ícones, Meu Guarda-Roupa.
 * `markdowns/` — histórias de usuário (HU01–HU21), critérios de aceite por RF, diagramas UML/atividade, pipelines.
 * `scripts/` — geradores (ícones, rubricas), backup/restore, chaves JWT, checagens de i18n, roteiro ponta a ponta.
