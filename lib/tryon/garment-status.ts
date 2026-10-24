@@ -10,6 +10,7 @@ export type BodyState = "carregando" | "pronto" | "erro";
 export interface GarmentStatus { body: BodyState; photos: Record<string, PhotoState> }
 
 let current: GarmentStatus = { body: "carregando", photos: {} };
+let photoRetries: Readonly<Record<string, number>> = {};
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -20,9 +21,21 @@ export function publishPhotoStates(photos: Record<string, PhotoState>) {
   const same = Object.keys(photos).length === Object.keys(current.photos).length && Object.entries(photos).every(([k, v]) => current.photos[k] === v);
   if (same) return; current = { ...current, photos }; emit();
 }
+/** Retry only the selected photograph; never creates a remote model-generation job. */
+export function requestPhotoRetry(id: string) {
+  if (!id || current.photos[id] === "carregando") return;
+  photoRetries = { ...Object.fromEntries(Object.entries(photoRetries).filter(([key]) => key in current.photos)), [id]: (photoRetries[id] ?? 0) + 1 };
+  current = { ...current, photos: { ...current.photos, [id]: "carregando" } }; emit();
+}
+
+/** Canvas and page share retry revisions without a React context crossing the renderer boundary. */
+export function useGarmentPhotoRetries() {
+  return useSyncExternalStore((l) => { listeners.add(l); return () => { listeners.delete(l); }; }, () => photoRetries, () => photoRetries);
+}
+
 export function garmentStatusSnapshot(): GarmentStatus { return current; }
 /** só para testes */
-export function resetGarmentStatus() { current = { body: "carregando", photos: {} }; emit(); }
+export function resetGarmentStatus() { current = { body: "carregando", photos: {} }; photoRetries = {}; emit(); }
 
 export function useGarmentStatus(): GarmentStatus {
   return useSyncExternalStore((l) => { listeners.add(l); return () => { listeners.delete(l); }; }, () => current, () => current);

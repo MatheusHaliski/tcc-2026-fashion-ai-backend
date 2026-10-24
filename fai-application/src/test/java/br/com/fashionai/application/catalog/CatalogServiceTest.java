@@ -181,6 +181,10 @@ class CatalogServiceTest {
         p.setMetadataJson(br.com.fashionai.application.common.Json.write(Map.of("catalogPhotoEligibility",Map.of("state","REVIEW"))));
         assertThat(catalog.product(p.getId())).containsEntry("id",p.getId());
         p.setMetadataJson(br.com.fashionai.application.common.Json.write(Map.of("catalogPhotoEligibility",Map.of("state","INELIGIBLE"))));
+        assertThat(catalog.product(p.getId())).containsEntry("id",p.getId());
+        p.setMetadataJson(br.com.fashionai.application.common.Json.write(Map.of("catalogPhotoEligibility",Map.of(
+                "state","INELIGIBLE","version","CATALOG_UNSAFE_QUARANTINE_V2","algorithmVersion","CATALOG_SOURCE_PREFLIGHT_V1",
+                "reason","SOURCE_GARMENT_BELOW_MIN_HEIGHT","reportSha256","a".repeat(64),"evidenceSha256","b".repeat(64)))));
         assertThatThrownBy(() -> catalog.product(p.getId())).isInstanceOf(ApiException.class);
     }
 
@@ -317,4 +321,119 @@ class CatalogServiceTest {
         Map<String, Object> summary = catalog.summary();
         assertThat(summary).containsEntry("products", (long) all.size()).containsEntry("brands", 1).containsEntry("withImage", (long) all.size());
     }
+    @Test
+    @SuppressWarnings("unchecked")
+    void productResponseAndSavedPieceUseTheSelectedVariantPhotoNotGlobalCanonical() {
+        CatalogProduct p=visible(null).getFirst();p.setColor("white");
+        CatalogVariant base=kit.dep(CatalogVariantRepository.class).findByProductIdOrderByVariantKey(p.getId()).getFirst();
+        base.setColor("white");
+        // Ingestion seeds both the product code and explicit SKU as variants; this scenario
+        // deliberately has one proven base color and one alternate color.
+        kit.dep(CatalogVariantRepository.class).findByProductIdOrderByVariantKey(p.getId()).stream()
+                .filter(v->!base.getId().equals(v.getId())).forEach(kit.dep(CatalogVariantRepository.class)::delete);
+        CatalogVariant alternate=new CatalogVariant();alternate.setProductId(p.getId());alternate.setVariantKey("red");alternate.setColor("red");
+        alternate=kit.dep(CatalogVariantRepository.class).save(alternate);
+        CatalogImage canonical=kit.dep(CatalogImageRepository.class).findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).getFirst();
+        canonical.setVariantId(null);canonical.setPrimary(true);canonical.setCanonical(true);canonical.setSourceSha256("a".repeat(64));
+        CatalogImage selected=new CatalogImage();selected.assignId(UUID.randomUUID());selected.setProductId(p.getId());selected.setVariantId(alternate.getId());
+        selected.setImageUrl("https://nike.com.br/red.png");selected.setSourceSha256("b".repeat(64));selected.setSourceType(CatalogSourceType.OFFICIAL_BRAND);
+        selected.setSourceDomain("nike.com.br");selected.setSourceUrl(p.getOfficialProductUrl());selected.setImageType(CatalogImageType.FRONT);
+        selected.setUsageStatus(CatalogImageUsage.PERSISTED);selected.setRetrievedAt(Instant.parse("2026-10-23T00:00:00Z"));
+        for(CatalogImage image:List.of(canonical,selected)) {
+            String name=image==canonical?"white":"red";
+            Map<String,Object> proof=new java.util.LinkedHashMap<>();proof.put("version","CATALOG_PHOTO_SET_V2");proof.put("status","READY");
+            proof.put("sourceUrl",image.getImageUrl());proof.put("sourceSha256",image.getSourceSha256());proof.put("category",p.getCategory());
+            proof.put("subcategory",p.getSubcategory());proof.put("color",name);proof.put("variantId",image.getVariantId());
+            proof.put("defaultAssetUrl","/api/catalog/default-asset?category="+p.getCategory());
+            proof.put("wholeUrl","https://media.example/"+name+"-whole.png");proof.put("fabricUrl","https://media.example/"+name+"-fabric.png");
+            proof.put("metrics",Map.of("preflight",Map.of("version","CATALOG_SOURCE_PREFLIGHT_V1","status","PASS",
+                    "sourceGarmentHeightFraction",.5,"measurementReliable",true,"complete",true,"occluded",false,
+                    "isolationVerified",true,"humanAssessmentComplete",true)));
+            image.setAssetsJson(br.com.fashionai.application.common.Json.write(Map.of("photoSet",proof)));
+        }
+        kit.dep(CatalogImageRepository.class).save(selected);
+        Map<String,Object> response=catalog.product(p.getId(),alternate.getId(),selected.getId());
+        assertThat(response).containsEntry("color","red").containsEntry("colorHex",br.com.fashionai.application.taxonomy.Taxonomy.hex("red"));
+        assertThat((Map<String,Object>)response.get("selectedVariant")).containsEntry("id",alternate.getId());
+        assertThat((Map<String,Object>)response.get("catalogImage")).containsEntry("variantId",alternate.getId())
+                .containsEntry("imageId",selected.getId()).containsEntry("url","https://media.example/red-fabric.png");
+        assertThat((Map<String,Object>)((List<?>)response.get("images")).stream().map(Map.class::cast)
+                .filter(i->canonical.getId().equals(i.get("id"))).findFirst().orElseThrow()).containsEntry("variantId",base.getId());
+        Map<String,Object> found=searchResult(p,"red");
+        assertThat(found).containsEntry("color","red").containsEntry("imageUrl","https://media.example/red-fabric.png");
+        assertThat(map(found.get("selectedVariant"))).containsEntry("id",alternate.getId());
+        assertThat(map(found.get("catalogImage"))).containsEntry("variantId",alternate.getId()).containsEntry("imageId",selected.getId());
+        UUID alternateId=alternate.getId();
+        assertThatThrownBy(()->catalog.product(p.getId(),alternateId,canonical.getId())).isInstanceOf(ApiException.class);
+        assertThat(canonical.isCanonical()).isTrue();assertThat(selected.isCanonical()).isFalse();
+        org.mockito.ArgumentCaptor<WardrobeService.CatalogPick> picked=org.mockito.ArgumentCaptor.forClass(WardrobeService.CatalogPick.class);
+        when(kit.dep(WardrobeService.class).createFromCatalog(any(),any(),picked.capture()))
+                .thenReturn(Views.piece(Kit.piece(user,"Red product",p.getCategory(),p.getSubcategory(),"red"),null,null));
+        catalog.addToWardrobe(ana,new CatalogService.AddRequest(p.getId(),alternateId,null,null,null,null,null,null,null,null,
+                br.com.fashionai.domain.model.enums.Visibility.PRIVATE,null,null,null,null,null,null,null));
+        assertThat(picked.getValue().variantId()).isEqualTo(alternateId);
+        assertThat(picked.getValue().imageUrl()).isEqualTo("https://media.example/red-fabric.png");
+        assertThat(picked.getValue().catalogImage()).containsEntry("variantId",alternateId).containsEntry("sourceUrl",selected.getImageUrl());
+
+        canonical.setCanonical(false);selected.setCanonical(true);
+        Map<String,Object> defaultSelection=catalog.product(p.getId());
+        assertThat(defaultSelection).containsEntry("color","red").containsEntry("imageUrl","https://media.example/red-fabric.png");
+        assertThat(map(defaultSelection.get("selectedVariant"))).containsEntry("id",alternateId);
+        assertThat(map(catalog.cards(List.of(p)).getFirst().get("catalogImage"))).containsEntry("variantId",alternateId);
+        catalog.addToWardrobe(ana,new CatalogService.AddRequest(p.getId(),null,null,null,null,null,null,null,null,null,
+                br.com.fashionai.domain.model.enums.Visibility.PRIVATE,null,null,null,null,null,null,null));
+        assertThat(picked.getValue().variantId()).isEqualTo(alternateId);
+        assertThat(picked.getValue().imageUrl()).isEqualTo("https://media.example/red-fabric.png");
+        canonical.setCanonical(true);selected.setCanonical(false);
+
+        kit.dep(CatalogImageRepository.class).delete(selected);
+        assertThat(catalog.product(p.getId(),alternateId,null)).containsEntry("color","red").containsEntry("imageUrl",null).containsEntry("catalogImage",null);
+        Map<String,Object> withoutRedPhoto=searchResult(p,"red");
+        assertThat(withoutRedPhoto).containsEntry("color","red").containsEntry("imageUrl",null).containsEntry("catalogImage",null);
+        assertThat(map(withoutRedPhoto.get("selectedVariant"))).containsEntry("id",alternateId);
+        catalog.addToWardrobe(ana,new CatalogService.AddRequest(p.getId(),alternateId,null,null,null,null,null,null,null,null,
+                br.com.fashionai.domain.model.enums.Visibility.PRIVATE,null,null,null,null,null,null,null));
+        assertThat(picked.getValue().variantId()).isEqualTo(alternateId);
+        assertThat(picked.getValue().imageUrl()).isNull();
+    }
+
+    @Test
+    void orphanVariantCanonicalNeverBecomesTheProductPhotoOrAnAvailableImage() {
+        CatalogProduct p=visible(null).getFirst();
+        CatalogImage primary=kit.dep(CatalogImageRepository.class).findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).getFirst();
+        CatalogImage orphan=new CatalogImage();orphan.setProductId(p.getId());orphan.setVariantId(UUID.randomUUID());
+        orphan.setImageUrl("https://nike.com.br/orphan.png");orphan.setImageType(CatalogImageType.FRONT);
+        orphan.setUsageStatus(CatalogImageUsage.PERSISTED);orphan.setCanonical(true);orphan.setSourceType(CatalogSourceType.OFFICIAL_BRAND);
+        orphan.setProcessingStatus("APPROVED");orphan.setSourceSha256("c".repeat(64));
+        kit.dep(CatalogImageRepository.class).save(orphan);
+        assertThat(catalog.mainImagesFor(List.of(p))).containsEntry(p.getId(),primary);
+        Map<String,Object> response=catalog.product(p.getId());
+        assertThat(((List<?>)response.get("images")).stream().map(CatalogServiceTest::imageId)).doesNotContain(orphan.getId());
+        assertThatThrownBy(()->catalog.product(p.getId(),null,orphan.getId())).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void pendingVariantPhotoStillCarriesItsVariantAndColorBeforePreviewIsReady() {
+        CatalogProduct p=visible(null).getFirst();p.setColor("white");
+        CatalogVariant red=new CatalogVariant();red.setProductId(p.getId());red.setVariantKey("red");red.setColor("red");
+        kit.dep(CatalogVariantRepository.class).save(red);
+        CatalogImage image=kit.dep(CatalogImageRepository.class).findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).getFirst();
+        image.setCanonical(true);image.setVariantId(red.getId());image.setProcessingStatus("PENDING");
+        Map<String,Object> response=catalog.product(p.getId());
+        assertThat(response).containsEntry("color","red").containsEntry("catalogImage",null);
+        assertThat(map(response.get("selectedVariant"))).containsEntry("id",red.getId());
+        red.setColor(null);
+        assertThat(catalog.product(p.getId())).containsEntry("color","white");
+        red.setColor("");
+        assertThat(catalog.product(p.getId())).containsEntry("color","");
+    }
+
+    private Map<String,Object> searchResult(CatalogProduct product,String color) {
+        Map<String,Object> response=catalog.search(new CatalogService.SearchRequest(product.getCategory(),product.getSubcategory(),"Nike",product.getModelName(),color,24));
+        return ((List<?>)response.get("results")).stream().map(br.com.fashionai.application.testkit.World::map)
+                .filter(item->product.getId().equals(item.get("id"))).findFirst().orElseThrow();
+    }
+
+    private static Object imageId(Object image) { return map(image).get("id"); }
+
 }

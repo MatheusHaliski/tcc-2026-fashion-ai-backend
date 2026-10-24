@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fitClassOf, necklineOf, riseOf, specFor } from "./garment-fit";
+import { fitClassOf, necklineOf, riseOf, sleeveLengthOf, specFor } from "./garment-fit";
 
 describe("decote da peça: dimensão NECKLINE ou o nome (o catálogo não traz atributos)", () => {
   const tee = (name: string, attributes: Record<string, string[]> | null = null) => ({ name, category: "upper_piece", subcategory: "t_shirt", attributes });
@@ -24,6 +24,14 @@ describe("decote da peça: dimensão NECKLINE ou o nome (o catálogo não traz a
 
 
 describe("catalogue structural attributes reach the fitted garment", () => {
+  it("preserves explicit short and long sleeve titles, while structured attributes take precedence", () => {
+    expect(specFor({ subcategory: "shirt", name: "Hokkaido Short Sleeve Linen Blend Shirt" })!.sleeve).toBe(.33);
+    expect(specFor({ subcategory: "shirt", name: "Camisa Manga Curta Floral" })!.sleeve).toBe(.33);
+    expect(specFor({ subcategory: "shirt", name: "Camisa Manga Longa Slim Micro Xadrez" })!.sleeve).toBe(.96);
+    expect(specFor({ subcategory: "jacket", name: "Short-Sleeved Jacket" })!.sleeve).toBe(.33);
+    expect(specFor({ subcategory: "shirt", name: "Short Sleeve Shirt", attributes: { SLEEVE_LENGTH: ["LONG_SLEEVE"] } })!.sleeve).toBe(.96);
+    expect(sleeveLengthOf({ name: "A brand without a length" })).toBeNull();
+  });
   it("orders declared waistband heights without changing leg length or the avatar", () => {
     const waist = ["LOW_RISE", "MID_RISE", "HIGH_RISE", "SUPER_HIGH_RISE"].map(rise => specFor({subcategory:"jeans",attributes:{RISE:[rise]}})!);
     expect(waist.map(s=>s.waist)).toEqual([...waist.map(s=>s.waist)].sort((a,b)=>a-b));

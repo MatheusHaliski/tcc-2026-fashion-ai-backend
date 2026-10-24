@@ -8271,5 +8271,11 @@
   "passport.transferStatus.ACCEPTED": "Aceita",
   "passport.transferStatus.CANCELLED": "Cancelada",
   "passport.transferStatus.EXPIRED": "Expirada",
-  "passport.transferredHint": "Esta peça foi transferida. Você pode baixar ou apagar seus comprovantes anteriores; o passaporte atual pertence ao novo dono."
+  "passport.transferredHint": "Esta peça foi transferida. Você pode baixar ou apagar seus comprovantes anteriores; o passaporte atual pertence ao novo dono.",
+  "tryOn.preview.loading": "Carregando a textura da peça…",
+  "tryOn.preview.ready": "Foto aplicada à prévia 3D estimada",
+  "tryOn.preview.colorOnly": "Prévia só com cor: esta peça está sem foto.",
+  "tryOn.preview.failed": "A textura não carregou; a peça continua vestida com a cor cadastrada.",
+  "tryOn.preview.retry": "Recarregar textura",
+  "tryOn.preview.savedModel": "O arquivo 3D é opcional e separado desta prévia."
 }

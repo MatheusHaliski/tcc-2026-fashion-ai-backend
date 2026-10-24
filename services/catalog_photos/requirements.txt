@@ -1,1 +1,1 @@
--r ../../scripts/catalog/requirements-photo-pipeline.txt
+-r ../../scripts/catalog/requirements-photo-models.txt

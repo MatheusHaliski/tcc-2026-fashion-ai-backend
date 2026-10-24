@@ -8271,5 +8271,11 @@
   "passport.transferStatus.ACCEPTED": "Accepted",
   "passport.transferStatus.CANCELLED": "Cancelled",
   "passport.transferStatus.EXPIRED": "Expired",
-  "passport.transferredHint": "This garment was transferred. You can download or delete your earlier documents; the current passport belongs to the new owner."
+  "passport.transferredHint": "This garment was transferred. You can download or delete your earlier documents; the current passport belongs to the new owner.",
+  "tryOn.preview.loading": "Loading the garment texture…",
+  "tryOn.preview.ready": "Photo applied to the estimated 3D preview",
+  "tryOn.preview.colorOnly": "Color-only preview: this garment has no photo.",
+  "tryOn.preview.failed": "The texture did not load; the garment stays dressed in its registered color.",
+  "tryOn.preview.retry": "Reload texture",
+  "tryOn.preview.savedModel": "The 3D file is optional and separate from this preview."
 }

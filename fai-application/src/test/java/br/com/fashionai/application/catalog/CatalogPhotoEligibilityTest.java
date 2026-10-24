@@ -13,7 +13,7 @@ class CatalogPhotoEligibilityTest {
         CatalogProduct product = new CatalogProduct();
         product.setIngestionStatus(CatalogIngestionStatus.VALIDATED);
         assertThat(CatalogPhotoEligibility.excluded(product)).isFalse();
-        for (String state : new String[]{"UNKNOWN", "REVIEW", "RETRY", "PASS"}) {
+        for (String state : new String[]{"UNKNOWN", "REVIEW", "RETRY", "PASS", "INELIGIBLE"}) {
             product.setMetadataJson(Json.write(Map.of("catalogPhotoEligibility", Map.of("state", state))));
             assertThat(CatalogPhotoEligibility.excluded(product)).as(state).isFalse();
         }
@@ -24,7 +24,8 @@ class CatalogPhotoEligibilityTest {
         CatalogProduct product = new CatalogProduct();
         product.setIngestionStatus(CatalogIngestionStatus.VALIDATED);
         product.setMetadataJson(Json.write(Map.of("catalogPhotoEligibility", Map.of("state", "INELIGIBLE",
-                "version", "CATALOG_UNSAFE_QUARANTINE_V2", "reason", "SOURCE_GARMENT_BELOW_MIN_HEIGHT"))));
+                "version", "CATALOG_UNSAFE_QUARANTINE_V2", "algorithmVersion", "CATALOG_SOURCE_PREFLIGHT_V1",
+                "reason", "SOURCE_GARMENT_BELOW_MIN_HEIGHT", "reportSha256", "a".repeat(64), "evidenceSha256", "b".repeat(64)))));
         assertThat(CatalogPhotoEligibility.excluded(product)).isTrue();
         product.setMetadataJson(null); product.setIngestionStatus(CatalogIngestionStatus.REJECTED);
         assertThat(CatalogPhotoEligibility.excluded(product)).isTrue();

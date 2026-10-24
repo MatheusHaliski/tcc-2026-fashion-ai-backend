@@ -150,3 +150,129 @@ it("skips queued cards that unmounted while keeping a shared visible subscriber"
   await waitFor(() => expect(b.result.current.pending).toBe(false));
   active.forEach(hook => hook.unmount()); b.unmount();
 });
+
+
+it("reuses a persisted V2 photo set without reprocessing or losing garment image identity", async () => {
+  const product = { id: "ready-v2", category: "upper_piece", subcategory: "hoodie", imageUrl: "/media/whole-v2.png",
+    catalogImage: { imageId: "hoodie-photo", url: "/media/fabric-v2.png", mode: "PROCESSED", sourceUrl: "https://brand.example/hoodie.png",
+      photoSet: { version: "CATALOG_PHOTO_SET_V2", status: "READY", category: "upper_piece", subcategory: "hoodie", sourceUrl: "https://brand.example/hoodie.png" },
+      whole: { url: "/media/whole-v2.png", alpha: true, processed: true, box: { x: 0, y: 0, w: 1, h: 1 } } } } as CatalogProduct;
+  const request = vi.spyOn(catalogApi, "previewImage");
+  const result = renderHook(() => useCatalogPreview(product));
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(request).not.toHaveBeenCalled();
+  expect(result.result.current.product.catalogImage?.imageId).toBe("hoodie-photo");
+  expect(result.result.current.product.catalogImage?.whole?.alpha).toBe(true);
+});
+
+it("keeps variant previews distinct and requests the selected garment instead of canonical color", async () => {
+  const base = { id: "variant-context", category: "lower_piece", subcategory: "jeans", imageUrl: "https://brand.example/front.jpg" } as CatalogProduct;
+  const request = vi.spyOn(catalogApi, "previewImage").mockImplementation(async (_id, options) => ({ ...base,
+    catalogImage: { url: `/media/${options?.variantId}.png`, mode: "PROCESSED", variantId: options?.variantId } }));
+  const first = { ...base, selectedVariant: { id: "indigo", key: "indigo", color: "denim" } };
+  const result = renderHook(({ product }) => useCatalogPreview(product), { initialProps: { product: first } });
+  await waitFor(() => expect(result.result.current.product.catalogImage?.url).toBe("/media/indigo.png"));
+  result.rerender({ product: { ...base, selectedVariant: { id: "black", key: "black", color: "black" } } });
+  expect(result.result.current.product.catalogImage?.url).not.toBe("/media/indigo.png");
+  await waitFor(() => expect(result.result.current.product.catalogImage?.url).toBe("/media/black.png"));
+  expect(request).toHaveBeenCalledWith(base.id, { variantId: "indigo" });
+  expect(request).toHaveBeenCalledWith(base.id, { variantId: "black" });
+});
+
+it("invalidates a cached photo when garment category context changes", async () => {
+  const source = "https://brand.example/context.jpg";
+  const product = { id: "recategorized-frame", category: "upper_piece", subcategory: "shirt", imageUrl: source,
+    catalogImage: { url: "/media/shirt.png", mode: "PROCESSED", photoSet: { version: "CATALOG_PHOTO_SET_V2", status: "READY", category: "upper_piece", subcategory: "shirt", sourceUrl: source } } } as CatalogProduct;
+  const request = vi.spyOn(catalogApi, "previewImage").mockResolvedValue({ ...product, category: "lower_piece", subcategory: "jeans",
+    catalogImage: { url: "/media/jeans.png", mode: "PROCESSED", photoSet: { version: "CATALOG_PHOTO_SET_V2", status: "READY", category: "lower_piece", subcategory: "jeans", sourceUrl: source } } });
+  const result = renderHook(({ current }) => useCatalogPreview(current), { initialProps: { current: product } });
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(request).not.toHaveBeenCalled();
+  result.rerender({ current: { ...product, category: "lower_piece", subcategory: "jeans" } });
+  await waitFor(() => expect(result.result.current.product.catalogImage?.url).toBe("/media/jeans.png"));
+  expect(request).toHaveBeenCalledTimes(1);
+});
+
+it("does not apply a response for a different product", async () => {
+  const product = { id: "expected-preview-product", imageUrl: "https://brand.example/expected.jpg" } as CatalogProduct;
+  vi.spyOn(catalogApi, "previewImage").mockResolvedValue({ ...product, id: "other-product", catalogImage: { url: "/media/other.png", mode: "PROCESSED" } });
+  const result = renderHook(() => useCatalogPreview(product));
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(result.result.current.failed).toBe("service");
+  expect(result.result.current.product.catalogImage).toBeUndefined();
+});
+
+it("rejects a canonical photo of another variant before selection or persistent caching", async () => {
+  const product = { id: "wrong-canonical-variant", imageUrl: "https://brand.example/black.jpg",
+    selectedVariant: { id: "black", key: "black", color: "black" } } as CatalogProduct;
+  let finish!: (value: CatalogProduct) => void;
+  vi.spyOn(catalogApi, "previewImage").mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  const result = renderHook(() => useCatalogPreview(product));
+  let selection!: Promise<unknown>;
+  act(() => { selection = Promise.resolve(result.result.current.prepare()).catch(error => error); });
+  await act(async () => { finish({ ...product, catalogImage: { variantId: "indigo", imageId: "misleading-image-binding", url: "/media/indigo.png", mode: "PROCESSED", previewCache },
+    images: [{ id: "misleading-image-binding", variantId: "black" }] } as CatalogProduct); });
+  expect(await selection).toMatchObject({ code: "CATALOG_PREVIEW_CONTEXT_MISMATCH" });
+  await waitFor(() => expect(result.result.current.failed).toBe("service"));
+  expect(result.result.current.product.catalogImage).toBeUndefined();
+  expect(localStorage.getItem("fai.catalogPreview.v2") ?? "").not.toContain(product.id);
+});
+
+it.each(["REVIEW", "INELIGIBLE", "RETRY"] as const)("withholds a %s photo from display, selection and persistent caching", async status => {
+  const product = { id: `unapproved-${status}`, imageUrl: "https://brand.example/unapproved.jpg" } as CatalogProduct;
+  let finish!: (value: CatalogProduct) => void;
+  vi.spyOn(catalogApi, "previewImage").mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  const result = renderHook(() => useCatalogPreview(product));
+  let selection!: Promise<unknown>;
+  act(() => { selection = Promise.resolve(result.result.current.prepare()).catch(error => error); });
+  await act(async () => { finish({ ...product, catalogImage: { url: "/media/unapproved.png", mode: "PROCESSED",
+    photoSet: { version: "CATALOG_PHOTO_SET_V2", status } } }); });
+  expect(await selection).toMatchObject({ code: "CATALOG_PREVIEW_CONTEXT_MISMATCH" });
+  await waitFor(() => expect(result.result.current.failed).toBe("service"));
+  expect(result.result.current.product.catalogImage).toBeUndefined();
+  expect(localStorage.getItem("fai.catalogPreview.v2") ?? "").not.toContain(product.id);
+});
+
+it.each(["variant color", "catalog source", "image source"])("invalidates framing when %s changes without changing the image IDs", async kind => {
+  const original = "https://brand.example/original.png", changed = "https://brand.example/corrected.png";
+  const product = { id: `metadata-change-${kind}`, category: "upper_piece", subcategory: "shirt", color: "red", imageUrl: original,
+    selectedVariant: { id: "variant", key: "variant", color: "red" },
+    catalogImage: { variantId: "variant", imageId: "image", sourceUrl: original, url: "/media/old.png", mode: "PROCESSED",
+      photoSet: { version: "CATALOG_PHOTO_SET_V2", status: "READY", color: "red", sourceUrl: original } },
+    ...(kind === "image source" ? { images: [{ id: "image", variantId: "variant", sourceUrl: original, url: original }] } : {}),
+  } as CatalogProduct;
+  const next = { ...product,
+    ...(kind === "variant color" ? { selectedVariant: { ...product.selectedVariant!, color: "black" } } : {}),
+    ...(kind === "catalog source" ? { catalogImage: { ...product.catalogImage!, sourceUrl: changed } } : {}),
+    ...(kind === "image source" ? { images: product.images!.map(image => ({ ...image, sourceUrl: changed })) } : {}),
+  };
+  const request = vi.spyOn(catalogApi, "previewImage").mockResolvedValue({ ...next, catalogImage: { ...next.catalogImage!, url: "/media/corrected.png",
+    photoSet: { ...next.catalogImage!.photoSet!, color: next.selectedVariant!.color!, sourceUrl: kind === "variant color" ? original : changed } } });
+  const result = renderHook(({ current }) => useCatalogPreview(current), { initialProps: { current: product } });
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(request).not.toHaveBeenCalled();
+  result.rerender({ current: next });
+  await waitFor(() => expect(result.result.current.product.catalogImage?.url).toBe("/media/corrected.png"));
+  expect(request).toHaveBeenCalledTimes(1);
+});
+
+it("prioritizes a selected queued garment while sharing the same request and respecting two workers", async () => {
+  const pending = new Map<string, () => void>();
+  const request = vi.spyOn(catalogApi, "previewImage").mockImplementation(id => new Promise(resolve => {
+    pending.set(id, () => resolve({ id, catalogImage: { url: `/media/${id}.png`, mode: "PROCESSED", previewCache } } as CatalogProduct));
+  }));
+  const hooks = [0, 1, 2, 3].map(index => renderHook(() => useCatalogPreview({ id: `selected-priority-${index}`, imageUrl: `https://brand.example/priority-${index}.png` } as CatalogProduct)));
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  let selected!: Promise<CatalogProduct>;
+  act(() => { selected = Promise.resolve(hooks[3].result.current.prepare()); });
+  expect(request).toHaveBeenCalledTimes(2);
+  await act(async () => { pending.get("selected-priority-0")!(); });
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(3));
+  expect(request.mock.calls[2][0]).toBe("selected-priority-3");
+  await act(async () => { pending.get("selected-priority-3")!(); pending.get("selected-priority-1")!(); });
+  expect((await selected).catalogImage?.url).toBe("/media/selected-priority-3.png");
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(4));
+  await act(async () => { pending.get("selected-priority-2")!(); });
+  await waitFor(() => expect(hooks.every(hook => !hook.result.current.pending)).toBe(true));
+  expect(request.mock.calls.filter(([id]) => id === "selected-priority-3")).toHaveLength(1);
+});

@@ -8271,5 +8271,11 @@
   "passport.transferStatus.ACCEPTED": "Aceptada",
   "passport.transferStatus.CANCELLED": "Cancelada",
   "passport.transferStatus.EXPIRED": "Caducada",
-  "passport.transferredHint": "Esta prenda se transfirió. Puedes descargar o borrar tus comprobantes anteriores; el pasaporte actual pertenece a su nuevo dueño."
+  "passport.transferredHint": "Esta prenda se transfirió. Puedes descargar o borrar tus comprobantes anteriores; el pasaporte actual pertenece a su nuevo dueño.",
+  "tryOn.preview.loading": "Cargando la textura de la prenda…",
+  "tryOn.preview.ready": "Foto aplicada a la vista 3D estimada",
+  "tryOn.preview.colorOnly": "Vista solo con color: esta prenda no tiene foto.",
+  "tryOn.preview.failed": "La textura no cargó; la prenda sigue puesta con el color registrado.",
+  "tryOn.preview.retry": "Recargar textura",
+  "tryOn.preview.savedModel": "El archivo 3D es opcional e independiente de esta vista."
 }

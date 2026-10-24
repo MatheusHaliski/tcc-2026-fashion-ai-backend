@@ -26,16 +26,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image  # noqa: E402
 
 from whole_frame import WHOLE_FRAME_VERSION, GarmentSegmenter, render_whole  # noqa: E402
-from photo_set import LocalClothProvider, clean_target_mask, MAX_INPUT_PIXELS, MAX_ANALYSIS_SIDE  # noqa: E402
+from photo_set import clean_target_mask, MAX_INPUT_PIXELS, MAX_ANALYSIS_SIDE  # noqa: E402
+from semantic_photo_provider import AutomaticClothProvider  # noqa: E402
 from photo_preflight import inspect_source  # noqa: E402
 from PIL import ImageOps
 
 SELECT = """
-SELECT i.id, i.version AS image_version, i.product_id, i.image_url, i.source_sha256, i.metrics_json, i.crop_json, i.whole_pipeline_version,
-       p.category, p.subcategory
+SELECT i.id, i.version AS image_version, i.product_id, i.variant_id, i.image_url, i.source_sha256, i.metrics_json, i.crop_json, i.whole_pipeline_version,
+       p.category, p.subcategory, v.id AS matched_variant_id, COALESCE(v.color, p.color) AS color
   FROM catalog_images i JOIN catalog_products p ON p.id = i.product_id
+  LEFT JOIN catalog_variants v ON v.id = i.variant_id AND v.product_id = p.id
  WHERE i.is_canonical = 1 AND i.processing_status = 'APPROVED' AND i.usage_status <> 'REJECTED'
-   AND (%(force)s OR i.whole_pipeline_version IS NULL OR i.whole_pipeline_version <> %(version)s)
+   AND (%(force)s OR i.whole_pipeline_version IS NULL OR i.whole_pipeline_version <> %(version)s
+        OR (i.variant_id IS NOT NULL AND v.id IS NULL)
+        OR NOT (JSON_EXTRACT(i.whole_json, '$.imageId') <=> CAST(COALESCE(JSON_QUOTE(i.id), 'null') AS JSON))
+        OR NOT (JSON_EXTRACT(i.whole_json, '$.variantId') <=> CAST(COALESCE(JSON_QUOTE(i.variant_id), 'null') AS JSON))
+        OR NOT (JSON_EXTRACT(i.whole_json, '$.color') <=> CAST(COALESCE(JSON_QUOTE(COALESCE(v.color, p.color)), 'null') AS JSON))
+        OR NOT (JSON_EXTRACT(i.whole_json, '$.category') <=> CAST(COALESCE(JSON_QUOTE(p.category), 'null') AS JSON))
+        OR NOT (JSON_EXTRACT(i.whole_json, '$.subcategory') <=> CAST(COALESCE(JSON_QUOTE(p.subcategory), 'null') AS JSON)))
    {product}
  ORDER BY i.updated_at DESC
  LIMIT %(limit)s
@@ -43,10 +51,13 @@ SELECT i.id, i.version AS image_version, i.product_id, i.image_url, i.source_sha
 
 UPDATE = """
 UPDATE catalog_images i JOIN catalog_products p ON p.id = i.product_id
+  LEFT JOIN catalog_variants v ON v.id = i.variant_id AND v.product_id = p.id
    SET i.whole_url = %(url)s, i.whole_json = %(json)s, i.whole_status = %(status)s,
        i.whole_pipeline_version = %(version)s, i.source_sha256 = %(source_sha)s, i.version = i.version + 1
  WHERE i.id = %(id)s AND i.version = %(image_version)s AND i.image_url = %(source_url)s
    AND (i.source_sha256 <=> %(sha)s) AND p.category = %(category)s AND p.subcategory <=> %(subcategory)s
+   AND i.variant_id <=> %(variant_id)s AND COALESCE(v.color, p.color) <=> %(color)s
+   AND (i.variant_id IS NULL OR v.id IS NOT NULL)
 """
 
 
@@ -68,6 +79,11 @@ def analysis_of(record) -> dict:
 
 def process(record, downloader, segmenter, *, out_dir: Path | None = None, storage=None, provider=None) -> dict:
     """Uma foto: baixa, recorta, renderiza; com ``storage`` envia e devolve o patch do banco."""
+    variant_id = record.get("variant_id")
+    if variant_id is not None and str(record.get("matched_variant_id")) != str(variant_id):
+        return {"id": record["id"], "productId": record.get("product_id"), "variantId": variant_id,
+                "status": "REVIEW", "reason": "VARIANT_CONTEXT_UNRESOLVED",
+                "metrics": {"sourceGarmentHeightFraction": None}}
     signals = analysis_of(record)
     path = downloader.get(record["image_url"])
     data = path.read_bytes()
@@ -81,7 +97,7 @@ def process(record, downloader, segmenter, *, out_dir: Path | None = None, stora
         image.load()
         original_size=image.size
         image.thumbnail((MAX_ANALYSIS_SIDE,MAX_ANALYSIS_SIDE),Image.Resampling.LANCZOS)
-        source_provider=provider or LocalClothProvider(segmenter=segmenter)
+        source_provider=provider or AutomaticClothProvider(segmenter=segmenter)
         if hasattr(source_provider,'for_source'):source_provider=source_provider.for_source(sha,record['image_url'])
         try:
             masks = source_provider.masks(image, record.get("category"), record.get("subcategory"))
@@ -89,7 +105,7 @@ def process(record, downloader, segmenter, *, out_dir: Path | None = None, stora
         except (ImportError, OSError, ValueError, RuntimeError) as error:
             reason = str(error) if isinstance(error, ValueError) and str(error).isupper() and len(str(error)) < 90 else 'SEGMENTATION_UNAVAILABLE'
             return {"id":record["id"],"productId":record.get("product_id"),
-                    "status":"RETRY" if reason == 'SEGMENTATION_UNAVAILABLE' else 'REVIEW',"reason":reason,
+                    "status":"RETRY" if reason in {'SEGMENTATION_UNAVAILABLE', 'PARSER_LOCAL_WEIGHTS_MISSING'} else 'REVIEW',"reason":reason,
                     "sourceSha256":sha,"metrics":{"sourceGarmentHeightFraction":None}}
         if signals["truncated"] or preflight.status != "PASS":
             return {"id":record["id"],"productId":record.get("product_id"),
@@ -103,6 +119,7 @@ def process(record, downloader, segmenter, *, out_dir: Path | None = None, stora
                     "sourceSha256":sha,"metrics":{"preflight":preflight.metrics}}
         result = render_whole(image, mask, preflight=preflight)
     info = {**result.info, "model": signals["model"], "sourceSha256": sha, "sourceUrl": record["image_url"],
+            "imageId": record["id"], "variantId": variant_id, "color": record.get("color"),
             "category":record.get("category"),"subcategory":record.get("subcategory"),"cleanup":cleanup}
     row = {"id": record["id"], "productId": record.get("product_id"), "status": "RENDERED", "info": info}
     if out_dir is not None:
@@ -114,6 +131,7 @@ def process(record, downloader, segmenter, *, out_dir: Path | None = None, stora
         row.update(status="STORED", url=url,
                    patch={"id": record["id"], "sha": record.get("source_sha256"), "source_sha": sha,
                           "image_version": record["image_version"], "source_url": record["image_url"],
+                          "variant_id": variant_id, "color": record.get("color"),
                           "category": record.get("category"), "subcategory": record.get("subcategory"), "url": url, "status": "DONE",
                           "version": WHOLE_FRAME_VERSION, "json": json.dumps(info, ensure_ascii=False)})
     return row
@@ -150,6 +168,7 @@ def main(argv=None) -> int:
     parser.add_argument("--out-dir", type=Path, help="salva as prévias JPEG aqui (ensaio)")
     parser.add_argument("--audit", type=Path, default=Path("whole-frames-audit.jsonl"))
     parser.add_argument("--reviewed-masks",type=Path)
+    parser.add_argument("--parser-weights",type=Path)
     args = parser.parse_args(argv)
 
     import tempfile
@@ -162,7 +181,7 @@ def main(argv=None) -> int:
         from category_frame_storage import FrameStorage
         storage = WholeStorage(FrameStorage())
     segmenter = GarmentSegmenter()
-    provider=None
+    provider=AutomaticClothProvider(weights=args.parser_weights)
     if args.reviewed_masks:
         from reviewed_photo_masks import ReviewedMaskProvider
         provider=ReviewedMaskProvider(args.reviewed_masks)
@@ -194,8 +213,11 @@ def main(argv=None) -> int:
                     with conn.cursor() as cur:
                         cur.execute(UPDATE, {"id": record["id"], "sha": record.get("source_sha256"), "source_sha": record.get("source_sha256"),
                                              "image_version": record["image_version"], "source_url": record["image_url"],
+                                             "variant_id": record.get("variant_id"), "color": record.get("color"),
                                              "category": record.get("category"), "subcategory": record.get("subcategory"), "url": None,
-                                             "json": json.dumps({"reason": str(error)}), "status": "FAILED",
+                                             "json": json.dumps({"reason": str(error), "imageId": record["id"],
+                                                                 "variantId": record.get("variant_id"), "color": record.get("color"),
+                                                                 "category": record.get("category"), "subcategory": record.get("subcategory")}), "status": "FAILED",
                                              "version": WHOLE_FRAME_VERSION})
                     conn.commit()
             audit.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")

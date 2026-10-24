@@ -135,7 +135,7 @@ class PassportPersistenceTest {
         Callable<GarmentPassportService.TransferView> accept=()->{
             start.await(); try(EntityManager em=factory.createEntityManager()) {
                 em.getTransaction().begin(); JpaRepositoryFactory repos=new JpaRepositoryFactory(em);
-                GarmentPassportService service=new GarmentPassportService(repos.getRepository(GarmentPassportRepository.class),repos.getRepository(PassportHoldingRepository.class),repos.getRepository(PassportEventRepository.class),repos.getRepository(PassportShareRepository.class),repos.getRepository(PassportEvidenceRepository.class),repos.getRepository(PassportTransferRepository.class),pieces,users,guard,true,Clock.fixed(NOW,ZoneOffset.UTC));
+                GarmentPassportService service=new GarmentPassportService(repos.getRepository(GarmentPassportRepository.class),repos.getRepository(PassportHoldingRepository.class),repos.getRepository(PassportEventRepository.class),repos.getRepository(PassportShareRepository.class),repos.getRepository(PassportEvidenceRepository.class),repos.getRepository(PassportTransferRepository.class),pieces,users,guard,mock(org.springframework.context.ApplicationEventPublisher.class),true,Clock.fixed(NOW,ZoneOffset.UTC));
                 var result=service.accept(CurrentUser.of(recipient,"127.0.0.1","test"),transferId,new GarmentPassportService.AcceptCommand(0,token),"accept_0001");
                 em.getTransaction().commit(); return result;
             }

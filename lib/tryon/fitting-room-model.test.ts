@@ -5,6 +5,19 @@ import type { PieceView } from "@/lib/api/types";
 import { specFor } from "@/lib/avatar3d/human/garment-fit";
 
 describe("product data survives the fitting adapters",()=>{
+  it("keeps the selected variant, exact source and photo revision in the 3D request", () => {
+    const product = { id: "shirt", brand: null, productName: "Hokkaido Short Sleeve Linen Blend Shirt", category: "upper_piece", subcategory: "shirt",
+      catalogImage: { imageId: "red-front", variantId: "red", mode: "PROCESSED", url: "/fabric-red.jpg", sourceUrl: "/original-red.jpg",
+        photoSet: { version: "CATALOG_PHOTO_SET_V2", status: "READY", sourceSha256: "first-sha", wholeUrl: "/isolated-red.png" } },
+      images: [{ id: "red-front", variantId: "red", canonical: true }, { id: "green-front", variantId: "green" }] } as unknown as CatalogProduct;
+    const red = fromCatalog(product, { id: "red", key: "red" }, undefined)!;
+    expect(toLook3d(red)).toMatchObject({ catalogProductId: "shirt", catalogVariantId: "red", catalogImageId: "red-front", textureRevision: red.textureRevision });
+    expect(toLook3d(fromCatalog(product, { id: "green", key: "green" }, undefined)!)).toMatchObject({ catalogVariantId: "green", catalogImageId: "green-front" });
+    expect(toLook3d(fromCatalog(product, { id: "missing", key: "missing" }, undefined)!)).toMatchObject({ catalogVariantId: "missing", catalogImageId: null });
+    const changed = structuredClone(product); changed.catalogImage!.photoSet!.sourceSha256 = "new-sha";
+    expect(fromCatalog(changed, { id: "red", key: "red" }, undefined)!.textureRevision).not.toBe(red.textureRevision);
+    expect(specFor(toLook3d(red))!.sleeve).toBe(.33);
+  });
   it("never paints the fabric card or an unrelated processed photograph on a garment", () => {
     const product = { id: "shorts", productName: "Bermuda", category: "lower_piece", subcategory: "shorts", imageUrl: "/media/fabric.jpg",
       catalogImage: { url: "/media/fabric.jpg", mode: "PROCESSED", imageId: "shorts-photo", sourceUrl: "https://brand.example/shorts.jpg" },

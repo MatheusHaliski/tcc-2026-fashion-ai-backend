@@ -79,6 +79,16 @@ export function fromCatalog(
 ): FittingItem | null {
   const color = variant?.color ?? p.color ?? null;
   const slot = slotOf(p.category);
+  const image = variant?.id ? p.images?.find(image => image.variantId === variant.id && image.id === p.catalogImage?.imageId)
+    ?? p.images?.find(image => image.variantId === variant.id && image.canonical)
+    ?? p.images?.find(image => image.variantId === variant.id)
+    : p.images?.find(image => image.id === p.catalogImage?.imageId);
+  // Never bind a different variant's canonical photo to the requested variant.
+  const imageId = image?.id ?? (!variant?.id || p.catalogImage?.variantId === variant.id ? p.catalogImage?.imageId : null);
+  const revision = JSON.stringify([imageId, image?.url, image?.processedUrl, image?.processingStatus,
+    p.catalogImage?.previewCache, p.catalogImage?.photoSet, p.catalogImage?.whole, p.catalogImage?.pipelineVersion]);
+  let hash = 2166136261;
+  for (let index = 0; index < revision.length; index++) hash = Math.imul(hash ^ revision.charCodeAt(index), 16777619);
 
   if (!slot) return null;
 
@@ -108,6 +118,8 @@ export function fromCatalog(
       (color ? label(color) : null),
     productId: p.id,
     variantId: variant?.id ?? null,
+    textureImageId: imageId ?? null,
+    textureRevision: `${(hash >>> 0).toString(16)}-${revision.length}`,
     processedUrl: processedImageOf(p),
     officialUrl:
       p.source?.productUrl && p.source.productUrl !== "null"
@@ -185,6 +197,9 @@ export const toSceneProduct = (p: CatalogProduct): SceneProduct => ({
 
 export const toLook3d = (i: FittingItem): Look3dPiece => ({
   catalogProductId: i.source === "catalog" ? i.productId ?? null : null,
+  catalogVariantId: i.source === "catalog" ? i.variantId ?? null : null,
+  catalogImageId: i.source === "catalog" ? i.textureImageId ?? null : null,
+  textureRevision: i.textureRevision ?? null,
   id: i.key,
   name: i.name,
   slot: WEAR3D[i.wear] ?? "accessory",

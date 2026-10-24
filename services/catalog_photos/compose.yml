@@ -7,10 +7,14 @@ services:
     restart: unless-stopped
     env_file: ../../.env
     environment:
-      U2NET_HOME: /home/worker/.u2net
+      CATALOG_PHOTO_MODEL_CACHE: /home/worker/.cache/fashionai/catalog
+      CATALOG_PHOTO_DEVICE: cpu
       OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+    cpus: 2
+    mem_limit: 6g
     volumes:
-      - models:/home/worker/.u2net
+      - models:/home/worker/.cache/fashionai/catalog
       - audit:/app/work
 volumes:
   models:
