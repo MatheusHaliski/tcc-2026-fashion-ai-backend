@@ -44,12 +44,13 @@ Storage**); o Hobby tem 10 GB e acima disso bloqueia deploys novos. O que manté
 * **Bundle da função enxuto** — `outputFileTracingExcludes` no `next.config.ts` tira de todas as funções o que o
   rastreamento arrasta sem necessidade (`media/`, binários do `sharp` de outras plataformas); confira em
   **Deployments → (um deployment) → Resources → Functions** o tamanho de cada função.
-* **Retenção curta** — em **Settings → Security → Deployment Retention Policy** (só pelo painel; não há API): Preview
-  1 dia, Canceled e Errored 1 dia, Production 7 dias. Os 3 últimos deployments de produção READY, a produção atual, os
-  com alias e o último preview de branch ativa nunca são apagados.
+* **Retenção curta** — em **Settings → Security → Deployment Retention Policy** (só pelo painel; não há API): está em
+  1 dia para todos os estados desde 24/10/2026. Os 3 últimos deployments de produção READY, a produção atual, os com
+  alias e o último preview de branch ativa nunca são apagados; o job de retenção roda em até 48 h.
 * **Limpeza manual** — `VERCEL_TOKEN=… python3 scripts/ops/vercel_deployments_cleanup.py --team … --project …`
-  (ensaio; `--apply` apaga). Deployment apagado fica 30 dias em **Settings → Security → Recently Deleted** e segue
-  contando até a exclusão permanente, que também só existe no painel.
+  (ensaio; `--apply` apaga). Deployment apagado aparece em **Settings → Security → Recently Deleted** por até 30 dias
+  (não há botão de exclusão permanente); com o time acima do limite a Vercel remove de vez sem esperar esse prazo, e o
+  painel de Usage demora a refletir.
 
 ## 2. API em contêiner
 
