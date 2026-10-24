@@ -67,6 +67,28 @@ class GhostMaskTest(unittest.TestCase):
         self.assertFalse(sd.ghost_mask(np.asarray(open_neck) >= 128, None, feather=0).any())
 
 
+class ForegroundBodyTest(unittest.TestCase):
+    def test_corpo_e_o_primeiro_plano_menos_a_peca_com_folga(self):
+        target = np.zeros((100, 100), bool); target[30:80, 30:70] = True            # peça
+        fg = target.copy(); fg[10:30, 40:60] = True; fg[30:80, 20:30] = True        # pescoço acima e braço ao lado
+        body = sd.body_from_foreground(target, fg, margin=2)
+        self.assertTrue(body[15, 50]); self.assertTrue(body[50, 22])
+        self.assertFalse(body[50, 50]); self.assertFalse(body[29, 50]); self.assertFalse(body[50, 29])   # peça e folga
+
+    def test_masks_for_deduz_o_corpo_quando_o_provedor_nao_traz(self):
+        im = Image.new("RGB", (100, 100))
+        target = Image.new("L", im.size, 0); ImageDraw.Draw(target).rectangle((30, 30, 69, 79), fill=255)
+        fg = Image.new("L", im.size, 0); ImageDraw.Draw(fg).rectangle((20, 10, 69, 79), fill=255)
+        provider = type("P", (), {"masks": lambda self, image, c, s=None: PhotoMasks(target, None, verified=True, target_category=c, target_subcategory=s, source="u2net")})()
+        segmenter = type("S", (), {"mask": lambda self, image, **k: fg})()
+        masks = sd.masks_for(im, "upper_piece", "t_shirt", provider, segmenter)
+        self.assertIsNotNone(masks.forbidden); self.assertTrue(masks.human_present); self.assertIn("isnet-foreground", masks.source)
+        self.assertEqual(np.asarray(masks.forbidden)[15, 50], 255); self.assertEqual(np.asarray(masks.forbidden)[50, 50], 0)
+        self.assertIsNone(sd.masks_for(im, "upper_piece", "t_shirt", provider, segmenter, foreground_body=False).forbidden)
+        shoes = sd.masks_for(im, "shoes_piece", "sneaker", provider, segmenter)
+        self.assertIsNone(shoes.forbidden); self.assertEqual(shoes.source, "isnet-general-use")
+
+
 class MeasureAndComposeTest(unittest.TestCase):
     def test_mede_limpa_e_compoe_com_o_tecido_original_e_a_ia_so_no_fantasma(self):
         im, target, forbidden = shirt_photo()
@@ -114,6 +136,23 @@ class MeasureAndComposeTest(unittest.TestCase):
         self.assertEqual(init.width % 8, 0); self.assertEqual(init.height % 8, 0); self.assertLessEqual(max(init.size), 512)
         self.assertLess(box[0], 60); self.assertGreater(box[2], 540)
         self.assertGreater(np.asarray(mask).max(), 0)
+
+
+class LenientCleanupTest(unittest.TestCase):
+    def test_contorno_fino_nao_classificado_cai_na_limpeza_tolerante(self):
+        im = Image.new("RGB", (400, 600), "white")
+        target = Image.new("L", im.size, 0); d = ImageDraw.Draw(target)
+        d.rectangle((120, 100, 180, 500), fill=255); d.rectangle((220, 100, 280, 500), fill=255)   # duas pernas
+        d.line((180, 300, 395, 300), fill=255, width=1)                                             # fio NÃO classificado (4-conexo, preso à perna)
+        empty = Image.new("L", im.size, 0)
+        with self.assertRaises(sd.PhotoSkip) as strict:
+            sd.measure(im, masks(target, empty, "lower_piece", "jeans"), "lower_piece", "jeans", im.size, lenient=False)
+        self.assertEqual(str(strict.exception), "UNCLASSIFIED_THIN_CONTOUR")
+        t, _, metrics = sd.measure(im, masks(target, empty, "lower_piece", "jeans"), "lower_piece", "jeans", im.size)
+        self.assertEqual(metrics["cleanup"]["cleanupMode"], "LENIENT_OPENING"); self.assertEqual(metrics["cleanup"]["strictReason"], "UNCLASSIFIED_THIN_CONTOUR")
+        self.assertEqual(metrics["cleanup"]["retainedParts"], 2); self.assertFalse(t[300, 380]); self.assertTrue(t[300, 150]); self.assertTrue(t[300, 250])
+        clean = Image.new("L", im.size, 0); ImageDraw.Draw(clean).rectangle((120, 100, 280, 500), fill=255)
+        self.assertEqual(sd.measure(im, masks(clean, empty, "upper_piece", "t_shirt"), "upper_piece", "t_shirt", im.size)[2]["cleanup"]["cleanupMode"], "STRICT")
 
 
 class DownloadTest(unittest.TestCase):

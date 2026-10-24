@@ -245,7 +245,8 @@ export DATABASE_URL='mysql+pymysql://usuario:senha@host:3306/fashionai'      # o
 ```
 
 Por foto: download (link direto ou `og:image` de página HTML) → rembg local pela classe de roupa (calçado/acessório: recorte
-geral) → limpeza da máscara (pessoa, outras peças, riscos fora do perímetro) e medição — **altura da peça < 25% da foto =
+geral; sem o parser humano configurado, o corpo é deduzido como primeiro plano geral menos a peça — `--no-foreground-body`
+desliga) → limpeza da máscara (pessoa, outras peças, riscos fora do perímetro) e medição — **altura da peça < 25% da foto =
 INELIGIBLE**, nada é gerado nem apagado (`ineligible.json` alimenta `quarantine_unsafe_products.py`) → inpainting SÓ na região
 fantasma (corpo visível por dentro da peça: gola entre os ombros, punhos, barra, entre as pernas) com
 `stable-diffusion-v1-5/stable-diffusion-inpainting` (o `runwayml/…` saiu do ar; `--model` aceita o SDXL inpainting e
