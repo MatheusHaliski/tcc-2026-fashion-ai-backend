@@ -73,6 +73,25 @@ python3 -m scripts.catalog.quarantine_unsafe_products --report work/catalog-quar
 
 Um relatório de `--snapshot` sempre tem origem `OFFLINE_SNAPSHOT:<sha256>`; `--apply`/`--restore` recusam esse relatório antes de abrir conexão. Os comandos de banco acima são instruções operacionais; não foram executados nesta entrega.
 
+## Etapa opcional: packshot local com Stable Diffusion (`process_local_sd.py`)
+
+Situação em 2026-10-24: o lote de packshot pela API externa (FASHN) falhou por falta de créditos, e o campo
+`catalog_images.processed_image_url` **não é lido pela interface** por decisão do responsável (a exibição por esse campo
+foi revertida). O plano do Total frame passa a ter duas trilhas:
+
+| Trilha | Onde roda | Grava em | Estado |
+| --- | --- | --- | --- |
+| Peça inteira verificada (`process_whole_frames.py` / `process_photo_sets.py`) | lote local, sem IA generativa | `whole_url`/`whole_json`, `assets_json.photoSet` | é o que a interface mostra hoje |
+| Packshot local *ghost mannequin* (`process_local_sd.py`) | lote local com Stable Diffusion Inpainting (CUDA/MPS/CPU) | `processed_image_url` + `./output_images/` | gera e grava; a interface só passará a usar quando o responsável liberar |
+
+Regras comuns às duas trilhas: isolar a peça (sem pessoa, outras peças, linhas/silhuetas fora do perímetro), centralizar
+com a maior aresta em 50% do quadro 3:4, remover o fundo, e nunca gerar packshot de peça cuja altura na foto seja menor
+que 25% — essa foto vai para `ineligible.json`/`INELIGIBLE` e a exclusão do produto continua sendo o passo auditado de
+`quarantine_unsafe_products.py` (nada é apagado pelos lotes). Diferença da trilha SD: a IA preenche SOMENTE a região
+fantasma (corpo visível por dentro da peça); o tecido fotografado é restaurado pixel a pixel na composição, então estampa,
+logo e costura nunca são redesenhados. Ordem recomendada: `--measure-only` (quarentena) → `--dry-run` (revisão visual em
+`output_images/`) → execução com gravação.
+
 ## Leitura do catálogo e compatibilidade
 
 Produtos legados sem `catalogPhotoEligibility` continuam visíveis. `REVIEW`, `RETRY` e medições ausentes não esvaziam o catálogo. O estado `INELIGIBLE` do produto auditado e a ingestão `REJECTED` são respeitados pelas consultas visíveis, detalhe e inclusão no guarda-roupa.
