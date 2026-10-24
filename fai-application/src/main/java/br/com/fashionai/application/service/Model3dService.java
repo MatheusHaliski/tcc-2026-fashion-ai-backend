@@ -133,7 +133,12 @@ public class Model3dService {
             out.put("progress", st == Model3dStatus.COMPLETED ? 100 : st == Model3dStatus.QUEUED ? 5 : result.getOrDefault("progress", 15));
             // só o provedor externo informa progresso de verdade; fila e relevo local têm números de referência
             out.put("progressReal", st == Model3dStatus.PROCESSING && Boolean.TRUE.equals(result.get("progressReal")));
-            out.put("stages", Json.list(job.getStagesJson()));
+            out.put("stages", withElapsed(Json.list(job.getStagesJson()), job.getStartedAt()));
+            // onde os minutos vão: total do job concluído e, enquanto roda, o tempo já decorrido
+            out.put("totalTimeMs", job.getTotalTimeMs());
+            if (st == Model3dStatus.PROCESSING && job.getStartedAt() != null) {
+                out.put("elapsedMs", Duration.between(job.getStartedAt(), Instant.now()).toMillis());
+            }
             out.put("queuedAt", job.getQueuedAt());
             out.put("startedAt", job.getStartedAt());
             out.put("finishedAt", job.getFinishedAt());
@@ -394,6 +399,32 @@ public class Model3dService {
         job.setErrorMessage(message);
         job.setFinishedAt(Instant.now());
         pieces.findById(job.getInputResourceId()).ifPresent(w -> w.setModel3dStatus(Model3dStatus.FAILED));
+    }
+
+    /** Tempo de cada etapa em ms (desde a anterior; a primeira, desde o início do job): mostra onde o 3D demora. */
+    static List<Map<String, Object>> withElapsed(List<Map<String, Object>> stages, Instant startedAt) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        Instant previous = startedAt;
+        for (Map<String, Object> stage : stages) {
+            Map<String, Object> m = new LinkedHashMap<>(stage);
+            Instant at = instantOf(m.get("at"));
+            if (at != null && previous != null) {
+                m.put("elapsedMs", Math.max(0, Duration.between(previous, at).toMillis()));
+            }
+            if (at != null) {
+                previous = at;
+            }
+            out.add(m);
+        }
+        return out;
+    }
+
+    private static Instant instantOf(Object value) {
+        try {
+            return value == null ? null : Instant.parse(String.valueOf(value));
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
     }
 
     private static Map<String, Object> stage(String name, String provider, String note) {

@@ -24,6 +24,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -126,6 +127,13 @@ class Model3dServiceTest {
         List<String> stages = Json.list(e.saved.get(0).getStagesJson()).stream().map(m -> String.valueOf(((Map<?, ?>) m).get("name"))).toList();
         assertThat(stages).contains("FOTO", "SILHUETA", "MALHA", "TEXTURA", "ARMAZENAMENTO");
         assertThat(e.quotaUsers).containsExactly(e.piece.getUser().getId());   // pedido normal consome cota
+        // onde o tempo foi: cada etapa com o seu tempo e o total do job (o painel mostra os dois)
+        assertThat(done.get("totalTimeMs")).isInstanceOf(Number.class);
+        List<Map<String, Object>> timed = (List<Map<String, Object>>) done.get("stages");
+        assertThat(timed).isNotEmpty().allSatisfy(stage -> assertThat(stage.get("elapsedMs")).isInstanceOf(Number.class));
+        assertThat(Model3dService.withElapsed(List.of(Map.of("name", "FOTO", "at", "2026-10-24T10:00:02Z"), Map.of("name", "MALHA", "at", "2026-10-24T10:03:05Z"),
+                Map.of("name", "SEM_HORA")), Instant.parse("2026-10-24T10:00:00Z")))
+                .extracting(m -> m.get("elapsedMs")).containsExactly(2000L, 183000L, null);
     }
 
     @Test

@@ -1,0 +1,13 @@
+# Peça inteira local com Stable Diffusion (process_local_sd.py): tudo roda na máquina do lote, sem API paga.
+# Instale primeiro o torch certo para a sua máquina (CUDA / Apple Silicon / CPU) — ver scripts/catalog/README.md.
+-r requirements-whole.txt
+torch>=2.3,<3
+diffusers>=0.31,<1
+transformers>=4.44,<5
+accelerate>=0.33,<2
+safetensors>=0.4,<1
+SQLAlchemy>=2.0,<3
+PyMySQL>=1.1,<2
+tqdm>=4.66,<5
+requests>=2.32,<3
+beautifulsoup4>=4.12,<5
