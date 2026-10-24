@@ -8,8 +8,10 @@ import { currentIntl } from "@/lib/i18n/state";
 /** Resposta de GET/POST /api/pieces/{id}/model3d (Model3dService.status). */
 export interface Model3dStatus {
   status?: "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED" | null; label?: string; modelUrl?: string | null; featureEnabled?: boolean;
-  providers?: string[]; jobId?: string; provider?: string | null; progress?: number; stages?: { name: string; provider: string; note?: string; at?: string }[];
+  providers?: string[]; jobId?: string; provider?: string | null; progress?: number; stages?: { name: string; provider: string; note?: string; at?: string; elapsedMs?: number | null }[];
   queuedAt?: string | null; startedAt?: string | null; finishedAt?: string | null; fallbackUsed?: boolean; error?: string | null; canRetryFree?: boolean;
+  /** total do job concluído e, enquanto roda, o tempo já decorrido (ms) — para enxergar onde os minutos vão */
+  totalTimeMs?: number | null; elapsedMs?: number | null;
   freeRetry?: boolean; model?: { kind?: string; vertices?: number; triangles?: number; widthM?: number; heightM?: number; depthM?: number };
   /** o provedor informou o progresso (fila e relevo local não informam: a tela não mostra porcentagem) */
   progressReal?: boolean;
@@ -20,6 +22,16 @@ const STAGE_LABEL: Record<string, string> = {
   get RECONSTRUCAO() { return tr("model3dPanel.reconstrucao_3d"); }, get ARMAZENAMENTO() { return tr("model3dPanel.arquivo_glb_salvo"); }, get TEMPO_LIMITE() { return tr("model3dPanel.tempo_limite"); },
 };
 const running = (s?: string | null) => s === "QUEUED" || s === "PROCESSING";
+
+/** "12 s", "3 min 05 s", "1 h 02 min": tempo de uma etapa ou do job inteiro; null sem medida. */
+export function fmtDuration(ms?: number | null): string | null {
+  if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) return null;
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60), r = s % 60;
+  if (m < 60) return `${m} min ${String(r).padStart(2, "0")} s`;
+  return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min`;
+}
 
 /**
  * RF16 — estado do modelo 3D da peça, vindo do servidor (sobrevive a recarregar a página) e consultado a cada 2,5 s
@@ -125,7 +137,8 @@ export function Model3dTechnical({ model }: { model: ReturnType<typeof useModel3
       )}
       {st.status === "FAILED" && <p>{t("model3dPanel.por_que_falhou")} {st.error ?? t("model3dPanel.o_provedor_nao_devolveu_o")} · {st.canRetryFree ? t("model3dPanel.o_primeiro_reprocessamento_e_gratis") : t("model3dPanel.novas_tentativas_usam_a_cota")}</p>}
       <p>{t("model3dPanel.motores_leva_de_segundos_relevo", { engines })}</p>
-      {(st.stages?.length ?? 0) > 0 && <ol className="fai-list is-plain">{st.stages!.map((x, i) => <li key={i}>✓ {STAGE_LABEL[x.name] ?? x.name} <span className="text-faint">· {x.provider}{x.note ? ` · ${x.note}` : ""}</span></li>)}</ol>}
+      {fmtDuration(st.totalTimeMs ?? st.elapsedMs) && <p data-testid="m3d-total">{t("model3dPanel.tempo_total", { tempo: fmtDuration(st.totalTimeMs ?? st.elapsedMs)! })}</p>}
+      {(st.stages?.length ?? 0) > 0 && <ol className="fai-list is-plain">{st.stages!.map((x, i) => <li key={i}>✓ {STAGE_LABEL[x.name] ?? x.name} <span className="text-faint">· {x.provider}{x.note ? ` · ${x.note}` : ""}{fmtDuration(x.elapsedMs) ? ` · ${fmtDuration(x.elapsedMs)}` : ""}</span></li>)}</ol>}
     </div>
   );
 }
