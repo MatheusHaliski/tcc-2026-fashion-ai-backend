@@ -132,7 +132,8 @@ Segundo arquivo do acervo, `data/catalog/acervo/acervo-oficial-2026-10-24.jsonl.
 não tinham produto (todas com foto), só com URLs novas — o acervo de 05/10 não muda. Coletor com busca melhorada (páginas
 de categoria, `/sitemap_index.xml`, marca da licenciada, CDN própria por marca) e lista do que ficou fora (403, páginas só
 por JavaScript). Tabela por marca, amostra do Total frame e comandos de importação em
-[`COLETA_2026-10-24.md`](COLETA_2026-10-24.md).
+[`COLETA_2026-10-24.md`](COLETA_2026-10-24.md). As marcas que ficaram parciais (Renner, Hope, Crocs) foram retomadas
+em `acervo-oficial-2026-10-24-complemento.jsonl.gz`: **759 peças novas**, também só acréscimos.
 
 ### 4.2 Peças agrupadas pela URL antiga (Gap, 11/10/2026)
 
