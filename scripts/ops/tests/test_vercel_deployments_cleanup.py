@@ -65,6 +65,33 @@ class PlanTest(unittest.TestCase):
             deleted = sorted(p.rsplit("/", 1)[1] for m, p in calls if m == "DELETE")
             self.assertEqual(deleted, ["dpl_b", "dpl_c"])
 
+    def test_sem_team_nao_manda_teamId_e_alias_de_branch_nao_protege(self):
+        calls = []
+
+        def fetch(method, path):
+            calls.append((method, path))
+            if path.startswith("/v6/deployments"):
+                return 200, {"deployments": [
+                    {"uid": "dpl_a", "url": "a", "state": "READY", "target": "production", "created": NOW - DAY // 10, "meta": {"githubCommitRef": "main"}},
+                    {"uid": "dpl_b", "url": "b", "state": "READY", "target": None, "created": NOW - 5 * DAY, "meta": {"githubCommitRef": "feat/y"}},
+                    {"uid": "dpl_c", "url": "c", "state": "READY", "target": None, "created": NOW - 5 * DAY, "meta": {"githubCommitRef": "feat/z"}}],
+                    "pagination": {"next": None}}
+            if path.startswith("/v2/deployments/dpl_b/aliases"):
+                return 200, {"aliases": [{"alias": "app-git-feat-y-123456-time.vercel.app"}]}
+            if path.startswith("/v2/deployments/dpl_c/aliases"):
+                return 200, {"aliases": [{"alias": "preview.fai-network.com"}]}
+            if "/aliases" in path:
+                return 200, {"aliases": []}
+            if method == "DELETE":
+                return 200, {"state": "DELETED"}
+            return 404, {}
+        with mock.patch.dict(os.environ, {"VERCEL_TOKEN": "t"}), mock.patch.object(vc, "make_fetch", return_value=fetch), \
+                mock.patch.object(vc.time, "time", return_value=NOW / 1000), mock.patch.object(vc.time, "sleep"):
+            self.assertEqual(vc.main(["--project", "prj_x", "--apply", "--yes"]), 0)
+        self.assertFalse([p for _, p in calls if "teamId" in p])
+        self.assertIn("teamId=team_x", vc.urllib.parse.urlencode(vc.team_query("team_x")))
+        self.assertEqual([p.rsplit("/", 1)[1].split("?")[0] for m, p in calls if m == "DELETE"], ["dpl_b"])   # alias de branch não protege; domínio próprio protege
+
     def test_token_so_no_cabecalho(self):
         seen = {}
 
