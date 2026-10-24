@@ -394,6 +394,17 @@ class StructuredDataTest(unittest.TestCase):
         item = to_catalog_item(structured_product(page), "https://www.fila.com.br/x/p", "Fila", "fila.com.br", "OFFICIAL_STORE", N, [])
         self.assertEqual(item["images"][0]["url"], "https://fila.vtexassets.com/arquivos/ids/1/a.jpg")   # og:image, http → https
 
+    def test_cdn_propria_da_marca_em_outro_dominio_so_por_configuracao(self):
+        # Superdry serve as fotos em images.laguna-live.sd.co.uk; Banana Republic em content.gapinc.com
+        self.assertFalse(brand_cdn_ok("https://images.laguna-live.sd.co.uk/zoom/a.jpg", "superdry.com"))
+        self.assertTrue(brand_cdn_ok("https://images.laguna-live.sd.co.uk/zoom/a.jpg", "superdry.com", ("sd.co.uk",)))
+        self.assertTrue(brand_cdn_ok("https://content.gapinc.com/b/0059/cn59585151.png", "bananarepublic.gap.com", ("gapinc.com",)))
+        self.assertFalse(brand_cdn_ok("https://cdn.pinimg.com/x.jpg", "superdry.com", ("pinimg.com",)))     # bloqueado nunca passa
+        found = structured_product(ld({**TEE, "brand": "Superdry", "name": "Camiseta Vintage", "image": ["https://images.laguna-live.sd.co.uk/zoom/a.jpg"]}))
+        self.assertNotIn("images", to_catalog_item(found, "https://www.superdry.com/x-1.html", "Superdry", "superdry.com", "OFFICIAL_BRAND", N, []))
+        item = to_catalog_item(found, "https://www.superdry.com/x-1.html", "Superdry", "superdry.com", "OFFICIAL_BRAND", N, [], image_hosts=("sd.co.uk",))
+        self.assertEqual(item["images"], [{"url": "https://images.laguna-live.sd.co.uk/zoom/a.jpg", "type": "PACKSHOT"}])
+
     def test_hosts_de_imagem_da_loja(self):
         self.assertTrue(brand_cdn_ok("https://lojalevis.vtexassets.com/arquivos/ids/1/a.jpg", "levi.com.br"))
         self.assertTrue(brand_cdn_ok("https://cdn.shopify.com/s/files/1/a.jpg", "dickies.com"))

@@ -198,7 +198,8 @@
         "source_type": "OFFICIAL_BRAND",
         "country": "US"
       }
-    ]
+    ],
+    "collector": {"image_hosts": ["gapinc.com"]}
   },
   {
     "name": "Ralph Lauren",
@@ -622,7 +623,8 @@
         "source_type": "OFFICIAL_BRAND",
         "country": "GB"
       }
-    ]
+    ],
+    "collector": {"image_hosts": ["sd.co.uk"]}
   },
   {
     "name": "Benetton",

@@ -507,14 +507,17 @@ STORE_IMAGE_HOSTS = ("vtexassets.com", "vteximg.com.br", "cdn.shopify.com", "dam
                      "amplience.net", "mitiendanube.com")
 
 
-def brand_cdn_ok(image_url: str, official: str) -> bool:
+def brand_cdn_ok(image_url: str, official: str, extra_hosts: Iterable[str] = ()) -> bool:
     """Imagem que a página oficial declara: do próprio domínio oficial, de um host com o rótulo da marca no nome
-    (static.nike.com, valentino-cdn.thron.com) ou do servidor de imagens da plataforma da loja (STORE_IMAGE_HOSTS).
-    Domínios bloqueados (Pinterest, marketplaces…) nunca passam."""
+    (static.nike.com, valentino-cdn.thron.com), do servidor de imagens da plataforma da loja (STORE_IMAGE_HOSTS) ou da
+    CDN própria da marca cadastrada em brands.json (`collector.image_hosts`: sd.co.uk da Superdry, gapinc.com do grupo
+    Gap). Domínios bloqueados (Pinterest, marketplaces…) nunca passam."""
     d = (domain(image_url) or "").lower()
     if not d or blocked(image_url):
         return False
     if same_site(d, official):
+        return True
+    if any(d == h.lower() or d.endswith("." + h.lower()) for h in extra_hosts):
         return True
     parts = official.lower().split(".")
     label = parts[-3] if len(parts) >= 3 and len(parts[-2]) <= 3 and len(parts[-1]) == 2 else parts[-2] if len(parts) >= 2 else official
@@ -537,9 +540,10 @@ def same_brand(n: Normalizer, page_brand: str, brand: str) -> bool:
 
 
 def to_catalog_item(found: dict, page_url: str, brand: str, official: str, source_type: str, n: Normalizer,
-                    warnings: list, page_brands: Iterable[str] = ()) -> Optional[dict]:
+                    warnings: list, page_brands: Iterable[str] = (), image_hosts: Iterable[str] = ()) -> Optional[dict]:
     """`page_brands`: nomes que a loja oficial escreve no lugar da marca e que valem como ela — a licenciada que opera a
-    loja (Scotch & Soda publica "United Legwear"). Vem de brands.json (`collector.accept_page_brands`), por marca."""
+    loja (Scotch & Soda publica "United Legwear"). `image_hosts`: CDN própria da marca em outro domínio registrado.
+    Os dois vêm de brands.json (`collector.accept_page_brands` / `collector.image_hosts`), por marca."""
     node = found["node"]
     name, title_color = clean_title(_text(node.get("name")), brand, n)
     if not name:
@@ -574,7 +578,7 @@ def to_catalog_item(found: dict, page_url: str, brand: str, official: str, sourc
     url = urljoin(page_url, url)
     if not same_site(domain(url), official):
         url = page_url
-    imgs = product_images(found, official)
+    imgs = product_images(found, official, image_hosts)
     color_raw = _text(node.get("color")) or title_color
     item = {
         "brand": brand, "subcategory": sub, "product_name": name[:240],
@@ -602,7 +606,7 @@ def to_catalog_item(found: dict, page_url: str, brand: str, official: str, sourc
     return {k: v for k, v in item.items() if v not in (None, "", [])}
 
 
-def product_images(found: dict, official: str) -> list[str]:
+def product_images(found: dict, official: str, extra_hosts: Iterable[str] = ()) -> list[str]:
     """Fotos do produto: as do nó principal; sem elas, a 1ª de cada variante (Nike e Shopify põem a foto só nas
     variantes de cor); sem nenhuma, o og:image da página. Sem repetição, só hosts aceitos por brand_cdn_ok."""
     node = found.get("node") or {}
@@ -614,7 +618,7 @@ def product_images(found: dict, official: str) -> list[str]:
         imgs = _images(found["og_image"])
     seen, out = set(), []
     for u in imgs:
-        if u not in seen and brand_cdn_ok(u, official):
+        if u not in seen and brand_cdn_ok(u, official, extra_hosts):
             seen.add(u)
             out.append(u)
     return out
@@ -634,7 +638,7 @@ GIVE_UP_AFTER = 150
 def collect(site: Site, brand: str, source_type: str, n: Normalizer, max_products: int, product_patterns=PRODUCT_HINTS,
             sitemap_patterns=(), visited: Optional[set] = None, warnings: Optional[list] = None,
             on_item: Optional[Callable[[dict], None]] = None, give_up_after: int = GIVE_UP_AFTER,
-            page_brands: Iterable[str] = ()) -> dict:
+            page_brands: Iterable[str] = (), image_hosts: Iterable[str] = ()) -> dict:
     """Percorre o domínio oficial e devolve um relatório; cada produto aceito vai para on_item (JSONL no CLI).
     Após `give_up_after` páginas seguidas sem dados estruturados de produto, larga o domínio: o site não publica
     JSON-LD/OpenGraph e insistir só gasta requisições dele."""
@@ -660,7 +664,7 @@ def collect(site: Site, brand: str, source_type: str, n: Normalizer, max_product
             report["skipped"] += 1
             return False
         found = structured_product(body)
-        item = to_catalog_item(found, url, brand, site.domain, source_type, n, warnings, page_brands) if found else None
+        item = to_catalog_item(found, url, brand, site.domain, source_type, n, warnings, page_brands, image_hosts) if found else None
         misses = 0 if found else misses + 1
         if not item:
             if not found:
