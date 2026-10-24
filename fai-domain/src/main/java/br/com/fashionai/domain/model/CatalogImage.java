@@ -119,10 +119,6 @@ public class CatalogImage extends VersionedAuditableEntity {
     @Column(name = "whole_pipeline_version", length = 40)
     private String wholePipelineVersion;
 
-    /** Total frame processado fora da API (V81): packshot da peça, sem pessoa e sem fundo; vence os demais no modo Peça inteira. */
-    @Column(name = "processed_image_url", columnDefinition = "text")
-    private String processedImageUrl;
-
     @Column(name = "attempts", nullable = false)
     private int attempts;
 

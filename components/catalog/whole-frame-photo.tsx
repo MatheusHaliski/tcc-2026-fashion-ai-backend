@@ -2,7 +2,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { cn } from "@/components/ui";
 import { mediaUrl } from "@/lib/api/client";
-import { TOTAL_FRAME, fitWhole, isLightBackground, isPackshot, type WholeFrame } from "@/lib/photo-framing";
+import { TOTAL_FRAME, fitWhole, isLightBackground, type WholeFrame } from "@/lib/photo-framing";
 
 const dimensions = new Map<string, { w: number; h: number }>();
 
@@ -16,8 +16,7 @@ export function WholeFramePhoto({ frame, alt, className, onFail }: { frame: Whol
   const [size, setSize] = useState(known);
   useEffect(() => { setSize(frame.width && frame.height ? { w: frame.width, h: frame.height } : dimensions.get(frame.url) ?? null); }, [frame.url, frame.width, frame.height]);
   const fit = !frame.rendered && size ? fitWhole(frame.box, size.w, size.h, frame.truncated) : null;
-  // packshot: imagem pronta (proporção livre) com fundo branco — funde ao fundo do quadro, sem emenda nas bordas
-  const blend = isPackshot(frame) || (!frame.rendered && !frame.alpha && isLightBackground(frame.background));
+  const blend = !frame.rendered && !frame.alpha && isLightBackground(frame.background);
   const background = frame.alpha || blend || !frame.background ? TOTAL_FRAME.background : frame.background;
   const vars = { background, "--tf-floor": fit ? `${fit.floor}%` : undefined, "--tf-span": fit ? `${fit.span}%` : undefined } as CSSProperties;
   return (

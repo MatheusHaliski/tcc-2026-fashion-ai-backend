@@ -79,13 +79,6 @@ export function resolveFraming(override?: unknown, userDefault?: unknown): Photo
   return "FABRIC";
 }
 
-/**
- * Packshot do catálogo (catalog_images.processed_image_url): a peça já sozinha no quadro, pronta — a interface mostra a
- * imagem inteira, sem caixa nem novo recorte, e o fundo branco dela se funde ao fundo do quadro.
- */
-export const PACKSHOT_VERSION = "PROCESSED_IMAGE_URL_V1";
-export const isPackshot = (frame?: Pick<WholeFrame, "version"> | null) => frame?.version === PACKSHOT_VERSION;
-
 /** Total frame do card do catálogo, se o servidor o entregou e a caixa é utilizável. */
 export function catalogWholeFrame(image?: CatalogCardImage | null): WholeFrame | null {
   const whole = image?.whole;
