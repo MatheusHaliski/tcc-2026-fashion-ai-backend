@@ -147,7 +147,8 @@ export function useCatalogPreview(product: CatalogProduct) {
   const [framed, setFramed] = useState<{ identity: string; product: CatalogProduct } | null>(null);
   const [pending, setPending] = useState(() => !hasCachedPreview(product) && !!(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl));
   const [failed, setFailed] = useState<"unsupported" | "source" | "service" | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [retry, setRetry] = useState<{ identity: string; count: number } | null>(null);
+  const retryCount = retry?.identity === identity ? retry.count : 0;
   useEffect(() => {
     let alive = true, started = false;
     const cachedPreview = retryCount === 0 && hasCachedPreview(product);
@@ -179,5 +180,5 @@ export function useCatalogPreview(product: CatalogProduct) {
     if (hasCachedPreview(current) || !(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl)) return current;
     return preview(product, false, () => true, true).then(prepared => ({ ...product, ...previewFields(prepared) }));
   }
-  return { ref, prepare, product: framed?.identity === identity && framed.product !== product ? { ...product, ...previewFields(framed.product) } : product, pending, failed, retry: () => { forgetPreview(product); setRetryCount(n => n + 1); } };
+  return { ref, prepare, product: framed?.identity === identity && framed.product !== product ? { ...product, ...previewFields(framed.product) } : product, pending, failed, retry: () => { forgetPreview(product); setRetry(current => ({ identity, count: current?.identity === identity ? current.count + 1 : 1 })); } };
 }

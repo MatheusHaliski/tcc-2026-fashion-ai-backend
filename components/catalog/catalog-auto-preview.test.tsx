@@ -87,6 +87,22 @@ it("retry invalidates persisted framing and requests a fresh preview", async () 
   expect(request).toHaveBeenLastCalledWith(product.id, { force: true });
 });
 
+it("does not carry a forced retry into a different source that already has a valid cached frame", async () => {
+  const product = { id: "retry-source-scope", imageUrl: "https://brand.example/old-source.png" } as CatalogProduct;
+  const request = vi.spyOn(catalogApi, "previewImage").mockResolvedValue({ ...product,
+    catalogImage: { url: "/media/old-frame.png", mode: "PROCESSED", previewCache } });
+  const result = renderHook(({ current }) => useCatalogPreview(current), { initialProps: { current: product } });
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  act(() => result.result.current.retry());
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  result.rerender({ current: { ...product, imageUrl: "https://brand.example/new-source.png",
+    catalogImage: { url: "/media/new-frame.png", mode: "PROCESSED", previewCache } } });
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(result.result.current.product.catalogImage?.url).toBe("/media/new-frame.png");
+  expect(request).toHaveBeenCalledTimes(2);
+});
+
 it("migrates a legacy frame once, then reuses both persisted URLs on later page visits", async () => {
   const product = { id: "migrate-dual-frame", imageUrl: "https://brand.example/legacy.jpg", catalogImage: { url: "/media/legacy.webp", mode: "PROCESSED" as const } } as CatalogProduct;
   const updated = { ...product, catalogImage: { ...product.catalogImage!, previewCache,
