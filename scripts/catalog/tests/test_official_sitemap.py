@@ -83,10 +83,21 @@ class SitemapTest(unittest.TestCase):
         self.assertEqual(list(product_urls(site)), ["https://www.nike.com.br/tenis-air-max-90", "https://www.nike.com.br/p/b"])
         self.assertNotIn("https://www.nike.com.br/sitemap-blog.xml", web.calls)              # blog nem é baixado
 
+    def test_sem_sitemap_no_robots_tenta_tambem_sitemap_index_xml(self):
+        # superdry.com: robots sem Sitemap, /sitemap.xml 404 e o índice de verdade em /sitemap_index.xml
+        sm = urlset("https://www.superdry.com/products/jaqueta-x")
+        web = FakeWeb({"https://superdry.com/robots.txt": (200, b"User-agent: *\nAllow: /", "text/plain"),
+                       "https://superdry.com/sitemap_index.xml": (200, index("https://www.superdry.com/sitemap-customSitemap_sd-uk_en_GB_product.xml"), XML),
+                       "https://www.superdry.com/sitemap-customSitemap_sd-uk_en_GB_product.xml": (200, sm, XML)})
+        site = Site("superdry.com", web, polite()[0])
+        site.load_robots()
+        self.assertEqual(site.sitemaps, ["https://superdry.com/sitemap.xml", "https://superdry.com/sitemap_index.xml"])
+        self.assertEqual(list(product_urls(site)), ["https://www.superdry.com/products/jaqueta-x"])
+
     def test_sem_sitemap_no_robots_usa_sitemap_xml(self):
         site, _, _ = self.site({"https://nike.com.br/sitemap.xml": (200, urlset("https://nike.com.br/p/x"), XML)}, robots="User-agent: *\n")
         site.load_robots()
-        self.assertEqual(site.sitemaps, ["https://nike.com.br/sitemap.xml"])
+        self.assertEqual(site.sitemaps, ["https://nike.com.br/sitemap.xml", "https://nike.com.br/sitemap_index.xml"])
         self.assertEqual(list(product_urls(site)), ["https://nike.com.br/p/x"])
 
     def test_urlset_que_lista_sitemaps_vira_indice(self):
@@ -185,7 +196,7 @@ class SitemapTest(unittest.TestCase):
         web = FakeWeb({"https://lezalez.com/robots.txt": (200, b"Sitemap: https://www.lezalez.com.br/sitemap.xml", "text/plain")})
         site = Site("lezalez.com", web, polite()[0])
         site.load_robots()
-        self.assertEqual(site.sitemaps, ["https://www.lezalez.com.br/sitemap.xml", "https://lezalez.com/sitemap.xml"])
+        self.assertEqual(site.sitemaps, ["https://www.lezalez.com.br/sitemap.xml", "https://lezalez.com/sitemap.xml", "https://lezalez.com/sitemap_index.xml"])
 
     def test_robots_403_nao_coleta(self):
         web = FakeWeb({"https://nike.com.br/robots.txt": (403, b"", "text/plain")})
@@ -198,6 +209,34 @@ class SitemapTest(unittest.TestCase):
         web = FakeWeb({"https://nike.com.br/robots.txt": (0, b"", "")})
         rep = collect(Site("nike.com.br", web, polite()[0]), "Nike", "OFFICIAL_STORE", N, 10)
         self.assertIn("sem conexão", rep["stopped"])
+
+    def test_busca_melhorada_por_paginas_de_categoria(self):
+        # sitemap só com categorias (C&A, Balenciaga, Birkenstock): o coletor lê a página de categoria e segue os links de
+        # produto dela — sem sair do domínio e respeitando o robots.txt
+        cat = (b'<html><body><a href="/women/jeans/p/jeans-reta-1">Jeans</a><a href="https://outra.com/p/x">fora</a>'
+               b'<a href="/women/jeans/pagina2">2</a><a href="#topo">topo</a></body></html>')
+        web = FakeWeb({"https://marca.com/robots.txt": (200, b"User-agent: *\nDisallow: /women/jeans/pagina2\nSitemap: https://marca.com/sitemap.xml", "text/plain"),
+                       "https://marca.com/sitemap.xml": (200, urlset("https://marca.com/women/jeans", "https://marca.com/sobre-nos"), XML),
+                       "https://marca.com/women/jeans": (200, cat, HTML),
+                       "https://marca.com/women/jeans/p/jeans-reta-1": (200, ld({**TEE, "brand": "Marca", "name": "Calça Jeans Reta"}), HTML)})
+        got = []
+        rep = collect(Site("marca.com", web, polite()[0]), "Marca", "OFFICIAL_BRAND", N, 10, on_item=got.append)
+        self.assertEqual(rep["accepted"], 1)
+        self.assertEqual(rep["crawled_categories"], 1)
+        self.assertEqual(got[0]["subcategory"], "jeans")
+        self.assertNotIn("https://outra.com/p/x", web.calls)
+        self.assertNotIn("https://marca.com/women/jeans/pagina2", web.calls)
+        self.assertNotIn("https://marca.com/sobre-nos", web.calls)
+
+    def test_busca_melhorada_sem_pista_na_url_segue_links_folha_da_pagina_inicial(self):
+        # loja sem sitemap e sem "product" na URL (Magento: /chuck-70-…): da página inicial, segue os links "folha"
+        home = b'<html><body><a href="/feminino-c">Fem</a><a href="/camiseta-chuck-basica-ct123">Chuck</a><a href="/sobre">Sobre</a></body></html>'
+        web = FakeWeb({"https://loja.com/robots.txt": (200, b"User-agent: *\nAllow: /", "text/plain"),
+                       "https://loja.com/": (200, home, HTML),
+                       "https://loja.com/camiseta-chuck-basica-ct123": (200, ld({**TEE, "brand": "Loja", "name": "Camiseta Chuck Básica"}), HTML)})
+        rep = collect(Site("loja.com", web, polite()[0]), "Loja", "OFFICIAL_BRAND", N, 10)
+        self.assertEqual(rep["accepted"], 1)
+        self.assertGreaterEqual(rep["crawled_categories"], 1)
 
     def test_limite_e_visitados(self):
         urls = [f"https://www.nike.com.br/p/{i}" for i in range(5)]
@@ -272,6 +311,18 @@ class StructuredDataTest(unittest.TestCase):
                                "Nike", "nike.com", "OFFICIAL_BRAND", N, warnings)
         self.assertIsNone(item)
         self.assertIn("nunca chutado", warnings[0])
+
+    def test_marca_da_pagina_aceita_so_pela_excecao_da_fonte(self):
+        # a loja oficial da Scotch & Soda escreve a licenciada "United Legwear" como marca do produto
+        found = structured_product(ld({**TEE, "brand": {"@type": "Brand", "name": "United Legwear"}, "name": "Camiseta Listras"}))
+        self.assertIsNone(to_catalog_item(found, "https://www.scotchandsoda.com/products/x", "Scotch & Soda", "scotchandsoda.com", "OFFICIAL_BRAND", N, []))
+        item = to_catalog_item(found, "https://www.scotchandsoda.com/products/x", "Scotch & Soda", "scotchandsoda.com", "OFFICIAL_BRAND", N, [],
+                               page_brands=("United Legwear",))
+        self.assertEqual(item["brand"], "Scotch & Soda")
+        # a exceção não abre para qualquer outra marca
+        other = structured_product(ld({**TEE, "brand": {"@type": "Brand", "name": "Adidas"}, "name": "Camiseta Listras"}))
+        self.assertIsNone(to_catalog_item(other, "https://www.scotchandsoda.com/products/y", "Scotch & Soda", "scotchandsoda.com", "OFFICIAL_BRAND", N, [],
+                                          page_brands=("United Legwear",)))
 
     def test_marca_diferente_da_fonte_e_recusada(self):
         warnings = []

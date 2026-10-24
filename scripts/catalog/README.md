@@ -111,7 +111,24 @@ Detalhes que já derrubaram marcas inteiras e hoje são tratados (com teste em `
 | robots.txt que redireciona para HTML, atributos HTML sem aspas, JSON-LD com entidades | ver histórico do arquivo |
 | 150 páginas seguidas sem dado estruturado | o domínio é largado (`GIVE_UP_AFTER`), sem gastar milhares de requisições |
 
-### Do coletado ao acervo
+### Busca melhorada (2026-10-24): páginas de categoria, `sitemap_index.xml` e marca da licenciada
+
+Três causas de "0 produtos" em marcas com site acessível, e o que o coletor passou a fazer — sempre dentro das regras
+(robots.txt, só o domínio oficial, só dados estruturados, 403/429 encerram o domínio):
+
+| Causa | Marcas | Solução |
+| --- | --- | --- |
+| Sitemaps só de categoria (ou nenhum sitemap) | C&A, Balenciaga, Birkenstock, Patagonia | `crawl_categories`: quando os sitemaps não rendem produto, o coletor lê até 40 páginas de categoria (as vistas nos sitemaps ou a página inicial), segue os links de produto (por pista na URL ou, sem pista, os links "folha") e cada página passa pelos mesmos dados estruturados |
+| Índice em `/sitemap_index.xml` sem declaração no robots | Superdry, Birkenstock | além de `/sitemap.xml`, tenta `/sitemap_index.xml` |
+| Loja oficial que escreve a licenciada como marca do produto | Scotch & Soda ("United Legwear") | `collector.accept_page_brands` em brands.json: só esse nome, só nessa marca; outra marca na página continua recusada |
+| Domínio cadastrado só redireciona para outro | Scotch & Soda (`scotch-soda.com` → `scotchandsoda.com`), Puma (`puma.com` → `us.puma.com`) | cadastrar o domínio que responde (o coletor nunca segue redirecionamento para fora do domínio pedido) |
+
+Fora de alcance, documentado: 403 no robots ou nas páginas (Adidas, Zara, Lacoste, Guess, Converse US, ASICS US, Fred
+Perry, Hoka, Coach, Kate Spade, Saint Laurent, Salomon, Reiss, Reserva, Youcom, Gymshark, Dr. Martens, Cariuma);
+páginas de produto renderizadas só por JavaScript, sem JSON-LD/OpenGraph (Converse BR, Supreme, Aéropostale); Louis Vuitton
+sem sitemap nem categorias legíveis; Uniqlo sem resposta (timeout).
+
+## Do coletado ao acervo
 
 ```bash
 python scripts/catalog/recheck_collected.py                      # regras de tipo atuais nos JSONL (com o coletor parado)

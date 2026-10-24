@@ -106,8 +106,10 @@ class Site:
                          for u in (m.group(1).strip() for m in re.finditer(r"(?im)^\s*sitemap:\s*(\S+)", text))]
         if not any(same_site(domain(u), self.domain) for u in self.sitemaps):
             # nenhum sitemap declarado no próprio domínio (robots aponta para um domínio antigo ou de outra loja, ex.:
-            # lezalez.com → lezalez.com.br, richards.com.br → richards.br): tenta também o sitemap padrão do site
+            # lezalez.com → lezalez.com.br, richards.com.br → richards.br): tenta também os sitemaps padrão do site —
+            # Superdry e Birkenstock só respondem em /sitemap_index.xml (Salesforce Commerce), sem declará-lo no robots
             self.sitemaps.append(urljoin(self.base + "/", "sitemap.xml"))
+            self.sitemaps.append(urljoin(self.base + "/", "sitemap_index.xml"))
         self.robots_loaded = True
 
     def allowed(self, url: str) -> bool:
@@ -183,7 +185,7 @@ def _sitemap_rank(url: str, extra: tuple) -> int:
 
 
 def product_urls(site: Site, product_patterns: Iterable[str] = PRODUCT_HINTS, sitemap_patterns: Iterable[str] = (),
-                 max_sitemaps: int = 60) -> Iterator[str]:
+                 max_sitemaps: int = 60, category_sink: Optional[list] = None) -> Iterator[str]:
     """URLs de produto a partir dos sitemaps do robots.txt (índices aninhados e .xml.gz). Sitemaps de produto (e do
     Brasil/EUA) são lidos antes; sitemaps de ajuda, blog e lojas físicas ficam de fora. Num sitemap de produto, toda URL
     do domínio conta como produto; nos demais, só as que parecem página de produto."""
@@ -213,6 +215,82 @@ def product_urls(site: Site, product_patterns: Iterable[str] = PRODUCT_HINTS, si
                         queue.append(url)
                 elif product_map or looks_like_product(url, product_patterns):
                     yield url
+                elif category_sink is not None and len(category_sink) < MAX_CATEGORY_QUEUE and looks_like_category(url) and url not in category_sink:
+                    category_sink.append(url)                     # guardada para a busca por páginas de categoria
+
+
+# ───────────────────────── busca melhorada: páginas de categoria
+
+_HREF = re.compile(r"""<a\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))""", re.I | re.S)
+CATEGORY_HINTS = ("categor", "collection", "colecao", "coleção", "/c/", "-c/", "/women", "/men", "/mulher", "/homem", "/feminino",
+                  "/masculino", "/kids", "/infantil", "/shop/", "/loja/", "department", "departamento", "/roupas", "/clothing",
+                  "/calcados", "/shoes", "/sapatos", "/tenis", "/acessorios", "/accessories", "/new", "/novidades", "/sale")
+MAX_CATEGORY_QUEUE = 500
+MAX_CATEGORY_PAGES = 40
+MAX_LINKS_PER_PAGE = 60
+
+
+def page_links(page: bytes, base_url: str) -> list[str]:
+    """Links <a href> da página, resolvidos contra ela: só http(s), sem #fragmento, sem repetição, na ordem da página."""
+    text = page.decode("utf-8", "replace")
+    out: list[str] = []
+    seen: set[str] = set()
+    for m in _HREF.finditer(text):
+        raw = html.unescape(next(g for g in m.groups() if g is not None)).strip()
+        if not raw or raw.startswith(("javascript:", "mailto:", "tel:", "#")):
+            continue
+        url = urljoin(base_url, raw).split("#")[0]
+        if url.startswith(("http://", "https://")) and url not in seen:
+            seen.add(url)
+            out.append(url)
+    return out
+
+
+def looks_like_category(url: str) -> bool:
+    """URL com cara de página de categoria/coleção (lista de produtos): caminho curto com termo de categoria ou "-c" no fim."""
+    parts = urllib.parse.urlsplit(url)
+    path = parts.path.lower().rstrip("/")
+    if not path or path.count("/") > 4 or looks_like_product(url):
+        return False
+    u = path + ("?" + parts.query.lower() if parts.query else "")
+    return path.endswith("-c") or any(h in u for h in CATEGORY_HINTS)
+
+
+def crawl_categories(site: Site, categories: list[str], visit: Callable[[str], Optional[bool]], done: Callable[[], bool],
+                     product_patterns: Iterable[str], report: dict, max_pages: int = MAX_CATEGORY_PAGES, max_links: int = MAX_LINKS_PER_PAGE):
+    """Busca melhorada: quando os sitemaps não rendem produto (só categorias, como C&A/Balenciaga/Birkenstock, ou nenhum
+    sitemap, como Patagonia), lê páginas de categoria — as vistas nos sitemaps ou, sem elas, a página inicial — e segue
+    os links de produto delas. Mesmas regras de sempre: robots.txt, nunca sai do domínio, cada página de produto passa
+    pelos dados estruturados e conta no limite de páginas sem dados. Lojas sem pista na URL (Magento: /chuck-70-…) usam
+    os links "folha" da página que não parecem categoria."""
+    queue = list(dict.fromkeys(categories)) or [site.base + "/"]
+    seen: set[str] = set()
+    crawled = 0
+    while queue and crawled < max_pages and not done():
+        page = queue.pop(0)
+        if page in seen:
+            continue
+        seen.add(page)
+        if not site.allowed(page):
+            report["blocked_by_robots"] += 1
+            continue
+        status, body, ctype = site.get(page)
+        crawled += 1
+        if status != 200 or not (("html" in (ctype or "")) or looks_like_html(body, ctype)):
+            continue
+        links = [u for u in page_links(body, page) if same_site(domain(u), site.domain) and not blocked(u) and u != page]
+        products = [u for u in links if looks_like_product(u, product_patterns)]
+        if not products:
+            products = [u for u in links if not looks_like_category(u) and urllib.parse.urlsplit(u).path.count("/") == 1
+                        and len(urllib.parse.urlsplit(u).path) > 8 and not urllib.parse.urlsplit(u).query]
+        for u in products[:max_links]:
+            if done():
+                break
+            visit(u)
+        for u in links:
+            if looks_like_category(u) and u not in seen and u not in queue and len(queue) < MAX_CATEGORY_QUEUE:
+                queue.append(u)
+    report["crawled_categories"] = crawled
 
 
 # ───────────────────────── dados estruturados da página
@@ -429,14 +507,16 @@ def same_brand(n: Normalizer, page_brand: str, brand: str) -> bool:
 
 
 def to_catalog_item(found: dict, page_url: str, brand: str, official: str, source_type: str, n: Normalizer,
-                    warnings: list) -> Optional[dict]:
+                    warnings: list, page_brands: Iterable[str] = ()) -> Optional[dict]:
+    """`page_brands`: nomes que a loja oficial escreve no lugar da marca e que valem como ela — a licenciada que opera a
+    loja (Scotch & Soda publica "United Legwear"). Vem de brands.json (`collector.accept_page_brands`), por marca."""
     node = found["node"]
     name, title_color = clean_title(_text(node.get("name")), brand, n)
     if not name:
         warnings.append(f"{page_url}: sem nome de produto")
         return None
     page_brand = _text(node.get("brand"))
-    if page_brand and not same_brand(n, page_brand, brand):
+    if page_brand and not same_brand(n, page_brand, brand) and not any(same_brand(n, page_brand, b) for b in page_brands):
         # site oficial de multimarcas autorizadas: a marca da página vence se for outra marca conhecida?
         # aqui só aceitamos a marca da própria fonte (um domínio = uma marca), para nunca atribuir errado
         warnings.append(f"{page_url}: marca da página ({page_brand}) difere da fonte ({brand}) — ignorado")
@@ -523,44 +603,55 @@ GIVE_UP_AFTER = 150
 
 def collect(site: Site, brand: str, source_type: str, n: Normalizer, max_products: int, product_patterns=PRODUCT_HINTS,
             sitemap_patterns=(), visited: Optional[set] = None, warnings: Optional[list] = None,
-            on_item: Optional[Callable[[dict], None]] = None, give_up_after: int = GIVE_UP_AFTER) -> dict:
+            on_item: Optional[Callable[[dict], None]] = None, give_up_after: int = GIVE_UP_AFTER,
+            page_brands: Iterable[str] = ()) -> dict:
     """Percorre o domínio oficial e devolve um relatório; cada produto aceito vai para on_item (JSONL no CLI).
     Após `give_up_after` páginas seguidas sem dados estruturados de produto, larga o domínio: o site não publica
     JSON-LD/OpenGraph e insistir só gasta requisições dele."""
     visited = visited if visited is not None else set()
     misses = 0
     warnings = warnings if warnings is not None else []
-    report = {"domain": site.domain, "pages": 0, "accepted": 0, "skipped": 0, "blocked_by_robots": 0, "stopped": None}
+    report = {"domain": site.domain, "pages": 0, "accepted": 0, "skipped": 0, "blocked_by_robots": 0, "stopped": None, "crawled_categories": 0}
+    categories: list[str] = []
+    done = lambda: report["accepted"] >= max_products
+
+    def visit(url: str) -> Optional[bool]:
+        """Uma URL candidata: True = produto aceito, False = descartada, None = não baixada (já vista ou robots)."""
+        nonlocal misses
+        if url in visited:
+            return None
+        visited.add(url)
+        if not site.allowed(url):
+            report["blocked_by_robots"] += 1
+            return None
+        status, body, ctype = site.get(url)
+        report["pages"] += 1
+        if status != 200 or "html" not in (ctype or "text/html"):
+            report["skipped"] += 1
+            return False
+        found = structured_product(body)
+        item = to_catalog_item(found, url, brand, site.domain, source_type, n, warnings, page_brands) if found else None
+        misses = 0 if found else misses + 1
+        if not item:
+            if not found:
+                warnings.append(f"{url}: sem dados estruturados de produto (JSON-LD/OpenGraph)")
+            report["skipped"] += 1
+            if give_up_after and misses >= give_up_after:
+                raise StopDomain(f"{site.domain}: {misses} páginas seguidas sem dados estruturados de produto")
+            return False
+        report["accepted"] += 1
+        if on_item:
+            on_item(item)
+        return True
+
     try:
         site.load_robots()
-        for url in product_urls(site, product_patterns, sitemap_patterns):
-            if report["accepted"] >= max_products:
+        for url in product_urls(site, product_patterns, sitemap_patterns, category_sink=categories):
+            if done():
                 break
-            if url in visited:
-                continue
-            visited.add(url)
-            if not site.allowed(url):
-                report["blocked_by_robots"] += 1
-                continue
-            status, body, ctype = site.get(url)
-            report["pages"] += 1
-            if status != 200 or "html" not in (ctype or "text/html"):
-                report["skipped"] += 1
-                continue
-            found = structured_product(body)
-            item = to_catalog_item(found, url, brand, site.domain, source_type, n, warnings) if found else None
-            misses = 0 if found else misses + 1
-            if not item:
-                if not found:
-                    warnings.append(f"{url}: sem dados estruturados de produto (JSON-LD/OpenGraph)")
-                report["skipped"] += 1
-                if give_up_after and misses >= give_up_after:
-                    report["stopped"] = f"{site.domain}: {misses} páginas seguidas sem dados estruturados de produto"
-                    break
-                continue
-            report["accepted"] += 1
-            if on_item:
-                on_item(item)
+            visit(url)
+        if report["accepted"] == 0 and not done():
+            crawl_categories(site, categories, visit, done, product_patterns, report)
     except StopDomain as e:
         report["stopped"] = str(e)
     return report

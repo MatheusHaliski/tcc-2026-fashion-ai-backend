@@ -16,7 +16,8 @@ repete produto (o JSONL é acrescentado, nunca reescrito). --fresh apaga o estad
 Rede: urllib com o proxy do ambiente (HTTPS_PROXY/HTTP_PROXY), timeout e novas tentativas em erro 5xx/timeout.
 Logs não mostram credenciais nem cabeçalhos — só domínio, contagens e motivos de descarte.
 
-Opcional por marca em brands.json: "collector": {"product_patterns": ["/p/"], "sitemap_patterns": ["product"]}.
+Opcional por marca em brands.json: "collector": {"product_patterns": ["/p/"], "sitemap_patterns": ["product"],
+"accept_page_brands": ["United Legwear"]} — o último aceita o nome que a loja oficial escreve no lugar da marca (licenciada).
 """
 from __future__ import annotations
 
@@ -166,7 +167,7 @@ def collect_brand(brand: dict, srcs: list[dict], args, fetch, n: Normalizer, log
             rep = collect(site, brand["name"], src["source_type"], n, remaining,
                           product_patterns=tuple(cfg.get("product_patterns") or PRODUCT_HINTS),
                           sitemap_patterns=tuple(cfg.get("sitemap_patterns") or ()), visited=visited,
-                          warnings=warnings, on_item=on_item)
+                          warnings=warnings, on_item=on_item, page_brands=tuple(cfg.get("accept_page_brands") or ()))
         finally:
             if fh:
                 fh.close()
