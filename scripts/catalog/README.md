@@ -151,6 +151,8 @@ python scripts/catalog/recheck_collected.py                      # regras de tip
 python scripts/catalog/build_acervo.py --out data/catalog/acervo/acervo-oficial-AAAA-MM-DD.jsonl.gz data/catalog/collected/*.jsonl
 ```
 
+Execução de 24/10/2026 (55 marcas sem peças → 32 com produto, 7886 peças): `docs/catalogo/COLETA_2026-10-24.md`.
+
 `build_acervo.py` passa cada linha pelas regras de tipo e pelo `normalize_product`, deixa a descrição em texto puro e
 tira as peças que já estão em outro arquivo de `data/catalog/acervo/` (mesma URL canônica): cada arquivo traz só peças
 novas. O gzip sai sem data no cabeçalho (mesmo conteúdo, mesmo arquivo). O `import_railway.sh` importa todos os
