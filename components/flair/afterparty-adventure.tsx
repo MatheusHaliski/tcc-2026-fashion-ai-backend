@@ -11,6 +11,7 @@ import {Button,Dialog,EmptyState,ErrorState,PageHeader,Skeleton,useToast} from '
 import type {FlairDeck} from './flair-card';
 import {useWebGL,type Look3d} from '@/components/three/common';
 import {canActivateLoadout,remainingCooldown,type AdventureSession,type AdventureAction} from '@/lib/flair/afterparty';
+const ROLES=['STAFF','GUEST','VIP','EVENT_VIP'] as const;
 const Scene=dynamic(()=>import('./afterparty-scene'),{ssr:false,loading:()=> <Skeleton className="h-full"/>});
 
 export function AfterpartyAdventure(){
@@ -19,7 +20,9 @@ export function AfterpartyAdventure(){
  const latest=useRef(session);latest.current=session;const busyRef=useRef(false);const keys=useRef(new Set<string>());const target=useRef<{x:number;z:number}|null>(null);const stage=useRef<HTMLDivElement>(null);const boot=useRef(false);const initialized=useRef(false);const alive=useRef(true);const sprint=useRef(running);sprint.current=running;
  const look=useApi<Look3d>(signal=>api.get(`/api/schemes/${session?.state.activeDeckId}/look3d`,{signal}),[session?.state.activeDeckId],{enabled:!!session?.state.activeDeckId});
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
- useEffect(()=>{if(loftUnlocked&&!existing.loading&&!boot.current){boot.current=true;if(existing.data)setSession(existing.data);}},[loftUnlocked,existing.loading,existing.data]);
+ // partida em andamento: adota assim que ela chega (antes, a decisão saía no mesmo quadro em que o nível liberava o jogo,
+ // com a busca ainda nem iniciada, e a partida nunca era retomada)
+ useEffect(()=>{if(existing.data&&!boot.current){boot.current=true;setSession(existing.data);}},[existing.data]);
  useEffect(()=>{if(decks.data&&!initialized.current){initialized.current=true;setSelected(decks.data.slice(0,7).map(d=>d.schemeId!).filter(Boolean));}},[decks.data]);
  const send=useCallback(async(action:Omit<AdventureAction,'requestId'>)=>{
   const s=latest.current;if(!loftUnlocked||!s||busyRef.current||s.state.status!=='ACTIVE')return;busyRef.current=true;setBusy(true);
@@ -47,10 +50,15 @@ export function AfterpartyAdventure(){
    </div>
    <div className="afterparty-status"><span role="status" aria-live="polite">{t(`afterparty.feedback.${s.feedback}`)}</span><span>{s.badge?t('afterparty.badgeOwned'):t('afterparty.badgeHint')}</span></div>
    <div className="afterparty-controls"><div className="afterparty-dpad" aria-label={t('afterparty.movement')}>{[['↑',0,-1],['←',-1,0],['↓',0,1],['→',1,0]].map(([text,x,z])=><button key={text} type="button" aria-label={t(`afterparty.direction.${text}`)} disabled={s.status!=='ACTIVE'} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);keys.current.clear();keys.current.add(Number(x)<0?'a':Number(x)>0?'d':Number(z)<0?'w':'s');target.current=null;}} onPointerUp={stop} onPointerCancel={stop} onLostPointerCapture={stop} onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();void send({type:'MOVE',dx:Number(x),dz:Number(z),running});}}}>{text}</button>)}</div><Button disabled={busy||s.status!=='ACTIVE'} onClick={()=>void send({type:'INTERACT'})}>{t('afterparty.interact')}</Button><Button disabled={busy||s.status!=='ACTIVE'} onClick={()=>void send({type:'DISTRACT'})}>{t('afterparty.distract')}</Button><Button aria-pressed={running} onClick={()=>setRunning(v=>!v)}>{t('afterparty.run')}</Button><Button variant="ghost" disabled={busy||s.status!=='ACTIVE'} onClick={()=>void send({type:'ABANDON'})}>{t('afterparty.end')}</Button></div>
-   <div className="afterparty-hud"><h2 className="type-h3">{t('afterparty.deck')}</h2><div className="afterparty-cards" role="group" aria-label={t('afterparty.deck')}>{s.loadouts.map((c,i)=>{const cooldown=remainingCooldown(session,c);return <button type="button" key={c.id} className="afterparty-card" data-tier={c.tier} aria-pressed={s.activeDeckId===c.id} disabled={busy||!canActivateLoadout(session,c)} onClick={()=>void send({type:'ACTIVATE',deckId:c.id})}>{c.imageUrl&&<img src={mediaUrl(c.imageUrl)} alt="" loading="lazy"/>}<strong>{i+1}. {c.title}</strong><span>{t(`fashionHype.level.${c.tier}`)}</span><span>{t(`afterparty.role.${c.role}`)}</span><small>{c.cost} {t('afterparty.energy')}{cooldown>0?` · ${cooldown}s`:''}</small>{c.techwear&&<span>{t('afterparty.techwear')}</span>}</button>;})}</div></div>
+   <div className="afterparty-hud"><h2 className="type-h3">{t('afterparty.deck')}</h2><div className="afterparty-cards" role="group" aria-label={t('afterparty.deck')}>{s.loadouts.map((c,i)=>{const cooldown=remainingCooldown(session,c);return <button type="button" key={c.id} className="afterparty-card" data-tier={c.tier} title={t(`afterparty.strategy.${c.role}`)} aria-pressed={s.activeDeckId===c.id} disabled={busy||!canActivateLoadout(session,c)} onClick={()=>void send({type:'ACTIVATE',deckId:c.id})}>{c.imageUrl&&<img src={mediaUrl(c.imageUrl)} alt="" loading="lazy"/>}<strong>{i+1}. {c.title}</strong><span>{t(`fashionHype.level.${c.tier}`)}</span><span>{t(`afterparty.role.${c.role}`)}</span><small>{c.cost} {t('afterparty.energy')}{cooldown>0?` · ${cooldown}s`:''}</small>{c.techwear&&<span>{t('afterparty.techwear')}</span>}</button>;})}</div></div>
    {s.status!=='ACTIVE'&&<div className="surface p-4" role="status"><h2 className="type-h3">{t(`afterparty.feedback.${s.status}`)}</h2><Button onClick={()=>{setSession(null);target.current=null;keys.current.clear();}}>{t('afterparty.again')}</Button></div>}
   </section>}
-  <Dialog open={help} onClose={()=>setHelp(false)} title={t('afterparty.help')}><p>{t('afterparty.instructions')}</p><ul className="grid gap-3 mt-3">{['STAFF','GUEST','VIP','EVENT_VIP'].map(role=><li key={role}><strong>{t(`afterparty.role.${role}`)}</strong><p>{t(`afterparty.strategy.${role}`)}</p></li>)}</ul><p className="mt-3">{t('afterparty.resourcesHint')}</p></Dialog>
+  <Dialog open={help} onClose={()=>setHelp(false)} title={t('afterparty.help')}><p>{t('afterparty.instructions')}</p>
+   {/* cada papel com as cartas do SEU deck que dão esse papel (atalho, raridade, custo): o descritivo aponta para o deck da partida */}
+   <ul className="grid gap-3 mt-3">{ROLES.map(role=>{const cards=(s?.loadouts??[]).map((c,i)=>({c,key:i+1})).filter(x=>x.c.role===role);const current=s?.status==='ACTIVE'&&s.role===role;return <li key={role} className="afterparty-role" data-current={current||undefined}>
+    <strong>{t(`afterparty.role.${role}`)}{current&&<span className="afterparty-role-now"> · {t('afterparty.roleCurrent')}</span>}</strong><p>{t(`afterparty.strategy.${role}`)}</p>
+    {!s?<p className="type-caption text-muted">{t('afterparty.roleBeforeStart')}</p>:cards.length?<ul className="afterparty-role-cards" aria-label={t('afterparty.roleCards',{role:t(`afterparty.role.${role}`)})}>{cards.map(({c,key})=><li key={c.id}><kbd>{key}</kbd><span>{c.title}</span><span className="text-muted">{t(`fashionHype.level.${c.tier}`)} · {c.cost} {t('afterparty.energy')}</span></li>)}</ul>:<p className="type-caption text-muted">{t('afterparty.roleNone')}</p>}
+   </li>;})}</ul><p className="mt-3">{t('afterparty.resourcesHint')}</p></Dialog>
  </>;
 }
 function TacticalMap({session,onTarget}:{session:AdventureSession;onTarget:(x:number,z:number)=>void}){
