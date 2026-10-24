@@ -770,6 +770,7 @@ public class CatalogImagePipelineService {
 
     /** Product edits invalidate the old derivative without downloading any photograph on a list/read request. */
     public static Map<String, Object> cardImage(CatalogImage canonical, CatalogProduct product) {
+        Map<String, Object> packshot = packshotWhole(canonical);
         Map<String, Object> photo = photoSet(canonical, product);
         if (!photo.isEmpty() && Set.of("READY","DEFAULT","REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(photo.get("status")))) {
             Map<String, Object> card = new LinkedHashMap<>();
@@ -777,12 +778,54 @@ public class CatalogImagePipelineService {
             card.put("mode", "READY".equals(photo.get("status")) ? "PROCESSED" : "DEFAULT");
             card.put("sourceUrl", canonical.getImageUrl()); card.put("photoSet", photo); card.put("defaultAssetUrl", photo.get("defaultAssetUrl"));
             card.put("aspect", "3:4"); card.put("imageId", canonical.getId());
-            if ("READY".equals(photo.get("status"))) card.put("whole", Map.of("url",photo.get("wholeUrl"),"box",Map.of("x",0,"y",0,"w",1,"h",1),"rendered",true,"processed",true,"version","CATALOG_PHOTO_SET_V2"));
+            if (packshot != null) card.put("whole", packshot);
+            else if ("READY".equals(photo.get("status"))) card.put("whole", Map.of("url",photo.get("wholeUrl"),"box",Map.of("x",0,"y",0,"w",1,"h",1),"rendered",true,"processed",true,"version","CATALOG_PHOTO_SET_V2"));
             return card;
         }
         Map<String, Object> preview = previewAssets(canonical);
-        if (!preview.isEmpty() && !currentPreview(product, canonical, Boolean.TRUE.equals(preview.get("persisted")))) return null;
-        return cardImage(canonical);
+        Map<String, Object> card = !preview.isEmpty() && !currentPreview(product, canonical, Boolean.TRUE.equals(preview.get("persisted")))
+                ? null : cardImage(canonical);
+        if (packshot == null) return card;
+        if (card == null) {
+            // sem enquadramento aprovado da foto original: o packshot é a foto do card (nunca a foto crua da marca)
+            card = new LinkedHashMap<>();
+            card.put("url", packshot.get("url")); card.put("thumbnailUrl", packshot.get("url")); card.put("mode", "PROCESSED");
+            card.put("aspect", "3:4"); card.put("sourceUrl", canonical.getImageUrl()); card.put("imageId", canonical.getId());
+        }
+        card.put("whole", packshot);
+        return card;
+    }
+
+    /** Versão do Total frame vindo de catalog_images.processed_image_url (packshot processado fora da API). */
+    public static final String PACKSHOT_VERSION = "PROCESSED_IMAGE_URL_V1";
+
+    /**
+     * Total frame do packshot (V81): a imagem já pronta para o quadro — a interface só a encaixa inteira, sem caixa nem
+     * novo recorte. Vale para a foto que não foi recusada; endereço só https ou do nosso /media/ (nunca data:, http ou
+     * javascript:). null sem packshot.
+     */
+    static Map<String, Object> packshotWhole(CatalogImage image) {
+        if (image == null || image.getUsageStatus() == CatalogImageUsage.REJECTED || "REJECTED".equals(image.getReviewStatus())) return null;
+        String url = image.getProcessedImageUrl() == null ? "" : image.getProcessedImageUrl().trim();
+        if (url.length() > 2048 || url.chars().anyMatch(c -> c <= ' ' || c == '"' || c == '<' || c == '>' || c == '\\')) return null;
+        boolean ours = url.startsWith("/media/") && !url.contains("..");
+        if (!ours) {
+            try {
+                java.net.URI uri = java.net.URI.create(url);
+                if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null || uri.getRawUserInfo() != null) return null;
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("url", url);
+        m.put("box", Map.of("x", 0, "y", 0, "w", 1, "h", 1));
+        m.put("background", "#F4F5F7");
+        m.put("rendered", true);
+        m.put("processed", true);
+        m.put("alpha", false);
+        m.put("version", PACKSHOT_VERSION);
+        return m;
     }
 
     /** Versão do Total frame: a interface encaixa a caixa da peça num quadro 3:4 com margem uniforme. */

@@ -33,6 +33,19 @@ describe("CatalogPhoto", () => {
     rerender(<CatalogPhoto requiredFrame alt="Camisa" framing="FABRIC" image={{ url: "/media/fabric.png", mode: "PROCESSED" }} />);
     expect(container.querySelector("img")!.getAttribute("src")).toBe(mediaUrl("/media/fabric.png"));
   });
+  it("packshot (processed_image_url) é o Total frame: inteiro, fundido ao quadro e antes da ilustração padrão", () => {
+    const whole = { url: "https://cdn.fashn.ai/p/output_0.png", rendered: true, processed: true, box: { x: 0, y: 0, w: 1, h: 1 }, background: "#F4F5F7", version: "PROCESSED_IMAGE_URL_V1" };
+    const { container, rerender } = render(<CatalogPhoto requiredFrame alt="Calça" framing="WHOLE" image={{ url: "/api/catalog/default-asset?category=lower_piece", mode: "DEFAULT", whole }} />);
+    const image = container.querySelector("img")!;
+    expect(image.getAttribute("src")).toBe("https://cdn.fashn.ai/p/output_0.png");
+    expect(image.style.objectFit).toBe("contain");
+    expect(container.querySelector(".is-whole.is-blend")).not.toBeNull();
+    // link expirado: volta ao enquadramento de sempre (aqui, a ilustração padrão)
+    fireEvent.error(image);
+    expect(container.querySelector("[data-mode='whole']")).toBeNull();
+    rerender(<CatalogPhoto requiredFrame alt="Calça" framing="FABRIC" image={{ url: "/api/catalog/default-asset?category=lower_piece", mode: "DEFAULT", whole }} />);
+    expect(container.querySelector("[data-mode='whole']")).toBeNull();
+  });
   it("usa a URL original da marca com o recorte e o fundo da foto", () => {
     const { container } = render(<CatalogPhoto alt="Camiseta" image={{ url: "https://img.brand.com/a.jpg", mode: "SEMANTIC_CROP", crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 }, background: "#f6f6f6" }} />);
     const wrap = container.querySelector("[data-mode='semantic-crop']") as HTMLElement;

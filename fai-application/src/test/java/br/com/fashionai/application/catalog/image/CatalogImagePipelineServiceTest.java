@@ -595,6 +595,51 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void packshotDoProcessedImageUrlEhOTotalFrameDoCard() {
+        CatalogImage i = image("https://brand.com/packshot.png", CatalogImageType.FRONT, null);
+        i.setSourceSha256("a".repeat(64));
+        // sem enquadramento aprovado: nada no card (nunca a foto crua)
+        assertThat(CatalogImagePipelineService.cardImage(i, product)).isNull();
+
+        i.setProcessedImageUrl("https://cdn.fashn.ai/abc/output_0.png");
+        Map<String, Object> card = CatalogImagePipelineService.cardImage(i, product);
+        assertThat(card).containsEntry("url", "https://cdn.fashn.ai/abc/output_0.png").containsEntry("mode", "PROCESSED")
+                .containsEntry("sourceUrl", "https://brand.com/packshot.png");
+        @SuppressWarnings("unchecked") Map<String, Object> whole = (Map<String, Object>) card.get("whole");
+        assertThat(whole).containsEntry("url", "https://cdn.fashn.ai/abc/output_0.png").containsEntry("rendered", true)
+                .containsEntry("version", CatalogImagePipelineService.PACKSHOT_VERSION);
+
+        // o packshot vence a Peça inteira do photoSet e aparece também no card de ilustração padrão
+        i.setAssetsJson(Json.write(Map.of("photoSet", photoEvidence(i, "READY"))));
+        card = CatalogImagePipelineService.cardImage(i, product);
+        assertThat(card).containsEntry("url", "https://media.fashion-ai.app/fabric.png");
+        assertThat(((Map<?, ?>) card.get("whole")).get("url")).isEqualTo("https://cdn.fashn.ai/abc/output_0.png");
+        i.setAssetsJson(Json.write(Map.of("photoSet", photoEvidence(i, "DEFAULT"))));
+        assertThat(((Map<?, ?>) CatalogImagePipelineService.cardImage(i, product).get("whole")).get("url")).isEqualTo("https://cdn.fashn.ai/abc/output_0.png");
+
+        // foto recusada pela revisão não mostra packshot
+        i.setAssetsJson(null); i.setReviewStatus("REJECTED");
+        assertThat(CatalogImagePipelineService.cardImage(i, product)).isNull();
+        i.setReviewStatus("NONE");
+    }
+
+    @Test
+    void packshotSoComEnderecoHttpsOuDoNossoMedia() {
+        CatalogImage i = new CatalogImage();
+        for (String bad : List.of("http://cdn.fashn.ai/a.png", "javascript:alert(1)", "data:image/png;base64,AAAA", "//cdn.fashn.ai/a.png",
+                "/media/../etc/passwd", "https://user@cdn.fashn.ai/a.png", "https://cdn.fashn.ai/a b.png", "  ", "relative/a.png")) {
+            i.setProcessedImageUrl(bad);
+            assertThat(CatalogImagePipelineService.packshotWhole(i)).as(bad).isNull();
+        }
+        i.setProcessedImageUrl(" /media/catalog/packshot/a.jpg ");
+        assertThat(CatalogImagePipelineService.packshotWhole(i)).containsEntry("url", "/media/catalog/packshot/a.jpg");
+        i.setProcessedImageUrl("https://media.fashion-ai.app/catalog/packshot/a.jpg");
+        assertThat(CatalogImagePipelineService.packshotWhole(i)).containsEntry("box", Map.of("x", 0, "y", 0, "w", 1, "h", 1));
+        i.setUsageStatus(br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED);
+        assertThat(CatalogImagePipelineService.packshotWhole(i)).isNull();
+    }
+
+    @Test
     void readyRequiresMeasuredCompleteIsolationAtOrAboveExactly25Percent() {
         assertThat(CatalogImagePipelineService.validPreflight(sourcePreflight())).isTrue();
         for (Map.Entry<String,Object> invalid : Map.<String,Object>of("sourceGarmentHeightFraction", .249,

@@ -74,8 +74,9 @@ export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, al
   useEffect(() => { setFailed(0); setWholeFailed(false); }, [key]);
   const fail = () => setFailed((n) => n + 1);
   const defaultPhoto = placeholder ?? <DefaultGarmentPhoto category={category ?? image?.photoSet?.category} subcategory={subcategory ?? image?.photoSet?.subcategory} color={color ?? image?.photoSet?.color} colorHex={colorHex} framing={framing} alt={alt}/>;
-  if(image?.mode === "DEFAULT") return <>{defaultPhoto}</>;
+  // Total frame pronto (inclusive o packshot de uma foto que, crua, só teria a ilustração padrão) vem antes da ilustração
   if (whole && !wholeFailed) return <WholeFramePhoto frame={whole} alt={alt} className={className} onFail={() => setWholeFailed(true)} />;
+  if(image?.mode === "DEFAULT") return <>{defaultPhoto}</>;
   if (requiredFrame && (framing === "WHOLE" && (!whole || wholeFailed) || framing === "FABRIC" && (!image || failed > 0 || image.mode === "SEMANTIC_CROP" && !crop))) return <span className="catalog-default-fallback">{defaultPhoto}{onRetry&&<button type="button" className="btn btn-sm catalog-photo-retry" onClick={() => { setFailed(0); setWholeFailed(false); onRetry(); }}>{tr("common.retry")}</button>}</span>;
   if (crop && failed === 0) {
     return (

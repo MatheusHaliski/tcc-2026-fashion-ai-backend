@@ -20,7 +20,7 @@ import { hasUsableCatalogPreview, useCatalogPreview } from "./use-catalog-previe
 import { DefaultGarmentPhoto } from "./default-garment-photo";
 import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
-import { usePhotoFraming } from "@/lib/photo-framing";
+import { catalogWholeFrame, isPackshot, usePhotoFraming } from "@/lib/photo-framing";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
@@ -522,11 +522,13 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   };
   const img = p.catalogImage?.url ?? p.imageUrl;
   const [framing] = usePhotoFraming();
+  // packshot no modo Peça inteira: já está pronto, aparece sem esperar (nem depender) do enquadramento de tecido
+  const packshot = framing === "WHOLE" && isPackshot(catalogWholeFrame(p.catalogImage));
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (
     <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
       <div className="catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
-        {preview.pending && !hasUsableCatalogPreview(p) || preview.failed || !img
+        {!packshot && (preview.pending && !hasUsableCatalogPreview(p) || preview.failed || !img)
           ? <><DefaultGarmentPhoto category={p.category} subcategory={p.subcategory} color={variant?.color ?? p.color} colorHex={variant?.color ? undefined : p.colorHex} framing={framing} alt={t("catalog.defaultIllustration")}/>{preview.failed && <button type="button" className="btn btn-sm catalog-photo-retry" onClick={preview.retry}>{t("common.retry")}</button>}</>
           : <CatalogPhoto requiredFrame onRetry={preview.retry} framing={framing} image={p.catalogImage} category={p.category} subcategory={p.subcategory} color={variant?.color ?? p.color} colorHex={variant?.color ? undefined : p.colorHex} alt={`${p.brand?.name ?? ""} ${p.productName}`}/>}
 

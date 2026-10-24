@@ -10,7 +10,8 @@ const STORE_KEY = "fai.catalogPreview.v2";
 const MAX_AGE = 24 * 60 * 60 * 1000;
 type PreviewFields = Pick<CatalogProduct, "catalogImage" | "imageProcessingStatus">;
 type Stored = { source: string; created: number; preview: PreviewFields };
-const sourceKey = (p: CatalogProduct) => JSON.stringify([p.id, p.imageUrl, p.catalogImage?.url, p.imageSource?.imageUrl]);
+// a Peça inteira entra na chave: o packshot que chega depois não fica escondido atrás da prévia guardada (24 h)
+const sourceKey = (p: CatalogProduct) => JSON.stringify([p.id, p.imageUrl, p.catalogImage?.url, p.imageSource?.imageUrl, p.catalogImage?.whole?.url]);
 const previewFields = (p: CatalogProduct): PreviewFields => ({ catalogImage: p.catalogImage, imageProcessingStatus: p.imageProcessingStatus });
 const STORE_MAX = 400;
 // Persistent cache across reloads: successful framings are reused instantly instead of re-rendered.
