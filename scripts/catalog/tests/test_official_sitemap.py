@@ -121,6 +121,11 @@ class SitemapTest(unittest.TestCase):
         site.load_robots()
         self.assertEqual(site.sitemaps, ["https://www.aeropostale.com/sitemap_index.xml", "http://outra.com/sitemap.xml"])
 
+    def test_pagina_de_produto_vtex_termina_em_p(self):
+        self.assertTrue(looks_like_product("https://www.cea.com.br/vestido-midi-floral-1082857/p"))
+        self.assertFalse(looks_like_product("https://www.cea.com.br/feminino/roupas/vestidos"))
+        self.assertFalse(looks_like_product("https://www.cea.com.br/politica-de-privacidade"))
+
     def test_padrao_de_produto_por_expressao_regular(self):
         pat = ("re:/en-us/.+/[A-Z0-9]+-[A-Z0-9]+\\.html$",)
         self.assertTrue(looks_like_product("https://www.guess.com/en-us/guess/women/bags/lua-bag-pink/RG920575-PIN.html", pat))
@@ -214,7 +219,7 @@ class SitemapTest(unittest.TestCase):
         # sitemap só com categorias (C&A, Balenciaga, Birkenstock): o coletor lê a página de categoria e segue os links de
         # produto dela — sem sair do domínio e respeitando o robots.txt
         cat = (b'<html><body><a href="/women/jeans/p/jeans-reta-1">Jeans</a><a href="https://outra.com/p/x">fora</a>'
-               b'<a href="/women/jeans/pagina2">2</a><a href="#topo">topo</a></body></html>')
+               b'<a href="/women/jeans/pagina2">2</a><a href="#topo">topo</a><a href="https://blog.marca.com/women/p/post-1">blog</a></body></html>')
         web = FakeWeb({"https://marca.com/robots.txt": (200, b"User-agent: *\nDisallow: /women/jeans/pagina2\nSitemap: https://marca.com/sitemap.xml", "text/plain"),
                        "https://marca.com/sitemap.xml": (200, urlset("https://marca.com/women/jeans", "https://marca.com/sobre-nos"), XML),
                        "https://marca.com/women/jeans": (200, cat, HTML),
@@ -227,6 +232,7 @@ class SitemapTest(unittest.TestCase):
         self.assertNotIn("https://outra.com/p/x", web.calls)
         self.assertNotIn("https://marca.com/women/jeans/pagina2", web.calls)
         self.assertNotIn("https://marca.com/sobre-nos", web.calls)
+        self.assertNotIn("https://blog.marca.com/women/p/post-1", web.calls)   # subdomínio que não é a loja: um 403 lá pararia tudo
 
     def test_busca_melhorada_sem_pista_na_url_segue_links_folha_da_pagina_inicial(self):
         # loja sem sitemap e sem "product" na URL (Magento: /chuck-70-…): da página inicial, segue os links "folha"

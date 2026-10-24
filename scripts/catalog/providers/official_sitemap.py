@@ -32,7 +32,8 @@ from validate_source import blocked, same_site
 
 Fetch = Callable[[str], tuple[int, bytes, str]]
 DEFAULT_UA = "FashionAI-CatalogBot/1.0 (+https://fashionai.app/catalog-bot)"
-PRODUCT_HINTS = ("product", "produto", "/p/", "/t/", "/pd/", "/item", "-p-", "/prod")
+# "re:/p$": página de produto VTEX (/nome-da-peca-1082857/p — C&A, Renner, Hering) sem barra final
+PRODUCT_HINTS = ("product", "produto", "/p/", "/t/", "/pd/", "/item", "-p-", "/prod", "re:/p$")
 
 
 class StopDomain(Exception):
@@ -290,6 +291,10 @@ def crawl_categories(site: Site, categories: list[str], visit: Callable[[str], O
     pelos dados estruturados e conta no limite de páginas sem dados. Lojas sem pista na URL (Magento: /chuck-70-…) usam
     os links "folha" da página que não parecem categoria."""
     queue = list(dict.fromkeys(categories)) or [site.base + "/"]
+    # só o host da loja (www.cea.com.br e cea.com.br): um link para blog./ajuda./carreiras. da mesma marca não é a loja,
+    # e um 403 lá encerraria o domínio inteiro
+    shop_hosts = {domain(site.base), site.domain, "www." + site.domain}
+    own = lambda u: (domain(u) or "") in shop_hosts
     seen: set[str] = set()
     crawled = 0
     while queue and crawled < max_pages and not done():
@@ -304,7 +309,7 @@ def crawl_categories(site: Site, categories: list[str], visit: Callable[[str], O
         crawled += 1
         if status != 200 or not (("html" in (ctype or "")) or looks_like_html(body, ctype)):
             continue
-        links = [u for u in page_links(body, page) if same_site(domain(u), site.domain) and not blocked(u) and u != page]
+        links = [u for u in page_links(body, page) if own(u) and not blocked(u) and u != page]
         products = [u for u in links if looks_like_product(u, product_patterns)]
         if not products:
             products = [u for u in links if looks_like_product_leaf(u)]
