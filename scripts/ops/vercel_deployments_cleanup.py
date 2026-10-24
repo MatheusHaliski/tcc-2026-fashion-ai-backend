@@ -3,12 +3,17 @@
 
     VERCEL_TOKEN=… python3 scripts/ops/vercel_deployments_cleanup.py --team team_xxx --project prj_xxx            # ensaio: só lista
     VERCEL_TOKEN=… python3 scripts/ops/vercel_deployments_cleanup.py --team team_xxx --project prj_xxx --apply    # apaga os candidatos
+    VERCEL_TOKEN=… python3 scripts/ops/vercel_deployments_cleanup.py --project prj_xxx                            # token com escopo de time/projeto
+
+Token "Full Account": passe --team. Token com escopo (time ou projeto, Account Settings → Tokens → Scope): NÃO passe
+--team — com esse tipo de token a API responde 403/404 quando teamId vai na query e só funciona sem ele.
 
 O que vira candidato (e por quê):
   * produção com estado ERROR ou CANCELED — nunca serviu tráfego; só ocupa armazenamento;
   * preview (target nulo) de branch cuja PR já foi mesclada/fechada ou mais velho que --preview-days (padrão 2);
   * nunca: o deployment de produção atual (READY mais recente), qualquer um com alias próprio, nem os --keep-production
-    (padrão 2) READY de produção mais recentes — são o plano de rollback.
+    (padrão 2) READY de produção mais recentes — são o plano de rollback. O alias automático de branch
+    (<projeto>-git-<branch>-<time>.vercel.app) não conta como "próprio": a Vercel o realoca sozinha e ele não protege nada.
 Deployment apagado fica 30 dias recuperável no painel (Settings → Security → Recently Deleted). O token vem SÓ de
 VERCEL_TOKEN e nunca é impresso; sem token o script sai antes de qualquer chamada. A política de retenção (Settings →
 Security → Deployment Retention Policy) não tem API pública: continua pelo painel.
@@ -62,12 +67,22 @@ class Deployment:
         return self.target == "production"
 
 
-def list_deployments(fetch: Fetch, team: str, project: str, limit: int = 100) -> list[Deployment]:
+def team_query(team: Optional[str]) -> dict[str, str]:
+    """teamId só com token Full Account; token com escopo infere o time e rejeita o parâmetro."""
+    return {"teamId": team} if team else {}
+
+
+def is_branch_alias(alias: str) -> bool:
+    """Alias automático de branch da Vercel (…-git-<branch>-<time>.vercel.app): realocado sozinho, não protege o deployment."""
+    return alias.endswith(".vercel.app") and "-git-" in alias
+
+
+def list_deployments(fetch: Fetch, team: Optional[str], project: str, limit: int = 100) -> list[Deployment]:
     """Todos os deployments do projeto (paginado), mais novos primeiro."""
     out: list[Deployment] = []
     until: Optional[int] = None
     while True:
-        q = {"teamId": team, "projectId": project, "limit": str(limit)}
+        q = {**team_query(team), "projectId": project, "limit": str(limit)}
         if until:
             q["until"] = str(until)
         status, body = fetch("GET", "/v6/deployments?" + urllib.parse.urlencode(q))
@@ -85,9 +100,10 @@ def list_deployments(fetch: Fetch, team: str, project: str, limit: int = 100) ->
     return out
 
 
-def aliases_of(fetch: Fetch, team: str, deployment_id: str) -> list[str]:
-    status, body = fetch("GET", f"/v2/deployments/{deployment_id}/aliases?teamId={team}")
-    return [a.get("alias") for a in body.get("aliases", []) if a.get("alias")] if status == 200 else []
+def aliases_of(fetch: Fetch, team: Optional[str], deployment_id: str) -> list[str]:
+    """Aliases que protegem o deployment (o alias automático de branch fica de fora)."""
+    status, body = fetch("GET", f"/v2/deployments/{deployment_id}/aliases?" + urllib.parse.urlencode(team_query(team)))
+    return [a["alias"] for a in body.get("aliases", []) if a.get("alias") and not is_branch_alias(a["alias"])] if status == 200 else []
 
 
 def plan(deployments: list[Deployment], *, now_ms: int, preview_days: float = 2, keep_production: int = 2,
@@ -119,8 +135,8 @@ def plan(deployments: list[Deployment], *, now_ms: int, preview_days: float = 2,
     return out
 
 
-def delete(fetch: Fetch, team: str, deployment_id: str) -> tuple[bool, str]:
-    status, body = fetch("DELETE", f"/v13/deployments/{deployment_id}?teamId={team}")
+def delete(fetch: Fetch, team: Optional[str], deployment_id: str) -> tuple[bool, str]:
+    status, body = fetch("DELETE", f"/v13/deployments/{deployment_id}?" + urllib.parse.urlencode(team_query(team)))
     if status in (200, 204):
         return True, body.get("state", "DELETED")
     return False, f"{status}: {body.get('error', {}).get('message', 'sem detalhe')}"
@@ -128,7 +144,7 @@ def delete(fetch: Fetch, team: str, deployment_id: str) -> tuple[bool, str]:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0], formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
-    ap.add_argument("--team", required=True, help="teamId (team_…)")
+    ap.add_argument("--team", default=None, help="teamId (team_…) — só com token Full Account; omita com token de escopo de time/projeto")
     ap.add_argument("--project", required=True, help="projectId (prj_…) ou nome")
     ap.add_argument("--preview-days", type=float, default=2, help="preview mais velho que isto vira candidato (padrão 2)")
     ap.add_argument("--keep-production", type=int, default=2, help="deployments READY de produção preservados (padrão 2)")
