@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import NewPiecePage from "@/app/(site)/(app)/pieces/new/page";
 import type { CatalogProduct, SearchResponse } from "@/lib/api/catalog";
 import { __setTaxonomyCache } from "@/lib/api/taxonomy";
@@ -75,9 +75,29 @@ describe("busca catalogada em Adicionar peça", () => {
     viewport(1280);
     vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
     let current = products;
-    mockCatalog(() => current);
+    const { fetchMock, calls } = mockCatalog(() => current);
+    const base = fetchMock.getMockImplementation()!;
+    let initialSearch = true;
+    let finishInitialSearch!: () => void;
+    fetchMock.mockImplementation(async (input, init) => {
+      if (initialSearch && new URL(String(input), "http://localhost").pathname === "/api/catalog/search") {
+        initialSearch = false;
+        const response = await base(input, init);
+        return new Promise<Response>(resolve => { finishInitialSearch = () => resolve(response); });
+      }
+      return base(input, init);
+    });
     await searchCatalog();
+    await waitFor(() => expect(finishInitialSearch).toBeTypeOf("function"));
+    const browseCount = () => calls.filter(call => call.method === "GET" && call.path.startsWith("/api/catalog/products?")).length;
+    const beforeReturn = browseCount();
     current = [...products, { ...products[0], id: "newly-imported", productName: "Tênis recém-importado" }];
+    // A contagem do browse aparece enquanto a busca complementar ainda carrega; focus não deve sobrepor essa carga.
+    fireEvent(window, new Event("focus"));
+    expect(browseCount()).toBe(beforeReturn);
+    expect(screen.getByText("Peças nesta seleção: 11")).toBeTruthy();
+    await act(async () => { finishInitialSearch(); });
+    // Simula voltar à aba já carregada, sem confundir a primeira renderização da contagem com o fim das requisições.
     fireEvent(window, new Event("focus"));
     await screen.findByText("Peças nesta seleção: 12");
     expect((screen.getByLabelText(/Como ela se chama/) as HTMLInputElement).value).toBe("tenis");

@@ -113,6 +113,46 @@ describe("caixa da peça na foto", () => {
 });
 
 describe("cores e textura vêm de dentro da peça", () => {
+  it("keeps a photographed pocket badge on the front without inventing its colours as back stripes", () => {
+    const image = rgba(160, 240, [0, 0, 0, 0]);
+    rect(image, 20, 10, 70, 230, [20, 70, 150, 255]);
+    rect(image, 90, 10, 140, 230, [20, 70, 150, 255]);
+    rect(image, 92, 10, 138, 70, [220, 155, 20, 255]);
+    const img = image as unknown as HTMLImageElement, info = photoInfo(img)!;
+    expect(info.legRows!.length).toBeGreaterThan(4);
+    const texture = garmentTexture(img, "#144696", null, info, SPECS.pants);
+    const atlas = texture.image as FakeCanvas;
+    expect(atlas.pixel(110, 30)).toEqual([220, 155, 20, 255]);
+    expect(atlas.pixel(280, 30)).toEqual([20, 70, 150, 255]);
+    texture.dispose();
+  });
+  it("retains pale denim wash when excluding an unrelated badge hue from the back", () => {
+    const image = rgba(160, 240, [0, 0, 0, 0]);
+    rect(image, 20, 10, 70, 230, [20, 70, 150, 255]);
+    rect(image, 90, 10, 140, 230, [20, 70, 150, 255]);
+    rect(image, 20, 10, 70, 50, [150, 170, 190, 255]);
+    rect(image, 90, 10, 140, 50, [150, 170, 190, 255]);
+    rect(image, 92, 50, 138, 85, [220, 155, 20, 255]);
+    const img = image as unknown as HTMLImageElement;
+    const texture = garmentTexture(img, "#144696", null, photoInfo(img), SPECS.pants);
+    expect((texture.image as FakeCanvas).pixel(280, 30)).toEqual([150, 170, 190, 255]);
+    texture.dispose();
+  });
+  it("retains unique print pixels in the front and reuses its atlas when another garment finishes", () => {
+    const image = cutout();
+    rect(image, 42, 40, 49, 44, [250, 250, 250, 255]);
+    rect(image, 52, 46, 59, 50, [5, 20, 80, 255]);
+    const img = image as unknown as HTMLImageElement, info = photoInfo(img)!;
+    const first = garmentTexture(img, "#dc1e1e", null, info, SPECS.shirt);
+    const second = garmentTexture(img, "#dc1e1e", null, photoInfo(img), SPECS.shirt);
+    expect((first.image as FakeCanvas).pixel(45, 42)).toEqual([250, 250, 250, 255]);
+    expect((first.image as FakeCanvas).pixel(55, 48)).toEqual([5, 20, 80, 255]);
+    expect(second).not.toBe(first); // independent GPU ownership
+    expect(second.image).toBe(first.image);
+    expect(second.userData.atlasCacheHit).toBe(true);
+    const edited = garmentTexture(img, "#123456", null, info, SPECS.shirt);
+    expect(edited.image).not.toBe(first.image);
+  });
   it("a cor do tecido é a da peça, não a do fundo; a textura pinta o fundo com o tecido e guarda o canto liso", () => {
     const img = opaque() as unknown as HTMLImageElement; const info = photoInfo(img)!;
     expect(fabricColor(img, "#123456")).toBe("#f6f6f6");           // sem a caixa: a cor vinha do fundo (o bug)

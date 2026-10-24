@@ -11,7 +11,8 @@ import { GarmentState } from "@/components/try-on/garment-state";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FITTING_SLOTS, type FittingItem, type FittingSlot } from "@/lib/tryon/fitting-room";
-import { useGarmentStatus } from "@/lib/tryon/garment-status";
+import { requestPhotoRetry, useGarmentStatus } from "@/lib/tryon/garment-status";
+import type { PhotoState } from "@/lib/tryon/garment-asset";
 import { model3dFill, model3dProgress, type Model3dProgress } from "@/lib/tryon/model3d-steps";
 
 export interface FittingItemsProps {
@@ -115,8 +116,8 @@ function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn
       setPaused(reason);
     }
   };
-  // peça da loja ainda não guardada: o 3D não "travou", ele espera a peça entrar no guarda-roupa
-  const idle = !pieceId ? t("tryOn.m3d.guarde_para_gerar") : null;
+  // A projected wearable does not wait for a separately saved GLB.
+  const idle = !pieceId ? t("tryOn.preview.savedModel") : null;
   return { pieceId, model, progress, paused: progress.phase === "none" ? paused : null, idle, queue, saveAndGenerate };
 }
 
@@ -156,8 +157,9 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
           {coveredBy
             ? <span className="piece-row-note"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.coberta_curto", { name: coveredBy })}</span>
             : onPreview2d ? <Button size="sm" onClick={() => onPreview2d(item)}><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.ver_previa_2d")}</Button> : null}
-          <Model3dStepBar progress={m3d.progress} paused={m3d.paused} idle={m3d.idle} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
-            onRetry={() => void m3d.model.request()} />
+          <GarmentPreviewStatus item={item} photo={garment.photos[item.key]} body={garment.body} />
+          {m3d.pieceId && (m3d.progress.phase !== "none" || m3d.paused) && <Model3dStepBar progress={m3d.progress} paused={m3d.paused} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
+            onRetry={() => void m3d.model.request()} />}
         </>}
         actions={catalog ? <>
           {item.officialUrl && (
@@ -179,6 +181,19 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
       </Dialog>
     </>
   );
+}
+
+/** The wearable preview is immediate; a separately saved GLB is not its loading state. */
+function GarmentPreviewStatus({ item, photo, body }: { item: FittingItem; photo?: PhotoState; body: "carregando" | "pronto" | "erro" }) {
+  const { t } = useI18n();
+  const state = photo ?? (!item.imageUrl && !item.processedUrl && !item.productId ? "sem-foto" : "carregando");
+  const label = body === "erro" ? t("tryOn.avatar_load_failed")
+    : body === "carregando" && !photo ? t("tryOn.corpo_carregando")
+    : t(state === "ok" ? "tryOn.preview.ready" : state === "sem-foto" ? "tryOn.preview.colorOnly" : state === "falhou" ? "tryOn.preview.failed" : "tryOn.preview.loading");
+  return <span className="fitting-slot-state" role="status" data-preview-photo={state}>
+    <span>{label}</span>
+    {(state === "falhou" || state === "sem-foto" && !!item.productId) && body === "pronto" && <Button size="sm" onClick={() => requestPhotoRetry(item.key)}>{t("tryOn.preview.retry")}</Button>}
+  </span>;
 }
 
 type T = ReturnType<typeof useI18n>["t"];

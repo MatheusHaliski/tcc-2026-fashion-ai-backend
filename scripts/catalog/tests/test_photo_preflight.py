@@ -115,7 +115,8 @@ class PreflightTests(unittest.TestCase):
         self.assertAlmostEqual(.5,box['x']+box['w']/2,delta=1/900);self.assertAlmostEqual(.5,box['y']+box['h']/2,delta=1/1200)
         self.assertAlmostEqual(source['w']/source['h'],box['w']*900/(box['h']*1200),places=2)
         out=np.asarray(Image.open(io.BytesIO(result.whole)))
-        self.assertTrue((out[0]==255).all())
+        self.assertEqual(4,out.shape[2]);self.assertTrue((out[0,:,3]==0).all())
+        self.assertTrue(result.metrics['whole']['alpha'])
 
     def test_semantic_exclusion_preserves_real_marks_and_rejects_unknown_exterior_lines(self):
         image,masks=fixture(400,top=200)

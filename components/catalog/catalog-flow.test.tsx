@@ -117,3 +117,40 @@ describe("adicionar peça pelo catálogo (RF47) — etapa única Peça", () => {
     expect(within(cards[1]).getAllByText("✗").length).toBe(2);
   });
 });
+
+
+describe("identidade da foto selecionada no catálogo", () => {
+  it("passes the displayed processed whole image into try-on selection", async () => {
+    const original = { ...PRODUCT, id: "processed-pick", imageUrl: "https://brand.example/original.png" };
+    const prepared = { ...original, catalogImage: { imageId: "photo-ready", url: "/media/fabric-ready.png", mode: "PROCESSED", photoSet: { version: "CATALOG_PHOTO_SET_V2", status: "READY" },
+      whole: { url: "/media/whole-ready.png", alpha: true, processed: true, box: { x: 0, y: 0, w: 1, h: 1 } } } };
+    loggedAs(ME, { "GET /api/taxonomy": TAXONOMY,
+      "GET /api/catalog/products": { items: [original], total: 1, page: 0, hasMore: false },
+      "POST /api/catalog/products/processed-pick/preview-image": prepared });
+    const pick = vi.fn();
+    renderApp(<CatalogSearch initial={{ brand: "Nike" }} browse onPick={pick} />);
+    await waitFor(() => expect(document.querySelector(".catalog-card")?.getAttribute("aria-busy")).toBe("false"));
+    fireEvent.click(screen.getByRole("button", { name: "Selecionar" }));
+    await waitFor(() => expect(pick).toHaveBeenCalledTimes(1));
+    expect(pick.mock.calls[0][0].catalogImage).toEqual(prepared.catalogImage);
+  });
+});
+
+it("waits for the selected photo preparation instead of freezing an unfinished solid-color try-on", async () => {
+  const original = { ...PRODUCT, id: "pending-pick", imageUrl: "https://brand.example/pending.png" };
+  let finish!: (response: Response) => void;
+  const { fetchMock } = loggedAs(ME, { "GET /api/taxonomy": TAXONOMY,
+    "GET /api/catalog/products": { items: [original], total: 1, page: 0, hasMore: false } });
+  const fallback = fetchMock.getMockImplementation()!;
+  fetchMock.mockImplementation((input, init) => String(input).includes("/api/catalog/products/pending-pick/preview-image")
+    ? new Promise<Response>(resolve => { finish = resolve; }) : fallback(input, init));
+  const pick = vi.fn();
+  renderApp(<CatalogSearch initial={{ brand: "Nike" }} browse onPick={pick} />);
+  const button = await screen.findByRole("button", { name: "Selecionar" });
+  await waitFor(() => expect(finish).toBeTypeOf("function"));
+  fireEvent.click(button);
+  expect(pick).not.toHaveBeenCalled();
+  finish(new Response(JSON.stringify({ ...original, catalogImage: { imageId: "prepared-photo", url: "/media/fabric.png", mode: "PROCESSED", photoSet: { version: "CATALOG_PHOTO_SET_V2", status: "READY" }, whole: { url: "/media/whole.png", alpha: true, processed: true, box: { x: 0, y: 0, w: 1, h: 1 } } } }), { headers: { "Content-Type": "application/json" } }));
+  await waitFor(() => expect(pick).toHaveBeenCalledTimes(1));
+  expect(pick.mock.calls[0][0].catalogImage.whole.url).toBe("/media/whole.png");
+});

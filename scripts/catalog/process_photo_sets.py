@@ -19,35 +19,51 @@ try:
     from . import db
     from .catalog_image_inventory import _SELECT
     from .process_catalog_images import ImageDownloader
-    from .photo_set import process_photo, LocalClothProvider, PHOTO_SET_VERSION
+    from .photo_set import process_photo, PHOTO_SET_VERSION
+    from .semantic_photo_provider import AutomaticClothProvider, AUTOMATIC_POLICY_VERSION
     from .default_assets import default_asset_url
     from .source_persistence import source_decision
 except ImportError:
     import db
     from catalog_image_inventory import _SELECT
     from process_catalog_images import ImageDownloader
-    from photo_set import process_photo, LocalClothProvider, PHOTO_SET_VERSION
+    from photo_set import process_photo, PHOTO_SET_VERSION
+    from semantic_photo_provider import AutomaticClothProvider, AUTOMATIC_POLICY_VERSION
     from default_assets import default_asset_url
     from source_persistence import source_decision
 LOG=logging.getLogger('fashionai.photo_sets')
-PHOTO_SELECT=_SELECT.replace('p.version AS product_version','p.color, p.version AS product_version').replace('i.id AS image_id','i.id AS id')
+PHOTO_SELECT=(_SELECT.replace('p.version AS product_version',
+    'COALESCE(v.color,p.color) AS color, v.id AS matched_variant_id, p.version AS product_version')
+    .replace('i.id AS image_id','i.id AS id')
+    .replace('LEFT JOIN catalog_images i ON i.product_id = p.id',
+             'LEFT JOIN catalog_images i ON i.product_id = p.id\nLEFT JOIN catalog_variants v ON v.id=i.variant_id AND v.product_id=p.id'))
+
+def invalid_variant(record):
+    return record.get('variant_id') is not None and record.get('matched_variant_id') != record['variant_id']
 
 def obj(value):
     if isinstance(value,dict):return value
     try:return json.loads(value) if value else {}
     except (ValueError,TypeError):return {}
 
-def current(record,now=None):
+def current(record,now=None,*,require_automatic_policy=False):
     s=obj(record.get('assets_json')).get('photoSet',{})
+    if invalid_variant(record):return False
     match=(s.get('version')==PHOTO_SET_VERSION and s.get('sourceUrl')==record.get('image_url') and s.get('sourceSha256')==record.get('source_sha256')
-       and s.get('category')==record.get('category') and s.get('subcategory')==record.get('subcategory') and s.get('color')==record.get('color'))
+       and s.get('category')==record.get('category') and s.get('subcategory')==record.get('subcategory') and s.get('color')==record.get('color')
+       and s.get('variantId')==record.get('variant_id')
+       and (s.get('imageId') is None or s.get('imageId')==record.get('id')))
+    if require_automatic_policy and s.get('isolationPolicyVersion') != AUTOMATIC_POLICY_VERSION:
+        return False
     return match and (s.get('status') in ('READY','DEFAULT','REVIEW','INELIGIBLE') or s.get('retryAt',0)>(now or time.time()))
 
 def build_set(record,downloader,provider,storage=None):
-    result={'version':PHOTO_SET_VERSION,'sourceUrl':record['image_url'],'sourceSha256':record.get('source_sha256'),
+    result={'version':PHOTO_SET_VERSION,'isolationPolicyVersion':AUTOMATIC_POLICY_VERSION,'sourceUrl':record['image_url'],'sourceSha256':record.get('source_sha256'),
+      'imageId':record.get('id'),'variantId':record.get('variant_id'),
       'category':record['category'],'subcategory':record['subcategory'],'color':record.get('color'),
       'defaultAssetUrl':default_asset_url(record['category'],record['subcategory'],record.get('color')),'generatedAt':time.time(),
       'metrics':{'sourceGarmentHeightFraction':None,'sourceQuality':None}}
+    if invalid_variant(record):return {**result,'status':'REVIEW','reason':'IMAGE_VARIANT_CONTEXT_INVALID'}
     sources=record.get('persistence_sources_json') or record.get('persistence_sources') or []
     if isinstance(sources,str):sources=json.loads(sources)
     rights=source_decision(sources,record['image_url'],record.get('source_domain'))
@@ -78,11 +94,14 @@ def commit_set(conn,record,result):
         rights=source_decision(cursor.fetchall(),record['image_url'],record.get('source_domain'))
         if result['status']=='READY' and rights['state']!='AUTHORIZED':return False
         cursor.execute("""UPDATE catalog_images i JOIN catalog_products p ON p.id=i.product_id
+          LEFT JOIN catalog_variants v ON v.id=i.variant_id AND v.product_id=p.id
           SET i.assets_json=JSON_SET(COALESCE(i.assets_json,JSON_OBJECT()),'$.photoSet',CAST(%s AS JSON)),
               i.source_sha256=%s,i.review_status=CASE WHEN %s='REVIEW' AND i.review_status<>'REJECTED' THEN 'PENDING' ELSE i.review_status END,
               i.version=i.version+1,i.updated_at=UTC_TIMESTAMP(6)
-          WHERE i.id=%s AND i.version=%s AND i.image_url=%s AND p.category=%s AND p.subcategory=%s AND p.color <=> %s""",
-          (json.dumps(result,ensure_ascii=False),result.get('sourceSha256'),result['status'],record['id'],record['version'],record['image_url'],record['category'],record['subcategory'],record.get('color')))
+          WHERE i.id=%s AND i.version=%s AND i.image_url=%s AND p.category=%s AND p.subcategory <=> %s
+            AND i.variant_id <=> %s AND (i.variant_id IS NULL OR v.id IS NOT NULL)
+            AND COALESCE(v.color,p.color) <=> %s""",
+          (json.dumps(result,ensure_ascii=False),result.get('sourceSha256'),result['status'],record['id'],record['version'],record['image_url'],record['category'],record['subcategory'],record.get('variant_id'),record.get('color')))
         return cursor.rowcount==1
 
 def run_pass(conn,downloader,provider,storage,audit,*,apply=False,batch_size=100,limit=None,force=False):
@@ -94,13 +113,14 @@ def run_pass(conn,downloader,provider,storage,audit,*,apply=False,batch_size=100
         if not records:break
         for record in records:
             last=record['id']
-            if not force and current(record):continue
+            if not force and current(record,require_automatic_policy=True):continue
             if limit is not None and total>=limit:break
             try:
                 result=build_set(record,downloader,provider,storage)
             except Exception:
-                result={'version':PHOTO_SET_VERSION,'status':'RETRY','reason':'DOWNLOAD_OR_STORAGE_FAILED','retryAt':time.time()+300,
+                result={'version':PHOTO_SET_VERSION,'isolationPolicyVersion':AUTOMATIC_POLICY_VERSION,'status':'RETRY','reason':'DOWNLOAD_OR_STORAGE_FAILED','retryAt':time.time()+300,
                   'sourceUrl':record['image_url'],'sourceSha256':record.get('source_sha256'),'category':record['category'],
+                  'imageId':record.get('id'),'variantId':record.get('variant_id'),
                   'subcategory':record['subcategory'],'color':record.get('color'),'defaultAssetUrl':default_asset_url(record['category'],record['subcategory'],record.get('color'))}
             saved=False
             if apply:
@@ -114,7 +134,7 @@ def run_pass(conn,downloader,provider,storage,audit,*,apply=False,batch_size=100
     return total
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--apply',action='store_true');p.add_argument('--watch',action='store_true');p.add_argument('--force',action='store_true');p.add_argument('--limit',type=int);p.add_argument('--interval',type=int,default=60);p.add_argument('--audit',type=Path,default=Path('photo-sets-audit.jsonl'));p.add_argument('--reviewed-masks',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--apply',action='store_true');p.add_argument('--watch',action='store_true');p.add_argument('--force',action='store_true');p.add_argument('--limit',type=int);p.add_argument('--interval',type=int,default=60);p.add_argument('--audit',type=Path,default=Path('photo-sets-audit.jsonl'));p.add_argument('--reviewed-masks',type=Path);p.add_argument('--parser-weights',type=Path);a=p.parse_args()
     if a.limit is not None and a.limit<1:p.error('--limit deve ser positivo')
     logging.basicConfig(level=logging.INFO,format='%(message)s')
     storage=None
@@ -126,7 +146,7 @@ def main():
         try:from .reviewed_photo_masks import ReviewedMaskProvider
         except ImportError:from reviewed_photo_masks import ReviewedMaskProvider
         provider=ReviewedMaskProvider(a.reviewed_masks)
-    else:provider=LocalClothProvider()
+    else:provider=AutomaticClothProvider(weights=a.parser_weights)
     a.audit.parent.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp,a.audit.open('a') as audit:
         downloader=ImageDownloader(Path(tmp));conn=db.connect()

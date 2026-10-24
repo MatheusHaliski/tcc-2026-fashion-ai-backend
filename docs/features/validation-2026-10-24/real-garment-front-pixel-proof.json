@@ -1,0 +1,29 @@
+{
+  "scope": "Exact opaque source RGB pixels versus left/front half of browser-generated atlas; does not certify geometric projection, source resolution, sleeves or unseen back details.",
+  "products": [
+    {
+      "id": "nike-celtics",
+      "imageId": "nike-celtics-0",
+      "wholeSha256": "2290513cf0918bcfc2e3a9aeba3bd9736715fb0f66ab0219b571b1a091b0d26f",
+      "opaqueSourcePixels": 206317,
+      "exactFrontAtlasPixels": 206317,
+      "ratio": 1
+    },
+    {
+      "id": "aramis-xadrez",
+      "imageId": "aramis-xadrez-0",
+      "wholeSha256": "cbcf5e7dd6ac444cce092e2195b460d8b8da710100bdeb963a9bdfbb6c6a6228",
+      "opaqueSourcePixels": 189599,
+      "exactFrontAtlasPixels": 189599,
+      "ratio": 1
+    },
+    {
+      "id": "hokkaido",
+      "imageId": "hokkaido-gallery-6",
+      "wholeSha256": "4d3bc3e14be39792aa4ab5c986ca675bf0e8830894555e4a78e8063424d1ade8",
+      "opaqueSourcePixels": 111398,
+      "exactFrontAtlasPixels": 111398,
+      "ratio": 1
+    }
+  ]
+}

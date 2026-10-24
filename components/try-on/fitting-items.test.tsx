@@ -3,7 +3,8 @@
  * "Provando agora" no formato do card compacto de peça (docs/anatomias): miniatura de 56 px, rótulo do lugar, identidade,
  * nome que é o link e UMA linha de estado — o botão "Ver prévia 2D no espelho" e a barra do 3D com as etapas que faltam
  * (porcentagem só quando é real). No máximo três ações visíveis e o resto no menu ⋯. Peça do guarda-roupa sem 3D entra
- * na fila sozinha (uma vez); peça da loja diz "3D começa ao guardar a peça" e, guardada (Já tenho ou menu ⋯), entra na fila sozinha; recurso desligado:
+ * na fila sozinha (uma vez); a prévia de loja não espera esse arquivo e mostra o estado real da foto, sem barra falsa;
+ * guardada (Já tenho ou menu ⋯), entra na fila sozinha; recurso desligado:
  * "3D pausado" com o motivo; falhou: "Tentar de novo
  * (grátis)"; pedido recusado: "3D pausado" com o motivo acessível.
  */
@@ -11,8 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
 import { FittingItems, resetAutoQueue } from "@/components/try-on/fitting-items";
 import type { FittingItem, FittingSlot } from "@/lib/tryon/fitting-room";
+import { publishBodyState, publishPhotoStates, resetGarmentStatus, useGarmentPhotoRetries } from "@/lib/tryon/garment-status";
 
-beforeEach(() => resetAutoQueue());
+beforeEach(() => { resetAutoQueue(); resetGarmentStatus(); publishBodyState("pronto"); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const NAMES: Record<FittingSlot, string> = { upper_piece: "Parte de cima", lower_piece: "Parte de baixo", shoes_piece: "Calçado", accessory_piece: "Acessório" };
 const catalog: FittingItem = { key: "c:p1", source: "catalog", slot: "upper_piece", wear: "TOP", name: "Blazer de alfaiataria", brand: { name: "Animale", logoUrl: null }, category: "upper_piece", subcategory: "blazer", imageUrl: "/media/b.png", officialUrl: "https://animale.com.br/x", sourceDomain: "animale.com.br", productId: "p1", colorHex: "#aabbcc", addedAt: 1 };
@@ -76,13 +78,15 @@ describe("FittingItems — card compacto de peça", () => {
     expect(posts(calls, "/api/pieces/w1/model3d")).toBe(1);
   });
 
-  it("peça da loja: espera ser guardada e, no menu ⋯, Guardar a peça e gerar o 3D (guarda e pede o 3D da peça guardada)", async () => {
+  it("a prévia da loja não espera guardar; o menu opcional ainda guarda e pede o arquivo 3D", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/pieces/w9/model3d": { status: null, featureEnabled: true }, "POST /api/pieces/w9/model3d": { status: "QUEUED" } });
     const onOwn = vi.fn();
     const props = { ...base(), items: [catalog], onOwn };
     const { rerender } = renderApp(<FittingItems {...props} />);
     const top = row("Parte de cima");
-    expect(top.getByText("3D começa ao guardar a peça")).toBeTruthy();
+    expect(top.getByText("Carregando a textura da peça…")).toBeTruthy();
+    expect(top.queryByRole("progressbar")).toBeNull();
+    expect(calls.some((call) => call.path.includes("/model3d"))).toBe(false);
     fireEvent.click(top.getByRole("button", { name: "Mais ações · Blazer de alfaiataria" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "Guardar a peça e gerar o 3D" }));
     expect(onOwn).toHaveBeenCalledWith(expect.objectContaining({ key: "c:p1" }));
@@ -90,6 +94,41 @@ describe("FittingItems — card compacto de peça", () => {
     await waitFor(() => expect(posts(calls, "/api/pieces/w9/model3d")).toBe(1));
     await waitFor(() => expect(row("Parte de cima").getByText("Na fila do 3D · 1 de 4")).toBeTruthy());
     expect(row("Parte de cima").getByRole("link", { name: /No seu guarda-roupa/ }).getAttribute("href")).toBe("/pieces/w9");
+  });
+
+  it("foto pronta aparece sem guardar ou gerar GLB; ausência de foto não afirma textura pronta", async () => {
+    const { calls } = loggedAs(undefined, {});
+    publishPhotoStates({ [catalogBottom.key]: "ok" });
+    renderApp(<FittingItems {...base()} items={[catalogBottom]} />);
+    const bottom = row("Parte de baixo");
+    expect(bottom.getByText("Foto aplicada à prévia 3D estimada")).toBeTruthy();
+    expect(bottom.queryByRole("progressbar")).toBeNull();
+    await act(async () => publishPhotoStates({ [catalogBottom.key]: "sem-foto" }));
+    expect(bottom.getByText("Prévia só com cor: esta peça está sem foto.")).toBeTruthy();
+    expect(bottom.queryByText("Foto aplicada à prévia 3D estimada")).toBeNull();
+    expect(calls.some((call) => call.path.includes("/model3d"))).toBe(false);
+  });
+
+  it("recarrega só a textura escolhida sem guardar nem pedir geração 3D", async () => {
+    const { calls } = loggedAs(undefined, {});
+    const onOwn = vi.fn();
+    publishPhotoStates({ [catalogBottom.key]: "falhou", [catalog.key]: "ok" });
+    function RetryProbe() {
+      const revisions = useGarmentPhotoRetries();
+      return <output data-testid="photo-retries">{JSON.stringify(revisions)}</output>;
+    }
+    renderApp(<><FittingItems {...base()} items={[catalogBottom, catalog]} onOwn={onOwn} /><RetryProbe /></>);
+    const bottom = row("Parte de baixo");
+    expect(bottom.getByText(/A textura não carregou/)).toBeTruthy();
+    fireEvent.click(bottom.getByRole("button", { name: "Recarregar textura" }));
+    expect(bottom.getByText("Carregando a textura da peça…")).toBeTruthy();
+    expect(bottom.queryByRole("button", { name: "Recarregar textura" })).toBeNull();
+    expect(screen.getByTestId("photo-retries").textContent).toBe('{"c:p2":1}');
+    expect(row("Parte de cima").getByText("Foto aplicada à prévia 3D estimada")).toBeTruthy();
+    expect(onOwn).not.toHaveBeenCalled();
+    expect(calls.some((call) => call.path.includes("/model3d"))).toBe(false);
+    await act(async () => publishPhotoStates({ [catalogBottom.key]: "ok", [catalog.key]: "ok" }));
+    expect(bottom.getByText("Foto aplicada à prévia 3D estimada")).toBeTruthy();
   });
 
   it("peça inferior: Guardar e gerar usa imediatamente o ID devolvido pelo salvamento", async () => {
