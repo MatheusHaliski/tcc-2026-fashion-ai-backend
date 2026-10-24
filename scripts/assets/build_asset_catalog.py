@@ -32,7 +32,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC = ROOT / "public"
+# mídia pesada (auras, materiais, peças padrão, bg_chrome) vive em media/, fora do deploy da Vercel; as URLs continuam
+# /aura/…, /assets_pecas/… (lib/media/static-media.ts). Os derivados continuam em public/_derived.
+MEDIA = ROOT / "media"
+ROOTS = (MEDIA, PUBLIC)
 DERIVED = PUBLIC / "_derived"
+
+
+def asset_dir(name: str) -> Path:
+    """Pasta de assets pelo nome da URL: media/<name> quando existe, senão public/<name>."""
+    return next((root / name for root in ROOTS if (root / name).is_dir()), PUBLIC / name)
 FRONT_MANIFEST = ROOT / "lib" / "assets" / "asset-manifest.json"
 BACK_MANIFEST = ROOT / "fai-web" / "src" / "main" / "resources" / "catalog" / "asset-manifest.json"
 
@@ -364,13 +373,14 @@ def sha256(path: Path) -> str:
 
 
 def url_of(path: Path) -> str:
-    rel = path.relative_to(PUBLIC).as_posix()
+    root = next(r for r in ROOTS if path.resolve().is_relative_to(r.resolve()))
+    rel = path.resolve().relative_to(root.resolve()).as_posix()
     return "/" + "/".join(part for part in rel.split("/"))
 
 
 def find_folder(key: str) -> Path | None:
     for name in CATEGORY_FOLDERS[key]:
-        p = PUBLIC / name
+        p = asset_dir(name)
         if p.is_dir():
             return p
     return None
@@ -495,7 +505,7 @@ def build_skins() -> dict:
 
 def build_default_pieces(d) -> dict:
     """RF4 — imagem padrão por subcategoria → categoria → genérica. Sem arquivos, gera silhuetas SVG."""
-    folder = next((PUBLIC / n for n in DEFAULT_PIECE_FOLDERS if (PUBLIC / n).is_dir()), None)
+    folder = next((asset_dir(n) for n in DEFAULT_PIECE_FOLDERS if asset_dir(n).is_dir()), None)
     files = sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in IMAGE_EXT | {".svg"}) if folder else []
     by_sub, by_cat, generic, unmatched, duplicates = {}, {}, None, [], []
     sub_to_cat = {sub: cat for cat, subs in PIECE_CATEGORIES.items() for sub in subs}
@@ -564,17 +574,20 @@ def build(derived_enabled: bool) -> dict:
     d = Deriver(derived_enabled)
     missing: list[dict] = []
     categories = []
-    public_root = PUBLIC.resolve()
-
     def public_asset(url: object) -> Path | None:
+        """Arquivo de uma URL do site: media/ tem prioridade, public/ em seguida; nunca fora das duas árvores."""
         if not isinstance(url, str) or not url.startswith("/"):
             return None
+        for root in ROOTS:
+            path = (root / url.lstrip("/")).resolve()
+            if path.is_relative_to(root.resolve()) and path.exists():
+                return path
         path = (PUBLIC / url.lstrip("/")).resolve()
-        return path if path.is_relative_to(public_root) else None
+        return path if path.is_relative_to(PUBLIC.resolve()) else None
 
     # ---------------- RF23 — fundos do chrome ----------------
     chrome = []
-    bg_dir = PUBLIC / "bg_chrome"
+    bg_dir = asset_dir("bg_chrome")
     ignored = []
     for f in sorted(bg_dir.iterdir()) if bg_dir.is_dir() else []:
         if not f.is_file():
@@ -661,7 +674,7 @@ def build(derived_enabled: bool) -> dict:
         variants_flat.append(v)
 
     # ---------------- Aura Electro (PNG + GIF próprio por variante) ----------------
-    electro_catalog = PUBLIC / "aura" / "electro" / "catalogo.json"
+    electro_catalog = asset_dir("aura") / "electro" / "catalogo.json"
     if electro_catalog.is_file() and "aura_electro" in presets:
         electro = json.loads(electro_catalog.read_text(encoding="utf-8"))
         preset = presets["aura_electro"]
@@ -696,7 +709,7 @@ def build(derived_enabled: bool) -> dict:
     # ---------------- Aura Geometry (PNG + GIF próprio por variante) ----------------
     # ---------------- Aura Geometry e Aura Splash (vídeo + pôster por variante) ----------------
     # /public/aura/<colecao>/catalogo.json lista {id, video, image}; o card desenha o MP4 como <video> (lib/card-art.ts)
-    video_catalogs = {"aura_geometry": PUBLIC / "aura" / "geometry" / "catalogo.json", "aura_splash": PUBLIC / "aura" / "splash" / "catalogo.json"}
+    video_catalogs = {"aura_geometry": asset_dir("aura") / "geometry" / "catalogo.json", "aura_splash": asset_dir("aura") / "splash" / "catalogo.json"}
     video_variant_total = 0
     for preset_id, catalog_file in video_catalogs.items():
         preset = presets.get(preset_id)

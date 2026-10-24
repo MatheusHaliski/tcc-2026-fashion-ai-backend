@@ -51,7 +51,7 @@ def main():
     parser.add_argument('--apply',action='store_true')
     parser.add_argument('--per-family',type=int,default=2)
     parser.add_argument('--max-seconds',type=int,default=120)
-    parser.add_argument('--output',type=Path,default=ROOT/'public/aura/fashion-curated')
+    parser.add_argument('--output',type=Path,default=ROOT/'media/aura/fashion-curated')
     args=parser.parse_args()
     if not 1 <= args.per_family <= 6 or not 10 <= args.max_seconds <= 180: parser.error('per-family 1..6; max-seconds 10..180')
     deadline=time.monotonic()+args.max_seconds

@@ -77,7 +77,7 @@ def process(src, tmp):
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    root = Path(args[0] if args else "public/aura_com_material_mosaico_com_GIF")
+    root = Path(args[0] if args else "media/aura_com_material_mosaico_com_GIF")
     marker = root / ".neon_glitch_done"
     done = set(json.loads(marker.read_text())) if marker.exists() and "--force" not in sys.argv else set()
     for src in sorted(root.glob("P*_M*.mp4")):

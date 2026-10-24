@@ -319,8 +319,8 @@ createServer(async (req, res) => {
   if (path.startsWith("/api/pieces/") && path.endsWith("/studio/pending")) return json(res, 200, null);
   if (path.startsWith("/api/hype/")) return json(res, 200, { status: "INSUFFICIENT_DATA", score: null });
 
-  // arquivos estáticos do app (fotos das peças) para a API de mídia
-  if (method === "GET" && MIME[extname(path)]) { const f = join(ROOT, "public", decodeURIComponent(path)); if (existsSync(f)) { res.writeHead(200, { "content-type": MIME[extname(path)], "access-control-allow-origin": "*" }); return res.end(readFileSync(f)); } }
+  // arquivos estáticos do app (fotos das peças, em public/ ou media/) para a API de mídia
+  if (method === "GET" && MIME[extname(path)]) { const f = [join(ROOT, "public", decodeURIComponent(path)), join(ROOT, "media", decodeURIComponent(path))].find(existsSync); if (f) { res.writeHead(200, { "content-type": MIME[extname(path)], "access-control-allow-origin": "*" }); return res.end(readFileSync(f)); } }
 
   log(404); return notFound(res, path);
 }).listen(PORT, () => console.log(`API simulada das demonstrações em http://localhost:${PORT} (nada aqui é persistido)`));

@@ -25,11 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Provador 2D: o manequim nunca sai sem roupa — tronco, pernas e pés vazios recebem a peça padrão do FashionAI. */
 class TryOnDefaultOutfitTest {
-    private static final Path PUBLIC = Path.of("..", "public");
-    private final DefaultOutfit assets = new DefaultOutfit(url -> {
-        Path p = PUBLIC.resolve(url.substring(1));
-        return Files.isRegularFile(p) ? Optional.of(p) : Optional.empty();
-    });
+    /** As peças padrão (/assets_pecas) vivem em media/, fora de public/ (lib/media/static-media.ts). */
+    private static final List<Path> ROOTS = List.of(Path.of("..", "media"), Path.of("..", "public"));
+    private final DefaultOutfit assets = new DefaultOutfit(url -> ROOTS.stream().map(r -> r.resolve(url.substring(1))).filter(Files::isRegularFile).findFirst());
 
     @Test
     void completaSoAsZonasDescobertas() {

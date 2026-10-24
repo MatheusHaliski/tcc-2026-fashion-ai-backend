@@ -151,7 +151,8 @@ fashionai:
     image-max-pixels: ${IMAGE_MAX_PIXELS:40000000}  # teto de decodificação (bomba de descompressão); também limitado pelo heap
     image-max-side: ${IMAGE_MAX_SIDE:12000}         # px por lado
   assets:
-    public-dir: ${ASSETS_PUBLIC_DIR:public}                # /public do repositório (chrome, aura, material, ícones)
+    public-dir: ${ASSETS_PUBLIC_DIR:public}                # /public do repositório (chrome, ícones, derivados)
+    media-dir: ${ASSETS_MEDIA_DIR:media}                   # /media do repositório (aura, material, peças padrão); no Docker é o mesmo /app/public
   storage:
     type: ${STORAGE_TYPE:local}                            # local | s3
     local-dir: ${STORAGE_LOCAL_DIR:./data/media}

@@ -55,13 +55,13 @@ def photo(garment, name, W, H, scale, dx, dy, rot, bg, q):
     x=int((W-g.width)/2+dx*W); y=int((H-g.height)/2+dy*H)
     base.paste(sh,(x+6,y+10),sh); base.paste(g,(x,y),g)
     base.save(f'{OUT}/{name}.jpg',quality=q)
-tee_ref=Image.open(R+'public/assets_pecas/01_Parte_superior/01_camiseta_referencia.png').convert('RGBA')
+tee_ref=Image.open(R+'media/assets_pecas/01_Parte_superior/01_camiseta_referencia.png').convert('RGBA')
 red=recolor(tee_ref,0.985)
 w,h=red.size
 red=print_text(red,['THE','BEST','PLAN'],(int(w*0.36),int(h*0.52),int(w*0.64),int(h*0.78)))
 red.save(f'{OUT}/_camiseta_vermelha_the_best_plan.png')
-tees=[('camiseta_azul_selo',tee_ref),('camiseta_listrada_FAI',Image.open(R+'public/assets_pecas/06_Variacao_inicial/camiseta_letras_FAI.png').convert('RGBA')),
-      ('camiseta_polo',Image.open(R+'public/assets_pecas/01_Parte_superior/06_polo_shirt_camisa_polo.png').convert('RGBA')),
+tees=[('camiseta_azul_selo',tee_ref),('camiseta_listrada_FAI',Image.open(R+'media/assets_pecas/06_Variacao_inicial/camiseta_letras_FAI.png').convert('RGBA')),
+      ('camiseta_polo',Image.open(R+'media/assets_pecas/01_Parte_superior/06_polo_shirt_camisa_polo.png').convert('RGBA')),
       ('camiseta_vermelha_the_best_plan',red),('camiseta_verde',recolor(tee_ref,0.30))]
 pants=[('calca_jeans',R+'01_jeans.png'),('calca_casual',R+'02_calca_casual.png'),('calca_alfaiataria',R+'03_calca_alfaiataria.png'),('calca_cargo',R+'04_calca_cargo.png'),('calca_jogger',R+'07_calca_jogger.png')]
 sizes=[(1200,1600),(1080,1350),(1600,1200),(1000,1000),(1500,2000)]
