@@ -238,6 +238,16 @@ class SitemapTest(unittest.TestCase):
         self.assertEqual(rep["accepted"], 1)
         self.assertGreaterEqual(rep["crawled_categories"], 1)
 
+    def test_link_de_produto_sem_pista_pela_forma_do_ultimo_segmento(self):
+        from providers.official_sitemap import looks_like_product_leaf
+        for u in ("https://www.balenciaga.com/en-us/alaska-fur-high-boot-brown-802177WBFC12200.html", "https://www.balenciaga.com/A006QCWCG822290.html",
+                  "https://www.ralphlauren.com/men-clothing-polos/custom-slim-fit-mesh-polo-shirt/0043104999.html",
+                  "https://converse.com.br/chuck-70-material-cano-alto-ct35630001-verde", "https://loja.com/camiseta-chuck-basica-ct123"):
+            self.assertTrue(looks_like_product_leaf(u), u)
+        for u in ("https://www.birkenstock.com/de-en/privacy-policy.html", "https://www.balenciaga.com/en-us/women/shoes-for-women/boots-for-women",
+                  "https://loja.com/sobre", "https://loja.com/feminino-c", "https://loja.com/busca?q=jeans", "https://loja.com/"):
+            self.assertFalse(looks_like_product_leaf(u), u)
+
     def test_limite_e_visitados(self):
         urls = [f"https://www.nike.com.br/p/{i}" for i in range(5)]
         pages = {"https://www.nike.com.br/sitemap_index.xml": (200, urlset(*urls), XML)}

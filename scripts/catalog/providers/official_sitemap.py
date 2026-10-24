@@ -246,14 +246,40 @@ def page_links(page: bytes, base_url: str) -> list[str]:
     return out
 
 
+_SKU_SEGMENT = re.compile(r"[a-z0-9]*\d{5,}[a-z0-9]*", re.I)
+
+
+def _sku_like(last_segment: str) -> bool:
+    """Último segmento com um código de 5+ dígitos (802177WBFC12200, 0043104999, ct35630001): é produto, não categoria."""
+    stem = last_segment[:-5] if last_segment.lower().endswith(".html") else last_segment
+    return any(_SKU_SEGMENT.fullmatch(tok) for tok in re.split(r"[-_.]", stem) if tok)
+
+
 def looks_like_category(url: str) -> bool:
-    """URL com cara de página de categoria/coleção (lista de produtos): caminho curto com termo de categoria ou "-c" no fim."""
+    """URL com cara de página de categoria/coleção (lista de produtos): caminho curto com termo de categoria ou "-c" no fim.
+    Um código de produto no último segmento (Ralph Lauren /men-…/…/0043104999.html) nunca é categoria."""
     parts = urllib.parse.urlsplit(url)
     path = parts.path.lower().rstrip("/")
-    if not path or path.count("/") > 4 or looks_like_product(url):
+    if not path or path.count("/") > 4 or looks_like_product(url) or _sku_like(path.rsplit("/", 1)[-1]):
         return False
     u = path + ("?" + parts.query.lower() if parts.query else "")
     return path.endswith("-c") or any(h in u for h in CATEGORY_HINTS)
+
+
+def looks_like_product_leaf(url: str) -> bool:
+    """Link de produto SEM pista na URL, pela forma do último segmento: um código com 5+ dígitos (Balenciaga
+    /en-us/alaska-fur-high-boot-802177WBFC12200.html, Ralph Lauren /…/0043104999.html) ou um caminho "folha" de um
+    nível com hífen (Magento: /chuck-70-cano-alto-ct16030001-prata). Categoria e .html sem código, nunca."""
+    parts = urllib.parse.urlsplit(url)
+    path = parts.path.rstrip("/")
+    if not path or parts.query:
+        return False
+    last = path.rsplit("/", 1)[-1]
+    if _sku_like(last):
+        return True
+    if looks_like_category(url) or last.lower().endswith(".html"):
+        return False                                              # .html sem código é página institucional (privacy-policy.html)
+    return path.count("/") == 1 and len(path) > 8 and "-" in last
 
 
 def crawl_categories(site: Site, categories: list[str], visit: Callable[[str], Optional[bool]], done: Callable[[], bool],
@@ -281,8 +307,7 @@ def crawl_categories(site: Site, categories: list[str], visit: Callable[[str], O
         links = [u for u in page_links(body, page) if same_site(domain(u), site.domain) and not blocked(u) and u != page]
         products = [u for u in links if looks_like_product(u, product_patterns)]
         if not products:
-            products = [u for u in links if not looks_like_category(u) and urllib.parse.urlsplit(u).path.count("/") == 1
-                        and len(urllib.parse.urlsplit(u).path) > 8 and not urllib.parse.urlsplit(u).query]
+            products = [u for u in links if looks_like_product_leaf(u)]
         for u in products[:max_links]:
             if done():
                 break
