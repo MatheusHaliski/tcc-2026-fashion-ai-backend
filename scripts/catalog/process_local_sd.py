@@ -20,6 +20,11 @@ relatório com o motivo); a memória do acelerador é liberada a cada foto (torc
 Modelos: `runwayml/stable-diffusion-inpainting` saiu do ar em 2024 — o padrão é a republicação oficial
 `stable-diffusion-v1-5/stable-diffusion-inpainting`; `--model diffusers/stable-diffusion-xl-1.0-inpainting-0.1` para SDXL.
 Nada é excluído do catálogo por este script: a quarentena (quarantine_unsafe_products.py) é um passo separado e auditado.
+
+Engine `--engine fashn-open` (fashn_open.py): o pipeline aberto da FASHN — parser humano com os rótulos por categoria do
+fashn-vton-1.5 + BiRefNet (alfa fino do primeiro plano) + LaMa só na região fantasma; `--sd` acrescenta o Stable Diffusion
+por cima. Pesos fixados por sha256 em `--weights` (`python scripts/catalog/fashn_open.py download`). O enquadramento e a
+regra dos 25 % são os mesmos dos dois engines.
 """
 from __future__ import annotations
 
@@ -48,6 +53,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from photo_preflight import MIN_SOURCE_HEIGHT, fit_box, inspect_source  # noqa: E402
 from photo_set import MAX_ANALYSIS_SIDE, MAX_INPUT_PIXELS, LocalClothProvider, PhotoMasks, clean_target_mask  # noqa: E402
 from whole_frame import HEIGHT, WIDTH, GarmentSegmenter, cloth_class  # noqa: E402
+from fashn_open import FashnOpenProvider, LamaInpainter  # noqa: E402
 
 LOG = logging.getLogger("fashionai.sd")
 VERSION = "LOCAL_SD_GHOST_V1"
@@ -130,13 +136,22 @@ def og_image(page: bytes, page_url: str) -> Optional[str]:
     return None
 
 
-def polite_fetch(fetch: Fetch, min_interval: float = 1.0, retries: int = 2, sleep=time.sleep, clock=time.monotonic) -> Fetch:
+HOST_PAUSED = "host-paused"                 # "content-type" sintético: o host pediu para parar e não foi mais consultado
+
+
+def polite_fetch(fetch: Fetch, min_interval: float = 1.0, retries: int = 2, sleep=time.sleep, clock=time.monotonic,
+                 host_limit: int = 3) -> Fetch:
     """Polidez por host (os CDNs das lojas — vtexassets.com — devolvem 429 a quem baixa em rajada) e espera em 429/503:
-    respeita Retry-After quando vem, senão 5 s, até `retries` vezes; depois devolve o status para virar RETRY no relatório."""
+    respeita Retry-After quando vem, senão 5 s, até `retries` vezes; depois devolve o status para virar RETRY no relatório.
+    Disjuntor por host (a regra do coletor, "o site pediu para parar"): depois de `host_limit` URLs seguidas em que o host
+    terminou em 429/503 mesmo após as esperas, as próximas URLs dele voltam 429 sem pedido algum; um 200 zera a conta; 0 desliga."""
     last: dict[str, float] = {}
+    strikes: dict[str, int] = {}
 
     def fetch_polite(url: str) -> tuple[int, bytes, str]:
         host = urlsplit(url).hostname or ""
+        if host_limit and strikes.get(host, 0) >= host_limit:
+            return 429, b"", HOST_PAUSED
         for attempt in range(retries + 1):
             wait = last.get(host, -1e9) + min_interval - clock()
             if wait > 0:
@@ -144,6 +159,7 @@ def polite_fetch(fetch: Fetch, min_interval: float = 1.0, retries: int = 2, slee
             last[host] = clock()
             status, body, ctype = fetch(url)
             if status not in (429, 503) or attempt == retries:
+                strikes[host] = strikes.get(host, 0) + 1 if status in (429, 503) else 0
                 return status, body, ctype
             retry_after = ctype if isinstance(ctype, str) and ctype.startswith("retry-after:") else ""
             try:
@@ -156,7 +172,7 @@ def polite_fetch(fetch: Fetch, min_interval: float = 1.0, retries: int = 2, slee
     return fetch_polite
 
 
-def requests_fetch(timeout: float = 20, min_interval: float = 1.0) -> Fetch:
+def requests_fetch(timeout: float = 20, min_interval: float = 1.0, host_limit: int = 3) -> Fetch:
     """fetch(url) -> (status, corpo até MAX_BYTES, content-type) com requests, polidez por host e espera em 429.
     Em 429/503 o "content-type" devolvido é "retry-after:<s>" para o polite_fetch saber quanto esperar."""
     import requests
@@ -172,7 +188,7 @@ def requests_fetch(timeout: float = 20, min_interval: float = 1.0) -> Fetch:
                 if len(data) > MAX_BYTES:
                     raise PhotoSkip("IMAGE_TOO_LARGE", "REJECTED")
             return r.status_code, bytes(data), r.headers.get("Content-Type", "")
-    return polite_fetch(fetch, min_interval)
+    return polite_fetch(fetch, min_interval, host_limit=host_limit)
 
 
 def resolve_image(url: str, fetch: Fetch) -> tuple[bytes, str]:
@@ -181,7 +197,7 @@ def resolve_image(url: str, fetch: Fetch) -> tuple[bytes, str]:
         raise PhotoSkip("INVALID_IMAGE_URL", "REJECTED")
     status, body, ctype = fetch(url)
     if status in (403, 429):
-        raise PhotoSkip(f"HTTP_{status}", "RETRY")
+        raise PhotoSkip(f"HTTP_{status}" + ("_HOST_PAUSED" if ctype == HOST_PAUSED else ""), "RETRY")
     if status != 200:
         raise PhotoSkip(f"HTTP_{status}", "RETRY" if status >= 500 else "REJECTED")
     kind = (ctype or "").split(";")[0].strip().lower()
@@ -322,16 +338,19 @@ def measure(image: Image.Image, masks: PhotoMasks, category: Optional[str], subc
 
 # ───────────────────────── Stable Diffusion local
 
-def sd_inputs(source: Image.Image, target: np.ndarray, ghost: np.ndarray, max_side: int) -> tuple[Image.Image, Image.Image, tuple[int, int, int, int]]:
+def sd_inputs(source: Image.Image, target: np.ndarray, ghost: np.ndarray, max_side: int,
+              extra_mask: Optional[np.ndarray] = None) -> tuple[Image.Image, Image.Image, tuple[int, int, int, int]]:
     """Recorte da peça com margem (a IA trabalha na melhor resolução possível), lados múltiplos de 8 e até `max_side`.
-    Devolve (imagem, máscara de inpainting, caixa do recorte na foto de análise)."""
+    Devolve (imagem, máscara de inpainting, caixa do recorte na foto de análise). `extra_mask` (corpo e outras peças)
+    também entra na máscara, sem alargar o recorte: o preenchimento não pode copiar pele que ficou fora da região fantasma."""
     region = target | ghost
     ys, xs = np.where(region)
     pad = int(0.08 * max(xs.max() - xs.min(), ys.max() - ys.min())) + 8
     box = (max(0, int(xs.min()) - pad), max(0, int(ys.min()) - pad),
            min(source.width, int(xs.max()) + 1 + pad), min(source.height, int(ys.max()) + 1 + pad))
     crop = source.crop(box)
-    mask = Image.fromarray((ghost * 255).astype(np.uint8)).crop(box)
+    hole = ghost if extra_mask is None else (ghost | np.asarray(extra_mask, dtype=bool))
+    mask = Image.fromarray((hole * 255).astype(np.uint8)).crop(box)
     scale = min(1.0, max_side / max(crop.size))
     tw = max(8, int(round(crop.width * scale / 8)) * 8)
     th = max(8, int(round(crop.height * scale / 8)) * 8)
@@ -423,19 +442,27 @@ class Packshot:
 
 
 def compose_packshot(source: Image.Image, target: np.ndarray, generated: Optional[Image.Image], ghost: np.ndarray, *,
-                     background: tuple[int, int, int] = BACKGROUND, shadow: bool = True) -> Packshot:
+                     background: tuple[int, int, int] = BACKGROUND, shadow: bool = True, alpha: Optional[np.ndarray] = None) -> Packshot:
     """Tecido original onde há peça; o resultado da IA só na região fantasma (com IA); fundo liso no resto. Depois o
-    Total frame: peça centralizada, maior aresta em 50% do quadro 900×1200, proporção preservada, sombra suave."""
+    Total frame: peça centralizada, maior aresta em 50% do quadro 900×1200, proporção preservada, sombra suave.
+    `alpha` (0..1, engine fashn-open) é o alfa fino do BiRefNet: a borda vem do modelo, sem desfoque."""
     src = np.asarray(source.convert("RGB"))
     if generated is not None:
         gen = np.asarray(generated.convert("RGB").resize(source.size, Image.Resampling.LANCZOS))
         rgb = np.where(target[..., None], src, gen)
-        alpha = target | ghost
+        hard = target | ghost
     else:
-        rgb, alpha = src, target
+        rgb, hard = src, target
     cutout = Image.fromarray(rgb.astype(np.uint8)).convert("RGBA")
-    # borda do alfa com 1 px de suavização: o contorno da segmentação deixa de parecer serrilhado, sem comer a peça
-    cutout.putalpha(Image.fromarray((alpha * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8)))
+    if alpha is None:
+        # borda do alfa com 1 px de suavização: o contorno da segmentação deixa de parecer serrilhado, sem comer a peça
+        matte = Image.fromarray((hard * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8))
+    else:
+        soft = np.asarray(alpha, dtype=np.float32)
+        if generated is not None:
+            soft = np.maximum(soft, ghost.astype(np.float32))      # a região fantasma preenchida entra opaca
+        matte = Image.fromarray((np.clip(soft, 0, 1) * 255).round().astype(np.uint8))
+    cutout.putalpha(matte)
     box = cutout.getbbox()
     if box is None:
         raise PhotoSkip("WHOLE_EMPTY_MASK")
@@ -455,7 +482,7 @@ def compose_packshot(source: Image.Image, target: np.ndarray, generated: Optiona
     info = {"version": VERSION, "width": WIDTH, "height": HEIGHT, "background": "#%02X%02X%02X" % background,
             "box": {"x": round(x / WIDTH, 4), "y": round(y / HEIGHT, 4), "w": round(w / WIDTH, 4), "h": round(h / HEIGHT, 4)},
             "garmentPixels": int(target.sum()), "ghostPixels": int(ghost.sum()) if generated is not None else 0,
-            "ai": generated is not None, "framing": framing}
+            "ai": generated is not None, "framing": framing, "matte": "mask-blur" if alpha is None else "birefnet"}
     return Packshot(out.getvalue(), info)
 
 
@@ -581,7 +608,13 @@ class Options:
     foreground_body: bool = True
     lenient_cleanup: bool = True
     min_interval: float = 1.0
+    host_limit: int = 3                     # URLs seguidas em 429/503 até parar de consultar o host (0 desliga)
     report: Optional[Path] = None
+    engine: str = "sd"                      # sd: rembg + Stable Diffusion · fashn-open: parser FASHN + BiRefNet + LaMa
+    weights: Optional[Path] = None          # pasta do fashn_open.py download (engine fashn-open)
+    device: str = "auto"
+    lama_max_side: int = 1024
+    lama_margin: int = 4                    # px a mais em volta da região fantasma: o LaMa não copia a franja de pele
     extra: dict = field(default_factory=dict)
 
 
@@ -589,11 +622,16 @@ class GhostPipeline:
     """Uma foto por vez: baixa → segmenta → mede → (IA) → compõe → grava PNG → UPDATE. Erros ficam no relatório."""
 
     def __init__(self, renderer: Optional[SdGhostRenderer], options: Options, *, fetch: Optional[Fetch] = None,
-                 provider=None, segmenter=None):
-        self.renderer, self.options = renderer, options
-        self.fetch = fetch or requests_fetch(min_interval=options.min_interval)
-        self.segmenter = segmenter or GarmentSegmenter()
-        self.provider = provider or LocalClothProvider(segmenter=self.segmenter)
+                 provider=None, segmenter=None, filler: Optional[LamaInpainter] = None, open_provider: Optional[FashnOpenProvider] = None):
+        self.renderer, self.options, self.filler = renderer, options, filler
+        self.fetch = fetch or requests_fetch(min_interval=options.min_interval, host_limit=options.host_limit)
+        if options.engine == "fashn-open":
+            self.segmenter, self.provider = segmenter, provider            # o rembg não entra neste engine
+            self.open_provider = open_provider or FashnOpenProvider(options.weights, options.device)
+        else:
+            self.segmenter = segmenter or GarmentSegmenter()
+            self.provider = provider or LocalClothProvider(segmenter=self.segmenter)
+            self.open_provider = None
         self.rows: list[dict] = []
 
     def process(self, row: dict) -> dict:
@@ -603,22 +641,41 @@ class GhostPipeline:
         try:
             data, final_url = resolve_image(str(row.get("image_url") or ""), self.fetch)
             image, original = open_image(data)
-            masks = masks_for(image, row.get("category"), row.get("subcategory"), self.provider, self.segmenter, self.options.foreground_body)
+            fusion = alpha = None
+            if self.open_provider is not None:
+                fusion = self.open_provider.analyse(image, row.get("category"), row.get("subcategory"))
+                masks = fusion.photo_masks(row.get("category"), row.get("subcategory"))
+            else:
+                masks = masks_for(image, row.get("category"), row.get("subcategory"), self.provider, self.segmenter, self.options.foreground_body)
             target, forbidden, metrics = measure(image, masks, row.get("category"), row.get("subcategory"), original, self.options.lenient_cleanup)
-            metrics.update(sourceSha256=hashlib.sha256(data).hexdigest(), originalWidth=original[0], originalHeight=original[1])
+            metrics.update(sourceSha256=hashlib.sha256(data).hexdigest(), originalWidth=original[0], originalHeight=original[1], engine=self.options.engine)
+            if fusion is not None:
+                metrics["fashnOpen"] = {"mode": fusion.mode, "personDetected": fusion.person, "parserLabelsKept": list(fusion.kept)}
+                # o alfa fino do BiRefNet só vale dentro da peça limpa (mais 1 px de franja); fora dela é zero
+                alpha = np.where(ndimage.binary_dilation(target, iterations=1), fusion.alpha, 0).astype(np.float32)
             if self.options.measure_only:
                 return {**base, "status": "MEASURED", "metrics": metrics, "image_path": None}
             ghost = ghost_mask(target, forbidden)
             generated = None
-            if self.renderer is not None and not self.options.no_ai and ghost.any():
-                init, mask, box = sd_inputs(image, target, ghost, self.renderer.max_side)
-                patch = self.renderer.render(init, mask).resize((box[2] - box[0], box[3] - box[1]), Image.Resampling.LANCZOS)
+            if self.filler is not None and not self.options.no_ai and ghost.any():
+                hole = ndimage.binary_dilation(ghost, iterations=self.options.lama_margin) if self.options.lama_margin > 0 else ghost
+                # o corpo e as outras peças também ficam mascarados para o LaMa: ele preenche a gola a partir do tecido e do
+                # fundo, nunca da pele do pescoço logo acima (o resultado fora da região fantasma é descartado na composição)
+                init, mask, box = sd_inputs(image, target, hole, self.options.lama_max_side, extra_mask=forbidden)
+                patch = self.filler.inpaint(init, mask).resize((box[2] - box[0], box[3] - box[1]), Image.Resampling.LANCZOS)
                 generated = image.copy()
+                generated.paste(patch, (box[0], box[1]))
+                metrics["lama"] = {"device": self.filler.device, "inpaintSize": [init.width, init.height], "margin": self.options.lama_margin}
+            if self.renderer is not None and not self.options.no_ai and ghost.any():
+                basis = generated if generated is not None else image        # com LaMa antes, o SD parte do preenchimento dele
+                init, mask, box = sd_inputs(basis, target, ghost, self.renderer.max_side)
+                patch = self.renderer.render(init, mask).resize((box[2] - box[0], box[3] - box[1]), Image.Resampling.LANCZOS)
+                generated = basis.copy()
                 generated.paste(patch, (box[0], box[1]))
                 metrics["sd"] = {"model": self.renderer.model, "device": self.renderer.device, "steps": self.renderer.steps,
                                  "guidance": self.renderer.guidance, "seed": self.renderer.seed, "controlnet": self.renderer.controlnet,
                                  "inpaintSize": [init.width, init.height]}
-            shot = compose_packshot(image, target, generated, ghost, shadow=self.options.shadow)
+            shot = compose_packshot(image, target, generated, ghost, shadow=self.options.shadow, alpha=alpha)
             name = output_name(row)
             path = self.options.out_dir / name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -639,6 +696,8 @@ class GhostPipeline:
         finally:
             if self.renderer is not None:
                 self.renderer.free()
+            elif self.filler is not None:
+                free_memory(self.filler.device)
             else:
                 gc.collect()
 
@@ -703,11 +762,20 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--offload", action="store_true", help="CUDA com pouca memória: blocos do modelo na GPU só na hora de usar")
     ap.add_argument("--prompt", default=PROMPT)
     ap.add_argument("--negative-prompt", default=NEGATIVE)
-    ap.add_argument("--no-ai", action="store_true", help="só o recorte do rembg no quadro (sem Stable Diffusion)")
+    ap.add_argument("--no-ai", action="store_true", help="só o recorte no quadro (sem Stable Diffusion; no fashn-open, também sem LaMa)")
+    ap.add_argument("--engine", choices=["sd", "fashn-open"], default="sd",
+                    help="sd: rembg + Stable Diffusion · fashn-open: parser FASHN (rótulos por categoria) + BiRefNet + LaMa, e --sd por cima")
+    ap.add_argument("--weights", type=Path, default=os.getenv("CATALOG_FASHN_OPEN_WEIGHTS") or None,
+                    help="pasta dos pesos do fashn-open (python scripts/catalog/fashn_open.py download --dest …) ou CATALOG_FASHN_OPEN_WEIGHTS")
+    ap.add_argument("--sd", action="store_true", help="com --engine fashn-open: Stable Diffusion inpainting por cima do LaMa na região fantasma")
+    ap.add_argument("--lama-max-side", type=int, default=1024, help="lado máximo do recorte enviado ao LaMa")
+    ap.add_argument("--lama-margin", type=int, default=4, help="px a mais em volta da região fantasma que o LaMa preenche (esconde a franja de pele)")
     ap.add_argument("--no-shadow", action="store_true")
     ap.add_argument("--no-foreground-body", action="store_true", help="sem parser humano, NÃO deduzir o corpo do primeiro plano geral")
     ap.add_argument("--strict-cleanup", action="store_true", help="só a limpeza estrita do catálogo (contorno fino não classificado → REVIEW)")
     ap.add_argument("--min-interval", type=float, default=1.0, help="segundos mínimos entre downloads no mesmo host (CDNs devolvem 429 em rajada)")
+    ap.add_argument("--host-retry-limit", type=int, default=3,
+                    help="URLs seguidas em 429/503 até parar de consultar o host nesta execução (as demais viram RETRY sem pedido; 0 desliga)")
     ap.add_argument("--measure-only", action="store_true", help="só mede a altura da peça e escreve o relatório (nada gerado nem gravado)")
     ap.add_argument("--dry-run", action="store_true", help="gera os arquivos, mas não grava no banco")
     ap.add_argument("--no-ensure-column", action="store_true", help="não cria a coluna de saída se faltar")
@@ -724,7 +792,11 @@ def main(argv=None) -> int:
     spec = TableSpec(args.table, args.id_column, args.url_column, args.out_column)
     options = Options(out_dir=args.out_dir, public_base_url=args.public_base_url, dry_run=args.dry_run, measure_only=args.measure_only,
                       no_ai=args.no_ai, shadow=not args.no_shadow, foreground_body=not args.no_foreground_body,
-                      lenient_cleanup=not args.strict_cleanup, min_interval=args.min_interval)
+                      lenient_cleanup=not args.strict_cleanup, min_interval=args.min_interval, host_limit=args.host_retry_limit,
+                      engine=args.engine, weights=args.weights,
+                      device=args.device, lama_max_side=args.lama_max_side, lama_margin=args.lama_margin)
+    if args.engine == "fashn-open" and not args.weights:
+        raise SystemExit("--engine fashn-open precisa de --weights (ou CATALOG_FASHN_OPEN_WEIGHTS): python scripts/catalog/fashn_open.py download --dest /pasta")
     engine = None
     if args.input:
         raw = json.loads(args.input.read_text(encoding="utf-8"))
@@ -737,13 +809,16 @@ def main(argv=None) -> int:
             ensure_column(engine, spec)
         rows = fetch_pending(engine, spec, args.limit, args.product_id)
     emit("pipeline_started", version=VERSION, pending=len(rows), mode="measure" if args.measure_only else "dry-run" if args.dry_run else "apply",
-         ai=not (args.no_ai or args.measure_only))
-    renderer = None
+         ai=not (args.no_ai or args.measure_only), engine=args.engine)
+    renderer = filler = None
     if not args.no_ai and not args.measure_only and rows:
-        renderer = SdGhostRenderer(args.model, args.device, args.controlnet, args.steps, args.guidance, args.seed, args.max_side,
-                                   args.offload, args.prompt, args.negative_prompt)
+        if args.engine == "fashn-open":
+            filler = LamaInpainter(args.weights, args.device)
+        if args.engine == "sd" or args.sd:
+            renderer = SdGhostRenderer(args.model, args.device, args.controlnet, args.steps, args.guidance, args.seed, args.max_side,
+                                       args.offload, args.prompt, args.negative_prompt)
     store = (lambda row, value: store_result(engine, spec, row["id"], value)) if engine is not None else None
-    results = GhostPipeline(renderer, options).run(rows, store)
+    results = GhostPipeline(renderer, options, filler=filler).run(rows, store)
     counts = {}
     for r in results:
         counts[r["status"]] = counts.get(r["status"], 0) + 1

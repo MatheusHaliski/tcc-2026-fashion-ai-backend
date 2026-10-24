@@ -212,6 +212,31 @@ class PoliteFetchTest(unittest.TestCase):
             sd.resolve_image("https://cdn.loja.com/a.png", fetch)
         self.assertEqual(c.exception.status, "RETRY")
 
+    def test_disjuntor_por_host_para_de_consultar_quem_pediu_para_parar(self):
+        calls = []
+
+        def raw(url):
+            calls.append(url)
+            return (200, b"ok", "image/png") if "outra.com" in url else (429, b"", "retry-after:")
+        fetch = sd.polite_fetch(raw, min_interval=0, retries=0, sleep=lambda s: None, clock=lambda: 0.0, host_limit=3)
+        for i in range(3):
+            self.assertEqual(fetch(f"https://cdn.loja.com/{i}.png")[0], 429)
+        self.assertEqual(fetch("https://cdn.loja.com/4.png"), (429, b"", sd.HOST_PAUSED))    # sem pedido: o host pediu para parar
+        self.assertEqual(fetch("https://outra.com/c.png")[0], 200)                           # outro host segue normal
+        self.assertEqual(len(calls), 4)
+        with self.assertRaises(sd.PhotoSkip) as c:
+            sd.resolve_image("https://cdn.loja.com/5.png", fetch)
+        self.assertEqual((c.exception.status, str(c.exception)), ("RETRY", "HTTP_429_HOST_PAUSED"))
+        # um 200 zera a conta; host_limit=0 desliga o disjuntor
+        ok_then_429 = iter([(200, b"ok", "image/png")] + [(429, b"", "retry-after:")] * 5)
+        fetch2 = sd.polite_fetch(lambda u: next(ok_then_429), min_interval=0, retries=0, sleep=lambda s: None, clock=lambda: 0.0, host_limit=2)
+        self.assertEqual([fetch2("https://x.com/a")[0], fetch2("https://x.com/b")[0], fetch2("https://x.com/c")[0]], [200, 429, 429])
+        self.assertEqual(fetch2("https://x.com/d")[2], sd.HOST_PAUSED)
+        n = []
+        fetch3 = sd.polite_fetch(lambda u: n.append(1) or (429, b"", ""), min_interval=0, retries=0, sleep=lambda s: None, clock=lambda: 0.0, host_limit=0)
+        [fetch3("https://y.com/z") for _ in range(5)]
+        self.assertEqual(len(n), 5)
+
 
 class DeviceTest(unittest.TestCase):
     def test_cuda_mps_cpu(self):
@@ -305,6 +330,89 @@ class PipelineTest(unittest.TestCase):
                                        provider=Provider(target, forbidden), segmenter=object()).run([row], store=lambda r, v: stored.append(v))
             self.assertEqual(results[0]["status"], "MEASURED"); self.assertEqual(renderer.calls, 0); self.assertEqual(stored, [])
             self.assertFalse(list((out / "b").glob("*.png")))
+
+
+class InpaintInputsTest(unittest.TestCase):
+    def test_extra_mask_entra_na_mascara_sem_alargar_o_recorte(self):
+        im, target, forbidden = shirt_photo()
+        t = np.asarray(target.convert("L")) >= 128
+        f = np.asarray(forbidden.convert("L")) >= 128
+        ghost = sd.ghost_mask(t, f)
+        init, mask, box = sd.sd_inputs(im, t, ghost, 4000)
+        init2, mask2, box2 = sd.sd_inputs(im, t, ghost, 4000, extra_mask=f)
+        self.assertEqual(box, box2); self.assertEqual(init.size, init2.size)
+        sx, sy = mask2.width / (box[2] - box[0]), mask2.height / (box[3] - box[1])
+        arm = (int((80 - box[0]) * sx), int((420 - box[1]) * sy))          # braço esquerdo (pele) abaixo da manga
+        self.assertEqual(mask.getpixel(arm), 0, "sem extra_mask o braço fora da região fantasma não é preenchido")
+        self.assertEqual(mask2.getpixel(arm), 255, "com extra_mask o braço some do contexto do preenchimento")
+        self.assertGreater(np.asarray(mask2).mean(), np.asarray(mask).mean())
+
+
+class FakeFusionProvider:
+    """Fusão pronta a partir da fixture: alfa = máscara da peça, corpo = forbidden (o que o parser + BiRefNet devolveriam)."""
+
+    def __init__(self, target, forbidden, mode="parser+birefnet"):
+        self.target, self.forbidden, self.mode = target, forbidden, mode
+
+    def analyse(self, image, category, subcategory):
+        import fashn_open as fo
+        t = np.asarray(self.target.convert("L")) >= 128
+        f = np.asarray(self.forbidden.convert("L")) >= 128
+        return fo.Fusion(t, f, t.astype(np.float32), self.mode, True, ("top",))
+
+
+class FakeFiller:
+    device = "cpu"
+
+    def __init__(self):
+        self.calls = 0
+
+    def inpaint(self, image, mask):
+        self.calls += 1
+        return Image.new("RGB", image.size, (0, 255, 0))
+
+
+class FashnOpenEngineTest(unittest.TestCase):
+    def test_engine_fashn_open_lama_alfa_fino_e_sd_opcional(self):
+        im, target, forbidden = shirt_photo()
+        png = io.BytesIO(); im.save(png, "PNG")
+        row = {"id": "i1", "product_id": "p1", "brand": "Marca", "category": "upper_piece", "subcategory": "t_shirt", "image_url": "https://brand.com/ok.png"}
+        fetch = lambda u: (200, png.getvalue(), "image/png")
+        provider = FakeFusionProvider(target, forbidden)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            filler = FakeFiller()
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "a", engine="fashn-open", dry_run=True), fetch=fetch,
+                                       open_provider=provider, filler=filler).run([row])
+            self.assertEqual(results[0]["status"], "RENDERED"); self.assertEqual(filler.calls, 1)
+            info = results[0]["metrics"]
+            self.assertEqual((info["matte"], info["engine"], info["fashnOpen"]["mode"]), ("birefnet", "fashn-open", "parser+birefnet"))
+            self.assertIn("lama", info); self.assertNotIn("sd", info); self.assertTrue(info["ai"])
+            arr = np.asarray(Image.open(results[0]["image_path"]).convert("RGB"))
+            green = int(((arr[..., 1] > 200) & (arr[..., 0] < 60) & (arr[..., 2] < 60)).sum())
+            blue = int(((arr[..., 2] > 120) & (arr[..., 0] < 60)).sum())
+            self.assertGreater(green, 0, "o preenchimento do LaMa aparece na gola"); self.assertGreater(blue, green, "o tecido original domina")
+            renderer, filler2 = FakeRenderer(), FakeFiller()
+            results = sd.GhostPipeline(renderer, sd.Options(out_dir=out / "b", engine="fashn-open", dry_run=True), fetch=fetch,
+                                       open_provider=provider, filler=filler2).run([row])
+            self.assertEqual((filler2.calls, renderer.calls), (1, 1), "--sd: LaMa primeiro, Stable Diffusion por cima")
+            self.assertIn("sd", results[0]["metrics"])
+            filler3 = FakeFiller()
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "c", engine="fashn-open", measure_only=True), fetch=fetch,
+                                       open_provider=provider, filler=filler3).run([row])
+            self.assertEqual(results[0]["status"], "MEASURED"); self.assertEqual(filler3.calls, 0)
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "d", engine="fashn-open", dry_run=True, no_ai=True), fetch=fetch,
+                                       open_provider=provider, filler=FakeFiller()).run([row])
+            self.assertEqual(results[0]["status"], "RENDERED"); self.assertFalse(results[0]["metrics"]["ai"]); self.assertEqual(results[0]["metrics"]["matte"], "birefnet")
+
+    def test_compose_com_alfa_fino_usa_a_borda_do_modelo(self):
+        im, target, _ = shirt_photo()
+        t = np.asarray(target.convert("L")) >= 128
+        alpha = np.where(t, 0.6, 0).astype(np.float32)          # semitransparente de propósito: tem de misturar com o fundo
+        shot = sd.compose_packshot(im, t, None, np.zeros_like(t), alpha=alpha, shadow=False)
+        self.assertEqual(shot.info["matte"], "birefnet")
+        center = np.asarray(Image.open(io.BytesIO(shot.data)).convert("RGB"))[600, 450]
+        self.assertTrue(100 < center[0] < 140 and 180 < center[2] < 215, center)   # 60 % azul (30,60,160) + 40 % branco
 
 
 if __name__ == "__main__":

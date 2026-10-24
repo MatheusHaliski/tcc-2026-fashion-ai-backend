@@ -1,0 +1,72 @@
+{
+  "name": "fashn-open",
+  "description": "Componentes publicos da FASHN para o engine fashn-open do process_local_sd.py: parser humano (rotulos por categoria do fashn-vton-1.5), BiRefNet (alfa fino do primeiro plano) e LaMa (preenchimento onde o corpo aparecia). O modelo `packshot` da API da FASHN e fechado e nao esta aqui.",
+  "vton_code_revision": "7c0f10af3f91ad4048fe9729c470a13ef905d25a",
+  "parser_code_revision": "f2771f2fb8655349e87e2869bbde7ace0bd06f2c",
+  "license": "fashn-human-parser e fashn-vton-1.5: Apache-2.0. BiRefNet (codigo upstream ZhengPeng7/BiRefNet): MIT. LaMa upstream: Apache-2.0. Os pesos republicados em fashn-ai/BiRefNet e fashn-ai/LaMa nao trazem model card: confirmar a licenca antes de uso comercial; preservar os avisos dos autores.",
+  "files": [
+    {
+      "component": "parser",
+      "repo": "fashn-ai/fashn-human-parser",
+      "revision": "1f80c34dbab321c5730dda5c3fea279fd3e97498",
+      "filename": "model.safetensors",
+      "path": "parser/model.safetensors",
+      "size": 256146352,
+      "sha256": "e43c8c8a9b04f28798f0a4630cf18caa2cdb27a0d454fae43a5716e6f7078244"
+    },
+    {
+      "component": "parser",
+      "repo": "fashn-ai/fashn-human-parser",
+      "revision": "1f80c34dbab321c5730dda5c3fea279fd3e97498",
+      "filename": "config.json",
+      "path": "parser/config.json",
+      "size": 1654,
+      "sha256": "87bd5b66419dbfa7c02cfbeb94e292454863b1606c5df29526b19a6c1de70d9f"
+    },
+    {
+      "component": "parser",
+      "repo": "fashn-ai/fashn-human-parser",
+      "revision": "1f80c34dbab321c5730dda5c3fea279fd3e97498",
+      "filename": "preprocessor_config.json",
+      "path": "parser/preprocessor_config.json",
+      "size": 340,
+      "sha256": "54007eb4cedae02565c4f035750aeebe3ddc53d36ab575e8534615623e6b6225"
+    },
+    {
+      "component": "birefnet",
+      "repo": "fashn-ai/BiRefNet",
+      "revision": "f4c18306dea59d223360ac97e2187f88192ca162",
+      "filename": "birefnet.safetensors",
+      "path": "birefnet/birefnet.safetensors",
+      "size": 884878856,
+      "sha256": "77277264c0e8c74149d3ff2fade4fd8176965b7108f3c5fc3b8c9c811edb4519"
+    },
+    {
+      "component": "birefnet",
+      "repo": "ZhengPeng7/BiRefNet",
+      "revision": "e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4",
+      "filename": "birefnet.py",
+      "path": "birefnet/code/birefnet.py",
+      "size": 91896,
+      "sha256": "208771ae626f653d64128fbf2d6ac9f8e645c5cc5e286258a73ec3322bbfe5ef"
+    },
+    {
+      "component": "birefnet",
+      "repo": "ZhengPeng7/BiRefNet",
+      "revision": "e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4",
+      "filename": "BiRefNet_config.py",
+      "path": "birefnet/code/BiRefNet_config.py",
+      "size": 298,
+      "sha256": "e7b8c2a74f6cea6a59553d517f71d47f2c1d90e670a13416af17c25fe2f3dc52"
+    },
+    {
+      "component": "lama",
+      "repo": "fashn-ai/LaMa",
+      "revision": "da55aaf971ce271b42eddca79831e0f646c7711e",
+      "filename": "big-lama.pt",
+      "path": "lama/big-lama.pt",
+      "size": 205803670,
+      "sha256": "7ba7aa7ac37a4d41fdbbeba3a2af7ead18058552997e3a3cd1a3b2210c9e6b4c"
+    }
+  ]
+}
