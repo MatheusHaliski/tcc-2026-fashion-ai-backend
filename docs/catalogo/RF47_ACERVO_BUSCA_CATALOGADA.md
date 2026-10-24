@@ -126,6 +126,14 @@ conferido aqui; as telas mostram o número real de cada ambiente. No repositóri
 grade. Evidências (API simulada com os nomes, marcas e tipos desse arquivo; fotos trocadas pela imagem padrão FAI da
 categoria): [`docs/evidencias/catalogo-completo-2026-10-10/`](../evidencias/catalogo-completo-2026-10-10/).
 
+### 4.1-b Coleta das marcas sem peças e acervo 2026-10-24 (24/10/2026)
+
+Segundo arquivo do acervo, `data/catalog/acervo/acervo-oficial-2026-10-24.jsonl.gz`: **7886 peças de 32 marcas** que
+não tinham produto (todas com foto), só com URLs novas — o acervo de 05/10 não muda. Coletor com busca melhorada (páginas
+de categoria, `/sitemap_index.xml`, marca da licenciada, CDN própria por marca) e lista do que ficou fora (403, páginas só
+por JavaScript). Tabela por marca, amostra do Total frame e comandos de importação em
+[`COLETA_2026-10-24.md`](COLETA_2026-10-24.md).
+
 ### 4.2 Peças agrupadas pela URL antiga (Gap, 11/10/2026)
 
 A URL canônica descartava a query, e as 248 peças da Gap (identificadas só por `?pid=`) viravam um produto com 839

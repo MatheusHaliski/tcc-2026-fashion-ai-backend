@@ -111,12 +111,55 @@ Detalhes que já derrubaram marcas inteiras e hoje são tratados (com teste em `
 | robots.txt que redireciona para HTML, atributos HTML sem aspas, JSON-LD com entidades | ver histórico do arquivo |
 | 150 páginas seguidas sem dado estruturado | o domínio é largado (`GIVE_UP_AFTER`), sem gastar milhares de requisições |
 
-### Do coletado ao acervo
+#### Custo medido em CPU (2026-10-24, máquina de 4 núcleos / 15 GB)
+
+Por foto, sem GPU: segmentador de roupa (u2net_cloth_seg) 4–14 s, parser humano 11–22 s, download < 0,5 s. Cada
+processo ocupa ~5 GB (modelos + torch), então cabem **2 processos** em 15 GB (4 estouram a memória). `--measure-only`
+sem parser: ~13 s/foto por processo → ~6,5 s/foto com dois → ~7 h para 8 mil fotos. Com parser, ~3× isso. Para o
+catálogo inteiro, rode na máquina do lote com GPU (`CATALOG_PHOTO_DEVICE=cuda`; o parser cai para < 1 s) ou divida em
+fatias de JSON (`--input`) em máquinas diferentes; `report.jsonl` é retomável (basta tirar do JSON o que já tem linha).
+
+### Parser humano local (recomendado para foto com modelo)
+
+Sem ele, o segmentador de roupa pode incluir um antebraço na classe "superior" e a dedução pelo primeiro plano não corrige
+erro dentro da própria máscara da peça (visto na amostra de 2026-10-24: camiseta Converse com o braço do modelo). O parser
+FASHN marca pele, rosto, braços e pernas e é o que `LocalClothProvider` já espera:
+
+```bash
+.venv/bin/pip install "fashn-human-parser @ git+https://github.com/fashn-AI/fashn-human-parser.git@f2771f2fb8655349e87e2869bbde7ace0bd06f2c"
+# pesos públicos (fashn-ai/fashn-human-parser; revisão e sha256 em services/anatomical_vton/fashn_assets.json) numa pasta FORA do repositório:
+#   model.safetensors (256 MB), config.json e preprocessor_config.json
+CATALOG_PHOTO_PARSER_WEIGHTS=/caminho/para/parser CATALOG_PHOTO_DEVICE=cpu .venv/bin/python scripts/catalog/process_local_sd.py --limit 20 --dry-run
+```
+
+Com o parser, `maskSource` vira `u2net_cloth_seg+fashn_human_parser`, a máscara de corpo deixa de ser heurística e a
+região fantasma passa a cobrir exatamente a pele visível. Confira a licença dos pesos antes de distribuí-los.
+
+## Busca melhorada (2026-10-24): páginas de categoria, `sitemap_index.xml` e marca da licenciada
+
+Três causas de "0 produtos" em marcas com site acessível, e o que o coletor passou a fazer — sempre dentro das regras
+(robots.txt, só o domínio oficial, só dados estruturados, 403/429 encerram o domínio):
+
+| Causa | Marcas | Solução |
+| --- | --- | --- |
+| Sitemaps só de categoria (ou nenhum sitemap) | C&A, Balenciaga, Birkenstock, Patagonia | `crawl_categories`: quando os sitemaps não rendem produto, o coletor lê até 40 páginas de categoria (as vistas nos sitemaps ou a página inicial), segue os links de produto (por pista na URL ou, sem pista, os links "folha") e cada página passa pelos mesmos dados estruturados |
+| Índice em `/sitemap_index.xml` sem declaração no robots | Superdry, Birkenstock | além de `/sitemap.xml`, tenta `/sitemap_index.xml` |
+| Loja oficial que escreve a licenciada como marca do produto | Scotch & Soda ("United Legwear") | `collector.accept_page_brands` em brands.json: só esse nome, só nessa marca; outra marca na página continua recusada |
+| Domínio cadastrado só redireciona para outro | Scotch & Soda (`scotch-soda.com` → `scotchandsoda.com`), Puma (`puma.com` → `us.puma.com`) | cadastrar o domínio que responde (o coletor nunca segue redirecionamento para fora do domínio pedido) |
+
+Fora de alcance, documentado: 403 no robots ou nas páginas (Adidas, Zara, Lacoste, Guess, Converse US, ASICS US, Fred
+Perry, Hoka, Coach, Kate Spade, Saint Laurent, Salomon, Reiss, Reserva, Youcom, Gymshark, Dr. Martens, Cariuma);
+páginas de produto renderizadas só por JavaScript, sem JSON-LD/OpenGraph (Converse BR, Supreme, Aéropostale); Louis Vuitton
+sem sitemap nem categorias legíveis; Uniqlo sem resposta (timeout).
+
+## Do coletado ao acervo
 
 ```bash
 python scripts/catalog/recheck_collected.py                      # regras de tipo atuais nos JSONL (com o coletor parado)
 python scripts/catalog/build_acervo.py --out data/catalog/acervo/acervo-oficial-AAAA-MM-DD.jsonl.gz data/catalog/collected/*.jsonl
 ```
+
+Execução de 24/10/2026 (55 marcas sem peças → 32 com produto, 7886 peças): `docs/catalogo/COLETA_2026-10-24.md`.
 
 `build_acervo.py` passa cada linha pelas regras de tipo e pelo `normalize_product`, deixa a descrição em texto puro e
 tira as peças que já estão em outro arquivo de `data/catalog/acervo/` (mesma URL canônica): cada arquivo traz só peças
@@ -244,9 +287,9 @@ export DATABASE_URL='mysql+pymysql://usuario:senha@host:3306/fashionai'      # o
 .venv/bin/python scripts/catalog/process_local_sd.py --limit 200                   # 3. gera e grava processed_image_url
 ```
 
-Por foto: download (link direto ou `og:image` de página HTML) → rembg local pela classe de roupa (calçado/acessório: recorte
-geral; sem o parser humano configurado, o corpo é deduzido como primeiro plano geral menos a peça — `--no-foreground-body`
-desliga) → limpeza da máscara (pessoa, outras peças, riscos fora do perímetro) e medição — **altura da peça < 25% da foto =
+Por foto: download (link direto ou `og:image` de página HTML; polidez por host e espera em 429) → rembg local pela classe
+de roupa (calçado/acessório: recorte geral; sem o parser humano configurado, o corpo é deduzido como primeiro plano geral
+menos a peça — `--no-foreground-body` desliga) → limpeza da máscara (pessoa, outras peças, riscos fora do perímetro) e medição — **altura da peça < 25% da foto =
 INELIGIBLE**, nada é gerado nem apagado (`ineligible.json` alimenta `quarantine_unsafe_products.py`) → inpainting SÓ na região
 fantasma (corpo visível por dentro da peça: gola entre os ombros, punhos, barra, entre as pernas) com
 `stable-diffusion-v1-5/stable-diffusion-inpainting` (o `runwayml/…` saiu do ar; `--model` aceita o SDXL inpainting e
