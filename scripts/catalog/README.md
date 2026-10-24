@@ -111,7 +111,23 @@ Detalhes que já derrubaram marcas inteiras e hoje são tratados (com teste em `
 | robots.txt que redireciona para HTML, atributos HTML sem aspas, JSON-LD com entidades | ver histórico do arquivo |
 | 150 páginas seguidas sem dado estruturado | o domínio é largado (`GIVE_UP_AFTER`), sem gastar milhares de requisições |
 
-### Busca melhorada (2026-10-24): páginas de categoria, `sitemap_index.xml` e marca da licenciada
+#### Parser humano local (recomendado para foto com modelo)
+
+Sem ele, o segmentador de roupa pode incluir um antebraço na classe "superior" e a dedução pelo primeiro plano não corrige
+erro dentro da própria máscara da peça (visto na amostra de 2026-10-24: camiseta Converse com o braço do modelo). O parser
+FASHN marca pele, rosto, braços e pernas e é o que `LocalClothProvider` já espera:
+
+```bash
+.venv/bin/pip install "fashn-human-parser @ git+https://github.com/fashn-AI/fashn-human-parser.git@f2771f2fb8655349e87e2869bbde7ace0bd06f2c"
+# pesos públicos (fashn-ai/fashn-human-parser; revisão e sha256 em services/anatomical_vton/fashn_assets.json) numa pasta FORA do repositório:
+#   model.safetensors (256 MB), config.json e preprocessor_config.json
+CATALOG_PHOTO_PARSER_WEIGHTS=/caminho/para/parser CATALOG_PHOTO_DEVICE=cpu .venv/bin/python scripts/catalog/process_local_sd.py --limit 20 --dry-run
+```
+
+Com o parser, `maskSource` vira `u2net_cloth_seg+fashn_human_parser`, a máscara de corpo deixa de ser heurística e a
+região fantasma passa a cobrir exatamente a pele visível. Confira a licença dos pesos antes de distribuí-los.
+
+## Busca melhorada (2026-10-24): páginas de categoria, `sitemap_index.xml` e marca da licenciada
 
 Três causas de "0 produtos" em marcas com site acessível, e o que o coletor passou a fazer — sempre dentro das regras
 (robots.txt, só o domínio oficial, só dados estruturados, 403/429 encerram o domínio):
@@ -261,9 +277,9 @@ export DATABASE_URL='mysql+pymysql://usuario:senha@host:3306/fashionai'      # o
 .venv/bin/python scripts/catalog/process_local_sd.py --limit 200                   # 3. gera e grava processed_image_url
 ```
 
-Por foto: download (link direto ou `og:image` de página HTML) → rembg local pela classe de roupa (calçado/acessório: recorte
-geral; sem o parser humano configurado, o corpo é deduzido como primeiro plano geral menos a peça — `--no-foreground-body`
-desliga) → limpeza da máscara (pessoa, outras peças, riscos fora do perímetro) e medição — **altura da peça < 25% da foto =
+Por foto: download (link direto ou `og:image` de página HTML; polidez por host e espera em 429) → rembg local pela classe
+de roupa (calçado/acessório: recorte geral; sem o parser humano configurado, o corpo é deduzido como primeiro plano geral
+menos a peça — `--no-foreground-body` desliga) → limpeza da máscara (pessoa, outras peças, riscos fora do perímetro) e medição — **altura da peça < 25% da foto =
 INELIGIBLE**, nada é gerado nem apagado (`ineligible.json` alimenta `quarantine_unsafe_products.py`) → inpainting SÓ na região
 fantasma (corpo visível por dentro da peça: gola entre os ombros, punhos, barra, entre as pernas) com
 `stable-diffusion-v1-5/stable-diffusion-inpainting` (o `runwayml/…` saiu do ar; `--model` aceita o SDXL inpainting e
