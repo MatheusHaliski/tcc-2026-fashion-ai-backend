@@ -32,7 +32,7 @@ import { DialoguePanel } from "./dialogue-ui";
 import { MapPanel } from "./map-ui";
 import { Briefing, GameOver, PauseMenu, Victory, type StartOptions } from "./screens";
 import { SceneRoot } from "./scene-root";
-import { clearSave, loadSave, loadSettings, saveSettings, writeSave, type HeistSettings, type SavedRun } from "./settings";
+import { bindLabel, clearSave, loadSave, loadSettings, saveSettings, writeSave, type HeistSettings, type SavedRun } from "./settings";
 
 type Panel = { kind: "vendor"; vendor: VendorId } | { kind: "puzzle" } | { kind: "clue"; ref: string } | { kind: "deck" } | { kind: "wheel" } | { kind: "dialogue" } | { kind: "map" } | null;
 type Stage = "brief" | "play" | "pause" | "over" | "won";
@@ -205,6 +205,7 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
             checkpoints.current[e.reason] = snap; lastCheckpoint.current = e.reason;
             const run: SavedRun = { version: SIM_VERSION, savedAt: Date.now(), checkpoint: e.reason, deck: deckKey(cards).split(","), snap };
             writeSave(run); setSave(run);
+            if (e.reason !== "start") setToasts((l) => [...l.slice(-2), { id: seq.current++, who: "", key: "heist.toast.checkpoint", vars: { where: t(`heist.checkpoint.${e.reason}`) }, at: now }]);
           }
           break;
         case "phase":
@@ -216,6 +217,27 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
     }
     s.events.length = 0;
   }, [audio, controls, say, t, cards, names]);
+
+  // tutorial gradual (MH-13-02): cada dica aparece uma vez, quando a situação acontece pela primeira vez
+  const tipsSeen = useRef(new Set<string>());
+  const tip = useCallback((id: string, vars?: Record<string, string>) => {
+    if (tipsSeen.current.has(id)) return;
+    tipsSeen.current.add(id);
+    setToasts((l) => [...l.slice(-2), { id: seq.current++, who: "", key: `heist.tip.${id}`, vars, at: performance.now() + 2500 }]);
+  }, []);
+  useEffect(() => {
+    if (stage !== "play" || hud.beat || hud.cutscene) return;
+    const k = (a: Parameters<typeof bindLabel>[1]) => bindLabel(settings, a, controls.usingPad, t);
+    if (hud.time > 1) tip("move", { move: controls.usingPad ? t("heist.key.leftStick") : ["forward", "left", "back", "right"].map((a) => k(a as never)).join(""), sprint: k("sprint"), discreet: k("discreet") });
+    if (hud.exposure > 0.2) tip("exposure");
+    if (hud.prompt?.kind === "pickpocket") tip("steal", { key: k("interact") });
+    if (hud.prompt?.kind === "takedown") tip("takedown", { key: k("melee") });
+    if (hud.hp <= 30) tip("lowHp", { key: k("heal") });
+    if (hud.access === "staff" && hud.accessTone === "bad") tip("staffArea");
+    if (hud.room === "cofre") tip("lasers", { key: k("crouch") });
+    if (hud.phase === "ESCAPE") tip("escape", { key: k("dodge") });
+    if (hud.weapon !== "hands" && hud.magSize > 0) tip("gun", { aim: k("aim"), fire: k("fire") });
+  }, [hud, stage, settings, controls, t, tip]);
 
   // falas e avisos somem sozinhos
   useEffect(() => {

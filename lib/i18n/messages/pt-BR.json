@@ -9099,5 +9099,15 @@
   "heist.who.waiter": "Garçom",
   "heist.win.again": "Jogar de novo",
   "heist.win.eyebrow": "Golpe concluído",
-  "heist.win.optionals": "{n} de {all} objetivos opcionais"
+  "heist.win.optionals": "{n} de {all} objetivos opcionais",
+  "heist.tip.escape": "Dica: quando um segurança mirar, esquive com {key}. Não pare de correr.",
+  "heist.tip.exposure": "Dica: alguém está te reparando — o arco embaixo à direita enche. Ande devagar, no meio de gente, ou saia da vista.",
+  "heist.tip.gun": "Dica: {aim} mira e {fire} atira. Tiro faz barulho: todo mundo ouve.",
+  "heist.tip.lasers": "Dica: corte a energia no quadro de luz ou passe pelos lasers agachada ({key}) no tempo certo.",
+  "heist.tip.lowHp": "Dica: vida baixa deixa você lenta e frágil. Cure-se com {key}.",
+  "heist.tip.move": "Dica: {move} anda, {sprint} corre e {discreet} faz a caminhada discreta.",
+  "heist.tip.staffArea": "Dica: área de funcionários. De uniforme de garçom você passa sem chamar atenção.",
+  "heist.tip.steal": "Dica: furto é por trás. Chegue devagar e aperte {key}; a etiqueta mostra o valor e quem está olhando.",
+  "heist.tip.takedown": "Dica: de costas para você, o segurança cai com {key} sem barulho.",
+  "heist.toast.checkpoint": "Checkpoint salvo: {where}"
 }
