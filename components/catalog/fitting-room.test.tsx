@@ -7,8 +7,9 @@ import type { FittingItem } from "@/lib/tryon/fitting-room";
 import TryOnPage from "@/app/(site)/(app)/try-on/page";
 
 // Observe only the page-to-scene contract; these characterization tests do not require WebGL.
-vi.mock("next/dynamic", () => ({ default: () => function FittingSceneStub(props: { sex: string; pieces: { id: string; slot: string }[]; view: string; light: string }) {
-  return <div data-testid="fitting-scene" data-sex={props.sex} data-pieces={JSON.stringify(props.pieces.map(({ id, slot }) => ({ id, slot })))} data-view={props.view} data-light={props.light} />;
+vi.mock("next/dynamic", () => ({ default: () => function FittingSceneStub(props: { sex: string; pieces: { id: string; slot: string; sizeLabel?: string | null }[]; view: string; light: string }) {
+  return <div data-testid="fitting-scene" data-sex={props.sex} data-pieces={JSON.stringify(props.pieces.map(({ id, slot }) => ({ id, slot })))}
+    data-sizes={JSON.stringify(Object.fromEntries(props.pieces.filter((p) => p.sizeLabel).map((p) => [p.id, p.sizeLabel])))} data-view={props.view} data-light={props.light} />;
 } }));
 
 afterEach(() => { cleanup(); nav.search = new URLSearchParams(); try { sessionStorage.clear(); localStorage.clear(); } catch { /* sem storage */ } });
@@ -85,6 +86,36 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Já tenho esta peça" })[0]);
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces/from-catalog")).toBe(true), { timeout: 4000 });
     expect(screen.getAllByRole("link", { name: /Ver em/ }).length).toBeGreaterThan(0);
+  });
+
+  it("tamanho em um toque: a peça veste o avatar no tamanho escolhido, que vira o padrão das próximas peças", async () => {
+    loggedAs(ME, {
+      "GET /api/taxonomy": TAXONOMY, "GET /api/try-on": { ...STATE, avatar: { id: "a1", model: {} } }, "GET /api/catalog/stores": STORES,
+      "GET /api/catalog/products": (url: URL) => ({ items: url.searchParams.get("brand") === "Levi's" ? [L501] : [AF1], page: 0, size: 48, total: 1, hasMore: false }),
+    });
+    renderApp(<TryOnPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Levi's/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Provar" }, { timeout: 4000 }));
+    const sizes = await screen.findByRole("radiogroup", { name: "Tamanho de 501 Original" });
+    // sem escolha: a peça veste no tamanho do corpo do avatar (corpo padrão feminino → 40), sem formulário
+    const mine = within(sizes).getByRole("radio", { name: /tamanho do seu avatar/ });
+    expect(mine.textContent).toMatch(/^40/); expect(mine.getAttribute("aria-checked")).toBe("true");
+    expect(screen.queryByRole("textbox", { name: /cintura|quadril|medida/i })).toBeNull();
+    fireEvent.click(within(sizes).getByRole("radio", { name: /^44/ }));
+    expect(within(sizes).getByRole("radio", { name: /^44/ }).getAttribute("aria-checked")).toBe("true");
+    // retorno por região: calça 44 num corpo 40 sobra na cintura e no quadril e fica comprida
+    expect(within(sizes.parentElement!).getByRole("status").textContent).toBe("Ficou largo demais na cintura e no quadril · fica comprido");
+    expect(within(sizes.parentElement!).getByText("Seu avatar veste 40")).toBeTruthy();
+    expect(JSON.parse(screen.getByTestId("fitting-scene").getAttribute("data-sizes") ?? "{}")).toEqual({ "c:p2": "44" });
+    expect(JSON.parse(localStorage.getItem("fai.tryon.sizes") ?? "{}")).toEqual({ numeric: "44" });
+    // a sessão guarda o tamanho junto da peça
+    expect(JSON.parse(sessionStorage.getItem("fai.tryon.fitting") ?? "[]")[0]).toMatchObject({ key: "c:p2", size: "44" });
+    // calçado: outra grade (numeração), começa no tamanho do avatar
+    fireEvent.click(screen.getByRole("button", { name: /Nike/ }));
+    await waitFor(() => expect(screen.getByText("Air Force 1 '07")).toBeTruthy(), { timeout: 4000 });
+    fireEvent.click(screen.getByRole("button", { name: "Provar" }));
+    const shoes = await screen.findByRole("radiogroup", { name: "Tamanho de Air Force 1 '07" });
+    expect(within(shoes).getByRole("radio", { name: /tamanho do seu avatar/ }).textContent).toMatch(/^37/);
   });
 
   it("guarda-roupa vazio não bloqueia: o provador abre nas lojas e salva provas", async () => {
@@ -194,15 +225,12 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
   it("mantém apresentação e iluminação sem reintroduzir vistas ou espelho e sem escrever na API", async () => {
     const { calls } = loggedAs(ME, { ...baseRoutes(), "GET /api/try-on": { ...STATE, avatar: { id: "a1", model: {} } } });
     renderApp(<TryOnPage />);
-    const female = await screen.findByRole("radio", { name: "Feminino" });
-    expect(female.getAttribute("aria-checked")).toBe("true");
-    expect(screen.getByTestId("fitting-scene").getAttribute("data-sex")).toBe("FEMININO");
-    fireEvent.click(screen.getByRole("radio", { name: "Masculino" }));
-    expect(screen.getByTestId("fitting-scene").getAttribute("data-sex")).toBe("MASCULINO");
-    expect(screen.getByText("Look masculino", { selector: "[data-tipo-look]" }).getAttribute("data-tipo-look")).toBe("masculino");
-    fireEvent.click(screen.getByRole("radio", { name: "Unisex" }));
-    expect(screen.getByText("Look unisex", { selector: "[data-tipo-look]" }).getAttribute("data-tipo-look")).toBe("unisex");
-    expect(screen.getByTestId("fitting-scene").getAttribute("data-sex")).toBe("FEMININO");
+    // o manequim segue o sexo do avatar; o seletor "Tipo de look" não existe mais no provador
+    expect((await screen.findByTestId("fitting-scene")).getAttribute("data-sex")).toBe("FEMININO");
+    expect(screen.queryByRole("radio", { name: "Feminino" })).toBeNull();
+    expect(screen.queryByRole("radio", { name: "Masculino" })).toBeNull();
+    expect(screen.queryByRole("radio", { name: "Unisex" })).toBeNull();
+    expect(screen.queryByText("Tipo de look")).toBeNull();
     expect(screen.queryByRole("radio", { name: "Costas" })).toBeNull();
     expect(screen.queryByRole("link", { name: /espelho/i })).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: "Noite" }));
@@ -334,7 +362,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     await screen.findByRole("list", { name: "Resultados do catálogo" }, { timeout: 4000 });
     fireEvent.click(screen.getByRole("button", { name: "Avançar →" }));
     expect(screen.getByText("Página 2 de 3 · 10 resultados")).toBeTruthy();
-    fireEvent.click(screen.getByRole("radio", { name: "Feminino" }));
+    fireEvent.click(within(screen.getByLabelText("Filtros rápidos")).getByRole("button", { name: "Feminino" }));
     expect(await screen.findByText("Página 1 de 2 · 5 resultados")).toBeTruthy();
     expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).getByText("Camiseta Nike 1")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Avançar →" }));
@@ -351,12 +379,11 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     expect(previous === null || previous.disabled).toBe(true);
   });
 
-  it("Tipo de Look filtra o catálogo com o código real, preserva os demais filtros e permite limpar a seleção", async () => {
-    const unisex = { ...SHIRTS[0], id: "unisex", productName: "Camisa inclusiva", gender: "UNISSEX" };
+  it("o filtro rápido de gênero do catálogo usa o código real, preserva os demais filtros e continua visível para desmarcar", async () => {
     const { calls } = loggedAs(ME, {
       ...baseRoutes(),
       "GET /api/catalog/products": (url: URL) => {
-        const items = [...SHIRTS, unisex].filter(p => !url.searchParams.get("gender") || p.gender === url.searchParams.get("gender"));
+        const items = SHIRTS.filter(p => !url.searchParams.get("gender") || p.gender === url.searchParams.get("gender"));
         return { items, total: items.length, page: Number(url.searchParams.get("page") ?? 0), size: 48, hasMore: false };
       },
     });
@@ -365,25 +392,21 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     fireEvent.click(within(screen.getByRole("group", { name: "O que provar" })).getByRole("button", { name: "Parte superior" }));
     fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "camisa" } });
     await screen.findByRole("list", { name: "Resultados do catálogo" }, { timeout: 4000 });
-    fireEvent.click(within(screen.getByLabelText("Filtros rápidos")).getByRole("button", { name: "Preto" }));
-    // Mesmo o tipo já ativo no manequim passa a ser um filtro quando escolhido explicitamente.
-    fireEvent.click(screen.getByRole("radio", { name: "Feminino" }));
+    const quick = () => within(screen.getByLabelText("Filtros rápidos"));
+    // cada filtro refaz a busca: o bloco de filtros rápidos é remontado quando os resultados chegam
+    const quickButton = async (name: string) => { await waitFor(() => expect(quick().getByRole("button", { name })).toBeTruthy(), { timeout: 4000 }); return quick().getByRole("button", { name }); };
+    fireEvent.click(await quickButton("Preto"));
+    fireEvent.click(await quickButton("Feminino"));
     const lastBrowse = () => new URL(calls.filter(c => c.path.startsWith("/api/catalog/products?")).at(-1)!.path, "http://local.test").searchParams;
     await waitFor(() => expect(lastBrowse().get("gender")).toBe("FEMININO"), { timeout: 4000 });
     expect(Object.fromEntries(lastBrowse())).toMatchObject({ brand: "Nike", category: "upper_piece", q: "camisa", color: "black", page: "0" });
-    fireEvent.click(screen.getByRole("radio", { name: "Masculino" }));
-    await waitFor(() => expect(lastBrowse().get("gender")).toBe("MASCULINO"), { timeout: 4000 });
-    expect(Object.fromEntries(lastBrowse())).toMatchObject({ brand: "Nike", category: "upper_piece", q: "camisa", color: "black", page: "0" });
-    fireEvent.click(screen.getByRole("radio", { name: "Unisex" }));
-    await waitFor(() => expect(lastBrowse().get("gender")).toBe("UNISSEX"), { timeout: 4000 });
-    expect(await screen.findByRole("heading", { name: "Camisa inclusiva" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Limpar seleção" }));
+    // a página filtrada só tem peças femininas: o chip escolhido continua lá (aria-pressed) para ser desmarcado
+    await waitFor(() => expect(quick().getByRole("button", { name: "Feminino" }).getAttribute("aria-pressed")).toBe("true"), { timeout: 4000 });
+    fireEvent.click(await quickButton("Feminino"));
     await waitFor(() => expect(lastBrowse().has("gender")).toBe(false), { timeout: 4000 });
-    expect(lastBrowse().has("brand")).toBe(false);
-    expect(lastBrowse().has("category")).toBe(false);
-    expect(screen.getByRole("radio", { name: "Unisex" }).getAttribute("aria-checked")).toBe("true");
-    fireEvent.click(screen.getByRole("radio", { name: "Unisex" }));
-    await waitFor(() => expect(lastBrowse().get("gender")).toBe("UNISSEX"), { timeout: 4000 });
+    expect(Object.fromEntries(lastBrowse())).toMatchObject({ brand: "Nike", category: "upper_piece", q: "camisa", color: "black" });
+    fireEvent.click(await quickButton("Masculino"));
+    await waitFor(() => expect(lastBrowse().get("gender")).toBe("MASCULINO"), { timeout: 4000 });
     expect(calls.filter(c => c.method !== "GET")).toEqual([]);
   });
 });

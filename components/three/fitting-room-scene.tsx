@@ -1,20 +1,22 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, type ComponentRef, type RefObject } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { StudioLight, useCanvasTexture, useReducedMotion, useTex, type Avatar3dRef, type Look3dPiece } from "@/components/three/common";
 import { Mannequin, bodyParamsOf } from "@/components/three/mannequin";
 import { useBodyAsset, type HumanParts } from "@/components/three/human-avatar";
 import { SceneDebug, type SceneDebugOptions } from "@/components/three/scene-debug";
-import { buildSpec, type BodyParams } from "@/lib/avatar3d/body-spec";
+import { buildSpec, validateBody, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { BrandEnvironment, LightMode, ResolvedEnvironment } from "@/lib/tryon/fitting-room";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import { ReferenceGallery } from "@/components/three/store-fixtures";
 import type { StoreScene } from "@/lib/scene3d/scene";
 import { resolveFittingStudio, STUDIO_PALETTE, type FittingStudioProfile } from "@/lib/scene3d/fitting-studio";
-import { approach, orbitGoal, type FittingCameraApi, type OrbitLimitState, type OrbitPose } from "@/lib/scene3d/orbit-steps";
+import type { FittingCameraApi } from "@/lib/scene3d/orbit-steps";
+import { CameraSteps, Rig, humanStore, type Controls } from "@/components/three/fitting-camera";
 import { useI18n } from "@/lib/i18n/i18n";
+import { sizedPieces } from "@/lib/tryon/sizes";
 import {
   BACK_Z, box, CabinBench, CabinEntrance, CeilingSpots, CornerPlant, cyl, DOOR_GAP, FRONT_Z, PaintedWall, Pouf, PROP_CUT, ROOM_CZ, ROOM_D, ROOM_W, Rug, SIDE_X, WALL_H,
   useCutaway, useFused, useLiteDecor, useStudioKit, wallCut, type Part, type StudioKit,
@@ -24,57 +26,7 @@ import {
  * reconstruction of a physical store. Catalogue photos are framed references;
  * parametric clothing on the avatar remains a visual preview, not a fitted asset.
  */
-const ANGLE: Record<AvatarView, number> = { front: 0, left34: -35, right34: 35, profile: 90, back: 180 };
 type V3 = [number, number, number];
-type Controls = ComponentRef<typeof OrbitControls>;
-function Rig({ view, target, dist, yaw }: { view: AvatarView; target: [number, number, number]; dist: number; yaw?: number }) {
-  const { camera } = useThree();
-  useEffect(() => {
-    const angle = (yaw ?? ANGLE[view]) * Math.PI / 180;
-    camera.position.set(target[0] + Math.sin(angle) * dist, target[1] + .12, target[2] + Math.cos(angle) * dist);
-    camera.lookAt(...target); camera.updateProjectionMatrix();
-  }, [view, camera, target, dist, yaw]);
-  return null;
-}
-
-/**
- * Botões de acessibilidade (fora do Canvas, em components/try-on): giram 30° e aproximam pela mesma órbita do arrasto,
- * em movimento suave — ou de uma vez com "reduzir movimento". Arrastar ou trocar de vista interrompe o giro.
- */
-function CameraSteps({ controls, dist, view, yaw, reduced, onCamera }: {
-  controls: RefObject<Controls | null>; dist: number; view: AvatarView; yaw?: number; reduced: boolean; onCamera?: (api: FittingCameraApi | null) => void;
-}) {
-  const camera = useThree((s) => s.camera);
-  const tween = useRef<{ pose: OrbitPose; goal: OrbitPose } | null>(null);
-  const sph = useMemo(() => new THREE.Spherical(), []), off = useMemo(() => new THREE.Vector3(), []);
-  useEffect(() => { tween.current = null; }, [view, yaw]);
-  useEffect(() => {
-    const c = controls.current; if (!c || !onCamera) return;
-    const limits = { minRadius: c.minDistance, maxRadius: c.maxDistance };
-    const home = (() => { sph.setFromVector3(off.set(0, .12, dist)); return { theta: 0, phi: sph.phi, radius: sph.radius }; })();
-    const poseNow = (): OrbitPose => { sph.setFromVector3(off.subVectors(camera.position, c.target)); return { theta: sph.theta, phi: sph.phi, radius: sph.radius }; };
-    const listeners = new Set<(s: OrbitLimitState) => void>(); let last = "";
-    const emit = () => {
-      const d = camera.position.distanceTo(c.target), state = { atMin: d <= c.minDistance + .01, atMax: d >= c.maxDistance - .01 }, key = `${state.atMin}|${state.atMax}`;
-      if (key !== last) { last = key; listeners.forEach((l) => l(state)); }
-    };
-    const cancel = () => { tween.current = null; };
-    c.addEventListener("start", cancel); c.addEventListener("change", emit);
-    onCamera({
-      step: (action) => { if(c.enabled === false)return; const pose = tween.current?.pose ?? poseNow(); tween.current = { pose, goal: orbitGoal(tween.current?.goal ?? pose, action, limits, home) }; },
-      subscribe: (listener) => { listeners.add(listener); last = ""; emit(); return () => { listeners.delete(listener); }; },
-    });
-    return () => { c.removeEventListener("start", cancel); c.removeEventListener("change", emit); onCamera(null); };
-  }, [controls, camera, dist, onCamera, sph, off]);
-  useFrame((_, dt) => {
-    const tw = tween.current, c = controls.current; if (!tw || !c) return;
-    if(c.enabled === false){tween.current=null;return;}
-    tw.pose = approach(tw.pose, tw.goal, reduced ? 1 : 1 - Math.exp(-dt * 9));
-    camera.position.setFromSpherical(sph.set(tw.pose.radius, tw.pose.phi, tw.pose.theta)).add(c.target); c.update();
-    if (tw.pose === tw.goal) tween.current = null;
-  });
-  return null;
-}
 
 function IdentityPlaque({ env }: { env: BrandEnvironment }) {
   const logo = useTex(env.logoUrl);
@@ -165,14 +117,19 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
   debug?: SceneDebugOptions | null;
   /** laboratório: ângulo livre da câmera (graus) para o giro de 360°, e enquadramento só do avatar */
   cameraYaw?: number; closeUp?: boolean;
-  /** botões de acessibilidade do palco: recebem os passos de câmera (girar 30°, aproximar, voltar à frente) */
+  /** botões de acessibilidade do palco: recebem os passos de câmera (girar 30°, aproximar, voltar à frente) e a câmera de detalhe */
   onCamera?: (api: FittingCameraApi | null) => void;
 
 }) {
   const { t } = useI18n(), asset = useBodyAsset(), reduced = useReducedMotion(), controls = useRef<Controls>(null);
-  const [parts, setParts] = useState<HumanParts | null>(null);
+  const [parts, setParts] = useState<HumanParts | null>(null), human = useMemo(humanStore, []);
   sex = avatar?.model?.sex ?? sex;
   const params = body ?? bodyParamsOf({ sex, build, avatar }), height = buildSpec(params).stature;
+  // tamanho escolhido × este corpo: a diferença em tamanhos vira folga e comprimento no molde (lib/tryon/sizes.ts)
+  const paramsKey = JSON.stringify(params);
+  // medidas de fita informadas em Meu Avatar valem mais que a estimativa pelo corpo
+  const measured = validateBody(avatar?.model?.body)?.measuresCm ?? null, measuredKey = JSON.stringify(measured);
+  const sized = useMemo(() => sizedPieces(pieces, params, sex, measured), [pieces, paramsKey, sex, measuredKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // alvo estável: um array novo a cada render fazia o Rig recolocar a câmera no preset e desfazer o giro da pessoa
   const target = useMemo<V3>(() => closeUp ? [0, height * .52, 0] : [0, height * .60, 0], [closeUp, height]), dist = closeUp ? height * 1.55 : height * 2.2;
   const env = scene?.brand ?? environment.featured, profile = resolveFittingStudio(env, scene);
@@ -187,12 +144,12 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
       <color attach="background" args={[profile.palette.wall]} /><fog attach="fog" args={[profile.palette.wall, 9, 18]} />
       <Lights light={light} /><Room key={env.key} profile={profile} target={target} />
       <group name="fitting-avatar">
-        <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params}
-          fallback={null} still={!!debug?.pose} onHuman={(p) => { setParts(p); onHuman?.(p); }} />
+        <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={sized} sway={false} body={params}
+          fallback={null} still={!!debug?.pose} onHuman={(p) => { setParts(p); human.set(p); onHuman?.(p); }} />
       </group>
       {debug && <SceneDebug parts={parts} options={debug} />}
       <Rig view={view} target={target} dist={dist} yaw={cameraYaw} /><OrbitControls ref={controls} target={target} enablePan={false} minDistance={1.4} maxDistance={dist * 1.25} maxPolarAngle={Math.PI * .52} />
-      <CameraSteps controls={controls} dist={dist} view={view} yaw={cameraYaw} reduced={reduced} onCamera={onCamera} />
+      <CameraSteps controls={controls} dist={dist} target={target} view={view} yaw={cameraYaw} reduced={reduced} human={human} onCamera={onCamera} />
     </Canvas>
     <p className="pointer-events-none absolute bottom-3 left-3 rounded-md bg-white/90 px-3 py-1 text-xs text-neutral-700">{t("tryOn.studio_conceptual")}</p>
   </div>;

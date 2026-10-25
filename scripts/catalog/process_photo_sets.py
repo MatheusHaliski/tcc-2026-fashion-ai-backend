@@ -3,6 +3,12 @@
 
 python -m scripts.catalog.process_photo_sets --apply --watch
 Without --apply, processes previews/audit locally but never writes DB or storage.
+
+Lote fora do banco (GPU, engine fashn-open — o único que atesta o preflight e por isso produz photoSet READY):
+  python -m scripts.catalog.process_photo_sets --export-rows rows.json          # fotos sem photoSet atual (--force: todas)
+  python scripts/catalog/process_local_sd.py --engine fashn-open --weights W --input rows.json --photo-set --dry-run --out-dir lote
+  python -m scripts.catalog.process_photo_sets --from-lot lote                  # ensaio: confere e conta
+  python -m scripts.catalog.process_photo_sets --from-lot lote --apply          # upload de whole/fabric + photoSet no banco (CAS)
 """
 from __future__ import annotations
 import argparse
@@ -78,14 +84,67 @@ def build_set(record,downloader,provider,storage=None):
         result.update(status='RETRY',retryAt=time.time()+300)
     if photo.status=='READY' and storage is not None:
         for kind,payload in (('whole',photo.whole),('fabric',photo.fabric)):
-            key=f"catalog/photo-sets/{PHOTO_SET_VERSION}/{hashlib.sha256(payload).hexdigest()}.png"
-            storage.client.put_object(Bucket=storage.bucket,Key=key,Body=payload,ContentType='image/png')
-            body=storage.client.get_object(Bucket=storage.bucket,Key=key)['Body']
-            try:verified=body.read(len(payload)+1)
-            finally:body.close()
-            if hashlib.sha256(verified).digest()!=hashlib.sha256(payload).digest():raise ValueError('UPLOAD_VERIFICATION_FAILED')
-            result[kind+'Url']=storage.base+'/'+quote(key,safe='/')
+            result[kind+'Url']=upload(storage,payload)
     return result
+
+def upload(storage,payload):
+    """PNG no bucket com chave pelo sha256, lido de volta e conferido; devolve a URL pública."""
+    key=f"catalog/photo-sets/{PHOTO_SET_VERSION}/{hashlib.sha256(payload).hexdigest()}.png"
+    storage.client.put_object(Bucket=storage.bucket,Key=key,Body=payload,ContentType='image/png')
+    body=storage.client.get_object(Bucket=storage.bucket,Key=key)['Body']
+    try:verified=body.read(len(payload)+1)
+    finally:body.close()
+    if hashlib.sha256(verified).digest()!=hashlib.sha256(payload).digest():raise ValueError('UPLOAD_VERIFICATION_FAILED')
+    return storage.base+'/'+quote(key,safe='/')
+
+ROW_FILTER=" WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') AND i.id>%s AND COALESCE(i.review_status,'PENDING')<>'REJECTED' ORDER BY i.id LIMIT %s"
+
+def export_rows(conn,out,*,limit=None,force=False,batch_size=500):
+    """Linhas para o lote fora do banco (process_local_sd.py --engine fashn-open --photo-set --input): só as fotos sem
+    photoSet atual (--force: todas). Nada sigiloso no arquivo: ids, marca, categoria, cor e a URL pública da foto."""
+    rows=[];last=''
+    while limit is None or len(rows)<limit:
+        with conn.cursor() as cursor:
+            cursor.execute(PHOTO_SELECT+ROW_FILTER,(last,batch_size));records=cursor.fetchall()
+        conn.rollback()
+        if not records:break
+        for record in records:
+            last=record['id']
+            if not force and current(record):continue
+            rows.append({'id':str(record['id']),'product_id':str(record['product_id']),'brand':record.get('brand'),'category':record['category'],
+                'subcategory':record['subcategory'],'color':record.get('color'),'image_url':record['image_url']})
+            if limit is not None and len(rows)>=limit:break
+    Path(out).write_text(json.dumps(rows,ensure_ascii=False),encoding='utf-8')
+    return len(rows)
+
+def lot_sets(lot):
+    for path in sorted(Path(lot).glob('photo-sets/*/set.json')):
+        yield path,json.loads(path.read_text(encoding='utf-8'))
+
+def import_lot(conn,lot,storage,audit,*,apply=False,limit=None):
+    """photo-sets/*/set.json do lote → (com --apply) upload de whole/fabric e commit_set com o mesmo CAS do worker.
+    Registro que mudou desde a exportação (URL, categoria, subcategoria) é pulado como 'stale'; a cor vem do banco."""
+    counts={}
+    def bump(k):counts[k]=counts.get(k,0)+1
+    for path,result in lot_sets(lot):
+        if limit is not None and sum(counts.values())>=limit:break
+        image_id=result.pop('imageId',None);result.pop('productId',None);files=result.pop('files',{})
+        with conn.cursor() as cursor:
+            cursor.execute(PHOTO_SELECT+" WHERE i.id=%s",(image_id,));record=cursor.fetchone()
+        conn.rollback()
+        if not record:bump('missing');continue
+        if record['image_url']!=result.get('sourceUrl') or record['category']!=result.get('category') or record['subcategory']!=result.get('subcategory'):bump('stale');continue
+        result['color']=record.get('color')
+        saved=False
+        if apply:
+            if result.get('status')=='READY':
+                for kind in ('whole','fabric'):result[kind+'Url']=upload(storage,(path.parent/files.get(kind,kind+'.png')).read_bytes())
+            try:saved=db.run_transaction(conn,lambda:commit_set(conn,record,result))
+            except Exception:
+                LOG.error(json.dumps({'event':'PHOTO_SET_DATABASE_WRITE_FAILED','imageId':str(image_id)}));raise
+        bump('saved' if saved else result.get('status','?'))
+        audit.write(json.dumps({'imageId':str(image_id),'productId':str(record['product_id']),'status':result.get('status'),'reason':result.get('reason'),'saved':saved})+'\n');audit.flush()
+    return counts
 
 def commit_set(conn,record,result):
     """CAS over image version AND product context; never overwrite concurrent admin corrections."""
@@ -142,6 +201,17 @@ def main():
         try:from .category_frame_storage import FrameStorage
         except ImportError:from category_frame_storage import FrameStorage
         storage=FrameStorage()
+    if a.export_rows:
+        conn=db.connect()
+        try:n=export_rows(conn,a.export_rows,limit=a.limit,force=a.force)
+        finally:conn.close()
+        print(f'{n} fotos exportadas para {a.export_rows}');return
+    if a.from_lot:
+        a.audit.parent.mkdir(parents=True,exist_ok=True);conn=db.connect()
+        try:
+            with a.audit.open('a') as audit:counts=import_lot(conn,a.from_lot,storage,audit,apply=a.apply,limit=a.limit)
+        finally:conn.close()
+        print(('gravado' if a.apply else 'ensaio (nada gravado)')+': '+json.dumps(counts,ensure_ascii=False));return
     if a.reviewed_masks:
         try:from .reviewed_photo_masks import ReviewedMaskProvider
         except ImportError:from reviewed_photo_masks import ReviewedMaskProvider

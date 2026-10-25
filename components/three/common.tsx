@@ -19,6 +19,8 @@ export interface Look3dPiece {
   /** modelagem declarada (taxonomia: SKINNY, STRAIGHT, OVERSIZED…) e dimensões (LENGTH, SLEEVE_LENGTH, SHAFT_HEIGHT) → caimento no 3D */
   material?: string | null;
   variation?: string | null; attributes?: Record<string, string[]> | null;
+  /** tamanho escolhido no provador (PP…XG, 34…50, 33…46) e a diferença para o corpo do avatar (lib/tryon/sizes.ts) */
+  sizeLabel?: string | null; sizeSteps?: number | null;
 }
 export interface FaceFit { offsetX?: number; offsetY?: number; scale?: number }
 /** Avatar 3D (RF40) confirmado pela pessoa: forma do rosto + textura (rota autenticada) + ajustes finos. */

@@ -1,0 +1,791 @@
+{
+  "api": "http://localhost:8080",
+  "rodada": "10251326",
+  "passos": [
+    {
+      "passo": "admin entra",
+      "conta": "admin local",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "listar presets Metamorfose cadastrados",
+      "conta": "admin local",
+      "metodo": "GET",
+      "rota": "/api/admin/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "enviar logo fictício no cadastro",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/uploads",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "enviar comprovante de atividade fictício",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/uploads",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "cadastrar conta MARCA",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/register",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "confirmar e-mail com o código",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/email-verification",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "entrar de novo (sessão com e-mail confirmado)",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "enviar logo fictício no cadastro",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/auth/uploads",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "enviar comprovante de atividade fictício",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/auth/uploads",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "cadastrar conta MARCA",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/auth/register",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "confirmar e-mail com o código",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/auth/email-verification",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "entrar de novo (sessão com e-mail confirmado)",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "enviar logo fictício no cadastro",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/uploads",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "enviar comprovante de atividade fictício",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/uploads",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "cadastrar conta MARCA",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/register",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "confirmar e-mail com o código",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/email-verification",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "entrar de novo (sessão com e-mail confirmado)",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "fila de verificação de marcas",
+      "conta": "admin local",
+      "metodo": "GET",
+      "rota": "/api/admin/approvals",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "aprovar perfil de marca",
+      "conta": "admin local → Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/admin/approvals/835b9c83-18a3-4362-8a73-d4f5306d86b5",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "marca entra aprovada",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "aprovar perfil de marca",
+      "conta": "admin local → Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/admin/approvals/7348afe2-eef1-4c9e-861d-60878b58c2dd",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "marca entra aprovada",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "aprovar perfil de marca",
+      "conta": "admin local → Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/admin/approvals/bb102021-a4e1-422a-8218-48fee3390f39",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "marca entra aprovada",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "marca tenta criar preset Metamorfose próprio",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/admin/aura-store",
+      "status": 403,
+      "codigo": "ACESSO_NEGADO",
+      "mensagem": "Você não tem permissão para esta ação.",
+      "esperado": 403,
+      "ok": true
+    },
+    {
+      "passo": "publicar preset META_CONSTELACAO_VIOLET",
+      "conta": "admin local",
+      "metodo": "POST",
+      "rota": "/api/admin/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "publicar preset META_FIO_VIVO_MINT",
+      "conta": "admin local",
+      "metodo": "POST",
+      "rota": "/api/admin/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "publicar preset META_HOLOGRAFIA_ROSE",
+      "conta": "admin local",
+      "metodo": "POST",
+      "rota": "/api/admin/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "publicar preset META_HOLOGRAFIA_VIOLET",
+      "conta": "admin local",
+      "metodo": "POST",
+      "rota": "/api/admin/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "publicar preset META_PRISMA_CHROME",
+      "conta": "admin local",
+      "metodo": "POST",
+      "rota": "/api/admin/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "publicar preset META_PRISMA_IVORY",
+      "conta": "admin local",
+      "metodo": "POST",
+      "rota": "/api/admin/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "loja de artes sem login",
+      "conta": "visitante",
+      "metodo": "GET",
+      "rota": "/api/aura-store",
+      "status": 401,
+      "codigo": "NAO_AUTENTICADO",
+      "mensagem": "Faça login para continuar.",
+      "esperado": [
+        200,
+        401
+      ],
+      "ok": true
+    },
+    {
+      "passo": "comprar licença META_PRISMA_IVORY sem saldo",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_PRISMA_IVORY/purchase",
+      "status": 409,
+      "codigo": "SALDO_INSUFICIENTE",
+      "mensagem": "Saldo de FAI Points insuficiente.",
+      "esperado": 409,
+      "ok": true
+    },
+    {
+      "passo": "preparação: +1200 FAI Points de teste (TEST_FIXTURE) direto no banco local",
+      "conta": "Atelier Aurora Teste",
+      "status": "fixture"
+    },
+    {
+      "passo": "comprar licença META_PRISMA_IVORY",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_PRISMA_IVORY/purchase",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "comprar licença META_CONSTELACAO_VIOLET",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_CONSTELACAO_VIOLET/purchase",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "Minhas Artes: Metamorfoses disponíveis",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "GET",
+      "rota": "/api/me/arts/metamorphoses",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "cadastrar peça de teste (imagem padrão)",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/pieces",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "criar esquema",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "POST",
+      "rota": "/api/schemes",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "aplicar o preset META_CONSTELACAO_VIOLET no próprio esquema",
+      "conta": "Atelier Aurora Teste",
+      "metodo": "PUT",
+      "rota": "/api/schemes/6b3957f3-3abe-4b1e-b11e-dbfcd53f151d/background",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "comprar licença META_FIO_VIVO_MINT sem saldo",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_FIO_VIVO_MINT/purchase",
+      "status": 409,
+      "codigo": "SALDO_INSUFICIENTE",
+      "mensagem": "Saldo de FAI Points insuficiente.",
+      "esperado": 409,
+      "ok": true
+    },
+    {
+      "passo": "preparação: +1200 FAI Points de teste (TEST_FIXTURE) direto no banco local",
+      "conta": "Litoral Teste Moda",
+      "status": "fixture"
+    },
+    {
+      "passo": "comprar licença META_FIO_VIVO_MINT",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_FIO_VIVO_MINT/purchase",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "comprar licença META_HOLOGRAFIA_ROSE",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_HOLOGRAFIA_ROSE/purchase",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "Minhas Artes: Metamorfoses disponíveis",
+      "conta": "Litoral Teste Moda",
+      "metodo": "GET",
+      "rota": "/api/me/arts/metamorphoses",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "cadastrar peça de teste (imagem padrão)",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/pieces",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "criar esquema",
+      "conta": "Litoral Teste Moda",
+      "metodo": "POST",
+      "rota": "/api/schemes",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "aplicar o preset META_HOLOGRAFIA_ROSE no próprio esquema",
+      "conta": "Litoral Teste Moda",
+      "metodo": "PUT",
+      "rota": "/api/schemes/2ecd15f6-aef4-455b-80e0-fda64328955b/background",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "comprar licença META_PRISMA_CHROME sem saldo",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_PRISMA_CHROME/purchase",
+      "status": 409,
+      "codigo": "SALDO_INSUFICIENTE",
+      "mensagem": "Saldo de FAI Points insuficiente.",
+      "esperado": 409,
+      "ok": true
+    },
+    {
+      "passo": "preparação: +1200 FAI Points de teste (TEST_FIXTURE) direto no banco local",
+      "conta": "Noite Urbana Teste",
+      "status": "fixture"
+    },
+    {
+      "passo": "comprar licença META_PRISMA_CHROME",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_PRISMA_CHROME/purchase",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "comprar licença META_HOLOGRAFIA_VIOLET",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_HOLOGRAFIA_VIOLET/purchase",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "Minhas Artes: Metamorfoses disponíveis",
+      "conta": "Noite Urbana Teste",
+      "metodo": "GET",
+      "rota": "/api/me/arts/metamorphoses",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "cadastrar peça de teste (imagem padrão)",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/pieces",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "criar esquema",
+      "conta": "Noite Urbana Teste",
+      "metodo": "POST",
+      "rota": "/api/schemes",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "aplicar o preset META_HOLOGRAFIA_VIOLET no próprio esquema",
+      "conta": "Noite Urbana Teste",
+      "metodo": "PUT",
+      "rota": "/api/schemes/a8376703-e10a-406a-a2f4-723d458b3e6d/background",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "cadastrar conta PESSOAL",
+      "conta": "Ana Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/auth/register",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "confirmar e-mail com o código",
+      "conta": "Ana Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/auth/email-verification",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "entrar de novo (sessão com e-mail confirmado)",
+      "conta": "Ana Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "ver a loja de artes",
+      "conta": "Ana Teste Comum",
+      "metodo": "GET",
+      "rota": "/api/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "comprar licença META_CONSTELACAO_VIOLET",
+      "conta": "Ana Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_CONSTELACAO_VIOLET/purchase",
+      "status": 403,
+      "codigo": "ACESSO_NEGADO",
+      "mensagem": "Somente marcas e celebridades aprovadas podem comprar licença de arte para promoções.",
+      "esperado": 403,
+      "ok": true
+    },
+    {
+      "passo": "Minhas Artes: Metamorfoses disponíveis",
+      "conta": "Ana Teste Comum",
+      "metodo": "GET",
+      "rota": "/api/me/arts/metamorphoses",
+      "status": 200,
+      "esperado": [
+        200,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "passo": "cadastrar peça de teste (imagem padrão)",
+      "conta": "Ana Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/pieces",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "criar esquema já com a Metamorfose no fundo",
+      "conta": "Ana Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/schemes",
+      "status": 403,
+      "codigo": "AURA_ART_REQUIRED",
+      "mensagem": "Esta Metamorfose exige uma arte adquirida na loja ou recebida como recompensa válida.",
+      "esperado": [
+        201,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "passo": "cadastrar peça de teste (imagem padrão)",
+      "conta": "Ana Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/pieces",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "criar esquema",
+      "conta": "Ana Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/schemes",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "aplicar o preset META_CONSTELACAO_VIOLET da marca no esquema",
+      "conta": "Ana Teste Comum",
+      "metodo": "PUT",
+      "rota": "/api/schemes/70be0221-9e07-46f7-820f-5e75f4686276/background",
+      "status": 403,
+      "codigo": "AURA_ART_REQUIRED",
+      "mensagem": "Esta Metamorfose exige uma arte adquirida na loja ou recebida como recompensa válida.",
+      "esperado": [
+        200,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "passo": "aplicar só o modo Metamorfose, sem a arte",
+      "conta": "Ana Teste Comum",
+      "metodo": "PUT",
+      "rota": "/api/schemes/70be0221-9e07-46f7-820f-5e75f4686276/background",
+      "status": 403,
+      "codigo": "AURA_ART_REQUIRED",
+      "mensagem": "Esta Metamorfose exige uma arte adquirida na loja ou recebida como recompensa válida.",
+      "esperado": [
+        200,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "passo": "controle: fundo de cor lisa no mesmo esquema",
+      "conta": "Ana Teste Comum",
+      "metodo": "PUT",
+      "rota": "/api/schemes/70be0221-9e07-46f7-820f-5e75f4686276/background",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "cadastrar conta PESSOAL",
+      "conta": "Bruno Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/auth/register",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "confirmar e-mail com o código",
+      "conta": "Bruno Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/auth/email-verification",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "entrar de novo (sessão com e-mail confirmado)",
+      "conta": "Bruno Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/auth/login",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "preparação: +1200 FAI Points de teste (TEST_FIXTURE) direto no banco local",
+      "conta": "Bruno Teste Comum",
+      "status": "fixture"
+    },
+    {
+      "passo": "ver a loja de artes",
+      "conta": "Bruno Teste Comum",
+      "metodo": "GET",
+      "rota": "/api/aura-store",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    },
+    {
+      "passo": "comprar licença META_PRISMA_IVORY",
+      "conta": "Bruno Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/aura-store/META_PRISMA_IVORY/purchase",
+      "status": 403,
+      "codigo": "ACESSO_NEGADO",
+      "mensagem": "Somente marcas e celebridades aprovadas podem comprar licença de arte para promoções.",
+      "esperado": 403,
+      "ok": true
+    },
+    {
+      "passo": "Minhas Artes: Metamorfoses disponíveis",
+      "conta": "Bruno Teste Comum",
+      "metodo": "GET",
+      "rota": "/api/me/arts/metamorphoses",
+      "status": 200,
+      "esperado": [
+        200,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "passo": "cadastrar peça de teste (imagem padrão)",
+      "conta": "Bruno Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/pieces",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "criar esquema já com a Metamorfose no fundo",
+      "conta": "Bruno Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/schemes",
+      "status": 403,
+      "codigo": "AURA_ART_REQUIRED",
+      "mensagem": "Esta Metamorfose exige uma arte adquirida na loja ou recebida como recompensa válida.",
+      "esperado": [
+        201,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "passo": "cadastrar peça de teste (imagem padrão)",
+      "conta": "Bruno Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/pieces",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "criar esquema",
+      "conta": "Bruno Teste Comum",
+      "metodo": "POST",
+      "rota": "/api/schemes",
+      "status": 201,
+      "esperado": 201,
+      "ok": true
+    },
+    {
+      "passo": "aplicar o preset META_PRISMA_IVORY da marca no esquema",
+      "conta": "Bruno Teste Comum",
+      "metodo": "PUT",
+      "rota": "/api/schemes/ec387b6e-2b85-41f5-b5ba-55c0282d8242/background",
+      "status": 403,
+      "codigo": "AURA_ART_REQUIRED",
+      "mensagem": "Esta Metamorfose exige uma arte adquirida na loja ou recebida como recompensa válida.",
+      "esperado": [
+        200,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "passo": "aplicar só o modo Metamorfose, sem a arte",
+      "conta": "Bruno Teste Comum",
+      "metodo": "PUT",
+      "rota": "/api/schemes/ec387b6e-2b85-41f5-b5ba-55c0282d8242/background",
+      "status": 403,
+      "codigo": "AURA_ART_REQUIRED",
+      "mensagem": "Esta Metamorfose exige uma arte adquirida na loja ou recebida como recompensa válida.",
+      "esperado": [
+        200,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "passo": "controle: fundo de cor lisa no mesmo esquema",
+      "conta": "Bruno Teste Comum",
+      "metodo": "PUT",
+      "rota": "/api/schemes/ec387b6e-2b85-41f5-b5ba-55c0282d8242/background",
+      "status": 200,
+      "esperado": 200,
+      "ok": true
+    }
+  ],
+  "inesperados": []
+}

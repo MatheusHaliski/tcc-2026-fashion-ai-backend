@@ -42,6 +42,8 @@ export interface FittingItem {
   material?: string | null;
   variation?: string | null;
   attributes?: Record<string, string[]> | null;
+  /** tamanho escolhido (grade do sistema, lib/tryon/sizes.ts); sem escolha, a peça veste no tamanho do avatar */
+  size?: string | null;
   addedAt: number;                              // ordem de escolha: a mais recente define a marca em destaque
 }
 

@@ -8,11 +8,8 @@ import type {
   LightMode,
   ResolvedEnvironment,
 } from "@/lib/tryon/fitting-room";
-import { toDatabaseTipoLook, type Sex } from "@/lib/tryon/fitting-room-model";
 
 export interface FittingControlsProps {
-  sex: Sex;
-  onSexChange: (sex: Sex) => void;
   light: LightMode;
   onLightChange: (light: LightMode) => void;
   mode: EnvironmentMode;
@@ -27,8 +24,6 @@ export interface FittingControlsProps {
 
 /** Controlled view controls keep presentation independent of persistence and dialogs. */
 export function FittingControls({
-  sex,
-  onSexChange,
   light,
   onLightChange,
   mode,

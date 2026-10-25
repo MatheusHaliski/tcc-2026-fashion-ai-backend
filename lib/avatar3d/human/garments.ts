@@ -22,7 +22,7 @@ import { silhouetteLandmarks, separatedLegRows, landmarkProjection, type Garment
  */
 import * as THREE from "three";
 import { installDenimWeave } from "./denim-weave";
-import { fabricRows, fabricTile, medoid } from "./garment-photo";
+import { fabricPatch, fabricRows, fabricTile, medoid } from "./garment-photo";
 import { baseNormals } from "./three-human";
 import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
@@ -67,9 +67,22 @@ export interface GarmentSpec {
   bustFall: number;
   /** bota: onde começa o cano, ao longo da perna (0 = quadril, 1 = tornozelo) */
   shaft: number;
+  /** tamanho escolhido menos o do corpo do avatar, em tamanhos (garment-fit.ts → applySize); ausente = no corpo */
+  sizeSteps?: number;
+  /** folga a mais de cada região além da comum (m): o peito sobra enquanto a cintura fecha, por exemplo */
+  sizeEase?: { chest: number; waist: number; hip: number };
+  /** diferença de tamanhos por região, para o relevo do caimento (sizeRelief): tensão, pregas e barra acumulada */
+  sizeFold?: { chest: number; waist: number; hip: number; length: number };
 }
 
 /** Radial opening along the leg; explicit silhouettes begin at their declared landmark. */
+/** Folga radial da manga: 60 % da folga do tronco, nunca abaixo de 1 cm — e nunca abaixo do que a verificação de
+ *  afastamento exige (55 % da folga). Camadas grossas (jaqueta 2,1 cm, casaco 2,5 cm) deixam de inflar o braço. */
+export const SLEEVE_EASE_FLOOR = 0.010;
+export function sleeveEase(sp: GarmentSpec): number {
+  return Math.min(sp.ease, Math.max(SLEEVE_EASE_FLOOR, sp.ease * 0.6));
+}
+
 export function legFlareOffset(sp: GarmentSpec, leg: number): number {
   const start = sp.legFlareStart;
   const opening = start === undefined ? Math.max(0, leg - .4)
@@ -364,6 +377,8 @@ function skirtTube(c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer
     const body = ring(c, P, y, P.torsoZ, TUBE_NA, 0.014); const rr = new Float32Array(TUBE_NA);
     for (let j = 0; j < TUBE_NA; j++) {
       let v = body[j] + sp.ease + 0.004 + sp.flare * t * t * 0.5 + sp.flare * t * 0.5;
+      // tamanho: a folga a mais do quadril e as pregas do que sobra continuam do tronco para o tubo (sem degrau na emenda)
+      v += (sp.sizeEase?.hip ?? 0) + looseFold(sp.sizeFold?.hip ?? 0, (j / TUBE_NA) * 2 * Math.PI - Math.PI);
       if (under) for (const tb of under.tubes) { const R = tubeRadius(tb, y, j); if (R > 0) v = Math.max(v, R + 0.005); }   // por fora do tubo de baixo
       if (prev) v = Math.max(v, prev[j] - 0.002);                          // o tecido não entra de volta
       rr[j] = v;
@@ -391,6 +406,90 @@ function nearestSkinWeights(a: BodyAsset, c: Composed, P: BodyParam, x: number, 
   return [ix, wt.map((w) => w / tot)];
 }
 
+// ================================================================== caimento por tamanho (relevo)
+
+/** Quanto cada região do corpo pesa num vértice: tronco por altura, braço segue o peito, coxa segue o quadril. */
+function sizeWeights(P: BodyParam, v: number): { chest: number; waist: number; hip: number } {
+  const g = P.group[v];
+  if (g === 2) return { chest: 0.6, waist: 0, hip: 0 };
+  if (g === 3) return { chest: 0, waist: 0, hip: 1 - 0.5 * smooth(0.2, 0.6, P.leg[v]) };
+  if (g !== 1) return { chest: 0, waist: 0, hip: 0 };
+  const h = P.h[v], chest = smooth(0.45, 0.62, h), hip = smooth(0.25, 0.08, h);
+  return { chest, waist: Math.max(0, 1 - chest - hip), hip };
+}
+
+/** Folga a mais da região do vértice (além da comum a toda a peça), em metros. */
+export function sizeExtra(sp: GarmentSpec, P: BodyParam, v: number): number {
+  const e = sp.sizeEase; if (!e) return 0;
+  const w = sizeWeights(P, v);
+  return Math.max(0, w.chest * e.chest + w.waist * e.waist + w.hip * e.hip);
+}
+
+/** Pregas do que sobra em volta do tronco (ângulo θ a partir da frente): nove pregas, nunca para dentro. */
+function looseFold(steps: number, th: number): number {
+  if (!(steps > 0.6)) return 0;
+  return Math.min(0.012, 0.0045 * (steps - 0.6) + 0.0015) * (0.5 + 0.5 * Math.cos(9 * th + 0.6));
+}
+
+/** Diferença de tamanhos que vale no vértice (média das regiões pelo peso): >0 sobra, <0 aperta. */
+export function sizeStepsAt(sp: GarmentSpec, P: BodyParam, v: number): number {
+  const f = sp.sizeFold; if (!f) return 0;
+  const w = sizeWeights(P, v), total = w.chest + w.waist + w.hip;
+  return total > 0 ? (w.chest * f.chest + w.waist * f.waist + w.hip * f.hip) / total : 0;
+}
+
+/** Eixo do membro na altura do vértice (perna pelas articulações quadril–joelho–tornozelo; braço ombro–punho). */
+function limbAxis(P: BodyParam, v: number, x: number, y: number): [number, number] | null {
+  const side = x >= 0 ? "L" : "R";
+  if (P.group[v] === 3 && P.legs) {
+    const L = P.legs[side];
+    const [a, b] = y > L.knee[1] ? [L.hip, L.knee] : [L.knee, L.ankle];
+    const t = Math.min(1, Math.max(0, (a[1] - y) / Math.max(1e-4, a[1] - b[1])));
+    return [lerp(a[0], b[0], t), lerp(a[2], b[2], t)];
+  }
+  if (P.group[v] === 2 && P.shoulder && P.wrist) {
+    const S = P.shoulder[side], W = P.wrist[side], t = Math.min(1, Math.max(0, P.arm[v]));
+    return [lerp(S[0], W[0], t), lerp(S[2], W[2], t)];
+  }
+  return null;
+}
+
+/**
+ * Relevo do tamanho escolhido, sempre para fora do corpo (m): o que o olho usa para ler caimento.
+ *   sobra (> 0,6 tamanho)   pregas verticais, mais fundas para a barra (tronco), para o tornozelo (perna) e o punho
+ *   aperta (< −0,4)         rugas de tensão horizontais na frente e nos lados do tronco, do quadril e das coxas
+ *   comprido (> 0,5)        barra acumulada no tornozelo (calça até o chão) e no punho (manga até a mão)
+ */
+export function sizeRelief(sp: GarmentSpec, P: BodyParam, v: number, x: number, y: number, z: number): number {
+  const f = sp.sizeFold; if (!f) return 0;
+  const g = P.group[v]; if (g !== 1 && g !== 2 && g !== 3) return 0;
+  const s = sizeStepsAt(sp, P, v); let out = 0;
+  if (s > 0.6) {
+    const amp = Math.min(0.012, 0.0045 * (s - 0.6) + 0.0015);
+    if (g === 1) out += smooth(0.62, 0.15, P.h[v]) * looseFold(s, Math.atan2(x, z - P.torsoZ));
+    else {
+      const c = limbAxis(P, v, x, y);
+      if (c) {
+        const th = Math.atan2(x - c[0], z - c[1]);
+        const k = g === 3 ? 0.8 * smooth(0.25, 0.9, P.leg[v]) : 0.5 * smooth(0.3, 0.9, P.arm[v]);
+        out += amp * k * (0.5 + 0.5 * Math.cos((g === 3 ? 6 : 5) * th + 1.1));
+      }
+    }
+  }
+  if (s < -0.4 && g !== 2) {
+    const amp = Math.min(0.0028, 0.0016 * (-s - 0.4) + 0.0006);
+    const zz = z - P.torsoZ, r = Math.hypot(x, zz) || 1, front = smooth(-0.2, 0.5, zz / r);
+    const k = g === 1 ? smooth(0.1, 0.25, P.h[v]) * smooth(0.85, 0.7, P.h[v]) : smooth(0.45, 0.05, P.leg[v]);
+    out += amp * front * k * Math.pow(Math.max(0, Math.sin((2 * Math.PI * y) / 0.024)), 3);
+  }
+  if (f.length > 0.5) {
+    const amp = Math.min(0.009, 0.004 * (f.length - 0.5) + 0.002);
+    if (g === 3 && sp.leg >= 0.95) out += amp * smooth(0.8, 0.97, P.leg[v]) * (0.5 + 0.5 * Math.sin((2 * Math.PI * P.leg[v]) / 0.045));
+    if (g === 2 && sp.sleeve >= 0.95) out += 0.8 * amp * smooth(0.78, 0.95, P.arm[v]) * (0.5 + 0.5 * Math.sin((2 * Math.PI * P.arm[v]) / 0.05));
+  }
+  return out;
+}
+
 /** Raio do tubo na altura y e no ângulo j (0 fora do comprimento do tubo). */
 export function tubeRadius(tb: SkirtTube, y: number, j: number): number {
   const f = ((tb.y0 - y) / tb.len) * (tb.r.length - 1);
@@ -411,7 +510,8 @@ export function underLayer(c: Composed, P: BodyParam, below: GarmentSpec[]): Und
   for (const sp of [...below].sort((a, b) => a.layer - b.layer)) {
     const cov = coverageOf(c, P, sp);
     const e = sp.ease + 0.004 + (sp.skirt > 0 ? 0 : sp.flare * 0.3);     // o alargamento da saia está no tubo
-    for (let v = 0; v < out.length; v++) if (cov[v] > 0.02) out[v] += e;
+    // a folga e o relevo do tamanho da peça de baixo também: a de cima passa por fora das pregas dela
+    for (let v = 0; v < out.length; v++) if (cov[v] > 0.02) out[v] += e + sizeExtra(sp, P, v) + sizeRelief(sp, P, v, c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2]);
     if (sp.skirt > 0) { tubes.push(skirtTube(c, P, sp, acc)); }
     acc = { ease: out, tubes };
   }
@@ -435,6 +535,9 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
   // caimento: anel do busto
   const NA = 64; const bustY = lerp(P.hipY, P.neckY, 0.72);
   const bust = sp.drape > 0 ? ring(c, P, bustY, P.torsoZ, NA, 0.015) : null;
+  // peça maior que o corpo: o tecido cai reto do busto até o quadril, inclusive dos lados (sem desenhar a cintura)
+  const HIP_H = 0.04, looseK = Math.min(1, Math.max(0, ((sp.sizeSteps ?? 0) - 0.3) / 1.2));
+  const hipLine = bust && looseK > 0 && Number.isFinite(sp.hem) && sp.hem < HIP_H ? ring(c, P, lerp(P.hipY, P.neckY, HIP_H), P.torsoZ, NA, 0.014) : null;
   // peito das peças soltas: casco convexo em algumas alturas (interpolado)
   const CH = [0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9];
   const chest = sp.drape >= 0.5 && !Number.isNaN(sp.hem) ? CH.map((hh) => hullRing(c, P, lerp(P.hipY, P.neckY, hh), P.torsoZ, NA)) : null;
@@ -450,18 +553,29 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     if (used[v] >= 0) return used[v];
     const i = pos.length / 3; used[v] = i;
     const g = P.group[v]; const h = P.h[v];
-    let e = sp.ease + (under ? under.ease[v] : 0);
+    // manga: a folga própria da peça é menor que a do tronco (um braço de 4–5 cm de raio com +2–3 cm virava um balão
+    // em jaqueta e casaco); a folga da camada de baixo continua inteira, para a manga passar por fora dela
+    let e = (g === 2 && sp.sleeve > 0 ? sleeveEase(sp) : sp.ease) + (under ? under.ease[v] : 0);
     if (g === 2 && sp.sleeve > 0) e += sp.flare * smooth(sp.sleeve * 0.3, sp.sleeve, P.arm[v]) * (sp.sleeve < 0.6 ? 1 : 0.3) + 0.002;
     if (g === 2 && sp.sleeve > 0) e += sp.sleeveEase ?? 0;
     if ((g === 1 || g === 3) && sp.hemFlare) e += sp.hemFlare * smooth(sp.hem + .35, sp.hem, h);
     if (g === 3 && sp.leg > 0) e += legFlareOffset(sp, P.leg[v]);
     if (sp.kind === "shoes" || sp.kind === "boots") e += 0.004 * smooth(-0.02, -0.12, c.body[v * 3 + 2] - (P.torsoZ + 0.05));   // biqueira
+    // tamanho escolhido: a região que sobra ganha folga (o relevo entra depois do caimento do busto, logo abaixo)
+    e += sizeExtra(sp, P, v);
     let x = c.body[v * 3] + normals[v * 3] * e, y = c.body[v * 3 + 1] + normals[v * 3 + 1] * e, z = c.body[v * 3 + 2] + normals[v * 3 + 2] * e;
     // cai reto do busto (não cola na cintura nem na barriga)
     if (bust && (g === 1 || g === 3) && h < 0.72 && h > sp.hem - 0.1) {
       const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
-      const target = bust[j] * sp.bustFall + e; const k = sp.drape * smooth(0.72, 0.5, h) * (0.15 + 0.85 * Math.abs(zz) / r);   // cai reto na frente e atrás; dos lados, o braço encosta
+      // cai reto na frente e atrás; dos lados, o braço encosta — numa peça maior que o corpo, os lados também caem retos
+      const side = 0.15 + 0.35 * Math.min(1, Math.max(0, (sp.sizeSteps ?? 0) / 2));
+      const target = bust[j] * sp.bustFall + e; const k = sp.drape * smooth(0.72, 0.5, h) * (side + (1 - side) * Math.abs(zz) / r);
       if (target > r && r > 1e-4) { const nr = lerp(r, target, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
+      if (hipLine && g === 1 && h > HIP_H) {
+        const zz2 = z - P.torsoZ, r2 = Math.hypot(x, zz2), t = Math.min(1, (h - HIP_H) / (0.72 - HIP_H));
+        const line = lerp(hipLine[j] + e + 0.004, bust[j] * sp.bustFall + e, t) * smooth(0.72, 0.6, h) + r2 * (1 - smooth(0.72, 0.6, h));
+        if (line > r2 && r2 > 1e-4) { const nr = lerp(r2, line, looseK); x *= nr / r2; z = P.torsoZ + (zz2 * nr) / r2; }
+      }
     }
     // peito: o tecido passa reto por cima do vão entre os seios (frente), sem desenhar o corpo
     if (chest && g === 1 && h >= CH[0] && h < CH[CH.length - 1]) {
@@ -474,6 +588,10 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
         if (R > r) { const nr = lerp(r, R, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
       }
     }
+    // relevo do tamanho (tensão, pregas, barra acumulada) depois do caimento: a amostra do anel do busto continua a do
+    // vértice do corpo, e o relevo só soma para fora
+    const rel = sizeRelief(sp, P, v, c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2]);
+    if (rel > 0) { x += normals[v * 3] * rel; y += normals[v * 3 + 1] * rel; z += normals[v * 3 + 2] * rel; }
     // por fora da saia que está por baixo, na altura do vértice (tronco e alto das coxas)
     if (under?.tubes.length && (g === 1 || g === 3)) {
       const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
@@ -683,11 +801,36 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
  * Geometria final para desenhar: triângulos da frente (na pose de exibição) com UV na foto; os de trás e dos lados com
  * UV num canto de cor lisa do tecido (a textura é foto sobre fundo da cor do tecido). Vértices duplicados na divisa.
  */
+/** Vértices de manga do molde: `along` é a posição ao longo do braço (0 = ombro, 1 = punho) do vértice do corpo de origem. */
+export interface SleeveSource { isSleeve: (v: number) => boolean; along: (v: number) => number }
+export interface SleeveSpan { fy: number; x0: number; x1: number }
+
+/**
+ * Mangas na foto, por lado: em cada linha da peça, o que fica entre a borda da peça e o tronco (torsoWidthAt) é manga.
+ * Só vale a manga CAÍDA ao lado do tronco (ocupa ≥ 30 % da altura da peça, em faixa contínua): manga aberta para o lado
+ * (flat lay) não separa do tronco e segue no tecido, como antes.
+ */
+export function photoSleeves(photo: PhotoInfo): { left: SleeveSpan[] | null; right: SleeveSpan[] | null } | null {
+  if (!photo.torsoWidthAt) return null;
+  const bw = photo.box.x1 - photo.box.x0; const left: SleeveSpan[] = [], right: SleeveSpan[] = [];
+  for (let i = 0; i <= 50; i++) {
+    const fy = i / 50; const full = photo.widthAt(fy); const torso = photo.torsoWidthAt(fy);
+    if (!full || !torso) continue;
+    if (torso.x0 - full.x0 > bw * 0.03) left.push({ fy, x0: full.x0, x1: torso.x0 });
+    if (full.x1 - torso.x1 > bw * 0.03) right.push({ fy, x0: torso.x1, x1: full.x1 });
+  }
+  const usable = (rows: SleeveSpan[]) => rows.length >= 6 && rows[rows.length - 1].fy - rows[0].fy >= 0.3
+    && rows.every((r, k) => k === 0 || r.fy - rows[k - 1].fy <= 0.081) ? rows : null;
+  const l = usable(left), r = usable(right);
+  return l || r ? { left: l, right: r } : null;
+}
+
 export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo: PhotoInfo | null, noPhoto?: (v: number) => boolean,
-  visibleAlpha: Float32Array = gg.alpha): THREE.BufferGeometry {
+  visibleAlpha: Float32Array = gg.alpha, sleeve?: SleeveSource): THREE.BufferGeometry {
   const sp = gg.spec; const n = gg.index.length / 3;
   // referência na foto e no molde (pose de exibição)
   let map: ((x: number, y: number) => [number, number]) | null = null;
+  let torsoCenter = 0;
   let photoScaleX = 1, photoScaleY = 1;
   let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
   for (let v = 0; v < gg.position.length / 3; v++) {
@@ -708,7 +851,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
     const pw = (upper ? photo.torsoWidthAt?.(fy) : null) ?? photo.widthAt(fy);
     if (Number.isFinite(xl) && pw && xr > xl) {
       const { box } = photo; const sx = (pw.x1 - pw.x0) / (xr - xl); const cxP = (pw.x0 + pw.x1) / 2, cxG = (xl + xr) / 2;
-      photoScaleX = sx;
+      photoScaleX = sx; torsoCenter = cxG;
       const bh = box.y1 - box.y0;
       // peça de cima com gola: o fim da gola da foto (collarRow) vai para a borda do decote 3D na frente — sem isso a
       // gola da foto caía abaixo da borda, com tecido "sobrando" entre ela e o pescoço. A barra continua na barra.
@@ -772,6 +915,37 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
       }
     }
   }
+  // manga da foto na manga 3D: a borda externa e a interna da manga fotografada vão nas bordas da manga do molde, do
+  // ombro ao punho — antes a manga ficava só no tecido (cor e trama) e a camisa "perdia" o desenho dos braços
+  let sleeveUv: ((v: number) => [number, number] | null) | null = null;
+  const spans = map && photo && sleeve && sp.sleeve > 0 ? photoSleeves(photo) : null;
+  if (spans && photo && sleeve) {
+    const bh = photo.box.y1 - photo.box.y0; const bins = 24;
+    const edges: Record<"l" | "r", { min: number; max: number }[]> = { l: [], r: [] };
+    const where = (v: number) => {
+      const a = sleeve.along(v); if (!(a >= 0) || !sleeve.isSleeve(v)) return null;
+      const t = Math.min(1, Math.max(0, a / Math.max(0.01, sp.sleeve)));
+      return { side: (posed[v * 3] < torsoCenter ? "l" : "r") as "l" | "r", t, bin: Math.min(bins - 1, Math.floor(t * bins)) };
+    };
+    for (let v = 0; v < posed.length / 3; v++) {
+      const at = where(v); if (!at) continue;
+      const e = edges[at.side][at.bin] ?? (edges[at.side][at.bin] = { min: Infinity, max: -Infinity });
+      e.min = Math.min(e.min, posed[v * 3]); e.max = Math.max(e.max, posed[v * 3]);
+    }
+    const spanAt = (rows: SleeveSpan[], t: number): SleeveSpan => {
+      const fy = rows[0].fy + t * (rows[rows.length - 1].fy - rows[0].fy);
+      let k = 0; while (k < rows.length - 2 && rows[k + 1].fy < fy) k++;
+      const a = rows[k], b = rows[Math.min(rows.length - 1, k + 1)]; const f = b.fy > a.fy ? (fy - a.fy) / (b.fy - a.fy) : 0;
+      return { fy, x0: a.x0 + (b.x0 - a.x0) * f, x1: a.x1 + (b.x1 - a.x1) * f };
+    };
+    sleeveUv = (v) => {
+      const at = where(v); if (!at) return null;
+      const rows = at.side === "l" ? spans.left : spans.right; const e = edges[at.side][at.bin];
+      if (!rows || !e || e.max - e.min < 1e-4) return null;
+      const s = spanAt(rows, at.t); const cross = (posed[v * 3] - e.min) / (e.max - e.min);
+      return [(s.x0 + cross * (s.x1 - s.x0)) / photo.width, 1 - (photo.box.y0 + s.fy * bh) / photo.height];
+    };
+  }
   const pos: number[] = [], uv: number[] = [], col: number[] = [], si: number[] = [], sw: number[] = [];
   const fabricUv: number[] = [], photoWeight: number[] = [];
   const normals = baseNormals(posed, gg.index, Uint32Array.from({ length: posed.length / 3 }, (_, i) => i));
@@ -788,12 +962,15 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         pos.push(gg.position[v * 3], gg.position[v * 3 + 1], gg.position[v * 3 + 2]);
         // camisa também recebe a foto na frente (cor, xadrez, listras REAIS): a carcela, os botões e a gola 3D vêm por
         // cima, alinhados ao centro — antes a frente ficava só com o painel do tecido (repetição ou degradê por linhas)
-        const blend = isFront && !noPhoto?.(v) && gg.photoEligible?.[v] !== 0 ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
+        const sleeveAt = sleeveUv?.(v) ?? null;
+        const blend = isFront && (sleeveAt || !noPhoto?.(v)) && gg.photoEligible?.[v] !== 0 ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
         // Every vertex of a shoulder triangle needs coordinates in the same
         // photographic panel, including its zero-weight sleeve vertices. Using
         // fabric-panel UVs there interpolates across the atlas divider and makes
         // a false diagonal seam. Fabric already has its own independent UVs.
-        if (map) {
+        if (sleeveAt) {
+          uv.push(0.5 * Math.min(0.999, Math.max(0.001, sleeveAt[0])), Math.min(0.999, Math.max(0.001, sleeveAt[1])));
+        } else if (map) {
           const [u, w] = map(posed[v * 3], posed[v * 3 + 1]);
           uv.push(0.5 * Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w)));
         } else {
@@ -870,7 +1047,10 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
     for (const [panel, range] of panels.entries()) {
       const offset = W + panel * W / panels.length, panelWidth = W / panels.length;
       const tile = fabricTile(raster, range);
-      if (!tile) {
+      // sem ladrilho periódico: a trama real da peça (jeans, malha, lã) espelhada 2×2 — costas e laterais continuam o
+      // desenho em vez de cair num degradê liso; tecido liso e logo isolado continuam no degradê/cor medida
+      const patch = tile ? null : fabricPatch(raster, range);
+      if (!tile && !patch) {
         const bh = info ? info.box.y1 - info.box.y0 : img.height;
         let rows = fabricRows(raster, { ...range, inset: !upperPanels && info?.legRows?.length ? .1 : .25,
           ...(info ? { fromY: info.box.y0 + bh * (info.collarRow ?? 0.02), toY: info.box.y1 - bh * 0.03 } : {}) });
@@ -899,8 +1079,17 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
           g.fillStyle = back; g.fillRect(offset, 0, panelWidth, H);
         }
       } else {
-        const sample = document.createElement("canvas"); sample.width = tile.width; sample.height = tile.height;
-        sample.getContext("2d")!.drawImage(source, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
+        const sample = document.createElement("canvas");
+        if (tile) {
+          sample.width = tile.width; sample.height = tile.height;
+          sample.getContext("2d")!.drawImage(source, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
+        } else {
+          const p = patch!; sample.width = p.width * 2; sample.height = p.height * 2; const sg2 = sample.getContext("2d")!;
+          for (const [fx, fy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]] as const) {   // 2×2 espelhado: sem emenda visível
+            sg2.save(); sg2.translate(fx < 0 ? p.width * 2 : 0, fy < 0 ? p.height * 2 : 0); sg2.scale(fx, fy);
+            sg2.drawImage(source, p.x, p.y, p.width, p.height, 0, 0, p.width, p.height); sg2.restore();
+          }
+        }
         const pattern = g.createPattern(sample, "repeat");
         if (pattern) {
           const sx = mapping ? W / (mapping.width * mapping.photoScaleX) : W / img.width;

@@ -1,15 +1,22 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
-import type { Look3dPiece } from "@/components/three/common";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Look3d, Look3dPiece } from "@/components/three/common";
 import { resolveEnvironment, type FittingItem, type LightMode } from "@/lib/tryon/fitting-room";
 import { resolveScene, type SceneContext, type SceneProduct } from "@/lib/scene3d/scene";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { FittingStudioProfile } from "@/lib/scene3d/fitting-studio";
 import { ACERVO, acervoLook } from "@/lib/tryon/acervo";
 import { setFitMode } from "@/lib/avatar3d/human/garment-fit";
+import { gridOf } from "@/lib/tryon/sizes";
 import { DEFAULT_BODY, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { SceneDebugOptions } from "@/components/three/scene-debug";
+import type { FittingCameraApi } from "@/lib/scene3d/orbit-steps";
+import { FittingDetailControls } from "@/components/try-on/fitting-detail-controls";
+import { NEUTRAL_MODS, type AdventureMods, type AdventureSession } from "@/lib/flair/afterparty";
+import { useSmartWheel } from "@/components/try-on/use-smart-wheel";
+import { useI18n } from "@/lib/i18n/i18n";
+import type { DetailMode, DetailState, StopKey } from "@/lib/scene3d/detail-camera";
 
 /*
  * Laboratório das cenas de loja com dados de EXEMPLO (marcas e artista fictícios, manequim padrão sem rosto de pessoa):
@@ -18,6 +25,16 @@ import type { SceneDebugOptions } from "@/components/three/scene-debug";
 const FittingRoomScene = dynamic(() => import("@/components/three/fitting-room-scene"), { ssr: false });
 const StoreStreetScene = dynamic(() => import("@/components/three/store-street-scene"), { ssr: false });
 const StageScene = dynamic(() => import("@/components/three/stage-scene"), { ssr: false });
+const HeistScene = dynamic(() => import("@/components/flair/afterparty-scene"), { ssr: false });
+/** MET Gala Heist com decks de exemplo: neutro, furtivo (escuro e de tênis) e de gala (claro, statement e raro). */
+const HEIST_MODS: Record<string, AdventureMods> = {
+  "heist-neutro": NEUTRAL_MODS,
+  "heist-furtivo": { agility: 78, stealth: 86, charm: 40, stamina: 72, speedMul: 1.16, suspicionMul: 0.78, distractMul: 1.08, regenMul: 1.28, light: "PENUMBRA", zoneMul: 0.82, crowd: 0, guests: 2, vipRouteMs: 0 },
+  "heist-gala": { agility: 30, stealth: 18, charm: 92, stamina: 40, speedMul: 0.97, suspicionMul: 1.19, distractMul: 1.44, regenMul: 1.02, light: "HOLOFOTES", zoneMul: 1.15, crowd: 0.67, guests: 6, vipRouteMs: 8000 },
+};
+const heistSession = (mods: AdventureMods, z: number): AdventureSession => ({ id: "lab", serverTime: 12_000, state: {
+  x: 0.4, z, energy: 80, suspicion: 12, status: "ACTIVE", phase: "ACQUIRE", activeDeckId: null, role: "NONE", color: "#406b91", feedback: "MOVING",
+  badge: false, item: false, running: false, activeUntil: 0, distractionUntilLeft: 0, distractionUntilRight: 0, distractionReadyAt: 0, cooldowns: {}, loadouts: [], startedAt: 10_000, mods } });
 
 const IMG = (n: string) => `/_derived/pecas_thumb/${n}-640.webp`;
 const piece = (id: string, name: string, slot: string, category: string, subcategory: string, img: string, colorHex: string): Look3dPiece =>
@@ -90,6 +107,7 @@ function publishProfile(p: FittingStudioProfile) {
 }
 
 export default function ScenesLab() {
+  const { t } = useI18n();
   const [s, setS] = useState("fitting-brand");
   const [view, setView] = useState<AvatarView>("front");
   // auditoria do vestir: ?pieces=<ids do acervo | cor-*>&body=F-ref|M-ref|F-plus|M-slim&debug=wire|sem-corpo|pesos&pose=bracos|caminhada|caminhada-animada|agachamento&yaw=<graus>&close=1&fit=antes&light=daylight|store|night&variation=SLIM&neckline=V_NECK
@@ -101,7 +119,11 @@ export default function ScenesLab() {
     // variation=SLIM|REGULAR|OVERSIZED… força a classe de caimento em todas as peças (auditoria: regata "justa" do catálogo)
     // neckline=V_NECK|SCOOP|… força a dimensão NECKLINE (auditoria do decote: "Decote V" do catálogo)
     const variation = q.get("variation"), neckline = q.get("neckline");
-    const pieces = labLook(q.get("pieces") ?? "")?.map((p) => ({ ...p, ...(variation ? { variation } : {}), ...(neckline ? { attributes: { ...(p.attributes ?? {}), NECKLINE: [neckline] } } : {}) })) ?? null;
+    // sizes=letter:GG,numeric:46,shoes:40 veste cada grade no tamanho dado (caimento por tamanho, lib/tryon/sizes.ts)
+    const sizes = Object.fromEntries((q.get("sizes") ?? "").split(",").map((x) => x.split(":")).filter((x) => x.length === 2)) as Record<string, string>;
+    const sized = (p: Look3dPiece): Look3dPiece => { const g = gridOf(p.category, p.subcategory); return g && sizes[g] ? { ...p, sizeLabel: sizes[g] } : p; };
+    const base = labLook(q.get("pieces") ?? "") ?? (Object.keys(sizes).length ? LAB_LOOK : null);
+    const pieces = base?.map((p) => sized({ ...p, ...(variation ? { variation } : {}), ...(neckline ? { attributes: { ...(p.attributes ?? {}), NECKLINE: [neckline] } } : {}) })) ?? null;
     const lq = q.get("light"); const light: LightMode = lq === "daylight" || lq === "night" ? lq : "store";
     const b = q.get("body") ?? "F-ref"; const sex = b.startsWith("M") ? "MASCULINO" : "FEMININO";
     const body = b === "F-plus" ? { ...DEFAULT_BODY.FEMININO, stature: 1.66, build: 1.4 } : b === "M-slim" ? { ...DEFAULT_BODY.MASCULINO, stature: 1.82, build: -0.8 } : null;
@@ -109,9 +131,23 @@ export default function ScenesLab() {
     const debug = dv || pose ? { view: (dv ?? "normal") as SceneDebugOptions["view"], pose: (pose ?? null) as SceneDebugOptions["pose"] } : null;
     const yaw = q.get("yaw"); setLab({ pieces, sex, body, debug, yaw: yaw !== null ? Number(yaw) : undefined, close: q.get("close") === "1", light, ready: true });
   }, []);
+  // câmera de detalhe (calçado, percurso pelo corpo) para as capturas: __lab.detail("calcado"), __lab.detail("percurso", "gola")
+  // ?panel=1 mostra o painel do palco por cima da cena; ?size=390x460 muda o tamanho do visor (captura de celular)
+  const [cameraApi, setCameraApi] = useState<FittingCameraApi | null>(null), [frame, setFrame] = useState({ panel: false, w: 1100, h: 680 });
+  const camera = useRef<FittingCameraApi | null>(null), onCamera = useCallback((api: FittingCameraApi | null) => { camera.current = api; setCameraApi(api); }, []);
+  // com o painel, o visor se comporta como o palco do provador: a mesma rolagem inteligente decide página × câmera
+  const viewer = useRef<HTMLDivElement>(null), wheelHint = useSmartWheel(viewer, frame.panel ? cameraApi?.detail : null);
+  useEffect(() => {
+    const q = new URLSearchParams(location.search), [w, h] = (q.get("size") ?? "").split("x").map(Number);
+    setFrame({ panel: q.get("panel") === "1", w: w > 0 ? w : 1100, h: h > 0 ? h : 680 });
+  }, []);
   // controle do script de capturas: muda ângulo, depuração, pose, luz e peças (look) sem recarregar a cena
   useEffect(() => {
     (window as unknown as { __lab: unknown }).__lab = {
+      detail: (mode: DetailMode, at?: StopKey) => { camera.current?.detail?.focus(mode, at); },
+      travel: (t: number) => { camera.current?.detail?.travel(t); },
+      wheel: (deltaY: number) => camera.current?.detail?.wheel(deltaY) ?? false,
+      detailState: () => { let state: DetailState | null = null; camera.current?.detail?.subscribe((x) => { state = x; })(); return state; },
       set: ({ look, ...patch }: { yaw?: number; debug?: SceneDebugOptions | null; close?: boolean; light?: LightMode; look?: string }) =>
         setLab((l) => ({ ...l, ...patch, ...(look !== undefined ? { pieces: labLook(look) } : {}) })),
       canvas: () => (document.querySelector("#scene-viewer canvas") as HTMLCanvasElement | null)?.toDataURL("image/png"),
@@ -157,10 +193,12 @@ export default function ScenesLab() {
   return (
     <main style={{ padding: 12 }}>
       <nav style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        {["fitting-neutral", "fitting-brand", ...Object.keys(FITTING), "ministores", "ministage", "ministage-sem-logo"].map((k) => <button key={k} onClick={() => setS(k)} aria-pressed={s === k}>{k}</button>)}
+        {["fitting-neutral", "fitting-brand", ...Object.keys(FITTING), "ministores", "ministage", "ministage-sem-logo", ...Object.keys(HEIST_MODS)].map((k) => <button key={k} onClick={() => setS(k)} aria-pressed={s === k}>{k}</button>)}
       </nav>
-      <div id="scene-viewer" style={{ width: 1100, height: 680, background: "#111" }}>
-        {s.startsWith("fitting") && lab.ready && <FittingRoomScene avatar={null} sex={lab.sex} body={lab.body} pieces={lab.pieces ?? LAB_LOOK} environment={env} view={view} onProfile={publishProfile}
+      <div id="scene-viewer" ref={viewer} style={{ position: "relative", width: frame.w, height: frame.h, background: "#111" }}>
+        {frame.panel && cameraApi?.detail && s.startsWith("fitting") && <FittingDetailControls api={cameraApi.detail} />}
+        {wheelHint && <p className="fitting-wheel-hint">{t("tryOn.roda.dica")}</p>}
+        {s.startsWith("fitting") && lab.ready && <FittingRoomScene avatar={null} sex={lab.sex} body={lab.body} pieces={lab.pieces ?? LAB_LOOK} environment={env} view={view} onProfile={publishProfile} onCamera={onCamera}
           debug={lab.debug} cameraYaw={lab.yaw} closeUp={lab.close} light={lab.light} scene={FITTING[s] ? resolveScene({ ...FITTING[s], worn: items }) : null} />}
         {s === "ministores" && <StoreStreetScene onPick={() => {}} selectedId="c1" brand={{ name: "Atelier Lumi" }} stores={[
           { id: "c1", label: "Verão Solar", rank: 1, audience: 70, fraction: 1, fireworks: 3, accentColor: "#F26A1B", artUrl: "/aura/geometry/geometry_01/imagem.png", score: 980, products: [TOPS[0], BAGS[1], SHOES[0]] },
@@ -169,6 +207,8 @@ export default function ScenesLab() {
           { id: "c4", label: "Inverno Lã", rank: 4, audience: 18, fraction: 0.3, fireworks: 0, accentColor: "#8E44AD", artUrl: "/aura/geometry/geometry_04/imagem.png", score: 310, products: [TOPS[4], BAGS[4], SHOES[1]] },
         ]} />}
         {s === "ministage" && <StageScene name="Luma Vale" era="Era Neon" colors={["#C6275E", "#2D55C9", "#F2C94C"]} mannequin={{ sex: "FEMININO", head: "PADRAO" }} pieces={LAB_LOOK} logoUrl={logo} seals={["/selos/circular/01.webp", "/selos/circular/02.webp"]} />}
+        {HEIST_MODS[s] && <HeistScene session={heistSession(HEIST_MODS[s], Number(new URLSearchParams(typeof location === "undefined" ? "" : location.search).get("z") ?? 4.2))}
+          look={{ title: "Lab", mannequin: { sex: lab.sex, head: "PADRAO" }, pieces: lab.pieces ?? LAB_LOOK } as unknown as Look3d} onTarget={() => {}} />}
         {s === "ministage-sem-logo" && <StageScene name="Rio Aurora" era="Era Tropical" colors={["#1BAF7A", "#EB6834", "#F2C94C"]} mannequin={{ sex: "MASCULINO", head: "PADRAO" }} pieces={LAB_LOOK} />}
       </div>
     </main>

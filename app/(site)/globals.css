@@ -2553,6 +2553,22 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-orbit { display: flex; align-items: center; gap: 6px; }
 .fitting-orbit-sep { width: 1px; height: 24px; background: var(--line); }
 @media (max-width: 640px) { .fitting-remote { right: 8px; bottom: 8px; max-width: calc(100% - 16px); } }
+/* câmera de detalhe (corpo inteiro · calçado · percorrer o corpo): canto superior esquerdo; no celular, faixa no topo com as paradas roláveis de lado */
+.fitting-detail { position: absolute; left: 12px; top: 12px; z-index: 2; display: grid; gap: 6px; width: min(340px, calc(100% - 24px)); padding: 8px; border-radius: 12px; }
+.fitting-detail-modes, .fitting-detail-stops { display: flex; flex-wrap: wrap; gap: 4px; }
+.fitting-detail .chip { padding-inline: .7rem; }
+.fitting-detail-track { display: grid; gap: 2px; }
+.fitting-detail-hint { margin: 0; color: var(--muted); }
+/* rolagem inteligente: a roda "fria" sobre o palco rolou a página; a dica diz como usar a roda na câmera (some sozinha) */
+.fitting-wheel-hint { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); width: max-content; max-width: min(320px, calc(100% - 32px)); margin: 0; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 84%, transparent); color: var(--surface); font-size: var(--text-body-sm); line-height: 1.4; text-align: center; pointer-events: none; }
+@media (max-width: 640px) {
+  .fitting-detail { left: 8px; top: 8px; width: calc(100% - 16px); }
+  .fitting-detail-stops { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .fitting-detail-stops .chip { flex: none; }
+  /* no celular o painel ocupa menos altura no percurso: o nome do controle e a posição ficam só para leitores de tela (aria-valuetext) */
+  .fitting-detail-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .fitting-detail-hint.is-percurso { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 .fitting-slot-thumb { flex: none; display: grid; place-items: center; width: 52px; height: 52px; overflow: hidden; border-radius: 8px; border: 1px solid var(--line-soft); }
 .fitting-slot-thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .fitting-slot-thumb.is-small { width: 34px; height: 34px; border: 2px solid var(--surface); }
@@ -2582,6 +2598,30 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 a.piece-row-link { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
 a.piece-row-link:hover { text-decoration-color: currentColor; }
 .piece-row-swatches { display: inline-flex; flex: none; gap: 4px; }
+/* tamanho em um toque: chips compactos; o do corpo do avatar leva um ponto; a linha diz como a peça fica */
+.size-picker { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.size-picker-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.size-chip { min-width: 34px; justify-content: center; padding-inline: 8px; font-variant-numeric: tabular-nums; position: relative; }
+.size-chip.is-mine::after { content: ""; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--thread); }
+.size-fit { color: var(--muted); font-size: var(--text-body-sm); }
+/* "Suas medidas" (Meu Avatar): campos curtos lado a lado, uma coluna no celular */
+.body-measures-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; }
+/* retorno de caimento do provador: frase, regiões e o tamanho do avatar; o texto fica na cor de leitura e um marcador
+   colorido reforça o estado (nunca só a cor: a frase diz o estado) */
+.fit-feedback { display: grid; gap: 2px; min-width: 0; font-size: var(--text-body-sm); line-height: 1.35; color: var(--ink); }
+.fit-feedback-verdict { display: inline-flex; align-items: baseline; gap: 6px; }
+.fit-feedback-verdict::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fit-mark, var(--muted)); transform: translateY(-1px); }
+.fit-feedback-verdict strong { font-weight: 600; }
+.fit-feedback.is-true { --fit-mark: var(--status-good); }
+.fit-feedback.is-snug, .fit-feedback.is-loose { --fit-mark: var(--status-warning); }
+.fit-feedback.is-oversized { --fit-mark: var(--status-serious); }
+.fit-feedback.is-tight { --fit-mark: var(--status-critical); }
+.fit-feedback-regions { display: flex; flex-wrap: wrap; gap: 0 12px; color: var(--muted); }
+.fit-region.is-tight, .fit-region.is-oversized { color: var(--ink); font-weight: 600; }
+.fit-feedback-natural { color: var(--muted); }
+.fit-feedback-link { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.size-fit.is-tight { color: var(--danger, #b42318); font-weight: 600; }
+.size-fit.is-oversized, .size-fit.is-snug { color: var(--ink); }
 .piece-row-state { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: var(--text-body-sm); line-height: 1.35; }
 .piece-row-note { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
 .piece-row-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
@@ -4094,6 +4134,20 @@ html[data-reduce-motion="true"] .fashion-motion-control, html[data-reduce-motion
 .afterparty-card small { font-size: 12px; }
 .afterparty-deck-selection { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
 .afterparty-map { width: 100%; height: 100%; touch-action: none; }
+/* MET Gala Heist: o que o deck muda no avatar e no salão; sinal + / − / · em texto (não só cor) */
+.heist-mods { display: grid; gap: 10px; margin-bottom: 12px; }
+.heist-mods-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 14px; margin: 0; padding: 0; list-style: none; }
+.heist-mod { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; font-size: var(--text-body-sm); }
+.heist-mod-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line-soft); background: var(--surface-2); color: var(--ink); font-weight: 700; line-height: 1; }
+.heist-mod.is-plus .heist-mod-mark { border-color: var(--status-good); }
+.heist-mod.is-minus .heist-mod-mark { border-color: var(--status-critical); }
+.heist-mod-body { display: grid; gap: 2px; min-width: 0; }
+.heist-mod-meter { width: 100%; height: 6px; }
+.heist-mod-text { color: var(--muted); }
+.heist-mods.is-compact { margin: 0; }
+.heist-mods.is-compact .heist-mods-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.heist-mods.is-compact .heist-mod { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border: 1px solid var(--line-soft); border-radius: 999px; background: var(--surface); }
+.heist-mods.is-compact .heist-mod-body { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 
 /* FAI Atelier — mesma superfície, tinta e fonte das outras abas; efeitos nunca indicam direito de acesso. */
 .atelier-hub { position: relative; min-width: 0; color: var(--ink); }

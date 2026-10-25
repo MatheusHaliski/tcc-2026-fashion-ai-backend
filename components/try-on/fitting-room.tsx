@@ -15,6 +15,7 @@ import { useFittingShare } from "@/lib/hooks/use-fitting-share";
 import { useSavedTries } from "@/lib/hooks/use-saved-tries";
 import { FITTING_SLOTS, visibleItems, type EnvironmentMode, type LightMode } from "@/lib/tryon/fitting-room";
 import { fromWardrobe, nextTick, type SavedTry, type Sex, type State, type Store, type Tab } from "@/lib/tryon/fitting-room-model";
+import { mannequinBody, validateBody } from "@/lib/avatar3d/body-spec";
 import { FittingStage } from "./fitting-stage";
 import { FittingControls } from "./fitting-controls";
 import { FittingItems } from "./fitting-items";
@@ -43,10 +44,10 @@ export function FittingRoom() {
   const [catalogTarget, setCatalogTarget] = useState<HTMLDivElement | null>(null);
   const [heroId, setHeroId] = useState<string | null>(null);
   
-  const [tipoLook, setTipoLook] = useState<Sex | null>(null);
-  // Apenas a escolha explícita restringe o catálogo; limpar filtros conserva o avatar escolhido.
-  const [catalogGender, setCatalogGender] = useState("");
-  const selectedTipoLook = tipoLook ?? data?.sex ?? "MASCULINO";
+  // o manequim segue o sexo do avatar; o gênero das peças é um filtro rápido do catálogo (chips do CatalogSearch)
+  const mannequinSex = data?.sex ?? "MASCULINO";
+  // o corpo da cena (FittingStage/FittingRoomScene): o sexo do modelo do avatar vence; UNISEX usa o do manequim
+  const bodySex: "FEMININO" | "MASCULINO" = data?.avatar?.model?.sex ?? (mannequinSex === "UNISEX" ? (data?.mannequin.sex === "FEMININO" ? "FEMININO" : "MASCULINO") : mannequinSex);
 
   const session = useFittingSession({
     data, colors: taxonomy?.colors, searchParams, onStatus: setStatus, onOwned: reload,
@@ -64,13 +65,6 @@ export function FittingRoom() {
   function pickProduct(product: CatalogProduct, variant: CatalogVariant | null) {
     setHeroId(product.id);
     session.pickProduct(product, variant);
-  }
-
-  function changeTipoLook(next: Sex) {
-    setTipoLook(next);
-    // TipoLook.codigo usa UNISEX; o catálogo usa o código Taxonomy.SEXES UNISSEX.
-    setCatalogGender(next === "UNISEX" ? "UNISSEX" : next);
-    setStatus(t("tryOn.look_tipo", { sex: next }));
   }
 
   function saveTry() {
@@ -113,10 +107,9 @@ export function FittingRoom() {
           <FittingStage
             avatar={data.avatar ?? null} mannequin={data.mannequin} pieces={shown}
             environment={environment} scene={scene} light={light} view="front"
-            sex={selectedTipoLook} onCanvas={share.onCanvas}
+            sex={mannequinSex} onCanvas={share.onCanvas}
           >
             <FittingControls
-              sex={selectedTipoLook} onSexChange={changeTipoLook}
               light={light} onLightChange={setLight} mode={mode} onModeChange={setMode}
               environment={environment} itemCount={session.items.length} onSnapshot={share.snapshot}
               onCopyLink={share.copyLink} onSave={saveTry} onClear={() => setConfirmClear(true)}
@@ -135,9 +128,8 @@ export function FittingRoom() {
           {tab === "stores" && (
             <StoreBrowser
               stores={stores.data?.stores ?? []} loading={stores.loading} store={store} category={category}
-              gender={catalogGender} onGenderChange={setCatalogGender}
               onStoreChange={setStore} onCategoryChange={setCategory} onPick={pickProduct} onResults={onSearchResults}
-              resultsTarget={catalogTarget} tipoLook={selectedTipoLook} onTipoLookChange={changeTipoLook}
+              resultsTarget={catalogTarget}
             />
           )}
           {tab === "wardrobe" && (
@@ -159,6 +151,8 @@ export function FittingRoom() {
             onVariantChange={session.changeVariant} onOwn={session.ownIt} onRemove={session.remove}
             onPickFromStores={(slot) => { setTab("stores"); setCategory(slot); }}
             onPickFromWardrobe={() => setTab("wardrobe")}
+            body={data.avatar ? fittingBody(bodySex, data.mannequin.build, data.avatar.model?.body) : null}
+            onSizeChange={session.changeSize}
           />
         </div>
       </div>
@@ -176,4 +170,11 @@ export function FittingRoom() {
       </Dialog>
     </>
   );
+}
+
+/** Corpo do provador: proporções do avatar, medidas de fita informadas e se a pessoa personalizou (altura, peso ou fita). */
+function fittingBody(sex: "FEMININO" | "MASCULINO", build: string | null | undefined, saved: unknown) {
+  const model = validateBody(saved);
+  return { params: mannequinBody(sex, build, saved), sex, measured: model?.measuresCm ?? null,
+    personalized: !!(model && (model.heightCm || model.weightKg || model.measuresCm)) };
 }

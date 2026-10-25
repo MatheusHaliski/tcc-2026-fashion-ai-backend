@@ -184,6 +184,14 @@ public class CatalogImagePipelineService {
         return texturePhoto(user, productId, false);
     }
 
+    /** Frente antes de detalhe, lateral e costas: a textura do provador e a verificação do enquadramento são da FRENTE da
+     *  peça (uma foto de costas servida como frente vestia o avatar com o capuz e a etiqueta na frente). */
+    static int viewRank(CatalogImage image) {
+        CatalogImageType type = image.getImageType();
+        if (type == null || type == CatalogImageType.FRONT) return 0;
+        return switch (type) { case DETAIL, TOP -> 1; case SIDE -> 2; case BACK, SOLE -> 3; default -> 1; };
+    }
+
     /** isolated=true never falls back to an unsegmented catalogue/model photograph. */
     public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated) {
         return texturePhoto(user,productId,isolated,null,null);
