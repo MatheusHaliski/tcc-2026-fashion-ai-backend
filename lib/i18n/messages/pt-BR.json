@@ -7366,7 +7366,7 @@
   "fashionHype.level.COLLAB_DROP": "Collab / Drop",
   "auraGate.requires": "Requer nível {level}",
   "auraGate.checking": "Verificando seu nível…",
-  "auraGate.locked.AURA_BASIC": "Aura básica disponível desde o nível Estreia.",
+  "auraGate.locked.AURA_BASIC": "Aura básica disponível desde o nível Básico.",
   "auraGate.locked.AURA_DYNAMIC": "Auras dinâmicas disponíveis a partir do nível Studio.",
   "auraGate.locked.AURA_IMPERSONATION": "Aura Impersonation disponível a partir do nível Loft!",
   "impersonation.title": "Aura Impersonation",
@@ -8184,5 +8184,12 @@
   "tryOn.preview.colorOnly": "Prévia só com cor: esta peça está sem foto.",
   "tryOn.preview.failed": "A textura não carregou; a peça continua vestida com a cor cadastrada.",
   "tryOn.preview.retry": "Recarregar textura",
-  "tryOn.preview.savedModel": "O arquivo 3D é opcional e separado desta prévia."
+  "tryOn.preview.savedModel": "O arquivo 3D é opcional e separado desta prévia.",
+  "sealWizard.fim_do_resgate": "Fim do resgate",
+  "sealWizard.fim_do_resgate_hint": "Depois desta data ninguém mais recebe o selo. Vazio = sem prazo.",
+  "sealWizard.validade_concessao": "Validade de cada selo concedido (dias)",
+  "sealWizard.validade_concessao_hint": "Conta a partir da emissão e não depende do fim do resgate. Vazio = 365 dias.",
+  "sealWizard.dias": "{value} dias",
+  "room3d.roomStore.retirar_do_quarto": "Retirar do quarto",
+  "room3d.roomStore.retirado": "{name} saiu do quarto e continua no seu inventário."
 }

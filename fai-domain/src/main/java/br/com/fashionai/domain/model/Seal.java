@@ -66,6 +66,14 @@ public class Seal extends VersionedAuditableEntity {
     @Column(name = "usage_count", nullable = false)
     private int usageCount;
 
+    /**
+     * Validade de cada selo concedido, em dias a partir da emissão. É independente da janela de resgate
+     * ({@code availableFrom}/{@code availableUntil}): o fim da campanha só bloqueia novas concessões. Nulo = padrão da
+     * plataforma ({@code SealService.DEFAULT_SEAL_VALIDITY}).
+     */
+    @Column(name = "grant_validity_days")
+    private Integer grantValidityDays;
+
     /** Selo emitido automaticamente por um vínculo (não criado no editor do RF25). */
     @Column(name = "auto_issued", nullable = false)
     private boolean autoIssued;

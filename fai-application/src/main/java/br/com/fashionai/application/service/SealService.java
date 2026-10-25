@@ -372,10 +372,22 @@ public class SealService {
     }
 
     // ================================================================== RF25 — selos do perfil emissor
+    /**
+     * {@code availableFrom}/{@code availableUntil} delimitam a campanha (novas concessões); {@code grantValidityDays} é a
+     * validade de cada selo concedido, contada da emissão (nulo = {@link #DEFAULT_SEAL_VALIDITY}).
+     */
     public record SealForm(String name, SealTier tier, String policyText, String iconUrl, Map<String, Object> background,
                            Instant availableFrom, Instant availableUntil, Integer usageLimit, SealStatus status,
-                           Map<String, Object> design, Map<String, Object> policy) {
+                           Map<String, Object> design, Map<String, Object> policy, Integer grantValidityDays) {
+        public SealForm(String name, SealTier tier, String policyText, String iconUrl, Map<String, Object> background,
+                        Instant availableFrom, Instant availableUntil, Integer usageLimit, SealStatus status,
+                        Map<String, Object> design, Map<String, Object> policy) {
+            this(name, tier, policyText, iconUrl, background, availableFrom, availableUntil, usageLimit, status, design, policy, null);
+        }
     }
+
+    /** Teto da validade configurável de um selo concedido (10 anos). */
+    public static final int MAX_GRANT_VALIDITY_DAYS = 3650;
 
     @Transactional
     public Map<String, Object> createSeal(CurrentUser user, SealForm form) {
@@ -574,6 +586,10 @@ public class SealService {
             throw ApiException.badRequest("LIMITE_INVALIDO", Msg.t("seal.o_limite_de_emissao_precisa"));
         }
         s.setUsageLimit(f.usageLimit());
+        if (f.grantValidityDays() != null && (f.grantValidityDays() < 1 || f.grantValidityDays() > MAX_GRANT_VALIDITY_DAYS)) {
+            throw ApiException.badRequest("VALIDADE_INVALIDA", Msg.t("seal.validade_da_concessao_invalida", MAX_GRANT_VALIDITY_DAYS));
+        }
+        if (f.grantValidityDays() != null) s.setGrantValidityDays(f.grantValidityDays());   // ausente na edição: mantém
         s.setStatus(f.status() == null ? SealStatus.ACTIVE : f.status());
         // RF21.CA20 — selo de celebridade é Premium (vítreo/holográfico); de marca é têxtil/dourado.
         s.setPremium(owner.getProfileType() == ProfileType.CELEBRIDADE);
@@ -803,6 +819,7 @@ public class SealService {
         m.put("availableUntil", s.getAvailableUntil());
         m.put("usageLimit", s.getUsageLimit());
         m.put("usageCount", s.getUsageCount());
+        m.put("grantValidityDays", s.getGrantValidityDays() != null ? s.getGrantValidityDays() : (int) DEFAULT_SEAL_VALIDITY.toDays());
         m.put("available", available(s, Instant.now()));
         m.put("unavailableReason", unavailableReason(s, Instant.now()));
         return m;
@@ -828,7 +845,9 @@ public class SealService {
     /** Medalhões dos vínculos APROVADOS de um esquema — o que o card mostra no espaço reservado ao selo. */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> approvedBadges(UUID schemeId) {
+        Instant now = Instant.now();
         return bonds.findBySchemeId(schemeId).stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
+                .filter(b -> b.getExpiresAt() == null || b.getExpiresAt().isAfter(now))   // selo vencido sai do card
                 .map(SealService::badge).toList();
     }
 
@@ -930,6 +949,7 @@ public class SealService {
         Object design = seal == null ? null : Json.map(seal.getBackgroundConfigJson()).get("design");
         m.put("design", design instanceof Map<?, ?> dm ? dm : SealDesigns.defaultDesign(premium, b.getTier()));
         m.put("linkedPieceIds", Json.strings(b.getLinkedPieceIdsJson()));
+        m.put("expiresAt", b.getExpiresAt());
         return m;
     }
 
@@ -1523,6 +1543,15 @@ public class SealService {
                 .findFirst().orElse(null);
     }
 
+    /**
+     * Validade do selo concedido: conta da emissão e nunca herda o fim da campanha — um resgate no último minuto da
+     * promoção não pode nascer expirado.
+     */
+    static Instant grantExpiry(Seal seal, Instant issuedAt) {
+        Duration validity = seal.getGrantValidityDays() != null ? Duration.ofDays(seal.getGrantValidityDays()) : DEFAULT_SEAL_VALIDITY;
+        return issuedAt.plus(validity);
+    }
+
     /** CA08 — emissão do selo único e rastreável. */
     private void issue(SealBond b, UUID decidedBy) {
         Seal seal = b.getSeal();
@@ -1530,7 +1559,7 @@ public class SealService {
         b.setReviewedAt(Instant.now());
         b.setReviewedBy(decidedBy);
         b.setIssuedAt(Instant.now());
-        b.setExpiresAt(seal.getAvailableUntil() != null ? seal.getAvailableUntil() : Instant.now().plus(DEFAULT_SEAL_VALIDITY));
+        b.setExpiresAt(grantExpiry(seal, b.getIssuedAt()));
         String prefix = b.getTargetOwner().getProfileType() == ProfileType.CELEBRIDADE ? "PRM" : "BRD";
         String code;
         do {
@@ -1959,7 +1988,8 @@ public class SealService {
     @Transactional
     public Map<String, Object> redeem(CurrentUser user, UUID promotionId) {
         guard.requireCanCreate(user);
-        Promotion p = promotions.findById(promotionId).orElseThrow(() -> ApiException.notFound(Msg.t("seal.promocao")));
+        // trava a promoção: dois resgates simultâneos não passam juntos do limite por pessoa nem da cota total
+        Promotion p = promotions.findForRedeem(promotionId).orElseThrow(() -> ApiException.notFound(Msg.t("seal.promocao")));
         Instant now = Instant.now();
         String reason = unavailable(p, now);
         if (reason == null && !users.findById(p.getOwnerUserId()).map(FlairService::sellerActive).orElse(false)) {

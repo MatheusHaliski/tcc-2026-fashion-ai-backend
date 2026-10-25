@@ -30,5 +30,11 @@ class AuraCommerceServiceTest {
   assertThatThrownBy(()->service.save(user,new AuraCommerceService.OfferForm("BAD","bad",null,0,true,Map.of()))).isInstanceOf(ApiException.class);
   assertThatThrownBy(()->service.save(user,new AuraCommerceService.OfferForm("BAD","bad","METAMORPHOSE",0,true,Map.of("auraMetamorphose","OFF")))).isInstanceOf(ApiException.class);
  }
- @Test void promotionNeedsOwnedLicense(){assertThatThrownBy(()->service.requireLicense(user,offer.getCode())).isInstanceOf(ApiException.class);}
+ @Test void licensedArtConfigIsFrozen(){
+  when(licenses.existsByPresetCode(offer.getCode())).thenReturn(true);
+  var changed=new AuraCommerceService.OfferForm(offer.getCode(),"Prisma marfim","METAMORPHOSE",150,true,Map.of("auraMetamorphose","CONSTELACAO"));
+  assertThatThrownBy(()->service.save(user,changed)).isInstanceOf(ApiException.class).hasFieldOrPropertyWithValue("code","AURA_OFFER_LOCKED");
+  service.save(user,new AuraCommerceService.OfferForm(offer.getCode(),"Prisma · Marfim","METAMORPHOSE",120,false,Map.of("auraMetamorphose","PRISMA")));
+  verify(offers).save(argThat(o->o.getPricePoints()==120&&!o.isActive()&&"Prisma · Marfim".equals(o.getName())));
+ }
 }

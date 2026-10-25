@@ -20,5 +20,8 @@ export function CardBorder({ entityId, background, auraHype = false, hype }: { e
   },[entityId,score,active]);
   const configured=(background?.border as CardBorderConfig | undefined)?.effect;
   const effect=configured && configured!=='AUTO' ? configured : (active?'SHIMMER':'NONE');
-  return <span className="card-border" aria-hidden="true" data-effect={effect} data-pulse={active && pulse?.id===entityId ? pulse.direction : undefined} style={borderStyle(background,auraHype)} />;
+  const direction = active && pulse?.id===entityId ? pulse.direction : undefined;
+  // a seta repete a direção do pulso em forma: subir/cair não depende só de verde/vermelho
+  return <><span className="card-border" aria-hidden="true" data-effect={effect} data-pulse={direction} style={borderStyle(background,auraHype)} />
+    {direction && <span className="card-border-arrow" aria-hidden="true" data-direction={direction}>{direction==='up'?'▲':'▼'}</span>}</>;
 }

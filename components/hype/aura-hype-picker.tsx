@@ -24,10 +24,14 @@ function ModelDemo({preset}:{preset:typeof HYPE_PRESETS[number]}){
 export function AuraHypePicker({value,onChange,inline=false}:{value?:string|null;onChange:(mode:string)=>void;inline?:boolean}){
  const {t}=useI18n();const id=useId();const [open,setOpen]=useState(false);const selected=value&&value!=='OFF'?hypePreset(value):null;
  const [desiredLevel,setLevel]=useState<AuraHypeCardLevel>(selected?.tier??'COMMON');
- const perms=useApi<{currentTier:string}>(signal=>api.get('/api/me/aura-permissions',{signal}),[],{enabled:inline||open,refreshInterval:30000});
+ const perms=useApi<{currentTier:string;hypeFinishes?:Partial<Record<AuraHypeCardLevel,{allowed:boolean;requiredTier:string}>>}>(signal=>api.get('/api/me/aura-permissions',{signal}),[],{enabled:inline||open,refreshInterval:30000});
  const currentTier=perms.loading||perms.error?null:perms.data?.currentTier;
- const level=cardLevelUnlocked(desiredLevel,currentTier)?desiredLevel:"COMMON";
- const unlocked=cardLevelUnlocked(level,currentTier);
+ // a regra vem do servidor (hypeFinishes); a tabela local só cobre resposta antiga
+ const finishes=perms.loading||perms.error?undefined:perms.data?.hypeFinishes;
+ const isUnlocked=(tier:AuraHypeCardLevel)=>finishes?.[tier]?.allowed ?? cardLevelUnlocked(tier,currentTier);
+ const requiredTier=(tier:AuraHypeCardLevel)=>finishes?.[tier]?.requiredTier ?? CARD_LEVEL_TIER[tier];
+ const level=isUnlocked(desiredLevel)?desiredLevel:"COMMON";
+ const unlocked=isUnlocked(level);
  const band=(kind:HypePresetKind)=><section className="aura-hype-preset-band" data-preset-kind={kind} aria-labelledby={`${id}-${kind}`}>
   <h4 id={`${id}-${kind}`} className="type-h3">{t(`auraHype.${kind}Title`)}</h4><p className="type-caption">{t(`auraHype.${kind}Hint`)}</p>
   <div className="aura-hype-preset-grid" tabIndex={0} role="group" aria-label={t(`auraHype.${kind}Title`)}>{hypePresetsForTier(level).filter(p=>p.kind===kind).map(p=><button type="button" key={p.id} className="aura-hype-preset" data-preset-kind={kind} disabled={!unlocked} aria-pressed={selected?.id===p.id} onClick={()=>{if(unlocked){onChange(p.id);setOpen(false);}}} style={{'--hype-ink':p.color,'--hype-secondary':p.secondary} as CSSProperties}>
@@ -38,8 +42,8 @@ export function AuraHypePicker({value,onChange,inline=false}:{value?:string|null
  {perms.loading&&<p role="status">{t('auraGate.checking')}</p>}
  {perms.error&&<div role="alert"><p>{t('auraGate.checkFailed')}</p><Button onClick={perms.reload}>{t('sealHypeIssuer.retry')}</Button></div>}
  <div className="fashion-hype-level-previews">{AURA_HYPE_CARD_LEVELS.map(tier=>{
-  const allowed=cardLevelUnlocked(tier,currentTier);
-  const requirement=t('auraGate.requires',{level:t(`levelProgress.name.${CARD_LEVEL_TIER[tier]}`)});
+  const allowed=isUnlocked(tier);
+  const requirement=t('auraGate.requires',{level:t(`levelProgress.name.${requiredTier(tier)}`)});
   return <button type="button" key={tier} className="fashion-hype-level-preview" data-fashion-level={tier} data-locked={!allowed||undefined} aria-pressed={tier===level} disabled={!allowed} title={`${t(`hypeLayout.finish.${tier}`)}${!allowed?` · ${requirement}`:""}`} aria-label={`${t(`hypeLayout.finish.${tier}`)}${!allowed?` · ${requirement}`:""}`} onClick={()=>{if(allowed)setLevel(tier);}}>
    {tier===level&&<span className="fashion-hype-level-selected" data-fai-selected aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="11" fill="#f5ebd7"/><path d="m6.5 12 3.5 3.5 7.5-7" fill="none" stroke="#2a211c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span>}
    <span className="fashion-hype-level-name">
@@ -50,7 +54,7 @@ export function AuraHypePicker({value,onChange,inline=false}:{value?:string|null
    {!allowed&&<small className="fashion-hype-level-requirement">{requirement}</small>}
   </button>;
  })}</div>
- {!unlocked&&<p role="status">{t('auraGate.requires',{level:t(`levelProgress.name.${CARD_LEVEL_TIER[level]}`)})}</p>}
+ {!unlocked&&<p role="status">{t('auraGate.requires',{level:t(`levelProgress.name.${requiredTier(level)}`)})}</p>}
  {band('static')}{band('dynamic')}</>;
  if(inline)return <div className="grid gap-3">{content}</div>;
  return <div className="opt-group"><p className="label">{t('auraHype.title')}</p><Button onClick={()=>setOpen(true)}>{t('hypeLayout.explore')}</Button><Dialog open={open} onClose={()=>setOpen(false)} title={t('hypeLayout.explore')} size="xl">{content}</Dialog></div>;

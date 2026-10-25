@@ -101,8 +101,10 @@ public class CatalogController {
 
     @GetMapping("/api/catalog/products/{id}/texture-image")
     public ResponseEntity<byte[]> textureImage(CurrentUser user, @PathVariable UUID id, @RequestParam(defaultValue = "false") boolean isolated,
-            @RequestParam(required=false) UUID variantId, @RequestParam(required=false) UUID imageId) {
-        var photo = imagePipeline.texturePhoto(user, id, isolated, variantId, imageId);
+            @RequestParam(required=false) UUID variantId, @RequestParam(required=false) UUID imageId,
+            @RequestParam(required=false) String view) {
+        var photo = imagePipeline.texturePhoto(user, id, isolated, variantId, imageId,
+                br.com.fashionai.application.catalog.image.CatalogImagePipelineService.TextureView.of(view));
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(photo.mime()))
                 .header("Cache-Control", "private, max-age=0, must-revalidate").header("X-Content-Type-Options", "nosniff").body(photo.bytes());
     }
