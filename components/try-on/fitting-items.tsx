@@ -167,6 +167,10 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
             ? <span className="piece-row-note"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.coberta_curto", { name: coveredBy })}</span>
             : onPreview2d ? <Button size="sm" onClick={() => onPreview2d(item)}><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.ver_previa_2d")}</Button> : null}
           <GarmentPreviewStatus item={item} photo={garment.photos[item.key]} body={garment.body} />
+          {size && onSizeChange && (
+            <SizePicker grid={size.grid} options={size.options} chosen={item.size ?? null} natural={size.natural} fit={size.fit} feedback={size.feedback}
+              personalized={body?.personalized ?? false} label={t("size.tamanho_de", { name: item.name })} onPick={(label) => onSizeChange(item, label)} />
+          )}
           {m3d.pieceId && (m3d.progress.phase !== "none" || m3d.paused) && <Model3dStepBar progress={m3d.progress} paused={m3d.paused} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
             onRetry={() => void m3d.model.request()} />}
         </>}
@@ -184,7 +188,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
         onRemove={onRemove} removeAria={t("tryOn.remover_de", { name: item.name, slot: slotName })} />
       <Dialog open={details} onClose={() => setDetails(false)} title={t("tryOn.detalhes_previa_titulo", { name: item.name })}>
         <div className="grid gap-3">
-          <GarmentState item={item} photo={garment.photos[item.key]} />
+          <GarmentState item={item} photo={garment.photos[item.key]} back={garment.backs?.[item.key]} />
           <p className="type-body">{m3d.paused ? t("tryOn.m3d.pausado_motivo", { reason: m3d.paused }) : m3d.idle ?? model3dLabel(t, m3d.progress)}</p>
         </div>
       </Dialog>

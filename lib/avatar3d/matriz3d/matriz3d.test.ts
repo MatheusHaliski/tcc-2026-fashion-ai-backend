@@ -151,7 +151,11 @@ const NOME_VARIACAO: [RegExp, string][] = [[/skinny/, "SKINNY"], [/\bslim\b/, "S
 
 function divergencias(name: string, sleeve: number, kind: string | null, fit?: string | null, fp?: Parameters<typeof fitClassOf>[0]): string[] {
   const out: string[] = []; const n = name.toLowerCase();
-  if (/high[\s-]?rise|cintura alta|super high/.test(n)) out.push("o nome diz cintura alta: RISE não é lido (o cós fica na altura padrão do molde)");
+  // divergência só quando o cós produzido não é o de uma peça declarada com cintura alta (RISE=HIGH_RISE)
+  if (/high[\s-]?rise|cintura alta|super high/.test(n) && fp) {
+    const got = specFor(fp)?.waist, high = specFor({ ...fp, attributes: { ...fp.attributes, RISE: ["HIGH_RISE"] } })?.waist;
+    if (got !== undefined && high !== undefined && Number.isFinite(high) && !(got! >= high! - 1e-9)) out.push(`o nome diz cintura alta, o cós sai em ${got} (cintura alta declarada: ${high})`);
+  }
   for (const [re, code] of NOME_VARIACAO) if (re.test(n) && fp) {
     const lida = fitClassOf({ ...fp, variation: code });
     if (lida !== fit) out.push(`o nome diz ${code}: lida como variação seria \"${lida}\", o molde usa \"${fit}\" (variação não é lida do nome)`);

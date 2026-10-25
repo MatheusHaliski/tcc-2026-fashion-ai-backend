@@ -825,8 +825,50 @@ export function photoSleeves(photo: PhotoInfo): { left: SleeveSpan[] | null; rig
   return l || r ? { left: l, right: r } : null;
 }
 
+/** Ponto do molde (pose de exibição) → UV na foto das costas. */
+export type BackProjection = (x: number, y: number) => [number, number];
+
+/**
+ * Foto das COSTAS (ou a metade traseira de uma foto composta frente + costas) projetada nas costas do molde. A foto de
+ * costas é vista por trás: o lado esquerdo da imagem é o lado esquerdo de quem veste (+x do molde), então a projeção é
+ * espelhada — o "Kappa" da nuca fica legível para quem olha as costas, nunca invertido. Em peça com gola 3D, o topo da
+ * foto vai para o topo da faixa da gola (é ali que ficam o logo e a etiqueta da nuca); o corpo recebe o resto.
+ * Sem largura de referência na foto ou no molde: null (as costas ficam no tecido medido, como antes).
+ */
+export function backProjection(gg: GarmentGeometry, posed: Float32Array, back: PhotoInfo | null, noPhoto?: (v: number) => boolean): BackProjection | null {
+  const sp = gg.spec;
+  if (!back || sp.kind === "shoes" || sp.kind === "boots") return null;
+  let yTop = -Infinity, yBot = Infinity; const eligible: number[] = [];
+  for (let v = 0; v < posed.length / 3; v++) if (gg.alpha[v] > 0.5 && !noPhoto?.(v) && gg.photoEligible?.[v] !== 0) {
+    const y = posed[v * 3 + 1]; yTop = Math.max(yTop, y); yBot = Math.min(yBot, y); eligible.push(v);
+  }
+  if (!eligible.length || !(yTop - yBot > 0.05)) return null;
+  const lower = ["pants", "shorts", "bermuda", "culottes", "skirt", "leggings"].includes(sp.kind);
+  const top = yTop + (HAS_COLLAR_BAND.has(sp.kind) && !sp.frontOpening && !Number.isNaN(sp.hem) ? collarBandHeight(sp.kind) : 0);
+  const fy = lower ? 0.12 : sp.sleeve > 0.6 ? 0.93 : 0.62;
+  const yRef = yTop - (yTop - yBot) * fy;
+  let xl = Infinity, xr = -Infinity;
+  for (const v of eligible) if (Math.abs(posed[v * 3 + 1] - yRef) < 0.012) { xl = Math.min(xl, posed[v * 3]); xr = Math.max(xr, posed[v * 3]); }
+  const photoRow = (top - yRef) / Math.max(0.05, top - yBot);
+  const upper = ["tee", "longsleeve", "crop", "hoodie", "shirt", "tank", "dress", "jacket", "coat", "sweater"].includes(sp.kind);
+  const pw = (upper ? back.torsoWidthAt?.(photoRow) : null) ?? back.widthAt(photoRow);
+  if (!Number.isFinite(xl) || !pw || !(xr > xl) || !(pw.x1 > pw.x0)) return null;
+  const sx = (pw.x1 - pw.x0) / (xr - xl), cxP = (pw.x0 + pw.x1) / 2, cxG = (xl + xr) / 2;
+  const sy = (back.box.y1 - back.box.y0) / Math.max(0.05, top - yBot);
+  return (x, y) => [(cxP - (x - cxG) * sx) / back.width, 1 - (back.box.y0 + (top - y) * sy) / back.height];
+}
+
+/** Peso da foto das costas num vértice: só superfícies voltadas para trás e só dentro da foto (fora dela, o tecido). */
+export function backPhotoWeight(map: BackProjection | null, x: number, y: number, normalZ: number): { uv: [number, number]; weight: number } {
+  if (!map) return { uv: [0, 0], weight: 0 };
+  const [u, v] = map(x, y);
+  if (!(u > 0 && u < 1 && v > 0 && v < 1)) return { uv: [Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, v))], weight: 0 };
+  const w = smooth(0.05, 0.75, -normalZ);
+  return { uv: [u, v], weight: w };
+}
+
 export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo: PhotoInfo | null, noPhoto?: (v: number) => boolean,
-  visibleAlpha: Float32Array = gg.alpha, sleeve?: SleeveSource): THREE.BufferGeometry {
+  visibleAlpha: Float32Array = gg.alpha, sleeve?: SleeveSource, back: BackProjection | null = null): THREE.BufferGeometry {
   const sp = gg.spec; const n = gg.index.length / 3;
   // referência na foto e no molde (pose de exibição)
   let map: ((x: number, y: number) => [number, number]) | null = null;
@@ -947,7 +989,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
     };
   }
   const pos: number[] = [], uv: number[] = [], col: number[] = [], si: number[] = [], sw: number[] = [];
-  const fabricUv: number[] = [], photoWeight: number[] = [];
+  const fabricUv: number[] = [], photoWeight: number[] = [], backUv: number[] = [], backWeight: number[] = [];
   const normals = baseNormals(posed, gg.index, Uint32Array.from({ length: posed.length / 3 }, (_, i) => i));
   const cache = new Map<string, number>(); const index: number[] = [];
   for (let t = 0; t < n; t++) {
@@ -981,6 +1023,9 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         fabricUv.push(0.501 + 0.498 * (gg.position[v * 3] - xMin) / Math.max(0.01, xMax - xMin),
           0.001 + 0.998 * (gg.position[v * 3 + 1] - yMin) / Math.max(0.01, yMax - yMin));
         photoWeight.push(blend * blend * (3 - 2 * blend));
+        // costas: manga e vértices fora da peça ficam no tecido, como na frente
+        const rear = !noPhoto?.(v) && gg.photoEligible?.[v] !== 0 ? backPhotoWeight(back, posed[v * 3], posed[v * 3 + 1], normals[v * 3 + 2]) : backPhotoWeight(null, 0, 0, 0);
+        backUv.push(rear.uv[0], rear.uv[1]); backWeight.push(rear.weight);
         col.push(1, 1, 1, visibleAlpha[v]);
         for (let k = 0; k < 4; k++) { si.push(gg.skinIndex[v * 4 + k]); sw.push(gg.skinWeight[v * 4 + k]); }
       }
@@ -992,6 +1037,8 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   g.setAttribute("fabricUv", new THREE.Float32BufferAttribute(fabricUv, 2));
   g.setAttribute("photoWeight", new THREE.Float32BufferAttribute(photoWeight, 1));
+  g.setAttribute("backUv", new THREE.Float32BufferAttribute(backUv, 2));
+  g.setAttribute("backWeight", new THREE.Float32BufferAttribute(backWeight, 1));
   g.setAttribute("color", new THREE.Float32BufferAttribute(col, 4));
   g.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(si, 4));
   g.setAttribute("skinWeight", new THREE.Float32BufferAttribute(sw, 4));
@@ -1215,7 +1262,44 @@ export function fabricSurface(material?: string): { roughness: number; sheen: nu
     default: return null;
   }
 }
-export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.MeshPhysicalMaterial {
+/**
+ * Textura da foto das costas: a imagem como veio (até 2K), com o fundo medido transparente — onde a foto não tem tecido,
+ * o alfa é 0 e o shader mantém o tecido/a cor da peça. Nada de logo ou estampa que não esteja nos pixels da foto.
+ */
+export function garmentBackTexture(img: CanvasImageSource & { width: number; height: number }, info: PhotoInfo | null): THREE.CanvasTexture {
+  const scale = Math.min(1, 2048 / Math.max(img.width, img.height));
+  const cv = document.createElement("canvas"); cv.width = Math.max(1, Math.round(img.width * scale)); cv.height = Math.max(1, Math.round(img.height * scale));
+  const g = cv.getContext("2d", { willReadFrequently: true })!; g.drawImage(img, 0, 0, cv.width, cv.height);
+  if (info?.backdrop) {
+    const raster = g.getImageData(0, 0, cv.width, cv.height), d = raster.data;
+    for (let o = 0; o < d.length; o += 4) if (isBackdrop(d, o, info.backdrop)) d[o + 3] = 0;
+    g.putImageData(raster, 0, 0);
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.userData.garmentBack = true; return t;
+}
+
+/** Mistura a foto das costas (atributos backUv/backWeight) por cima da cor já calculada do material. */
+export function applyBackPhoto(m: THREE.Material, backTex: THREE.Texture): void {
+  m.userData.backMap = backTex;
+  const previous = m.onBeforeCompile; const previousKey = m.customProgramCacheKey.bind(m);
+  m.onBeforeCompile = (shader, renderer) => {
+    previous.call(m, shader, renderer);
+    shader.uniforms.garmentBackMap = { value: backTex };
+    shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>
+      attribute vec2 backUv; attribute float backWeight;
+      varying vec2 vGarmentBackUv; varying float vGarmentBackWeight;`)
+      .replace("#include <begin_vertex>", `#include <begin_vertex>
+        vGarmentBackUv = backUv; vGarmentBackWeight = backWeight;`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>
+      uniform sampler2D garmentBackMap; varying vec2 vGarmentBackUv; varying float vGarmentBackWeight;`)
+      .replace("#include <color_fragment>", `#include <color_fragment>
+        vec4 garmentBack = texture2D(garmentBackMap, vGarmentBackUv);
+        diffuseColor.rgb = mix(diffuseColor.rgb, garmentBack.rgb, clamp(vGarmentBackWeight, 0.0, 1.0) * garmentBack.a);`);
+  };
+  m.customProgramCacheKey = () => `${previousKey()}-back-photo-v1`;
+}
+
+export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec, backTex: THREE.Texture | null = null): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
     map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: sp.construction === "cargo" ? .94 : sp.kind === "jacket" || sp.kind === "coat" ? 0.7 : 0.85,
     sheen: sp.construction === "cargo" ? .08 : sp.kind === "jacket" || sp.kind === "coat" ? 0.15 : 0.35, sheenRoughness: 0.8, sheenColor: new THREE.Color("#ffffff"), polygonOffset: true, polygonOffsetFactor: -sp.layer, polygonOffsetUnits: -sp.layer,
@@ -1240,10 +1324,16 @@ export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.Mesh
   const compile = m.onBeforeCompile;
   if (sp.weave === "denim" || sp.fabric === "DENIM") m.onBeforeCompile = (shader, renderer) => { compile.call(m, shader, renderer); installDenimWeave(shader); };
   m.customProgramCacheKey = () => `garment-fabric-blend-v2-${sp.weave === "denim" || sp.fabric === "DENIM" ? "denim" : "plain"}`;
+  if (backTex) applyBackPhoto(m, backTex);
   return m;
 }
 
 // ================================================================== gola (ribana) em volta do pescoço inteiro
+
+/** Altura da faixa 3D da gola (m): camisa/polo tem a gola mais alta; moletom e suéter, ribana média. */
+export function collarBandHeight(kind: GarmentKind): number {
+  return kind === "shirt" ? 0.026 : kind === "hoodie" || kind === "sweater" ? 0.02 : 0.016;
+}
 
 /** Peças com gola de malha/ribana contornando o decote (jaqueta e casaco são abertos na frente: sem faixa). */
 export const HAS_COLLAR_BAND: ReadonlySet<GarmentKind> = new Set(["tee", "longsleeve", "tank", "crop", "sweater", "hoodie", "shirt", "dress", "jumpsuit", "romper"]);
@@ -1262,7 +1352,7 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
   // Torso ease describes the chest, not the thickness of a collar. Keep the
   // neckline close to the body while retaining clearance for real inner layers.
   const collarEase = Math.min(sp.ease, .004);
-  const band = sp.kind === "shirt" ? 0.026 : sp.kind === "hoodie" || sp.kind === "sweater" ? 0.02 : 0.016;
+  const band = collarBandHeight(sp.kind);
   const phiOf = (x: number, dz: number) => Math.atan2(x, dz);
   const yN = (phi: number) => P.hipY + necklineH(sp, Math.sin(phi), Math.cos(phi)) * span;
   // raio do corpo na altura do decote, por ângulo (só tronco/pescoço), e o vértice do corpo mais próximo (pesos)

@@ -83,6 +83,17 @@ it("respects explicit model fits in catalogue titles without a brand-wide preset
   expect(specFor({name:"Macacão decote V",subcategory:"jumpsuit"})!.neckShape).toBe("v");
 });
 
+it("reads a bare 'Slim' title as a fitted cut on apparel only (Aramis, auditoria do provador 2026-10-25)",()=>{
+  const aramis={name:"Camisa Social Manga Longa Slim",subcategory:"shirt"};
+  expect(fitClassOf(aramis)).toBe("justa");
+  expect(specFor(aramis)!.ease).toBeLessThan(specFor({name:"Camisa Social Manga Longa",subcategory:"shirt"})!.ease);
+  expect(specFor(aramis)!.sleeve).toBe(.96);
+  expect(fitClassOf({name:"Slim Jeans",subcategory:"jeans"})).toBe("justa");
+  expect(fitClassOf({name:"Havaianas Slim",subcategory:"flip_flops"})).toBe("regular");   // linha de produto, não caimento
+  expect(fitClassOf({name:"Camisa Slim",subcategory:"shirt",variation:"OVERSIZED"})).toBe("oversized");  // variação declarada vence
+  expect(fitClassOf({name:"Slimane Tee",subcategory:"t_shirt"})).toBe("regular");
+});
+
 describe("silhuetas inferiores declaradas", () => {
   const pants = (variation: string) => specFor({ subcategory: "jeans", variation })!;
   it("abre bootcut e flare somente abaixo do joelho, com amplitudes distintas", () => {

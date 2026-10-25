@@ -347,6 +347,62 @@ export function prepareGarmentPhoto(img: CanvasImageSource & { width: number; he
   } catch { return null; }
 }
 
+export interface PhotoBox { x0: number; y0: number; x1: number; y1: number }
+
+/**
+ * Foto composta do catálogo — frente e costas da mesma peça lado a lado, num só arquivo (como a polo Kappa: frente à
+ * esquerda, costas à direita). Lê o recorte (alfa): exatamente duas silhuetas separadas por uma faixa vazia, de largura
+ * e altura parecidas e na mesma faixa de altura. A frente é a da esquerda (convenção do e-commerce); qualquer outra
+ * configuração (uma peça só, três vistas, peças de tamanhos diferentes) devolve null e a foto segue inteira.
+ */
+export function compositeViews(raster: GarmentRaster): { front: PhotoBox; back: PhotoBox } | null {
+  const { width: w, height: h, data } = raster;
+  if (w < 16 || h < 16 || data.length !== w * h * 4) return null;
+  const cols = new Uint32Array(w);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] >= 128) cols[x]++;
+  const minGap = Math.max(2, Math.round(w * 0.02)), minRun = Math.round(w * 0.08);
+  const runs: { x0: number; x1: number }[] = []; let start = -1, empty = 0;
+  for (let x = 0; x <= w; x++) {
+    const on = x < w && cols[x] >= 2;
+    if (on) { if (start < 0) start = x; empty = 0; continue; }
+    if (start < 0) continue;
+    if (++empty >= minGap || x === w) { const end = x - empty; if (end - start + 1 >= minRun) runs.push({ x0: start, x1: end }); start = -1; empty = 0; }
+  }
+  if (runs.length !== 2) return null;
+  const boxOf = (r: { x0: number; x1: number }): PhotoBox | null => {
+    let y0 = h, y1 = -1;
+    for (let y = 0; y < h; y++) { let n = 0; for (let x = r.x0; x <= r.x1; x++) if (data[(y * w + x) * 4 + 3] >= 128) n++; if (n >= 2) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
+    return y1 < 0 ? null : { x0: r.x0, y0, x1: r.x1 + 1, y1: y1 + 1 };
+  };
+  const a = boxOf(runs[0]), b = boxOf(runs[1]);
+  if (!a || !b) return null;
+  const wa = a.x1 - a.x0, wb = b.x1 - b.x0, ha = a.y1 - a.y0, hb = b.y1 - b.y0;
+  const ratio = (p: number, q: number) => Math.max(p, q) / Math.max(1, Math.min(p, q));
+  const overlap = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
+  if (ratio(wa, wb) > 1.5 || ratio(ha, hb) > 1.4 || overlap < 0.4 * Math.min(ha, hb)) return null;
+  return { front: a, back: b };
+}
+
+/** Recorta as duas vistas da foto composta (canvas com alfa); sem composição, null. */
+export function splitCompositePhoto(img: CanvasImageSource & { width: number; height: number }): { front: HTMLCanvasElement; back: HTMLCanvasElement } | null {
+  try {
+    const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+    const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return null;
+    g.drawImage(img, 0, 0);
+    const views = compositeViews(g.getImageData(0, 0, c.width, c.height)); if (!views) return null;
+    // a margem nunca passa do meio da faixa vazia: nem um pixel da outra vista entra no recorte
+    const mid = Math.round((views.front.x1 + views.back.x0) / 2);
+    const crop = (b: PhotoBox, minX: number, maxX: number) => {
+      const pad = Math.round(Math.max(b.x1 - b.x0, b.y1 - b.y0) * 0.02);
+      const x0 = Math.max(minX, b.x0 - pad), y0 = Math.max(0, b.y0 - pad), x1 = Math.min(maxX, b.x1 + pad), y1 = Math.min(c.height, b.y1 + pad);
+      const out = document.createElement("canvas"); out.width = x1 - x0; out.height = y1 - y0;
+      out.getContext("2d")!.drawImage(c, x0, y0, x1 - x0, y1 - y0, 0, 0, x1 - x0, y1 - y0);
+      return out;
+    };
+    return { front: crop(views.front, 0, mid), back: crop(views.back, mid, c.width) };
+  } catch { return null; }
+}
+
 /** A foto reduzida (≤1024 px) como canvas, sem recorte — para o filtro de pessoa quando o fundo não é separável. */
 function scaledCanvas(img: CanvasImageSource & { width: number; height: number }): HTMLCanvasElement | null {
   try {

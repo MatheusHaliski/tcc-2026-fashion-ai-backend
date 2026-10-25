@@ -4,12 +4,12 @@
  * useGarmentStatus. Só ids de peça e estados — nenhuma imagem, medida ou dado pessoal.
  */
 import { useSyncExternalStore } from "react";
-import type { PhotoState } from "@/lib/tryon/garment-asset";
+import type { BackEvidence, PhotoState } from "@/lib/tryon/garment-asset";
 
 export type BodyState = "carregando" | "pronto" | "erro";
-export interface GarmentStatus { body: BodyState; photos: Record<string, PhotoState> }
+export interface GarmentStatus { body: BodyState; photos: Record<string, PhotoState>; backs: Record<string, BackEvidence> }
 
-let current: GarmentStatus = { body: "carregando", photos: {} };
+let current: GarmentStatus = { body: "carregando", photos: {}, backs: {} };
 let photoRetries: Readonly<Record<string, number>> = {};
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
@@ -17,9 +17,9 @@ const emit = () => listeners.forEach((l) => l());
 export function publishBodyState(body: BodyState) {
   if (current.body === body) return; current = { ...current, body }; emit();
 }
-export function publishPhotoStates(photos: Record<string, PhotoState>) {
-  const same = Object.keys(photos).length === Object.keys(current.photos).length && Object.entries(photos).every(([k, v]) => current.photos[k] === v);
-  if (same) return; current = { ...current, photos }; emit();
+const sameRecord = <T,>(a: Record<string, T>, b: Record<string, T>) => Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([k, v]) => b[k] === v);
+export function publishPhotoStates(photos: Record<string, PhotoState>, backs: Record<string, BackEvidence> = current.backs) {
+  if (sameRecord(photos, current.photos) && sameRecord(backs, current.backs)) return; current = { ...current, photos, backs }; emit();
 }
 /** Retry only the selected photograph; never creates a remote model-generation job. */
 export function requestPhotoRetry(id: string) {
@@ -35,7 +35,7 @@ export function useGarmentPhotoRetries() {
 
 export function garmentStatusSnapshot(): GarmentStatus { return current; }
 /** só para testes */
-export function resetGarmentStatus() { current = { body: "carregando", photos: {} }; photoRetries = {}; emit(); }
+export function resetGarmentStatus() { current = { body: "carregando", photos: {}, backs: {} }; photoRetries = {}; emit(); }
 
 export function useGarmentStatus(): GarmentStatus {
   return useSyncExternalStore((l) => { listeners.add(l); return () => { listeners.delete(l); }; }, () => current, () => current);

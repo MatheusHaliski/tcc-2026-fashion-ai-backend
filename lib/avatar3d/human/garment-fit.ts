@@ -51,6 +51,10 @@ export function fitClassOf(p: FitPiece): FitClass {
   // Catalogue items often have no variation column; use explicit model words, never brand stereotypes.
   const name = (p.name ?? "").toLowerCase();
   if (/\b(skinny|slim[ -]?fit|extra[ -]?slim|muscle[ -]?fit)\b/.test(name)) return "justa";
+  // "Camisa Social Manga Longa Slim", "Slim Jeans": a modelagem vem só como "Slim" no título. Em calçado, "Slim" é linha
+  // de produto (Havaianas Slim), não caimento.
+  const kind = kindOf(p);
+  if (/\bslim\b/.test(name) && kind && kind !== "shoes" && kind !== "boots") return "justa";
   if (/\b(wide[ -]?leg|flare|pantalona)\b/.test(name)) return "fluida";
   if (/\b(oversized|baggy|loose[ -]?fit)\b/.test(name)) return "oversized";
   if (/\b(regular[ -]?fit|straight)\b/.test(name)) return "regular";

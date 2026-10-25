@@ -19,6 +19,12 @@ import { fitClassOf, specFor, type FitClass, type FitPiece } from "@/lib/avatar3
 export type Family = "superior" | "sobreposicao" | "inferior" | "peca-inteira" | "calcado" | "acessorio";
 export type TryOnState = "APROVADA" | "ESTIMADA" | "PROCESSANDO" | "SEM_3D" | "ERRO";
 export type PhotoState = "ok" | "carregando" | "falhou" | "sem-foto";
+/**
+ * Evidência das costas da peça no 3D: a foto das costas do catálogo, a metade traseira de uma foto composta (frente +
+ * costas no mesmo arquivo) ou nenhuma — então as costas ficam na cor/trama medida na frente e a região é "sem evidência"
+ * (nunca um logo ou estampa deduzido da marca).
+ */
+export type BackEvidence = "foto-costas" | "foto-composta" | "sem-evidencia";
 
 export interface GarmentStrategy {
   family: Family;
@@ -67,7 +73,7 @@ export interface GarmentContract {
 /** Limitações conhecidas por subcategoria (registradas, não escondidas). */
 export const KNOWN_LIMITS: Record<string, string> = {
   sandals: "sandalia_como_sapato_fechado", flip_flops: "sandalia_como_sapato_fechado", heels: "salto_sem_salto_modelado", espadrilles: "sandalia_como_sapato_fechado",
-  hoodie: "capuz_nao_modelado", bodysuit: "body_inferior_estimado",
+  hoodie: "capuz_abaixado_estimado", bodysuit: "body_inferior_estimado",
   matching_set: "conjunto_como_macacao", overalls: "jardineira_sem_peitilho", kimono: "quimono_estimado_sem_faixa", skort: "saia_short_forro_estimado",
 };
 

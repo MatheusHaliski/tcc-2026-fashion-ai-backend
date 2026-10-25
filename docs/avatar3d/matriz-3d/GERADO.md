@@ -1,7 +1,7 @@
 <!-- gerado por lib/avatar3d/matriz3d/matriz3d.test.ts (MATRIZ3D_WRITE=1) — não editar à mão -->
 # MATRIZ-3D — relatório gerado
 
-Versões: taxonomia 1.0.0 · molde `fai-mould-skinwrap-v2` · contrato 1.0.0 · corpo `fai-body-v1`.
+Versões: taxonomia 1.0.0 · molde `fai-mould-skinwrap-v6` · contrato 1.0.0 · corpo `fai-body-v1`.
 
 Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑ parcial · ✖ ausente · — não aplicável.
 
@@ -206,7 +206,7 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | `gola.faixa` Gola em faixa 3D (ribana) em volta do decote | Gola e decote | `lib/avatar3d/human/garments.ts` | tee, shirt | 15 | 0 |  |
 | `gola.pontas` Pontas da gola de camisa | Gola e decote | `lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 | gola de camisa com pé e volume |
 | `gola.pe` Pé de gola | Gola e decote | — | — | 0 | 2 | camisa e polo sem pé de gola (a gola é faixa de ribana ou ponta plana) |
-| `gola.polo` Gola polo (com vista de 2–3 botões) | Gola e decote | `lib/avatar3d/human/garments.ts`<br>`lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 | a polo precisa de refinamento do volume da gola |
+| `gola.polo` Gola polo (com vista de 2–3 botões) | Gola e decote | `lib/avatar3d/human/upperwear.ts`<br>`lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 | a polo precisa de refinamento do volume da gola |
 | `gola.lapela` Lapela | Gola e decote | — | — | 0 | 2 | blazer e casaco sem lapela (a frente é a casca fechada) |
 | `botoes.disco` Botões da vista (posição, quantidade, espaçamento) | Botões | `lib/avatar3d/human/garment-trims.ts` | shirt | 2 | 3 | cardigã, blazer e casaco não têm botões |
 | `botoes.aro` Aro do botão | Botões | `lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 |  |
@@ -282,6 +282,8 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | aplicado onde não se aplica | `polo_shirt` | Aro do botão (botoes.aro) sai do molde shirt | 2 |
 | aplicado onde não se aplica | `polo_shirt` | Fixação do botão no tecido (botoes.fixacao) sai do molde shirt | 2 |
 | aplicado onde não se aplica | `polo_shirt` | Pesponto visual (linha decorativa) (costura.pesponto) sai do molde shirt | 2 |
+| aplicado onde não se aplica | `skort` | Barra da perna (costura.barra-perna) sai do molde skirt | 2 |
+| aplicado onde não se aplica | `skort` | Gancho e entrepernas (cintura.gancho) sai do molde skirt | 2 |
 | aplicado onde não se aplica | `matching_set` | Cava sem manga (manga.cava) sai do molde jumpsuit | 2 |
 | aplicado onde não se aplica | `matching_set` | Perna em coluna (cai reta do joelho) (cintura.perna-coluna) sai do molde jumpsuit | 2 |
 | aplicado onde não se aplica | `matching_set` | Alças (detalhe.alcas) sai do molde jumpsuit | 2 |
@@ -361,11 +363,7 @@ Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"ve
 
 Registro: `polo_shirt` · cor black · [página oficial](https://www.allsaints.com/us/menswear/sonny-long-sleeve-polo/USM014KC-5.html) · fonte `data/catalog/acervo/acervo-oficial-2026-10-05.jsonl.gz`.
 
-Atributos → molde: `{"molde":"shirt","classe_caimento":"regular","decote":"POLO_COLLAR","folga_mm":8,"manga":0.33,"barra_h":-0.06,"cos_h":null,"perna":0,"perna_coluna":0}`
-
-**Divergências entre o registro e o molde:**
-
-- o nome diz manga longa, o molde sai com manga 0.33 (SLEEVE_LENGTH não é lido do nome)
+Atributos → molde: `{"molde":"shirt","classe_caimento":"regular","decote":"POLO_COLLAR","folga_mm":8,"manga":0.96,"barra_h":-0.06,"cos_h":null,"perna":0,"perna_coluna":0}`
 
 | Componente | Estado | Implementação | Parâmetros |
 |---|---|---|---|
@@ -380,7 +378,7 @@ Atributos → molde: `{"molde":"shirt","classe_caimento":"regular","decote":"POL
 | `decote.atributo` | ✔ Implementado e validado | garment-fit.ts#necklineOf; garment-fit.ts#NECK_WORDS | NECKLINE=V_NECK → v 0.22 |
 | `decote.foto` | ◐ Implementado, sem validação | human-outfit.tsx#withPhotoNeckline; garments.ts#neckDrop | neckDrop × (gola − barra); só aprofunda |
 | `gola.faixa` | ✔ Implementado e validado | garments.ts#collarBand; garments.ts#HAS_COLLAR_BAND; garments.ts#ribColor | 288 vért. · cor ribColor() |
-| `gola.polo` | ◑ Parcial | garments.ts#placketLength: .16; garment-trims.ts#shirtPlacket |  |
+| `gola.polo` | ◑ Parcial | upperwear.ts#placketLength: .16; garment-trims.ts#shirtPlacket |  |
 | `botoes.disco` | ✔ Implementado e validado | garment-trims.ts#shirtPlacket; garment-trims.ts#const count = gg.spec.placketLength ? 3 : 7 | 3 discos de 5 mm · espaçamento uniforme do decote−4 cm à barra+4 cm · face +z |
 | `fechamento.vista` | ✔ Implementado e validado | garment-trims.ts#carcela | tira de 18 mm do decote à barra, centrada em x=0 |
 | `corpo.folga` | ◐ Implementado, sem validação | garments.ts#underLayer; garments.ts#ease: | folga 8 mm + camadas de baixo · camada 3 |
@@ -403,7 +401,7 @@ Atributos → molde: `{"molde":"shirt","classe_caimento":"regular","decote":"POL
 
 Asset final no provador: `peca-<peça>`, `punho-<peça>`, `gola-<peça>`, `botoes-<peça>`, `carcela-<peça>`.
 
-Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"vertices":2394,"triangulos":4510,"penetracao_repouso":"0%","acabamentos":{"punho":576,"carcela":82,"costura":164,"botoes":39,"botoes-borda":72,"gola-ponta":8},"gola_vertices":288},"MASCULINO":{"vertices":2527,"triangulos":4787,"penetracao_repouso":"0%","acabamentos":{"punho":576,"carcela":82,"costura":164,"botoes":39,"botoes-borda":72,"gola-ponta":8},"gola_vertices":288}}`
+Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"vertices":3012,"triangulos":5748,"penetracao_repouso":"0%","acabamentos":{"punho":576,"carcela":82,"costura":164,"botoes":39,"botoes-borda":72,"gola-ponta":8},"gola_vertices":288},"MASCULINO":{"vertices":3125,"triangulos":5985,"penetracao_repouso":"0%","acabamentos":{"punho":576,"carcela":82,"costura":164,"botoes":39,"botoes-borda":72,"gola-ponta":8},"gola_vertices":288}}`
 
 ![polo](catalogo/rastreio/polo.png)
 
@@ -411,11 +409,7 @@ Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"ve
 
 Registro: `shirt` · cor — · [página oficial](https://www.aramis.com.br/camisa-social-manga-longa-slim-branco-ml-18-0315-001/p) · fonte `data/catalog/acervo/acervo-oficial-2026-10-05.jsonl.gz`.
 
-Atributos → molde: `{"molde":"shirt","classe_caimento":"regular","decote":null,"folga_mm":8,"manga":0.96,"barra_h":-0.1,"cos_h":null,"perna":0,"perna_coluna":0}`
-
-**Divergências entre o registro e o molde:**
-
-- o nome diz SLIM: lida como variação seria "justa", o molde usa "regular" (variação não é lida do nome)
+Atributos → molde: `{"molde":"shirt","classe_caimento":"justa","decote":null,"folga_mm":6,"manga":0.96,"barra_h":-0.1,"cos_h":null,"perna":0,"perna_coluna":0}`
 
 | Componente | Estado | Implementação | Parâmetros |
 |---|---|---|---|
@@ -464,11 +458,7 @@ Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"ve
 
 Registro: `jeans` · cor — · [página oficial](https://www.abercrombie.com/shop/us/p/high-rise-bootcut-jean-61265349) · fonte `data/catalog/acervo/acervo-oficial-2026-10-05.jsonl.gz`.
 
-Atributos → molde: `{"molde":"pants","classe_caimento":"regular","decote":null,"folga_mm":11,"manga":0,"barra_h":null,"cos_h":0.18,"perna":0.985,"perna_coluna":1}`
-
-**Divergências entre o registro e o molde:**
-
-- o nome diz cintura alta: RISE não é lido (o cós fica na altura padrão do molde)
+Atributos → molde: `{"molde":"pants","classe_caimento":"regular","decote":null,"folga_mm":11,"manga":0,"barra_h":null,"cos_h":0.34,"perna":0.985,"perna_coluna":1}`
 
 | Componente | Estado | Implementação | Parâmetros |
 |---|---|---|---|
@@ -498,6 +488,6 @@ Atributos → molde: `{"molde":"pants","classe_caimento":"regular","decote":null
 
 Asset final no provador: `peca-<peça>`.
 
-Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"vertices":1517,"triangulos":2941,"penetracao_repouso":"0%","acabamentos":{},"gola_vertices":0},"MASCULINO":{"vertices":1539,"triangulos":2987,"penetracao_repouso":"0%","acabamentos":{},"gola_vertices":0}}`
+Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"vertices":1726,"triangulos":3354,"penetracao_repouso":"0%","acabamentos":{},"gola_vertices":0},"MASCULINO":{"vertices":1782,"triangulos":3474,"penetracao_repouso":"0%","acabamentos":{},"gola_vertices":0}}`
 
 ![calça jeans](catalogo/rastreio/calca-jeans.png)
