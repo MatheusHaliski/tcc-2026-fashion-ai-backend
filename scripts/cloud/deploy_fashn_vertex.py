@@ -7,6 +7,8 @@ is undeployed afterwards; --keep-deployed retains a billed serving replica.
 --with-sam3d builds the same container with SAM 3D Body (Avatar 3D body measurements) on the same T4; its gated
 Hugging Face weights are read at build time from the Secret Manager secret named by --hf-secret.
 --with-portrait adds the stylized avatar portrait (SDXL + InstantID, public weights, no token) to the same container.
+--with-photo-set adds the catalog photo cut-out (fashn-open: parser + BiRefNet + LaMa, public pinned weights, no token) to
+the same container; scripts/cloud/photo_sets_vertex.py sends the catalog photos to it in batches.
 """
 import argparse
 import base64
@@ -31,7 +33,7 @@ HF_SECRET='fashionai-hf-token'
 # o corpo bruto de um erro pode ecoar a entrada (imagens em base64) e nunca é impresso.
 SERVER_HINTS={
     'INVALID_PREDICTION_INPUT':'o corpo da requisição não segue o contrato do /predict',
-    'TASK_NOT_SUPPORTED_BY_MODEL':'a imagem implantada não atende esta tarefa: a prova pede VTON_MODEL_ENGINE=fashn, as medidas do corpo uma imagem construída com --with-sam3d e o retrato uma com --with-portrait',
+    'TASK_NOT_SUPPORTED_BY_MODEL':'a imagem implantada não atende esta tarefa: a prova pede VTON_MODEL_ENGINE=fashn, as medidas do corpo uma imagem construída com --with-sam3d, o retrato uma com --with-portrait e o recorte de fotos uma com --with-photo-set',
     'INVALID_VTON_IMAGE':'a foto não pôde ser lida: use JPG, PNG ou WebP com até 1536 px no maior lado e até 6 MB',
     'EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED':'a foto da pessoa precisa ter exatamente uma pessoa detectada (sem reflexo, pôster ou gente ao fundo)',
     'INSUFFICIENT_SHARED_BODY_LANDMARKS':'corpo pouco visível: use foto de frente, em pé, com ombros, cotovelos, punhos e quadril aparecendo',
@@ -60,7 +62,16 @@ SERVER_HINTS={
     'IMPLAUSIBLE_BODY_SCALE':'a reconstrução do corpo saiu degenerada; use foto de frente, em pé, corpo inteiro',
     'IMPLAUSIBLE_BODY_PROPORTIONS':'a reconstrução do corpo saiu implausível (pose torta ou corpo cortado); use foto de frente, em pé, braços levemente afastados',
     'DEGENERATE_BODY_FRAME':'não deu para orientar o corpo (ombros, quadris e tornozelos); use foto de frente, em pé',
+    'INVALID_SOURCE_IMAGE':'a foto do catálogo não é PNG, JPEG nem WebP',
+    'SOURCE_IMAGE_TOO_LARGE':'a foto do catálogo passa de 6 MB',
+    'PHOTOSET_CATEGORY_NOT_SUPPORTED':'categoria sem recorte: upper_piece, lower_piece ou full_body_piece',
+    'SOURCE_URL_REQUIRED':'o recorte precisa da URL http(s) de origem da foto (o importador confere se ela não mudou)',
+    'PHOTOSET_WEIGHTS_INVALID':'os pesos do fashn-open na imagem não conferem com os SHA-256 fixados; refaça o build',
+    'PHOTOSET_ASSETS_MISSING':'a imagem não tem os pesos ou o código do recorte; construa com --with-photo-set',
+    'PHOTOSET_FILE_MISSING':'o recorte não gerou os arquivos que o set.json lista',
 }
+# Categoria da prova (FASHN) → categoria do catálogo, para o teste de fumaça do recorte.
+PHOTO_SET_CATEGORY={'tops':'upper_piece','bottoms':'lower_piece','one-pieces':'full_body_piece'}
 # Máquina padrão por GPU de serving no Vertex (1 GPU por réplica).
 MACHINE_FOR={'NVIDIA_TESLA_T4':'n1-standard-8','NVIDIA_L4':'g2-standard-8'}
 MAX_SIDE=1536  # decode_image (auto_catalog.py) recusa lados maiores: IMAGE_DIMENSION_LIMIT -> 422 INVALID_VTON_IMAGE
@@ -137,8 +148,8 @@ class CloudOperationFailed(RuntimeError):
 
 
 class CloudHTTPError(RuntimeError):
-    def __init__(self,status,message):
-        self.status=status;super().__init__(message)
+    def __init__(self,status,message,code=None):
+        self.status=status;self.code=code;super().__init__(message)
 
 
 def google_error(raw):
@@ -179,7 +190,7 @@ class Cloud:
             detail=f'; servidor: {code} — {SERVER_HINTS[code]}' if code else ''
             if not code and host is None and not path.endswith(':predict'):
                 reason=google_error(raw);detail=f'; Google: {reason}' if reason else ''
-            raise CloudHTTPError(error.code,f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}{detail}') from None
+            raise CloudHTTPError(error.code,f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}{detail}',code) from None
 
     def wait(self,operation,seconds=2400):
         started=time.monotonic();deadline=started+seconds
@@ -221,16 +232,22 @@ def stage_context(destination):
     shutil.copytree(ROOT/'services/anatomical_vton',target,
                     ignore=shutil.ignore_patterns('__pycache__','*.pyc','tests'))
     shutil.copyfile(ROOT/'services/anatomical_vton/deploy/google-cloud/Dockerfile.fashn',Path(destination)/'Dockerfile')
+    # O código do lote (recorte de fotos, --with-photo-set): só os arquivos versionados, sem testes nem saídas locais.
+    tracked=subprocess.run(['git','ls-files','-z','scripts/catalog'],cwd=ROOT,check=True,capture_output=True).stdout.decode().split('\0')
+    for name in tracked:
+        if not name or '/tests/' in name or not (ROOT/name).is_file():continue
+        (Path(destination)/name).parent.mkdir(parents=True,exist_ok=True)
+        shutil.copyfile(ROOT/name,Path(destination)/name)
 
 
-def engine_name(with_sam3d=False,with_portrait=False):
-    return 'fashn'+('+sam3d_body' if with_sam3d else '')+('+portrait' if with_portrait else '')
+def engine_name(with_sam3d=False,with_portrait=False,with_photo_set=False):
+    return 'fashn'+('+sam3d_body' if with_sam3d else '')+('+portrait' if with_portrait else '')+('+photo_set' if with_photo_set else '')
 
 
-def release_tag(source,with_sam3d=False,with_portrait=False):
-    """12 hex do commit; cada variante (SAM 3D Body, retrato) ganha outra tag no mesmo formato, para nunca sobrescrever
-    nem ser confundida com a imagem só FASHN do mesmo commit."""
-    extras=engine_name(with_sam3d,with_portrait)[len('fashn'):]
+def release_tag(source,with_sam3d=False,with_portrait=False,with_photo_set=False):
+    """12 hex do commit; cada variante (SAM 3D Body, retrato, recorte de fotos) ganha outra tag no mesmo formato, para
+    nunca sobrescrever nem ser confundida com a imagem só FASHN do mesmo commit."""
+    extras=engine_name(with_sam3d,with_portrait,with_photo_set)[len('fashn'):]
     return hashlib.sha256((source+extras).encode()).hexdigest()[:12] if extras else source[:12]
 
 
@@ -250,6 +267,7 @@ def build_config(image,service_account,project,hf_secret=None,engine=None):
         config['availableSecrets']={'secretManager':[{'versionName':f'projects/{project}/secrets/{hf_secret}/versions/latest','env':'HF_TOKEN'}]}
         config['timeout']='3600s'
     if 'portrait' in engine:config['timeout']='5400s'  # +11 GB de pesos baixados, conferidos e enviados ao registro
+    elif 'photo_set' in engine:config['timeout']='3600s'  # +1,3 GB (parser, BiRefNet, LaMa) e timm/kornia
     return config
 
 
@@ -402,7 +420,7 @@ def build_image(project,region,image,state,state_file,hf_secret=None,engine=None
                 raise RuntimeError('CLOUD_BUILD_ID_NOT_RETURNED_CHECK_CONSOLE_BEFORE_RESUBMIT')
             state['buildId']=build_id;save_json(state_file,state)
     print(f'Logs: https://console.cloud.google.com/cloud-build/builds;region={region}/{build_id}?project={project}',flush=True)
-    return wait_build(project,region,build_id,image,6000 if 'portrait' in (engine or '') else 4200 if hf_secret else 3000)
+    return wait_build(project,region,build_id,image,6000 if 'portrait' in (engine or '') else 4200 if hf_secret or 'photo_set' in (engine or '') else 3000)
 
 
 def resume_deployment(cloud,state,state_file,retry_failed=False):
@@ -504,7 +522,7 @@ def build_only_release(project,region,image,output,apply=False,hf_secret=None,en
     """Publish a container, without creating endpoints, models or GPU replicas."""
     engine=engine or ('fashn+sam3d_body' if hf_secret else 'fashn')
     plan={'executed':False,'image':image,'project':project,'region':region,'gpuReplicas':0,'withSam3d':bool(hf_secret),
-          'withPortrait':'portrait' in engine,'engine':engine}
+          'withPortrait':'portrait' in engine,'withPhotoSet':'photo_set' in engine,'engine':engine}
     if not apply:
         print(json.dumps(plan,indent=2));return plan
     # Read-only authentication/project check before enabling services or uploading.
@@ -526,7 +544,7 @@ def build_only_release(project,region,image,output,apply=False,hf_secret=None,en
     save_json(state_file,state)
     build_image(project,region,image,state,state_file,hf_secret,engine)
     result={'executed':True,'status':'IMAGE_BUILD_SUCCEEDED','image':image,'withSam3d':bool(hf_secret),'withPortrait':'portrait' in engine,
-            'buildId':state['buildId'],'gpuReplicas':0,'gpuInferenceValidated':False}
+            'withPhotoSet':'photo_set' in engine,'buildId':state['buildId'],'gpuReplicas':0,'gpuInferenceValidated':False}
     save_json(directory/'result.json',result)
     print(json.dumps(result,indent=2),flush=True)
     return result
@@ -580,6 +598,65 @@ def portrait_smoke(cloud,endpoint_name,host,person,output):
     return {'identitySimilarity':similarity,'outputSha256':hashlib.sha256(jpeg).hexdigest(),'diagnostics':diagnostics}
 
 
+PHOTO_SET_FILES={'whole':'whole.png','fabric':'fabric.png'}
+PHOTO_SET_STATUSES=('READY','REVIEW','INELIGIBLE')
+
+
+def short_reason(reason):
+    """Motivo do lote só se for um código curto; texto livre de exceção nunca é impresso nem gravado."""
+    return reason if isinstance(reason,str) and re.fullmatch(r'[A-Za-z0-9_:-]{1,90}',reason) else 'UNKNOWN'
+
+
+def photo_set_folder(out_dir,image_id):
+    """A mesma pasta do lote local (process_local_sd.py --photo-set), que process_photo_sets.py --from-lot percorre."""
+    return Path(out_dir)/'photo-sets'/hashlib.sha256(str(image_id).encode()).hexdigest()[:24]
+
+
+def write_photo_set(prediction,out_dir,image_id,source_url):
+    """Resposta do recorte (garment_photo_set) → photo-sets/<id>/{whole.png, fabric.png, set.json}, conferindo o contrato
+    antes de gravar. set.json vai por último: um lote interrompido nunca deixa set.json apontando para PNG incompleto.
+    Sem photoSet (a foto falhou na GPU) nada é gravado e volta None."""
+    photo_set=prediction.get('photoSet')
+    if photo_set is None:return None
+    files=prediction.get('files') or {}
+    if not isinstance(photo_set,dict) or not isinstance(files,dict) or photo_set.get('status') not in PHOTO_SET_STATUSES \
+            or str(photo_set.get('imageId'))!=str(image_id) or photo_set.get('sourceUrl')!=source_url:
+        raise RuntimeError('INVALID_PHOTO_SET_CONTRACT')
+    listed=photo_set.get('files') or {}
+    if listed!=(PHOTO_SET_FILES if photo_set['status']=='READY' else {}) or set(files)!=set(listed):
+        raise RuntimeError('INVALID_PHOTO_SET_FILES')
+    decoded={}
+    for name,encoded in files.items():
+        try:data=base64.b64decode(encoded,validate=True)
+        except (ValueError,TypeError):raise RuntimeError('INVALID_GPU_OUTPUT_PNG') from None
+        if not data.startswith(b'\x89PNG\r\n\x1a\n'):raise RuntimeError('INVALID_GPU_OUTPUT_PNG')
+        decoded[listed[name]]=data
+    folder=photo_set_folder(out_dir,image_id);folder.mkdir(parents=True,exist_ok=True)
+    (folder/'set.json').unlink(missing_ok=True)
+    for filename,data in decoded.items():
+        part=folder/(filename+'.part');part.write_bytes(data);part.replace(folder/filename)
+    save_json(folder/'set.json',photo_set)
+    return folder
+
+
+def photo_set_smoke(cloud,endpoint_name,host,garment,category,subcategory,output):
+    """Recorte de fotos na mesma réplica: set.json e PNGs vão para <output>/photo-set-smoke (só no Cloud Shell de quem roda).
+    READY, REVIEW ou INELIGIBLE provam o caminho na GPU; qual deles sai depende da foto, não do contêiner."""
+    url='https://fashionai.invalid/smoke/garment'
+    instance={'task':'garment_photo_set','source_image':garment,'catalog_category':PHOTO_SET_CATEGORY[category],
+              'source_url':url,'image_id':'smoke-garment',**({'subcategory':subcategory} if subcategory else {})}
+    result=cloud.request('POST',endpoint_name+':predict',{'instances':[instance]},host=host)
+    predictions=result.get('predictions',[])
+    if len(predictions)!=1:raise RuntimeError('INVALID_GPU_PREDICTION_CONTRACT')
+    prediction=predictions[0];diagnostics=prediction.get('diagnostics',{})
+    if diagnostics.get('device')!='cuda:0' or diagnostics.get('engine')!='FASHN_OPEN_PHOTO_SET' or not diagnostics.get('peakCudaBytes'):
+        raise RuntimeError('REAL_CUDA_PHOTO_SET_EVIDENCE_REQUIRED')
+    folder=write_photo_set(prediction,Path(output)/'photo-set-smoke','smoke-garment',url)
+    if folder is None:raise RuntimeError('PHOTO_SET_SMOKE_FAILED: '+short_reason(prediction.get('reason')))
+    photo_set=json.loads((folder/'set.json').read_text(encoding='utf-8'))
+    return {'status':photo_set['status'],'reason':photo_set.get('reason'),'folder':str(folder),'diagnostics':diagnostics}
+
+
 def save_json(path,value):
     path=Path(path);temporary=None
     try:
@@ -615,16 +692,19 @@ def main():
     parser.add_argument('--restart-cancelled-build',action='store_true',help='Start a replacement only if the selected build is confirmed CANCELLED')
     parser.add_argument('--with-sam3d',action='store_true',help='Same container plus SAM 3D Body (Avatar 3D body measurements); the smoke also measures --person, which must show the whole body')
     parser.add_argument('--with-portrait',action='store_true',help='Same container plus the stylized avatar portrait (SDXL + InstantID, public weights); the smoke also draws --person, whose face must be visible')
+    parser.add_argument('--with-photo-set',action='store_true',help='Same container plus the catalog photo cut-out (fashn-open photoSet: parser + BiRefNet + LaMa, public pinned weights); the smoke also cuts out --garment (with --deploy-only too, when --garment and --category are given)')
+    parser.add_argument('--photo-set-subcategory',help='Catalog subcategory of --garment for the cut-out smoke (e.g. jacket, hoodie, jeans)')
     parser.add_argument('--hf-secret',default=HF_SECRET,help='Secret Manager secret with a Hugging Face read token approved for facebook/sam-3d-body-dinov3 (used with --with-sam3d at build time only)')
     args=parser.parse_args()
     hf_secret=args.hf_secret if args.with_sam3d else None
-    engine=engine_name(args.with_sam3d,args.with_portrait)
+    engine=engine_name(args.with_sam3d,args.with_portrait,args.with_photo_set)
+    if args.photo_set_subcategory and not re.fullmatch(r'[a-z0-9_]{1,80}',args.photo_set_subcategory):parser.error('--photo-set-subcategory: a-z, 0-9 e _')
     if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]',args.project) or not re.fullmatch(r'[a-z]+-[a-z]+[0-9]',args.region):parser.error('Invalid project/region')
     if args.build_only:
         if args.diagnose or args.new_release or args.reregister_model or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build or args.keep_deployed:
             parser.error('--build-only cannot be combined with deployment/resume options; repeat it to resume its saved build')
         source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
-        image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{release_tag(source,args.with_sam3d,args.with_portrait)}'
+        image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{release_tag(source,args.with_sam3d,args.with_portrait,args.with_photo_set)}'
         build_only_release(args.project,args.region,image,args.output,args.apply,hf_secret,engine);return
     if args.diagnose:
         diagnose_deployment(args.project,args.region,args.output);return
@@ -641,11 +721,16 @@ def main():
     machine=args.machine_type or MACHINE_FOR[args.accelerator]
     if args.deploy_only:
         person=garment=person_hash=garment_hash=None
+        if args.garment or args.category:
+            # Com a réplica mantida, a peça só serve ao teste do recorte (a prova pede também --person, sem --deploy-only).
+            if not (args.with_photo_set and args.garment and args.category):
+                parser.error('with --deploy-only, --garment/--category only drive the cut-out smoke: pass --with-photo-set, --garment and --category')
+            garment,garment_hash=image_payload(args.garment)
     else:
         if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference (or use --deploy-only)')
         person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
     source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
-    tag=release_tag(source,args.with_sam3d,args.with_portrait);image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
+    tag=release_tag(source,args.with_sam3d,args.with_portrait,args.with_photo_set);image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
     if args.source_image:
         # Same image, any region: Vertex pulls it from the project's Artifact Registry; no new Cloud Build.
         image=args.source_image;tag=image.rsplit(':',1)[-1]
@@ -655,7 +740,8 @@ def main():
         saved=json.loads(saved_file.read_text())
         image=build_image_reference({'projectId':saved.get('project'),'images':[saved.get('image','')]},args.project,args.region)
         tag=image.rsplit(':',1)[-1]
-    plan={'executed':False,'engine':'FASHN_VTON_1_5'+('+SAM_3D_BODY' if args.with_sam3d else '')+('+SDXL_INSTANTID_PORTRAIT' if args.with_portrait else ''),'project':args.project,'region':args.region,
+    plan={'executed':False,'engine':'FASHN_VTON_1_5'+('+SAM_3D_BODY' if args.with_sam3d else '')+('+SDXL_INSTANTID_PORTRAIT' if args.with_portrait else '')
+              +('+FASHN_OPEN_PHOTO_SET' if args.with_photo_set else ''),'project':args.project,'region':args.region,
           'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':args.accelerator,
           'machineType':machine,'deployOnly':args.deploy_only,'sourceImage':bool(args.source_image),
           'keepDeployed':args.keep_deployed,'newRelease':args.new_release,
@@ -741,7 +827,12 @@ def main():
                 'VTON_VERTEX_TRYON_DEDICATED_HOST':host,'VTON_WORKER_TIMEOUT_SECONDS':'650'}
             save_json(output/'backend-config.json',configuration)
             print(json.dumps({'status':'GPU_DEPLOYED','region':args.region,'accelerator':args.accelerator,'machineType':machine,
-                'endpoint':endpoint_name,'deployedModelId':gpu_id,'dedicatedHost':host},indent=2),flush=True)
+                'endpoint':endpoint_name,'deployedModelId':gpu_id,'dedicatedHost':host,'withPhotoSet':args.with_photo_set},indent=2),flush=True)
+            if garment:
+                smoke=photo_set_smoke(cloud,endpoint_name,host,garment,args.category,args.photo_set_subcategory,output)
+                save_json(output/'photo-set-evidence.json',{'status':'PHOTO_SET_SMOKE_PASSED','installerCommit':source,'containerImage':image,
+                    'garmentSha256':garment_hash,'photoSet':smoke,'model':state['model'],'endpoint':endpoint_name})
+                print(f"PHOTO_SET_SMOKE_PASSED: {smoke['status']} em {smoke['folder']}",flush=True)
             return
         payload={'instances':[{'task':'virtual_try_on','person_image':person,'garment_image':garment,
                               'category':args.category,'garment_photo_type':args.garment_photo_type,'num_timesteps':30,'seed':42}]}
@@ -756,6 +847,7 @@ def main():
         (output/'try-on-gpu.png').write_bytes(png)
         evidence={'status':'GPU_SMOKE_PASSED','installerCommit':source,
             'containerSourceCommitPrefix':tag,'containerImage':image,'withSam3d':args.with_sam3d,'withPortrait':args.with_portrait,
+            'withPhotoSet':args.with_photo_set,
             'personSha256':person_hash,'garmentSha256':garment_hash,'outputSha256':hashlib.sha256(png).hexdigest(),
             'diagnostics':diagnostics,'model':state['model'],'endpoint':endpoint_name}
         save_json(output/'evidence.json',evidence)
@@ -765,6 +857,9 @@ def main():
             save_json(output/'evidence.json',evidence)
         if args.with_portrait:
             evidence['stylizedPortrait']=portrait_smoke(cloud,endpoint_name,host,person,output)
+            save_json(output/'evidence.json',evidence)
+        if args.with_photo_set:
+            evidence['photoSet']=photo_set_smoke(cloud,endpoint_name,host,garment,args.category,args.photo_set_subcategory,output)
             save_json(output/'evidence.json',evidence)
         configuration={'VTON_RENDER_PROVIDER':'vertex_fashn','GOOGLE_CLOUD_PROJECT':args.project,
             'GOOGLE_CLOUD_LOCATION':args.region,'VTON_VERTEX_TRYON_ENDPOINT_ID':endpoint_name.rsplit('/',1)[-1],

@@ -4,6 +4,8 @@
   saem e a prova é repetida uma vez (a prova tem prioridade).
 - O retrato estilizado (SDXL + InstantID) é "exclusivo": enquanto gera, o modelo da prova vai para a RAM e os outros
   extras saem da GPU; a FASHN volta à GPU no próximo pedido de prova.
+- O recorte de fotos do catálogo (photoSet: parser + BiRefNet + LaMa) também é exclusivo: num lote ele recebe muitas fotos
+  seguidas, e a prova, se chegar no meio, recupera a GPU do mesmo jeito.
 """
 import json
 import os
@@ -11,7 +13,7 @@ import threading
 from .models import AlignmentError
 
 OOM='GPU_MEMORY_EXHAUSTED_REDUCE_WORKLOAD'
-EXCLUSIVE=frozenset({'stylized_portrait'})
+EXCLUSIVE=frozenset({'stylized_portrait','garment_photo_set'})
 
 
 class SharedT4Runtime:
@@ -64,13 +66,13 @@ class SharedT4Runtime:
 
 def engine_parts(engine):
     parts=(engine or '').split('+')
-    if parts[0]!='fashn' or len(set(parts))!=len(parts) or not set(parts[1:])<= {'sam3d_body','portrait'}:
+    if parts[0]!='fashn' or len(set(parts))!=len(parts) or not set(parts[1:])<= {'sam3d_body','portrait','photo_set'}:
         raise AlignmentError('INVALID_VTON_MODEL_ENGINE')
     return set(parts[1:])
 
 
 def shared_t4_runtime(engine=None):
-    """O contêiner descrito por VTON_MODEL_ENGINE (fashn, fashn+sam3d_body, fashn+portrait, fashn+sam3d_body+portrait)."""
+    """O contêiner descrito por VTON_MODEL_ENGINE: fashn com qualquer combinação de +sam3d_body, +portrait e +photo_set."""
     from pathlib import Path
     from .fashn_download import DEFAULT_WEIGHTS_DIR as FASHN_WEIGHTS_DIR
     from .fashn_runtime import NativeFashnRuntime
@@ -91,6 +93,13 @@ def shared_t4_runtime(engine=None):
         # Na subida: presença e tamanho (rápido); os SHA-256 são conferidos ao carregar o modelo, no 1º retrato.
         portrait_download.verify_assets(portrait_weights,hashes=False);portrait_download.verify_code(portrait_code)
         extras['stylized_portrait']=lambda:StylizedPortraitRuntime(portrait_weights,portrait_code)
+    if 'photo_set' in parts:
+        from .photoset_runtime import DEFAULT_CODE_DIR as PHOTOSET_CODE,DEFAULT_WEIGHTS_DIR as PHOTOSET_WEIGHTS,PhotoSetRuntime
+        photoset_weights=os.getenv('VTON_PHOTOSET_WEIGHTS',PHOTOSET_WEIGHTS);photoset_code=os.getenv('VTON_PHOTOSET_CODE',PHOTOSET_CODE)
+        # Na subida: só presença (rápido); tamanho e SHA-256 dos pesos são conferidos ao carregar, no 1º recorte.
+        if not (Path(photoset_weights)/'fashn_open_manifest.json').is_file() or not (Path(photoset_code)/'process_local_sd.py').is_file():
+            raise AlignmentError('PHOTOSET_ASSETS_MISSING')
+        extras['garment_photo_set']=lambda:PhotoSetRuntime(photoset_weights,photoset_code)
     fashn=NativeFashnRuntime(os.getenv('VTON_FASHN_WEIGHTS',FASHN_WEIGHTS_DIR))
     if 'sam3d_body' in parts:
         extras={'body_measurement':lambda:Sam3dBodyRuntime(weights,code,fashn.person_evidence,manifest),**extras}

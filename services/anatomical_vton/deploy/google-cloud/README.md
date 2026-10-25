@@ -101,6 +101,34 @@ Para montar só a imagem (sem ligar a T4):
 python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --build-only --with-portrait --region us-central1 --output work/fashn-portrait-build
 ```
 
+### Recorte das fotos do catálogo (photoSet) na mesma T4
+
+`deploy_fashn_vertex.py --with-photo-set` acrescenta ao contêiner o engine fashn-open de `scripts/catalog`
+(`VTON_MODEL_ENGINE=fashn+photo_set`): parser humano da FASHN, BiRefNet e LaMa. É o mesmo código do lote local
+(`process_local_sd.py --engine fashn-open --photo-set`), copiado para a imagem; a tarefa `garment_photo_set` recebe os
+bytes de uma foto e devolve o `set.json` do photoSet (CATALOG_PHOTO_SET_V2) com `whole.png` e `fabric.png`.
+
+- **Pesos:** públicos, sem token, com tamanho e SHA-256 fixados em `fashn_open_assets.json` (conferidos no build e ao
+  carregar). Os pesos republicados em `fashn-ai/BiRefNet` e `fashn-ai/LaMa` não trazem model card: confirmar a licença
+  antes de uso comercial.
+- **Memória:** o recorte é exclusivo na T4, como o retrato: enquanto recorta, a FASHN vai para a RAM; um pedido de prova
+  no meio do lote recupera a GPU e o recorte recarrega na foto seguinte.
+- **Download:** a foto não é baixada na GPU. O cliente `scripts/cloud/photo_sets_vertex.py` baixa no Cloud Shell com o
+  baixador do worker do catálogo (só HTTPS público, intervalo por host, host parado em 403/429) e apaga cada foto
+  depois de enviada. Nada é gravado em banco ou bucket: o lote sai no formato do `--from-lot`.
+
+```bash
+# 1. réplica com o recorte (faturável enquanto estiver no ar); --garment/--category fazem um teste com uma foto
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --new-release --deploy-only --with-photo-set --output work/fashn-photo-set \
+  --garment foto-da-peca.jpg --category tops --photo-set-subcategory jacket
+# 2. linhas do catálogo (variáveis do banco no ambiente) → recorte na GPU → ensaio do importador
+python3 -m scripts.catalog.process_photo_sets --export-rows rows.json --limit 50
+python3 -u scripts/cloud/photo_sets_vertex.py --input rows.json --out work/photo-sets-vertex
+python3 -m scripts.catalog.process_photo_sets --from-lot work/photo-sets-vertex          # --apply grava (CAS do worker)
+# 3. desligar a T4
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --undeploy --output work/fashn-photo-set
+```
+
 ## Plano de capacidade GPU
 
 O comando abaixo apenas gera comandos revisáveis para **um modelo e endpoint já

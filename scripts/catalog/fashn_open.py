@@ -297,7 +297,9 @@ def _device(torch_module, wanted: str = "auto") -> str:
 def import_birefnet(code_dir: Path):
     """Importa birefnet.py / BiRefNet_config.py (revisão fixa; hash já conferido por verify_component) como pacote isolado."""
     code_dir = Path(code_dir)
-    (code_dir / "__init__.py").touch()
+    init = code_dir / "__init__.py"
+    if not init.exists():                       # no contêiner a pasta é só leitura: o download já criou o arquivo
+        init.touch()
     if PACKAGE not in sys.modules:
         spec = importlib.util.spec_from_file_location(PACKAGE, code_dir / "__init__.py", submodule_search_locations=[str(code_dir)])
         package = importlib.util.module_from_spec(spec)
