@@ -34,8 +34,12 @@ describe("configurações — conta", () => {
     renderApp(<SettingsPage />);
     const runway = await screen.findByRole("switch", { name: "Desfilar meu Look do Dia na Passarela 3D do Explorar" }, { timeout: 4000 });
     // país em maiúsculas (antes das outras ações: cada refreshMe recarrega o campo a partir do `me`)
-    fireEvent.change(document.getElementById("country")!, { target: { value: "pt" } });
-    expect((document.getElementById("country") as HTMLInputElement).value).toBe("PT");
+    // num runner lento o efeito que copia o `me` para o formulário pode chegar depois da digitação e apagá-la:
+    // digita de novo até o valor (já em maiúsculas) ficar
+    await waitFor(() => {
+      fireEvent.change(document.getElementById("country")!, { target: { value: "pt" } });
+      expect((document.getElementById("country") as HTMLInputElement).value).toBe("PT");
+    });
     fireEvent.click(within(document.getElementById("country")!.parentElement!).getByRole("button", { name: "Salvar" }));
     await waitFor(() => expect(calls.some((c) => c.method === "PATCH" && (c.body as { country?: string }).country === "PT")).toBe(true));
     await dismiss();
