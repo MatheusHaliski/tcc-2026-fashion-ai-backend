@@ -55,6 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -151,17 +152,22 @@ class InstitutionalDisplayPolicyTest {
     }
 
     @Test
-    void perfilAdicionaItensElegiveisSemInventarSelosConquistados() {
+    void perfilAdicionaItensElegiveisComOSeloDePerfilSemInventarSelosConquistados() {
         Scheme look = look("Elegível", tenis);
         when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.LOOK)).thenReturn(true);
         when(sealPolicies.hasProfilePolicies(brand.getId(), SealTier.PECA)).thenReturn(true);
         when(sealPolicies.profileSchemes(eq(brand.getId()), any(), eq(60))).thenReturn(List.of(look));
         when(sealPolicies.profilePieces(eq(brand.getId()), any(), eq(60))).thenReturn(List.of(tenis));
+        // o selo de perfil que o item atende vai para o card, com a arte do emissor — sem criar vínculo
+        Map<String, Object> perfil = Map.of("tier", "PERFIL", "owner", brand.getUsername(), "name", "Vitrine", "design", Map.of("kind", "CIRCULAR"));
+        when(sealPolicies.profileSealBadges(eq(brand.getId()), eq(SealTier.LOOK), any(), eq(look))).thenReturn(List.of(perfil));
+        when(sealPolicies.profileSealBadges(eq(brand.getId()), eq(SealTier.PECA), eq(List.of(tenis)), isNull())).thenReturn(List.of(perfil));
         List<Map<String, Object>> looks = service.highlightedSchemes(visitor, brand, null, null);
         assertThat(ids(looks)).containsExactly(look.getId());
-        assertThat(looks.get(0).get("seals")).isEqualTo(List.of());
-        assertThat(service.highlightedPieces(visitor, brand, "RECENTES", null))
-                .extracting(e -> ((Views.PieceView) e.get("piece")).id()).containsExactly(tenis.getId());
+        assertThat(looks.get(0).get("seals")).isEqualTo(List.of(perfil));
+        List<Map<String, Object>> pieces = service.highlightedPieces(visitor, brand, "RECENTES", null);
+        assertThat(pieces).extracting(e -> ((Views.PieceView) e.get("piece")).id()).containsExactly(tenis.getId());
+        assertThat(pieces.get(0).get("seals")).isEqualTo(List.of(perfil));
         assertThat(allBonds).isEmpty();
     }
 

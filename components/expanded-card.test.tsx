@@ -227,6 +227,15 @@ describe("ExpandedScheme — ações do dono do look", () => {
 describe("ExpandedPiece — o dono", () => {
   const routes = (p: PieceView, extra: Record<string, unknown> = {}) => ({ ...HYPE, "GET /api/taxonomy": TAXONOMY, "GET /api/pieces/p1": { piece: p, location: { label: "Gaveta 2" }, originSchemes: [{ schemeId: "s1", title: "Look de sábado", coverImageUrl: "/media/s.png" }, { schemeId: "s2", title: "null" }] }, ...extra });
 
+  it("selo Hype emitido pela marca para a peça: a célula Selo da lista Info mostra o medalhão do emissor", async () => {
+    const design = { mode: "TEMPLATE", template: "fai/03" };
+    const api = loggedAs(undefined, routes(piece(), { "GET /api/pieces/seals": { items: { p1: [{ tier: "PECA", owner: "nike", premium: false, name: "Nike Hot", iconUrl: null, design, linkedPieceIds: ["p1"] }] } } }));
+    renderApp(<ExpandedPiece id="p1" />);
+    const medal = await screen.findByTitle("Nike Hot · @nike · PECA", undefined, { timeout: 4000 });
+    expect(medal.closest(".pc-info-seal")?.textContent).toContain("Nike Hot");
+    expect(api.calls.filter((c) => c.path.startsWith("/api/pieces/seals"))[0].path).toBe("/api/pieces/seals?ids=p1");
+  });
+
   it("mostra os dados úteis, a ação principal e os looks com a peça; clicar no look navega", async () => {
     loggedAs(undefined, routes(piece({ forSale: false, forDonation: true, disponivel: false, visibility: "FOLLOWERS" })));
     const { container } = renderApp(<ExpandedPiece id="p1" />);

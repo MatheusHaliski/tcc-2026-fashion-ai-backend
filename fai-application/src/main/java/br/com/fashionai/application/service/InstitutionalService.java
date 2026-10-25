@@ -399,7 +399,12 @@ public class InstitutionalService {
     static final int TAB_LIMIT = 60;
 
     /** Look promovido no perfil por um ou mais vínculos aprovados do emissor. */
-    record Promoted(Scheme scheme, List<SealBond> bonds, Instant issuedAt, Instant expiresAt, boolean expired, boolean revalidationPending) {
+    /** {@code profileSeals}: medalhões dos selos de perfil que o look atende (entrada por política de perfil, sem vínculo). */
+    record Promoted(Scheme scheme, List<SealBond> bonds, Instant issuedAt, Instant expiresAt, boolean expired, boolean revalidationPending,
+                    List<Map<String, Object>> profileSeals) {
+        Promoted(Scheme scheme, List<SealBond> bonds, Instant issuedAt, Instant expiresAt, boolean expired, boolean revalidationPending) {
+            this(scheme, bonds, issuedAt, expiresAt, expired, revalidationPending, List.of());
+        }
     }
 
     static boolean expired(SealBond b, Instant now) {
@@ -455,7 +460,9 @@ public class InstitutionalService {
         }
         Set<UUID> present = out.stream().map(p -> p.scheme().getId()).collect(Collectors.toSet());
         for (Scheme scheme : profileEligible) {
-            if (present.add(scheme.getId())) out.add(new Promoted(scheme, List.of(), null, null, false, false));
+            if (present.add(scheme.getId())) out.add(new Promoted(scheme, List.of(), null, null, false, false,
+                    sealService.profileSealBadges(u.getId(), SealTier.LOOK, schemeItems.findBySchemeIdOrderBySortOrder(scheme.getId()).stream()
+                            .map(SchemeItem::getWardrobeItem).filter(Objects::nonNull).toList(), scheme)));
         }
         Comparator<Promoted> byIssued = Comparator.comparing(Promoted::issuedAt, Comparator.nullsLast(Comparator.reverseOrder()));
         if (history) {
@@ -576,7 +583,8 @@ public class InstitutionalService {
         for (WardrobeItem w : eligible) {
             if (!ids.add(w.getId()) || out.size() >= TAB_LIMIT) continue;
             Map<String, Object> entry = new LinkedHashMap<>();
-            entry.put("piece", Views.piece(w, null, null)); entry.put("seals", List.of());
+            entry.put("piece", Views.piece(w, null, null));
+            entry.put("seals", sealService.profileSealBadges(owner.getId(), SealTier.PECA, List.of(w), null));
             entry.put("author", Views.user(w.getUser())); entry.put("schemeId", null);
             entry.put("profilePolicy", true); out.add(entry);
         }
@@ -640,7 +648,9 @@ public class InstitutionalService {
     Map<String, Object> entry(CurrentUser viewer, Promoted p) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("scheme", schemeService.view(viewer, p.scheme(), schemeItems.findBySchemeIdOrderBySortOrder(p.scheme().getId())));
-        m.put("seals", p.bonds().stream().map(SealService::badge).toList());
+        List<Map<String, Object>> seals = new ArrayList<>(p.bonds().stream().map(SealService::badge).toList());
+        seals.addAll(p.profileSeals());                                    // selo de perfil: a arte do emissor no card
+        m.put("seals", seals);
         Map<String, Object> promotion = new LinkedHashMap<>();
         promotion.put("profilePolicy", p.bonds().isEmpty());
         promotion.put("issuedAt", p.issuedAt());

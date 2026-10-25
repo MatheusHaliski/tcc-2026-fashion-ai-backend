@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.seal.SealDesigns;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.audit.Audit;
@@ -148,7 +149,7 @@ class SealHypeServiceTest {
             return b;
         });
         when(bondRepo.findById(any())).thenAnswer(inv -> allBonds.stream().filter(b -> b.getId().equals(inv.getArgument(0))).findFirst());
-        when(bondRepo.findBySchemeId(any())).thenAnswer(inv -> allBonds.stream().filter(b -> b.getScheme().getId().equals(inv.getArgument(0))).toList());
+        when(bondRepo.findBySchemeId(any())).thenAnswer(inv -> allBonds.stream().filter(b -> b.getScheme() != null && b.getScheme().getId().equals(inv.getArgument(0))).toList());
         when(bondRepo.findBySchemeIdAndTargetOwnerIdAndStatusIn(any(), any(), any())).thenAnswer(inv -> allBonds.stream()
                 .filter(b -> b.getScheme().getId().equals(inv.getArgument(0)) && b.getTargetOwner().getId().equals(inv.getArgument(1))
                         && ((Collection<?>) inv.getArgument(2)).contains(b.getStatus())).toList());
@@ -156,7 +157,10 @@ class SealHypeServiceTest {
         when(bondRepo.findBySealIdInAndStatus(anyCollection(), any())).thenAnswer(inv -> allBonds.stream()
                 .filter(b -> b.getSeal() != null && ((Collection<?>) inv.getArgument(0)).contains(b.getSeal().getId()) && b.getStatus() == inv.getArgument(1)).toList());
         when(bondRepo.findBySchemeIdInAndStatus(anyCollection(), any())).thenAnswer(inv -> allBonds.stream()
-                .filter(b -> ((Collection<?>) inv.getArgument(0)).contains(b.getScheme().getId()) && b.getStatus() == inv.getArgument(1)).toList());
+                .filter(b -> b.getScheme() != null && ((Collection<?>) inv.getArgument(0)).contains(b.getScheme().getId()) && b.getStatus() == inv.getArgument(1)).toList());
+        // selo pedido no painel Hype de uma peça: o vínculo aponta direto para a peça, sem look
+        when(bondRepo.findByPieceIdInAndStatus(anyCollection(), any())).thenAnswer(inv -> allBonds.stream()
+                .filter(b -> b.getPiece() != null && ((Collection<?>) inv.getArgument(0)).contains(b.getPiece().getId()) && b.getStatus() == inv.getArgument(1)).toList());
 
         schemeRepo = mock(SchemeRepository.class);
         when(schemeRepo.findById(any())).thenAnswer(inv -> Optional.ofNullable(allSchemes.get(inv.getArgument(0))));
@@ -385,6 +389,53 @@ class SealHypeServiceTest {
         assertThat(seals.profileSchemes(adidas.getId(), s -> true, 60)).isEmpty();
         bond.setExpiresAt(null); bond.setStatus(SealBondStatus.REVOKED);
         assertThat(seals.profilePieces(adidas.getId(), w -> true, 60)).isEmpty();
+    }
+
+    @Test
+    void seloDePerfilVaiParaOCardComOMedalhaoDoEmissorSoQuandoAPoliticaEAtendida() {
+        Seal earned = seal(nike, "Nike Peça", SealTier.PECA, Map.of("rules", List.of(Map.of("brand", "Nike"))));
+        Scheme look = look(Visibility.PUBLIC, p1, p2);
+        approved(earned, look, SealTier.PECA, p1);
+        when(bondRepo.findByRequestedByIdAndStatusOrderByCreatedAtDesc(any(), any())).thenAnswer(inv -> allBonds.stream()
+                .filter(b -> b.getRequestedBy().getId().equals(inv.getArgument(0)) && b.getStatus() == inv.getArgument(1)).toList());
+        Map<String, Object> policy = Map.of("referenceModel", Map.of(
+                "version", 1, "tier", "PERFIL", "target", "BOTH", "title", "Perfil", "description", "Exige Nike Peça",
+                "minPieces", 1, "pieces", List.of(Map.of("count", 1)),
+                "earnedSeals", Map.of("match", "ALL", "rules", List.of(Map.of("sealId", earned.getId().toString(), "scope", "PIECES", "minCount", 1)))));
+        Seal profile = seal(adidas, "Vitrine Adidas", SealTier.PERFIL, policy);
+        Map<String, Object> design = SealDesigns.defaultDesign(false, SealTier.PERFIL);
+        profile.setBackgroundConfigJson(Json.write(Map.of("policy", SealPolicies.normalize(policy), "design", design)));
+
+        assertThat(seals.profileSealBadges(adidas.getId(), SealTier.PECA, List.of(p1), null)).singleElement().satisfies(badge -> {
+            assertThat(badge).containsEntry("tier", "PERFIL").containsEntry("owner", "adidas").containsEntry("name", "Vitrine Adidas");
+            assertThat(Json.write(badge.get("design"))).isEqualTo(Json.write(design));
+        });
+        assertThat(seals.profileSealBadges(adidas.getId(), SealTier.LOOK, List.of(p1, p2), look)).hasSize(1);
+        assertThat(seals.profileSealBadges(adidas.getId(), SealTier.PECA, List.of(p2), null)).isEmpty();       // p2 não tem o selo exigido
+        assertThat(seals.profileSealBadges(nike.getId(), SealTier.PECA, List.of(p1), null)).isEmpty();         // nike não tem selo de perfil
+    }
+
+    @Test
+    void seloHypeEmitidoParaAPecaApareceNosSelosDaPecaComOMedalhaoDoEmissor() {
+        Seal hot = seal(nike, "Nike Hot", SealTier.PECA, Map.of("hype", Map.of("minLevel", "HOT")));
+        Map<String, Object> design = SealDesigns.defaultDesign(false, SealTier.PECA);
+        hot.setBackgroundConfigJson(Json.write(Map.of("policy", Json.map(hot.getBackgroundConfigJson()).get("policy"), "design", design)));
+        SealBond bond = new SealBond();
+        bond.assignId(UUID.randomUUID()); bond.setSeal(hot); bond.setPiece(p1); bond.setTargetOwner(nike); bond.setRequestedBy(ana);
+        bond.setTier(SealTier.PECA); bond.setStatus(SealBondStatus.APPROVED); bond.setExpiresAt(Instant.now().plusSeconds(3600));
+        bond.setLinkedPieceIdsJson(Json.write(List.of(p1.getId().toString())));
+        allBonds.add(bond);
+
+        @SuppressWarnings("unchecked")
+        Map<String, List<Map<String, Object>>> items = (Map<String, List<Map<String, Object>>>) seals.pieceSeals(visitor, List.of(p1.getId())).get("items");
+        assertThat(items.get(p1.getId().toString())).singleElement().satisfies(badge -> {
+            assertThat(badge).containsEntry("tier", "PECA").containsEntry("owner", "nike").containsEntry("name", "Nike Hot");
+            assertThat(Json.write(badge.get("design"))).isEqualTo(Json.write(design));
+        });
+        bond.setExpiresAt(Instant.now().minusSeconds(1));                                                     // vencido: sai do card
+        @SuppressWarnings("unchecked")
+        Map<String, List<Map<String, Object>>> later = (Map<String, List<Map<String, Object>>>) seals.pieceSeals(visitor, List.of(p1.getId())).get("items");
+        assertThat(later.get(p1.getId().toString())).isEmpty();
     }
 
     // ------------------------------------------------------------------ sugestões

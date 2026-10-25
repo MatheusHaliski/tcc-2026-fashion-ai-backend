@@ -321,12 +321,47 @@ public class SealService {
     boolean hasProfilePolicies(UUID ownerId, SealTier subject) { return !profilePolicies(ownerId, subject).isEmpty(); }
 
     private List<SealPolicies.Policy> profilePolicies(UUID ownerId, SealTier subject) {
+        return profileSeals(ownerId, subject).stream().map(SealService::policyOf).toList();
+    }
+
+    /** Selos de perfil (tier PERFIL) ativos, de emissor apto, cuja política vale para o tipo pedido (peça ou look). */
+    private List<Seal> profileSeals(UUID ownerId, SealTier subject) {
         Instant now = Instant.now();
         Set<Object> targets = subject == SealTier.LOOK ? Set.of("LOOK", "BOTH") : Set.of("PECA", "BOTH");
         return seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(ownerId, SealStatus.ACTIVE).stream()
                 .filter(s -> s.getTier() == SealTier.PERFIL && available(s, now) && issuer(s.getOwner()) != null)
-                .map(s -> SealPolicies.parse(Json.map(s.getBackgroundConfigJson()).get("policy")))
-                .filter(p -> p != null && p.referenceModel() != null && targets.contains(p.referenceModel().get("target"))).toList();
+                .filter(s -> { SealPolicies.Policy p = policyOf(s); return p != null && p.referenceModel() != null && targets.contains(p.referenceModel().get("target")); })
+                .toList();
+    }
+
+    private static SealPolicies.Policy policyOf(Seal s) {
+        return SealPolicies.parse(Json.map(s.getBackgroundConfigJson()).get("policy"));
+    }
+
+    /**
+     * Medalhões dos selos de perfil que a peça ou o look atende — o que o card mostra na vitrine do emissor quando entra
+     * por uma política de perfil (sem vínculo emitido). Mesma arte e mesmo formato de {@link #badge}.
+     */
+    public List<Map<String, Object>> profileSealBadges(UUID ownerId, SealTier subject, List<WardrobeItem> items, Scheme scheme) {
+        if (items == null || items.isEmpty()) return List.of();
+        return profileSeals(ownerId, subject).stream()
+                .filter(s -> profileMatch(List.of(policyOf(s)), subject, items, scheme))
+                .map(SealService::sealBadge).toList();
+    }
+
+    /** Medalhão de um selo sem vínculo (selo de perfil na vitrine): emissor, nome, tier e o desenho do selo. */
+    public static Map<String, Object> sealBadge(Seal s) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("tier", s.getTier().name());
+        m.put("owner", s.getOwner().getUsername());
+        boolean premium = s.getOwner().getProfileType() == ProfileType.CELEBRIDADE;
+        m.put("premium", premium);
+        m.put("name", s.getName());
+        m.put("iconUrl", s.getIconUrl());
+        Object design = Json.map(s.getBackgroundConfigJson()).get("design");
+        m.put("design", design instanceof Map<?, ?> dm ? dm : SealDesigns.defaultDesign(premium, s.getTier()));
+        m.put("linkedPieceIds", List.of());
+        return m;
     }
 
     private boolean profileMatch(List<SealPolicies.Policy> policies, SealTier subject, List<WardrobeItem> items, Scheme scheme) {

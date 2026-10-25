@@ -1,4 +1,5 @@
 "use client";
+import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -178,6 +179,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const depth = useFashionDepth(auraEnabled && !headerExtra);
   const hype = useHypeSummary("PIECE", id, auraEnabled, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
+  // selos aprovados da peça (marca, celebridade e selos Hype emitidos por elas): a célula "Selo" da lista Info
+  const sealsOf = usePieceSeals(p ? [p] : null);
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
   const [artRef, inView] = useInView<HTMLElement>();
   useEffect(() => { if (startEditing && p && mine && !editing) startEdit(); }, [startEditing, p?.id, mine]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -296,7 +299,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               {primary}
             </section>
             <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />
-            <PieceCardPanels piece={p} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} />
+            <PieceCardPanels piece={p} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} seals={sealsOf(p.id)} />
             <section className="pd-section" aria-labelledby={`pd-facts-${p.id}`}>
               <h3 id={`pd-facts-${p.id}`} className="pd-h">{t("pieceDetail.detalhes")}</h3>
               <PieceDetailFacts piece={p}/>
