@@ -64,6 +64,9 @@ class StartupScriptTest(unittest.TestCase):
         self.assertIn("gcloud compute instances delete", script)
         self.assertIn("gs://$BUCKET/jobs/$JOB/out/DONE", script)
         self.assertTrue(script.startswith("#!/bin/bash\nset -euo pipefail"))
+        # usa o Python da imagem que já tem torch com CUDA; só sem ele instala o torch num venv
+        self.assertIn("torch.cuda.is_available()", script)
+        self.assertIn("for c in /opt/conda/bin/python python3", script)
 
 
 class MainTest(unittest.TestCase):
@@ -74,17 +77,58 @@ class MainTest(unittest.TestCase):
             with mock.patch.object(vm.subprocess, "run", side_effect=AssertionError("não devia executar")):
                 self.assertEqual(vm.main(["--project", "fashionai-tcc", "--bucket", "fashionai-packshot", "--job", "lote-1", "--rows", str(rows)]), 0)
 
+    @staticmethod
+    def fake_gcloud(calls, quota=1.0, families="pytorch-2-7-cu128-ubuntu-2204-nvidia-570"):
+        """Consultas (capture_output) respondem cota e famílias; comandos de verdade só ficam registrados."""
+        def run(cmd, check=False, capture_output=False, text=False):
+            calls.append(cmd)
+            if capture_output and cmd[:3] == ["gcloud", "compute", "project-info"]:
+                return SimpleNamespace(returncode=0, stdout=json.dumps({"quotas": [{"metric": "GPUS_ALL_REGIONS", "limit": quota, "usage": 0}]}))
+            if capture_output and cmd[:3] == ["gcloud", "compute", "images"]:
+                return SimpleNamespace(returncode=0, stdout=families)
+            return SimpleNamespace(returncode=0, stdout="")
+        return run
+
+    def rows(self, tmp):
+        rows = Path(tmp) / "rows.json"
+        rows.write_text(json.dumps({"images": [{"id": "a", "image_url": "https://x/a.jpg"}]}), encoding="utf-8")
+        return rows
+
     def test_apply_yes_sobe_o_json_e_cria_a_vm(self):
         calls = []
         with tempfile.TemporaryDirectory() as tmp:
-            rows = Path(tmp) / "rows.json"
-            rows.write_text(json.dumps({"images": [{"id": "a", "image_url": "https://x/a.jpg"}]}), encoding="utf-8")
-            with mock.patch.object(vm.subprocess, "run", side_effect=lambda cmd, check: calls.append(cmd)):
-                self.assertEqual(vm.main(["--project", "fashionai-tcc", "--bucket", "fashionai-packshot", "--job", "lote-1", "--rows", str(rows),
+            with mock.patch.object(vm.subprocess, "run", side_effect=self.fake_gcloud(calls)):
+                self.assertEqual(vm.main(["--project", "fashionai-tcc", "--bucket", "fashionai-packshot", "--job", "lote-1", "--rows", str(self.rows(tmp)),
                                           "--apply", "--yes", "--gpu", "l4"]), 0)
-        self.assertEqual([c[0] for c in calls], ["gsutil", "gcloud"])
-        script_arg = [a for a in calls[1] if a.startswith("--metadata-from-file=startup-script=")][0]
+        executed = [c for c in calls if c[:3] not in (["gcloud", "compute", "project-info"], ["gcloud", "compute", "images"])]
+        self.assertEqual([c[0] for c in executed], ["gsutil", "gcloud"])
+        script_arg = [a for a in executed[1] if a.startswith("--metadata-from-file=startup-script=")][0]
         self.assertTrue(script_arg.endswith("startup.sh"))
+        # a família vem da lista atual das Deep Learning VMs, não de um nome fixo que o Google pode retirar
+        self.assertIn("--image-family=pytorch-2-7-cu128-ubuntu-2204-nvidia-570", executed[1])
+        self.assertNotIn("--image-family=pytorch-latest-gpu", executed[1])
+
+    def test_cota_global_zerada_recusa_antes_de_subir_qualquer_arquivo(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as tmp, mock.patch("sys.stderr") as err:
+            with mock.patch.object(vm.subprocess, "run", side_effect=self.fake_gcloud(calls, quota=0.0)):
+                code = vm.main(["--project", "fashionai-tcc", "--bucket", "fashionai-packshot", "--job", "lote-1", "--rows", str(self.rows(tmp)), "--apply", "--yes"])
+        self.assertEqual(code, 4)
+        self.assertFalse([c for c in calls if c[0] == "gsutil" or c[:4] == ["gcloud", "compute", "instances", "create"]])
+        self.assertIn("GPUS_ALL_REGIONS", "".join(str(c) for c in err.write.call_args_list))
+
+    def test_sem_familia_pytorch_recusa_e_familia_explicita_dispensa_a_busca(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as tmp, mock.patch("sys.stderr"):
+            with mock.patch.object(vm.subprocess, "run", side_effect=self.fake_gcloud(calls, families="")):
+                self.assertEqual(vm.main(["--project", "fashionai-tcc", "--bucket", "fashionai-packshot", "--job", "lote-1", "--rows", str(self.rows(tmp)), "--apply", "--yes"]), 4)
+        calls.clear()
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(vm.subprocess, "run", side_effect=self.fake_gcloud(calls, families="")):
+                self.assertEqual(vm.main(["--project", "fashionai-tcc", "--bucket", "fashionai-packshot", "--job", "lote-1", "--rows", str(self.rows(tmp)),
+                                          "--apply", "--yes", "--image-family", "common-cu128-ubuntu-2204-nvidia-570"]), 0)
+        self.assertFalse([c for c in calls if c[:3] == ["gcloud", "compute", "images"]])
+        self.assertIn("--image-family=common-cu128-ubuntu-2204-nvidia-570", calls[-1])
 
 
 if __name__ == "__main__":

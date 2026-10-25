@@ -28,7 +28,10 @@ import tempfile
 from pathlib import Path
 
 REPO_URL = "https://github.com/MatheusHaliski/tcc-2026-fashion-ai-backend.git"
-IMAGE_FAMILY, IMAGE_PROJECT = "pytorch-latest-gpu", "deeplearning-platform-release"   # CUDA pronto; driver via metadado
+# Deep Learning VM do Google (PyTorch + CUDA prontos). As famílias mudam de nome a cada versão — "pytorch-latest-gpu"
+# foi retirada —, então a família é descoberta no --apply (a PyTorch+CUDA mais recente) ou fixada com --image-family.
+IMAGE_PROJECT = "deeplearning-platform-release"
+IMAGE_FILTER = "family~^pytorch AND family~cu AND NOT family~arm AND NOT family~tpu"
 GPU = {
     # preços aproximados de southamerica-east1 (US$/h, VM + GPU); conferir em cloud.google.com/compute/gpus-pricing
     "t4": {"machine": "n1-standard-8", "accelerator": "nvidia-tesla-t4", "spot_usd_h": 0.30, "ondemand_usd_h": 0.95,
@@ -80,8 +83,17 @@ for _ in $(seq 1 90); do nvidia-smi -L && break; sleep 10; done
 nvidia-smi -L
 mkdir -p /opt/fashionai && cd /opt/fashionai
 git clone --depth 1 --branch "$BRANCH" {shlex.quote(repo_url)} src
-PY=/opt/conda/bin/python
-[ -x "$PY" ] || {{ python3 -m venv venv; PY=/opt/fashionai/venv/bin/python; }}
+# o Python da imagem que já tem o torch com CUDA (conda nas imagens antigas, python3 nas novas); só sem ele, um venv
+export PIP_BREAK_SYSTEM_PACKAGES=1
+PY=""
+for c in /opt/conda/bin/python python3; do
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys, torch; sys.exit(0 if torch.cuda.is_available() else 1)" 2>/dev/null; then PY="$(command -v "$c")"; break; fi
+done
+if [ -z "$PY" ]; then
+  python3 -m venv venv; PY=/opt/fashionai/venv/bin/python
+  "$PY" -m pip install -q torch torchvision --index-url https://download.pytorch.org/whl/cu121
+fi
+"$PY" -c "import torch; print('python', __import__('sys').executable, 'torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 "$PY" -m pip install -q -r src/scripts/catalog/requirements-fashn-open.txt
 "$PY" src/scripts/catalog/fashn_open.py download --dest {shlex.quote(weights_dir)}
 gsutil -q cp "gs://$BUCKET/jobs/$JOB/rows.json" rows.json
@@ -99,7 +111,7 @@ def plan(args, photos: int, script_path: str = "<startup-script>") -> dict:
     create = ["gcloud", "compute", "instances", "create", name, f"--project={args.project}", f"--zone={args.zone}",
               f"--machine-type={spec['machine']}", "--maintenance-policy=TERMINATE", "--provisioning-model=SPOT",
               "--instance-termination-action=DELETE", f"--max-run-duration={int(args.max_hours * 3600)}s",
-              f"--image-family={IMAGE_FAMILY}", f"--image-project={IMAGE_PROJECT}", "--boot-disk-size=100GB", "--boot-disk-type=pd-balanced",
+              f"--image-family={getattr(args, 'image_family', None) or '<família PyTorch+CUDA mais recente>'}", f"--image-project={IMAGE_PROJECT}", "--boot-disk-size=100GB", "--boot-disk-type=pd-balanced",
               "--scopes=https://www.googleapis.com/auth/cloud-platform", "--metadata=install-nvidia-driver=True",
               f"--metadata-from-file=startup-script={script_path}", f"--labels=fashionai-job={args.job}"]
     if spec["accelerator"]:
@@ -126,6 +138,46 @@ def run(command: list[str]) -> None:
     subprocess.run(command, check=True)
 
 
+def query(command: list[str]) -> str | None:
+    """Consulta só de leitura ao gcloud; None se falhar (sem permissão, sem rede)."""
+    done = subprocess.run(command, check=False, capture_output=True, text=True)
+    return done.stdout.strip() if done.returncode == 0 else None
+
+
+def latest_image_family() -> str | None:
+    """A família PyTorch+CUDA mais recente das Deep Learning VMs (x86, sem TPU)."""
+    out = query(["gcloud", "compute", "images", "list", f"--project={IMAGE_PROJECT}", "--no-standard-images",
+                 f"--filter={IMAGE_FILTER}", "--sort-by=~creationTimestamp", "--limit=1", "--format=value(family)"])
+    return out.splitlines()[0].strip() if out else None
+
+
+def gpu_quota(project: str) -> float | None:
+    """Limite da cota global GPUS_ALL_REGIONS (sem ela em 1+, nenhuma VM com GPU é criada)."""
+    out = query(["gcloud", "compute", "project-info", "describe", f"--project={project}", "--format=json"])
+    if not out:
+        return None
+    try:
+        return next((float(q["limit"]) for q in json.loads(out).get("quotas", []) if q.get("metric") == "GPUS_ALL_REGIONS"), None)
+    except (ValueError, KeyError, TypeError):
+        return None
+
+
+def preflight(args) -> str | None:
+    """Antes de subir qualquer arquivo: cota global de GPU e família de imagem. Devolve o motivo da recusa ou None."""
+    quota = gpu_quota(args.project)
+    if quota is not None and quota < 1:
+        return ("cota GPUS_ALL_REGIONS = 0: peça 1 em IAM e administrador → Cotas e limites do sistema → \"GPUs (all regions)\" "
+                "e rode de novo depois da aprovação. Nada foi criado.")
+    if not args.image_family:
+        args.image_family = latest_image_family()
+        if not args.image_family:
+            return (f"nenhuma família PyTorch+CUDA encontrada em {IMAGE_PROJECT}; liste com "
+                    f"`gcloud compute images list --project={IMAGE_PROJECT} --no-standard-images --format='value(family)' | sort -u` "
+                    "e passe --image-family. Nada foi criado.")
+    print(f"imagem: {IMAGE_PROJECT}/{args.image_family}" + ("" if quota is None else f" · cota GPUS_ALL_REGIONS = {quota:g}"), flush=True)
+    return None
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0], formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("--project", required=True)
@@ -140,6 +192,7 @@ def main(argv=None) -> int:
     ap.add_argument("--sd", action="store_true", help="também o Stable Diffusion por cima do LaMa (mais lento)")
     ap.add_argument("--service-account", help="conta de serviço da VM (precisa poder apagar a própria instância e escrever no bucket)")
     ap.add_argument("--extra-args", default="", help="argumentos extras para o process_local_sd.py (ex.: --steps 20)")
+    ap.add_argument("--image-family", help=f"família de imagem em {IMAGE_PROJECT} (padrão: a PyTorch+CUDA mais recente, descoberta no --apply)")
     ap.add_argument("--apply", action="store_true", help="cria a VM (sem isto, só o plano)")
     ap.add_argument("--yes", action="store_true", help="com --apply, não pede confirmação")
     ap.add_argument("--status", action="store_true", help="só verifica se gs://…/out/DONE existe")
@@ -165,6 +218,10 @@ def main(argv=None) -> int:
     if not args.apply:
         print("plano apenas — nada foi criado (use --apply --yes para criar)")
         return 0
+    refused = preflight(args)
+    if refused:
+        print("recusado: " + refused, file=sys.stderr)
+        return 4
     if not args.yes:
         answer = input(f"Criar {planned['vm']} ({args.gpu} spot, teto {args.max_hours} h, ≈ US$ {planned['estimate']['spot_usd']})? (digite 'sim') ")
         if answer.strip().lower() != "sim":
