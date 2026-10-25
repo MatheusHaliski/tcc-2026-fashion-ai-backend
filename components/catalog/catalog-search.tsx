@@ -554,10 +554,10 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
           </div>
         ) : p.colorName ? <p className="mt-1 flex items-center gap-1.5 type-body-sm"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: p.colorHex ?? undefined }} />{p.colorName}</p> : null}
         <p className="mt-1 type-caption text-faint">{t("catalog.fonte", { fonte: source })}</p>
-        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("fit.title")}</Button>}
+        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("size.botao")}</Button>}
         <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant)} loading={busy} disabled={disabled}>{busy ? t("catalog.verificando_foto") : pickLabel ?? t("catalog.e_esta")}</Button>
       </div>
-      {fitOpen && <ProductFitDialog productId={p.id} productName={p.productName} open onClose={() => setFitOpen(false)} />}
+      {fitOpen && <ProductFitDialog product={p} open onClose={() => setFitOpen(false)} />}
     </article>
   );
 }

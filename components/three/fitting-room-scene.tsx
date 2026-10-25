@@ -15,6 +15,7 @@ import type { StoreScene } from "@/lib/scene3d/scene";
 import { resolveFittingStudio, STUDIO_PALETTE, type FittingStudioProfile } from "@/lib/scene3d/fitting-studio";
 import { approach, orbitGoal, type FittingCameraApi, type OrbitLimitState, type OrbitPose } from "@/lib/scene3d/orbit-steps";
 import { useI18n } from "@/lib/i18n/i18n";
+import { sizedPieces } from "@/lib/tryon/sizes";
 import {
   BACK_Z, box, CabinBench, CabinEntrance, CeilingSpots, CornerPlant, cyl, DOOR_GAP, FRONT_Z, PaintedWall, Pouf, PROP_CUT, ROOM_CZ, ROOM_D, ROOM_W, Rug, SIDE_X, WALL_H,
   useCutaway, useFused, useLiteDecor, useStudioKit, wallCut, type Part, type StudioKit,
@@ -173,6 +174,9 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
   const [parts, setParts] = useState<HumanParts | null>(null);
   sex = avatar?.model?.sex ?? sex;
   const params = body ?? bodyParamsOf({ sex, build, avatar }), height = buildSpec(params).stature;
+  // tamanho escolhido × este corpo: a diferença em tamanhos vira folga e comprimento no molde (lib/tryon/sizes.ts)
+  const paramsKey = JSON.stringify(params);
+  const sized = useMemo(() => sizedPieces(pieces, params, sex), [pieces, paramsKey, sex]); // eslint-disable-line react-hooks/exhaustive-deps
   // alvo estável: um array novo a cada render fazia o Rig recolocar a câmera no preset e desfazer o giro da pessoa
   const target = useMemo<V3>(() => closeUp ? [0, height * .52, 0] : [0, height * .60, 0], [closeUp, height]), dist = closeUp ? height * 1.55 : height * 2.2;
   const env = scene?.brand ?? environment.featured, profile = resolveFittingStudio(env, scene);
@@ -187,7 +191,7 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
       <color attach="background" args={[profile.palette.wall]} /><fog attach="fog" args={[profile.palette.wall, 9, 18]} />
       <Lights light={light} /><Room key={env.key} profile={profile} target={target} />
       <group name="fitting-avatar">
-        <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params}
+        <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={sized} sway={false} body={params}
           fallback={null} still={!!debug?.pose} onHuman={(p) => { setParts(p); onHuman?.(p); }} />
       </group>
       {debug && <SceneDebug parts={parts} options={debug} />}

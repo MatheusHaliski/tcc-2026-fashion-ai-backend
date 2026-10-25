@@ -13,6 +13,15 @@ import {
 } from "@/lib/tryon/fitting-room";
 import { fromCatalog, fromWardrobe, type State } from "@/lib/tryon/fitting-room-model";
 import { read, write, SESSION_KEY } from "@/lib/tryon/fitting-room-storage";
+import { gridOf, readMySizes, writeMySize } from "@/lib/tryon/sizes";
+
+/** Peça nova entra no tamanho que a pessoa escolheu por último nessa grade; sem escolha, no tamanho do avatar. */
+function withMySize(item: FittingItem): FittingItem {
+  if (item.size) return item;
+  const grid = gridOf(item.category, item.subcategory);
+  const mine = grid ? readMySizes()[grid] : undefined;
+  return mine ? { ...item, size: mine } : item;
+}
 
 interface FittingSessionOptions {
   data: State | null;
@@ -93,6 +102,7 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
   }, [searchParams, data, commit]);
 
   function tryOn(item: FittingItem) {
+    item = withMySize(item);
     commit(wearItem(items, item));
     onStatus(t("tryOn.provando_status", {
       name: item.name, slot: slotNames[item.slot], marca: item.brand?.name ?? "",
@@ -116,7 +126,15 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
     if (!product) return;
     const next = fromCatalog(product, variant, colors);
     if (!next) return;
-    commit(items.map((current) => current.key === item.key ? { ...next, addedAt: item.addedAt } : current));
+    commit(items.map((current) => current.key === item.key ? { ...next, size: item.size ?? null, addedAt: item.addedAt } : current));
+  }
+
+  /** Toque no tamanho: a peça veste o avatar nesse tamanho e ele vira o padrão das próximas peças da mesma grade. */
+  function changeSize(item: FittingItem, size: string) {
+    const grid = gridOf(item.category, item.subcategory);
+    if (grid) writeMySize(grid, size);
+    commit(items.map((current) => current.key === item.key ? { ...current, size } : current));
+    onStatus(t("size.vestindo_status", { name: item.name, size }));
   }
 
   /** Guarda a peça da loja no guarda-roupa; devolve se guardou (a linha do provador só pede o 3D da peça guardada). */
@@ -142,5 +160,5 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
     }
   }
 
-  return { items, products, owned, busyOwn, slotNames, commit, tryOn, pickProduct, remove, changeVariant, ownIt };
+  return { items, products, owned, busyOwn, slotNames, commit, tryOn, pickProduct, remove, changeVariant, changeSize, ownIt };
 }

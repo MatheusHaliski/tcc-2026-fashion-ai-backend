@@ -67,6 +67,8 @@ export interface GarmentSpec {
   bustFall: number;
   /** bota: onde começa o cano, ao longo da perna (0 = quadril, 1 = tornozelo) */
   shaft: number;
+  /** tamanho escolhido menos o do corpo do avatar, em tamanhos (garment-fit.ts → applySize); ausente = no corpo */
+  sizeSteps?: number;
 }
 
 /** Radial opening along the leg; explicit silhouettes begin at their declared landmark. */

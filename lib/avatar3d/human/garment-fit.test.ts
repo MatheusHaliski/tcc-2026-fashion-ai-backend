@@ -23,6 +23,27 @@ describe("decote da peça: dimensão NECKLINE ou o nome (o catálogo não traz a
 });
 
 
+describe("tamanho escolhido × corpo do avatar (lib/tryon/sizes.ts)", () => {
+  it("maior que o corpo: mais folga, barra e manga mais longas; menor: aperta até o mínimo", () => {
+    const tee = { category: "upper_piece", subcategory: "t_shirt" };
+    const base = specFor(tee)!, big = specFor({ ...tee, sizeSteps: 2 })!, small = specFor({ ...tee, sizeSteps: -3 })!;
+    expect(big.ease - base.ease).toBeCloseTo(2 * 0.06 / (2 * Math.PI), 4);           // 6 cm de perímetro por tamanho
+    expect(big.hem).toBeLessThan(base.hem); expect(big.sleeve).toBeGreaterThan(base.sleeve); expect(big.sizeSteps).toBe(2);
+    expect(small.ease).toBe(0.0015);                                                    // não fecha: cola no corpo
+    expect(small.sleeve).toBeLessThan(base.sleeve);
+  });
+  it("calça na numeração (4 cm por número) e perna até o chão no máximo; calçado só alarga", () => {
+    const jeans = { category: "lower_piece", subcategory: "jeans" };
+    const base = specFor(jeans)!, big = specFor({ ...jeans, sizeSteps: 3 })!;
+    expect(big.ease - base.ease).toBeCloseTo(3 * 0.04 / (2 * Math.PI), 4);
+    expect(big.leg).toBeLessThanOrEqual(1); expect(big.leg).toBeGreaterThan(base.leg);
+    const shoe = { category: "shoes_piece", subcategory: "casual_sneakers" };
+    const sb = specFor(shoe)!, s2 = specFor({ ...shoe, sizeSteps: 2 })!;
+    expect(s2.ease - sb.ease).toBeCloseTo(0.003, 5); expect(s2.leg).toBe(sb.leg);
+    expect(specFor({ ...jeans, sizeSteps: 0 })).toEqual(base);
+  });
+});
+
 describe("catalogue structural attributes reach the fitted garment", () => {
   it("orders declared waistband heights without changing leg length or the avatar", () => {
     const waist = ["LOW_RISE", "MID_RISE", "HIGH_RISE", "SUPER_HIGH_RISE"].map(rise => specFor({subcategory:"jeans",attributes:{RISE:[rise]}})!);

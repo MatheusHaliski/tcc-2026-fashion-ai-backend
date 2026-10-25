@@ -2582,6 +2582,14 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 a.piece-row-link { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
 a.piece-row-link:hover { text-decoration-color: currentColor; }
 .piece-row-swatches { display: inline-flex; flex: none; gap: 4px; }
+/* tamanho em um toque: chips compactos; o do corpo do avatar leva um ponto; a linha diz como a peça fica */
+.size-picker { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.size-picker-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.size-chip { min-width: 34px; justify-content: center; padding-inline: 8px; font-variant-numeric: tabular-nums; position: relative; }
+.size-chip.is-mine::after { content: ""; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--thread); }
+.size-fit { color: var(--muted); font-size: var(--text-body-sm); }
+.size-fit.is-tight { color: var(--danger, #b42318); font-weight: 600; }
+.size-fit.is-oversized, .size-fit.is-snug { color: var(--ink); }
 .piece-row-state { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: var(--text-body-sm); line-height: 1.35; }
 .piece-row-note { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
 .piece-row-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }

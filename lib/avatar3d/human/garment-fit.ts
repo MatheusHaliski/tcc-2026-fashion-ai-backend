@@ -14,10 +14,13 @@ import { upperProfile, upperVariantFit, applyUpperVariation } from "./upperwear"
  * Nada aqui altera o corpo da pessoa: só a roupa muda para caber (nunca o contrário).
  */
 import { SPECS, kindOf, specOf, type GarmentKind, type GarmentSpec } from "./garments";
+import { SIZE_RADIAL, gridOf } from "@/lib/tryon/sizes";
 
 export type FitClass = "justa" | "regular" | "oversized" | "estruturada" | "fluida";
 
-export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; material?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
+export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; material?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null;
+  /** tamanho escolhido menos o tamanho do corpo do avatar, em tamanhos da grade (lib/tryon/sizes.ts); sem escolha, 0 */
+  sizeSteps?: number | null }
 
 /** Variação de modelagem da taxonomia → classe de caimento. */
 export const VARIATION_FIT: Record<string, FitClass> = {
@@ -204,6 +207,26 @@ export function specFor(p: FitPiece): GarmentSpec | null {
   }
   sp.fabric = (p.material ?? first(p, "MATERIAL"))?.toUpperCase() ?? undefined;
   if (["jeans", "denim_shorts"].includes(sub) && (!sp.fabric || ["COTTON", "DENIM"].includes(sp.fabric))) sp.weave = "denim";
+  applySize(sp, p);
   sp.ease = clamp(sp.ease, 0.0015, 0.05);
   return sp;
+}
+
+/**
+ * Tamanho escolhido × corpo do avatar (lib/tryon/sizes.ts): cada tamanho acima soma a folga radial do passo da grade
+ * (letras 6 cm de perímetro ≈ 0,95 cm; numeração 4 cm ≈ 0,64 cm; calçado ≈ 1,5 mm por número) e alonga barra, manga e
+ * perna; abaixo, aperta e encurta. O mínimo de folga (0,15 cm, o clamp de specFor) é o "não fecha": a peça cola no corpo.
+ */
+export function applySize(sp: GarmentSpec, p: FitPiece): void {
+  const steps = p.sizeSteps; if (!steps || !Number.isFinite(steps)) return;
+  const grid = gridOf(p.category ?? (sp.kind === "shoes" || sp.kind === "boots" ? "shoes_piece" : null), p.subcategory)
+    ?? (sp.kind === "shoes" || sp.kind === "boots" ? "shoes" : sp.leg > 0 && Number.isNaN(sp.hem) ? "numeric" : "letter");
+  sp.ease += SIZE_RADIAL[grid] * steps;
+  sp.sizeSteps = steps;
+  if (grid === "shoes") return;
+  if (!Number.isNaN(sp.hem)) sp.hem -= 0.02 * steps;                                   // maior: barra mais baixa
+  if (sp.sleeve > 0) sp.sleeve = clamp(sp.sleeve + 0.015 * steps, 0.1, 1);             // manga mais longa, até o punho
+  if (sp.leg > 0) sp.leg = clamp(sp.leg + 0.012 * steps, 0.2, 1);                      // perna até o chão no máximo
+  if (sp.skirt > 0) sp.skirt = Math.max(0.05, sp.skirt + 0.01 * steps);
+  if (steps > 0) sp.bustFall = Math.min(1.06, sp.bustFall + 0.01 * steps);             // sobra tecido: cai mais reto
 }

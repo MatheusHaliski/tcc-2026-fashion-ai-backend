@@ -11,7 +11,7 @@ import type { HairLod } from "@/lib/avatar3d/human/hair-lod";
 import { withDefaultOutfit } from "@/lib/avatar3d/human/default-outfit";
 import { useReducedMotion } from "@/components/three/common";
 import { clampAdjust, skinWithLight, validateModel } from "@/lib/avatar3d/model";
-import { BODY_KEYS, DEFAULT_BODY, buildSpec, validateBody, type BodyParams, type BodySources, type Sex, type Spec } from "@/lib/avatar3d/body-spec";
+import { BODY_KEYS, buildSpec, mannequinBody, validateBody, type BodyParams, type BodySources, type Sex, type Spec } from "@/lib/avatar3d/body-spec";
 
 /*
  * Manequim da Passarela 3D, do My Stage 3D, do "Gerar 3D", da "Foto com meu manequim" e do Avatar 3D. O corpo sai
@@ -33,7 +33,6 @@ import { BODY_KEYS, DEFAULT_BODY, buildSpec, validateBody, type BodyParams, type
  */
 
 /** Compleição do provador (preferências) → parâmetro build do corpo (só quando não há corpo medido/informado). */
-const BUILD: Record<string, number> = { SLIM: -0.8, MEDIUM: 0, ATHLETIC: 0.3, CURVY: 0.8, PLUS: 1.6 };
 
 /** O corpo inteiro numa geometria só (uma malha, um material): tronco, pescoço, membros, articulações, mãos e pés. */
 function bodyGeo(s: Spec, withNeck: boolean): THREE.BufferGeometry {
@@ -159,10 +158,7 @@ export function mannequinSex(m: Pick<Mannequin3d, "sex" | "avatar">): Sex {
 
 /** Proporções do corpo deste manequim: as do avatar (medidas/informadas) ou as de referência do sexo. */
 export function bodyParamsOf(m: Mannequin3d): BodyParams {
-  const sex = mannequinSex(m);
-  const saved = validateBody(m.avatar?.model?.body);
-  if (saved) return saved.params;
-  return { ...DEFAULT_BODY[sex], build: BUILD[m.build ?? "MEDIUM"] ?? 0 };
+  return mannequinBody(mannequinSex(m), m.build, m.avatar?.model?.body);
 }
 
 /**

@@ -7,6 +7,7 @@ import { buildHuman, baseNormals } from "./three-human";
 import { applyIdle, applyRestPose, setArmOut } from "./pose";
 import { SPECS, specOf, garmentMaterial, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, photoSleeves, sleeveEase, texturedGeometry, tubeRadius, underLayer, type GarmentKind } from "./garments";
 import { DEFAULT_BODY } from "../body-spec";
+import { specFor } from "./garment-fit";
 
 const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
 const meta = JSON.parse(readFileSync(new URL("fai-body-v1.json", dir), "utf-8")) as BodyMeta;
@@ -354,6 +355,23 @@ it("maps separated trouser photographs to the corresponding leg panel",()=>{
   expect(uv.getX(v)).toBeCloseTo(p.getX(v)<0?.1125:.3875,3);checked++;
  }
  expect(checked).toBeGreaterThan(2);mesh.dispose();
+});
+
+it("tamanho escolhido muda a malha: GG num corpo M afasta o tecido ~2 cm a mais no tórax; PP cola no corpo", () => {
+  const sex = "FEMININO"; const c = compose(asset, fitBody(asset, { sex }).z, null, DEFAULT_BODY[sex].stature);
+  const normals = baseNormals(c.body, asset.body.index, asset.body.renderVertex); const P = bodyParam(asset, c);
+  const gap = (sizeSteps: number) => {
+    const g = garmentGeometry(asset, c, normals, P, specFor({ category: "upper_piece", subcategory: "t_shirt", sizeSteps })!)!;
+    let sum = 0, n = 0;
+    for (let v = 0; v < g.position.length / 3; v++) {
+      const src = g.source[v]; if (src < 0 || P.group[src] !== 1 || P.h[src] < 0.55 || P.h[src] > 0.8 || g.alpha[v] < 0.5) continue;
+      sum += Math.hypot(g.position[v * 3] - c.body[src * 3], g.position[v * 3 + 1] - c.body[src * 3 + 1], g.position[v * 3 + 2] - c.body[src * 3 + 2]); n++;
+    }
+    return sum / n;
+  };
+  const m = gap(0), gg = gap(2), pp = gap(-2);
+  expect(gg - m).toBeGreaterThan(0.012); expect(gg - m).toBeLessThan(0.03);
+  expect(pp).toBeLessThan(m); expect(pp).toBeGreaterThan(0.001);
 });
 
 describe("manga: folga e foto", () => {

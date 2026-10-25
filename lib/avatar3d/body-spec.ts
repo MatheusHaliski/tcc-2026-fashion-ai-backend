@@ -58,6 +58,14 @@ export type BodySources = Record<BodyCoreKey, Source> & Partial<Record<DepthKey,
  */
 export const DEPTH_FROM_WIDTH: Record<DepthKey, number> = { chestD: 0.7, waistD: 0.72, hipD: 0.64 };
 
+/** Compleição declarada do manequim (sem avatar com corpo medido) → `build` do corpo. */
+export const BUILD_FACTOR: Record<string, number> = { SLIM: -0.8, MEDIUM: 0, ATHLETIC: 0.3, CURVY: 0.8, PLUS: 1.6 };
+
+/** Corpo do manequim: o corpo salvo do avatar quando existe; senão o padrão do sexo com a compleição declarada. */
+export function mannequinBody(sex: Sex, build?: string | null, saved?: unknown): BodyParams {
+  return validateBody(saved)?.params ?? { ...DEFAULT_BODY[sex], build: BUILD_FACTOR[build ?? "MEDIUM"] ?? 0 };
+}
+
 /** Profundidade de cada nível: a medida quando existe; senão a razão fixa sobre a largura (com a compleição). */
 export function effectiveDepth(p: BodyParams): Record<DepthKey, number> {
   const g = 1 + 0.12 * p.build, gc = 1 + 0.08 * p.build;

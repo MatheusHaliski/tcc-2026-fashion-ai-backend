@@ -7,8 +7,9 @@ import type { FittingItem } from "@/lib/tryon/fitting-room";
 import TryOnPage from "@/app/(site)/(app)/try-on/page";
 
 // Observe only the page-to-scene contract; these characterization tests do not require WebGL.
-vi.mock("next/dynamic", () => ({ default: () => function FittingSceneStub(props: { sex: string; pieces: { id: string; slot: string }[]; view: string; light: string }) {
-  return <div data-testid="fitting-scene" data-sex={props.sex} data-pieces={JSON.stringify(props.pieces.map(({ id, slot }) => ({ id, slot })))} data-view={props.view} data-light={props.light} />;
+vi.mock("next/dynamic", () => ({ default: () => function FittingSceneStub(props: { sex: string; pieces: { id: string; slot: string; sizeLabel?: string | null }[]; view: string; light: string }) {
+  return <div data-testid="fitting-scene" data-sex={props.sex} data-pieces={JSON.stringify(props.pieces.map(({ id, slot }) => ({ id, slot })))}
+    data-sizes={JSON.stringify(Object.fromEntries(props.pieces.filter((p) => p.sizeLabel).map((p) => [p.id, p.sizeLabel])))} data-view={props.view} data-light={props.light} />;
 } }));
 
 afterEach(() => { cleanup(); nav.search = new URLSearchParams(); try { sessionStorage.clear(); localStorage.clear(); } catch { /* sem storage */ } });
@@ -85,6 +86,34 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Já tenho esta peça" })[0]);
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces/from-catalog")).toBe(true), { timeout: 4000 });
     expect(screen.getAllByRole("link", { name: /Ver em/ }).length).toBeGreaterThan(0);
+  });
+
+  it("tamanho em um toque: a peça veste o avatar no tamanho escolhido, que vira o padrão das próximas peças", async () => {
+    loggedAs(ME, {
+      "GET /api/taxonomy": TAXONOMY, "GET /api/try-on": { ...STATE, avatar: { id: "a1", model: {} } }, "GET /api/catalog/stores": STORES,
+      "GET /api/catalog/products": (url: URL) => ({ items: url.searchParams.get("brand") === "Levi's" ? [L501] : [AF1], page: 0, size: 48, total: 1, hasMore: false }),
+    });
+    renderApp(<TryOnPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Levi's/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Provar" }, { timeout: 4000 }));
+    const sizes = await screen.findByRole("radiogroup", { name: "Tamanho de 501 Original" });
+    // sem escolha: a peça veste no tamanho do corpo do avatar (corpo padrão feminino → 40), sem formulário
+    const mine = within(sizes).getByRole("radio", { name: /tamanho do seu avatar/ });
+    expect(mine.textContent).toMatch(/^40/); expect(mine.getAttribute("aria-checked")).toBe("true");
+    expect(screen.queryByRole("textbox", { name: /cintura|quadril|medida/i })).toBeNull();
+    fireEvent.click(within(sizes).getByRole("radio", { name: /^44/ }));
+    expect(within(sizes).getByRole("radio", { name: /^44/ }).getAttribute("aria-checked")).toBe("true");
+    expect(within(sizes.parentElement!).getByRole("status").textContent).toBe("Bem folgado — seu avatar veste 40");
+    expect(JSON.parse(screen.getByTestId("fitting-scene").getAttribute("data-sizes") ?? "{}")).toEqual({ "c:p2": "44" });
+    expect(JSON.parse(localStorage.getItem("fai.tryon.sizes") ?? "{}")).toEqual({ numeric: "44" });
+    // a sessão guarda o tamanho junto da peça
+    expect(JSON.parse(sessionStorage.getItem("fai.tryon.fitting") ?? "[]")[0]).toMatchObject({ key: "c:p2", size: "44" });
+    // calçado: outra grade (numeração), começa no tamanho do avatar
+    fireEvent.click(screen.getByRole("button", { name: /Nike/ }));
+    await waitFor(() => expect(screen.getByText("Air Force 1 '07")).toBeTruthy(), { timeout: 4000 });
+    fireEvent.click(screen.getByRole("button", { name: "Provar" }));
+    const shoes = await screen.findByRole("radiogroup", { name: "Tamanho de Air Force 1 '07" });
+    expect(within(shoes).getByRole("radio", { name: /tamanho do seu avatar/ }).textContent).toMatch(/^37/);
   });
 
   it("guarda-roupa vazio não bloqueia: o provador abre nas lojas e salva provas", async () => {

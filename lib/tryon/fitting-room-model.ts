@@ -199,4 +199,5 @@ export const toLook3d = (i: FittingItem): Look3dPiece => ({
   model3dUrl: i.model3dUrl,
   model3dStatus: i.model3dStatus,
   defaultImage: !i.imageUrl && !i.processedUrl,
+  sizeLabel: i.size ?? null,
 });
