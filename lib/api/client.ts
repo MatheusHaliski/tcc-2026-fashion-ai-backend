@@ -207,9 +207,9 @@ export const api = {
   delete: <T,>(path: string, opts?: RequestOptions) => request<T>("DELETE", path, undefined, opts),
   upload: <T,>(path: string, form: FormData, method: "POST" | "PUT" = "POST", opts?: RequestOptions) => request<T>(method, path, form, opts),
   /** Busca um binário autenticado (card.png privado, foto) e devolve uma object URL. */
-  async blobUrl(path: string): Promise<string> {
+  async blobUrl(path: string, opts: RequestOptions = {}): Promise<string> {
     // imagens (card.png, exportações): o Accept padrão é JSON e o servidor responderia 406
-    const blob = await request<Blob>("GET", path, undefined, { headers: { Accept: "image/png,image/*;q=0.9,*/*;q=0.8" } });
+    const blob = await request<Blob>("GET", path, undefined, { ...opts, headers: { ...opts.headers, Accept: "image/png,image/*;q=0.9,*/*;q=0.8" } });
     return URL.createObjectURL(blob);
   },
 };

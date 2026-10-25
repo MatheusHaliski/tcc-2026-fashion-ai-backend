@@ -1,4 +1,4 @@
-# Contexto de build do Dockerfile.backend: só o código Java e o /public entram na imagem.
+# Contexto de build do Dockerfile.backend: só o código Java, o /public e o /media entram na imagem.
 node_modules
 .next
 **/target
@@ -7,6 +7,7 @@ markdowns
 material_chrome
 *.png
 !public/**/*.png
+!media/**/*.png
 .git
 .github
 .claude

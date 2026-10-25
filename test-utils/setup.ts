@@ -40,6 +40,7 @@ if (typeof window !== "undefined") {
 
 // ---------------------------------------------------------------- Next.js fora do servidor do Next
 import { vi } from "vitest";
+import { configure } from "@testing-library/dom";
 import { createElement, type ReactNode } from "react";
 
 /** Roteador falso: as telas navegam com push/replace; os testes conferem as chamadas em `router`. */
@@ -62,3 +63,7 @@ vi.mock("next/link", () => ({
 
 // componentes carregados sob demanda (cenas 3D/WebGL): nos testes não carregam nada
 vi.mock("next/dynamic", () => ({ default: () => function DynamicStub() { return null; } }));
+
+// findBy*/waitFor esperam até 1 s por padrão; com a cobertura ligada e a suíte inteira rodando, telas que carregam a
+// sessão e a API simulada passam disso e o teste falha sem erro real. A afirmação é a mesma, só a espera é maior.
+configure({ asyncUtilTimeout: 4000 });

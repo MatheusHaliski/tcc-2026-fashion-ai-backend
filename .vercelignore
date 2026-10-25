@@ -1,2 +1,5 @@
 
 assets/source-archives/
+# mídia estática pesada: servida pelo CDN no commit do deploy, nunca enviada à Vercel (lib/media/static-media.ts).
+# Ancorado na raiz: sem a barra inicial o padrão (semântica do gitignore) apagaria também lib/media/ e quebraria o build.
+/media/

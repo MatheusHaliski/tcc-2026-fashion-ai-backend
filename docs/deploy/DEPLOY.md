@@ -32,6 +32,26 @@ alterado.
 As URLs `*.vercel.app` do projeto também exigem login na Vercel (proteção padrão do time). Para abrir ao público depois
 do lançamento: `DEV_GATE_ENABLED=false` nos dois lados e desligar a proteção em **Settings → Deployment Protection**.
 
+### Armazenamento de deployments (Hobby: 10 GB)
+
+A Vercel soma, por deployment retido, os estáticos (**Deployment Storage**) e os bundles das funções (**Functions
+Storage**); o Hobby tem 10 GB e acima disso bloqueia deploys novos. O que mantém o projeto pequeno:
+
+* **Mídia pesada fora do deployment** — `media/` (~1 GB: auras, materiais, peças padrão, fundos, demos) não vai para a
+  Vercel (`.vercelignore`); as URLs `/aura/…`, `/assets_pecas/…` etc. são reescritas pelo `next.config.ts` para o CDN
+  jsDelivr no commit exato do deploy (`VERCEL_GIT_COMMIT_SHA`), sem credencial — ver `media/README.md` e
+  `lib/media/static-media.ts`. Um deploy sem commit no GitHub (CLI) precisa de `STATIC_MEDIA_ORIGIN`.
+* **Bundle da função enxuto** — `outputFileTracingExcludes` no `next.config.ts` tira de todas as funções o que o
+  rastreamento arrasta sem necessidade (`media/`, binários do `sharp` de outras plataformas); confira em
+  **Deployments → (um deployment) → Resources → Functions** o tamanho de cada função.
+* **Retenção curta** — em **Settings → Security → Deployment Retention Policy** (só pelo painel; não há API): está em
+  1 dia para todos os estados desde 24/10/2026. Os 3 últimos deployments de produção READY, a produção atual, os com
+  alias e o último preview de branch ativa nunca são apagados; o job de retenção roda em até 48 h.
+* **Limpeza manual** — `VERCEL_TOKEN=… python3 scripts/ops/vercel_deployments_cleanup.py --team … --project …`
+  (ensaio; `--apply` apaga). Deployment apagado aparece em **Settings → Security → Recently Deleted** por até 30 dias
+  (não há botão de exclusão permanente); com o time acima do limite a Vercel remove de vez sem esperar esse prazo, e o
+  painel de Usage demora a refletir.
+
 ## 2. API em contêiner
 
 ```bash

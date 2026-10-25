@@ -1,0 +1,180 @@
+{
+  "scope": "Actual WebGL in Chromium/SwiftShader, production HumanOutfit path, actual READY whole source pixels served by intercepted authenticated image endpoints; no database upload or source readiness claim for REVIEW. Lab canvas resized to each viewport.",
+  "sourceFiles": [
+    {
+      "productId": "nike-celtics",
+      "sourceSha256": "619e377d605e49144956659364de00e3c9c87c56730f788a54912f4fdad079a9",
+      "wholeSha256": "2290513cf0918bcfc2e3a9aeba3bd9736715fb0f66ab0219b571b1a091b0d26f"
+    },
+    {
+      "productId": "aramis-xadrez",
+      "sourceSha256": "7461a4c827be453ba4996555a123a11b1a889f07b5049f51d8c7cf6ded48aa38",
+      "wholeSha256": "cbcf5e7dd6ac444cce092e2195b460d8b8da710100bdeb963a9bdfbb6c6a6228"
+    },
+    {
+      "productId": "hokkaido",
+      "sourceSha256": "527c2086ee6d079dc38bbc1678c6a409910e0efc32a60520e0099f4427c3beba",
+      "wholeSha256": "4d3bc3e14be39792aa4ab5c986ca675bf0e8830894555e4a78e8063424d1ade8"
+    }
+  ],
+  "checks": [
+    {
+      "id": "proof-nike-celtics",
+      "jeansBackWarmPixels": 0,
+      "hoodColor": "4f4e51",
+      "atlas": [
+        1800,
+        1200
+      ],
+      "photoVertices": 981,
+      "program": "garment-fabric-blend-v2-plain",
+      "tint": "ffffff",
+      "hoodVertices": 1346,
+      "dressed": true,
+      "visible": true,
+      "garmentMeshes": [
+        "peca-proof-jeans",
+        "cabedal-fai-padrao-tenis",
+        "sola-fai-padrao-tenis",
+        "cadarco-fai-padrao-tenis",
+        "peca-proof-nike-celtics",
+        "punho-proof-nike-celtics",
+        "punho-proof-nike-celtics",
+        "capuz-proof-nike-celtics",
+        "gola-proof-nike-celtics"
+      ]
+    },
+    {
+      "id": "proof-aramis-xadrez",
+      "jeansBackWarmPixels": 0,
+      "hoodColor": null,
+      "atlas": [
+        1800,
+        1200
+      ],
+      "photoVertices": 918,
+      "program": "garment-fabric-blend-v2-plain",
+      "tint": "ffffff",
+      "hoodVertices": 0,
+      "dressed": true,
+      "visible": true,
+      "garmentMeshes": [
+        "peca-proof-jeans",
+        "cabedal-fai-padrao-tenis",
+        "sola-fai-padrao-tenis",
+        "cadarco-fai-padrao-tenis",
+        "peca-proof-aramis-xadrez",
+        "punho-proof-aramis-xadrez",
+        "punho-proof-aramis-xadrez",
+        "gola-proof-aramis-xadrez"
+      ]
+    },
+    {
+      "id": "proof-hokkaido",
+      "jeansBackWarmPixels": 0,
+      "hoodColor": null,
+      "atlas": [
+        1800,
+        1200
+      ],
+      "photoVertices": 918,
+      "program": "garment-fabric-blend-v2-plain",
+      "tint": "ffffff",
+      "hoodVertices": 0,
+      "dressed": true,
+      "visible": true,
+      "garmentMeshes": [
+        "peca-proof-jeans",
+        "cabedal-fai-padrao-tenis",
+        "sola-fai-padrao-tenis",
+        "cadarco-fai-padrao-tenis",
+        "peca-proof-hokkaido",
+        "punho-proof-hokkaido",
+        "punho-proof-hokkaido",
+        "gola-proof-hokkaido"
+      ]
+    },
+    {
+      "id": "proof-hokkaido-review",
+      "jeansBackWarmPixels": 0,
+      "hoodColor": null,
+      "atlas": [
+        32,
+        16
+      ],
+      "photoVertices": 0,
+      "program": "garment-fabric-blend-v2-plain",
+      "tint": "ffffff",
+      "hoodVertices": 0,
+      "dressed": true,
+      "visible": true,
+      "garmentMeshes": [
+        "peca-proof-jeans",
+        "cabedal-fai-padrao-tenis",
+        "sola-fai-padrao-tenis",
+        "cadarco-fai-padrao-tenis",
+        "peca-proof-hokkaido-review",
+        "punho-proof-hokkaido-review",
+        "punho-proof-hokkaido-review",
+        "carcela-proof-hokkaido-review",
+        "costura-proof-hokkaido-review",
+        "botoes-proof-hokkaido-review",
+        "botoes-borda-proof-hokkaido-review",
+        "gola-ponta-proof-hokkaido-review",
+        "gola-proof-hokkaido-review"
+      ]
+    }
+  ],
+  "requests": [
+    {
+      "id": "nike-celtics",
+      "query": {
+        "variantId": "nike-celtics-variant",
+        "imageId": "nike-celtics-0",
+        "v": "actual-source-619e377d605e49144956659364de00e3c9c87c56730f788a54912f4fdad079a9:0",
+        "isolated": "true"
+      },
+      "url": "http://localhost:8080/api/catalog/products/nike-celtics/texture-image?variantId=nike-celtics-variant&imageId=nike-celtics-0&v=actual-source-619e377d605e49144956659364de00e3c9c87c56730f788a54912f4fdad079a9%3A0&isolated=true"
+    },
+    {
+      "id": "aramis-xadrez",
+      "query": {
+        "variantId": "aramis-xadrez-variant",
+        "imageId": "aramis-xadrez-0",
+        "v": "actual-source-7461a4c827be453ba4996555a123a11b1a889f07b5049f51d8c7cf6ded48aa38:0",
+        "isolated": "true"
+      },
+      "url": "http://localhost:8080/api/catalog/products/aramis-xadrez/texture-image?variantId=aramis-xadrez-variant&imageId=aramis-xadrez-0&v=actual-source-7461a4c827be453ba4996555a123a11b1a889f07b5049f51d8c7cf6ded48aa38%3A0&isolated=true"
+    },
+    {
+      "id": "hokkaido",
+      "query": {
+        "variantId": "hokkaido-variant",
+        "imageId": "hokkaido-gallery-6",
+        "v": "actual-source-527c2086ee6d079dc38bbc1678c6a409910e0efc32a60520e0099f4427c3beba:0",
+        "isolated": "true"
+      },
+      "url": "http://localhost:8080/api/catalog/products/hokkaido/texture-image?variantId=hokkaido-variant&imageId=hokkaido-gallery-6&v=actual-source-527c2086ee6d079dc38bbc1678c6a409910e0efc32a60520e0099f4427c3beba%3A0&isolated=true"
+    },
+    {
+      "id": "hokkaido-review",
+      "query": {
+        "variantId": "hokkaido-review-variant",
+        "imageId": "hokkaido-review-0",
+        "v": "actual-source-review:0",
+        "isolated": "true"
+      },
+      "url": "http://localhost:8080/api/catalog/products/hokkaido-review/texture-image?variantId=hokkaido-review-variant&imageId=hokkaido-review-0&v=actual-source-review%3A0&isolated=true"
+    },
+    {
+      "id": "hokkaido-review",
+      "query": {
+        "variantId": "hokkaido-review-variant",
+        "imageId": "hokkaido-review-0",
+        "v": "actual-source-review:0"
+      },
+      "url": "http://localhost:8080/api/catalog/products/hokkaido-review/texture-image?variantId=hokkaido-review-variant&imageId=hokkaido-review-0&v=actual-source-review%3A0"
+    }
+  ],
+  "errors": []
+}

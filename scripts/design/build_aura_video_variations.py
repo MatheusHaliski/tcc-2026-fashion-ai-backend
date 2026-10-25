@@ -6,7 +6,7 @@ Each variation changes composition, palette and periodic motion. Not 120 AI-gene
 import hashlib,json,math,random,subprocess
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageEnhance,ImageFilter,ImageOps
-ROOT=Path(__file__).resolve().parents[2];FOLDER=ROOT/'public/aura/fashion-curated'
+ROOT=Path(__file__).resolve().parents[2];FOLDER=ROOT/'media/aura/fashion-curated'
 PALETTES=[('ivory','Marfim couture','#d0b08f','#f1e9dc'),('chrome','Cromo editorial','#a9aecb','#edf1ef'),('rose','Rosé têxtil','#be859e','#f2d5cc'),('violet','Violeta prismático','#8b6eb5','#d3c9ed'),('mint','Mint holográfico','#6aada5','#d6e8dd')]
 MOTIFS={'COMMON':['Cetim','Cromo líquido','Organza','Malha','Plissado','Vidro','Seda','Trama'], 'ELECTRO':['Fibras','Órbitas','Circuitos','Arcos','Pulso','Traços','Rede','Horizonte'], 'SPLASH':['Tinta','Pigmento','Névoa','Aquarela','Vórtice','Gotas','Mármore','Ondas']}
 def compose(source,family,motif,palette,seed):

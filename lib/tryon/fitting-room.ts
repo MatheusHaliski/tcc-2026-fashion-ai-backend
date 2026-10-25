@@ -31,6 +31,8 @@ export interface FittingItem {
   colorName?: string | null;
   productId?: string;
   variantId?: string | null;
+  textureImageId?: string | null;
+  textureRevision?: string | null;
   pieceId?: string;
   officialUrl?: string | null;
   sourceDomain?: string | null;

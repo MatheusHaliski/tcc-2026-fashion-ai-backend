@@ -8,10 +8,17 @@ const cache = new Map<string, Promise<CatalogProduct>>();
 const consumers = new Map<Promise<CatalogProduct>, Set<() => boolean>>();
 const STORE_KEY = "fai.catalogPreview.v2";
 const MAX_AGE = 24 * 60 * 60 * 1000;
-type PreviewFields = Pick<CatalogProduct, "catalogImage" | "imageProcessingStatus">;
+type PreviewFields = Pick<CatalogProduct, "catalogImage" | "imageProcessingStatus" | "images" | "imageSource">;
+type PreviewContext = PreviewFields & Partial<Pick<CatalogProduct, "selectedVariant" | "category" | "subcategory" | "color" | "imageUrl" | "imageSource">>;
 type Stored = { source: string; created: number; preview: PreviewFields };
-const sourceKey = (p: CatalogProduct) => JSON.stringify([p.id, p.imageUrl, p.catalogImage?.url, p.imageSource?.imageUrl]);
-const previewFields = (p: CatalogProduct): PreviewFields => ({ catalogImage: p.catalogImage, imageProcessingStatus: p.imageProcessingStatus });
+const sourceKey = (p: CatalogProduct) => JSON.stringify([
+  p.id, p.category, p.subcategory, p.color, p.selectedVariant?.id, p.selectedVariant?.color,
+  p.imageUrl, p.imageSource?.imageUrl, p.catalogImage?.imageId, p.catalogImage?.variantId,
+  p.catalogImage?.url, p.catalogImage?.sourceUrl, p.catalogImage?.crop, p.catalogImage?.whole, p.catalogImage?.pipelineVersion, p.catalogImage?.photoSet,
+  p.catalogImage?.previewCache?.contextHash, p.catalogImage?.previewCache?.sourceSha256,
+  p.images?.map(image => [image.id, image.variantId, image.url, image.sourceUrl, image.processedUrl, image.processingStatus]),
+]);
+const previewFields = (p: CatalogProduct): PreviewFields => ({ catalogImage: p.catalogImage, imageProcessingStatus: p.imageProcessingStatus, ...(p.images ? { images: p.images } : {}), ...(p.imageSource !== undefined ? { imageSource: p.imageSource } : {}) });
 const STORE_MAX = 400;
 // Persistent cache across reloads: successful framings are reused instantly instead of re-rendered.
 function readStore(): Record<string, Stored> {
@@ -20,7 +27,7 @@ function readStore(): Record<string, Stored> {
 function storedPreview(product: CatalogProduct): CatalogProduct | null {
   if (typeof localStorage === "undefined") return null;
   const entry = readStore()[product.id];
-  return entry?.source === sourceKey(product) && Date.now() - entry.created < MAX_AGE && hasCachedPreview(entry.preview)
+  return entry?.source === sourceKey(product) && Date.now() - entry.created < MAX_AGE && hasCachedPreview({ ...product, ...entry.preview })
     ? { ...product, ...entry.preview } : null;
 }
 function forgetPreview(product: CatalogProduct) {
@@ -40,14 +47,34 @@ function storePreview(source: CatalogProduct, p: CatalogProduct) {
 }
 const MAX_ACTIVE = 2;
 const queue: (() => Promise<void>)[] = [];
+const queued = new Map<string, () => Promise<void>>();
 let active = 0;
-export function hasUsableCatalogPreview(product: PreviewFields) {
+function matchesVariant(product: PreviewContext) {
+  const variantId = product.selectedVariant?.id;
   const image = product.catalogImage;
-  return !!image?.url && (image.mode === "DEFAULT" || image.mode === "PROCESSED" || (image?.mode === "SEMANTIC_CROP" && !!image.crop));
+  if (!variantId || image?.mode === "DEFAULT") return true;
+  if (image?.variantId) return image.variantId === variantId;
+  return !!product.images?.some(source => source.id === image?.imageId && source.variantId === variantId);
 }
-function hasCachedPreview(product: PreviewFields) {
+function matchesPhotoContext(product: PreviewContext) {
+  const image = product.catalogImage, set = image?.photoSet;
+  if (!set) return true;
+  const color = product.selectedVariant?.color ?? product.color;
+  const source = product.images?.find(candidate => candidate.id === image.imageId);
+  const sourceUrl = source?.sourceUrl ?? image.sourceUrl ?? product.imageSource?.imageUrl ?? product.imageUrl;
+  return !(set.category && product.category && set.category !== product.category) &&
+    !(set.subcategory && product.subcategory && set.subcategory !== product.subcategory) &&
+    !(set.color && color && set.color !== color) &&
+    !(set.sourceUrl && sourceUrl && set.sourceUrl !== sourceUrl);
+}
+export function hasUsableCatalogPreview(product: PreviewContext) {
+  const image = product.catalogImage;
+  if (image?.photoSet && !["READY", "DEFAULT"].includes(image.photoSet.status)) return false;
+  return matchesVariant(product) && matchesPhotoContext(product) && !!image?.url && (image.mode === "DEFAULT" || image.mode === "PROCESSED" || (image?.mode === "SEMANTIC_CROP" && !!image.crop));
+}
+function hasCachedPreview(product: PreviewContext) {
   const state = product.catalogImage?.previewCache;
-  if(product.catalogImage?.photoSet?.version === "CATALOG_PHOTO_SET_V1" && ["READY","DEFAULT"].includes(product.catalogImage.photoSet.status)) return hasUsableCatalogPreview(product);
+  if(product.catalogImage?.photoSet?.version === "CATALOG_PHOTO_SET_V2" && ["READY","DEFAULT"].includes(product.catalogImage.photoSet.status)) return hasUsableCatalogPreview(product);
   return hasUsableCatalogPreview(product) && state?.version === "CATALOG_PREVIEW_FRAMES_V2" && state.status === "READY";
 }
 
@@ -57,36 +84,55 @@ function drain() {
     void queue.shift()!().finally(() => { active--; drain(); });
   }
 }
-async function requestPreview(id: string, force = false) {
+async function requestPreview(product: CatalogProduct, force = false) {
   for (let attempt = 0; ; attempt++) {
-    try { return await (force ? catalogApi.previewImage(id, { force: true }) : catalogApi.previewImage(id)); }
+    try {
+      const options = { ...(force ? { force: true } : {}), ...(product.selectedVariant?.id ? { variantId: product.selectedVariant.id } : {}) };
+      return await (Object.keys(options).length ? catalogApi.previewImage(product.id, options) : catalogApi.previewImage(product.id));
+    }
     catch (error) {
       if (!(error instanceof ApiError) || ![429, 502, 503, 504].includes(error.status) || attempt >= 4) throw error;
       await new Promise(resolve => setTimeout(resolve, 600 * 2 ** attempt));
     }
   }
 }
-function preview(product: CatalogProduct, force: boolean, wanted: () => boolean) {
+function preview(product: CatalogProduct, force: boolean, wanted: () => boolean, priority = false) {
   const id = sourceKey(product);
   const existing = cache.get(id);
-  if (existing) { consumers.get(existing)?.add(wanted); return existing; }
+  if (existing) {
+    consumers.get(existing)?.add(wanted);
+    const waiting = priority ? queued.get(id) : undefined;
+    const position = waiting ? queue.indexOf(waiting) : -1;
+    if (position > 0) { queue.splice(position, 1); queue.unshift(waiting!); }
+    drain();
+    return existing;
+  }
   const stored = force ? null : storedPreview(product);
   if (stored) { const hit = Promise.resolve(stored); cache.set(id, hit); return hit; }
   if (queue.length >= 96) return Promise.reject(new Error("Preview queue is full"));
   const interested = new Set([wanted]);
   const result = new Promise<CatalogProduct>((resolve, reject) => {
     const run = async () => {
+      if (queued.get(id) === run) queued.delete(id);
       try {
         if (![...interested].some(isAlive => isAlive())) throw new DOMException("Preview no longer displayed", "AbortError");
-        const p = await requestPreview(product.id, force);
-        if (cache.get(id) === result) storePreview(product, p);
-        resolve(p);
+        const p = await requestPreview(product, force);
+        const prepared = { ...product, ...previewFields(p) };
+        if (p.id !== product.id || (p.category && product.category && p.category !== product.category) ||
+          (p.subcategory && product.subcategory && p.subcategory !== product.subcategory) ||
+          (p.catalogImage?.photoSet && !["READY", "DEFAULT"].includes(p.catalogImage.photoSet.status)) ||
+          (p.catalogImage && (!matchesVariant(prepared) || !matchesPhotoContext(prepared)))) {
+          throw new ApiError(409, "CATALOG_PREVIEW_CONTEXT_MISMATCH", "Catalog preview context changed");
+        }
+        if (cache.get(id) === result) storePreview(product, prepared);
+        resolve(prepared);
       }
       catch (error) { if (cache.get(id) === result) cache.delete(id); reject(error); }
       finally { consumers.delete(result); }
     };
     // Explicit recovery should not wait behind a previous page's queued cards.
-    if (force) queue.unshift(run); else queue.push(run);
+    queued.set(id, run);
+    if (force || priority) queue.unshift(run); else queue.push(run);
   });
   consumers.set(result, interested);
   cache.set(id, result);
@@ -97,16 +143,19 @@ function preview(product: CatalogProduct, force: boolean, wanted: () => boolean)
 
 export function useCatalogPreview(product: CatalogProduct) {
   const ref = useRef<HTMLElement>(null);
-  const [framed, setFramed] = useState<CatalogProduct | null>(null);
+  const identity = sourceKey(product);
+  const [framed, setFramed] = useState<{ identity: string; product: CatalogProduct } | null>(null);
   const [pending, setPending] = useState(() => !hasCachedPreview(product) && !!(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl));
   const [failed, setFailed] = useState<"unsupported" | "source" | "service" | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [retry, setRetry] = useState<{ identity: string; count: number } | null>(null);
+  const retryCount = retry?.identity === identity ? retry.count : 0;
   useEffect(() => {
     let alive = true, started = false;
     const cachedPreview = retryCount === 0 && hasCachedPreview(product);
     const stored = cachedPreview || retryCount > 0 ? null : storedPreview(product);
     // Keep an old, valid photo visible during the one-time backend migration.
-    setFramed(cachedPreview ? product : stored ?? (hasUsableCatalogPreview(product) ? product : null));
+    const initial = cachedPreview ? product : stored ?? (hasUsableCatalogPreview(product) ? product : null);
+    setFramed(initial ? { identity, product: initial } : null);
     setFailed(null);
     const hasSource = !!(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl);
     setPending(!cachedPreview && !stored && hasSource);
@@ -115,7 +164,7 @@ export function useCatalogPreview(product: CatalogProduct) {
       if (started) return;
       started = true;
       setPending(true);
-      void preview(product, retryCount > 0, () => alive).then((p) => { if (alive) setFramed({ ...product, ...previewFields(p) }); })
+      void preview(product, retryCount > 0, () => alive).then((p) => { if (alive) setFramed({ identity, product: { ...product, ...previewFields(p) } }); })
         .catch((error) => { if (alive) setFailed(error instanceof ApiError && error.code === "CATEGORY_FRAME_UNAVAILABLE" ? "unsupported" : error instanceof ApiError && error.code === "CATALOG_IMAGE_FETCH_FAILED" ? "source" : "service"); })
         .finally(() => { if (alive) setPending(false); });
     };
@@ -125,6 +174,11 @@ export function useCatalogPreview(product: CatalogProduct) {
     }, { rootMargin: "250px 0px" });
     if (ref.current) observer?.observe(ref.current);
     return () => { alive = false; observer?.disconnect(); };
-  }, [product.id, product.imageUrl, product.catalogImage?.url, product.catalogImage?.mode, product.catalogImage?.crop, product.imageSource?.imageUrl, retryCount]);
-  return { ref, product: framed && framed !== product ? { ...product, ...previewFields(framed) } : product, pending, failed, retry: () => { forgetPreview(product); setRetryCount(n => n + 1); } };
+  }, [identity, retryCount]); // Source/variant identity excludes unrelated editable product metadata.
+  function prepare(): CatalogProduct | Promise<CatalogProduct> {
+    const current = framed?.identity === identity ? { ...product, ...previewFields(framed.product) } : product;
+    if (hasCachedPreview(current) || !(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl)) return current;
+    return preview(product, false, () => true, true).then(prepared => ({ ...product, ...previewFields(prepared) }));
+  }
+  return { ref, prepare, product: framed?.identity === identity && framed.product !== product ? { ...product, ...previewFields(framed.product) } : product, pending, failed, retry: () => { forgetPreview(product); setRetry(current => ({ identity, count: current?.identity === identity ? current.count + 1 : 1 })); } };
 }

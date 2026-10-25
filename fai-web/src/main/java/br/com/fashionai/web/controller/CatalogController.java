@@ -77,30 +77,34 @@ public class CatalogController {
 
     @GetMapping("/api/catalog/products/{id}")
     @Operation(summary = "RF47 — Produto do catálogo com variantes, fotos oficiais e proveniência")
-    public Map<String, Object> product(@PathVariable UUID id) {
-        return catalog.product(id);
+    public Map<String, Object> product(@PathVariable UUID id,@RequestParam(required=false) UUID variantId,
+            @RequestParam(required=false) UUID imageId) {
+        return catalog.product(id,variantId,imageId);
     }
 
     @PostMapping("/api/catalog/products/{id}/preview-image")
     @Operation(summary = "Enquadramento automático em cache para exibir o card do catálogo")
     public Map<String, Object> previewImage(CurrentUser user, @PathVariable UUID id,
-                                           @RequestParam(defaultValue = "false") boolean force) {
-        imagePipeline.ensurePreview(user, id, force);
-        return catalog.product(id);
+                                           @RequestParam(defaultValue = "false") boolean force,
+                                           @RequestParam(required=false) UUID variantId, @RequestParam(required=false) UUID imageId) {
+        imagePipeline.ensurePreview(user, id, force, variantId, imageId);
+        return catalog.product(id,variantId,imageId);
     }
 
     @PostMapping("/api/catalog/products/{id}/verify-image")
     @Operation(summary = "Verifica novamente a foto original e aplica a regra de enquadramento 3:4 antes da seleção")
-    public Map<String, Object> verifyImage(CurrentUser user, @PathVariable UUID id) {
-        imagePipeline.verifySelection(user, id);
-        return catalog.product(id);
+    public Map<String, Object> verifyImage(CurrentUser user, @PathVariable UUID id,
+            @RequestParam(required=false) UUID variantId, @RequestParam(required=false) UUID imageId) {
+        imagePipeline.verifySelection(user, id, variantId, imageId);
+        return catalog.product(id,variantId,imageId);
     }
 
     @GetMapping("/api/catalog/products/{id}/texture-image")
-    public ResponseEntity<byte[]> textureImage(CurrentUser user, @PathVariable UUID id, @RequestParam(defaultValue = "false") boolean isolated) {
-        var photo = imagePipeline.texturePhoto(user, id, isolated);
+    public ResponseEntity<byte[]> textureImage(CurrentUser user, @PathVariable UUID id, @RequestParam(defaultValue = "false") boolean isolated,
+            @RequestParam(required=false) UUID variantId, @RequestParam(required=false) UUID imageId) {
+        var photo = imagePipeline.texturePhoto(user, id, isolated, variantId, imageId);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(photo.mime()))
-                .header("Cache-Control", "private, max-age=300").header("X-Content-Type-Options", "nosniff").body(photo.bytes());
+                .header("Cache-Control", "private, max-age=0, must-revalidate").header("X-Content-Type-Options", "nosniff").body(photo.bytes());
     }
 
     @PostMapping("/api/catalog/discover")

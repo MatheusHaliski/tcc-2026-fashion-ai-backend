@@ -1006,8 +1006,20 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
  * Na foto opaca com fundo medido (info.backdrop), o fundo vira transparente antes de tudo: não entra na frente, na
  * trama nem no degradê — o fundo de estúdio nunca aparece em volta da peça nem tinge o painel do tecido.
  */
+const garmentAtlases = new Map<object, { key: string; canvas: HTMLCanvasElement }>();
+
 export function garmentTexture(img: (CanvasImageSource & { width: number; height: number }) | null, fabric: string,
   mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number } | null, info?: PhotoInfo | null, spec?: GarmentSpec): THREE.CanvasTexture {
+  // Other photographs finishing must not resample this immutable isolated image.
+  // Four canvases bound memory; GPU textures remain owned/disposed by each mesh.
+  const cacheKey = JSON.stringify([fabric, mapping, spec?.kind, info?.box, info?.backdrop, info?.collarRow, info?.landmarks, info?.legRows]);
+  const cached = img ? garmentAtlases.get(img) : null;
+  if (cached?.key === cacheKey) {
+    garmentAtlases.delete(img!); garmentAtlases.set(img!, cached);
+    const texture = new THREE.CanvasTexture(cached.canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4;
+    texture.userData.atlasCacheHit = true;
+    return texture;
+  }
   // Keep small lettering and logos up to 2K without unbounded atlases for tall
   // catalog images. Never upscale the product source or substitute brand artwork.
   const scale = img ? Math.min(1, 2048 / Math.max(img.width, img.height)) : 1;
@@ -1040,8 +1052,25 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
       const patch = tile ? null : fabricPatch(raster, range);
       if (!tile && !patch) {
         const bh = info ? info.box.y1 - info.box.y0 : img.height;
-        const rows = fabricRows(raster, { ...range, inset: !upperPanels && info?.legRows?.length ? .1 : .25,
+        let rows = fabricRows(raster, { ...range, inset: !upperPanels && info?.legRows?.length ? .1 : .25,
           ...(info ? { fromY: info.box.y0 + bh * (info.collarRow ?? 0.02), toY: info.box.y1 - bh * 0.03 } : {}) });
+        if (!upperPanels && info?.legRows?.length && rows.length >= 8) {
+          // A pocket badge can dominate a few thigh rows. Extrapolating those
+          // orange/green pixels would invent stripes on the unseen back. Keep
+          // the dominant cloth chroma while retaining its measured denim wash.
+          const chroma = (rgb: number[]) => {
+            const minimum = Math.min(...rgb), range = Math.max(...rgb) - minimum;
+            if (range < 12) return null; // nearly neutral wash has no reliable hue
+            const channels = rgb.map(channel => channel - minimum), sum = channels.reduce((a, b) => a + b, 0);
+            return channels.map(channel => channel / sum);
+          };
+          const cloth = chroma(medoid(rows.map(row => row.rgb)));
+          const wash = rows.filter(row => {
+            const hue = chroma(row.rgb);
+            return !cloth || !hue || Math.hypot(...hue.map((channel, index) => channel - cloth[index])) < .4;
+          });
+          if (wash.length >= rows.length / 2) rows = wash;
+        }
         if (rows.length) {
           const back = g.createLinearGradient(0, 0, 0, H);
           const photoHeight = mapping ? mapping.height * mapping.photoScaleY : img.height;
@@ -1072,7 +1101,11 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
     }
     g.drawImage(info?.backdrop ? source : img, 0, 0, W, H);
   }
-  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  if (img) {
+    garmentAtlases.set(img, { key: cacheKey, canvas: cv });
+    if (garmentAtlases.size > 4) garmentAtlases.delete(garmentAtlases.keys().next().value!);
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.userData.atlasCacheHit = false; return t;
 }
 
 /**

@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[2]
 MODELS=[('couture-fiber-satin','Cetim fotônico',['#65d9ef','#86b7d7']),('couture-titanium','Titânio violeta',['#be94ee','#b9ccd8']),('couture-holo-organza','Organza holográfica',['#88def0','#bba9e3']),('couture-gold-pleats','Plissado constelar',['#e8c791','#a9987f']),('couture-mint-glass','Vidro mint',['#92d8c4','#c1d0ca']),('couture-holo-mesh','Malha holográfica',['#c4a0e6','#e7b0bd'])]
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--image',type=Path,required=True);a=p.parse_args()
- output=ROOT/'public/aura/fashion-curated';output.mkdir(parents=True,exist_ok=True)
+ output=ROOT/'media/aura/fashion-curated';output.mkdir(parents=True,exist_ok=True)
  catalog=json.loads((output/'catalog.json').read_text());by_id={r['id']:r for r in catalog['presets']}
  with Image.open(a.image) as im:
   w,h=im.size

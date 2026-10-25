@@ -3,7 +3,7 @@
  * Grava as demonstrações da Central FLAIR com o app de verdade (Next em http://localhost:3000) sobre a API simulada
  * (mock-api.mjs), usando o Chromium do Playwright. Cada roteiro vira um clipe de 10 a 20 s com cursor visível, cliques
  * marcados e sem telas de abertura: a gravação começa já na interface. A saída (WebM do Playwright) é convertida pelo
- * encode.mjs em MP4 + WebM otimizados e numa capa JPG em public/flair/demos.
+ * encode.mjs em MP4 + WebM otimizados e numa capa JPG em media/flair/demos.
  *
  * Uso: node scripts/flair-demos/record.mjs [modo…]   (sem argumentos grava os 9 modos)
  *      PW_CHROMIUM=/caminho/chrome   executável do Chromium (padrão: o do Playwright instalado)

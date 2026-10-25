@@ -33,7 +33,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-ELECTRO = ROOT / "public" / "aura" / "electro"
+ELECTRO = ROOT / "media" / "aura" / "electro"
 W, H, RING, INSET = 360, 480, 108, 0
 CELL, DOT = 12, 10        # grade de LEDs: célula de 12 px, led de 10 px (9 fileiras no anel)
 FRAMES, DELAY = 100, 100  # 10 s a 10 fps

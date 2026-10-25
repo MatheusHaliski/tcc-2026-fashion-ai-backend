@@ -21,9 +21,9 @@ export interface NormRect { x: number; y: number; w: number; h: number }
 /** Total frame: foto original + caixa da peça nela (V1, só foto de produto) ou a peça já recortada sem pessoa em 900×1200 (V2, `processed`). */
 export interface CatalogWholeFrame { url: string; box: NormRect; background?: string | null; width?: number | null; height?: number | null; truncated?: string[] | null; alpha?: boolean; processed?: boolean; rendered?: boolean; version?: string }
 export interface CatalogPreviewCache { version: string; status: string; persisted: boolean; sourceUrl?: string; sourceSha256?: string; contextHash?: string; wholeStatus?: string }
-export interface CatalogPhotoSet { version: string; status: "READY" | "DEFAULT" | "RETRY"; category?: string; subcategory?: string; color?: string | null; sourceUrl?: string; sourceSha256?: string; wholeUrl?: string; fabricUrl?: string; defaultAssetUrl?: string; reason?: string }
-export interface CatalogCardImage { url: string; sourceUrl?: string | null; mode: "SEMANTIC_CROP" | "PROCESSED" | "DEFAULT"; photoSet?: CatalogPhotoSet | null; defaultAssetUrl?: string; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null; whole?: CatalogWholeFrame | null; previewCache?: CatalogPreviewCache | null }
-export interface CatalogProductImage { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
+export interface CatalogPhotoSet { version: string; status: "READY" | "DEFAULT" | "RETRY" | "REVIEW" | "INELIGIBLE"; category?: string; subcategory?: string; color?: string | null; sourceUrl?: string; sourceSha256?: string; wholeUrl?: string; fabricUrl?: string; defaultAssetUrl?: string; reason?: string }
+export interface CatalogCardImage { variantId?: string | null; url: string; sourceUrl?: string | null; mode: "SEMANTIC_CROP" | "PROCESSED" | "DEFAULT"; photoSet?: CatalogPhotoSet | null; defaultAssetUrl?: string; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null; whole?: CatalogWholeFrame | null; previewCache?: CatalogPreviewCache | null }
+export interface CatalogProductImage { variantId?: string | null; id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
 
 export interface CatalogProduct {
   /** Optional viewer-owned projection; never a canonical public user portrait. */
@@ -59,8 +59,8 @@ export const catalogApi = {
   browse: (p: BrowseParams, signal?: AbortSignal) => api.get<BrowseResponse>(`/api/catalog/products${qs(p)}`, { signal }),
   summary: (signal?: AbortSignal) => api.get<CatalogSummary>("/api/catalog/summary", { signal }),
   suggestions: (p: SearchParams, signal?: AbortSignal) => api.get<{ suggestions: string[] }>(`/api/catalog/suggestions${qs(p)}`, { signal }),
-  previewImage: async (id: string, options?: { force?: boolean }): Promise<CatalogProduct> => {
-    const refresh = options?.force ? "?force=true" : "";
+  previewImage: async (id: string, options?: { force?: boolean; variantId?: string; imageId?: string }): Promise<CatalogProduct> => {
+    const refresh = qs({ force: options?.force ? "true" : undefined, variantId: options?.variantId, imageId: options?.imageId });
     try { return await api.post<CatalogProduct>(`/api/catalog/products/${id}/preview-image${refresh}`, {}); }
     catch (error) {
       if (!(error instanceof ApiError) || error.status !== 404) throw error;
@@ -68,7 +68,7 @@ export const catalogApi = {
       return await api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image${refresh}`, {});
     }
   },
-  verifyImage: (id: string) => api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image`, {}),
+  verifyImage: (id: string, options?: { variantId?: string; imageId?: string }) => api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image${qs(options ?? {})}`, {}),
   product: (id: string) => api.get<CatalogProduct>(`/api/catalog/products/${id}`),
   discover: (p: { brand?: string; subcategory?: string; category?: string; query?: string; color?: string }) => api.post<DiscoverResponse>("/api/catalog/discover", p),
   addToWardrobe: (body: Record<string, unknown>) => api.post<PieceView>("/api/pieces/from-catalog", body),

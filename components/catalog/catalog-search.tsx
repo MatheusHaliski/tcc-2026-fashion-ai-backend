@@ -64,11 +64,14 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const [picking, setPicking] = useState<string | null>(null);
   const pickingRef = useRef(false);
 
-  async function pickProduct(product: CatalogProduct, variant: CatalogVariant | null) {
+  async function pickProduct(product: CatalogProduct, variant: CatalogVariant | null, prepare?: () => CatalogProduct | Promise<CatalogProduct>) {
     if (pickingRef.current) return;
     pickingRef.current = true; setPicking(product.id);
-    try { await onPick(product, variant); }
-    catch (error) { setError(error instanceof Error ? error.message : t("catalog.verificacao_falhou")); }
+    try {
+      const prepared = prepare ? prepare() : product;
+      await onPick(prepared instanceof Promise ? await prepared : prepared, variant);
+    }
+    catch (error) { setError(error instanceof ApiError && error.code === "CATALOG_PREVIEW_CONTEXT_MISMATCH" ? t("catalog.verificacao_falhou") : error instanceof Error ? error.message : t("catalog.verificacao_falhou")); }
     finally { pickingRef.current = false; setPicking(null); }
   }
 
@@ -342,7 +345,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
                 renderProduct={(product) => (
                   <CatalogResultCard
                     product={product}
-                    onPick={(variant) => void pickProduct(product, variant)}
+                    onPick={(variant, prepared, prepare) => void pickProduct(prepared, variant, prepare)}
                     busy={picking === product.id} disabled={!!picking}
                     pickLabel={pickLabel}
                     selectedVariant={selectedVariants[product.id] ?? product.selectedVariant ?? null}
@@ -352,7 +355,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
               />
             ) : (
               <ul className="grid-cards" aria-label={t("catalog.resultados")}>
-                {filtered.map((p) => <li key={p.id}><CatalogResultCard product={p} onPick={(v) => void pickProduct(p, v)} busy={picking === p.id} disabled={!!picking} pickLabel={pickLabel} /></li>)}
+                {filtered.map((p) => <li key={p.id}><CatalogResultCard product={p} onPick={(v, prepared, prepare) => void pickProduct(prepared, v, prepare)} busy={picking === p.id} disabled={!!picking} pickLabel={pickLabel} /></li>)}
               </ul>
             )
           )}
@@ -504,7 +507,7 @@ function placeholderFor(category: string, t: (k: string) => string) {
 /** Card de resultado: foto oficial dominante (ou a ilustração da categoria), marca, nome, modelo, cor, tipo e fonte. */
 export function CatalogResultCard({ product: original, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange, busy, disabled }: {
   product: CatalogProduct;
-  onPick: (variant: CatalogVariant | null) => void; busy?: boolean; disabled?: boolean;
+  onPick: (variant: CatalogVariant | null, prepared: CatalogProduct, prepare: () => CatalogProduct | Promise<CatalogProduct>) => void; busy?: boolean; disabled?: boolean;
   pickLabel?: string;
   selectedVariant?: CatalogVariant | null;
   onVariantChange?: (variant: CatalogVariant) => void;
@@ -512,11 +515,12 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   const { t } = useI18n();
   const { user } = useAuth();
   const [fitOpen, setFitOpen] = useState(false);
-  const preview = useCatalogPreview(original);
-  const p = preview.product;
   const tax = useTaxonomy();
-  const [localVariant, setLocalVariant] = useState<CatalogVariant | null>(p.selectedVariant ?? null);
+  const [localVariant, setLocalVariant] = useState<CatalogVariant | null>(original.selectedVariant ?? null);
   const variant = controlledVariant === undefined ? localVariant : controlledVariant;
+  const requestProduct = useMemo(() => variant ? { ...original, selectedVariant: variant } : original, [original, variant]);
+  const preview = useCatalogPreview(requestProduct);
+  const p = preview.product;
   const setVariant = (next: CatalogVariant) => {
     if (controlledVariant === undefined) setLocalVariant(next);
     onVariantChange?.(next);
@@ -527,7 +531,7 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   return (
     <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
       <div className="catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
-        {preview.pending && !hasUsableCatalogPreview(p) || preview.failed || !img
+        {!hasUsableCatalogPreview(p) || preview.failed || !img
           ? <><DefaultGarmentPhoto category={p.category} subcategory={p.subcategory} color={variant?.color ?? p.color} colorHex={variant?.color ? undefined : p.colorHex} framing={framing} alt={t("catalog.defaultIllustration")}/>{preview.failed && <button type="button" className="btn btn-sm catalog-photo-retry" onClick={preview.retry}>{t("common.retry")}</button>}</>
           : <CatalogPhoto requiredFrame onRetry={preview.retry} framing={framing} image={p.catalogImage} category={p.category} subcategory={p.subcategory} color={variant?.color ?? p.color} colorHex={variant?.color ? undefined : p.colorHex} alt={`${p.brand?.name ?? ""} ${p.productName}`}/>}
 
@@ -550,12 +554,12 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
         )}
         {(p.variants?.length ?? 0) > 1 ? (
           <div className="mt-1.5 flex flex-wrap gap-1" role="group" aria-label={t("common.color")}>
-            {p.variants!.map((v) => <button key={v.id} type="button" className={cn("catalog-swatch", (variant?.id ?? p.selectedVariant?.id) === v.id && "is-active")} title={v.colorName ?? v.color ?? v.key} aria-label={v.colorName ?? v.color ?? v.key} aria-pressed={(variant?.id ?? null) === v.id} onClick={() => setVariant(v)} style={{ background: tax?.colors?.[v.color ?? ""] ?? "var(--surface-3)" }} />)}
+            {p.variants!.map((v) => <button key={v.id} type="button" className={cn("catalog-swatch", (variant?.id ?? p.selectedVariant?.id) === v.id && "is-active")} title={v.colorName ?? v.color ?? v.key} aria-label={v.colorName ?? v.color ?? v.key} aria-pressed={(variant?.id ?? null) === v.id} onClick={() => setVariant(v)} disabled={disabled || busy} style={{ background: tax?.colors?.[v.color ?? ""] ?? "var(--surface-3)" }} />)}
           </div>
         ) : p.colorName ? <p className="mt-1 flex items-center gap-1.5 type-body-sm"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: p.colorHex ?? undefined }} />{p.colorName}</p> : null}
         <p className="mt-1 type-caption text-faint">{t("catalog.fonte", { fonte: source })}</p>
-        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("size.botao")}</Button>}
-        <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant)} loading={busy} disabled={disabled}>{busy ? t("catalog.verificando_foto") : pickLabel ?? t("catalog.e_esta")}</Button>
+        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("fit.title")}</Button>}
+        <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant, p, preview.prepare)} loading={busy} disabled={disabled}>{busy ? t("catalog.verificando_foto") : pickLabel ?? t("catalog.e_esta")}</Button>
       </div>
       {fitOpen && <ProductFitDialog product={p} open onClose={() => setFitOpen(false)} />}
     </article>
