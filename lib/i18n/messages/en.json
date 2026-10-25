@@ -6181,8 +6181,6 @@
   "institutionalProfile.visibility.FOLLOWERS": "Followers only",
   "catalog.pecas_na_selecao": "Pieces in this selection: {count}",
   "editImage.recorte_dica": "Check whether background, skin or another object is left on the edge. Fix the mask in the editor (crop, background removal); the original photo stays in My Photos.",
-  "tryOn.unisex": "Unisex",
-  "tryOn.look_tipo": "{sex, select, MASCULINO {Men’s look} FEMININO {Women’s look} other {Unisex look}}",
   "tryOn.avatar_required": "Create or review your 3D Avatar to try pieces on your body.",
   "tryOn.model_missing": "2D preview available; the piece’s 3D model has not been generated yet",
   "tryOn.model_requires_fitting": "3D model available; avatar fitting has not been validated yet.",

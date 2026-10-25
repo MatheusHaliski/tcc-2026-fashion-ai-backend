@@ -6181,8 +6181,6 @@
   "institutionalProfile.visibility.FOLLOWERS": "Solo seguidores",
   "catalog.pecas_na_selecao": "Prendas en esta selección: {count}",
   "editImage.recorte_dica": "Revisa si quedó fondo, piel u otro objeto en el borde. Corrige la máscara en el editor (recorte, quitar fondo); la foto original sigue en Mis Fotos.",
-  "tryOn.unisex": "Unisex",
-  "tryOn.look_tipo": "{sex, select, MASCULINO {Look masculino} FEMININO {Look femenino} other {Look unisex}}",
   "tryOn.avatar_required": "Crea o revisa tu Avatar 3D para probar prendas en tu cuerpo.",
   "tryOn.model_missing": "Vista previa 2D disponible; el modelo 3D de la prenda aún no se ha generado",
   "tryOn.model_requires_fitting": "Modelo 3D disponible; el ajuste al avatar aún no se ha validado.",
