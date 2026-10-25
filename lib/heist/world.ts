@@ -1,17 +1,18 @@
 /*
- * The MET Gala Afterparty Heist — geometria do museu: grade de 0,5 m (paredes, portas e duto), colisão de círculos,
- * linha de visão (DDA na grade + móveis) e o mundo da partida montado a partir da planta (level.ts).
+ * MET Gala Heist v2 — geometria: grade de 0,5 m (paredes, paredes do labirinto, portas e duto), colisão de círculos,
+ * linha de visão (DDA na grade + móveis) e o mundo da partida montado a partir da planta (level.ts). A grade cobre o
+ * prédio, o beco e a avenida (x −32…32, z −26…51).
  */
 import type { DoorDef, DoorId, InteractDef, Prop, Rect, Room, RoomId, Shape, Vec } from "./types";
-import { DOORS, INTERACTS, RACKS, ROOMS, baseProps } from "./level";
+import { DOORS, INNER_WALLS, INTERACTS, RACKS, ROOMS, baseProps } from "./level";
 
-export { DOORS, ROOMS, STAFF, CAMERAS, INTERACTS, RACKS } from "./level";
-export const CELL = 0.5, X0 = -24, Z0 = -24, GW = 96, GH = 100;
+export { DOORS, ROOMS, GUARDS, CIVILIANS, INTERACTS, RACKS } from "./level";
+export const CELL = 0.5, X0 = -32, Z0 = -26, GW = 128, GH = 154;
 export const PLAYER_R = 0.34, STAFF_R = 0.36, GUEST_R = 0.32;
 
 export interface World {
   rooms: Room[]; doors: DoorDef[]; props: Prop[]; interacts: InteractDef[]; racks: typeof RACKS;
-  /** 0 parede · 1 piso · 2 porta (índice em doorAt) */
+  /** 0 parede · 1 piso · 2 porta (índice em doorAt); as paredes do labirinto são 0 dentro do serviço */
   grid: Uint8Array; doorAt: Int8Array; propHash: Map<number, number[]>;
 }
 
@@ -29,6 +30,7 @@ function carve(grid: Uint8Array, r: Rect, value: number, doorAt?: Int8Array, doo
 export function buildWorld(): World {
   const grid = new Uint8Array(GW * GH), doorAt = new Int8Array(GW * GH).fill(-1);
   for (const r of ROOMS) carve(grid, r.rect, 1);
+  for (const r of INNER_WALLS) carve(grid, r, 0);
   DOORS.forEach((d, k) => carve(grid, d.rect, 2, doorAt, k));
   const props = baseProps();
   for (const r of RACKS) { const w = 0.65, d = 0.3, c = Math.abs(Math.sin(r.yaw)) > 0.5; props.push({ id: r.id, kind: "rack", room: r.room, height: "tall", yaw: r.yaw, shape: c ? box(r.pos.x - d, r.pos.z - w, r.pos.x + d, r.pos.z + w) : box(r.pos.x - w, r.pos.z - d, r.pos.x + w, r.pos.z + d) }); }
@@ -51,7 +53,7 @@ export const inRect = (r: Rect, p: Vec, m = 0) => p.x >= r.x0 - m && p.x <= r.x1
 export function roomAt(p: Vec): RoomId {
   for (const r of ROOMS) if (inRect(r.rect, p)) return r.id;
   for (const d of DOORS) if (inRect(d.rect, p, 0.05)) return d.between[1];
-  let best: RoomId = "salao", bd = Infinity;
+  let best: RoomId = "rua", bd = Infinity;
   for (const r of ROOMS) { const dx = Math.max(r.rect.x0 - p.x, 0, p.x - r.rect.x1), dz = Math.max(r.rect.z0 - p.z, 0, p.z - r.rect.z1); const d = dx * dx + dz * dz; if (d < bd) { bd = d; best = r.id; } }
   return best;
 }
@@ -69,18 +71,20 @@ export function propsNear(w: World, x0: number, z0: number, x1: number, z1: numb
 export type Mover = "player" | "staff" | "guest";
 export interface PassRules { doors: Record<DoorId, boolean>; crouch: boolean }
 
-/** A célula bloqueia quem? Paredes bloqueiam todos; portas seguem o estado; o duto só deixa passar a jogadora agachada; as
- * janelas do beiral só se atravessam escalando (a interação leva de um lado ao outro); a equipe tem as chaves. */
+/** A célula bloqueia quem? Paredes bloqueiam todos; o duto só deixa passar a jogadora agachada; janelas e a escada de
+ * incêndio só se atravessam escalando (a interação leva de um lado ao outro); a equipe tem as chaves; convidados passam
+ * pelas abertas, pelo portão do tapete (têm convite) e pela pulseira; para a jogadora, `rules.doors` diz o que ela já
+ * pode atravessar (a simulação confere tranca, chave e lado). */
 export function cellBlocked(w: World, i: number, j: number, who: Mover, rules: PassRules): boolean {
   if (!inGrid(i, j)) return true;
   const c = w.grid[j * GW + i];
   if (c === 0) return true;
   if (c === 1) return false;
   const d = w.doors[w.doorAt[j * GW + i]];
-  if (d.lock === "window") return true;
+  if (d.lock === "climb") return true;
   if (d.lock === "vent") return !(who === "player" && rules.crouch);
   if (who === "staff") return false;
-  if (who === "guest") return !(d.lock === "open" || d.lock === "wristband");
+  if (who === "guest") return !(d.lock === "open" || d.lock === "wristband" || d.lock === "invite");
   return !rules.doors[d.id];
 }
 
@@ -141,6 +145,8 @@ export function segCircle(a: Vec, b: Vec, c: { x: number; z: number; r: number }
 /** Distância do ponto ao segmento. */
 export function segDist(p: Vec, a: Vec, b: Vec) { const dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz; const t = l2 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / l2)) : 0; return Math.hypot(p.x - a.x - dx * t, p.z - a.z - dz * t); }
 
+/** Portas que não tapam o olhar mesmo fechadas: o portão do tapete é um cordão. */
+const SEE_THROUGH: ReadonlySet<DoorId> = new Set<DoorId>(["carpetGate"]);
 /** Parede ou porta fechada no caminho do olhar? (DDA na grade; portas abertas e vãos deixam ver.) */
 export function wallBetween(w: World, a: Vec, b: Vec, doors: Record<DoorId, boolean>): boolean {
   let [i, j] = cellOf(a.x, a.z); const [ti, tj] = cellOf(b.x, b.z);
@@ -151,7 +157,7 @@ export function wallBetween(w: World, a: Vec, b: Vec, doors: Record<DoorId, bool
     if (!inGrid(i, j)) return true;
     const c = w.grid[j * GW + i];
     if (c === 0) return true;
-    if (c === 2) { const d = w.doors[w.doorAt[j * GW + i]]; if (d.lock === "vent" || d.lock === "window" || !doors[d.id]) return true; }
+    if (c === 2) { const d = w.doors[w.doorAt[j * GW + i]]; if (d.lock === "vent" || d.lock === "climb" || (!SEE_THROUGH.has(d.id) && !doors[d.id])) return true; }
     if (i === ti && j === tj) return false;
     if (tmx < tmz) { if (tmx > 1) return false; i += si; tmx += tdx; } else { if (tmz > 1) return false; j += sj; tmz += tdz; }
   }

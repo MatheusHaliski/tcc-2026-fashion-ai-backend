@@ -1,201 +1,212 @@
 /*
- * The MET Gala Afterparty Heist (título de trabalho) — tipos da simulação. Evento, museu e personagens são ficcionais:
- * a afterparty da Gala Lumière no Museu Vesper de Moda, onde o Vestido Aurora (Casa Orvalho, 1957) está exposto.
+ * MET Gala Heist v2 — tipos da simulação. O evento é a Gala Lumière no Museu Vesper (ficcional, com a cara de uma gala de
+ * moda num museu de avenida: fachada neoclássica, escadaria com tapete, Grande Salão com o arranjo floral, exposição de
+ * moda). O objetivo final é o diamante de Celine Dion (US$ 15 mil), emprestado para a exposição.
  *
- * Tudo é dado simples (sem classes): o estado inteiro cabe num structuredClone (checkpoint e salvamento) e o mundo
- * estático (salas, paredes, grade de navegação) fica fora dele, compartilhado.
+ * Tudo é dado simples (sem classes): o estado inteiro cabe num structuredClone (checkpoint) e o mundo estático (salas,
+ * paredes, grade de navegação) fica fora dele, compartilhado.
  *
- * Eixos: x para leste, z para sul, metros. Direção `yaw` θ aponta para (sin θ, cos θ) — o mesmo que rotation.y de um
- * modelo que olha para +z no three.js.
+ * Eixos: x para leste, z para sul (a avenida fica ao sul da fachada), metros, y para cima. Direção `yaw` θ aponta para
+ * (sin θ, cos θ) — o mesmo que rotation.y de um modelo que olha para +z no three.js.
  */
 export interface Vec { x: number; z: number }
 
-/** Salas da planta. A doca faz parte dos corredores de serviço e o beiral, do terraço (as oito áreas do jogo: AREA_OF). */
-export type RoomId = "entrada" | "salao" | "galeria" | "lounge" | "terraco" | "beiral" | "bastidores" | "servico" | "doca" | "conservacao";
-export type AreaId = "entrada" | "salao" | "galeria" | "lounge" | "terraco" | "bastidores" | "servico" | "conservacao";
-export type DoorId = "main" | "side" | "service" | "staff" | "lounge" | "backstage" | "stage" | "gallery" | "conservation" | "terrace" | "staffTerrace" | "vent" | "windowT" | "windowC";
-/** open: sempre aberta · wristband: pulseira do credenciamento · keypad: código da doca (ou decodificador) ·
- * keycard: credencial da curadoria · vent: duto, só agachada · window: janela do beiral, escalando */
-export type DoorLock = "open" | "wristband" | "keypad" | "keycard" | "vent" | "window";
+/* ---------- planta ---------- */
+/** Salas. `seguranca` fica dentro do labirinto de serviço; `beiral` é a cornija externa; `rua` e `beco` são o lado de fora. */
+export type RoomId = "rua" | "beco" | "vestibulo" | "salao" | "galeria" | "lounge" | "terraco" | "beiral" | "bastidores" | "servico" | "seguranca" | "doca" | "cofre";
+export type DoorId = "carpetGate" | "front" | "dockGate" | "side" | "main" | "service" | "staff" | "lounge" | "backstage" | "stage" | "gallery" | "vault" | "terrace" | "staffTerrace" | "vent" | "secDoor" | "windowT" | "windowC" | "fireEscape";
+/** open: sempre aberta · invite: o convite (a recepcionista confere no portão do tapete) · wristband: a pulseira que o portão
+ * dá · staff: leitor de crachá (só com uniforme da equipe) · key: chave física (keyId) que alguém da sala carrega · keypad:
+ * código · keycard: cartão da segurança · vent: duto, só agachada · climb: janela/escada de incêndio, só escalando */
+export type DoorLock = "open" | "invite" | "wristband" | "staff" | "key" | "keypad" | "keycard" | "vent" | "climb";
+export type KeyId = "doca" | "servico";
 
 export interface Rect { x0: number; z0: number; x1: number; z1: number }
 export type Shape = ({ type: "box" } & Rect) | { type: "circle"; x: number; z: number; r: number };
 /** low: esconde só quem está agachado · tall: bloqueia a visão · glass: bloqueia o passo, não a visão */
 export type Height = "low" | "tall" | "glass";
-export type PropKind = "column" | "table" | "bar" | "crate" | "shelf" | "case" | "rack" | "stand" | "planter" | "desk" | "backdrop" | "van"
-  | "stage" | "screen" | "panel" | "bench" | "rope" | "detector" | "locker" | "piano" | "sofa" | "statue" | "railing" | "cart" | "mirror"
-  | "mannequin" | "lamp" | "worktable" | "steamer";
+export type PropKind =
+  // interior
+  | "column" | "table" | "bar" | "crate" | "shelf" | "case" | "rack" | "stand" | "planter" | "desk" | "backdrop" | "stage" | "screen"
+  | "panel" | "bench" | "rope" | "detector" | "locker" | "piano" | "sofa" | "floral" | "statue" | "railing" | "cart" | "mirror"
+  | "mannequin" | "lamp" | "worktable" | "steamer" | "pedestal" | "safe" | "coatcheck" | "dumpster" | "monitor"
+  // exterior
+  | "limo" | "suv" | "policeCar" | "cateringTruck" | "getawayCar" | "barrier" | "riser" | "podium" | "lampPost" | "tree"
+  | "vendorStand" | "tent" | "hydrant" | "fireEscape";
 export interface Prop { id: string; kind: PropKind; shape: Shape; height: Height; room: RoomId; yaw?: number; variant?: number }
 
-/** public: convidados circulam · staff: equipe (com crachá de produção, tudo bem) · private: só a curadoria */
-export type Access = "public" | "staff" | "private";
-export interface Room { id: RoomId; rect: Rect; access: Access; floor: "marble" | "carpet" | "concrete" | "parquet" | "stone" | "metal" }
-export interface DoorDef { id: DoorId; rect: Rect; lock: DoorLock; between: [RoomId, RoomId] }
-
-/* ---------- personagens ---------- */
-/** Elenco ficcional: Helena (anfitriã), Íris (curadora), Caio (estilista), Valéria (jornalista), Ruth (chefe de segurança
- * do museu), Otto Brandt (produtor da gala), Lia (assistente de produção), Davi (bartender) e Nina (convidada). */
-export type CharacterId = "helena" | "iris" | "caio" | "valeria" | "ruth" | "brandt" | "lia" | "davi" | "nina";
-export type ActivityAnim = "talk" | "inspect" | "drink" | "phone" | "work" | "idle" | "serve" | "watch" | "speech" | "steam" | "carry" | "write";
-/** Uma parada da rotina: onde, fazendo o quê, por quanto tempo (s) e com quem conversa ali (para ouvir escondido). */
-export interface Activity { id: string; pos: Vec; yaw?: number; anim: ActivityAnim; dur: [number, number]; with?: CharacterId; overhear?: string }
-/** Rotina: blocos do relógio da festa (minutos depois das 21:00) e as paradas que a pessoa percorre em cada um. */
-export interface RoutineBlock { from: number; to: number; stops: Activity[] }
-export type Mood = "calm" | "warm" | "wary" | "alarmed";
-export interface Character {
-  id: CharacterId; pos: Vec; vel: Vec; yaw: number; look: number; anim: ActivityAnim | "walk";
-  block: number; stop: number; activityUntil: number; path: Vec[]; pathIdx: number; target: Vec | null;
-  /** conversando com a jogadora: a rotina pausa e depois retoma de onde parou */
-  talking: boolean; paused: { until: number; reason: string } | null;
-  noticedAt: number; greeted: boolean; lastBarkAt: number; mood: Mood;
-  /** distração pedida a outra pessoa (entrevista da jornalista): fica presa até lá */
-  busyUntil: number; busyWith: CharacterId | null;
+/** public: convidados circulam · staff: equipe (com uniforme, tudo bem) · private: só a segurança · street: lado de fora */
+export type Access = "public" | "staff" | "private" | "street";
+export type Floor = "marble" | "carpet" | "concrete" | "parquet" | "stone" | "metal" | "asphalt" | "sidewalk";
+export interface Room { id: RoomId; rect: Rect; access: Access; floor: Floor; tier: number; outdoor?: boolean }
+export interface DoorDef {
+  id: DoorId; rect: Rect; lock: DoorLock; between: [RoomId, RoomId]; keyId?: KeyId;
+  /** a sala de onde a porta abre sem a tranca (barra antipânico, botão de saída) */
+  freeFrom?: RoomId;
 }
-
-/** Equipe: segurança do museu (avisa e acompanha até o salão — nunca ataca) e a equipe de Brandt (avisa o chefe). */
-export type StaffKind = "seguranca" | "equipe";
-export type StaffState = "PATROL" | "POST" | "NOTICE" | "INVESTIGATE" | "WARN" | "ESCORT" | "RETURN" | "DISTRACTED" | "CHECK";
-export interface StaffSpawn { id: string; kind: StaffKind; name: string; room: RoomId; post?: { pos: Vec; yaw: number }; route?: Vec[]; blackoutCheck?: boolean }
-export interface Staff {
-  id: string; kind: StaffKind; name: string; pos: Vec; vel: Vec; yaw: number; look: number;
-  state: StaffState; stateT: number; route: Vec[]; routeIdx: number; waitUntil: number; post: { pos: Vec; yaw: number } | null;
-  path: Vec[]; pathIdx: number; goal: Vec | null; replanAt: number;
-  sees: boolean; awareness: number; lastKnown: Vec | null; until: number; warned: number; barkAt: number; anim: ActivityAnim | "walk";
-}
-
-export type GuestState = "IDLE" | "WALK" | "WATCH" | "GATHER";
-export interface Guest { id: string; pos: Vec; vel: Vec; yaw: number; state: GuestState; stateT: number; target: Vec | null; path: Vec[]; pathIdx: number; seed: number; anim: ActivityAnim | "walk"; role: "guest" | "musician" | "waiter" | "crew"; home: Vec; wander: boolean; group: number }
-
-export interface CameraDef { id: string; pos: Vec; yaw: number; sweep: number; room: RoomId }
-export interface CameraState extends CameraDef { aim: number; off: boolean }
 
 /* ---------- interação ---------- */
-export type InteractKind = "inspect" | "talk" | "keypad" | "case" | "puzzle" | "door" | "climb" | "rack" | "desk" | "styling" | "medcab" | "board" | "crate" | "deliver";
+export type InteractKind =
+  | "vendor" | "hostess" | "pickpocket" | "uniform" | "intercom" | "inspect" | "keypad" | "safe" | "fuses" | "pedestal"
+  | "climb" | "rack" | "exit" | "door" | "pickup";
 export interface InteractDef { id: string; kind: InteractKind; pos: Vec; room: RoomId; radius: number; ref?: string; yaw?: number }
-export interface InteractState extends InteractDef { used: boolean }
 
-/* ---------- cartas FLAIR na missão ---------- */
-export type CardTier = "BRONZE" | "PRATA" | "OURO" | "ESPECIAL" | "INICIAL";
-export type CardEffectKind = "VITALIDADE" | "RECUPERACAO" | "PERCEPCAO" | "PRESENCA" | "MOBILIDADE" | "RECURSOS" | "ESPECIALIDADE" | "SINERGIA";
-/** Condição para o efeito valer (ativo) ou contar (passivo). */
-export type CardCondition = "SEMPRE" | "EXPLORANDO" | "EM_DIALOGO" | "EM_PUZZLE" | "EM_TRAVESSIA" | "EM_FUGA";
-export type ToolId = "chamada" | "decodificador";
-export type PuzzleKind = "inspection" | "quiz" | "lighting" | "route" | "contradiction" | "styling" | "evidence";
-export interface CardEffect {
-  /** identificador estável do efeito (ex.: VIT-OURO) e versão da regra — sobe quando o balanceamento muda */
-  id: string; version: number; kind: CardEffectKind; mode: "PASSIVO" | "ATIVO";
-  /** intensidade na unidade do efeito: +PV, cargas, segundos, % ou opções de diálogo/dica */
-  magnitude: number; unit: "pv" | "cargas" | "s" | "%" | "opcao";
-  duration: number; cooldown: number; condition: CardCondition;
-  cost: number; stack: "SOMA" | "MAIOR" | "UNICO"; cap: number;
-  /** cura por carga (RECUPERACAO), ferramenta (RECURSOS) ou quebra-cabeça facilitado (ESPECIALIDADE) */
-  heal?: number; tool?: ToolId; puzzle?: PuzzleKind | "any";
-  /** efeito exclusivo das cartas Especiais (criadas por marcas, celebridades e administradores) */
-  unique?: string;
-  feedback: { icon: string; sfx: string; haptic: "leve" | "medio" | "forte" };
+/* ---------- personagens ---------- */
+/** Aparência de quem está em cena: o catálogo (lib/heist/looks.ts) monta humanos realistas a partir destas chaves e do seed. */
+export type LookId =
+  | "guestF" | "guestM" | "guard" | "guardHeavy" | "police" | "waiter" | "waitress" | "hostess" | "paparazzo" | "fan"
+  | "catering" | "vendor" | "curator" | "bartender" | "musician" | "crew" | "driver";
+export type CivRole = "guest" | "queue" | "fan" | "paparazzo" | "waiter" | "hostess" | "catering" | "vendor" | "curator" | "bartender" | "musician" | "crew" | "driver";
+/** Animações que a cena sabe desenhar (procedurais, no esqueleto do corpo humano). */
+export type Anim =
+  | "idle" | "walk" | "run" | "sneak" | "crouch" | "discreet" | "tired" | "talk" | "phone" | "drink" | "photo" | "cheer"
+  | "serve" | "guard" | "aim" | "shoot" | "reload" | "melee" | "stab" | "takedown" | "knockedOut" | "dead" | "downed"
+  | "change" | "pickpocket" | "interact" | "climb" | "crawl" | "celebrate" | "dance" | "wave" | "sit" | "queue" | "look"
+  | "point" | "cower" | "flee" | "play";
+export type Hold = "pistol" | "knife" | "camera" | "tray" | "phone" | "glass" | "flashlight" | "tablet" | "diamond" | "violin" | null;
+
+/* ---------- seguranças ---------- */
+/** GRABBED: agarrado por trás durante o nocaute (não vê nem age; cai no fim da ação). */
+export type GuardState = "PATROL" | "POST" | "SUSPICIOUS" | "ALERT" | "SEARCH" | "GRABBED" | "DOWN";
+export interface GuardSpawn {
+  /** callsign: nome próprio do segurança no rádio (não se traduz) */
+  id: string; callsign: string; room: RoomId; look: "guard" | "guardHeavy" | "police";
+  post?: { pos: Vec; yaw: number }; route?: Vec[];
+  /** carrega a chave da sala (cai quando a pessoa é derrubada) */
+  carries?: KeyId | "keycard";
+  /** entra em cena só no alarme do diamante (reforço) e fica plantado na passagem */
+  lockdown?: boolean; blocker?: boolean;
 }
-export interface LoadoutCard { cardId: string; name: string; tier: CardTier; imageUrl?: string | null; brandName?: string | null; position?: string | null; effect: CardEffect; source: "COLECAO" | "INICIAL" }
-export interface Synergy { id: string; cards: string[]; hp?: number; presence?: number; tool?: number }
-/** O que o loadout dá na partida. O servidor (FlairHeistCards.java) valida e calcula; o jogo só aplica. */
-export interface HeistLoadout {
-  version: number; budget: number; spent: number; cards: LoadoutCard[]; synergies: Synergy[];
-  maxHp: number; heal: { charges: number; amount: number; cooldown: number };
-  perception: { seconds: number; cooldown: number } | null;
-  /** % a mais de confiança ganha em conversas e quantas opções de diálogo extras (Presença) */
-  presence: number; presenceOptions: number;
-  /** % mais rápido em travessias: escalada do beiral, duto e esconderijos */
-  mobility: number;
-  tools: Record<ToolId, number>;
-  /** dicas gratuitas por tipo de quebra-cabeça (Especialidade); "any" vale para todos */
-  specialty: Partial<Record<PuzzleKind | "any", number>>;
-  uniques: string[];
+export interface Guard {
+  id: string; callsign: string; look: GuardSpawn["look"]; room: RoomId; tier: number;
+  pos: Vec; vel: Vec; yaw: number; look2: number; hp: number; maxHp: number;
+  state: GuardState; stateT: number; route: Vec[]; routeIdx: number; waitUntil: number; post: { pos: Vec; yaw: number } | null;
+  path: Vec[]; pathIdx: number; goal: Vec | null; replanAt: number;
+  /** suspeita sobre a jogadora (0–1); em 1 ela foi reconhecida */
+  suspicion: number; sees: boolean; lastKnown: Vec | null; lastSeenAt: number;
+  aimStart: number; nextShotAt: number; shots: number; hitAt: number; downAt: number; killed: boolean;
+  carries: GuardSpawn["carries"] | null; active: boolean; blocker: boolean; barkAt: number; anim: Anim; animAt: number;
 }
+
+/* ---------- civis ---------- */
+export interface CivSpawn {
+  id: string; role: CivRole; look: LookId; pos: Vec; yaw: number; anim: Anim; room: RoomId; hold?: Hold; wander?: Vec[]; group?: number; vendor?: VendorId;
+  /** altura de quem fica sobre um móvel (fotógrafos na arquibancada); sem ela, o piso (floorY) */
+  y?: number;
+}
+export interface Civilian {
+  id: string; role: CivRole; look: LookId; room: RoomId; pos: Vec; vel: Vec; y: number | null; yaw: number; anim: Anim; baseAnim: Anim; hold: Hold; vendor: VendorId | null;
+  home: Vec; homeYaw: number; wander: Vec[]; wanderIdx: number; path: Vec[]; pathIdx: number; waitUntil: number;
+  /** pânico depois de tiros (corre para longe ou se abaixa) até este instante */
+  panicUntil: number; panicFrom: Vec | null;
+  /** reação à jogadora: olhar, comentar, pedir bebida ao "garçom", estranhar */
+  reactUntil: number; reactKind: "look" | "order" | "stare" | "greet" | "point" | null; barkAt: number; seed: number; queueIdx: number;
+  hasInvite: boolean; animAt: number;
+}
+
+/* ---------- cartas, roupa e itens ---------- */
+export type CardTier = "BRONZE" | "PRATA" | "OURO" | "ESPECIAL";
+/** O que a carta é na partida: peça para vestir (com disfarce), acessório com uso próprio ou só valor de troca. */
+export type CardUse =
+  | "WEAR"        // roupa e calçado: veste a jogadora (com a animação de troca)
+  | "VISION"      // óculos: Visão (seguranças, lasers e marcas através das paredes)
+  | "PICK"        // joias: grampo (abre teclado, cofre e a trava da vitrine)
+  | "AMMO"        // bolsas: pentes escondidos (recarrega a munição)
+  | "KNIFE"       // cinto: coldre com faca
+  | "TIME"        // relógio: cronômetro (tempo mais lento por alguns segundos)
+  | "BANDAGE"     // lenço: curativo (recupera vida)
+  | "HOOD"        // chapéu, boné, gorro: rosto coberto (reconhecem mais de perto)
+  | "TRADE";      // sem uso direto: só valor de troca
+export interface HeistCard {
+  id: string; name: string; tier: CardTier; value: number; use: CardUse; category: string; subcategory: string;
+  imageUrl?: string | null; colorHex?: string | null; brandName?: string | null; rarity: string;
+  /** peça para vestir: o que ela vira no corpo (Look3dPiece do provador) */
+  slot?: "TOP" | "BOTTOM" | "FULL" | "SHOES" | "ACCESSORY";
+  /** disfarce que a peça dá e o calçado (salto faz barulho e não escala) */
+  dress?: "gala" | "casual" | "staff"; shoes?: "heels" | "flat" | "sneakers" | "boots";
+  /** carta especial/inicial: veio do kit da partida, não da coleção */
+  starter?: boolean;
+}
+export type CardState = "DECK" | "WORN" | "USED" | "TRADED";
+export type WeaponId = "hands" | "knife" | "pistol" | "pistolS" | "guardPistol";
+export type ItemId = "medkit" | "medkitXL" | "ammo" | "knife" | "pistol" | "pistolS" | "uniform" | "invite" | "decoder" | "bottle" | "vest";
+export type VendorId = "street" | "bar";
+export interface VendorOffer { item: ItemId; price: number; minPiece?: number; stock: number }
+export type Disguise = "gala" | "casual" | "staff";
 
 /* ---------- jogadora ---------- */
-export type PlayerMode = "WALK" | "CLIMB" | "HIDDEN";
-export interface PlayerAction { kind: "inspect" | "talk" | "climb" | "heal" | "dodge" | "stumble" | "pickup" | "hide" | "tool"; t: number; dur: number; from?: Vec; to?: Vec; ref?: string }
-export interface Inventory { invite: boolean; wristband: boolean; lanyard: boolean; keycard: boolean; code: boolean; gown: boolean }
+export type PlayerMode = "WALK" | "CLIMB" | "CRAWL" | "HIDDEN" | "CHANGE" | "CUTSCENE" | "DOWNED";
+export interface PlayerAction { kind: "change" | "climb" | "pickpocket" | "takedown" | "melee" | "reload" | "heal" | "interact" | "celebrate" | "pickup"; t: number; dur: number; from?: Vec; to?: Vec; ref?: string; fromY?: number; toY?: number; done?: boolean }
+export interface Inventory {
+  invite: boolean; wristband: boolean; keycard: boolean; keys: KeyId[]; diamond: boolean;
+  medkit: number; medkitXL: number; bandage: number; bottles: number; decoder: number; vest: number;
+  weapons: WeaponId[]; ammo: number; mag: number; uniform: boolean;
+}
 export interface Player {
-  pos: Vec; vel: Vec; yaw: number; hp: number; maxHp: number; crouch: boolean; sprint: boolean; mode: PlayerMode;
-  action: PlayerAction | null; inv: Inventory; hidden: string | null; lastHitAt: number; iframesUntil: number; dodgeReadyAt: number;
-  /** recursos das cartas */
-  heals: number; healReadyAt: number; tools: Record<ToolId, number>; perceiveUntil: number; perceiveReadyAt: number;
-  /** integridade do Vestido Aurora original enquanto está com a jogadora (0–100) */
-  gownIntegrity: number;
+  pos: Vec; vel: Vec; y: number; yaw: number; hp: number; maxHp: number; armor: number;
+  crouch: boolean; sprint: boolean; discreet: boolean; aiming: boolean; mode: PlayerMode; action: PlayerAction | null;
+  weapon: WeaponId; nextFireAt: number; reloadUntil: number; meleeUntil: number; combo: number; lastHitAt: number; lastShotAt: number;
+  inv: Inventory; hidden: string | null; disguise: Disguise; shoes: "heels" | "flat" | "sneakers" | "boots"; hood: boolean;
+  /** peças vestidas: ids das cartas (ou das peças da partida) por lugar */
+  outfit: { base: "arrival" | "uniform"; worn: string[] };
+  visionUntil: number; slowUntil: number; credits: Record<VendorId, number>;
+  /** tropeço/recuo quando leva tiro */
+  staggerUntil: number; noiseAt: number; noise: number; changeSeen: boolean;
+  /** última sala fora das portas (de que lado da porta ela está) e a velocidade real no plano */
+  lastRoom: RoomId; speed: number;
 }
 
-/* ---------- narrativa ---------- */
-/** Evidências: o que prova, de onde veio e a quem se relaciona ficam no diário (heist.evidence.<id>.*). */
-export type EvidenceId = "E_INVITE" | "E_REPLICA" | "E_PHOTO" | "E_CONTRADICTION" | "E_CALLSHEET" | "E_MANIFEST" | "E_ROUTE" | "E_ORIGINAL" | "E_SKETCH";
-/** Depoimentos (versões das testemunhas) que o confronto de horários compara. */
-export type StatementId = "S_IRIS" | "S_BRANDT" | "S_LIA" | "S_HELENA" | "S_CAIO";
-export interface EvidenceEntry { id: EvidenceId; at: number; room: RoomId; source: string; relates: CharacterId[] }
-export interface StatementEntry { id: StatementId; who: CharacterId; at: number }
-export type ObjectiveId = "CHECKIN" | "INSPECT" | "CURATOR" | "WITNESSES" | "BACKSTAGE" | "ROUTE" | "CONSERVATION" | "RESOLVE" | "FINALE";
-export type Approach = "persuasao" | "investigacao" | "furtividade" | "puzzles" | "acao";
-export type Resolution = "" | "SOCIAL" | "ACAO";
-export interface Narrative {
-  facts: string[]; evidence: EvidenceEntry[]; statements: StatementEntry[]; trust: Record<CharacterId, number>;
-  /** suspeita geral (0–100) e o piso que ela não perde enquanto alguém lembra da jogadora */
-  suspicion: number; notoriety: number;
-  done: ObjectiveId[]; approaches: Record<Approach, number>;
-  /** relógio da festa em minutos depois das 21:00 (começa 21:30; a apresentação final é às 23:30) */
-  clock: number; resolution: Resolution; dialoguesSeen: string[];
-  /** onde está o original: na caixa C-17 da conservação, na doca (transporte antecipado) ou com a jogadora */
-  gownAt: "conservacao" | "doca" | "player" | "palco";
-  hintsUsed: number; assists: number;
-}
+/* ---------- puzzles ---------- */
+export type PuzzleKind = "keypad" | "safe" | "fuses" | "rings";
+export interface PuzzleSession { kind: PuzzleKind; id: string; input: string; lights: boolean[]; rings: number[]; mistakes: number; hints: number; solved: boolean; startedAt: number }
 
-/* ---------- diretor de eventos ---------- */
-export type DirectorEventId = "recognized" | "performance" | "spill" | "blackout" | "reroute" | "earlyTransport" | "legitClue";
-export interface DirectorState { active: { id: DirectorEventId; until: number; data?: Record<string, number | string> } | null; fired: { id: DirectorEventId; at: number }[]; lastAt: number }
+/* ---------- objetivos ---------- */
+export type ObjectiveId = "ENTER" | "ROUTE" | "LASERS" | "DIAMOND" | "ESCAPE" | "DONE";
+export type Phase = "INFILTRATE" | "CUTSCENE" | "ESCAPE" | "WON" | "LOST";
 
-/* ---------- ação: a sabotagem durante a fuga com o original ---------- */
-export type HazardKind = "rig" | "steam" | "sprinkler";
-export interface Hazard { id: string; kind: HazardKind; pos: Vec; r: number; warnAt: number; fireAt: number; endAt: number; hit: boolean }
-export interface ActionState { phase: "OFF" | "ESCAPE" | "DONE"; startedAt: number; hazards: Hazard[]; nextAt: number; wave: number; blockedDoor: DoorId | null }
-
-/* ---------- quebra-cabeças ---------- */
-export interface PuzzleSession { kind: PuzzleKind; id: string; hints: number; freeHints: number; mistakes: number; state: unknown; solved: boolean; assisted: boolean }
-
-export interface Stats { puzzles: number; hints: number; mistakes: number; assists: number; spotted: number; warned: number; escorted: number; damage: number; dodges: number; dialogues: number; inspected: number; overheard: number; healsUsed: number; toolsUsed: number; checkpoints: number }
-
-export type GameStatus = "EXPLORE" | "DIALOGUE" | "PUZZLE" | "ENDED";
 export type HeistEvent =
   | { t: "line"; who: string; key: string; vars?: Record<string, string | number> }
-  | { t: "sfx"; id: string; pos?: Vec; gain?: number }
   | { t: "toast"; key: string; vars?: Record<string, string | number> }
-  | { t: "objective"; id: ObjectiveId; done: boolean }
-  | { t: "evidence"; id: EvidenceId } | { t: "statement"; id: StatementId }
-  | { t: "trust"; who: CharacterId; delta: number }
-  | { t: "suspicion"; level: "notice" | "warn" | "escort" }
+  | { t: "sfx"; id: string; pos?: Vec; gain?: number }
+  | { t: "shot"; from: Vec; to: Vec; fromY: number; toY: number; hit: boolean; by: "player" | "guard"; silenced?: boolean }
+  | { t: "hit"; damage: number; on: "player" | string; head?: boolean; pos: Vec }
+  | { t: "down"; id: string; killed: boolean }
+  | { t: "outfit"; pieces: string[] }
+  | { t: "objective"; id: ObjectiveId }
+  | { t: "alarm"; on: boolean }
   | { t: "checkpoint"; reason: string }
-  | { t: "director"; id: DirectorEventId; phase: "start" | "end" }
-  | { t: "hit"; damage: number; pos: Vec } | { t: "dodge" }
-  | { t: "puzzle"; kind: PuzzleKind; id: string; result: "start" | "solved" | "hint" | "mistake" | "assist" | "close" }
-  | { t: "status"; status: GameStatus }
   | { t: "rumble"; strong: number; weak: number; ms: number }
-  | { t: "card"; effect: CardEffectKind; id: string };
+  | { t: "puzzle"; kind: PuzzleKind; result: "start" | "solved" | "mistake" | "close" }
+  | { t: "door"; id: DoorId; open: boolean }
+  | { t: "phase"; phase: Phase };
 
 /** Entrada de um quadro, já traduzida do teclado/mouse/controle. Bordas (…Press) valem um quadro. */
 export interface HeistInput {
   /** analógico: x à direita, y para a frente (−1 a 1), relativo à câmera */
-  move: { x: number; y: number }; camYaw: number;
-  sprint: boolean; crouchPress: boolean; interact: boolean; interactPress: boolean;
-  dodgePress: boolean; perceivePress: boolean; healPress: boolean; toolPress: boolean;
+  move: { x: number; y: number }; camYaw: number; camPitch: number;
+  /** direção do tiro da arma até o ponto sob a mira (a câmera fica sobre o ombro: o raio da mira não sai da arma) */
+  aimYaw?: number; aimPitch?: number;
+  sprint: boolean; crouchPress: boolean; discreet: boolean; interactPress: boolean; aim: boolean; fire: boolean; firePress: boolean;
+  reloadPress: boolean; meleePress: boolean; healPress: boolean; throwPress: boolean;
 }
 
+export interface Stats { shots: number; hits: number; headshots: number; kills: number; takedowns: number; damage: number; heals: number; traded: number; worn: number; spotted: number; puzzles: number; mistakes: number; time: number; route: string }
+
 export interface SimState {
-  version: number; seed: number; rng: number; time: number; tick: number; status: GameStatus; endedAt: number;
-  player: Player; characters: Character[]; staff: Staff[]; guests: Guest[]; cameras: CameraState[]; interacts: InteractState[];
-  doors: Record<DoorId, boolean>; n: Narrative; director: DirectorState; action: ActionState;
-  dialogue: { who: CharacterId; node: string; at: number } | null;
-  puzzle: PuzzleSession | null;
-  lights: { blackout: RoomId[]; until: number };
-  /** convidados juntos no palco (apresentação) até este instante */
-  gatherUntil: number;
-  tutorial: { step: number; done: boolean };
-  /** quem fala o quê por último (nada se repete em seguida) e quando cada categoria pode falar de novo */
-  lineLast: Record<string, string>; lineAt: Record<string, number>;
-  stats: Stats; nextId: number; events: HeistEvent[];
+  version: number; seed: number; rng: number; time: number; tick: number; phase: Phase; phaseAt: number;
+  player: Player; guards: Guard[]; civs: Civilian[];
+  doors: Record<DoorId, boolean>; /** portas destrancadas para a jogadora (a chave abre de vez) */ unlocked: DoorId[];
+  cards: HeistCard[]; cardState: Record<string, CardState>; offers: Record<VendorId, VendorOffer[]>;
+  puzzle: PuzzleSession | null; solved: PuzzleKind[]; fusesCut: boolean; lasersOn: boolean; alarm: boolean; alarmAt: number;
+  objective: ObjectiveId; checkpoint: string; cutscene: { t: number; step: number } | null;
+  /** pickups no chão (chave, cartão, pistola de quem caiu) */
+  drops: { id: string; kind: "key" | "keycard" | "guardPistol" | "ammo"; keyId?: KeyId; pos: Vec; taken: boolean }[];
+  /** ruídos que ainda vão soar (garrafa jogada cai depois de voar) */
+  pending: { pos: Vec; at: number; r: number }[];
+  /** usos que sobram de cada carta (Visão, Cronômetro) e pistas lidas */
+  cardUses: Record<string, number>; clues: string[]; visited: RoomId[]; lockdown: boolean;
+  /** quando a fila da calçada anda de novo */
+  queueAt: number;
+  /** quem fala o quê por último e quando cada um pode falar de novo */
+  lineAt: Record<string, number>; stats: Stats; nextId: number; events: HeistEvent[];
 }

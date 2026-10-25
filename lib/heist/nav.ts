@@ -1,5 +1,5 @@
 /*
- * The MET Gala Afterparty Heist — navegação da equipe, dos personagens e dos convidados: grade de 0,5 m com paredes e móveis inflados pelo raio do
+ * MET Gala Heist v2 — navegação dos seguranças, da equipe e dos convidados: grade de 0,5 m com paredes e móveis inflados pelo raio do
  * corpo, A* em 8 direções (sem cortar quina) e caminho alisado por linha livre ("puxar o barbante"), para ninguém andar
  * em zigue-zague de célula em célula.
  */
@@ -8,14 +8,15 @@ import { CELL, GH, GW, X0, Z0, cellOf, inGrid, type Mover, type World } from "./
 
 export interface NavGrid { who: Mover; blocked: Uint8Array }
 
-/** Máscara de passagem para quem anda (a equipe passa por todas as portas, menos o duto e as janelas; convidados, só pelas abertas). */
+/** Máscara de passagem para quem anda (a equipe passa por todas as portas, menos o duto, as janelas e a escada de incêndio;
+ * convidados, só pelas abertas, pelo portão do tapete e pela pulseira). */
 export function buildNav(w: World, who: Exclude<Mover, "player">, inflate = 0.3): NavGrid {
   const blocked = new Uint8Array(GW * GH);
   const wall = (i: number, j: number) => {
     if (!inGrid(i, j)) return true;
     const c = w.grid[j * GW + i]; if (c === 0) return true; if (c === 1) return false;
     const d = w.doors[w.doorAt[j * GW + i]];
-    return d.lock === "vent" || d.lock === "window" || (who === "guest" && !(d.lock === "open" || d.lock === "wristband"));
+    return d.lock === "vent" || d.lock === "climb" || (who === "guest" && !(d.lock === "open" || d.lock === "wristband" || d.lock === "invite"));
   };
   const reach = Math.ceil(inflate / CELL);
   for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
