@@ -20,6 +20,15 @@ const ui = (api: FittingDetailApi) => render(<I18nProvider initial="pt-BR"><Fitt
 const stops = [...STOP_KEYS];
 
 describe("câmera de detalhe do provador", () => {
+  it("painel com título visível e texto claro (nunca a chave da tradução)", () => {
+    const { api } = fakeDetail({ mode: "corpo", t: 0, stops });
+    ui(api);
+    const region = screen.getByRole("region", { name: "Câmera de detalhe" });
+    expect(within(region).getByRole("heading", { name: "Câmera de detalhe" })).toBeTruthy();
+    expect(region.textContent).not.toMatch(/tryOn\./);
+    expect(screen.getByRole("radiogroup", { name: "Enquadramento" }).getAttribute("aria-describedby")).toBeTruthy();
+  });
+
   it("enquadramentos em radiogroup: corpo inteiro, calçado e percorrer o corpo", () => {
     const { api } = fakeDetail({ mode: "corpo", t: 0, stops });
     ui(api);
@@ -66,5 +75,6 @@ describe("câmera de detalhe do provador", () => {
     set({ mode: "percurso", t: 6.2, stops });
     expect(slider.getAttribute("aria-valuetext")).toBe("Barra · 7 de 8");
     expect(screen.getByText("Barra · 7 de 8", { selector: "p" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Câmera de detalhe" }).textContent).not.toMatch(/tryOn\./);
   });
 });

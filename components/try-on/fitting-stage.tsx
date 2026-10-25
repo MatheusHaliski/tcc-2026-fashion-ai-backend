@@ -99,6 +99,7 @@ export function FittingStage({
         </span>
       </div>
 
+      <div className={`fitting-stage-row${avatar && camera?.detail ? " has-panel" : ""}`}>
       <div
         ref={stageRef}
         className="fitting-stage"
@@ -135,9 +136,11 @@ export function FittingStage({
             </Link>
           </div>
         )}
-        {avatar && camera?.detail && <FittingDetailControls api={camera.detail} />}
         {wheelHint && <p className="fitting-wheel-hint">{t("tryOn.roda.dica")}</p>}
         {avatar && camera && <FittingRemoteControls api={camera} />}
+      </div>
+      {/* câmera de detalhe ao lado do palco (embaixo, no celular): nunca por cima do avatar */}
+      {avatar && camera?.detail && <FittingDetailControls api={camera.detail} />}
       </div>
 
       <div className="grid gap-2 p-3">{children}</div>

@@ -68,7 +68,7 @@ const seedOf = (key: string) => { let h = 2166136261; for (let i = 0; i < key.le
  * quadro, ganchos, placa luminosa). A parede virada para a câmera e os móveis que tapariam o avatar saem de cena
  * (useCutaway); o tapete e os spots ficam sempre.
  */
-function Room({ profile, target }: { profile: FittingStudioProfile; target: V3 }) {
+function Room({ profile, target, references }: { profile: FittingStudioProfile; target: V3; references: boolean }) {
   const { t } = useI18n(), p = profile.palette, kit = useStudioKit(p), lite = useLiteDecor(), root = useRef<THREE.Group>(null);
   useCutaway(root, target);
   return <group ref={root} name="conceptual-fitting-studio">
@@ -78,7 +78,7 @@ function Room({ profile, target }: { profile: FittingStudioProfile; target: V3 }
     <group name="studio-back-wall" userData={wallCut(0, 1, BACK_Z, .7)}>
       <PaintedWall kit={kit} palette={p} width={ROOM_W} position={[0, 0, BACK_Z]} />
       <IdentityPlaque env={profile.brand} />
-      <ReferenceGallery products={profile.photographs} label={t("tryOn.reference_images")} position={[1.72, 1.55, BACK_Z + .03]} />
+      {references && <ReferenceGallery products={profile.photographs} label={t("tryOn.reference_images")} position={[1.72, 1.55, BACK_Z + .03]} />}
       <BenchAndRail kit={kit} />
     </group>
     <group name="studio-front-wall" userData={wallCut(0, -1, -FRONT_Z, .5)}>
@@ -106,7 +106,11 @@ function Lights({ light }: { light: LightMode }) {
   </>;
 }
 
-export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, onHuman, debug, cameraYaw, closeUp = false, onCamera }: {
+/** Quadros com as fotos do catálogo na parede do fundo: só para revisão e desenvolvimento (laboratório das cenas ou
+ *  NEXT_PUBLIC_FITTING_REFERENCES=1). No produto, a cabine não mostra fotos de catálogo — nem a pessoa fotografada. */
+export const SHOW_CATALOG_REFERENCES = process.env.NEXT_PUBLIC_FITTING_REFERENCES === "1";
+
+export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, onHuman, debug, cameraYaw, closeUp = false, onCamera, references = SHOW_CATALOG_REFERENCES }: {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; body?: BodyParams | null;
   pieces: Look3dPiece[]; environment: ResolvedEnvironment; scene?: StoreScene | null; light?: LightMode; view?: AvatarView; onCanvas?: (c: HTMLCanvasElement) => void;
   /** o perfil do estúdio desenhado (objetos com função, paleta, fotos de referência) — inventário da auditoria */
@@ -119,6 +123,8 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
   cameraYaw?: number; closeUp?: boolean;
   /** botões de acessibilidade do palco: recebem os passos de câmera (girar 30°, aproximar, voltar à frente) e a câmera de detalhe */
   onCamera?: (api: FittingCameraApi | null) => void;
+  /** quadros de referência do catálogo (revisão/desenvolvimento) */
+  references?: boolean;
 
 }) {
   const { t } = useI18n(), asset = useBodyAsset(), reduced = useReducedMotion(), controls = useRef<Controls>(null);
@@ -142,7 +148,7 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
     <Canvas shadows camera={{ fov: 32, near: .05, far: 30, position: [0, target[1], dist] }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; gl.toneMappingExposure = 1; onCanvas?.(gl.domElement); }} aria-label={t("tryOn.cena_aria", { marca: env.name })}>
       <color attach="background" args={[profile.palette.wall]} /><fog attach="fog" args={[profile.palette.wall, 9, 18]} />
-      <Lights light={light} /><Room key={env.key} profile={profile} target={target} />
+      <Lights light={light} /><Room key={env.key} profile={profile} target={target} references={references} />
       <group name="fitting-avatar">
         <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={sized} sway={false} body={params}
           fallback={null} still={!!debug?.pose} onHuman={(p) => { setParts(p); human.set(p); onHuman?.(p); }} />
