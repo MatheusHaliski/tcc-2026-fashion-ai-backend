@@ -13,7 +13,7 @@
 import * as THREE from "three";
 import { LASERS, MAZE, mazeCell, RACKS } from "@/lib/heist/level";
 import { Batch, BOX0, CYL, CYL0, Instances, SPH, geo, mat, mul } from "./interior-batch";
-import { M, fabric, glow, solid, type Palette } from "./interior-mats";
+import { M, fabric, glow, miscMat, solid, type Palette } from "./interior-mats";
 import { SANS, SERIF, drawGown, drawnTexture, fit, spaced, rand, type Quality } from "./interior-tex";
 import { chandelier, candelabra, roseGeometry } from "./interior-hall";
 import { frondGeometry, frondMaterial } from "./interior-dress";
@@ -211,7 +211,7 @@ function galeria(c: RoomsCtx) {
   c.batch.add(room, stone, geo("bigNicheArch", () => { const s = new THREE.Shape(), r = 1.6, t = 0.3, sp = 2.9; s.moveTo(-r - t, 0); s.lineTo(-r - t, sp); s.absarc(0, sp, r + t, Math.PI, 0, true); s.lineTo(r + t, 0); s.lineTo(r, 0); s.lineTo(r, sp); s.absarc(0, sp, r, 0, Math.PI, false); s.lineTo(-r, 0); s.closePath(); return new THREE.ExtrudeGeometry(s, { depth: 0.25, bevelEnabled: false, curveSegments: 28 }); }), mat(nx, 0, nz + 0.005, 0), { cast: true });
   const orange = new THREE.MeshStandardMaterial({ color: "#c2441b", roughness: 0.9, emissive: new THREE.Color("#ff6a26"), emissiveIntensity: 1.5, emissiveMap: nicheTexture() });
   c.batch.add(room, orange, geo("bigNicheFill", () => { const s = new THREE.Shape(); s.moveTo(-1.6, 0); s.lineTo(1.6, 0); s.lineTo(1.6, 2.9); s.absarc(0, 2.9, 1.6, 0, Math.PI, false); s.closePath(); return new THREE.ShapeGeometry(s, 28); }), mat(nx, 0, nz + 0.01, 0));
-  A(c, room, nx, 2.4, nz + 1.1, "#ff7a3a", 16, 7.5);
+  A(c, room, nx, 1.3, nz + 1.2, "#ff7a3a", 10, 6);
   // rótulo de parede da exposição
   wallPlane(c, room, signMat(c.copy.institute, "gala", c.copy.exhibitSub, 0.45), -6.5, 3.4, -21.97, 0, 4, 1);
   wallPlane(c, room, signMat(c.copy.exhibitTitle, "gala", c.copy.posterFoot, 0.45), 6.5, 3.4, -21.97, 0, 4, 1);
@@ -383,7 +383,7 @@ function cofre(c: RoomsCtx) {
     lightCone(c, room, new THREE.Vector3(x, H - 0.35, z), new THREE.Vector3(-17.25, 1.15, -14.25), 0.32, "#eef4ff", 0.1);
   }
   A(c, room, -17.25, H - 0.6, -14.25, "#f0f5ff", 20, 8);
-  for (const [x, z] of [[-20.5, -9], [-14, -9], [-20.5, -20], [-14, -20]]) A(c, room, x, H - 0.4, z, "#dbe6ff", 3, 5);
+  for (const [x, z] of [[-20.5, -9], [-14, -9], [-20.5, -20], [-14, -20]]) A(c, room, x, H - 0.4, z, "#dbe6ff", 7, 6.5);
   // postes emissores dos lasers (os feixes são da simulação/coordenador)
   const seen = new Set<string>();
   for (const L of LASERS) for (const p of [L.a, L.b]) {
@@ -407,7 +407,7 @@ function cofre(c: RoomsCtx) {
 function terraco(c: RoomsCtx) {
   const P = c.P, room = "terraco";
   // sebes em floreiras encostadas nas paredes do prédio (oeste e sul)
-  for (let z = -21.4; z <= -7.4; z += 1.4) { if (z > -16.8 && z < -13.2) continue; B(c, room, P.stone, 12.85, 0, z, 0.7, 0.55, 1.3); c.inst.add(room, "hedge", geo("hedgeGeo", () => new THREE.BoxGeometry(0.62, 0.8, 1.26, 3, 3, 3)), solid("hedgeLeaf", "#24452a", { rough: 0.9 }), mat(12.85, 0.55, z)); }
+  for (let z = -21.4; z <= -7.4; z += 1.4) { if (z > -16.8 && z < -13.2) continue; B(c, room, P.stone, 12.85, 0, z, 0.7, 0.55, 1.3); c.inst.add(room, "hedge", hedgeGeometry(), miscMat("hedge", c.q), mat(12.85, 0.55, z)); }
   // postes e cordões de lâmpadas em catenária
   const poles = [new THREE.Vector3(12.9, 0, -21.6), new THREE.Vector3(21.6, 0, -21.6), new THREE.Vector3(21.6, 0, -6.9), new THREE.Vector3(12.9, 0, -6.9)];
   for (const p of poles) c.batch.add(room, P.black, CYL0(8), mat(p.x, 0, p.z, 0, 0.04, 3.6, 0.04));
@@ -418,6 +418,21 @@ function terraco(c: RoomsCtx) {
   }
   // lanternas no chão junto ao sofá
   for (const [x, z] of [[14.6, -12.8], [18.4, -12.8]]) { c.batch.add(room, P.black, BOX0(), mat(x, 0, z, 0, 0.22, 0.45, 0.22)); c.inst.add(room, "lanternFlame", SPH(8), P.flame, mat(x, 0.22, z, 0, 0.04)); A(c, room, x, 0.4, z, "#ffb15a", 1.5, 2.5, { flicker: 1 }); }
+}
+
+/** Sebe podada: caixa arredondada e levemente irregular (folhagem não tem aresta viva). */
+function hedgeGeometry(): THREE.BufferGeometry {
+  return geo("hedgeGeoRound", () => {
+    const g = new THREE.BoxGeometry(0.62, 0.8, 1.26, 6, 6, 10), p = g.getAttribute("position") as THREE.BufferAttribute, v = new THREE.Vector3();
+    for (let i = 0; i < p.count; i++) {
+      v.fromBufferAttribute(p, i);
+      const nx = v.x / 0.31, ny = (v.y + 0.4) / 0.8 * 2 - 1, nz = v.z / 0.63;
+      const round = 1 - 0.1 * Math.max(0, Math.abs(nx) * Math.abs(ny) * 0.6 + Math.abs(nx) * Math.abs(nz) * 0.4 + Math.abs(ny) * Math.abs(nz) * 0.4 - 0.25);
+      const bump = 1 + 0.03 * Math.sin(v.x * 23 + v.z * 17) * Math.cos(v.y * 19 + v.z * 7);
+      p.setXYZ(i, v.x * round * bump, v.y * (ny > 0 ? round : 1), v.z * round * bump);
+    }
+    g.computeVertexNormals(); return g;
+  });
 }
 
 /** Extras do salão que não são arquitetura: o quarteto (luz própria), castiçais nas mesas — já nos móveis —, giroflex. */

@@ -13,7 +13,7 @@ import { Batch, BOX0, CYL, CYL0, Instances, SPH, geo, mat, mul } from "./interio
 import { M, fabric, glass, glow, solid, type Palette } from "./interior-mats";
 import { SANS, SERIF, drawSymbol, drawnTexture, fit, paper, rand, spaced, type Quality } from "./interior-tex";
 import { candelabra, roseGeometry } from "./interior-hall";
-import { canopyGeometry, dressFormParts, frondGeometry, frondMaterial, gownGeometry, gownMaterial, statueGeometry, type GownCut } from "./interior-dress";
+import { canopyGeometry, dressFormParts, frondGeometry, frondMaterial, gownGeometry, gownMaterial, oliveSprigGeometry, oliveSprigMaterial, statueGeometry, type GownCut } from "./interior-dress";
 import type { InteriorCopy } from "./interior-copy";
 import type { InteriorRoom } from "./interior-shell";
 import { CODES, RING_SYMBOLS } from "@/lib/heist/level";
@@ -129,6 +129,8 @@ export function cctvTexture(k: number): THREE.CanvasTexture {
 }
 
 /* ======================= construtores por tipo ======================= */
+/** Tipos de móvel com construtor próprio (o resto vira um bloco preto — o teste garante que nenhum do interior cai nele). */
+export const BUILT_KINDS = new Set<Prop["kind"]>(["column", "table", "stage", "screen", "desk", "sofa", "planter", "bar", "mirror", "piano", "steamer", "mannequin", "case", "bench", "statue", "pedestal", "monitor", "safe", "panel", "crate", "coatcheck", "detector", "rope", "rack", "floral"]);
 export function buildProp(p: Prop, c: PropsCtx) {
   const f = foot(p), room = p.room as InteriorRoom, P = c.P;
   switch (p.kind) {
@@ -172,6 +174,22 @@ function column(c: PropsCtx, room: string, f: Foot) {
   // folhas de acanto douradas (anel de folhas) e o ábaco
   for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; c.inst.add(room, "acanthus", geo("acanthusLeaf", () => new THREE.SphereGeometry(1, 8, 6, 0, Math.PI, 0, Math.PI / 2).scale(0.09, 0.22, 0.05)), P.gold, L(f, Math.cos(a) * r * 1.08, 4.55, Math.sin(a) * r * 1.08, -a + Math.PI / 2, 1, 1, 1, -0.25)); }
   box(c, room, P.stone, f, 0, 4.94, 0, r * 2.9, 0.08, r * 2.9);
+  // uplight de festa: a lata preta no piso e a luz âmbar subindo pelo fuste, do lado que olha para o centro do salão
+  const toC = Math.atan2(0 - f.cx, 4.5 - f.cz);
+  c.batch.add(room, uplightWash(), geo("colWash", () => new THREE.CylinderGeometry(1, 1, 1, 40, 1, true).translate(0, 0.5, 0)), mat(f.cx, 0.33, f.cz, toC, r * 1.05, 4.1, r * 1.05));
+  c.batch.add(room, P.black, CYL0(12), mat(f.cx + Math.sin(toC) * f.r * 1.35, 0, f.cz + Math.cos(toC) * f.r * 1.35, 0, 0.09, 0.12, 0.09));
+  c.inst.add(room, "uplightLens", geo("uplightLensGeo", () => new THREE.CircleGeometry(0.07, 16).rotateX(-Math.PI / 2)), P.ledAmber, mat(f.cx + Math.sin(toC) * f.r * 1.35, 0.121, f.cz + Math.cos(toC) * f.r * 1.35));
+}
+/** Luz de uplight pintada num cilindro em volta do fuste: forte embaixo e no lado da lata, esmaecendo para cima e para os lados. */
+function uplightWash(): THREE.MeshBasicMaterial {
+  return glow("uplightWash", "#ffa654", 0.95, { additive: true, map: drawnTexture("uplightWashTex", 256, 128, (g, w, h) => {
+    const img = g.createImageData(w, h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const u = x / w, v = 1 - y / h, side = Math.max(0, Math.cos(u * Math.PI * 2)) ** 2.2, up = Math.max(0, 1 - v) ** 1.6 * 0.85 + 0.15 * (1 - v);
+      const a = side * up, k = (y * w + x) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = 255; img.data[k + 3] = Math.round(255 * Math.min(1, a));
+    }
+    g.putImageData(img, 0, 0);
+  }, false) });
 }
 
 /** Mesa alta de coquetel com capa de linho atada, vela no globo de vidro, taças e um buquê de rosas. */
@@ -328,7 +346,13 @@ function planter(c: PropsCtx, room: InteriorRoom, f: Foot, id: string) {
     c.batch.add(room, P.stone, lathe("terrPlanter", [[0, 0], [0.98, 0], [1, 0.05], [0.95, 0.6], [1.02, 0.66], [1.0, 0.72], [0, 0.72]], 32), L(f, 0, 0, 0, 0, f.r, 1, f.r), { cast: true });
     c.batch.add(room, P.soil, CYL0(24), L(f, 0, 0.68, 0, 0, f.r * 0.9, 0.03, f.r * 0.9));
     c.batch.add(room, P.bark, geo("oliveTrunk", () => new THREE.CylinderGeometry(0.05, 0.09, 1.4, 8).translate(0, 0.7, 0)), L(f, 0, 0.7, 0, 0, 1, 1, 1, 0.08));
-    c.batch.add(room, solid("olive", "#4b6a3d", { rough: 0.85 }), canopyGeometry(7 + (id.length % 3)), L(f, 0.05, 1.9, 0, R() * 3, 1.2));
+    c.batch.add(room, solid("oliveCore", "#1e2b19", { rough: 0.95 }), canopyGeometry(7 + (id.length % 3)), L(f, 0.05, 1.95, 0, R() * 3, 0.95));
+    const sprig = oliveSprigGeometry(), sm = oliveSprigMaterial();
+    for (let k = 0; k < (c.q === "high" ? 150 : 70); k++) {
+      const a = R() * Math.PI * 2, el = Math.acos(2 * R() - 1), rr = 0.42 + R() * 0.2;
+      const x = Math.sin(el) * Math.cos(a) * rr * 1.15, y = 2.25 + Math.cos(el) * rr * 0.8, z = Math.sin(el) * Math.sin(a) * rr * 1.15;
+      c.inst.add(room, "oliveSprig", sprig, sm, L(f, x, y, z, a + Math.PI / 2, 0.8 + R() * 0.5, 0.8 + R() * 0.5, 1, (R() - 0.5) * 1.6, (R() - 0.5) * 1.2));
+    }
     return;
   }
   c.batch.add(room, P.gold, urn(), L(f, 0, 0, 0, 0, f.r / 0.44, 1, f.r / 0.44), { cast: true });

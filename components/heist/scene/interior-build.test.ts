@@ -47,7 +47,7 @@ describe("por quadro", () => {
     updateDoors(b.doors, allDoors(true), 0, true);
     for (const l of b.doors.leaves) expect(Math.abs(l.pivot.rotation.y), l.id).toBeGreaterThan(1.4);
     updateDoors(b.doors, allDoors(false), 0, true);
-    for (const l of b.doors.leaves) expect(l.pivot.rotation.y, l.id).toBe(0);
+    for (const l of b.doors.leaves) expect(Math.abs(l.pivot.rotation.y), l.id).toBe(0);
     // LED: vermelho fechada, verde aberta
     const led = b.doors.leds[0].mesh.material as THREE.MeshBasicMaterial;
     expect(led.color.r).toBeGreaterThan(led.color.g);

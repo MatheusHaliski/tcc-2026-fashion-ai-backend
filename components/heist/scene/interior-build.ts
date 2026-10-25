@@ -156,10 +156,14 @@ export function prepareInterior(b: InteriorBuild, gl: THREE.WebGLRenderer): Prep
     mirror = new FloorMirror(0.5);
     for (const f of b.floors) { const k = MIRROR[f.key]; if (k) mirror.patch(f.mesh, k[0], k[1]); }
   }
+  const out = { mirror, domes: beaconDomes(b) }; prepared.set(b, { gl, out });
+  return out;
+}
+/** Materiais (cópias por sala) da cúpula do giroflex: o alarme acende todos. */
+export function beaconDomes(b: InteriorBuild): THREE.MeshStandardMaterial[] {
   const domes: THREE.MeshStandardMaterial[] = [];
   for (const g of b.rooms.values()) g.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (m && !Array.isArray(m) && m.name?.startsWith("solid-beaconOff") && !domes.includes(m)) domes.push(m); });
-  const out = { mirror, domes }; prepared.set(b, { gl, out });
-  return out;
+  return domes;
 }
 
 export function disposeInterior(b: InteriorBuild) {

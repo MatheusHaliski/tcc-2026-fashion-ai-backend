@@ -123,9 +123,9 @@ export function buildDoors(doors: DoorDef[], P: Palette, q: Quality, batch: Batc
     // (cada lado no lote da sala daquele lado: o batente continua lá quando a sala vizinha está escondida)
     for (const [side, sr] of [[s.t0, s.lo], [s.t1, s.hi]] as const) {
       const at = (along: number, y: number, sx: number, sy: number) => alongX ? mat(along, y, side, 0, sx, sy, 0.05) : mat(side, y, along, 0, 0.05, sy, sx);
-      const r = isInterior(sr) ? sr : room;
-      batch.add(r, trim, BOX0(), at(s.w0 - 0.04, 0, 0.08, H + 0.08)); batch.add(r, trim, BOX0(), at(s.w1 + 0.04, 0, 0.08, H + 0.08));
-      batch.add(r, trim, BOX0(), at((s.w0 + s.w1) / 2, H, W + 0.16, 0.08));
+      const r = isInterior(sr) ? sr : room, tr = r === "servico" || r === "doca" || r === "seguranca" ? P.darkSteel : trim;
+      batch.add(r, tr, BOX0(), at(s.w0 - 0.04, 0, 0.08, H + 0.08)); batch.add(r, tr, BOX0(), at(s.w1 + 0.04, 0, 0.08, H + 0.08));
+      batch.add(r, tr, BOX0(), at((s.w0 + s.w1) / 2, H, W + 0.16, 0.08));
     }
     const swing = (spec.swingTo ?? "lo") === "lo" ? -1 : 1;                     // −1: abre para o lado de menor coordenada
     for (let k = 0; k < n; k++) {

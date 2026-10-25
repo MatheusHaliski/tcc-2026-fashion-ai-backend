@@ -164,9 +164,11 @@ export function envFor(gl: THREE.WebGLRenderer, m: EnvMood): THREE.Texture {
   let per = envCache.get(gl); if (!per) { per = new Map(); envCache.set(gl, per); }
   const hit = per.get(m); if (hit) return hit;
   const pm = new THREE.PMREMGenerator(gl); const sc = moodScene(m);
-  const rt = pm.fromScene(sc, 0.03); pm.dispose();
+  const rt = pm.fromScene(sc, 0.03, 0.1, 100, { size: PROBE_SIZE }); pm.dispose();
   sc.traverse((o) => { const me = o as THREE.Mesh; if (me.isMesh) { me.geometry.dispose(); (me.material as THREE.Material).dispose(); } });
   per.set(m, rt.texture); return rt.texture;
 }
+/** Lado do cubo dos ambientes (o sintético de cada clima e a sonda de cada sala usam o mesmo: os shaders não mudam). */
+export const PROBE_SIZE = 128;
 /** Intensidade do ambiente por clima (a luz difusa de fundo de cada sala). */
-export const ENV_INTENSITY: Record<EnvMood, number> = { warm: 0.6, gallery: 0.42, backstage: 0.5, cool: 0.7, vault: 0.5 };
+export const ENV_INTENSITY: Record<EnvMood, number> = { warm: 0.45, gallery: 0.42, backstage: 0.5, cool: 0.7, vault: 0.5 };

@@ -628,7 +628,7 @@ function solvePuzzle(s: SimState) {
 export function closePuzzle(s: SimState) { if (s.puzzle) emit(s, { t: "puzzle", kind: s.puzzle.kind, result: "close" }); s.puzzle = null; }
 
 /* ---------- cena do diamante, alarme e fuga ---------- */
-function startCutscene(s: SimState) {
+export function startCutscene(s: SimState) {
   const p = s.player;
   s.puzzle = null; p.inv.diamond = true; p.aiming = false; p.crouch = false; p.mode = "CUTSCENE"; p.action = null;
   addLoot(s, "diamante", 15000, "ESPECIAL", "exposed", "vitrine", "cofre");

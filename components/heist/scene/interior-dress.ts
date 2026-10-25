@@ -137,6 +137,21 @@ export function frondGeometry(): THREE.BufferGeometry {
 export function frondMaterial(): THREE.MeshStandardMaterial {
   return cachedMat("frondMat", () => new THREE.MeshStandardMaterial({ map: frondTexture(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.7, envMapIntensity: 0.5 }));
 }
+/** Raminho de oliveira: cartão com folhas estreitas verde-prateadas recortadas por textura (a copa é feita de muitos). */
+export function oliveSprigGeometry(): THREE.BufferGeometry {
+  return geo("oliveSprig", () => { const g = new THREE.PlaneGeometry(0.34, 0.34, 2, 2); const p = g.getAttribute("position") as THREE.BufferAttribute; for (let i = 0; i < p.count; i++) p.setZ(i, -0.04 * (p.getX(i) ** 2 + p.getY(i) ** 2) * 6); g.computeVertexNormals(); return g; });
+}
+export function oliveSprigMaterial(): THREE.MeshStandardMaterial {
+  return cachedMat("oliveSprigMat", () => new THREE.MeshStandardMaterial({ map: drawnTexture("oliveSprigTex", 256, 256, (g, w, h) => {
+    const R = rand(77); g.clearRect(0, 0, w, h);
+    g.strokeStyle = "#5b5a3c"; g.lineWidth = 3; g.beginPath(); g.moveTo(w * 0.15, h * 0.85); g.quadraticCurveTo(w * 0.5, h * 0.5, w * 0.85, h * 0.15); g.stroke();
+    for (let k = 0; k < 16; k++) {
+      const t = 0.08 + (k / 16) * 0.84, x = w * (0.15 + 0.7 * t), y = h * (0.85 - 0.7 * t), side = k % 2 ? 1 : -1, a = -Math.PI / 4 + side * (0.7 + R() * 0.4);
+      g.save(); g.translate(x, y); g.rotate(a); g.fillStyle = R() > 0.5 ? "#6f7d54" : "#8f9a72";
+      g.beginPath(); g.ellipse(0, -h * 0.07, w * 0.018, h * 0.07, 0, 0, Math.PI * 2); g.fill(); g.restore();
+    }
+  }), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.65, envMapIntensity: 0.5 }));
+}
 /** Copa podada (oliveira/topiaria): bolas irregulares de folhagem. */
 export function canopyGeometry(seed: number): THREE.BufferGeometry {
   return geo(`canopy${seed}`, () => {

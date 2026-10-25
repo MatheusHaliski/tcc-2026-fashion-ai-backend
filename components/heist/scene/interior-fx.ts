@@ -9,8 +9,8 @@ import * as THREE from "three";
 import { DOORS, INTERACTS, RACKS, baseProps } from "@/lib/heist/level";
 import type { DoorId, RoomId } from "@/lib/heist/types";
 import type { SceneView } from "@/lib/heist/view";
-import { ENV_INTENSITY, envFor, type EnvMood } from "./interior-mats";
-import { doorHeight, isInterior, roomAtPoint, type InteriorRoom } from "./interior-shell";
+import { ENV_INTENSITY, PROBE_SIZE, envFor, type EnvMood } from "./interior-mats";
+import { INTERIOR, doorHeight, isInterior, roomAtPoint, type InteriorRoom } from "./interior-shell";
 import type { LightAnchor } from "./interior-props";
 import type { DoorOut } from "./interior-doors";
 import { cctvTexture } from "./interior-props";
@@ -25,26 +25,68 @@ export const MOOD: Record<InteriorRoom, EnvMood> = {
 const FLUORESCENT = new Set<RoomId>(["servico", "seguranca", "doca"]);
 
 const envClones = new WeakMap<THREE.WebGLRenderer, Map<string, THREE.Material>>();
-/** Cópia do material com o ambiente do clima da sala (cada sala reflete o próprio entorno: âmbar, galeria, fluorescente). */
-export function roomMaterial(m: THREE.Material, room: InteriorRoom, gl: THREE.WebGLRenderer): THREE.Material {
+/**
+ * Cópia do material com o ambiente da sala: primeiro o sintético do clima (âmbar, galeria, fluorescente), depois — no
+ * "high" — a sonda tirada da própria sala (`probe`). O piso espelhado é único por sala e recebe o ambiente direto.
+ */
+export function roomMaterial(m: THREE.Material, room: InteriorRoom, gl: THREE.WebGLRenderer, probe?: THREE.Texture): THREE.Material {
   const std = m as THREE.MeshStandardMaterial;
   if (!std.isMeshStandardMaterial) return m;                                  // básicos (telas, chamas) e shaders ficam como estão
+  const mood = MOOD[room];
+  if (m.userData.mirror) { if (probe) { std.envMap = probe; std.envMapIntensity = (m.userData.envBase as number) * PROBE_INTENSITY[mood]; } return m; }
   let per = envClones.get(gl); if (!per) { per = new Map(); envClones.set(gl, per); }
-  const mood = MOOD[room], key = `${m.uuid}|${mood}`;
+  const key = probe ? `${m.uuid}|${room}|${probe.uuid}` : `${m.uuid}|${mood}`;
   let c = per.get(key) as THREE.MeshStandardMaterial | undefined;
   if (!c) {
-    c = std.clone(); c.name = `${m.name}@${mood}`;
-    c.envMap = envFor(gl, mood); c.envMapIntensity = std.envMapIntensity * ENV_INTENSITY[mood];
+    const base = (m.userData.envBase as number | undefined) ?? std.envMapIntensity;
+    c = std.clone(); c.name = `${m.name.split("@")[0]}@${probe ? room : mood}`; c.userData = { ...m.userData, envBase: base };
+    c.envMap = probe ?? envFor(gl, mood); c.envMapIntensity = base * (probe ? PROBE_INTENSITY[mood] : ENV_INTENSITY[mood]);
     per.set(key, c);
   }
   return c;
 }
-/** Troca os materiais das malhas de uma sala pelas cópias do clima dela. */
-export function applyRoomEnv(root: THREE.Object3D, room: InteriorRoom, gl: THREE.WebGLRenderer) {
+/** Troca os materiais das malhas de uma sala pelas cópias com o ambiente dela. */
+export function applyRoomEnv(root: THREE.Object3D, room: InteriorRoom, gl: THREE.WebGLRenderer, probe?: THREE.Texture) {
   root.traverse((o) => {
     const me = o as THREE.Mesh; if (!me.isMesh) return;
-    me.material = Array.isArray(me.material) ? me.material.map((x) => roomMaterial(x, room, gl)) : roomMaterial(me.material, room, gl);
+    me.material = Array.isArray(me.material) ? me.material.map((x) => roomMaterial(x, room, gl, probe)) : roomMaterial(me.material, room, gl, probe);
   });
+}
+/** Peso da sonda (luz real da sala, mais escura que os painéis sintéticos). */
+const PROBE_INTENSITY: Record<EnvMood, number> = { warm: 1.1, gallery: 1.0, backstage: 1.0, cool: 1.0, vault: 1.1 };
+
+/* ---------- sondas de reflexo por sala ---------- */
+/** Onde cada sala se fotografa para o próprio reflexo (altura de olho, no meio do espaço livre). */
+export const PROBE_AT: Record<InteriorRoom, [number, number, number]> = {
+  vestibulo: [0, 1.8, 19.4], salao: [0, 2.2, 9.2], galeria: [0, 1.8, -12.6], lounge: [17, 1.7, 9.6], terraco: [17.2, 1.8, -14],
+  bastidores: [17, 1.7, -1.2], servico: [-17.25, 1.6, 4.75], seguranca: [-20.2, 1.6, 4.8], doca: [-15, 2, 20.2], cofre: [-15.6, 1.8, -12],
+};
+/**
+ * Uma foto cúbica de cada sala, acesa pelas âncoras dela, vira (filtrada por PMREM) o reflexo e a luz difusa de fundo
+ * dos materiais daquela sala: o latão do lounge reflete o bar e as arandelas, o vidro das vitrines reflete a galeria, o
+ * espelho do camarim mostra o camarim (MH-03-08). Tirada uma vez, depois que a cena acende; de quebra compila todos os
+ * materiais de uma vez (sem engasgo ao entrar numa sala nova). Só o interior aparece na foto (gente e rua escondidas).
+ */
+export function captureProbes(gl: THREE.WebGLRenderer, scene: THREE.Scene, root: THREE.Object3D, rooms: Map<InteriorRoom, THREE.Group>, pool: LightPool, anchors: readonly LightAnchor[], keep: readonly THREE.Object3D[]): Map<InteriorRoom, THREE.Texture> {
+  const out = new Map<InteriorRoom, THREE.Texture>();
+  const rt = new THREE.WebGLCubeRenderTarget(PROBE_SIZE, { type: THREE.HalfFloatType });
+  const cube = new THREE.CubeCamera(0.05, 80, rt);
+  const pm = new THREE.PMREMGenerator(gl);
+  const hidden: THREE.Object3D[] = [];
+  for (const ch of scene.children) if (ch !== root && !keep.includes(ch) && ch.visible) { ch.visible = false; hidden.push(ch); }
+  const vis = new Map<THREE.Object3D, boolean>(); for (const g of rooms.values()) vis.set(g, g.visible);
+  const only = new Set<RoomId>(), focus = new THREE.Vector3();
+  for (const room of INTERIOR) {
+    for (const [r, g] of rooms) g.visible = r === room;
+    only.clear(); only.add(room); focus.set(...PROBE_AT[room]);
+    pool.update(anchors, only, only, focus, 0, (a) => (a.alarm ? 0 : 1), true);
+    cube.position.copy(focus); cube.update(gl, scene);
+    out.set(room, pm.fromCubemap(rt.texture).texture);
+  }
+  for (const [g, v] of vis) g.visible = v;
+  for (const o of hidden) o.visible = true;
+  pm.dispose(); rt.dispose();
+  return out;
 }
 
 /* ---------- salas visíveis ---------- */
@@ -94,17 +136,18 @@ export class LightPool {
     }
   }
   /** `gain(a)` devolve o multiplicador da âncora agora (cintilação, alarme, energia cortada); 0 tira da disputa. */
-  update(anchors: readonly LightAnchor[], lit: Set<RoomId>, core: Set<RoomId>, focus: THREE.Vector3, dt: number, gain: (a: LightAnchor) => number) {
+  update(anchors: readonly LightAnchor[], lit: Set<RoomId>, core: Set<RoomId>, focus: THREE.Vector3, dt: number, gain: (a: LightAnchor) => number, snap = false) {
     const sc = this.scored; sc.length = 0;
     for (const a of anchors) {
       if (!lit.has(a.room)) continue;
+      if (!core.has(a.room) && a.intensity < 8 && !a.alarm) continue;
       const g = gain(a); if (g <= 0) continue;
       const dx = a.x - focus.x, dy = a.y - focus.y, dz = a.z - focus.z;
       sc.push({ a, s: (a.intensity * g) / (1 + dx * dx + dy * dy + dz * dz) * (a.alarm ? 4 : 1) * (core.has(a.room) ? 1 : 0.33) });
     }
     sc.sort((p, q) => q.s - p.s);
     const want = new Set<LightAnchor>(); for (let k = 0; k < Math.min(this.slots.length, sc.length); k++) want.add(sc[k].a);
-    const rate = this.first ? 1e9 : dt * 4;
+    const rate = this.first || snap ? 1e9 : dt * 4;
     const held = new Set<LightAnchor>();
     for (const s of this.slots) {
       if (!s.a) continue;
@@ -113,7 +156,7 @@ export class LightPool {
     for (const a of want) {
       if (held.has(a)) continue;
       const free = this.slots.find((s) => !s.a); if (!free) break;
-      free.a = a; free.w = this.first ? 1 : 0; held.add(a);
+      free.a = a; free.w = this.first || snap ? 1 : 0; held.add(a);
     }
     this.first = false;
     this.slots.forEach((s, k) => {
@@ -141,10 +184,10 @@ interface KeyDef { p: [number, number, number]; aim: [number, number, number]; a
 const KEYS: Partial<Record<InteriorRoom, KeyDef[]>> = {
   vestibulo: [{ p: [0, 6.05, 19.5], aim: [0, 0, 19.2], angle: 1.0, i: 60, color: "#ffd9a8" }],
   salao: [
-    { p: [-8.25, 8.9, 4.5], aim: [-6.5, 0, 4.5], angle: 0.95, i: 95, color: "#ffd29a" },
-    { p: [8.25, 8.9, 4.5], aim: [6.5, 0, 4.5], angle: 0.95, i: 95, color: "#ffd29a" },
-    { p: [0, 9.2, 11.6], aim: [0, 0, 10.4], angle: 0.9, i: 80, color: "#ffdcae" },
-    { p: [0, 9.2, -2.6], aim: [0, 0, -1.8], angle: 0.9, i: 80, color: "#ffdcae" },
+    { p: [-8.25, 8.9, 4.5], aim: [-6.5, 0, 4.5], angle: 0.8, i: 80, color: "#ffd29a" },
+    { p: [8.25, 8.9, 4.5], aim: [6.5, 0, 4.5], angle: 0.8, i: 80, color: "#ffd29a" },
+    { p: [0, 9.2, 11.6], aim: [0, 0, 10.4], angle: 0.78, i: 70, color: "#ffdcae" },
+    { p: [0, 9.2, -2.6], aim: [0, 0, -1.8], angle: 0.78, i: 70, color: "#ffdcae" },
   ],
   galeria: [{ p: [-5, 5.25, -14], aim: [-5, 0, -14.5], angle: 1.0, i: 45, color: "#fff1dc" }, { p: [5, 5.25, -14], aim: [5, 0, -14.5], angle: 1.0, i: 45, color: "#fff1dc" }],
   lounge: [{ p: [17.2, 4.45, 9.3], aim: [17.2, 0, 9.3], angle: 1.05, i: 38, color: "#ffc98a" }],
@@ -163,8 +206,9 @@ export class KeyLight {
   private cur: KeyDef | null = null;
   private w = 0;
   private first = true;
+  private warm = 3;
   constructor(size: number) {
-    const l = new THREE.SpotLight("#ffffff", 0, 0, 0.9, 0.6, 2);
+    const l = new THREE.SpotLight("#ffffff", 0, 0, 0.9, 0.8, 2);
     l.castShadow = true; l.shadow.mapSize.set(size, size); l.shadow.bias = -0.0005; l.shadow.normalBias = 0.04; l.shadow.radius = 5;
     l.shadow.camera.near = 0.3; l.shadow.camera.far = 26; l.name = "interior-key";
     this.light = l;
@@ -178,7 +222,7 @@ export class KeyLight {
     else this.w = Math.min(1, this.w + rate);
     this.first = false;
     const l = this.light, k = this.cur;
-    l.shadow.autoUpdate = !!k && this.w > 0;
+    l.shadow.autoUpdate = (!!k && this.w > 0) || this.warm-- > 0;
     if (!k) { l.intensity = 0; return; }
     l.position.set(...k.p); l.target.position.set(...k.aim); l.target.updateMatrixWorld();
     l.angle = k.angle; l.color.set(k.color); l.intensity = k.i * this.w * gain * LIGHT_GAIN;
@@ -198,6 +242,7 @@ export class FloorMirror {
   private uniforms = { tMirror: { value: null as THREE.Texture | null }, uMirrorMat: { value: new THREE.Matrix4() }, uMirrorOn: { value: 0 } };
   private size = new THREE.Vector2();
   private hidden: THREE.Object3D[] = [];
+  private frames = 0;
   constructor(private scale = 0.5) {
     this.rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true });
     this.rt.texture.name = "floorMirror";
@@ -205,7 +250,8 @@ export class FloorMirror {
   }
   /** Pisos que refletem: `k` força do reflexo, `f0` refletância de frente (mármore polido ~0,06; madeira envernizada ~0,03). */
   patch(mesh: THREE.Mesh, k: number, f0: number) {
-    const m = (mesh.material as THREE.MeshStandardMaterial).clone(); m.name += "+mirror";
+    const src = mesh.material as THREE.MeshStandardMaterial, m = src.clone(); m.name += "+mirror";
+    m.userData = { ...src.userData, mirror: true, envBase: ((src.userData.envBase as number | undefined) ?? src.envMapIntensity) * 0.55 };
     const u = this.uniforms;
     m.onBeforeCompile = (sh) => {
       sh.uniforms.tMirror = u.tMirror; sh.uniforms.uMirrorMat = u.uMirrorMat; sh.uniforms.uMirrorOn = u.uMirrorOn;
@@ -232,6 +278,8 @@ if (uMirrorOn > 0.5) {
     m.envMapIntensity *= 0.55;
     mesh.material = m; this.floors.push(mesh);
   }
+  /** Desliga o reflexo até o próximo `update` (fotos das sondas: a textura do espelho é da câmera principal). */
+  off() { this.uniforms.uMirrorOn.value = 0; }
   /** Antes do desenho principal: espelha a câmera, corta abaixo do piso e desenha a cena sem os pisos. */
   update(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, hide: readonly THREE.Object3D[]) {
     const u = this.uniforms;
@@ -239,7 +287,7 @@ if (uMirrorOn > 0.5) {
     camera.updateMatrixWorld();
     const cp = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
     const any = this.floors.some((f) => f.visible && f.parent?.visible !== false);
-    if (!any || cp.y <= 0.05) { u.uMirrorOn.value = 0; return; }
+    if (!any || cp.y <= 0.05 || ++this.frames < 3) { u.uMirrorOn.value = 0; return; }
     u.uMirrorOn.value = 1;
     gl.getDrawingBufferSize(this.size);
     const w = Math.max(2, Math.round(this.size.x * this.scale)), h = Math.max(2, Math.round(this.size.y * this.scale));

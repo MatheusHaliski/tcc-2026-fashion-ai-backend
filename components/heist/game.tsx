@@ -13,7 +13,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import type { HeistCard, SimState, VendorId, WeaponId } from "@/lib/heist/types";
 import { emptyView, type SceneView } from "@/lib/heist/view";
 import { SIM_VERSION, newSim, outfitPieces, restore, simCtx, snapshot, type SimCtx } from "@/lib/heist/state";
-import { choose, endTalk, equip, interact, quickHeal, skipBeat, skipCutscene, startBeat, step, writeView, type OpenUi } from "@/lib/heist/sim";
+import { choose, endTalk, equip, interact, quickHeal, skipBeat, skipCutscene, startBeat, startCutscene, step, writeView, type OpenUi } from "@/lib/heist/sim";
 import { castShot, damagePlayer, tiredness } from "@/lib/heist/combat";
 import { GUARDS, floorY } from "@/lib/heist/level";
 import { angDiff, yawOf } from "@/lib/heist/math";
@@ -166,7 +166,7 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
   useEffect(() => {
     if (!labHandle) return;
     const w = window as unknown as { __heist?: unknown };
-    w.__heist = { get s() { return sim.current.s; }, ctx, step: (inp: Parameters<typeof step>[2], dt: number) => step(sim.current.s, ctx, inp, dt), interact: () => onUiRef.current(interact(sim.current.s, ctx)), loading: () => loadingRef.current, hurt: (n: number, by: string) => { const t = sim.current.s.guards.find((g) => g.id === by); damagePlayer(sim.current.s, n, t ? t.pos : sim.current.s.player.pos, by); } };
+    w.__heist = { get s() { return sim.current.s; }, ctx, step: (inp: Parameters<typeof step>[2], dt: number) => step(sim.current.s, ctx, inp, dt), interact: () => onUiRef.current(interact(sim.current.s, ctx)), loading: () => loadingRef.current, takeDiamond: () => { startCutscene(sim.current.s); skipCutscene(sim.current.s); }, hurt: (n: number, by: string) => { const t = sim.current.s.guards.find((g) => g.id === by); damagePlayer(sim.current.s, n, t ? t.pos : sim.current.s.player.pos, by); } };
     return () => { delete w.__heist; };
   }, [labHandle, ctx]);
   // laboratório: começar num checkpoint (?at=salao, cofre…)
