@@ -11,6 +11,7 @@ import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.CatalogImage;
 import br.com.fashionai.domain.model.CatalogProduct;
 import br.com.fashionai.domain.model.CatalogSource;
+import br.com.fashionai.domain.model.enums.CatalogImageType;
 import br.com.fashionai.domain.model.CatalogVariant;
 import br.com.fashionai.domain.model.enums.CatalogImageUsage;
 import br.com.fashionai.domain.repository.CatalogImageRepository;
