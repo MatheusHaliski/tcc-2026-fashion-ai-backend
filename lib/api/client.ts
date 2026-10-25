@@ -196,7 +196,9 @@ async function request<T>(method: string, path: string, body?: unknown, opts: Re
   if (res.status === 204) return undefined as T;
   const ct = res.headers.get("content-type") ?? "";
   if (ct.includes("application/json")) return (await res.json()) as T;
-  return (await res.blob()) as T;
+  // 200 sem corpo (o backend devolve null sem Content-Type): nada, e não um Blob vazio que passa por valor verdadeiro
+  const blob = await res.blob();
+  return (blob.size ? blob : undefined) as T;
 }
 
 export const api = {

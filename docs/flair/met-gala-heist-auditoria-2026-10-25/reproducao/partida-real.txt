@@ -1,0 +1,34 @@
+20:55:54 captura 01-selecao-deck
+20:56:10 captura 02-inicio | pos=(0.00,5.00) susp=0 en=100 fb=STARTED st=ACTIVE
+20:56:10 T01 inicio | pos=(0.00,5.00) susp=0 en=100 fb=STARTED st=ACTIVE
+20:56:12 T01 caminhada: 4.9 m em 2.7 s (1.80 m/s) | pos=(0.00,0.10) susp=36 en=100 fb=WAITING st=ACTIVE
+20:56:16 captura 03-t01-portaria | pos=(0.00,0.10) susp=100 en=100 fb=DETECTED st=FAILED
+20:56:16 T01 fim em 6.5 s desde o tapete | pos=(0.00,0.10) susp=100 en=100 fb=DETECTED st=FAILED
+20:56:20 captura 04-t01-detectado | pos=(0.00,0.10) susp=100 en=100 fb=DETECTED st=FAILED
+20:56:30 T03 inicio | pos=(0.00,5.00) susp=0 en=100 fb=STARTED st=ACTIVE
+20:56:32 T03 ida: 2.7 m em 1.5 s (1.76 m/s) | pos=(0.00,2.29) susp=10 en=100 fb=WAITING st=ACTIVE
+20:56:33 T03 depois de 1,5 s parada na vista | pos=(0.00,2.29) susp=35 en=100 fb=WAITING st=ACTIVE
+20:56:35 T03 volta: 3.0 m em 1.7 s (1.83 m/s) | pos=(0.00,5.34) susp=49 en=100 fb=WAITING st=ACTIVE
+20:56:35 T03 fora da vista | pos=(0.00,5.34) susp=49 en=100 fb=WAITING st=ACTIVE
+20:56:38 captura 05-t03-fora-da-vista | pos=(0.00,5.34) susp=26 en=100 fb=WAITING st=ACTIVE
+20:56:42 T03 4 s fora da vista | pos=(0.00,5.34) susp=0 en=100 fb=WAITING st=ACTIVE
+20:56:46 captura 06-t03-recuou | pos=(0.00,5.34) susp=0 en=100 fb=WAITING st=ACTIVE
+20:56:46 T02 na mesma partida (suspeita zerada) | pos=(0.00,5.34) susp=0 en=100 fb=WAITING st=ACTIVE
+20:56:46 carta 1: 1. Look teste Bruno Teste Comum / Rara / Convidado / 20 Energia | pos=(0.00,5.34) susp=0 en=100 fb=WAITING st=ACTIVE
+20:56:47 metamorfose (tecla 1): 1 tentativa(s) | pos=(0.00,5.34) susp=0 en=80 fb=TRANSFORMED st=ACTIVE
+20:57:00 T02 ate o seguranca esquerdo: 4.5 m em 13.4 s (0.34 m/s) | pos=(-1.55,1.07) susp=0 en=100 fb=MOVING st=ACTIVE
+20:57:40 distração: 6 clique(s) — não aceita | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:57:41 T02 ate o direito: 0.0 m em 0.4 s (0.00 m/s) | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:58:51 distração: 6 clique(s) — não aceita | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:58:51 T02 ate a vitrine: 0.0 m em 0.4 s (0.00 m/s) | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:00 furto (tecla E): não aceito | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:00 T02 furto: DETECTED em 134.8 s | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:04 captura 07-t02-furto | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:05 T05 ate a portaria: 0.0 m em 0.4 s (0.00 m/s) | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:05 T05 fora da vista, antes da portaria | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:14 metamorfose de novo (tecla 1): não aceito | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:14 T05 ate a saida: 0.0 m em 0.4 s (0.00 m/s) | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:15 saída (tecla E): 1 tentativa(s) | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:16 T05 fim: FAILED em 11.8 s; operação 150.5 s | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:20 captura 08-t05-fim | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED
+20:59:20 metricas {"droppedInputs":10,"actions":47,"rttAvgMs":88,"rttP95Ms":94,"rttMaxMs":2023,"pageErrors":[]} | pos=(-1.55,1.07) susp=100 en=100 fb=DETECTED st=FAILED

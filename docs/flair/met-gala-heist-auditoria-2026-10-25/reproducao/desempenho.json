@@ -1,0 +1,35 @@
+{
+ "renderer": "Chromium headless + SwiftShader (CPU), 1280x720, sem GPU",
+ "results": [
+  {
+   "scene": "heist-neutro",
+   "z": 4.2,
+   "frames": 8,
+   "avgMs": 731.2,
+   "p95Ms": 1416.6,
+   "callsPerFrame": 735.3,
+   "trisPerFrame": 273051.4,
+   "heapMb": 109
+  },
+  {
+   "scene": "heist-gala",
+   "z": 2.2,
+   "frames": 8,
+   "avgMs": 683.3,
+   "p95Ms": 750,
+   "callsPerFrame": 791.5,
+   "trisPerFrame": 276919.9,
+   "heapMb": 109
+  },
+  {
+   "scene": "heist-gala",
+   "z": -2.5,
+   "frames": 9,
+   "avgMs": 642.6,
+   "p95Ms": 1133.3,
+   "callsPerFrame": 726.9,
+   "trisPerFrame": 270357.1,
+   "heapMb": 86.4
+  }
+ ]
+}

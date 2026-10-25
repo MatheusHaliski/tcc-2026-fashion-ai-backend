@@ -1,0 +1,8 @@
+{
+ "droppedInputs": 10,
+ "actions": 47,
+ "rttAvgMs": 88,
+ "rttP95Ms": 94,
+ "rttMaxMs": 2023,
+ "pageErrors": []
+}
