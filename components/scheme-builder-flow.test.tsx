@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
 import { PIECE, PIECE_2, SCHEME } from "@/test-utils/fixtures";
 import { SchemeBuilder } from "./scheme-builder";
-vi.mock("@/components/look-seal-verification", () => ({ useLookSeals: () => ({ valid: true, requests: [] }), SealSuggestions: () => null }));
+vi.mock("@/components/look-seal-verification", () => ({ useLookSeals: () => ({ valid: true, requests: [], pickedArts: [] }), SealSuggestions: () => null }));
 vi.mock("@/components/scheme-card", () => ({ SchemeCard: () => null }));
 vi.mock("@/components/hype/look-hype-preview", () => ({ LookHypePreview: () => null, PieceHypeTag: () => null }));
 vi.mock("@/components/insights/insight-strip", () => ({ InsightStrip: () => null }));

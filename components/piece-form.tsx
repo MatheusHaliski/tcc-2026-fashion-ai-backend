@@ -10,7 +10,7 @@ import { SealSuggestionHype } from "@/components/hype/hype-seals";
 import type { HypeLevel } from "@/lib/hype/types";
 import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
 import type { SealBadge } from "@/components/scheme-card";
-import type { SealDesign } from "@/components/seal-medallion";
+import { suggestionSealBadge, type SuggestedSeal } from "@/lib/seals/suggestion-badge";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
@@ -42,12 +42,11 @@ export function toPayload(v: PieceFormValue) {
 /** `hype`: HypeScore atual da peça avaliada (RF53); sem cálculo ainda, vem null e nada aparece. */
 /** `seal`: o selo que o vínculo emitiria, com a arte (medalhão) definida pelo emissor na criação do selo. */
 interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; hype?: { score: number | null; level: HypeLevel | null } | null;
-  seal?: { name: string; tier: string; premium: boolean; owner?: string | null; iconUrl?: string | null; design?: SealDesign | null } | null }
+  seal?: SuggestedSeal | null }
 /** identificador guardado em seals[] da peça: tipo + nome (o mesmo formato "TIPO:nome" que o card lê) */
 const sealId = (s: SealOption) => `${s.kind}:${s.name}`;
 /** Medalhão do selo para a prévia: a arte do emissor; sem selo cadastrado, o logo do perfil emissor. */
-const sealArt = (s: SealOption): SealBadge => ({ label: s.seal?.name ?? s.name, name: s.seal?.name ?? s.name, premium: s.seal?.premium ?? s.kind === "CELEBRITY",
-  owner: s.seal?.owner ?? undefined, tier: s.seal?.tier ?? "PECA", iconUrl: s.seal?.iconUrl ?? s.logoUrl ?? null, design: s.seal?.design ?? null, kind: s.kind });
+const sealArt = (s: SealOption): SealBadge => suggestionSealBadge(s);
 
 /** Selos marcados com a arte guardada, na ordem em que foram marcados. */
 export function chosenSealArts(v: PieceFormValue): SealBadge[] {

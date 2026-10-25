@@ -396,6 +396,17 @@ class SealCreatorsCoverageTest {
     }
 
     @Test
+    void sugestaoDeSeloDePecaNaPreviaDoLookDizQuaisPecasOSeloCobre() {
+        activeSeal("Peça azul", SealTier.PECA, referencePolicy(SealTier.PECA, "Peça azul", 1, "Nike", "blue"));
+        WardrobeItem a = piece("Nike", "blue"), c = piece("Nike", "red");
+        Map<String, Object> suggestion = list(seals.preview(anaSession, List.of(a.getId(), c.getId()), List.of(), List.of()), "suggestions").stream()
+                .filter(m -> brand.getId().equals(m.get("targetOwnerId"))).findFirst().orElseThrow();
+        // a prévia do card do look desenha o selo de peça na linha da peça coberta
+        assertThat(suggestion.get("linkedPieceIds")).asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.LIST).containsExactly(a.getId());
+        assertThat(suggestion.get("seal")).isNotNull();
+    }
+
+    @Test
     void modoAutomaticoSugereParaPecasELooksSalvosEOsSelosDePecaVinculamSoAsPecasCompativeis() {
         activeSeal("Peça azul", SealTier.PECA, referencePolicy(SealTier.PECA, "Peça azul", 1, "Nike", "blue"));
         activeSeal("Look Nike", SealTier.LOOK, referencePolicy(SealTier.LOOK, "Look Nike", 2, "Nike", "blue"));

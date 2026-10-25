@@ -26,6 +26,7 @@ import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
+import { isPersistedPieceId, usePieceSealsFor } from "@/lib/pieces/piece-seals-store";
 import { CardFashionMeta } from "@/components/card-fashion-meta";
 import { DefaultGarmentPhoto } from "@/components/catalog/default-garment-photo";
 import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, piecePhotoAspect } from "@/components/catalog/catalog-photo";
@@ -55,7 +56,7 @@ export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: strin
   return { src: thumbUrl(raw, 640), srcSet: thumbSrcSet(raw), cover: false };
 }
 
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming, expanded = false }: {
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals: givenSeals, anatomy, extra, flip = true, framing: forcedFraming, expanded = false }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   extra?: ReactNode;
   flip?: boolean;
@@ -73,6 +74,9 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const depth = useFashionDepth(tilt);
   const hype = useHypeSummary("PIECE", piece.id, !piece.id.startsWith("preview") && (!selectable || auraEnabled), auraEnabled);
   const hypeState = hypeViewState(hype.summary, hype);
+  // selos aprovados de marca/celebridade/perfil: os que a tela passou; sem eles, o card busca em lote (mesma arte do emissor)
+  const fetchedSeals = usePieceSealsFor(piece.id, givenSeals === undefined && isPersistedPieceId(piece.id));
+  const brandSeals = givenSeals ?? (fetchedSeals.length ? fetchedSeals : undefined);
   const seals = withHypeSeals(brandSeals, hypeSealCodes(hype.summary));
   const openModal = (e: React.MouseEvent) => { if (!detail || href || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openPiece(piece.id); };
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;

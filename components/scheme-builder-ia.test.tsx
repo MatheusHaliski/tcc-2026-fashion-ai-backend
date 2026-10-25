@@ -13,7 +13,7 @@ import { tokenStore } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { SchemeBuilder, SlotBrand, onePerType } from "./scheme-builder";
 
-const seals = vi.hoisted(() => ({ valid: true, requests: [] as unknown[] }));
+const seals = vi.hoisted(() => ({ valid: true, requests: [] as unknown[], pickedArts: [] as unknown[] }));
 vi.mock("@/components/look-seal-verification", () => ({ useLookSeals: () => seals, SealSuggestions: () => <p>sugestões de selo</p> }));
 vi.mock("@/components/scheme-card", () => ({ SchemeCard: ({ scheme }: { scheme: { title: string; items: unknown[] } }) => <p>prévia: {scheme.title} ({scheme.items.length})</p> }));
 vi.mock("@/components/hype/look-hype-preview", () => ({ LookHypePreview: () => null, PieceHypeTag: () => null }));

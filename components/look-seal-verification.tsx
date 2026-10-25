@@ -1,4 +1,6 @@
 "use client";
+import { suggestionSealBadge, type SuggestedSeal } from "@/lib/seals/suggestion-badge";
+import type { SealBadge } from "@/components/scheme-card";
 import { useEffect, useState } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -8,7 +10,7 @@ import { SealSuggestionHype } from "@/components/hype/hype-seals";
 import type { HypeLevel } from "@/lib/hype/types";
 
 /** `hype`: HypeScore atual do look avaliado (RF53) — o backend já ordena as sugestões por Hype. */
-export interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; eraLabel?: string | null; hype?: { score: number | null; level: HypeLevel | null } | null }
+export interface SealOption { seal?: SuggestedSeal | null; tier?: string | null; linkedPieceIds?: string[] | null; targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; eraLabel?: string | null; hype?: { score: number | null; level: HypeLevel | null } | null }
 export interface SealSearch { loading: boolean; list: SealOption[]; message?: string | null; unregisteredMessage?: string | null; failed?: boolean }
 
 /**
@@ -79,7 +81,9 @@ export function useLookSeals({ pieceIds, occasion, style, enabled, schemeId, bac
   const consent = choice.key === key && choice.consent;
   const valid = !picked.some((id) => search.list.find((s) => s.targetOwnerId === id)?.kind === "CELEBRITY") || consent;
   const requests: SealRequest[] = search.loading || search.failed || !valid ? [] : search.list.filter((s) => picked.includes(s.targetOwnerId)).map((s) => ({ targetOwnerId: s.targetOwnerId, ...(s.kind === "CELEBRITY" ? { imageRightsConsent: consent } : {}) }));
-  return { search, picked, consent, valid, requests, bonds: result?.key === key ? result.bonds : [],
+  // medalhões dos selos marcados (arte do emissor) para a prévia do card do look
+  const pickedArts: SealBadge[] = search.list.filter((s) => picked.includes(s.targetOwnerId)).map((s) => suggestionSealBadge(s, "LOOK"));
+  return { search, picked, consent, valid, requests, pickedArts, bonds: result?.key === key ? result.bonds : [],
     onToggle: (id: string) => setChoice({ key, consent, picked: picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id] }),
     onConsent: (value: boolean) => setChoice({ key, picked, consent: value }),
     onRetry: () => { setChoice({ key, picked: [], consent: false }); setResult(null); setAttempt((n) => n + 1); } };

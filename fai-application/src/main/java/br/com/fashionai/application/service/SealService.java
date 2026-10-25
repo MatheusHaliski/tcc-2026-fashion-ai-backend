@@ -1223,6 +1223,7 @@ public class SealService {
             m.put("tier", c.tier());
             m.put("eraLabel", c.eraLabel());
             m.put("sealId", c.sealId());
+            m.put("linkedPieceIds", c.linkedPieceIds() == null ? List.of() : c.linkedPieceIds()); // peças que o selo de peça cobre no look
             m.put("seal", sealArt(c));                           // arte do selo do emissor, para a prévia do card
             m.put("hype", hypeView(c, hype));                   // RF53: {score, level} da entidade avaliada, ou null
             suggestions.add(m);

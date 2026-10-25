@@ -10,7 +10,7 @@ import { SchemeTags } from "@/components/scheme-tags";
 import { AiCompositionCard } from "@/components/ai-compositions";
 import { useUndo } from "@/lib/hooks/use-undo";
 import { PieceCard } from "@/components/piece-card";
-import { SchemeCard } from "@/components/scheme-card";
+import { SchemeCard, toSealBadges } from "@/components/scheme-card";
 import type { BgConfig } from "@/components/background-studio";
 import dynamic from "next/dynamic";
 const BackgroundStudio = dynamic(() => import("@/components/background-studio").then((m) => m.BackgroundStudio), { loading: () => <Skeleton className="h-40" /> });
@@ -259,7 +259,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
         <div className="mb-1 flex items-center justify-between gap-2"><p className="label mb-0">{t("scheme.card")}</p>
           {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, container); layout, skin e peças ficam */}
           <span className="flex gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></span></div>
-        <SchemeCard scheme={draft} href="#" />
+        {/* selos já aprovados do look (edição) + os marcados agora, com a arte do emissor */}
+        <SchemeCard scheme={draft} href="#" seals={[...(initial?.sealBadges?.length ? toSealBadges(initial.sealBadges) : []), ...sealVerification.pickedArts]} />
         {/* RF53 (P1-08): os seis números do rascunho — o Hype aqui é a média das peças; nada é salvo nem vira sinal */}
         <LookHypePreview pieceIds={selected.map((x) => x.id)} occasion={form.occasion} style={form.style} schemeId={initial?.id ?? null} />
         {/* RF53 · Lote A5 (P3-15): leitura pessoal das peças escolhidas (Hype ao lado do DNA e do uso) e redescobertas; fechada até abrir */}
