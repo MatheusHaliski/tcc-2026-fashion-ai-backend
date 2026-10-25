@@ -193,7 +193,8 @@ def run_pass(conn,downloader,provider,storage,audit,*,apply=False,batch_size=100
     return total
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--apply',action='store_true');p.add_argument('--watch',action='store_true');p.add_argument('--force',action='store_true');p.add_argument('--limit',type=int);p.add_argument('--interval',type=int,default=60);p.add_argument('--audit',type=Path,default=Path('photo-sets-audit.jsonl'));p.add_argument('--reviewed-masks',type=Path);p.add_argument('--parser-weights',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter);p.add_argument('--apply',action='store_true');p.add_argument('--watch',action='store_true');p.add_argument('--force',action='store_true');p.add_argument('--limit',type=int);p.add_argument('--interval',type=int,default=60);p.add_argument('--audit',type=Path,default=Path('photo-sets-audit.jsonl'));p.add_argument('--reviewed-masks',type=Path);p.add_argument('--parser-weights',type=Path)
+    p.add_argument('--export-rows',type=Path,help='grava as linhas (JSON) para o lote fora do banco e sai');p.add_argument('--from-lot',type=Path,help='importa photo-sets/*/set.json de um lote (--apply para gravar)');a=p.parse_args()
     if a.limit is not None and a.limit<1:p.error('--limit deve ser positivo')
     logging.basicConfig(level=logging.INFO,format='%(message)s')
     storage=None

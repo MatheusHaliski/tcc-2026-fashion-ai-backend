@@ -12,6 +12,7 @@ import br.com.fashionai.domain.model.CatalogImage;
 import br.com.fashionai.domain.model.CatalogProduct;
 import br.com.fashionai.domain.model.CatalogSource;
 import br.com.fashionai.domain.model.CatalogVariant;
+import br.com.fashionai.domain.model.enums.CatalogImageType;
 import br.com.fashionai.domain.model.enums.CatalogImageUsage;
 import br.com.fashionai.domain.repository.CatalogImageRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
@@ -214,7 +215,7 @@ public class CatalogImagePipelineService {
                         || "APPROVED".equals(i.getProcessingStatus())&&(i.isCanonical()||variantId!=null||imageId!=null))
                 .filter(i->!Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(boundPhotoSet(i,product).get("status"))))
                 .sorted(java.util.Comparator.comparing((CatalogImage i)->!"READY".equals(boundPhotoSet(i,product).get("status")))
-                        .thenComparing(i->!i.isCanonical()).thenComparing(i->String.valueOf(i.getId())))
+                        .thenComparing(CatalogImagePipelineService::viewRank).thenComparing(i->!i.isCanonical()).thenComparing(i->String.valueOf(i.getId())))
                 .toList();
         for (CatalogImage selected:candidates) {
             Map<String,Object> cleaned=boundPhotoSet(selected,product);
@@ -310,7 +311,7 @@ public class CatalogImagePipelineService {
                 .filter(i -> i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
                 .filter(i -> i.getImageUrl() != null && !i.getImageUrl().isBlank())
                 .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(boundPhotoSet(i,product).get("status"))))
-                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()))
+                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()).thenComparing(CatalogImagePipelineService::viewRank))
                 .limit(3).toList();
         if (candidates.isEmpty()) throw new ApiException(422, "CATALOG_IMAGE_MISSING", "Esta peça não tem foto disponível para verificar.");
         boolean downloaded = false;

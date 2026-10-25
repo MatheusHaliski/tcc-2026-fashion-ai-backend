@@ -30,6 +30,10 @@ const pipeline = vi.hoisted(() => ({ loadOriented: vi.fn(async () => ({})) }));
 vi.mock("@/lib/avatar3d/pipeline", () => pipeline);
 
 import ScenesLab, { LAB_LOOK } from "./scenes-lab";
+import { I18nProvider } from "@/lib/i18n/i18n";
+
+// o laboratório usa as mesmas traduções do app (dica da roda, câmera de detalhe)
+const Lab = () => <I18nProvider initial="pt-BR"><ScenesLab /></I18nProvider>;
 
 type Lab = { set: (p: Record<string, unknown>) => void; canvas: () => string | undefined; texture: (u: string, p?: string) => Promise<unknown>; probe: (u: string, p: string) => Promise<unknown> };
 const lab = () => (window as unknown as { __lab: Lab }).__lab;
@@ -43,7 +47,7 @@ afterEach(() => { cleanup(); at(""); vi.restoreAllMocks(); });
 describe("ScenesLab", () => {
   it("sem parâmetros abre o provador com a marca, o look de exemplo e a luz de loja", () => {
     at("");
-    render(<ScenesLab />);
+    render(<Lab />);
     expect(screen.getByRole("button", { name: "fitting-brand" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByTestId("fitting")).toBeTruthy();
     expect(fit.setFitMode).toHaveBeenCalledWith("depois");
@@ -53,7 +57,7 @@ describe("ScenesLab", () => {
 
   it("lê cenário, vista, corpo, peças, luz, depuração e ajustes de caimento da URL", () => {
     at("?s=fitting-sneakers&view=back&fit=antes&body=M-slim&pieces=cor-vermelha,camisa-xadrez,molde-jeans,camiseta_referencia,nada&light=night&debug=wire&yaw=30&close=1&variation=SLIM&neckline=V_NECK");
-    render(<ScenesLab />);
+    render(<Lab />);
     expect(fit.setFitMode).toHaveBeenCalledWith("antes");
     const p = fitting();
     expect(p).toMatchObject({ sex: "MASCULINO", view: "back", light: "night", closeUp: true, cameraYaw: 30, debug: { view: "wire", pose: null } });
@@ -68,14 +72,14 @@ describe("ScenesLab", () => {
 
   it("corpo plus, pose sem depuração, luz do dia e vista inválida ignorada", () => {
     at("?body=F-plus&pose=caminhada&light=daylight&view=cima&pieces=,");
-    render(<ScenesLab />);
+    render(<Lab />);
     expect(fitting()).toMatchObject({ sex: "FEMININO", light: "daylight", view: "front", debug: { view: "normal", pose: "caminhada" }, pieces: LAB_LOOK });
     expect((fitting().body as { build: number }).build).toBe(1.4);
   });
 
   it("botões trocam entre provador neutro, rua de lojas e palcos", () => {
     at("");
-    render(<ScenesLab />);
+    render(<Lab />);
     fireEvent.click(screen.getByRole("button", { name: "fitting-neutral" }));
     expect((fitting().environment as { kind: string }).kind).toBe("neutral");
     fireEvent.click(screen.getByRole("button", { name: "ministores" }));
@@ -96,7 +100,7 @@ describe("ScenesLab", () => {
 
   it("onProfile publica o inventário do estúdio para o script de capturas", () => {
     at("");
-    render(<ScenesLab />);
+    render(<Lab />);
     const onProfile = fitting().onProfile as (p: unknown) => void;
     onProfile({ interpretation: "x", brand: { key: "norte" }, palette: ["#000"], objects: [{ id: "o" }], photographs: [{ id: "f1" }, { id: "f2" }] });
     expect((window as unknown as { __sceneInventory: unknown }).__sceneInventory).toEqual({ interpretation: "x", brand: "norte", palette: ["#000"], objects: [{ id: "o" }], photographs: ["f1", "f2"] });
@@ -104,7 +108,7 @@ describe("ScenesLab", () => {
 
   it("__lab.set muda ângulo, luz e peças sem recarregar; canvas devolve nada sem cena", () => {
     at("");
-    render(<ScenesLab />);
+    render(<Lab />);
     act(() => lab().set({ yaw: 90, light: "night", look: "cor-preta" }));
     expect(fitting()).toMatchObject({ cameraYaw: 90, light: "night" });
     expect((fitting().pieces as { id: string }[])[0].id).toBe("lab-cor-preta");
@@ -119,7 +123,7 @@ describe("ScenesLab", () => {
 
   it("__lab.texture monta a textura pelo mesmo caminho do provador", async () => {
     at("");
-    render(<ScenesLab />);
+    render(<Lab />);
     three.loadTexture.mockResolvedValueOnce(null);
     expect(await lab().texture("/x.webp")).toBeNull();
     three.loadTexture.mockResolvedValue({ image: fakeImg });
@@ -136,7 +140,7 @@ describe("ScenesLab", () => {
 
   it("__lab.probe explica o recorte, a pessoa e o que vira textura", async () => {
     at("");
-    render(<ScenesLab />);
+    render(<Lab />);
     three.loadTexture.mockResolvedValueOnce({});
     expect(await lab().probe("/x", "upper")).toEqual({ loaded: false });
     three.loadTexture.mockResolvedValue({ image: fakeImg });
@@ -153,7 +157,7 @@ describe("ScenesLab", () => {
 
   it("__lab.probe sem recorte usa a foto inteira; sem pessoa e sem máscara", async () => {
     at("");
-    render(<ScenesLab />);
+    render(<Lab />);
     three.loadTexture.mockResolvedValue({ image: fakeImg });
     photo.prepareGarmentPhoto.mockReturnValue(null);
     vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(function (this: HTMLCanvasElement, cb: BlobCallback) { cb(new Blob(["b"])); });
