@@ -161,7 +161,7 @@ public class BackgroundStudioService {
                 auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
             }
             if (m.get("auraHype") instanceof String mode && !"OFF".equals(mode)) {
-                if (!validHypeMode(mode)) throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
+                if (!validHypeMode(mode)) throw ApiException.badRequest("AURA_HYPE_INVALID", Msg.t("auraHype.invalid"));
                 if (mode.startsWith("COLLAB_DROP_")) auraPermissions.requireHypeFinish(user.id(), "COLLAB_DROP");
                 else if (mode.startsWith("COMMON_") || mode.startsWith("RARE_") || mode.startsWith("LEGENDARY_")) auraPermissions.requireHypeFinish(user.id(),mode.substring(0,mode.indexOf('_')));
                 else auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
@@ -419,7 +419,7 @@ public class BackgroundStudioService {
         }
         Object auraHype = scheme.get("auraHype");
         if (auraHype != null && !validHypeMode(auraHype)) {
-            throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
+            throw ApiException.badRequest("AURA_HYPE_INVALID", Msg.t("auraHype.invalid"));
         }
         Map<String, Object> aura = scheme.get("aura") instanceof Map<?, ?> a ? (Map<String, Object>) a : null;
         String auraVariant = aura == null ? null : (String) aura.get("variantId");
@@ -660,7 +660,7 @@ public class BackgroundStudioService {
         }
         Object hype = config.get("auraHype");
         if (hype != null && !validHypeMode(hype))
-            throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
+            throw ApiException.badRequest("AURA_HYPE_INVALID", Msg.t("auraHype.invalid"));
         Object metamorphose = config.get("auraMetamorphose");
         if (metamorphose != null && !List.of("OFF", "PRISMA", "CONSTELACAO", "FIO_VIVO", "HOLOGRAFIA").contains(metamorphose))
             throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");

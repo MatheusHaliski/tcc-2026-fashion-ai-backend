@@ -19,6 +19,11 @@ import java.util.UUID;
 public interface PromotionRepository extends JpaRepository<Promotion, UUID> {
     Optional<Promotion> findByCode(String code);
 
+    /** Resgate: o teste de cota/limite por pessoa e o incremento compartilham o bloqueio da promoção. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Promotion p where p.id = :id")
+    Optional<Promotion> findForRedeem(@Param("id") UUID id);
+
     List<Promotion> findBySealIdOrderByCreatedAtDesc(UUID sealId);
 
     List<Promotion> findByOwnerUserIdOrderByCreatedAtDesc(UUID ownerUserId);

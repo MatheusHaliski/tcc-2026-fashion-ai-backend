@@ -303,3 +303,25 @@ e a regra de desbloqueio no Loft não é a implementada.
    (não depender só de cor).
 6. Confirmação explícita antes de aplicar AURA Hype num card publicado.
 7. Frontend lê `requiredTier` de `/api/me/aura-permissions` em vez de duplicar a tabela.
+
+## 17. Correções aplicadas (mesmo branch)
+
+| Achado | Correção | Teste |
+|---|---|---|
+| Preferência `auraHype` sem gate (5.4, 6.16, AURA-015) | `PreferencesService.update` exige Studio (`AURA_DYNAMIC`); `get` devolve `auraHype=false` e `auraHypeAllowed=false` para quem não tem o nível. Configurações: interruptor bloqueado com "Requer nível Studio", e uma recusa do servidor desfaz a escolha local (antes ficava ligada como "preferência local") | `PreferencesServiceTest.auraHypeExigeStudioMesmoEmChamadaDireta` |
+| Arte licenciada alterada quebrava cards existentes (3.13, AURA-013) | `AuraCommerceService.save` recusa mudar `config` de oferta já licenciada (409 `AURA_OFFER_LOCKED`; nova versão = novo código). Nome, preço e ativo continuam editáveis | `AuraCommerceServiceTest.licensedArtConfigIsFrozen` |
+| `requireLicense` nunca chamado | Removido; a mensagem da compra não promete mais "promoções" | — |
+| Tabela de níveis duplicada no frontend (1.3) | `/api/me/aura-permissions` devolve `hypeFinishes` (`configVersion` 2); o picker usa essa resposta e só cai na tabela local com resposta antiga | vitest `components/hype` |
+| Pulso de Hype só por cor (6.15) | Seta ▲/▼ junto do pulso (`.card-border-arrow`) | `card-border.test.tsx` |
+| Mensagem `AURA_HYPE_INVALID` fixa em português (5.15) | `Msg.t("auraHype.invalid")` em pt-BR/en/es | — |
+| Documentação com 7 níveis (achado 0.1) | `FAI_XP_NIVEIS_FLAIR.md` reescrito com os 3 níveis e a regra por acabamento; "nível Estreia" → "nível Básico" nas mensagens | — |
+| Build quebrado (achado 0.5) | Import de `CatalogImageType` | build |
+
+Itens desta auditoria que **não** foram alterados, e por quê:
+- **Regra do AURA Hype no Loft (1.8–1.10, 5.3):** é decisão de produto. O código segue a regra documentada (por
+  acabamento) até haver uma decisão.
+- **Editor de Metamorfose para marcas e celebridades, com coleção, versões e moderação (seções 2–3):** é uma
+  funcionalidade nova, não uma correção. Precisa de modelo de dados, fluxo de revisão e tela.
+- **Confirmação antes de aplicar o AURA Hype (5.10):** a escolha só vale ao salvar o card, e o salvar já é o passo
+  explícito.
+- **Recompensas `SYNERGY_*` sem arte correspondente:** depende de definir qual arte cada sinergia concede.

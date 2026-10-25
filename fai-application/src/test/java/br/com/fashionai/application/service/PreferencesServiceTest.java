@@ -90,6 +90,18 @@ class PreferencesServiceTest {
     }
 
     @Test
+    void auraHypeExigeStudioMesmoEmChamadaDireta() throws Exception {
+        var ledger = kit.dep(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        prefs.setAuraPermissions(new AuraPermissionsService(ledger));
+        when(ledger.lifetime(ana.id())).thenReturn(0L);
+        var enable = br.com.fashionai.application.common.Json.MAPPER.readValue("{\"auraHype\":true}", PreferencesService.Update.class);
+        assertThatThrownBy(() -> prefs.update(ana, enable)).isInstanceOf(ApiException.class);
+        assertThat(prefs.get(ana)).containsEntry("auraHype", false).containsEntry("auraHypeAllowed", false);
+        var disable = br.com.fashionai.application.common.Json.MAPPER.readValue("{\"auraHype\":false}", PreferencesService.Update.class);
+        assertThat(prefs.update(ana, disable)).containsEntry("auraHype", false);
+    }
+
+    @Test
     void moedaDosPrecosAceitaBrlUsdEurEVoltaAoAutomatico() throws Exception {
         var mapper = br.com.fashionai.application.common.Json.MAPPER;
         assertThat(prefs.get(ana).get("currency")).isNull();
@@ -103,6 +115,9 @@ class PreferencesServiceTest {
 
     @Test
     void auraHypePersisteSemAlterarTemaOuOptOut() throws Exception {
+        var ledger = kit.dep(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
+        prefs.setAuraPermissions(new AuraPermissionsService(ledger));
+        when(ledger.lifetime(ana.id())).thenReturn(300L);
         var update = br.com.fashionai.application.common.Json.MAPPER.readValue("{\"auraHype\":true}", PreferencesService.Update.class);
         assertThat(prefs.update(ana, update)).containsEntry("auraHype", true).containsEntry("hypeCreatorOptOut", false);
         var empty = br.com.fashionai.application.common.Json.MAPPER.readValue("{}", PreferencesService.Update.class);

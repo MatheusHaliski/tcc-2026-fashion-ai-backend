@@ -3881,6 +3881,9 @@ html[data-theme="contrast"] .aura-metamorphose { border-color: currentcolor; }
 .card-border[data-effect="HOLO"] { background-image: linear-gradient(135deg,#83e7dd,#b7a9f2,#efb2d9,#f2dfa9,#83e7dd); }
 .card-border[data-pulse="up"] { background: #27d779; filter: drop-shadow(0 0 7px #27d779); animation: none; }
 .card-border[data-pulse="down"] { background: #f46a76; filter: drop-shadow(0 0 7px #f46a76); animation: none; }
+.card-border-arrow { position: absolute; top: 6px; right: 6px; z-index: 6; pointer-events: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; font-size: var(--text-caption); line-height: 1; color: #fff; box-shadow: 0 1px 4px #0004; }
+.card-border-arrow[data-direction="up"] { background: #1c9c58; }
+.card-border-arrow[data-direction="down"] { background: #c94350; }
 @keyframes card-border-shift { from { background-position: 0 0; } to { background-position: 100% 100%; } }
 @media (prefers-reduced-motion: reduce) { .card-border { animation: none !important; } }
 html[data-reduce-motion="true"] .card-border { animation: none; }

@@ -5,4 +5,5 @@ import java.util.*;
 public interface AuraIssuerLicenseRepository extends JpaRepository<AuraIssuerLicense,UUID> {
  Optional<AuraIssuerLicense> findByOwnerIdAndPresetCode(UUID ownerId,String presetCode);
  List<AuraIssuerLicense> findByOwnerIdOrderByPurchasedAtDesc(UUID ownerId);
+ boolean existsByPresetCode(String presetCode);
 }

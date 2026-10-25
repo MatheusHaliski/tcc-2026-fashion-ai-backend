@@ -111,6 +111,12 @@ public class HighlightsController {
         return points.apply(user, inventoryId, body.moduleId());
     }
 
+    @DeleteMapping("/api/me/room-inventory/{inventoryId}/apply")
+    @Operation(summary = "RF35.CA05 — Retirar do quarto um item aplicado (continua no inventário)")
+    public Map<String, Object> unapply(CurrentUser user, @PathVariable UUID inventoryId) {
+        return points.unapply(user, inventoryId);
+    }
+
     @GetMapping("/api/me/achievements")
     @Operation(summary = "RF35 — Conquistas (inclusive secretas já desbloqueadas)")
     public List<Map<String, Object>> achievements(CurrentUser user) {

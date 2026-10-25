@@ -7366,7 +7366,7 @@
   "fashionHype.level.COLLAB_DROP": "Collab / Drop",
   "auraGate.requires": "Requires level {level}",
   "auraGate.checking": "Checking your level…",
-  "auraGate.locked.AURA_BASIC": "Basic aura is available from Estreia level.",
+  "auraGate.locked.AURA_BASIC": "Basic aura is available from the Basic level.",
   "auraGate.locked.AURA_DYNAMIC": "Dynamic auras unlock at Studio level.",
   "auraGate.locked.AURA_IMPERSONATION": "Aura Impersonation unlocks at Loft level!",
   "impersonation.title": "Aura Impersonation",
@@ -8184,5 +8184,12 @@
   "tryOn.preview.colorOnly": "Color-only preview: this garment has no photo.",
   "tryOn.preview.failed": "The texture did not load; the garment stays dressed in its registered color.",
   "tryOn.preview.retry": "Reload texture",
-  "tryOn.preview.savedModel": "The 3D file is optional and separate from this preview."
+  "tryOn.preview.savedModel": "The 3D file is optional and separate from this preview.",
+  "sealWizard.fim_do_resgate": "Claim deadline",
+  "sealWizard.fim_do_resgate_hint": "After this date nobody else receives the seal. Empty = no deadline.",
+  "sealWizard.validade_concessao": "Validity of each granted seal (days)",
+  "sealWizard.validade_concessao_hint": "Counted from issuance, independent of the claim deadline. Empty = 365 days.",
+  "sealWizard.dias": "{value} days",
+  "room3d.roomStore.retirar_do_quarto": "Remove from room",
+  "room3d.roomStore.retirado": "{name} was removed from the room and stays in your inventory."
 }
