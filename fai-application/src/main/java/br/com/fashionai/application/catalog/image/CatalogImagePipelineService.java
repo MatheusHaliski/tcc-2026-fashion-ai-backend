@@ -215,6 +215,7 @@ public class CatalogImagePipelineService {
                         || "APPROVED".equals(i.getProcessingStatus())&&(i.isCanonical()||variantId!=null||imageId!=null))
                 .filter(i->!Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(boundPhotoSet(i,product).get("status"))))
                 .sorted(java.util.Comparator.comparing((CatalogImage i)->!"READY".equals(boundPhotoSet(i,product).get("status")))
+                        .thenComparing(CatalogImagePipelineService::viewRank)
                         .thenComparing(i->!i.isCanonical()).thenComparing(i->String.valueOf(i.getId())))
                 .toList();
         for (CatalogImage selected:candidates) {
@@ -311,7 +312,7 @@ public class CatalogImagePipelineService {
                 .filter(i -> i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
                 .filter(i -> i.getImageUrl() != null && !i.getImageUrl().isBlank())
                 .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(boundPhotoSet(i,product).get("status"))))
-                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()))
+                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()).thenComparing(CatalogImagePipelineService::viewRank))
                 .limit(3).toList();
         if (candidates.isEmpty()) throw new ApiException(422, "CATALOG_IMAGE_MISSING", "Esta peça não tem foto disponível para verificar.");
         boolean downloaded = false;
