@@ -11,7 +11,9 @@
  *    ondas que as pernas desenham nele (joelho, panturrilha): o raio é suavizado sem nunca entrar mais de 3 mm, então a
  *    perna não atravessa a saia;
  *  - camisa por baixo de paletó ou colete: aparece inteira na abertura da frente (sem pele entre a camisa e a lapela) e
- *    vai para dentro da calça (some logo acima da barra do paletó; a calça volta a aparecer por baixo dela).
+ *    vai para dentro da calça (some logo acima da barra do paletó; a calça volta a aparecer por baixo dela);
+ *  - sapato social, scarpin e sapatilha: sola e cadarço na cor do couro e couro polido (sem foto, o calçado sai com sola
+ *    clara e cadarço branco de tênis).
  */
 import * as THREE from "three";
 import type { Look3dPiece } from "@/components/three/common";
@@ -69,6 +71,25 @@ function paramsOf(p: HumanParts): BodyParam {
   return P;
 }
 const OUTER = new Set(["jacket", "vest", "coat"]), INNER = new Set(["shirt", "tee", "longsleeve"]);
+const FORMAL_SHOES = /oxford|derby|loafer|mocass|heel|salto|pump|scarpin|flat|sapatilha/;
+
+/** Sapato social: sola e cadarço na cor do couro (com o mesmo sombreado de antes) e cabedal polido. */
+function polishShoes(root: THREE.Object3D, piece: Look3dPiece) {
+  const leather = new THREE.Color(piece.colorHex ?? "#111111");
+  for (const part of ["sola", "cadarco", "cabedal"]) {
+    const mesh = root.getObjectByName(`${part}-${piece.id}`) as THREE.Mesh | undefined, col = mesh?.geometry.getAttribute("color");
+    if (!mesh || !col || mesh.geometry.userData.polished) continue;
+    mesh.geometry.userData.polished = true;
+    if (part !== "cabedal") {
+      const to = leather.clone().multiplyScalar(part === "sola" ? 0.7 : 1.3);
+      let top = 0; for (let i = 0; i < col.count; i++) top = Math.max(top, col.getX(i) + col.getY(i) + col.getZ(i));
+      for (let i = 0; i < col.count; i++) { const k = top > 0 ? (col.getX(i) + col.getY(i) + col.getZ(i)) / top : 1; col.setXYZ(i, to.r * k, to.g * k, to.b * k); }
+      col.needsUpdate = true;
+    }
+    const m = mesh.material as THREE.MeshPhysicalMaterial;
+    if (part === "cabedal" && m.isMeshPhysicalMaterial) { m.roughness = 0.34; m.sheen = 0; m.clearcoat = 0.6; m.clearcoatRoughness = 0.18; m.userData.fabricFixed = true; }
+  }
+}
 
 /** Vértices da malha presos sobretudo a um osso do braço ou da mão (a manga não entra nas regras do tronco). */
 function armVertices(mesh: THREE.SkinnedMesh): Uint8Array {
@@ -92,6 +113,7 @@ export function mendGarments(p: HumanParts, pieces: Look3dPiece[]) {
   const outerOf = (sp: GarmentSpec) => worn.filter((o) => o.spec.layer > sp.layer && OUTER.has(o.spec.kind) && Number.isFinite(o.spec.hem));
   const tucked = worn.some((w) => w.spec.kind === "shirt" && outerOf(w.spec).length > 0);
   for (const { piece, spec } of worn) {
+    if (spec.kind === "shoes") { if (FORMAL_SHOES.test((piece.subcategory ?? "").toLowerCase())) polishShoes(p.human.root, piece); continue; }
     const mesh = p.human.root.getObjectByName(`peca-${piece.id}`) as THREE.SkinnedMesh | undefined;
     const geo = mesh?.geometry, pos = geo?.getAttribute("position"), col = geo?.getAttribute("color");
     if (!mesh || !geo || !pos || !col || col.itemSize !== 4 || geo.userData.mended) continue;

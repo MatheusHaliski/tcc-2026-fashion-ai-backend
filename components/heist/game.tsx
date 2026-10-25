@@ -190,7 +190,8 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
   const say = useCallback((who: string, key: string, vars?: Record<string, string | number>) => {
     setLines((l) => [...l.slice(-2), { id: seq.current++, who, key, vars, at: performance.now() }]);
     audio.duck(2.6);
-    audio.speak(t(key, vars), !!GUARD_NAMES[who]);
+    const st = sim.current.s, from = st.guards.find((g) => g.id === who)?.pos ?? st.civs.find((c) => c.id === who)?.pos;
+    audio.speak(t(key, vars), !!GUARD_NAMES[who], from);
   }, [audio, t]);
 
   const onEvents = useCallback((s: SimState) => {

@@ -148,13 +148,14 @@ export class HeistAudio {
     const len = Math.max(1, Math.floor(c.sampleRate * dur)), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
     const src = c.createBufferSource(); src.buffer = buf;
-    const f = c.createBiquadFilter(); f.type = type; f.frequency.value = filter;
-    const g = c.createGain(); g.gain.value = gain;
+    // um pouco de variação a cada disparo: o mesmo som não se repete idêntico (MH-15-08)
+    const f = c.createBiquadFilter(); f.type = type; f.frequency.value = filter * (0.88 + Math.random() * 0.24);
+    const g = c.createGain(); g.gain.value = gain * (0.9 + Math.random() * 0.2);
     src.connect(f).connect(g).connect(out); src.start(c.currentTime + at);
   }
   private tone(freq: number, dur: number, gain: number, type: OscillatorType = "sine", at = 0, slide = 0, pos?: Vec) {
     const c = this.ctx, out = this.out(pos); if (!c || !out) return;
-    const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = freq;
+    const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = freq * (0.96 + Math.random() * 0.08);
     if (slide) o.frequency.linearRampToValueAtTime(freq + slide, c.currentTime + at + dur);
     g.gain.setValueAtTime(gain, c.currentTime + at); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + at + dur);
     o.connect(g).connect(out); o.start(c.currentTime + at); o.stop(c.currentTime + at + dur + 0.02);
@@ -223,12 +224,13 @@ export class HeistAudio {
     else this.noise(kind === "boots" ? 0.07 : 0.05, (kind === "boots" ? 0.16 : 0.1) * gain, kind === "boots" ? 700 : 1100, "bandpass", 0, pos);
   }
   /** Fala lida pela síntese de voz do navegador (quando ligada): voz do idioma, mais grave para os seguranças. */
-  speak(text: string, low: boolean) {
+  speak(text: string, low: boolean, from?: Vec) {
     if (!this.vol.voices || typeof window === "undefined" || !window.speechSynthesis) return;
+    const far = from ? 1 / (1 + Math.hypot(from.x - this.listener.x, from.z - this.listener.z) / 9) : 1;
     const synth = window.speechSynthesis;
     if (synth.speaking && synth.pending) synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = this.locale; u.volume = this.vol.voice; u.rate = 1.05; u.pitch = low ? 0.7 : 1.1;
+    u.lang = this.locale; u.volume = Math.max(0.15, this.vol.voice * far); u.rate = 1.05; u.pitch = low ? 0.7 : 1.1;
     const v = synth.getVoices().find((x) => x.lang.toLowerCase().startsWith(this.locale.slice(0, 2).toLowerCase()));
     if (v) u.voice = v;
     synth.speak(u);

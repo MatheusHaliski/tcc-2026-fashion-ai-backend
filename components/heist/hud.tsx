@@ -171,7 +171,7 @@ export function Hud({ h, pad, lines, toasts, names, settings, fps, errors = 0 }:
       </section>
 
       {/* ---------- interação: presa no alvo quando ele está na tela ---------- */}
-      {h.prompt && <p className={cn("hz-prompt", !h.prompt.ok && "is-blocked", h.promptAt?.on && "is-anchored")} style={h.promptAt?.on ? { left: `${h.promptAt.x * 100}%`, top: `${h.promptAt.y * 100}%` } : undefined}>
+      {h.prompt && <p className={cn("hz-prompt", !h.prompt.ok && "is-blocked", h.promptAt?.on && "is-anchored", !!h.prompt.vars?.tier && `tier-${String(h.prompt.vars.tier).split(".").pop()!.toLowerCase()}`)} style={h.promptAt?.on ? { left: `${h.promptAt.x * 100}%`, top: `${h.promptAt.y * 100}%` } : undefined}>
         <kbd>{key(h.prompt.kind === "takedown" ? "melee" : "interact")}</kbd>
         <span>{t(h.prompt.key, { ...h.prompt.vars, item: h.prompt.vars?.item ? t(String(h.prompt.vars.item)) : "", tier: h.prompt.vars?.tier ? t(String(h.prompt.vars.tier)) : "", door: h.prompt.vars?.door ? t(`heist.doorName.${h.prompt.vars.door}`) : "" })}</span>
       </p>}

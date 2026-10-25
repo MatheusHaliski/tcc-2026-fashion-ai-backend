@@ -119,6 +119,9 @@ li.is-current .hz-step-box { border-color: var(--hz-gold); box-shadow: 0 0 6px r
 .hz-prompt { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); margin: 0; padding: 6px 14px; display: inline-flex; gap: 8px; align-items: center; background: var(--hz-glass-2); border: 1px solid var(--hz-gold-soft); border-radius: 999px; font-size: .9em; max-width: min(520px, 80vw); }
 .hz-prompt.is-anchored { bottom: auto; transform: translate(-50%, -100%); }
 .hz-prompt.is-blocked { border-color: rgba(229, 50, 63, .6); color: #ffb3b8; }
+/* joia observada: a borda e o brilho dizem a raridade (bronze, prata, ouro, especial) */
+.hz-prompt.tier-bronze { border-color: #b98a5a; } .hz-prompt.tier-prata { border-color: #9fb7e8; box-shadow: 0 0 10px rgba(159, 183, 232, .35); }
+.hz-prompt.tier-ouro { border-color: #e8c062; box-shadow: 0 0 12px rgba(232, 192, 98, .5); } .hz-prompt.tier-especial { border-color: #c9a7ff; box-shadow: 0 0 14px rgba(201, 167, 255, .6); }
 .hz-lines { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); width: min(760px, 90vw); margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; justify-items: center; text-align: center; }
 .hz-lines li { font-size: 1em; padding: 3px 10px; background: rgba(0, 0, 0, var(--hz-sub-bg, .6)); border-radius: 3px; text-shadow: 0 1px 2px #000; }
 .hz-hud.sub-s .hz-lines li { font-size: .85em; } .hz-hud.sub-l .hz-lines li { font-size: 1.2em; } .hz-hud.sub-xl .hz-lines li { font-size: 1.45em; }
