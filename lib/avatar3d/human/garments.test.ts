@@ -5,7 +5,7 @@ import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { buildHuman, baseNormals } from "./three-human";
 import { applyIdle, applyRestPose, setArmOut } from "./pose";
-import { SPECS, specOf, garmentMaterial, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, texturedGeometry, tubeRadius, underLayer, type GarmentKind } from "./garments";
+import { SPECS, specOf, garmentMaterial, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, photoSleeves, sleeveEase, texturedGeometry, tubeRadius, underLayer, type GarmentKind } from "./garments";
 import { DEFAULT_BODY } from "../body-spec";
 
 const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
@@ -354,4 +354,76 @@ it("maps separated trouser photographs to the corresponding leg panel",()=>{
   expect(uv.getX(v)).toBeCloseTo(p.getX(v)<0?.1125:.3875,3);checked++;
  }
  expect(checked).toBeGreaterThan(2);mesh.dispose();
+});
+
+describe("manga: folga e foto", () => {
+  it("a folga da manga é menor que a do tronco em camadas grossas e o antebraço da jaqueta deixa de inflar", () => {
+    expect(sleeveEase(SPECS.jacket)).toBeLessThan(SPECS.jacket.ease);
+    expect(sleeveEase(SPECS.coat)).toBeLessThan(SPECS.coat.ease);
+    expect(sleeveEase(SPECS.tee)).toBe(SPECS.tee.ease);                      // camiseta já tem folga pequena: fica igual
+    for (const sp of [SPECS.jacket, SPECS.coat, SPECS.sweater]) expect(sleeveEase(sp)).toBeGreaterThanOrEqual(sp.ease * .55);   // afastamento mínimo (garment-clearance)
+    const { c, gs, h } = dressed("MASCULINO", ["tee", "jacket"]);
+    const P = bodyParam(asset, c); const jacket = gs[1];
+    let sum = 0, n = 0;
+    for (let v = 0; v < jacket.position.length / 3; v++) {
+      const src = jacket.source[v]; if (src < 0 || P.group[src] !== 2 || P.arm[src] < 0.6 || jacket.alpha[v] < 0.5) continue;
+      sum += Math.hypot(jacket.position[v * 3] - c.body[src * 3], jacket.position[v * 3 + 1] - c.body[src * 3 + 1], jacket.position[v * 3 + 2] - c.body[src * 3 + 2]); n++;
+    }
+    expect(n).toBeGreaterThan(20);
+    expect(sum / n).toBeLessThan(0.016);                                       // antes: folga da jaqueta inteira (≥ 2 cm) no antebraço
+    expect(sum / n).toBeGreaterThan(0.009);
+    h.dispose();
+  });
+
+  function sleeveMesh() {
+    // tronco em coluna (x −0,1..0,1, y 0..1) e duas mangas caídas (x ±0,25..±0,35, y 0,2..1,0); along = 0 no ombro (y=1) → 1 no punho (y=0,2).
+    // linhas de baixo para cima, como no teste das pernas: o enrolamento dá normal +z (frente) à malha plana
+    const pos: number[] = [], idx: number[] = [];
+    const strip = (xs: number[], y0: number, y1: number, rows: number) => {
+      const start = pos.length / 3;
+      for (let r = 0; r <= rows; r++) for (const x of xs) pos.push(x, y0 + (y1 - y0) * (r / rows), 0);
+      for (let r = 0; r < rows; r++) for (let col = 0; col < xs.length - 1; col++) { const i = start + r * xs.length + col; idx.push(i, i + 1, i + xs.length, i + 1, i + xs.length + 1, i + xs.length); }
+    };
+    strip([-0.1, 0, 0.1], 0, 1, 50); strip([-0.35, -0.3, -0.25], 0.2, 1, 40); strip([0.25, 0.3, 0.35], 0.2, 1, 40);
+    const count = pos.length / 3;
+    const gg = { spec: SPECS.shirt, position: Float32Array.from(pos), alpha: new Float32Array(count).fill(1), index: Uint32Array.from(idx), source: new Int32Array(count).fill(0),
+      skinIndex: new Uint16Array(count * 4), skinWeight: new Float32Array(count * 4) } as unknown as Parameters<typeof texturedGeometry>[0];
+    const isSleeve = (v: number) => Math.abs(gg.position[v * 3]) > 0.2;
+    const along = (v: number) => isSleeve(v) ? (1 - gg.position[v * 3 + 1]) / 0.8 : -1;
+    return { gg, isSleeve, along };
+  }
+  const photo = (withTorso: boolean) => ({
+    width: 300, height: 400, box: { x0: 50, y0: 40, x1: 250, y1: 360 }, collarRow: null, neckDrop: null, cutout: true, backdrop: null,
+    widthAt: (fy: number) => (fy <= 0.6 ? { x0: 50, x1: 250 } : { x0: 110, x1: 190 }),
+    ...(withTorso ? { torsoWidthAt: () => ({ x0: 110, x1: 190 }) } : {}),
+  }) as unknown as NonNullable<Parameters<typeof texturedGeometry>[2]>;
+
+  it("a manga caída ao lado do tronco na foto vai para a manga 3D, da borda externa à interna, do ombro ao punho", () => {
+    const { gg, isSleeve, along } = sleeveMesh();
+    const mesh = texturedGeometry(gg, gg.position, photo(true), isSleeve, gg.alpha, { isSleeve, along });
+    const p = mesh.getAttribute("position"), uv = mesh.getAttribute("uv"), weight = mesh.getAttribute("photoWeight");
+    let checked = 0;
+    for (let v = 0; v < p.count; v++) {
+      const x = p.getX(v), y = p.getY(v);
+      if (Math.abs(Math.abs(x) - 0.35) > 1e-3 || Math.abs(y - 0.6) > 1e-3) continue;        // borda externa das mangas, meio do braço (along 0,5)
+      // along 0,5 / manga 0,96 → 52 % da faixa de linhas da manga (fy 0..0,6) → fy 0,3125 → y da foto 40 + 0,3125·320 = 140
+      expect(uv.getY(v)).toBeCloseTo(1 - 140 / 400, 2);
+      expect(uv.getX(v)).toBeCloseTo(0.5 * (x < 0 ? 50 / 300 : 250 / 300), 2);               // borda externa: x0 da manga esquerda / x1 da direita
+      expect(weight.getX(v)).toBeGreaterThan(0.5);
+      checked++;
+    }
+    expect(checked).toBe(2);
+    mesh.dispose();
+  });
+
+  it("sem manga separada do tronco na foto (flat lay ou colada ao corpo), a manga segue no tecido, como antes", () => {
+    const { gg, isSleeve, along } = sleeveMesh();
+    expect(photoSleeves(photo(false))).toBeNull();
+    const mesh = texturedGeometry(gg, gg.position, photo(false), isSleeve, gg.alpha, { isSleeve, along });
+    const p = mesh.getAttribute("position"), weight = mesh.getAttribute("photoWeight");
+    let sleeves = 0, torso = 0;
+    for (let v = 0; v < p.count; v++) { if (Math.abs(p.getX(v)) > 0.2) { expect(weight.getX(v)).toBe(0); sleeves++; } else if (weight.getX(v) > 0.5) torso++; }
+    expect(sleeves).toBeGreaterThan(100); expect(torso).toBeGreaterThan(50);
+    mesh.dispose();
+  });
 });

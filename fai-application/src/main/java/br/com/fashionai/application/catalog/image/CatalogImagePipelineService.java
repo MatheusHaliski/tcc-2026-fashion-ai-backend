@@ -11,6 +11,7 @@ import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.CatalogImage;
 import br.com.fashionai.domain.model.CatalogProduct;
 import br.com.fashionai.domain.model.CatalogSource;
+import br.com.fashionai.domain.model.enums.CatalogImageType;
 import br.com.fashionai.domain.model.enums.CatalogImageUsage;
 import br.com.fashionai.domain.repository.CatalogImageRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
@@ -176,6 +177,14 @@ public class CatalogImagePipelineService {
         return texturePhoto(user, productId, false);
     }
 
+    /** Frente antes de detalhe, lateral e costas: a textura do provador e a verificação do enquadramento são da FRENTE da
+     *  peça (uma foto de costas servida como frente vestia o avatar com o capuz e a etiqueta na frente). */
+    static int viewRank(CatalogImage image) {
+        CatalogImageType type = image.getImageType();
+        if (type == null || type == CatalogImageType.FRONT) return 0;
+        return switch (type) { case DETAIL, TOP -> 1; case SIDE -> 2; case BACK, SOLE -> 3; default -> 1; };
+    }
+
     /** isolated=true never falls back to an unsegmented catalogue/model photograph. */
     public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated) {
         guard.requireCanCreate(user);
@@ -186,7 +195,8 @@ public class CatalogImagePipelineService {
                 .filter(i -> (i.isCanonical() && "APPROVED".equals(i.getProcessingStatus()) || "READY".equals(photoSet(i,product).get("status")))
                         && i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
                 .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(photoSet(i,product).get("status"))))
-                .sorted(java.util.Comparator.comparing(i -> !"READY".equals(photoSet(i,product).get("status"))))
+                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !"READY".equals(photoSet(i,product).get("status")))
+                        .thenComparing(CatalogImagePipelineService::viewRank))
                 .findFirst().orElseThrow(() -> ApiException.notFound("catalog image"));
         Map<String,Object> cleaned=photoSet(selected,product);
         if("DEFAULT".equals(cleaned.get("status"))) throw new ApiException(422,"CATALOG_PHOTO_DEFAULT_ONLY","A peça usa uma ilustração padrão.");
@@ -240,7 +250,7 @@ public class CatalogImagePipelineService {
                 .filter(i -> i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
                 .filter(i -> i.getImageUrl() != null && !i.getImageUrl().isBlank())
                 .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(photoSet(i,product).get("status"))))
-                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()))
+                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()).thenComparing(CatalogImagePipelineService::viewRank))
                 .limit(3).toList();
         if (candidates.isEmpty()) throw new ApiException(422, "CATALOG_IMAGE_MISSING", "Esta peça não tem foto disponível para verificar.");
         boolean downloaded = false;

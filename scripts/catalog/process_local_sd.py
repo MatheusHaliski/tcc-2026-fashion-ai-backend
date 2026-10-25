@@ -443,10 +443,13 @@ class Packshot:
 
 
 def compose_packshot(source: Image.Image, target: np.ndarray, generated: Optional[Image.Image], ghost: np.ndarray, *,
-                     background: tuple[int, int, int] = BACKGROUND, shadow: bool = True, alpha: Optional[np.ndarray] = None) -> Packshot:
+                     background: tuple[int, int, int] = BACKGROUND, shadow: bool = True, alpha: Optional[np.ndarray] = None,
+                     keep_alpha: bool = False) -> Packshot:
     """Tecido original onde há peça; o resultado da IA só na região fantasma (com IA); fundo liso no resto. Depois o
     Total frame: peça centralizada, maior aresta em 50% do quadro 900×1200, proporção preservada, sombra suave.
-    `alpha` (0..1, engine fashn-open) é o alfa fino do BiRefNet: a borda vem do modelo, sem desfoque."""
+    `alpha` (0..1, engine fashn-open) é o alfa fino do BiRefNet: a borda vem do modelo, sem desfoque. `keep_alpha`: PNG
+    RGBA com o RGB já composto sobre o fundo e o matte da peça no canal alfa (quem ignora o alfa vê o packshot normal;
+    o provador 3D recebe o recorte pronto, sem a franja clara da borda serrilhada)."""
     src = np.asarray(source.convert("RGB"))
     if generated is not None:
         gen = np.asarray(generated.convert("RGB").resize(source.size, Image.Resampling.LANCZOS))
@@ -478,12 +481,16 @@ def compose_packshot(source: Image.Image, target: np.ndarray, generated: Optiona
         layer.paste((20, 24, 31, 255), (x, y + max(4, h // 40)), silhouette)
         canvas.alpha_composite(layer.filter(ImageFilter.GaussianBlur(max(6, w // 30))))
     canvas.alpha_composite(cutout, (x, y))
+    if keep_alpha:
+        matte = Image.new("L", (WIDTH, HEIGHT), 0)
+        matte.paste(cutout.getchannel("A"), (x, y))
+        canvas.putalpha(matte)
     out = io.BytesIO()
-    canvas.convert("RGB").save(out, "PNG", optimize=True)
+    (canvas if keep_alpha else canvas.convert("RGB")).save(out, "PNG", optimize=True)
     info = {"version": VERSION, "width": WIDTH, "height": HEIGHT, "background": "#%02X%02X%02X" % background,
             "box": {"x": round(x / WIDTH, 4), "y": round(y / HEIGHT, 4), "w": round(w / WIDTH, 4), "h": round(h / HEIGHT, 4)},
             "garmentPixels": int(target.sum()), "ghostPixels": int(ghost.sum()) if generated is not None else 0,
-            "ai": generated is not None, "framing": framing, "matte": "mask-blur" if alpha is None else "birefnet"}
+            "ai": generated is not None, "framing": framing, "matte": "mask-blur" if alpha is None else "birefnet", "alphaChannel": keep_alpha}
     return Packshot(out.getvalue(), info)
 
 
@@ -734,7 +741,7 @@ class GhostPipeline:
         elif box is None:
             result.update(status="REVIEW", reason="NO_SAFE_FABRIC_RECTANGLE")
         else:
-            whole = compose_packshot(image, target, generated, ghost, shadow=False, alpha=alpha)   # sem sombra: vira textura e card
+            whole = compose_packshot(image, target, generated, ghost, shadow=False, alpha=alpha, keep_alpha=True)   # sem sombra, com alfa: vira textura e card
             fabric = image.crop(box)
             if fabric.width > WIDTH:
                 fabric = fabric.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)

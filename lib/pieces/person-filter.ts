@@ -109,7 +109,9 @@ export async function stripPerson(file: File, opts: { keep?: GarmentPart } = {})
         if (k === OTHERS) out = true;
         else if (keep === "feet") out = v < z.ankle - z.torso * 0.3;
         else if (keep === "upper") out = v > bandBottom || (v >= bandTop && d2(o, lowerMean) < d2(o, upperMean));
-        else out = v < bandTop || v > z.ankle - z.torso * 0.05 || (v <= bandBottom && d2(o, upperMean) < d2(o, lowerMean));
+        // a boca do tênis e a meia ficam logo acima do tornozelo: a calça é cortada 12 % do tronco acima dele (antes 5 %
+        // deixava o cano do calçado virar barra da calça no molde)
+        else out = v < bandTop || v > z.ankle - z.torso * 0.12 || (v <= bandBottom && d2(o, upperMean) < d2(o, lowerMean));
       }
       keepMask[m] = out ? 0 : 1;
     }

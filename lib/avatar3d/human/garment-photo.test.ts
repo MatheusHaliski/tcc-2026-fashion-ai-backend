@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cutoutGarment, fabricTile, fabricRows, fillInteriorHoles, fullBodyUpperPhoto, splitByHem, type GarmentRaster } from "./garment-photo";
+import { cutoutGarment, fabricPatch, fabricTile, fabricRows, fillInteriorHoles, fullBodyUpperPhoto, splitByHem, type GarmentRaster } from "./garment-photo";
 
 function jeans(): GarmentRaster {
   const width = 80, height = 100;
@@ -10,6 +10,32 @@ function jeans(): GarmentRaster {
   }
   return { width, height, data };
 }
+
+describe("borda do recorte e trama para as costas", () => {
+  it("o pixel misto da borda (tecido + fundo) fica semitransparente e sem a contaminação do branco", () => {
+    const image = jeans();
+    // serrilhado: a coluna 19 (fora do jeans) recebe a mistura 50 % jeans + 50 % branco, como a câmera registra a borda
+    for (let y = 12; y < 94; y++) image.data.set([145, 165, 187, 255], (y * image.width + 19) * 4);
+    const cut = cutoutGarment(image)!;
+    const o = (50 * image.width + 19) * 4, inner = (50 * image.width + 30) * 4;
+    expect(cut.data[o + 3]).toBeGreaterThan(80); expect(cut.data[o + 3]).toBeLessThan(255);     // alfa parcial, não opaco
+    expect(cut.data[o]).toBeLessThan(80); expect(cut.data[o + 2]).toBeLessThan(150);              // cor de volta ao denim, não azul-claro
+    expect([...cut.data.slice(inner, inner + 4)]).toEqual([35, 75, 120, 255]);                     // interior intocado
+  });
+  it("fabricPatch: trama real (jeans com grão) vira ladrilho espelhado; tecido liso e logo isolado não", () => {
+    const width = 240, height = 320, data = new Uint8ClampedArray(width * height * 4);
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let y = 20; y < 300; y++) for (let x = 30; x < 210; x++) { const g = Math.round(rnd() * 60); data.set([30 + g, 60 + g, 110 + g, 255], (y * width + x) * 4); }
+    const patch = fabricPatch({ width, height, data });
+    expect(patch).not.toBeNull(); expect(patch!.width).toBeGreaterThanOrEqual(24);
+    for (let y = patch!.y; y < patch!.y + patch!.height; y++) for (let x = patch!.x; x < patch!.x + patch!.width; x++) expect(data[(y * width + x) * 4 + 3]).toBe(255);
+    const plain = new Uint8ClampedArray(width * height * 4);
+    for (let y = 20; y < 300; y++) for (let x = 30; x < 210; x++) plain.set([30, 60, 110, 255], (y * width + x) * 4);
+    expect(fabricPatch({ width, height, data: plain })).toBeNull();
+    for (let y = 150; y < 190; y++) for (let x = 90; x < 150; x++) plain.set([230, 20, 40, 255], (y * width + x) * 4);      // um logo numa peça lisa
+    expect(fabricPatch({ width, height, data: plain })).toBeNull();
+  });
+});
 
 describe("product photo separated from its backdrop", () => {
   it.each(["horizontal", "vertical"])("retains %s stripes without tiling a unique contrasting logo", axis => {

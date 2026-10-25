@@ -439,7 +439,10 @@ class FashnOpenEngineTest(unittest.TestCase):
             self.assertTrue(pf["measurementReliable"] and pf["complete"] and pf["isolationVerified"] and pf["humanAssessmentComplete"])
             self.assertFalse(pf["occluded"]); self.assertGreaterEqual(pf["sourceGarmentHeightFraction"], 0.25)
             self.assertEqual(data["files"], {"whole": "whole.png", "fabric": "fabric.png"})
-            self.assertEqual(Image.open(folder / "whole.png").size, (900, 1200))
+            whole = Image.open(folder / "whole.png")
+            self.assertEqual((whole.size, whole.mode), ((900, 1200), "RGBA"))
+            self.assertEqual(whole.getpixel((5, 5)), (255, 255, 255, 0), "fundo transparente com RGB branco por baixo")
+            self.assertEqual(whole.getpixel((450, 600))[3], 255, "peça opaca no centro")
             fabric = Image.open(folder / "fabric.png"); self.assertAlmostEqual(fabric.width / fabric.height, 0.75, places=2)
             self.assertEqual(data["metrics"]["fabric"]["coverage"], 1.0); self.assertIn("box", data["metrics"]["whole"])
             # mão sobre o tecido: oclusão incerta → o preflight não passa, o conjunto fica REVIEW e nenhuma imagem é gravada
