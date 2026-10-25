@@ -2,7 +2,8 @@
 
 import { Chip, cn } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
-import type { SizeFit, SizeGrid, SizeOption } from "@/lib/tryon/sizes";
+import type { FitVerdict, SizeFit, SizeGrid, SizeOption } from "@/lib/tryon/sizes";
+import { FitFeedback } from "./fit-feedback";
 
 export interface SizePickerProps {
   grid: SizeGrid;
@@ -12,6 +13,10 @@ export interface SizePickerProps {
   /** tamanho do corpo do avatar (marcado com •); null sem corpo conhecido */
   natural: string | null;
   fit?: SizeFit | null;
+  /** retorno por região (provador): substitui a linha simples de `fit` */
+  feedback?: FitVerdict | null;
+  /** a pessoa informou altura, peso ou medidas em Meu Avatar */
+  personalized?: boolean;
   label: string;
   onPick: (size: string) => void;
 }
@@ -21,7 +26,7 @@ export interface SizePickerProps {
  * ponto e o nome acessível "tamanho do seu avatar"; a linha de estado diz como a peça fica no corpo (no corpo, justa,
  * folgada…). É um radiogroup: cada chip é um radio com aria-checked.
  */
-export function SizePicker({ grid, options, chosen, natural, fit, label, onPick }: SizePickerProps) {
+export function SizePicker({ grid, options, chosen, natural, fit, feedback, personalized = true, label, onPick }: SizePickerProps) {
   const { t } = useI18n();
   const current = chosen ?? natural;
   return (
@@ -38,7 +43,8 @@ export function SizePicker({ grid, options, chosen, natural, fit, label, onPick 
           );
         })}
       </span>
-      {fit && natural && (
+      {feedback && <FitFeedback grid={grid} feedback={feedback} natural={natural} personalized={personalized} />}
+      {!feedback && fit && natural && (
         <span className={cn("size-fit", `is-${fit}`)} role="status" aria-live="polite">
           {t(`size.fit.${grid === "shoes" ? "pe" : "corpo"}.${fit}`, { natural })}
         </span>

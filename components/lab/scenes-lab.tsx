@@ -8,6 +8,7 @@ import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { FittingStudioProfile } from "@/lib/scene3d/fitting-studio";
 import { ACERVO, acervoLook } from "@/lib/tryon/acervo";
 import { setFitMode } from "@/lib/avatar3d/human/garment-fit";
+import { gridOf } from "@/lib/tryon/sizes";
 import { DEFAULT_BODY, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { SceneDebugOptions } from "@/components/three/scene-debug";
 import type { FittingCameraApi } from "@/lib/scene3d/orbit-steps";
@@ -107,7 +108,11 @@ export default function ScenesLab() {
     // variation=SLIM|REGULAR|OVERSIZED… força a classe de caimento em todas as peças (auditoria: regata "justa" do catálogo)
     // neckline=V_NECK|SCOOP|… força a dimensão NECKLINE (auditoria do decote: "Decote V" do catálogo)
     const variation = q.get("variation"), neckline = q.get("neckline");
-    const pieces = labLook(q.get("pieces") ?? "")?.map((p) => ({ ...p, ...(variation ? { variation } : {}), ...(neckline ? { attributes: { ...(p.attributes ?? {}), NECKLINE: [neckline] } } : {}) })) ?? null;
+    // sizes=letter:GG,numeric:46,shoes:40 veste cada grade no tamanho dado (caimento por tamanho, lib/tryon/sizes.ts)
+    const sizes = Object.fromEntries((q.get("sizes") ?? "").split(",").map((x) => x.split(":")).filter((x) => x.length === 2)) as Record<string, string>;
+    const sized = (p: Look3dPiece): Look3dPiece => { const g = gridOf(p.category, p.subcategory); return g && sizes[g] ? { ...p, sizeLabel: sizes[g] } : p; };
+    const base = labLook(q.get("pieces") ?? "") ?? (Object.keys(sizes).length ? LAB_LOOK : null);
+    const pieces = base?.map((p) => sized({ ...p, ...(variation ? { variation } : {}), ...(neckline ? { attributes: { ...(p.attributes ?? {}), NECKLINE: [neckline] } } : {}) })) ?? null;
     const lq = q.get("light"); const light: LightMode = lq === "daylight" || lq === "night" ? lq : "store";
     const b = q.get("body") ?? "F-ref"; const sex = b.startsWith("M") ? "MASCULINO" : "FEMININO";
     const body = b === "F-plus" ? { ...DEFAULT_BODY.FEMININO, stature: 1.66, build: 1.4 } : b === "M-slim" ? { ...DEFAULT_BODY.MASCULINO, stature: 1.82, build: -0.8 } : null;

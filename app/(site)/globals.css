@@ -2604,6 +2604,22 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .size-chip { min-width: 34px; justify-content: center; padding-inline: 8px; font-variant-numeric: tabular-nums; position: relative; }
 .size-chip.is-mine::after { content: ""; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--thread); }
 .size-fit { color: var(--muted); font-size: var(--text-body-sm); }
+/* "Suas medidas" (Meu Avatar): campos curtos lado a lado, uma coluna no celular */
+.body-measures-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; }
+/* retorno de caimento do provador: frase, regiões e o tamanho do avatar; o texto fica na cor de leitura e um marcador
+   colorido reforça o estado (nunca só a cor: a frase diz o estado) */
+.fit-feedback { display: grid; gap: 2px; min-width: 0; font-size: var(--text-body-sm); line-height: 1.35; color: var(--ink); }
+.fit-feedback-verdict { display: inline-flex; align-items: baseline; gap: 6px; }
+.fit-feedback-verdict::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fit-mark, var(--muted)); transform: translateY(-1px); }
+.fit-feedback-verdict strong { font-weight: 600; }
+.fit-feedback.is-true { --fit-mark: var(--status-good); }
+.fit-feedback.is-snug, .fit-feedback.is-loose { --fit-mark: var(--status-warning); }
+.fit-feedback.is-oversized { --fit-mark: var(--status-serious); }
+.fit-feedback.is-tight { --fit-mark: var(--status-critical); }
+.fit-feedback-regions { display: flex; flex-wrap: wrap; gap: 0 12px; color: var(--muted); }
+.fit-region.is-tight, .fit-region.is-oversized { color: var(--ink); font-weight: 600; }
+.fit-feedback-natural { color: var(--muted); }
+.fit-feedback-link { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .size-fit.is-tight { color: var(--danger, #b42318); font-weight: 600; }
 .size-fit.is-oversized, .size-fit.is-snug { color: var(--ink); }
 .piece-row-state { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: var(--text-body-sm); line-height: 1.35; }

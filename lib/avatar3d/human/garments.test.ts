@@ -374,6 +374,34 @@ it("tamanho escolhido muda a malha: GG num corpo M afasta o tecido ~2 cm a mais 
   expect(pp).toBeLessThan(m); expect(pp).toBeGreaterThan(0.001);
 });
 
+it("caimento por região: sobra vira pregas, aperto vira rugas de tensão e o comprido acumula na barra da calça", () => {
+  const sex = "FEMININO"; const c = compose(asset, fitBody(asset, { sex }).z, null, DEFAULT_BODY[sex].stature);
+  const normals = baseNormals(c.body, asset.body.index, asset.body.renderVertex); const P = bodyParam(asset, c);
+  const dist = (g: ReturnType<typeof garmentGeometry>, v: number) => { const src = g!.source[v]; return Math.hypot(g!.position[v * 3] - c.body[src * 3], g!.position[v * 3 + 1] - c.body[src * 3 + 1], g!.position[v * 3 + 2] - c.body[src * 3 + 2]); };
+  /** relevo do tamanho numa faixa: a mesma peça com e sem o relevo, vértice a vértice (min, max e média da diferença) */
+  const relief = (piece: Record<string, unknown>, keep: (src: number) => boolean) => {
+    const sp = specFor(piece)!, flat = { ...sp, sizeFold: undefined };
+    const g = garmentGeometry(asset, c, normals, P, sp)!, f = garmentGeometry(asset, c, normals, P, flat)!; const d: number[] = [];
+    for (let v = 0; v < g.position.length / 3; v++) { const src = g.source[v]; if (src >= 0 && g.alpha[v] >= 0.5 && keep(src)) d.push(dist(g, v) - dist(f, v)); }
+    return { min: Math.min(...d), max: Math.max(...d), mean: d.reduce((x, y) => x + y, 0) / d.length };
+  };
+  const tee = { category: "upper_piece", subcategory: "t_shirt" };
+  const lowerTorso = (src: number) => P.group[src] === 1 && P.h[src] > 0.15 && P.h[src] < 0.45;
+  const loose = relief({ ...tee, sizeSteps: 2.5 }, lowerTorso);
+  expect(loose.max).toBeGreaterThan(0.004); expect(loose.min).toBeLessThan(0.001); expect(loose.min).toBeGreaterThanOrEqual(-1e-6);   // pregas, nunca para dentro
+  expect(relief({ ...tee, sizeSteps: 0.2 }, lowerTorso).max).toBeLessThan(1e-6);           // no tamanho: liso
+  // peito no corpo e cintura apertada: rugas de tensão na frente da cintura; o peito fica liso
+  const waistTight = { ...tee, sizeSteps: 0, sizeRegions: { chest: 0, waist: -2, length: 0 } };
+  const front = (src: number) => lowerTorso(src) && c.body[src * 3 + 2] > P.torsoZ + 0.04;
+  const chest = (src: number) => P.group[src] === 1 && P.h[src] > 0.7 && P.h[src] < 0.8;
+  expect(relief(waistTight, front).max).toBeGreaterThan(0.0008);
+  expect(relief(waistTight, chest).max).toBeLessThan(0.0004);
+  // calça comprida: a barra acumula no tornozelo (e não no joelho)
+  const jeans = { category: "lower_piece", subcategory: "jeans", sizeSteps: 0.1, sizeRegions: { waist: 0, hip: 0, length: 2 } };
+  expect(relief(jeans, (src) => P.group[src] === 3 && P.leg[src] > 0.88 && P.leg[src] < 0.98).max).toBeGreaterThan(0.003);
+  expect(relief(jeans, (src) => P.group[src] === 3 && P.leg[src] > 0.4 && P.leg[src] < 0.6).max).toBeLessThan(0.0005);
+});
+
 describe("manga: folga e foto", () => {
   it("a folga da manga é menor que a do tronco em camadas grossas e o antebraço da jaqueta deixa de inflar", () => {
     expect(sleeveEase(SPECS.jacket)).toBeLessThan(SPECS.jacket.ease);

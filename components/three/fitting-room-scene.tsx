@@ -7,7 +7,7 @@ import { StudioLight, useCanvasTexture, useReducedMotion, useTex, type Avatar3dR
 import { Mannequin, bodyParamsOf } from "@/components/three/mannequin";
 import { useBodyAsset, type HumanParts } from "@/components/three/human-avatar";
 import { SceneDebug, type SceneDebugOptions } from "@/components/three/scene-debug";
-import { buildSpec, type BodyParams } from "@/lib/avatar3d/body-spec";
+import { buildSpec, validateBody, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { BrandEnvironment, LightMode, ResolvedEnvironment } from "@/lib/tryon/fitting-room";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import { ReferenceGallery } from "@/components/three/store-fixtures";
@@ -127,7 +127,9 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
   const params = body ?? bodyParamsOf({ sex, build, avatar }), height = buildSpec(params).stature;
   // tamanho escolhido × este corpo: a diferença em tamanhos vira folga e comprimento no molde (lib/tryon/sizes.ts)
   const paramsKey = JSON.stringify(params);
-  const sized = useMemo(() => sizedPieces(pieces, params, sex), [pieces, paramsKey, sex]); // eslint-disable-line react-hooks/exhaustive-deps
+  // medidas de fita informadas em Meu Avatar valem mais que a estimativa pelo corpo
+  const measured = validateBody(avatar?.model?.body)?.measuresCm ?? null, measuredKey = JSON.stringify(measured);
+  const sized = useMemo(() => sizedPieces(pieces, params, sex, measured), [pieces, paramsKey, sex, measuredKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // alvo estável: um array novo a cada render fazia o Rig recolocar a câmera no preset e desfazer o giro da pessoa
   const target = useMemo<V3>(() => closeUp ? [0, height * .52, 0] : [0, height * .60, 0], [closeUp, height]), dist = closeUp ? height * 1.55 : height * 2.2;
   const env = scene?.brand ?? environment.featured, profile = resolveFittingStudio(env, scene);

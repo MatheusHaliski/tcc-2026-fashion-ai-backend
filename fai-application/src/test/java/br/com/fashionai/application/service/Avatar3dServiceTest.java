@@ -534,6 +534,29 @@ class Avatar3dServiceTest {
         assertFalse(((Map<?, ?>) cleared.get("model")).containsKey("body"));
     }
 
+    /** Medidas de fita e número do calçado: opcionais, nas faixas; altura, peso e medidas não vão para quem vê o avatar. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void medidasPessoaisValidadasEFicamSoComODono() {
+        service.save(me, cmd(true, null), texture(512, 512));
+        Map<String, Object> b = body(0.15, "observed");
+        b.put("weightKg", 64);
+        b.put("measuresCm", new LinkedHashMap<>(Map.of("chest", 92, "waist", 74, "shoe", 37, "neck", 35)));
+        Map<?, ?> saved = (Map<?, ?>) ((Map<?, ?>) service.update(me, new Avatar3dService.SettingsCommand(null, null, b)).get("model")).get("body");
+        assertEquals(Map.of("chest", 92.0, "waist", 74.0, "shoe", 37.0), saved.get("measuresCm"));
+        Map<String, Object> bad = body(0.15, "observed");
+        bad.put("measuresCm", Map.of("waist", 400));
+        assertEquals("CORPO_INVALIDO", code(() -> Avatar3dService.validateBody(bad)));
+        // o dono vê tudo; outra pessoa vê as proporções do corpo, sem altura, peso e medidas
+        Map<?, ?> mine = (Map<?, ?>) ((Map<?, ?>) service.forMannequin(me.id(), me.id()).orElseThrow().get("model")).get("body");
+        assertEquals(64.0, mine.get("weightKg"));
+        Map<String, Object> pub = Avatar3dService.publicModel(Map.of("skin", "#c8966e", "body", saved));
+        Map<?, ?> pubBody = (Map<?, ?>) pub.get("body");
+        assertFalse(pubBody.containsKey("weightKg")); assertFalse(pubBody.containsKey("heightCm")); assertFalse(pubBody.containsKey("measuresCm"));
+        assertEquals(saved.get("params"), pubBody.get("params"));
+        assertEquals("#c8966e", pub.get("skin"));
+    }
+
     /**
      * Profundidade do tronco (foto de perfil): opcional — um corpo salvo antes dela continua válido —, mas quando
      * vem precisa do valor na faixa e da origem, como qualquer outra medida.

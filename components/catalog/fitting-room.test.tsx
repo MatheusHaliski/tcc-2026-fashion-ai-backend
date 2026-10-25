@@ -103,7 +103,9 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     expect(screen.queryByRole("textbox", { name: /cintura|quadril|medida/i })).toBeNull();
     fireEvent.click(within(sizes).getByRole("radio", { name: /^44/ }));
     expect(within(sizes).getByRole("radio", { name: /^44/ }).getAttribute("aria-checked")).toBe("true");
-    expect(within(sizes.parentElement!).getByRole("status").textContent).toBe("Bem folgado — seu avatar veste 40");
+    // retorno por região: calça 44 num corpo 40 sobra na cintura e no quadril e fica comprida
+    expect(within(sizes.parentElement!).getByRole("status").textContent).toBe("Ficou largo demais na cintura e no quadril · fica comprido");
+    expect(within(sizes.parentElement!).getByText("Seu avatar veste 40")).toBeTruthy();
     expect(JSON.parse(screen.getByTestId("fitting-scene").getAttribute("data-sizes") ?? "{}")).toEqual({ "c:p2": "44" });
     expect(JSON.parse(localStorage.getItem("fai.tryon.sizes") ?? "{}")).toEqual({ numeric: "44" });
     // a sessão guarda o tamanho junto da peça

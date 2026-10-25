@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { DEFAULT_BODY, mannequinBody } from "@/lib/avatar3d/body-spec";
-import { GRIDS, bodyMeasures, bodyPosition, gridOf, naturalSize, readMySizes, referenceRows, sizeFit, sizeSteps, sizeSummary, sizedPieces, writeMySize } from "./sizes";
+import { GRIDS, bodyMeasures, bodyPosition, fitVerdict, gridOf, lengthFit, naturalSize, readMySizes, referenceRows, regionPositions, sizeFit, sizeRegions, sizeSteps, sizeSummary, sizedPieces, writeMySize } from "./sizes";
 
 afterEach(() => { try { localStorage.clear(); } catch { /* sem storage */ } });
 
@@ -84,5 +84,40 @@ describe("referência e meus tamanhos", () => {
     expect(readMySizes()).toEqual({ shoes: "39" });
     localStorage.setItem("fai.tryon.sizes", "{oops");
     expect(readMySizes()).toEqual({});
+  });
+});
+
+describe("caimento por região e retorno do provador", () => {
+  const F = DEFAULT_BODY.FEMININO;
+  it("corpo padrão no tamanho dele: vestiu bem, no comprimento", () => {
+    const sum = sizeSummary({ category: "upper_piece", subcategory: "t_shirt" }, F, "FEMININO")!;
+    expect(sum.feedback.verdict).toBe("true"); expect(sum.feedback.length).toBe("true"); expect(sum.feedback.where).toEqual([]);
+    expect(sum.feedback.regions.map((r) => r.region).sort()).toEqual(["chest", "length", "waist"]);
+  });
+  it("medida de fita informada manda: cintura de 90 cm num M fica apertada na cintura, não no peito", () => {
+    const sum = sizeSummary({ category: "upper_piece", subcategory: "t_shirt", size: "M" }, F, "FEMININO", { waist: 90 })!;
+    expect(sum.natural).toBe("XG");                                                    // fecha na maior medida (cintura)
+    expect(sum.feedback.verdict).toBe("tight"); expect(sum.feedback.where).toEqual(["waist"]);
+    expect(sum.feedback.regions.find((r) => r.region === "chest")!.fit).toBe("true");
+  });
+  it("altura: 1,85 m num M fica curto; 1,50 m num M fica comprido", () => {
+    const m = bodyMeasures(F, "FEMININO");
+    expect(lengthFit(sizeRegions("letter", regionPositions("letter", "FEMININO", m, 1.85, "upper_piece"), "M")!.length!)).toBe("short");
+    expect(lengthFit(sizeRegions("letter", regionPositions("letter", "FEMININO", m, 1.5, "upper_piece"), "M")!.length!)).toBe("long");
+  });
+  it("calça: cintura e quadril; o número do calçado informado vira o tamanho do pé", () => {
+    const pos = regionPositions("numeric", "FEMININO", bodyMeasures(F, "FEMININO"), F.stature, "lower_piece");
+    expect(Object.keys(pos).sort()).toEqual(["hip", "length", "waist"]);
+    expect(naturalSize("shoes", bodyPosition("shoes", "FEMININO", bodyMeasures(F, "FEMININO", { shoe: 39 }), "shoes_piece"))).toBe("39");
+    expect(fitVerdict("shoes", { foot: -1 }).verdict).toBe("tight");
+  });
+  it("o pior caso decide: aperto pesa mais que sobra; medidas fora da faixa são ignoradas", () => {
+    expect(fitVerdict("letter", { chest: 2, waist: -1.5 }).verdict).toBe("tight");
+    expect(fitVerdict("letter", { chest: 1, waist: 0.8 }).where.sort()).toEqual(["chest", "waist"]);
+    expect(bodyMeasures(F, "FEMININO", { chest: 500 }).chest).toBeCloseTo(bodyMeasures(F, "FEMININO").chest, 6);
+  });
+  it("a peça vestida leva as regiões para o molde 3D", () => {
+    const [p] = sizedPieces([{ category: "upper_piece", subcategory: "t_shirt", sizeLabel: "M" }], F, "FEMININO", { waist: 90 });
+    expect(p.sizeRegions!.waist).toBeLessThan(-1); expect(p.sizeRegions!.chest).toBeCloseTo(0, 1);
   });
 });

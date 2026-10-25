@@ -13,7 +13,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { FITTING_SLOTS, type FittingItem, type FittingSlot } from "@/lib/tryon/fitting-room";
 import { useGarmentStatus } from "@/lib/tryon/garment-status";
 import { model3dFill, model3dProgress, type Model3dProgress } from "@/lib/tryon/model3d-steps";
-import { sizeSummary } from "@/lib/tryon/sizes";
+import { sizeSummary, type TapeMeasures } from "@/lib/tryon/sizes";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { SizePicker } from "./size-picker";
 
@@ -35,7 +35,7 @@ export interface FittingItemsProps {
   onPickFromStores?: (slot: FittingSlot) => void;
   onPickFromWardrobe?: (slot: FittingSlot) => void;
   /** corpo do avatar (o mesmo da cena) para o tamanho dele e como a peça fica; sem corpo, sem seletor de tamanho */
-  body?: { params: BodyParams; sex: "FEMININO" | "MASCULINO" } | null;
+  body?: { params: BodyParams; sex: "FEMININO" | "MASCULINO"; measured?: TapeMeasures | null; personalized?: boolean } | null;
   /** toque num tamanho: a peça veste o avatar nesse tamanho */
   onSizeChange?: (item: FittingItem, size: string) => void;
 }
@@ -133,7 +133,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
   body?: FittingItemsProps["body"]; onSizeChange?: FittingItemsProps["onSizeChange"];
 }) {
   const { t } = useI18n();
-  const size = body && onSizeChange && !coveredBy ? sizeSummary(item, body.params, body.sex) : null;
+  const size = body && onSizeChange && !coveredBy ? sizeSummary(item, body.params, body.sex, body.measured) : null;
   const garment = useGarmentStatus();   // estado das fotos no 3D (publicado pela cena)
   const m3d = useFittingModel3d(item, ownedId, onOwn);
   const [details, setDetails] = useState(false);
@@ -169,6 +169,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
             onRetry={() => void m3d.model.request()} />
           {size && onSizeChange && (
             <SizePicker grid={size.grid} options={size.options} chosen={item.size ?? null} natural={size.natural} fit={size.fit}
+              feedback={size.feedback} personalized={!!body?.personalized}
               label={t("size.tamanho_de", { name: item.name })} onPick={(label) => onSizeChange(item, label)} />
           )}
         </>}

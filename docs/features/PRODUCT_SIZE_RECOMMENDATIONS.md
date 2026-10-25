@@ -1,5 +1,10 @@
 # Recomendação de tamanho por produto — MVP
 
+> **Atualização 2026-10-25 (2) — caimento por região e medidas pessoais.** O tamanho agora é avaliado por região (peito,
+> cintura, quadril, comprimento, pé), com as medidas de fita e a altura e o peso informados em Meu Avatar. O provador
+> responde "vestiu bem", "está justo na cintura" ou "ficou apertado no peito". Detalhes em
+> `docs/provador/caimento-por-tamanho-2026-10-25/README.md`.
+
 > **Atualização 2026-10-25 — a interface passou a usar a grade do sistema, sem formulário.** A pessoa toca no tamanho
 > (PP…XG, 34…50 ou a numeração do calçado, 33…46) no "Provando agora", no botão "Tamanho" do catálogo ou em
 > `/fit` ("Meus tamanhos"); a peça veste o avatar nesse tamanho. O tamanho do corpo do avatar é estimado pelo próprio

@@ -15,7 +15,7 @@ import { useFittingShare } from "@/lib/hooks/use-fitting-share";
 import { useSavedTries } from "@/lib/hooks/use-saved-tries";
 import { FITTING_SLOTS, visibleItems, type EnvironmentMode, type LightMode } from "@/lib/tryon/fitting-room";
 import { fromWardrobe, nextTick, type SavedTry, type Sex, type State, type Store, type Tab } from "@/lib/tryon/fitting-room-model";
-import { mannequinBody } from "@/lib/avatar3d/body-spec";
+import { mannequinBody, validateBody } from "@/lib/avatar3d/body-spec";
 import { FittingStage } from "./fitting-stage";
 import { FittingControls } from "./fitting-controls";
 import { FittingItems } from "./fitting-items";
@@ -151,7 +151,7 @@ export function FittingRoom() {
             onVariantChange={session.changeVariant} onOwn={session.ownIt} onRemove={session.remove}
             onPickFromStores={(slot) => { setTab("stores"); setCategory(slot); }}
             onPickFromWardrobe={() => setTab("wardrobe")}
-            body={data.avatar ? { params: mannequinBody(bodySex, data.mannequin.build, data.avatar.model?.body), sex: bodySex } : null}
+            body={data.avatar ? fittingBody(bodySex, data.mannequin.build, data.avatar.model?.body) : null}
             onSizeChange={session.changeSize}
           />
         </div>
@@ -170,4 +170,11 @@ export function FittingRoom() {
       </Dialog>
     </>
   );
+}
+
+/** Corpo do provador: proporções do avatar, medidas de fita informadas e se a pessoa personalizou (altura, peso ou fita). */
+function fittingBody(sex: "FEMININO" | "MASCULINO", build: string | null | undefined, saved: unknown) {
+  const model = validateBody(saved);
+  return { params: mannequinBody(sex, build, saved), sex, measured: model?.measuresCm ?? null,
+    personalized: !!(model && (model.heightCm || model.weightKg || model.measuresCm)) };
 }

@@ -20,7 +20,8 @@ import { HAIR_TONES, paletteId } from "@/lib/avatar3d/hair-tone";
 import { HAIR_CUTS, HAIR_FRINGES } from "@/lib/avatar3d/hair-cut";
 import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
-import { validateBody } from "@/lib/avatar3d/body-spec";
+import { validateBody, type BodyModel } from "@/lib/avatar3d/body-spec";
+import { BodyMeasuresCard } from "@/components/avatar3d/body-measures";
 import { NEUTRAL_ENVIRONMENT } from "@/lib/tryon/fitting-room";
 import { portraitRefusalKey, similarityBand, stylizedPortraitOnGpu } from "@/lib/avatar3d/portrait-gpu";
 import type { FaceFidelity } from "@/lib/avatar3d/identity/metrics";
@@ -196,7 +197,7 @@ function HairFringePicker({ value, onChange }: { value: number; onChange: (v: nu
  * avatar sai da própria foto e um aviso diz isso. A foto não é guardada; o avatar só é salvo com o consentimento.
  * Sem foto nova, a prévia é o avatar salvo (visibilidade, ajustes, GLB e excluir valem para ele).
  */
-function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO" | "MASCULINO"; onChanged: () => void }) {
+function AvatarStudio({ saved, sex, onChanged, pendingBody }: { saved: Saved; sex: "FEMININO" | "MASCULINO"; onChanged: () => void; pendingBody?: BodyModel | null }) {
   const { t, fmtDateTime } = useI18n(); const toast = useToast(); const issueText = useIssueText(); const { user } = useAuth();
   const profileUrl = mediaUrl(user?.avatarUrl);
   const [file, setFile] = useState<Blob | null>(null);
@@ -290,7 +291,10 @@ function AvatarStudio({ saved, sex, onChanged }: { saved: Saved; sex: "FEMININO"
     setBusy("save");
     try {
       const fd = new FormData();
-      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub, quality: qualityReport(m.parts.identity, m.parts.human.root.userData.skinReport) }));
+      // medidas pessoais: as do cartão "Suas medidas" (antes do primeiro avatar) ou as já salvas — refazer o avatar não as perde
+      const keepBody = pendingBody ?? validateBody(saved.model?.body);
+      const model = keepBody ? { ...built.model, body: { ...keepBody, sex: built.model.sex ?? keepBody.sex } } : built.model;
+      fd.append("meta", JSON.stringify({ model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub, quality: qualityReport(m.parts.identity, m.parts.human.root.userData.skinReport) }));
       fd.append("texture", await atlasBlob(built.atlas), "avatar.jpg");
       await api.upload("/api/me/avatar3d", fd);
       toast.success(t("avatar3d.page.salvo"));
@@ -447,6 +451,7 @@ function IdentityPanel({ identity, onChanged }: { identity: IdentityView; onChan
 /** RF40 — aba "Meu Avatar 3D". */
 export default function MyAvatar() {
   const { t } = useI18n(); const { me, user } = useAuth(); const webgl = useWebGL();
+  const [pendingBody, setPendingBody] = useState<BodyModel | null>(null);
   const saved = useApi<Saved>((signal) => api.get("/api/me/avatar3d", { signal }), []);
   const top = useRef<HTMLDivElement>(null);
   const sex: "FEMININO" | "MASCULINO" = me?.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
@@ -462,8 +467,12 @@ export default function MyAvatar() {
       {webgl === false ? (
         <Card><p className="type-body">{t("avatar3d.page.sem_webgl")}</p></Card>
       ) : (
-        <AvatarStudio saved={s} sex={sex} onChanged={done} />
+        <AvatarStudio saved={s} sex={sex} onChanged={done} pendingBody={pendingBody} />
       )}
+      <div className="mt-4">
+        <BodyMeasuresCard key={`${s.updatedAt ?? ""}-${s.exists}`} sex={s.model?.sex ?? sex} initial={validateBody(s.model?.body)} canSave={!!s.exists && !!s.model}
+          onDraft={setPendingBody} onSaved={saved.reload} />
+      </div>
     </div>
   );
 }
