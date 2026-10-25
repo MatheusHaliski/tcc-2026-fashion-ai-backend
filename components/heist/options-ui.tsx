@@ -66,6 +66,7 @@ export function OptionsPanel({ settings: st, onSettings: set }: { settings: Heis
     </section>
     <section><h3>{t("heist.options.video")}</h3>
       <Choice name="hz-quality" legend={t("heist.options.quality")} value={st.quality} onChange={(v) => set({ ...st, quality: v })} options={[{ v: "high", label: t("heist.options.high") }, { v: "low", label: t("heist.options.low") }]} />
+      <p className="hz-fine">{t(st.quality === "high" ? "heist.options.qualityHigh" : "heist.options.qualityLow")}</p>
       <Check label={t("heist.options.showFps")} hint={t("heist.options.showFpsHint")} checked={st.showFps} onChange={(v) => set({ ...st, showFps: v })} />
     </section>
   </div>;

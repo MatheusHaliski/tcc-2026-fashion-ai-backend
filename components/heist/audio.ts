@@ -208,6 +208,20 @@ export class HeistAudio {
     if (now - this.heartAt < period) return;
     this.heartAt = now; this.tone(58, 0.12, 0.35 * tired, "sine"); this.tone(52, 0.14, 0.28 * tired, "sine", 0.16);
   }
+  /** Abaixa a música e a multidão enquanto alguém fala (a fala fica inteligível: MH-08-12, MH-15-02). */
+  duck(secs: number) {
+    const c = this.ctx; if (!c || !this.music) return;
+    const now = c.currentTime;
+    this.music.gain.cancelScheduledValues(now);
+    this.music.gain.setTargetAtTime(this.vol.music * 0.5 * 0.35, now, 0.08);
+    this.music.gain.setTargetAtTime(this.vol.music * 0.5, now + secs, 0.6);
+    if (this.crowd) { this.crowd.gain.gain.setTargetAtTime(0.012, now, 0.1); this.crowd.gain.gain.setTargetAtTime(0.05 * (CROWD[this.reverb?.room ?? "rua"] ?? 0.05), now + secs, 0.8); }
+  }
+  /** Passo: salto alto estala (agudo), sapato baixo abafa; `pos` = de quem (seguranças soam do lado certo). */
+  step(kind: "heels" | "soft" | "boots", gain: number, pos?: Vec) {
+    if (kind === "heels") { this.tone(2400, 0.035, 0.05 * gain, "square", 0, -900, pos); this.noise(0.03, 0.08 * gain, 3800, "highpass", 0, pos); }
+    else this.noise(kind === "boots" ? 0.07 : 0.05, (kind === "boots" ? 0.16 : 0.1) * gain, kind === "boots" ? 700 : 1100, "bandpass", 0, pos);
+  }
   /** Fala lida pela síntese de voz do navegador (quando ligada): voz do idioma, mais grave para os seguranças. */
   speak(text: string, low: boolean) {
     if (!this.vol.voices || typeof window === "undefined" || !window.speechSynthesis) return;

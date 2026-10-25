@@ -47,6 +47,7 @@ function Driver({ sim, ctx, view, controls, audio, settings, running, slowMo, on
 }) {
   const { camera } = useThree();
   const hudAt = useRef(0), fps = useRef({ n: 0, t: 0 });
+  const steps = useRef({ player: 0, guards: new Map<string, number>() });
   const dir = useMemo(() => new THREE.Vector3(), []);
   useFrame((_, rawDt) => {
     const s = sim.current.s, dt = Math.min(0.05, rawDt);
@@ -85,6 +86,19 @@ function Driver({ sim, ctx, view, controls, audio, settings, running, slowMo, on
     onEvents(s);
     audio.setListener(camera.position.x, camera.position.z, cyaw);
     audio.heartbeat(s.time, tiredness(s));
+    // passos: os dela no ritmo da passada; os dos seguranças a até 12 m, do lado de onde vêm (MH-15-04, MH-15-07)
+    const p = s.player, st = steps.current;
+    if (p.speed > 0.6 && p.mode === "WALK" && !p.hidden) {
+      st.player += dt * (p.speed > 3 ? 3.2 : p.speed > 1.5 ? 2.1 : 1.6);
+      if (st.player >= 1) { st.player = 0; audio.step(p.shoes === "heels" ? "heels" : "soft", p.discreet || p.crouch ? 0.35 : p.speed > 3 ? 1 : 0.6); }
+    }
+    for (const g of s.guards) {
+      if (!g.active || g.state === "DOWN" || g.state === "GRABBED") continue;
+      const v = Math.hypot(g.vel.x, g.vel.z), d = Math.hypot(g.pos.x - p.pos.x, g.pos.z - p.pos.z);
+      if (v < 0.5 || d > 12) continue;
+      const t0 = (st.guards.get(g.id) ?? 0) + dt * (v > 3 ? 3 : 1.8);
+      if (t0 >= 1) { st.guards.set(g.id, 0); audio.step(g.role === "heavy" || g.role === "police" ? "boots" : "soft", Math.max(0.25, 1 - d / 12), g.pos); } else st.guards.set(g.id, t0);
+    }
     hudAt.current += dt;
     if (hudAt.current > 1 / 15) {
       hudAt.current = 0;
@@ -126,6 +140,13 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
   const [rev, setRev] = useState(0);
   const [loading, setLoading] = useState(debug ? 1 : 0);
   const [fps, setFps] = useState<number | null>(null);
+  // diagnóstico (F3): erros de script desde que a partida abriu
+  const [errors, setErrors] = useState(0);
+  useEffect(() => {
+    const bump = () => setErrors((n) => n + 1);
+    window.addEventListener("error", bump); window.addEventListener("unhandledrejection", bump);
+    return () => { window.removeEventListener("error", bump); window.removeEventListener("unhandledrejection", bump); };
+  }, []);
   const [save, setSave] = useState<SavedRun | null>(null);
   const [wheelHover, setWheelHover] = useState<WheelSlot | null>(null);
   const seq = useRef(1);
@@ -168,6 +189,7 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
   }, [t]);
   const say = useCallback((who: string, key: string, vars?: Record<string, string | number>) => {
     setLines((l) => [...l.slice(-2), { id: seq.current++, who, key, vars, at: performance.now() }]);
+    audio.duck(2.6);
     audio.speak(t(key, vars), !!GUARD_NAMES[who]);
   }, [audio, t]);
 
@@ -365,7 +387,7 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
       </Suspense>
       <HeistFx view={view} />
     </Canvas>
-    {(stage === "play" || stage === "pause") && <Hud h={hud} pad={controls.usingPad} lines={lines} toasts={toasts} names={names} settings={settings} fps={fps} />}
+    {(stage === "play" || stage === "pause") && <Hud h={hud} pad={controls.usingPad} lines={lines} toasts={toasts} names={names} settings={settings} fps={fps} errors={errors} />}
     {stage === "play" && !controls.locked && !panel && !controls.usingPad && !hud.beat && !hud.cutscene && <p className="hz-clickhint">{t("heist.hud.clickToPlay")}</p>}
     {panel?.kind === "wheel" && <ItemWheel info={wheelInfo} hover={wheelHover} onPick={(sl) => pickWheel(sl)} />}
     {panel?.kind === "vendor" && <VendorPanel s={s} vendor={panel.vendor} onChange={bump} onClose={() => closePanel()} />}

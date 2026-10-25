@@ -9103,11 +9103,14 @@
   "heist.tip.escape": "Consejo: cuando un guardia apunte, esquiva con {key}. No dejes de correr.",
   "heist.tip.exposure": "Consejo: alguien se está fijando en ti — el arco abajo a la derecha se llena. Camina despacio, entre la gente, o sal de su vista.",
   "heist.tip.gun": "Consejo: {aim} apunta y {fire} dispara. Los disparos hacen ruido: todos los oyen.",
-  "heist.tip.lasers": "Consejo: corta la energía en el cuadro eléctrico o pasa agachada ({key}) por los láseres en el momento justo.",
+  "heist.tip.lasers": "Consejo: corta la energía en el cuadro eléctrico o pasa agachada ({key}) por los láseres en el momento justo. Si necesitas más tiempo, ralentiza los láseres en Opciones → Juego.",
   "heist.tip.lowHp": "Consejo: con poca vida vas lenta y frágil. Cúrate con {key}.",
   "heist.tip.move": "Consejo: {move} para moverte, {sprint} para correr y {discreet} para el paso discreto.",
   "heist.tip.staffArea": "Consejo: zona del personal. Con uniforme de camarero pasas sin llamar la atención.",
   "heist.tip.steal": "Consejo: el robo es por la espalda. Acércate despacio y pulsa {key}; la etiqueta muestra el valor y quién mira.",
   "heist.tip.takedown": "Consejo: de espaldas a ti, el guardia cae sin ruido con {key}.",
-  "heist.toast.checkpoint": "Punto de control guardado: {where}"
+  "heist.toast.checkpoint": "Punto de control guardado: {where}",
+  "heist.hud.diag": "errores {errors} · IA: {sus} recelosos, {alert} en alerta · edificio {alertLevel}/3",
+  "heist.options.qualityHigh": "Alta: sombras, reflejos en el suelo, brillo de las luces, grano de película y resolución de hasta 1,75×. Pide una tarjeta gráfica dedicada para 60 FPS.",
+  "heist.options.qualityLow": "Ligera: sin sombras ni posprocesado, menos personas animadas por fotograma y resolución reducida — más fluidez en portátiles."
 }

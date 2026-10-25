@@ -42,7 +42,7 @@ export interface HudState {
 const BUILD = `${SIM_VERSION}.${(process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? "dev").slice(0, 7)}`;
 const fmtClock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-export function Hud({ h, pad, lines, toasts, names, settings, fps }: { h: HudState; pad: boolean; lines: Line[]; toasts: Line[]; names: (who: string) => string; settings: HeistSettings; fps: number | null }) {
+export function Hud({ h, pad, lines, toasts, names, settings, fps, errors = 0 }: { h: HudState; pad: boolean; lines: Line[]; toasts: Line[]; names: (who: string) => string; settings: HeistSettings; fps: number | null; errors?: number }) {
   const { t } = useI18n();
   const key = (a: Parameters<typeof bindLabel>[1]) => bindLabel(settings, a, pad, t);
   const pct = Math.max(0, h.hp / h.maxHp), low = h.hp <= 30;
@@ -181,6 +181,6 @@ export function Hud({ h, pad, lines, toasts, names, settings, fps }: { h: HudSta
     <ul className="hz-lines" style={subStyle}>{lines.map((l) => <li key={l.id}><b>{names(l.who)}:</b> {t(l.key, l.vars)}</li>)}</ul>
     {cinema && <p className="hz-skip"><kbd>{key("skip")}</kbd> {t("heist.hud.skip")}</p>}
     {!cinema && <ul className="hz-toasts" aria-live="polite">{toasts.map((x) => <li key={x.id}>{t(x.key, x.vars)}</li>)}</ul>}
-    {fps !== null && <p className="hz-fps hz-num" aria-hidden>{t("heist.hud.fps", { fps, build: BUILD })}</p>}
+    {fps !== null && <p className="hz-fps hz-num" aria-hidden>{t("heist.hud.fps", { fps, build: BUILD })}<br />{t("heist.hud.diag", { errors, sus: h.detect.filter((d) => !d.alert && d.level > 0.35).length, alert: h.detect.filter((d) => d.alert).length, alertLevel: h.alertLevel })}</p>}
   </div>;
 }

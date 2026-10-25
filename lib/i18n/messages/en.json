@@ -9103,11 +9103,14 @@
   "heist.tip.escape": "Tip: when a guard takes aim, dodge with {key}. Keep running.",
   "heist.tip.exposure": "Tip: someone is noticing you — the arc at the bottom right is filling. Walk slowly, stay among people or get out of sight.",
   "heist.tip.gun": "Tip: {aim} to aim and {fire} to shoot. Gunfire is loud: everyone hears it.",
-  "heist.tip.lasers": "Tip: cut the power at the fuse box or crouch ({key}) through the lasers at the right moment.",
+  "heist.tip.lasers": "Tip: cut the power at the fuse box or crouch ({key}) through the lasers at the right moment. If you need more time, slow the lasers down in Options → Gameplay.",
   "heist.tip.lowHp": "Tip: low health makes you slow and fragile. Heal with {key}.",
   "heist.tip.move": "Tip: {move} to move, {sprint} to sprint and {discreet} for the discreet walk.",
   "heist.tip.staffArea": "Tip: staff area. In a waiter's uniform you can pass without drawing attention.",
   "heist.tip.steal": "Tip: steal from behind. Approach slowly and press {key}; the tag shows the value and who's watching.",
   "heist.tip.takedown": "Tip: with his back to you, the guard goes down silently with {key}.",
-  "heist.toast.checkpoint": "Checkpoint saved: {where}"
+  "heist.toast.checkpoint": "Checkpoint saved: {where}",
+  "heist.hud.diag": "errors {errors} · AI: {sus} suspicious, {alert} alerted · building {alertLevel}/3",
+  "heist.options.qualityHigh": "High: shadows, floor reflections, light bloom, film grain and up to 1.75× resolution. Needs a dedicated graphics card for 60 FPS.",
+  "heist.options.qualityLow": "Light: no shadows or post-processing, fewer people animated per frame and reduced resolution — smoother on laptops."
 }
