@@ -226,7 +226,10 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
             const snap = snapshot(s);
             checkpoints.current[e.reason] = snap; lastCheckpoint.current = e.reason;
             const run: SavedRun = { version: SIM_VERSION, savedAt: Date.now(), checkpoint: e.reason, deck: deckKey(cards).split(","), snap };
-            writeSave(run); setSave(run);
+            // gravar no navegador fora do quadro (JSON grande): sem engasgo ao entrar na sala nova
+            const idle = (window as unknown as { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => void }).requestIdleCallback;
+            if (idle) idle(() => writeSave(run), { timeout: 2000 }); else setTimeout(() => writeSave(run), 0);
+            setSave(run);
             if (e.reason !== "start") setToasts((l) => [...l.slice(-2), { id: seq.current++, who: "", key: "heist.toast.checkpoint", vars: { where: t(`heist.checkpoint.${e.reason}`) }, at: now }]);
           }
           break;
