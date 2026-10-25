@@ -11,6 +11,9 @@ import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
 import { I18nProvider } from "@/lib/i18n/i18n";
 import type { FittingCameraApi, OrbitLimitState } from "@/lib/scene3d/orbit-steps";
+import { surfaceStops, type DetailState } from "@/lib/scene3d/detail-camera";
+import { bodyParam } from "@/lib/avatar3d/human/garments";
+import type { HumanParts } from "./human-avatar";
 
 const canvasCapture = vi.hoisted(() => ({ enabled: false, children: null as ReactNode }));
 
@@ -30,6 +33,7 @@ import StageScene from "./stage-scene";
 import StoreStreetScene, { type StoreEntry } from "./store-street-scene";
 import LookViewer from "./look-viewer";
 import FittingRoomScene from "./fitting-room-scene";
+import { posedStops } from "./fitting-camera";
 import AvatarViewer from "./avatar-viewer";
 import { CapsuleMannequin, Mannequin, bodyParamsOf, mannequinSex } from "./mannequin";
 import { outfitOf } from "./human-outfit";
@@ -204,6 +208,54 @@ describe("cenas 3D", () => {
     stop(); await r.unmount();
     expect(api).toBeNull();
   }, 20000);
+
+  it("provador: câmera de detalhe gruda no calçado, percorre a superfície do corpo e volta ao corpo inteiro", async () => {
+    await serveBodyAsset();
+    let api: FittingCameraApi | null = null, parts: HumanParts | null = null;
+    const r = await mountFitting({ view: "front", onCamera: (a) => { api = a; }, onHuman: (p) => { parts = p; } }, <CameraProbe />);
+    await frames(r, 2);
+    await waitFor(() => expect(parts).toBeTruthy());
+    await frames(r, 3);                                                               // o corpo montado chega à câmera
+    const detail = api!.detail!, states: DetailState[] = [], stop = detail.subscribe((s) => states.push(s));
+    await waitFor(() => expect(states.at(-1)?.stops).toEqual(["gola", "ombro", "peito", "cintura", "quadril", "joelho", "barra", "calcado"]));
+    const cam = probe.camera!, home = cam.position.clone();
+    const stops = posedStops(parts!, surfaceStops(parts!.composed.body, bodyParam(parts!.asset, parts!.composed)));
+    const at = (k: string) => stops.find((s) => s.key === k)!;
+    const near = (p: [number, number, number]) => cam.position.distanceTo(new THREE.Vector3(...p));
+
+    // calçado: a câmera desliza até o tênis e fica a ~36 cm dele, olhando para ele
+    detail.focus("calcado"); await frames(r, 150);
+    expect(states.at(-1)!.mode).toBe("calcado");
+    expect(near(at("calcado").eye)).toBeLessThan(0.01);
+    expect(cam.position.y).toBeLessThan(0.45);
+    const look = new THREE.Vector3(); cam.getWorldDirection(look);
+    const toShoe = new THREE.Vector3(...at("calcado").target).sub(cam.position).normalize();
+    expect(look.dot(toShoe)).toBeGreaterThan(0.999);
+    // a roda aproxima do tênis até o limite e então devolve a rolagem (false)
+    const before = cam.position.distanceTo(new THREE.Vector3(...at("calcado").target));
+    expect(detail.wheel(-120)).toBe(true); await frames(r, 120);
+    expect(cam.position.distanceTo(new THREE.Vector3(...at("calcado").target))).toBeLessThan(before);
+    let zoomed = 0; while (detail.wheel(-400) && zoomed < 40) zoomed++;
+    expect(zoomed).toBeLessThan(40);
+
+    // percurso: gola → peito pela superfície; a roda anda no percurso e para no fim
+    detail.travel(0); await frames(r, 150);
+    expect(states.at(-1)).toMatchObject({ mode: "percurso", t: 0 });
+    expect(near(at("gola").eye)).toBeLessThan(0.01);
+    detail.travel(2); await frames(r, 150);
+    expect(near(at("peito").eye)).toBeLessThan(0.01);
+    expect(detail.wheel(100)).toBe(true);
+    expect(states.at(-1)!.t).toBeCloseTo(2.4, 5);
+    detail.focus("percurso", "calcado"); await frames(r, 150);
+    expect(near(at("calcado").eye)).toBeLessThan(0.01);
+    expect(detail.wheel(100)).toBe(false);                                            // fim do percurso: a página rola
+
+    // corpo inteiro: volta ao enquadramento de antes; trocar de vista também volta
+    detail.focus("corpo"); await frames(r, 200);
+    expect(states.at(-1)!.mode).toBe("corpo");
+    expect(cam.position.distanceTo(home)).toBeLessThan(0.01);
+    stop(); await r.unmount();
+  }, 30000);
 
   it("provador: avatar fixo, sem espelho, com rotação e zoom da câmera", async()=>{
     await serveBodyAsset();let cameraApi:FittingCameraApi|null=null;

@@ -19,6 +19,7 @@ import type {
   ResolvedEnvironment,
 } from "@/lib/tryon/fitting-room";
 import { toLook3d, type Sex, type State } from "@/lib/tryon/fitting-room-model";
+import { FittingDetailControls } from "./fitting-detail-controls";
 import { FittingRemoteControls } from "./fitting-remote-controls";
 
 const FittingRoomScene = dynamic(
@@ -129,6 +130,7 @@ export function FittingStage({
             </Link>
           </div>
         )}
+        {avatar && camera?.detail && <FittingDetailControls api={camera.detail} />}
         {avatar && camera && <FittingRemoteControls api={camera} />}
       </div>
 
