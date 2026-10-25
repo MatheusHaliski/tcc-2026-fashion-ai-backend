@@ -51,6 +51,11 @@ export const LAB_LOOK: Look3dPiece[] = [
 function labLook(ids: string): Look3dPiece[] | null {
   const list = ids.split(",").filter(Boolean).map((id): Look3dPiece | null => {
     if (id.startsWith("cor-")) return { id: `lab-${id}`, name: id, slot: "upper_piece", category: "upper_piece", subcategory: "t_shirt", imageUrl: `/lab/cores/camiseta-${id.slice(4)}.webp` };
+    // auditoria do pipeline de vestimenta: foto local em /public/lab-audit (fora do git), ex.: audit-01-jacket, audit-07-lower-pants
+    if (id.startsWith("audit-")) {
+      const [, n, ...rest] = id.split("-"); const lower = rest[0] === "lower"; const sub = (lower ? rest.slice(1) : rest).join("_");
+      return { id: `lab-${id}`, name: id, slot: lower ? "lower_piece" : "upper_piece", category: lower ? "lower_piece" : "upper_piece", subcategory: sub, imageUrl: `/lab-audit/img${n}.png` };
+    }
     if (id.startsWith("camisa-")) return { id: `lab-${id}`, name: `Camisa ${id.slice(7)}`, slot: "upper_piece", category: "upper_piece", subcategory: "shirt", imageUrl: `/lab/cores/${id}.webp` };
     const p = id.startsWith("molde-") ? ACERVO.find((x) => x.subcategory === id.slice(6)) : ACERVO.find((x) => x.id.includes(id)); return p ? acervoLook(p) : null;
   }).filter((p): p is Look3dPiece => !!p);
