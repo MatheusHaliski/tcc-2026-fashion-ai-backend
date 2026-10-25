@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Look3dPiece } from "@/components/three/common";
+import type { Look3d, Look3dPiece } from "@/components/three/common";
 import { resolveEnvironment, type FittingItem, type LightMode } from "@/lib/tryon/fitting-room";
 import { resolveScene, type SceneContext, type SceneProduct } from "@/lib/scene3d/scene";
 import type { AvatarView } from "@/components/three/avatar-viewer";
@@ -13,6 +13,7 @@ import { DEFAULT_BODY, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { SceneDebugOptions } from "@/components/three/scene-debug";
 import type { FittingCameraApi } from "@/lib/scene3d/orbit-steps";
 import { FittingDetailControls } from "@/components/try-on/fitting-detail-controls";
+import { NEUTRAL_MODS, type AdventureMods, type AdventureSession } from "@/lib/flair/afterparty";
 import { useSmartWheel } from "@/components/try-on/use-smart-wheel";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { DetailMode, DetailState, StopKey } from "@/lib/scene3d/detail-camera";
@@ -24,6 +25,16 @@ import type { DetailMode, DetailState, StopKey } from "@/lib/scene3d/detail-came
 const FittingRoomScene = dynamic(() => import("@/components/three/fitting-room-scene"), { ssr: false });
 const StoreStreetScene = dynamic(() => import("@/components/three/store-street-scene"), { ssr: false });
 const StageScene = dynamic(() => import("@/components/three/stage-scene"), { ssr: false });
+const HeistScene = dynamic(() => import("@/components/flair/afterparty-scene"), { ssr: false });
+/** MET Gala Heist com decks de exemplo: neutro, furtivo (escuro e de tênis) e de gala (claro, statement e raro). */
+const HEIST_MODS: Record<string, AdventureMods> = {
+  "heist-neutro": NEUTRAL_MODS,
+  "heist-furtivo": { agility: 78, stealth: 86, charm: 40, stamina: 72, speedMul: 1.16, suspicionMul: 0.78, distractMul: 1.08, regenMul: 1.28, light: "PENUMBRA", zoneMul: 0.82, crowd: 0, guests: 2, vipRouteMs: 0 },
+  "heist-gala": { agility: 30, stealth: 18, charm: 92, stamina: 40, speedMul: 0.97, suspicionMul: 1.19, distractMul: 1.44, regenMul: 1.02, light: "HOLOFOTES", zoneMul: 1.15, crowd: 0.67, guests: 6, vipRouteMs: 8000 },
+};
+const heistSession = (mods: AdventureMods, z: number): AdventureSession => ({ id: "lab", serverTime: 12_000, state: {
+  x: 0.4, z, energy: 80, suspicion: 12, status: "ACTIVE", phase: "ACQUIRE", activeDeckId: null, role: "NONE", color: "#406b91", feedback: "MOVING",
+  badge: false, item: false, running: false, activeUntil: 0, distractionUntilLeft: 0, distractionUntilRight: 0, distractionReadyAt: 0, cooldowns: {}, loadouts: [], startedAt: 10_000, mods } });
 
 const IMG = (n: string) => `/_derived/pecas_thumb/${n}-640.webp`;
 const piece = (id: string, name: string, slot: string, category: string, subcategory: string, img: string, colorHex: string): Look3dPiece =>
@@ -182,7 +193,7 @@ export default function ScenesLab() {
   return (
     <main style={{ padding: 12 }}>
       <nav style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        {["fitting-neutral", "fitting-brand", ...Object.keys(FITTING), "ministores", "ministage", "ministage-sem-logo"].map((k) => <button key={k} onClick={() => setS(k)} aria-pressed={s === k}>{k}</button>)}
+        {["fitting-neutral", "fitting-brand", ...Object.keys(FITTING), "ministores", "ministage", "ministage-sem-logo", ...Object.keys(HEIST_MODS)].map((k) => <button key={k} onClick={() => setS(k)} aria-pressed={s === k}>{k}</button>)}
       </nav>
       <div id="scene-viewer" ref={viewer} style={{ position: "relative", width: frame.w, height: frame.h, background: "#111" }}>
         {frame.panel && cameraApi?.detail && s.startsWith("fitting") && <FittingDetailControls api={cameraApi.detail} />}
@@ -196,6 +207,8 @@ export default function ScenesLab() {
           { id: "c4", label: "Inverno Lã", rank: 4, audience: 18, fraction: 0.3, fireworks: 0, accentColor: "#8E44AD", artUrl: "/aura/geometry/geometry_04/imagem.png", score: 310, products: [TOPS[4], BAGS[4], SHOES[1]] },
         ]} />}
         {s === "ministage" && <StageScene name="Luma Vale" era="Era Neon" colors={["#C6275E", "#2D55C9", "#F2C94C"]} mannequin={{ sex: "FEMININO", head: "PADRAO" }} pieces={LAB_LOOK} logoUrl={logo} seals={["/selos/circular/01.webp", "/selos/circular/02.webp"]} />}
+        {HEIST_MODS[s] && <HeistScene session={heistSession(HEIST_MODS[s], Number(new URLSearchParams(typeof location === "undefined" ? "" : location.search).get("z") ?? 4.2))}
+          look={{ title: "Lab", mannequin: { sex: lab.sex, head: "PADRAO" }, pieces: lab.pieces ?? LAB_LOOK } as unknown as Look3d} onTarget={() => {}} />}
         {s === "ministage-sem-logo" && <StageScene name="Rio Aurora" era="Era Tropical" colors={["#1BAF7A", "#EB6834", "#F2C94C"]} mannequin={{ sex: "MASCULINO", head: "PADRAO" }} pieces={LAB_LOOK} />}
       </div>
     </main>

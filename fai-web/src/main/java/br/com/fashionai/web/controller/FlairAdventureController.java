@@ -10,6 +10,7 @@ public class FlairAdventureController {
  public FlairAdventureController(FlairAdventureService adventure){this.adventure=adventure;}
  public record Start(List<UUID> deckIds){}
  @GetMapping("/api/flair/adventure/active") public Map<String,Object> active(CurrentUser user){return adventure.active(user);}
+ @PostMapping("/api/flair/adventure/preview") public Map<String,Object> preview(CurrentUser user,@RequestBody Start form){return adventure.preview(user,form.deckIds());}
  @PostMapping("/api/flair/adventure/sessions") public Map<String,Object> start(CurrentUser user,@RequestBody Start form){return adventure.start(user,form.deckIds());}
  @GetMapping("/api/flair/adventure/sessions/{id}") public Map<String,Object> state(CurrentUser user,@PathVariable UUID id){return adventure.state(user,id);}
  @PostMapping("/api/flair/adventure/sessions/{id}/actions") public Map<String,Object> action(CurrentUser user,@PathVariable UUID id,@RequestBody AfterpartyEngine.Action action){return adventure.action(user,id,action);}
