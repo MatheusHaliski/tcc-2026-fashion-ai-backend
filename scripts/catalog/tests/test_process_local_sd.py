@@ -1,5 +1,6 @@
 """Peça inteira local com Stable Diffusion: as partes puras (máscara fantasma, composição, og:image, SQL, lote) sem GPU,
 sem rede e sem modelo — o renderizador é um dublê que pinta a região pedida."""
+import hashlib
 import io
 import json
 import sys
@@ -404,6 +405,49 @@ class FashnOpenEngineTest(unittest.TestCase):
             results = sd.GhostPipeline(None, sd.Options(out_dir=out / "d", engine="fashn-open", dry_run=True, no_ai=True), fetch=fetch,
                                        open_provider=provider, filler=FakeFiller()).run([row])
             self.assertEqual(results[0]["status"], "RENDERED"); self.assertFalse(results[0]["metrics"]["ai"]); self.assertEqual(results[0]["metrics"]["matte"], "birefnet")
+
+    def test_photo_set_grava_whole_fabric_e_set_json_com_preflight_atestado(self):
+        import fashn_open as fo
+        im, target, forbidden = shirt_photo()
+        png = io.BytesIO(); im.save(png, "PNG")
+        row = {"id": "img-1", "product_id": "p1", "brand": "Marca", "category": "upper_piece", "subcategory": "t_shirt",
+               "image_url": "https://brand.com/ok.png", "color": "blue"}
+        fetch = lambda u: (200, png.getvalue(), "image/png")
+
+        class Provider:
+            """Fusão da fixture (sem o risco externo) com a evidência que o engine real traria."""
+
+            def __init__(self, evidence):
+                self.evidence = evidence
+
+            def analyse(self, image, category, subcategory):
+                t = np.asarray(target.convert("L")) >= 128; t[:150] = False
+                f = np.asarray(forbidden.convert("L")) >= 128
+                return fo.Fusion(t, f, t.astype(np.float32), "parser+birefnet", True, ("top",), self.evidence)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            ok = Provider({"touchesBorder": False, "bodyInsideFraction": 0.01, "occluderFraction": 0.0})
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "a", engine="fashn-open", dry_run=True, photo_set=True), fetch=fetch,
+                                       open_provider=ok, filler=FakeFiller()).run([row])
+            self.assertEqual(results[0]["status"], "RENDERED"); self.assertEqual(results[0]["metrics"]["preflight"]["status"], "PASS")
+            ps = results[0]["photoSet"]; self.assertEqual(ps["status"], "READY")
+            folder = Path(ps["dir"]); data = json.loads((folder / "set.json").read_text(encoding="utf-8"))
+            self.assertEqual((data["version"], data["status"], data["imageId"], data["sourceUrl"], data["color"]),
+                             ("CATALOG_PHOTO_SET_V2", "READY", "img-1", "https://brand.com/ok.png", "blue"))
+            self.assertEqual(data["sourceSha256"], hashlib.sha256(png.getvalue()).hexdigest())
+            pf = data["metrics"]["preflight"]
+            self.assertTrue(pf["measurementReliable"] and pf["complete"] and pf["isolationVerified"] and pf["humanAssessmentComplete"])
+            self.assertFalse(pf["occluded"]); self.assertGreaterEqual(pf["sourceGarmentHeightFraction"], 0.25)
+            self.assertEqual(data["files"], {"whole": "whole.png", "fabric": "fabric.png"})
+            self.assertEqual(Image.open(folder / "whole.png").size, (900, 1200))
+            fabric = Image.open(folder / "fabric.png"); self.assertAlmostEqual(fabric.width / fabric.height, 0.75, places=2)
+            self.assertEqual(data["metrics"]["fabric"]["coverage"], 1.0); self.assertIn("box", data["metrics"]["whole"])
+            # mão sobre o tecido: oclusão incerta → o preflight não passa, o conjunto fica REVIEW e nenhuma imagem é gravada
+            unsure = Provider({"touchesBorder": False, "bodyInsideFraction": 0.0, "occluderFraction": 0.08})
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "b", engine="fashn-open", dry_run=True, photo_set=True), fetch=fetch,
+                                       open_provider=unsure, filler=FakeFiller()).run([row])
+            ps = results[0]["photoSet"]; self.assertEqual((ps["status"], ps["reason"]), ("REVIEW", "GARMENT_OCCLUSION_UNCERTAIN"))
+            self.assertFalse((Path(ps["dir"]) / "whole.png").exists()); self.assertTrue((Path(ps["dir"]) / "set.json").exists())
 
     def test_compose_com_alfa_fino_usa_a_borda_do_modelo(self):
         im, target, _ = shirt_photo()

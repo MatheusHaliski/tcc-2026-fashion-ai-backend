@@ -51,7 +51,8 @@ from scipy import ndimage
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from photo_preflight import MIN_SOURCE_HEIGHT, fit_box, inspect_source  # noqa: E402
-from photo_set import MAX_ANALYSIS_SIDE, MAX_INPUT_PIXELS, LocalClothProvider, PhotoMasks, clean_target_mask  # noqa: E402
+from photo_set import MAX_ANALYSIS_SIDE, MAX_INPUT_PIXELS, PHOTO_SET_VERSION, LocalClothProvider, PhotoMasks, clean_target_mask  # noqa: E402
+from photo_set import _fabric_box as fabric_box  # noqa: E402  — o mesmo retângulo 3:4 só de tecido do worker do catálogo
 from whole_frame import HEIGHT, WIDTH, GarmentSegmenter, cloth_class  # noqa: E402
 from fashn_open import FashnOpenProvider, LamaInpainter  # noqa: E402
 
@@ -576,7 +577,8 @@ def normalize_row(raw: dict, spec: TableSpec) -> dict:
         brand = brand.get("name")
     return {"id": row.get("id", row.get(spec.id_column.lower())), "image_url": row.get("image_url", row.get(spec.url_column.lower(), row.get("url"))),
             "product_id": row.get("product_id", row.get("id")), "brand": brand or row.get("brand_name") or "FashionAI",
-            "category": row.get("category"), "subcategory": row.get("subcategory"), "product_name": row.get("product_name") or row.get("name")}
+            "category": row.get("category"), "subcategory": row.get("subcategory"), "product_name": row.get("product_name") or row.get("name"),
+            "color": row.get("color")}
 
 
 def fetch_pending(engine, spec: TableSpec, limit: int, product_id: Optional[str] = None) -> list[dict]:
@@ -615,6 +617,7 @@ class Options:
     device: str = "auto"
     lama_max_side: int = 1024
     lama_margin: int = 4                    # px a mais em volta da região fantasma: o LaMa não copia a franja de pele
+    photo_set: bool = False                 # também grava photo-sets/<id>/{whole,fabric}.png + set.json (photoSet do catálogo)
     extra: dict = field(default_factory=dict)
 
 
@@ -638,6 +641,7 @@ class GhostPipeline:
         base = {"id": row.get("id"), "product_id": row.get("product_id"), "brand": row.get("brand"), "category": row.get("category"),
                 "subcategory": row.get("subcategory"), "source_url_sha256": hashlib.sha256(str(row.get("image_url") or "").encode()).hexdigest()}
         started = time.monotonic()
+        data = None
         try:
             data, final_url = resolve_image(str(row.get("image_url") or ""), self.fetch)
             image, original = open_image(data)
@@ -650,7 +654,8 @@ class GhostPipeline:
             target, forbidden, metrics = measure(image, masks, row.get("category"), row.get("subcategory"), original, self.options.lenient_cleanup)
             metrics.update(sourceSha256=hashlib.sha256(data).hexdigest(), originalWidth=original[0], originalHeight=original[1], engine=self.options.engine)
             if fusion is not None:
-                metrics["fashnOpen"] = {"mode": fusion.mode, "personDetected": fusion.person, "parserLabelsKept": list(fusion.kept)}
+                metrics["fashnOpen"] = {"mode": fusion.mode, "personDetected": fusion.person, "parserLabelsKept": list(fusion.kept),
+                                        "evidence": fusion.evidence, "attestations": fusion.attestations()}
                 # o alfa fino do BiRefNet só vale dentro da peça limpa (mais 1 px de franja); fora dela é zero
                 alpha = np.where(ndimage.binary_dilation(target, iterations=1), fusion.alpha, 0).astype(np.float32)
             if self.options.measure_only:
@@ -683,11 +688,17 @@ class GhostPipeline:
             value = f"{self.options.public_base_url.rstrip('/')}/{name}" if self.options.public_base_url else path.as_posix()
             info = {**shot.info, **metrics, "sourceUrl": final_url}
             path.with_suffix(".json").write_text(json.dumps(info, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
-            return {**base, "status": "RENDERED", "image_path": path.as_posix(), "stored_value": value, "metrics": info,
-                    "seconds": round(time.monotonic() - started, 1)}
+            result = {**base, "status": "RENDERED", "image_path": path.as_posix(), "stored_value": value, "metrics": info,
+                      "seconds": round(time.monotonic() - started, 1)}
+            if self.options.photo_set and fusion is not None:
+                result["photoSet"] = self.write_photo_set(row, data, info, image=image, target=target, ghost=ghost, generated=generated, alpha=alpha)
+            return result
         except PhotoSkip as skip:
             emit("photo_skipped", id=str(base["id"]), status=skip.status, reason=str(skip))
-            return {**base, "status": skip.status, "reason": str(skip), "metrics": skip.metrics, "image_path": None}
+            result = {**base, "status": skip.status, "reason": str(skip), "metrics": skip.metrics, "image_path": None}
+            if self.options.photo_set and self.open_provider is not None and data is not None and skip.status in ("INELIGIBLE", "REVIEW"):
+                result["photoSet"] = self.write_photo_set(row, data, skip.metrics or {}, status=skip.status, reason=str(skip))
+            return result
         except (ImportError, OSError, ValueError, RuntimeError, MemoryError) as error:
             # uma foto com erro (modelo sem memória, arquivo corrompido, rede) não derruba o lote
             reason = str(error) if isinstance(error, ValueError) and str(error).isupper() and len(str(error)) < 90 else type(error).__name__
@@ -700,6 +711,43 @@ class GhostPipeline:
                 free_memory(self.filler.device)
             else:
                 gc.collect()
+
+    def write_photo_set(self, row: dict, data: bytes, info: dict, *, status: Optional[str] = None, reason: Optional[str] = None,
+                        image: Optional[Image.Image] = None, target: Optional[np.ndarray] = None, ghost: Optional[np.ndarray] = None,
+                        generated: Optional[Image.Image] = None, alpha: Optional[np.ndarray] = None) -> dict:
+        """photo-sets/<id>/{whole.png, fabric.png, set.json}: o que `process_photo_sets.py --from-lot` grava como o photoSet da
+        foto (CATALOG_PHOTO_SET_V2, o mesmo contrato do worker do catálogo). READY só com preflight PASS — atestado pela
+        evidência do engine fashn-open — e um retângulo 3:4 só de tecido; senão fica o status do preflight com o motivo."""
+        preflight = info.get("preflight") or {}
+        folder = self.options.out_dir / "photo-sets" / hashlib.sha256(str(row.get("id")).encode()).hexdigest()[:24]
+        folder.mkdir(parents=True, exist_ok=True)
+        metrics = {"version": PHOTO_SET_VERSION, "category": row.get("category"), "subcategory": row.get("subcategory"),
+                   "sourceGarmentHeightFraction": preflight.get("sourceGarmentHeightFraction"), "sourceQuality": preflight.get("quality"),
+                   "maskSource": preflight.get("maskSource"), "preflight": preflight, "cleanup": info.get("cleanup"), "fashnOpen": info.get("fashnOpen")}
+        result = {"version": PHOTO_SET_VERSION, "imageId": row.get("id"), "productId": row.get("product_id"), "sourceUrl": row.get("image_url"),
+                  "sourceSha256": hashlib.sha256(data).hexdigest(), "category": row.get("category"), "subcategory": row.get("subcategory"),
+                  "color": row.get("color"), "generatedAt": time.time(), "engine": "fashn-open", "metrics": metrics}
+        box = fabric_box(Image.fromarray((target * 255).astype(np.uint8))) if target is not None else None
+        if status is not None or preflight.get("status") != "PASS":
+            result.update(status="INELIGIBLE" if (status or preflight.get("status")) == "INELIGIBLE" else "REVIEW",
+                          reason=reason or preflight.get("reason") or "PREFLIGHT_NOT_PASSED")
+        elif box is None:
+            result.update(status="REVIEW", reason="NO_SAFE_FABRIC_RECTANGLE")
+        else:
+            whole = compose_packshot(image, target, generated, ghost, shadow=False, alpha=alpha)   # sem sombra: vira textura e card
+            fabric = image.crop(box)
+            if fabric.width > WIDTH:
+                fabric = fabric.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+            (folder / "whole.png").write_bytes(whole.data)
+            buffer = io.BytesIO()
+            fabric.save(buffer, "PNG", optimize=True)
+            (folder / "fabric.png").write_bytes(buffer.getvalue())
+            metrics["whole"] = {"width": WIDTH, "height": HEIGHT, "box": whole.info["box"], "framing": whole.info["framing"], "background": "#FFFFFF",
+                                "rendered": True, "processed": True, "ghostPixels": whole.info["ghostPixels"]}
+            metrics["fabric"] = {"width": fabric.width, "height": fabric.height, "sourceBox": list(box), "coverage": 1.0}
+            result.update(status="READY", reason=None, files={"whole": "whole.png", "fabric": "fabric.png"})
+        (folder / "set.json").write_text(json.dumps(result, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
+        return {"status": result["status"], "reason": result.get("reason"), "dir": folder.as_posix()}
 
     def run(self, rows: list[dict], store: Optional[Callable[[dict, str], bool]] = None) -> list[dict]:
         self.options.out_dir.mkdir(parents=True, exist_ok=True)
@@ -770,6 +818,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--sd", action="store_true", help="com --engine fashn-open: Stable Diffusion inpainting por cima do LaMa na região fantasma")
     ap.add_argument("--lama-max-side", type=int, default=1024, help="lado máximo do recorte enviado ao LaMa")
     ap.add_argument("--lama-margin", type=int, default=4, help="px a mais em volta da região fantasma que o LaMa preenche (esconde a franja de pele)")
+    ap.add_argument("--photo-set", action="store_true",
+                    help="com --engine fashn-open: grava também photo-sets/<id>/{whole,fabric}.png + set.json, que process_photo_sets.py --from-lot importa como photoSet do catálogo")
     ap.add_argument("--no-shadow", action="store_true")
     ap.add_argument("--no-foreground-body", action="store_true", help="sem parser humano, NÃO deduzir o corpo do primeiro plano geral")
     ap.add_argument("--strict-cleanup", action="store_true", help="só a limpeza estrita do catálogo (contorno fino não classificado → REVIEW)")
@@ -794,9 +844,11 @@ def main(argv=None) -> int:
                       no_ai=args.no_ai, shadow=not args.no_shadow, foreground_body=not args.no_foreground_body,
                       lenient_cleanup=not args.strict_cleanup, min_interval=args.min_interval, host_limit=args.host_retry_limit,
                       engine=args.engine, weights=args.weights,
-                      device=args.device, lama_max_side=args.lama_max_side, lama_margin=args.lama_margin)
+                      device=args.device, lama_max_side=args.lama_max_side, lama_margin=args.lama_margin, photo_set=args.photo_set)
     if args.engine == "fashn-open" and not args.weights:
         raise SystemExit("--engine fashn-open precisa de --weights (ou CATALOG_FASHN_OPEN_WEIGHTS): python scripts/catalog/fashn_open.py download --dest /pasta")
+    if args.photo_set and args.engine != "fashn-open":
+        raise SystemExit("--photo-set exige --engine fashn-open: é o único engine que atesta o preflight (complete/occluded/isolação)")
     engine = None
     if args.input:
         raw = json.loads(args.input.read_text(encoding="utf-8"))

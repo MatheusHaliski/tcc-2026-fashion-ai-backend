@@ -56,6 +56,7 @@ class StartupScriptTest(unittest.TestCase):
         script = vm.startup_script(job="lote-1", bucket="fashionai-packshot", branch="main", zone="southamerica-east1-c", extra_args="--sd --steps 20")
         self.assertIn("--engine fashn-open", script)
         self.assertIn("--dry-run", script)
+        self.assertIn("--photo-set", script)
         self.assertNotIn("--apply", script)
         self.assertNotIn("DATABASE_URL", script)
         self.assertIn("fashn_open.py download", script)

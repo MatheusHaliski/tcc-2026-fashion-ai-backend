@@ -75,6 +75,17 @@ class FuseTest(unittest.TestCase):
         self.assertEqual(f.alpha[60, 50], 1.0); self.assertEqual(f.alpha[20, 50], 0.0); self.assertEqual(f.alpha[105, 15], 0.0)
         self.assertEqual(f.alpha.dtype, np.float32)
 
+    def test_cascalhos_nao_entram_na_peca(self):
+        labels, alpha = scene()
+        labels[100:102, 80:82] = 3; alpha[100:102, 80:82] = 1.0      # 4 px rotulados 'top' longe da camiseta
+        f = fo.fuse(labels, alpha, {3})
+        self.assertFalse(f.target[100, 80]); self.assertTrue(f.target[60, 50])
+        self.assertTrue(fo.keep_large(np.ones((10, 10), dtype=bool)).all())
+        # um fio de 1 px saindo da peça (cabelo, linha solta) é descartado; a barra de 3 px de espessura fica
+        hair = labels.copy(); alpha_hair = alpha.copy(); hair[20:40, 65] = 3; alpha_hair[20:40, 65] = 1.0
+        g = fo.fuse(hair, alpha_hair, {3})
+        self.assertFalse(g.target[25, 65]); self.assertTrue(g.target[82, 50])
+
     def test_sem_pessoa_e_flat_lay_so_birefnet(self):
         labels, alpha = scene()
         labels[labels > 0] = 2                       # o parser "viu" cabelo em cima do produto (bola, tricô): não é pessoa
@@ -93,6 +104,30 @@ class FuseTest(unittest.TestCase):
         self.assertEqual(masks.source, "fashn-open:parser+birefnet"); self.assertTrue(masks.isolation_verified); self.assertTrue(masks.human_present)
         self.assertEqual(np.asarray(masks.target)[60, 50], 255); self.assertEqual(np.asarray(masks.forbidden)[60, 25], 255)
         self.assertIsNone(fo.fuse(labels, alpha, None).photo_masks("shoes_piece", "boot").forbidden)
+
+    def test_atestacoes_do_preflight_vem_da_evidencia_dos_dois_modelos(self):
+        labels, alpha = scene()
+        f = fo.fuse(labels, alpha, {3})
+        self.assertEqual(f.evidence, {"touchesBorder": False, "bodyInsideFraction": 0.0, "occluderFraction": 0.0})
+        masks = f.photo_masks("upper_piece", "t_shirt")
+        self.assertEqual((masks.complete, masks.occluded, masks.measurement_verified), (True, False, True))
+        # mãos sobre o tecido: oclusão incerta (nenhum preenchimento recupera o que está NA FRENTE da peça)
+        hands = labels.copy(); hands[55:65, 45:55] = 13
+        self.assertIsNone(fo.fuse(hands, alpha, {3}).photo_masks("upper_piece", "t_shirt").occluded)
+        # corpo demais por dentro da peça (um grande vão de pele entre os lados): oclusão incerta
+        gap = labels.copy(); gap[45:80, 40:60] = 16; alpha_gap = alpha.copy()
+        self.assertIsNone(fo.fuse(gap, alpha_gap, {3}).photo_masks("upper_piece", "t_shirt").occluded)
+        # peça encostando na borda da foto: incompleta
+        edge = labels.copy(); edge[40:80, 0:30] = 3; alpha_edge = alpha.copy(); alpha_edge[40:80, 0:30] = 1.0
+        self.assertFalse(fo.fuse(edge, alpha_edge, {3}).photo_masks("upper_piece", "t_shirt").complete)
+        # flat-lay verificado: sem pessoa, a máscara de corpo existe vazia e a medição é atestada
+        flat = labels.copy(); flat[flat > 0] = 2
+        fm = fo.fuse(flat, alpha, {3}).photo_masks("upper_piece", "t_shirt")
+        self.assertTrue(fm.isolation_verified); self.assertIsNotNone(fm.forbidden); self.assertEqual(np.asarray(fm.forbidden).max(), 0)
+        self.assertEqual((fm.complete, fm.occluded, fm.measurement_verified, fm.human_present), (True, False, True, False))
+        # sem rótulos para a categoria (parser não roda): nada é atestado
+        om = fo.fuse(labels, alpha, None).photo_masks("other", None)
+        self.assertEqual((om.complete, om.occluded, om.measurement_verified, om.isolation_verified, om.human_present), (None, None, False, False, None))
 
 
 def fake_manifest():

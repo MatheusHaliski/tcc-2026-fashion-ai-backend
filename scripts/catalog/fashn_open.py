@@ -32,7 +32,7 @@ import json
 import sys
 import time
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable, Iterable, Optional
@@ -66,6 +66,12 @@ PERSON_LABELS = frozenset({1, 12, 13, 14, 15, 16})
 HUMAN_LABELS = PERSON_LABELS | {2}
 # Fora das três categorias da FASHN (que não cobrem calçado nem acessório), o rótulo que fica quando há pessoa na foto.
 EXTRA_KEEP = {"shoes_piece": ("feet",), "accessory_piece": ("belt", "bag", "hat", "scarf", "glasses", "jewelry")}
+# Atestações do preflight (photo_preflight.inspect_source) só com os dois modelos concordando: o parser separou pessoa e
+# peça e o BiRefNet isolou o produto; ou o parser não viu pessoa e o BiRefNet isolou o produto solto (flat-lay).
+VERIFIED_MODES = frozenset({"parser+birefnet", "birefnet-flat-lay"})
+OCCLUDER_LABELS = frozenset({8, 11, 13, 17})     # bolsa, óculos, mãos, joia: o que fica NA FRENTE do tecido
+MAX_BODY_INSIDE = 0.12                            # corpo por dentro da peça (gola, entre as pernas) acima disto = oclusão incerta
+MAX_OCCLUDER = 0.05                               # mão/bolsa sobre o tecido: medido 0,8 % (mão na cintura) e 2,4 % (mão sobre o vestido)
 
 
 # ───────────────────────── rótulos por categoria (idêntico ao fashn-vton-1.5)
@@ -96,13 +102,77 @@ class Fusion:
     mode: str                             # parser+birefnet · birefnet-flat-lay · birefnet-only
     person: bool
     kept: tuple[str, ...] = ()
+    evidence: dict = field(default_factory=dict)   # touchesBorder, bodyInsideFraction, occluderFraction
+
+    @property
+    def verified(self) -> bool:
+        return self.mode in VERIFIED_MODES
+
+    def attestations(self) -> dict:
+        """`complete`, `occluded` e `measurement_verified` do preflight, a partir da evidência dos dois modelos — nunca da
+        mera existência de uma máscara. occluded=None (incerto) com corpo demais por dentro da peça ou mão/bolsa sobre o
+        tecido; complete=False quando a peça encosta na borda da foto. Sem isolação verificada, nada é atestado."""
+        if not self.verified:
+            return {"complete": None, "occluded": None, "measurement_verified": False}
+        e = self.evidence
+        clear = e.get("bodyInsideFraction", 0.0) <= MAX_BODY_INSIDE and e.get("occluderFraction", 0.0) <= MAX_OCCLUDER
+        return {"complete": not e.get("touchesBorder", True), "occluded": False if clear else None, "measurement_verified": True}
 
     def photo_masks(self, category, subcategory, source: str = "fashn-open") -> PhotoMasks:
         def to_l(array):
             return Image.fromarray((np.asarray(array, dtype=bool) * 255).astype(np.uint8))
-        return PhotoMasks(to_l(self.target), None if self.forbidden is None else to_l(self.forbidden), verified=True,
-                          target_category=category, target_subcategory=subcategory, human_present=self.person,
-                          source=f"{source}:{self.mode}", isolation_verified=self.mode == "parser+birefnet")
+        att = self.attestations()
+        # flat-lay verificado: o parser não viu pessoa, então a máscara de corpo é vazia (e existe — a avaliação foi feita)
+        forbidden = self.forbidden if self.forbidden is not None else (np.zeros_like(self.target) if self.verified else None)
+        return PhotoMasks(to_l(self.target), None if forbidden is None else to_l(forbidden), verified=True,
+                          target_category=category, target_subcategory=subcategory, human_present=self.person if self.verified else None,
+                          source=f"{source}:{self.mode}", measurement_verified=att["measurement_verified"],
+                          isolation_verified=self.verified, complete=att["complete"], occluded=att["occluded"])
+
+
+def evidence_of(target: np.ndarray, forbidden: Optional[np.ndarray], labels: Optional[np.ndarray]) -> dict:
+    """O que sustenta as atestações: peça encostando na borda; corpo visível ENTRE o primeiro e o último pixel da peça na
+    mesma linha (gola, punhos, entre as pernas — é o que o preenchimento cobre); mãos/bolsa/óculos/joia dentro da caixa
+    da peça (coisas na frente do tecido, que nenhum preenchimento recupera)."""
+    h, w = target.shape
+    touches = bool(target[0].any() or target[-1].any() or target[:, 0].any() or target[:, -1].any())
+    area = max(1, int(target.sum()))
+    body_inside = 0.0
+    if forbidden is not None and area > 1:
+        rows = target.any(axis=1)
+        first = np.argmax(target, axis=1)
+        last = w - 1 - np.argmax(target[:, ::-1], axis=1)
+        xs = np.arange(w)[None, :]
+        between = rows[:, None] & (xs >= first[:, None]) & (xs <= last[:, None])
+        body_inside = float((np.asarray(forbidden, dtype=bool) & between).sum()) / area
+    occluder = 0.0
+    if labels is not None and area > 1:
+        ys, xs_ = np.where(target)
+        box = (slice(int(ys.min()), int(ys.max()) + 1), slice(int(xs_.min()), int(xs_.max()) + 1))
+        occluder = float(np.isin(np.asarray(labels)[box], list(OCCLUDER_LABELS)).sum()) / area
+    return {"touchesBorder": touches, "bodyInsideFraction": round(body_inside, 4), "occluderFraction": round(occluder, 4)}
+
+
+def keep_large(mask: np.ndarray, min_fraction: float = 0.004, min_pixels: int = 24) -> np.ndarray:
+    """Tira os cascalhos: componente menor que 0,4 % da peça (e que 24 px) não é peça — é franja do BiRefNet ou ruído do
+    parser. É o mesmo critério de sustentação do preflight (inspect_source), que marcaria a extensão como incerta."""
+    labelled, count = ndimage.label(mask)
+    if count <= 1:
+        return mask
+    areas = np.bincount(labelled.ravel())
+    areas[0] = 0
+    return np.isin(labelled, np.flatnonzero(areas >= max(min_pixels, int(mask.sum() * min_fraction))))
+
+
+def settle_extent(target: np.ndarray) -> np.ndarray:
+    """A extensão sustentada da peça, medida como o preflight mede: abre 3×3, fica com os componentes grandes e descarta
+    o que sobra a mais de 3 px desse apoio (fios, cabelo, serrilhado de 1–2 px) — por eles o preflight marcaria
+    SOURCE_EXTENT_UNCERTAIN e a foto nunca viraria photoSet READY."""
+    support = keep_large(ndimage.binary_opening(target, structure=np.ones((3, 3), dtype=bool)))
+    if not support.any():
+        return keep_large(target)
+    stray = target & ~support & (ndimage.distance_transform_edt(~support) > 3)
+    return keep_large(target & ~stray)
 
 
 def fuse(labels: np.ndarray, alpha: np.ndarray, keep_ids: Optional[Iterable[int]], *, threshold: float = 0.5,
@@ -117,17 +187,20 @@ def fuse(labels: np.ndarray, alpha: np.ndarray, keep_ids: Optional[Iterable[int]
     foreground = alpha >= threshold
     person = bool(np.isin(labels, list(PERSON_LABELS)).mean() >= person_min)
     if keep_ids is None or not person:
+        foreground = settle_extent(foreground)
         soft = np.where(ndimage.binary_dilation(foreground, iterations=1), alpha, 0).astype(np.float32)
-        return Fusion(foreground, None, soft, "birefnet-only" if keep_ids is None else "birefnet-flat-lay", person)
+        mode = "birefnet-only" if keep_ids is None else "birefnet-flat-lay"
+        return Fusion(foreground, None, soft, mode, person, evidence=evidence_of(foreground, None, labels if mode != "birefnet-only" else None))
     keep_ids = frozenset(keep_ids)
     keep = np.isin(labels, list(keep_ids))
     radius = edge or max(4, int(round(0.006 * max(labels.shape))))
     target = foreground & keep
     target |= foreground & (labels == 0) & ndimage.binary_dilation(keep, iterations=radius)
+    target = settle_extent(target)
     forbidden = (foreground | np.isin(labels, list(HUMAN_LABELS))) & ~target
     soft = np.where(ndimage.binary_dilation(target, iterations=1), alpha, 0).astype(np.float32)
     kept = tuple(sorted(IDS_TO_LABELS[i] for i in keep_ids if (labels == i).any()))
-    return Fusion(target, forbidden, soft, "parser+birefnet", True, kept)
+    return Fusion(target, forbidden, soft, "parser+birefnet", True, kept, evidence_of(target, forbidden, labels))
 
 
 # ───────────────────────── pesos fixados

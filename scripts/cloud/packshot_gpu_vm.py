@@ -8,8 +8,11 @@
     python scripts/cloud/packshot_gpu_vm.py … --fetch ./saida  # baixa output_images, report.jsonl, metadata_clean.json
 
 O que a VM faz (startup-script): clona a branch, instala requirements-fashn-open.txt, baixa e confere os pesos fixados
-(fashn_open.py download), roda o lote com --dry-run (gera PNG + relatórios; NUNCA escreve no banco), envia tudo para
-gs://BUCKET/jobs/JOB/out/ e se apaga. --max-run-duration apaga a VM mesmo que o script trave: o custo tem teto.
+(fashn_open.py download), roda o lote com --dry-run --photo-set (PNG, relatórios e photo-sets/<id>/set.json; NUNCA
+escreve no banco), envia tudo para gs://BUCKET/jobs/JOB/out/ e se apaga. --max-run-duration apaga a VM mesmo que o
+script trave: o custo tem teto. Depois, com acesso ao banco: process_photo_sets.py --from-lot <saida> --apply.
+As linhas vêm de `process_photo_sets.py --export-rows rows.json` (ids das fotos do banco); linhas do acervo
+(acervo_rows.py) também servem para o packshot, mas não têm id de foto para a importação.
 Credenciais: só o gcloud já autenticado no ambiente; nada é lido do chat nem impresso. Sem --apply nada é criado.
 """
 from __future__ import annotations
@@ -84,7 +87,7 @@ PY=/opt/conda/bin/python
 gsutil -q cp "gs://$BUCKET/jobs/$JOB/rows.json" rows.json
 cd src
 "$PY" scripts/catalog/process_local_sd.py --engine fashn-open --weights {shlex.quote(weights_dir)} --input ../rows.json \\
-  --limit 1000000 --out-dir ../out --dry-run {extra}
+  --limit 1000000 --out-dir ../out --dry-run --photo-set {extra}
 gsutil -m -q rsync -r ../out "gs://$BUCKET/jobs/$JOB/out"
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > /tmp/DONE && gsutil -q cp /tmp/DONE "gs://$BUCKET/jobs/$JOB/out/DONE"
 """

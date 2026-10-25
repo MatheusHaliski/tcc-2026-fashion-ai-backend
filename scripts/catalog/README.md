@@ -330,6 +330,25 @@ fixados por repositório, revisão e sha256 em `fashn_open_assets.json`, conferi
 .venv/bin/python scripts/catalog/process_local_sd.py --engine fashn-open --weights /dados/fashn-open --sd --limit 200     # com SD por cima
 ```
 
+**photoSet do catálogo (`--photo-set`).** O worker `process_photo_sets.py` só grava `photoSet READY` com preflight
+`PASS`, e o preflight exige atestações (`complete`, `occluded`, `measurement_verified`, isolação verificada) que nenhum
+provedor automático dava — na medição de 24/10, 100 % das fotos ficaram em `REVIEW`, e é por isso que a interface mostra
+"prévia só com cor", "a textura não carregou" e "as fotos não permitem o enquadramento". O engine `fashn-open` atesta
+esses campos com evidência dos dois modelos (peça não encosta na borda; corpo por dentro da peça ≤ 12 %; mão/bolsa sobre
+o tecido ≤ 5 %; parser separou pessoa e peça, ou não viu pessoa e o BiRefNet isolou o produto) e descarta fios e
+cascalhos como o preflight faz. Fluxo com o banco:
+
+```bash
+python -m scripts.catalog.process_photo_sets --export-rows rows.json              # fotos sem photoSet atual (--force: todas)
+python scripts/catalog/process_local_sd.py --engine fashn-open --weights W --input rows.json --photo-set --dry-run --out-dir lote
+python -m scripts.catalog.process_photo_sets --from-lot lote                      # ensaio: READY / REVIEW / stale / missing
+python -m scripts.catalog.process_photo_sets --from-lot lote --apply              # upload whole/fabric + photoSet (mesmo CAS do worker)
+```
+
+`lote/photo-sets/<id>/set.json` é o contrato `CATALOG_PHOTO_SET_V2` (sourceSha256, preflight, whole, fabric); registro que
+mudou desde a exportação é pulado como `stale`. Com o photoSet `READY`, a prévia do provador usa a foto isolada
+(`texture-image?isolated=true`) e `ensurePreview` não roda mais a verificação que recusava o enquadramento.
+
 Custo medido em CPU (4 núcleos / 15 GB, 2026-10-24): BiRefNet ≈ 30 s/foto e ≈ 4,8 GB; parser 3–8 s; LaMa alguns
 segundos — é trabalho para GPU. `scripts/cloud/packshot_gpu_vm.py` imprime o plano (comandos `gcloud`, custo estimado) e,
 só com `--apply --yes`, cria uma VM **spot** T4/L4 na GCP com `--max-run-duration` (teto de custo), que roda o lote em
