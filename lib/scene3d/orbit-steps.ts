@@ -30,8 +30,11 @@ export interface FittingDetailApi {
   focus(mode: DetailMode, at?: StopKey): void;
   /** anda no percurso (entra nele se ainda não estiver) */
   travel(t: number): void;
-  /** roda do mouse/trackpad já decidida para a câmera: aproxima, afasta ou anda no percurso; false = no limite */
-  wheel(deltaY: number): boolean;
+  /**
+   * roda do mouse/trackpad já decidida para a câmera (pixels): aproxima/afasta ou, no percurso, anda pelo corpo; a
+   * pinça (pinch) sempre aproxima/afasta. false = no limite (a rolagem volta para a página)
+   */
+  wheel(deltaY: number, pinch?: boolean): boolean;
   subscribe(listener: (state: DetailState) => void): () => void;
 }
 

@@ -155,10 +155,10 @@ export function CameraSteps({ controls, dist, target, view, yaw, reduced, human,
       detail.current = { ...d, t: next }; glideTo(pose.target, pose.eye, DETAIL_LIMITS.min, DETAIL_LIMITS.max); sync();
     };
     /** roda já decidida para a câmera (rolagem inteligente no FittingStage); false = no limite, a página rola */
-    const wheel = (deltaY: number) => {
+    const wheel = (deltaY: number, pinch = false) => {
       if (c.enabled === false) return false;
       const d = detail.current;
-      if (d.mode === "percurso" && d.stops.length) { const r = wheelTravel(d.t, deltaY, d.stops.length); if (r.consumed) travel(r.t); return r.consumed; }
+      if (!pinch && d.mode === "percurso" && d.stops.length) { const r = wheelTravel(d.t, deltaY, d.stops.length); if (r.consumed) travel(r.t); return r.consumed; }
       const g = glide.current, to = g ? g.target : c.target, eye = g ? g.eye : camera.position;
       const min = g ? g.min : c.minDistance, max = g ? g.max : c.maxDistance;
       const r = wheelDolly(eye.distanceTo(to), deltaY, min, max); if (!r.consumed) return false;

@@ -2559,10 +2559,15 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-detail .chip { padding-inline: .7rem; }
 .fitting-detail-track { display: grid; gap: 2px; }
 .fitting-detail-hint { margin: 0; color: var(--muted); }
+/* rolagem inteligente: a roda "fria" sobre o palco rolou a página; a dica diz como usar a roda na câmera (some sozinha) */
+.fitting-wheel-hint { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); width: max-content; max-width: min(320px, calc(100% - 32px)); margin: 0; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 84%, transparent); color: var(--surface); font-size: var(--text-body-sm); line-height: 1.4; text-align: center; pointer-events: none; }
 @media (max-width: 640px) {
   .fitting-detail { left: 8px; top: 8px; width: calc(100% - 16px); }
   .fitting-detail-stops { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
   .fitting-detail-stops .chip { flex: none; }
+  /* no celular o painel ocupa menos altura no percurso: o nome do controle e a posição ficam só para leitores de tela (aria-valuetext) */
+  .fitting-detail-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .fitting-detail-hint.is-percurso { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 .fitting-slot-thumb { flex: none; display: grid; place-items: center; width: 52px; height: 52px; overflow: hidden; border-radius: 8px; border: 1px solid var(--line-soft); }
 .fitting-slot-thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; }

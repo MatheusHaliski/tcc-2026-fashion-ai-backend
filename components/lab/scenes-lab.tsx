@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Look3dPiece } from "@/components/three/common";
 import { resolveEnvironment, type FittingItem, type LightMode } from "@/lib/tryon/fitting-room";
 import { resolveScene, type SceneContext, type SceneProduct } from "@/lib/scene3d/scene";
@@ -10,6 +10,11 @@ import { ACERVO, acervoLook } from "@/lib/tryon/acervo";
 import { setFitMode } from "@/lib/avatar3d/human/garment-fit";
 import { DEFAULT_BODY, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { SceneDebugOptions } from "@/components/three/scene-debug";
+import type { FittingCameraApi } from "@/lib/scene3d/orbit-steps";
+import { FittingDetailControls } from "@/components/try-on/fitting-detail-controls";
+import { useSmartWheel } from "@/components/try-on/use-smart-wheel";
+import { useI18n } from "@/lib/i18n/i18n";
+import type { DetailMode, DetailState, StopKey } from "@/lib/scene3d/detail-camera";
 
 /*
  * Laboratório das cenas de loja com dados de EXEMPLO (marcas e artista fictícios, manequim padrão sem rosto de pessoa):
@@ -90,6 +95,7 @@ function publishProfile(p: FittingStudioProfile) {
 }
 
 export default function ScenesLab() {
+  const { t } = useI18n();
   const [s, setS] = useState("fitting-brand");
   const [view, setView] = useState<AvatarView>("front");
   // auditoria do vestir: ?pieces=<ids do acervo | cor-*>&body=F-ref|M-ref|F-plus|M-slim&debug=wire|sem-corpo|pesos&pose=bracos|caminhada|caminhada-animada|agachamento&yaw=<graus>&close=1&fit=antes&light=daylight|store|night&variation=SLIM&neckline=V_NECK
@@ -109,9 +115,23 @@ export default function ScenesLab() {
     const debug = dv || pose ? { view: (dv ?? "normal") as SceneDebugOptions["view"], pose: (pose ?? null) as SceneDebugOptions["pose"] } : null;
     const yaw = q.get("yaw"); setLab({ pieces, sex, body, debug, yaw: yaw !== null ? Number(yaw) : undefined, close: q.get("close") === "1", light, ready: true });
   }, []);
+  // câmera de detalhe (calçado, percurso pelo corpo) para as capturas: __lab.detail("calcado"), __lab.detail("percurso", "gola")
+  // ?panel=1 mostra o painel do palco por cima da cena; ?size=390x460 muda o tamanho do visor (captura de celular)
+  const [cameraApi, setCameraApi] = useState<FittingCameraApi | null>(null), [frame, setFrame] = useState({ panel: false, w: 1100, h: 680 });
+  const camera = useRef<FittingCameraApi | null>(null), onCamera = useCallback((api: FittingCameraApi | null) => { camera.current = api; setCameraApi(api); }, []);
+  // com o painel, o visor se comporta como o palco do provador: a mesma rolagem inteligente decide página × câmera
+  const viewer = useRef<HTMLDivElement>(null), wheelHint = useSmartWheel(viewer, frame.panel ? cameraApi?.detail : null);
+  useEffect(() => {
+    const q = new URLSearchParams(location.search), [w, h] = (q.get("size") ?? "").split("x").map(Number);
+    setFrame({ panel: q.get("panel") === "1", w: w > 0 ? w : 1100, h: h > 0 ? h : 680 });
+  }, []);
   // controle do script de capturas: muda ângulo, depuração, pose, luz e peças (look) sem recarregar a cena
   useEffect(() => {
     (window as unknown as { __lab: unknown }).__lab = {
+      detail: (mode: DetailMode, at?: StopKey) => { camera.current?.detail?.focus(mode, at); },
+      travel: (t: number) => { camera.current?.detail?.travel(t); },
+      wheel: (deltaY: number) => camera.current?.detail?.wheel(deltaY) ?? false,
+      detailState: () => { let state: DetailState | null = null; camera.current?.detail?.subscribe((x) => { state = x; })(); return state; },
       set: ({ look, ...patch }: { yaw?: number; debug?: SceneDebugOptions | null; close?: boolean; light?: LightMode; look?: string }) =>
         setLab((l) => ({ ...l, ...patch, ...(look !== undefined ? { pieces: labLook(look) } : {}) })),
       canvas: () => (document.querySelector("#scene-viewer canvas") as HTMLCanvasElement | null)?.toDataURL("image/png"),
@@ -159,8 +179,10 @@ export default function ScenesLab() {
       <nav style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
         {["fitting-neutral", "fitting-brand", ...Object.keys(FITTING), "ministores", "ministage", "ministage-sem-logo"].map((k) => <button key={k} onClick={() => setS(k)} aria-pressed={s === k}>{k}</button>)}
       </nav>
-      <div id="scene-viewer" style={{ width: 1100, height: 680, background: "#111" }}>
-        {s.startsWith("fitting") && lab.ready && <FittingRoomScene avatar={null} sex={lab.sex} body={lab.body} pieces={lab.pieces ?? LAB_LOOK} environment={env} view={view} onProfile={publishProfile}
+      <div id="scene-viewer" ref={viewer} style={{ position: "relative", width: frame.w, height: frame.h, background: "#111" }}>
+        {frame.panel && cameraApi?.detail && s.startsWith("fitting") && <FittingDetailControls api={cameraApi.detail} />}
+        {wheelHint && <p className="fitting-wheel-hint">{t("tryOn.roda.dica")}</p>}
+        {s.startsWith("fitting") && lab.ready && <FittingRoomScene avatar={null} sex={lab.sex} body={lab.body} pieces={lab.pieces ?? LAB_LOOK} environment={env} view={view} onProfile={publishProfile} onCamera={onCamera}
           debug={lab.debug} cameraYaw={lab.yaw} closeUp={lab.close} light={lab.light} scene={FITTING[s] ? resolveScene({ ...FITTING[s], worn: items }) : null} />}
         {s === "ministores" && <StoreStreetScene onPick={() => {}} selectedId="c1" brand={{ name: "Atelier Lumi" }} stores={[
           { id: "c1", label: "Verão Solar", rank: 1, audience: 70, fraction: 1, fireworks: 3, accentColor: "#F26A1B", artUrl: "/aura/geometry/geometry_01/imagem.png", score: 980, products: [TOPS[0], BAGS[1], SHOES[0]] },

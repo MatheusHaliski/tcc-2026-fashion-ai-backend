@@ -35,7 +35,7 @@ export function FittingDetailControls({ api }: { api: FittingDetailApi }) {
       {state.mode === "percurso" && ready && (
         <>
           <label className="fitting-detail-track">
-            <span className="type-caption">{t("tryOn.detalhe.percurso")}</span>
+            <span className="fitting-detail-label type-caption">{t("tryOn.detalhe.percurso")}</span>
             <input type="range" min={0} max={state.stops.length - 1} step={0.05} value={state.t} aria-valuetext={position}
               style={{ ["--pct" as string]: `${(state.t / Math.max(1, state.stops.length - 1)) * 100}%` }}
               onChange={(e) => api.travel(Number(e.target.value))} />
@@ -47,7 +47,7 @@ export function FittingDetailControls({ api }: { api: FittingDetailApi }) {
           </div>
         </>
       )}
-      <p className="fitting-detail-hint type-caption" aria-live="polite">
+      <p className={`fitting-detail-hint type-caption is-${state.mode}`} aria-live="polite">
         {state.mode === "percurso" && current ? position : t(`tryOn.detalhe.dica.${state.mode}`)}
       </p>
     </div>

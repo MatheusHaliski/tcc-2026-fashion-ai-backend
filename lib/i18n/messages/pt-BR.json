@@ -8230,5 +8230,6 @@
   "tryOn.detalhe.parada.calcado": "Calçado",
   "tryOn.detalhe.dica.corpo": "Arraste para girar o avatar. Aproxime com os botões ou com a roda sobre o palco.",
   "tryOn.detalhe.dica.calcado": "A câmera fica presa ao calçado: arraste para girar em volta e ver a marca de perto.",
-  "tryOn.detalhe.dica.percurso": "Deslize, role ou toque numa parada para descer pela superfície do corpo."
+  "tryOn.detalhe.dica.percurso": "Deslize, role ou toque numa parada para descer pela superfície do corpo.",
+  "tryOn.roda.dica": "Para aproximar com a roda, clique no palco ou deixe o ponteiro parado sobre ele."
 }

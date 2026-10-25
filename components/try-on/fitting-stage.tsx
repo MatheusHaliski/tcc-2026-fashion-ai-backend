@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -21,6 +21,7 @@ import type {
 import { toLook3d, type Sex, type State } from "@/lib/tryon/fitting-room-model";
 import { FittingDetailControls } from "./fitting-detail-controls";
 import { FittingRemoteControls } from "./fitting-remote-controls";
+import { useSmartWheel } from "./use-smart-wheel";
 
 const FittingRoomScene = dynamic(
   () => retryImport(() => import("@/components/three/fitting-room-scene")),
@@ -59,6 +60,9 @@ export function FittingStage({
   const { t } = useI18n();
   // passos de câmera da cena (botões de girar/aproximar); só existem com a cena 3D montada
   const [camera, setCamera] = useState<FittingCameraApi | null>(null);
+  // rolagem inteligente: a roda sobre o 3D decide entre a página e a câmera (sem prender a página no provador)
+  const stageRef = useRef<HTMLDivElement>(null);
+  const wheelHint = useSmartWheel(stageRef, camera?.detail);
   const look = useMemo(() => pieces.map(toLook3d), [pieces]);
   const body = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
   const sceneSex = sex === "UNISEX"
@@ -96,6 +100,7 @@ export function FittingStage({
       </div>
 
       <div
+        ref={stageRef}
         className="fitting-stage"
         role="region"
         aria-label={t("tryOn.palco_lojas_aria", {
@@ -131,6 +136,7 @@ export function FittingStage({
           </div>
         )}
         {avatar && camera?.detail && <FittingDetailControls api={camera.detail} />}
+        {wheelHint && <p className="fitting-wheel-hint">{t("tryOn.roda.dica")}</p>}
         {avatar && camera && <FittingRemoteControls api={camera} />}
       </div>
 

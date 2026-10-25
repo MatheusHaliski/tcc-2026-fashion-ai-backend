@@ -8230,5 +8230,6 @@
   "tryOn.detalhe.parada.calcado": "Calzado",
   "tryOn.detalhe.dica.corpo": "Arrastra para girar el avatar. Acércate con los botones o con la rueda sobre el escenario.",
   "tryOn.detalhe.dica.calcado": "La cámara se queda fija en el calzado: arrastra para girar alrededor y ver la marca de cerca.",
-  "tryOn.detalhe.dica.percurso": "Desliza, desplázate o toca una parada para bajar por la superficie del cuerpo."
+  "tryOn.detalhe.dica.percurso": "Desliza, desplázate o toca una parada para bajar por la superficie del cuerpo.",
+  "tryOn.roda.dica": "Para acercar con la rueda, haz clic en el escenario o deja el puntero quieto sobre él."
 }

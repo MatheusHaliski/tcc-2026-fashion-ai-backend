@@ -8230,5 +8230,6 @@
   "tryOn.detalhe.parada.calcado": "Footwear",
   "tryOn.detalhe.dica.corpo": "Drag to turn the avatar. Zoom with the buttons or the wheel over the stage.",
   "tryOn.detalhe.dica.calcado": "The camera sticks to the footwear: drag to circle it and see the brand up close.",
-  "tryOn.detalhe.dica.percurso": "Slide, scroll or tap a stop to move down the surface of the body."
+  "tryOn.detalhe.dica.percurso": "Slide, scroll or tap a stop to move down the surface of the body.",
+  "tryOn.roda.dica": "To zoom with the wheel, click the stage or rest the pointer on it."
 }
