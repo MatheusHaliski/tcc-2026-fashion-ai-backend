@@ -9,6 +9,8 @@ import { FaiIcon } from "@/components/fai-icon";
 import { SealSuggestionHype } from "@/components/hype/hype-seals";
 import type { HypeLevel } from "@/lib/hype/types";
 import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
+import type { SealBadge } from "@/components/scheme-card";
+import type { SealDesign } from "@/components/seal-medallion";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
@@ -21,6 +23,8 @@ export interface PieceFormValue {
   /** RF4 · Arte de fundo da peça (aura, material, skin, anatomia) — mesmo formato do look */
   background?: Record<string, unknown> | null;
   variation?: string | null; attributes?: Record<string, string[]>;
+  /** arte dos selos marcados (id "TIPO:nome" → medalhão do emissor), só para a prévia do card; não vai para o backend */
+  sealArts?: Record<string, SealBadge>;
 }
 export const EMPTY_PIECE: PieceFormValue = { draftId: null, useDefaultImage: false, name: "", category: "", subcategory: "", sex: "UNISSEX", brandName: "", color: "", material: "", size: "m", occasion: [], style: [], seals: [], price: "", visibility: "PRIVATE", tags: "", notes: "", condition: "", purchaseDate: "", purchaseLocation: "", sku: "", careInstructions: "", forSale: false, background: null };
 /** "Sem marca" é o que a análise escreve no campo quando não acha marca na peça; o backend salva a peça sem marca. */
@@ -31,14 +35,24 @@ export const PIECE_CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "a
 
 export function toPayload(v: PieceFormValue) {
   // só o que o backend guarda: o logo largo, o domínio e a medida de nitidez são apenas do slot do formulário
-  const { brandLogoWideUrl: _w, brandDomain: _d, brandEdgePx: _e, ...rest } = v; void _w; void _d; void _e;
+  const { brandLogoWideUrl: _w, brandDomain: _d, brandEdgePx: _e, sealArts: _s, ...rest } = v; void _w; void _d; void _e; void _s;
   return { ...rest, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null, background: v.background ?? null };
 }
 
 /** `hype`: HypeScore atual da peça avaliada (RF53); sem cálculo ainda, vem null e nada aparece. */
-interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; hype?: { score: number | null; level: HypeLevel | null } | null }
+/** `seal`: o selo que o vínculo emitiria, com a arte (medalhão) definida pelo emissor na criação do selo. */
+interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; hype?: { score: number | null; level: HypeLevel | null } | null;
+  seal?: { name: string; tier: string; premium: boolean; owner?: string | null; iconUrl?: string | null; design?: SealDesign | null } | null }
 /** identificador guardado em seals[] da peça: tipo + nome (o mesmo formato "TIPO:nome" que o card lê) */
 const sealId = (s: SealOption) => `${s.kind}:${s.name}`;
+/** Medalhão do selo para a prévia: a arte do emissor; sem selo cadastrado, o logo do perfil emissor. */
+const sealArt = (s: SealOption): SealBadge => ({ label: s.seal?.name ?? s.name, name: s.seal?.name ?? s.name, premium: s.seal?.premium ?? s.kind === "CELEBRITY",
+  owner: s.seal?.owner ?? undefined, tier: s.seal?.tier ?? "PECA", iconUrl: s.seal?.iconUrl ?? s.logoUrl ?? null, design: s.seal?.design ?? null, kind: s.kind });
+
+/** Selos marcados com a arte guardada, na ordem em que foram marcados. */
+export function chosenSealArts(v: PieceFormValue): SealBadge[] {
+  return v.seals.map((id) => v.sealArts?.[id]).filter((x): x is SealBadge => !!x);
+}
 
 /**
  * Selos da peça (RF4 · Mais detalhes): nada de rótulos padronizados — a IA compara marca, tipo, cor, ocasião e estilo com
@@ -60,7 +74,16 @@ export function PieceSealSuggestions({ value, onChange }: { value: PieceFormValu
     }, 400);
     return () => { alive = false; clearTimeout(h); };
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  const toggle = (s: SealOption) => { const id = sealId(s); const on = value.seals.includes(id); onChange({ ...value, seals: on ? value.seals.filter((x) => x !== id) : value.seals.length < 2 ? [...value.seals, id] : value.seals }); };
+  const toggle = (s: SealOption) => {
+    const id = sealId(s); const on = value.seals.includes(id);
+    const seals = on ? value.seals.filter((x) => x !== id) : value.seals.length < 2 ? [...value.seals, id] : value.seals;
+    onChange({ ...value, seals, sealArts: { ...value.sealArts, [id]: sealArt(s) } });
+  };
+  // a lista volta a ser buscada (outra sessão, rascunho): a arte do selo já marcado é preenchida sem novo clique
+  useEffect(() => {
+    const missing = search.list.filter((s) => value.seals.includes(sealId(s)) && !value.sealArts?.[sealId(s)]);
+    if (missing.length) onChange({ ...value, sealArts: { ...value.sealArts, ...Object.fromEntries(missing.map((s) => [sealId(s), sealArt(s)])) } });
+  }, [search.list]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="grid gap-2" aria-busy={search.loading}>
       {search.loading ? <p className="flex items-center gap-2 type-body-sm text-muted" role="status"><Spinner size={16} />{t("schemeBuilder.pesquisando_selos")}</p> : (

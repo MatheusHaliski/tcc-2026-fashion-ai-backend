@@ -7,15 +7,17 @@ import {SchemeCard,CardSealSummary} from './scheme-card';
 import {CardFashionMeta} from './card-fashion-meta';
 afterEach(cleanup);
 const seals=[{label:'Marca',name:'Seleção oficial',owner:'marca',tier:'PECA'}];
-it('keeps garment awards and readable fashion facts outside the Hype tab',()=>{
+it('shows the brand seal as the "Selo" cell of the Info list and keeps fashion facts outside the Hype tab',()=>{
  mockApi({});const {container}=renderApp(<PieceCard piece={PIECE} seals={seals} flip={false}/>);
  const media=container.querySelector<HTMLElement>('.pc-media')!;expect(media.style.aspectRatio).toBe('4 / 3');
- expect(container.querySelector('.card-seals')?.textContent).toContain('MAR');
+ const sealCell=container.querySelector('.pc-info-seal')!;
+ expect(sealCell.textContent).toContain('Seleção oficial');expect(sealCell.parentElement?.previousElementSibling?.textContent).toBe('Selo');
+ expect(container.querySelector('.card-seals')).toBeNull();
  const meta=container.querySelector('.card-fashion-meta')!;
  expect([...meta.querySelectorAll('dt')].map(e=>e.textContent)).toEqual(['Marca','Cor','Ocasião','Estilo']);
  expect(meta.textContent).toContain('Nike');expect(meta.textContent).toContain('Casual');
- fireEvent.click(screen.getByRole('tab',{name:'Hype'}));expect(meta.closest('[role="tabpanel"]')).toBeNull();
- expect(meta.isConnected).toBe(true);expect(screen.getByTitle('Seleção oficial · @marca · PECA').isConnected).toBe(true);
+ fireEvent.click(screen.getByRole('tab',{name:/^Hype/}));expect(meta.closest('[role="tabpanel"]')).toBeNull();
+ expect(meta.isConnected).toBe(true);expect(screen.queryByTitle('Seleção oficial · @marca · PECA')).toBeNull();
 });
 it('shortens outfit posts without losing the full item list in expanded view',()=>{
  mockApi({});const {container,unmount}=renderApp(<SchemeCard scheme={SCHEME} seals={seals} flip={false}/>);

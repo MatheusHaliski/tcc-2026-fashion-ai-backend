@@ -1149,8 +1149,33 @@ public class SealService {
         return background;
     }
 
-    private static Map<String, Object> previewResult(AiOutcome<List<Candidate>> outcome, List<String> unregistered,
-                                                     SealPolicies.HypeLookup hype) {
+    /**
+     * O selo que o vínculo emitiria para a sugestão, com a arte definida pelo emissor na criação (medalhão, ícone, nome):
+     * o selo da política que casou ({@code sealId}) ou, sem política, o selo ativo do tier sem política — a mesma regra
+     * de {@link #sealFor}. Sem selo: null (a prévia mostra o logo do perfil).
+     */
+    Map<String, Object> sealArt(Candidate c) {
+        if (c.targetOwnerId() == null) return null;
+        Seal s = c.sealId() == null ? null : seals.findById(c.sealId()).orElse(null);
+        if (s == null && c.tier() != null && c.tier() != SealTier.PERFIL)
+            s = seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(c.targetOwnerId(), SealStatus.ACTIVE).stream()
+                    .filter(x -> x.getTier() == c.tier() && SealPolicies.parse(Json.map(x.getBackgroundConfigJson()).get("policy")) == null)
+                    .findFirst().orElse(null);
+        if (s == null || !s.getOwner().getId().equals(c.targetOwnerId())) return null;
+        Object design = Json.map(s.getBackgroundConfigJson()).get("design");
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", s.getId());
+        m.put("name", s.getName());
+        m.put("tier", s.getTier().name());
+        m.put("premium", s.isPremium());
+        m.put("owner", s.getOwner().getUsername());
+        m.put("iconUrl", s.getIconUrl());
+        m.put("design", design instanceof Map<?, ?> dm ? dm : SealDesigns.defaultDesign(s.isPremium(), s.getTier()));
+        return m;
+    }
+
+    private Map<String, Object> previewResult(AiOutcome<List<Candidate>> outcome, List<String> unregistered,
+                                              SealPolicies.HypeLookup hype) {
         List<Map<String, Object>> suggestions = new ArrayList<>();
         for (Candidate c : outcome.value()) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -1163,6 +1188,7 @@ public class SealService {
             m.put("tier", c.tier());
             m.put("eraLabel", c.eraLabel());
             m.put("sealId", c.sealId());
+            m.put("seal", sealArt(c));                           // arte do selo do emissor, para a prévia do card
             m.put("hype", hypeView(c, hype));                   // RF53: {score, level} da entidade avaliada, ou null
             suggestions.add(m);
         }

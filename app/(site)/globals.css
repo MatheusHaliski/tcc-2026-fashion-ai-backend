@@ -2006,22 +2006,15 @@ a .fai-coupon, button .fai-coupon { transition: transform .15s ease, box-shadow 
 .pae-swatch-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pae-expanded { max-width: 420px; }
 .pae-expanded .pae-swatch .pc-content { aspect-ratio: 4 / 5; }
-/* Ampliado usa o card final real, não apenas uma amostra da arte. */
-.pae-expanded-card { width: min(100%, 420px); }
-.pae-expanded-card > .piece-card { width: 100%; }
-.pae-expanded-card .pc-media { aspect-ratio: 4 / 5; }
-.pae-expanded-card .pc-content { min-width: 0; }
 .pae-fx { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .pae-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
 .pae-preview { display: grid; gap: 8px; }
-.card-preview-mode { position: relative; width: 100%; }
-.card-preview-mode-toggle { position: absolute; z-index: 20; top: 10px; left: 10px; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid color-mix(in srgb, var(--line) 55%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink); box-shadow: 0 2px 8px color-mix(in srgb, #000 16%, transparent); cursor: pointer; }
-.card-preview-mode-toggle:hover { background: var(--surface); transform: translateY(-1px); }
-.card-preview-mode-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* lista Info do card: o selo da marca/celebridade com o medalhão do emissor */
+.pc-info-seal { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pc-info-seal-item { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.pc-info-seal-item .seal-medallion { flex: none; width: 30px; height: 30px; }
 /* a prévia tem a largura de uma coluna da grade: o que se vê aqui é o que aparece no feed */
 .pae-preview-card { width: min(100%, var(--pae-preview-w, 480px)); }
-.card-preview-mode > .pae-expanded-card { width: min(100%, 420px); }
-.card-preview-mode > .pae-expanded-card > .piece-card { width: 100%; }
 .switch-track:disabled { opacity: .45; cursor: not-allowed; }
 .chip:disabled { opacity: .45; cursor: not-allowed; }
 /* alternativa à ação principal (posição secundária): texto-link, alvo de toque próprio */
@@ -4273,8 +4266,6 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .piece-card-expanded .pc-header, .piece-card-expanded .c-actions { grid-column: 1 / -1; }
 .piece-card-expanded .pc-media { grid-column: 1; }
 .piece-card-expanded .pc-id { grid-column: 2; grid-row: 2; align-self: stretch; padding: 12px; }
-.pae-expanded-card { width: 100%; }
-.card-preview-mode-toggle { z-index: 12; }
 @media (prefers-reduced-motion: reduce) { .hype-mini-stars { animation: none; } .hype-led-track i { transition: none; } }
 /* Preview stays before controls on mobile; scrolling inside it keeps the entire final card reachable. */
 .piece-create-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
@@ -4297,7 +4288,6 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
   .piece-card-expanded .pc-seg { flex-wrap: wrap; }
   .piece-card-expanded .pc-seg-btn { min-width: 0; flex: 1; }
 }
-.card-preview-mode > .pae-expanded-card { width: 100%; }
 .piece-card-expanded .c-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); }
 .fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dt { order: 0; grid-column: 1; }
 .fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dd { order: 0; grid-column: 2; justify-self: end; }

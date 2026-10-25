@@ -14,7 +14,7 @@ import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, Switch, useToast 
 import { useApi } from "@/lib/hooks/use-api";
 import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
 import type { FlairPreview } from "@/components/flair/flair-collection";
-import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
+import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, chosenSealArts, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCard } from "@/components/piece-card";
 import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
@@ -297,7 +297,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
             </Card>
           )}
           {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={null} />{Object.entries(fieldErrors).filter(([k]) => PIECE_FIELD_STEP[k] === "more").map(([k, m]) => <p key={k} role="alert" className="error-text">{m}</p>)}{nav}</Card>}
-          {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} />{nav}</Card>}
+          {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} seals={chosenSealArts(value)} />{nav}</Card>}
           {step === "review" && (
             <Card>
               <h2 className="type-h3 mb-2">{t("builder.step.review")}</h2>
@@ -329,7 +329,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
         </div>
         {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview piece-create-preview"><p className="label">{step === "review" && shareToFeed ? t("interactions.post_preview") : t("scheme.card")}</p>
           <PhotoFramingToggle className="mb-3" value={photoFraming} onChange={(next) => setBackground((current) => ({ ...current, photoFraming: next }))} />
-          <PieceCard piece={previewPiece} href="#"
+          <PieceCard piece={previewPiece} href="#" seals={chosenSealArts(value)}
           extra={step === "review" && shareToFeed && user ? <span className="caption">{t("feed.shared_by", { username: user.username })}</span> : undefined} /></aside>}
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>

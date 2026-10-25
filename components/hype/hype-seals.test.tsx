@@ -11,7 +11,7 @@ import { nav, router } from "@/test-utils/setup";
 import { PIECE, PIECE_2, SCHEME, page } from "@/test-utils/fixtures";
 import { PieceCard } from "@/components/piece-card";
 import { SchemeCard, type SealBadge } from "@/components/scheme-card";
-import { EMPTY_PIECE, PieceSealSuggestions } from "@/components/piece-form";
+import { EMPTY_PIECE, PieceSealSuggestions, chosenSealArts, toPayload, type PieceFormValue } from "@/components/piece-form";
 import { HypeAnalyticsDrawer } from "./hype-analytics-drawer";
 import { SealHypeStat, SealSuggestionHype, hypeSealBadges, withHypeSeals } from "./hype-seals";
 import { HYPE_SEAL_DESIGN, HYPE_SEAL_ORDER, cardHypeSeals, orderHypeSeals } from "@/lib/hype/seals";
@@ -64,12 +64,16 @@ describe("frente dos cards", () => {
     expect(api.calls.filter((c) => c.path.startsWith("/api/hype"))).toHaveLength(1);   // só o resumo em lote de sempre
   });
 
-  it("peça com selos de marca: marca primeiro e o Hype ainda aparece; sem Hype disponível, nenhum Selo de Hype", async () => {
+  it("peça com selos de marca: a marca na lista Info (medalhão do emissor) e o Hype na faixa da frente; sem Hype disponível, nenhum Selo de Hype", async () => {
     mockApi({ "GET /api/hype/summaries": summaries("PIECE", { p1: { ...AVAILABLE, seals: ["VIRAL", "CLASSIC"] }, p2: { status: "INSUFFICIENT_DATA", score: null, seals: ["VIRAL"] } }) });
     const { container } = renderApp(<><PieceCard piece={PIECE} seals={[brand("Nike Verde"), brand("Nike Azul"), brand("Nike Ouro")]} /><PieceCard piece={PIECE_2} /></>);
     expect(await screen.findByTitle("Selo de Hype: Viral")).toBeTruthy();
     const [first, second] = Array.from(container.querySelectorAll<HTMLElement>(".fcard-face.is-front"));
-    expect(Array.from(first.querySelectorAll<HTMLElement>(".card-seals .seal-medallion")).map((m) => m.title)).toEqual(["Nike Verde", "Nike Azul", "Selo de Hype: Viral"]);
+    expect(Array.from(first.querySelectorAll<HTMLElement>(".card-seals .seal-medallion")).map((m) => m.title)).toEqual(["Selo de Hype: Viral"]);
+    // o selo da marca é a célula "Selo" da lista Info: dois medalhões e o "+1" do terceiro
+    const sealCell = first.querySelector(".pc-info-seal") as HTMLElement;
+    expect(Array.from(sealCell.querySelectorAll<HTMLElement>(".seal-medallion")).map((m) => m.title.split(" · ")[0])).toEqual(["Nike Verde", "Nike Azul"]);
+    expect(sealCell.textContent).toContain("+1");
     await waitFor(() => expect(second.querySelector(".hype-badge.is-empty")).toBeTruthy());
     expect(hypeMedals(second)).toHaveLength(0);
   });
@@ -126,6 +130,24 @@ describe("sugestões de selo e Hype do selo", () => {
     expect(row.textContent).toContain("Atende à política do selo «Nike Hot»: peça com Hype ≥ Em alta.");
     expect(within(row).getByText("Hype 82 · Tendência")).toBeTruthy();
     expect(screen.getByRole("checkbox", { name: /Adidas/ }).textContent).not.toContain("Hype");
+  });
+
+  it("marcar a sugestão guarda o selo com o medalhão do emissor, que aparece na célula Selo da prévia do card", async () => {
+    const design = { mode: "TEMPLATE" as const, template: "fai/03" };
+    mockApi({ "POST /api/seal-suggestions/preview-piece": { suggestions: [
+      { targetOwnerId: "c1", kind: "CELEBRITY", name: "Shakira", confidence: 0.97, justification: "Atende à política do selo «Azul Shakira»",
+        seal: { name: "Azul Shakira", tier: "PECA", premium: true, owner: "shakira", iconUrl: null, design } },
+    ] } });
+    let value: PieceFormValue = { ...EMPTY_PIECE, brandName: "Adidas", color: "blue" };
+    const { rerender } = renderApp(<PieceSealSuggestions value={value} onChange={(v) => { value = v; }} />);
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Shakira/ }, { timeout: 2000 }));
+    expect(value.seals).toEqual(["CELEBRITY:Shakira"]);
+    expect(chosenSealArts(value)).toEqual([expect.objectContaining({ name: "Azul Shakira", owner: "shakira", tier: "PECA", premium: true, design })]);
+    expect(toPayload(value)).not.toHaveProperty("sealArts");                       // a arte é só da prévia
+    rerender(<PieceCard piece={PIECE} href="#" seals={chosenSealArts(value)} />);
+    const cell = (await screen.findByTitle("Azul Shakira · @shakira · PECA")).closest(".pc-info-seal") as HTMLElement;
+    expect(cell.textContent).toContain("Azul Shakira");
+    expect(cell.parentElement?.previousElementSibling?.textContent).toBe("Selo");
   });
 
   it("SealSuggestionHype some sem score; SealHypeStat mostra média, faixa e vinculados (some sem média)", () => {

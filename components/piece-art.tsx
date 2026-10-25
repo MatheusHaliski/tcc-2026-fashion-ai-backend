@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import { resolveCardArt, BRICKS, brickColor, ART_INDEX, studioOf } from "@/lib/card-art";
+import { resolveCardArt, BRICKS, brickColor, ART_INDEX, studioOf, containerInkOf } from "@/lib/card-art";
 import { CardArtLayer, Blossom, Leaf, Palm, Snowflake, Sun } from "@/components/card-art";
 import { fashionPreset } from "@/lib/aura-fashion";
 import type { ArtEffects, ArtFamily, ArtVariant, PieceArt, Season } from "@/lib/piece-art";
@@ -96,10 +96,22 @@ export function ArtStage({ bg, art, density, pieceHex, animate = false }: { bg?:
 }
 
 /** Classes e variáveis que a superfície externa (article) recebe da arte. */
+/**
+ * Cor dos textos do container (Background Studio › Container › Cor dos textos), como no card de look: a escolhida ou,
+ * com cor de container manual, a legível sobre ela. Os textos secundários (marca, legendas) seguem o mesmo tom, mais claros.
+ */
+export function containerInkVars(bg: Record<string, unknown> | null | undefined, art: PieceArt): Record<string, string> {
+  const container = bg?.container as { ink?: unknown } | undefined;
+  const manual = typeof container?.ink === "string" && /^#[0-9A-Fa-f]{6}$/.test(container.ink) ? container.ink : null;
+  if (!manual && !art.surface.color) return {};
+  const ink = containerInkOf(art.surface.color ?? "#FFFFFF", manual);
+  return { "--card-ink": ink, "--muted": `color-mix(in srgb, ${ink} 72%, transparent)`, "--faint": `color-mix(in srgb, ${ink} 58%, transparent)` };
+}
+
 export function artSurfaceProps(bg: Record<string, unknown> | null | undefined, art: PieceArt, density: "compact" | "expanded") {
   const fx: ArtEffects = art.effects;
   const cls = ["pc", `pc-${density}`, `em-${art.composition.emphasis}`, fx.rim && "fx-rim", fx.glass && "fx-glass", fx.relief && "fx-relief", density === "expanded" && fx.motion && "fx-motion"].filter(Boolean).join(" ");
-  const style = { ...v({ "--pc-accent": accentOf(bg, art), ...(art.surface.color ? { "--container-bg": art.surface.color } : {}) }), position: "relative" as const, isolation: "isolate" as const };
+  const style = { ...v({ "--pc-accent": accentOf(bg, art), ...(art.surface.color ? { "--container-bg": art.surface.color } : {}), ...containerInkVars(bg, art) }), position: "relative" as const, isolation: "isolate" as const };
   return { className: cls, style, "data-family": art.template.family, "data-variant": art.template.variant, "data-surface": art.surface.style };
 }
 

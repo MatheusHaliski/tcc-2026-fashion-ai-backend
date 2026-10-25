@@ -373,6 +373,20 @@ class SealCreatorsCoverageTest {
     }
 
     @Test
+    void sugestaoDaPreviaTrazOSeloComOMedalhaoDesenhadoPeloEmissor() {
+        Map<String, Object> policy = referencePolicy(SealTier.PECA, "Azul Nike", 1, "Nike", "blue");
+        Seal seal = activeSeal("Azul Nike", SealTier.PECA, policy);
+        Map<String, Object> design = SealDesigns.defaultDesign(false, SealTier.PECA);
+        seal.setBackgroundConfigJson(Json.write(Map.of("policy", SealPolicies.normalize(policy), "design", design)));
+        SealService.PieceFields fields = new SealService.PieceFields("Camiseta", "upper_piece", "t_shirt", "blue", "Nike", List.of(), List.of());
+        Map<String, Object> suggestion = list(seals.previewPiece(anaSession, fields), "suggestions").stream()
+                .filter(m -> brand.getId().equals(m.get("targetOwnerId"))).findFirst().orElseThrow();
+        @SuppressWarnings("unchecked") Map<String, Object> art = (Map<String, Object>) suggestion.get("seal");
+        assertThat(art).containsEntry("id", seal.getId()).containsEntry("name", "Azul Nike").containsEntry("tier", "PECA");
+        assertThat(Json.write(art.get("design"))).isEqualTo(Json.write(design));
+    }
+
+    @Test
     void modoAutomaticoDetectaLookCompativelNaPreviaESoLigaAsPecasQueSustentamAPolitica() {
         activeSeal("Duas azuis", SealTier.LOOK, referencePolicy(SealTier.LOOK, "Duas azuis", 2, "Nike", "blue"));
         WardrobeItem a = piece("Nike", "blue"), b = piece("Nike", "blue"), c = piece("Nike", "red"), d = piece("Zara", "blue");

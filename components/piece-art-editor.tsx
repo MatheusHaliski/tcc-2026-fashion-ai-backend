@@ -8,8 +8,8 @@ import { Button, Chip, Dialog, SegmentPicker, Switch, useToast } from "@/compone
 import { ArtSegments, AuraMaterialPanel, CLEAR_CARTELA, ColorPanel, ContainerColor, OptionStrip, SeasonalDialog, SkinPicker, useRecommendedSkins, type ArtSegment, type BgConfig } from "@/components/background-studio";
 import { useUndo } from "@/lib/hooks/use-undo";
 import { ART_INDEX } from "@/lib/card-art";
+import type { SealBadge } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
-import { CardPreviewModeToggle } from "@/components/card-preview-mode-toggle";
 import { ArtStage, artSurfaceProps } from "@/components/piece-art";
 import {
   AURA_MAX, EFFECT_LIMIT, FAMILIES, FAMILY_EFFECTS, FAMILY_EMPHASIS, SEASONS, STUDIO_KEYS, activeEffects, constrainEffects, defaultArt, readPieceArt, studioPart, writePieceArt,
@@ -25,10 +25,12 @@ const TOGGLES = ["rim", "glow", "glass", "relief", "collage", "particles"] as co
  * A arte só ocupa a faixa entre a borda externa e o container; a prévia ao lado é o PRÓPRIO {@link PieceCard} do feed
  * (ou a moldura do card ampliado), com a mesma largura de uma coluna da grade; nada aqui altera a foto da peça.
  */
-export function PieceArtEditor({ value, onChange, piece, styles, occasions, mediaPanel, actions }: {
+export function PieceArtEditor({ value, onChange, piece, styles, occasions, mediaPanel, actions, seals }: {
   /** config completo do fundo (Studio + v2): o editor é controlado */
   value: Record<string, unknown>; onChange: (bg: Record<string, unknown>) => void;
   piece: PieceView; styles?: string[]; occasions?: string[];
+  /** selos de marca/celebridade mostrados na prévia (lista Info do card) */
+  seals?: SealBadge[];
   /** fundo da área da peça (a foto de estúdio), quando o contexto permite trocá-lo */
   mediaPanel?: ReactNode;
   /** aplicar / cancelar / restaurar (no detalhe) ou a navegação do cadastro */
@@ -36,7 +38,6 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
 }) {
   const { t } = useI18n();
   const [seg, setSeg] = useState<ArtSegment>("cor");
-  const [view, setView] = useState<"feed" | "expanded">("feed");
   // modal da Cartela sazonal (como no look e no DNA): aberto ao clicar na família; variant = a variação em que se entra
   // ao Aplicar (Cancelar não muda nada)
   const [seasonal, setSeasonal] = useState<{ variant?: ArtVariant } | null>(null);
@@ -171,14 +172,10 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
         {actions && <div className="pae-nav">{actions}</div>}
       </div>
       {/* sem "card-preview": a prévia é idêntica ao card do feed (nem o lugar reservado do selo aparece) */}
-      <aside className="pae-preview" aria-label={view === "feed" ? t("pieceArt.previa_no_feed") : t("pieceArt.previa_ampliada")}>
+      <aside className="pae-preview" aria-label={t("pieceArt.previa_no_feed")}>
         {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, cor do container); família, efeitos e skin ficam */}
         <span className="flex justify-end gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={!hasStudioArt && !art.surface.color} onClick={() => emit({ ...art, surface: { ...art.surface, color: null } }, clearStudio)}>{t("backgroundStudio.limpar_arte")}</Button></span>
-        <CardPreviewModeToggle expanded={view === "expanded"} onToggle={() => setView(current => current === "feed" ? "expanded" : "feed")} feedLabel={t("pieceArt.previa_feed")} expandedLabel={t("pieceArt.previa_ampliado")}>
-          {view === "feed"
-            ? <div className="pae-preview-card"><PieceCard piece={preview} href="#" /></div>
-            : <div className="pae-expanded-card" aria-label={t("pieceArt.previa_ampliada")}><PieceCard piece={preview} href="#" flip={false} expanded /></div>}
-        </CardPreviewModeToggle>
+        <div className="pae-preview-card"><PieceCard piece={preview} href="#" seals={seals} /></div>
         <p className="type-caption text-muted">{t("pieceArt.camadas_legenda")}</p>
       </aside>
     </div>

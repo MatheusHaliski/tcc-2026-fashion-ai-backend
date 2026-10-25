@@ -30,6 +30,11 @@ const slotOf = (root: ParentNode, name: string) => {
   const card = Array.from(root.querySelectorAll<HTMLElement>(".fcard-face.is-front")).find((f) => f.textContent?.includes(name));
   return Array.from(card?.querySelectorAll<HTMLElement>(".card-seals .seal-slot [title]") ?? []).map((m) => m.title);
 };
+/** Selos de marca/celebridade: célula "Selo" da lista Info, com o medalhão do emissor. */
+const infoSealsOf = (root: ParentNode, name: string) => {
+  const card = Array.from(root.querySelectorAll<HTMLElement>(".fcard-face.is-front")).find((f) => f.textContent?.includes(name));
+  return Array.from(card?.querySelectorAll<HTMLElement>(".pc-info-seal .seal-medallion[title]") ?? []).map((m) => m.title);
+};
 
 beforeEach(() => { __resetHypeStore(); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); nav.search = new URLSearchParams(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
@@ -91,11 +96,14 @@ describe("Lookbook › Peças — selos de marca e Selos de Hype juntos, como no
     const authOf = (path: string) => new Headers((anon.fetchMock.mock.calls.find(([u]) => String(u).includes(path))?.[1] as RequestInit | undefined)?.headers).get("authorization");
     expect(authOf("/api/users/u2/closet")).toBeNull();
     expect(authOf("/api/pieces/seals")).toBeNull();
-    // slot lotado: 2 de marca + 1 de Hype (o Hype garante a vaga); p2 sem marca: os Selos de Hype sozinhos
+    // marca na célula Selo da lista Info; na faixa da frente só os Selos de Hype; p2 sem marca: os Selos de Hype sozinhos
     const lookbookP1 = slotOf(lookbook, "Camiseta branca lisa");
     const lookbookP2 = slotOf(lookbook, "Calça jeans reta");
-    expect(lookbookP1).toEqual(["Nike Verde · @nike · PECA", "Adidas Azul · @adidas · PECA", "Selo de Hype: Viral"]);
+    const lookbookInfo = infoSealsOf(lookbook, "Camiseta branca lisa");
+    expect(lookbookInfo).toEqual(["Nike Verde · @nike · PECA", "Adidas Azul · @adidas · PECA"]);
+    expect(lookbookP1).toEqual(["Selo de Hype: Viral"]);
     expect(lookbookP2).toEqual(["Selo de Hype: Tendência"]);
+    expect(infoSealsOf(lookbook, "Calça jeans reta")).toEqual([]);
     cleanup(); __resetHypeStore(); vi.unstubAllGlobals();
 
     // o mesmo par de peças no /closet do dono: medalhões idênticos, na mesma ordem
@@ -106,6 +114,7 @@ describe("Lookbook › Peças — selos de marca e Selos de Hype juntos, como no
     expect(await screen.findByTitle("Nike Verde · @nike · PECA")).toBeTruthy();
     await screen.findAllByTitle("Selo de Hype: Viral");
     expect(slotOf(closet, "Camiseta branca lisa")).toEqual(lookbookP1);
+    expect(infoSealsOf(closet, "Camiseta branca lisa")).toEqual(lookbookInfo);
     expect(slotOf(closet, "Calça jeans reta")).toEqual(lookbookP2);
   });
 });

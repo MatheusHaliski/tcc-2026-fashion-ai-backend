@@ -10,7 +10,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { CaptureGuideDialog } from "@/components/capture/capture-guide-dialog";
 import { guideFor, type CaptureCategory } from "@/lib/capture/capture-guides";
 import { useCaptureTutorialPrefs } from "@/lib/capture/tutorial-prefs";
-import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_MAX_TAGS, PieceMoreDetails, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
+import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_MAX_TAGS, PieceMoreDetails, chosenSealArts, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCreationSteps, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { PieceArtEditor } from "@/components/piece-art-editor";
 import { PieceCard } from "@/components/piece-card";
@@ -522,7 +522,7 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
           ))}
           {currentStep === "art" && rows.filter((r) => r.index === active).map((r) => <fieldset key={r.index} disabled={saving || r.status === "saved" || !r.include}>
             <PieceArtEditor value={r.value.background ?? { skin: "atelier" }} onChange={(background) => setValue(r.index, { ...r.value, background })}
-              piece={photoPreview(r, user, tax)} styles={r.value.style} occasions={r.value.occasion} />
+              piece={photoPreview(r, user, tax)} styles={r.value.style} occasions={r.value.occasion} seals={chosenSealArts(r.value)} />
           </fieldset>)}
           {currentStep === "review" && <ul className="grid gap-3" aria-label={t("builder.step.review")}>
             {rows.map((r, i) => <li key={r.index} className={cn("flex items-center gap-3 rounded-md border border-line-soft p-3", !r.include && "opacity-60")}>
@@ -535,7 +535,7 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
           {problem && <p role="alert" className="error-text">{problem}</p>}
         </div>
         {currentStep !== "art" && rows.filter((r) => r.index === active).map((r) => <aside key={r.index} aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start">
-          <p className="label">{t("scheme.card")}</p><PieceCard piece={photoPreview(r, user, tax)} href="#" />
+          <p className="label">{t("scheme.card")}</p><PieceCard piece={photoPreview(r, user, tax)} href="#" seals={chosenSealArts(r.value)} />
         </aside>)}
       </div>
       {footer}

@@ -11,6 +11,9 @@ import { HypeGuideIcon } from "@/components/hype/hype-guide";
 import { BrandLogo } from "@/components/brand-logo";
 import { hypePreset } from "@/lib/hype/aura-hype-presets";
 import { conservationLabel } from "@/lib/api/piece-references";
+import { mediaUrl } from "@/lib/api/client";
+import { SealMedallion } from "@/components/seal-medallion";
+import type { SealBadge } from "@/components/scheme-card";
 
 type Tab = "info" | "hype";
 
@@ -23,9 +26,11 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[] }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao">>; summary?: HypeSummary | null; initial?: Tab;
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], seals }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao">>; summary?: HypeSummary | null; initial?: Tab;
   /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
-  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][] }) {
+  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][];
+  /** selos de marca/celebridade da peça: entram na lista Info com o medalhão desenhado pelo emissor na criação do selo */
+  seals?: SealBadge[] }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>(initial);
   // a aba inicial acompanha a preferência (a AURA Hype salva no navegador chega depois do 1º render) até a pessoa escolher
@@ -44,6 +49,14 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
     if(piece.material) rows.push([t("common.material"),label(piece.material)]);
     if(piece.size) rows.push([t("common.size"),label(piece.size)]);
   }
+  // depois de Material e Tamanho: na grade de duas colunas o selo é a 4ª célula, logo abaixo de Material
+  const sealTitle = (s: SealBadge) => `${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}${s.tier ? ` · ${s.tier}` : ""}`;
+  if (seals?.length) rows.push([t("pieceCard.selo"), <span className="pc-info-seal">{seals.slice(0, 2).map((s, i) => (
+    <span key={i} className="pc-info-seal-item">
+      {s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} title={sealTitle(s)} />
+        : <span className={`seal-medallion ${s.premium ? "premium" : ""}`} title={sealTitle(s)}>{s.iconUrl ? <img src={mediaUrl(s.iconUrl)} alt="" /> : (s.name ?? s.label).replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase()}</span>}
+      <span>{s.name ?? s.label}</span>
+    </span>))}{seals.length > 2 && <span className="card-meta-more" title={seals.slice(2).map(sealTitle).join(" · ")}>+{seals.length - 2}</span>}</span>]);
   const condition = conservationLabel(piece, t);
   if (condition) rows.push([t("pieceReferences.condition.label"), condition]);
   rows.push(...infoRows);
@@ -66,7 +79,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
         {tabs.map((x) => (
           <button key={x.key} type="button" role="tab" data-tab={x.key} id={`${id}-${x.key}`} aria-selected={tab === x.key} aria-controls={`${id}-panel`}
             tabIndex={tab === x.key ? 0 : -1} className="pc-seg-btn" onClick={(e) => { e.stopPropagation(); touched.current = true; setTab(x.key); }}>
-            {x.icon}<span>{x.text}{x.key==="info"&&<span className="pc-tab-live-score"><HypeBadge state={hypeViewState(summary,{loading,error})} summary={summary}/></span>}</span>
+            {x.icon}<span>{x.text}{x.key==="hype"&&<span className="pc-tab-live-score"><HypeBadge state={hypeViewState(summary,{loading,error})} summary={summary}/></span>}</span>
           </button>
         ))}
       </div>

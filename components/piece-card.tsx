@@ -152,10 +152,11 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                   {secondary}
                   {expanded && zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}
                 </span>
-                {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
+                {/* o selo da marca/celebridade fica na lista Info; aqui só os selos Hype automáticos */}
+                {!expanded && !!seals?.some((s) => s.kind === "HYPE") && <CardSealSummary seals={seals.filter((s) => s.kind === "HYPE")} />}
                 {!expanded && <CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} />}
                 {expanded && <PieceDetailFacts piece={piece}/>}
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} />
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} seals={brandSeals} />
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{<Price value={piece.price} />}</b></span>}
                 {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>
