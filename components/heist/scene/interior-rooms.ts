@@ -46,7 +46,7 @@ export function signTexture(text: string, style: SignStyle, sub = ""): THREE.Tex
     g.fillStyle = ink[style];
     if (style === "neon") { g.shadowColor = "#ff4fb1"; g.shadowBlur = 30; }
     const font = (px: number) => style === "brass" || style === "gala" ? `600 ${px}px ${SERIF}` : `700 ${px}px ${SANS}`;
-    const px = fit(g, text, font, sub ? 96 : 120, w - 80);
+    const px = fit(g, text, font, sub ? 96 : 120, (w - 80) * (style === "gala" || style === "brass" ? 0.8 : 1));
     if (style === "gala" || style === "brass") spaced(g, text, w / 2, sub ? h * 0.4 : h / 2, Math.round(px * 0.18)); else g.fillText(text, w / 2, sub ? h * 0.4 : h / 2);
     if (sub) { g.shadowBlur = 0; g.font = `400 ${Math.round(h * 0.16)}px ${style === "brass" || style === "gala" ? SERIF : SANS}`; g.fillText(sub, w / 2, h * 0.76); }
     if (style === "exit") { g.font = `700 ${Math.round(h * 0.5)}px ${SANS}`; g.fillText("➜", w * 0.9, h / 2); }
@@ -119,6 +119,13 @@ function sconce(c: RoomsCtx, room: InteriorRoom, x: number, y: number, z: number
   A(c, room, p.x, p.y, p.z, "#ffbf75", 3.2, 4, { flicker: 0.4 });
   // mancha de luz na parede (pintura de luz quente sobre a arandela)
   c.batch.add(room, glow("sconceWash", "#ffb46a", 0.55, { additive: true, map: washTexture() }), PLANE(), mul(at, mat(0, 0.45, 0.012, 0, 1.4, 1.6, 1)));
+}
+/** Fundo do nicho: laranja que acende de baixo para cima e esmaece nas bordas (luz rasante escondida no rodapé). */
+function nicheTexture(): THREE.Texture {
+  return drawnTexture("nicheGlow", 128, 256, (g, w, h) => {
+    const v = g.createLinearGradient(0, h, 0, 0); v.addColorStop(0, "#ffffff"); v.addColorStop(0.45, "#b8b8b8"); v.addColorStop(1, "#5a5a5a"); g.fillStyle = v; g.fillRect(0, 0, w, h);
+    const e = g.createLinearGradient(0, 0, w, 0); e.addColorStop(0, "rgba(0,0,0,0.55)"); e.addColorStop(0.2, "rgba(0,0,0,0)"); e.addColorStop(0.8, "rgba(0,0,0,0)"); e.addColorStop(1, "rgba(0,0,0,0.55)"); g.fillStyle = e; g.fillRect(0, 0, w, h);
+  }, false);
 }
 function washTexture(): THREE.Texture {
   return drawnTexture("wash", 128, 128, (g, w, h) => { const grd = g.createRadialGradient(w / 2, h * 0.45, 2, w / 2, h * 0.45, w / 2); grd.addColorStop(0, "rgba(255,255,255,0.9)"); grd.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h); }, false);
@@ -202,9 +209,9 @@ function galeria(c: RoomsCtx) {
   // o nicho laranja no fundo (parede norte, centro) com a estátua branca em contraluz — como a referência
   const nx = 0, nz = -22;
   c.batch.add(room, stone, geo("bigNicheArch", () => { const s = new THREE.Shape(), r = 1.6, t = 0.3, sp = 2.9; s.moveTo(-r - t, 0); s.lineTo(-r - t, sp); s.absarc(0, sp, r + t, Math.PI, 0, true); s.lineTo(r + t, 0); s.lineTo(r, 0); s.lineTo(r, sp); s.absarc(0, sp, r, 0, Math.PI, false); s.lineTo(-r, 0); s.closePath(); return new THREE.ExtrudeGeometry(s, { depth: 0.25, bevelEnabled: false, curveSegments: 28 }); }), mat(nx, 0, nz + 0.005, 0), { cast: true });
-  const orange = new THREE.MeshStandardMaterial({ color: "#c2441b", roughness: 0.9, emissive: new THREE.Color("#ff5a1e"), emissiveIntensity: 0.55, emissiveMap: washTexture() });
+  const orange = new THREE.MeshStandardMaterial({ color: "#c2441b", roughness: 0.9, emissive: new THREE.Color("#ff6a26"), emissiveIntensity: 1.5, emissiveMap: nicheTexture() });
   c.batch.add(room, orange, geo("bigNicheFill", () => { const s = new THREE.Shape(); s.moveTo(-1.6, 0); s.lineTo(1.6, 0); s.lineTo(1.6, 2.9); s.absarc(0, 2.9, 1.6, 0, Math.PI, false); s.closePath(); return new THREE.ShapeGeometry(s, 28); }), mat(nx, 0, nz + 0.01, 0));
-  A(c, room, nx, 2.4, nz + 0.9, "#ff7a3a", 9, 5);
+  A(c, room, nx, 2.4, nz + 1.1, "#ff7a3a", 16, 7.5);
   // rótulo de parede da exposição
   wallPlane(c, room, signMat(c.copy.institute, "gala", c.copy.exhibitSub, 0.45), -6.5, 3.4, -21.97, 0, 4, 1);
   wallPlane(c, room, signMat(c.copy.exhibitTitle, "gala", c.copy.posterFoot, 0.45), 6.5, 3.4, -21.97, 0, 4, 1);
@@ -243,7 +250,7 @@ function lounge(c: RoomsCtx) {
   const back = mat(21.995, 0, 9.5, -Math.PI / 2);
   c.batch.add(room, P.gold, archFrame(2.2, 1.9), back, { cast: true });
   c.batch.add(room, P.mirror, geo("barArchFill", () => { const s = new THREE.Shape(); s.moveTo(-2.2, 0); s.lineTo(2.2, 0); s.lineTo(2.2, 1.9); s.absarc(0, 1.9, 2.2, 0, Math.PI, false); s.closePath(); return new THREE.ShapeGeometry(s, 28); }), mul(back, mat(0, 0, -0.004)));
-  c.batch.add(room, glow("backbarGlow", "#ffb760", 1.25, { map: washTexture() }), PLANE(), mul(back, mat(0, 2.1, 0.003, 0, 4.2, 2.8, 1)));
+  c.batch.add(room, glow("backbarGlow", "#ffb760", 0.65, { additive: true, map: washTexture() }), PLANE(), mul(back, mat(0, 2.1, 0.003, 0, 4.2, 2.8, 1)));
   const R = rand(91);
   for (let sh = 0; sh < 4; sh++) {
     const y = 1.15 + sh * 0.48;
@@ -254,7 +261,8 @@ function lounge(c: RoomsCtx) {
   wallPlane(c, room, signMat(c.copy.lounge, "neon", "", 1.2), 21.97, 3.3, 9.5, -Math.PI / 2, 1.6, 0.4);
   A(c, room, 21.3, 2.2, 9.5, "#ffb258", 10, 5.5);
   // arandelas nas paredes oeste e norte, palmeiras nos cantos, lustre e o teto escuro com sanca dourada
-  for (const [x, y, z, ry] of [[12.53, 2.6, 6.2, Math.PI / 2], [12.53, 2.6, 12.8, Math.PI / 2], [19.0, 2.6, 4.53, 0], [15.3, 2.6, 4.53, 0]] as [number, number, number, number][]) sconce(c, room, x, y, z, ry);
+  // (as duas da parede leste ladeiam o arco do bar, como na referência)
+  for (const [x, y, z, ry] of [[12.53, 2.6, 6.2, Math.PI / 2], [12.53, 2.6, 12.8, Math.PI / 2], [19.0, 2.6, 4.53, 0], [15.3, 2.6, 4.53, 0], [21.97, 2.75, 6.62, -Math.PI / 2], [21.97, 2.75, 12.38, -Math.PI / 2]] as [number, number, number, number][]) sconce(c, room, x, y, z, ry);
   const frond = frondGeometry(), fm = frondMaterial();
   for (const [x, z] of [[21.45, 5.1], [12.85, 13.68]]) {
     c.batch.add(room, P.gold, geo("lgPot", () => new THREE.LatheGeometry([[0, 0], [0.2, 0], [0.26, 0.4], [0.28, 0.44], [0, 0.44]].map(([a, b]) => new THREE.Vector2(a, b)), 20)), mat(x, 0, z));
@@ -286,7 +294,7 @@ function bastidores(c: RoomsCtx) {
   const cable = (pts: number[][]) => c.batch.add(room, P.rubber, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0.012, z))), 40, 0.012, 5, false));
   cable([[12.6, -2.2], [14, -2.4], [15.5, -2.1], [17.2, -2.6], [18.4, -4.4], [19.6, -5.2]]); cable([[12.6, -1.6], [13.6, 0.4], [15.2, 1.4]]);
   // luzes de serviço (lâmpada em gaiola) e o forro escuro
-  for (const [x, z] of [[14.5, -3], [18.5, -3], [16.5, 1.5], [20.6, -1]]) { c.batch.add(room, P.black, CYL(6), mat(x, 4.3, z, 0, 0.006, 0.6, 0.006)); c.inst.add(room, "cageBulb", SPH(10), P.bulbWarm, mat(x, 3.95, z, 0, 0.06)); A(c, room, x, 3.9, z, "#ffd9a6", 4.5, 5.5); }
+  for (const [x, z] of [[14.5, -3], [18.5, -3], [16.5, 1.5], [20.6, -1]]) { c.batch.add(room, P.black, CYL(6), mat(x, 4.3, z, 0, 0.006, 0.6, 0.006)); c.inst.add(room, "cageBulb", SPH(10), P.bulbWarm, mat(x, 3.95, z, 0, 0.06)); A(c, room, x, 3.9, z, "#ffd9a6", 8, 6.5); }
   beacon(c, room, 12.6, 3.8, 2.6, 1, 0);
 }
 

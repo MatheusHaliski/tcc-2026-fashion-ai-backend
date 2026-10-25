@@ -135,11 +135,11 @@ export type Palette = ReturnType<typeof M>;
 export type EnvMood = "warm" | "gallery" | "backstage" | "cool" | "vault";
 const MOODS: Record<EnvMood, { walls: string; floor: string; panels: [string, number][]; spots: [string, number][] }> = {
   // salão em âmbar com lavagens rosa nas paredes; galeria quase preta com focos brancos; serviço com fluorescentes frias
-  warm: { walls: "#4a3428", floor: "#2a1c14", panels: [["#ffd29a", 6], ["#ff7fb0", 3.5], ["#ffe2b8", 4]], spots: [["#fff0d8", 14]] },
+  warm: { walls: "#3a2a22", floor: "#1e140e", panels: [["#ffcf8f", 5], ["#b98cff", 1.4], ["#ffe2b8", 3]], spots: [["#fff0d8", 12]] },
   gallery: { walls: "#0d0f14", floor: "#120c08", panels: [["#f4f0e6", 1.2]], spots: [["#fff6e8", 18], ["#dfe6ff", 10]] },
   backstage: { walls: "#141414", floor: "#0c0c0c", panels: [["#ffe0b0", 3], ["#ffffff", 2]], spots: [["#fff2d8", 8]] },
   cool: { walls: "#7c827f", floor: "#4b4c4a", panels: [["#f1f7ff", 5], ["#dfe9f2", 3]], spots: [["#ffffff", 4]] },
-  vault: { walls: "#26081a", floor: "#08060a", panels: [["#b0306a", 1.6]], spots: [["#fff4e0", 20], ["#9b6bff", 3]] },
+  vault: { walls: "#120a14", floor: "#060508", panels: [["#6a5a80", 1.0]], spots: [["#fff4e0", 16], ["#cfd8ff", 4]] },
 };
 function moodScene(m: EnvMood): THREE.Scene {
   const s = new THREE.Scene(); const d = MOODS[m];
@@ -169,4 +169,4 @@ export function envFor(gl: THREE.WebGLRenderer, m: EnvMood): THREE.Texture {
   per.set(m, rt.texture); return rt.texture;
 }
 /** Intensidade do ambiente por clima (a luz difusa de fundo de cada sala). */
-export const ENV_INTENSITY: Record<EnvMood, number> = { warm: 0.85, gallery: 0.5, backstage: 0.55, cool: 0.9, vault: 0.55 };
+export const ENV_INTENSITY: Record<EnvMood, number> = { warm: 0.6, gallery: 0.42, backstage: 0.5, cool: 0.7, vault: 0.5 };

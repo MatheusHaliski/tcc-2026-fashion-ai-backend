@@ -244,8 +244,8 @@ export function buildHall(q: Quality, copy: InteriorCopy, batch: Batch, inst: In
   }
   /* arcos, tímpanos, lavagem de luz e pilastras */
   const fan = new THREE.MeshStandardMaterial({ map: fanlightTexture(), emissiveMap: fanlightTexture(), emissive: new THREE.Color("#ffb46a"), emissiveIntensity: 0.9, roughness: 0.2, metalness: 0.2 });
-  const upl = new THREE.MeshBasicMaterial({ map: uplightTexture(), color: new THREE.Color("#ff5fa8").multiplyScalar(0.9), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-  const niche = fabric("hallDrape", "#5a1830", q, { rough: 0.85 });
+  const upl = new THREE.MeshBasicMaterial({ map: uplightTexture(), color: new THREE.Color("#ffa04a").multiplyScalar(0.55), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const niche = fabric("hallDrape", "#2a1240", q, { rough: 0.8, sheen: "#9a6ad8" });
   for (const a of ARCHES) {
     const base = hallWall(a.wall, a.s, 0, 0.005);
     batch.add(room, trim, archFrameGeo(a.r, a.spring, 0.32, 0.14), base, { cast: true });
@@ -254,7 +254,7 @@ export function buildHall(q: Quality, copy: InteriorCopy, batch: Batch, inst: In
     else if (a.panel) {
       batch.add(room, niche, archFillGeo(a.r, a.spring, 0), mul(base, mat(0, 0, 0.01)));
       group.add(Object.assign(new THREE.Mesh(archFillGeo(a.r, a.spring, 0), upl), { matrix: mul(base, mat(0, 0, 0.03)), matrixAutoUpdate: false, renderOrder: 2 }));
-      inst.add(room, "uplight", BOX0(), P.ledPink, mul(base, mat(0, 0, 0.25, 0, 0.5, 0.06, 0.12)));
+      inst.add(room, "uplight", BOX0(), P.ledAmber, mul(base, mat(0, 0, 0.25, 0, 0.5, 0.06, 0.12)));
     }
   }
   for (const [w, list] of Object.entries(PILASTERS) as [WallSide, number[]][]) for (const s of list) {

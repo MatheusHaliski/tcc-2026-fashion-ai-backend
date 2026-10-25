@@ -13,7 +13,9 @@ import { doorHeight, doorSides, isInterior, type InteriorRoom } from "./interior
 import type { Quality } from "./interior-tex";
 
 type Style = "bronzeGlass" | "walnut" | "steel" | "black" | "french" | "vault" | "hidden";
-interface DoorSpec { style: Style; fixture?: "keypad" | "card" | "key" | "badge"; fixtureSide?: InteriorRoom | "lo" | "hi"; swingTo?: "lo" | "hi"; speed?: number }
+interface DoorSpec { style: Style; fixture?: "keypad" | "card" | "key" | "badge"; fixtureSide?: InteriorRoom | "lo" | "hi"; swingTo?: "lo" | "hi"; speed?: number;
+  /** ângulo aberta (rad; ~92° por padrão; 2,8 = dobrada contra a parede) e folha única mesmo em vão largo */
+  angle?: number; single?: boolean }
 const SPECS: Partial<Record<DoorId, DoorSpec>> = {
   main: { style: "bronzeGlass", swingTo: "lo" },
   gallery: { style: "walnut", swingTo: "lo" },
@@ -23,13 +25,14 @@ const SPECS: Partial<Record<DoorId, DoorSpec>> = {
   staffTerrace: { style: "steel", swingTo: "hi" },
   side: { style: "steel", fixture: "badge", fixtureSide: "vestibulo", swingTo: "lo" },
   stage: { style: "black", fixture: "badge", fixtureSide: "salao", swingTo: "hi" },
-  staff: { style: "hidden", fixture: "key", fixtureSide: "salao", swingTo: "lo" },
-  service: { style: "steel", fixture: "keypad", fixtureSide: "doca", swingTo: "lo" },
-  vault: { style: "vault", fixture: "card", fixtureSide: "galeria", swingTo: "lo", speed: 0.9 },
-  secDoor: { style: "steel", swingTo: "lo" },
+  staff: { style: "hidden", fixture: "key", fixtureSide: "salao", swingTo: "hi" },
+  // a de serviço abre para a doca (para o labirinto fecharia o corredor de 1,5 m); a da segurança dobra contra a parede
+  service: { style: "steel", fixture: "keypad", fixtureSide: "doca", swingTo: "hi" },
+  vault: { style: "vault", fixture: "card", fixtureSide: "galeria", swingTo: "lo", speed: 0.9, single: true },
+  secDoor: { style: "steel", swingTo: "lo", angle: 2.75 },
 };
 
-export interface DoorLeaf { id: DoorId; pivot: THREE.Object3D; sign: number; open: number; speed: number; room: InteriorRoom }
+export interface DoorLeaf { id: DoorId; pivot: THREE.Object3D; sign: number; open: number; speed: number; room: InteriorRoom; angle: number }
 export interface DoorOut { leaves: DoorLeaf[]; leds: { id: DoorId; mesh: THREE.Mesh; room: InteriorRoom }[]; group: THREE.Group }
 
 const leafGeo = () => geo("leafBox", () => new THREE.BoxGeometry(1, 1, 1).translate(0.5, 0.5, 0));
@@ -114,7 +117,7 @@ export function buildDoors(doors: DoorDef[], P: Palette, q: Quality, batch: Batc
     if (d.id === "windowC") { jewelWindow(d, P, batch); continue; }
     if (!spec) continue;
     const H = doorHeight(d), W = s.w1 - s.w0, alongX = s.along === "x", mid = (s.t0 + s.t1) / 2;
-    const double = W >= 1.6, n = double ? 2 : 1, lw = W / n - 0.01;
+    const double = W >= 1.6 && !spec.single, n = double ? 2 : 1, lw = W / n - 0.01;
     // batente dourado/escuro dos dois lados
     const trim = spec.style === "steel" || spec.style === "black" ? P.darkSteel : spec.style === "vault" ? P.chrome : P.gold;
     // (cada lado no lote da sala daquele lado: o batente continua lá quando a sala vizinha está escondida)
@@ -138,7 +141,7 @@ export function buildDoors(doors: DoorDef[], P: Palette, q: Quality, batch: Batc
       // o sentido do giro que leva a folha para o lado `swing` (em coordenada perpendicular ao vão)
       const test = (sign: number) => { const a = base + sign * 1.2, fx = Math.cos(a), fz = -Math.sin(a); return alongX ? fz : fx; };
       const sign = Math.sign(test(1)) === swing ? 1 : -1;
-      leaves.push({ id: d.id, pivot: holder, sign, open: 0, speed: spec.speed ?? 2.6, room });
+      leaves.push({ id: d.id, pivot: holder, sign, open: 0, speed: spec.speed ?? 2.6, room, angle: spec.angle ?? 1.6 });
     }
     if (spec.fixture) {
       const fr = spec.fixtureSide === "lo" ? s.lo : spec.fixtureSide === "hi" ? s.hi : spec.fixtureSide;

@@ -30,6 +30,6 @@ export default function HeistLab() {
   }, []);
   const cards = useMemo(() => matchCards(SAMPLE), []);
   return <div style={{ position: "fixed", inset: 0, background: "#000" }}>
-    {q && <HeistGame cards={cards} debug={q.debug} startAt={q.at} quality={q.quality} />}
+    {q && <HeistGame cards={cards} debug={q.debug} startAt={q.at} quality={q.quality} labHandle />}
   </div>;
 }

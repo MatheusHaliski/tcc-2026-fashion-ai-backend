@@ -53,12 +53,13 @@ const LINKS = DOORS.map((d) => ({ id: d.id, a: d.between[0], b: d.between[1], al
 /**
  * Salas desenhadas neste quadro: a da jogadora e a da câmera, mais duas camadas de vizinhas por portas abertas (do
  * vestíbulo se vê o salão e, pelo vão alinhado, a galeria). `lit` guarda só a primeira camada: as luzes dinâmicas vêm
- * dela; as salas mais distantes aparecem com o ambiente e os emissivos.
+ * dela (as das vizinhas pesam um terço: uma vela junto da parede do salão não acende o corredor do outro lado); as salas
+ * mais distantes aparecem com o ambiente e os emissivos.
  */
-export function roomsInView(v: SceneView, camRoom: RoomId | null, seen: Set<RoomId>, lit: Set<RoomId>) {
-  seen.clear(); lit.clear();
+export function roomsInView(v: SceneView, camRoom: RoomId | null, seen: Set<RoomId>, lit: Set<RoomId>, core: Set<RoomId>) {
+  seen.clear(); lit.clear(); core.clear();
   const seeds: RoomId[] = [v.playerRoom]; if (camRoom && camRoom !== v.playerRoom) seeds.push(camRoom);
-  for (const s of seeds) { seen.add(s); lit.add(s); }
+  for (const s of seeds) { seen.add(s); lit.add(s); core.add(s); }
   let frontier = seeds.slice();
   for (let depth = 0; depth < 2 && frontier.length; depth++) {
     const next: RoomId[] = [];
@@ -93,13 +94,13 @@ export class LightPool {
     }
   }
   /** `gain(a)` devolve o multiplicador da âncora agora (cintilação, alarme, energia cortada); 0 tira da disputa. */
-  update(anchors: readonly LightAnchor[], lit: Set<RoomId>, focus: THREE.Vector3, dt: number, gain: (a: LightAnchor) => number) {
+  update(anchors: readonly LightAnchor[], lit: Set<RoomId>, core: Set<RoomId>, focus: THREE.Vector3, dt: number, gain: (a: LightAnchor) => number) {
     const sc = this.scored; sc.length = 0;
     for (const a of anchors) {
       if (!lit.has(a.room)) continue;
       const g = gain(a); if (g <= 0) continue;
       const dx = a.x - focus.x, dy = a.y - focus.y, dz = a.z - focus.z;
-      sc.push({ a, s: (a.intensity * g) / (1 + dx * dx + dy * dy + dz * dz) * (a.alarm ? 4 : 1) });
+      sc.push({ a, s: (a.intensity * g) / (1 + dx * dx + dy * dy + dz * dz) * (a.alarm ? 4 : 1) * (core.has(a.room) ? 1 : 0.33) });
     }
     sc.sort((p, q) => q.s - p.s);
     const want = new Set<LightAnchor>(); for (let k = 0; k < Math.min(this.slots.length, sc.length); k++) want.add(sc[k].a);
@@ -132,6 +133,56 @@ export function flickerOf(a: LightAnchor, t: number): number {
   const ph = a.x * 3.1 + a.z * 1.7;
   if (FLUORESCENT.has(a.room)) { const c = (t * 0.9 + ph) % 7; return c < 0.12 || (c > 0.3 && c < 0.38) ? 0.15 : 1; }
   return 1 - f * (0.1 + 0.08 * Math.sin(t * 11.3 + ph) + 0.06 * Math.sin(t * 23.7 + ph * 2.3) + 0.04 * Math.sin(t * 5.1 + ph * 0.7));
+}
+
+/* ---------- luz-chave com sombra (só "high") ---------- */
+interface KeyDef { p: [number, number, number]; aim: [number, number, number]; angle: number; i: number; color: string }
+/** A fonte principal de cada sala (lustre, refletor, luminária de teto) — a única luz interna que faz sombra. */
+const KEYS: Partial<Record<InteriorRoom, KeyDef[]>> = {
+  vestibulo: [{ p: [0, 6.05, 19.5], aim: [0, 0, 19.2], angle: 1.0, i: 60, color: "#ffd9a8" }],
+  salao: [
+    { p: [-8.25, 8.9, 4.5], aim: [-6.5, 0, 4.5], angle: 0.95, i: 95, color: "#ffd29a" },
+    { p: [8.25, 8.9, 4.5], aim: [6.5, 0, 4.5], angle: 0.95, i: 95, color: "#ffd29a" },
+    { p: [0, 9.2, 11.6], aim: [0, 0, 10.4], angle: 0.9, i: 80, color: "#ffdcae" },
+    { p: [0, 9.2, -2.6], aim: [0, 0, -1.8], angle: 0.9, i: 80, color: "#ffdcae" },
+  ],
+  galeria: [{ p: [-5, 5.25, -14], aim: [-5, 0, -14.5], angle: 1.0, i: 45, color: "#fff1dc" }, { p: [5, 5.25, -14], aim: [5, 0, -14.5], angle: 1.0, i: 45, color: "#fff1dc" }],
+  lounge: [{ p: [17.2, 4.45, 9.3], aim: [17.2, 0, 9.3], angle: 1.05, i: 38, color: "#ffc98a" }],
+  bastidores: [{ p: [17.2, 4.45, -1], aim: [17.2, 0, -1], angle: 1.05, i: 40, color: "#fff0d8" }],
+  seguranca: [{ p: [-20.2, 3.45, 4.75], aim: [-20.2, 0, 4.75], angle: 1.1, i: 22, color: "#eef6ff" }],
+  doca: [{ p: [-15.2, 5.8, 20.2], aim: [-15.2, 0, 20.2], angle: 1.05, i: 55, color: "#ffc27a" }],
+  cofre: [{ p: [-17.25, 5.05, -14.25], aim: [-17.25, 0, -14.25], angle: 0.8, i: 70, color: "#f2f6ff" }],
+};
+/**
+ * Um SpotLight com sombra que acompanha a sala da jogadora: a fonte da lista mais perto dela (com folga para não trocar
+ * à toa). A troca apaga a atual e acende a nova; sem fonte (labirinto, terraço — lá a lua faz a sombra) fica em 0 e o
+ * mapa de sombra para de ser redesenhado. O número de luzes com sombra nunca muda (nada recompila).
+ */
+export class KeyLight {
+  readonly light: THREE.SpotLight;
+  private cur: KeyDef | null = null;
+  private w = 0;
+  private first = true;
+  constructor(size: number) {
+    const l = new THREE.SpotLight("#ffffff", 0, 0, 0.9, 0.6, 2);
+    l.castShadow = true; l.shadow.mapSize.set(size, size); l.shadow.bias = -0.0005; l.shadow.normalBias = 0.04; l.shadow.radius = 5;
+    l.shadow.camera.near = 0.3; l.shadow.camera.far = 26; l.name = "interior-key";
+    this.light = l;
+  }
+  update(room: RoomId, px: number, pz: number, dt: number, gain: number) {
+    const list = isInterior(room) ? KEYS[room] : undefined;
+    let want: KeyDef | null = null, best = 1e9;
+    for (const k of list ?? []) { const d = Math.hypot(k.aim[0] - px, k.aim[2] - pz) - (k === this.cur ? 2.5 : 0); if (d < best) { best = d; want = k; } }
+    const rate = this.first ? 1e9 : dt * 3.5;
+    if (want !== this.cur) { this.w = Math.max(0, this.w - rate); if (this.w === 0) this.cur = want; }
+    else this.w = Math.min(1, this.w + rate);
+    this.first = false;
+    const l = this.light, k = this.cur;
+    l.shadow.autoUpdate = !!k && this.w > 0;
+    if (!k) { l.intensity = 0; return; }
+    l.position.set(...k.p); l.target.position.set(...k.aim); l.target.updateMatrixWorld();
+    l.angle = k.angle; l.color.set(k.color); l.intensity = k.i * this.w * gain * LIGHT_GAIN;
+  }
 }
 
 /* ---------- reflexo planar dos pisos polidos ---------- */
@@ -376,7 +427,7 @@ export function updateDoors(d: DoorOut, doors: Record<DoorId, boolean>, dt: numb
     const target = doors[l.id] ? 1 : 0;
     l.open = snap ? target : l.open + Math.sign(target - l.open) * Math.min(Math.abs(target - l.open), dt * l.speed * 0.6);
     const e = l.open * l.open * (3 - 2 * l.open);
-    l.pivot.rotation.y = l.sign * e * 1.6;
+    l.pivot.rotation.y = l.sign * e * l.angle;
   }
   for (const led of d.leds) (led.mesh.material as THREE.MeshBasicMaterial).color.copy(doors[led.id] ? LED_GREEN : LED_RED);
 }

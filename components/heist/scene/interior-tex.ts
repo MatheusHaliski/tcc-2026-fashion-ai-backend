@@ -247,7 +247,7 @@ export function wallSurface(k: WallKey, q: Quality): Surface {
       return surface(k + q, sz, (u, v, o) => {
         const d = damask(u, v), fib = vnoise(u * 200, v * 200, 200, 141), n = fbm(u, v, 4, 143, 2);
         const t = 0.86 + 0.14 * fib + 0.06 * (n - 0.5);
-        if (teal) { o[0] = mix(0.018, 0.05, d) * t; o[1] = mix(0.075, 0.13, d) * t; o[2] = mix(0.095, 0.15, d) * t; }
+        if (teal) { o[0] = mix(0.085, 0.15, d) * t; o[1] = mix(0.18, 0.27, d) * t; o[2] = mix(0.22, 0.31, d) * t; }
         else if (green) { o[0] = mix(0.025, 0.06, d) * t; o[1] = mix(0.17, 0.26, d) * t; o[2] = mix(0.11, 0.14, d) * t; }
         else { o[0] = mix(0.2, 0.36, d) * t; o[1] = mix(0.03, 0.08, d) * t; o[2] = mix(0.09, 0.12, d) * t; }
         o[3] = 0.45 + 0.15 * d + 0.1 * fib; o[4] = 0.88 - 0.4 * d;

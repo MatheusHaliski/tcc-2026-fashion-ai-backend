@@ -14,7 +14,7 @@ import type { HeistCard, SimState, VendorId, WeaponId } from "@/lib/heist/types"
 import { emptyView, type SceneView } from "@/lib/heist/view";
 import { SIM_VERSION, newSim, outfitPieces, restore, simCtx, snapshot, type SimCtx } from "@/lib/heist/state";
 import { choose, endTalk, equip, interact, quickHeal, skipBeat, skipCutscene, startBeat, step, writeView, type OpenUi } from "@/lib/heist/sim";
-import { castShot, tiredness } from "@/lib/heist/combat";
+import { castShot, damagePlayer, tiredness } from "@/lib/heist/combat";
 import { GUARDS, floorY } from "@/lib/heist/level";
 import { angDiff, yawOf } from "@/lib/heist/math";
 import { useReducedMotion } from "@/components/three/common";
@@ -98,9 +98,13 @@ function Driver({ sim, ctx, view, controls, audio, settings, running, slowMo, on
   return null;
 }
 
-export interface HeistGameProps { cards: HeistCard[]; onExit?: () => void; debug?: boolean; quality?: "high" | "low"; startAt?: string }
+export interface HeistGameProps {
+  cards: HeistCard[]; onExit?: () => void; debug?: boolean; quality?: "high" | "low"; startAt?: string;
+  /** laboratório: expõe a simulação em `window.__heist` (testes de jogo e capturas automáticas) */
+  labHandle?: boolean;
+}
 
-export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt }: HeistGameProps) {
+export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, labHandle = false }: HeistGameProps) {
   const { t, locale } = useI18n();
   const reduced = useReducedMotion();
   const ctx = useMemo(() => simCtx(), []);
@@ -125,6 +129,8 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt }
   const [save, setSave] = useState<SavedRun | null>(null);
   const [wheelHover, setWheelHover] = useState<WheelSlot | null>(null);
   const seq = useRef(1);
+  const onUiRef = useRef<(ui: OpenUi) => void>(() => {});
+  const loadingRef = useRef(0);
   const beatLine = useRef({ at: -1, next: 0 });
   const bump = useCallback(() => setRev((r) => r + 1), []);
   const setSettings = useCallback((st: HeistSettings) => { setSettingsState(st); saveSettings(st); }, []);
@@ -136,6 +142,12 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt }
   useEffect(() => { if (!settings.showFps) setFps(null); }, [settings.showFps]);
   useEffect(() => { const sv = loadSave(SIM_VERSION); setSave(sv && sv.deck.join(",") === deckKey(cards) ? sv : null); }, [cards]);
   useEffect(() => { const el = wrap.current; if (!el) return; controls.attach(el); return () => { controls.detach(); audio.stop(); }; }, [controls, audio]);
+  useEffect(() => {
+    if (!labHandle) return;
+    const w = window as unknown as { __heist?: unknown };
+    w.__heist = { get s() { return sim.current.s; }, ctx, step: (inp: Parameters<typeof step>[2], dt: number) => step(sim.current.s, ctx, inp, dt), interact: () => onUiRef.current(interact(sim.current.s, ctx)), loading: () => loadingRef.current, hurt: (n: number, by: string) => { const t = sim.current.s.guards.find((g) => g.id === by); damagePlayer(sim.current.s, n, t ? t.pos : sim.current.s.player.pos, by); } };
+    return () => { delete w.__heist; };
+  }, [labHandle, ctx]);
   // laboratório: começar num checkpoint (?at=salao, cofre…)
   useEffect(() => {
     if (!startAt) return;
@@ -219,6 +231,8 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt }
     if (ui.ui === "clue") setPanel({ kind: "clue", ref: ui.ref });
     if (ui.ui === "dialogue") setPanel({ kind: "dialogue" });
   }, [controls]);
+  onUiRef.current = onUi;
+  loadingRef.current = loading;
   const closePanel = useCallback((relock = true) => { setPanel(null); controls.reset(); if (relock) controls.lock(); bump(); }, [controls, bump]);
   const leaveTalk = useCallback(() => { endTalk(sim.current.s); closePanel(); }, [closePanel]);
   const onChoose = useCallback((i: number) => {

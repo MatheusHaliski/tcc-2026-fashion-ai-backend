@@ -114,11 +114,16 @@ export function ExteriorLights({ view, q, props }: { view: React.MutableRefObjec
       flashState.current[i] = Math.max(0, flashState.current[i] - dt * 14);
       if (rng() < rate * dt) flashState.current[i] = 1;
       const s = flashSprites.current[i];
-      if (s) { const a = flashState.current[i]; (s.material as THREE.SpriteMaterial).opacity = a; s.visible = a > 0.02; const k = 0.3 + a * 0.5; s.scale.set(k, k, 1); }
+      if (s) {
+        // o flash aponta para onde o fotógrafo olha: de frente estoura, de lado é um ponto
+        const a = flashState.current[i], fx = Math.sin(ph.yaw), fz = Math.cos(ph.yaw), tx = cam.x - ph.x, tz = cam.z - ph.z, tl = Math.hypot(tx, tz) || 1;
+        const facing = 0.2 + 0.8 * Math.max(0, (fx * tx + fz * tz) / tl) ** 2;
+        (s.material as THREE.SpriteMaterial).opacity = a * facing; s.visible = a > 0.02; const k = (0.22 + a * 0.4) * (0.6 + 0.4 * facing); s.scale.set(k, k, 1);
+      }
       if (flashState.current[i] > bv) { bv = flashState.current[i]; brightest = i; }
     });
     if (flash.current) {
-      if (brightest >= 0 && bv > 0.05) { const ph = PAPARAZZI[brightest]; flash.current.position.set(ph.x + Math.sin(ph.yaw) * 0.3, ph.y + 0.05, ph.z + Math.cos(ph.yaw) * 0.3); flash.current.intensity = 70 * bv; }
+      if (brightest >= 0 && bv > 0.05) { const ph = PAPARAZZI[brightest]; flash.current.position.set(ph.x + Math.sin(ph.yaw) * 0.3, ph.y + 0.05, ph.z + Math.cos(ph.yaw) * 0.3); flash.current.intensity = 45 * bv; }
       else flash.current.intensity = 0;
     }
     // giroflex

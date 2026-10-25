@@ -20,9 +20,10 @@ export function MapPanel({ s, onClose }: { s: SimState; onClose: () => void }) {
   const { t } = useI18n();
   const p = s.player;
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.code === "KeyM" || e.code === "Escape") { e.preventDefault(); onClose(); } };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // captura: o M/Esc que fecha o mapa não chega ao jogo (senão abriria a pausa ou o mapa de novo)
+    const onKey = (e: KeyboardEvent) => { if (e.code === "KeyM" || e.code === "Escape") { e.preventDefault(); e.stopPropagation(); onClose(); } };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [onClose]);
   usePad(true, (f) => { if (f.tapped(PAD.circle) || f.tapped(PAD.share)) onClose(); });
   const targets = s.mission.step < STEPS.length ? targetsFor(s, STEPS[s.mission.step].id) : [];
@@ -46,7 +47,7 @@ export function MapPanel({ s, onClose }: { s: SimState; onClose: () => void }) {
             return <g key={r.id} className={cn("hz-map-room", `is-${r.access}`, !seen && "is-unseen", here && "is-here")}>
               <rect x={r.rect.x0} y={r.rect.z0} width={r.rect.x1 - r.rect.x0} height={r.rect.z1 - r.rect.z0} />
               {!seen && <rect x={r.rect.x0} y={r.rect.z0} width={r.rect.x1 - r.rect.x0} height={r.rect.z1 - r.rect.z0} fill="url(#hz-hatch)" />}
-              {r.rect.z1 - r.rect.z0 > 2 && <text x={(r.rect.x0 + r.rect.x1) / 2} y={(r.rect.z0 + r.rect.z1) / 2} textAnchor="middle" dominantBaseline="middle">{t(`heist.room.${r.id}`)}</text>}
+              {r.rect.z1 - r.rect.z0 > 2 && <text x={(r.rect.x0 + r.rect.x1) / 2} y={r.id === "servico" ? r.rect.z0 + 1.4 : (r.rect.z0 + r.rect.z1) / 2} textAnchor="middle" dominantBaseline="middle">{t(`heist.room.${r.id}`)}</text>}
             </g>;
           })}
           {mazeKnown && <g className="hz-map-maze">{INNER_WALLS.map((w, i) => <rect key={i} x={w.x0} y={w.z0} width={w.x1 - w.x0} height={w.z1 - w.z0} />)}</g>}

@@ -26,7 +26,9 @@ export function DialoguePanel({ s, rev, onChoose, onLeave }: { s: SimState; rev:
   const pick = (k: number) => { const o = options[k]; if (o && !o.locked) onChoose(o.i); };
   const move = (dir: 1 | -1) => setSel((x) => (x + dir + options.length) % Math.max(1, options.length));
   useEffect(() => {
+    // na fase de captura da janela: a conversa fica com a tecla e o jogo (pausa, andar, interagir) não a vê
     const onKey = (e: KeyboardEvent) => {
+      e.stopPropagation();
       if (e.repeat && !["ArrowUp", "ArrowDown"].includes(e.code)) return;
       if (e.code === "ArrowUp" || e.code === "KeyW") { e.preventDefault(); move(-1); }
       else if (e.code === "ArrowDown" || e.code === "KeyS") { e.preventDefault(); move(1); }
@@ -34,8 +36,8 @@ export function DialoguePanel({ s, rev, onChoose, onLeave }: { s: SimState; rev:
       else if (e.code === "Escape" || e.code === "Backspace") { e.preventDefault(); onLeave(); }
       else if (/^Digit[1-9]$/.test(e.code)) { const k = Number(e.code.slice(5)) - 1; if (k < options.length) { setSel(k); pick(k); } }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   });
   // o ✕ que abriu a conversa ainda está apertado no primeiro quadro: espera soltar antes de valer
   const openedAt = useRef(0);

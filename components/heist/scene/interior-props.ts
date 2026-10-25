@@ -496,7 +496,7 @@ function statue(c: PropsCtx, room: InteriorRoom, f: Foot, id: string) {
   box(c, room, P.marbleWhite, f, 0, 1.0, 0, f.r * 2.05, 0.06, f.r * 2.05);
   const v = id.charCodeAt(id.length - 1) % 2;
   c.batch.add(room, marble, statueGeometry(v), L(f, 0, 1.06, 0, v ? Math.PI * 0.85 : Math.PI * 0.15, 0.95), { cast: true });
-  anchor(c, room, worldOf(f, 0, 3.6, 0.6), "#ffe9cc", 3, 4.5);
+  anchor(c, room, worldOf(f, 0, 3.4, 0.9), "#ffe9cc", 7, 4.5);
 }
 
 /** Pedestal do diamante: coluna de mármore negro, os três anéis de latão da trava (símbolos), cúpula de vidro e almofada. */

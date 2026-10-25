@@ -153,7 +153,7 @@ li.is-current .hz-step-box { border-color: var(--hz-gold); box-shadow: 0 0 6px r
 .hz-map-room rect:first-child { stroke: rgba(255, 255, 255, .28); stroke-width: .12; }
 .hz-map-room.is-street rect:first-child { fill: #1b1a1f; } .hz-map-room.is-public rect:first-child { fill: #3a2c1c; } .hz-map-room.is-staff rect:first-child { fill: #1c2a36; } .hz-map-room.is-private rect:first-child { fill: #3a1a20; }
 .hz-map-room.is-unseen { opacity: .55; } .hz-map-room.is-here rect:first-child { stroke: var(--hz-gold); stroke-width: .25; }
-.hz-map-room text { fill: rgba(244, 239, 230, .78); font: 600 1.05px var(--font-data); letter-spacing: .08px; text-transform: uppercase; }
+.hz-map-room text { fill: rgba(244, 239, 230, .78); font: 600 .82px var(--font-data); letter-spacing: .04px; text-transform: uppercase; }
 .hz-map-maze rect { fill: rgba(244, 239, 230, .5); }
 .hz-map-door.is-open { fill: var(--hz-ok); } .hz-map-door.is-locked { fill: var(--hz-red); } .hz-map-door.is-climb { fill: var(--hz-amber); } .hz-map-door.is-vent { fill: var(--hz-blue); }
 .hz-map-target path { fill: none; stroke: var(--hz-gold); stroke-width: .25; } .hz-map-target.is-main path { fill: var(--hz-gold); }

@@ -17,7 +17,7 @@ import type { RoomId } from "@/lib/heist/types";
 import type { SceneView } from "@/lib/heist/view";
 import { sceneLocale } from "./interior-copy";
 import { buildInterior, disposeInterior, prepareInterior, type InteriorBuild } from "./interior-build";
-import { LightPool, flickerOf, roomsInView, updateAnimated, updateBeacons, updateDoors, updateHalos, updateVision } from "./interior-fx";
+import { KeyLight, LightPool, flickerOf, roomsInView, updateAnimated, updateBeacons, updateDoors, updateHalos, updateVision } from "./interior-fx";
 import type { LightAnchor } from "./interior-props";
 import { roomAtPoint } from "./interior-shell";
 import type { Quality } from "./interior-tex";
@@ -44,20 +44,23 @@ export function HeistInterior({ view, quality }: { view: React.MutableRefObject<
   }, [quality, locale]);
   const prep = useMemo(() => prepareInterior(b, gl), [b, gl]);
   const pool = useMemo(() => new LightPool(quality === "high" ? 10 : 5), [quality]);
+  // a única luz interna com sombra (pessoas, colunas e mesas assentam no piso); só no "high"
+  const key = useMemo(() => (quality === "high" ? new KeyLight(1024) : null), [quality]);
   useEffect(() => () => { disposeInterior(b); }, [b]);
   useEffect(() => () => { prep.mirror?.dispose(); }, [prep]);
-  const st = useRef({ seen: new Set<RoomId>(), lit: new Set<RoomId>(), focus: new THREE.Vector3(), first: true });
+  const st = useRef({ seen: new Set<RoomId>(), lit: new Set<RoomId>(), core: new Set<RoomId>(), focus: new THREE.Vector3(), first: true });
   const hide = useMemo(() => [...b.shadows, b.vision.group], [b]);
   useFrame((state, dt) => {
     const v = view.current, t = state.clock.elapsedTime, cam = state.camera, s = st.current;
-    roomsInView(v, roomAtPoint(cam.position.x, cam.position.z), s.seen, s.lit);
+    roomsInView(v, roomAtPoint(cam.position.x, cam.position.z), s.seen, s.lit, s.core);
     for (const [room, g] of b.rooms) g.visible = s.seen.has(room);
     for (const [o, [a, c]] of b.doorRooms) o.visible = s.seen.has(a) || s.seen.has(c);
     updateDoors(b.doors, v.doors, dt, s.first);
     // as luzes seguem um ponto entre a câmera e a jogadora (o que aparece na tela e o que está em volta dela)
     s.focus.set(cam.position.x * 0.6 + v.player.x * 0.4, cam.position.y * 0.6 + (v.player.y + 1.4) * 0.4, cam.position.z * 0.6 + v.player.z * 0.4);
     if (Math.hypot(cam.position.x - v.player.x, cam.position.z - v.player.z) > 12) s.focus.copy(cam.position);
-    pool.update(b.anchors, s.lit, s.focus, dt, (a) => gainOf(a, v, t));
+    pool.update(b.anchors, s.lit, s.core, s.focus, dt, (a) => gainOf(a, v, t));
+    key?.update(v.playerRoom, v.player.x, v.player.z, dt, (v.playerRoom === "cofre" && !v.lasersPowered ? 0.12 : 1) * (v.alarm ? 0.85 : 1));
     updateBeacons(b.beacons, prep.domes, v, s.seen, t);
     updateVision(b.vision, v, t, dt);
     updateHalos(b.halos, t);
@@ -70,6 +73,7 @@ export function HeistInterior({ view, quality }: { view: React.MutableRefObject<
     <>
       <primitive object={b.root} />
       <primitive object={pool.group} />
+      {key && <><primitive object={key.light} /><primitive object={key.light.target} /></>}
     </>
   );
 }

@@ -16,7 +16,7 @@ import { baseProps, CIVILIANS, floorY, SIDEWALK_Y, ROAD_Y, STAIRS, DOCK_RAMP } f
 import type { Prop } from "@/lib/heist/types";
 import { boxGeo, inst, lathe, merge, place, ropeGeo, tubeThrough, worldUV } from "./exterior-geometry";
 import { exteriorMaterials, type ExteriorMaterials } from "./exterior-materials";
-import { fanSignTex, leafTex, signTex, SIGNAGE, prng, type Quality } from "./exterior-textures";
+import { bloomTex, fanSignTex, leafTex, signTex, SIGNAGE, prng, type Quality } from "./exterior-textures";
 import { Instanced } from "./exterior-facade";
 
 export const X_FAR = 90;                           // até onde a avenida segue (some na névoa)
@@ -271,24 +271,33 @@ function Florals({ m, q }: { m: ExteriorMaterials; q: Quality }) {
     const palette = ["#f7efe9", "#f3d9d4", "#ead0c8", "#fbf6ef", "#e9b9b6", "#d8a7a0"].map((c) => new THREE.Color(c));
     for (const [x, z] of [[-3.25, 30.45], [3.25, 30.45]]) {
       const y = floorY({ x, z }) + 0.86;
-      for (let k = 0; k < (q === "high" ? 160 : 80); k++) {
-        const u = r() * Math.PI * 2, v = Math.acos(2 * r() * 0.9 - 0.9), rr = 0.55 + r() * 0.35;
-        const p = new THREE.Vector3(x + Math.sin(v) * Math.cos(u) * rr, y + 0.35 + Math.cos(v) * rr * 0.85, z + Math.sin(v) * Math.sin(u) * rr);
-        blooms.push(new THREE.Matrix4().compose(p, new THREE.Quaternion().setFromEuler(new THREE.Euler(r() * 6, r() * 6, r() * 6)), new THREE.Vector3(1, 0.75, 1).multiplyScalar(0.07 + r() * 0.06)));
+      // cúpula de flores: cabeças de 15–26 cm viradas para fora (com folga aleatória), mais densas na casca
+      for (let k = 0; k < (q === "high" ? 150 : 75); k++) {
+        const u = r() * Math.PI * 2, v = Math.acos(2 * r() * 0.92 - 0.92), rr = 0.5 + Math.sqrt(r()) * 0.38;
+        const dir = new THREE.Vector3(Math.sin(v) * Math.cos(u), Math.cos(v) * 0.85, Math.sin(v) * Math.sin(u));
+        const p = new THREE.Vector3(x, y + 0.35, z).addScaledVector(dir, rr);
+        const face = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().add(new THREE.Vector3((r() - 0.5) * 0.8, (r() - 0.3) * 0.6, (r() - 0.5) * 0.8)).normalize());
+        blooms.push(new THREE.Matrix4().compose(p, face, new THREE.Vector3(1, 1, 1).multiplyScalar(0.15 + r() * 0.11)));
         colors.push(palette[Math.floor(r() * palette.length)]);
       }
-      for (let k = 0; k < 40; k++) { const u = r() * Math.PI * 2; leaves.push(new THREE.Matrix4().compose(new THREE.Vector3(x + Math.cos(u) * (0.55 + r() * 0.4), y + 0.1 + r() * 0.7, z + Math.sin(u) * (0.55 + r() * 0.4)), new THREE.Quaternion().setFromEuler(new THREE.Euler(r() * 6, r() * 6, r() * 6)), new THREE.Vector3(0.5, 0.5, 0.5))); }
+      for (let k = 0; k < (q === "high" ? 90 : 45); k++) { const u = r() * Math.PI * 2, d = 0.45 + r() * 0.5; leaves.push(new THREE.Matrix4().compose(new THREE.Vector3(x + Math.cos(u) * d, y + 0.05 + r() * 0.85, z + Math.sin(u) * d), new THREE.Quaternion().setFromEuler(new THREE.Euler(r() * 6, r() * 6, r() * 6)), new THREE.Vector3(0.42, 0.42, 0.42))); }
     }
     const urns = [[-3.25, 30.45], [3.25, 30.45]].map(([x, z]) => inst(x, floorY({ x, z }), z));
     return { urn, urns, blooms, colors, leaves };
   }, [q]);
-  const bloomGeo = useMemo(() => new THREE.IcosahedronGeometry(1, 1), []);
+  // cabeça de flor: o disco de pétalas de frente (+z) e dois cartões em cruz atrás dele, para ter volume de lado
+  const bloomGeo = useMemo(() => {
+    const front = new THREE.PlaneGeometry(1, 1);
+    const a = new THREE.PlaneGeometry(0.8, 0.8); a.rotateY(Math.PI / 2); a.translate(0, 0, -0.18);
+    const b = new THREE.PlaneGeometry(0.8, 0.8); b.rotateX(Math.PI / 2); b.translate(0, 0, -0.18);
+    return merge([front, a, b]);
+  }, []);
   const bloomMesh = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0 });
+    const mat = new THREE.MeshStandardMaterial({ map: bloomTex(q), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.7, metalness: 0 });
     const mesh = new THREE.InstancedMesh(bloomGeo, mat, data.blooms.length);
     data.blooms.forEach((x, i) => { mesh.setMatrixAt(i, x); mesh.setColorAt(i, data.colors[i]); });
     mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; mesh.castShadow = true; return mesh;
-  }, [data, bloomGeo]);
+  }, [data, bloomGeo, q]);
   const leafMat = useMemo(() => new THREE.MeshStandardMaterial({ map: leafTex(q, "dark"), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.8 }), [q]);
   const leafGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
   return (

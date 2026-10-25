@@ -95,7 +95,8 @@ export function beatFor(s: SimState, id: MissionStep | "intro", via: string): Be
       ],
       lines: [L(0.4, "heist.beat.intro1"), L(3.8, "heist.beat.intro2")],
     };
-    case "arrive": return { shots: [{ from: [5.5, 0.6, 35.5], to: [4.2, 0.4, 34.6], look: [0, -0.4, 31.6], dur: 3.6, fov: 46 }], lines: [L(0.3, "heist.beat.arrive")] };
+    // por cima do ombro dela, da calçada para a escadaria e as portas (o tapete e a fachada no quadro)
+    case "arrive": return { shots: [{ from: P(1.6, 1.5, 3.4), to: P(0.9, 1.25, 2.3), look: [0, 1.4, 27], lookTo: [0, 2.6, 25.2], dur: 3.6, fov: 46 }], lines: [L(0.3, "heist.beat.arrive")] };
     case "credential": return { shots: [{ from: P(1.1, 1.75, 1.1), to: P(0.8, 1.6, 0.9), look: P(0, 1.2, 0), dur: 2.8, fov: 38 }], lines: [L(0.2, `heist.beat.credential.${via}`)] };
     case "getIn":
       if (via === "salao" || via === "vestibulo") return { shots: [{ from: [-9.5, 6.8, 12.5], to: [-6, 6, 12.8], look: [0, 2.6, 4], lookTo: [2, 2.2, 0], dur: 4.4, fov: 52 }], lines: [L(0.4, "heist.beat.hall")] };

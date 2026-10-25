@@ -340,6 +340,35 @@ export function leafTex(q: Quality, hue: "green" | "dark" = "green"): THREE.Text
 
 /* ---------- luz ---------- */
 /** Mancha de luz radial (poças de luz dos postes, halo de lâmpadas, flash). */
+/** Cabeça de flor para cartões cruzados (arranjos da escadaria): quatro camadas de pétalas, do contorno solto ao miolo
+ * fechado, com a base de cada pétala na sombra e a borda clara; em cinza, para a cor de cada instância tingir. Alfa recortado. */
+export function bloomTex(q: Quality): THREE.Texture {
+  return memo(`bloom:${q}`, () => {
+    const S = q === "high" ? 256 : 128, [c, g] = canvas(S, S), r = prng(61), cx = S / 2;
+    for (let layer = 0; layer < 4; layer++) {
+      const n = 9 - layer, R = S * (0.47 - layer * 0.095), w = R * (0.6 - layer * 0.04), base = 160 + layer * 24;
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2 + layer * 0.7 + (r() - 0.5) * 0.45, len = R * (0.88 + r() * 0.12);
+        g.save(); g.translate(cx, cx); g.rotate(a);
+        const grd = g.createLinearGradient(0, 0, len, 0), lo = Math.round(base * 0.5), mid = base, hi = Math.min(255, base + 45);
+        grd.addColorStop(0, `rgb(${lo},${lo},${lo})`); grd.addColorStop(0.55, `rgb(${mid},${mid},${mid})`); grd.addColorStop(1, `rgb(${hi},${hi},${hi})`);
+        g.fillStyle = grd;
+        g.beginPath(); g.moveTo(0, 0);
+        g.bezierCurveTo(len * 0.3, -w, len * 0.92, -w * 0.85, len, (r() - 0.5) * w * 0.2);
+        g.bezierCurveTo(len * 0.92, w * 0.85, len * 0.3, w, 0, 0);
+        g.fill();
+        g.strokeStyle = "rgba(40,40,40,0.22)"; g.lineWidth = Math.max(1, S / 170); g.stroke();
+        g.restore();
+      }
+    }
+    const core = g.createRadialGradient(cx, cx, 0, cx, cx, S * 0.09);
+    core.addColorStop(0, "rgb(96,90,84)"); core.addColorStop(1, "rgba(150,144,138,0)");
+    g.fillStyle = core; g.beginPath(); g.arc(cx, cx, S * 0.09, 0, Math.PI * 2); g.fill();
+    const t = texFrom(c, true); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true;
+    return t;
+  });
+}
+
 export function glowTex(kind: "soft" | "star" = "soft"): THREE.Texture {
   return memo(`glow:${kind}`, () => {
     const S = 128, [c, g] = canvas(S, S);
