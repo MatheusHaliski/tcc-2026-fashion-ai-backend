@@ -120,7 +120,7 @@ export function corinthianCapital(r: number, h = 1.1): THREE.BufferGeometry {
     const n = 8, a = (k / n) * Math.PI * 2 + (row ? Math.PI / n : 0), lh = row ? h * 0.6 : h * 0.38, base = row ? h * 0.12 : 0.02, w = r * (row ? 0.62 : 0.72);
     const g = new THREE.PlaneGeometry(w, lh, 3, 6); const p = g.getAttribute("position");
     for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), y = p.getY(i) + lh / 2, t = y / lh;
+      const x = p.getX(i), y = Math.max(0, p.getY(i) + lh / 2), t = Math.min(1, y / lh);     // sem t < 0 (pow de negativo = NaN)
       const out = 0.04 + 0.22 * Math.pow(t, 2.2) * r * 3.2 * 0.25, lobe = 0.03 * Math.sin((x / w) * Math.PI * 6) * t;
       const narrow = 1 - 0.55 * Math.pow(t, 3);
       p.setXYZ(i, x * narrow, y + base - (t > 0.82 ? (t - 0.82) * lh * 0.9 : 0), r * (1 + (row ? 0.14 : 0.05)) + out + lobe);

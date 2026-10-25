@@ -4144,6 +4144,13 @@ html[data-reduce-motion="true"] .fashion-motion-control, html[data-reduce-motion
 .afterparty-card:disabled { opacity: .6; }
 .afterparty-card small { font-size: 12px; }
 .afterparty-deck-selection { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+
+/* FLAIR Metamorfose — MET Gala Heist v2: escolha do look e o jogo em tela cheia */
+.gala-heist-stage{position:fixed;inset:0;z-index:80;background:#000}
+.gala-heist-decks{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.gala-heist-deck{display:flex;gap:8px;align-items:center;cursor:pointer}.gala-heist-deck.is-on{outline:2px solid var(--thread);outline-offset:-2px}
+.gala-heist-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin:8px 0 0;padding:0;list-style:none}
+.gala-heist-cards li{display:grid;gap:2px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);font-size:.85rem}.gala-heist-cards li.is-out{opacity:.55}
 .afterparty-map { width: 100%; height: 100%; touch-action: none; }
 /* MET Gala Heist: o que o deck muda no avatar e no salão; sinal + / − / · em texto (não só cor) */
 .heist-mods { display: grid; gap: 10px; margin-bottom: 12px; }

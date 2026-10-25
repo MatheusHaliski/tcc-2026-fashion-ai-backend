@@ -3,11 +3,11 @@
  * cansaço), dano nos seguranças (vida implícita pela sala), queda com a chave no chão, ruído, alerta pelo rádio e o
  * quanto um segurança reconhece a jogadora (distância, disfarce, caminhada discreta, multidão, capuz, arma à mostra).
  */
-import type { Guard, SimState, Vec } from "./types";
-import { CELL, GW, X0, Z0, cellOf, inGrid, propsNear, segBox, segCircle } from "./world";
-import { floorY } from "./level";
+import type { DetectReason, Guard, SimState, Vec } from "./types";
+import { CELL, GW, X0, Z0, cellOf, inGrid, propsNear, segBox, segCircle, sightClear, wallBetween } from "./world";
+import { ROOM_LIGHT, floorY } from "./level";
 import { MAG_SIZE } from "./cards";
-import { TIRED_AT, accessOf, emit, line, roomOfPos, type SimCtx } from "./state";
+import { DIFFICULTY, TIRED_AT, accessOf, emit, line, roomOfPos, simCtx, type SimCtx } from "./state";
 import { angDiff, dist, rand, yawOf } from "./math";
 
 export interface V3 { x: number; y: number; z: number }
@@ -63,10 +63,11 @@ export function castShot(s: SimState, ctx: SimCtx, o: Vec, oy: number, yaw: numb
 }
 
 /** Dano na jogadora: o colete segura metade até acabar; cansada (vida baixa) apanha 30 % a mais. */
-export function damagePlayer(s: SimState, amount: number, from: Vec) {
+export function damagePlayer(s: SimState, amount: number, from: Vec, by: string | null = null) {
   const p = s.player;
   if (p.mode === "DOWNED" || s.phase === "CUTSCENE" || s.phase === "WON") return;
-  let dmg = amount * (p.hp <= TIRED_AT ? 1.3 : 1);
+  p.lastDamageBy = by;
+  let dmg = amount * (p.hp <= TIRED_AT ? 1.3 : 1) * DIFFICULTY[s.difficulty].dmg;
   if (p.armor > 0) { const absorbed = Math.min(p.armor, dmg * 0.5); p.armor -= absorbed; dmg -= absorbed; }
   p.hp = Math.max(0, p.hp - dmg); p.lastHitAt = s.time; p.staggerUntil = s.time + 0.22; s.stats.damage += dmg;
   emit(s, { t: "hit", damage: Math.round(dmg), on: "player", pos: { ...from } });
@@ -93,35 +94,58 @@ export function downGuard(s: SimState, g: Guard, killed: boolean) {
 export function damageGuard(s: SimState, g: Guard, amount: number, head: boolean, from: Vec) {
   g.hp -= amount; g.hitAt = s.time;
   emit(s, { t: "hit", damage: Math.round(amount), on: g.id, head, pos: { ...g.pos } });
-  if (g.hp <= 0) { downGuard(s, g, true); return; }
+  if (g.hp <= 0) { downGuard(s, g, true); witness(s, g.pos, "kill"); return; }
   alertGuard(s, g, from, true);
 }
 
-/** O segurança reconhece a jogadora: avisa pelo rádio quem está na mesma sala ou perto. */
-export function alertGuard(s: SimState, g: Guard, at: Vec, radio: boolean) {
+/** Sobe o alerta do prédio (0–3): mais gente desconfiada, rádio falando, chefes chamando reforço. */
+export function raiseAlert(s: SimState, why: string) {
+  if (s.alertLevel < 3) { s.alertLevel++; emit(s, { t: "toast", key: `heist.toast.alert${s.alertLevel}`, vars: { why } }); }
+  s.alertAt = s.time;
+}
+
+/** Reforço: o chefe ou a polícia chama o segurança de reserva mais perto (entra pela porta mais próxima da sala). */
+export function callReserves(s: SimState, at: Vec) {
+  let best: Guard | null = null;
+  for (const r of s.guards) if (r.reserve && !r.active && r.state !== "DOWN" && (!best || dist(r.pos, at) < dist(best.pos, at))) best = r;
+  if (!best) return;
+  best.active = true; best.state = "SEARCH"; best.stateT = s.time; best.lastKnown = { ...at }; best.suspicion = 0.8;
+  line(s, best.id, "heist.bark.reinforce", 0);
+}
+
+/** O segurança reconhece a jogadora: avisa pelo rádio quem está na mesma sala ou perto (o chefe avisa o prédio todo). */
+export function alertGuard(s: SimState, g: Guard, at: Vec, radio: boolean, reason: DetectReason = "seen") {
   const was = g.state;
   g.suspicion = 1; g.lastKnown = { ...at }; g.lastSeenAt = s.time;
   if (was !== "ALERT") {
-    g.state = "ALERT"; g.stateT = s.time; g.aimStart = 0; g.nextShotAt = s.time + 0.5;
+    g.state = "ALERT"; g.stateT = s.time; g.aimStart = 0; g.nextShotAt = s.time + (g.role === "heavy" ? 0.35 : 0.5); g.reason = reason;
     s.stats.spotted++;
-    line(s, g.id, s.lockdown ? "heist.bark.diamond" : "heist.bark.spotted", 3);
+    line(s, g.id, s.lockdown ? "heist.bark.diamond" : g.role === "chief" ? "heist.bark.chief" : g.role === "police" ? "heist.bark.police" : "heist.bark.spotted", 3);
+    emit(s, { t: "detected", by: g.id, reason });
+    if (!s.lockdown) raiseAlert(s, g.id);
+    if (g.role === "chief" || g.role === "police") callReserves(s, at);
   }
   if (!radio) return;
-  const room = roomOfPos(g.pos);
+  const room = roomOfPos(g.pos), wide = g.role === "chief";
   for (const o of s.guards) {
-    if (o === g || !o.active || o.state === "DOWN" || o.state === "ALERT") continue;
-    if (roomOfPos(o.pos) === room || dist(o.pos, g.pos) < 14) { o.suspicion = 1; o.state = "ALERT"; o.stateT = s.time; o.lastKnown = { ...at }; o.aimStart = 0; o.nextShotAt = s.time + 0.8; }
+    if (o === g || !o.active || o.state === "DOWN" || o.state === "GRABBED" || o.state === "ALERT") continue;
+    if (roomOfPos(o.pos) === room || dist(o.pos, g.pos) < 14) { o.suspicion = 1; o.state = "ALERT"; o.stateT = s.time; o.lastKnown = { ...at }; o.aimStart = 0; o.nextShotAt = s.time + 0.8; o.reason = "seen"; }
+    else if (wide && o.state !== "SEARCH") { o.state = "SEARCH"; o.stateT = s.time; o.lastKnown = { ...at }; o.suspicion = Math.max(o.suspicion, 0.6); }
   }
 }
 
-/** Ruído (tiro, garrafa, salto correndo): quem ouve vai ver; tiro perto põe a sala em alerta e os civis em pânico. */
+/** Ruído (tiro, garrafa, salto correndo): quem ouve vai ver; tiro perto põe a sala em alerta e os civis em pânico.
+ * Parede no caminho abafa (o raio cai para 45 %, MH-06-04). Posto crítico olha, mas não sai do lugar (MH-06-16). */
 export function makeNoise(s: SimState, at: Vec, r: number, kind: "shot" | "bottle" | "step" | "alarm") {
+  const w = simCtx().world;
   for (const g of s.guards) {
-    if (!g.active || g.state === "DOWN" || g.state === "ALERT") continue;
-    const d = dist(g.pos, at);
+    if (!g.active || g.state === "DOWN" || g.state === "GRABBED" || g.state === "ALERT") continue;
+    let d = dist(g.pos, at);
     if (d > r) continue;
-    if (kind === "shot" && d < r * 0.6) { alertGuard(s, g, s.player.pos, false); continue; }
-    g.state = "SUSPICIOUS"; g.stateT = s.time; g.lastKnown = { ...at }; g.suspicion = Math.max(g.suspicion, kind === "step" ? 0.3 : 0.55); g.goal = null;
+    if (kind !== "alarm" && wallBetween(w, g.pos, at, s.doors)) d /= 0.45;
+    if (d > r) continue;
+    if (kind === "shot" && d < r * 0.6) { alertGuard(s, g, s.player.pos, false, "noise"); continue; }
+    g.state = "SUSPICIOUS"; g.stateT = s.time; g.lastKnown = { ...at }; g.suspicion = Math.max(g.suspicion, kind === "step" ? 0.3 : 0.55); g.goal = null; g.reason = "noise";
     line(s, g.id, kind === "bottle" ? "heist.bark.noise" : "heist.bark.what", 5);
   }
   if (kind === "shot" || kind === "alarm") for (const c of s.civs) {
@@ -134,32 +158,61 @@ export function crowdAround(s: SimState, p: Vec): number {
   let n = 0; for (const c of s.civs) if (Math.abs(c.pos.x - p.x) < 2.2 && Math.abs(c.pos.z - p.z) < 2.2 && dist(c.pos, p) < 2.2) n++; return n;
 }
 
+/** Testemunha (MH-05-07): quem vê um nocaute, um tiro ou um furto falhado grita, foge e chama a segurança; e lembra dela. */
+export function witness(s: SimState, at: Vec, kind: "takedown" | "kill" | "theft") {
+  const w = simCtx().world;
+  let told = false;
+  for (const c of s.civs) {
+    if (c.panicUntil > s.time || c.role === "vendor") continue;
+    const d = dist(c.pos, at);
+    if (d > 12 || Math.abs(angDiff(c.yaw, yawOf({ x: at.x - c.pos.x, z: at.z - c.pos.z }))) > 1.3) continue;
+    if (!sightClear(w, c.pos, at, { doors: s.doors })) continue;
+    c.knowsPlayer = s.time; c.reactKind = "point"; c.reactUntil = s.time + 3;
+    if (kind !== "theft") { c.panicUntil = s.time + 8; c.panicFrom = { ...at }; }
+    if (!told) { line(s, c.id, `heist.civ.witness.${kind}`, 6); told = true; }
+  }
+  if (!told) return;
+  // pedido de ajuda: o segurança mais perto vem ver
+  let best: Guard | null = null, bd = 18;
+  for (const g of s.guards) { if (!g.active || g.state === "DOWN" || g.state === "GRABBED" || g.state === "ALERT") continue; const d = dist(g.pos, at); if (d < bd) { bd = d; best = g; } }
+  if (best) { best.state = "SUSPICIOUS"; best.stateT = s.time; best.lastKnown = { ...at }; best.suspicion = Math.max(best.suspicion, 0.75); best.reason = kind === "theft" ? "theft" : "body"; }
+}
+
 /**
  * Quanto o segurança reconhece por segundo vendo a jogadora a `d` metros. Perto (≤ 2,2 m, no campo de visão) é rápido
  * mesmo disfarçada — chegar perto de segurança é ser pega; de longe, o disfarce certo para a sala, a caminhada discreta,
  * a multidão e o capuz seguram. Em sala privada (Sala das Joias, segurança), qualquer um é intrusa. Arma à mostra ou
  * tiro recente: reconhecimento imediato.
  */
-export function recognitionRate(s: SimState, g: Guard, d: number): number {
+export function recognition(s: SimState, g: Guard, d: number): { rate: number; reason: DetectReason } {
   const p = s.player;
-  if (s.lockdown || p.inv.diamond) return 99;
+  if (s.lockdown || p.inv.diamond) return { rate: 99, reason: "alarm" };
   const room = p.lastRoom, access = accessOf(room);
-  let base = d <= 2.2 ? 2.4 : d <= 4 ? 0.35 : d <= 8 ? 0.13 : 0.05;
-  let k = 1;
-  if (access === "private") k *= 5;
-  else if (access === "staff") k *= p.disguise === "staff" ? 0.4 : 2.6;
-  else if (access === "public") k *= p.disguise === "casual" ? 1.7 : p.disguise === "staff" ? 0.6 : 1;
+  const base = d <= 2.2 ? 2.4 : d <= 4 ? 0.35 : d <= 8 ? 0.13 : 0.05;
+  const RANK: DetectReason[] = ["weapon", "changing", "close", "private", "restricted", "casual", "running", "crouching", "seen"];
+  let k = 1, reason: DetectReason = d <= 2.2 ? "close" : "seen";
+  const why = (m: number, r: DetectReason) => { k *= m; if (m > 1 && RANK.indexOf(r) < RANK.indexOf(reason)) reason = r; };
+  if (access === "private") why(5, "private");
+  else if (access === "staff") why(p.disguise === "staff" ? 0.4 : 2.6, "restricted");
+  else if (access === "public") why(p.disguise === "casual" ? 1.7 : p.disguise === "staff" ? 0.6 : 1, "casual");
   else k *= p.disguise === "casual" ? 1 : 0.8;
-  if (p.aiming || s.time - p.lastShotAt < 3 || p.action?.kind === "melee" || p.action?.kind === "takedown") k *= 6;
-  if (p.speed > 3 && access !== "street") k *= 1.8;
-  if (p.crouch && (access === "public" || access === "street")) k *= 1.5;
+  if (p.aiming || s.time - p.lastShotAt < 3 || p.action?.kind === "melee" || p.action?.kind === "takedown") why(6, "weapon");
+  if (p.speed > 3 && access !== "street") why(1.8, "running");
+  if (p.crouch && (access === "public" || access === "street")) why(1.5, "crouching");
+  if (p.action?.kind === "change") why(4, "changing");
   if (p.discreet) k *= 0.5;
   if (p.hood) k *= 0.7;
   if (p.speed < 2.2 && crowdAround(s, p.pos) >= 2) k *= 0.35;
   if (s.time < p.slowUntil) k *= 0.5;
+  if ((s.lineAt.drinkUntil ?? 0) > s.time && room === "lounge") k *= 0.7;           // drinque na mão: mais uma no bar
+  // luz da sala (a Sala das Joias fica na penumbra com o quadro de luz cortado) e o alerta do prédio
+  const light = room === "cofre" && s.fusesCut ? 0.35 : ROOM_LIGHT[room] ?? 1;
+  if (d > 2.2) k *= light;
+  k *= DIFFICULTY[s.difficulty].rec * (1 + 0.2 * s.alertLevel);
   const rate = base * k;
-  return d <= 2.2 ? Math.max(rate, 0.9) : rate;
+  return { rate: d <= 2.2 ? Math.max(rate, 0.9) : rate, reason };
 }
+export const recognitionRate = (s: SimState, g: Guard, d: number) => recognition(s, g, d).rate;
 
 /** O segurança vê a jogadora? Cone de 110° até 16 m (em alerta, 22 m e 160°), sente quem encosta (1,3 m). */
 export function guardSees(s: SimState, ctx: SimCtx, g: Guard, sightClear: (a: Vec, b: Vec, crouch: boolean) => boolean): boolean {

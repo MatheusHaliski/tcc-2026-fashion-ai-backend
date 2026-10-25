@@ -3,14 +3,15 @@
  * vestida (peças e disfarce), checkpoints e falas. O estado é dado simples: o checkpoint é um structuredClone.
  */
 import type { Look3dPiece } from "@/components/three/common";
-import type { Civilian, DoorDef, DoorId, Disguise, Guard, HeistCard, HeistEvent, RoomId, SimState, Vec } from "./types";
+import type { CardTier, ChallengeId, Civilian, Difficulty, DoorDef, DoorId, Disguise, Guard, HeistCard, HeistEvent, Jewel, JewelKind, Persona, RoomId, SimState, Vec } from "./types";
 import { buildNav, type NavGrid } from "./nav";
 import { buildWorld, roomAt, type World } from "./world";
 import { CHECKPOINTS, CIVILIANS, DOORS, GUARDS, PLAYER_SPAWN, PLAYER_SPAWN_YAW, ROOMS, ROOM_TIER, VENDOR_OFFERS, floorY } from "./level";
 import { charges, guardHp, pieceOf } from "./cards";
+import { mulberry } from "./math";
 import { PLAYER_ARRIVAL, WAITER_UNIFORM } from "./outfits";
 
-export const SIM_VERSION = 1;
+export const SIM_VERSION = 2;
 export const PLAYER_R = 0.34, GUARD_R = 0.36, CIV_R = 0.3;
 export const MAX_HP = 100;
 /** Vida baixa: abaixo disto a barra fica vermelha e a jogadora cansa (anda e luta pior, apanha mais). */
@@ -23,6 +24,15 @@ export function simCtx(): SimCtx {
   if (!ctxCache) { const world = buildWorld(); ctxCache = { world, staffNav: buildNav(world, "staff"), guestNav: buildNav(world, "guest") }; }
   return ctxCache;
 }
+
+/** Dificuldade (MH-13-04): reconhecimento, dano e pontaria dos seguranças, preço do revendedor e recuperação de vida. */
+export const DIFFICULTY: Record<Difficulty, { rec: number; dmg: number; acc: number; price: number; regen: number }> = {
+  facil: { rec: 0.6, dmg: 0.6, acc: -0.15, price: 0.8, regen: 50 },
+  normal: { rec: 1, dmg: 1, acc: 0, price: 1, regen: 0 },
+  dificil: { rec: 1.3, dmg: 1.25, acc: 0.08, price: 1.1, regen: 0 },
+  lenda: { rec: 1.6, dmg: 1.5, acc: 0.12, price: 1.25, regen: 0 },
+};
+export interface SimOptions { difficulty?: Difficulty; challenge?: ChallengeId | null; slowLasers?: boolean; regen?: boolean; beats?: boolean }
 
 const ACCESS = Object.fromEntries(ROOMS.map((r) => [r.id, r.access])) as Record<RoomId, (typeof ROOMS)[number]["access"]>;
 export const accessOf = (r: RoomId) => ACCESS[r];
@@ -37,6 +47,8 @@ function newGuard(spawn: (typeof GUARDS)[number]): Guard {
     waitUntil: 0, post: spawn.post ? { pos: { ...spawn.post.pos }, yaw: spawn.post.yaw } : null, path: [], pathIdx: 0, goal: null, replanAt: 0,
     suspicion: 0, sees: false, lastKnown: null, lastSeenAt: -99, aimStart: 0, nextShotAt: 0, shots: 0, hitAt: -1, downAt: -1, killed: false,
     carries: spawn.carries ?? null, active: !spawn.lockdown, blocker: !!spawn.blocker, barkAt: 0, anim: spawn.post ? "guard" : "walk", animAt: 0,
+    role: spawn.role ?? (spawn.look === "guardHeavy" ? "heavy" : spawn.look === "police" ? "police" : "guard"), critical: !!spawn.critical, reserve: !!spawn.reserve,
+    reason: null, flank: null, cover: null, searched: [],
   };
 }
 
@@ -46,10 +58,38 @@ function newCiv(c: (typeof CIVILIANS)[number], k: number): Civilian {
     vendor: c.vendor ?? null, home: { ...c.pos }, homeYaw: c.yaw, wander: c.wander?.map((p) => ({ ...p })) ?? [], wanderIdx: 0, path: [], pathIdx: 0, waitUntil: 2 + (k % 7),
     panicUntil: 0, panicFrom: null, reactUntil: 0, reactKind: null, barkAt: 0, seed: 1013 * (k + 1), queueIdx: c.role === "queue" ? k : -1,
     hasInvite: c.role === "queue", animAt: 0,
+    persona: "dreamy", jewel: null, knowsPlayer: -1, pointedAt: -99, nearSince: -1, hopAt: 40 + (k % 9) * 7, talkId: c.talk ?? null,
   };
 }
 
-export function newSim(cards: HeistCard[], seed = 20261025): SimState {
+/** Joias dos convidados (sorteadas pela semente: cada partida tem alvos diferentes, MH-12-06). */
+const JEWELS: { kind: JewelKind; tier: CardTier; min: number; max: number }[] = [
+  { kind: "anel", tier: "BRONZE", min: 600, max: 1100 }, { kind: "pulseira", tier: "BRONZE", min: 700, max: 1200 }, { kind: "colar", tier: "PRATA", min: 1500, max: 2800 },
+  { kind: "brincos", tier: "PRATA", min: 1600, max: 3000 }, { kind: "relogio", tier: "OURO", min: 4000, max: 6500 }, { kind: "broche", tier: "OURO", min: 3800, max: 6000 },
+  { kind: "tiara", tier: "OURO", min: 5200, max: 7000 },
+];
+const PERSONAS: Persona[] = ["chatty", "wary", "dreamy", "critic", "dreamy", "chatty", "wary", "dreamy"];
+
+function vary(s: SimState) {
+  let rng = s.seed ^ 0x5bd1e995;
+  const rnd = () => { const [v, n] = mulberry(rng); rng = n; return v; };
+  const pickIdx = (n: number) => Math.floor(rnd() * n);
+  // jeito de cada convidado
+  for (const c of s.civs) if (c.role === "guest" || c.role === "queue" || c.role === "dancer" || c.role === "celebrity") c.persona = PERSONAS[pickIdx(PERSONAS.length)];
+  // joias: dez convidados sorteados + os brincos de diamante da atriz (os mais caros e mais vigiados)
+  const pool = s.civs.filter((c) => c.role === "guest" || c.role === "queue" || c.role === "dancer");
+  for (let k = 0; k < 10 && pool.length; k++) {
+    const c = pool.splice(pickIdx(pool.length), 1)[0], j = JEWELS[pickIdx(JEWELS.length)];
+    c.jewel = { id: `jw-${c.id}`, kind: j.kind, tier: j.tier, value: Math.round((j.min + rnd() * (j.max - j.min)) / 50) * 50, taken: false, missAt: 0, noticed: false } satisfies Jewel;
+  }
+  const lina = s.civs.find((c) => c.role === "celebrity");
+  if (lina) lina.jewel = { id: "jw-lina", kind: "brincos", tier: "ESPECIAL", value: 11000, taken: false, missAt: 0, noticed: false };
+  // rondas começam em pontos diferentes e com pausas diferentes; convidados mudam um pouco de lugar
+  for (const g of s.guards) if (g.route.length) { g.routeIdx = pickIdx(g.route.length); g.waitUntil = rnd() * 3; }
+  for (const c of s.civs) if (c.role === "guest" && !c.wander.length) { c.pos.x += (rnd() - 0.5) * 0.25; c.pos.z += (rnd() - 0.5) * 0.25; c.home = { ...c.pos }; c.hopAt = 30 + rnd() * 60; }
+}
+
+export function newSim(cards: HeistCard[], seed = 20261025, opts: SimOptions = {}): SimState {
   const queue = CIVILIANS.filter((c) => c.role === "queue");
   const civs = CIVILIANS.map((c, k) => { const v = newCiv(c, k); if (c.role === "queue") v.queueIdx = queue.indexOf(c); return v; });
   const s: SimState = {
@@ -58,18 +98,32 @@ export function newSim(cards: HeistCard[], seed = 20261025): SimState {
       pos: { ...PLAYER_SPAWN }, vel: { x: 0, z: 0 }, y: floorY(PLAYER_SPAWN), yaw: PLAYER_SPAWN_YAW, hp: MAX_HP, maxHp: MAX_HP, armor: 0,
       crouch: false, sprint: false, discreet: false, aiming: false, mode: "WALK", action: null, weapon: "hands", nextFireAt: 0, reloadUntil: 0, meleeUntil: 0, combo: 0,
       lastHitAt: -99, lastShotAt: -99,
-      inv: { invite: false, wristband: false, keycard: false, keys: [], diamond: false, medkit: 0, medkitXL: 0, bandage: 0, bottles: 1, decoder: 0, vest: 0, weapons: ["hands"], ammo: 0, mag: 0, uniform: false },
+      inv: { invite: false, wristband: false, keycard: false, keys: [], diamond: false, medkit: 0, medkitXL: 0, bandage: 0, bottles: 1, decoder: 0, vest: 0, weapons: ["hands"], ammo: 0, mag: 0, uniform: false, loot: [] },
       hidden: null, disguise: "gala", shoes: "heels", hood: false, outfit: { base: "arrival", worn: [] }, visionUntil: 0, slowUntil: 0, credits: { street: 0, bar: 0 },
-      staggerUntil: 0, noiseAt: -99, noise: 0, changeSeen: false, lastRoom: "rua", speed: 0,
+      staggerUntil: 0, noiseAt: -99, noise: 0, changeSeen: false, lastRoom: "rua", speed: 0, iframesUntil: 0, dodgeReadyAt: 0, lastDamageBy: null,
     },
     guards: GUARDS.map(newGuard), civs,
     doors: Object.fromEntries(DOORS.map((d) => [d.id, d.lock === "open"])) as Record<DoorId, boolean>, unlocked: [],
     cards, cardState: Object.fromEntries(cards.map((c) => [c.id, "DECK"])), offers: { street: VENDOR_OFFERS.street.map((o) => ({ ...o })), bar: VENDOR_OFFERS.bar.map((o) => ({ ...o })) },
     puzzle: null, solved: [], fusesCut: false, lasersOn: true, alarm: false, alarmAt: -1, objective: "ENTER", checkpoint: "start", cutscene: null, drops: [],
     pending: [], cardUses: Object.fromEntries(cards.map((c) => [c.id, charges(c)])), clues: [], visited: ["rua"], lockdown: false, queueAt: 12,
+    alertLevel: 0, alertAt: 0, difficulty: opts.difficulty ?? "normal", challenge: opts.challenge ?? null, challengeFailed: null, challengeAt: 0,
+    options: { slowLasers: !!opts.slowLasers, regen: opts.regen ?? false, beats: opts.beats ?? true }, stashes: [], dialogue: null, mission: { step: 0, via: {} }, beat: null, flags: [],
     lineAt: {}, stats: { shots: 0, hits: 0, headshots: 0, kills: 0, takedowns: 0, damage: 0, heals: 0, traded: 0, worn: 0, spotted: 0, puzzles: 0, mistakes: 0, time: 0, route: "" },
     nextId: 1, events: [],
   };
+  const d = DIFFICULTY[s.difficulty];
+  if (d.price !== 1) for (const v of ["street", "bar"] as const) for (const o of s.offers[v]) o.price = Math.round(o.price * d.price);
+  vary(s);
+  // Midnight Escape: começa na Sala das Joias com a energia cortada e o cartão; o relógio corre a partir do alarme
+  if (s.challenge === "midnight") {
+    const cp = CHECKPOINTS.cofre;
+    s.player.pos = { ...cp.pos }; s.player.yaw = cp.yaw; s.player.y = 0; s.player.lastRoom = "cofre";
+    s.player.inv.keycard = true; s.player.inv.wristband = true; s.fusesCut = true; s.checkpoint = "cofre";
+    s.visited.push("vestibulo", "salao", "galeria", "cofre");
+    const via: Record<string, string> = { arrive: "ok", credential: "inside", getIn: "salao", findRoute: "keycard", reachVault: "ok", lasers: "fuses" };
+    s.mission = { step: 6, via }; s.flags.push("changed");
+  }
   return s;
 }
 

@@ -34,6 +34,8 @@ const ARCHES = [{ cx: -9, w: 4.2, spring: 5.9 }, { cx: 0, w: 4.2, spring: 5.9 },
 const WING_TOP = 11.0, WING_CORNICE = 11.6, WING_BAL = 12.55;
 /** Janelas das alas: vão de 3,6 m, janela do piso nobre com frontão e a de cima, menor. */
 const BAY = 3.6;
+/** Vão do portão da doca na ala oeste. */
+const DOCK_X0 = -21.1, DOCK_X1 = -16.9, DOCK_H = 4.45;
 
 /* perfis de moldura (z para fora, y para cima) */
 const P_CORNICE: [number, number][] = [[0, 0], [0.08, 0], [0.1, 0.06], [0.16, 0.1], [0.18, 0.18], [0.42, 0.24], [0.5, 0.3], [0.62, 0.36], [0.62, 0.46], [0, 0.46]];
@@ -93,7 +95,11 @@ function useFacadeGeometry(q: Quality) {
     /* --- alas (oeste até sumir na névoa; leste até a esquina do beco) --- */
     const wingRuns: [number, number][] = [[WEST_END, -HALF], [HALF, EAST_X]];
     for (const [x0, x1] of wingRuns) {
-      ashlar.push(boxGeo(x0, 0, WALL_BACK, x1, WING_TOP, FACADE_Z));
+      if (x0 === WEST_END) {
+        // ala oeste: o vão do portão de enrolar da doca (x −21,1…−16,9; até 4,45 m) com verga de pedra por cima
+        ashlar.push(boxGeo(x0, 0, WALL_BACK, DOCK_X0, WING_TOP, FACADE_Z), boxGeo(DOCK_X1, 0, WALL_BACK, x1, WING_TOP, FACADE_Z), boxGeo(DOCK_X0, DOCK_H, WALL_BACK, DOCK_X1, WING_TOP, FACADE_Z));
+        stone.push(boxGeo(DOCK_X0 - 0.25, DOCK_H, FACADE_Z, DOCK_X1 + 0.25, DOCK_H + 0.42, FACADE_Z + 0.16));
+      } else ashlar.push(boxGeo(x0, 0, WALL_BACK, x1, WING_TOP, FACADE_Z));
       stone.push(moldingSouth(P_CORNICE, x0, x1 + (x1 === EAST_X ? 0.62 : 0), FACADE_Z, WING_TOP));
     }
     // face leste (beco) com o vão da porta da escada de incêndio (z −15…−13, y 0…2,2)
@@ -133,7 +139,7 @@ function useWindows() {
     let n = 0; const lit = () => (n++ * 7919) % 11 < 3;
     const put = (m: THREE.Matrix4, isBig: boolean) => { if (lit()) (isBig ? litBig : litSmall).push(m); else (isBig ? big : small).push(m); };
     // sul: ala oeste e ala leste (vão de 3,6 m entre pilastras)
-    for (let x = -HALF - BAY / 2; x > WEST_END + 1; x -= BAY) { put(inst(x, 0, FACADE_Z, 0), true); put(inst(x, 5.6, FACADE_Z, 0, [0.85, 0.75, 1]), false); }
+    for (let x = -HALF - BAY / 2; x > WEST_END + 1; x -= BAY) { if (x > DOCK_X0 - 1.2 && x < DOCK_X1 + 1.2) { put(inst(x, 5.6, FACADE_Z, 0, [0.85, 0.75, 1]), false); continue; } put(inst(x, 0, FACADE_Z, 0), true); put(inst(x, 5.6, FACADE_Z, 0, [0.85, 0.75, 1]), false); }
     for (const x of [HALF + 1.7, HALF + 5.2]) { put(inst(x, 0, FACADE_Z, 0), true); put(inst(x, 5.6, FACADE_Z, 0, [0.85, 0.75, 1]), false); }
     // leste (beco): janelas ao longo de z, menos onde fica a porta da escada de incêndio
     for (let z = 22.4; z > NORTH_Z + 1; z -= BAY) { if (z > -16.5 && z < -11.5) continue; put(inst(EAST_X, 0, z, Math.PI / 2), true); put(inst(EAST_X, 5.6, z, Math.PI / 2, [0.85, 0.75, 1]), false); }
@@ -154,7 +160,7 @@ function useWindows() {
   }, []);
 }
 
-function Instanced({ geometry, material, matrices, shadow = false }: { geometry: THREE.BufferGeometry; material: THREE.Material; matrices: THREE.Matrix4[]; shadow?: boolean }) {
+export function Instanced({ geometry, material, matrices, shadow = false }: { geometry: THREE.BufferGeometry; material: THREE.Material; matrices: THREE.Matrix4[]; shadow?: boolean }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const mesh = useMemo(() => { const m = new THREE.InstancedMesh(geometry, material, Math.max(1, matrices.length)); matrices.forEach((x, i) => m.setMatrixAt(i, x)); m.count = matrices.length; m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere(); m.castShadow = shadow; m.receiveShadow = true; return m; }, [geometry, material, matrices, shadow]);
   return <primitive ref={ref} object={mesh} />;
@@ -218,7 +224,8 @@ function ArchGlazing({ q, cx, spring, w, from }: { q: Quality; cx: number; sprin
     const arc = new THREE.TorusGeometry(r * 0.45, 0.035, 6, 24, Math.PI); arc.translate(cx, spring, 24.27); parts.push(worldUV(arc));
     return { glass: g, bars: merge(parts) };
   }, [cx, spring, w, from]);
-  return (<><mesh geometry={glass} material={m.glassFrosted} /><mesh geometry={bars} material={m.bronze} /></>);
+  const lit = useMemo(() => { const g = m.glassFrosted.clone(); g.emissiveIntensity = 1.05; return g; }, [m]);
+  return (<><mesh geometry={glass} material={lit} /><mesh geometry={bars} material={m.bronze} /></>);
 }
 
 /** Portão de enrolar da doca: as ripas sobem para o rolo quando `dockGate` abre. */

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { HeistCard, HeistInput, SimState } from "./types";
 import { newSim, simCtx, outfitPieces, restore, snapshot } from "./state";
-import { buy, equip, interact, promptAt, puzzleKey, puzzlePick, puzzleRing, skipCutscene, startPuzzle, step, trade, useCard, wear, CUTSCENE_LEN, CHANGE_TIME } from "./sim";
+import { buy, choose, equip, interact, promptAt, puzzleKey, puzzlePick, puzzleRing, skipCutscene, startPuzzle, step, trade, useCard, wear, CUTSCENE_LEN, CHANGE_TIME } from "./sim";
+import { DIALOGUES, choicesOf } from "./dialogue";
 import { damagePlayer, downGuard, tiredness } from "./combat";
 import { matchCards, offerLock, toHeistCard, guardHp, SHOT_DAMAGE, type DeckCard } from "./cards";
 import { CODES, GUARDS } from "./level";
@@ -9,7 +10,7 @@ import { yawOf } from "./math";
 
 const ctx = simCtx();
 const idle = (o: Partial<HeistInput> = {}): HeistInput => ({ move: { x: 0, y: 0 }, camYaw: 0, camPitch: 0, sprint: false, crouchPress: false, discreet: false, interactPress: false, aim: false, fire: false, firePress: false, reloadPress: false, meleePress: false, healPress: false, throwPress: false, ...o });
-const run = (s: SimState, secs: number, inp: (k: number) => HeistInput = () => idle()) => { const n = Math.round(secs * 60); for (let k = 0; k < n; k++) { step(s, ctx, inp(k), 1 / 60); s.events.length = 0; } };
+const run = (s: SimState, secs: number, inp: (k: number) => HeistInput = () => idle()) => { const n = Math.round(secs * 60); s.options.beats = false; for (let k = 0; k < n; k++) { step(s, ctx, inp(k), 1 / 60); s.events.length = 0; } };
 const guard = (s: SimState, id: string) => s.guards.find((g) => g.id === id)!;
 const card = (o: Partial<DeckCard>): DeckCard => ({ id: o.id ?? "c", name: o.name ?? "Peça", category: "accessory_piece", subcategory: "clutch", rarity: "STANDARD", stats: { CLOUT: 40 }, ...o });
 /** Põe a jogadora num ponto, sem ninguém desconfiado, para testar uma regra isolada. */
@@ -59,17 +60,17 @@ describe("combate: vida implícita por sala, vida baixa e game over", () => {
     expect(Math.ceil(guardHp(3) / SHOT_DAMAGE.pistol)).toBe(3);
     expect(Math.ceil(guardHp(9) / SHOT_DAMAGE.pistol)).toBe(9);
     for (const [id, shots, at, room] of [["r2", 3, { x: 0.6, z: 32.6 }, "rua"], ["j2", 9, { x: -17, z: -13 }, "cofre"]] as const) {
-      const s = newSim([]);
+      const s = newSim([], undefined, { beats: false });
       s.player.inv.weapons.push("pistol"); s.player.inv.ammo = 40; equip(s, "pistol");
       const g = guard(s, id);
       place(s, at.x, at.z, room); s.player.y = id === "r2" ? -1.6 : 0;
-      g.state = "POST";
-      const yaw = yawOf({ x: g.pos.x - at.x, z: g.pos.z - at.z });
-      const dy = (id === "r2" ? -1.6 : 0) + 1.1 - (s.player.y + 1.45), d = Math.hypot(g.pos.x - at.x, g.pos.z - at.z);
+      g.state = "POST"; g.blocker = true;                          // segura a posição: o teste mede só a vida
       let fired = 0;
       for (let k = 0; k < shots * 40 && g.state !== "DOWN"; k++) {
         const press = k % 30 === 0;
         if (press) fired++;
+        const yaw = yawOf({ x: g.pos.x - s.player.pos.x, z: g.pos.z - s.player.pos.z });
+        const dy = (id === "r2" ? -1.6 : 0) + 1.1 - (s.player.y + 1.45), d = Math.hypot(g.pos.x - s.player.pos.x, g.pos.z - s.player.pos.z);
         step(s, ctx, idle({ aim: true, firePress: press, camYaw: yaw, camPitch: Math.atan2(dy, d) }), 1 / 60);
         s.player.hp = 100; s.events.length = 0;
       }
@@ -148,14 +149,19 @@ describe("portas, chaves e puzzles", () => {
     const s = newSim([]);
     for (const g of s.guards) g.active = false;
     place(s, 0, 32.3, "rua"); s.player.y = -1.6;
-    interact(s, ctx);
+    expect(interact(s, ctx)).toEqual({ ui: "dialogue" });
+    const start = DIALOGUES.hostess.start;
+    const show = choicesOf(s, start).find((x) => x.c.key === "heist.dlg.hostess.showInvite")!;
+    expect(show.locked?.key).toBe("heist.dlg.lock.noInvite");                    // apagada, com o motivo
+    choose(s, start.choices.length - 1);                                         // "deixa pra lá"
     expect(s.unlocked).not.toContain("carpetGate");
     const q = s.civs.find((c) => c.role === "queue")!;
+    q.persona = "dreamy";                                           // alvo distraído (a desconfiada vira para quem chega perto)
     s.player.pos = { x: q.pos.x + 0.9, z: q.pos.z };                // atrás dela (a fila olha para o oeste)
     expect(promptAt(s)?.kind).toBe("pickpocket");
     interact(s, ctx); run(s, 1.3);
     expect(s.player.inv.invite).toBe(true);
-    place(s, 0, 32.3, "rua"); interact(s, ctx);
+    place(s, 0, 32.3, "rua"); interact(s, ctx); choose(s, 0);                  // "mostrar o convite"
     expect(s.unlocked).toContain("carpetGate");
     expect(s.player.inv.wristband).toBe(true);
   });
@@ -186,7 +192,7 @@ describe("roupa, disfarce e reação", () => {
     wear(s, "gown"); run(s, CHANGE_TIME + 0.2);
     expect(s.cardState.gown).toBe("WORN");
     expect(outfitPieces(s).some((p) => p.id === "card-gown")).toBe(true);
-    place(s, 0, 32.3, "rua"); interact(s, ctx);
+    place(s, 0, 32.3, "rua"); interact(s, ctx); choose(s, 1);                  // "estou com a casa de moda" (grife ≥ 70)
     expect(s.unlocked).toContain("carpetGate");
   });
 });

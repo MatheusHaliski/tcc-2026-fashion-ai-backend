@@ -366,6 +366,8 @@ export const SIGNAGE = {
   caterer: "BUFÊ LUMIÈRE", catererSub: "ALTA GASTRONOMIA PARA EVENTOS", police: "POLÍCIA", dock: "DOCA · ENTREGAS", staffOnly: "SOMENTE FUNCIONÁRIOS",
   exit: "SAÍDA DE EMERGÊNCIA", vendor: "ACHADOS DE GRIFE", vendorSub: "COMPRO · TROCO · VENDO", vendorTag: "SEM PERGUNTAS",
   avenue: "AV. VESPER", street: "R. ORVALHO", closed: "VIA INTERDITADA", fans: ["ÍCONE ✦", "OLHA PRA CÁ!", "LENDA", "TE AMO ♥", "MUSA", "BRILHA!"],
+  invite: "ACESSO SOMENTE COM CONVITE", reception: "RECEPÇÃO", press: "IMPRENSA CREDENCIADA", service: "ENTRADA DE SERVIÇO", serviceArrow: "◀", noParking: "PROIBIDO ESTACIONAR",
+  queue: "FILA DE CONVIDADOS", alley: "BECO · ACESSO RESTRITO",
 } as const;
 
 const SERIF = "'Didot', 'Bodoni 72', 'Playfair Display', 'Libre Bodoni', Georgia, 'DejaVu Serif', serif";

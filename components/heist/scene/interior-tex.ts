@@ -100,14 +100,14 @@ function chip(u: number, v: number, cells: number, seed: number, fill: number): 
 }
 const CHIPS: [number, number, number][] = [[0.95, 0.94, 0.9], [0.62, 0.6, 0.57], [0.16, 0.15, 0.15], [0.66, 0.38, 0.26], [0.83, 0.74, 0.58], [0.74, 0.62, 0.36]];
 
-export type FloorKey = "terrazzo" | "checker" | "parquet" | "carpet" | "stage" | "concrete" | "marbleBlack" | "pavers";
-export type WallKey = "limestone" | "galleryPaint" | "damaskGreen" | "woodPanel" | "blackPaint" | "drywall" | "cmu" | "damaskPlum";
+export type FloorKey = "terrazzo" | "checker" | "parquet" | "carpet" | "stage" | "concrete" | "marbleBlack" | "pavers" | "galleryMarble";
+export type WallKey = "limestone" | "galleryPaint" | "damaskGreen" | "woodPanel" | "blackPaint" | "drywall" | "cmu" | "damaskPlum" | "damaskTeal";
 export type MiscKey = "plaster" | "acoustic" | "marbleWhite" | "fabric" | "brushed" | "grain" | "leather" | "crate";
 
 /** Metros que uma repetição da textura cobre no mundo (u = x / tamanho). */
 export const TILE: Record<FloorKey | WallKey | MiscKey, [number, number]> = {
-  terrazzo: [2, 2], checker: [1.2, 1.2], parquet: [2, 2], carpet: [1.2, 1.2], stage: [3, 3], concrete: [3, 3], marbleBlack: [1.2, 1.2], pavers: [2.4, 2.4],
-  limestone: [2.4, 1.2], galleryPaint: [2, 2], damaskGreen: [0.8, 0.8], woodPanel: [1, 1.1], blackPaint: [2, 2], drywall: [2, 2], cmu: [1.6, 0.8], damaskPlum: [0.8, 0.8],
+  terrazzo: [2, 2], checker: [1.2, 1.2], parquet: [2, 2], carpet: [1.2, 1.2], stage: [3, 3], concrete: [3, 3], marbleBlack: [1.2, 1.2], pavers: [2.4, 2.4], galleryMarble: [2, 2],
+  limestone: [2.4, 1.2], galleryPaint: [2, 2], damaskGreen: [0.8, 0.8], woodPanel: [1, 1.1], blackPaint: [2, 2], drywall: [2, 2], cmu: [1.6, 0.8], damaskPlum: [0.8, 0.8], damaskTeal: [0.8, 0.8],
   plaster: [2, 2], acoustic: [1.2, 1.2], marbleWhite: [1, 1], fabric: [0.5, 0.5], brushed: [1, 1], grain: [1, 1], leather: [0.4, 0.4], crate: [1.2, 1.2],
 };
 
@@ -194,6 +194,20 @@ export function floorSurface(k: FloorKey, q: Quality): Surface {
       if (joint) { o[0] = 0.72; o[1] = 0.55; o[2] = 0.25; o[4] = 0.25; o[3] = 0.55; return; }
       o[0] = mix(base, 0.85, w); o[1] = mix(base, 0.83, w); o[2] = mix(base * 1.15, 0.8, w); o[3] = 0.5; o[4] = 0.06 + 0.03 * w;
     }, 0.6);
+    case "galleryMarble": return surface("galleryMarble" + q, big, (u, v, o) => {
+      // placa de 2 m de mármore creme polido com veios suaves e a faixa embutida de mármore verde-negro (referência: corredor
+      // de museu com piso espelhado); juntas finas a cada 1 m
+      const lu = u * 2 % 1, lv = v * 2 % 1, joint = Math.min(lu, 1 - lu, lv, 1 - lv) < 0.0035;
+      const e = Math.min(u, 1 - u, v, 1 - v), band = e > 0.055 && e < 0.1, fillet = Math.abs(e - 0.05) < 0.004 || Math.abs(e - 0.105) < 0.004;
+      const t = fbm(u, v, 3, 301, 5) * 5 + (u * 0.8 + v * 1.4) * 2.2;
+      const w = Math.max(vein(t, 0.05) * 0.45, vein(t * 2.4 + 0.7, 0.025) * 0.25) * (0.5 + 0.5 * fbm(u, v, 6, 303, 2));
+      if (band) { const tb = fbm(u * 3, v * 3, 6, 305, 3); const wb = vein(t * 1.6, 0.03) * 0.6; o[0] = mix(0.035 + 0.02 * tb, 0.5, wb); o[1] = mix(0.06 + 0.02 * tb, 0.52, wb); o[2] = mix(0.05 + 0.02 * tb, 0.48, wb); o[3] = 0.5; o[4] = 0.05; return; }
+      if (fillet) { o[0] = 0.78; o[1] = 0.6; o[2] = 0.3; o[3] = 0.52; o[4] = 0.12; return; }
+      const base = fbm(u, v, 5, 307, 3);
+      o[0] = mix(0.86 + 0.03 * base, 0.62, w); o[1] = mix(0.8 + 0.03 * base, 0.58, w); o[2] = mix(0.68 + 0.03 * base, 0.52, w);
+      if (joint) { o[0] *= 0.7; o[1] *= 0.7; o[2] *= 0.7; }
+      o[3] = joint ? 0.35 : 0.5; o[4] = joint ? 0.4 : 0.05 + 0.04 * w;
+    }, 0.5);
     case "pavers": {
       const R = rand(17); const tones = Array.from({ length: 64 }, () => R());
       return surface("pavers" + q, big, (u, v, o) => {
@@ -228,12 +242,13 @@ export function wallSurface(k: WallKey, q: Quality): Surface {
       const n = fbm(u, v, 8, 131, 4), roller = vnoise(u * 3, v * 90, 3, 133);
       o[0] = 0.07 + 0.012 * n + 0.006 * roller; o[1] = 0.08 + 0.012 * n + 0.006 * roller; o[2] = 0.11 + 0.014 * n + 0.006 * roller; o[3] = 0.5 + 0.06 * n; o[4] = 0.88;
     }, 0.4);
-    case "damaskGreen": case "damaskPlum": {
-      const green = k === "damaskGreen";
+    case "damaskGreen": case "damaskPlum": case "damaskTeal": {
+      const green = k === "damaskGreen", teal = k === "damaskTeal";
       return surface(k + q, sz, (u, v, o) => {
         const d = damask(u, v), fib = vnoise(u * 200, v * 200, 200, 141), n = fbm(u, v, 4, 143, 2);
         const t = 0.86 + 0.14 * fib + 0.06 * (n - 0.5);
-        if (green) { o[0] = mix(0.025, 0.06, d) * t; o[1] = mix(0.17, 0.26, d) * t; o[2] = mix(0.11, 0.14, d) * t; }
+        if (teal) { o[0] = mix(0.018, 0.05, d) * t; o[1] = mix(0.075, 0.13, d) * t; o[2] = mix(0.095, 0.15, d) * t; }
+        else if (green) { o[0] = mix(0.025, 0.06, d) * t; o[1] = mix(0.17, 0.26, d) * t; o[2] = mix(0.11, 0.14, d) * t; }
         else { o[0] = mix(0.2, 0.36, d) * t; o[1] = mix(0.03, 0.08, d) * t; o[2] = mix(0.09, 0.12, d) * t; }
         o[3] = 0.45 + 0.15 * d + 0.1 * fib; o[4] = 0.88 - 0.4 * d;
       }, 0.7);

@@ -36,12 +36,18 @@ export interface LookTemplate {
   tint?: { piece: string; palette: string[] };
   /** objeto preso à cabeça: ponto de rádio (segurança) */
   earpiece?: boolean;
+  /** gravata-borboleta no colarinho (smoking, garçom) */
+  bowtie?: boolean;
 }
 
 /* ---------- peças ---------- */
 const P = (id: string, slot: string, category: string, subcategory: string, colorHex: string, extra: Partial<Look3dPiece> = {}): Look3dPiece =>
   ({ id: `look-${id}`, name: `look-${id}`, slot, category, subcategory, colorHex, imageUrl: null, ...extra });
-const FLOOR = { attributes: { LENGTH: ["FLOOR_LENGTH"] } }, KNEE = { attributes: { LENGTH: ["KNEE"] } }, MIDI = { attributes: { LENGTH: ["MIDI"] } };
+/** Comprimento e decote declarados (dimensões da taxonomia, garment-fit.ts). Vestido de gala sem alça ou ombro a ombro:
+ * o decote padrão do vestido sobe até o pescoço nas costas e deixa retalhos nos ombros sem manga. */
+const DIM = (length: string, neckline?: string): Partial<Look3dPiece> => ({ attributes: { LENGTH: [length], ...(neckline ? { NECKLINE: [neckline] } : {}) } });
+/** Paletó de smoking/terno: lapela em V até o meio do peito; camisa social de colarinho fechado (gravata-borboleta). */
+const LAPEL = { attributes: { NECKLINE: ["PLUNGE"] } }, CLOSED_COLLAR = { attributes: { NECKLINE: ["MOCK_NECK"] } };
 /** Base clara para tingir por clone (a cor final multiplica a textura do tecido). */
 const TINT_BASE = "#ece8e2";
 /** Vestidos de gala: cores de tapete vermelho, do preto ao dourado. */
@@ -50,9 +56,10 @@ const GOWNS = ["#7b0f1e", "#0f4d3a", "#c9a24a", "#14161c", "#1d2f6b", "#e7d9c8",
 const JACKETS = ["#101114", "#141a2e", "#101114", "#4a1220", "#103326", "#e9e4d8", "#101114", "#2a2a30"];
 const STREET = ["#2b2f36", "#5a6b7d", "#8a2b2b", "#d9d4c7", "#1f3a2a", "#c47b2a", "#3d2f5a", "#191a1d"];
 
-const gown = (id: string, sub = "dress", extra: Partial<Look3dPiece> = FLOOR): Look3dPiece[] => [P(`${id}-gown`, "full", "FULL_BODY", sub, TINT_BASE, { ...extra, material: "SATIN" }), P(`${id}-heels`, "shoes", "SHOES", "heels", "#141414")];
+const gown = (id: string, neckline = "STRAPLESS", length = "FLOOR_LENGTH"): Look3dPiece[] =>
+  [P(`${id}-gown`, "full", "FULL_BODY", "dress", TINT_BASE, { ...DIM(length, neckline), material: "SATIN" }), P(`${id}-heels`, "shoes", "SHOES", "heels", "#141414")];
 const tux = (id: string): Look3dPiece[] => [
-  P(`${id}-shirt`, "upper", "UPPER", "shirt", "#f4f2ee"), P(`${id}-jacket`, "outer", "UPPER", "blazer", TINT_BASE),
+  P(`${id}-shirt`, "upper", "UPPER", "shirt", "#f4f2ee", CLOSED_COLLAR), P(`${id}-jacket`, "outer", "UPPER", "blazer", TINT_BASE, LAPEL),
   P(`${id}-pants`, "lower", "LOWER", "tailored_pants", "#121216"), P(`${id}-shoes`, "shoes", "SHOES", "oxford_shoes", "#0a0a0a"),
 ];
 
@@ -91,16 +98,16 @@ const T = (key: string, look: LookId, sex: Sex, stature: number, build: number, 
 export const LOOKS: Record<LookId, LookTemplate[]> = {
   guestF: [
     T("guestF-0", "guestF", "FEMININO", 1.7, -0.2, SKIN.light, LONG_WAVY(HAIR_C.blonde), FACE_F("#9e1b2c", "#5a4430", 2, "#4a3a36"), gown("gF0"), { tint: { piece: "look-gF0-gown", palette: GOWNS } }),
-    T("guestF-1", "guestF", "FEMININO", 1.74, 0.1, SKIN.deep, CURLY(HAIR_C.black), FACE_F("#7a2a3a", "#1a1210", 1, "#6b3f2a", "#8a3d3a"), gown("gF1"), { tint: { piece: "look-gF1-gown", palette: GOWNS } }),
+    T("guestF-1", "guestF", "FEMININO", 1.74, 0.1, SKIN.deep, CURLY(HAIR_C.black), FACE_F("#7a2a3a", "#1a1210", 1, "#6b3f2a", "#8a3d3a"), gown("gF1", "OFF_SHOULDER"), { tint: { piece: "look-gF1-gown", palette: GOWNS } }),
     T("guestF-2", "guestF", "FEMININO", 1.66, 0, SKIN.medium, LONG_STRAIGHT(HAIR_C.black), FACE_F("#b23a48", "#1e1612", 2, "#5c4038"), gown("gF2"), { tint: { piece: "look-gF2-gown", palette: GOWNS } }),
-    T("guestF-3", "guestF", "FEMININO", 1.68, 0.4, SKIN.porcelain, BOB(HAIR_C.auburn), FACE_F("#c0485a", "#5a3020", 1, "#7a5a4a", "#d98a80"), gown("gF3", "dress", MIDI), { tint: { piece: "look-gF3-gown", palette: GOWNS } }),
+    T("guestF-3", "guestF", "FEMININO", 1.68, 0.4, SKIN.porcelain, BOB(HAIR_C.auburn), FACE_F("#c0485a", "#5a3020", 1, "#7a5a4a", "#d98a80"), gown("gF3", "OFF_SHOULDER", "MIDI"), { tint: { piece: "look-gF3-gown", palette: GOWNS } }),
     T("guestF-4", "guestF", "FEMININO", 1.72, -0.1, SKIN.brown, COILY(HAIR_C.black), FACE_F("#8a2032", "#16100d", 2, "#3a2a2a", "#9a4a40"), gown("gF4"), { tint: { piece: "look-gF4-gown", palette: GOWNS } }),
   ],
   guestM: [
-    T("guestM-0", "guestM", "MASCULINO", 1.8, 0.1, SKIN.light, SHORT_M(HAIR_C.brown), FACE_M("#3a2a20", 0.35), tux("gM0"), { tint: { piece: "look-gM0-jacket", palette: JACKETS } }),
-    T("guestM-1", "guestM", "MASCULINO", 1.84, 0.4, SKIN.ebony, COILY(HAIR_C.black), FACE_M("#120c0a", 0.25, "#6a3a32"), tux("gM1"), { tint: { piece: "look-gM1-jacket", palette: JACKETS } }),
-    T("guestM-2", "guestM", "MASCULINO", 1.76, 0, SKIN.tan, SHORT_WAVY_M(HAIR_C.darkBrown), FACE_M("#1e1612", 0.6), tux("gM2"), { tint: { piece: "look-gM2-jacket", palette: JACKETS } }),
-    T("guestM-3", "guestM", "MASCULINO", 1.78, 0.7, SKIN.medium, SHORT_M(HAIR_C.gray), FACE_M("#5a5552", 0.15), tux("gM3"), { tint: { piece: "look-gM3-jacket", palette: JACKETS } }),
+    T("guestM-0", "guestM", "MASCULINO", 1.8, 0.1, SKIN.light, SHORT_M(HAIR_C.brown), FACE_M("#3a2a20", 0.35), tux("gM0"), { tint: { piece: "look-gM0-jacket", palette: JACKETS }, bowtie: true }),
+    T("guestM-1", "guestM", "MASCULINO", 1.84, 0.4, SKIN.ebony, COILY(HAIR_C.black), FACE_M("#120c0a", 0.25, "#6a3a32"), tux("gM1"), { tint: { piece: "look-gM1-jacket", palette: JACKETS }, bowtie: true }),
+    T("guestM-2", "guestM", "MASCULINO", 1.76, 0, SKIN.tan, SHORT_WAVY_M(HAIR_C.darkBrown), FACE_M("#1e1612", 0.6), tux("gM2"), { tint: { piece: "look-gM2-jacket", palette: JACKETS }, bowtie: true }),
+    T("guestM-3", "guestM", "MASCULINO", 1.78, 0.7, SKIN.medium, SHORT_M(HAIR_C.gray), FACE_M("#5a5552", 0.15), tux("gM3"), { tint: { piece: "look-gM3-jacket", palette: JACKETS }, bowtie: true }),
   ],
   guard: [
     T("guard-0", "guard", "MASCULINO", 1.86, 1.0, SKIN.light, BUZZ(HAIR_C.darkBrown), FACE_M("#2a1e18", 0.5), GUARD_SUIT, { earpiece: true }),
@@ -109,10 +116,10 @@ export const LOOKS: Record<LookId, LookTemplate[]> = {
   ],
   guardHeavy: [T("guardHeavy-0", "guardHeavy", "MASCULINO", 1.9, 1.6, SKIN.medium, BUZZ(HAIR_C.black), FACE_M("#1a1210", 0.7), GUARD_HEAVY, { earpiece: true })],
   police: [T("police-0", "police", "MASCULINO", 1.82, 0.9, SKIN.brown, CAP("#18233a", HAIR_C.black), FACE_M("#1a1210", 0.3), POLICE_UNIFORM, { earpiece: true })],
-  waiter: [T("waiter-0", "waiter", "MASCULINO", 1.77, 0, SKIN.medium, SHORT_M(HAIR_C.black), FACE_M("#1a1210", 0.1), WAITER_UNIFORM)],
+  waiter: [T("waiter-0", "waiter", "MASCULINO", 1.77, 0, SKIN.medium, SHORT_M(HAIR_C.black), FACE_M("#1a1210", 0.1), WAITER_UNIFORM, { bowtie: true })],
   waitress: [T("waitress-0", "waitress", "FEMININO", 1.66, 0, SKIN.light, BOB(HAIR_C.darkBrown), FACE_F("#a84a52", "#2c1e16", 1, null, "#d08a80"), WAITRESS_UNIFORM)],
   hostess: [T("hostess-0", "hostess", "FEMININO", 1.72, -0.2, SKIN.tan, LONG_STRAIGHT(HAIR_C.darkBrown), FACE_F("#a02838", "#1e1612", 2, "#4a3a36"),
-    [P("host-dress", "full", "FULL_BODY", "dress", "#0e0e12", KNEE), P("host-heels", "shoes", "SHOES", "heels", "#0a0a0a")])],
+    [P("host-dress", "full", "FULL_BODY", "dress", "#0e0e12", DIM("KNEE", "OFF_SHOULDER")), P("host-heels", "shoes", "SHOES", "heels", "#0a0a0a")])],
   paparazzo: [
     T("paparazzo-0", "paparazzo", "MASCULINO", 1.78, 0.5, SKIN.light, CAP("#1c1d22", HAIR_C.brown), FACE_M("#3a2a20", 0.8),
       [P("pap-jacket", "outer", "UPPER", "jacket", "#2a2b30"), P("pap-tee", "upper", "UPPER", "t_shirt", "#1b1c1f"), P("pap-pants", "lower", "LOWER", "cargo_pants", "#3b3e44"), P("pap-shoes", "shoes", "SHOES", "casual_sneakers", "#1c1c1c")]),
@@ -125,24 +132,24 @@ export const LOOKS: Record<LookId, LookTemplate[]> = {
     T("fan-1", "fan", "MASCULINO", 1.75, 0.2, SKIN.deep, COILY(HAIR_C.black), FACE_M("#120c0a", 0.4, "#6a3a32"),
       [P("fan1-tee", "upper", "UPPER", "t_shirt", TINT_BASE), P("fan1-jacket", "outer", "UPPER", "jacket", "#2c2f35"), P("fan1-jeans", "lower", "LOWER", "jeans", "#1f2a3d"), P("fan1-sneakers", "shoes", "SHOES", "high_top_sneakers", "#d8d6d0")], { tint: { piece: "look-fan1-tee", palette: STREET } }),
     T("fan-2", "fan", "FEMININO", 1.6, -0.1, SKIN.porcelain, BOB(HAIR_C.platinum), FACE_F("#c0485a", "#7a6a5a", 2, "#8a6a7a", "#e09a90"),
-      [P("fan2-sweater", "upper", "UPPER", "sweater", TINT_BASE), P("fan2-skirt", "lower", "LOWER", "skirt", "#1c1c20", { attributes: { LENGTH: ["MINI"] } }), P("fan2-boots", "shoes", "SHOES", "boots", "#121212")], { tint: { piece: "look-fan2-sweater", palette: STREET } }),
+      [P("fan2-sweater", "upper", "UPPER", "sweater", TINT_BASE), P("fan2-skirt", "lower", "LOWER", "skirt", "#1c1c20", DIM("MINI")), P("fan2-boots", "shoes", "SHOES", "boots", "#121212")], { tint: { piece: "look-fan2-sweater", palette: STREET } }),
   ],
   catering: [T("catering-0", "catering", "MASCULINO", 1.74, 0.6, SKIN.tan, CAP("#efece6", HAIR_C.black), FACE_M("#1a1210", 0.5),
     [P("cat-shirt", "upper", "UPPER", "shirt", "#f2f0ea"), P("cat-pants", "lower", "LOWER", "tailored_pants", "#16161a"), P("cat-shoes", "shoes", "SHOES", "oxford_shoes", "#0c0c0c")])],
   vendor: [T("vendor-0", "vendor", "MASCULINO", 1.79, 0.9, SKIN.light, CAP("#3a2a22", HAIR_C.darkBrown), FACE_M("#2a1e18", 0.9),
     [P("ven-jacket", "outer", "UPPER", "jacket", "#3a2418", { material: "LEATHER" }), P("ven-tee", "upper", "UPPER", "t_shirt", "#2a2a2e"), P("ven-jeans", "lower", "LOWER", "jeans", "#26324a"), P("ven-boots", "shoes", "SHOES", "boots", "#1a120c")])],
   curator: [T("curator-0", "curator", "FEMININO", 1.7, 0, SKIN.porcelain, BOB(HAIR_C.gray), FACE_F("#8a3a42", "#4a4440", 1, "#5a5050", null),
-    [P("cur-blouse", "upper", "UPPER", "blouse", "#f0ece4"), P("cur-blazer", "outer", "UPPER", "blazer", "#22242c"), P("cur-pants", "lower", "LOWER", "tailored_pants", "#22242c"), P("cur-shoes", "shoes", "SHOES", "loafers", "#141414")])],
+    [P("cur-blouse", "upper", "UPPER", "blouse", "#f0ece4"), P("cur-blazer", "outer", "UPPER", "blazer", "#22242c", LAPEL), P("cur-pants", "lower", "LOWER", "tailored_pants", "#22242c"), P("cur-shoes", "shoes", "SHOES", "loafers", "#141414")])],
   bartender: [T("bartender-0", "bartender", "MASCULINO", 1.78, 0.3, SKIN.brown, SHORT_WAVY_M(HAIR_C.black), FACE_M("#16100d", 0.7, "#7a4a3a"),
     [P("bar-shirt", "upper", "UPPER", "shirt", "#121214"), P("bar-vest", "outer", "UPPER", "vest", "#2a2a30"), P("bar-pants", "lower", "LOWER", "tailored_pants", "#121214"), P("bar-shoes", "shoes", "SHOES", "oxford_shoes", "#0a0a0a")])],
   musician: [
-    T("musician-0", "musician", "FEMININO", 1.67, 0, SKIN.light, LONG_STRAIGHT(HAIR_C.chestnut), FACE_F("#9a3a48", "#3a2a20", 1, "#5a4038"), [P("mus-gown", "full", "FULL_BODY", "dress", "#0d0d10", { ...FLOOR, material: "SATIN" }), P("mus-heels", "shoes", "SHOES", "heels", "#0a0a0a")]),
-    T("musician-1", "musician", "MASCULINO", 1.79, 0.1, SKIN.medium, SHORT_M(HAIR_C.black), FACE_M("#1a1210", 0.2), tux("mus1").map((p) => (p.id.endsWith("jacket") ? { ...p, colorHex: "#0f1013" } : p))),
+    T("musician-0", "musician", "FEMININO", 1.67, 0, SKIN.light, LONG_STRAIGHT(HAIR_C.chestnut), FACE_F("#9a3a48", "#3a2a20", 1, "#5a4038"), [P("mus-gown", "full", "FULL_BODY", "dress", "#0d0d10", { ...DIM("FLOOR_LENGTH", "STRAPLESS"), material: "SATIN" }), P("mus-heels", "shoes", "SHOES", "heels", "#0a0a0a")]),
+    T("musician-1", "musician", "MASCULINO", 1.79, 0.1, SKIN.medium, SHORT_M(HAIR_C.black), FACE_M("#1a1210", 0.2), tux("mus1").map((p) => (p.id.endsWith("jacket") ? { ...p, colorHex: "#0f1013" } : p)), { bowtie: true }),
   ],
   crew: [T("crew-0", "crew", "FEMININO", 1.68, 0.3, SKIN.medium, hair({ color: HAIR_C.darkBrown, length: "medium", texture: "wavy", bottom: -10 }), FACE_F("#8a4a4a", "#2c1e16", 0, null, null),
     [P("crew-tee", "upper", "UPPER", "long_sleeve", "#141416"), P("crew-pants", "lower", "LOWER", "cargo_pants", "#141416"), P("crew-sneakers", "shoes", "SHOES", "casual_sneakers", "#1a1a1a")])],
   driver: [T("driver-0", "driver", "MASCULINO", 1.8, 0.8, SKIN.deep, CAP("#0d0e12", HAIR_C.black), FACE_M("#120c0a", 0.2, "#6a3a32"),
-    [P("drv-shirt", "upper", "UPPER", "shirt", "#e9e6df"), P("drv-jacket", "outer", "UPPER", "blazer", "#0d0e12"), P("drv-pants", "lower", "LOWER", "tailored_pants", "#0d0e12"), P("drv-shoes", "shoes", "SHOES", "oxford_shoes", "#090909")])],
+    [P("drv-shirt", "upper", "UPPER", "shirt", "#e9e6df"), P("drv-jacket", "outer", "UPPER", "blazer", "#0d0e12", LAPEL), P("drv-pants", "lower", "LOWER", "tailored_pants", "#0d0e12"), P("drv-shoes", "shoes", "SHOES", "oxford_shoes", "#090909")])],
 };
 
 /** A jogadora quando o jogo não passa o Avatar 3D dela: mulher de cabelo escuro ondulado, maquiagem de gala. */
@@ -165,6 +172,26 @@ export function tintFor(t: LookTemplate, seed: number): string | null {
 }
 /** Altura relativa da pessoa (±5 %). */
 export const scaleFor = (seed: number) => 0.95 + 0.1 * hash(seed * 3.7 + 2.9);
+
+/**
+ * Corte de gala das peças que chegam sem decote declarado (as roupas fixas de outfits.ts): vestido longo sem alça,
+ * paletó com lapela em V, colete em V e camisa social de colarinho fechado por baixo deles. O decote padrão do molde
+ * deixava retalhos nos ombros do vestido sem manga e cortava paletó e colete reto no peito. Vale igual para a jogadora e
+ * para os figurantes: o uniforme do disfarce continua idêntico ao dos garçons do salão.
+ */
+export function tailored(pieces: Look3dPiece[]): Look3dPiece[] {
+  const sub = (p: Look3dPiece) => (p.subcategory ?? "").toLowerCase();
+  const formal = pieces.some((p) => sub(p) === "blazer" || sub(p) === "vest");
+  const cut = (p: Look3dPiece): string | null => {
+    if (p.attributes?.NECKLINE?.length) return null;
+    if (sub(p) === "dress" && p.attributes?.LENGTH?.some((l) => l === "FLOOR_LENGTH" || l === "MAXI")) return "STRAPLESS";
+    if (sub(p) === "blazer") return "PLUNGE";
+    if (sub(p) === "vest") return "V_NECK";
+    if (sub(p) === "shirt" && formal) return "MOCK_NECK";
+    return null;
+  };
+  return pieces.map((p) => { const n = cut(p); return n ? { ...p, attributes: { ...p.attributes, NECKLINE: [n] } } : p; });
+}
 
 /* ---------- rosto sintético ---------- */
 const OUTER_LIPS = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];

@@ -13,6 +13,9 @@ import { CELL, GW, X0, Z0, cellOf, inGrid, insideProp, roomAt, type World } from
 import { DIAMOND_POS, VAULT_ENTRY, floorY } from "@/lib/heist/level";
 import { OUTDOOR } from "@/lib/heist/state";
 import type { HeistControls } from "./input";
+import type { HeistSettings } from "./settings";
+
+const ease = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
 
 /** Pé-direito por sala (a câmera não sobe além do teto). */
 const CEILING: Partial<Record<string, number>> = { salao: 8.6, servico: 3.1, seguranca: 3.1, doca: 5.2 };
@@ -37,17 +40,27 @@ function boom(world: World, s: SimState, from: THREE.Vector3, dir: THREE.Vector3
 }
 void CELL; void X0; void Z0;
 
-export function HeistCamera({ view, sim, world, controls, reducedMotion }: { view: React.MutableRefObject<SceneView>; sim: React.MutableRefObject<{ s: SimState }>; world: World; controls: HeistControls; reducedMotion: boolean }) {
+export function HeistCamera({ view, sim, world, controls, reducedMotion, settings }: { view: React.MutableRefObject<SceneView>; sim: React.MutableRefObject<{ s: SimState }>; world: World; controls: HeistControls; reducedMotion: boolean; settings: HeistSettings }) {
   const { camera } = useThree();
-  const cur = useRef({ pos: new THREE.Vector3(), look: new THREE.Vector3(), fov: 62, init: false, shake: 0, lastHit: -1 });
+  const cur = useRef({ pos: new THREE.Vector3(), look: new THREE.Vector3(), fov: 62, init: false, shake: 0, lastHit: -1, inBeat: false });
   const tmp = useRef({ pivot: new THREE.Vector3(), dir: new THREE.Vector3(), want: new THREE.Vector3(), look: new THREE.Vector3(), right: new THREE.Vector3() });
   useFrame((_, rawDt) => {
     const dt = Math.min(0.05, rawDt), s = sim.current.s, p = s.player, v = view.current, c = cur.current, T = tmp.current;
     const cam = camera as THREE.PerspectiveCamera;
     const crouchH = p.mode === "CRAWL" ? 0.55 : p.crouch ? 1.05 : 1.55;
     T.pivot.set(p.pos.x, p.y + crouchH, p.pos.z);
-    let fov = 62, smooth = 10;
-    if (s.phase === "CUTSCENE" && s.cutscene) {
+    let fov = settings.fov, smooth = 10;
+    const beat = s.beat;
+    if (beat) {
+      // cena curta do subobjetivo: segue os enquadramentos (de/para, com suavização), sem a jogadora no controle
+      let t = s.time - beat.at, shot = beat.shots[0];
+      for (const sh of beat.shots) { shot = sh; if (t <= sh.dur) break; t -= sh.dur; }
+      const u = ease(Math.min(1, Math.max(0, t / shot.dur)));
+      T.want.set(shot.from[0] + (shot.to[0] - shot.from[0]) * u, shot.from[1] + (shot.to[1] - shot.from[1]) * u, shot.from[2] + (shot.to[2] - shot.from[2]) * u);
+      const lt = shot.lookTo ?? shot.look;
+      T.look.set(shot.look[0] + (lt[0] - shot.look[0]) * u, shot.look[1] + (lt[1] - shot.look[1]) * u, shot.look[2] + (lt[2] - shot.look[2]) * u);
+      fov = shot.fov ?? 50; smooth = 30;
+    } else if (s.phase === "CUTSCENE" && s.cutscene) {
       const t = s.cutscene.t;
       if (t < 4.4) {
         // close: de frente para ela e o diamante, girando devagar
@@ -71,24 +84,30 @@ export function HeistCamera({ view, sim, world, controls, reducedMotion }: { vie
     } else {
       const aiming = p.aiming;
       const yaw = controls.yaw, pitch = controls.pitch;
-      const dist = aiming ? 1.55 : p.crouch ? 2.6 : 3.3, side = aiming ? 0.55 : 0.38;
+      const dist = (aiming ? 1.55 : p.crouch ? 2.6 : 3.3) * settings.camDistance, side = (aiming ? 0.55 : 0.38) * (settings.shoulder === "left" ? -1 : 1);
       // direção para trás da câmera (oposta ao olhar) e o ombro direito
       T.dir.set(-Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
       T.right.set(-Math.cos(yaw), 0, Math.sin(yaw));
-      const shoulder = T.pivot.clone().addScaledVector(T.right, side * Math.min(1, boom(world, s, T.pivot, T.right, side + 0.2) / (side + 0.2)));
+      const sideDir = T.right.clone().multiplyScalar(Math.sign(side) || 1), sideLen = Math.abs(side);
+      const shoulder = T.pivot.clone().addScaledVector(sideDir, sideLen * Math.min(1, boom(world, s, T.pivot, sideDir, sideLen + 0.2) / (sideLen + 0.2)));
       const len = boom(world, s, shoulder, T.dir, dist);
       T.want.copy(shoulder).addScaledVector(T.dir, len);
       const room = roomAt({ x: T.want.x, z: T.want.z });
       T.want.y = Math.min(T.want.y, floorY({ x: T.want.x, z: T.want.z }) + ceilingAt(room) - 0.25);
       T.want.y = Math.max(T.want.y, floorY({ x: T.want.x, z: T.want.z }) + 0.3);
       T.look.copy(shoulder).addScaledVector(T.dir, -10);
-      fov = aiming ? 46 : p.speed > 3 ? 68 : 62; smooth = aiming ? 18 : 12;
+      fov = aiming ? settings.fov - 16 : p.speed > 3 ? settings.fov + 6 : settings.fov; smooth = aiming ? 18 : 12;
     }
-    if (!c.init) { c.pos.copy(T.want); c.look.copy(T.look); c.init = true; }
+    // corte seco no começo de cada enquadramento da cena curta
+    const cut = beat ? beat.shots.reduce<number[]>((acc, sh) => [...acc, (acc[acc.length - 1] ?? 0) + sh.dur], [0]).some((at) => Math.abs(s.time - beat.at - at) < dt * 0.75) : false;
+    if (!c.init || cut) { c.pos.copy(T.want); c.look.copy(T.look); c.init = true; }
+    // ao sair da cena curta a câmera volta para trás dela pelo caminho mais curto
+    if (c.inBeat && !beat) { controls.yaw = p.yaw; controls.pitch = -0.12; }
+    c.inBeat = !!beat;
     const k = 1 - Math.exp(-smooth * dt);
     c.pos.lerp(T.want, k); c.look.lerp(T.look, Math.min(1, k * 1.4));
     // tremida curta ao levar tiro (desligada com "reduzir movimento")
-    if (!reducedMotion && p.lastHitAt !== c.lastHit) { c.lastHit = p.lastHitAt; if (p.lastHitAt > 0) c.shake = 0.12; }
+    if (!reducedMotion && settings.shake && p.lastHitAt !== c.lastHit) { c.lastHit = p.lastHitAt; if (p.lastHitAt > 0) c.shake = 0.12; }
     c.shake = Math.max(0, c.shake - dt * 0.6);
     camera.position.copy(c.pos);
     if (c.shake > 0) camera.position.add(new THREE.Vector3((Math.random() - 0.5) * c.shake, (Math.random() - 0.5) * c.shake, 0));

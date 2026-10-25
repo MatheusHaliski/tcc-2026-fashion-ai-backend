@@ -22,8 +22,8 @@ export interface RoomStyle { h: number; floor: FloorKey; wall: WallKey; ceil: "p
 export const STYLE: Record<InteriorRoom, RoomStyle> = {
   vestibulo: { h: 6.5, floor: "checker", wall: "limestone", ceil: "plaster", base: "marble", crown: true },
   salao: { h: 9.5, floor: "terrazzo", wall: "limestone", ceil: null, base: "marble", crown: false },
-  galeria: { h: 5.5, floor: "parquet", wall: "galleryPaint", ceil: "dark", base: "black", crown: false },
-  lounge: { h: 4.6, floor: "carpet", wall: "damaskGreen", ceil: "dark", base: "wood", crown: true },
+  galeria: { h: 5.5, floor: "galleryMarble", wall: "galleryPaint", ceil: "dark", base: "black", crown: false },
+  lounge: { h: 4.6, floor: "parquet", wall: "damaskTeal", ceil: "dark", base: "wood", crown: true },
   bastidores: { h: 4.6, floor: "stage", wall: "blackPaint", ceil: "dark", base: null, crown: false },
   servico: { h: 3.6, floor: "concrete", wall: "drywall", ceil: "acoustic", base: "rubber", crown: false },
   seguranca: { h: 3.6, floor: "concrete", wall: "drywall", ceil: null, base: "rubber", crown: false },

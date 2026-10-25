@@ -8,7 +8,7 @@
  *  DIAMANTE    6 cortar a energia ou atravessar os lasers · 7 abrir a vitrine e pegar o diamante
  *  FUGA        8 sair do prédio · 9 chegar a um carro de fuga
  */
-import type { SimState, Vec } from "./types";
+import type { Beat, SimState, Vec } from "./types";
 import { DIAMOND_POS, EXITS, INTERACTS, VAULT_ENTRY } from "./level";
 import { VIP_PRESTIGE, wornPrestige } from "./state";
 import { dist } from "./math";
@@ -82,8 +82,7 @@ export function targetsFor(s: SimState, id: MissionStep): MissionTarget[] {
 }
 
 /* ---------- cenas de corte dos subobjetivos ---------- */
-export interface Shot { from: [number, number, number]; to: [number, number, number]; look: [number, number, number]; lookTo?: [number, number, number]; dur: number; fov?: number }
-export interface Beat { shots: Shot[]; lines: { at: number; who: string; key: string }[] }
+export type { Beat, Shot } from "./types";
 /** Cena de cada subobjetivo cumprido (`via` diz como). Posições em metros no mundo; `player` = perto da jogadora. */
 export function beatFor(s: SimState, id: MissionStep | "intro", via: string): Beat | null {
   const p = s.player, P = (dx: number, dy: number, dz: number): [number, number, number] => [p.pos.x + dx, p.y + dy, p.pos.z + dz];

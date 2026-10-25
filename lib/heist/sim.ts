@@ -5,13 +5,16 @@
  * vitrine do diamante, portas trancadas, carros da fuga), lasers, cena do diamante, alarme e fuga, objetivos, checkpoint,
  * vitória e derrota. As telas (revendedor, roda de itens, puzzles) chamam as ações exportadas daqui.
  */
-import type { DoorId, Guard, HeistCard, HeistInput, ItemId, PuzzleKind, SimState, Vec, VendorId, WeaponId } from "./types";
+import type { CardTier, DialogueId, DoorId, Guard, HeistCard, HeistInput, ItemId, JewelKind, LootItem, PuzzleKind, SimState, Vec, VendorId, WeaponId } from "./types";
 import { collide, roomAt, segDist } from "./world";
-import { CHECKPOINTS, CLIMB_TO, CODES, DIAMOND_POS, DOORS, EXITS, INTERACTS, LASERS, RACKS, VAULT_ENTRY, floorY } from "./level";
+import { CHECKPOINTS, CLIMB_TO, CODES, DIAMOND_POS, DOORS, EXITS, INTERACTS, LASERS, RACKS, STASH_REWARD, VAULT_ENTRY, floorY } from "./level";
 import { AMMO_PACK, FIST_DAMAGE, ITEM_HEAL, KNIFE_DAMAGE, SHOT_DAMAGE, effectSize, offerLock } from "./cards";
-import { DOOR_BY_ID, GUARD_R, MAX_HP, OUTDOOR, PLAYER_R, CIV_R, VIP_PRESTIGE, disguiseOf, emit, line, passRules, playerMayPass, shoesOf, toast, wornPrestige, type SimCtx } from "./state";
-import { alertGuard, castShot, crowdAround, damageGuard, downGuard, magSize, makeNoise, tiredness } from "./combat";
-import { updateCivs, updateGuards, witnessesOfChange } from "./ai";
+import { DIFFICULTY, DOOR_BY_ID, GUARD_R, MAX_HP, OUTDOOR, PLAYER_R, CIV_R, disguiseOf, emit, line, passRules, playerMayPass, shoesOf, simCtx as simCtxImport, toast, type SimCtx } from "./state";
+import { alertGuard, castShot, crowdAround, damageGuard, downGuard, magSize, makeNoise, tiredness, witness } from "./combat";
+import { updateCivs, updateGuards, watchers, witnessesOfChange } from "./ai";
+import { DIALOGUES, choicesOf } from "./dialogue";
+import { endingOf, trackGoals } from "./goals";
+import { STEPS, beatFor, beatLength, stepDone, type MissionStep } from "./mission";
 import { angDiff, clamp, dist, norm, rand, turn, yawOf } from "./math";
 
 export const CHANGE_TIME = 2.6, CHANGE_SWAP = 1.15;
@@ -25,24 +28,31 @@ export function step(s: SimState, ctx: SimCtx, inp: HeistInput, rawDt: number) {
   const dt = Math.min(0.05, rawDt) * (slow ? 0.45 : 1);
   s.time += dt; s.tick++; s.stats.time += rawDt;
   if (s.phase === "CUTSCENE") { cutscene(s, ctx, dt); return; }
-  player(s, ctx, inp, dt, slow);
+  if (s.beat && s.time >= s.beat.until) s.beat = null;
+  player(s, ctx, s.beat ? IDLE_INPUT(inp) : inp, dt, slow);
   doors(s);
   updateGuards(s, ctx, dt);
   updateCivs(s, ctx, dt);
   pendingNoises(s);
   lasers(s, ctx);
   progress(s, ctx);
+  trackGoals(s);
 }
 
 /* ---------- jogadora ---------- */
 function player(s: SimState, ctx: SimCtx, inp: HeistInput, dt: number, slow: boolean) {
   const p = s.player;
   if (p.mode === "DOWNED") { p.speed = 0; return; }
-  if (p.action) { if (action(s, ctx, dt)) return; }
+  if (p.action && !cancelAction(s, inp) && action(s, ctx, dt)) return;
+  // dificuldade fácil: a vida volta devagar até a metade, longe do combate
+  const regenTo = DIFFICULTY[s.difficulty].regen || (s.options.regen ? 50 : 0);
+  if (regenTo && p.hp < regenTo && s.time - p.lastHitAt > 8) p.hp = Math.min(regenTo, p.hp + 4 * dt);
   if (p.hidden) { p.speed = 0; if (inp.interactPress) unhide(s); return; }
   if (inp.crouchPress) p.crouch = !p.crouch;
   const tired = tiredness(s);
   p.discreet = inp.discreet && !p.crouch && !p.aiming;
+  if (inp.dodgePress) dodge(s, inp, tired);
+  if (p.action?.kind === "dodge") return;
   p.aiming = inp.aim && isPistol(p.weapon) && p.mode === "WALK";
   // direção relativa à câmera: frente (sen θ, cos θ), direita (−cos θ, sen θ)
   const fx = Math.sin(inp.camYaw), fz = Math.cos(inp.camYaw);
@@ -104,7 +114,16 @@ function action(s: SimState, ctx: SimCtx, dt: number): boolean {
     case "change":
       if (!a.done && a.t >= CHANGE_SWAP) { a.done = true; applyWear(s, a.ref!); if (witnessesOfChange(s, ctx)) p.changeSeen = true; }
       break;
-    case "pickpocket": case "takedown": case "heal": case "interact": case "celebrate": case "pickup": break;
+    case "dodge": {
+      const v = a.from ?? { x: 0, z: 0 };
+      p.pos.x += v.x * 5.2 * dt; p.pos.z += v.z * 5.2 * dt;
+      collide(ctx.world, p.pos, PLAYER_R, "player", { doors: passRules(s), crouch: p.crouch });
+      for (const g of s.guards) if (g.active && g.state !== "DOWN") push(p.pos, g.pos, PLAYER_R + GUARD_R);
+      p.speed = 5.2;
+      if (a.t < a.dur) return true;
+      p.action = null; return false;
+    }
+    case "pickpocket": case "takedown": case "heal": case "interact": case "celebrate": case "pickup": case "loot": break;
     case "reload": case "melee": p.speed = 0; return false;                      // recarregar e golpear não prendem os pés
   }
   p.vel.x = p.vel.z = 0; p.speed = 0;
@@ -118,8 +137,38 @@ function finishAction(s: SimState, ctx: SimCtx, a: NonNullable<SimState["player"
   const p = s.player;
   if (a.kind === "climb" && a.to) { p.pos = { ...a.to }; p.y = floorY(p.pos); p.lastRoom = roomAt(p.pos); }
   if (a.kind === "heal") { const amt = Number(a.ref); p.hp = Math.min(p.maxHp, p.hp + amt); s.stats.heals++; emit(s, { t: "sfx", id: "heal" }); }
-  if (a.kind === "takedown") { const g = s.guards.find((x) => x.id === a.ref); if (g && g.state === "GRABBED") downGuard(s, g, p.weapon === "knife"); makeNoise(s, p.pos, 3, "step"); }
-  if (a.kind === "pickpocket") pickpocketDone(s, a.ref!);
+  if (a.kind === "takedown") { const g = s.guards.find((x) => x.id === a.ref); if (g && g.state === "GRABBED") { downGuard(s, g, p.weapon === "knife"); witness(s, g.pos, p.weapon === "knife" ? "kill" : "takedown"); } makeNoise(s, p.pos, 3, "step"); }
+  if (a.kind === "pickpocket") pickpocketDone(s, ctx, a.ref!);
+  if (a.kind === "loot") lootDone(s, a.ref!);
+}
+
+/** Esquiva (Espaço / ○): um passo rápido para o lado do movimento (ou para trás), sem levar tiro por 0,32 s. */
+function dodge(s: SimState, inp: HeistInput, tired: number) {
+  const p = s.player;
+  if (s.time < p.dodgeReadyAt || p.action || p.hidden || p.mode !== "WALK") return;
+  const fx = Math.sin(inp.camYaw), fz = Math.cos(inp.camYaw);
+  let dx = fx * inp.move.y - fz * inp.move.x, dz = fz * inp.move.y + fx * inp.move.x;
+  const l = Math.hypot(dx, dz);
+  if (l < 0.2) { dx = -Math.sin(p.yaw); dz = -Math.cos(p.yaw); } else { dx /= l; dz /= l; }
+  const dur = 0.32 * (1 - 0.25 * tired);
+  p.action = { kind: "dodge", t: 0, dur, from: { x: dx, z: dz } };
+  p.iframesUntil = s.time + dur; p.dodgeReadyAt = s.time + 0.9 * (1 + tired); p.crouch = false;
+  emit(s, { t: "sfx", id: "dodge" });
+}
+
+/** Cancelar (MH-04-11, MH-07-07): E de novo, andar ou esquivar interrompe furto, saque, cura (o kit volta) e a troca de
+ * roupa antes de a peça mudar. */
+function cancelAction(s: SimState, inp: HeistInput): boolean {
+  const p = s.player, a = p.action!;
+  const moved = Math.hypot(inp.move.x, inp.move.y) > 0.6 && a.t > 0.15;
+  if (!(inp.interactPress || moved || inp.dodgePress)) return false;
+  if (a.kind === "pickpocket" || a.kind === "loot") { p.action = null; toast(s, "heist.toast.cancel"); return true; }
+  if (a.kind === "heal") {
+    if (a.item === "medkit") p.inv.medkit++; else if (a.item === "medkitXL") p.inv.medkitXL++; else if (a.item?.startsWith("card:")) s.cardState[a.item.slice(5)] = "DECK";
+    p.action = null; toast(s, "heist.toast.cancel"); return true;
+  }
+  if (a.kind === "change" && !a.done) { p.action = null; toast(s, "heist.toast.cancel"); return true; }
+  return false;
 }
 
 /* ---------- combate da jogadora ---------- */
@@ -131,6 +180,8 @@ function combat(s: SimState, ctx: SimCtx, inp: HeistInput, tired: number) {
     p.inv.mag += take; p.inv.ammo -= take; p.reloadUntil = 0; if (p.action?.kind === "reload") p.action = null;
   }
   if (inp.reloadPress && isPistol(p.weapon) && !p.reloadUntil && p.inv.mag < magSize(p.weapon) && p.inv.ammo > 0) startReload(s, tired);
+  else if (inp.reloadPress && isPistol(p.weapon) && p.inv.ammo <= 0) hint(s, "heist.toast.noAmmo");
+  if (inp.firePress && !isPistol(p.weapon) && (inp.aim || p.weapon !== "hands")) hint(s, p.inv.weapons.some(isPistol) ? "heist.toast.equipGun" : "heist.toast.noGun");
   if (isPistol(p.weapon) && (inp.firePress || (inp.fire && p.weapon === "pistolS")) && s.time >= p.nextFireAt && !p.reloadUntil) fire(s, ctx, inp, tired);
   if (inp.meleePress && s.time >= p.meleeUntil) melee(s, tired);
 }
@@ -204,18 +255,23 @@ export function meleeTarget(s: SimState): { g: Guard; behind: boolean } | null {
 /** Atalho da barra de vida: usa o melhor curativo disponível (kit grande se falta muito, kit, depois lenço). */
 export function quickHeal(s: SimState): boolean {
   const p = s.player;
-  if (p.action || p.hp >= p.maxHp || p.mode !== "WALK") return false;
+  if (p.action || p.mode !== "WALK") return false;
+  if (p.hp >= p.maxHp) { hint(s, "heist.toast.fullHp"); return false; }
   const missing = p.maxHp - p.hp;
-  if (p.inv.medkitXL > 0 && (missing >= 60 || p.inv.medkit === 0)) { p.inv.medkitXL--; p.action = { kind: "heal", t: 0, dur: 1.3, ref: String(ITEM_HEAL.medkitXL) }; return true; }
-  if (p.inv.medkit > 0) { p.inv.medkit--; p.action = { kind: "heal", t: 0, dur: 1, ref: String(ITEM_HEAL.medkit) }; return true; }
+  if (p.inv.medkitXL > 0 && (missing >= 60 || p.inv.medkit === 0)) { p.inv.medkitXL--; p.action = { kind: "heal", t: 0, dur: 1.3, ref: String(ITEM_HEAL.medkitXL), item: "medkitXL" }; return true; }
+  if (p.inv.medkit > 0) { p.inv.medkit--; p.action = { kind: "heal", t: 0, dur: 1, ref: String(ITEM_HEAL.medkit), item: "medkit" }; return true; }
+  if (p.inv.bandage > 0) { p.inv.bandage--; p.action = { kind: "heal", t: 0, dur: 0.9, ref: "30" }; return true; }
   const scarf = s.cards.find((c) => c.use === "BANDAGE" && s.cardState[c.id] === "DECK");
-  if (scarf) { s.cardState[scarf.id] = "USED"; p.action = { kind: "heal", t: 0, dur: 0.9, ref: String(effectSize(scarf)) }; return true; }
+  if (scarf) { s.cardState[scarf.id] = "USED"; p.action = { kind: "heal", t: 0, dur: 0.9, ref: String(effectSize(scarf)), item: `card:${scarf.id}` }; return true; }
   toast(s, "heist.toast.noHeal"); return false;
 }
+/** Aviso curto que não se repete em seguida. */
+function hint(s: SimState, key: string) { if ((s.lineAt[`hint-${key}`] ?? -99) + 2.5 > s.time) return; s.lineAt[`hint-${key}`] = s.time; toast(s, key); }
 
 function throwBottle(s: SimState, ctx: SimCtx, camYaw: number) {
   const p = s.player;
-  if (p.inv.bottles <= 0 || p.action) return;
+  if (p.action) return;
+  if (p.inv.bottles <= 0) { hint(s, "heist.toast.noBottle"); return; }
   p.inv.bottles--;
   const dir = { x: Math.sin(camYaw), z: Math.cos(camYaw) };
   let land = { ...p.pos };
@@ -253,7 +309,7 @@ export function laserOn(s: SimState, id: string): boolean {
   if (!s.lasersOn || s.fusesCut) return false;
   const L = LASERS.find((l) => l.id === id)!;
   if (L.off <= 0) return true;
-  const t = s.time * (s.time < s.player.slowUntil ? 0.4 : 1) + L.phase;
+  const t = s.time * (s.time < s.player.slowUntil ? 0.4 : 1) * (s.options.slowLasers ? 0.6 : 1) + L.phase;
   return t % (L.on + L.off) < L.on;
 }
 function lasers(s: SimState, ctx: SimCtx) {
@@ -273,7 +329,7 @@ function lasers(s: SimState, ctx: SimCtx) {
 }
 
 /* ---------- interação ---------- */
-export type PromptKind = "vendor" | "hostess" | "uniform" | "intercom" | "inspect" | "keypad" | "safe" | "fuses" | "pedestal" | "climb" | "door" | "exit" | "hide" | "unhide" | "pickpocket" | "pickup" | "takedown";
+export type PromptKind = "vendor" | "hostess" | "uniform" | "intercom" | "inspect" | "keypad" | "safe" | "fuses" | "pedestal" | "climb" | "door" | "exit" | "hide" | "unhide" | "pickpocket" | "pickup" | "takedown" | "talk" | "stash" | "jewelCase" | "coatRack";
 export interface Prompt { kind: PromptKind; key: string; vars?: Record<string, string | number>; ok: boolean; ref?: string; pos: Vec }
 
 /** O que E/✕ faz agora (o HUD mostra; `interact` executa o mesmo). */
@@ -296,13 +352,27 @@ export function promptAt(s: SimState): Prompt | null {
     if (pr) { best = pr; bd = d; }
   }
   if (best) return best;
-  // furto: convidada da fila (convite) e a curadora (cartão), por trás
+  // furto (por trás, o mais perto que dá) e conversa (quem tem diálogo): convite da fila, cartão da curadora, joia
+  let steal: { c: (typeof s.civs)[number]; kind: "invite" | "keycard" | "jewel"; d: number } | null = null;
+  let talkTo: { c: (typeof s.civs)[number]; d: number } | null = null, front: { c: (typeof s.civs)[number]; d: number } | null = null;
   for (const c of s.civs) {
-    if (!(c.hasInvite && c.role === "queue" && !p.inv.invite) && !(c.role === "curator" && !p.inv.keycard && !s.lineAt["picked-" + c.id])) continue;
-    const d = dist(c.pos, p.pos); if (d > 1.3) continue;
-    const behind = Math.abs(angDiff(c.yaw, yawOf({ x: p.pos.x - c.pos.x, z: p.pos.z - c.pos.z }))) > 1.6;
-    return { kind: "pickpocket", key: c.role === "curator" ? "heist.prompt.pickKeycard" : "heist.prompt.pickInvite", ok: behind, ref: c.id, pos: c.pos };
+    if (c.panicUntil > s.time) continue;
+    const d = dist(c.pos, p.pos); if (d > 1.6) continue;
+    const kind = (c.hasInvite && c.role === "queue" && !p.inv.invite) ? "invite" : (c.role === "curator" && !p.inv.keycard && !s.lineAt["picked-" + c.id]) ? "keycard" : (c.jewel && !c.jewel.taken) ? "jewel" : null;
+    if (kind && d < 1.3) {
+      const behind = Math.abs(angDiff(c.yaw, yawOf({ x: p.pos.x - c.pos.x, z: p.pos.z - c.pos.z }))) > 1.6;
+      if (behind) { if (!steal || d < steal.d) steal = { c, kind, d }; } else if (!front || d < front.d) front = { c, d };
+    }
+    if (c.talkId && !(c.talkId === "hostess" && s.unlocked.includes("carpetGate")) && (!talkTo || d < talkTo.d)) talkTo = { c, d };
   }
+  if (steal) {
+    const c = steal.c, j = c.jewel;
+    const vars: Record<string, string | number> = steal.kind === "jewel" && j ? { item: `heist.jewel.${j.kind}`, value: j.value, tier: `heist.tier.${j.tier}` } : {};
+    vars.watch = watchers(s, simCtxLite(), c.id);
+    return { kind: "pickpocket", key: steal.kind === "jewel" ? "heist.prompt.pickJewel" : steal.kind === "keycard" ? "heist.prompt.pickKeycard" : "heist.prompt.pickInvite", ok: true, ref: c.id, pos: c.pos, vars };
+  }
+  if (talkTo) return { kind: "talk", key: `heist.prompt.talk.${talkTo.c.talkId}`, ok: true, ref: talkTo.c.id, pos: talkTo.c.pos };
+  if (front) return { kind: "pickpocket", key: "heist.prompt.pickFront", ok: false, ref: front.c.id, pos: front.c.pos };
   // porta trancada encostada: diz o que falta
   for (const d of DOORS) {
     if (d.lock === "open" || d.lock === "vent" || d.lock === "climb") continue;
@@ -317,6 +387,9 @@ function interactsNear(s: SimState) {
   const racks = RACKS.map((r) => ({ id: r.id, kind: "rack" as const, ref: r.id, pos: { x: r.pos.x + Math.sin(r.yaw) * 0.7, z: r.pos.z + Math.cos(r.yaw) * 0.7 }, radius: 1.1 }));
   return [...INTERACTS_CACHE, ...racks].filter((it) => Math.abs(it.pos.x - p.pos.x) < 2 && Math.abs(it.pos.z - p.pos.z) < 2);
 }
+let ctxLite: SimCtx | null = null;
+/** Contexto estático para quem não recebe ctx (o botão de furto conta quem está olhando). */
+function simCtxLite(): SimCtx { return (ctxLite ??= simCtxImport()); }
 const INTERACTS_CACHE = INTERACTS.map((i) => ({ id: i.id, kind: i.kind, ref: i.ref, pos: i.pos, radius: i.radius }));
 
 function describe(s: SimState, kind: string, ref: string, id: string, pos: Vec): Prompt | null {
@@ -343,12 +416,15 @@ function describe(s: SimState, kind: string, ref: string, id: string, pos: Vec):
     }
     case "exit": return p.inv.diamond ? P("exit", "heist.prompt.exit") : null;
     case "rack": return P("hide", "heist.prompt.hide");
+    case "stash": return s.stashes.includes(ref) ? null : P("stash", "heist.prompt.stash");
+    case "jewelCase": return s.stashes.includes(ref) ? null : P("jewelCase", s.fusesCut ? "heist.prompt.jewelCase" : "heist.prompt.jewelCaseSensor");
+    case "coatRack": return s.stashes.includes(ref) ? null : P("coatRack", "heist.prompt.coatRack");
   }
   void id; return null;
 }
 
 /** Executa a interação do prompt. Telas (revendedor, puzzle, pista) devolvem o que abrir. */
-export type OpenUi = { ui: "vendor"; vendor: VendorId } | { ui: "puzzle"; kind: PuzzleKind } | { ui: "clue"; ref: string } | null;
+export type OpenUi = { ui: "vendor"; vendor: VendorId } | { ui: "puzzle"; kind: PuzzleKind } | { ui: "clue"; ref: string } | { ui: "dialogue" } | null;
 export function interact(s: SimState, ctx: SimCtx): OpenUi {
   const pr = promptAt(s); const p = s.player;
   if (!pr || !pr.ok) { if (pr?.kind === "door") emit(s, { t: "sfx", id: "locked" }); return null; }
@@ -361,8 +437,12 @@ export function interact(s: SimState, ctx: SimCtx): OpenUi {
       const c = s.civs.find((x) => x.id === pr.ref)!;
       p.action = { kind: "pickpocket", t: 0, dur: 1.1, ref: c.id }; p.yaw = yawOf({ x: c.pos.x - p.pos.x, z: c.pos.z - p.pos.z }); return null;
     }
-    case "vendor": return { ui: "vendor", vendor: pr.ref as VendorId };
-    case "hostess": hostess(s); return null;
+    case "talk": { const c = s.civs.find((x) => x.id === pr.ref)!; return talk(s, c.id, c.talkId!); }
+    case "vendor": return pr.ref === "bar" ? talk(s, s.civs.find((c) => c.talkId === "bartender")?.id ?? "bar", "bartender") : { ui: "vendor", vendor: pr.ref as VendorId };
+    case "hostess": return talk(s, s.civs.find((c) => c.talkId === "hostess")?.id ?? "hostess", "hostess");
+    case "stash": p.action = { kind: "pickup", t: 0, dur: 0.8 }; openStash(s, pr.ref!); return null;
+    case "jewelCase": p.action = { kind: "loot", t: 0, dur: 1.6, ref: pr.ref! }; return null;
+    case "coatRack": p.action = { kind: "loot", t: 0, dur: 1.4, ref: pr.ref! }; return null;
     case "uniform": takeUniform(s, ctx, pr.ref!); return null;
     case "intercom": intercom(s); return null;
     case "inspect": if (!s.clues.includes(pr.ref!)) s.clues.push(pr.ref!); return { ui: "clue", ref: pr.ref! };
@@ -397,14 +477,24 @@ function pickup(s: SimState, id: string): OpenUi {
   return null;
 }
 
-function pickpocketDone(s: SimState, civId: string) {
+function pickpocketDone(s: SimState, ctx: SimCtx, civId: string) {
   const c = s.civs.find((x) => x.id === civId); const p = s.player;
   if (!c) return;
   const facing = Math.abs(angDiff(c.yaw, yawOf({ x: p.pos.x - c.pos.x, z: p.pos.z - c.pos.z }))) < 1.4;
   const watched = s.guards.some((g) => g.sees && dist(g.pos, p.pos) < 8);
   if (facing || watched) {
-    line(s, c.id, "heist.civ.thief", 1); c.reactKind = "point"; c.reactUntil = s.time + 4;
-    for (const g of s.guards) if (g.active && g.state !== "DOWN" && dist(g.pos, p.pos) < 12) { g.suspicion = Math.min(0.99, g.suspicion + 0.6); g.lastKnown = { ...p.pos }; g.state = "SUSPICIOUS"; g.stateT = s.time; }
+    line(s, c.id, "heist.civ.thief", 1); c.reactKind = "point"; c.reactUntil = s.time + 4; c.knowsPlayer = s.time;
+    for (const g of s.guards) if (g.active && g.state !== "DOWN" && g.state !== "GRABBED" && dist(g.pos, p.pos) < 12) { g.suspicion = Math.min(0.99, g.suspicion + 0.6); g.lastKnown = { ...p.pos }; g.state = "SUSPICIOUS"; g.stateT = s.time; g.reason = "theft"; }
+    witness(s, p.pos, "theft");
+    return;
+  }
+  const needInvite = c.hasInvite && c.role === "queue" && !p.inv.invite, needCard = c.role === "curator" && !p.inv.keycard && !s.lineAt["picked-" + c.id];
+  if (c.jewel && !c.jewel.taken && !needInvite && !needCard) {
+    const j = c.jewel;
+    j.taken = true; j.missAt = s.time + 25 + rand(s) * 30 + (c.persona === "dreamy" ? 30 : c.persona === "wary" ? -10 : 0);
+    addLoot(s, j.kind, j.value, j.tier, "worn", c.role, p.lastRoom);
+    // alguém olhando (que não a dona) pode ter visto: grita depois
+    if (watchers(s, ctx, c.id) > 0 && rand(s) < 0.5) witness(s, p.pos, "theft");
     return;
   }
   if (c.role === "curator") { p.inv.keycard = true; s.lineAt["picked-" + c.id] = s.time; toast(s, "heist.toast.keycard"); }
@@ -412,18 +502,63 @@ function pickpocketDone(s: SimState, civId: string) {
   s.stats.route ||= "furto";
 }
 
-/** Recepcionista do portão: convite (furtado ou comprado) ou grife de verdade vestida abrem o tapete e dão a pulseira. */
-function hostess(s: SimState) {
-  const p = s.player;
-  if (p.inv.invite || (p.disguise === "gala" && wornPrestige(s) >= VIP_PRESTIGE)) {
-    s.unlocked.push("carpetGate"); p.inv.wristband = true;
-    line(s, "hostess", p.inv.invite ? "heist.hostess.welcome" : "heist.hostess.vip", 0);
-    s.stats.route ||= p.inv.invite ? "convite" : "vip";
-    return;
-  }
-  line(s, "hostess", p.disguise === "casual" ? "heist.hostess.casual" : "heist.hostess.noList", 0);
-  for (const g of s.guards) if ((g.id === "r2" || g.id === "r3") && g.state !== "DOWN") g.suspicion = Math.min(0.9, g.suspicion + 0.2);
+function addLoot(s: SimState, kind: LootItem["kind"], value: number, tier: CardTier, from: LootItem["from"], owner: LootItem["owner"], room: LootItem["room"]) {
+  const item: LootItem = { id: `loot-${s.nextId++}`, kind, value, tier, from, owner, room, at: s.time };
+  s.player.inv.loot.push(item);
+  emit(s, { t: "loot", item }); emit(s, { t: "sfx", id: "loot" });
 }
+
+/** Saque: vitrine de joias da Sala das Joias (o sensor dispara enquanto há energia) ou a estola guardada na chapelaria. */
+function lootDone(s: SimState, ref: string) {
+  const p = s.player;
+  if (s.stashes.includes(ref)) return;
+  if (ref === "coatRack") {
+    const att = s.civs.find((c) => c.room === "vestibulo" && c.role === "crew");
+    if (att && dist(att.pos, p.pos) < 4 && Math.abs(angDiff(att.yaw, yawOf({ x: p.pos.x - att.pos.x, z: p.pos.z - att.pos.z }))) < 1.2) {
+      line(s, att.id, "heist.civ.coat", 0); att.reactKind = "point"; att.reactUntil = s.time + 3; att.knowsPlayer = s.time; witness(s, p.pos, "theft"); return;
+    }
+    s.stashes.push(ref); addLoot(s, "estola", 2600, "PRATA", "stored", "chapelaria", "vestibulo"); return;
+  }
+  s.stashes.push(ref);
+  const kinds: JewelKind[] = ["colar", "tiara", "broche", "pulseira"];
+  const k = Number(ref.slice(-1)) - 1;
+  addLoot(s, kinds[k] ?? "colar", 5000 + k * 450, "OURO", "exposed", "vitrine", "cofre");
+  if (!s.fusesCut && !s.lockdown) {
+    emit(s, { t: "sfx", id: "laser" }); emit(s, { t: "alarm", on: true }); toast(s, "heist.toast.caseAlarm");
+    for (const g of s.guards) if (g.active && g.state !== "DOWN" && g.state !== "GRABBED" && g.room === "cofre") alertGuard(s, g, p.pos, false, "laser");
+  }
+}
+
+function openStash(s: SimState, ref: string) {
+  const r = STASH_REWARD[ref], inv = s.player.inv;
+  if (!r || s.stashes.includes(ref)) return;
+  s.stashes.push(ref);
+  inv.ammo += r.ammo ?? 0; inv.bottles += r.bottles ?? 0; inv.medkit += r.medkit ?? 0; inv.decoder += r.decoder ?? 0; inv.bandage += r.bandage ?? 0;
+  toast(s, `heist.toast.${ref}`);
+}
+
+/* ---------- conversas ---------- */
+/** Começa a conversa com quem tem diálogo (a simulação para enquanto a tela de conversa está aberta). */
+export function talk(s: SimState, civId: string, id: DialogueId): OpenUi {
+  const c = s.civs.find((x) => x.id === civId);
+  if (c) { c.reactKind = "look"; c.reactUntil = s.time + 2; }
+  s.dialogue = { npc: civId, id, node: "start" };
+  s.stats.route ||= "";
+  return { ui: "dialogue" };
+}
+/** Escolhe a opção `index` (o índice original no nó). Devolve a próxima tela (conversa, revendedor ou nada). */
+export function choose(s: SimState, index: number): OpenUi {
+  const d = s.dialogue; if (!d) return null;
+  const node = DIALOGUES[d.id][d.node];
+  const opt = choicesOf(s, node).find((x) => x.i === index);
+  if (!opt || opt.locked) return { ui: "dialogue" };
+  const next = opt.c.go(s);
+  if (!s.flags.includes(`dlg-${d.id}`)) s.flags.push(`dlg-${d.id}`);
+  if (next?.startsWith("vendor:")) { s.dialogue = null; return { ui: "vendor", vendor: next.slice(7) as VendorId }; }
+  if (!next) { s.dialogue = null; return null; }
+  d.node = next; return { ui: "dialogue" };
+}
+export function endTalk(s: SimState) { s.dialogue = null; }
 
 function intercom(s: SimState) {
   const p = s.player;
@@ -496,6 +631,7 @@ export function closePuzzle(s: SimState) { if (s.puzzle) emit(s, { t: "puzzle", 
 function startCutscene(s: SimState) {
   const p = s.player;
   s.puzzle = null; p.inv.diamond = true; p.aiming = false; p.crouch = false; p.mode = "CUTSCENE"; p.action = null;
+  addLoot(s, "diamante", 15000, "ESPECIAL", "exposed", "vitrine", "cofre");
   p.yaw = yawOf({ x: DIAMOND_POS.x - p.pos.x, z: DIAMOND_POS.z - p.pos.z });
   s.phase = "CUTSCENE"; s.phaseAt = s.time; s.cutscene = { t: 0, step: 0 };
   emit(s, { t: "phase", phase: "CUTSCENE" });
@@ -538,7 +674,9 @@ function endCutscene(s: SimState) {
 }
 function win(s: SimState, exit: string) {
   s.phase = "WON"; s.phaseAt = s.time; s.objective = "DONE"; s.stats.route = `${s.stats.route || "furtiva"}→${exit}`;
+  if (!s.flags.includes(`ending-${endingOf(s)}`)) s.flags.push(`ending-${endingOf(s)}`);
   emit(s, { t: "phase", phase: "WON" }); emit(s, { t: "objective", id: "DONE" });
+  if (s.challenge && !s.challengeFailed) emit(s, { t: "challenge", id: s.challenge, result: "done" });
 }
 
 /* ---------- objetivos e checkpoints ---------- */
@@ -555,10 +693,33 @@ function progress(s: SimState, ctx: SimCtx) {
     else obj = s.fusesCut || dist(p.pos, DIAMOND_POS) < 3 ? "DIAMOND" : "LASERS";
   }
   if (obj !== s.objective) { s.objective = obj; emit(s, { t: "objective", id: obj }); }
+  // subobjetivos cumpridos, em ordem (vários de uma vez: a cena é só a do último)
+  while (s.mission.step < STEPS.length) {
+    const st = STEPS[s.mission.step], via = stepDone(s, st.id);
+    if (!via) break;
+    s.mission.via[st.id] = via; s.mission.step++;
+    emit(s, { t: "beat", step: st.id, via });
+    startBeat(s, st.id, via);
+  }
   // fuga: chegar perto do carro já basta
   if (s.phase === "ESCAPE") for (const e of EXITS) if (dist(e.pos, p.pos) < 1.4) win(s, e.id);
   void ctx;
 }
+
+/** Entrada sem nada apertado (cena curta: a câmera e o mundo seguem, a jogadora não). */
+const IDLE_INPUT = (inp: HeistInput): HeistInput => ({ ...inp, move: { x: 0, y: 0 }, sprint: false, crouchPress: false, discreet: false, interactPress: false, aim: false, fire: false, firePress: false, reloadPress: false, meleePress: false, healPress: false, throwPress: false, dodgePress: false });
+
+/** Começa a cena curta de um subobjetivo (ou a de abertura). Devolve os enquadramentos para a câmera; null se não houver. */
+export function startBeat(s: SimState, id: MissionStep | "intro", via: string) {
+  if (!s.options.beats || s.phase === "CUTSCENE" || s.phase === "WON" || s.phase === "LOST") return null;
+  const b = beatFor(s, id, via);
+  if (!b) return null;
+  s.beat = { ...b, step: id, via, at: s.time, until: s.time + beatLength(b) };
+  s.player.iframesUntil = Math.max(s.player.iframesUntil, s.beat.until + 0.6);
+  return b;
+}
+/** Pular a cena curta (Enter / ✕): o controle volta na hora. */
+export function skipBeat(s: SimState) { if (s.beat) s.beat.until = s.time; }
 
 /* ======================= ações das telas ======================= */
 /** Vestir uma carta de roupa (ou o uniforme / o vestido de chegada): abaixa, troca (a peça muda a ~45 %) e levanta. */
@@ -582,6 +743,7 @@ function applyWear(s: SimState, ref: string) {
     p.outfit.worn = p.outfit.worn.filter((id) => { const o = s.cards.find((x) => x.id === id)!; if (clash(o)) { s.cardState[id] = "DECK"; return false; } return true; });
     p.outfit.worn.push(c.id); s.cardState[c.id] = "WORN"; s.stats.worn++;
   }
+  if (!s.flags.includes("changed")) s.flags.push("changed");
   p.disguise = disguiseOf(s); p.shoes = shoesOf(s);
   emit(s, { t: "outfit", pieces: [...p.outfit.worn, p.outfit.base] });
   toast(s, `heist.toast.disguise.${p.disguise}`);

@@ -27,6 +27,7 @@ const mats = {
   diamond: new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0, metalness: 0, transmission: 0.6, ior: 2.42, thickness: 0.02, iridescence: 1, iridescenceIOR: 1.8, clearcoat: 1, emissive: "#9fc8ff", emissiveIntensity: 0.25, transparent: true, opacity: 0.95 }),
   beam: new THREE.MeshBasicMaterial({ color: "#fff6d8", transparent: true, opacity: 0.07, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
   ear: new THREE.MeshStandardMaterial({ color: "#d9d4cc", roughness: 0.4 }),
+  bowtie: new THREE.MeshPhysicalMaterial({ color: "#09090b", roughness: 0.38, sheen: 0.6, sheenColor: new THREE.Color("#3a3a44"), sheenRoughness: 0.5 }),
   coil: new THREE.MeshStandardMaterial({ color: "#e8e3da", roughness: 0.5, transparent: true, opacity: 0.85 }),
 };
 const box = (x: number, y: number, z: number) => new THREE.BoxGeometry(x, y, z);
@@ -43,6 +44,8 @@ const geo = {
   gem: new THREE.OctahedronGeometry(0.016, 1),
   violin: (() => { const s = new THREE.Shape(); s.moveTo(0, -0.18); s.bezierCurveTo(0.11, -0.18, 0.11, -0.04, 0.06, -0.01); s.bezierCurveTo(0.09, 0.03, 0.09, 0.16, 0, 0.16); s.bezierCurveTo(-0.09, 0.16, -0.09, 0.03, -0.06, -0.01); s.bezierCurveTo(-0.11, -0.04, -0.11, -0.18, 0, -0.18); return new THREE.ExtrudeGeometry(s, { depth: 0.04, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.004, bevelSegments: 2 }); })(),
   neck: box(0.024, 0.26, 0.018), bowStick: cyl(0.0035, 0.0035, 0.72, 6),
+  bowWing: (() => { const g = new THREE.ConeGeometry(0.022, 0.05, 4, 1); g.rotateY(Math.PI / 4); g.scale(1, 1, 0.45); g.rotateZ(Math.PI / 2); g.translate(0.025, 0, 0); return g; })(),
+  bowKnot: (() => { const g = new THREE.BoxGeometry(0.014, 0.018, 0.012); return g; })(),
   earBud: new THREE.SphereGeometry(0.0075, 10, 8), earCoil: new THREE.TorusKnotGeometry(0.006, 0.0012, 64, 4, 2, 9),
   beam: (() => { const g = new THREE.ConeGeometry(0.9, 6, 18, 1, true); g.translate(0, -3, 0); g.rotateX(Math.PI); return g; })(),
 };
@@ -132,6 +135,14 @@ export function makeEarpiece(): THREE.Group {
   const g = new THREE.Group(); g.name = "ponto";
   g.add(mesh(geo.earBud, mats.ear, -0.072, 0.035, 0.0));
   const c = mesh(geo.earCoil, mats.coil, -0.07, -0.03, -0.025, 0.2, 0, 0); c.scale.set(1, 6, 1); g.add(c);
+  return g;
+}
+
+/** Gravata-borboleta: duas asas e o nó, centrada na origem (frente = +z). Quem chama prende ao osso do pescoço. */
+export function makeBowTie(): THREE.Group {
+  const g = new THREE.Group(); g.name = "gravata-borboleta";
+  const right = mesh(geo.bowWing, mats.bowtie); const left = mesh(geo.bowWing, mats.bowtie); left.rotation.y = Math.PI;
+  g.add(right, left, mesh(geo.bowKnot, mats.bowtie, 0, 0, 0.003));
   return g;
 }
 

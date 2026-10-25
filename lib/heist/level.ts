@@ -45,6 +45,13 @@ export const ROOMS: Room[] = [
   { id: "rua", rect: { x0: -30, z0: 24.5, x1: 30, z1: 50.5 }, access: "street", floor: "sidewalk", tier: 3, outdoor: true },
 ];
 
+/** Luz de cada sala (0–1): no escuro, quem está longe é reconhecido mais devagar (MH-06-03). A Sala das Joias fica na
+ * penumbra quando o quadro de luz é cortado. */
+export const ROOM_LIGHT: Record<RoomId, number> = {
+  rua: 0.95, beco: 0.4, vestibulo: 1, salao: 0.85, galeria: 0.65, lounge: 0.7, terraco: 0.5, beiral: 0.3, bastidores: 0.9,
+  servico: 0.55, seguranca: 0.9, doca: 0.6, cofre: 0.8,
+};
+
 /** Nome da sala para o HUD (chave de tradução) e o nível dos seguranças (tiros de pistola comum para derrubar). */
 export const ROOM_TIER = Object.fromEntries(ROOMS.map((r) => [r.id, r.tier])) as Record<RoomId, number>;
 
@@ -263,19 +270,19 @@ export const LASERS: LaserDef[] = [
 /* ---------- seguranças: o nível sobe sala a sala (tiros para derrubar com a pistola comum) ---------- */
 export const GUARDS: GuardSpawn[] = [
   // rua (3 tiros)
-  { id: "r1", callsign: "Vargas", room: "rua", look: "police", post: { pos: { x: -27, z: 42.6 }, yaw: 0 } },
-  { id: "r2", callsign: "Diniz", room: "rua", look: "guard", post: { pos: { x: -4.4, z: 32.6 }, yaw: Math.PI / 2 } },
+  { id: "r1", callsign: "Vargas", room: "rua", look: "police", post: { pos: { x: -27, z: 42.6 }, yaw: 0 }, role: "police", critical: true },
+  { id: "r2", callsign: "Diniz", room: "rua", look: "guard", post: { pos: { x: -4.4, z: 32.6 }, yaw: Math.PI / 2 }, critical: true },
   { id: "r3", callsign: "Kátia", room: "rua", look: "guard", post: { pos: { x: 16.6, z: 32.2 }, yaw: -Math.PI / 2 } },
   { id: "r4", callsign: "Bento", room: "rua", look: "guard", route: [{ x: -14, z: 26 }, { x: -24, z: 26 }, { x: -24, z: 31.6 }, { x: -14, z: 31.6 }] },
   { id: "b1", callsign: "Iuri", room: "beco", look: "guard", route: [{ x: 25, z: 20 }, { x: 25, z: -6 }, { x: 27, z: -19 }, { x: 25, z: 2 }] },
   // vestíbulo (3)
-  { id: "v1", callsign: "Jonas", room: "vestibulo", look: "guard", post: { pos: { x: 3, z: 15.4 }, yaw: 0 } },
+  { id: "v1", callsign: "Jonas", room: "vestibulo", look: "guard", post: { pos: { x: 3, z: 15.4 }, yaw: 0 }, critical: true },
   { id: "v2", callsign: "Lívia", room: "vestibulo", look: "guard", route: [{ x: -6.5, z: 16 }, { x: -6.5, z: 22.8 }, { x: -3, z: 23 }, { x: -3, z: 16.6 }] },
   // doca (4) — Gil leva a chave do portão da doca
-  { id: "d1", callsign: "Gil", room: "doca", look: "guard", post: { pos: { x: -19, z: 23.2 }, yaw: Math.PI }, carries: "doca" },
+  { id: "d1", callsign: "Gil", room: "doca", look: "guard", post: { pos: { x: -19, z: 23.2 }, yaw: Math.PI }, carries: "doca", critical: true },
   { id: "d2", callsign: "Sônia", room: "doca", look: "guard", route: [{ x: -10, z: 19 }, { x: -16.5, z: 18.6 }, { x: -12, z: 22.6 }] },
   // Grande Salão (4) — o chefe Marcos leva a chave da porta de serviço
-  { id: "s1", callsign: "Marcos", room: "salao", look: "guard", route: [{ x: -3, z: 12 }, { x: -7, z: 4.5 }, { x: -3, z: -3 }, { x: 3, z: -3 }, { x: 7.5, z: 4.5 }, { x: 3, z: 12 }], carries: "servico" },
+  { id: "s1", callsign: "Marcos", room: "salao", look: "guard", route: [{ x: -3, z: 12 }, { x: -7, z: 4.5 }, { x: -3, z: -3 }, { x: 3, z: -3 }, { x: 7.5, z: 4.5 }, { x: 3, z: 12 }], carries: "servico", role: "chief" },
   { id: "s2", callsign: "Marta", room: "salao", look: "guard", post: { pos: { x: -3.2, z: -4.6 }, yaw: Math.PI } },
   { id: "s3", callsign: "Edu", room: "salao", look: "guard", post: { pos: { x: -10.6, z: 12.4 }, yaw: Math.PI * 0.75 } },
   // lounge (5), Instituto do Traje (5)
@@ -289,19 +296,19 @@ export const GUARDS: GuardSpawn[] = [
   { id: "m1", callsign: "Rui", room: "servico", look: "guard", route: [mazeCell(1, 10), mazeCell(4, 10), mazeCell(4, 7), mazeCell(2, 8)] },
   { id: "m2", callsign: "Otávio", room: "servico", look: "guard", route: [mazeCell(2, 0), mazeCell(4, 0), mazeCell(4, 3), mazeCell(2, 3)] },
   { id: "m3", callsign: "Cida", room: "servico", look: "guard", route: [mazeCell(3, 4), mazeCell(3, 7), mazeCell(2, 6), mazeCell(2, 4)] },
-  { id: "q1", callsign: "Nunes", room: "seguranca", look: "guard", post: { pos: { x: -20.6, z: 5.8 }, yaw: -Math.PI / 2 }, carries: "keycard" },
+  { id: "q1", callsign: "Nunes", room: "seguranca", look: "guard", post: { pos: { x: -20.6, z: 5.8 }, yaw: -Math.PI / 2 }, carries: "keycard", role: "chief", critical: true },
   // Sala das Joias (9)
-  { id: "j1", callsign: "Brandão", room: "cofre", look: "guardHeavy", route: [{ x: -13.6, z: -9.6 }, { x: -21, z: -9.6 }, { x: -21, z: -19 }, { x: -13.6, z: -19 }] },
-  { id: "j2", callsign: "Hilda", room: "cofre", look: "guardHeavy", post: { pos: { x: -13.4, z: -13 }, yaw: -Math.PI / 2 } },
+  { id: "j1", callsign: "Brandão", room: "cofre", look: "guardHeavy", route: [{ x: -13.6, z: -9.6 }, { x: -21, z: -9.6 }, { x: -21, z: -19 }, { x: -13.6, z: -19 }], role: "heavy" },
+  { id: "j2", callsign: "Hilda", room: "cofre", look: "guardHeavy", post: { pos: { x: -13.4, z: -13 }, yaw: -Math.PI / 2 }, role: "heavy", critical: true },
   // reforços do alarme: dois entram pela porta da sala (cena), os outros plantam-se nas saídas — toda rota de fuga tem combate
-  { id: "x1", callsign: "Cardoso", room: "cofre", look: "guardHeavy", post: { pos: { x: -12.9, z: -14.6 }, yaw: -Math.PI / 2 }, lockdown: true },
-  { id: "x2", callsign: "Lopes", room: "cofre", look: "guardHeavy", post: { pos: { x: -12.9, z: -15.6 }, yaw: -Math.PI / 2 }, lockdown: true },
+  { id: "x1", callsign: "Cardoso", room: "cofre", look: "guardHeavy", post: { pos: { x: -12.9, z: -14.6 }, yaw: -Math.PI / 2 }, lockdown: true, role: "heavy" },
+  { id: "x2", callsign: "Lopes", room: "cofre", look: "guardHeavy", post: { pos: { x: -12.9, z: -15.6 }, yaw: -Math.PI / 2 }, lockdown: true, role: "heavy" },
   { id: "x3", callsign: "Prado", room: "servico", look: "guard", post: { pos: { x: -19, z: 15.2 }, yaw: Math.PI }, lockdown: true, blocker: true },
   { id: "x4", callsign: "Abreu", room: "terraco", look: "guard", post: { pos: { x: 21.2, z: -14 }, yaw: -Math.PI / 2 }, lockdown: true, blocker: true },
-  { id: "x5", callsign: "Moura", room: "galeria", look: "guard", route: [{ x: 0, z: -8 }, { x: -8, z: -14 }, { x: 0, z: -19 }, { x: 8, z: -14 }], lockdown: true },
-  { id: "x6", callsign: "Pires", room: "salao", look: "guard", post: { pos: { x: -11, z: 10 }, yaw: Math.PI / 2 }, lockdown: true, blocker: true },
-  { id: "x7", callsign: "Silva", room: "beco", look: "police", post: { pos: { x: 25.2, z: -13.2 }, yaw: -Math.PI / 2 }, lockdown: true },
-  { id: "x8", callsign: "Rocha", room: "rua", look: "police", post: { pos: { x: -19, z: 26.2 }, yaw: Math.PI }, lockdown: true, blocker: true },
+  { id: "x5", callsign: "Moura", room: "galeria", look: "guard", route: [{ x: 0, z: -8 }, { x: -8, z: -14 }, { x: 0, z: -19 }, { x: 8, z: -14 }], lockdown: true, reserve: true },
+  { id: "x6", callsign: "Pires", room: "salao", look: "guard", post: { pos: { x: -11, z: 10 }, yaw: Math.PI / 2 }, lockdown: true, blocker: true, reserve: true },
+  { id: "x7", callsign: "Silva", room: "beco", look: "police", post: { pos: { x: 25.2, z: -13.2 }, yaw: -Math.PI / 2 }, lockdown: true, role: "police" },
+  { id: "x8", callsign: "Rocha", room: "rua", look: "police", post: { pos: { x: -19, z: 26.2 }, yaw: Math.PI }, lockdown: true, blocker: true, role: "police" },
 ];
 
 /* ---------- civis ---------- */
@@ -316,10 +323,12 @@ function civs(): CivSpawn[] {
   for (let k = 0; k < 4; k++) C("paparazzo", "paparazzo", "rua", 7.2 + (k % 2) * 2.6, 27 + Math.floor(k / 2) * 2.4, -Math.PI / 2, k % 2 ? "photo" : "talk", { hold: k % 2 ? "camera" : "phone", y: -1.6 + 0.6 + Math.floor(k / 2) * 0.45 });
   // fila: convidados com convite (dá para furtar o de quem está distraído)
   for (let k = 0; k < 8; k++) C("queue", k % 2 ? "guestM" : "guestF", "rua", 2.9 + k * 1.3, 31.95, -Math.PI / 2, (["queue", "phone", "talk", "queue"] as const)[k % 4], { hold: k % 4 === 1 ? "phone" : null });
-  C("hostess", "hostess", "rua", -1.7, 32.4, Math.PI, "idle", { hold: "tablet" });
+  C("hostess", "hostess", "rua", -1.7, 32.4, Math.PI, "idle", { hold: "tablet", talk: "hostess" });
   C("hostess", "hostess", "rua", 1.6, 25.1, 0, "idle", { hold: "tablet", y: 0 });
   C("driver", "driver", "rua", -6, 36, 0, "idle"); C("driver", "driver", "rua", 7, 36, 0, "phone", { hold: "phone" });
-  C("catering", "catering", "rua", -20.4, 37, -Math.PI / 2, "phone", { hold: "phone" });
+  C("catering", "catering", "rua", -20.4, 37, -Math.PI / 2, "phone", { hold: "phone", talk: "cateringChief" });
+  // Lina Vale (atriz fictícia) saiu da limusine e posa para os fãs antes de subir
+  C("celebrity", "guestF", "rua", -5.4, 32.9, Math.PI, "wave", { talk: "celebrity" });
   C("vendor", "vendor", "rua", -28.2, 47.1, 0, "idle", { vendor: "street" });
   // vestíbulo
   C("hostess", "hostess", "vestibulo", -4.4, 20.9, 0, "idle", { hold: "tablet" });
@@ -333,12 +342,14 @@ function civs(): CivSpawn[] {
   C("waiter", "waitress", "salao", 4, 0, 0, "serve", { hold: "tray", wander: [{ x: 4, z: 0 }, { x: 7.4, z: 9.6 }, { x: 1.4, z: -2.6 }, { x: -6.6, z: 0.6 }] });
   C("waiter", "waiter", "salao", 0, 12.4, 0, "serve", { hold: "tray", wander: [{ x: 0, z: 12.4 }, { x: -5, z: 13 }, { x: 5.4, z: 13 }] });
   for (const [x, z] of [[-10.2, 1.2], [-10.9, 2.1], [-10.9, 3.1], [-10.2, 3.9]]) C("musician", "musician", "salao", x, z, Math.PI / 2, "play", { hold: "violin" });
+  // casais dançando perto do quarteto
+  for (const [x, z, yaw] of [[-7.6, 0.4, 0.5], [-7.1, 0.9, -2.6], [-8.4, 5.4, 1.2], [-7.9, 4.8, -1.9]] as const) C("dancer", out.length % 2 ? "guestM" : "guestF", "salao", x, z, yaw, "dance");
   // lounge e bar (Davi negocia por baixo do balcão)
-  C("bartender", "bartender", "lounge", 21.5, 9.5, -Math.PI / 2, "serve", { vendor: "bar" });
+  C("bartender", "bartender", "lounge", 21.5, 9.5, -Math.PI / 2, "serve", { vendor: "bar", talk: "bartender" });
   for (const [x, z, yaw, a] of [[18.9, 7.6, Math.PI / 2, "drink"], [18.9, 11.4, Math.PI / 2, "drink"], [14.4, 12.6, Math.PI, "sit"], [15.2, 12.6, Math.PI, "sit"], [13.6, 7.7, Math.PI / 2, "sit"], [16.6, 10.1, 3, "talk"]] as const) C("guest", out.length % 2 ? "guestF" : "guestM", "lounge", x, z, yaw, a, { hold: a === "drink" ? "glass" : null });
   // Instituto do Traje: convidados olhando as vitrines e a curadora (leva um cartão da Sala das Joias)
   for (const [x, z, yaw] of [[-6.5, -12.6, Math.PI], [-5.6, -12.8, Math.PI], [6.4, -12.6, Math.PI], [0, -15.2, Math.PI], [-9.4, -10, -Math.PI / 2], [9.4, -19, Math.PI / 2]] as const) C("guest", out.length % 2 ? "guestF" : "guestM", "galeria", x, z, yaw, "look");
-  C("curator", "curator", "galeria", 2, -12, Math.PI, "talk", { hold: "tablet", wander: [{ x: 2, z: -12 }, { x: -4, z: -19 }, { x: 6, z: -18.6 }, { x: 8, z: -12 }] });
+  C("curator", "curator", "galeria", 2, -12, Math.PI, "talk", { hold: "tablet", talk: "curator", wander: [{ x: 2, z: -12 }, { x: -4, z: -19 }, { x: 6, z: -18.6 }, { x: 8, z: -12 }] });
   // bastidores e terraço
   for (const [x, z, yaw] of [[21, -2.6, Math.PI / 2], [17.6, -1.1, Math.PI], [15.2, 1.2, 0]] as const) C("crew", "crew", "bastidores", x, z, yaw, "interact");
   for (const [x, z, yaw, a] of [[16, -12.6, 0, "sit"], [17, -12.6, 0, "sit"], [19.8, -18.6, -2, "drink"], [19, -19.4, 1, "talk"]] as const) C("guest", out.length % 2 ? "guestM" : "guestF", "terraco", x, z, yaw, a, { hold: a === "drink" ? "glass" : null });
@@ -372,6 +383,18 @@ export const INTERACTS: InteractDef[] = [
   { id: "climbTout", kind: "climb", ref: "climbTout", pos: { x: 19.5, z: -23 }, room: "beiral", radius: 1.2 },
   { id: "climbC", kind: "climb", ref: "climbC", pos: { x: -19.5, z: -23 }, room: "beiral", radius: 1.2 },
   { id: "climbCin", kind: "climb", ref: "climbCin", pos: { x: -19.5, z: -21.4 }, room: "cofre", radius: 1.2 },
+  // esconderijos com recompensa para quem explora (MH-02-13)
+  { id: "stashBeco", kind: "stash", ref: "stashBeco", pos: { x: 27.8, z: -2.8 }, room: "beco", radius: 1.1 },
+  { id: "stashMakeup", kind: "stash", ref: "stashMakeup", pos: { x: 19.9, z: -1.5 }, room: "bastidores", radius: 1 },
+  { id: "stashMaze", kind: "stash", ref: "stashMaze", pos: { x: -21.25, z: -5.25 }, room: "servico", radius: 1 },
+  { id: "stashTerrace", kind: "stash", ref: "stashTerrace", pos: { x: 14.9, z: -19.7 }, room: "terraco", radius: 1 },
+  { id: "stashDock", kind: "stash", ref: "stashDock", pos: { x: -10.3, z: 22.1 }, room: "doca", radius: 1 },
+  // joias expostas (vitrines da Sala das Joias, com sensor enquanto há energia) e a peça guardada na chapelaria
+  { id: "caseJ1", kind: "jewelCase", ref: "caseJ1", pos: { x: -20.5, z: -18.5 }, room: "cofre", radius: 1 },
+  { id: "caseJ2", kind: "jewelCase", ref: "caseJ2", pos: { x: -20.5, z: -10.5 }, room: "cofre", radius: 1 },
+  { id: "caseJ3", kind: "jewelCase", ref: "caseJ3", pos: { x: -13.55, z: -20.5 }, room: "cofre", radius: 1 },
+  { id: "caseJ4", kind: "jewelCase", ref: "caseJ4", pos: { x: -19.75, z: -20.6 }, room: "cofre", radius: 1 },
+  { id: "coatRack", kind: "coatRack", ref: "coatRack", pos: { x: 7.2, z: 20.4 }, room: "vestibulo", radius: 1 },
   { id: "carWest", kind: "exit", ref: "carWest", pos: EXITS[0].pos, room: "rua", radius: 1.6 },
   { id: "carEast", kind: "exit", ref: "carEast", pos: EXITS[1].pos, room: "beco", radius: 1.6 },
 ];
@@ -380,6 +403,11 @@ export const CLIMB_TO: Record<string, { to: Vec; dur: number }> = {
   fireUp: { to: { x: 21.4, z: -14 }, dur: 3.2 }, fireDown: { to: { x: 23.6, z: -14 }, dur: 2.6 },
   climbT: { to: { x: 19.5, z: -23 }, dur: 1.6 }, climbTout: { to: { x: 19.5, z: -21.4 }, dur: 1.6 },
   climbC: { to: { x: -19.5, z: -21.4 }, dur: 1.6 }, climbCin: { to: { x: -19.5, z: -23 }, dur: 1.6 },
+};
+
+/** O que cada esconderijo guarda. */
+export const STASH_REWARD: Record<string, { ammo?: number; bottles?: number; medkit?: number; decoder?: number; bandage?: number }> = {
+  stashBeco: { ammo: 12, bottles: 1 }, stashMakeup: { medkit: 1 }, stashMaze: { decoder: 1 }, stashTerrace: { bandage: 1 }, stashDock: { bottles: 2 },
 };
 
 /** Códigos (pistas na planta: cartaz do Aurora no salão e a folha de chamada nos bastidores) e a combinação da vitrine

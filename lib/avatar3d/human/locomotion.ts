@@ -138,6 +138,17 @@ export function cloneRig(r: Rig, root: THREE.Object3D): Rig {
   return { ...r, bones };
 }
 
+/**
+ * Refaz a pose de exibição do esqueleto (a roupa nova pode abrir os braços: saia rodada, casaco). A jogadora troca de
+ * roupa no meio da partida; os clones da multidão nunca mudam de roupa e compartilham `base` com o modelo.
+ */
+export function syncBase(r: Rig, base: (b: THREE.Bone) => THREE.Quaternion | undefined) {
+  for (let i = 0; i < r.bones.length; i++) { const q = base(r.bones[i]); if (q) r.base[i].copy(q); }
+  reset(r);
+  for (let i = 0; i < r.bones.length; i++) modelQuat(r, i, r.baseModel[i]);
+  for (const s of [0, 1] as Side[]) modelPos(r, s ? r.k.RightFoot : r.k.LeftFoot, r.footIdle[s]);
+}
+
 /* ---------- cinemática ---------- */
 /** Volta à pose de exibição. */
 export function reset(r: Rig) {
@@ -304,6 +315,8 @@ export interface MotionInput {
   /** para onde olhar, no espaço do modelo (pés da pessoa na origem, olhando para +z); null = olhar livre */
   look?: THREE.Vector3 | null;
   grip?: Grip;
+  /** sacar (out) ou guardar a arma da mão direita: segundos desde a troca; a mão passa pelo coldre no quadril */
+  draw?: { t: number; out: boolean } | null;
 }
 
 function save(r: Rig, buf: Float32Array) {
@@ -343,7 +356,7 @@ export function animate(r: Rig, st: MotionState, inp: MotionInput, dt: number) {
     pose(r, st, st.cur, inp.animT, inp); save(r, st.bufB);
     blendInto(r, st.bufA, st.bufB, w);
   } else { pose(r, st, st.cur, inp.animT, inp); st.prevT = inp.animT; }
-  if (!LYING.has(st.cur)) { lookAt(r, st, inp, dt); flinch(r, st, inp); }
+  if (!LYING.has(st.cur)) { if (inp.draw) drawOverlay(r, inp.draw); lookAt(r, st, inp, dt); flinch(r, st, inp); }
 }
 
 /* ---------- marcha ---------- */
@@ -651,7 +664,15 @@ function strike(r: Rig, st: MotionState, m: Motion, t: number, grip: Grip) {
 
 /** Conversa: gestos das mãos na altura da cintura/peito, de vez em quando um aceno de cabeça. */
 function talk(r: Rig, st: MotionState, t: number, walking: number) {
-  if (walking > 0.5) return;
+  if (walking > 0.5) {
+    // andando e conversando: a cabeça vira para o lado de quem acompanha e uma das mãos gesticula curto, de vez em quando
+    const tt = st.t + st.seed * 2.3, side = hash(st.seed + 21) > 0.5 ? 1 : -1;
+    twist(r, r.k.Spine2, side * 5 * D); twist(r, r.k.Neck, side * 12 * D); twist(r, r.k.Head, side * (14 + 6 * Math.sin(tt * 0.8)) * D);
+    const gest = smooth(0.45, 0.85, Math.sin(tt * 1.1) * 0.5 + 0.5);
+    if (gest > 0.01) { const s: Side = side > 0 ? 0 : 1; swing(r, s ? r.k.RightForeArm : r.k.LeftForeArm, 38 * D * gest); rot(r, s ? r.k.RightHand : r.k.LeftHand, AY, SIGN[s] * 25 * D * gest); }
+    lean(r, r.k.Head, 3 * D * Math.sin(tt * 2.2) * gest);
+    return;
+  }
   const tt = st.t + st.seed * 2.3, burst = smooth(0.2, 0.6, Math.sin(tt * 0.9) * 0.5 + 0.5);
   const side: Side = hash(Math.floor(tt / 2.4) + st.seed) > 0.5 ? 1 : 0;
   const k = burst * (1 - walking);
@@ -932,6 +953,23 @@ function climb(r: Rig, st: MotionState, t: number) {
 }
 
 /* ---------- camadas por cima ---------- */
+/** Duração de sacar/guardar a arma (s). */
+export const DRAW_TIME = 0.42;
+const DQ = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()];
+/**
+ * Sacar a arma: a mão direita sai do coldre (quadril direito, um pouco atrás) e chega à pose do gesto; guardar: a mão
+ * vai ao coldre e volta. A pose do gesto já está nos ossos; aqui só se mistura com a pose do coldre.
+ */
+function drawOverlay(r: Rig, d: { t: number; out: boolean }) {
+  if (d.t < 0 || d.t > DRAW_TIME) return;
+  const k = d.out ? smooth(0, DRAW_TIME, d.t) : 1 - pulse(0, DRAW_TIME, DRAW_TIME * 0.4, d.t);
+  if (k >= 0.999) return;
+  const ids = [r.k.RightArm, r.k.RightForeArm, r.k.RightHand];
+  for (let i = 0; i < 3; i++) DQ[i].copy(r.bones[ids[i]].quaternion);
+  pelvis(r, -0.19, -0.03, -0.05, A); arm(r, 1, A, -0.7, -1, 0.5); handTo(r, 1, 0.05, -1, 0.15, 0.95, 0, -0.2);
+  for (let i = 0; i < 3; i++) r.bones[ids[i]].quaternion.slerp(DQ[i], k);
+}
+
 const LOOK = new THREE.Vector3();
 /** Olhar para um ponto (cabeça, pescoço e um pouco do peito), com limite e suavização. */
 function lookAt(r: Rig, st: MotionState, inp: MotionInput, dt: number) {
@@ -955,7 +993,9 @@ function flinch(r: Rig, st: MotionState, inp: MotionInput) {
   lean(r, r.k.Spine1, -9 * D * k); lean(r, r.k.Spine2, -6 * D * k); twist(r, r.k.Spine2, side * 9 * D * k);
   rot(r, r.k.LeftShoulder, AZ, 6 * D * k); rot(r, r.k.RightShoulder, AZ, -6 * D * k);
   lean(r, r.k.Head, -10 * D * k); bank(r, r.k.Head, side * 6 * D * k);
-  r.bones[r.k.Hips].position.z -= 0.03 * k;
+  // cambaleio: o corpo recua alguns centímetros, desce um pouco e pende para o lado do impacto
+  const hp = r.bones[r.k.Hips].position; hp.z -= 0.045 * k; hp.y -= 0.025 * k; hp.x += side * 0.02 * k;
+  bank(r, r.k.Spine1, -side * 4 * D * k);
 }
 
 /** Posição atual de uma junta pelo nome (testes e objetos na cena). */

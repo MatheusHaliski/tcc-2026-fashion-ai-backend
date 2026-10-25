@@ -33,19 +33,20 @@ export interface ExteriorMaterials {
 export function exteriorMaterials(q: Quality): ExteriorMaterials {
   return memo(`mats:${q}`, () => {
     const grain = grainNormal(q);
-    const ashlar = pbrMat(stoneSet(q, "ashlar"), { normal: 0.9, envMapIntensity: 0.5 });
-    const rustic = pbrMat(stoneSet(q, "rustic"), { normal: 1.1, envMapIntensity: 0.5 });
-    const stone = pbrMat(stoneSet(q, "plain"), { normal: 0.8, envMapIntensity: 0.5 });
+    const stoneTint = new THREE.Color("#d2ccc2");
+    const ashlar = pbrMat(stoneSet(q, "ashlar"), { normal: 0.9, color: stoneTint, envMapIntensity: 0.5 });
+    const rustic = pbrMat(stoneSet(q, "rustic"), { normal: 1.1, color: stoneTint, envMapIntensity: 0.5 });
+    const stone = pbrMat(stoneSet(q, "plain"), { normal: 0.8, color: stoneTint, envMapIntensity: 0.5 });
     const stoneDouble = stone.clone(); stoneDouble.side = THREE.DoubleSide;
-    const roughStone = pbrMat(stoneSet(q, "plain"), { normal: 2.2, color: new THREE.Color("#d8cfbe"), envMapIntensity: 0.4 });
+    const roughStone = pbrMat(stoneSet(q, "plain"), { normal: 2.2, color: new THREE.Color("#b9b0a1"), envMapIntensity: 0.4 });
     const granite = pbrMat(graniteSet(q), { normal: 0.6, envMapIntensity: 0.8 });
     const asphalt = pbrMat(asphaltSet(q), { normal: 0.7, envMapIntensity: 1.25 });
     const asphaltOld = pbrMat(asphaltSet(q), { normal: 0.9, color: new THREE.Color("#b7b0a6"), envMapIntensity: 1.1 });
-    const sidewalk = pbrMat(sidewalkSet(q), { normal: 0.8, envMapIntensity: 0.9 });
+    const sidewalk = pbrMat(sidewalkSet(q), { normal: 0.8, color: new THREE.Color("#c4bfb8"), roughness: 0.82, envMapIntensity: 1 });   // molhada: mais escura e mais lisa
     const carpet = pbrMat(carpetSet(q), { normal: 0.7, envMapIntensity: 0.25 });
     const brick = pbrMat(brickSet(q, "red"), { normal: 1, envMapIntensity: 0.4 });
     const brickBrown = pbrMat(brickSet(q, "brown"), { normal: 1, envMapIntensity: 0.4 });
-    const concrete = pbrMat(sidewalkSet(q), { normal: 0.6, color: new THREE.Color("#a49e94"), envMapIntensity: 0.6 });
+    const concrete = pbrMat(sidewalkSet(q), { normal: 0.6, color: new THREE.Color("#8f8a82"), roughness: 0.85, envMapIntensity: 0.7 });
     const metal = (color: string, roughness: number, metalness: number, extra: THREE.MeshStandardMaterialParameters = {}) => new THREE.MeshStandardMaterial({ color, roughness, metalness, normalMap: grain, normalScale: new THREE.Vector2(0.25, 0.25), ...extra });
     const castIron = metal("#1b1f1c", 0.55, 0.55);
     const brass = metal("#c9a05a", 0.24, 1);
@@ -63,7 +64,7 @@ export function exteriorMaterials(q: Quality): ExteriorMaterials {
     const rubber = new THREE.MeshStandardMaterial({ color: "#121212", roughness: 0.88 });
     const whitePaint = new THREE.MeshStandardMaterial({ color: "#efece6", roughness: 0.45, metalness: 0.05 });
     const glassDark = new THREE.MeshStandardMaterial({ color: "#0c1118", roughness: 0.06, metalness: 0.3, envMapIntensity: 1.6 });
-    const glassWarm = new THREE.MeshStandardMaterial({ color: "#3a2a18", emissive: new THREE.Color("#ffbd72"), emissiveIntensity: 1.7, roughness: 0.15, metalness: 0.1 });
+    const glassWarm = new THREE.MeshStandardMaterial({ color: "#3a2a18", emissive: new THREE.Color("#ffbd72"), emissiveIntensity: 1.15, roughness: 0.15, metalness: 0.1 });
     const glassFrosted = new THREE.MeshStandardMaterial({ color: "#2b2117", emissive: new THREE.Color("#ffcf8f"), emissiveIntensity: 2.4, roughness: 0.4 });
     const lampGlow = new THREE.MeshStandardMaterial({ color: "#fff1d6", emissive: new THREE.Color("#ffd49a"), emissiveIntensity: 6, roughness: 0.3, toneMapped: true });
     const tailLight = new THREE.MeshStandardMaterial({ color: "#3a0000", emissive: new THREE.Color("#ff1a1a"), emissiveIntensity: 3, roughness: 0.3 });

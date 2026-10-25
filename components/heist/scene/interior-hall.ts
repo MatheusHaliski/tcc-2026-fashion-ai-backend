@@ -24,7 +24,8 @@ export function hallWall(w: WallSide, s: number, y: number, off = 0): THREE.Matr
     case "E": return mat(12 - off, y, s, -Math.PI / 2);
   }
 }
-const HALL_H = 9.5, BALC_Y = 5.0, BALC_T = 0.4, BALC_D = 1.2;
+export const HALL_H = 9.5, BALC_Y = 5.0;
+const BALC_T = 0.4, BALC_D = 1.2;
 export const DOMES: { x: number; z: number; r: number; rise: number }[] = [{ x: -8.25, z: 4.5, r: 3, rise: 1.4 }, { x: 0, z: 4.5, r: 4, rise: 1.8 }, { x: 8.25, z: 4.5, r: 3, rise: 1.4 }];
 
 /* ---------- arcos ---------- */
