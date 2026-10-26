@@ -1,0 +1,1205 @@
+import { lowerProfile } from "./lowerwear";
+import { upperProfile } from "./upperwear";
+import { silhouetteLandmarks, separatedLegRows, landmarkProjection, type GarmentLandmarks, type PhotoLegRow } from "./photo-landmarks";
+/*
+ * Avatar 3D (RF40) / Provador — roupa que veste. Cada peça vira uma malha presa ao MESMO esqueleto do corpo.
+ */
+import * as THREE from "three";
+import { installDenimWeave } from "./denim-weave";
+import { fabricPatch, fabricRows, fabricTile, medoid } from "./garment-photo";
+import { baseNormals } from "./three-human";
+import type { BodyAsset } from "./asset";
+import type { Composed } from "./compose";
+
+export type GarmentKind =
+  | "tee" | "tank" | "longsleeve" | "shirt" | "sweater" | "hoodie" | "jacket" | "coat" | "crop" | "vest"
+  | "dress" | "jumpsuit" | "romper" | "skirt" | "pants" | "culottes" | "shorts" | "bermuda" | "leggings" | "shoes" | "boots";
+
+export interface GarmentSpec {
+  kind: GarmentKind;
+  construction?: "cargo";
+  weave?: "denim";
+  frontOpening?: number;
+  sleeveEase?: number;
+  hemFlare?: number;
+  ribbed?: boolean;
+  legCuff?: boolean;
+  liningLeg?: number;
+  placket?: boolean;
+  placketLength?: number;
+  fabric?: string;
+  ease: number;
+  hem: number;
+  neck: number;
+  vneck: number;
+  neckShape?: "round" | "v" | "square" | "boat";
+  waist: number;
+  sleeve: number;
+  leg: number;
+  skirt: number;
+  drape: number;
+  legFlareStart?: number;
+  flare: number;
+  layer: number;
+  legColumn: number;
+  bustFall: number;
+  shaft: number;
+  sizeSteps?: number;
+  sizeEase?: { chest: number; waist: number; hip: number };
+  sizeFold?: { chest: number; waist: number; hip: number; length: number };
+}
+
+export const SLEEVE_EASE_FLOOR = 0.010;
+export function sleeveEase(sp: GarmentSpec): number {
+  return Math.min(sp.ease, Math.max(SLEEVE_EASE_FLOOR, sp.ease * 0.6));
+}
+
+export function legFlareOffset(sp: GarmentSpec, leg: number): number {
+  const start = sp.legFlareStart;
+  const opening = start === undefined ? Math.max(0, leg - .4)
+    : Math.max(0, Math.min(1, (leg - start) / Math.max(.05, sp.leg - start)));
+  return sp.flare * opening;
+}
+
+const S = (kind: GarmentKind, o: Partial<GarmentSpec>): GarmentSpec => ({ kind, ease: 0.006, hem: NaN, neck: 1, vneck: 0.04, waist: NaN, sleeve: 0, leg: 0, skirt: 0, drape: 0, flare: 0, layer: 3, legColumn: 0, bustFall: 0.965, shaft: 0.72, ...o });
+export const SPECS: Record<GarmentKind, GarmentSpec> = {
+  leggings: S("leggings", { ease: 0.002, waist: 0.2, leg: 0.97, layer: 1 }),
+  pants: S("pants", { ease: 0.009, waist: 0.18, leg: 0.985, flare: 0.03, layer: 2, legColumn: 1 }),
+  culottes: S("culottes", { ease: 0.012, waist: 0.18, leg: 0.74, flare: 0.08, layer: 2, legColumn: 1.3 }),
+  shorts: S("shorts", { ease: 0.007, waist: 0.18, leg: 0.36, flare: 0.012, layer: 2 }),
+  bermuda: S("bermuda", { ease: 0.009, waist: 0.18, leg: 0.5, flare: 0.015, layer: 2, legColumn: 1 }),
+  skirt: S("skirt", { ease: 0.008, waist: 0.2, skirt: 0.42, flare: 0.1, layer: 2 }),
+  tank: S("tank", { ease: 0.005, hem: -0.03, neck: 1.03, vneck: 0.24, drape: 0.35, layer: 3 }),
+  crop: S("crop", { ease: 0.005, hem: 0.45, neck: 0.95, vneck: 0.09, sleeve: 0.28, drape: 0.2, layer: 3 }),
+  tee: S("tee", { ease: 0.007, hem: -0.06, neck: 0.98, vneck: 0.09, sleeve: 0.33, drape: 0.6, flare: 0.02, layer: 3 }),
+  longsleeve: S("longsleeve", { ease: 0.007, hem: -0.06, neck: 0.98, vneck: 0.09, sleeve: 0.96, drape: 0.6, layer: 3 }),
+  shirt: S("shirt", { ease: 0.010, hem: -0.1, neck: 1.02, vneck: 0.11, sleeve: 0.96, drape: 0.7, layer: 4, frontOpening: 0.02 }),
+  sweater: S("sweater", { ease: 0.012, hem: -0.07, neck: 1.0, vneck: 0.08, sleeve: 0.97, drape: 0.75, layer: 4 }),
+  hoodie: S("hoodie", { ease: 0.015, hem: -0.08, neck: 1.03, vneck: 0.12, sleeve: 0.97, drape: 0.8, layer: 4, neckShape: "v" }),
+  jacket: S("jacket", { ease: 0.022, hem: -0.08, neck: 1.03, vneck: 0.14, sleeve: 0.98, drape: 0.85, layer: 5, frontOpening: 0.04 }),
+  vest: S("vest", { ease: 0.016, hem: -0.06, neck: 1.0, vneck: 0.18, drape: 0.85, layer: 5 }),
+  coat: S("coat", { ease: 0.026, hem: -0.08, neck: 1.03, vneck: 0.16, sleeve: 0.99, drape: 0.9, skirt: 0.5, flare: 0.08, layer: 6, frontOpening: 0.05 }),
+  dress: S("dress", { ease: 0.006, hem: 0.36, neck: 1.03, vneck: 0.23, skirt: 0.5, flare: 0.14, drape: 0.2, layer: 3 }),
+  jumpsuit: S("jumpsuit", { ease: 0.008, hem: -0.2, neck: 0.95, vneck: 0.1, waist: 1, leg: 0.97, flare: 0.01, drape: 0.3, layer: 3, legColumn: 1 }),
+  romper: S("romper", { ease: 0.008, hem: -0.2, neck: 0.95, vneck: 0.1, waist: 1, leg: 0.34, flare: 0.012, drape: 0.3, layer: 3 }),
+  shoes: S("shoes", { ease: 0.008, layer: 2 }),
+  boots: S("boots", { ease: 0.009, layer: 2 }),
+};
+
+const BAG_WORDS: ReadonlySet<string> = new Set(["bag", "bolsa", "backpack", "mochila", "clutch", "pochete", "purse", "tote", "wallet", "carteira", "necessaire"]);
+
+export function kindOf(p: { category?: string | null; subcategory?: string | null; slot?: string | null }): GarmentKind | null {
+  const sub = (p.subcategory ?? "").toLowerCase();
+  if (SUBCATEGORY_KINDS[sub]) return SUBCATEGORY_KINDS[sub];
+  const is = (...k: string[]) => k.some((x) => sub.includes(x));
+  const words = sub.split(/[^a-zà-ú]+/);
+  if (words.some((w) => BAG_WORDS.has(w) || w.endsWith("bag"))) return null;
+  if (is("legging")) return "leggings";
+  if (is("skort", "short_saia", "short-saia")) return "skirt";
+  if (is("skirt", "saia") && !is("short")) return "skirt";
+  if (is("bermuda")) return "bermuda";
+  if (is("short")) return "shorts";
+  if (is("culotte", "pantacourt", "pantalona_curta")) return "culottes";
+  if (is("pant", "jean", "trouser", "calca", "calça", "jogger", "chino", "cargo", "sweatpant")) return "pants";
+  if (is("dress", "vestido")) return "dress";
+  if (is("romper", "playsuit", "macaquinho")) return "romper";
+  if (is("jumpsuit", "macac", "overall", "jardineira", "matching_set", "conjunto")) return "jumpsuit";
+  if (is("boot", "bota", "coturno")) return "boots";
+  if (is("sneaker", "tenis", "tênis", "shoe", "sapato", "loafer", "oxford", "derby", "mocass", "sandal", "sandál", "heel", "salto", "slipper", "chinelo", "flat", "sapatilha", "alpargata", "espadrille")) return "shoes";
+  if (is("coat", "casaco", "parka", "trench", "overcoat")) return "coat";
+  if (is("vest", "colete") && !is("vestido")) return "vest";
+  if (is("jacket", "jaqueta", "blazer", "windbreaker", "corta", "bomber", "cardigan", "kimono", "quimono")) return "jacket";
+  if (is("hoodie", "capuz")) return "hoodie";
+  if (is("sweater", "sueter", "suéter", "sweatshirt", "moletom", "pullover", "knit")) return "sweater";
+  if (is("tank", "regata", "camisole", "bodysuit") || sub === "body") return "tank";
+  if (is("crop")) return "crop";
+  if (is("polo")) return "tee";
+  if (is("shirt", "camisa", "blouse", "blusa")) return is("t_shirt", "tshirt", "t-shirt", "camiseta") ? "tee" : "shirt";
+  if (is("long_sleeve", "manga_longa", "longsleeve")) return "longsleeve";
+  if (is("tee", "camiseta", "polo", "top")) return "tee";
+  const slot = (p.slot ?? "").toUpperCase();
+  if (["OUTER_LAYER", "OUTERWEAR"].includes(slot)) return "jacket";
+  const pick = (c: string): GarmentKind | null => {
+    const k = c.replace(/_PIECE$/, "");
+    if (["OUTER_LAYER", "OUTERWEAR"].includes(k)) return "jacket";
+    if (["FULL_BODY", "CORPO_INTEIRO", "DRESS", "FULL"].includes(k)) return "dress";
+    if (["UPPER", "TOP", "PARTE_SUPERIOR"].includes(k)) return "tee";
+    if (["LOWER", "BOTTOM", "PARTE_INFERIOR"].includes(k)) return "pants";
+    if (["SHOES", "FOOTWEAR", "CALCADOS"].includes(k)) return "shoes";
+    return null;
+  };
+  return pick((p.category ?? "").toUpperCase()) ?? pick(slot) ?? null;
+}
+
+export const SUBCATEGORY_KINDS: Readonly<Record<string, GarmentKind>> = {
+  t_shirt: "tee", shirt: "shirt", blouse: "shirt", tank_top: "tank", top: "tank", crop_top: "crop",
+  polo_shirt: "shirt", bodysuit: "tank", sweater: "sweater", sweatshirt: "sweater", hoodie: "hoodie",
+  cardigan: "jacket", vest: "vest", blazer: "jacket", jacket: "jacket", coat: "coat", parka: "coat",
+  windbreaker: "jacket", kimono: "jacket", jeans: "pants", tailored_pants: "pants", casual_pants: "pants",
+  chino_pants: "pants", cargo_pants: "pants", jogger_pants: "pants", sweatpants: "pants", leggings: "leggings",
+  culottes: "culottes", shorts: "shorts", bermuda_shorts: "bermuda", denim_shorts: "shorts", skirt: "skirt", skort: "skirt",
+  dress: "dress", jumpsuit: "jumpsuit", romper: "romper", matching_set: "jumpsuit", overalls: "jumpsuit",
+  casual_sneakers: "shoes", running_shoes: "shoes", training_shoes: "shoes", basketball_shoes: "shoes",
+  skate_shoes: "shoes", high_top_sneakers: "shoes", loafers: "shoes", moccasins: "shoes", oxford_shoes: "shoes",
+  derby_shoes: "shoes", boots: "boots", ankle_boots: "boots", long_boots: "boots", combat_boots: "boots",
+  sandals: "shoes", flip_flops: "shoes", heels: "shoes", flats: "shoes", espadrilles: "shoes",
+};
+
+export function specOf(p: { name?: string; category?: string | null; subcategory?: string | null; slot?: string | null }): GarmentSpec | null {
+  const kind = kindOf(p);
+  if (!kind) return null;
+  const sub = (p.subcategory ?? "").toLowerCase();
+  const upper = upperProfile(p);
+  if (upper) {
+    const spec = { ...SPECS[kind], ...upper.spec };
+    if (/long[ _-]?sleeve|manga[ _-]?longa/i.test(p.name ?? "")) spec.sleeve = .96;
+    return spec;
+  }
+  if (sub === "overalls") return { ...SPECS.jumpsuit, neck: 1.03, vneck: .3 };
+  const description = `${p.subcategory ?? ""} ${p.name ?? ""}`.toLowerCase();
+  const lower = lowerProfile(p);
+  if (lower) {
+    const spec = { ...SPECS[kind], ...lower.spec };
+    if (spec.construction === "cargo" && /loose|relaxed|wide|larga|ampla/.test(description)) {
+      spec.ease = .026; spec.flare = .045;
+    }
+    return spec;
+  }
+  if (kind === "pants" && /cargo/.test(description)) {
+    const loose = /loose|relaxed|wide|larga|ampla/.test(description);
+    return { ...SPECS.pants, construction: "cargo", ease: loose ? .026 : .019, waist: .29, flare: loose ? .045 : .032 };
+  }
+  const base = kind === "jacket" && /blazer/.test(description) ? { ...SPECS[kind], ease: .022, drape: .5, frontOpening: 0.05 } : SPECS[kind];
+  return !Number.isNaN(base.hem) && /long[ _-]?sleeve|manga[ _-]?longa/.test(description) ? { ...base, sleeve: .96 } : base;
+}
+
+export function armOutFor(specs: GarmentSpec[]): number {
+  let out = 10; let under = 0;
+  for (const sp of [...specs].sort((a, b) => a.layer - b.layer)) {
+    if (sp.skirt > 0) out = Math.max(out, 15);
+    if (Number.isNaN(sp.hem)) continue;
+    const thick = sp.ease + under + (sp.sleeveEase ?? 0) * .5;
+    out = Math.max(out, Math.min(22, 10 + (thick - 0.012) * 350));
+    under = Math.max(under, sp.ease + 0.004 + sp.flare * 0.3);
+  }
+  return Math.round(out * 10) / 10;
+}
+
+export interface BodyParam {
+  group: Uint8Array;
+  side: Int8Array;
+  h: Float32Array;
+  arm: Float32Array;
+  leg: Float32Array;
+  hipY: number; neckY: number; ankleY: number; torsoZ: number;
+  neckZ: number;
+  shoulder?: { L: number[]; R: number[] }; wrist?: { L: number[]; R: number[] };
+  legs?: { L: { hip: number[]; knee: number[]; ankle: number[] }; R: { hip: number[]; knee: number[]; ankle: number[] } };
+}
+
+export function bodyParam(a: BodyAsset, c: Composed): BodyParam {
+  const nb = a.meta.counts.body; const names = a.meta.bones.map((b) => b.name.replace("mixamorig:", ""));
+  const J = (n: string) => { const i = names.indexOf(n); return [c.joints[i * 3], c.joints[i * 3 + 1], c.joints[i * 3 + 2]]; };
+  const grp = names.map((n) => (n === "Head" ? 0 : /Hand|Thumb|Index|Middle|Ring|Pinky/.test(n) ? 5 : /Arm/.test(n) ? 2 : /UpLeg|Leg$/.test(n) ? 3 : /Foot|Toe/.test(n) ? 4 : 1));
+  const hipY = (J("LeftUpLeg")[1] + J("RightUpLeg")[1]) / 2, neckY = J("Neck")[1], ankleY = (J("LeftFoot")[1] + J("RightFoot")[1]) / 2;
+  const out: BodyParam = { group: new Uint8Array(nb), side: new Int8Array(nb), h: new Float32Array(nb), arm: new Float32Array(nb), leg: new Float32Array(nb), hipY, neckY, ankleY, torsoZ: J("Spine1")[2], neckZ: J("Neck")[2] };
+  const S0 = { L: J("LeftArm"), R: J("RightArm") }, W0 = { L: J("LeftHand"), R: J("RightHand") };
+  out.shoulder = S0; out.wrist = W0;
+  out.legs = { L: { hip: J("LeftUpLeg"), knee: J("LeftLeg"), ankle: J("LeftFoot") }, R: { hip: J("RightUpLeg"), knee: J("RightLeg"), ankle: J("RightFoot") } };
+  for (let v = 0; v < nb; v++) {
+    const x = c.body[v * 3], y = c.body[v * 3 + 1], z = c.body[v * 3 + 2];
+    out.group[v] = grp[a.body.skinIndex[v * 4]]; out.side[v] = x >= 0 ? 1 : -1;
+    out.h[v] = (y - hipY) / (neckY - hipY);
+    const s = x >= 0 ? "L" : "R"; const Sp = S0[s], Wp = W0[s];
+    const d = [Wp[0] - Sp[0], Wp[1] - Sp[1], Wp[2] - Sp[2]]; const L2 = d[0] ** 2 + d[1] ** 2 + d[2] ** 2;
+    out.arm[v] = ((x - Sp[0]) * d[0] + (y - Sp[1]) * d[1] + (z - Sp[2]) * d[2]) / L2;
+    out.leg[v] = (hipY - y) / (hipY - ankleY);
+  }
+  return out;
+}
+
+const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+export function necklineH(sp: GarmentSpec, x: number, dz: number): number {
+  const r = Math.hypot(x, dz) || 1;
+  const front = smooth(-0.2, 0.75, dz / r);
+  const side = Math.abs(x) / r;
+  const vDrop = sp.frontOpening ? Math.max(sp.vneck, 0.15) : sp.vneck;
+
+  switch (sp.neckShape) {
+    case "v":
+      return sp.neck - vDrop * Math.max(0, 1 - side / 0.75) * smooth(-0.15, 0.35, dz / r);
+    case "square":
+      return sp.neck - vDrop * (1 - smooth(0.42, 0.6, side)) * smooth(-0.15, 0.35, dz / r);
+    case "boat":
+      return sp.neck - vDrop * smooth(-0.3, 0.3, dz / r);
+    default:
+      return sp.neck - vDrop * Math.pow(front, 1.4);
+  }
+}
+
+export function frontPanelCoverage(sp: GarmentSpec, x: number, dz: number): number {
+  return sp.frontOpening && dz > 0 ? smooth(sp.frontOpening - .008, sp.frontOpening + .008, Math.abs(x)) : 1;
+}
+
+function coverage(sp: GarmentSpec, P: BodyParam, v: number, x: number, z: number): number {
+  const g = P.group[v], h = P.h[v], arm = P.arm[v], leg = P.leg[v];
+  const dh = 0.03, da = 0.035, dl = 0.02;
+  const neckTop = necklineH(sp, x, z - P.neckZ);
+  if (sp.kind === "shoes" || sp.kind === "boots") {
+    if (g === 4) return 1;
+    if (g === 3) {
+      const start = sp.kind === "boots" ? sp.shaft : 0.92;
+      return smooth(start, start + 0.05, leg);
+    }
+    return 0;
+  }
+  let c = 0;
+  if (!Number.isNaN(sp.hem) && (g === 1 || g === 2 || g === 3)) {
+    const inTorso = smooth(sp.hem - dh, sp.hem + dh, h) * (1 - smooth(neckTop - dh, neckTop + dh, h));
+    if (g === 1) c = Math.max(c, inTorso);
+    if (g === 3 && sp.hem < 0) c = Math.max(c, inTorso * (1 - smooth(0.02, 0.06, leg)));
+    if (g === 2) c = Math.max(c, sp.sleeve > 0 ? 1 - smooth(sp.sleeve - da, sp.sleeve + da, arm) : 1 - smooth(-0.06, 0.0, arm));
+    if (g === 2 && sp.sleeve === 0) c *= inTorso;
+  }
+  if (!Number.isNaN(sp.waist)) {
+    const below = 1 - smooth(sp.waist - dh, sp.waist + dh, h);
+    if (g === 1) c = Math.max(c, below);
+    if (g === 3 && sp.leg > 0) c = Math.max(c, 1 - smooth(sp.leg - dl, sp.leg + dl, leg));
+  }
+  return c * frontPanelCoverage(sp, x, z - P.torsoZ);
+}
+
+export interface GarmentGeometry {
+  spec: GarmentSpec;
+  position: Float32Array; alpha: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array;
+  photoEligible?: Float32Array;
+  source: Int32Array;
+}
+
+function ring(c: Composed, P: BodyParam, y: number, z0: number, NA: number, band = 0.012): Float32Array {
+  const r = new Float32Array(NA); const nb = P.h.length;
+  for (let v = 0; v < nb; v++) {
+    const g = P.group[v]; if (g !== 1 && g !== 3) continue;
+    if (Math.abs(c.body[v * 3 + 1] - y) > band) continue;
+    const x = c.body[v * 3], z = c.body[v * 3 + 2] - z0; const j = Math.round(((Math.atan2(x, z) + Math.PI) / (2 * Math.PI)) * NA) % NA;
+    r[j] = Math.max(r[j], Math.hypot(x, z));
+  }
+  for (let j = 0; j < NA; j++) if (!r[j]) { let b = 0; for (let d = 1; d < NA / 2 && !b; d++) b = Math.max(r[(j + d) % NA], r[(j - d + NA) % NA]); r[j] = b; }
+  const out = new Float32Array(NA);
+  for (let j = 0; j < NA; j++) { let m = 0; for (let d = -2; d <= 2; d++) m = Math.max(m, r[(j + d + NA) % NA]); out[j] = m; }
+  return out;
+}
+
+function hullRing(c: Composed, P: BodyParam, y: number, z0: number, NA: number): Float32Array {
+  const r = ring(c, P, y, z0, NA, 0.012); const out = new Float32Array(NA);
+  for (let j = 0; j < NA; j++) { let m = r[j]; for (let d = -NA / 4; d <= NA / 4; d++) { const k = (j + d + NA) % NA; m = Math.max(m, r[k] * Math.cos((d * 2 * Math.PI) / NA)); } out[j] = m; }
+  return out;
+}
+
+export function coverageOf(c: Composed, P: BodyParam, sp: GarmentSpec): Float32Array {
+  const nb = P.h.length; const cov = new Float32Array(nb);
+  for (let v = 0; v < nb; v++) cov[v] = coverage(sp, P, v, c.body[v * 3], c.body[v * 3 + 2]);
+  return cov;
+}
+
+export interface SkirtTube { y0: number; len: number; r: Float32Array[] }
+const TUBE_NA = 64;
+
+function skirtTop(sp: GarmentSpec): number { return sp.kind === "dress" ? sp.hem : sp.kind === "coat" ? 0.0 : sp.waist; }
+
+function skirtTube(c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null): SkirtTube {
+  const y0 = lerp(P.hipY, P.neckY, skirtTop(sp)); const rows = Math.max(6, Math.ceil(sp.skirt / 0.012));
+  const r: Float32Array[] = []; let prev: Float32Array | null = null;
+  for (let i = 0; i <= rows; i++) {
+    const y = y0 - (sp.skirt * i) / rows; const t = i / rows;
+    const body = ring(c, P, y, P.torsoZ, TUBE_NA, 0.014); const rr = new Float32Array(TUBE_NA);
+    for (let j = 0; j < TUBE_NA; j++) {
+      let v = body[j] + sp.ease + 0.004 + sp.flare * t * t * 0.5 + sp.flare * t * 0.5;
+      v += (sp.sizeEase?.hip ?? 0) + looseFold(sp.sizeFold?.hip ?? 0, (j / TUBE_NA) * 2 * Math.PI - Math.PI);
+      if (under) for (const tb of under.tubes) { const R = tubeRadius(tb, y, j); if (R > 0) v = Math.max(v, R + 0.005); }
+      if (prev) v = Math.max(v, prev[j] - 0.002);
+      rr[j] = v;
+    }
+    r.push(rr); prev = rr;
+  }
+  return { y0, len: sp.skirt, r };
+}
+
+function nearestSkinWeights(a: BodyAsset, c: Composed, P: BodyParam, x: number, y: number, z: number): [number[], number[]] {
+  let best = -1, bd = Infinity; const nb = a.meta.counts.body;
+  for (let v = 0; v < nb; v++) {
+    if (P.group[v] !== 1 && P.group[v] !== 3) continue;
+    const dy = c.body[v * 3 + 1] - y; if (dy * dy > bd) continue;
+    const d = (c.body[v * 3] - x) ** 2 + dy * dy + (c.body[v * 3 + 2] - z) ** 2; if (d < bd) { bd = d; best = v; }
+  }
+  const names = a.meta.bones.map((b) => b.name); const hips = names.indexOf("mixamorig:Hips");
+  const ix: number[] = [], wt: number[] = []; let tot = 0;
+  for (let k = 0; k < 4; k++) {
+    const bone = a.body.skinIndex[best * 4 + k]; const w = best >= 0 ? a.body.skinWeight[best * 4 + k] : 0;
+    ix.push(w ? bone : 0); wt.push(w); tot += w;
+  }
+  if (!tot) return [[hips, 0, 0, 0], [1, 0, 0, 0]];
+  return [ix, wt.map((w) => w / tot)];
+}
+
+function sizeWeights(P: BodyParam, v: number): { chest: number; waist: number; hip: number } {
+  const g = P.group[v];
+  if (g === 2) return { chest: 0.6, waist: 0, hip: 0 };
+  if (g === 3) return { chest: 0, waist: 0, hip: 1 - 0.5 * smooth(0.2, 0.6, P.leg[v]) };
+  if (g !== 1) return { chest: 0, waist: 0, hip: 0 };
+  const h = P.h[v], chest = smooth(0.45, 0.62, h), hip = smooth(0.25, 0.08, h);
+  return { chest, waist: Math.max(0, 1 - chest - hip), hip };
+}
+
+export function sizeExtra(sp: GarmentSpec, P: BodyParam, v: number): number {
+  const e = sp.sizeEase; if (!e) return 0;
+  const w = sizeWeights(P, v);
+  return Math.max(0, w.chest * e.chest + w.waist * e.waist + w.hip * e.hip);
+}
+
+function looseFold(steps: number, th: number): number {
+  if (!(steps > 0.6)) return 0;
+  return Math.min(0.012, 0.0045 * (steps - 0.6) + 0.0015) * (0.5 + 0.5 * Math.cos(9 * th + 0.6));
+}
+
+export function sizeStepsAt(sp: GarmentSpec, P: BodyParam, v: number): number {
+  const f = sp.sizeFold; if (!f) return 0;
+  const w = sizeWeights(P, v), total = w.chest + w.waist + w.hip;
+  return total > 0 ? (w.chest * f.chest + w.waist * f.waist + w.hip * f.hip) / total : 0;
+}
+
+function limbAxis(P: BodyParam, v: number, x: number, y: number): [number, number] | null {
+  const side = x >= 0 ? "L" : "R";
+  if (P.group[v] === 3 && P.legs) {
+    const L = P.legs[side];
+    const [a, b] = y > L.knee[1] ? [L.hip, L.knee] : [L.knee, L.ankle];
+    const t = Math.min(1, Math.max(0, (a[1] - y) / Math.max(1e-4, a[1] - b[1])));
+    return [lerp(a[0], b[0], t), lerp(a[2], b[2], t)];
+  }
+  if (P.group[v] === 2 && P.shoulder && P.wrist) {
+    const S = P.shoulder[side], W = P.wrist[side], t = Math.min(1, Math.max(0, P.arm[v]));
+    return [lerp(S[0], W[0], t), lerp(S[2], W[2], t)];
+  }
+  return null;
+}
+
+export function sizeRelief(sp: GarmentSpec, P: BodyParam, v: number, x: number, y: number, z: number): number {
+  const f = sp.sizeFold; if (!f) return 0;
+  const g = P.group[v]; if (g !== 1 && g !== 2 && g !== 3) return 0;
+  const s = sizeStepsAt(sp, P, v); let out = 0;
+  if (s > 0.6) {
+    const amp = Math.min(0.012, 0.0045 * (s - 0.6) + 0.0015);
+    if (g === 1) out += smooth(0.62, 0.15, P.h[v]) * looseFold(s, Math.atan2(x, z - P.torsoZ));
+    else {
+      const c = limbAxis(P, v, x, y);
+      if (c) {
+        const th = Math.atan2(x - c[0], z - c[1]);
+        const k = g === 3 ? 0.8 * smooth(0.25, 0.9, P.leg[v]) : 0.5 * smooth(0.3, 0.9, P.arm[v]);
+        out += amp * k * (0.5 + 0.5 * Math.cos((g === 3 ? 6 : 5) * th + 1.1));
+      }
+    }
+  }
+  if (s < -0.4 && g !== 2) {
+    const amp = Math.min(0.0028, 0.0016 * (-s - 0.4) + 0.0006);
+    const zz = z - P.torsoZ, r = Math.hypot(x, zz) || 1, front = smooth(-0.2, 0.5, zz / r);
+    const k = g === 1 ? smooth(0.1, 0.25, P.h[v]) * smooth(0.85, 0.7, P.h[v]) : smooth(0.45, 0.05, P.leg[v]);
+    out += amp * front * k * Math.pow(Math.max(0, Math.sin((2 * Math.PI * y) / 0.024)), 3);
+  }
+  if (f.length > 0.5) {
+    const amp = Math.min(0.009, 0.004 * (f.length - 0.5) + 0.002);
+    if (g === 3 && sp.leg >= 0.95) out += amp * smooth(0.8, 0.97, P.leg[v]) * (0.5 + 0.5 * Math.sin((2 * Math.PI * P.leg[v]) / 0.045));
+    if (g === 2 && sp.sleeve >= 0.95) out += 0.8 * amp * smooth(0.78, 0.95, P.arm[v]) * (0.5 + 0.5 * Math.sin((2 * Math.PI * P.arm[v]) / 0.05));
+  }
+  return out;
+}
+
+export function tubeRadius(tb: SkirtTube, y: number, j: number): number {
+  const f = ((tb.y0 - y) / tb.len) * (tb.r.length - 1);
+  if (f < 0 || f > tb.r.length - 1 + 1.5) return 0;
+  const i = Math.min(tb.r.length - 1, Math.floor(f)), k = Math.min(tb.r.length - 1, i + 1), w = Math.min(1, f - i);
+  return lerp(tb.r[i][j], tb.r[k][j], w);
+}
+
+export interface UnderLayer { ease: Float32Array; tubes: SkirtTube[] }
+
+export function underLayer(c: Composed, P: BodyParam, below: GarmentSpec[]): UnderLayer {
+  const out = new Float32Array(P.h.length); const tubes: SkirtTube[] = []; let acc: UnderLayer | null = null;
+  for (const sp of [...below].sort((a, b) => a.layer - b.layer)) {
+    const cov = coverageOf(c, P, sp);
+    const e = sp.ease + 0.004 + (sp.skirt > 0 ? 0 : sp.flare * 0.3);
+    for (let v = 0; v < out.length; v++) if (cov[v] > 0.02) out[v] += e + sizeExtra(sp, P, v) + sizeRelief(sp, P, v, c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2]);
+    if (sp.skirt > 0) { tubes.push(skirtTube(c, P, sp, acc)); }
+    acc = { ease: out, tubes };
+  }
+  return { ease: out, tubes };
+}
+
+export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null = null): GarmentGeometry | null {
+  const nb = a.meta.counts.body; const cov = coverageOf(c, P, sp);
+  const rv = a.body.renderVertex; const idx = a.body.index;
+  const used = new Int32Array(nb).fill(-1); const tris: number[] = [];
+  for (let t = 0; t < idx.length; t += 3) {
+    const p = rv[idx[t]], q = rv[idx[t + 1]], r = rv[idx[t + 2]];
+    if (Math.max(cov[p], cov[q], cov[r]) > 0.02 && Math.min(cov[p], cov[q], cov[r]) >= 0 && (cov[p] + cov[q] + cov[r]) > 0.3) tris.push(p, q, r);
+  }
+  const shortHem = sp.skirt === 0 && !(sp.leg > 0) && Number.isFinite(sp.hem) && sp.hem < 0;
+  const tubeSpec = shortHem ? { ...sp, skirt: (0.07 - sp.hem) * (P.neckY - P.hipY), waist: 0.07 } : sp;
+  const top = shortHem ? 0.02 : sp.skirt > 0 ? skirtTop(sp) : NaN;
+  const pos: number[] = [], al: number[] = [], si: number[] = [], sw: number[] = [], src: number[] = [];
+  const NA = 64; const bustY = lerp(P.hipY, P.neckY, 0.72);
+  const bust = sp.drape > 0 ? ring(c, P, bustY, P.torsoZ, NA, 0.015) : null;
+  const HIP_H = 0.04, looseK = Math.min(1, Math.max(0, ((sp.sizeSteps ?? 0) - 0.3) / 1.2));
+  const hipLine = bust && looseK > 0 && Number.isFinite(sp.hem) && sp.hem < HIP_H ? ring(c, P, lerp(P.hipY, P.neckY, HIP_H), P.torsoZ, NA, 0.014) : null;
+  const CH = [0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9];
+  const chest = sp.drape >= 0.5 && !Number.isNaN(sp.hem) ? CH.map((hh) => hullRing(c, P, lerp(P.hipY, P.neckY, hh), P.torsoZ, NA)) : null;
+  if (chest) for (let j = 0; j < NA; j++) {
+    const r = CH.map((_, i) => chest[i][j]);
+    for (let i = 1; i < CH.length - 1; i++) for (let a2 = 0; a2 < i; a2++) for (let b2 = i + 1; b2 < CH.length; b2++) {
+      const t = (CH[i] - CH[a2]) / (CH[b2] - CH[a2]); chest[i][j] = Math.max(chest[i][j], r[a2] + (r[b2] - r[a2]) * t);
+    }
+  }
+  const add = (v: number) => {
+    if (used[v] >= 0) return used[v];
+    const i = pos.length / 3; used[v] = i;
+    const g = P.group[v]; const h = P.h[v];
+    let e = (g === 2 && sp.sleeve > 0 ? sleeveEase(sp) : sp.ease) + (under ? under.ease[v] : 0);
+    if (g === 2 && sp.sleeve > 0) e += sp.flare * smooth(sp.sleeve * 0.3, sp.sleeve, P.arm[v]) * (sp.sleeve < 0.6 ? 1 : 0.3) + 0.002;
+    if (g === 2 && sp.sleeve > 0) e += sp.sleeveEase ?? 0;
+    if ((g === 1 || g === 3) && sp.hemFlare) e += sp.hemFlare * smooth(sp.hem + .35, sp.hem, h);
+    if (g === 3 && sp.leg > 0) e += legFlareOffset(sp, P.leg[v]);
+    if (sp.kind === "shoes" || sp.kind === "boots") e += 0.004 * smooth(-0.02, -0.12, c.body[v * 3 + 2] - (P.torsoZ + 0.05));
+    e += sizeExtra(sp, P, v);
+    let x = c.body[v * 3] + normals[v * 3] * e, y = c.body[v * 3 + 1] + normals[v * 3 + 1] * e, z = c.body[v * 3 + 2] + normals[v * 3 + 2] * e;
+    if (bust && (g === 1 || g === 3) && h < 0.72 && h > sp.hem - 0.1) {
+      const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
+      const side = 0.15 + 0.35 * Math.min(1, Math.max(0, (sp.sizeSteps ?? 0) / 2));
+      const target = bust[j] * sp.bustFall + e; const k = sp.drape * smooth(0.72, 0.5, h) * (side + (1 - side) * Math.abs(zz) / r);
+      if (target > r && r > 1e-4) { const nr = lerp(r, target, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
+      if (hipLine && g === 1 && h > HIP_H) {
+        const zz2 = z - P.torsoZ, r2 = Math.hypot(x, zz2), t = Math.min(1, (h - HIP_H) / (0.72 - HIP_H));
+        const line = lerp(hipLine[j] + e + 0.004, bust[j] * sp.bustFall + e, t) * smooth(0.72, 0.6, h) + r2 * (1 - smooth(0.72, 0.6, h));
+        if (line > r2 && r2 > 1e-4) { const nr = lerp(r2, line, looseK); x *= nr / r2; z = P.torsoZ + (zz2 * nr) / r2; }
+      }
+    }
+    if (chest && g === 1 && h >= CH[0] && h < CH[CH.length - 1]) {
+      const zz = z - P.torsoZ; const r = Math.hypot(x, zz);
+      if (zz > 0 && r > 1e-4) {
+        const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
+        const f = ((h - CH[0]) / (CH[1] - CH[0])); const i0 = Math.min(CH.length - 2, Math.floor(f)); const w = f - i0;
+        const R = lerp(chest[i0][j], chest[i0 + 1][j], w) + e * 0.9;
+        const k = smooth(CH[CH.length - 1], CH[CH.length - 1] - 0.08, h) * smooth(0.1, 0.6, zz / r) * sp.drape;
+        if (R > r) { const nr = lerp(r, R, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
+      }
+    }
+    const rel = sizeRelief(sp, P, v, c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2]);
+    if (rel > 0) { x += normals[v * 3] * rel; y += normals[v * 3 + 1] * rel; z += normals[v * 3 + 2] * rel; }
+    if (under?.tubes.length && (g === 1 || g === 3)) {
+      const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
+      let target = 0; for (const tb of under.tubes) target = Math.max(target, tubeRadius(tb, y, j));
+      target += 0.004 + sp.ease * 0.5;
+      if (target > r && r > 1e-4) { x *= target / r; z = P.torsoZ + (zz * target) / r; }
+    }
+    if ((sp.kind === "shoes" || sp.kind === "boots") && c.body[v * 3 + 1] < 0.018) y = Math.min(y, -0.004 - 0.008 * smooth(0.018, 0.0, c.body[v * 3 + 1]));
+    pos.push(x, y, z); al.push(cov[v]); src.push(v);
+    for (let k = 0; k < 4; k++) { const w = a.body.skinWeight[v * 4 + k]; si.push(w ? a.body.skinIndex[v * 4 + k] : 0); sw.push(w / 255); }
+    return i;
+  };
+  const index: number[] = [];
+  for (let t = 0; t < tris.length; t += 3) {
+    const [p, q, r] = [tris[t], tris[t + 1], tris[t + 2]];
+    if (shortHem && [p, q, r].some((v) => P.group[v] !== 2 && P.h[v] < 0)) continue;
+    if (!Number.isNaN(top) && [p, q, r].every((v) => P.group[v] === 3 || P.h[v] < top - 0.02)) continue;
+    if (sp.kind === "boots" && [p, q, r].every((v) => P.group[v] === 4)) continue;
+    index.push(add(p), add(q), add(r));
+  }
+  if (sp.skirt > 0 || shortHem) {
+    const tube = skirtTube(c, P, shortHem ? { ...tubeSpec, kind: "skirt" } : tubeSpec, under); const rows = tube.r.length - 1;
+    const base = pos.length / 3; const names = a.meta.bones.map((b) => b.name);
+    const hips = names.indexOf("mixamorig:Hips"), upL = names.indexOf("mixamorig:LeftUpLeg"), upR = names.indexOf("mixamorig:RightUpLeg");
+    for (let i = 0; i <= rows; i++) {
+      const y = tube.y0 - (tube.len * i) / rows; const t = i / rows;
+      for (let j = 0; j < TUBE_NA; j++) {
+        const r = tube.r[i][j]; const phi = (j / TUBE_NA) * 2 * Math.PI - Math.PI;
+        pos.push(Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
+        al.push(frontPanelCoverage(sp, Math.sin(phi) * r, Math.cos(phi) * r)); src.push(-1);
+        const w = smooth(-0.12, 0.15, P.hipY - y) * (0.7 + 0.3 * Math.max(0, Math.cos(phi))); const wl = w * Math.min(1, Math.max(0, 0.5 + Math.sin(phi) * 2));
+        if (shortHem) {
+          const [ix, wt] = nearestSkinWeights(a, c, P, Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
+          const m = new Map<number, number>(); let legW = 0;
+          ix.forEach((b, k) => { if (!wt[k]) return; if (b === upL || b === upR) legW += wt[k]; else m.set(b, (m.get(b) ?? 0) + wt[k]); });
+          const side = Math.min(1, Math.max(0, 0.5 + Math.sin(phi) * 2));
+          if (legW) { m.set(upL, legW * side); m.set(upR, legW * (1 - side)); }
+          const top = [...m].filter(([, x]) => x > 0).sort((p1, p2) => p2[1] - p1[1]).slice(0, 4); const tot = top.reduce((n, [, x]) => n + x, 0) || 1;
+          for (let k = 0; k < 4; k++) { si.push(top[k]?.[0] ?? hips); sw.push((top[k]?.[1] ?? 0) / tot); }
+          continue;
+        }
+        si.push(hips, upL, upR, 0); sw.push(1 - w, wl, w - wl, 0);
+      }
+    }
+    for (let i = 0; i < rows; i++) for (let j = 0; j < TUBE_NA; j++) {
+      const j2 = (j + 1) % TUBE_NA; const p = base + i * TUBE_NA + j, q = base + i * TUBE_NA + j2, r = base + (i + 1) * TUBE_NA + j, s2 = base + (i + 1) * TUBE_NA + j2;
+      index.push(p, r, q, q, r, s2);
+    }
+  }
+  if (index.length < 30) return null;
+  return { spec: sp, position: Float32Array.from(pos), alpha: Float32Array.from(al), skinIndex: Uint16Array.from(si), skinWeight: Float32Array.from(sw), index: Uint32Array.from(index), source: Int32Array.from(src) };
+}
+
+export function posedPositions(skeleton: THREE.Skeleton, bindMatrix: THREE.Matrix4, position: Float32Array, skinIndex: ArrayLike<number>, skinWeight: ArrayLike<number>, space?: THREE.Object3D): Float32Array {
+  skeleton.bones.forEach((b) => b.updateMatrixWorld(true));
+  let toSpace: THREE.Matrix4 | null = null;
+  if (space) { space.updateWorldMatrix(true, false); toSpace = space.matrixWorld.clone().invert(); }
+  const M = skeleton.bones.map((b, i) => { const m = new THREE.Matrix4().multiplyMatrices(b.matrixWorld, skeleton.boneInverses[i]).multiply(bindMatrix); return toSpace ? m.premultiply(toSpace) : m; });
+  const out = new Float32Array(position.length); const p = new THREE.Vector3(), q = new THREE.Vector3();
+  for (let v = 0; v < position.length / 3; v++) {
+    p.set(position[v * 3], position[v * 3 + 1], position[v * 3 + 2]); let x = 0, y = 0, z = 0;
+    for (let k = 0; k < 4; k++) { const w = skinWeight[v * 4 + k]; if (!w) continue; q.copy(p).applyMatrix4(M[skinIndex[v * 4 + k]]); x += w * q.x; y += w * q.y; z += w * q.z; }
+    out[v * 3] = x; out[v * 3 + 1] = y; out[v * 3 + 2] = z;
+  }
+  return out;
+}
+
+export interface PhotoInfo {
+  torsoWidthAt?: (fy: number) => { x0: number; x1: number } | null;
+  landmarks?: GarmentLandmarks | null;
+  legRows?: PhotoLegRow[];
+  width: number; height: number; box: { x0: number; y0: number; x1: number; y1: number }; widthAt: (fy: number) => { x0: number; x1: number } | null;
+  collarRow: number | null;
+  neckDrop: number | null;
+  cutout: boolean; backdrop: [number, number, number] | null;
+  isBackView?: boolean;
+}
+
+export const BACKDROP_TOLERANCE = 32;
+export const isBackdrop = (d: Uint8ClampedArray, o: number, backdrop: [number, number, number] | null): boolean =>
+  !!backdrop && Math.hypot(d[o] - backdrop[0], d[o + 1] - backdrop[1], d[o + 2] - backdrop[2]) <= BACKDROP_TOLERANCE;
+
+export function srgbBytes(color: string): [number, number, number] {
+  const h = new THREE.Color(color).getHex();
+  return [(h >> 16) & 255, (h >> 8) & 255, h & 255];
+}
+
+export interface PhotoMask { W: number; H: number; data: Uint8ClampedArray; mask: Uint8Array; cutout: boolean; backdrop: [number, number, number] | null }
+
+export function photoMask(img: CanvasImageSource & { width: number; height: number }, W = 256): PhotoMask | null {
+  if (typeof document === "undefined") return null;
+  const H = Math.max(1, Math.round((W * img.height) / img.width));
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d", { willReadFrequently: true }); if (!g) return null;
+  g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
+  const n = W * H; const mask = new Uint8Array(n); let transparent = 0;
+  for (let i = 0; i < n; i++) if (d[i * 4 + 3] <= 32) transparent++;
+  if (transparent >= n * 0.01) {
+    for (let i = 0; i < n; i++) mask[i] = d[i * 4 + 3] > 32 ? 1 : 0;
+    return { W, H, data: d, mask, cutout: true, backdrop: null };
+  }
+  const ring: number[][] = [[], [], []];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (x < 2 || y < 2 || x >= W - 2 || y >= H - 2) { const o = (y * W + x) * 4; ring[0].push(d[o]); ring[1].push(d[o + 1]); ring[2].push(d[o + 2]); }
+  const med = (arr: number[]) => { const v = [...arr].sort((a, b) => a - b); return v[v.length >> 1]; };
+  const backdrop: [number, number, number] = [med(ring[0]), med(ring[1]), med(ring[2])];
+  let on = 0;
+  for (let i = 0; i < n; i++) { const far = d[i * 4 + 3] > 32 && !isBackdrop(d, i * 4, backdrop); mask[i] = far ? 1 : 0; on += far ? 1 : 0; }
+  if (on > n * 0.98 || on < n * 0.002) { for (let i = 0; i < n; i++) mask[i] = d[i * 4 + 3] > 32 ? 1 : 0; return { W, H, data: d, mask, cutout: true, backdrop: null }; }
+  return { W, H, data: d, mask, cutout: false, backdrop };
+}
+
+export function photoInfo(img: CanvasImageSource & { width: number; height: number }): PhotoInfo | null {
+  const pm = photoMask(img); if (!pm) return null;
+  const { W, H, data: d, mask } = pm;
+  const rows = new Uint16Array(H), cols = new Uint16Array(W);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mask[y * W + x]) { rows[y]++; cols[x]++; }
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let x = 0; x < W; x++) if (cols[x] >= 2) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); }
+  for (let y = 0; y < H; y++) if (rows[y] >= 2) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  if (x1 < 0 || y1 < 0) return null;
+  const k = img.width / W;
+  const px = (x: number, y: number) => { const o = (y * W + x) * 4; return mask[y * W + x] ? [d[o], d[o + 1], d[o + 2]] : null; };
+  const cx0 = Math.round(x0 + (x1 - x0) * 0.45), cx1 = Math.round(x0 + (x1 - x0) * 0.55);
+  const body: number[][] = []; for (let y = Math.round(y0 + (y1 - y0) * 0.35); y < y0 + (y1 - y0) * 0.6; y++) for (let x = cx0; x <= cx1; x++) { const p = px(x, y); if (p) body.push(p); }
+  let collarRow: number | null = null;
+  if (body.length > 10) {
+    const med = [0, 1, 2].map((i) => body.map((p) => p[i]).sort((a, b) => a - b)[body.length >> 1]);
+    let last = -1, gap = 0;
+    for (let y = y0; y < y0 + (y1 - y0) * 0.22; y++) {
+      let diff = 0, cnt = 0;
+      for (let x = cx0; x <= cx1; x++) { const p = px(x, y); if (!p) { diff++; cnt++; continue; } cnt++; if (Math.hypot(p[0] - med[0], p[1] - med[1], p[2] - med[2]) > 55) diff++; }
+      if (cnt && diff / cnt > 0.5) { last = y; gap = 0; } else if (last >= 0 && ++gap > 2) break;
+    }
+    if (last > y0) collarRow = (last + 1 - y0) / Math.max(1, y1 - y0);
+  }
+  const topAt = (a: number, b: number, deepest: boolean): number | null => {
+    const xa = Math.round(x0 + (x1 - x0) * a), xb = Math.round(x0 + (x1 - x0) * b); let best: number | null = null;
+    for (let x = xa; x <= xb; x++) for (let y = y0; y <= y1; y++) if (mask[y * W + x]) { best = best === null ? y : deepest ? Math.max(best, y) : Math.min(best, y); break; }
+    return best;
+  };
+  let neckDrop: number | null = null;
+  if (y1 - y0 >= 24 && x1 - x0 >= 24) {
+    const mid = topAt(0.44, 0.56, true), l = topAt(0.2, 0.32, false), rr = topAt(0.68, 0.8, false);
+    if (mid !== null && l !== null && rr !== null) neckDrop = Math.max(0, (mid - Math.min(l, rr)) / Math.max(1, y1 - y0));
+  }
+  
+  const isBackView = collarRow === null || (neckDrop !== null && neckDrop < 0.02);
+
+  return {
+    landmarks: (() => { const points = silhouetteLandmarks(mask, W, H, { x0, y0, x1, y1 }); if (!points) return null;
+      return Object.fromEntries(Object.entries(points).map(([name, p]) => [name, { x: p.x * k, y: p.y * k }])) as unknown as GarmentLandmarks; })(),
+    legRows: separatedLegRows(mask,W,H,{x0,y0,x1,y1}).map(row=>({y:row.y*k,left:{x0:row.left.x0*k,x1:row.left.x1*k},right:{x0:row.right.x0*k,x1:row.right.x1*k}})),
+    collarRow: collarRow ?? 0.03, neckDrop, cutout: pm.cutout, backdrop: pm.backdrop, isBackView,
+    width: img.width, height: img.height, box: { x0: x0 * k, y0: y0 * k, x1: (x1 + 1) * k, y1: (y1 + 1) * k },
+    widthAt: (fy) => {
+      const y = Math.min(H - 1, Math.round(y0 + (y1 - y0) * fy)); let a = -1, b = -1;
+      for (let x = 0; x < W; x++) if (mask[y * W + x]) { if (a < 0) a = x; b = x; }
+      return a < 0 ? null : { x0: a * k, x1: (b + 1) * k };
+    },
+    torsoWidthAt: (fy) => {
+      const y = Math.min(H - 1, Math.max(0, Math.round(y0 + (y1 - y0) * fy)));
+      const points = silhouetteLandmarks(mask, W, H, { x0, y0, x1, y1 });
+      if (!points) return null;
+      const center = Math.round((points.neckline.x + points.hem.x) / 2);
+      if (!mask[y * W + center]) return null;
+      let a = center, b = center;
+      while (a > 0 && mask[y * W + a - 1]) a--;
+      while (b < W - 1 && mask[y * W + b + 1]) b++;
+      return b - a < 8 ? null : { x0: a * k, x1: (b + 1) * k };
+    },
+  };
+}
+
+export interface SleeveSource { isSleeve: (v: number) => boolean; along: (v: number) => number }
+export interface SleeveSpan { fy: number; x0: number; x1: number }
+
+export function photoSleeves(photo: PhotoInfo): { left: SleeveSpan[] | null; right: SleeveSpan[] | null } | null {
+  if (!photo.torsoWidthAt) return null;
+  const bw = photo.box.x1 - photo.box.x0; const left: SleeveSpan[] = [], right: SleeveSpan[] = [];
+  for (let i = 0; i <= 50; i++) {
+    const fy = i / 50; const full = photo.widthAt(fy); const torso = photo.torsoWidthAt(fy);
+    if (!full || !torso) continue;
+    if (torso.x0 - full.x0 > bw * 0.03) left.push({ fy, x0: full.x0, x1: torso.x0 });
+    if (full.x1 - torso.x1 > bw * 0.03) right.push({ fy, x0: torso.x1, x1: full.x1 });
+  }
+  const usable = (rows: SleeveSpan[]) => rows.length >= 2 && rows[rows.length - 1].fy - rows[0].fy >= 0.15
+    && rows.every((r, k) => k === 0 || r.fy - rows[k - 1].fy <= 0.1) ? rows : null;
+  const l = usable(left), r = usable(right);
+  return l || r ? { left: l, right: r } : null;
+}
+
+export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo: PhotoInfo | null, noPhoto?: (v: number) => boolean,
+  visibleAlpha: Float32Array = gg.alpha, sleeve?: SleeveSource): THREE.BufferGeometry {
+  const sp = gg.spec; const n = gg.index.length / 3;
+  let map: ((x: number, y: number, z?: number) => [number, number]) | null = null;
+  let torsoCenter = 0;
+  let photoScaleX = 1, photoScaleY = 1;
+  let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+  for (let v = 0; v < gg.position.length / 3; v++) {
+    xMin = Math.min(xMin, gg.position[v * 3]); xMax = Math.max(xMax, gg.position[v * 3]);
+    yMin = Math.min(yMin, gg.position[v * 3 + 1]); yMax = Math.max(yMax, gg.position[v * 3 + 1]);
+  }
+
+  if (photo && (sp.kind === "shoes" || sp.kind === "boots")) {
+    let footXMin = Infinity, footXMax = -Infinity;
+    let footYMin = Infinity, footYMax = -Infinity;
+    let footZMin = Infinity, footZMax = -Infinity;
+    for (let v = 0; v < posed.length / 3; v++) if (gg.alpha[v] > 0.01) {
+      footXMin = Math.min(footXMin, posed[v * 3]); footXMax = Math.max(footXMax, posed[v * 3]);
+      footYMin = Math.min(footYMin, posed[v * 3 + 1]); footYMax = Math.max(footYMax, posed[v * 3 + 1]);
+      footZMin = Math.min(footZMin, posed[v * 3 + 2]); footZMax = Math.max(footZMax, posed[v * 3 + 2]);
+    }
+    const dx = Math.max(0.01, footXMax - footXMin), dy = Math.max(0.01, footYMax - footYMin), dz = Math.max(0.01, footZMax - footZMin);
+    map = (x, y, z) => {
+      const uP = (x - footXMin) / dx, vP = (y - footYMin) / dy, zP = z !== undefined ? (z - footZMin) / dz : 0.5;
+      return [0.05 + 0.90 * (0.6 * uP + 0.4 * zP), 0.05 + 0.90 * vP];
+    };
+  } else if (photo) {
+    let yTop = -Infinity, yBot = Infinity; const front: number[] = [];
+    for (let v = 0; v < posed.length / 3; v++) if (gg.alpha[v] > 0.5 && !noPhoto?.(v) && gg.photoEligible?.[v] !== 0) { const y = posed[v * 3 + 1]; yTop = Math.max(yTop, y); yBot = Math.min(yBot, y); front.push(v); }
+    const isUpperPiece = ["tee", "longsleeve", "crop", "hoodie", "shirt", "tank", "dress", "jacket", "coat", "sweater"].includes(sp.kind);
+    const fy = ["pants", "shorts", "bermuda", "culottes", "skirt", "leggings"].includes(sp.kind) ? 0.45 : isUpperPiece ? 0.85 : sp.sleeve > 0.6 ? 0.93 : 0.62;
+    const yRef = yTop - (yTop - yBot) * fy;
+    let xl = Infinity, xr = -Infinity;
+    for (const v of front) if (Math.abs(posed[v * 3 + 1] - yRef) < 0.012) { xl = Math.min(xl, posed[v * 3]); xr = Math.max(xr, posed[v * 3]); }
+    const pw = (isUpperPiece ? photo.torsoWidthAt?.(fy) : null) ?? photo.widthAt(fy);
+    if (Number.isFinite(xl) && pw && xr > xl) {
+      const { box } = photo; const sx = (pw.x1 - pw.x0) / (xr - xl); const cxP = (pw.x0 + pw.x1) / 2, cxG = (xl + xr) / 2;
+      photoScaleX = sx; torsoCenter = cxG;
+      const bh = box.y1 - box.y0;
+      let yFront = -Infinity;
+      if (HAS_COLLAR_BAND.has(sp.kind) && photo.collarRow !== null) {
+        const mid = front.filter((v) => Math.abs(posed[v * 3]) < 0.025);
+        if (mid.length) {
+          let z0 = Infinity, z1 = -Infinity; for (const v of mid) { z0 = Math.min(z0, posed[v * 3 + 2]); z1 = Math.max(z1, posed[v * 3 + 2]); }
+          for (const v of mid) if (posed[v * 3 + 2] > (z0 + z1) / 2) yFront = Math.max(yFront, posed[v * 3 + 1]);
+        }
+      }
+      if (Number.isFinite(yFront) && yFront - yBot > 0.1) {
+        const yRib = yFront - 0.016; const rowRib = box.y0 + bh * photo.collarRow!;
+        const sy = (box.y1 - rowRib) / (yRib - yBot);
+        photoScaleY = sy;
+        map = (x, y) => [(cxP + (x - cxG) * sx) / photo.width, 1 - (box.y1 - (y - yBot) * sy) / photo.height];
+      } else {
+        const sy = bh / Math.max(0.05, yTop - yBot);
+        photoScaleY = sy;
+        map = (x, y) => [(cxP + (x - cxG) * sx) / photo.width, 1 - (box.y0 + (yTop - y) * sy) / photo.height];
+      }
+      if (photo.legRows?.length && sp.leg>0 && Number.isNaN(sp.hem)) {
+        const whole=map!;
+        const makeLeg=(side:"left"|"right")=>{
+          const rows=photo.legRows!.flatMap(row=>{
+            const modelY=yTop-(row.y-box.y0)/Math.max(1,bh)*(yTop-yBot);
+            const candidates=front.filter(v=>Math.abs(posed[v*3+1]-modelY)<.025 && (side==="left"?posed[v*3]<cxG:posed[v*3]>=cxG));
+            if(candidates.length<2)return [];
+            const modelLeft=Math.min(...candidates.map(v=>posed[v*3])),modelRight=Math.max(...candidates.map(v=>posed[v*3]));
+            if(modelRight-modelLeft<.005)return [];
+            return [{modelY,modelLeft,modelRight,photoY:row.y,photoLeft:row[side].x0,photoRight:row[side].x1}];
+          });
+          return rows.length>=4?landmarkProjection(rows,photo.width,photo.height):null;
+        };
+        const left=makeLeg("left"),right=makeLeg("right");
+        if(left&&right){
+          const start=photo.legRows[0].y;
+          map=(x,y)=>{
+            const base=whole(x,y),photoY=(1-base[1])*photo.height;
+            const f=Math.min(1,Math.max(0,(photoY-start)/Math.max(1,bh*.06)));
+            const leg=(x<cxG?left:right)(x,y);
+            return [base[0]*(1-f)+leg[0]*f,base[1]];
+          };
+        }
+      }
+      if (photo.landmarks && isUpperPiece) {
+        const lm = photo.landmarks;
+        const shouldersY = yTop - .02;
+        const modelRow = (y: number) => {
+          const row = front.filter(v => Math.abs(posed[v * 3 + 1] - y) < .025);
+          if (row.length < 2) return { left: xl, right: xr };
+          return { left: Math.min(...row.map(v => posed[v * 3])), right: Math.max(...row.map(v => posed[v * 3])) };
+        };
+        const top = modelRow(shouldersY), hem = modelRow(yBot + .02), ph = photo.torsoWidthAt?.(.98) ?? photo.widthAt(.98) ?? pw;
+        map = landmarkProjection([
+          { modelY: shouldersY, modelLeft: top.left, modelRight: top.right, photoY: (lm.leftShoulder.y + lm.rightShoulder.y) / 2, photoLeft: lm.leftShoulder.x, photoRight: lm.rightShoulder.x },
+          { modelY: yRef, modelLeft: xl, modelRight: xr, photoY: box.y0 + bh * fy, photoLeft: pw.x0, photoRight: pw.x1 },
+          { modelY: yBot, modelLeft: hem.left, modelRight: hem.right, photoY: box.y1, photoLeft: ph.x0, photoRight: ph.x1 },
+        ], photo.width, photo.height);
+      }
+    }
+  }
+
+  let sleeveUv: ((v: number) => [number, number] | null) | null = null;
+  const spans = map && photo && sleeve && sp.sleeve > 0 ? photoSleeves(photo) : null;
+  if (spans && photo && sleeve) {
+    const bh = photo.box.y1 - photo.box.y0; const bins = 24;
+    const edges: Record<"l" | "r", { min: number; max: number }[]> = { l: [], r: [] };
+    const where = (v: number) => {
+      const a = sleeve.along(v); if (!(a >= 0) || !sleeve.isSleeve(v)) return null;
+      const t = Math.min(1, Math.max(0, a / Math.max(0.01, sp.sleeve)));
+      return { side: (posed[v * 3] < torsoCenter ? "l" : "r") as "l" | "r", t, bin: Math.min(bins - 1, Math.floor(t * bins)) };
+    };
+    for (let v = 0; v < posed.length / 3; v++) {
+      const at = where(v); if (!at) continue;
+      const e = edges[at.side][at.bin] ?? (edges[at.side][at.bin] = { min: Infinity, max: -Infinity });
+      e.min = Math.min(e.min, posed[v * 3]); e.max = Math.max(e.max, posed[v * 3]);
+    }
+    const spanAt = (rows: SleeveSpan[], t: number): SleeveSpan => {
+      const fy = rows[0].fy + t * (rows[rows.length - 1].fy - rows[0].fy);
+      let k = 0; while (k < rows.length - 2 && rows[k + 1].fy < fy) k++;
+      const a = rows[k], b = rows[Math.min(rows.length - 1, k + 1)]; const f = b.fy > a.fy ? (fy - a.fy) / (b.fy - a.fy) : 0;
+      return { fy, x0: a.x0 + (b.x0 - a.x0) * f, x1: a.x1 + (b.x1 - a.x1) * f };
+    };
+    sleeveUv = (v) => {
+      const at = where(v); if (!at) return null;
+      const rows = at.side === "l" ? spans.left : spans.right; const e = edges[at.side][at.bin];
+      if (!rows || !e || e.max - e.min < 1e-4) return null;
+      const s = spanAt(rows, at.t); const cross = (posed[v * 3] - e.min) / (e.max - e.min);
+      return [(s.x0 + cross * (s.x1 - s.x0)) / photo.width, 1 - (photo.box.y0 + s.fy * bh) / photo.height];
+    };
+  }
+
+  const pos: number[] = [], uv: number[] = [], col: number[] = [], si: number[] = [], sw: number[] = [];
+  const fabricUv: number[] = [], photoWeight: number[] = [];
+  const normals = baseNormals(posed, gg.index, Uint32Array.from({ length: posed.length / 3 }, (_, i) => i));
+  const cache = new Map<string, number>(); const index: number[] = [];
+  for (let t = 0; t < n; t++) {
+    const vs = [gg.index[t * 3], gg.index[t * 3 + 1], gg.index[t * 3 + 2]];
+    const isFront = !!map;
+    for (const v of vs) {
+      const key = `${v}:${isFront ? 1 : 0}`; let i = cache.get(key);
+      if (i === undefined) {
+        i = pos.length / 3; cache.set(key, i);
+        pos.push(gg.position[v * 3], gg.position[v * 3 + 1], gg.position[v * 3 + 2]);
+        const sleeveAt = sleeveUv?.(v) ?? null;
+        
+        const gGroup = gg.source[v] >= 0 ? 1 : 3;
+        const isLowerPiece = gGroup === 3 || ["pants", "shorts", "bermuda", "culottes", "skirt", "leggings"].includes(sp.kind);
+        const isShoe = sp.kind === "shoes" || sp.kind === "boots";
+
+        const normalZ = normals[v * 3 + 2];
+        const isBackView = photo?.isBackView ?? false;
+        
+        const angleThreshold = isShoe 
+          ? 1.0 
+          : isLowerPiece 
+          ? Math.min(1, Math.max(0, (normalZ + 0.65) / 0.85)) 
+          : isBackView 
+          ? Math.min(1, Math.max(0, (-normalZ + 0.35) / 0.85))
+          : Math.min(1, Math.max(0, (normalZ + 0.35) / 0.85));
+
+        const isSleeveVertex = sleeve?.isSleeve(v) ?? false;
+        const blend = isFront && (sleeveAt || isSleeveVertex || isLowerPiece || isShoe || !noPhoto?.(v)) && gg.photoEligible?.[v] !== 0 
+          ? angleThreshold 
+          : 0;
+
+        if (sleeveAt) {
+          uv.push(0.5 * Math.min(0.999, Math.max(0.001, sleeveAt[0])), Math.min(0.999, Math.max(0.001, sleeveAt[1])));
+        } else if (map) {
+          const [u, w] = map(posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2]);
+          uv.push(0.5 * Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w)));
+        } else {
+          uv.push(0.501 + 0.498 * (gg.position[v * 3] - xMin) / Math.max(0.01, xMax - xMin),
+            0.001 + 0.998 * (gg.position[v * 3 + 1] - yMin) / Math.max(0.01, yMax - yMin));
+        }
+        fabricUv.push(0.501 + 0.498 * (gg.position[v * 3] - xMin) / Math.max(0.01, xMax - xMin),
+          0.001 + 0.998 * (gg.position[v * 3 + 1] - yMin) / Math.max(0.01, yMax - yMin));
+        photoWeight.push(blend * blend * (3 - 2 * blend));
+        col.push(1, 1, 1, visibleAlpha[v]);
+        for (let k = 0; k < 4; k++) { si.push(gg.skinIndex[v * 4 + k]); sw.push(gg.skinWeight[v * 4 + k]); }
+      }
+      index.push(i);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute("fabricUv", new THREE.Float32BufferAttribute(fabricUv, 2));
+  g.setAttribute("photoWeight", new THREE.Float32BufferAttribute(photoWeight, 1));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 4));
+  g.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(si, 4));
+  g.setAttribute("skinWeight", new THREE.Float32BufferAttribute(sw, 4));
+  g.setIndex(index); g.computeVertexNormals();
+  g.userData.fabricMapping = { width: Math.max(0.01, xMax - xMin), height: Math.max(0.01, yMax - yMin), photoScaleX, photoScaleY };
+  return g;
+}
+
+const garmentAtlases = new Map<object, { key: string; canvas: HTMLCanvasElement }>();
+
+export function garmentTexture(img: (CanvasImageSource & { width: number; height: number }) | null, fabric: string,
+  mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number } | null, info?: PhotoInfo | null, spec?: GarmentSpec): THREE.CanvasTexture {
+  const cacheKey = JSON.stringify([fabric, mapping, spec?.kind, info?.box, info?.backdrop, info?.collarRow, info?.landmarks, info?.legRows]);
+  const cached = img ? garmentAtlases.get(img) : null;
+  if (cached?.key === cacheKey) {
+    garmentAtlases.delete(img!); garmentAtlases.set(img!, cached);
+    const texture = new THREE.CanvasTexture(cached.canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4;
+    texture.userData.atlasCacheHit = true;
+    return texture;
+  }
+  const scale = img ? Math.min(1, 2048 / Math.max(img.width, img.height)) : 1;
+  const W = img ? Math.max(1, Math.round(img.width * scale)) : 16, H = img ? Math.max(1, Math.round(img.height * scale)) : 16;
+  const cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H; const g = cv.getContext("2d")!;
+  g.fillStyle = fabric; g.fillRect(0, 0, W * 2, H);
+  if (img) {
+    const source = document.createElement("canvas"); source.width = img.width; source.height = img.height;
+    const sg = source.getContext("2d", { willReadFrequently: true })!; sg.drawImage(img, 0, 0);
+    const raster = sg.getImageData(0, 0, source.width, source.height);
+    if (info?.backdrop) {
+      const d = raster.data;
+      for (let o = 0; o < d.length; o += 4) if (isBackdrop(d, o, info.backdrop)) d[o + 3] = 0;
+      sg.putImageData(raster, 0, 0);
+    }
+    const upperPanels = spec && ["shirt", "hoodie", "sweater", "jacket", "coat"].includes(spec.kind) && info?.landmarks;
+    const torsoCenter = upperPanels ? (upperPanels.neckline.x + upperPanels.hem.x) / 2 : null;
+    const split = info && upperPanels ? torsoCenter
+      : info?.legRows?.length ? (info.box.x0 + info.box.x1) / 2 : null;
+    const panels = split === null ? [{}] : [{ fromX: 0, toX: split }, { fromX: split, toX: img.width }];
+    for (const [panel, range] of panels.entries()) {
+      const offset = W + panel * W / panels.length, panelWidth = W / panels.length;
+      const tile = fabricTile(raster, range);
+      const patch = tile ? null : fabricPatch(raster, range);
+      if (!tile && !patch) {
+        const bh = info ? info.box.y1 - info.box.y0 : img.height;
+        let rows = fabricRows(raster, { ...range, inset: !upperPanels && info?.legRows?.length ? .1 : .25,
+          ...(info ? { fromY: info.box.y0 + bh * (info.collarRow ?? 0.02), toY: info.box.y1 - bh * 0.03 } : {}) });
+        if (!upperPanels && info?.legRows?.length && rows.length >= 8) {
+          const chroma = (rgb: number[]) => {
+            const minimum = Math.min(...rgb), range = Math.max(...rgb) - minimum;
+            if (range < 12) return null;
+            const channels = rgb.map(channel => channel - minimum), sum = channels.reduce((a, b) => a + b, 0);
+            return channels.map(channel => channel / sum);
+          };
+          const cloth = chroma(medoid(rows.map(row => row.rgb)));
+          const wash = rows.filter(row => {
+            const hue = chroma(row.rgb);
+            return !cloth || !hue || Math.hypot(...hue.map((channel, index) => channel - cloth[index])) < .4;
+          });
+          if (wash.length >= rows.length / 2) rows = wash;
+        }
+        if (rows.length) {
+          const back = g.createLinearGradient(0, 0, 0, H);
+          const photoHeight = mapping ? mapping.height * mapping.photoScaleY : img.height;
+          const first = rows[0].y, last = rows[rows.length - 1].y;
+          for (const row of rows) back.addColorStop(Math.min(1, Math.max(0, (row.y - first) / Math.max(1, Math.min(photoHeight, last - first)))), `rgb(${row.rgb.join(",")})`);
+          g.fillStyle = back; g.fillRect(offset, 0, panelWidth, H);
+        }
+      } else {
+        const sample = document.createElement("canvas");
+        if (tile) {
+          sample.width = tile.width; sample.height = tile.height;
+          sample.getContext("2d")!.drawImage(source, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
+        } else {
+          const p = patch!; sample.width = p.width * 2; sample.height = p.height * 2; const sg2 = sample.getContext("2d")!;
+          for (const [fx, fy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]] as const) {
+            sg2.save(); sg2.translate(fx < 0 ? p.width * 2 : 0, fy < 0 ? p.height * 2 : 0); sg2.scale(fx, fy);
+            sg2.drawImage(source, p.x, p.y, p.width, p.height, 0, 0, p.width, p.height); sg2.restore();
+          }
+        }
+        const pattern = g.createPattern(sample, "repeat");
+        if (pattern) {
+          const sx = mapping ? W / (mapping.width * mapping.photoScaleX) : W / img.width;
+          const sy = mapping ? H / (mapping.height * mapping.photoScaleY) : H / img.height;
+          g.save(); g.beginPath(); g.rect(offset, 0, panelWidth, H); g.clip();
+          g.translate(W, 0); g.scale(sx, sy); g.fillStyle = pattern; g.fillRect(0, 0, W / sx, H / sy); g.restore();
+        }
+      }
+    }
+    g.drawImage(info?.backdrop ? source : img, 0, 0, W, H);
+  }
+  if (img) {
+    garmentAtlases.set(img, { key: cacheKey, canvas: cv });
+    if (garmentAtlases.size > 4) garmentAtlases.delete(garmentAtlases.keys().next().value!);
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.userData.atlasCacheHit = false; return t;
+}
+
+export function shoeColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fallback?: string | null, info?: PhotoInfo | null): { upper: string; sole: string; accent?: string | null } {
+  const base = fallback && /^#[0-9a-f]{6}$/i.test(fallback) ? fallback : "#5a5a5a";
+  if (!img || typeof document === "undefined") return { upper: base, sole: "#e8e4dc" };
+  const W = 96, H = Math.max(8, Math.round((96 * img.height) / img.width));
+  const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return { upper: base, sole: "#e8e4dc" };
+  g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
+  const backdrop = info?.backdrop ?? null;
+  let y0 = H, y1 = -1; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = (y * W + x) * 4; if (d[o + 3] > 128 && !isBackdrop(d, o, backdrop)) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
+  if (y1 < 0) return { upper: base, sole: "#e8e4dc" };
+  const hgt = y1 - y0;
+  const up = dominants(d, W, [y0 + Math.round(hgt * 0.35), y0 + Math.round(hgt * 0.75)], false, backdrop);
+  const top = dominants(d, W, [y0, y0 + Math.round(hgt * 0.35)], false, backdrop);
+  const upper = up[0] ?? base;
+  const accent = [...up.slice(1), ...top].find((c2) => colorDist(c2, upper) > 90) ?? null;
+  return { upper, sole: dominants(d, W, [y1 - Math.max(1, Math.round(hgt * 0.14)), y1], true, backdrop)[0] ?? "#e8e4dc", accent };
+}
+
+function colorDist(a: string, b: string): number {
+  const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [x, y] = [p(a), p(b)]; return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+}
+
+function dominants(d: Uint8ClampedArray, W: number, ys: [number, number], allowNeutral: boolean, backdrop: [number, number, number] | null = null): string[] {
+  const bins = new Map<number, { w: number; r: number; g: number; b: number }>();
+  for (let y = ys[0]; y <= ys[1]; y++) for (let x = 0; x < W; x++) {
+    const o = (y * W + x) * 4; if (d[o + 3] < 200 || isBackdrop(d, o, backdrop)) continue;
+    const r = d[o], gg = d[o + 1], b = d[o + 2]; const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b); const sat = mx ? (mx - mn) / mx : 0; const l = (mx + mn) / 510;
+    if (!allowNeutral && (l > 0.9 || l < 0.08)) continue;
+    let hue = 0; if (mx !== mn) { hue = mx === r ? ((gg - b) / (mx - mn)) % 6 : mx === gg ? (b - r) / (mx - mn) + 2 : (r - gg) / (mx - mn) + 4; }
+    const key = sat < 0.15 ? 100 + Math.min(4, Math.floor(l * 5)) : Math.floor(((hue + 6) % 6) * 2);
+    const e = bins.get(key) ?? { w: 0, r: 0, g: 0, b: 0 };
+    e.w += 1; e.r += r; e.g += gg; e.b += b; bins.set(key, e);
+  }
+  return [...bins.values()].filter((e) => e.w >= 3).sort((p, q) => q.w - p.w)
+    .map((e) => "#" + [e.r, e.g, e.b].map((v) => Math.round(v / e.w).toString(16).padStart(2, "0")).join(""));
+}
+
+export function trimColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string, info?: PhotoInfo | null): { hem: string | null; cuff: string | null; cuffLeft: string | null; cuffRight: string | null } {
+  const empty = { hem: null, cuff: null, cuffLeft: null, cuffRight: null };
+  if (!img || typeof document === "undefined") return empty;
+  try {
+    const W = 128, H = Math.max(8, Math.round((128 * img.height) / img.width));
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d", { willReadFrequently: true }); if (!g) return empty;
+    g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
+    const backdrop = info?.backdrop ?? null;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = (y * W + x) * 4; if (d[o + 3] > 128 && !isBackdrop(d, o, backdrop)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
+    if (x1 < 0) return empty;
+    const fr = srgbBytes(fabric);
+    const med = (xs: [number, number], ys: [number, number]) => {
+      const px: number[][] = [];
+      for (let y = Math.max(0, Math.floor(ys[0])); y <= Math.min(H - 1, Math.ceil(ys[1])); y++) for (let x = Math.max(0, Math.floor(xs[0])); x <= Math.min(W - 1, Math.ceil(xs[1])); x++) {
+        const o = (y * W + x) * 4; if (d[o + 3] > 200 && !isBackdrop(d, o, backdrop)) px.push([d[o], d[o + 1], d[o + 2]]);
+      }
+      if (px.length < 4) return null;
+      const m = medoid(px);
+      return Math.hypot(m[0] - fr[0], m[1] - fr[1], m[2] - fr[2]) < 45 ? null : "#" + m.map((v) => v.toString(16).padStart(2, "0")).join("");
+    };
+    const bw = x1 - x0, bh = y1 - y0;
+    let hem = null as string | null; for (let k = 1; k <= 3 && !hem; k++) hem = med([x0 + bw * 0.3, x0 + bw * 0.7], [y1 - k * 1.2, y1 - (k - 1) * 1.2]);
+    const cuffL = med([x0, x0 + bw * 0.04], [y0 + bh * 0.05, y0 + bh * 0.45]); const cuffR = med([x1 - bw * 0.04, x1], [y0 + bh * 0.05, y0 + bh * 0.45]);
+    return { hem, cuff: cuffL ?? cuffR, cuffLeft: cuffL, cuffRight: cuffR };
+  } catch { return empty; }
+}
+
+export function fabricColor(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fallback?: string | null, info?: PhotoInfo | null): string {
+  const base = fallback && /^#[0-9a-f]{6}$/i.test(fallback) ? fallback : "#8a8a8a";
+  if (!img || typeof document === "undefined") return base;
+  try {
+    const c = document.createElement("canvas"); c.width = 48; c.height = 48; const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return base;
+    if (info && info.box.x1 - info.box.x0 >= 4 && info.box.y1 - info.box.y0 >= 4) g.drawImage(img, info.box.x0, info.box.y0, info.box.x1 - info.box.x0, info.box.y1 - info.box.y0, 0, 0, 48, 48);
+    else g.drawImage(img, 0, 0, 48, 48);
+    const d = g.getImageData(8, 8, 32, 32).data; const ch: number[][] = [[], [], []];
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200 && !isBackdrop(d, i, info?.backdrop ?? null)) { ch[0].push(d[i]); ch[1].push(d[i + 1]); ch[2].push(d[i + 2]); }
+    if (ch[0].length < 20) return base;
+    const m = medoid(ch[0].map((_, k) => [ch[0][k], ch[1][k], ch[2][k]]));
+    return "#" + m.map((v) => v.toString(16).padStart(2, "0")).join("");
+  } catch { return base; }
+}
+
+export function fabricSurface(material?: string): { roughness: number; sheen: number } | null {
+  switch (material?.toUpperCase()) {
+    case "DENIM": case "CANVAS": return { roughness: .94, sheen: .08 };
+    case "COTTON": case "LINEN": return { roughness: .88, sheen: .25 };
+    case "WOOL": case "CASHMERE": case "FLEECE": case "KNIT": return { roughness: .93, sheen: .5 };
+    case "SILK": case "SATIN": return { roughness: .4, sheen: .65 };
+    case "LEATHER": return { roughness: .55, sheen: .08 };
+    default: return null;
+  }
+}
+
+export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.MeshPhysicalMaterial {
+  const m = new THREE.MeshPhysicalMaterial({
+    map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: sp.construction === "cargo" ? .94 : sp.kind === "jacket" || sp.kind === "coat" ? 0.7 : 0.85,
+    sheen: sp.construction === "cargo" ? .08 : sp.kind === "jacket" || sp.kind === "coat" ? 0.15 : 0.35, sheenRoughness: 0.8, sheenColor: new THREE.Color("#ffffff"), polygonOffset: true, polygonOffsetFactor: -sp.layer, polygonOffsetUnits: -sp.layer,
+  });
+  const surface = fabricSurface(sp.fabric);
+  if (surface) { m.roughness = surface.roughness; m.sheen = surface.sheen; }
+  m.name = `roupa-${sp.kind}`;
+  m.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>
+      attribute vec2 fabricUv; attribute float photoWeight;
+      varying vec2 vGarmentFabricUv; varying float vGarmentPhotoWeight;`)
+      .replace("#include <begin_vertex>", `#include <begin_vertex>
+        vGarmentFabricUv = fabricUv; vGarmentPhotoWeight = photoWeight;`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>
+      varying vec2 vGarmentFabricUv; varying float vGarmentPhotoWeight;`)
+      .replace("#include <map_fragment>", `#ifdef USE_MAP
+        vec4 garmentPhoto = texture2D(map, vMapUv);
+        vec4 garmentFabric = texture2D(map, vGarmentFabricUv);
+        diffuseColor *= mix(garmentFabric, garmentPhoto, clamp(vGarmentPhotoWeight, 0.0, 1.0));
+      #endif`);
+  };
+  const compile = m.onBeforeCompile;
+  if (sp.weave === "denim" || sp.fabric === "DENIM") m.onBeforeCompile = (shader, renderer) => { compile.call(m, shader, renderer); installDenimWeave(shader); };
+  m.customProgramCacheKey = () => `garment-fabric-blend-v2-${sp.weave === "denim" || sp.fabric === "DENIM" ? "denim" : "plain"}`;
+  return m;
+}
+
+export const HAS_COLLAR_BAND: ReadonlySet<GarmentKind> = new Set(["tee", "longsleeve", "tank", "crop", "sweater", "shirt", "dress", "jumpsuit", "romper"]);
+
+export interface CollarBand { position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
+
+export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null = null): CollarBand | null {
+  if (!HAS_COLLAR_BAND.has(sp.kind) || Number.isNaN(sp.hem) || (sp.frontOpening && sp.frontOpening > 0)) {
+    return null;
+  }
+  const NA = 72, nb = P.h.length, span = P.neckY - P.hipY;
+  const collarEase = Math.min(sp.ease, .004);
+  const band = sp.kind === "shirt" ? 0.026 : sp.kind === "hoodie" || sp.kind === "sweater" ? 0.02 : 0.016;
+  const phiOf = (x: number, dz: number) => Math.atan2(x, dz);
+  const yN = (phi: number) => P.hipY + necklineH(sp, Math.sin(phi), Math.cos(phi)) * span;
+  const rAt = new Float32Array(NA), easeAt = new Float32Array(NA);
+  const bins: { dy: number; r: number; e: number }[][] = Array.from({ length: NA }, () => []);
+  const cand: number[] = [];
+  for (let v = 0; v < nb; v++) {
+    if (P.group[v] !== 1 || P.h[v] < 0.7 || P.h[v] > 1.12) continue;
+    cand.push(v);
+    const x = c.body[v * 3], y = c.body[v * 3 + 1], dz = c.body[v * 3 + 2] - P.neckZ;
+    const phi = phiOf(x, dz); const dy = Math.abs(y - yN(phi)); if (dy > 0.015) continue;
+    const j = Math.round(((phi + Math.PI) / (2 * Math.PI)) * NA) % NA;
+    bins[j].push({ dy, r: Math.hypot(x, dz), e: under ? under.ease[v] : 0 });
+  }
+  for (let j = 0; j < NA; j++) {
+    const b = bins[j].sort((p, q) => p.dy - q.dy).slice(0, 4); if (!b.length) continue;
+    const rs = b.map((x) => x.r).sort((p, q) => p - q); rAt[j] = rs[rs.length >> 1]; easeAt[j] = Math.max(...b.map((x) => x.e));
+  }
+  if (!rAt.some((r) => r > 0)) return null;
+  const measured = rAt.slice(), measuredEase = easeAt.slice();
+  for (let j = 0; j < NA; j++) if (!measured[j]) {
+    let left = 1, right = 1;
+    while (!measured[(j - left + NA) % NA]) left++;
+    while (!measured[(j + right) % NA]) right++;
+    const l = (j - left + NA) % NA, r = (j + right) % NA;
+    rAt[j] = lerp(measured[l], measured[r], left / (left + right));
+    easeAt[j] = lerp(measuredEase[l], measuredEase[r], left / (left + right));
+  }
+  let sm = rAt;
+  for (let pass = 0; pass < 12; pass++) sm = Float32Array.from(sm, (_, j) =>
+    (sm[(j + NA - 1) % NA] + 2 * sm[j] + sm[(j + 1) % NA]) / 4);
+  const pos: number[] = [], si: number[] = [], sw: number[] = [];
+  const influences = Array.from({ length: NA }, (_, j) => {
+    const phi = j / NA * 2 * Math.PI - Math.PI;
+    const r = sm[j] + collarEase + easeAt[j];
+    const x = Math.sin(phi) * r, z = P.neckZ + Math.cos(phi) * r, y = yN(phi);
+    const near = cand.map(v => ({ v, d: (c.body[v * 3] - x) ** 2 + (c.body[v * 3 + 1] - y) ** 2 + (c.body[v * 3 + 2] - z) ** 2 }))
+      .sort((a, b) => a.d - b.d).slice(0, 8);
+    const weights = new Map<number, number>();
+    let total = 0;
+    for (const { v, d } of near) {
+      const proximity = 1 / Math.max(d, 0.000025); total += proximity;
+      for (let k = 0; k < 4; k++) {
+        const bone = a.body.skinIndex[v * 4 + k], w = a.body.skinWeight[v * 4 + k] / 255;
+        if (w) weights.set(bone, (weights.get(bone) ?? 0) + proximity * w);
+      }
+    }
+    for (const [bone, w] of weights) weights.set(bone, w / total);
+    return weights;
+  });
+  let smoothInfluences = influences;
+  for (let pass = 0; pass < 10; pass++) smoothInfluences = smoothInfluences.map((_, j) => {
+    const blend = new Map<number, number>();
+    for (const [offset, factor] of [[-1, .25], [0, .5], [1, .25]])
+      for (const [bone, weight] of smoothInfluences[(j + offset + NA) % NA])
+        blend.set(bone, (blend.get(bone) ?? 0) + weight * factor);
+    return blend;
+  });
+  const boneTotals = new Map<number, number>();
+  for (const weights of smoothInfluences) for (const [bone, weight] of weights)
+    boneTotals.set(bone, (boneTotals.get(bone) ?? 0) + weight);
+  const bones = [...boneTotals].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([bone]) => bone);
+  const weightsAt = smoothInfluences.map(blend => {
+    const top = bones.map(bone => [bone, blend.get(bone) ?? 0]);
+    const total = top.reduce((sum, [, w]) => sum + w, 0) || 1;
+    return top.map(([bone, w]) => [bone, w / total]);
+  });
+  const rings: [number, number][] = [[0.002, 0.009], [0.002, -band], [-0.001, -band], [-0.001, 0.009]];
+  for (const [dr, dy] of rings) for (let j = 0; j < NA; j++) {
+    const phi = (j / NA) * 2 * Math.PI - Math.PI; const r = sm[j] + collarEase + easeAt[j] + dr;
+    const x = Math.sin(phi) * r, z = P.neckZ + Math.cos(phi) * r, y = yN(phi) + dy;
+    pos.push(x, y, z);
+    for (let k = 0; k < 4; k++) { si.push(weightsAt[j][k]?.[0] ?? 0); sw.push(weightsAt[j][k]?.[1] ?? 0); }
+  }
+  const idx: number[] = [];
+  for (let ring = 0; ring < 4; ring++) {
+    const r0 = ring * NA, r1 = ((ring + 1) % 4) * NA;
+    for (let j = 0; j < NA; j++) { const j2 = (j + 1) % NA; idx.push(r0 + j, r1 + j, r0 + j2, r0 + j2, r1 + j, r1 + j2); }
+  }
+  const w = Float32Array.from(sw);
+  for (let i = 0; i < w.length; i += 4) { const s0 = w[i] + w[i + 1] + w[i + 2] + w[i + 3] || 1; for (let k = 0; k < 4; k++) w[i + k] /= s0; }
+  return { position: Float32Array.from(pos), skinIndex: Uint16Array.from(si), skinWeight: w, index: Uint32Array.from(idx) };
+}
+
+export function ribColor(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string, given?: PhotoInfo | null, opts: { wide?: boolean } = {}): string {
+  const darker = () => { const f = new THREE.Color(fabric); f.multiplyScalar(0.86); return `#${f.getHexString()}`; };
+  if (!img || typeof document === "undefined") return darker();
+  try {
+    const info = given ?? photoInfo(img); if (!info || info.collarRow === null) return darker();
+    const W = 256, H = Math.max(8, Math.round((256 * img.height) / img.width));
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d", { willReadFrequently: true }); if (!g) return darker();
+    g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
+    const k = W / img.width; const bx0 = info.box.x0 * k, bx1 = info.box.x1 * k, by0 = info.box.y0 * k, bh = (info.box.y1 - info.box.y0) * k;
+    const yEnd = by0 + bh * info.collarRow, yStart = opts.wide ? by0 : Math.max(by0, yEnd - bh * 0.03);
+    const x0 = bx0 + (bx1 - bx0) * (opts.wide ? 0.25 : 0.4), x1 = bx0 + (bx1 - bx0) * (opts.wide ? 0.75 : 0.6);
+    let px: number[][] = [];
+    for (let y = Math.floor(yStart); y < yEnd; y++) for (let x = Math.floor(x0); x < x1; x++) {
+      const o = (y * W + x) * 4; if (d[o + 3] > 200 && !isBackdrop(d, o, info.backdrop)) px.push([d[o], d[o + 1], d[o + 2]]);
+    }
+    if (px.length < 6) return darker();
+    if (opts.wide) { const lum = px.map((p) => 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]).sort((a, b) => a - b); const cut = lum[Math.floor(lum.length * 0.35)]; px = px.filter((p) => 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] >= cut); }
+    const med = medoid(px);
+    const f = srgbBytes(fabric);
+    if (Math.hypot(med[0] - f[0], med[1] - f[1], med[2] - f[2]) < 40) return darker();
+    return "#" + med.map((v) => v.toString(16).padStart(2, "0")).join("");
+  } catch { return darker(); }
+}
