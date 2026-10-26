@@ -9119,5 +9119,6 @@
   "sealWizard.validade_concessao_hint": "Se cuenta desde la emisión y no depende del fin del canje. Vacío = 365 días.",
   "sealWizard.dias": "{value} días",
   "room3d.roomStore.retirar_do_quarto": "Quitar de la habitación",
-  "room3d.roomStore.retirado": "{name} salió de la habitación y sigue en tu inventario."
+  "room3d.roomStore.retirado": "{name} salió de la habitación y sigue en tu inventario.",
+  "heist.brief.readyPartial": "Listo para empezar ({pct} %): el resto de la multitud termina de cargarse mientras juegas."
 }

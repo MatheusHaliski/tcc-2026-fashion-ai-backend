@@ -43,7 +43,9 @@ export function Briefing({ cards, onStart, onContinue, save, onExit, loading, pa
   settings: HeistSettings; onSettings: (s: HeistSettings) => void;
 }) {
   const { t, fmtDateTime } = useI18n();
-  const ready = loading >= 1;
+  // começa com a jogadora e quem está perto prontos (os modelos carregam dos mais próximos para os mais longe);
+  // o resto da multidão termina de carregar durante o jogo
+  const ready = loading >= 0.6, partial = ready && loading < 1;
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [challenge, setChallenge] = useState<ChallengeId | null>(null);
   const [tab, setTab] = useState<"deck" | "vendor" | "controls" | "options">("deck");
@@ -70,7 +72,7 @@ export function Briefing({ cards, onStart, onContinue, save, onExit, loading, pa
         {save && onContinue && <button type="button" className="hz-btn is-big" onClick={onContinue} disabled={!ready}>{t("heist.brief.continue", { where: t(`heist.checkpoint.${save.checkpoint}`), when: fmtDateTime(new Date(save.savedAt)) })}</button>}
         {onExit && <button type="button" className="hz-btn" onClick={onExit}>{t("heist.exit")}</button>}
       </div>
-      <p id="hz-load" className="hz-fine" aria-live="polite">{ready ? t("heist.brief.ready") : t("heist.brief.progress", { pct: Math.round(loading * 100) })}</p>
+      <p id="hz-load" className="hz-fine" aria-live="polite">{partial ? t("heist.brief.readyPartial", { pct: Math.round(loading * 100) }) : ready ? t("heist.brief.ready") : t("heist.brief.progress", { pct: Math.round(loading * 100) })}</p>
     </div>
     <div className="hz-brief-col">
       <div className="hz-tabs" role="tablist">
