@@ -120,15 +120,12 @@ const BAG_WORDS: ReadonlySet<string> = new Set(["bag", "bolsa", "backpack", "moc
 /** Tipo de molde pela subcategoria da peça (taxonomia do app); null = acessório (não é roupa de vestir). */
 export function kindOf(p: { category?: string | null; subcategory?: string | null; slot?: string | null }): GarmentKind | null {
   const sub = (p.subcategory ?? "").toLowerCase();
-  // Official codes take precedence over substring guesses (flip_flops,
-  // moccasins and top previously fell through when no broad category was sent).
   if (SUBCATEGORY_KINDS[sub]) return SUBCATEGORY_KINDS[sub];
   const is = (...k: string[]) => k.some((x) => sub.includes(x));
-  // bolsas e mochilas são acessórios: "crossbody_bag" contém "body" e viraria regata; "baggy" não é bolsa
   const words = sub.split(/[^a-zà-ú]+/);
   if (words.some((w) => BAG_WORDS.has(w) || w.endsWith("bag"))) return null;
   if (is("legging")) return "leggings";
-  if (is("skort", "short_saia", "short-saia")) return "skirt";                    // saia-short: a frente é de saia
+  if (is("skort", "short_saia", "short-saia")) return "skirt";
   if (is("skirt", "saia") && !is("short")) return "skirt";
   if (is("bermuda")) return "bermuda";
   if (is("short")) return "shorts";
@@ -140,19 +137,16 @@ export function kindOf(p: { category?: string | null; subcategory?: string | nul
   if (is("boot", "bota", "coturno")) return "boots";
   if (is("sneaker", "tenis", "tênis", "shoe", "sapato", "loafer", "oxford", "derby", "mocass", "sandal", "sandál", "heel", "salto", "slipper", "chinelo", "flat", "sapatilha", "alpargata", "espadrille")) return "shoes";
   if (is("coat", "casaco", "parka", "trench", "overcoat")) return "coat";
-  if (is("vest", "colete") && !is("vestido")) return "vest";                      // colete: sem manga
+  if (is("vest", "colete") && !is("vestido")) return "vest";
   if (is("jacket", "jaqueta", "blazer", "windbreaker", "corta", "bomber", "cardigan", "kimono", "quimono")) return "jacket";
   if (is("hoodie", "capuz")) return "hoodie";
   if (is("sweater", "sueter", "suéter", "sweatshirt", "moletom", "pullover", "knit")) return "sweater";
-  // "body" só a peça (bodysuit/body): "crossbody_bag" contém "body" e virava regata
   if (is("tank", "regata", "camisole", "bodysuit") || sub === "body") return "tank";
   if (is("crop")) return "crop";
-  if (is("polo")) return "tee";                                                     // polo: manga curta (antes virava camisa de manga longa)
+  if (is("polo")) return "tee";
   if (is("shirt", "camisa", "blouse", "blusa")) return is("t_shirt", "tshirt", "t-shirt", "camiseta") ? "tee" : "shirt";
   if (is("long_sleeve", "manga_longa", "longsleeve")) return "longsleeve";
   if (is("tee", "camiseta", "polo", "top")) return "tee";
-  // subcategoria desconhecida: a categoria gravada ("upper_piece"…) decide antes do lugar no look ("upper", "lower"…);
-  // só a camada externa do look vem antes (jaqueta sobre a peça de cima é informação de camada, não contradiz a categoria)
   const slot = (p.slot ?? "").toUpperCase();
   if (["OUTER_LAYER", "OUTERWEAR"].includes(slot)) return "jacket";
   const pick = (c: string): GarmentKind | null => {
@@ -181,7 +175,6 @@ export const SUBCATEGORY_KINDS: Readonly<Record<string, GarmentKind>> = {
   sandals: "shoes", flip_flops: "shoes", heels: "shoes", flats: "shoes", espadrilles: "shoes",
 };
 
-/** Construction is independent of the broad category: cargo is not a tight generic trouser. */
 export function specOf(p: { name?: string; category?: string | null; subcategory?: string | null; slot?: string | null }): GarmentSpec | null {
   const kind = kindOf(p);
   if (!kind) return null;
@@ -202,7 +195,6 @@ export function specOf(p: { name?: string; category?: string | null; subcategory
     }
     return spec;
   }
-  // Preserve legacy/free-text cargo aliases outside the official subcategory codes.
   if (kind === "pants" && /cargo/.test(description)) {
     const loose = /loose|relaxed|wide|larga|ampla/.test(description);
     return { ...SPECS.pants, construction: "cargo", ease: loose ? .026 : .019, waist: .29, flare: loose ? .045 : .032 };
@@ -211,36 +203,27 @@ export function specOf(p: { name?: string; category?: string | null; subcategory
   return !Number.isNaN(base.hem) && /long[ _-]?sleeve|manga[ _-]?longa/.test(description) ? { ...base, sleeve: .96 } : base;
 }
 
-/**
- * Afastamento dos braços (graus) na pose de exibição para o look: saia rodada pede as mãos por fora dela, e camadas
- * grossas no tronco (jaqueta sobre camiseta, casaco sobre suéter) pedem o braço mais aberto — como numa pessoa de
- * casaco, o braço não "entra" na lateral do tronco. Espessura na axila = folga da peça + a maior das de baixo.
- */
 export function armOutFor(specs: GarmentSpec[]): number {
   let out = 10; let under = 0;
   for (const sp of [...specs].sort((a, b) => a.layer - b.layer)) {
     if (sp.skirt > 0) out = Math.max(out, 15);
-    if (Number.isNaN(sp.hem)) continue;                                  // não cobre o tronco
+    if (Number.isNaN(sp.hem)) continue;
     const thick = sp.ease + under + (sp.sleeveEase ?? 0) * .5;
-    out = Math.max(out, Math.min(22, 10 + (thick - 0.012) * 350));    // casaco por cima: a axila abre até 22°
+    out = Math.max(out, Math.min(22, 10 + (thick - 0.012) * 350));
     under = Math.max(under, sp.ease + 0.004 + sp.flare * 0.3);
   }
   return Math.round(out * 10) / 10;
 }
 
-// ================================================================== parametrização do corpo
-
 export interface BodyParam {
-  group: Uint8Array;          // 0 cabeça, 1 tronco, 2 braço, 3 perna, 4 pé, 5 mão
-  side: Int8Array;            // +1 esquerdo da pessoa (x > 0), −1 direito
-  h: Float32Array;            // altura no tronco: 0 = articulação do quadril, 1 = base do pescoço
-  arm: Float32Array;          // ao longo do braço: 0 = ombro, 1 = punho
-  leg: Float32Array;          // ao longo da perna: 0 = quadril, 1 = tornozelo
+  group: Uint8Array;
+  side: Int8Array;
+  h: Float32Array;
+  arm: Float32Array;
+  leg: Float32Array;
   hipY: number; neckY: number; ankleY: number; torsoZ: number;
-  neckZ: number;              // eixo do pescoço (z da articulação Neck): centro do decote e da gola
-  /** ombro e punho (articulações) de cada lado: eixo do braço, para punhos e barras de manga */
+  neckZ: number;
   shoulder?: { L: number[]; R: number[] }; wrist?: { L: number[]; R: number[] };
-  /** quadril, joelho e tornozelo de cada lado: eixo da perna (caimento reto da calça) */
   legs?: { L: { hip: number[]; knee: number[]; ankle: number[] }; R: { hip: number[]; knee: number[]; ankle: number[] } };
 }
 
@@ -268,28 +251,22 @@ export function bodyParam(a: BodyAsset, c: Composed): BodyParam {
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-/** Cobertura contínua (0–1) de um vértice do corpo por uma peça. Largura da transição ≈ 1,5–2 cm. */
-/**
- * Altura (h) do decote no ângulo em volta do pescoço: na nuca `neck`, na frente `neck − vneck`, com transição suave
- * pelos lados (antes era um degrau em z = tronco, que deixava a borda torta dos lados e alta demais na frente).
- */
 export function necklineH(sp: GarmentSpec, x: number, dz: number): number {
   const r = Math.hypot(x, dz) || 1;
-  const front = smooth(-0.2, 0.75, dz / r);                // 0 atrás · 1 na frente
-  const side = Math.abs(x) / r;                             // 0 no centro · 1 no ombro
+  const front = smooth(-0.2, 0.75, dz / r);
+  const side = Math.abs(x) / r;
   switch (sp.neckShape) {
-    case "v":                                               // ponta no centro: a profundidade cai em linha reta até o ombro
+    case "v":
       return sp.neck - sp.vneck * Math.max(0, 1 - side / 0.75) * smooth(-0.15, 0.35, dz / r);
-    case "square":                                          // reto entre as alças, sobe de vez perto do ombro
+    case "square":
       return sp.neck - sp.vneck * (1 - smooth(0.42, 0.6, side)) * smooth(-0.15, 0.35, dz / r);
-    case "boat":                                            // raso e largo: a mesma altura de ombro a ombro
+    case "boat":
       return sp.neck - sp.vneck * smooth(-0.3, 0.3, dz / r);
     default:
       return sp.neck - sp.vneck * Math.pow(front, 1.4);
   }
 }
 
-/** Shared by garment coverage and inner-layer occlusion; back panels remain intact. */
 export function frontPanelCoverage(sp: GarmentSpec, x: number, dz: number): number {
   return sp.frontOpening && dz > 0 ? smooth(sp.frontOpening - .008, sp.frontOpening + .008, Math.abs(x)) : 1;
 }
@@ -304,12 +281,11 @@ function coverage(sp: GarmentSpec, P: BodyParam, v: number, x: number, z: number
   }
   let c = 0;
   if (!Number.isNaN(sp.hem) && (g === 1 || g === 2 || g === 3)) {
-    // tronco (e o alto das coxas quando a barra passa do quadril)
     const inTorso = smooth(sp.hem - dh, sp.hem + dh, h) * (1 - smooth(neckTop - dh, neckTop + dh, h));
     if (g === 1) c = Math.max(c, inTorso);
     if (g === 3 && sp.hem < 0) c = Math.max(c, inTorso * (1 - smooth(0.02, 0.06, leg)));
     if (g === 2) c = Math.max(c, sp.sleeve > 0 ? 1 - smooth(sp.sleeve - da, sp.sleeve + da, arm) : 1 - smooth(-0.06, 0.0, arm));
-    if (g === 2 && sp.sleeve === 0) c *= inTorso;                             // regata: cava sem manga
+    if (g === 2 && sp.sleeve === 0) c *= inTorso;
   }
   if (!Number.isNaN(sp.waist)) {
     const below = 1 - smooth(sp.waist - dh, sp.waist + dh, h);
@@ -322,11 +298,10 @@ function coverage(sp: GarmentSpec, P: BodyParam, v: number, x: number, z: number
 export interface GarmentGeometry {
   spec: GarmentSpec;
   position: Float32Array; alpha: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array;
-  photoEligible?: Float32Array; // 0 = estimated lining, never project the outer photograph here
-  source: Int32Array;         // vértice do corpo de onde nasceu (−1 = tubo da saia)
+  photoEligible?: Float32Array;
+  source: Int32Array;
 }
 
-/** Anel do corpo (raio máximo por ângulo) na altura y, só tronco e pernas, em volta do eixo (0, z0). */
 function ring(c: Composed, P: BodyParam, y: number, z0: number, NA: number, band = 0.012): Float32Array {
   const r = new Float32Array(NA); const nb = P.h.length;
   for (let v = 0; v < nb; v++) {
@@ -336,39 +311,28 @@ function ring(c: Composed, P: BodyParam, y: number, z0: number, NA: number, band
     r[j] = Math.max(r[j], Math.hypot(x, z));
   }
   for (let j = 0; j < NA; j++) if (!r[j]) { let b = 0; for (let d = 1; d < NA / 2 && !b; d++) b = Math.max(r[(j + d) % NA], r[(j - d + NA) % NA]); r[j] = b; }
-  // suaviza (o anel é o "casco" do corpo, sem reentrâncias entre as pernas)
   const out = new Float32Array(NA);
   for (let j = 0; j < NA; j++) { let m = 0; for (let d = -2; d <= 2; d++) m = Math.max(m, r[(j + d + NA) % NA]); out[j] = m; }
   return out;
 }
 
-/**
- * Raio do casco convexo do tronco por ângulo na altura y (função suporte: max r_k·cos(θ_k − θ_j)). Peça solta passa
- * por cima do vão entre os seios e das reentrâncias, como o tecido de verdade, em vez de desenhar o corpo.
- */
 function hullRing(c: Composed, P: BodyParam, y: number, z0: number, NA: number): Float32Array {
   const r = ring(c, P, y, z0, NA, 0.012); const out = new Float32Array(NA);
   for (let j = 0; j < NA; j++) { let m = r[j]; for (let d = -NA / 4; d <= NA / 4; d++) { const k = (j + d + NA) % NA; m = Math.max(m, r[k] * Math.cos((d * 2 * Math.PI) / NA)); } out[j] = m; }
   return out;
 }
 
-/**
- * Geometria da peça em repouso (coordenadas do corpo, pose "A" do esqueleto). `normals` são as normais da malha base.
- * `under` = folga extra por vértice (underLayer) para passar por fora das peças já vestidas por baixo.
- */
 export function coverageOf(c: Composed, P: BodyParam, sp: GarmentSpec): Float32Array {
   const nb = P.h.length; const cov = new Float32Array(nb);
   for (let v = 0; v < nb; v++) cov[v] = coverage(sp, P, v, c.body[v * 3], c.body[v * 3 + 2]);
   return cov;
 }
 
-/** Tubo de saia/vestido/casaco longo: raio (em volta do eixo (0, torsoZ)) por linha e por ângulo. */
 export interface SkirtTube { y0: number; len: number; r: Float32Array[] }
 const TUBE_NA = 64;
 
 function skirtTop(sp: GarmentSpec): number { return sp.kind === "dress" ? sp.hem : sp.kind === "coat" ? 0.0 : sp.waist; }
 
-/** Anéis do tubo da saia de uma peça (os mesmos que `garmentGeometry` usa para montá-la). */
 function skirtTube(c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null): SkirtTube {
   const y0 = lerp(P.hipY, P.neckY, skirtTop(sp)); const rows = Math.max(6, Math.ceil(sp.skirt / 0.012));
   const r: Float32Array[] = []; let prev: Float32Array | null = null;
@@ -377,10 +341,9 @@ function skirtTube(c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer
     const body = ring(c, P, y, P.torsoZ, TUBE_NA, 0.014); const rr = new Float32Array(TUBE_NA);
     for (let j = 0; j < TUBE_NA; j++) {
       let v = body[j] + sp.ease + 0.004 + sp.flare * t * t * 0.5 + sp.flare * t * 0.5;
-      // tamanho: a folga a mais do quadril e as pregas do que sobra continuam do tronco para o tubo (sem degrau na emenda)
       v += (sp.sizeEase?.hip ?? 0) + looseFold(sp.sizeFold?.hip ?? 0, (j / TUBE_NA) * 2 * Math.PI - Math.PI);
-      if (under) for (const tb of under.tubes) { const R = tubeRadius(tb, y, j); if (R > 0) v = Math.max(v, R + 0.005); }   // por fora do tubo de baixo
-      if (prev) v = Math.max(v, prev[j] - 0.002);                          // o tecido não entra de volta
+      if (under) for (const tb of under.tubes) { const R = tubeRadius(tb, y, j); if (R > 0) v = Math.max(v, R + 0.005); }
+      if (prev) v = Math.max(v, prev[j] - 0.002);
       rr[j] = v;
     }
     r.push(rr); prev = rr;
@@ -388,7 +351,6 @@ function skirtTube(c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer
   return { y0, len: sp.skirt, r };
 }
 
-/** Pesos de pele (4 ossos, normalizados) do vértice do tronco ou da coxa mais próximo de (x, y, z). */
 function nearestSkinWeights(a: BodyAsset, c: Composed, P: BodyParam, x: number, y: number, z: number): [number[], number[]] {
   let best = -1, bd = Infinity; const nb = a.meta.counts.body;
   for (let v = 0; v < nb; v++) {
@@ -406,9 +368,6 @@ function nearestSkinWeights(a: BodyAsset, c: Composed, P: BodyParam, x: number, 
   return [ix, wt.map((w) => w / tot)];
 }
 
-// ================================================================== caimento por tamanho (relevo)
-
-/** Quanto cada região do corpo pesa num vértice: tronco por altura, braço segue o peito, coxa segue o quadril. */
 function sizeWeights(P: BodyParam, v: number): { chest: number; waist: number; hip: number } {
   const g = P.group[v];
   if (g === 2) return { chest: 0.6, waist: 0, hip: 0 };
@@ -418,27 +377,23 @@ function sizeWeights(P: BodyParam, v: number): { chest: number; waist: number; h
   return { chest, waist: Math.max(0, 1 - chest - hip), hip };
 }
 
-/** Folga a mais da região do vértice (além da comum a toda a peça), em metros. */
 export function sizeExtra(sp: GarmentSpec, P: BodyParam, v: number): number {
   const e = sp.sizeEase; if (!e) return 0;
   const w = sizeWeights(P, v);
   return Math.max(0, w.chest * e.chest + w.waist * e.waist + w.hip * e.hip);
 }
 
-/** Pregas do que sobra em volta do tronco (ângulo θ a partir da frente): nove pregas, nunca para dentro. */
 function looseFold(steps: number, th: number): number {
   if (!(steps > 0.6)) return 0;
   return Math.min(0.012, 0.0045 * (steps - 0.6) + 0.0015) * (0.5 + 0.5 * Math.cos(9 * th + 0.6));
 }
 
-/** Diferença de tamanhos que vale no vértice (média das regiões pelo peso): >0 sobra, <0 aperta. */
 export function sizeStepsAt(sp: GarmentSpec, P: BodyParam, v: number): number {
   const f = sp.sizeFold; if (!f) return 0;
   const w = sizeWeights(P, v), total = w.chest + w.waist + w.hip;
   return total > 0 ? (w.chest * f.chest + w.waist * f.waist + w.hip * f.hip) / total : 0;
 }
 
-/** Eixo do membro na altura do vértice (perna pelas articulações quadril–joelho–tornozelo; braço ombro–punho). */
 function limbAxis(P: BodyParam, v: number, x: number, y: number): [number, number] | null {
   const side = x >= 0 ? "L" : "R";
   if (P.group[v] === 3 && P.legs) {
@@ -454,12 +409,6 @@ function limbAxis(P: BodyParam, v: number, x: number, y: number): [number, numbe
   return null;
 }
 
-/**
- * Relevo do tamanho escolhido, sempre para fora do corpo (m): o que o olho usa para ler caimento.
- *   sobra (> 0,6 tamanho)   pregas verticais, mais fundas para a barra (tronco), para o tornozelo (perna) e o punho
- *   aperta (< −0,4)         rugas de tensão horizontais na frente e nos lados do tronco, do quadril e das coxas
- *   comprido (> 0,5)        barra acumulada no tornozelo (calça até o chão) e no punho (manga até a mão)
- */
 export function sizeRelief(sp: GarmentSpec, P: BodyParam, v: number, x: number, y: number, z: number): number {
   const f = sp.sizeFold; if (!f) return 0;
   const g = P.group[v]; if (g !== 1 && g !== 2 && g !== 3) return 0;
@@ -490,7 +439,6 @@ export function sizeRelief(sp: GarmentSpec, P: BodyParam, v: number, x: number, 
   return out;
 }
 
-/** Raio do tubo na altura y e no ângulo j (0 fora do comprimento do tubo). */
 export function tubeRadius(tb: SkirtTube, y: number, j: number): number {
   const f = ((tb.y0 - y) / tb.len) * (tb.r.length - 1);
   if (f < 0 || f > tb.r.length - 1 + 1.5) return 0;
@@ -498,19 +446,13 @@ export function tubeRadius(tb: SkirtTube, y: number, j: number): number {
   return lerp(tb.r[i][j], tb.r[k][j], w);
 }
 
-/**
- * O que já está vestido por baixo: folga extra por vértice do corpo (para passar por fora das peças coladas ao corpo) e
- * os tubos das saias — a peça de cima que desce sobre uma saia passa por fora do tubo NA ALTURA em que está (o tubo
- * abre para baixo), em vez de afastar a cintura inteira pelo tamanho da barra.
- */
 export interface UnderLayer { ease: Float32Array; tubes: SkirtTube[] }
 
 export function underLayer(c: Composed, P: BodyParam, below: GarmentSpec[]): UnderLayer {
   const out = new Float32Array(P.h.length); const tubes: SkirtTube[] = []; let acc: UnderLayer | null = null;
   for (const sp of [...below].sort((a, b) => a.layer - b.layer)) {
     const cov = coverageOf(c, P, sp);
-    const e = sp.ease + 0.004 + (sp.skirt > 0 ? 0 : sp.flare * 0.3);     // o alargamento da saia está no tubo
-    // a folga e o relevo do tamanho da peça de baixo também: a de cima passa por fora das pregas dela
+    const e = sp.ease + 0.004 + (sp.skirt > 0 ? 0 : sp.flare * 0.3);
     for (let v = 0; v < out.length; v++) if (cov[v] > 0.02) out[v] += e + sizeExtra(sp, P, v) + sizeRelief(sp, P, v, c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2]);
     if (sp.skirt > 0) { tubes.push(skirtTube(c, P, sp, acc)); }
     acc = { ease: out, tubes };
@@ -526,23 +468,16 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     const p = rv[idx[t]], q = rv[idx[t + 1]], r = rv[idx[t + 2]];
     if (Math.max(cov[p], cov[q], cov[r]) > 0.02 && Math.min(cov[p], cov[q], cov[r]) >= 0 && (cov[p] + cov[q] + cov[r]) > 0.3) tris.push(p, q, r);
   }
-  // Below the hip a shirt is a single fabric envelope, not two copied thigh meshes.
-  // The latter split at the crotch and created dangling, independently skinned scraps.
-  const shortHem = sp.skirt === 0 && !(sp.leg > 0) && Number.isFinite(sp.hem) && sp.hem < 0;   // macacão e macaquinho têm perna: não são barra de blusa
+  const shortHem = sp.skirt === 0 && !(sp.leg > 0) && Number.isFinite(sp.hem) && sp.hem < 0;
   const tubeSpec = shortHem ? { ...sp, skirt: (0.07 - sp.hem) * (P.neckY - P.hipY), waist: 0.07 } : sp;
   const top = shortHem ? 0.02 : sp.skirt > 0 ? skirtTop(sp) : NaN;
   const pos: number[] = [], al: number[] = [], si: number[] = [], sw: number[] = [], src: number[] = [];
-  // caimento: anel do busto
   const NA = 64; const bustY = lerp(P.hipY, P.neckY, 0.72);
   const bust = sp.drape > 0 ? ring(c, P, bustY, P.torsoZ, NA, 0.015) : null;
-  // peça maior que o corpo: o tecido cai reto do busto até o quadril, inclusive dos lados (sem desenhar a cintura)
   const HIP_H = 0.04, looseK = Math.min(1, Math.max(0, ((sp.sizeSteps ?? 0) - 0.3) / 1.2));
   const hipLine = bust && looseK > 0 && Number.isFinite(sp.hem) && sp.hem < HIP_H ? ring(c, P, lerp(P.hipY, P.neckY, HIP_H), P.torsoZ, NA, 0.014) : null;
-  // peito das peças soltas: casco convexo em algumas alturas (interpolado)
   const CH = [0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9];
   const chest = sp.drape >= 0.5 && !Number.isNaN(sp.hem) ? CH.map((hh) => hullRing(c, P, lerp(P.hipY, P.neckY, hh), P.torsoZ, NA)) : null;
-  // e em pé: envelope convexo na vertical (por ângulo) — o tecido vai reto do alto do peito até a linha do busto, sem
-  // desenhar a ponta do seio
   if (chest) for (let j = 0; j < NA; j++) {
     const r = CH.map((_, i) => chest[i][j]);
     for (let i = 1; i < CH.length - 1; i++) for (let a2 = 0; a2 < i; a2++) for (let b2 = i + 1; b2 < CH.length; b2++) {
@@ -553,21 +488,16 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     if (used[v] >= 0) return used[v];
     const i = pos.length / 3; used[v] = i;
     const g = P.group[v]; const h = P.h[v];
-    // manga: a folga própria da peça é menor que a do tronco (um braço de 4–5 cm de raio com +2–3 cm virava um balão
-    // em jaqueta e casaco); a folga da camada de baixo continua inteira, para a manga passar por fora dela
     let e = (g === 2 && sp.sleeve > 0 ? sleeveEase(sp) : sp.ease) + (under ? under.ease[v] : 0);
     if (g === 2 && sp.sleeve > 0) e += sp.flare * smooth(sp.sleeve * 0.3, sp.sleeve, P.arm[v]) * (sp.sleeve < 0.6 ? 1 : 0.3) + 0.002;
     if (g === 2 && sp.sleeve > 0) e += sp.sleeveEase ?? 0;
     if ((g === 1 || g === 3) && sp.hemFlare) e += sp.hemFlare * smooth(sp.hem + .35, sp.hem, h);
     if (g === 3 && sp.leg > 0) e += legFlareOffset(sp, P.leg[v]);
-    if (sp.kind === "shoes" || sp.kind === "boots") e += 0.004 * smooth(-0.02, -0.12, c.body[v * 3 + 2] - (P.torsoZ + 0.05));   // biqueira
-    // tamanho escolhido: a região que sobra ganha folga (o relevo entra depois do caimento do busto, logo abaixo)
+    if (sp.kind === "shoes" || sp.kind === "boots") e += 0.004 * smooth(-0.02, -0.12, c.body[v * 3 + 2] - (P.torsoZ + 0.05));
     e += sizeExtra(sp, P, v);
     let x = c.body[v * 3] + normals[v * 3] * e, y = c.body[v * 3 + 1] + normals[v * 3 + 1] * e, z = c.body[v * 3 + 2] + normals[v * 3 + 2] * e;
-    // cai reto do busto (não cola na cintura nem na barriga)
     if (bust && (g === 1 || g === 3) && h < 0.72 && h > sp.hem - 0.1) {
       const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
-      // cai reto na frente e atrás; dos lados, o braço encosta — numa peça maior que o corpo, os lados também caem retos
       const side = 0.15 + 0.35 * Math.min(1, Math.max(0, (sp.sizeSteps ?? 0) / 2));
       const target = bust[j] * sp.bustFall + e; const k = sp.drape * smooth(0.72, 0.5, h) * (side + (1 - side) * Math.abs(zz) / r);
       if (target > r && r > 1e-4) { const nr = lerp(r, target, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
@@ -577,7 +507,6 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
         if (line > r2 && r2 > 1e-4) { const nr = lerp(r2, line, looseK); x *= nr / r2; z = P.torsoZ + (zz2 * nr) / r2; }
       }
     }
-    // peito: o tecido passa reto por cima do vão entre os seios (frente), sem desenhar o corpo
     if (chest && g === 1 && h >= CH[0] && h < CH[CH.length - 1]) {
       const zz = z - P.torsoZ; const r = Math.hypot(x, zz);
       if (zz > 0 && r > 1e-4) {
@@ -588,18 +517,15 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
         if (R > r) { const nr = lerp(r, R, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
       }
     }
-    // relevo do tamanho (tensão, pregas, barra acumulada) depois do caimento: a amostra do anel do busto continua a do
-    // vértice do corpo, e o relevo só soma para fora
     const rel = sizeRelief(sp, P, v, c.body[v * 3], c.body[v * 3 + 1], c.body[v * 3 + 2]);
     if (rel > 0) { x += normals[v * 3] * rel; y += normals[v * 3 + 1] * rel; z += normals[v * 3 + 2] * rel; }
-    // por fora da saia que está por baixo, na altura do vértice (tronco e alto das coxas)
     if (under?.tubes.length && (g === 1 || g === 3)) {
       const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
       let target = 0; for (const tb of under.tubes) target = Math.max(target, tubeRadius(tb, y, j));
       target += 0.004 + sp.ease * 0.5;
       if (target > r && r > 1e-4) { x *= target / r; z = P.torsoZ + (zz * target) / r; }
     }
-    if ((sp.kind === "shoes" || sp.kind === "boots") && c.body[v * 3 + 1] < 0.018) y = Math.min(y, -0.004 - 0.008 * smooth(0.018, 0.0, c.body[v * 3 + 1]));   // sola
+    if ((sp.kind === "shoes" || sp.kind === "boots") && c.body[v * 3 + 1] < 0.018) y = Math.min(y, -0.004 - 0.008 * smooth(0.018, 0.0, c.body[v * 3 + 1]));
     pos.push(x, y, z); al.push(cov[v]); src.push(v);
     for (let k = 0; k < 4; k++) { const w = a.body.skinWeight[v * 4 + k]; si.push(w ? a.body.skinIndex[v * 4 + k] : 0); sw.push(w / 255); }
     return i;
@@ -608,13 +534,10 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
   for (let t = 0; t < tris.length; t += 3) {
     const [p, q, r] = [tris[t], tris[t + 1], tris[t + 2]];
     if (shortHem && [p, q, r].some((v) => P.group[v] !== 2 && P.h[v] < 0)) continue;
-    // a saia/vestido de baixo é o tubo: o molde não desce pelas pernas abaixo do começo da saia
     if (!Number.isNaN(top) && [p, q, r].every((v) => P.group[v] === 3 || P.h[v] < top - 0.02)) continue;
-    // bota: o pé é a fôrma modelada (shoes.ts); o molde do pé copiaria os dedos — fica só o cano (perna)
     if (sp.kind === "boots" && [p, q, r].every((v) => P.group[v] === 4)) continue;
     index.push(add(p), add(q), add(r));
   }
-  // ---- tubo da saia (saia, vestido, casaco longo)
   if (sp.skirt > 0 || shortHem) {
     const tube = skirtTube(c, P, shortHem ? { ...tubeSpec, kind: "skirt" } : tubeSpec, under); const rows = tube.r.length - 1;
     const base = pos.length / 3; const names = a.meta.bones.map((b) => b.name);
@@ -625,16 +548,9 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
         const r = tube.r[i][j]; const phi = (j / TUBE_NA) * 2 * Math.PI - Math.PI;
         pos.push(Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
         al.push(frontPanelCoverage(sp, Math.sin(phi) * r, Math.cos(phi) * r)); src.push(-1);
-        // abaixo do quadril o tubo acompanha as coxas (frente e laterais mais que as costas), dividido entre as duas
-        // pernas pelo lado: no agachamento as coxas sobem e levam a frente da saia, em vez de atravessá-la.
-        // A barra curta de blusa (shortHem) é um envelope contínuo colado ao corpo: herda os pesos da pele mais próxima
-        // (quadril, coluna e o alto das coxas) — presa só ao osso do quadril, a barriga e as coxas a atravessavam no
-        // agachamento. A malha continua uma só (sem retalhos soltos entre as pernas).
         const w = smooth(-0.12, 0.15, P.hipY - y) * (0.7 + 0.3 * Math.max(0, Math.cos(phi))); const wl = w * Math.min(1, Math.max(0, 0.5 + Math.sin(phi) * 2));
         if (shortHem) {
           const [ix, wt] = nearestSkinWeights(a, c, P, Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
-          // o total de coxa vem da pele; a divisão entre as duas é contínua pelo lado (no meio da frente e das costas,
-          // metade para cada uma) — nada de a barra pular de uma coxa para a outra no meio
           const m = new Map<number, number>(); let legW = 0;
           ix.forEach((b, k) => { if (!wt[k]) return; if (b === upL || b === upR) legW += wt[k]; else m.set(b, (m.get(b) ?? 0) + wt[k]); });
           const side = Math.min(1, Math.max(0, 0.5 + Math.sin(phi) * 2));
@@ -655,14 +571,6 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
   return { spec: sp, position: Float32Array.from(pos), alpha: Float32Array.from(al), skinIndex: Uint16Array.from(si), skinWeight: Float32Array.from(sw), index: Uint32Array.from(index), source: Int32Array.from(src) };
 }
 
-// ================================================================== pose de exibição (CPU) e textura
-
-/** Posições de uma geometria presa ao esqueleto na pose atual dos ossos (skinning linear, como no shader). */
-/**
- * Posições na pose atual do esqueleto. Com `space` (a malha do corpo), no espaço dela — frente do corpo em +z, como a
- * projeção da foto espera —, e não no da cena: com o personagem girado (no Meu Quarto ele começa de costas para a
- * câmera), a matriz de mundo dos ossos virava o corpo e a foto da peça ia para as costas.
- */
 export function posedPositions(skeleton: THREE.Skeleton, bindMatrix: THREE.Matrix4, position: Float32Array, skinIndex: ArrayLike<number>, skinWeight: ArrayLike<number>, space?: THREE.Object3D): Float32Array {
   skeleton.bones.forEach((b) => b.updateMatrixWorld(true));
   let toSpace: THREE.Matrix4 | null = null;
@@ -682,22 +590,15 @@ export interface PhotoInfo {
   landmarks?: GarmentLandmarks | null;
   legRows?: PhotoLegRow[];
   width: number; height: number; box: { x0: number; y0: number; x1: number; y1: number }; widthAt: (fy: number) => { x0: number; x1: number } | null;
-  /** fim da gola da frente no centro da foto (fração da altura da caixa), quando a gola difere do tecido; senão null */
   collarRow: number | null;
-  /** profundidade do decote na foto: quanto o topo da peça no centro fica abaixo do topo nos ombros (fração da altura
-   * da caixa); null sem leitura (peça sem ombros na foto, caixa pequena). Na foto recortada o pescoço é transparente,
-   * então o topo no centro É a borda do decote. */
   neckDrop: number | null;
-  /** PNG recortado (alfa) ou foto opaca com o fundo medido na borda; sem fundo separável, backdrop é null */
   cutout: boolean; backdrop: [number, number, number] | null;
 }
 
-/** Diferença RGB até a qual um pixel ainda é o fundo da foto opaca (fundo de estúdio e do card são quase uniformes). */
 export const BACKDROP_TOLERANCE = 32;
 export const isBackdrop = (d: Uint8ClampedArray, o: number, backdrop: [number, number, number] | null): boolean =>
   !!backdrop && Math.hypot(d[o] - backdrop[0], d[o + 1] - backdrop[1], d[o + 2] - backdrop[2]) <= BACKDROP_TOLERANCE;
 
-/** Bytes sRGB de uma cor CSS (THREE.Color guarda valores lineares: r*255 de "#dc1e1e" daria 183, não 220). */
 export function srgbBytes(color: string): [number, number, number] {
   const h = new THREE.Color(color).getHex();
   return [(h >> 16) & 255, (h >> 8) & 255, h & 255];
@@ -705,12 +606,6 @@ export function srgbBytes(color: string): [number, number, number] {
 
 export interface PhotoMask { W: number; H: number; data: Uint8ClampedArray; mask: Uint8Array; cutout: boolean; backdrop: [number, number, number] | null }
 
-/**
- * Máscara da peça na foto, em W px de largura. PNG recortado: o alfa. Foto opaca (JPEG do estúdio com fundo colorido,
- * card do catálogo, foto cuja remoção de fundo falhou): tudo que difere do fundo medido na borda — sem isso a caixa da
- * peça era o quadro inteiro, a camiseta encolhia para um "carimbo" no peito e o fundo da foto virava a cor do tecido.
- * Sem fundo separável (foto preenchida pela peça, ou peça da cor do fundo), vale o quadro inteiro, como antes.
- */
 export function photoMask(img: CanvasImageSource & { width: number; height: number }, W = 256): PhotoMask | null {
   if (typeof document === "undefined") return null;
   const H = Math.max(1, Math.round((W * img.height) / img.width));
@@ -732,11 +627,9 @@ export function photoMask(img: CanvasImageSource & { width: number; height: numb
   return { W, H, data: d, mask, cutout: false, backdrop };
 }
 
-/** Caixa da peça na foto (alfa ou fundo separado) e a largura dela em cada altura (fração da caixa). */
 export function photoInfo(img: CanvasImageSource & { width: number; height: number }): PhotoInfo | null {
   const pm = photoMask(img); if (!pm) return null;
   const { W, H, data: d, mask } = pm;
-  // caixa pelas linhas e colunas com ao menos 2 px da peça: um pixel perdido no fundo não estica a caixa
   const rows = new Uint16Array(H), cols = new Uint16Array(W);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mask[y * W + x]) { rows[y]++; cols[x]++; }
   let x0 = W, y0 = H, x1 = -1, y1 = -1;
@@ -744,8 +637,6 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
   for (let y = 0; y < H; y++) if (rows[y] >= 2) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
   if (x1 < 0 || y1 < 0) return null;
   const k = img.width / W;
-  // gola: nas colunas do centro, de cima para baixo nos primeiros 22% da peça, as linhas que diferem do tecido do
-  // meio da peça (ribana, forro da nuca à mostra) — a última linha seguida delas é o fim da gola da frente
   const px = (x: number, y: number) => { const o = (y * W + x) * 4; return mask[y * W + x] ? [d[o], d[o + 1], d[o + 2]] : null; };
   const cx0 = Math.round(x0 + (x1 - x0) * 0.45), cx1 = Math.round(x0 + (x1 - x0) * 0.55);
   const body: number[][] = []; for (let y = Math.round(y0 + (y1 - y0) * 0.35); y < y0 + (y1 - y0) * 0.6; y++) for (let x = cx0; x <= cx1; x++) { const p = px(x, y); if (p) body.push(p); }
@@ -760,8 +651,6 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
     }
     if (last > y0) collarRow = (last + 1 - y0) / Math.max(1, y1 - y0);
   }
-  // decote: topo da peça (primeira linha com a peça) nas colunas do centro × nas colunas dos ombros (20–32% e 68–80%)
-  // no centro vale o ponto mais FUNDO (a ponta do V); nos ombros, o mais alto
   const topAt = (a: number, b: number, deepest: boolean): number | null => {
     const xa = Math.round(x0 + (x1 - x0) * a), xb = Math.round(x0 + (x1 - x0) * b); let best: number | null = null;
     for (let x = xa; x <= xb; x++) for (let y = y0; y <= y1; y++) if (mask[y * W + x]) { best = best === null ? y : deepest ? Math.max(best, y) : Math.min(best, y); break; }
@@ -788,7 +677,7 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
       const points = silhouetteLandmarks(mask, W, H, { x0, y0, x1, y1 });
       if (!points) return null;
       const center = Math.round((points.neckline.x + points.hem.x) / 2);
-      if (!mask[y * W + center]) return null; // an open front needs separate panels, not a guessed bridge
+      if (!mask[y * W + center]) return null;
       let a = center, b = center;
       while (a > 0 && mask[y * W + a - 1]) a--;
       while (b < W - 1 && mask[y * W + b + 1]) b++;
@@ -797,19 +686,9 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
   };
 }
 
-/**
- * Geometria final para desenhar: triângulos da frente (na pose de exibição) com UV na foto; os de trás e dos lados com
- * UV num canto de cor lisa do tecido (a textura é foto sobre fundo da cor do tecido). Vértices duplicados na divisa.
- */
-/** Vértices de manga do molde: `along` é a posição ao longo do braço (0 = ombro, 1 = punho) do vértice do corpo de origem. */
 export interface SleeveSource { isSleeve: (v: number) => boolean; along: (v: number) => number }
 export interface SleeveSpan { fy: number; x0: number; x1: number }
 
-/**
- * Mangas na foto, por lado: em cada linha da peça, o que fica entre a borda da peça e o tronco (torsoWidthAt) é manga.
- * Só vale a manga CAÍDA ao lado do tronco (ocupa ≥ 30 % da altura da peça, em faixa contínua): manga aberta para o lado
- * (flat lay) não separa do tronco e segue no tecido, como antes.
- */
 export function photoSleeves(photo: PhotoInfo): { left: SleeveSpan[] | null; right: SleeveSpan[] | null } | null {
   if (!photo.torsoWidthAt) return null;
   const bw = photo.box.x1 - photo.box.x0; const left: SleeveSpan[] = [], right: SleeveSpan[] = [];
@@ -819,8 +698,9 @@ export function photoSleeves(photo: PhotoInfo): { left: SleeveSpan[] | null; rig
     if (torso.x0 - full.x0 > bw * 0.03) left.push({ fy, x0: full.x0, x1: torso.x0 });
     if (full.x1 - torso.x1 > bw * 0.03) right.push({ fy, x0: torso.x1, x1: full.x1 });
   }
-  const usable = (rows: SleeveSpan[]) => rows.length >= 6 && rows[rows.length - 1].fy - rows[0].fy >= 0.3
-    && rows.every((r, k) => k === 0 || r.fy - rows[k - 1].fy <= 0.081) ? rows : null;
+  // FIX: Flexibilizado de >= 6 para >= 2 para mapear mangas dobradas e peças curtas
+  const usable = (rows: SleeveSpan[]) => rows.length >= 2 && rows[rows.length - 1].fy - rows[0].fy >= 0.15
+    && rows.every((r, k) => k === 0 || r.fy - rows[k - 1].fy <= 0.1) ? rows : null;
   const l = usable(left), r = usable(right);
   return l || r ? { left: l, right: r } : null;
 }
@@ -828,7 +708,6 @@ export function photoSleeves(photo: PhotoInfo): { left: SleeveSpan[] | null; rig
 export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo: PhotoInfo | null, noPhoto?: (v: number) => boolean,
   visibleAlpha: Float32Array = gg.alpha, sleeve?: SleeveSource): THREE.BufferGeometry {
   const sp = gg.spec; const n = gg.index.length / 3;
-  // referência na foto e no molde (pose de exibição)
   let map: ((x: number, y: number) => [number, number]) | null = null;
   let torsoCenter = 0;
   let photoScaleX = 1, photoScaleY = 1;
@@ -840,9 +719,6 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
   if (photo && sp.kind !== "shoes" && sp.kind !== "boots") {
     let yTop = -Infinity, yBot = Infinity; const front: number[] = [];
     for (let v = 0; v < posed.length / 3; v++) if (gg.alpha[v] > 0.5 && !noPhoto?.(v) && gg.photoEligible?.[v] !== 0) { const y = posed[v * 3 + 1]; yTop = Math.max(yTop, y); yBot = Math.min(yBot, y); front.push(v); }
-    // linha de referência da largura: calça no alto; peça de cima no busto (62%); manga longa deitada ao lado do corpo
-    // na foto (flat lay ou vestida) alargava a "largura do tronco" e punha os punhos na barra do tronco 3D — com manga
-    // longa a referência desce para perto da barra (93%), onde a foto só tem o tronco
     const fy = ["pants", "shorts", "bermuda", "culottes", "skirt", "leggings"].includes(sp.kind) ? 0.12 : sp.sleeve > 0.6 ? 0.93 : 0.62;
     const yRef = yTop - (yTop - yBot) * fy;
     let xl = Infinity, xr = -Infinity;
@@ -853,8 +729,6 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
       const { box } = photo; const sx = (pw.x1 - pw.x0) / (xr - xl); const cxP = (pw.x0 + pw.x1) / 2, cxG = (xl + xr) / 2;
       photoScaleX = sx; torsoCenter = cxG;
       const bh = box.y1 - box.y0;
-      // peça de cima com gola: o fim da gola da foto (collarRow) vai para a borda do decote 3D na frente — sem isso a
-      // gola da foto caía abaixo da borda, com tecido "sobrando" entre ela e o pescoço. A barra continua na barra.
       let yFront = -Infinity;
       if (HAS_COLLAR_BAND.has(sp.kind) && photo.collarRow !== null) {
         const mid = front.filter((v) => Math.abs(posed[v * 3]) < 0.025);
@@ -864,7 +738,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         }
       }
       if (Number.isFinite(yFront) && yFront - yBot > 0.1) {
-        const yRib = yFront - 0.016; const rowRib = box.y0 + bh * photo.collarRow!;   // fim da faixa 3D (collarBand)
+        const yRib = yFront - 0.016; const rowRib = box.y0 + bh * photo.collarRow!;
         const sy = (box.y1 - rowRib) / (yRib - yBot);
         photoScaleY = sy;
         map = (x, y) => [(cxP + (x - cxG) * sx) / photo.width, 1 - (box.y1 - (y - yBot) * sy) / photo.height];
@@ -874,7 +748,6 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         map = (x, y) => [(cxP + (x - cxG) * sx) / photo.width, 1 - (box.y0 + (yTop - y) * sy) / photo.height];
       }
       if (photo.legRows?.length && sp.leg>0 && Number.isNaN(sp.hem)) {
-        // Independent panels keep a pocket/logo on its original leg, even when the photo and avatar have different stances.
         const whole=map!;
         const makeLeg=(side:"left"|"right")=>{
           const rows=photo.legRows!.flatMap(row=>{
@@ -915,8 +788,6 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
       }
     }
   }
-  // manga da foto na manga 3D: a borda externa e a interna da manga fotografada vão nas bordas da manga do molde, do
-  // ombro ao punho — antes a manga ficava só no tecido (cor e trama) e a camisa "perdia" o desenho dos braços
   let sleeveUv: ((v: number) => [number, number] | null) | null = null;
   const spans = map && photo && sleeve && sp.sleeve > 0 ? photoSleeves(photo) : null;
   if (spans && photo && sleeve) {
@@ -952,29 +823,26 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
   const cache = new Map<string, number>(); const index: number[] = [];
   for (let t = 0; t < n; t++) {
     const vs = [gg.index[t * 3], gg.index[t * 3 + 1], gg.index[t * 3 + 2]];
-    // manga: a foto plana mostra a manga aberta para o lado; projetada de frente no braço caído viraria um retalho —
-    // a manga fica no tecido (cor e trama), com a barra/punho próprios
     const isFront = !!map;
     for (const v of vs) {
       const key = `${v}:${isFront ? 1 : 0}`; let i = cache.get(key);
       if (i === undefined) {
         i = pos.length / 3; cache.set(key, i);
         pos.push(gg.position[v * 3], gg.position[v * 3 + 1], gg.position[v * 3 + 2]);
-        // camisa também recebe a foto na frente (cor, xadrez, listras REAIS): a carcela, os botões e a gola 3D vêm por
-        // cima, alinhados ao centro — antes a frente ficava só com o painel do tecido (repetição ou degradê por linhas)
         const sleeveAt = sleeveUv?.(v) ?? null;
-        const blend = isFront && (sleeveAt || !noPhoto?.(v)) && gg.photoEligible?.[v] !== 0 ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
-        // Every vertex of a shoulder triangle needs coordinates in the same
-        // photographic panel, including its zero-weight sleeve vertices. Using
-        // fabric-panel UVs there interpolates across the atlas divider and makes
-        // a false diagonal seam. Fabric already has its own independent UVs.
+        
+        // FIX: Ampliada a projeção do photoWeight nas normais frontais/laterais e garantido suporte a vértices de manga
+        const isSleeveVertex = sleeve?.isSleeve(v) ?? false;
+        const blend = isFront && (sleeveAt || isSleeveVertex || !noPhoto?.(v)) && gg.photoEligible?.[v] !== 0 
+          ? Math.min(1, Math.max(0, (normals[v * 3 + 2] + 0.35) / 0.85)) 
+          : 0;
+
         if (sleeveAt) {
           uv.push(0.5 * Math.min(0.999, Math.max(0.001, sleeveAt[0])), Math.min(0.999, Math.max(0.001, sleeveAt[1])));
         } else if (map) {
           const [u, w] = map(posed[v * 3], posed[v * 3 + 1]);
           uv.push(0.5 * Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w)));
         } else {
-          // Separate fabric panel for sleeves, sides and back. It spans the rest mesh, never one flat-color pixel.
           uv.push(0.501 + 0.498 * (gg.position[v * 3] - xMin) / Math.max(0.01, xMax - xMin),
             0.001 + 0.998 * (gg.position[v * 3 + 1] - yMin) / Math.max(0.01, yMax - yMin));
         }
@@ -1000,18 +868,10 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
   return g;
 }
 
-/**
- * Textura em dois painéis: à esquerda a foto da frente sobre o tecido; à direita o painel do tecido (costas, laterais
- * e mangas): a trama repetida da foto (fabricTile) ou o degradê de lavagem por altura (fabricRows), senão a cor lisa.
- * Na foto opaca com fundo medido (info.backdrop), o fundo vira transparente antes de tudo: não entra na frente, na
- * trama nem no degradê — o fundo de estúdio nunca aparece em volta da peça nem tinge o painel do tecido.
- */
 const garmentAtlases = new Map<object, { key: string; canvas: HTMLCanvasElement }>();
 
 export function garmentTexture(img: (CanvasImageSource & { width: number; height: number }) | null, fabric: string,
   mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number } | null, info?: PhotoInfo | null, spec?: GarmentSpec): THREE.CanvasTexture {
-  // Other photographs finishing must not resample this immutable isolated image.
-  // Four canvases bound memory; GPU textures remain owned/disposed by each mesh.
   const cacheKey = JSON.stringify([fabric, mapping, spec?.kind, info?.box, info?.backdrop, info?.collarRow, info?.landmarks, info?.legRows]);
   const cached = img ? garmentAtlases.get(img) : null;
   if (cached?.key === cacheKey) {
@@ -1020,8 +880,6 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
     texture.userData.atlasCacheHit = true;
     return texture;
   }
-  // Keep small lettering and logos up to 2K without unbounded atlases for tall
-  // catalog images. Never upscale the product source or substitute brand artwork.
   const scale = img ? Math.min(1, 2048 / Math.max(img.width, img.height)) : 1;
   const W = img ? Math.max(1, Math.round(img.width * scale)) : 16, H = img ? Math.max(1, Math.round(img.height * scale)) : 16;
   const cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H; const g = cv.getContext("2d")!;
@@ -1035,11 +893,7 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
       for (let o = 0; o < d.length; o += 4) if (isBackdrop(d, o, info.backdrop)) d[o + 3] = 0;
       sg.putImageData(raster, 0, 0);
     }
-    // Separate evidence for each leg or upper half: one striped/coloured side
-    // must not become the opposite side's material. Ambiguous silhouettes stay whole.
     const upperPanels = spec && ["shirt", "hoodie", "sweater", "jacket", "coat"].includes(spec.kind) && info?.landmarks;
-    // Extended sleeves and side crops move the global box midpoint. The detected
-    // neckline/hem identify the torso seam independently of those outer bounds.
     const torsoCenter = upperPanels ? (upperPanels.neckline.x + upperPanels.hem.x) / 2 : null;
     const split = info && upperPanels ? torsoCenter
       : info?.legRows?.length ? (info.box.x0 + info.box.x1) / 2 : null;
@@ -1047,20 +901,15 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
     for (const [panel, range] of panels.entries()) {
       const offset = W + panel * W / panels.length, panelWidth = W / panels.length;
       const tile = fabricTile(raster, range);
-      // sem ladrilho periódico: a trama real da peça (jeans, malha, lã) espelhada 2×2 — costas e laterais continuam o
-      // desenho em vez de cair num degradê liso; tecido liso e logo isolado continuam no degradê/cor medida
       const patch = tile ? null : fabricPatch(raster, range);
       if (!tile && !patch) {
         const bh = info ? info.box.y1 - info.box.y0 : img.height;
         let rows = fabricRows(raster, { ...range, inset: !upperPanels && info?.legRows?.length ? .1 : .25,
           ...(info ? { fromY: info.box.y0 + bh * (info.collarRow ?? 0.02), toY: info.box.y1 - bh * 0.03 } : {}) });
         if (!upperPanels && info?.legRows?.length && rows.length >= 8) {
-          // A pocket badge can dominate a few thigh rows. Extrapolating those
-          // orange/green pixels would invent stripes on the unseen back. Keep
-          // the dominant cloth chroma while retaining its measured denim wash.
           const chroma = (rgb: number[]) => {
             const minimum = Math.min(...rgb), range = Math.max(...rgb) - minimum;
-            if (range < 12) return null; // nearly neutral wash has no reliable hue
+            if (range < 12) return null;
             const channels = rgb.map(channel => channel - minimum), sum = channels.reduce((a, b) => a + b, 0);
             return channels.map(channel => channel / sum);
           };
@@ -1085,7 +934,7 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
           sample.getContext("2d")!.drawImage(source, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
         } else {
           const p = patch!; sample.width = p.width * 2; sample.height = p.height * 2; const sg2 = sample.getContext("2d")!;
-          for (const [fx, fy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]] as const) {   // 2×2 espelhado: sem emenda visível
+          for (const [fx, fy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]] as const) {
             sg2.save(); sg2.translate(fx < 0 ? p.width * 2 : 0, fy < 0 ? p.height * 2 : 0); sg2.scale(fx, fy);
             sg2.drawImage(source, p.x, p.y, p.width, p.height, 0, 0, p.width, p.height); sg2.restore();
           }
@@ -1108,10 +957,6 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.userData.atlasCacheHit = false; return t;
 }
 
-/**
- * Calçado: cor do cabedal (a cor dominante da faixa do meio da foto, por matiz — a mediana por canal misturava cabedal,
- * cadarço e detalhes num cinza) e da sola (a dominante da faixa de baixo).
- */
 export function shoeColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fallback?: string | null, info?: PhotoInfo | null): { upper: string; sole: string; accent?: string | null } {
   const base = fallback && /^#[0-9a-f]{6}$/i.test(fallback) ? fallback : "#5a5a5a";
   if (!img || typeof document === "undefined") return { upper: base, sole: "#e8e4dc" };
@@ -1122,7 +967,6 @@ export function shoeColors(img: (CanvasImageSource & { width: number; height: nu
   let y0 = H, y1 = -1; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = (y * W + x) * 4; if (d[o + 3] > 128 && !isBackdrop(d, o, backdrop)) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
   if (y1 < 0) return { upper: base, sole: "#e8e4dc" };
   const hgt = y1 - y0;
-  // cabedal: a faixa lateral (abaixo do cadarço, acima da sola); detalhe: a segunda cor dessa faixa ou da de cima
   const up = dominants(d, W, [y0 + Math.round(hgt * 0.35), y0 + Math.round(hgt * 0.75)], false, backdrop);
   const top = dominants(d, W, [y0, y0 + Math.round(hgt * 0.35)], false, backdrop);
   const upper = up[0] ?? base;
@@ -1135,13 +979,12 @@ function colorDist(a: string, b: string): number {
   const [x, y] = [p(a), p(b)]; return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
 }
 
-/** Cores dominantes numa faixa de linhas (da mais frequente para a menos): caixas de matiz/luminância por contagem. */
 function dominants(d: Uint8ClampedArray, W: number, ys: [number, number], allowNeutral: boolean, backdrop: [number, number, number] | null = null): string[] {
   const bins = new Map<number, { w: number; r: number; g: number; b: number }>();
   for (let y = ys[0]; y <= ys[1]; y++) for (let x = 0; x < W; x++) {
     const o = (y * W + x) * 4; if (d[o + 3] < 200 || isBackdrop(d, o, backdrop)) continue;
     const r = d[o], gg = d[o + 1], b = d[o + 2]; const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b); const sat = mx ? (mx - mn) / mx : 0; const l = (mx + mn) / 510;
-    if (!allowNeutral && (l > 0.9 || l < 0.08)) continue;              // fundo branco, sombra e contorno
+    if (!allowNeutral && (l > 0.9 || l < 0.08)) continue;
     let hue = 0; if (mx !== mn) { hue = mx === r ? ((gg - b) / (mx - mn)) % 6 : mx === gg ? (b - r) / (mx - mn) + 2 : (r - gg) / (mx - mn) + 4; }
     const key = sat < 0.15 ? 100 + Math.min(4, Math.floor(l * 5)) : Math.floor(((hue + 6) % 6) * 2);
     const e = bins.get(key) ?? { w: 0, r: 0, g: 0, b: 0 };
@@ -1151,10 +994,6 @@ function dominants(d: Uint8ClampedArray, W: number, ys: [number, number], allowN
     .map((e) => "#" + [e.r, e.g, e.b].map((v) => Math.round(v / e.w).toString(16).padStart(2, "0")).join(""));
 }
 
-/**
- * Cores dos acabamentos na foto: barra (faixa de baixo, no centro) e manga (pontas laterais do alto da peça, onde a
- * manga termina na foto plana). Quando o acabamento é do mesmo tecido, null (a faixa sai no tecido um pouco mais escuro).
- */
 export function trimColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string, info?: PhotoInfo | null): { hem: string | null; cuff: string | null; cuffLeft: string | null; cuffRight: string | null } {
   const empty = { hem: null, cuff: null, cuffLeft: null, cuffRight: null };
   if (!img || typeof document === "undefined") return empty;
@@ -1173,22 +1012,16 @@ export function trimColors(img: (CanvasImageSource & { width: number; height: nu
         const o = (y * W + x) * 4; if (d[o + 3] > 200 && !isBackdrop(d, o, backdrop)) px.push([d[o], d[o + 1], d[o + 2]]);
       }
       if (px.length < 4) return null;
-      const m = medoid(px);                                           // cor real (não a média de duas cores)
+      const m = medoid(px);
       return Math.hypot(m[0] - fr[0], m[1] - fr[1], m[2] - fr[2]) < 45 ? null : "#" + m.map((v) => v.toString(16).padStart(2, "0")).join("");
     };
     const bw = x1 - x0, bh = y1 - y0;
-    // barra: as 3 últimas linhas no centro; manga: as pontas das laterais na faixa de cima (onde a manga termina)
     let hem = null as string | null; for (let k = 1; k <= 3 && !hem; k++) hem = med([x0 + bw * 0.3, x0 + bw * 0.7], [y1 - k * 1.2, y1 - (k - 1) * 1.2]);
     const cuffL = med([x0, x0 + bw * 0.04], [y0 + bh * 0.05, y0 + bh * 0.45]); const cuffR = med([x1 - bw * 0.04, x1], [y0 + bh * 0.05, y0 + bh * 0.45]);
-    // Left/right refer to the product photograph, not the wearer's anatomical side.
     return { hem, cuff: cuffL ?? cuffR, cuffLeft: cuffL, cuffRight: cuffR };
   } catch { return empty; }
 }
 
-/**
- * Cor do tecido: mediana dos pixels da peça no miolo da foto (sem bordas, sombras e recorte). Com a caixa da peça
- * (info), o miolo é o da peça, não o do quadro: numa foto opaca a cor vinha do fundo de estúdio.
- */
 export function fabricColor(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fallback?: string | null, info?: PhotoInfo | null): string {
   const base = fallback && /^#[0-9a-f]{6}$/i.test(fallback) ? fallback : "#8a8a8a";
   if (!img || typeof document === "undefined") return base;
@@ -1204,7 +1037,6 @@ export function fabricColor(img: (CanvasImageSource & { width: number; height: n
   } catch { return base; }
 }
 
-/** Appearance estimates only: texture/color still come from the product photo. */
 export function fabricSurface(material?: string): { roughness: number; sheen: number } | null {
   switch (material?.toUpperCase()) {
     case "DENIM": case "CANVAS": return { roughness: .94, sheen: .08 };
@@ -1215,6 +1047,7 @@ export function fabricSurface(material?: string): { roughness: number; sheen: nu
     default: return null;
   }
 }
+
 export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
     map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: sp.construction === "cargo" ? .94 : sp.kind === "jacket" || sp.kind === "coat" ? 0.7 : 0.85,
@@ -1243,31 +1076,17 @@ export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.Mesh
   return m;
 }
 
-// ================================================================== gola (ribana) em volta do pescoço inteiro
-
-/** Peças com gola de malha/ribana contornando o decote (jaqueta e casaco são abertos na frente: sem faixa). */
 export const HAS_COLLAR_BAND: ReadonlySet<GarmentKind> = new Set(["tee", "longsleeve", "tank", "crop", "sweater", "hoodie", "shirt", "dress", "jumpsuit", "romper"]);
 
 export interface CollarBand { position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
 
-/**
- * Gola 3D: uma faixa fechada que dá a volta inteira no decote (frente, lados e nuca), na borda da peça, com espessura —
- * de fora e de dentro ela é gola, nunca o tecido do corpo "preenchendo" o que a foto da frente não cobre. Seção: anel
- * externo em cima e embaixo, anel interno embaixo e em cima; pesos de pele interpolados e suaves
- * no perímetro acompanham o pescoço e o tronco sem separar as bordas da faixa.
- */
 export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null = null): CollarBand | null {
   if (!HAS_COLLAR_BAND.has(sp.kind) || Number.isNaN(sp.hem) || sp.frontOpening) return null;
   const NA = 72, nb = P.h.length, span = P.neckY - P.hipY;
-  // Torso ease describes the chest, not the thickness of a collar. Keep the
-  // neckline close to the body while retaining clearance for real inner layers.
   const collarEase = Math.min(sp.ease, .004);
   const band = sp.kind === "shirt" ? 0.026 : sp.kind === "hoodie" || sp.kind === "sweater" ? 0.02 : 0.016;
   const phiOf = (x: number, dz: number) => Math.atan2(x, dz);
   const yN = (phi: number) => P.hipY + necklineH(sp, Math.sin(phi), Math.cos(phi)) * span;
-  // raio do corpo na altura do decote, por ângulo (só tronco/pescoço), e o vértice do corpo mais próximo (pesos)
-  // raio: o da superfície na altura do decote — os vértices mais próximos dessa altura em cada ângulo (a mediana deles);
-  // o maior raio pegava o alto do ombro (quase horizontal) e abria a gola para fora do pescoço
   const rAt = new Float32Array(NA), easeAt = new Float32Array(NA);
   const bins: { dy: number; r: number; e: number }[][] = Array.from({ length: NA }, () => []);
   const cand: number[] = [];
@@ -1284,8 +1103,6 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
     const rs = b.map((x) => x.r).sort((p, q) => p - q); rAt[j] = rs[rs.length >> 1]; easeAt[j] = Math.max(...b.map((x) => x.e));
   }
   if (!rAt.some((r) => r > 0)) return null;
-  // Interpolate between measured bins on the closed curve. Never use a bin
-  // filled earlier in this loop as a new measurement: that creates plateaus.
   const measured = rAt.slice(), measuredEase = easeAt.slice();
   for (let j = 0; j < NA; j++) if (!measured[j]) {
     let left = 1, right = 1;
@@ -1295,14 +1112,10 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
     rAt[j] = lerp(measured[l], measured[r], left / (left + right));
     easeAt[j] = lerp(measuredEase[l], measuredEase[r], left / (left + right));
   }
-  // Periodic smoothing includes the seam and preserves the anatomical oval.
   let sm = rAt;
   for (let pass = 0; pass < 12; pass++) sm = Float32Array.from(sm, (_, j) =>
     (sm[(j + NA - 1) % NA] + 2 * sm[j] + sm[(j + 1) % NA]) / 4);
   const pos: number[] = [], si: number[] = [], sw: number[] = [];
-  // Blend nearby body influences instead of copying one vertex's bones.
-  // All four cross-section rings share the same influences at an angle, so
-  // tilting the head cannot pull their edges apart into spikes.
   const influences = Array.from({ length: NA }, (_, j) => {
     const phi = j / NA * 2 * Math.PI - Math.PI;
     const r = sm[j] + collarEase + easeAt[j];
@@ -1329,8 +1142,6 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
         blend.set(bone, (blend.get(bone) ?? 0) + weight * factor);
     return blend;
   });
-  // A consistent set of four bones prevents a fifth influence popping in and
-  // out when neighbouring samples have almost equal weights.
   const boneTotals = new Map<number, number>();
   for (const weights of smoothInfluences) for (const [bone, weight] of weights)
     boneTotals.set(bone, (boneTotals.get(bone) ?? 0) + weight);
@@ -1340,8 +1151,6 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
     const total = top.reduce((sum, [, w]) => sum + w, 0) || 1;
     return top.map(([bone, w]) => [bone, w / total]);
   });
-  // 4 anéis: externo-cima, externo-baixo, interno-baixo, interno-cima
-  // A thin folded edge overlaps the fabric instead of a padded 7.5 mm shell.
   const rings: [number, number][] = [[0.002, 0.009], [0.002, -band], [-0.001, -band], [-0.001, 0.009]];
   for (const [dr, dy] of rings) for (let j = 0; j < NA; j++) {
     const phi = (j / NA) * 2 * Math.PI - Math.PI; const r = sm[j] + collarEase + easeAt[j] + dr;
@@ -1359,11 +1168,6 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
   return { position: Float32Array.from(pos), skinIndex: Uint16Array.from(si), skinWeight: w, index: Uint32Array.from(idx) };
 }
 
-/**
- * Cor da gola: na foto, a faixa logo acima do fim da gola da frente (PhotoInfo.collarRow), no centro — a ribana da
- * frente (na camiseta padrão, a laranja). Sem gola distinta na foto, o próprio tecido um pouco mais escuro (a ribana
- * é mais densa).
- */
 export function ribColor(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string, given?: PhotoInfo | null, opts: { wide?: boolean } = {}): string {
   const darker = () => { const f = new THREE.Color(fabric); f.multiplyScalar(0.86); return `#${f.getHexString()}`; };
   if (!img || typeof document === "undefined") return darker();
@@ -1374,8 +1178,6 @@ export function ribColor(img: (CanvasImageSource & { width: number; height: numb
     g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
     const k = W / img.width; const bx0 = info.box.x0 * k, bx1 = info.box.x1 * k, by0 = info.box.y0 * k, bh = (info.box.y1 - info.box.y0) * k;
     const yEnd = by0 + bh * info.collarRow, yStart = opts.wide ? by0 : Math.max(by0, yEnd - bh * 0.03);
-    // ribana da camiseta: o fim da faixa, no centro. Gola de camisa (wide): a gola inteira (do topo ao fim dela, 25–75%
-    // da largura), sem a abertura escura do centro (os 35% mais escuros ficam de fora) — a cor é a do tecido da gola
     const x0 = bx0 + (bx1 - bx0) * (opts.wide ? 0.25 : 0.4), x1 = bx0 + (bx1 - bx0) * (opts.wide ? 0.75 : 0.6);
     let px: number[][] = [];
     for (let y = Math.floor(yStart); y < yEnd; y++) for (let x = Math.floor(x0); x < x1; x++) {
@@ -1383,7 +1185,7 @@ export function ribColor(img: (CanvasImageSource & { width: number; height: numb
     }
     if (px.length < 6) return darker();
     if (opts.wide) { const lum = px.map((p) => 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]).sort((a, b) => a - b); const cut = lum[Math.floor(lum.length * 0.35)]; px = px.filter((p) => 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] >= cut); }
-    const med = medoid(px);                                           // cor real (não a média de duas cores)
+    const med = medoid(px);
     const f = srgbBytes(fabric);
     if (Math.hypot(med[0] - f[0], med[1] - f[1], med[2] - f[2]) < 40) return darker();
     return "#" + med.map((v) => v.toString(16).padStart(2, "0")).join("");
