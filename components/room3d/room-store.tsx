@@ -72,6 +72,12 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
     try { await api.post(`/api/me/room-inventory/${apply.inventoryId}/apply`, { moduleId: target }); toast.success(t("room3d.roomStore.montado_em", { name: apply.item.name, moduleLabel: moduleLabel(target) })); setApply(null); shop.reload(); onChanged?.(); } catch (e) { toast.fromError(e); }
   }
 
+  async function removeFromRoom(i: ShopItem, inventoryId: string) {
+    if (busy) return;
+    setBusy(i.sku);
+    try { await api.delete(`/api/me/room-inventory/${inventoryId}/apply`); toast.success(t("room3d.roomStore.retirado", { name: i.name })); shop.reload(); onChanged?.(); } catch (e) { toast.fromError(e); } finally { setBusy(null); }
+  }
+
   if (shop.error) return <ErrorState error={shop.error} onRetry={shop.reload} />;
   return (
     <div className="grid gap-3">
@@ -90,7 +96,7 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
         resultCount={list.length} />
       {shop.loading ? <SkeletonGrid n={6} h="h-48" /> : list.length === 0 ? <EmptyState title={t("room3d.roomStore.nenhum_item_com_esses_filtros")} hint={creatorSlug ? t("room3d.roomStore.esta_marca_celebridade_ainda_nao") : t("room3d.roomStore.limpe_os_filtros_para_ver")} /> : (
         <><div className="grid-cards">{list.slice(0, compact ? 12 : shown).map((i) => {
-          const units = i.inventory ?? []; const loose = units.find((u) => !u.appliedModule);
+          const units = i.inventory ?? []; const loose = units.find((u) => !u.appliedModule); const mounted = units.find((u) => u.appliedModule);
           return (
             <div key={i.sku} className="surface flex flex-col p-3">
               <StoreSwatch item={i} />
@@ -112,6 +118,7 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
               <div className="mt-auto flex flex-wrap gap-1 pt-2">
                 <Button size="sm" onClick={() => setInfo(i)}><UiIcon name="info" size={18} />{t("store.moreInfo")}</Button>
                 {loose && <Button size="sm" variant="accent" onClick={() => openApply(i, loose.inventoryId)}>{t("room3d.roomStore.montar_no_quarto")}</Button>}
+                {mounted && <Button size="sm" loading={busy === i.sku} disabled={!!busy} onClick={() => void removeFromRoom(i, mounted.inventoryId)}>{t("room3d.roomStore.retirar_do_quarto")}</Button>}
                 {i.finish?.model3dUrl && <Button size="sm" onClick={() => setModelPreview(i)}>{t("roomAssets.preview")}</Button>}
                 <Button size="sm" onClick={() => tryOn(i)}>{t("scheme.tryOn")}</Button>
                 <Button size="sm" variant="primary" loading={busy === i.sku} disabled={!!busy || !!i.blocker || i.levelOk === false} onClick={() => { if (i.affordable === false) setPurchaseError(t("store.insufficient")); else setConfirmPurchase(i); }} title={i.levelOk === false ? t("room3d.roomStore.disponivel_a_partir_do_nivel", { requiredLevel: i.requiredLevel }) : i.affordable === false ? t("room3d.roomStore.saldo_insuficiente") : i.blocker ?? undefined}>{units.length ? t("room3d.roomStore.comprar_outro") : t("room3d.roomStore.comprar")}</Button>

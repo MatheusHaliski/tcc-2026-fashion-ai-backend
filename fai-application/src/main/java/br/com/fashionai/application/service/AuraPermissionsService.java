@@ -14,7 +14,7 @@ public class AuraPermissionsService {
  public static final Map<String,FaiPointsService.Level> HYPE_FINISH_TIERS=Map.of("COMMON",FaiPointsService.Level.ESTREIA,"RARE",FaiPointsService.Level.STUDIO,"LEGENDARY",FaiPointsService.Level.LOFT,"COLLAB_DROP",FaiPointsService.Level.LOFT);
  @Transactional(readOnly=true) public void requireHypeFinish(UUID userId,String finish){
   var required=HYPE_FINISH_TIERS.get(finish);
-  if(required==null)throw ApiException.badRequest("AURA_HYPE_INVALID","AURA Hype inválida.");
+  if(required==null)throw ApiException.badRequest("AURA_HYPE_INVALID",Msg.t("auraHype.invalid"));
   if(userId==null||!FaiPointsService.Level.of(ledger.lifetime(userId)).atLeast(required))throw new ApiException(403,"AURA_LEVEL_REQUIRED",Msg.t("auraHype.finishLocked",required.name()),Map.of("requiredTier",required.name()));
  }
  public String getLockedAuraMessage(AuraType type){return Msg.t("auraGate.locked."+type.name());}
@@ -22,6 +22,8 @@ public class AuraPermissionsService {
  @Transactional(readOnly=true) public Map<String,Object> permissions(UUID userId){
   var tier=FaiPointsService.Level.of(ledger.lifetime(userId));Map<String,Object> allowed=new LinkedHashMap<>();
   AuraGatingConfig.forEach((type,required)->allowed.put(type.name(),Map.of("allowed",tier.atLeast(required),"requiredTier",required.name(),"message",getLockedAuraMessage(type))));
-  return Map.of("currentTier",tier.name(),"auras",allowed,"configVersion",1);
+  Map<String,Object> finishes=new LinkedHashMap<>();
+  for(String finish:List.of("COMMON","RARE","LEGENDARY","COLLAB_DROP")){var required=HYPE_FINISH_TIERS.get(finish);finishes.put(finish,Map.of("allowed",tier.atLeast(required),"requiredTier",required.name()));}
+  return Map.of("currentTier",tier.name(),"auras",allowed,"hypeFinishes",finishes,"configVersion",2);
  }
 }

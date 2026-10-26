@@ -372,6 +372,28 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         layouts.save(l);
     }
 
+    @Override
+    @Transactional
+    public void resetFinish(UUID userId, String moduleId, RoomCatalogItem item) {
+        RoomLayout l = layout(userId);
+        Map<String, Map<String, Object>> factory = defaultModules(FaiPointsService.Level.LOFT).stream()
+                .collect(Collectors.toMap(m -> String.valueOf(m.get("id")), m -> m, (a, b) -> a));
+        List<Map<String, Object>> mods = modules(l);
+        for (Map<String, Object> m : mods) {
+            String id = String.valueOf(m.get("id"));
+            if (!item.getSku().equals(m.get("sku")) || !("ALL".equals(moduleId) || moduleId.equals(id))) {
+                continue;
+            }
+            Map<String, Object> original = factory.getOrDefault(id, Map.of());
+            m.put("sku", null);
+            m.remove("rarity");
+            m.put("finish", original.get("finish"));
+            m.put("mold", original.get("mold"));
+        }
+        l.setModulesJson(Json.write(mods));
+        layouts.save(l);
+    }
+
     /**
      * Luzes do closet (RF29): uma fileira de luzes por marco de faixa do FAI Inventory Score (Organizado → Maison Closet).
      * Cada faixa alcançada acende uma luz; a última acesa ganha a animação de conquista no espelho.

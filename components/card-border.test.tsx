@@ -11,8 +11,10 @@ describe('borda e atualização real de Hype',()=>{
   const pulse=()=>container.querySelector('.card-border')?.getAttribute('data-pulse');
   expect(pulse()).toBeNull();
   rerender(<CardBorder background={{auraMetamorphose:"PRISMA"}} entityId="p1" auraHype hype={score(55)}/>);expect(pulse()).toBe('up');
+  expect(container.querySelector('.card-border-arrow')?.textContent).toBe('▲');
   act(()=>vi.advanceTimersByTime(HYPE_BORDER_PULSE_MS));expect(pulse()).toBeNull();
   rerender(<CardBorder background={{auraMetamorphose:"PRISMA"}} entityId="p1" auraHype hype={score(52)}/>);expect(pulse()).toBe('down');
+  expect(container.querySelector('.card-border-arrow')?.textContent).toBe('▼');
   act(()=>vi.advanceTimersByTime(HYPE_BORDER_PULSE_MS));expect(pulse()).toBeNull();
  });
  it('não trata troca de peça, ativação de AURA ou score ausente como ganho de pontos',()=>{

@@ -7366,7 +7366,7 @@
   "fashionHype.level.COLLAB_DROP": "Collab / Drop",
   "auraGate.requires": "Requires level {level}",
   "auraGate.checking": "Checking your level…",
-  "auraGate.locked.AURA_BASIC": "Basic aura is available from Estreia level.",
+  "auraGate.locked.AURA_BASIC": "Basic aura is available from the Basic level.",
   "auraGate.locked.AURA_DYNAMIC": "Dynamic auras unlock at Studio level.",
   "auraGate.locked.AURA_IMPERSONATION": "Aura Impersonation unlocks at Loft level!",
   "impersonation.title": "Aura Impersonation",
@@ -9112,5 +9112,12 @@
   "heist.toast.checkpoint": "Checkpoint saved: {where}",
   "heist.hud.diag": "errors {errors} · AI: {sus} suspicious, {alert} alerted · building {alertLevel}/3",
   "heist.options.qualityHigh": "High: shadows, floor reflections, light bloom, film grain and up to 1.75× resolution. Needs a dedicated graphics card for 60 FPS.",
-  "heist.options.qualityLow": "Light: no shadows or post-processing, fewer people animated per frame and reduced resolution — smoother on laptops."
+  "heist.options.qualityLow": "Light: no shadows or post-processing, fewer people animated per frame and reduced resolution — smoother on laptops.",
+  "sealWizard.fim_do_resgate": "Claim deadline",
+  "sealWizard.fim_do_resgate_hint": "After this date nobody else receives the seal. Empty = no deadline.",
+  "sealWizard.validade_concessao": "Validity of each granted seal (days)",
+  "sealWizard.validade_concessao_hint": "Counted from issuance, independent of the claim deadline. Empty = 365 days.",
+  "sealWizard.dias": "{value} days",
+  "room3d.roomStore.retirar_do_quarto": "Remove from room",
+  "room3d.roomStore.retirado": "{name} was removed from the room and stays in your inventory."
 }

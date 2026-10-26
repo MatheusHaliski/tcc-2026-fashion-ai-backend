@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { api, mediaUrl } from "@/lib/api/client";
+import { api, ApiError, mediaUrl } from "@/lib/api/client";
 import type { Me, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -28,6 +28,8 @@ function Settings() {
   const auraPermissions = useApi<{ currentTier: string; auras: Record<string, { allowed: boolean; requiredTier: string }> }>((signal) => api.get("/api/me/aura-permissions", { signal }), [me?.user.id]);
   const impersonationAccess = auraPermissions.data?.auras.AURA_IMPERSONATION;
   const impersonationAllowed = impersonationAccess?.allowed === true;
+  const dynamicAccess = auraPermissions.data?.auras.AURA_DYNAMIC;
+  const auraHypeLocked = dynamicAccess?.allowed === false;
   const [auraBusy, setAuraBusy] = useState(false);
   const [auraLocal, setAuraLocal] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
@@ -46,6 +48,7 @@ function Settings() {
     try { server.setData(await api.put<Prefs>("/api/me/preferences", { ...patch, clientUpdatedAt: new Date().toISOString() })); notice.success(t("settings.saved")); return true; } catch (e) { notice.fromError(e); return false; }
   }
   async function setAuraHype(enabled: boolean) {
+    if (enabled && auraHypeLocked) return;
     updateTheme({ auraHype: enabled });
     setAuraBusy(true); setAuraLocal(false);
     try {
@@ -55,7 +58,11 @@ function Settings() {
         updateTheme({ auraHype: saved.auraHype });
         notice.success(t("settings.saved"));
       } else setAuraLocal(true);
-    } catch { setAuraLocal(true); }
+    } catch (e) {
+      // recusa do servidor (nível insuficiente) desfaz a escolha; só falha de rede fica como preferência local
+      if (e instanceof ApiError && e.status < 500) { updateTheme({ auraHype: false }); notice.fromError(e); }
+      else setAuraLocal(true);
+    }
     finally { setAuraBusy(false); }
   }
   async function setAuraImpersonation(enabled: boolean) {
@@ -116,7 +123,7 @@ function Settings() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="lg:col-span-2">
             {heading(t("settingsHelp.effectsTitle"), "aura")}
-            <Switch checked={!!theme.auraHype} disabled={auraBusy} label={t("auraHype.title")} hint={t("settingsHelp.auraShort")} onChange={setAuraHype} />
+            <Switch checked={!!theme.auraHype} disabled={auraBusy || (auraHypeLocked && !theme.auraHype)} label={t("auraHype.title")} hint={auraHypeLocked ? t("auraGate.requires", { level: t(`levelProgress.name.${dynamicAccess!.requiredTier}`) }) : t("settingsHelp.auraShort")} onChange={setAuraHype} />
             <div className="mt-4 flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <Switch checked={!!server.data?.auraImpersonation} disabled={impersonationBusy || (!impersonationAllowed && !server.data?.auraImpersonation)} label={t("settingsHelp.impersonationTitle")} hint={impersonationStatus} onChange={setAuraImpersonation} />
