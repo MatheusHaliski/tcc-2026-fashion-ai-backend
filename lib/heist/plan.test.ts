@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { HeistInput, SimState } from "./types";
 import { newSim, simCtx } from "./state";
-import { choose, interact, promptAt, skipBeat, startBeat, step, talk, wear } from "./sim";
+import { choose, interact, promptAt, skipBeat, skipCutscene, startBeat, startCutscene, step, talk, wear } from "./sim";
 import { DIALOGUES, choicesOf } from "./dialogue";
 import { alertGuard, makeNoise, recognition } from "./combat";
 import { challengeState, endingOf, optionalDone } from "./goals";
@@ -294,6 +294,21 @@ describe("alerta, dificuldade, desafios e finais (MH-11, MH-12, MH-13)", () => {
 });
 
 describe("Midnight Escape", () => {
+  it("fuga completa: com o diamante, pela janela, beiral, terraço e escada de incêndio até o carro do beco — vitória (condição mínima)", () => {
+    const s = newSim([], 3, { challenge: "midnight" }); quiet(s);
+    startCutscene(s); skipCutscene(s);
+    expect(s.phase).toBe("ESCAPE");
+    expect(s.player.inv.diamond).toBe(true);
+    // cada trecho como a escalada deixa: beiral → terraço → beco; depois anda até o carro leste
+    for (const [x, z, room, y] of [[-19.5, -23, "beiral", 0], [19.5, -21.4, "terraco", 0], [23.6, -14, "beco", -1.6]] as const) { place(s, x, z, room, y); run(s, 0.2); }
+    place(s, 25.5, 7.4, "beco", -1.6);
+    run(s, 1.2, () => idle({ move: { x: 0, y: 1 }, camYaw: 0 }));
+    expect(s.phase).toBe("WON");
+    expect(s.stats.route).toContain("carEast");
+    expect(challengeState(s)).toMatchObject({ id: "midnight", status: "done" });
+    expect(endingOf(s)).toBe("fantasma");
+  });
+
   it("começa na Sala das Joias com a energia cortada e o subobjetivo do diamante", () => {
     const s = newSim([], 3, { challenge: "midnight" });
     expect(s.player.lastRoom).toBe("cofre");
