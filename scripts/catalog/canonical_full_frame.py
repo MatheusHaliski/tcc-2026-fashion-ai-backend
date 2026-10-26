@@ -30,6 +30,11 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 
+try:
+    from .photo_set_quality import assess_ready_candidate
+except ImportError:
+    from photo_set_quality import assess_ready_candidate
+
 WIDTH, HEIGHT = 900, 1200
 VERSION = "FAI_CANONICAL_FRAME_V0_PREVIEW"
 CATEGORIES = frozenset({"upper_piece", "lower_piece", "full_body_piece", "shoes_piece", "accessory_piece"})
@@ -284,6 +289,7 @@ def canonical_candidate(set_path: Path, asset_root: Path, output: Path, registry
     # Separate outputs: never overwrite whole.png, set.json, report.jsonl or fabric.png.
     output.mkdir(parents=True, exist_ok=True)
     report = {**meta, "category": category, "subcategory": subcategory,
+              "sourcePostflight": assess_ready_candidate(photo_set).as_dict(),
               "imageId": photo_set.get("imageId"), "sourceSha256": photo_set.get("sourceSha256"),
               "originalWholeSha256": original_hash,
               "fabricSha256": fabric_hash,

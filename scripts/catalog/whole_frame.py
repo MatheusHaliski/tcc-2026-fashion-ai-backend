@@ -99,17 +99,16 @@ def render_whole(image: Image.Image, mask: Image.Image, truncated=(), *, preflig
 
 def render_canonical_whole_preview(asset_glb: Path, fabric_png: Path, *, category: str,
                                    subcategory: str, photo_set_status: str) -> WholeResult:
-    """Opt-in Total Frame constructed from a GLB and a confirmed photo-set fabric patch.
+    """Create a separate GLB preview; the original `render_whole` stays intact.
 
-    The existing `render_whole` path and its geometry-free output remain intact.
-    Only an upstream READY photo-set may be used for a parallel candidate.
-    The returned PNG is always tagged REVIEW, never promoted to READY here.
+    Only a READY source can feed the V0 prototype and its output always remains
+    REVIEW. This is NOT evidence of physical fit, actual logos or 3-D quality.
     """
     if photo_set_status != "READY":
         raise ValueError("CANONICAL_PREVIEW_REQUIRES_READY_SOURCE")
     try:
         from .canonical_full_frame import render_asset_png
-    except ImportError:  # standalone worker
+    except ImportError:
         from canonical_full_frame import render_asset_png
     png, info = render_asset_png(Path(asset_glb), Path(fabric_png),
                                  category=category, subcategory=subcategory)

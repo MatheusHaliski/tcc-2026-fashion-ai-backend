@@ -55,6 +55,7 @@ from photo_set import MAX_ANALYSIS_SIDE, MAX_INPUT_PIXELS, PHOTO_SET_VERSION, Lo
 from photo_set import _fabric_box as fabric_box  # noqa: E402  — o mesmo retângulo 3:4 só de tecido do worker do catálogo
 from whole_frame import HEIGHT, WIDTH, GarmentSegmenter, cloth_class  # noqa: E402
 from fashn_open import FashnOpenProvider, LamaInpainter  # noqa: E402
+from photo_set_quality import apply_quality_gate  # noqa: E402
 
 LOG = logging.getLogger("fashionai.sd")
 VERSION = "LOCAL_SD_GHOST_V1"
@@ -779,6 +780,15 @@ class GhostPipeline:
                                 "rendered": True, "processed": True, "ghostPixels": whole.info["ghostPixels"]}
             metrics["fabric"] = {"width": fabric.width, "height": fabric.height, "sourceBox": list(box), "coverage": 1.0}
             result.update(status="READY", reason=None, files={"whole": "whole.png", "fabric": "fabric.png"})
+            # Preflight attests a candidate segmentation, not a complete
+            # garment. Human/model photographs, lenient contours and ghost
+            # repairs must be reviewed before these files reach the catalog.
+            result = apply_quality_gate(result)
+            if result["status"] != "READY" and result.get("files"):
+                # The GPU wire contract permits file payloads only for READY.
+                # Keep local PNGs for diagnostics, but do not transmit them as
+                # publishable output from PhotoSetRuntime.
+                result["reviewPreviewFiles"] = result.pop("files")
         (folder / "set.json").write_text(json.dumps(result, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
         return {"status": result["status"], "reason": result.get("reason"), "dir": folder.as_posix()}
 
@@ -793,7 +803,10 @@ class GhostPipeline:
         with report.open("a", encoding="utf-8") as audit:
             for row in progress:
                 result = self.process(row)
-                if result["status"] == "RENDERED" and store is not None and not self.options.dry_run:
+                can_store_photo_set = (not self.options.photo_set or
+                                       (result.get("photoSet") or {}).get("status") == "READY")
+                if (result["status"] == "RENDERED" and can_store_photo_set and
+                        store is not None and not self.options.dry_run):
                     result["stored"] = store(row, result["stored_value"])
                 self.rows.append(result)
                 audit.write(json.dumps(result, ensure_ascii=False, default=str) + "\n")
