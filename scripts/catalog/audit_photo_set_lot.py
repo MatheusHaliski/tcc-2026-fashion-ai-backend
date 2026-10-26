@@ -8,6 +8,7 @@ REVIEW with an immutable adjacent backup, keeping PNGs and other lot data.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import tempfile
@@ -39,12 +40,18 @@ def harden_set_path(path: Path, *, apply_local: bool = False) -> dict:
         reviewed["reviewPreviewFiles"] = dict(record["files"])
     reviewed.pop("files", None)
     backup = path.with_name("set.before-postflight-v1.json")
-    if backup.exists():
-        if backup.read_bytes() != source:
-            return {"status": "BACKUP_CONFLICT_REVIEW_REQUIRED"}
-    else:
+    if backup.exists() and backup.read_bytes() != source:
+        # --force may generate a different READY result for the same image.
+        # Keep the original backup immutable and preserve the new version
+        # under a content-addressed name, instead of stopping the GPU batch.
+        digest = hashlib.sha256(source).hexdigest()
+        backup = path.with_name(f"set.before-postflight-v1.{digest}.json")
+    try:
         with backup.open("xb") as stream:
             stream.write(source)
+    except FileExistsError:
+        if backup.read_bytes() != source:
+            return {"status": "BACKUP_CONFLICT_REVIEW_REQUIRED"}
     temporary = None
     try:
         with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent,
