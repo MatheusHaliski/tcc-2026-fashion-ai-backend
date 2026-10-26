@@ -117,10 +117,27 @@ def predict(cloud,endpoint_name,host,instance,attempts=5,sleep=time.sleep):
 
 
 def already_done(out,row):
-    """set.json desta foto e desta URL já no lote: o importador usaria o mesmo; não gasta GPU de novo."""
+    """Resume only a complete result for the *same* catalog image context.
+
+    A reused URL alone is insufficient: the product category or subcategory
+    might have been corrected after the previous GPU call. Missing READY PNGs
+    also require regeneration, not a misleading ALREADY_IN_LOT outcome.
+    """
     path=deploy.photo_set_folder(out,row['id'])/'set.json'
-    try:return json.loads(path.read_text(encoding='utf-8')).get('sourceUrl')==row['image_url']
-    except (OSError,ValueError):return False
+    try:
+        record=json.loads(path.read_text(encoding='utf-8'))
+        if not isinstance(record,dict):return False
+        if record.get('sourceUrl')!=row['image_url'] or str(record.get('imageId'))!=str(row['id']):return False
+        for key in ('category','subcategory','color'):
+            if record.get(key)!=row.get(key):return False
+        if row.get('product_id') is not None and str(record.get('productId'))!=str(row['product_id']):return False
+        if record.get('status') not in ('READY','REVIEW','INELIGIBLE'):return False
+        if record.get('status')=='READY':
+            if record.get('files')!={'whole':'whole.png','fabric':'fabric.png'}:return False
+            if not all((path.parent/filename).is_file() and not (path.parent/filename).is_symlink()
+                       for filename in ('whole.png','fabric.png')):return False
+        return True
+    except (OSError,ValueError,TypeError):return False
 
 
 def process_row(row,data,cloud,endpoint_name,host,out,sleep=time.sleep):
