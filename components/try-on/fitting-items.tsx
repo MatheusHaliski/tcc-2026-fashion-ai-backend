@@ -167,8 +167,13 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
             ? <span className="piece-row-note"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.coberta_curto", { name: coveredBy })}</span>
             : onPreview2d ? <Button size="sm" onClick={() => onPreview2d(item)}><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.ver_previa_2d")}</Button> : null}
           <GarmentPreviewStatus item={item} photo={garment.photos[item.key]} body={garment.body} />
-          {m3d.pieceId && (m3d.progress.phase !== "none" || m3d.paused) && <Model3dStepBar progress={m3d.progress} paused={m3d.paused} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
+          {m3d.pieceId && (m3d.progress.phase !== "none" || m3d.paused) && <Model3dStepBar progress={m3d.progress} paused={m3d.paused} idle={m3d.idle} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
             onRetry={() => void m3d.model.request()} />}
+          {size && onSizeChange && (
+            <SizePicker grid={size.grid} options={size.options} chosen={item.size ?? null} natural={size.natural} fit={size.fit}
+              feedback={size.feedback} personalized={!!body?.personalized}
+              label={t("size.tamanho_de", { name: item.name })} onPick={(label) => onSizeChange(item, label)} />
+          )}
         </>}
         actions={catalog ? <>
           {item.officialUrl && (

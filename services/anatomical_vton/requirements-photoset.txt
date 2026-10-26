@@ -1,0 +1,5 @@
+# Recorte de fotos do catálogo (photoSet, engine fashn-open de scripts/catalog/process_local_sd.py) no mesmo contêiner
+# da FASHN: o parser humano, o torch e o scipy já vêm do lock da FASHN; o BiRefNet precisa de timm e kornia.
+# Lock: uv pip compile --python-version 3.11 services/anatomical_vton/requirements-photoset.txt -c services/anatomical_vton/requirements-portrait.lock -o services/anatomical_vton/requirements-photoset.lock
+timm>=1.0,<2
+kornia>=0.7,<0.9

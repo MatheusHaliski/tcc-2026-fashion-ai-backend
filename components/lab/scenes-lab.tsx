@@ -51,6 +51,11 @@ export const LAB_LOOK: Look3dPiece[] = [
 function labLook(ids: string): Look3dPiece[] | null {
   const list = ids.split(",").filter(Boolean).map((id): Look3dPiece | null => {
     if (id.startsWith("cor-")) return { id: `lab-${id}`, name: id, slot: "upper_piece", category: "upper_piece", subcategory: "t_shirt", imageUrl: `/lab/cores/camiseta-${id.slice(4)}.webp` };
+    // auditoria do pipeline de vestimenta: foto local em /public/lab-audit (fora do git), ex.: audit-01-jacket, audit-07-lower-pants
+    if (id.startsWith("audit-")) {
+      const [, n, ...rest] = id.split("-"); const lower = rest[0] === "lower"; const sub = (lower ? rest.slice(1) : rest).join("_");
+      return { id: `lab-${id}`, name: id, slot: lower ? "lower_piece" : "upper_piece", category: lower ? "lower_piece" : "upper_piece", subcategory: sub, imageUrl: `/lab-audit/img${n}.png` };
+    }
     if (id.startsWith("camisa-")) return { id: `lab-${id}`, name: `Camisa ${id.slice(7)}`, slot: "upper_piece", category: "upper_piece", subcategory: "shirt", imageUrl: `/lab/cores/${id}.webp` };
     const p = id.startsWith("molde-") ? ACERVO.find((x) => x.subcategory === id.slice(6)) : ACERVO.find((x) => x.id.includes(id)); return p ? acervoLook(p) : null;
   }).filter((p): p is Look3dPiece => !!p);
@@ -196,9 +201,9 @@ export default function ScenesLab() {
         {["fitting-neutral", "fitting-brand", ...Object.keys(FITTING), "ministores", "ministage", "ministage-sem-logo", ...Object.keys(HEIST_MODS)].map((k) => <button key={k} onClick={() => setS(k)} aria-pressed={s === k}>{k}</button>)}
       </nav>
       <div id="scene-viewer" ref={viewer} style={{ position: "relative", width: frame.w, height: frame.h, background: "#111" }}>
-        {frame.panel && cameraApi?.detail && s.startsWith("fitting") && <FittingDetailControls api={cameraApi.detail} />}
+        {frame.panel && cameraApi?.detail && s.startsWith("fitting") && <div style={{ position: "absolute", left: 12, top: 12, zIndex: 2, width: 280 }}><FittingDetailControls api={cameraApi.detail} /></div>}
         {wheelHint && <p className="fitting-wheel-hint">{t("tryOn.roda.dica")}</p>}
-        {s.startsWith("fitting") && lab.ready && <FittingRoomScene avatar={null} sex={lab.sex} body={lab.body} pieces={lab.pieces ?? LAB_LOOK} environment={env} view={view} onProfile={publishProfile} onCamera={onCamera}
+        {s.startsWith("fitting") && lab.ready && <FittingRoomScene avatar={null} sex={lab.sex} body={lab.body} pieces={lab.pieces ?? LAB_LOOK} environment={env} view={view} onProfile={publishProfile} onCamera={onCamera} references
           debug={lab.debug} cameraYaw={lab.yaw} closeUp={lab.close} light={lab.light} scene={FITTING[s] ? resolveScene({ ...FITTING[s], worn: items }) : null} />}
         {s === "ministores" && <StoreStreetScene onPick={() => {}} selectedId="c1" brand={{ name: "Atelier Lumi" }} stores={[
           { id: "c1", label: "Verão Solar", rank: 1, audience: 70, fraction: 1, fireworks: 3, accentColor: "#F26A1B", artUrl: "/aura/geometry/geometry_01/imagem.png", score: 980, products: [TOPS[0], BAGS[1], SHOES[0]] },

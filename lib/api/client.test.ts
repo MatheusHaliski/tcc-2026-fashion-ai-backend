@@ -65,6 +65,15 @@ describe("cliente da API (RF2: sessão, erros e renovação do token)", () => {
     expect(blob.size).toBe(3);
   });
 
+  it("200 sem corpo nem Content-Type (null do backend) volta vazio, não um Blob vazio", async () => {
+    // GET /api/flair/adventure/active sem partida: o Blob vazio passava por sessão e derrubava a tela do Heist
+    const { api } = await fresh();
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    await expect(api.get("/api/flair/adventure/active")).resolves.toBeUndefined();
+    fetchMock.mockResolvedValueOnce(new Response("", { status: 200, headers: { "content-length": "0" } }));
+    await expect(api.get("/api/flair/adventure/active")).resolves.toBeUndefined();
+  });
+
   it("put e patch enviam o corpo; sem corpo vai {}", async () => {
     const { api } = await fresh();
     fetchMock.mockImplementation(async () => json(200, {}));   // um Response novo por chamada

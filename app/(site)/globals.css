@@ -2553,22 +2553,33 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-orbit { display: flex; align-items: center; gap: 6px; }
 .fitting-orbit-sep { width: 1px; height: 24px; background: var(--line); }
 @media (max-width: 640px) { .fitting-remote { right: 8px; bottom: 8px; max-width: calc(100% - 16px); } }
-/* câmera de detalhe (corpo inteiro · calçado · percorrer o corpo): canto superior esquerdo; no celular, faixa no topo com as paradas roláveis de lado */
-.fitting-detail { position: absolute; left: 12px; top: 12px; z-index: 2; display: grid; gap: 6px; width: min(340px, calc(100% - 24px)); padding: 8px; border-radius: 12px; }
-.fitting-detail-modes, .fitting-detail-stops { display: flex; flex-wrap: wrap; gap: 4px; }
-.fitting-detail .chip { padding-inline: .7rem; }
-.fitting-detail-track { display: grid; gap: 2px; }
+/* câmera de detalhe (corpo inteiro · calçado · percorrer o corpo): painel ao lado do palco a partir de 960 px e embaixo
+   dele no celular — nunca por cima do avatar */
+.fitting-stage-row { display: grid; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 960px) { .fitting-stage-row.has-panel { grid-template-columns: minmax(0, 1fr) 280px; } }
+.fitting-detail { display: grid; align-content: start; gap: 12px; padding: 14px; background: var(--surface); border-top: 1px solid var(--line-soft); }
+@media (min-width: 960px) { .fitting-detail { max-height: clamp(460px, 68vh, 760px); overflow-y: auto; border-top: 3px solid var(--fitting-accent, var(--mark)); border-left: 1px solid var(--line-soft); } }
+.fitting-detail-head { display: grid; gap: 2px; }
+.fitting-detail-head h3, .fitting-detail-head p { margin: 0; }
+.fitting-detail-modes { display: grid; gap: 6px; }
+.fitting-detail-modes .chip { justify-content: flex-start; min-height: 44px; }
+.fitting-detail-stops { display: flex; flex-wrap: wrap; gap: 6px; }
+.fitting-detail-stops > p { flex-basis: 100%; margin: 0; }
+.fitting-detail-stops .chip { min-height: 40px; }
+.fitting-detail-track { display: grid; gap: 4px; }
 .fitting-detail-hint { margin: 0; color: var(--muted); }
+@media (max-width: 959px) {
+  .fitting-detail-modes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fitting-detail-modes .chip { justify-content: center; text-align: center; }
+}
+@media (max-width: 640px) {
+  .fitting-detail { padding: 12px; }
+  .fitting-detail-stops { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .fitting-detail-stops > p { display: none; }
+  .fitting-detail-stops .chip { flex: none; }
+}
 /* rolagem inteligente: a roda "fria" sobre o palco rolou a página; a dica diz como usar a roda na câmera (some sozinha) */
 .fitting-wheel-hint { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); width: max-content; max-width: min(320px, calc(100% - 32px)); margin: 0; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 84%, transparent); color: var(--surface); font-size: var(--text-body-sm); line-height: 1.4; text-align: center; pointer-events: none; }
-@media (max-width: 640px) {
-  .fitting-detail { left: 8px; top: 8px; width: calc(100% - 16px); }
-  .fitting-detail-stops { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
-  .fitting-detail-stops .chip { flex: none; }
-  /* no celular o painel ocupa menos altura no percurso: o nome do controle e a posição ficam só para leitores de tela (aria-valuetext) */
-  .fitting-detail-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .fitting-detail-hint.is-percurso { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-}
 .fitting-slot-thumb { flex: none; display: grid; place-items: center; width: 52px; height: 52px; overflow: hidden; border-radius: 8px; border: 1px solid var(--line-soft); }
 .fitting-slot-thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .fitting-slot-thumb.is-small { width: 34px; height: 34px; border: 2px solid var(--surface); }
@@ -4136,6 +4147,13 @@ html[data-reduce-motion="true"] .fashion-motion-control, html[data-reduce-motion
 .afterparty-card:disabled { opacity: .6; }
 .afterparty-card small { font-size: 12px; }
 .afterparty-deck-selection { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+
+/* FLAIR Metamorfose — MET Gala Heist v2: escolha do look e o jogo em tela cheia */
+.gala-heist-stage{position:fixed;inset:0;z-index:80;background:#000}
+.gala-heist-decks{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.gala-heist-deck{display:flex;gap:8px;align-items:center;cursor:pointer}.gala-heist-deck.is-on{outline:2px solid var(--thread);outline-offset:-2px}
+.gala-heist-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin:8px 0 0;padding:0;list-style:none}
+.gala-heist-cards li{display:grid;gap:2px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);font-size:.85rem}.gala-heist-cards li.is-out{opacity:.55}
 .afterparty-map { width: 100%; height: 100%; touch-action: none; }
 /* MET Gala Heist: o que o deck muda no avatar e no salão; sinal + / − / · em texto (não só cor) */
 .heist-mods { display: grid; gap: 10px; margin-bottom: 12px; }
