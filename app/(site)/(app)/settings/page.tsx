@@ -13,6 +13,7 @@ import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useNotice } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
+import { NavOrderEditor } from "@/components/nav-order-editor";
 
 /** "Dólar americano (USD)" no idioma da interface. */
 const currencyName = (intl: string, c: string) => { try { return `${new Intl.DisplayNames(intl, { type: "currency" }).of(c) ?? c} (${c})`; } catch { return c; } };
@@ -147,6 +148,11 @@ function Settings() {
             <p className="type-caption text-muted mb-2">{t("settings.todo_o_conteudo_das_paginas")}</p>
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">{CONTAINER_PRESETS.map((c) => { const on = (theme.contentContainerColor ?? "#FFFFFF").toUpperCase() === c.hex; return <button key={c.hex} type="button" aria-pressed={on} title={c.label} aria-label={c.label} onClick={() => { const v = c.hex === "#FFFFFF" ? null : c.hex; updateTheme({ contentContainerColor: v }); savePrefs({ contentContainerColor: v ?? "" }); }} className={`h-12 rounded-lg border-2 ${on ? "border-mark ring-2 ring-mark/40" : "border-line-soft"}`} style={{ background: c.hex }} />; })}</div>
             <div className="mt-2 flex flex-wrap items-center gap-2"><label className="type-body-sm flex items-center gap-2">{t("settings.outra_cor")}{" "}<input type="color" aria-label={t("settings.cor_personalizada_dos_containers")} className="h-9 w-14 rounded border border-line-soft" value={theme.contentContainerColor ?? "#FFFFFF"} onChange={(e) => updateTheme({ contentContainerColor: e.target.value.toUpperCase() })} onBlur={(e) => savePrefs({ contentContainerColor: e.target.value.toUpperCase() })} /></label><Button size="sm" onClick={() => { updateTheme({ contentContainerColor: null }); savePrefs({ contentContainerColor: "" }); }}>{t("settings.padrao_branco")}</Button></div>
+          </Card>
+          <Card className="lg:col-span-2">
+            {heading(t("settings.navOrder.title"), "navOrder")}
+            <p className="type-body-sm text-muted mb-3">{t("settings.navOrder.hint")}</p>
+            <NavOrderEditor />
           </Card>
         </div>
       )}
