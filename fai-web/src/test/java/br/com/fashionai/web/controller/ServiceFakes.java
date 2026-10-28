@@ -1407,11 +1407,6 @@ final class ServiceFakes {
         }
 
         @Override
-        public void requireLicense(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            Fk.call(this, "requireLicense", void.class, new Object[]{a0, a1});
-        }
-
-        @Override
         public java.util.Map<java.lang.String, java.lang.Object> save(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.AuraCommerceService.OfferForm a1) {
             return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "save", java.util.Map.class, new Object[]{a0, a1});
         }

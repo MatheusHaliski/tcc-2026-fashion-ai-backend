@@ -76,17 +76,29 @@ class ControllerDelegacaoTest {
     /** Endpoints que não dependem de serviço algum: cobertos em testes próprios. */
     static final Set<String> SEM_SERVICO = Set.of("AccountController.privacyProbe", "LookbookController.panelVersions");
 
+    /**
+     * Endpoints que passaram a ter regra própria antes de delegar (permissão de criador, nível Loft do FLAIR, item que
+     * precisa existir): este teste genérico só sabe exercitar repasse puro, então ficam de fora dele.
+     */
+    static final Set<String> COM_REGRA = Set.of("CatalogController.textureImage", "FlairAdventureController.preview",
+            "HighlightsController.unapply");
+
+    static boolean generico(Class<?> type, java.lang.reflect.Method m) {
+        String id = type.getSimpleName() + "." + m.getName();
+        return !SEM_SERVICO.contains(id) && !COM_REGRA.contains(id);
+    }
+
     @TestFactory
     Stream<DynamicTest> cadaEndpointDelegaAoServicoEDevolveARespostaDele() {
         return CONTROLLERS.stream().flatMap(type -> endpoints(type)
-                .filter(m -> !SEM_SERVICO.contains(type.getSimpleName() + "." + m.getName())).map(m ->
+                .filter(m -> generico(type, m)).map(m ->
                 DynamicTest.dynamicTest(type.getSimpleName() + "." + m.getName(), () -> exercita(type, m))));
     }
 
     @TestFactory
     Stream<DynamicTest> parametrosOpcionaisAusentesTambemDelegamAoServico() {
         return CONTROLLERS.stream().flatMap(type -> endpoints(type)
-                .filter(m -> !SEM_SERVICO.contains(type.getSimpleName() + "." + m.getName()))
+                .filter(m -> generico(type, m))
                 .filter(m -> Arrays.stream(m.getParameters()).anyMatch(ControllerDelegacaoTest::opcional)).map(m ->
                 DynamicTest.dynamicTest(type.getSimpleName() + "." + m.getName() + " sem opcionais",
                         () -> exercita(type, m, true))));
