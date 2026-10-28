@@ -11,10 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Consultas agrupadas do dashboard e do Explorador (V6): stored procedures (sp_admin_kpis, sp_timeseries,
- * sp_purge_notifications), views (vw_country_insights, vw_brand_usage) e GROUP BY diretos. Só leitura, exceto o expurgo.
- */
+
 @Component
 public class MysqlAnalyticsAdapter implements AnalyticsQueryPort {
     private final NamedParameterJdbcTemplate jdbc;
