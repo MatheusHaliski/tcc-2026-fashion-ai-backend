@@ -350,7 +350,49 @@ public class FaiPointsService {
         }
         item.setAppliedModule(moduleId);
         layouts.applyFinish(user.id(), moduleId, c);
+        releaseDisplaced(user.id(), item);
         return Map.of("applied", true, "module", moduleId, "sku", c.getSku());
+    }
+
+    /**
+     * Retira do quarto um item comprado: o módulo volta ao acabamento de fábrica e o item continua no inventário (a
+     * propriedade nunca depende de estar aplicado).
+     */
+    @Transactional
+    public Map<String, Object> unapply(CurrentUser user, UUID inventoryId) {
+        RoomInventoryItem item = inventory.findById(inventoryId).orElseThrow(() -> ApiException.notFound("Item"));
+        if (!item.getUserId().equals(user.id())) {
+            throw ApiException.forbidden(Msg.t("faiPoints.item_de_outro_usuario"));
+        }
+        if (item.getAppliedModule() == null) {
+            throw new ApiException(409, "ITEM_NAO_APLICADO", Msg.t("room.item_not_applied"));
+        }
+        RoomCatalogItem c = catalog.findById(item.getSku()).orElseThrow();
+        String module = item.getAppliedModule();
+        layouts.resetFinish(user.id(), module, c);
+        item.setAppliedModule(null);
+        return Map.of("applied", false, "module", module, "sku", c.getSku(), "inventoryId", item.getId());
+    }
+
+    /**
+     * Um módulo mostra um único item: depois de aplicar {@code applied}, as outras unidades que ocupavam o mesmo lugar (ou
+     * cujo acabamento foi sobrescrito, como num guarda-roupa inteiro) deixam de constar como aplicadas — continuam no
+     * inventário e podem ser reaplicadas.
+     */
+    void releaseDisplaced(UUID userId, RoomInventoryItem applied) {
+        RoomLayout layout = layouts.layout(userId);
+        List<Map<String, Object>> modules = layout == null ? List.of() : Json.list(layout.getModulesJson());
+        for (RoomInventoryItem other : inventory.findByUserId(userId)) {
+            if (other.getId() == null || other.getId().equals(applied.getId()) || other.getAppliedModule() == null) {
+                continue;
+            }
+            String where = other.getAppliedModule();
+            boolean present = !where.equals(applied.getAppliedModule()) && modules.stream()
+                    .anyMatch(m -> other.getSku().equals(m.get("sku")) && ("ALL".equals(where) || where.equals(String.valueOf(m.get("id")))));
+            if (!present) {
+                other.setAppliedModule(null);
+            }
+        }
     }
 
     /** Porta de acesso ao layout (implementada pelo RoomService) — evita dependência circular. */
@@ -360,6 +402,9 @@ public class FaiPointsService {
         List<String> compatibleModules(UUID userId, RoomCatalogItem item);
 
         void applyFinish(UUID userId, String moduleId, RoomCatalogItem item);
+
+        /** Volta ao acabamento de fábrica os módulos que mostram {@code item} ({@code "ALL"} = guarda-roupa inteiro). */
+        void resetFinish(UUID userId, String moduleId, RoomCatalogItem item);
 
         RoomLayout layout(UUID userId);
     }

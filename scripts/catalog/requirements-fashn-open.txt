@@ -1,0 +1,8 @@
+# Engine fashn-open do process_local_sd.py: parser humano + BiRefNet + LaMa da FASHN (SD opcional vem do requirements-sd.txt).
+# Instale primeiro o torch certo para a máquina (CUDA / Apple Silicon / CPU) — ver scripts/catalog/README.md.
+-r requirements-sd.txt
+torchvision>=0.18,<1
+timm>=1.0,<2
+kornia>=0.7,<1
+einops>=0.8,<1
+fashn-human-parser @ git+https://github.com/fashn-AI/fashn-human-parser.git@f2771f2fb8655349e87e2869bbde7ace0bd06f2c

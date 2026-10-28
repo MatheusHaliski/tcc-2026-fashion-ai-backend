@@ -1,0 +1,9 @@
+T01 inicio pos=(0.00,5.00) suspeita=0% energia=100 status=ACTIVE fase=ACQUIRE feedback=STARTED cracha=false item=false
+T01 caminhada ate a portaria: GATE_BLOCKED em 2.6s; pos=(0.00,0.20) suspeita=30% energia=100 status=ACTIVE fase=ACQUIRE feedback=GATE_BLOCKED cracha=false item=false
+T02 rotas=[ARRIVED,ARRIVED,ARRIVED] cracha=BADGE_FOUND rotas2=[ARRIVED,ARRIVED] furto=ITEM_FOUND em 6.9s; pos=(0.14,-5.31) suspeita=20% energia=100 status=ACTIVE fase=ESCAPE feedback=ITEM_FOUND cracha=true item=true
+T03 suspeita: chegou 11%, 2s parada 49%, depois de sair e esperar 4s 21%; pos=(0.00,5.50) suspeita=21% energia=100 status=ACTIVE fase=ACQUIRE feedback=MOVING cracha=false item=false
+T03 parada 8s na vista: pos=(0.00,2.00) suspeita=100% energia=100 status=FAILED fase=ACQUIRE feedback=DETECTED cracha=false item=false
+T03 correndo na vista: pos=(0.00,1.85) suspeita=79% energia=100 status=ACTIVE fase=ACQUIRE feedback=MOVING cracha=false item=false
+T04 ATTACK recusado: ApiException
+T05 fuga pelo centro: ARRIVED em 11.9s; pos=(0.00,4.89) suspeita=0% energia=100 status=COMPLETED fase=ESCAPE feedback=COMPLETED cracha=true item=true
+T06 motor: 0.004 ms por ação (média de 20 000)

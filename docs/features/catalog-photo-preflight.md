@@ -95,6 +95,7 @@ foi revertida). O plano do Total frame passa a ter duas trilhas:
 | --- | --- | --- | --- |
 | Peça inteira verificada (`process_whole_frames.py` / `process_photo_sets.py`) | lote local, sem IA generativa | `whole_url`/`whole_json`, `assets_json.photoSet` | é o que a interface mostra hoje |
 | Packshot local *ghost mannequin* (`process_local_sd.py`) | lote local com Stable Diffusion Inpainting (CUDA/MPS/CPU) | `processed_image_url` + `./output_images/` | gera e grava; a interface só passará a usar quando o responsável liberar |
+| Packshot pelo pipeline aberto da FASHN (`process_local_sd.py --engine fashn-open`) | parser humano da FASHN (rótulos por categoria do fashn-vton-1.5) + BiRefNet (alfa fino) + LaMa na região fantasma, `--sd` opcional; GPU via `scripts/cloud/packshot_gpu_vm.py` | os mesmos do engine `sd` | pronto na branch; o `packshot` da API da FASHN é fechado, então este é o equivalente mais próximo sem créditos |
 
 Regras comuns às duas trilhas: isolar a peça (sem pessoa, outras peças, linhas/silhuetas fora do perímetro), centralizar
 com a maior aresta em 50% do quadro 3:4, remover o fundo, e nunca gerar packshot de peça cuja altura na foto seja menor

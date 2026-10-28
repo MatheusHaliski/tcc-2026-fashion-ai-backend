@@ -19,7 +19,9 @@ describe("FLAIR game categories", () => {
 
     expect(await screen.findByRole("heading", { name: "FLAIR" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "FLAIR METAMORFOSE" })).toBeTruthy();
-    expect((await screen.findByRole("link", { name: /Bloqueado até o nível Loft/ })).getAttribute("href")).toBe("/points");
+    const locked = await screen.findAllByRole("link", { name: /Bloqueado até o nível Loft/ });
+    expect(locked.length).toBe(2);
+    for (const l of locked) expect(l.getAttribute("href")).toBe("/points");
   });
 
   it("opens the Metamorfose game at Loft", async () => {
@@ -28,5 +30,6 @@ describe("FLAIR game categories", () => {
 
     const game = await screen.findByRole("link", { name: "Jogar FLAIR Metamorfose" });
     expect(game.getAttribute("href")).toBe("/flair/aventura");
+    expect((await screen.findByRole("link", { name: "Jogar o MET Gala Heist" })).getAttribute("href")).toBe("/flair/heist");
   });
 });

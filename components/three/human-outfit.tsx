@@ -113,7 +113,10 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     // caixa da peça na foto (alfa do recorte ou fundo separado da foto opaca): uma só leitura para a projeção, a cor do
     // tecido, a textura e os acabamentos — cores sempre de dentro da peça, nunca do fundo da foto
     const info = infos.get(it) ?? (img ? photoInfo(img) : null);
-    const geo = texturedGeometry(gg, posed, info, it.spec.sleeve > 0 ? sleeveVert : undefined, visibleAlpha);
+    // manga: quando a foto mostra a manga caída ao lado do tronco, ela vai para a manga 3D (texturedGeometry/photoSleeves);
+    // senão a manga fica no tecido (cor e trama), como antes
+    const sleeveSource = it.spec.sleeve > 0 ? { isSleeve: sleeveVert, along: (v: number) => (gg.source[v] >= 0 ? P.arm[gg.source[v]] : -1) } : undefined;
+    const geo = texturedGeometry(gg, posed, info, it.spec.sleeve > 0 ? sleeveVert : undefined, visibleAlpha, sleeveSource);
     const shoe = it.spec.kind === "shoes" || it.spec.kind === "boots";
     const fabric = fabricColor(img, it.piece.colorHex, info);
     const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric, geo.userData.fabricMapping, info, it.spec);

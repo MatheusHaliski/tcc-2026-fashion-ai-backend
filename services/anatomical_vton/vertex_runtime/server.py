@@ -13,12 +13,15 @@ from .bundle import SharedGpuBundle
 
 PAYLOAD_LIMIT=1_400_000  # Headroom below the shared endpoint's 1.5 MB limit.
 # Fields each task's runtime receives; the others keep the Instance defaults and are not forwarded.
-TASK_FIELDS={'body_measurement':{'task','person_image'},'stylized_portrait':{'task','person_image','seed'}}
+TASK_FIELDS={'body_measurement':{'task','person_image'},'stylized_portrait':{'task','person_image','seed'},
+             'garment_photo_set':{'task','source_image','catalog_category','subcategory','source_url','image_id','product_id','color'}}
+# Campos só do recorte de fotos do catálogo (photoSet): nenhuma outra tarefa os aceita.
+PHOTOSET_FIELDS=('source_image','catalog_category','subcategory','source_url','image_id','product_id','color')
 
 
 class Instance(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    task:Literal['garment_annotation','body_evidence','virtual_try_on','body_measurement','stylized_portrait']
+    task:Literal['garment_annotation','body_evidence','virtual_try_on','body_measurement','stylized_portrait','garment_photo_set']
     garment_image:str|None=None
     category:Literal['tops','bottoms','one-pieces']|None=None
     garment_photo_type:Literal['auto','model','flat-lay']='auto'
@@ -29,8 +32,21 @@ class Instance(BaseModel):
     attributes:dict|None=None
     response_schema:dict|None=None  # Compatibility only; output uses our canonical schemas.
     quality_feedback:str|None=Field(default=None,max_length=160)
+    source_image:str|None=None
+    catalog_category:Literal['upper_piece','lower_piece','full_body_piece']|None=None
+    subcategory:str|None=Field(default=None,max_length=80,pattern=r'^[a-z0-9_]+$')
+    source_url:str|None=Field(default=None,max_length=2048,pattern=r'^https?://')
+    image_id:str|None=Field(default=None,max_length=200)
+    product_id:str|None=Field(default=None,max_length=200)
+    color:str|None=Field(default=None,max_length=80)
     @model_validator(mode='after')
     def task_input(self):
+        if self.task=='garment_photo_set':
+            if not self.source_image or not self.catalog_category or not self.source_url:raise ValueError('SOURCE_IMAGE_CATEGORY_AND_URL_REQUIRED')
+            # Qualquer campo enviado fora dos do recorte (inclusive os que têm padrão, como seed) é recusado, não ignorado.
+            if self.model_fields_set-TASK_FIELDS['garment_photo_set']:raise ValueError('PHOTOSET_INPUT_ONLY')
+            return self
+        if any(getattr(self,name) is not None for name in PHOTOSET_FIELDS):raise ValueError('UNEXPECTED_PHOTOSET_INPUT')
         if self.task=='virtual_try_on':
             if not self.garment_image or not self.person_image or not self.category or self.image_png is not None or self.attributes is not None or self.response_schema is not None or self.quality_feedback is not None:
                 raise ValueError('PERSON_GARMENT_AND_CATEGORY_REQUIRED')

@@ -2,6 +2,7 @@ package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.common.*;
 import br.com.fashionai.application.flair.AfterpartyEngine;
+import br.com.fashionai.application.flair.AfterpartyMods;
 import br.com.fashionai.application.flair.AfterpartyEngine.*;
 import br.com.fashionai.application.flair.FlairEngine;
 import br.com.fashionai.application.hype.AuraHypeDropService;
@@ -22,11 +23,25 @@ public class FlairAdventureService {
   requireLoft(user);guard.requireCanCreate(user);if(selected==null||selected.isEmpty()||selected.size()>7||new HashSet<>(selected).size()!=selected.size())throw ApiException.badRequest("DECK_INVALID","Selecione de um a sete looks diferentes.");
   users.lockOwner(user.id()).orElseThrow(()->ApiException.notFound("Usuário"));
   Optional<FlairAdventureSession> active=sessions.findFirstByOwnerIdAndStatusOrderByCreatedAtDesc(user.id(),"ACTIVE");if(active.isPresent())return state(user,active.get().getId());
-  Map<String,FlairEngine.Deck> owned=new HashMap<>();flair.decks(user).forEach(d->owned.put(d.schemeId(),d));
-  if(selected.stream().anyMatch(id->!owned.containsKey(id.toString())))throw ApiException.badRequest("DECK_INVALID","Use somente looks seus, com peças disponíveis.");
+  Map<String,FlairEngine.Deck> owned=ownedDecks(user,selected);
   var grants=drops.classifications(HypeEntityType.SCHEME,selected);List<Loadout> loadouts=new ArrayList<>();
   for(UUID id:selected){var deck=owned.get(id.toString());loadouts.add(loadout(deck,grants.get(id)));}
-  long now=System.currentTimeMillis();State state=AfterpartyEngine.start(loadouts,now);FlairAdventureSession session=new FlairAdventureSession();session.setOwnerId(user.id());session.setStateJson(Json.write(state));sessions.save(session);faiPoints.game(user.id(),"FLAIR_METAMORFOSE_AFTERPARTY",session.getId().toString(),"PLAY");return view(session,state,now);
+  long now=System.currentTimeMillis();State state=AfterpartyEngine.start(loadouts,modsOf(selected,owned),now);FlairAdventureSession session=new FlairAdventureSession();session.setOwnerId(user.id());session.setStateJson(Json.write(state));sessions.save(session);faiPoints.game(user.id(),"FLAIR_METAMORFOSE_AFTERPARTY",session.getId().toString(),"PLAY");return view(session,state,now);
+ }
+ /** Prévia das vantagens do deck antes de começar: os mesmos modificadores que a partida vai usar (nada é gravado). */
+ @Transactional(readOnly=true) public Map<String,Object> preview(CurrentUser user,List<UUID> selected){
+  requireLoft(user);guard.requireCanCreate(user);if(selected==null||selected.isEmpty()||selected.size()>7||new HashSet<>(selected).size()!=selected.size())throw ApiException.badRequest("DECK_INVALID","Selecione de um a sete looks diferentes.");
+  return Map.of("mods",modsOf(selected,ownedDecks(user,selected)));
+ }
+ private Map<String,FlairEngine.Deck> ownedDecks(CurrentUser user,List<UUID> selected){
+  Map<String,FlairEngine.Deck> owned=new HashMap<>();flair.decks(user).forEach(d->owned.put(d.schemeId(),d));
+  if(selected.stream().anyMatch(id->!owned.containsKey(id.toString())))throw ApiException.badRequest("DECK_INVALID","Use somente looks seus, com peças disponíveis.");
+  return owned;
+ }
+ /** Todas as cartas dos looks escolhidos formam o deck da partida. */
+ static AfterpartyMods.Mods modsOf(List<UUID> selected,Map<String,FlairEngine.Deck> owned){
+  List<FlairEngine.Card> cards=new ArrayList<>();for(UUID id:selected){var d=owned.get(id.toString());if(d!=null)cards.addAll(d.cards());}
+  return AfterpartyMods.of(cards);
  }
  static Loadout loadout(FlairEngine.Deck deck,Map<String,Object> grant){
   int quality=deck.cards().stream().mapToInt(c->switch(c.rarity()){case "RARE"->2;case "PREMIUM","LIMITED"->1;default->0;}).min().orElse(0);

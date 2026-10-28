@@ -58,6 +58,14 @@ export type BodySources = Record<BodyCoreKey, Source> & Partial<Record<DepthKey,
  */
 export const DEPTH_FROM_WIDTH: Record<DepthKey, number> = { chestD: 0.7, waistD: 0.72, hipD: 0.64 };
 
+/** Compleição declarada do manequim (sem avatar com corpo medido) → `build` do corpo. */
+export const BUILD_FACTOR: Record<string, number> = { SLIM: -0.8, MEDIUM: 0, ATHLETIC: 0.3, CURVY: 0.8, PLUS: 1.6 };
+
+/** Corpo do manequim: o corpo salvo do avatar quando existe; senão o padrão do sexo com a compleição declarada. */
+export function mannequinBody(sex: Sex, build?: string | null, saved?: unknown): BodyParams {
+  return validateBody(saved)?.params ?? { ...DEFAULT_BODY[sex], build: BUILD_FACTOR[build ?? "MEDIUM"] ?? 0 };
+}
+
 /** Profundidade de cada nível: a medida quando existe; senão a razão fixa sobre a largura (com a compleição). */
 export function effectiveDepth(p: BodyParams): Record<DepthKey, number> {
   const g = 1 + 0.12 * p.build, gc = 1 + 0.08 * p.build;
@@ -87,11 +95,27 @@ export interface BodyModel {
   sources: BodySources;
   heightCm: number | null;     // informado pela pessoa
   weightKg: number | null;     // informado pela pessoa (só orienta a compleição estimada; nunca é "medido")
+  /** medidas de fita (cm) e número do calçado informados pela pessoa: só o tamanho do provador usa (lib/tryon/sizes.ts) */
+  measuresCm?: TapeMeasures;
   photo: boolean;              // se alguma medida veio de uma foto de corpo inteiro
   warnings: string[];          // códigos: PERSPECTIVE, NOT_FRONTAL, FEET_HIDDEN, ARMS_ON_TORSO, LOOSE_CLOTHING...
 }
 
 export const clampParam = (k: BodyKey, v: number) => Math.min(BODY_RANGE[k][1], Math.max(BODY_RANGE[k][0], v));
+
+/** Medidas de fita (cm) e número do calçado (BR), todas opcionais; as faixas valem também no backend (Avatar3dService). */
+export interface TapeMeasures { chest?: number | null; waist?: number | null; hip?: number | null; shoe?: number | null }
+export const TAPE_RANGE: Record<keyof TapeMeasures, [number, number]> = { chest: [60, 170], waist: [50, 170], hip: [60, 180], shoe: [33, 46] };
+/** Só as medidas na faixa (uma fora dela é descartada, não "corrigida"); nenhuma = undefined. */
+export function cleanTape(t: unknown): TapeMeasures | undefined {
+  if (!t || typeof t !== "object") return undefined;
+  const out: TapeMeasures = {};
+  for (const k of Object.keys(TAPE_RANGE) as (keyof TapeMeasures)[]) {
+    const v = (t as Record<string, unknown>)[k];
+    if (typeof v === "number" && Number.isFinite(v) && v >= TAPE_RANGE[k][0] && v <= TAPE_RANGE[k][1]) out[k] = v;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 
 export function defaultBodyModel(sex: Sex): BodyModel {
   const sources = Object.fromEntries(BODY_KEYS.map((k) => [k, "default"])) as BodySources;
@@ -112,6 +136,20 @@ export function applyUserData(m: BodyModel, heightCm: number | null, weightKg: n
     out.params.build = clampParam("build", Math.round(((bmi - 22) / 4) * 20) / 20);
     out.sources.build = "estimated";
   }
+  return out;
+}
+
+/**
+ * Medidas pessoais do cartão "Suas medidas" (Meu Avatar): altura e peso mudam o corpo (applyUserData); apagar um deles
+ * desfaz o que ele tinha mudado (estatura informada volta à de referência, compleição estimada pelo peso volta a zero).
+ * As medidas de fita e o número do calçado só vão para o tamanho do provador.
+ */
+export function withPersonalMeasures(base: BodyModel, heightCm: number | null, weightKg: number | null, tape: unknown): BodyModel {
+  const m: BodyModel = { ...base, params: { ...base.params }, sources: { ...base.sources } };
+  if (heightCm == null && m.sources.stature === "user") { m.params.stature = DEFAULT_BODY[m.sex].stature; m.sources.stature = "default"; }
+  if (weightKg == null && m.sources.build === "estimated") { m.params.build = DEFAULT_BODY[m.sex].build; m.sources.build = "default"; }
+  const out = applyUserData(m, heightCm, weightKg), measuresCm = cleanTape(tape);
+  if (measuresCm) out.measuresCm = measuresCm; else delete out.measuresCm;
   return out;
 }
 
@@ -138,7 +176,10 @@ export function validateBody(x: unknown): BodyModel | null {
     if (params[k] === undefined && sources[k] === undefined) continue;
     if (!ok(params[k], k) || !known(sources[k])) { delete params[k]; delete sources[k]; }
   }
-  return { ...m, params, sources };
+  const measuresCm = cleanTape(m.measuresCm);
+  const out: BodyModel = { ...m, params, sources };
+  if (measuresCm) out.measuresCm = measuresCm; else delete out.measuresCm;
+  return out;
 }
 
 // ================================================================== geometria

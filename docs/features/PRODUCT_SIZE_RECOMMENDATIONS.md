@@ -1,5 +1,21 @@
 # Recomendação de tamanho por produto — MVP
 
+> **Atualização 2026-10-25 (2) — caimento por região e medidas pessoais.** O tamanho agora é avaliado por região (peito,
+> cintura, quadril, comprimento, pé), com as medidas de fita e a altura e o peso informados em Meu Avatar. O provador
+> responde "vestiu bem", "está justo na cintura" ou "ficou apertado no peito". Detalhes em
+> `docs/provador/caimento-por-tamanho-2026-10-25/README.md`.
+
+> **Atualização 2026-10-25 — a interface passou a usar a grade do sistema, sem formulário.** A pessoa toca no tamanho
+> (PP…XG, 34…50 ou a numeração do calçado, 33…46) no "Provando agora", no botão "Tamanho" do catálogo ou em
+> `/fit` ("Meus tamanhos"); a peça veste o avatar nesse tamanho. O tamanho do corpo do avatar é estimado pelo próprio
+> corpo (larguras/profundidades do `body-spec`, perímetro de elipse) calibrado pelo corpo padrão — que veste M, 40/42 e
+> 37/40 — e a diferença em tamanhos vira folga e comprimento no molde (`lib/tryon/sizes.ts`,
+> `garment-fit.ts → applySize`: 6 cm de perímetro por letra, 4 cm por número de calça, ~1,5 mm de largura por número
+> de calçado). A última escolha por grade fica no navegador e vale para as próximas peças. O editor JSON de tabela, o
+> formulário de medidas e o cliente `lib/api/fit.ts` saíram da interface; os endpoints abaixo continuam no backend, sem
+> uso pela interface. A grade é uma referência do FashionAI, não a tabela oficial de cada marca, e o provador continua
+> sendo uma prévia visual, não prova de caimento.
+
 O módulo usa a tabela real e revisada de um produto adulto do catálogo, nas famílias `TSHIRT` e `JEANS`. Não há tabelas ou medidas de demonstração inseridas pela V78. `/fit` permite guardar/apagar medidas privadas e abrir um produto por ID; `ProductFitDialog` permite integrar a comparação ao catálogo. Nenhuma imagem/avatar é usada como medida ou como prova de caimento.
 
 ## Configuração e privacidade

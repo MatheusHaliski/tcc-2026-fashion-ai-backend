@@ -120,7 +120,10 @@ public class PreferencesService {
         out.put("defaultCardSkin", p.getDefaultCardSkin());
         out.put("lookDoDiaPanelVersion", u.getLookDoDiaPanelVersion());
         out.put("hypeCreatorOptOut", p.isHypeCreatorOptOut());
-        out.put("auraHype", p.isAuraHype());
+        // borda animada do AURA Hype: Studio (AURA_DYNAMIC); preferência antiga de quem ainda não chegou lá fica desligada
+        boolean auraHypeAllowed = auraPermissions == null || auraPermissions.canUserEquipAura(u.getId(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
+        out.put("auraHype", p.isAuraHype() && auraHypeAllowed);
+        out.put("auraHypeAllowed", auraHypeAllowed);
         out.put("auraImpersonation", p.isAuraImpersonation());
         out.put("clientUpdatedAt", p.getClientUpdatedAt());
         out.put("profile", Map.of("displayName", u.getDisplayName(), "username", u.getUsername(),
@@ -250,6 +253,10 @@ public class PreferencesService {
             auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_IMPERSONATION);
         }
         if (u.auraImpersonation() != null) p.setAuraImpersonation(u.auraImpersonation());
+        if (Boolean.TRUE.equals(u.auraHype())) {
+            if (auraPermissions == null) throw new ApiException(503, "AURA_PERMISSIONS_UNAVAILABLE", Msg.t("auraGate.locked.AURA_DYNAMIC"));
+            auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
+        }
         if (u.theme() != null) {
             p.setTheme(u.theme());
         }

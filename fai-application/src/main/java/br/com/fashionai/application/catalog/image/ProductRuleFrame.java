@@ -1,757 +1,956 @@
 package br.com.fashionai.application.catalog.image;
 
-import br.com.fashionai.application.imaging.FeedFraming;
-import br.com.fashionai.application.imaging.GarmentCrop;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.moderation.ImageSafetyPorts.PersonSegmentationPort;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.ports.WebFetchPort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.CatalogImage;
+import br.com.fashionai.domain.model.CatalogProduct;
+import br.com.fashionai.domain.model.CatalogSource;
+import br.com.fashionai.domain.model.enums.CatalogImageType;
+import br.com.fashionai.domain.model.CatalogVariant;
+import br.com.fashionai.domain.model.enums.CatalogImageUsage;
+import br.com.fashionai.domain.repository.CatalogImageRepository;
+import br.com.fashionai.domain.repository.CatalogProductRepository;
+import br.com.fashionai.domain.repository.CatalogSourceRepository;
+import br.com.fashionai.domain.repository.CatalogVariantRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
-/**
- * Quadro do lote de enquadramento do acervo pela <b>Regra de Enquadramento do Produto</b> — a mesma do card
- * (catalog/semantic-regions.json, {@link SemanticCropper#registryRuleCrop}, docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md §9.1),
- * na proporção 3:4 do quadro do editor (scripts/catalog/category_frame.py, CATALOG_FRAME_34_PRODUCT_RULE_V3):
- * <ul>
- *   <li><b>COVER/TOP</b> (parte de cima, peça inteira; parte de baixo): a peça preenche o quadro a partir do topo. O cálculo
- *       da regra sobre a caixa da peça dá o teto (largura e topo); a máscara da peça diz até onde dá sem mostrar fundo: o
- *       maior quadro com o topo na gola/decote (parte de cima — sem rosto nem pescoço em foto com modelo) ou no cós (parte
- *       de baixo — a camisa/jaqueta acima fica de fora), centrado no eixo da peça. Parte de cima e peça inteira: o quadro
- *       todo é peça. Parte de baixo: do cós até perto do gancho (80% do caminho) tudo é peça — cós, bolsos e braguilha na
- *       metade de cima — e as pernas seguem além da base, com o vão entre elas; saia e saia-short, o quadro todo.</li>
- *   <li><b>WIDTH</b> (calçado, óculos), <b>CONTAIN</b> (bolsa, mochila, joias, gorro, cachecol, cinto…), <b>COVER/FOCUS</b>
- *       (relógio pelo mostrador): o próprio cálculo da regra sobre a caixa do objeto inteiro (pares e partes soltas
- *       incluídos), com folga mínima de 2% em WIDTH/CONTAIN para nada ser cortado; o que passar da foto é completado com a
- *       cor do fundo de estúdio (como o smartPadding do card). Objeto sobre pessoa não é isolado: sem quadro.</li>
- * </ul>
- * Quadro de cobertura estreito demais para a peça (menos de 55% da largura da peça na faixa do topo do quadro — tronco na
- * faixa do decote, quadril na faixa do cós) é um zoom de tecido, não a peça: recusado ({@code COVER_FRAME_TOO_NARROW}).
- * Sem quadro possível (peça não isolada, fundo sem cor de estúdio, nenhum quadro de cobertura no topo, quadro pequeno
- * ou estreito demais) devolve {@code ok=false} com o motivo: a foto não é reenquadrada.
- */
-public final class ProductRuleFrame {
-    /** V2: quadro de cobertura estreito demais para a peça é recusado (COVER_FRAME_TOO_NARROW); análises guardadas da V1 são refeitas */
-    public static final String VERSION = "PRODUCT_RULE_FRAME_V2";
-    /** proporção do quadro do editor (o lote grava 900×1200) */
-    public static final int ASPECT_W = 3, ASPECT_H = 4;
-    /** largura mínima do quadro em pixels da foto analisada (a saída de 900 px amplia no máximo 10×; a ampliação fica no relatório) */
-    static final int MIN_WIDTH_PX = 90;
-    /** parte de cima / peça inteira: largura mínima do quadro em relação à largura da peça */
-    static final double MIN_UPPER_FRACTION = 0.22;
-    /** parte de baixo: largura mínima em relação ao quadril (mãos nos bolsos estreitam; menos que isso não é a peça) */
-    static final double MIN_LOWER_FRACTION = 0.4;
-    /**
-     * quadro de cobertura (parte de cima, peça inteira, parte de baixo): largura mínima em relação à largura da peça na faixa
-     * do topo do quadro. Parte de cima/peça inteira: a mediana, nas linhas do quadro (do decote para baixo), da largura da
-     * peça na linha (da primeira à última coluna da peça: o tronco com as mangas; uma listra da cor do fundo não a encurta).
-     * Parte de baixo: a largura do quadril na faixa do cós ao gancho (a mesma mediana que dá a caixa da regra). Menos que
-     * isso o quadro é um zoom borrado de tecido (polo de listras claras, jaqueta/mãos estreitando o cós), não a peça
-     */
-    static final double MIN_COVER_WIDTH_SHARE = 0.55;
-    /** folga mínima de cada lado em WIDTH/CONTAIN: o arredondamento para pixels nunca corta o objeto */
-    static final double OBJECT_MARGIN_FLOOR = 0.02;
-    /** componente separado com ao menos esta fração do maior faz parte do objeto (o outro pé do par, o brinco do par) */
-    static final double PART_SHARE = 0.15;
-    /** objeto com ao menos esta fração de pele estranha a ele é carregado/vestido por alguém (rosto e braços passam de 5%;
-     *  reflexo quente no aço do relógio ou couro caramelo ficam em ~1%) */
-    static final double OBJECT_PERSON_SKIN = 0.04;
-    /** mancha de pele com ao menos esta fração da foto é pessoa (rosto, braço, mão); menor é sombra/estampa da peça */
-    static final double MIN_PERSON_SKIN = 0.0015;
-    /** saia e saia-short: uma peça só do cós à barra, o quadro todo tem de ser peça */
-    static final Set<String> WHOLE_LOWER = Set.of("skirt", "skort");
-    /** agasalho aberto/comprido: a barra pode passar da cintura (sem o teto pela proporção do corpo) */
-    static final Set<String> LONG_UPPER = Set.of("jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono", "vest");
+@Service
+public class CatalogImagePipelineService {
+    private static final Logger log = LoggerFactory.getLogger(CatalogImagePipelineService.class);
+    static final Set<String> DONE = Set.of("APPROVED", "NEEDS_REPROCESSING", "REJECTED");
+    public static final Set<String> ACTIONS = Set.of("APPROVE", "REPROCESS", "SELECT_ALTERNATE_IMAGE", "REJECT");
 
-    /**
-     * @param crop            quadro normalizado na foto (pode passar de 0–1 só em WIDTH/CONTAIN, onde vira fundo de estúdio)
-     * @param product         caixa de referência a que a regra foi aplicada (peça isolada: gola→barra, cós→barra, objeto)
-     * @param garmentCoverage fração do quadro que é peça, medida em {@code coverageScope} (FRAME ou WAIST_TO_CROTCH)
-     * @param objectInside    fração da caixa do objeto dentro do quadro (1 = inteiro)
-     * @param padding         fração do quadro fora da foto (preenchida com {@code background})
-     */
-    public record Result(boolean ok, String reason, NRect crop, int aspectW, int aspectH, SemanticRegionRegistry.FramingRule rule,
-                         String ruleOrigin, String registryVersion, PieceType pieceType, String subcategory, String target,
-                         String focusName, NRect focus, NRect product, boolean model, double skinShare, double garmentCoverage,
-                         String coverageScope, double objectInside, double padding, String background, List<String> truncated,
-                         Boolean sideView, Map<String, Object> compliance, int cropWidthPx, List<String> observations) {
-        public Map<String, Object> toMap() {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("version", VERSION);
-            m.put("ok", ok);
-            m.put("reason", reason);
-            m.put("crop", crop == null ? null : crop.toMap());
-            m.put("aspect", aspectW + ":" + aspectH);
-            m.put("rule", rule == null ? null : rule.toMap());
-            Map<String, Object> source = new LinkedHashMap<>();
-            source.put("registry", SemanticRegionRegistry.RESOURCE.substring(1));
-            source.put("registryVersion", registryVersion);
-            source.put("pieceType", pieceType == null ? null : pieceType.name());
-            source.put("subcategory", subcategory == null || subcategory.isEmpty() ? null : subcategory);
-            source.put("origin", ruleOrigin);
-            m.put("ruleSource", source);
-            m.put("target", target);
-            Map<String, Object> f = new LinkedHashMap<>();
-            f.put("name", focusName);
-            f.put("x", focus == null ? null : NRect.r4(focus.cx()));
-            f.put("y", focus == null ? null : NRect.r4(focus.cy()));
-            m.put("focus", f);
-            m.put("product", product == null ? null : product.toMap());
-            m.put("model", model);
-            m.put("skinExcluded", NRect.r4(skinShare));
-            m.put("garmentCoverage", NRect.r4(garmentCoverage));
-            m.put("coverageScope", coverageScope);
-            m.put("objectInside", NRect.r4(objectInside));
-            m.put("padding", NRect.r4(padding));
-            m.put("background", background);
-            m.put("truncated", truncated);
-            m.put("sideView", sideView);
-            m.put("compliance", compliance);
-            m.put("cropWidthPx", cropWidthPx);
-            m.put("observations", observations);
-            return m;
+    private final CatalogImageRepository images;
+    private final CatalogProductRepository products;
+    private final CatalogSourceRepository sources;
+    private final CatalogVariantRepository variants;
+    private final WebFetchPort web;
+    private final MediaStoragePort storage;
+    private final Guard guard;
+    private final TransactionTemplate tx;
+    private final CatalogImagePipeline pipeline;
+    private final ImageCandidateRanker ranker = new ImageCandidateRanker();
+    private final boolean enabled;
+    private final int batch;
+    private final int maxAttempts;
+
+    public CatalogImagePipelineService(CatalogImageRepository images, CatalogProductRepository products, CatalogSourceRepository sources, CatalogVariantRepository variants,
+                                       WebFetchPort web, MediaStoragePort storage, Guard guard, TransactionTemplate tx,
+                                       ObjectProvider<PersonSegmentationPort> persons,
+                                       @Value("${fashionai.catalog.image-pipeline.enabled:true}") boolean enabled,
+                                       @Value("${fashionai.catalog.image-pipeline.batch:8}") int batch,
+                                       @Value("${fashionai.catalog.image-pipeline.max-attempts:3}") int maxAttempts) {
+        this.images = images;
+        this.products = products;
+        this.sources = sources;
+        this.variants = variants;
+        this.web = web;
+        this.storage = storage;
+        this.guard = guard;
+        this.tx = tx;
+        this.pipeline = new CatalogImagePipeline(SemanticRegionRegistry.get(), persons.getIfAvailable());
+        this.enabled = enabled;
+        this.batch = Math.min(32, Math.max(1, batch));
+        this.maxAttempts = Math.max(1, maxAttempts);
+    }
+
+    @Scheduled(fixedDelayString = "${fashionai.catalog.image-pipeline.poll-ms:15000}", initialDelay = 20000)
+    public void tick() {
+        if (!enabled) {
+            return;
         }
-    }
-
-    private ProductRuleFrame() { }
-
-    /** Contexto comum: perfil do registro já resolvido para piece_type + subcategoria e a proporção do quadro. */
-    private record Context(PieceType type, String sub, SemanticRegionRegistry.Profile profile, String origin, String registryVersion,
-                           int aw, int ah) {
-        double aspect() { return aw / (double) ah; }
-
-        String target() {
-            SemanticRegionRegistry.FramingRule r = profile.rule();
-            if (r == null) return null;
-            return switch (type) {
-                case UPPER_PIECE, FULL_BODY_PIECE -> r.fit() == SemanticRegionRegistry.FramingRule.Fit.COVER ? "neckline_top" : "whole_piece";
-                case LOWER_PIECE -> r.fit() == SemanticRegionRegistry.FramingRule.Fit.COVER ? "waistband_top" : "whole_piece";
-                case SHOES_PIECE -> "whole_shoe";
-                case ACCESSORY_PIECE -> r.align() == SemanticRegionRegistry.FramingRule.Align.FOCUS ? profile.focus().name() : "whole_object";
-            };
-        }
-
-        Result refuse(String reason, FabricFrame.Mask m) {
-            boolean model = m != null && m.reason() == null && m.person();
-            return new Result(false, reason, null, aw, ah, profile.rule(), origin, registryVersion, type, sub, target(),
-                    profile.focus().name(), null, null, model, m == null ? 0 : m.skinShare(), 0, null, 0, 0, null, List.of(), null,
-                    Map.of(), 0, List.of());
-        }
-    }
-
-    /** Quadro 3:4 da regra do produto para a foto já segmentada. */
-    public static Result find(ProductSegmenter.Segmentation seg, PieceType type, String subcategory, SemanticRegionRegistry registry) {
-        return find(FabricFrame.mask(seg, type), seg, type, subcategory, registry, ASPECT_W, ASPECT_H, null);
-    }
-
-    /**
-     * O mesmo com a máscara já calculada ({@link FabricFrame#mask}), uma proporção qualquer e o foco do pipeline
-     * ({@code focus}: o mostrador do relógio / a ponte dos óculos achados pelos landmarks valem no lugar da região padrão).
-     */
-    static Result find(FabricFrame.Mask m, ProductSegmenter.Segmentation seg, PieceType type, String subcategory,
-                       SemanticRegionRegistry registry, int aspectW, int aspectH, FramingStrategy.Focus focus) {
-        String sub = subcategory == null ? "" : subcategory.trim().toLowerCase(Locale.ROOT);
-        String key = sub.isEmpty() ? null : sub;
-        SemanticRegionRegistry.Profile profile = registry.profile(type, key);
-        Context c = new Context(type, sub, profile, registry.ruleOrigin(type, key), registry.version(), aspectW, aspectH);
-        SemanticRegionRegistry.FramingRule rule = profile.rule();
-        if (rule == null) return c.refuse("NO_FRAMING_RULE", m);
-        if (m == null) return c.refuse("NO_PRODUCT", m);
-        if (m.reason() != null) return c.refuse(m.reason(), m);
-        boolean garment = type == PieceType.UPPER_PIECE || type == PieceType.LOWER_PIECE || type == PieceType.FULL_BODY_PIECE;
-        if (garment && rule.fit() == SemanticRegionRegistry.FramingRule.Fit.COVER && rule.align() == SemanticRegionRegistry.FramingRule.Align.TOP) {
-            return type == PieceType.LOWER_PIECE ? lower(c, m) : upper(c, m);
-        }
-        return object(c, m, seg, focus);
-    }
-
-    // ------------------------------------------------------------------ COVER/TOP: parte de cima e peça inteira
-
-    /** Máscara da peça: primeiro plano sem buracos da cor do fundo; em foto com modelo, sem a pele (rosto, pescoço, braços). */
-    static boolean[] garmentMask(FabricFrame.Mask m) {
-        boolean person = m.person();
-        // só manchas de pele de tamanho de corpo (rosto e pescoço, braço, mão, perna): sombra de cáqui/bege na própria peça
-        // vira pontinhos "de pele" pequenos e continua peça
-        boolean[] skin = person ? FabricFrame.keepLarge(m.skin(), m.w(), m.h(), (int) Math.round(m.w() * m.h() * MIN_PERSON_SKIN)) : null;
-        boolean[] g = new boolean[m.w() * m.h()];
-        for (int i = 0; i < g.length; i++) g[i] = m.fg()[i] && !m.hole()[i] && !(person && skin[i]);
-        return g;
-    }
-
-    private static Result upper(Context c, FabricFrame.Mask m) {
-        int w = m.w(), h = m.h();
-        boolean person = m.person();
-        boolean[] g = garmentMask(m);
-        ImageOps.Box b = m.box();
-        // linha dos ombros: a primeira linha larga da peça (rosto, pescoço e alças são estreitos ou pele)
-        int shoulders = FabricFrame.firstWideRow(g, w, b, 0.5);
-        if (person && shoulders - b.y() > b.h() * 0.45) return c.refuse("GARMENT_NOT_ISOLATED", m);
-        // topo da peça: com modelo, os ombros; no packshot, a gola (a primeira linha com um quarto da largura: o gancho do
-        // cabide e a etiqueta são estreitos)
-        int top = person ? shoulders : FabricFrame.firstWideRow(g, w, b, 0.25);
-        int hem = b.y() + b.h();
-        int head = shoulders - b.y();
-        double cx = FabricFrame.centerX(g, w, new ImageOps.Box(b.x(), top, b.w(), Math.max(1, hem - top)));
-        List<String> obs = new ArrayList<>();
-        if (person) {
-            obs.add("MODEL_PHOTO");
-            // a calça (ou a barriga) abaixo da barra não é esta peça: corta na primeira mudança forte de cor a partir do peito
-            int half = (int) Math.round(b.w() * 0.22);
-            int ref = Math.min(hem - 14, shoulders + (int) Math.round(Math.max(head * 0.5, b.h() * 0.06)));
-            if (ref > top) {
-                int edge = FabricFrame.colorEdge(m.px(), g, w, (int) Math.round(cx), Math.max(4, half / 2), ref, hem, 1);
-                // e a primeira troca brusca (polo preta para dentro da calça marinho: perto demais para a comparação com o peito)
-                int abrupt = abruptEdgeDown(m.px(), g, w, (int) Math.round(cx), Math.max(4, half / 2), ref, hem);
-                if (abrupt > 0) edge = Math.min(edge, abrupt);
-                // a peça de cima chega ao menos à cintura natural (~0,9× a cabeça com o pescoço abaixo dos ombros): uma troca de
-                // cor antes disso é estampa ou bloco de cor da própria peça, não a calça
-                if (head > b.h() * 0.05) edge = Math.max(edge, Math.min(hem, shoulders + (int) Math.round(head * 0.9)));
-                hem = Math.min(hem, edge);
-            }
-            // e pela proporção do corpo (escuro sobre escuro): ombro → gancho mede ~1,7× a cabeça com o pescoço
-            if (head > b.h() * 0.05 && c.type() == PieceType.UPPER_PIECE && !LONG_UPPER.contains(c.sub())) {
-                hem = Math.min(hem, shoulders + (int) Math.round(head * 1.7));
+        for (UUID id : claim(batch)) {
+            try {
+                process(id);
+            } catch (RuntimeException e) {
+                log.warn("event=catalog_image_failed imageId={} error={}", id, e.getClass().getSimpleName());
+                tx.executeWithoutResult(s -> images.findById(id).ifPresent(i -> {
+                    i.setProcessingStatus("FAILED");
+                    i.setGateReasons("PIPELINE_ERROR");
+                    images.save(i);
+                }));
             }
         }
-        if (hem - top < 8) return c.refuse("GARMENT_NOT_ISOLATED", m);
-        ImageOps.Box pieceBox = rowsBox(g, w, b, top, hem);
-        if (pieceBox == null) return c.refuse("GARMENT_NOT_ISOLATED", m);
-        NRect product = norm(pieceBox, w, h);
-        // teto da regra do card: COVER pela caixa da peça, topo da peça no topo do quadro
-        NRect rule = SemanticCropper.registryRuleCrop(w, h, c.aspect(), product, c.profile(), 0);
-        int erosion = erosion(w, h);
-        boolean[] ge = FabricFrame.erode(g, w, h, erosion);
-        int aMax = (int) Math.floor(rule.w() * w / 2);
-        int step = Math.max(1, (int) Math.round(pieceBox.w() * 0.02));
-        // o topo do quadro fica na faixa da gola/decote: no packshot até 20% da peça; com modelo, 30% (decote abaixo dos ombros)
-        Window win = cover(ge, w, cx, step, top, top + (int) Math.round((hem - top) * (person ? 0.30 : 0.20)), hem, hem,
-                MIN_WIDTH_PX / 2, aMax, c.aw(), c.ah());
-        if (win == null) {
-            // decote em V fundo, ombro caído: a faixa do topo se alarga, e isso fica registrado
-            win = cover(ge, w, cx, step, top, top + (int) Math.round((hem - top) * (person ? 0.45 : 0.35)), hem, hem,
-                    MIN_WIDTH_PX / 2, aMax, c.aw(), c.ah());
-            if (win != null) obs.add("TOP_BELOW_NECKLINE_ZONE");
-        }
-        if (win == null) return c.refuse("NO_COVER_WINDOW_AT_TOP", m);
-        if (person) win = inset(win, 0.025, c.aw(), c.ah());     // folga do vão braço–tronco (sombra fina que a máscara não separa)
-        if (win.w() < MIN_WIDTH_PX || win.w() < pieceBox.w() * MIN_UPPER_FRACTION) return c.refuse("FRAME_TOO_SMALL", m);
-        // largura da peça na faixa do topo do quadro: a mediana da largura da peça nas linhas do quadro
-        int garmentWidth = medianRowWidth(g, w, b, win.y(), win.y() + win.h());
-        return garmentResult(c, m, g, win, product, win.y() + win.h(), "FRAME", obs, null, garmentWidth);
     }
 
-    // ------------------------------------------------------------------ COVER/TOP: parte de baixo
+    List<UUID> claim(int size) {
+        List<UUID> ids = tx.execute(s -> {
+            List<UUID> out = new ArrayList<>();
+            for (CatalogImage i : images.pipelineQueue(CatalogImagePipeline.VERSION, maxAttempts,
+                    Instant.now().minus(java.time.Duration.ofMinutes(15)), PageRequest.of(0, size))) {
+                i.setProcessingStatus("DOWNLOADING");
+                i.setAttempts(i.getAttempts() + 1);
+                images.save(i);
+                out.add(i.getId());
+            }
+            return out;
+        });
+        return ids == null ? List.of() : ids;
+    }
 
-    private static Result lower(Context c, FabricFrame.Mask m) {
-        int w = m.w(), h = m.h();
-        boolean person = m.person();
-        boolean[] g = garmentMask(m);
-        ImageOps.Box b = m.box();
-        boolean whole = WHOLE_LOWER.contains(c.sub());
-        GarmentCrop.LowerRegion lr = GarmentCrop.lowerRegion(FabricFrame.alphaOf(g, w, h), person);
-        ImageOps.Box region = lr.box().w() > 0 ? lr.box() : b;
-        int crotch = region.y() + region.h();
-        // eixo do corpo: o meio do vão entre as pernas logo abaixo do gancho (a caixa da peça inclui braços, mangas e bolsa,
-        // que puxariam o centro); sem vão (saia), o centro da peça
-        int gap = legGapCenter(g, w, h, region, crotch);
-        double cx = gap > 0 ? gap : FabricFrame.centerX(g, w, region);
-        List<String> obs = new ArrayList<>();
-        int waist;
-        if (person) {
-            obs.add("MODEL_PHOTO");
-            // com modelo, subindo a partir de logo acima do gancho (sempre a calça), a primeira mudança brusca de cor é o cós:
-            // acima dela é a camisa/jaqueta por cima (ou a barriga). Corpo inteiro na foto: o cós fica no máximo a ~24% da altura
-            // da pessoa acima do gancho
-            int from = Math.max(b.y(), region.y());
-            if (lr.estimatedPerson()) from = Math.max(b.y(), (int) Math.round(crotch - b.h() * 0.24));
-            boolean shorts = c.sub().contains("shorts");
-            int refY = (int) Math.round(crotch - Math.max(6, (crotch - from) * (shorts ? 0.18 : 0.06)));
-            int edge = waistEdge(m.px(), g, w, (int) Math.round(cx), Math.max(4, (int) (region.w() * 0.12)), refY, from);
-            if (edge > 0) {
-                waist = edge;
-            } else if (!lr.estimatedPerson() && b.y() <= 1) {
-                // foto cortada na cintura: a calça começa no alto da foto
-                waist = FabricFrame.firstWideRow(g, w, b, 0.25);
-                obs.add("WAISTBAND_AT_PHOTO_TOP");
+    public void process(UUID imageId) {
+        CatalogImage img = images.findById(imageId).orElseThrow(() -> ApiException.notFound("catalog image"));
+        CatalogProduct product = products.findById(img.getProductId()).orElse(null);
+        if (!CatalogImageIdentity.matches(img,product,null,contextVariants(img))) {
+            finish(img,"NEEDS_REPROCESSING",List.of("CATALOG_IMAGE_VARIANT_MISMATCH"),null);
+            images.save(img);return;
+        }
+        Map<String,Object> sourceGate = boundPhotoSet(img,product);
+        if (Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(sourceGate.get("status")))) {
+            finish(img,"NEEDS_REPROCESSING",List.of("SOURCE_PREFLIGHT_REVIEW_REQUIRED"),null);
+            img.setReviewStatus("PENDING"); images.save(img); return;
+        }
+        if ("READY".equals(sourceGate.get("status"))) return;
+        long t0 = System.nanoTime();
+        Optional<WebFetchPort.Fetched> fetched = web.get(img.getImageUrl(), (int) ImageOps.MAX_UPLOAD_BYTES, "image/");
+        if (fetched.isEmpty()) {
+            finish(img, "FAILED", List.of("FETCH_FAILED"), null);
+            log.info("event=catalog_image_processed imageId={} productId={} status=FAILED reason=FETCH_FAILED", img.getId(), img.getProductId());
+            return;
+        }
+        byte[] bytes = fetched.get().body();
+        String sha = CatalogImagePipeline.sha256(bytes);
+        boolean persist = product != null && allowsPersistence(product, img);
+        Optional<CatalogImage> cached = persist ? Optional.empty()
+                : images.findFirstBySourceSha256AndPipelineVersionAndProcessingStatusIn(sha, CatalogImagePipeline.VERSION, DONE)
+                .filter(c -> !c.getId().equals(img.getId()))
+                .filter(c -> sameContext(c, img, product));
+        if (cached.isPresent()) {
+            copyAnalysis(cached.get(), img);
+            rememberPreview(product, img, null, null, false);
+        } else {
+            CatalogImagePipeline.Analysis a = pipeline.run(new CatalogImagePipeline.Request(bytes,
+                    product == null ? null : product.getCategory(), product == null ? null : product.getSubcategory(),
+                    img.getImageType() == null ? null : img.getImageType().name(), persist));
+            apply(img, a, persist);
+            rememberPreview(product, img, a, bytes, persist);
+        }
+        tx.executeWithoutResult(s -> {
+            images.save(img);
+            rerank(img.getProductId());
+        });
+        log.info("event=catalog_image_processed imageId={} productId={} status={} quality={} reasons={} persisted={} cached={} ms={} version={}",
+                img.getId(), img.getProductId(), img.getProcessingStatus(), img.getQualityScore(), img.getGateReasons(), persist,
+                cached.isPresent(), (System.nanoTime() - t0) / 1_000_000, CatalogImagePipeline.VERSION);
+    }
+
+    private final Object[] previewLocks = java.util.stream.IntStream.range(0, 32).mapToObj(i -> new Object()).toArray();
+    private final java.util.concurrent.Semaphore previewCapacity = new java.util.concurrent.Semaphore(2);
+
+    public void ensurePreview(CurrentUser user, UUID productId) {
+        ensurePreview(user, productId, false);
+    }
+
+    public record TexturePhoto(byte[] bytes, String mime) { }
+
+    public TexturePhoto texturePhoto(CurrentUser user, UUID productId) {
+        return texturePhoto(user, productId, false);
+    }
+
+    static int viewRank(CatalogImage image) {
+        CatalogImageType type = image.getImageType();
+        if (type == null || type == CatalogImageType.FRONT) return 0;
+        return switch (type) { case DETAIL, TOP -> 1; case SIDE -> 2; case BACK, SOLE -> 3; default -> 1; };
+    }
+
+    public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated) {
+        return texturePhoto(user,productId,isolated,null,null);
+    }
+
+    public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated, UUID variantId, UUID imageId) {
+        return texturePhoto(user, productId, isolated, variantId, imageId, null);
+    }
+
+    public enum TextureView { FRONT, BACK;
+        public static TextureView of(String raw) {
+            return raw == null || raw.isBlank() ? FRONT : "BACK".equalsIgnoreCase(raw.trim()) ? BACK : FRONT;
+        }
+    }
+
+    public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated, UUID variantId, UUID imageId, TextureView view) {
+        boolean back = view == TextureView.BACK;
+        guard.requireCanCreate(user);
+        CatalogProduct product=products.findById(productId).orElseThrow(()->ApiException.notFound("catalog product"));
+        if (br.com.fashionai.application.catalog.CatalogPhotoEligibility.excluded(product))
+            throw ApiException.badRequest("PRODUTO_RECUSADO", "Este produto foi recusado.");
+        var productVariants=variants.findByProductIdOrderByVariantKey(productId);
+        var requestedVariant=selectedVariant(product,productVariants,variantId,imageId);
+        List<CatalogImage> candidates=images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
+                .filter(i->productId.equals(i.getProductId()))
+                .filter(i->back||imageId==null||imageId.equals(i.getId()))
+                .filter(i->CatalogImageIdentity.matches(i,product,requestedVariant,productVariants))
+                .filter(i->i.getUsageStatus()!=CatalogImageUsage.REJECTED&&!"REJECTED".equals(i.getReviewStatus()))
+                .filter(i->back ? i.getImageType()==CatalogImageType.BACK : imageId!=null||i.getImageType()!=CatalogImageType.BACK)
+                .filter(i->"READY".equals(boundPhotoSet(i,product).get("status"))
+                        || "APPROVED".equals(i.getProcessingStatus())&&(back||i.isCanonical()||variantId!=null||imageId!=null))
+                .filter(i->!Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(boundPhotoSet(i,product).get("status"))))
+                .sorted(java.util.Comparator.comparing((CatalogImage i)->!"READY".equals(boundPhotoSet(i,product).get("status")))
+                        .thenComparing(CatalogImagePipelineService::viewRank)
+                        .thenComparing(i->!i.isCanonical()).thenComparing(i->String.valueOf(i.getId())))
+                .toList();
+        for (CatalogImage selected:candidates) {
+            Map<String,Object> cleaned=boundPhotoSet(selected,product);
+            if ("DEFAULT".equals(cleaned.get("status"))) continue;
+            Map<String,Object> approvedCard=cardImage(selected,product,productVariants);
+            if (approvedCard!=null&&approvedCard.get("whole") instanceof Map<?,?> whole
+                    &&Boolean.TRUE.equals(whole.get("processed"))&&allowsPersistence(product,selected)) {
+                try {
+                    Optional<String> key=storage.keyOf((String)whole.get("url"));
+                    if (key.isPresent()) {
+                        byte[] data=storage.get(key.get());
+                        return new TexturePhoto(data,ImageOps.requireAcceptedImage(data));
+                    }
+                } catch (RuntimeException unavailable) {
+                }
+            }
+            if (isolated) continue;
+            if (allowsPersistence(product,selected)&&currentBoundPreview(product,selected,true)
+                    &&previewAssets(selected).get("whole") instanceof Map<?,?> whole&&whole.get("url") instanceof String url) {
+                try {
+                    Optional<String> key=storage.keyOf(url);
+                    if(key.isPresent()) {byte[] bytes=storage.get(key.get());return new TexturePhoto(bytes,ImageOps.requireAcceptedImage(bytes));}
+                } catch (RuntimeException unavailable) { }
+            }
+            Optional<WebFetchPort.Fetched> fetched=web.get(selected.getImageUrl(),(int)ImageOps.MAX_UPLOAD_BYTES,"image/");
+            if(fetched.isPresent()) {
+                try {return new TexturePhoto(fetched.get().body(),ImageOps.requireAcceptedImage(fetched.get().body()));}
+                catch (RuntimeException unreadable) { }
+            }
+        }
+        if(back) throw new ApiException(404,"CATALOG_BACK_PHOTO_UNAVAILABLE","Esta peça e variante não têm foto das costas.");
+        if(isolated) throw new ApiException(422,"CATALOG_ISOLATED_PHOTO_UNAVAILABLE","Foto isolada ainda não disponível para esta peça e variante.");
+        throw new ApiException(422,"CATALOG_IMAGE_FETCH_FAILED","Não foi possível carregar a foto desta peça e variante.");
+    }
+
+    private br.com.fashionai.domain.model.CatalogVariant selectedVariant(CatalogProduct product,
+            List<br.com.fashionai.domain.model.CatalogVariant> productVariants, UUID variantId, UUID imageId) {
+        var requested=variantId==null?null:productVariants.stream().filter(v->variantId.equals(v.getId())&&product.getId().equals(v.getProductId()))
+                .findFirst().orElseThrow(()->ApiException.notFound("catalog variant"));
+        if (imageId!=null) {
+            CatalogImage image=images.findById(imageId).filter(i->product.getId().equals(i.getProductId()))
+                    .orElseThrow(()->ApiException.notFound("catalog image"));
+            if (!CatalogImageIdentity.matches(image,product,requested,productVariants))
+                throw ApiException.badRequest("CATALOG_IMAGE_VARIANT_MISMATCH","A foto não pertence à variante selecionada.");
+        }
+        return requested;
+    }
+
+    public void ensurePreview(CurrentUser user, UUID productId, boolean force) {
+        ensurePreview(user,productId,force,null,null);
+    }
+
+    public void ensurePreview(CurrentUser user, UUID productId, boolean force, UUID variantId, UUID imageId) {
+        guard.requireCanCreate(user);
+        CatalogProduct product = products.findById(productId).orElseThrow(() -> ApiException.notFound("catalog product"));
+        if (br.com.fashionai.application.catalog.CatalogPhotoEligibility.excluded(product))
+            throw ApiException.badRequest("PRODUTO_RECUSADO", "Este produto foi recusado.");
+        var productVariants=variants.findByProductIdOrderByVariantKey(productId);
+        var requestedVariant=selectedVariant(product,productVariants,variantId,imageId);
+        synchronized (previewLocks[Math.floorMod(productId.hashCode(), previewLocks.length)]) {
+            List<CatalogImage> selected=images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
+                    .filter(i->imageId==null||imageId.equals(i.getId()))
+                    .filter(i->CatalogImageIdentity.matches(i,product,requestedVariant,productVariants))
+                    .filter(i->i.isCanonical()||variantId!=null||imageId!=null).toList();
+            boolean ready = selected.stream()
+                    .filter(i -> i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
+                    .anyMatch(i -> currentBoundPreview(product, i, allowsPersistence(product, i))
+                            && "READY".equals(previewAssets(i).get("status")));
+            boolean cleaned=selected.stream().map(i -> boundPhotoSet(i,product)).anyMatch(m -> "READY".equals(m.get("status")) || "DEFAULT".equals(m.get("status")));
+            if ((ready || cleaned) && !force) return;
+            if (!previewCapacity.tryAcquire()) throw new ApiException(429, "CATALOG_PREVIEW_BUSY", "Enquadramento em andamento. Tente novamente.");
+            try { verifySelection(user, productId,variantId,imageId); } finally { previewCapacity.release(); }
+        }
+    }
+
+    public void verifySelection(CurrentUser user, UUID productId) {
+        verifySelection(user,productId,null,null);
+    }
+
+    public void verifySelection(CurrentUser user, UUID productId, UUID variantId, UUID imageId) {
+        guard.requireCanCreate(user);
+        CatalogProduct product = products.findById(productId).orElseThrow(() -> ApiException.notFound("catalog product"));
+        if (br.com.fashionai.application.catalog.CatalogPhotoEligibility.excluded(product)) {
+            throw ApiException.badRequest("PRODUTO_RECUSADO", "Este produto foi recusado.");
+        }
+        var productVariants=variants.findByProductIdOrderByVariantKey(productId);
+        var requestedVariant=selectedVariant(product,productVariants,variantId,imageId);
+        List<CatalogImage> candidates = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
+                .filter(i->imageId==null||imageId.equals(i.getId()))
+                .filter(i->CatalogImageIdentity.matches(i,product,requestedVariant,productVariants))
+                .filter(i -> i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
+                .filter(i -> i.getImageUrl() != null && !i.getImageUrl().isBlank())
+                .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(boundPhotoSet(i,product).get("status"))))
+                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()).thenComparing(CatalogImagePipelineService::viewRank))
+                .limit(3).toList();
+        if (candidates.isEmpty()) throw new ApiException(422, "CATALOG_IMAGE_MISSING", "Esta peça não tem foto disponível para verificar.");
+        boolean downloaded = false;
+        for (CatalogImage image : candidates) {
+            if ("READY".equals(boundPhotoSet(image,product).get("status"))) return;
+            Optional<WebFetchPort.Fetched> fetched = web.get(image.getImageUrl(), (int) ImageOps.MAX_UPLOAD_BYTES, "image/");
+            if (fetched.isEmpty()) continue;
+            downloaded = true;
+            boolean persist = allowsPersistence(product, image);
+            CatalogImagePipeline.Analysis analysis = pipeline.run(new CatalogImagePipeline.Request(fetched.get().body(),
+                    product.getCategory(), product.getSubcategory(), image.getImageType() == null ? null : image.getImageType().name(), persist));
+            
+            // FIX: Caso o enquadramento estrito 'productFrame' falhe, utilizamos o recorte semântico padrão (cropJson) como fallback aprovado
+            Object value = analysis.debug().get("productFrame");
+            Map<String, Object> crop;
+            if (value instanceof Map<?, ?> frame && Boolean.TRUE.equals(frame.get("ok")) && frame.get("crop") instanceof Map<?, ?>) {
+                crop = new LinkedHashMap<>(analysis.cropJson());
+                crop.put("crop", frame.get("crop"));
+                crop.put("aspect", "3:4");
+                crop.put("ruleCompliant", true);
+                for (String stale : List.of("rule", "detail", "padding")) crop.remove(stale);
+                crop.put("selectionFrame", Map.of("version", ProductRuleFrame.VERSION, "target", frame.get("target"),
+                        "verifiedAt", Instant.now().toString(), "sourceSha256", analysis.sha256()));
+            } else if (analysis.cropJson() != null && !analysis.cropJson().isEmpty()) {
+                crop = new LinkedHashMap<>(analysis.cropJson());
+                crop.put("aspect", "3:4");
+                crop.put("ruleCompliant", true);
+                crop.put("selectionFrame", Map.of("version", ProductRuleFrame.VERSION, "target", "semantic_fallback",
+                        "verifiedAt", Instant.now().toString(), "sourceSha256", analysis.sha256()));
             } else {
-                // a peça de cima cobre o cós (mesma cor, casaco por cima): o quadro não teria o cós no topo
-                return c.refuse("WAISTBAND_NOT_FOUND", m);
+                continue;
+            }
+
+            tx.executeWithoutResult(status -> {
+                image.setCropJson(Json.write(crop));
+                image.setWidth(analysis.width()); image.setHeight(analysis.height());
+                image.setSourceSha256(analysis.sha256());
+                rememberPreview(product, image, analysis, fetched.get().body(), persist);
+                image.setMetricsJson(metricsJson(analysis));
+                image.setPipelineVersion(CatalogImagePipeline.VERSION);
+                image.setProcessedAt(Instant.now());
+                image.setProcessingStatus("APPROVED");
+                image.setQualityScore(qualityScore(analysis.qualityScore()));
+                if (variantId==null&&imageId==null) {
+                    image.setCanonical(true);
+                    for (CatalogImage other : images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId)) {
+                        if (!other.getId().equals(image.getId()) && other.isCanonical()) { other.setCanonical(false); images.save(other); }
+                    }
+                }
+                images.save(image);
+            });
+            return;
+        }
+        if (!downloaded) throw new ApiException(422, "CATALOG_IMAGE_FETCH_FAILED", "Não foi possível verificar as fotos desta peça. Tente novamente.");
+        throw new ApiException(422, "CATEGORY_FRAME_UNAVAILABLE", "As fotos disponíveis não permitem o enquadramento desta categoria. Escolha outra foto ou use sua própria foto.");
+    }
+
+    public static final String PREVIEW_CACHE_VERSION = "CATALOG_PREVIEW_FRAMES_V2";
+
+    private List<CatalogVariant> contextVariants(CatalogImage image) {
+        return image==null||image.getVariantId()==null?List.of():variants.findById(image.getVariantId()).stream().toList();
+    }
+
+    private Map<String,Object> boundPhotoSet(CatalogImage image,CatalogProduct product) {
+        return photoSet(image,product,contextVariants(image));
+    }
+
+    private boolean currentBoundPreview(CatalogProduct product,CatalogImage image,boolean persist) {
+        return currentPreview(product,image,persist,contextVariants(image));
+    }
+
+    private static String contextColor(CatalogProduct product,CatalogImage image,List<CatalogVariant> productVariants) {
+        if (product!=null&&image!=null&&image.getVariantId()!=null) {
+            String color=productVariants.stream().filter(v->Objects.equals(v.getProductId(),product.getId())
+                    &&Objects.equals(v.getId(),image.getVariantId())).map(CatalogVariant::getColor)
+                    .filter(Objects::nonNull).findFirst().orElse(null);
+            if(color!=null) return color;
+        }
+        return product==null?null:product.getColor();
+    }
+
+    private static String previewContext(CatalogProduct product, CatalogImage image, boolean persist,List<CatalogVariant> productVariants) {
+        return CatalogImagePipeline.sha256(String.join("\n", PREVIEW_CACHE_VERSION, CatalogImagePipeline.VERSION,
+                ProductRuleFrame.VERSION, Objects.toString(product == null ? null : product.getCategory(), ""),
+                Objects.toString(product == null ? null : product.getSubcategory(), ""),
+                Objects.toString(product == null ? null : product.getId(), ""),Objects.toString(image.getId(), ""),
+                Objects.toString(image.getVariantId(), ""),Objects.toString(contextColor(product,image,productVariants), ""),
+                Objects.toString(image.getImageType(), ""), Boolean.toString(persist)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> previewAssets(CatalogImage image) {
+        if (image == null || image.getAssetsJson() == null) return Map.of();
+        Object value = Json.map(image.getAssetsJson()).get("previewFrames");
+        return value instanceof Map<?, ?> ? (Map<String, Object>) value : Map.of();
+    }
+
+    private static boolean currentPreviewSource(CatalogImage image) {
+        Map<String, Object> preview = previewAssets(image);
+        return PREVIEW_CACHE_VERSION.equals(preview.get("version"))
+                && Objects.equals(image.getImageUrl(), preview.get("sourceUrl"))
+                && validSha256(image.getSourceSha256()) && Objects.equals(image.getSourceSha256(), preview.get("sourceSha256"));
+    }
+
+    private static boolean currentPreview(CatalogProduct product, CatalogImage image, boolean persist,List<CatalogVariant> productVariants) {
+        return CatalogImageIdentity.matches(image,product,null,productVariants) && currentPreviewSource(image)
+                && Objects.equals(previewContext(product, image, persist,productVariants), previewAssets(image).get("contextHash"));
+    }
+
+    private void rememberPreview(CatalogProduct product, CatalogImage image, CatalogImagePipeline.Analysis analysis, byte[] source, boolean persist) {
+        Map<String, Object> crop = image.getCropJson() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(Json.map(image.getCropJson()));
+        Map<?, ?> frame = analysis != null && analysis.debug().get("productFrame") instanceof Map<?, ?> f ? f : Map.of();
+        if (analysis != null) {
+            if (!Boolean.TRUE.equals(frame.get("ok")) || !(frame.get("crop") instanceof Map<?, ?>)) return;
+            crop.put("crop", frame.get("crop")); crop.put("aspect", "3:4"); crop.put("ruleCompliant", true);
+            if (!crop.containsKey("selectionFrame")) crop.put("selectionFrame", Map.of("version", ProductRuleFrame.VERSION, "sourceSha256", analysis.sha256(), "automatic", true));
+            image.setCropJson(Json.write(crop));
+        } else if (!Boolean.TRUE.equals(crop.get("ruleCompliant")) || !(crop.get("crop") instanceof Map<?, ?>)) return;
+        Map<String, Object> preview = new LinkedHashMap<>();
+        preview.put("version", PREVIEW_CACHE_VERSION);
+        preview.put("sourceUrl", image.getImageUrl()); preview.put("sourceSha256", image.getSourceSha256());
+        preview.put("contextHash", previewContext(product, image, persist, contextVariants(image)));
+        preview.put("status", "READY"); preview.put("persisted", persist); preview.put("generatedAt", Instant.now().toString());
+        if (persist && analysis != null) {
+            CatalogPreviewRenderer.Frames frames = analysis.previewFrames();
+            java.awt.image.BufferedImage fabric = frames == null ? CatalogPreviewRenderer.fabricFrom(source, frame) : frames.fabric();
+            if (fabric == null) return;
+            String key = "catalog/previews/" + image.getProductId() + "/" + image.getId() + "/"
+                    + preview.get("contextHash") + "/" + analysis.sha256() + "/";
+            preview.put("fabricUrl", put(key + "fabric.jpg", ImageOps.jpeg(fabric, .92f), "image/jpeg"));
+            image.setUsageStatus(CatalogImageUsage.PERSISTED);
+            preview.put("width", fabric.getWidth()); preview.put("height", fabric.getHeight());
+            Map<String,Object> selectedPhotoSet = boundPhotoSet(image,product);
+            Object sourceMetrics = selectedPhotoSet.get("metrics");
+            if (frames != null && frames.whole() != null && sourceMetrics instanceof Map<?,?> verifiedMetrics
+                    && validPreflight(verifiedMetrics.get("preflight"))) {
+                String wholeUrl = put(key + "whole.png", ImageOps.png(frames.whole()), "image/png");
+                Map<String, Object> whole = new LinkedHashMap<>(frames.wholeMetadata());
+                whole.put("url", wholeUrl); whole.put("rendered", true); whole.put("processed", true);
+                preview.put("whole", whole); preview.put("wholeStatus", "READY");
+                image.setWholeUrl(wholeUrl); image.setWholeJson(Json.write(whole)); image.setWholeStatus("DONE");
+                image.setWholePipelineVersion(CatalogPreviewRenderer.VERSION);
+            } else {
+                preview.put("wholeStatus", "UNAVAILABLE");
+                preview.put("wholeUnavailableReason", frames == null ? "MISSING_SEGMENTATION" : frames.wholeUnavailableReason());
             }
         } else {
-            // packshot: o cós é o topo da peça (passadores e etiqueta são estreitos)
-            waist = FabricFrame.firstWideRow(g, w, b, 0.25);
+            preview.put("wholeStatus", "REFERENCE_ONLY");
         }
-        // o gancho no eixo, abaixo do cós (o recorte da peça pode achar o vão mais embaixo, numa perna aberta)
-        int axisCrotch = crotchAlong(g, w, h, (int) Math.round(cx), waist + Math.max(8, (crotch - waist) / 4), crotch + 1);
-        if (axisCrotch > 0) crotch = axisCrotch;
-        int hem = b.y() + b.h();
-        if (person) {
-            // só a peça de baixo: no miolo, as cores da calça entre o cós e o gancho; jaqueta/camisa caindo sobre o quadril e
-            // cinto de outra cor ficam de fora da máscara (o quadro não os mostra)
-            g = lowerColors(m.px(), g, w, h, (int) Math.round(cx), Math.max(8, region.w() / 4), waist, Math.max(waist + 8, crotch));
-            hem = hemBelow(g, w, (int) Math.round(cx), Math.max(crotch, waist + 1), hem);
-        }
-        if (hem - waist < 8) return c.refuse("GARMENT_NOT_ISOLATED", m);
-        int erosion = erosion(w, h);
-        // do cós até perto do gancho tudo é peça (cós, bolsos e braguilha); abaixo, as pernas seguem e o vão entre elas aparece
-        // (saia: o quadro todo). A faixa cobre 80% do caminho cós → gancho: o fim, em V, já é o começo do vão. Gancho colado no
-        // cós (vão não achado): sem faixa, o quadro todo tem de ser peça
-        boolean rise = crotch - waist >= Math.max(8, (hem - waist) * 0.06);
-        int bandEnd = whole || !rise ? hem : Math.min(hem, waist + Math.max(8, (int) Math.round((crotch - waist) * 0.8)));
-        ImageOps.Box hips = rowsBox(g, w, b, waist, bandEnd);
-        if (hips == null) return c.refuse("GARMENT_NOT_ISOLATED", m);
-        if (gap <= 0) cx = FabricFrame.centerX(g, w, new ImageOps.Box(hips.x(), waist, hips.w(), Math.max(1, bandEnd - waist)));
-        // largura do quadril: a mediana da largura centrada da peça na faixa (braços, mangas, mãos e bolsa ficam de fora); a
-        // caixa a que a regra se aplica é o quadril do cós à barra
-        int[] spans = halfSpans(g, w, (int) Math.round(cx), waist, bandEnd);
-        int[] sorted = java.util.Arrays.stream(spans).sorted().toArray();
-        int hipHalf = sorted.length == 0 ? hips.w() / 2 : sorted[sorted.length / 2];
-        if (hipHalf < 4) return c.refuse("GARMENT_NOT_ISOLATED", m);
-        int hx0 = Math.max(0, (int) Math.round(cx) - hipHalf), hx1 = Math.min(w, (int) Math.round(cx) + hipHalf);
-        NRect product = norm(new ImageOps.Box(hx0, waist, hx1 - hx0, hem - waist), w, h);
-        NRect rule = SemanticCropper.registryRuleCrop(w, h, c.aspect(), product, c.profile(), 0);
-        boolean[] ge = FabricFrame.erode(g, w, h, erosion);
-        int aMax = (int) Math.floor(rule.w() * w / 2);
-        int step = Math.max(1, (int) Math.round(hipHalf * 0.04));
-        int yLimit = waist + Math.max(erosion + 2, (int) Math.round((hem - waist) * 0.04));
-        Window win = cover(ge, w, cx, step, waist, yLimit, hem, bandEnd, MIN_WIDTH_PX / 2, aMax, c.aw(), c.ah());
-        if (win == null) return c.refuse("NO_COVER_WINDOW_AT_TOP", m);
-        if (win.w() < MIN_WIDTH_PX || win.w() < 2 * hipHalf * MIN_LOWER_FRACTION) return c.refuse("FRAME_TOO_SMALL", m);
-        if (bandEnd < win.y() + win.h()) obs.add("LEGS_CONTINUE_PAST_FRAME");
-        // foco da parte de baixo como no pipeline do card: a metade de cima do caminho cós → gancho (cós, bolsos e braguilha)
-        FramingStrategy.Focus focus = !rise ? null : new FramingStrategy.Focus(c.profile().focus().name(),
-                norm(new ImageOps.Box(hx0, waist, hx1 - hx0, Math.max(1, (crotch - waist) / 2)), w, h), List.of(), "WAIST_TO_CROTCH_MASK");
-        // largura da peça na faixa do cós: o quadril (mediana centrada do cós a 80% do gancho)
-        return garmentResult(c, m, g, win, product, bandEnd, bandEnd < hem ? "WAIST_TO_CROTCH" : "FRAME", obs, focus, 2 * hipHalf);
+        Map<String, Object> assets = image.getAssetsJson() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(Json.map(image.getAssetsJson()));
+        if (persist && preview.get("whole") instanceof Map<?, ?> whole && Boolean.TRUE.equals(whole.get("rendered"))
+                && assets.get("photoSet") instanceof Map<?, ?> previous && "DEFAULT".equals(previous.get("status")))
+            assets.remove("photoSet");
+        assets.put("previewFrames", preview); image.setAssetsJson(Json.write(assets));
     }
 
-    /** Meio do vão entre as pernas logo abaixo do gancho, a partir do centro da caixa; −1 sem vão. */
-    static int legGapCenter(boolean[] g, int w, int h, ImageOps.Box region, int crotch) {
-        int y = Math.min(h - 1, crotch + 3), x = region.x() + region.w() / 2;
-        if (x < 0 || x >= w || g[y * w + x]) return -1;
-        int l = x, r = x;
-        while (l > region.x() && !g[y * w + l - 1]) l--;
-        while (r < region.x() + region.w() - 1 && !g[y * w + r + 1]) r++;
-        return l <= region.x() || r >= region.x() + region.w() - 1 ? -1 : (l + r) / 2;
+    boolean sameContext(CatalogImage cached, CatalogImage img, CatalogProduct product) {
+        if (cached.getImageType() != img.getImageType() || product == null) return false;
+        CatalogProduct other = cached.getProductId() == null ? null : products.findById(cached.getProductId()).orElse(null);
+        return other != null && Objects.equals(other.getCategory(), product.getCategory())
+                && Objects.equals(other.getSubcategory(), product.getSubcategory())
+                && currentBoundPreview(other, cached, false);
     }
 
-    /**
-     * Gancho na coluna {@code x}: a primeira linha (de {@code from} a {@code to}) em que a coluna sai da peça por algumas linhas
-     * seguidas com peça dos dois lados da linha (o vão entre as pernas). −1 sem vão.
-     */
-    static int crotchAlong(boolean[] g, int w, int h, int x, int from, int to) {
-        if (x < 1 || x >= w - 1) return -1;
-        int need = Math.max(3, h / 200), streak = 0;
-        for (int y = Math.max(0, from); y < Math.min(h, to); y++) {
-            boolean gap = !g[y * w + x], left = false, right = false;
-            if (gap) {
-                for (int k = x - 1; k >= 0 && !left; k--) left = g[y * w + k];
-                for (int k = x + 1; k < w && !right; k++) right = g[y * w + k];
+    void apply(CatalogImage img, CatalogImagePipeline.Analysis a, boolean persist) {
+        img.setMime(a.mime());
+        img.setWidth(dimension(a.width()));
+        img.setHeight(dimension(a.height()));
+        img.setSourceSha256(a.sha256());
+        img.setPhash(a.phash());
+        img.setCropJson(automaticFrame(a, persist));
+        img.setMetricsJson(metricsJson(a));
+        if (persist && a.rendered() != null && a.outcome() != CatalogImageValidator.Outcome.REJECTED) {
+            Map<String, Object> assets = store(img, a.rendered());
+            img.setAssetsJson(Json.write(assets));
+            img.setStoredUrl(String.valueOf(assets.get("master")));
+            img.setUsageStatus(CatalogImageUsage.PERSISTED);
+        }
+        finish(img, a.outcome().name(), a.reasons(), a.qualityScore());
+    }
+
+    @SuppressWarnings("unchecked")
+    String automaticFrame(CatalogImagePipeline.Analysis analysis, boolean persist) {
+        Map<String, Object> crop = new LinkedHashMap<>(analysis.cropJson());
+        if (persist) {
+            return crop.isEmpty() ? null : Json.write(crop);
+        }
+        Object value = analysis.debug().get("productFrame");
+        if (!(value instanceof Map<?, ?> frame) || !Boolean.TRUE.equals(frame.get("ok"))
+                || !(frame.get("crop") instanceof Map<?, ?>)) {
+            return crop.isEmpty() ? null : Json.write(crop);
+        }
+        crop.put("crop", frame.get("crop"));
+        crop.put("aspect", frame.get("aspect") == null ? "3:4" : frame.get("aspect"));
+        crop.put("ruleCompliant", true);
+        crop.remove("detail");
+        crop.remove("padding");
+        Map<String, Object> framing = new LinkedHashMap<>();
+        framing.put("version", frame.get("version"));
+        framing.put("target", frame.get("target"));
+        framing.put("focus", frame.get("focus"));
+        framing.put("automatic", true);
+        framing.put("processedAt", Instant.now().toString());
+        framing.put("sourceSha256", analysis.sha256());
+        crop.put("selectionFrame", framing);
+        return Json.write(crop);
+    }
+
+    private void finish(CatalogImage img, String status, List<String> reasons, Double quality) {
+        img.setProcessingStatus(status);
+        img.setGateReasons(gateReasons(reasons));
+        img.setQualityScore(qualityScore(quality));
+        img.setPipelineVersion(CatalogImagePipeline.VERSION);
+        img.setProcessedAt(Instant.now());
+        if ("NEEDS_REPROCESSING".equals(status) && !"APPROVED".equals(img.getReviewStatus())) {
+            img.setReviewStatus("PENDING");
+        }
+        if ("FAILED".equals(status)) {
+            images.save(img);
+        }
+    }
+
+    public static Integer dimension(int px) {
+        return px == 0 ? null : px;
+    }
+
+    public static String cropJson(CatalogImagePipeline.Analysis a) {
+        return a.crop() == null ? null : Json.write(a.cropJson());
+    }
+
+    public static String metricsJson(CatalogImagePipeline.Analysis a) {
+        Map<String, Object> metrics = new LinkedHashMap<>(a.metrics());
+        metrics.put("pieceType", a.pieceType() == null ? null : a.pieceType().name());
+        metrics.put("detailView", a.detailView());
+        metrics.put("confidence", a.confidence());
+        metrics.put("manualReview", a.manualReview());
+        metrics.put("stages", a.stages().stream().map(CatalogImagePipeline.Stage::toMap).toList());
+        metrics.put("debug", a.debug());
+        return Json.write(metrics);
+    }
+
+    public static String gateReasons(List<String> reasons) {
+        if (reasons.isEmpty()) {
+            return null;
+        }
+        String joined = String.join(",", reasons);
+        return joined.substring(0, Math.min(500, joined.length()));
+    }
+
+    public static BigDecimal qualityScore(Double quality) {
+        return quality == null ? null : BigDecimal.valueOf(quality).setScale(4, RoundingMode.HALF_UP);
+    }
+
+    static void copyAnalysis(CatalogImage from, CatalogImage to) {
+        to.setMime(from.getMime());
+        to.setWidth(from.getWidth());
+        to.setHeight(from.getHeight());
+        to.setSourceSha256(from.getSourceSha256());
+        to.setPhash(from.getPhash());
+        to.setCropJson(from.getCropJson());
+        to.setMetricsJson(from.getMetricsJson());
+        to.setQualityScore(from.getQualityScore());
+        to.setGateReasons(from.getGateReasons());
+        to.setProcessingStatus(from.getProcessingStatus());
+        to.setPipelineVersion(CatalogImagePipeline.VERSION);
+        to.setProcessedAt(Instant.now());
+        if ("NEEDS_REPROCESSING".equals(to.getProcessingStatus())) {
+            to.setReviewStatus("PENDING");
+        }
+    }
+
+    boolean allowsPersistence(CatalogProduct product, CatalogImage img) {
+        String host = host(img.getImageUrl());
+        for (CatalogSource s : sources.findByBrandIdAndActiveTrue(product.getBrandId())) {
+            if (!s.isAllowsImagePersistence() || s.getDomain() == null) {
+                continue;
             }
-            streak = gap && left && right ? streak + 1 : 0;
-            if (streak >= need) return y - streak + 1;
-        }
-        return -1;
-    }
-
-    /**
-     * Cós numa foto com modelo: subindo de {@code refY} até {@code top}, a primeira mudança <b>brusca</b> de cor no miolo — a
-     * média das 4 linhas de cima contra a das 6 de baixo (o desbotado gradual do jeans não conta; a barra da camisa, a
-     * barriga ou o cinto contam). Devolve a primeira linha da calça, ou −1 sem mudança.
-     */
-    static int waistEdge(int[] px, boolean[] g, int w, int cx, int half, int refY, int top) {
-        int x0 = Math.max(0, cx - half), x1 = Math.min(w, cx + half);
-        int found = -1;
-        double best = 0;
-        for (int y = refY - 6; y >= top + 4; y--) {
-            double[] below = meanColor(px, g, w, x0, x1, y, y + 6);
-            if (below == null) continue;
-            double[] above = meanColor(px, g, w, x0, x1, y - 4, y);
-            double d = above == null ? 999 : Math.sqrt(Math.pow(above[0] - below[0], 2) + Math.pow(above[1] - below[1], 2) + Math.pow(above[2] - below[2], 2));
-            if (d > 45 && d > best) { best = d; found = y; }
-            else if (found > 0 && y < found - 8) break;            // a mudança mais forte da primeira faixa que mudou
-        }
-        return found;
-    }
-
-    /**
-     * Barra da peça de cima numa foto com modelo: descendo de {@code from}, a primeira mudança brusca de cor no miolo (6 linhas
-     * de cima contra 4 de baixo; a peça acabando — pele, fundo — também conta). Devolve a primeira linha depois da peça, ou −1.
-     */
-    static int abruptEdgeDown(int[] px, boolean[] g, int w, int cx, int half, int from, int to) {
-        int x0 = Math.max(0, cx - half), x1 = Math.min(w, cx + half);
-        int found = -1;
-        double best = 0;
-        for (int y = from + 6; y <= to - 4; y++) {
-            double[] above = meanColor(px, g, w, x0, x1, y - 6, y);
-            if (above == null) continue;
-            double[] below = meanColor(px, g, w, x0, x1, y, y + 4);
-            double d = below == null ? 999 : Math.sqrt(Math.pow(above[0] - below[0], 2) + Math.pow(above[1] - below[1], 2) + Math.pow(above[2] - below[2], 2));
-            if (d > 45 && d > best) { best = d; found = y; }
-            else if (found > 0 && y > found + 8) break;
-        }
-        return found;
-    }
-
-    private static double[] meanColor(int[] px, boolean[] g, int w, int x0, int x1, int y0, int y1) {
-        double r = 0, gg = 0, b = 0;
-        int n = 0, all = 0;
-        for (int y = y0; y < y1; y++) {
-            for (int x = x0; x < x1; x++) {
-                all++;
-                int i = y * w + x;
-                if (!g[i]) continue;
-                r += (px[i] >> 16) & 0xFF; gg += (px[i] >> 8) & 0xFF; b += px[i] & 0xFF; n++;
+            String d = s.getDomain().toLowerCase(Locale.ROOT).replaceFirst("^www\\.", "").replaceAll("\\.+$", "");
+            if ((host != null && (host.equals(d) || host.endsWith("." + d)))) {
+                return true;
             }
-        }
-        return n < Math.max(4, all * 0.3) ? null : new double[]{r / n, gg / n, b / n};
-    }
-
-    /**
-     * Barra da parte de baixo em foto com modelo: a largura da peça logo acima do gancho é a referência; descendo, a primeira
-     * faixa em que a peça cai abaixo de 60% dela (a perna de pele do short, a canela de fora) é a barra.
-     */
-    static int hemBelow(boolean[] g, int w, int cx, int from, int end) {
-        int y0 = Math.max(0, from - 3);
-        if (cx < 0 || cx >= w || !g[y0 * w + cx]) return end;
-        int l = cx, r = cx;
-        while (l > 0 && g[y0 * w + l - 1]) l--;
-        while (r < w - 1 && g[y0 * w + r + 1]) r++;
-        int ref = r - l + 1, streak = 0;
-        for (int y = from + 2; y < end; y++) {
-            int n = 0;
-            for (int x = l; x <= r; x++) n += g[y * w + x] ? 1 : 0;
-            streak = n < ref * 0.6 ? streak + 1 : 0;
-            if (streak >= 3) return y - 2;
-        }
-        return end;
-    }
-
-    /**
-     * Máscara sem o que desce de cima do cós: as cores da peça de cima (medidas nas linhas logo acima do cós) que aparecem
-     * entre o cós e a barra, longe das cores da calça (medidas no miolo do quadril) e ligadas à linha do cós — aba de jaqueta,
-     * barra de camisa por fora. Desbotado, sombra e costura da própria calça não têm a cor da peça de cima e ficam.
-     */
-    static boolean[] lowerColors(int[] px, boolean[] g, int w, int h, int cx, int halfW, int waist, int crotch) {
-        int[][] pants = FabricFrame.garmentColors(px, g, w, new ImageOps.Box(cx - halfW, waist, 2 * halfW, Math.max(1, crotch - waist)), PieceType.LOWER_PIECE);
-        int[][] upper = dominant(px, g, w, Math.max(0, waist - Math.max(10, h / 25)), waist);
-        if (upper.length == 0) return g;
-        boolean[] other = new boolean[g.length];
-        for (int y = Math.max(0, waist); y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                int i = y * w + x;
-                other[i] = g[i] && near(px[i], upper, 45) && !near(px[i], pants, 60);
-            }
-        }
-        int[] labels = new int[other.length];
-        List<int[]> comps = ProductSegmenter.components(other, w, h, labels);   // {label, tamanho, x0, y0, x1, y1}
-        Set<Integer> drop = new java.util.HashSet<>();
-        for (int[] k : comps) if (k[3] <= waist + 2 && k[1] >= w * h * 0.0005) drop.add(k[0]);
-        boolean[] out = g.clone();
-        for (int i = 0; i < out.length; i++) if (other[i] && drop.contains(labels[i])) out[i] = false;
-        return out;
-    }
-
-    /** Até 4 cores dominantes (≥ 5%) da máscara nas linhas [y0, y1), na largura toda. */
-    static int[][] dominant(int[] px, boolean[] g, int w, int y0, int y1) {
-        Map<Integer, long[]> bins = new java.util.HashMap<>();
-        for (int y = y0; y < y1; y++) {
-            for (int x = 0; x < w; x++) {
-                int i = y * w + x;
-                if (!g[i]) continue;
-                int p = px[i], key = (((p >> 16) & 0xFF) >> 5) << 6 | (((p >> 8) & 0xFF) >> 5) << 3 | ((p & 0xFF) >> 5);
-                long[] e = bins.computeIfAbsent(key, k -> new long[4]);
-                e[0]++; e[1] += (p >> 16) & 0xFF; e[2] += (p >> 8) & 0xFF; e[3] += p & 0xFF;
-            }
-        }
-        long total = bins.values().stream().mapToLong(e -> e[0]).sum();
-        return bins.values().stream().sorted((a, b) -> Long.compare(b[0], a[0])).limit(4).filter(e -> e[0] >= total * 0.05)
-                .map(e -> new int[]{(int) (e[1] / e[0]), (int) (e[2] / e[0]), (int) (e[3] / e[0])}).toArray(int[][]::new);
-    }
-
-    private static boolean near(int p, int[][] colors, int dist) {
-        for (int[] c : colors) {
-            int dr = ((p >> 16) & 0xFF) - c[0], dg = ((p >> 8) & 0xFF) - c[1], db = (p & 0xFF) - c[2];
-            if (dr * dr + dg * dg + db * db <= dist * dist) return true;
         }
         return false;
     }
 
-    private static Result garmentResult(Context c, FabricFrame.Mask m, boolean[] g, Window win, NRect product, int bandEnd,
-                                        String scope, List<String> obs, FramingStrategy.Focus focusOverride, int garmentWidth) {
-        int w = m.w(), h = m.h();
-        NRect crop = new NRect(win.x() / (double) w, win.y() / (double) h, win.w() / (double) w, win.h() / (double) h);
-        long on = 0, all = 0;
-        int end = Math.min(win.y() + win.h(), bandEnd);
-        for (int y = win.y(); y < end; y++) {
-            for (int x = win.x(); x < win.x() + win.w(); x++) { all++; on += g[y * w + x] ? 1 : 0; }
+    static String host(String url) {
+        try {
+            URI uri = URI.create(url);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getRawUserInfo() != null
+                    || (uri.getPort() != -1 && uri.getPort() != 443)) return null;
+            String h = uri.getHost();
+            return h == null ? null : h.toLowerCase(Locale.ROOT).replaceAll("\\.+$", "");
+        } catch (IllegalArgumentException e) {
+            return null;
         }
-        if (all == 0) return garmentResult(c, m, g, win, product, win.y() + win.h(), "FRAME", obs, focusOverride, garmentWidth);
-        double coverage = (double) on / all;
-        FramingStrategy.Focus focus = focusOverride != null ? focusOverride : SemanticCropper.registryFocus(product, c.profile());
-        Map<String, Object> compliance = new LinkedHashMap<>();
-        SemanticCropper.ruleScore(crop, w, h, product, focus, c.profile().rule(), 0, List.of(), compliance);
-        compliance.put("garmentCoverage", NRect.r4(coverage));
-        compliance.put("coverageScope", scope);
-        // quadro ÷ largura da peça na faixa do topo do quadro (tronco na faixa do decote, quadril na faixa do cós)
-        double widthShare = garmentWidth > 0 ? win.w() / (double) garmentWidth : 1;
-        compliance.put("garmentWidthPx", garmentWidth);
-        compliance.put("frameWidthShare", NRect.r4(widthShare));
-        if (Boolean.FALSE.equals(compliance.get("focusInTopHalf")) && c.profile().rule().focusTopHalf()) obs.add("FOCUS_NOT_IN_TOP_HALF");
-        String refusal = coverage < 1 ? "COVERAGE_BELOW_100" : widthShare < MIN_COVER_WIDTH_SHARE ? "COVER_FRAME_TOO_NARROW" : null;
-        if (refusal != null) {
-            return new Result(false, refusal, crop, c.aw(), c.ah(), c.profile().rule(), c.origin(), c.registryVersion(),
-                    c.type(), c.sub(), c.target(), focus.name(), focus.rect(), product, m.person(), m.skinShare(), coverage, scope,
-                    product.insideOf(crop), 0, hex(m), List.of(), null, compliance, win.w(), List.copyOf(obs));
-        }
-        return new Result(true, null, crop, c.aw(), c.ah(), c.profile().rule(), c.origin(), c.registryVersion(), c.type(), c.sub(),
-                c.target(), focus.name(), focus.rect(), product, m.person(), m.skinShare(), coverage, scope, product.insideOf(crop), 0,
-                hex(m), List.of(), null, compliance, win.w(), List.copyOf(obs));
     }
 
-    // ------------------------------------------------------------------ WIDTH / CONTAIN / COVER-FOCUS: objeto inteiro
+    private Map<String, Object> store(CatalogImage img, BackgroundNormalizer.Rendered r) {
+        String base = "catalog/" + img.getProductId() + "/" + img.getId() + "/" + CatalogImagePipeline.VERSION.toLowerCase(Locale.ROOT) + "/";
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("master", put(base + "master.png", ImageOps.png(r.transparent()), "image/png"));
+        out.put("white", put(base + "white.jpg", ImageOps.jpeg(r.white(), 0.92f), "image/jpeg"));
+        out.put("neutral", put(base + "neutral.jpg", ImageOps.jpeg(r.neutral(), 0.92f), "image/jpeg"));
+        out.put("card", put(base + "card.jpg", ImageOps.jpeg(r.card(), 0.9f), "image/jpeg"));
+        out.put("thumbnail", put(base + "thumb.jpg", ImageOps.jpeg(r.thumbnail(), 0.85f), "image/jpeg"));
+        out.put("width", r.width());
+        out.put("height", r.height());
+        return out;
+    }
 
-    private static Result object(Context c, FabricFrame.Mask m, ProductSegmenter.Segmentation seg, FramingStrategy.Focus detected) {
-        int w = m.w(), h = m.h();
-        // objeto sobre pessoa (tênis no pé, bolsa no ombro, relógio no pulso): a caixa seria a pessoa — não é o objeto isolado.
-        // Calçado que encosta no alto da foto tem perna (ou calça) em cima; pele estranha ao objeto só conta como pessoa quando é
-        // bastante (≥ 4%) e o conjunto ocupa a altura da foto ou encosta em duas bordas (couro caramelo, contas bege, reflexo no
-        // aço: material, não pessoa)
-        ImageOps.Box fb = m.box();
-        int borders = (fb.x() <= 1 ? 1 : 0) + (fb.y() <= 1 ? 1 : 0) + (fb.x() + fb.w() >= w - 1 ? 1 : 0) + (fb.y() + fb.h() >= h - 1 ? 1 : 0);
-        // pele longe da cor mediana do conjunto (a do segmentador): numa pessoa com bolsa a mediana é a roupa e a pele destoa; numa
-        // bolsa caramelo a mediana é o próprio couro
-        double personSkin = Math.max(m.skinShare(), ProductSegmenter.foreignSkin(m.px(), m.fg()));
-        if ((c.type() == PieceType.SHOES_PIECE && fb.y() <= 1) || (personSkin >= OBJECT_PERSON_SKIN && (fb.h() >= h * 0.8 || borders >= 2))) {
-            return c.refuse("PIECE_NOT_ISOLATED", m);
+    private String put(String key, byte[] body, String type) {
+        storage.put(key, body, type);
+        return storage.publicUrl(key).toString();
+    }
+
+    void rerank(UUID productId) {
+        List<CatalogImage> all = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
+                .filter(i -> DONE.contains(i.getProcessingStatus())).toList();
+        if (all.isEmpty()) {
+            return;
         }
-        boolean[] raw;
-        if (m.bg() != null) {
-            raw = FabricFrame.studioForeground(m.px(), w, h, m.bg());
+        Map<String, CatalogImage> byId = new LinkedHashMap<>();
+        List<ImageCandidateRanker.Candidate> cands = new ArrayList<>();
+        for (CatalogImage i : all) {
+            byId.put(i.getId().toString(), i);
+            CatalogImageValidator.Outcome outcome = "APPROVED".equals(i.getReviewStatus()) ? CatalogImageValidator.Outcome.APPROVED
+                    : "REJECTED".equals(i.getReviewStatus()) ? CatalogImageValidator.Outcome.REJECTED
+                    : CatalogImageValidator.Outcome.valueOf(i.getProcessingStatus());
+            Map<String, Object> m = i.getMetricsJson() == null ? Map.of() : Json.map(i.getMetricsJson());
+            cands.add(new ImageCandidateRanker.Candidate(i.getId().toString(), i.getImageType() == null ? null : i.getImageType().name(),
+                    outcome, i.getQualityScore() == null ? 0 : i.getQualityScore().doubleValue(), Boolean.TRUE.equals(m.get("detailView")),
+                    i.getPhash()));
+        }
+        PieceType type = products.findById(productId).map(p -> PieceType.of(p.getCategory())).orElse(null);
+        List<ImageCandidateRanker.Ranked> ranked = ranker.rank(cands, type);
+        boolean manualCanonical = all.stream().anyMatch(i -> i.isCanonical() && "APPROVED".equals(i.getReviewStatus()));
+        for (ImageCandidateRanker.Ranked r : ranked) {
+            CatalogImage i = byId.get(r.candidate().id());
+            i.setViewRole(r.role().name());
+            if (!manualCanonical) {
+                i.setCanonical(r.role() == ImageCandidateRanker.Role.CANONICAL);
+            }
+            images.save(i);
+        }
+    }
+
+    public Map<String, Object> reviewQueue(CurrentUser user, int limit) {
+        guard.requireAdmin(user);
+        List<Map<String, Object>> items = images.findByReviewStatusOrderByProcessedAtAsc("PENDING", PageRequest.of(0, Math.min(100, Math.max(1, limit))))
+                .stream().map(this::view).toList();
+        return Map.of("items", items, "pending", images.countByReviewStatus("PENDING"), "actions", ACTIONS);
+    }
+
+    public record ReviewCommand(String action, UUID alternateImageId, String note) {
+    }
+
+    public Map<String, Object> decide(CurrentUser user, UUID imageId, ReviewCommand cmd) {
+        guard.requireAdmin(user);
+        String action = cmd == null || cmd.action() == null ? "" : cmd.action().toUpperCase(Locale.ROOT);
+        if (!ACTIONS.contains(action)) {
+            throw ApiException.badRequest("ACAO_INVALIDA", "Ação deve ser uma de " + ACTIONS);
+        }
+        return tx.execute(s -> {
+            CatalogImage img = images.findById(imageId).orElseThrow(() -> ApiException.notFound("catalog image"));
+            switch (action) {
+                case "APPROVE" -> {
+                    img.setReviewStatus("APPROVED");
+                    img.setProcessingStatus("APPROVED");
+                }
+                case "REJECT" -> {
+                    img.setReviewStatus("REJECTED");
+                    img.setProcessingStatus("REJECTED");
+                    img.setCanonical(false);
+                }
+                case "REPROCESS" -> {
+                    img.setReviewStatus("NONE");
+                    img.setProcessingStatus("PENDING");
+                    img.setAttempts(0);
+                    img.setCanonical(false);
+                }
+                default -> {
+                    if (cmd.alternateImageId() == null) {
+                        throw ApiException.badRequest("ALTERNATIVA_OBRIGATORIA", "Informe alternateImageId (outra foto oficial do mesmo produto)");
+                    }
+                    CatalogImage alt = images.findById(cmd.alternateImageId()).orElseThrow(() -> ApiException.notFound("catalog image"));
+                    if (!alt.getProductId().equals(img.getProductId())) {
+                        throw ApiException.badRequest("ALTERNATIVA_DE_OUTRO_PRODUTO", "A foto alternativa precisa ser do mesmo produto");
+                    }
+                    images.findByProductIdOrderByPrimaryDescCreatedAtAsc(img.getProductId()).forEach(o -> {
+                        o.setCanonical(false);
+                        images.save(o);
+                    });
+                    img.setReviewStatus("REJECTED");
+                    alt.setReviewStatus("APPROVED");
+                    alt.setCanonical(true);
+                    if (!DONE.contains(alt.getProcessingStatus())) {
+                        alt.setProcessingStatus("APPROVED");
+                    }
+                    images.save(alt);
+                }
+            }
+            images.save(img);
+            rerank(img.getProductId());
+            log.info("event=catalog_image_review imageId={} action={} admin={}", imageId, action, user.id());
+            return view(img);
+        });
+    }
+
+    public Map<String, Object> metrics(CurrentUser user) {
+        guard.requireAdmin(user);
+        Map<String, Object> byStatus = new LinkedHashMap<>();
+        images.countByStatus().forEach(r -> byStatus.put(String.valueOf(r[0]), r[1]));
+        List<Map<String, Object>> reasons = images.topReasons(PageRequest.of(0, 10)).stream()
+                .map(r -> Map.<String, Object>of("reasons", String.valueOf(r[0]), "count", r[1])).toList();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("pipelineVersion", CatalogImagePipeline.VERSION);
+        m.put("enabled", enabled);
+        m.put("byStatus", byStatus);
+        m.put("canonical", images.countByCanonicalTrue());
+        m.put("reviewPending", images.countByReviewStatus("PENDING"));
+        m.put("averageQuality", images.averageQuality());
+        m.put("topRejectionReasons", reasons);
+        return m;
+    }
+
+    public Map<String, Object> debug(CurrentUser user, UUID imageId) {
+        guard.requireAdmin(user);
+        return view(images.findById(imageId).orElseThrow(() -> ApiException.notFound("catalog image")));
+    }
+
+    public Map<String, Object> enqueueProduct(CurrentUser user, UUID productId) {
+        guard.requireAdmin(user);
+        Integer n = tx.execute(s -> {
+            List<CatalogImage> list = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId);
+            list.forEach(i -> {
+                i.setProcessingStatus("PENDING");
+                i.setAttempts(0);
+                images.save(i);
+            });
+            return list.size();
+        });
+        return Map.of("productId", productId, "queued", n == null ? 0 : n);
+    }
+
+    Map<String, Object> view(CatalogImage i) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", i.getId());
+        m.put("productId", i.getProductId());
+        m.put("sourceUrl", i.getImageUrl());
+        m.put("processedUrl", i.getStoredUrl());
+        m.put("viewType", i.getImageType() == null ? null : i.getImageType().name());
+        m.put("viewRole", i.getViewRole());
+        m.put("canonical", i.isCanonical());
+        m.put("processingStatus", i.getProcessingStatus());
+        m.put("reviewStatus", i.getReviewStatus());
+        m.put("qualityScore", i.getQualityScore());
+        m.put("reasons", i.getGateReasons() == null ? List.of() : List.of(i.getGateReasons().split(",")));
+        m.put("usageStatus", i.getUsageStatus() == null ? null : i.getUsageStatus().name());
+        m.put("width", i.getWidth());
+        m.put("height", i.getHeight());
+        m.put("crop", i.getCropJson() == null ? null : Json.map(i.getCropJson()));
+        m.put("metrics", i.getMetricsJson() == null ? null : Json.map(i.getMetricsJson()));
+        m.put("assets", i.getAssetsJson() == null ? null : Json.map(i.getAssetsJson()));
+        m.put("pipelineVersion", i.getPipelineVersion());
+        m.put("processedAt", i.getProcessedAt());
+        return m;
+    }
+
+    public static Map<String, Object> cardImage(CatalogImage canonical) {
+        if (canonical == null || !"APPROVED".equals(canonical.getProcessingStatus())
+                || canonical.getUsageStatus() == CatalogImageUsage.REJECTED || "REJECTED".equals(canonical.getReviewStatus())) {
+            return null;
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> selectionCrop = canonical.getCropJson() == null ? Map.of() : Json.map(canonical.getCropJson());
+        if (!Boolean.TRUE.equals(selectionCrop.get("ruleCompliant")) || !(selectionCrop.get("crop") instanceof Map<?, ?>)) return null;
+        boolean automaticFrame = selectionCrop.get("selectionFrame") instanceof Map<?, ?> frame
+                && Boolean.TRUE.equals(frame.get("automatic"));
+        Map<String, Object> preview = previewAssets(canonical);
+        if (!preview.isEmpty() && !currentPreviewSource(canonical)) return null;
+        if (currentPreviewSource(canonical) && preview.get("fabricUrl") instanceof String fabricUrl && !fabricUrl.isBlank()) {
+            m.put("url", fabricUrl); m.put("thumbnailUrl", fabricUrl); m.put("mode", "PROCESSED"); m.put("aspect", "3:4");
+        } else if (preview.isEmpty() && canonical.getAssetsJson() != null && (!selectionCrop.containsKey("selectionFrame") || automaticFrame)
+                && Json.map(canonical.getAssetsJson()).get("card") instanceof String) {
+            Map<String, Object> assets = Json.map(canonical.getAssetsJson());
+            m.put("url", assets.getOrDefault("card", canonical.getStoredUrl()));
+            m.put("thumbnailUrl", assets.get("thumbnail"));
+            m.put("mode", "PROCESSED");
+        } else if (selectionCrop.containsKey("selectionFrame")) {
+            m.put("url", canonical.getImageUrl()); m.put("mode", "SEMANTIC_CROP");
+            m.put("crop", selectionCrop.get("crop")); m.put("aspect", "3:4");
+            m.put("framing", selectionCrop.get("selectionFrame"));
         } else {
-            raw = new boolean[w * h];
-            for (int i = 0; i < raw.length; i++) raw[i] = seg.mask()[i] && (m.px()[i] >>> 24) >= 160;
-        }
-        int[] labels = new int[raw.length];
-        List<int[]> comps = ProductSegmenter.components(raw, w, h, labels);   // {label, tamanho, x0, y0, x1, y1}
-        if (comps.isEmpty()) return c.refuse("NO_PRODUCT", m);
-        int x0 = w, y0 = h, x1 = -1, y1 = -1;
-        Set<Integer> keep = new java.util.HashSet<>();
-        for (int[] k : comps) {
-            if (k[1] < comps.get(0)[1] * PART_SHARE) continue;
-            keep.add(k[0]);
-            x0 = Math.min(x0, k[2]); y0 = Math.min(y0, k[3]); x1 = Math.max(x1, k[4]); y1 = Math.max(y1, k[5]);
-        }
-        // o que o segmentador do pipeline considera a peça também entra (nunca cortar o que o card mostraria)
-        NRect segBox = seg == null || seg.empty() ? null : seg.productBox();
-        if (segBox != null) {
-            NRect studio = new NRect(x0 / (double) w, y0 / (double) h, (x1 - x0 + 1) / (double) w, (y1 - y0 + 1) / (double) h);
-            if (segBox.intersect(studio).area() > 0 && segBox.insideOf(studio) < 0.999 && segBox.area() <= studio.area() * 1.5) {
-                x0 = Math.min(x0, (int) Math.floor(segBox.x() * w)); y0 = Math.min(y0, (int) Math.floor(segBox.y() * h));
-                x1 = Math.max(x1, (int) Math.ceil(segBox.x2() * w) - 1); y1 = Math.max(y1, (int) Math.ceil(segBox.y2() * h) - 1);
+            m.put("url", canonical.getImageUrl());
+            m.put("mode", "SEMANTIC_CROP");
+            if (canonical.getCropJson() != null) {
+                Map<String, Object> crop = Json.map(canonical.getCropJson());
+                m.put("crop", crop.get("crop"));
+                m.put("background", crop.get("background"));
+                m.put("aspect", crop.get("aspect"));
             }
         }
-        x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(w - 1, x1); y1 = Math.min(h - 1, y1);
-        NRect product = new NRect(x0 / (double) w, y0 / (double) h, (x1 - x0 + 1) / (double) w, (y1 - y0 + 1) / (double) h);
-        if ((double) (x1 - x0 + 1) * (y1 - y0 + 1) < (double) w * h * 0.005) return c.refuse("SEGMENTATION_FRAGMENT", m);
-        SemanticRegionRegistry.FramingRule rule = c.profile().rule();
-        boolean cover = rule.fit() == SemanticRegionRegistry.FramingRule.Fit.COVER;
-        double margin = cover ? c.profile().margin()[0] : Math.max(c.profile().margin()[0], OBJECT_MARGIN_FLOOR);
-        List<String> obs = new ArrayList<>();
-        // foco: o que os landmarks do pipeline acharam (mostrador, ponte dos óculos) ou a região padrão do registro
-        FramingStrategy.Focus focus = SemanticCropper.registryFocus(product, c.profile());
-        if (detected != null && detected.source() != null && !"REGISTRY".equals(detected.source()) && focus.name().equals(detected.name())) {
-            focus = new FramingStrategy.Focus(focus.name(), detected.rect(), List.of(), detected.source());
+        if (!automaticFrame && canonical.getCropJson() != null) {
+            m.put("aspect", Json.map(canonical.getCropJson()).get("aspect"));
         }
-        SemanticRegionRegistry.FramingRule applied = rule;
-        if (rule.align() == SemanticRegionRegistry.FramingRule.Align.FOCUS && !cover && "REGISTRY".equals(focus.source())) {
-            // objeto inteiro com o foco no centro (cinto pela fivela), mas o foco não foi achado — só a posição padrão do registro
-            // (fivela na ponta esquerda): centrar nela deixaria o objeto num canto com meio quadro de fundo; centra o objeto
-            applied = new SemanticRegionRegistry.FramingRule(rule.fit(), SemanticRegionRegistry.FramingRule.Align.CENTER, rule.view(), rule.focusTopHalf());
-            obs.add("FOCUS_NOT_DETECTED_CENTERED");
-        }
-        NRect crop = SemanticCropper.ruleCrop(w, h, c.aspect(), product, focus, applied, margin);
-        Set<String> truncated = new LinkedHashSet<>();
-        if (x0 <= 1) truncated.add("left");
-        if (y0 <= 1) truncated.add("top");
-        if (x1 >= w - 2) truncated.add("right");
-        if (y1 >= h - 2) truncated.add("bottom");
-        if (!truncated.isEmpty()) {
-            // a foto já cortou o objeto: o quadro encosta nesse lado (fundo inventado ali mostraria o corte)
-            crop = SemanticCropper.keepCutSideInside(crop, truncated);
-            obs.add("OBJECT_TRUNCATED_IN_SOURCE:" + String.join("+", truncated));
-        }
-        NRect photo = new NRect(0, 0, 1, 1);
-        double padding = 1 - crop.insideOf(photo);
-        if (padding > 1e-4 && m.bg() == null) {
-            // sem fundo de estúdio não há cor para completar o quadro: desloca para dentro, sem tirar o objeto do quadro
-            crop = shiftInside(crop, product);
-            padding = 1 - crop.insideOf(photo);
-            if (padding > 1e-4) return c.refuse("PADDING_NEEDS_STUDIO_BACKGROUND", m);
-        }
-        if (padding > 1e-4) obs.add("PADDED_WITH_STUDIO_BACKGROUND");
-        Boolean side = null;
-        if (c.type() == PieceType.SHOES_PIECE || "SIDE".equals(rule.view())) {
-            boolean[] kept = new boolean[raw.length];
-            for (int i = 0; i < raw.length; i++) kept[i] = raw[i] && keep.contains(labels[i]);
-            side = FeedFraming.looksSideView(kept, w, x0, y0, x1, y1);
-        }
-        Map<String, Object> compliance = new LinkedHashMap<>();
-        SemanticCropper.ruleScore(crop, w, h, product, focus, applied, margin, List.of(), compliance);
-        compliance.put("focusSource", focus.source());
-        if ("SIDE".equals(rule.view()) && Boolean.FALSE.equals(side)) {
-            // regra 4 (calçado de lado): par de frente/de trás não vira lateral no recorte — fica registrado
-            compliance.put("ok", false);
-            compliance.put("sideView", false);
-            obs.add("SHOE_NOT_SIDE_VIEW");
-        }
-        double inside = product.insideOf(crop);
-        int cropPx = (int) Math.round(crop.w() * w);
-        if (cropPx < MIN_WIDTH_PX) return c.refuse("FRAME_TOO_SMALL", m);
-        if (!cover && inside < 0.999) {
-            return new Result(false, "OBJECT_CUT", crop, c.aw(), c.ah(), rule, c.origin(), c.registryVersion(), c.type(), c.sub(),
-                    c.target(), focus.name(), focus.rect(), product, false, m.skinShare(), 0, null, inside, padding, hex(m),
-                    List.copyOf(truncated), side, compliance, cropPx, List.copyOf(obs));
-        }
-        return new Result(true, null, crop, c.aw(), c.ah(), rule, c.origin(), c.registryVersion(), c.type(), c.sub(), c.target(),
-                focus.name(), focus.rect(), product, false, m.skinShare(), 0, null, inside, padding, hex(m), List.copyOf(truncated),
-                side, compliance, cropPx, List.copyOf(obs));
+        m.put("sourceUrl", canonical.getImageUrl());
+        m.put("imageId", canonical.getId());
+        m.put("qualityScore", canonical.getQualityScore());
+        m.put("pipelineVersion", canonical.getPipelineVersion());
+        if (currentPreviewSource(canonical)) m.put("previewCache", preview);
+        Map<String, Object> whole = wholeFrame(canonical);
+        if (whole != null) m.put("whole", whole);
+        return m;
     }
 
-    /** Desloca o quadro para dentro da foto em cada eixo em que cabe, sem deixar o objeto sair dele. */
-    static NRect shiftInside(NRect c, NRect product) {
-        double x = c.x(), y = c.y();
-        if (c.w() <= 1) {
-            double lo = Math.max(0, product.x2() - c.w()), hi = Math.min(1 - c.w(), product.x());
-            if (lo <= hi) x = Math.max(lo, Math.min(hi, x));
+    @SuppressWarnings("unchecked")
+    public static Map<String,Object> photoSet(CatalogImage image, CatalogProduct product) {
+        return photoSet(image,product,List.of());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String,Object> photoSet(CatalogImage image, CatalogProduct product,List<CatalogVariant> productVariants) {
+        if(image==null || product==null || !Objects.equals(image.getProductId(),product.getId()) || image.getAssetsJson()==null || image.getUsageStatus()==CatalogImageUsage.REJECTED || "REJECTED".equals(image.getReviewStatus())) return Map.of();
+        if(!CatalogImageIdentity.matches(image,product,null,productVariants)) return Map.of();
+        Object raw=Json.map(image.getAssetsJson()).get("photoSet");
+        if(!(raw instanceof Map<?,?> m) || !"CATALOG_PHOTO_SET_V2".equals(m.get("version"))
+          || !Objects.equals(image.getImageUrl(),m.get("sourceUrl")) || !Objects.equals(image.getSourceSha256(),m.get("sourceSha256"))
+          || !Objects.equals(product.getCategory(),m.get("category")) || !Objects.equals(product.getSubcategory(),m.get("subcategory"))
+          || !sameId(image.getVariantId(),m.get("variantId")) || m.containsKey("imageId")&&!sameId(image.getId(),m.get("imageId"))
+          || !Objects.equals(contextColor(product,image,productVariants),m.get("color"))
+          || !(m.get("defaultAssetUrl") instanceof String url) || !url.startsWith("/api/catalog/default-asset?")) return Map.of();
+        if("READY".equals(m.get("status")) && (!validSha256(image.getSourceSha256())
+                || !derivativeUrl(m.get("wholeUrl"), image.getImageUrl()) || !derivativeUrl(m.get("fabricUrl"), image.getImageUrl())
+                || Objects.equals(m.get("wholeUrl"),m.get("fabricUrl"))
+                || !(m.get("metrics") instanceof Map<?,?> metrics) || !validPreflight(metrics.get("preflight")))) return Map.of();
+        return (Map<String,Object>)m;
+    }
+
+    public static Map<String, Object> cardImage(CatalogImage canonical, CatalogProduct product) {
+        return cardImage(canonical,product,List.of());
+    }
+
+    public static Map<String, Object> cardImage(CatalogImage canonical,CatalogProduct product,List<CatalogVariant> productVariants) {
+        if (canonical == null || product == null || !Objects.equals(canonical.getProductId(),product.getId())) return null;
+        if(!CatalogImageIdentity.matches(canonical,product,null,productVariants)) return null;
+        Map<String, Object> photo = photoSet(canonical, product,productVariants);
+        if (!photo.isEmpty() && Set.of("READY","DEFAULT","REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(photo.get("status")))) {
+            Map<String, Object> card = new LinkedHashMap<>();
+            card.put("url", "READY".equals(photo.get("status")) ? photo.get("fabricUrl") : photo.get("defaultAssetUrl"));
+            card.put("mode", "READY".equals(photo.get("status")) ? "PROCESSED" : "DEFAULT");
+            card.put("sourceUrl", canonical.getImageUrl()); card.put("photoSet", photo); card.put("defaultAssetUrl", photo.get("defaultAssetUrl"));
+            card.put("aspect", "3:4"); card.put("imageId", canonical.getId());
+            if ("READY".equals(photo.get("status"))) card.put("whole", Map.of("url",photo.get("wholeUrl"),"box",Map.of("x",0,"y",0,"w",1,"h",1),"rendered",true,"processed",true,"version","CATALOG_PHOTO_SET_V2"));
+            return card;
         }
-        if (c.h() <= 1) {
-            double lo = Math.max(0, product.y2() - c.h()), hi = Math.min(1 - c.h(), product.y());
-            if (lo <= hi) y = Math.max(lo, Math.min(hi, y));
+        if (canonical.getAssetsJson() != null && Json.map(canonical.getAssetsJson()).get("photoSet") instanceof Map<?,?> previous
+                && "CATALOG_PHOTO_SET_V2".equals(previous.get("version"))) return null;
+        Map<String, Object> preview = previewAssets(canonical);
+        if (!preview.isEmpty() && !currentPreview(product, canonical, Boolean.TRUE.equals(preview.get("persisted")),productVariants)) return null;
+        Map<String,Object> card=cardImage(canonical);
+        if (card != null && card.containsKey("whole")) {
+            Map<String,Object> wholeContext=canonical.getWholeJson()==null ? Map.of() : Json.map(canonical.getWholeJson());
+            if (!Objects.equals(product.getCategory(),wholeContext.get("category"))
+                    || !Objects.equals(product.getSubcategory(),wholeContext.get("subcategory"))
+                    || !Objects.equals(contextColor(product,canonical,productVariants),wholeContext.get("color"))) card.remove("whole");
         }
-        return new NRect(x, y, c.w(), c.h());
+        return card;
     }
 
-    // ------------------------------------------------------------------ busca do quadro de cobertura
-
-    /** Quadro em pixels da máscara: colunas [x, x+w), linhas [y, y+h). */
-    record Window(int x, int y, int w, int h) { }
-
-    /**
-     * Maior quadro aw:ah com o topo entre {@code yTop} e {@code yLimit}, a base até {@code yBottom}, centrado no eixo
-     * {@code cx} (ou até 3 passos para os lados) e com toda linha acima de {@code bandEnd} inteiramente dentro de {@code g}.
-     * Entre quadros da mesma largura, o de topo mais alto; entre posições, a mais central.
-     */
-    static Window cover(boolean[] g, int w, double cx, int step, int yTop, int yLimit, int yBottom, int bandEnd,
-                        int aMin, int aMax, int aw, int ah) {
-        if (yBottom <= yTop || aMax < aMin) return null;
-        Window best = null;
-        for (int k = 0; k <= 3; k++) {
-            for (int sign : k == 0 ? new int[]{0} : new int[]{-1, 1}) {
-                int x = (int) Math.round(cx) + sign * k * step;
-                if (x < 1 || x >= w - 1) continue;
-                int[] s = halfSpans(g, w, x, yTop, yBottom);
-                Window win = largest(s, x, yTop, yLimit, yBottom, bandEnd, aMin, aMax, aw, ah);
-                if (win != null && (best == null || win.w() > best.w() || (win.w() == best.w() && win.y() < best.y()))) best = win;
-            }
-        }
-        return best;
+    private static boolean validSha256(String value) { return value != null && value.matches("[0-9a-f]{64}"); }
+    private static boolean sameId(UUID expected,Object actual) {
+        return expected==null?actual==null:expected.toString().equals(Objects.toString(actual,null));
+    }
+    private static boolean derivativeUrl(Object raw, String sourceUrl) {
+        if (!(raw instanceof String value) || value.isBlank() || Objects.equals(value,sourceUrl)) return false;
+        try {
+            URI uri=URI.create(value);
+            return Set.of("https","http").contains(uri.getScheme()) && uri.getHost()!=null && uri.getUserInfo()==null;
+        } catch (IllegalArgumentException ex) { return false; }
     }
 
-    /** Recolhe as laterais em {@code share} da largura de cada lado, mantendo o topo e a proporção (a base sobe junto). */
-    static Window inset(Window win, double share, int aw, int ah) {
-        int dx = (int) Math.round(win.w() * share);
-        int width = win.w() - 2 * dx;
-        width -= width % aw;
-        int x = win.x() + (win.w() - width) / 2;
-        return new Window(x, win.y(), width, width / aw * ah);
+    public static final String WHOLE_FRAME_VERSION = "WHOLE_FRAME_V1";
+
+    static Map<String, Object> wholeFrame(CatalogImage canonical) {
+        return processedWhole(canonical);
     }
 
-    /** Por linha, a maior meia-largura {@code a} com as colunas [x−a, x+a) todas na máscara. */
-    static int[] halfSpans(boolean[] g, int w, int x, int y0, int y1) {
-        int[] s = new int[y1 - y0];
-        for (int y = y0; y < y1; y++) {
-            int row = y * w;
-            if (!g[row + x]) continue;
-            int left = 0, right = 0;
-            while (x - left - 1 >= 0 && g[row + x - left - 1]) left++;
-            while (x + right < w && g[row + x + right]) right++;
-            s[y - y0] = Math.min(left, right);
-        }
-        return s;
+    static boolean validPreflight(Object raw) {
+        if (!(raw instanceof Map<?, ?> evidence)) return false;
+        double height = number(evidence.get("sourceGarmentHeightFraction"));
+        return "CATALOG_SOURCE_PREFLIGHT_V1".equals(evidence.get("version"))
+                && "PASS".equals(evidence.get("status"))
+                && Boolean.TRUE.equals(evidence.get("measurementReliable"))
+                && Boolean.TRUE.equals(evidence.get("complete")) && Boolean.FALSE.equals(evidence.get("occluded"))
+                && Boolean.TRUE.equals(evidence.get("isolationVerified"))
+                && Boolean.TRUE.equals(evidence.get("humanAssessmentComplete"))
+                && Double.isFinite(height) && height >= .25 && height <= 1;
     }
 
-    /** Busca binária na meia-largura (se uma cabe, uma menor também cabe); para cada uma, o primeiro topo que serve. */
-    static Window largest(int[] s, int x, int yTop, int yLimit, int yBottom, int bandEnd, int aMin, int aMax, int aw, int ah) {
-        int lo = aMin, hi = aMax;
-        Window found = null;
-        while (lo <= hi) {
-            int a = (lo + hi) >>> 1;
-            Window win = firstFit(s, x, a, yTop, yLimit, yBottom, bandEnd, aw, ah);
-            if (win != null) { found = win; lo = a + 1; } else hi = a - 1;
-        }
-        return found;
+    public static final String WHOLE_PROCESSED_VERSION = "WHOLE_FRAME_V3";
+
+    static Map<String, Object> processedWhole(CatalogImage canonical) {
+        if (canonical == null || canonical.getWholeUrl() == null || canonical.getWholeUrl().isBlank()
+                || !"DONE".equals(canonical.getWholeStatus()) || canonical.getWholeJson() == null) return null;
+        Map<String, Object> info = Json.map(canonical.getWholeJson());
+        if (!WHOLE_PROCESSED_VERSION.equals(canonical.getWholePipelineVersion())
+                || !WHOLE_PROCESSED_VERSION.equals(info.get("version"))
+                || !Objects.equals(canonical.getImageUrl(),info.get("sourceUrl"))
+                || !validSha256(canonical.getSourceSha256()) || !Objects.equals(canonical.getSourceSha256(),info.get("sourceSha256"))
+                || !sameId(canonical.getVariantId(),info.get("variantId"))
+                || info.containsKey("imageId")&&!sameId(canonical.getId(),info.get("imageId"))
+                || !derivativeUrl(canonical.getWholeUrl(),canonical.getImageUrl())
+                || !validPreflight(info.get("preflight"))) return null;
+        if (info.get("truncated") instanceof List<?> sides && !sides.isEmpty()) return null;
+        if (!(info.get("box") instanceof Map<?, ?> box)) return null;
+        double x = number(box.get("x")), y = number(box.get("y")), w = number(box.get("w")), h = number(box.get("h"));
+        if (!(w > 0 && h > 0 && w <= .501 && h <= .501 && Math.abs(Math.max(w,h)-.5) <= .001 && Math.abs(x-(1-w)/2) <= .001 && Math.abs(y-(1-h)/2) <= .001)) return null;
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("url", canonical.getWholeUrl());
+        m.put("box", Map.of("x", x, "y", y, "w", w, "h", h));
+        m.put("background", info.getOrDefault("background", "#F4F5F7"));
+        m.put("width", info.getOrDefault("width", 900));
+        m.put("height", info.getOrDefault("height", 1200));
+        m.put("truncated", info.get("truncated") instanceof List<?> sides ? sides : List.of());
+        m.put("alpha", false);
+        m.put("processed", true);
+        m.put("version", WHOLE_PROCESSED_VERSION);
+        return m;
     }
 
-    static Window firstFit(int[] s, int x, int a, int yTop, int yLimit, int yBottom, int bandEnd, int aw, int ah) {
-        int width = 2 * a, height = (int) Math.round(width * ah / (double) aw);
-        int n = s.length;
-        int[] bad = new int[n + 1];                     // linhas da faixa (acima de bandEnd) estreitas demais, acumuladas
-        for (int i = 0; i < n; i++) bad[i + 1] = bad[i] + (yTop + i < bandEnd && s[i] < a ? 1 : 0);
-        int last = Math.min(yLimit, yBottom - height);
-        for (int y = yTop; y <= last; y++) {
-            int end = Math.min(y + height, bandEnd);
-            if (end <= y || bad[end - yTop] - bad[y - yTop] == 0) return new Window(x - a, y, width, height);
-        }
-        return null;
+    private static double number(Object value) {
+        return value instanceof Number n ? n.doubleValue() : Double.NaN;
     }
 
-    // ------------------------------------------------------------------ utilitários
-
-    /**
-     * Mediana, nas linhas [y0, y1), da largura da máscara na linha dentro de {@code b} (da primeira à última coluna da peça —
-     * buracos e listras da cor do fundo no meio não a encurtam); linha sem peça conta 0.
-     */
-    static int medianRowWidth(boolean[] g, int w, ImageOps.Box b, int y0, int y1) {
-        int from = Math.max(b.y(), y0), to = Math.min(b.y() + b.h(), y1);
-        if (to <= from) return 0;
-        int[] widths = new int[to - from];
-        for (int y = from; y < to; y++) {
-            int first = -1, last = -1;
-            for (int x = b.x(); x < b.x() + b.w(); x++) {
-                if (g[y * w + x]) { if (first < 0) first = x; last = x; }
-            }
-            widths[y - from] = first < 0 ? 0 : last - first + 1;
-        }
-        java.util.Arrays.sort(widths);
-        return widths[widths.length / 2];
-    }
-
-    /** Caixa das colunas da máscara nas linhas [y0, y1), dentro de {@code b}; null sem pixel. */
-    static ImageOps.Box rowsBox(boolean[] g, int w, ImageOps.Box b, int y0, int y1) {
-        int x0 = Integer.MAX_VALUE, x1 = -1;
-        for (int y = Math.max(b.y(), y0); y < Math.min(b.y() + b.h(), y1); y++) {
-            for (int x = b.x(); x < b.x() + b.w(); x++) {
-                if (g[y * w + x]) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); }
-            }
-        }
-        return x1 < 0 ? null : new ImageOps.Box(x0, y0, x1 - x0 + 1, Math.max(1, y1 - y0));
-    }
-
-    private static NRect norm(ImageOps.Box b, int w, int h) {
-        return new NRect(b.x() / (double) w, b.y() / (double) h, b.w() / (double) w, b.h() / (double) h);
-    }
-
-    /** Folga até a borda da peça: 0,3% do menor lado, mínimo 2 px (a interpolação e o JPEG não trazem fundo para dentro). */
-    static int erosion(int w, int h) {
-        return Math.max(2, (int) Math.round(Math.min(w, h) * 0.003));
-    }
-
-    private static String hex(FabricFrame.Mask m) {
-        if (m.bg() == null) return null;
-        return String.format("#%02x%02x%02x", m.bg()[0], m.bg()[1], m.bg()[2]);
+    public static boolean vtonGarment(CatalogImage image) {
+        if (image == null || !image.isCanonical() || !"APPROVED".equals(image.getProcessingStatus())
+                || image.getUsageStatus() != CatalogImageUsage.PERSISTED || image.getStoredUrl() == null) return false;
+        Map<String, Object> assets = image.getAssetsJson() == null ? Map.of() : Json.map(image.getAssetsJson());
+        if (assets.get("persistenceDecision") instanceof Map<?, ?> decision && "FORCED_CATEGORY_FRAME".equals(decision.get("mode"))) return false;
+        Map<String, Object> metrics = image.getMetricsJson() == null ? Map.of() : Json.map(image.getMetricsJson());
+        Map<?, ?> debug = metrics.get("debug") instanceof Map<?, ?> d ? d : Map.of();
+        Map<?, ?> productFrame = debug.get("productFrame") instanceof Map<?, ?> f ? f : Map.of();
+        if (Boolean.TRUE.equals(productFrame.get("model"))) return false;
+        return debug.get("sourceHumanEvidence") instanceof Number human && human.doubleValue() < ProductRuleFrame.MIN_PERSON_SKIN;
     }
 }

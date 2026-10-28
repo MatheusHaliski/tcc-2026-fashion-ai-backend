@@ -133,9 +133,89 @@ export function cutoutGarment(raster: GarmentRaster): GarmentRaster | null {
     if (x > 0) visit(p - 1); if (x < w - 1) visit(p + 1);
     if (y > 0) visit(p - w); if (y < h - 1) visit(p + w);
   }
+  // borda do recorte: o pixel misto (tecido + fundo, o serrilhado da foto) projetado no molde virava uma linha clara ao
+  // longo de costuras, bolsos e barra. O alfa sai da projeção da cor entre o fundo e o tecido vizinho (um pixel meio
+  // denim, meio branco vira alfa 0,5) e a cor volta a ser a do tecido, sem a contaminação do fundo.
+  const edge = new Uint8Array(w * h);
+  const transparentAt = (q: number) => result[q * 4 + 3] === 0;
+  for (let p = 0; p < w * h; p++) {
+    if (transparentAt(p)) continue;
+    const x = p % w, y = (p / w) | 0;
+    if ((x > 0 && transparentAt(p - 1)) || (x < w - 1 && transparentAt(p + 1)) || (y > 0 && transparentAt(p - w)) || (y < h - 1 && transparentAt(p + w))) edge[p] = 1;
+  }
+  for (let p = 0; p < w * h; p++) {
+    if (!edge[p]) continue;
+    const x = p % w, y = (p / w) | 0;
+    let inner = -1;
+    for (const q of [p - 1, p + 1, p - w, p + w, p - w - 1, p - w + 1, p + w - 1, p + w + 1]) {
+      const qx = q % w, qy = (q / w) | 0;
+      if (q < 0 || q >= w * h || Math.abs(qx - x) > 1 || Math.abs(qy - y) > 1 || transparentAt(q) || edge[q]) continue;
+      inner = q; break;
+    }
+    if (inner < 0) continue;
+    let dot = 0, norm = 0;
+    for (let c = 0; c < 3; c++) { const f = data[inner * 4 + c] - bg[c], v = data[p * 4 + c] - bg[c]; dot += f * v; norm += f * f; }
+    if (norm < 1) continue;
+    const a = Math.max(0, Math.min(1, dot / norm));
+    if (a >= 0.97) continue;
+    for (let c = 0; c < 3; c++) result[p * 4 + c] = Math.max(0, Math.min(255, Math.round(a > 0.05 ? bg[c] + (data[p * 4 + c] - bg[c]) / a : data[inner * 4 + c])));
+    result[p * 4 + 3] = Math.round(result[p * 4 + 3] * a);
+  }
   const coverage = 1 - count / (w * h);
   if (coverage < 0.04 || coverage > 0.9) return null;
   return { width: w, height: h, data: result };
+}
+
+/**
+ * Trama real da peça para as costas e laterais quando não há ladrilho periódico (fabricTile): a janela OPACA de menor
+ * variância entre as que têm textura (variância ≥ 100), desde que ao menos três janelas tenham textura parecida
+ * (até 4× a menor) — uma só janela texturizada num tecido liso é um logo ou uma estampa, não trama.
+ */
+export function fabricPatch(raster: GarmentRaster, range: { fromX?: number; toX?: number } = {}): { x: number; y: number; width: number; height: number } | null {
+  const { width: w, height: h, data } = raster;
+  const startX = Math.max(0, Math.floor(range.fromX ?? 0)), endX = Math.min(w, Math.ceil(range.toX ?? w));
+  let x0 = w, x1 = 0, y0 = h, y1 = 0;
+  for (let y = 0; y < h; y++) for (let x = startX; x < endX; x++) if (data[(y * w + x) * 4 + 3] > 240) {
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+  }
+  const size = Math.min(96, Math.floor((x1 - x0) * .3), Math.floor((y1 - y0) * .25));
+  if (size < 24) return null;
+  const candidates: { x: number; y: number; variance: number }[] = [];
+  for (const fy of [0.4, 0.55, 0.7]) for (const fx of [0.2, 0.5, 0.8]) {
+    const py = Math.round(y0 + (y1 - y0) * fy);
+    let rowLeft = w, rowRight = -1;
+    for (let x = startX; x < endX; x++) if (data[(py * w + x) * 4 + 3] > 240) { rowLeft = Math.min(rowLeft, x); rowRight = x; }
+    if (rowRight - rowLeft < size) continue;
+    const px = Math.round(rowLeft + (rowRight - rowLeft - size) * fx);
+    if (px + size > w || py + size > h) continue;
+    const mean = [0, 0, 0]; let opaque = true;
+    for (let y = 0; y < size; y += 2) for (let x = 0; x < size; x += 2) {
+      const k = ((py + y) * w + px + x) * 4;
+      if (data[k + 3] < 240) opaque = false;
+      for (let c = 0; c < 3; c++) mean[c] += data[k + c];
+    }
+    if (!opaque) continue;
+    const samples = Math.ceil(size / 2) ** 2; for (let c = 0; c < 3; c++) mean[c] /= samples;
+    let variance = 0;
+    for (let y = 0; y < size; y += 2) for (let x = 0; x < size; x += 2) for (let c = 0; c < 3; c++) variance += (data[((py + y) * w + px + x) * 4 + c] - mean[c]) ** 2;
+    variance /= samples * 3;
+    if (variance < 100) continue;
+    // trama é alta frequência: suavizada em blocos 4×4 a variância despenca; um logo ou estampa grande (áreas lisas e
+    // bordas largas) mantém quase toda a variância depois de suavizar — não é trama, não vira ladrilho
+    const block = 4, nb = Math.floor(size / block); let low = 0;
+    for (let by = 0; by < nb; by++) for (let bx = 0; bx < nb; bx++) {
+      const sum = [0, 0, 0];
+      for (let y = 0; y < block; y++) for (let x = 0; x < block; x++) { const k = ((py + by * block + y) * w + px + bx * block + x) * 4; for (let c = 0; c < 3; c++) sum[c] += data[k + c]; }
+      for (let c = 0; c < 3; c++) low += (sum[c] / (block * block) - mean[c]) ** 2;
+    }
+    low /= nb * nb * 3;
+    if (low / variance > 0.5) continue;
+    candidates.push({ x: px, y: py, variance });
+  }
+  if (candidates.length < 3) return null;
+  candidates.sort((a, b) => a.variance - b.variance);
+  if (candidates.filter((c) => c.variance <= candidates[0].variance * 4).length < 3) return null;
+  return { x: candidates[0].x, y: candidates[0].y, width: size, height: size };
 }
 
 /**

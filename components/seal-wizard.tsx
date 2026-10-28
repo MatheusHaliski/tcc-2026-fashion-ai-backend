@@ -17,7 +17,7 @@ import { SealPolicyChat, type SealPolicyDraft } from "@/components/seal-policy-c
  * Criação por conversa com Copilot ou metas de Hype: política → dados → arte → revisão.
  * O rascunho do Copilot só entra no criador após aplicação explícita; as metas de Hype são conferidas no servidor.
  */
-export interface SealFormState { open: boolean; id?: string; name: string; tier: SealTierId; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign; policy: SealPolicy }
+export interface SealFormState { open: boolean; id?: string; name: string; tier: SealTierId; policyText: string; usageLimit: string; grantValidityDays?: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign; policy: SealPolicy }
 
 /** Desenho como aparece no selo: a folha sem título usa o nome do selo (o backend grava o mesmo ao salvar). */
 export function displayDesign(d: SealDesign, name: string): SealDesign {
@@ -90,8 +90,9 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label={t("common.disponivel_a_partir_de")} id="sfrom" hint={t("common.vazio_imediato")}><Input id="sfrom" type="datetime-local" value={form.availableFrom} onChange={(e) => setForm((f) => ({ ...f, availableFrom: e.target.value }))} /></Field>
-              <Field label={t("common.expira_em")} id="suntil" hint={t("common.vazio_sem_expiracao")}><Input id="suntil" type="datetime-local" value={form.availableUntil} onChange={(e) => setForm((f) => ({ ...f, availableUntil: e.target.value }))} /></Field>
+              <Field label={t("sealWizard.fim_do_resgate")} id="suntil" hint={t("sealWizard.fim_do_resgate_hint")}><Input id="suntil" type="datetime-local" value={form.availableUntil} onChange={(e) => setForm((f) => ({ ...f, availableUntil: e.target.value }))} /></Field>
             </div>
+            {form.tier !== "PERFIL" && <Field label={t("sealWizard.validade_concessao")} id="svalidity" hint={t("sealWizard.validade_concessao_hint")}><Input id="svalidity" type="number" min={1} max={3650} value={form.grantValidityDays ?? ""} onChange={(e) => setForm((f) => ({ ...f, grantValidityDays: e.target.value }))} /></Field>}
             {form.tier !== "PERFIL" && <Field label={t("brands.slug.limite_de_emissoes")} id="slimit"><Input id="slimit" type="number" min={1} value={form.usageLimit} onChange={(e) => setForm((f) => ({ ...f, usageLimit: e.target.value }))} /></Field>}
           </div>
         )}
@@ -224,7 +225,8 @@ function SealReview({ form, premium, onEdit }: { form: SealFormState; premium?: 
     { k: t("sealPolicy.nivel"), v: t(form.tier === "PERFIL" ? "sealCopilot.profile" : form.tier === "PECA" ? "sealPolicy.nivel_peca" : "sealPolicy.nivel_look"), step: 1 },
     { k: t("sealWizard.politica"), v: policy ? describePolicy(policy, form.tier) : form.policyText || t("sealWizard.sem_politica"), step: 1 },
     { k: t("sealWizard.validade"), v: `${form.availableFrom ? fmtDateTime(form.availableFrom) : t("sealWizard.imediato")} → ${form.availableUntil ? fmtDateTime(form.availableUntil) : t("sealWizard.sem_expiracao")}`, step: 1 },
-    ...(form.tier === "PERFIL" ? [] : [{ k: t("brands.slug.limite_de_emissoes"), v: form.usageLimit || "∞", step: 1 }]),
+    ...(form.tier === "PERFIL" ? [] : [{ k: t("sealWizard.validade_concessao"), v: t("sealWizard.dias", { value: form.grantValidityDays || "365" }), step: 1 },
+      { k: t("brands.slug.limite_de_emissoes"), v: form.usageLimit || "∞", step: 1 }]),
     { k: t("sealWizard.tipo_do_selo"), v: t(`sealWizard.tipo.${kind}`), step: 2 },
   ];
   return (

@@ -3,6 +3,8 @@
  * OrbitControls — theta é o azimute em torno do avatar (0 = câmera em +z, de frente para ele), phi é o ângulo a partir
  * do zênite e radius a distância ao alvo, tudo em radianos e metros. Funções puras: a cena só aplica o resultado.
  */
+import type { DetailMode, DetailState, StopKey } from "./detail-camera";
+
 export const ORBIT_STEP_DEG = 30;
 export const ZOOM_STEP = 1.2;
 
@@ -16,6 +18,24 @@ export interface FittingCameraApi {
   step(action: OrbitAction): void;
   /** avisa quando a distância encosta nos limites (Aproximar/Afastar ficam indisponíveis); devolve o cancelamento */
   subscribe(listener: (state: OrbitLimitState) => void): () => void;
+  /** câmera de detalhe (lib/scene3d/detail-camera.ts): só com o corpo do avatar montado */
+  detail?: FittingDetailApi;
+}
+
+/**
+ * Câmera de detalhe: "corpo" é o enquadramento inteiro de sempre; "calcado" prende o alvo no tênis (arrastar gira em
+ * volta dele); "percurso" desliza pela superfície do corpo, da gola ao calçado, com t contínuo (0 = primeira parada).
+ */
+export interface FittingDetailApi {
+  focus(mode: DetailMode, at?: StopKey): void;
+  /** anda no percurso (entra nele se ainda não estiver) */
+  travel(t: number): void;
+  /**
+   * roda do mouse/trackpad já decidida para a câmera (pixels): aproxima/afasta ou, no percurso, anda pelo corpo; a
+   * pinça (pinch) sempre aproxima/afasta. false = no limite (a rolagem volta para a página)
+   */
+  wheel(deltaY: number, pinch?: boolean): boolean;
+  subscribe(listener: (state: DetailState) => void): () => void;
 }
 
 const clamp = (r: number, l: OrbitLimits) => Math.min(l.maxRadius, Math.max(l.minRadius, r));

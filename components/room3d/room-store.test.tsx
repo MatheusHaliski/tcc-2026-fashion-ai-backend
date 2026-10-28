@@ -239,6 +239,16 @@ describe("loja do quarto — ações do item", () => {
     expect(onChanged).toHaveBeenCalledTimes(2);
   });
 
+  it("retirar do quarto devolve a unidade montada para a caixa sem tirar do inventário", async () => {
+    const onChanged = vi.fn();
+    const { calls } = await open({ "DELETE /api/me/room-inventory/inv2/apply": { applied: false, module: "door:2", sku: "A", inventoryId: "inv2" } }, { onChanged });
+    expect(within(card("Placa Sem Slug")).queryByRole("button", { name: "Retirar do quarto" })).toBeNull();   // nada montado
+    fireEvent.click(within(card("Porta Carvalho")).getByRole("button", { name: "Retirar do quarto" }));
+    expect(await screen.findByText("Porta Carvalho saiu do quarto e continua no seu inventário.")).toBeTruthy();
+    expect(calls.some((c) => c.method === "DELETE" && c.path === "/api/me/room-inventory/inv2/apply")).toBe(true);
+    expect(onChanged).toHaveBeenCalledTimes(1);
+  });
+
   it("compra sem número de série; montar escolhendo outro módulo e falha ao montar", async () => {
     await open({
       "POST /api/points/shop/A/purchase": { inventoryId: "inv7", balance: 10, serial: "null" },

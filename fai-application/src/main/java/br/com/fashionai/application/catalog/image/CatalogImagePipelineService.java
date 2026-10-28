@@ -11,7 +11,9 @@ import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.CatalogImage;
 import br.com.fashionai.domain.model.CatalogProduct;
 import br.com.fashionai.domain.model.CatalogSource;
+import br.com.fashionai.domain.model.enums.CatalogImageType;
 import br.com.fashionai.domain.model.CatalogVariant;
+import br.com.fashionai.domain.model.enums.CatalogImageType;
 import br.com.fashionai.domain.model.enums.CatalogImageUsage;
 import br.com.fashionai.domain.repository.CatalogImageRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
@@ -184,6 +186,14 @@ public class CatalogImagePipelineService {
         return texturePhoto(user, productId, false);
     }
 
+    /** Frente antes de detalhe, lateral e costas: a textura do provador e a verificação do enquadramento são da FRENTE da
+     *  peça (uma foto de costas servida como frente vestia o avatar com o capuz e a etiqueta na frente). */
+    static int viewRank(CatalogImage image) {
+        CatalogImageType type = image.getImageType();
+        if (type == null || type == CatalogImageType.FRONT) return 0;
+        return switch (type) { case DETAIL, TOP -> 1; case SIDE -> 2; case BACK, SOLE -> 3; default -> 1; };
+    }
+
     /** isolated=true never falls back to an unsegmented catalogue/model photograph. */
     public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated) {
         return texturePhoto(user,productId,isolated,null,null);
@@ -191,6 +201,23 @@ public class CatalogImagePipelineService {
 
     /** Explicit image/variant selectors are IDs scoped to this product, never arbitrary fetch URLs. */
     public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated, UUID variantId, UUID imageId) {
+        return texturePhoto(user, productId, isolated, variantId, imageId, null);
+    }
+
+    /** Vista da foto pedida pelo provador: a frente (padrão) ou as costas da peça. */
+    public enum TextureView { FRONT, BACK;
+        public static TextureView of(String raw) {
+            return raw == null || raw.isBlank() ? FRONT : "BACK".equalsIgnoreCase(raw.trim()) ? BACK : FRONT;
+        }
+    }
+
+    /**
+     * {@code view=BACK}: só uma foto marcada como costas da mesma peça/variante — nunca a frente no lugar (o provador
+     * deixa as costas no tecido medido e registra "sem evidência"). A frente nunca recebe uma foto de costas: o logo da
+     * nuca não pode ir parar no peito.
+     */
+    public TexturePhoto texturePhoto(CurrentUser user, UUID productId, boolean isolated, UUID variantId, UUID imageId, TextureView view) {
+        boolean back = view == TextureView.BACK;
         guard.requireCanCreate(user);
         CatalogProduct product=products.findById(productId).orElseThrow(()->ApiException.notFound("catalog product"));
         if (br.com.fashionai.application.catalog.CatalogPhotoEligibility.excluded(product))
@@ -199,13 +226,17 @@ public class CatalogImagePipelineService {
         var requestedVariant=selectedVariant(product,productVariants,variantId,imageId);
         List<CatalogImage> candidates=images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
                 .filter(i->productId.equals(i.getProductId()))
-                .filter(i->imageId==null||imageId.equals(i.getId()))
+                // a foto escolhida (imageId) é a da frente: nas costas vale a variante dela, não a própria foto
+                .filter(i->back||imageId==null||imageId.equals(i.getId()))
                 .filter(i->CatalogImageIdentity.matches(i,product,requestedVariant,productVariants))
                 .filter(i->i.getUsageStatus()!=CatalogImageUsage.REJECTED&&!"REJECTED".equals(i.getReviewStatus()))
+                .filter(i->back ? i.getImageType()==CatalogImageType.BACK : imageId!=null||i.getImageType()!=CatalogImageType.BACK)
+                // a foto canônica é a da frente: as costas valem quando aprovadas, sem exigir o selo de canônica
                 .filter(i->"READY".equals(boundPhotoSet(i,product).get("status"))
-                        || "APPROVED".equals(i.getProcessingStatus())&&(i.isCanonical()||variantId!=null||imageId!=null))
+                        || "APPROVED".equals(i.getProcessingStatus())&&(back||i.isCanonical()||variantId!=null||imageId!=null))
                 .filter(i->!Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(boundPhotoSet(i,product).get("status"))))
                 .sorted(java.util.Comparator.comparing((CatalogImage i)->!"READY".equals(boundPhotoSet(i,product).get("status")))
+                        .thenComparing(CatalogImagePipelineService::viewRank)
                         .thenComparing(i->!i.isCanonical()).thenComparing(i->String.valueOf(i.getId())))
                 .toList();
         for (CatalogImage selected:candidates) {
@@ -238,6 +269,7 @@ public class CatalogImagePipelineService {
                 catch (RuntimeException unreadable) { /* Keep trying only this product/variant's alternatives. */ }
             }
         }
+        if(back) throw new ApiException(404,"CATALOG_BACK_PHOTO_UNAVAILABLE","Esta peça e variante não têm foto das costas.");
         if(isolated) throw new ApiException(422,"CATALOG_ISOLATED_PHOTO_UNAVAILABLE","Foto isolada ainda não disponível para esta peça e variante.");
         throw new ApiException(422,"CATALOG_IMAGE_FETCH_FAILED","Não foi possível carregar a foto desta peça e variante.");
     }
@@ -302,7 +334,7 @@ public class CatalogImagePipelineService {
                 .filter(i -> i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
                 .filter(i -> i.getImageUrl() != null && !i.getImageUrl().isBlank())
                 .filter(i -> !Set.of("REVIEW","INELIGIBLE","RETRY").contains(String.valueOf(boundPhotoSet(i,product).get("status"))))
-                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()))
+                .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()).thenComparing(CatalogImagePipelineService::viewRank))
                 .limit(3).toList();
         if (candidates.isEmpty()) throw new ApiException(422, "CATALOG_IMAGE_MISSING", "Esta peça não tem foto disponível para verificar.");
         boolean downloaded = false;

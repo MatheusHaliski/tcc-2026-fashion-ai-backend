@@ -245,6 +245,47 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void fotoDeFrenteVemAntesDaDeCostasNaTexturaIsolada() {
+        CatalogSource source = new CatalogSource(); source.setDomain("brand.com"); source.setAllowsImagePersistence(true); sources.add(source);
+        CatalogImage back = image("https://brand.com/back.png", CatalogImageType.BACK, null);
+        CatalogImage front = image("https://brand.com/front.png", CatalogImageType.FRONT, null);
+        byte[] backWhole = CatalogPhotos.png(CatalogPhotos.tee(120, 160, 1.0)), frontWhole = CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0));
+        for (var pair : List.of(Map.entry(back, "whole-back.png"), Map.entry(front, "whole-front.png"))) {
+            CatalogImage i = pair.getKey(); i.setSourceSha256("a".repeat(64)); i.setCanonical(i == back); i.setProcessingStatus("APPROVED");
+            Map<String, Object> state = photoEvidence(i, "READY"); state.put("wholeUrl", "https://media.fashion-ai.app/" + pair.getValue());
+            i.setAssetsJson(Json.write(Map.of("photoSet", state)));
+        }
+        stored.put("whole-back.png", backWhole); stored.put("whole-front.png", frontWhole);
+        assertThat(service.texturePhoto(admin, product.getId(), true).bytes()).isEqualTo(frontWhole);
+        assertThat(CatalogImagePipelineService.viewRank(front)).isLessThan(CatalogImagePipelineService.viewRank(back));
+        assertThat(CatalogImagePipelineService.viewRank(image("https://brand.com/x.png", null, null))).isZero();
+        // costas: a foto marcada BACK, mesmo sem ser a canônica e com a frente escolhida explicitamente
+        var BACK = CatalogImagePipelineService.TextureView.BACK;
+        assertThat(service.texturePhoto(admin, product.getId(), true, null, null, BACK).bytes()).isEqualTo(backWhole);
+        assertThat(service.texturePhoto(admin, product.getId(), true, null, front.getId(), BACK).bytes()).isEqualTo(backWhole);
+    }
+
+    @Test
+    void semFotoDeCostasAsCostasNaoRecebemAFrenteEAFrenteNaoRecebeAsCostas() {
+        CatalogSource source = new CatalogSource(); source.setDomain("brand.com"); source.setAllowsImagePersistence(true); sources.add(source);
+        CatalogImage back = image("https://brand.com/only-back.png", CatalogImageType.BACK, null);
+        back.setSourceSha256("a".repeat(64)); back.setCanonical(true); back.setProcessingStatus("APPROVED");
+        Map<String, Object> state = photoEvidence(back, "READY"); state.put("wholeUrl", "https://media.fashion-ai.app/whole-only-back.png");
+        back.setAssetsJson(Json.write(Map.of("photoSet", state)));
+        stored.put("whole-only-back.png", CatalogPhotos.png(CatalogPhotos.tee(120, 160, 1.0)));
+        assertThatThrownBy(() -> service.texturePhoto(admin, product.getId(), true)).isInstanceOf(ApiException.class);
+
+        CatalogImage front = image("https://brand.com/only-front.png", CatalogImageType.FRONT, null);
+        db.remove(back.getId());
+        front.setSourceSha256("a".repeat(64)); front.setCanonical(true); front.setProcessingStatus("APPROVED");
+        Map<String, Object> frontState = photoEvidence(front, "READY"); frontState.put("wholeUrl", "https://media.fashion-ai.app/whole-only-front.png");
+        front.setAssetsJson(Json.write(Map.of("photoSet", frontState)));
+        stored.put("whole-only-front.png", CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0)));
+        assertThatThrownBy(() -> service.texturePhoto(admin, product.getId(), true, null, null, CatalogImagePipelineService.TextureView.BACK))
+                .isInstanceOf(ApiException.class).hasFieldOrPropertyWithValue("status", 404);
+    }
+
+    @Test
     void textureTransportReadsOnlyTheApprovedOriginalWithoutRenderingOrPersistingAgain() {
         byte[] original = CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0));
         CatalogImage front = image("https://img.brand.com/texture.png", CatalogImageType.FRONT, original);

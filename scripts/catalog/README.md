@@ -300,6 +300,60 @@ cada foto (RENDERED, REJECTED, REVIEW, INELIGIBLE, RETRY, FAILED); uma falha nã
 liberada a cada foto. `--no-ai` dá só o recorte; `--public-base-url` grava URL em vez de caminho local; `--table products`
 atende a tabela genérica do roteiro original.
 
+### Engine `fashn-open` — o pipeline aberto da FASHN (parser + BiRefNet + LaMa, SD opcional)
+
+O modelo `packshot` da API da FASHN é fechado: resultado idêntico ao dela só pela própria API. O que a FASHN publica no
+Hugging Face permite montar o pipeline equivalente, e é isso que `--engine fashn-open` faz (`fashn_open.py`; pesos
+fixados por repositório, revisão e sha256 em `fashn_open_assets.json`, conferidos antes de qualquer `import`):
+
+1. **fashn-human-parser** com a mesma seleção de rótulos por categoria do `fashn-vton-1.5` (`create_garment_image`):
+   tops → `top/dress/scarf`, bottoms → `skirt/pants/belt`, one-pieces e conjuntos → todos. Foto **sem pessoa** (flat-lay,
+   produto solto): o parser é ignorado, como o `disable_masking` da FASHN — ele "vê" cabelo em textura de produto. Calçado
+   fica com `feet`; acessório com `belt/bag/hat/scarf/glasses/jewelry` (as três categorias da FASHN não os cobrem).
+   Os rótulos saem da média dos logits da foto e do seu espelho (TTA): sozinho, o parser rotulou a metade de baixo de um
+   jeans como `dress` (conjunto jeans + top) e a calça saiu partida; com o espelho a confusão desaparece.
+2. **BiRefNet** (`fashn-ai/BiRefNet`, Swin-L a 1024²) dá o alfa fino do primeiro plano: a borda peça/fundo vem dele; a
+   borda peça/corpo e peça/outra peça vem do parser. Onde o parser (576×384) chamou de fundo mas o BiRefNet vê primeiro
+   plano colado na peça, a borda fina vence.
+3. **LaMa** (`fashn-ai/LaMa`, `big-lama.pt` TorchScript) preenche SÓ a região fantasma (corpo por dentro da peça), com
+   `--lama-margin` px a mais e com todo o corpo/outras peças também mascarados no recorte que ele vê — assim a gola é
+   preenchida a partir do tecido e do fundo, nunca da pele do pescoço logo acima. O tecido original continua pixel a pixel.
+4. `--sd`: Stable Diffusion inpainting por cima do preenchimento do LaMa (acabamento *ghost mannequin*).
+5. Enquadramento, `ineligible.json` e a regra dos 25 % são os mesmos do engine `sd`; `metadata_clean.json` traz
+   `engine`, `fashnOpen.mode` (`parser+birefnet`, `birefnet-flat-lay`, `birefnet-only`) e `matte: birefnet`.
+
+```bash
+.venv/bin/pip install -r scripts/catalog/requirements-fashn-open.txt
+.venv/bin/python scripts/catalog/fashn_open.py download --dest /dados/fashn-open        # ≈ 1,4 GB, sha256 conferido
+.venv/bin/python scripts/catalog/fashn_open.py smoke --dest /dados/fashn-open --image foto.jpg --category upper_piece
+.venv/bin/python scripts/catalog/process_local_sd.py --engine fashn-open --weights /dados/fashn-open --input rows.json --dry-run --limit 20
+.venv/bin/python scripts/catalog/process_local_sd.py --engine fashn-open --weights /dados/fashn-open --sd --limit 200     # com SD por cima
+```
+
+**photoSet do catálogo (`--photo-set`).** O worker `process_photo_sets.py` só grava `photoSet READY` com preflight
+`PASS`, e o preflight exige atestações (`complete`, `occluded`, `measurement_verified`, isolação verificada) que nenhum
+provedor automático dava — na medição de 24/10, 100 % das fotos ficaram em `REVIEW`, e é por isso que a interface mostra
+"prévia só com cor", "a textura não carregou" e "as fotos não permitem o enquadramento". O engine `fashn-open` atesta
+esses campos com evidência dos dois modelos (peça não encosta na borda; corpo por dentro da peça ≤ 12 %; mão/bolsa sobre
+o tecido ≤ 5 %; parser separou pessoa e peça, ou não viu pessoa e o BiRefNet isolou o produto) e descarta fios e
+cascalhos como o preflight faz. Fluxo com o banco:
+
+```bash
+python -m scripts.catalog.process_photo_sets --export-rows rows.json              # fotos sem photoSet atual (--force: todas)
+python scripts/catalog/process_local_sd.py --engine fashn-open --weights W --input rows.json --photo-set --dry-run --out-dir lote
+python -m scripts.catalog.process_photo_sets --from-lot lote                      # ensaio: READY / REVIEW / stale / missing
+python -m scripts.catalog.process_photo_sets --from-lot lote --apply              # upload whole/fabric + photoSet (mesmo CAS do worker)
+```
+
+`lote/photo-sets/<id>/set.json` é o contrato `CATALOG_PHOTO_SET_V2` (sourceSha256, preflight, whole, fabric); registro que
+mudou desde a exportação é pulado como `stale`. Com o photoSet `READY`, a prévia do provador usa a foto isolada
+(`texture-image?isolated=true`) e `ensurePreview` não roda mais a verificação que recusava o enquadramento.
+
+Custo medido em CPU (4 núcleos / 15 GB, 2026-10-24): BiRefNet ≈ 30 s/foto e ≈ 4,8 GB; parser 3–8 s; LaMa alguns
+segundos — é trabalho para GPU. `scripts/cloud/packshot_gpu_vm.py` imprime o plano (comandos `gcloud`, custo estimado) e,
+só com `--apply --yes`, cria uma VM **spot** T4/L4 na GCP com `--max-run-duration` (teto de custo), que roda o lote em
+`--dry-run` (nunca escreve no banco), devolve PNG e relatórios num bucket e se apaga. Sem `--apply` nada é criado.
+
 ## Auditoria e direitos de persistência
 
 Consulte `docs/catalogo/AUDITORIA_PERSISTENCIA_PIPELINE.md` para a investigação,

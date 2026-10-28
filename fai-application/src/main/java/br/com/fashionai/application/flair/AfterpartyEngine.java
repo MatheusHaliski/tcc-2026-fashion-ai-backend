@@ -3,7 +3,11 @@ package br.com.fashionai.application.flair;
 import br.com.fashionai.application.common.ApiException;
 import java.util.*;
 
-/** Authoritative, deterministic stealth simulation. Energy is local to the match, never FAI Points. */
+/**
+ * Authoritative, deterministic stealth simulation. Energy is local to the match, never FAI Points. The match deck
+ * changes the avatar and the hall (AfterpartyMods): speed, suspicion, distraction, energy, the guards' sight (lighting),
+ * crowd cover and an opening VIP route. Sessions saved before the modifiers play neutral.
+ */
 public final class AfterpartyEngine {
  private AfterpartyEngine(){}
  public record Loadout(String id,String title,String tier,String role,String color,boolean techwear,String imageUrl,int cost,int cooldownMs){}
@@ -12,23 +16,32 @@ public final class AfterpartyEngine {
   public double x=0,z=5,energy=100,suspicion=0;
   public String status="ACTIVE",phase="ACQUIRE",activeDeckId=null,role="NONE",color="#406b91",feedback="STARTED";
   public boolean badge=false,item=false,running=false;
-  public long lastTickAt,lastMoveAt,activeUntil=0,distractionUntilLeft=0,distractionUntilRight=0,distractionReadyAt=0;
+  public long lastTickAt,lastMoveAt,activeUntil=0,distractionUntilLeft=0,distractionUntilRight=0,distractionReadyAt=0,startedAt=0;
+  public AfterpartyMods.Mods mods;
   public List<Loadout> loadouts=new ArrayList<>();
   public Map<String,Long> cooldowns=new HashMap<>();
   public List<String> requests=new ArrayList<>();
  }
- public static State start(List<Loadout> loadouts,long now){State s=new State();s.loadouts=new ArrayList<>(loadouts);s.lastTickAt=now;s.lastMoveAt=now;return s;}
+ public static State start(List<Loadout> loadouts,long now){return start(loadouts,AfterpartyMods.NEUTRAL,now);}
+ public static State start(List<Loadout> loadouts,AfterpartyMods.Mods mods,long now){State s=new State();s.loadouts=new ArrayList<>(loadouts);s.lastTickAt=now;s.lastMoveAt=now;s.startedAt=now;s.mods=mods;return s;}
+ static AfterpartyMods.Mods mods(State s){return s.mods==null?AfterpartyMods.NEUTRAL:s.mods;}
  public static boolean effectActive(State s,long now){return s.activeDeckId!=null&&s.activeUntil>now;}
- public static boolean vipAccess(State s,long now){return s.badge||effectActive(s,now)&&Set.of("VIP","EVENT_VIP").contains(s.role)||s.distractionUntilLeft>now&&s.distractionUntilRight>now;}
+ /** Rota VIP do deck de alta-cultura: o cordão VIP fica aberto nos primeiros segundos da partida. */
+ public static boolean vipRoute(State s,long now){long ms=mods(s).vipRouteMs();return ms>0&&s.startedAt>0&&now<s.startedAt+ms;}
+ public static boolean vipAccess(State s,long now){return s.badge||effectActive(s,now)&&Set.of("VIP","EVENT_VIP").contains(s.role)||s.distractionUntilLeft>now&&s.distractionUntilRight>now||vipRoute(s,now);}
+ /** Zona que os seguranças da portaria enxergam: penumbra encolhe, holofotes aumentam. */
+ public static boolean inGuardSight(State s,long now){return Math.abs(s.x)<2.4*mods(s).zoneMul()&&s.z>-.7&&s.z<3.4&&(s.distractionUntilLeft<=now||s.distractionUntilRight<=now);}
  public static boolean mainAccess(State s,long now){return vipAccess(s,now)||effectActive(s,now)&&s.role.equals("GUEST");}
  public static void tick(State s,long now){
   if(!s.status.equals("ACTIVE"))return;
   double dt=Math.max(0,Math.min(2,(now-s.lastTickAt)/1000d));s.lastTickAt=Math.max(now,s.lastTickAt);
-  s.energy=Math.min(100,s.energy+dt*3);
+  var m=mods(s);
+  s.energy=Math.min(100,s.energy+dt*3*m.regenMul());
   if(!effectActive(s,now)){s.role="NONE";s.color="#406b91";s.activeDeckId=null;}
-  boolean visible=Math.abs(s.x)<2.4&&s.z>-.7&&s.z<3.4&&(s.distractionUntilLeft<=now||s.distractionUntilRight<=now);
-  double rate=visible?(s.running?23:effectActive(s,now)?-5:18):-7;
-  if(s.z< -3&&!vipAccess(s,now))rate=30;
+  boolean visible=inGuardSight(s,now);
+  // furtividade multiplica a suspeita que sobe; carisma deixa o disfarce mais convincente; a multidão cobre fora da vista
+  double rate=visible?(s.running?23*m.suspicionMul():effectActive(s,now)?-5*(0.6+0.8*m.charm()/100.0):18*m.suspicionMul()):-7-4*m.crowd();
+  if(s.z< -3&&!vipAccess(s,now))rate=30*m.suspicionMul();
   s.suspicion=Math.max(0,Math.min(100,s.suspicion+dt*rate));
   if(s.suspicion>=100){s.status="FAILED";s.feedback="DETECTED";}
  }
@@ -57,7 +70,7 @@ public final class AfterpartyEngine {
   if(!Double.isFinite(a.dx())||!Double.isFinite(a.dz())||Math.abs(a.dx())>1||Math.abs(a.dz())>1)throw ApiException.badRequest("MOVE_INVALID","Direção inválida.");
   double dt=Math.max(0,Math.min(.4,(now-s.lastMoveAt)/1000d));s.lastMoveAt=Math.max(now,s.lastMoveAt);double len=Math.hypot(a.dx(),a.dz());if(len==0){s.running=false;return;}
   boolean tech=effectActive(s,now)&&s.loadouts.stream().anyMatch(c->c.id().equals(s.activeDeckId)&&c.techwear());
-  double speed=a.running()?(tech?3.8:3):2;double x=Math.max(-5,Math.min(5,s.x+a.dx()/Math.max(1,len)*dt*speed));double z=Math.max(-7,Math.min(7,s.z+a.dz()/Math.max(1,len)*dt*speed));
+  double speed=(a.running()?(tech?3.8:3):2)*mods(s).speedMul();double x=Math.max(-5,Math.min(5,s.x+a.dx()/Math.max(1,len)*dt*speed));double z=Math.max(-7,Math.min(7,s.z+a.dz()/Math.max(1,len)*dt*speed));
   // Portaria spans the roof; only a staff disguise can use the side service entrance.
   boolean crossesGate=s.z>=0&&z<0||s.z<0&&z>=0;
   if(crossesGate&&!mainAccess(s,now)&&!(Math.abs(x)>3.2&&effectActive(s,now)&&s.role.equals("STAFF"))){s.feedback="GATE_BLOCKED";s.running=false;return;}
@@ -68,7 +81,8 @@ public final class AfterpartyEngine {
   if(Math.abs(s.x)>3.5||s.z<-.5||s.z>3.5){s.feedback="TOO_FAR";return;}
   if(!effectActive(s,now)||!Set.of("GUEST","VIP","EVENT_VIP").contains(s.role)){s.feedback="DISGUISE_REQUIRED";return;}
   if(now<s.distractionReadyAt){s.feedback="COOLDOWN";return;}if(s.energy<15){s.feedback="ENERGY_LOW";return;}
-  s.energy-=15;s.distractionReadyAt=now+6000;if(s.x<=0)s.distractionUntilLeft=now+12000;else s.distractionUntilRight=now+12000;s.feedback="DISTRACTED";
+  long lasts=Math.round(12000*mods(s).distractMul());
+  s.energy-=15;s.distractionReadyAt=now+6000;if(s.x<=0)s.distractionUntilLeft=now+lasts;else s.distractionUntilRight=now+lasts;s.feedback="DISTRACTED";
  }
  private static void interact(State s,long now){
   if(Math.hypot(s.x-4,s.z+2)<1.2){if(effectActive(s,now)&&s.role.equals("STAFF")){s.badge=true;s.feedback="BADGE_FOUND";}else s.feedback="STAFF_REQUIRED";return;}

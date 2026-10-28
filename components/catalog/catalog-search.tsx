@@ -269,7 +269,8 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   }, [resultsLayout, paginationKey, discover.result]);
 
   const colors = Array.from(new Set(shown.flatMap((p) => [p.color, ...(p.variants ?? []).map((v) => v.color)]).filter((c): c is string => !!c)));
-  const genders = Array.from(new Set(shown.map((p) => p.gender).filter((g): g is string => !!g)));
+  // o gênero escolhido continua entre os chips mesmo quando a página filtrada só tem ele (senão não daria para desmarcar)
+  const genders = Array.from(new Set([...shown.map((p) => p.gender).filter((g): g is string => !!g), ...(gender ? [gender] : [])]));
   const canSearchOfficial = !!(acervo?.canSearchOfficial || res?.canSearchOfficial) && !discover.busy && !discover.result;
   const reportRef = useRef(onResults); reportRef.current = onResults;
 
@@ -327,10 +328,10 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
             </p>
           )}
           {resultsLayout === "matrix" && <p className="mb-3 type-body-sm tabular" role="status">{t("catalog.pecas_na_selecao", { count: browsing && acervo ? acervo.total : filtered.length })}</p>}
-          {(colors.length > 1 || controlledGender === undefined && genders.length > 1) && (
+          {(colors.length > 1 || controlledGender === undefined && (genders.length > 1 || !!gender)) && (
             <div className="mb-3 flex flex-wrap items-center gap-1.5" aria-label={t("catalog.filtros_rapidos")}>
               {colors.length > 1 && <><span className="type-caption text-muted">{t("common.color")}:</span>{colors.map((c) => <Chip key={c} active={color === c} onClick={() => setColor(color === c ? "" : c)}><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: tax?.colors?.[c] ?? "#999" }} />{label(c)}</Chip>)}</>}
-              {controlledGender === undefined && genders.length > 1 && <><span className="type-caption text-muted ml-2">{t("catalog.genero")}:</span>{genders.map((g) => <Chip key={g} active={gender === g} onClick={() => setGender(gender === g ? "" : g)}>{label(g.toLowerCase())}</Chip>)}</>}
+              {controlledGender === undefined && (genders.length > 1 || !!gender) && <><span className="type-caption text-muted ml-2">{t("catalog.genero")}:</span>{genders.map((g) => <Chip key={g} active={gender === g} onClick={() => setGender(gender === g ? "" : g)}>{label(g.toLowerCase())}</Chip>)}</>}
             </div>
           )}
           {filtered.length > 0 && (
@@ -557,10 +558,10 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
           </div>
         ) : p.colorName ? <p className="mt-1 flex items-center gap-1.5 type-body-sm"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: p.colorHex ?? undefined }} />{p.colorName}</p> : null}
         <p className="mt-1 type-caption text-faint">{t("catalog.fonte", { fonte: source })}</p>
-        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("fit.title")}</Button>}
+        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("size.botao")}</Button>}
         <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant, p, preview.prepare)} loading={busy} disabled={disabled}>{busy ? t("catalog.verificando_foto") : pickLabel ?? t("catalog.e_esta")}</Button>
       </div>
-      {fitOpen && <ProductFitDialog productId={p.id} productName={p.productName} open onClose={() => setFitOpen(false)} />}
+      {fitOpen && <ProductFitDialog product={p} open onClose={() => setFitOpen(false)} />}
     </article>
   );
 }

@@ -4,17 +4,19 @@ FAI XP é a progressão medida pelos **FAI Points vitalícios**. O saldo pode se
 
 ## Níveis
 
+São **três** níveis (`FaiPointsService.Level`). A migração `V74__tres_niveis_basico_studio_loft.sql` converteu Closet,
+Atelier, Penthouse e Maison em Loft, e `Level.parse` continua lendo esses nomes antigos como Loft.
+
 | Nível exibido | Identificador interno | FAI Points vitalícios necessários | Desbloqueios relevantes |
 |---|---|---:|---|
-| Básico | `ESTREIA` | 0 | Acesso inicial e AURA básica |
-| Studio | `STUDIO` | 300 | AURA Hype e auras dinâmicas |
-| Loft | `LOFT` | 900 | AURA Metamorfose, AURA Impersonation e jogos FLAIR Metamorfose |
-| Closet | `CLOSET` | 2.000 | Módulos especializados do quarto |
-| Atelier | `ATELIER` | 4.000 | Ilha central do quarto |
-| Penthouse | `PENTHOUSE` | 7.500 | Ambiente premium |
-| Maison | `MAISON` | 12.000 | Closet de assinatura |
+| Básico | `ESTREIA` | 0 | Quarto base, Smart Mirror/Vista-me, AURA estática e acabamento Hype **Comum** |
+| Studio | `STUDIO` | 300 | Iluminação guiada, sapateira/vitrine/porta-joias, AURA dinâmica (borda animada do AURA Hype) e acabamento Hype **Raro** |
+| Loft | `LOFT` | 900 | Quarto maior, ilha central, closet de assinatura, AURA Metamorfose, AURA Impersonation, FLAIR Metamorfose e acabamentos Hype **Lendário** e **Collab/Drop** |
 
 Os identificadores internos são mantidos para compatibilidade com dados existentes. Assim, `ESTREIA` é apresentado como **Básico**, sem alterar o valor persistido nem invalidar o progresso já registrado.
+
+A fonte única da regra é o backend (`AuraPermissionsService.AuraGatingConfig` e `HYPE_FINISH_TIERS`); o frontend lê os
+requisitos de `GET /api/me/aura-permissions` (`auras` e `hypeFinishes`).
 
 ## Como ganhar XP
 
@@ -31,6 +33,8 @@ O Roubo ao Afterparty concede pontos por iniciar uma partida e um bônus de vit�
 
 ## Auras
 
-- AURA Hype e demais auras dinâmicas: **Studio** (300 pontos).
-- AURA Metamorfose: **Loft** (900 pontos).
-- AURA Impersonation: **Loft** (900 pontos).
+- AURA básica e acabamento Hype Comum: **Básico** (0 pontos).
+- AURA dinâmica, borda animada do AURA Hype (preferência `auraHype`) e acabamento Hype Raro: **Studio** (300 pontos).
+- AURA Metamorfose, AURA Impersonation e acabamentos Hype Lendário e Collab/Drop: **Loft** (900 pontos).
+
+Todas as regras valem também em chamadas diretas à API (403 `AURA_LEVEL_REQUIRED` com `requiredTier`).

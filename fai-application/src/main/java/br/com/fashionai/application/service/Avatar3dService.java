@@ -414,7 +414,7 @@ public class Avatar3dService {
                     if (owner || (a.getApprovedVersion() != null && a.getApprovedVersion() == a.getCurrentVersion())) {
                         Map<String, Object> m = new LinkedHashMap<>();
                         m.put("version", a.getUpdatedAt() == null ? 0 : a.getUpdatedAt().toEpochMilli());
-                        m.put("model", Json.map(a.getModelJson()));
+                        m.put("model", owner ? Json.map(a.getModelJson()) : publicModel(Json.map(a.getModelJson())));
                         m.put("adjust", a.getAdjustJson() == null ? Map.of() : Json.map(a.getAdjustJson()));
                         // textura ainda não aprovada: quem não é o dono vê a forma com o rosto padrão (sem a foto)
                         m.put("textureUrl", owner || publicTexture(a) ? textureUrl(a) : null);
@@ -426,7 +426,7 @@ public class Avatar3dService {
                     return versions.findByUserIdAndVersionNo(ownerId, a.getApprovedVersion()).map(v -> {
                         Map<String, Object> m = new LinkedHashMap<>();
                         m.put("version", v.getUpdatedAt() == null ? v.getVersionNo() : v.getUpdatedAt().toEpochMilli());
-                        m.put("model", Json.map(v.getModelJson()));
+                        m.put("model", publicModel(Json.map(v.getModelJson())));
                         m.put("adjust", v.getAdjustJson() == null ? Map.of() : Json.map(v.getAdjustJson()));
                         m.put("textureUrl", v.getTextureModeration() == ModerationStatus.APPROVED
                                 ? "/api/avatar3d/" + ownerId + "/texture?version=" + v.getVersionNo() : null);
@@ -749,6 +749,28 @@ public class Avatar3dService {
     }
 
     /** Faixas plausíveis de cada proporção do corpo (as mesmas de lib/avatar3d/body-spec.ts, BODY_RANGE). */
+    /** Medidas de fita (cm) e número do calçado (BR): as mesmas faixas de lib/tryon/sizes.ts (TAPE_RANGE). */
+    static final Map<String, double[]> TAPE_RANGE = Map.of(
+            "chest", new double[]{60, 170}, "waist", new double[]{50, 170}, "hip", new double[]{60, 180}, "shoe", new double[]{33, 46});
+    /** O que é da pessoa e não vai para quem vê o avatar dela: altura e peso informados e as medidas de fita. */
+    static final List<String> PERSONAL_BODY_KEYS = List.of("heightCm", "weightKg", "measuresCm");
+
+    /** Modelo para outra pessoa: as proporções desenham o corpo; as medidas pessoais ficam só com o dono. */
+    static Map<String, Object> publicModel(Map<String, Object> model) {
+        if (!(model.get("body") instanceof Map<?, ?> body)) {
+            return model;
+        }
+        Map<String, Object> b = new LinkedHashMap<>();
+        body.forEach((k, v) -> {
+            if (!PERSONAL_BODY_KEYS.contains(String.valueOf(k))) {
+                b.put(String.valueOf(k), v);
+            }
+        });
+        Map<String, Object> out = new LinkedHashMap<>(model);
+        out.put("body", b);
+        return out;
+    }
+
     static final Map<String, double[]> BODY_RANGE = Map.of(
             "stature", new double[]{1.2, 2.2}, "shoulderW", new double[]{0.15, 0.26}, "chestW", new double[]{0.13, 0.26},
             "waistW", new double[]{0.11, 0.26}, "hipW", new double[]{0.15, 0.27}, "legLen", new double[]{0.46, 0.58},
@@ -810,6 +832,19 @@ public class Avatar3dService {
         out.put("sources", src);
         out.put("heightCm", bounded(b.get("heightCm"), 120, 220));
         out.put("weightKg", bounded(b.get("weightKg"), 30, 250));
+        // medidas de fita e número do calçado informados pela pessoa (opcionais): só o tamanho do provador usa
+        if (b.get("measuresCm") instanceof Map<?, ?> tape) {
+            Map<String, Object> cm = new LinkedHashMap<>();
+            for (Map.Entry<String, double[]> e : TAPE_RANGE.entrySet()) {
+                Double cmValue = bounded(tape.get(e.getKey()), e.getValue()[0], e.getValue()[1]);
+                if (cmValue != null) {
+                    cm.put(e.getKey(), cmValue);
+                }
+            }
+            if (!cm.isEmpty()) {
+                out.put("measuresCm", cm);
+            }
+        }
         out.put("photo", Boolean.TRUE.equals(b.get("photo")));
         out.put("warnings", b.get("warnings") instanceof List<?> w ? w.stream().limit(20).map(String::valueOf)
                 .map(x -> x.replaceAll("[^A-Za-z0-9_]", "")).filter(x -> !x.isEmpty()).toList() : List.of());

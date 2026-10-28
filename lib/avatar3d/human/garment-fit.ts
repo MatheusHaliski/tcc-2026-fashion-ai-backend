@@ -14,10 +14,15 @@ import { upperProfile, upperVariantFit, applyUpperVariation } from "./upperwear"
  * Nada aqui altera o corpo da pessoa: só a roupa muda para caber (nunca o contrário).
  */
 import { SPECS, kindOf, specOf, type GarmentKind, type GarmentSpec } from "./garments";
+import { SIZE_RADIAL, gridOf, type SizeRegions } from "@/lib/tryon/sizes";
 
 export type FitClass = "justa" | "regular" | "oversized" | "estruturada" | "fluida";
 
-export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; material?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
+export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; material?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null;
+  /** tamanho escolhido menos o tamanho do corpo do avatar, em tamanhos da grade (lib/tryon/sizes.ts); sem escolha, 0 */
+  sizeSteps?: number | null;
+  /** a mesma diferença por região do corpo (peito, cintura, quadril, comprimento, pé); sem ela, a do total em tudo */
+  sizeRegions?: SizeRegions | null }
 
 /** Variação de modelagem da taxonomia → classe de caimento. */
 export const VARIATION_FIT: Record<string, FitClass> = {
@@ -215,6 +220,38 @@ export function specFor(p: FitPiece): GarmentSpec | null {
   }
   sp.fabric = (p.material ?? first(p, "MATERIAL"))?.toUpperCase() ?? undefined;
   if (["jeans", "denim_shorts"].includes(sub) && (!sp.fabric || ["COTTON", "DENIM"].includes(sp.fabric))) sp.weave = "denim";
+  applySize(sp, p);
   sp.ease = clamp(sp.ease, 0.0015, 0.05);
   return sp;
+}
+
+/**
+ * Tamanho escolhido × corpo do avatar (lib/tryon/sizes.ts), região por região. A folga de cada região é o passo da grade
+ * em perímetro (letras 6 cm ≈ 0,95 cm de raio; numeração 4 cm ≈ 0,64 cm; calçado ≈ 1,5 mm por número) vezes a diferença
+ * de tamanhos ali: a parte comum a todas as regiões entra na folga da peça; o que uma região tem a mais (o peito sobra
+ * enquanto a cintura fecha) vai para `sizeEase`, aplicado vértice a vértice no molde. O comprimento alonga ou encurta
+ * barra, manga e perna. O mínimo de folga (0,15 cm, o clamp de specFor) é o "não fecha": a peça cola no corpo — e o
+ * relevo do tamanho (garments.ts → sizeRelief) desenha a tensão, as pregas do que sobra e a barra acumulada.
+ */
+export function applySize(sp: GarmentSpec, p: FitPiece): void {
+  const steps = p.sizeSteps; if (steps == null || !Number.isFinite(steps)) return;
+  // no tamanho do corpo em todas as regiões: o molde fica como está
+  if (!steps && !Object.values(p.sizeRegions ?? {}).some((x) => x && Number.isFinite(x))) return;
+  const shoe = sp.kind === "shoes" || sp.kind === "boots";
+  const grid = gridOf(p.category ?? (shoe ? "shoes_piece" : null), p.subcategory)
+    ?? (shoe ? "shoes" : sp.leg > 0 && Number.isNaN(sp.hem) ? "numeric" : "letter");
+  const R = SIZE_RADIAL[grid], r = p.sizeRegions ?? {};
+  sp.sizeSteps = steps;
+  if (grid === "shoes") { sp.ease += R * (r.foot ?? steps); return; }
+  const chest = r.chest ?? r.waist ?? steps, waist = r.waist ?? r.chest ?? r.hip ?? steps, hip = r.hip ?? r.waist ?? steps;
+  const length = r.length ?? steps, common = Math.min(chest, waist, hip);
+  sp.ease += R * common;
+  sp.sizeEase = { chest: R * (chest - common), waist: R * (waist - common), hip: R * (hip - common) };
+  sp.sizeFold = { chest, waist, hip, length };
+  if (!Number.isNaN(sp.hem)) sp.hem -= 0.02 * length;                                  // maior: barra mais baixa
+  if (sp.sleeve > 0) sp.sleeve = clamp(sp.sleeve + 0.015 * length, 0.1, 1);            // manga mais longa, até o punho
+  if (sp.leg > 0) sp.leg = clamp(sp.leg + 0.012 * length, 0.2, 1);                     // perna até o chão no máximo
+  if (sp.skirt > 0) sp.skirt = Math.max(0.05, sp.skirt + 0.01 * length);
+  if (chest > 0) sp.bustFall = Math.min(1.06, sp.bustFall + 0.01 * chest);             // sobra tecido: cai mais reto
+  if (chest < 0) sp.drape = Math.max(0, sp.drape * (1 + 0.3 * chest));                  // apertado: o tecido cola no busto
 }

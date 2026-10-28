@@ -14,6 +14,9 @@ import { FITTING_SLOTS, type FittingItem, type FittingSlot } from "@/lib/tryon/f
 import { requestPhotoRetry, useGarmentStatus } from "@/lib/tryon/garment-status";
 import type { PhotoState } from "@/lib/tryon/garment-asset";
 import { model3dFill, model3dProgress, type Model3dProgress } from "@/lib/tryon/model3d-steps";
+import { sizeSummary, type TapeMeasures } from "@/lib/tryon/sizes";
+import type { BodyParams } from "@/lib/avatar3d/body-spec";
+import { SizePicker } from "./size-picker";
 
 export interface FittingItemsProps {
   items: FittingItem[];
@@ -32,6 +35,10 @@ export interface FittingItemsProps {
   /** lugar vazio: ir às lojas (com a categoria do lugar) ou ao guarda-roupa */
   onPickFromStores?: (slot: FittingSlot) => void;
   onPickFromWardrobe?: (slot: FittingSlot) => void;
+  /** corpo do avatar (o mesmo da cena) para o tamanho dele e como a peça fica; sem corpo, sem seletor de tamanho */
+  body?: { params: BodyParams; sex: "FEMININO" | "MASCULINO"; measured?: TapeMeasures | null; personalized?: boolean } | null;
+  /** toque num tamanho: a peça veste o avatar nesse tamanho */
+  onSizeChange?: (item: FittingItem, size: string) => void;
 }
 
 /**
@@ -41,7 +48,7 @@ export interface FittingItemsProps {
  * guarda-roupa.
  */
 export function FittingItems({
-  items, products, colors, owned, busyOwn, status, slotNames, onVariantChange, onOwn, onRemove, onPreview2d, onPickFromStores, onPickFromWardrobe,
+  items, products, colors, owned, busyOwn, status, slotNames, onVariantChange, onOwn, onRemove, onPreview2d, onPickFromStores, onPickFromWardrobe, body, onSizeChange,
 }: FittingItemsProps) {
   const { t } = useI18n();
   const fullBody = items.find((entry) => entry.wear === "FULL_BODY");
@@ -63,7 +70,7 @@ export function FittingItems({
           return (
             <FittingSlotRow key={slot} item={item} slotName={slotNames[slot]} product={item.productId ? products[item.productId] : undefined} colors={colors}
               ownedId={owned[item.key]} busyOwn={busyOwn === item.key} coveredBy={slot === "lower_piece" && fullBody ? fullBody.name : null}
-              onVariantChange={onVariantChange} onOwn={onOwn} onRemove={() => onRemove(slot)} onPreview2d={onPreview2d} />
+              onVariantChange={onVariantChange} onOwn={onOwn} onRemove={() => onRemove(slot)} onPreview2d={onPreview2d} body={body} onSizeChange={onSizeChange} />
           );
         })}
       </ul>
@@ -121,11 +128,13 @@ function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn
   return { pieceId, model, progress, paused: progress.phase === "none" ? paused : null, idle, queue, saveAndGenerate };
 }
 
-function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, coveredBy, onVariantChange, onOwn, onRemove, onPreview2d }: {
+function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, coveredBy, onVariantChange, onOwn, onRemove, onPreview2d, body, onSizeChange }: {
   item: FittingItem; slotName: string; product?: CatalogProduct; colors?: Record<string, string>; ownedId?: string; busyOwn: boolean; coveredBy: string | null;
   onVariantChange: (item: FittingItem, variant: CatalogVariant) => void; onOwn: (item: FittingItem) => void; onRemove: () => void; onPreview2d?: (item: FittingItem) => void;
+  body?: FittingItemsProps["body"]; onSizeChange?: FittingItemsProps["onSizeChange"];
 }) {
   const { t } = useI18n();
+  const size = body && onSizeChange && !coveredBy ? sizeSummary(item, body.params, body.sex, body.measured) : null;
   const garment = useGarmentStatus();   // estado das fotos no 3D (publicado pela cena)
   const m3d = useFittingModel3d(item, ownedId, onOwn);
   const [details, setDetails] = useState(false);
@@ -158,8 +167,13 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
             ? <span className="piece-row-note"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.coberta_curto", { name: coveredBy })}</span>
             : onPreview2d ? <Button size="sm" onClick={() => onPreview2d(item)}><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("tryOn.ver_previa_2d")}</Button> : null}
           <GarmentPreviewStatus item={item} photo={garment.photos[item.key]} body={garment.body} />
-          {m3d.pieceId && (m3d.progress.phase !== "none" || m3d.paused) && <Model3dStepBar progress={m3d.progress} paused={m3d.paused} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
+          {m3d.pieceId && (m3d.progress.phase !== "none" || m3d.paused) && <Model3dStepBar progress={m3d.progress} paused={m3d.paused} idle={m3d.idle} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
             onRetry={() => void m3d.model.request()} />}
+          {size && onSizeChange && (
+            <SizePicker grid={size.grid} options={size.options} chosen={item.size ?? null} natural={size.natural} fit={size.fit}
+              feedback={size.feedback} personalized={!!body?.personalized}
+              label={t("size.tamanho_de", { name: item.name })} onPick={(label) => onSizeChange(item, label)} />
+          )}
         </>}
         actions={catalog ? <>
           {item.officialUrl && (
