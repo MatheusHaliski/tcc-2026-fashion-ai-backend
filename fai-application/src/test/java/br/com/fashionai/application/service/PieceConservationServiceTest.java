@@ -88,24 +88,54 @@ class PieceConservationServiceTest {
         assertThat(piece.getEstadoConservacao()).isNull();
     }
 
-    @Test
-    void ownerUpdateReturnsAndPersistsTheExplicitFk() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void ownerUpdateReturnsAndPersistsTheExplicitFk(boolean existingInactive) {
         Kit kit = new Kit();
         var state = state("EXCELENTE");
+        state.setAtivo(!existingInactive);
         kit.dep(EstadoConservacaoRepository.class).save(state);
         var owner = Kit.user("ana");
         var piece = Kit.piece(owner, "Camisa", "upper_piece", "shirt", "blue");
+        if (existingInactive) piece.setEstadoConservacao(state);
         kit.dep(WardrobeItemRepository.class).save(piece);
         var wardrobe = kit.build(WardrobeService.class);
         wardrobe.setConservation(kit.build(PieceConservationService.class));
         var body = new java.util.LinkedHashMap<String, Object>();
-        body.putAll(Map.of("name", "Camisa", "category", "upper_piece", "subcategory", "shirt", "sex", "UNISSEX",
+        body.putAll(Map.of("name", "Camisa atualizada", "category", "upper_piece", "subcategory", "shirt", "sex", "UNISSEX",
                 "color", "blue", "material", "COTTON", "size", "m", "occasion", java.util.List.of("casual"),
                 "style", java.util.List.of("basic"), "price", 100));
         body.put("estadoConservacaoId", state.getId());
         var result = wardrobe.update(Kit.as(owner), piece.getId(), Json.read(Json.write(body), WardrobeService.PieceForm.class));
+        assertThat(result.name()).isEqualTo("Camisa atualizada");
         assertThat(result.estadoConservacao().id()).isEqualTo(state.getId());
         assertThat(kit.dep(WardrobeItemRepository.class).findById(piece.getId()).orElseThrow().getEstadoConservacao()).isSameAs(state);
+    }
+
+    @Test
+    void retainingAnInactiveReferenceDoesNotPermitSwitchingToAnotherInactiveOptionOrReselectingAfterClear() {
+        Kit kit = new Kit();
+        var service = kit.build(PieceConservationService.class);
+        var piece = new WardrobeItem();
+        var existing = state("BOA");
+        existing.setAtivo(false);
+        var different = state("DESGASTADA");
+        different.setAtivo(false);
+        var active = state("NOVA");
+        for (var option : java.util.List.of(existing, different, active)) {
+            kit.dep(EstadoConservacaoRepository.class).save(option);
+        }
+        piece.setEstadoConservacao(existing);
+        service.apply(piece, existing.getId(), false);
+        assertThat(piece.getEstadoConservacao()).isSameAs(existing);
+        assertThatThrownBy(() -> service.apply(piece, different.getId(), false)).isInstanceOf(ApiException.class);
+        assertThat(piece.getEstadoConservacao()).isSameAs(existing);
+        service.apply(piece, active.getId(), false);
+        assertThat(piece.getEstadoConservacao()).isSameAs(active);
+        assertThatThrownBy(() -> service.apply(piece, existing.getId(), false)).isInstanceOf(ApiException.class);
+        service.apply(piece, null, true);
+        assertThatThrownBy(() -> service.apply(piece, existing.getId(), false)).isInstanceOf(ApiException.class);
+        assertThat(piece.getEstadoConservacao()).isNull();
     }
 
     private static EstadoConservacao state(String code) {
