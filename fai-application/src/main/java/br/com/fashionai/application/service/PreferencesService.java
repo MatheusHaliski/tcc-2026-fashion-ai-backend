@@ -102,6 +102,7 @@ public class PreferencesService {
         out.put("theme", p.getTheme());
         out.put("language", p.getLanguage());
         out.put("currency", p.getCurrency());
+        out.put("navOrder", p.getNavOrderJson() == null ? null : Json.map(p.getNavOrderJson()));
         out.put("density", p.getDensity());
         out.put("fontScale", p.getFontScale());
         out.put("highContrast", p.isHighContrast());
@@ -151,7 +152,19 @@ public class PreferencesService {
                          MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
                          String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
                          String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic,
-                         Boolean hypeCreatorOptOut, Boolean auraHype, Boolean auraImpersonation, String currency) {
+                         Boolean hypeCreatorOptOut, Boolean auraHype, Boolean auraImpersonation, String currency,
+                         Map<String, Object> navOrder) {
+        public Update(ThemeMode theme, UiLanguage language, UiDensity density, Integer fontScale, Boolean highContrast,
+                      Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
+                      MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
+                      String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
+                      String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic,
+                      Boolean hypeCreatorOptOut, Boolean auraHype, Boolean auraImpersonation, String currency) {
+            this(theme, language, density, fontScale, highContrast, reduceMotion, chromeBackgroundId, sizeSystem, unitSystem,
+                    mannequinSex, mannequinSkinTone, mannequinBuild, defaultCardSkin, lookDoDiaPanelVersion, clientUpdatedAt,
+                    contentContainerColor, soundEnabled, hapticsEnabled, coreAesthetic, hypeCreatorOptOut, auraHype, auraImpersonation,
+                    currency, null);
+        }
         public Update(ThemeMode theme, UiLanguage language, UiDensity density, Integer fontScale, Boolean highContrast,
                       Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
                       MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
@@ -182,6 +195,47 @@ public class PreferencesService {
                     mannequinSex, mannequinSkinTone, mannequinBuild, defaultCardSkin, lookDoDiaPanelVersion, clientUpdatedAt,
                     contentContainerColor, soundEnabled, hapticsEnabled, coreAesthetic, hypeCreatorOptOut, null);
         }
+    }
+
+    static final java.util.regex.Pattern NAV_GROUP = java.util.regex.Pattern.compile("^nav\\.group\\.[a-z]{2,20}$");
+    static final java.util.regex.Pattern NAV_HREF = java.util.regex.Pattern.compile("^/[a-z0-9][a-z0-9/-]{0,40}$");
+
+    /**
+     * RF23 — ordem do menu lateral: só chaves de grupo ({@code nav.group.x}) e caminhos internos ({@code /closet}), sem
+     * repetição e com limite de tamanho. O frontend ignora o que não conhece e acrescenta itens novos no fim, então a lista
+     * guardada não precisa conter todos os itens.
+     */
+    static Map<String, Object> navOrder(Map<String, Object> raw) {
+        List<String> groups = navList(raw.get("groups"), NAV_GROUP, 12);
+        Map<String, List<String>> items = new LinkedHashMap<>();
+        if (raw.get("items") instanceof Map<?, ?> m) {
+            if (m.size() > 12) throw invalidNav();
+            m.forEach((k, v) -> {
+                String key = String.valueOf(k);
+                if (!NAV_GROUP.matcher(key).matches()) throw invalidNav();
+                items.put(key, navList(v, NAV_HREF, 20));
+            });
+        } else if (raw.get("items") != null) {
+            throw invalidNav();
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("groups", groups);
+        out.put("items", items);
+        return out;
+    }
+
+    private static List<String> navList(Object value, java.util.regex.Pattern format, int max) {
+        if (value == null) return List.of();
+        if (!(value instanceof List<?> list) || list.size() > max) throw invalidNav();
+        java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
+        for (Object o : list) {
+            if (!(o instanceof String s) || !format.matcher(s).matches() || !out.add(s)) throw invalidNav();
+        }
+        return List.copyOf(out);
+    }
+
+    private static ApiException invalidNav() {
+        return ApiException.badRequest("ORDEM_DO_MENU_INVALIDA", Msg.t("preferences.ordem_do_menu_invalida"));
     }
 
     /** DET-C06 — microestéticas "-core" do quiz "Qual é o seu core?" (vocabulário do arquétipo do DNA). */
@@ -216,6 +270,10 @@ public class PreferencesService {
                 throw ApiException.badRequest("MOEDA_INVALIDA", Msg.t("preferences.moeda_invalida"));
             }
             p.setCurrency(c.isEmpty() || "AUTO".equals(c) ? null : c);
+        }
+        if (u.navOrder() != null) {
+            // {} ou sem grupos volta à ordem padrão do menu
+            p.setNavOrderJson(u.navOrder().isEmpty() ? null : Json.write(navOrder(u.navOrder())));
         }
         if (u.density() != null) {
             p.setDensity(u.density());

@@ -18,6 +18,7 @@
         <module>fai-infrastructure</module>
         <module>fai-web</module>
         <module>fai-bootstrap</module>
+        <module>fai-coverage</module>
     </modules>
 
     <properties>
