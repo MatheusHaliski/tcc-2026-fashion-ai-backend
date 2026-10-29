@@ -310,6 +310,34 @@ describe("ExpandedPiece — o dono", () => {
     expect(await screen.findByRole("heading", { name: "Camiseta nova" })).toBeTruthy();
   });
 
+  it("edits conservation by UUID and shows the returned reference in the expanded card after save and reload", async () => {
+    const excellent = { id: "00000000-0000-4000-8000-000000000002", codigo: "EXCELENTE", nome: "Excelente" };
+    let saved = piece({ condition: "GOOD", estadoConservacao: null });
+    const api = loggedAs(undefined, routes(saved, {
+      "GET /api/pieces/p1": () => ({ piece: saved }),
+      "GET /api/opcoes/estados-conservacao": [excellent],
+      "PUT /api/pieces/p1": (_u: URL, init: RequestInit) => {
+        const body = JSON.parse(String(init.body));
+        saved = { ...saved, estadoConservacao: body.estadoConservacaoId === excellent.id ? excellent : null };
+        return saved;
+      },
+    }));
+    const { unmount } = renderApp(<ExpandedPiece id="p1" startEditing />);
+    const dialog = await screen.findByRole("dialog", { name: "Editar dados" });
+    const field = within(dialog).getByLabelText("Estado de conservação");
+    await waitFor(() => expect(field.hasAttribute("disabled")).toBe(false));
+    expect(field.textContent).toContain("Não informado");
+    fireEvent.click(field);
+    fireEvent.click(screen.getByRole("option", { name: "Excelente" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar dados" })).toBeNull());
+    expect((api.calls.find(c => c.method === "PUT")?.body as { estadoConservacaoId: string }).estadoConservacaoId).toBe(excellent.id);
+    expect(screen.getByText("Excelente", { selector: ".c-facts dd" })).toBeTruthy();
+    unmount();
+    renderApp(<ExpandedPiece id="p1" />);
+    expect(await screen.findByText("Excelente", { selector: ".c-facts dd" })).toBeTruthy();
+  });
+
   it.each([false, true])("shows the approved blue garment seal in the detail modal (celebrity=%s)", async premium => {
     const { DetailModalProvider, useDetailModal } = await import("./detail-modal");
     function Open() {

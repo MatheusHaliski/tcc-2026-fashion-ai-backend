@@ -195,6 +195,13 @@ public class WardrobeService {
         this.ownMedia = ownMedia;
     }
 
+    private PieceConservationService conservation;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void setConservation(PieceConservationService conservation) {
+        this.conservation = conservation;
+    }
+
     // ================================================================== RF4 — análise da foto (rascunho)
     /**
      * @param subcategoryCandidates subtipos mais parecidos com a foto ({code, score}), do mais parecido para o menos
@@ -1110,12 +1117,27 @@ public class WardrobeService {
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
                             Map<String, Object> background, UUID captureSessionId, String variation,
-                            Map<String, List<String>> attributes, List<String> confirmed) {
+                            Map<String, List<String>> attributes, List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao) {
         /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
         public PieceForm {
             occasion = Taxonomy.normalizeTags(occasion);
             style = Taxonomy.normalizeTags(style);
             variation = variation == null || variation.isBlank() ? null : variation.trim().toUpperCase(java.util.Locale.ROOT);
+        }
+
+        /** Compatibility constructor: old callers do not set or clear the conservation FK. */
+        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
+                         String sex, UUID brandId, String brandName, String color, String material, String size,
+                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
+                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
+                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
+                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                         Map<String, Object> background, UUID captureSessionId, String variation,
+                         Map<String, List<String>> attributes, List<String> confirmed) {
+            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
+                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
+                    variation, attributes, confirmed, null, false);
         }
 
         /**
@@ -1173,7 +1195,7 @@ public class WardrobeService {
             return new PieceForm(draftId, useDefaultImage, name, category, r.subcategory(), sex, brandId, brandName, color, mat, size,
                     market, occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
                     careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
-                    variation != null ? variation : r.variation(), attrs, confirmed);
+                    variation != null ? variation : r.variation(), attrs, confirmed, estadoConservacaoId, clearEstadoConservacao);
         }
 
         /** Formulário sem sessão de captura adaptativa (lote, várias peças numa foto, edição). */
@@ -1450,6 +1472,9 @@ public class WardrobeService {
     }
 
     private void apply(WardrobeItem w, PieceForm f, boolean creating, Map<?, ?> aiPrefill) {
+        if (f.estadoConservacaoId() != null || Boolean.TRUE.equals(f.clearEstadoConservacao())) {
+            conservation.apply(w, f.estadoConservacaoId(), Boolean.TRUE.equals(f.clearEstadoConservacao()));
+        }
         BackgroundStudioService.validateMotionWrite(w.getBackgroundConfigJson(), f.background());
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());
@@ -1466,7 +1491,9 @@ public class WardrobeService {
         w.setPrice(f.price());
         w.setTags(Json.csv(f.tags()));
         w.setNotes(InputSanitizer.clean(f.notes(), 1000));
-        w.setCondition(f.condition() == null ? (creating ? ItemCondition.GOOD : w.getCondition()) : f.condition());
+        if (!Boolean.TRUE.equals(f.clearEstadoConservacao())) {
+            w.setCondition(f.condition() == null ? (creating ? ItemCondition.GOOD : w.getCondition()) : f.condition());
+        }
         w.setPurchaseDate(f.purchaseDate());
         w.setPurchaseLocation(InputSanitizer.clean(f.purchaseLocation(), 160));
         w.setSku(InputSanitizer.clean(f.sku(), 80));

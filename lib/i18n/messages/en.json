@@ -9134,5 +9134,10 @@
   "sealWizard.dias": "{value} days",
   "room3d.roomStore.retirar_do_quarto": "Remove from room",
   "room3d.roomStore.retirado": "{name} was removed from the room and stays in your inventory.",
-  "heist.brief.readyPartial": "Ready to start ({pct}%): the rest of the crowd finishes loading while you play."
+  "heist.brief.readyPartial": "Ready to start ({pct}%): the rest of the crowd finishes loading while you play.",
+  "pieceReferences.condition.unselected": "Not provided",
+  "pieceReferences.condition.unavailable": "Saved condition unavailable",
+  "pieceReferences.condition.loadError": "Could not load item conditions.",
+  "pieceReferences.condition.empty": "No item conditions available.",
+  "pieceReferences.condition.hint": "Select the actual condition of the item. No option is selected automatically."
 }
