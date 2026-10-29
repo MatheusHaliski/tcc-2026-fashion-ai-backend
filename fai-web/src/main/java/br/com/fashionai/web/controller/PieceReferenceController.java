@@ -21,11 +21,11 @@ public class PieceReferenceController {
         this.lavagens = lavagens;
     }
 
-    @GetMapping("/api/estados-conservacao")
+    @GetMapping({"/api/estados-conservacao", "/api/opcoes/estados-conservacao"})
     @Transactional(readOnly = true)
     @Operation(summary = "Opções de conservação cadastradas em EstadoConservacao")
     public List<Views.ReferenceOptionView> estadosConservacao() {
-        return estados.findAllByOrderByNomeAsc().stream().map(Views::estadoConservacao).toList();
+        return estados.findAllByAtivoTrueOrderByNomeAsc().stream().map(Views::estadoConservacao).toList();
     }
 
     @GetMapping("/api/tipos-lavagem")

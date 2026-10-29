@@ -8,12 +8,14 @@ import { BrandSearchInput } from "@/components/brand-search-input";
 import { FaiIcon } from "@/components/fai-icon";
 import { SealSuggestionHype } from "@/components/hype/hype-seals";
 import type { HypeLevel } from "@/lib/hype/types";
+import { PieceConservationField } from "@/components/piece-conservation-field";
 import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
 
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
   color: string; material: string; size: string; market?: string; occasion: string[]; style: string[]; seals: string[]; price: string; visibility: string;
   tags: string; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
+  estadoConservacaoId?: string | null; estadoConservacaoNome?: string | null; clearEstadoConservacao?: boolean;
   /** RF4 · Estúdio: false = salvar sem a foto de estúdio gerada no rascunho */
   studio?: boolean;
   /** RF4 · buscador web de marcas: logo filtrado (fundo branco, letras pretas), fonte e referência externa */
@@ -31,8 +33,8 @@ export const PIECE_CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "a
 
 export function toPayload(v: PieceFormValue) {
   // só o que o backend guarda: o logo largo, o domínio e a medida de nitidez são apenas do slot do formulário
-  const { brandLogoWideUrl: _w, brandDomain: _d, brandEdgePx: _e, ...rest } = v; void _w; void _d; void _e;
-  return { ...rest, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null, background: v.background ?? null };
+  const { brandLogoWideUrl: _w, brandDomain: _d, brandEdgePx: _e, estadoConservacaoNome: _cn, ...rest } = v; void _w; void _d; void _e; void _cn;
+  return { ...rest, estadoConservacaoId: v.estadoConservacaoId || null, clearEstadoConservacao: v.clearEstadoConservacao ?? false, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null, background: v.background ?? null };
 }
 
 /** `hype`: HypeScore atual da peça avaliada (RF53); sem cálculo ainda, vem null e nada aparece. */
@@ -102,7 +104,7 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, c
 }) {
   const { t } = useI18n(); const tax = useTaxonomy(); const err: Record<string, string> = { ...(error?.fields ?? {}), ...(fieldErrors ?? {}) };
   const [expanded, setExpanded] = useState(false);
-  const additionalError = ["material", "sex", "size", "brandName", "price", "occasion", "style"].some(k => !!err[k]);
+  const additionalError = ["material", "sex", "size", "brandName", "price", "occasion", "style", "estadoConservacaoId"].some(k => !!err[k]);
   useEffect(() => { if (additionalError) setExpanded(true); }, [additionalError]);
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   const allowedOccasions = (category: string) => (category ? tax?.allowedOccasionsByCategory?.[category] : undefined) ?? tax?.occasions;
@@ -119,6 +121,8 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, c
       </Field>
       {afterBrand}
       <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
+      <PieceConservationField value={value.estadoConservacaoId ?? ""} selectedName={value.estadoConservacaoNome}
+        error={err.estadoConservacaoId} onChange={id => onChange({ ...value, estadoConservacaoId: id || null, clearEstadoConservacao: !id })} />
       <ChipMultiSelect className="sm:col-span-2" legend={t("common.occasion")} max={PIECE_MAX_TAGS} options={occasions.map((o) => ({ id: o, label: label(o) }))} value={value.occasion} onChange={(v) => set("occasion", v)}
         error={err.occasion} hint={t("pieceForm.dica_ocasioes")} limitMessage={t("pieceForm.limite_ocasioes")} problem={(v) => tagProblem("occasion", v, tax, value.category)} />
       <ChipMultiSelect className="sm:col-span-2" legend={t("common.style")} max={PIECE_MAX_TAGS} options={(tax?.styles ?? []).map((o) => ({ id: o, label: label(o) }))} value={value.style} onChange={(v) => set("style", v)}
@@ -166,7 +170,7 @@ export function tagProblem(field: "occasion" | "style", v: string, tax: ReturnTy
 /** Campos da peça em cada etapa do criador (para levar a pessoa ao campo com problema). */
 export const PIECE_FIELD_STEP: Record<string, "data" | "more"> = {
   name: "data", category: "data", subcategory: "data", color: "data", material: "data", sex: "data", size: "data", brandName: "data",
-  price: "data", occasion: "data", style: "data", seals: "more", visibility: "more", forSale: "more", market: "data",
+  estadoConservacaoId: "data", price: "data", occasion: "data", style: "data", seals: "more", visibility: "more", forSale: "more", market: "data",
 };
 
 /** Validação no cliente, antes de enviar — as mesmas regras do servidor, com as mesmas mensagens compreensíveis. */
@@ -200,13 +204,15 @@ export function PieceForm({ value, onChange, onSubmit, busy, error, fieldErrors,
   // "Mais detalhes" abre sozinho quando já há algo preenchido ali (edição) ou quando o servidor apontou erro nesses campos.
   const moreOpen = ["seals", "visibility", "forSale"].some((k) => err[k]) || !!(value.seals.length || value.forSale);
   return (
-    <form onSubmit={submit} noValidate className="grid gap-2">
+    <form onSubmit={submit} noValidate aria-busy={busy || undefined} className="grid gap-2">
       {prefilledNote && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm">{prefilledNote}</p>}
+      <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0">
       <PieceFields value={value} onChange={onChange} error={error} fieldErrors={fieldErrors} />
       <details className="more-details" open={moreOpen}>
         <summary>{t("pieceForm.moreDetails")}</summary>
         <div className="pt-3"><PieceMoreDetails value={value} onChange={onChange} error={error} /></div>
       </details>
+      </fieldset>
       {error && Object.keys(err).length === 0 && <p role="alert" className="error-text">{error.message}</p>}
       <div className="flex justify-end gap-2"><Button type="submit" variant="primary" size="lg" loading={busy}>{submitLabel}</Button></div>
     </form>

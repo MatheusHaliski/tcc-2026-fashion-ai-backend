@@ -9134,5 +9134,10 @@
   "sealWizard.dias": "{value} días",
   "room3d.roomStore.retirar_do_quarto": "Quitar de la habitación",
   "room3d.roomStore.retirado": "{name} salió de la habitación y sigue en tu inventario.",
-  "heist.brief.readyPartial": "Listo para empezar ({pct} %): el resto de la multitud termina de cargarse mientras juegas."
+  "heist.brief.readyPartial": "Listo para empezar ({pct} %): el resto de la multitud termina de cargarse mientras juegas.",
+  "pieceReferences.condition.unselected": "No informado",
+  "pieceReferences.condition.unavailable": "Estado guardado no disponible",
+  "pieceReferences.condition.loadError": "No se pudieron cargar los estados de conservación.",
+  "pieceReferences.condition.empty": "No hay estados de conservación disponibles.",
+  "pieceReferences.condition.hint": "Selecciona el estado real de la prenda. Ninguna opción se selecciona automáticamente."
 }
