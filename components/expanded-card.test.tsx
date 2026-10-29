@@ -310,6 +310,30 @@ describe("ExpandedPiece — o dono", () => {
     expect(await screen.findByRole("heading", { name: "Camiseta nova" })).toBeTruthy();
   });
 
+  it.each([false, true])("shows the approved blue garment seal in the detail modal (celebrity=%s)", async premium => {
+    const { DetailModalProvider, useDetailModal } = await import("./detail-modal");
+    function Open() {
+      const detail = useDetailModal();
+      return <button onClick={() => detail?.openPiece("p1")}>Abrir peça azul</button>;
+    }
+    const badge = { name: premium ? "Azul da estrela" : "Azul da marca", tier: "PECA", owner: premium ? "estrela" : "marca", premium,
+      design: { kind: "FASHIONAI", mode: "TEMPLATE", template: "fai/01" }, linkedPieceIds: ["p1"] };
+    const api = loggedAs(undefined, routes(piece({ color: "blue", seals: ["SUSTAINABLE", "BRAND:nao-aprovada"] }), {
+      "GET /api/pieces/seals": { items: { p1: [badge] } },
+    }));
+    renderApp(<DetailModalProvider><Open /></DetailModalProvider>);
+    fireEvent.click(screen.getByRole("button", { name: "Abrir peça azul" }));
+    const modal = await screen.findByRole("dialog", { name: /detalhe da peça/i });
+    expect(await within(modal).findByRole("img", { name: `selos: ${badge.name}` })).toBeTruthy();
+    expect(modal.querySelector(`.card-seals .seal-medallion[title="${badge.name} · @${badge.owner} · PECA"]`)).toBeTruthy();
+    expect(within(modal).queryByText("SUSTAINABLE")).toBeNull();
+    expect(within(modal).queryByText("nao-aprovada")).toBeNull();
+    expect(api.calls.some(call => call.path === "/api/pieces/seals?ids=p1")).toBe(true);
+    fireEvent.click(within(modal).getByRole("button", { name: "Fechar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Abrir peça azul" }));
+    expect(await within(await screen.findByRole("dialog", { name: /detalhe da peça/i })).findByRole("img", { name: `selos: ${badge.name}` })).toBeTruthy();
+  });
+
   it("startEditing abre a edição assim que a peça chega", async () => {
     loggedAs(undefined, routes(piece()));
     renderApp(<ExpandedPiece id="p1" startEditing />);
