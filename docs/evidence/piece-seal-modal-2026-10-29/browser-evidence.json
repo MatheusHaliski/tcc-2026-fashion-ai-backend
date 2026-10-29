@@ -1,0 +1,38 @@
+{
+  "scope": "Frontend real local da branch de PR; API e vínculo aprovado simulados. Não demonstra emissão/aprovação real nem gravação em MySQL. A peça usa o asset padrão azul local.",
+  "seal": {
+    "tier": "PECA",
+    "owner": "marca-teste",
+    "premium": false,
+    "name": "Peça azul — selo de teste",
+    "linkedPieceIds": [
+      "p1"
+    ],
+    "design": {
+      "kind": "FASHIONAI",
+      "mode": "TEMPLATE",
+      "template": "fai/01"
+    }
+  },
+  "modalSealTitle": "Peça azul — selo de teste · @marca-teste · PECA",
+  "verifiedReopenAfterReload": true,
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/pieces/seals?ids=p1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/pieces/seals?ids=p1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/pieces/seals?ids=p1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/pieces/seals?ids=p1"
+    }
+  ],
+  "pageErrors": []
+}
