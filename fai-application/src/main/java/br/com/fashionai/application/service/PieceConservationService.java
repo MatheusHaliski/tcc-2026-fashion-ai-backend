@@ -25,6 +25,9 @@ public class PieceConservationService {
             // An explicit owner clear must not reveal an older enum as the current choice.
             piece.setCondition(null);
         } else if (id != null) {
+            // An existing FK may outlive the option's availability for new selections.
+            // Compare against server-owned state, never a client-supplied previous ID.
+            if (piece.getEstadoConservacao() != null && id.equals(piece.getEstadoConservacao().getId())) return;
             var state = estados.findById(id).filter(s -> s.isAtivo()).orElseThrow(this::invalid);
             piece.setEstadoConservacao(state);
         }

@@ -9,7 +9,7 @@ Implementado no checkout `/workspace/fashionai-vton-gpu`, branch de publicação
 - Nenhuma opção é selecionada automaticamente. Ausência de referência e enum legado GOOD aparecem como “Não informado”. Outros enums legados continuam legíveis sem criar uma FK por inferência.
 - A referência salva tem precedência sobre o enum legado nos cards do guarda-roupa, painéis Info e card ampliado.
 - O PUT retorna a referência; ExpandedPiece atualiza o detalhe e emite o evento `fai:piece-updated`, já consumido pela grade de `/closet`. O GET após recarregar retorna a mesma referência.
-- UUID inexistente, opção inativa ou combinação ID + limpeza explícita retornam erro 400 com campo `estadoConservacaoId`. A verificação existente de proprietário acontece antes de qualquer alteração. Visitantes não podem editar; a política existente de administração foi mantida.
+- UUID inexistente, nova escolha de opção inativa ou combinação ID + limpeza explícita retornam erro 400 com campo `estadoConservacaoId`. A verificação existente de proprietário acontece antes de qualquer alteração. Visitantes não podem editar; a política existente de administração foi mantida.
 - Campo omitido/null preserva uma referência existente. Para remover deliberadamente a escolha, a UI envia `clearEstadoConservacao: true`; essa ação também limpa o enum antigo para que ele não reapareça como condição atual.
 
 ## Esquema real e migração
@@ -79,3 +79,12 @@ As capturas E1/E2 foram obtidas anteriormente com a implementação local e API 
 - [E1 — Editar peça](E1-editar-peca.png)
 - [E2 — Card recarregado](E2-card-recarregado.png)
 - [Resultado do navegador](browser-evidence.json)
+
+
+## Correção: referência salva que ficou inativa
+
+Editar nome ou outro dado da peça preserva o estado de conservação atual mesmo se a opção tiver sido desativada depois da escolha. A validação compara o UUID recebido com a referência já vinculada à peça no servidor, após a autorização de propriedade. Não aceita um ID anterior declarado pelo cliente.
+
+Uma referência diferente precisa continuar ativa. Limpar a escolha mantém o comportamento explícito anterior; voltar a selecionar a opção inativa após limpar ou trocar é rejeitado. O endpoint de opções continua listando somente as ativas.
+
+Regressão reproduzida antes do ajuste: erro 400 no update do proprietário que mantém a FK inativa. Testes também cobrem rejeição de outra opção inativa, troca para ativa e rejeição de reescolha inativa após trocar/limpar.
