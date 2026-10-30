@@ -1,0 +1,15 @@
+{
+  "api": "In-memory fixture, not production",
+  "glb": "synthetic, not a brand asset",
+  "checks": [
+    "GLB upload and WebGL render",
+    "explicit TipoLook confirmation",
+    "version save",
+    "reload retains edits",
+    "binary GLB export",
+    "409 preserves draft",
+    "viewer cannot edit",
+    "revoked invitation cannot reload"
+  ],
+  "pageErrors": []
+}
