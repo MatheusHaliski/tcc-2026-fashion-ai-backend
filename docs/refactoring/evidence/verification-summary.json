@@ -1,0 +1,31 @@
+{
+  "base": "a4c9e5d129cf6eb45e5c6ff23e0ba5ff2632b4b1",
+  "frontend": {
+    "baseline_existing": 46,
+    "panel_contract_tests": 2,
+    "after_passed": 48
+  },
+  "java": {
+    "baseline_passed": 43,
+    "after_passed": 43
+  },
+  "python_legacy": {
+    "before_failed": 2,
+    "before_passed": 4,
+    "after_failed": 2,
+    "after_passed": 4,
+    "subtests_passed": 5
+  },
+  "artifact_tests_passed": 4,
+  "audit_tests_passed": 4,
+  "typescript": "passed before and after",
+  "styles": "passed",
+  "design_checks": "passed",
+  "i18n_errors": 0,
+  "i18n_warnings": 10,
+  "build": "ENOSPC after compilation; not complete",
+  "browser": "before complete; after partial with crash/timeout",
+  "installed_next": "16.4.2",
+  "declared_next": "^16.4.3",
+  "new_normalized_sccs": 0
+}
