@@ -1,0 +1,48 @@
+{
+  "scope": "Frontend real em Next dev; API simulada no navegador. Não testa MySQL ou produção.",
+  "saved": [
+    {
+      "method": "PUT",
+      "path": "/api/pieces/p1",
+      "body": {
+        "draftId": null,
+        "useDefaultImage": false,
+        "name": "Camisa de algodão",
+        "category": "upper_piece",
+        "subcategory": "shirt",
+        "sex": "UNISSEX",
+        "brandName": "",
+        "color": "blue",
+        "material": "COTTON",
+        "size": "m",
+        "occasion": [
+          "casual"
+        ],
+        "style": [
+          "basic"
+        ],
+        "seals": [],
+        "price": 100,
+        "visibility": "PRIVATE",
+        "tags": [],
+        "notes": "",
+        "condition": "GOOD",
+        "purchaseDate": null,
+        "purchaseLocation": "",
+        "sku": "",
+        "careInstructions": "",
+        "forSale": false,
+        "background": null,
+        "brandId": null,
+        "brandLogoUrl": null,
+        "brandSource": null,
+        "estadoConservacaoId": "00000000-0000-4000-8000-000000000001",
+        "clearEstadoConservacao": false,
+        "brandRef": null,
+        "market": null
+      }
+    }
+  ],
+  "rendered": "Excelente",
+  "pageErrors": []
+}

@@ -127,6 +127,10 @@ public class UserPreferences extends VersionedAuditableEntity {
     @Column(name = "dashboard_layout_json", columnDefinition = "json")
     private String dashboardLayoutJson;
 
+    /** RF23 — ordem do menu lateral escolhida pelo usuário: {groups: [...], items: {grupo: [href...]}}; nulo = padrão. */
+    @Column(name = "nav_order_json", columnDefinition = "json")
+    private String navOrderJson;
+
     /** Foto com meu manequim — enquadramento do rosto na cabeça 3D: {offsetX, offsetY, scale}. */
     @Column(name = "mannequin_face_json", columnDefinition = "json")
     private String mannequinFaceJson;

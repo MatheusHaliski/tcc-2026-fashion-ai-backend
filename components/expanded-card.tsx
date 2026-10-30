@@ -17,7 +17,7 @@ import { label, CATEGORY_LABEL, useTaxonomy, subcategoryLabel } from "@/lib/api/
 import { ActionMenu, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, useFocusTrap, type MenuItem } from "@/components/ui";
 import { UiIcon } from "@/components/ui/icons";
 import { FaiIcon } from "@/components/fai-icon";
-import { SchemeCard } from "@/components/scheme-card";
+import { CardSealSummary, SchemeCard } from "@/components/scheme-card";
 import { CardActions, InteractionBar } from "@/components/interactions";
 import { HypeInline } from "@/components/hype/hype-inline";
 import { HypeBadge } from "@/components/hype/hype-badge";
@@ -31,6 +31,7 @@ import { Model3dAction, Model3dTechnical, useModel3d } from "@/components/model3
 import { EditImageDialog, hasRealLogo, studioMeta, studioNeedsReview, studioVersion } from "@/components/edit-image";
 import { Generate3DDialog } from "@/components/generate-3d";
 import { emitPieceUpdate } from "@/lib/pieces/piece-events";
+import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { StudioLightbox, StudioReport, backdropCenter, backdropEdge, backdropGradient, sangria, useStudioBackdrops, type StudioInfo } from "@/components/studio";
 import { PieceForm, toPayload, validatePieceForm, type PieceFormValue, EMPTY_PIECE } from "@/components/piece-form";
 import { ArtStage, artSurfaceProps, useInView } from "@/components/piece-art";
@@ -178,6 +179,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const depth = useFashionDepth(auraEnabled && !headerExtra);
   const hype = useHypeSummary("PIECE", id, auraEnabled, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
+  const sealsOf = usePieceSeals(p ? [p] : [], { anonymous: !user });
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
   const [artRef, inView] = useInView<HTMLElement>();
   useEffect(() => { if (startEditing && p && mine && !editing) startEdit(); }, [startEditing, p?.id, mine]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -206,7 +208,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   async function doDelete() { try { await api.delete(`/api/pieces/${id}`); toast.success(t("expanded.peca_excluida")); setConfirmDelete({ open: false }); if (window.location.pathname.startsWith("/pieces/")) router.push("/closet"); else window.location.reload(); } catch (e) { toast.fromError(e); } }
   function startEdit() {
     if (!p) return;
-    setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? "", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? "", size: p.size ?? "m", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? "", visibility: p.visibility, forSale: p.forSale, seals: p.seals ?? [], background: p.background ?? null });
+    setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? "", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? "", size: p.size ?? "m", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? "", visibility: p.visibility, forSale: p.forSale, seals: p.seals ?? [], condition: p.condition ?? "", estadoConservacaoId: p.estadoConservacao?.id ?? null, estadoConservacaoNome: p.estadoConservacao?.nome ?? null, careInstructions: p.careInstructions ?? "", background: p.background ?? null });
     setEditing(true);
   }
   // edição: mesma regra do cadastro — uma tentativa por ação (trava síncrona) e validação antes de enviar
@@ -292,6 +294,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
             <section className="pd-id" aria-labelledby={`pd-name-${p.id}`}>
               <h2 id={`pd-name-${p.id}`} className="pd-name">{p.name}</h2>
               {p.brandName && <p className="pd-brand"><BrandLogo name={p.brandName} src={p.brandLogoUrl} size={20} withName /></p>}
+              <CardSealSummary seals={sealsOf(p.id)} />
               {p.forSale && p.price != null && <p className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular"><Price value={p.price} /></b></p>}
               {primary}
             </section>

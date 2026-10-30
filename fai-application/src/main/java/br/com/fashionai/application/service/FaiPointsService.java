@@ -28,23 +28,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * RF35 — FAI Points: conquistados pelo uso, nunca vendidos (CA08). Duas medidas: saldo (gastável na loja do
- * quarto) e pontos vitalícios (definem o nível, nunca diminuem). Ledger append-only com chave de idempotência
- * (CA01); limite diário atingido não bloqueia a ação, só não pontua (CA02). Nenhuma função básica fica atrás
- * de nível ou saldo (§0.1 / CA05).
- */
 @Service
 public class FaiPointsService {
     public static final ZoneId ZONE = ZoneId.of("America/Sao_Paulo");
 
-    /**
-     * §5.3 — os três níveis do app (Básico → Studio → Loft) e o limiar de pontos vitalícios. O que cada um libera:
-     * Básico: quarto base em branco de fábrica, Smart Mirror/Vista-me, AURA estática e carta Hype Comum;
-     * Studio: iluminação guiada, primeiros acabamentos, sapateira/vitrine de bolsas/porta-joias, couro, veludo e metais,
-     * AURA animada e carta Rara; Loft: quarto maior, ilha central, troca de estação, closet de assinatura, ouro e
-     * holográfico, AURA Metamorfose/Impersonation, jogo FLAIR Metamorfose e cartas Lendária e Collab/Drop.
-     */
     public enum Level {
         ESTREIA(0, Msg.k("faiPoints.fai_origem_smart_mirror_vista"), Msg.k("faiPoints.branco_de_fabrica")),
         STUDIO(300, Msg.k("faiPoints.iluminacao_guiada_personalizavel_e"), Msg.k("faiPoints.primeiros_acabamentos_e_materiais")),
@@ -162,11 +149,6 @@ public class FaiPointsService {
         return new Award(true, points, false, Msg.t("faiPoints.fai_pts", points), after, up);
     }
 
-    /**
-     * Extrato (RF30/RF39): cada lançamento do ledger vira uma notificação FAI_POINTS — "+40 FAI Points · Esquema criado"
-     * ou "−180 FAI Points · Compra na loja do quarto: …" —, que a central de notificações (sino da topbar) mostra
-     * agrupada por dia. {@code detail} entra no texto da ação (o nome do item comprado).
-     */
     private void statement(FaiPointsLedgerEntry e, String detail) {
         if (notifications == null) {
             return;   // testes de unidade sem a central de notificações
@@ -179,11 +161,7 @@ public class FaiPointsService {
                 Map.of("delta", e.getDelta(), "action", e.getActionCode(), "href", "/points"));
     }
 
-    /**
-     * RF41 — ponte única entre qualquer jogo e os FAI Points: jogar pontua (GAME_PLAYED) e vencer pontua de novo
-     * (GAME_WON). A referência jogo:partida paga 1× por partida; os tetos diários das regras seguram o farm, e o teto
-     * atingido nunca impede de jogar. Devolve os pontos lançados agora (0 se já pontuado ou no teto).
-     */
+    
     @Transactional
     public int game(UUID userId, String game, String matchRef, String outcome) {
         String ref = game + ":" + matchRef;
@@ -233,10 +211,7 @@ public class FaiPointsService {
     }
 
     // ------------------------------------------------------------------ loja do quarto (Molde de Fábrica)
-    /**
-     * Loja do quarto: todos os blocos do móvel por material, cor e selo de identidade (fábrica FAI e itens criados por
-     * marcas/celebridades no "Criar guarda-roupa 3D"), com as condições de compra de cada item.
-     */
+  
     @Transactional(readOnly = true)
     public List<Map<String, Object>> shop(CurrentUser user) {
         Level lvl = level(user.id());
@@ -275,20 +250,11 @@ public class FaiPointsService {
                 "finish", Json.map(c.getFinishJson()), "balance", balance(user.id()), "note", Msg.t("faiPoints.previa_descartada_ao_sair_nada"));
     }
 
-    /**
-     * Compra na loja do quarto. Saldo e estoque são conferidos sob trava: primeiro as carteiras em ordem de UUID (débitos do mesmo
-     * usuário em fila — nada de duas compras gastando o mesmo saldo), depois a do item (edição limitada não passa do
-     * estoque); a ordem fixa carteiras ordenadas → item evita deadlock entre compras cruzadas.
-     */
+
     public Map<String, Object> buy(CurrentUser user, String sku) {
         return buy(user, sku, null);
     }
 
-    /**
-     * {@code requestKey}: a chave que o diálogo de compra gera uma vez por compra (cabeçalho Idempotency-Key). O mesmo
-     * pedido repetido — clique duplo, reenvio depois de um timeout — devolve a compra já feita, sem cobrar nem entregar
-     * de novo. A conferência acontece depois da trava da carteira, então dois pedidos iguais nunca passam juntos.
-     */
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Map<String, Object> buy(CurrentUser user, String sku, String requestKey) {
         // Read creator identity without loading a managed SKU, then lock all wallets in UUID order.
