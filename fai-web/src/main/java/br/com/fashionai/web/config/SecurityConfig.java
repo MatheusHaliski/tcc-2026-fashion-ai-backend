@@ -85,6 +85,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/atelier/guest/*/scene", "/api/atelier/guest/*/catalog", "/api/atelier/guest/*/assets/*", "/api/atelier/guest/*/assets/*/metadata", "/api/atelier/guest/*/versions/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/atelier/guest/*/versions", "/api/atelier/guest/*/assets", "/api/atelier/guest/*/gender-evidence").permitAll()
                         .requestMatchers("/media/restricted/**").hasRole("ADMIN")   // documentos do cadastro (RF1)
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/uploads", "/api/auth/login", "/api/auth/refresh",
@@ -120,7 +122,7 @@ public class SecurityConfig {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList());
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Correlation-Id", "Accept-Language", "X-Dev-Gate",
+        cors.setAllowedHeaders(List.of("X-Atelier-Guest", "Authorization", "Content-Type", "X-Correlation-Id", "Accept-Language", "X-Dev-Gate",
                 "X-FAI-Platform", "X-FAI-Quality", "X-FAI-App-Version", "If-Match", "Idempotency-Key"));
         cors.setExposedHeaders(List.of("X-Correlation-Id", "Content-Disposition", "X-Dev-Gate-Required", "ETag"));
         cors.setAllowCredentials(true);
