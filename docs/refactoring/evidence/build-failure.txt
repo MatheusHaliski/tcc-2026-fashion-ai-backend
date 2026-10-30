@@ -1,0 +1,4 @@
+Next.js 16.4.2 --webpack
+Compiled with warnings
+Error: ENOSPC: no space left on device, mkdir '/workspace/fashionai-refactoring/.next/server/app/gate'
+Next.js build worker exited with code: 1 and signal: null

@@ -1,0 +1,23 @@
+{
+  "scope": "Frontend real local; API simulada; nenhum serviço/banco/GPU remoto utilizado.",
+  "phase": "before",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/pieces/seals?ids=p1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/pieces/seals?ids=p1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/pieces/seals?ids=p1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/pieces/seals?ids=p1"
+    }
+  ],
+  "pageErrors": []
+}

@@ -19,8 +19,11 @@ import logging
 import tempfile
 import time
 from pathlib import Path
-from urllib.parse import quote
 from PIL import Image
+try:
+    from .photo_set_artifacts import ready_files, upload_verified
+except ImportError:
+    from photo_set_artifacts import ready_files, upload_verified
 try:
     from .photo_set_quality import apply_quality_gate, assess_ready_candidate
 except ImportError:
@@ -96,14 +99,8 @@ def build_set(record,downloader,provider,storage=None):
     return result
 
 def upload(storage,payload):
-    """PNG no bucket com chave pelo sha256, lido de volta e conferido; devolve a URL pública."""
-    key=f"catalog/photo-sets/{PHOTO_SET_VERSION}/{hashlib.sha256(payload).hexdigest()}.png"
-    storage.client.put_object(Bucket=storage.bucket,Key=key,Body=payload,ContentType='image/png')
-    body=storage.client.get_object(Bucket=storage.bucket,Key=key)['Body']
-    try:verified=body.read(len(payload)+1)
-    finally:body.close()
-    if hashlib.sha256(verified).digest()!=hashlib.sha256(payload).digest():raise ValueError('UPLOAD_VERIFICATION_FAILED')
-    return storage.base+'/'+quote(key,safe='/')
+    """Compatibility entrypoint: keep the worker's photo-set version in every storage key."""
+    return upload_verified(storage,payload,PHOTO_SET_VERSION)
 
 ROW_FILTER=" WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') AND i.id>%s AND COALESCE(i.review_status,'PENDING')<>'REJECTED' ORDER BY i.id LIMIT %s"
 
@@ -130,33 +127,6 @@ def lot_sets(lot):
         yield path,json.loads(path.read_text(encoding='utf-8'))
 
 
-def ready_files(path,files):
-    """Validate only the two expected local PNGs; forbid traversal and partial lots.
-
-    A corrupted or absent READY image must stay local for review. In
-    particular, never try to upload a file from an arbitrary set.json path.
-    """
-    if files!={'whole':'whole.png','fabric':'fabric.png'}:
-        return None,'PHOTO_SET_FILES_INVALID'
-    data={}
-    for kind in ('whole','fabric'):
-        item=path.parent/files[kind]
-        if not item.is_file() or item.is_symlink() or item.stat().st_size>15_000_000:
-            return None,'PHOTO_SET_FILES_INVALID'
-        payload=item.read_bytes()
-        if not payload.startswith(b'\x89PNG\r\n\x1a\n'):
-            return None,'PHOTO_SET_FILES_INVALID'
-        try:
-            with Image.open(io.BytesIO(payload)) as pic:
-                if pic.format!='PNG' or pic.width<24 or pic.height<24:
-                    return None,'PHOTO_SET_FILES_INVALID'
-                if kind=='whole' and pic.size!=(900,1200):
-                    return None,'PHOTO_SET_FILES_INVALID'
-                pic.verify()
-        except (OSError,ValueError):
-            return None,'PHOTO_SET_FILES_INVALID'
-        data[kind]=payload
-    return data,None
 
 def import_lot(conn,lot,storage,audit,*,apply=False,limit=None):
     """photo-sets/*/set.json do lote → (com --apply) upload de whole/fabric e commit_set com o mesmo CAS do worker.
