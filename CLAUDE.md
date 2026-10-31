@@ -4,7 +4,9 @@
 
 Leia `docs/refactoring/LINE_RULES.md`. Resumo:
 
-- Código de produção: no máximo **250 linhas** por arquivo; testes: no máximo **400**.
+- Limite máximo de linhas por arquivo, por categoria (tabela em `docs/refactoring/LINE_RULES.md`):
+  hook e route handler/BFF **150**; controller Java **200**; repositório e DTO Java **120**;
+  página, componente, lib TS, service, entidade, adapter, Python, scripts e CSS **250**; testes **400**.
 - Arquivos legados acima do limite estão congelados em `scripts/refactoring/line_baseline.json` e **não podem
   crescer**. Para mudar um deles, extraia antes uma responsabilidade (função/classe/hook/componente) e só então
   acrescente código.

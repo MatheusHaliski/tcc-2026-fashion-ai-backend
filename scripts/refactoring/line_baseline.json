@@ -1,7 +1,22 @@
 {
  "limits": {
-  "production": 250,
-  "test": 400
+  "teste": 400,
+  "hook": 150,
+  "route-handler": 150,
+  "pagina": 250,
+  "componente": 250,
+  "lib-ts": 250,
+  "java-controller": 200,
+  "java-repositorio": 120,
+  "java-dto": 120,
+  "java-entidade": 250,
+  "java-service": 250,
+  "java-adapter": 250,
+  "java-outro": 250,
+  "python": 250,
+  "script-js": 250,
+  "css": 250,
+  "outro": 250
  },
  "rule": "docs/refactoring/LINE_RULES.md",
  "files": {
@@ -12,6 +27,10 @@
   "app/(site)/(app)/room/page.tsx": {
    "max": 665,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+  },
+  "app/bff/auth/[action]/route.ts": {
+   "max": 165,
+   "reason": "acima do limite da categoria route-handler (150) definido em 2026-10-31; só pode diminuir"
   },
   "components/app-shell.tsx": {
    "max": 352,
@@ -40,6 +59,10 @@
   "components/catalog/fitting-room.test.tsx": {
    "max": 412,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+  },
+  "components/catalog/use-catalog-preview.ts": {
+   "max": 184,
+   "reason": "acima do limite da categoria hook (150) definido em 2026-10-31; só pode diminuir"
   },
   "components/dna-card.tsx": {
    "max": 304,
@@ -709,6 +732,26 @@
    "max": 437,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
+  "fai-web/src/main/java/br/com/fashionai/web/controller/FlairModesController.java": {
+   "max": 244,
+   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
+  },
+  "fai-web/src/main/java/br/com/fashionai/web/controller/HypeController.java": {
+   "max": 202,
+   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
+  },
+  "fai-web/src/main/java/br/com/fashionai/web/controller/LookbookController.java": {
+   "max": 214,
+   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
+  },
+  "fai-web/src/main/java/br/com/fashionai/web/controller/SealController.java": {
+   "max": 239,
+   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
+  },
+  "fai-web/src/main/java/br/com/fashionai/web/controller/WardrobeController.java": {
+   "max": 246,
+   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
+  },
   "fai-web/src/test/java/br/com/fashionai/web/controller/ServiceFakes.java": {
    "max": 4643,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -808,6 +851,10 @@
   "lib/heist/types.ts": {
    "max": 276,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+  },
+  "lib/hooks/use-fitting-session.ts": {
+   "max": 164,
+   "reason": "acima do limite da categoria hook (150) definido em 2026-10-31; só pode diminuir"
   },
   "lib/room3d/interaction.ts": {
    "max": 350,

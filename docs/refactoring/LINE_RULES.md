@@ -3,12 +3,33 @@
 Objetivo: arquivos curtos, com uma responsabilidade, fáceis de ler e revisar. As regras valem para todo código
 versionado (TS/TSX/JS, Java, Python, CSS, shell) e são verificadas no CI por `scripts/refactoring/line_ratchet.py`.
 
-## Limites
+## Limites máximos por arquivo
 
-| Tipo | Limite máximo | Meta |
+Cada arquivo de código pertence a uma categoria (detectada por caminho/nome em
+`scripts/refactoring/line_ratchet.py`, função `category`) e tem um **limite máximo de linhas físicas**:
+
+| Arquivo | Categoria | Máximo |
 |---|---|---|
-| Código de produção (componente, página, hook, service, controller, util, script) | **250 linhas** | componente simples 40–150, hook 40–150, util 20–120, página ≤ 250 |
-| Teste | **400 linhas** | um arquivo de teste por unidade/fluxo; fixtures grandes em arquivo próprio |
+| testes, fixtures e kits de teste (`src/test`, `*.test.ts(x)`, `test_*.py`) | `teste` | **400** |
+| hooks React `use-*.ts(x)` / `useX.ts(x)` | `hook` | **150** |
+| Route Handlers do App Router (`app/**/route.ts`, BFF/API) e `middleware.ts` | `route-handler` | **150** |
+| `page`/`layout`/`loading`/`error`/`not-found`/`template` do App Router | `pagina` | **250** |
+| componentes React `.tsx`/`.jsx` | `componente` | **250** |
+| módulos TS/JS sem JSX (`lib/`, helpers de `components/`) | `lib-ts` | **250** |
+| controllers Spring (`fai-web/.../controller`) | `java-controller` | **200** |
+| interfaces Spring Data `*Repository` | `java-repositorio` | **120** |
+| DTOs/records de request/response | `java-dto` | **120** |
+| entidades/embeddables JPA (`fai-domain/.../model`) | `java-entidade` | **250** |
+| classes `*Service` | `java-service` | **250** |
+| adapters de infraestrutura (`fai-infrastructure`) | `java-adapter` | **250** |
+| políticas, regras, views, utilitários e configuração Java | `java-outro` | **250** |
+| scripts, pipelines e serviços Python | `python` | **250** |
+| scripts Node em `scripts/` | `script-js` | **250** |
+| folhas de estilo | `css` | **250** |
+| shell, Kotlin, Groovy | `outro` | **250** |
+
+Metas de legibilidade (não obrigatórias): componente simples 40–150, hook 40–120, utilitário 20–120,
+controller ≤ 150, página ≤ 200. Consulte a tabela vigente com `python3 scripts/refactoring/line_ratchet.py --limits`.
 
 Fora do escopo: `docs/`, migrations Flyway já aplicadas (nunca reescrever), arquivos gerados, dados/JSON/SQL de seed.
 
