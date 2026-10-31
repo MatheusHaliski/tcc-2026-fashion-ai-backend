@@ -1,0 +1,9 @@
+$ mvn -B -q -pl fai-application -Dtest='SchemeRemix*Test,SchemeServiceTest,SocialServiceTest,PieceRemixTest,SchemeRulesTest,SchemeFiltersTest' -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.615 s -- in br.com.fashionai.application.service.PieceRemixTest
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.316 s -- in br.com.fashionai.application.service.SchemeFiltersTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.197 s -- in br.com.fashionai.application.service.SchemeRemixCharacterizationTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in br.com.fashionai.application.service.SchemeRemixPrototypeTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in br.com.fashionai.application.service.SchemeRulesTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.881 s -- in br.com.fashionai.application.service.SchemeServiceTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.496 s -- in br.com.fashionai.application.service.SocialServiceTest
+Total: 43 testes, 0 falhas, 0 erros

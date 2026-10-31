@@ -1076,51 +1076,11 @@ public class SchemeService {
         }
         List<SchemeItem> srcItems = schemeItems.findBySchemeIdOrderBySortOrder(sourceId);
         List<WardrobeItem> mine = wardrobe.eligible(user.id());
-        List<ItemForm> mapped = new ArrayList<>();
-        List<Map<String, Object>> missing = new ArrayList<>();
-        Set<UUID> used = new HashSet<>();
-        for (SchemeItem si : srcItems) {
-            WardrobeItem target = si.getWardrobeItem();
-            WardrobeItem match = src.getUser().getId().equals(user.id()) ? target : mine.stream()
-                    .filter(w -> !used.contains(w.getId()))
-                    .max(Comparator.comparingDouble(w -> similarity(w, target))).filter(w -> similarity(w, target) >= 1.0).orElse(null);
-            if (match != null) {
-                used.add(match.getId());
-                mapped.add(new ItemForm(match.getId(), si.getSlot(), si.getSortOrder(), si.getZIndex(), si.getPositionX(),
-                        si.getPositionY(), si.getScale(), si.getRotation(), si.getOpacity(), Json.map(si.getFiltersJson())));
-            } else {
-                missing.add(Map.of("sourcePiece", Views.row(si), "action", Msg.t("scheme.adicionar_ao_guarda_roupa_ou")));
-            }
-        }
-        Map<String, Object> prefill = new LinkedHashMap<>();
-        prefill.put("title", Msg.t("scheme.remix_de", src.getTitle()));
-        prefill.put("description", src.getDescription());
-        prefill.put("occasion", Json.csv(src.getOccasion()));
-        prefill.put("style", Json.csv(src.getStyle()));
-        prefill.put("season", src.getSeason());
-        prefill.put("mood", src.getMood());
-        prefill.put("items", mapped);
-        prefill.put("background", Json.map(src.getStudioConfigJson()));
-        prefill.put("cardSkin", src.getCardSkin());
-        prefill.put("remixedFromId", src.getId());
-        prefill.put("origin", SchemeOrigin.REMIX);
+        SchemeRemixPrototype.PieceMapping mapping = SchemeRemixPrototype.mapPieces(srcItems, mine, src.getUser().getId().equals(user.id()));
+        Map<String, Object> prefill = SchemeRemixPrototype.prefill(src, mapping.items());
+        List<Map<String, Object>> missing = mapping.missing();
         return Map.of("prefill", prefill, "missingPieces", missing, "source", Map.of("id", src.getId(), "title", src.getTitle(),
                 "owner", Views.user(src.getUser())), "next", "/create-look?remix=" + src.getId());
-    }
-
-    private static double similarity(WardrobeItem a, WardrobeItem b) {
-        double s = 0;
-        if (Objects.equals(a.getSubcategory(), b.getSubcategory())) {
-            s += 1;
-        } else if (Objects.equals(a.getCategory(), b.getCategory())) {
-            s += 0.5;
-        }
-        if (Objects.equals(a.getColor(), b.getColor())) {
-            s += 0.5;
-        } else if (Objects.equals(Taxonomy.COLOR_FAMILY.get(a.getColor()), Taxonomy.COLOR_FAMILY.get(b.getColor()))) {
-            s += 0.25;
-        }
-        return s;
     }
 
     // ================================================================== render do card (RF5 preview / RF19.CA09)
