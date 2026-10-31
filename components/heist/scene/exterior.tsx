@@ -2,7 +2,9 @@
 /*
  * MET Gala Heist v2 — a cena de fora: fachada do Museu Vesper, avenida com a escadaria e o tapete, carros, beco, a cidade em
  * volta e as luzes da noite da gala. Dono: o "Agente Rua" (ver scratchpad/gala/PLANO.md); o céu, a névoa, o ambiente e o
- * pós-processamento ficam em sky.tsx.
+ * pós-processamento ficam em sky.tsx. A cidade: a quadra em frente com lojas e apartamentos, as transversais e o skyline
+ * (exterior-blocks, exterior-city, exterior-skyline); o mobiliário da rua e os móveis únicos da entrada
+ * (exterior-furniture); a sujeira da calçada (exterior-litter); halos e poças de luz numa chamada (exterior-glow).
  *
  * Reflexos: no "high", a pista reflete de verdade (MeshReflectorMaterial — mais um desenho da cena por quadro, por isso só
  * enquanto a jogadora está do lado de fora); calçadas, carros, vidros e metais recebem um mapa de reflexo capturado da

@@ -234,7 +234,7 @@ function seguranca(c: RoomsCtx) {
     ce.quad([[r.x0, H, r.z0], [r.x1, H, r.z0], [r.x1, H, r.z1], [r.x0, H, r.z1]], [0, -1, 0], [[r.x0 / 1.2, r.z0 / 1.2], [r.x1 / 1.2, r.z0 / 1.2], [r.x1 / 1.2, r.z1 / 1.2], [r.x0 / 1.2, r.z1 / 1.2]]);
   }
   c.batch.add(room, pbrMat(`seg-floor-vinil-${c.q}`, texVinyl(c.q), { env: 0.7, offset: true }), fl.geometry(), undefined, { receive: true });
-  c.batch.add(room, pbrMat(`seg-ceil-acustico-${c.q}`, texCeilMineral(c.q), { tint: "#c9ccd0", env: 0.4 }), ce.geometry());
+  c.batch.add(room, pbrMat(`seg-ceil-acustico-${c.q}`, texCeilMineral(c.q), { tint: "#c9ccd0", env: 0.6, bounce: 0.24 }), ce.geometry());
   // tampas de acesso no piso (chapa com ilhós e o feixe de cabos subindo para o console) e o capacho da porta
   for (const z of [5.7, 6.9]) { const f = Fr.at(c, room, -21.0, 0, z); f.box(S.alu, 0, 0.002, 0, 0.6, 0.006, 0.6); f.cyl(S.rubber, -0.15, 0.004, 0.0, 0.05, 0.006, 16); f.g(S.cable, tube([[-0.15, 0.0, 0], [-0.18, 0.25, 0.02], [-0.22, 0.6, 0.0]], 0.022, 10, 6), 0, 0, 0); }
   { const f = Fr.at(c, room, -19.0, 0, 4.75, Math.PI / 2); f.rbox(S.rubberGrey, 0, 0.002, 0, 1.2, 0.012, 0.7, 0.01); for (let k = 0; k < 12; k++) f.i("seg-matRib", BOX0(), S.rubber, -0.55 + k * 0.1, 0.014, 0, 0, 0.012, 0.004, 0.62); }

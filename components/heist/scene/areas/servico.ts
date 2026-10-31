@@ -86,8 +86,8 @@ function servico(c: RoomsCtx) {
     flatQuad(copa ? ceilPvc : ceilMin, r.x0, r.z0, r.x1, r.z1, H, false, 1.2, copa);
     if (copa) flatQuad(quarry, r.x0, r.z0, r.x1, r.z1, 0.002, true, 0.6);
   }
-  c.batch.add(room, pbrMat(`srv-ceil-mineral-${c.q}`, texCeilMineral(c.q), { env: 0.4 }), ceilMin.geometry());
-  c.batch.add(room, pbrMat(`srv-ceil-pvc-${c.q}`, texCeilPvc(c.q), { env: 0.7 }), ceilPvc.geometry());
+  c.batch.add(room, pbrMat(`srv-ceil-mineral-${c.q}`, texCeilMineral(c.q), { env: 0.6, bounce: 0.3 }), ceilMin.geometry());
+  c.batch.add(room, pbrMat(`srv-ceil-pvc-${c.q}`, texCeilPvc(c.q), { env: 0.8, bounce: 0.32 }), ceilPvc.geometry());
   c.batch.add(room, pbrMat(`srv-floor-ceramica-${c.q}`, texQuarry(c.q), { env: 0.45, offset: true }), quarry.geometry(), undefined, { receive: true });
   /* ---------- azulejo até o forro nas zonas da copa; para-choques no corredor; cantoneiras ---------- */
   const tiles = new QuadBuilder();
@@ -301,7 +301,7 @@ function servico(c: RoomsCtx) {
     }
     const hatch = Fr.at(c, room, -17.25, H, 12.75);
     hatch.box(S.alu, 0, -0.012, 0, 0.64, 0.012, 0.64); hatch.box(S.paintWhite, 0, -0.016, 0, 0.58, 0.006, 0.58); hatch.box(S.steelBlack, 0.22, -0.026, 0, 0.06, 0.012, 0.03);
-    const stain = once("srv-stainMat", () => new THREE.MeshStandardMaterial({ color: "#6b4f2c", transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    const stain = once("srv-stainMat2", () => new THREE.MeshStandardMaterial({ color: "#a08454", opacity: 0.55, transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
       alphaMap: drawnTexture("srv-stain", 128, 128, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); r.addColorStop(0, "rgba(255,255,255,0.35)"); r.addColorStop(0.75, "rgba(255,255,255,0.25)"); r.addColorStop(0.86, "rgba(255,255,255,0.75)"); r.addColorStop(0.9, "rgba(255,255,255,0.1)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.beginPath(); g.ellipse(w / 2, h / 2, w * 0.48, h * 0.4, 0.4, 0, Math.PI * 2); g.fill(); }, false) }));
     for (const [x, z, s] of [[-21.4, 8.6, 0.7], [-13.6, -1.9, 0.5], [-19.0, 12.6, 0.9], [-15.4, 4.4, 0.45], [-17.6, 15.3, 0.6]] as [number, number, number][]) c.batch.add(room, stain, geo("srv-stainPlane", () => new THREE.PlaneGeometry(1, 1).rotateX(Math.PI / 2)), mat(x, H - 0.002, z, s * 5, s, 1, s * 0.8));
   }

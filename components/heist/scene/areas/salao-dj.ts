@@ -103,7 +103,7 @@ function facade(): THREE.Texture {
 }
 
 /* ======================= cabine do DJ (móvel da planta) ======================= */
-const facadeMat = () => salaoMat("djFacade", () => new THREE.MeshPhysicalMaterial({ map: facade(), roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.1 }));
+const facadeMat = () => salaoMat("djFacade", () => new THREE.MeshPhysicalMaterial({ map: facade(), roughness: 0.22, clearcoat: 0.8, clearcoatRoughness: 0.22, envMapIntensity: 1.0 }));
 /** Altura do tampo da cabine (o DJ alcança os pratos de pé, a ~0,5 m). */
 export const BOOTH_H = 1.05;
 /** Posições (locais) do equipamento sobre o tampo: x ao longo da cabine; z negativo = lado do DJ. */
@@ -284,7 +284,7 @@ export function dressDj(c: RoomsCtx, pins: BeamSet) {
     return { yoke, head, lens, beam, pan0: Math.atan2(6.5 - hx, 4.5 - hz), ph: k * 1.37, k, spot: spotIM[k % 2], si: k >> 1 };
   });
   /* ---------- globos espelhados (instanciados), motores, cabos e pin spots ---------- */
-  const ballMat = salaoMat("mirrorBall", () => new THREE.MeshStandardMaterial({ color: "#dfe3e8", metalness: 1, roughness: 0.12, envMapIntensity: 2.6, flatShading: true, emissive: "#ffffff", emissiveMap: ballTiles(), emissiveIntensity: 1.1 }));
+  const ballMat = salaoMat("mirrorBall", () => new THREE.MeshStandardMaterial({ color: "#dfe3e8", metalness: 1, roughness: 0.12, envMapIntensity: 2.6, flatShading: true, emissive: "#ffffff", emissiveMap: ballTiles(), emissiveIntensity: 0.6 }));
   const BALLS: [number, number, number, number, number][] = [[5.0, 5.35, 3.5, 0.3, 0.55], [5.0, 5.45, 5.6, 0.25, -0.62], [7.6, 5.25, 4.5, 0.34, 0.48]];
   const ballIM = new THREE.InstancedMesh(geo(`salao-ballUnit-${c.q}`, () => new THREE.IcosahedronGeometry(1, c.q === "high" ? 5 : 4)), ballMat, BALLS.length);
   ballIM.boundingSphere = zone.clone(); ballIM.instanceMatrix.setUsage(THREE.DynamicDrawUsage); ballIM.userData.room = ROOM; c.group.add(ballIM);
@@ -301,7 +301,7 @@ export function dressDj(c: RoomsCtx, pins: BeamSet) {
     pins.add(new THREE.Vector3(px, TRUSS.y - 0.1, pz), new THREE.Vector3(x, yb, z), 0.05, "#fff4e0", 0.18);
   });
   const gGeo = new THREE.BufferGeometry(); gGeo.setAttribute("position", new THREE.BufferAttribute(gPos, 3)); gGeo.setAttribute("color", new THREE.BufferAttribute(gCol, 3).setUsage(THREE.DynamicDrawUsage));
-  const glints = new THREE.Points(gGeo, new THREE.PointsMaterial({ map: glintTexture(), size: 0.3, sizeAttenuation: true, vertexColors: true, color: new THREE.Color(2.2, 2.2, 2.2), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const glints = new THREE.Points(gGeo, new THREE.PointsMaterial({ map: glintTexture(), size: 0.3, sizeAttenuation: true, vertexColors: true, color: new THREE.Color(1.6, 1.6, 1.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
   glints.userData.room = ROOM; glints.renderOrder = 6; c.group.add(glints);
   /* ---------- pontinhos de luz dos globos: piso da pista e teto ---------- */
   const sparkle = sparkleTexture();
@@ -319,7 +319,7 @@ export function dressDj(c: RoomsCtx, pins: BeamSet) {
     for (const s of [-1, 1]) c.batch.add(ROOM, waveMat, geo("salao-cdjScreen", () => new THREE.PlaneGeometry(0.24, 0.05).rotateX(-Math.PI / 2)), L(f, s * GEAR.cdjX, BOOTH_H + 0.107, GEAR.z + 0.15, Math.PI));
     c.batch.add(ROOM, salaoMat("laptopScrMat", () => new THREE.MeshBasicMaterial({ map: laptopScreen(), color: new THREE.Color(1.15, 1.15, 1.15) })), geo("salao-laptopScr", () => new THREE.PlaneGeometry(0.3, 0.19)), L(f, GEAR.laptopX, LAPTOP.y, LAPTOP.z + 0.124, Math.PI, 1, 1, 1, -0.2));
     for (const y of [0.075, BOOTH_H - 0.07]) c.batch.add(ROOM, led, BOX0(), L(f, 0, y, f.d / 2 + 0.002, 0, f.w - 0.1, 0.012, 0.006));
-    const glowPos = worldOf(f, 0, 0.4, f.d / 2 + 0.6); A(c, ROOM, glowPos.x, glowPos.y, glowPos.z, "#ffb36b", 3, 3);
+    const glowPos = worldOf(f, 0, 0.12, f.d / 2 + 1.0); A(c, ROOM, glowPos.x, glowPos.y, glowPos.z, "#ffb36b", 2.5, 3);   // brilho do LED no piso (longe do laqueado)
   }
   /* ---------- luzes coloridas da pista (âncoras que pulsam) ---------- */
   const party: { a: LightAnchor; base: number }[] = [];

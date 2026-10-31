@@ -11,8 +11,8 @@ import type { RoomsCtx } from "./kit";
 import { A } from "./kit";
 import { ROOM, VH, VM, X0, X1, Z0, Z1, frameGeo, lathe, vGeo, vMat, vTex, type VPalette } from "./vestibulo-kit";
 
-/** Campo dos caixotões (dentro da cimalha, que avança 0,43 m) e a grade. */
-const F = { x0: X0 + 0.43, x1: X1 - 0.43, z0: Z0 + 0.43, z1: Z1 - 0.43, nx: 9, nz: 5, beam: 0.24, drop: 0.3 };
+/** Campo dos caixotões (dentro da sanca, que chega ao teto a 0,68 m da parede) e a grade. */
+const F = { x0: X0 + 0.8, x1: X1 - 0.8, z0: Z0 + 0.8, z1: Z1 - 0.8, nx: 9, nz: 5, beam: 0.24, drop: 0.3 };
 /** Centro do lustre e do medalhão. */
 export const CHANDELIER = { x: 0, z: (Z0 + Z1) / 2, y: 4.35 };
 const MED_R = 2.3;

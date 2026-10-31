@@ -67,10 +67,11 @@ export function dessertTable(p: Prop, c: PropsCtx) {
   const f = foot(p), P = c.P, b = c.batch, inst = c.inst, R = rand(41);
   dressedTable(c, f, "dessert");
   garland(c, f, f.w, f.d);
-  const porcelain = salaoSolid("porcelain", "#f7f5f0", { rough: 0.25, env: 1.1 }), fondant = salaoSolid("fondant", "#f7f0e4", { rough: 0.55, env: 0.6 });
+  const porcelain = salaoSolid("porcelain", "#f7f5f0", { rough: 0.25, env: 1.1 }), fondant = salaoMat("fondantSatin", () => new THREE.MeshPhysicalMaterial({   // pasta americana: marfim acetinado, um brilho de açúcar
+    color: "#fbf5ea", roughness: 0.42, sheen: 0.6, sheenColor: new THREE.Color("#ffffff"), sheenRoughness: 0.5, emissive: new THREE.Color("#4a3f33"), envMapIntensity: 1.3 }));
   const marbleW = P.marbleWhite, gold = P.goldBright;
-  // degraus de mármore branco com filete dourado ao fundo (alturas diferentes para o olhar subir)
-  for (const [x, h, w] of [[-1.25, 0.16, 0.6], [1.25, 0.1, 0.62], [0, 0.06, 0.7]] as [number, number, number][]) { bx(b, marbleW, f, x, TOP, -0.22, w, h, 0.42, { cast: true }); bx(b, gold, f, x, TOP + h - 0.008, -0.22, w + 0.01, 0.008, 0.43); }
+  // degraus de mármore branco com filete dourado na frente (alturas diferentes para o olhar subir)
+  for (const [x, h, w] of [[-1.25, 0.16, 0.6], [1.25, 0.1, 0.62], [0, 0.06, 0.7]] as [number, number, number][]) { bx(b, marbleW, f, x, TOP, -0.22, w, h, 0.42, { cast: true }); bx(b, gold, f, x, TOP + h - 0.016, -0.22 + 0.211, w + 0.004, 0.009, 0.006); }   // filete na frente (o topo fica de mármore)
   /* bolo de cinco andares sobre o prato com pé dourado: fondant marfim, faixa dourada e colar de pérolas em cada andar */
   const cake0 = TOP + 0.06;
   b.add(ROOM, gold, lathe("cakeStand", [[0, 0], [0.16, 0], [0.17, 0.012], [0.05, 0.03], [0.04, 0.08], [0.06, 0.1], [0.23, 0.11], [0.235, 0.125], [0, 0.125]], 40), L(f, 0, cake0, -0.22), { cast: true });

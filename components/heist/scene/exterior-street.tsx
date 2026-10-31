@@ -499,7 +499,7 @@ export function HeistStreet({ q, m }: { q: Quality; m: ExteriorMaterials }) {
   const ironMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#1c1c1c", roughness: 0.4, metalness: 0.8 }), []);
   const ledPanel = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: new THREE.Color("#f4f6ff"), emissiveIntensity: 3.2 }), []);
   const ledLens = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: new THREE.Color("#e4ecff"), emissiveIntensity: 6 }), []);
-  const floodLens = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: new THREE.Color("#ffc890"), emissiveIntensity: 5 }), []);
+  const floodLens = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: new THREE.Color("#ffc890"), emissiveIntensity: 2.2 }), []);
   const blueBarrier = useMemo(() => new THREE.MeshStandardMaterial({ color: "#2f5f9b", roughness: 0.45, metalness: 0.6, normalMap: m.galvanized.normalMap, normalScale: new THREE.Vector2(0.2, 0.2) }), [m]);
   const sawMat = useMemo(() => {
     const c = document.createElement("canvas"); c.width = 128; c.height = 32; const g = c.getContext("2d")!;

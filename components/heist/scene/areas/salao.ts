@@ -45,9 +45,9 @@ function dress(c0: RoomsCtx) {
   // foco na passarela: dois refletores na borda do mezanino norte apontados para o fim da passarela
   for (const x of [9.8, 11.4]) {                                          // a coluna de x 9 fica de fora
     c.batch.add(ROOM, c.P.black, CYL0(12), mat(x, 4.78, -0.75, 0, 0.08, 0.2, 0.08));
-    pins.add(new THREE.Vector3(x, 4.78, -0.75), new THREE.Vector3(10.3, 0.6, -2.6), 0.55, "#fff2e2", 0.07);
+    pins.add(new THREE.Vector3(x, 4.78, -0.75), new THREE.Vector3(10.3, 0.6, -2.6), 0.4, "#fff2e2", 0.035);
   }
-  A(c, ROOM, 10.3, 3.2, -2.2, "#fff0dc", 7, 6.5);
+  A(c, ROOM, 10.3, 3.2, -2.2, "#fff0dc", 5, 6);
   pins.flush(c.group);
   A(c, ROOM, -8, 4.6, 13.1, "#fff0d8", 9, 5.5); A(c, ROOM, 8, 4.6, 13.1, "#fff0d8", 9, 5.5);
   // giroflex (o do leste saiu de trás do painel do DJ)

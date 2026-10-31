@@ -185,7 +185,7 @@ export function buildDoors(doors: DoorDef[], P: Palette, q: Quality, batch: Batc
       // para onde olha a frente (+z) da folha e qual lado é o de puxar (o lado para onde ela abre)
       const front: RoomId | null = alongX ? (k === 0 ? s.hi : s.lo) : (k === 0 ? s.lo : s.hi), back: RoomId | null = front === s.lo ? s.hi : s.lo;
       const pull: 1 | -1 = front === swingRoom ? 1 : -1;
-      const leaf = buildLeaf({ style: spec.style, w: lw, h: H - 0.01, pull, front, back, stencil: spec.stencil?.[loc], closer: spec.closer }, P, q);
+      const leaf = buildLeaf({ style: spec.style, w: lw, h: H - 0.01, pull, front, back, stencil: spec.stencil?.[loc], closer: spec.closer, wallUv: spec.style === "jib" ? { origin: hingeAlong, dir: dirAlong } : undefined }, P, q);
       const holder = new THREE.Group(); holder.add(leaf); pivot.add(holder);
       if (spec.closer) {
         // mola aérea em braço paralelo, do lado de empurrar (oposto ao giro); a sapata pende do forro do vão

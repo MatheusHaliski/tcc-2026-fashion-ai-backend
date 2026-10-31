@@ -86,4 +86,46 @@ Geral da porta do vestíbulo; a pista com gente dançando (jogo com `?shot=`); a
 
 ## Implementado
 
-_Preenchido pelo agente da área: cada item com arquivo e função, captura e estado._
+**Arquivos (todos em `components/heist/scene/`, menos a planta):**
+
+- `areas/salao.ts`: o módulo da área (móveis por `model`, decoração, piso e parede da casca, luzes principais).
+- `areas/salao-kit.ts`: pegada e matriz dos móveis, torneados, gerador de superfícies PBR, lote por acabamento (`tinting`) e feixes de luz instanciados (`salaoBeamMaterial`, `BeamSet`).
+- `areas/salao-walls.ts`: piso, paredes, cortinas, lustres, camarotes e o painel do DJ.
+- `areas/salao-dj.ts`: cabine, caixas, pista, treliça, luzes, globos e o tique da música.
+- `areas/salao-food.ts`: doces, bufê e aparador.
+- `areas/salao-dining.ts`: mesas dos patronos.
+- `interior-hall.ts`: arquitetura do salão.
+- `lib/heist/level.ts`: seção do salão em `baseProps()` e `civs()`.
+
+**Capturas:** `scratchpad/gala/areas/salao/`. As `v*-low` são da iteração; as `h*-high` são da rodada final.
+
+| Item | Arquivo → função | Captura | Estado |
+| --- | --- | --- | --- |
+| Piso Botticino polido em módulos de 2,4 m: frisos de granito negro, filete de latão, losangos Rosso, reflexo | `salao-walls.ts` → `floorSurfaceSalao` / `floorMaterialSalao` (via `AREA.surfaces`) | v1, h1, h5 | VALIDADO |
+| Rosácea de mármores (Ø 6,1 m), barra grega e tapetes redondos de Aubusson sob as mesas | `salao-walls.ts` → `floorInlays`, `rosetteSurface`, `meanderSurface`, `rugTexture` | h1, h5, h6 | VALIDADO |
+| Cantaria de calcário, lambri de nogueira com almofadas em relevo, molduras duplas de pedra com florão | `salao-walls.ts` → `wallSurfaceSalao` / `wallMaterialSalao`, `boiserie` | h2, h5 | VALIDADO |
+| Cortinas de veludo bordô com bandô, galões, franja, abraçadeiras e borlas nos arcos dos doces e do bufê | `salao-walls.ts` → `drapes`, `drapePanel` | v3, h3 | VALIDADO |
+| Cortina pregueada iluminada de baixo nos quatro arcos cegos (no lugar do degradê liso) | `interior-hall.ts` → `pleatedArchGeo`, `archDrapeMaterial` | h3, h5 | VALIDADO |
+| Quatro lustres "Coroa Celeste" | `salao-walls.ts` → `crownChandelier` | h1, h4 | VALIDADO |
+| Camarotes: seis pares de bergères com mesinha de mármore e abajur nos mezaninos norte e sul | `salao-walls.ts` → `mezzanineBoxes` | h4 | IMPLEMENTADO |
+| Painel de veludo com estrelas e o monograma atrás do DJ | `salao-walls.ts` → `djBackdrop` | v2, h2 | VALIDADO |
+| Cabine do DJ: dois players, mixer, notebook no suporte, luminária, copo, celular, cabos presos com fita, case aberto, bolsa de discos, rolo de cabo, frente laqueada com medalhão e LED | `salao-dj.ts` → `djBooth` (fixture `djBooth`) | v2, h2 | VALIDADO |
+| Caixas: dois subwoofers e uma coluna em cada lado; duas line arrays penduradas | `salao-dj.ts` → `djSpeaker` (fixture `djSpeaker`), `flownArray` | v2, h2, v5 | VALIDADO |
+| Pista de nogueira com borda de alumínio e copos esquecidos | `salao-dj.ts` → `danceFloor` | v5, h4, h6 | VALIDADO |
+| Treliça com talhas e oito moving heads (feixe e mancha no piso seguem a música); três globos com motor, cabo e pin spot; pontinhos no piso e no teto; telas e LED da cabine; luzes coloridas que pulsam a 122 bpm. O alarme apaga a festa. | `salao-dj.ts` → `trussRig`, `dressDj` (tique em `c.ticks`) | v5, h4, h6 (quadro parado) | VALIDADO |
+| Mesa de doces: bolo de cinco andares, torre de macarons, cupcakes, éclairs, cloches, verrines, trufas, castiçais | `salao-food.ts` → `dessertTable` (fixture `dessertTable`) | v3, h3 | VALIDADO |
+| Bufê: réchauds com tampa de rolo e fogareiros, canapés, frutas, frios, torre de champanhe de 55 taças, balde com garrafas | `salao-food.ts` → `buffetTable` (fixture `buffetTable`) | v5 | IMPLEMENTADO |
+| Aparador dos garçons | `salao-food.ts` → `serviceBuffet` (fixture `serviceBuffet`) | — | IMPLEMENTADO |
+| Três mesas dos patronos: marchetaria, oito cadeiras Gala Étoile, lugares completos, candelabro, rosas e votivas | `salao-dining.ts` → `patronTable` (fixture `patronTable`) | v4, h5 | VALIDADO |
+| Pin spots sobre os doces e o bufê e foco na passarela | `salao.ts` → `dress` (`BeamSet`) | h3 (doces); passarela sem captura | IMPLEMENTADO |
+| Desempenho: 298 → 199 chamadas do salão no "low" (689 mil triângulos); 201 chamadas e 1,16 milhão de triângulos no "high" | `salao-kit.ts` → `tinting`, `BeamSet`; instâncias em `salao-dj.ts` | contagem no jsdom | VALIDADO |
+| Planta: móveis | `level.ts` → `baseProps` (seção do salão) | `world.test` | VALIDADO |
+| Planta: pessoas | `level.ts` → `civs` (seção do salão) | v7, h7 | IMPLEMENTADO |
+
+**Pendências**
+
+- Animações de verdade para "dj", "eat" e "dance" (agente das pessoas):
+  - DJ: as mãos nos pratos a ~0,5 m à frente do corpo, tampo a 1,05 m; ele fica em x 11,12, de frente para −x.
+  - Ritmo: o salão exporta `BPM = 122` (`salao-dj.ts`).
+  - Prato na mão de quem come.
+- O salão tem 41 pessoas (antes, 35).

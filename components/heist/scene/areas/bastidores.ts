@@ -123,6 +123,16 @@ function bastidores(c: RoomsCtx) {
     f.g(S.rubber, geo("bk-rampGeo", () => { const s = new THREE.Shape(); s.moveTo(-0.3, 0); s.lineTo(-0.1, 0.05); s.lineTo(0.1, 0.05); s.lineTo(0.3, 0); s.closePath(); return new THREE.ExtrudeGeometry(s, { depth: 0.9, bevelEnabled: false }).translate(0, 0, -0.45); }), 0, 0, 0, Math.PI / 2);
     f.box(S.plasticYellow, 0, 0.05, 0, 0.9, 0.003, 0.18, Math.PI / 2);
   }
+  /* ---------- luzes azuis de passagem (running lights) presas no rodapé, como em todo bastidor ---------- */
+  {
+    const blue = glow("bk-runLight", "#3f6dff", 2.6);
+    for (const [x, z, ry] of [[12.68, -4.6, Math.PI / 2], [12.68, 0.6, Math.PI / 2], [12.68, 2.8, Math.PI / 2], [14.6, -5.96, 0], [19.5, -5.96, 0], [21.94, 2.3, -Math.PI / 2], [14.0, 3.96, Math.PI], [19.8, 3.96, Math.PI]] as [number, number, number][]) {
+      const f = Fr.at(c, room, x, 0, z, ry);
+      f.rbox(S.steelBlack, 0, 0.1, 0.03, 0.12, 0.06, 0.06, 0.01); f.box(blue, 0, 0.1, 0.061, 0.08, 0.012, 0.002);
+      f.g(S.cable, tube([[0.06, 0.12, 0.03], [0.12, 0.05, 0.03], [0.3, 0.012, 0.04]], 0.004, 8, 4), 0, 0, 0);
+      const p = f.p(0, 0.08, 0.25); A(c, room, p.x, p.y, p.z, "#3f6dff", 1.1, 1.8);
+    }
+  }
   /* ---------- espelho de corpo inteiro e banqueta na troca rápida ---------- */
   {
     const f = Fr.at(c, room, 12.85, 0, 1.15, Math.PI / 2 - 0.25);

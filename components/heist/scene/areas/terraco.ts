@@ -344,12 +344,12 @@ function terraco(c: RoomsCtx) {
   c.batch.add(ROOM, T.iron, CYL(8), mat(21.92, 1.45, -12.83, 0, 0.015, 0.6, 0.015));
   c.batch.add(ROOM, exit, geo("terraco-exitPlane", () => new THREE.PlaneGeometry(0.4, 0.2)), mat(21.9, 1.78, -12.83, -Math.PI / 2));
   A(c, ROOM, 21.6, 1.8, -12.85, "#4cff8a", 0.8, 1.6);
-  /* paredes oeste e sul (7 m): cordão de pedra a 3,4 m, cimalha no alto, treliças com trepadeiras, lanternas */
+  /* paredes oeste e sul (7 m): cordão de pedra a 3,7 m (acima do frontão), cimalha no alto, treliças, lanternas */
   for (const [axis, plane, a0, a1] of [["z", 12.5, -22, -6.5], ["x", -6.5, 12.5, 22]] as ["x" | "z", number, number, number][]) {
     const M = (a: number, y: number, out: number, sx = 1, sy = 1, sz = 1) => axis === "z" ? mat(plane + out, y, a, Math.PI / 2, sx, sy, sz) : mat(a, y, plane - out, Math.PI, sx, sy, sz);
     const len = a1 - a0, mid = (a0 + a1) / 2;
-    c.batch.add(ROOM, T.stone, BOX0(), M(mid, 3.35, 0.05, len, 0.2, 0.1));
-    c.batch.add(ROOM, T.stone, BOX0(), M(mid, 3.55, 0.035, len, 0.06, 0.07));
+    c.batch.add(ROOM, T.stone, BOX0(), M(mid, 3.72, 0.05, len, 0.2, 0.1));
+    c.batch.add(ROOM, T.stone, BOX0(), M(mid, 3.92, 0.035, len, 0.06, 0.07));
     c.batch.add(ROOM, T.stone, BOX0(), M(mid, 6.7, 0.08, len, 0.3, 0.16));
     c.batch.add(ROOM, T.stone, BOX0(), M(mid, 6.55, 0.05, len, 0.15, 0.1));
     for (let a = a0 + 0.06; a < a1; a += 0.12) c.inst.add(ROOM, "terraco-modillion", BOX0(), T.stone, M(a, 6.45, 0.07, 0.05, 0.1, 0.14));

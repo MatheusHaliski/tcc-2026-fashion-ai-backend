@@ -65,7 +65,7 @@ function wainscot(c: RoomsCtx, V: VPalette, w: Side, a: number, b: number) {
 }
 
 /** Pilastra canelada: pedestal (0–1,1 m), fuste com caneluras (1,1–5,25 m) e capitel com folhas e volutas douradas. */
-function pilaster(c: RoomsCtx, V: VPalette, w: Side, s: number, top = 5.75, width = 0.55) {
+function pilaster(c: RoomsCtx, V: VPalette, w: Side, s: number, top = 5.6, width = 0.55) {
   const capH = 0.48, shaftTop = top - capH;
   // pedestal: base, dado e cornija do pedestal
   wb(c, V.nero, w, s, 0, 0, width + 0.14, 0.2, 0.15);
@@ -93,12 +93,16 @@ function pilaster(c: RoomsCtx, V: VPalette, w: Side, s: number, top = 5.75, widt
   c.inst.add(ROOM, "vestibulo-capRose", vGeo("capRoseGeo", () => new THREE.SphereGeometry(0.035, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2).rotateX(Math.PI / 2)), V.giltBright, mul(at(w, s, top - 0.03, 0.2), mat(0, 0, 0)));
 }
 
-/** Cimalha corrida no alto das quatro paredes (5,75–6,5 m) com o filete dourado do friso e os dentículos. */
+/**
+ * Cimalha corrida no alto das quatro paredes (5,6–6,2 m: arquitrave, friso com filete dourado, dentículos e cornija) e,
+ * acima dela, a sanca: o quarto de cana côncavo que sobe até o teto a 0,68 m da parede, com o filete dourado na borda.
+ */
 function cornice(c: RoomsCtx, V: VPalette) {
-  const y0 = 5.75, pts: [number, number][] = [[0.045, 0], [0.045, 0.08], [0.07, 0.08], [0.07, 0.19], [0.03, 0.2], [0.03, 0.36], ...arcPts(0.03, 0.36, 0.16, 0.46, false, 5), [0.2, 0.47], [0.2, 0.52], [0.33, 0.53], [0.33, 0.61], ...arcPts(0.33, 0.61, 0.43, 0.75, true, 6)];
+  const y0 = 5.6, pts: [number, number][] = [[0.045, 0], [0.045, 0.08], [0.07, 0.08], [0.07, 0.19], [0.03, 0.2], [0.03, 0.36], ...arcPts(0.03, 0.36, 0.16, 0.46, false, 5), [0.2, 0.47], [0.2, 0.52], [0.33, 0.53], [0.33, 0.58], ...arcPts(0.33, 0.58, 0.38, 0.62, true, 3), ...arcPts(0.38, 0.62, 0.68, 0.9, false, 8)];
   for (const [w, s0, s1] of [["N", X0, X1], ["S", X0, X1], ["W", 14.5, Z1], ["E", 14.5, Z1]] as [Side, number, number][]) {
     run(c, V.stoneMold, w, s0, s1, y0, `cornice-${w}`, pts, true);
     run(c, V.gilt, w, s0, s1, y0 + 0.255, `corniceGilt-${w}`, [[0.04, 0], [0.05, 0.015], [0.04, 0.03]]);
+    run(c, V.gilt, w, s0, s1, y0 + 0.885, `coveGilt-${w}`, [[0.66, 0], [0.7, 0.008], [0.7, 0.015], [0.66, 0.015]]);
     const len = Math.abs(s1 - s0), n = Math.floor(len / 0.11);
     for (let k = 0; k < n; k++) c.inst.add(ROOM, "vestibulo-dentil", BOX0(), V.stoneMold, mul(at(w, Math.min(s0, s1) + (k + 0.5) * (len / n), y0 + 0.43, 0.1), mat(0, 0, 0, 0, 0.055, 0.08, 0.2)));
   }
@@ -318,10 +322,10 @@ export function buildWalls(c: RoomsCtx) {
   for (const x of [-3.38, 3.38]) sconceV(c, V, "N", x, 3.0);
   sconceV(c, V, "E", 23.75, 2.75);
   /* pinturas a óleo sobre as curvas das escadas (paredes oeste e leste, acima do corrimão) */
-  painting(c, V, "W", 16.15, 4.5, "portrait", 1.35, 1.85);
-  painting(c, V, "E", 16.15, 4.5, "landscape", 1.35, 1.85);
+  painting(c, V, "W", 16.15, 4.38, "portrait", 1.35, 1.85);
+  painting(c, V, "E", 16.15, 4.38, "landscape", 1.35, 1.85);
   /* cartazes da exposição no alto das paredes laterais */
   poster(c, V, "W", 21.25, 4.4, 0, 1.15, 1.6);
-  poster(c, V, "E", 21.5, 4.25, 1, 1.15, 1.6);
+  poster(c, V, "E", 21.5, 4.3, 1, 1.15, 1.6);
   void VH; void smooth; void fbm;
 }

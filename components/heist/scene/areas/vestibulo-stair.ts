@@ -57,8 +57,9 @@ export function buildStair(p: Prop, c: Ctx) {
     add(V.redCarpet, BOX0(), mat(X((xa + xb) / 2), h, lwalk, 0, GOING, 0.01, runnerW));
     if (i > 1) {
       add(V.redCarpet, BOX0(), mat(X(xa - 0.005), h - RISE, lwalk, 0, 0.012, RISE - SLAB, runnerW));
-      c.inst.add(ROOM, "vestibulo-stairRod", CYL(10), V.brass, mat(X(xa + 0.02), h - RISE + 0.018, lwalk, 0, 0.008, runnerW + 0.1, 0.008, Math.PI / 2, 0));
-      for (const s of [-1, 1]) c.inst.add(ROOM, "vestibulo-rodEye", vGeo("rodEyeGeo", () => new THREE.SphereGeometry(0.016, 10, 6)), V.brass, mat(X(xa + 0.02), h - RISE + 0.018, lwalk + s * (runnerW / 2 + 0.06)));
+      // o varão fica no piso de baixo, encostado no espelho (o espelho do lance de baixo olha para −x no leste)
+      c.inst.add(ROOM, "vestibulo-stairRod", CYL(10), V.brass, mat(X(xa - 0.02), h - RISE + 0.018, lwalk, 0, 0.008, runnerW + 0.1, 0.008, Math.PI / 2, 0));
+      for (const s of [-1, 1]) c.inst.add(ROOM, "vestibulo-rodEye", vGeo("rodEyeGeo", () => new THREE.SphereGeometry(0.016, 10, 6)), V.brass, mat(X(xa - 0.02), h - RISE + 0.018, lwalk + s * (runnerW / 2 + 0.06)));
     }
   }
   /* ---------- leque: dez degraus contornando a coluna (por fora: arco de r 1,7 até φ = 90°; depois as paredes) ---------- */
@@ -79,8 +80,8 @@ export function buildStair(p: Prop, c: Ctx) {
     for (let i = 4; i >= 0; i--) rw.push(at(pa + (pb - pa) * (i / 4), 1.45));
     add(V.redCarpet, prism(rw, h, h + 0.01));
     const r0 = at(pa, 0.45), r1 = at(pa, 1.45);
-    add(V.redCarpet, BOXC(), beam(new THREE.Vector3(r0[0], h - RISE / 2 - SLAB / 2, r0[1]), new THREE.Vector3(r1[0], h - RISE / 2 - SLAB / 2, r1[1]), 0.012, RISE - SLAB));
-    c.inst.add(ROOM, "vestibulo-stairRodB", BOXC(), V.brass, beam(new THREE.Vector3(r0[0] + tx * 0.02, h - RISE + 0.018, r0[1] + tz * 0.02), new THREE.Vector3(r1[0] + tx * 0.02, h - RISE + 0.018, r1[1] + tz * 0.02), 0.016, 0.016));
+    add(V.redCarpet, BOXC(), beam(new THREE.Vector3(r0[0] - tx * 0.007, h - RISE / 2 - SLAB / 2, r0[1] - tz * 0.007), new THREE.Vector3(r1[0] - tx * 0.007, h - RISE / 2 - SLAB / 2, r1[1] - tz * 0.007), 0.012, RISE - SLAB));
+    c.inst.add(ROOM, "vestibulo-stairRodB", BOXC(), V.brass, beam(new THREE.Vector3(r0[0] - tx * 0.02, h - RISE + 0.018, r0[1] - tz * 0.02), new THREE.Vector3(r1[0] - tx * 0.02, h - RISE + 0.018, r1[1] - tz * 0.02), 0.016, 0.016));
   }
   /* ---------- lance de cima: oito degraus junto à parede norte até a galeria ---------- */
   for (let j = 1; j <= ST.nUp; j++) {
@@ -90,8 +91,8 @@ export function buildStair(p: Prop, c: Ctx) {
     c.inst.add(ROOM, "vestibulo-nosing", CYL(10), V.carrara, mat(X(xb + 0.025), h - SLAB / 2, (uz0 + uz1) / 2, 0, SLAB / 2, uz1 - uz0, SLAB / 2, Math.PI / 2, 0));
     add(V.redCarpet, BOX0(), mat(X((xa + xb) / 2), h, uwalk, 0, GOING, 0.01, runnerW));
     add(V.redCarpet, BOX0(), mat(X(xb + 0.005), h - RISE, uwalk, 0, 0.012, RISE - SLAB, runnerW));
-    c.inst.add(ROOM, "vestibulo-stairRod", CYL(10), V.brass, mat(X(xb - 0.02), h - RISE + 0.018, uwalk, 0, 0.008, runnerW + 0.1, 0.008, Math.PI / 2, 0));
-    for (const s of [-1, 1]) c.inst.add(ROOM, "vestibulo-rodEye", vGeo("rodEyeGeo", () => new THREE.SphereGeometry(0.016, 10, 6)), V.brass, mat(X(xb - 0.02), h - RISE + 0.018, uwalk + s * (runnerW / 2 + 0.06)));
+    c.inst.add(ROOM, "vestibulo-stairRod", CYL(10), V.brass, mat(X(xb + 0.02), h - RISE + 0.018, uwalk, 0, 0.008, runnerW + 0.1, 0.008, Math.PI / 2, 0));
+    for (const s of [-1, 1]) c.inst.add(ROOM, "vestibulo-rodEye", vGeo("rodEyeGeo", () => new THREE.SphereGeometry(0.016, 10, 6)), V.brass, mat(X(xb + 0.02), h - RISE + 0.018, uwalk + s * (runnerW / 2 + 0.06)));
   }
   // o último espelho (até a galeria) e a passadeira que entra 30 cm na galeria
   add(V.carrara, BOX0(), mat(X(ST.xTop), GALLERY_Y - RISE, (uz0 + uz1) / 2, 0, 0.02, RISE, uz1 - uz0));
@@ -139,6 +140,19 @@ export function buildStair(p: Prop, c: Ctx) {
     const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); return g;
   });
   add(V.stoneMold, curveGeo, undefined, true);
+  // rodapé de nero nas faces da escada que dão para a sala (banzo reto, banzo curvo e a ponta sob a galeria)
+  add(V.nero, BOX0(), mat(X((ST.xBottom + 0.3 + ST.newel[0]) / 2), 0, lz1 + 0.025, 0, ST.newel[0] - ST.xBottom - 0.3, 0.18, 0.035));
+  add(V.nero, vGeo(`curvePlinth${sg}`, () => {
+    const pts: [number, number][] = [], N = 24;
+    for (let i = 0; i <= N; i++) pts.push(at((i / N) * Math.PI / 2, ST.ro + 0.03));
+    for (let i = N; i >= 0; i--) pts.push(at((i / N) * Math.PI / 2, ST.ro - 0.01));
+    return prism(pts, 0, 0.18);
+  }));
+  add(V.nero, BOX0(), mat(X(ST.xTop - 0.0175), 0, (uz0 + lz0) / 2, 0, 0.035, 0.18, lz0 - uz0));
+  // almofada alta entalhada na ponta da escada sob a galeria (a face que olha para a porta do salão)
+  const ex = X(ST.xTop), ey0 = 0.5, ey1 = GALLERY_Y - 0.55, ez = (uz0 + lz0) / 2;
+  add(V.stoneMold, frameGeo("endPanel", lz0 - uz0 - 0.3, ey1 - ey0, 0.08, 0.035, 0.012), mat(ex, (ey0 + ey1) / 2, ez, -sg * Math.PI / 2), true);
+  add(V.gilt, frameGeo("endPanelGilt", lz0 - uz0 - 0.48, ey1 - ey0 - 0.18, 0.012, 0.012, 0.003), mat(ex, (ey0 + ey1) / 2, ez, -sg * Math.PI / 2));
   // rodapé em degrau contra as paredes (norte, atrás do lance de cima; e o canto do leque)
   for (let j = 1; j <= ST.nUp; j++) { const xb = ST.newel[0] - GOING * (j - 1), h = (ST.nLow + ST.nTurn + j) * RISE; add(V.nero, BOX0(), mat(X(xb - GOING / 2), h, uz0 + 0.015, 0, GOING + 0.02, 0.18, 0.03)); }
 

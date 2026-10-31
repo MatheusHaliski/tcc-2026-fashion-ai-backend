@@ -17,7 +17,7 @@ const CAMS: Record<string, { pos: [number, number, number]; target: [number, num
   revendedor: { pos: [-23.8, 0.05, 44.4], target: [-28.2, -0.5, 49], player: [-25, -1.6, 46] },
   fas: { pos: [1.6, 1.5, 25.6], target: [0, -0.6, 46], player: [1.4, 0, 25.4] },
   doca: { pos: [-12.5, -0.1, 31.5], target: [-19, 0.5, 24.5], player: [-14, -1.6, 30] },
-  drone: { pos: [-12, 72, 104], target: [0, 0, 30], player: [0, -1.6, 40], fov: 48 },
+  drone: { pos: [-58, 55, 37], target: [4, 0, 36], player: [-20, -1.6, 40], fov: 50 },
   cidade: { pos: [26, 0.2, 44.2], target: [-30, 4, 47], player: [26, -1.6, 44.4] },
   calcada: { pos: [-11.6, -0.55, 47.3], target: [-13.4, -1.55, 49.4], player: [-11.6, -1.6, 47.3] },
   vitrines: { pos: [3, 0.15, 47.6], target: [-5, 1.2, 51.3], player: [3, -1.6, 47.6] },
@@ -26,12 +26,36 @@ const CAMS: Record<string, { pos: [number, number, number]; target: [number, num
 function Rig({ cam, view, ready }: { cam: (typeof CAMS)[string]; view: React.MutableRefObject<SceneView>; ready: () => void }) {
   const { camera, scene, gl } = useThree();
   const frames = useRef(0);
+  const done = useRef<(() => Record<string, string>) | null>(null);
   useEffect(() => { camera.position.set(...cam.pos); camera.lookAt(...cam.target); (camera as THREE.PerspectiveCamera).fov = cam.fov ?? 55; (camera as THREE.PerspectiveCamera).updateProjectionMatrix(); }, [camera, cam]);
   useFrame((_, dt) => {
     const v = view.current; v.time += dt; v.player.x = cam.player[0]; v.player.y = cam.player[1]; v.player.z = cam.player[2];
     const info = gl.info;
-    if (frames.current === 14) { info.autoReset = false; info.reset(); }   // soma todas as passadas do quadro 15 (sombras, reflexo, pós)
-    if (frames.current === 15) { (window as unknown as { __heistRuaInfo?: object }).__heistRuaInfo = { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures, programs: info.programs?.length ?? 0 }; info.autoReset = true; }
+    if (frames.current === 14) {
+      // soma todas as passadas de um quadro e separa por passada: cena, reflexo da pista, mapas de sombra e pós (chamadas/triângulos)
+      info.autoReset = false; info.reset();
+      const passes: Record<string, [number, number]> = {}, sh = [0, 0];
+      const render = gl.render, shadow = gl.shadowMap.render;
+      gl.shadowMap.render = (...a: Parameters<typeof shadow>) => { const c0 = info.render.calls, t0 = info.render.triangles; shadow.apply(gl.shadowMap, a); sh[0] += info.render.calls - c0; sh[1] += info.render.triangles - t0; };
+      gl.render = (s: THREE.Object3D, c: THREE.Camera) => {
+        const c0 = info.render.calls, t0 = info.render.triangles, s0 = sh[0], s1 = sh[1];
+        render.call(gl, s, c);
+        const k = c === camera ? "cena" : (c as THREE.OrthographicCamera).isOrthographicCamera ? "pos" : "reflexo", p = (passes[k] ??= [0, 0]);
+        p[0] += info.render.calls - c0 - (sh[0] - s0); p[1] += info.render.triangles - t0 - (sh[1] - s1);
+      };
+      done.current = () => {
+        gl.render = render; gl.shadowMap.render = shadow;
+        const out: Record<string, string> = {};
+        for (const [k, [c, t]] of Object.entries(passes)) out[k] = `${c}/${Math.round(t / 1000)}k`;
+        if (sh[0]) out.sombras = `${sh[0]}/${Math.round(sh[1] / 1000)}k`;
+        return out;
+      };
+    }
+    if (frames.current === 15) {
+      const passes = done.current?.(); done.current = null;
+      (window as unknown as { __heistRuaInfo?: object }).__heistRuaInfo = { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures, programs: info.programs?.length ?? 0, passes };
+      info.autoReset = true;
+    }
     if (++frames.current === 16) {
       // depuração: malhas com posição inválida (NaN) estragam o bloom inteiro
       const bad: string[] = [];

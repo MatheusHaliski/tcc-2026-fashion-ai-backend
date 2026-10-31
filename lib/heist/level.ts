@@ -342,8 +342,8 @@ export function baseProps(): Prop[] {
   }
   /* doca: chegada do bufê, da produção do desfile e das obras. Móveis próprios (areas/doca-props.ts desenha pelo model):
    * estantes de aço e a bancada de conferência na parede norte, a guarita da portaria na oeste (entre a porta de serviço
-   * e o portão), os flight cases no meio (cobertura dentro do circuito da Sônia), a paleteira carregada e os carros
-   * térmicos junto à parede sul, o bebedouro e os paletes vazios nos cantos. A caixa alta que ficou é a caixa de obra do
+   * e o portão), os flight cases no meio (cobertura dentro do circuito da Sônia), a empilhadeira patolada (carregando),
+   * a paleteira carregada e os carros térmicos junto à parede sul, o bebedouro e os paletes vazios nos cantos. A caixa alta que ficou é a caixa de obra do
    * museu (o esconderijo da doca fica diante dela). */
   P("crate", "doca", box(-11, 22.6, -9.6, 23.8), "tall");
   {
@@ -355,6 +355,7 @@ export function baseProps(): Prop[] {
     FD("docaPallets", box(-21.95, 16.6, -20.75, 17.6), "low");
     FD("docaFlightCases", box(-13, 20, -11.8, 20.6), "tall");
     FD("docaPalletJack", box(-14.4, 23, -12.75, 24), "low");
+    FD("docaStacker", box(-16.3, 23.26, -14.6, 24), "low");                      // empilhadeira patolada, atrás da arara rack-d1
     FD("docaHotBoxes", box(-9.55, 23.25, -8.55, 23.95), "tall", Math.PI);
   }
   /* terraço (jardim da cobertura): jardineiras escultóricas, o sofá de fibra do estar sob o pergolado (de frente para a
@@ -491,6 +492,7 @@ function civs(): CivSpawn[] {
   for (const [x, z, yaw, a] of [[-3, 18, 0.4, "talk"], [-2.7, 18.9, -2.6, "talk"], [3.65, 19.5, 1.8, "drink"], [4.5, 19.3, Math.PI / 2, "phone"]] as const) C("guest", out.length % 2 ? "guestM" : "guestF", "vestibulo", x, z, yaw, a, { hold: a === "drink" ? "glass" : a === "phone" ? "phone" : null });
   C("guest", "guestM", "vestibulo", -4.2, 22.85, Math.PI, "talk");
   C("waiter", "waitress", "vestibulo", 1.95, 21.6, -Math.PI / 2, "serve", { hold: "tray" });
+  C("guest", "guestF", "vestibulo", 4.85, 23.45, Math.PI, "sit", { hold: "phone" });       // esperando o casaco no banco
   // Grande Salão: rodas de conversa em volta das mesas altas, garçons e o quarteto de cordas
   const rings: [number, number, number][] = [[-2.8, 1.2, 3], [-2.6, 9.2, 3], [2.8, 8.8, 2], [6.4, 9.0, 3]];
   let g = 0;

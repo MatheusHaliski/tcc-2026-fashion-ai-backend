@@ -102,16 +102,16 @@ export const texQuarry = (q: Quality) => pbr(`srv-ceramica-${q}`, mid(q), mid(q)
   const grit = vn(u * 220, v * 220, 220, 31), grease = sm(0.5, 0.8, fbm(u, v, 3, 33, 3));
   if (e < 0.018) { o[0] = 0.17 + 0.03 * grit; o[1] = 0.16 + 0.03 * grit; o[2] = 0.15 + 0.03 * grit; o[3] = 0.12; o[4] = 0.96; return; }
   const tone = hsh(i, j, 37), edge = sm(0.018, 0.05, e), k = (0.82 + 0.22 * tone) * (0.93 + 0.1 * grit) * (1 - 0.18 * grease);
-  o[0] = 0.56 * k; o[1] = 0.23 * k; o[2] = 0.14 * k; o[3] = 0.35 + 0.15 * edge + 0.1 * grit; o[4] = 0.62 + 0.2 * grit - 0.2 * grease;
+  o[0] = 0.64 * k; o[1] = 0.27 * k; o[2] = 0.17 * k; o[3] = 0.35 + 0.15 * edge + 0.1 * grit; o[4] = 0.62 + 0.2 * grit - 0.2 * grease;
 }, 1.6);
 /** Granilite cinza polido com lascas brancas, pretas e ocres e juntas plásticas a cada 1 m (textura = 2 × 2 m). */
 export const texGranilite = (q: Quality) => pbr(`srv-granilite-${q}`, big(q), big(q), (u, v, o) => {
   const ju = Math.min(u % 0.5, 0.5 - (u % 0.5)), jv = Math.min(v % 0.5, 0.5 - (v % 0.5)), joint = Math.min(ju, jv) < 0.0018;
   const n = fbm(u, v, 6, 41, 4), wear = sm(0.42, 0.72, fbm(u, v, 3, 43, 3)), dirt = sm(0.55, 0.85, fbm(u, v, 5, 45, 3));
-  let r = 0.47 + 0.05 * n, g = 0.47 + 0.05 * n, b = 0.46 + 0.05 * n, ro = 0.26 + 0.24 * wear, h = 0.5;
+  let r = 0.6 + 0.05 * n, g = 0.6 + 0.05 * n, b = 0.585 + 0.05 * n, ro = 0.26 + 0.24 * wear, h = 0.5;
   const c1 = chip(u, v, 64, 47, 0.42, 0.2, 0.42), c = c1 >= 0 ? c1 : chip(u, v, 180, 49, 0.55, 0.18, 0.4);
   if (c >= 0) { const C = [[0.86, 0.85, 0.82], [0.12, 0.12, 0.13], [0.33, 0.33, 0.34], [0.62, 0.55, 0.44], [0.72, 0.71, 0.69]][c]; const t = 0.9 + 0.1 * n; r = C[0] * t; g = C[1] * t; b = C[2] * t; ro = 0.2 + 0.18 * wear; h = 0.52; }
-  r *= 1 - 0.16 * dirt; g *= 1 - 0.16 * dirt; b *= 1 - 0.15 * dirt;
+  r *= 1 - 0.1 * dirt; g *= 1 - 0.1 * dirt; b *= 1 - 0.09 * dirt;
   if (joint) { r = 0.3; g = 0.3; b = 0.31; ro = 0.5; h = 0.38; }
   o[0] = r; o[1] = g; o[2] = b; o[3] = h; o[4] = ro;
 }, 0.7);
@@ -190,11 +190,13 @@ export const texWallBk = (q: Quality) => pbr(`bk-parede-${q}`, mid(q), mid(q) * 
 const mats = new Map<string, THREE.Material>();
 export function once<T extends THREE.Material>(key: string, make: () => T): T { const hit = mats.get(key) as T | undefined; if (hit) return hit; const m = make(); m.name = key; mats.set(key, m); return m; }
 /** Material com superfície PBR da área (tinta, metal, relevo e cores por vértice opcionais). */
-export function pbrMat(key: string, sf: Pbr, o: { tint?: string; metal?: number; rough?: number; normal?: number; vertex?: boolean; env?: number; offset?: boolean } = {}): THREE.MeshStandardMaterial {
+/** `bounce`: luz rebatida do piso e das paredes (o próprio mapa como emissivo fraco) — forros que só recebem luz rasante. */
+export function pbrMat(key: string, sf: Pbr, o: { tint?: string; metal?: number; rough?: number; normal?: number; vertex?: boolean; env?: number; offset?: boolean; bounce?: number } = {}): THREE.MeshStandardMaterial {
   return once(key, () => new THREE.MeshStandardMaterial({
     map: sf.map, normalMap: sf.normalMap, roughnessMap: sf.roughnessMap, normalScale: new THREE.Vector2(o.normal ?? 1, o.normal ?? 1),
     color: new THREE.Color(o.tint ?? "#ffffff"), metalness: o.metal ?? 0, roughness: o.rough ?? 1, vertexColors: o.vertex ?? false, envMapIntensity: o.env ?? 1,
     polygonOffset: !!o.offset, polygonOffsetFactor: o.offset ? -1 : 0, polygonOffsetUnits: o.offset ? -1 : 0,
+    emissiveMap: o.bounce ? sf.map : null, emissive: new THREE.Color(o.bounce ? "#ffffff" : "#000000"), emissiveIntensity: o.bounce ?? 0,
   }));
 }
 /** Paleta da área: metais, plásticos, borrachas e tintas (chaves "srv-"). */

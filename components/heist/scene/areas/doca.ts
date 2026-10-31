@@ -5,8 +5,8 @@
  * porta de enrolar vista por dentro (guias, caixa do rolo, motor, corrente de manobra e a botoeira).
  *
  * O módulo da área (AREA, no fim) troca a casca (piso, parede e teto próprios: doca-tex.ts), desenha os móveis próprios
- * (doca-props.ts: estantes, bancada de conferência, guarita, flight cases, paleteira, carros térmicos, bebedouro,
- * paletes) e a caixa de obra (a `crate` que ficou), decora as paredes e o teto, acende as luminárias (âncoras) e anima a
+ * (doca-props.ts: estantes, bancada de conferência, guarita, flight cases, paleteira, empilhadeira patolada, carros
+ * térmicos, bebedouro, paletes) e a caixa de obra (a `crate` que ficou), decora as paredes e o teto, acende as luminárias (âncoras) e anima a
  * cortina do portão e o exaustor.
  */
 import * as THREE from "three";

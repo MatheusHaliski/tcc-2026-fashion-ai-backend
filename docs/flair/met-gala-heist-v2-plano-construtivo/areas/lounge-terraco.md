@@ -160,6 +160,27 @@ Capturas em `scratchpad/gala/areas/lounge-terraco/` (ver a lista no fim).
 | Bistrô de ferro (mesa e duas cadeiras) e cinzeiro de pé | `terraco.ts` `bistroTable`, `cafeChair`, `urn` | IMPLEMENTADO |
 | Cordões de lâmpadas de filamento (postes nos cantos e raios até o pergolado), lanternas de parede e de chão | `terraco.ts` `stringLights`, `wallLantern`, `terraceLantern` | IMPLEMENTADO |
 
-### O que mudou na planta
+### O que mudou na planta (`lib/heist/level.ts`)
 
-_Ver o relatório do agente (abaixo, preenchido no fim)._
+**Lounge.** Bar de Davi mantido em x 19,8…21 × z 6,5…12,5 (interação `vendorBar` em x 19,2, z 9,5 livre: as quatro
+banquetas ficam em z 6,95, 8,2, 10,8 e 12,05, x 19,42). Sofá sul encostado na parede (x 13,95…16,65 × z 12,95…13,9; antes o
+posto do Ravi, em x 13,6, z 13, ficava dentro dele) e sofá oeste fora do giro da folha da porta (x 12,95…13,95 × z
+5,75…8,45). Guéridons em x 15,72, z 7,03 (r 0,30) e x 17,0, z 13,35 (r 0,25 — o do canto sudoeste fechava o acesso ao posto
+do Ravi na navegação). Piano em x 17,6…19,1 × z 12,3…13,9 (teclado para o norte). Móveis próprios (`fixture`): poltronas
+`loungeArmchair` em x 15,3…16,15 × z 5,75…6,6 e 7,45…8,3 e em x 16,3…17,1 × z 11,75…12,55; mesas baixas `loungeCoffee` em
+x 14,35…14,95 × z 6,45…7,75 e x 14,6…16,0 × z 11,85…12,45; banquetas `loungeStool` (r 0,21); biombo `loungeScreen` (alto) em
+x 18,7…20,3 × z 4,75…5,15, a 1,77 m do centro da porta dos bastidores.
+Pessoas: Davi (x 21,5, z 9,5) como antes; bebendo no balcão em x 18,95, z 7,55 e 11,45; sentados no sofá sul em x 14,75 e
+15,6, z 13,15 e no sofá oeste em x 13,7, z 7,6; casal conversando em x 16,6, z 10,1 e x 16,95, z 9,35; e o **pianista** (novo,
+`musician`, sentado) em x 18,35, z 11,95 — 9 pessoas, a mesma paridade de antes (os looks das salas seguintes não mudam).
+
+**Terraço.** Jardineiras nos mesmos três lugares; sofá do pergolado em x 15,6…18,2 × z −11,35…−10,45, de frente para o
+norte (os dois sentados antes ficavam de costas para o sofá e fora dele); banco de contemplação (`bench`) em x 16…18 × z
+−19,45…−18,95. Móveis próprios: mesa de fogo `terracoFire` (x 16,25…17,55 × z −12,75…−11,95), poltronas `terracoChair` (x
+15,7…16,5 e 17,3…18,1 × z −14,35…−13,55), pilares do pergolado `terracoPost` (x 15,25 e 18,55 × z −14,75 e −10,1), mesa de
+drinks `terracoDrinks` (x 21,0…21,8 × z −21,1…−18,1), totem `terracoTotem` (x 17,0, z −20,9), bistrô `terracoBistro` (x
+21,1, z −10,9) com duas `terracoCafeChair`, cinzeiro `terracoUrn` (x 21,55, z −16,2) e quatro canteiros `terracoBed` junto às
+paredes oeste e sul. A ronda da Bia, o checkpoint (x 20,6, z −14), o posto do Abreu, a saída da escada de incêndio, a
+janela do beiral (`climbT`) e o esconderijo (x 14,9, z −19,7) ficam livres.
+Pessoas: dois no sofá (x 16,45 e 17,35, z −11,15, de frente para a mesa de fogo), o casal na mesa de drinks (x 20,6, z
+−19,15 e x 20,55, z −20,05) e alguém no banco olhando o totem (x 16,55, z −19,25).

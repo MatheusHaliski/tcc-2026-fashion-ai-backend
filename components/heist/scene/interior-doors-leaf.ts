@@ -34,6 +34,8 @@ export interface LeafSpec {
   stencil?: string;
   /** mola aérea */
   closer?: boolean;
+  /** porta disfarçada: coordenada (ao longo da parede) da dobradiça e o sentido da folha, para a cantaria casar com a parede */
+  wallUv?: { origin: number; dir: number };
 }
 export const LEAF_T: Record<LeafStyle, number> = { grand: 0.075, steel: 0.05, padded: 0.08, stage: 0.055, french: 0.055, jib: 0.06, vault: 0.3 };
 
@@ -94,8 +96,6 @@ function wireTexture(): THREE.Texture {
   const t = drawnTexture("vestibulo-door-wireTex", 128, 128, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = "rgba(60,60,60,0.9)"; g.lineWidth = 2; for (let k = 0; k <= 4; k++) { g.beginPath(); g.moveTo(k * w / 4, 0); g.lineTo(k * w / 4, h); g.stroke(); g.beginPath(); g.moveTo(0, k * h / 4); g.lineTo(w, k * h / 4); g.stroke(); } });
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 6); return t;
 }
-/** Calcário com fiadas de 60 cm (o mesmo desenho da parede do salão) para a folha disfarçada. */
-function jibTexture(): THREE.Texture { return drawnTexture("vestibulo-door-jibStone", 256, 640, (g, w, h) => { g.fillStyle = "#cbbd9f"; g.fillRect(0, 0, w, h); g.strokeStyle = "rgba(240,232,214,0.9)"; g.lineWidth = 3; for (let y = h; y > 0; y -= h * 0.6 / 2.6) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } for (let k = 0; k < 500; k++) { g.fillStyle = `rgba(120,100,70,${0.03 + (k % 5) * 0.01})`; g.fillRect((k * 37) % w, (k * 89) % h, 3, 3); } }); }
 
 /* ---------- montagem por material ---------- */
 class Parts {
@@ -270,16 +270,17 @@ function french(p: Parts, M: DoorMats, s: LeafSpec) {
   hinges(p, M.brass, h, t, s.pull, 3, 0.011);
 }
 function jib(p: Parts, M: DoorMats, s: LeafSpec) {
-  const { w, h } = s, t = LEAF_T.jib, salaoSide = s.front === "salao" ? 1 : -1, stone = solid("vestibulo-door-jibStoneMat", "#ffffff", { rough: 0.78, env: 0.6 });
-  (stone as THREE.MeshStandardMaterial).map = jibTexture();
+  const { w, h } = s, t = LEAF_T.jib, salaoSide = s.front === "salao" ? 1 : -1;
   p.box(M.steelPaintLight, 0, 0, -t / 2, w, h, t / 2);
-  // do lado do salão: calcário acima do lambri de nogueira (rodapé de nero, almofada e chapim), sem ferragem à vista
-  const z0 = salaoSide * (t / 2), zz = (d: number) => [Math.min(z0, z0 + salaoSide * d), Math.max(z0, z0 + salaoSide * d)] as const;
-  { const [a, b] = zz(0.004); p.box(stone, 0.002, 1.06, a, w - 0.002, h, b); }
-  { const [a, b] = zz(0.03); p.box(M.marbleDark, 0, 0, a, w, 0.16, b); }
-  { const [a, b] = zz(0.02); p.box(M.walnut, 0, 0.16, a, w, 1.0, b); }
-  { const [a, b] = zz(0.04); p.box(M.walnut, 0, 1.0, a, w, 1.06, b); }
-  p.add(M.walnut, raised(w - 0.16, 0.62, 0.03, 0.012), onFace(salaoSide, w / 2, 0.575, t / 2 + 0.02));
+  // do lado do salão: a mesma cantaria da parede (uv no referencial da parede: u = posição/2,4 m, v = altura/1,2 m, as
+  // juntas continuam as da parede) e o rodapé de mármore negro da casca; nenhuma ferragem à vista além da fechadura
+  const face = new THREE.PlaneGeometry(w - 0.004, h - 0.18, 1, 1);
+  if (salaoSide < 0) face.rotateY(Math.PI);                                       // virada para o verso (−z)
+  face.translate(w / 2, 0.18 + (h - 0.18) / 2, salaoSide * (t / 2 + 0.002));
+  const fp = face.getAttribute("position") as THREE.BufferAttribute, fu = face.getAttribute("uv") as THREE.BufferAttribute, U = s.wallUv ?? { origin: 0, dir: 1 };
+  for (let i = 0; i < fp.count; i++) fu.setXY(i, (U.origin + U.dir * fp.getX(i)) / 2.4, fp.getY(i) / 1.2);
+  p.add(M.limestone, face);
+  { const z0 = salaoSide * (t / 2), z1 = salaoSide * (t / 2 + 0.022); p.box(M.marbleDark, 0, 0, Math.min(z0, z1), w, 0.18, Math.max(z0, z1)); }
   // do lado do serviço: barra de empurrar e chapa de chute
   const ss = -salaoSide, zs = ss * (t / 2);
   p.add(M.inox, CYLN(12), mat(w / 2, 1.0, zs + ss * 0.06, 0, 0.02, w - 0.3, 0.02, 0, Math.PI / 2));
@@ -337,7 +338,8 @@ export function closerArm(h: number, t: number, side: number, holder: THREE.Obje
     const r = holder.rotation.y; if (r === last) return; last = r;
     const c = Math.cos(r), s = Math.sin(r), F = new THREE.Vector2(F0.x * c - F0.y * s, F0.x * s + F0.y * c);
     const d = Math.min(a + b - 1e-3, Math.max(Math.abs(a - b) + 1e-3, F.distanceTo(S))), u = F.clone().sub(S).normalize(), l = (a * a - b * b + d * d) / (2 * d), hh = Math.sqrt(Math.max(0, a * a - l * l));
-    const n = new THREE.Vector2(-u.y, u.x); if (n.y * pull < 0) n.negate();
+    // cotovelo sempre do mesmo lado da linha eixo→sapata (o lado de fora quando fechada): o braço dobra sem pular
+    const n = pull < 0 ? new THREE.Vector2(u.y, -u.x) : new THREE.Vector2(-u.y, u.x);
     const E = S.clone().addScaledVector(u, l).addScaledVector(n, hh);
     seg(0, S, E, y, 0.03); seg(base.length, E, F, y - 0.012, 0.022);
     geom.getAttribute("position").needsUpdate = true; geom.computeVertexNormals(); geom.computeBoundingSphere();
@@ -350,7 +352,7 @@ export function closerArm(h: number, t: number, side: number, holder: THREE.Obje
 /** Folha pronta: um grupo com uma malha por material (geometria reaproveitada entre folhas iguais). */
 const cache = new Map<string, { m: THREE.Material; g: THREE.BufferGeometry }[]>();
 export function buildLeaf(s: LeafSpec, P: Palette, q: Quality): THREE.Group {
-  const key = `${s.style}|${s.w.toFixed(3)}|${s.h.toFixed(3)}|${s.pull}|${s.front}|${s.back}|${s.stencil ?? ""}|${s.closer ? 1 : 0}|${q}`;
+  const key = `${s.style}|${s.w.toFixed(3)}|${s.h.toFixed(3)}|${s.pull}|${s.front}|${s.back}|${s.stencil ?? ""}|${s.closer ? 1 : 0}|${s.wallUv ? `${s.wallUv.origin}/${s.wallUv.dir}` : ""}|${q}`;
   let parts = cache.get(key);
   if (!parts) {
     const p = new Parts(), M = doorMats(P);

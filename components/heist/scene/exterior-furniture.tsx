@@ -92,8 +92,8 @@ function bin(P: Parts, M: THREE.Matrix4) {
 /** Parquímetro: haste e cabeça com o visor, a fenda das moedas e o adesivo do "P". */
 function meter(P: Parts, M: THREE.Matrix4) {
   add(P, "steel", boxGeo(-0.035, 0, -0.035, 0.035, 1.1, 0.035), M);
-  add(P, "meterHead", boxGeo(-0.12, 1.1, -0.08, 0.12, 1.48, 0.08), M);
-  add(P, "meterHead", lathe([[0, 1.48], [0.12, 1.48], [0.09, 1.54], [0, 1.56]], 12), M);
+  add(P, "steel", boxGeo(-0.12, 1.1, -0.08, 0.12, 1.48, 0.08), M);
+  add(P, "steel", lathe([[0, 1.48], [0.12, 1.48], [0.09, 1.54], [0, 1.56]], 12), M);
   add(P, "led", boxGeo(-0.07, 1.36, 0.08, 0.07, 1.42, 0.085), M);
   add(P, "paintBlue", boxGeo(-0.06, 1.16, 0.08, 0.06, 1.28, 0.084), M);
 }
@@ -173,7 +173,7 @@ function lightStand(P: Parts, M: THREE.Matrix4) {
   for (let k = 0; k < 3; k++) { const a = (k / 3) * Math.PI * 2; add(P, "steel", tubeThrough([[0, 0.9, 0], [Math.cos(a) * 0.32, 0, Math.sin(a) * 0.32]], 0.012, 1, 5), M); }
   add(P, "steel", boxGeo(-0.015, 0.9, -0.015, 0.015, 2.2, 0.015), M);
   const box = lathe([[0, 0], [0.42, 0.12], [0.45, 0.16], [0, 0.16]], 8); box.rotateX(-Math.PI / 2 - 0.4); box.translate(0, 2.25, 0);
-  add(P, "softbox", box, M);
+  add(P, "paintBlack", box, M);
   add(P, "led", lathe([[0, 0], [0.41, 0.12], [0, 0.121]], 8).rotateX(-Math.PI / 2 - 0.4).translate(0, 2.25, 0.004), M);
 }
 /** Balcão do manobrista (1,2 × 0,6 × 1,1 m): púlpito laqueado com friso de latão, o quadro de chaves com porta de vidro,
@@ -190,7 +190,7 @@ function valetStand(P: Parts, M: THREE.Matrix4) {
   add(P, "led", boxGeo(0.22, 1.43, -0.08, 0.32, 1.47, 0.02), M);
   // porta-guarda-chuvas (cilindro de latão) com três guarda-chuvas fechados
   add(P, "brass", lathe([[0, 0], [0.13, 0], [0.13, 0.55], [0.12, 0.56], [0.12, 0.02], [0, 0.02]], 14).translate(0.68, 0, 0.05), M);
-  for (let k = 0; k < 3; k++) { const a = k * 2.1; add(P, "umbrella", lathe([[0, 0.1], [0.035, 0.5], [0.045, 0.8], [0.012, 0.9], [0, 0.95]], 8).translate(0.68 + Math.cos(a) * 0.05, 0, 0.05 + Math.sin(a) * 0.05), M); }
+  for (let k = 0; k < 3; k++) { const a = k * 2.1; add(P, "paintBlack", lathe([[0, 0.1], [0.035, 0.5], [0.045, 0.8], [0.012, 0.9], [0, 0.95]], 8).translate(0.68 + Math.cos(a) * 0.05, 0, 0.05 + Math.sin(a) * 0.05), M); }
 }
 
 /* ---------- fora da área andável: semáforos, controlador e placas de rua ---------- */
@@ -306,13 +306,13 @@ export function HeistFurniture({ props, m, q }: { props: Prop[]; m: ExteriorMate
       ad: pic(tex.ad, 0.9, 0.3), busSign: pic(tex.busSign, 0.25), kiosk: new THREE.MeshStandardMaterial({ color: "#1f3d2c", roughness: 0.55, metalness: 0.4 }), kioskSign: pic(tex.kioskSign, 0.6, 0.4),
       inside: new THREE.MeshBasicMaterial({ map: interiorAtlas(q) }), poster: new THREE.MeshStandardMaterial({ map: flyerAtlas(q), roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2 }),
       binBody: new THREE.MeshStandardMaterial({ color: "#21302a", roughness: 0.5, metalness: 0.55 }), bag: new THREE.MeshStandardMaterial({ color: "#0b0b0c", roughness: 0.35 }),
-      meterHead: new THREE.MeshStandardMaterial({ color: "#3a3f45", roughness: 0.4, metalness: 0.7 }), paintBlue: new THREE.MeshStandardMaterial({ color: "#1d4f9a", roughness: 0.45, metalness: 0.3 }),
+      paintBlue: new THREE.MeshStandardMaterial({ color: "#1d4f9a", roughness: 0.45, metalness: 0.3 }),
       paintRed: new THREE.MeshStandardMaterial({ color: "#a3161d", roughness: 0.45, metalness: 0.3 }), paintBlack: new THREE.MeshStandardMaterial({ color: "#151617", roughness: 0.45, metalness: 0.5 }),
       tire: m.rubber, bikeFrame: new THREE.MeshStandardMaterial({ color: "#2f6a8a", roughness: 0.35, metalness: 0.5 }), parkSign: pic(tex.parkSign, 0.05),
       granite: m.granite, inscription: new THREE.MeshStandardMaterial({ map: tex.inscription, transparent: true, depthWrite: false, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2 }),
       stone: m.stone, soil: m.soil, brass: m.brass, totemFace: pic(tex.totem, 0.9, 0.3), step: new THREE.MeshStandardMaterial({ map: step, roughness: 0.75 }),
-      carpetPatch: m.carpet, softbox: new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.6 }), lacquer: new THREE.MeshPhysicalMaterial({ color: "#060606", roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.08 }),
-      valetSign: pic(tex.valetSign, 0.35, 0.4), umbrella: new THREE.MeshStandardMaterial({ color: "#121a2a", roughness: 0.7 }),
+      carpetPatch: m.carpet, lacquer: new THREE.MeshPhysicalMaterial({ color: "#060606", roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.08 }),
+      valetSign: pic(tex.valetSign, 0.35, 0.4),
       sigRed: em("#ff2418", 5), sigOff: new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.2 }), streetSign: pic(tex.street, 0.12, 0.45),
       cabinet: new THREE.MeshStandardMaterial({ color: "#8a9096", roughness: 0.5, metalness: 0.5 }),
     };

@@ -22,7 +22,7 @@ import { BOX0, CYL, CYL0, SPH, geo, mat, mul } from "../interior-batch";
 import { glow, solid } from "../interior-mats";
 import { drawnTexture, rand, type Quality } from "../interior-tex";
 import { frondGeometry, frondMaterial } from "../interior-dress";
-import { type RoomsCtx, A, signMat, washTexture, beacon } from "./kit";
+import { type RoomsCtx, A, signMat, washTexture, beacon, lightCone } from "./kit";
 import type { AreaModule } from "./types";
 import { areaMat, contactMat, frameRing, lathe, pleatedShade, profileRun, raisedPanel, drape, tube, footOf } from "./lounge-kit";
 import { DAMASK_TILE, PARQUET_TILE, agedMirrorTexture, cofferTexture, damaskSurface, fringeTexture, paintingTexture, parquetSurface, rugTexture } from "./lounge-tex";
@@ -135,6 +135,7 @@ function chandelierDeco(c: RoomsCtx, L: LoungeMats, x: number, z: number) {
     for (let k = 0; k < n; k++) {
       const a = (k / n) * Math.PI * 2;
       c.inst.add(room, "lounge-drop", geo("lounge-dropGeo", () => new THREE.OctahedronGeometry(1, 0).scale(0.5, 1.6, 0.5)), crystal, mat(x + Math.cos(a) * r * 1.02, y - h - 0.05 - (k % 2) * 0.04, z + Math.sin(a) * r * 1.02, a, 0.016));
+      if (c.q === "high") c.inst.add(room, "lounge-drop", geo("lounge-dropGeo", () => new THREE.OctahedronGeometry(1, 0).scale(0.5, 1.6, 0.5)), crystal, mat(x + Math.cos(a) * r * 1.02, y - h - 0.12 - (k % 2) * 0.04, z + Math.sin(a) * r * 1.02, a + 0.4, 0.012));
       if (k % 4 === 0) c.batch.add(room, L.brass, CYL(5), mat(x + Math.cos(a) * r * 0.85, y - h / 2, z + Math.sin(a) * r * 0.85, 0, 0.005, h, 0.005));
     }
     c.inst.add(room, "lounge-chBulb", SPH(8), glow("lounge-chBulbMat", "#ffe2b0", 2.6), mat(x, y - h * 0.6, z, 0, r * 0.32, 0.05, r * 0.32));
@@ -283,12 +284,26 @@ function floorLamp(c: RoomsCtx, L: LoungeMats, x: number, z: number) {
   c.inst.add(room, "lounge-lampGlow", SPH(10), glow("lounge-lampGlowMat", "#ffd29a", 2.2), mat(x, 1.42, z, 0, 0.05));
   A(c, room, x, 1.45, z, "#ffc27a", 4, 4.4);
 }
-function palm(c: RoomsCtx, x: number, z: number, seed: number) {
+/** Palmeira de canto em cachepô de celadon: as folhas abrem só para dentro da sala (`toward` = direção do centro). */
+function palm(c: RoomsCtx, x: number, z: number, seed: number, toward: number) {
   const glaze = solid("lounge-celadon", "#3f6e66", { rough: 0.22, env: 1.2 });
   c.batch.add(room, solid("lounge-standWood", "#2a1a10", { rough: 0.6 }), lathe("lounge-potStand", [[0, 0], [0.24, 0], [0.24, 0.03], [0.2, 0.05], [0.2, 0.12], [0, 0.12]], 8), mat(x, 0, z));
   c.batch.add(room, glaze, lathe("lounge-pot", [[0, 0], [0.16, 0], [0.2, 0.05], [0.26, 0.2], [0.27, 0.38], [0.24, 0.46], [0.25, 0.5], [0.22, 0.5], [0, 0.46]], 28), mat(x, 0.12, z), { cast: true });
   const frond = frondGeometry(), fm = frondMaterial(), R = rand(seed);
-  for (let k = 0; k < 14; k++) c.inst.add(room, "frond", frond, fm, mat(x, 0.6, z, (k / 14) * Math.PI * 2 + R() * 0.3, 1.0 + R() * 0.4, 1.4 + R() * 0.5, 1, -0.25 - (k % 3) * 0.16));
+  for (let k = 0; k < 13; k++) c.inst.add(room, "frond", frond, fm, mat(x, 0.6, z, toward + (k / 12 - 0.5) * 2.4 + (R() - 0.5) * 0.15, 0.9 + R() * 0.3, 1.3 + R() * 0.4, 0.85, -0.2 - (k % 3) * 0.14));
+}
+/** Vaso alto de cerâmica craquelada num pedestal baixo, com plumas secas de capim-dos-pampas (canto sem espaço para folhas). */
+function pampasVase(c: RoomsCtx, x: number, z: number) {
+  const crackle = solid("lounge-crackle", "#cfc6b2", { rough: 0.3, env: 1.1 });
+  c.batch.add(room, solid("lounge-standWood", "#2a1a10", { rough: 0.6 }), lathe("lounge-potStand", [[0, 0], [0.24, 0], [0.24, 0.03], [0.2, 0.05], [0.2, 0.12], [0, 0.12]], 8), mat(x, 0, z));
+  c.batch.add(room, crackle, lathe("lounge-tallVase", [[0, 0], [0.11, 0], [0.13, 0.04], [0.2, 0.3], [0.21, 0.42], [0.15, 0.66], [0.08, 0.8], [0.075, 0.86], [0.095, 0.9], [0.07, 0.9], [0, 0.86]], 28), mat(x, 0.12, z), { cast: true });
+  const R = rand(5);
+  for (let k = 0; k < 9; k++) {
+    const a = (k / 9) * Math.PI * 2, tilt = 0.1 + R() * 0.22, len = 0.9 + R() * 0.4;
+    c.batch.add(room, solid("lounge-reed", "#b59a6a", { rough: 0.9 }), CYL(4), mat(x, 1.0, z, a, 0.005, len, 0.005, tilt, 0));
+    const tip = new THREE.Vector3(0, len / 2 + 0.12, 0).applyEuler(new THREE.Euler(tilt, a, 0, "YXZ"));
+    c.inst.add(room, "lounge-plume", geo("lounge-plumeGeo", () => new THREE.SphereGeometry(1, 8, 6).scale(0.05, 0.2, 0.05)), solid("lounge-plumeMat", "#e7d8b4", { rough: 1 }), mat(x + tip.x, 1.0 + tip.y, z + tip.z, a, 1, 1, 1, tilt, 0));
+  }
 }
 
 /* ---------- tapetes e frisa do piso ---------- */
@@ -334,14 +349,14 @@ function lounge(c: RoomsCtx) {
   for (const w of ["N", "S"] as Wall[]) cornice(c, L, w, X0, X1);
   ceiling(c, L);
   chandelierDeco(c, L, 17.25, 9.25);
-  for (const z of [7.5, 9.5, 11.5]) pendant(c, L, 20.35, z, 2.32);
+  for (const z of [7.5, 9.5, 11.5]) { pendant(c, L, 20.35, z, 2.32); lightCone(c, room, new THREE.Vector3(20.35, 2.2, z), new THREE.Vector3(20.3, 1.1, z), 0.42, "#ffb066", 0.05); }
   backBar(c, L);
   painting(c, L);
   wallMirror(c, L, "W", 12.6, 2.3, 0.62, 1.5);
   sunburstClock(c, L, "N", 20.95, 2.75);
   for (const [w, a, y] of [["W", 5.55, 2.25], ["W", 8.6, 2.25], ["W", 11.68, 2.3], ["W", 13.52, 2.3], ["N", 15.55, 2.3], ["N", 18.45, 2.3], ["E", 13.5, 2.35], ["S", 15.67, 2.45], ["S", 18.83, 2.45]] as [Wall, number, number][]) decoSconce(c, L, w, a, y);
   floorLamp(c, L, 13.3, 5.32);
-  palm(c, 21.55, 4.9, 7); palm(c, 12.95, 13.55, 11);
+  palm(c, 21.35, 5.1, 7, Math.atan2(17.25 - 21.35, 9.25 - 5.1)); pampasVase(c, 12.92, 13.6);
   // piso: frisa, tapetes persas sob os dois grupos e as sombras de contato dos móveis que pisam neles
   floorBorder(c, L);
   rug(c, "a", c.q, 13.45, 5.55, 16.6, 8.65, true, 1);

@@ -90,7 +90,7 @@ function limb(F: Fr, a: THREE.Vector3, b: THREE.Vector3, r: number): THREE.Matri
   const m = new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), q, new THREE.Vector3(r / 0.05, (len + 2 * r) / (0.2 + 0.1), r / 0.05));
   return F(0, 0, 0).multiply(m);
 }
-export type ArmPose = "down" | "hip" | "raised" | "none";
+export type ArmPose = "down" | "hip" | "raised" | "clasp" | "none";
 /**
  * Manequim de exposição: tronco torneado (busto, cintura, quadril), pescoço, cabeça abstrata em ovo inclinada, ombros e
  * braços em pose; a haste e a base de latão (aparecem nos vestidos curtos e nos que não chegam ao chão).
@@ -103,8 +103,9 @@ export function mannequin(b: Batch, room: string, F: Fr, o: { arms?: ArmPose; he
   const arms = o.arms ?? "down";
   if (arms !== "none") for (const s of [-1, 1]) {
     const V = (x: number, y: number, z: number) => new THREE.Vector3(s * x, y, z);
-    const sh = V(0.175, 1.37, 0), el = arms === "raised" && s > 0 ? V(0.3, 1.58, 0.05) : arms === "hip" ? V(0.27, 1.14, -0.04) : V(0.215, 1.1, 0.02);
-    const wr = arms === "raised" && s > 0 ? V(0.26, 1.82, 0.1) : arms === "hip" ? V(0.17, 0.98, 0.06) : V(0.22, 0.85, 0.07);
+    // clasp: mãos juntas diante da cintura (vestido de baile: os braços não somem dentro da saia)
+    const sh = V(0.175, 1.37, 0), el = arms === "raised" && s > 0 ? V(0.3, 1.58, 0.05) : arms === "hip" ? V(0.27, 1.14, -0.04) : arms === "clasp" ? V(0.235, 1.13, 0.07) : V(0.215, 1.1, 0.02);
+    const wr = arms === "raised" && s > 0 ? V(0.26, 1.82, 0.1) : arms === "hip" ? V(0.17, 0.98, 0.06) : arms === "clasp" ? V(0.07, 1.05, 0.2) : V(0.22, 0.85, 0.07);
     b.add(room, M, capsule("arm", 0.05, 0.2), limb(F, sh, el, 0.038));
     b.add(room, o.glove ?? M, capsule("arm", 0.05, 0.2), limb(F, el, wr, 0.031));
     const hand = wr.clone().add(wr.clone().sub(el).normalize().multiplyScalar(0.06));
@@ -130,7 +131,7 @@ function beads(inst: Instances, room: string, F: Fr, cut: Cut, n: number, y0: nu
  * cinto de cetim dourado e cristais bordados no corpete e na saia.
  */
 export function auroraGown(b: Batch, inst: Instances, room: string, F: Fr, q: Quality) {
-  mannequin(b, room, F, { arms: "down", base: false });
+  mannequin(b, room, F, { arms: "clasp", base: false });
   b.add(room, satin("aurora", "#ffffff", { stops: ["#9c86f0", "#d79ad8", "#f3a3b8", "#fbd3a6", "#fde7b8"], sheen: "#fff3e0" }), gownGeo("aurora", "ball", q, { tail: 0.55, folds: 16, amp: 0.07 }), F(0, 0, 0), { cast: true });
   b.add(room, satin("auroraTule", "#f6eaff", { opacity: 0.32, rough: 0.6, sheen: "#ffffff", clear: 0 }), gownGeo("auroraTule", "ball", q, { scale: 1.06, tail: 0.68, folds: 23, amp: 0.1, seed: 1.7 }), F(0, 0, 0));
   b.add(room, satin("auroraCinto", "#d9b46a", { sheen: "#fff1c8", rough: 0.3 }), geo("galeria-cinto", () => new THREE.TorusGeometry(0.152, 0.018, 8, 40).rotateX(Math.PI / 2).scale(1, 1, 0.84)), F(0, 1.035, 0));

@@ -90,12 +90,15 @@ function rosette(c: RoomsCtx) {
       // triângulo (base lateral, ponta, meio) no plano XZ, olhando para cima
       if (side > 0) pos.push(Bp[0], 0, Bp[1], T[0], 0, T[1], M[0], 0, M[1]); else pos.push(M[0], 0, M[1], T[0], 0, T[1], Bp[0], 0, Bp[1]);
     }
+    // garante que as faces olhem para cima (ordem anti-horária vista de cima) e só então tira o uv (mármore em metros)
+    const n = pos.length / 3;
+    for (let i = 0; i < n; i += 3) {
+      const ax = pos[(i + 1) * 3] - pos[i * 3], az = pos[(i + 1) * 3 + 2] - pos[i * 3 + 2], bx2 = pos[(i + 2) * 3] - pos[i * 3], bz = pos[(i + 2) * 3 + 2] - pos[i * 3 + 2];
+      if (az * bx2 - ax * bz < 0) for (let k = 0; k < 3; k++) { const t = pos[(i + 1) * 3 + k]; pos[(i + 1) * 3 + k] = pos[(i + 2) * 3 + k]; pos[(i + 2) * 3 + k] = t; }
+    }
     const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-    const n = pos.length / 3; g.setAttribute("normal", new THREE.Float32BufferAttribute(new Array(n).fill([0, 1, 0]).flat(), 3));
+    g.setAttribute("normal", new THREE.Float32BufferAttribute(new Array(n).fill([0, 1, 0]).flat(), 3));
     g.setAttribute("uv", new THREE.Float32BufferAttribute(Array.from({ length: n }, (_, i) => [pos[i * 3] / 0.75, pos[i * 3 + 2] / 0.75]).flat(), 2));
-    // garante que as faces olhem para cima (ordem anti-horária vista de cima)
-    const p = g.getAttribute("position") as THREE.BufferAttribute;
-    for (let i = 0; i < n; i += 3) { const ax = p.getX(i + 1) - p.getX(i), az = p.getZ(i + 1) - p.getZ(i), bx2 = p.getX(i + 2) - p.getX(i), bz = p.getZ(i + 2) - p.getZ(i); if (az * bx2 - ax * bz < 0) { const x = p.getX(i + 1), z = p.getZ(i + 1); p.setXYZ(i + 1, p.getX(i + 2), 0, p.getZ(i + 2)); p.setXYZ(i + 2, x, 0, z); } }
     return g;
   });
   const at0 = mat(PX, 0.0026, PZ);

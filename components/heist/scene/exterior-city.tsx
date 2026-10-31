@@ -11,7 +11,8 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { boxGeo, merge } from "./exterior-geometry";
 import type { ExteriorMaterials } from "./exterior-materials";
-import { glowTex, leafTex, prng, stoneSet, type Quality } from "./exterior-textures";
+import { leafTex, prng, stoneSet, type Quality } from "./exterior-textures";
+import { GlowField } from "./exterior-glow";
 import { gateTex, interiorAtlas, signAtlas, windowAtlas, flyerAtlas } from "./exterior-citytex";
 import { PARTS, type CityKit } from "./exterior-blocks";
 import { Instanced } from "./exterior-facade";
@@ -104,7 +105,7 @@ function Park({ m, q }: { m: ExteriorMaterials; q: Quality }) {
   }, [q]);
   const leafMat = useMemo(() => new THREE.MeshStandardMaterial({ map: leafTex(q, "dark"), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.9, color: new THREE.Color("#6f7d66") }), [q]);
   const leafGeo = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
-  const glow = useMemo(() => new THREE.SpriteMaterial({ map: glowTex("soft"), color: new THREE.Color("#ffd8a0"), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.9 }), []);
+  const glows = useMemo(() => data.lamps.map((p) => ({ pos: p, size: 2.6, color: "#ffd8a0", strength: 0.9 })), [data]);
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, Y, -70]} material={m.grass} receiveShadow><planeGeometry args={[240, 94]} /></mesh>
@@ -113,7 +114,7 @@ function Park({ m, q }: { m: ExteriorMaterials; q: Quality }) {
       <mesh geometry={data.posts} material={m.castIron} />
       <mesh geometry={data.heads} material={m.lampGlow} />
       <Instanced geometry={leafGeo} material={leafMat} matrices={data.cards} />
-      {data.lamps.map((p, i) => <sprite key={i} material={glow} position={p.toArray()} scale={[2.6, 2.6, 1]} />)}
+      <GlowField items={glows} />
     </group>
   );
 }

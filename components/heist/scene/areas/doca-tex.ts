@@ -322,6 +322,16 @@ const CELLS: Cell[] = [
   ["gateWarn", 896, 1664, 256, 96, (g, w, h) => { g.fillStyle = YEL; g.fillRect(0, 0, w, h); g.strokeStyle = BLK; g.lineWidth = 5; g.strokeRect(4, 4, w - 8, h - 8); text(g, "PORTÃO AUTOMÁTICO", w / 2, h * 0.38, 22, BLK, { weight: "900", max: w - 20 }); text(g, "NÃO PERMANEÇA SOB A PORTA", w / 2, h * 0.72, 15, BLK, { weight: "800", max: w - 20 }); }],
   ["buttons", 896, 1760, 128, 160, (g, w, h) => { g.fillStyle = YEL; g.fillRect(0, 0, w, h); for (const [k, c, s] of [[0, "#2e7d32", "ABRE"], [1, "#c62828", "PARA"], [2, "#212121", "FECHA"]] as [number, string, string][]) { const y = 30 + k * 44; g.fillStyle = "#333"; g.beginPath(); g.arc(36, y, 17, 0, Math.PI * 2); g.fill(); g.fillStyle = c; g.beginPath(); g.arc(36, y, 13, 0, Math.PI * 2); g.fill(); text(g, s, 88, y, 16, BLK, { weight: "900" }); } }],
   ["apron", 640, 1664, 128, 192, (g, w, h) => { g.fillStyle = "#f2f0ea"; g.beginPath(); g.moveTo(30, 6); g.lineTo(98, 6); g.lineTo(98, 60); g.lineTo(118, 80); g.lineTo(110, h - 6); g.lineTo(18, h - 6); g.lineTo(10, 80); g.lineTo(30, 60); g.closePath(); g.fill(); g.fillStyle = "#b8913f"; g.fillRect(40, 96, 48, 6); text(g, "BUFÊ", 64, 120, 14, "#8a6c2f", { font: SERIF, weight: "400" }); }],
+  // plaqueta de capacidade da empilhadeira patolada (com a numeração da frota da doca e os avisos), gasta nas bordas
+  ["stacker", 1408, 1664, 384, 192, (g, w, h) => {
+    g.fillStyle = YEL; g.fillRect(0, 0, w, h); g.strokeStyle = BLK; g.lineWidth = 6; g.strokeRect(5, 5, w - 10, h - 10);
+    g.fillStyle = BLK; g.fillRect(10, 10, w - 20, 40); text(g, "EMPILHADEIRA ELÉTRICA  Nº 03", w / 2, 31, 22, YEL, { weight: "900", max: w - 40 });
+    text(g, "CAPACIDADE 1.200 kg", w / 2, 80, 34, BLK, { weight: "900", max: w - 30 });
+    text(g, "CENTRO DE CARGA 600 mm  ·  ELEVAÇÃO 1,6 m", w / 2, 113, 15, BLK, { weight: "800", max: w - 30 });
+    g.save(); g.beginPath(); g.rect(10, 128, w - 20, 22); g.clip(); for (let x = -22; x < w; x += 28) { g.beginPath(); g.moveTo(x, 150); g.lineTo(x + 14, 150); g.lineTo(x + 36, 128); g.lineTo(x + 22, 128); g.closePath(); g.fill(); } g.restore();
+    text(g, "SÓ OPERADOR TREINADO · NÃO TRANSPORTE PESSOAS", w / 2, 168, 14, BLK, { weight: "800", max: w - 30 });
+    const r = rng(771); for (let k = 0; k < 26; k++) { g.fillStyle = `rgba(52,44,30,${0.05 + r() * 0.12})`; g.beginPath(); g.arc(r() * w, r() < 0.5 ? r() * 18 + h - 18 : r() * h, 2 + r() * 9, 0, Math.PI * 2); g.fill(); }
+  }],
 ];
 /** Desgaste da tinta do piso: falhas e riscos (transparência). */
 function wear(g: CanvasRenderingContext2D, w: number, h: number, seed: number) {

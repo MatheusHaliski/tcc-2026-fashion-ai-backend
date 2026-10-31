@@ -90,4 +90,52 @@ textos são ficcionais (Casa Orvalho, Museu Vesper, exposição "Aurora · a art
 
 ## Implementado
 
-_Preenchido pelo agente da área: cada item com arquivo e função, captura e estado._
+Arquivos da área (todos em `components/heist/scene/areas/`): `galeria.ts` (módulo da galeria: casca, paredes, nicho,
+teto, spots, luz), `galeria-props.ts` (vitrines, banco, estátuas, móveis próprios), `galeria-trajes.ts` (manequins,
+vestidos, acessórios, joias), `galeria-tex.ts` (texturas e textos da galeria), `galeria-copy.ts` (textos diegéticos em
+pt-BR, en, es), `galeria-kit.ts` (ferramentas comuns: superfícies procedurais, molduras extrudadas, atlas, idioma),
+`cofre.ts` (módulo da Sala das Joias), `cofre-props.ts` (pedestal, vitrines, conservação), `cofre-tex.ts` (mármores,
+seda adamascada, anéis da trava, laudo, etiquetas). Planta: seções da galeria e do cofre em `lib/heist/level.ts`
+(`baseProps()` e `civs()`). Capturas em `scratchpad/gala/areas/galeria-joias/`.
+
+### Instituto do Traje
+
+| Item | Arquivo e função | Captura | Estado |
+| --- | --- | --- | --- |
+| Piso de parquet em espinha de peixe, faixa de granito com filete, soleiras | `galeria-tex.ts` `herringbone`/`floorOak`; `galeria.ts` `floorBorder` | g01, g02 | IMPLEMENTADO |
+| Rodapé de granito, tecido pintado por seção, pilastras caneladas, trilho de quadros, friso, cornija | `galeria.ts` `walls` | g01, g02 | IMPLEMENTADO |
+| Textos de parede (introdução, seções I–III, créditos), legendas dos arcos, inscrição dourada do friso | `galeria-tex.ts` `wallTextAtlas`, `creditsAtlas`, `friezeText`; `galeria.ts` `walls` | g01, g02 | IMPLEMENTADO |
+| Quadros (croquis e guaches) com passe-partout, vidro e moldura de perfil | `galeria-tex.ts` `artAtlas`; `galeria.ts` `framed` | g02 | IMPLEMENTADO |
+| Nicho do Aurora (arco, impostas, fecho, degrau, fundo "amanhecer") | `galeria.ts` `niche`; `galeria-tex.ts` `auroraTex` | g01, g02 | IMPLEMENTADO |
+| Teto em caixotões, bossas, rosetas, lanternim com grelha, difusores e detectores | `galeria.ts` `ceiling` | g01, g02 | IMPLEMENTADO |
+| Trilhos e 26 spots de museu (suporte, corpo com aletas, lente) com seis feixes | `galeria.ts` `spots` | g01, g02 | IMPLEMENTADO |
+| Luz: âncoras, manchas dos spots nas paredes, luz de sanca, três luzes com sombra | `galeria.ts` `lights`, `washes`, `KEYS` | g02 | IMPLEMENTADO |
+| Vitrines de piso (Aurora, coluna de veludo, tule carmim) com vidro de 19 mm, caixa de luz, sensor e etiqueta | `galeria-props.ts` `vitrine`, `glassHood`, `lightAttic`; `galeria-trajes.ts` `auroraGown`, `velvetGown`, `tulleGown`, `mannequin` | g01, g03 | IMPLEMENTADO |
+| Vitrines de parede (chapéus, luvas e bolsas, leques e sapatos, chapéus e véus) | `galeria-props.ts` `wallVitrine`; `galeria-trajes.ts` `hat`, `headStand`, `gloveStand`, `clutch`, `fan`, `pump` | g02 | IMPLEMENTADO |
+| Vitrine circular de joia (fixture `jewelVitrine`) | `galeria-props.ts` `jewelVitrine`; `galeria-trajes.ts` `necklace`, `earrings`, `ring` | g02 | IMPLEMENTADO |
+| Banco escultural de lâminas de carvalho | `galeria-props.ts` `bench` | g01, g02 | IMPLEMENTADO |
+| Mesa de croquis e amostras têxteis (fixture `sketchTable`) | `galeria-props.ts` `sketchTable` | — | IMPLEMENTADO |
+| Cópias em gesso com himátion sobre pedestal clássico | `galeria-props.ts` `statue` (variante 0), `himationSkirt`, `himationSash` | g01, g02 | IMPLEMENTADO |
+| Vestidos-escultura «Pétalas» e «Plissê» com cordão de distância | `galeria-props.ts` `statue` (1 e 2); `galeria-trajes.ts` `petalsGown`, `plisseGown` | — | IMPLEMENTADO |
+| Atril de catálogos e totem do audioguia (fixtures `catalogStand`, `audioGuide`) | `galeria-props.ts` `catalogStand`, `audioGuide` | — | IMPLEMENTADO |
+| Placa-pista (placardStars) no atril de bronze | `galeria.ts` `details` | — | IMPLEMENTADO |
+| Saída, extintor e acionador, termo-higrômetros, sensores de presença, câmeras de domo, giroflex | `galeria.ts` `details` | — | IMPLEMENTADO |
+| Pessoas novas: fotógrafo no Aurora, convidada na vitrine de joia, convidado nos croquis, convidada sentada no banco | `lib/heist/level.ts` `civs()` | — | IMPLEMENTADO |
+
+### Sala das Joias
+
+| Item | Arquivo e função | Captura | Estado |
+| --- | --- | --- | --- |
+| Piso de Nero Marquina, faixa de Rosso Levanto, rosácea de 16 pontas, soleira de aço | `cofre-tex.ts` `floorNero`, `rossoMat`, `thassosMat`, `inlayBrass`; `cofre.ts` `floorInlays`, `rosette` | c01, c02 | IMPLEMENTADO |
+| Lambri de nogueira com almofadas, régua de cadeira, seda adamascada em painéis com filete dourado, pilastras, friso, cornija | `cofre.ts` `walls`; `cofre-tex.ts` `damaskMat` | c01 | IMPLEMENTADO |
+| Teto em caixotões de laca, tambor e cúpula dourada, anel de spots com quatro feixes, spots embutidos | `cofre.ts` `ceiling` | c01 | IMPLEMENTADO |
+| Pedestal do diamante (diamante e brilho preservados, anéis da trava com os símbolos) | `cofre-props.ts` `pedestal` | c02 | IMPLEMENTADO |
+| Vitrines de joias em alcova (tiaras, pérolas, brincos) e a baixa sob a janela (anéis) | `cofre-props.ts` `jewelCase`, `lowCase` | c01 | IMPLEMENTADO |
+| Nichos iluminados (parure de esmeraldas no oeste, tiara de safira no norte) | `cofre.ts` `niches` | c01 | IMPLEMENTADO |
+| Cortinas de veludo e sanefa na janela da cornija | `cofre.ts` `windowDrapes` | — | IMPLEMENTADO |
+| Postes emissores dos lasers | `cofre.ts` `laserPosts` | c01, c02 | IMPLEMENTADO |
+| Câmeras de parede e domo sobre o duto | `cofre.ts` `cameras` | — | IMPLEMENTADO |
+| Conservação: mesa de restauração, mapoteca, estação fotográfica, carrinho de acervo (fixtures) | `cofre-props.ts` `restorationTable`, `flatFiles`, `photoStation`, `collectionCart` | — | IMPLEMENTADO |
+| Parede da conservação: placa, quadro de cortiça com laudos, registrador de clima, prateleira de caixas | `cofre.ts` `signsAndConservationWall` | — | IMPLEMENTADO |
+| Saída, luz de emergência e corte de energia (spots, vitrines e nichos apagam; emergência acende) | `cofre.ts` `power` | — | IMPLEMENTADO |
+| Luz: âncoras, leques de luz na seda, luz com sombra no pedestal | `cofre.ts` `lights`, `scallops`, `KEYS` | c01 | IMPLEMENTADO |

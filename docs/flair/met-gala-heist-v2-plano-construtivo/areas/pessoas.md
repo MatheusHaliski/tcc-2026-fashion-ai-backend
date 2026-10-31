@@ -83,4 +83,33 @@ bandeja com cinco taças em seis).
 
 ## Implementado
 
-_Preenchido pelo agente das pessoas._
+Capturas em `/tmp/claude-0/-home-user-tcc-2026-fashion-ai-backend/7ee91c59-4fb9-5bee-a7c2-8abced5989af/scratchpad/gala/areas/pessoas/`
+(laboratório `/lab/heist-gente?cam=…`, com `&t=` para parar o tempo num instante; `cam=pessoa&look=…&seed=…&anim=…` mostra
+uma pessoa de cada aparência e gesto).
+
+| Item | Onde (arquivo · função) | Captura | Estado |
+| --- | --- | --- | --- |
+| Dança no relógio comum (122 BPM, o das luzes da pista): balanço, passo e junta, passo à frente, twist e giro com pivô na bola do pé; braços em 6 estilos misturados por frase; intensidade, atraso e preferências pela semente; pés plantados | `lib/avatar3d/human/locomotion.ts` · `dance`, `footwork`, `armStyle`, `DANCE_BPM`, `danceBeat` | `pista-low.jpg`, `danca-gown-low.jpg`, `danca-gF1-low.jpg` | VALIDADO (teste: ponta do pé no chão andando > 0,25 m/s em menos de 1,5 % dos quadros; quadril mais baixo na batida para todos) |
+| Vestido longo dançando: passos menores, joelhos quase retos, sem passo à frente (a barra não chuta) | `locomotion.ts` · `MotionInput.skirt`; `people.tsx` · `longSkirt` | `danca-gF1-low.jpg` | IMPLEMENTADO |
+| DJ: duas mãos no mixer (botões e crossfader), vai aos players (quadril desloca, tronco gira e inclina, jog/arranhado), fone na orelha 2 compassos a cada 4, mão para a pista; cabeça, ombros e joelhos na batida; mãos na altura do equipamento da cabine do salão (`DJ_DESK`), compensando a altura da pessoa | `locomotion.ts` · `djPose`, `DJ_DESK`; `people.tsx` (`scale`) | `dj-low.jpg` | VALIDADO (teste: uma mão no console > 85 % do tempo, as duas > 35 %, fone na orelha > 10 %, players > 5 %) |
+| Fone de DJ (arco por cima do cabelo, concha esquerda na orelha e a direita virada para trás) na cabeça enquanto toca e no pescoço fora do console | `components/heist/people/holds.ts` · `makeHeadphones`; `people.tsx` · `syncHold` | `dj-low.jpg` | IMPLEMENTADO |
+| Visual do DJ: camiseta preta + blazer de veludo bordô + tênis branco; macacão preto de crepe de manga longa | `lib/heist/looks.ts` · `LOOKS.dj` | `dj-low.jpg` | IMPLEMENTADO |
+| Comer: prato nivelado à frente da cintura, garfada a cada ~5 s (corta, leva à boca com a cabeça vindo ao encontro, volta), boca abre para o garfo e mastiga; andando, o garfo descansa no prato; na bancada (copa), a mão direita arruma o doce | `locomotion.ts` · `eat`, `eatPhase`, `interact`; `people.tsx` (boca) | `comer-low.jpg` | VALIDADO (teste: mão do garfo a < 26 cm da cabeça na garfada; prato varia < 4 cm) |
+| Prato de sobremesa Ø 17 cm com filete dourado, fatia de bolo em camadas com morango, garfo de sobremesa | `holds.ts` · `geo.plate`, `geo.cake`, `geo.fork`, `makeFork` | `comer-low.jpg` | IMPLEMENTADO |
+| Chef e confeiteira: dólmã trespassado (gola padre, duas fileiras de botões de tecido), avental aberto atrás, touca alta plissada do tamanho da cabeça | `looks.ts` · `chefWear`, `LOOKS.chef`; `fabric.ts` (avental); `people.tsx` · `addChefHat`; `holds.ts` · `makeToque`, `makeChefButtons` | `comer-low.jpg` | IMPLEMENTADO |
+| Garçons: bandeja nivelada e firme (não balança com o peito), oferece parado (bandeja avança, mão aberta mostra as taças); cinco taças diferentes com líquido e guardanapo, seis chamadas de desenho | `locomotion.ts` · `serve`; `holds.ts` · `TRAY` | `pista-low.jpg`, `comer-low.jpg` | IMPLEMENTADO |
+| Joias das convidadas (brincos e colar de brilhantes, ouro ou pérolas, colar do tamanho do pescoço) e lenço de bolso nos smokings | `looks.ts` (`jewel`, `pocket`); `people.tsx` · `addJewelry`, `frontOf`; `holds.ts` · `makeEarrings`, `makeNecklace`, `makePocketSquare` | `danca-gown-low.jpg`, `danca-gF1-low.jpg` | IMPLEMENTADO |
+| Desempenho: detalhes de poucos pixels somem de longe; vidro e joias sem transmissão; objetos de mão numa geometria por material | `people.tsx` · `DETAIL`; `holds.ts` | `salao60-low.jpg` | IMPLEMENTADO |
+| Laboratório: presets `pista`, `dj`, `comer`, `salao60`, `jogadora`, `pessoa`, tempo parado (`t`) e contagem de chamadas de desenho (`window.__heistGenteInfo`) | `components/lab/heist-gente-scene.tsx`, `heist-gente-lab.tsx` | — | IMPLEMENTADO |
+
+Testes: `lib/avatar3d/human/locomotion.test.ts` (9, inclui dança, DJ e comer), `components/heist/people/fabric.test.ts` (2) e
+`components/heist/people/holds.test.ts` (3: medidas e chamadas de desenho dos objetos).
+
+Pendências e pedidos a outras áreas:
+- **Grande Salão (`salao-dj.ts`)**: o tique das luzes usa o relógio do three (`state.clock`), e a dança usa o tempo da
+  cena (`view.time`); para luz e passos baterem juntos, o tique pode usar `danceBeat(v.time)` de `locomotion.ts` (o
+  andamento já é o mesmo: 122 BPM).
+- O DJ espera o equipamento como na cabine atual (`DJ_DESK`: superfície a ~1,16 m, botões 0,55 m à frente dos pés,
+  players a ±0,62 m); se a cabine mudar, basta ajustar `DJ_DESK`.
+- Cabelo na qualidade "low" (casca, nível 3) fica cinzento e chapado; os vestidos longos seguem as coxas (tubo preso às
+  pernas): numa dança muito aberta ainda aparecem dobras horizontais leves.
