@@ -48,3 +48,8 @@ Revisar candidatos do CSV por duplicação literal, regra, integração, apresen
 ## Política de publicação
 
 O usuário autorizou explicitamente abrir a PR após revisar o resultado local. A branch de publicação é `refactor/architecture-first-batch`; o conteúdo permanece isolado de outras tarefas. A PR documenta as limitações de build, navegador e baseline Python. Não há deploy, merge automático ou alteração de banco nesta publicação.
+
+
+## Checkpoint adicional — 30/10/2026
+
+Nova auditoria por AST e primeiro lote de histórico do Atelier documentados em [gof/INDEX.md](gof/INDEX.md). Este adendo preserva o relato anterior e distingue a base5166f88c das novas alterações ainda não commitadas. Inventário abrangente não equivale a revisão semântica concluída.

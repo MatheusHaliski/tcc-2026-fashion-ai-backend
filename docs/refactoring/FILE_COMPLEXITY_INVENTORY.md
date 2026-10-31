@@ -1,6 +1,6 @@
 # Inventário de complexidade — FashionAI
 
-Base: `a4c9e5d129cf6eb45e5c6ff23e0ba5ff2632b4b1`. 2649 arquivos de código; 351384 linhas físicas.
+Base: `a4f46cd153b3fce7a19da3c0ed4ecfaa6e38c6df`. 2672 arquivos de código; 353093 linhas físicas.
 
 CSV completo: [file-complexity.csv](file-complexity.csv). Dados e ciclos: [inventory.json](inventory.json).
 
@@ -32,7 +32,6 @@ Triagem: >250 revisão; >400 prioridade; >600 alta; >1000 crítica. Tamanho não
 | `fai-application/src/main/java/br/com/fashionai/application/service/InstitutionalService.java` | 767 | 17 | 47 | 171 | 59.4 | low |
 | `scripts/diagramas/v5/gerar.py` | 1430 | 57 | 5 | 637 | 59.1 | medium |
 | `components/catalog/catalog-search.tsx` | 567 | 16 | 23 | 362 | 58.95 | low |
-| `components/atelier3d/editor.tsx` | 915 | 11 | 10 | 138 | 58.23 | low |
 | `lib/avatar3d/human/garments.ts` | 1205 | 57 | 8 | 688 | 58.14 | high |
 | `fai-application/src/main/java/br/com/fashionai/application/service/FlairService.java` | 1117 | 45 | 45 | 216 | 57.6 | medium |
 | `components/room3d/room-scene.tsx` | 1005 | 58 | 13 | 561 | 57.09 | high |
@@ -44,6 +43,7 @@ Triagem: >250 revisão; >400 prioridade; >600 alta; >1000 crítica. Tamanho não
 | `components/multi-piece-review.tsx` | 682 | 31 | 16 | 351 | 54.17 | low |
 | `fai-application/src/main/java/br/com/fashionai/application/hype/HypeQueryService.java` | 1512 | 47 | 30 | 309 | 53.65 | low |
 | `fai-application/src/main/java/br/com/fashionai/application/service/IdentityService.java` | 1079 | 53 | 33 | 209 | 53.39 | low |
+| `fai-application/src/main/java/br/com/fashionai/application/service/LookbookService.java` | 781 | 26 | 39 | 142 | 53.08 | medium |
 
 ## Contagens de triagem
 

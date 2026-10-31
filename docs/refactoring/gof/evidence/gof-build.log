@@ -1,0 +1,44 @@
+
+> fashion-ai-web@0.1.0 prebuild
+> npm run lint:styles && node scripts/ux/check-design.cjs && node scripts/avatar3d/copy-mediapipe.mjs && node scripts/i18n/check.js --fail && node scripts/i18n/scan.js --fail
+
+
+> fashion-ai-web@0.1.0 lint:styles
+> stylelint "app/(site)/globals.css" "lib/design/typography.css"
+
+Design checks passed: explicit typography roles and labels >=12px.
+copy-mediapipe: WASM em /workspace/fashionai-refactoring/public/mediapipe/wasm
+copy-mediapipe: modelo de idade/sexo em /workspace/fashionai-refactoring/public/mediapipe/face-api
+frontend: 9225 chaves · backend: 2827 chaves
+erros: 0 · avisos: 10 · chaves do frontend sem referência direta: 844
+aviso fe:en: igual ao pt-BR (não traduzido?) heist.who.vendor = Tião
+aviso fe:es: igual ao pt-BR (não traduzido?) heist.who.vendor = Tião
+aviso be:en: igual ao pt-BR (não traduzido?) flairLooks.sao_paulo_tropical = São Paulo Tropical
+aviso be:en: igual ao pt-BR (não traduzido?) flairModes.sao_paulo = São Paulo
+aviso be:en: igual ao pt-BR (não traduzido?) flairModes.sao_paulo_tropical_market = São Paulo — Tropical Market
+aviso be:en: igual ao pt-BR (não traduzido?) wardrobeCreator.sao_gabriel = São Gabriel
+aviso be:es: igual ao pt-BR (não traduzido?) flairLooks.sao_paulo_tropical = São Paulo Tropical
+aviso be:es: igual ao pt-BR (não traduzido?) flairModes.sao_paulo = São Paulo
+aviso be:es: igual ao pt-BR (não traduzido?) flairModes.sao_paulo_tropical_market = São Paulo — Tropical Market
+aviso be:es: igual ao pt-BR (não traduzido?) wardrobeCreator.sao_gabriel = São Gabriel
+0 textos embutidos em 0 arquivos
+
+> fashion-ai-web@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.4.2 (webpack)
+✓ Running next.config.ts took 31ms
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+
+  To migrate automatically, run:
+  npx @next/codemod@canary middleware-to-proxy .
+
+  Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 43s
+  Running TypeScript ...
+  Finished TypeScript in 7.0s ...
+  Collecting page data using 2 workers ...
+  Generating static pages using 2 workers (0/83) ...
+⨯ Next.js build worker exited with code: 1 and signal: null
