@@ -10,6 +10,8 @@ Leia `docs/refactoring/LINE_RULES.md`. Resumo:
   acrescente código.
 - Depois de reduzir um arquivo congelado: `python -m scripts.refactoring.line_ratchet --update` e versione o baseline.
 - Antes de commitar: `python -m scripts.refactoring.line_ratchet` deve terminar sem violações.
+- **Arquivo acima do limite deve ser refatorado criando arquivos auxiliares** (uma responsabilidade coesa por
+  arquivo, cada um dentro do limite); o original passa a compor/delegar. GoF quando a estrutura corresponder.
 - Divida por responsabilidade, não por contagem; nunca fragmente artificialmente.
 
 ## Refatoração

@@ -12,6 +12,14 @@ versionado (TS/TSX/JS, Java, Python, CSS, shell) e são verificadas no CI por `s
 
 Fora do escopo: `docs/`, migrations Flyway já aplicadas (nunca reescrever), arquivos gerados, dados/JSON/SQL de seed.
 
+## Regra de correção
+
+**Se um arquivo exceder o limite, ele deve ser refatorado criando arquivos auxiliares**: cada responsabilidade coesa
+(regras puras, mapeamento/views, parsing, cálculo, tabelas, subcomponentes, hooks, I/O) sai para um arquivo próprio
+dentro do limite, e o arquivo original passa a compor/delegar. Aplicar um padrão GoF quando a nova estrutura
+corresponder de fato a um (ex.: Facade sobre colaboradores, Strategy, Chain of Responsibility); caso contrário,
+registrar "NENHUM" com o motivo. Exceção só para dados/configuração pura, com justificativa no baseline.
+
 ## Catraca (arquivos legados)
 
 1. Arquivo **novo** nasce dentro do limite.
