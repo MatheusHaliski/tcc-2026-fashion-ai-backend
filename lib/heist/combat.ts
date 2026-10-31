@@ -3,8 +3,8 @@
  * cansaço), dano nos seguranças (vida implícita pela sala), queda com a chave no chão, ruído, alerta pelo rádio e o
  * quanto um segurança reconhece a jogadora (distância, disfarce, caminhada discreta, multidão, capuz, arma à mostra).
  */
-import type { DetectReason, Guard, SimState, Vec } from "./types";
-import { CELL, GW, X0, Z0, cellOf, inGrid, propsNear, segBox, segCircle, sightClear, wallBetween } from "./world";
+import type { Civilian, DetectReason, Guard, SimState, Vec } from "./types";
+import { CELL, GW, X0, Z0, cellOf, inGrid, propsNear, segBox, segCircle, segDist, sightClear, wallBetween } from "./world";
 import { ROOM_LIGHT, floorY } from "./level";
 import { MAG_SIZE } from "./cards";
 import { DIFFICULTY, TIRED_AT, accessOf, emit, line, roomOfPos, simCtx, type SimCtx } from "./state";
@@ -32,7 +32,7 @@ function wallDistance(ctx: SimCtx, s: SimState, o: Vec, yaw: number, maxD: numbe
 }
 
 /** Tiro de `o` (altura oy) na direção (yaw, pitch): devolve o segurança atingido (e se foi na cabeça) ou o ponto de impacto. */
-export function castShot(s: SimState, ctx: SimCtx, o: Vec, oy: number, yaw: number, pitch: number, maxD = 45): { guard: Guard | null; head: boolean; t: number; point: V3 } {
+export function castShot(s: SimState, ctx: SimCtx, o: Vec, oy: number, yaw: number, pitch: number, maxD = 45): { guard: Guard | null; head: boolean; t: number; point: V3; civ: Civilian | null } {
   const cp = Math.cos(pitch), D = { x: Math.sin(yaw) * cp, y: Math.sin(pitch), z: Math.cos(yaw) * cp };
   let tMax = wallDistance(ctx, s, o, yaw, maxD * cp) / Math.max(cp, 1e-3);
   // móveis altos e vidro param a bala; baixos só se o raio passa abaixo de ~0,95 m do piso
@@ -59,7 +59,25 @@ export function castShot(s: SimState, ctx: SimCtx, o: Vec, oy: number, yaw: numb
     const px = o.x + D.x * t - g.pos.x, pz = o.z + D.z * t - g.pos.z, y = oy + D.y * t - gy;
     if (px * px + pz * pz < 0.3 * 0.3 && y > 0.05 && y < 1.55) { best = g; bestT = t; head = false; }
   }
-  return { guard: best, head, t: bestT, point: { x: o.x + D.x * bestT, y: oy + D.y * bestT, z: o.z + D.z * bestT } };
+  // a bala não atravessa gente: quem está na frente (convidado, garçom, fã) para o tiro antes do alvo
+  let civ: Civilian | null = null;
+  const hl = D.x * D.x + D.z * D.z;
+  if (hl > 1e-6) for (const c of s.civs) {
+    const rx = c.pos.x - o.x, rz = c.pos.z - o.z, t = (rx * D.x + rz * D.z) / hl;
+    if (t <= 0.3 || t >= bestT) continue;
+    const px = o.x + D.x * t - c.pos.x, pz = o.z + D.z * t - c.pos.z, y = oy + D.y * t - (c.y ?? floorY(c.pos));
+    if (px * px + pz * pz < 0.27 * 0.27 && y > 0.05 && y < 1.6) { civ = c; best = null; bestT = t; head = false; }
+  }
+  return { guard: best, head, t: bestT, point: { x: o.x + D.x * bestT, y: oy + D.y * bestT, z: o.z + D.z * bestT }, civ };
+}
+
+/** Alguém (civil) na linha de tiro entre `a` e `b`? O segurança segura o tiro em vez de arriscar. */
+export function civInLine(s: SimState, a: Vec, b: Vec): Civilian | null {
+  for (const c of s.civs) {
+    if (Math.abs(c.pos.x - (a.x + b.x) / 2) > Math.abs(a.x - b.x) / 2 + 0.6 || Math.abs(c.pos.z - (a.z + b.z) / 2) > Math.abs(a.z - b.z) / 2 + 0.6) continue;
+    if (segDist(c.pos, a, b) < 0.42 && dist(c.pos, a) > 0.5 && dist(c.pos, b) > 0.5) return c;
+  }
+  return null;
 }
 
 /** Dano na jogadora: o colete segura metade até acabar; cansada (vida baixa) apanha 30 % a mais. */
@@ -149,7 +167,11 @@ export function makeNoise(s: SimState, at: Vec, r: number, kind: "shot" | "bottl
     line(s, g.id, kind === "bottle" ? "heist.bark.noise" : "heist.bark.what", 5);
   }
   if (kind === "shot" || kind === "alarm") for (const c of s.civs) {
-    if (dist(c.pos, at) < (kind === "alarm" ? 60 : r * 0.9) && c.role !== "vendor") { c.panicUntil = s.time + 10 + rand(s) * 6; c.panicFrom = { ...at }; c.path = []; }
+    if (dist(c.pos, at) < (kind === "alarm" ? 60 : r * 0.9) && c.role !== "vendor") {
+      // cada um percebe num instante (o alarme demora mais a ser entendido que um tiro por perto)
+      const late = rand(s) * (kind === "alarm" ? 1.6 : 0.5);
+      c.panicAt = s.time + late; c.panicUntil = s.time + late + 10 + rand(s) * 6; c.panicFrom = { ...at }; c.path = [];
+    }
   }
 }
 

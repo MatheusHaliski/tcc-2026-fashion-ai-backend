@@ -121,6 +121,8 @@ export interface Civilian {
   home: Vec; homeYaw: number; wander: Vec[]; wanderIdx: number; path: Vec[]; pathIdx: number; waitUntil: number;
   /** pânico depois de tiros (corre para longe ou se abaixa) até este instante */
   panicUntil: number; panicFrom: Vec | null;
+  /** quando o pânico começa (reação ao alarme fora de sincronia: cada um percebe num instante) */
+  panicAt?: number;
   /** reação à jogadora: olhar, comentar, pedir bebida ao "garçom", estranhar */
   reactUntil: number; reactKind: "look" | "order" | "stare" | "greet" | "point" | null; barkAt: number; seed: number; queueIdx: number;
   hasInvite: boolean; animAt: number;

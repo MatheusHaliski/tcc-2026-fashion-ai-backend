@@ -26,7 +26,7 @@ export type { InteriorBuild };
 
 /** Multiplicador de cada âncora agora: chama/fluorescente, Sala das Joias na penumbra sem energia, giroflex no alarme. */
 function gainOf(a: LightAnchor, v: SceneView, t: number): number {
-  if (a.alarm) { if (!v.alarm) return 0; const s = Math.max(0, Math.sin(t * 5.2 + a.x)); return 0.15 + s * s; }
+  if (a.alarm) { if (!v.alarm) return 0; if (v.calm) return 0.45; const s = Math.max(0, Math.sin(t * 5.2 + a.x)); return 0.15 + s * s; }
   let g = flickerOf(a, t);
   if (a.room === "cofre" && !v.lasersPowered) g *= 0.12;
   if (v.alarm) g *= 0.85;

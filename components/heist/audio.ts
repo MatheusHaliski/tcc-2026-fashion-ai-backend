@@ -8,12 +8,19 @@
  *  - vozes: as falas podem ser lidas pela síntese de voz do navegador (opcional, desligada por padrão).
  * Só começa depois de um gesto da pessoa (regra dos navegadores).
  */
-import type { RoomId, Vec } from "@/lib/heist/types";
+import type { Floor, RoomId, Vec } from "@/lib/heist/types";
 
 const REVERB: Partial<Record<RoomId, { secs: number; wet: number }>> = {
   salao: { secs: 2.6, wet: 0.32 }, galeria: { secs: 2, wet: 0.28 }, vestibulo: { secs: 1.6, wet: 0.24 }, cofre: { secs: 1.4, wet: 0.22 },
   lounge: { secs: 0.9, wet: 0.14 }, bastidores: { secs: 0.8, wet: 0.12 }, servico: { secs: 0.7, wet: 0.16 }, seguranca: { secs: 0.4, wet: 0.08 },
   doca: { secs: 1.2, wet: 0.2 }, rua: { secs: 0.5, wet: 0.06 }, beco: { secs: 0.6, wet: 0.1 }, terraco: { secs: 0.3, wet: 0.04 }, beiral: { secs: 0.2, wet: 0.03 },
+};
+/** Timbre do passo por piso: volume, altura do estalo, se o salto estala, "toc" de madeira/metal (Hz) e arranhado. */
+const FLOOR_STEP: Record<Floor, { gain: number; pitch: number; click: boolean; knock?: number; grit?: number }> = {
+  marble: { gain: 1, pitch: 1, click: true }, stone: { gain: 0.95, pitch: 0.92, click: true, grit: 0.015 },
+  parquet: { gain: 0.85, pitch: 0.7, click: true, knock: 190 }, metal: { gain: 1, pitch: 1.1, click: true, knock: 540 },
+  concrete: { gain: 0.8, pitch: 0.85, click: true, grit: 0.03 }, sidewalk: { gain: 0.75, pitch: 0.85, click: true, grit: 0.02 },
+  asphalt: { gain: 0.7, pitch: 0.8, click: false, grit: 0.035 }, carpet: { gain: 0.4, pitch: 0.45, click: false },
 };
 const CROWD: Partial<Record<RoomId, number>> = { rua: 0.7, vestibulo: 0.8, salao: 1, lounge: 0.85, galeria: 0.45, terraco: 0.3, bastidores: 0.2 };
 // ii–V–I–VI em dó (Dm9, G13, Cmaj9, A7♭13), em Hz, e as fundamentais do baixo
@@ -35,6 +42,8 @@ export class HeistAudio {
   private listener = { x: 0, z: 0, yaw: 0 };
   vol = { music: 0.5, sfx: 0.8, voices: false, voice: 0.8 };
   locale = "pt-BR";
+  /** Há parede ou porta fechada entre a jogadora e o som? (o jogo liga na planta da simulação) */
+  occluded: ((pos: Vec) => boolean) | null = null;
 
   start() {
     if (this.ctx || typeof window === "undefined") return;
@@ -137,8 +146,11 @@ export class HeistAudio {
       const dx = pos.x - this.listener.x, dz = pos.z - this.listener.z, d = Math.hypot(dx, dz);
       const rel = Math.atan2(dx, dz) - this.listener.yaw;
       const pan = c.createStereoPanner(); pan.pan.value = Math.max(-1, Math.min(1, -Math.sin(rel)));
-      g.gain.value = 1 / (1 + d / 7);
-      g.connect(pan).connect(this.sfx);
+      // atrás de parede ou de porta fechada: mais baixo e sem os agudos (MH-15-07)
+      const walled = this.occluded?.(pos) ?? false;
+      g.gain.value = (1 / (1 + d / 7)) * (walled ? 0.45 : 1);
+      if (walled) { const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 650; g.connect(lp).connect(pan).connect(this.sfx); }
+      else g.connect(pan).connect(this.sfx);
     } else g.connect(this.sfx);
     if (this.reverb) g.connect(this.reverb.conv);
     return g;
@@ -218,15 +230,23 @@ export class HeistAudio {
     this.music.gain.setTargetAtTime(this.vol.music * 0.5, now + secs, 0.6);
     if (this.crowd) { this.crowd.gain.gain.setTargetAtTime(0.012, now, 0.1); this.crowd.gain.gain.setTargetAtTime(0.05 * (CROWD[this.reverb?.room ?? "rua"] ?? 0.05), now + secs, 0.8); }
   }
-  /** Passo: salto alto estala (agudo), sapato baixo abafa; `pos` = de quem (seguranças soam do lado certo). */
-  step(kind: "heels" | "soft" | "boots", gain: number, pos?: Vec) {
-    if (kind === "heels") { this.tone(2400, 0.035, 0.05 * gain, "square", 0, -900, pos); this.noise(0.03, 0.08 * gain, 3800, "highpass", 0, pos); }
-    else this.noise(kind === "boots" ? 0.07 : 0.05, (kind === "boots" ? 0.16 : 0.1) * gain, kind === "boots" ? 700 : 1100, "bandpass", 0, pos);
+  /**
+   * Passo: salto alto estala (agudo), sapato baixo abafa, coturno pesa; o piso muda o timbre — mármore e pedra
+   * estalam, carpete e tapete engolem o som, parquete tem o "toc" da madeira, concreto arranha, metal ressoa e o
+   * asfalto molhado respinga (MH-15-04). `pos` = de quem (seguranças soam do lado certo).
+   */
+  step(kind: "heels" | "soft" | "boots", gain: number, pos?: Vec, floor: Floor = "marble") {
+    const f = FLOOR_STEP[floor];
+    gain *= f.gain;
+    if (kind === "heels" && f.click) { this.tone(2400 * f.pitch, 0.035, 0.05 * gain, "square", 0, -900, pos); this.noise(0.03, 0.08 * gain, 3800 * f.pitch, "highpass", 0, pos); }
+    else this.noise(kind === "boots" ? 0.07 : 0.05, (kind === "boots" ? 0.16 : kind === "heels" ? 0.12 : 0.1) * gain, (kind === "boots" ? 700 : 1100) * f.pitch, f.click ? "bandpass" : "lowpass", 0, pos);
+    if (f.knock) this.tone(f.knock, 0.05, 0.05 * gain, "triangle", 0, -40, pos);
+    if (f.grit) this.noise(0.06, f.grit * gain, 2600, "highpass", 0.012, pos);
   }
   /** Fala lida pela síntese de voz do navegador (quando ligada): voz do idioma, mais grave para os seguranças. */
   speak(text: string, low: boolean, from?: Vec) {
     if (!this.vol.voices || typeof window === "undefined" || !window.speechSynthesis) return;
-    const far = from ? 1 / (1 + Math.hypot(from.x - this.listener.x, from.z - this.listener.z) / 9) : 1;
+    const far = from ? (this.occluded?.(from) ? 0.5 : 1) / (1 + Math.hypot(from.x - this.listener.x, from.z - this.listener.z) / 9) : 1;
     const synth = window.speechSynthesis;
     if (synth.speaking && synth.pending) synth.cancel();
     const u = new SpeechSynthesisUtterance(text);

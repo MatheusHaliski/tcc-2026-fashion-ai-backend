@@ -223,7 +223,8 @@ export function HeistPostFX({ quality, letterbox = 0, view }: { quality: Quality
     const u = fx.grade.uniforms;
     u.time.value = state.clock.elapsedTime; u.letterbox.value = shown.current;
     const v = view?.current;
-    u.alarm.value = v?.alarm ? 0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 6) : 0;
+    // "reduzir clarões": borda vermelha acesa e parada em vez de pulsar
+    u.alarm.value = v?.alarm ? (v.calm ? 0.45 : 0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 6)) : 0;
     fx.composer.render(dt);
   }, 1);
   return null;

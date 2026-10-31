@@ -3,8 +3,8 @@
  * linha de visão (DDA na grade + móveis) e o mundo da partida montado a partir da planta (level.ts). A grade cobre o
  * prédio, o beco e a avenida (x −32…32, z −26…51).
  */
-import type { DoorDef, DoorId, InteractDef, Prop, Rect, Room, RoomId, Shape, Vec } from "./types";
-import { DOORS, INNER_WALLS, INTERACTS, RACKS, ROOMS, baseProps } from "./level";
+import type { DoorDef, DoorId, Floor, InteractDef, Prop, Rect, Room, RoomId, Shape, Vec } from "./types";
+import { CURB_Z, DOORS, FAR_CURB_Z, INNER_WALLS, INTERACTS, RACKS, ROOMS, STAIRS, baseProps } from "./level";
 
 export { DOORS, ROOMS, GUARDS, CIVILIANS, INTERACTS, RACKS } from "./level";
 export const CELL = 0.5, X0 = -32, Z0 = -26, GW = 128, GH = 154;
@@ -58,6 +58,16 @@ export function roomAt(p: Vec): RoomId {
   return best;
 }
 export const roomOf = (id: RoomId) => ROOMS.find((r) => r.id === id)!;
+/** Piso sob (x, z), para o som dos passos: na rua, o tapete vermelho do portão até as portas, a escadaria de pedra, a
+ * pista de asfalto e a calçada; dentro, o piso da sala. */
+export function floorKind(p: Vec): Floor {
+  const room = roomAt(p);
+  if (room !== "rua") return roomOf(room).floor;
+  if (Math.abs(p.x) <= 1.8 && p.z >= 24.5 && p.z <= STAIRS.bottom + 0.5) return "carpet";
+  if (p.x >= STAIRS.x0 && p.x <= STAIRS.x1 && p.z >= STAIRS.top && p.z <= STAIRS.bottom) return "stone";
+  if (p.z > CURB_Z && p.z < FAR_CURB_Z) return "asphalt";
+  return "sidewalk";
+}
 export const doorIndex = (id: DoorId) => DOORS.findIndex((d) => d.id === id);
 export const doorCenter = (id: DoorId): Vec => { const r = DOORS[doorIndex(id)].rect; return { x: (r.x0 + r.x1) / 2, z: (r.z0 + r.z1) / 2 }; };
 

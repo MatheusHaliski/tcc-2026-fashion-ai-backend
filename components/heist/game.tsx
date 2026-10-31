@@ -17,6 +17,7 @@ import { choose, endTalk, equip, interact, quickHeal, skipBeat, skipCutscene, st
 import { castShot, damagePlayer, tiredness } from "@/lib/heist/combat";
 import { GUARDS, floorY } from "@/lib/heist/level";
 import { angDiff, yawOf } from "@/lib/heist/math";
+import { floorKind, wallBetween } from "@/lib/heist/world";
 import { useReducedMotion } from "@/components/three/common";
 import { HeistControls } from "./input";
 import { HeistAudio } from "./audio";
@@ -86,18 +87,19 @@ function Driver({ sim, ctx, view, controls, audio, settings, running, slowMo, on
     onEvents(s);
     audio.setListener(camera.position.x, camera.position.z, cyaw);
     audio.heartbeat(s.time, tiredness(s));
-    // passos: os dela no ritmo da passada; os dos seguranças a até 12 m, do lado de onde vêm (MH-15-04, MH-15-07)
+    // passos: os dela no ritmo da passada; os dos seguranças a até 12 m, do lado de onde vêm, no timbre do piso
+    // (MH-15-04, MH-15-07); atrás de parede, abafados (audio.occluded)
     const p = s.player, st = steps.current;
     if (p.speed > 0.6 && p.mode === "WALK" && !p.hidden) {
       st.player += dt * (p.speed > 3 ? 3.2 : p.speed > 1.5 ? 2.1 : 1.6);
-      if (st.player >= 1) { st.player = 0; audio.step(p.shoes === "heels" ? "heels" : "soft", p.discreet || p.crouch ? 0.35 : p.speed > 3 ? 1 : 0.6); }
+      if (st.player >= 1) { st.player = 0; audio.step(p.shoes === "heels" ? "heels" : "soft", p.discreet || p.crouch ? 0.35 : p.speed > 3 ? 1 : 0.6, undefined, floorKind(p.pos)); }
     }
     for (const g of s.guards) {
       if (!g.active || g.state === "DOWN" || g.state === "GRABBED") continue;
       const v = Math.hypot(g.vel.x, g.vel.z), d = Math.hypot(g.pos.x - p.pos.x, g.pos.z - p.pos.z);
       if (v < 0.5 || d > 12) continue;
       const t0 = (st.guards.get(g.id) ?? 0) + dt * (v > 3 ? 3 : 1.8);
-      if (t0 >= 1) { st.guards.set(g.id, 0); audio.step(g.role === "heavy" || g.role === "police" ? "boots" : "soft", Math.max(0.25, 1 - d / 12), g.pos); } else st.guards.set(g.id, t0);
+      if (t0 >= 1) { st.guards.set(g.id, 0); audio.step(g.role === "heavy" || g.role === "police" ? "boots" : "soft", Math.max(0.25, 1 - d / 12), g.pos, floorKind(g.pos)); } else st.guards.set(g.id, t0);
     }
     hudAt.current += dt;
     if (hudAt.current > 1 / 15) {
@@ -158,9 +160,12 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
 
   useEffect(() => { controls.settings = settings; }, [controls, settings]);
   useEffect(() => { audio.setMix(settings.music, settings.sfx, settings.voices, settings.voiceVolume); }, [audio, settings.music, settings.sfx, settings.voices, settings.voiceVolume]);
+  useEffect(() => { audio.occluded = (pos) => { const s = sim.current.s; return wallBetween(ctx.world, s.player.pos, pos, s.doors); }; return () => { audio.occluded = null; }; }, [audio, ctx]);
   useEffect(() => { audio.locale = locale; }, [audio, locale]);
   useEffect(() => { const s = sim.current.s; s.options.slowLasers = settings.slowLasers; s.options.regen = settings.regen; s.options.beats = settings.beats; }, [settings.slowLasers, settings.regen, settings.beats]);
   useEffect(() => { if (!settings.showFps) setFps(null); }, [settings.showFps]);
+  const calm = settings.reduceFlashes || reduced;
+  useEffect(() => { view.current.calm = calm; }, [calm]);
   useEffect(() => { const sv = loadSave(SIM_VERSION); setSave(sv && sv.deck.join(",") === deckKey(cards) ? sv : null); }, [cards]);
   useEffect(() => { const el = wrap.current; if (!el) return; controls.attach(el); return () => { controls.detach(); audio.stop(); }; }, [controls, audio]);
   useEffect(() => {
@@ -380,7 +385,7 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
   const blurred = stage === "over" || stage === "pause" || stage === "won" || stage === "brief";
   const quality = settings.quality;
   // faixas de cinema: no pós-processamento quando ele está ligado (qualidade alta), senão as do HUD
-  return <div ref={wrap} className={`hz-game ${blurred ? "is-dimmed" : ""} ${stage === "over" ? "is-over" : ""} ${quality === "high" && !debug ? "has-glbox" : ""}`} data-stage={stage}>
+  return <div ref={wrap} className={`hz-game ${blurred ? "is-dimmed" : ""} ${stage === "over" ? "is-over" : ""} ${quality === "high" && !debug ? "has-glbox" : ""} ${calm ? "is-calm" : ""}`} data-stage={stage}>
     <Canvas shadows={quality === "high"} dpr={quality === "high" ? [1, 1.75] : [0.7, 1]} gl={{ antialias: quality === "high", powerPreference: "high-performance" }}
       camera={{ fov: settings.fov, near: 0.05, far: 500, position: [-18, 0.5, 52] }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1; gl.outputColorSpace = THREE.SRGBColorSpace; }}>

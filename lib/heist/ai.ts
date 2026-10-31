@@ -18,7 +18,7 @@ import { collide, roomAt, sightClear, propsNear } from "./world";
 import { findPath, nearestWalkable } from "./nav";
 import { ENTRY_PATH, QUEUE_SLOTS, RACKS, floorY } from "./level";
 import { CIV_R, DIFFICULTY, GUARD_R, OUTDOOR, VIP_PRESTIGE, accessOf, line, wornPrestige, type SimCtx } from "./state";
-import { alertGuard, damagePlayer, guardSees, raiseAlert, recognition } from "./combat";
+import { alertGuard, civInLine, damagePlayer, guardSees, raiseAlert, recognition } from "./combat";
 import { angDiff, dist, norm, rand, turn, yawOf } from "./math";
 
 const OPEN_ALL = { doors: {} as Record<string, boolean>, crouch: false };
@@ -196,7 +196,11 @@ function shootAt(s: SimState, g: Guard, d: number) {
   const p = s.player, toP = yawOf({ x: p.pos.x - g.pos.x, z: p.pos.z - g.pos.z });
   if (!g.aimStart) g.aimStart = s.time;
   const telegraph = g.role === "heavy" ? 0.4 : 0.55;
-  if (!s.beat && s.time - g.aimStart > telegraph && s.time >= g.nextShotAt && Math.abs(angDiff(g.yaw, toP)) < 0.3) guardFire(s, g, d);
+  if (!s.beat && s.time - g.aimStart > telegraph && s.time >= g.nextShotAt && Math.abs(angDiff(g.yaw, toP)) < 0.3) {
+    // convidado na linha de tiro: segura o disparo e manda sair da frente (não atira através de gente)
+    if (civInLine(s, g.pos, p.pos)) { g.nextShotAt = s.time + 0.5; line(s, g.id, "heist.bark.clear", 5); return; }
+    guardFire(s, g, d);
+  }
 }
 
 function back(s: SimState, g: Guard) { g.state = g.post ? "POST" : "PATROL"; g.stateT = s.time; g.goal = null; g.path = []; g.suspicion = Math.min(g.suspicion, 0.2); g.flank = null; g.cover = null; }
@@ -230,8 +234,8 @@ export function updateCivs(s: SimState, ctx: SimCtx, dt: number) {
   for (let k = 0; k < s.civs.length; k++) {
     const c = s.civs[k];
     const d = dist(c.pos, p.pos);
-    // pânico: encolhe onde está ou corre para longe do tiro, com reações diferentes
-    if (c.panicUntil > s.time) {
+    // pânico: encolhe onde está ou corre para longe do tiro, com reações diferentes (cada um a partir do seu instante)
+    if (c.panicUntil > s.time && (c.panicAt ?? 0) <= s.time) {
       // quem está perto grita (uma voz por vez nas legendas): medo, pedido de ajuda, indignação ou curiosidade
       if (d < 15 && (s.lineAt.panicAny ?? -99) + 1.5 < s.time && line(s, c.id, PANIC_LINES[(c.seed >> 2) % PANIC_LINES.length], 12)) s.lineAt.panicAny = s.time;
       const from = c.panicFrom ?? p.pos;

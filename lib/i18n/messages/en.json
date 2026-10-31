@@ -9120,5 +9120,9 @@
   "sealWizard.dias": "{value} days",
   "room3d.roomStore.retirar_do_quarto": "Remove from room",
   "room3d.roomStore.retirado": "{name} was removed from the room and stays in your inventory.",
-  "heist.brief.readyPartial": "Ready to start ({pct}%): the rest of the crowd finishes loading while you play."
+  "heist.brief.readyPartial": "Ready to start ({pct}%): the rest of the crowd finishes loading while you play.",
+  "heist.bark.clear": "Get out of the way!",
+  "heist.civ.grazed": "That almost hit me!",
+  "heist.options.reduceFlashes": "Reduce flashes",
+  "heist.options.reduceFlashesHint": "The alarm stays lit without strobing, muzzle flashes and the damage flash are dimmed and nothing in the interface pulses."
 }

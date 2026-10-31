@@ -209,6 +209,10 @@ function fire(s: SimState, ctx: SimCtx, inp: HeistInput, tired: number) {
   if (shot.guard) {
     s.stats.hits++; if (shot.head) s.stats.headshots++;
     damageGuard(s, shot.guard, SHOT_DAMAGE[p.weapon as "pistol"] * (shot.head ? 1.6 : 1), shot.head, p.pos);
+  } else if (shot.civ) {
+    // tiro de raspão em quem estava na frente: a pessoa se joga no chão, grita, e todo mundo em volta vê
+    const c = shot.civ; c.panicAt = s.time; c.panicUntil = s.time + 12; c.panicFrom = { ...p.pos }; c.anim = "cower";
+    line(s, c.id, "heist.civ.grazed", 0); witness(s, p.pos, "kill");
   }
 }
 

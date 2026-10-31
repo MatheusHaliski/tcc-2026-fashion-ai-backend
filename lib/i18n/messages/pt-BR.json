@@ -9120,5 +9120,9 @@
   "sealWizard.dias": "{value} dias",
   "room3d.roomStore.retirar_do_quarto": "Retirar do quarto",
   "room3d.roomStore.retirado": "{name} saiu do quarto e continua no seu inventário.",
-  "heist.brief.readyPartial": "Pronto para começar ({pct}%): o resto da multidão termina de carregar durante o jogo."
+  "heist.brief.readyPartial": "Pronto para começar ({pct}%): o resto da multidão termina de carregar durante o jogo.",
+  "heist.bark.clear": "Saiam da frente!",
+  "heist.civ.grazed": "Quase me acertou!",
+  "heist.options.reduceFlashes": "Reduzir clarões",
+  "heist.options.reduceFlashesHint": "O alarme fica aceso sem piscar, os clarões dos tiros e o vermelho do dano ficam fracos e nada na interface pulsa."
 }
