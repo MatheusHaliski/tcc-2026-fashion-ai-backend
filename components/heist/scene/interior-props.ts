@@ -9,6 +9,7 @@
  */
 import * as THREE from "three";
 import { areaProp } from "./areas";
+import { hasModel } from "@/lib/heist/models";
 import type { Prop, RoomId } from "@/lib/heist/types";
 import { Batch, BOX0, CYL, CYL0, Instances, SPH, geo, mat, mul } from "./interior-batch";
 import { M, fabric, glass, glow, solid, type Palette } from "./interior-mats";
@@ -134,6 +135,8 @@ export function cctvTexture(k: number): THREE.CanvasTexture {
 export const BUILT_KINDS = new Set<Prop["kind"]>(["column", "table", "stage", "screen", "desk", "sofa", "planter", "bar", "mirror", "piano", "steamer", "mannequin", "case", "bench", "statue", "pedestal", "monitor", "safe", "panel", "crate", "coatcheck", "detector", "rope", "rack", "floral", "fixture"]);
 export function buildProp(p: Prop, c: PropsCtx) {
   const f = foot(p), room = p.room as InteriorRoom, P = c.P;
+  // móvel com modelo 3D gerado (lib/heist/models.ts): HeistModels carrega o GLB no lugar do desenho procedural
+  if (p.kind === "fixture" && hasModel(p.model)) return;
   // a área da sala desenha o móvel (areas/*): móveis próprios ("fixture") e versões dela dos genéricos
   const own = areaProp(p); if (own) return own(p, c);
   switch (p.kind) {

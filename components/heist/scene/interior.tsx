@@ -19,8 +19,10 @@ import { sceneLocale } from "./interior-copy";
 import { beaconDomes, buildInterior, disposeInterior, prepareInterior, type InteriorBuild } from "./interior-build";
 import { KeyLight, LightPool, applyRoomEnv, captureProbes, flickerOf, roomsInView, updateAnimated, updateBeacons, updateDoors, updateHalos, updateVision } from "./interior-fx";
 import type { LightAnchor } from "./interior-props";
-import { roomAtPoint } from "./interior-shell";
+import { isInterior, roomAtPoint } from "./interior-shell";
 import type { Quality } from "./interior-tex";
+import { buildWorld } from "@/lib/heist/world";
+import { HeistModels } from "./models";
 
 export type { InteriorBuild };
 
@@ -53,6 +55,8 @@ export function HeistInterior({ view, quality }: { view: React.MutableRefObject<
   const camera = useThree((s) => s.camera), scene = useThree((s) => s.scene);
   useEffect(() => { if (quality === "low") gl.compileAsync(b.root, camera, scene).catch(() => undefined); }, [b, gl, camera, scene, quality]);
   const hide = useMemo(() => [...b.shadows, b.vision.group], [b]);
+  // móveis próprios com modelo 3D gerado (Meshy): entram nos grupos das salas depois de carregar
+  const fixtures = useMemo(() => buildWorld().props.filter((p) => p.kind === "fixture" && isInterior(p.room)), []);
   useFrame((state, dt) => {
     const v = view.current, t = state.clock.elapsedTime, cam = state.camera, s = st.current;
     // 3º quadro (cena montada e acesa): a sonda de reflexo de cada sala (só "high", uma vez)
@@ -88,6 +92,7 @@ export function HeistInterior({ view, quality }: { view: React.MutableRefObject<
   return (
     <>
       <primitive object={b.root} />
+      <HeistModels props={fixtures} rooms={b.rooms} quality={quality} />
       <primitive object={pool.group} />
       {key && <><primitive object={key.light} /><primitive object={key.light.target} /></>}
     </>

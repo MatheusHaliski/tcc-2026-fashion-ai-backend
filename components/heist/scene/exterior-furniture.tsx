@@ -13,6 +13,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { floorY, SIDEWALK_Y } from "@/lib/heist/level";
+import { hasModel } from "@/lib/heist/models";
 import type { Prop } from "@/lib/heist/types";
 import { boxGeo, lathe, merge, tubeThrough } from "./exterior-geometry";
 import type { ExteriorMaterials } from "./exterior-materials";
@@ -266,7 +267,7 @@ export function HeistFurniture({ props, m, q }: { props: Prop[]; m: ExteriorMate
   const data = useMemo(() => {
     const P: Parts = new Map(), leaves: THREE.Matrix4[] = [], glows: GlowSpec[] = [], r = prng(707);
     for (const p of props) {
-      if (p.kind !== "fixture" || !p.model) continue;
+      if (p.kind !== "fixture" || !p.model || hasModel(p.model)) continue;      // com modelo gerado: HeistModels carrega o GLB
       const c = p.shape.type === "box" ? { x: (p.shape.x0 + p.shape.x1) / 2, z: (p.shape.z0 + p.shape.z1) / 2 } : { x: p.shape.x, z: p.shape.z };
       const M = T(c.x, floorY(c), c.z, p.yaw ?? 0);
       switch (p.model) {

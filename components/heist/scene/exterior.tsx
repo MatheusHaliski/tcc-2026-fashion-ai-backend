@@ -26,6 +26,7 @@ import { HeistCity } from "./exterior-city";
 import { ExteriorLights } from "./exterior-fx";
 import { buildCity } from "./exterior-blocks";
 import { furnitureLights, HeistFurniture } from "./exterior-furniture";
+import { HeistModels } from "./models";
 import { HeistLitter } from "./exterior-litter";
 import { SKY_LAYER } from "./exterior-skyline";
 
@@ -101,6 +102,8 @@ export function HeistExterior({ view, quality }: { view: React.MutableRefObject<
   }, [quality, props]);
   const cross = useMemo(() => crossRoadGeometry(), []);
   const root = useRef<THREE.Group>(null);
+  // móveis da rua e do beco com modelo 3D gerado (Meshy) entram aqui depois de carregar
+  const modelsGroup = useMemo(() => { const g = new THREE.Group(); g.name = "modelos-exterior"; return g; }, []);
   return (
     <group ref={root}>
       <HeistFacade q={quality} view={view} />
@@ -111,6 +114,8 @@ export function HeistExterior({ view, quality }: { view: React.MutableRefObject<
       <HeistAlley props={props} m={m} q={quality} />
       <HeistCity m={m} q={quality} kit={kit} />
       <HeistFurniture props={props} m={m} q={quality} />
+      <primitive object={modelsGroup} />
+      <HeistModels props={props} parent={modelsGroup} quality={quality} />
       <HeistLitter props={props} m={m} q={quality} />
       <ExteriorLights view={view} q={quality} props={props} kit={kit} />
       <StreetProbe m={m} q={quality} root={root} />
