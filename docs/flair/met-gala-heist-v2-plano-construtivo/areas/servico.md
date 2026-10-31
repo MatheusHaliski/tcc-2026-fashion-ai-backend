@@ -164,6 +164,7 @@ Capturas em `scratchpad/gala/areas/servico/` (caminho completo no relatório).
 | `r1-copa.jpg` | copa de montagem de perto (pass, bandejeiro, azulejo, cerâmica) | low | VALIDADO |
 | `r1-alto.jpg` | vista alta do labirinto (o desenho das instalações seguindo os corredores) | low | VALIDADO |
 | `r1-seguranca.jpg` | sala de segurança da porta (console, painel do palco, mesa, racks, quadro de luz) | low | VALIDADO (185 draws · 338k tri, com as salas vizinhas) |
+| `r1-penteadeira.jpg` | penteadeiras de perto (espelhos com lâmpadas, gaveteiros, maquiagem, cadeira alta) | low | VALIDADO (112 draws · 154k tri) |
 | `r9-corredor-high.jpg` | o mesmo corredor em "high" | high | REPROVADO: estourado (bloom + sonda da sala com o forro saturado pelas luzes a 30 cm); corrigido em seguida: forro autoiluminado, luzes mais baixas e mais fracas, env menor, foco mais fechado |
 | `r9-corredor-high2.jpg`, `r9-copa-high.jpg`, `r9-seguranca-high.jpg`, `r9-bastidores-high.jpg` | rodada final em "high" | high | na fila de capturas ao fim do turno (ver relatório) |
 | `plan-labirinto.jpg`, `plan-bastidores.jpg` | plantas de conferência (paredes da grade, móveis, pessoas, rondas, interações) | — | geradas de `lib/heist` sem navegador |

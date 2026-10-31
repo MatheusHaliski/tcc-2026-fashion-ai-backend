@@ -50,6 +50,7 @@ function cofre(c: RoomsCtx) {
   walls(c);
   niches(c);
   windowDrapes(c);
+  moonlight(c);
   ceiling(c);
   laserPosts(c);
   cameras(c);
@@ -210,6 +211,24 @@ function windowDrapes(c: RoomsCtx) {
   }
   bx(c.batch, ROOM, lacquerPlum(), N(2.5, 3.38, 0.0, 0, 2.6, 0.32, 0.2), true);
   bx(c.batch, ROOM, goldC(), N(2.5, 3.38, 0.2, 0, 2.6, 0.03, 0.008)); bx(c.batch, ROOM, goldC(), N(2.5, 3.66, 0.2, 0, 2.6, 0.03, 0.008));
+}
+/**
+ * Luar pela janela da cornija (luz pintada, que continua quando cortam o quadro de luz): o vidro clareia atrás das
+ * grades e as quatro vidraças de cima se desenham no piso com a sombra das grades (a 45°, as de baixo batem na
+ * vitrine baixa sob a janela). Marca no escuro a rota de fuga.
+ */
+function moonlight(c: RoomsCtx) {
+  const glow = lit("cofre-luarVidro", "#9db4ff", 0.24, { additive: true, map: paint("cofre-luarVidroTex", 64, 128, (g, w, h) => {
+    const grd = g.createLinearGradient(0, 0, 0, h); grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(1, "rgba(255,255,255,0.45)");
+    g.fillStyle = grd; g.fillRect(0, 0, w, h);
+  }, { srgb: false }) });
+  c.batch.add(ROOM, glow, PLANE(), wf(WALLS.N)(2.5, 1.75, -0.2, 0, 1.0, 1.7, 1));
+  const pool = lit("cofre-luarPiso", "#a9bdff", 0.2, { additive: true, map: paint("cofre-luarPisoTex", 160, 128, (g, w, h) => {
+    g.filter = "blur(4px)"; g.fillStyle = "#fff";
+    const mx = 16, mz = 14, bar = 4, pw = (w - 2 * mx - 3 * bar) / 4;
+    for (let i = 0; i < 4; i++) g.fillRect(mx + i * (pw + bar), mz, pw, h - 2 * mz);
+  }, { srgb: false }) });
+  c.batch.add(ROOM, pool, planeUp(), mat(-19.5, 0.006, -19.83, 0, 1.15, 1, 0.95));
 }
 
 /* ---------- teto: caixotões de laca, tambor e cúpula dourada sobre o pedestal ---------- */
