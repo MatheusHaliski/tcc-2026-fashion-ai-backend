@@ -160,7 +160,7 @@ function fireTable(p: Prop, c: PropsCtx) {
 
 /** Mesa panorâmica de drinks: dois pés de corten em lâmina, travessa, apoio de pés de bronze e o tampo de quartzito. */
 function drinksTable(p: Prop, c: PropsCtx) {
-  const f = footOf(p), T = terraMats(c.q, c.P), L = loungeMats(c.q, c.P), w = f.w, d = f.d, h = 1.1;
+  const f = footOf(p), T = terraMats(c.q, c.P), L = loungeMats(c.q, c.P, c.copy), w = f.w, d = f.d, h = 1.1;
   for (const s of [-1, 1]) { box(c, T.corten, f, s * (w / 2 - 0.35), 0, 0, 0.06, h - 0.05, d - 0.16, 0, true); box(c, T.corten, f, s * (w / 2 - 0.35), 0, 0, 0.14, 0.04, d - 0.1); }
   box(c, T.corten, f, 0, 0.62, -0.08, w - 0.7, 0.12, 0.05);
   c.batch.add(ROOM, T.bronze, CYL(12), at(f, 0, 0.24, d / 2 - 0.06, 0, 0.018, w - 0.5, 0.018, 0, Math.PI / 2));
@@ -218,7 +218,7 @@ function totem(p: Prop, c: PropsCtx) {
 
 /** Bistrô: mesa de ferro fundido com tampo de mármore, xícaras, a vela e um vasinho; e a cadeira de ferro com voluta. */
 function bistroTable(p: Prop, c: PropsCtx) {
-  const f = footOf(p), T = terraMats(c.q, c.P), L = loungeMats(c.q, c.P), r = f.r * 0.95;
+  const f = footOf(p), T = terraMats(c.q, c.P), L = loungeMats(c.q, c.P, c.copy), r = f.r * 0.95;
   c.batch.add(ROOM, T.iron, lathe("terraco-bistroCol", [[0, 0.04], [0.03, 0.04], [0.025, 0.4], [0.045, 0.62], [0.06, 0.7], [0, 0.7]], 12), at(f, 0, 0, 0));
   for (let k = 0; k < 3; k++) { const a = (k / 3) * Math.PI * 2; c.batch.add(ROOM, T.iron, tube(`terraco-bistroLeg`, [[0, 0.12, 0], [0.12, 0.05, 0], [0.24, 0.015, 0], [0.27, 0.0, 0]], 0.013, 10, 6), at(f, 0, 0, 0, a)); }
   c.batch.add(ROOM, c.P.marbleWhite, CYL0(28), at(f, 0, 0.7, 0, 0, r, 0.025, r), { cast: true });

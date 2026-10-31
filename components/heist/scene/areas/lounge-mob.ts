@@ -14,13 +14,15 @@ import type { PropsCtx } from "../interior-props";
 import { BOX0, CYL, CYL0, SPH, geo, mat, mul } from "../interior-batch";
 import { fabric, glass, glow, miscMat, solid, type Palette } from "../interior-mats";
 import { rand, type Quality } from "../interior-tex";
+import type { InteriorCopy } from "../interior-copy";
+import { loungeCopy, loungeLocale } from "./lounge-copy";
 import { areaMat, at, footOf, lamp, lathe, pleatedShade, rbox, tube, tufted, world, type Foot } from "./lounge-kit";
 import { BOOKS, LABELS, agedMirrorTexture, bookAtlas, labelAtlas, menuTexture, onyxSurface, scoreTexture, screenTexture } from "./lounge-tex";
 
 const ROOM = "lounge";
 
 /* ======================= materiais do lounge ======================= */
-export function loungeMats(q: Quality, P: Palette) {
+export function loungeMats(q: Quality, P: Palette, copy: InteriorCopy) {
   return {
     velvet: fabric("lounge-velvetOx", "#4e101b", q, { sheen: "#c4505e", rough: 0.74 }),
     velvetTeal: fabric("lounge-velvetTeal", "#0f3b40", q, { sheen: "#5fb3b0", rough: 0.75 }),
@@ -37,7 +39,7 @@ export function loungeMats(q: Quality, P: Palette) {
     onyxTop: areaMat(`lounge-onyxTop-${q}`, () => { const sf = onyxSurface(q); const t = sf.map.clone(); t.repeat.set(0.6, 0.6); t.needsUpdate = true; return new THREE.MeshPhysicalMaterial({ map: t, color: new THREE.Color("#c9a77a"), emissiveMap: t, emissive: new THREE.Color("#ff9c4a"), emissiveIntensity: 0.18, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.2 }); }),
     mirror: areaMat(`lounge-agedMirror-${q}`, () => new THREE.MeshStandardMaterial({ map: agedMirrorTexture(q), color: new THREE.Color("#b3a182"), metalness: 1, roughness: 0.1, envMapIntensity: 0.95 })),
     bottle: solid("lounge-bottleGlass", "#ffffff", { rough: 0.05, env: 1.7, transparent: true, opacity: 0.84 }),
-    label: areaMat("lounge-label", () => new THREE.MeshStandardMaterial({ map: labelAtlas(), roughness: 0.55, side: THREE.DoubleSide })),
+    label: areaMat(`lounge-label-${loungeLocale(copy)}`, () => new THREE.MeshStandardMaterial({ map: labelAtlas(loungeCopy(copy)), roughness: 0.55, side: THREE.DoubleSide })),
     cork: solid("lounge-cork", "#9b7651", { rough: 0.9 }),
     foil: solid("lounge-foil", "#7a1420", { metal: 0.8, rough: 0.35 }),
     glassClear: glass("lounge-glass", { tint: "#e8f0f0", opacity: 0.22, rough: 0.03 }),
@@ -150,7 +152,7 @@ function along(path: ReturnType<typeof frontPath>, s: number): { x: number; z: n
 }
 
 export function onyxBar(p: Prop, c: PropsCtx) {
-  const f = footOf(p), P = c.P, L = loungeMats(c.q, P), W = f.w, D = f.d, H = 1.1, back = -D / 2;
+  const f = footOf(p), P = c.P, L = loungeMats(c.q, P, c.copy), W = f.w, D = f.d, H = 1.1, back = -D / 2;
   // corpo de nogueira, rodapé de mármore negro recuado, faixa alta da frente (o "die") e o tampo com sobra de 6 cm
   put(c, L.marble, slab("lounge-barPlinth", barShape(W, D, back + 0.05, 0.07), 0.1), at(f, 0, 0, 0));
   put(c, L.walnut, slab("lounge-barBody", barShape(W, D, back, 0.012), 0.8), at(f, 0, 0.1, 0), true);
@@ -209,7 +211,7 @@ export function onyxBar(p: Prop, c: PropsCtx) {
   bottleAt(c, ROOM, L, at(f, -2.55, top + 0.05, -0.02, 0.3, 1, 1, 1, 0.32), 0, 12, new THREE.Color("#22311f"));
   for (const x of [-1.05, 0.95, 2.6]) votive(c, f, x, top, front - 0.18, L);
   // cardápios em tenda (papel dobrado) com a carta da casa
-  const menu = areaMat("lounge-menuMat", () => new THREE.MeshStandardMaterial({ map: menuTexture("Bar Lumière"), roughness: 0.85, side: THREE.DoubleSide }));
+  const menu = areaMat(`lounge-menuMat-${loungeLocale(c.copy)}`, () => new THREE.MeshStandardMaterial({ map: menuTexture(loungeCopy(c.copy)), roughness: 0.85, side: THREE.DoubleSide }));
   for (const x of [-1.35, 1.4]) for (const s of [-1, 1]) c.batch.add(ROOM, menu, geo("lounge-menuLeaf", () => new THREE.PlaneGeometry(0.1, 0.15).translate(0, 0.075, 0)), at(f, x, top, front - 0.2 + s * 0.035, s > 0 ? 0 : Math.PI, 1, 1, 1, -0.24));
   // tigela de castanhas, rosa num vaso fino e a campainha de balcão
   c.batch.add(ROOM, L.brass, lathe("lounge-bowl", [[0, 0], [0.03, 0], [0.07, 0.04], [0.075, 0.045], [0, 0.03]], 18), at(f, 0.62, top, front - 0.16));
@@ -225,7 +227,7 @@ export function onyxBar(p: Prop, c: PropsCtx) {
 
 /* ======================= banqueta de bar ======================= */
 export function barStool(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P);
+  const f = footOf(p), L = loungeMats(c.q, c.P, c.copy);
   c.batch.add(ROOM, L.brass, lathe("lounge-stoolBase", [[0, 0], [0.2, 0], [0.205, 0.008], [0.19, 0.022], [0.06, 0.04], [0.04, 0.05], [0, 0.05]], 28), at(f, 0, 0, 0), { cast: true });
   c.batch.add(ROOM, L.brass, lathe("lounge-stoolPost", [[0.03, 0], [0.03, 0.6], [0.045, 0.61], [0.05, 0.64], [0.12, 0.66], [0.13, 0.67], [0, 0.67]], 16), at(f, 0, 0.04, 0), { cast: true });
   c.batch.add(ROOM, L.brass, geo("lounge-stoolRing", () => new THREE.TorusGeometry(0.165, 0.012, 8, 32).rotateX(Math.PI / 2)), at(f, 0, 0.3, 0));
@@ -276,7 +278,7 @@ function upholstered(c: PropsCtx, f: Foot, L: LoungeMats, cover: THREE.Material,
   }
 }
 export function loungeSofa(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P), mods = Math.max(2, Math.round(f.w / 0.95));
+  const f = footOf(p), L = loungeMats(c.q, c.P, c.copy), mods = Math.max(2, Math.round(f.w / 0.95));
   upholstered(c, f, L, L.velvet, mods, p.id.length * 7 + 3);
   // manta de lã dobrada caindo sobre um braço (passa por cima do rolo e pende dos dois lados, com a barra ondulada)
   const s = p.id.charCodeAt(p.id.length - 1) % 2 ? 1 : -1, x = s * (f.w / 2 - 0.1);
@@ -291,20 +293,20 @@ export function loungeSofa(p: Prop, c: PropsCtx) {
   }), at(f, x + s * 0.02, 0.73, 0.06));
 }
 export function armchair(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P);
+  const f = footOf(p), L = loungeMats(c.q, c.P, c.copy);
   upholstered(c, f, L, L.leather, 1, p.id.length * 5 + 1);
 }
 
 /* ======================= mesa baixa ======================= */
 export function coffeeTable(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P), w = f.w, d = f.d, h = 0.42;
+  const f = footOf(p), L = loungeMats(c.q, c.P, c.copy), w = f.w, d = f.d, h = 0.42;
   c.batch.add(ROOM, L.marble, rbox(w, 0.04, d, 0.012, 2), at(f, 0, h - 0.04, 0), { cast: true });
   for (const s of [-1, 1]) { box(c, L.brass, f, 0, h - 0.045, s * (d / 2 + 0.004), w + 0.012, 0.048, 0.008); box(c, L.brass, f, s * (w / 2 + 0.004), h - 0.045, 0, 0.008, 0.048, d + 0.012); }
   for (const x of [-w / 2 + 0.05, w / 2 - 0.05]) for (const z of [-d / 2 + 0.05, d / 2 - 0.05]) box(c, L.brass, f, x, 0, z, 0.025, h - 0.045, 0.025, 0, true);
   for (const s of [-1, 1]) { box(c, L.brass, f, 0, 0.1, s * (d / 2 - 0.05), w - 0.1, 0.02, 0.02); box(c, L.brass, f, s * (w / 2 - 0.05), 0.1, 0, 0.02, 0.02, d - 0.1); }
   box(c, glass("lounge-smoke", { tint: "#2a2622", opacity: 0.5, rough: 0.08 }), f, 0, 0.12, 0, w - 0.1, 0.01, d - 0.1);
   // livros de arte: pilha na prateleira e um aberto em cima; velas em lanternas de vidro; decanter e copos
-  const books = areaMat("lounge-bookMat", () => new THREE.MeshStandardMaterial({ map: bookAtlas(), roughness: 0.7 }));
+  const books = areaMat(`lounge-bookMat-${loungeLocale(c.copy)}`, () => new THREE.MeshStandardMaterial({ map: bookAtlas(loungeCopy(c.copy)), roughness: 0.7 }));
   const R = rand(p.id.length * 31 + 7);
   for (let k = 0; k < 3; k++) {
     const bw = 0.3 - k * 0.03, bd = 0.24 - k * 0.02, y = 0.13 + k * 0.032, kk = (k + p.id.length) % BOOKS.length;
@@ -331,7 +333,7 @@ export function coffeeTable(p: Prop, c: PropsCtx) {
 /** Seda da cúpula: translúcida (acende por dentro), dos dois lados. */
 export const shadeMat = () => areaMat("lounge-shadeSilk", () => new THREE.MeshStandardMaterial({ color: "#e9cfa2", emissive: new THREE.Color("#ff9c48"), emissiveIntensity: 0.6, roughness: 0.92, side: THREE.DoubleSide }));
 export function gueridon(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P), r = f.r * 0.98, h = 0.62;
+  const f = footOf(p), L = loungeMats(c.q, c.P, c.copy), r = f.r * 0.98, h = 0.62;
   c.batch.add(ROOM, L.brass, lathe("lounge-guerBase", [[0, 0], [0.19, 0], [0.2, 0.012], [0.17, 0.03], [0.05, 0.05], [0.032, 0.08], [0.028, 0.45], [0.04, 0.47], [0.03, 0.52], [0.06, 0.56], [0.06, h - 0.03], [0, h - 0.03]], 24), at(f, 0, 0, 0), { cast: true });
   c.batch.add(ROOM, L.marble, CYL0(32), at(f, 0, h - 0.03, 0, 0, r, 0.03, r), { cast: true });
   c.batch.add(ROOM, L.brass, geo(`lounge-gallery${r.toFixed(2)}`, () => new THREE.TorusGeometry(r, 0.008, 6, 40).rotateX(Math.PI / 2)), at(f, 0, h + 0.012, 0));
@@ -358,7 +360,7 @@ function pianoShape(mirror = false): THREE.Shape {
 }
 const PLANE_ = () => geo("plane", () => new THREE.PlaneGeometry(1, 1));
 export function grandPiano(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P), w = f.w, d = f.d - 0.22, zb = -0.11;   // corpo um pouco atrás: o teclado sobra na frente
+  const f = footOf(p), L = loungeMats(c.q, c.P, c.copy), w = f.w, d = f.d - 0.22, zb = -0.11;   // corpo um pouco atrás: o teclado sobra na frente
   const rim = geo("lounge-pianoRim", () => new THREE.ExtrudeGeometry(pianoShape(), { depth: 0.3, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 2, curveSegments: 24 }).rotateX(Math.PI / 2).translate(0, 0.312, 0));
   put(c, L.lacquer, rim, at(f, 0, 0.62, zb, 0, w, 1, d), true);
   // tampo aberto (dobradiça no lado reto, x = +0,5) a ~35°, a vareta e a chapa dourada com as cordas por dentro
@@ -377,7 +379,7 @@ export function grandPiano(p: Prop, c: PropsCtx) {
   for (const s of [-1, 1]) box(c, L.lacquer, f, s * (kw / 2 + (w - kw) / 4), 0.74, kz + 0.02, (w - kw) / 2, 0.06, 0.17);
   box(c, L.lacquer, f, 0, 0.77, kz - 0.09, kw, 0.012, 0.09, 0);
   // estante inclinada com a partitura e as pernas torneadas com rodízios
-  const score = areaMat("lounge-scoreMat", () => new THREE.MeshStandardMaterial({ map: scoreTexture(), roughness: 0.9, side: THREE.DoubleSide }));
+  const score = areaMat(`lounge-scoreMat-${loungeLocale(c.copy)}`, () => new THREE.MeshStandardMaterial({ map: scoreTexture(loungeCopy(c.copy)), roughness: 0.9, side: THREE.DoubleSide }));
   const desk = at(f, 0, 0.78, kz - 0.17, 0, 1, 1, 1, -0.22);
   c.batch.add(ROOM, L.lacquer, BOX0(), mul(desk, mat(0, 0, 0, 0, w * 0.5, 0.27, 0.012)));
   c.batch.add(ROOM, L.lacquer, BOX0(), mul(desk, mat(0, 0, 0.03, 0, w * 0.5, 0.012, 0.05)));
@@ -402,7 +404,7 @@ export function grandPiano(p: Prop, c: PropsCtx) {
 
 /* ======================= trumeau: espelho envelhecido sobre console ======================= */
 export function trumeau(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P), w = f.w, d = f.d;
+  const f = footOf(p), L = loungeMats(c.q, c.P, c.copy), w = f.w, d = f.d;
   // console de nogueira com tampo de mármore e pernas cabriolé (curva em S)
   c.batch.add(ROOM, L.marble, rbox(w - 0.1, 0.03, d - 0.02, 0.008, 2), at(f, 0, 0.82, 0), { cast: true });
   box(c, L.walnut, f, 0, 0.7, -0.01, w - 0.2, 0.12, d - 0.08, 0, true);
@@ -435,7 +437,7 @@ export function trumeau(p: Prop, c: PropsCtx) {
 
 /* ======================= biombo de laca ======================= */
 export function lacquerScreen(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P), n = 3, pw = f.w / n / Math.cos(0.42) * 0.98, h = 1.72;
+  const f = footOf(p), L = loungeMats(c.q, c.P, c.copy), n = 3, pw = f.w / n / Math.cos(0.42) * 0.98, h = 1.72;
   const art = areaMat("lounge-screenArt", () => new THREE.MeshStandardMaterial({ map: screenTexture(), roughness: 0.22, metalness: 0.1, envMapIntensity: 1.1 }));
   for (let k = 0; k < n; k++) {
     const ry = (k % 2 ? -1 : 1) * 0.42, x = -f.w / 2 + (k + 0.5) * f.w / n;

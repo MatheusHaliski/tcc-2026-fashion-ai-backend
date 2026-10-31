@@ -9,6 +9,7 @@
 import * as THREE from "three";
 import { drawnTexture, SANS, SERIF, fit, spaced, type Quality } from "../interior-tex";
 import { FAKE, areaSurface, clamp01, fbm, hash2, mix, smooth, vnoise, type AreaSurface } from "./lounge-kit";
+import type { LoungeCopy } from "./lounge-copy";
 
 /* ======================= parquet em espinha de peixe ======================= */
 /** Tábua de 10 cm × 50 cm (n = 5), a 45°: a textura repete a cada 1,414 m (40 tábuas). */
@@ -262,17 +263,19 @@ export function cofferTexture(): THREE.Texture {
 }
 
 /* ======================= rótulos e papéis ======================= */
-/** Rótulos fictícios (atlas 8 × 2 de 128 × 256 px): destilados e licores inventados. */
+/** Rótulos fictícios (atlas 8 × 2 de 128 × 256 px): nome da marca inventada (não muda de idioma), fundo e tinta; a
+ *  descrição vem de lounge-copy.ts (labelSubs, na mesma ordem). */
 export const LABELS = [
-  ["VESPER", "Cognac XO", "#1d1208", "#d9b46a"], ["LUMIÈRE", "London Dry Gin", "#f2efe6", "#1d3b52"], ["NOIR 1957", "Rum envelhecido", "#120c0a", "#c9a25a"], ["CELESTE", "Amaro", "#1f3a5c", "#e8d8b0"],
-  ["CAIRN 18", "Single malt", "#e9dfc6", "#5a2a16"], ["ROSSO", "Vermute di Gala", "#7a1420", "#f1e2c4"], ["FÉE VERTE", "Absinto", "#0f3a24", "#e6e0b8"], ["SOMBRA", "Mezcal joven", "#d8d2c2", "#262220"],
-  ["AURORA", "Cachaça de alambique", "#f0e6cc", "#7a4a12"], ["ROSA", "Licor de pétalas", "#f1d6db", "#6a1f33"], ["PORTO 1963", "Vintage", "#2a0d10", "#d8b56c"], ["FINO", "Xerez seco", "#efe7cf", "#3b5a2a"],
-  ["MARQUISE", "Champagne brut", "#0e0e10", "#d6b46a"], ["ORCHIDÉE", "Crème de violette", "#3a2550", "#e8dcf0"], ["BERGAMOTA", "Licor cítrico", "#f2e8b8", "#305a3a"], ["NUIT", "Bourbon de pequeno lote", "#1a1410", "#e0c48a"],
+  ["VESPER", "#1d1208", "#d9b46a"], ["LUMIÈRE", "#f2efe6", "#1d3b52"], ["NOIR 1957", "#120c0a", "#c9a25a"], ["CELESTE", "#1f3a5c", "#e8d8b0"],
+  ["CAIRN 18", "#e9dfc6", "#5a2a16"], ["ROSSO", "#7a1420", "#f1e2c4"], ["FÉE VERTE", "#0f3a24", "#e6e0b8"], ["SOMBRA", "#d8d2c2", "#262220"],
+  ["AURORA", "#f0e6cc", "#7a4a12"], ["ROSA", "#f1d6db", "#6a1f33"], ["PORTO 1963", "#2a0d10", "#d8b56c"], ["FINO", "#efe7cf", "#3b5a2a"],
+  ["MARQUISE", "#0e0e10", "#d6b46a"], ["ORCHIDÉE", "#3a2550", "#e8dcf0"], ["BERGAMOTA", "#f2e8b8", "#305a3a"], ["NUIT", "#1a1410", "#e0c48a"],
 ] as const;
-export function labelAtlas(): THREE.Texture {
-  return drawnTexture("lounge-labels", 1024, 512, (g, w, h) => {
+export function labelAtlas(T: LoungeCopy): THREE.Texture {
+  return drawnTexture(`lounge-labels-${T.menuSub}`, 1024, 512, (g, w, h) => {
     const cw = w / 8, ch = h / 2;
-    LABELS.forEach(([name, sub, bg, ink], k) => {
+    LABELS.forEach(([name, bg, ink], k) => {
+      const sub = T.labelSubs[k] ?? "";
       const x = (k % 8) * cw, y = Math.floor(k / 8) * ch;
       g.fillStyle = bg; g.fillRect(x, y, cw, ch);
       g.strokeStyle = ink; g.lineWidth = 3; g.strokeRect(x + 8, y + 10, cw - 16, ch - 20); g.lineWidth = 1; g.strokeRect(x + 13, y + 15, cw - 26, ch - 30);
@@ -281,39 +284,39 @@ export function labelAtlas(): THREE.Texture {
       g.font = `600 18px ${SERIF}`; g.fillText(name.slice(0, 1), x + cw / 2, y + ch * 0.27 + 1);
       fit(g, name, (p) => `700 ${p}px ${SERIF}`, 24, cw - 28); g.fillText(name, x + cw / 2, y + ch * 0.5);
       g.font = `italic 400 12px ${SERIF}`; g.fillText(sub, x + cw / 2, y + ch * 0.62);
-      g.font = `400 10px ${SANS}`; g.fillText(`${40 + (k % 5)}% vol · 700 ml`, x + cw / 2, y + ch * 0.82);
+      g.font = `400 10px ${SANS}`; g.fillText(T.labelFoot.replace("{abv}", String(40 + (k % 5))), x + cw / 2, y + ch * 0.82);
       g.fillRect(x + cw * 0.3, y + ch * 0.7, cw * 0.4, 1.5);
     });
   });
 }
 /** Cardápio de coquetéis do Bar Lumière (dobrado em tenda sobre o balcão). */
-export function menuTexture(title: string): THREE.Texture {
-  return drawnTexture(`lounge-menu-${title}`, 256, 384, (g, w, h) => {
+export function menuTexture(T: LoungeCopy): THREE.Texture {
+  return drawnTexture(`lounge-menu-${T.menuSub}`, 256, 384, (g, w, h) => {
     g.fillStyle = "#efe6d2"; g.fillRect(0, 0, w, h); g.strokeStyle = "#a9853f"; g.lineWidth = 3; g.strokeRect(10, 10, w - 20, h - 20);
-    g.fillStyle = "#2a1d10"; g.textAlign = "center"; g.font = `600 22px ${SERIF}`; spaced(g, title.toUpperCase(), w / 2, 46, 3);
-    g.font = `italic 400 13px ${SERIF}`; g.fillText("coquetéis da casa", w / 2, 68);
-    const rows = ["Vesper Lumière", "Rosa de Gala", "Noite no Museu", "Sombra & Mel", "Diamante Negro", "Aurora Tropical"];
-    rows.forEach((r, k) => { g.font = `500 15px ${SERIF}`; g.textAlign = "left"; g.fillText(r, 26, 106 + k * 42); g.textAlign = "right"; g.fillText(String(38 + k * 4), w - 26, 106 + k * 42); g.font = `400 10px ${SANS}`; g.textAlign = "left"; g.fillStyle = "#6a5a40"; g.fillText("gin · vermute · casca de laranja", 26, 122 + k * 42); g.fillStyle = "#2a1d10"; });
+    g.fillStyle = "#2a1d10"; g.textAlign = "center"; g.font = `600 22px ${SERIF}`; spaced(g, T.menuTitle.toUpperCase(), w / 2, 46, 3);
+    g.font = `italic 400 13px ${SERIF}`; g.fillText(T.menuSub, w / 2, 68);
+    T.cocktails.forEach((r, k) => { g.font = `500 15px ${SERIF}`; g.textAlign = "left"; g.fillText(r, 26, 106 + k * 42); g.textAlign = "right"; g.fillText(String(38 + k * 4), w - 26, 106 + k * 42); g.font = `400 10px ${SANS}`; g.textAlign = "left"; g.fillStyle = "#6a5a40"; g.fillText(T.ingredients, 26, 122 + k * 42); g.fillStyle = "#2a1d10"; });
   });
 }
 /** Partitura aberta na estante do piano. */
-export function scoreTexture(): THREE.Texture {
-  return drawnTexture("lounge-score", 512, 360, (g, w, h) => {
+export function scoreTexture(T: LoungeCopy): THREE.Texture {
+  return drawnTexture(`lounge-score-${T.score}`, 512, 360, (g, w, h) => {
     g.fillStyle = "#efe8d6"; g.fillRect(0, 0, w, h); g.fillStyle = "#d8cfba"; g.fillRect(w / 2 - 2, 0, 4, h);
     g.strokeStyle = "#222"; g.fillStyle = "#222";
     for (const x0 of [16, w / 2 + 14]) for (let s = 0; s < 6; s++) {
       const y0 = 40 + s * 52; g.lineWidth = 1; for (let l = 0; l < 5; l++) { g.beginPath(); g.moveTo(x0, y0 + l * 6); g.lineTo(x0 + w / 2 - 30, y0 + l * 6); g.stroke(); }
       for (let k = 0; k < 12; k++) { const x = x0 + 20 + k * 18, y = y0 + 3 + hash2(k, s, 3) * 24; g.beginPath(); g.ellipse(x, y, 3.6, 2.6, -0.4, 0, Math.PI * 2); g.fill(); g.fillRect(x + 3, y - 18, 1.2, 18); }
     }
-    g.font = `italic 600 16px ${SERIF}`; g.textAlign = "center"; g.fillText("Noturno em mi bemol", w / 4, 22);
+    g.font = `italic 600 16px ${SERIF}`; g.textAlign = "center"; g.fillText(T.score, w / 4, 22);
   });
 }
-/** Capas de livros de arte (atlas 4 × 1): títulos inventados. */
-export const BOOKS = [["MODA E RUÍNA", "#1b1b1d", "#d8b46a"], ["ATELIÊS DE PARIS", "#e8e1d2", "#7a1a20"], ["LUMIÈRE · 1957", "#3a2a1a", "#efe2c4"], ["O CORTE PERFEITO", "#14303a", "#e6d6a8"]] as const;
-export function bookAtlas(): THREE.Texture {
-  return drawnTexture("lounge-books", 1024, 256, (g, w, h) => {
+/** Capas de livros de arte (atlas 4 × 1): fundo e tinta; os títulos (inventados) vêm de lounge-copy.ts. */
+export const BOOKS = [["#1b1b1d", "#d8b46a"], ["#e8e1d2", "#7a1a20"], ["#3a2a1a", "#efe2c4"], ["#14303a", "#e6d6a8"]] as const;
+export function bookAtlas(T: LoungeCopy): THREE.Texture {
+  return drawnTexture(`lounge-books-${T.books[0]}`, 1024, 256, (g, w, h) => {
     const cw = w / 4;
-    BOOKS.forEach(([t, bg, ink], k) => {
+    BOOKS.forEach(([bg, ink], k) => {
+      const t = T.books[k];
       const x = k * cw; g.fillStyle = bg; g.fillRect(x, 0, cw, h);
       g.fillStyle = ink; g.textAlign = "center"; g.textBaseline = "middle";
       fit(g, t, (p) => `600 ${p}px ${SERIF}`, 26, cw - 30); g.fillText(t, x + cw / 2, h * 0.3);

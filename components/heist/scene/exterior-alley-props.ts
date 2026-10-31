@@ -18,6 +18,7 @@
  */
 import * as THREE from "three";
 import { SIDEWALK_Y } from "@/lib/heist/level";
+import { hasModel } from "@/lib/heist/models";
 import type { Prop } from "@/lib/heist/types";
 import { Bag, box0, cyl0, mul, rod, taper, tm, tube, type V3 } from "./exterior-alley-geo";
 import { rng, type Rect01 } from "./exterior-alley-tex";
@@ -86,6 +87,7 @@ export function cylinderP45(bag: Bag, at: THREE.Matrix4, color: THREE.ColorRepre
 
 /* ======================= móveis do beco ======================= */
 export function buildFixture(bag: Bag, p: Prop, signs: Record<string, Rect01>) {
+  if (hasModel(p.model)) return;                                                 // com modelo gerado: HeistModels carrega o GLB
   const f = footOf(p);
   switch (p.model) {
     case "becoTotem": return totem(bag, f, signs);

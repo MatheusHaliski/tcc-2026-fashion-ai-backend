@@ -31,7 +31,8 @@ export interface LeafSpec {
   /** sala para onde a frente (+z) e o verso (−z) olham */
   front: RoomId | null; back: RoomId | null;
   /** texto do estêncil (palco) */
-  stencil?: string;
+  /** portas do palco: o nome em estêncil e o texto da fita crepe (vestibulo-copy.ts, por idioma) */
+  stencil?: string; tape?: string;
   /** mola aérea */
   closer?: boolean;
   /** porta disfarçada: coordenada (ao longo da parede) da dobradiça e o sentido da folha, para a cantaria casar com a parede */
@@ -63,8 +64,8 @@ function doorMats(P: Palette) {
 export type DoorMats = ReturnType<typeof doorMats>;
 
 /** Preto do palco: tinta fosca com marcas de uso, fita crepe e o nome em estêncil (spray branco falhado). */
-function stageTexture(text: string): THREE.Texture {
-  return drawnTexture(`vestibulo-door-stage-${text}`, 512, 1280, (g, w, h) => {
+function stageTexture(text: string, tape: string): THREE.Texture {
+  return drawnTexture(`vestibulo-door-stage-${text}-${tape}`, 512, 1280, (g, w, h) => {
     g.fillStyle = "#16161a"; g.fillRect(0, 0, w, h);
     for (let k = 0; k < 260; k++) { const x = (k * 151) % w, y = (k * 97) % h, l = 10 + (k % 23) * 3; g.strokeStyle = `rgba(${90 + (k % 40)},${90 + (k % 40)},${95 + (k % 40)},${0.05 + (k % 7) * 0.012})`; g.lineWidth = 1 + (k % 3); g.beginPath(); g.moveTo(x, y); g.lineTo(x + l * Math.cos(k), y + l * Math.sin(k) * 0.3); g.stroke(); }
     const scuff = g.createLinearGradient(0, h, 0, h * 0.82); scuff.addColorStop(0, "rgba(120,110,100,0.25)"); scuff.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = scuff; g.fillRect(0, h * 0.82, w, h * 0.18);
@@ -81,7 +82,7 @@ function stageTexture(text: string): THREE.Texture {
     for (let k = 0; k < 160; k++) { g.fillStyle = `rgba(236,230,214,${0.15 + (k % 5) * 0.08})`; g.fillRect((((k * 53) % 1000) / 1000 - 0.5) * tw * 1.12, (((k * 31) % 100) / 100 - 0.5) * F * 1.3, 2, 2); }
     g.restore();
     // fita crepe com a marca do ensaio, acima do visor
-    g.fillStyle = "rgba(214,196,150,0.85)"; g.fillRect(w * 0.18, h * 0.19, w * 0.5, 26); g.fillStyle = "#3a3020"; g.font = `600 18px ${FAM}`; g.textAlign = "left"; g.fillText("CENA 4 · ENTRADA L", w * 0.2, h * 0.19 + 19);
+    g.fillStyle = "rgba(214,196,150,0.85)"; g.fillRect(w * 0.18, h * 0.19, w * 0.5, 26); g.fillStyle = "#3a3020"; g.font = `600 18px ${FAM}`; g.textAlign = "left"; g.fillText(tape, w * 0.2, h * 0.19 + 19);
   });
 }
 /** Aço "guilhochê" do painel do cofre: círculos sobrepostos em grade, como o acabamento de portas-fortes antigas. */
@@ -238,8 +239,8 @@ function padded(p: Parts, M: DoorMats, s: LeafSpec) {
   if (s.closer) closerBody(p, M.brass, h, t, -s.pull);
 }
 function stage(p: Parts, M: DoorMats, s: LeafSpec) {
-  const { w, h } = s, t = LEAF_T.stage, tex = stageTexture(s.stencil ?? "PALCO");
-  const black = solid(`vestibulo-door-stage-${s.stencil}`, "#ffffff", { rough: 0.72 }); (black as THREE.MeshStandardMaterial).map = tex;
+  const { w, h } = s, t = LEAF_T.stage, tex = stageTexture(s.stencil ?? "PALCO", s.tape ?? "");
+  const black = solid(`vestibulo-door-stage-${s.stencil}-${s.tape}`, "#ffffff", { rough: 0.72 }); (black as THREE.MeshStandardMaterial).map = tex;
   // chapa com o furo do visor redondo; uv = (x/w, y/h) na frente e espelhado no verso, para o estêncil caber na folha e
   // ler direito dos dois lados (e nas duas folhas de um vão duplo, que são uma o espelho da outra)
   const slab = geo(`vestibulo-door-stageSlab2-${w.toFixed(3)}-${h.toFixed(3)}`, () => {
@@ -358,7 +359,7 @@ export function closerArm(h: number, t: number, side: number, holder: THREE.Obje
 /** Folha pronta: um grupo com uma malha por material (geometria reaproveitada entre folhas iguais). */
 const cache = new Map<string, { m: THREE.Material; g: THREE.BufferGeometry }[]>();
 export function buildLeaf(s: LeafSpec, P: Palette, q: Quality): THREE.Group {
-  const key = `${s.style}|${s.w.toFixed(3)}|${s.h.toFixed(3)}|${s.pull}|${s.front}|${s.back}|${s.stencil ?? ""}|${s.closer ? 1 : 0}|${s.wallUv ? `${s.wallUv.origin}/${s.wallUv.dir}` : ""}|${q}`;
+  const key = `${s.style}|${s.w.toFixed(3)}|${s.h.toFixed(3)}|${s.pull}|${s.front}|${s.back}|${s.stencil ?? ""}|${s.tape ?? ""}|${s.closer ? 1 : 0}|${s.wallUv ? `${s.wallUv.origin}/${s.wallUv.dir}` : ""}|${q}`;
   let parts = cache.get(key);
   if (!parts) {
     const p = new Parts(), M = doorMats(P);

@@ -332,7 +332,7 @@ function floorBorder(c: RoomsCtx, L: LoungeMats) {
 
 /** Lounge e bar (decoração sem colisão, luzes): ver o cabeçalho. */
 function lounge(c: RoomsCtx) {
-  const L = loungeMats(c.q, c.P);
+  const L = loungeMats(c.q, c.P, c.copy);
   // paredes: oeste (porta do salão em z 9–11), norte (bastidores em x 16–18), leste (estante do bar), sul (janelas)
   panelledWall(c, L, "W", Z0, 8.8); panelledWall(c, L, "W", 11.2, Z1);
   panelledWall(c, L, "N", X0, 15.8); panelledWall(c, L, "N", 18.2, X1);

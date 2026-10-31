@@ -106,7 +106,7 @@ cordões de luz — nunca um vazio sobre a cabeça.
 Arquivos (todos em `components/heist/scene/areas/`): `lounge.ts` (módulo e decoração do lounge), `lounge-mob.ts` (móveis do
 lounge), `lounge-tex.ts` (texturas do lounge), `lounge-kit.ts` (ferramentas da área: superfícies, estofado capitonê,
 cortina, cúpula plissada, molduras, referencial dos móveis), `terraco.ts` (módulo, decoração e móveis do terraço),
-`terraco-tex.ts` (texturas do terraço). Na planta (`lib/heist/level.ts`), só as seções do lounge e do terraço em
+`terraco-tex.ts` (texturas do terraço), `lounge-copy.ts` (textos desenhados nas texturas — descrição dos rótulos, cardápio, partitura, capas dos livros — em pt-BR, en e es; os nomes inventados das marcas não mudam). Na planta (`lib/heist/level.ts`), só as seções do lounge e do terraço em
 `baseProps()` e `civs()`. `STYLE` de `interior-shell.ts` não precisou mudar: o lounge troca piso, parede e teto pelo contrato
 (`surfaces`) e desenha as próprias molduras (`trims: false`).
 
@@ -126,6 +126,7 @@ Capturas em `scratchpad/gala/areas/lounge-terraco/` (ver a lista no fim).
 | Lustre art déco de três andares de vidro fosco com pingentes | `lounge.ts` `chandelierDeco` | IMPLEMENTADO |
 | Bar curvo de ônix aceso por trás, pilastras caneladas, tampo de mármore, descanso de couro, trilho de pés, estação do barman | `lounge-mob.ts` `onyxBar`; `lounge-tex.ts` `onyxSurface` | IMPLEMENTADO |
 | Objetos do balcão: coqueteleiras, copo de mistura, dosador, taças com bebida, balde de champanhe, velas, cardápios, castanhas, rosa, campainha | `lounge-mob.ts` `onyxBar`, `glassAt`, `bottleAt` | IMPLEMENTADO |
+| Rótulos, cardápio, partitura e capas de livros por idioma | `lounge-copy.ts` `LOUNGE_COPY`, `loungeCopy`; `lounge-tex.ts` `labelAtlas`, `menuTexture`, `scoreTexture`, `bookAtlas` | IMPLEMENTADO |
 | Estante do bar: armário com tampo de ônix, arco de ônix com prateleiras iluminadas, espelhos envelhecidos, ~150 garrafas com rótulos inventados, letreiro dourado | `lounge.ts` `backBar`; `lounge-tex.ts` `labelAtlas`, `agedMirrorTexture` | IMPLEMENTADO |
 | Pendentes de vidro âmbar sobre o balcão | `lounge.ts` `pendant` | IMPLEMENTADO |
 | Banquetas de bar (4) | `lounge-mob.ts` `barStool` (fixture `loungeStool`) | IMPLEMENTADO |

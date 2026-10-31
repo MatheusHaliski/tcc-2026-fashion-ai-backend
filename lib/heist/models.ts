@@ -22,4 +22,5 @@ export interface ModelDef {
 
 export const MODELS: Record<string, ModelDef> = {};
 
-export const hasModel = (model: string | undefined): model is string => !!model && Object.prototype.hasOwnProperty.call(MODELS, model);
+/** Há GLB gerado para este `model`? (booleano simples, sem predicado de tipo: o ramo falso não deve estreitar `model`.) */
+export const hasModel = (model: string | undefined): boolean => !!model && Object.prototype.hasOwnProperty.call(MODELS, model);

@@ -21,6 +21,7 @@ import { sceneLocale } from "./interior-copy";
 import type { Quality } from "./interior-tex";
 import { CLOSER_SHOE, LEAF_T, buildLeaf, closerArm, doorMats, type LeafStyle } from "./interior-doors-leaf";
 import { arcPts, profileGeo } from "./areas/vestibulo-kit";
+import { DOOR_COPY, type DoorCopy } from "./areas/vestibulo-copy";
 
 type Casing = "stone" | "wood" | "steel" | "black" | "vault" | "none";
 interface DoorSpec {
@@ -29,17 +30,17 @@ interface DoorSpec {
   angle?: number; single?: boolean;
   /** guarnição de cada lado (sala → estilo); o que faltar usa `trim` */
   casing?: Partial<Record<RoomId, Casing>>; trim: Casing;
-  closer?: boolean; stencil?: Record<"pt-BR" | "en" | "es", string>;
+  closer?: boolean; stencil?: keyof Omit<DoorCopy, "tape">;
 }
 const SPECS: Partial<Record<DoorId, DoorSpec>> = {
   main: { style: "grand", swingTo: "lo", trim: "wood", casing: { vestibulo: "stone" }, closer: true },
   gallery: { style: "grand", swingTo: "lo", trim: "wood", closer: true },
   lounge: { style: "padded", swingTo: "hi", trim: "wood", closer: true },
-  backstage: { style: "stage", swingTo: "lo", trim: "black", casing: { bastidores: "steel" }, closer: true, stencil: { "pt-BR": "BASTIDORES", en: "BACKSTAGE", es: "BASTIDORES" } },
+  backstage: { style: "stage", swingTo: "lo", trim: "black", casing: { bastidores: "steel" }, closer: true, stencil: "backstage" },
   terrace: { style: "french", swingTo: "hi", trim: "wood", casing: { terraco: "stone" } },
   staffTerrace: { style: "steel", swingTo: "hi", trim: "steel", closer: true },
   side: { style: "steel", fixture: "badge", fixtureSide: "vestibulo", swingTo: "lo", trim: "steel", casing: { vestibulo: "stone" }, closer: true },
-  stage: { style: "stage", fixture: "badge", fixtureSide: "salao", swingTo: "hi", trim: "black", casing: { bastidores: "steel" }, closer: true, stencil: { "pt-BR": "PALCO", en: "STAGE", es: "ESCENARIO" } },
+  stage: { style: "stage", fixture: "badge", fixtureSide: "salao", swingTo: "hi", trim: "black", casing: { bastidores: "steel" }, closer: true, stencil: "stage" },
   staff: { style: "jib", fixture: "key", fixtureSide: "salao", swingTo: "hi", trim: "steel", casing: { salao: "none" } },
   // a de serviço abre para a doca (para o labirinto fecharia o corredor de 1,5 m); a da segurança dobra contra a parede
   service: { style: "steel", fixture: "keypad", fixtureSide: "doca", swingTo: "hi", trim: "steel", closer: true },
@@ -185,7 +186,7 @@ export function buildDoors(doors: DoorDef[], P: Palette, q: Quality, batch: Batc
       // para onde olha a frente (+z) da folha e qual lado é o de puxar (o lado para onde ela abre)
       const front: RoomId | null = alongX ? (k === 0 ? s.hi : s.lo) : (k === 0 ? s.lo : s.hi), back: RoomId | null = front === s.lo ? s.hi : s.lo;
       const pull: 1 | -1 = front === swingRoom ? 1 : -1;
-      const leaf = buildLeaf({ style: spec.style, w: lw, h: H - 0.01, pull, front, back, stencil: spec.stencil?.[loc], closer: spec.closer, wallUv: spec.style === "jib" ? { origin: hingeAlong, dir: dirAlong } : undefined }, P, q);
+      const leaf = buildLeaf({ style: spec.style, w: lw, h: H - 0.01, pull, front, back, stencil: spec.stencil && DOOR_COPY[loc][spec.stencil], tape: spec.stencil && DOOR_COPY[loc].tape, closer: spec.closer, wallUv: spec.style === "jib" ? { origin: hingeAlong, dir: dirAlong } : undefined }, P, q);
       const holder = new THREE.Group(); holder.add(leaf); pivot.add(holder);
       if (spec.closer) {
         // mola aérea em braço paralelo, do lado de empurrar (oposto ao giro); a sapata pende do forro do vão
