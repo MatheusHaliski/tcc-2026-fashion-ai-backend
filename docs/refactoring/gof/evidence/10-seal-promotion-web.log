@@ -1,0 +1,4 @@
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.044 s -- in br.com.fashionai.web.config.SealFormPayloadTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.870 s -- in br.com.fashionai.web.security.SealCopilotRoutesTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

@@ -1750,33 +1750,14 @@ public class SealService {
                                 Integer totalQuota, Integer perUserLimit, UUID partnerBrandUserId, Visibility visibility, String storeUrl) {
     }
 
-    /** Link http(s) de loja terceira (ou nulo). */
+    /** Link http(s) de loja terceira (ou nulo); regra em {@link PromotionRules#storeUrl}. */
     public static String storeUrl(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        String v = raw.trim();
-        if (httpsOnly(v) == null) {
-            throw ApiException.badRequest("LINK_INVALIDO", Msg.t("seal.informe_o_link_da_loja"));
-        }
-        return v;
+        return PromotionRules.storeUrl(raw);
     }
 
-    /** Link externo exibido ao usuário (loja, cupom): só https com host; o resto (http, javascript:, data:…) vira null. */
+    /** Link externo exibido ao usuário: só https com host; regra em {@link PromotionRules#httpsOnly}. */
     public static String httpsOnly(String raw) {
-        if (raw == null) {
-            return null;
-        }
-        String v = raw.trim();
-        if (!v.matches("(?i)https://[^\\s/?#]+[^\\s]{0,500}")) {
-            return null;
-        }
-        try {
-            java.net.URI uri = java.net.URI.create(v);
-            return "https".equalsIgnoreCase(uri.getScheme()) && uri.getHost() != null && uri.getHost().contains(".") ? v : null;
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        return PromotionRules.httpsOnly(raw);
     }
 
     /** Card RF38 — promoções que o usuário pode resgatar agora (selo válido, período, estoque e limite por pessoa). */
@@ -1845,24 +1826,15 @@ public class SealService {
     }
 
     private void applyPromotion(CurrentUser user, Promotion p, PromotionForm f) {
-        if (f.type() == null) {
-            throw ApiException.badRequest("TIPO_OBRIGATORIO", Msg.t("seal.escolha_o_tipo_da_promocao"));
-        }
+        PromotionRules.requireType(f.type());
         User owner = users.findById(user.id()).orElseThrow();
         boolean celebrity = owner.getProfileType() == ProfileType.CELEBRIDADE;
-        Set<PromotionType> brandTypes = Set.of(PromotionType.DESCONTO_ECOMMERCE, PromotionType.CUPOM_LOJA,
-                PromotionType.FRETE_GRATIS, PromotionType.BRINDE, PromotionType.ACESSO_ANTECIPADO, PromotionType.EVENTO);
-        if (!celebrity && !brandTypes.contains(f.type())) {
-            throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("seal.tipo_exclusivo_de_promocoes_de"));
-        }
+        PromotionRules.requireTypeFor(f.type(), celebrity);
         p.setType(f.type());
         p.setTitle(InputSanitizer.required("title", f.title(), 3, 160));
         p.setDescription(InputSanitizer.clean(f.description(), 512));
         p.setRules(InputSanitizer.clean(f.rules(), 2048));
-        if (f.discountPercent() != null && (f.discountPercent() < 1 || f.discountPercent() > 90)) {
-            throw ApiException.badRequest("DESCONTO_INVALIDO", Msg.t("seal.desconto_entre_1_e_90"));
-        }
-        p.setDiscountPercent(f.discountPercent());
+        p.setDiscountPercent(PromotionRules.discountPercent(f.discountPercent()));
         if (f.sealId() != null) {
             Seal seal = seals.findById(f.sealId()).orElseThrow(() -> ApiException.notFound("Selo"));
             guard.requireOwner(user, seal.getOwner().getId(), "seal:" + f.sealId());
@@ -1872,14 +1844,12 @@ public class SealService {
             }
             p.setSeal(seal);
         }
-        p.setRequiredSealKind(celebrity ? "PREMIUM_SEAL" : "BRAND_SEAL");
+        p.setRequiredSealKind(PromotionRules.requiredSealKind(celebrity));
         p.setStartsAt(f.startsAt());
         p.setExpiresAt(f.expiresAt());
-        if (f.startsAt() != null && f.expiresAt() != null && f.expiresAt().isBefore(f.startsAt())) {
-            throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("seal.a_promocao_termina_antes_de"));
-        }
+        PromotionRules.requirePeriod(f.startsAt(), f.expiresAt());
         p.setTotalQuota(f.totalQuota());
-        p.setPerUserLimit(f.perUserLimit() == null ? 1 : Math.max(1, f.perUserLimit()));
+        p.setPerUserLimit(PromotionRules.perUserLimit(f.perUserLimit()));
         if (f.partnerBrandUserId() != null) {
             if (!celebrity) {
                 throw ApiException.badRequest("PARCEIRA_INVALIDA", Msg.t("seal.marca_parceira_so_se_aplica"));
@@ -1895,7 +1865,7 @@ public class SealService {
             p.setPartnerBrandUserId(partner.getId());
         }
         p.setVisibility(f.visibility() == null ? Visibility.PUBLIC : f.visibility());
-        p.setStoreUrl(storeUrl(f.storeUrl()));
+        p.setStoreUrl(PromotionRules.storeUrl(f.storeUrl()));
     }
 
     /**
@@ -1907,8 +1877,8 @@ public class SealService {
             return false;
         }
         Instant now = Instant.now();
-        return bonds.findByRequestedByIdAndStatusOrderByCreatedAtDesc(celebrityId, SealBondStatus.APPROVED).stream()
-                .anyMatch(b -> b.getTargetOwner().getId().equals(partner.getId()) && (b.getExpiresAt() == null || b.getExpiresAt().isAfter(now)));
+        return PromotionRules.partnerBondValid(bonds.findByRequestedByIdAndStatusOrderByCreatedAtDesc(celebrityId, SealBondStatus.APPROVED),
+                partner.getId(), now);
     }
 
     /** Promoções do perfil, filtradas pelos selos do solicitante (CA11/CA21). */
@@ -1932,11 +1902,7 @@ public class SealService {
     }
 
     private SealBond eligibleBond(Promotion p, List<SealBond> candidates) {
-        Instant now = Instant.now();
-        return candidates.stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
-                .filter(b -> b.getExpiresAt() == null || b.getExpiresAt().isAfter(now))
-                .filter(b -> p.getSeal() == null || (b.getSeal() != null && b.getSeal().getId().equals(p.getSeal().getId())))
-                .findFirst().orElse(null);
+        return PromotionRules.eligibleBond(p, candidates, Instant.now());
     }
 
     Map<String, Object> promotionView(Promotion p, SealBond eligible) {
@@ -1966,22 +1932,7 @@ public class SealService {
     }
 
     static String unavailable(Promotion p, Instant now) {
-        if (p.getStatus() != PromotionStatus.AVAILABLE) {
-            return Msg.t("seal.promocao_2", (p.getStatus() == PromotionStatus.EXPIRED ? "expirada" : Msg.t("seal.indisponivel")));
-        }
-        if (p.getStartsAt() != null && p.getStartsAt().isAfter(now)) {
-            return Msg.t("seal.a_promocao_comeca_em", p.getStartsAt());
-        }
-        if (p.getExpiresAt() != null && !p.getExpiresAt().isAfter(now)) {
-            return Msg.t("seal.promocao_expirada");
-        }
-        if (p.getTotalQuota() != null && p.getRedeemedCount() >= p.getTotalQuota()) {
-            return Msg.t("seal.promocao_esgotada");
-        }
-        if (p.getSeal() != null && p.getSeal().getStatus() != SealStatus.ACTIVE) {
-            return Msg.t("seal.o_selo_desta_promocao_esta");
-        }
-        return null;
+        return PromotionRules.unavailable(p, now);
     }
 
     /** CA12/CA13/CA22 — resgate com código único, estoque e limite por usuário. */
@@ -2012,13 +1963,9 @@ public class SealService {
             throw ApiException.conflict("LIMITE_POR_USUARIO", Msg.t("seal.voce_ja_resgatou_esta_promocao"));
         }
         User owner = users.findById(p.getOwnerUserId()).orElseThrow();
-        String prefix = owner.getUsername().replaceAll("[^A-Za-z0-9]", "").toUpperCase();
-        prefix = prefix.substring(0, Math.min(5, prefix.length()));
-        if (p.getPartnerBrandUserId() != null) {
-            String partner = users.findById(p.getPartnerBrandUserId()).map(User::getUsername).orElse("PARC")
-                    .replaceAll("[^A-Za-z0-9]", "").toUpperCase();
-            prefix = prefix + "X" + partner.substring(0, Math.min(4, partner.length()));
-        }
+        String partnerName = p.getPartnerBrandUserId() == null ? null
+                : users.findById(p.getPartnerBrandUserId()).map(User::getUsername).orElse("PARC");
+        String prefix = PromotionRules.codePrefix(owner.getUsername(), partnerName);
         String code;
         do {
             code = Hashing.promoCode(prefix);

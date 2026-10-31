@@ -272,7 +272,7 @@ public class CouponService {
         Instant now = Instant.now();
         for (Promotion p : promotions.findByOwnerUserIdOrderByCreatedAtDesc(me.getId())) {
             Map<String, Object> v = new LinkedHashMap<>();
-            String reason = SealService.unavailable(p, now);
+            String reason = PromotionRules.unavailable(p, now);
             v.put("source", SELO);
             v.put("id", p.getId());
             v.put("title", p.getTitle());
@@ -400,7 +400,7 @@ public class CouponService {
         m.put("expiresAt", expiresAt);
         m.put("issuedAt", issuedAt);
         m.put("owner", ownerView(owner));
-        m.put("storeUrl", SealService.httpsOnly(storeUrl));
+        m.put("storeUrl", PromotionRules.httpsOnly(storeUrl));
         m.put("accentColor", accent != null ? accent : owner.getProfileType() == ProfileType.CELEBRIDADE ? "#7B4FD6" : "#1F2A44");
         return m;
     }
@@ -438,12 +438,12 @@ public class CouponService {
     /** Loja terceira da marca (site cadastrado) ou, para celebridade, o primeiro link do perfil. */
     String storeOf(User owner) {
         // só https: link da loja vindo do cadastro ou do perfil nunca vira javascript:/data:/http em claro no cupom
-        String store = SealService.httpsOnly(brands.findByOwnerId(owner.getId()).map(BrandProfile::getStoreUrl).orElse(null));
+        String store = PromotionRules.httpsOnly(brands.findByOwnerId(owner.getId()).map(BrandProfile::getStoreUrl).orElse(null));
         if (store != null) {
             return store;
         }
         return Json.list(owner.getLinksJson()).stream().map(l -> l.get("url")).filter(Objects::nonNull).map(String::valueOf)
-                .map(SealService::httpsOnly).filter(Objects::nonNull).findFirst().orElse(null);
+                .map(PromotionRules::httpsOnly).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     static String discountText(Integer pct, BigDecimal amount, BigDecimal minPurchase) {
