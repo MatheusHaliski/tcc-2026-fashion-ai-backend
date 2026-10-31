@@ -2248,7 +2248,7 @@ public class WardrobeService {
         } else {
             Map<String, Object> summary = studioSummary(info, studioVersion(cur, w) + 1, approved);
             if (cur != null && cur.get("url") != null) {
-                summary.put("previous", studioRef(cur));
+                summary.put("previous", StudioVersionMetadata.reference(cur));
             }
             meta.put("studio", summary);
         }
@@ -2261,52 +2261,21 @@ public class WardrobeService {
     // miniatura, variante do feed, detalhe do logo, recorte realçado, enquadramento e marcos para ajuste manual) até a
     // pessoa aprovar (POST /studio/approve) ou descartar (DELETE /studio/pending). Peças antigas sem esses campos
     // contam como versão 1 aprovada.
-    private static final List<String> STUDIO_KEYS = List.of("url", "thumbUrl", "feedUrl", "detailUrl", "enhancedUrl", "backdrop",
-            "stages", "metrics", "framing", "feed", "logo", "provider");
-
-    @SuppressWarnings("unchecked")
+    // Package-level compatibility for existing callers and characterization tests.
     static Map<String, Object> studioMeta(Map<String, Object> meta) {
-        return meta.get("studio") instanceof Map<?, ?> m ? new LinkedHashMap<>((Map<String, Object>) m) : null;
+        return StudioVersionMetadata.copyFrom(meta);
     }
 
     static int studioVersion(Map<String, Object> cur, WardrobeItem w) {
-        if (cur != null && cur.get("version") instanceof Number n) {
-            return n.intValue();
-        }
-        return w.getStudioImageUrl() != null ? 1 : 0;
+        return StudioVersionMetadata.version(cur, () -> w.getStudioImageUrl());
     }
 
-    /** Aprovada: marcada como tal ou legada (sem o campo). */
     static boolean studioApproved(Map<String, Object> cur, WardrobeItem w) {
-        return w.getStudioImageUrl() != null && (cur == null || !Boolean.FALSE.equals(cur.get("approved")));
+        return StudioVersionMetadata.approved(cur, w.getStudioImageUrl());
     }
 
     static Map<String, Object> studioSummary(Map<String, Object> info, int version, boolean approved) {
-        Map<String, Object> s = new LinkedHashMap<>();
-        for (String k : STUDIO_KEYS) {
-            if (info.get(k) != null) {
-                s.put(k, "provider".equals(k) ? String.valueOf(info.get(k)) : info.get(k));
-            }
-        }
-        String now = java.time.Instant.now().toString();
-        s.put("version", version);
-        s.put("approved", approved);
-        s.put("createdAt", now);
-        if (approved) {
-            s.put("approvedAt", now);
-        }
-        return s;
-    }
-
-    /** O que fica da versão anterior (histórico curto): versão e as URLs, sem a versão anterior dela. */
-    private static Map<String, Object> studioRef(Map<String, Object> cur) {
-        Map<String, Object> ref = new LinkedHashMap<>();
-        for (String k : List.of("version", "url", "feedUrl", "backdrop", "approvedAt")) {
-            if (cur.get(k) != null) {
-                ref.put(k, cur.get(k));
-            }
-        }
-        return ref;
+        return StudioVersionMetadata.summary(info, version, approved);
     }
 
     /**
@@ -2328,17 +2297,13 @@ public class WardrobeService {
                 cur = new LinkedHashMap<>(Map.of("url", w.getStudioImageUrl(), "version", 1, "approved", true));
             }
             dropPendingMedia(cur);
-            cur.put("pending", studioSummary(info, Math.max(studioVersion(cur, w), pendingVersion(cur)) + 1, false));
+            cur.put("pending", studioSummary(info, Math.max(studioVersion(cur, w), StudioVersionMetadata.pendingVersion(cur)) + 1, false));
             meta.put("studio", cur);
             w.setFlatLayMetadataJson(Json.write(meta));
             return "pending";
         }
         applyStudio(w, info, false);
         return "applied";
-    }
-
-    private static int pendingVersion(Map<String, Object> cur) {
-        return cur.get("pending") instanceof Map<?, ?> p && p.get("version") instanceof Number n ? n.intValue() : 0;
     }
 
     /** Apaga os arquivos de uma versão pendente que não vai ao ar (melhor esforço: arquivo que sobrar não quebra nada). */
@@ -2373,7 +2338,7 @@ public class WardrobeService {
             if (w.getStudioImageUrl() != null) {
                 Map<String, Object> prev = new LinkedHashMap<>(cur);
                 prev.putIfAbsent("url", w.getStudioImageUrl());
-                next.put("previous", studioRef(prev));
+                next.put("previous", StudioVersionMetadata.reference(prev));
             }
             w.setStudioImageUrl(String.valueOf(next.get("url")));
             w.setStudioBackdrop(next.get("backdrop") == null ? null : String.valueOf(next.get("backdrop")));

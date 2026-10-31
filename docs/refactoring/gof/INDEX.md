@@ -26,3 +26,7 @@ A revisão/refatoração integral continua em andamento. COVERAGE_FINAL signific
 [GOF_EXECUTION.md](GOF_EXECUTION.md) e [PATTERN_COVERAGE.csv](PATTERN_COVERAGE.csv) documentam as implementações das famílias5/7/11 integradas ao relatório de limites.32 testes da auditoria passaram; o contrato CSV anterior é preservado. O escopo desse lote é a ferramenta offline, não uma refatoração integral já concluída.
 
 Publicação do PR autorizada na continuação. A matriz mantém pendências explícitas; não há certificação de edição/refatoração completa de todos os arquivos.
+
+## Continuação Java
+
+Lote FLOW-WARDROBE-STUDIO-004 implementado, com98 testes Java passando. Ver WARDROBE_STUDIO.md, CI_FOLLOWUP.md e evidence/wardrobe-studio-metrics.json. WardrobeService continua CRITICAL/PARTIAL; refatoração integral e falhas amplas de frontend/catálogo continuam pendentes.

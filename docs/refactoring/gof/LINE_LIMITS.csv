@@ -3,7 +3,7 @@ docs/taxonomia/proposta/seed_piece_variations.sql,6564,CRITICAL,REVIEW_COHESION_
 fai-web/src/test/java/br/com/fashionai/web/controller/ServiceFakes.java,4643,CRITICAL,REVIEW_COHESION_AND_RECORD_REFACTOR_OR_EXCEPTION
 app/(site)/globals.css,4329,CRITICAL,REVIEW_COHESION_AND_RECORD_REFACTOR_OR_EXCEPTION
 fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V47__taxonomia_seed_variacoes.sql,3408,CRITICAL,IMMUTABLE_APPLIED_MIGRATION_REVIEW_ONLY
-fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java,2827,CRITICAL,REVIEW_COHESION_AND_RECORD_REFACTOR_OR_EXCEPTION
+fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java,2792,CRITICAL,REVIEW_COHESION_AND_RECORD_REFACTOR_OR_EXCEPTION
 docs/anatomias/anatomias_card_v17_1.html,2158,CRITICAL,REVIEW_COHESION_AND_RECORD_REFACTOR_OR_EXCEPTION
 fai-application/src/main/java/br/com/fashionai/application/service/SealService.java,2150,CRITICAL,REVIEW_COHESION_AND_RECORD_REFACTOR_OR_EXCEPTION
 fai-application/src/main/java/br/com/fashionai/application/moments/MomentService.java,1902,CRITICAL,REVIEW_COHESION_AND_RECORD_REFACTOR_OR_EXCEPTION
@@ -823,6 +823,7 @@ components/passport/passport.test.tsx,129,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPON
 fai-application/src/test/java/br/com/fashionai/application/imaging/TryOnDigitalDoubleTest.java,128,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-web/src/test/java/br/com/fashionai/web/security/PieceReferenceAccessTest.java,128,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/photo-edit/recipe-ramos.test.ts,128,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/reconcile_gof.py,128,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/(gate)/gate/page.test.tsx,127,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/avatar3d/body-lab.tsx,127,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/brand-search-input.tsx,127,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -860,7 +861,6 @@ fai-web/src/main/java/br/com/fashionai/web/error/GlobalExceptionHandler.java,123
 lib/avatar3d/human/upperwear.test.ts,123,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/tryon/accessory-2d.ts,123,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/tryon/sizes.test.ts,123,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
-scripts/refactoring/reconcile_gof.py,123,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/atelier/atelier-hub-tendencias.test.tsx,122,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/test/java/br/com/fashionai/application/flair/FlairEngineHabilidadesTest.java,122,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/test/java/br/com/fashionai/application/service/CreatorOptOutPreferencesTest.java,122,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1416,6 +1416,7 @@ components/piece-conservation-field.test.tsx,65,WITHIN_GENERAL_TARGET,REVIEW_BY_
 docs/testes/busca-catalogada/search_tests.py,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/main/java/br/com/fashionai/application/common/ApiException.java,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/test/java/br/com/fashionai/application/service/CommunityTrendServiceTest.java,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+fai-application/src/test/java/br/com/fashionai/application/service/StudioVersionMetadataTest.java,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-domain/src/main/java/br/com/fashionai/domain/model/CaptureRequest.java,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-domain/src/main/java/br/com/fashionai/domain/model/ChallengeTemplate.java,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-domain/src/main/java/br/com/fashionai/domain/model/ChallengeVote.java,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1427,6 +1428,7 @@ lib/scene3d/orbit-steps.ts,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT
 scripts/avatar3d/twin-fid/body.mjs,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/keys/generate_jwt_keys.sh,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/refactoring/browser-regression.cjs,65,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+fai-application/src/main/java/br/com/fashionai/application/service/StudioVersionMetadata.java,64,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/test/java/br/com/fashionai/application/catalog/image/CatalogPreviewRendererTest.java,64,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/test/java/br/com/fashionai/application/imaging/GarmentCropTest.java,64,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-web/src/main/java/br/com/fashionai/web/support/CorrelationIdFilter.java,64,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE

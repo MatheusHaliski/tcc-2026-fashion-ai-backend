@@ -1,6 +1,6 @@
 # Inventário de complexidade — FashionAI
 
-Base: `a4f46cd153b3fce7a19da3c0ed4ecfaa6e38c6df`. 2672 arquivos de código; 353093 linhas físicas.
+Base: `fe5817603e055f21edc2f3df0efb72cbd25f07b3`. 2674 arquivos de código; 353192 linhas físicas.
 
 CSV completo: [file-complexity.csv](file-complexity.csv). Dados e ciclos: [inventory.json](inventory.json).
 
@@ -16,7 +16,7 @@ Triagem: >250 revisão; >400 prioridade; >600 alta; >1000 crítica. Tamanho não
 |---|---:|---:|---:|---:|---:|---|
 | `fai-application/src/main/java/br/com/fashionai/application/service/ChallengeService.java` | 1888 | 47 | 45 | 441 | 69.27 | high |
 | `fai-application/src/main/java/br/com/fashionai/application/service/CopilotService.java` | 1419 | 27 | 36 | 318 | 69.06 | high |
-| `fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java` | 2827 | 101 | 67 | 695 | 66.76 | high |
+| `fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java` | 2792 | 99 | 67 | 678 | 66.7 | high |
 | `fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java` | 1311 | 49 | 55 | 321 | 66.1 | high |
 | `fai-application/src/main/java/br/com/fashionai/application/service/FlairChallengeService.java` | 1035 | 24 | 31 | 238 | 65.33 | high |
 | `fai-application/src/main/java/br/com/fashionai/application/service/DnaService.java` | 1461 | 46 | 47 | 313 | 64.11 | medium |

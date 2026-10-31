@@ -4258,6 +4258,7 @@ fai-application/src/test/java/br/com/fashionai/application/service/SocialService
 fai-application/src/test/java/br/com/fashionai/application/service/SocialServiceTest.java,fai-domain/src/main/java/br/com/fashionai/domain/model/enums/Visibility.java,java_import,exact_qualified_name
 fai-application/src/test/java/br/com/fashionai/application/service/SocialServiceTest.java,fai-domain/src/main/java/br/com/fashionai/domain/repository/DnaSchemeRepository.java,java_import,exact_qualified_name
 fai-application/src/test/java/br/com/fashionai/application/service/SocialServiceTest.java,fai-domain/src/main/java/br/com/fashionai/domain/repository/ShareRepository.java,java_import,exact_qualified_name
+fai-application/src/test/java/br/com/fashionai/application/service/StudioVersionMetadataTest.java,fai-domain/src/main/java/br/com/fashionai/domain/model/WardrobeItem.java,java_import,exact_qualified_name
 fai-application/src/test/java/br/com/fashionai/application/service/StudioVersionsTest.java,fai-application/src/main/java/br/com/fashionai/application/audit/Audit.java,java_import,exact_qualified_name
 fai-application/src/test/java/br/com/fashionai/application/service/StudioVersionsTest.java,fai-application/src/main/java/br/com/fashionai/application/common/ApiException.java,java_import,exact_qualified_name
 fai-application/src/test/java/br/com/fashionai/application/service/StudioVersionsTest.java,fai-application/src/main/java/br/com/fashionai/application/common/Json.java,java_import,exact_qualified_name

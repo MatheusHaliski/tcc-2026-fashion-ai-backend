@@ -1,6 +1,6 @@
 # Cobertura residual após os lotes concluídos
 
-3976 entradas de cobertura; 3959 ainda pendentes/parciais. Inventário por sintaxe não equivale a decisão arquitetural de todos os itens.
+3979 entradas de cobertura; 3959 ainda pendentes/parciais. Inventário por sintaxe não equivale a decisão arquitetural de todos os itens.
 
 - Domínio 02: 96 entradas pendentes/parciais.
 - Domínio 03: 103 entradas pendentes/parciais.

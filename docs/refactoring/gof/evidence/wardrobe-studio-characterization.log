@@ -1,0 +1,94 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] Fashion AI API                                                     [pom]
+[INFO] fai-domain                                                         [jar]
+[INFO] fai-application                                                    [jar]
+[INFO]
+[INFO] ------------------< br.com.fashionai:fashion-ai-api >-------------------
+[INFO] Building Fashion AI API 0.1.0-SNAPSHOT                             [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ fashion-ai-api ---
+[INFO] argLine set to -javaagent:/workspace/.tooling/m2/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/workspace/fashionai-refactoring/target/jacoco.exec
+[INFO]
+[INFO] --------------------< br.com.fashionai:fai-domain >---------------------
+[INFO] Building fai-domain 0.1.0-SNAPSHOT                                 [2/3]
+[INFO]   from fai-domain/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ fai-domain ---
+[INFO] argLine set to -javaagent:/workspace/.tooling/m2/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/workspace/fashionai-refactoring/fai-domain/target/jacoco.exec
+[INFO]
+[INFO] --- resources:3.3.1:resources (default-resources) @ fai-domain ---
+[INFO] skip non existing resourceDirectory /workspace/fashionai-refactoring/fai-domain/src/main/resources
+[INFO]
+[INFO] --- compiler:3.16.0:compile (default-compile) @ fai-domain ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ fai-domain ---
+[INFO] skip non existing resourceDirectory /workspace/fashionai-refactoring/fai-domain/src/test/resources
+[INFO]
+[INFO] --- compiler:3.16.0:testCompile (default-testCompile) @ fai-domain ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.6.1:test (default-test) @ fai-domain ---
+[INFO] No tests to run.
+[INFO]
+[INFO] ------------------< br.com.fashionai:fai-application >------------------
+[INFO] Building fai-application 0.1.0-SNAPSHOT                            [3/3]
+[INFO]   from fai-application/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ fai-application ---
+[INFO] argLine set to -javaagent:/workspace/.tooling/m2/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/workspace/fashionai-refactoring/fai-application/target/jacoco.exec
+[INFO]
+[INFO] --- resources:3.3.1:resources (default-resources) @ fai-application ---
+[INFO] Copying 13 resources from src/main/resources to target/classes
+[INFO]
+[INFO] --- compiler:3.16.0:compile (default-compile) @ fai-application ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ fai-application ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO]
+[INFO] --- compiler:3.16.0:testCompile (default-testCompile) @ fai-application ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 261 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] /workspace/fashionai-refactoring/fai-application/src/test/java/br/com/fashionai/application/hype/HypeQueryPrivacyTest.java: Some input files use or override a deprecated API.
+[INFO] /workspace/fashionai-refactoring/fai-application/src/test/java/br/com/fashionai/application/hype/HypeQueryPrivacyTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /workspace/fashionai-refactoring/fai-application/src/test/java/br/com/fashionai/application/catalog/image/CatalogImagePipelineServiceTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /workspace/fashionai-refactoring/fai-application/src/test/java/br/com/fashionai/application/catalog/image/CatalogImagePipelineServiceTest.java: Recompile with -Xlint:unchecked for details.
+[INFO]
+[INFO] --- surefire:3.6.1:test (default-test) @ fai-application ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running br.com.fashionai.application.service.StudioVersionMetadataTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.198 s -- in br.com.fashionai.application.service.StudioVersionMetadataTest
+[INFO] Running br.com.fashionai.application.service.WardrobeServiceEstudioTest
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+03:21:59.867 [main] WARN br.com.fashionai.application.service.WardrobeService -- estúdio falhou (segue só com o Flat Lay): java.lang.IllegalStateException: fora
+03:21:59.958 [main] WARN br.com.fashionai.application.service.WardrobeService -- estúdio falhou (segue só com o Flat Lay): java.lang.IllegalStateException: fora
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.737 s -- in br.com.fashionai.application.service.WardrobeServiceEstudioTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Fashion AI API 0.1.0-SNAPSHOT:
+[INFO]
+[INFO] Fashion AI API ..................................... SUCCESS [  0.392 s]
+[INFO] fai-domain ......................................... SUCCESS [  1.055 s]
+[INFO] fai-application .................................... SUCCESS [ 27.402 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  29.512 s
+[INFO] Finished at: 2026-10-31T03:22:01Z
+[INFO] ------------------------------------------------------------------------
