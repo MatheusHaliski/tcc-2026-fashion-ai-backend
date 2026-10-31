@@ -53,7 +53,7 @@ export function applyRoomEnv(root: THREE.Object3D, room: InteriorRoom, gl: THREE
   });
 }
 /** Peso da sonda (luz real da sala, mais escura que os painéis sintéticos). */
-const PROBE_INTENSITY: Record<EnvMood, number> = { warm: 1.1, gallery: 1.0, backstage: 1.0, cool: 1.0, vault: 1.1 };
+const PROBE_INTENSITY: Record<EnvMood, number> = { warm: 0.75, gallery: 0.7, backstage: 0.95, cool: 0.9, vault: 1.6 };
 
 /* ---------- sondas de reflexo por sala ---------- */
 /** Onde cada sala se fotografa para o próprio reflexo (altura de olho, no meio do espaço livre). */
@@ -168,7 +168,7 @@ export class LightPool {
   }
 }
 /** Ganho global das âncoras (calibrado nas capturas: candela → brilho com exposição 1 e ACES). */
-export const LIGHT_GAIN = 2.2;
+export const LIGHT_GAIN = 1.8;
 
 /** Cintilação: chama (rápida e pequena) ou fluorescente com defeito (apaga e volta de vez em quando). */
 export function flickerOf(a: LightAnchor, t: number): number {
@@ -194,7 +194,7 @@ const KEYS: Partial<Record<InteriorRoom, KeyDef[]>> = {
   bastidores: [{ p: [17.2, 4.45, -1], aim: [17.2, 0, -1], angle: 1.05, i: 40, color: "#fff0d8" }],
   seguranca: [{ p: [-20.2, 3.45, 4.75], aim: [-20.2, 0, 4.75], angle: 1.1, i: 22, color: "#eef6ff" }],
   doca: [{ p: [-15.2, 5.8, 20.2], aim: [-15.2, 0, 20.2], angle: 1.05, i: 55, color: "#ffc27a" }],
-  cofre: [{ p: [-17.25, 5.05, -14.25], aim: [-17.25, 0, -14.25], angle: 0.8, i: 70, color: "#f2f6ff" }],
+  cofre: [{ p: [-17.25, 5.05, -14.25], aim: [-17.25, 0, -14.25], angle: 1.0, i: 95, color: "#f2f6ff" }],
 };
 /**
  * Um SpotLight com sombra que acompanha a sala da jogadora: a fonte da lista mais perto dela (com folga para não trocar

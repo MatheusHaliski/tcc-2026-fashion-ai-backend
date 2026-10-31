@@ -21,12 +21,15 @@ const CAMS: Record<string, { pos: [number, number, number]; target: [number, num
 };
 
 function Rig({ cam, view, ready }: { cam: (typeof CAMS)[string]; view: React.MutableRefObject<SceneView>; ready: () => void }) {
-  const { camera, scene } = useThree();
+  const { camera, scene, gl } = useThree();
   const frames = useRef(0);
   useEffect(() => { camera.position.set(...cam.pos); camera.lookAt(...cam.target); (camera as THREE.PerspectiveCamera).fov = cam.fov ?? 55; (camera as THREE.PerspectiveCamera).updateProjectionMatrix(); }, [camera, cam]);
   useFrame((_, dt) => {
     const v = view.current; v.time += dt; v.player.x = cam.player[0]; v.player.y = cam.player[1]; v.player.z = cam.player[2];
-    if (++frames.current === 40) {
+    const info = gl.info;
+    if (frames.current === 14) { info.autoReset = false; info.reset(); }   // soma todas as passadas do quadro 15 (sombras, reflexo, pós)
+    if (frames.current === 15) { (window as unknown as { __heistRuaInfo?: object }).__heistRuaInfo = { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures, programs: info.programs?.length ?? 0 }; info.autoReset = true; }
+    if (++frames.current === 16) {
       // depuração: malhas com posição inválida (NaN) estragam o bloom inteiro
       const bad: string[] = [];
       scene.traverse((o) => {
@@ -48,7 +51,7 @@ export default function HeistRuaScene() {
   const params = useMemo(() => new URLSearchParams(typeof location === "undefined" ? "" : location.search), []);
   const key = params.get("cam") ?? "avenida", q = (params.get("q") === "low" ? "low" : "high") as "high" | "low", post = params.get("fx") !== "0";
   const cam = CAMS[key] ?? CAMS.avenida;
-  const view = useRef<SceneView>((() => { const v = emptyView(); v.playerRoom = "rua"; v.doors = { ...v.doors, front: true, dockGate: false, carpetGate: false } as SceneView["doors"]; return v; })());
+  const view = useRef<SceneView>((() => { const v = emptyView(); v.playerRoom = "rua"; v.doors = { ...v.doors, front: params.get("door") === "1", dockGate: false, carpetGate: false } as SceneView["doors"]; return v; })());
   return (
     <Canvas shadows={q === "high"} dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: true }} camera={{ fov: 55, near: 0.05, far: 500, position: cam.pos }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1; gl.outputColorSpace = THREE.SRGBColorSpace; }}>

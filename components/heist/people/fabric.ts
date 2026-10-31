@@ -10,8 +10,9 @@
  *  - vestido: o corpete desce um pouco por dentro do tubo da saia (sem a fresta de pele na cintura) e o tubo perde as
  *    ondas que as pernas desenham nele (joelho, panturrilha): o raio é suavizado sem nunca entrar mais de 3 mm, então a
  *    perna não atravessa a saia;
- *  - camisa por baixo de paletó ou colete: aparece inteira na abertura da frente (sem pele entre a camisa e a lapela) e
- *    vai para dentro da calça (some logo acima da barra do paletó; a calça volta a aparecer por baixo dela);
+ *  - camisa por baixo de paletó ou colete: aparece inteira na abertura da frente (sem pele entre a camisa e a lapela),
+ *    4 mm mais para fora ali (o peito não a atravessa em pose nenhuma), e vai para dentro da calça (some logo acima da
+ *    barra do paletó; a calça volta a aparecer por baixo dela);
  *  - sapato social, scarpin e sapatilha: sola e cadarço na cor do couro e couro polido (sem foto, o calçado sai com sola
  *    clara e cadarço branco de tênis).
  */
@@ -25,6 +26,8 @@ import { specFor } from "@/lib/avatar3d/human/garment-fit";
 const TINTS = new WeakMap<THREE.Material, Map<string, THREE.Material>>();
 const WHITE = new THREE.Color("#ffffff");
 const lum = (c: THREE.Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+/** Degrau suave de a para b (aceita a > b: decresce). */
+const step = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 /** Brilho do tecido na própria cor; cetim com verniz leve. */
 export function fabricSheen(m: THREE.MeshPhysicalMaterial, color: THREE.Color) {
@@ -134,10 +137,16 @@ export function mendGarments(p: HumanParts, pieces: Look3dPiece[]) {
       const tuck = spec.kind === "shirt", cut = Math.min(...outer.map((o) => o.spec.hem)) + 0.035, neck = spec.neck - spec.vneck - 0.03;
       for (let i = 0; i < pos.count; i++) {
         if (arm[i]) continue;
-        const h = hOf(pos.getY(i)), dz = pos.getZ(i) - P.torsoZ;
-        if (tuck && h < cut) col.setW(i, 0);
-        else if (dz > 0 && Math.abs(pos.getX(i)) < 0.13 && h < neck) col.setW(i, 1);
+        const h = hOf(pos.getY(i)), x = pos.getX(i), dz = pos.getZ(i) - P.torsoZ;
+        if (tuck && h < cut) { col.setW(i, 0); continue; }
+        if (dz <= 0 || Math.abs(x) >= 0.13 || h >= neck) continue;
+        col.setW(i, 1);
+        // 4 mm para fora (radial ao tronco: igual nos vértices repetidos da costura de UV), sumindo perto da gola e da barra:
+        // o peito, que a camisa escondida não precisava cobrir, não aparece pela abertura em pose nenhuma
+        const k = 0.004 * step(neck, neck - 0.08, h) * step(0.13, 0.08, Math.abs(x)) * (tuck ? step(cut, cut + 0.05, h) : 1), r = Math.hypot(x, dz);
+        if (k > 0 && r > 1e-4) { pos.setX(i, x + (x / r) * k); pos.setZ(i, pos.getZ(i) + (dz / r) * k); }
       }
+      pos.needsUpdate = true;
       const hem = tuck ? p.human.root.getObjectByName(`barra-${piece.id}`) : null; if (hem) hem.visible = false;
     }
     if (tucked && Number.isFinite(spec.waist) && (spec.leg > 0 || spec.skirt > 0)) {

@@ -29,10 +29,10 @@ const CAMS: Record<string, { pos: V3; target: V3; room: RoomId; player: [number,
   vitrines: { pos: [-3.4, 1.7, -11.4], target: [-6.5, 1.3, -14.5], room: "galeria", player: [-3.6, -11.8] },
   bastidores: { pos: [21.2, 1.8, 3.3], target: [14.6, 1.3, -3.4], room: "bastidores", player: [20.4, 2.6] },
   labirinto: { pos: [-13.25, 1.65, 14.6], target: [-13.25, 1.45, 3], room: "servico", player: [-13.25, 13.8] },
-  seguranca: { pos: [-18.95, 1.7, 2.35], target: [-21.6, 1.15, 6.4], room: "seguranca", player: [-19.2, 3] },
+  seguranca: { pos: [-18.85, 1.75, 7.25], target: [-21.4, 1.0, 3.0], room: "seguranca", player: [-19.3, 6.6] },
   joias: { pos: [-13.0, 1.85, -7.4], target: [-17.25, 1.0, -14.25], room: "cofre", player: [-13.4, -8.2] },
   pedestal: { pos: [-15.2, 1.55, -12.3], target: [-17.25, 1.15, -14.25], room: "cofre", player: [-15.4, -12.6] },
-  terraco: { pos: [13.2, 1.8, -7.2], target: [19, 1.2, -18], room: "terraco", player: [13.6, -7.8] },
+  terraco: { pos: [13.3, 1.7, -9.6], target: [19.5, 1.5, -19.5], room: "terraco", player: [13.8, -10.2] },
   doca: { pos: [-9.3, 2.1, 23.4], target: [-18, 1.4, 17.4], room: "doca", player: [-10, 22.8] },
 };
 
@@ -46,7 +46,8 @@ function Rig({ cam, view, hud }: { cam: (typeof CAMS)[string]; view: React.Mutab
   }, [camera, cam, view]);
   useFrame((_, dt) => {
     const v = view.current; v.time += dt;
-    const w = window as unknown as { __heistSalasFrame?: number; __heistSalasReady?: boolean };
+    const w = window as unknown as { __heistSalasFrame?: number; __heistSalasReady?: boolean; __heistSalasCam?: string };
+    w.__heistSalasCam = Object.keys(CAMS).find((k) => CAMS[k] === cam);
     w.__heistSalasFrame = (w.__heistSalasFrame ?? 0) + 1; if (w.__heistSalasFrame === 8) w.__heistSalasReady = true;
     acc.current.t += dt; acc.current.n++;
     if (hud.current && acc.current.n >= 30) {

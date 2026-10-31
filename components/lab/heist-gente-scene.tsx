@@ -2,8 +2,8 @@
 /*
  * Laboratório das pessoas do MET Gala Heist v2 (só desenvolvimento): uma sala escura de gala (piso de madeira polida,
  * parede azul-petróleo, luz quente de arandelas) e um SceneView de exemplo animado aqui mesmo, sem simulação, para ver
- * a multidão, os gestos, a troca de roupa, a queda, o tiro e a jogadora de vestido de perto. `?cam=` escolhe a cena;
- * `?q=low` testa a qualidade baixa.
+ * a multidão, os gestos, a troca de roupa, a queda, o tiro, a jogadora de vestido de perto e uma pessoa de cada aparência
+ * (`pessoa`, com `look` e `seed`). `?cam=` escolhe a cena; `?q=low` testa a qualidade baixa.
  */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
@@ -16,7 +16,7 @@ import { PLAYER_ARRIVAL, WAITER_UNIFORM } from "@/lib/heist/outfits";
 import { MOTIONS, MOTION_DURATION } from "@/lib/avatar3d/human/locomotion";
 import type { Anim, Hold, LookId } from "@/lib/heist/types";
 
-export type Preset = "multidao" | "close" | "anims" | "troca" | "caida" | "tiro" | "agachada" | "jogadora";
+export type Preset = "multidao" | "close" | "anims" | "troca" | "caida" | "tiro" | "agachada" | "jogadora" | "pessoa";
 const CAMS: Record<Preset, { pos: [number, number, number]; target: [number, number, number]; fov: number }> = {
   multidao: { pos: [0.55, 1.78, 6.9], target: [0, 1.25, 0], fov: 50 },
   close: { pos: [0.1, 1.62, 2.15], target: [0, 1.5, 0], fov: 38 },
@@ -26,6 +26,7 @@ const CAMS: Record<Preset, { pos: [number, number, number]; target: [number, num
   tiro: { pos: [3.6, 1.7, 2.6], target: [0, 1.1, -1.4], fov: 46 },
   agachada: { pos: [0.45, 1.35, 3.4], target: [0, 1.0, -3], fov: 52 },
   jogadora: { pos: [0.75, 1.45, 2.5], target: [0, 1.0, 0], fov: 42 },
+  pessoa: { pos: [0.65, 1.25, 3.2], target: [0, 0.92, 0], fov: 42 },
 };
 
 interface Spec {
@@ -49,7 +50,7 @@ function ring(prefix: string, cx: number, cz: number, k: number, seed0: number, 
   });
 }
 
-function scenario(p: Preset): { actors: Spec[]; player: PlayerSpec } {
+function scenario(p: Preset, who: { look: LookId; seed: number; anim: Anim }): { actors: Spec[]; player: PlayerSpec } {
   switch (p) {
     case "multidao": return {
       player: { x: 0.25, z: 4.6, yaw: Math.PI, anim: "idle" },
@@ -89,6 +90,7 @@ function scenario(p: Preset): { actors: Spec[]; player: PlayerSpec } {
     }
     case "troca": return { player: { x: 0, z: 0, yaw: 0.25, anim: "change", loop: 3.6 }, actors: [] };
     case "jogadora": return { player: { x: 0, z: 0, yaw: 0.3, anim: "idle" }, actors: [] };
+    case "pessoa": return { player: { x: 0, z: 9, yaw: 0, anim: "idle" }, actors: [{ id: "x1", look: who.look, seed: who.seed, x: 0, z: 0, yaw: 0.3, anim: who.anim }] };
     case "caida": return {
       player: { x: 0, z: 0.2, yaw: 0.4, anim: "downed", loop: 5 },
       actors: [
@@ -108,8 +110,8 @@ function scenario(p: Preset): { actors: Spec[]; player: PlayerSpec } {
 }
 
 /** Anima o SceneView de exemplo: posições, gestos com começo e fim em laço, tiro levado, olhar. */
-function Animator({ view, preset, onSwap }: { view: React.MutableRefObject<SceneView>; preset: Preset; onSwap: (uniform: boolean) => void }) {
-  const sc = useMemo(() => scenario(preset), [preset]);
+function Animator({ view, preset, at, who, onSwap }: { view: React.MutableRefObject<SceneView>; preset: Preset; at?: number; who: { look: LookId; seed: number; anim: Anim }; onSwap: (uniform: boolean) => void }) {
+  const sc = useMemo(() => scenario(preset, who), [preset, who]);
   const { camera } = useThree();
   const t0 = useRef(-1), swapped = useRef(false), lastShot = useRef(-9);
   useEffect(() => {
@@ -118,7 +120,7 @@ function Animator({ view, preset, onSwap }: { view: React.MutableRefObject<Scene
   }, [sc, view]);
   useFrame(({ clock }) => {
     if (t0.current < 0) t0.current = clock.elapsedTime;
-    const t = clock.elapsedTime - t0.current, v = view.current;
+    const t = at ?? clock.elapsedTime - t0.current, v = view.current;
     v.time = t;
     const pl = v.player, ps = sc.player;
     const loopT = (loop?: number) => (loop ? t % loop : t);
@@ -174,7 +176,9 @@ function Room() {
   </group>;
 }
 
-export default function HeistGenteScene({ preset, quality }: { preset: Preset; quality: "high" | "low" }) {
+/** `at`: tempo parado da cena (s), para capturar um instante do gesto; `look`/`seed`/`anim`: quem aparece em `pessoa`. */
+export default function HeistGenteScene({ preset, quality, at, look = "guestF", seed = 1, anim = "idle" }: { preset: Preset; quality: "high" | "low"; at?: number; look?: LookId; seed?: number; anim?: Anim }) {
+  const who = useMemo(() => ({ look, seed, anim }), [look, seed, anim]);
   const view = useRef<SceneView>(emptyView());
   const [uniform, setUniform] = useState(false);
   const pieces = uniform ? WAITER_UNIFORM : PLAYER_ARRIVAL;
@@ -182,7 +186,7 @@ export default function HeistGenteScene({ preset, quality }: { preset: Preset; q
   return <Canvas shadows dpr={[1, 1.5]} camera={{ position: cam.pos, fov: cam.fov, near: 0.05, far: 200 }}
     onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1; gl.outputColorSpace = THREE.SRGBColorSpace; }}>
     <Room />
-    <Animator view={view} preset={preset} onSwap={setUniform} />
+    <Animator view={view} preset={preset} at={at} who={who} onSwap={setUniform} />
     <HeistPeople view={view} playerPieces={pieces} quality={quality} onProgress={(p) => { (window as unknown as { __heistGenteProgress?: number }).__heistGenteProgress = p; }} />
     <OrbitControls target={cam.target} makeDefault />
   </Canvas>;

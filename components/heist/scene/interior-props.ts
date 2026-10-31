@@ -542,7 +542,19 @@ function pedestal(c: PropsCtx, room: InteriorRoom, f: Foot) {
   const diamond = new THREE.Mesh(diamondGeometry(), new THREE.MeshPhysicalMaterial({ color: "#f4fbff", metalness: 0.05, roughness: 0.0, envMapIntensity: 3.2, clearcoat: 1, clearcoatRoughness: 0, iridescence: 0.6, iridescenceIOR: 1.6, flatShading: true }));
   diamond.position.copy(worldOf(f, 0, 1.2, 0)); diamond.scale.setScalar(0.07); diamond.userData.room = room; c.group.add(diamond);
   c.animated.push({ kind: "diamond", mesh: diamond, room });
+  const glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexture(), color: new THREE.Color("#ffffff").multiplyScalar(2.2), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glint.position.copy(worldOf(f, 0.03, 1.27, 0.02)); glint.scale.setScalar(0.2); glint.renderOrder = 6; glint.userData.room = room; c.group.add(glint);
+  c.animated.push({ kind: "glint", mesh: glint, room });
   anchor(c, room, worldOf(f, 0, 3.8, 0), "#f2f6ff", 14, 6);
+}
+function glintTexture(): THREE.Texture {
+  return drawnTexture("diamondGlint", 128, 128, (g, w, h) => {
+    const c = w / 2, grd = g.createRadialGradient(c, c, 0, c, c, c * 0.35); grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h);
+    for (const [a, l] of [[0, 1], [Math.PI / 2, 1], [Math.PI / 4, 0.45], [-Math.PI / 4, 0.45]] as [number, number][]) {
+      g.save(); g.translate(c, c); g.rotate(a); const lg = g.createLinearGradient(-c * l, 0, c * l, 0); lg.addColorStop(0, "rgba(255,255,255,0)"); lg.addColorStop(0.5, "rgba(255,255,255,0.95)"); lg.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = lg; g.beginPath(); g.moveTo(-c * l, 0); g.lineTo(0, -2.2); g.lineTo(c * l, 0); g.lineTo(0, 2.2); g.closePath(); g.fill(); g.restore();
+    }
+  }, false);
 }
 /** Brilhante redondo: coroa, mesa e pavilhão facetados (57 facetas aproximadas). */
 export function diamondGeometry(): THREE.BufferGeometry {

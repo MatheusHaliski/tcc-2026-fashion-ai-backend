@@ -190,7 +190,7 @@ function galeria(c: RoomsCtx) {
   }
   // teto em caixotões com luminárias de vidro em taça (como a referência) e trilhos de foco
   for (let ix = 0, x = -10; x <= 10; x += 4, ix++) for (let iz = 0, z = -20; z <= -8; z += 4, iz++) {
-    c.batch.add(room, P.plasterPlain, BOX0(), mat(x, H - 0.28, z, 0, 3.6, 0.04, 3.6));
+    c.batch.add(room, solid("galCoffer", "#3b332c", { rough: 0.85, env: 0.6 }), BOX0(), mat(x, H - 0.28, z, 0, 3.6, 0.04, 3.6));
     c.batch.add(room, P.gold, BOX0(), mat(x, H - 0.3, z, 0, 3.64, 0.02, 0.06)); c.batch.add(room, P.gold, BOX0(), mat(x, H - 0.3, z, 0, 0.06, 0.02, 3.64));
     if ((ix + iz) % 2 === 0) {
       c.batch.add(room, P.brass, CYL(6), mat(x, H - 0.6, z, 0, 0.008, 0.6, 0.008));
@@ -382,8 +382,8 @@ function cofre(c: RoomsCtx) {
     c.batch.add(room, P.black, CYL(14), mat(x, H - 0.2, z, 0, 0.09, 0.3, 0.09));
     lightCone(c, room, new THREE.Vector3(x, H - 0.35, z), new THREE.Vector3(-17.25, 1.15, -14.25), 0.32, "#eef4ff", 0.1);
   }
-  A(c, room, -17.25, H - 0.6, -14.25, "#f0f5ff", 20, 8);
-  for (const [x, z] of [[-20.5, -9], [-14, -9], [-20.5, -20], [-14, -20]]) A(c, room, x, H - 0.4, z, "#dbe6ff", 7, 6.5);
+  A(c, room, -17.25, H - 0.6, -14.25, "#f0f5ff", 30, 9);
+  for (const [x, z] of [[-20.5, -9], [-14, -9], [-20.5, -20], [-14, -20]]) A(c, room, x, H - 0.4, z, "#dbe6ff", 12, 7);
   // postes emissores dos lasers (os feixes são da simulação/coordenador)
   const seen = new Set<string>();
   for (const L of LASERS) for (const p of [L.a, L.b]) {
@@ -414,10 +414,20 @@ function terraco(c: RoomsCtx) {
   const strands: [number, number][] = [[0, 2], [1, 3], [0, 1], [1, 2], [2, 3], [3, 0]];
   for (const [a, b] of strands) {
     const pa = poles[a].clone().setY(3.55), pb = poles[b].clone().setY(3.55), n = Math.round(pa.distanceTo(pb) / 0.7);
-    for (let i = 1; i < n; i++) { const t = i / n, p = pa.clone().lerp(pb, t); p.y -= Math.sin(Math.PI * t) * 0.7; c.inst.add(room, "stringBulb", SPH(8), P.bulbWarm, mat(p.x, p.y, p.z, 0, 0.045)); if (i % 4 === 2) A(c, room, p.x, p.y - 0.1, p.z, "#ffcf8e", 2.4, 4); }
+    for (let i = 1; i < n; i++) { const t = i / n, p = pa.clone().lerp(pb, t); p.y -= Math.sin(Math.PI * t) * 0.7; c.inst.add(room, "stringBulb", SPH(8), P.bulbWarm, mat(p.x, p.y, p.z, 0, 0.045)); c.flames.push(p.clone()); if (i % 4 === 2) A(c, room, p.x, p.y - 0.1, p.z, "#ffcf8e", 2.4, 4); }
   }
   // lanternas no chão junto ao sofá
-  for (const [x, z] of [[14.6, -12.8], [18.4, -12.8]]) { c.batch.add(room, P.black, BOX0(), mat(x, 0, z, 0, 0.22, 0.45, 0.22)); c.inst.add(room, "lanternFlame", SPH(8), P.flame, mat(x, 0.22, z, 0, 0.04)); A(c, room, x, 0.4, z, "#ffb15a", 1.5, 2.5, { flicker: 1 }); }
+  for (const [x, z] of [[14.6, -12.8], [18.4, -12.8]]) {
+    c.batch.add(room, P.black, BOX0(), mat(x, 0, z, 0, 0.24, 0.04, 0.24));
+    for (const [dx, dz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) c.batch.add(room, P.black, BOX0(), mat(x + dx * 0.105, 0.04, z + dz * 0.105, 0, 0.02, 0.4, 0.02));
+    c.batch.add(room, P.black, geo("lanternCap", () => new THREE.ConeGeometry(0.17, 0.12, 4).rotateY(Math.PI / 4).translate(0, 0.06, 0)), mat(x, 0.44, z));
+    c.batch.add(room, P.black, geo("lanternRing", () => new THREE.TorusGeometry(0.04, 0.008, 6, 12)), mat(x, 0.6, z));
+    c.batch.add(room, P.glass, BOX0(), mat(x, 0.04, z, 0, 0.2, 0.4, 0.2));
+    c.inst.add(room, "candle", CYL0(8), P.candle, mat(x, 0.04, z, 0, 0.035, 0.14, 0.035));
+    c.inst.add(room, "lanternFlame", geo("flameGeo", () => new THREE.SphereGeometry(1, 6, 5).scale(0.5, 1.4, 0.5)), P.flame, mat(x, 0.215, z, 0, 0.022));
+    c.flames.push(new THREE.Vector3(x, 0.215, z));
+    A(c, room, x, 0.4, z, "#ffb15a", 1.5, 2.5, { flicker: 1 });
+  }
 }
 
 /** Sebe podada: caixa arredondada e levemente irregular (folhagem não tem aresta viva). */

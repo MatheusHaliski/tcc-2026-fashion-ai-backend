@@ -217,7 +217,7 @@ export function buildHall(q: Quality, copy: InteriorCopy, batch: Batch, inst: In
     batch.add(room, P.plasterPlain, geo(`domeAnnulus${d.r}`, () => new THREE.RingGeometry(d.r - 0.42, d.r + 0.55, 64, 1).rotateX(Math.PI / 2)), mat(d.x, HALL_H - 0.01, d.z));
     batch.add(room, P.gold, geo(`domeGold${d.r}`, () => new THREE.TorusGeometry(d.r - 0.28, 0.05, 6, 64).rotateX(Math.PI / 2)), mat(d.x, HALL_H - 0.2, d.z));
     batch.add(room, glow("cove", "#ffd7a0", 1.6), geo(`cove${d.r}`, () => new THREE.TorusGeometry(d.r + 0.05, 0.035, 6, 64).rotateX(Math.PI / 2)), mat(d.x, HALL_H - 0.33, d.z));
-    batch.add(room, glow("oculus", "#fff0d0", 2.2), geo(`oculus${d.r}`, () => new THREE.CircleGeometry(d.r * 0.2, 32).rotateX(Math.PI / 2)), mat(d.x, HALL_H + d.rise - 0.04, d.z));
+    batch.add(room, glow("oculusNight", "#6f8fd0", 1.15), geo(`oculus${d.r}`, () => new THREE.CircleGeometry(d.r * 0.2, 32).rotateX(Math.PI / 2)), mat(d.x, HALL_H + d.rise - 0.04, d.z));
   }
   /* galeria do segundo nível: laje, entablamento, balaustrada e luzes embutidas no forro */
   const bands: [number, number, number, number, WallSide][] = [[-12, -6, 12, -6 + BALC_D, "N"], [-12, 14 - BALC_D, 12, 14, "S"], [-12, -6 + BALC_D, -12 + BALC_D, 14 - BALC_D, "W"], [12 - BALC_D, -6 + BALC_D, 12, 14 - BALC_D, "E"]];
