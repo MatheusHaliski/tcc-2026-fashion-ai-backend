@@ -80,8 +80,6 @@ public class InventoryScoreService {
     static final Duration CACHE_TTL = Duration.ofHours(1);
     static final Map<String, Double> WEIGHTS = new LinkedHashMap<>();
     static final Map<String, String> NAMES = new LinkedHashMap<>();
-    /** Grupos de ocasião de referência da cobertura (§3.2). */
-    static final Map<String, List<String>> OCCASION_GROUPS = new LinkedHashMap<>();
     static final Set<String> COMBO_CATEGORIES = Set.of("upper_piece", "lower_piece", "shoes_piece", "full_body_piece");
 
     public record Band(int min, int max, String label) {
@@ -106,11 +104,6 @@ public class InventoryScoreService {
         NAMES.put("D", "Diversidade");
         NAMES.put("O", Msg.k("common.organizacao"));
         NAMES.put("I", "Identidade");
-        OCCASION_GROUPS.put("faculdade/trabalho", List.of("university", "school", "work", "business"));
-        OCCASION_GROUPS.put("casual", List.of("casual", "home", "travel", "outdoor", "vacation"));
-        OCCASION_GROUPS.put("social", List.of("social", "formal", "wedding", "ceremony", "date"));
-        OCCASION_GROUPS.put("esporte", List.of("sport", "gym"));
-        OCCASION_GROUPS.put("festa", List.of("party", "night_out", "festival"));
     }
 
     public static String band(int score) {
@@ -243,119 +236,9 @@ public class InventoryScoreService {
         return Math.max(0, Math.min(1, h / Math.log(m)));
     }
 
-    static Set<String> occ(WardrobeItem w) {
-        return new HashSet<>(Json.csv(w.getOccasionTags()));
-    }
-
-    static boolean shareOccasion(WardrobeItem a, WardrobeItem b, WardrobeItem c) {
-        Set<String> s = occ(a);
-        s.retainAll(occ(b));
-        if (c != null) {
-            s.retainAll(occ(c));
-        }
-        return !s.isEmpty();
-    }
-
-    static Set<String> shared(WardrobeItem a, WardrobeItem b, WardrobeItem c) {
-        Set<String> s = occ(a);
-        s.retainAll(occ(b));
-        if (c != null) {
-            s.retainAll(occ(c));
-        }
-        return s;
-    }
-
-    /** Combinações válidas (§3.4) sobre A: (upper+lower+shoes) ou (dress+shoes) com ≥ 1 ocasião em comum. */
-    record Combos(Map<UUID, Integer> perPiece, long total, Map<String, Boolean> coverage, List<List<UUID>> sample, boolean enumerated) {
-    }
-
-    static Combos combos(List<WardrobeItem> a, int sampleLimit, Set<String> discoveredKeys) {
-        List<WardrobeItem> uppers = a.stream().filter(w -> "upper_piece".equals(w.getCategory())).toList();
-        List<WardrobeItem> lowers = a.stream().filter(w -> "lower_piece".equals(w.getCategory())).toList();
-        List<WardrobeItem> shoes = a.stream().filter(w -> "shoes_piece".equals(w.getCategory())).toList();
-        List<WardrobeItem> dresses = a.stream().filter(w -> "full_body_piece".equals(w.getCategory())).toList();
-        Map<UUID, Integer> per = new HashMap<>();
-        a.forEach(w -> per.put(w.getId(), 0));
-        Map<String, Boolean> coverage = new LinkedHashMap<>();
-        OCCASION_GROUPS.keySet().forEach(g -> coverage.put(g, false));
-        long total = 0;
-        List<List<UUID>> sample = new ArrayList<>();
-        long work = (long) uppers.size() * lowers.size() * shoes.size() + (long) dresses.size() * shoes.size();
-        boolean enumerate = work <= 400_000;
-        if (enumerate) {
-            for (WardrobeItem u : uppers) {
-                for (WardrobeItem l : lowers) {
-                    if (!shareOccasion(u, l, null)) {
-                        continue;
-                    }
-                    for (WardrobeItem s : shoes) {
-                        Set<String> sh = shared(u, l, s);
-                        if (sh.isEmpty()) {
-                            continue;
-                        }
-                        total++;
-                        per.merge(u.getId(), 1, Integer::sum);
-                        per.merge(l.getId(), 1, Integer::sum);
-                        per.merge(s.getId(), 1, Integer::sum);
-                        markCoverage(coverage, sh);
-                        if (sample.size() < sampleLimit && discoveredKeys != null
-                                && !discoveredKeys.contains(SchemeService.combinationKey(List.of(u.getId(), l.getId(), s.getId())))) {
-                            sample.add(List.of(u.getId(), l.getId(), s.getId()));
-                        }
-                    }
-                }
-            }
-            for (WardrobeItem d : dresses) {
-                for (WardrobeItem s : shoes) {
-                    Set<String> sh = shared(d, s, null);
-                    if (sh.isEmpty()) {
-                        continue;
-                    }
-                    total++;
-                    per.merge(d.getId(), 1, Integer::sum);
-                    per.merge(s.getId(), 1, Integer::sum);
-                    markCoverage(coverage, sh);
-                    if (sample.size() < sampleLimit && discoveredKeys != null
-                            && !discoveredKeys.contains(SchemeService.combinationKey(List.of(d.getId(), s.getId())))) {
-                        sample.add(List.of(d.getId(), s.getId()));
-                    }
-                }
-            }
-        } else {
-            // §7 — contagem por grupos de ocasião (limite inferior por peça: maior grupo em que ela participa)
-            for (String o : Taxonomy.OCCASIONS) {
-                List<WardrobeItem> uo = uppers.stream().filter(w -> occ(w).contains(o)).toList();
-                List<WardrobeItem> lo = lowers.stream().filter(w -> occ(w).contains(o)).toList();
-                List<WardrobeItem> so = shoes.stream().filter(w -> occ(w).contains(o)).toList();
-                List<WardrobeItem> dO = dresses.stream().filter(w -> occ(w).contains(o)).toList();
-                long t = (long) uo.size() * lo.size() * so.size() + (long) dO.size() * so.size();
-                if (t > 0) {
-                    markCoverage(coverage, Set.of(o));
-                }
-                total = Math.max(total, t);
-                for (WardrobeItem u : uo) {
-                    per.merge(u.getId(), lo.size() * so.size(), Math::max);
-                }
-                for (WardrobeItem l : lo) {
-                    per.merge(l.getId(), uo.size() * so.size(), Math::max);
-                }
-                for (WardrobeItem s : so) {
-                    per.merge(s.getId(), uo.size() * lo.size() + dO.size(), Math::max);
-                }
-                for (WardrobeItem d : dO) {
-                    per.merge(d.getId(), so.size(), Math::max);
-                }
-            }
-        }
-        return new Combos(per, total, coverage, sample, enumerate);
-    }
-
-    private static void markCoverage(Map<String, Boolean> coverage, Set<String> sharedOccasions) {
-        OCCASION_GROUPS.forEach((g, codes) -> {
-            if (!coverage.get(g) && codes.stream().anyMatch(sharedOccasions::contains)) {
-                coverage.put(g, true);
-            }
-        });
+    /** Combinações válidas (§3.4/§7) — regra pura em {@link InventoryComboCounter}; porta mantida para o Copilot. */
+    static InventoryComboCounter.Combos combos(List<WardrobeItem> a, int sampleLimit, Set<String> discoveredKeys) {
+        return InventoryComboCounter.count(a, sampleLimit, discoveredKeys);
     }
 
     /** Uso por peça e dia (diário), respeitando o antifraude: esquema com ≥ 2 peças que sobreviveu 24 h. */
@@ -519,8 +402,8 @@ public class InventoryScoreService {
         double hSty = entropy(a.stream().flatMap(w -> Json.csv(w.getStyleTags()).stream()).toList(), Taxonomy.STYLES.size());
         Set<String> discoveredKeys = allSchemes.stream().map(s -> comboKeyOf(schemePieces.getOrDefault(s.getId(), List.of()), byId))
                 .filter(Objects::nonNull).collect(Collectors.toSet());
-        Combos combos = combos(a, 12, discoveredKeys);
-        double cob = combos.coverage().values().stream().mapToDouble(b -> b ? 1 : 0).sum() / OCCASION_GROUPS.size();
+        InventoryComboCounter.Combos combos = combos(a, 12, discoveredKeys);
+        double cob = combos.coverage().values().stream().mapToDouble(b -> b ? 1 : 0).sum() / InventoryComboCounter.OCCASION_GROUPS.size();
         int dVal = (int) Math.round(100 * (0.25 * hCat + 0.25 * hCol + 0.25 * hSty + 0.25 * cob));
         dims.put("D", dVal);
         String weakestAttr = hCat <= hCol && hCat <= hSty ? "categorias" : hCol <= hSty ? Msg.t("inventoryScore.familias_de_cor") : "estilos";
@@ -556,7 +439,7 @@ public class InventoryScoreService {
                 Msg.t("inventoryScore.das_aparicoes_nos_looks_dos", (pct(conc))))),
                 comboEligible.stream().sorted(Comparator.comparingInt(w -> combos.perPiece().getOrDefault(w.getId(), 0))).limit(5)
                         .map(w -> Map.<String, Object>of("pieceId", w.getId(), "name", String.valueOf(w.getName()),
-                                "value", Msg.t("inventoryScore.combinacoes", (combos.perPiece().getOrDefault(w.getId(), 0))), "hint", occ(w).isEmpty()
+                                "value", Msg.t("inventoryScore.combinacoes", (combos.perPiece().getOrDefault(w.getId(), 0))), "hint", InventoryComboCounter.occ(w).isEmpty()
                                         ? Msg.t("inventoryScore.sem_ocasiao_cadastrada_nao_forma") : Msg.t("inventoryScore.precisa_de_pecas_com_ocasiao"))).toList()));
 
         // ---- O
