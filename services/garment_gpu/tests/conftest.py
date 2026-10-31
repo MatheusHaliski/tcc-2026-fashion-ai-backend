@@ -43,4 +43,5 @@ def runtime(settings, redis, store, pipeline):
     seg = FakeSegmentEngine()
     rec = ReconstructionEngine(settings, pipeline=pipeline)
     stages.configure(settings, store, JobStore(redis, settings.job_ttl_seconds), redis, seg, rec)
+    redis.set("fai:worker:test-reconstruct", '{"stage": "reconstruct"}', ex=60)  # heartbeat of a generative worker
     return {"segment": seg, "reconstruct": rec, "pipeline": pipeline}

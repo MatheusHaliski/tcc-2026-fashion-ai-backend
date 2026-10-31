@@ -143,3 +143,11 @@ def test_api_recusa_subir_sem_chaves(redis, store):
 
     with pytest.raises(RuntimeError):
         create_app(config.load({}), redis=redis, store=store)
+
+
+def test_reconstrucao_recusada_na_hora_sem_worker_generativo(client, redis):
+    redis.delete("fai:worker:test-reconstruct")
+    res = submit(client, mode="reconstruct")
+    assert res.status_code == 503 and res.json()["detail"]["code"] == "RECONSTRUCT_UNAVAILABLE"
+    assert res.headers["retry-after"] == "300"
+    assert submit(client).status_code == 202  # segmentação continua normal
