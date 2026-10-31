@@ -745,10 +745,6 @@
    "max": 330,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-infrastructure/ai-providers/src/main/java/br/com/fashionai/infrastructure/ai/ocr/OnnxTextReader.java": {
-   "max": 357,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-infrastructure/persistence-mysql/src/main/java/br/com/fashionai/infrastructure/mysql/demo/MysqlDemoDataAdminAdapter.java": {
    "max": 437,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
