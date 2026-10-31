@@ -25,5 +25,5 @@ FREE_GB=$(df -BG --output=avail /var/lib/docker 2>/dev/null | tail -1 | tr -dc '
 if [ "${FREE_GB:-0}" -ge 80 ]; then ok "${FREE_GB} GB livres em /var/lib/docker"
 else bad "${FREE_GB:-?} GB livres: reserve ≥ 20 GB (segmentação) e ≥ 80 GB com o Qwen-Image-Edit"; fi
 [ -f .env ] && ok ".env presente" || bad ".env ausente: cp .env.example .env e preencha os segredos"
-if [ -f .env ] && grep -qE '^[A-Z_]+=CHANGE_ME' .env; then bad ".env ainda tem valores CHANGE_ME"; fi
+if [ -f .env ] && grep -qE '^[A-Z0-9_]+=CHANGE_ME' .env; then bad ".env ainda tem valores CHANGE_ME"; fi
 exit "$FAILED"

@@ -3,6 +3,7 @@
 #   docker compose --profile reconstruct up --build -d             # Fase 2: + worker generativo (Qwen-Image-Edit)
 #   docker compose --profile monitoring up -d                      # Prometheus + Grafana + NVIDIA DCGM exporter
 #   docker compose --profile edge up -d                            # Caddy com HTTPS automático na frente da API
+#   docker compose --profile tunnel up -d                          # Cloudflare Tunnel: HTTPS sem IP público na VM
 # Workers extras em OUTRAS máquinas GPU: compose.worker.yaml (Fase 3).
 name: fai-garment-gpu
 
@@ -133,6 +134,18 @@ services:
     ports: ["80:80", "443:443"]
     volumes: ["./deploy/Caddyfile:/etc/caddy/Caddyfile:ro", "caddy-data:/data", "caddy-config:/config"]
     depends_on: [api]
+
+  tunnel:
+    <<: *common
+    profiles: [tunnel]
+    # Só conexão de SAÍDA até a Cloudflare: a VM continua sem IP público e sem porta aberta. No painel Zero Trust,
+    # o hostname público do túnel aponta para http://api:8000. TUNNEL_TOKEN vem do .env (nunca versionado).
+    image: cloudflare/cloudflared:2026.9.3
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?defina CLOUDFLARE_TUNNEL_TOKEN no .env}
+    depends_on:
+      api: { condition: service_healthy }
 
 volumes:
   hf-models:
