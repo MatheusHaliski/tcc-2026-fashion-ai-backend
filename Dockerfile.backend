@@ -12,6 +12,7 @@ COPY fai-application fai-application
 COPY fai-infrastructure fai-infrastructure
 COPY fai-web fai-web
 COPY fai-bootstrap fai-bootstrap
+COPY fai-coverage fai-coverage
 # sem --mount=type=cache: o Railway exige um id próprio no cache mount e recusa o Dockerfile sem ele
 # a saída do Maven é impressa (sem -q) para que falhas de build mostrem a causa real; heap limitado para o build não ser morto por memória
 ENV MAVEN_OPTS="-Xmx1536m"
