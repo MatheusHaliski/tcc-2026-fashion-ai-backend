@@ -704,26 +704,6 @@
    "max": 437,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-web/src/main/java/br/com/fashionai/web/controller/FlairModesController.java": {
-   "max": 244,
-   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
-  },
-  "fai-web/src/main/java/br/com/fashionai/web/controller/HypeController.java": {
-   "max": 202,
-   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
-  },
-  "fai-web/src/main/java/br/com/fashionai/web/controller/LookbookController.java": {
-   "max": 214,
-   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
-  },
-  "fai-web/src/main/java/br/com/fashionai/web/controller/SealController.java": {
-   "max": 239,
-   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
-  },
-  "fai-web/src/main/java/br/com/fashionai/web/controller/WardrobeController.java": {
-   "max": 246,
-   "reason": "acima do limite da categoria java-controller (200) definido em 2026-10-31; só pode diminuir"
-  },
   "fai-web/src/test/java/br/com/fashionai/web/controller/ServiceFakes.java": {
    "max": 4643,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"

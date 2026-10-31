@@ -218,7 +218,7 @@ PRINCIPAL = {
     'RF35': 'ShowcaseController.list', 'RF36': 'ShowcaseController.schemeMannequinPhoto', 'RF37': 'FlairController.duel',
     'RF38': 'CouponController.redeem', 'RF39': 'RoomCreatorController.create', 'RF40': 'Avatar3dController.save',
     'RF42': 'LookbookController.markDailyLook', 'RF43': 'AutopilotController.planWeek', 'RF44': 'HighlightsController.buy',
-    'RF45': 'WardrobeController.studioPiece', 'RF46': 'BackgroundController.art', 'RF47': 'CatalogController.search',
+    'RF45': 'WardrobeStudioController.studioPiece', 'RF46': 'BackgroundController.art', 'RF47': 'CatalogController.search',
     'RF48': 'HighlightsController.account', 'RF50': 'AdminController.decide', 'RF51': 'BackgroundController.saveScheme',
     'RF53': 'HypeController.look', 'RF54': 'LensController.create', 'RF25': 'SealController.createSeal',
     'RF25-criador-de-selos': 'SealController.draft', 'RF50/criador-de-selos': 'SealController.draft',

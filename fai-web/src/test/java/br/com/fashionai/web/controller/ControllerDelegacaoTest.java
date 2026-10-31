@@ -56,7 +56,9 @@ class ControllerDelegacaoTest {
             AdminCatalogController.class, AuraPermissionsController.class, AuraHypeDropController.class,
             BrandLogoController.class, ExchangeRateController.class, CommunityTrendController.class,
             PieceReferenceController.class, SocialController.class, MetamorphoseInventoryController.class,
-            AtelierController.class, br.com.fashionai.web.controller.fit.FitController.class);
+            AtelierController.class, br.com.fashionai.web.controller.fit.FitController.class,
+            FlairCardModesController.class, DailyLookController.class, SealPromotionController.class,
+            MultiPieceController.class, WardrobeStudioController.class);
 
     static final CurrentUser ADMIN = new CurrentUser(UUID.fromString("00000000-0000-0000-0000-00000000000a"), "admin",
             "ADMIN", ProfileType.ADMIN, true, AccountStatus.ACTIVE, "127.0.0.1", "junit");
