@@ -28,10 +28,6 @@
    "max": 665,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "app/bff/auth/[action]/route.ts": {
-   "max": 165,
-   "reason": "acima do limite da categoria route-handler (150) definido em 2026-10-31; só pode diminuir"
-  },
   "components/app-shell.tsx": {
    "max": 352,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -59,10 +55,6 @@
   "components/catalog/fitting-room.test.tsx": {
    "max": 412,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/catalog/use-catalog-preview.ts": {
-   "max": 184,
-   "reason": "acima do limite da categoria hook (150) definido em 2026-10-31; só pode diminuir"
   },
   "components/dna-card.tsx": {
    "max": 304,
@@ -803,10 +795,6 @@
   "lib/heist/types.ts": {
    "max": 276,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/hooks/use-fitting-session.ts": {
-   "max": 164,
-   "reason": "acima do limite da categoria hook (150) definido em 2026-10-31; só pode diminuir"
   },
   "lib/room3d/interaction.ts": {
    "max": 350,
