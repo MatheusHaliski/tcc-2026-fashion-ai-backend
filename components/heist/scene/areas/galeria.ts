@@ -96,14 +96,17 @@ function galeria(c: RoomsCtx) {
  * dinâmicos não alcançam na qualidade baixa.
  */
 function washes(c: RoomsCtx) {
-  const pool = lit("galeria-lavagem", "#ffd7a6", 0.34, { map: poolTex(), additive: true }), P = PLANE();
+  // a mancha toma a cor do tecido da seção (luz quente refletida no ameixa, no azul-noite e no verde-garrafa)
+  const pools = { joias: lit("galeria-lavagemJ", "#ffb3cf", 0.36, { map: poolTex(), additive: true }), aurora: lit("galeria-lavagemA", "#bfcaff", 0.34, { map: poolTex(), additive: true }), atelie: lit("galeria-lavagemV", "#c2f0cf", 0.32, { map: poolTex(), additive: true }) };
+  const section = (k: "N" | "S" | "W" | "E", x: number) => k === "W" ? pools.joias : k === "E" ? pools.atelie : k === "N" ? (x < 8 ? pools.joias : x < 16 ? pools.aurora : pools.atelie) : x < 12 ? pools.atelie : pools.joias;
+  const P = PLANE();
   const list: ["N" | "S" | "W" | "E", number, number, number, number][] = [
     ["N", 2.125, 2.7, 3.4, 3.6], ["N", 18, 2.7, 3.4, 3.6], ["N", 21.875, 2.7, 3.2, 3.6], ["N", 6, 2.0, 3.0, 2.8], ["N", 8.5, 2.2, 1.8, 3.4], ["N", 15.5, 2.2, 1.8, 3.4],
     ["S", 6, 2.7, 3.4, 3.6], ["S", 18, 2.7, 3.4, 3.6], ["S", 3, 2.0, 2.4, 3.2], ["S", 21, 2.0, 2.4, 3.2],
     ["W", 5.75, 1.9, 1.5, 2.2], ["W", 1.25, 1.9, 1.5, 2.2], ["W", 3.5, 2.9, 2.6, 2.8], ["W", 12.5, 2.9, 2.6, 2.8], ["W", 8.5, 3.3, 2.6, 1.6],
     ["E", 9.75, 1.9, 1.5, 2.2], ["E", 14.25, 1.9, 1.5, 2.2], ["E", 3, 2.9, 2.6, 2.8], ["E", 12, 2.9, 2.6, 2.8], ["E", 7, 3.2, 2.4, 1.4],
   ];
-  for (const [k, x, y, w, h] of list) c.batch.add(ROOM, pool, P, wf(WALLS[k])(x, y, 0.02, 0, w, h, 1));
+  for (const [k, x, y, w, h] of list) c.batch.add(ROOM, section(k, x), P, wf(WALLS[k])(x, y, 0.02, 0, w, h, 1));
   // sanca: fita de LED sobre a cornija (só aparece de longe) e o degradê na borda do teto
   const cove = lit("galeria-sancaLuz", "#ffdcae", 0.5, { map: coveTex(), additive: true }), led = lit("galeria-sancaLed", "#ffe2b8", 1.6);
   const down = geo("galeria-planeDown", () => new THREE.PlaneGeometry(1, 1).rotateX(Math.PI / 2));

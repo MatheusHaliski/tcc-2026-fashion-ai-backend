@@ -18,7 +18,7 @@ import * as THREE from "three";
 import type { Prop } from "@/lib/heist/types";
 import type { PropsCtx } from "../interior-props";
 import { BOX0, CYL, CYL0, SPH, geo, mat, mul } from "../interior-batch";
-import { fabric, glass, glow, miscMat, solid, type Palette } from "../interior-mats";
+import { fabric, glass, miscMat, solid, type Palette } from "../interior-mats";
 import { rand, type Quality } from "../interior-tex";
 import { canopyGeometry, oliveSprigGeometry, oliveSprigMaterial } from "../interior-dress";
 import { type RoomsCtx, A } from "./kit";
@@ -187,7 +187,7 @@ function terraceLantern(c: { batch: PropsCtx["batch"]; inst: PropsCtx["inst"]; f
   c.inst.add(ROOM, "candle", CYL0(8), c.P.candle, mul(M, mat(0, 0.03 * s, 0, 0, 0.03 * s, 0.12 * s, 0.03 * s)));
   c.inst.add(ROOM, "lanternFlame", flameGeo(), c.P.flame, mul(M, mat(0, 0.175 * s, 0, 0, 0.02 * s)));
   const p = new THREE.Vector3(0, 0.175 * s, 0).applyMatrix4(M); c.flames.push(p);
-  c.anchors.push({ x: p.x, y: p.y + 0.1, z: p.z, color: "#ffb15a", intensity: 1.2 + s, distance: 2.4, room: ROOM, flicker: 1 });
+  c.anchors.push({ x: p.x, y: p.y + 0.1, z: p.z, color: "#ffb15a", intensity: 1.6 + 1.4 * s, distance: 3, room: ROOM, flicker: 1 });
 }
 
 /** Banco de contemplação: dois blocos de travertino e o assento grosso de teca, uma manta e a lanterna no chão. */
@@ -302,14 +302,12 @@ function trellis(c: RoomsCtx, T: TM, M: THREE.Matrix4, w: number, y0: number, y1
     c.batch.add(ROOM, wood, boxC, mul(M, mat((xa + xb) / 2, (ya + yb) / 2, dir > 0 ? 0.02 : 0.036, 0, 0.022, len, 0.014, 0, -dir * Math.PI / 4)));
   }
   // ramos que sobem do canteiro e a folhagem (mais densa embaixo)
-  const R = rand(seed);
   for (let k = 0; k < Math.max(2, Math.round(w / 1.1)); k++) {
     const x0 = -w / 2 + (k + 0.5) * w / Math.max(2, Math.round(w / 1.1));
     const pts: [number, number, number][] = []; for (let j = 0; j <= 5; j++) pts.push([x0 + Math.sin(j * 1.3 + k) * 0.25, y0 - 0.05 + j * h * 0.17, 0.06]);
     c.batch.add(ROOM, T.vine, tube(`terraco-vine-${seed}-${k}`, pts, 0.012, 24, 5), M);
   }
   foliage(c, T, M, -w / 2 + 0.05, w / 2 - 0.05, y0, y1 + 0.15, Math.round(w * h * (c.q === "high" ? 46 : 22)), seed + 1);
-  void R;
 }
 /** Lanterna de parede de ferro (arandela externa) com a vela acesa. */
 function wallLantern(c: RoomsCtx, T: TM, M: THREE.Matrix4) {
@@ -318,7 +316,7 @@ function wallLantern(c: RoomsCtx, T: TM, M: THREE.Matrix4) {
   terraceLantern(c, T, mul(M, mat(0, -0.18, 0.24)), 0.9);
 }
 
-/** Cordão de lâmpadas de filamento entre dois pontos (catenária com `sag`): cabo, soquetes e globos; luz a cada 5ª. */
+/** Cordão de lâmpadas de filamento entre dois pontos (catenária com `sag`): cabo, soquetes e globos; luz a cada 4ª. */
 function stringLights(c: RoomsCtx, T: TM, a: THREE.Vector3, b: THREE.Vector3, sag: number, key: string) {
   const n = Math.max(2, Math.round(a.distanceTo(b) / 0.55)), pts: [number, number, number][] = [];
   for (let i = 0; i <= 24; i++) { const t = i / 24, p = a.clone().lerp(b, t); pts.push([p.x, p.y - Math.sin(Math.PI * t) * sag, p.z]); }
@@ -329,7 +327,7 @@ function stringLights(c: RoomsCtx, T: TM, a: THREE.Vector3, b: THREE.Vector3, sa
     c.inst.add(ROOM, "terraco-socket", CYL0(8), T.black, mat(p.x, p.y - 0.05, p.z, 0, 0.012, 0.05, 0.012));
     c.inst.add(ROOM, "terraco-bulb", geo("terraco-bulbGeo", () => new THREE.SphereGeometry(1, 12, 8).scale(0.032, 0.042, 0.032)), bulb, mat(p.x, p.y - 0.09, p.z));
     c.flames.push(new THREE.Vector3(p.x, p.y - 0.09, p.z));
-    if (i % 5 === 2) A(c, ROOM, p.x, p.y - 0.15, p.z, "#ffcf8e", 1.6, 3.4);
+    if (i % 4 === 2) A(c, ROOM, p.x, p.y - 0.15, p.z, "#ffcf8e", 3.2, 4.6);
   }
 }
 
@@ -422,7 +420,7 @@ function terraco(c: RoomsCtx) {
   const tex = totemTexture(), col = new THREE.Color();
   if (totems.length) c.ticks.push({ room: ROOM, tick: (t) => {
     tex.offset.y = -t * 0.12;
-    col.setHSL((0.92 + 0.08 * Math.sin(t * 0.21) + 0.1 * Math.sin(t * 0.07)) % 1, 0.7, 0.62);
+    col.setHSL((0.92 + 0.08 * Math.sin(t * 0.21) + 0.1 * Math.sin(t * 0.07)) % 1, 0.85, 0.56);
     for (const m of totems) m.color.copy(col).multiplyScalar(1.6);
   } });
 }

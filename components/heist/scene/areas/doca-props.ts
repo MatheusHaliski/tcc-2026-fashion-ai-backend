@@ -51,10 +51,12 @@ export function docaMats(q: Quality, P: Palette): DocaMats {
     const film = new THREE.MeshStandardMaterial({ color: "#e6eef2", roughness: 0.12, metalness: 0, transparent: true, opacity: 0.38, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 1.4 }); film.name = "doca-film";
     const galv = new THREE.MeshStandardMaterial({ color: "#a3a8ac", roughness: 0.42, metalness: 0.85, envMapIntensity: 1 }); galv.name = "doca-galv";
     const inox = new THREE.MeshStandardMaterial({ color: "#c8ccd0", roughness: 0.22, metalness: 1, envMapIntensity: 1.2 }); inox.name = "doca-inox";
+    // alumínio dos perfis (flight cases, moldura do quadro): menos metálico que o aço da paleta para não sumir no escuro do "low"
+    const alu = new THREE.MeshStandardMaterial({ color: "#c4c8cc", roughness: 0.36, metalness: 0.55, envMapIntensity: 1 }); alu.name = "doca-alu";
     return {
       paint: vc("paint", { roughness: 0.48, metalness: 0.35, envMapIntensity: 0.8 }), matte: vc("matte", { roughness: 0.82, metalness: 0.05, envMapIntensity: 0.5 }),
       plastic: vc("plastic", { roughness: 0.45, metalness: 0, envMapIntensity: 0.7 }), galv, laminate, signs, marks, lit, film, inox,
-      rubber: P.rubber, wood: P.crateWood, alu: P.steel, chrome: P.chrome, glass: P.glass, led: P.fluoro, ledRed: P.ledRed, ledGreen: P.ledGreen,
+      rubber: P.rubber, wood: P.crateWood, alu, chrome: P.chrome, glass: P.glass, led: P.fluoro, ledRed: P.ledRed, ledGreen: P.ledGreen,
     };
   });
 }
@@ -270,7 +272,7 @@ function flightStack(c: PropsCtx, M: DocaMats, A: Record<string, Rect>, f: Foot)
 /** Paleteira manual com palete carregado (fardos e caixas do bufê envoltos em filme), garfos ao longo de x local. */
 function palletJack(c: PropsCtx, M: DocaMats, A: Record<string, Rect>, f: Foot) {
   const x0 = -f.w / 2, pw = 1.2, pd = Math.min(1.0, f.d), red = "#c62f23";
-  pallet(c, M, f, x0 + pw / 2, 0, pw, pd, "#e8d6b8");
+  pallet(c, M, f, x0 + pw / 2, 0, pw, pd, "#c9ad84");
   // carga: duas camadas de fardos (garrafas de água) e caixas do bufê por cima, envolto em filme
   for (let ly = 0; ly < 2; ly++) for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) {
     const x = x0 + 0.22 + i * 0.38, z = -pd / 2 + 0.26 + j * 0.48, y = 0.144 + ly * 0.3;
@@ -405,7 +407,7 @@ function fountain(c: PropsCtx, M: DocaMats, f: Foot) {
 
 /** Pilha de paletes vazios (7 × 0,144 m) com três cones de sinalização empilhados em cima. */
 function palletStack(c: PropsCtx, M: DocaMats, f: Foot) {
-  const w = Math.min(1.2, f.w), d = Math.min(1.0, f.d), tones = ["#e8d6b8", "#d6cbb8", "#f0e2c6", "#cfc4b0", "#e0cfae", "#d9ccb4", "#efe0c2"];
+  const w = Math.min(1.2, f.w), d = Math.min(1.0, f.d), tones = ["#c9ab7e", "#b5a084", "#d2b48a", "#a69886", "#c4a57a", "#b8a689", "#cdb088"];   // pinho de palete, uns acinzentados pelo uso
   for (let k = 0; k < 7; k++) pallet(c, M, f, (k % 2 ? 0.015 : -0.01), 0, w - (k % 3) * 0.01, d, tones[k], k * 0.144);
   const top = 7 * 0.144;
   for (let k = 0; k < 3; k++) {
@@ -426,6 +428,13 @@ export function artCrate(c: PropsCtx, p: Prop) {
   for (const sz of [-1, 1]) { slat(0, 0.1, sz * (D / 2 - 0.01), W, e, 0.03); slat(0, H - e, sz * (D / 2 - 0.01), W, e, 0.03); for (const sx of [-1, 1]) slat(sx * (W / 2 - e / 2), 0.1, sz * (D / 2 - 0.01), e, H - 0.1, 0.03); slat(0, H / 2, sz * (D / 2 - 0.01), W - 0.1, e, 0.03); }
   for (const sx of [-1, 1]) { slat(sx * (W / 2 - 0.01), 0.1, 0, 0.03, e, D - 0.1); slat(sx * (W / 2 - 0.01), H - e, 0, 0.03, e, D - 0.1); }
   for (let k = 0; k < 10; k++) c.inst.add(ROOM, "doca-screw", CYL0(6), M.chrome as THREE.Material, L(f, -W / 2 + 0.1 + (k % 5) * ((W - 0.2) / 4), k < 5 ? 0.13 : H - 0.04, D / 2 + 0.006, 0, 0.008, 0.004, 0.008, Math.PI / 2));
+  // tampa aparafusada: quadro de sarrafos em volta, travessa do meio, parafusos a cada 30 cm e o envelope da nota
+  for (const sz of [-1, 1]) slat(0, H, sz * (D / 2 - 0.065), W - 0.04, 0.03, 0.09);
+  for (const sx of [-1, 1, 0]) slat(sx * (W / 2 - 0.065), H, 0, 0.09, 0.03, D - 0.22);
+  for (let x = -W / 2 + 0.12; x < W / 2 - 0.05; x += 0.3) for (const sz of [-1, 1]) c.inst.add(ROOM, "doca-screw", CYL0(6), M.chrome as THREE.Material, L(f, x, H + 0.03, sz * (D / 2 - 0.065), 0, 0.009, 0.003, 0.009));
+  for (let z = -D / 2 + 0.25; z < D / 2 - 0.2; z += 0.3) for (const sx of [-1, 1]) c.inst.add(ROOM, "doca-screw", CYL0(6), M.chrome as THREE.Material, L(f, sx * (W / 2 - 0.065), H + 0.03, z, 0, 0.009, 0.003, 0.009));
+  c.batch.add(ROOM, M.film, BOX0(), L(f, -0.33, H + 0.002, -0.05, 0.25, 0.27, 0.006, 0.36));
+  decal(c, M.signs, f, "crateDoc", A.clipboard, -0.33, H + 0.004, -0.05, 0.24, 0.33, 0.25, -Math.PI / 2);
   decal(c, M.signs, f, "artCrate", A.artCrate, 0, H * 0.5 + 0.22, D / 2 + 0.008, W * 0.86, W * 0.43);
   decal(c, M.signs, f, "artCrateSide", A.artCrate, W / 2 + 0.008, H * 0.55, 0, D * 0.86, D * 0.43, Math.PI / 2);
 }

@@ -18,14 +18,14 @@
  */
 import * as THREE from "three";
 import { baseProps } from "@/lib/heist/level";
-import { BOX0, CYL, CYL0, SPH, geo, mat, mul } from "../interior-batch";
+import { BOX0, CYL, SPH, geo, mat, mul } from "../interior-batch";
 import { glow, solid } from "../interior-mats";
 import { drawnTexture, rand, type Quality } from "../interior-tex";
 import { frondGeometry, frondMaterial } from "../interior-dress";
 import { type RoomsCtx, A, signMat, washTexture, beacon, lightCone } from "./kit";
 import type { AreaModule } from "./types";
 import { areaMat, contactMat, frameRing, lathe, pleatedShade, profileRun, raisedPanel, drape, tube, footOf } from "./lounge-kit";
-import { DAMASK_TILE, PARQUET_TILE, agedMirrorTexture, cofferTexture, damaskSurface, fringeTexture, paintingTexture, parquetSurface, rugTexture } from "./lounge-tex";
+import { DAMASK_TILE, PARQUET_TILE, cofferTexture, damaskSurface, fringeTexture, paintingTexture, parquetSurface, rugTexture } from "./lounge-tex";
 import { armchair, barStool, bottleAt, coffeeTable, glassAt, grandPiano, gueridon, lacquerScreen, loungeMats, loungeSofa, onyxBar, shadeMat, trumeau, type LoungeMats } from "./lounge-mob";
 
 const room = "lounge", H = 4.6, X0 = 12.5, X1 = 22, Z0 = 4.5, Z1 = 14;
@@ -395,4 +395,3 @@ export const AREA: AreaModule = {
     ],
   },
 };
-void agedMirrorTexture; void CYL0;

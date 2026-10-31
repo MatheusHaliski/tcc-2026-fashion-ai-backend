@@ -15,7 +15,7 @@ import { CYL, CYL0, SPH, geo } from "../interior-batch";
 import { fabric } from "../interior-mats";
 import type { LightAnchor, PropsCtx } from "../interior-props";
 import { statueGeometry } from "../interior-dress";
-import { SANS, SERIF, type Quality } from "../interior-tex";
+import { SANS, SERIF, miscSurface, type Quality } from "../interior-tex";
 import type { InteriorRoom } from "../interior-shell";
 import { type Fr, at, atlasPlane, bx, cy, frame, glassEdge, langOf, lathe, lit, once, paint, plain, planeUp, thickGlass } from "./galeria-kit";
 import { GAL_COPY, LBL } from "./galeria-copy";
@@ -43,6 +43,13 @@ export function artMat(q: Quality): THREE.MeshStandardMaterial {
   return once(`galeria-arteMat-${q}`, () => new THREE.MeshStandardMaterial({ map: t, roughness: 0.88, emissiveMap: t, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 0.1 }));
 }
 export const artGeo = (i: number) => atlasPlane("galeria-arte", ART_COLS, ART_ROWS, i);
+/** Veludo do deck das vitrines: escuro e com brilho rasante na própria cor (o padrão branqueava o forro sob a caixa de luz). */
+export function velvetDeck(key: string, color: string, q: Quality): THREE.MeshPhysicalMaterial {
+  return once(`galeria-veludoDeck-${key}-${q}`, () => {
+    const sf = miscSurface("fabric", q), col = new THREE.Color(color);
+    return new THREE.MeshPhysicalMaterial({ color: col, map: sf.map, normalMap: sf.normalMap, normalScale: new THREE.Vector2(0.3, 0.3), roughness: 0.92, sheen: 0.7, sheenColor: col.clone().multiplyScalar(2.2), sheenRoughness: 0.55, envMapIntensity: 0.4 });
+  });
+}
 /** Etiqueta de museu num porta-etiqueta de latão (w × h), em pé no quadro F, centro em (x, y, z), inclinada `tilt`. */
 export function label(c: PropsCtx | { q: Quality; copy: PropsCtx["copy"]; batch: PropsCtx["batch"] }, F: Fr, i: number, x: number, y: number, z: number, w = 0.3, tilt = 0, ry = 0) {
   c.batch.add(ROOM, brass(), geo("galeria-portaEtq", () => new THREE.BoxGeometry(1, 1, 1)), F(x, y, z - 0.004, ry, w + 0.02, w * 0.5 + 0.02, 0.008, tilt));
@@ -66,7 +73,7 @@ function glassHood(c: PropsCtx, F: Fr, w: number, d: number, y0: number, y1: num
 function lightAttic(c: PropsCtx, F: Fr, w: number, d: number, y0: number, h: number) {
   bx(c.batch, ROOM, blackSteel(), F(0, y0, 0, 0, w + 0.012, h, d + 0.012), true);
   bx(c.batch, ROOM, brass(), F(0, y0 - 0.003, 0, 0, w + 0.016, 0.006, d + 0.016));
-  c.batch.add(ROOM, lit("galeria-difusor", "#fff3dc", 1.5), geo("galeria-planeDown", () => new THREE.PlaneGeometry(1, 1).rotateX(Math.PI / 2)), F(0, y0 - 0.022, 0, 0, w - 0.22, 1, d - 0.22));
+  c.batch.add(ROOM, lit("galeria-difusor", "#ffe9c8", 0.75), geo("galeria-planeDown", () => new THREE.PlaneGeometry(1, 1).rotateX(Math.PI / 2)), F(0, y0 - 0.022, 0, 0, w - 0.22, 1, d - 0.22));
   const nx = Math.max(2, Math.round(w / 0.35)), nz = Math.max(2, Math.round(d / 0.35));
   for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) c.inst.add(ROOM, "galeria-fibra", SPH(6), lit("galeria-fibraLuz", "#fff6e6", 3), F(-w / 2 + (i + 0.5) * w / nx, y0 - 0.024, -d / 2 + (j + 0.5) * d / nz, 0, 0.012, 0.004, 0.012));
 }
@@ -86,7 +93,7 @@ export function vitrine(p: Prop, c: PropsCtx) {
   c.batch.add(ROOM, brass(), CYL(14), F(w * 0.22, 0.24, -d / 2 - 0.004, 0, 0.013, 0.006, 0.013, Math.PI / 2));
   for (let k = 0; k < 8; k++) bx(c.batch, ROOM, blackSteel(), F(-w * 0.35 + k * w * 0.1, 0.33, d / 2 + 0.0015, 0, w * 0.06, 0.012, 0.003));   // grelha de ventilação (controle de umidade)
   // deck forrado na cor da seção e o estrado redondo do manequim
-  const deck = fabric(`galeria-deck-${v}`, v === 0 ? "#2a0f22" : v === 1 ? "#101830" : "#0d2a20", q, { rough: 0.85 });
+  const deck = velvetDeck(`piso${v}`, v === 0 ? "#2a0d20" : v === 1 ? "#0c1328" : "#0a2219", q);
   bx(c.batch, ROOM, deck, F(0, H0, 0, 0, w - 0.03, 0.012, d - 0.03));
   c.batch.add(ROOM, deck, lathe("galeria-estrado", [[0, 0], [0.5, 0], [0.5, 0.06], [0.48, 0.075], [0, 0.075]], 40), F(0, H0 + 0.012, 0));
   c.batch.add(ROOM, brass(), geo("galeria-estradoAro", () => new THREE.TorusGeometry(0.5, 0.004, 6, 48).rotateX(Math.PI / 2)), F(0, H0 + 0.07, 0));
@@ -99,7 +106,7 @@ export function vitrine(p: Prop, c: PropsCtx) {
   // manequim e vestido (levemente girado, como na exposição)
   const M: Fr = (x, y, z, ry = 0, sx = 1, sy = sx, sz = sx, rx = 0, rz = 0) => F(x, H0 + 0.075 + y, z, ry + (v === 1 ? 0 : v === 0 ? 0.32 : -0.32), sx, sy, sz, rx, rz);
   if (v === 1) auroraGown(c.batch, c.inst, ROOM, M, q); else if (v === 0) velvetGown(c.batch, c.inst, ROOM, M, q); else tulleGown(c.batch, c.inst, ROOM, M, q);
-  label(c, F, v === 1 ? LBL.aurora : v === 0 ? LBL.velvet : LBL.tulle, w / 2 - 0.3, 0.15, d / 2 + 0.006, 0.34, -0.15);
+  label(c, F, v === 1 ? LBL.aurora : v === 0 ? LBL.velvet : LBL.tulle, w / 2 - 0.3, 0.25, d / 2 + 0.006, 0.34, -0.15);
   anchor(c, at(F, 0, 2.2, 0.1), "#fff1dc", v === 1 ? 9 : 5.5, 4.5);
 }
 /** Vitrine de parede (acessórios): gabinete com portas, vidro nas quatro faces, degraus forrados e as peças. */
@@ -113,7 +120,7 @@ function wallVitrine(c: PropsCtx, cx: number, cz: number, sx: number, sz: number
     bx(c.batch, ROOM, blackSteel(), F(s * L / 4, 0.14, D / 2 + 0.0015, 0, L / 2 - 0.08, H0 - 0.26, 0.003));
     bx(c.batch, ROOM, brass(), F(s * 0.06, 0.42, D / 2 + 0.012, 0, 0.012, 0.16, 0.012));
   }
-  const deck = fabric(`galeria-deckParede-${west ? "j" : "a"}`, west ? SECTION.joias : SECTION.atelie, q, { rough: 0.85 });
+  const deck = velvetDeck(`parede${west ? "J" : "A"}`, west ? "#2a0d20" : "#0a2219", q);
   bx(c.batch, ROOM, deck, F(0, H0, 0, 0, L - 0.03, 0.012, D - 0.03));
   // degraus forrados (frente baixa, fundo alto)
   for (let k = 0; k < 3; k++) bx(c.batch, ROOM, deck, F(0, H0 + 0.012, -D / 2 + 0.18 + k * 0.26, 0, L - 0.08, 0.36 - k * 0.15, 0.26));
@@ -178,7 +185,7 @@ export function statue(p: Prop, c: PropsCtx) {
     label(c, F, LBL.statue0 + (s.x < 0 ? 0 : 1), 0, 0.62, 0.285, 0.3, 0);
     // a figura em gesso, virada para o centro da sala, com o himátion: saia drapeada de barra assimétrica e a faixa enrolada
     // que cruza o peito do ombro esquerdo ao quadril direito
-    const gesso = plain("galeria-gessoEstatua", "#ece6da", { rough: 0.55, env: 0.8 }), ry = s.x < 0 ? Math.PI * 0.12 : -Math.PI * 0.12;
+    const gesso = plain("galeria-gessoEstatua", "#ece6da", { rough: 0.55, env: 0.8, emissive: "#ece6da", ei: 0.07 }), ry = s.x < 0 ? Math.PI * 0.12 : -Math.PI * 0.12;
     c.batch.add(ROOM, gesso, statueGeometry(s.x < 0 ? 1 : 0), F(0, 1.02, 0, ry, 0.95), { cast: true });
     c.batch.add(ROOM, gesso, himationSkirt(), F(0, 1.02, 0, ry, 0.95), { cast: true });
     c.batch.add(ROOM, gesso, himationSash(), F(0, 1.02, 0, ry, 0.95));
@@ -246,7 +253,7 @@ function jewelVitrine(p: Prop, c: PropsCtx) {
   c.batch.add(ROOM, B, fluted(), F(0, 0.08, 0, 0, 0.4, 0.78, 0.4), { cast: true });
   c.batch.add(ROOM, B, lathe("galeria-jvCapitel", [[0, 0], [0.41, 0], [0.45, 0.03], [0.47, 0.06], [0.47, 0.09], [0, 0.09]], 48), F(0, 0.86, 0));
   c.batch.add(ROOM, brass(), geo("galeria-jvAro", () => new THREE.TorusGeometry(0.47, 0.008, 6, 64).rotateX(Math.PI / 2)), F(0, 0.95, 0));
-  c.batch.add(ROOM, fabric("galeria-veludoAmeixa", "#2a0f22", q), CYL0(48), F(0, 0.95, 0, 0, 0.44, 0.012, 0.44));
+  c.batch.add(ROOM, velvetDeck("joia", "#2a0d20", q), CYL0(48), F(0, 0.95, 0, 0, 0.44, 0.012, 0.44));
   // vidro: duas faces (espessura) e as bordas polidas em cima e embaixo
   const G = vidro(), E = aresta();
   c.batch.add(ROOM, G, geo("galeria-jvVidro", () => new THREE.CylinderGeometry(0.44, 0.44, 0.7, 64, 1, true).translate(0, 0.35, 0)), F(0, 0.962, 0));

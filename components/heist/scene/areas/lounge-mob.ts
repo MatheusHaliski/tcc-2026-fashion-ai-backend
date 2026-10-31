@@ -358,7 +358,7 @@ function pianoShape(mirror = false): THREE.Shape {
 }
 const PLANE_ = () => geo("plane", () => new THREE.PlaneGeometry(1, 1));
 export function grandPiano(p: Prop, c: PropsCtx) {
-  const f = footOf(p), L = loungeMats(c.q, c.P), P = c.P, w = f.w, d = f.d - 0.22, zb = -0.11;   // corpo um pouco atrás: o teclado sobra na frente
+  const f = footOf(p), L = loungeMats(c.q, c.P), w = f.w, d = f.d - 0.22, zb = -0.11;   // corpo um pouco atrás: o teclado sobra na frente
   const rim = geo("lounge-pianoRim", () => new THREE.ExtrudeGeometry(pianoShape(), { depth: 0.3, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 2, curveSegments: 24 }).rotateX(Math.PI / 2).translate(0, 0.312, 0));
   put(c, L.lacquer, rim, at(f, 0, 0.62, zb, 0, w, 1, d), true);
   // tampo aberto (dobradiça no lado reto, x = +0,5) a ~35°, a vareta e a chapa dourada com as cordas por dentro
@@ -398,7 +398,6 @@ export function grandPiano(p: Prop, c: PropsCtx) {
   c.batch.add(ROOM, L.leatherOx, bt.g, at(f, 0, 0.52, bz, 0, 1, 1, 1, -Math.PI / 2));
   for (const [x, y] of bt.buttons) c.inst.add(ROOM, "lounge-button", SPH(6), L.leatherOx, at(f, x, 0.522, bz - y, 0, 0.01, 0.006, 0.01));
   for (const x of [-0.31, 0.31]) for (const z of [-0.13, 0.13]) c.batch.add(ROOM, L.lacquer, lathe("lounge-benchLeg", [[0.022, 0], [0.026, 0.05], [0.02, 0.2], [0.03, 0.4], [0, 0.42]], 10), at(f, x, 0, bz + z));
-  void P;
 }
 
 /* ======================= trumeau: espelho envelhecido sobre console ======================= */

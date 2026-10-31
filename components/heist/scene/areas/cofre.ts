@@ -60,7 +60,16 @@ function cofre(c: RoomsCtx) {
 }
 
 /** Leque de luz dos spots embutidos na seda (aditivo, um lote): o que os poucos pontos dinâmicos não pintam no "low". */
-const scallopMat = () => lit("cofre-vieira", "#ffe2bf", 0.3, { additive: true, map: paint("cofre-vieiraTex", 128, 128, (g, w, h) => { const grd = g.createRadialGradient(w / 2, h * 0.08, 0, w / 2, h * 0.3, h * 0.75); grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(0.35, "rgba(255,255,255,0.5)"); grd.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h); }, { srgb: false }) });
+const scallopMat = () => lit("cofre-vieira", "#ffe2bf", 0.32, { additive: true, map: paint("cofre-vieiraTex2", 128, 128, (g, w, h) => {
+  // leque: núcleo no alto, abrindo para baixo como o facho de um spot rente à parede; zero em todas as bordas
+  const img = g.createImageData(w, h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const u = (x + 0.5) / w, v = (y + 0.5) / h, d = Math.hypot((u - 0.5) / (0.1 + 0.36 * v), (v - 0.1) / 0.86);
+    const edge = Math.min(1, Math.min(u, 1 - u, v, 1 - v) / 0.08), a = Math.pow(Math.max(0, 1 - d), 1.6) * edge, k = (y * w + x) * 4;
+    img.data[k] = img.data[k + 1] = img.data[k + 2] = 255; img.data[k + 3] = Math.round(255 * a);
+  }
+  g.putImageData(img, 0, 0);
+}, { srgb: false }) });
 function scallops(c: RoomsCtx) {
   const m = scallopMat(), list: ["N" | "S" | "W" | "E", number][] = [["E", 1.6], ["E", 4.3], ["E", 9.9], ["E", 13.4], ["S", 1.8], ["S", 5.0], ["S", 8.0], ["N", 6.75], ["W", 1.2], ["W", 14.6]];
   for (const [k, x] of list) c.batch.add(ROOM, m, PLANE(), wf(WALLS[k])(x, 3.05, 0.016, 0, 1.5, 2.3, 1));
@@ -223,7 +232,7 @@ function ceiling(c: RoomsCtx) {
     const a = (k / 8) * Math.PI * 2 + Math.PI / 8, x = PX + Math.cos(a) * 1.55, z = PZ + Math.sin(a) * 1.55, y = H - 0.42;
     c.batch.add(ROOM, plain("cofre-pretoFosco", "#141416", { rough: 0.5 }), CYL0(16), mat(x, y, z, 0, 0.075, 0.14, 0.075));
     c.batch.add(ROOM, lit("cofre-lenteSpot", "#f4f8ff", 3), geo("cofre-lenteGeo", () => new THREE.CircleGeometry(0.05, 18).rotateX(Math.PI / 2)), mat(x, y - 0.002, z));
-    if (k % 2 === 0) lightCone(c, ROOM, new THREE.Vector3(x, y - 0.02, z), new THREE.Vector3(PX, 1.15, PZ), 0.3, "#eef4ff", 0.1);
+    if (k % 2 === 0) lightCone(c, ROOM, new THREE.Vector3(x, y - 0.02, z), new THREE.Vector3(PX, 1.15, PZ), 0.3, "#eef4ff", 0.065);
   }
   // spots embutidos nos caixotões da borda, mirando as vitrines e os nichos
   for (const [x, z] of [[-20.8, -20.8], [-17.25, -20.8], [-13.7, -20.8], [-20.8, -14.25], [-13.7, -11.5], [-20.8, -7.7], [-17.25, -7.7], [-13.7, -7.7], [-20.8, -11.0], [-20.8, -17.5]] as [number, number][]) {

@@ -144,6 +144,14 @@ export function wallSurface(q: Quality): Surface {
       if (sc < 0.12 && ym > 0.15 && ym < 1.0) { r = 0.55; g = 0.55; b = 0.53; }
     } else if (!stripe) {
       const s = smooth(0.4, 1, samp(soot, 128, u, v)) * smooth(2.5, 6, ym); r *= 1 - 0.32 * s; g *= 1 - 0.32 * s; b *= 1 - 0.3 * s;
+      // retoques de tinta (painéis de outro tom onde a parede foi consertada) e escorridos de sujeira descendo do alto
+      const pc = hash(Math.floor(u * 3), Math.floor(ym / 1.5), 716);
+      if (pc > 0.8) { const t = 1 + (pc - 0.9) * 0.5; r *= t; g *= t; b *= t * 1.01; }
+      const sx = u * 24, si = Math.floor(sx);
+      if (hash(si, 3, 717) > 0.8) {
+        const len = 1.2 + 2.8 * hash(si, 4, 717), top = 6 - 0.3 * hash(si, 5, 717), d = sx - si - 0.5;
+        if (ym > top - len && ym < top) { const e = Math.exp(-(d * d) / 0.015) * ((ym - (top - len)) / len) * 0.16; r *= 1 - e; g *= 1 - e; b *= 1 - e * 0.9; }
+      }
     }
     o[0] = r; o[1] = g; o[2] = b; o[3] = 0.6 - 0.35 * joint + 0.04 * p; o[4] = band ? 0.55 : stripe ? 0.45 : 0.82;
   }, 2.2);

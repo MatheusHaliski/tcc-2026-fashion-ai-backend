@@ -140,12 +140,12 @@ function fusePanel(p: Prop, c: PropsCtx) {
     for (let k = 0; k < 12; k++) { const x = -w / 2 + 0.14 + k * ((w - 0.28) / 11); f.i("seg-breaker", rbox(0.055, 0.1, 0.06, 0.004), S.plasticWhite, x, y + 0.025, d / 2 + 0.01); f.i("seg-toggle", BOX0(), k % 5 === 3 ? S.plasticRed : S.plasticBlack, x, y + 0.08, d / 2 + 0.042, 0, 0.012, 0.022, 0.012); f.i("seg-label", BOX0(), S.paper, x, y - 0.012, d / 2 - 0.002, 0, 0.05, 0.02, 0.003); }
   }
   f.rbox(S.plasticRed, w / 2 - 0.16, 1.98, d / 2 + 0.01, 0.12, 0.1, 0.08, 0.01);
-  // porta entreaberta (35°) com o aviso e a fechadura
-  const dr = f.sub(-w / 2, 0, d / 2 + 0.005, -0.6);
-  dr.rbox(grey, w / 2, 0.9, 0.0, w - 0.02, 1.2, 0.022, 0.006);
-  signOn(c, dr, "highVoltage", w / 2, 1.85, 0.012, 0.14);
-  dr.box(S.chrome, w - 0.08, 1.4, 0.012, 0.03, 0.09, 0.02);
-  for (const y of [1.0, 1.9]) f.cyl(S.chrome, -w / 2 + 0.01, y, d / 2 + 0.01, 0.01, 0.1, 8);
+  // porta aberta (~60°, dobradiça do lado norte: de quem entra pela porta da sala se veem os disjuntores) com o aviso
+  const dr = f.sub(w / 2, 0, d / 2 + 0.005, 1.05);
+  dr.rbox(grey, -w / 2, 0.9, 0.0, w - 0.02, 1.2, 0.022, 0.006);
+  signOn(c, dr, "highVoltage", -w / 2, 1.85, 0.012, 0.14);
+  dr.box(S.chrome, -w + 0.08, 1.4, 0.012, 0.03, 0.09, 0.02);
+  for (const y of [1.0, 1.9]) f.cyl(S.chrome, w / 2 - 0.01, y, d / 2 + 0.01, 0.01, 0.1, 8);
   for (const x of [-0.3, -0.1, 0.1, 0.3]) f.cyl(S.galv, x, 2.12, -0.02, 0.016, H - 2.12, 8);
   f.box(S.galv, 0, H - 0.12, 0, w + 0.2, 0.06, 0.2);
 }

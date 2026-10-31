@@ -271,7 +271,7 @@ export function auroraTex(): THREE.Texture {
 }
 /** Vidro fosco do lanternim: painéis com leve variação de brilho (a grelha de bronze é geometria). */
 export function laylightMat(): THREE.MeshBasicMaterial {
-  return once("galeria-lanternim", () => new THREE.MeshBasicMaterial({ color: new THREE.Color("#ffe6c4").multiplyScalar(0.34), map: paint("galeria-lanternimTex", 256, 256, (g, w, h) => {
+  return once("galeria-lanternim", () => new THREE.MeshBasicMaterial({ color: new THREE.Color("#ffdcb4").multiplyScalar(0.2), map: paint("galeria-lanternimTex", 256, 256, (g, w, h) => {
     const R = rand(77); g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) { g.fillStyle = `rgba(200,190,170,${0.05 + R() * 0.12})`; g.fillRect(i * w / 5 + 2, j * h / 5 + 2, w / 5 - 4, h / 5 - 4); }
     const v = g.createRadialGradient(w / 2, h / 2, w * 0.1, w / 2, h / 2, w * 0.75); v.addColorStop(0, "rgba(255,255,255,0)"); v.addColorStop(1, "rgba(120,110,95,0.45)"); g.fillStyle = v; g.fillRect(0, 0, w, h);

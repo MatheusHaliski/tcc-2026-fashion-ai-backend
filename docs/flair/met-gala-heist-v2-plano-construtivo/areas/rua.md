@@ -106,7 +106,8 @@ bronze embaixo e puxador vertical de latão, e os refletores de fachada visívei
 ## Implementado
 
 Capturas em `scratchpad/gala/areas/rua/` (laboratório `/lab/heist-rua`, presets `?cam=` novos: `cidade`, `calcada`,
-`vitrines`; `low` para iterar, `final-*-high.jpg` na rodada final).
+`vitrines`, `drone` refeito; `low` para iterar, `final-*-high.jpg` na rodada final). O log de cada captura traz a contagem de
+um quadro inteiro separada por passada (`passes`: cena, reflexo da pista, mapas de sombra, pós), em chamadas/triângulos.
 
 | Item | Arquivo e função | Captura | Estado |
 | --- | --- | --- | --- |

@@ -40,7 +40,7 @@ export function rossoMat(q: Quality, mirror = false): THREE.MeshStandardMaterial
   return m;
 }
 function thassos(u: number, v: number, o: Float32Array) {
-  const t = fbm(u, v, 3, 631, 4) * 4 + v * 2, w = vein(t, 0.02) * 0.35 * fbm(u, v, 5, 633, 2), b = 0.9 + 0.04 * fbm(u, v, 8, 635, 2);
+  const t = fbm(u, v, 3, 631, 4) * 4 + v * 2, w = vein(t, 0.02) * 0.45 * fbm(u, v, 5, 633, 2), b = 0.74 + 0.05 * fbm(u, v, 8, 635, 2);
   o[0] = mix(b, 0.66, w); o[1] = mix(b, 0.64, w); o[2] = mix(b * 0.99, 0.62, w); o[3] = 0.5; o[4] = 0.06 + 0.05 * w;
 }
 export function thassosMat(q: Quality, mirror = false): THREE.MeshStandardMaterial {

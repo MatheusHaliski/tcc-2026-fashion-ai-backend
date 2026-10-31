@@ -75,7 +75,8 @@ export function pedestal(p: Prop, c: PropsCtx) {
   c.batch.add(ROOM, velvetPlum(q), lathe("cofre-almofada", [[0, 0], [0.14, 0], [0.155, 0.03], [0.15, 0.06], [0.12, 0.075], [0.05, 0.078], [0, 0.072]], 32), F(0, 1.05, 0));
   for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + Math.PI / 4; c.batch.add(ROOM, br, CYL0(6), F(Math.cos(a) * 0.035, 1.118, Math.sin(a) * 0.035, 0, 0.003, 0.05, 0.003, Math.cos(a) * 0.35, -Math.sin(a) * 0.35)); }
   // campânula: cilindro de vidro grosso (duas faces) com cúpula, aros de latão e o remate
-  const G = vidroC(), E = arestaC();
+  // vidro da campânula mais limpo que o das vitrines (os feixes da cúpula atravessam: com o vidro grosso ela ficava leitosa)
+  const G = thickGlass("cofre-vidroCampanula", { opacity: 0.06, tint: "#eef4f6" }), E = arestaC();
   c.batch.add(ROOM, br, lathe("cofre-campBase", [[0.205, 0], [0.245, 0], [0.245, 0.03], [0.235, 0.04], [0.205, 0.04]], 48), F(0, 1.05, 0));
   for (const r of [0.225, 0.213]) c.batch.add(ROOM, G, geo(`cofre-campVidro${r}`, () => new THREE.CylinderGeometry(r, r, 0.34, 64, 1, true).translate(0, 0.17, 0)), F(0, 1.09, 0));
   c.batch.add(ROOM, G, geo("cofre-campCupula", () => new THREE.SphereGeometry(0.225, 48, 12, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.42, 1)), F(0, 1.43, 0));
