@@ -32,8 +32,8 @@ nem forma de objeto nem textura. O que se busca dela:
 
 | Área do jogo | Zonas do blueprint | Salas da planta | Arquivos da área |
 | --- | --- | --- | --- |
-| [Rua: avenida, fachada e cidade](areas/rua.md) | Z01 | `rua` | `scene/exterior*.tsx`, `exterior-*.ts`, `sky.tsx` |
-| [Beco, doca e beiral](areas/beco-doca.md) | Z12, Z15 | `beco`, `doca`, `beiral` | `scene/exterior-alley.tsx`, `areas/doca.ts` |
+| [Rua: avenida, fachada (com o beiral) e cidade](areas/rua.md) | Z01 | `rua`, `beiral` | `scene/exterior*.tsx`, `exterior-*.ts`, `sky.tsx` |
+| [Beco e doca](areas/beco-doca.md) | Z12, Z15 | `beco`, `doca` | `scene/exterior-alley.tsx`, `areas/doca.ts` |
 | [Vestíbulo e escadaria](areas/vestibulo.md) | Z02, Z03, Z14 | `vestibulo` + portas internas | `areas/vestibulo.ts`, `interior-doors.ts` |
 | [Grande Salão: gala, pista e DJ](areas/salao.md) | Z04, Z05, Z06 | `salao` | `interior-hall.ts`, `areas/salao.ts` |
 | [Lounge, bar e terraço](areas/lounge-terraco.md) | Z05, Z13 | `lounge`, `terraco` | `areas/lounge.ts`, `areas/terraco.ts` |

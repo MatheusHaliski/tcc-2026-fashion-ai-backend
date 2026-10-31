@@ -1,10 +1,10 @@
-# Beco, doca e beiral
+# Beco e doca
 
-**Zonas do blueprint:** Z12 (apoio e doca), Z15 (pátio de saída e garagem) · **Salas da planta:** `beco`, `doca`, `beiral`
+**Zonas do blueprint:** Z12 (apoio e doca), Z15 (pátio de saída e garagem) · **Salas da planta:** `beco`, `doca` (o beiral, cornija norte, é da fachada: área da rua)
 
-**Dimensões:** beco x 22,5 a 30, z −22 a 24,5 (rua, ao ar livre); doca x −22 a −8,5, z 16,5 a 24 (pé-direito 6 m); beiral x −21 a 21, z −23,5 a −22,5
+**Dimensões:** beco x 22,5 a 30, z −22 a 24,5 (rua, ao ar livre); doca x −22 a −8,5, z 16,5 a 24 (pé-direito 6 m)
 
-**Arquivos da área:** `components/heist/scene/exterior-alley.tsx` (beco e beiral), `components/heist/scene/areas/doca.ts` (doca); arquivos novos da área em `areas/doca-*.ts` ou `exterior-alley-*.ts`
+**Arquivos da área:** `components/heist/scene/exterior-alley.tsx` (beco), `components/heist/scene/areas/doca.ts` (doca); arquivos novos da área em `areas/doca-*.ts` ou `exterior-alley-*.ts`
 
 ## Como está hoje
 

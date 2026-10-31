@@ -1,6 +1,6 @@
 # Rua: avenida, fachada e cidade
 
-**Zonas do blueprint:** Z01 (fachada e tapete vermelho) · **Salas da planta:** `rua`
+**Zonas do blueprint:** Z01 (fachada e tapete vermelho) · **Salas da planta:** `rua` e a fachada inteira do museu, inclusive o beiral (cornija norte) e a parede leste vista do beco
 
 **Dimensões:** x −30 a 30, z 24,5 a 50,5; calçada em y −1,6 e pista em −1,75; escadaria de 12 degraus até as portas (z 24,5 a 31)
 
