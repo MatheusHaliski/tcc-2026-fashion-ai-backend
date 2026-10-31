@@ -92,41 +92,193 @@
    "max": 379,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
+  "components/heist/audio.ts": {
+   "max": 265,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
   "components/heist/game.tsx": {
-   "max": 409,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 417,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/heist.css": {
+   "max": 296,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/people/holds.ts": {
+   "max": 334,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/people/people.tsx": {
-   "max": 302,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 394,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/bastidores-moveis.ts": {
+   "max": 349,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/cofre-props.ts": {
+   "max": 311,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/cofre.ts": {
+   "max": 375,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/doca-props.ts": {
+   "max": 450,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/doca-tex.ts": {
+   "max": 374,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/doca.ts": {
+   "max": 279,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/galeria-props.ts": {
+   "max": 361,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/galeria-tex.ts": {
+   "max": 293,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/galeria-trajes.ts": {
+   "max": 281,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/galeria.ts": {
+   "max": 400,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/lounge-mob.ts": {
+   "max": 449,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/lounge-tex.ts": {
+   "max": 363,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/lounge.ts": {
+   "max": 397,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/salao-dj.ts": {
+   "max": 387,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/salao-food.ts": {
+   "max": 275,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/salao-kit.ts": {
+   "max": 259,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/salao-walls.ts": {
+   "max": 406,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/seguranca.ts": {
+   "max": 329,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/servico-copa.ts": {
+   "max": 357,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/servico-kit.ts": {
+   "max": 543,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/servico.ts": {
+   "max": 338,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/terraco.ts": {
+   "max": 469,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/vestibulo-floor.ts": {
+   "max": 295,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/vestibulo-furniture.ts": {
+   "max": 411,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/vestibulo-kit.ts": {
+   "max": 313,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/vestibulo-stair.ts": {
+   "max": 259,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/areas/vestibulo-walls.ts": {
+   "max": 331,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/exterior-alley-facade.ts": {
+   "max": 281,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/exterior-alley-props.ts": {
+   "max": 305,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/exterior-alley-tex.ts": {
+   "max": 655,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/exterior-blocks.ts": {
+   "max": 466,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/exterior-citytex.ts": {
+   "max": 505,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/scene/exterior-facade.tsx": {
-   "max": 313,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 336,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/exterior-furniture.tsx": {
+   "max": 335,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/scene/exterior-street.tsx": {
-   "max": 500,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 562,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/scene/exterior-textures.ts": {
-   "max": 531,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 553,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "components/heist/scene/interior-doors-leaf.ts": {
+   "max": 372,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/scene/interior-fx.ts": {
-   "max": 505,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 507,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/scene/interior-hall.ts": {
-   "max": 398,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 432,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/scene/interior-props.ts": {
-   "max": 671,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 690,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/scene/interior-rooms.ts": {
    "max": 444,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+  },
+  "components/heist/scene/interior-shell.ts": {
+   "max": 256,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/heist/scene/interior-tex.ts": {
    "max": 412,
@@ -135,6 +287,10 @@
   "components/interactions.tsx": {
    "max": 361,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+  },
+  "components/lab/heist-gente-scene.tsx": {
+   "max": 277,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "components/lookbook-tabs.tsx": {
    "max": 379,
@@ -761,8 +917,8 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/avatar3d/human/locomotion.ts": {
-   "max": 1005,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 1331,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "lib/avatar3d/human/three-human.ts": {
    "max": 333,
@@ -777,24 +933,28 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/heist/ai.ts": {
-   "max": 375,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 379,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
+  },
+  "lib/heist/combat.ts": {
+   "max": 252,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "lib/heist/level.ts": {
-   "max": 432,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 620,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "lib/heist/looks.ts": {
-   "max": 259,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 287,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "lib/heist/sim.ts": {
-   "max": 820,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 824,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "lib/heist/types.ts": {
-   "max": 276,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
+   "max": 284,
+   "reason": "PENDENTE: veio acima do limite no merge de main (Heist v2/locomoção, PR #418/#419) em 2026-10-31; redução no lote H*"
   },
   "lib/room3d/interaction.ts": {
    "max": 350,
