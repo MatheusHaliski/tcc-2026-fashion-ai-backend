@@ -139,6 +139,21 @@ Quando a política da organização proíbe IP público na VM (padrão em projet
 A autenticação continua sendo a chave por cliente da API; opcionalmente, restrinja ainda mais com regras de WAF ou
 uma aplicação Cloudflare Access com *service token*.
 
+### Sem domínio: Tailscale Funnel
+
+Sem domínio próprio, o Tailscale Funnel dá uma URL HTTPS fixa e gratuita (`https://<máquina>.<tailnet>.ts.net`),
+também sem IP público na VM (é como a `fai-gpu-1` está publicada):
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh && sudo systemctl enable --now tailscaled
+sudo tailscale up --hostname=fai-gpu-1          # abre um link de login
+sudo tailscale funnel --bg 8000                 # na 1ª vez pede para habilitar HTTPS/Funnel na tailnet
+tailscale funnel status                         # mostra a URL pública; desligar: sudo tailscale funnel --https=443 off
+```
+
+Use `METRICS_PUBLIC=false`: o Funnel não filtra rotas. `/health` é público; `/ready` só mostra o detalhe das
+dependências para chave admin; o resto exige chave. A configuração do Funnel persiste em reinícios.
+
 ## Integração com o backend Java
 
 No backend (`.env` da API Spring): `GARMENT_GPU_URL=https://gpu.seu-dominio` e `GARMENT_GPU_API_KEY=<chave

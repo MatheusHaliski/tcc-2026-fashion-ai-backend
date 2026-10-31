@@ -76,8 +76,12 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
     def health():
         return {"status": "ok", "service": "fai-garment-api"}
 
+    def optional_client(x_api_key: str | None = Header(default=None)) -> Client | None:
+        return keyring.authenticate(x_api_key)
+
     @app.get("/ready")
-    def ready():
+    def ready(client: Client | None = Depends(optional_client)):
+        """Status code for probes; which dependency is down only for admin keys (the API may be public via Funnel)."""
         checks = {}
         for name, probe in (("redis", lambda: bool(redis.ping())), ("storage", store.ping)):
             try:
@@ -85,10 +89,10 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
             except Exception:
                 checks[name] = "down"
         ok = all(v == "ok" for v in checks.values())
-        return JSONResponse({"status": "ok" if ok else "degraded", "checks": checks}, status_code=200 if ok else 503)
-
-    def optional_client(x_api_key: str | None = Header(default=None)) -> Client | None:
-        return keyring.authenticate(x_api_key)
+        body = {"status": "ok" if ok else "degraded"}
+        if client is not None and client.is_admin:
+            body["checks"] = checks
+        return JSONResponse(body, status_code=200 if ok else 503)
 
     @app.get("/metrics")
     def metrics(client: Client | None = Depends(optional_client)):

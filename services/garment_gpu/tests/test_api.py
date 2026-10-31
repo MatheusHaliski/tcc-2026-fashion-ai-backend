@@ -126,7 +126,8 @@ def test_exclusao_apaga_imagens(client, settings, redis, store):
 
 def test_operacao_saude_metricas_e_filas(client, settings, redis):
     assert client.get("/health").json()["status"] == "ok"
-    assert client.get("/ready").json()["checks"] == {"redis": "ok", "storage": "ok"}
+    assert client.get("/ready").json() == {"status": "ok"}
+    assert client.get("/ready", headers=headers("ops")).json()["checks"] == {"redis": "ok", "storage": "ok"}
     submit(client)
     metrics = client.get("/metrics").text
     assert 'fai_queue_depth{queue="fai-segment"} 1.0' in metrics and "fai_jobs_submitted_total" in metrics
