@@ -1,0 +1,17 @@
+VIOLAÇÃO app/(site)/(app)/explorer/page.tsx: 352 linhas > limite 250 (production); divida por responsabilidade
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogService.java: cresceu para 847 linhas (teto congelado 811); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/lens/LensService.java: cresceu para 1427 linhas (teto congelado 1363); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/Avatar3dService.java: cresceu para 889 linhas (teto congelado 600); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/BackgroundStudioService.java: cresceu para 812 linhas (teto congelado 736); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/ChallengeService.java: cresceu para 1888 linhas (teto congelado 1852); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/IdentityService.java: cresceu para 1079 linhas (teto congelado 1007); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/InventoryScoreService.java: cresceu para 1295 linhas (teto congelado 1178); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/PreferencesService.java: cresceu para 540 linhas (teto congelado 451); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/RoomService.java: cresceu para 1533 linhas (teto congelado 1436); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java: cresceu para 1311 linhas (teto congelado 1271); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/SealService.java: cresceu para 2150 linhas (teto congelado 2097); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/SocialService.java: cresceu para 472 linhas (teto congelado 438); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java: cresceu para 2792 linhas (teto congelado 2730); extraia antes de acrescentar
+APERTAR fai-application/src/test/java/br/com/fashionai/application/service/IdentitySecurityTest.java: teto 596 -> 530 (rode: python -m scripts.refactoring.line_ratchet --update)
+APERTAR scripts/catalog/canonical_full_frame.py: teto 345 -> 259 (rode: python -m scripts.refactoring.line_ratchet --update)
+2594 arquivos governados; 263 congelados; 14 violações

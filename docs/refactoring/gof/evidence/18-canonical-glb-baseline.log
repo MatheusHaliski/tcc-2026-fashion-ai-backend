@@ -1,0 +1,20 @@
+test_container_errors (scripts.catalog.tests.test_canonical_frame_fixture.CanonicalFrameFixtureTest.test_container_errors) ... ok
+test_lot_is_idempotent_and_never_touches_photo_set (scripts.catalog.tests.test_canonical_frame_fixture.CanonicalFrameFixtureTest.test_lot_is_idempotent_and_never_touches_photo_set) ... ok
+test_lot_reports_checksum_and_decoder_failures (scripts.catalog.tests.test_canonical_frame_fixture.CanonicalFrameFixtureTest.test_lot_reports_checksum_and_decoder_failures) ... ok
+test_quad_renders_900x1200_transparent_review_png (scripts.catalog.tests.test_canonical_frame_fixture.CanonicalFrameFixtureTest.test_quad_renders_900x1200_transparent_review_png) ... ok
+test_semantic_and_topology_errors (scripts.catalog.tests.test_canonical_frame_fixture.CanonicalFrameFixtureTest.test_semantic_and_topology_errors) ... ok
+test_glb_renders_transparent_png_with_source_color (tests.test_canonical_full_frame.CanonicalFrameTest.test_glb_renders_transparent_png_with_source_color) ... skipped 'canonical asset bundle not present'
+test_legacy_template_is_not_automatically_rendered (tests.test_canonical_full_frame.CanonicalFrameTest.test_legacy_template_is_not_automatically_rendered) ... skipped 'canonical asset bundle not present'
+test_lot_writes_only_separate_preview (tests.test_canonical_full_frame.CanonicalFrameTest.test_lot_writes_only_separate_preview) ... skipped 'canonical asset bundle not present'
+test_nonready_source_is_skipped_and_wrapper_requires_ready (tests.test_canonical_full_frame.CanonicalFrameTest.test_nonready_source_is_skipped_and_wrapper_requires_ready) ... skipped 'canonical asset bundle not present'
+test_stale_preview_is_never_silently_reused (tests.test_canonical_full_frame.CanonicalFrameTest.test_stale_preview_is_never_silently_reused) ... skipped 'canonical asset bundle not present'
+test_guided_output_is_separate_review_and_idempotent (tests.test_canonical_photo_guided.PhotoGuidedTest.test_guided_output_is_separate_review_and_idempotent) ... skipped 'canonical GLB assets not available'
+test_nonready_photo_set_does_not_get_promoted (tests.test_canonical_photo_guided.PhotoGuidedTest.test_nonready_photo_set_does_not_get_promoted) ... skipped 'canonical GLB assets not available'
+test_rejects_unobservable_white_on_white (tests.test_canonical_photo_guided.PhotoGuidedTest.test_rejects_unobservable_white_on_white) ... skipped 'canonical GLB assets not available'
+test_studio_reference_preserves_real_details (tests.test_canonical_photo_guided.PhotoGuidedTest.test_studio_reference_preserves_real_details) ... skipped 'canonical GLB assets not available'
+test_unconfirmed_pair_is_not_processed (tests.test_canonical_photo_guided.PhotoGuidedTest.test_unconfirmed_pair_is_not_processed) ... skipped 'canonical GLB assets not available'
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.511s
+
+OK (skipped=10)

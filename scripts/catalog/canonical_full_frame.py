@@ -22,109 +22,23 @@ import hashlib
 import io
 import json
 import math
-import struct
 import time
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 
 try:
+    from .canonical_glb import CanonicalFrameError, Primitive, load_primitives
     from .photo_set_quality import assess_ready_candidate
 except ImportError:
+    from canonical_glb import CanonicalFrameError, Primitive, load_primitives
     from photo_set_quality import assess_ready_candidate
 
 WIDTH, HEIGHT = 900, 1200
 VERSION = "FAI_CANONICAL_FRAME_V0_PREVIEW"
 CATEGORIES = frozenset({"upper_piece", "lower_piece", "full_body_piece", "shoes_piece", "accessory_piece"})
 MIME = b"\x89PNG\r\n\x1a\n"
-
-
-class CanonicalFrameError(ValueError):
-    pass
-
-
-@dataclass(frozen=True)
-class Primitive:
-    positions: np.ndarray
-    texcoords: np.ndarray
-    triangles: np.ndarray
-    material: int
-
-
-def _glb(path: Path) -> tuple[dict, bytes]:
-    data = path.read_bytes()
-    if len(data) < 28 or data[:4] != b"glTF":
-        raise CanonicalFrameError("INVALID_CANONICAL_GLB")
-    magic, version, length = struct.unpack_from("<III", data)
-    if magic != 0x46546C67 or version != 2 or length != len(data):
-        raise CanonicalFrameError("INVALID_CANONICAL_GLB")
-    offset, document, binary = 12, None, None
-    while offset < len(data):
-        if offset + 8 > len(data):
-            raise CanonicalFrameError("INVALID_CANONICAL_GLB_CHUNK")
-        chunk_size, kind = struct.unpack_from("<I4s", data, offset)
-        offset += 8
-        if chunk_size % 4 or offset + chunk_size > len(data):
-            raise CanonicalFrameError("INVALID_CANONICAL_GLB_CHUNK")
-        value = data[offset:offset + chunk_size]
-        offset += chunk_size
-        if kind == b"JSON":
-            document = json.loads(value)
-        if kind == b"BIN\x00":
-            binary = value
-    if not isinstance(document, dict) or binary is None:
-        raise CanonicalFrameError("INVALID_CANONICAL_GLB_CHUNK")
-    return document, binary
-
-
-def _accessor(doc: dict, binary: bytes, index: int) -> np.ndarray:
-    acc = doc["accessors"][index]
-    view = doc["bufferViews"][acc["bufferView"]]
-    dimensions = {"SCALAR": 1, "VEC2": 2, "VEC3": 3}.get(acc["type"])
-    component = {5126: np.dtype("<f4"), 5125: np.dtype("<u4"), 5123: np.dtype("<u2")}.get(acc["componentType"])
-    if dimensions is None or component is None or acc.get("sparse"):
-        raise CanonicalFrameError("UNSUPPORTED_CANONICAL_ACCESSOR")
-    count = int(acc["count"])
-    start = int(view.get("byteOffset", 0)) + int(acc.get("byteOffset", 0))
-    stride = int(view.get("byteStride", dimensions * component.itemsize))
-    extent = start + (count - 1) * stride + dimensions * component.itemsize
-    if count < 1 or start < 0 or extent > len(binary):
-        raise CanonicalFrameError("INVALID_CANONICAL_ACCESSOR_BOUNDS")
-    if stride == dimensions * component.itemsize:
-        data = np.frombuffer(binary, dtype=component, count=count * dimensions, offset=start)
-        result = data.reshape(count, dimensions)
-    else:
-        result = np.ndarray(shape=(count, dimensions), dtype=component, buffer=binary, offset=start,
-                            strides=(stride, component.itemsize))
-    if not np.isfinite(result).all():
-        raise CanonicalFrameError("NONFINITE_CANONICAL_GEOMETRY")
-    return np.asarray(result)
-
-
-def _primitives(asset_path: Path, category: str, subcategory: str) -> list[Primitive]:
-    doc, binary = _glb(asset_path)
-    extra = doc.get("extras") or {}
-    if extra.get("category") != category or extra.get("subcategory") != subcategory:
-        raise CanonicalFrameError("CANONICAL_GEOMETRY_ID_MISMATCH")
-    if extra.get("approval") != "PROTOTYPE_UNVERIFIED":
-        raise CanonicalFrameError("CANONICAL_GEOMETRY_APPROVAL_UNEXPECTED")
-    primitives = []
-    for mesh in doc.get("meshes", []):
-        for primitive in mesh.get("primitives", []):
-            if primitive.get("mode", 4) != 4:
-                raise CanonicalFrameError("UNSUPPORTED_CANONICAL_TOPOLOGY")
-            attrs = primitive["attributes"]
-            positions = _accessor(doc, binary, attrs["POSITION"]).astype(np.float32)
-            uv = _accessor(doc, binary, attrs["TEXCOORD_0"]).astype(np.float32)
-            faces = _accessor(doc, binary, primitive["indices"]).reshape(-1).astype(np.int32)
-            if len(positions) != len(uv) or len(faces) % 3 or np.any(faces >= len(positions)):
-                raise CanonicalFrameError("INVALID_CANONICAL_TOPOLOGY")
-            primitives.append(Primitive(positions, uv, faces.reshape(-1, 3), int(primitive.get("material", 0))))
-    if not primitives:
-        raise CanonicalFrameError("CANONICAL_GEOMETRY_EMPTY")
-    return primitives
 
 
 def _texture(fabric_path: Path) -> tuple[np.ndarray, np.ndarray]:
@@ -170,7 +84,7 @@ def _camera(primitives: list[Primitive], category: str):
 
 def render_asset_png(asset_path: Path, fabric_path: Path, *, category: str, subcategory: str) -> tuple[bytes, dict]:
     """Software render of canonical preview, not a PBR/physics-certified bake."""
-    primitives = _primitives(Path(asset_path), category, subcategory)
+    primitives = load_primitives(Path(asset_path), category, subcategory)
     tiled, base = _texture(Path(fabric_path))
     projected, framing = _camera(primitives, category)
     output = np.zeros((HEIGHT, WIDTH, 4), dtype=np.uint8)
