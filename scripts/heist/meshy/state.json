@@ -513,17 +513,6 @@
   "done": 1793477389102,
   "bytes": 672936
  },
- "jewelVitrine": {
-  "preview": "01a19396-8480-75b0-baa8-511a38db584c",
-  "previewAt": 1793477479375,
-  "previewCredits": 20,
-  "refine": "01a19397-4fd8-70c5-90e3-162441e2e095",
-  "refineAt": 1793477531059,
-  "refineCredits": 10,
-  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a19397-4fd8-70c5-90e3-162441e2e095/output/preview.png?Expires=4947004800&Signature=OaOT2CwOEjgC9~6K4N3sC~m5WonyYtRfpdeTbAePXDTcBdV6WZHvKVqek3YqmGr8LZJ9MDsGdWiBaz7vGRwjPUm8kE6qe5yEkVOXvFJWgEbnMQxlR5gccmq76CsTfWcFxsyYvmMEUz1bE-4zHNzSsRM2Gr5v0723ZZNm418rhHXG97~KK0hdAejyDmcj3BVT-5bHKJT7SyW7CxiqixpBOoMrOk9wZUnrQRzGoRx~SzGzb74Liey~VqLzdHXwcYGXIILoiseT1kinn4Ff0sI0H8VYqTx8MxO9Ai66tULOcJ4PRr4sJxUuLBHTRehhJ9lXYX8qNkkjrM~mAJ3FVAlI4A__&Key-Pair-Id=K1VGYTHIYLM9UM",
-  "done": 1793477583781,
-  "bytes": 450312
- },
  "srvHandSink": {
   "preview": "01a19396-8450-70f1-b43f-6bb76fdfdc53",
   "previewAt": 1793477478957,
@@ -908,17 +897,6 @@
   "done": 1793478446009,
   "bytes": 632840
  },
- "segRack": {
-  "preview": "01a193a4-a4ca-713a-a64f-677dd8749cb1",
-  "previewAt": 1793478405384,
-  "previewCredits": 20,
-  "refine": "01a193a6-fafe-7167-8a00-35499f30170b",
-  "refineAt": 1793478557170,
-  "refineCredits": 10,
-  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a193a6-fafe-7167-8a00-35499f30170b/output/preview.png?Expires=4947004800&Signature=aHJy31p88Oh55EdkvvdYiEAT3YESBQD3TbNUDD6cokxdEYS-l177TJj5ZysF029qhp-y0i9YOhGdZllqkBfTGhymMZe9W1RJyCWOKcwKYgNm7NkzGPqeMxc-M~gQromSKf3hsXHh8gGN6MNXfwFmAZS1m41WTpRx5rCV4YHE4301FLWBqDZE3jHibwKILDSMfYxneTOsQ1NvX6zFRDMgizKXdQqmtL6Etul7awoaOlh6tR1h35rWtHKkRz-hAwMABytWjyFMBPn4N-2mc742sG~rRWrReQX0oRYKbxp2aeZnExxEipTAMAAdNg8Dy~HEFbcH57g37Slxub8PlLCaWw__&Key-Pair-Id=K1VGYTHIYLM9UM",
-  "done": 1793478610403,
-  "bytes": 369548
- },
  "segCoord": {
   "preview": "01a193a4-ad56-70a0-9bfe-308795fb8cc4",
   "previewAt": 1793478406955,
@@ -940,5 +918,52 @@
   "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a193a6-7e05-7238-8637-3e773e18359c/output/preview.png?Expires=4947004800&Signature=eHB9CSEynrALZGMkFI5nduVhRmesy6rbs~hI7ZZ6~KIlYuTWR1SabXtzein~KY9KR4kADsDv2VEObKAimwV8IAwY-5iuPl2mrRQuFfyXprX6sScAuV2wCAdKUaDb4yrdgbySdSHIzT7haqmi2jpSDAnFsWMU4ZN464rLSqawQJgjUX6wkg1d~E3566~kC3usRsqgJ6p15M6FlvWM68IxRZ9~4twKlFb1gbnja5UtkFjWwDtIWEQ9wjvhbVGkeQHUdJWWrdwtO-mJ9CCEXM0wRiwZFZDFZRxLusoz5yIMpGo7R4QKU8lz19EgCCbElwMV1SnliB5LHwp2JjzGRzWaAw__&Key-Pair-Id=K1VGYTHIYLM9UM",
   "done": 1793478565615,
   "bytes": 746120
+ },
+ "jewelVitrine__v1": {
+  "preview": "01a19396-8480-75b0-baa8-511a38db584c",
+  "previewAt": 1793477479375,
+  "previewCredits": 20,
+  "refine": "01a19397-4fd8-70c5-90e3-162441e2e095",
+  "refineAt": 1793477531059,
+  "refineCredits": 10,
+  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a19397-4fd8-70c5-90e3-162441e2e095/output/preview.png?Expires=4947004800&Signature=OaOT2CwOEjgC9~6K4N3sC~m5WonyYtRfpdeTbAePXDTcBdV6WZHvKVqek3YqmGr8LZJ9MDsGdWiBaz7vGRwjPUm8kE6qe5yEkVOXvFJWgEbnMQxlR5gccmq76CsTfWcFxsyYvmMEUz1bE-4zHNzSsRM2Gr5v0723ZZNm418rhHXG97~KK0hdAejyDmcj3BVT-5bHKJT7SyW7CxiqixpBOoMrOk9wZUnrQRzGoRx~SzGzb74Liey~VqLzdHXwcYGXIILoiseT1kinn4Ff0sI0H8VYqTx8MxO9Ai66tULOcJ4PRr4sJxUuLBHTRehhJ9lXYX8qNkkjrM~mAJ3FVAlI4A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "done": 1793477583781,
+  "bytes": 450312,
+  "retired": "refeito: saiu como um rolo branco num pedestal, sem vidro nem colar"
+ },
+ "segRack__v2": {
+  "preview": "01a193a4-a4ca-713a-a64f-677dd8749cb1",
+  "previewAt": 1793478405384,
+  "previewCredits": 20,
+  "refine": "01a193a6-fafe-7167-8a00-35499f30170b",
+  "refineAt": 1793478557170,
+  "refineCredits": 10,
+  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a193a6-fafe-7167-8a00-35499f30170b/output/preview.png?Expires=4947004800&Signature=aHJy31p88Oh55EdkvvdYiEAT3YESBQD3TbNUDD6cokxdEYS-l177TJj5ZysF029qhp-y0i9YOhGdZllqkBfTGhymMZe9W1RJyCWOKcwKYgNm7NkzGPqeMxc-M~gQromSKf3hsXHh8gGN6MNXfwFmAZS1m41WTpRx5rCV4YHE4301FLWBqDZE3jHibwKILDSMfYxneTOsQ1NvX6zFRDMgizKXdQqmtL6Etul7awoaOlh6tR1h35rWtHKkRz-hAwMABytWjyFMBPn4N-2mc742sG~rRWrReQX0oRYKbxp2aeZnExxEipTAMAAdNg8Dy~HEFbcH57g37Slxub8PlLCaWw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "done": 1793478610403,
+  "bytes": 369548,
+  "retired": "refeito: segunda tentativa: caixas abertas com portas rasgadas (1,5 × 1,3 × 1,9)"
+ },
+ "segRack": {
+  "preview": "01a193bd-6c39-7162-b15b-de7838478f36",
+  "previewAt": 1793480028576,
+  "previewCredits": 20,
+  "refine": "01a193be-fc9c-7023-ba7d-55e787c5b18b",
+  "refineAt": 1793480130208,
+  "refineCredits": 10,
+  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a193be-fc9c-7023-ba7d-55e787c5b18b/output/preview.png?Expires=4947004800&Signature=ngfGjUDf~GKQ-DevE07Plixzb6953-2V1D-mOFrk6YDgnz6IaQT2nLJOC7UkDnZStjCY0GXFxWM5T8qzm37GTKDqnwq937h44SJldh385weTsCZr-sJhP6P3mFUeBHeNZD~i9KDnEWiLDB468wXFddLSNve7vIdQiG9kVaHMNbwE4yFgLyDo5z3DbyLbhiv7UKPj~vX9K6YDUZPGlgaCDRebw7UTyIaHg4M2pJZG4LV-7zhob8aX~HxglflWtNAQqjem5oMEQ6JRqvhWwaT-uxgiNP0iRXDGI7O2ec-oX-DK3Z5rRLoOXPGb4FG9u9dKZ5Et0EEC3AUS56-jmYrbtQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "done": 1793480183155,
+  "bytes": 291396
+ },
+ "jewelVitrine__v2": {
+  "preview": "01a193bd-6c42-7623-952b-a4a6622645f4",
+  "previewAt": 1793480028549,
+  "previewCredits": 20,
+  "refine": "01a193be-caf6-763d-82e8-15a5513a06d5",
+  "refineAt": 1793480117598,
+  "refineCredits": 10,
+  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a193be-caf6-763d-82e8-15a5513a06d5/output/preview.png?Expires=4947004800&Signature=FdWdgkw1OukacHRVBZnehIeLN~6iZ5qNtSpSTSC3xKtN2OPkBElBC4YVb5-DrdCuoK0Z9urb7AKAUPGPdCt7~~yWvE9BciPmRt3OfdRNfKQRSfrCuiE7jtiDdAZn8a2xHXcvhBcMFBaYGaTS~M~-kWuj7rTmV7HBF7pPskWhNIRlnJniynJ6jXdlAB3UG3S4veVtJH9Bqe6GhvqmUUN1J~3LDWIVTr1WU9NmhzTrXQ-48RZOu8sNMhD4zLlPUcTnIRr16AMII57na5MwNRqrza9uF4Pxc4o66LUx7spIAUjSeABwnXX88iCnSaWj2qHuj~0ZC~nMOYksykqwZPQF6Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "done": 1793480158273,
+  "bytes": 560548,
+  "retired": "descartado: o Meshy não modela o vidro (ficou pedestal com busto e anel flutuante); a vitrine procedural com vidro continua"
  }
 }
