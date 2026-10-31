@@ -41,6 +41,13 @@ dentro do limite, e o arquivo original passa a compor/delegar. Aplicar um padrã
 corresponder de fato a um (ex.: Facade sobre colaboradores, Strategy, Chain of Responsibility); caso contrário,
 registrar "NENHUM" com o motivo. Exceção só para dados/configuração pura, com justificativa no baseline.
 
+### Proibido para "caber" no limite
+
+- Comprimir formatação: várias instruções numa linha, corpo de método e chaves numa linha só
+  (`{ return x(); }` em série), imports/parâmetros empilhados, remoção de quebras ou de comentários úteis.
+  O código segue a formatação padrão do projeto (uma instrução por linha); a redução tem de vir de extração.
+- Fragmentar sem coesão (`Parte1`/`Parte2`, métodos sem relação agrupados) ou apagar testes/asserções.
+
 ## Catraca (arquivos legados)
 
 1. Arquivo **novo** nasce dentro do limite.

@@ -14,7 +14,8 @@ Leia `docs/refactoring/LINE_RULES.md`. Resumo:
 - Antes de commitar: `python -m scripts.refactoring.line_ratchet` deve terminar sem violações.
 - **Arquivo acima do limite deve ser refatorado criando arquivos auxiliares** (uma responsabilidade coesa por
   arquivo, cada um dentro do limite); o original passa a compor/delegar. GoF quando a estrutura corresponder.
-- Divida por responsabilidade, não por contagem; nunca fragmente artificialmente.
+- Divida por responsabilidade, não por contagem; nunca fragmente artificialmente nem comprima a formatação
+  (várias instruções ou um método inteiro numa linha) para caber no limite.
 
 ## Refatoração
 
