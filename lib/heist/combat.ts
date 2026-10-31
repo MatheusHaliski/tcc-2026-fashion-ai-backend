@@ -170,7 +170,9 @@ export function makeNoise(s: SimState, at: Vec, r: number, kind: "shot" | "bottl
     if (dist(c.pos, at) < (kind === "alarm" ? 60 : r * 0.9) && c.role !== "vendor") {
       // cada um percebe num instante (o alarme demora mais a ser entendido que um tiro por perto)
       const late = rand(s) * (kind === "alarm" ? 1.6 : 0.5);
-      c.panicAt = s.time + late; c.panicUntil = s.time + late + 10 + rand(s) * 6; c.panicFrom = { ...at }; c.path = [];
+      // só quem ainda não está em pânico entra na onda com atraso; quem já está não volta à rotina entre dois tiros
+      if (c.panicUntil <= s.time) c.panicAt = s.time + late;
+      c.panicUntil = Math.max(c.panicUntil, s.time + late + 10 + rand(s) * 6); c.panicFrom = { ...at }; c.path = [];
     }
   }
 }

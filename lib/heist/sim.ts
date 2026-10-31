@@ -210,9 +210,10 @@ function fire(s: SimState, ctx: SimCtx, inp: HeistInput, tired: number) {
     s.stats.hits++; if (shot.head) s.stats.headshots++;
     damageGuard(s, shot.guard, SHOT_DAMAGE[p.weapon as "pistol"] * (shot.head ? 1.6 : 1), shot.head, p.pos);
   } else if (shot.civ) {
-    // tiro de raspão em quem estava na frente: a pessoa se joga no chão, grita, e todo mundo em volta vê
+    // tiro de raspão em quem estava na frente: a pessoa se joga no chão e grita; o barulho do tiro (makeNoise, acima)
+    // já põe a sala em pânico e manda os seguranças olharem (motivo "barulho")
     const c = shot.civ; c.panicAt = s.time; c.panicUntil = s.time + 12; c.panicFrom = { ...p.pos }; c.anim = "cower";
-    line(s, c.id, "heist.civ.grazed", 0); witness(s, p.pos, "kill");
+    line(s, c.id, "heist.civ.grazed", 0);
   }
 }
 

@@ -221,7 +221,7 @@ function boiserie(c: RoomsCtx) {
     c.batch.add(ROOM, walnut, BOX0(), mul(at(mid, 0.16, 0.012), mat(0, 0, 0, 0, len, 0.86, 0.024)), { cast: true });     // fundo do lambri
     c.batch.add(ROOM, walnut, BOX0(), mul(at(mid, 0.16, 0.03), mat(0, 0, 0, 0, len, 0.07, 0.03)));                       // travessa de baixo
     c.batch.add(ROOM, walnut, BOX0(), mul(at(mid, 0.93, 0.03), mat(0, 0, 0, 0, len, 0.07, 0.03)));                       // travessa de cima
-    c.batch.add(ROOM, walnut, geo("salao-chairRail", () => new THREE.CylinderGeometry(0.03, 0.03, 1, 10, 1).rotateZ(Math.PI / 2).translate(0, 0.03, 0)), mul(at(mid, 1.0, 0.04), mat(0, 0, 0, 0, len, 1, 1)));
+    c.batch.add(ROOM, walnut, geo("salao-dadoRail", () => new THREE.CylinderGeometry(0.03, 0.03, 1, 10, 1).rotateZ(Math.PI / 2).translate(0, 0.03, 0)), mul(at(mid, 1.0, 0.04), mat(0, 0, 0, 0, len, 1, 1)));
     c.batch.add(ROOM, walnut, BOX0(), mul(at(mid, 1.0, 0.025), mat(0, 0, 0, 0, len, 0.06, 0.05)));                      // chapim
     const n = Math.max(1, Math.round(len / 0.95)), pw = len / n;
     for (let k = 0; k < n; k++) {

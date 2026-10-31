@@ -14,11 +14,11 @@ import { lathe, merge } from "./exterior-geometry";
 import type { ExteriorMaterials } from "./exterior-materials";
 import { glowTex, leafTex, prng, type Quality } from "./exterior-textures";
 import { flyerAtlas, flyerUV } from "./exterior-citytex";
-import { FAR_LINE } from "./exterior-blocks";
+import { CROSS, FAR_LINE } from "./exterior-blocks";
 
 type V2 = { x: number; z: number };
 /** Onde não cai sujeira: tapete e escadaria, o patamar das portas e a rampa da doca. */
-const clean = (p: V2) => (p.x > -2.7 && p.x < 2.7 && p.z < 33.1) || (p.x > STAIRS.x0 && p.x < STAIRS.x1 && p.z < STAIRS.bottom) || p.z < 24.6 || (p.z > FAR_LINE - 0.05);
+const clean = (p: V2) => (p.x > -2.7 && p.x < 2.7 && p.z < 33.1) || (p.x > STAIRS.x0 && p.x < STAIRS.x1 && p.z < STAIRS.bottom) || p.z < 24.6 || ((p.z > FAR_LINE - 0.05 && !CROSS.some((c) => p.x >= c.walk0 && p.x <= c.walk1)));
 /** Chão em (x, z) com a sujeira 2–4 mm acima (sem brigar com o piso). */
 const ground = (p: V2, lift = 0.004) => floorY(p) + lift;
 
