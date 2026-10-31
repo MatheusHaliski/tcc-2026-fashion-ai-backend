@@ -13,7 +13,7 @@ import { M } from "./interior-mats";
 import { INTERIOR, buildShell, isInterior, roomAtPoint, type InteriorRoom } from "./interior-shell";
 import { DOMES, HALL_H, buildFloral, buildHall } from "./interior-hall";
 import { buildProp, foot, type LightAnchor, type PropsCtx } from "./interior-props";
-import { buildRooms, type RoomsCtx } from "./interior-rooms";
+import { dressAreas, type RoomsCtx } from "./areas";
 import { buildDoors, type DoorOut } from "./interior-doors";
 import { drawnTexture, type FloorKey, type Quality } from "./interior-tex";
 import { FloorMirror, applyRoomEnv, buildBeacons, buildHalos, buildVision, type Animated, type BeaconsOut, type VisionOut } from "./interior-fx";
@@ -37,6 +37,8 @@ export interface InteriorBuild {
   shadows: THREE.Mesh[];
   /** malhas cuja geometria é só delas (lotes mesclados) — liberadas no dispose */
   owned: THREE.Mesh[];
+  /** animações por quadro das áreas (areas/*: discos espelhados, luzes da pista, telas…) */
+  ticks: RoomsCtx["ticks"];
   stats: { draws: number; instances: number; triangles: number; anchors: number; ms: number };
 }
 
@@ -106,8 +108,8 @@ export function buildInterior(q: Quality, locale: SceneLocale): InteriorBuild {
   const pc: PropsCtx = { q, P, batch, inst, copy, anchors, flames, animated, group: loose };
   const props = w.props.filter((p) => isInterior(p.room));
   for (const p of props) buildProp(p, pc);
-  const rc: RoomsCtx = { q, P, batch, inst, copy, anchors, flames, group: loose, beacons: [], cones: [] };
-  buildRooms(rc);
+  const rc: RoomsCtx = { q, P, batch, inst, copy, anchors, flames, group: loose, beacons: [], cones: [], ticks: [] };
+  dressAreas(rc);
   hallAnchors(hall.chandeliers, [...hall.flames, ...flames], anchors);
   contactShadows(props, batch);
   /* portas internas */
@@ -127,6 +129,7 @@ export function buildInterior(q: Quality, locale: SceneLocale): InteriorBuild {
     const tri = (mesh.geometry.index?.count ?? mesh.geometry.getAttribute("position").count) / 3; triangles += tri;
     const name = (mesh.material as THREE.Material).name;
     if (name.startsWith("floor-")) floors.push({ mesh, key: name.split("-")[1] as FloorKey, room: room as InteriorRoom });
+    else if ((mesh.material as THREE.Material).userData?.mirror) floors.push({ mesh, key: name as FloorKey, room: room as InteriorRoom });
     if (name === "contactRound" || name === "contactRect") { shadows.push(mesh); mesh.renderOrder = 1; }
   }
   for (const { room, mesh } of inst.flush()) {
@@ -140,7 +143,7 @@ export function buildInterior(q: Quality, locale: SceneLocale): InteriorBuild {
   const beacons = buildBeacons(rc.beacons); root.add(beacons.group);
   const vision = buildVision(); root.add(vision.group);
   const ms = (typeof performance !== "undefined" ? performance.now() : 0) - t0;
-  return { q, root, rooms, anchors, beacons, cones: rc.cones, animated, doors, doorRooms, halos, vision, floors, shadows, owned, stats: { draws, instances, triangles: Math.round(triangles), anchors: anchors.length, ms: Math.round(ms) } };
+  return { q, root, rooms, anchors, beacons, cones: rc.cones, animated, doors, doorRooms, halos, vision, floors, shadows, owned, ticks: rc.ticks, stats: { draws, instances, triangles: Math.round(triangles), anchors: anchors.length, ms: Math.round(ms) } };
 }
 
 /** O que depende do renderizador: ambiente do clima em cada sala e o reflexo dos pisos polidos (só no "high"). */
@@ -154,7 +157,8 @@ export function prepareInterior(b: InteriorBuild, gl: THREE.WebGLRenderer): Prep
   let mirror: FloorMirror | null = null;
   if (b.q === "high") {
     mirror = new FloorMirror(0.5);
-    for (const f of b.floors) { const k = MIRROR[f.key]; if (k) mirror.patch(f.mesh, k[0], k[1]); }
+    // piso da casca: força pelo tipo; piso próprio de uma área (areas/*): força no material (userData.mirror)
+    for (const f of b.floors) { const k = ((f.mesh.material as THREE.Material).userData?.mirror as [number, number] | undefined) ?? MIRROR[f.key]; if (k) mirror.patch(f.mesh, k[0], k[1]); }
   }
   const out = { mirror, domes: beaconDomes(b) }; prepared.set(b, { gl, out });
   return out;

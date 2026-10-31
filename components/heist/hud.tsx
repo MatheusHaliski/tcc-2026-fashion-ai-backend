@@ -58,7 +58,7 @@ export function Hud({ h, pad, lines, toasts, names, settings, fps, errors = 0 }:
     <div className="hz-letterbox" aria-hidden><span /><span /></div>
     {/* vida baixa: vinheta vermelha; tiro levado: clarão; Visão: contorno ciano na borda */}
     <div className="hz-vignette" style={{ opacity: Math.min(0.85, h.tired * 0.9) }} aria-hidden />
-    <div className="hz-hitflash" style={{ opacity: hitAgo < 0.35 ? 0.55 * (1 - hitAgo / 0.35) : 0 }} aria-hidden />
+    <div className="hz-hitflash" style={{ opacity: hitAgo < 0.35 ? (settings.reduceFlashes ? 0.18 : 0.55) * (1 - hitAgo / 0.35) : 0 }} aria-hidden />
     {h.vision > 0 && <div className="hz-visionframe" aria-hidden />}
 
     {!cinema && <>

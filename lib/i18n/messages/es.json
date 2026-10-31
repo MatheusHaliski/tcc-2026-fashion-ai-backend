@@ -9223,5 +9223,9 @@
   "atelier3d.guests.revoked": "Revocado",
   "atelier3d.guests.revoke": "Revocar",
   "atelier3d.guests.missingToken": "Abre el enlace privado completo enviado por el responsable del proyecto.",
-  "atelier3d.guests.session": "Acceso de invitado por enlace privado. La identificación es declarada por el responsable y no verifica tu identidad personal."
+  "atelier3d.guests.session": "Acceso de invitado por enlace privado. La identificación es declarada por el responsable y no verifica tu identidad personal.",
+  "heist.bark.clear": "¡Apártense!",
+  "heist.civ.grazed": "¡Casi me da!",
+  "heist.options.reduceFlashes": "Reducir destellos",
+  "heist.options.reduceFlashesHint": "La alarma queda encendida sin parpadear, los fogonazos y el destello de daño se atenúan y nada en la interfaz late."
 }

@@ -30,10 +30,16 @@ export type PropKind =
   | "column" | "table" | "bar" | "crate" | "shelf" | "case" | "rack" | "stand" | "planter" | "desk" | "backdrop" | "stage" | "screen"
   | "panel" | "bench" | "rope" | "detector" | "locker" | "piano" | "sofa" | "floral" | "statue" | "railing" | "cart" | "mirror"
   | "mannequin" | "lamp" | "worktable" | "steamer" | "pedestal" | "safe" | "coatcheck" | "dumpster" | "monitor"
+  // móvel próprio de uma área (lib/heist/areas/*): o desenho vem do módulo da área pelo `model`
+  | "fixture"
   // exterior
   | "limo" | "suv" | "policeCar" | "cateringTruck" | "getawayCar" | "barrier" | "riser" | "podium" | "lampPost" | "tree"
   | "vendorStand" | "tent" | "hydrant" | "fireEscape";
-export interface Prop { id: string; kind: PropKind; shape: Shape; height: Height; room: RoomId; yaw?: number; variant?: number }
+export interface Prop {
+  id: string; kind: PropKind; shape: Shape; height: Height; room: RoomId; yaw?: number; variant?: number;
+  /** "fixture": qual móvel da área é (ex.: "djBooth", "dessertTable") — o módulo de cena da área desenha */
+  model?: string;
+}
 
 /** public: convidados circulam · staff: equipe (com uniforme, tudo bem) · private: só a segurança · street: lado de fora */
 export type Access = "public" | "staff" | "private" | "street";
@@ -55,8 +61,8 @@ export interface InteractDef { id: string; kind: InteractKind; pos: Vec; room: R
 /** Aparência de quem está em cena: o catálogo (lib/heist/looks.ts) monta humanos realistas a partir destas chaves e do seed. */
 export type LookId =
   | "guestF" | "guestM" | "guard" | "guardHeavy" | "police" | "waiter" | "waitress" | "hostess" | "paparazzo" | "fan"
-  | "catering" | "vendor" | "curator" | "bartender" | "musician" | "crew" | "driver";
-export type CivRole = "guest" | "queue" | "fan" | "paparazzo" | "waiter" | "hostess" | "catering" | "vendor" | "curator" | "bartender" | "musician" | "crew" | "driver" | "celebrity" | "dancer";
+  | "catering" | "vendor" | "curator" | "bartender" | "musician" | "crew" | "driver" | "dj" | "chef";
+export type CivRole = "guest" | "queue" | "fan" | "paparazzo" | "waiter" | "hostess" | "catering" | "vendor" | "curator" | "bartender" | "musician" | "crew" | "driver" | "celebrity" | "dancer" | "dj" | "chef";
 /** Jeito de cada convidado (MH-05-03): tagarela puxa conversa, desconfiada vira quando alguém fica atrás, distraída não
  * percebe nada, crítica de moda comenta a roupa. */
 export type Persona = "chatty" | "wary" | "dreamy" | "critic";
@@ -70,8 +76,8 @@ export type Anim =
   | "idle" | "walk" | "run" | "sneak" | "crouch" | "discreet" | "tired" | "talk" | "phone" | "drink" | "photo" | "cheer"
   | "serve" | "guard" | "aim" | "shoot" | "reload" | "melee" | "stab" | "takedown" | "knockedOut" | "dead" | "downed"
   | "change" | "pickpocket" | "interact" | "climb" | "crawl" | "celebrate" | "dance" | "wave" | "sit" | "queue" | "look"
-  | "point" | "cower" | "flee" | "play";
-export type Hold = "pistol" | "knife" | "camera" | "tray" | "phone" | "glass" | "flashlight" | "tablet" | "diamond" | "violin" | null;
+  | "point" | "cower" | "flee" | "play" | "dj" | "eat";
+export type Hold = "pistol" | "knife" | "camera" | "tray" | "phone" | "glass" | "flashlight" | "tablet" | "diamond" | "violin" | "plate" | "headphones" | null;
 
 /* ---------- seguranças ---------- */
 /** GRABBED: agarrado por trás durante o nocaute (não vê nem age; cai no fim da ação). */
@@ -121,6 +127,8 @@ export interface Civilian {
   home: Vec; homeYaw: number; wander: Vec[]; wanderIdx: number; path: Vec[]; pathIdx: number; waitUntil: number;
   /** pânico depois de tiros (corre para longe ou se abaixa) até este instante */
   panicUntil: number; panicFrom: Vec | null;
+  /** quando o pânico começa (reação ao alarme fora de sincronia: cada um percebe num instante) */
+  panicAt?: number;
   /** reação à jogadora: olhar, comentar, pedir bebida ao "garçom", estranhar */
   reactUntil: number; reactKind: "look" | "order" | "stare" | "greet" | "point" | null; barkAt: number; seed: number; queueIdx: number;
   hasInvite: boolean; animAt: number;

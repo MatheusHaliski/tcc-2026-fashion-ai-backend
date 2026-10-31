@@ -16,7 +16,7 @@ import * as THREE from "three";
 import type { SceneView } from "@/lib/heist/view";
 import { archedWall, atticBase, boxGeo, corinthianCapital, flutedShaft, inst, lathe, merge, moldingSouth, worldUV } from "./exterior-geometry";
 import { exteriorMaterials } from "./exterior-materials";
-import { bannerTex, inscriptionTex, signTex, SIGNAGE, type Quality } from "./exterior-textures";
+import { bannerTex, inscriptionTex, plaqueTex, signTex, SIGNAGE, type Quality } from "./exterior-textures";
 
 /* ---------- medidas da fachada (m) ---------- */
 export const FACADE_Z = 24.5;
@@ -76,13 +76,24 @@ function useFacadeGeometry(q: Quality) {
       rough.push(boxGeo(px - 0.95, Y_ENT_TOP + 1.25, FACADE_Z + 0.15, px + 0.75, Y_ENT_TOP + 2.25, front - 0.35));
       rough.push(boxGeo(px - 0.2, Y_ENT_TOP + 2.25, FACADE_Z + 0.25, px + 0.65, Y_ENT_TOP + 2.75, front - 0.55));
     }
-    // entablamento corrido: arquitrave, friso e cornija
+    // almofadas (painel em relevo com moldura) nas faces dos pedestais encostados e no tímpano sobre os arcos laterais
+    const cushion = (x0: number, x1: number, y0: number, y1: number, z: number) => {
+      stone.push(boxGeo(x0 + 0.1, y0 + 0.1, z, x1 - 0.1, y1 - 0.1, z + 0.035));
+      for (const [a, b, c2, d] of [[x0, y0, x1, y0 + 0.06], [x0, y1 - 0.06, x1, y1], [x0, y0, x0 + 0.06, y1], [x1 - 0.06, y0, x1, y1]]) stone.push(boxGeo(a, b, z, c2, d, z + 0.06));
+    };
+    for (const px of PAIRS) if (!isFree(px)) { const w = PAIR_GAP + 0.66; cushion(px - w + 0.2, px + w - 0.2, 0.25, Y_PED - 0.45, FACADE_Z + 0.675); }
+    // entablamento corrido: arquitrave, friso, dentículos e cornija
     stone.push(moldingSouth(P_ARCHITRAVE, -HALF, HALF, FACADE_Z, Y_ENT));
+    for (let x = -HALF + 0.1; x < HALF - 0.05; x += 0.17) stone.push(boxGeo(x, Y_CORN - 0.11, FACADE_Z + 0.2, x + 0.08, Y_CORN - 0.01, FACADE_Z + 0.29));
     ashlar.push(boxGeo(-HALF, Y_FRIEZE, FACADE_Z, HALF, Y_CORN, FACADE_Z + 0.2));
     stone.push(moldingSouth(P_CORNICE, -HALF - 0.2, HALF + 0.2, FACADE_Z + 0.2, Y_CORN));
     // ático (recuado), painéis rebaixados, friso de cabeças e guirlandas e a cornija de coroamento
     ashlar.push(boxGeo(-HALF, Y_ENT_TOP, 14.5, HALF, Y_ATTIC_TOP, FACADE_Z - 0.05));
-    for (let k = 0; k < 7; k++) { const x0 = -HALF + 0.6 + k * ((2 * HALF - 1.2) / 7); const x1 = x0 + (2 * HALF - 1.2) / 7 - 0.5; stone.push(boxGeo(x0 + 0.25, Y_ENT_TOP + 0.35, FACADE_Z - 0.05, x1 + 0.25, Y_ENT_TOP + 1.55, FACADE_Z + 0.02)); }
+    for (let k = 0; k < 7; k++) {
+      const x0 = -HALF + 0.6 + k * ((2 * HALF - 1.2) / 7); const x1 = x0 + (2 * HALF - 1.2) / 7 - 0.5;
+      stone.push(boxGeo(x0 + 0.25, Y_ENT_TOP + 0.35, FACADE_Z - 0.05, x1 + 0.25, Y_ENT_TOP + 1.55, FACADE_Z + 0.02));
+      for (const [a, b, c2, d] of [[x0 + 0.1, Y_ENT_TOP + 0.22, x1 + 0.4, Y_ENT_TOP + 0.3], [x0 + 0.1, Y_ENT_TOP + 1.6, x1 + 0.4, Y_ENT_TOP + 1.68], [x0 + 0.1, Y_ENT_TOP + 0.22, x0 + 0.18, Y_ENT_TOP + 1.68], [x1 + 0.32, Y_ENT_TOP + 0.22, x1 + 0.4, Y_ENT_TOP + 1.68]]) stone.push(boxGeo(a, b, FACADE_Z - 0.05, c2, d, FACADE_Z + 0.06));
+    }
     const heads: THREE.BufferGeometry[] = [];
     for (let k = 0; k <= 16; k++) {
       const x = -HALF + 0.9 + k * ((2 * HALF - 1.8) / 16), y = Y_ATTIC_TOP - 0.55;
@@ -166,23 +177,33 @@ export function Instanced({ geometry, material, matrices, shadow = false }: { ge
   return <primitive ref={ref} object={mesh} />;
 }
 
-/** Banner de tecido pendurado numa haste de latão (leve ondulação). */
-function Banner({ q, kind, x, y0, y1, w, z }: { q: Quality; kind: "aurora" | "lumiere" | "institute" | "marquee"; x: number; y0: number; y1: number; w: number; z: number }) {
+/** Banners da fachada: [tipo, x, y0, y1, largura, z]. Os três do Instituto dividem a textura (uma malha só). */
+const BANNERS: { kind: "aurora" | "lumiere" | "institute" | "marquee"; x: number; y0: number; y1: number; w: number; z: number }[] = [
+  { kind: "aurora", x: -9, y0: 2.2, y1: 9.75, w: 3.6, z: FACADE_Z + 0.12 }, { kind: "lumiere", x: 9, y0: 2.2, y1: 9.75, w: 3.6, z: FACADE_Z + 0.12 },
+  { kind: "marquee", x: 0, y0: 8.95, y1: 9.85, w: 3.6, z: FACADE_Z + 0.32 },
+  ...[-21.6, -36, -50.4].map((x) => ({ kind: "institute" as const, x, y0: 5.4, y1: 10.6, w: 1.7, z: FACADE_Z + 0.14 })),
+];
+/** Tecido dos banners (leve ondulação), um lote por desenho, e as hastes e ponteiras de latão de todos num lote só. */
+function Banners({ q }: { q: Quality }) {
   const m = exteriorMaterials(q);
-  const { geo, mat } = useMemo(() => {
-    const h = y1 - y0, g = new THREE.PlaneGeometry(w, h, 10, 16), p = g.getAttribute("position");
-    for (let i = 0; i < p.count; i++) { const u = p.getX(i) / w + 0.5, v = p.getY(i) / h + 0.5; p.setZ(i, 0.045 * Math.sin(u * Math.PI * 4 + v * 1.3) * (0.4 + 0.6 * (1 - v))); }
-    g.computeVertexNormals();
-    return { geo: g, mat: new THREE.MeshStandardMaterial({ map: bannerTex(q, kind), roughness: 0.82, side: THREE.DoubleSide, envMapIntensity: 0.3 }) };
-  }, [q, kind, w, y0, y1]);
-  return (
-    <group position={[x, 0, z]}>
-      <mesh geometry={geo} material={mat} position={[0, (y0 + y1) / 2, 0]} castShadow receiveShadow />
-      <mesh material={m.brass} position={[0, y1 + 0.06, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.035, 0.035, w + 0.3, 10]} /></mesh>
-      <mesh material={m.brass} position={[0, y0 - 0.04, 0.02]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.025, 0.025, w + 0.1, 8]} /></mesh>
-      {[-1, 1].map((s) => <mesh key={s} material={m.brass} position={[s * (w / 2 + 0.15), y1 + 0.06, 0]}><sphereGeometry args={[0.06, 10, 8]} /></mesh>)}
-    </group>
-  );
+  const data = useMemo(() => {
+    const cloth = new Map<string, THREE.BufferGeometry[]>(), brass: THREE.BufferGeometry[] = [];
+    for (const b of BANNERS) {
+      const h = b.y1 - b.y0, g = new THREE.PlaneGeometry(b.w, h, 10, 16), p = g.getAttribute("position");
+      for (let i = 0; i < p.count; i++) { const u = p.getX(i) / b.w + 0.5, v = p.getY(i) / h + 0.5; p.setZ(i, 0.045 * Math.sin(u * Math.PI * 4 + v * 1.3) * (0.4 + 0.6 * (1 - v))); }
+      g.computeVertexNormals(); g.translate(b.x, (b.y0 + b.y1) / 2, b.z);
+      (cloth.get(b.kind) ?? cloth.set(b.kind, []).get(b.kind)!).push(g);
+      const rod = (y: number, r: number, len: number, dz: number) => { const c = new THREE.CylinderGeometry(r, r, len, 10); c.rotateZ(Math.PI / 2); c.translate(b.x, y, b.z + dz); return c; };
+      brass.push(rod(b.y1 + 0.06, 0.035, b.w + 0.3, 0), rod(b.y0 - 0.04, 0.025, b.w + 0.1, 0.02));
+      for (const s of [-1, 1]) { const f = new THREE.SphereGeometry(0.06, 10, 8); f.translate(b.x + s * (b.w / 2 + 0.15), b.y1 + 0.06, b.z); brass.push(f); }
+    }
+    return { cloth: [...cloth.entries()].map(([k, l]) => ({ k: k as (typeof BANNERS)[number]["kind"], geo: merge(l) })), brass: merge(brass) };
+  }, []);
+  const mats = useMemo(() => Object.fromEntries(data.cloth.map(({ k }) => [k, new THREE.MeshStandardMaterial({ map: bannerTex(q, k), roughness: 0.82, side: THREE.DoubleSide, envMapIntensity: 0.3 })])), [q, data]);
+  return (<>
+    {data.cloth.map(({ k, geo }) => <mesh key={k} geometry={geo} material={mats[k]} castShadow receiveShadow />)}
+    <mesh geometry={data.brass} material={m.brass} />
+  </>);
 }
 
 /** Portas de bronze e vidro do arco central: duas folhas que abrem para dentro (dobradiças nas pontas). */
@@ -190,9 +211,11 @@ function FrontDoors({ q, view }: { q: Quality; view: React.MutableRefObject<Scen
   const m = exteriorMaterials(q);
   const left = useRef<THREE.Group>(null), right = useRef<THREE.Group>(null), open = useRef(0);
   const leaf = useMemo(() => {
-    const frame = merge([boxGeo(0, 0, -0.04, 2, 0.22, 0.04), boxGeo(0, 3.98, -0.04, 2, 4.2, 0.04), boxGeo(0, 0, -0.04, 0.12, 4.2, 0.04), boxGeo(1.88, 0, -0.04, 2, 4.2, 0.04), boxGeo(0.12, 2.05, -0.04, 1.88, 2.15, 0.04)]);
-    const glass = merge([boxGeo(0.12, 0.22, -0.012, 1.88, 2.05, 0.012), boxGeo(0.12, 2.15, -0.012, 1.88, 3.98, 0.012)]);
-    const bar = boxGeo(0.25, 1.0, 0.04, 1.75, 1.06, 0.1);
+    const frame = merge([boxGeo(0, 0, -0.04, 2, 0.22, 0.04), boxGeo(0, 3.98, -0.04, 2, 4.2, 0.04), boxGeo(0, 0, -0.04, 0.12, 4.2, 0.04), boxGeo(1.88, 0, -0.04, 2, 4.2, 0.04), boxGeo(0.12, 2.05, -0.04, 1.88, 2.15, 0.04),
+      // almofada de bronze na parte de baixo: painel com moldura em relevo
+      boxGeo(0.12, 0.22, -0.03, 1.88, 1.1, 0.03), boxGeo(0.3, 0.38, 0.03, 1.7, 0.94, 0.05), boxGeo(0.22, 0.3, 0.03, 1.78, 0.36, 0.06), boxGeo(0.22, 0.96, 0.03, 1.78, 1.02, 0.06), boxGeo(0.22, 0.3, 0.03, 0.28, 1.02, 0.06), boxGeo(1.72, 0.3, 0.03, 1.78, 1.02, 0.06), boxGeo(0.12, 1.1, -0.04, 1.88, 1.16, 0.04)]);
+    const glass = merge([boxGeo(0.12, 1.16, -0.012, 1.88, 2.05, 0.012), boxGeo(0.12, 2.15, -0.012, 1.88, 3.98, 0.012)]);
+    const bar = merge([boxGeo(1.62, 0.95, 0.05, 1.66, 2.2, 0.09), boxGeo(1.6, 0.95, 0.03, 1.68, 1.0, 0.09), boxGeo(1.6, 2.15, 0.03, 1.68, 2.2, 0.09)]);
     return { frame, glass, bar };
   }, []);
   const glass = useMemo(() => { const g = m.glassWarm.clone(); g.emissiveIntensity = 0.55; g.transparent = true; g.opacity = 0.75; return g; }, [m]);
@@ -275,6 +298,7 @@ export function HeistFacade({ q, view }: { q: Quality; view: React.MutableRefObj
   const g = useFacadeGeometry(q);
   const w = useWindows();
   const inscription = useMemo(() => new THREE.MeshStandardMaterial({ map: inscriptionTex(q, SIGNAGE.museum), transparent: true, roughness: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), [q]);
+  const plaques = useMemo(() => ({ museum: plaqueTex(q, "museum", [SIGNAGE.museum, "FUNDADO EM MCMXXXI", "ARTE · TRAJE · CIDADE"]), gala: plaqueTex(q, "gala", [SIGNAGE.institute, "GALA LUMIÈRE · ENTRADA", "SOMENTE COM CONVITE"]) }), [q]);
   return (
     <group>
       <mesh geometry={g.ashlar} material={m.ashlar} castShadow receiveShadow />
@@ -293,6 +317,8 @@ export function HeistFacade({ q, view }: { q: Quality; view: React.MutableRefObj
       <Instanced geometry={w.mullion} material={m.bronze} matrices={[...w.big, ...w.litBig, ...w.small, ...w.litSmall]} />
       <Instanced geometry={w.frame} material={m.stone} matrices={[...w.big, ...w.litBig, ...w.small, ...w.litSmall]} />
       <Instanced geometry={w.pediment} material={m.stone} matrices={[...w.big, ...w.litBig]} />
+      {/* placas de bronze nos pedestais dos pares soltos (nome do museu e a entrada da gala) */}
+      {[[-4.6, "museum"], [4.6, "gala"]].map(([x, k]) => <mesh key={k as string} position={[x as number, 0.62, 25.82]}><boxGeometry args={[1.05, 0.65, 0.035]} /><meshStandardMaterial map={k === "museum" ? plaques.museum : plaques.gala} metalness={0.55} roughness={0.42} /></mesh>)}
       {/* inscrição no friso, entre os pares de dentro */}
       <mesh material={inscription} position={[0, Y_FRIEZE + 0.3, FACADE_Z + 0.205]}><planeGeometry args={[7.6, 0.475]} /></mesh>
       {/* vãos: portas centrais, bandeira e os arcos laterais envidraçados */}
@@ -302,10 +328,7 @@ export function HeistFacade({ q, view }: { q: Quality; view: React.MutableRefObj
       <ArchGlazing q={q} cx={0} spring={5.9} w={4.2} from={4.44} />
       {[-9, 9].map((cx) => <ArchGlazing key={cx} q={q} cx={cx} spring={5.9} w={4.2} from={0} />)}
       {/* banners da exposição entre os pares e a faixa sobre o arco central */}
-      <Banner q={q} kind="aurora" x={-9} y0={2.2} y1={9.75} w={3.6} z={FACADE_Z + 0.12} />
-      <Banner q={q} kind="lumiere" x={9} y0={2.2} y1={9.75} w={3.6} z={FACADE_Z + 0.12} />
-      <Banner q={q} kind="marquee" x={0} y0={8.95} y1={9.85} w={3.6} z={FACADE_Z + 0.32} />
-      {[-21.6, -36, -50.4].map((x) => <Banner key={x} q={q} kind="institute" x={x} y0={5.4} y1={10.6} w={1.7} z={FACADE_Z + 0.14} />)}
+      <Banners q={q} />
       <DockGate q={q} view={view} />
       <FireDoorFrame q={q} />
     </group>

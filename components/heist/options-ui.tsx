@@ -63,6 +63,7 @@ export function OptionsPanel({ settings: st, onSettings: set }: { settings: Heis
       <Choice name="hz-subsize" legend={t("heist.options.subtitleSize")} value={st.subtitleSize} onChange={(v) => set({ ...st, subtitleSize: v })} options={(["s", "m", "l", "xl"] as const).map((v) => ({ v, label: t(`heist.options.size.${v}`) }))} />
       <Range label={t("heist.options.subtitleBg")} value={st.subtitleBg} min={0} max={1} step={0.05} onChange={(v) => set({ ...st, subtitleBg: v })} fmt={pct} />
       <Check label={t("heist.options.minimalHud")} hint={t("heist.options.minimalHudHint")} checked={st.minimalHud} onChange={(v) => set({ ...st, minimalHud: v })} />
+      <Check label={t("heist.options.reduceFlashes")} hint={t("heist.options.reduceFlashesHint")} checked={st.reduceFlashes} onChange={(v) => set({ ...st, reduceFlashes: v })} />
     </section>
     <section><h3>{t("heist.options.video")}</h3>
       <Choice name="hz-quality" legend={t("heist.options.quality")} value={st.quality} onChange={(v) => set({ ...st, quality: v })} options={[{ v: "high", label: t("heist.options.high") }, { v: "low", label: t("heist.options.low") }]} />

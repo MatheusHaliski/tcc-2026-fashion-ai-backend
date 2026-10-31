@@ -12,7 +12,8 @@ import * as THREE from "three";
 export type Quality = "high" | "low";
 
 const cache = new Map<string, unknown>();
-function memo<T>(key: string, make: () => T): T { if (!cache.has(key)) cache.set(key, make()); return cache.get(key) as T; }
+/** Cache das texturas do módulo (as da cidade também guardam aqui: chave com o prefixo "city-"). */
+export function memo<T>(key: string, make: () => T): T { if (!cache.has(key)) cache.set(key, make()); return cache.get(key) as T; }
 
 /** Sorteio com semente (mulberry32): a rua é sempre a mesma. */
 export function prng(seed: number) {
@@ -42,23 +43,23 @@ function field(size: number, seed: number, octaves = 5, base = 4): Float32Array 
   for (let i = 0; i < out.length; i++) out[i] /= total;
   return out;
 }
-const fieldOf = (size: number, seed: number, octaves = 5, base = 4) => memo(`f${size}:${seed}:${octaves}:${base}`, () => field(size, seed, octaves, base));
+export const fieldOf = (size: number, seed: number, octaves = 5, base = 4) => memo(`f${size}:${seed}:${octaves}:${base}`, () => field(size, seed, octaves, base));
 /** Amostra o campo com repetição (bilinear), em coordenadas de pixel de um campo de lado n. */
-function samp(f: Float32Array, n: number, x: number, y: number): number {
+export function samp(f: Float32Array, n: number, x: number, y: number): number {
   x = ((x % n) + n) % n; y = ((y % n) + n) % n;
   const ix = Math.floor(x), iy = Math.floor(y), tx = x - ix, ty = y - iy, ix1 = (ix + 1) % n, iy1 = (iy + 1) % n;
   const a = f[iy * n + ix], b = f[iy * n + ix1], c = f[iy1 * n + ix], d = f[iy1 * n + ix1];
   return a + (b - a) * tx + (c - a) * ty + (a - b - c + d) * tx * ty;
 }
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const smooth = (a: number, b: number, v: number) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+export const smooth = (a: number, b: number, v: number) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
 
 /* ---------- saída: canvas → textura ---------- */
-function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
+export function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   return [c, c.getContext("2d", { willReadFrequently: false })!];
 }
-function texFrom(c: HTMLCanvasElement, srgb: boolean, meters?: number | [number, number]): THREE.CanvasTexture {
+export function texFrom(c: HTMLCanvasElement, srgb: boolean, meters?: number | [number, number]): THREE.CanvasTexture {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
@@ -73,7 +74,7 @@ function paint(w: number, h: number, px: (x: number, y: number, o: Uint8ClampedA
   g.putImageData(img, 0, 0); return c;
 }
 /** Mapa normal (espaço tangente, +Y para cima) a partir de um campo de altura periódico. */
-function normalFrom(hf: Float32Array, w: number, h: number, strength: number): HTMLCanvasElement {
+export function normalFrom(hf: Float32Array, w: number, h: number, strength: number): HTMLCanvasElement {
   return paint(w, h, (x, y, d, i) => {
     const l = hf[y * w + ((x - 1 + w) % w)], r = hf[y * w + ((x + 1) % w)], u = hf[((y - 1 + h) % h) * w + x], b = hf[((y + 1) % h) * w + x];
     let nx = (l - r) * strength, ny = (b - u) * strength, nz = 1; const len = Math.hypot(nx, ny, nz); nx /= len; ny /= len; nz /= len;
@@ -399,14 +400,14 @@ export const SIGNAGE = {
   queue: "FILA DE CONVIDADOS", alley: "BECO · ACESSO RESTRITO",
 } as const;
 
-const SERIF = "'Didot', 'Bodoni 72', 'Playfair Display', 'Libre Bodoni', Georgia, 'DejaVu Serif', serif";
-const SANS = "'Helvetica Neue', Inter, Arial, 'Liberation Sans', sans-serif";
-function spaced(g: CanvasRenderingContext2D, text: string, x: number, y: number, spacing: number) {
+export const SERIF = "'Didot', 'Bodoni 72', 'Playfair Display', 'Libre Bodoni', Georgia, 'DejaVu Serif', serif";
+export const SANS = "'Helvetica Neue', Inter, Arial, 'Liberation Sans', sans-serif";
+export function spaced(g: CanvasRenderingContext2D, text: string, x: number, y: number, spacing: number) {
   const chars = [...text]; const widths = chars.map((ch) => g.measureText(ch).width); const total = widths.reduce((a, b) => a + b, 0) + spacing * (chars.length - 1);
   let cx = x - total / 2; const align = g.textAlign; g.textAlign = "left";
   chars.forEach((ch, k) => { g.fillText(ch, cx, y); cx += widths[k] + spacing; }); g.textAlign = align;
 }
-function fitFont(g: CanvasRenderingContext2D, text: string, family: string, weight: string, max: number, width: number, spacing = 0) {
+export function fitFont(g: CanvasRenderingContext2D, text: string, family: string, weight: string, max: number, width: number, spacing = 0) {
   let size = max; g.font = `${weight} ${size}px ${family}`;
   while (size > 8 && g.measureText(text).width + spacing * text.length > width) { size -= 2; g.font = `${weight} ${size}px ${family}`; }
   return size;
@@ -478,6 +479,27 @@ export function bannerTex(q: Quality, kind: BannerKind): THREE.Texture {
       g.fillStyle = "#c9a24a"; fitFont(g, SIGNAGE.date, SANS, "600", H * 0.13, W * 0.4); spaced(g, SIGNAGE.date, W / 2, H * 0.8, H * 0.02);
     }
     fabric(g, W, H);
+    const t = texFrom(c, true); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
+  });
+}
+
+/** Placa de bronze fundido: fundo escuro com pátina, borda em relevo, quatro rosetas e as letras romanas claras. */
+export function plaqueTex(q: Quality, key: string, lines: readonly string[]): THREE.Texture {
+  return memo(`plaque:${q}:${key}`, () => {
+    const W = q === "high" ? 768 : 384, H = Math.round(W * 0.62), [c, g] = canvas(W, H);
+    const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, "#3a2a18"); bg.addColorStop(0.5, "#5a4024"); bg.addColorStop(1, "#2e2214"); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(70,110,90,${0.04 + Math.random() * 0.05})`; g.beginPath(); g.arc(Math.random() * W, Math.random() * H, 4 + Math.random() * 30, 0, Math.PI * 2); g.fill(); }
+    g.strokeStyle = "#b38a4a"; g.lineWidth = H * 0.035; g.strokeRect(H * 0.05, H * 0.05, W - H * 0.1, H - H * 0.1);
+    g.strokeStyle = "#1c140c"; g.lineWidth = H * 0.012; g.strokeRect(H * 0.09, H * 0.09, W - H * 0.18, H - H * 0.18);
+    for (const [x, y] of [[H * 0.13, H * 0.13], [W - H * 0.13, H * 0.13], [H * 0.13, H - H * 0.13], [W - H * 0.13, H - H * 0.13]]) { const rg = g.createRadialGradient(x - 2, y - 2, 1, x, y, H * 0.035); rg.addColorStop(0, "#f0d39a"); rg.addColorStop(1, "#6a4a24"); g.fillStyle = rg; g.beginPath(); g.arc(x, y, H * 0.035, 0, Math.PI * 2); g.fill(); }
+    g.textAlign = "center"; g.textBaseline = "middle";
+    lines.forEach((l, k) => {
+      const big = k === 0, size = fitFont(g, l, "'Trajan Pro', 'Cinzel', Georgia, 'DejaVu Serif', serif", "600", big ? H * 0.2 : H * 0.085, W * 0.78, H * 0.02);
+      const y = H * (lines.length === 1 ? 0.5 : big ? 0.38 : 0.58 + (k - 1) * 0.13);
+      g.font = `600 ${size}px 'Trajan Pro', 'Cinzel', Georgia, 'DejaVu Serif', serif`;
+      g.fillStyle = "#1a120a"; spaced(g, l, W / 2 + 2, y + 2, H * 0.02);
+      g.fillStyle = "#e3c27f"; spaced(g, l, W / 2, y, H * 0.02);
+    });
     const t = texFrom(c, true); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
   });
 }

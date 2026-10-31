@@ -1,0 +1,37 @@
+groups:
+  - name: fai-garment
+    rules:
+      - alert: FilaAcumulando
+        expr: max by (queue) (fai_queue_depth) > 20
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Fila {{ $labels.queue }} com {{ $value }} jobs há 10 min — adicione um worker GPU"
+
+      - alert: FilaSemWorker
+        expr: (sum(fai_queue_depth) > 0) and on() (sum(fai_workers_alive) or vector(0)) == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Há jobs na fila e nenhum worker GPU com heartbeat"
+
+      - alert: VRAMQuaseCheia
+        expr: DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) > 0.95
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "GPU {{ $labels.gpu }} com VRAM acima de 95% — risco de CUDA out of memory"
+
+      - alert: QAReprovandoMuito
+        expr: sum(rate(fai_qa_verdicts_total{verdict="fail"}[1h])) / sum(rate(fai_qa_verdicts_total[1h])) > 0.4
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: "Mais de 40% das reconstruções reprovadas no QA na última hora (modelo, LoRA ou fotos de entrada)"
+
+      - alert: FalhasTecnicas
+        expr: sum by (stage) (rate(fai_stage_outcomes_total{outcome="error"}[15m])) > 0.05
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Etapa {{ $labels.stage }} com falhas técnicas recorrentes — veja os logs do worker"

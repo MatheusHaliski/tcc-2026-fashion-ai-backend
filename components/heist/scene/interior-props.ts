@@ -8,6 +8,8 @@
  * luz (LightAnchor) para o conjunto de luzes dinâmicas do interior.
  */
 import * as THREE from "three";
+import { areaProp } from "./areas";
+import { hasModel } from "@/lib/heist/models";
 import type { Prop, RoomId } from "@/lib/heist/types";
 import { Batch, BOX0, CYL, CYL0, Instances, SPH, geo, mat, mul } from "./interior-batch";
 import { M, fabric, glass, glow, solid, type Palette } from "./interior-mats";
@@ -130,9 +132,13 @@ export function cctvTexture(k: number): THREE.CanvasTexture {
 
 /* ======================= construtores por tipo ======================= */
 /** Tipos de móvel com construtor próprio (o resto vira um bloco preto — o teste garante que nenhum do interior cai nele). */
-export const BUILT_KINDS = new Set<Prop["kind"]>(["column", "table", "stage", "screen", "desk", "sofa", "planter", "bar", "mirror", "piano", "steamer", "mannequin", "case", "bench", "statue", "pedestal", "monitor", "safe", "panel", "crate", "coatcheck", "detector", "rope", "rack", "floral"]);
+export const BUILT_KINDS = new Set<Prop["kind"]>(["column", "table", "stage", "screen", "desk", "sofa", "planter", "bar", "mirror", "piano", "steamer", "mannequin", "case", "bench", "statue", "pedestal", "monitor", "safe", "panel", "crate", "coatcheck", "detector", "rope", "rack", "floral", "fixture"]);
 export function buildProp(p: Prop, c: PropsCtx) {
   const f = foot(p), room = p.room as InteriorRoom, P = c.P;
+  // móvel com modelo 3D gerado (lib/heist/models.ts): HeistModels carrega o GLB no lugar do desenho procedural
+  if (p.kind === "fixture" && hasModel(p.model)) return;
+  // a área da sala desenha o móvel (areas/*): móveis próprios ("fixture") e versões dela dos genéricos
+  const own = areaProp(p); if (own) return own(p, c);
   switch (p.kind) {
     case "column": return column(c, room, f);
     case "table": return p.room === "lounge" ? sideTable(c, room, f) : cocktailTable(c, room, f, p.id);
@@ -159,6 +165,7 @@ export function buildProp(p: Prop, c: PropsCtx) {
     case "rope": return rope(c, room, f);
     case "rack": return rack(c, room, f, p.id);
     case "floral": return;                                                       // a instalação floral é de interior-hall
+    case "fixture": return box(c, room, P.black, f, 0, 0, 0, f.w, p.height === "tall" ? 2 : 0.9, f.d);   // sem construtor na área ainda
     default: box(c, room, P.black, f, 0, 0, 0, f.w, 1, f.d);
   }
 }
@@ -542,7 +549,19 @@ function pedestal(c: PropsCtx, room: InteriorRoom, f: Foot) {
   const diamond = new THREE.Mesh(diamondGeometry(), new THREE.MeshPhysicalMaterial({ color: "#f4fbff", metalness: 0.05, roughness: 0.0, envMapIntensity: 3.2, clearcoat: 1, clearcoatRoughness: 0, iridescence: 0.6, iridescenceIOR: 1.6, flatShading: true }));
   diamond.position.copy(worldOf(f, 0, 1.2, 0)); diamond.scale.setScalar(0.07); diamond.userData.room = room; c.group.add(diamond);
   c.animated.push({ kind: "diamond", mesh: diamond, room });
+  const glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexture(), color: new THREE.Color("#ffffff").multiplyScalar(2.2), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glint.position.copy(worldOf(f, 0.03, 1.27, 0.02)); glint.scale.setScalar(0.2); glint.renderOrder = 6; glint.userData.room = room; c.group.add(glint);
+  c.animated.push({ kind: "glint", mesh: glint, room });
   anchor(c, room, worldOf(f, 0, 3.8, 0), "#f2f6ff", 14, 6);
+}
+function glintTexture(): THREE.Texture {
+  return drawnTexture("diamondGlint", 128, 128, (g, w, h) => {
+    const c = w / 2, grd = g.createRadialGradient(c, c, 0, c, c, c * 0.35); grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h);
+    for (const [a, l] of [[0, 1], [Math.PI / 2, 1], [Math.PI / 4, 0.45], [-Math.PI / 4, 0.45]] as [number, number][]) {
+      g.save(); g.translate(c, c); g.rotate(a); const lg = g.createLinearGradient(-c * l, 0, c * l, 0); lg.addColorStop(0, "rgba(255,255,255,0)"); lg.addColorStop(0.5, "rgba(255,255,255,0.95)"); lg.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = lg; g.beginPath(); g.moveTo(-c * l, 0); g.lineTo(0, -2.2); g.lineTo(c * l, 0); g.lineTo(0, 2.2); g.closePath(); g.fill(); g.restore();
+    }
+  }, false);
 }
 /** Brilhante redondo: coroa, mesa e pavilhão facetados (57 facetas aproximadas). */
 export function diamondGeometry(): THREE.BufferGeometry {

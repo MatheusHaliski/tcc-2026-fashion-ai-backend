@@ -2,7 +2,9 @@
 /*
  * MET Gala Heist v2 — a cena de fora: fachada do Museu Vesper, avenida com a escadaria e o tapete, carros, beco, a cidade em
  * volta e as luzes da noite da gala. Dono: o "Agente Rua" (ver scratchpad/gala/PLANO.md); o céu, a névoa, o ambiente e o
- * pós-processamento ficam em sky.tsx.
+ * pós-processamento ficam em sky.tsx. A cidade: a quadra em frente com lojas e apartamentos, as transversais e o skyline
+ * (exterior-blocks, exterior-city, exterior-skyline); o mobiliário da rua e os móveis únicos da entrada
+ * (exterior-furniture); a sujeira da calçada (exterior-litter); halos e poças de luz numa chamada (exterior-glow).
  *
  * Reflexos: no "high", a pista reflete de verdade (MeshReflectorMaterial — mais um desenho da cena por quadro, por isso só
  * enquanto a jogadora está do lado de fora); calçadas, carros, vidros e metais recebem um mapa de reflexo capturado da
@@ -17,11 +19,16 @@ import type { SceneView } from "@/lib/heist/view";
 import { exteriorMaterials, type ExteriorMaterials } from "./exterior-materials";
 import { asphaltSet, type Quality } from "./exterior-textures";
 import { HeistFacade } from "./exterior-facade";
-import { HeistStreet, roadGeometry, streetProps } from "./exterior-street";
+import { crossRoadGeometry, HeistStreet, roadGeometry, streetProps } from "./exterior-street";
 import { HeistVehicles } from "./exterior-vehicles";
 import { HeistAlley } from "./exterior-alley";
 import { HeistCity } from "./exterior-city";
 import { ExteriorLights } from "./exterior-fx";
+import { buildCity } from "./exterior-blocks";
+import { furnitureLights, HeistFurniture } from "./exterior-furniture";
+import { HeistModels } from "./models";
+import { HeistLitter } from "./exterior-litter";
+import { SKY_LAYER } from "./exterior-skyline";
 
 const OUTSIDE = new Set(["rua", "beco", "vestibulo", "doca"]);
 
@@ -52,6 +59,7 @@ function StreetProbe({ m, q, root }: { m: ExteriorMaterials; q: Quality; root: R
   const probe = useMemo(() => {
     const rt = new THREE.WebGLCubeRenderTarget(q === "high" ? 256 : 128, { type: THREE.HalfFloatType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
     const cam = new THREE.CubeCamera(0.3, 400, rt); cam.position.set(0, -0.9, 37.5);
+    cam.children.forEach((c) => c.layers.enable(SKY_LAYER));
     return { rt, cam };
   }, [q]);
   useEffect(() => { frames.current = 0; done.current = false; }, [probe]);
@@ -68,7 +76,7 @@ function StreetProbe({ m, q, root }: { m: ExteriorMaterials; q: Quality; root: R
     pm.dispose();
     const prev = env.current; env.current = next;
     const wet = new Set<THREE.Material>(m.wet);
-    for (const mat of m.wet) { mat.envMap = next; mat.envMapIntensity = Math.max(mat.envMapIntensity, 1.1); mat.needsUpdate = true; }
+    for (const mat of m.wet) { mat.envMap = next; mat.needsUpdate = true; }
     root.current?.traverse((o) => {
       const mats = (o as THREE.Mesh).material; if (!mats) return;
       for (const mat of Array.isArray(mats) ? mats : [mats]) {
@@ -84,17 +92,32 @@ function StreetProbe({ m, q, root }: { m: ExteriorMaterials; q: Quality; root: R
 
 export function HeistExterior({ view, quality }: { view: React.MutableRefObject<SceneView>; quality: Quality }) {
   const m = exteriorMaterials(quality);
+  const { camera } = useThree();
+  useEffect(() => { camera.layers.enable(SKY_LAYER); }, [camera]);
   const props = useMemo(streetProps, []);
+  const kit = useMemo(() => {
+    const k = buildCity(quality === "low"), f = furnitureLights(props);
+    k.anchors.push(...f.anchors); k.pools.push(...f.pools); k.glows.push(...f.glows.map((g) => ({ pos: g.pos, size: g.size, color: String(g.color) })));
+    return k;
+  }, [quality, props]);
+  const cross = useMemo(() => crossRoadGeometry(), []);
   const root = useRef<THREE.Group>(null);
+  // móveis da rua e do beco com modelo 3D gerado (Meshy) entram aqui depois de carregar
+  const modelsGroup = useMemo(() => { const g = new THREE.Group(); g.name = "modelos-exterior"; return g; }, []);
   return (
     <group ref={root}>
       <HeistFacade q={quality} view={view} />
       <HeistStreet q={quality} m={m} />
       <Road q={quality} m={m} view={view} />
+      <mesh geometry={cross} material={m.asphalt} receiveShadow />
       <HeistVehicles props={props} m={m} q={quality} />
       <HeistAlley props={props} m={m} q={quality} />
-      <HeistCity m={m} q={quality} />
-      <ExteriorLights view={view} q={quality} props={props} />
+      <HeistCity m={m} q={quality} kit={kit} />
+      <HeistFurniture props={props} m={m} q={quality} />
+      <primitive object={modelsGroup} />
+      <HeistModels props={props} parent={modelsGroup} quality={quality} />
+      <HeistLitter props={props} m={m} q={quality} />
+      <ExteriorLights view={view} q={quality} props={props} kit={kit} />
       <StreetProbe m={m} q={quality} root={root} />
     </group>
   );

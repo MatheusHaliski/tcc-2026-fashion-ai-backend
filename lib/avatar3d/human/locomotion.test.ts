@@ -5,7 +5,7 @@ import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { buildHuman } from "./three-human";
 import { applyRestPose } from "./pose";
-import { MOTIONS, MOTION_DURATION, animate, cloneRig, jointPos, makeRig, newMotionState, type Motion, type MotionInput, type Rig } from "./locomotion";
+import { DJ_DESK, MOTIONS, MOTION_DURATION, animate, cloneRig, danceBeat, eatPhase, jointPos, makeRig, newMotionState, type Motion, type MotionInput, type Rig } from "./locomotion";
 
 const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
 const meta = JSON.parse(readFileSync(new URL("fai-body-v1.json", dir), "utf-8")) as BodyMeta;
@@ -104,6 +104,67 @@ describe("locomoção procedural no corpo humano", () => {
     expect(midHips).toBeLessThan(rig.dim.hipH - 0.18);
     expect(midHand).toBeLessThan(0.05);                                // mão esquerda cruzou para o outro lado
     expect(jointPos(rig, "Hips", P).y).toBeGreaterThan(rig.dim.hipH - 0.06);
+  });
+
+  it("dança no relógio comum: todos descem na batida, cada um com o seu passo, e o pé no chão não patina", () => {
+    const beatPhase = (time: number) => { const b = danceBeat(time); return b - Math.floor(b); };
+    const bins = new Float64Array(10), counts = new Float64Array(10);
+    let slides = 0, planted = 0;
+    const T = new THREE.Vector3(), prev = [new THREE.Vector3(), new THREE.Vector3()];
+    const styles = new Set<string>();
+    for (const seed of [2, 5, 8, 13, 21, 34, 55, 89]) {
+      const st = newMotionState(rig, seed, "dance"); const dt = 1 / 60;
+      for (let k = 0; k < 60 * 20; k++) {
+        const time = 100 + k * dt;
+        animate(rig, st, { anim: "dance", animT: k * dt, speed: 0, time }, dt);
+        const hy = jointPos(rig, "Hips", P).y; const ph = Math.floor(beatPhase(time) * 10) % 10;
+        bins[ph] += hy; counts[ph]++;
+        // ponta do pé no chão e o pé chato (tornozelo baixo): a ponta não pode andar
+        for (const [i, side] of [[0, "Left"], [1, "Right"]] as const) {
+          jointPos(rig, `${side}ToeBase`, T); const ay = jointPos(rig, `${side}Foot`, P).y;
+          if (k > 30 && T.y < 0.05 && ay < rig.dim.ankle + 0.012) {
+            planted++; if (Math.hypot(T.x - prev[i].x, T.z - prev[i].z) / dt > 0.25) slides++;
+          }
+          prev[i].copy(T);
+        }
+        if (k % 120 === 0) styles.add(`${Math.round(jointPos(rig, "LeftHand", P).y * 10)}`);
+      }
+    }
+    // quadril mais baixo perto da batida (fase 0) do que no contratempo (fase 0,5), para todos ao mesmo tempo
+    const at = (i: number) => bins[i] / counts[i];
+    expect(Math.min(at(0), at(9))).toBeLessThan(at(5) - 0.012);
+    expect(planted).toBeGreaterThan(2000);
+    expect(slides / planted, "pé no chão patinando").toBeLessThan(0.015);
+    expect(styles.size, "braços variam").toBeGreaterThan(3);
+  });
+
+  it("DJ com as mãos no console (mixer e pratos), às vezes o fone na orelha e a mão para a pista", () => {
+    const st = newMotionState(rig, 6, "dj"); let one = 0, both = 0, frames = 0, nearEar = 0, farDeck = 0;
+    const desk = (v: THREE.Vector3) => v.z > 0.36 && Math.abs(v.y - (DJ_DESK.y + 0.035)) < 0.08;
+    for (let k = 0; k < 60 * 30; k++) {
+      animate(rig, st, { anim: "dj", animT: k / 60, speed: 0, time: k / 60, grip: "headphones" }, 1 / 60);
+      const r = jointPos(rig, "RightHand", new THREE.Vector3()), l = jointPos(rig, "LeftHand", new THREE.Vector3()), head = jointPos(rig, "Head", P);
+      frames++; if (desk(r) || desk(l)) one++; if (desk(r) && desk(l)) both++;
+      if (Math.min(l.distanceTo(head), r.distanceTo(head)) < 0.2) nearEar++;
+      if (Math.max(Math.abs(l.x), Math.abs(r.x)) > DJ_DESK.deckX - 0.12) farDeck++;
+    }
+    expect(one / frames, "uma mão no console").toBeGreaterThan(0.85);
+    expect(both / frames, "as duas no console").toBeGreaterThan(0.35);
+    expect(nearEar / frames, "fone na orelha").toBeGreaterThan(0.1);
+    expect(farDeck / frames, "vai aos pratos").toBeGreaterThan(0.05);
+  });
+
+  it("comer: o garfo vai à boca a cada garfada e o prato fica firme à frente", () => {
+    const st = newMotionState(rig, 4, "eat"); let closest = Infinity, plateLo = Infinity, plateHi = -Infinity;
+    for (let k = 0; k < 60 * 11; k++) {
+      const time = 50 + k / 60;
+      animate(rig, st, { anim: "eat", animT: k / 60, speed: 0, time, grip: "plate" }, 1 / 60);
+      const head = jointPos(rig, "Head", new THREE.Vector3());
+      if (eatPhase(time, 4).atMouth > 0.9) closest = Math.min(closest, jointPos(rig, "RightHand", P).distanceTo(head));
+      if (k > 30) { const y = jointPos(rig, "LeftHand", P).y; plateLo = Math.min(plateLo, y); plateHi = Math.max(plateHi, y); }
+    }
+    expect(closest).toBeLessThan(0.26);
+    expect(plateHi - plateLo).toBeLessThan(0.04);
   });
 
   it("mistura sem salto entre gestos e o clone anda igual ao modelo", () => {

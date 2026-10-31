@@ -9223,5 +9223,9 @@
   "atelier3d.guests.revoked": "Revoked",
   "atelier3d.guests.revoke": "Revoke",
   "atelier3d.guests.missingToken": "Open the complete private link sent by the project owner.",
-  "atelier3d.guests.session": "Guest access through a private link. The label is declared by the owner and does not verify your personal identity."
+  "atelier3d.guests.session": "Guest access through a private link. The label is declared by the owner and does not verify your personal identity.",
+  "heist.bark.clear": "Get out of the way!",
+  "heist.civ.grazed": "That almost hit me!",
+  "heist.options.reduceFlashes": "Reduce flashes",
+  "heist.options.reduceFlashesHint": "The alarm stays lit without strobing, muzzle flashes and the damage flash are dimmed and nothing in the interface pulses."
 }

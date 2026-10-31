@@ -218,12 +218,15 @@ export function HeistPostFX({ quality, letterbox = 0, view }: { quality: Quality
   }, [fx, size, gl]);
   useEffect(() => () => { fx?.composer.dispose(); }, [fx]);
   useFrame((state, dt) => {
-    if (!fx) return;
+    // um useFrame com prioridade tira do R3F o desenho automático: na qualidade "Leve" (sem pós) desenha direto aqui,
+    // senão a tela fica preta
+    if (!fx) { state.gl.render(state.scene, state.camera); return; }
     shown.current += (lb.current - shown.current) * Math.min(1, dt * 4);
     const u = fx.grade.uniforms;
     u.time.value = state.clock.elapsedTime; u.letterbox.value = shown.current;
     const v = view?.current;
-    u.alarm.value = v?.alarm ? 0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 6) : 0;
+    // "reduzir clarões": borda vermelha acesa e parada em vez de pulsar
+    u.alarm.value = v?.alarm ? (v.calm ? 0.45 : 0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 6)) : 0;
     fx.composer.render(dt);
   }, 1);
   return null;

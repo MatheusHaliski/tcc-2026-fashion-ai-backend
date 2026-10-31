@@ -1,0 +1,31 @@
+# Fase 3 — worker GPU em OUTRA máquina, consumindo a fila central (Redis) e o armazenamento central (RustFS/S3).
+# Na máquina GPU extra (só precisa de driver NVIDIA + Docker + NVIDIA Container Toolkit):
+#   cp .env.worker.example .env      # REDIS_URL e S3_ENDPOINT apontando para o servidor central pela rede privada
+#   WORKER_STAGE=reconstruct docker compose -f compose.worker.yaml up --build -d
+#   GPU_IDS=1 METRICS_HOST_PORT=9102 docker compose -p fai-worker-gpu1 -f compose.worker.yaml up -d   # uma GPU por projeto
+# Use rede privada (WireGuard/Tailscale) ou rediss:// com TLS; Redis e o S3 nunca ficam abertos na internet.
+name: fai-garment-remote-worker
+
+services:
+  gpu-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+      args: { STAGE: "${WORKER_STAGE:-segment}" }
+    image: fai-garment-${WORKER_STAGE:-segment}:local
+    env_file: .env
+    environment:
+      WORKER_STAGE: ${WORKER_STAGE:-segment}
+      WORKER_METRICS_PORT: "9101"
+    volumes: ["hf-models:/models", "./loras:/loras:ro"]
+    shm_size: "8gb"
+    ports: ["${PRIVATE_BIND:-127.0.0.1}:${METRICS_HOST_PORT:-9101}:9101"]
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        reservations:
+          devices: [{ driver: nvidia, device_ids: ["${GPU_IDS:-0}"], capabilities: [gpu] }]
+
+volumes:
+  hf-models:

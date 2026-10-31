@@ -59,3 +59,6 @@ __pycache__/
 # ambiente virtual dos lotes Python (scripts/catalog/requirements-sd.txt) e saída do packshot local
 /.venv/
 /output_images/
+
+# Meshy: originais baixados (grandes) ficam fora; só o comprimido em public/heist/models entra
+scripts/heist/meshy/raw/

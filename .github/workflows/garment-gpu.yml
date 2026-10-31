@@ -1,0 +1,41 @@
+name: Garment GPU (API, filas, QA e imagens — sem GPU)
+
+on:
+  pull_request:
+    paths:
+      - "services/garment_gpu/**"
+      - ".github/workflows/garment-gpu.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/garment_gpu/**"
+      - ".github/workflows/garment-gpu.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  service:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r services/garment_gpu/requirements-test.txt
+      - name: API, RQ (SimpleWorker em fakeredis), QA, S3 (moto), segurança e export LoRA — redes neurais substituídas
+        run: python -m pytest services/garment_gpu/tests -q
+      - name: Sintaxe
+        run: python -m compileall -q services/garment_gpu
+      - name: Arquivos Compose (todos os perfis + worker remoto)
+        working-directory: services/garment_gpu
+        run: |
+          sed 's/CHANGE_ME[A-Z_]*/ci/' .env.example > .env
+          docker compose --profile reconstruct --profile monitoring --profile edge config -q
+          sed 's/CHANGE_ME[A-Z_]*/ci/' .env.worker.example > .env
+          docker compose -f compose.worker.yaml config -q
+          rm .env
+      - name: Imagem da API
+        run: docker build -f services/garment_gpu/Dockerfile.api -t fai-garment-api:ci services/garment_gpu

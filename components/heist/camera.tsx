@@ -40,13 +40,20 @@ function boom(world: World, s: SimState, from: THREE.Vector3, dir: THREE.Vector3
 }
 void CELL; void X0; void Z0;
 
-export function HeistCamera({ view, sim, world, controls, reducedMotion, settings }: { view: React.MutableRefObject<SceneView>; sim: React.MutableRefObject<{ s: SimState }>; world: World; controls: HeistControls; reducedMotion: boolean; settings: HeistSettings }) {
+/** Enquadramento fixo do laboratório (?shot=): a câmera fica parada nele, o jogo continua rodando (pessoas, luzes). */
+export interface LabShot { pos: [number, number, number]; target: [number, number, number]; fov?: number }
+export function HeistCamera({ view, sim, world, controls, reducedMotion, settings, shot = null }: { view: React.MutableRefObject<SceneView>; sim: React.MutableRefObject<{ s: SimState }>; world: World; controls: HeistControls; reducedMotion: boolean; settings: HeistSettings; shot?: LabShot | null }) {
   const { camera } = useThree();
   const cur = useRef({ pos: new THREE.Vector3(), look: new THREE.Vector3(), fov: 62, init: false, shake: 0, lastHit: -1, inBeat: false });
   const tmp = useRef({ pivot: new THREE.Vector3(), dir: new THREE.Vector3(), want: new THREE.Vector3(), look: new THREE.Vector3(), right: new THREE.Vector3() });
   useFrame((_, rawDt) => {
     const dt = Math.min(0.05, rawDt), s = sim.current.s, p = s.player, v = view.current, c = cur.current, T = tmp.current;
     const cam = camera as THREE.PerspectiveCamera;
+    if (shot) {
+      cam.position.set(...shot.pos); cam.lookAt(...shot.target);
+      if (cam.fov !== (shot.fov ?? 50)) { cam.fov = shot.fov ?? 50; cam.updateProjectionMatrix(); }
+      return;
+    }
     const crouchH = p.mode === "CRAWL" ? 0.55 : p.crouch ? 1.05 : 1.55;
     T.pivot.set(p.pos.x, p.y + crouchH, p.pos.z);
     let fov = settings.fov, smooth = 10;

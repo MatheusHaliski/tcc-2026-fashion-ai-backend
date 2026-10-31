@@ -28,13 +28,13 @@ export type Motion =
   | "idle" | "walk" | "run" | "sneak" | "crouch" | "discreet" | "tired" | "talk" | "phone" | "drink" | "photo" | "cheer"
   | "serve" | "guard" | "aim" | "shoot" | "reload" | "melee" | "stab" | "takedown" | "knockedOut" | "dead" | "downed"
   | "change" | "pickpocket" | "interact" | "climb" | "crawl" | "celebrate" | "dance" | "wave" | "sit" | "queue" | "look"
-  | "point" | "cower" | "flee" | "play";
+  | "point" | "cower" | "flee" | "play" | "dj" | "eat";
 export const MOTIONS: readonly Motion[] = ["idle", "walk", "run", "sneak", "crouch", "discreet", "tired", "talk", "phone", "drink", "photo", "cheer",
   "serve", "guard", "aim", "shoot", "reload", "melee", "stab", "takedown", "knockedOut", "dead", "downed",
   "change", "pickpocket", "interact", "climb", "crawl", "celebrate", "dance", "wave", "sit", "queue", "look",
-  "point", "cower", "flee", "play"];
+  "point", "cower", "flee", "play", "dj", "eat"];
 /** Objeto na mão: muda a mão (punho fechado) e alguns gestos (taça → bebe, celular → orelha). */
-export type Grip = "pistol" | "knife" | "camera" | "tray" | "phone" | "glass" | "flashlight" | "tablet" | "diamond" | "violin" | null;
+export type Grip = "pistol" | "knife" | "camera" | "tray" | "phone" | "glass" | "flashlight" | "tablet" | "diamond" | "violin" | "plate" | "headphones" | null;
 
 /** Duração de cada gesto com começo e fim (s); os outros repetem enquanto durarem. */
 export const MOTION_DURATION: Partial<Record<Motion, number>> = {
@@ -317,6 +317,11 @@ export interface MotionInput {
   grip?: Grip;
   /** sacar (out) ou guardar a arma da mão direita: segundos desde a troca; a mão passa pelo coldre no quadril */
   draw?: { t: number; out: boolean } | null;
+  /** vestido longo (0–1): a saia segue as coxas, então na dança os joelhos dobram menos e os passos são menores (a barra
+   * não chuta para a frente nem abre ao meio) */
+  skirt?: number;
+  /** escala da pessoa no mundo (altura relativa): o DJ mantém as mãos na altura do equipamento */
+  scale?: number;
 }
 
 function save(r: Rig, buf: Float32Array) {
@@ -334,7 +339,7 @@ function blendInto(r: Rig, a: Float32Array, b: Float32Array, w: number) {
 /** Gestos que deitam o corpo: não recebem olhar, recuo nem mistura com o cansaço. */
 const LYING: ReadonlySet<Motion> = new Set(["knockedOut", "dead", "downed", "crawl"]);
 /** Gestos que só mexem no tronco e nos braços: as pernas andam se houver velocidade. */
-const UPPER: ReadonlySet<Motion> = new Set(["idle", "queue", "look", "talk", "phone", "drink", "photo", "cheer", "serve", "guard", "aim", "shoot", "reload", "point", "wave", "interact", "play", "walk", "run", "tired", "discreet", "flee"]);
+const UPPER: ReadonlySet<Motion> = new Set(["idle", "queue", "look", "talk", "phone", "drink", "photo", "cheer", "serve", "guard", "aim", "shoot", "reload", "point", "wave", "interact", "play", "walk", "run", "tired", "discreet", "flee", "eat"]);
 
 /**
  * Um quadro de animação: mistura com o gesto anterior por ~0,2 s, depois olhar e recuo de tiro por cima.
@@ -503,7 +508,8 @@ function pose(r: Rig, st: MotionState, m: Motion, t: number, inp: MotionInput) {
     case "climb": climb(r, st, t); return;
     case "change": change(r, st, t); return;
     case "celebrate": celebrate(r, st, t); return;
-    case "dance": dance(r, st, t); return;
+    case "dance": dance(r, st, t, inp); return;
+    case "dj": djPose(r, st, t, inp); return;
     case "takedown": takedown(r, st, t); return;
     case "cower": cower(r, st, t); return;
     case "crouch": case "sneak": { const { walking, g } = lower(r, st, "sneak", { crouch: m === "crouch" && st.speed < 0.2 ? 0.34 : 0 }); crouchArms(r, st, walking, g, grip); headLevel(r, 4 * D); return; }
@@ -525,12 +531,13 @@ function pose(r: Rig, st: MotionState, m: Motion, t: number, inp: MotionInput) {
     case "drink": armsFree(r, st, walking, g, 0.7); drink(r, st, t); break;
     case "photo": photo(r, st, t); break;
     case "cheer": cheer(r, st, t, grip); break;
-    case "serve": armsFree(r, st, walking, g, 0.7); serve(r, st); break;
+    case "serve": armsFree(r, st, walking, g, 0.7); serve(r, st, walking); break;
     case "guard": guardHands(r, st, walking); break;
     case "point": armsFree(r, st, walking, g, 0.5); point(r, st, inp); break;
     case "wave": armsFree(r, st, walking, g, 0.5); wave(r, st, t); break;
-    case "interact": interact(r, st, t); break;
+    case "interact": interact(r, st, t, grip); break;
     case "play": play(r, st, t); break;
+    case "eat": armsFree(r, st, walking, g, 0.7); eat(r, st, t, walking, inp); break;
     case "discreet": discreet(r, st, walking); break;
     case "flee": armsFree(r, st, walking, g, 1.25); twist(r, r.k.Neck, 28 * D * pulse(0.5, 1.5, 0.3, (st.t + st.seed) % 3.2)); break;
     default:
@@ -555,16 +562,17 @@ function holdIdle(r: Rig, st: MotionState, grip: Grip, walking: number) {
   switch (grip) {
     case "glass": drink(r, st, st.t + st.seed * 5); break;
     case "phone": case "tablet": textHold(r, st, grip); break;
-    case "tray": serve(r, st); break;
+    case "tray": serve(r, st, walking); break;
     case "pistol": case "flashlight": lowReady(r, st, grip); break;
     case "knife": curl(r, 1, 0.9, 0.7); break;
     case "camera": chest(r, -0.06, -0.12, 0.26, A); arm(r, 1, A, -0.5, -1, -0.6); handTo(r, 1, -0.1, -0.3, 1, 0.8, 0, 0); curl(r, 1, 0.6, 0.4); break;
     case "diamond": chest(r, 0.08, 0.05, 0.3, A); arm(r, 0, A, 0.5, -1, -0.4); handTo(r, 0, -0.2, 0.3, 1, -0.3, 1, 0); curl(r, 0, 0.45, 0.3); break;
     case "violin": play(r, st, st.t); break;
+    case "plate": eat(r, st, st.t, 1, HOLD_ONLY); break;          // prato à frente, garfo descansando nele
     default: break;
   }
-  void walking;
 }
+const HOLD_ONLY: MotionInput = { anim: "idle", animT: 0, speed: 0 };
 /** Celular/tablet na frente do peito, olhando para a tela. */
 function textHold(r: Rig, st: MotionState, grip: Grip) {
   const tab = grip === "tablet";
@@ -722,11 +730,22 @@ function cheer(r: Rig, st: MotionState, t: number, grip: Grip) {
   lean(r, r.k.Head, -6 * D);
   void t;
 }
-/** Garçom: bandeja na mão esquerda, palma para cima na altura do ombro; braço direito solto atrás. */
-function serve(r: Rig, st: MotionState) {
-  chest(r, 0.21, 0.04, 0.24, A); arm(r, 0, A, 0.7, -1, -0.4); handTo(r, 0, -0.35, 0, 0.94, 0, 1, 0); curl(r, 0, 0.12, 0);
-  pelvis(r, -0.1, -0.02, -0.16, B); arm(r, 1, B, -0.5, -1, 0.3); handTo(r, 1, 0, -0.6, -0.8, 0, 0, -1, 0.6); curl(r, 1, 0.35);
-  void st;
+/**
+ * Garçom: bandeja na mão esquerda, palma para cima na altura do ombro, nivelada e firme — o alvo vem do quadril de
+ * exibição e só acompanha um terço do sobe e desce da passada (o peito, que gira e balança, não leva a bandeja junto).
+ * Parado, de tempos em tempos oferece: estende a bandeja à frente e a mão direita, aberta, mostra as taças.
+ */
+function serve(r: Rig, st: MotionState, walking = 0) {
+  const h = r.hips0, tt = (st.t + st.seed * 3.3) % 8, offer = (1 - walking) * pulse(0.6, 3.4, 0.6, tt);
+  const bob = r.bones[r.k.Hips].position.y - h.y;
+  A.set(h.x + 0.2 - 0.03 * offer, h.y + 0.39 + bob * 0.35 - 0.04 * offer, h.z + 0.22 + 0.13 * offer);
+  arm(r, 0, A, 0.7, -1, -0.4); handTo(r, 0, -0.35, 0, 0.94, 0, 1, 0); curl(r, 0, 0.12, 0);
+  pelvis(r, -0.1, -0.02, -0.16, B);
+  if (offer > 0.02) { chest(r, -0.02, -0.1, 0.36, C); B.lerp(C, offer); }
+  arm(r, 1, B, mix(-0.5, -0.6, offer), -1, mix(0.3, -0.2, offer));
+  handTo(r, 1, mix(0, 0.5, offer), mix(-0.6, 0.1, offer), mix(-0.8, 0.85, offer), 0, mix(0, 0.8, offer), mix(-1, 0.2, offer), mix(0.6, 0.75, offer));
+  curl(r, 1, mix(0.35, 0.08, offer));
+  if (offer > 0.02) { lean(r, r.k.Spine2, 4 * D * offer); lean(r, r.k.Head, 6 * D * offer); }
 }
 /** Segurança em posto: pés afastados, mãos cruzadas à frente da pelve, cabeça varrendo devagar. */
 function guardHands(r: Rig, st: MotionState, walking: number) {
@@ -751,10 +770,15 @@ function wave(r: Rig, st: MotionState, t: number) {
   chest(r, -0.38 - 0.06 * Math.sin(tt), 0.36, 0.12, A); arm(r, 1, A, -1, -0.6, -0.2); handTo(r, 1, -0.25 * Math.sin(tt), 1, 0.15, 0, 0, 1); curl(r, 1, 0.1);
   void t;
 }
-/** Mexer em painel/teclado/mesa: mãos à frente na altura do peito, dedos "digitando". */
-function interact(r: Rig, st: MotionState, t: number) {
+/** Mexer em painel/teclado/mesa: mãos à frente na altura do peito, dedos "digitando". Com um prato (copa, bufê): a
+ * esquerda segura o prato nivelado sobre a bancada e a direita arruma o doce nele com o garfo. */
+function interact(r: Rig, st: MotionState, t: number, grip: Grip = null) {
   const tt = st.t * 7;
   for (const s of [0, 1] as Side[]) {
+    if (grip === "plate" && s === 0) {
+      chest(r, 0.08, -0.22, 0.36, A); arm(r, 0, A, 0.7, -1, -0.5); handTo(r, 0, -0.55, 0.05, 0.84, 0, 1, 0); curl(r, 0, 0.12, 0.05); continue;
+    }
+    if (grip === "plate") { chest(r, 0.02 + 0.03 * Math.sin(tt * 0.3), -0.15 + 0.02 * Math.abs(Math.sin(tt * 0.6)), 0.4, A); arm(r, 1, A, -0.7, -1, -0.3); handTo(r, 1, 0.25, -0.55, 0.8, 0.9, 0.2, 0, 0.9); curl(r, 1, 0.5, 0.45); continue; }
     chest(r, SIGN[s] * 0.1, -0.12 + 0.015 * Math.sin(tt + s * 1.7), 0.38, A); arm(r, s, A, SIGN[s] * 0.7, -1, -0.3);
     handTo(r, s, -SIGN[s] * 0.2, -0.1, 1, 0, -0.3, 1, 0.9); curl(r, s, 0.25 + 0.1 * Math.sin(tt * 1.3 + s));
   }
@@ -832,17 +856,319 @@ function celebrate(r: Rig, st: MotionState, t: number) {
   headPt(r, 0.1, 0.04, 0.3, B); arm(r, 0, B, 0.7, -1, -0.3); handTo(r, 0, -0.3, 0.6, 0.7, -0.4, 0.2, -0.8); curl(r, 0, 0.5, 0.35);
   twist(r, r.k.Head, 12 * D * (1 - groove)); lean(r, r.k.Head, -6 * D);
 }
-/** Dança na pista: passo de lado, quadril, braços para cima alternando. */
-function dance(r: Rig, st: MotionState, t: number) {
-  const tt = st.t * 2 * Math.PI * 1.05 + st.seed, s1 = Math.sin(tt);
-  lower(r, st, "idle", { still: true, wide: 0.35 });
-  r.bones[r.k.Hips].position.x += 0.05 * s1; r.bones[r.k.Hips].position.y -= 0.03 * Math.abs(Math.cos(tt));
-  bank(r, r.k.Spine, -7 * D * s1); twist(r, r.k.Spine1, 8 * D * Math.sin(tt * 0.5));
-  for (const s of [0, 1] as Side[]) {
-    const up = 0.5 + 0.5 * Math.sin(tt + s * Math.PI);
-    chest(r, SIGN[s] * 0.28, mix(-0.1, 0.45, up), 0.15, A); arm(r, s, A, SIGN[s], -0.4, -0.4); curl(r, s, 0.3);
+/* ---------- pista de dança, DJ e comer ---------- */
+/** Andamento da música da pista (batidas por minuto, o mesmo das luzes da pista em salao-dj.ts): o relógio comum de quem
+ * dança e do DJ é MotionInput.time (o tempo da cena). */
+export const DANCE_BPM = 122;
+/** Batida no relógio comum (contagem contínua: 0, 1, 2… a cada batida). */
+export const danceBeat = (time: number) => (time * DANCE_BPM) / 60;
+
+/** Passos de pé: balanço no lugar, passo e junta de lado, passo à frente e volta, giro dos calcanhares (twist). */
+const STEPS = ["bounce", "side", "rock", "twist"] as const;
+type Steps = typeof STEPS[number];
+/** Braços: soco no ar, mãos para o alto, cotovelos dobrados, palmas, apontar (disco), mãos para o par. */
+const ARMS = ["pump", "up", "elbows", "clap", "point", "partner"] as const;
+type Arms = typeof ARMS[number];
+
+/** Pés no apoio da dança (posição do tornozelo, ponta e giro do pé) e o quadril sobre eles. */
+interface Footwork { x: [number, number]; z: [number, number]; lift: [number, number]; pitch: [number, number]; turn: [number, number]; hx: number; hz: number; twist: number }
+const FW: [Footwork, Footwork] = [0, 1].map(() => ({ x: [0, 0], z: [0, 0], lift: [0, 0], pitch: [0, 0], turn: [0, 0], hx: 0, hz: 0, twist: 0 })) as [Footwork, Footwork];
+/** Mãos de um estilo de braços: alvo do punho, dedos, palma e fechamento, por lado. */
+interface ArmSet { t: [THREE.Vector3, THREE.Vector3]; f: [THREE.Vector3, THREE.Vector3]; n: [THREE.Vector3, THREE.Vector3]; curl: [number, number]; pole: [THREE.Vector3, THREE.Vector3] }
+const newArmSet = (): ArmSet => ({ t: [new THREE.Vector3(), new THREE.Vector3()], f: [new THREE.Vector3(), new THREE.Vector3()], n: [new THREE.Vector3(), new THREE.Vector3()], curl: [0, 0], pole: [new THREE.Vector3(), new THREE.Vector3()] });
+const AS: [ArmSet, ArmSet] = [newArmSet(), newArmSet()];
+
+/** Passo que vai de `a` a `b` dentro da batida (u de 0 a 1): pé sobe no meio e pousa na batida seguinte. */
+function stepArc(a: number, b: number, u: number): { p: number; lift: number } {
+  const e = smooth(0.08, 0.92, u);
+  return { p: mix(a, b, e), lift: Math.sin(Math.PI * clamp(u, 0, 1)) };
+}
+
+/**
+ * Pés de um estilo no compasso (c de 0 a 4 batidas), em metros em torno da posição de dança de cada pé. Todo estilo
+ * começa e termina o compasso com os pés no lugar: a troca de estilo (no começo de um bloco) não arrasta pé.
+ */
+function footwork(style: Steps, c: number, bar: number, k: number, out: Footwork) {
+  out.x[0] = out.x[1] = out.z[0] = out.z[1] = out.lift[0] = out.lift[1] = out.pitch[0] = out.pitch[1] = out.turn[0] = out.turn[1] = 0;
+  out.hx = 0; out.hz = 0; out.twist = 0;
+  const beat = Math.floor(c), u = c - beat;
+  switch (style) {
+    case "bounce": {
+      // no lugar: o peso passa de um pé ao outro a cada batida e o calcanhar do pé livre sobe
+      const free: Side = beat % 2 ? 1 : 0, heel = Math.sin(Math.PI * u) * (0.6 + 0.4 * k);
+      out.pitch[free] = 16 * D * heel; out.hx = -SIGN[free] * 0.03 * k * Math.sin(Math.PI * u);
+      break;
+    }
+    case "side": {
+      // passo e junta: o pé da frente sai (1), o outro junta (2), sai de volta (3) e o primeiro junta (4); o compasso par
+      // vai para a direita da pessoa (pé direito na frente) e o ímpar para a esquerda (pé esquerdo) — sempre de volta ao lugar
+      const lead: Side = bar % 2 ? 0 : 1, other: Side = lead ? 0 : 1, W = SIGN[lead] * (0.13 + 0.09 * k);
+      const P1 = beat === 0 ? stepArc(0, W, u) : beat === 3 ? stepArc(W, 0, u) : { p: beat === 1 || beat === 2 ? W : 0, lift: 0 };
+      const P2 = beat === 1 ? stepArc(0, W, u) : beat === 2 ? stepArc(W, 0, u) : { p: 0, lift: 0 };
+      out.x[lead] = P1.p; out.x[other] = P2.p; out.lift[lead] = P1.lift; out.lift[other] = P2.lift;
+      out.hx = (W / 2) * (1 - Math.cos((Math.PI * c) / 2)); out.twist = SIGN[other] * 5 * D * Math.sin((Math.PI * c) / 2);
+      break;
+    }
+    case "rock": {
+      // passo à frente na batida 1, peso nele na 2, volta na 3, toque do outro pé na 4 (compasso ímpar: o outro pé)
+      const s: Side = bar % 2 ? 0 : 1, o: Side = s ? 0 : 1, L = 0.12 + 0.08 * k;
+      const S = beat === 0 ? stepArc(0, L, u) : beat === 1 ? { p: L, lift: 0 } : beat === 2 ? stepArc(L, 0, u) : { p: 0, lift: 0 };
+      out.z[s] = S.p; out.lift[s] = S.lift * 0.7;
+      out.hz = L * 0.55 * (beat === 0 ? smooth(0.3, 1, u) : beat === 1 ? 1 : beat === 2 ? 1 - smooth(0, 0.7, u) : 0);
+      out.hx = SIGN[s] * 0.025 * (beat === 1 ? 1 : 0);
+      if (beat === 3) out.pitch[o] = 22 * D * Math.sin(Math.PI * u);                // toque do outro pé (calcanhar sobe)
+      out.twist = -SIGN[s] * 7 * D * (beat === 1 ? 1 : beat === 0 ? u : beat === 2 ? 1 - u : 0);
+      break;
+    }
+    case "twist": {
+      // os dois pés giram sobre a ponta, para um lado e para o outro a cada batida; o quadril gira ao contrário
+      const a = Math.sin(Math.PI * c) * (16 + 12 * k) * D;
+      out.turn[0] = out.turn[1] = a; out.twist = -a * 0.8;
+      out.pitch[0] = out.pitch[1] = 8 * D * Math.abs(Math.sin(Math.PI * c));
+      break;
+    }
   }
-  lean(r, r.k.Head, 4 * D * Math.cos(tt));
+}
+
+const AT = new THREE.Vector3();
+/** Mãos de um estilo de braços no compasso (alvos relativos ao peito: acompanham o tronco). */
+function armStyle(r: Rig, style: Arms, c: number, k: number, seed: number, out: ArmSet) {
+  const beat = Math.floor(c), u = c - beat, on = Math.cos(2 * Math.PI * c) * 0.5 + 0.5;   // 1 na batida
+  const sway = Math.sin((Math.PI * c) / 2);                                            // um lado por compasso de 2
+  for (const s of [0, 1] as Side[]) { out.curl[s] = 0.3; out.pole[s].set(SIGN[s] * 0.8, -1, -0.3); }
+  const set = (s: Side, x: number, y: number, z: number, fx: number, fy: number, fz: number, nx: number, ny: number, nz: number) => {
+    chest(r, x, y, z, out.t[s]); out.f[s].set(fx, fy, fz); out.n[s].set(nx, ny, nz);
+  };
+  switch (style) {
+    case "pump": {
+      // punho direito sobe no ar chegando na batida e desce devagar; a esquerda dobrada junto ao peito
+      const up = (0.35 + 0.15 * k) * Math.max(smooth(0.7, 1, u), 1 - smooth(0, 0.5, u)) + 0.05;
+      set(1, -0.2, 0.22 + up, 0.22, -0.1, 1, 0.2, 0.9, 0, -0.3); out.curl[1] = 1; out.pole[1].set(-1, -0.3, -0.5);
+      set(0, 0.17, -0.12 + 0.04 * on, 0.25, -0.5, 0.6, 0.6, -0.6, 0, -0.8); out.curl[0] = 0.75;
+      break;
+    }
+    case "up": {
+      // as duas mãos no alto, balançando de um lado ao outro com o quadril
+      for (const s of [0, 1] as Side[]) {
+        set(s, SIGN[s] * (0.2 + 0.05 * k) + 0.12 * sway, 0.62 + 0.06 * on - 0.03 * s, 0.12 + 0.04 * s, SIGN[s] * 0.2 + 0.4 * sway, 1, 0.1, 0, 0.2, 1);
+        out.curl[s] = 0.15; out.pole[s].set(SIGN[s], -0.3, -0.6);
+      }
+      break;
+    }
+    case "elbows": {
+      // braços dobrados em 90° à frente, indo e vindo em oposição (o jeito de dançar mais comum na pista)
+      for (const s of [0, 1] as Side[]) {
+        const fw = (s ? 1 : -1) * Math.sin(Math.PI * c);
+        set(s, SIGN[s] * 0.2, -0.18 + 0.05 * fw * k, 0.24 + 0.07 * fw * k, -SIGN[s] * 0.3, 0.6, 0.75, -SIGN[s] * 0.8, 0, -0.5);
+        out.curl[s] = 0.7;
+      }
+      break;
+    }
+    case "clap": {
+      // palmas nas batidas 2 e 4: as mãos se encontram à frente do peito
+      const meet = beat % 2 ? 1 - smooth(0, 0.45, u) : smooth(0.55, 1, u);
+      for (const s of [0, 1] as Side[]) {
+        set(s, SIGN[s] * mix(0.22, 0.035, meet), -0.02 + 0.06 * meet, 0.3 + 0.04 * meet, 0, 0.75, 0.6, -SIGN[s], 0, 0);
+        out.curl[s] = 0.1; out.pole[s].set(SIGN[s], -1, -0.2);
+      }
+      break;
+    }
+    case "point": {
+      // apontar (disco): direita no alto em diagonal na batida 1, cruzando para baixo na 3; a esquerda na cintura
+      const hi = beat < 2 ? 1 - smooth(0.6, 1, c - 1) : smooth(0.6, 1, c - 3);
+      set(1, mix(0.1, -0.42, hi), mix(-0.32, 0.62, hi), mix(0.3, 0.2, hi), mix(0.3, -0.5, hi), mix(-0.8, 0.85, hi), 0.3, 0.9, 0, 0); out.curl[1] = 0.8;
+      out.pole[1].set(-1, -0.4, -0.4);
+      set(0, 0.24, -0.34, 0.06, 0.2, -0.9, 0.3, -0.3, 0, 1); out.curl[0] = 0.4; out.pole[0].set(1, 0, -1);
+      break;
+    }
+    case "partner": {
+      // mãos à frente na altura da cintura, como quem segura as mãos do par, balançando no ritmo
+      for (const s of [0, 1] as Side[]) {
+        set(s, SIGN[s] * 0.2 + 0.04 * sway, -0.3 + 0.03 * on, 0.36, 0, -0.1, 1, -SIGN[s] * 0.3, 0.9, 0); out.curl[s] = 0.35;
+      }
+      break;
+    }
+  }
+  void seed;
+}
+
+const DA = new THREE.Vector3(), DB = new THREE.Vector3();
+/**
+ * Dança da pista no relógio comum (DANCE_BPM, MotionInput.time): todos na mesma batida, cada um com o seu jeito pela
+ * semente — passos (balanço, passo de lado, passo à frente, twist; troca a cada 8 compassos), braços (troca a cada 2,
+ * misturando uma batida), intensidade, um atraso humano de poucos centésimos e, para quem gosta, um giro de vez em
+ * quando. Os pés ficam plantados: o tornozelo só sai do lugar quando é o pé que dá o passo, e calcanhar que sobe gira
+ * sobre a ponta do pé.
+ */
+function dance(r: Rig, st: MotionState, t: number, inp: MotionInput) {
+  if (st.speed > 0.35) {
+    // andando para a pista ou mudando de lugar: anda no ritmo, braços soltos
+    const { walking, g } = lower(r, st, "walk"); armsFree(r, st, walking, g, 0.8); headLevel(r, 2 * D, 0.6); return;
+  }
+  const seed = st.seed, d = r.dim, sk = clamp(inp.skirt ?? 0, 0, 1);
+  const k = 0.55 + 0.45 * hash(seed + 31);
+  const b = danceBeat(inp.time ?? st.t) + (hash(seed + 37) - 0.5) * 0.08;
+  const bar = Math.floor(b / 4), c = b - bar * 4;
+  // passos por bloco de 8 compassos (cada pessoa tem dois preferidos); braços por frase de 2 compassos
+  // de vestido longo, nada de passo à frente (o pé entraria na saia): troca pelo passo de lado
+  const block = Math.floor(bar / 8), steps = (j: number): Steps => { const x = STEPS[Math.floor(hash(seed * 1.7 + j * 0.31) * 2 + hash(seed + 41) * 4) % STEPS.length]; return sk > 0.5 && x === "rock" ? "side" : x; };
+  const arms = (j: number) => ARMS[Math.floor(hash(seed * 2.3 + j * 0.57) * ARMS.length)];
+  const phrase = Math.floor(bar / 2), inPhrase = b - phrase * 8;
+  const fNow = steps(block), fPrev = steps(block - 1), wf = bar % 8 === 0 && fPrev !== fNow ? smooth(0, 1, c) : 1;
+  const kf = k * (1 - 0.4 * sk);
+  footwork(fNow, c, bar, kf, FW[0]);
+  if (wf < 1) { footwork(fPrev, c, bar, kf, FW[1]); }
+  const F = FW[0], P = FW[1], fx = (i: 0 | 1, a: number[], b2: number[]) => (wf < 1 ? mix(b2[i], a[i], wf) : a[i]);
+  const fh = (a: number, b2: number) => (wf < 1 ? mix(b2, a, wf) : a);
+  // giro: para quem gosta, nas batidas 2–4 de um compasso em cada quatro (só no balanço ou no twist, com os pés no
+  // lugar): pivô na ponta de um pé (o calcanhar sobe e o pé gira sobre a bola) com o outro no ar, pousando no fim
+  const spin = hash(seed + 53) > 0.55 && bar % 4 === 3 && (fNow === "bounce" || fNow === "twist") && wf >= 1 ? smooth(1, 4, c) : 0;
+  const pivot: Side = hash(seed + 67) > 0.5 ? 0 : 1;
+  if (spin > 0) {
+    const air = pulse(1.15, 3.9, 0.35, c), free: Side = pivot ? 0 : 1;
+    F.lift[free] = Math.max(F.lift[free], 0.75 * air); F.lift[pivot] = 0;
+    F.pitch[pivot] = 14 * D * air; F.turn[pivot] = 0; F.turn[free] = 0;
+  }
+  // quadril: desce em toda batida (joelhos), vai para cima do pé de apoio, gira com os passos
+  const on = Math.cos(2 * Math.PI * c) * 0.5 + 0.5, sway = Math.sin((Math.PI * c) / 2);
+  const hp = r.bones[r.k.Hips].position;
+  hp.set(r.hips0.x + fh(F.hx, P.hx) + 0.025 * k * sway, r.hips0.y - ((0.012 + 0.03 * k) * on + 0.015) * (1 - 0.6 * sk), r.hips0.z + fh(F.hz, P.hz) + 0.01);
+  twist(r, r.k.Hips, fh(F.twist, P.twist) + 6 * D * k * Math.sin(Math.PI * c));
+  bank(r, r.k.Hips, -4 * D * k * sway);
+  // pernas: tornozelo no apoio (ponta do pé parada quando o calcanhar sobe ou o pé gira)
+  for (const s of [0, 1] as Side[]) {
+    const idle = r.footIdle[s];
+    const pitch = fx(s, F.pitch, P.pitch), turn = fx(s, F.turn, P.turn) + SIGN[s] * 7 * D, lift = fx(s, F.lift, P.lift);
+    // giro e ponta sobre a bola do pé: o tornozelo anda o que a ponta não anda
+    const L = d.toe, hA = d.ankle;
+    const tx = -L * Math.sin(turn - SIGN[s] * 7 * D), tz = L * (1 - Math.cos(turn - SIGN[s] * 7 * D));
+    const py = hA * (Math.cos(pitch) - 1) + L * Math.sin(pitch), pz = hA * Math.sin(pitch) + L * (1 - Math.cos(pitch));
+    leg(r, s, idle.x * (1.18 - 0.12 * sk) + fx(s, F.x, P.x) + tx, idle.y + py + 0.06 * lift, idle.z + fx(s, F.z, P.z) + tz + pz - 0.01 * lift,
+      pitch + 10 * D * lift, turn, 0.04 + 0.04 * k);
+  }
+  // tronco: um pouco à frente, ombros soltos no ritmo, peito contra o quadril
+  lean(r, r.k.Spine, 3 * D); lean(r, r.k.Spine1, (2 + 3 * k * on) * D); lean(r, r.k.Spine2, 2 * D);
+  twist(r, r.k.Spine1, -fh(F.twist, P.twist) * 0.6); twist(r, r.k.Spine2, 5 * D * k * Math.sin(Math.PI * c + 0.6));
+  bank(r, r.k.Spine1, 5 * D * k * sway); bank(r, r.k.Spine2, 2 * D * k * sway);
+  const shoulder = 3.5 * D * k * on;
+  rot(r, r.k.LeftShoulder, AZ, shoulder); rot(r, r.k.RightShoulder, AZ, -shoulder);
+  // braços: estilo da frase, misturado com o anterior na primeira batida da frase
+  const aNow = arms(phrase), aPrev = arms(phrase - 1), wa = aPrev !== aNow ? smooth(0, 1, inPhrase) : 1;
+  armStyle(r, aNow, c, k, seed, AS[0]);
+  if (wa < 1) armStyle(r, aPrev, c, k, seed, AS[1]);
+  for (const s of [0, 1] as Side[]) {
+    const X = AS[0], Y = AS[1];
+    DA.copy(X.t[s]); if (wa < 1) DA.lerp(Y.t[s], 1 - wa);
+    DB.copy(X.pole[s]); if (wa < 1) DB.lerp(Y.pole[s], 1 - wa);
+    arm(r, s, DA, DB.x, DB.y, DB.z);
+    AT.copy(X.f[s]); if (wa < 1) AT.lerp(Y.f[s], 1 - wa);
+    V2.copy(X.n[s]); if (wa < 1) V2.lerp(Y.n[s], 1 - wa);
+    handTo(r, s, AT.x, AT.y, AT.z, V2.x, V2.y, V2.z, 0.85);
+    curl(r, s, wa < 1 ? mix(Y.curl[s], X.curl[s], wa) : X.curl[s]);
+  }
+  // cabeça: acena na batida e pende com o balanço; quem dança com as mãos no alto olha para cima
+  const look = aNow === "up" ? -10 * D * wa : 0;
+  lean(r, r.k.Neck, (3 + 4 * k) * D * on); lean(r, r.k.Head, (2 + 3 * k) * D * on + look);
+  bank(r, r.k.Head, -3 * D * k * sway); twist(r, r.k.Head, 4 * D * Math.sin(b * 0.37 + seed));
+  if (spin > 0) {
+    // o corpo inteiro gira em torno do quadril e depois desliza de volta para que a bola do pé de pivô não saia do lugar
+    const ball = pivot ? r.k.RightToeBase : r.k.LeftToeBase;
+    modelPos(r, ball, V3);
+    twist(r, r.k.Hips, spin * 2 * Math.PI * (hash(seed + 59) > 0.5 ? 1 : -1));
+    modelPos(r, ball, V4); hp.x += V3.x - V4.x; hp.z += V3.z - V4.z;
+  }
+  void t;
+}
+
+/**
+ * Console do DJ, em metros no mundo, a partir dos pés do DJ olhando para a cabine (a do Grande Salão, salao-dj.ts: tampo
+ * a 1,05 m, players e mixer em cima): superfície do equipamento a ~1,16 m, linha dos botões 0,55 m à frente, borda do
+ * mixer (crossfader) a 0,44 m, pratos (jog) a ±0,62 m de lado.
+ */
+export const DJ_DESK = { y: 1.16, z: 0.55, near: 0.44, deckX: 0.62 } as const;
+/**
+ * DJ no console: na maior parte do tempo as duas mãos no mixer (botões e fader, a direita corre o crossfader); a cada
+ * poucos compassos vai a um dos pratos (o quadril desloca, o tronco gira e inclina para alcançar o jog, que gira ou
+ * arranha no dobro da batida); a cada 4 compassos, por 2, uma mão segura o fone na orelha (cabeça inclinada, ouvindo a
+ * próxima música) e a outra fica no mixer; de vez em quando a direita sobe para a pista. Cabeça, ombros e joelhos marcam
+ * a batida o tempo todo. `inp.scale` (altura da pessoa) mantém as mãos na altura do equipamento no mundo.
+ */
+function djPose(r: Rig, st: MotionState, t: number, inp: MotionInput) {
+  const seed = st.seed, b = danceBeat(inp.time ?? st.t), bar = Math.floor(b / 4), c = b - bar * 4, on = Math.cos(2 * Math.PI * c) * 0.5 + 0.5;
+  const { walking, g } = lower(r, st, "idle", { still: st.speed < 0.3, wide: 0.15 });
+  if (walking > 0.5) { armsFree(r, st, walking, g, 0.8); return; }
+  const k = 1 / (inp.scale ?? 1), Y = DJ_DESK.y * k + 0.035, Z = DJ_DESK.z * k, N = DJ_DESK.near * k, X = DJ_DESK.deckX * k;
+  // momentos (por compasso): fone 2 a cada 4; prato da esquerda ou da direita 1 a cada 3; braço no alto 1 a cada 6
+  const cycle = (bar + Math.floor(hash(seed) * 4)) % 4, cue = cycle >= 2 ? pulse(0, 8, 0.6, (cycle - 2) * 4 + c) : 0;
+  const deckBar = (bar + Math.floor(hash(seed + 5) * 3)) % 3 === 0 && cue === 0, deckSide: Side = hash(seed + bar * 0.37) > 0.5 ? 0 : 1;
+  const deck = deckBar ? pulse(0, 4, 0.7, c) : 0;
+  const hype = cue === 0 && !deckBar && (bar + Math.floor(hash(seed + 3) * 6)) % 6 === 0 ? pulse(0, 4, 0.5, c) : 0;
+  // quadril: marca a batida e vai para o lado do prato; tronco inclinado sobre o console, gira para o prato
+  const hp = r.bones[r.k.Hips].position; hp.y -= 0.018 * on; hp.x += 0.012 * Math.sin((Math.PI * c) / 2) + SIGN[deckSide] * 0.11 * deck;
+  for (const s of [0, 1] as Side[]) leg(r, s, r.footIdle[s].x * 1.18, r.footIdle[s].y, r.footIdle[s].z, 0, SIGN[s] * 8 * D, 0.05);
+  lean(r, r.k.Spine, 6 * D); lean(r, r.k.Spine1, (8 + 2 * on + 6 * deck) * D); lean(r, r.k.Spine2, (7 + 3 * deck) * D);
+  twist(r, r.k.Spine1, SIGN[deckSide] * 9 * D * deck); twist(r, r.k.Spine2, SIGN[deckSide] * 7 * D * deck);
+  rot(r, r.k.LeftShoulder, AZ, 3 * D * on); rot(r, r.k.RightShoulder, AZ, -3 * D * on);
+  const dip = (r.hips0.y - hp.y) * 0.3;
+  const scratch = hash(seed + bar * 0.73) > 0.55 ? Math.sin(2 * Math.PI * b * 2) : Math.sin(2 * Math.PI * b * 0.5);
+  for (const s of [0, 1] as Side[]) {
+    // mixer: esquerda nos botões, direita no crossfader (corre de um lado ao outro nas batidas)
+    const knob = Math.floor(b * 0.5 + hash(seed + 7 + s) * 3) % 3;
+    if (s === 0) A.set(0.07 + 0.03 * (knob - 1), Y - dip, mix(N, Z, 0.5 + 0.25 * (knob - 1)));
+    else A.set(-0.02 + 0.06 * Math.sin(Math.PI * b * 0.5 + seed), Y - dip - 0.01, N + 0.02);
+    // prato: a mão do lado dele vai ao jog
+    if (s === deckSide && deck > 0) { B.set(SIGN[s] * (X - 0.04), Y - dip + 0.015, Z - 0.03 + 0.025 * scratch); A.lerp(B, deck); }
+    // fone: uma mão (a esquerda, ou a direita de quem prefere) na orelha
+    const ear: Side = hash(seed + 9) > 0.7 ? 1 : 0;
+    if (s === ear && cue > 0) { headPt(r, SIGN[s] * 0.075, 0.05, 0.0, B); A.lerp(B, cue); }
+    if (s === 1 && hype > 0) { headPt(r, -0.32, 0.38 + 0.04 * on, 0.25, C); A.lerp(C, hype); }
+    const atEar = s === ear ? cue : 0, up = s === 1 ? hype : 0;
+    arm(r, s, A, SIGN[s] * mix(0.8, 1, atEar), mix(-1, -0.2, Math.max(atEar, up)), mix(-0.3, -0.6, atEar));
+    if (atEar > 0.5) handTo(r, s, -SIGN[s] * 0.1, 1, 0.1, -SIGN[s], 0, 0.1, 0.9);
+    else if (up > 0.5) handTo(r, s, 0.1, 1, 0.2, 0, 0, 1, 0.9);
+    else handTo(r, s, -SIGN[s] * 0.15, -0.3, 1, 0, -1, 0.2, 0.9);
+    curl(r, s, up > 0.5 ? 0.95 : atEar > 0.5 ? 0.55 : 0.3, 0.3);
+  }
+  // cabeça: acena na batida; no fone inclina para o lado da orelha; no alto olha a pista
+  const earSign = hash(seed + 9) > 0.7 ? 1 : -1;
+  lean(r, r.k.Neck, (6 + 6 * on) * D * (1 - hype)); lean(r, r.k.Head, (10 + 6 * on) * D * (1 - hype) - 8 * D * hype);
+  bank(r, r.k.Head, earSign * 14 * D * cue); twist(r, r.k.Head, (SIGN[deckSide] * 12 * deck + 6 * Math.sin(b * 0.21 + seed)) * D);
+  void t;
+}
+
+/** Garfada (s): o garfo desce ao prato, sobe à boca, morde e volta; o resto do ciclo é mastigar e olhar em volta. */
+const BITE = { cycle: 5.2, down: [0.2, 0.9], up: [0.9, 1.55], at: [1.55, 1.9], back: [1.9, 2.5] } as const;
+/** Fase da garfada de quem come (para a boca: 0 longe, 1 no garfo) e a mastigação (0–1) logo depois. */
+export function eatPhase(time: number, seed: number): { atMouth: number; chew: number } {
+  const u = (time + hash(seed + 61) * BITE.cycle) % BITE.cycle;
+  const atMouth = smooth(BITE.up[0] + 0.3, BITE.at[0], u) * (1 - smooth(BITE.at[1], BITE.back[1] - 0.2, u));
+  const chewing = smooth(BITE.at[1], BITE.at[1] + 0.2, u) * (1 - smooth(BITE.cycle - 1.4, BITE.cycle - 0.6, u));
+  return { atMouth, chew: chewing * (0.5 + 0.5 * Math.sin(u * 2 * Math.PI * 1.7)) };
+}
+/**
+ * Comer: prato pequeno na mão esquerda à frente da cintura (palma para cima, nivelado), garfo na direita. A cada ~5 s
+ * o garfo desce ao prato (corta), sobe à boca com a cabeça vindo ao encontro, e volta; depois mastiga olhando em volta.
+ * Andando, o prato fica parado à frente e o garfo descansa nele.
+ */
+function eat(r: Rig, st: MotionState, t: number, walking: number, inp: MotionInput) {
+  const u = ((inp.time ?? st.t) + hash(st.seed + 61) * BITE.cycle) % BITE.cycle;
+  // prato: firme à frente da cintura, sem acompanhar o balanço do braço
+  chest(r, 0.1, -0.27, 0.27, A); A.y = Math.max(A.y, 0.9 * r.dim.hipH + 0.05);
+  arm(r, 0, A, 0.7, -1, -0.5); handTo(r, 0, -0.55, 0.05, 0.84, 0, 1, 0); curl(r, 0, 0.12, 0.05);
+  // garfo: do prato à boca e de volta (a mão fica ~11 cm abaixo e à frente da boca: os dentes do garfo chegam nela)
+  const cut = pulse(BITE.down[0], BITE.down[1], 0.15, u) * (1 - walking);
+  const mouth = walking > 0.5 ? 0 : smooth(BITE.up[0], BITE.at[0], u) * (1 - smooth(BITE.at[1], BITE.back[1], u));
+  B.copy(A).add(V1.set(-0.05, 0.08 - 0.025 * cut * Math.abs(Math.sin(u * 18)), 0.02));
+  headPt(r, -0.02, -0.14, 0.15, C);
+  V2.copy(B).lerp(C, mouth);
+  arm(r, 1, V2, -0.7, -1, -0.4);
+  // dedos apontam para o prato (garfo para baixo) e, na boca, para cima e para trás (o garfo entra na boca)
+  handTo(r, 1, mix(0.25, 0.1, mouth), mix(-0.55, 0.7, mouth), mix(0.8, -0.35, mouth), mix(0.9, 0.7, mouth), mix(0.2, 0, mouth), mix(0, 0.3, mouth), 0.9);
+  curl(r, 1, 0.5, 0.45);
+  // cabeça: olha o prato para pegar, vem ao encontro do garfo, mastiga olhando em volta
+  const lookPlate = (1 - mouth) * pulse(BITE.down[0] - 0.2, BITE.up[0] + 0.2, 0.25, u);
+  lean(r, r.k.Neck, (6 * lookPlate + 4 * mouth) * D); lean(r, r.k.Head, (14 * lookPlate + 6 * mouth) * D);
+  if (mouth < 0.1 && lookPlate < 0.1) idleHead(r, st, 0.8);
   void t;
 }
 /** Abaixar e proteger a cabeça (pânico): agachada, mãos na nuca, tremendo. */
