@@ -1,0 +1,8 @@
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.34 s -- in br.com.fashionai.application.service.CopilotAnswerTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.087 s -- in br.com.fashionai.application.service.HypePersonalDataTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.716 s -- in br.com.fashionai.application.service.ChallengeServiceTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.421 s -- in br.com.fashionai.application.insights.InsightServiceTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.356 s -- in br.com.fashionai.application.insights.InsightNewContextsTest
+[INFO] Tests run: 48, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+mvn -B -q -pl fai-web -am -DskipTests test-compile -> exit 0

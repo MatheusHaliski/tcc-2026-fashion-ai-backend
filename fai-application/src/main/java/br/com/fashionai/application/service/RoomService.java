@@ -97,18 +97,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     public static final int BASE_CAPACITY = 12;
     public static final int SHOE_RACK_CAPACITY = 24;
     public static final List<String> DEFAULT_DRAWER_LABELS = List.of("Jeans", "Academia", "Praia", Msg.k("room.acessorios"), Msg.k("room.intimas"), "Favoritas");
-    static final Set<String> OUTERWEAR = Set.of("jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono");
-    static final Set<String> KNITWEAR = Set.of("sweater", "sweatshirt", "hoodie", "vest");
-    static final Set<String> DENIM = Set.of("jeans", "denim_shorts");
-    static final Set<String> GYM = Set.of("sweatpants", "jogger_pants", "leggings", "training_shoes", "running_shoes");
-    static final Set<String> BAGS = Set.of("handbag", "crossbody_bag", "tote_bag", "clutch", "backpack");
-    static final Set<String> JEWELRY = Set.of("necklace", "bracelet", "earrings", "ring", "watch");
-    static final Set<String> INTIMATES = Set.of("socks");
-    static final Map<String, String> SUBCATEGORY_PT = Map.ofEntries(Map.entry("skirt", "Saias"), Map.entry("shorts", "Shorts"),
-            Map.entry("bermuda_shorts", "Bermudas"), Map.entry("tailored_pants", "Alfaiataria"), Map.entry("chino_pants", "Chinos"),
-            Map.entry("cargo_pants", "Cargo"), Map.entry("casual_pants", "Calças casuais"), Map.entry("culottes", "Pantacourts"),
-            Map.entry("skort", "Short-saias"), Map.entry("belt", "Cintos"), Map.entry("scarf", "Lenços"), Map.entry("cap", Msg.k("room.bones")),
-            Map.entry("hat", "Chapéus"), Map.entry("sunglasses", Msg.k("room.oculos")), Map.entry("t_shirt", "Camisetas"));
+    /** Alias mantido para consumidores do pacote (provador); a regra vive em {@link RoomPlacementRules}. */
+    static final Set<String> OUTERWEAR = RoomPlacementRules.OUTERWEAR;
 
     /** Decorações de desafios ativos (RF36 §5) — implementado pelo ChallengeService, sem acoplar o quarto. */
     public interface DecorationsProvider {
@@ -472,72 +462,13 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     }
 
     // ================================================================== endereçamento (§1.1) e atribuição automática (CA02)
-    private static String nz(String s) {
-        return s == null ? "" : s;
-    }
-
-    private static boolean occHas(WardrobeItem w, String... codes) {
-        List<String> occ = Json.csv(w.getOccasionTags());
-        for (String c : codes) {
-            if (occ.contains(c)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Categoria de gaveta preferida por tipo/tags (§1.1) — null = qualquer gaveta livre. */
-    static String preferredDrawerLabel(WardrobeItem w) {
-        String cat = nz(w.getCategory());
-        String sub = nz(w.getSubcategory());
-        if (cat.equals("accessory_piece")) {
-            return INTIMATES.contains(sub) ? Msg.t("room.intimas") : Msg.t("room.acessorios");
-        }
-        if (DENIM.contains(sub)) {
-            return "Jeans";
-        }
-        if (GYM.contains(sub) || occHas(w, "sport", "gym")) {
-            return "Academia";
-        }
-        if (occHas(w, "beach")) {
-            return "Praia";
-        }
-        return null;
-    }
-
     /** RF32.CA02 / RF34 §3.5 — o endereço é coerente com o tipo e com a categoria da gaveta? */
     public static boolean coherent(WardrobeItem w, RoomAddress a, Map<String, String> labels) {
-        String cat = nz(w.getCategory());
-        String sub = nz(w.getSubcategory());
-        return switch (a.zone()) {
-            case "door" -> cat.equals("upper_piece") || cat.equals("full_body_piece");
-            case "drawer" -> {
-                if (!(cat.equals("lower_piece") || cat.equals("accessory_piece") || cat.equals("shoes_piece"))) {
-                    yield false;
-                }
-                String label = labels.get(String.valueOf(a.index()));
-                if (label == null) {
-                    yield true;
-                }
-                yield switch (label.toLowerCase(Locale.ROOT)) {
-                    case "jeans" -> DENIM.contains(sub);
-                    case "academia" -> GYM.contains(sub) || occHas(w, "sport", "gym");
-                    case "praia" -> occHas(w, "beach");
-                    case "acessórios", "acessorios" -> cat.equals("accessory_piece");
-                    case "íntimas", "intimas" -> INTIMATES.contains(sub);
-                    case "favoritas" -> w.isFavorite();
-                    default -> true;
-                };
-            }
-            case "base", "shoe" -> cat.equals("shoes_piece");
-            case "bags" -> BAGS.contains(sub);
-            case "jewelry" -> JEWELRY.contains(sub);
-            default -> true; // cadeira, maleiro de estação: nunca penalizam
-        };
+        return RoomPlacementRules.coherent(w, a, labels);
     }
 
     public static int drawerCapacity(String category) {
-        return "shoes_piece".equals(category) ? 1 : "lower_piece".equals(category) ? 2 : 4;
+        return RoomPlacementRules.drawerCapacity(category);
     }
 
     private record Occupancy(Set<String> taken, Map<String, Integer> drawerCount, Map<String, String> drawerCategory) {
@@ -616,19 +547,12 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
 
     /** Posição automática coerente com o tipo (CA02); sem posição livre → Cadeira (CA07). */
     RoomAddress place(WardrobeItem w, RoomLayout layout, Map<String, String> labels, Occupancy occ) {
-        String cat = nz(w.getCategory());
-        String sub = nz(w.getSubcategory());
+        String cat = RoomPlacementRules.nz(w.getCategory());
+        String sub = RoomPlacementRules.nz(w.getSubcategory());
         Optional<RoomAddress> found = Optional.empty();
         switch (cat) {
             case "upper_piece", "full_body_piece" -> {
-                int pref = cat.equals("full_body_piece") ? 4 : OUTERWEAR.contains(sub) ? 3 : KNITWEAR.contains(sub) ? 2 : 1;
-                List<Integer> order = new ArrayList<>(List.of(pref));
-                for (int d = 1; d <= 6; d++) {
-                    if (d != pref) {
-                        order.add(d);
-                    }
-                }
-                for (int d : order) {
+                for (int d : RoomPlacementRules.hangerDoorOrder(cat, sub)) {
                     found = freeHanger(layout, d, occ);
                     if (found.isPresent()) {
                         break;
@@ -637,16 +561,16 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             }
             case "shoes_piece" -> found = freeDrawer(layout, labels, occ, null, true, cat);
             case "accessory_piece" -> {
-                if (BAGS.contains(sub)) {
+                if (RoomPlacementRules.BAGS.contains(sub)) {
                     found = freeIn(layout, "bags", "bags", occ);
-                } else if (JEWELRY.contains(sub)) {
+                } else if (RoomPlacementRules.JEWELRY.contains(sub)) {
                     found = freeIn(layout, "jewelry", "jewelry", occ);
                 }
                 if (found.isEmpty()) {
-                    found = freeDrawer(layout, labels, occ, preferredDrawerLabel(w), false, cat);
+                    found = freeDrawer(layout, labels, occ, RoomPlacementRules.preferredDrawerLabel(w), false, cat);
                 }
             }
-            default -> found = freeDrawer(layout, labels, occ, preferredDrawerLabel(w), false, cat);
+            default -> found = freeDrawer(layout, labels, occ, RoomPlacementRules.preferredDrawerLabel(w), false, cat);
         }
         if (found.isEmpty() && Set.of("lower_piece", "accessory_piece", "shoes_piece").contains(cat)) {
             found = freeDrawer(layout, labels, occ, null, true, cat);
@@ -1236,27 +1160,6 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     }
 
     // ================================================================== organizar com IA (CA05)
-    static String titleCase(String s) {
-        return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
-    }
-
-    /** Sugestão local de rótulo para uma gaveta pelo conteúdo dominante. */
-    static String suggestLabel(List<WardrobeItem> content, String current) {
-        if (content.isEmpty()) {
-            return current;
-        }
-        Map<String, Long> votes = new HashMap<>();
-        for (WardrobeItem w : content) {
-            String pref = preferredDrawerLabel(w);
-            if (pref == null) {
-                pref = SUBCATEGORY_PT.getOrDefault(nz(w.getSubcategory()), titleCase(nz(w.getSubcategory()).replace('_', ' ')));
-            }
-            votes.merge(pref, 1L, Long::sum);
-        }
-        Map.Entry<String, Long> top = votes.entrySet().stream().max(Map.Entry.comparingByValue()).orElseThrow();
-        return top.getValue() * 2 >= content.size() ? top.getKey() : current;
-    }
-
     @Transactional
     public Map<String, Object> organizePreview(CurrentUser user, boolean useAi) {
         RoomLayout layout = layout(user.id());
@@ -1272,7 +1175,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         Map<String, String> proposed = new TreeMap<>((a, b) -> Integer.compare(Integer.parseInt(a), Integer.parseInt(b)));
         proposed.putAll(labels);
         drawerContent.forEach((idx, content) -> {
-            String s = suggestLabel(content.stream().filter(Objects::nonNull).toList(), labels.get(idx));
+            String s = RoomPlacementRules.suggestLabel(content.stream().filter(Objects::nonNull).toList(), labels.get(idx));
             if (s != null) {
                 proposed.put(idx, s);
             }
