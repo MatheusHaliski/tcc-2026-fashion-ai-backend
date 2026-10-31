@@ -14,7 +14,7 @@ de cada slot vem da peça inserida.
 | Junção | a mesma marca vinda de fontes diferentes vira um resultado (fonte mais confiável; herda site/logo que faltar) e a lista é ordenada: nome igual → começa com → contém | `BrandWebSearchService.merge` |
 | Filtro do logo | até 6 logos por busca passam pelo pipeline: vetor desenhado em preto no branco; imagem com fundo, contraste e **nitidez** medidos; recorte; binarização em S; saídas quadrada (320×320) e faixa (160 px) | `LogoFilter`, `SvgPathRenderer` |
 | Escolha | o nome e o slot "logo da marca" são preenchidos; "usar o texto sem logo da web" deixa a marca como texto livre (monograma) | `BrandSearchInput` |
-| Gravação | `POST/PUT /api/pieces` com `brandName`, `brandLogoUrl`, `brandSource`, `brandRef`; o backend só aceita logo que esteja no storage próprio e registra o logo em `brand_logos`, valendo para a marca em todas as telas | `WardrobeService.brandFromWebSearch`, `BrandLogoService.acceptWebLogo` |
+| Gravação | `POST/PUT /api/pieces` com `brandName`, `brandLogoUrl`, `brandSource`, `brandRef`; o backend só aceita logo que esteja no storage próprio e registra o logo em `brand_logos`, valendo para a marca em todas as telas | `PieceFormWriter.brandFromWebSearch` (chamado por `WardrobeService.create/update`), `BrandLogoService.acceptWebLogo` |
 | RF5/RF13 | o slot mostra a marca da peça (logo + nome, 🔒). O payload do esquema não tem marca | `SlotBrand` (scheme-builder), `SchemeBrands` (dna-builder) |
 
 Não há catálogo de marcas guardado: o índice do Simple Icons e o resultado de cada busca ficam **só em memória**

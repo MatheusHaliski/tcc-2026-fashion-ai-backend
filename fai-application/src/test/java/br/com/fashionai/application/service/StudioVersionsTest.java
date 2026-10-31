@@ -94,11 +94,11 @@ class StudioVersionsTest {
 
     @Test
     void cachedDefaultStudioRequiresTheCurrentFabricFramingVersion() {
-        assertThat(WardrobeService.currentFeedVersion(piece)).isFalse();
+        assertThat(PieceStudioHints.currentFeedVersion(piece)).isFalse();
         piece.setFlatLayMetadataJson(Json.write(Map.of("studio", Map.of("feed", Map.of("pipelineVersion", "OLD")))));
-        assertThat(WardrobeService.currentFeedVersion(piece)).isFalse();
+        assertThat(PieceStudioHints.currentFeedVersion(piece)).isFalse();
         piece.setFlatLayMetadataJson(Json.write(Map.of("studio", Map.of("feed", Map.of("pipelineVersion", br.com.fashionai.application.imaging.GarmentCrop.VERSION)))));
-        assertThat(WardrobeService.currentFeedVersion(piece)).isTrue();
+        assertThat(PieceStudioHints.currentFeedVersion(piece)).isTrue();
     }
 
     @Test
