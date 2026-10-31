@@ -59,7 +59,7 @@ class Block7RulesTest {
 
     @Test
     void dashboardAlertsTurnNumbersIntoDecisions() {
-        List<Map<String, Object>> alerts = DashboardService.alerts(
+        List<Map<String, Object>> alerts = DashboardAlerts.alerts(
                 Map.of("ai_fallback_pct", 45.0, "moderation_pending", 3, "approvals_pending", 2, "bonds_approved", 4, "redemptions", 1),
                 List.of(Map.of("capability", "TRY_ON", "provider", "fashn", "cost_usd", 4.17)));
         assertThat(alerts).extracting(a -> a.get("title").toString())

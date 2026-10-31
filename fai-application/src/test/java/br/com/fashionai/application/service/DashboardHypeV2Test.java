@@ -60,7 +60,7 @@ class DashboardHypeV2Test {
                 look("e", "Épsilon", "INSUFFICIENT_DATA", null, null, null, true),
                 look("p", "Privado", "AVAILABLE", 99.0, "VIRAL", 30.0, false),    // Hype pessoal: fora da média e do top
                 look("n", "Novo", null, null, null, null, false));                 // sem linha em hype_scores (LEFT JOIN)
-        Map<String, Object> h = DashboardService.issuerHype(rows, CFG);
+        Map<String, Object> h = DashboardHypeBlocks.issuerHype(rows, CFG);
         assertThat(h).containsEntry("bondedLooks", 7).containsEntry("withHype", 4).containsEntry("insufficient", 1L).containsEntry("notPublic", 2);
         assertThat(h.get("avgScore")).isEqualTo(62.5);                       // (80 + 60 + 70 + 40) / 4, sem o privado de 99
         assertThat(h.get("level")).isEqualTo("HOT");                         // faixa sempre com o número (60–74 = Em alta)
@@ -76,7 +76,7 @@ class DashboardHypeV2Test {
 
     @Test
     void issuerWithoutPublicHypeIsNullNeverZero() {
-        Map<String, Object> h = DashboardService.issuerHype(List.of(
+        Map<String, Object> h = DashboardHypeBlocks.issuerHype(List.of(
                 look("e", "Épsilon", "INSUFFICIENT_DATA", null, null, null, true),
                 look("p", "Privado", "AVAILABLE", 90.0, "VIRAL", 10.0, false)), CFG);
         assertThat(h.get("avgScore")).isNull();
@@ -84,24 +84,24 @@ class DashboardHypeV2Test {
         assertThat(h.get("deltaPoints")).isNull();
         assertThat(h.get("direction")).isNull();
         assertThat((List<?>) h.get("top")).isEmpty();
-        assertThat(DashboardService.issuerHype(null, CFG)).containsEntry("bondedLooks", 0).containsEntry("avgScore", null);
+        assertThat(DashboardHypeBlocks.issuerHype(null, CFG)).containsEntry("bondedLooks", 0).containsEntry("avgScore", null);
     }
 
     @Test
     void issuerDeltaDirection() {
-        Map<String, Object> up = DashboardService.issuerHype(List.of(look("a", "A", "AVAILABLE", 50.0, "RELEVANT", 6.0, true)), CFG);
+        Map<String, Object> up = DashboardHypeBlocks.issuerHype(List.of(look("a", "A", "AVAILABLE", 50.0, "RELEVANT", 6.0, true)), CFG);
         assertThat(up).containsEntry("direction", "UP").containsEntry("deltaPoints", 6.0);
-        Map<String, Object> down = DashboardService.issuerHype(List.of(look("a", "A", "AVAILABLE", 50.0, "RELEVANT", -3.5, true)), CFG);
+        Map<String, Object> down = DashboardHypeBlocks.issuerHype(List.of(look("a", "A", "AVAILABLE", 50.0, "RELEVANT", -3.5, true)), CFG);
         assertThat(down).containsEntry("direction", "DOWN");
         // exatamente 2 pts já não é estável (a régua é |Δ| < 2)
-        assertThat(DashboardService.issuerHype(List.of(look("a", "A", "AVAILABLE", 50.0, "RELEVANT", 2.0, true)), CFG)).containsEntry("direction", "UP");
+        assertThat(DashboardHypeBlocks.issuerHype(List.of(look("a", "A", "AVAILABLE", 50.0, "RELEVANT", 2.0, true)), CFG)).containsEntry("direction", "UP");
     }
 
     // ------------------------------------------------------------------ P2-21 widget do admin
 
     @Test
     void adminBlockListsAllSixLevelsInOrderWithPiecesAndLooks() {
-        Map<String, Object> b = DashboardService.hypeV2Block(
+        Map<String, Object> b = DashboardHypeBlocks.hypeV2Block(
                 List.of(row("entity_type", "PIECE", "level", "HOT", "total", 5L), row("entity_type", "SCHEME", "level", "HOT", "total", 2L),
                         row("entity_type", "PIECE", "level", "VIRAL", "total", 1L), row("entity_type", "SCHEME", "level", "NICHE", "total", 3L),
                         row("entity_type", "PIECE", "level", "MEGA", "total", 9L)),   // faixa desconhecida: ignorada
@@ -128,11 +128,11 @@ class DashboardHypeV2Test {
 
     @Test
     void jobStateNeverCalculatedAndStale() {
-        Map<String, Object> never = DashboardService.hypeJob(Map.of(), CFG, NOW);
+        Map<String, Object> never = DashboardHypeBlocks.hypeJob(Map.of(), CFG, NOW);
         assertThat(never.get("lastCalculatedAt")).isNull();
         assertThat(never.get("stale")).isNull();
         assertThat(never).containsEntry("rows", 0L);
-        Map<String, Object> old = DashboardService.hypeJob(row("last_calculated_at", "2026-10-03T09:20:00Z"), CFG, NOW);
+        Map<String, Object> old = DashboardHypeBlocks.hypeJob(row("last_calculated_at", "2026-10-03T09:20:00Z"), CFG, NOW);
         assertThat(old).containsEntry("stale", true);
     }
 

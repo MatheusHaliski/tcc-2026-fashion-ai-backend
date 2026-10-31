@@ -1,0 +1,8 @@
+# Lote 16 — caracterização ANTES da extração (código original de DashboardService, 414 linhas)
+$ mvn -B -pl fai-application -Dtest='Dashboard*Test,Block7RulesTest,AdminService*Test' -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.DashboardHypeV2Test
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.AdminServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.Block7RulesTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.DashboardServiceCharacterizationTest
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

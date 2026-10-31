@@ -241,7 +241,7 @@ public class AdminService {
      */
     Map<String, Object> hypeV2State() {
         String version = hypeConfig.algorithmVersion();
-        Map<String, Object> m = new LinkedHashMap<>(DashboardService.hypeJob(analytics.hypeJobV2(version), hypeConfig, Instant.now()));
+        Map<String, Object> m = new LinkedHashMap<>(DashboardHypeBlocks.hypeJob(analytics.hypeJobV2(version), hypeConfig, Instant.now()));
         m.put("cron", hypeCron);
         HypeLiveRecalc live = hypeLive.getIfAvailable();
         Map<String, Object> l = new LinkedHashMap<>();
@@ -249,7 +249,7 @@ public class AdminService {
         l.put("intervalSeconds", Math.max(10, hypeLiveSeconds));
         l.put("pending", live != null && live.isDirty());
         m.put("live", l);
-        m.put("coverage", DashboardService.hypeV2Block(List.of(), analytics.hypeCoverageV2(
+        m.put("coverage", DashboardHypeBlocks.hypeV2Block(List.of(), analytics.hypeCoverageV2(
                 new AnalyticsQueryPort.Filter(Instant.EPOCH, Instant.now(), null, null), version), Map.of(), hypeConfig, Instant.now()).get("coverage"));
         return m;
     }
