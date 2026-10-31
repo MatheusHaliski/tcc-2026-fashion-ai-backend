@@ -1,0 +1,45 @@
+# Lote 19 — DEPOIS da extração (DbNetBoxes + CtcGreedyDecoder)
+# 1) Caracterização + golden + testes novos + sondas de marca
+# mvn -B -pl fai-infrastructure/ai-providers -am -Dtest=OnnxTextReader*Test,TmpOcrGoldenDumpTest,BrandReaderFoldedOcrTest,DbNetBoxesTest,CtcGreedyDecoderTest,BrandOcrProbeTest,BrandRobustProbeTest,MultiPieceLocalProbeTest -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.infrastructure.ai.ocr.OnnxTextReaderCharacterizationTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 1 -- in br.com.fashionai.infrastructure.ai.ocr.OnnxTextReaderTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.infrastructure.ai.ocr.DbNetBoxesTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.infrastructure.ai.ocr.BrandReaderFoldedOcrTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.infrastructure.ai.ocr.CtcGreedyDecoderTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.infrastructure.ai.ocr.TmpOcrGoldenDumpTest
+3 x Tests run: 1, Failures: 0, Errors: 0, Skipped: 1 -- in BrandOcrProbeTest, BrandRobustProbeTest, MultiPieceLocalProbeTest (sondas que exigem pasta de fotos via variável de ambiente)
+Tests run: 28, Failures: 0, Errors: 0, Skipped: 4
+BUILD SUCCESS
+# diff golden antes/depois (13 linhas GOLDEN): IDENTICAL
+
+# 2) Módulo ai-providers inteiro (TmpOcrGoldenDumpTest já removido)
+# mvn -B -pl fai-infrastructure/ai-providers -am -Dtest=br/com/fashionai/infrastructure/ai/**/*Test -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.moderation.GoogleVisionSafeSearchAdapterTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 1 -- in ...ai.moderation.BrandOcrProbeTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 1 -- in ...ai.moderation.BrandRobustProbeTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 1 -- in ...ai.moderation.MultiPieceLocalProbeTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 2 -- in ...ai.moderation.OnnxPersonSegmenterTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.ClaudeProviderTest
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.image.ImageProvidersHttpTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.image.ReplicateImageEditAdapterTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.image.AuraMotionAdapterTest
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.image.AnatomicalTryOnAdapterWorkerTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.image.GeminiImageEditAdapterTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.image.AnatomicalTryOnAdapterTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.image.ReplicateImageGenerationAdapterTest
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.image.MeshyModel3dAdapterTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.ProviderHelpersTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.ProviderCircuitRetryTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.ocr.OnnxTextReaderCharacterizationTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 1 -- in ...ai.ocr.OnnxTextReaderTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.ocr.DbNetBoxesTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.ocr.BrandReaderFoldedOcrTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.ocr.CtcGreedyDecoderTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in ...ai.GeminiProviderTest
+Tests run: 100, Failures: 0, Errors: 0, Skipped: 6
+BUILD SUCCESS
+
+# 3) Catraca de linhas (python /home/user/tcc-2026-fashion-ai-backend/scripts/refactoring/line_ratchet.py)
+APERTAR fai-infrastructure/ai-providers/src/main/java/br/com/fashionai/infrastructure/ai/ocr/OnnxTextReader.java: teto 357 -> 220
+# 0 violações nos arquivos tocados; as 17 violações listadas são de arquivos de outros lotes (worktree em bcaee73,
+# baseline da branch principal já reduzido) e não foram tocadas.

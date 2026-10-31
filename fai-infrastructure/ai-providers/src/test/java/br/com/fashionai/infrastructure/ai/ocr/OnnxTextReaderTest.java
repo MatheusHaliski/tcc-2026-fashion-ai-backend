@@ -65,7 +65,7 @@ class OnnxTextReaderTest {
     /** Letra grande que vira bloco à parte ("L" + "ACOSTE") volta a ser uma linha só; outra linha continua separada. */
     @Test
     void juntaBlocosDaMesmaLinha() {
-        List<int[]> out = OnnxTextReader.mergeLine(List.of(new int[]{100, 200, 150, 290, 10}, new int[]{160, 205, 600, 292, 90}, new int[]{120, 500, 400, 540, 30}));
+        List<int[]> out = DbNetBoxes.mergeLine(List.of(new int[]{100, 200, 150, 290, 10}, new int[]{160, 205, 600, 292, 90}, new int[]{120, 500, 400, 540, 30}));
         assertEquals(2, out.size());
         assertTrue(out.stream().anyMatch(b -> b[0] == 100 && b[2] == 600 && b[1] == 200 && b[3] == 292));
     }

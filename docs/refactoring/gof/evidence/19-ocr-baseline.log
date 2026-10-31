@@ -1,0 +1,24 @@
+# Lote 19 — caracterização ANTES da extração (OnnxTextReader original, base bcaee73)
+# mvn -B -pl fai-infrastructure/ai-providers -am -Dtest=OnnxTextReader*Test,TmpOcrGoldenDumpTest,BrandReaderFoldedOcrTest -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.infrastructure.ai.ocr.OnnxTextReaderCharacterizationTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 1 -- in br.com.fashionai.infrastructure.ai.ocr.OnnxTextReaderTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.infrastructure.ai.ocr.BrandReaderFoldedOcrTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.infrastructure.ai.ocr.TmpOcrGoldenDumpTest
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 1
+BUILD SUCCESS
+# Saída exata do OCR (TmpOcrGoldenDumpTest, temporário, não versionado): texto | confiança | caixa relativa
+GOLDEN lacoste96 | LACOSTE | 0.99509368624006 | [0.25333333333333335, 0.257, 0.7555555555555555, 0.338]
+GOLDEN lacoste96 count=1
+GOLDEN nike48 | NIKE | 0.9745250940322876 | [0.43333333333333335, 0.289, 0.5711111111111111, 0.34]
+GOLDEN nike48 count=1
+GOLDEN blank count=0
+GOLDEN twoRows | PUMA | 0.9951858073472977 | [0.06888888888888889, 0.24571428571428572, 0.3411111111111111, 0.34285714285714286]
+GOLDEN twoRows | ADIDAS | 0.9855688214302063 | [0.07222222222222222, 0.58, 0.4122222222222222, 0.6757142857142857]
+GOLDEN twoRows count=2
+GOLDEN fourRows | TOMMY | 0.9870221257209778 | [0.049166666666666664, 0.1692857142857143, 0.23333333333333334, 0.2042857142857143]
+GOLDEN fourRows | HILFIGER | 0.996106743812561 | [0.051666666666666666, 0.3707142857142857, 0.255, 0.4042857142857143]
+GOLDEN fourRows | NEWBALANCE | 0.9928012192249298 | [0.051666666666666666, 0.5707142857142857, 0.3875, 0.6035714285714285]
+GOLDEN fourRows | Hering2026 | 0.9998428821563721 | [0.05, 0.7678571428571429, 0.3275, 0.8107142857142857]
+GOLDEN fourRows count=4
+GOLDEN rec | NIKE | 0.9794180691242218 | null
+GOLDEN rec count=1

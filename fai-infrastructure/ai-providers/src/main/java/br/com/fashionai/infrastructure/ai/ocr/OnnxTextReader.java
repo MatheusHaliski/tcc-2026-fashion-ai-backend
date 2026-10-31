@@ -14,9 +14,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.nio.FloatBuffer;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -30,17 +28,15 @@ import java.util.Map;
  *       próprio modelo (metadado {@code character}).</li>
  * </ol>
  * Entrada das duas redes: BGR, (x/255 − 0,5)/0,5, como no RapidOCR. Texto vertical e girado não é tratado (logos de
- * roupa são horizontais).
+ * roupa são horizontais). O pós-processamento puro fica em {@link DbNetBoxes} (caixas) e {@link CtcGreedyDecoder} (texto);
+ * aqui ficam só o ciclo de vida das sessões ONNX, a conversão da imagem em tensor e a montagem das {@code Line}.
  */
 @Component
 public class OnnxTextReader implements TextReaderPort {
     private static final Logger log = LoggerFactory.getLogger(OnnxTextReader.class);
     static final String DET = "/models/ocr/ppocrv4_det.onnx";
     static final String REC = "/models/ocr/ppocrv4_rec.onnx";
-    private static final int DET_MIN_SIDE = 736, DET_MAX_SIDE = 1600, REC_H = 48, REC_MAX_W = 1280;
-    private static final float DB_THRESH = 0.3f, BOX_THRESH = 0.5f;
-    private static final double UNCLIP = 1.6;
-    private static final int MAX_BOXES = 60;
+    private static final int DET_MAX_SIDE = 1600, REC_H = 48, REC_MAX_W = 1280;
 
     private final Object lock = new Object();
     private volatile boolean failed;
@@ -99,12 +95,8 @@ public class OnnxTextReader implements TextReaderPort {
     // ------------------------------------------------------------------ detecção (DBNet)
     private List<int[]> detect(BufferedImage img) throws Exception {
         int w = img.getWidth(), h = img.getHeight();
-        double ratio = Math.min(w, h) < DET_MIN_SIDE ? DET_MIN_SIDE / (double) Math.min(w, h) : 1.0;
-        if (Math.max(w, h) * ratio > 2000) {
-            ratio = 2000.0 / Math.max(w, h);
-        }
-        int rw = Math.max(32, (int) Math.round(w * ratio / 32.0) * 32);
-        int rh = Math.max(32, (int) Math.round(h * ratio / 32.0) * 32);
+        int[] size = DbNetBoxes.inputSize(w, h);
+        int rw = size[0], rh = size[1];
         BufferedImage r = scale(img, rw, rh);
         float[] prob;
         OrtEnvironment env = OrtEnvironment.getEnvironment();
@@ -114,99 +106,7 @@ public class OnnxTextReader implements TextReaderPort {
             prob = new float[rw * rh];
             fb.get(prob);
         }
-        boolean[] bin = new boolean[prob.length];
-        for (int i = 0; i < prob.length; i++) {
-            bin[i] = prob[i] > DB_THRESH;
-        }
-        // dilatação 2x2 (use_dilation do PP-OCR): junta letras vizinhas da mesma palavra
-        boolean[] dil = bin.clone();
-        for (int y = 0; y < rh; y++) {
-            for (int x = 0; x < rw; x++) {
-                if (bin[y * rw + x]) {
-                    if (x + 1 < rw) dil[y * rw + x + 1] = true;
-                    if (y + 1 < rh) dil[(y + 1) * rw + x] = true;
-                    if (x + 1 < rw && y + 1 < rh) dil[(y + 1) * rw + x + 1] = true;
-                }
-            }
-        }
-        List<int[]> boxes = new ArrayList<>();
-        boolean[] seen = new boolean[dil.length];
-        ArrayDeque<Integer> stack = new ArrayDeque<>();
-        for (int i = 0; i < dil.length; i++) {
-            if (!dil[i] || seen[i]) {
-                continue;
-            }
-            int x0 = rw, y0 = rh, x1 = -1, y1 = -1, n = 0;
-            double sum = 0;
-            stack.push(i);
-            seen[i] = true;
-            while (!stack.isEmpty()) {
-                int p = stack.pop();
-                int px = p % rw, py = p / rw;
-                x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
-                sum += prob[p];
-                n++;
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dx = -1; dx <= 1; dx++) {
-                        int nx = px + dx, ny = py + dy;
-                        if (nx >= 0 && ny >= 0 && nx < rw && ny < rh) {
-                            int q = ny * rw + nx;
-                            if (dil[q] && !seen[q]) {
-                                seen[q] = true;
-                                stack.push(q);
-                            }
-                        }
-                    }
-                }
-            }
-            int bw = x1 - x0 + 1, bh = y1 - y0 + 1;
-            if (Math.min(bw, bh) < 3 || sum / n < BOX_THRESH) {
-                continue;
-            }
-            // unclip: afasta cada lado pela distância área × razão ÷ perímetro (retângulo)
-            double d = bw * (double) bh * UNCLIP / (2.0 * (bw + bh));
-            double sx = w / (double) rw, sy = h / (double) rh;
-            int ax0 = clamp((int) Math.floor((x0 - d) * sx), w), ay0 = clamp((int) Math.floor((y0 - d) * sy), h);
-            int ax1 = clamp((int) Math.ceil((x1 + 1 + d) * sx), w), ay1 = clamp((int) Math.ceil((y1 + 1 + d) * sy), h);
-            if (ax1 - ax0 >= 5 && ay1 - ay0 >= 5) {
-                boxes.add(new int[]{ax0, ay0, ax1, ay1, n});
-            }
-        }
-        boxes = mergeLine(boxes);
-        boxes.sort(Comparator.comparingInt((int[] b) -> -b[4]));
-        List<int[]> top = new ArrayList<>(boxes.subList(0, Math.min(MAX_BOXES, boxes.size())));
-        top.sort(Comparator.<int[]>comparingInt(b -> b[1]).thenComparingInt(b -> b[0]));
-        return top;
-    }
-
-    /**
-     * Junta caixas da mesma linha de texto: em letra grande (logo no peito), a primeira ou a última letra às vezes vira
-     * um bloco à parte, mais alto que largo, que sozinho seria descartado como texto vertical ("L" + "ACOSTE"). Duas
-     * caixas se juntam quando se sobrepõem na vertical (≥ 55% da menor altura), têm altura parecida (razão ≤ 1,6) e o vão
-     * entre elas é menor que 0,6 × a altura.
-     */
-    static List<int[]> mergeLine(List<int[]> in) {
-        List<int[]> boxes = new ArrayList<>(in);
-        boolean merged = true;
-        while (merged) {
-            merged = false;
-            outer:
-            for (int i = 0; i < boxes.size(); i++) {
-                for (int j = i + 1; j < boxes.size(); j++) {
-                    int[] a = boxes.get(i), b = boxes.get(j);
-                    int ha = a[3] - a[1], hb = b[3] - b[1];
-                    int overlap = Math.min(a[3], b[3]) - Math.max(a[1], b[1]);
-                    int gap = Math.max(a[0], b[0]) - Math.min(a[2], b[2]);
-                    if (overlap >= 0.55 * Math.min(ha, hb) && Math.max(ha, hb) <= 1.6 * Math.min(ha, hb) && gap < 0.6 * Math.max(ha, hb)) {
-                        boxes.set(i, new int[]{Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3]), a[4] + b[4]});
-                        boxes.remove(j);
-                        merged = true;
-                        break outer;
-                    }
-                }
-            }
-        }
-        return boxes;
+        return DbNetBoxes.boxes(prob, rw, rh, w, h);
     }
 
     // ------------------------------------------------------------------ reconhecimento (CRNN + CTC)
@@ -231,29 +131,8 @@ public class OnnxTextReader implements TextReaderPort {
              OrtSession.Result res = rec.run(Map.of(recIn, t))) {
             OnnxTensor o = (OnnxTensor) res.get(0);
             long[] shape = o.getInfo().getShape();
-            int steps = (int) shape[1], classes = (int) shape[2];
-            FloatBuffer fb = o.getFloatBuffer();
-            StringBuilder sb = new StringBuilder();
-            double conf = 0;
-            int kept = 0, prev = 0;
-            for (int s = 0; s < steps; s++) {
-                int best = 0;
-                float bp = -1;
-                for (int c = 0; c < classes; c++) {
-                    float v = fb.get(s * classes + c);
-                    if (v > bp) {
-                        bp = v;
-                        best = c;
-                    }
-                }
-                if (best != 0 && best != prev && best < dict.size()) {
-                    sb.append(dict.get(best));
-                    conf += bp;
-                    kept++;
-                }
-                prev = best;
-            }
-            return kept == 0 ? null : new Line(sb.toString().trim(), conf / kept, box);
+            CtcGreedyDecoder.Decoded text = CtcGreedyDecoder.decode(o.getFloatBuffer(), (int) shape[1], (int) shape[2], dict);
+            return text == null ? null : new Line(text.text(), text.confidence(), box);
         }
     }
 
@@ -273,19 +152,7 @@ public class OnnxTextReader implements TextReaderPort {
                     opts.setIntraOpNumThreads(2);
                     OrtSession d = env.createSession(bytes(DET), opts);
                     OrtSession r = env.createSession(bytes(REC), opts);
-                    String chars = r.getMetadata().getCustomMetadata().get("character");
-                    if (chars == null || chars.isEmpty()) {
-                        throw new IllegalStateException("dicionário ausente no modelo de reconhecimento");
-                    }
-                    List<String> dct = new ArrayList<>();
-                    dct.add("");                                   // 0 = branco do CTC
-                    // mesma lista do RapidOCR (splitlines): nenhuma linha é descartada, senão os índices se deslocam
-                    List<String> lines = new ArrayList<>(List.of(chars.split("\n", -1)));
-                    if (chars.endsWith("\n")) {
-                        lines.remove(lines.size() - 1);
-                    }
-                    dct.addAll(lines);
-                    dct.add(" ");                                  // espaço no fim (use_space_char)
+                    List<String> dct = CtcGreedyDecoder.dictionary(r.getMetadata().getCustomMetadata().get("character"));
                     detIn = d.getInputNames().iterator().next();
                     recIn = r.getInputNames().iterator().next();
                     dict = dct;
@@ -326,10 +193,6 @@ public class OnnxTextReader implements TextReaderPort {
 
     private static float norm(int v) {
         return (v / 255f - 0.5f) / 0.5f;
-    }
-
-    private static int clamp(int v, int max) {
-        return Math.max(0, Math.min(max, v));
     }
 
     /** RGB sobre branco (peça recortada com transparência) e lado maior limitado. */
