@@ -30,3 +30,9 @@ Publicação do PR autorizada na continuação. A matriz mantém pendências exp
 ## Continuação Java
 
 Lote FLOW-WARDROBE-STUDIO-004 implementado, com98 testes Java passando. Ver WARDROBE_STUDIO.md, CI_FOLLOWUP.md e evidence/wardrobe-studio-metrics.json. WardrobeService continua CRITICAL/PARTIAL; refatoração integral e falhas amplas de frontend/catálogo continuam pendentes.
+
+## Módulo 02 — identidade
+
+Lote FLOW-AUTH-REGISTER-FORM-005: validação do formulário de cadastro extraída de `IdentityService.register` para
+`RegistrationFormChain` (Chain of Responsibility, variante pipeline), com caracterização antes da extração. Ver
+[02-RESULTADO.md](02-RESULTADO.md). IdentityService continua PARTIAL.
