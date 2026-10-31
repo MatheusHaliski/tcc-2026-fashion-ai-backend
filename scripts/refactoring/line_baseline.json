@@ -5,10 +5,6 @@
  },
  "rule": "docs/refactoring/LINE_RULES.md",
  "files": {
-  "app/(site)/(app)/explorer/page.tsx": {
-   "max": 352,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "app/(site)/(app)/pieces/new/page.tsx": {
    "max": 341,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
