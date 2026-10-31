@@ -18,6 +18,14 @@ worker. Aqui nada é gravado em banco ou bucket, e a réplica não é criada nem
   python3 -u scripts/cloud/photo_sets_vertex.py --input rows.json --out lote-vertex
   python3 -m scripts.catalog.process_photo_sets --from-lot lote-vertex     # ensaio: confere e conta; --apply grava
 
+  # opcional, depois da GPU: gera candidatos canônicos SEM alterar whole.png/set.json nem gravar banco
+  python3 -u scripts/cloud/photo_sets_vertex.py --input rows.json --out lote-vertex \
+    --canonical-asset-root work/garments-canonical-v0
+
+  # ou reprocessa um lote existente sem usar a GPU:
+  python3 -m scripts.catalog.canonical_full_frame --from-lot lote-vertex \
+    --asset-root work/garments-canonical-v0
+
 Rodar de novo continua de onde parou: foto com set.json da mesma URL já no lote é pulada (--force refaz).
 """
 import argparse
@@ -109,10 +117,27 @@ def predict(cloud,endpoint_name,host,instance,attempts=5,sleep=time.sleep):
 
 
 def already_done(out,row):
-    """set.json desta foto e desta URL já no lote: o importador usaria o mesmo; não gasta GPU de novo."""
+    """Resume only a complete result for the *same* catalog image context.
+
+    A reused URL alone is insufficient: the product category or subcategory
+    might have been corrected after the previous GPU call. Missing READY PNGs
+    also require regeneration, not a misleading ALREADY_IN_LOT outcome.
+    """
     path=deploy.photo_set_folder(out,row['id'])/'set.json'
-    try:return json.loads(path.read_text(encoding='utf-8')).get('sourceUrl')==row['image_url']
-    except (OSError,ValueError):return False
+    try:
+        record=json.loads(path.read_text(encoding='utf-8'))
+        if not isinstance(record,dict):return False
+        if record.get('sourceUrl')!=row['image_url'] or str(record.get('imageId'))!=str(row['id']):return False
+        for key in ('category','subcategory','color'):
+            if record.get(key)!=row.get(key):return False
+        if row.get('product_id') is not None and str(record.get('productId'))!=str(row['product_id']):return False
+        if record.get('status') not in ('READY','REVIEW','INELIGIBLE'):return False
+        if record.get('status')=='READY':
+            if record.get('files')!={'whole':'whole.png','fabric':'fabric.png'}:return False
+            if not all((path.parent/filename).is_file() and not (path.parent/filename).is_symlink()
+                       for filename in ('whole.png','fabric.png')):return False
+        return True
+    except (OSError,ValueError,TypeError):return False
 
 
 def process_row(row,data,cloud,endpoint_name,host,out,sleep=time.sleep):
@@ -137,6 +162,16 @@ def process_row(row,data,cloud,endpoint_name,host,out,sleep=time.sleep):
     if folder is None:
         return {**base,'status':'FAILED','reason':deploy.short_reason(prediction.get('reason')),'diagnostics':diagnostics,
                 'seconds':round(time.monotonic()-started,1)}
+    # Postflight also runs locally in Cloud Shell, protecting the current
+    # already-deployed GPU image without a new build. The GPU response is first
+    # saved/validated with its original contract; unsafe READY is then
+    # downgraded to REVIEW with a preserved set.json backup (PNGs untouched).
+    catalog_path=str(ROOT/'scripts/catalog')
+    if catalog_path not in sys.path:sys.path.insert(0,catalog_path)
+    from audit_photo_set_lot import harden_set_path
+    verdict=harden_set_path(folder/'set.json',apply_local=True)
+    if verdict['status'] in {'BACKUP_CONFLICT_REVIEW_REQUIRED'}:
+        raise BatchStopped('POSTFLIGHT_BACKUP_CONFLICT')
     photo_set=json.loads((folder/'set.json').read_text(encoding='utf-8'))
     return {**base,'status':photo_set['status'],'reason':photo_set.get('reason'),'lotStatus':prediction.get('status'),
             'dir':folder.relative_to(out).as_posix(),'diagnostics':diagnostics,'seconds':round(time.monotonic()-started,1)}
@@ -200,6 +235,8 @@ def main(argv=None):
     parser.add_argument('--force',action='store_true',help='refaz fotos que já têm set.json da mesma URL no lote')
     parser.add_argument('--min-interval',type=float,default=1.0,help='segundos mínimos entre downloads no mesmo host')
     parser.add_argument('--endpoint',help='ID numérico do endpoint (padrão: o endpoint chamado '+deploy.NAME+')')
+    parser.add_argument('--canonical-asset-root',type=Path,
+                        help='após a GPU, gera prévias canônicas em <out>/canonical-preview; não altera o photoSet')
     parser.add_argument('--project',default=deploy.PROJECT);parser.add_argument('--region',default=deploy.REGION)
     args=parser.parse_args(argv)
     if args.limit is not None and args.limit<1:parser.error('--limit deve ser positivo')
@@ -214,6 +251,14 @@ def main(argv=None):
     except (BatchStopped,deploy.CloudHTTPError) as error:
         print(f'LOTE_PARADO: {error}',file=sys.stderr);return 3
     print('Recorte na GPU: '+' · '.join(f'{k}: {v}' for k,v in sorted(counts.items())),flush=True)
+    if args.canonical_asset_root:
+        # Um renderizador local e independente: não usa GPU nem exige nova release.
+        # A saída é REVIEW em pasta paralela. O importador não a consome.
+        catalog_path=str(ROOT/'scripts/catalog')
+        if catalog_path not in sys.path:sys.path.insert(0,catalog_path)
+        from canonical_full_frame import render_lot
+        rendered=render_lot(args.out,args.canonical_asset_root,limit=args.limit)
+        print('Prévia canônica (nada gravado no banco): '+json.dumps(rendered,ensure_ascii=False),flush=True)
     print(f'Próximo passo (ensaio, sem gravar): python3 -m scripts.catalog.process_photo_sets --from-lot {args.out}',flush=True)
     print('ATENÇÃO: a réplica continua ativa e faturável. Para remover: python3 -u scripts/cloud/deploy_fashn_vertex.py '
           '--apply --undeploy --output <a mesma pasta do deploy>',flush=True)

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import io
 from dataclasses import dataclass
+from pathlib import Path
 
 from PIL import Image, ImageChops, ImageFilter, ImageOps
 
@@ -94,6 +95,24 @@ def render_whole(image: Image.Image, mask: Image.Image, truncated=(), *, preflig
         "preflight": preflight.metrics, "framing": framing,
     }
     return WholeResult(out.getvalue(), info)
+
+
+def render_canonical_whole_preview(asset_glb: Path, fabric_png: Path, *, category: str,
+                                   subcategory: str, photo_set_status: str) -> WholeResult:
+    """Create a separate GLB preview; the original `render_whole` stays intact.
+
+    Only a READY source can feed the V0 prototype and its output always remains
+    REVIEW. This is NOT evidence of physical fit, actual logos or 3-D quality.
+    """
+    if photo_set_status != "READY":
+        raise ValueError("CANONICAL_PREVIEW_REQUIRES_READY_SOURCE")
+    try:
+        from .canonical_full_frame import render_asset_png
+    except ImportError:
+        from canonical_full_frame import render_asset_png
+    png, info = render_asset_png(Path(asset_glb), Path(fabric_png),
+                                 category=category, subcategory=subcategory)
+    return WholeResult(png, info)
 
 
 class GarmentSegmenter:

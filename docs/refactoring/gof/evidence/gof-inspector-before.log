@@ -1,0 +1,11 @@
+
+ RUN  v5.0.5 /workspace/fashionai-refactoring
+
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+   Start at  02:25:28
+   Duration  2.15s (environment 28%, import 27%, tests 20%, transform 18%, setup 6%)
+
+    Isolate  2 workers spawned · ~359ms startup each (spawn + environment, per file)
+             at least ~359ms faster with isolate: false — reuses workers across files instead of one per file

@@ -1,0 +1,60 @@
+{
+  "status": "passed",
+  "scope": "Production frontend with mocked API and synthetic GLB; no real backend or DB",
+  "saves": [
+    {
+      "expectedSequence": 1,
+      "assetId": "a1",
+      "document": {
+        "nodes": {
+          "n0": {
+            "position": [
+              0.12,
+              0,
+              0
+            ],
+            "rotation": [
+              0,
+              3.141592653589793,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ],
+            "visible": true
+          }
+        },
+        "materials": {
+          "n0.p0": {
+            "color": "#2266aa",
+            "roughness": 0.8,
+            "metalness": 0,
+            "repeat": [
+              1,
+              1
+            ],
+            "rotation": 0
+          }
+        },
+        "vertices": {
+          "n0.p0": {
+            "0": [
+              0,
+              0,
+              0.2
+            ]
+          }
+        }
+      },
+      "productIds": [
+        "p"
+      ],
+      "confirmedTipoLookId": "male",
+      "genderEvidenceHash": "local-fixture",
+      "requestId": "a45dee0b-ceee-40b3-9d74-207c72086d5f"
+    }
+  ],
+  "errors": []
+}

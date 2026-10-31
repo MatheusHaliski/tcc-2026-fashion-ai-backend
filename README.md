@@ -12,7 +12,7 @@ assets e da documentação do projeto.
 | Backend | Java 21 (imagem Docker na JVM 25 LTS) · Spring Boot 4.1 (Spring Framework 7, Hibernate 7, Jackson 3) · Spring Security 7 (JWT RS256 próprio) · Spring Data JPA · Flyway · MySQL 8.4/9.x |
 | Frontend | Next.js 16 · React 19 · TypeScript · Tailwind CSS · Three.js / React Three Fiber (cenas 3D) |
 | Opcionais | Redis (cotas/contadores), Cassandra (timeline/notificações com TTL), OpenSearch (busca), S3/MinIO (mídia) |
-| IA | Claude (SDK oficial), Gemini, Replicate (FLUX), FASHN (try-on), Meshy (3D), remove.bg/rembg — com fallback local para cada capacidade |
+| IA | Claude (SDK oficial), Gemini, Replicate (FLUX), FASHN (try-on), Meshy (3D), remove.bg/rembg, GPU própria (Grounding DINO + SAM 2.1 + Qwen-Image-Edit, `services/garment_gpu`) — com fallback local para cada capacidade |
 | Serviços cloud | Vercel (frontend), Railway (API, bancos e bucket S3), Resend (e-mail), Google OAuth (acesso restrito), Open-Meteo (clima) |
 | Documentação da API | `http://localhost:8080/swagger-ui.html` (OpenAPI 3 em `/v3/api-docs`) |
 
@@ -202,4 +202,7 @@ Detalhes de deploy em `docs/deploy/DEPLOY.md`.
 * `docs/` — rubricas (`docs/rubricas/`), testes ponta a ponta e evidências (`docs/testes/`), deploy, diagramas, anatomias de cards, tipografia, ícones, Meu Guarda-Roupa.
 * `markdowns/` — histórias de usuário (HU01–HU21), critérios de aceite por RF, diagramas UML/atividade, pipelines.
 * `scripts/` — geradores (ícones, rubricas), backup/restore, chaves JWT, checagens de i18n, roteiro ponta a ponta.
+* `services/garment_gpu/` — pipeline de imagem de peças em GPU própria, sem API de terceiros: API FastAPI privada,
+  filas Redis, S3, workers NVIDIA de segmentação (Grounding DINO + SAM 2.1) e reconstrução (Qwen-Image-Edit) com QA
+  automático e revisão humana. Ligado ao backend por `GARMENT_GPU_URL`/`GARMENT_GPU_API_KEY` (veja o README do serviço).
 * `docker-compose.dev.yml`, `Dockerfile.backend` — ambiente local e imagem da API.

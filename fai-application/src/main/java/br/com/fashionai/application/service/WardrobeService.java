@@ -195,6 +195,13 @@ public class WardrobeService {
         this.ownMedia = ownMedia;
     }
 
+    private PieceConservationService conservation;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void setConservation(PieceConservationService conservation) {
+        this.conservation = conservation;
+    }
+
     // ================================================================== RF4 — análise da foto (rascunho)
     /**
      * @param subcategoryCandidates subtipos mais parecidos com a foto ({code, score}), do mais parecido para o menos
@@ -1110,12 +1117,27 @@ public class WardrobeService {
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
                             Map<String, Object> background, UUID captureSessionId, String variation,
-                            Map<String, List<String>> attributes, List<String> confirmed) {
+                            Map<String, List<String>> attributes, List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao) {
         /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
         public PieceForm {
             occasion = Taxonomy.normalizeTags(occasion);
             style = Taxonomy.normalizeTags(style);
             variation = variation == null || variation.isBlank() ? null : variation.trim().toUpperCase(java.util.Locale.ROOT);
+        }
+
+        /** Compatibility constructor: old callers do not set or clear the conservation FK. */
+        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
+                         String sex, UUID brandId, String brandName, String color, String material, String size,
+                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
+                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
+                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
+                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                         Map<String, Object> background, UUID captureSessionId, String variation,
+                         Map<String, List<String>> attributes, List<String> confirmed) {
+            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
+                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
+                    variation, attributes, confirmed, null, false);
         }
 
         /**
@@ -1173,7 +1195,7 @@ public class WardrobeService {
             return new PieceForm(draftId, useDefaultImage, name, category, r.subcategory(), sex, brandId, brandName, color, mat, size,
                     market, occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
                     careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
-                    variation != null ? variation : r.variation(), attrs, confirmed);
+                    variation != null ? variation : r.variation(), attrs, confirmed, estadoConservacaoId, clearEstadoConservacao);
         }
 
         /** Formulário sem sessão de captura adaptativa (lote, várias peças numa foto, edição). */
@@ -1450,6 +1472,9 @@ public class WardrobeService {
     }
 
     private void apply(WardrobeItem w, PieceForm f, boolean creating, Map<?, ?> aiPrefill) {
+        if (f.estadoConservacaoId() != null || Boolean.TRUE.equals(f.clearEstadoConservacao())) {
+            conservation.apply(w, f.estadoConservacaoId(), Boolean.TRUE.equals(f.clearEstadoConservacao()));
+        }
         BackgroundStudioService.validateMotionWrite(w.getBackgroundConfigJson(), f.background());
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());
@@ -1466,7 +1491,9 @@ public class WardrobeService {
         w.setPrice(f.price());
         w.setTags(Json.csv(f.tags()));
         w.setNotes(InputSanitizer.clean(f.notes(), 1000));
-        w.setCondition(f.condition() == null ? (creating ? ItemCondition.GOOD : w.getCondition()) : f.condition());
+        if (!Boolean.TRUE.equals(f.clearEstadoConservacao())) {
+            w.setCondition(f.condition() == null ? (creating ? ItemCondition.GOOD : w.getCondition()) : f.condition());
+        }
         w.setPurchaseDate(f.purchaseDate());
         w.setPurchaseLocation(InputSanitizer.clean(f.purchaseLocation(), 160));
         w.setSku(InputSanitizer.clean(f.sku(), 80));
@@ -2221,7 +2248,7 @@ public class WardrobeService {
         } else {
             Map<String, Object> summary = studioSummary(info, studioVersion(cur, w) + 1, approved);
             if (cur != null && cur.get("url") != null) {
-                summary.put("previous", studioRef(cur));
+                summary.put("previous", StudioVersionMetadata.reference(cur));
             }
             meta.put("studio", summary);
         }
@@ -2234,52 +2261,21 @@ public class WardrobeService {
     // miniatura, variante do feed, detalhe do logo, recorte realçado, enquadramento e marcos para ajuste manual) até a
     // pessoa aprovar (POST /studio/approve) ou descartar (DELETE /studio/pending). Peças antigas sem esses campos
     // contam como versão 1 aprovada.
-    private static final List<String> STUDIO_KEYS = List.of("url", "thumbUrl", "feedUrl", "detailUrl", "enhancedUrl", "backdrop",
-            "stages", "metrics", "framing", "feed", "logo", "provider");
-
-    @SuppressWarnings("unchecked")
+    // Package-level compatibility for existing callers and characterization tests.
     static Map<String, Object> studioMeta(Map<String, Object> meta) {
-        return meta.get("studio") instanceof Map<?, ?> m ? new LinkedHashMap<>((Map<String, Object>) m) : null;
+        return StudioVersionMetadata.copyFrom(meta);
     }
 
     static int studioVersion(Map<String, Object> cur, WardrobeItem w) {
-        if (cur != null && cur.get("version") instanceof Number n) {
-            return n.intValue();
-        }
-        return w.getStudioImageUrl() != null ? 1 : 0;
+        return StudioVersionMetadata.version(cur, () -> w.getStudioImageUrl());
     }
 
-    /** Aprovada: marcada como tal ou legada (sem o campo). */
     static boolean studioApproved(Map<String, Object> cur, WardrobeItem w) {
-        return w.getStudioImageUrl() != null && (cur == null || !Boolean.FALSE.equals(cur.get("approved")));
+        return StudioVersionMetadata.approved(cur, w.getStudioImageUrl());
     }
 
     static Map<String, Object> studioSummary(Map<String, Object> info, int version, boolean approved) {
-        Map<String, Object> s = new LinkedHashMap<>();
-        for (String k : STUDIO_KEYS) {
-            if (info.get(k) != null) {
-                s.put(k, "provider".equals(k) ? String.valueOf(info.get(k)) : info.get(k));
-            }
-        }
-        String now = java.time.Instant.now().toString();
-        s.put("version", version);
-        s.put("approved", approved);
-        s.put("createdAt", now);
-        if (approved) {
-            s.put("approvedAt", now);
-        }
-        return s;
-    }
-
-    /** O que fica da versão anterior (histórico curto): versão e as URLs, sem a versão anterior dela. */
-    private static Map<String, Object> studioRef(Map<String, Object> cur) {
-        Map<String, Object> ref = new LinkedHashMap<>();
-        for (String k : List.of("version", "url", "feedUrl", "backdrop", "approvedAt")) {
-            if (cur.get(k) != null) {
-                ref.put(k, cur.get(k));
-            }
-        }
-        return ref;
+        return StudioVersionMetadata.summary(info, version, approved);
     }
 
     /**
@@ -2301,17 +2297,13 @@ public class WardrobeService {
                 cur = new LinkedHashMap<>(Map.of("url", w.getStudioImageUrl(), "version", 1, "approved", true));
             }
             dropPendingMedia(cur);
-            cur.put("pending", studioSummary(info, Math.max(studioVersion(cur, w), pendingVersion(cur)) + 1, false));
+            cur.put("pending", studioSummary(info, Math.max(studioVersion(cur, w), StudioVersionMetadata.pendingVersion(cur)) + 1, false));
             meta.put("studio", cur);
             w.setFlatLayMetadataJson(Json.write(meta));
             return "pending";
         }
         applyStudio(w, info, false);
         return "applied";
-    }
-
-    private static int pendingVersion(Map<String, Object> cur) {
-        return cur.get("pending") instanceof Map<?, ?> p && p.get("version") instanceof Number n ? n.intValue() : 0;
     }
 
     /** Apaga os arquivos de uma versão pendente que não vai ao ar (melhor esforço: arquivo que sobrar não quebra nada). */
@@ -2346,7 +2338,7 @@ public class WardrobeService {
             if (w.getStudioImageUrl() != null) {
                 Map<String, Object> prev = new LinkedHashMap<>(cur);
                 prev.putIfAbsent("url", w.getStudioImageUrl());
-                next.put("previous", studioRef(prev));
+                next.put("previous", StudioVersionMetadata.reference(prev));
             }
             w.setStudioImageUrl(String.valueOf(next.get("url")));
             w.setStudioBackdrop(next.get("backdrop") == null ? null : String.valueOf(next.get("backdrop")));
@@ -2750,48 +2742,7 @@ public class WardrobeService {
      * subcategorias LEGACY com o equivalente novo e os rótulos dos códigos novos em pt-BR/en/es.
      */
     static Map<String, Object> taxonomyV2() {
-        TaxonomyRegistry reg = TaxonomyRegistry.get();
-        Map<String, Object> out = new LinkedHashMap<>();
-        Map<String, Object> bySub = new LinkedHashMap<>();
-        Taxonomy.SUBCATEGORIES.values().forEach(subs -> subs.forEach(sub -> bySub.put(sub, reg.variationsOf(sub).stream()
-                .map(l -> Map.of("code", l.code(), "tier", l.tier(), "priority", l.priority())).toList())));
-        out.put("variationsBySubcategory", bySub);
-        Map<String, Object> variations = new LinkedHashMap<>();
-        reg.variations().forEach((code, v) -> variations.put(code, Map.of("labels", v.labels(), "description", v.description())));
-        out.put("variations", variations);
-        out.put("dimensions", reg.dimensions().stream().map(d -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("code", d.code());
-            m.put("labels", d.labels());
-            m.put("multiValued", d.multiValued());
-            m.put("maxPerPiece", d.maxPerPiece());
-            m.put("maxPerScheme", d.maxPerScheme());
-            m.put("attribute", d.attribute() && !Taxonomy.FIELD_DIMENSIONS.contains(d.code()));
-            m.put("appliesTo", d.appliesTo());
-            m.put("values", d.values().stream().filter(v -> !v.legacy()).map(v -> {
-                Map<String, Object> x = new LinkedHashMap<>();
-                x.put("code", v.code());
-                x.put("labels", v.labels());
-                x.put("tier", v.tier());
-                x.put("priority", v.priority());
-                if (v.group() != null) {
-                    x.put("group", v.group());
-                }
-                if (!v.appliesTo().isEmpty()) {
-                    x.put("appliesTo", v.appliesTo());
-                }
-                return x;
-            }).toList());
-            return m;
-        }).toList());
-        Map<String, Object> legacy = new LinkedHashMap<>();
-        reg.legacySubcategories().forEach(l -> legacy.put(l.code(), Map.of("category", l.category(), "replacedBy", l.replacedBy(),
-                "implies", l.implies(), "labels", l.labels())));
-        out.put("legacySubcategories", legacy);
-        Map<String, Object> subLabels = new LinkedHashMap<>();
-        Taxonomy.SUBCATEGORIES.values().forEach(subs -> subs.forEach(sub -> reg.subcategory(sub).ifPresent(x -> subLabels.put(sub, x.labels()))));
-        out.put("subcategoryLabels", subLabels);
-        return out;
+        return br.com.fashionai.application.taxonomy.TaxonomyView.extended();
     }
 
     // ------------------------------------------------------------------ util

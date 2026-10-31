@@ -165,14 +165,18 @@ def keep_large(mask: np.ndarray, min_fraction: float = 0.004, min_pixels: int = 
 
 
 def settle_extent(target: np.ndarray) -> np.ndarray:
-    """A extensão sustentada da peça, medida como o preflight mede: abre 3×3, fica com os componentes grandes e descarta
-    o que sobra a mais de 3 px desse apoio (fios, cabelo, serrilhado de 1–2 px) — por eles o preflight marcaria
-    SOURCE_EXTENT_UNCERTAIN e a foto nunca viraria photoSet READY."""
+    """Remove componentes isolados sem cortar extremidades finas ligadas ao tecido.
+
+    A abertura 3×3 serve somente para encontrar o núcleo confiável da peça. Usar
+    a própria abertura como máscara final (ou descartar tudo a mais de 3 px)
+    encurta cós, barras e contornos de pernas. A reconstrução geodésica recupera
+    pixels ORIGINAIS conectados ao núcleo; nunca cria tecido novo.
+    """
+    target = np.asarray(target, dtype=bool)
     support = keep_large(ndimage.binary_opening(target, structure=np.ones((3, 3), dtype=bool)))
     if not support.any():
         return keep_large(target)
-    stray = target & ~support & (ndimage.distance_transform_edt(~support) > 3)
-    return keep_large(target & ~stray)
+    return keep_large(ndimage.binary_propagation(support, mask=target))
 
 
 def fuse(labels: np.ndarray, alpha: np.ndarray, keep_ids: Optional[Iterable[int]], *, threshold: float = 0.5,

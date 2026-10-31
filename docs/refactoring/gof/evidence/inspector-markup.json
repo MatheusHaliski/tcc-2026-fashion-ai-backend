@@ -1,0 +1,5 @@
+{
+  "comparison": "Extracted aside JSX; indentation normalized and asset.inspection prop alias applied",
+  "matches": true,
+  "scope": "Source JSX only; not browser pixel comparison"
+}

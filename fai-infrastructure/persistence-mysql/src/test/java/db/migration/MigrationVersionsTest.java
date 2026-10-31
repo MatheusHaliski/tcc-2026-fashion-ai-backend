@@ -13,11 +13,6 @@ import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Duas branches que criam a mesma versão de migration passam no merge sem conflito (os nomes são diferentes), mas o
- * Flyway recusa versões repetidas e a API não sobe — e nenhum outro teste roda o Flyway. Foi o que aconteceu com três
- * V31 e duas V32 no main. Este teste falha no CI antes do deploy: versões SQL e Java somadas, sem repetição.
- */
 class MigrationVersionsTest {
     private static final Pattern NAME = Pattern.compile("^V([0-9_.]+)__.+\\.(sql|class)$");
 
@@ -28,7 +23,7 @@ class MigrationVersionsTest {
             String file = r.getFilename();
             Matcher m = file == null ? null : NAME.matcher(file);
             if (m == null || !m.matches() || file.contains("$")) {
-                continue;                                    // classes internas (V34__...$Fk.class) não são migrations
+                continue;                         
             }
             String version = m.group(1).replace('_', '.').replaceAll("(\\.0+)+$", "");
             byVersion.computeIfAbsent(version, v -> new ArrayList<>()).add(file);

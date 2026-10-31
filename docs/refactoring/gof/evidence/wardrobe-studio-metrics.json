@@ -1,0 +1,13 @@
+{
+  "base": "1ab356bb",
+  "service_before": 2827,
+  "service_after": 2792,
+  "extracted": 64,
+  "total_before": 2827,
+  "total_after": 2856,
+  "net_lines": 29,
+  "characterization_tests": 18,
+  "regression_tests": 98,
+  "failures": 0,
+  "errors": 0
+}

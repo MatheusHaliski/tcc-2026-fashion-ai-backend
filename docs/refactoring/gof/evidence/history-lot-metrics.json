@@ -1,0 +1,25 @@
+{
+  "flow": "FLOW-A3D-HISTORY-001",
+  "editor_lines_before": 915,
+  "editor_lines_after": 890,
+  "new_runtime_module_lines": 38,
+  "runtime_total_before": 915,
+  "runtime_total_after": 928,
+  "editor_reduction_percent": 2.73,
+  "branch_syntax_before_editor": 135,
+  "branch_syntax_after_editor": 131,
+  "branch_syntax_new_helper": 4,
+  "functions_before_editor": 88,
+  "functions_after_editor": 89,
+  "functions_new_helper": 3,
+  "imports_before_editor": 14,
+  "imports_after_editor": 15,
+  "jsx_byte_identical": true,
+  "new_import_cycles": 0,
+  "new_history_tests_lines": 57,
+  "notes": [
+    "Branch syntax counts are not per-function cyclomatic complexity",
+    "No global branch/duplication reduction claimed",
+    "Runtime helper + editor counted together; audit/test/docs overhead reported separately"
+  ]
+}

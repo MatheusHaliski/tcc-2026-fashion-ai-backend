@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1
+# GPU worker. One image per stage:
+#   docker build --build-arg STAGE=segment     -f Dockerfile.worker .   (Grounding DINO + SAM 2.1, ~4 GB VRAM)
+#   docker build --build-arg STAGE=reconstruct -f Dockerfile.worker .   (Qwen-Image-Edit, 40+ GB VRAM or CPU offload)
+# Pick a BASE_IMAGE whose CUDA version is supported by the host driver (nvidia-smi shows the maximum).
+ARG BASE_IMAGE=pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
+FROM ${BASE_IMAGE}
+ARG STAGE=segment
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/app HF_HOME=/models WORKER_STAGE=${STAGE} \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+WORKDIR /app
+COPY requirements-api.txt requirements-${STAGE}.txt /tmp/req/
+RUN --mount=type=secret,id=proxy_ca,target=/run/secrets/proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi; \
+    pip install --no-cache-dir -r /tmp/req/requirements-${STAGE}.txt \
+    && python -c "import torch, torchvision; print('torch', torch.__version__, 'cuda', torch.version.cuda)" \
+    && if [ "${STAGE}" = "segment" ]; then \
+         python -c "from transformers import AutoModelForZeroShotObjectDetection, Sam2Model, Sam2Processor"; \
+       else \
+         python -c "from diffusers import QwenImageEditPlusPipeline; import peft"; \
+       fi
+COPY . /app/services/garment_gpu/
+RUN rm -rf /app/services/garment_gpu/tests /app/services/garment_gpu/deploy \
+    && useradd --uid 10001 --create-home fai && mkdir -p /models && chown 10001:10001 /models
+USER 10001:10001
+EXPOSE 9101
+CMD ["python", "-m", "services.garment_gpu.worker"]

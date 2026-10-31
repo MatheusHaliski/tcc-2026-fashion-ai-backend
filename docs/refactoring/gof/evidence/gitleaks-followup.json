@@ -1,0 +1,9 @@
+{
+  "scanner": "8.21.2",
+  "pr_range": "7b473d2b..1ab356bb",
+  "pr_findings": 0,
+  "main_history_findings_before": 1,
+  "confirmed_synthetic_test_constant": true,
+  "exact_fingerprint_exception": true,
+  "historical_commit_rescan_findings": 0
+}

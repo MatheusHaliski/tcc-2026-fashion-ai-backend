@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface EstadoConservacaoRepository extends JpaRepository<EstadoConservacao, UUID> {
     List<EstadoConservacao> findAllByOrderByNomeAsc();
+    List<EstadoConservacao> findAllByAtivoTrueOrderByNomeAsc();
 }

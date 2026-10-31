@@ -18,17 +18,18 @@
         <module>fai-infrastructure</module>
         <module>fai-web</module>
         <module>fai-bootstrap</module>
+        <module>fai-coverage</module>
     </modules>
 
     <properties>
         <java.version>21</java.version>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>4.1.1</spring-boot.version>
+        <spring-boot.version>4.1.2</spring-boot.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <springdoc.version>3.1.1</springdoc.version>
-        <aws-sdk.version>2.55.14</aws-sdk.version>
+        <aws-sdk.version>2.57.3</aws-sdk.version>
         <anthropic-java.version>2.73.0</anthropic-java.version>
         <onnxruntime.version>1.31.0</onnxruntime.version>
         <bouncycastle.version>1.86</bouncycastle.version>
@@ -118,7 +119,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.6.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>

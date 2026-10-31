@@ -1,0 +1,161 @@
+
+> fashion-ai-web@0.1.0 prebuild
+> npm run lint:styles && node scripts/ux/check-design.cjs && node scripts/avatar3d/copy-mediapipe.mjs && node scripts/i18n/check.js --fail && node scripts/i18n/scan.js --fail
+
+
+> fashion-ai-web@0.1.0 lint:styles
+> stylelint "app/(site)/globals.css" "lib/design/typography.css"
+
+Design checks passed: explicit typography roles and labels >=12px.
+copy-mediapipe: WASM em /workspace/fashionai-refactoring/public/mediapipe/wasm
+copy-mediapipe: modelo de idade/sexo em /workspace/fashionai-refactoring/public/mediapipe/face-api
+frontend: 9225 chaves · backend: 2827 chaves
+erros: 0 · avisos: 10 · chaves do frontend sem referência direta: 844
+aviso fe:en: igual ao pt-BR (não traduzido?) heist.who.vendor = Tião
+aviso fe:es: igual ao pt-BR (não traduzido?) heist.who.vendor = Tião
+aviso be:en: igual ao pt-BR (não traduzido?) flairLooks.sao_paulo_tropical = São Paulo Tropical
+aviso be:en: igual ao pt-BR (não traduzido?) flairModes.sao_paulo = São Paulo
+aviso be:en: igual ao pt-BR (não traduzido?) flairModes.sao_paulo_tropical_market = São Paulo — Tropical Market
+aviso be:en: igual ao pt-BR (não traduzido?) wardrobeCreator.sao_gabriel = São Gabriel
+aviso be:es: igual ao pt-BR (não traduzido?) flairLooks.sao_paulo_tropical = São Paulo Tropical
+aviso be:es: igual ao pt-BR (não traduzido?) flairModes.sao_paulo = São Paulo
+aviso be:es: igual ao pt-BR (não traduzido?) flairModes.sao_paulo_tropical_market = São Paulo — Tropical Market
+aviso be:es: igual ao pt-BR (não traduzido?) wardrobeCreator.sao_gabriel = São Gabriel
+0 textos embutidos em 0 arquivos
+
+> fashion-ai-web@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.4.2 (webpack)
+✓ Running next.config.ts took 27ms
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+
+  To migrate automatically, run:
+  npx @next/codemod@canary middleware-to-proxy .
+
+  Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.6s
+  Running TypeScript ...
+  Finished TypeScript in 1726ms ...
+  Collecting page data using 2 workers ...
+  Generating static pages using 2 workers (0/83) ...
+  Generating static pages using 2 workers (20/83)
+  Generating static pages using 2 workers (41/83)
+  Generating static pages using 2 workers (62/83)
+✓ Generating static pages using 2 workers (83/83) in 7.3s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /[...missing]
+├ ƒ /admin/aura-store
+├ ƒ /admin/catalog-images
+├ ƒ /admin/dashboard
+├ ƒ /admin/moderation
+├ ƒ /admin/moments
+├ ƒ /admin/physical-store
+├ ƒ /admin/room-assets
+├ ƒ /admin/system
+├ ƒ /admin/users
+├ ƒ /api/catalog/default-asset
+├ ƒ /arts-store
+├ ƒ /atelier
+├ ƒ /atelier/galeria
+├ ƒ /atelier/guest/[inviteId]
+├ ƒ /atelier/projects/[id]
+├ ƒ /atelier/projects/[id]/editor
+├ ƒ /atelier/projects/[id]/revisions/[revisionId]/tech-pack
+├ ƒ /autopilot
+├ ƒ /avatar
+├ ƒ /bff/auth/[action]
+├ ƒ /bff/metrics
+├ ƒ /brands
+├ ƒ /brands/[slug]
+├ ƒ /challenges
+├ ƒ /challenges/[id]
+├ ƒ /closet
+├ ƒ /copilot
+├ ƒ /coupons
+├ ƒ /dashboard
+├ ƒ /design
+├ ƒ /dev-media/[...path]
+├ ƒ /dna
+├ ƒ /dna-schemes/[id]
+├ ƒ /dna-schemes/[id]/edit
+├ ƒ /dna-schemes/new
+├ ƒ /explorer
+├ ƒ /feed
+├ ƒ /fit
+├ ƒ /flair
+├ ƒ /flair/aventura
+├ ƒ /flair/cartas
+├ ƒ /flair/carteira
+├ ƒ /flair/decks
+├ ƒ /flair/desafios
+├ ƒ /flair/desafios/[slug]
+├ ƒ /flair/heist
+├ ƒ /flair/lojas
+├ ƒ /flair/missoes
+├ ƒ /flair/partidas
+├ ƒ /forgot-password
+├ ƒ /gate
+├ ƒ /gate/google
+├ ƒ /gate/google/callback
+├ ƒ /gate/renew
+├ ƒ /gate/status
+├ ƒ /gate/verify
+├ ƒ /highlights
+├ ƒ /history
+├ ƒ /lab/avatar
+├ ƒ /lab/body
+├ ƒ /lab/heist
+├ ƒ /lab/heist-gente
+├ ƒ /lab/heist-rua
+├ ƒ /lab/heist-salas
+├ ƒ /lab/human
+├ ƒ /lab/moulds
+├ ƒ /lab/scenes
+├ ƒ /legal/[document]
+├ ƒ /lens
+├ ƒ /lens/[scanId]
+├ ƒ /login
+├ ƒ /lookbook
+├ ƒ /looks
+├ ƒ /mirror
+├ ƒ /moments
+├ ƒ /moments/[id]
+├ ƒ /notifications
+├ ƒ /passport-transfers
+├ ƒ /passport/[token]
+├ ƒ /pieces/[id]
+├ ƒ /pieces/[id]/passport
+├ ƒ /pieces/[id]/photo
+├ ƒ /pieces/new
+├ ƒ /points
+├ ƒ /points/ganhar
+├ ƒ /points/loja
+├ ƒ /points/physical-store
+├ ƒ /points/saldo
+├ ƒ /register
+├ ƒ /reset-password
+├ ○ /robots.txt
+├ ƒ /room
+├ ƒ /schemes/[id]
+├ ƒ /schemes/[id]/edit
+├ ƒ /schemes/[id]/photo
+├ ƒ /schemes/new
+├ ƒ /search
+├ ƒ /settings
+├ ƒ /try-on
+├ ƒ /u/[username]
+└ ƒ /verify-email
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

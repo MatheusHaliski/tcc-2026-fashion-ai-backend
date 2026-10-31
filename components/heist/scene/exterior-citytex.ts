@@ -10,6 +10,8 @@
  * geometria pede a célula pelo índice e recebe o retângulo de UV (cellUV).
  */
 import * as THREE from "three";
+import { sceneLocale, type SceneLocale } from "./interior-copy";
+import { FLYER_COPY, STORE_COPY } from "./exterior-copy";
 import { canvas, fitFont, memo, prng, SANS, SERIF, spaced, texFrom, type Quality } from "./exterior-textures";
 
 /** Retângulo de UV [u0, v0, u1, v1] da célula k numa grade cols × rows (linha 0 em cima; v do three cresce para cima). */
@@ -315,39 +317,40 @@ export function interiorAtlas(q: Quality): THREE.Texture {
  * lona dos toldos. O atlas gêmeo (glow) tem só o que acende: neon, letra retroiluminada, caixa de luz.
  * ========================================================================================================================= */
 export const SIGN_COLS = 4, SIGN_ROWS = 8;
-export interface ShopDef { kind: ShopKind; name: string; sub?: string; bg: string; ink: string; font: "serif" | "sans" | "script"; neon?: string; lightbox?: boolean; awning?: number }
+export interface ShopDef { kind: ShopKind; bg: string; ink: string; font: "serif" | "sans" | "script"; neon?: string; lightbox?: boolean; awning?: number }
 /** As lojas da quadra (todas fictícias): o letreiro, as cores, o neon e, quando tem, o toldo (índice 0–7 nas sanefas/lonas). */
 export const SHOPS: Record<ShopKind, ShopDef> = {
-  fashion: { kind: "fashion", name: "MAISON VERANE", sub: "ALTA COSTURA · PRÊT-À-PORTER", bg: "#0e0e10", ink: "#e8d3a2", font: "serif", lightbox: true },
-  jewelry: { kind: "jewelry", name: "OPALINE", sub: "JOALHERIA", bg: "#0d1626", ink: "#d7b56d", font: "serif", lightbox: true },
-  cafe: { kind: "cafe", name: "Café Lumen", bg: "#1d3a2c", ink: "#fff1d6", font: "script", neon: "#ffe2b0", awning: 0 },
-  pharmacy: { kind: "pharmacy", name: "FARMÁCIA AVENIDA", sub: "24 HORAS", bg: "#f4f7f6", ink: "#14834a", font: "sans", neon: "#3dff8c", lightbox: true },
-  books: { kind: "books", name: "LIVRARIA VESPERTINA", sub: "LIVROS · DISCOS · CAFÉ", bg: "#13233c", ink: "#e9dcc0", font: "serif", awning: 1 },
-  bakery: { kind: "bakery", name: "PADARIA ESTRELA", sub: "DESDE 1931", bg: "#6a1c1c", ink: "#f6e3c0", font: "serif", awning: 2 },
-  florist: { kind: "florist", name: "ÍRIS FLORES", bg: "#24402c", ink: "#f3f0e6", font: "script", awning: 3 },
-  bistro: { kind: "bistro", name: "BISTRÔ 1957", bg: "#3c0f16", ink: "#f2d9a6", font: "serif", neon: "#ffb36a", awning: 4 },
-  bar: { kind: "bar", name: "BAR ALVORADA", bg: "#14090c", ink: "#ff6fae", font: "script", neon: "#ff4fa0" },
-  shoes: { kind: "shoes", name: "SAPATARIA PRIMA", bg: "#111111", ink: "#f0f0f0", font: "sans", awning: 5 },
-  perfume: { kind: "perfume", name: "ÉTER", sub: "PERFUMARIA", bg: "#f1d8d4", ink: "#5a2a30", font: "serif", lightbox: true, awning: 6 },
-  optics: { kind: "optics", name: "ÓTICA CLARIDADE", bg: "#e9edf0", ink: "#1c2a3a", font: "sans", lightbox: true },
-  gallery: { kind: "gallery", name: "GALERIA NOVE", bg: "#f4f3f0", ink: "#151515", font: "sans" },
-  lobby: { kind: "lobby", name: "EDIFÍCIO SERENO", bg: "#1a2a20", ink: "#e9d9a6", font: "serif", awning: 7 },
-  closed: { kind: "closed", name: "ALUGA-SE", sub: "TRATAR NO LOCAL", bg: "#f2c230", ink: "#151515", font: "sans" },
-  atelier: { kind: "atelier", name: "ATELIÊ NOIVAS DO PARQUE", bg: "#f1ebe2", ink: "#6a4a3a", font: "script", lightbox: true },
+  fashion: { kind: "fashion", bg: "#0e0e10", ink: "#e8d3a2", font: "serif", lightbox: true },
+  jewelry: { kind: "jewelry", bg: "#0d1626", ink: "#d7b56d", font: "serif", lightbox: true },
+  cafe: { kind: "cafe", bg: "#1d3a2c", ink: "#fff1d6", font: "script", neon: "#ffe2b0", awning: 0 },
+  pharmacy: { kind: "pharmacy", bg: "#f4f7f6", ink: "#14834a", font: "sans", neon: "#3dff8c", lightbox: true },
+  books: { kind: "books", bg: "#13233c", ink: "#e9dcc0", font: "serif", awning: 1 },
+  bakery: { kind: "bakery", bg: "#6a1c1c", ink: "#f6e3c0", font: "serif", awning: 2 },
+  florist: { kind: "florist", bg: "#24402c", ink: "#f3f0e6", font: "script", awning: 3 },
+  bistro: { kind: "bistro", bg: "#3c0f16", ink: "#f2d9a6", font: "serif", neon: "#ffb36a", awning: 4 },
+  bar: { kind: "bar", bg: "#14090c", ink: "#ff6fae", font: "script", neon: "#ff4fa0" },
+  shoes: { kind: "shoes", bg: "#111111", ink: "#f0f0f0", font: "sans", awning: 5 },
+  perfume: { kind: "perfume", bg: "#f1d8d4", ink: "#5a2a30", font: "serif", lightbox: true, awning: 6 },
+  optics: { kind: "optics", bg: "#e9edf0", ink: "#1c2a3a", font: "sans", lightbox: true },
+  gallery: { kind: "gallery", bg: "#f4f3f0", ink: "#151515", font: "sans" },
+  lobby: { kind: "lobby", bg: "#1a2a20", ink: "#e9d9a6", font: "serif", awning: 7 },
+  closed: { kind: "closed", bg: "#f2c230", ink: "#151515", font: "sans" },
+  atelier: { kind: "atelier", bg: "#f1ebe2", ink: "#6a4a3a", font: "script", lightbox: true },
 };
 /** Lona de cada toldo: [cor A, cor B, listrada?]. */
 const AWNINGS: [string, string, boolean][] = [["#17382a", "#17382a", false], ["#13233c", "#e9dcc0", true], ["#8e1a1a", "#f3ead8", true], ["#24402c", "#f3f0e6", true], ["#3c0f16", "#3c0f16", false], ["#111111", "#f0f0f0", true], ["#d9a8a4", "#f6e8e4", true], ["#1a2a20", "#1a2a20", false]];
 export const SIGN = { valance: (a: number) => 16 + a, cloth: (a: number) => 24 + a } as const;
 
 export interface SignAtlas { map: THREE.Texture; glow: THREE.Texture }
-export function signAtlas(q: Quality): SignAtlas {
-  return memo(`city-sign:${q}`, () => {
+export function signAtlas(q: Quality, locale: SceneLocale = sceneLocale()): SignAtlas {
+  const copy = STORE_COPY[locale];
+  return memo(`city-sign:${q}:${locale}`, () => {
     const CW = q === "high" ? 512 : 256, CH = CW / 4, W = CW * SIGN_COLS, H = CH * SIGN_ROWS;
     const [c, g] = canvas(W, H), [ce, ge] = canvas(W, H);
     ge.fillStyle = "#000"; ge.fillRect(0, 0, W, H);
     const fam = (f: ShopDef["font"]) => (f === "serif" ? SERIF : f === "script" ? SCRIPT : SANS);
     SHOP_KINDS.forEach((kind, k) => {
-      const s = SHOPS[kind], x = (k % SIGN_COLS) * CW, y = Math.floor(k / SIGN_COLS) * CH;
+      const s = { ...SHOPS[kind], ...copy[kind] }, x = (k % SIGN_COLS) * CW, y = Math.floor(k / SIGN_COLS) * CH;
       clip(g, x, y, CW, CH, () => {
         box(g, x, y, CW, CH, s.bg);
         g.strokeStyle = s.ink; g.globalAlpha = 0.6; g.lineWidth = CH * 0.03; g.strokeRect(x + CH * 0.08, y + CH * 0.1, CW - CH * 0.16, CH * 0.8); g.globalAlpha = 1;
@@ -368,7 +371,7 @@ export function signAtlas(q: Quality): SignAtlas {
     });
     // sanefas (nome na faixa da frente do toldo) e lonas
     SHOP_KINDS.forEach((kind) => {
-      const s = SHOPS[kind]; if (s.awning === undefined) return;
+      const s = { ...SHOPS[kind], ...copy[kind] }; if (s.awning === undefined) return;
       const [a, b, striped] = AWNINGS[s.awning];
       for (const [cell, label] of [[SIGN.valance(s.awning), true], [SIGN.cloth(s.awning), false]] as const) {
         const x = (cell % SIGN_COLS) * CW, y = Math.floor(cell / SIGN_COLS) * CH;
@@ -395,31 +398,34 @@ export function signAtlas(q: Quality): SignAtlas {
  * Panfletos e cartazes (4 × 4): festas, shows, a própria gala, liquidação, aulas, gato perdido — tudo fictício.
  * ========================================================================================================================= */
 export const FLYER_COLS = 4, FLYER_ROWS = 4;
-const FLYERS: { bg: string; ink: string; accent: string; title: string; lines: string[]; font: "serif" | "sans" | "script" }[] = [
-  { bg: "#111111", ink: "#ff4fa0", accent: "#3df2ff", title: "FESTA NEON", lines: ["SÁBADO · 23H", "CLUBE SUBSOLO", "DJ ÍRIS · DJ KOBALT"], font: "sans" },
-  { bg: "#f2e6c8", ink: "#3a1e0c", accent: "#b8913f", title: "Noite de Jazz", lines: ["QUINTETO ALVORADA", "SEX · 22H · BAR ALVORADA"], font: "script" },
-  { bg: "#3c0711", ink: "#f3dca6", accent: "#d9b779", title: "GALA LUMIÈRE", lines: ["PROGRAMA DA NOITE", "MUSEU VESPER · 04.12"], font: "serif" },
-  { bg: "#ffe14d", ink: "#151515", accent: "#e0201c", title: "LIQUIDAÇÃO", lines: ["ATÉ 70% OFF", "SAPATARIA PRIMA"], font: "sans" },
-  { bg: "#f7f3ec", ink: "#1d2a4a", accent: "#c1121f", title: "AULAS DE TANGO", lines: ["INICIANTES · TER E QUI", "ESTÚDIO 3º ANDAR"], font: "serif" },
-  { bg: "#ffffff", ink: "#111111", accent: "#555555", title: "PROCURA-SE", lines: ["GATO CINZA · MIMI", "RECOMPENSA"], font: "sans" },
-  { bg: "#1d2a4a", ink: "#f2d38f", accent: "#ffffff", title: "AS VESPERTINAS", lines: ["TURNÊ DE INVERNO", "TEATRO ORVALHO · 21H"], font: "serif" },
-  { bg: "#e8f4ea", ink: "#1f6b3a", accent: "#e85c5c", title: "FEIRA DE VINIL", lines: ["DOMINGO NA PRAÇA", "ENTRADA LIVRE"], font: "sans" },
-  { bg: "#6a1fb0", ink: "#fff36b", accent: "#ffffff", title: "CIRCO ESTRELA", lines: ["ÚLTIMA SEMANA", "LONA DO PARQUE"], font: "sans" },
-  { bg: "#0f2c35", ink: "#f3e2b8", accent: "#cdb98c", title: "AURORA", lines: ["EXPOSIÇÃO · CASA ORVALHO", "MUSEU VESPER"], font: "serif" },
-  { bg: "#ff6b35", ink: "#111111", accent: "#ffffff", title: "CORRIDA 5K", lines: ["NOTURNA · 15/11", "INSCRIÇÕES ABERTAS"], font: "sans" },
-  { bg: "#f1ebe2", ink: "#6a4a3a", accent: "#b79a5e", title: "Ateliê Noivas", lines: ["PROVA SEM HORA MARCADA", "AV. VESPER, 210"], font: "script" },
-  { bg: "#202020", ink: "#e9e9e9", accent: "#ffcc00", title: "O BAILE", lines: ["UMA PEÇA EM 3 ATOS", "ESTREIA DIA 20"], font: "serif" },
-  { bg: "#d8f0ff", ink: "#0d47a1", accent: "#e91e63", title: "AULA DE YOGA", lines: ["NO TERRAÇO · 7H", "PRIMEIRA AULA GRÁTIS"], font: "sans" },
-  { bg: "#2b2b2b", ink: "#ff3b3b", accent: "#ffffff", title: "SHOW PUNK", lines: ["OS SEM NOME", "GARAGEM · 20H"], font: "sans" },
-  { bg: "#f6e3c0", ink: "#6a1c1c", accent: "#b8913f", title: "Pão de Queijo", lines: ["SAINDO AGORA!", "PADARIA ESTRELA"], font: "script" },
+/** Estilo de cada panfleto (cores e fonte); os textos vêm de exterior-copy.ts, por idioma, na mesma ordem. */
+const FLYER_STYLES: { bg: string; ink: string; accent: string; font: "serif" | "sans" | "script" }[] = [
+  { bg: "#111111", ink: "#ff4fa0", accent: "#3df2ff", font: "sans" },
+  { bg: "#f2e6c8", ink: "#3a1e0c", accent: "#b8913f", font: "script" },
+  { bg: "#3c0711", ink: "#f3dca6", accent: "#d9b779", font: "serif" },
+  { bg: "#ffe14d", ink: "#151515", accent: "#e0201c", font: "sans" },
+  { bg: "#f7f3ec", ink: "#1d2a4a", accent: "#c1121f", font: "serif" },
+  { bg: "#ffffff", ink: "#111111", accent: "#555555", font: "sans" },
+  { bg: "#1d2a4a", ink: "#f2d38f", accent: "#ffffff", font: "serif" },
+  { bg: "#e8f4ea", ink: "#1f6b3a", accent: "#e85c5c", font: "sans" },
+  { bg: "#6a1fb0", ink: "#fff36b", accent: "#ffffff", font: "sans" },
+  { bg: "#0f2c35", ink: "#f3e2b8", accent: "#cdb98c", font: "serif" },
+  { bg: "#ff6b35", ink: "#111111", accent: "#ffffff", font: "sans" },
+  { bg: "#f1ebe2", ink: "#6a4a3a", accent: "#b79a5e", font: "script" },
+  { bg: "#202020", ink: "#e9e9e9", accent: "#ffcc00", font: "serif" },
+  { bg: "#d8f0ff", ink: "#0d47a1", accent: "#e91e63", font: "sans" },
+  { bg: "#2b2b2b", ink: "#ff3b3b", accent: "#ffffff", font: "sans" },
+  { bg: "#f6e3c0", ink: "#6a1c1c", accent: "#b8913f", font: "script" },
 ];
 /** Proporção do panfleto dentro da célula (retrato A5 no centro). */
 export const FLYER_ASPECT = 0.707;
-export function flyerAtlas(q: Quality): THREE.Texture {
-  return memo(`city-flyer:${q}`, () => {
+export function flyerAtlas(q: Quality, locale: SceneLocale = sceneLocale()): THREE.Texture {
+  const copy = FLYER_COPY[locale];
+  return memo(`city-flyer:${q}:${locale}`, () => {
     const S = q === "high" ? 256 : 128, W = S * FLYER_COLS, H = S * FLYER_ROWS, [c, g] = canvas(W, H), r = prng(503);
     g.clearRect(0, 0, W, H);
-    FLYERS.forEach((f, k) => {
+    FLYER_STYLES.forEach((f, k) => {
+      const c = copy[k];
       const cx = (k % FLYER_COLS) * S, cy = Math.floor(k / FLYER_COLS) * S, fw = S * FLYER_ASPECT, x = cx + (S - fw) / 2, y = cy;
       clip(g, x, y, fw, S, () => {
         box(g, x, y, fw, S, f.bg);
@@ -430,8 +436,8 @@ export function flyerAtlas(q: Quality): THREE.Texture {
         else { g.save(); g.translate(x + fw / 2, y + S * 0.35); for (let i = 0; i < 18; i++) { g.rotate(Math.PI / 9); g.fillRect(0, -1, S * 0.5, 2); } g.restore(); }
         g.globalAlpha = 1;
         const fam = f.font === "serif" ? SERIF : f.font === "script" ? SCRIPT : SANS;
-        text(g, f.title, x + fw / 2, y + S * 0.3, fw * 0.86, S * 0.16, fam, f.ink, f.font === "sans" ? "800" : "600");
-        f.lines.forEach((l, i) => text(g, l, x + fw / 2, y + S * (0.62 + i * 0.1), fw * 0.84, S * 0.065, SANS, f.ink, "600"));
+        text(g, c.title, x + fw / 2, y + S * 0.3, fw * 0.86, S * 0.16, fam, f.ink, f.font === "sans" ? "800" : "600");
+        c.lines.forEach((l, i) => text(g, l, x + fw / 2, y + S * (0.62 + i * 0.1), fw * 0.84, S * 0.065, SANS, f.ink, "600"));
         // amassado e sujeira (papel na calçada)
         for (let i = 0; i < 5; i++) { g.strokeStyle = `rgba(0,0,0,${0.06 + r() * 0.08})`; g.lineWidth = 1; g.beginPath(); g.moveTo(x + fw * r(), y); g.lineTo(x + fw * r(), y + S); g.stroke(); }
         const dirt = g.createRadialGradient(x + fw * r(), y + S * r(), 0, x + fw * 0.5, y + S * 0.5, S * 0.7); dirt.addColorStop(0, "rgba(60,50,40,0)"); dirt.addColorStop(1, "rgba(60,50,40,0.28)");
