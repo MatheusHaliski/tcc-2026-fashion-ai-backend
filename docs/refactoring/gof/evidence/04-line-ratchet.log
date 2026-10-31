@@ -1,0 +1,5 @@
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/IdentityService.java: cresceu para 1079 linhas (teto congelado 1007); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java: cresceu para 1311 linhas (teto congelado 1271); extraia antes de acrescentar
+APERTAR fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java: teto 2792 -> 2730 (rode: python -m scripts.refactoring.line_ratchet --update)
+APERTAR fai-application/src/test/java/br/com/fashionai/application/service/IdentitySecurityTest.java: teto 596 -> 530 (rode: python -m scripts.refactoring.line_ratchet --update)
+2593 arquivos governados; 264 congelados; 2 violações

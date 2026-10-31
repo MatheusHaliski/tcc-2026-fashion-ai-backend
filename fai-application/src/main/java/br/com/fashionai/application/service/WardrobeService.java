@@ -1705,21 +1705,8 @@ public class WardrobeService {
 
     /** RF53 — valor do filtro "com selo": hype, brand ou any (nulo = sem filtro; valor desconhecido é ignorado). */
     static String sealFilter(String raw) {
-        if (blank(raw)) {
-            return null;
-        }
-        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
-            case "hype" -> "hype";
-            case "brand", "marca", "celebrity", "celebridade" -> "brand";
-            case "any", "qualquer", "all" -> "any";
-            default -> null;
-        };
+        return ClosetQuery.sealFilter(raw);
     }
-
-    static final java.util.Set<String> HYPE_SORTS = java.util.Set.of("hype", "hype_desc", "hype_asc", "growth", "rarity");
-    /** nomes em português que telas antigas enviavam (antes caíam no padrão e a ordenação era ignorada) */
-    static final Map<String, String> SORT_ALIASES = Map.of("recentes", "recent", "mais_usadas", "worn", "menos_usadas", "least_worn",
-            "nome", "name", "preco", "price", "mais_tempo_sem_uso", "idle");
 
     /**
      * Score v2 de cada peça (nulo = sem Hype: dados insuficientes ou ainda não calculado — sempre por último).
@@ -1737,11 +1724,6 @@ public class WardrobeService {
                 .collect(Collectors.toMap(br.com.fashionai.domain.model.HypeScoreCurrent::getEntityId, h -> h, (a, b) -> a));
     }
 
-    private static Comparator<WardrobeItem> nullsLast(java.util.function.Function<WardrobeItem, BigDecimal> key, boolean desc) {
-        Comparator<BigDecimal> cmp = desc ? Comparator.<BigDecimal>reverseOrder() : Comparator.<BigDecimal>naturalOrder();
-        return Comparator.comparing(key, Comparator.nullsLast(cmp));
-    }
-
     @Transactional(readOnly = true)
     public Views.Page<Views.PieceView> closet(CurrentUser viewer, UUID ownerId, ClosetFilter f) {
         UUID owner = ownerId == null ? viewer.id() : ownerId;
@@ -1750,24 +1732,15 @@ public class WardrobeService {
                 .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
                 .filter(w -> self || guard.canView(viewer, owner, effectiveVisibility(w)))
                 .filter(w -> self || w.getModerationStatus() == ModerationStatus.APPROVED)
-                .filter(w -> blank(f.category()) || f.category().equals(w.getCategory()))
-                .filter(w -> blank(f.color()) || f.color().equals(w.getColor())
-                        || f.color().equalsIgnoreCase(Taxonomy.COLOR_FAMILY.get(w.getColor())))
-                .filter(w -> blank(f.season()) || (w.getMarket() != null && w.getMarket().startsWith(f.season().toLowerCase(Locale.ROOT))))
-                .filter(w -> blank(f.occasion()) || Json.csv(w.getOccasionTags()).contains(f.occasion()))
-                .filter(w -> blank(f.style()) || Json.csv(w.getStyleTags()).contains(f.style()))
-                .filter(w -> stateMatches(w, f.state()))
-                .filter(w -> blank(f.q()) || contains(w.getName(), f.q()) || contains(w.getBrandName(), f.q())
-                        || contains(w.getSubcategory(), f.q()))
+                .filter(w -> ClosetQuery.matches(w, f))
                 .collect(Collectors.toCollection(ArrayList::new));
-        String sort = SORT_ALIASES.getOrDefault(f.sort() == null ? "recent" : f.sort(), f.sort() == null ? "recent" : f.sort());
+        String sort = ClosetQuery.sortKey(f.sort());
         String seal = sealFilter(f.seal());
-        Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = HYPE_SORTS.contains(sort) || !blank(f.hypeLevel())
-                || (seal != null && !"brand".equals(seal)) ? hypeOf(all, self) : Map.of();
+        Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = ClosetQuery.needsHype(sort, f.hypeLevel(), seal)
+                ? hypeOf(all, self) : Map.of();
         if (!blank(f.hypeLevel()) && hypeConfig != null) {
-            // faixa mínima sobre o número EXIBIDO (arredondado): 59,6 aparece como 60 e já é "Em alta"
             int min = hypeMinimum(f.hypeLevel());
-            all.removeIf(w -> hype.get(w.getId()) == null || hype.get(w.getId()).getScore() == null || hype.get(w.getId()).getScore().doubleValue() < min - 0.5);
+            all.removeIf(w -> ClosetQuery.belowMinimum(hype.get(w.getId()), min));
         }
         if (seal != null) {
             // RF53 — selo de Hype: derivado do Hype atual (peça privada não tem: só item público elegível); selo de marca:
@@ -1775,38 +1748,13 @@ public class WardrobeService {
             Set<UUID> branded = "hype".equals(seal) ? Set.of()
                     : SealService.approvedPieceBonds(all.stream().map(WardrobeItem::getId).toList(), schemeItems, sealBonds,
                     sc -> SealService.canViewScheme(guard, viewer, sc)).keySet();
-            all.removeIf(w -> {
-                boolean hasHype = !br.com.fashionai.application.hype.HypeSeals.of(hype.get(w.getId())).isEmpty();
-                boolean hasBrand = branded.contains(w.getId());
-                return switch (seal) {
-                    case "hype" -> !hasHype;
-                    case "brand" -> !hasBrand;
-                    default -> !hasHype && !hasBrand;
-                };
-            });
+            all.removeIf(w -> !ClosetQuery.keepForSeal(seal,
+                    !br.com.fashionai.application.hype.HypeSeals.of(hype.get(w.getId())).isEmpty(), branded.contains(w.getId())));
         }
-        java.util.function.Function<WardrobeItem, BigDecimal> score = w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getScore() : null;
-        LocalDate today = LocalDate.now(br.com.fashionai.application.hype.HypeSignalRecorder.ZONE);
-        Comparator<WardrobeItem> order = switch (sort) {
-            case "hype", "hype_desc" -> nullsLast(score, true);
-            case "hype_asc" -> nullsLast(score, false);
-            case "growth" -> nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDeltaPoints() : null, true)
-                    .thenComparing(nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDimensions().getTrend() : null, true));
-            case "rarity" -> nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDimensions().getRarity() : null, true);
-            case "least_worn" -> Comparator.comparingInt(WardrobeItem::getWearCount).thenComparing(WardrobeItem::getCreatedAt);
-            case "idle" -> Comparator.comparingLong((WardrobeItem w) -> br.com.fashionai.application.hype.HypeQueryService.idleDays(w, today)).reversed();
-            case "worn" -> Comparator.comparingInt(WardrobeItem::getWearCount).reversed();
-            case "name" -> Comparator.comparing(w -> w.getName().toLowerCase(Locale.ROOT));
-            case "price" -> Comparator.comparing((WardrobeItem w) -> w.getPrice() == null ? BigDecimal.ZERO : w.getPrice()).reversed();
-            default -> Comparator.comparing(WardrobeItem::getCreatedAt).reversed();
-        };
-        all.sort(order);
-        int size = Math.max(1, Math.min(60, f.size() <= 0 ? 30 : f.size()));
-        int page = Math.max(0, f.page());
-        int from = Math.min(all.size(), page * size);
-        int to = Math.min(all.size(), from + size);
-        List<Views.PieceView> items = all.subList(from, to).stream().map(w -> Views.piece(w, viewerState(viewer, w), null)).toList();
-        return new Views.Page<>(items, page, size, all.size(), to < all.size());
+        all.sort(ClosetQuery.order(sort, hype, LocalDate.now(br.com.fashionai.application.hype.HypeSignalRecorder.ZONE)));
+        ClosetQuery.Window win = ClosetQuery.window(f.page(), f.size(), all.size());
+        List<Views.PieceView> items = all.subList(win.from(), win.to()).stream().map(w -> Views.piece(w, viewerState(viewer, w), null)).toList();
+        return new Views.Page<>(items, win.page(), win.size(), all.size(), win.hasMore(all.size()));
     }
 
     /** Faixa mínima de Hype → score mínimo (limiares centralizados no HypeScoreConfig). */
@@ -1823,17 +1771,7 @@ public class WardrobeService {
     }
 
     static boolean stateMatches(WardrobeItem w, String state) {
-        if (blank(state) || "todos".equalsIgnoreCase(state)) {
-            return true;
-        }
-        return switch (state.toLowerCase(Locale.ROOT)) {
-            case "favoritos", "favorites" -> w.isFavorite();
-            case "disponivel", "disponiveis", "available" -> w.isDisponivel();
-            case "indisponivel", "indisponiveis", "unavailable" -> !w.isDisponivel();
-            case "venda", "a_venda", "for_sale", "forsale" -> w.isForSale();
-            case "doar", "para_doar", "doacao", "for_donation", "donation" -> w.isForDonation();
-            default -> true;
-        };
+        return ClosetQuery.stateMatches(w, state);
     }
 
     // ================================================================== RF7 — detalhe
