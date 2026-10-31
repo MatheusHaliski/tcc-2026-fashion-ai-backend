@@ -1,0 +1,7 @@
+# Baseline no código ORIGINAL (base bcaee73), antes da extração
+# mvn -B -pl fai-application -Dtest='ChallengeConclusionRewardTest,ChallengeServiceTest,ChallengeSecurityTest' -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 10, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.ChallengeConclusionRewardTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.ChallengeSecurityTest
+Tests run: 18, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.ChallengeServiceTest
+Tests run: 33, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS

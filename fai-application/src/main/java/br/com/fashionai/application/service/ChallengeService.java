@@ -1068,58 +1068,22 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         result.put("name", tplName(t));
         result.put("mode", i.getMode());
         result.put("concludedAt", Instant.now().toString());
-        switch (i.getMode()) {
-            case "EQUIPE" -> {
-                double teamFraction = members.stream().mapToDouble(p -> p.getProgressFraction().doubleValue()).average().orElse(0);
-                int pool = teamFraction < 0.25 ? 0 : (int) Math.round(t.getRewardPoints() * teamFraction);
-                int each = members.isEmpty() ? 0 : pool / members.size();
-                result.put("teamFraction", round2(teamFraction));
-                result.put("rewardEach", each);
-                for (ChallengeParticipant p : members) {
-                    reward(p, i, t, each);
-                }
-            }
-            case "DUELO" -> {
-                Map<UUID, Double> scores = duelScores(i, t, members);
-                result.put("scoring", VOTED.contains(t.getCode()) ? Msg.t("challenge.votos_as_cegas") : "recorde pessoal");
-                double best = scores.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
-                boolean teams = members.stream().anyMatch(p -> "B".equals(p.getTeam()));
-                List<String> winners = new ArrayList<>();
-                if (teams) {
-                    Map<String, Double> byTeam = members.stream().collect(Collectors.groupingBy(p -> p.getTeam() == null ? "A" : p.getTeam(),
-                            Collectors.averagingDouble(p -> scores.getOrDefault(p.getUserId(), 0.0))));
-                    double top = byTeam.values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
-                    Set<String> win = byTeam.entrySet().stream().filter(e -> e.getValue() == top && top > 0).map(Map.Entry::getKey).collect(Collectors.toSet());
-                    result.put("teams", byTeam);
-                    for (ChallengeParticipant p : members) {
-                        boolean w = win.contains(p.getTeam() == null ? "A" : p.getTeam());
-                        if (w) {
-                            winners.add(p.getUserId().toString());
-                        }
-                        reward(p, i, t, w ? t.getRewardPoints() : t.getRewardPoints() / 4);
-                    }
-                } else {
-                    for (ChallengeParticipant p : members) {
-                        boolean w = best > 0 && scores.getOrDefault(p.getUserId(), 0.0) == best;
-                        if (w) {
-                            winners.add(p.getUserId().toString());
-                        }
-                        reward(p, i, t, w ? t.getRewardPoints() : t.getRewardPoints() / 4);
-                    }
-                }
-                result.put("winners", winners.stream().map(id -> users.findById(UUID.fromString(id)).map(User::getUsername).orElse("—")).toList());
-                result.put("ranking", scores.entrySet().stream().sorted(Map.Entry.<UUID, Double>comparingByValue().reversed())
-                        .map(e -> Map.of("user", users.findById(e.getKey()).map(User::getUsername).orElse("—"), "score", round2(e.getValue()))).toList());
-            }
-            default -> {
-                for (ChallengeParticipant p : members) {
-                    double f = p.getProgressFraction().doubleValue();
-                    reward(p, i, t, f < 0.25 ? 0 : (int) Math.round(t.getRewardPoints() * Math.min(1, f)));
-                }
-                if (!members.isEmpty()) {
-                    result.put("fraction", round2(members.get(0).getProgressFraction().doubleValue()));
-                }
-            }
+        ChallengeRewardSplit split = ChallengeRewardSplit.forMode(i.getMode());
+        boolean duel = split == ChallengeRewardSplit.DUEL;
+        Map<UUID, Double> scores = duel ? duelScores(i, t, members) : Map.of();
+        if (duel) {
+            result.put("scoring", VOTED.contains(t.getCode()) ? Msg.t("challenge.votos_as_cegas") : "recorde pessoal");
+        }
+        ChallengeRewardSplit.Outcome outcome = split.split(members.stream()
+                .map(p -> new ChallengeRewardSplit.Member(p.getUserId(), p.getTeam(), p.getProgressFraction())).toList(), scores, t.getRewardPoints());
+        result.putAll(outcome.summary());
+        for (int k = 0; k < members.size(); k++) {
+            reward(members.get(k), i, t, outcome.points().get(k));
+        }
+        if (duel) {
+            result.put("winners", outcome.winners().stream().map(id -> users.findById(id).map(User::getUsername).orElse("—")).toList());
+            result.put("ranking", scores.entrySet().stream().sorted(Map.Entry.<UUID, Double>comparingByValue().reversed())
+                    .map(e -> Map.of("user", users.findById(e.getKey()).map(User::getUsername).orElse("—"), "score", round2(e.getValue()))).toList());
         }
         i.setState(CONCLUIDO);
         i.setResultJson(Json.write(result));
