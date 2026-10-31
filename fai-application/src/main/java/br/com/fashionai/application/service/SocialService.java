@@ -131,41 +131,7 @@ public class SocialService {
 
     private void bump(Target t, String field, long delta) {
         counters.increment(t.type().name().toLowerCase(), t.id(), field, delta);
-        switch (t.entity()) {
-            case Scheme s -> {
-                switch (field) {
-                    case "likes" -> s.setLikeCount(Math.max(0, s.getLikeCount() + delta));
-                    case "comments" -> s.setCommentCount(Math.max(0, s.getCommentCount() + delta));
-                    case "shares" -> s.setShareCount(Math.max(0, s.getShareCount() + delta));
-                    case "saves" -> s.setSaveCount(Math.max(0, s.getSaveCount() + delta));
-                    case "remixes" -> s.setRemixCount(Math.max(0, s.getRemixCount() + delta));
-                    default -> {
-                    }
-                }
-            }
-            case WardrobeItem w -> {
-                switch (field) {
-                    case "likes" -> w.setLikesCount(Math.max(0, w.getLikesCount() + delta));
-                    case "comments" -> w.setCommentCount(Math.max(0, w.getCommentCount() + delta));
-                    case "shares" -> w.setSharesCount(Math.max(0, w.getSharesCount() + delta));
-                    case "remixes" -> w.setRemixesCount(Math.max(0, w.getRemixesCount() + delta));
-                    default -> {
-                    }
-                }
-            }
-            case DnaScheme d -> {
-                switch (field) {
-                    case "likes" -> d.setLikeCount(Math.max(0, d.getLikeCount() + delta));
-                    case "comments" -> d.setCommentCount(Math.max(0, d.getCommentCount() + delta));
-                    case "shares" -> d.setShareCount(Math.max(0, d.getShareCount() + delta));
-                    case "remixes" -> d.setRemixCount(Math.max(0, d.getRemixCount() + delta));
-                    default -> {
-                    }
-                }
-            }
-            default -> {
-            }
-        }
+        InteractionCounters.apply(t.entity(), field, delta);
     }
 
     /** HypeScore v2 — sinal de comportamento sobre peça/look (DNA de estilo não tem Hype). Filtrado no HypeSignalRecorder. */
