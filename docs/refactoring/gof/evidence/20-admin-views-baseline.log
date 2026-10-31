@@ -1,0 +1,5 @@
+# Código ORIGINAL (base d8107c6), antes da extração
+$ mvn -B -q -o -pl fai-application -Dtest='AdminViewsCharacterizationTest,AdminServiceTest' -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.58 s -- in br.com.fashionai.application.service.AdminServiceTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.483 s -- in br.com.fashionai.application.service.AdminViewsCharacterizationTest
+# total: 12 testes, 0 falhas

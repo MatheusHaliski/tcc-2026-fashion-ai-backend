@@ -1,0 +1,13 @@
+# Depois da extração de AdminViews
+$ mvn -B -q -o -pl fai-application -Dtest='AdminViewsCharacterizationTest,AdminViewsTest,AdminServiceTest,AdminBootstrapTest,BackupJobTest' -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.105 s -- in br.com.fashionai.application.service.AdminBootstrapTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.780 s -- in br.com.fashionai.application.service.AdminServiceTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.553 s -- in br.com.fashionai.application.service.AdminViewsCharacterizationTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.099 s -- in br.com.fashionai.application.service.AdminViewsTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.075 s -- in br.com.fashionai.application.service.BackupJobTest
+# total fai-application: 27 testes, 0 falhas
+$ mvn -B -q -o -pl fai-web -am -Dtest='ControllerDelegacaoTest' -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 697, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.76 s -- in br.com.fashionai.web.controller.ControllerDelegacaoTest
+$ python /home/user/tcc-2026-fashion-ai-backend/scripts/refactoring/line_ratchet.py
+APERTAR .../AdminService.java: teto 314 -> 286
+# 1 violação preexistente fora do lote (scripts/catalog/canonical_full_frame.py, não tocado); 0 nos arquivos do lote
