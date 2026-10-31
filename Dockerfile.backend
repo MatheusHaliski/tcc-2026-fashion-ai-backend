@@ -13,7 +13,9 @@ COPY fai-infrastructure fai-infrastructure
 COPY fai-web fai-web
 COPY fai-bootstrap fai-bootstrap
 # sem --mount=type=cache: o Railway exige um id próprio no cache mount e recusa o Dockerfile sem ele
-RUN mvn -q -DskipTests package
+# a saída do Maven é impressa (sem -q) para que falhas de build mostrem a causa real; heap limitado para o build não ser morto por memória
+ENV MAVEN_OPTS="-Xmx1536m"
+RUN mvn -B -ntp -DskipTests package
 
 # Ubuntu 24.04 (noble) fixo: o nome do pacote do cliente MySQL não muda entre builds (a tag 21-jre muda de Ubuntu sozinha)
 FROM eclipse-temurin:25-jre-noble
