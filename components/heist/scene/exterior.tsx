@@ -17,11 +17,15 @@ import type { SceneView } from "@/lib/heist/view";
 import { exteriorMaterials, type ExteriorMaterials } from "./exterior-materials";
 import { asphaltSet, type Quality } from "./exterior-textures";
 import { HeistFacade } from "./exterior-facade";
-import { HeistStreet, roadGeometry, streetProps } from "./exterior-street";
+import { crossRoadGeometry, HeistStreet, roadGeometry, streetProps } from "./exterior-street";
 import { HeistVehicles } from "./exterior-vehicles";
 import { HeistAlley } from "./exterior-alley";
 import { HeistCity } from "./exterior-city";
 import { ExteriorLights } from "./exterior-fx";
+import { buildCity } from "./exterior-blocks";
+import { furnitureLights, HeistFurniture } from "./exterior-furniture";
+import { HeistLitter } from "./exterior-litter";
+import { SKY_LAYER } from "./exterior-skyline";
 
 const OUTSIDE = new Set(["rua", "beco", "vestibulo", "doca"]);
 
@@ -52,6 +56,7 @@ function StreetProbe({ m, q, root }: { m: ExteriorMaterials; q: Quality; root: R
   const probe = useMemo(() => {
     const rt = new THREE.WebGLCubeRenderTarget(q === "high" ? 256 : 128, { type: THREE.HalfFloatType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
     const cam = new THREE.CubeCamera(0.3, 400, rt); cam.position.set(0, -0.9, 37.5);
+    cam.children.forEach((c) => c.layers.enable(SKY_LAYER));
     return { rt, cam };
   }, [q]);
   useEffect(() => { frames.current = 0; done.current = false; }, [probe]);
@@ -68,7 +73,7 @@ function StreetProbe({ m, q, root }: { m: ExteriorMaterials; q: Quality; root: R
     pm.dispose();
     const prev = env.current; env.current = next;
     const wet = new Set<THREE.Material>(m.wet);
-    for (const mat of m.wet) { mat.envMap = next; mat.envMapIntensity = Math.max(mat.envMapIntensity, 1.1); mat.needsUpdate = true; }
+    for (const mat of m.wet) { mat.envMap = next; mat.needsUpdate = true; }
     root.current?.traverse((o) => {
       const mats = (o as THREE.Mesh).material; if (!mats) return;
       for (const mat of Array.isArray(mats) ? mats : [mats]) {
@@ -84,17 +89,28 @@ function StreetProbe({ m, q, root }: { m: ExteriorMaterials; q: Quality; root: R
 
 export function HeistExterior({ view, quality }: { view: React.MutableRefObject<SceneView>; quality: Quality }) {
   const m = exteriorMaterials(quality);
+  const { camera } = useThree();
+  useEffect(() => { camera.layers.enable(SKY_LAYER); }, [camera]);
   const props = useMemo(streetProps, []);
+  const kit = useMemo(() => {
+    const k = buildCity(quality === "low"), f = furnitureLights(props);
+    k.anchors.push(...f.anchors); k.pools.push(...f.pools); k.glows.push(...f.glows.map((g) => ({ pos: g.pos, size: g.size, color: String(g.color) })));
+    return k;
+  }, [quality, props]);
+  const cross = useMemo(() => crossRoadGeometry(), []);
   const root = useRef<THREE.Group>(null);
   return (
     <group ref={root}>
       <HeistFacade q={quality} view={view} />
       <HeistStreet q={quality} m={m} />
       <Road q={quality} m={m} view={view} />
+      <mesh geometry={cross} material={m.asphalt} receiveShadow />
       <HeistVehicles props={props} m={m} q={quality} />
       <HeistAlley props={props} m={m} q={quality} />
-      <HeistCity m={m} q={quality} />
-      <ExteriorLights view={view} q={quality} props={props} />
+      <HeistCity m={m} q={quality} kit={kit} />
+      <HeistFurniture props={props} m={m} q={quality} />
+      <HeistLitter props={props} m={m} q={quality} />
+      <ExteriorLights view={view} q={quality} props={props} kit={kit} />
       <StreetProbe m={m} q={quality} root={root} />
     </group>
   );

@@ -6,12 +6,12 @@ import type { Anim, LookId } from "@/lib/heist/types";
 
 /*
  * Laboratório das pessoas do MET Gala Heist v2 (dados de exemplo, sem simulação). `?cam=` escolhe a cena
- * (multidao | close | anims | troca | caida | tiro | agachada | jogadora | pessoa), `?q=low` a qualidade baixa, `?t=1.2`
+ * (multidao | close | anims | troca | caida | tiro | agachada | jogadora | pessoa | pista | dj | comer | salao60), `?q=low` a qualidade baixa, `?t=1.2`
  * para o tempo da cena num instante (captura de um momento do gesto) e, em `pessoa`, `?look=guard&seed=5&anim=guard` quem
  * aparece e o gesto.
  */
 const Scene = dynamic(() => import("./heist-gente-scene"), { ssr: false });
-const PRESETS: Preset[] = ["multidao", "close", "anims", "troca", "caida", "tiro", "agachada", "jogadora", "pessoa"];
+const PRESETS: Preset[] = ["multidao", "close", "anims", "troca", "caida", "tiro", "agachada", "jogadora", "pessoa", "pista", "dj", "comer", "salao60"];
 
 export default function HeistGenteLab() {
   const [opts, setOpts] = useState<{ preset: Preset; quality: "high" | "low"; at?: number; look?: LookId; seed?: number; anim?: Anim } | null>(null);

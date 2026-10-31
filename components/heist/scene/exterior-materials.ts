@@ -60,7 +60,7 @@ export function exteriorMaterials(q: Quality): ExteriorMaterials {
     const velvet = new THREE.MeshPhysicalMaterial({ color: "#5c0a18", roughness: 0.8, sheen: 1, sheenColor: new THREE.Color("#ff6a7a"), sheenRoughness: 0.4 });
     const carPaint = new THREE.MeshPhysicalMaterial({ color: "#07080a", metalness: 0.55, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.035, envMapIntensity: 1.4 });
     const navyPaint = new THREE.MeshPhysicalMaterial({ color: "#14234a", metalness: 0.4, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 1.2 });
-    const carGlass = new THREE.MeshPhysicalMaterial({ color: "#05070a", metalness: 0.1, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.8 });
+    const carGlass = new THREE.MeshPhysicalMaterial({ color: "#05070a", metalness: 0.1, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 0.95 });
     const rubber = new THREE.MeshStandardMaterial({ color: "#121212", roughness: 0.88 });
     const whitePaint = new THREE.MeshStandardMaterial({ color: "#efece6", roughness: 0.45, metalness: 0.05 });
     const glassDark = new THREE.MeshStandardMaterial({ color: "#0c1118", roughness: 0.06, metalness: 0.3, envMapIntensity: 1.6 });

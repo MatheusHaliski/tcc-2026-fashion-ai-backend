@@ -14,7 +14,8 @@
  *    4 mm mais para fora ali (o peito não a atravessa em pose nenhuma), e vai para dentro da calça (some logo acima da
  *    barra do paletó; a calça volta a aparecer por baixo dela);
  *  - sapato social, scarpin e sapatilha: sola e cadarço na cor do couro e couro polido (sem foto, o calçado sai com sola
- *    clara e cadarço branco de tênis).
+ *    clara e cadarço branco de tênis);
+ *  - avental da copa (uma saia com "apron" no nome): só frente e lados, costas abertas.
  */
 import * as THREE from "three";
 import type { Look3dPiece } from "@/components/three/common";
@@ -68,7 +69,8 @@ export function tinted(src: THREE.Material, hex: string): THREE.Material {
 
 /* ---------- acabamento das peças ---------- */
 const PARAMS = new WeakMap<object, BodyParam>();
-function paramsOf(p: HumanParts): BodyParam {
+/** Medidas do molde do corpo (quadril, pescoço, grupos dos vértices), calculadas uma vez por corpo. */
+export function paramsOf(p: HumanParts): BodyParam {
   let P = PARAMS.get(p.composed);
   if (!P) { P = bodyParam(p.asset, p.composed); PARAMS.set(p.composed, P); }
   return P;
@@ -130,6 +132,11 @@ export function mendGarments(p: HumanParts, pieces: Look3dPiece[]) {
       }
       const index = geo.getIndex();
       if (index && smoothSkirt(pos.array as Float32Array, index.array, P.torsoZ, P.hipY)) { pos.needsUpdate = true; geo.computeVertexNormals(); }
+    }
+    if (spec.kind === "skirt" && /apron|avental/.test(piece.name ?? piece.id)) {
+      // avental: a saia fica só na frente e nos lados (costas abertas a partir de ~110° da frente) e sem barra atrás
+      for (let i = 0; i < pos.count; i++) { const a = Math.abs(Math.atan2(pos.getX(i), pos.getZ(i) - P.torsoZ)); col.setW(i, col.getW(i) * (1 - step(1.85, 2.05, a))); }
+      const hem = p.human.root.getObjectByName(`barra-${piece.id}`); if (hem) hem.visible = false;
     }
     const outer = INNER.has(spec.kind) ? outerOf(spec) : [];
     if (outer.length) {

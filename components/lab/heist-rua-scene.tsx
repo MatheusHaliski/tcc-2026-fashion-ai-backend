@@ -11,13 +11,16 @@ import { HeistPostFX, HeistSky } from "@/components/heist/scene/sky";
 const CAMS: Record<string, { pos: [number, number, number]; target: [number, number, number]; player: [number, number, number]; fov?: number }> = {
   avenida: { pos: [4.2, 0.35, 49.6], target: [-2.5, 5.2, 25], player: [4, -1.6, 47.5] },
   escadaria: { pos: [0.6, -0.15, 35.2], target: [0, 2.6, 24], player: [0, -1.6, 32.8] },
-  fila: { pos: [17.2, -0.05, 32.2], target: [3, -0.4, 31.2], player: [16.5, -1.6, 32.3] },
-  fachada: { pos: [-7.5, -0.7, 32], target: [-4, 8.5, 24.5], player: [-7, -1.6, 32.4] },
+  fila: { pos: [17.6, 0.0, 30.4], target: [3, -0.3, 31.6], player: [17, -1.6, 30.6] },
+  fachada: { pos: [-5.3, -0.65, 32.5], target: [-3.5, 8.8, 24.5], player: [-5.2, -1.6, 32.6] },
   beco: { pos: [26.4, 0.0, 21.5], target: [23.4, 0.8, -12], player: [26, -1.6, 21] },
   revendedor: { pos: [-23.8, 0.05, 44.4], target: [-28.2, -0.5, 49], player: [-25, -1.6, 46] },
   fas: { pos: [1.6, 1.5, 25.6], target: [0, -0.6, 46], player: [1.4, 0, 25.4] },
   doca: { pos: [-12.5, -0.1, 31.5], target: [-19, 0.5, 24.5], player: [-14, -1.6, 30] },
-  drone: { pos: [34, 26, 74], target: [0, 0, 28], player: [0, -1.6, 40], fov: 42 },
+  drone: { pos: [-12, 72, 104], target: [0, 0, 30], player: [0, -1.6, 40], fov: 48 },
+  cidade: { pos: [26, 0.2, 44.2], target: [-30, 4, 47], player: [26, -1.6, 44.4] },
+  calcada: { pos: [-11.6, -0.55, 47.3], target: [-13.4, -1.55, 49.4], player: [-11.6, -1.6, 47.3] },
+  vitrines: { pos: [3, 0.15, 47.6], target: [-5, 1.2, 51.3], player: [3, -1.6, 47.6] },
 };
 
 function Rig({ cam, view, ready }: { cam: (typeof CAMS)[string]; view: React.MutableRefObject<SceneView>; ready: () => void }) {

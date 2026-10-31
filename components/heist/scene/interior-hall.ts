@@ -68,11 +68,42 @@ function fanlightTexture(): THREE.Texture {
     for (const rr of [0.3, 0.62, 0.95]) { g.beginPath(); g.arc(w / 2, h, rr * h, Math.PI, 0); g.stroke(); }
   });
 }
-function uplightTexture(): THREE.Texture {
-  return drawnTexture("uplight", 64, 256, (g, w, h) => {
-    const grd = g.createLinearGradient(0, h, 0, 0); grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(0.35, "rgba(255,255,255,0.45)"); grd.addColorStop(1, "rgba(255,255,255,0)");
-    g.fillStyle = grd; g.fillRect(0, 0, w, h);
-  }, false);
+/** Luz do refletor no pé do arco (emissiva da cortina): forte embaixo e no meio, sumindo para cima e para os lados. */
+function archWashTexture(): THREE.Texture {
+  return drawnTexture("archWash", 256, 256, (g, w, h) => {
+    const img = g.createImageData(w, h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const u = (x + 0.5) / w, v = 1 - (y + 0.5) / h, k = Math.min(1, 0.05 + 0.95 * Math.exp(-3.1 * v) * Math.exp(-(((u - 0.5) / 0.3) ** 2)));
+      const i = (y * w + x) * 4; img.data[i] = img.data[i + 1] = img.data[i + 2] = Math.round(k * 255); img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+  });
+}
+/**
+ * Cortina de veludo pregueada que preenche o arco (corta no semicírculo): pregas de ~0,2 m com até `depth` de fundo.
+ * A cor por vértice marca crista clara e vale escuro — vale para a cor e para a luz emissiva do refletor (ver archDrapeMaterial).
+ */
+function pleatedArchGeo(r: number, spring: number, depth: number, pleat: number): THREE.BufferGeometry {
+  return geo(`pleatArch${r}-${spring}-${depth}-${pleat}`, () => {
+    const N = Math.max(4, Math.round((2 * r) / pleat)), per = 6, nu = N * per, nv = 16, pos: number[] = [], uv: number[] = [], col: number[] = [], idx: number[] = [];
+    for (let i = 0; i <= nu; i++) {
+      const u = i / nu, x = -r + 2 * r * u, top = spring + Math.sqrt(Math.max(0, r * r - x * x)) - 0.012;
+      const fold = 0.5 + 0.5 * Math.cos(((i % per) / per) * Math.PI * 2), k = 0.42 + 0.58 * fold;
+      for (let j = 0; j <= nv; j++) { const y = (top * j) / nv; pos.push(x, y, depth * fold); uv.push(u, y / (spring + r)); col.push(k, k, k); }
+    }
+    for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) { const a = i * (nv + 1) + j, b = a + nv + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals(); return g;
+  });
+}
+/** Veludo ameixa iluminado de baixo: a cor por vértice (pregas) multiplica também a emissão. */
+function archDrapeMaterial(): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial({ color: "#3b1858", roughness: 0.9, metalness: 0, vertexColors: true, emissive: new THREE.Color("#ff9a48"), emissiveMap: archWashTexture(), emissiveIntensity: 0.95, envMapIntensity: 0.35 });
+  m.name = "salao-archDrape";
+  m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n#ifdef USE_COLOR\n\ttotalEmissiveRadiance *= vColor.rgb;\n#endif"); };
+  m.customProgramCacheKey = () => "salao-archDrape";
+  return m;
 }
 
 /* ---------- rosa (instanciada) ---------- */
@@ -244,7 +275,7 @@ export function buildHall(q: Quality, copy: InteriorCopy, batch: Batch, inst: In
   }
   /* arcos, tímpanos, lavagem de luz e pilastras */
   const fan = new THREE.MeshStandardMaterial({ map: fanlightTexture(), emissiveMap: fanlightTexture(), emissive: new THREE.Color("#ffb46a"), emissiveIntensity: 0.9, roughness: 0.2, metalness: 0.2 });
-  const upl = new THREE.MeshBasicMaterial({ map: uplightTexture(), color: new THREE.Color("#ffa04a").multiplyScalar(0.55), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const drape = archDrapeMaterial();
   const niche = fabric("hallDrape", "#2a1240", q, { rough: 0.8, sheen: "#9a6ad8" });
   for (const a of ARCHES) {
     const base = hallWall(a.wall, a.s, 0, 0.005);
@@ -252,8 +283,9 @@ export function buildHall(q: Quality, copy: InteriorCopy, batch: Batch, inst: In
     batch.add(room, P.gold, geo(`keystone`, () => new THREE.BoxGeometry(0.34, 0.5, 0.2)), mul(base, mat(0, a.spring + a.r + 0.12, 0.1)));
     if (a.door) batch.add(room, fan, archFillGeo(a.r, a.spring, a.door), mul(base, mat(0, 0, 0.012)));
     else if (a.panel) {
+      // fundo de veludo e, na frente, a cortina pregueada que o refletor do pé ilumina (luz nas cristas, sombra nos vales)
       batch.add(room, niche, archFillGeo(a.r, a.spring, 0), mul(base, mat(0, 0, 0.01)));
-      group.add(Object.assign(new THREE.Mesh(archFillGeo(a.r, a.spring, 0), upl), { matrix: mul(base, mat(0, 0, 0.03)), matrixAutoUpdate: false, renderOrder: 2 }));
+      batch.add(room, drape, pleatedArchGeo(a.r - 0.03, a.spring, 0.09, 0.2), mul(base, mat(0, 0, 0.02)));
       inst.add(room, "uplight", BOX0(), P.ledAmber, mul(base, mat(0, 0, 0.25, 0, 0.5, 0.06, 0.12)));
     }
   }
@@ -262,7 +294,8 @@ export function buildHall(q: Quality, copy: InteriorCopy, batch: Batch, inst: In
     batch.add(room, trim, BOX0(), mul(b, mat(0, 0, 0.07, 0, 0.72, BALC_Y - 0.35, 0.14)));
     batch.add(room, trim, BOX0(), mul(b, mat(0, 0, 0.1, 0, 0.86, 0.32, 0.2)));                       // base
     batch.add(room, P.gold, BOX0(), mul(b, mat(0, BALC_Y - 0.65, 0.12, 0, 0.84, 0.3, 0.16)));       // capitel
-    // arandela de duas velas
+    // arandela de duas velas (a da pilastra atrás do painel do DJ fica escondida pelo veludo: não vai)
+    if (w === "E" && s === 3.8) continue;
     batch.add(room, P.gold, BOX0(), mul(b, mat(0, 2.9, 0.2, 0, 0.06, 0.28, 0.16)));
     for (const dx of [-0.16, 0.16]) {
       batch.add(room, P.gold, CYL0(10), mul(b, mat(dx, 3.05, 0.3, 0, 0.04, 0.05, 0.04)));
@@ -299,8 +332,9 @@ export function buildHall(q: Quality, copy: InteriorCopy, batch: Batch, inst: In
   }
   /* lustres de cristal sob as cúpulas laterais */
   for (const d of [DOMES[0], DOMES[2]]) chandelier(room, d.x, 6.9, d.z, HALL_H + d.rise - 0.1, q, P, batch, inst, chandeliers);
-  /* castiçais altos junto às pilastras (afastados 0,45 m da parede) */
-  for (const [w, s] of [["N", -11.3], ["N", -4], ["S", -11.3], ["S", -4], ["S", 4], ["S", 11.3], ["W", -4.6], ["W", 12.9]] as [WallSide, number][]) {
+  /* castiçais altos junto às pilastras (afastados 0,45 m da parede); os dos cantos sul, o do sofá e o do aparador saíram
+   * (no lugar deles ficaram o aparador dos garçons, a mesa de doces e o vaso) */
+  for (const [w, s] of [["N", -11.3], ["N", -4], ["S", -4], ["S", 4]] as [WallSide, number][]) {
     const b = mul(hallWall(w, s, 0, 0), mat(0, 0, 0.62));
     batch.add(room, P.gold, CYL0(12), mul(b, mat(0, 0, 0, 0, 0.16, 0.06, 0.16)));
     candelabra(room, b, 1.9, P, batch, inst, flames);

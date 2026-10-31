@@ -17,10 +17,11 @@ import type { Prop } from "@/lib/heist/types";
 import { boxGeo, inst, lathe, merge, place, ropeGeo, tubeThrough, worldUV } from "./exterior-geometry";
 import { exteriorMaterials, type ExteriorMaterials } from "./exterior-materials";
 import { bloomTex, fanSignTex, leafTex, signTex, SIGNAGE, prng, type Quality } from "./exterior-textures";
+import { CITY_X, CROSS, CROSS_Z1, FAR_LINE } from "./exterior-blocks";
 import { Instanced } from "./exterior-facade";
 
-export const X_FAR = 90;                           // até onde a avenida segue (some na névoa)
-const CURB0 = 32.85, CURB1 = 33.05, FAR0 = 42.95, FAR1 = 43.15, FAR_END = 53;
+export const X_FAR = CITY_X;                       // até onde a avenida segue (some na névoa)
+const CURB0 = 32.85, CURB1 = 33.05, FAR0 = 42.95, FAR1 = 43.15, FAR_END = FAR_LINE;
 const STEP_D = (STAIRS.bottom - STAIRS.top) / STAIRS.steps;
 const stepY = (k: number) => (SIDEWALK_Y * k) / STAIRS.steps;     // degrau k (1…12): 0 = patamar
 
@@ -33,26 +34,45 @@ export function roadGeometry(): THREE.BufferGeometry {
 }
 
 /* ---------- chão ---------- */
+/** Pistas das ruas transversais (asfalto sem reflexo de verdade), do meio-fio da avenida até o fim da quadra. */
+export function crossRoadGeometry(): THREE.BufferGeometry {
+  return merge(CROSS.map((c) => { const g = new THREE.PlaneGeometry(c.road1 - c.road0, CROSS_Z1 - FAR0, 1, 1); g.rotateX(-Math.PI / 2); g.translate((c.road0 + c.road1) / 2, ROAD_Y, (FAR0 + CROSS_Z1) / 2); return worldUV(g); }));
+}
 function useGround() {
   return useMemo(() => {
     const sidewalk: THREE.BufferGeometry[] = [], curb: THREE.BufferGeometry[] = [];
     // calçada do museu (fora da escadaria e da rampa da doca), do meio-fio até a fachada
     for (const [x0, x1, z0] of [[-X_FAR, DOCK_RAMP.x0, 24.5], [DOCK_RAMP.x0, DOCK_RAMP.x1, DOCK_RAMP.z1], [DOCK_RAMP.x1, STAIRS.x0, 24.5], [STAIRS.x0, STAIRS.x1, STAIRS.bottom], [STAIRS.x1, X_FAR, 24.5]] as const) sidewalk.push(boxGeo(x0, SIDEWALK_Y - 0.3, z0, x1, SIDEWALK_Y, CURB0));
-    // calçada de lá (fãs, revendedor)
-    sidewalk.push(boxGeo(-X_FAR, SIDEWALK_Y - 0.3, FAR1, X_FAR, SIDEWALK_Y, FAR_END));
-    // meio-fio de granito dos dois lados (a face desce até a pista)
-    curb.push(boxGeo(-X_FAR, ROAD_Y - 0.2, CURB0, X_FAR, SIDEWALK_Y, CURB1), boxGeo(-X_FAR, ROAD_Y - 0.2, FAR0, X_FAR, SIDEWALK_Y, FAR1));
-    // faixas: linha dupla amarela no meio, tracejadas brancas, faixa de pedestres a oeste e as linhas de retenção
+    // calçada de lá (fãs, revendedor, lojas), interrompida pelas transversais, e as calçadas delas até o fim da quadra
+    const breaks = [-X_FAR, ...CROSS.flatMap((c) => [c.road0 - 0.2, c.road1 + 0.2]), X_FAR];
+    for (let i = 0; i < breaks.length; i += 2) sidewalk.push(boxGeo(breaks[i], SIDEWALK_Y - 0.3, FAR1, breaks[i + 1], SIDEWALK_Y, FAR_END + 0.6));
+    for (const c of CROSS) {
+      sidewalk.push(boxGeo(c.walk0 - 0.6, SIDEWALK_Y - 0.3, FAR_END + 0.6, c.road0 - 0.2, SIDEWALK_Y, CROSS_Z1), boxGeo(c.road1 + 0.2, SIDEWALK_Y - 0.3, FAR_END + 0.6, c.walk1 + 0.6, SIDEWALK_Y, CROSS_Z1));
+      curb.push(boxGeo(c.road0 - 0.2, ROAD_Y - 0.2, FAR1, c.road0, SIDEWALK_Y, CROSS_Z1), boxGeo(c.road1, ROAD_Y - 0.2, FAR1, c.road1 + 0.2, SIDEWALK_Y, CROSS_Z1));
+    }
+    // meio-fio de granito dos dois lados da avenida (a face desce até a pista), aberto nas transversais
+    curb.push(boxGeo(-X_FAR, ROAD_Y - 0.2, CURB0, X_FAR, SIDEWALK_Y, CURB1));
+    for (let i = 0; i < breaks.length; i += 2) curb.push(boxGeo(breaks[i], ROAD_Y - 0.2, FAR0, breaks[i + 1], SIDEWALK_Y, FAR1));
+    // faixas: linha dupla amarela no meio, tracejadas brancas, faixas de pedestres nas esquinas e as linhas de retenção
     const yellow: THREE.BufferGeometry[] = [], white: THREE.BufferGeometry[] = [];
     const stripe = (x0: number, z0: number, x1: number, z1: number, to: THREE.BufferGeometry[]) => { const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0); g.rotateX(-Math.PI / 2); g.translate((x0 + x1) / 2, ROAD_Y + 0.004, (z0 + z1) / 2); to.push(worldUV(g)); };
-    stripe(-X_FAR, 37.86, -29.4, 37.96, yellow); stripe(-24.6, 37.86, X_FAR, 37.96, yellow); stripe(-X_FAR, 38.06, -29.4, 38.16, yellow); stripe(-24.6, 38.06, X_FAR, 38.16, yellow);
-    for (let x = -X_FAR; x < X_FAR; x += 6) { if (x > -31 && x < -23) continue; stripe(x, 35.42, x + 3, 35.52, white); stripe(x, 40.52, x + 3, 40.62, white); }
-    for (let z = CURB1 + 0.3; z < FAR0 - 0.4; z += 1.1) stripe(-29, z, -25, z + 0.6, white);                  // faixa de pedestres
-    stripe(-29.6, CURB1 + 0.2, -29.3, 37.8, white); stripe(-24.7, 38.2, -24.4, FAR0 - 0.2, white);
+    const zebraX = (x0: number, x1: number) => { for (let z = CURB1 + 0.3; z < FAR0 - 0.4; z += 1.1) stripe(x0, z, x1, z + 0.6, white); };
+    const gaps: [number, number][] = CROSS.map((c) => [c.walk0 - 4.8, c.walk1 + 4.8]);
+    const yellowRun = (z0: number, z1: number) => { let x = -X_FAR; for (const [g0, g1] of gaps) { stripe(x, z0, g0, z1, yellow); x = g1; } stripe(x, z0, X_FAR, z1, yellow); };
+    yellowRun(37.86, 37.96); yellowRun(38.06, 38.16);
+    for (let x = -X_FAR; x < X_FAR; x += 6) { if (gaps.some(([g0, g1]) => x + 3 > g0 && x < g1)) continue; stripe(x, 35.42, x + 3, 35.52, white); stripe(x, 40.52, x + 3, 40.62, white); }
+    for (const c of CROSS) {
+      zebraX(c.walk0 - 4.4, c.walk0 - 0.6); zebraX(c.walk1 + 0.6, c.walk1 + 4.4);
+      stripe(c.walk0 - 4.8, CURB1 + 0.2, c.walk0 - 4.5, 37.8, white); stripe(c.walk1 + 4.5, 38.2, c.walk1 + 4.8, FAR0 - 0.2, white);
+      for (let x = c.road0 + 0.3; x < c.road1 - 0.4; x += 1.1) stripe(x, FAR1 + 0.6, x + 0.6, FAR1 + 3.6, white);
+      stripe(c.road0 + 0.2, FAR1 + 4.0, (c.road0 + c.road1) / 2, FAR1 + 4.3, white);
+      for (let z = FAR1 + 6; z < CROSS_Z1; z += 6) stripe((c.road0 + c.road1) / 2 - 0.06, z, (c.road0 + c.road1) / 2 + 0.06, z + 3, white);
+    }
     // tampas de bueiro e grelhas de drenagem no meio-fio
     const iron: THREE.BufferGeometry[] = [];
-    for (const [x, z] of [[-12, 36.4], [14, 39.6], [27, 36.8], [-40, 39.2]]) { const c = new THREE.CylinderGeometry(0.34, 0.34, 0.02, 24); c.translate(x, ROAD_Y + 0.006, z); iron.push(worldUV(c)); }
-    for (const x of [-34, -18.5, -1, 13.5, 26]) iron.push(boxGeo(x - 0.45, ROAD_Y + 0.001, CURB1, x + 0.45, ROAD_Y + 0.012, CURB1 + 0.35));
+    for (const [x, z] of [[-12, 36.4], [14, 39.6], [27, 36.8], [-58, 39.2], [-37.5, 70], [50.5, 88]]) { const c = new THREE.CylinderGeometry(0.34, 0.34, 0.02, 24); c.translate(x, ROAD_Y + 0.006, z); iron.push(worldUV(c)); }
+    for (const x of [-18.5, -1, 13.5, 26]) iron.push(boxGeo(x - 0.45, ROAD_Y + 0.001, CURB1, x + 0.45, ROAD_Y + 0.012, CURB1 + 0.35));
+    for (const x of [-22, -6.5, 9, 24]) iron.push(boxGeo(x - 0.45, ROAD_Y + 0.001, FAR0 - 0.35, x + 0.45, ROAD_Y + 0.012, FAR0));
     return { sidewalk: merge(sidewalk), curb: merge(curb), yellow: merge(yellow), white: merge(white), iron: merge(iron) };
   }, []);
 }
@@ -147,7 +167,15 @@ function useRisers() {
         }
       }
     }
-    return { deck: merge(deck), skirt: merge(skirt), rail: merge(rail), gear: merge(gear), panels: merge(panels) };
+    // refletor de fachada no deque de cima, apontado para as colunas: forquilha, corpo com aletas e a lente
+    const flood: THREE.BufferGeometry[] = [], lens: THREE.BufferGeometry[] = [];
+    for (const s of [-1, 1]) {
+      const x = s * 8.5, y = SIDEWALK_Y + 1.05, z = 30.55, aim = new THREE.Matrix4().makeRotationX(-2.21).setPosition(x, y + 0.42, z);   // lente (+z local) para cima e para o norte
+      flood.push(boxGeo(x - 0.22, y, z - 0.14, x + 0.22, y + 0.06, z + 0.14), boxGeo(x - 0.24, y + 0.06, z - 0.03, x - 0.2, y + 0.46, z + 0.03), boxGeo(x + 0.2, y + 0.06, z - 0.03, x + 0.24, y + 0.46, z + 0.03));
+      const body = merge([boxGeo(-0.19, -0.16, -0.14, 0.19, 0.16, 0.12), ...[-0.12, -0.04, 0.04, 0.12].map((dx) => boxGeo(dx - 0.012, -0.17, -0.2, dx + 0.012, 0.17, -0.14))]); body.applyMatrix4(aim); flood.push(body);
+      const l = boxGeo(-0.16, -0.13, 0.12, 0.16, 0.13, 0.13); l.applyMatrix4(aim); lens.push(l);
+    }
+    return { deck: merge(deck), skirt: merge(skirt), rail: merge(rail), gear: merge(gear), panels: merge(panels), flood: merge(flood), lens: merge(lens) };
   }, []);
 }
 
@@ -197,11 +225,19 @@ function useBarriers(props: Prop[]) {
 }
 
 /* ---------- postes de ferro fundido ---------- */
-export function lampPositions(props: Prop[]): THREE.Vector3[] { return props.filter((p) => p.kind === "lampPost" && p.shape.type === "circle").map((p) => { const s = p.shape as { x: number; z: number }; return new THREE.Vector3(s.x, floorY(s) + 4.55, s.z); }); }
+/** Cabeças dos postes: lanternas de ferro fundido no meio-fio do museu (4,55 m) e luminárias de LED de 8 m no meio-fio de
+ * lá, com o braço por cima da pista. */
+export function streetLights(props: Prop[]): { pos: THREE.Vector3; kind: "lantern" | "led" }[] {
+  return props.filter((p) => p.kind === "lampPost" && p.shape.type === "circle").map((p) => {
+    const s = p.shape as { x: number; z: number }, led = s.z > 38;
+    return { pos: led ? new THREE.Vector3(s.x, floorY(s) + 8.15, s.z - 1.85) : new THREE.Vector3(s.x, floorY(s) + 4.55, s.z), kind: led ? "led" as const : "lantern" as const };
+  });
+}
 function useLamps(props: Prop[]) {
   return useMemo(() => {
     const at = props.filter((p) => p.kind === "lampPost" && p.shape.type === "circle").map((p) => p.shape as { x: number; z: number });
-    const posts = at.map((s) => inst(s.x, floorY(s), s.z, s.z < 38 ? 0 : Math.PI));
+    const posts = at.filter((s) => s.z < 38).map((s) => inst(s.x, floorY(s), s.z, 0));
+    const leds = at.filter((s) => s.z >= 38).map((s) => inst(s.x, floorY(s), s.z, Math.PI));
     // base canelada, haste afinando, colar e a lanterna de quatro vidros com o teto em cúpula
     const iron = merge([
       lathe([[0, 0], [0.26, 0], [0.26, 0.12], [0.2, 0.18], [0.21, 0.5], [0.16, 0.62], [0.12, 0.66], [0.1, 0.9], [0.075, 3.9], [0.1, 3.96], [0.1, 4.04], [0.06, 4.1], [0, 4.1]], 16),
@@ -210,7 +246,16 @@ function useLamps(props: Prop[]) {
       ...[0, 1, 2, 3].map((k) => { const a = (k * Math.PI) / 2 + Math.PI / 4; return place(new THREE.BoxGeometry(0.025, 0.74, 0.025), Math.cos(a) * 0.19, 4.56, Math.sin(a) * 0.19); }),
     ]);
     const glass = lathe([[0.12, 4.2], [0.2, 4.4], [0.2, 4.9], [0.17, 4.92]], 4, Math.PI / 4);
-    return { posts, iron, glass };
+    // poste de aço galvanizado de 8 m (octogonal, afinando), porta de inspeção, braço curvo e a luminária de LED
+    const steel = merge([
+      boxGeo(-0.22, 0, -0.22, 0.22, 0.04, 0.22),
+      lathe([[0, 0.04], [0.12, 0.04], [0.115, 1.0], [0.07, 8.1], [0, 8.12]], 8),
+      boxGeo(-0.06, 0.45, 0.1, 0.06, 0.85, 0.125),
+      tubeThrough([[0, 7.75, 0], [0, 8.2, 0.6], [0, 8.3, 1.3], [0, 8.32, 1.65]], 0.045, 10, 8),
+      place(new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(0.24, 0.12, 0.42), 0, 8.22, 1.85),
+    ]);
+    const lens = boxGeo(-0.17, 8.2, 1.55, 0.17, 8.215, 2.15);
+    return { posts, leds, iron, glass, steel, lens };
   }, [props]);
 }
 
@@ -381,43 +426,54 @@ function Signage({ m }: { m: ExteriorMaterials }) {
       closed: mk(signTex("closed", [SIGNAGE.closed], { w: 512, h: 128, bg: "#ffffff", ink: "#c1121f", font: "sans", border: "#c1121f" })),
     };
   }, []);
-  const Stand = ({ x, z, rot, mat, w = 0.6, h = 0.24 }: { x: number; z: number; rot: number; mat: THREE.Material; w?: number; h?: number }) => {
-    const y = floorY({ x, z });
-    return (
-      <group position={[x, y, z]} rotation={[0, rot, 0]}>
-        <mesh material={m.brass} position={[0, 0.5, 0]}><cylinderGeometry args={[0.018, 0.018, 1.0, 8]} /></mesh>
-        <mesh material={m.brass} position={[0, 0.01, 0]}><cylinderGeometry args={[0.16, 0.18, 0.02, 18]} /></mesh>
-        <mesh material={m.brass} position={[0, 1.0 + h / 2, -0.012]}><boxGeometry args={[w + 0.04, h + 0.04, 0.012]} /></mesh>
-        <mesh material={mat} position={[0, 1.0 + h / 2, 0]}><planeGeometry args={[w, h]} /></mesh>
-      </group>
-    );
-  };
+  const data = useMemo(() => {
+    const brass: THREE.BufferGeometry[] = [], faces = new Map<string, THREE.BufferGeometry[]>();
+    const face = (k: string, g: THREE.BufferGeometry) => (faces.get(k) ?? faces.set(k, []).get(k)!).push(g);
+    const plane = (w: number, h: number, M: THREE.Matrix4) => new THREE.PlaneGeometry(w, h).applyMatrix4(M);
+    // pedestal de latão com a placa (convite no portão, fim da fila)
+    const stand = (x: number, z: number, rot: number, k: string, w = 0.6, h = 0.24) => {
+      const y = floorY({ x, z }), M = new THREE.Matrix4().makeRotationY(rot).setPosition(x, y, z);
+      brass.push(new THREE.CylinderGeometry(0.018, 0.018, 1.0, 8).translate(0, 0.5, 0).applyMatrix4(M), new THREE.CylinderGeometry(0.16, 0.18, 0.02, 18).translate(0, 0.01, 0).applyMatrix4(M), boxGeo(-(w + 0.04) / 2, 1.0 - 0.02, -0.018, (w + 0.04) / 2, 1.0 + h + 0.02, -0.006).applyMatrix4(M));
+      face(k, plane(w, h, M.clone().multiply(new THREE.Matrix4().makeTranslation(0, 1.0 + h / 2, 0))));
+    };
+    stand(-1.95, 31.25, 0, "invite"); stand(1.95, 31.25, 0, "invite"); stand(15.0, 32.7, 0, "queue");
+    for (const x of [-9, 9]) face("press", plane(4.6, 0.58, new THREE.Matrix4().setPosition(x, SIDEWALK_Y + 0.62, 31.02)));
+    face("restricted", plane(3.6, 0.45, new THREE.Matrix4().makeRotationY(-Math.PI / 2).setPosition(-12.02, SIDEWALK_Y + 0.42, 27.8)));
+    face("restricted", plane(3.6, 0.45, new THREE.Matrix4().makeRotationY(Math.PI / 2).setPosition(12.02, SIDEWALK_Y + 0.42, 27.8)));
+    face("service", plane(0.8, 0.32, new THREE.Matrix4().setPosition(-15.6, SIDEWALK_Y + 2.0, 25.22)));
+    for (const x of [-30.75, 30.75]) for (const z of [37.9, 30, 46]) face("closed", plane(1.8, 0.45, new THREE.Matrix4().makeRotationY(x < 0 ? -Math.PI / 2 : Math.PI / 2).setPosition(x + (x < 0 ? -0.04 : 0.04), floorY({ x: Math.sign(x) * 29.9, z }) + 0.85, z)));
+    const pole = new THREE.CylinderGeometry(0.03, 0.03, 2.2, 8).translate(-15.6, SIDEWALK_Y + 1.1, 25.2);
+    return { brass: merge(brass), pole, faces: [...faces.entries()].map(([k, l]) => ({ k, geo: merge(l) })) };
+  }, []);
   return (
     <group>
-      {/* convite: no pé do tapete, dos dois lados do portão (dentro dos cercados) */}
-      <Stand x={-1.95} z={31.25} rot={0} mat={mats.invite} />
-      <Stand x={1.95} z={31.25} rot={0} mat={mats.invite} />
-      {/* fim da fila: no último pedestal do cordão, voltada para a calçada */}
-      <Stand x={15.0} z={32.7} rot={0} mat={mats.queue} />
-      {/* imprensa e restrito: nas saias das arquibancadas viradas para a rua e para a calçada */}
-      {[-9, 9].map((x) => <mesh key={x} material={mats.press} position={[x, SIDEWALK_Y + 0.62, 31.02]}><planeGeometry args={[4.6, 0.58]} /></mesh>)}
-      <mesh material={mats.restricted} position={[-12.02, SIDEWALK_Y + 0.42, 27.8]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[3.6, 0.45]} /></mesh>
-      <mesh material={mats.restricted} position={[12.02, SIDEWALK_Y + 0.42, 27.8]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[3.6, 0.45]} /></mesh>
-      {/* entrada de serviço: placa em poste na calçada, ao lado da rampa, apontando para a doca */}
-      <group position={[-15.6, SIDEWALK_Y, 25.2]}>
-        <mesh material={m.galvanized} position={[0, 1.1, 0]}><cylinderGeometry args={[0.03, 0.03, 2.2, 8]} /></mesh>
-        <mesh material={mats.service} position={[0, 2.0, 0.02]}><planeGeometry args={[0.8, 0.32]} /></mesh>
-      </group>
-      {/* "VIA INTERDITADA" nos cavaletes das pontas */}
-      {[-30.75, 30.75].map((x) => [37.9, 30, 46].map((z) => <mesh key={`${x}:${z}`} material={mats.closed} position={[x + (x < 0 ? -0.04 : 0.04), floorY({ x: Math.sign(x) * 29.9, z }) + 0.85, z]} rotation={[0, x < 0 ? -Math.PI / 2 : Math.PI / 2, 0]}><planeGeometry args={[1.8, 0.45]} /></mesh>))}
+      <mesh geometry={data.brass} material={m.brass} />
+      <mesh geometry={data.pole} material={m.galvanized} />
+      {data.faces.map(({ k, geo }) => <mesh key={k} geometry={geo} material={mats[k as keyof typeof mats]} />)}
     </group>
   );
 }
 
-/** Cartazes dos fãs presos nas grades (os fãs, de verdade, são do HeistPeople). */
+/** Cartazes dos fãs presos nas grades (os fãs, de verdade, são do HeistPeople): o lado pintado virado para o tapete e o
+ * verso de papelão liso para a calçada (nada de letra espelhada). Um lote por desenho e um para os versos. */
 function FanSigns() {
-  const list = useMemo(() => { const r = prng(4); const out: { x: number; k: number; tilt: number }[] = []; for (let x = -23; x < 29; x += 3.4 + r() * 3) out.push({ x, k: out.length, tilt: (r() - 0.5) * 0.25 }); return out; }, []);
-  return <group>{list.map((s) => <mesh key={s.x} position={[s.x, SIDEWALK_Y + 0.72, 43.1]} rotation={[0, Math.PI, s.tilt]}><planeGeometry args={[0.56, 0.35]} /><meshStandardMaterial map={fanSignTex(s.k)} roughness={0.85} side={THREE.DoubleSide} /></mesh>)}</group>;
+  const data = useMemo(() => {
+    const r = prng(4), fronts = new Map<number, THREE.BufferGeometry[]>(), backs: THREE.BufferGeometry[] = [];
+    let k = 0;
+    for (let x = -23; x < 29; x += 3.4 + r() * 3, k++) {
+      const tilt = (r() - 0.5) * 0.25, m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, tilt)).setPosition(x, SIDEWALK_Y + 0.72, 43.1);
+      const f = new THREE.PlaneGeometry(0.56, 0.35).applyMatrix4(m), b = new THREE.PlaneGeometry(0.56, 0.35); b.rotateY(Math.PI); b.applyMatrix4(m);
+      const d = k % SIGNAGE.fans.length; (fronts.get(d) ?? fronts.set(d, []).get(d)!).push(f); backs.push(b);
+    }
+    return { fronts: [...fronts.entries()].map(([d, l]) => ({ d, geo: merge(l) })), back: merge(backs) };
+  }, []);
+  const back = useMemo(() => new THREE.MeshStandardMaterial({ color: "#c9b896", roughness: 0.95 }), []);
+  return (
+    <group>
+      {data.fronts.map(({ d, geo }) => <mesh key={d} geometry={geo}><meshStandardMaterial map={fanSignTex(d)} roughness={0.85} /></mesh>)}
+      <mesh geometry={data.back} material={back} />
+    </group>
+  );
 }
 
 /** Hidrante de ferro fundido (vermelho escuro, tampas de latão). */
@@ -442,6 +498,8 @@ export function HeistStreet({ q, m }: { q: Quality; m: ExteriorMaterials }) {
   const ground = useGround(), stairs = useStairs(), ramp = useDockRamp(), risers = useRisers(), ropes = useRopes(props), barriers = useBarriers(props), lamps = useLamps(props), trees = useTrees(props, q);
   const ironMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#1c1c1c", roughness: 0.4, metalness: 0.8 }), []);
   const ledPanel = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: new THREE.Color("#f4f6ff"), emissiveIntensity: 3.2 }), []);
+  const ledLens = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: new THREE.Color("#e4ecff"), emissiveIntensity: 6 }), []);
+  const floodLens = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: new THREE.Color("#ffc890"), emissiveIntensity: 5 }), []);
   const blueBarrier = useMemo(() => new THREE.MeshStandardMaterial({ color: "#2f5f9b", roughness: 0.45, metalness: 0.6, normalMap: m.galvanized.normalMap, normalScale: new THREE.Vector2(0.2, 0.2) }), [m]);
   const sawMat = useMemo(() => {
     const c = document.createElement("canvas"); c.width = 128; c.height = 32; const g = c.getContext("2d")!;
@@ -472,6 +530,8 @@ export function HeistStreet({ q, m }: { q: Quality; m: ExteriorMaterials }) {
       <mesh geometry={risers.rail} material={m.blackMetal} castShadow />
       <mesh geometry={risers.gear} material={m.blackMetal} castShadow />
       <mesh geometry={risers.panels} material={ledPanel} />
+      <mesh geometry={risers.flood} material={m.blackMetal} castShadow />
+      <mesh geometry={risers.lens} material={floodLens} />
       {/* cordões de veludo */}
       <Instanced geometry={ropes.post} material={m.brass} matrices={ropes.posts} shadow />
       <mesh geometry={ropes.ropes} material={m.velvet} castShadow />
@@ -482,6 +542,8 @@ export function HeistStreet({ q, m }: { q: Quality; m: ExteriorMaterials }) {
       {/* postes */}
       <Instanced geometry={lamps.iron} material={m.castIron} matrices={lamps.posts} shadow />
       <Instanced geometry={lamps.glass} material={m.glassFrosted} matrices={lamps.posts} />
+      <Instanced geometry={lamps.steel} material={m.galvanized} matrices={lamps.leds} shadow />
+      <Instanced geometry={lamps.lens} material={ledLens} matrices={lamps.leds} />
       {/* árvores */}
       <mesh geometry={trees.trunks} material={m.bark} castShadow />
       <mesh geometry={trees.grates} material={m.castIron} receiveShadow />
