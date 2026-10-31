@@ -101,15 +101,19 @@ Geral da porta do vestíbulo; a pista com gente dançando (jogo com `?shot=`); a
 
 | Vista | low | high |
 | --- | --- | --- |
-| Geral da porta do vestíbulo | `v8-geral-low.jpg` | `h1-geral-high.jpg` |
+| Geral da porta do vestíbulo | `v1-geral-low.jpg` (iteração, antes das cortinas e do lote por acabamento) | `h1-geral-high.jpg` |
 | Cabine do DJ de perto | `v2-dj-low.jpg` | `h2-dj-high.jpg` |
 | Mesa de doces de perto (bolo e macarons) | `v3-doces-low.jpg` | `h3-doces-high.jpg` |
 | Mesas dos patronos | `v4-jantar-low.jpg` | `h5-jantar-high.jpg` |
 | Do mezanino | `v5-mezanino-low.jpg` | `h4-mezanino-high.jpg` |
 | Vista alta | — | `h6-alta-high.jpg` |
-| Pista com gente (jogo, `?shot=`) | `v7-pista-gente-low.jpg` | — |
+| Pista com gente (jogo, `?shot=`) | `v7-pista-gente-low.jpg` (na fila; ver abaixo) | — |
 
-O "high" do jogo com gente (`h7`) não carregou em 15 min com a máquina cheia.
+Capturas do jogo com gente:
+
+- O jogo só libera a partida com 60 % das pessoas montadas: a 0,03 por minuto, são cerca de 30 min no SwiftShader.
+- `h7` (high) não chegou a 60 % em 15 min.
+- `v7` (low) foi relançada com espera de até 50 min (`jogo.cjs`, log em `jogo2.log`), mas às 18h27 havia 57 capturas na fila.
 
 | Item | Arquivo → função | Captura | Estado |
 | --- | --- | --- | --- |
