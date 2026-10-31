@@ -65,15 +65,26 @@ log(`${selected.length} brief(s) selecionado(s), ${pending.length} sem GLB; esti
 for (const b of pending) log(`  ${b.model} (nível ${b.tier}, ${b.ai_model}, ${b.polycount} tri, ${b.fit === "footprint" ? "pegada" : `${b.height} m`})`);
 if (dry || !pending.length) process.exit(0);
 
-const KEY = process.env.MESHY_API_KEY;
-if (!KEY) { console.error("MESHY_API_KEY não está no ambiente (configure nas Network secrets e abra uma sessão nova)."); process.exit(2); }
+// Sessão na nuvem: a saída HTTPS passa por um proxy (HTTPS_PROXY) que o fetch do Node só respeita com NODE_USE_ENV_PROXY=1;
+// sem a variável, o script se reexecuta com ela. O segredo de rede do ambiente (host api.meshy.ai) pode ser injetado pelo
+// próprio proxy: nesse caso MESHY_API_KEY não existe e as chamadas vão sem cabeçalho de autorização.
+if (process.env.HTTPS_PROXY && process.env.NODE_USE_ENV_PROXY !== "1") {
+  const { spawnSync } = await import("node:child_process");
+  const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...args], { stdio: "inherit", env: { ...process.env, NODE_USE_ENV_PROXY: "1" } });
+  process.exit(r.status ?? 1);
+}
+const KEY = process.env.MESHY_API_KEY ?? null;
+if (!KEY) log("sem MESHY_API_KEY no ambiente: contando com o segredo de rede para api.meshy.ai injetado pelo proxy");
 fs.mkdirSync(RAW, { recursive: true }); fs.mkdirSync(OUT, { recursive: true });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function api(method, url, body) {
   for (let attempt = 0; attempt < 6; attempt++) {
-    const res = await fetch(API + url, { method, headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+    const headers = { "Content-Type": "application/json" };
+    if (KEY) headers.Authorization = `Bearer ${KEY}`;
+    const res = await fetch(API + url, { method, headers, body: body ? JSON.stringify(body) : undefined });
     if (res.status === 429) { log(`429 (limite de requisições): esperando 30 s`); await sleep(30000); continue; }
+    if (res.status === 401) throw new Error(`${method} ${url} → 401: sem autorização. Configure MESHY_API_KEY ou o segredo de rede para o host api.meshy.ai (e abra uma sessão nova).`);
     const text = await res.text();
     let json; try { json = JSON.parse(text); } catch { json = { raw: text.slice(0, 300) }; }
     if (!res.ok) throw new Error(`${method} ${url} → ${res.status}: ${json.message ?? json.raw ?? text.slice(0, 200)}`);
