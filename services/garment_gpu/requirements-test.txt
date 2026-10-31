@@ -1,0 +1,5 @@
+-r requirements-api.txt
+pytest>=8,<10
+httpx>=0.27,<1
+fakeredis>=2.26,<3
+moto[s3]>=5,<6
