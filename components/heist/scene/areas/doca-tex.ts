@@ -134,7 +134,7 @@ export function wallSurface(q: Quality): Surface {
     let r: number, g: number, b: number;
     if (stripe) { r = 0.86; g = 0.68; b = 0.12; }
     else if (band) { r = 0.27; g = 0.29; b = 0.305; }
-    else { r = 0.72; g = 0.735; b = 0.72; }
+    else { r = 0.67; g = 0.685; b = 0.67; }
     const k = (0.94 + blockTone + 0.05 * (m - 0.5)) * (1 - 0.18 * joint) * (p < 0.15 ? 0.82 : 1);
     r *= k; g *= k; b *= k;
     // barrado: raspões de carrinho (preto de borracha) e lascas mostrando o bloco cinza

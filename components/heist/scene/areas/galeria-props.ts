@@ -19,7 +19,7 @@ import { SANS, SERIF, miscSurface, type Quality } from "../interior-tex";
 import type { InteriorRoom } from "../interior-shell";
 import { type Fr, at, atlasPlane, bx, cy, frame, glassEdge, langOf, lathe, lit, once, paint, plain, planeUp, thickGlass } from "./galeria-kit";
 import { GAL_COPY, LBL } from "./galeria-copy";
-import { ART_COLS, ART_ROWS, CATALOG_COVER, LABEL_COLS, LABEL_ROWS, SECTION, artAtlas, graniteMat, labelAtlas } from "./galeria-tex";
+import { ART_COLS, ART_ROWS, CATALOG_COVER, LABEL_COLS, LABEL_ROWS, SECTION, artAtlas, coveTex, graniteMat, labelAtlas } from "./galeria-tex";
 import { auroraGown, clutch, crystalMat, earrings, fan, gloveStand, goldMat, hat, headStand, jewelBust, necklace, petalsGown, plisseGown, pump, ring, satin, tulleGown, velvetGown } from "./galeria-trajes";
 
 const ROOM = "galeria";
@@ -126,6 +126,9 @@ function wallVitrine(c: PropsCtx, cx: number, cz: number, sx: number, sz: number
   for (let k = 0; k < 3; k++) bx(c.batch, ROOM, deck, F(0, H0 + 0.012, -D / 2 + 0.18 + k * 0.26, 0, L - 0.08, 0.36 - k * 0.15, 0.26));
   glassHood(c, F, L, D, H0, G1);
   lightAttic(c, F, L, D, G1, 0.18);
+  // fundo forrado do mesmo veludo e a luz da caixa escorrendo por ele (luz pintada: no "low" só há cinco luzes reais)
+  bx(c.batch, ROOM, deck, F(0, H0 + 0.012, -D / 2 + 0.021, 0, L - 0.04, G1 - H0 - 0.03, 0.004));
+  c.batch.add(ROOM, lit("galeria-vitrineFundo", "#ffd9b0", 0.3, { map: coveTex(), additive: true }), geo("galeria-planoFundo", () => new THREE.PlaneGeometry(1, 1).translate(0, -0.5, 0)), F(0, G1 - 0.02, -D / 2 + 0.026, 0, L - 0.08, G1 - H0 - 0.05, 1));
   // degraus: fundo alto, meio e frente baixa (centro em z e altura do topo)
   const y = H0 + 0.012, zT = [-0.42, -0.16, 0.1], hT = [0.36, 0.21, 0.06];
   const kid = satin("pelicaPreta", "#151517", { rough: 0.5 }), ivory = satin("pelicaMarfim", "#efe6d5", { rough: 0.45 }), wine = satin("cetimVinho", "#5a0f22", { rough: 0.35 });

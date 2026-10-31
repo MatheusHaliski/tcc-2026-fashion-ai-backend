@@ -24,12 +24,12 @@ Galeria como corredor de museu à noite (arcadas, mezanino, caixotões, vitrines
 
 | Móvel | Uso e razão de estar aqui | Medidas de referência | Colisão | Estado |
 | --- | --- | --- | --- | --- |
-| Vitrines com manequins individuais e vestidos-escultura | A exposição do Instituto do Traje | vitrine 2 × 2 × 2,4 m | vidro (já existe) | PLANEJADO |
-| Vitrine circular de joia com vidro espesso | Peça central de joalheria | Ø 1,0 × 1,8 m | vidro | PLANEJADO |
-| Banco escultural de galeria | Pausa para olhar | 2,4 × 0,5 × 0,45 m | baixa (já existe) | PLANEJADO |
-| Mesa de croquis e amostras têxteis | Processo criativo exposto | 2,0 × 0,9 × 0,9 m | baixa | PLANEJADO |
-| Mesa de restauração com suportes acolchoados (Sala das Joias) | Conservação do acervo (Z08) | 1,8 × 0,9 × 0,9 m | baixa | PLANEJADO |
-| Gaveteiro horizontal, estação fotográfica e carrinho de acervo | Guarda e documentação (Z08) | gaveteiro 1,5 × 1,0 × 1,0 m | baixa | PLANEJADO |
+| Vitrines com manequins individuais e vestidos-escultura | A exposição do Instituto do Traje | vitrine 2 × 2 × 2,4 m | vidro (já existe) | VALIDADO |
+| Vitrine circular de joia com vidro espesso | Peça central de joalheria | Ø 1,0 × 1,8 m | vidro | IMPLEMENTADO |
+| Banco escultural de galeria | Pausa para olhar | 2,4 × 0,5 × 0,45 m (feito no vão da planta: 4,0 × 0,6 m) | baixa (já existe) | VALIDADO |
+| Mesa de croquis e amostras têxteis | Processo criativo exposto | 2,0 × 0,9 × 0,9 m | baixa | VALIDADO |
+| Mesa de restauração com suportes acolchoados (Sala das Joias) | Conservação do acervo (Z08) | 1,8 × 0,9 × 0,9 m | baixa | VALIDADO |
+| Gaveteiro horizontal, estação fotográfica e carrinho de acervo | Guarda e documentação (Z08) | gaveteiro 1,5 × 1,0 × 1,0 m | baixa | VALIDADO |
 
 ### Objetos de cena
 
@@ -95,47 +95,92 @@ teto, spots, luz), `galeria-props.ts` (vitrines, banco, estátuas, móveis próp
 vestidos, acessórios, joias), `galeria-tex.ts` (texturas e textos da galeria), `galeria-copy.ts` (textos diegéticos em
 pt-BR, en, es), `galeria-kit.ts` (ferramentas comuns: superfícies procedurais, molduras extrudadas, atlas, idioma),
 `cofre.ts` (módulo da Sala das Joias), `cofre-props.ts` (pedestal, vitrines, conservação), `cofre-tex.ts` (mármores,
-seda adamascada, anéis da trava, laudo, etiquetas). Planta: seções da galeria e do cofre em `lib/heist/level.ts`
-(`baseProps()` e `civs()`). Capturas em `scratchpad/gala/areas/galeria-joias/`.
+seda adamascada, anéis da trava, laudo, etiquetas). Todas as chaves de cache começam por `galeria-` ou `cofre-`.
+
+**Planta** (`lib/heist/level.ts`, só as seções da galeria e do cofre):
+
+- `baseProps()` galeria: as quatro estátuas ganham variante (0 = gesso em (−3,5; −20,5) e (3,5; −20,5); 1 = «Pétalas» em
+  (−9; −7,6); 2 = «Plissê» em (9; −7,6)); móveis novos `fixture`: `jewelVitrine` círculo (−6,5; −19,0) r 0,5 "glass";
+  `sketchTable` x 5,5…7,5, z −10,45…−9,55 "low" giro π; `catalogStand` x −4,9…−4,4, z −7,57…−7,03 "low" giro π/2;
+  `audioGuide` x 4,4…4,9, z −7,57…−7,03 "low" giro −π/2.
+- `baseProps()` cofre (canto da conservação, encostado na parede sul): `restorationTable` x −16,2…−14,4,
+  z −8,15…−7,25; `photoStation` x −13,9…−12,8, z −8,3…−7,0; `flatFiles` x −21,75…−20,25, z −7,55…−6,55;
+  `collectionCart` x −20,05…−19,45, z −7,75…−6,65 (todos "low", giro π, o carrinho π/2).
+- `civs()` galeria: fotógrafo em (2,4; −14,4) mirando o Aurora; convidada em (−5,6; −18,3) na vitrine de joia; convidado
+  em (6,3; −11,25) na mesa de croquis; convidada sentada no banco em (−0,9; −11,28).
+- Sem mudança de lugar nem de altura: vitrines, banco, pedestal (−17,25; −14,25), vitrines de joias, lasers e postes,
+  duto, porta blindada, `placardStars`, checkpoints "cofre" e "fuga", curadora e convidados que já existiam. O diamante
+  e o brilho somem com `view.diamondOnPedestal` como antes. Todos os móveis novos passam no teste de proteção do
+  `world.test` (rotas, portas e interações livres).
+
+**Capturas** (pasta `scratchpad/gala/areas/galeria-joias/` da sessão; `low` para iterar, `high` na rodada final):
+
+- Instituto do Traje: `g02-entrada-low` (do vão do salão), `g03-vitrine-perto-low` (vidro, manequim e etiqueta),
+  `g11-alta-low` (vista alta), `g12-escultura-atril-low` (canto sudoeste: «Pétalas», atril, vitrine de parede,
+  créditos), `g13-vitrine-parede-low` (vitrine de parede de perto), `g31-entrada-high`, `g32-vitrine-high`.
+- Sala das Joias: `c01-porta-low` (da porta), `c02-pedestal-low` (pedestal de perto), `c03-conservacao-low` e
+  `c13-conservacao-low` (canto da conservação, antes e depois de baixar os brancos), `c04-alta-low` (vista alta),
+  `c05-sem-energia-low` (quadro de luz cortado), `c06-janela-low` (parede da janela), `c31-porta-high`,
+  `c32-pedestal-high`.
+
+**Desempenho** (medido na sala isolada): galeria 131 chamadas de desenho e 208 mil triângulos no "low" (265 mil no
+"high", com os cristais e as pétalas a mais); Sala das Joias 103 chamadas e 79 mil triângulos.
 
 ### Instituto do Traje
 
 | Item | Arquivo e função | Captura | Estado |
 | --- | --- | --- | --- |
-| Piso de parquet em espinha de peixe, faixa de granito com filete, soleiras | `galeria-tex.ts` `herringbone`/`floorOak`; `galeria.ts` `floorBorder` | g01, g02 | IMPLEMENTADO |
-| Rodapé de granito, tecido pintado por seção, pilastras caneladas, trilho de quadros, friso, cornija | `galeria.ts` `walls` | g01, g02 | IMPLEMENTADO |
-| Textos de parede (introdução, seções I–III, créditos), legendas dos arcos, inscrição dourada do friso | `galeria-tex.ts` `wallTextAtlas`, `creditsAtlas`, `friezeText`; `galeria.ts` `walls` | g01, g02 | IMPLEMENTADO |
-| Quadros (croquis e guaches) com passe-partout, vidro e moldura de perfil | `galeria-tex.ts` `artAtlas`; `galeria.ts` `framed` | g02 | IMPLEMENTADO |
-| Nicho do Aurora (arco, impostas, fecho, degrau, fundo "amanhecer") | `galeria.ts` `niche`; `galeria-tex.ts` `auroraTex` | g01, g02 | IMPLEMENTADO |
-| Teto em caixotões, bossas, rosetas, lanternim com grelha, difusores e detectores | `galeria.ts` `ceiling` | g01, g02 | IMPLEMENTADO |
-| Trilhos e 26 spots de museu (suporte, corpo com aletas, lente) com seis feixes | `galeria.ts` `spots` | g01, g02 | IMPLEMENTADO |
-| Luz: âncoras, manchas dos spots nas paredes, luz de sanca, três luzes com sombra | `galeria.ts` `lights`, `washes`, `KEYS` | g02 | IMPLEMENTADO |
-| Vitrines de piso (Aurora, coluna de veludo, tule carmim) com vidro de 19 mm, caixa de luz, sensor e etiqueta | `galeria-props.ts` `vitrine`, `glassHood`, `lightAttic`; `galeria-trajes.ts` `auroraGown`, `velvetGown`, `tulleGown`, `mannequin` | g01, g03 | IMPLEMENTADO |
-| Vitrines de parede (chapéus, luvas e bolsas, leques e sapatos, chapéus e véus) | `galeria-props.ts` `wallVitrine`; `galeria-trajes.ts` `hat`, `headStand`, `gloveStand`, `clutch`, `fan`, `pump` | g02 | IMPLEMENTADO |
-| Vitrine circular de joia (fixture `jewelVitrine`) | `galeria-props.ts` `jewelVitrine`; `galeria-trajes.ts` `necklace`, `earrings`, `ring` | g02 | IMPLEMENTADO |
-| Banco escultural de lâminas de carvalho | `galeria-props.ts` `bench` | g01, g02 | IMPLEMENTADO |
-| Mesa de croquis e amostras têxteis (fixture `sketchTable`) | `galeria-props.ts` `sketchTable` | — | IMPLEMENTADO |
-| Cópias em gesso com himátion sobre pedestal clássico | `galeria-props.ts` `statue` (variante 0), `himationSkirt`, `himationSash` | g01, g02 | IMPLEMENTADO |
-| Vestidos-escultura «Pétalas» e «Plissê» com cordão de distância | `galeria-props.ts` `statue` (1 e 2); `galeria-trajes.ts` `petalsGown`, `plisseGown` | — | IMPLEMENTADO |
-| Atril de catálogos e totem do audioguia (fixtures `catalogStand`, `audioGuide`) | `galeria-props.ts` `catalogStand`, `audioGuide` | — | IMPLEMENTADO |
-| Placa-pista (placardStars) no atril de bronze | `galeria.ts` `details` | — | IMPLEMENTADO |
-| Saída, extintor e acionador, termo-higrômetros, sensores de presença, câmeras de domo, giroflex | `galeria.ts` `details` | — | IMPLEMENTADO |
+| Piso de parquet em espinha de peixe, faixa de granito com filete, soleiras | `galeria-tex.ts` `herringbone`/`floorOak`; `galeria.ts` `floorBorder` | g02, g11, g12, g31 | VALIDADO |
+| Rodapé de granito, tecido pintado por seção, pilastras caneladas, trilho de quadros, friso, cornija | `galeria.ts` `walls` | g02, g11, g12, g31 | VALIDADO |
+| Textos de parede (introdução, seções I–III, créditos), legendas dos arcos, inscrição dourada do friso | `galeria-tex.ts` `wallTextAtlas`, `creditsAtlas`, `friezeText`; `galeria.ts` `walls` | g02, g11, g12 | VALIDADO |
+| Quadros (croquis e guaches) com passe-partout, vidro e moldura de perfil | `galeria-tex.ts` `artAtlas`; `galeria.ts` `framed` | g02, g12 | VALIDADO |
+| Nicho do Aurora (arco, impostas, fecho, degrau, fundo "amanhecer") | `galeria.ts` `niche`; `galeria-tex.ts` `auroraTex` | g02, g11, g31 | VALIDADO |
+| Teto em caixotões, bossas, rosetas, lanternim com grelha, difusores e detectores | `galeria.ts` `ceiling` | g02, g11, g31 | VALIDADO |
+| Trilhos e 26 spots de museu (suporte, corpo com aletas, lente) com seis feixes | `galeria.ts` `spots` | g02, g11 | VALIDADO |
+| Luz: âncoras, manchas dos spots nas paredes tingidas pela seção, luz de sanca, três luzes com sombra | `galeria.ts` `lights`, `washes`, `KEYS` | g02, g31 | VALIDADO |
+| Vitrines de piso (Aurora, coluna de veludo, tule carmim) com vidro de 19 mm, caixa de luz, sensor e etiqueta | `galeria-props.ts` `vitrine`, `glassHood`, `lightAttic`, `velvetDeck`; `galeria-trajes.ts` `auroraGown`, `velvetGown`, `tulleGown`, `mannequin` | g02, g03, g32 | VALIDADO |
+| Vitrines de parede (chapéus, luvas e bolsas, leques e sapatos, chapéus e véus) com fundo forrado e luz da caixa | `galeria-props.ts` `wallVitrine`; `galeria-trajes.ts` `hat`, `headStand`, `gloveStand`, `clutch`, `fan`, `pump` | g11, g12, g13 | VALIDADO |
+| Vitrine circular de joia (fixture `jewelVitrine`) | `galeria-props.ts` `jewelVitrine`; `galeria-trajes.ts` `necklace`, `earrings`, `ring`, `jewelBust` | g02 (de longe) | IMPLEMENTADO |
+| Banco escultural de lâminas de carvalho com catálogo esquecido | `galeria-props.ts` `bench` | g02, g11 | VALIDADO |
+| Mesa de croquis e amostras têxteis (fixture `sketchTable`) | `galeria-props.ts` `sketchTable` | g11 | VALIDADO |
+| Cópias em gesso com himátion sobre pedestal clássico | `galeria-props.ts` `statue` (variante 0), `himationSkirt`, `himationSash` | g02, g11 | VALIDADO |
+| Vestido-escultura «Pétalas» com cordão de distância | `galeria-props.ts` `statue` (1); `galeria-trajes.ts` `petalsGown` | g12 | VALIDADO |
+| Vestido-escultura «Plissê» com cordão de distância | `galeria-props.ts` `statue` (2); `galeria-trajes.ts` `plisseGown` | — | IMPLEMENTADO |
+| Atril de catálogos (fixture `catalogStand`) | `galeria-props.ts` `catalogStand` | g12 | VALIDADO |
+| Totem do audioguia (fixture `audioGuide`) | `galeria-props.ts` `audioGuide` | — | IMPLEMENTADO |
+| Placa-pista (`placardStars`) no atril de bronze | `galeria.ts` `details` | — | IMPLEMENTADO |
+| Saída, extintor e acionador, termo-higrômetros, sensores de presença, câmeras de domo, giroflex | `galeria.ts` `details` | g11, g12 | VALIDADO |
 | Pessoas novas: fotógrafo no Aurora, convidada na vitrine de joia, convidado nos croquis, convidada sentada no banco | `lib/heist/level.ts` `civs()` | — | IMPLEMENTADO |
 
 ### Sala das Joias
 
 | Item | Arquivo e função | Captura | Estado |
 | --- | --- | --- | --- |
-| Piso de Nero Marquina, faixa de Rosso Levanto, rosácea de 16 pontas, soleira de aço | `cofre-tex.ts` `floorNero`, `rossoMat`, `thassosMat`, `inlayBrass`; `cofre.ts` `floorInlays`, `rosette` | c01, c02 | IMPLEMENTADO |
-| Lambri de nogueira com almofadas, régua de cadeira, seda adamascada em painéis com filete dourado, pilastras, friso, cornija | `cofre.ts` `walls`; `cofre-tex.ts` `damaskMat` | c01 | IMPLEMENTADO |
-| Teto em caixotões de laca, tambor e cúpula dourada, anel de spots com quatro feixes, spots embutidos | `cofre.ts` `ceiling` | c01 | IMPLEMENTADO |
-| Pedestal do diamante (diamante e brilho preservados, anéis da trava com os símbolos) | `cofre-props.ts` `pedestal` | c02 | IMPLEMENTADO |
-| Vitrines de joias em alcova (tiaras, pérolas, brincos) e a baixa sob a janela (anéis) | `cofre-props.ts` `jewelCase`, `lowCase` | c01 | IMPLEMENTADO |
-| Nichos iluminados (parure de esmeraldas no oeste, tiara de safira no norte) | `cofre.ts` `niches` | c01 | IMPLEMENTADO |
-| Cortinas de veludo e sanefa na janela da cornija | `cofre.ts` `windowDrapes` | — | IMPLEMENTADO |
-| Postes emissores dos lasers | `cofre.ts` `laserPosts` | c01, c02 | IMPLEMENTADO |
-| Câmeras de parede e domo sobre o duto | `cofre.ts` `cameras` | — | IMPLEMENTADO |
-| Conservação: mesa de restauração, mapoteca, estação fotográfica, carrinho de acervo (fixtures) | `cofre-props.ts` `restorationTable`, `flatFiles`, `photoStation`, `collectionCart` | — | IMPLEMENTADO |
-| Parede da conservação: placa, quadro de cortiça com laudos, registrador de clima, prateleira de caixas | `cofre.ts` `signsAndConservationWall` | — | IMPLEMENTADO |
-| Saída, luz de emergência e corte de energia (spots, vitrines e nichos apagam; emergência acende) | `cofre.ts` `power` | — | IMPLEMENTADO |
-| Luz: âncoras, leques de luz na seda, luz com sombra no pedestal | `cofre.ts` `lights`, `scallops`, `KEYS` | c01 | IMPLEMENTADO |
+| Piso de Nero Marquina, faixa de Rosso Levanto, rosácea de 16 pontas, soleira de aço | `cofre-tex.ts` `floorNero`, `rossoMat`, `thassosMat`, `inlayBrass`; `cofre.ts` `floorInlays`, `rosette` | c01, c02, c04, c31 | VALIDADO |
+| Lambri de nogueira com almofadas, régua de cadeira, seda adamascada em painéis com filete dourado, pilastras, friso, cornija | `cofre.ts` `walls`; `cofre-tex.ts` `damaskMat` | c01, c04, c31 | VALIDADO |
+| Teto em caixotões de laca, tambor e cúpula dourada, anel de spots com quatro feixes, spots embutidos | `cofre.ts` `ceiling` | c01, c04 | VALIDADO |
+| Pedestal do diamante (diamante e brilho preservados, anéis da trava com os símbolos, campânula fina) | `cofre-props.ts` `pedestal` | c02, c04, c32 | VALIDADO |
+| Vitrines de joias em alcova (tiaras, pérolas, brincos) e a baixa sob a janela (anéis), tampo com moldura de latão | `cofre-props.ts` `jewelCase`, `lowCase` | c01, c04, c06, c31 | VALIDADO |
+| Nichos iluminados (parure de esmeraldas no oeste, tiara de safira no norte) | `cofre.ts` `niches` | c01, c06, c31 | VALIDADO |
+| Cortinas de veludo e sanefa na janela da cornija | `cofre.ts` `windowDrapes` | c06 | VALIDADO |
+| Postes emissores dos lasers | `cofre.ts` `laserPosts` | c01, c02, c04 | VALIDADO |
+| Câmeras de parede e domo sobre o duto | `cofre.ts` `cameras` | c04 | VALIDADO |
+| Conservação: mesa de restauração, mapoteca, estação fotográfica, carrinho de acervo (fixtures) | `cofre-props.ts` `restorationTable`, `flatFiles`, `photoStation`, `collectionCart` | c03, c13, c04 | VALIDADO |
+| Parede da conservação: placa, quadro de cortiça com laudos, registrador de clima, prateleira de caixas | `cofre.ts` `signsAndConservationWall` | c03, c13 | VALIDADO |
+| Saída, luz de emergência e corte de energia (spots, vitrines e nichos apagam; emergência acende) | `cofre.ts` `power` | c05 | VALIDADO |
+| Luz: âncoras, leques de luz na seda, luz com sombra no pedestal | `cofre.ts` `lights`, `scallops`, `KEYS` | c01, c02, c04 | VALIDADO |
+
+### Pendente
+
+- **Vista com gente**: a página do jogo (`/lab/heist?at=salao&q=low&shot=…`) não chegou a 60 % do carregamento das
+  pessoas em 15 min (o mesmo erro das outras áreas: o carregamento é do sistema de pessoas, não das salas). As quatro
+  pessoas novas estão na planta e passam nos testes de simulação e de mundo; falta a captura.
+- Folhas das portas (vão do salão, porta blindada, porta do terraço) são da área do vestíbulo; a área desenhou só os
+  batentes, as soleiras e as placas.
+- Sem captura de perto: «Plissê», totem do audioguia, placa-pista no atril e a vitrine circular de joia (vista só de
+  longe).
+- Modelos gerados (Meshy): o manifesto do coordenador tem briefs para `sketchTable`, `catalogStand`,
+  `restorationTable`, `photoStation`, `flatFiles`, `collectionCart` e `jewelVitrine`. Se um GLB for gerado, o desenho
+  procedural da área é pulado e perde os textos desenhados nos três idiomas (catálogo, laudo, etiquetas das gavetas) e,
+  na vitrine de joia, o vidro grosso de duas faces e o colar; vale manter procedural pelo menos `jewelVitrine` e
+  `sketchTable`.

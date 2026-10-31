@@ -68,15 +68,20 @@ function stageTexture(text: string): THREE.Texture {
     g.fillStyle = "#16161a"; g.fillRect(0, 0, w, h);
     for (let k = 0; k < 260; k++) { const x = (k * 151) % w, y = (k * 97) % h, l = 10 + (k % 23) * 3; g.strokeStyle = `rgba(${90 + (k % 40)},${90 + (k % 40)},${95 + (k % 40)},${0.05 + (k % 7) * 0.012})`; g.lineWidth = 1 + (k % 3); g.beginPath(); g.moveTo(x, y); g.lineTo(x + l * Math.cos(k), y + l * Math.sin(k) * 0.3); g.stroke(); }
     const scuff = g.createLinearGradient(0, h, 0, h * 0.82); scuff.addColorStop(0, "rgba(120,110,100,0.25)"); scuff.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = scuff; g.fillRect(0, h * 0.82, w, h * 0.18);
-    // estêncil: letras com as pontes do molde e borrifos
-    g.save(); g.translate(w / 2, h * 0.32); g.rotate(-Math.PI / 2);
-    g.font = `700 ${Math.round(w * 0.28)}px 'DejaVu Sans', Arial, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+    // estêncil na vertical, lido de baixo para cima, entre a chapa de chute e o visor (0,3–1,4 m da folha de 2,6 m): letras
+    // com as pontes do molde no meio de cada uma e os borrifos do spray em volta
+    const FAM = "'DejaVu Sans', Arial, sans-serif", len = h * 0.42;
+    g.font = `700 100px ${FAM}`;
+    const F = Math.min(w * 0.3, (100 * len) / Math.max(1, g.measureText(text).width));
+    g.save(); g.translate(w / 2, h * 0.67); g.rotate(-Math.PI / 2);
+    g.font = `700 ${Math.round(F)}px ${FAM}`; g.textAlign = "center"; g.textBaseline = "middle";
+    const tw = g.measureText(text).width;
     g.fillStyle = "rgba(236,230,214,0.85)"; g.fillText(text, 0, 0);
-    g.fillStyle = "#16161a"; for (let k = -8; k <= 8; k++) g.fillRect(k * w * 0.12 - 2, -w * 0.02, 4, w * 0.04);
-    for (let k = 0; k < 140; k++) { g.fillStyle = `rgba(236,230,214,${0.15 + (k % 5) * 0.08})`; g.fillRect(((k * 53) % 600) - 300, ((k * 31) % 140) - 70, 2, 2); }
+    g.fillStyle = "#16161a"; for (let k = 0; k < text.length; k++) g.fillRect(-tw / 2 + ((k + 0.5) * tw) / text.length - 2, -F * 0.09, 4, F * 0.18);
+    for (let k = 0; k < 160; k++) { g.fillStyle = `rgba(236,230,214,${0.15 + (k % 5) * 0.08})`; g.fillRect((((k * 53) % 1000) / 1000 - 0.5) * tw * 1.12, (((k * 31) % 100) / 100 - 0.5) * F * 1.3, 2, 2); }
     g.restore();
-    // fita crepe com a marca do ensaio
-    g.fillStyle = "rgba(214,196,150,0.85)"; g.fillRect(w * 0.18, h * 0.6, w * 0.5, 26); g.fillStyle = "#3a3020"; g.font = `600 18px 'DejaVu Sans', Arial`; g.textAlign = "left"; g.fillText("CENA 4 · ENTRADA L", w * 0.2, h * 0.6 + 19);
+    // fita crepe com a marca do ensaio, acima do visor
+    g.fillStyle = "rgba(214,196,150,0.85)"; g.fillRect(w * 0.18, h * 0.19, w * 0.5, 26); g.fillStyle = "#3a3020"; g.font = `600 18px ${FAM}`; g.textAlign = "left"; g.fillText("CENA 4 · ENTRADA L", w * 0.2, h * 0.19 + 19);
   });
 }
 /** Aço "guilhochê" do painel do cofre: círculos sobrepostos em grade, como o acabamento de portas-fortes antigas. */
@@ -235,13 +240,14 @@ function padded(p: Parts, M: DoorMats, s: LeafSpec) {
 function stage(p: Parts, M: DoorMats, s: LeafSpec) {
   const { w, h } = s, t = LEAF_T.stage, tex = stageTexture(s.stencil ?? "PALCO");
   const black = solid(`vestibulo-door-stage-${s.stencil}`, "#ffffff", { rough: 0.72 }); (black as THREE.MeshStandardMaterial).map = tex;
-  // chapa com o furo do visor redondo; uv da frente = (x/w, y/h) para o estêncil caber na folha
-  const slab = geo(`vestibulo-door-stageSlab-${w.toFixed(3)}-${h.toFixed(3)}`, () => {
+  // chapa com o furo do visor redondo; uv = (x/w, y/h) na frente e espelhado no verso, para o estêncil caber na folha e
+  // ler direito dos dois lados (e nas duas folhas de um vão duplo, que são uma o espelho da outra)
+  const slab = geo(`vestibulo-door-stageSlab2-${w.toFixed(3)}-${h.toFixed(3)}`, () => {
     const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(w, 0); sh.lineTo(w, h); sh.lineTo(0, h); sh.closePath();
     const hole = new THREE.Path(); hole.absarc(w / 2, 1.62, 0.15, 0, Math.PI * 2, true); sh.holes.push(hole);
     const g = new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false, curveSegments: 24 }); g.translate(0, 0, -t / 2);
     const pos = g.getAttribute("position") as THREE.BufferAttribute, uv = g.getAttribute("uv") as THREE.BufferAttribute;
-    for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / w, pos.getY(i) / h);
+    for (let i = 0; i < pos.count; i++) { const u = pos.getX(i) / w; uv.setXY(i, pos.getZ(i) < 0 ? 1 - u : u, pos.getY(i) / h); }
     return g;
   });
   p.add(black, slab);

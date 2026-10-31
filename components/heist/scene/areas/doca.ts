@@ -94,7 +94,7 @@ function ceiling(c: RoomsCtx, M: DocaMats) {
     for (let j = 0; j < 12; j++) { const a = (j / 12) * Math.PI * 2; c.inst.add(R, "doca-fin", BOX0(), M.paint as THREE.Material, mat(x + Math.cos(a) * 0.1, y + 0.08, z + Math.sin(a) * 0.1, -a, 0.16, 0.08, 0.008)); }
     c.batch.add(R, M.paint, tint(geo("doca-ufoTop", () => new THREE.CylinderGeometry(0.05, 0.07, 0.12, 14).translate(0, 0.06, 0)), "doca-ufoTop", "#2b2e32"), mat(x, y + 0.08, z));
     c.inst.add(R, "doca-ufoLens", geo("doca-ufoLensGeo", () => new THREE.CircleGeometry(0.16, 24).rotateX(Math.PI / 2)), M.led, mat(x, y - 0.002, z));
-    A(c, R, x, y - 0.35, z, "#eef3ff", 13, 9.5, { flicker: k === 4 ? 1 : 0 });
+    A(c, R, x, y - 0.35, z, "#eef3ff", 10.5, 9.5, { flicker: k === 4 ? 1 : 0 });
   }
 }
 
@@ -265,8 +265,8 @@ export const AREA: AreaModule = {
   },
   keys: {
     doca: [
-      { p: [-19.6, 4.55, 20.3], aim: [-19.2, 0, 20.3], angle: 1.1, i: 46, color: "#eef3ff" },
-      { p: [-12.6, 4.55, 20.3], aim: [-12.6, 0, 20.3], angle: 1.15, i: 50, color: "#eef3ff" },
+      { p: [-19.6, 4.55, 20.3], aim: [-19.2, 0, 20.3], angle: 1.1, i: 32, color: "#eef3ff" },
+      { p: [-12.6, 4.55, 20.3], aim: [-12.6, 0, 20.3], angle: 1.15, i: 34, color: "#eef3ff" },
     ],
   },
 };
