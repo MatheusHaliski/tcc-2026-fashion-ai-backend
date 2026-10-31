@@ -97,4 +97,99 @@ no portão e na ronda; os civis ficam fora do circuito dela.
 
 ## Implementado
 
-_Preenchido pelo agente da área: cada item com arquivo e função, captura e estado._
+Capturas em `scratchpad/gala/areas/beco-doca/` (b = beco no laboratório da rua, d = doca no laboratório das salas; `-low`
+para iterar, `-high` a rodada final). Estados: VALIDADO = construído e conferido na captura; IMPLEMENTADO = construído e
+testado, sem captura de perto.
+
+**Arquivos da área** (novos ou reescritos):
+
+| Arquivo | O que tem |
+| --- | --- |
+| `components/heist/scene/exterior-alley.tsx` | `HeistAlley` (monta o beco em lotes por material, decalques, instâncias e animações), `museumEscape`, `museumFixtures` + `ALLEY_LAMPS`, `neighborLights`, `fence`, `Steam` |
+| `components/heist/scene/exterior-alley-facade.ts` | `neighborFacade`: o prédio vizinho inteiro (lado leste do beco) |
+| `components/heist/scene/exterior-alley-ground.ts` | `alleyGround`: o chão do beco |
+| `components/heist/scene/exterior-alley-props.ts` | `buildFixture` (móveis próprios `beco*`) e `dumpster` (as duas caçambas da planta) |
+| `components/heist/scene/exterior-alley-tex.ts` | texturas procedurais: asfalto, remendo, concreto, tijolo, concreto pintado; folhas de decalques da parede e do chão, poças, janelas acesas, placas; tela, grelha, solda, bituca, mato, tampa de bueiro, madeira, papelão, tecido, brilho |
+| `components/heist/scene/exterior-alley-mats.ts`, `exterior-alley-geo.ts` | materiais da área e o `Bag` (lotes por material com cor por vértice e UV em metros) |
+| `components/heist/scene/areas/doca.ts` | módulo `AREA`: casca própria (piso, parede, telha), `ceiling`, `gate`, `walls`, `extinguisher`, `exhaust`, `floorMarks`, âncoras de luz e as luzes-chave |
+| `components/heist/scene/areas/doca-props.ts` | `docaFixture` (móveis próprios `doca*`) e `artCrate` (a caixa alta da planta) |
+| `components/heist/scene/areas/doca-tex.ts` | `floorSurface`, `wallSurface`, `deckSurface`, `laminateSurface` e a folha `docaAtlas` (placas, quadro de escalas, mural, mapa de fuga, etiquetas, estênceis, marcas de piso) |
+| `lib/heist/level.ts` | seções beco e doca de `baseProps()` e doca de `civs()` |
+
+### Z15 — beco
+
+| Item | Arquivo e função | Captura | Estado |
+| --- | --- | --- | --- |
+| Chão: asfalto trincado (couro de jacaré, trincas seladas com piche), remendos, canaleta em V com quatro grelhas, bueiro com vapor, tampas da caixa de gordura e do hidrômetro, poças com película de óleo, sujeira e folhas no pé das paredes, panfletos, bitucas e mato | `alleyGround`; `alleyAsphalt`, `alleyPatch`, `groundDecals`, `puddleAtlas`, `buttTex`, `weedTex`, `manholeTex` | b1, b2 | VALIDADO |
+| Prédio vizinho: tijolo velho (segundo UV para pichações fictícias, reboco descascado e manchas), barrado de cimento, vigas por andar, janelas recuadas com caixilho e interior aceso, porta da cozinha, garagem de enrolar, saída de emergência, janelinhas com grade, ar-condicionado e condensadoras em mãos-francesas, duas escadas de incêndio, canos de descida, exaustor da cozinha até a platibanda, medidores e fiação | `neighborFacade`, `wallDecals`, `windowInteriors`, `alleyBrick`, `alleyPaintedConcrete` | b1, b2 | VALIDADO |
+| Escada de incêndio do museu: três balcões de grade, lances alternados, lances de baixo recolhidos (a colisão), escada de mão de `fireUp` | `museumEscape` | b3 | IMPLEMENTADO |
+| Luz: quatro luminárias de vapor de sódio em braço curvo (luz de verdade pelo grupo da rua, `ALLEY_LAMPS`), refletor com sensor sobre a porta da cozinha (acende com a câmera a 6,5 m e fica 12 s), luminária de mercúrio que pisca na saída de emergência, tartaruga no fundo; câmera de segurança e placas | `museumFixtures`, `neighborLights`, `HeistAlley` | b1, b2 | VALIDADO |
+| Caçambas (as duas da planta): nervuras, frente inclinada, tampas (uma aberta com sacos), bolsos de içamento, rodízios, dreno, etiqueta | `dumpster` | b1, b2 | VALIDADO |
+| Abrigo de GLP com quatro P45, coletor e cano amarelo | `gasCage` (`becoGasCage`) | b2 | IMPLEMENTADO |
+| Tambor de óleo usado com funil e balde | `drum` (`becoDrum`) | b2 | IMPLEMENTADO |
+| Contêineres de 240 L (o carrinho de lixo do restaurante) | `bins` (`becoBins`) | b2 | IMPLEMENTADO |
+| Sacos de lixo e caixote | `trashPile` (`becoTrashPile`) | b2 | IMPLEMENTADO |
+| Papelão em fardo e caixas desmontadas | `cardboard` (`becoCardboard`) | b3 | IMPLEMENTADO |
+| Paletes empilhados e encostados | `pallets` (`becoPallets`) | b3 | IMPLEMENTADO |
+| Condensadora na gaiola antifurto (hélice girando) | `condenser` (`becoCondenser`) | b3 | IMPLEMENTADO |
+| Colchão velho, cadeira quebrada e balde | `junk` (`becoJunk`) | b3 | IMPLEMENTADO |
+| Coleta seletiva do museu | `recycling` (`becoRecycling`) | b2 | IMPLEMENTADO |
+| Totem de embarque da Gala Lumière (aceso) | `totem` (`becoTotem`) | b2 | IMPLEMENTADO |
+| Cerca do fundo: tela, mourões, portão com corrente e cadeado, arame farpado, placa | `fence` | b3 | IMPLEMENTADO |
+| Vapor do bueiro e do exaustor da cozinha | `Steam` | b2 | IMPLEMENTADO |
+
+### Z12 — doca
+
+| Item | Arquivo e função | Captura | Estado |
+| --- | --- | --- | --- |
+| Piso: concreto polido com juntas serradas a cada 3 m, desgaste, marcas de pneu e de óleo; zebrado na boca do portão, "não obstruir" diante das portas e do quadro de força, corredor de pedestres com setas e letreiro, vagas de palete | `floorSurface`, `floorMarks` | d1, d5 | VALIDADO |
+| Paredes: bloco pintado com barrado grafite de 1,2 m e filete amarelo, raspões de carrinho, retoques e escorridos; cantoneiras zebradas e bate-carrinho de borracha; placas (EPI, proibido fumar, empilhadeira, 5 km/h, motoristas, somente funcionários, saída) e luzes de emergência | `wallSurface`, `walls` | d1, d5 | VALIDADO |
+| Teto: telha trapezoidal, vigas I com enrijecedores e mãos-francesas, eletrocalha com cabos e tirantes, eletrodutos, sprinklers (tubos vermelhos e bicos), detectores de fumaça, seis luminárias de LED com aletas (uma com defeito) | `ceiling`, `deckSurface` | d1 | VALIDADO |
+| Portão de enrolar por dentro: guias, capô do rolo, motor, corrente de manobra, botoeira, placas, para-choques, a cortina que sobe com `dockGate` e a luz da rua vazando por baixo | `gate` | d1, d2 | IMPLEMENTADO |
+| Estantes de aço (duas) com a carga da produção e a placa de carga máxima | `shelf` (`docaShelf`) | d1 | VALIDADO |
+| Bancada de conferência, quadro de escalas e cabideiro | `bench` (`docaBench`) | d1, d3 | VALIDADO |
+| Guarita de controle de acesso (monitor das câmeras trocando de imagem) | `booth` (`docaBooth`) | d5 | VALIDADO |
+| Flight cases empilhados | `flightStack` (`docaFlightCases`) | d1 | VALIDADO |
+| Paleteira com palete carregado e filme | `palletJack` (`docaPalletJack`) | d4 | IMPLEMENTADO |
+| Empilhadeira patolada carregando a bateria | `stacker` (`docaStacker`) | d4 | IMPLEMENTADO |
+| Carros térmicos do bufê | `hotBoxes` (`docaHotBoxes`) | d4 | IMPLEMENTADO |
+| Bebedouro de inox e o dispensador de copos | `fountain` (`docaFountain`), `walls` | d3 | IMPLEMENTADO |
+| Paletes vazios e cones | `palletStack` (`docaPallets`) | d5 | VALIDADO |
+| Caixa de obra do museu (tampa aparafusada com o envelope da nota) | `artCrate` | d1 | VALIDADO |
+| Relógio de ponto, mural de avisos, porta-cartões, mapa de rota de fuga, extintores (placa e quadrado no piso), quadro de força, exaustor girando, vassoura e pá, carrinho de mão | `walls`, `extinguisher`, `exhaust` | d1, d5 | VALIDADO |
+| Pessoas: Márcia e o motorista na bancada, Tião nos carros térmicos, Dorival na guarita | `civs()` (level.ts) | d6 | IMPLEMENTADO |
+
+### Planta (lib/heist/level.ts)
+
+- **beco** (`FB`, móveis `fixture` com `model`): `becoTotem` x 28,75–29,25 z 22,6–22,9 (alto); `becoGasCage` x 28,85–30
+  z 20,4–22,4 (vidro, gira −90°); `becoDrum` círculo (29,55; 19,6) r 0,3; `becoBins` x 29,15–30 z 11,6–13,7;
+  `becoTrashPile` x 28,55–30 z −1,45–−0,35; `becoCardboard` x 29,2–30 z −7,9–−6,5; `becoPallets` x 28,95–30 z −10,4–−8,6;
+  `becoCondenser` x 29,15–30 z −15,2–−13,6; `becoJunk` x 28,9–30 z −21,6–−19,4 (todos baixos, junto ao vizinho);
+  `becoRecycling` x 22,5–23,15 z 18,6–20,6 (baixo, na parede do museu). Caçambas, escada de incêndio e carro da fuga
+  ficaram onde estavam; a ronda (x 25–27), as escaladas e a saída `carEast` continuam livres.
+- **doca** (`FD`): `docaShelf` x −17,2–−15,2 e −15–−13, z 16,55–17,15 (altas); `docaBench` x −12,6–−10,6 z 16,55–17,35;
+  `docaFountain` x −8,95–−8,55 z 16,95–17,35; `docaBooth` x −22–−20,4 z 19,6–21,2 (alta, de frente para a doca);
+  `docaPallets` x −21,95–−20,75 z 16,6–17,6; `docaFlightCases` x −13–−11,8 z 20–20,6 (alta); `docaPalletJack`
+  x −14,4–−12,75 z 23–24; `docaStacker` x −16,3–−14,6 z 23,26–24; `docaHotBoxes` x −9,55–−8,55 z 23,25–23,95 (alta).
+  A `crate` alta (x −11–−9,6 z 22,6–23,8) virou a caixa de obra; as outras três caixas da planta antiga (duas altas e
+  uma baixa) saíram: a cobertura do meio agora são os flight cases e a carga está nas estantes, na bancada e no palete.
+- **pessoas da doca** (`civs()`): bufê (Márcia) em (−11,6; 17,85) conferindo na bancada; motorista em (−12,35; 17,9)
+  com o tablet; bufê (Tião) em (−9,05; 22,85) nos carros térmicos; portaria (Dorival, `crew`/`guard` com lanterna) em
+  (−20,05; 21,6) ao lado da guarita. Fora do circuito da Sônia e do posto do Gil. (Antes havia um só civil do bufê, em
+  (−13,4; 19,4), no meio do corredor.)
+
+### Mudanças no plano
+
+- A "empilhadeira estacionada" é uma **empilhadeira patolada elétrica** (operador a pé): é a que uma doca pequena usa e
+  cabe junto à parede sem fechar a rampa nem a arara `rack-d1`.
+- O **totem de saída** ficou na boca do beco (é o ponto de embarque dos motoristas e a saída de funcionários).
+- O "carrinho de lixo" do beco são os contêineres de 240 L com rodas; na doca há o carrinho de mão entre a estante e a
+  bancada.
+
+### Pendências e pedidos a outras áreas
+
+- **Rua**: o volume do prédio vizinho na cidade (exterior-blocks) continua atrás da fachada do beco, que fica 7 cm à
+  frente dele; as poças de luz das `ALLEY_LAMPS` são desenhadas pelo grupo de luzes da rua (exterior-fx), em x + 1,4.
+- **Vestíbulo/portas**: as folhas das portas da doca são da área das portas; o portão de enrolar por fora é da fachada
+  (exterior-facade) e a cortina de dentro (doca.ts) repete a mesma conta de abertura.
+- O refletor com sensor do vizinho acende pela posição da câmera (que acompanha a jogadora), não pela simulação.

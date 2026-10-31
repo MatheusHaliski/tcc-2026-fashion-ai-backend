@@ -97,7 +97,19 @@ Geral da porta do vestíbulo; a pista com gente dançando (jogo com `?shot=`); a
 - `interior-hall.ts`: arquitetura do salão.
 - `lib/heist/level.ts`: seção do salão em `baseProps()` e `civs()`.
 
-**Capturas:** `scratchpad/gala/areas/salao/`. As `v*-low` são da iteração; as `h*-high` são da rodada final.
+**Capturas finais** (`/tmp/claude-0/-home-user-tcc-2026-fashion-ai-backend/7ee91c59-4fb9-5bee-a7c2-8abced5989af/scratchpad/gala/areas/salao/`):
+
+| Vista | low | high |
+| --- | --- | --- |
+| Geral da porta do vestíbulo | `v8-geral-low.jpg` | `h1-geral-high.jpg` |
+| Cabine do DJ de perto | `v2-dj-low.jpg` | `h2-dj-high.jpg` |
+| Mesa de doces de perto (bolo e macarons) | `v3-doces-low.jpg` | `h3-doces-high.jpg` |
+| Mesas dos patronos | `v4-jantar-low.jpg` | `h5-jantar-high.jpg` |
+| Do mezanino | `v5-mezanino-low.jpg` | `h4-mezanino-high.jpg` |
+| Vista alta | — | `h6-alta-high.jpg` |
+| Pista com gente (jogo, `?shot=`) | `v7-pista-gente-low.jpg` | — |
+
+O "high" do jogo com gente (`h7`) não carregou em 15 min com a máquina cheia.
 
 | Item | Arquivo → função | Captura | Estado |
 | --- | --- | --- | --- |
@@ -120,7 +132,7 @@ Geral da porta do vestíbulo; a pista com gente dançando (jogo com `?shot=`); a
 | Pin spots sobre os doces e o bufê e foco na passarela | `salao.ts` → `dress` (`BeamSet`) | h3 (doces); passarela sem captura | IMPLEMENTADO |
 | Desempenho: 298 → 199 chamadas do salão no "low" (689 mil triângulos); 201 chamadas e 1,16 milhão de triângulos no "high" | `salao-kit.ts` → `tinting`, `BeamSet`; instâncias em `salao-dj.ts` | contagem no jsdom | VALIDADO |
 | Planta: móveis | `level.ts` → `baseProps` (seção do salão) | `world.test` | VALIDADO |
-| Planta: pessoas | `level.ts` → `civs` (seção do salão) | v7, h7 | IMPLEMENTADO |
+| Planta: pessoas | `level.ts` → `civs` (seção do salão) | v7 | IMPLEMENTADO |
 
 **Pendências**
 

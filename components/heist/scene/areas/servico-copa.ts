@@ -104,7 +104,7 @@ function range(p: Prop, c: PropsCtx) {
   f.box(S.galv, 0, hy + 0.47, -d / 2 + 0.25, 0.45, 3.2 - hy - 0.47, 0.32);
   for (const s of [-1, 0, 1]) { f.cyl(S.chrome, s * 0.4, hy + 0.2, -d / 2 + 0.3, 0.008, 0.16, 6); f.i("srv-nozzle", CYL0(8), S.chrome, s * 0.4, hy + 0.17, -d / 2 + 0.3, 0, 0.014, 0.03, 0.014); }
   f.cylX(S.chrome, 0, hy + 0.36, -d / 2 + 0.3, 0.008, hw - 0.1, 6);
-  light(c, room, f.p(0, hy + 0.2, 0.25), "#ffe2b8", 6, 3.6);
+  light(c, room, f.p(0, hy - 0.25, 0.3), "#ffe2b8", 3.2, 3.6);
   light(c, room, f.p(0, 0.95, 0.05), "#6f9bff", 0.8, 1.4, { flicker: 0.6 });
   signOn(c, f, "hot", -w / 2 + 0.2, 1.62, -d / 2 + 0.022, 0.12);
 }
@@ -216,7 +216,7 @@ function pass(p: Prop, c: PropsCtx) {
   for (let k = 0; k < 3; k++) f.g(S.porcelain, stackGeo(10), -w / 2 + 0.25 + k * 0.5, 1.81, -0.08);
   for (let k = 0; k < 2; k++) f.g(S.inox, lathe("cloche", [[0.15, 0], [0.148, 0.02], [0.12, 0.09], [0.06, 0.13], [0.015, 0.14], [0.015, 0.16], [0.03, 0.165], [0, 0.17]], 22), -w / 2 + 0.5 + k * 0.5, 1.385, -0.08);
   for (let k = 0; k < 6; k++) f.i("srv-plate", plateGeo(), S.porcelain, -w / 2 + 0.2 + k * 0.22, 1.39, 0.06);
-  light(c, room, f.p(0, 1.3, 0.25), "#ff9a52", 2.6, 2.4);
+  light(c, room, f.p(0, 1.15, 0.35), "#ff9a52", 1.4, 2.4);
 }
 
 /* ---------- carro-bandejeiro de inox com as assadeiras de canapés ---------- */
@@ -287,7 +287,7 @@ function cocktail(p: Prop, c: PropsCtx) {
   for (let k = 0; k < 9; k++) sh.i("srv-coupeDown", coupeGeo(), S.glassClear, -w / 2 + 0.16 + k * 0.15, 0.162, 0.08, 0, 1, 1, 1, Math.PI, 0);
   for (let k = 0; k < 8; k++) sh.i("srv-tumbler", tumblerGeo(), S.glassClear, -w / 2 + 0.2 + k * 0.16, 0.02, 0.2);
   signOn(c, f, "drinks", w / 2 - 0.32, 1.72, -d / 2 + 0.005, 0.5, { depth: 0.003 });
-  light(c, room, f.p(0, 1.45, 0.25), "#ffd7a2", 3.2, 2.6);
+  light(c, room, f.p(0, 1.6, 0.3), "#ffd7a2", 2.2, 2.6);
 }
 
 /* ---------- lavagem: mesa de sujos com cuba, ducha de pré-enxágue, lava-louças de baixo e escorredor ---------- */
@@ -322,7 +322,7 @@ function dish(p: Prop, c: PropsCtx) {
   const sh = f.sub(0.2, 1.62, -d / 2 + 0.02);
   sh.box(S.inox, 0, 0, 0.15, 0.9, 0.02, 0.3); for (let k = 0; k < 12; k++) sh.i("srv-plateUp", plateGeo(), S.porcelain, -0.38 + k * 0.07, 0.15, 0.15, Math.PI / 2, 1, 1, 1, 0, Math.PI / 2);
   for (const s of [-1, 1]) sh.box(S.galv, s * 0.36, -0.16, 0.02, 0.02, 0.16, 0.03);
-  light(c, room, f.p(0, 1.9, 0.3), "#f2f7ff", 2.4, 2.6);
+  light(c, room, f.p(0, 1.9, 0.35), "#f2f7ff", 1.8, 2.6);
 }
 
 /** Pia de lavar as mãos (fixture com colisão própria: está no caminho de quem passa rente à parede). */

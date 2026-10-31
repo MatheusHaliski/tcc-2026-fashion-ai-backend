@@ -27,7 +27,7 @@ export const velvetPlum = (q: PropsCtx["q"]) => fabric("cofre-veludoAmeixa", "#2
 export const velvetBlack = (q: PropsCtx["q"]) => fabric("cofre-veludoPreto", "#0c0b0e", q, { rough: 0.85 });
 const vidroC = () => thickGlass("cofre-vidro");
 const arestaC = () => glassEdge("cofre-vidroAresta");
-export const steelWhite = () => plain("cofre-acoBranco", "#d9dad6", { metal: 0.35, rough: 0.42 });
+export const steelWhite = () => plain("cofre-acoBranco", "#b9bcb8", { metal: 0.35, rough: 0.42 });
 export const steelGrey = () => plain("cofre-acoCinza", "#8d9298", { metal: 0.7, rough: 0.38 });
 const anchor = (c: PropsCtx, v: THREE.Vector3, color: string, intensity: number, distance: number, o: Partial<LightAnchor> = {}) => c.anchors.push({ x: v.x, y: v.y, z: v.z, color, intensity, distance, room: ROOM as InteriorRoom, ...o });
 /** Etiqueta do atlas pequeno (gavetas, caixas, vitrines). */
@@ -131,7 +131,8 @@ export function jewelCase(p: Prop, c: PropsCtx) {
   bx(c.batch, ROOM, G, F(0, y1, 0, 0, L, t, D));
   bx(c.batch, ROOM, E, F(0, y1, D / 2 - t / 2, 0, L, t + 0.002, t + 0.002));
   for (const ex of [-1, 1]) for (const ez of [-1, 1]) bx(c.batch, ROOM, br, F(ex * (L / 2 - 0.009), y0, ez * (D / 2 - 0.009), 0, 0.018, y1 - y0 + t, 0.018));
-  bx(c.batch, ROOM, br, F(0, y1 + t, 0, 0, L + 0.02, 0.04, D + 0.02));
+  // moldura do tampo em quatro réguas (o vidro de cima continua à vista: joia se olha de cima)
+  for (const e of [-1, 1]) { bx(c.batch, ROOM, br, F(0, y1 + t, e * (D / 2 - 0.005), 0, L + 0.02, 0.035, 0.03)); bx(c.batch, ROOM, br, F(e * (L / 2 - 0.005), y1 + t, 0, 0, 0.03, 0.035, D)); }
   bx(c.batch, ROOM, caseLight(), F(0, y1 - 0.006, D / 2 - 0.05, 0, L - 0.1, 0.006, 0.012));
   // alcova: costas de veludo ameixa contra a parede, pilastras de nogueira nas pontas e o arco por cima
   const Bz = -D / 2 - back;
@@ -192,7 +193,7 @@ export function fixture(p: Prop, c: PropsCtx) {
     case "collectionCart": return collectionCart(c, F, w, d);
   }
 }
-const muslin = (q: PropsCtx["q"]) => fabric("cofre-musselina", "#ece6d6", q, { rough: 0.95 });
+const muslin = (q: PropsCtx["q"]) => fabric("cofre-musselina", "#cfc7b4", q, { rough: 0.95 });
 const gloveWhite = (q: PropsCtx["q"]) => fabric("cofre-luvaAlgodao", "#f5f3ee", q, { rough: 0.95 });
 /** Par de luvas brancas de algodão deitadas (palma, quatro dedos e o polegar). */
 function gloves(c: PropsCtx, F: Fr, x: number, y: number, z: number, r: number) {

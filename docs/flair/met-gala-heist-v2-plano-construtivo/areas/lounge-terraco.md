@@ -184,3 +184,32 @@ paredes oeste e sul. A ronda da Bia, o checkpoint (x 20,6, z −14), o posto do 
 janela do beiral (`climbT`) e o esconderijo (x 14,9, z −19,7) ficam livres.
 Pessoas: dois no sofá (x 16,45 e 17,35, z −11,15, de frente para a mesa de fogo), o casal na mesa de drinks (x 20,6, z
 −19,15 e x 20,55, z −20,05) e alguém no banco olhando o totem (x 16,55, z −19,25).
+
+### Desempenho (montagem medida no jsdom)
+
+| Sala | Chamadas de desenho | Triângulos | Instâncias | Âncoras de luz |
+| --- | --- | --- | --- | --- |
+| Lounge (low e high) | 123 | ~213 mil | ~2 040 | 24 |
+| Terraço (low / high) | 80 | ~116 mil / ~120 mil | ~2 020 / ~3 400 | 38 |
+
+Bem dentro do orçamento por sala (low: 200 chamadas e 600 mil triângulos; high: 400 e 1,2 milhão). Texturas geradas uma vez
+por chave (`lounge-…`, `terraco-…`): 1024 px no "high" para o que se vê de perto (parquet, ônix, lajes, deck, quartzito),
+512 no "low"; o resto em 256–768.
+
+### Pendências e pedidos a outras áreas
+
+- **Pessoas no jogo (captura com gente).** As duas capturas em `/lab/heist?at=…&shot=…` esgotaram os 15 min sem o jogo chegar
+  a 60 % de carregamento (o mesmo aconteceu com a área do salão: o carregamento parou em ~27 % após 10 min). A posição e a
+  direção de cada pessoa das duas salas estão nas plantas `p1-planta-lounge.jpg` e `p2-planta-terraco.jpg` (círculo
+  rosa com o traço para onde olha; os sentados ficam dentro do assento).
+- **Pianista (área pessoas).** Usa a pose `sit` (mãos no colo). Uma animação "piano" (mãos no teclado, a 0,30 m à frente e
+  0,25 m acima do assento) faria o pianista tocar de verdade.
+- **Passos no lounge (planta, fora das minhas seções).** O piso agora é parquet com tapetes, mas `ROOMS.lounge.floor`
+  continua `"carpet"` (passos abafados). Se quiserem som de madeira fora dos tapetes, trocar para `"parquet"`.
+- **Terraço no jogo (área da rua).** A fachada fecha o norte e o leste do pátio com paredes até 11 m logo atrás do
+  parapeito; a balaustrada fica diante delas e a vista da cidade só aparece no laboratório com céu (`&sky=1`). Para o
+  terraço "com a cidade ao fundo" também no jogo, a fachada teria de baixar essas paredes até o parapeito.
+- **Janela do beiral (`windowT`).** Ninguém desenha caixilho do lado de dentro; o vão ficou livre (é por onde se escala),
+  emoldurado pelos pedestais da balaustrada.
+- **Letreiro espelhado.** Da porta do salão, olhando para a porta dos bastidores aberta, aparece um letreiro com o texto
+  invertido do outro lado (provavelmente uma placa de dupla face dos bastidores ou das portas); não é das minhas salas.

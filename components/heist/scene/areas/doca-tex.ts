@@ -330,6 +330,16 @@ const CELLS: Cell[] = [
   ["gateWarn", 896, 1664, 256, 96, (g, w, h) => { g.fillStyle = YEL; g.fillRect(0, 0, w, h); g.strokeStyle = BLK; g.lineWidth = 5; g.strokeRect(4, 4, w - 8, h - 8); text(g, "PORTÃO AUTOMÁTICO", w / 2, h * 0.38, 22, BLK, { weight: "900", max: w - 20 }); text(g, "NÃO PERMANEÇA SOB A PORTA", w / 2, h * 0.72, 15, BLK, { weight: "800", max: w - 20 }); }],
   ["buttons", 896, 1760, 128, 160, (g, w, h) => { g.fillStyle = YEL; g.fillRect(0, 0, w, h); for (const [k, c, s] of [[0, "#2e7d32", "ABRE"], [1, "#c62828", "PARA"], [2, "#212121", "FECHA"]] as [number, string, string][]) { const y = 30 + k * 44; g.fillStyle = "#333"; g.beginPath(); g.arc(36, y, 17, 0, Math.PI * 2); g.fill(); g.fillStyle = c; g.beginPath(); g.arc(36, y, 13, 0, Math.PI * 2); g.fill(); text(g, s, 88, y, 16, BLK, { weight: "900" }); } }],
   ["apron", 640, 1664, 128, 192, (g, w, h) => { g.fillStyle = "#f2f0ea"; g.beginPath(); g.moveTo(30, 6); g.lineTo(98, 6); g.lineTo(98, 60); g.lineTo(118, 80); g.lineTo(110, h - 6); g.lineTo(18, h - 6); g.lineTo(10, 80); g.lineTo(30, 60); g.closePath(); g.fill(); g.fillStyle = "#b8913f"; g.fillRect(40, 96, 48, 6); text(g, "BUFÊ", 64, 120, 14, "#8a6c2f", { font: SERIF, weight: "400" }); }],
+  // tela do notebook da bancada: a planilha da conferência de carga (notas, fornecedores fictícios, volumes, conferido)
+  ["laptop", 1408, 1856, 256, 160, (g, w, h) => {
+    g.fillStyle = "#f4f6f8"; g.fillRect(0, 0, w, h); g.fillStyle = "#1f3b57"; g.fillRect(0, 0, w, 20); text(g, "CONFERÊNCIA DE CARGA · DOCA", 8, 11, 11, "#fff", { weight: "800", align: "left", max: w - 16 });
+    g.fillStyle = "#dde3ea"; g.fillRect(0, 22, w, 16);
+    const cols = [6, 44, 152, 200, 232];
+    ["NF", "FORNECEDOR", "VOL.", "OK"].forEach((s, k) => text(g, s, cols[k], 30, 9, "#33475b", { weight: "800", align: "left" }));
+    const rows: [string, string, string, string][] = [["4471", "Bufê Lumière", "12", "✓"], ["4472", "Gelo Polar", "40", "✓"], ["0913", "Flores Íris", "3", "—"], ["2210", "Produção · cases", "8", "✓"], ["2211", "Produção · luz", "4", "✓"], ["0057", "Instituto do Traje", "1", "!"], ["4475", "Bufê Lumière", "6", "—"]];
+    rows.forEach((r, k) => { const y = 48 + k * 15; if (k % 2) { g.fillStyle = "#eef2f6"; g.fillRect(0, y - 7, w, 15); } r.forEach((s, j) => text(g, s, cols[j], y, 9, j === 3 ? (s === "✓" ? "#2e7d32" : s === "!" ? "#c62828" : "#888") : "#222", { weight: j === 3 ? "900" : "600", align: "left", max: j === 1 ? 104 : 40 })); });
+    g.fillStyle = "#1f3b57"; g.fillRect(0, h - 12, w, 12); text(g, "23:47 · 34/36 volumes", w - 8, h - 6, 8, "#cfe0f2", { weight: "700", align: "right" });
+  }],
   // plaqueta de capacidade da empilhadeira patolada (com a numeração da frota da doca e os avisos), gasta nas bordas
   ["stacker", 1408, 1664, 384, 192, (g, w, h) => {
     g.fillStyle = YEL; g.fillRect(0, 0, w, h); g.strokeStyle = BLK; g.lineWidth = 6; g.strokeRect(5, 5, w - 10, h - 10);

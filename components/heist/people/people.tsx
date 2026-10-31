@@ -98,6 +98,17 @@ function addChefHat(p: HumanParts, pieces: Look3dPiece[]) {
   if (pts.length) chest.add(makeChefButtons(pts));
 }
 
+/**
+ * Cabelo só de casca (qualidade baixa, nível 3): o brilho frio forte que o provador usa para o cabelo escuro não virar
+ * silhueta deixa, na luz quente da gala, o cabelo preto cinza-prateado. Aqui o brilho fica mais baixo e na cor do fio.
+ */
+function tameHairShell(hair: THREE.SkinnedMesh, color: string) {
+  if (hair.userData.hairLod !== 3) return;
+  for (const m of ([] as THREE.Material[]).concat(hair.material)) {
+    const pm = m as THREE.MeshPhysicalMaterial; if (!pm.isMeshPhysicalMaterial || pm.sheen < 0.3) continue;
+    pm.sheen = 0.22; pm.sheenColor = new THREE.Color(color).lerp(new THREE.Color("#ffffff"), 0.18); pm.roughness = Math.max(pm.roughness, 0.66);
+  }
+}
 /** Ponto da frente de uma peça (o vértice mais à frente perto de x, na altura h do molde), no quadro do osso `bone`. */
 function frontOf(p: HumanParts, pieceId: string, x: number, h: number, bone: string): THREE.Vector3 | null {
   const mesh = p.human.root.getObjectByName(`peca-${pieceId}`) as THREE.Mesh | undefined, pos = mesh?.geometry.getAttribute("position");
@@ -136,6 +147,7 @@ function TemplateBuilder({ t, hairLod, onDone }: { t: LookTemplate; hairLod: Hai
     mendGarments(p, pieces);
     if (t.bowtie) addBowTie(p, pieces);
     if (t.chefHat) addChefHat(p, pieces);
+    if (p.hair && t.hair?.color) tameHairShell(p.hair, t.hair.color);
     if (t.jewel) addJewelry(p, t.jewel);
     const jacket = t.pocket ? pieces.find((x) => x.slot === "outer") : null, pocket = jacket ? frontOf(p, jacket.id, 0.085, 0.76, "Spine2") : null;
     if (pocket) p.human.bone("Spine2").add(makePocketSquare(pocket.add(new THREE.Vector3(0, 0, 0.002))));

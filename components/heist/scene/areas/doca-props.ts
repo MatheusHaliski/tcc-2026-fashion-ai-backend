@@ -92,11 +92,11 @@ function cy(c: PropsCtx, m: Mat, f: Foot, x: number, y: number, z: number, r: nu
 function decal(c: PropsCtx, m: Mat, f: Foot, name: string, r: Rect, x: number, y: number, z: number, w: number, h: number, ry = 0, rx = 0) {
   c.batch.add(ROOM, m, planeUV(name, r), L(f, x, y, z, ry, w, h, 1, rx));
 }
-/** Rodízio giratório (placa, garfo, roda) com a base em y = 0 e a placa em `h`. */
-function caster(c: PropsCtx, M: DocaMats, f: Foot, x: number, z: number, h: number, ry = 0) {
-  bx(c, M.galv, f, x, h - 0.008, z, 0.09, 0.008, 0.08);
-  bx(c, M.galv, f, x, h * 0.35, z, 0.05, h * 0.62, 0.012, undefined, { ry });
-  c.batch.add(ROOM, M.rubber, geo("doca-wheel", () => new THREE.CylinderGeometry(1, 1, 1, 16).rotateZ(Math.PI / 2)), L(f, x, h * 0.4, z + 0.012, ry, 0.032, h * 0.4, h * 0.4));
+/** Rodízio giratório (placa, garfo, roda) de altura `h`, apoiado em `y0` (o chão ou a tampa do case de baixo). */
+function caster(c: PropsCtx, M: DocaMats, f: Foot, x: number, z: number, h: number, ry = 0, y0 = 0) {
+  bx(c, M.galv, f, x, y0 + h - 0.008, z, 0.09, 0.008, 0.08);
+  bx(c, M.galv, f, x, y0 + h * 0.35, z, 0.05, h * 0.62, 0.012, undefined, { ry });
+  c.batch.add(ROOM, M.rubber, geo("doca-wheel", () => new THREE.CylinderGeometry(1, 1, 1, 16).rotateZ(Math.PI / 2)), L(f, x, y0 + h * 0.4, z + 0.012, ry, 0.032, h * 0.4, h * 0.4));
 }
 
 /* ======================= os móveis ======================= */
@@ -130,7 +130,7 @@ function shelf(c: PropsCtx, M: DocaMats, A: Record<string, Rect>, f: Foot, id: s
   for (const y of levels) { bx(c, M.paint, f, 0, y, 0, W - 0.02, 0.02, D - 0.02, tray); for (const s of [-1, 1]) bx(c, M.paint, f, 0, y - 0.03, s * (D / 2 - 0.012), W - 0.02, 0.05, 0.012, tray); }
   // contraventamento em X atrás e a placa de carga máxima
   for (const s of [-1, 1]) bx(c, M.paint, f, 0, 1.2, -D / 2 + 0.008, Math.hypot(W, 2.2), 0.03, 0.004, up, { rz: s * Math.atan2(2.2, W) });
-  decal(c, M.signs, f, "maxLoad", A.maxLoad, -W / 2 + 0.35, 2.47, D / 2 + 0.004, 0.42, 0.14);
+  decal(c, M.signs, f, "maxLoad", A.maxLoad, -W / 2 + 0.3, 2.355, D / 2 + 0.004, 0.3, 0.1);                  // pendurada na aba de cima
   // carga: caixas de papelão, caixas do bufê, organizadores de plástico, fitas, carretéis, latas, toalhas dobradas, cubas
   for (let k = 0; k < levels.length - 1; k++) {
     const y = levels[k] + 0.02, room = levels[k + 1] - levels[k] - 0.06;
@@ -149,6 +149,11 @@ function shelf(c: PropsCtx, M: DocaMats, A: Record<string, Rect>, f: Foot, id: s
       x += w + 0.02 + r() * 0.05;
     }
   }
+  // no alto: caixas vazias guardadas e o banner da produção enrolado
+  const top = levels[levels.length - 1] + 0.02;
+  let tx = -W / 2 + 0.08;
+  for (let k = 0; k < 3; k++) { const w = 0.3 + r() * 0.25, h = 0.2 + r() * 0.18; if (tx + w > W / 2 - 0.62) break; c.batch.add(ROOM, M.signs, boxUV("kraftBox", A.kraftBox), L(f, tx + w / 2, top, (r() - 0.5) * 0.05, (r() - 0.5) * 0.12, w - 0.02, h, D - 0.12)); tx += w + 0.04; }
+  cy(c, M.matte, f, W / 2 - 0.06, top + 0.07, 0.02, 0.07, 0.5, "#24324a", { rz: Math.PI / 2, seg: 14 });
 }
 
 /** Bancada de conferência, o quadro de escalas e o cabideiro na parede de trás. */
@@ -163,13 +168,16 @@ function bench(c: PropsCtx, M: DocaMats, A: Record<string, Rect>, f: Foot) {
   c.batch.add(ROOM, M.signs, boxUV("kraftBox", A.kraftBox), L(f, -0.55, 0.22, 0, 0.05, 0.5, 0.32, 0.5));
   c.batch.add(ROOM, M.signs, boxUV("cateringBox", A.cateringBox), L(f, 0.05, 0.22, -0.02, -0.04, 0.42, 0.28, 0.45));
   cy(c, M.paint, f, 0.72, 0.22, 0.05, 0.14, 0.42, "#9aa0a5", { seg: 18 });
+  // (lixeira de pedal: o saco preto dobrado na boca, a tampa com a dobradiça atrás e o pedal na frente)
+  cy(c, M.plastic, f, 0.72, 0.62, 0.05, 0.146, 0.025, "#111", { seg: 18 }); cy(c, M.paint, f, 0.72, 0.64, 0.05, 0.145, 0.025, "#80868c", { seg: 18 });
+  bx(c, M.plastic, f, 0.72, 0.62, 0.05 - 0.15, 0.07, 0.04, 0.025, "#2a2a2a"); bx(c, M.plastic, f, 0.72, 0.225, 0.05 + 0.16, 0.1, 0.02, 0.07, "#2a2a2a");
   // em cima: prancheta com a conferência, notebook aberto, impressora de etiquetas, rádio, estilete, fita, café, notas
   const y = H;
   bx(c, M.paint, f, -0.55, y, 0.12, 0.25, 0.012, 0.36, "#6b4a2a", { ry: 0.12 });
   decal(c, M.signs, f, "clipboard", A.clipboard, -0.55, y + 0.014, 0.12, 0.24, 0.35, 0.12, -Math.PI / 2);
   bx(c, M.paint, f, 0.15, y, -0.05, 0.34, 0.018, 0.24, "#2a2d31");                                  // notebook
   bx(c, M.paint, f, 0.15, y + 0.018, -0.17, 0.34, 0.22, 0.012, "#2a2d31", { rx: -0.25 });
-  c.batch.add(ROOM, glowScreen(), geo("plane", () => new THREE.PlaneGeometry(1, 1)), L(f, 0.15, y + 0.13, -0.155, 0, 0.3, 0.19, 1, -0.25));
+  c.batch.add(ROOM, M.lit, planeUV("laptop", A.laptop), L(f, 0.15, y + 0.13, -0.155, 0, 0.3, 0.19, 1, -0.25));         // a planilha da conferência
   bx(c, M.plastic, f, 0.62, y, -0.1, 0.14, 0.12, 0.2, "#e8e6e0"); bx(c, M.plastic, f, 0.62, y + 0.12, -0.05, 0.12, 0.012, 0.06, "#1a1a1a");  // impressora de etiquetas
   bx(c, M.plastic, f, -0.15, y, 0.18, 0.06, 0.16, 0.035, "#141414", { ry: 0.3 }); cy(c, M.plastic, f, -0.13, y + 0.16, 0.18, 0.006, 0.14, "#141414");  // rádio
   bx(c, M.plastic, f, 0.4, y, 0.25, 0.14, 0.012, 0.025, "#f2c230", { ry: 0.6 });                   // estilete
@@ -193,7 +201,6 @@ function bench(c: PropsCtx, M: DocaMats, A: Record<string, Rect>, f: Foot) {
   // capacetes no gancho da ponta
   c.batch.add(ROOM, M.plastic, tint(geo("doca-helmet", () => new THREE.SphereGeometry(0.13, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.85, 1.15)), "doca-helmet", "#f2f2ee"), L(f, hx + 0.48, 1.6, wz + 0.15));
 }
-function glowScreen(): THREE.MeshBasicMaterial { return once("screen", () => new THREE.MeshBasicMaterial({ color: new THREE.Color("#9fc6ff").multiplyScalar(1.3) })); }
 
 /** Guarita de controle de acesso: chapa em baixo, vidro em cima, porta lateral, balcão do passa-documentos e o interior. */
 function booth(c: PropsCtx, M: DocaMats, A: Record<string, Rect>, f: Foot) {
@@ -249,7 +256,7 @@ function flightStack(c: PropsCtx, M: DocaMats, A: Record<string, Rect>, f: Foot)
     const cw = 0.15, H = 0.8;
     // rodízios e a tábua dos rodízios
     bx(c, M.wood, f, 0, y + cw - 0.02, 0, W - 0.04, 0.02, D - 0.04, undefined, { ry });
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) caster(c, M, f, sx * (W / 2 - 0.1), sz * (D / 2 - 0.09), y + cw - 0.02, ry);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) caster(c, M, f, sx * (W / 2 - 0.1), sz * (D / 2 - 0.09), cw - 0.02, ry, y);
     const y0 = y + cw;
     bx(c, M.laminate, f, 0, y0, 0, W - 0.01, H, D - 0.01, undefined, { ry, cast: true });
     // perfis de alumínio nas 12 arestas e o friso da tampa

@@ -234,7 +234,7 @@ function seguranca(c: RoomsCtx) {
     ce.quad([[r.x0, H, r.z0], [r.x1, H, r.z0], [r.x1, H, r.z1], [r.x0, H, r.z1]], [0, -1, 0], [[r.x0 / 1.2, r.z0 / 1.2], [r.x1 / 1.2, r.z0 / 1.2], [r.x1 / 1.2, r.z1 / 1.2], [r.x0 / 1.2, r.z1 / 1.2]]);
   }
   c.batch.add(room, pbrMat(`seg-floor-vinil-${c.q}`, texVinyl(c.q), { env: 0.7, offset: true }), fl.geometry(), undefined, { receive: true });
-  c.batch.add(room, pbrMat(`seg-ceil-acustico-${c.q}`, texCeilMineral(c.q), { tint: "#c9ccd0", env: 0.6, bounce: 0.24 }), ce.geometry());
+  c.batch.add(room, pbrMat(`seg-ceil-acustico-${c.q}`, texCeilMineral(c.q), { tint: "#000000", env: 0.15, bounce: 0.5 }), ce.geometry());
   // tampas de acesso no piso (chapa com ilhós e o feixe de cabos subindo para o console) e o capacho da porta
   for (const z of [5.7, 6.9]) { const f = Fr.at(c, room, -21.0, 0, z); f.box(S.alu, 0, 0.002, 0, 0.6, 0.006, 0.6); f.cyl(S.rubber, -0.15, 0.004, 0.0, 0.05, 0.006, 16); f.g(S.cable, tube([[-0.15, 0.0, 0], [-0.18, 0.25, 0.02], [-0.22, 0.6, 0.0]], 0.022, 10, 6), 0, 0, 0); }
   { const f = Fr.at(c, room, -19.0, 0, 4.75, Math.PI / 2); f.rbox(S.rubberGrey, 0, 0.002, 0, 1.2, 0.012, 0.7, 0.01); for (let k = 0; k < 12; k++) f.i("seg-matRib", BOX0(), S.rubber, -0.55 + k * 0.1, 0.014, 0, 0, 0.012, 0.004, 0.62); }
@@ -242,7 +242,7 @@ function seguranca(c: RoomsCtx) {
     const f = Fr.at(c, room, x, H, z);
     f.box(S.paintWhite, 0, -0.02, 0, 0.62, 0.02, 1.22); f.box(S.opal, 0, -0.03, 0, 0.5, 0.012, 1.1);
     for (let k = 0; k < 6; k++) f.i("seg-louver", BOX0(), S.paintWhite, -0.25 + k * 0.1, -0.04, 0, 0, 0.006, 0.02, 1.1);
-    A(c, room, x, H - 0.35, z, "#eef4ff", 6, 5.2);
+    A(c, room, x, H - 0.6, z, "#eef4ff", 4, 5.2);
   }
   { const f = Fr.at(c, room, -19.4, H, 6.6); f.box(S.paintWhite, 0, -0.03, 0, 0.6, 0.03, 0.6); for (let k = 0; k < 4; k++) f.box(S.paintWhite, 0, -0.06 + k * 0.006, 0, 0.5 - k * 0.1, 0.012, 0.5 - k * 0.1); }
   smokeDetector(c, room, -19.6, H, 3.0);
@@ -314,7 +314,7 @@ function seguranca(c: RoomsCtx) {
 }
 
 /** Sombra da luminária do forro (só "high"). */
-const KEYS = [{ p: [-20.25, 3.1, 4.75] as [number, number, number], aim: [-20.4, 0, 5.0] as [number, number, number], angle: 1.25, i: 18, color: "#eef4ff" }];
+const KEYS = [{ p: [-20.25, 3.1, 4.75] as [number, number, number], aim: [-20.4, 0, 5.0] as [number, number, number], angle: 1.0, i: 12, color: "#eef4ff" }];
 const wallSeg = (q: Quality) => pbrMat(`seg-wall-pintura-${q}`, texPaintSeg(q), { vertex: true, env: 0.5 });
 
 /** Módulo da área (ver areas/types.ts). */

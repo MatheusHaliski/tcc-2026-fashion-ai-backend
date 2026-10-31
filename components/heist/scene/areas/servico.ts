@@ -39,8 +39,8 @@ function mazeLinks() {
 }
 
 /* ---------- materiais das superfícies ---------- */
-const floorSrv = (q: Quality) => pbrMat(`srv-floor-granilite-${q}`, texGranilite(q), { vertex: true, env: 0.9 });
-const wallSrv = (q: Quality) => pbrMat(`srv-wall-drywall-${q}`, texDrywallSrv(q), { vertex: true, env: 0.5 });
+const floorSrv = (q: Quality) => pbrMat(`srv-floor-granilite-${q}`, texGranilite(q), { vertex: true, env: 0.6 });
+const wallSrv = (q: Quality) => pbrMat(`srv-wall-drywall-${q}`, texDrywallSrv(q), { vertex: true, env: 0.3 });
 /** Zebrado amarelo e preto pintado no piso (faixas a 45°, 0,5 m por repetição). */
 const hatchMat = () => once("srv-hatchMat", () => {
   const t = drawnTexture("srv-hatch", 128, 128, (g, w, h) => { g.fillStyle = "#e2b11e"; g.fillRect(0, 0, w, h); g.fillStyle = "#151515"; for (let k = -2; k < 4; k++) { g.beginPath(); g.moveTo(k * w / 2, h); g.lineTo(k * w / 2 + w / 4, h); g.lineTo(k * w / 2 + w / 4 + w / 2, 0); g.lineTo(k * w / 2 + w / 2, 0); g.fill(); } });
@@ -86,8 +86,10 @@ function servico(c: RoomsCtx) {
     flatQuad(copa ? ceilPvc : ceilMin, r.x0, r.z0, r.x1, r.z1, H, false, 1.2, copa);
     if (copa) flatQuad(quarry, r.x0, r.z0, r.x1, r.z1, 0.002, true, 0.6);
   }
-  c.batch.add(room, pbrMat(`srv-ceil-mineral-${c.q}`, texCeilMineral(c.q), { env: 0.6, bounce: 0.3 }), ceilMin.geometry());
-  c.batch.add(room, pbrMat(`srv-ceil-pvc-${c.q}`, texCeilPvc(c.q), { env: 0.8, bounce: 0.32 }), ceilPvc.geometry());
+  // o forro é iluminado por difusão (emissivo com o próprio mapa) e não pelas luzes pontuais: a 30 cm das luminárias ele
+  // estouraria e, no "high", o bloom e a sonda da sala espalhariam esse branco pelas paredes
+  c.batch.add(room, pbrMat(`srv-ceil-mineral-${c.q}`, texCeilMineral(c.q), { tint: "#000000", env: 0.15, bounce: 0.72 }), ceilMin.geometry());
+  c.batch.add(room, pbrMat(`srv-ceil-pvc-${c.q}`, texCeilPvc(c.q), { tint: "#000000", env: 0.15, bounce: 0.78 }), ceilPvc.geometry());
   c.batch.add(room, pbrMat(`srv-floor-ceramica-${c.q}`, texQuarry(c.q), { env: 0.45, offset: true }), quarry.geometry(), undefined, { receive: true });
   /* ---------- azulejo até o forro nas zonas da copa; para-choques no corredor; cantoneiras ---------- */
   const tiles = new QuadBuilder();
@@ -110,7 +112,7 @@ function servico(c: RoomsCtx) {
       else if (!lockerZone(f, s.a, s.b)) for (const [p, q] of cut(f, s.a, s.b)) crashRail(c, { ...f, a: p, b: q }, 0.95);
     }
   }
-  c.batch.add(room, pbrMat(`srv-wall-azulejo-${c.q}`, texTileWhite(c.q), { env: 0.9 }), tiles.geometry(), undefined, { receive: true });
+  c.batch.add(room, pbrMat(`srv-wall-azulejo-${c.q}`, texTileWhite(c.q), { env: 0.45 }), tiles.geometry(), undefined, { receive: true });
   for (const k of info.corners) if (k.room === "servico" && zoneOf(k.x + k.sx * 0.3, k.z + k.sz * 0.3) === "corredor") cornerGuard(c, k);
   // ralos de inox no centro das células da copa (grelha com furos e a moldura)
   for (const cells of Object.values(COPA_ZONES)) for (const [cc, rr] of cells) {
@@ -157,7 +159,7 @@ function servico(c: RoomsCtx) {
     const flick = (cc === 0 && rr === 9) || (cc === 4 && rr === 1);
     const diff = flick ? solid(`srv-opalFlick-${cc}-${rr}`, "#f4f7fb", { rough: 0.3, emissive: "#eef4ff", emissiveIntensity: 1.6 }) : undefined;
     vaporTight(c, room, p.x, H, z, alongX, copa, diff);
-    A(c, room, p.x, H - 0.3, z, copa ? "#fff0d6" : "#e4eeff", copa ? 6 : 5.2, 4.6, { flicker: flick ? 1 : 0 });
+    A(c, room, p.x, H - 0.65, z, copa ? "#fff0d6" : "#e4eeff", copa ? 3.8 : 3.4, 5, { flicker: flick ? 1 : 0 });
     if (diff) c.ticks.push({ room, tick: (t) => { diff.emissiveIntensity = 1.6 * tubeFlicker(p.x, z, t); } });
     const px = alongX ? 0 : 0.3, pz = alongX ? 0.3 : 0;
     sprinkler(c, room, p.x + px, H, z + pz);
@@ -315,16 +317,16 @@ function servico(c: RoomsCtx) {
 
 /** Sombras das luzes principais (só no "high"): copa, cozinha, corredor principal e a porta da equipe. */
 const KEYS: KeyDef[] = [
-  { p: [-19.25, 3.0, -4.7], aim: [-19.25, 0, -5.2], angle: 1.15, i: 16, color: "#ffe9cc" },
-  { p: [-15.0, 3.0, 6.8], aim: [-15.4, 0, 6.8], angle: 1.15, i: 15, color: "#fff0dc" },
-  { p: [-15.25, 3.0, 10.9], aim: [-15.25, 0, 10.6], angle: 1.1, i: 14, color: "#fff0dc" },
-  { p: [-15.6, 3.0, 0.75], aim: [-15.2, 0, 0.75], angle: 1.1, i: 14, color: "#f2f6ff" },
-  { p: [-17.25, 3.0, -2.25], aim: [-17.0, 0, -2.25], angle: 1.15, i: 14, color: "#fff0dc" },
-  { p: [-21.25, 3.0, -2.6], aim: [-21.4, 0, -2.6], angle: 1.15, i: 14, color: "#fff0dc" },
-  { p: [-19.25, 3.0, 0.75], aim: [-19.0, 0, 0.75], angle: 1.1, i: 13, color: "#fff0dc" },
-  { p: [-13.25, 3.0, 9.75], aim: [-13.25, 0, 9.75], angle: 1.15, i: 15, color: "#e8f0ff" },
-  { p: [-17.25, 3.0, 15.0], aim: [-17.25, 0, 15.0], angle: 1.2, i: 15, color: "#e8f0ff" },
-  { p: [-17.25, 3.0, 4.75], aim: [-17.25, 0, 4.75], angle: 1.15, i: 14, color: "#e8f0ff" },
+  { p: [-19.25, 3.0, -4.7], aim: [-19.25, 0, -5.2], angle: 0.95, i: 11, color: "#ffe9cc" },
+  { p: [-15.0, 3.0, 6.8], aim: [-15.4, 0, 6.8], angle: 0.95, i: 11, color: "#fff0dc" },
+  { p: [-15.25, 3.0, 10.9], aim: [-15.25, 0, 10.6], angle: 0.95, i: 11, color: "#fff0dc" },
+  { p: [-15.6, 3.0, 0.75], aim: [-15.2, 0, 0.75], angle: 0.95, i: 11, color: "#f2f6ff" },
+  { p: [-17.25, 3.0, -2.25], aim: [-17.0, 0, -2.25], angle: 0.95, i: 11, color: "#fff0dc" },
+  { p: [-21.25, 3.0, -2.6], aim: [-21.4, 0, -2.6], angle: 0.95, i: 11, color: "#fff0dc" },
+  { p: [-19.25, 3.0, 0.75], aim: [-19.0, 0, 0.75], angle: 0.95, i: 11, color: "#fff0dc" },
+  { p: [-13.25, 3.0, 9.75], aim: [-13.25, 0, 9.75], angle: 0.95, i: 11, color: "#e8f0ff" },
+  { p: [-17.25, 3.0, 15.0], aim: [-17.25, 0, 15.0], angle: 0.95, i: 11, color: "#e8f0ff" },
+  { p: [-17.25, 3.0, 4.75], aim: [-17.25, 0, 4.75], angle: 0.95, i: 11, color: "#e8f0ff" },
 ];
 
 /** Módulo da área (ver areas/types.ts). */

@@ -67,7 +67,7 @@ export function vanity(p: Prop, c: PropsCtx) {
     ch.box(S.steelBlack, 0, 0.3, 0.19, 0.46, 0.02, 0.02); ch.box(S.steelBlack, 0, 0.3, -0.19, 0.46, 0.02, 0.02);
     ch.box(S.fabricBlack, 0, 0.76, 0, 0.44, 0.025, 0.4); ch.box(S.fabricBlack, 0, 1.0, -0.2, 0.44, 0.24, 0.012);
     for (const sx of [-1, 1]) { ch.cyl(S.steelBlack, sx * 0.23, 0.76, -0.21, 0.012, 0.42, 8); ch.box(S.steelBlack, sx * 0.23, 0.95, -0.02, 0.025, 0.02, 0.4); }
-    light(c, room, f.p(x, 1.45, -d / 2 + 0.45), "#ffd9a8", 4.5, 3.4);
+    light(c, room, f.p(x, 1.75, -d / 2 + 0.5), "#ffd9a8", 2.6, 3.6);
   }
 }
 /** Espelhos de camarim (mirror): moldura preta, vidro, lâmpadas-globo nas laterais e em cima, bilhetes colados. */
