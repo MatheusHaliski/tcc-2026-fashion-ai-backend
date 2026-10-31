@@ -1,6 +1,6 @@
-# Cobertura residual após o primeiro lote
+# Cobertura residual após os lotes concluídos
 
-3965 entradas de cobertura; 3960 ainda pendentes/parciais. Inventário por sintaxe não equivale a decisão arquitetural de todos os itens.
+3976 entradas de cobertura; 3959 ainda pendentes/parciais. Inventário por sintaxe não equivale a decisão arquitetural de todos os itens.
 
 - Domínio 02: 96 entradas pendentes/parciais.
 - Domínio 03: 103 entradas pendentes/parciais.
@@ -22,7 +22,7 @@
 - Domínio 19: 221 entradas pendentes/parciais.
 - Domínio 20: 106 entradas pendentes/parciais.
 - Domínio 21: 83 entradas pendentes/parciais.
-- Domínio 22: 253 entradas pendentes/parciais.
+- Domínio 22: 252 entradas pendentes/parciais.
 
 Imports sem associação inequívoca: 518. Candidatos de contratos HTTP não verificados: 1569.
 

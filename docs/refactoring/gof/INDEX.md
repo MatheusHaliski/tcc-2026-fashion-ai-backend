@@ -20,3 +20,9 @@ Editor915 →632 linhas (-30,93%). Runtime combinado915 →981 (+66): editor632,
 - [Cobertura21](21-RESULTADO.md), [reconciliação22](22-RESULTADO.md), [pendências](RESIDUAL_FINDINGS.md)
 
 A revisão/refatoração integral continua em andamento. COVERAGE_FINAL significa fechamento deste lote; o editor continua PARTIAL, e arquivos não avaliados continuam PENDING. Não houve deploy, mudança de banco ou inferência paga.
+
+## Terceiro lote:23 padrões executáveis
+
+[GOF_EXECUTION.md](GOF_EXECUTION.md) e [PATTERN_COVERAGE.csv](PATTERN_COVERAGE.csv) documentam as implementações das famílias5/7/11 integradas ao relatório de limites.32 testes da auditoria passaram; o contrato CSV anterior é preservado. O escopo desse lote é a ferramenta offline, não uma refatoração integral já concluída.
+
+Publicação do PR autorizada na continuação. A matriz mantém pendências explícitas; não há certificação de edição/refatoração completa de todos os arquivos.

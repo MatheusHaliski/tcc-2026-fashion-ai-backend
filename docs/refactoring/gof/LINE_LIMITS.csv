@@ -639,6 +639,7 @@ fai-application/src/test/java/br/com/fashionai/application/imaging/FeedFramingRu
 fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V31__hype_score_v2.sql,158,WITHIN_GENERAL_TARGET,IMMUTABLE_APPLIED_MIGRATION_REVIEW_ONLY
 lib/gate/token.test.ts,158,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 pom.xml,158,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/gof/execution.py,158,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/main/java/br/com/fashionai/application/service/DailyLookService.java,157,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/catalog/repair_merged_products.py,157,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 services/anatomical_vton/sam3d_runtime.py,157,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -859,6 +860,7 @@ fai-web/src/main/java/br/com/fashionai/web/error/GlobalExceptionHandler.java,123
 lib/avatar3d/human/upperwear.test.ts,123,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/tryon/accessory-2d.ts,123,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/tryon/sizes.test.ts,123,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/reconcile_gof.py,123,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/atelier/atelier-hub-tendencias.test.tsx,122,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/test/java/br/com/fashionai/application/flair/FlairEngineHabilidadesTest.java,122,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/test/java/br/com/fashionai/application/service/CreatorOptOutPreferencesTest.java,122,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -881,7 +883,6 @@ fai-application/src/main/java/br/com/fashionai/application/service/GuideService.
 fai-domain/src/main/java/br/com/fashionai/domain/model/HypeScoreCurrent.java,120,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-web/src/test/java/br/com/fashionai/web/support/RequestFiltersTest.java,120,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/legal/markdown.tsx,120,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
-scripts/refactoring/reconcile_gof.py,120,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/main/java/br/com/fashionai/application/atelier3d/Atelier3dService.java,119,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/main/java/br/com/fashionai/application/avatar/IdentityQuality.java,119,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/main/java/br/com/fashionai/application/catalog/OfficialCatalogDiscovery.java,119,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -890,6 +891,7 @@ fai-application/src/test/java/br/com/fashionai/application/service/ExchangeRateS
 fai-infrastructure/ai-providers/src/test/java/br/com/fashionai/infrastructure/ai/image/AuraMotionAdapterTest.java,119,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V44__taxonomia_vocabulario.sql,119,WITHIN_GENERAL_TARGET,IMMUTABLE_APPLIED_MIGRATION_REVIEW_ONLY
 lib/avatar3d/quality.test.ts,119,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/gof/creation.py,119,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/seal-policy-editor.test.tsx,118,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/main/java/br/com/fashionai/application/flair/AfterpartyMods.java,118,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-domain/src/main/java/br/com/fashionai/domain/model/HypeMilestone.java,118,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1148,6 +1150,7 @@ components/looks/my-looks.tsx,86,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_
 components/seal-core-editor.tsx,86,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-infrastructure/ai-providers/src/test/java/br/com/fashionai/infrastructure/ai/ocr/OnnxTextReaderTest.java,86,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/tryon/acervo.ts,86,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/gof/query.py,86,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 services/anatomical_vton/anchors.py,86,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/main/java/br/com/fashionai/application/atelier3d/GlbInspector.java,85,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/test/java/br/com/fashionai/application/service/SealPoliciesTest.java,85,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1156,6 +1159,7 @@ lib/avatar3d/human/fit-matrix.ts,85,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILI
 lib/avatar3d/human/hair-lod.ts,85,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/avatar3d/human/lowered-hood.test.ts,85,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/moments/types.ts,85,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/gof/model.py,85,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 services/anatomical_vton/tests/test_google_cloud.py,85,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/catalog/photo-flow.test.tsx,84,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/heist/hud-state.ts,84,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1173,6 +1177,7 @@ fai-application/src/main/java/br/com/fashionai/application/hype/StyleCompatibili
 fai-web/pom.xml,83,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/avatar3d/still.ts,83,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/skins.test.ts,83,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/test_gof_creation.py,83,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/piece-references.test.tsx,82,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/points/hub.test.tsx,82,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-application/src/main/java/br/com/fashionai/application/multiplatform/ClientConfigService.java,82,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1237,6 +1242,7 @@ lib/hype/model.ts,78,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALO
 lib/scene3d/detail-camera.test.ts,78,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/scene3d/fitting-walk.ts,78,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/catalog/tests/test_repair_tryon_catalog.py,78,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/test_gof_execution.py,78,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/(gate)/gate/verify/route.ts,77,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/bff/auth/[action]/route.test.ts,77,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/feed-hype.test.tsx,77,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1319,6 +1325,7 @@ components/try-on/use-smart-wheel.ts,71,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSI
 fai-web/src/main/java/br/com/fashionai/web/controller/RoomCreatorController.java,71,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/avatar3d/body-gpu.ts,71,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/avatar3d/textures.test.ts,71,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/gof/tree.py,71,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/research/validate_impersonation_video.py,71,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/mirror-tipo-look.test.tsx,70,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/catalog/catalog-results-grid.tsx,70,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1524,7 +1531,6 @@ lib/tryon/accessory-detect.test.ts,58,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBI
 scripts/catalog/reviewed_photo_masks.py,58,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/catalog/tests/test_acervo_rows.py,58,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/i18n/rules.js,58,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
-scripts/refactoring/line_policy.py,58,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/(site)/layout.tsx,57,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/atelier/metamorphoses-panel.tsx,57,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/atelier3d/scene-inspector.test.tsx,57,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1623,6 +1629,8 @@ fai-web/src/main/java/br/com/fashionai/web/config/I18nConfig.java,52,WITHIN_GENE
 fai-web/src/main/java/br/com/fashionai/web/controller/AdminCatalogImageController.java,52,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 fai-web/src/main/java/br/com/fashionai/web/security/SessionActiveFilter.java,52,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/avatar3d/human/attach-hair.test.ts,52,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/line_policy.py,52,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/test_gof_model.py,52,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 services/digital_twin/face_reconstruction.py,52,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/(gate)/gate/google/callback/route.ts,51,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/aura-guide.tsx,51,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -1843,6 +1851,7 @@ lib/scene3d/wheel-intent.ts,40,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NO
 scripts/backup/mysql_restore.sh,40,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/e2e/verify-photos-cascade.mjs,40,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 scripts/flair-demos/shots.mjs,40,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/gof/facade.py,40,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/heist/wheel.tsx,39,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/hype/hype-trending.test.tsx,39,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/piece-card-panels.test.tsx,39,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
@@ -2161,6 +2170,7 @@ lib/aura-fashion.test.ts,24,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_S
 lib/fashion-card/context-pipeline.test.ts,24,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/hype/layout-data.ts,24,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 lib/tryon/garment-photo-source.ts,24,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
+scripts/refactoring/test_gof_query.py,24,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/(site)/(app)/admin/aura-store/page.tsx,23,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 app/(site)/(app)/dna-schemes/[id]/edit/page.tsx,23,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE
 components/guide/feed-guide-demo.tsx,23,WITHIN_GENERAL_TARGET,REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE

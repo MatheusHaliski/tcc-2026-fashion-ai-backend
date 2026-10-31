@@ -57,9 +57,12 @@ def main():
             row.update(pattern='Memento',decision='Keep local past/present/future snapshots in pure transitions; no new command bus',status='COMPLETED',evidence='history.test.ts + editor.test.tsx')
         elif row['kind']=='source' and row['path'] in {'components/atelier3d/scene-inspector.tsx', 'components/atelier3d/scene-fields.tsx'}:
             row.update(pattern='Component composition (no additional GoF hierarchy)',decision='Keep property selection/document patches separate from controlled value inputs and session orchestration',status='COMPLETED',evidence='FLOW-A3D-INSPECTOR-002; scene-inspector.test.tsx + editor.test.tsx')
+        elif row['kind']=='source' and (row['path'].startswith('scripts/refactoring/gof/') or row['path']=='scripts/refactoring/line_policy.py' or row['path'].startswith('scripts/refactoring/test_gof_')):
+            row.update(pattern='23 GoF patterns in offline audit flow; see PATTERN_COVERAGE.csv',decision='Reviewed local audit collaboration; legacy CSV contract preserved; no application or production integration changed',status='COMPLETED',evidence='FLOW-AUDIT-GOF-003; evidence/gof-pattern-tests.log; GOF_EXECUTION.md')
     coverage = [row for row in coverage if row.get('kind') != 'flow']
     coverage.append({'kind':'flow','path':'components/atelier3d/editor.tsx','symbol':'FLOW-A3D-HISTORY-001','route':'/atelier/projects/[id]/editor','domain':'06','lines':by_path['components/atelier3d/editor.tsx']['lines'],'pattern':'Memento','decision':'Preserved 30-edit cap, reset, branching, undo/redo, dirty/busy/owner guards and save payload','tests':['lib/atelier3d/history.test.ts','components/atelier3d/editor.test.tsx'],'status':'COMPLETED','evidence':'evidence/metrics.json; QUALITY_SCORECARD.md'})
     coverage.append({'kind':'flow','path':'components/atelier3d/scene-inspector.tsx','symbol':'FLOW-A3D-INSPECTOR-002','route':'/atelier/projects/[id]/editor','domain':'06','lines':by_path['components/atelier3d/scene-inspector.tsx']['lines'],'pattern':'Component composition','decision':'Preserved transforms, radians/degrees, material edits, vertex restrictions and read-only fieldset','tests':['components/atelier3d/scene-inspector.test.tsx','components/atelier3d/editor.test.tsx'],'status':'COMPLETED','evidence':'evidence/gof-inspector-after.log'})
+    coverage.append({'kind':'flow','path':'scripts/refactoring/line_policy.py','symbol':'FLOW-AUDIT-GOF-003','route':'offline CLI','domain':'22','lines':by_path['scripts/refactoring/line_policy.py']['lines'],'pattern':'All 23 GoF patterns in 3 families','decision':'Executable offline inventory with legacy CSV byte contract, immutable records, validation, rollback and explicit queries','tests':['scripts/refactoring/test_gof_model.py','scripts/refactoring/test_gof_query.py','scripts/refactoring/test_gof_execution.py','scripts/refactoring/test_gof_creation.py'],'status':'COMPLETED','evidence':'GOF_EXECUTION.md; evidence/gof-pattern-tests.log'})
     columns=['kind','path','symbol','route','domain','lines','pattern','decision','tests','status','evidence']
     for name in ['COVERAGE.csv','COVERAGE_FINAL.csv']:write_csv(OUT/name,coverage,columns)
     line_rows = [{'path':r['path'], 'physical_lines':int(r['lines']), 'band':size_band(int(r['lines'])),
@@ -108,7 +111,7 @@ def main():
     integrations=[{'path':r['path'],'types':[{'name':t['name'],'implements':t.get('implements',[])} for t in r.get('types',[])],'review':'PENDING_INTERFACE_AND_CONFIGURATION_REVIEW'} for r in j if r['path'].startswith('fai-infrastructure/')]
     write_csv(OUT/'all-integrations.csv',integrations,['path','types','review'])
     pending=[r for r in coverage if r['status'] not in {'COMPLETED'}]
-    (OUT/'RESIDUAL_FINDINGS.md').write_text('# Cobertura residual após o primeiro lote\n\n'+
+    (OUT/'RESIDUAL_FINDINGS.md').write_text('# Cobertura residual após os lotes concluídos\n\n'+
         f"{len(coverage)} entradas de cobertura; {len(pending)} ainda pendentes/parciais. Inventário por sintaxe não equivale a decisão arquitetural de todos os itens.\n\n"+
         '\n'.join(f"- Domínio {d}: {n} entradas pendentes/parciais." for d,n in sorted(Counter(r['domain'] for r in pending).items()))+
         f"\n\nImports sem associação inequívoca: {len(read('unresolved-imports.csv'))}. Candidatos de contratos HTTP não verificados: {len(contracts)}.\n\n"+

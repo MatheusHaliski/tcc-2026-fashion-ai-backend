@@ -1,6 +1,6 @@
 # Inventário de complexidade — FashionAI
 
-Base: `7b473d2b3687865624fb25fe2091f9bc8f048436`. 2662 arquivos de código; 352300 linhas físicas.
+Base: `a4f46cd153b3fce7a19da3c0ed4ecfaa6e38c6df`. 2672 arquivos de código; 353093 linhas físicas.
 
 CSV completo: [file-complexity.csv](file-complexity.csv). Dados e ciclos: [inventory.json](inventory.json).
 

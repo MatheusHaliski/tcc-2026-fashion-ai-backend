@@ -39,3 +39,8 @@ O catálogo de acompanhamento contém exatamente5 criacionais,7 estruturais e11 
 As três famílias têm exemplos reais identificados: Builder na construção de ShoePart; Adapter no rembg; Strategy no enquadramento por categoria; Observer nos eventos transacionais; Memento no histórico isolado deste PR. Os quatro primeiros são implementações existentes e não foram introduzidos por este lote.
 
 Os outros18 padrões permanecem com análise/aplicação global pendente. Não há alegação de que todos os23 foram implementados neste PR. Singleton gerenciado pelo Spring, árvore Three.js e nomes como Interpreter não são contados automaticamente como aplicações GoF sem verificar sua colaboração real. O critério original continua sendo utilidade arquitetural comprovada, sem implementar classes artificiais apenas para completar catálogo.
+
+
+## Continuação: todos os23 implementados em uma colaboração executável
+
+O checkpoint anterior avaliava os23 e implementava Memento no editor. A exigência posterior de todos os padrões gerou FLOW-AUDIT-GOF-003: motor offline integrado à CLI/CI, com32 testes de auditoria e CSV legado preservado. A tabela inicial permanece como decisão histórica do fluxo do editor; a adoção atual por padrão está em PATTERN_COVERAGE.csv e GOF_EXECUTION.md. Todos os23 têm implementação no motor, sem afirmar aplicação em todos os módulos de negócio.

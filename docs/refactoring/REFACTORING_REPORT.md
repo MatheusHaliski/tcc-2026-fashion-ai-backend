@@ -78,6 +78,9 @@ Resultados completos e comandos: [REFACTORING_TESTS.md](REFACTORING_TESTS.md). P
 Nova auditoria por AST e primeiro lote de histórico do Atelier documentados em [gof/INDEX.md](gof/INDEX.md). Este adendo preserva o relato anterior e distingue a base5166f88c das novas alterações ainda não commitadas. Inventário abrangente não equivale a revisão semântica concluída.
 
 
-### Continuação publicada em PR
+### Continuação preparada para PR (ainda não aberto)
 
 Histórico e inspetor isolados; editor915→632 linhas, total combinado981 (+66).14 testes funcionais,14 da auditoria, tipagem, build completo e browser smoke passaram. Limites e três famílias/23 padrões em gof/LINE_LIMITS.md e gof/PATTERN_DECISIONS.md. A refatoração de todo o repositório não está concluída; pendências explícitas na matriz.
+
+
+Lote adicional: motor de auditoria com os23 padrões executáveis,32 testes de auditoria passaram e contrato CSV preservado. Ver gof/GOF_EXECUTION.md. Branch publicada; abertura do PR autorizada na continuação. A matriz global permanece parcial.

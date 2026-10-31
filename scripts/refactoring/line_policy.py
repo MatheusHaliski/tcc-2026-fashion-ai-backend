@@ -29,23 +29,15 @@ def review_action(path: str, lines: int) -> str:
     return 'REVIEW_BY_RESPONSIBILITY_NOT_SIZE_ALONE'
 
 
-def report(root, output):
-    from collections import Counter
+def report(root, output, query=''):
     from pathlib import Path
     from scripts.refactoring.inventory_gof import EXCLUDED, SOURCE, git, require_present_sources, write_csv
+    from scripts.refactoring.gof.facade import AuditFacade
 
     paths = sorted(p for p in git(root, 'ls-files', '-z').split('\0')
                    if p and Path(p).suffix in SOURCE and not set(Path(p).parts) & EXCLUDED)
     require_present_sources(root, paths)
-    rows = []
-    for path in paths:
-        lines = len((root/path).read_text(encoding='utf-8', errors='replace').splitlines())
-        rows.append({'path': path, 'physical_lines': lines, 'band': size_band(lines),
-                     'action': review_action(path, lines)})
-    output.parent.mkdir(parents=True, exist_ok=True)
-    write_csv(output, sorted(rows, key=lambda r: (-r['physical_lines'], r['path'])),
-              ['path', 'physical_lines', 'band', 'action'])
-    return dict(sorted(Counter(row['band'] for row in rows).items()))
+    return AuditFacade.local(write_csv, size_band, review_action).report(root, paths, output, query)
 
 
 if __name__ == '__main__':
@@ -54,5 +46,7 @@ if __name__ == '__main__':
     from pathlib import Path
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--query', default='', help='Optional filtered triage, e.g. lines > 1000; default includes every source')
     args = parser.parse_args()
-    print(json.dumps({'mode': 'triage_not_approval', 'bands': report(Path.cwd(), args.output)}, sort_keys=True))
+    print(json.dumps({'mode': 'filtered_triage_not_approval' if args.query else 'triage_not_approval',
+                      'bands': report(Path.cwd(), args.output, args.query)}, sort_keys=True))

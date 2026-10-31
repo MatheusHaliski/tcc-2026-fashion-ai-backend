@@ -28,3 +28,7 @@ Não executados: JUnit da aplicação, DB/HTTP de backend reais, suíte Vitest i
 Runtime combinado915 →981 (+66 linhas), ramos sintáticos135 →135. Melhoria demonstrada: isolamento/testabilidade. Não alegada redução global de complexidade ou melhoria medida de performance.
 
 As capturas contêm ícones estáticos ausentes no checkout esparso. Não foram usadas para aprovar a fidelidade visual global; o fluxo e o payload foram verificados. Nenhum arquivo de identidade visual foi alterado.
+
+## Verificação do motor GoF
+
+32 testes de auditoria passaram após implementar as23 colaborações. Logs em evidence/gof-pattern-tests.log; relatório executado em evidence/gof-pattern-report.log. Este lote altera apenas Python/CI/documentação; os14 testes React, build e browser acima são do lote anterior, cujos arquivos produtivos permaneceram iguais. Nenhum build/reteste de frontend é reivindicado como novo neste lote.
