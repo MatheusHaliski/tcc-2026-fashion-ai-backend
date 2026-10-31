@@ -59,6 +59,11 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
             return client
         return dependency
 
+    def stage_alive(stage: str) -> bool:
+        """True when some worker of this stage sent a heartbeat recently (keys expire after 60 s)."""
+        return any(json.loads(raw).get("stage") == stage
+                   for raw in (redis.get(k) for k in redis.scan_iter("fai:worker:*")) if raw)
+
     def owned(job_id: str, client: Client, reviewers_too: bool = True) -> dict:
         """Owner or admin; reviewers (scope review) can read and review every client's jobs, never delete them."""
         if not JOB_ID.match(job_id):
@@ -76,8 +81,12 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
     def health():
         return {"status": "ok", "service": "fai-garment-api"}
 
+    def optional_client(x_api_key: str | None = Header(default=None)) -> Client | None:
+        return keyring.authenticate(x_api_key)
+
     @app.get("/ready")
-    def ready():
+    def ready(client: Client | None = Depends(optional_client)):
+        """Status code for probes; which dependency is down only for admin keys (the API may be public via Funnel)."""
         checks = {}
         for name, probe in (("redis", lambda: bool(redis.ping())), ("storage", store.ping)):
             try:
@@ -85,10 +94,10 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
             except Exception:
                 checks[name] = "down"
         ok = all(v == "ok" for v in checks.values())
-        return JSONResponse({"status": "ok" if ok else "degraded", "checks": checks}, status_code=200 if ok else 503)
-
-    def optional_client(x_api_key: str | None = Header(default=None)) -> Client | None:
-        return keyring.authenticate(x_api_key)
+        body = {"status": "ok" if ok else "degraded"}
+        if client is not None and client.is_admin:
+            body["checks"] = checks
+        return JSONResponse(body, status_code=200 if ok else 503)
 
     @app.get("/metrics")
     def metrics(client: Client | None = Depends(optional_client)):
@@ -134,6 +143,10 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
                 fail(422, "INVALID_BBOX", "bbox deve ser [x1,y1,x2,y2] em pixels dentro da imagem")
         if prompt and mode != "reconstruct":
             fail(422, "PROMPT_REQUIRES_RECONSTRUCT", "prompt só vale para mode=reconstruct")
+        if mode == "reconstruct" and not stage_alive("reconstruct"):
+            # sem worker generativo no ar o job ficaria parado até o prazo do cliente: recusa já, ele usa outro provedor
+            REQUESTS_REJECTED.labels("no_reconstruct_worker").inc()
+            fail(503, "RECONSTRUCT_UNAVAILABLE", "Nenhum worker de reconstrução ativo", {"Retry-After": "300"})
         job_id = uuid.uuid4().hex
         record = {"job_id": job_id, "client_id": client.client_id, "mode": mode, "category": category,
                   "background": background, "framing": framing, "bbox": coords, "seed": seed, "prompt": prompt,
