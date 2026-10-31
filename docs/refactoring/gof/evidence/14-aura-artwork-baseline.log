@@ -1,0 +1,8 @@
+# Lote 14 — caracterizacao ANTES da extracao (codigo de producao original, base bcaee73)
+$ mvn -B -q -pl fai-application -Dtest=BackgroundStudioArtworkContractTest,BackgroundStudioServiceTest,BackgroundStudioAnimationTest,PieceArtRevisionTest,AuraMotionServiceTest -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 17, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.AuraMotionServiceTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.BackgroundStudioAnimationTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.BackgroundStudioArtworkContractTest
+Tests run: 16, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.BackgroundStudioServiceTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.PieceArtRevisionTest
+Total: 48 testes, 0 falhas, 0 erros (BUILD SUCCESS, exit 0)
