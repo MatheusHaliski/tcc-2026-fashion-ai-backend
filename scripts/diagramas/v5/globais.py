@@ -57,7 +57,7 @@ def classes_by_area(name, title, compact=False, max_fields=6):
 # --------------------------------------------------------------------------------------------- componentes globais
 GROUPS = [
     ('Conta, perfil e social', ('Auth', 'Me', 'Preferences', 'Profile', 'Account', 'Social', 'Comment', 'Notification', 'Admin', 'Dashboard', 'IssuerReview', 'MediaProxy')),
-    ('Guarda-roupa, looks e fotos', ('Wardrobe', 'Scheme', 'Lookbook', 'Photo', 'Background', 'Dna', 'Autopilot', 'Mirror', 'Room', 'RoomCreator')),
+    ('Guarda-roupa, looks e fotos', ('Wardrobe', 'Scheme', 'Lookbook', 'DailyLook', 'MultiPiece', 'Photo', 'Background', 'Dna', 'Autopilot', 'Mirror', 'Room', 'RoomCreator')),
     ('Catálogo, marcas, provador e 3D', ('Catalog', 'BrandLogo', 'TryOn', 'AnatomicalTryOn', 'VtonCatalog', 'Avatar3d', 'Showcase', 'Discovery', 'Lens', 'Insights')),
     ('Selos, cupons, jogos e Hype', ('Seal', 'Coupon', 'Flair', 'FlairModes', 'Challenge', 'Highlights', 'Hype', 'Institutional', 'Points')),
 ]

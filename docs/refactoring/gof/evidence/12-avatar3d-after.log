@@ -1,0 +1,14 @@
+# Lote GoF 12 - depois da extracao (Avatar3dModelRules + Avatar3dBodyRules)
+$ mvn -B -pl fai-application -Dtest=Avatar3d*Test,AvatarBodyScanServiceTest -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.137 s -- in br.com.fashionai.application.service.Avatar3dModelValidationCharacterizationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in br.com.fashionai.application.service.Avatar3dBodyRulesTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in br.com.fashionai.application.service.Avatar3dModelRulesTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.861 s -- in br.com.fashionai.application.service.Avatar3dServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.069 s -- in br.com.fashionai.application.service.AvatarBodyScanServiceTest
+[INFO] Tests run: 47, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+# consumidor web (Avatar3dController delega ao servico; ServiceFakes estende Avatar3dService)
+$ mvn -B -pl fai-web -am -Dtest=ControllerDelegacaoTest -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 697, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

@@ -33,7 +33,7 @@ class WardrobeAnalysisTest {
 
     @Test
     void tipoEscolhidoMandaNoSubtipoEVocabularioVemDaTaxonomia() {
-        LocalVision.PieceGuess g = WardrobeService.parseAnalysis(AI, "upper_piece");
+        LocalVision.PieceGuess g = PieceAnalysisParser.parseAnalysis(AI, "upper_piece");
         assertThat(g.category()).isEqualTo("upper_piece");
         // "jeans" não é peça de cima: vale o primeiro do ranking que é do tipo escolhido
         assertThat(g.subcategory()).isEqualTo("polo_shirt");
@@ -56,7 +56,7 @@ class WardrobeAnalysisTest {
      */
     @Test
     void respostaComCamposNulosNaoDerrubaOParser() {
-        LocalVision.PieceGuess g = WardrobeService.parseAnalysis("""
+        LocalVision.PieceGuess g = PieceAnalysisParser.parseAnalysis("""
                 {"subcategory": "t_shirt", "material": null, "sex": null, "color": null,
                  "subcategoryRanking": [{"code": null}, {"similarity": 0.5}], "brand": "Adidas", "confidence": {"brand": 0.9}}""", null);
         assertThat(g).isNotNull();
@@ -72,14 +72,14 @@ class WardrobeAnalysisTest {
         assertThat(WardrobeService.brandName("Sem marca")).isNull();
         assertThat(WardrobeService.brandName("  ")).isNull();
         assertThat(WardrobeService.brandName(" Nike ")).isEqualTo("Nike");
-        assertThat(WardrobeService.isNoBrandPlaceholder("No brand")).isTrue();
-        assertThat(WardrobeService.isNoBrandPlaceholder("Sin marca")).isTrue();
-        assertThat(WardrobeService.isNoBrandPlaceholder("Zara")).isFalse();
+        assertThat(PieceAnalysisParser.isNoBrandPlaceholder("No brand")).isTrue();
+        assertThat(PieceAnalysisParser.isNoBrandPlaceholder("Sin marca")).isTrue();
+        assertThat(PieceAnalysisParser.isNoBrandPlaceholder("Zara")).isFalse();
     }
 
     @Test
     void preenchimentoUsaOcasiaoEEstiloDaIaQuandoValem() {
-        WardrobeService.Prefill p = WardrobeService.prefill(WardrobeService.parseAnalysis(AI, "upper_piece"), null);
+        WardrobeService.Prefill p = PiecePrefill.prefill(PieceAnalysisParser.parseAnalysis(AI, "upper_piece"), null);
         assertThat(p.name()).isEqualTo("Camisa polo azul");
         assertThat(p.occasion()).containsExactly("casual", "beach");
         assertThat(p.style()).containsExactly("basic", "preppy");
@@ -100,7 +100,7 @@ class WardrobeAnalysisTest {
                 for (LocalVision.Insights seen : List.of(LocalVision.Insights.NONE, junk)) {
                     LocalVision.PieceGuess g = new LocalVision.PieceGuess(e.getKey(), sub, null, null, null, null,
                             Map.of("category", 0.9, "subcategory", 0.9), 0.9, List.of(), null, seen);
-                    WardrobeService.Prefill p = WardrobeService.prefill(g, null);
+                    WardrobeService.Prefill p = PiecePrefill.prefill(g, null);
                     assertThatCode(() -> Taxonomy.requirePiece(p.category(), p.subcategory(), p.sex(), p.color(), p.material(), p.size(),
                             p.occasion(), p.style())).as(sub).doesNotThrowAnyException();
                 }
@@ -122,7 +122,7 @@ class WardrobeAnalysisTest {
     @Test
     void promptDizOQueECadaImagemNaOrdem() {
         List<BrandRegions.Zone> zones = BrandRegions.TOP_ZONES.stream().map(id -> new BrandRegions.Zone(id, new double[]{0, 0, 1, 1})).toList();
-        String p = WardrobeService.analyzerPrompt("upper_piece", List.of("1 = t_shirt", "2 = shirt"), zones,
+        String p = PieceAnalyzerPrompts.analyzerPrompt("upper_piece", List.of("1 = t_shirt", "2 = shirt"), zones,
                 List.of(new SubtypeReferences.Match("t_shirt", 0.93)));
         assertThat(p).contains("Tipo escolhido pela pessoa: upper_piece")
                 .contains("1 = peça inteira; 2 = folha de referências (1 = t_shirt, 2 = shirt); 3 = zona de marca \"gola\"; "
@@ -135,17 +135,17 @@ class WardrobeAnalysisTest {
     void semIaOSubtipoEOMaisParecidoDaCategoria() {
         LocalVision.PieceGuess base = new LocalVision.PieceGuess("upper_piece", "t_shirt", "blue", null, null, null,
                 Map.of("category", 0.4, "subcategory", 0.3, "color", 0.8), 0.5, List.of("blue"), null);
-        LocalVision.PieceGuess g = WardrobeService.localGuess(base, "lower_piece", List.of(
+        LocalVision.PieceGuess g = DraftEvidence.localGuess(base, "lower_piece", List.of(
                 new SubtypeReferences.Match("t_shirt", 0.97), new SubtypeReferences.Match("jeans", 0.93), new SubtypeReferences.Match("skirt", 0.8)));
         assertThat(g.category()).isEqualTo("lower_piece");
         assertThat(g.subcategory()).isEqualTo("jeans");
         assertThat(g.confidence().get("category")).isEqualTo(1.0);
-        assertThat(WardrobeService.candidates(g.insights().ranking(), "lower_piece")).extracting(m -> m.get("code")).containsExactly("jeans", "skirt");
+        assertThat(DraftEvidence.candidates(g.insights().ranking(), "lower_piece")).extracting(m -> m.get("code")).containsExactly("jeans", "skirt");
     }
 
     @Test
     void recusaTrazAPrimeiraOrientacaoETodosOsCriterios() {
-        ApiException e = WardrobeService.rejection(List.of(
+        ApiException e = DraftEvidence.rejection(List.of(
                 new PhotoAcceptance.Check("fundo", true, 0.9, 0.45, null),
                 new PhotoAcceptance.Check("inteira", false, 1, 0, "a peça foi cortada pela borda da foto (embaixo).")));
         assertThat(e.status()).isEqualTo(422);

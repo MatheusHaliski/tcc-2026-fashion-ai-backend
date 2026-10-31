@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -48,21 +47,7 @@ public class HypeController {
     }
 
     static List<UUID> ids(String csv) {
-        List<UUID> out = new ArrayList<>();
-        if (csv == null) {
-            return out;
-        }
-        for (String part : csv.split(",")) {
-            try {
-                out.add(UUID.fromString(part.trim()));
-            } catch (IllegalArgumentException ignored) {
-                // id malformado: ignorado (o lote continua)
-            }
-            if (out.size() >= HypeQueryService.MAX_BATCH) {
-                break;
-            }
-        }
-        return out;
+        return UuidCsv.parse(csv, HypeQueryService.MAX_BATCH);
     }
 
     @GetMapping("/api/hype/summaries")

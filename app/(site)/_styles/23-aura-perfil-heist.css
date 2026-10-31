@@ -1,0 +1,140 @@
+/* carta AURA Hype: nenhum texto ou número é cortado (sem reticências nem corte de linhas) */
+.is-fashion-hype .pc-name { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.aura-hype-preset .opt-name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.fashion-hype-cell dt, .fashion-hype-cell dd { overflow: visible; white-space: nowrap; }
+.aura-hype-preset-card { display: grid; overflow: hidden; border-radius: 12px 12px 0 0; background: var(--fashion-panel, #242421); color: #f2efe8; }
+.aura-hype-preset-card .fashion-hype-header { width: 100%; }
+.aura-hype-preset-card .fashion-hype-metadata { padding: .6rem; }
+.aura-hype-preset-art { display: block; position: relative; overflow: hidden; aspect-ratio: 3 / 4; border-block: 1px solid var(--hype-ink); background: radial-gradient(ellipse at 50% 42%, #f4f1ea 0 30%, #c9c4ba 75%); }
+.aura-hype-preset-art > img, .fashion-hype-level-art > img { position: absolute; inset: 8%; width: 84%; height: 84%; object-fit: contain; }
+.aura-hype-preset-card .fashion-hype-cell[data-tone="high"] { border-color: var(--hype-ink); }
+.aura-hype-preset-card .fashion-hype-cell[data-tone="high"] dd, .aura-hype-preset-card .fashion-hype-cell[data-tone="mid"] dd { color: var(--hype-ink); }
+.aura-hype-preset-card .fashion-hype-cell[data-tone="mid"] { border-color: color-mix(in srgb, var(--hype-secondary) 60%, transparent); }
+.aura-hype-preset .opt-name { padding: .55rem .65rem .65rem; }
+.aura-format-thumb { display: grid; gap: 5px; padding: 10px; background: var(--surface-3); }
+.aura-format-thumb i { display: block; min-width: 0; min-height: 0; border: 1px solid color-mix(in srgb, var(--thread) 55%, var(--line-soft)); border-radius: 5px; background: linear-gradient(145deg, color-mix(in srgb, var(--thread) 24%, var(--surface)), var(--surface)); }
+.aura-format-thumb.is-single { grid-template-columns: 1fr; }
+.aura-format-thumb.is-mosaic { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.fashion-hype-piece-name { font-size: clamp(1.15rem, 2vw, 1.6rem); line-height: 1.15; }
+/* 2.5D presentation: background, photograph and front glass; no asset reprocessing. */
+.is-fashion-hype { transform: perspective(1100px) rotateX(var(--fashion-tilt-x, 0deg)) rotateY(var(--fashion-tilt-y, 0deg)); transform-style: preserve-3d; transition: transform 180ms ease-out; }
+.is-fashion-hype > .art-stage { transform: translateZ(0); }
+.is-fashion-hype .pc-media, .is-fashion-hype .pd-slide { position: relative; transform: translateZ(8px); }
+.is-fashion-hype .fashion-hype-header, .is-fashion-hype .fashion-hype-metadata { transform: translateZ(16px); }
+.fashion-depth-glare { position: absolute; z-index: 10; inset: 0; pointer-events: none; border-radius: inherit; opacity: .18; background: radial-gradient(circle at var(--fashion-glare-x, 50%) var(--fashion-glare-y, 50%), #fff9, transparent 55%); mix-blend-mode: soft-light; }
+.fashion-motion-control { display: none; }
+@media (pointer: coarse) { .fashion-motion-control { display: block; position: relative; z-index: 12; padding: .4rem; } .fashion-motion-control button { min-height: 44px; padding: .4rem .7rem; border: 1px solid currentcolor; border-radius: .5rem; } }
+@media (prefers-reduced-motion: reduce) { .is-fashion-hype { transform: none; transition: none; } .fashion-motion-control { display: none; } .fashion-depth-glare { display: none; } }
+html[data-reduce-motion="true"] .is-fashion-hype { transform: none; transition: none; }
+html[data-reduce-motion="true"] .fashion-motion-control, html[data-reduce-motion="true"] .fashion-depth-glare { display: none; }
+/* Perfil e FAI Atelier: nível discreto (selo como os demais do cabeçalho) (selo como os demais do cabeçalho) e o progresso em modal, sem placar de LED */
+.level-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--line-soft); border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: 12px; line-height: 1.5; cursor: pointer; }
+.level-chip:hover { background: var(--surface-3); }
+.level-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.level-chip-pct { color: var(--muted); }
+.level-details { display: grid; gap: 8px; }
+.level-details-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 16px; }
+.level-details-head .tabular { font-size: 20px; font-weight: 600; }
+.level-details-track { height: 8px; overflow: hidden; border-radius: 999px; background: var(--surface-3); }
+.level-details-track i { display: block; height: 100%; border-radius: inherit; background: var(--thread); transition: width 300ms ease; }
+.level-details-list { display: grid; gap: 6px; }
+.level-details-list li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .level-details-track i { transition: none; } }
+.hero-fashion-card { position: relative; isolation: isolate; overflow: visible; max-width: 450px; padding: 12px; background: #242529; color: #f3f3ee; }
+.hero-fashion-background { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(ellipse at 50% 20%,#295974,#191b29 70%); }
+.hero-fashion-card[data-power="COSMIC_GOLD"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 30%,#927148,#211d2e 70%); }
+.hero-fashion-card[data-power="ELEMENTAL_WIND"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 20%,#42777b,#172e30 70%); }
+.hero-fashion-card[data-power="ELEMENTAL_FIRE"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 20%,#a85c35,#2e1e24 70%); }
+.hero-fashion-card[data-power="Y2K_HOLOGRAM"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 20%,#855e95,#25213f 70%); }
+.hero-fashion-front { position: relative; z-index: 1; }
+.hero-fashion-media { position: relative; aspect-ratio: 4 / 5; margin: 10px; transform: translateZ(8px); border: 1px solid var(--fashion-metal); border-radius: 8px; background: #171923; }
+.hero-fashion-poster, .hero-fashion-motion, .hero-fashion-media > .card-art-img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
+.hero-fashion-media > .card-art-img { position: absolute; inset: 0; }
+.hero-fashion-demo-video { position: absolute; inset: 0; opacity: .28; mix-blend-mode: screen; pointer-events: none; }
+.hero-fashion-demo-video .card-art-img { width: 100%; height: 100%; object-fit: cover; }
+.hero-fashion-vfx { position: absolute; inset: -9px; pointer-events: none; border: 1px solid #a3dbea55; border-radius: 10px; box-shadow: 0 0 18px #78d4e34d; background: radial-gradient(circle at 10% 10%,#b1e9fa88 1px,transparent 3px),radial-gradient(circle at 90% 80%,#d4b0fa88 1px,transparent 3px); mask-image: radial-gradient(ellipse,transparent 30%,#000 95%); }
+.hero-fashion-vfx[data-particle="GOLD_DUST"] { box-shadow: 0 0 22px #e7ca7a66; border-color: #e7ca7a88; }
+.hero-fashion-vfx[data-particle="WEATHER_MIST"] { box-shadow: 0 0 28px #8acdc677; }
+.hero-fashion-vfx[data-particle="NEON_GLITCH"] { border-color: #bf9be8; box-shadow: 3px 0 14px #84e8eb44,-3px 0 14px #ce96db44; }
+.hero-fashion-vfx[data-shader="CEL_SHADING"] { border-width: 2px; }
+.hero-fashion-vfx[data-shader="VHS_Y2K"] { background-image: repeating-linear-gradient(0deg,transparent 0 6px,#bc9bd722 7px 8px); }
+.hero-fashion-vfx[data-shader="INFRARED_SCAN"] { background-image: repeating-linear-gradient(90deg,transparent 0 28px,#97e1c433 29px 30px); }
+.hero-fashion-identity { position: relative; padding: .7rem; transform: translateZ(16px); }
+.hero-fashion-identity h3 { font-size: 1.25rem; font-weight: 800; }
+.hero-fashion-aura-badge { display: inline-block; padding: .25rem .5rem; margin-block: .5rem; border: 1px solid #d9d9ee66; border-radius: 5px; font-size: 12px; }
+.hero-fashion-power { color: #e3d19d; font-weight: 700; }
+.hero-fashion-demo-note { padding: .5rem; margin-block: .5rem; background: #fff; color: #25242a; font-size: 12px; border-radius: 5px; }
+.hero-fashion-lock { position: absolute; z-index: 20; inset: 0; display: grid; align-content: center; justify-items: center; gap: .7rem; padding: 1.5rem; text-align: center; border-radius: inherit; background: linear-gradient(135deg,#161b2eeb,#333449e8); backdrop-filter: blur(5px); }
+.hero-fashion-lock > span { font-size: 2rem; }
+.hero-fashion-card[data-locked="true"] .hero-fashion-vfx, .hero-fashion-card[data-locked="true"] .fashion-depth-glare { display: none; }
+
+/* FLAIR adventure: world above, actionable look deck below. */
+.afterparty-game { display: grid; gap: 12px; }
+.afterparty-world { position: relative; height: clamp(300px, 50vh, 620px); overflow: hidden; border: 1px solid #7d94ad; border-radius: 16px; background: #111c2d; }
+.afterparty-world:focus-visible { outline: 3px solid #63dddb; outline-offset: 3px; }
+.afterparty-objective { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; pointer-events: none; color: white; background: #101a2de6; border: 1px solid #839fb0; border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+.afterparty-status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 14px; }
+.afterparty-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.afterparty-dpad { display: flex; gap: 4px; }
+.afterparty-dpad button { touch-action: none; min-width: 44px; min-height: 44px; border: 1px solid currentcolor; border-radius: 8px; font-size: 18px; }
+.afterparty-hud { min-width: 0; background: #111c2d; color: #e4f3ff; border: 1px solid #7d94ad; border-radius: 14px; padding: 16px; }
+.afterparty-cards { display: flex; gap: 12px; overflow-x: auto; padding: 12px 2px; }
+.afterparty-role[data-current] { border-inline-start: 3px solid var(--mark); padding-inline-start: 10px; }
+.afterparty-role-now { color: var(--muted); font-weight: 600; }
+.afterparty-role-cards { display: grid; gap: 6px; margin-top: 6px; }
+.afterparty-role-cards li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 14px; }
+.afterparty-role-cards kbd { min-width: 24px; padding: 1px 6px; border: 1px solid var(--line-soft); border-radius: 6px; background: var(--surface-2); font: 600 13px var(--font-ui); text-align: center; }
+.afterparty-card { display: flex; flex: 0 0 160px; flex-direction: column; gap: 6px; text-align: left; border: 2px solid #8393a6; background: #213043; color: #e4f3ff; border-radius: 12px; padding: 10px; font-size: 14px; }
+.afterparty-card img { width: 100%; height: 90px; object-fit: contain; border-radius: 6px; background: #ebe8df; }
+.afterparty-card[data-tier="RARE"] { border-color: #82e3ed; }
+.afterparty-card[data-tier="LEGENDARY"] { border-color: #e6c56f; }
+.afterparty-card[data-tier="COLLAB_DROP"] { border-color: #cd9cef; }
+.afterparty-card[aria-pressed="true"] { box-shadow: 0 0 0 3px #65ddac; }
+.afterparty-card:disabled { opacity: .6; }
+.afterparty-card small { font-size: 12px; }
+.afterparty-deck-selection { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+
+/* FLAIR Metamorfose — MET Gala Heist v2: escolha do look e o jogo em tela cheia */
+.gala-heist-stage{position:fixed;inset:0;z-index:80;background:#000}
+.gala-heist-decks{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.gala-heist-deck{display:flex;gap:8px;align-items:center;cursor:pointer}.gala-heist-deck.is-on{outline:2px solid var(--thread);outline-offset:-2px}
+.gala-heist-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin:8px 0 0;padding:0;list-style:none}
+.gala-heist-cards li{display:grid;gap:2px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);font-size:.85rem}.gala-heist-cards li.is-out{opacity:.55}
+.afterparty-map { width: 100%; height: 100%; touch-action: none; }
+/* MET Gala Heist: o que o deck muda no avatar e no salão; sinal + / − / · em texto (não só cor) */
+.heist-mods { display: grid; gap: 10px; margin-bottom: 12px; }
+.heist-mods-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 14px; margin: 0; padding: 0; list-style: none; }
+.heist-mod { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; font-size: var(--text-body-sm); }
+.heist-mod-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line-soft); background: var(--surface-2); color: var(--ink); font-weight: 700; line-height: 1; }
+.heist-mod.is-plus .heist-mod-mark { border-color: var(--status-good); }
+.heist-mod.is-minus .heist-mod-mark { border-color: var(--status-critical); }
+.heist-mod-body { display: grid; gap: 2px; min-width: 0; }
+.heist-mod-meter { width: 100%; height: 6px; }
+.heist-mod-text { color: var(--muted); }
+.heist-mods.is-compact { margin: 0; }
+.heist-mods.is-compact .heist-mods-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.heist-mods.is-compact .heist-mod { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border: 1px solid var(--line-soft); border-radius: 999px; background: var(--surface); }
+.heist-mods.is-compact .heist-mod-body { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+
+/* FAI Atelier — mesma superfície, tinta e fonte das outras abas; efeitos nunca indicam direito de acesso. */
+.atelier-hub { position: relative; min-width: 0; color: var(--ink); }
+.atelier-hub .btn:focus-visible, .atelier-hub select:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.atelier-fx { position: absolute; z-index: -1; inset: 0; overflow: hidden; pointer-events: none; border-radius: inherit; }
+.atelier-circle-stream { position: absolute; inset: 0; width: 100%; height: 100%; }
+.atelier-data-tunnels { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.atelier-flow-line { animation: atelier-flow 12s linear infinite; }
+.atelier-arrow-flow { position: absolute; display: flex; gap: 10px; right: 6%; bottom: 18px; color: var(--ink); opacity: .4; }
+.atelier-arrow-flow svg { width: 28px; height: 20px; animation: atelier-arrow 3.6s ease-in-out infinite; }
+.atelier-reward-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; margin-bottom: 28px; }
+.atelier-reward-strip > div { padding: 13px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--surface-2); }
+.atelier-reward-strip dt { font-size: var(--text-body-sm, 14px); line-height: 1.4; color: var(--muted); }
+.atelier-reward-strip dd { margin-top: 6px; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); }
+.atelier-panel { min-width: 0; padding-top: 20px; }
+.atelier-section-heading { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+.atelier-section-heading h2 { font-size: clamp(20px, 2.4vw, 28px); font-weight: 700; margin-bottom: 8px; }
+.atelier-section-heading p { max-width: 680px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.atelier-hub .input, .atelier-hub select { background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--ink); padding: 10px; width: 100%; font-size: 14px; margin-top: 8px; }
+.atelier-hub label { color: var(--ink); font-size: 14px; }
+.atelier-workbench { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr); gap: clamp(18px, 3vw, 40px); }
+.atelier-workbench-controls { display: flex; flex-direction: column; align-items: stretch; gap: 18px; padding: 22px; border: 1px solid var(--line-soft); background: var(--surface-2); border-radius: 16px; }
+.atelier-demo-notice { border-inline-start: 3px solid var(--mark); padding: 10px 14px; background: var(--surface-2); color: var(--ink); font-size: 14px; line-height: 1.6; }

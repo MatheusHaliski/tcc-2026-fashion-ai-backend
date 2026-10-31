@@ -16,7 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** FLAIR — modos de jogo sobre peças (cartas), looks e times: PEÇA → CARD → LOOK → TEAM/DECK → COMPETIÇÃO. */
+/**
+ * FLAIR — modos de jogo sobre peças (cartas), looks e times: PEÇA → CARD → LOOK → TEAM/DECK → COMPETIÇÃO. Aqui ficam o
+ * catálogo e os modos disputados com looks prontos; os montados carta a carta (Draft, Deck Battle, Chess e Ultimate
+ * Team) ficam em {@link FlairCardModesController}.
+ */
 @RestController
 @Tag(name = "FLAIR — modos (Battle, Squad, League, World Tour, Conquest, Deck Battle e eventos especiais)")
 public class FlairModesController {
@@ -35,25 +39,10 @@ public class FlairModesController {
     public record RosterRequest(List<UUID> starters, List<UUID> reserves, List<UUID> specials) {
     }
 
-    public record PickRequest(UUID pieceId) {
-    }
-
-    public record DraftLooksRequest(List<List<UUID>> looks) {
-    }
-
-    public record CardsRequest(List<UUID> pieceIds) {
-    }
-
     public record TagRequest(UUID schemeId, String partner, List<String> opponents) {
     }
 
     public record OpponentRequest(String opponent) {
-    }
-
-    public record BoardRequest(Map<String, UUID> board) {
-    }
-
-    public record RolesRequest(Map<String, UUID> roles) {
     }
 
     @GetMapping("/api/flair/modes")
@@ -146,48 +135,6 @@ public class FlairModesController {
         return modes.attack(user, map, code, body.schemeIds());
     }
 
-    @PostMapping("/api/flair/modes/draft")
-    @Operation(summary = "FLAIR Draft — abre um monte de 20 peças (escolha em serpente contra a IA)")
-    public Map<String, Object> draftStart(CurrentUser user) {
-        return modes.draftStart(user);
-    }
-
-    @PostMapping("/api/flair/modes/draft/{id}/pick")
-    @Operation(summary = "FLAIR Draft — escolhe uma peça (a IA responde na vez dela)")
-    public Map<String, Object> draftPick(CurrentUser user, @PathVariable UUID id, @RequestBody PickRequest body) {
-        return modes.draftPick(user, id, body.pieceId());
-    }
-
-    @PostMapping("/api/flair/modes/draft/{id}/looks")
-    @Operation(summary = "FLAIR Draft — envia os 3 looks montados com as escolhas: 3 confrontos")
-    public Map<String, Object> draftFinish(CurrentUser user, @PathVariable UUID id, @RequestBody DraftLooksRequest body) {
-        return modes.draftFinish(user, id, body.looks());
-    }
-
-    @GetMapping("/api/flair/modes/deck")
-    @Operation(summary = "Deck Battle — meu deck de 12 cartas (e uma sugestão)")
-    public Map<String, Object> deck(CurrentUser user) {
-        return modes.deck(user);
-    }
-
-    @PutMapping("/api/flair/modes/deck")
-    @Operation(summary = "Deck Battle — salva o deck: 4 superiores, 3 inferiores, 2 calçados, 2 acessórios e 1 curinga")
-    public Map<String, Object> saveDeck(CurrentUser user, @RequestBody CardsRequest body) {
-        return modes.saveDeck(user, body.pieceIds());
-    }
-
-    @PostMapping("/api/flair/modes/deck/battle")
-    @Operation(summary = "Deck Battle — sorteia o desafio e distribui 7 cartas")
-    public Map<String, Object> deckStart(CurrentUser user) {
-        return modes.deckStart(user);
-    }
-
-    @PostMapping("/api/flair/modes/deck/battle/{id}/play")
-    @Operation(summary = "Deck Battle — joga o look montado com a mão")
-    public Map<String, Object> deckPlay(CurrentUser user, @PathVariable UUID id, @RequestBody CardsRequest body) {
-        return modes.deckPlay(user, id, body.pieceIds());
-    }
-
     @PostMapping("/api/flair/modes/combo")
     @Operation(summary = "Combo Battle — as sinergias entre peças decidem")
     public Map<String, Object> combo(CurrentUser user, @RequestBody LookRequest body) {
@@ -210,35 +157,5 @@ public class FlairModesController {
     @Operation(summary = "Wardrobe Wars — guarda-roupa × guarda-roupa em 7 categorias")
     public Map<String, Object> wardrobeWars(CurrentUser user, @RequestBody OpponentRequest body) {
         return modes.wardrobeWars(user, body.opponent());
-    }
-
-    @GetMapping("/api/flair/modes/chess")
-    @Operation(summary = "FLAIR Chess — posições do tabuleiro, minhas cartas e uma sugestão")
-    public Map<String, Object> chessSuggest(CurrentUser user) {
-        return modes.chessSuggest(user);
-    }
-
-    @PostMapping("/api/flair/modes/chess")
-    @Operation(summary = "FLAIR Chess — joga o tabuleiro 3×3 contra a IA")
-    public Map<String, Object> chess(CurrentUser user, @RequestBody BoardRequest body) {
-        return modes.chess(user, body.board());
-    }
-
-    @GetMapping("/api/flair/modes/ultimate")
-    @Operation(summary = "FLAIR Ultimate Team — elenco por função e Team Rating")
-    public Map<String, Object> ultimate(CurrentUser user) {
-        return modes.ultimate(user);
-    }
-
-    @PutMapping("/api/flair/modes/ultimate")
-    @Operation(summary = "FLAIR Ultimate Team — salva as 7 funções")
-    public Map<String, Object> saveUltimate(CurrentUser user, @RequestBody RolesRequest body) {
-        return modes.saveUltimate(user, body.roles());
-    }
-
-    @PostMapping("/api/flair/modes/ultimate/play")
-    @Operation(summary = "FLAIR Ultimate Team — partida função × função (Chemistry desempata)")
-    public Map<String, Object> playUltimate(CurrentUser user, @RequestBody OpponentRequest body) {
-        return modes.playUltimate(user, body.opponent());
     }
 }

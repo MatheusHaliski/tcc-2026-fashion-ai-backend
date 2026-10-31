@@ -15,3 +15,9 @@ Segundo lote: inspetor de propriedades e entradas de valores separados, com14 te
 
 
 Fechamento para publicação: build completo e browser smoke passaram;14 testes funcionais e14 testes da auditoria. Quantidades finais devem ser lidas em RESIDUAL_FINDINGS.md/audit-metadata.json, pois o fechamento anterior era uma fotografia intermediária.
+
+## Onda 02–20
+
+Recontagem a partir do HEAD integrado em RESIDUAL_FINDINGS.md (COVERAGE.csv/COVERAGE_FINAL.csv atualizados por lote,
+com sha256 de cada fonte tocada). Cada domínio 02–20 tem ao menos um lote DONE; os arquivos originais tocados ficam
+PARTIAL e os demais itens seguem PENDING com domínio de triagem. 100% de decisão ainda não foi atingido.

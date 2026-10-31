@@ -5,7 +5,6 @@ import br.com.fashionai.application.service.SealDesignService;
 import br.com.fashionai.application.service.SealService;
 import br.com.fashionai.application.service.SealPolicyCopilot;
 import br.com.fashionai.domain.model.enums.SealTier;
-import br.com.fashionai.domain.model.enums.PromotionStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * RF20/RF21/RF25 — selos (criador, rascunho pelo Copilot, uploads), sugestões e vínculos (SealBond); as promoções
+ * ligadas a selo (RF22) ficam em {@link SealPromotionController}.
+ */
 @RestController
 @Tag(name = "RF20/RF21 — Selos, vínculos (SealBond) e promoções")
 public class SealController {
@@ -78,20 +81,7 @@ public class SealController {
     @GetMapping("/api/pieces/seals")
     @Operation(summary = "RF53 — Selos de marca/celebridade das peças (vínculos APROVADOS de tier PEÇA), em lote: ids=a,b,c (até 60; respeita visibilidade)")
     public Map<String, Object> pieceSeals(CurrentUser viewer, @RequestParam(value = "ids", required = false) String ids) {
-        List<UUID> out = new java.util.ArrayList<>();
-        if (ids != null) {
-            for (String part : ids.split(",")) {
-                try {
-                    out.add(UUID.fromString(part.trim()));
-                } catch (IllegalArgumentException ignored) {
-                    // id malformado: ignorado (o lote continua)
-                }
-                if (out.size() >= SealService.MAX_PIECE_SEALS) {
-                    break;
-                }
-            }
-        }
-        return seals.pieceSeals(viewer, out);
+        return seals.pieceSeals(viewer, UuidCsv.parse(ids, SealService.MAX_PIECE_SEALS));
     }
 
     @GetMapping("/api/me/seals")
@@ -186,49 +176,6 @@ public class SealController {
     @Operation(summary = "RF20.CA05 — Revogar selo concedido")
     public Map<String, Object> revoke(CurrentUser user, @PathVariable UUID bondId, @RequestBody(required = false) RevokeRequest body) {
         return seals.revoke(user, bondId, body == null ? null : body.reason());
-    }
-
-    public record AdminCouponRequest(UUID issuerId, SealService.PromotionForm promotion) { }
-
-    @PostMapping("/api/admin/coupons")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Map<String, Object> createAdminCoupon(CurrentUser user, @RequestBody AdminCouponRequest request) {
-        return seals.createAdminPromotion(user, request.issuerId(), request.promotion());
-    }
-
-    @PostMapping("/api/promotions")
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "RF22 — Criar promoção/benefício ligado a selo")
-    public Map<String, Object> createPromotion(CurrentUser user, @RequestBody SealService.PromotionForm form) {
-        return seals.createPromotion(user, form);
-    }
-
-    @PutMapping("/api/promotions/{id}")
-    @Operation(summary = "RF22 — Editar promoção")
-    public Map<String, Object> updatePromotion(CurrentUser user, @PathVariable UUID id, @RequestBody SealService.PromotionForm form) {
-        return seals.updatePromotion(user, id, form);
-    }
-
-    public record StatusRequest(@NotNull PromotionStatus status) {
-    }
-
-    @PutMapping("/api/promotions/{id}/status")
-    @Operation(summary = "RF22 — Ativar, pausar ou encerrar promoção")
-    public Map<String, Object> setPromotionStatus(CurrentUser user, @PathVariable UUID id, @RequestBody StatusRequest body) {
-        return seals.setPromotionStatus(user, id, body.status());
-    }
-
-    @GetMapping("/api/users/{ownerId}/promotions")
-    @Operation(summary = "RF22 — Promoções de uma marca/celebridade (com elegibilidade do visitante)")
-    public List<Map<String, Object>> promotionsOf(CurrentUser viewer, @PathVariable UUID ownerId) {
-        return seals.promotionsOf(viewer, ownerId);
-    }
-
-    @PostMapping("/api/promotions/{id}/redemptions")
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "RF22 — Resgatar benefício (gera código)")
-    public Map<String, Object> redeem(CurrentUser user, @PathVariable UUID id) {
-        return seals.redeem(user, id);
     }
 
     @GetMapping("/api/me/issuer-metrics")

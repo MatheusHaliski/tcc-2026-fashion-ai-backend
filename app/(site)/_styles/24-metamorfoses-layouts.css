@@ -1,0 +1,135 @@
+/* Metamorfoses: a peça do guarda-roupa escolhida numa grade de fotos (no lugar da lista) */
+.atelier-piece-picker { display: grid; gap: 8px; min-width: 0; border: 0; padding: 0; margin: 0; }
+.atelier-piece-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 320px; overflow-y: auto; padding: 2px; }
+.atelier-piece-grid button { display: grid; gap: 4px; min-width: 0; padding: 6px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface-2); color: var(--ink); text-align: left; cursor: pointer; }
+.atelier-piece-grid button img { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 6px; background: #f4f3ef; }
+.atelier-piece-grid button span { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.atelier-piece-grid button[aria-pressed="true"] { border-color: var(--mark); box-shadow: 0 0 0 2px color-mix(in srgb, var(--mark) 30%, transparent); }
+.atelier-piece-grid button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.atelier-piece-grid button:disabled { opacity: .6; cursor: default; }
+.atelier-processing-steps { display: grid; gap: 14px; }
+.atelier-processing-steps li { display: flex; gap: 12px; align-items: center; color: var(--ink); font-size: 14px; }
+.atelier-processing-steps li > span { border: 1px solid var(--line-soft); border-radius: 8px; padding: 7px; }
+.atelier-processing-steps li[data-done="true"] { color: var(--ink); }
+.atelier-workbench-preview { display: grid; align-content: start; padding: 12px; perspective: 1100px; }
+.atelier-workbench-preview .hero-fashion-card { width: 100%; max-width: 440px; justify-self: center; color: var(--ink); }
+.atelier-preview-empty { min-height: 350px; border: 1px dashed var(--line-soft); border-radius: 20px; display: grid; align-content: center; justify-items: center; gap: 20px; padding: 25px; text-align: center; }
+.atelier-preview-empty > span { font-size: 70px; color: var(--ink); }
+.atelier-library-toggle { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0; }
+.atelier-timeline { position: relative; isolation: isolate; }
+.atelier-timeline .atelier-fx { opacity: .5; }
+.atelier-chapter-rail { display: flex; overflow-x: auto; gap: 10px; padding: 12px 0 25px; margin-bottom: 12px; }
+.atelier-chapter-rail li { flex-shrink: 0; position: relative; }
+.atelier-chapter-rail li::after { content: ""; position: absolute; height: 1px; background: var(--line-soft); bottom: -12px; left: 0; right: -10px; }
+.atelier-shifting-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; perspective: 1400px; padding: 16px 3px 25px; }
+.atelier-shifting-card { position: relative; min-width: 0; transform: translateZ(var(--atelier-depth)) rotateY(var(--atelier-lean)); transition: transform .5s cubic-bezier(.2,.8,.2,1), filter .4s; animation: atelier-card-enter .5s both; animation-delay: var(--atelier-delay); border: 1px solid var(--line-soft); border-radius: 16px; background: var(--surface-2); }
+.atelier-shifting-card[data-active="true"] { z-index: 2; border-color: var(--mark); box-shadow: 0 12px 30px #0002; }
+.atelier-memory { padding: 15px; display: grid; gap: 12px; }
+.atelier-memory img { width: 100%; height: 240px; object-fit: contain; background: #e6e8e6; border-radius: 10px; }
+.atelier-memory h3 { font-size: 18px; font-weight: 650; }
+.atelier-memory-date { color: var(--ink); font: 600 12px var(--font-ui); }
+.atelier-earned-memories { margin-top: 25px; display: grid; gap: 14px; }
+.atelier-trend-matrix { position: relative; isolation: isolate; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; padding: 15px 0 30px; }
+.atelier-trend-matrix > .atelier-data-tunnels { z-index: -1; }
+.atelier-trend-gauge { position: relative; overflow: hidden; padding: 24px; border: 1px solid var(--line-soft); border-radius: 16px; background: var(--surface-2); }
+.atelier-trend-gauge h3 { position: relative; z-index: 1; font-size: 16px; margin-bottom: 20px; }
+.atelier-trend-gauge li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(35px, 100px) 3ch; align-items: center; gap: 12px; margin-top: 12px; font-size: 14px; }
+.atelier-trend-gauge meter { width: 100%; accent-color: var(--mark); }
+.atelier-orbit { position: absolute; width: 190px; height: 190px; border: 1px dashed var(--line-soft); border-radius: 50%; right: -70px; top: -60px; animation: atelier-orbit 30s linear infinite; }
+.atelier-orbit::after { content: ""; position: absolute; inset: 15px; border: 4px solid var(--line-soft); border-block-start-color: var(--line-soft); border-radius: 50%; }
+.atelier-trend-score { font: 600 14px var(--font-ui); color: var(--ink); padding: 12px; }
+.atelier-trending-piece .fai-card { color: #18222f; }
+.atelier-trending-piece > .btn { margin: 12px; }
+.atelier-earned-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+.atelier-earned { border: 1px solid var(--line-soft); background: var(--surface-2); padding: 20px; border-radius: 14px; }
+.atelier-earned h3 { color: var(--ink); font-weight: 650; margin-bottom: 10px; }
+.atelier-earned h4 { margin-top: 15px; font-weight: 600; }
+.atelier-earned p { font-size: 14px; line-height: 1.6; color: var(--ink); }
+.atelier-inventory-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.atelier-inventory-item { display: flex; flex-direction: column; align-items: start; gap: 12px; border: 1px solid var(--line-soft); padding: 20px; background: var(--surface-2); border-radius: 14px; }
+.atelier-inventory-item img { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; }
+.atelier-inventory-icon { color: var(--ink); font-size: 35px; }
+.atelier-help-steps { display: grid; gap: 24px; }
+.atelier-hub[data-motion="off"] *, .atelier-hub[data-motion="off"] *::before, .atelier-hub[data-motion="off"] *::after, .atelier-fx[data-paused="true"] * { animation: none !important; transition: none !important; }
+.atelier-hub[data-motion="off"] .atelier-shifting-card { transform: none; }
+@keyframes atelier-flow { to { stroke-dashoffset: -620; } }
+@keyframes atelier-arrow { 0%, 100% { opacity: .15; transform: translateX(-4px); } 50% { opacity: .8; transform: translateX(4px); } }
+@keyframes atelier-card-enter { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+@keyframes atelier-orbit { to { transform: rotate(360deg); } }
+@media (max-width: 1050px) { .atelier-reward-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } .atelier-shifting-grid, .atelier-inventory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 650px) { .atelier-hero, .atelier-workbench { grid-template-columns: minmax(0, 1fr); } .atelier-hero { gap: 18px; } .atelier-shifting-grid, .atelier-inventory-grid, .atelier-trend-matrix, .atelier-earned-grid { grid-template-columns: minmax(0, 1fr); } .atelier-reward-strip { gap: 6px; } .atelier-reward-strip > div { padding: 10px; } .atelier-reward-strip dt { font-size: 12px; min-height: 70px; } .atelier-workbench-controls { padding: 15px; } }
+@media (prefers-reduced-motion: reduce) { .atelier-hub *, .atelier-hub *::before, .atelier-hub *::after { animation: none !important; transition: none !important; } .atelier-shifting-card { transform: none; } }
+html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] .atelier-hub *::before, html[data-reduce-motion="true"] .atelier-hub *::after { animation: none !important; transition: none !important; }
+.atelier-trend-delta { grid-column: 1 / -1; font-size: 12px; color: var(--ink); }
+.atelier-trend-delta[data-direction="up"] { color: var(--ink); }
+.atelier-trend-delta[data-direction="down"] { color: var(--ink); }
+.atelier-hub .tab { color: var(--ink); }
+
+/* Eight Hype layouts; each band contains four genuinely distinct reading modes. */
+.aura-hype-preset-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 300px); grid-template-columns: none; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 4px 4px 12px; }
+.aura-hype-preset { scroll-snap-align: start; }
+.aura-hype-preset:disabled { opacity: .45; cursor: not-allowed; }
+.aura-hype-preset-art { aspect-ratio: 2 / 1; }
+.aura-hype[data-preset-kind="static"] *, .aura-hype[data-preset-kind="static"]::before, .aura-hype[data-preset-kind="static"]::after { animation: none !important; }
+.fashion-hype-level-preview:disabled { opacity: 1; cursor: not-allowed; }
+.hype-demo-label { padding: 4px 8px; }
+.fashion-hype-matrix[data-layout="static-horizontal"] { display: flex; overflow-x: auto; }
+.fashion-hype-matrix[data-layout="static-horizontal"] > div { flex: 0 0 54px; }
+.fashion-hype-matrix[data-layout="static-vertical"], .fashion-hype-matrix[data-layout="ranked-bars"], .fashion-hype-matrix[data-layout="extremes"], .fashion-hype-matrix[data-layout="momentum"] { grid-template-columns: minmax(0, 1fr); }
+.fashion-hype-matrix[data-layout="static-columns"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fashion-hype-matrix[data-layout="static-vertical"] .fashion-hype-cell { grid-template-columns: 1fr auto; justify-items: start; }
+.fashion-hype-matrix[data-layout="static-vertical"] dd { justify-self: end; }
+.hype-global-only { display: grid; justify-items: center; gap: 8px; padding: 16px; }
+.hype-global-only strong { font: 600 48px/1 var(--font-data); }
+.fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell { grid-template-columns: 1fr auto; justify-items: start; }
+.hype-led-track { grid-column: 1 / -1; width: 100%; height: 8px; border-radius: 4px; background: #ffffff20; overflow: hidden; }
+.hype-led-track i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--hype-ink, #6dccc1) 0 6px, transparent 6px 8px); transition: width 700ms ease; }
+.fashion-hype-cell[data-tone="max"] { color: #ffe080; border-color: #ffe080; }
+.fashion-hype-cell[data-tone="min"] { color: #ff9393; border-color: #ff9393; }
+.fashion-hype-matrix[data-layout="momentum"] dd { font-size: 36px; }
+.fashion-hype-matrix[data-layout="key-triad"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fashion-hype-matrix[data-layout="key-triad"] small, .hype-dimension-trend { white-space: normal; font-size: 12px; }
+.hype-mini-stars { display: block; animation: hype-star-pulse 2s ease-in-out infinite alternate; }
+@keyframes hype-star-pulse { from { opacity: .4; } to { opacity: 1; } }
+.pc-tab-live-score { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+/* The expanded preview changes the actual content layout, not just the photograph. */
+.piece-card-expanded .pc-content { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+.piece-card-expanded .pc-header, .piece-card-expanded .c-actions { grid-column: 1 / -1; }
+.piece-card-expanded .pc-media { grid-column: 1; }
+.piece-card-expanded .pc-id { grid-column: 2; grid-row: 2; align-self: stretch; padding: 12px; }
+.pae-expanded-card { width: 100%; }
+.card-preview-mode-toggle { z-index: 12; }
+@media (prefers-reduced-motion: reduce) { .hype-mini-stars { animation: none; } .hype-led-track i { transition: none; } }
+/* Preview stays before controls on mobile; scrolling inside it keeps the entire final card reachable. */
+.piece-create-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.piece-create-preview, .pae-preview { position: sticky; top: 64px; max-height: calc(100dvh - 156px); overflow: auto; min-width: 0; scroll-padding-block: 16px; }
+.piece-create-preview { grid-row: 1; }
+.piece-create-main { grid-row: 2; }
+.pae-preview { grid-row: 1; max-height: 58dvh; z-index: 8; background: var(--surface); }
+.pae-main { grid-row: 2; min-width: 0; }
+/* Keep the mobile sticky preview above the viewport centre so editor controls
+   scrolled into view remain clickable; the full card stays accessible inside it. */
+@media (max-width: 899px) { .pae-preview { max-height: min(36dvh, 320px); } }
+@media (min-width: 900px) {
+  .piece-create-layout:not(.is-art) { grid-template-columns: minmax(0, 1fr) minmax(352px, 44%); }
+  .piece-create-main, .pae-main { grid-row: 1; grid-column: 1; }
+  .piece-create-preview, .pae-preview { grid-row: 1; grid-column: 2; max-height: calc(100dvh - 80px); }
+}
+@media (max-width: 639px) {
+  .piece-card-expanded .pc-content { display: block; }
+  .piece-card-expanded .c-facts { gap: 10px 16px; }
+  .piece-card-expanded .pc-seg { flex-wrap: wrap; }
+  .piece-card-expanded .pc-seg-btn { min-width: 0; flex: 1; }
+}
+.card-preview-mode > .pae-expanded-card { width: 100%; }
+.piece-card-expanded .c-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); }
+.fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dt { order: 0; grid-column: 1; }
+.fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dd { order: 0; grid-column: 2; justify-self: end; }
+.fashion-hype-matrix[data-layout="ranked-bars"] .hype-led-track { grid-row: 2; }
+
+/* Cards remain stable under the pointer; focus indicators and their controls stay interactive. */
+.fashion-depth-glare { display: none; }
+
+.catalog-default-fallback { position: relative; display: block; width: 100%; height: 100%; }
+.catalog-photo-retry { position: absolute; bottom: 8px; right: 8px; z-index: 2; background: var(--surface); }
+.catalog-photo.is-default { width: 100%; height: 100%; display: block; }

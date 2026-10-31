@@ -1,0 +1,242 @@
+/* ---------- RF11 · palco do card: arte do Background Studio atrás do container (passe-partout) ---------- */
+/* raios em ordem: borda externa do card > container do esquema > elementos internos */
+.fai-card { --r-out: var(--card-radius, 6px); --r-box: calc(var(--r-out) * .66); --r-in: calc(var(--r-out) * .33); }
+.fai-card .scheme-stage { position: relative; }
+/* a faixa da arte cresce com o card (7,5% da largura, entre 14 e 30 px): a moldura fica visível sem roubar a foto */
+.fai-card { --aura-band: clamp(14px, 7.5%, 30px); }
+.fai-card.has-art .scheme-stage { padding: calc(var(--aura-band) + 6px) var(--aura-band) var(--aura-band); isolation: isolate; overflow: hidden; }
+.fai-card.has-art .scheme-container, .fai-card.has-art .dna-container { position: relative; z-index: 1; margin: 0; background: var(--container-bg, var(--card-bg)); color: var(--card-ink); border-radius: var(--r-box); padding: 6px; box-shadow: 0 0 0 1.5px rgba(255,255,255,.75), 0 14px 30px rgba(0,0,0,.28); }
+.fai-card.has-art .dna-container::before { background: var(--container-bg, var(--card-bg)); top: -8px; padding: 1px 5px; border-radius: 3px; }
+.fai-card.has-art :is(.c-photo, .grid-pieces, .hero-lateral-row, .dna-hero, .dna-lateral, .dna-timeline, .dna-mood, .dna-occasions) { border-radius: var(--r-in); overflow: hidden; }
+.fai-card.has-art .hero-lateral-row .c-photo { border-radius: var(--r-in) 0 0 var(--r-in); }
+.fai-card.has-art .piece2 { border-radius: var(--r-in); }
+.fai-card.has-art .c-row:last-child { border-bottom: none; }
+.card-art { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-size: cover; background-position: center; container-type: inline-size; }
+.card-art-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.card-art.art-aura-splash > img.card-art-img:not(.card-art-material),
+.card-art.art-aura-splash > video.card-art-img { mix-blend-mode: screen; filter: brightness(1.14) saturate(1.3) contrast(1.06); transform: scale(1.1); }
+.aura-splash-spread { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .78; mix-blend-mode: screen; pointer-events: none; }
+.aura-splash-spread .goo-flow { transform-box: fill-box; transform-origin: center; }
+.aura-splash-spread .goo-flow-pink { animation: splash-spread-pink 7.2s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow-gold { animation: splash-spread-gold 8.4s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow-cyan { animation: splash-spread-cyan 6.6s ease-in-out infinite alternate; }
+.aura-splash-spread .goo-flow circle { fill: #fff; opacity: .8; }
+.aura-splash-spread .goo-highlight { fill: none; stroke: #fff; stroke-width: .75; stroke-linecap: round; opacity: .72; }
+.aura-splash-spread .goo-drops { fill: #fff; opacity: .72; animation: splash-drops 5.5s ease-in-out infinite alternate; }
+@keyframes splash-spread-pink { from { transform: translate(-2%, 1%) scale(.92, .92) rotate(-2deg); } to { transform: translate(2%, -2%) scale(1.06, 1.08) rotate(2deg); } }
+@keyframes splash-spread-gold { from { transform: translate(2%, 1%) scale(.94, .9) rotate(2deg); } to { transform: translate(-2%, -2%) scale(1.05, 1.12) rotate(-2deg); } }
+@keyframes splash-spread-cyan { from { transform: translate(1%, -2%) scale(1.02, .92) rotate(1deg); } to { transform: translate(-2%, 2%) scale(.94, 1.08) rotate(-2deg); } }
+@keyframes splash-drops { from { transform: translateY(1%) scale(.9); } to { transform: translateY(-2%) scale(1.08); } }
+/* arte em moldura (Aura Electro): o GIF 360×480 (anel de 108 px, LEDs na faixa inteira) vira border-image 9-slice — os cantos ficam inteiros e cada lado estica
+   sobre a faixa da arte, então o feixe sai de um ponto, percorre as quatro bordas e volta ao mesmo ponto, em qualquer
+   proporção de card (antes, object-fit: cover cortava as laterais e só as bordas superior e inferior apareciam) */
+.card-art-frame { position: absolute; inset: 0; border-style: solid; border-color: transparent; border-width: calc(var(--aura-frame, 20px) + 6px) var(--aura-frame, 20px) var(--aura-frame, 20px); border-image-slice: 108; border-image-width: 1; border-image-repeat: stretch; pointer-events: none; }
+/* material sozinho aparece inteiro; sobre uma arte AURA entra em overlay forte (antes: soft-light a 42%, quase invisível) */
+.card-art-material.is-solo { mix-blend-mode: normal; opacity: 1; }
+.card-art-material.is-overlay { mix-blend-mode: overlay; opacity: .72; }
+.card-art::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+/* animações dos presets AURA (estratégia "css-animation-over-static" do manifesto) */
+.card-art.anim-sweep::after { background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.28) 50%, transparent 70%); background-size: 250% 100%; animation: art-sweep 8s linear infinite; }
+.card-art.anim-shimmer::after { background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.38) 50%, transparent 60%); background-size: 300% 300%; animation: art-sweep 5s ease-in-out infinite; }
+@keyframes art-sweep { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+.card-art.anim-diagonal::after { background: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 10px, transparent 10px 22px); animation: art-diag 6s linear infinite; }
+@keyframes art-diag { to { background-position: 62px 0; } }
+.card-art.anim-breathe .card-art-img { animation: art-breathe 7s ease-in-out infinite; }
+@keyframes art-breathe { 50% { transform: scale(1.05); filter: brightness(1.08); } }
+.card-art.anim-drift .card-art-img { animation: art-drift 14s ease-in-out infinite alternate; }
+@keyframes art-drift { from { transform: scale(1.12) translate(-3%, -2%); } to { transform: scale(1.12) translate(3%, 2%); } }
+.card-art.anim-flicker::after { background: radial-gradient(circle at 50% 18%, rgba(255,255,255,.4), transparent 60%); animation: art-flicker 3.2s steps(1) infinite; }
+@keyframes art-flicker { 0%, 100% { opacity: .2; } 12% { opacity: .9; } 14% { opacity: .3; } 40% { opacity: .7; } 42% { opacity: .25; } 70% { opacity: .8; } }
+.card-art.anim-hue .card-art-img { animation: art-hue 9s ease-in-out infinite; }
+@keyframes art-hue { 50% { filter: hue-rotate(28deg) saturate(1.15); } }
+.card-art.anim-particles::after { background-image: radial-gradient(circle, rgba(255,255,255,.85) 1px, transparent 1.7px), radial-gradient(circle, rgba(255,255,255,.5) 1px, transparent 1.7px); background-size: 34px 34px, 21px 21px; background-position: 0 0, 10px 14px; animation: art-rise 9s linear infinite; }
+@keyframes art-rise { to { background-position: 0 -340px, 10px -196px; } }
+.card-art.anim-scanline::after { background: repeating-linear-gradient(0deg, rgba(0,0,0,.14) 0 1px, transparent 1px 4px), linear-gradient(180deg, transparent 45%, rgba(120,255,240,.28) 50%, transparent 55%); background-size: 100% 100%, 100% 220%; animation: art-scan 4s linear infinite; }
+@keyframes art-scan { from { background-position: 0 0, 0 120%; } to { background-position: 0 0, 0 -120%; } }
+/* decoração das cartelas sazonais */
+.season-decor { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.season-decor .fall { position: absolute; top: -34px; width: var(--size); height: var(--size); display: block; animation: season-fall var(--dur) linear var(--delay) infinite; }
+.season-decor .fall svg, .season-decor .bloom svg, .season-decor .palm svg, .season-decor .sun svg { width: 100%; height: 100%; display: block; overflow: visible; }
+@keyframes season-fall { from { transform: translate(0, -10px) rotate(0deg); } to { transform: translate(var(--drift), 560px) rotate(360deg); } }
+.season-decor .flake { color: #fff; filter: drop-shadow(0 0 2px rgba(60,100,150,.7)); }
+.season-decor .snow-ground { position: absolute; left: -6%; right: -6%; bottom: -8px; height: 20px; background: #fff; border-radius: 50% 50% 0 0 / 100% 100% 0 0; box-shadow: 0 -2px 8px rgba(92,122,153,.35); }
+.season-decor .sun { position: absolute; right: 6%; top: 6%; width: 70px; height: 70px; }
+.season-decor .sun .sun-rays { transform-origin: 0 0; animation: sun-spin 18s linear infinite; }
+@keyframes sun-spin { to { transform: rotate(360deg); } }
+.season-decor .palm { position: absolute; bottom: 4px; width: 62px; height: 96px; transform-origin: bottom center; animation: palm-sway 5s ease-in-out infinite; }
+.season-decor .palm.left { left: -4px; } .season-decor .palm.right { right: -4px; animation-delay: -2.5s; }
+@keyframes palm-sway { 50% { transform: rotate(3deg); } }
+.season-decor .sea { position: absolute; left: 0; right: 0; bottom: 0; height: 16px; background: linear-gradient(180deg, #48B8D0, #1E7FA8); -webkit-mask: radial-gradient(10px 6px at 10px 0, transparent 98%, #000) 0 0 / 20px 100%; mask: radial-gradient(10px 6px at 10px 0, transparent 98%, #000) 0 0 / 20px 100%; }
+.season-decor .sparkle { position: absolute; width: 6px; height: 6px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: sparkle 2.4s ease-in-out var(--delay) infinite; }
+@keyframes sparkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1.2); } }
+.season-decor .leaf-pile { position: absolute; left: -4%; right: -4%; bottom: -10px; height: 22px; background: radial-gradient(circle at 10% 60%, #C2410C 8px, transparent 9px), radial-gradient(circle at 28% 40%, #D97706 9px, transparent 10px), radial-gradient(circle at 46% 70%, #9A3412 8px, transparent 9px), radial-gradient(circle at 64% 45%, #B45309 9px, transparent 10px), radial-gradient(circle at 82% 65%, #C2410C 8px, transparent 9px), radial-gradient(circle at 96% 40%, #D97706 8px, transparent 9px); }
+.season-decor .branch { position: absolute; left: -2%; top: -2%; width: 58%; height: 30%; }
+.season-decor .branch > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.season-decor .bloom { position: absolute; width: 18px; height: 18px; transform: translate(-50%, -50%); }
+/* passarela: holofotes com intensidade proporcional às curtidas (--light); entram uma vez quando o card aparece */
+.runway-spots { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.runway-spots .spot { position: absolute; top: 0; height: 100%; background: linear-gradient(180deg, rgba(255,248,214,.95), rgba(255,248,214,0) 90%); clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%); mix-blend-mode: screen; opacity: var(--light, .4); }
+.runway:not([data-play]) .runway-spots .spot { opacity: 0; }
+.runway[data-play] .runway-spots .spot { animation: spot-in .9s ease-out both; animation-delay: calc(var(--i, 0) * 120ms); }
+@keyframes spot-in { from { opacity: 0; } }
+:root[data-reduce-motion="true"] :is(.card-art, .card-art *, .season-decor *, .runway-spots *, .runway *)::after, :root[data-reduce-motion="true"] :is(.card-art *, .season-decor *, .runway-spots *, .runway *, .xray-stage *) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { :is(.card-art, .season-decor, .runway-spots, .runway, .xray-stage) *, .card-art::after { animation: none !important; } }
+
+/* ---------- Anatomias da Seção B (v18): foto em toda anatomia, nada infinito, dado com rótulo ---------- */
+/* 01 Passarela */
+.runway { position: relative; aspect-ratio: 4/5; overflow: hidden; background: radial-gradient(ellipse at 50% 0, #2c2836, #0b0a0f 72%); isolation: isolate; }
+.runway-backdrop { position: absolute; inset: 0 0 auto; height: 30%; background: linear-gradient(180deg, #1d1a25, #0b0a0f); display: flex; justify-content: center; padding-top: 8px; }
+.runway-backdrop span { font-family: var(--font-data); font-size: var(--text-caption); text-transform: uppercase; letter-spacing: .3em; color: rgba(255,255,255,.62); }
+.runway-carpet-wrap { position: absolute; left: 50%; bottom: 0; width: 84%; height: 86%; transform: translateX(-50%); filter: drop-shadow(0 0 .8px #E8C15A) drop-shadow(0 0 .8px #E8C15A); }
+.runway-carpet { position: absolute; inset: 0; clip-path: polygon(41% 0, 59% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, #4d0910 0%, #8e0e1a 40%, #c1121f 100%); }
+.runway-carpet::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, rgba(0,0,0,.1) 0 5px, transparent 5px 11px), linear-gradient(90deg, rgba(0,0,0,.35), transparent 30%, transparent 70%, rgba(0,0,0,.35)); }
+.runway-look { position: absolute; transform: translateX(-50%); margin: 0; display: flex; flex-direction: column; align-items: center; z-index: 2; }
+.runway-look img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 4px; padding: 2px; box-shadow: 0 6px 10px rgba(0,0,0,.55); }
+.runway-look.lead img { box-shadow: 0 0 0 2px #E8C15A, 0 8px 14px rgba(0,0,0,.6); }
+.runway-look figcaption { font-size: 12px; font-weight: 700; color: #fff; background: rgba(0,0,0,.78); border-radius: 999px; padding: 1px 7px; margin-top: 3px; white-space: nowrap; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.runway-look figcaption:empty { display: none; }
+.runway-look.lead figcaption { background: #E8C15A; color: #1a1206; }
+.runway-audience { position: absolute; bottom: 0; width: 22%; height: 30px; z-index: 3; opacity: .85; background: radial-gradient(circle at 7px 10px, #16131c 5.5px, transparent 6px) 0 0 / 13px 17px repeat-x, radial-gradient(circle at 7px 18px, #211d29 7px, transparent 7.5px) 5px 10px / 13px 20px repeat-x; }
+.runway-audience.left { left: 0; } .runway-audience.right { right: 0; }
+/* 02 Etiqueta */
+.tags-rail { position: relative; padding: 16px 8px 8px; background: linear-gradient(180deg, color-mix(in srgb, var(--card-bg, #fff) 92%, #000 8%), var(--card-bg, #fff)); }
+.tags-rail .rail { position: absolute; left: 6px; right: 6px; top: 6px; height: 4px; border-radius: 2px; background: linear-gradient(180deg, #d9d9d9, #8f8f8f); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.tags-rail .tags { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 6px; }
+.hang-tag { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 14px 6px 6px; background: #EBDDBF; color: #2b2217; border-radius: 3px; clip-path: polygon(22% 0, 78% 0, 100% 10%, 100% 100%, 0 100%, 0 10%); transform: rotate(var(--tilt)); transform-origin: 50% -8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); min-width: 0; font-size: 12px; }
+.hang-tag.is-classic { box-shadow: inset 0 0 0 2px #1F7A76; }
+.hang-tag::before { content: ""; position: absolute; left: 50%; top: -14px; height: 20px; border-left: 1px solid #6b5a41; }
+.hang-tag .tag-hole { position: absolute; left: 50%; top: 4px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--card-bg, #fff); box-shadow: inset 0 0 0 1px rgba(0,0,0,.35); }
+.hang-tag .tag-photo { display: block; aspect-ratio: 1; background: #fff; border-radius: 2px; overflow: hidden; }
+.hang-tag .tag-photo img { width: 100%; height: 100%; object-fit: contain; }
+.hang-tag .tag-brand { font-family: var(--font-data); font-size: var(--text-caption); text-transform: uppercase; letter-spacing: .06em; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hang-tag .tag-name { font-weight: 600; font-size: 12px; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-align: center; }
+.hang-tag .tag-row { display: flex; justify-content: space-between; font-family: var(--font-data); font-size: 12px; border-top: 1px dashed rgba(43,34,23,.3); padding-top: 1px; gap: 2px; min-width: 0; }
+.hang-tag .tag-row em { font-style: normal; opacity: .75; }
+.hang-tag .tag-price { font-family: var(--font-data); font-size: 12px; text-align: center; margin-top: 2px; }
+.hang-tag .tag-classic { font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; text-align: center; background: #1F7A76; color: #fff; border-radius: 2px; padding: 2px 3px; }
+.hang-tag .tag-care { display: flex; justify-content: center; color: #2b2217; opacity: .8; }
+.tag-total { margin: 8px 0 0; font-size: 12px; text-align: right; color: var(--muted); }
+.tag-total b { color: var(--card-ink); font-family: var(--font-data); }
+/* 03 Raio-X: fotos em cores reais sobre o scanner; a âncora tem pino branco */
+.xray { display: flex; flex-direction: column; background: #06131f; color: #bff6ff; }
+.xray-stage { position: relative; aspect-ratio: 4/3; overflow: hidden; background: radial-gradient(circle at 50% 45%, #0e3350, #06131f 75%); }
+.xray-grid { position: absolute; inset: 0; background: linear-gradient(rgba(94,242,255,.12) 1px, transparent 1px) 0 0 / 14px 14px, linear-gradient(90deg, rgba(94,242,255,.12) 1px, transparent 1px) 0 0 / 14px 14px; }
+.xray-piece { position: absolute; width: 40%; height: 40%; transform: translate(-50%, -50%); }
+.xray-piece img { width: 100%; height: 100%; object-fit: contain; background: rgba(255,255,255,.94); border-radius: 4px; padding: 3px; box-shadow: 0 0 0 1px rgba(94,242,255,.5), 0 0 10px rgba(94,242,255,.35); }
+.xray-pin { position: absolute; right: -6px; top: -6px; width: 22px; height: 22px; border-radius: 50%; background: #5ef2ff; color: #06131f; font-style: normal; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 6px #5ef2ff; }
+.xray-pin.anchor, .xray-legend i.anchor { background: #fff; color: #06131f; box-shadow: 0 0 0 2px #5ef2ff; }
+.xray-beam { position: absolute; left: 0; right: 0; top: -22px; height: 22px; opacity: 0; background: linear-gradient(180deg, transparent, rgba(94,242,255,.4), transparent); }
+.xray-stage[data-play] .xray-beam { animation: xray-once 1.8s ease-in-out 1 both; }
+@keyframes xray-once { 0% { top: -22px; opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+.xray-corner { position: absolute; width: 14px; height: 14px; border: 2px solid #5ef2ff; }
+.xray-corner.tl { left: 6px; top: 6px; border-right: 0; border-bottom: 0; } .xray-corner.br { right: 6px; bottom: 6px; border-left: 0; border-top: 0; }
+.xray-legend { list-style: none; margin: 0; padding: 4px 10px; display: flex; flex-direction: column; min-width: 0; }
+.xray-legend li { display: flex; gap: 8px; align-items: center; min-width: 0; padding: 5px 0; border-top: 1px solid rgba(94,242,255,.15); }
+.xray-legend li:first-child { border-top: 0; }
+.xray-legend i { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #5ef2ff; color: #06131f; font-style: normal; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.xray-legend span { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.xray-legend b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e8fdff; }
+.xray-legend em { font-style: normal; font-size: 12px; color: #9fe3ee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xray-share { flex: none; font-family: var(--font-data); font-size: 12px; color: #9fe3ee; }
+.xray-readout { margin: 0; padding: 6px 10px; font-family: var(--font-data); font-size: 12px; background: #041019; border-top: 1px solid rgba(94,242,255,.25); color: #5ef2ff; }
+/* 04 Bento: altura fixa, o destaque troca sem pular */
+.bento { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 3px; aspect-ratio: 1/1; padding: 3px; background: var(--line-soft); }
+.bento-cell { position: relative; overflow: hidden; border-radius: var(--r-in, 4px); background: var(--surface-2); text-align: left; min-width: 0; min-height: 0; padding: 0; border: 0; }
+button.bento-cell { cursor: pointer; }
+.bento-cell.hero { grid-row: 1 / 4; }
+.bento-cell img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 8px 6px 28px; }
+.bento-cell img.is-cover { object-fit: cover; padding: 0; }
+.bento-label { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; padding: 4px 6px; background: rgba(255,255,255,.94); color: #191A19; min-width: 0; }
+.bento-label b { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bento-label em { font-style: normal; font-size: 12px; color: #4F534B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bento-cell.hero .bento-label b { font-size: 13px; }
+button.bento-cell:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--focus); }
+/* 05 Espectro */
+.spectrum { padding: 10px 12px 4px; display: flex; flex-direction: column; gap: 6px; }
+.spectrum-band { display: flex; height: 16px; border-radius: 3px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.spectrum-band i { flex-basis: 0; box-shadow: inset -1px 0 0 rgba(255,255,255,.5); }
+.spectrum-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line-soft); }
+.spectrum-swatch { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+.spectrum-name { display: flex; flex-direction: column; min-width: 0; }
+.spectrum-name b { font-size: 13px; } .spectrum-name em { font-style: normal; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spectrum-pct { font-family: var(--font-data); font-size: 12px; text-align: right; white-space: nowrap; }
+.spectrum-note { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+.spectrum .anat-how { margin: 0 -12px; }
+/* 06 Custo por uso */
+.cpu { display: flex; flex-direction: column; }
+.cpu-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line-soft); }
+.cpu-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); min-width: 0; }
+.cpu-name { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+.cpu-l1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
+.cpu-l1 b { font-size: 13px; font-weight: 600; }
+.cpu-l1 b:first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cpu-value { flex: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cpu-name em { font-style: normal; font-size: 12px; color: var(--muted); }
+.cpu-bar { display: block; height: 5px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 4px; } .cpu-bar i { display: block; height: 100%; border-radius: 99px; }
+.cpu-l3 { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 3px; font-size: 12px; color: var(--muted); }
+.cpu-foot { margin: 0; padding: 8px 12px; font-size: 12px; color: var(--muted); }
+/* 07 Silhueta */
+.silhouette { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 10px; padding: 10px 12px; align-items: center; }
+.mannequin { width: 78px; height: 166px; }
+.silhouette-data { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sil-family { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.sil-family b { font-size: 13px; color: var(--card-ink, var(--ink)); }
+.sil-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) 22px; gap: 6px; align-items: center; font-size: 12px; }
+.sil-row > span:first-child { font-size: 12px; line-height: 1.15; color: var(--muted); overflow-wrap: anywhere; }
+.sil-bar { height: 8px; border-radius: 3px; background: var(--surface-2); overflow: hidden; } .sil-bar i { display: block; height: 100%; background: var(--thread); }
+.sil-row b { font-family: var(--font-data); font-size: 12px; text-align: right; }
+/* 08 Hype Focus: faixas fixas de status, número sempre escrito */
+.hypef { padding: 10px 12px 0; display: flex; flex-direction: column; gap: 6px; }
+.hypef-top { display: flex; gap: 10px; align-items: flex-start; padding-bottom: 8px; border-bottom: 1px solid var(--line-soft); }
+.hypef-gauge { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.hypef-vals { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); }
+.hypef-vals b { color: var(--card-ink, var(--ink)); font-variant-numeric: tabular-nums; }
+.hypef-row { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; }
+.hypef-row em { font-style: normal; font-size: 12px; color: var(--muted); }
+.hypef-meter { width: 84px; flex: none; display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.hypef-meter > span:first-child { text-align: right; } .hypef-meter b { color: var(--card-ink, var(--ink)); font-variant-numeric: tabular-nums; }
+.hypef .hype-bar { display: block; height: 5px; }
+.hypef-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 2px 0 0; font-family: var(--font-data); font-size: 12px; color: var(--muted); }
+.hypef-legend span { display: inline-flex; align-items: center; gap: 4px; } .hypef-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.hypef .anat-how { margin: 0 -12px; }
+.hypef-forming { margin: 0; padding: 4px 0 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+/* 09 Cartela sazonal: as peças sobre a arte da estação */
+.season-card { display: flex; flex-direction: column; }
+.season-hero { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 8px 14px; }
+.season-title { position: relative; z-index: 2; display: inline-flex; gap: 5px; align-items: center; background: rgba(255,255,255,.9); color: #2a1a10; border-radius: 999px; padding: 3px 12px; font-family: var(--font-editorial); font-size: 13px; font-weight: 600; }
+.season-pieces { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; position: relative; z-index: 2; }
+.season-polaroid { display: flex; flex-direction: column; background: #fff; padding: 3px 3px 2px; border-radius: 2px; box-shadow: 0 3px 8px rgba(0,0,0,.22); transform: rotate(var(--tilt)); min-width: 0; }
+.season-polaroid img { aspect-ratio: 1; width: 100%; object-fit: contain; background: #f4f1ec; }
+.season-polaroid em { font-style: normal; font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.season-palette { display: flex; align-items: center; gap: 4px; margin: 0; padding: 10px 12px 4px; font-size: 12px; color: var(--muted); }
+.season-palette i { width: 18px; height: 18px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); } .season-palette span { margin-left: 4px; }
+.season-match { margin: 0; padding: 0 12px 10px; font-size: 12px; color: var(--muted); }
+.season-decor.once .fall.once { position: absolute; top: var(--rest); width: var(--size); height: var(--size); display: block; animation: none; transform: rotate(var(--rot)); }
+.season-hero:not([data-play]) .season-decor.once .fall.once { opacity: 0; }
+.season-hero[data-play] .season-decor.once .fall.once { animation: fall-once 2.2s cubic-bezier(.3,.6,.4,1) var(--d) both; }
+@keyframes fall-once { from { transform: translate(var(--drift), -160px) rotate(calc(var(--rot) - 140deg)); opacity: 0; } 20% { opacity: 1; } }
+.season-decor.once .sun { right: 4%; top: 4%; width: 54px; height: 54px; }
+.season-decor.once .sun .sun-rays { animation: none; }
+/* LEGO: placa-base com a textura enviada */
+.blocks-plate { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; background-size: 150px 150px; background-repeat: repeat; }
+.brick-piece { --brick: #C91A09; position: relative; background: var(--brick); border-radius: 3px; padding: 12px 6px 6px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.22), 0 3px 0 rgba(0,0,0,.28); min-width: 0; }
+.brick-piece::before { content: ""; position: absolute; top: 3px; left: 6px; right: 6px; height: 7px; background: radial-gradient(circle, color-mix(in srgb, var(--brick) 72%, #fff) 2.6px, rgba(0,0,0,.28) 3.2px, transparent 3.6px) 0 0 / 14px 7px repeat-x; }
+.brick-photo { display: block; aspect-ratio: 4 / 3; background: #fff; border: 3px solid rgba(255,255,255,.9); border-radius: 2px; overflow: hidden; }
+.brick-photo img { width: 100%; height: 100%; object-fit: contain; }
+.brick-label { display: block; margin-top: 4px; background: rgba(255,255,255,.92); color: #1B2A34; font-family: var(--font-data); font-size: 12px; font-weight: 700; padding: 1px 4px; border-radius: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scheme-container[data-anatomy="LEGO"] { background: url("/textures/lego_placa_base_card.webp") 0 0 / 150px 150px; }
+.scheme-container[data-anatomy="LEGO"] :is(.c-titleblock, .c-chips) { background: rgba(255,255,255,.93); color: #1B2A34; margin: 6px 8px; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.18), 0 2px 0 rgba(0,0,0,.25); border-bottom: none; }
+.scheme-container[data-anatomy="LEGO"] .seal-studs { background: rgba(255,255,255,.85); margin: 0 8px; border-radius: 3px; }
+/* as placas claras do LEGO têm superfície fixa: tokens claros, qualquer que seja a skin ou o tema */
+.scheme-container[data-anatomy="LEGO"] :is(.c-titleblock, .c-chips, .seal-studs) { --ink: #1B2A34; --card-ink: #1B2A34; --muted: #4F5A52; --faint: #5E6860; --line-soft: #D8D6CC; --surface-2: #F1F0EA; --surface-3: #E9E7DF; --chalk-ink: #7A5710; --mark-ink: #A51F4E; --thread-ink: #165C58; --chalk-soft: #FAF0DC; --mark-soft: #FBE7EE; --thread-soft: #E0F0EE; color-scheme: light; }
+/* DNA · B12 LEGO com a mesma textura e B11 com a decoração da estação */
+.dna-blocks .dna-container { background: url("/textures/lego_placa_base_card.webp") 0 0 / 150px 150px; border-color: #7C3AED; }
+.dna-season .season-decor { z-index: 0; } .dna-season > :not(.season-decor) { position: relative; z-index: 1; }
+.dna-season::after { content: none; }
+/* animação "Brilho" escolhida no modal da Cartela sazonal: o mesmo brilho que passa pela arte do card */
+.season-hero.motion-shimmer::after, .dna-season.motion-shimmer::after { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.38) 50%, transparent 60%); background-size: 300% 300%; animation: art-sweep 5s ease-in-out infinite; }
+/* movimento reduzido (preferência do app ou do sistema): o brilho fica parado — depois da regra acima, que é mais
+   específica que os seletores genéricos de redução de movimento */
+:root[data-reduce-motion="true"] :is(.season-hero, .dna-season).motion-shimmer::after { animation: none; }
+@media (prefers-reduced-motion: reduce) { :is(.season-hero, .dna-season).motion-shimmer::after { animation: none; } }
+

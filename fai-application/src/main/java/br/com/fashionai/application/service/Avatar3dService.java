@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * RF40 — Meu Avatar 3D. O rosto é reconstruído no navegador (lib/avatar3d); aqui só chega o resultado: a forma em pose
@@ -55,11 +54,10 @@ import java.util.regex.Pattern;
  */
 @Service
 public class Avatar3dService {
-    static final int MODEL_VERSION = 1;
-    static final int SHAPE_LEN = 468 * 3;
+    static final int MODEL_VERSION = Avatar3dModelRules.MODEL_VERSION;
+    static final int SHAPE_LEN = Avatar3dModelRules.SHAPE_LEN;
     /** Versões guardadas além da atual e da aprovada. */
     static final int KEEP_VERSIONS = 5;
-    private static final Pattern HEX = Pattern.compile("^#[0-9a-fA-F]{6}$");
     private static final long MAX_TEXTURE_BYTES = 4L * 1024 * 1024;
     /** Tons de cabelo da paleta (lib/avatar3d/hair-tone.ts, HAIR_TONES): 0 = o medido na foto, 1–14 = escolhido. */
     static final int HAIR_TONES = 14;
@@ -559,306 +557,19 @@ public class Avatar3dService {
         }
     }
 
-    /** Mesmas regras de validateModel (lib/avatar3d/model.ts). Devolve só os campos conhecidos. */
+    /** Validação do modelo: regras em {@link Avatar3dModelRules}. */
     static Map<String, Object> validateModel(Map<String, Object> m) {
-        ApiException invalid = ApiException.badRequest("MODELO_INVALIDO", Msg.t("avatar3d.modelo_invalido"));
-        if (m == null || !(m.get("v") instanceof Number v) || v.intValue() != MODEL_VERSION) {
-            throw invalid;
-        }
-        if (!(m.get("shape") instanceof List<?> shape) || shape.size() != SHAPE_LEN) {
-            throw invalid;
-        }
-        for (Object o : shape) {
-            if (!(o instanceof Number n) || !Double.isFinite(n.doubleValue()) || Math.abs(n.doubleValue()) >= 40) {
-                throw invalid;
-            }
-        }
-        if (!(m.get("skin") instanceof String skin) || !HEX.matcher(skin).matches()) {
-            throw invalid;
-        }
-        if (!(m.get("hair") instanceof Map<?, ?> hair)) {
-            throw invalid;
-        }
-        Object color = hair.get("color");
-        if (color != null && !(color instanceof String c && HEX.matcher(c).matches())) {
-            throw invalid;
-        }
-        for (String k : List.of("top", "side", "fringe")) {
-            if (!(hair.get(k) instanceof Number n) || !Double.isFinite(n.doubleValue())) {
-                throw invalid;
-            }
-        }
-        // campos novos do cabelo (opcionais): valor fora da lista é descartado, como no validateModel do app
-        @SuppressWarnings("unchecked") Map<String, Object> h = new LinkedHashMap<>((Map<String, Object>) hair);
-        if (h.containsKey("length") && !HAIR_LENGTHS.contains(h.get("length"))) h.remove("length");
-        if (h.containsKey("texture") && !HAIR_TEXTURES.contains(h.get("texture"))) h.remove("texture");
-        if (h.containsKey("cover") && h.get("cover") != null && !(h.get("cover") instanceof String cv && HEX.matcher(cv).matches())) h.remove("cover");
-        if (h.containsKey("outline") && !validOutline(h.get("outline"))) h.remove("outline");
-        if (h.containsKey("tone") && h.get("tone") != null && !validTone(h.get("tone"))) h.remove("tone");
-        // volume medido (fator 0,5–2,5) e a classe dele
-        if (h.containsKey("volume") && !(h.get("volume") instanceof Number vn && Double.isFinite(vn.doubleValue()) && vn.doubleValue() >= 0.5 && vn.doubleValue() <= 2.5)) h.remove("volume");
-        if (h.containsKey("volumeLevel") && !HAIR_VOLUMES.contains(h.get("volumeLevel"))) h.remove("volumeLevel");
-        // risca medida na foto (−1 … 1) e variação de tom medida (0–1), hair-flow.ts e hair-tone.ts no cliente
-        if (h.containsKey("part") && !(h.get("part") instanceof Number pn && Double.isFinite(pn.doubleValue()) && Math.abs(pn.doubleValue()) <= 1)) h.remove("part");
-        if (h.containsKey("variation") && !(h.get("variation") instanceof Number vv && Double.isFinite(vv.doubleValue()) && vv.doubleValue() >= 0 && vv.doubleValue() <= 1)) h.remove("variation");
-        h.keySet().retainAll(HAIR_KEYS);
-        Map<String, Object> out = new LinkedHashMap<>();
-        if (m.get("body") instanceof Map<?, ?> body) {
-            @SuppressWarnings("unchecked") Map<String, Object> b = (Map<String, Object>) body;
-            out.put("body", validateBody(b));
-        }
-        for (String k : List.of("v", "shape", "skin", "metrics", "views", "warnings")) {
-            if (m.containsKey(k)) {
-                out.put(k, m.get(k));
-            }
-        }
-        // corpo base do avatar (estimado pelo rosto no aparelho ou escolhido pela pessoa); valor desconhecido é descartado
-        if ("FEMININO".equals(m.get("sex")) || "MASCULINO".equals(m.get("sex"))) {
-            out.put("sex", m.get("sex"));
-        }
-        // pele do corpo medida na foto (opcional): só hex válido passa
-        if (m.get("bodySkin") instanceof String bs && HEX.matcher(bs).matches()) {
-            out.put("bodySkin", bs);
-        }
-        out.put("hair", h);
-        // olhos (AVATAR-ID I4): opcionais; fora das regras são descartados, o avatar continua (como no app)
-        Map<String, Object> eyes = validEyes(m.get("eyes"));
-        if (eyes != null) {
-            out.put("eyes", eyes);
-        }
-        Map<String, Object> brows = validBrows(m.get("brows"));
-        if (brows != null) {
-            out.put("brows", brows);
-        }
-        return out;
+        return Avatar3dModelRules.validate(m);
     }
 
-    /** Sobrancelhas (lib/avatar3d/identity/brows.ts): cor "#rrggbb", medidas nas faixas, forma da lista. */
-    static final List<String> BROW_SHAPES = List.of("STRAIGHT", "SOFT_ARCH", "HIGH_ARCH");
-
-    static Map<String, Object> validBrows(Object o) {
-        if (!(o instanceof Map<?, ?> b) || !isHex(b.get("color")) || !BROW_SHAPES.contains(b.get("shape"))) {
-            return null;
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("color", b.get("color"));
-        for (Map.Entry<String, Double> e : Map.of("thickness", 1.0, "arch", 0.5, "density", 1.0, "confidence", 1.0).entrySet()) {
-            if (!(b.get(e.getKey()) instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < 0 || n.doubleValue() > e.getValue()) {
-                return null;
-            }
-            out.put(e.getKey(), n.doubleValue());
-        }
-        out.put("shape", b.get("shape"));
-        // medidas por fatia, de dentro para fora (opcional, clientes novos): 5 espessuras 0–1 e 5 cores hex ou nulas
-        if (b.get("zones") instanceof Map<?, ?> z && z.get("thickness") instanceof List<?> zt && zt.size() == 5
-                && z.get("color") instanceof List<?> zc && zc.size() == 5) {
-            boolean ok = true;
-            List<Object> th = new ArrayList<>(), co = new ArrayList<>();
-            for (Object t : zt) {
-                if (!(t instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < 0 || n.doubleValue() > 1) { ok = false; break; }
-                th.add(n.doubleValue());
-            }
-            for (Object cc : zc) {
-                if (cc != null && !isHex(cc)) { ok = false; break; }
-                co.add(cc);
-            }
-            if (ok) {
-                Map<String, Object> zones = new LinkedHashMap<>();
-                zones.put("thickness", th);
-                zones.put("color", co);
-                out.put("zones", zones);
-            }
-        }
-        return out;
-    }
-
-    /** Olhos (lib/avatar3d/iris.ts, AvatarEyes): cores "#rrggbb", valores das listas, confiança 0–1. */
-    static final List<String> IRIS_CLASSES = List.of("DARK_BROWN", "MEDIUM_BROWN", "LIGHT_BROWN", "HAZEL", "AMBER", "GREEN", "GREEN_GRAY", "GRAY", "GRAY_BLUE", "BLUE", "BLUE_GRAY");
-    static final List<String> IRIS_PATTERNS = List.of("RADIAL", "CRYPT", "RING", "UNIFORM");
-    static final List<String> GLASSES_KINDS = List.of("NONE", "PRESCRIPTION", "SUNGLASSES");
-
-    static Map<String, Object> validEyes(Object o) {
-        if (!(o instanceof Map<?, ?> e) || !isHex(e.get("color")) || !isHex(e.get("secondary"))) {
-            return null;
-        }
-        if (!IRIS_CLASSES.contains(e.get("cls")) || !IRIS_PATTERNS.contains(e.get("pattern")) || !GLASSES_KINDS.contains(e.get("glasses"))) {
-            return null;
-        }
-        if (!"IMAGE_ANALYSIS".equals(e.get("source")) && !"DEFAULT".equals(e.get("source"))) {
-            return null;
-        }
-        if (!(e.get("confidence") instanceof Number c) || !Double.isFinite(c.doubleValue()) || c.doubleValue() < 0 || c.doubleValue() > 1) {
-            return null;
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        for (String k : List.of("color", "secondary", "cls", "pattern")) {
-            out.put(k, e.get(k));
-        }
-        out.put("confidence", c.doubleValue());
-        out.put("source", e.get("source"));
-        out.put("glasses", e.get("glasses"));
-        if (isHex(e.get("frame"))) {
-            out.put("frame", e.get("frame"));
-        }
-        // heterocromia: a cor de cada olho, só quando os dois vêm certos
-        Map<String, Object> r = irisColor(e.get("right")), l = irisColor(e.get("left"));
-        if (r != null && l != null) {
-            out.put("right", r);
-            out.put("left", l);
-        }
-        return out;
-    }
-
-    private static boolean isHex(Object o) {
-        return o instanceof String s && HEX.matcher(s).matches();
-    }
-
-    private static Map<String, Object> irisColor(Object o) {
-        if (!(o instanceof Map<?, ?> m) || !isHex(m.get("color")) || !isHex(m.get("secondary"))) {
-            return null;
-        }
-        return new LinkedHashMap<>(Map.of("color", m.get("color"), "secondary", m.get("secondary")));
-    }
-
-    /** Cabelo: comprimento e textura medidos na foto (lib/avatar3d/hair.ts) e a silhueta por altura. */
-    static final List<String> HAIR_LENGTHS = List.of("bald", "buzz", "short", "medium", "long");
-    static final List<String> HAIR_TEXTURES = List.of("straight", "wavy", "curly", "coily");
-    static final java.util.Set<String> HAIR_KEYS = java.util.Set.of("present", "color", "top", "side", "bottom", "fringe", "cut", "length", "texture", "cover", "outline", "tone", "volume", "volumeLevel", "part", "variation");
-    static final List<String> HAIR_VOLUMES = List.of("flat", "normal", "full", "big");
-    static final List<String> HAIR_FAMILIES = List.of("natural", "ash", "golden", "copper", "red", "gray", "white");
-
-    /** Tom medido: {level: 1–10, family: uma de HAIR_FAMILIES}, nada mais. */
-    static boolean validTone(Object o) {
-        if (!(o instanceof Map<?, ?> t) || t.size() != 2 || !(t.get("level") instanceof Number n) || !HAIR_FAMILIES.contains(t.get("family"))) {
-            return false;
-        }
-        double d = n.doubleValue();
-        return d == Math.rint(d) && d >= 1 && d <= 10;
-    }
-
-    static boolean validOutline(Object o) {
-        if (!(o instanceof List<?> l) || l.size() > 32) {
-            return false;
-        }
-        for (Object x : l) {
-            if (!(x instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < 0 || n.doubleValue() > 30) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /** Faixas plausíveis de cada proporção do corpo (as mesmas de lib/avatar3d/body-spec.ts, BODY_RANGE). */
-    /** Medidas de fita (cm) e número do calçado (BR): as mesmas faixas de lib/tryon/sizes.ts (TAPE_RANGE). */
-    static final Map<String, double[]> TAPE_RANGE = Map.of(
-            "chest", new double[]{60, 170}, "waist", new double[]{50, 170}, "hip", new double[]{60, 180}, "shoe", new double[]{33, 46});
-    /** O que é da pessoa e não vai para quem vê o avatar dela: altura e peso informados e as medidas de fita. */
-    static final List<String> PERSONAL_BODY_KEYS = List.of("heightCm", "weightKg", "measuresCm");
-
-    /** Modelo para outra pessoa: as proporções desenham o corpo; as medidas pessoais ficam só com o dono. */
-    static Map<String, Object> publicModel(Map<String, Object> model) {
-        if (!(model.get("body") instanceof Map<?, ?> body)) {
-            return model;
-        }
-        Map<String, Object> b = new LinkedHashMap<>();
-        body.forEach((k, v) -> {
-            if (!PERSONAL_BODY_KEYS.contains(String.valueOf(k))) {
-                b.put(String.valueOf(k), v);
-            }
-        });
-        Map<String, Object> out = new LinkedHashMap<>(model);
-        out.put("body", b);
-        return out;
-    }
-
-    static final Map<String, double[]> BODY_RANGE = Map.of(
-            "stature", new double[]{1.2, 2.2}, "shoulderW", new double[]{0.15, 0.26}, "chestW", new double[]{0.13, 0.26},
-            "waistW", new double[]{0.11, 0.26}, "hipW", new double[]{0.15, 0.27}, "legLen", new double[]{0.46, 0.58},
-            "armLen", new double[]{0.29, 0.38}, "headH", new double[]{0.11, 0.155}, "build", new double[]{-1.5, 2});
-    /**
-     * Profundidades do tronco (frente → costas): só existem quando uma foto de perfil as mediu ou a pessoa as
-     * ajustou. Ausentes, o corpo é o mesmo de antes (a profundidade sai da largura) — por isso são opcionais aqui,
-     * e corpos salvos antes desta versão continuam válidos.
-     */
-    static final Map<String, double[]> BODY_DEPTH_RANGE = Map.of(
-            "chestD", new double[]{0.08, 0.22}, "waistD", new double[]{0.07, 0.24}, "hipD", new double[]{0.08, 0.24});
-    static final List<String> BODY_SOURCES = List.of("observed", "user", "estimated", "default");
-
-    /**
-     * Corpo do avatar: só números finitos dentro das faixas, uma origem conhecida por proporção, altura e peso
-     * informados dentro de limites humanos. Devolve só os campos conhecidos (nada de texto livre).
-     */
+    /** Validação do corpo: regras em {@link Avatar3dBodyRules}. */
     static Map<String, Object> validateBody(Map<String, Object> b) {
-        ApiException invalid = ApiException.badRequest("CORPO_INVALIDO", Msg.t("avatar3d.corpo_invalido"));
-        if (b == null || !(b.get("v") instanceof Number v) || v.intValue() != 1) {
-            throw invalid;
-        }
-        if (!"FEMININO".equals(b.get("sex")) && !"MASCULINO".equals(b.get("sex"))) {
-            throw invalid;
-        }
-        if (!(b.get("params") instanceof Map<?, ?> params) || !(b.get("sources") instanceof Map<?, ?> sources)) {
-            throw invalid;
-        }
-        Map<String, Object> p = new LinkedHashMap<>(), src = new LinkedHashMap<>();
-        for (Map.Entry<String, double[]> e : BODY_RANGE.entrySet()) {
-            Object n = params.get(e.getKey());
-            if (!(n instanceof Number num) || !Double.isFinite(num.doubleValue()) || num.doubleValue() < e.getValue()[0] || num.doubleValue() > e.getValue()[1]) {
-                throw invalid;
-            }
-            Object sv = sources.get(e.getKey());
-            if (!(sv instanceof String so) || !BODY_SOURCES.contains(so)) {
-                throw invalid;
-            }
-            p.put(e.getKey(), num.doubleValue());
-            src.put(e.getKey(), so);
-        }
-        // profundidades: opcionais, mas quando vêm precisam do valor na faixa E da origem, como qualquer medida
-        for (Map.Entry<String, double[]> e : BODY_DEPTH_RANGE.entrySet()) {
-            Object n = params.get(e.getKey()), sv = sources.get(e.getKey());
-            if (n == null && sv == null) {
-                continue;
-            }
-            if (!(n instanceof Number num) || !Double.isFinite(num.doubleValue()) || num.doubleValue() < e.getValue()[0] || num.doubleValue() > e.getValue()[1]
-                    || !(sv instanceof String so) || !BODY_SOURCES.contains(so)) {
-                throw invalid;
-            }
-            p.put(e.getKey(), num.doubleValue());
-            src.put(e.getKey(), so);
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("v", 1);
-        out.put("sex", b.get("sex"));
-        out.put("params", p);
-        out.put("sources", src);
-        out.put("heightCm", bounded(b.get("heightCm"), 120, 220));
-        out.put("weightKg", bounded(b.get("weightKg"), 30, 250));
-        // medidas de fita e número do calçado informados pela pessoa (opcionais): só o tamanho do provador usa
-        if (b.get("measuresCm") instanceof Map<?, ?> tape) {
-            Map<String, Object> cm = new LinkedHashMap<>();
-            for (Map.Entry<String, double[]> e : TAPE_RANGE.entrySet()) {
-                Double cmValue = bounded(tape.get(e.getKey()), e.getValue()[0], e.getValue()[1]);
-                if (cmValue != null) {
-                    cm.put(e.getKey(), cmValue);
-                }
-            }
-            if (!cm.isEmpty()) {
-                out.put("measuresCm", cm);
-            }
-        }
-        out.put("photo", Boolean.TRUE.equals(b.get("photo")));
-        out.put("warnings", b.get("warnings") instanceof List<?> w ? w.stream().limit(20).map(String::valueOf)
-                .map(x -> x.replaceAll("[^A-Za-z0-9_]", "")).filter(x -> !x.isEmpty()).toList() : List.of());
-        return out;
+        return Avatar3dBodyRules.validate(b);
     }
 
-    private static Double bounded(Object o, double lo, double hi) {
-        if (o == null) {
-            return null;
-        }
-        if (!(o instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < lo || n.doubleValue() > hi) {
-            throw ApiException.badRequest("CORPO_INVALIDO", Msg.t("avatar3d.corpo_invalido"));
-        }
-        return n.doubleValue();
+    /** Modelo para outra pessoa, sem as medidas pessoais do corpo ({@link Avatar3dBodyRules#publicModel}). */
+    static Map<String, Object> publicModel(Map<String, Object> model) {
+        return Avatar3dBodyRules.publicModel(model);
     }
 
     /** Ajustes inteiros: tom e corte do cabelo (índices) e óculos (1 = mostra os de grau vistos na foto, 0 = sem). */

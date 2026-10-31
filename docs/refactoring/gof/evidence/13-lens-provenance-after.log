@@ -1,0 +1,7 @@
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.132 s -- in br.com.fashionai.application.lens.LensSimilarityTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.244 s -- in br.com.fashionai.application.lens.LensScanProvenanceTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.692 s -- in br.com.fashionai.application.lens.LensScanProvenanceCharacterizationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.061 s -- in br.com.fashionai.application.lens.LensReadingTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.873 s -- in br.com.fashionai.application.lens.LensServiceTest
+[INFO] Tests run: 46, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

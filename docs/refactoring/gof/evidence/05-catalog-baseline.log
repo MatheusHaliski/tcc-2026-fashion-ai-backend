@@ -1,0 +1,6 @@
+# 05 catalogo — caracterizacao no codigo ORIGINAL (base bcaee73, CatalogService.java intocado), 2026-10-31T13:13:38Z
+$ mvn -B -pl fai-application -Dtest='CatalogServicePhotoChoiceTest,CatalogServiceTest' -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.catalog.CatalogServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.catalog.CatalogServicePhotoChoiceTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

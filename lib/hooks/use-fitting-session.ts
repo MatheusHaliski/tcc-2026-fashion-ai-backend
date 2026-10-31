@@ -2,26 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReadonlyURLSearchParams } from "next/navigation";
-import { api, ApiError } from "@/lib/api/client";
-import type { PieceView } from "@/lib/api/types";
-import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
+import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useToast } from "@/components/ui";
 import {
-  FITTING_SLOTS, decodeTryOn, removeSlot, restoreFittingItems, wearItem,
+  decodeTryOn, removeSlot, restoreFittingItems, wearItem,
   type FittingItem, type FittingSlot,
 } from "@/lib/tryon/fitting-room";
-import { fromCatalog, fromWardrobe, type State } from "@/lib/tryon/fitting-room-model";
+import { fromCatalog, type State } from "@/lib/tryon/fitting-room-model";
 import { read, write, SESSION_KEY } from "@/lib/tryon/fitting-room-storage";
-import { gridOf, readMySizes, writeMySize } from "@/lib/tryon/sizes";
-
-/** Peça nova entra no tamanho que a pessoa escolheu por último nessa grade; sem escolha, no tamanho do avatar. */
-function withMySize(item: FittingItem): FittingItem {
-  if (item.size) return item;
-  const grid = gridOf(item.category, item.subcategory);
-  const mine = grid ? readMySizes()[grid] : undefined;
-  return mine ? { ...item, size: mine } : item;
-}
+import { loadScheme, restoreTryOn, wardrobeIndex, withMySize } from "@/lib/tryon/fitting-session-items";
+import { gridOf, writeMySize } from "@/lib/tryon/sizes";
+import { useFittingOwnership } from "./use-fitting-ownership";
 
 interface FittingSessionOptions {
   data: State | null;
@@ -31,14 +23,17 @@ interface FittingSessionOptions {
   onOwned: () => void;
 }
 
-/** Session use cases: restore, wear, remove, change variant and add a catalog item to the wardrobe. */
+/**
+ * Session use cases: restore, wear, remove, change variant and add a catalog item to the wardrobe.
+ * Fachada do provador: restauração e "meu tamanho" em `lib/tryon/fitting-session-items`, inclusão no guarda-roupa em
+ * `useFittingOwnership`; o contrato devolvido ao FittingRoom não muda.
+ */
 export function useFittingSession({ data, colors, searchParams, onStatus, onOwned }: FittingSessionOptions) {
   const { t } = useI18n();
   const toast = useToast();
   const [items, setItems] = useState<FittingItem[]>([]);
   const [products, setProducts] = useState<Record<string, CatalogProduct>>({});
-  const [owned, setOwned] = useState<Record<string, string>>({});
-  const [busyOwn, setBusyOwn] = useState<string | null>(null);
+  const { owned, busyOwn, ownIt } = useFittingOwnership(onOwned);
   const booted = useRef(false);
 
   const slotNames: Record<FittingSlot, string> = {
@@ -61,44 +56,14 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
       setItems(restoreFittingItems(read<FittingItem[]>("session", SESSION_KEY, [])));
       return;
     }
-    const wardrobe = new Map(FITTING_SLOTS.flatMap((slot) =>
-      (data.pieces?.[slot] ?? []).map((entry) => [entry.piece.id, entry] as const),
-    ));
-    Promise.all(refs.map(async (ref) => {
-      if (ref.source === "wardrobe") {
-        const entry = wardrobe.get(ref.id);
-        return entry ? fromWardrobe(entry) : null;
-      }
-      try {
-        const product = await catalogApi.product(ref.id);
-        setProducts((current) => ({ ...current, [product.id]: product }));
-        return fromCatalog(product, product.variants?.find((variant) => variant.id === ref.variantId) ?? null, colors);
-      } catch {
-        return null;
-      }
-    })).then((restored) => {
-      let next: FittingItem[] = [];
-      restored.forEach((item) => { if (item) next = wearItem(next, item); });
-      commit(next);
-    });
+    void restoreTryOn(refs, wardrobeIndex(data), colors, (product) => setProducts((current) => ({ ...current, [product.id]: product })))
+      .then(commit);
   }, [data, searchParams, colors, commit]);
 
   useEffect(() => {
     const schemeId = searchParams.get("scheme");
     if (!schemeId || !data) return;
-    const wardrobe = new Map(FITTING_SLOTS.flatMap((slot) =>
-      (data.pieces?.[slot] ?? []).map((entry) => [entry.piece.id, entry] as const),
-    ));
-    api.get<{ scheme: { items: { wardrobeItemId: string }[] } }>(`/api/schemes/${schemeId}`)
-      .then(({ scheme }) => {
-        let next: FittingItem[] = [];
-        scheme.items.forEach((item) => {
-          const entry = wardrobe.get(item.wardrobeItemId);
-          if (entry) next = wearItem(next, fromWardrobe(entry));
-        });
-        commit(next);
-      })
-      .catch(() => undefined);
+    loadScheme(schemeId, wardrobeIndex(data)).then(commit).catch(() => undefined);
   }, [searchParams, data, commit]);
 
   function tryOn(item: FittingItem) {
@@ -135,29 +100,6 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
     if (grid) writeMySize(grid, size);
     commit(items.map((current) => current.key === item.key ? { ...current, size } : current));
     onStatus(t("size.vestindo_status", { name: item.name, size }));
-  }
-
-  /** Guarda a peça da loja no guarda-roupa; devolve se guardou (a linha do provador só pede o 3D da peça guardada). */
-  async function ownIt(item: FittingItem): Promise<string | false> {
-    if (!item.productId || busyOwn) return false;
-    setBusyOwn(item.key);
-    try {
-      const piece = await api.post<PieceView>("/api/pieces/from-catalog", {
-        productId: item.productId, variantId: item.variantId ?? null, visibility: "PRIVATE",
-      });
-      setOwned((current) => ({ ...current, [item.key]: piece.id }));
-      toast.success(t("tryOn.adicionada_ao_guarda_roupa", { name: item.name }));
-      onOwned();
-      return piece.id;
-    } catch (error) {
-      // o Provador não tem formulário: "Corrija os campos destacados" não aponta nada — mostra o que o servidor recusou
-      const fields = error instanceof ApiError && error.code === "FORMULARIO_INVALIDO" ? Object.values(error.fields).filter((v) => typeof v === "string") : [];
-      if (fields.length) toast.error(t("tryOn.nao_deu_para_guardar", { name: item.name, reason: fields.join(" · ") }));
-      else toast.fromError(error);
-      return false;
-    } finally {
-      setBusyOwn(null);
-    }
   }
 
   return { items, products, owned, busyOwn, slotNames, commit, tryOn, pickProduct, remove, changeVariant, changeSize, ownIt };

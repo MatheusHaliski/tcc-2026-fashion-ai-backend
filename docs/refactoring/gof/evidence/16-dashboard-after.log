@@ -1,0 +1,20 @@
+# Lote 16 — DEPOIS da extração (DashboardService 217 linhas + DashboardAlerts 78 + DashboardHypeBlocks 163)
+$ mvn -B -pl fai-application -Dtest='Dashboard*Test,Block7RulesTest,AdminService*Test' -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.DashboardHypeBlocksTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.DashboardHypeV2Test
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.AdminServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.Block7RulesTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.DashboardServiceCharacterizationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.DashboardAlertsTest
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+# Contrato HTTP do DashboardController (fai-web, MockMvc com fakes de serviço)
+$ mvn -B -q -pl fai-web -am -Dtest='ControllerDelegacaoTest' -Dsurefire.failIfNoSpecifiedTests=false test
+surefire-reports/TEST-br.com.fashionai.web.controller.ControllerDelegacaoTest.xml: tests="697" errors="0" failures="0"
+BUILD SUCCESS (modo -q, sem saída de falha)
+
+# Catraca de linhas (worktree a partir de bcaee73; baseline da branch principal)
+$ python /home/user/tcc-2026-fashion-ai-backend/scripts/refactoring/line_ratchet.py
+APERTAR fai-application/src/main/java/br/com/fashionai/application/service/DashboardService.java: teto 414 -> 217
+14 violações, todas em arquivos de outros lotes já reduzidos na branch principal (worktree antiga); 0 nos arquivos deste lote.

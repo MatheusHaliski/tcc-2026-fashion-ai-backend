@@ -2,16 +2,20 @@ import re, glob, json, os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 BYFILE={}   # (arquivo, record) -> params
 ANY={}
+IMPORTED={} # (arquivo, record) -> classe externa (import x.y.Externa.Record;)
 for f in glob.glob(ROOT+'/fai-*/src/main/java/**/*.java', recursive=True):
     src=open(f,encoding='utf-8').read(); base=os.path.basename(f)[:-5]
     for m in re.finditer(r'record\s+(\w+)\s*\(((?:[^()]|\([^()]*\))*)\)', src):
         name, params = m.group(1), re.sub(r'\s+',' ',re.sub(r'@\w+(\((?:[^()]|\([^()]*\))*\))?\s*', '', m.group(2)).strip())
         BYFILE[(base,name)]=params; ANY.setdefault(name,[]).append((base,params))
+    for m in re.finditer(r'^import\s+[\w.]+\.([A-Z]\w*)\.([A-Z]\w*)\s*;', src, re.M):
+        IMPORTED[(base,m.group(2))]=m.group(1)
 def fields(ctrl, body):
     if not body: return None
     parts=body.split('.')
     if len(parts)>=2 and (parts[-2],parts[-1]) in BYFILE: return BYFILE[(parts[-2],parts[-1])]
     if (ctrl,parts[-1]) in BYFILE: return BYFILE[(ctrl,parts[-1])]
+    if (IMPORTED.get((ctrl,parts[-1])),parts[-1]) in BYFILE: return BYFILE[(IMPORTED[(ctrl,parts[-1])],parts[-1])]
     c=ANY.get(parts[-1])
     return c[0][1]+ (f'  [de {c[0][0]}]' if c else '') if c else '?'
 if __name__=='__main__':

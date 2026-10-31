@@ -1,0 +1,5 @@
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/IdentityService.java: cresceu para 1079 linhas (teto congelado 1007); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/PreferencesService.java: cresceu para 540 linhas (teto congelado 451); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java: cresceu para 1311 linhas (teto congelado 1271); extraia antes de acrescentar
+VIOLAÇÃO fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java: cresceu para 2792 linhas (teto congelado 2730); extraia antes de acrescentar
+2593 arquivos governados; 264 congelados; 4 violações

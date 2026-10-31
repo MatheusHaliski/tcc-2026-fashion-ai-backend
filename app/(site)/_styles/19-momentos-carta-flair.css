@@ -1,0 +1,197 @@
+/* RF15 · Editor de fotografia da peça: prévia do servidor com o quadro 4:5 e as ferramentas por cima */
+.photo-edit-stage { display: grid; place-items: center; min-height: 320px; background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface-3) 0% 50%) 50% / 16px 16px; border-radius: var(--radius); overflow: hidden; touch-action: none; user-select: none; }
+.photo-edit-stage.is-tool { cursor: crosshair; }
+.photo-edit-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* barra do editor (RF15): Cancelar à esquerda, Salvar à direita, desfazer/refazer/comparar no meio; no celular as ações
+   do meio descem para a segunda linha, sem separar Cancelar de Salvar */
+.photo-edit-topbar { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "cancel mid save"; align-items: center; gap: .5rem; margin: 0 0 .75rem; padding: .5rem 0; background: var(--surface); border-bottom: 1px solid var(--line-soft, rgb(0 0 0 / .08)); }
+.photo-edit-topbar > :first-child { grid-area: cancel; }
+.photo-edit-topbar > :last-child { grid-area: save; }
+.photo-edit-topbar-mid { grid-area: mid; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+@media (max-width: 639px) {
+  .photo-edit-topbar { grid-template-columns: auto 1fr auto; grid-template-areas: "cancel . save" "mid mid mid"; }
+}
+.look-compose-stage { position: relative; width: 100%; max-width: 420px; aspect-ratio: 3 / 5; margin: 0 auto; overflow: hidden; border-radius: var(--radius); background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface-3) 0% 50%) 50% / 16px 16px; touch-action: none; user-select: none; }
+.look-compose-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.look-compose-stage.is-preview { aspect-ratio: auto; max-width: 520px; }
+.look-compose-stage.is-preview img { display: block; width: 100%; height: auto; }
+.look-compose-layer { position: absolute; display: grid; place-items: center; padding: 0; border: 2px solid transparent; border-radius: 6px; background: transparent; cursor: grab; }
+.look-compose-layer img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; pointer-events: none; }
+.look-compose-layer.is-selected { border-color: var(--accent); }
+.photo-edit-frame { position: relative; display: inline-block; max-width: 100%; }
+.photo-edit-frame img { display: block; max-width: 100%; max-height: 70vh; width: auto; height: auto; }
+.photo-edit-crop { position: absolute; border: 2px solid var(--accent); box-shadow: 0 0 0 9999px rgb(0 0 0 / .45); cursor: move; }
+.photo-edit-crop-thirds { position: absolute; inset: 0; background: linear-gradient(to right, transparent 33.1%, rgb(255 255 255 / .5) 33.3%, transparent 33.5%, transparent 66.5%, rgb(255 255 255 / .5) 66.7%, transparent 66.9%), linear-gradient(to bottom, transparent 33.1%, rgb(255 255 255 / .5) 33.3%, transparent 33.5%, transparent 66.5%, rgb(255 255 255 / .5) 66.7%, transparent 66.9%); pointer-events: none; }
+.photo-edit-busy { position: absolute; right: .5rem; bottom: .5rem; padding: .2rem .5rem; border-radius: 999px; background: var(--surface); color: var(--muted); font-size: var(--text-caption); }
+.photo-edit-quality { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem .8rem; margin: 0; }
+.photo-edit-quality dt { font-size: var(--text-caption); color: var(--muted); }
+.photo-edit-quality dd { margin: 0; font-family: var(--font-data); }
+/* ======================================================================================================================
+   FashionAI MOMENTOS (docs/momentos/MOMENTOS.md) — o tema do Momento é uma CAMADA (--moment-*) sobre os tokens FashionAI.
+   Sem tema, tudo cai nos tokens padrão; nada depende só de cor (ícone + nome + status em texto); reduced motion = sem
+   animação; mobile em primeiro lugar. */
+.moment-themed { --moment-accent: var(--thread); --moment-accent-soft: var(--thread-soft); --moment-bg: var(--surface); --moment-gradient: linear-gradient(135deg, var(--moment-accent-soft), var(--surface) 70%); }
+.moment-link { color: inherit; text-decoration: none; } .moment-link:hover, .moment-link:focus-visible { text-decoration: underline; }
+.moment-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 10px; background: var(--moment-accent-soft); line-height: 1; }
+.moment-card { position: relative; padding: 14px; border-radius: 16px; border: 1px solid var(--line-soft); background: var(--surface); border-left: 4px solid var(--moment-accent); }
+.moment-card.is-ended { opacity: .92; border-left-style: dashed; }
+.moment-card-head { display: flex; align-items: flex-start; gap: 10px; }
+.moment-status { font-family: var(--font-data); font-size: var(--text-caption); letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-soft); color: var(--muted); white-space: nowrap; }
+.moment-status.is-active { background: var(--moment-accent-soft); color: var(--ink); border-color: transparent; }
+.moment-status.is-scheduled { background: var(--surface-2); }
+.moment-status.is-ended { text-decoration: line-through; }
+.moment-countdown { font-family: var(--font-data); font-weight: 600; }
+.moment-bonus { font-weight: 600; color: var(--chalk-ink); }
+.moment-me { color: var(--thread-ink); font-weight: 600; }
+.moment-sponsored { letter-spacing: .1em; }
+.moment-tags { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.moment-tag { font-size: var(--text-caption, 12px); padding: 2px 10px; border-radius: 999px; background: var(--moment-accent-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--moment-accent) 35%, transparent); }
+/* herói "acontecendo agora" */
+.moment-hero { position: relative; overflow: hidden; border-radius: 20px; border: 1px solid var(--line-soft); background: var(--moment-bg); color: var(--ink); isolation: isolate; }
+.moment-hero[data-tone="dark"] { color: #F2F1EC; --ink: #F2F1EC; --muted: #C9CBC3; --surface: color-mix(in srgb, var(--moment-bg) 85%, #fff); --surface-2: color-mix(in srgb, var(--moment-bg) 75%, #fff); --line-soft: rgba(255,255,255,.22); color-scheme: dark; }
+.moment-hero-art { position: absolute; inset: 0; background: var(--moment-gradient); opacity: .9; z-index: -1; }
+.moment-hero[data-tone="light"] .moment-hero-art { opacity: .55; }
+.moment-hero-body { padding: clamp(16px, 3vw, 28px); }
+.moment-hero-kicker { font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .8; margin-bottom: 6px; }
+.moment-hero-title { line-height: 1.05; }
+.moment-hero-sub { opacity: .9; }
+.moment-hero-facts { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; align-items: center; }
+.moment-fact { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-body-sm); }
+.moment-timebar { height: 6px; border-radius: 999px; background: color-mix(in srgb, currentColor 18%, transparent); overflow: hidden; margin-top: 12px; }
+.moment-timebar > i { display: block; height: 100%; border-radius: 999px; background: var(--moment-accent); transition: width .4s ease; }
+.moment-hero-cta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.moment-hero[data-tone="dark"] .btn { background: rgba(255,255,255,.1); color: inherit; border-color: rgba(255,255,255,.4); }
+.moment-hero[data-tone="dark"] .btn-primary { background: #F2F1EC; color: #191A19; border-color: #F2F1EC; }
+.moment-hero[data-tone="dark"] .badge { background: rgba(255,255,255,.12); color: inherit; border-color: rgba(255,255,255,.3); }
+.moment-hero[data-tone="dark"] .moment-tag { background: rgba(255,255,255,.14); color: inherit; border-color: rgba(255,255,255,.35); }
+.moment-hero[data-tone="dark"] .label { color: inherit; opacity: .8; }
+.moment-page-head { margin-bottom: 16px; }
+/* banner do feed */
+.moment-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 16px; border-radius: 16px; border: 1px solid var(--line-soft); background: var(--moment-gradient); }
+.moment-banner[data-tone="dark"] { background: var(--moment-bg); color: #F2F1EC; --ink: #F2F1EC; }
+.moment-banner[data-tone="dark"] .moment-banner-sub, .moment-banner[data-tone="dark"] .moment-hero-kicker { color: #E6E4DA; }
+.moment-banner[data-tone="dark"] .btn-primary { background: #F2F1EC; color: #191A19; border-color: #F2F1EC; }
+.moment-banner[data-tone="dark"] .btn-ghost { color: inherit; }
+/* opções (participar) e seleção de look */
+.moment-option { text-align: left; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line-soft); background: var(--surface); cursor: pointer; }
+.moment-option.is-active { border-color: var(--ink); background: var(--surface-2); }
+.moment-option:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.moment-look-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 280px; overflow: auto; padding: 2px; }
+.moment-look-tile { display: grid; gap: 4px; padding: 4px; border-radius: 10px; border: 1.5px solid var(--line-soft); background: var(--surface); cursor: pointer; text-align: left; }
+.moment-look-tile.is-active { border-color: var(--ink); } .moment-look-tile.is-sent { opacity: .55; cursor: not-allowed; }
+.moment-look-tile:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.moment-look-thumb { display: block; width: 100%; aspect-ratio: 4 / 5; border-radius: 8px; background: var(--surface-2); overflow: hidden; flex: none; }
+.moment-look-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.moment-leaderboard .moment-look-thumb, .moment-trend-look .moment-look-thumb { width: 44px; aspect-ratio: 4 / 5; }
+/* match e scores */
+.moment-match .hype-metric-bar > i { background: var(--moment-accent, var(--thread)); }
+.moment-scores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.moment-context { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line-soft); }
+.moment-context .hype-metric-bar > i { background: var(--chalk); }
+/* comunidade, ranking, trending, memória */
+.moment-entry { display: grid; gap: 6px; }
+.moment-entry.is-mine { outline: 2px solid var(--thread-soft); outline-offset: 2px; border-radius: 8px; }
+.moment-entry-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.moment-vote-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.moment-vote-row .chip.is-voted { border-color: var(--thread); }
+.moment-leaderboard { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.moment-rank { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line-soft); background: var(--surface); }
+.moment-rank.is-you { border-color: var(--thread); }
+.moment-rank-pos { font-family: var(--font-editorial); font-size: 20px; font-weight: 600; min-width: 28px; text-align: center; }
+.moment-trend-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; } .moment-trend-list li { display: flex; justify-content: space-between; gap: 8px; font-size: var(--text-body-sm); }
+.moment-trend-looks, .moment-memory-looks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.moment-trend-look { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 10px; border: 1px solid var(--line-soft); color: inherit; text-decoration: none; min-width: 0; }
+.moment-memory-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 8px 0; }
+.moment-memory-stats dt { font-family: var(--font-data); font-size: var(--text-caption); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.moment-memory-stats dd { margin: 0; font-family: var(--font-editorial); font-size: 22px; }
+.moment-interps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.moment-interp { padding: 8px 10px; border-radius: 10px; background: var(--surface-2); }
+.moment-group-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; border: 1px solid var(--line-soft); }
+/* perfil → momentos */
+.moment-tl-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line-soft); border-left: 4px solid var(--moment-accent, var(--thread)); background: var(--surface); }
+.moment-tl-item.is-hidden { opacity: .6; }
+.moment-replay-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--text-body); }
+/* calendário */
+.moment-month { width: 100%; border-collapse: separate; border-spacing: 3px; table-layout: fixed; }
+.moment-month th { font-weight: 500; text-align: center; padding: 4px 0; }
+.moment-day { vertical-align: top; min-height: 64px; height: 64px; padding: 4px; border-radius: 8px; background: var(--surface-2); }
+.moment-day.is-empty { background: transparent; }
+.moment-day.is-today { outline: 2px solid var(--ink); outline-offset: -2px; }
+.moment-day-num { display: block; font-family: var(--font-data); font-size: 12px; }
+.moment-day.is-today .moment-day-num { font-weight: 700; }
+.moment-day-items, .moment-month-legend, .moment-year-items { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 2px; }
+.moment-month-legend { margin-top: 10px; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.moment-day-pill { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 1px 6px; border-radius: 999px; background: var(--moment-accent-soft, var(--thread-soft)); border-left: 3px solid var(--moment-accent, var(--thread)); color: var(--ink); text-decoration: none; font-size: var(--text-caption); line-height: 1.5; }
+.moment-day-pill:hover, .moment-day-pill:focus-visible { text-decoration: underline; }
+.moment-day-pill-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.moment-week, .moment-year, .moment-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.moment-week-day { padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line-soft); }
+.moment-week-day.is-today { border-color: var(--ink); }
+.moment-year { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.moment-year-month { padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line-soft); background: var(--surface); }
+.moment-year-month.is-current { border-color: var(--ink); }
+.moment-year-items .moment-day-pill { display: flex; justify-content: space-between; }
+@media (max-width: 640px) {
+  .moment-day { height: 52px; min-height: 52px; }
+  .moment-day-pill-name { display: none; }
+  .moment-scores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .moment-hero-cta .btn { flex: 1 1 45%; }
+}
+:root[data-theme="contrast"] .moment-day-pill, :root[data-theme="contrast"] .moment-tag { background: var(--surface-2); border-color: var(--line); }
+@media (forced-colors: active) { .moment-card, .moment-day-pill, .moment-tl-item { border: 1px solid CanvasText; } .moment-timebar > i { background: CanvasText; forced-color-adjust: none; } }
+@media (prefers-reduced-motion: reduce) { .moment-timebar > i { transition: none; } }
+
+/* ---------- Carta FLAIR (FLAIR-UT §3, seção E da prancha) ----------
+   5:7; o metal é o nível (que também vem escrito no rodapé); a frente traz nota, posição, foto, nome, marca e os números
+   do Hype em linha (2 colunas de 4). A carta é um objeto: as cores do metal valem nos dois temas, com tinta escura sobre
+   bronze, prata e ouro (contraste ≥ 4,5:1) e tinta branca sobre a placa escura da Especial. */
+.fgc { --fgc-w: 220px; position: relative; width: 100%; max-width: var(--fgc-w); aspect-ratio: 5 / 7; border-radius: 14px; padding: 6px; color: var(--fgc-ink); background: var(--fgc-metal); box-shadow: 0 6px 18px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.4); font-family: var(--font-data); overflow: hidden; }
+.fgc-sm { --fgc-w: 184px; } .fgc-lg { --fgc-w: 300px; }
+.fgc-face { position: relative; height: 100%; display: flex; flex-direction: column; border-radius: 10px; padding: 8px 10px 6px; background: var(--fgc-plate); overflow: hidden; }
+/* como nas cartas de futebol: nota e posição no canto, por cima da foto, que começa no topo da carta */
+.fgc-top { position: absolute; top: 8px; left: 10px; right: 38px; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; pointer-events: none; }
+.fgc-ovr { display: flex; flex-direction: column; line-height: 1; }
+.fgc-ovr b { font-size: calc(var(--fgc-w) * .15); font-weight: 800; letter-spacing: -.02em; }
+.fgc-ovr small { font-size: var(--text-caption); font-weight: 700; letter-spacing: .08em; margin-top: 2px; }
+.fgc-brand-mark { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 12px; background: var(--fgc-ink); color: var(--fgc-plate-solid); }
+/* a foto ocupa só a área que sobra (posição absoluta): nunca empurra nome, marca e números para fora da carta */
+.fgc-photo { position: relative; flex: 1 1 0; min-height: 0; margin: 0 0 4px; }
+.fgc-photo img { position: absolute; top: 4px; right: 0; bottom: 0; left: 20%; width: 80%; height: calc(100% - 4px); object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
+.fgc-name { text-align: center; text-transform: uppercase; font-weight: 800; font-size: calc(var(--fgc-w) * .058); letter-spacing: .02em; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fgc-brand { text-align: center; font-size: var(--text-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.fgc-hype { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; row-gap: 1px; border-top: 1px solid var(--fgc-line); padding-top: 4px; margin: 0; }
+.fgc-hype > div { display: flex; align-items: baseline; gap: 5px; }
+.fgc-hype dd { margin: 0; font-weight: 800; font-size: 12.5px; min-width: 2ch; text-align: right; }
+.fgc-hype dt { font-size: var(--text-caption); font-weight: 600; letter-spacing: .06em; }
+.fgc-sm .fgc-hype dd { font-size: var(--text-caption); } .fgc-sm .fgc-hype dt { font-size: var(--text-caption); }
+.fgc-foot { display: flex; justify-content: space-between; gap: 6px; border-top: 1px solid var(--fgc-line); margin-top: 4px; padding-top: 3px; font-size: var(--text-caption); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.fgc-flip { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.55); color: #1c1a17; font-size: 14px; border: 1px solid rgba(0,0,0,.15); }
+.fgc-flip:focus-visible { outline: 2px solid var(--fgc-ink); outline-offset: 2px; }
+.fgc-back { gap: 6px; font-size: var(--text-caption); padding-top: 12px; }
+.fgc-back-title { flex: none; font-weight: 800; text-transform: uppercase; padding-right: 30px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fgc-stats { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.fgc-stats li { display: grid; grid-template-columns: 42px 1fr 24px; align-items: center; gap: 6px; font-weight: 600; letter-spacing: .04em; }
+.fgc-bar { height: 6px; border-radius: 3px; background: var(--fgc-line); overflow: hidden; } .fgc-bar i { display: block; height: 100%; background: var(--fgc-ink); }
+.fgc-ability, .fgc-meta { margin: 0; line-height: 1.35; }
+.fgc.tier-bronze { --fgc-metal: linear-gradient(145deg, #6E4128, #C58A5A 45%, #8C5A3C); --fgc-plate: linear-gradient(180deg, #EBCBAA, #C99068); --fgc-plate-solid: #EBCBAA; --fgc-ink: #2B170B; --fgc-line: rgba(43,23,11,.28); }
+.fgc.tier-prata { --fgc-metal: linear-gradient(145deg, #7F868E, #E3E6EA 45%, #9DA3AA); --fgc-plate: linear-gradient(180deg, #F5F6F8, #C9CDD2); --fgc-plate-solid: #F5F6F8; --fgc-ink: #1F2328; --fgc-line: rgba(31,35,40,.25); }
+.fgc.tier-ouro { --fgc-metal: linear-gradient(145deg, #8A6408, #F2C94C 40%, #FFF3C4 55%, #B8860B); --fgc-plate: linear-gradient(180deg, #FFF7DA, #EBC660); --fgc-plate-solid: #FFF7DA; --fgc-ink: #1C1606; --fgc-line: rgba(28,22,6,.28); }
+.fgc.tier-especial { --fgc-metal: linear-gradient(135deg, #3B1C7A, #C2185B 35%, #00A3A3 70%, #3B1C7A); --fgc-plate: linear-gradient(180deg, #170E30, #2B1450); --fgc-plate-solid: #170E30; --fgc-ink: #FFFFFF; --fgc-line: rgba(255,255,255,.3); }
+.fgc.is-rare .fgc-face::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.38) 45%, transparent 60%); background-size: 250% 100%; background-position: 50% 0; }
+@media (prefers-reduced-motion: no-preference) { .fgc.is-rare .fgc-face::after { animation: fgc-shine 3.6s ease-in-out infinite; } }
+@keyframes fgc-shine { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+.fgc.is-locked { filter: grayscale(.75); opacity: .85; }
+.fgc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; justify-items: center; }
+.fgc-tier-head { display: flex; align-items: baseline; gap: 8px; margin: 18px 0 10px; }
+.fgc-tier-head:first-child { margin-top: 0; }
+/* Criador de peça › "Depois de salvar": Compartilhar no feed e Converter para FLAIR (as duas começam desligadas) */
+.after-save { display: grid; gap: 10px; margin: 16px 0 12px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+.after-save-detail { padding: 0 0 4px 2px; }
+.after-save-flair { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; }
+.after-save-flair .fgc { flex: 0 0 auto; }
+.after-save-flair p { flex: 1 1 180px; min-width: 0; }
+/* Compartilhar › prévia do post: o próprio card, sem descrição, como sai no feed */
+.share-post { display: grid; gap: 6px; justify-items: center; margin: 0; }
+.share-post > figcaption { justify-self: start; }
+.share-post > .fai-card { width: 100%; max-width: 260px; }
+

@@ -34,7 +34,7 @@ class WardrobePrefillTest {
     void iaConfianteEntraComoEsta() {
         LocalVision.PieceGuess g = new LocalVision.PieceGuess("shoes_piece", "running_shoes", "white", "SYNTHETIC", "Nike", "UNISSEX",
                 Map.of("category", 0.9, "subcategory", 0.9, "color", 0.9, "material", 0.8, "brand", 0.9), 0.9, List.of("white"), null);
-        WardrobeService.Prefill p = WardrobeService.prefill(g, null);
+        WardrobeService.Prefill p = PiecePrefill.prefill(g, null);
         assertComplete(p);
         assertEquals("running_shoes", p.subcategory());
         assertEquals("Nike", p.brand());
@@ -46,7 +46,7 @@ class WardrobePrefillTest {
     @Test
     void semReconhecimentoTodosOsCamposAindaVemPreenchidos() {
         LocalVision.PieceGuess g = new LocalVision.PieceGuess(null, null, null, null, null, null, Map.of(), 0.1, List.of(), null);
-        WardrobeService.Prefill p = WardrobeService.prefill(g, null);
+        WardrobeService.Prefill p = PiecePrefill.prefill(g, null);
         assertComplete(p);
         assertEquals("upper_piece", p.category());
         assertEquals("t_shirt", p.subcategory());
@@ -59,7 +59,7 @@ class WardrobePrefillTest {
     void palpiteAbaixoDaConfiancaEUsadoEmVezDeFicarVazio() {
         LocalVision.PieceGuess g = new LocalVision.PieceGuess(null, "jeans", "blue", null, null, null,
                 Map.of("subcategory", 0.4, "color", 0.4), 0.4, List.of("blue"), null);
-        WardrobeService.Prefill p = WardrobeService.prefill(g, null);
+        WardrobeService.Prefill p = PiecePrefill.prefill(g, null);
         assertComplete(p);
         assertEquals("lower_piece", p.category());
         assertEquals("jeans", p.subcategory());
@@ -79,7 +79,7 @@ class WardrobePrefillTest {
             for (double overall : new double[]{0.9, 0.1}) {
                 LocalVision.PieceGuess g = new LocalVision.PieceGuess(category, sub, null, null, null, null,
                         Map.of("category", overall, "subcategory", overall), overall, List.of(), null);
-                WardrobeService.Prefill p = WardrobeService.prefill(g, null);
+                WardrobeService.Prefill p = PiecePrefill.prefill(g, null);
                 assertTrue(Taxonomy.STYLES.containsAll(p.style()), sub + " estilo=" + p.style());
                 assertFalse(p.style().stream().anyMatch(Taxonomy.OCCASIONS::contains), sub + " estilo com código de ocasião: " + p.style());
                 assertTrue(Taxonomy.allowedOccasions(p.category()).containsAll(p.occasion()), sub + " ocasião=" + p.occasion());

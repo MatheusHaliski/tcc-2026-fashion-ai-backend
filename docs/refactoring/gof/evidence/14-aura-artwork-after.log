@@ -1,0 +1,18 @@
+# Lote 14 — DEPOIS da extracao de StudioArtworkRules (caracterizacao + unidade nova + consumidores)
+$ mvn -B -q -pl fai-application -Dtest=BackgroundStudioArtworkContractTest,StudioArtworkRulesTest,BackgroundStudioServiceTest,BackgroundStudioAnimationTest,PieceArtRevisionTest,AuraMotionServiceTest,AuraCommerceServiceTest,AuraPermissionsServiceTest,MetamorphoseInventoryServiceTest,WardrobeServiceEstudioTest -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.AuraCommerceServiceTest
+Tests run: 17, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.AuraMotionServiceTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.AuraPermissionsServiceTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.BackgroundStudioAnimationTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.BackgroundStudioArtworkContractTest
+Tests run: 16, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.BackgroundStudioServiceTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.MetamorphoseInventoryServiceTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.PieceArtRevisionTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.StudioArtworkRulesTest
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.WardrobeServiceEstudioTest
+Total: 80 testes, 0 falhas, 0 erros (BUILD SUCCESS, exit 0)
+
+$ python /home/user/tcc-2026-fashion-ai-backend/scripts/refactoring/line_ratchet.py   (a partir da raiz da worktree)
+APERTAR fai-application/src/main/java/br/com/fashionai/application/service/BackgroundStudioService.java: teto 812 -> 736
+2593 arquivos governados; 264 congelados; 12 violacoes — todas em arquivos de outros lotes ja reduzidos na branch
+principal (worktree parte de bcaee73); 0 violacoes em BackgroundStudioService.java, StudioArtworkRules.java e nos testes novos.

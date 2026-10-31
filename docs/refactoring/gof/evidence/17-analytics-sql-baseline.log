@@ -1,0 +1,13 @@
+# 17 — baseline (código ORIGINAL de MysqlAnalyticsAdapter, base bcaee73), antes da extração
+# 1) gravação do golden a partir do código original (1ª execução falha por design: o recurso ainda não estava em target/)
+$ mvn -B -q -pl fai-infrastructure/persistence-mysql -Dtest=MysqlAnalyticsSqlCharacterizationTest \
+    -Danalytics.golden.write=<worktree>/fai-infrastructure/persistence-mysql/src/test/resources/br/com/fashionai/infrastructure/mysql/analytics/analytics-sql-golden.txt test
+analytics-sql-golden.txt: 295 linhas (35 consultas: SQL exato + parâmetros nomeados ordenados)
+sha256 fce2f1db34c21c4acbf7c63ea59aaa9bd40aebff3119004337da75293397d7d3
+
+# 2) caracterização + teste existente no código original
+$ mvn -B -pl fai-infrastructure/persistence-mysql -Dtest='MysqlAnalytics*Test' -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in ...analytics.MysqlAnalyticsAdapterTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 -- in ...analytics.MysqlAnalyticsSqlCharacterizationTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

@@ -37,9 +37,9 @@ class WardrobeServiceParsersTest {
     void recusaUsaAPrimeiraOrientacaoReprovada() {
         var checks = List.of(new PhotoAcceptance.Check("fundo", true, 1, 0.5, "ok"),
                 new PhotoAcceptance.Check("inteira", false, 0.2, 0.5, "mostre a peça inteira"));
-        var e = WardrobeService.rejection(checks);
+        var e = DraftEvidence.rejection(checks);
         assertThat(e.getMessage()).contains("mostre a peça inteira");
-        var e2 = WardrobeService.rejection(List.of(new PhotoAcceptance.Check("fundo", true, 1, 0.5, "ok")), "lower_piece");
+        var e2 = DraftEvidence.rejection(List.of(new PhotoAcceptance.Check("fundo", true, 1, 0.5, "ok")), "lower_piece");
         assertThat(e2.getMessage()).isNotBlank();
     }
 
@@ -48,14 +48,14 @@ class WardrobeServiceParsersTest {
         var base = guess(null, "jeans", null, Map.of("subcategory", 0.3, "color", 0.9), null);
         var ranking = List.of(new SubtypeReferences.Match("jeans", 0.95), new SubtypeReferences.Match("t_shirt", 0.9),
                 new SubtypeReferences.Match("shirt", 0.7));
-        var g = WardrobeService.localGuess(base, "upper_piece", ranking);
+        var g = DraftEvidence.localGuess(base, "upper_piece", ranking);
         assertThat(g.category()).isEqualTo("upper_piece");
         assertThat(g.subcategory()).isEqualTo("t_shirt");
         assertThat(g.confidence().get("category")).isEqualTo(1.0);
         assertThat(g.insights().ranking()).extracting(SubtypeReferences.Match::subcategory).containsExactly("t_shirt", "shirt");
 
         // só um candidato da categoria: folga padrão
-        var um = WardrobeService.localGuess(base, "upper_piece", List.of(new SubtypeReferences.Match("t_shirt", 0.8)));
+        var um = DraftEvidence.localGuess(base, "upper_piece", List.of(new SubtypeReferences.Match("t_shirt", 0.8)));
         assertThat(um.subcategory()).isEqualTo("t_shirt");
         assertThat(um.confidence().get("subcategory")).isEqualTo(0.54);
     }
@@ -63,18 +63,18 @@ class WardrobeServiceParsersTest {
     @Test
     void palpiteLocalSemRankingCaiNoPrimeiroSubtipoDoTipoEscolhido() {
         var base = guess("lower_piece", "jeans", null, Map.of("category", 0.4), null);
-        var g = WardrobeService.localGuess(base, "upper_piece", List.of());
+        var g = DraftEvidence.localGuess(base, "upper_piece", List.of());
         assertThat(g.subcategory()).isEqualTo(Taxonomy.SUBCATEGORIES.get("upper_piece").get(0));
         assertThat(g.confidence().get("subcategory")).isEqualTo(0.2);
 
         // sem tipo escolhido: mantém o da análise local e a confiança dela
-        var livre = WardrobeService.localGuess(base, null, List.of(new SubtypeReferences.Match("t_shirt", 0.9)));
+        var livre = DraftEvidence.localGuess(base, null, List.of(new SubtypeReferences.Match("t_shirt", 0.9)));
         assertThat(livre.category()).isEqualTo("lower_piece");
         assertThat(livre.subcategory()).isEqualTo("jeans");
         assertThat(livre.confidence().get("category")).isEqualTo(0.4);
 
         // subtipo da análise já é do tipo escolhido: fica
-        var mesmo = WardrobeService.localGuess(guess(null, "shirt", null, Map.of(), null), "upper_piece", List.of());
+        var mesmo = DraftEvidence.localGuess(guess(null, "shirt", null, Map.of(), null), "upper_piece", List.of());
         assertThat(mesmo.subcategory()).isEqualTo("shirt");
     }
 
@@ -82,27 +82,27 @@ class WardrobeServiceParsersTest {
     void candidatosSoDaCategoriaEAteTres() {
         var ranking = List.of(new SubtypeReferences.Match("t_shirt", 0.9), new SubtypeReferences.Match("jeans", 0.8),
                 new SubtypeReferences.Match("shirt", 0.7), new SubtypeReferences.Match("hoodie", 0.6), new SubtypeReferences.Match("blazer", 0.5));
-        assertThat(WardrobeService.candidates(ranking, "upper_piece")).extracting(m -> m.get("code"))
+        assertThat(DraftEvidence.candidates(ranking, "upper_piece")).extracting(m -> m.get("code"))
                 .containsExactly("t_shirt", "shirt", "hoodie");
-        assertThat(WardrobeService.candidates(ranking, null)).hasSize(3);
-        assertThat(WardrobeService.candidates(ranking, "inexistente")).isEmpty();
+        assertThat(DraftEvidence.candidates(ranking, null)).hasSize(3);
+        assertThat(DraftEvidence.candidates(ranking, "inexistente")).isEmpty();
     }
 
     @Test
     void buscaDaMarcaUsaAZonaDaIaOuADoLogo() {
         var zones = List.of(new BrandRegions.Zone("gola", new double[]{0, 0, 1, 0.3}), new BrandRegions.Zone("peito", new double[]{0, 0.3, 1, 1}));
-        var naGola = WardrobeService.brandSearch(zones, guess("upper_piece", "t_shirt", "Nike", Map.of(), insights("gola", "NIKE bordado")), null, "ia");
+        var naGola = DraftEvidence.brandSearch(zones, guess("upper_piece", "t_shirt", "Nike", Map.of(), insights("gola", "NIKE bordado")), null, "ia");
         assertThat(naGola).containsEntry("brand", "Nike").containsEntry("foundIn", "gola").containsEntry("evidence", "NIKE bordado")
                 .containsEntry("logoSource", "ia");
         assertThat(naGola.get("zones")).isEqualTo(List.of("gola", "peito"));
 
         // zona da IA desconhecida: vale a zona onde está o logo
-        var peloLogo = WardrobeService.brandSearch(zones, guess("upper_piece", "t_shirt", " ", Map.of(), insights("outra", null)),
+        var peloLogo = DraftEvidence.brandSearch(zones, guess("upper_piece", "t_shirt", " ", Map.of(), insights("outra", null)),
                 new double[]{0.4, 0.5, 0.6, 0.7}, "local");
         assertThat(peloLogo).containsEntry("brand", null).containsEntry("foundIn", "peito");
 
         // sem marca e sem logo: não achou em lugar nenhum
-        var nada = WardrobeService.brandSearch(zones, guess("upper_piece", "t_shirt", null, Map.of(), insights(null, null)), null, null);
+        var nada = DraftEvidence.brandSearch(zones, guess("upper_piece", "t_shirt", null, Map.of(), insights(null, null)), null, null);
         assertThat(nada).containsEntry("foundIn", null);
     }
 
@@ -110,63 +110,63 @@ class WardrobeServiceParsersTest {
     void ocrConfirmadoViraMarcaENaoConfirmadoViraSugestao() {
         var zones = List.of(new BrandRegions.Zone("peito", new double[]{0, 0, 1, 1}));
         Map<String, Object> bs = new LinkedHashMap<>();
-        WardrobeService.applyOcr(bs, new BrandReader.Found("Adidas", "peito", "ADIDAS", 0.9, true, new double[]{0.1, 0.1, 0.2, 0.2}), zones);
+        DraftEvidence.applyOcr(bs, new BrandReader.Found("Adidas", "peito", "ADIDAS", 0.9, true, new double[]{0.1, 0.1, 0.2, 0.2}), zones);
         assertThat(bs).containsEntry("brand", "Adidas").containsEntry("foundIn", "peito").containsEntry("logoSource", "ocr")
                 .containsEntry("certainty", "confirmada");
 
         Map<String, Object> sug = new LinkedHashMap<>();
-        WardrobeService.applyOcr(sug, new BrandReader.Found("Puma", "fora", "PUM", 0.4, false, new double[]{2, 2, 3, 3}), zones);
+        DraftEvidence.applyOcr(sug, new BrandReader.Found("Puma", "fora", "PUM", 0.4, false, new double[]{2, 2, 3, 3}), zones);
         assertThat(sug).containsEntry("suggestion", "Puma").containsEntry("foundIn", "fora").containsEntry("certainty", "possivel")
                 .doesNotContainKey("brand");
 
         Map<String, Object> jaAchou = new LinkedHashMap<>(Map.of("foundIn", "gola"));
-        WardrobeService.applyOcr(jaAchou, new BrandReader.Found("Puma", "peito", "PUM", 0.4, false, new double[]{0.1, 0.1, 0.2, 0.2}), zones);
+        DraftEvidence.applyOcr(jaAchou, new BrandReader.Found("Puma", "peito", "PUM", 0.4, false, new double[]{0.1, 0.1, 0.2, 0.2}), zones);
         assertThat(jaAchou).containsEntry("foundIn", "gola");
     }
 
     @Test
     void caixaDoLogoGuardadaSoComQuatroNumeros() {
-        assertThat(WardrobeService.boxOf(Map.of("box", List.of(1, 2, 3.5, 4)))).containsExactly(1, 2, 3.5, 4);
-        assertThat(WardrobeService.boxOf(Map.of("box", List.of(1, 2, 3)))).isNull();
-        assertThat(WardrobeService.boxOf(Map.of("box", List.of(1, "x", 3, 4)))).isNull();
-        assertThat(WardrobeService.boxOf("nada")).isNull();
+        assertThat(AiResponseJson.boxOf(Map.of("box", List.of(1, 2, 3.5, 4)))).containsExactly(1, 2, 3.5, 4);
+        assertThat(AiResponseJson.boxOf(Map.of("box", List.of(1, 2, 3)))).isNull();
+        assertThat(AiResponseJson.boxOf(Map.of("box", List.of(1, "x", 3, 4)))).isNull();
+        assertThat(AiResponseJson.boxOf("nada")).isNull();
     }
 
     @Test
     void respostaDosRecortesDescartaMarcaFraca() {
-        assertThat(WardrobeService.parseBrandTiles("sem json")).isNull();
-        assertThat(WardrobeService.parseBrandTiles("{\"brand\":\"Nike\",\"image\":2,\"confidence\":0.9}")).containsEntry("brand", "Nike")
+        assertThat(PieceAnalysisParser.parseBrandTiles("sem json")).isNull();
+        assertThat(PieceAnalysisParser.parseBrandTiles("{\"brand\":\"Nike\",\"image\":2,\"confidence\":0.9}")).containsEntry("brand", "Nike")
                 .containsEntry("image", 2);
-        assertThat(WardrobeService.parseBrandTiles("{\"brand\":\"Nike\",\"confidence\":0.3}")).containsEntry("brand", null);
-        assertThat(WardrobeService.parseBrandTiles("{\"brand\":\"Lacoste\"}")).containsEntry("brand", "Lacoste");
-        assertThat(WardrobeService.parseBrandTiles("{\"brand\":\"none\"}")).containsEntry("brand", null);
+        assertThat(PieceAnalysisParser.parseBrandTiles("{\"brand\":\"Nike\",\"confidence\":0.3}")).containsEntry("brand", null);
+        assertThat(PieceAnalysisParser.parseBrandTiles("{\"brand\":\"Lacoste\"}")).containsEntry("brand", "Lacoste");
+        assertThat(PieceAnalysisParser.parseBrandTiles("{\"brand\":\"none\"}")).containsEntry("brand", null);
     }
 
     @Test
     void mensagemDoAnalisadorDescreveTipoImagensERanking() {
         var zones = List.of(new BrandRegions.Zone("gola", new double[]{0, 0, 1, 1}));
-        String p = WardrobeService.analyzerPrompt("upper_piece", List.of("1 t_shirt", "2 shirt"), zones,
+        String p = PieceAnalyzerPrompts.analyzerPrompt("upper_piece", List.of("1 t_shirt", "2 shirt"), zones,
                 List.of(new SubtypeReferences.Match("t_shirt", 0.9)));
         assertThat(p).contains("Tipo escolhido pela pessoa: upper_piece").contains("folha de referências (1 t_shirt, 2 shirt)")
                 .contains("zona de marca \"gola\"").contains("Similaridade de silhueta").contains("t_shirt 0.9")
                 .contains("Modelagens por subtipo");
-        String livre = WardrobeService.analyzerPrompt(null, List.of(), List.of(), List.of());
+        String livre = PieceAnalyzerPrompts.analyzerPrompt(null, List.of(), List.of(), List.of());
         assertThat(livre).contains("Tipo não informado").doesNotContain("folha de referências").doesNotContain("Similaridade")
                 .doesNotContain("Modelagens por subtipo").endsWith("Analise e responda só com o JSON.");
     }
 
     @Test
     void vocabularioListaModelagensEDimensoes() {
-        String v = WardrobeService.analyzerVocabulary("upper_piece");
+        String v = PieceAnalyzerPrompts.analyzerVocabulary("upper_piece");
         assertThat(v).startsWith("Modelagens por subtipo").contains("t_shirt: ").contains("Características (dimensão: códigos):");
-        assertThat(WardrobeService.analyzerVocabulary("inexistente")).contains("Modelagens por subtipo (código = nome): .");
+        assertThat(PieceAnalyzerPrompts.analyzerVocabulary("inexistente")).contains("Modelagens por subtipo (código = nome): .");
     }
 
     @Test
     void analiseVaziaOuSemJsonNaoViraPalpite() {
-        assertThat(WardrobeService.parseAnalysis(null)).isNull();
-        assertThat(WardrobeService.parseAnalysis("nada aqui")).isNull();
-        assertThat(WardrobeService.parseAnalysis("} {")).isNull();
+        assertThat(PieceAnalysisParser.parseAnalysis(null)).isNull();
+        assertThat(PieceAnalysisParser.parseAnalysis("nada aqui")).isNull();
+        assertThat(PieceAnalysisParser.parseAnalysis("} {")).isNull();
     }
 
     @Test
@@ -178,7 +178,7 @@ class WardrobeServiceParsersTest {
                  "color":"white","material":"COTTON","sex":"FEMININO","occasion":["casual","inventada"],"style":"basic",
                  "brand":"Nike","brandZone":"gola","brandEvidence":"NIKE","photo":{"fullyVisible":true,"viewAngle":"frontal_90","singlePiece":false},
                  "confidence":{"category":0.9,"subcategory":"alto","photo":0.8},"logo":{"visible":true,"box":[100,100,300,300]}}""";
-        var g = WardrobeService.parseAnalysis(json, "upper_piece");
+        var g = PieceAnalysisParser.parseAnalysis(json, "upper_piece");
         assertThat(g.category()).isEqualTo("upper_piece");
         assertThat(g.subcategory()).isEqualTo("t_shirt");
         assertThat(g.color()).isEqualTo("white");
@@ -203,7 +203,7 @@ class WardrobeServiceParsersTest {
 
     @Test
     void analiseSemTipoEscolhidoDeduzACategoriaDoSubtipo() {
-        var g = WardrobeService.parseAnalysis("ok {\"subcategory\":\"jeans\",\"color\":\"roxo-inventado\",\"name\":\" \"} fim");
+        var g = PieceAnalysisParser.parseAnalysis("ok {\"subcategory\":\"jeans\",\"color\":\"roxo-inventado\",\"name\":\" \"} fim");
         assertThat(g.category()).isEqualTo("lower_piece");
         assertThat(g.subcategory()).isEqualTo("jeans");
         assertThat(g.color()).isNull();
@@ -212,17 +212,17 @@ class WardrobeServiceParsersTest {
         assertThat(g.insights().detectedCategory()).isNull();
         assertThat(g.logoBox()).isNull();
 
-        var soCategoria = WardrobeService.parseAnalysis("{\"category\":\"shoes_piece\",\"subcategory\":\"nao_existe\"}");
+        var soCategoria = PieceAnalysisParser.parseAnalysis("{\"category\":\"shoes_piece\",\"subcategory\":\"nao_existe\"}");
         assertThat(soCategoria.category()).isEqualTo("shoes_piece");
         assertThat(soCategoria.subcategory()).isNull();
         assertThat(soCategoria.insights().detectedCategory()).isEqualTo("shoes_piece");
 
-        var invalida = WardrobeService.parseAnalysis("{\"category\":\"nave\",\"subcategory\":\"nao_existe\"}");
+        var invalida = PieceAnalysisParser.parseAnalysis("{\"category\":\"nave\",\"subcategory\":\"nao_existe\"}");
         assertThat(invalida.category()).isNull();
         assertThat(invalida.subcategory()).isNull();
 
         // tipo escolhido sem nenhum subtipo válido no ranking: subtipo fica vazio
-        var semSub = WardrobeService.parseAnalysis("{\"subcategory\":\"jeans\"}", "upper_piece");
+        var semSub = PieceAnalysisParser.parseAnalysis("{\"subcategory\":\"jeans\"}", "upper_piece");
         assertThat(semSub.subcategory()).isNull();
     }
 
@@ -231,13 +231,13 @@ class WardrobeServiceParsersTest {
         TaxonomyRegistry reg = TaxonomyRegistry.get();
         String sub = "t_shirt";
         String variation = reg.variationsOf(sub).get(0).code();
-        String dim = WardrobeService.ANALYZER_DIMENSIONS.stream().filter(d -> !reg.valuesFor(d, "upper_piece", sub).isEmpty()).findFirst().orElseThrow();
+        String dim = PieceAnalyzerPrompts.ANALYZER_DIMENSIONS.stream().filter(d -> !reg.valuesFor(d, "upper_piece", sub).isEmpty()).findFirst().orElseThrow();
         String code = reg.valuesFor(dim, "upper_piece", sub).get(0).code();
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("variation", Map.of("code", variation.toLowerCase(), "confidence", 0.9));
         m.put("attributes", Map.of(dim.toLowerCase(), Map.of("codes", List.of(code.toLowerCase(), "inventado"), "confidence", 0.8),
                 "COLOR", Map.of("codes", List.of("x"), "confidence", 1), "PATTERN_X", "nao-mapa"));
-        var in = WardrobeService.withTaxonomy(LocalVision.Insights.NONE, m, "upper_piece", sub);
+        var in = PieceAnalysisParser.withTaxonomy(LocalVision.Insights.NONE, m, "upper_piece", sub);
         assertThat(in.variation()).isEqualTo(variation);
         assertThat(in.variationConfidence()).isEqualTo(0.9);
         assertThat(in.attributes()).containsEntry(dim, List.of(code));
@@ -245,17 +245,17 @@ class WardrobeServiceParsersTest {
         // confiança baixa: nada entra
         Map<String, Object> fraco = Map.of("variation", Map.of("code", variation, "confidence", 0.2),
                 "attributes", Map.of(dim, Map.of("codes", List.of(code), "confidence", 0.5)));
-        var f = WardrobeService.withTaxonomy(LocalVision.Insights.NONE, fraco, "upper_piece", sub);
+        var f = PieceAnalysisParser.withTaxonomy(LocalVision.Insights.NONE, fraco, "upper_piece", sub);
         assertThat(f.variation()).isNull();
         assertThat(f.attributes()).isEmpty();
 
         // variação sem confiança informada vale 0
-        var semConf = WardrobeService.withTaxonomy(LocalVision.Insights.NONE, Map.of("variation", Map.of("code", variation)), "upper_piece", sub);
+        var semConf = PieceAnalysisParser.withTaxonomy(LocalVision.Insights.NONE, Map.of("variation", Map.of("code", variation)), "upper_piece", sub);
         assertThat(semConf.variation()).isNull();
         assertThat(semConf.variationConfidence()).isZero();
 
-        assertThat(WardrobeService.withTaxonomy(LocalVision.Insights.NONE, m, null, sub)).isSameAs(LocalVision.Insights.NONE);
-        assertThat(WardrobeService.withTaxonomy(LocalVision.Insights.NONE, m, "upper_piece", null)).isSameAs(LocalVision.Insights.NONE);
+        assertThat(PieceAnalysisParser.withTaxonomy(LocalVision.Insights.NONE, m, null, sub)).isSameAs(LocalVision.Insights.NONE);
+        assertThat(PieceAnalysisParser.withTaxonomy(LocalVision.Insights.NONE, m, "upper_piece", null)).isSameAs(LocalVision.Insights.NONE);
     }
 
     @Test
@@ -273,8 +273,8 @@ class WardrobeServiceParsersTest {
         assertThat(WardrobeService.strings("x")).containsExactly("x");
         assertThat(WardrobeService.strings(" ")).isEmpty();
         assertThat(WardrobeService.strings(5)).isEmpty();
-        assertThat(WardrobeService.firstNonBlank(null, " ", "a")).isEqualTo("a");
-        assertThat(WardrobeService.firstNonBlank(null, "")).isNull();
+        assertThat(PiecePrefill.firstNonBlank(null, " ", "a")).isEqualTo("a");
+        assertThat(PiecePrefill.firstNonBlank(null, "")).isNull();
         assertThat(WardrobeService.str(null)).isNull();
         assertThat(WardrobeService.str(" a ")).isEqualTo("a");
         assertThat(WardrobeService.blank(null)).isTrue();
@@ -298,19 +298,19 @@ class WardrobeServiceParsersTest {
         assertThat(WardrobeService.humanize("tank_top")).isEqualTo("Tank top");
         assertThat(WardrobeService.label("t_shirt")).isEqualTo("Camiseta");
         assertThat(WardrobeService.label("codigo_sem_rotulo")).isEqualTo("Codigo sem rotulo");
-        assertThat(WardrobeService.pieceName("t_shirt", "white")).isEqualTo("Camiseta branco");
+        assertThat(PiecePrefill.pieceName("t_shirt", "white")).isEqualTo("Camiseta branco");
     }
 
     @Test
     void caixaDoLogoDaIaValidada() {
-        assertThat(WardrobeService.logoBox(Map.of("visible", true, "box", List.of(-5, 10, 2000, 500)))).containsExactly(0, 10, 1000, 500);
-        assertThat(WardrobeService.logoBox(Map.of("visible", false, "box", List.of(0, 0, 100, 100)))).isNull();
-        assertThat(WardrobeService.logoBox(Map.of("box", List.of(0, 0, 100)))).isNull();
-        assertThat(WardrobeService.logoBox(Map.of("box", List.of(0, "a", 100, 100)))).isNull();
-        assertThat(WardrobeService.logoBox(Map.of("box", List.of(0, 0, 5, 100)))).isNull();
-        assertThat(WardrobeService.logoBox(Map.of("box", List.of(0, 0, 100, 5)))).isNull();
-        assertThat(WardrobeService.logoBox(null)).isNull();
-        assertThat(WardrobeService.logoBox(Map.of("box", "x"))).isNull();
+        assertThat(AiResponseJson.logoBox(Map.of("visible", true, "box", List.of(-5, 10, 2000, 500)))).containsExactly(0, 10, 1000, 500);
+        assertThat(AiResponseJson.logoBox(Map.of("visible", false, "box", List.of(0, 0, 100, 100)))).isNull();
+        assertThat(AiResponseJson.logoBox(Map.of("box", List.of(0, 0, 100)))).isNull();
+        assertThat(AiResponseJson.logoBox(Map.of("box", List.of(0, "a", 100, 100)))).isNull();
+        assertThat(AiResponseJson.logoBox(Map.of("box", List.of(0, 0, 5, 100)))).isNull();
+        assertThat(AiResponseJson.logoBox(Map.of("box", List.of(0, 0, 100, 5)))).isNull();
+        assertThat(AiResponseJson.logoBox(null)).isNull();
+        assertThat(AiResponseJson.logoBox(Map.of("box", "x"))).isNull();
     }
 
     @Test
@@ -342,7 +342,7 @@ class WardrobeServiceParsersTest {
         var in = new LocalVision.Insights("Camiseta Nike", List.of("party"), List.of("sporty"), null, null, null, null, null, null, null, 0, List.of());
         var g = new LocalVision.PieceGuess("upper_piece", "t_shirt", "navy", "POLYESTER", "Nike", "MASCULINO",
                 Map.of("category", 0.9, "subcategory", 0.9, "color", 0.9, "material", 0.9, "brand", 0.9), 0.9, List.of(), null, in);
-        var p = WardrobeService.prefill(g, Map.of("box", List.of(1, 2, 3, 4)));
+        var p = PiecePrefill.prefill(g, Map.of("box", List.of(1, 2, 3, 4)));
         assertThat(p.name()).isEqualTo("Camiseta Nike");
         assertThat(p.category()).isEqualTo("upper_piece");
         assertThat(p.subcategory()).isEqualTo("t_shirt");
@@ -364,7 +364,7 @@ class WardrobeServiceParsersTest {
     @Test
     void preenchimentoSemConfiancaCaiNosPadroes() {
         var g = new LocalVision.PieceGuess(null, null, null, null, null, "ALIEN", null, 0.1, List.of(), null);
-        var p = WardrobeService.prefill(g, null, null, null, null);
+        var p = PiecePrefill.prefill(g, null, null, null, null);
         assertThat(p.category()).isEqualTo("upper_piece");
         assertThat(p.subcategory()).isEqualTo(Taxonomy.SUBCATEGORIES.get("upper_piece").get(0));
         assertThat(p.color()).isEqualTo("black");
@@ -379,37 +379,37 @@ class WardrobeServiceParsersTest {
 
         // cor da paleta quando a IA não deu; cor fora da paleta vira preto; subtipo de outra categoria é trocado
         var pal = new LocalVision.PieceGuess("lower_piece", "t_shirt", null, null, null, null, Map.of(), 0.3, List.of("blue"), null);
-        var pp = WardrobeService.prefill(pal, null);
+        var pp = PiecePrefill.prefill(pal, null);
         assertThat(pp.color()).isEqualTo("blue");
         assertThat(pp.subcategory()).isEqualTo(Taxonomy.SUBCATEGORIES.get("lower_piece").get(0));
         var fora = new LocalVision.PieceGuess(null, "jeans", "furta-cor", null, null, null, Map.of(), 0.3, null, null);
-        var pf = WardrobeService.prefill(fora, null);
+        var pf = PiecePrefill.prefill(fora, null);
         assertThat(pf.category()).isEqualTo("lower_piece");
         assertThat(pf.color()).isEqualTo("black");
     }
 
     @Test
     void estiloMaterialEPrecoPadraoPorTipo() {
-        assertThat(WardrobeService.defaultStyle("hoodie")).isEqualTo("sporty");
-        assertThat(WardrobeService.defaultStyle("cargo_pants")).isEqualTo("streetwear");
-        assertThat(WardrobeService.defaultStyle("blazer")).isEqualTo("classic");
-        assertThat(WardrobeService.defaultStyle("t_shirt")).isEqualTo("basic");
+        assertThat(PiecePrefill.defaultStyle("hoodie")).isEqualTo("sporty");
+        assertThat(PiecePrefill.defaultStyle("cargo_pants")).isEqualTo("streetwear");
+        assertThat(PiecePrefill.defaultStyle("blazer")).isEqualTo("classic");
+        assertThat(PiecePrefill.defaultStyle("t_shirt")).isEqualTo("basic");
 
-        assertThat(WardrobeService.defaultMaterial("shoes_piece", "sandals")).isEqualTo("SYNTHETIC");
-        assertThat(WardrobeService.defaultMaterial("shoes_piece", "boots")).isEqualTo("LEATHER");
-        assertThat(WardrobeService.defaultMaterial("accessory_piece", "cap")).isEqualTo("COTTON");
-        assertThat(WardrobeService.defaultMaterial("accessory_piece", "watch")).isEqualTo("SYNTHETIC");
-        assertThat(WardrobeService.defaultMaterial("lower_piece", "jeans")).isEqualTo("COTTON");
-        assertThat(WardrobeService.defaultMaterial("upper_piece", "coat")).isEqualTo("WOOL");
-        assertThat(WardrobeService.defaultMaterial("upper_piece", "blazer")).isEqualTo("POLYESTER");
-        assertThat(WardrobeService.defaultMaterial("upper_piece", "t_shirt")).isEqualTo("COTTON");
+        assertThat(PiecePrefill.defaultMaterial("shoes_piece", "sandals")).isEqualTo("SYNTHETIC");
+        assertThat(PiecePrefill.defaultMaterial("shoes_piece", "boots")).isEqualTo("LEATHER");
+        assertThat(PiecePrefill.defaultMaterial("accessory_piece", "cap")).isEqualTo("COTTON");
+        assertThat(PiecePrefill.defaultMaterial("accessory_piece", "watch")).isEqualTo("SYNTHETIC");
+        assertThat(PiecePrefill.defaultMaterial("lower_piece", "jeans")).isEqualTo("COTTON");
+        assertThat(PiecePrefill.defaultMaterial("upper_piece", "coat")).isEqualTo("WOOL");
+        assertThat(PiecePrefill.defaultMaterial("upper_piece", "blazer")).isEqualTo("POLYESTER");
+        assertThat(PiecePrefill.defaultMaterial("upper_piece", "t_shirt")).isEqualTo("COTTON");
 
-        assertThat(WardrobeService.estimatedPrice("upper_piece", "blazer")).isEqualByComparingTo("349");
-        assertThat(WardrobeService.estimatedPrice("lower_piece", "x")).isEqualByComparingTo("169");
-        assertThat(WardrobeService.estimatedPrice("shoes_piece", "x")).isEqualByComparingTo("249");
-        assertThat(WardrobeService.estimatedPrice("accessory_piece", "x")).isEqualByComparingTo("99");
-        assertThat(WardrobeService.estimatedPrice("full_body_piece", "x")).isEqualByComparingTo("229");
-        assertThat(WardrobeService.estimatedPrice("upper_piece", "x")).isEqualByComparingTo("129");
+        assertThat(PiecePrefill.estimatedPrice("upper_piece", "blazer")).isEqualByComparingTo("349");
+        assertThat(PiecePrefill.estimatedPrice("lower_piece", "x")).isEqualByComparingTo("169");
+        assertThat(PiecePrefill.estimatedPrice("shoes_piece", "x")).isEqualByComparingTo("249");
+        assertThat(PiecePrefill.estimatedPrice("accessory_piece", "x")).isEqualByComparingTo("99");
+        assertThat(PiecePrefill.estimatedPrice("full_body_piece", "x")).isEqualByComparingTo("229");
+        assertThat(PiecePrefill.estimatedPrice("upper_piece", "x")).isEqualByComparingTo("129");
     }
 
     @Test
@@ -428,35 +428,35 @@ class WardrobeServiceParsersTest {
 
     @Test
     void tipoDoEstudioPorCategoria() {
-        assertThat(WardrobeService.studioKind(null, null)).isNull();
-        assertThat(WardrobeService.studioKind("upper_piece", "coat")).isEqualTo("OUTERWEAR");
-        assertThat(WardrobeService.studioKind("upper_piece", "t_shirt")).isEqualTo("TOP");
-        assertThat(WardrobeService.studioKind("lower_piece", "jeans")).isEqualTo("BOTTOM");
-        assertThat(WardrobeService.studioKind("shoes_piece", "boots")).isEqualTo("SHOES");
-        assertThat(WardrobeService.studioKind("full_body_piece", "dress")).isEqualTo("FULL_BODY");
-        assertThat(WardrobeService.studioKind("accessory_piece", "cap")).isEqualTo("ACCESSORY");
-        assertThat(WardrobeService.studioKind("outro", "x")).isNull();
+        assertThat(PieceStudioHints.studioKind(null, null)).isNull();
+        assertThat(PieceStudioHints.studioKind("upper_piece", "coat")).isEqualTo("OUTERWEAR");
+        assertThat(PieceStudioHints.studioKind("upper_piece", "t_shirt")).isEqualTo("TOP");
+        assertThat(PieceStudioHints.studioKind("lower_piece", "jeans")).isEqualTo("BOTTOM");
+        assertThat(PieceStudioHints.studioKind("shoes_piece", "boots")).isEqualTo("SHOES");
+        assertThat(PieceStudioHints.studioKind("full_body_piece", "dress")).isEqualTo("FULL_BODY");
+        assertThat(PieceStudioHints.studioKind("accessory_piece", "cap")).isEqualTo("ACCESSORY");
+        assertThat(PieceStudioHints.studioKind("outro", "x")).isNull();
     }
 
     @Test
     void caixaDoLogoRelativaAPeca() {
-        assertThat(WardrobeService.logoRelative(null, 100, 100)).isNull();
-        assertThat(WardrobeService.logoRelative(new double[]{0, 0, 1000, 1000}, 0, 100)).isNull();
-        assertThat(WardrobeService.logoRelative(new double[]{0, 0, 1000, 1000}, 100, -1)).isNull();
-        double[] full = WardrobeService.logoRelative(new double[]{0, 0, 1000, 1000}, 100, 100);
+        assertThat(DraftEvidence.logoRelative(null, 100, 100)).isNull();
+        assertThat(DraftEvidence.logoRelative(new double[]{0, 0, 1000, 1000}, 0, 100)).isNull();
+        assertThat(DraftEvidence.logoRelative(new double[]{0, 0, 1000, 1000}, 100, -1)).isNull();
+        double[] full = DraftEvidence.logoRelative(new double[]{0, 0, 1000, 1000}, 100, 100);
         assertThat(full).containsExactly(0, 0, 1, 1);
-        double[] meio = WardrobeService.logoRelative(new double[]{400, 400, 600, 600}, 200, 100);
+        double[] meio = DraftEvidence.logoRelative(new double[]{400, 400, 600, 600}, 200, 100);
         assertThat(meio[0]).isBetween(0.3, 0.45);
-        assertThat(WardrobeService.logoRelative(new double[]{500, 500, 501, 501}, 100, 100)).isNull();
+        assertThat(DraftEvidence.logoRelative(new double[]{500, 500, 501, 501}, 100, 100)).isNull();
     }
 
     @Test
     void dicasDoEstudioComLadosCortadosELogo() {
-        var h = WardrobeService.studioHints("upper_piece", "t_shirt", List.of("top", "left"), Map.of("box", List.of(0.1, 0.1, 0.2, 0.2)));
+        var h = PieceStudioHints.studioHints("upper_piece", "t_shirt", List.of("top", "left"), Map.of("box", List.of(0.1, 0.1, 0.2, 0.2)));
         assertThat(h.toString()).contains("TOP").contains("ia");
-        var semNada = WardrobeService.studioHints("lower_piece", "jeans", "x", Map.of("box", List.of(0.1, "a", 0.2, 0.2)));
+        var semNada = PieceStudioHints.studioHints("lower_piece", "jeans", "x", Map.of("box", List.of(0.1, "a", 0.2, 0.2)));
         assertThat(semNada.toString()).contains("BOTTOM").doesNotContain("ia,");
-        var outro = WardrobeService.studioHints("lower_piece", "jeans", null, Map.of("box", List.of(1, 2)));
+        var outro = PieceStudioHints.studioHints("lower_piece", "jeans", null, Map.of("box", List.of(1, 2)));
         assertThat(outro.toString()).contains("BOTTOM");
     }
 
@@ -483,13 +483,13 @@ class WardrobeServiceParsersTest {
     @Test
     void versaoDoFeedAtual() {
         WardrobeItem w = new WardrobeItem();
-        assertThat(WardrobeService.currentFeedVersion(w)).isFalse();
+        assertThat(PieceStudioHints.currentFeedVersion(w)).isFalse();
         w.setFlatLayMetadataJson("{\"studio\":{\"feed\":\"x\"}}");
-        assertThat(WardrobeService.currentFeedVersion(w)).isFalse();
+        assertThat(PieceStudioHints.currentFeedVersion(w)).isFalse();
         w.setFlatLayMetadataJson("{\"studio\":{\"feed\":{\"pipelineVersion\":\"" + br.com.fashionai.application.imaging.GarmentCrop.VERSION + "\"}}}");
-        assertThat(WardrobeService.currentFeedVersion(w)).isTrue();
+        assertThat(PieceStudioHints.currentFeedVersion(w)).isTrue();
         w.setFlatLayMetadataJson("{\"studio\":{\"feed\":{\"pipelineVersion\":\"velha\"}}}");
-        assertThat(WardrobeService.currentFeedVersion(w)).isFalse();
+        assertThat(PieceStudioHints.currentFeedVersion(w)).isFalse();
     }
 
     @Test
@@ -502,8 +502,8 @@ class WardrobeServiceParsersTest {
 
     @Test
     void semMarcaNoIdiomaDeQualquerUmNaoEMarca() {
-        assertThat(WardrobeService.isNoBrandPlaceholder(" Sem marca ")).isTrue();
-        assertThat(WardrobeService.isNoBrandPlaceholder("Nike")).isFalse();
+        assertThat(PieceAnalysisParser.isNoBrandPlaceholder(" Sem marca ")).isTrue();
+        assertThat(PieceAnalysisParser.isNoBrandPlaceholder("Nike")).isFalse();
     }
 
     @Test
@@ -550,29 +550,29 @@ class WardrobeServiceParsersTest {
         String variation = TaxonomyRegistry.get().variationsOf("t_shirt").get(0).code();
         Map<String, Object> ai = Map.of("variation", variation.toLowerCase(), "variationConfidence", 0.8);
         WardrobeItem w = new WardrobeItem();
-        WardrobeService.applyTaxonomy(w, form("upper_piece", "t_shirt", null, variation, null), ai);
+        PieceTaxonomyWriter.applyTaxonomy(w, form("upper_piece", "t_shirt", null, variation, null), ai);
         assertThat(w.getVariationCode()).isEqualTo(variation);
         assertThat(w.getVariationStatus()).isEqualTo("AI_SUGGESTED");
         assertThat(w.getVariationSource()).isEqualTo("AI");
         assertThat(w.getVariationConfidence()).isEqualByComparingTo("0.8");
 
         // mesma variação, agora confirmada pela pessoa
-        WardrobeService.applyTaxonomy(w, form("upper_piece", "t_shirt", null, variation, null, List.of("variation")), ai);
+        PieceTaxonomyWriter.applyTaxonomy(w, form("upper_piece", "t_shirt", null, variation, null, List.of("variation")), ai);
         assertThat(w.getVariationStatus()).isEqualTo("USER_CONFIRMED");
         assertThat(w.getVariationSource()).isEqualTo("USER");
 
         // sugestão sem confiança numérica
         WardrobeItem w2 = new WardrobeItem();
-        WardrobeService.applyTaxonomy(w2, form("upper_piece", "t_shirt", null, variation, null), Map.of("variation", variation));
+        PieceTaxonomyWriter.applyTaxonomy(w2, form("upper_piece", "t_shirt", null, variation, null), Map.of("variation", variation));
         assertThat(w2.getVariationConfidence()).isNull();
         assertThat(w2.getVariationStatus()).isEqualTo("AI_SUGGESTED");
 
         // trocar pela pessoa (sem sugestão)
         WardrobeItem w3 = new WardrobeItem();
-        WardrobeService.applyTaxonomy(w3, form("upper_piece", "t_shirt", null, variation, Map.of()), null);
+        PieceTaxonomyWriter.applyTaxonomy(w3, form("upper_piece", "t_shirt", null, variation, Map.of()), null);
         assertThat(w3.getVariationStatus()).isEqualTo("USER_CONFIRMED");
         // limpar a variação (atributos informados)
-        WardrobeService.applyTaxonomy(w3, form("upper_piece", "t_shirt", null, null, Map.of()), null);
+        PieceTaxonomyWriter.applyTaxonomy(w3, form("upper_piece", "t_shirt", null, null, Map.of()), null);
         assertThat(w3.getVariationCode()).isNull();
         assertThat(w3.getVariationStatus()).isNull();
     }
@@ -585,9 +585,9 @@ class WardrobeServiceParsersTest {
         WardrobeItem w = new WardrobeItem();
         w.setVariationCode(variation);
         w.setVariationStatus("USER_CONFIRMED");
-        WardrobeService.applyTaxonomy(w, form("upper_piece", "t_shirt", null, null, null));
+        PieceTaxonomyWriter.applyTaxonomy(w, form("upper_piece", "t_shirt", null, null, null));
         assertThat(w.getVariationCode()).isEqualTo(variation);
-        WardrobeService.applyTaxonomy(w, form("lower_piece", "jeans", null, null, null));
+        PieceTaxonomyWriter.applyTaxonomy(w, form("lower_piece", "jeans", null, null, null));
         assertThat(w.getVariationCode()).isNull();
         assertThat(w.getVariationStatus()).isNull();
         assertThat(w.getAttributes()).isNotEmpty();

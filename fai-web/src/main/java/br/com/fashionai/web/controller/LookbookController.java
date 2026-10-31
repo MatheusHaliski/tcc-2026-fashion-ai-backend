@@ -1,36 +1,33 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.DailyLookService;
 import br.com.fashionai.application.service.LookbookService;
 import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.enums.DailyLookFeedback;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.HypeScorePanelVersion;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * RF6 — Lookbook (visão geral, publicações, favoritos, salvos), aba e marcação do Look do Dia, agrupamentos e método do
+ * HypeScore. Histórico e feedback dos Looks do Dia (RF10, {@code DailyLookService}) ficam em {@link DailyLookController}.
+ */
 @RestController
 @Tag(name = "RF6 — Lookbook, Look do Dia e HypeScore (painel em v2; agrupamentos por similaridade)")
 public class LookbookController {
     private final LookbookService lookbook;
-    private final DailyLookService dailyLooks;
     private final br.com.fashionai.application.hype.HypeScoreConfig hypeV2;
 
-    public LookbookController(LookbookService lookbook, DailyLookService dailyLooks,
-                              br.com.fashionai.application.hype.HypeScoreConfig hypeV2) {
+    public LookbookController(LookbookService lookbook, br.com.fashionai.application.hype.HypeScoreConfig hypeV2) {
         this.hypeV2 = hypeV2;
         this.lookbook = lookbook;
-        this.dailyLooks = dailyLooks;
     }
 
     @GetMapping("/api/users/{ownerId}/lookbook")
@@ -113,28 +110,6 @@ public class LookbookController {
     @Operation(summary = "RF6.CA05 — Marcar esquema como Look do Dia")
     public Map<String, Object> markDailyLook(CurrentUser user, @RequestBody DailyLookRequest body) {
         return lookbook.markDailyLook(user, body.schemeId());
-    }
-
-    @GetMapping("/api/me/daily-looks")
-    @Operation(summary = "RF6 — Histórico de Looks do Dia")
-    public List<Map<String, Object>> history(CurrentUser user) {
-        return dailyLooks.history(user);
-    }
-
-    @GetMapping("/api/me/daily-looks/pending-feedback")
-    @Operation(summary = "RF10 — Look do dia anterior aguardando feedback")
-    public Map<String, Object> pendingFeedback(CurrentUser user) {
-        return dailyLooks.pendingFeedback(user);
-    }
-
-    public record FeedbackRequest(@NotNull DailyLookFeedback feedback) {
-    }
-
-    @PutMapping("/api/me/daily-looks/{date}/feedback")
-    @Operation(summary = "RF10 — Feedback do look (ADOREI / OK / NAO_CURTI) alimenta as preferências")
-    public Map<String, Object> feedback(CurrentUser user, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-                                        @RequestBody FeedbackRequest body) {
-        return dailyLooks.feedback(user, date, body.feedback());
     }
 
     @GetMapping("/api/me/capsule")

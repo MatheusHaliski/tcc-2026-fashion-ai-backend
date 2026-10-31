@@ -36,3 +36,23 @@ As capturas contêm ícones estáticos ausentes no checkout esparso. Não foram 
 ## Continuação Java
 
 Lote FLOW-WARDROBE-STUDIO-004 implementado, com98 testes Java passando. Ver WARDROBE_STUDIO.md, CI_FOLLOWUP.md e evidence/wardrobe-studio-metrics.json. WardrobeService continua CRITICAL/PARTIAL; refatoração integral e falhas amplas de frontend/catálogo continuam pendentes.
+
+## Onda temática 02–20 (19 lotes, um por domínio)
+
+Comandos realmente executados na branch integrada `claude/serene-thompson-yetcg5` após o último lote:
+
+| Verificação | Comando | Resultado | Evidência |
+|---|---|---|---|
+| Suíte Java completa (14 módulos) | `mvn -B test` | BUILD SUCCESS em 263 s: fai-application 2012, infraestrutura 197 (58+13+18+8+100), fai-web 790, fai-bootstrap 13 = **3012 testes, 0 falhas, 0 erros**, 33 skipped preexistentes | evidence/onda-02-20-suite-java-final.log |
+| Suíte Java intermediária (lotes 02–17) | `mvn -B test` | BUILD SUCCESS, 2984 testes, 0 falhas | evidence/integracao-suite-java-completa.log |
+| Tipagem TypeScript (após lote 15) | `npx tsc --noEmit -p .` | exit 0 | execução local |
+| Vitest do lote 15 | `npx vitest run components/explorer lib/explorer components/explorer-hype.test.tsx` | 14/14 | evidence/15-explorer-insights-after.log |
+| Python do lote 18 | `python3 -m unittest scripts.catalog.tests.test_canonical_frame_fixture scripts.catalog.tests.test_canonical_glb` | OK (10 skipped preexistentes sem bundle canônico) | evidence/18-*.log |
+| Auditoria + catraca de linhas | `python -m unittest scripts.refactoring.test_audit_repository scripts.refactoring.test_line_policy scripts.refactoring.test_line_ratchet` e `discover -p 'test_gof_*.py'` | OK | — |
+| Catraca estrita | `python scripts/refactoring/line_ratchet.py --strict` | 0 violações, baseline apertado | scripts/refactoring/line_baseline.json |
+
+Antes/depois por lote (caracterização no código original → regressão do domínio): ver ONDA-DOMINIOS-02-20.md.
+
+Não executados: suíte Vitest inteira (8 falhas preexistentes conhecidas em `app/pages.smoke.test.tsx`, `lab/heist*`,
+reproduzidas no código original pelo lote 15), build Next de produção, navegador, banco/HTTP reais, testes Python que
+exigem `scipy`/`pytest`, inferência. Cobertura de linhas (JaCoCo/V8) não foi medida nesta onda.

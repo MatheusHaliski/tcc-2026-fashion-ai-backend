@@ -1,0 +1,9 @@
+$ mvn -B -q -pl fai-application -Dtest='SchemeRemixCharacterizationTest,SchemeServiceTest' -Dsurefire.failIfNoSpecifiedTests=false test   # codigo ORIGINAL (antes da extracao)
+-------------------------------------------------------------------------------
+Test set: br.com.fashionai.application.service.SchemeRemixCharacterizationTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.12 s -- in br.com.fashionai.application.service.SchemeRemixCharacterizationTest
+-------------------------------------------------------------------------------
+Test set: br.com.fashionai.application.service.SchemeServiceTest
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.891 s -- in br.com.fashionai.application.service.SchemeServiceTest

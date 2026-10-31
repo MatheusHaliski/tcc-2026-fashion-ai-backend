@@ -1,0 +1,18 @@
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.630 s -- in br.com.fashionai.application.service.SealPoliciesTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.629 s -- in br.com.fashionai.application.service.SealPromotionCharacterizationTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.069 s -- in br.com.fashionai.application.service.SealHypeServiceTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.424 s -- in br.com.fashionai.application.service.SealPromotionFlowTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.714 s -- in br.com.fashionai.application.service.SealPolicyChatTest
+[INFO] Tests run: 35, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.873 s -- in br.com.fashionai.application.service.SealCreatorsCoverageTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 s -- in br.com.fashionai.application.service.PromotionRulesTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.633 s -- in br.com.fashionai.application.service.SealDesignServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.706 s -- in br.com.fashionai.application.service.CouponServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in br.com.fashionai.application.service.SealReferenceModelsTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.034 s -- in br.com.fashionai.application.service.SealPoliciesHypeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in br.com.fashionai.application.service.SealGrantValidityTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.214 s -- in br.com.fashionai.application.service.SealHypeOffersServiceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.063 s -- in br.com.fashionai.application.service.FlairServiceTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.046 s -- in br.com.fashionai.application.seal.SealDesignsTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in br.com.fashionai.application.seal.SealDraftsTest
+[INFO] Tests run: 161, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

@@ -1,0 +1,7 @@
+# 07 depois da extracao - mvn -B -q -pl fai-application -Dtest='Social*Test,InteractionCountersTest,VisibilityRulesTest,FlairCollectionServiceTest,PieceRemixTest' test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.092 s -- in br.com.fashionai.application.service.FlairCollectionServiceTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in br.com.fashionai.application.service.InteractionCountersTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.142 s -- in br.com.fashionai.application.service.PieceRemixTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.548 s -- in br.com.fashionai.application.service.SocialCountersCharacterizationTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.149 s -- in br.com.fashionai.application.service.SocialServiceTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.212 s -- in br.com.fashionai.application.service.VisibilityRulesTest

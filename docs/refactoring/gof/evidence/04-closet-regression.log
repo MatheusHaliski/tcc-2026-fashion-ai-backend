@@ -1,0 +1,21 @@
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.73 s -- in br.com.fashionai.application.service.WardrobeServiceCadastroTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.079 s -- in br.com.fashionai.application.service.WardrobeServiceClosetTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.359 s -- in br.com.fashionai.application.service.WardrobeClosetCaracterizacaoTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.522 s -- in br.com.fashionai.application.service.SchemeFiltersTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.098 s -- in br.com.fashionai.application.service.StudioVersionsTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.448 s -- in br.com.fashionai.application.service.PieceConservationServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.166 s -- in br.com.fashionai.application.service.ClosetSealFilterTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.677 s -- in br.com.fashionai.application.service.WardrobeEventListenersTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.043 s -- in br.com.fashionai.application.service.LookbookClosetHypePrivacyTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.090 s -- in br.com.fashionai.application.service.WardrobePrefillTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.064 s -- in br.com.fashionai.application.service.StudioVersionMetadataTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in br.com.fashionai.application.service.ClosetQueryTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.194 s -- in br.com.fashionai.application.service.WardrobeAnalysisTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in br.com.fashionai.application.service.WardrobeStateFilterTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.512 s -- in br.com.fashionai.application.service.WardrobeCreatorServiceTest
+[WARNING] Tests run: 3, Failures: 0, Errors: 0, Skipped: 3, Time elapsed: 0.032 s -- in br.com.fashionai.application.service.WardrobeAnalyzeFlowTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.717 s -- in br.com.fashionai.application.service.WardrobeServiceEstudioTest
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.192 s -- in br.com.fashionai.application.service.WardrobeServiceParsersTest
+[INFO] Tests run: 161, Failures: 0, Errors: 0, Skipped: 3
+[INFO] BUILD SUCCESS
+[INFO] Total time:  29.917 s

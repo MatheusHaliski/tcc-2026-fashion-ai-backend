@@ -1,0 +1,10 @@
+# Lote GoF 08 — caracterização ANTES da extração (código original, base bcaee73)
+$ mvn -B -pl fai-application -Dtest=InventoryCombosCharacterizationTest,InventoryScoreServiceTest,Copilot*Test -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CopilotHypeIntentTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CopilotAnswerTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CopilotLexiconTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CopilotPromptInterpretationTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.InventoryScoreServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.InventoryCombosCharacterizationTest
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

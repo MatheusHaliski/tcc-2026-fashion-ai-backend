@@ -1,0 +1,10 @@
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.429 s -- in br.com.fashionai.application.service.WardrobeServiceClosetTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.230 s -- in br.com.fashionai.application.service.WardrobeClosetCaracterizacaoTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.175 s -- in br.com.fashionai.application.service.ClosetSealFilterTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in br.com.fashionai.application.service.LookbookClosetHypePrivacyTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in br.com.fashionai.application.service.ClosetQueryTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in br.com.fashionai.application.service.WardrobeStateFilterTest
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.133 s -- in br.com.fashionai.application.service.WardrobeServiceParsersTest
+[INFO] Tests run: 70, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time:  22.565 s

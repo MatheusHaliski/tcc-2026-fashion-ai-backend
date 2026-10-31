@@ -1,0 +1,123 @@
+/* ---------- Dashboard administrativo (dataviz): tiles, mapa de calor, funil, tabela de dados, abas ---------- */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 8px; }
+.kpi-tile { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kpi-label { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.kpi-value { font-family: var(--font-editorial); font-size: 28px; font-weight: 600; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.kpi-delta { font-size: 12px; color: var(--muted); }
+.kpi-delta.is-good { color: var(--thread-ink); }
+.kpi-delta.is-bad { color: var(--mark-ink); }
+.heatmap { display: grid; gap: 2px; overflow-x: auto; padding-bottom: 4px; }
+.heatmap-row { display: grid; grid-template-columns: 40px repeat(24, minmax(14px, 1fr)); gap: 2px; align-items: center; min-width: 420px; }
+.heatmap-axis { font-size: 12px; color: var(--muted); }
+.heatmap-hour { font-size: var(--text-caption); color: var(--muted); text-transform: none; }
+.heatmap-cell { display: block; height: 18px; border-radius: 3px; }
+.heatmap-cell:hover { outline: 2px solid var(--ink); outline-offset: -1px; }
+.heatmap-legend { display: flex; align-items: center; gap: 3px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.heatmap-legend i { display: inline-block; width: 16px; height: 10px; border-radius: 2px; }
+.funnel { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.funnel-step { display: grid; grid-template-columns: minmax(120px, 200px) minmax(120px, 1fr) 210px; gap: 10px; align-items: center; font-size: 13px; }
+.funnel-label { color: var(--ink); }
+.funnel-track { height: 14px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.funnel-track i { display: block; height: 100%; background: var(--series-1); border-radius: 0 4px 4px 0; }
+.funnel-value { text-align: right; white-space: nowrap; }
+@media (max-width: 639px) { .funnel-step { grid-template-columns: 1fr; gap: 4px; } .funnel-value { text-align: left; } }
+.data-table { margin-top: 8px; }
+.data-table summary { cursor: pointer; font-size: 12px; color: var(--muted); padding: 6px 0; min-height: 32px; display: inline-flex; align-items: center; }
+.data-table table th, .data-table table td { padding: 5px 8px; border-top: 1px solid var(--line-soft); }
+.data-table table th { color: var(--muted); font-weight: 600; }
+.dash-grid { display: grid; gap: 16px; min-width: 0; }
+.dash-grid > * { min-width: 0; }
+.heatmap-hour { white-space: nowrap; }
+@media (min-width: 1024px) { .dash-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.dash-card-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.dash-card-head h2 { flex: 1; }
+.dash-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.health-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.status-dot.good { background: var(--status-good); } .status-dot.warning { background: var(--status-warning); } .status-dot.critical { background: var(--status-critical); }
+
+/* DET-D09 — antes e depois da peça (controle deslizante sobre as duas fotos) */
+.before-after { position: relative; aspect-ratio: 1 / 1; background: var(--surface-2); overflow: hidden; touch-action: pan-y; }
+.before-after-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 16px; }
+.before-after-before { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--ba)) 0 0); background: var(--surface-2); }
+.before-after-divider { position: absolute; top: 0; bottom: 0; left: var(--ba); width: 2px; margin-left: -1px; background: var(--ink); pointer-events: none; }
+.before-after-divider::after { content: ""; position: absolute; top: 50%; left: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 999px; background: var(--surface); border: 2px solid var(--ink); }
+.before-after-tag { position: absolute; top: 10px; padding: 2px 8px; border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 0.75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; pointer-events: none; }
+.before-after-tag.is-before { left: 10px; } .before-after-tag.is-after { right: 10px; }
+.before-after-range { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+.before-after-range:focus-visible + .before-after-tag, .before-after:focus-within .before-after-divider { outline: 2px solid var(--mark); outline-offset: 2px; }
+
+/* DET-G04 — modo foto do quarto: filtros e profundidade de campo na prévia (a exportação aplica os mesmos) */
+.room3d-stage[data-filter="editorial"] canvas { filter: contrast(1.1) saturate(0.88) brightness(1.02); }
+.room3d-stage[data-filter="filme"] canvas { filter: sepia(0.22) contrast(1.05) brightness(1.04) saturate(1.05); }
+.room3d-stage[data-filter="pb"] canvas { filter: grayscale(1) contrast(1.15); }
+.room3d-dof { position: absolute; inset: 0; pointer-events: none; backdrop-filter: blur(var(--dof-blur, 3px)); -webkit-backdrop-filter: blur(var(--dof-blur, 3px));
+  mask-image: radial-gradient(ellipse 42% 48% at 50% 50%, transparent 55%, #000 100%); -webkit-mask-image: radial-gradient(ellipse 42% 48% at 50% 50%, transparent 55%, #000 100%); }
+.room3d-stage.is-photo .room3d-hint { display: none; }
+.photo-mode { display: grid; gap: 12px; padding: 12px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--surface); }
+.photo-mode-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+/* DET-C06 — quiz "Qual é o seu core?" */
+.core-quiz-options { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.core-quiz-option { text-align: left; padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--surface); color: var(--ink); min-height: 48px; }
+.core-quiz-option:hover { border-color: var(--ink); }
+.core-quiz-option[aria-pressed="true"] { border-color: var(--mark); box-shadow: inset 0 0 0 1px var(--mark); }
+.core-quiz-progress { height: 4px; border-radius: 999px; background: var(--line-soft); overflow: hidden; }
+.core-quiz-progress > i { display: block; height: 100%; background: var(--ink); }
+
+/* Segment picker (visões de uma aba, uma por vez) */
+.segmented { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--surface-2); overflow-x: auto; scrollbar-width: none; }
+.segmented > button { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 4px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.segmented > button:hover { color: var(--ink); }
+.segmented > button.is-active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .14); }
+.segmented .seg-count { font-size: var(--text-caption); font-weight: 600; color: var(--muted); }
+/* Card ampliado (RF7.CA07): a borda do card é a borda do modal */
+.dialog.dialog-card { max-width: 560px; padding: 0; border: 0; background: transparent; box-shadow: none; overflow: auto; }
+.dialog.dialog-card > .fai-card, .dialog.dialog-card .fai-card.is-expanded { box-shadow: var(--shadow); }
+/* No detalhe aberto pelo Closet, o conteúdo é estático: não aplicar o hover da lista ao passar o mouse. */
+.dialog.dialog-card.is-piece .piece-detail { transform: none; }
+.c-modal-controls { display: inline-flex; gap: 2px; margin-left: 2px; }
+.expanded-page { max-width: 560px; margin: 0 auto; }
+.fai-card .c-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; padding: 4px 12px 10px; }
+/* a mesma lista de fatos fora do card (revisar e salvar, comparação de fotos) */
+.c-facts:not(.fai-card .c-facts) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+.c-facts:not(.fai-card .c-facts) dt { font-size: var(--text-caption); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.c-facts:not(.fai-card .c-facts) dd { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.fai-card .c-facts dt { font-size: var(--text-caption); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.fai-card .c-facts dd { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.success-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; margin-bottom: 10px; background: var(--surface); border: 1.5px solid var(--line-soft); border-radius: var(--radius); }
+
+/* RF23 · Editar perfil: "+" no círculo da foto, remover foto e a caixa isométrica do avatar 3D */
+.edit-profile .ep-plus { position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9999px; background: var(--color-accent, #22c55e); color: #0b0b0b; border: 3px solid var(--color-surface, #fff); box-shadow: 0 1px 3px rgb(0 0 0 / .25); cursor: pointer; }
+.edit-profile .ep-plus:hover { filter: brightness(1.05); }
+.edit-profile .ep-plus:focus-visible, .edit-profile .ep-cube:focus-visible, .edit-profile .ep-remove:focus-visible { outline: 2px solid var(--color-ink, #111); outline-offset: 2px; }
+.edit-profile .ep-remove { position: absolute; right: -2px; top: -2px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 9999px; background: var(--color-surface, #fff); color: var(--color-muted, #555); border: 1px solid var(--color-line-soft, #ddd); font-size: 12px; line-height: 1; cursor: pointer; }
+.edit-profile .ep-rotate { position: absolute; left: -2px; bottom: -2px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9999px; background: var(--color-surface, #fff); color: var(--color-ink, #111); border: 1px solid var(--color-line-soft, #ddd); box-shadow: 0 1px 3px rgb(0 0 0 / .2); cursor: pointer; }
+.edit-profile .ep-rotate:hover { background: var(--color-surface-2, #f4f4f4); }
+.edit-profile .ep-rotate:focus-visible { outline: 2px solid var(--color-ink, #111); outline-offset: 2px; }
+.edit-profile .ep-cube { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 16px; border: 1px solid var(--color-line-soft, #ddd); background: var(--color-surface, #fff); color: var(--color-ink, #111); transition: transform .15s ease; }
+.edit-profile .ep-cube:hover { transform: translateY(-2px); background: var(--color-surface-2, #f5f5f5); }
+
+/* Avatar 3D · corpo: origem de cada medida (observada na foto, informada, estimada, referência) e estado das regiões */
+.badge.src-observed { background: #dcfce7; border-color: #16a34a; color: #14532d; }
+.badge.src-user { background: #dbeafe; border-color: #2563eb; color: #1e3a8a; }
+.badge.src-estimated { background: #fef3c7; border-color: #d97706; color: #78350f; }
+.badge.src-default, .badge.src-hidden { background: var(--surface-2); border-color: var(--line-soft); color: var(--muted); }
+
+/* ---------- Ações sociais (RF19): uma linha, ícones 22 px com a contagem ao lado, mesma área de toque e estados
+   visíveis por forma (contorno → preenchido), não só por cor. Sem linha "N curtidas" separada. ---------- */
+.c-actions { gap: 0; }
+.fai-card .c-actions, .fai-card .c-post .c-actions { flex-wrap: nowrap; min-height: 44px; padding: 2px 4px; }
+.c-act { gap: 4px; min-height: 40px; min-width: 40px; padding: 0 8px; border-radius: 999px; background: transparent; font-family: var(--font-data); font-size: 13px; font-weight: 600; line-height: 1; justify-content: center; }
+.c-act:hover:not(.is-static):not(:disabled) { background: var(--surface-2); }
+.c-act:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.c-act[aria-pressed="true"] { background: transparent; color: var(--card-ink, var(--ink)); }
+.c-act.is-like[aria-pressed="true"] { color: var(--mark); }
+.c-act-icon { flex: none; }
+.c-act-n { min-width: 1ch; text-align: left; white-space: nowrap; }
+.c-act { white-space: nowrap; flex: none; }
+.c-post.is-preview .c-act:disabled { cursor: default; opacity: 1; }
+.c-post.is-compact .c-act { min-width: 36px; min-height: 40px; padding: 0 6px; }
+@media (pointer: coarse) { .c-act, .c-post.is-compact .c-act { min-height: var(--touch); } }
+:root[data-theme="contrast"] .c-act.is-like[aria-pressed="true"] { color: var(--mark); }
+

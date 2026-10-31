@@ -15,3 +15,9 @@ Segundo lote: inspetor de propriedades e entradas de valores separados, com14 te
 
 
 Fechamento para publicação: build completo e browser smoke passaram;14 testes funcionais e14 testes da auditoria. Quantidades finais devem ser lidas em RESIDUAL_FINDINGS.md/audit-metadata.json, pois o fechamento anterior era uma fotografia intermediária.
+
+## Onda 02–20
+
+19 lotes com caracterização antes da extração e regressão depois; suíte Java completa verde (3012 testes) e
+catraca de linhas no CI (`architecture.yml`). Scoreboard em QUALITY_SCORECARD.md; regressões não testadas e achados
+em RISK_REGISTER.md. Sem cobertura de linhas medida; nenhum resultado foi marcado como aprovado sem execução.

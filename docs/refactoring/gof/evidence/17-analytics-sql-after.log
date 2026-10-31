@@ -1,0 +1,23 @@
+# 17 — depois da extração (AnalyticsInsightsSql + AnalyticsDashboardSql; adapter só faz binding)
+$ mvn -B -pl fai-infrastructure/persistence-mysql -Dtest='MysqlAnalytics*Test,AnalyticsSqlCatalogTest' -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Compiling 9 source files with javac [debug parameters release 21] to target/classes
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in ...analytics.AnalyticsSqlCatalogTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in ...analytics.MysqlAnalyticsAdapterTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 -- in ...analytics.MysqlAnalyticsSqlCharacterizationTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+# suíte completa do módulo persistence-mysql (sem banco: mocks + checagens estáticas de migrations)
+$ mvn -B -q -pl fai-infrastructure/persistence-mysql test        -> exit 0
+surefire-reports: 11 classes, 58 testes, 0 falhas, 0 erros, 0 skipped
+  MysqlPersistenceConfigTest 2 | AnalyticsSqlCatalogTest 4 | MysqlAnalyticsAdapterTest 12 | MysqlAnalyticsSqlCharacterizationTest 1
+  MysqlAuditServiceTest 2 | MysqlDumpBackupAdapterTest 8 | MysqlSslModeEnvironmentPostProcessorTest 6
+  MysqlDemoDataAdminAdapterTest 15 | AppliedMigrationChecksumsTest 1 | MigrationVersionsTest 1 | V34IntegridadeReferencialTest 6
+
+# catraca de linhas (a partir da raiz da worktree)
+$ python /home/user/tcc-2026-fashion-ai-backend/scripts/refactoring/line_ratchet.py
+APERTAR .../mysql/analytics/MysqlAnalyticsAdapter.java: teto 348 -> 227
+13 violações, TODAS em services de fai-application não tocados (worktree parte de bcaee73, anterior às reduções
+de outros lotes na branch principal: CatalogService, LensService, Avatar3dService, BackgroundStudioService,
+ChallengeService, IdentityService, InventoryScoreService, PreferencesService, RoomService, SchemeService,
+SealService, SocialService, WardrobeService). 0 violações nos arquivos deste lote.

@@ -36,3 +36,9 @@ Lote FLOW-WARDROBE-STUDIO-004 implementado, com98 testes Java passando. Ver WARD
 Lote FLOW-AUTH-REGISTER-FORM-005: validação do formulário de cadastro extraída de `IdentityService.register` para
 `RegistrationFormChain` (Chain of Responsibility, variante pipeline), com caracterização antes da extração. Ver
 [02-RESULTADO.md](02-RESULTADO.md). IdentityService continua PARTIAL.
+
+## Onda 02–20 e regras de tamanho
+
+Um lote por domínio 03–20 (além do 02): [ONDA-DOMINIOS-02-20.md](ONDA-DOMINIOS-02-20.md), relatórios
+`03-RESULTADO.md` … `20-RESULTADO.md`, achados em [RISK_REGISTER.md](RISK_REGISTER.md), pendências em
+[RESIDUAL_FINDINGS.md](RESIDUAL_FINDINGS.md). Regras de linhas por arquivo: [../LINE_RULES.md](../LINE_RULES.md).

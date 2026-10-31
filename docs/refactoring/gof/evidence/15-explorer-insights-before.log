@@ -1,0 +1,8 @@
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ Test Files  2 passed (2)
+      Tests  10 passed (10)
+   Start at  13:33:58
+   Duration  3.32s (tests 33%, import 24%, environment 24%, transform 17%, setup 3%)
+

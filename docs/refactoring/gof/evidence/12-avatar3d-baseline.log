@@ -1,0 +1,7 @@
+# Lote GoF 12 - caracterizacao no codigo ORIGINAL (base bcaee73, antes da extracao)
+$ mvn -B -pl fai-application -Dtest=Avatar3d*Test,AvatarBodyScanServiceTest -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.740 s -- in br.com.fashionai.application.service.Avatar3dModelValidationCharacterizationTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.68 s -- in br.com.fashionai.application.service.Avatar3dServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.328 s -- in br.com.fashionai.application.service.AvatarBodyScanServiceTest
+[INFO] Tests run: 36, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

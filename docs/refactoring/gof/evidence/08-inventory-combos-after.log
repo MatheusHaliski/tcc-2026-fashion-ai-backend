@@ -1,0 +1,20 @@
+# Lote GoF 08 — DEPOIS da extração de InventoryComboCounter
+$ mvn -B -pl fai-application -Dtest=InventoryCombosCharacterizationTest,InventoryComboCounterTest,InventoryScoreServiceTest,ScoreBandsTest,Copilot*Test,Dna*Test -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.ScoreBandsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CopilotHypeIntentTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.DnaServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CopilotAnswerTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CopilotLexiconTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CopilotPromptInterpretationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.InventoryComboCounterTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.InventoryScoreServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.InventoryCombosCharacterizationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.DnaHypeFocusV2Test
+[INFO] Tests run: 51, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+$ python /home/user/tcc-2026-fashion-ai-backend/scripts/refactoring/line_ratchet.py
+APERTAR .../service/InventoryScoreService.java: teto 1295 -> 1178
+6 violações, todas em arquivos NÃO tocados por este lote (CatalogService, IdentityService, PreferencesService,
+SchemeService, SocialService, WardrobeService): a worktree parte de bcaee73, anterior às reduções desses arquivos
+na branch principal. 0 violações em arquivos tocados (InventoryComboCounter 160 ≤ 250; testes 180 e 68 ≤ 400).

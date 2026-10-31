@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -197,6 +198,12 @@ abstract class MomentServiceFixture {
 
     List<MomentParticipation> allParts() {
         return MemoryRepository.rows(parts);
+    }
+
+    /** Confere o código do erro e devolve o status HTTP (compartilhado por MomentServiceAcoesTest e MomentServiceComunidadeTest). */
+    static int code(Throwable e, String expected) {
+        assertThat(((ApiException) e).code()).isEqualTo(expected);
+        return ((ApiException) e).status();
     }
 
     static Map<String, Object> map(Object o) {

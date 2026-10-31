@@ -7,7 +7,6 @@ import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.hype.HypeLiveRecalc;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.moderation.UploadQuarantine;
@@ -119,28 +118,8 @@ public class AdminService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> moderationQueue(CurrentUser admin) {
         guard.requireAdmin(admin);
-        return moderation.findByStatusOrderByCreatedAtAsc(ModerationQueueStatus.PENDING_REVIEW).stream().map(q -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id", q.getId());
-            m.put("targetType", q.getTargetType());
-            m.put("targetId", q.getTargetId());
-            m.put("userId", q.getUserId());
-            m.put("excerpt", q.getContentExcerpt());
-            m.put("categories", Json.strings(q.getCategoriesJson()));
-            m.put("confidence", q.getConfidence());
-            m.put("createdAt", q.getCreatedAt());
-            if ("PIECE".equals(q.getTargetType()) && q.getTargetId() != null) {
-                pieces.findById(q.getTargetId()).ifPresent(w -> m.put("imageUrl", w.getImageUrl()));
-            } else if (UploadQuarantine.TARGET.equals(q.getTargetType())) {
-                // foto retida pela moderação: a imagem sai só pelo endpoint autenticado do admin (restricted/)
-                Map<String, Object> meta = UploadQuarantine.meta(q);
-                m.put("categories", UploadQuarantine.reasons(q));
-                m.put("upload", Map.of("kind", String.valueOf(meta.get("kind")), "engine", String.valueOf(meta.get("engine")),
-                        "signals", meta.getOrDefault("signals", Map.of())));
-                m.put("imageEndpoint", "/api/admin/moderation/" + q.getId() + "/image");
-            }
-            return m;
-        }).toList();
+        return moderation.findByStatusOrderByCreatedAtAsc(ModerationQueueStatus.PENDING_REVIEW).stream()
+                .map(q -> AdminViews.moderationItem(q, pieces::findById)).toList();
     }
 
     @Transactional
@@ -213,8 +192,7 @@ public class AdminService {
     public List<Map<String, Object>> auditLog(CurrentUser admin, String actor) {
         guard.requireAdmin(admin);
         var list = actor == null || actor.isBlank() ? auditLogs.findTop200ByOrderByTimestampDesc() : auditLogs.findTop100ByActorOrderByTimestampDesc(actor);
-        return list.stream().map(a -> Map.<String, Object>of("actor", a.getActor(), "action", a.getAcao(), "resource", a.getRecurso(), "result", a.getResultado(),
-                "ip", String.valueOf(a.getIp()), "timestamp", a.getTimestamp(), "correlationId", a.getCorrelationId(), "metadata", Json.map(a.getMetadataJson()))).toList();
+        return list.stream().map(AdminViews::auditEntry).toList();
     }
 
     @Transactional(readOnly = true)
@@ -223,12 +201,8 @@ public class AdminService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("providers", ai.providerAvailability());
         out.put("remoteEnabled", ai.remoteEnabled());
-        out.put("catalog", AiCatalog.all().stream().map(s -> Map.of("capability", s.capability().name(), "name", s.capability().officialName(),
-                "hostRf", s.capability().hostRf(), "primary", s.primary() == null ? "" : s.primary().service() + " · " + s.primary().model(),
-                "fallback", s.fallbackBehavior(), "dailyQuota", s.dailyQuotaPerUser(), "status", s.status())).toList());
-        out.put("recent", aiLogs.findTop300ByOrderByCreatedAtDesc().stream().limit(100).map(l -> Map.<String, Object>of("capability", l.getCapability(),
-                "provider", l.getProvider(), "model", String.valueOf(l.getModel()), "latencyMs", l.getLatencyMs(), "costUsd", String.valueOf(l.getEstimatedCostUsd()),
-                "result", l.getResult().name(), "fallback", l.isFallbackUsed(), "at", l.getCreatedAt())).toList());
+        out.put("catalog", AiCatalog.all().stream().map(AdminViews::aiCapability).toList());
+        out.put("recent", aiLogs.findTop300ByOrderByCreatedAtDesc().stream().limit(100).map(AdminViews::aiCall).toList());
         // Admin › Sistema (IA & sistema) lê o estado do job v2 deste mesmo endpoint (campo aditivo, P3-14)
         out.put("hypeV2", hypeV2State());
         return out;
@@ -241,7 +215,7 @@ public class AdminService {
      */
     Map<String, Object> hypeV2State() {
         String version = hypeConfig.algorithmVersion();
-        Map<String, Object> m = new LinkedHashMap<>(DashboardService.hypeJob(analytics.hypeJobV2(version), hypeConfig, Instant.now()));
+        Map<String, Object> m = new LinkedHashMap<>(DashboardHypeBlocks.hypeJob(analytics.hypeJobV2(version), hypeConfig, Instant.now()));
         m.put("cron", hypeCron);
         HypeLiveRecalc live = hypeLive.getIfAvailable();
         Map<String, Object> l = new LinkedHashMap<>();
@@ -249,7 +223,7 @@ public class AdminService {
         l.put("intervalSeconds", Math.max(10, hypeLiveSeconds));
         l.put("pending", live != null && live.isDirty());
         m.put("live", l);
-        m.put("coverage", DashboardService.hypeV2Block(List.of(), analytics.hypeCoverageV2(
+        m.put("coverage", DashboardHypeBlocks.hypeV2Block(List.of(), analytics.hypeCoverageV2(
                 new AnalyticsQueryPort.Filter(Instant.EPOCH, Instant.now(), null, null), version), Map.of(), hypeConfig, Instant.now()).get("coverage"));
         return m;
     }
@@ -269,9 +243,7 @@ public class AdminService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> backups(CurrentUser admin) {
         guard.requireAdmin(admin);
-        return backups.findTop50ByOrderByStartedAtDesc().stream().map(b -> Map.<String, Object>of("id", b.getId(), "kind", b.getKind(), "status", b.getStatus(),
-                "sizeBytes", String.valueOf(b.getSizeBytes()), "startedAt", b.getStartedAt(), "finishedAt", String.valueOf(b.getFinishedAt()),
-                "notes", String.valueOf(b.getNotes()))).toList();
+        return backups.findTop50ByOrderByStartedAtDesc().stream().map(AdminViews::backup).toList();
     }
 
     /**

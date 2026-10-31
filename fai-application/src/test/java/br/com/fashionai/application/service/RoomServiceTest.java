@@ -288,16 +288,16 @@ class RoomServiceTest {
     void sugestaoDeRotuloPeloConteudoDaGaveta() {
         WardrobeItem jeans = world.piece(world.me, "jeans");
         WardrobeItem skirt = Kit.piece(world.me, "saia", "lower_piece", "skirt", "black");
-        assertThat(RoomService.suggestLabel(List.of(jeans, jeans), "x")).isEqualTo("Jeans");
-        assertThat(RoomService.suggestLabel(List.of(skirt, skirt, jeans), null)).isEqualTo("Saias");
-        assertThat(RoomService.suggestLabel(List.of(), "Atual")).isEqualTo("Atual");
+        assertThat(RoomPlacementRules.suggestLabel(List.of(jeans, jeans), "x")).isEqualTo("Jeans");
+        assertThat(RoomPlacementRules.suggestLabel(List.of(skirt, skirt, jeans), null)).isEqualTo("Saias");
+        assertThat(RoomPlacementRules.suggestLabel(List.of(), "Atual")).isEqualTo("Atual");
         WardrobeItem gym = Kit.piece(world.me, "legging", "lower_piece", "leggings", "black");
         WardrobeItem beach = Kit.piece(world.me, "saída", "lower_piece", "shorts", "white");
         beach.setOccasionTags("beach");
         WardrobeItem socks = Kit.piece(world.me, "meia", "accessory_piece", "socks", "white");
-        assertThat(RoomService.preferredDrawerLabel(gym)).isEqualTo("Academia");
-        assertThat(RoomService.preferredDrawerLabel(beach)).isEqualTo("Praia");
-        assertThat(RoomService.preferredDrawerLabel(socks)).isNotNull();
+        assertThat(RoomPlacementRules.preferredDrawerLabel(gym)).isEqualTo("Academia");
+        assertThat(RoomPlacementRules.preferredDrawerLabel(beach)).isEqualTo("Praia");
+        assertThat(RoomPlacementRules.preferredDrawerLabel(socks)).isNotNull();
         Map<String, String> labels = Map.of("1", "Jeans", "2", "Academia", "3", "Praia", "4", "Acessórios", "5", "Íntimas", "6", "Favoritas", "7", "Outra");
         for (int d = 1; d <= 8; d++) {
             RoomService.coherent(gym, RoomAddress.of("drawer", d), labels);

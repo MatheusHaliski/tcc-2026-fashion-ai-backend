@@ -66,7 +66,7 @@ public class BackgroundStudioService {
     /** Famílias de silhueta que a pessoa pode declarar no look (anatomias v18, prancha 07). */
     public static final Set<String> SILHOUETTES = Set.of("AMPULHETA", "RETA", "TRAPEZIO", "TRIANGULO_INVERTIDO", "OVERSIZED");
     /** Enquadramento da foto da peça no card: recorte de tecido (padrão) ou Total frame (a peça inteira no quadro). */
-    public static final Set<String> PHOTO_FRAMINGS = Set.of("FABRIC", "WHOLE");
+    public static final Set<String> PHOTO_FRAMINGS = StudioArtworkRules.PHOTO_FRAMINGS;
     public static final Map<String, Map<String, Object>> SEAL_PLACEMENT = new LinkedHashMap<>();
     public static final Map<String, Map<String, Object>> PIECE_SEAL_PLACEMENT = new LinkedHashMap<>();
 
@@ -632,90 +632,14 @@ public class BackgroundStudioService {
         return Map.of("pieceId", pieceId, "background", saved == null ? Map.of() : saved);
     }
 
-    /**
-     * Arte do card da peça (RF11 v2): cada gravação ganha uma revisão ({@code rev}). Quando o editor manda a revisão que
-     * leu ({@code baseRev}) e ela não é mais a atual (outra aba ou outro aparelho aplicou antes), a gravação é recusada
-     * com 409 em vez de sobrescrever em silêncio. Sem {@code baseRev} (clientes antigos, criação da peça) grava como antes.
-     */
-    /** Structured border paint only: arbitrary CSS and unknown visual modes are not accepted. */
-    static boolean validHypeMode(Object value) {
-        if (!(value instanceof String mode)) return false;
-        if (List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(mode)) return true;
-        return mode.matches("(COMMON|RARE|LEGENDARY|COLLAB_DROP)_(STATIC_HORIZONTAL|STATIC_VERTICAL|STATIC_COLUMNS|STATIC_GLOBAL|RANKED_BARS|EXTREMES|MOMENTUM|KEY_TRIAD)") || mode.matches("(SCAN|CONTOUR|MESH|HOLO|FIBER|PRISM|PARTICLES|SPOTLIGHT)_(GRAPHITE|CHROME|ROSE|VIOLET|CHAMPAGNE)");
-    }
+    /** Regras puras da arte do card: ver {@link StudioArtworkRules} (contrato estático mantido para os consumidores). */
+    static boolean validHypeMode(Object value) { return StudioArtworkRules.validHypeMode(value); }
 
-    static void validateArtwork(Map<?, ?> config) {
-        if (config == null) return;
-        Object composition = config.get("compositionPreset");
-        if (composition != null) {
-            if (!(composition instanceof Map<?, ?> preset)
-                    || !(preset.get("id") instanceof String id) || !id.matches("[a-z0-9-]{1,80}")
-                    || !(preset.get("name") instanceof String name) || name.length() > 160
-                    || !List.of("COMMON", "ELECTRO", "SPLASH", "HYPE", "METAMORPHOSE").contains(preset.get("family"))
-                    || !("/aura/fashion-curated/" + id + ".webp").equals(preset.get("image"))
-                    || preset.get("video") != null && !("/aura/fashion-curated/" + id + ".mp4").equals(preset.get("video"))
-                    || !(preset.get("palette") instanceof List<?> palette) || palette.size() != 2
-                    || palette.stream().anyMatch(c -> !(c instanceof String hex) || !hex.matches("#[0-9a-fA-F]{6}")))
-                throw ApiException.badRequest("AURA_COMPOSITION_INVALID", "Composição AURA inválida.");
-        }
-        Object hype = config.get("auraHype");
-        if (hype != null && !validHypeMode(hype))
-            throw ApiException.badRequest("AURA_HYPE_INVALID", Msg.t("auraHype.invalid"));
-        Object metamorphose = config.get("auraMetamorphose");
-        if (metamorphose != null && !List.of("OFF", "PRISMA", "CONSTELACAO", "FIO_VIVO", "HOLOGRAFIA").contains(metamorphose))
-            throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");
-        Object metamorphosePreset = config.get("auraMetamorphosePreset");
-        if (metamorphosePreset != null) {
-            String requiredMode = switch (metamorphosePreset instanceof String id ? id : "") {
-                case "NIKE_ORANGE" -> "PRISMA";
-                case "ADIDAS_BLUE" -> "FIO_VIVO";
-                case "ASICS_WHITE" -> "HOLOGRAFIA";
-                default -> null;
-            };
-            if (requiredMode == null || !requiredMode.equals(metamorphose))
-                throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");
-        }
-        // enquadramento da foto no card: FABRIC (recorte de tecido, o de sempre) ou WHOLE (Total frame: a peça inteira)
-        Object framing = config.get("photoFraming");
-        if (framing != null && !PHOTO_FRAMINGS.contains(framing))
-            throw ApiException.badRequest("PHOTO_FRAMING_INVALID", Msg.t("backgroundStudio.enquadramento_invalido"));
-        Object value = config.get("border");
-        if (value == null) return;
-        if (!(value instanceof Map<?, ?> border)) throw ApiException.badRequest("CARD_BORDER_INVALID", "Borda inválida.");
-        if (border.get("mode") != null && !List.of("AUTO", "COLOR", "GRADIENT").contains(border.get("mode")))
-            throw ApiException.badRequest("CARD_BORDER_INVALID", "Modo de borda inválido.");
-        if (border.get("effect") != null && !List.of("AUTO", "NONE", "GLOW", "SHIMMER", "HOLO").contains(border.get("effect")))
-            throw ApiException.badRequest("CARD_BORDER_INVALID", "Efeito de borda inválido.");
-        for (String key : List.of("color", "from", "to")) {
-            Object color = border.get(key);
-            if (color != null && (!(color instanceof String hex) || !hex.matches("#[0-9a-fA-F]{6}")))
-                throw ApiException.badRequest("CARD_BORDER_INVALID", "Cor da borda inválida.");
-        }
-    }
+    static void validateArtwork(Map<?, ?> config) { StudioArtworkRules.validateArtwork(config); }
 
-    /** Clients may retain/remove server-issued motion, never forge or replace it. */
-    static void validateMotionWrite(String currentJson, Object cfg) {
-        if (!(cfg instanceof Map<?,?> incoming) || incoming.get("impersonationData") == null) return;
-        Object existing = Json.map(currentJson).get("impersonationData");
-        if (existing == null || !existing.equals(incoming.get("impersonationData")))
-            throw ApiException.badRequest("AURA_MOTION_SERVER_ONLY", Msg.t("auraMotion.notReady"));
-    }
+    static void validateMotionWrite(String currentJson, Object cfg) { StudioArtworkRules.validateMotionWrite(currentJson, cfg); }
 
-    static Object withRevision(String currentJson, Object cfg) {
-        validateMotionWrite(currentJson, cfg);
-        if (!(cfg instanceof Map<?, ?> in)) return cfg;
-        validateArtwork(in);
-        Map<String, Object> current = currentJson == null || currentJson.isBlank() ? Map.of() : Json.map(currentJson);
-        int rev = current.get("rev") instanceof Number n ? n.intValue() : 0;
-        Map<String, Object> out = new java.util.LinkedHashMap<>();
-        in.forEach((k, v) -> out.put(String.valueOf(k), v));
-        Object base = out.remove("baseRev");
-        if (base instanceof Number b && b.intValue() != rev) {
-            throw ApiException.conflict("ARTE_ALTERADA", Msg.t("backgroundStudio.arte_alterada_em_outra_janela"));
-        }
-        out.put("rev", rev + 1);
-        return out;
-    }
+    static Object withRevision(String currentJson, Object cfg) { return StudioArtworkRules.withRevision(currentJson, cfg); }
 
     /**
      * Thumbnails dos skins (00_dimensoes_e_metodologia.md / 08_negativo): gera em retrato e recorta ao centro

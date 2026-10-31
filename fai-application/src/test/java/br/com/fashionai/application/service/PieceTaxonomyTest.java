@@ -58,7 +58,7 @@ class PieceTaxonomyTest {
     void gravaVariacaoAtributosEstiloEOcasiao() {
         WardrobeItem w = piece();
         WardrobeService.PieceForm f = form("jeans", "DENIM", "MOM", Map.of("RISE", List.of("HIGH_RISE"), "FINISH", List.of("RIPPED", "LIGHT_WASH")));
-        WardrobeService.applyTaxonomy(w, f);
+        PieceTaxonomyWriter.applyTaxonomy(w, f);
         assertThat(w.getVariationCode()).isEqualTo("MOM");
         assertThat(w.getVariationStatus()).isEqualTo("USER_CONFIRMED");
         assertThat(w.getVariationSource()).isEqualTo("USER");
@@ -73,17 +73,17 @@ class PieceTaxonomyTest {
         assertThat(v.attributes()).containsOnlyKeys("RISE", "FINISH");
 
         // formulário antigo (sem variação nem atributos) não apaga o que a peça tem
-        WardrobeService.applyTaxonomy(w, form("jeans", "DENIM", null, null));
+        PieceTaxonomyWriter.applyTaxonomy(w, form("jeans", "DENIM", null, null));
         assertThat(w.getVariationCode()).isEqualTo("MOM");
         assertThat(TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS)).containsKeys("RISE", "FINISH");
 
         // formulário novo sem uma dimensão: ela sai; variação trocada
-        WardrobeService.applyTaxonomy(w, form("jeans", "DENIM", "WIDE_LEG", Map.of("RISE", List.of("MID_RISE"))));
+        PieceTaxonomyWriter.applyTaxonomy(w, form("jeans", "DENIM", "WIDE_LEG", Map.of("RISE", List.of("MID_RISE"))));
         assertThat(w.getVariationCode()).isEqualTo("WIDE_LEG");
         assertThat(TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS)).containsOnlyKeys("RISE").containsEntry("RISE", List.of("MID_RISE"));
 
         // mudou de subcategoria com formulário antigo: a variação que não vale mais sai
-        WardrobeService.applyTaxonomy(w, form("skirt", "DENIM", null, null));
+        PieceTaxonomyWriter.applyTaxonomy(w, form("skirt", "DENIM", null, null));
         assertThat(w.getVariationCode()).isNull();
     }
 
@@ -101,30 +101,30 @@ class PieceTaxonomyTest {
 
         // volta igual à sugestão, sem confirmação: continua sugestão da IA, com a confiança dela
         WardrobeItem untouched = piece();
-        WardrobeService.applyTaxonomy(untouched, form("jeans", "DENIM", "MOM", null), prefill);
+        PieceTaxonomyWriter.applyTaxonomy(untouched, form("jeans", "DENIM", "MOM", null), prefill);
         assertThat(untouched.getVariationStatus()).isEqualTo("AI_SUGGESTED");
         assertThat(untouched.getVariationSource()).isEqualTo("AI");
         assertThat(untouched.getVariationConfidence()).isEqualByComparingTo("0.82");
 
         // reenviada sem mudança na edição: a proveniência fica como está
-        WardrobeService.applyTaxonomy(untouched, form("jeans", "DENIM", "MOM", null));
+        PieceTaxonomyWriter.applyTaxonomy(untouched, form("jeans", "DENIM", "MOM", null));
         assertThat(untouched.getVariationStatus()).isEqualTo("AI_SUGGESTED");
 
         // confirmada depois, na edição: vira da pessoa
-        WardrobeService.applyTaxonomy(untouched, confirming(form("jeans", "DENIM", "MOM", null), List.of("variation")));
+        PieceTaxonomyWriter.applyTaxonomy(untouched, confirming(form("jeans", "DENIM", "MOM", null), List.of("variation")));
         assertThat(untouched.getVariationStatus()).isEqualTo("USER_CONFIRMED");
         assertThat(untouched.getVariationSource()).isEqualTo("USER");
         assertThat(untouched.getVariationConfidence()).isNull();
 
         // confirmada já no cadastro
         WardrobeItem confirmed = piece();
-        WardrobeService.applyTaxonomy(confirmed, confirming(form("jeans", "DENIM", "MOM", null), List.of("variation")), prefill);
+        PieceTaxonomyWriter.applyTaxonomy(confirmed, confirming(form("jeans", "DENIM", "MOM", null), List.of("variation")), prefill);
         assertThat(confirmed.getVariationStatus()).isEqualTo("USER_CONFIRMED");
         assertThat(confirmed.getVariationSource()).isEqualTo("USER");
 
         // trocada pela pessoa: é escolha dela
         WardrobeItem changed = piece();
-        WardrobeService.applyTaxonomy(changed, form("jeans", "DENIM", "WIDE_LEG", null), prefill);
+        PieceTaxonomyWriter.applyTaxonomy(changed, form("jeans", "DENIM", "WIDE_LEG", null), prefill);
         assertThat(changed.getVariationStatus()).isEqualTo("USER_CONFIRMED");
         assertThat(changed.getVariationSource()).isEqualTo("USER");
         assertThat(changed.getVariationConfidence()).isNull();

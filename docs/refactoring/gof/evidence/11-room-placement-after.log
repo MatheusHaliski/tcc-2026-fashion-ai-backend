@@ -1,0 +1,11 @@
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.529 s -- in br.com.fashionai.application.service.RoomInventoryApplyTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.390 s -- in br.com.fashionai.application.service.MirrorWardrobePickerTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.040 s -- in br.com.fashionai.application.service.RoomPlacementCharacterizationTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.243 s -- in br.com.fashionai.application.service.RoomServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.194 s -- in br.com.fashionai.application.service.MirrorScoresTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.540 s -- in br.com.fashionai.application.service.MirrorServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in br.com.fashionai.application.service.RoomPlacementRulesTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.283 s -- in br.com.fashionai.application.service.InventoryScoreServiceTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.769 s -- in br.com.fashionai.application.service.RoomAssetServiceTest
+[INFO] Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

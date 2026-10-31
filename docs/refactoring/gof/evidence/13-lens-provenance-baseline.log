@@ -1,0 +1,4 @@
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.701 s -- in br.com.fashionai.application.lens.LensScanProvenanceCharacterizationTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.286 s -- in br.com.fashionai.application.lens.LensServiceTest
+[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

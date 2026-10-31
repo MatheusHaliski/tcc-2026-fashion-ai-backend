@@ -16,7 +16,7 @@
     "predev": "node scripts/avatar3d/copy-mediapipe.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint:styles": "stylelint \"app/(site)/globals.css\" \"lib/design/typography.css\""
+    "lint:styles": "stylelint \"app/(site)/globals.css\" \"app/\\(site\\)/_styles/*.css\" \"lib/design/typography.css\""
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "1.1.1",

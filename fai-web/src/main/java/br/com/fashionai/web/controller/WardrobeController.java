@@ -1,7 +1,6 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.MultiPieceService;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.web.support.Uploads;
@@ -16,15 +15,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * RF4/RF7/RF15/RF16 — peças do guarda-roupa: análise em lote, cadastro, closet, detalhe, edição, estados, foto, marca,
+ * modelo 3D e cópia. A foto com várias peças fica em {@link MultiPieceController} e o Estúdio (foto de produto) em
+ * {@link WardrobeStudioController}; mesma tag do OpenAPI.
+ */
 @RestController
 @Tag(name = "RF4/RF7/RF15/RF16 — Peças do guarda-roupa")
 public class WardrobeController {
     private final WardrobeService wardrobe;
-    private final MultiPieceService multiPiece;
 
-    public WardrobeController(WardrobeService wardrobe, MultiPieceService multiPiece) {
+    public WardrobeController(WardrobeService wardrobe) {
         this.wardrobe = wardrobe;
-        this.multiPiece = multiPiece;
     }
 
     @PostMapping(value = "/api/pieces/analysis/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -32,41 +34,6 @@ public class WardrobeController {
     public List<WardrobeService.Draft> analyzeBatch(CurrentUser user, @RequestPart("files") List<MultipartFile> files,
                                                     @RequestParam(value = "category", required = false) String category) {
         return wardrobe.analyzeBatch(user, Uploads.images(files), category);
-    }
-
-    @PostMapping(value = "/api/pieces/analysis/multi", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "RF4 — Várias peças numa foto: a IA acha cada peça e devolve nome, tipo, cor, material, estilo, "
-            + "ocasião e a caixa da peça (em % da foto). Nada é cadastrado: a pessoa revisa antes")
-    public MultiPieceService.Detection analyzeMulti(CurrentUser user, @RequestPart("file") MultipartFile file) {
-        return multiPiece.detect(user, Uploads.image(file));
-    }
-
-    @PostMapping(value = "/api/pieces/analysis/multi/{draftId}/pieces", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "RF4 — Rascunho de uma peça da foto com várias peças: o recorte da peça (ou a foto inteira) passa "
-            + "pelo Flat Lay e pela moderação; o draftId devolvido é cadastrado pelo POST /api/pieces")
-    public MultiPieceService.PieceDraft multiPieceDraft(CurrentUser user, @PathVariable UUID draftId,
-                                                        @RequestPart("file") MultipartFile file,
-                                                        @RequestParam(value = "index", required = false) Integer index) {
-        return multiPiece.pieceDraft(user, draftId, index, Uploads.image(file));
-    }
-
-    @PostMapping(value = "/api/pieces/analysis/multi/{draftId}/ai-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "RF4 — Cópia da peça por IA: recria a foto da peça (recorte ou foto inteira) como foto de produto. "
-            + "A prévia já vem com o selo \"gerada por IA\"; nada é cadastrado. Sem IA de imagem → 503 IA_INDISPONIVEL")
-    public MultiPieceService.AiImage multiPieceAiImage(CurrentUser user, @PathVariable UUID draftId,
-                                                       @RequestPart("file") MultipartFile file,
-                                                       @RequestParam(value = "index", required = false) Integer index,
-                                                       @RequestParam(value = "name", required = false) String name,
-                                                       @RequestParam(value = "category", required = false) String category,
-                                                       @RequestParam(value = "color", required = false) String color) {
-        return multiPiece.recreate(user, draftId, index, Uploads.image(file), name, category, color);
-    }
-
-    @PostMapping("/api/pieces/analysis/multi/{draftId}/ai-images/{aiImageId}/piece")
-    @Operation(summary = "RF4 — Rascunho da peça com a cópia por IA no lugar da foto: todas as versões levam o selo de IA e "
-            + "a peça é cadastrada com aiGeneratedImage = true pelo POST /api/pieces")
-    public MultiPieceService.PieceDraft multiPieceAiDraft(CurrentUser user, @PathVariable UUID draftId, @PathVariable UUID aiImageId) {
-        return multiPiece.aiPieceDraft(user, draftId, aiImageId);
     }
 
     @PostMapping("/api/pieces")
@@ -175,47 +142,10 @@ public class WardrobeController {
         return wardrobe.removeBackground(user, id);
     }
 
-    @GetMapping("/api/studio/backdrops")
-    @Operation(summary = "RF4 · Estúdio — fundos disponíveis para a foto de produto")
-    public List<Map<String, Object>> studioBackdrops() {
-        return wardrobe.studioBackdrops();
-    }
-
     @PostMapping("/api/pieces/analysis/{draftId}/brand")
     @Operation(summary = "RF4 — Nova tentativa de ler a marca: grade de sub-retângulos (3×3, 4×4, 5×5) com OCR local e IA de visão")
     public Map<String, Object> retryBrand(CurrentUser user, @PathVariable UUID draftId, @RequestParam(defaultValue = "3") int grid) {
         return wardrobe.retryBrand(user, draftId, grid);
-    }
-
-    @PostMapping("/api/pieces/analysis/{draftId}/studio")
-    @Operation(summary = "RF4 · Estúdio — refaz a foto de estúdio do rascunho com outro fundo (force=true usa o recorte incerto)")
-    public Map<String, Object> studioDraft(CurrentUser user, @PathVariable UUID draftId, @RequestParam(defaultValue = "auto") String backdrop,
-                                           @RequestParam(defaultValue = "false") boolean force) {
-        return wardrobe.studioDraft(user, draftId, backdrop, force);
-    }
-
-    @PostMapping("/api/pieces/{id}/studio")
-    @Operation(summary = "RF4 · Estúdio — gera/refaz a foto de estúdio de uma peça cadastrada")
-    public Views.PieceView studioPiece(CurrentUser user, @PathVariable UUID id, @RequestParam(defaultValue = "auto") String backdrop) {
-        return wardrobe.studioPiece(user, id, backdrop);
-    }
-
-    @PostMapping("/api/pieces/{id}/studio/approve")
-    @Operation(summary = "RF4 · Estúdio — aprova a foto de estúdio (a versão pendente vai ao ar; a anterior fica no histórico)")
-    public Views.PieceView approveStudio(CurrentUser user, @PathVariable UUID id) {
-        return wardrobe.approveStudio(user, id);
-    }
-
-    @DeleteMapping("/api/pieces/{id}/studio/pending")
-    @Operation(summary = "RF4 · Estúdio — descarta a versão pendente (a aprovada continua no ar)")
-    public Views.PieceView discardStudio(CurrentUser user, @PathVariable UUID id) {
-        return wardrobe.discardStudio(user, id);
-    }
-
-    @PostMapping("/api/me/pieces/studio")
-    @Operation(summary = "RF4 · Estúdio — leva ao estúdio as peças que ainda não têm foto de estúdio (até 40)")
-    public Map<String, Object> studioAll(CurrentUser user, @RequestParam(defaultValue = "auto") String backdrop) {
-        return wardrobe.studioAll(user, backdrop);
     }
 
     @PostMapping("/api/pieces/{id}/model3d")

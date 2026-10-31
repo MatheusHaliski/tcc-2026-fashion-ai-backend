@@ -24,7 +24,7 @@ def trello_rf(ctrl, verb, path, summary):
         if '/showcase/' in path or path.endswith('/stage') or path.endswith('/cover'):
             return 'RF34/RF35'
         return 'RF36'
-    if ctrl in ('FlairController', 'FlairModesController'):
+    if ctrl in ('FlairController', 'FlairModesController', 'FlairCardModesController'):
         return 'RF37'
     if ctrl == 'CouponController':
         return 'RF38'
@@ -34,7 +34,7 @@ def trello_rf(ctrl, verb, path, summary):
         return 'RF26'
     if ctrl == 'WardrobeController' and path.endswith('/flags'):
         return 'RF31'
-    if ctrl == 'SealController' and ('/seals' in path and 'seal-' not in path or '/promotions' in path or 'issuer-metrics' in path):
+    if ctrl in ('SealController', 'SealPromotionController') and ('/seals' in path and 'seal-' not in path or '/promotions' in path or 'issuer-metrics' in path):
         return 'RF25'
     m = re.search(r'\b(RN?F\d+)', s)
     if m:

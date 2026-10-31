@@ -1,6 +1,5 @@
 package br.com.fashionai.application.lens;
 
-import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
@@ -29,7 +28,6 @@ import br.com.fashionai.domain.model.PieceImage;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AiCallResult;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.ConsentPurpose;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
@@ -278,18 +276,21 @@ public class LensService {
         }
     }
 
-    /** Detecta, lê cada recorte, grava a imagem limpa e as peças; o scan sai pronto (MVP síncrono). */
+    /**
+     * Detecta, lê cada recorte, grava a imagem limpa e as peças; o scan sai pronto (MVP síncrono). Proveniência, estado
+     * e linhas de peça vêm de {@link LensScanProvenance} (puro); aqui ficam a gravação e a devolução da cota.
+     */
     LensViews.ScanView process(CurrentUser user, LensSource source, UUID refId, LensIntent intent, BufferedImage photo,
                                int faces, boolean redactionConfirmed) {
         MultiPieceService.PieceDetection det = null;
         try {
             // foto enviada sem a confirmação do borrão de rostos (cliente antigo, direto ou com falha) nunca vai para a IA
             // externa: a leitura fica local. As fotos do próprio app já passaram pelo cadastro e pela moderação.
-            det = redactionConfirmed || source.inApp() ? multiPiece.detectPieces(user.id(), photo) : localDetection();
+            det = redactionConfirmed || source.inApp() ? multiPiece.detectPieces(user.id(), photo)
+                    : LensScanProvenance.localDetection();
         } catch (RuntimeException ex) {
             log.warn("Lens: detecção falhou ({})", ex.toString());
         }
-        AiOutcome<?> outcome = det == null ? null : det.outcome();
 
         LensScan scan = new LensScan();
         scan.setUserId(user.id());
@@ -300,23 +301,10 @@ public class LensService {
         scan.setHeight(photo.getHeight());
         scan.setFacesRedacted(faces);
         scan.setRedactionConfirmed(redactionConfirmed);
-        scan.setAiSource(det == null ? "local" : det.source());
         scan.setAlgorithmVersion(LensConfig.ALGORITHM_VERSION);
-        scan.setModelVersion(modelVersion(outcome));
-        scan.setAiInferenceId(outcome == null ? null : outcome.inferenceId());
         scan.setExpiresAt(Instant.now().plus(Duration.ofDays(config.retentionDays())));
         scan.setProcessedAt(Instant.now());
-        List<MultiPieceService.DetectedPiece> found = det == null ? List.of() : det.pieces();
-        if (det == null) {
-            scan.setStatus(LensScanStatus.FAILED);
-            scan.setErrorCode("FAILED");
-        } else if (found.isEmpty()) {
-            scan.setStatus(LensScanStatus.NO_FASHION_FOUND);
-            scan.setErrorCode("NO_FASHION_FOUND");
-        } else {
-            scan.setStatus(LensScanStatus.READY);
-            scan.setErrorCode(degradedReason(det));
-        }
+        LensScanProvenance.stamp(scan, det);
         scans.save(scan);
 
         String base = "restricted/users/" + user.id() + "/lens/" + scan.getId();
@@ -327,67 +315,15 @@ public class LensService {
         scan.setThumbKey(base + "-thumb.jpg");
         scans.save(scan);
 
-        // ordem de leitura: de cima para baixo, depois da esquerda para a direita
-        List<MultiPieceService.DetectedPiece> ordered = new ArrayList<>(found);
-        ordered.sort(Comparator.comparingDouble((MultiPieceService.DetectedPiece p) -> p.box().y())
-                .thenComparingDouble(p -> p.box().x()));
+        List<MultiPieceService.DetectedPiece> ordered = LensScanProvenance.readingOrder(det);
         List<LensDetection> saved = new ArrayList<>();
         for (int i = 0; i < ordered.size(); i++) {
-            saved.add(detections.save(fromDetected(scan.getId(), i, ordered.get(i), photo)));
+            saved.add(detections.save(LensScanProvenance.fromDetected(scan.getId(), i, ordered.get(i), photo)));
         }
         if (det == null) {
             rateLimit.release(user.id(), QUOTA_BUCKET);          // falha nossa não consome a cota da pessoa
         }
         return view(new Ctx(user), scan, saved);
-    }
-
-    /** Leitura sem IA externa: uma peça cobrindo a foto, como quando a IA não está disponível. */
-    static MultiPieceService.PieceDetection localDetection() {
-        return new MultiPieceService.PieceDetection(List.of(MultiPieceService.localPiece()), "local", null);
-    }
-
-    /** Por que a leitura ficou local (a UI explica): consentimento ou cota da IA. Nulo quando não há o que explicar. */
-    static String degradedReason(MultiPieceService.PieceDetection det) {
-        if (det == null || !"local".equals(det.source()) || det.outcome() == null) {
-            return null;
-        }
-        AiCallResult r = det.outcome().result();
-        return r == AiCallResult.CONSENT_DENIED ? "CONSENT_REQUIRED" : r == AiCallResult.RATE_LIMITED ? "QUOTA" : null;
-    }
-
-    static String modelVersion(AiOutcome<?> outcome) {
-        String detector = outcome == null || outcome.provider() == null ? "local"
-                : "local".equals(outcome.provider()) ? "local" : outcome.provider() + ":" + outcome.model();
-        String v = "multi-piece-detector@" + detector + "+" + GarmentEmbedder.MODEL.key();
-        return v.length() > 160 ? v.substring(0, 160) : v;
-    }
-
-    /** Peça do detector → linha do scan, com a leitura local do recorte (cores, padrão, embedding). */
-    static LensDetection fromDetected(UUID scanId, int ordinal, MultiPieceService.DetectedPiece p, BufferedImage photo) {
-        LensViews.Box box = new LensViews.Box(p.box().x(), p.box().y(), p.box().width(), p.box().height());
-        LensImageAnalysis.Reading read = LensImageAnalysis.read(photo, box, p.color());
-        LensDetection d = new LensDetection();
-        d.setScanId(scanId);
-        d.setOrdinal(ordinal);
-        d.setBoxJson(Json.write(box));
-        d.setCategory(p.category());
-        d.setSubcategory(p.subcategory());
-        d.setMaterial(p.material());
-        d.setSex(p.sex());
-        d.setLabel(p.name() != null && !p.name().isBlank() ? p.name() : defaultLabel(p.category(), p.subcategory()));
-        d.setColorsJson(Json.write(read.colors()));
-        d.setPattern(read.pattern());
-        d.setStyleTags(Json.csv(p.style()));
-        d.setOccasionTags(Json.csv(p.occasion()));
-        d.setConfidence(BigDecimal.valueOf(p.confidence()).setScale(3, RoundingMode.HALF_UP));
-        Map<String, Object> conf = new LinkedHashMap<>();
-        conf.put("detection", p.confidence());
-        conf.put("pattern", Math.round(read.patternConfidence() * 100) / 100.0);
-        d.setAttributeConfidenceJson(Json.write(conf));
-        d.setEmbeddingJson(Json.write(round4(read.embedding())));
-        d.setEmbeddingModel(GarmentEmbedder.MODEL.key());
-        d.setStatus(LensDetectionStatus.DETECTED);
-        return d;
     }
 
     // ================================================================== ler
@@ -1380,7 +1316,7 @@ public class LensService {
         return out;
     }
 
-    private static List<Double> round4(float[] v) {
+    static List<Double> round4(float[] v) {
         List<Double> out = new ArrayList<>(v == null ? 0 : v.length);
         if (v != null) {
             for (float f : v) {

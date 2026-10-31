@@ -4,7 +4,8 @@
  * selos na análise completa, Hype das sugestões de selo, "Hype do selo" no perfil do emissor e o filtro "Com selo" do
  * guarda-roupa com os selos de marca/celebridade de cada peça (GET /api/pieces/seals, um pedido por página).
  */
-import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+const { readCssBundle } = createRequire(import.meta.url)("../../scripts/ux/css-bundle.cjs");
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 import { nav, router } from "@/test-utils/setup";
@@ -192,7 +193,7 @@ describe("guarda-roupa — \"Com selo\" e selos de marca nas peças", () => {
 
 describe("CSS dos Selos de Hype", () => {
   it("bloco próprio com tokens claro/escuro/contraste, sem animação com movimento reduzido", () => {
-    const css = readFileSync("app/(site)/globals.css", "utf8");
+    const css = readCssBundle("app/(site)/globals.css");
     const block = css.slice(css.indexOf("/* RF53 · Selos de Hype"));
     expect(block.length).toBeGreaterThan(100);
     expect(block).toMatch(/:root \{ --hype-seal-ring:/);
