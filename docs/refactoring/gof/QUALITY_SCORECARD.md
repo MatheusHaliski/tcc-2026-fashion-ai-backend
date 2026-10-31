@@ -32,3 +32,7 @@ As capturas contêm ícones estáticos ausentes no checkout esparso. Não foram 
 ## Verificação do motor GoF
 
 32 testes de auditoria passaram após implementar as23 colaborações. Logs em evidence/gof-pattern-tests.log; relatório executado em evidence/gof-pattern-report.log. Este lote altera apenas Python/CI/documentação; os14 testes React, build e browser acima são do lote anterior, cujos arquivos produtivos permaneceram iguais. Nenhum build/reteste de frontend é reivindicado como novo neste lote.
+
+## Continuação Java
+
+Lote FLOW-WARDROBE-STUDIO-004 implementado, com98 testes Java passando. Ver WARDROBE_STUDIO.md, CI_FOLLOWUP.md e evidence/wardrobe-studio-metrics.json. WardrobeService continua CRITICAL/PARTIAL; refatoração integral e falhas amplas de frontend/catálogo continuam pendentes.

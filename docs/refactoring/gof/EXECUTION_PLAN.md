@@ -14,3 +14,7 @@ Para outro ambiente, configurar `FAI_AUDIT_JAVA_BIN` (diretório bin do JDK21) e
 
 
 Continuação autorizada: FLOW-A3D-INSPECTOR-002 implementado. Publicação em PR autorizada pelo usuário; deploy, migrations de produção e inferência paga continuam fora do escopo. A matriz global e as prioridades de linhas continuam obrigatórias até avaliar todos os arquivos.
+
+## Continuação Java
+
+Lote FLOW-WARDROBE-STUDIO-004 implementado, com98 testes Java passando. Ver WARDROBE_STUDIO.md, CI_FOLLOWUP.md e evidence/wardrobe-studio-metrics.json. WardrobeService continua CRITICAL/PARTIAL; refatoração integral e falhas amplas de frontend/catálogo continuam pendentes.
