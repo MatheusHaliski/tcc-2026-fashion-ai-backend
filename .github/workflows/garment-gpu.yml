@@ -36,6 +36,8 @@ jobs:
           docker compose --profile reconstruct --profile monitoring --profile edge config -q
           sed 's/CHANGE_ME[A-Z_]*/ci/' .env.worker.example > .env
           docker compose -f compose.worker.yaml config -q
+          printf 'REDIS_PASSWORD=ci\nS3_ACCESS_KEY=ci\nS3_SECRET_KEY=ci\n' > .env
+          docker compose config -q   # .env mínimo: perfis opcionais não podem exigir variáveis
           rm .env
       - name: Imagem da API
         run: docker build -f services/garment_gpu/Dockerfile.api -t fai-garment-api:ci services/garment_gpu
