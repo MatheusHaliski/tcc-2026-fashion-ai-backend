@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  *   <li>a foto passa pela moderação de uploads como qualquer foto de pessoa, é regravada em JPEG sem metadados (GPS,
  *       aparelho), na orientação certa e com até {@value #MAX_SIDE} px, e só existe em memória: não é gravada aqui,
  *       no worker nem no Vertex;</li>
- *   <li>só proporções dentro das faixas do corpo do avatar ({@link Avatar3dService#BODY_RANGE}) voltam; o resto vira
+ *   <li>só proporções dentro das faixas do corpo do avatar ({@link Avatar3dBodyRules#BODY_RANGE}) voltam; o resto vira
  *       recusa com o motivo, nada é "corrigido";</li>
  *   <li>limite por pessoa (a GPU é uma só) e auditoria sem nenhuma medida.</li>
  * </ul>
@@ -83,7 +83,7 @@ public class AvatarBodyScanService {
         Map<?, ?> measured = result.get("ratios") instanceof Map<?, ?> m ? m : Map.of();
         Map<?, ?> rejected = result.get("refused") instanceof Map<?, ?> r ? r : Map.of();
         for (String key : RATIOS) {
-            double[] range = Avatar3dService.BODY_RANGE.getOrDefault(key, Avatar3dService.BODY_DEPTH_RANGE.get(key));
+            double[] range = Avatar3dBodyRules.BODY_RANGE.getOrDefault(key, Avatar3dBodyRules.BODY_DEPTH_RANGE.get(key));
             Object value = measured.get(key);
             if (value instanceof Number n && Double.isFinite(n.doubleValue()) && n.doubleValue() >= range[0] && n.doubleValue() <= range[1]) {
                 ratios.put(key, n.doubleValue());
