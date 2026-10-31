@@ -291,17 +291,6 @@
   "done": 1793474291832,
   "bytes": 371556
  },
- "terracoBed": {
-  "preview": "01a19364-4359-7781-8253-e8b7a02b470e",
-  "previewAt": 1793474186265,
-  "previewCredits": 20,
-  "refine": "01a19366-6bce-7151-a1d1-fabf98513cd6",
-  "refineAt": 1793474327134,
-  "refineCredits": 10,
-  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a19366-6bce-7151-a1d1-fabf98513cd6/output/preview.png?Expires=4947004800&Signature=lrUM9e6nciC4w5f8F2rIxuJFlI0v06H0FQxeW736iF4HZI6eT14Jdr343z473uf7KGr1qpNtu~m3GYfzITOfRP8tk~yjDZU00zMgv5D~1NO0Tlbfg1HTX-nlD-FSqqnGsBFjjQNurZgCBh7MWlMS5mPaaCBn61XG8-GTUleEEX~sfc26vqLRpsjAgUeinFyeOyGlv6HXoZFOyZdSMtTZIrQr4lhmF42BVta6xInFkZMmm2ulq9gSY79EM6rgJpMpmPbjHvqUhW6sbc1Z-I9cjRXzoaAGPZA3GZ8hMta7tUFfLW9J4KbKBe5PZWM4O1ik227Q37qOJI9iawE9xfMTgg__&Key-Pair-Id=K1VGYTHIYLM9UM",
-  "done": 1793474368359,
-  "bytes": 874708
- },
  "terracoUrn__v2": {
   "preview": "01a19364-4c66-74ef-848d-19c51a1c1340",
   "previewAt": 1793474187875,
@@ -324,5 +313,40 @@
   "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a19369-5412-748a-90b5-b8f49b306f07/output/preview.png?Expires=4947004800&Signature=HwEUvYWvFOWcX8fI9neCy-TITbuZPF6pz21c7aaJTBaiW9PjGQ2BWb7um9ZWJbFCaC~r-BXAkY0VG8huZuO6~hvrNi82WoLGNK3jAaJOfH80jt79~N0ltdeNnuADc0LrYFV5sX6HZLLZjbITwTOaUK6ive8XjJ5NZcDdogmFPcOcWpqJjQAgPayuvM5q0-duwp5E8ITXngKr0gbLP6-HDNNCsuROcruicnPV8n-NvrTtpaoxGIwD6xihtvYbAdAy94d~tyFOM~2mZ5BZ06Sj7DnjwNf2Mdic6QuAwVve~S9DyJ2Mkpz6ZdGnK1J4aMv24eTR9kU3cVLIb2-pJpPioQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
   "done": 1793474557793,
   "bytes": 240824
+ },
+ "terracoBed__v2": {
+  "preview": "01a19364-4359-7781-8253-e8b7a02b470e",
+  "previewAt": 1793474186265,
+  "previewCredits": 20,
+  "refine": "01a19366-6bce-7151-a1d1-fabf98513cd6",
+  "refineAt": 1793474327134,
+  "refineCredits": 10,
+  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a19366-6bce-7151-a1d1-fabf98513cd6/output/preview.png?Expires=4947004800&Signature=lrUM9e6nciC4w5f8F2rIxuJFlI0v06H0FQxeW736iF4HZI6eT14Jdr343z473uf7KGr1qpNtu~m3GYfzITOfRP8tk~yjDZU00zMgv5D~1NO0Tlbfg1HTX-nlD-FSqqnGsBFjjQNurZgCBh7MWlMS5mPaaCBn61XG8-GTUleEEX~sfc26vqLRpsjAgUeinFyeOyGlv6HXoZFOyZdSMtTZIrQr4lhmF42BVta6xInFkZMmm2ulq9gSY79EM6rgJpMpmPbjHvqUhW6sbc1Z-I9cjRXzoaAGPZA3GZ8hMta7tUFfLW9J4KbKBe5PZWM4O1ik227Q37qOJI9iawE9xfMTgg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "done": 1793474368359,
+  "bytes": 874708,
+  "retired": "refeito: proporção 2:1 cobria só 1,2–1,4 m dos canteiros; nova tentativa com medidas explícitas"
+ },
+ "terracoBed": {
+  "preview": "01a19383-b7f3-7231-9c93-6c1e28dc36fe",
+  "previewAt": 1793476246979,
+  "previewCredits": 20,
+  "refine": "01a19384-e833-7624-8972-c524c1552cb0",
+  "refineAt": 1793476324401,
+  "refineCredits": 10,
+  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a19384-e833-7624-8972-c524c1552cb0/output/preview.png?Expires=4947004800&Signature=YmkwJLjSltAac1v4RZkWgm9qappZ4COn5uCgYCdpoTSp8WIT9NOkorFw8KZjZdxx6ajSc7Y~Xcvwa9gtvHrr~qQYYcZOa-5r4B9zcQj6LN~0tPxJ2Y9bz1NoAZFYe8Wd09H1VbWxR8FSOoROwO5mnYhBbsr7DVQLrwgsZTN0DTXZoEQ~VDrLCg9ucPEsUqqM4xjc7SQCBPxXl6ommM43UFgSRxtzf26iiRIZE12OIyDEJXi2bn1CJ0chUBWZrv1mt8pE1w3ZX50KFs5M2kCKd00-2HIU9-64SBf2Nf61QQmzR-M4H62R~3l~JzvoH~LOmTLJ7N5UzaP5fPwgIDGaig__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "done": 1793476365450,
+  "bytes": 851184
+ },
+ "sketchTable": {
+  "preview": "01a19385-8ef2-7689-8be5-a90e1557a410",
+  "previewAt": 1793476367530
+ },
+ "catalogStand": {
+  "preview": "01a19385-8f3d-72e2-8f60-2dddae7449ee",
+  "previewAt": 1793476367875
+ },
+ "restorationTable": {
+  "preview": "01a19385-8f39-722d-a94f-9848a207be2e",
+  "previewAt": 1793476367718
  }
 }
