@@ -1,0 +1,22 @@
+     × logado: lab/heist-gente/page.tsx 3021ms
+     × logado: lab/heist-rua/page.tsx 3024ms
+     × logado: lab/heist-salas/page.tsx 3407ms
+     × logado: lab/heist/page.tsx 3015ms
+     × com dados: lab/heist-gente/page.tsx 3007ms
+     × com dados: lab/heist-rua/page.tsx 3007ms
+     × com dados: lab/heist-salas/page.tsx 3016ms
+     × com dados: lab/heist/page.tsx 3008ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  app/pages.smoke.test.tsx > telas do app abrem sem quebrar > logado: lab/heist-gente/page.tsx
+ FAIL  app/pages.smoke.test.tsx > telas do app abrem sem quebrar > com dados: lab/heist-gente/page.tsx
+ FAIL  app/pages.smoke.test.tsx > telas do app abrem sem quebrar > logado: lab/heist-rua/page.tsx
+ FAIL  app/pages.smoke.test.tsx > telas do app abrem sem quebrar > logado: lab/heist/page.tsx
+ FAIL  app/pages.smoke.test.tsx > telas do app abrem sem quebrar > com dados: lab/heist-rua/page.tsx
+ FAIL  app/pages.smoke.test.tsx > telas do app abrem sem quebrar > com dados: lab/heist/page.tsx
+ FAIL  app/pages.smoke.test.tsx > telas do app abrem sem quebrar > logado: lab/heist-salas/page.tsx
+ FAIL  app/pages.smoke.test.tsx > telas do app abrem sem quebrar > com dados: lab/heist-salas/page.tsx
+ Test Files  1 failed | 6 passed (7)
+      Tests  8 failed | 221 passed (229)
+ Test Files  3 passed (3)
+      Tests  14 passed (14)
+tsc --noEmit -p . : exit 0, 0 erros
