@@ -16,7 +16,7 @@ import * as THREE from "three";
 import type { SceneView } from "@/lib/heist/view";
 import { archedWall, atticBase, boxGeo, corinthianCapital, flutedShaft, inst, lathe, merge, moldingSouth, worldUV } from "./exterior-geometry";
 import { exteriorMaterials } from "./exterior-materials";
-import { bannerTex, inscriptionTex, plaqueTex, signTex, SIGNAGE, type Quality } from "./exterior-textures";
+import { bannerTex, inscriptionTex, plaqueTex, signTex, signage, type Quality } from "./exterior-textures";
 
 /* ---------- medidas da fachada (m) ---------- */
 export const FACADE_Z = 24.5;
@@ -261,7 +261,7 @@ function DockGate({ q, view }: { q: Quality; view: React.MutableRefObject<SceneV
     const target = view.current.doors.dockGate ? 1 : 0; open.current += (target - open.current) * Math.min(1, dt * 1.6);
     if (slats.current) { const s = Math.max(0.02, 1 - open.current); slats.current.scale.y = s; slats.current.position.y = 4 * (1 - s); }
   });
-  const sign = signTex("dock", [SIGNAGE.dock, SIGNAGE.staffOnly], { w: 512, h: 128, bg: "#f2c230", ink: "#151515" });
+  const sign = signTex("dock", [signage().dock, signage().staffOnly], { w: 512, h: 128, bg: "#f2c230", ink: "#151515" });
   return (
     <group position={[-19, 0, 24.32]}>
       <mesh ref={slats} geometry={geo} material={panel} castShadow />
@@ -282,7 +282,7 @@ function DockGate({ q, view }: { q: Quality; view: React.MutableRefObject<SceneV
 /** Porta da escada de incêndio (beco): batente de aço e a placa de saída acesa. A folha é do interior. */
 function FireDoorFrame({ q }: { q: Quality }) {
   const m = exteriorMaterials(q);
-  const sign = signTex("exit", [SIGNAGE.exit], { w: 512, h: 96, bg: "#0b7a3b", ink: "#ffffff" });
+  const sign = signTex("exit", [signage().exit], { w: 512, h: 96, bg: "#0b7a3b", ink: "#ffffff" });
   return (
     <group>
       {[-15.08, -12.92].map((z) => <mesh key={z} material={m.galvanized} position={[22.56, 1.12, z]}><boxGeometry args={[0.14, 2.3, 0.16]} /></mesh>)}
@@ -297,8 +297,8 @@ export function HeistFacade({ q, view }: { q: Quality; view: React.MutableRefObj
   const m = exteriorMaterials(q);
   const g = useFacadeGeometry(q);
   const w = useWindows();
-  const inscription = useMemo(() => new THREE.MeshStandardMaterial({ map: inscriptionTex(q, SIGNAGE.museum), transparent: true, roughness: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), [q]);
-  const plaques = useMemo(() => ({ museum: plaqueTex(q, "museum", [SIGNAGE.museum, "FUNDADO EM MCMXXXI", "ARTE · TRAJE · CIDADE"]), gala: plaqueTex(q, "gala", [SIGNAGE.institute, "GALA LUMIÈRE · ENTRADA", "SOMENTE COM CONVITE"]) }), [q]);
+  const inscription = useMemo(() => new THREE.MeshStandardMaterial({ map: inscriptionTex(q, signage().museum), transparent: true, roughness: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), [q]);
+  const plaques = useMemo(() => ({ museum: plaqueTex(q, "museum", [signage().museum, signage().founded, signage().museumTag]), gala: plaqueTex(q, "gala", [signage().institute, signage().galaEntrance, signage().inviteOnly]) }), [q]);
   return (
     <group>
       <mesh geometry={g.ashlar} material={m.ashlar} castShadow receiveShadow />

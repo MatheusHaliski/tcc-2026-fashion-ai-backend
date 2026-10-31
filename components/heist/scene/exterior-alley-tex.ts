@@ -18,10 +18,14 @@
  * Cor em sRGB; normal e ORM (R oclusão, G rugosidade, B metal) lineares. Tudo gerado uma vez por qualidade.
  */
 import * as THREE from "three";
+import { ALLEY_COPY, type AlleyCopy } from "./exterior-alley-copy";
+import { sceneLocale, type SceneLocale } from "./interior-copy";
 
 export type Quality = "high" | "low";
 
 const cache = new Map<string, unknown>();
+/** Textos desenhados na folha, no idioma da cena (ver *-copy.ts); trocado por cada atlas antes de desenhar. */
+let T: AlleyCopy = ALLEY_COPY["pt-BR"];
 function memo<T>(key: string, make: () => T): T { const k = `beco-${key}`; if (!cache.has(k)) cache.set(k, make()); return cache.get(k) as T; }
 
 /** Sorteio com semente (mulberry32): o beco é sempre o mesmo. */
@@ -326,9 +330,10 @@ function paperFill(g: CanvasRenderingContext2D, w: number, h: number, base: stri
 }
 
 /** Folha de decalques das paredes do beco (lógica 2048 × 1024). Nomes inventados; nenhuma marca real. */
-export function wallDecals(q: Quality): Atlas {
+export function wallDecals(q: Quality, locale: SceneLocale = sceneLocale()): Atlas {
+  T = ALLEY_COPY[locale];
   const s = q === "high" ? 1 : 0.5;
-  return atlas(`walldecals:${q}`, 2048, 1024, s, [
+  return atlas(`walldecals:${q}:${locale}`, 2048, 1024, s, [
     // pichação de assinatura (traço fino, preto com contorno prata)
     ["tagNox", 0, 0, 512, 256, (g, w, h) => { overspray(g, w / 2, h / 2, 150, "#111", 3, 120); sprayText(g, "NOX", w / 2, h * 0.48, 150, "#141414", "#b9bcc2", { seed: 4, drips: 7 }); }],
     // grafite de letras gordas (bomb) em dois tons
@@ -339,7 +344,7 @@ export function wallDecals(q: Quality): Atlas {
       g.fillStyle = "rgba(20,20,22,0.92)"; g.save(); g.translate(w / 2, h * 0.44); g.beginPath();
       g.moveTo(-70, 20); g.quadraticCurveTo(-20, -40, 40, -30); g.lineTo(70, -46); g.lineTo(52, -22); g.quadraticCurveTo(60, 10, 20, 30); g.lineTo(30, 62); g.lineTo(14, 62); g.lineTo(6, 34); g.lineTo(-10, 36); g.lineTo(-4, 62); g.lineTo(-20, 62); g.lineTo(-22, 34); g.quadraticCurveTo(-60, 40, -70, 20); g.fill();
       g.fillStyle = "#e8e2d4"; g.beginPath(); g.arc(46, -30, 4, 0, Math.PI * 2); g.fill(); g.restore();
-      g.fillStyle = "rgba(20,20,22,0.9)"; g.font = `700 26px ${CONDENSED}`; g.textAlign = "center"; g.fillText("OLHO VIVO", w / 2, h * 0.9);
+      g.fillStyle = "rgba(20,20,22,0.9)"; g.font = `700 26px ${CONDENSED}`; g.textAlign = "center"; g.fillText(T.olhoVivo, w / 2, h * 0.9);
     }],
     ["tagsSmall", 1792, 0, 256, 256, (g, w, h) => {
       sprayText(g, "LUME", w * 0.45, h * 0.28, 64, "#c23a2b", "rgba(0,0,0,0)", { seed: 9, drips: 3, font: HANDS });
@@ -355,7 +360,7 @@ export function wallDecals(q: Quality): Atlas {
         paperFill(g, pw, ph, bg, 20 + k);
         g.fillStyle = ink; g.textAlign = "center"; g.font = `900 30px ${IMPACT}`; g.fillText(t1.split(" ")[0], pw / 2, 60); g.font = `900 26px ${IMPACT}`; g.fillText(t1.split(" ").slice(1).join(" "), pw / 2, 94);
         g.font = `700 13px ${SANS}`; g.fillText(t2, pw / 2, 140);
-        g.fillRect(20, 160, pw - 40, 3); g.font = `600 11px ${SANS}`; g.fillText("CARTAZ · NÃO RETIRAR", pw / 2, 196);
+        g.fillRect(20, 160, pw - 40, 3); g.font = `600 11px ${SANS}`; g.fillText(T.cartazNaoRetirar, pw / 2, 196);
         // rasgo: um pedaço arrancado mostrando o cartaz de baixo (branco sujo)
         if (k === 1) { g.globalCompositeOperation = "destination-out"; raggedBlob(g, pw * 0.8, ph * 0.85, 40, 30, 30 + k, 0.5); g.fill(); g.globalCompositeOperation = "source-over"; }
         g.restore();
@@ -389,16 +394,16 @@ export function wallDecals(q: Quality): Atlas {
       const r = rng(48); for (let k = 0; k < 40; k++) { const y = h - r() * h, spread = (1 - y / h) * w * 0.4 + 20, x = w / 2 + (r() - 0.5) * spread; const grd = g.createRadialGradient(x, y, 0, x, y, 30 + r() * 50); grd.addColorStop(0, `rgba(12,10,8,${0.22 + 0.25 * (y / h)})`); grd.addColorStop(1, "rgba(12,10,8,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h); }
     }],
     // pintura de aviso direto no tijolo e o número da casa
-    ["noTrash", 1792, 256, 256, 128, (g, w, h) => { g.fillStyle = "rgba(240,236,224,0.85)"; g.font = `900 34px ${CONDENSED}`; g.textAlign = "center"; g.fillText("PROIBIDO", w / 2, h * 0.38); g.fillText("JOGAR LIXO", w / 2, h * 0.75); g.fillStyle = "rgba(200,40,30,0.85)"; g.fillRect(16, h * 0.86, w - 32, 6); }],
+    ["noTrash", 1792, 256, 256, 128, (g, w, h) => { g.fillStyle = "rgba(240,236,224,0.85)"; g.font = `900 34px ${CONDENSED}`; g.textAlign = "center"; g.fillText(T.proibido, w / 2, h * 0.38); g.fillText(T.jogarLixo, w / 2, h * 0.75); g.fillStyle = "rgba(200,40,30,0.85)"; g.fillRect(16, h * 0.86, w - 32, 6); }],
     ["houseNumber", 1792, 384, 128, 128, (g, w, h) => { g.fillStyle = "#e9e3d2"; g.fillRect(8, 8, w - 16, h - 16); g.strokeStyle = "#1d2a4a"; g.lineWidth = 5; g.strokeRect(12, 12, w - 24, h - 24); g.fillStyle = "#1d2a4a"; g.font = `800 64px ${SANS}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("18", w / 2, h / 2 + 3); }],
-    ["chalk", 1920, 384, 128, 128, (g, w, h) => { g.strokeStyle = "rgba(235,235,230,0.8)"; g.lineWidth = 3; g.font = `400 22px ${HANDS}`; g.fillStyle = "rgba(235,235,230,0.85)"; g.fillText("GÁS ↓", 14, 40); g.strokeRect(14, 60, 90, 40); g.beginPath(); g.moveTo(14, 60); g.lineTo(104, 100); g.stroke(); }],
+    ["chalk", 1920, 384, 128, 128, (g, w, h) => { g.strokeStyle = "rgba(235,235,230,0.8)"; g.lineWidth = 3; g.font = `400 22px ${HANDS}`; g.fillStyle = "rgba(235,235,230,0.85)"; g.fillText(T.gas, 14, 40); g.strokeRect(14, 60, 90, 40); g.beginPath(); g.moveTo(14, 60); g.lineTo(104, 100); g.stroke(); }],
     // eflorescência (sal branco subindo do pé da parede) e mancha de umidade
     ["efflor", 0, 512, 512, 192, (g, w, h) => {
       const r = rng(49); for (let k = 0; k < 60; k++) { const x = r() * w, y = h - r() * h * 0.8, rad = 14 + r() * 40; const grd = g.createRadialGradient(x, y, 0, x, y, rad); grd.addColorStop(0, "rgba(230,228,215,0.32)"); grd.addColorStop(1, "rgba(230,228,215,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h); }
       const wet = g.createLinearGradient(0, h, 0, 0); wet.addColorStop(0, "rgba(14,16,12,0.7)"); wet.addColorStop(0.45, "rgba(14,16,12,0.25)"); wet.addColorStop(1, "rgba(14,16,12,0)"); g.fillStyle = wet; g.fillRect(0, 0, w, h);
     }],
     // aviso de gás (placa pintada no muro sobre o abrigo) e marca de giz
-    ["gasPaint", 512, 512, 384, 192, (g, w, h) => { g.fillStyle = "rgba(242,194,48,0.92)"; g.fillRect(10, 10, w - 20, h - 20); g.fillStyle = "#151515"; g.font = `900 48px ${IMPACT}`; g.textAlign = "center"; g.fillText("GLP", w / 2, h * 0.42); g.font = `800 22px ${SANS}`; g.fillText("PERIGO · INFLAMÁVEL", w / 2, h * 0.66); g.fillText("NÃO FUME", w / 2, h * 0.84); }],
+    ["gasPaint", 512, 512, 384, 192, (g, w, h) => { g.fillStyle = "rgba(242,194,48,0.92)"; g.fillRect(10, 10, w - 20, h - 20); g.fillStyle = "#151515"; g.font = `900 48px ${IMPACT}`; g.textAlign = "center"; g.fillText(T.glp, w / 2, h * 0.42); g.font = `800 22px ${SANS}`; g.fillText(T.perigoInflamavel, w / 2, h * 0.66); g.fillText(T.naoFume, w / 2, h * 0.84); }],
     // contorno escuro de mão/encosto (gordura) em volta da porta da cozinha
     ["grease", 896, 512, 256, 256, (g, w, h) => { const r = rng(50); for (let k = 0; k < 26; k++) { const x = w * 0.2 + r() * w * 0.6, y = h * 0.2 + r() * h * 0.6, rad = 10 + r() * 30; const grd = g.createRadialGradient(x, y, 0, x, y, rad); grd.addColorStop(0, "rgba(24,18,10,0.35)"); grd.addColorStop(1, "rgba(24,18,10,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h); } }],
     // pichação de assinatura longa (corrida) e "xarpi" vertical
@@ -410,15 +415,16 @@ export function wallDecals(q: Quality): Atlas {
       const grd = g.createLinearGradient(0, 0, 0, h); grd.addColorStop(0, "#f39a3c"); grd.addColorStop(1, "#c1306b"); g.fillStyle = grd;
       g.beginPath(); g.arc(w * 0.22, h * 0.62, h * 0.32, Math.PI, 0); g.fill();
       for (let k = 0; k < 9; k++) { const a = Math.PI + (k + 0.5) * (Math.PI / 9); g.strokeStyle = "#f5c04a"; g.lineWidth = 6; g.beginPath(); g.moveTo(w * 0.22 + Math.cos(a) * h * 0.36, h * 0.62 + Math.sin(a) * h * 0.36); g.lineTo(w * 0.22 + Math.cos(a) * h * 0.48, h * 0.62 + Math.sin(a) * h * 0.48); g.stroke(); }
-      sprayText(g, "AMANHÃ", w * 0.62, h * 0.5, 110, "#f4efe2", "#1d1b2e", { seed: 54, drips: 6, skew: -0.08 });
+      sprayText(g, T.amanha, w * 0.62, h * 0.5, 110, "#f4efe2", "#1d1b2e", { seed: 54, drips: 6, skew: -0.08 });
     }],
   ]);
 }
 
 /** Folha de decalques do chão do beco (lógica 1024 × 1024). */
-export function groundDecals(q: Quality): Atlas {
+export function groundDecals(q: Quality, locale: SceneLocale = sceneLocale()): Atlas {
+  T = ALLEY_COPY[locale];
   const s = q === "high" ? 1 : 0.5;
-  return atlas(`grounddecals:${q}`, 1024, 1024, s, [
+  return atlas(`grounddecals:${q}:${locale}`, 1024, 1024, s, [
     // faixa de sujeira do pé da parede (repete ao longo de u; v = 0 junto à parede)
     ["grime", 0, 0, 1024, 192, (g, w, h) => {
       const r = rng(61);
@@ -431,14 +437,14 @@ export function groundDecals(q: Quality): Atlas {
       g.globalAlpha = 1;
     }],
     // panfletos (papel, um pouco amassado/sujo): eventos e serviços inventados
-    ["flyer0", 0, 192, 128, 176, (g, w, h) => { paperFill(g, w, h, "#f6f1e3", 62); g.fillStyle = "#c2185b"; g.font = `900 22px ${IMPACT}`; g.textAlign = "center"; g.fillText("BAILE", w / 2, 40); g.fillText("ORVALHO", w / 2, 66); g.fillStyle = "#222"; g.font = `600 11px ${SANS}`; g.fillText("SÁBADO · 23H", w / 2, 92); g.fillRect(14, 104, w - 28, 2); g.fillText("ENTRADA FRANCA", w / 2, 124); g.fillStyle = "rgba(60,40,20,0.25)"; g.fillRect(0, h * 0.6, w, 30); }],
-    ["flyer1", 128, 192, 128, 176, (g, w, h) => { paperFill(g, w, h, "#fff04a", 63); g.fillStyle = "#151515"; g.font = `900 20px ${IMPACT}`; g.textAlign = "center"; g.fillText("PIZZA", w / 2, 36); g.fillText("DO BECO", w / 2, 60); g.font = `700 12px ${SANS}`; g.fillText("ENTREGA 24H", w / 2, 88); g.fillStyle = "#c62828"; g.beginPath(); g.arc(w / 2, 130, 26, 0, Math.PI * 2); g.fill(); g.fillStyle = "#fff"; g.font = `900 14px ${SANS}`; g.fillText("2 POR 1", w / 2, 135); }],
-    ["flyer2", 256, 192, 128, 176, (g, w, h) => { paperFill(g, w, h, "#e9f0f7", 64); g.fillStyle = "#1a3a6a"; g.font = `900 16px ${SANS}`; g.textAlign = "center"; g.fillText("ALUGA-SE", w / 2, 30); g.fillText("SALÃO", w / 2, 50); g.fillStyle = "#333"; g.font = `500 10px ${SANS}`; for (let k = 0; k < 6; k++) g.fillRect(16, 70 + k * 12, w - 32 - (k % 2) * 20, 3); for (let k = 0; k < 7; k++) { g.fillStyle = "#ddd"; g.fillRect(6 + k * 17, h - 30, 12, 28); g.fillStyle = "#555"; g.fillRect(9 + k * 17, h - 28, 2, 24); } }],
-    ["flyer3", 384, 192, 128, 176, (g, w, h) => { paperFill(g, w, h, "#121212", 65); g.fillStyle = "#e3b04b"; g.font = `400 14px Georgia, serif`; g.textAlign = "center"; g.fillText("GALA", w / 2, 40); g.font = `400 26px Georgia, serif`; g.fillText("LUMIÈRE", w / 2, 70); g.font = `600 9px ${SANS}`; g.fillText("CONVITE · NÃO TRANSFERÍVEL", w / 2, 100); g.strokeStyle = "#e3b04b"; g.strokeRect(10, 10, w - 20, h - 20); g.fillStyle = "rgba(90,70,40,0.4)"; g.beginPath(); g.ellipse(w * 0.7, h * 0.8, 30, 14, 0.3, 0, Math.PI * 2); g.fill(); }],
+    ["flyer0", 0, 192, 128, 176, (g, w, h) => { paperFill(g, w, h, "#f6f1e3", 62); g.fillStyle = "#c2185b"; g.font = `900 22px ${IMPACT}`; g.textAlign = "center"; g.fillText(T.baile, w / 2, 40); g.fillText("ORVALHO", w / 2, 66); g.fillStyle = "#222"; g.font = `600 11px ${SANS}`; g.fillText(T.sabado23h, w / 2, 92); g.fillRect(14, 104, w - 28, 2); g.fillText(T.entradaFranca, w / 2, 124); g.fillStyle = "rgba(60,40,20,0.25)"; g.fillRect(0, h * 0.6, w, 30); }],
+    ["flyer1", 128, 192, 128, 176, (g, w, h) => { paperFill(g, w, h, "#fff04a", 63); g.fillStyle = "#151515"; g.font = `900 20px ${IMPACT}`; g.textAlign = "center"; g.fillText("PIZZA", w / 2, 36); g.fillText(T.doBeco, w / 2, 60); g.font = `700 12px ${SANS}`; g.fillText(T.entrega24h, w / 2, 88); g.fillStyle = "#c62828"; g.beginPath(); g.arc(w / 2, 130, 26, 0, Math.PI * 2); g.fill(); g.fillStyle = "#fff"; g.font = `900 14px ${SANS}`; g.fillText(T.n2Por1, w / 2, 135); }],
+    ["flyer2", 256, 192, 128, 176, (g, w, h) => { paperFill(g, w, h, "#e9f0f7", 64); g.fillStyle = "#1a3a6a"; g.font = `900 16px ${SANS}`; g.textAlign = "center"; g.fillText(T.alugaSe, w / 2, 30); g.fillText(T.salao, w / 2, 50); g.fillStyle = "#333"; g.font = `500 10px ${SANS}`; for (let k = 0; k < 6; k++) g.fillRect(16, 70 + k * 12, w - 32 - (k % 2) * 20, 3); for (let k = 0; k < 7; k++) { g.fillStyle = "#ddd"; g.fillRect(6 + k * 17, h - 30, 12, 28); g.fillStyle = "#555"; g.fillRect(9 + k * 17, h - 28, 2, 24); } }],
+    ["flyer3", 384, 192, 128, 176, (g, w, h) => { paperFill(g, w, h, "#121212", 65); g.fillStyle = "#e3b04b"; g.font = `400 14px Georgia, serif`; g.textAlign = "center"; g.fillText("GALA", w / 2, 40); g.font = `400 26px Georgia, serif`; g.fillText("LUMIÈRE", w / 2, 70); g.font = `600 9px ${SANS}`; g.fillText(T.conviteNaoTransferivel, w / 2, 100); g.strokeStyle = "#e3b04b"; g.strokeRect(10, 10, w - 20, h - 20); g.fillStyle = "rgba(90,70,40,0.4)"; g.beginPath(); g.ellipse(w * 0.7, h * 0.8, 30, 14, 0.3, 0, Math.PI * 2); g.fill(); }],
     // jornal velho (colunas cinza)
-    ["newspaper", 512, 192, 256, 176, (g, w, h) => { paperFill(g, w, h, "#d9d4c5", 66); g.fillStyle = "#2a2a2a"; g.font = `900 22px Georgia, serif`; g.fillText("CIDADE", 12, 30); for (let c = 0; c < 4; c++) for (let k = 0; k < 14; k++) g.fillRect(12 + c * 60, 46 + k * 9, 50 - (k % 3) * 6, 3); g.fillStyle = "#777"; g.fillRect(140, 50, 100, 60); }],
+    ["newspaper", 512, 192, 256, 176, (g, w, h) => { paperFill(g, w, h, "#d9d4c5", 66); g.fillStyle = "#2a2a2a"; g.font = `900 22px Georgia, serif`; g.fillText(T.cidade, 12, 30); for (let c = 0; c < 4; c++) for (let k = 0; k < 14; k++) g.fillRect(12 + c * 60, 46 + k * 9, 50 - (k % 3) * 6, 3); g.fillStyle = "#777"; g.fillRect(140, 50, 100, 60); }],
     // papelão rasgado (pedaço solto)
-    ["cardboard", 768, 192, 256, 176, (g, w, h) => { raggedBlob(g, w / 2, h / 2, w * 0.46, h * 0.4, 67, 0.3); g.save(); g.clip(); g.fillStyle = "#a27c52"; g.fillRect(0, 0, w, h); g.fillStyle = "rgba(60,40,20,0.25)"; for (let x = 0; x < w; x += 6) g.fillRect(x, 0, 2, h); g.fillStyle = "#1a1a1a"; g.font = `900 22px ${SANS}`; g.fillText("FRÁGIL", 40, 80); g.fillStyle = "rgba(40,30,20,0.5)"; g.fillRect(0, h * 0.7, w, 20); g.restore(); }],
+    ["cardboard", 768, 192, 256, 176, (g, w, h) => { raggedBlob(g, w / 2, h / 2, w * 0.46, h * 0.4, 67, 0.3); g.save(); g.clip(); g.fillStyle = "#a27c52"; g.fillRect(0, 0, w, h); g.fillStyle = "rgba(60,40,20,0.25)"; for (let x = 0; x < w; x += 6) g.fillRect(x, 0, 2, h); g.fillStyle = "#1a1a1a"; g.font = `900 22px ${SANS}`; g.fillText(T.fragil, 40, 80); g.fillStyle = "rgba(40,30,20,0.5)"; g.fillRect(0, h * 0.7, w, 20); g.restore(); }],
     // manchas de óleo (escuras com borda irisada) e mancha molhada (bica do cano)
     ["oil0", 0, 368, 256, 256, (g, w, h) => { const r = rng(68); for (let k = 0; k < 9; k++) { const x = w / 2 + (r() - 0.5) * 90, y = h / 2 + (r() - 0.5) * 90, rad = 30 + r() * 60; const grd = g.createRadialGradient(x, y, 0, x, y, rad); grd.addColorStop(0, "rgba(8,8,6,0.55)"); grd.addColorStop(0.75, "rgba(12,10,8,0.3)"); grd.addColorStop(1, "rgba(12,10,8,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h); } }],
     ["oil1", 256, 368, 256, 256, (g, w, h) => { const r = rng(69); for (let k = 0; k < 24; k++) { const x = w / 2 + (r() - 0.5) * 160, y = h / 2 + (r() - 0.5) * 60, rad = 8 + r() * 26; g.fillStyle = `rgba(10,9,7,${0.3 + r() * 0.3})`; g.beginPath(); g.ellipse(x, y, rad, rad * 0.7, r() * 3, 0, Math.PI * 2); g.fill(); } }],
@@ -515,8 +521,9 @@ export function weedTex(): THREE.CanvasTexture {
   });
 }
 /** Tampa de bueiro de ferro fundido (vista de cima): anéis, losangos em relevo e a inscrição. Cor + altura. */
-export function manholeTex(): { map: THREE.CanvasTexture; normalMap: THREE.CanvasTexture } {
-  return memo("manhole", () => {
+export function manholeTex(locale: SceneLocale = sceneLocale()): { map: THREE.CanvasTexture; normalMap: THREE.CanvasTexture } {
+  T = ALLEY_COPY[locale];
+  return memo(`manhole:${locale}`, () => {
     const S = 256, [c, g] = canvas(S, S), hf = new Float32Array(S * S), r = rng(92);
     for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
       const u = (x + 0.5) / S - 0.5, v = (y + 0.5) / S - 0.5, d = Math.hypot(u, v) * 2;
@@ -526,7 +533,7 @@ export function manholeTex(): { map: THREE.CanvasTexture; normalMap: THREE.Canva
     const img = g.createImageData(S, S);
     for (let i = 0; i < S * S; i++) { const h = hf[i], v = h > 0 ? 40 + h * 60 : 0; img.data[i * 4] = v * 1.05; img.data[i * 4 + 1] = v; img.data[i * 4 + 2] = v * 0.92; img.data[i * 4 + 3] = 255; }
     g.putImageData(img, 0, 0);
-    g.fillStyle = "rgba(150,140,125,0.6)"; g.font = `800 18px ${SANS}`; g.textAlign = "center"; g.fillText("ÁGUAS PLUVIAIS", S / 2, S / 2 + 6);
+    g.fillStyle = "rgba(150,140,125,0.6)"; g.font = `800 18px ${SANS}:${locale}`; g.textAlign = "center"; g.fillText(T.aguasPluviais, S / 2, S / 2 + 6);
     // ferrugem e lama nas bordas
     for (let k = 0; k < 60; k++) { const a = r() * Math.PI * 2, d = S * (0.36 + r() * 0.1); g.fillStyle = `rgba(110,60,25,${0.15 + r() * 0.2})`; g.beginPath(); g.arc(S / 2 + Math.cos(a) * d, S / 2 + Math.sin(a) * d, 3 + r() * 6, 0, Math.PI * 2); g.fill(); }
     return { map: texFrom(c, true, undefined, true), normalMap: texFrom(normalCanvas(hf, S, S, 6, false), false, undefined, true) };
@@ -558,44 +565,45 @@ export function windowInteriors(q: Quality): Atlas {
 /* ---------- placas ---------- */
 /** Placas do beco (lógica 1024 × 512): totem de embarque da gala (duas faces), saída de emergência do vizinho, garagem,
  * placa da cerca, placa do abrigo de gás, medidores, aviso de câmera. */
-export function alleySigns(q: Quality): Atlas {
+export function alleySigns(q: Quality, locale: SceneLocale = sceneLocale()): Atlas {
+  T = ALLEY_COPY[locale];
   const s = q === "high" ? 1 : 0.5;
   const GOLD = "#d9b46a", SERIF = "'Didot', 'Bodoni 72', 'Playfair Display', Georgia, 'DejaVu Serif', serif";
-  return atlas(`signs:${q}`, 1024, 512, s, [
+  return atlas(`signs:${q}:${locale}`, 1024, 512, s, [
     // totem: frente (para quem chega da avenida) e verso
     ["totemFront", 0, 0, 160, 512, (g, w, h) => {
       const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, "#14100c"); bg.addColorStop(1, "#060505"); g.fillStyle = bg; g.fillRect(0, 0, w, h);
       g.strokeStyle = GOLD; g.lineWidth = 2; g.strokeRect(8, 8, w - 16, h - 16);
       g.fillStyle = GOLD; g.textAlign = "center"; g.font = `400 13px ${SERIF}`; g.fillText("GALA", w / 2, 46); g.font = `400 24px ${SERIF}`; g.fillText("LUMIÈRE", w / 2, 74);
       g.fillRect(30, 90, w - 60, 1.5);
-      g.font = `700 15px ${SANS}`; g.fillStyle = "#f3ead6"; g.fillText("EMBARQUE", w / 2, 132); g.fillText("MOTORISTAS", w / 2, 152);
-      g.font = `500 10px ${SANS}`; g.fillStyle = "#bfae86"; g.fillText("CREDENCIADOS", w / 2, 170);
+      g.font = `700 15px ${SANS}`; g.fillStyle = "#f3ead6"; g.fillText(T.embarque, w / 2, 132); g.fillText(T.motoristas, w / 2, 152);
+      g.font = `500 10px ${SANS}`; g.fillStyle = "#bfae86"; g.fillText(T.credenciados, w / 2, 170);
       // seta para dentro do beco
       g.fillStyle = GOLD; g.beginPath(); g.moveTo(w / 2, 196); g.lineTo(w / 2 + 26, 236); g.lineTo(w / 2 + 9, 236); g.lineTo(w / 2 + 9, 280); g.lineTo(w / 2 - 9, 280); g.lineTo(w / 2 - 9, 236); g.lineTo(w / 2 - 26, 236); g.closePath(); g.fill();
-      g.font = `700 13px ${SANS}`; g.fillStyle = "#f3ead6"; g.fillText("SAÍDA DE", w / 2, 320); g.fillText("FUNCIONÁRIOS", w / 2, 338); g.font = `500 10px ${SANS}`; g.fillStyle = "#bfae86"; g.fillText("APÓS 01H00", w / 2, 356);
-      g.strokeStyle = "rgba(217,180,106,0.6)"; g.lineWidth = 1; g.strokeRect(22, 384, w - 44, 70); g.font = `600 9px ${SANS}`; g.fillStyle = "#bfae86"; g.fillText("MUSEU VESPER", w / 2, 410); g.fillText("ENTRADA DE SERVIÇO", w / 2, 426); g.fillText("PELA DOCA · AV. VESPER", w / 2, 442);
+      g.font = `700 13px ${SANS}`; g.fillStyle = "#f3ead6"; g.fillText(T.saidaDe, w / 2, 320); g.fillText(T.funcionarios, w / 2, 338); g.font = `500 10px ${SANS}`; g.fillStyle = "#bfae86"; g.fillText(T.apos01h00, w / 2, 356);
+      g.strokeStyle = "rgba(217,180,106,0.6)"; g.lineWidth = 1; g.strokeRect(22, 384, w - 44, 70); g.font = `600 9px ${SANS}`; g.fillStyle = "#bfae86"; g.fillText(T.museuVesper, w / 2, 410); g.fillText(T.entradaDeServico, w / 2, 426); g.fillText(T.pelaDocaAvVesper, w / 2, 442);
       g.font = `400 9px ${SERIF}`; g.fillStyle = GOLD; g.fillText("04 · 12 · 2026", w / 2, h - 26);
     }],
     ["totemBack", 160, 0, 160, 512, (g, w, h) => {
       g.fillStyle = "#0b0908"; g.fillRect(0, 0, w, h); g.strokeStyle = GOLD; g.lineWidth = 2; g.strokeRect(8, 8, w - 16, h - 16);
-      g.fillStyle = GOLD; g.textAlign = "center"; g.font = `400 22px ${SERIF}`; g.fillText("✦", w / 2, 70); g.font = `400 13px ${SERIF}`; g.fillText("OBRIGADO", w / 2, 110); g.font = `600 10px ${SANS}`; g.fillStyle = "#bfae86";
+      g.fillStyle = GOLD; g.textAlign = "center"; g.font = `400 22px ${SERIF}`; g.fillText("✦", w / 2, 70); g.font = `400 13px ${SERIF}`; g.fillText(T.obrigado, w / 2, 110); g.font = `600 10px ${SANS}`; g.fillStyle = "#bfae86";
       ["BOA NOITE", "E VOLTE COM CUIDADO", "", "TÁXI E APLICATIVO", "NA AV. VESPER"].forEach((t, k) => g.fillText(t, w / 2, 160 + k * 18));
       g.fillStyle = "rgba(217,180,106,0.25)"; g.fillRect(20, 300, w - 40, 150); g.fillStyle = GOLD; g.font = `400 26px ${SERIF}`; g.fillText("L", w / 2, 390);
     }],
     // saída de emergência (placa verde fotoluminescente) e "GARAGEM · NÃO ESTACIONE"
-    ["exitGreen", 320, 0, 256, 96, (g, w, h) => { g.fillStyle = "#0b7a3b"; g.fillRect(0, 0, w, h); g.fillStyle = "#e9fff1"; g.font = `800 30px ${SANS}`; g.textAlign = "center"; g.fillText("SAÍDA", w * 0.42, h * 0.5 + 6); g.font = `600 13px ${SANS}`; g.fillText("DE EMERGÊNCIA", w * 0.42, h * 0.82); g.beginPath(); g.moveTo(w * 0.78, h * 0.3); g.lineTo(w * 0.92, h * 0.5); g.lineTo(w * 0.78, h * 0.7); g.closePath(); g.fill(); g.fillRect(w * 0.7, h * 0.44, w * 0.09, h * 0.12); }],
-    ["garage", 576, 0, 448, 96, (g, w, h) => { g.fillStyle = "#f2f2f2"; g.fillRect(0, 0, w, h); g.strokeStyle = "#b71c1c"; g.lineWidth = 6; g.strokeRect(5, 5, w - 10, h - 10); g.fillStyle = "#b71c1c"; g.font = `900 34px ${SANS}`; g.textAlign = "center"; g.fillText("GARAGEM", w / 2, 44); g.font = `800 18px ${SANS}`; g.fillText("NÃO ESTACIONE · 24 HORAS", w / 2, 76); }],
+    ["exitGreen", 320, 0, 256, 96, (g, w, h) => { g.fillStyle = "#0b7a3b"; g.fillRect(0, 0, w, h); g.fillStyle = "#e9fff1"; g.font = `800 30px ${SANS}`; g.textAlign = "center"; g.fillText(T.saida, w * 0.42, h * 0.5 + 6); g.font = `600 13px ${SANS}`; g.fillText(T.deEmergencia, w * 0.42, h * 0.82); g.beginPath(); g.moveTo(w * 0.78, h * 0.3); g.lineTo(w * 0.92, h * 0.5); g.lineTo(w * 0.78, h * 0.7); g.closePath(); g.fill(); g.fillRect(w * 0.7, h * 0.44, w * 0.09, h * 0.12); }],
+    ["garage", 576, 0, 448, 96, (g, w, h) => { g.fillStyle = "#f2f2f2"; g.fillRect(0, 0, w, h); g.strokeStyle = "#b71c1c"; g.lineWidth = 6; g.strokeRect(5, 5, w - 10, h - 10); g.fillStyle = "#b71c1c"; g.font = `900 34px ${SANS}`; g.textAlign = "center"; g.fillText(T.garagem, w / 2, 44); g.font = `800 18px ${SANS}`; g.fillText(T.naoEstacione24Horas, w / 2, 76); }],
     // cerca do fundo e câmera (vizinho)
-    ["fence", 320, 96, 320, 128, (g, w, h) => { g.fillStyle = "#e8e6df"; g.fillRect(0, 0, w, h); g.fillStyle = "#b71c1c"; g.fillRect(0, 0, w, 34); g.fillStyle = "#fff"; g.font = `900 24px ${SANS}`; g.textAlign = "center"; g.fillText("PROPRIEDADE", w / 2, 26); g.fillStyle = "#151515"; g.font = `800 22px ${SANS}`; g.fillText("PARTICULAR", w / 2, 66); g.font = `600 15px ${SANS}`; g.fillText("NÃO ENTRE · CÃES SOLTOS", w / 2, 98); }],
-    ["camera", 640, 96, 192, 128, (g, w, h) => { g.fillStyle = "#f2c230"; g.fillRect(0, 0, w, h); g.fillStyle = "#151515"; g.fillRect(24, 40, 54, 34); g.beginPath(); g.moveTo(78, 46); g.lineTo(100, 36); g.lineTo(100, 78); g.lineTo(78, 68); g.fill(); g.font = `800 16px ${SANS}`; g.textAlign = "left"; g.fillText("SORRIA,", 108, 52); g.fillText("VOCÊ ESTÁ", 108, 72); g.fillText("SENDO", 108, 92); g.fillText("FILMADO", 108, 112); }],
+    ["fence", 320, 96, 320, 128, (g, w, h) => { g.fillStyle = "#e8e6df"; g.fillRect(0, 0, w, h); g.fillStyle = "#b71c1c"; g.fillRect(0, 0, w, 34); g.fillStyle = "#fff"; g.font = `900 24px ${SANS}`; g.textAlign = "center"; g.fillText(T.propriedade, w / 2, 26); g.fillStyle = "#151515"; g.font = `800 22px ${SANS}`; g.fillText(T.particular, w / 2, 66); g.font = `600 15px ${SANS}`; g.fillText(T.naoEntreCaesSoltos, w / 2, 98); }],
+    ["camera", 640, 96, 192, 128, (g, w, h) => { g.fillStyle = "#f2c230"; g.fillRect(0, 0, w, h); g.fillStyle = "#151515"; g.fillRect(24, 40, 54, 34); g.beginPath(); g.moveTo(78, 46); g.lineTo(100, 36); g.lineTo(100, 78); g.lineTo(78, 68); g.fill(); g.font = `800 16px ${SANS}`; g.textAlign = "left"; g.fillText(T.sorria, 108, 52); g.fillText(T.voceEsta, 108, 72); g.fillText(T.sendo, 108, 92); g.fillText(T.filmado, 108, 112); }],
     ["meter", 832, 96, 192, 128, (g, w, h) => { g.fillStyle = "#e9e6dc"; g.fillRect(0, 0, w, h); g.fillStyle = "#151515"; g.fillRect(20, 16, w - 40, 36); g.fillStyle = "#9fe28e"; g.font = `600 22px monospace`; g.textAlign = "center"; g.fillText("0 4 7 1 9", w / 2, 42); g.fillStyle = "#333"; g.font = `700 12px ${SANS}`; g.fillText("kWh · 220 V", w / 2, 74); g.fillStyle = "#888"; g.fillRect(30, 90, w - 60, 4); g.fillRect(30, 102, w - 90, 4); }],
     // placas de gás (abrigo) e "PROIBIDO ESTACIONAR" do museu
-    ["gasSign", 320, 224, 256, 128, (g, w, h) => { g.fillStyle = "#f2c230"; g.fillRect(0, 0, w, h); g.fillStyle = "#151515"; g.beginPath(); g.moveTo(40, 100); g.lineTo(70, 30); g.lineTo(100, 100); g.closePath(); g.lineWidth = 6; g.strokeStyle = "#151515"; g.stroke(); g.font = `900 40px ${SANS}`; g.textAlign = "center"; g.fillText("!", 70, 92); g.font = `900 26px ${SANS}`; g.fillText("GÁS", 175, 58); g.font = `700 14px ${SANS}`; g.fillText("INFLAMÁVEL", 175, 84); g.fillText("NÃO FUME", 175, 104); }],
-    ["noPark", 576, 224, 448, 128, (g, w, h) => { g.fillStyle = "#f2f2f2"; g.fillRect(0, 0, w, h); g.strokeStyle = "#b71c1c"; g.lineWidth = 7; g.strokeRect(6, 6, w - 12, h - 12); g.fillStyle = "#b71c1c"; g.font = `900 30px ${SANS}`; g.textAlign = "center"; g.fillText("BECO · ACESSO RESTRITO", w / 2, 54); g.font = `800 22px ${SANS}`; g.fillText("PROIBIDO ESTACIONAR", w / 2, 94); }],
+    ["gasSign", 320, 224, 256, 128, (g, w, h) => { g.fillStyle = "#f2c230"; g.fillRect(0, 0, w, h); g.fillStyle = "#151515"; g.beginPath(); g.moveTo(40, 100); g.lineTo(70, 30); g.lineTo(100, 100); g.closePath(); g.lineWidth = 6; g.strokeStyle = "#151515"; g.stroke(); g.font = `900 40px ${SANS}`; g.textAlign = "center"; g.fillText("!", 70, 92); g.font = `900 26px ${SANS}`; g.fillText(T.gas, 175, 58); g.font = `700 14px ${SANS}`; g.fillText(T.inflamavel, 175, 84); g.fillText(T.naoFume, 175, 104); }],
+    ["noPark", 576, 224, 448, 128, (g, w, h) => { g.fillStyle = "#f2f2f2"; g.fillRect(0, 0, w, h); g.strokeStyle = "#b71c1c"; g.lineWidth = 7; g.strokeRect(6, 6, w - 12, h - 12); g.fillStyle = "#b71c1c"; g.font = `900 30px ${SANS}`; g.textAlign = "center"; g.fillText(T.becoAcessoRestrito, w / 2, 54); g.font = `800 22px ${SANS}`; g.fillText(T.proibidoEstacionar, w / 2, 94); }],
     // etiqueta de caçamba (empresa fictícia de coleta) e estêncil "GLP" dos botijões
-    ["dumpLabel", 0, 512 - 160, 320, 160, (g, w, h) => { g.fillStyle = "rgba(240,240,232,0.92)"; g.fillRect(0, 0, w, h); g.fillStyle = "#1f4a3a"; g.font = `900 30px ${SANS}`; g.textAlign = "center"; g.fillText("COLETA", w / 2, 42); g.fillText("SÃO BENTO", w / 2, 76); g.fillStyle = "#151515"; g.font = `700 13px ${SANS}`; g.fillText("PROIBIDO DEPOSITAR ENTULHO", w / 2, 108); g.fillText("CONTÊINER Nº 0417", w / 2, 132); }],
-    ["glp", 320, 352, 128, 64, (g, w, h) => { g.fillStyle = "rgba(240,240,236,0.9)"; g.font = `900 34px ${CONDENSED}`; g.textAlign = "center"; g.fillText("GLP", w / 2, 44); g.fillRect(14, 52, w - 28, 3); }],
-    ["kitchen", 448, 352, 320, 96, (g, w, h) => { g.fillStyle = "#f2f2f2"; g.fillRect(0, 0, w, h); g.fillStyle = "#1d2a4a"; g.font = `800 22px ${SANS}`; g.textAlign = "center"; g.fillText("ENTRADA DE SERVIÇO", w / 2, 40); g.font = `600 14px ${SANS}`; g.fillText("COZINHA · TOQUE A CAMPAINHA", w / 2, 70); }],
+    ["dumpLabel", 0, 512 - 160, 320, 160, (g, w, h) => { g.fillStyle = "rgba(240,240,232,0.92)"; g.fillRect(0, 0, w, h); g.fillStyle = "#1f4a3a"; g.font = `900 30px ${SANS}`; g.textAlign = "center"; g.fillText(T.coleta, w / 2, 42); g.fillText("SÃO BENTO", w / 2, 76); g.fillStyle = "#151515"; g.font = `700 13px ${SANS}`; g.fillText(T.proibidoDepositarEntulho, w / 2, 108); g.fillText(T.conteinerNo0417, w / 2, 132); }],
+    ["glp", 320, 352, 128, 64, (g, w, h) => { g.fillStyle = "rgba(240,240,236,0.9)"; g.font = `900 34px ${CONDENSED}`; g.textAlign = "center"; g.fillText(T.glp, w / 2, 44); g.fillRect(14, 52, w - 28, 3); }],
+    ["kitchen", 448, 352, 320, 96, (g, w, h) => { g.fillStyle = "#f2f2f2"; g.fillRect(0, 0, w, h); g.fillStyle = "#1d2a4a"; g.font = `800 22px ${SANS}`; g.textAlign = "center"; g.fillText(T.entradaDeServico, w / 2, 40); g.font = `600 14px ${SANS}`; g.fillText(T.cozinhaToqueACampainha, w / 2, 70); }],
     ["bins", 768, 352, 256, 96, (g, w, h) => { const cols = ["#1f5bb5", "#c62828", "#2e7d32", "#f2c230"], lab = ["PAPEL", "PLÁSTICO", "VIDRO", "METAL"]; cols.forEach((c, k) => { g.fillStyle = c; g.fillRect(k * (w / 4), 0, w / 4, h); g.fillStyle = k === 3 ? "#151515" : "#fff"; g.font = `800 ${k === 1 ? 13 : 16}px ${SANS}`; g.textAlign = "center"; g.fillText(lab[k], k * (w / 4) + w / 8, h / 2 + 6); }); }],
   ]);
 }
@@ -618,16 +626,17 @@ export function woodTex(): THREE.CanvasTexture {
   });
 }
 /** Papelão ondulado: kraft com ondas, fita adesiva, setas e "FRÁGIL" impressos, manchas de umidade. */
-export function cardboardTex(): THREE.CanvasTexture {
-  return memo("cardboard", () => {
+export function cardboardTex(locale: SceneLocale = sceneLocale()): THREE.CanvasTexture {
+  T = ALLEY_COPY[locale];
+  return memo(`cardboard:${locale}`, () => {
     const S = 512, [c, g] = canvas(S, S), r = rng(113);
     g.fillStyle = "#b8925f"; g.fillRect(0, 0, S, S);
-    for (let x = 0; x < S; x += 4) { g.fillStyle = `rgba(90,60,30,${0.05 + 0.04 * Math.sin(x)})`; g.fillRect(x, 0, 2, S); }
+    for (let x = 0; x < S; x += 4) { g.fillStyle = `rgba(90,60,30,${0.05 + 0.04 * Math.sin(x)}):${locale}`; g.fillRect(x, 0, 2, S); }
     for (let k = 0; k < 500; k++) { g.fillStyle = `rgba(${r() > 0.5 ? "60,40,20" : "230,210,170"},${0.06 + r() * 0.08})`; g.fillRect(r() * S, r() * S, 2 + r() * 4, 1 + r() * 2); }
     g.fillStyle = "rgba(205,180,120,0.75)"; g.fillRect(0, S * 0.46, S, 46); g.fillStyle = "rgba(255,255,255,0.12)"; g.fillRect(0, S * 0.46 + 6, S, 6);
-    g.fillStyle = "rgba(25,25,25,0.82)"; g.font = `900 46px ${SANS}`; g.fillText("FRÁGIL", 30, 120);
+    g.fillStyle = "rgba(25,25,25,0.82)"; g.font = `900 46px ${SANS}`; g.fillText(T.fragil, 30, 120);
     g.save(); g.translate(400, 330); for (const dx of [0, 46]) { g.beginPath(); g.moveTo(dx, -40); g.lineTo(dx + 18, -10); g.lineTo(dx + 6, -10); g.lineTo(dx + 6, 30); g.lineTo(dx - 6, 30); g.lineTo(dx - 6, -10); g.lineTo(dx - 18, -10); g.closePath(); g.fill(); } g.restore();
-    g.strokeStyle = "rgba(25,25,25,0.7)"; g.lineWidth = 3; g.strokeRect(30, 360, 200, 110); g.font = `700 18px ${SANS}`; g.fillText("PESO 18 kg", 46, 400); g.fillText("LOTE 0412", 46, 440);
+    g.strokeStyle = "rgba(25,25,25,0.7)"; g.lineWidth = 3; g.strokeRect(30, 360, 200, 110); g.font = `700 18px ${SANS}`; g.fillText(T.peso18Kg, 46, 400); g.fillText(T.lote0412, 46, 440);
     const wet = g.createRadialGradient(140, 470, 10, 140, 470, 160); wet.addColorStop(0, "rgba(60,40,20,0.35)"); wet.addColorStop(1, "rgba(60,40,20,0)"); g.fillStyle = wet; g.fillRect(0, 0, S, S);
     return texFrom(c, true, 1);
   });

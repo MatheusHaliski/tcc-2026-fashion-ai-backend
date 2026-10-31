@@ -110,7 +110,12 @@ cortina, cúpula plissada, molduras, referencial dos móveis), `terraco.ts` (mó
 `baseProps()` e `civs()`. `STYLE` de `interior-shell.ts` não precisou mudar: o lounge troca piso, parede e teto pelo contrato
 (`surfaces`) e desenha as próprias molduras (`trims: false`).
 
-Capturas em `scratchpad/gala/areas/lounge-terraco/` (ver a lista no fim).
+Capturas (qualidade "low" para iterar; as duas gerais também em "high") em
+`/tmp/claude-0/-home-user-tcc-2026-fashion-ai-backend/7ee91c59-4fb9-5bee-a7c2-8abced5989af/scratchpad/gala/areas/lounge-terraco/`:
+`l1-porta-low.jpg` / `l1-porta-high.jpg` (lounge da porta do salão), `l2-bar-low.jpg` (bar de perto: ônix, garrafas e
+nichos), `l3-detalhe-low.jpg` (sofá capitonê e mesa baixa a menos de 1,5 m), `l4-alta-low.jpg` (vista alta do lounge),
+`t1-geral-low.jpg` / `t1-geral-high.jpg` (terraço com o céu, do lado da porta da galeria), `t2-drinks-low.jpg` (mesa de
+drinks de perto), `t3-fogo-low.jpg` (mesa de fogo e pergolado), `t4-alta-low.jpg` (vista alta do terraço).
 
 ### Lounge
 

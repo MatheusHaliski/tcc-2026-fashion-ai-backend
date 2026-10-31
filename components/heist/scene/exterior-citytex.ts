@@ -12,6 +12,7 @@
 import * as THREE from "three";
 import { sceneLocale, type SceneLocale } from "./interior-copy";
 import { FLYER_COPY, STORE_COPY } from "./exterior-copy";
+import { signage } from "./exterior-textures";
 import { canvas, fitFont, memo, prng, SANS, SERIF, spaced, texFrom, type Quality } from "./exterior-textures";
 
 /** Retângulo de UV [u0, v0, u1, v1] da célula k numa grade cols × rows (linha 0 em cima; v do three cresce para cima). */
@@ -195,7 +196,7 @@ function shopWall(g: G, x: number, y: number, w: number, h: number, kind: ShopKi
     case "bakery": {
       vgrad(g, x, y, w, h, "#d9a35c", "#8a5a2a");
       for (let s = 0; s < 3; s++) { const sy = y + h * (0.25 + s * 0.18); box(g, x + w * 0.05, sy, w * 0.9, h * 0.02, "#5a3a1c"); for (let k = 0; k < 16; k++) { g.fillStyle = rgb(200 + r() * 40, 140 + r() * 40, 70 + r() * 30); g.beginPath(); g.ellipse(x + w * (0.09 + k * 0.054), sy - h * 0.035, w * 0.024, h * 0.032, 0, 0, Math.PI * 2); g.fill(); } }
-      text(g, "PÃES · DOCES · CAFÉ", x + w * 0.5, y + h * 0.1, w * 0.6, h * 0.08, SERIF, "#3a1e0c", "600", 2);
+      text(g, signage().bakeryBoard, x + w * 0.5, y + h * 0.1, w * 0.6, h * 0.08, SERIF, "#3a1e0c", "600", 2);
       floorLine("#4a2e18");
       break;
     }
@@ -299,8 +300,8 @@ function interiorExtra(g: G, x: number, y: number, w: number, h: number, k: numb
   }
 }
 
-export function interiorAtlas(q: Quality): THREE.Texture {
-  return memo(`city-int:${q}`, () => {
+export function interiorAtlas(q: Quality, locale: SceneLocale = sceneLocale()): THREE.Texture {
+  return memo(`city-int:${q}:${locale}`, () => {
     const CW = q === "high" ? 512 : 256, CH = CW / 2, W = CW * INT_COLS, H = CH * INT_ROWS, r = prng(411);
     const [c, g] = canvas(W, H);
     for (let k = 0; k < INT_COLS * INT_ROWS; k++) {
@@ -489,14 +490,14 @@ export function skylineTex(q: Quality, seed: number): { map: THREE.Texture; emis
 
 /* ---------- painel de fotos da gala (step-and-repeat): logotipos repetidos em diagonal ---------- */
 export function stepRepeatTex(q: Quality): THREE.Texture {
-  return memo(`city-step:${q}`, () => {
+  return memo(`city-step:${q}:${sceneLocale()}`, () => {
     const W = q === "high" ? 1024 : 512, H = W * 0.8, [c, g] = canvas(W, H);
     vgrad(g, 0, 0, W, H, "#f7f1e6", "#ece3d3");
     const cols = 5, rows = 6, cw = W / cols, rh = H / rows;
     for (let rr = 0; rr < rows; rr++) for (let cc = 0; cc < cols; cc++) {
       const x = cc * cw + (rr % 2 ? cw / 2 : 0), y = rr * rh + rh / 2, k = (rr + cc) % 3;
       if (k === 0) { text(g, "GALA", x, y - rh * 0.14, cw * 0.5, rh * 0.18, SANS, "#8a6a2f", "600", 3); text(g, "LUMIÈRE", x, y + rh * 0.1, cw * 0.7, rh * 0.32, SERIF, "#3c0711", "400", 1); }
-      else if (k === 1) { text(g, "MUSEU VESPER", x, y, cw * 0.75, rh * 0.2, SANS, "#151515", "700", 4); }
+      else if (k === 1) { text(g, signage().museum, x, y, cw * 0.75, rh * 0.2, SANS, "#151515", "700", 4); }
       else { text(g, "Casa Orvalho", x, y, cw * 0.7, rh * 0.32, SCRIPT, "#0f2c35", "500"); }
     }
     const t = texFrom(c, true); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping; t.needsUpdate = true;

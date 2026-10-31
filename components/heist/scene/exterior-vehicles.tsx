@@ -15,7 +15,7 @@ import { floorY } from "@/lib/heist/level";
 import type { Prop } from "@/lib/heist/types";
 import { boxGeo, carShell, merge, place } from "./exterior-geometry";
 import type { ExteriorMaterials } from "./exterior-materials";
-import { cateringTex, signTex, SIGNAGE, type Quality } from "./exterior-textures";
+import { cateringTex, signTex, signage, type Quality } from "./exterior-textures";
 
 interface CarSpec { L: number; W: number; belt: number; roof: number; hood: number; trunk: number; ws: number; rw: number; front: number; rear: number; R: number; clear: number }
 const SPECS = {
@@ -145,7 +145,7 @@ export function HeistVehicles({ props, m, q }: { props: Prop[]; m: ExteriorMater
       decal: new THREE.MeshStandardMaterial({ map: cateringTex(q), roughness: 0.45, metalness: 0.05 }),
     };
   }, [m, q]);
-  const doorPanel = useMemo(() => new THREE.MeshStandardMaterial({ map: signTex("police", [SIGNAGE.police], { w: 512, h: 160, bg: "#f2f2f2", ink: "#14234a", font: "sans" }), roughness: 0.35, metalness: 0.1 }), []);
+  const doorPanel = useMemo(() => new THREE.MeshStandardMaterial({ map: signTex("police", [signage().police], { w: 512, h: 160, bg: "#f2f2f2", ink: "#14234a", font: "sans" }), roughness: 0.35, metalness: 0.1 }), []);
   const cast = new Set(["paint:black", "paint:police", "paint:getaway", "white", "rubber", "black"]);
   return (
     <group>

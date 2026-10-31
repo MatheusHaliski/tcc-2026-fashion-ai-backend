@@ -16,7 +16,7 @@ import { baseProps, CIVILIANS, floorY, SIDEWALK_Y, ROAD_Y, STAIRS, DOCK_RAMP } f
 import type { Prop } from "@/lib/heist/types";
 import { boxGeo, inst, lathe, merge, place, ropeGeo, tubeThrough, worldUV } from "./exterior-geometry";
 import { exteriorMaterials, type ExteriorMaterials } from "./exterior-materials";
-import { bloomTex, fanSignTex, leafTex, signTex, SIGNAGE, prng, type Quality } from "./exterior-textures";
+import { bloomTex, fanSignTex, leafTex, signTex, signage, prng, type Quality } from "./exterior-textures";
 import { CITY_X, CROSS, CROSS_Z1, FAR_LINE } from "./exterior-blocks";
 import { Instanced } from "./exterior-facade";
 
@@ -295,7 +295,7 @@ function Podium({ m }: { m: ExteriorMaterials }) {
     const lamp = merge([tubeThrough([[0.2, 1.12, -0.18], [0.2, 1.42, -0.18], [0.05, 1.5, -0.18]], 0.01, 8, 5)]);
     return { body, trim, lamp };
   }, []);
-  const sign = useMemo(() => new THREE.MeshStandardMaterial({ map: signTex("reception", [SIGNAGE.reception, SIGNAGE.gala], { w: 512, h: 256, bg: "#0c0b0a", ink: "#d9b779", font: "serif", border: "#b8913f" }), roughness: 0.5 }), []);
+  const sign = useMemo(() => new THREE.MeshStandardMaterial({ map: signTex("reception", [signage().reception, signage().gala], { w: 512, h: 256, bg: "#0c0b0a", ink: "#d9b779", font: "serif", border: "#b8913f" }), roughness: 0.5 }), []);
   const lacquer = useMemo(() => new THREE.MeshPhysicalMaterial({ color: "#060606", roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.08 }), []);
   return (
     <group position={[-2.3, SIDEWALK_Y, 32.1]} rotation={[0, Math.PI, 0]}>
@@ -393,7 +393,7 @@ function VendorStand({ m, q }: { m: ExteriorMaterials; q: Quality }) {
   // cordão de lâmpadas na beira da lona
   const bulbs = useMemo(() => { const out: THREE.Matrix4[] = []; for (let k = 0; k <= 12; k++) { const t = k / 12, x = X0 + t * (X1 - X0); out.push(inst(x, y + 2.42 - Math.sin(t * Math.PI) * 0.12, Z0 - 0.22)); } return out; }, []);
   const bulbGeo = useMemo(() => new THREE.SphereGeometry(0.045, 8, 6), []);
-  const sign = useMemo(() => new THREE.MeshStandardMaterial({ map: signTex("vendor", [SIGNAGE.vendor, `${SIGNAGE.vendorSub} · ${SIGNAGE.vendorTag}`], { w: 768, h: 256, bg: "#f1e7cf", ink: "#3a0e12", font: "hand", border: "#3a0e12" }), roughness: 0.8 }), []);
+  const sign = useMemo(() => new THREE.MeshStandardMaterial({ map: signTex("vendor", [signage().vendor, `${signage().vendorSub} · ${signage().vendorTag}`], { w: 768, h: 256, bg: "#f1e7cf", ink: "#3a0e12", font: "hand", border: "#3a0e12" }), roughness: 0.8 }), []);
   return (
     <group>
       <mesh geometry={data.poles} material={m.galvanized} castShadow />
@@ -418,12 +418,12 @@ function Signage({ m }: { m: ExteriorMaterials }) {
   const mats = useMemo(() => {
     const mk = (tex: THREE.Texture, glow = 0) => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, emissive: glow ? new THREE.Color("#ffffff") : new THREE.Color("#000000"), emissiveMap: glow ? tex : null, emissiveIntensity: glow });
     return {
-      invite: mk(signTex("invite", [SIGNAGE.invite, SIGNAGE.gala], { w: 640, h: 256, bg: "#0d0b09", ink: "#e2c27e", font: "serif", border: "#b8913f" }), 0.25),
-      press: mk(signTex("press", [SIGNAGE.press], { w: 1024, h: 128, bg: "#101010", ink: "#f2f2f2", font: "sans" })),
-      restricted: mk(signTex("restricted", [SIGNAGE.restricted], { w: 1024, h: 128, bg: "#8d1220", ink: "#ffffff", font: "sans" })),
-      service: mk(signTex("service", [`${SIGNAGE.serviceArrow}  ${SIGNAGE.service}`, SIGNAGE.staffOnly], { w: 640, h: 256, bg: "#f2c230", ink: "#111111", font: "sans" }), 0.08),
-      queue: mk(signTex("queue", [SIGNAGE.queue, SIGNAGE.invite], { w: 640, h: 256, bg: "#0d0b09", ink: "#e2c27e", font: "serif", border: "#b8913f" }), 0.25),
-      closed: mk(signTex("closed", [SIGNAGE.closed], { w: 512, h: 128, bg: "#ffffff", ink: "#c1121f", font: "sans", border: "#c1121f" })),
+      invite: mk(signTex("invite", [signage().invite, signage().gala], { w: 640, h: 256, bg: "#0d0b09", ink: "#e2c27e", font: "serif", border: "#b8913f" }), 0.25),
+      press: mk(signTex("press", [signage().press], { w: 1024, h: 128, bg: "#101010", ink: "#f2f2f2", font: "sans" })),
+      restricted: mk(signTex("restricted", [signage().restricted], { w: 1024, h: 128, bg: "#8d1220", ink: "#ffffff", font: "sans" })),
+      service: mk(signTex("service", [`${signage().serviceArrow}  ${signage().service}`, signage().staffOnly], { w: 640, h: 256, bg: "#f2c230", ink: "#111111", font: "sans" }), 0.08),
+      queue: mk(signTex("queue", [signage().queue, signage().invite], { w: 640, h: 256, bg: "#0d0b09", ink: "#e2c27e", font: "serif", border: "#b8913f" }), 0.25),
+      closed: mk(signTex("closed", [signage().closed], { w: 512, h: 128, bg: "#ffffff", ink: "#c1121f", font: "sans", border: "#c1121f" })),
     };
   }, []);
   const data = useMemo(() => {
@@ -463,7 +463,7 @@ function FanSigns() {
     for (let x = -23; x < 29; x += 3.4 + r() * 3, k++) {
       const tilt = (r() - 0.5) * 0.25, m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, Math.PI, tilt)).setPosition(x, SIDEWALK_Y + 0.72, 43.1);
       const f = new THREE.PlaneGeometry(0.56, 0.35).applyMatrix4(m), b = new THREE.PlaneGeometry(0.56, 0.35); b.rotateY(Math.PI); b.applyMatrix4(m);
-      const d = k % SIGNAGE.fans.length; (fronts.get(d) ?? fronts.set(d, []).get(d)!).push(f); backs.push(b);
+      const d = k % signage().fans.length; (fronts.get(d) ?? fronts.set(d, []).get(d)!).push(f); backs.push(b);
     }
     return { fronts: [...fronts.entries()].map(([d, l]) => ({ d, geo: merge(l) })), back: merge(backs) };
   }, []);

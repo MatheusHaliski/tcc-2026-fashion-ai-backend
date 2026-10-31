@@ -107,7 +107,8 @@ export function vitrine(p: Prop, c: PropsCtx) {
   const M: Fr = (x, y, z, ry = 0, sx = 1, sy = sx, sz = sx, rx = 0, rz = 0) => F(x, H0 + 0.075 + y, z, ry + (v === 1 ? 0 : v === 0 ? 0.32 : -0.32), sx, sy, sz, rx, rz);
   if (v === 1) auroraGown(c.batch, c.inst, ROOM, M, q); else if (v === 0) velvetGown(c.batch, c.inst, ROOM, M, q); else tulleGown(c.batch, c.inst, ROOM, M, q);
   label(c, F, v === 1 ? LBL.aurora : v === 0 ? LBL.velvet : LBL.tulle, w / 2 - 0.3, 0.25, d / 2 + 0.006, 0.34, -0.15);
-  anchor(c, at(F, 0, 2.2, 0.1), "#fff1dc", v === 1 ? 9 : 5.5, 4.5);
+  // a âncora fica a 1 m do vestido: com 10 luzes no "high" ela entra sempre e, forte demais, estoura o cetim e o tule
+  anchor(c, at(F, 0, 2.2, 0.1), "#fff1dc", v === 1 ? 3.6 : 3, 4.5);
 }
 /** Vitrine de parede (acessórios): gabinete com portas, vidro nas quatro faces, degraus forrados e as peças. */
 function wallVitrine(c: PropsCtx, cx: number, cz: number, sx: number, sz: number) {
