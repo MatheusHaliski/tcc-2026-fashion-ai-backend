@@ -51,7 +51,7 @@ public final class WornPieceRegions {
             return List.of();
         }
         int[] px = ImageOps.scale(photo, w, h).getRGB(0, 0, w, h, null, 0, w);
-        boolean[] person = personBlob(cls, w, h);
+        boolean[] person = WornPersonBlob.find(cls, w, h);
         if (person == null) {
             return List.of();
         }
@@ -79,15 +79,15 @@ public final class WornPieceRegions {
                 }
             }
         }
-        int top = first(any, 1, 0, h - 1), bottom = last(any, 1, 0, h - 1);
+        int top = WornRows.first(any, 1, 0, h - 1), bottom = WornRows.last(any, 1, 0, h - 1);
         if (top < 0 || bottom - top < 8) {
             return List.of();
         }
         int personH = bottom - top + 1;
-        int faceTop = first(face, 2, top, bottom), faceBottom = last(face, 2, top, bottom);
+        int faceTop = WornRows.first(face, 2, top, bottom), faceBottom = WornRows.last(face, 2, top, bottom);
         if (faceTop < 0) {
-            faceTop = first(hair, 2, top, bottom);
-            faceBottom = last(hair, 2, top, bottom);
+            faceTop = WornRows.first(hair, 2, top, bottom);
+            faceBottom = WornRows.last(hair, 2, top, bottom);
         }
         if (faceTop < 0) {
             faceTop = top;
@@ -169,37 +169,9 @@ public final class WornPieceRegions {
         return List.copyOf(out);
     }
 
-    /**
-     * Linha em que a cor média da roupa mais muda entre o que está acima e o que está abaixo (ambos com ao menos
-     * {@code minSide} linhas); −1 quando o maior salto fica abaixo de {@link #SPLIT_DIST}.
-     */
+    /** Linha do maior salto de cor da roupa entre {@code from} e {@code to} ({@link WornRows#colourCut}); −1 sem salto. */
     static int colourCut(int[] clothes, long[] sr, long[] sg, long[] sb, int from, int to, int minSide) {
-        int best = -1;
-        double bestDist = SPLIT_DIST;
-        for (int y = from + minSide; y <= to - minSide + 1; y++) {
-            long ar = 0, ag = 0, ab = 0, an = 0, br = 0, bg = 0, bb = 0, bn = 0;
-            for (int r = from; r < y; r++) {
-                ar += sr[r];
-                ag += sg[r];
-                ab += sb[r];
-                an += clothes[r];
-            }
-            for (int r = y; r <= to; r++) {
-                br += sr[r];
-                bg += sg[r];
-                bb += sb[r];
-                bn += clothes[r];
-            }
-            if (an < minSide * MIN_ROW || bn < minSide * MIN_ROW) {
-                continue;
-            }
-            double d = PixelStats.distance(PixelStats.rgb(ar, ag, ab, an), PixelStats.rgb(br, bg, bb, bn));
-            if (d > bestDist) {
-                bestDist = d;
-                best = y;
-            }
-        }
-        return best;
+        return WornRows.colourCut(clothes, sr, sg, sb, from, to, minSide);
     }
 
     /** Caixa, cor dominante e cobertura dos pixels de roupa (e de acessório, para boné e calçado) entre duas linhas. */
@@ -232,90 +204,6 @@ public final class WornPieceRegions {
         double x2 = Math.min(100, 100.0 * (maxX + 1) / w + pad), y2 = Math.min(100, 100.0 * (maxY + 1) / h + pad);
         return new Worn(kind, round(x), round(y), round(x2 - x), round(y2 - y), PixelStats.dominant(px, idx, n),
                 Math.round((y1 - personTop + 1) / (double) personH * 100) / 100.0, n / (double) (w * h));
-    }
-
-    /** O bloco conexo (8 vizinhos) de pixels não-fundo com mais rosto — ou, sem rosto, com mais pele do corpo. */
-    static boolean[] personBlob(byte[] cls, int w, int h) {
-        int size = w * h;
-        int[] label = new int[size];
-        int[] queue = new int[size];
-        int labels = 0;
-        long bestScore = -1;
-        int bestLabel = -1;
-        long headAll = 0, skinAll = 0;
-        for (int i = 0; i < size; i++) {
-            if (cls[i] == ClassMap.HAIR || cls[i] == ClassMap.FACE_SKIN) {
-                headAll++;
-            } else if (cls[i] == ClassMap.BODY_SKIN) {
-                skinAll++;
-            }
-        }
-        boolean useFace = headAll / (double) size >= MIN_HEAD;
-        if (!useFace && skinAll / (double) size < MIN_SKIN) {
-            return null;
-        }
-        for (int i = 0; i < size; i++) {
-            if (label[i] != 0 || cls[i] == ClassMap.BACKGROUND) {
-                continue;
-            }
-            int id = ++labels, head = 0, tail = 1;
-            long faces = 0, skins = 0, clothes = 0;
-            queue[0] = i;
-            label[i] = id;
-            while (head < tail) {
-                int p = queue[head++], x = p % w, y = p / w;
-                switch (cls[p]) {
-                    case ClassMap.HAIR, ClassMap.FACE_SKIN -> faces++;
-                    case ClassMap.BODY_SKIN -> skins++;
-                    default -> clothes++;
-                }
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dx = -1; dx <= 1; dx++) {
-                        int nx = x + dx, ny = y + dy;
-                        if (nx < 0 || nx >= w || ny < 0 || ny >= h) {
-                            continue;
-                        }
-                        int q = ny * w + nx;
-                        if (label[q] == 0 && cls[q] != ClassMap.BACKGROUND) {
-                            label[q] = id;
-                            queue[tail++] = q;
-                        }
-                    }
-                }
-            }
-            // com mais de uma pessoa, a maior (mais roupa) e com rosto: quem está em primeiro plano
-            long score = useFace ? faces * 8 + clothes : skins * 8 + clothes;
-            if ((useFace ? faces : skins) > 0 && score > bestScore) {
-                bestScore = score;
-                bestLabel = id;
-            }
-        }
-        if (bestLabel < 0) {
-            return null;
-        }
-        boolean[] person = new boolean[size];
-        for (int i = 0; i < size; i++) {
-            person[i] = label[i] == bestLabel;
-        }
-        return person;
-    }
-
-    private static int first(int[] rows, int min, int from, int to) {
-        for (int y = from; y <= to; y++) {
-            if (rows[y] >= min) {
-                return y;
-            }
-        }
-        return -1;
-    }
-
-    private static int last(int[] rows, int min, int from, int to) {
-        for (int y = to; y >= from; y--) {
-            if (rows[y] >= min) {
-                return y;
-            }
-        }
-        return -1;
     }
 
     private static double round(double v) {

@@ -344,16 +344,8 @@
    "max": 680,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/imaging/BrandRegions.java": {
-   "max": 252,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/imaging/FeedFraming.java": {
    "max": 685,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/imaging/FlatLayPipeline.java": {
-   "max": 319,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/imaging/GhostMannequin.java": {
@@ -380,36 +372,16 @@
    "max": 415,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/imaging/PhotoAcceptance.java": {
-   "max": 293,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/imaging/ReliefModelGenerator.java": {
-   "max": 310,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/imaging/SchemeCardRenderer.java": {
    "max": 357,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/imaging/StudioFraming.java": {
-   "max": 270,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/imaging/StudioPipeline.java": {
    "max": 647,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/imaging/SvgPathRenderer.java": {
-   "max": 269,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/imaging/TryOnCompositor.java": {
    "max": 360,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/imaging/WornPieceRegions.java": {
-   "max": 324,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/insights/InsightService.java": {
