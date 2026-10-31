@@ -1,0 +1,26 @@
+{
+  "file": {
+    "path": "components/atelier3d/editor.tsx",
+    "language": ".tsx",
+    "lines": "915",
+    "sha256": "11995cc71bdf10c605e2ae1ba601ce53f1765f22009df4ab47866f4047c1cc27",
+    "origin": "tracked",
+    "domain": "06",
+    "responsibility": "SYNTAX_INVENTORY_PENDING_SEMANTIC_REVIEW",
+    "is_test": "False",
+    "generated_marker": "False",
+    "fan_in": "3",
+    "fan_out": "9",
+    "dependencies": "[\"components/atelier3d/contracts.ts\", \"components/atelier3d/gender-panel.tsx\", \"components/atelier3d/guest-panel.tsx\", \"components/atelier3d/scene-api.ts\", \"components/atelier3d/viewport.tsx\", \"components/ui/index.tsx\", \"lib/api/client.ts\", \"lib/atelier3d/document.ts\", \"lib/i18n/i18n.tsx\"]",
+    "consumers": "[\"app/(site)/(app)/atelier/projects/[id]/editor/page.tsx\", \"components/atelier3d/editor.test.tsx\", \"components/atelier3d/guest-editor.tsx\"]",
+    "tests": "[\"components/atelier3d/editor.test.tsx\"]",
+    "risk": "REVIEW_REQUIRED",
+    "pattern": "UNDECIDED",
+    "decision": "Inventory complete; semantic/pattern decision pending",
+    "status": "PENDING"
+  },
+  "branches": 135,
+  "functions": 88,
+  "imports": 14,
+  "revision": "5166f88ca8f866cbc0465996015cafc69852e8d7"
+}

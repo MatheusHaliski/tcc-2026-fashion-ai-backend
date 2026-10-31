@@ -7,28 +7,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Catálogo de provedores por capacidade (RF24): serviço primário, alternativa, fallback local, modalidade
- * de custo (G = gratuito/local, P = pago por uso, H = híbrido/free tier + excedente), custo estimado por
- * chamada, latência típica, cota diária por usuário e status de implementação.
- *
- * Preços de referência (USD, set/2026): Claude Opus 5 US$5/US$25 por MTok (entrada/saída); Claude Haiku 4.5
- * US$1/US$5; Gemini 2.5 Flash US$0,30/US$2,50 (com free tier); FASHN.ai ~US$0,075/imagem; remove.bg
- * ~US$0,20/imagem em créditos; Cloudinary free tier (25 créditos/mês); Replicate FLUX schnell ~US$0,003/imagem.
- * Custos por chamada são estimativas a partir do tamanho típico do prompt — o custo real sai do uso de
- * tokens devolvido pelo provedor e é gravado em ai_inference_log (RF24.CA16).
- * <p>
- * Cotas diárias: capacidades pagas por imagem (estúdio, remoção de fundo, provador, geração de fundo, logo com busca
- * na web) ficam em até ~30 usos/dia por pessoa; acima disso o teto em dólar ({@link AiBudget}) seria o único freio.
- */
 public final class AiCatalog {
     public static final String CLAUDE_DEFAULT_MODEL = "claude-opus-5";
     public static final String CLAUDE_LIGHT_MODEL = "claude-haiku-4-5";
-    /**
-     * Modelo do Gemini: o gemini-2.5-flash foi desligado para contas novas (404 "no longer available to new users",
-     * visto nos logs de produção em 27/09/2026); o Google indica o gemini-3.8-flash. GEMINI_MODEL no ambiente troca o
-     * modelo sem mexer no código quando o Google aposentar este.
-     */
     public static final String GEMINI_DEFAULT_MODEL = envOr("GEMINI_MODEL", "gemini-3.8-flash");
 
     private static String envOr(String name, String fallback) {

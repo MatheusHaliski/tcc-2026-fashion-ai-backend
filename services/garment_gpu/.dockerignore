@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+**/__pycache__
+**/*.pyc
+.pytest_cache
+work/
+backups/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.safetensors

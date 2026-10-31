@@ -114,6 +114,26 @@ class PreferencesServiceTest {
     }
 
     @Test
+    void ordemDoMenuSalvaPorUsuarioValidadaEVoltaAoPadrao() throws Exception {
+        var mapper = br.com.fashionai.application.common.Json.MAPPER;
+        assertThat(prefs.get(ana).get("navOrder")).isNull();
+        Map<String, Object> saved = prefs.update(ana, mapper.readValue("""
+                {"navOrder": {"groups": ["nav.group.wardrobe", "nav.group.discover"],
+                              "items": {"nav.group.wardrobe": ["/room", "/closet"]}}}""", PreferencesService.Update.class));
+        assertThat(saved.get("navOrder")).isEqualTo(Map.of("groups", List.of("nav.group.wardrobe", "nav.group.discover"),
+                "items", Map.of("nav.group.wardrobe", List.of("/room", "/closet"))));
+        // outra preferência não apaga a ordem
+        assertThat(prefs.update(ana, mapper.readValue("{\"theme\":\"DARK\"}", PreferencesService.Update.class)).get("navOrder")).isNotNull();
+        // formatos fora do permitido: grupo inventado, link externo, item repetido, tipo errado
+        for (String bad : List.of("{\"navOrder\":{\"groups\":[\"admin\"]}}", "{\"navOrder\":{\"items\":{\"nav.group.wardrobe\":[\"https://x.com\"]}}}",
+                "{\"navOrder\":{\"groups\":[\"nav.group.play\",\"nav.group.play\"]}}", "{\"navOrder\":{\"items\":[\"/closet\"]}}")) {
+            assertThatThrownBy(() -> prefs.update(ana, mapper.readValue(bad, PreferencesService.Update.class))).isInstanceOf(ApiException.class);
+        }
+        // {} volta à ordem padrão
+        assertThat(prefs.update(ana, mapper.readValue("{\"navOrder\":{}}", PreferencesService.Update.class)).get("navOrder")).isNull();
+    }
+
+    @Test
     void auraHypePersisteSemAlterarTemaOuOptOut() throws Exception {
         var ledger = kit.dep(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class);
         prefs.setAuraPermissions(new AuraPermissionsService(ledger));

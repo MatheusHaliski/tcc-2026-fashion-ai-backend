@@ -274,6 +274,13 @@ def process_photo(image: Image.Image, category: str, subcategory: str | None = N
         metrics["sourceQuality"] = preflight.metrics["quality"]
         if preflight.status != "PASS":
             return PhotoSet(preflight.status, preflight.reason, metrics=metrics)
+        # Even a semantically isolated mask of a garment *on a person* is not
+        # evidence of its hidden waistband, sleeve opening or backside. Keep
+        # automatic publication blocked until a separately reviewed source is
+        # available; the original photograph and its analysis remain intact.
+        if masks.human_present is not False:
+            metrics["postflight"] = {"status": "REVIEW", "reason": "HUMAN_SOURCE_REVIEW_REQUIRED"}
+            return PhotoSet("REVIEW", "HUMAN_SOURCE_REVIEW_REQUIRED", metrics=metrics)
         mask, cleanup = clean_target_mask(masks.target, masks.forbidden, category, subcategory)
         metrics.update(cleanup)
         fabric_box = _fabric_box(mask)

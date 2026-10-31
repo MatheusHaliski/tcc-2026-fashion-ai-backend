@@ -19,4 +19,7 @@ public class EstadoConservacao extends AuditableEntity {
 
     @Column(nullable = false, length = 80)
     private String nome;
+
+    @Column(nullable = false)
+    private boolean ativo = true;
 }

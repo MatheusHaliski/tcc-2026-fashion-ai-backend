@@ -1,0 +1,20 @@
+# syntax=docker/dockerfile:1
+# Private API (CPU only). Build context: services/garment_gpu (compose.yaml does this).
+FROM python:3.12-slim
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/app
+WORKDIR /app
+COPY requirements-api.txt /tmp/req/
+RUN --mount=type=secret,id=proxy_ca,target=/run/secrets/proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi; \
+    pip install --no-cache-dir -r /tmp/req/requirements-api.txt
+COPY . /app/services/garment_gpu/
+RUN rm -rf /app/services/garment_gpu/tests /app/services/garment_gpu/deploy \
+    && python -c "import services.garment_gpu.api" \
+    && useradd --uid 10001 --create-home fai
+USER 10001:10001
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+# One process per container (Prometheus counters stay consistent); scale with more replicas behind the proxy.
+CMD ["uvicorn", "--factory", "services.garment_gpu.api:app_factory", "--host", "0.0.0.0", "--port", "8000", \
+     "--proxy-headers", "--forwarded-allow-ips", "*", "--no-server-header"]

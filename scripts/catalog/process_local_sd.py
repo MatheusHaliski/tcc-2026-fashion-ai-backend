@@ -8,7 +8,7 @@
 Etapas por foto: baixa (link direto ou og:image de página HTML) → rembg LOCAL com a classe de roupa da categoria (cima,
 baixo, corpo inteiro; calçado/acessório usa o recorte geral) → medição e limpeza da máscara (pessoa, outras peças, riscos e
 silhuetas fora do perímetro; altura da peça menor que 25% da foto = INELEGÍVEL, nada é gerado) → inpainting só onde o
-corpo aparecia POR DENTRO da peça (gola, punhos, barra, entre as pernas) com Stable Diffusion Inpainting local, opcional
+corpo aparecia POR DENTRO da peça (gola, punhos, barra; preserva o vão entre pernas de calças) com Stable Diffusion Inpainting local, opcional
 ControlNet inpaint → composição: o tecido ORIGINAL é preservado pixel a pixel (a IA nunca redesenha estampa, logo ou
 costura), fundo branco, peça centralizada com a maior aresta em 50% do quadro 3:4 de 900×1200 e sombra suave → PNG em
 --out-dir → UPDATE da coluna (caminho local ou URL pública com --public-base-url).
@@ -55,6 +55,7 @@ from photo_set import MAX_ANALYSIS_SIDE, MAX_INPUT_PIXELS, PHOTO_SET_VERSION, Lo
 from photo_set import _fabric_box as fabric_box  # noqa: E402  — o mesmo retângulo 3:4 só de tecido do worker do catálogo
 from whole_frame import HEIGHT, WIDTH, GarmentSegmenter, cloth_class  # noqa: E402
 from fashn_open import FashnOpenProvider, LamaInpainter  # noqa: E402
+from photo_set_quality import apply_quality_gate  # noqa: E402
 
 LOG = logging.getLogger("fashionai.sd")
 VERSION = "LOCAL_SD_GHOST_V1"
@@ -234,11 +235,13 @@ def open_image(data: bytes) -> tuple[Image.Image, tuple[int, int]]:
 
 # ───────────────────────── máscaras: peça, corpo e a região "fantasma"
 
-def ghost_mask(target: np.ndarray, forbidden: Optional[np.ndarray], feather: int = 3) -> np.ndarray:
+def ghost_mask(target: np.ndarray, forbidden: Optional[np.ndarray], feather: int = 3, *,
+               category: Optional[str] = None) -> np.ndarray:
     """Onde o corpo aparecia POR DENTRO da peça — é só isso que a IA preenche: buracos fechados da máscara da peça (gola
     fechada, cós) e pixels de pessoa/outra peça ENTRE o primeiro e o último pixel da peça na mesma linha (pescoço entre os
-    ombros, punhos, barra, entre as pernas). Rosto acima dos ombros, braços ao lado do tronco, fundo e qualquer coisa fora
-    do perímetro ficam de fora; o tecido em si nunca entra (é restaurado na composição)."""
+    ombros, punhos, barra). Para lower_piece, o vão aberto entre as duas pernas permanece transparente. Rosto acima dos
+    ombros, braços ao lado do tronco, fundo e qualquer coisa fora do perímetro ficam de fora; o tecido em si nunca entra
+    (é restaurado na composição)."""
     target = np.asarray(target, dtype=bool)
     if not target.any():
         return np.zeros_like(target)
@@ -253,6 +256,14 @@ def ghost_mask(target: np.ndarray, forbidden: Optional[np.ndarray], feather: int
     ghost = holes | body
     if feather > 0 and ghost.any():
         ghost = ndimage.binary_dilation(ghost, iterations=feather)
+    if category == "lower_piece":
+        # Cada perna é uma faixa horizontal independente abaixo do gancho.
+        # O espaço entre as duas faixas não é uma cavidade da roupa: nunca
+        # preencher ali pele/fundo com LaMa nem torná-lo opaco no whole.png.
+        starts = target & ~np.pad(target[:, :-1], ((0, 0), (1, 0)), constant_values=False)
+        split_rows = starts.sum(axis=1) >= 2
+        gap = between & ~target
+        ghost[split_rows] &= ~gap[split_rows]
     return ghost
 
 
@@ -287,8 +298,8 @@ LENIENT_REASONS = {"UNCLASSIFIED_THIN_CONTOUR", "AMBIGUOUS_TARGET_COMPONENTS", "
 
 
 def lenient_clean(target: Image.Image, forbidden: Optional[Image.Image], category: Optional[str], subcategory: Optional[str]) -> tuple[np.ndarray, dict]:
-    """Plano B da limpeza, só neste lote de revisão visual: tira o corpo (com folga), abre a máscara (3×3: some risco,
-    fio e serrilhado fino) e fica com os componentes relevantes — 2 pernas/pés, até 4 peças num conjunto, 1 nos demais.
+    """Plano B da limpeza: abertura 3×3 identifica componentes sustentados, sem aparar sua silhueta original.
+    Tira o corpo (com folga) e mantém até 2 pernas/pés, 4 peças num conjunto, 1 nos demais.
     A trilha verificada do catálogo continua estrita; aqui o modo fica registrado na evidência (`cleanupMode`)."""
     a = np.asarray(target.convert("L")) >= 128
     if forbidden is not None:
@@ -302,7 +313,10 @@ def lenient_clean(target: Image.Image, forbidden: Optional[Image.Image], categor
     keep = [k for k in np.argsort(areas)[::-1] if areas[k] >= max(24, int(opened.sum() * .004))][:max_parts]
     if not keep:
         raise PhotoSkip("TARGET_MASK_EMPTY_AFTER_CLEANUP", "REVIEW")
-    cleaned = np.isin(labels, keep)
+    support = np.isin(labels, keep)
+    # Reconstrói somente pixels presentes na máscara original e ligados ao
+    # núcleo: não perde detalhes legítimos finos de cós, barras e costuras.
+    cleaned = ndimage.binary_propagation(support, mask=a)
     kept = int(cleaned.sum())
     if kept < 64 or kept < .6 * max(before, 1):
         raise PhotoSkip("EXCESSIVE_MASK_REMOVAL", "REVIEW")
@@ -325,6 +339,19 @@ def measure(image: Image.Image, masks: PhotoMasks, category: Optional[str], subc
             raise PhotoSkip(str(error), "REVIEW", {"preflight": preflight.metrics}) from None
         target, cleanup = lenient_clean(masks.target, masks.forbidden, category, subcategory)
         cleanup["strictReason"] = str(error)
+    if category == "lower_piece" and preflight.metrics.get("status") == "PASS":
+        # Um preflight válido da fonte não atesta a máscara depois da limpeza.
+        # Se ela perder o topo (cós) ou as barras, impedir READY silencioso.
+        before_ys = np.flatnonzero((np.asarray(masks.target.convert("L")) >= 128).any(axis=1))
+        after_ys = np.flatnonzero(target.any(axis=1))
+        if before_ys.size and after_ys.size:
+            top_loss = max(0, int(after_ys[0] - before_ys[0]))
+            bottom_loss = max(0, int(before_ys[-1] - after_ys[-1]))
+            tolerance = max(3, int(round(image.height * 0.02)))
+            if top_loss > tolerance or bottom_loss > tolerance:
+                raise PhotoSkip("LOWER_PIECE_EXTENT_LOSS", "REVIEW",
+                                {"preflight": preflight.metrics, "cleanup": cleanup,
+                                 "extentLoss": {"topPixels": top_loss, "bottomPixels": bottom_loss}})
     ys, xs = np.where(target)
     height_fraction = (ys.max() + 1 - ys.min()) / image.height
     frame_height = min(0.5, 0.5 * ((ys.max() + 1 - ys.min()) / (xs.max() + 1 - xs.min())) * (WIDTH / HEIGHT))
@@ -667,7 +694,7 @@ class GhostPipeline:
                 alpha = np.where(ndimage.binary_dilation(target, iterations=1), fusion.alpha, 0).astype(np.float32)
             if self.options.measure_only:
                 return {**base, "status": "MEASURED", "metrics": metrics, "image_path": None}
-            ghost = ghost_mask(target, forbidden)
+            ghost = ghost_mask(target, forbidden, category=row.get("category"))
             generated = None
             if self.filler is not None and not self.options.no_ai and ghost.any():
                 hole = ndimage.binary_dilation(ghost, iterations=self.options.lama_margin) if self.options.lama_margin > 0 else ghost
@@ -753,6 +780,15 @@ class GhostPipeline:
                                 "rendered": True, "processed": True, "ghostPixels": whole.info["ghostPixels"]}
             metrics["fabric"] = {"width": fabric.width, "height": fabric.height, "sourceBox": list(box), "coverage": 1.0}
             result.update(status="READY", reason=None, files={"whole": "whole.png", "fabric": "fabric.png"})
+            # Preflight attests a candidate segmentation, not a complete
+            # garment. Human/model photographs, lenient contours and ghost
+            # repairs must be reviewed before these files reach the catalog.
+            result = apply_quality_gate(result)
+            if result["status"] != "READY" and result.get("files"):
+                # The GPU wire contract permits file payloads only for READY.
+                # Keep local PNGs for diagnostics, but do not transmit them as
+                # publishable output from PhotoSetRuntime.
+                result["reviewPreviewFiles"] = result.pop("files")
         (folder / "set.json").write_text(json.dumps(result, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
         return {"status": result["status"], "reason": result.get("reason"), "dir": folder.as_posix()}
 
@@ -767,7 +803,10 @@ class GhostPipeline:
         with report.open("a", encoding="utf-8") as audit:
             for row in progress:
                 result = self.process(row)
-                if result["status"] == "RENDERED" and store is not None and not self.options.dry_run:
+                can_store_photo_set = (not self.options.photo_set or
+                                       (result.get("photoSet") or {}).get("status") == "READY")
+                if (result["status"] == "RENDERED" and can_store_photo_set and
+                        store is not None and not self.options.dry_run):
                     result["stored"] = store(row, result["stored_value"])
                 self.rows.append(result)
                 audit.write(json.dumps(result, ensure_ascii=False, default=str) + "\n")

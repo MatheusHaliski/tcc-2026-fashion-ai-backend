@@ -22,17 +22,17 @@ it("prefers the conservation reference name over the legacy enum in the Info tab
 });
 
 it.each([
-  ["NEW", "Novo"], ["GOOD", "Bom"], ["WORN", "Desgastado"], ["DAMAGED", "Danificado"],
+  ["NEW", "Novo"], ["GOOD", "Não informado"], ["WORN", "Desgastado"], ["DAMAGED", "Danificado"],
 ])("translates legacy %s without requiring a catalog entry", (condition, expected) => {
   mockApi({});
   renderApp(<PieceCardPanels piece={{ ...PIECE, condition, estadoConservacao: null }} />);
   expect(within(screen.getByRole("tabpanel")).getByText(expected)).toBeTruthy();
 });
 
-it("omits absent condition and washing facts", () => {
+it("marks absent condition as unselected and omits absent washing facts", () => {
   mockApi({});
   const { container } = renderApp(<PieceDetailFacts piece={{ ...PIECE, condition: null, estadoConservacao: null, tipoLavagem: null, careInstructions: "  " }} />);
-  expect([...container.querySelectorAll("dt")].map(node => node.textContent)).not.toContain("Estado de conservação");
+  expect(screen.getByText("Não informado")).toBeTruthy();
   expect(screen.queryByText("Lavagem")).toBeNull();
   expect(screen.queryByText("Cuidados adicionais")).toBeNull();
 });

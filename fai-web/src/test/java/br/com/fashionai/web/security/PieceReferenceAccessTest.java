@@ -47,6 +47,8 @@ class PieceReferenceAccessTest {
                 .andExpect(jsonPath("$[0].codigo").value("SEMINOVA"))
                 .andExpect(jsonPath("$[0].nome").value("Sem marcas de uso"))
                 .andExpect(jsonPath("$[0].createdAt").doesNotExist());
+        mvc.perform(get("/api/opcoes/estados-conservacao")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].codigo").value("SEMINOVA"));
         mvc.perform(get("/api/tipos-lavagem")).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(WASH_ID.toString()))
                 .andExpect(jsonPath("$[0].codigo").value("MANUAL"))
@@ -56,7 +58,7 @@ class PieceReferenceAccessTest {
 
     @Test
     void anonymousMutationsAndUnrelatedRoutesRemainProtected() throws Exception {
-        for (String path : List.of("/api/estados-conservacao", "/api/tipos-lavagem")) {
+        for (String path : List.of("/api/estados-conservacao", "/api/opcoes/estados-conservacao", "/api/tipos-lavagem")) {
             mvc.perform(post(path)).andExpect(status().isUnauthorized());
             mvc.perform(put(path)).andExpect(status().isUnauthorized());
             mvc.perform(patch(path)).andExpect(status().isUnauthorized());
@@ -113,7 +115,7 @@ class PieceReferenceAccessTest {
 
         private static <T> T repository(Class<T> type, List<?> rows) {
             return type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, (proxy, method, args) -> {
-                if (method.getName().equals("findAllByOrderByNomeAsc")) return rows;
+                if ((method.getName().equals("findAllByOrderByNomeAsc") || method.getName().equals("findAllByAtivoTrueOrderByNomeAsc"))) return rows;
                 if (method.getDeclaringClass() == Object.class) return switch (method.getName()) {
                     case "hashCode" -> System.identityHashCode(proxy);
                     case "equals" -> proxy == args[0];

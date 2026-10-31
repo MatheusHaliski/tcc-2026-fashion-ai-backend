@@ -1,0 +1,107 @@
+[
+  {
+    "name": "desktop-edit-dialog.png",
+    "before_size": [
+      1280,
+      1000
+    ],
+    "after_size": [
+      1280,
+      1000
+    ],
+    "pixel_identical": false,
+    "difference_bbox": [
+      42,
+      120,
+      66,
+      144
+    ]
+  },
+  {
+    "name": "desktop-empty.png",
+    "status": "not_completed"
+  },
+  {
+    "name": "desktop-error.png",
+    "status": "not_completed"
+  },
+  {
+    "name": "desktop-loading.png",
+    "status": "not_completed"
+  },
+  {
+    "name": "desktop-modal-hype.png",
+    "before_size": [
+      1280,
+      1000
+    ],
+    "after_size": [
+      1280,
+      1000
+    ],
+    "pixel_identical": false,
+    "difference_bbox": [
+      42,
+      120,
+      1127,
+      415
+    ]
+  },
+  {
+    "name": "desktop-modal-info.png",
+    "before_size": [
+      1280,
+      1000
+    ],
+    "after_size": [
+      1280,
+      1000
+    ],
+    "pixel_identical": false,
+    "difference_bbox": [
+      42,
+      120,
+      66,
+      144
+    ]
+  },
+  {
+    "name": "mobile-edit-dialog.png",
+    "before_size": [
+      390,
+      844
+    ],
+    "after_size": [
+      390,
+      844
+    ],
+    "pixel_identical": true,
+    "difference_bbox": null
+  },
+  {
+    "name": "mobile-modal-hype.png",
+    "before_size": [
+      390,
+      844
+    ],
+    "after_size": [
+      390,
+      844
+    ],
+    "pixel_identical": true,
+    "difference_bbox": null
+  },
+  {
+    "name": "mobile-modal-info.png",
+    "before_size": [
+      390,
+      844
+    ],
+    "after_size": [
+      390,
+      844
+    ],
+    "pixel_identical": true,
+    "difference_bbox": null
+  }
+]

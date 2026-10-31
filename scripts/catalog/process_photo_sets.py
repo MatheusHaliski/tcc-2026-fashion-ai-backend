@@ -19,8 +19,15 @@ import logging
 import tempfile
 import time
 from pathlib import Path
-from urllib.parse import quote
 from PIL import Image
+try:
+    from .photo_set_artifacts import ready_files, upload_verified
+except ImportError:
+    from photo_set_artifacts import ready_files, upload_verified
+try:
+    from .photo_set_quality import apply_quality_gate, assess_ready_candidate
+except ImportError:
+    from photo_set_quality import apply_quality_gate, assess_ready_candidate
 try:
     from . import db
     from .catalog_image_inventory import _SELECT
@@ -61,6 +68,10 @@ def current(record,now=None,*,require_automatic_policy=False):
        and (s.get('imageId') is None or s.get('imageId')==record.get('id')))
     if require_automatic_policy and s.get('isolationPolicyVersion') != AUTOMATIC_POLICY_VERSION:
         return False
+    # Older READY records without sufficient postflight evidence must be
+    # rechecked instead of being treated as permanently approved.
+    if s.get('status')=='READY' and assess_ready_candidate(s).status!='READY':
+        return False
     return match and (s.get('status') in ('READY','DEFAULT','REVIEW','INELIGIBLE') or s.get('retryAt',0)>(now or time.time()))
 
 def build_set(record,downloader,provider,storage=None):
@@ -88,14 +99,8 @@ def build_set(record,downloader,provider,storage=None):
     return result
 
 def upload(storage,payload):
-    """PNG no bucket com chave pelo sha256, lido de volta e conferido; devolve a URL pública."""
-    key=f"catalog/photo-sets/{PHOTO_SET_VERSION}/{hashlib.sha256(payload).hexdigest()}.png"
-    storage.client.put_object(Bucket=storage.bucket,Key=key,Body=payload,ContentType='image/png')
-    body=storage.client.get_object(Bucket=storage.bucket,Key=key)['Body']
-    try:verified=body.read(len(payload)+1)
-    finally:body.close()
-    if hashlib.sha256(verified).digest()!=hashlib.sha256(payload).digest():raise ValueError('UPLOAD_VERIFICATION_FAILED')
-    return storage.base+'/'+quote(key,safe='/')
+    """Compatibility entrypoint: keep the worker's photo-set version in every storage key."""
+    return upload_verified(storage,payload,PHOTO_SET_VERSION)
 
 ROW_FILTER=" WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') AND i.id>%s AND COALESCE(i.review_status,'PENDING')<>'REJECTED' ORDER BY i.id LIMIT %s"
 
@@ -121,6 +126,8 @@ def lot_sets(lot):
     for path in sorted(Path(lot).glob('photo-sets/*/set.json')):
         yield path,json.loads(path.read_text(encoding='utf-8'))
 
+
+
 def import_lot(conn,lot,storage,audit,*,apply=False,limit=None):
     """photo-sets/*/set.json do lote → (com --apply) upload de whole/fabric e commit_set com o mesmo CAS do worker.
     Registro que mudou desde a exportação (URL, categoria, subcategoria) é pulado como 'stale'; a cor vem do banco."""
@@ -129,6 +136,14 @@ def import_lot(conn,lot,storage,audit,*,apply=False,limit=None):
     for path,result in lot_sets(lot):
         if limit is not None and sum(counts.values())>=limit:break
         image_id=result.pop('imageId',None);result.pop('productId',None);files=result.pop('files',{})
+        payloads=None
+        if result.get('status')=='READY':
+            result=apply_quality_gate(result)
+            if result.get('status')=='READY':
+                payloads,error=ready_files(path,files)
+                if error:
+                    result.update(status='REVIEW',reason=error)
+                    result=apply_quality_gate(result)
         with conn.cursor() as cursor:
             cursor.execute(PHOTO_SELECT+" WHERE i.id=%s",(image_id,));record=cursor.fetchone()
         conn.rollback()
@@ -138,7 +153,7 @@ def import_lot(conn,lot,storage,audit,*,apply=False,limit=None):
         saved=False
         if apply:
             if result.get('status')=='READY':
-                for kind in ('whole','fabric'):result[kind+'Url']=upload(storage,(path.parent/files.get(kind,kind+'.png')).read_bytes())
+                for kind in ('whole','fabric'):result[kind+'Url']=upload(storage,payloads[kind])
             try:saved=db.run_transaction(conn,lambda:commit_set(conn,record,result))
             except Exception:
                 LOG.error(json.dumps({'event':'PHOTO_SET_DATABASE_WRITE_FAILED','imageId':str(image_id)}));raise

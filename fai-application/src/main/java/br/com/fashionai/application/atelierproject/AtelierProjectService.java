@@ -171,6 +171,20 @@ public class AtelierProjectService {
     private Summary summary(DesignProject p){return new Summary(p.getId(),p.getOwnerId(),p.getTitle(),p.getBrief(),p.getVisibility(),p.getState(),p.getVersion(),p.getRevisionNumber(),p.getLatestRevisionId(),p.getUpdatedAt());}
     private ReviewView reviewView(DesignReview r){return new ReviewView(r.getId(),r.getRevisionId(),r.getAuthorId(),name(r.getAuthorId()),r.getDecision(),r.getNotes(),r.getCreatedAt());}
     private Revision revision(CurrentUser user,DesignRevision r){return new Revision(r.getId(),r.getParentRevisionId(),r.getSourceRevisionId(),r.getAuthorId(),name(r.getAuthorId()),r.getNumber(),r.getTitle(),r.getBrief(),decode(r.getSpecificationJson()),r.getContributionLicense(),r.getCreatedAt(),r.getVotingEndsAt(),votes.countByRevisionIdAndInterestedTrue(r.getId()),votes.findByRevisionIdAndUserId(r.getId(),user.id()).map(DesignVote::isInterested).orElse(null));}
+    /** Source GLBs require participation even when the public technical specification can be read. */
+    public DesignProject access3d(CurrentUser user,UUID id,boolean writing) {
+        authenticated(user);var p=find(id,writing);
+        if(writing){write(user);edit(user,p);notArchived(p);}else participant(user,p);
+        return p;
+    }
+    /** Only call after validating a project-scoped guest capability. */
+    public DesignProject capability3dProject(UUID id,boolean writing) {
+        if(!enabled)throw new ApiException(503,"ATELIER_PROJECTS_DISABLED","O Atelier está indisponível.");
+        var p=find(id,writing);notArchived(p);return p;
+    }
+    public DesignProject manage3dGuests(CurrentUser user,UUID id) {
+        write(user);var p=find(id,true);owner(user,p);notArchived(p);return p;
+    }
     private boolean ownerAvailable(DesignProject p){return users.findById(p.getOwnerId()).map(u->u.getStatus()!=AccountStatus.DELETED).orElse(true);}
     private DesignProject find(UUID id,boolean locked){var p=(locked?projects.lockById(id):projects.findById(id)).orElseThrow(()->ApiException.notFound("Projeto"));if(!ownerAvailable(p))throw ApiException.notFound("Projeto");return p;}
     private DesignRevision revisionFor(DesignProject p,UUID id){return revisions.findById(id).filter(r->r.getProjectId().equals(p.getId())).orElseThrow(()->ApiException.notFound("Revisão"));}

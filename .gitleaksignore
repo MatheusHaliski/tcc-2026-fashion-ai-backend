@@ -21,3 +21,5 @@ a87434db30a3e500c6f0c01ca2f802656c6f6674:docs/design/referencias-aura/references
 867cd8e720c1a73fa2a4c82e8fc83cbe3603c44d:fai-application/src/test/java/br/com/fashionai/application/service/PhysicalStorePurchaseTest.java:generic-api-key:85
 1c41e30cf39c57fbcfe3bd28aafb188adcada40d:fai-application/src/test/java/br/com/fashionai/application/service/FaiPointsShopTest.java:generic-api-key:128
 1c41e30cf39c57fbcfe3bd28aafb188adcada40d:fai-application/src/test/java/br/com/fashionai/application/service/PhysicalStorePurchaseTest.java:generic-api-key:85
+# Constante sintética do teste HMAC do gate; apenas esta ocorrência histórica foi conferida.
+444d9cd78e7387f450e520762cde415e2c15d6ea:fai-web/src/test/java/br/com/fashionai/web/support/DevGateFilterFluxoTest.java:generic-api-key:24

@@ -43,8 +43,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -238,84 +236,14 @@ public class IdentityService {
 
     @Transactional
     public Session register(RegisterCommand cmd, String ip, String userAgent) {
-        Map<String, Object> errors = new LinkedHashMap<>();
         ProfileType type = cmd.profileType() == null ? ProfileType.PESSOAL : cmd.profileType();
         if (type == ProfileType.ADMIN) {
             throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("identity.tipo_de_perfil_nao_permitido"));
         }
-        if (cmd.fullName() == null || cmd.fullName().trim().length() < 3) {
-            errors.put("fullName", Msg.t("identity.informe_seu_nome_completo"));
-        }
         String mail = cmd.email() == null ? "" : cmd.email().trim().toLowerCase(Locale.ROOT);
-        if (!EMAIL.matcher(mail).matches()) {
-            errors.put("email", Msg.t("common.formato_de_e_mail_invalido"));
-        }
-        validatePassword(cmd.password(), errors);
-        if (cmd.password() != null && !cmd.password().equals(cmd.confirmPassword())) {
-            errors.put("confirmPassword", Msg.t("identity.as_senhas_nao_coincidem"));
-        }
-        if (!cmd.acceptTerms()) {
-            errors.put("acceptTerms", Msg.t("identity.e_preciso_aceitar_os_termos"));
-        }
-        if (cmd.birthDate() != null && !cmd.birthDate().isBlank()) {
-            try {
-                LocalDate birth = LocalDate.parse(cmd.birthDate());
-                if (Period.between(birth, LocalDate.now()).getYears() < 13) {
-                    errors.put("birthDate", Msg.t("identity.o_fashion_ai_e_destinado"));
-                }
-            } catch (DateTimeParseException ex) {
-                errors.put("birthDate", Msg.t("identity.data_invalida_use_aaaa_mm"));
-            }
-        }
-        if (type == ProfileType.MARCA) {
-            BrandData b = cmd.brand();
-            if (b == null || blank(b.razaoSocial())) {
-                errors.put("brand.razaoSocial", Msg.t("identity.razao_social_e_obrigatoria"));
-            }
-            if (b == null || !validCnpj(b.cnpj())) {
-                errors.put("brand.cnpj", Msg.t("identity.cnpj_invalido"));
-            }
-            if (b == null || blank(b.logoUrl())) {
-                errors.put("brand.logoUrl", Msg.t("identity.envie_o_logo_da_marca"));
-            }
-            // critério obrigatório da verificação (PRESENCA_OFICIAL): sem o site o perfil nunca poderia ser aprovado
-            if (b == null || blank(b.storeUrl())) {
-                errors.put("brand.storeUrl", Msg.t("identity.informe_o_site_oficial"));
-            } else if (!IssuerVerificationPolicy.webUrl(IssuerVerificationPolicy.normalizeUrl(b.storeUrl()))) {
-                errors.put("brand.storeUrl", Msg.t("issuerReview.link_invalido"));
-            }
-        }
-        if (type == ProfileType.CELEBRIDADE) {
-            CelebrityData c = cmd.celebrity();
-            if (c == null || blank(c.stageName())) {
-                errors.put("celebrity.stageName", Msg.t("identity.nome_artistico_e_obrigatorio"));
-            }
-            if (c == null || blank(c.realName())) {
-                // critério obrigatório da verificação (NOME_CONFERE): sem ele o perfil nunca poderia ser aprovado
-                errors.put("celebrity.realName", Msg.t("identity.nome_civil_e_obrigatorio"));
-            }
-            if (c == null || blank(c.identityProofUrl())) {
-                errors.put("celebrity.identityProofUrl", Msg.t("identity.envie_o_documento_de_identificacao"));
-            }
-            if (c == null || blank(c.officialPhotoUrl())) {
-                errors.put("celebrity.officialPhotoUrl", Msg.t("identity.envie_a_foto_oficial"));
-            }
-            // critério obrigatório da verificação (CONTROLE_PERFIL_OFICIAL): é nesse perfil que o analista procura o código
-            if (c == null || blank(c.verificationUrl())) {
-                errors.put("celebrity.verificationUrl", Msg.t("identity.informe_o_perfil_oficial"));
-            } else if (!IssuerVerificationPolicy.webUrl(IssuerVerificationPolicy.normalizeUrl(c.verificationUrl()))) {
-                errors.put("celebrity.verificationUrl", Msg.t("issuerReview.link_invalido"));
-            }
-        }
-        if (type != ProfileType.MARCA && cmd.sex() == null) {
-            errors.put("sex", Msg.t("identity.escolha_o_manequim_feminino_ou"));
-        }
-        if (cmd.username() != null && !cmd.username().isBlank()) {
-            String problem = usernameProblem(normalizeUsername(cmd.username()));
-            if (problem != null) {
-                errors.put("username", problem);
-            }
-        }
+        // campos do formulário: cadeia ordenada de regras puras (a ordem das chaves em details é contrato)
+        Map<String, Object> errors = RegistrationFormChain.validate(
+                new RegistrationFormChain.Input(cmd, type, mail, LocalDate.now()));
         // arquivos do cadastro: lidos já aqui (confere que o envio existe) e copiados para a conta depois de criada
         Map<String, byte[]> uploads = new LinkedHashMap<>();
         for (String[] f : new String[][]{{"avatarUrl", cmd.avatarUrl(), "avatar"},

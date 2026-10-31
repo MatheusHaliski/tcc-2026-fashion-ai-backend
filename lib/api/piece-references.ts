@@ -14,7 +14,8 @@ export function conservationLabel(piece: PieceReferences, t: Translate): string 
   const name = piece.estadoConservacao?.nome?.trim();
   if (name) return name;
   const condition = piece.condition?.trim();
-  if (!condition) return null;
+  // GOOD was a server default; it cannot establish an explicit owner choice.
+  if (!condition || condition.toUpperCase() === "GOOD") return t("pieceReferences.condition.unselected");
   const key = LEGACY_CONDITION_KEYS[condition.toUpperCase()];
   return key ? t(key) : condition;
 }

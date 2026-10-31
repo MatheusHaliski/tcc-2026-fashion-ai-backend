@@ -1,0 +1,42 @@
+[
+  {
+    "area": "React",
+    "original": "components/expanded-card.tsx",
+    "before": 393,
+    "after_original": 7,
+    "extracted_lines": 419,
+    "after_total": 426,
+    "net_delta": 33,
+    "extracted_files": [
+      "components/expanded-card/creation-success.tsx",
+      "components/expanded-card/expanded-dna.tsx",
+      "components/expanded-card/expanded-piece.tsx",
+      "components/expanded-card/expanded-scheme.tsx",
+      "components/expanded-card/piece-gallery.tsx"
+    ]
+  },
+  {
+    "area": "Java",
+    "original": "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java",
+    "before": 2868,
+    "after_original": 2827,
+    "extracted_lines": 55,
+    "after_total": 2882,
+    "net_delta": 14,
+    "extracted_files": [
+      "fai-application/src/main/java/br/com/fashionai/application/taxonomy/TaxonomyView.java"
+    ]
+  },
+  {
+    "area": "Python",
+    "original": "scripts/catalog/process_photo_sets.py",
+    "before": 275,
+    "after_original": 245,
+    "extracted_lines": 49,
+    "after_total": 294,
+    "net_delta": 19,
+    "extracted_files": [
+      "scripts/catalog/photo_set_artifacts.py"
+    ]
+  }
+]
