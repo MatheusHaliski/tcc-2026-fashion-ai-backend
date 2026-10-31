@@ -1,0 +1,97 @@
+
+/* ---------- Temas (RNF7): claro, escuro e alto contraste. Tokens de superfície e tinta em CSS variables. ---------- */
+:root {
+  --ground: #F7F6F2; --surface: #FFFFFF; --surface-2: #F1F0EA; --surface-3: #E9E7DF;
+  --ink: #191A19; --muted: #5C6058; --faint: #6B6F66;
+  --line: #1A1A18; --line-soft: #D8D6CC;
+  --mark: #C6275E; --mark-soft: #FBE7EE;
+  --thread: #1F7A76; --thread-soft: #E0F0EE;
+  --chalk: #B8862B; --chalk-soft: #FAF0DC; --chalk-ink: #7A5710; --thread-ink: #165C58; --mark-ink: #A51F4E;
+  --accent: #FF6A1A; --accent-ink: #1A0F08;
+  --status-good: #0ca30c; --status-warning: #fab219; --status-serious: #ec835a; --status-critical: #d03b3b;
+  --focus: #2563EB;
+  /* dataviz: paleta categórica validada (ordem fixa, CVD ΔE ≥ 8, visão normal ΔE ≥ 15) e rampa sequencial azul (docs/dashboard) */
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  --seq-1: #cde2fb; --seq-2: #9ec5f4; --seq-3: #6da7ec; --seq-4: #3987e5; --seq-5: #256abf; --seq-6: #184f95; --seq-7: #0d366b;
+  --chrome-bg: none; --chrome-opacity: 0.22;
+  --radius: 10px; --radius-sm: 6px;
+  /* camadas: uma escala só para o app inteiro */
+  --z-sticky: 20; --z-header: 40; --z-popover: 50; --z-dialog: 60; --z-toast: 70; --z-skip: 100;
+  /* alturas de controle: 3 tamanhos (sm 34 · md 40 · lg 48); em tela de toque o mínimo vira 44 */
+  --control-sm: 34px; --control-md: 40px; --control-lg: 48px; --touch: 44px;
+  --header-h: 56px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
+  --shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px -12px rgba(0,0,0,.18);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --ground: #121311; --surface: #1B1C1A; --surface-2: #23241F; --surface-3: #2B2C26;
+  --ink: #F2F1EC; --muted: #B4B7AE; --faint: #9DA197;
+  --line: #E6E4DA; --line-soft: #3A3B34;
+  --mark: #F06292; --mark-soft: #3A1D28;
+  --thread: #4FB3AE; --thread-soft: #14302E;
+  --chalk: #E0B04D; --chalk-soft: #3A2E12; --chalk-ink: #F0C872; --thread-ink: #7FD3CE; --mark-ink: #F58DB0;
+  --chrome-opacity: 0.16;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  --seq-1: #1f2a36; --seq-2: #104281; --seq-3: #184f95; --seq-4: #1c5cab; --seq-5: #2a78d6; --seq-6: #5598e7; --seq-7: #9ec5f4;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+:root[data-theme="contrast"] {
+  --ground: #000000; --surface: #000000; --surface-2: #101010; --surface-3: #1A1A1A;
+  --ink: #FFFFFF; --muted: #FFFFFF; --faint: #E0E0E0;
+  --line: #FFFF00; --line-soft: #FFFFFF;
+  --mark: #FFFF00; --mark-soft: #333300;
+  --thread: #00E5FF; --thread-soft: #003A40;
+  --chalk: #FFD700; --chalk-soft: #3A3000; --chalk-ink: #FFD700; --thread-ink: #00E5FF; --mark-ink: #FFFF00;
+  --accent: #FFFF00; --accent-ink: #000000;
+  --focus: #FFFF00;
+  --chrome-bg: none; --chrome-opacity: 0;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  --seq-1: #1f2a36; --seq-2: #104281; --seq-3: #184f95; --seq-4: #1c5cab; --seq-5: #2a78d6; --seq-6: #5598e7; --seq-7: #9ec5f4;
+  --shadow: none;
+  color-scheme: dark;
+}
+:root[data-reduce-motion="true"] *, :root[data-reduce-motion="true"] *::before, :root[data-reduce-motion="true"] *::after {
+  animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+:root[data-density="compact"] { --radius: 6px; }
+/* RF23 — todo conteúdo navegável pelo menu fica num container (branco por padrão; cor configurável em Configurações → Aparência) */
+.page-container { background: var(--content-bg, var(--surface)); border: 1px solid var(--line-soft); border-radius: 18px; box-shadow: var(--shadow); padding: clamp(12px, 2.2vw, 28px); min-height: calc(100vh - 7rem); color: var(--ink); }
+:root[data-content-tone="light"] :is(.page-container, .app-header) { --surface: #FFFFFF; --surface-2: #F1F0EA; --surface-3: #E9E7DF; --ink: #191A19; --muted: #5C6058; --faint: #6B6F66; --line: #1A1A18; --line-soft: #D8D6CC; --mark-soft: #FBE7EE; --thread-soft: #E0F0EE; --chalk-soft: #FAF0DC; color-scheme: light; }
+:root[data-content-tone="dark"] :is(.page-container, .app-header) { --surface: color-mix(in srgb, var(--content-bg) 88%, #FFFFFF); --surface-2: color-mix(in srgb, var(--content-bg) 80%, #FFFFFF); --surface-3: color-mix(in srgb, var(--content-bg) 72%, #FFFFFF); --ink: #F2F1EC; --muted: #C9CBC3; --faint: #9A9D94; --line: #E6E4DA; --line-soft: rgba(255,255,255,.18); --mark-soft: #3A1D28; --thread-soft: #14302E; --chalk-soft: #3A2E12; color-scheme: dark; }
+.page-container .page-container { border: 0; box-shadow: none; padding: 0; min-height: 0; }
+/* nada estoura a largura do conteúdo: itens de grade podem encolher, palavras longas quebram e tabelas rolam dentro do card */
+.page-container { min-width: 0; overflow-wrap: break-word; }
+.page-container .grid > * { min-width: 0; }
+.page-container .surface:has(> table), .page-container .surface:has(> div > table), .page-container .card-pad:has(table) { overflow-x: auto; }
+:root[data-density="compact"] .card-pad { padding: 0.5rem 0.75rem; }
+
+@theme inline {
+  --color-ground: var(--ground); --color-surface: var(--surface); --color-surface-2: var(--surface-2); --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink); --color-muted: var(--muted); --color-faint: var(--faint);
+  --color-line: var(--line); --color-line-soft: var(--line-soft);
+  --color-mark: var(--mark); --color-mark-soft: var(--mark-soft); --color-thread: var(--thread); --color-thread-soft: var(--thread-soft);
+  --color-chalk: var(--chalk); --color-chalk-soft: var(--chalk-soft); --color-accent: var(--accent); --color-accent-ink: var(--accent-ink);
+  --color-chalk-ink: var(--chalk-ink); --color-thread-ink: var(--thread-ink); --color-mark-ink: var(--mark-ink);
+  --color-good: var(--status-good); --color-warning: var(--status-warning); --color-serious: var(--status-serious); --color-critical: var(--status-critical);
+  --color-focus: var(--focus);
+  --radius-fai: var(--radius); --radius-fai-sm: var(--radius-sm);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-ui); font-size: var(--text-body); line-height: 1.5; min-height: 100dvh; }
+/* fundo do chrome (RF23): tile do /public com opacidade baixa, atrás de todo o conteúdo */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; background-image: var(--chrome-bg); background-size: 420px; background-repeat: repeat; opacity: var(--chrome-opacity); pointer-events: none; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+img { max-width: 100%; display: block; }
+h1, h2, h3, h4 { margin: 0; }
+.tabular { font-variant-numeric: tabular-nums; }
+.skip-link { position: absolute; left: -999px; top: 8px; z-index: var(--z-skip); background: var(--surface); color: var(--ink); padding: 8px 12px; border: 2px solid var(--line); border-radius: 6px; }
+.skip-link:focus { left: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+

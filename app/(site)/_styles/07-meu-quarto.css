@@ -1,0 +1,107 @@
+/* RF32 — Meu Quarto 3D: palco WebGL + painel de posições acessível (mesmas ações da lista) */
+.room3d { display: grid; gap: 12px; }
+@media (min-width: 1024px) { .room3d { grid-template-columns: minmax(0, 1fr) 260px; } .room3d[data-mode="mirror"] { grid-template-columns: minmax(0, 1fr) 360px; } }
+.room3d-stage { position: relative; height: min(72vh, 680px); min-height: 420px; overflow: hidden; border-radius: 14px; border: 1px solid var(--line-soft); background: #efe9df; }
+.room3d-stage canvas { touch-action: none; }
+.room3d-loading { display: grid; height: 100%; place-items: center; color: var(--muted); font-size: 14px; }
+.room3d-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.room3d-light { display: inline-flex; align-items: center; gap: 8px; min-height: var(--control-md); padding: 0 12px; border-radius: 999px; background: var(--surface-2); }
+.room3d-light input { width: 110px; accent-color: var(--ink); }
+.room3d-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 20px); padding: 3px 10px; border-radius: 999px; background: rgba(0,0,0,.5); color: #fff; font-size: 12px; text-align: center; pointer-events: none; }
+/* Acessibilidade 3D (room-scene-controls.tsx): girar a cena e o direcional do avatar num canto do palco, longe do avatar;
+   alvos de 44 px, foco visível e "apertado" enquanto segura. A dica vai para o outro canto. */
+.room3d-controls { position: absolute; right: 10px; bottom: 10px; display: grid; justify-items: end; gap: 6px; }
+.room-gamepad { width: min(310px, calc(100% - 20px)); padding: 12px; border-radius: 28px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line-soft); box-shadow: 0 8px 24px rgb(0 0 0 / 20%); }
+.room-pad-shoulders { display: flex; justify-content: space-between; width: 100%; }
+.room-pad-body { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.room-pad-stick { width: 80px; height: 80px; flex: 0 0 80px; border-radius: 50%; border: 2px solid var(--line-soft); background: var(--surface-2); display: grid; place-items: center; touch-action: none; }
+.room-pad-thumb { width: 34px; height: 34px; border-radius: 50%; background: var(--ink); opacity: 0.7; pointer-events: none; }
+.room-pad-accessible button { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
+.room-pad-accessible button:focus { position: static; width: auto; height: auto; clip-path: none; padding: 8px; background: var(--surface); }
+.room-pad-actions { display: grid; grid-template-columns: repeat(2, 36px); gap: 4px; }
+.room-pad-actions button { width: 36px; height: 36px; border: 1px solid var(--line-soft); border-radius: 50%; background: var(--surface); color: var(--ink); }
+.room-context-prompt { position: absolute; bottom: calc(100% + 12px); right: 0; display: flex; align-items: center; gap: 12px; width: max-content; max-width: min(360px, 90vw); padding: 12px 16px; border: 1px solid #c9a227; border-radius: 6px; background: rgb(20 28 32 / 88%); color: #fff3ce; text-align: left; }
+.room-key { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 1px solid currentcolor; border-radius: 50%; }
+/* O feed é uma sequência de posts, não uma grade de cards esticados. O limite
+   inclui o wrapper que alterna Info/Hype, mantendo a mesma largura nas duas faces. */
+.feed-compact-grid { display: grid; grid-template-columns: minmax(0, 470px); justify-content: center; align-items: start; gap: 24px; }
+.feed-compact-grid > * { width: 100%; max-width: 470px; min-width: 0; }
+.feed-compact-grid .fai-card { width: 100%; }
+.room3d-controls-row { display: grid; grid-template-columns: repeat(2, 44px); gap: 6px; }
+.room3d-dpad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 3px; }
+.room3d-dpad .is-up { grid-area: 1 / 2; } .room3d-dpad .is-left { grid-area: 2 / 1; } .room3d-dpad .is-right { grid-area: 2 / 3; } .room3d-dpad .is-down { grid-area: 3 / 2; }
+.room3d-control { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 12px; background: rgba(24,20,17,.62); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.room3d-control:hover { background: rgba(24,20,17,.8); }
+.room3d-control[data-pressed="true"] { background: #1F7A76; }
+.room3d-control:focus-visible { outline: 3px solid #fff; outline-offset: 1px; box-shadow: 0 0 0 6px #1F7A76; }
+.room3d-stage:has(.room3d-controls) .room3d-hint { left: 10px; transform: none; max-width: calc(100% - 180px); border-radius: 12px; text-align: left; }
+/* caminhada até/para longe do espelho ("Indo ao espelho…"): aviso no alto do palco; vazio, não ocupa espaço */
+.room3d-walk-status { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 20px); padding: 5px 14px; border-radius: 999px; background: #1F7A76; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.2); pointer-events: none; }
+.room3d-walk-status:empty { padding: 0; box-shadow: none; background: transparent; }
+/* na prova o espelho ocupa a direita do quadro: botões menores */
+.room3d[data-mode="mirror"] .room3d-control { width: 36px; height: 36px; border-radius: 10px; }
+.room3d[data-mode="mirror"] .room3d-controls-row { grid-template-columns: repeat(2, 36px); }
+.room3d[data-mode="mirror"] .room3d-dpad { grid-template-columns: repeat(3, 36px); grid-template-rows: repeat(3, 36px); }
+.room3d-positions { max-height: min(72vh, 680px); overflow: auto; padding: 10px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--surface); }
+/* Configurações do quarto (room-settings-panel.tsx): no lugar das abas 2.5D/Lista e da lista de posições, ao lado da cena;
+   no alto, luz, roupa e móvel; abaixo, seções que abrem e fecham (câmera, paredes, ambiente, gráficos, interface…) */
+@media (min-width: 1024px) { .room3d:not([data-mode="mirror"]) { grid-template-columns: minmax(0, 1fr) 320px; } }
+.room3d-side { display: grid; align-content: start; gap: 8px; max-height: min(72vh, 680px); overflow: auto; padding: 12px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--surface); }
+.room3d-side-flat { max-height: none; }
+.room-settings { display: grid; gap: 12px; }
+.room-settings-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.room-settings-cards { display: grid; gap: 8px; }
+.room-settings-card { display: grid; gap: 8px; padding: 10px; border-radius: 12px; background: var(--surface-2); }
+.room-settings-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.room-settings-range { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 8px; font-size: 13px; }
+.room-settings-range input { grid-column: 1 / -1; width: 100%; accent-color: var(--ink); }
+.room-settings-range output { grid-row: 1; grid-column: 2; }
+.room-settings-field { display: grid; gap: 4px; font-size: 13px; }
+.room-settings-section { border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.room-settings-section > summary { cursor: pointer; padding: 6px 0; font-weight: 600; list-style-position: inside; }
+.room-settings-section[open] { display: grid; gap: 10px; }
+.room-settings-views { display: flex; flex-wrap: wrap; gap: 6px; }
+.room-settings-views > p { flex-basis: 100%; }
+.room-settings-favorites ol { display: grid; gap: 2px; }
+.room-settings-favorites li { display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 8px; }
+.room-settings-favorites li > span { width: 18px; font-weight: 600; }
+.room-settings-favorites li.is-active { background: var(--thread-soft); }
+/* o que o avatar segura (antes na seção "Controlar meu avatar") e o nome da vista ao trocar: avisos no alto da cena */
+.room3d-play-status { position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); padding: 5px 12px; border-radius: 999px; background: rgb(20 28 32 / 80%); color: #fff3ce; font-size: 13px; pointer-events: none; }
+.room3d-view-flash { position: absolute; top: 44%; left: 50%; transform: translate(-50%, -50%); padding: 8px 18px; border-radius: 999px; background: rgb(0 0 0 / 62%); color: #fff; font-size: 15px; font-weight: 600; pointer-events: none; }
+.room-gamepad.is-minimal { width: auto; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.room3d-positions ul { display: grid; gap: 2px; }
+.room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
+.room3d-positions button:hover, .room3d-positions button[aria-pressed="true"] { background: var(--surface-2); }
+/* Prova no espelho dentro do quarto (RF27 ↔ RF28): ajuda de primeiro uso, estados e Voltar ao quarto (as roupas em mãos
+   ficam nas células "Partes do look" do painel do Espelho e na folha de cada parte) */
+.mirror-hands { display: grid; gap: 8px; margin-top: 8px; }
+.mirror-hands.is-tryon { padding: 10px; border: 2px solid #1F7A76; border-radius: 12px; background: var(--surface-2); }
+.mirror-hands.is-transition { justify-self: start; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; }
+.mirror-hands-help { display: grid; gap: 4px; padding: 10px; border-radius: 12px; background: var(--chalk-soft, #f6efd9); }
+.mirror-hands-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.mirror-hands-bar > p { flex: 1 1 160px; min-width: 0; }
+.room3d-positions .mirror-hands button { display: inline-flex; width: auto; justify-content: center; }
+/* QUARTO-ESPELHO: na prova, as opções de vestimenta (o painel da aba Espelho) ficam ao lado da cena */
+.room3d-positions .mirror-controls button { display: inline-flex; width: auto; justify-content: center; }
+.room3d-positions .mirror-controls .fitting-store { display: grid; width: auto; justify-content: stretch; padding: 8px 4px; }
+.room3d-positions .mirror-controls .mirror-parts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.room3d-positions .mirror-controls .vista-occasions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* a coluna de posições pinta o botão pressionado de cinza: no painel do Espelho valem as cores dos chips e das células */
+.room3d-positions .mirror-controls .chip { padding: .3rem .85rem; }
+.room3d-positions .mirror-controls .chip[aria-pressed="true"], .room3d-positions .mirror-controls .chip[aria-checked="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.room3d-positions .mirror-controls .fitting-store.is-active { background: var(--thread-soft); }
+.room3d-positions .mirror-controls .btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+/* LEGO (prancha 10 · C7 · narrativa B12): montagem animada — os blocos caem e encaixam de cima para baixo (60 ms entre
+   peças, via animation-delay); "montar de novo" repete. Com "reduzir movimento" o card aparece já montado. */
+.blocks-plate:not([data-play]) .brick-drop { visibility: hidden; }
+.blocks-plate[data-play] .brick-drop { animation: brick-drop .42s cubic-bezier(.2, .9, .3, 1.25) both; }
+@keyframes brick-drop { 0% { transform: translateY(-38px); opacity: 0; } 70% { transform: translateY(3px); opacity: 1; } 100% { transform: none; opacity: 1; } }
+:root[data-reduce-motion="true"] .brick-drop { animation: none; }
+@media (prefers-reduced-motion: reduce) { .brick-drop { animation: none; } }
+/* Clássica do armário: 30 usos ou mais (o acabamento vem do uso, nunca do preço) */
+.brick-classic { display: block; margin-top: 3px; background: #1F7A76; color: #fff; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; text-align: center; padding: 2px 4px; border-radius: 2px; }
+.brick-replay { grid-column: 1 / -1; justify-self: end; min-height: 32px; background: #F2CD37; color: #1B2A34; font-family: var(--font-data); font-size: 12px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.22), 0 2px 0 rgba(0,0,0,.25); text-transform: uppercase; }
+.brick-replay:hover { filter: brightness(1.05); }
+

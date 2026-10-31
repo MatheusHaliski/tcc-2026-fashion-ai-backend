@@ -1,6 +1,7 @@
 /** Guard against the typography regressions measured in the FashionAI UX audit. */
 const fs = require('node:fs');
-const css = fs.readFileSync('app/(site)/globals.css', 'utf8');
+const { readCssBundle } = require('./css-bundle.cjs');
+const css = readCssBundle('app/(site)/globals.css');
 const type = fs.readFileSync('lib/design/typography.css', 'utf8');
 const errors = [];
 for (const match of css.matchAll(/font-size:\s*([\d.]+)px/g)) if (Number(match[1]) < 12) errors.push(`CSS: font-size ${match[1]}px`);

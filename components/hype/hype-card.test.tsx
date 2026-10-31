@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+const { readCssBundle } = createRequire(import.meta.url)("../../scripts/ux/css-bundle.cjs");
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, settle, waitFor } from "@/test-utils/render";
 import { PIECE, SCHEME } from "@/test-utils/fixtures";
@@ -103,7 +104,7 @@ describe("FashionCard — frente e verso", () => {
   });
 
   it("movimento reduzido troca o giro 3D por uma troca simples de face (CSS)", () => {
-    const css = readFileSync("app/(site)/globals.css", "utf8");
+    const css = readCssBundle("app/(site)/globals.css");
     const block = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce) {\n  .fcard-inner"));
     expect(block).toMatch(/\.fcard-inner, \.fcard\.is-flipped \.fcard-inner \{ transform: none; transition: none; \}/);
     expect(css).toMatch(/:root\[data-reduce-motion="true"\] \.fcard-inner/);
@@ -233,7 +234,7 @@ describe("verso com arte dinâmica por faixa", () => {
   });
 
   it("o CSS pausa a arte fora do verso, para com movimento reduzido e some no alto contraste", () => {
-    const css = readFileSync("app/(site)/globals.css", "utf8");
+    const css = readCssBundle("app/(site)/globals.css");
     expect(css).toMatch(/\.fcard:not\(\.is-flipped\) \.hype-art[^{]*\{[^}]*animation-play-state: paused/);
     expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.hype-art \*, \.hype-art \{ animation: none/);
     expect(css).toMatch(/data-theme="contrast"\] \.hype-art \{ display: none; \}/);

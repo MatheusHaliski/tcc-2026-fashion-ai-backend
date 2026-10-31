@@ -1,0 +1,133 @@
+/* RF47 · criador de peça: a mesma grade paginada de marcas do provador */
+.catalog-brand-heading { min-height: 34px; }
+.catalog-brand-stage { min-height: 160px; }
+.catalog-brand-grid .fitting-stores { padding: 3px; }
+.fitting-store { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: center; transition: border-color .15s, background .15s; }
+/* marca sem peças do tipo escolhido: continua na grade (todas as marcas), apagada */
+.fitting-store.is-empty:not(.is-active) { opacity: .55; }
+.fitting-store.is-active { border-color: var(--thread); background: var(--thread-soft); }
+.fitting-store:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fitting-store-name { font-weight: 600; font-size: 13px; line-height: 1.2; }
+.aura-hype { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; color: #c7f8ff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-shadow: 0 1px 8px #00162f; background: linear-gradient(135deg, rgba(0, 17, 43, .08), rgba(0, 215, 255, .08), rgba(156, 69, 255, .12)); }
+.aura-hype-grid { position: absolute; inset: 0; opacity: .45; background-image: linear-gradient(rgba(86, 240, 255, .22) 1px, transparent 1px), linear-gradient(90deg, rgba(86, 240, 255, .22) 1px, transparent 1px); background-size: 18px 18px; mask-image: linear-gradient(to bottom, transparent, #000 28%, #000 80%, transparent); }
+.aura-hype-scan { position: absolute; left: 0; right: 0; height: 20%; border-top: 1px solid #b9faff; border-bottom: 1px solid rgba(130, 249, 255, .45); background: linear-gradient(transparent, rgba(20, 226, 255, .26), transparent); animation: aura-hype-scan 3.2s ease-in-out infinite; }
+.aura-hype-node { position: absolute; width: 7px; height: 7px; border-radius: 50%; border: 1px solid #d8fcff; background: #18dffc; box-shadow: 0 0 12px #18dffc; animation: aura-hype-pulse 1.8s ease-in-out infinite; }
+.aura-hype-node.is-one { left: 28%; top: 31%; }.aura-hype-node.is-two { left: 68%; top: 47%; animation-delay: .5s; }.aura-hype-node.is-three { left: 42%; top: 72%; animation-delay: 1s; }
+.aura-hype-readout { position: absolute; top: 10px; left: 10px; display: grid; line-height: 1; }.aura-hype-readout small, .aura-hype-readout em, .aura-hype-metrics { font-size: var(--text-caption); letter-spacing: .12em; font-style: normal; }.aura-hype-readout strong { font-size: 30px; letter-spacing: -.08em; }.aura-hype-readout em { color: #85ffcb; margin-top: 3px; }
+.aura-hype-metrics { position: absolute; right: 9px; bottom: 9px; text-align: right; line-height: 1.55; }
+.aura-hype.is-viral, .aura-hype.is-trending { color: #fff0a5; }.aura-hype.is-viral .aura-hype-node, .aura-hype.is-trending .aura-hype-node { background: #ffd54d; box-shadow: 0 0 12px #ffd54d; }
+@keyframes aura-hype-scan { 0%, 100% { transform: translateY(-15%); opacity: .2; } 48% { transform: translateY(410%); opacity: 1; } }
+@keyframes aura-hype-pulse { 0%, 100% { transform: scale(.7); opacity: .5; } 50% { transform: scale(1.35); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .aura-hype-scan, .aura-hype-node { animation: none; } }
+.fitting-saved { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--line-soft); border-radius: 10px; }
+@media (max-width: 640px) { .fitting-stage { height: 62vh; } .fitting-saved { flex-wrap: wrap; } }
+
+/* RF47 · leitura das características únicas da peça (texto → estampa, logo, cores) e o "por que esta?" do card */
+.design-understood { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.design-chip { padding: 2px 9px; border-radius: 999px; background: var(--thread-soft); color: var(--thread); font-size: 12px; font-weight: 600; }
+.catalog-card-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; }
+.catalog-reasons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.catalog-reason { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; font-size: var(--text-caption); border: 1px solid var(--line-soft); }
+.catalog-reason.is-ok { background: var(--thread-soft); color: var(--thread); border-color: transparent; }
+.catalog-reason.is-miss { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--muted) 60%, transparent); }
+
+/* RF28 — Vista-me: espelho de corpo inteiro com o reflexo do Avatar 3D */
+.mirror-frame { position: relative; padding: 14px; border-radius: 180px 180px 22px 22px; background: linear-gradient(145deg, #E9D9B4 0%, #B8975A 38%, #F3E6C4 52%, #9C7A3E 78%, #D9C08A 100%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 18px 40px -18px rgba(40,30,10,.55); }
+.mirror-glass { position: relative; height: clamp(420px, 62vh, 620px); overflow: hidden; border-radius: 168px 168px 12px 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.18), inset 0 0 40px rgba(0,0,0,.12); }
+.mirror-glass canvas { display: block; }
+.mirror-sheen { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.22) 42%, rgba(255,255,255,0) 55%), linear-gradient(115deg, rgba(255,255,255,0) 62%, rgba(255,255,255,.12) 66%, rgba(255,255,255,0) 72%); mix-blend-mode: screen; }
+.mirror-empty { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(280px, 86%); padding: 12px 14px; text-align: center; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); box-shadow: 0 6px 20px -10px rgba(0,0,0,.4); }
+.mirror-note { margin-top: 10px; text-align: center; font-size: 13px; color: #3b2f17; }
+@media (max-width: 480px) { .mirror-frame { padding: 10px; border-radius: 140px 140px 18px 18px; } .mirror-glass { border-radius: 130px 130px 10px 10px; } }
+/* PROV-2D — Prévia 2D: a foto parada do mesmo avatar ocupa o vidro inteiro, sem distorcer */
+.mirror-still { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; }
+.vista-still { width: 100%; max-width: 220px; aspect-ratio: 1 / 2; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+.vista-still img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+/* ---------- RF25 · criador de selo em etapas (modo → dados → arte → revisar e salvar) ---------- */
+.seal-mode { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 16px; border-radius: 10px; border: 1.5px solid var(--line-soft); background: var(--surface); color: var(--ink); cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.seal-mode:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--line-soft)); }
+.seal-mode.is-active { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.seal-mode:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.seal-mode:disabled { cursor: progress; opacity: .7; }
+.seal-ai-note { padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line-soft)); }
+.seal-ai-note ul { margin: 4px 0 0; padding-left: 18px; list-style: disc; }
+.seal-wizard-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.seal-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; max-height: 248px; overflow-y: auto; padding: 4px; }
+.seal-gallery.is-sheet { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
+.seal-gallery-item { padding: 3px; border-radius: 10px; border: 2px solid transparent; background: var(--surface-2); cursor: pointer; line-height: 0; }
+.seal-gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.seal-gallery.is-sheet .seal-gallery-item img { aspect-ratio: 4 / 5; object-fit: contain; }
+.seal-gallery-item.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
+.seal-gallery-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.seal-review { display: grid; gap: 10px; margin: 0; }
+.seal-review > div { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid var(--line-soft); }
+.seal-review dd { margin: 0; }
+.seal-review .link { margin-left: 6px; color: var(--muted); text-decoration: underline; background: none; border: 0; padding: 0; cursor: pointer; }
+.seal-core-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line-soft); background: var(--surface-2); }
+
+/* RF53 · Insights dinâmicos: faixa no topo das abas com análise (Explorador, Cápsula, Copilot, Autopiloto, Histórico,
+   guarda-roupa). 2–5 cards curtos; o tom vem por ícone + texto (a cor só reforça) e o número aparece sempre em texto. */
+.insight-strip { display: grid; gap: 10px; min-width: 0; padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+.insight-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.insight-heading { margin: 0; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.insight-hint { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.insight-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.insight-card { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 10px 12px; border-radius: var(--radius-sm); border-left: 3px solid var(--line-soft); background: var(--surface-2); }
+.insight-card.is-positive { border-left-color: var(--thread); }
+.insight-card.is-attention { border-left-color: var(--chalk); }
+.insight-card.is-skeleton { gap: 8px; border-left-color: transparent; }
+.insight-tone { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.insight-card.is-positive .insight-tone { color: var(--thread-ink); }
+.insight-card.is-attention .insight-tone { color: var(--chalk-ink); }
+.insight-title { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.3; }
+.insight-text { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink); }
+.insight-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 2px 0 0; padding-top: 4px; border-top: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); }
+.insight-metric b { font-family: var(--font-data); font-size: 13px; color: var(--ink); white-space: nowrap; }
+.insight-cta { display: inline-flex; align-items: center; gap: 2px; width: fit-content; min-height: 28px; margin-top: auto; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.insight-cta:hover { color: var(--thread-ink); }
+.insight-cta:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.insight-basis { margin: 0; font-size: var(--text-caption); color: var(--faint); }
+.insight-empty { margin: 0; font-size: 13px; color: var(--muted); }
+.insight-error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+.insight-error p { margin: 0; }
+.insight-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-top: 8px; font-size: var(--text-caption); color: var(--faint); }
+.insight-ai { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+:root[data-theme="contrast"] .insight-card { border: 1px solid var(--line-soft); border-left-width: 3px; }
+:root[data-theme="contrast"] .insight-card.is-positive { border-left-color: var(--thread); }
+:root[data-theme="contrast"] .insight-card.is-attention { border-left-color: var(--chalk); }
+@media (pointer: coarse) { .insight-cta, .insight-ai { min-height: var(--touch); } }
+
+/* RF53 · Ranking de HypeScore (Explorador): tipo e janela mudam o contexto; região, país, categoria e subcategoria são
+   filtros. "Hype por região" = lista de barras com o valor sempre em texto (a barra só reforça); a posição do ranking
+   reaproveita o .trend-rank e as peças do look, o .hype-look-pieces da análise completa. */
+.hype-ranking { display: grid; gap: 12px; min-width: 0; }
+.hype-ranking-context, .hype-ranking-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.hype-ranking-filters .dd { min-width: 0; max-width: 100%; }
+.hype-ranking-cats .chip[aria-checked="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.hype-ranking-cats .seg-count { margin-left: 6px; font-family: var(--font-data); font-size: var(--text-caption); opacity: .75; }
+.hype-region-compare { display: grid; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+.hype-region-compare h3 { margin: 0; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.hype-region-bars { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.hype-region-row { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 32px; padding: 4px 6px; border: 0; border-radius: var(--radius-sm); background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hype-region-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.hype-region-row[aria-pressed="true"] { background: var(--thread-soft); }
+.hype-region-row[aria-pressed="true"] .hype-region-name { font-weight: 700; }
+.hype-region-row.is-world { cursor: default; border-bottom: 1px dashed var(--line-soft); border-radius: 0; }
+.hype-region-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.hype-region-track { height: 10px; overflow: hidden; border-radius: 999px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-soft); }
+.hype-region-fill { display: block; height: 100%; border-radius: inherit; background: var(--thread); }
+.hype-region-row.is-world .hype-region-fill { background: var(--muted); }
+.hype-region-value { font-family: var(--font-data); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.hype-region-value b { color: var(--ink); font-size: 13px; }
+.hype-ranking-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.hype-ranking-meta .type-caption { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hype-ranking-look { display: grid; gap: 6px; width: 100%; }
+.hype-ranking-toggle { display: inline-flex; align-items: center; gap: 4px; width: fit-content; min-height: 28px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.hype-ranking-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.hype-ranking-look .hype-look-pieces > li { grid-template-columns: 36px minmax(0, 1fr) auto; padding: 4px 6px; }
+.hype-ranking-look .hype-look-piece-ph { width: 36px; height: 36px; }
+@media (max-width: 639px) { .hype-region-row { grid-template-columns: minmax(0, 1fr) auto; } .hype-region-track { grid-column: 1 / -1; grid-row: 2; } }
+@media (pointer: coarse) { .hype-region-row, .hype-ranking-toggle { min-height: var(--touch); } }
+:root[data-theme="contrast"] .hype-region-fill { background: var(--ink); }
+

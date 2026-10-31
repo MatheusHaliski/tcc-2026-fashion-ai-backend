@@ -1,0 +1,161 @@
+/* ---------- Card de peça: cabeçalho → foto reduzida → identidade e informações → ações ---------- */
+.fai-card.piece-card { container-type: inline-size; }
+.piece-card .pc-header { min-height: 48px; padding: 6px 12px; gap: 8px; }
+.fai-card .c-who-link { color: inherit; text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.piece-card .pc-media { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface-2); }
+.piece-card .pc-media img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; }
+.piece-card .pc-media img.is-cover { object-fit: cover; }
+.piece-card .pc-media img.is-contain { object-fit: contain; padding: 9%; }
+.piece-card .pc-flags { position: absolute; z-index: 2; left: 8px; top: 8px; display: flex; gap: 4px; }
+.piece-card .pc-flag { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.92); color: #191A19; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; letter-spacing: .03em; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.piece-card .pc-flag.is-fav { color: #B8862B; font-size: 13px; }
+/* até quatro selos (IA, indisponível, para doar, favorita): quebram linha em vez de vazar do card estreito */
+.piece-card .pc-flags { flex-wrap: wrap; max-width: calc(100% - 16px); }
+.piece-card .pc-flag.is-donate { color: #165C58; }
+.piece-card .pc-seal { position: absolute; z-index: 2; right: 6px; top: 6px; }
+.piece-card .pc-id { display: grid; gap: 8px; padding: 10px 12px 12px; min-width: 0; }
+.piece-card .pc-name { font-family: var(--font-editorial); font-weight: var(--card-title-weight, 600); font-size: 16px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.piece-card .pc-name-link { color: inherit; text-decoration: none; min-width: 0; }
+/* Ocasião e estilo têm posição própria e leitura completa; não viram uma
+   legenda minúscula sobre a fotografia nem dependem da aba Hype estar aberta. */
+.fai-card { --card-info-radius: 12px; --card-info-min-height: 76px; --card-info-gap: 12px; --card-info-value-size: 16px; --card-detail-min-height: 56px; --card-tab-min-height: 44px; --card-hype-value-size: 22px; }
+.fai-card .card-fashion-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-info-gap); min-width: 0; margin: 0; padding: 0; }
+.card-fashion-meta > div { min-width: 0; min-height: var(--card-info-min-height); padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: var(--card-info-radius); }
+.card-fashion-meta dt { margin-bottom: 3px; font-family: var(--font-ui); font-size: 12px; line-height: 1.3; font-weight: 500; color: var(--card-muted, var(--muted)); }
+.card-fashion-meta dd { margin: 0; font-family: var(--font-ui); font-size: var(--card-info-value-size); line-height: 1.4; font-weight: 600; white-space: normal; overflow-wrap: anywhere; }
+.fai-card .card-seals { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.card-seals .seal-slot { position: static; flex-wrap: wrap; width: auto; max-width: 100%; height: auto; gap: 6px; }
+.card-seals .seal-slot .seal-medallion + .seal-medallion { margin-left: 0; }
+.card-seals .seal-medallion:not(.has-design) { flex: none; width: 44px; height: 44px; }
+
+/* A fotografia ocupa menos altura; o resumo abaixo permanece legível e estável. */
+.card-meta-colors { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.card-meta-more { font-size: 12px; font-weight: 600; color: var(--card-muted, var(--muted)); }
+.fai-card .card-fashion-meta .pc-info-color i { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #0003; }
+.piece-card[data-card-mode="feed"] .pc-id { padding: 14px 16px; gap: 12px; }
+.fai-card[data-card-mode="feed"] :is(.pc-name, .c-title) { min-height: 24px; font-size: 18px; line-height: 1.3; }
+.fai-card[data-card-mode="feed"] :is(.c-total, .pc-price) { min-height: 24px; font-size: 16px; line-height: 1.5; }
+.fai-card[data-card-mode="feed"] :is(.c-desc, .c-titleblock > .type-caption) { font-size: 14px; line-height: 1.4; }
+.fai-card[data-card-mode="feed"] .pc-info { gap: 12px; }
+.fai-card[data-card-mode="feed"] .pc-info > div { min-width: 0; min-height: var(--card-detail-min-height); padding: 6px 10px; border: 1px solid var(--line-soft); border-radius: 10px; }
+.fai-card[data-card-mode="feed"] .pc-info dd { font-size: 16px; line-height: 1.4; }
+.fai-card[data-card-mode="feed"] .pc-seg { border-radius: 12px; }
+.fai-card[data-card-mode="feed"] .pc-seg-btn { min-width: 0; min-height: var(--card-tab-min-height); padding-inline: 6px; border-radius: 10px; font-size: 14px; letter-spacing: 0; }
+.fai-card[data-card-mode="feed"] .pc-seg-btn > span { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
+.fai-card[data-card-mode="feed"] .pc-tab-live-score .hype-badge { min-width: 48px; min-height: 28px; border-radius: 8px; justify-content: center; }
+.fai-card[data-card-mode="feed"] .pc-tab-live-score .hype-badge b { font-size: 16px; }
+.fai-card[data-card-mode="feed"] .fashion-hype-cell { min-height: var(--card-detail-min-height); padding: 8px 6px; border-radius: var(--card-info-radius); }
+.fai-card[data-card-mode="feed"] .fashion-hype-cell dd { font-size: var(--card-hype-value-size); }
+/* O acabamento do preset pode ser claro: o número usa a tinta legível do
+   container, sem desaparecer em branco sobre branco nos atributos altos. */
+.fai-card[data-card-mode="feed"] .pc-panels .fashion-hype-cell[data-tone] dd { color: var(--card-ink, var(--ink)); }
+.card-fashion-meta .brand-logo-name { white-space: normal; overflow: visible; font-size: 16px; line-height: 1.4; }
+.fai-card.scheme-card-social .c-titleblock { gap: 10px; padding: 14px 16px; }
+.scheme-card-social .pc-panels { padding: 0 16px 14px; }
+.scheme-card-social .c-photo.is-look img { object-fit: contain; padding: 8px; }
+.scheme-card-social .scheme-container > :is(.runway, .bento) { aspect-ratio: 4 / 3; }
+/* As coordenadas antigas de Total frame foram calculadas em 3:4: manter esse
+   palco dentro da foto menor evita cortar a peça antes da renderização do lote. */
+.piece-card[data-card-mode="feed"] .pc-media[data-photo-framing="WHOLE"] .catalog-photo.is-whole:not([data-rendered]) {
+  inset: 0 auto 0 50%; width: auto; height: 100%; aspect-ratio: 3 / 4; max-width: 100%; transform: translateX(-50%);
+}
+
+.piece-card .pc-name-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+.piece-card .pc-sub { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* tags essenciais (até dois estilos): uma linha pequena e discreta, cortada com reticências — nunca disputa com a foto */
+.piece-card .pc-tags { display: block; min-width: 0; font-size: var(--text-caption); line-height: 1.3; letter-spacing: .02em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-price { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+/* RF23.CA13 — preço convertido para a moeda do usuário: o original fica ao lado, menor e discreto */
+.price-converted { white-space: nowrap; }
+.price-original { font-size: 0.85em; font-weight: 400; color: var(--muted); }
+.pc-sale { font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; background: var(--thread-soft); color: var(--thread-ink); }
+.piece-card .pc-select { display: block; width: 100%; }
+.piece-card .pc-select .pc-id { padding-top: 8px; }
+/* card estreito (2 colunas no celular): menos respiro lateral, a mesma altura de toque */
+/* (compartilhar fica só com o ícone ali; o número segue no nome acessível e no detalhe) */
+@container (max-width: 200px) {
+  .fai-card.piece-card .c-post .c-actions { justify-content: space-between; padding: 2px 2px; }
+  .fai-card.piece-card .c-post .c-actions .grow { display: none; }
+  .fai-card.piece-card .c-post .c-act { padding: 0 3px; gap: 2px; min-width: 26px; font-size: 12px; }
+  .fai-card.piece-card .c-post .c-act.is-share .c-act-n { display: none; }
+  .fai-card.piece-card .c-post .c-act.is-remix .c-act-n { display: none; }
+  .piece-card .c-act-icon { width: 20px; height: 20px; }
+  .piece-card .pc-id { padding: 0 10px 10px; }
+}
+
+/* ---------- Detalhe da peça: imagem dominante; no desktop, foto à esquerda e informações à direita ---------- */
+.dialog.dialog-card.is-piece { max-width: min(1040px, 100%); }
+.expanded-page:has(> .piece-detail) { max-width: 1040px; }
+.fai-card.piece-detail { container-type: inline-size; }
+.piece-detail .pd-layout { display: grid; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 760px) {
+  .piece-detail .pd-layout { grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr); align-items: start; }
+  .piece-detail .pd-media { position: sticky; top: 0; }
+  .piece-detail .pd-info { border-left: 1px solid var(--line-soft); }
+}
+.piece-detail .pd-media { position: relative; }
+.pd-gallery { position: relative; }
+.pd-slide { display: block; width: 100%; aspect-ratio: 4 / 5; padding: 0; border: 0; background: var(--surface-2); cursor: zoom-in; overflow: hidden; }
+.pd-slide img { display: block; width: 100%; height: 100%; }
+.pd-slide img.is-contain { object-fit: contain; }
+.pd-slide.is-catalog-crop { position: relative; }
+.pd-slide img.is-cover { object-fit: cover; }
+.pd-slide:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+.pd-slide-tag { position: absolute; left: 10px; top: 10px; padding: 2px 9px; border-radius: 999px; background: rgba(255,255,255,.92); color: #191A19; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; pointer-events: none; }
+.pd-nav { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: var(--touch); height: var(--touch); border-radius: 999px; background: rgba(255,255,255,.9); color: #191A19; font-size: 24px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.pd-nav.is-prev { left: 8px; } .pd-nav.is-next { right: 8px; }
+.pd-nav:focus-visible, .pd-dot:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pd-dots { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: flex; gap: 2px; padding: 2px 6px; border-radius: 999px; background: rgba(0,0,0,.28); }
+.pd-dot { width: 24px; height: 24px; display: grid; place-items: center; }
+.pd-dot::after { content: ""; width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.6); }
+.pd-dot[aria-current="true"]::after { background: #fff; transform: scale(1.2); }
+.pd-busy { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--surface) 70%, transparent); font-size: var(--text-body); }
+.piece-detail .pd-info { display: flex; flex-direction: column; min-width: 0; }
+.piece-detail .pd-id { display: grid; gap: 6px; padding: 14px 16px 8px; }
+.piece-detail .pd-name { margin: 0; font-family: var(--font-editorial); font-weight: 600; font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
+.piece-detail .pd-brand { margin: 0; font-size: 13px; color: var(--muted); }
+.piece-detail .pd-cta { justify-self: start; margin-top: 6px; min-width: 200px; }
+@media (max-width: 639px) { .piece-detail .pd-cta { justify-self: stretch; } }
+.piece-detail .pd-section { padding: 12px 16px; border-top: 1px solid var(--line-soft); }
+.piece-detail .pd-h { margin: 0 0 8px; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.piece-detail .c-facts { padding: 0; }
+.piece-detail .pd-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.piece-detail .pd-tech { padding: 10px 16px 14px; border-top: 1px solid var(--line-soft); }
+.piece-detail .pd-tech > summary { cursor: pointer; font-size: 12px; color: var(--muted); min-height: 32px; display: flex; align-items: center; }
+.piece-detail .pd-tech[open] > summary { margin-bottom: 6px; }
+.piece-detail .c-post { border-top: 1px solid var(--line-soft); background: transparent; }
+
+/* ---------- Modelo 3D compacto (estado → uma ação) ---------- */
+.m3d-compact { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.m3d-bar { display: inline-block; width: 140px; height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.m3d-bar > span { display: block; height: 100%; background: var(--ink); transition: width .7s; }
+
+/* ---------- Editar imagem (dono) ---------- */
+.ei-frame { position: relative; aspect-ratio: 4 / 5; border: 1px solid var(--line-soft); border-radius: 8px; overflow: hidden; background: var(--surface-2); }
+.ei-frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ei-frame.is-full { aspect-ratio: auto; max-height: 240px; }
+.ei-frame.is-full img { max-height: 240px; }
+.ei-frame.is-checker { background-color: #fff; background-image: linear-gradient(45deg, #e6e6e6 25%, transparent 25%), linear-gradient(-45deg, #e6e6e6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e6e6e6 75%), linear-gradient(-45deg, transparent 75%, #e6e6e6 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0; }
+/* Editar imagem › Enquadramento (quadro 4:5 em escalas fixas) e Recorte (janela livre): o fora do quadro escurece;
+   alças nos cantos por dentro da janela (o palco corta o que passa da foto) */
+.qc-stage { position: relative; justify-self: center; max-width: 100%; overflow: hidden; border-radius: 8px; background: var(--surface-2); touch-action: none; user-select: none; }
+.qc-stage img { display: block; max-width: 100%; max-height: 60vh; pointer-events: none; }
+.qc-stage.is-window { cursor: crosshair; }
+.qc-rect { position: absolute; box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.5); outline: 2px solid #fff; cursor: move; }
+.qc-handle { position: absolute; width: 16px; height: 16px; background: #fff; border: 2px solid var(--ink, #111); border-radius: 3px; }
+.qc-handle.is-nw { left: -2px; top: -2px; cursor: nwse-resize; }
+.qc-handle.is-ne { right: -2px; top: -2px; cursor: nesw-resize; }
+.qc-handle.is-sw { left: -2px; bottom: -2px; cursor: nesw-resize; }
+.qc-handle.is-se { right: -2px; bottom: -2px; cursor: nwse-resize; }
+@media (min-width: 900px) {
+  .dialog-card.is-piece .piece-detail .pd-slide { max-height: calc(90dvh - 52px); }
+  .dialog-card.is-piece .piece-detail .pd-info { max-height: calc(90dvh - 52px); overflow-y: auto; }
+}
+.piece-detail .pd-warn { flex-basis: 100%; margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--chalk-soft); color: var(--chalk-ink); font-size: 13px; }
+.menu-pop.is-up { top: auto; bottom: calc(100% + 6px); }
+@container (max-width: 200px) { .fai-card.piece-card .c-post .c-act-n { font-size: var(--text-caption); letter-spacing: -.02em; } }
+.m3d-bar.is-indeterminate > span { width: 35%; animation: m3d-indet 1.6s ease-in-out infinite; }
+@keyframes m3d-indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(290%); } }
+@media (prefers-reduced-motion: reduce) { .m3d-bar.is-indeterminate > span { animation: none; width: 100%; opacity: .45; } }
+:root[data-reduce-motion="true"] .m3d-bar.is-indeterminate > span { animation: none; width: 100%; opacity: .45; }
+
