@@ -882,7 +882,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/catalog/canonical_full_frame.py": {
-   "max": 345,
+   "max": 259,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/catalog/canonical_photo_guided.py": {
