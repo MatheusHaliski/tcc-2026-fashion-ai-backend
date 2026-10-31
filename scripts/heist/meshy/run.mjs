@@ -94,7 +94,13 @@ async function api(method, url, body) {
 }
 async function waitTask(id, label) {
   for (;;) {
-    const t = await api("GET", `/openapi/v2/text-to-3d/${id}`);
+    let t;
+    try { t = await api("GET", `/openapi/v2/text-to-3d/${id}`); }
+    catch (e) {
+      // tarefa desconhecida para esta chave (outra conta, id apagado): descarta o id guardado e pede de novo
+      if (/→ 404:/.test(String(e.message))) throw new Error(`${label}: NOT_FOUND — tarefa ${id} desconhecida; será pedida de novo`);
+      throw e;
+    }
     if (t.status === "SUCCEEDED") return t;
     if (t.status === "FAILED" || t.status === "CANCELED") throw new Error(`${label}: ${t.status} — ${t.task_error?.message ?? "sem detalhe"}`);
     log(`  ${label}: ${t.status} ${t.progress ?? 0}%${t.preceding_tasks ? ` (${t.preceding_tasks} na fila)` : ""}`);
@@ -135,8 +141,8 @@ async function generate(b) {
   } catch (e) {
     st.error = String(e.message ?? e); st.errorAt = Date.now(); save();
     // geometria reprovada: a próxima rodada pede de novo
-    if (/geometria: (FAILED|CANCELED)/.test(st.error)) delete st.preview;
-    if (/textura: (FAILED|CANCELED)/.test(st.error)) delete st.refine;
+    if (/geometria: (FAILED|CANCELED|NOT_FOUND)/.test(st.error)) delete st.preview;
+    if (/textura: (FAILED|CANCELED|NOT_FOUND)/.test(st.error)) { delete st.refine; if (/NOT_FOUND/.test(st.error)) delete st.preview; }
     log(`${b.model}: ERRO ${st.error}`);
   }
 }

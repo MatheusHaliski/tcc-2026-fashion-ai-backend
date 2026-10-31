@@ -114,6 +114,18 @@ describe("combate: vida implícita por sala, vida baixa e game over", () => {
     expect(hg.shots).toBeGreaterThan(0);
   });
 
+  it("um segundo tiro não tira do pânico quem já se encolheu (a onda de pânico só vale para quem entra agora)", () => {
+    const s = newSim([], undefined, { beats: false });
+    s.player.inv.weapons.push("pistol"); s.player.inv.ammo = 40; equip(s, "pistol");
+    place(s, -6, 4, "salao"); for (const g of s.guards) g.active = false;
+    const near = () => s.civs.filter((c) => c.role !== "paparazzo" && c.role !== "vendor" && Math.hypot(c.pos.x - s.player.pos.x, c.pos.z - s.player.pos.z) < 12);
+    const panicking = (k: string) => expect(near().every((c) => c.anim === "cower" || c.anim === "flee"), k).toBe(true);
+    step(s, ctx, idle({ aim: true, firePress: true }), 1 / 60);
+    run(s, 2); panicking("2 s depois do primeiro tiro");
+    step(s, ctx, idle({ aim: true, firePress: true }), 1 / 60); s.events.length = 0;
+    for (let k = 0; k < 30; k++) { panicking(`quadro ${k} depois do segundo tiro`); step(s, ctx, idle(), 1 / 60); s.events.length = 0; }
+  });
+
   it("com vida baixa ela anda mais devagar, não corre e apanha mais", () => {
     const fast = newSim([]), slow = newSim([]);
     slow.player.hp = 18;
