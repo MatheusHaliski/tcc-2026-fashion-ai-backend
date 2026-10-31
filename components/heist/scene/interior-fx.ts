@@ -6,6 +6,8 @@
  * contorno ciano da Visão nos interativos, os giroflex do alarme, o halo das velas, as portas e as telas.
  */
 import * as THREE from "three";
+import { areaKeys } from "./areas";
+import type { KeyDef as AreaKeyDef } from "./areas/types";
 import { DOORS, INTERACTS, RACKS, baseProps } from "@/lib/heist/level";
 import type { DoorId, RoomId } from "@/lib/heist/types";
 import type { SceneView } from "@/lib/heist/view";
@@ -179,7 +181,7 @@ export function flickerOf(a: LightAnchor, t: number): number {
 }
 
 /* ---------- luz-chave com sombra (só "high") ---------- */
-interface KeyDef { p: [number, number, number]; aim: [number, number, number]; angle: number; i: number; color: string }
+type KeyDef = AreaKeyDef;
 /** A fonte principal de cada sala (lustre, refletor, luminária de teto) — a única luz interna que faz sombra. */
 const KEYS: Partial<Record<InteriorRoom, KeyDef[]>> = {
   vestibulo: [{ p: [0, 6.05, 19.5], aim: [0, 0, 19.2], angle: 1.0, i: 60, color: "#ffd9a8" }],
@@ -214,7 +216,7 @@ export class KeyLight {
     this.light = l;
   }
   update(room: RoomId, px: number, pz: number, dt: number, gain: number) {
-    const list = isInterior(room) ? KEYS[room] : undefined;
+    const list = isInterior(room) ? areaKeys(room) ?? KEYS[room] : undefined;
     let want: KeyDef | null = null, best = 1e9;
     for (const k of list ?? []) { const d = Math.hypot(k.aim[0] - px, k.aim[2] - pz) - (k === this.cur ? 2.5 : 0); if (d < best) { best = d; want = k; } }
     const rate = this.first ? 1e9 : dt * 3.5;

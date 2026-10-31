@@ -28,13 +28,13 @@ export type Motion =
   | "idle" | "walk" | "run" | "sneak" | "crouch" | "discreet" | "tired" | "talk" | "phone" | "drink" | "photo" | "cheer"
   | "serve" | "guard" | "aim" | "shoot" | "reload" | "melee" | "stab" | "takedown" | "knockedOut" | "dead" | "downed"
   | "change" | "pickpocket" | "interact" | "climb" | "crawl" | "celebrate" | "dance" | "wave" | "sit" | "queue" | "look"
-  | "point" | "cower" | "flee" | "play";
+  | "point" | "cower" | "flee" | "play" | "dj" | "eat";
 export const MOTIONS: readonly Motion[] = ["idle", "walk", "run", "sneak", "crouch", "discreet", "tired", "talk", "phone", "drink", "photo", "cheer",
   "serve", "guard", "aim", "shoot", "reload", "melee", "stab", "takedown", "knockedOut", "dead", "downed",
   "change", "pickpocket", "interact", "climb", "crawl", "celebrate", "dance", "wave", "sit", "queue", "look",
-  "point", "cower", "flee", "play"];
+  "point", "cower", "flee", "play", "dj", "eat"];
 /** Objeto na mão: muda a mão (punho fechado) e alguns gestos (taça → bebe, celular → orelha). */
-export type Grip = "pistol" | "knife" | "camera" | "tray" | "phone" | "glass" | "flashlight" | "tablet" | "diamond" | "violin" | null;
+export type Grip = "pistol" | "knife" | "camera" | "tray" | "phone" | "glass" | "flashlight" | "tablet" | "diamond" | "violin" | "plate" | "headphones" | null;
 
 /** Duração de cada gesto com começo e fim (s); os outros repetem enquanto durarem. */
 export const MOTION_DURATION: Partial<Record<Motion, number>> = {
@@ -531,6 +531,9 @@ function pose(r: Rig, st: MotionState, m: Motion, t: number, inp: MotionInput) {
     case "wave": armsFree(r, st, walking, g, 0.5); wave(r, st, t); break;
     case "interact": interact(r, st, t); break;
     case "play": play(r, st, t); break;
+    // provisórios até a animação própria: DJ mexendo no console (mãos à frente) e comer (mão à boca, como beber)
+    case "dj": interact(r, st, t); break;
+    case "eat": armsFree(r, st, walking, g, 0.7); drink(r, st, t); break;
     case "discreet": discreet(r, st, walking); break;
     case "flee": armsFree(r, st, walking, g, 1.25); twist(r, r.k.Neck, 28 * D * pulse(0.5, 1.5, 0.3, (st.t + st.seed) % 3.2)); break;
     default:

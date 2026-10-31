@@ -155,4 +155,4 @@ export function placeInHand(rig: Rig, side: 0 | 1, obj: THREE.Object3D) {
   const hand = rig.bones[rig.k[side ? "RightHand" : "LeftHand"]]; hand.add(obj);
 }
 /** Mão usada por cada objeto (bandeja, taça, diamante e tablet na esquerda; o resto na direita). */
-export const HOLD_SIDE: Record<Exclude<Hold, null>, 0 | 1> = { pistol: 1, knife: 1, flashlight: 1, camera: 1, phone: 1, tablet: 0, glass: 0, tray: 0, diamond: 0, violin: 1 };
+export const HOLD_SIDE: Record<Exclude<Hold, null>, 0 | 1> = { pistol: 1, knife: 1, flashlight: 1, camera: 1, phone: 1, tablet: 0, glass: 0, tray: 0, diamond: 0, violin: 1, plate: 0, headphones: 1 };

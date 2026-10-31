@@ -50,7 +50,10 @@ function Rig({ cam, view, ready }: { cam: (typeof CAMS)[string]; view: React.Mut
 export default function HeistRuaScene() {
   const params = useMemo(() => new URLSearchParams(typeof location === "undefined" ? "" : location.search), []);
   const key = params.get("cam") ?? "avenida", q = (params.get("q") === "low" ? "low" : "high") as "high" | "low", post = params.get("fx") !== "0";
-  const cam = CAMS[key] ?? CAMS.avenida;
+  // câmera livre para as capturas das áreas: ?pos=x,y,z&target=x,y,z[&player=x,y,z][&fov=n]
+  const n = (k: string, len: number) => { const v = (params.get(k) ?? "").split(",").map(Number); return v.length === len && v.every(Number.isFinite) ? v as [number, number, number] : null; };
+  const fp = n("pos", 3), ft = n("target", 3);
+  const cam = fp && ft ? { pos: fp, target: ft, player: n("player", 3) ?? [fp[0], -1.6, fp[2]] as [number, number, number], fov: Number(params.get("fov")) || undefined } : CAMS[key] ?? CAMS.avenida;
   const view = useRef<SceneView>((() => { const v = emptyView(); v.playerRoom = "rua"; v.doors = { ...v.doors, front: params.get("door") === "1", dockGate: false, carpetGate: false } as SceneView["doors"]; return v; })());
   return (
     <Canvas shadows={q === "high"} dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: true }} camera={{ fov: 55, near: 0.05, far: 500, position: cam.pos }}

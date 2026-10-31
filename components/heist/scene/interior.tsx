@@ -80,6 +80,7 @@ export function HeistInterior({ view, quality }: { view: React.MutableRefObject<
     updateVision(b.vision, v, t, dt);
     updateHalos(b.halos, t);
     updateAnimated(b.animated, v, t);
+    for (const k of b.ticks) if (s.seen.has(k.room)) k.tick(t, dt, v);
     for (const c of b.cones) if (c.room === "cofre") c.mesh.visible = v.lasersPowered;
     prep.mirror?.update(state.gl, state.scene, cam, hide);
     s.first = false;

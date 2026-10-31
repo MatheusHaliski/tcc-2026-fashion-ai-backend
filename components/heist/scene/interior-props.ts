@@ -8,6 +8,7 @@
  * luz (LightAnchor) para o conjunto de luzes dinâmicas do interior.
  */
 import * as THREE from "three";
+import { areaProp } from "./areas";
 import type { Prop, RoomId } from "@/lib/heist/types";
 import { Batch, BOX0, CYL, CYL0, Instances, SPH, geo, mat, mul } from "./interior-batch";
 import { M, fabric, glass, glow, solid, type Palette } from "./interior-mats";
@@ -130,9 +131,11 @@ export function cctvTexture(k: number): THREE.CanvasTexture {
 
 /* ======================= construtores por tipo ======================= */
 /** Tipos de móvel com construtor próprio (o resto vira um bloco preto — o teste garante que nenhum do interior cai nele). */
-export const BUILT_KINDS = new Set<Prop["kind"]>(["column", "table", "stage", "screen", "desk", "sofa", "planter", "bar", "mirror", "piano", "steamer", "mannequin", "case", "bench", "statue", "pedestal", "monitor", "safe", "panel", "crate", "coatcheck", "detector", "rope", "rack", "floral"]);
+export const BUILT_KINDS = new Set<Prop["kind"]>(["column", "table", "stage", "screen", "desk", "sofa", "planter", "bar", "mirror", "piano", "steamer", "mannequin", "case", "bench", "statue", "pedestal", "monitor", "safe", "panel", "crate", "coatcheck", "detector", "rope", "rack", "floral", "fixture"]);
 export function buildProp(p: Prop, c: PropsCtx) {
   const f = foot(p), room = p.room as InteriorRoom, P = c.P;
+  // a área da sala desenha o móvel (areas/*): móveis próprios ("fixture") e versões dela dos genéricos
+  const own = areaProp(p); if (own) return own(p, c);
   switch (p.kind) {
     case "column": return column(c, room, f);
     case "table": return p.room === "lounge" ? sideTable(c, room, f) : cocktailTable(c, room, f, p.id);
@@ -159,6 +162,7 @@ export function buildProp(p: Prop, c: PropsCtx) {
     case "rope": return rope(c, room, f);
     case "rack": return rack(c, room, f, p.id);
     case "floral": return;                                                       // a instalação floral é de interior-hall
+    case "fixture": return box(c, room, P.black, f, 0, 0, 0, f.w, p.height === "tall" ? 2 : 0.9, f.d);   // sem construtor na área ainda
     default: box(c, room, P.black, f, 0, 0, 0, f.w, 1, f.d);
   }
 }

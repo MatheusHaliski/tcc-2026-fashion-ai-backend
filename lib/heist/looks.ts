@@ -142,6 +142,10 @@ export const LOOKS: Record<LookId, LookTemplate[]> = {
     [P("cur-blouse", "upper", "UPPER", "blouse", "#f0ece4"), P("cur-blazer", "outer", "UPPER", "blazer", "#22242c", LAPEL), P("cur-pants", "lower", "LOWER", "tailored_pants", "#22242c"), P("cur-shoes", "shoes", "SHOES", "loafers", "#141414")])],
   bartender: [T("bartender-0", "bartender", "MASCULINO", 1.78, 0.3, SKIN.brown, SHORT_WAVY_M(HAIR_C.black), FACE_M("#16100d", 0.7, "#7a4a3a"),
     [P("bar-shirt", "upper", "UPPER", "shirt", "#121214"), P("bar-vest", "outer", "UPPER", "vest", "#2a2a30"), P("bar-pants", "lower", "LOWER", "tailored_pants", "#121214"), P("bar-shoes", "shoes", "SHOES", "oxford_shoes", "#0a0a0a")])],
+  // provisórios (o módulo de pessoas refina): DJ de terno escuro sem gravata e chef de dólmã branco
+  dj: [T("dj-0", "dj", "MASCULINO", 1.8, 0.2, SKIN.deep, SHORT_M(HAIR_C.black), FACE_M("#120c0a", 0.4, "#6a3a32"), tux("dj0").map((p) => (p.id.endsWith("jacket") ? { ...p, colorHex: "#141418" } : p)))],
+  chef: [T("chef-0", "chef", "MASCULINO", 1.76, 0.5, SKIN.light, CAP("#f4f2ee", HAIR_C.brown), FACE_M("#2a1e18", 0.3),
+    [P("chef-coat", "upper", "UPPER", "shirt", "#f6f4ef"), P("chef-pants", "lower", "LOWER", "tailored_pants", "#1a1a1e"), P("chef-shoes", "shoes", "SHOES", "oxford_shoes", "#0c0c0c")])],
   musician: [
     T("musician-0", "musician", "FEMININO", 1.67, 0, SKIN.light, LONG_STRAIGHT(HAIR_C.chestnut), FACE_F("#9a3a48", "#3a2a20", 1, "#5a4038"), [P("mus-gown", "full", "FULL_BODY", "dress", "#0d0d10", { ...DIM("FLOOR_LENGTH", "STRAPLESS"), material: "SATIN" }), P("mus-heels", "shoes", "SHOES", "heels", "#0a0a0a")]),
     T("musician-1", "musician", "MASCULINO", 1.79, 0.1, SKIN.medium, SHORT_M(HAIR_C.black), FACE_M("#1a1210", 0.2), tux("mus1").map((p) => (p.id.endsWith("jacket") ? { ...p, colorHex: "#0f1013" } : p)), { bowtie: true }),

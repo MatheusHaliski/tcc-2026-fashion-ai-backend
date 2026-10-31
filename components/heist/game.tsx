@@ -21,7 +21,7 @@ import { floorKind, wallBetween } from "@/lib/heist/world";
 import { useReducedMotion } from "@/components/three/common";
 import { HeistControls } from "./input";
 import { HeistAudio } from "./audio";
-import { HeistCamera } from "./camera";
+import { HeistCamera, type LabShot } from "./camera";
 import { HeistFx } from "./fx";
 import { Hud, type HudState, type Line } from "./hud";
 import { hudOf } from "./hud-state";
@@ -116,11 +116,13 @@ function Driver({ sim, ctx, view, controls, audio, settings, running, slowMo, on
 
 export interface HeistGameProps {
   cards: HeistCard[]; onExit?: () => void; debug?: boolean; quality?: "high" | "low"; startAt?: string;
+  /** laboratório: câmera parada num enquadramento (?shot=) para fotografar pessoas e cenário em jogo */
+  labShot?: LabShot | null;
   /** laboratório: expõe a simulação em `window.__heist` (testes de jogo e capturas automáticas) */
   labHandle?: boolean;
 }
 
-export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, labHandle = false }: HeistGameProps) {
+export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, labHandle = false, labShot = null }: HeistGameProps) {
   const { t, locale } = useI18n();
   const reduced = useReducedMotion();
   const ctx = useMemo(() => simCtx(), []);
@@ -174,13 +176,14 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
     w.__heist = { get s() { return sim.current.s; }, ctx, step: (inp: Parameters<typeof step>[2], dt: number) => step(sim.current.s, ctx, inp, dt), interact: () => onUiRef.current(interact(sim.current.s, ctx)), loading: () => loadingRef.current, takeDiamond: () => { startCutscene(sim.current.s); skipCutscene(sim.current.s); }, hurt: (n: number, by: string) => { const t = sim.current.s.guards.find((g) => g.id === by); damagePlayer(sim.current.s, n, t ? t.pos : sim.current.s.player.pos, by); } };
     return () => { delete w.__heist; };
   }, [labHandle, ctx]);
-  // laboratório: começar num checkpoint (?at=salao, cofre…)
-  useEffect(() => {
-    if (!startAt) return;
-    const s = sim.current.s;
+  // laboratório: começar num checkpoint (?at=salao, cofre…) — também depois de "Começar", que cria a partida de novo
+  const labTeleport = useCallback((s: SimState) => {
+    if (!startAt) return false;
     const cp = { salao: { x: 0, z: 12.6 }, servico: { x: -19.2, z: 15.2 }, cofre: { x: -14, z: -15 }, vestibulo: { x: 0, z: 22.6 }, terraco: { x: 20.6, z: -14 } }[startAt];
-    if (cp) { s.player.pos = { ...cp }; s.player.y = 0; s.player.inv.wristband = true; }
+    if (cp) { s.player.pos = { ...cp }; s.player.y = 0; s.player.inv.wristband = true; s.player.lastRoom = startAt as SimState["player"]["lastRoom"]; }
+    return !!cp;
   }, [startAt]);
+  useEffect(() => { labTeleport(sim.current.s); }, [labTeleport]);
 
   const running = stage === "play" && (!panel || panel.kind === "wheel");
   // a roda aberta: o tempo quase para; o mouse escolhe
@@ -366,7 +369,7 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
   const start = (o: StartOptions) => {
     const s = newSim(cards, (Date.now() % 1e9) | 0, { difficulty: o.difficulty, challenge: o.challenge, slowLasers: settings.slowLasers, regen: settings.regen, beats: settings.beats });
     checkpoints.current = { start: snapshot(s) };
-    startBeat(s, "intro", "");
+    if (!labTeleport(s)) startBeat(s, "intro", "");
     begin(s, "start");
   };
   const continueRun = () => { if (save) begin(restore(save.snap as SimState), save.checkpoint); };
@@ -390,7 +393,7 @@ export function HeistGame({ cards, onExit, debug = false, quality: q0, startAt, 
       camera={{ fov: settings.fov, near: 0.05, far: 500, position: [-18, 0.5, 52] }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1; gl.outputColorSpace = THREE.SRGBColorSpace; }}>
       <Driver sim={sim} ctx={ctx} view={view} controls={controls} audio={audio} settings={settings} running={running} slowMo={panel?.kind === "wheel"} onEvents={onEvents} onUi={onUi} onHud={setHud} onFps={setFps} doneAt={doneAt} />
-      <HeistCamera view={view} sim={sim} world={ctx.world} controls={controls} reducedMotion={reduced} settings={settings} />
+      <HeistCamera view={view} sim={sim} world={ctx.world} controls={controls} reducedMotion={reduced} settings={settings} shot={labShot} />
       <Suspense fallback={null}>
         <SceneRoot world={ctx.world} view={view} pieces={pieces} quality={quality} debug={debug} onProgress={setLoading} letterbox={!!hud.beat || hud.cutscene} />
       </Suspense>

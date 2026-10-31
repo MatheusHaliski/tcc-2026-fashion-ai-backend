@@ -5,6 +5,8 @@
  *   ?q=low|high  qualidade · ?alarm=1 giroflex · ?vision=1 contornos da Visão · ?power=0 Sala das Joias sem energia
  *   ?diamond=0 pedestal vazio · ?doors=0 todas as portas fechadas · ?sky=1 céu, lua e névoa da rua por cima
  *   ?fx=0 sem pós-processamento · ?hud=0 sem o painel de números
+ * Câmera livre (para as capturas de cada área, sem mexer na lista CAMS): ?pos=x,y,z&target=x,y,z&room=salao
+ * [&player=x,z][&fov=50] — a sala diz quais salas acendem e aparecem.
  */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
@@ -36,6 +38,15 @@ const CAMS: Record<string, { pos: V3; target: V3; room: RoomId; player: [number,
   doca: { pos: [-9.3, 2.1, 23.4], target: [-18, 1.4, 17.4], room: "doca", player: [-10, 22.8] },
 };
 
+/** ?pos=x,y,z&target=x,y,z&room=sala[&player=x,z][&fov=n] → enquadramento livre (ou null). */
+function freeCam(p: URLSearchParams): (typeof CAMS)[string] | null {
+  const n = (k: string, len: number) => { const v = (p.get(k) ?? "").split(",").map(Number); return v.length === len && v.every(Number.isFinite) ? v : null; };
+  const pos = n("pos", 3), target = n("target", 3), room = p.get("room") as RoomId | null;
+  if (!pos || !target || !room) return null;
+  const player = n("player", 2) ?? [pos[0], pos[2]], fov = Number(p.get("fov")) || undefined;
+  return { pos: pos as V3, target: target as V3, room, player: player as [number, number], fov };
+}
+
 function Rig({ cam, view, hud }: { cam: (typeof CAMS)[string]; view: React.MutableRefObject<SceneView>; hud: React.RefObject<HTMLDivElement | null> }) {
   const { camera, gl } = useThree();
   const acc = useRef({ t: 0, n: 0 });
@@ -61,7 +72,8 @@ function Rig({ cam, view, hud }: { cam: (typeof CAMS)[string]; view: React.Mutab
 
 function LabScene({ hud }: { hud: React.RefObject<HTMLDivElement | null> }) {
   const params = useMemo(() => new URLSearchParams(location.search), []);
-  const [key, setKey] = useState(params.get("cam") ?? "salao"), cam = CAMS[key] ?? CAMS.salao;
+  const free = useMemo(() => freeCam(params), [params]);
+  const [key, setKey] = useState(params.get("cam") ?? "salao"), cam = free ?? CAMS[key] ?? CAMS.salao;
   const q = (params.get("q") === "low" ? "low" : "high") as "high" | "low";
   const view = useRef<SceneView>((() => {
     const v = emptyView(); v.playerRoom = cam.room;
