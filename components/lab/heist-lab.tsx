@@ -2,11 +2,13 @@
 /*
  * Laboratório do MET Gala Heist v2: a partida completa com um deck de exemplo (peças fictícias de várias raridades, para
  * testar o revendedor, as cartas de vestir, a Visão e a munição). ?debug=planta mostra a planta em blocos no lugar da
- * cena, ?at=salao|servico|cofre|vestibulo|terraco começa num ponto, ?q=low liga a qualidade baixa.
+ * cena, ?at=salao|servico|cofre|vestibulo|terraco começa num ponto, ?q=low liga a qualidade baixa e
+ * ?shot=x,y,z,tx,ty,tz[,fov] deixa a câmera parada num enquadramento (fotografar gente e cenário com o jogo rodando).
  */
 import dynamic from "next/dynamic";
 import { useMemo, useState, useEffect } from "react";
 import { matchCards, type DeckCard } from "@/lib/heist/cards";
+import type { LabShot } from "@/components/heist/camera";
 
 const HeistGame = dynamic(() => import("@/components/heist/game").then((m) => m.HeistGame), { ssr: false });
 
@@ -23,13 +25,15 @@ const SAMPLE: DeckCard[] = [
 
 export default function HeistLab() {
   // os parâmetros da URL são lidos antes de montar o jogo (debug e qualidade valem só na montagem)
-  const [q, setQ] = useState<{ debug: boolean; at?: string; quality?: "high" | "low" } | null>(null);
+  const [q, setQ] = useState<{ debug: boolean; at?: string; quality?: "high" | "low"; shot: LabShot | null } | null>(null);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    setQ({ debug: p.get("debug") === "planta", at: p.get("at") ?? undefined, quality: p.get("q") === "low" ? "low" : undefined });
+    const n = (p.get("shot") ?? "").split(",").map(Number), ok = (n.length === 6 || n.length === 7) && n.every(Number.isFinite);
+    const shot: LabShot | null = ok ? { pos: [n[0], n[1], n[2]], target: [n[3], n[4], n[5]], fov: n[6] } : null;
+    setQ({ debug: p.get("debug") === "planta", at: p.get("at") ?? undefined, quality: p.get("q") === "low" ? "low" : undefined, shot });
   }, []);
   const cards = useMemo(() => matchCards(SAMPLE), []);
   return <div style={{ position: "fixed", inset: 0, background: "#000" }}>
-    {q && <HeistGame cards={cards} debug={q.debug} startAt={q.at} quality={q.quality} labHandle />}
+    {q && <HeistGame cards={cards} debug={q.debug} startAt={q.at} quality={q.quality} labHandle labShot={q.shot} />}
   </div>;
 }

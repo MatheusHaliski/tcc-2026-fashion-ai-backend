@@ -50,7 +50,7 @@ export function HeistFx({ view }: { view: React.MutableRefObject<SceneView> }) {
         m.rotation.set(0, 0, 0); m.rotateY(Math.atan2(dx, dz)); m.rotateX(Math.PI / 2);
       }
     });
-    laserMat.opacity = view.current.vision ? 0.95 : 0.22 + 0.06 * Math.sin(t * 9);
+    laserMat.opacity = view.current.vision ? 0.95 : v.calm ? 0.25 : 0.22 + 0.06 * Math.sin(t * 9);
     // tiros
     v.shots.slice(-MAX_SHOTS).forEach((sh, i) => {
       const m = shots.current[i], f = flashes.current[i]; if (!m || !f) return;
@@ -59,7 +59,7 @@ export function HeistFx({ view }: { view: React.MutableRefObject<SceneView> }) {
       const len = a.distanceTo(b);
       m.visible = age < 0.07 && len > 0.2;
       m.position.copy(a).lerp(b, 0.5); m.scale.set(1, len, 1); m.lookAt(b); m.rotateX(Math.PI / 2);
-      f.visible = age < 0.06 && !sh.silenced; f.position.copy(a); f.intensity = 18 * (1 - age / 0.06);
+      f.visible = age < 0.06 && !sh.silenced; f.position.copy(a); f.intensity = (v.calm ? 4 : 18) * (1 - age / 0.06);
     });
     for (let i = Math.min(MAX_SHOTS, v.shots.length); i < MAX_SHOTS; i++) { if (shots.current[i]) shots.current[i].visible = false; if (flashes.current[i]) flashes.current[i].visible = false; }
     // itens no chão
@@ -72,7 +72,7 @@ export function HeistFx({ view }: { view: React.MutableRefObject<SceneView> }) {
       m.position.set(d.x, d.y + 0.05 + Math.sin(t * 3 + i) * 0.02, d.z); m.rotation.y = t * 1.2 + i;
     }
     // alarme: luz vermelha pulsando perto da jogadora
-    if (alarm.current) { alarm.current.visible = v.alarm; alarm.current.position.set(v.player.x, v.player.y + 3.2, v.player.z); alarm.current.intensity = v.alarm ? 6 + 6 * Math.max(0, Math.sin(t * 6)) : 0; }
+    if (alarm.current) { alarm.current.visible = v.alarm; alarm.current.position.set(v.player.x, v.player.y + 3.2, v.player.z); alarm.current.intensity = v.alarm ? (v.calm ? 7 : 6 + 6 * Math.max(0, Math.sin(t * 6))) : 0; }
     // Visão: silhuetas por trás das paredes
     let n = 0;
     for (const a of v.actors) {

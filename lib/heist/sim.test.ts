@@ -65,6 +65,7 @@ describe("combate: vida implícita por sala, vida baixa e game over", () => {
       const g = guard(s, id);
       place(s, at.x, at.z, room); s.player.y = id === "r2" ? -1.6 : 0;
       g.state = "POST"; g.blocker = true;                          // segura a posição: o teste mede só a vida
+      s.civs.length = 0;                                           // ninguém na frente (quem está na linha para a bala: teste abaixo)
       let fired = 0;
       for (let k = 0; k < shots * 40 && g.state !== "DOWN"; k++) {
         const press = k % 30 === 0;
@@ -77,6 +78,40 @@ describe("combate: vida implícita por sala, vida baixa e game over", () => {
       expect(g.state, id).toBe("DOWN");
       expect(fired, id).toBe(shots);
     }
+  });
+
+  it("convidado na frente para a bala e se joga no chão; o segurança não atira através de gente", () => {
+    const s = newSim([], undefined, { beats: false });
+    s.player.inv.weapons.push("pistol"); s.player.inv.ammo = 40; equip(s, "pistol");
+    const g = guard(s, "v1");
+    place(s, g.pos.x, g.pos.z + 4, "vestibulo");
+    g.state = "POST"; g.blocker = true;
+    const c = s.civs.find((x) => x.role === "guest")!, mid = { x: g.pos.x, z: g.pos.z + 2 };
+    c.pos = { ...mid }; c.y = null;
+    const yaw = yawOf({ x: g.pos.x - s.player.pos.x, z: g.pos.z - s.player.pos.z });
+    step(s, ctx, idle({ aim: true, firePress: true, camYaw: yaw, camPitch: Math.atan2(1.1 - 1.45, 4) }), 1 / 60);
+    expect(g.hp).toBe(g.maxHp);
+    expect(c.panicUntil).toBeGreaterThan(s.time);
+    expect(s.events.some((e) => e.t === "line" && e.key === "heist.civ.grazed")).toBe(true);
+    // segurança em alerta, com ela à vista: enquanto alguém está na linha, ele segura o tiro e manda sair da frente
+    const h = newSim([], undefined, { beats: false }), hg = guard(h, "v1");
+    place(h, hg.pos.x, hg.pos.z + 4, "vestibulo");
+    const hc = h.civs.find((x) => x.role === "guest")!;
+    h.civs.length = 0; h.civs.push(hc);                           // só ela, o segurança e um convidado
+    hg.state = "ALERT"; hg.stateT = 0; hg.blocker = true; hg.lastKnown = { ...h.player.pos };
+    hg.yaw = yawOf({ x: h.player.pos.x - hg.pos.x, z: h.player.pos.z - hg.pos.z });
+    let cleared = false;
+    for (let k = 0; k < 120; k++) {
+      hc.pos = { x: hg.pos.x, z: hg.pos.z + 2 }; hc.y = null; hc.panicUntil = 0;
+      step(h, ctx, idle(), 1 / 60);
+      cleared ||= h.events.some((e) => e.t === "line" && e.key === "heist.bark.clear");
+      h.player.hp = 100; h.events.length = 0;
+    }
+    expect(hg.shots).toBe(0);
+    expect(cleared).toBe(true);
+    h.civs.length = 0;                                            // saiu da frente: agora ele atira
+    run(h, 2, () => { h.player.hp = 100; return idle(); });
+    expect(hg.shots).toBeGreaterThan(0);
   });
 
   it("com vida baixa ela anda mais devagar, não corre e apanha mais", () => {

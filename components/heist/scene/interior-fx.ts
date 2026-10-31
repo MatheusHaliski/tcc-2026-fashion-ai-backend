@@ -6,6 +6,8 @@
  * contorno ciano da Visão nos interativos, os giroflex do alarme, o halo das velas, as portas e as telas.
  */
 import * as THREE from "three";
+import { areaKeys } from "./areas";
+import type { KeyDef as AreaKeyDef } from "./areas/types";
 import { DOORS, INTERACTS, RACKS, baseProps } from "@/lib/heist/level";
 import type { DoorId, RoomId } from "@/lib/heist/types";
 import type { SceneView } from "@/lib/heist/view";
@@ -53,7 +55,7 @@ export function applyRoomEnv(root: THREE.Object3D, room: InteriorRoom, gl: THREE
   });
 }
 /** Peso da sonda (luz real da sala, mais escura que os painéis sintéticos). */
-const PROBE_INTENSITY: Record<EnvMood, number> = { warm: 1.1, gallery: 1.0, backstage: 1.0, cool: 1.0, vault: 1.1 };
+const PROBE_INTENSITY: Record<EnvMood, number> = { warm: 0.75, gallery: 0.7, backstage: 0.95, cool: 0.9, vault: 1.6 };
 
 /* ---------- sondas de reflexo por sala ---------- */
 /** Onde cada sala se fotografa para o próprio reflexo (altura de olho, no meio do espaço livre). */
@@ -168,7 +170,7 @@ export class LightPool {
   }
 }
 /** Ganho global das âncoras (calibrado nas capturas: candela → brilho com exposição 1 e ACES). */
-export const LIGHT_GAIN = 2.2;
+export const LIGHT_GAIN = 1.8;
 
 /** Cintilação: chama (rápida e pequena) ou fluorescente com defeito (apaga e volta de vez em quando). */
 export function flickerOf(a: LightAnchor, t: number): number {
@@ -179,7 +181,7 @@ export function flickerOf(a: LightAnchor, t: number): number {
 }
 
 /* ---------- luz-chave com sombra (só "high") ---------- */
-interface KeyDef { p: [number, number, number]; aim: [number, number, number]; angle: number; i: number; color: string }
+type KeyDef = AreaKeyDef;
 /** A fonte principal de cada sala (lustre, refletor, luminária de teto) — a única luz interna que faz sombra. */
 const KEYS: Partial<Record<InteriorRoom, KeyDef[]>> = {
   vestibulo: [{ p: [0, 6.05, 19.5], aim: [0, 0, 19.2], angle: 1.0, i: 60, color: "#ffd9a8" }],
@@ -194,7 +196,7 @@ const KEYS: Partial<Record<InteriorRoom, KeyDef[]>> = {
   bastidores: [{ p: [17.2, 4.45, -1], aim: [17.2, 0, -1], angle: 1.05, i: 40, color: "#fff0d8" }],
   seguranca: [{ p: [-20.2, 3.45, 4.75], aim: [-20.2, 0, 4.75], angle: 1.1, i: 22, color: "#eef6ff" }],
   doca: [{ p: [-15.2, 5.8, 20.2], aim: [-15.2, 0, 20.2], angle: 1.05, i: 55, color: "#ffc27a" }],
-  cofre: [{ p: [-17.25, 5.05, -14.25], aim: [-17.25, 0, -14.25], angle: 0.8, i: 70, color: "#f2f6ff" }],
+  cofre: [{ p: [-17.25, 5.05, -14.25], aim: [-17.25, 0, -14.25], angle: 1.0, i: 95, color: "#f2f6ff" }],
 };
 /**
  * Um SpotLight com sombra que acompanha a sala da jogadora: a fonte da lista mais perto dela (com folga para não trocar
@@ -214,7 +216,7 @@ export class KeyLight {
     this.light = l;
   }
   update(room: RoomId, px: number, pz: number, dt: number, gain: number) {
-    const list = isInterior(room) ? KEYS[room] : undefined;
+    const list = isInterior(room) ? areaKeys(room) ?? KEYS[room] : undefined;
     let want: KeyDef | null = null, best = 1e9;
     for (const k of list ?? []) { const d = Math.hypot(k.aim[0] - px, k.aim[2] - pz) - (k === this.cur ? 2.5 : 0); if (d < best) { best = d; want = k; } }
     const rate = this.first ? 1e9 : dt * 3.5;

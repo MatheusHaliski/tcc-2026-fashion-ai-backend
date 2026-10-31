@@ -1,7 +1,8 @@
 /*
  * MET Gala Heist v2 — preferências da pessoa (guardadas neste navegador): câmera (sensibilidade, eixo invertido, campo de
  * visão, ombro, distância, tremida), jogo (assistência de mira, alternar/segurar, lasers mais lentos), áudio (música,
- * efeitos, vozes sintetizadas), interface (escala, HUD mínimo, legendas: tamanho e fundo), vídeo (qualidade, FPS) e o
+ * efeitos, vozes sintetizadas), interface (escala, HUD mínimo, legendas: tamanho e fundo, reduzir clarões), vídeo
+ * (qualidade, FPS) e o
  * remapeamento de todos os comandos do teclado e do controle (MH-04-09, MH-13-10, MH-14-14/16, MH-15-10, MH-17).
  */
 import { PAD } from "@/lib/input/gamepad";
@@ -26,7 +27,7 @@ export interface HeistSettings {
   sensitivity: number; invertY: boolean; vibration: boolean; fov: number; shoulder: "right" | "left"; camDistance: number; shake: boolean;
   aimAssist: boolean; toggleCrouch: boolean; toggleDiscreet: boolean; toggleAim: boolean; slowLasers: boolean; regen: boolean; beats: boolean;
   music: number; sfx: number; voices: boolean; voiceVolume: number;
-  subtitleSize: "s" | "m" | "l" | "xl"; subtitleBg: number; uiScale: number; minimalHud: boolean;
+  subtitleSize: "s" | "m" | "l" | "xl"; subtitleBg: number; uiScale: number; minimalHud: boolean; reduceFlashes: boolean;
   quality: "high" | "low"; showFps: boolean;
   keys: Record<KeyAction, string[]>; pad: Record<PadAction, number>;
 }
@@ -34,7 +35,7 @@ export const DEFAULT_SETTINGS: HeistSettings = {
   sensitivity: 1, invertY: false, vibration: true, fov: 62, shoulder: "right", camDistance: 1, shake: true,
   aimAssist: false, toggleCrouch: true, toggleDiscreet: false, toggleAim: false, slowLasers: false, regen: false, beats: true,
   music: 0.5, sfx: 0.8, voices: false, voiceVolume: 0.8,
-  subtitleSize: "m", subtitleBg: 0.6, uiScale: 1, minimalHud: false,
+  subtitleSize: "m", subtitleBg: 0.6, uiScale: 1, minimalHud: false, reduceFlashes: false,
   quality: "high", showFps: false,
   keys: DEFAULT_KEYS, pad: DEFAULT_PAD,
 };
@@ -43,7 +44,8 @@ const STORE = "fai-heist-v2-settings";
 export function loadSettings(): HeistSettings {
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(STORE) : null;
-    if (!raw) return { ...DEFAULT_SETTINGS };
+    // primeira vez: quem pediu menos movimento ao sistema já começa com os clarões reduzidos
+    if (!raw) return { ...DEFAULT_SETTINGS, reduceFlashes: typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches };
     const v = JSON.parse(raw) as Partial<HeistSettings>;
     return { ...DEFAULT_SETTINGS, ...v, keys: { ...DEFAULT_KEYS, ...(v.keys ?? {}) }, pad: { ...DEFAULT_PAD, ...(v.pad ?? {}) } };
   } catch { return { ...DEFAULT_SETTINGS }; }

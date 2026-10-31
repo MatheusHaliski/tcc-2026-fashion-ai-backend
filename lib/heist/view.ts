@@ -38,9 +38,11 @@ export interface SceneView {
   drops: { id: string; kind: string; x: number; y: number; z: number }[]; diamondOnPedestal: boolean;
   /** câmera da cena (a simulação/controle escreve; a cena só lê) */
   slowMo: number;
+  /** opção "reduzir clarões" (escrita pelo jogo, não pela simulação): alarme aceso sem piscar, clarões fracos */
+  calm: boolean;
 }
 
 export function emptyView(): SceneView {
   const player: ActorView = { id: "player", kind: "player", look: "player", seed: 0, x: 0, y: 0, z: 0, yaw: 0, speed: 0, anim: "idle", animT: 0, hold: null, aimPitch: 0, lookAt: null, hitAt: -1, tired: 0, room: "rua", visible: true };
-  return { time: 0, actors: [], player, playerRoom: "rua", doors: {} as Record<DoorId, boolean>, lasers: {}, lasersPowered: true, alarm: false, alarmAt: -1, vision: false, shots: [], drops: [], diamondOnPedestal: true, slowMo: 1 };
+  return { time: 0, actors: [], player, playerRoom: "rua", doors: {} as Record<DoorId, boolean>, lasers: {}, lasersPowered: true, alarm: false, alarmAt: -1, vision: false, shots: [], drops: [], diamondOnPedestal: true, slowMo: 1, calm: false };
 }

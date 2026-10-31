@@ -38,6 +38,12 @@ export interface LookTemplate {
   earpiece?: boolean;
   /** gravata-borboleta no colarinho (smoking, garçom) */
   bowtie?: boolean;
+  /** touca alta de chef presa à cabeça e os botões do dólmã trespassado */
+  chefHat?: boolean;
+  /** joias (brincos e colar): brilhantes, ouro ou pérolas */
+  jewel?: "diamond" | "gold" | "pearl";
+  /** lenço de bolso no paletó (smoking) */
+  pocket?: boolean;
 }
 
 /* ---------- peças ---------- */
@@ -58,13 +64,20 @@ const STREET = ["#2b2f36", "#5a6b7d", "#8a2b2b", "#d9d4c7", "#1f3a2a", "#c47b2a"
 
 const gown = (id: string, neckline = "STRAPLESS", length = "FLOOR_LENGTH"): Look3dPiece[] =>
   [P(`${id}-gown`, "full", "FULL_BODY", "dress", TINT_BASE, { ...DIM(length, neckline), material: "SATIN" }), P(`${id}-heels`, "shoes", "SHOES", "heels", "#141414")];
+/** Uniforme da copa: o avental é uma saia aberta atrás (fabric.ts corta as costas; o cós fica como as tiras). */
+const chefWear = (id: string, apron: string): Look3dPiece[] => [
+  P(`${id}-dolma`, "upper", "UPPER", "shirt", "#f6f4ef", { material: "COTTON", attributes: { NECKLINE: ["MOCK_NECK"], CLOSURE: ["DOUBLE_BREASTED"], SLEEVE_LENGTH: ["LONG_SLEEVE"] } }),
+  P(`${id}-pants`, "lower", "LOWER", "tailored_pants", "#1a1a1e"),
+  P(`${id}-apron`, "lower", "LOWER", "skirt", apron, { material: "COTTON", attributes: { LENGTH: ["KNEE"] } }),
+  P(`${id}-shoes`, "shoes", "SHOES", "loafers", "#0c0c0c"),
+];
 const tux = (id: string): Look3dPiece[] => [
   P(`${id}-shirt`, "upper", "UPPER", "shirt", "#f4f2ee", CLOSED_COLLAR), P(`${id}-jacket`, "outer", "UPPER", "blazer", TINT_BASE, LAPEL),
   P(`${id}-pants`, "lower", "LOWER", "tailored_pants", "#121216"), P(`${id}-shoes`, "shoes", "SHOES", "oxford_shoes", "#0a0a0a"),
 ];
 
 /* ---------- corpo, pele, cabelo e rosto ---------- */
-const SKIN = { porcelain: "#f2d7c6", light: "#e6bc9f", medium: "#c99470", tan: "#a8714f", brown: "#7f5038", deep: "#5b3624", ebony: "#3f2519" } as const;
+const SKIN = { porcelain: "#ecc8b0", light: "#e6bc9f", medium: "#c99470", tan: "#a8714f", brown: "#7f5038", deep: "#5b3624", ebony: "#3f2519" } as const;
 const HAIR_C = { black: "#16110f", darkBrown: "#2c1e16", brown: "#4a3020", chestnut: "#6b4128", auburn: "#7a3a20", blonde: "#c49a62", platinum: "#ddd3c4", gray: "#8c8884" } as const;
 const H0: AvatarHair = { present: true, color: HAIR_C.darkBrown, top: 15, side: 9, bottom: 2.9, fringe: 0, cut: false, length: "short", texture: "straight", volume: 1 };
 const hair = (o: Partial<AvatarHair>): AvatarHair => ({ ...H0, ...o });
@@ -97,17 +110,17 @@ const T = (key: string, look: LookId, sex: Sex, stature: number, build: number, 
 /** Modelos por aparência. O primeiro de cada lista é o mais comum (sementes caem mais nele quando há poucos). */
 export const LOOKS: Record<LookId, LookTemplate[]> = {
   guestF: [
-    T("guestF-0", "guestF", "FEMININO", 1.7, -0.2, SKIN.light, LONG_WAVY(HAIR_C.blonde), FACE_F("#9e1b2c", "#5a4430", 2, "#4a3a36"), gown("gF0"), { tint: { piece: "look-gF0-gown", palette: GOWNS } }),
-    T("guestF-1", "guestF", "FEMININO", 1.74, 0.1, SKIN.deep, CURLY(HAIR_C.black), FACE_F("#7a2a3a", "#1a1210", 1, "#6b3f2a", "#8a3d3a"), gown("gF1", "OFF_SHOULDER"), { tint: { piece: "look-gF1-gown", palette: GOWNS } }),
-    T("guestF-2", "guestF", "FEMININO", 1.66, 0, SKIN.medium, LONG_STRAIGHT(HAIR_C.black), FACE_F("#b23a48", "#1e1612", 2, "#5c4038"), gown("gF2"), { tint: { piece: "look-gF2-gown", palette: GOWNS } }),
-    T("guestF-3", "guestF", "FEMININO", 1.68, 0.4, SKIN.porcelain, BOB(HAIR_C.auburn), FACE_F("#c0485a", "#5a3020", 1, "#7a5a4a", "#d98a80"), gown("gF3", "OFF_SHOULDER", "MIDI"), { tint: { piece: "look-gF3-gown", palette: GOWNS } }),
-    T("guestF-4", "guestF", "FEMININO", 1.72, -0.1, SKIN.brown, COILY(HAIR_C.black), FACE_F("#8a2032", "#16100d", 2, "#3a2a2a", "#9a4a40"), gown("gF4"), { tint: { piece: "look-gF4-gown", palette: GOWNS } }),
+    T("guestF-0", "guestF", "FEMININO", 1.7, -0.2, SKIN.light, LONG_WAVY(HAIR_C.blonde), FACE_F("#9e1b2c", "#5a4430", 2, "#4a3a36"), gown("gF0"), { tint: { piece: "look-gF0-gown", palette: GOWNS }, jewel: "diamond" }),
+    T("guestF-1", "guestF", "FEMININO", 1.74, 0.1, SKIN.deep, CURLY(HAIR_C.black), FACE_F("#7a2a3a", "#1a1210", 1, "#6b3f2a", "#8a3d3a"), gown("gF1", "OFF_SHOULDER"), { tint: { piece: "look-gF1-gown", palette: GOWNS }, jewel: "gold" }),
+    T("guestF-2", "guestF", "FEMININO", 1.66, 0, SKIN.medium, LONG_STRAIGHT(HAIR_C.black), FACE_F("#b23a48", "#1e1612", 2, "#5c4038"), gown("gF2"), { tint: { piece: "look-gF2-gown", palette: GOWNS }, jewel: "diamond" }),
+    T("guestF-3", "guestF", "FEMININO", 1.68, 0.4, SKIN.porcelain, BOB(HAIR_C.auburn), FACE_F("#c0485a", "#5a3020", 1, "#7a5a4a", "#d98a80"), gown("gF3", "OFF_SHOULDER", "MIDI"), { tint: { piece: "look-gF3-gown", palette: GOWNS }, jewel: "pearl" }),
+    T("guestF-4", "guestF", "FEMININO", 1.72, -0.1, SKIN.brown, COILY(HAIR_C.black), FACE_F("#8a2032", "#16100d", 2, "#3a2a2a", "#9a4a40"), gown("gF4"), { tint: { piece: "look-gF4-gown", palette: GOWNS }, jewel: "gold" }),
   ],
   guestM: [
-    T("guestM-0", "guestM", "MASCULINO", 1.8, 0.1, SKIN.light, SHORT_M(HAIR_C.brown), FACE_M("#3a2a20", 0.35), tux("gM0"), { tint: { piece: "look-gM0-jacket", palette: JACKETS }, bowtie: true }),
-    T("guestM-1", "guestM", "MASCULINO", 1.84, 0.4, SKIN.ebony, COILY(HAIR_C.black), FACE_M("#120c0a", 0.25, "#6a3a32"), tux("gM1"), { tint: { piece: "look-gM1-jacket", palette: JACKETS }, bowtie: true }),
-    T("guestM-2", "guestM", "MASCULINO", 1.76, 0, SKIN.tan, SHORT_WAVY_M(HAIR_C.darkBrown), FACE_M("#1e1612", 0.6), tux("gM2"), { tint: { piece: "look-gM2-jacket", palette: JACKETS }, bowtie: true }),
-    T("guestM-3", "guestM", "MASCULINO", 1.78, 0.7, SKIN.medium, SHORT_M(HAIR_C.gray), FACE_M("#5a5552", 0.15), tux("gM3"), { tint: { piece: "look-gM3-jacket", palette: JACKETS }, bowtie: true }),
+    T("guestM-0", "guestM", "MASCULINO", 1.8, 0.1, SKIN.light, SHORT_M(HAIR_C.brown), FACE_M("#3a2a20", 0.35), tux("gM0"), { tint: { piece: "look-gM0-jacket", palette: JACKETS }, bowtie: true, pocket: true }),
+    T("guestM-1", "guestM", "MASCULINO", 1.84, 0.4, SKIN.ebony, COILY(HAIR_C.black), FACE_M("#120c0a", 0.25, "#6a3a32"), tux("gM1"), { tint: { piece: "look-gM1-jacket", palette: JACKETS }, bowtie: true, pocket: true }),
+    T("guestM-2", "guestM", "MASCULINO", 1.76, 0, SKIN.tan, SHORT_WAVY_M(HAIR_C.darkBrown), FACE_M("#1e1612", 0.6), tux("gM2"), { tint: { piece: "look-gM2-jacket", palette: JACKETS }, bowtie: true, pocket: true }),
+    T("guestM-3", "guestM", "MASCULINO", 1.78, 0.7, SKIN.medium, SHORT_M(HAIR_C.gray), FACE_M("#5a5552", 0.15), tux("gM3"), { tint: { piece: "look-gM3-jacket", palette: JACKETS }, bowtie: true, pocket: true }),
   ],
   guard: [
     T("guard-0", "guard", "MASCULINO", 1.86, 1.0, SKIN.light, BUZZ(HAIR_C.darkBrown), FACE_M("#2a1e18", 0.5), GUARD_SUIT, { earpiece: true }),
@@ -119,7 +132,7 @@ export const LOOKS: Record<LookId, LookTemplate[]> = {
   waiter: [T("waiter-0", "waiter", "MASCULINO", 1.77, 0, SKIN.medium, SHORT_M(HAIR_C.black), FACE_M("#1a1210", 0.1), WAITER_UNIFORM, { bowtie: true })],
   waitress: [T("waitress-0", "waitress", "FEMININO", 1.66, 0, SKIN.light, BOB(HAIR_C.darkBrown), FACE_F("#a84a52", "#2c1e16", 1, null, "#d08a80"), WAITRESS_UNIFORM)],
   hostess: [T("hostess-0", "hostess", "FEMININO", 1.72, -0.2, SKIN.tan, LONG_STRAIGHT(HAIR_C.darkBrown), FACE_F("#a02838", "#1e1612", 2, "#4a3a36"),
-    [P("host-dress", "full", "FULL_BODY", "dress", "#0e0e12", DIM("KNEE", "OFF_SHOULDER")), P("host-heels", "shoes", "SHOES", "heels", "#0a0a0a")])],
+    [P("host-dress", "full", "FULL_BODY", "dress", "#0e0e12", DIM("KNEE", "OFF_SHOULDER")), P("host-heels", "shoes", "SHOES", "heels", "#0a0a0a")], { jewel: "pearl" })],
   paparazzo: [
     T("paparazzo-0", "paparazzo", "MASCULINO", 1.78, 0.5, SKIN.light, CAP("#1c1d22", HAIR_C.brown), FACE_M("#3a2a20", 0.8),
       [P("pap-jacket", "outer", "UPPER", "jacket", "#2a2b30"), P("pap-tee", "upper", "UPPER", "t_shirt", "#1b1c1f"), P("pap-pants", "lower", "LOWER", "cargo_pants", "#3b3e44"), P("pap-shoes", "shoes", "SHOES", "casual_sneakers", "#1c1c1c")]),
@@ -142,6 +155,21 @@ export const LOOKS: Record<LookId, LookTemplate[]> = {
     [P("cur-blouse", "upper", "UPPER", "blouse", "#f0ece4"), P("cur-blazer", "outer", "UPPER", "blazer", "#22242c", LAPEL), P("cur-pants", "lower", "LOWER", "tailored_pants", "#22242c"), P("cur-shoes", "shoes", "SHOES", "loafers", "#141414")])],
   bartender: [T("bartender-0", "bartender", "MASCULINO", 1.78, 0.3, SKIN.brown, SHORT_WAVY_M(HAIR_C.black), FACE_M("#16100d", 0.7, "#7a4a3a"),
     [P("bar-shirt", "upper", "UPPER", "shirt", "#121214"), P("bar-vest", "outer", "UPPER", "vest", "#2a2a30"), P("bar-pants", "lower", "LOWER", "tailored_pants", "#121214"), P("bar-shoes", "shoes", "SHOES", "oxford_shoes", "#0a0a0a")])],
+  // DJ da gala: camiseta preta sob blazer de veludo bordô e tênis branco; ou macacão preto de crepe de manga longa. O
+  // fone (hold "headphones") vai na cabeça enquanto toca e no pescoço fora do console.
+  dj: [
+    T("dj-0", "dj", "MASCULINO", 1.8, 0.2, SKIN.deep, SHORT_WAVY_M(HAIR_C.black), FACE_M("#120c0a", 0.45, "#6a3a32"),
+      [P("dj0-tee", "upper", "UPPER", "t_shirt", "#111113"), P("dj0-blazer", "outer", "UPPER", "blazer", "#3d0f1c", { material: "WOOL" }),
+        P("dj0-pants", "lower", "LOWER", "tailored_pants", "#121214"), P("dj0-sneakers", "shoes", "SHOES", "casual_sneakers", "#ecebe6")]),
+    T("dj-1", "dj", "FEMININO", 1.72, 0, SKIN.medium, BOB(HAIR_C.platinum), FACE_F("#7a1f3a", "#3a2a20", 2, "#3a3036", null),
+      [P("dj1-jumpsuit", "full", "FULL_BODY", "jumpsuit", "#0d0d10", { material: "WOOL", attributes: { SLEEVE_LENGTH: ["LONG_SLEEVE"] } }), P("dj1-sneakers", "shoes", "SHOES", "casual_sneakers", "#f0efe9")]),
+  ],
+  // Copa: dólmã branco trespassado (duas fileiras de botões, gola padre), avental (preto do chef, branco da confeiteira),
+  // calça escura e sapato fechado; a touca alta plissada vai presa à cabeça (people.tsx), por cima da touca de malha.
+  chef: [
+    T("chef-0", "chef", "MASCULINO", 1.76, 0.5, SKIN.light, CAP("#f4f2ee", HAIR_C.brown), FACE_M("#2a1e18", 0.3), chefWear("chef0", "#16161a"), { chefHat: true }),
+    T("chef-1", "chef", "FEMININO", 1.68, 0.2, SKIN.brown, CAP("#f4f2ee", HAIR_C.black), FACE_F("#8a3a3a", "#1a1210", 0, null, null), chefWear("chef1", "#f3f1ec"), { chefHat: true }),
+  ],
   musician: [
     T("musician-0", "musician", "FEMININO", 1.67, 0, SKIN.light, LONG_STRAIGHT(HAIR_C.chestnut), FACE_F("#9a3a48", "#3a2a20", 1, "#5a4038"), [P("mus-gown", "full", "FULL_BODY", "dress", "#0d0d10", { ...DIM("FLOOR_LENGTH", "STRAPLESS"), material: "SATIN" }), P("mus-heels", "shoes", "SHOES", "heels", "#0a0a0a")]),
     T("musician-1", "musician", "MASCULINO", 1.79, 0.1, SKIN.medium, SHORT_M(HAIR_C.black), FACE_M("#1a1210", 0.2), tux("mus1").map((p) => (p.id.endsWith("jacket") ? { ...p, colorHex: "#0f1013" } : p)), { bowtie: true }),

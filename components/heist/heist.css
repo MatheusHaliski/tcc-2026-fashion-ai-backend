@@ -292,3 +292,5 @@ button.hz-card { cursor: pointer; } button.hz-card:hover { border-color: var(--h
 .hz-win-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; text-align: left; margin-top: 12px; }
 .hz-offers.is-compact .hz-offer { padding: 8px; }
 :root[data-reduce-motion="true"] .hz-game * { animation: none !important; transition: none !important; }
+/* "reduzir clarões": nada pisca (alarme, vida baixa, cura urgente, vinheta); o resto da interface continua igual */
+.hz-game.is-calm .hz-vignette, .hz-game.is-calm .hz-alarm, .hz-game.is-calm .hz-hp.is-low .hz-hp-fill, .hz-game.is-calm .hz-quickheal.is-urgent, .hz-game.is-calm .hz-mission.is-updated { animation: none; }

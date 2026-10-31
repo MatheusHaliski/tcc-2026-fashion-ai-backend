@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildNav, findPath, nearestWalkable, pathLength } from "./nav";
 import { DOORS, GUARDS, INTERACTS, ROOMS, buildWorld, collide, roomAt, sightClear, type PassRules } from "./world";
-import { CIVILIANS, CLIMB_TO, EXITS, MAZE, PLAYER_SPAWN, QUEUE_SLOTS, floorY, mazeCell } from "./level";
+import { CHECKPOINTS, CIVILIANS, CLIMB_TO, EXITS, MAZE, PLAYER_SPAWN, QUEUE_SLOTS, RACKS, floorY, mazeCell } from "./level";
 import type { DoorId } from "./types";
 
 const ALL_OPEN = Object.fromEntries(DOORS.map((d) => [d.id, true])) as Record<DoorId, boolean>;
@@ -72,5 +72,32 @@ describe("Museu Vesper e a avenida (planta, colisão, linha de visão e navegaç
     expect(sightClear(w, { x: -6, z: 0 }, { x: -6, z: -12 }, { doors: ALL_OPEN })).toBe(false);
     expect(sightClear(w, { x: -6, z: 37 }, { x: -6, z: 32 }, { doors: ALL_OPEN })).toBe(false);      // limusine
     expect(sightClear(w, { x: -17.25, z: -12 }, { x: -17.25, z: -16.5 }, { doors: ALL_OPEN })).toBe(true); // pedestal de vidro
+  });
+
+  it("móveis próprios das áreas (fixture) ficam na sala deles e não tapam porta, interação, posto, ronda, pessoa, arara, checkpoint, fila nem saída", () => {
+    const gap = (sh: (typeof w.props)[number]["shape"], p: { x: number; z: number }) => sh.type === "circle"
+      ? Math.hypot(p.x - sh.x, p.z - sh.z) - sh.r
+      : Math.hypot(Math.max(sh.x0 - p.x, 0, p.x - sh.x1), Math.max(sh.z0 - p.z, 0, p.z - sh.z1));
+    const keep: { what: string; pos: { x: number; z: number }; r: number }[] = [
+      ...w.interacts.map((i) => ({ what: `interação ${i.id}`, pos: i.pos, r: 0.6 })),
+      ...GUARDS.flatMap((g) => (g.post ? [{ what: `posto ${g.id}`, pos: g.post.pos, r: 0.6 }] : (g.route ?? []).map((p, k) => ({ what: `ronda ${g.id}#${k}`, pos: p, r: 0.5 })))),
+      ...CIVILIANS.map((c) => ({ what: `civil ${c.id} (${c.role})`, pos: c.pos, r: 0.3 })),
+      ...RACKS.map((r) => ({ what: `arara ${r.id}`, pos: r.pos, r: 0.6 })),
+      ...Object.entries(CHECKPOINTS).map(([k, c]) => ({ what: `checkpoint ${k}`, pos: c.pos, r: 0.6 })),
+      ...QUEUE_SLOTS.map((p, k) => ({ what: `fila ${k}`, pos: p, r: 0.4 })),
+      ...EXITS.map((e) => ({ what: `saída ${e.id}`, pos: e.pos, r: 0.8 })),
+      { what: "início", pos: PLAYER_SPAWN, r: 0.8 },
+    ];
+    for (const p of w.props.filter((x) => x.kind === "fixture")) {
+      expect(p.model, p.id).toBeTruthy();
+      const R = ROOMS.find((r) => r.id === p.room)!.rect, sh = p.shape;
+      const [x0, z0, x1, z1] = sh.type === "circle" ? [sh.x - sh.r, sh.z - sh.r, sh.x + sh.r, sh.z + sh.r] : [sh.x0, sh.z0, sh.x1, sh.z1];
+      expect(x0 >= R.x0 - 1e-6 && z0 >= R.z0 - 1e-6 && x1 <= R.x1 + 1e-6 && z1 <= R.z1 + 1e-6, `${p.id} (${p.model}) fora da sala ${p.room}`).toBe(true);
+      for (const d of DOORS) {
+        const c = { x: (d.rect.x0 + d.rect.x1) / 2, z: (d.rect.z0 + d.rect.z1) / 2 }, half = Math.max(d.rect.x1 - d.rect.x0, d.rect.z1 - d.rect.z0) / 2;
+        expect(gap(sh, c), `${p.id} (${p.model}) na frente da porta ${d.id}`).toBeGreaterThan(half + 0.6);
+      }
+      for (const k of keep) expect(gap(sh, k.pos), `${p.id} (${p.model}) em cima de ${k.what}`).toBeGreaterThan(k.r);
+    }
   });
 });

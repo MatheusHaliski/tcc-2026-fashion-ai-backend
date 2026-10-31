@@ -12,6 +12,7 @@ import type { DoorDef, RoomId } from "@/lib/heist/types";
 import { Batch, BOX0, QuadBuilder, mat } from "./interior-batch";
 import { TILE, type FloorKey, type Quality, type WallKey } from "./interior-tex";
 import { M, floorMat, wallMat } from "./interior-mats";
+import { areaSurface } from "./areas";
 
 export type InteriorRoom = "vestibulo" | "salao" | "galeria" | "lounge" | "terraco" | "bastidores" | "servico" | "seguranca" | "doca" | "cofre";
 export const INTERIOR: InteriorRoom[] = ["vestibulo", "salao", "galeria", "lounge", "terraco", "bastidores", "servico", "seguranca", "doca", "cofre"];
@@ -125,7 +126,7 @@ export function buildShell(w: World, q: Quality, batch: Batch): ShellInfo {
   };
   for (const r of ROOMS) {
     if (!isInterior(r.id) || r.id === "seguranca") continue;                 // a sala de segurança fica dentro do serviço
-    const st = STYLE[r.id], [tu, tv] = TILE[st.floor], b = fb(r.id, st.floor), R = r.rect;
+    const st = STYLE[r.id], [tu, tv] = areaSurface(r.id)?.floorTile ?? TILE[st.floor], b = fb(r.id, st.floor), R = r.rect;
     const xs: number[] = [], zs: number[] = [];
     for (let x = R.x0; x < R.x1 - 1e-6; x += 1) xs.push(x); xs.push(R.x1);
     for (let z = R.z0; z < R.z1 - 1e-6; z += 1) zs.push(z); zs.push(R.z1);
@@ -138,10 +139,16 @@ export function buildShell(w: World, q: Quality, batch: Batch): ShellInfo {
   // soleiras: piso das células de porta com o piso da sala de um dos lados
   for (const d of w.doors) {
     const s = doorSides(d), room = isInterior(s.lo) ? s.lo : isInterior(s.hi) ? s.hi : null; if (!room) continue;
-    const st = STYLE[room], [tu, tv] = TILE[st.floor], b = fb(room, st.floor), R = d.rect;
+    const st = STYLE[room], [tu, tv] = areaSurface(room)?.floorTile ?? TILE[st.floor], b = fb(room, st.floor), R = d.rect;
     b.quad([[R.x0, 0, R.z1], [R.x1, 0, R.z1], [R.x1, 0, R.z0], [R.x0, 0, R.z0]], [0, 1, 0], [[R.x0 / tu, -R.z1 / tv], [R.x1 / tu, -R.z1 / tv], [R.x1 / tu, -R.z0 / tv], [R.x0 / tu, -R.z0 / tv]], [0.8, 0.8, 0.8, 0.8]);
   }
-  for (const [k, b] of floors) { const [room, key] = k.split("|"); batch.add(room, floorMat(key as FloorKey, q), b.geometry(), undefined, { receive: true }); }
+  for (const [k, b] of floors) {
+    const [room, key] = k.split("|"), o = areaSurface(room as InteriorRoom);
+    // piso próprio da área: nome "floor-<sala>" e a força do reflexo no próprio material (prepareInterior)
+    const m = o?.floor ? o.floor(q) : floorMat(key as FloorKey, q);
+    if (o?.floor) { m.name = `floor-${room}`; m.userData.mirror = o.floorMirror ?? null; }
+    batch.add(room, m, b.geometry(), undefined, { receive: true });
+  }
 
   /* ---------- paredes ---------- */
   // faces por plano: chave = sala|material|eixo|plano|sentido|y0|y1 → intervalos ao longo do eixo
@@ -192,7 +199,7 @@ export function buildShell(w: World, q: Quality, batch: Batch): ShellInfo {
     iv.sort((p, q2) => p[0] - q2[0]);
     const merged: [number, number][] = [];
     for (const [a, b] of iv) { const last = merged[merged.length - 1]; if (last && Math.abs(last[1] - a) < 1e-6) last[1] = b; else merged.push([a, b]); }
-    const [tu, tv] = TILE[run.mat], b = wb(run.room, run.mat);
+    const [tu, tv] = areaSurface(run.room)?.wallTile ?? TILE[run.mat], b = wb(run.room, run.mat);
     for (const [a, c] of merged) {
       // faixas: rodapé escuro, corpo, canto do teto
       const ys = run.y1 - run.y0 > 1.2 ? [run.y0, run.y0 + 0.3, run.y1 - 0.45, run.y1] : [run.y0, run.y1];
@@ -212,11 +219,12 @@ export function buildShell(w: World, q: Quality, batch: Batch): ShellInfo {
       if (run.kind !== "jamb" && run.y0 === 0) trims.push({ room: run.room, axis: run.axis, plane: run.plane, dir: run.dir, a, b: c, y1: run.y1 });
     }
   }
-  for (const [k, b] of walls) { const [room, key] = k.split("|"); batch.add(room, wallMat(key as WallKey, q), b.geometry(), undefined, { cast: true }); }
+  for (const [k, b] of walls) { const [room, key] = k.split("|"), o = areaSurface(room as InteriorRoom); batch.add(room, o?.wall ? o.wall(q) : wallMat(key as WallKey, q), b.geometry(), undefined, { cast: true }); }
 
   /* ---------- rodapés e sancas ---------- */
   const baseMat = { marble: P.marbleDark, wood: P.mahogany, rubber: P.rubber, brass: P.brass, black: P.black } as const;
   for (const t of trims) {
+    if (areaSurface(t.room)?.trims === false) continue;                       // a área desenha as próprias molduras
     const st = STYLE[t.room], len = t.b - t.a, mid = (t.a + t.b) / 2;
     const place = (y: number, h: number, depth: number, m: THREE.Material) => {
       const off = t.dir * depth / 2;
@@ -230,8 +238,8 @@ export function buildShell(w: World, q: Quality, batch: Batch): ShellInfo {
 
   /* ---------- tetos ---------- */
   for (const r of ROOMS) {
-    if (!isInterior(r.id)) continue; const st = STYLE[r.id]; if (!st.ceil) continue;
-    const R = r.rect, h = st.h, m = st.ceil === "plaster" ? P.plaster : st.ceil === "acoustic" ? P.acoustic : P.ceilDark;
+    if (!isInterior(r.id)) continue; const st = STYLE[r.id], o = areaSurface(r.id); if (!st.ceil || o?.ceil === null) continue;
+    const R = r.rect, h = st.h, m = o?.ceil ? o.ceil(q) : st.ceil === "plaster" ? P.plaster : st.ceil === "acoustic" ? P.acoustic : P.ceilDark;
     const b = new QuadBuilder(), [tu, tv] = st.ceil === "acoustic" ? TILE.acoustic : TILE.plaster;
     b.quad([[R.x0, h, R.z0], [R.x1, h, R.z0], [R.x1, h, R.z1], [R.x0, h, R.z1]], [0, -1, 0], [[R.x0 / tu, R.z0 / tv], [R.x1 / tu, R.z0 / tv], [R.x1 / tu, R.z1 / tv], [R.x0 / tu, R.z1 / tv]], [0.85, 0.85, 0.85, 0.85]);
     batch.add(r.id, m, b.geometry(), undefined, { cast: true });

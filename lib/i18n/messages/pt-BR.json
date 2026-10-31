@@ -9223,5 +9223,9 @@
   "atelier3d.guests.revoked": "Revogado",
   "atelier3d.guests.revoke": "Revogar",
   "atelier3d.guests.missingToken": "Abra o link privado completo enviado pelo responsável do projeto.",
-  "atelier3d.guests.session": "Acesso de convidado por link privado. A identificação é declarada pelo responsável e não verifica sua identidade pessoal."
+  "atelier3d.guests.session": "Acesso de convidado por link privado. A identificação é declarada pelo responsável e não verifica sua identidade pessoal.",
+  "heist.bark.clear": "Saiam da frente!",
+  "heist.civ.grazed": "Quase me acertou!",
+  "heist.options.reduceFlashes": "Reduzir clarões",
+  "heist.options.reduceFlashesHint": "O alarme fica aceso sem piscar, os clarões dos tiros e o vermelho do dano ficam fracos e nada na interface pulsa."
 }

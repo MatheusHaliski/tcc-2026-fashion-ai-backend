@@ -5,6 +5,8 @@
  *   ?q=low|high  qualidade · ?alarm=1 giroflex · ?vision=1 contornos da Visão · ?power=0 Sala das Joias sem energia
  *   ?diamond=0 pedestal vazio · ?doors=0 todas as portas fechadas · ?sky=1 céu, lua e névoa da rua por cima
  *   ?fx=0 sem pós-processamento · ?hud=0 sem o painel de números
+ * Câmera livre (para as capturas de cada área, sem mexer na lista CAMS): ?pos=x,y,z&target=x,y,z&room=salao
+ * [&player=x,z][&fov=50] — a sala diz quais salas acendem e aparecem.
  */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
@@ -29,12 +31,21 @@ const CAMS: Record<string, { pos: V3; target: V3; room: RoomId; player: [number,
   vitrines: { pos: [-3.4, 1.7, -11.4], target: [-6.5, 1.3, -14.5], room: "galeria", player: [-3.6, -11.8] },
   bastidores: { pos: [21.2, 1.8, 3.3], target: [14.6, 1.3, -3.4], room: "bastidores", player: [20.4, 2.6] },
   labirinto: { pos: [-13.25, 1.65, 14.6], target: [-13.25, 1.45, 3], room: "servico", player: [-13.25, 13.8] },
-  seguranca: { pos: [-18.95, 1.7, 2.35], target: [-21.6, 1.15, 6.4], room: "seguranca", player: [-19.2, 3] },
+  seguranca: { pos: [-18.85, 1.75, 7.25], target: [-21.4, 1.0, 3.0], room: "seguranca", player: [-19.3, 6.6] },
   joias: { pos: [-13.0, 1.85, -7.4], target: [-17.25, 1.0, -14.25], room: "cofre", player: [-13.4, -8.2] },
   pedestal: { pos: [-15.2, 1.55, -12.3], target: [-17.25, 1.15, -14.25], room: "cofre", player: [-15.4, -12.6] },
-  terraco: { pos: [13.2, 1.8, -7.2], target: [19, 1.2, -18], room: "terraco", player: [13.6, -7.8] },
+  terraco: { pos: [13.3, 1.7, -9.6], target: [19.5, 1.5, -19.5], room: "terraco", player: [13.8, -10.2] },
   doca: { pos: [-9.3, 2.1, 23.4], target: [-18, 1.4, 17.4], room: "doca", player: [-10, 22.8] },
 };
+
+/** ?pos=x,y,z&target=x,y,z&room=sala[&player=x,z][&fov=n] → enquadramento livre (ou null). */
+function freeCam(p: URLSearchParams): (typeof CAMS)[string] | null {
+  const n = (k: string, len: number) => { const v = (p.get(k) ?? "").split(",").map(Number); return v.length === len && v.every(Number.isFinite) ? v : null; };
+  const pos = n("pos", 3), target = n("target", 3), room = p.get("room") as RoomId | null;
+  if (!pos || !target || !room) return null;
+  const player = n("player", 2) ?? [pos[0], pos[2]], fov = Number(p.get("fov")) || undefined;
+  return { pos: pos as V3, target: target as V3, room, player: player as [number, number], fov };
+}
 
 function Rig({ cam, view, hud }: { cam: (typeof CAMS)[string]; view: React.MutableRefObject<SceneView>; hud: React.RefObject<HTMLDivElement | null> }) {
   const { camera, gl } = useThree();
@@ -46,7 +57,8 @@ function Rig({ cam, view, hud }: { cam: (typeof CAMS)[string]; view: React.Mutab
   }, [camera, cam, view]);
   useFrame((_, dt) => {
     const v = view.current; v.time += dt;
-    const w = window as unknown as { __heistSalasFrame?: number; __heistSalasReady?: boolean };
+    const w = window as unknown as { __heistSalasFrame?: number; __heistSalasReady?: boolean; __heistSalasCam?: string };
+    w.__heistSalasCam = Object.keys(CAMS).find((k) => CAMS[k] === cam);
     w.__heistSalasFrame = (w.__heistSalasFrame ?? 0) + 1; if (w.__heistSalasFrame === 8) w.__heistSalasReady = true;
     acc.current.t += dt; acc.current.n++;
     if (hud.current && acc.current.n >= 30) {
@@ -60,7 +72,8 @@ function Rig({ cam, view, hud }: { cam: (typeof CAMS)[string]; view: React.Mutab
 
 function LabScene({ hud }: { hud: React.RefObject<HTMLDivElement | null> }) {
   const params = useMemo(() => new URLSearchParams(location.search), []);
-  const [key, setKey] = useState(params.get("cam") ?? "salao"), cam = CAMS[key] ?? CAMS.salao;
+  const free = useMemo(() => freeCam(params), [params]);
+  const [key, setKey] = useState(params.get("cam") ?? "salao"), cam = free ?? CAMS[key] ?? CAMS.salao;
   const q = (params.get("q") === "low" ? "low" : "high") as "high" | "low";
   const view = useRef<SceneView>((() => {
     const v = emptyView(); v.playerRoom = cam.room;
