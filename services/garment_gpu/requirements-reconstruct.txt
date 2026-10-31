@@ -1,0 +1,7 @@
+# QwenImageEditPlusPipeline (Qwen-Image-Edit-2509/2511) verified with diffusers 0.39; peft loads garment LoRA adapters.
+-r requirements-api.txt
+diffusers>=0.39,<1
+transformers>=4.56,<5
+accelerate>=1.1,<2
+safetensors>=0.4.5,<1
+peft>=0.15,<1

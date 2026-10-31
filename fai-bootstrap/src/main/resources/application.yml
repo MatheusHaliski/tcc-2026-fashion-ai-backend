@@ -221,6 +221,14 @@ fashionai:
     photoroom-api-key: ${PHOTOROOM_API_KEY:}               # RF4 estúdio (fundo + reiluminação + sombra por IA)
     remove-bg-api-key: ${REMOVE_BG_API_KEY:${REMBG_API_KEY:}}
     rembg-url: ${REMBG_URL:}
+    # GPU própria (services/garment_gpu: Grounding DINO + SAM 2.1 + Qwen-Image-Edit). Configurada, vira a primeira
+    # opção da remoção de fundo e da cópia da peça por IA; vazia, nada muda.
+    garment-gpu-url: ${GARMENT_GPU_URL:}                   # https://..., ou http só em rede privada
+    garment-gpu-api-key: ${GARMENT_GPU_API_KEY:}           # chave do cliente com escopos submit|read
+    garment-gpu-segment-timeout-seconds: ${GARMENT_GPU_SEGMENT_TIMEOUT_SECONDS:45}
+    garment-gpu-edit-timeout-seconds: ${GARMENT_GPU_EDIT_TIMEOUT_SECONDS:240}
+    garment-gpu-edit-cost-usd: ${GARMENT_GPU_EDIT_COST_USD:0.00}   # custo estimado de GPU por reconstrução (orçamento)
+    garment-gpu-delete-after-download: ${GARMENT_GPU_DELETE_AFTER_DOWNLOAD:true}   # false = mantém para revisão/LoRA
     google-vision-api-key: ${GOOGLE_VISION_API_KEY:}       # moderação de fotos enviadas (SafeSearch); vazio = segmentação local + revisão humana
     daily-budget-usd: ${AI_DAILY_BUDGET_USD:5.00}          # teto global de gasto com IA externa por dia UTC (0 = sem teto)
     user-daily-budget-usd: ${AI_USER_DAILY_BUDGET_USD:0.50} # teto por usuário por dia UTC (0 = sem teto)

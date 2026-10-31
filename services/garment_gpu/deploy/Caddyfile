@@ -1,0 +1,34 @@
+# HTTPS automático (Let's Encrypt) na frente da API. DOMAIN precisa apontar (DNS A/AAAA) para este servidor.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# só os IPs autorizados (backend Java no Railway, equipe); o resto recebe 403
+	@outside not remote_ip {$ALLOWED_CIDRS}
+	respond @outside 403
+
+	# métricas e saúde detalhada ficam na rede interna (Prometheus coleta direto em api:8000)
+	@internal path /metrics /ready
+	respond @internal 404
+
+	request_body {
+		max_size 16MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	reverse_proxy api:8000 {
+		transport http {
+			read_timeout 60s
+		}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
