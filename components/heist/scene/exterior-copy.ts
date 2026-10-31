@@ -5,6 +5,61 @@
  */
 import type { SceneLocale } from "./interior-copy";
 
+/** Letreiros, placas, faixas, cartazes e inscrições pintados na rua (nomes ficcionais do mundo do jogo). */
+export interface Signage {
+  gala: string; year: string; date: string; museum: string; institute: string; aurora: string; auroraHouse: string; exhibit: string;
+  restricted: string; caterer: string; catererSub: string; police: string; dock: string; staffOnly: string; exit: string;
+  vendor: string; vendorSub: string; vendorTag: string; avenue: string; street: string; closed: string; fans: string[];
+  invite: string; reception: string; press: string; service: string; serviceArrow: string; noParking: string; queue: string; alley: string;
+  /** ponto de ônibus, banca, placa de estacionamento, manobrista, totem, mapa da linha, inscrição e placas de bronze */
+  busStop: string; busLines: string; kiosk: string; kioskSub: string; noParkingSub: string; tow: string; valet: string; guests: string;
+  routeTitle: string; youAreHere: string; inscription: string; founded: string; museumTag: string; galaEntrance: string; inviteOnly: string;
+  /** quadro da padaria (interior da loja) */
+  bakeryBoard: string;
+}
+
+export const SIGNAGE_COPY: Record<SceneLocale, Signage> = {
+  "pt-BR": {
+    gala: "GALA LUMIÈRE", year: "2026", date: "04 · 12 · 2026", museum: "MUSEU VESPER", institute: "INSTITUTO DO TRAJE",
+    aurora: "AURORA", auroraHouse: "CASA ORVALHO · 1957", exhibit: "EXPOSIÇÃO", restricted: "ÁREA RESTRITA · CREDENCIADOS",
+    caterer: "BUFÊ LUMIÈRE", catererSub: "ALTA GASTRONOMIA PARA EVENTOS", police: "POLÍCIA", dock: "DOCA · ENTREGAS", staffOnly: "SOMENTE FUNCIONÁRIOS",
+    exit: "SAÍDA DE EMERGÊNCIA", vendor: "ACHADOS DE GRIFE", vendorSub: "COMPRO · TROCO · VENDO", vendorTag: "SEM PERGUNTAS",
+    avenue: "AV. VESPER", street: "R. ORVALHO", closed: "VIA INTERDITADA", fans: ["ÍCONE ✦", "OLHA PRA CÁ!", "LENDA", "TE AMO ♥", "MUSA", "BRILHA!"],
+    invite: "ACESSO SOMENTE COM CONVITE", reception: "RECEPÇÃO", press: "IMPRENSA CREDENCIADA", service: "ENTRADA DE SERVIÇO", serviceArrow: "◀", noParking: "PROIBIDO ESTACIONAR",
+    queue: "FILA DE CONVIDADOS", alley: "BECO · ACESSO RESTRITO",
+    busStop: "PONTO DE ÔNIBUS", busLines: "207 · 315 · 422 · NOTURNO N12", kiosk: "BANCA DA AVENIDA", kioskSub: "JORNAIS · REVISTAS · CIGARROS · BALAS",
+    noParkingSub: "EVENTO · 18H ÀS 4H", tow: "GUINCHO", valet: "MANOBRISTA", guests: "CONVIDADOS", routeTitle: "LINHAS NOTURNAS", youAreHere: "VOCÊ ESTÁ AQUI",
+    inscription: "MUSEU VESPER · MCMXXXI", founded: "FUNDADO EM MCMXXXI", museumTag: "ARTE · TRAJE · CIDADE", galaEntrance: "GALA LUMIÈRE · ENTRADA", inviteOnly: "SOMENTE COM CONVITE",
+    bakeryBoard: "PÃES · DOCES · CAFÉ",
+  },
+  en: {
+    gala: "GALA LUMIÈRE", year: "2026", date: "12 · 04 · 2026", museum: "VESPER MUSEUM", institute: "COSTUME INSTITUTE",
+    aurora: "AURORA", auroraHouse: "CASA ORVALHO · 1957", exhibit: "EXHIBITION", restricted: "RESTRICTED AREA · CREDENTIALS ONLY",
+    caterer: "LUMIÈRE CATERING", catererSub: "FINE DINING FOR EVENTS", police: "POLICE", dock: "DOCK · DELIVERIES", staffOnly: "STAFF ONLY",
+    exit: "EMERGENCY EXIT", vendor: "DESIGNER FINDS", vendorSub: "BUY · TRADE · SELL", vendorTag: "NO QUESTIONS",
+    avenue: "VESPER AVE", street: "ORVALHO ST", closed: "ROAD CLOSED", fans: ["ICON ✦", "LOOK HERE!", "LEGEND", "LOVE YOU ♥", "MUSE", "SHINE!"],
+    invite: "ADMISSION BY INVITATION ONLY", reception: "RECEPTION", press: "ACCREDITED PRESS", service: "SERVICE ENTRANCE", serviceArrow: "◀", noParking: "NO PARKING",
+    queue: "GUEST LINE", alley: "ALLEY · RESTRICTED ACCESS",
+    busStop: "BUS STOP", busLines: "207 · 315 · 422 · NIGHT N12", kiosk: "AVENUE NEWSSTAND", kioskSub: "NEWSPAPERS · MAGAZINES · CIGARETTES · CANDY",
+    noParkingSub: "EVENT · 6 PM TO 4 AM", tow: "TOW-AWAY ZONE", valet: "VALET", guests: "GUESTS", routeTitle: "NIGHT LINES", youAreHere: "YOU ARE HERE",
+    inscription: "VESPER MUSEUM · MCMXXXI", founded: "FOUNDED MCMXXXI", museumTag: "ART · COSTUME · CITY", galaEntrance: "GALA LUMIÈRE · ENTRANCE", inviteOnly: "INVITATION ONLY",
+    bakeryBoard: "BREAD · PASTRIES · COFFEE",
+  },
+  es: {
+    gala: "GALA LUMIÈRE", year: "2026", date: "04 · 12 · 2026", museum: "MUSEO VESPER", institute: "INSTITUTO DEL TRAJE",
+    aurora: "AURORA", auroraHouse: "CASA ORVALHO · 1957", exhibit: "EXPOSICIÓN", restricted: "ÁREA RESTRINGIDA · ACREDITADOS",
+    caterer: "CATERING LUMIÈRE", catererSub: "ALTA GASTRONOMÍA PARA EVENTOS", police: "POLICÍA", dock: "MUELLE · ENTREGAS", staffOnly: "SOLO PERSONAL",
+    exit: "SALIDA DE EMERGENCIA", vendor: "HALLAZGOS DE FIRMA", vendorSub: "COMPRO · CAMBIO · VENDO", vendorTag: "SIN PREGUNTAS",
+    avenue: "AV. VESPER", street: "C. ORVALHO", closed: "VÍA CORTADA", fans: ["ÍCONO ✦", "¡MIRA AQUÍ!", "LEYENDA", "TE AMO ♥", "MUSA", "¡BRILLA!"],
+    invite: "ACCESO SOLO CON INVITACIÓN", reception: "RECEPCIÓN", press: "PRENSA ACREDITADA", service: "ENTRADA DE SERVICIO", serviceArrow: "◀", noParking: "PROHIBIDO APARCAR",
+    queue: "FILA DE INVITADOS", alley: "CALLEJÓN · ACCESO RESTRINGIDO",
+    busStop: "PARADA DE AUTOBÚS", busLines: "207 · 315 · 422 · NOCTURNO N12", kiosk: "QUIOSCO DE LA AVENIDA", kioskSub: "PERIÓDICOS · REVISTAS · CIGARRILLOS · CARAMELOS",
+    noParkingSub: "EVENTO · 18H A 4H", tow: "GRÚA", valet: "APARCACOCHES", guests: "INVITADOS", routeTitle: "LÍNEAS NOCTURNAS", youAreHere: "USTED ESTÁ AQUÍ",
+    inscription: "MUSEO VESPER · MCMXXXI", founded: "FUNDADO EN MCMXXXI", museumTag: "ARTE · TRAJE · CIUDAD", galaEntrance: "GALA LUMIÈRE · ENTRADA", inviteOnly: "SOLO CON INVITACIÓN",
+    bakeryBoard: "PANES · DULCES · CAFÉ",
+  },
+};
+
 export interface FlyerCopy { title: string; lines: string[] }
 /** Letreiro de cada loja da quadra (nome e subtítulo); a chave é o `kind` de STORES em exterior-citytex.ts. */
 export interface StoreCopy { name: string; sub?: string }
