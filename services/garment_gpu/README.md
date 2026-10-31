@@ -125,6 +125,20 @@ humana (`POST /review`). Calibração inicial com fotos reais de pessoas vestind
   um treinador de LoRA para Qwen-Image-Edit (ex.: DiffSynth-Studio, ostris ai-toolkit) e carregue com
   `RECON_LORA_PATH=/loras/arquivo.safetensors` (pasta `./loras`). Treine só com imagens cujos direitos a equipe tem.
 
+## Expor a API com Cloudflare Tunnel (VM sem IP público)
+
+Quando a política da organização proíbe IP público na VM (padrão em projetos novos do Google Cloud), o perfil
+`tunnel` publica a API em HTTPS sem abrir porta nenhuma: o `cloudflared` só faz conexão de saída até a Cloudflare.
+
+1. No painel Cloudflare **Zero Trust → Networks → Tunnels**, crie um túnel (tipo *Cloudflared*), copie o token e
+   adicione um **Public hostname** (ex.: `gpu.seudominio.com`) com serviço **HTTP** → `api:8000`.
+2. Na VM, no `.env`: `CLOUDFLARE_TUNNEL_TOKEN=<token>` e `METRICS_PUBLIC=false` (as métricas não ficam públicas).
+3. `docker compose --profile tunnel up -d` e teste de fora: `curl https://gpu.seudominio.com/health`.
+4. No backend Java (Railway): `GARMENT_GPU_URL=https://gpu.seudominio.com` e `GARMENT_GPU_API_KEY=<chave submit|read>`.
+
+A autenticação continua sendo a chave por cliente da API; opcionalmente, restrinja ainda mais com regras de WAF ou
+uma aplicação Cloudflare Access com *service token*.
+
 ## Integração com o backend Java
 
 No backend (`.env` da API Spring): `GARMENT_GPU_URL=https://gpu.seu-dominio` e `GARMENT_GPU_API_KEY=<chave
