@@ -37,7 +37,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.awt.image.BufferedImage;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -197,54 +196,13 @@ public class PreferencesService {
         }
     }
 
-    static final java.util.regex.Pattern NAV_GROUP = java.util.regex.Pattern.compile("^nav\\.group\\.[a-z]{2,20}$");
-    static final java.util.regex.Pattern NAV_HREF = java.util.regex.Pattern.compile("^/[a-z0-9][a-z0-9/-]{0,40}$");
-
-    /**
-     * RF23 — ordem do menu lateral: só chaves de grupo ({@code nav.group.x}) e caminhos internos ({@code /closet}), sem
-     * repetição e com limite de tamanho. O frontend ignora o que não conhece e acrescenta itens novos no fim, então a lista
-     * guardada não precisa conter todos os itens.
-     */
-    static Map<String, Object> navOrder(Map<String, Object> raw) {
-        List<String> groups = navList(raw.get("groups"), NAV_GROUP, 12);
-        Map<String, List<String>> items = new LinkedHashMap<>();
-        if (raw.get("items") instanceof Map<?, ?> m) {
-            if (m.size() > 12) throw invalidNav();
-            m.forEach((k, v) -> {
-                String key = String.valueOf(k);
-                if (!NAV_GROUP.matcher(key).matches()) throw invalidNav();
-                items.put(key, navList(v, NAV_HREF, 20));
-            });
-        } else if (raw.get("items") != null) {
-            throw invalidNav();
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("groups", groups);
-        out.put("items", items);
-        return out;
-    }
-
-    private static List<String> navList(Object value, java.util.regex.Pattern format, int max) {
-        if (value == null) return List.of();
-        if (!(value instanceof List<?> list) || list.size() > max) throw invalidNav();
-        java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
-        for (Object o : list) {
-            if (!(o instanceof String s) || !format.matcher(s).matches() || !out.add(s)) throw invalidNav();
-        }
-        return List.copyOf(out);
-    }
-
-    private static ApiException invalidNav() {
-        return ApiException.badRequest("ORDEM_DO_MENU_INVALIDA", Msg.t("preferences.ordem_do_menu_invalida"));
-    }
-
     /** DET-C06 — microestéticas "-core" do quiz "Qual é o seu core?" (vocabulário do arquétipo do DNA). */
-    public static final List<String> CORES = List.of("OLD_MONEY", "QUIET_LUXURY", "GORPCORE", "COQUETTE", "Y2K", "STREETWEAR", "DARK_ACADEMIA", "COTTAGECORE");
+    public static final List<String> CORES = PreferenceValueRules.CORES;
 
     @Transactional
     public Map<String, Object> update(CurrentUser user, Update u) {
         UserPreferences p = prefs(user);
-        if (u.clientUpdatedAt() != null && p.getClientUpdatedAt() != null && u.clientUpdatedAt().isBefore(p.getClientUpdatedAt())) {
+        if (PreferenceValueRules.isStale(u.clientUpdatedAt(), p.getClientUpdatedAt())) {
             // sincronização entre dispositivos (RF23.CA02): a alteração mais recente vence.
             return get(user);
         }
@@ -264,25 +222,17 @@ public class PreferencesService {
             p.setLanguage(u.language());
         }
         if (u.currency() != null) {
-            // "" ou AUTO volta à moeda do idioma
-            String c = u.currency().trim().toUpperCase(java.util.Locale.ROOT);
-            if (!c.isEmpty() && !"AUTO".equals(c) && !ExchangeRateService.supported(c)) {
-                throw ApiException.badRequest("MOEDA_INVALIDA", Msg.t("preferences.moeda_invalida"));
-            }
-            p.setCurrency(c.isEmpty() || "AUTO".equals(c) ? null : c);
+            p.setCurrency(PreferenceValueRules.currency(u.currency())); // "" ou AUTO volta à moeda do idioma
         }
         if (u.navOrder() != null) {
             // {} ou sem grupos volta à ordem padrão do menu
-            p.setNavOrderJson(u.navOrder().isEmpty() ? null : Json.write(navOrder(u.navOrder())));
+            p.setNavOrderJson(u.navOrder().isEmpty() ? null : Json.write(PreferenceValueRules.navOrder(u.navOrder())));
         }
         if (u.density() != null) {
             p.setDensity(u.density());
         }
         if (u.fontScale() != null) {
-            if (u.fontScale() < 80 || u.fontScale() > 160) {
-                throw ApiException.badRequest("FONTE_INVALIDA", Msg.t("preferences.tamanho_de_fonte_entre_80"));
-            }
-            p.setFontScale(u.fontScale());
+            p.setFontScale(PreferenceValueRules.fontScale(u.fontScale()));
         }
         if (u.highContrast() != null) {
             p.setHighContrast(u.highContrast());
@@ -297,11 +247,7 @@ public class PreferencesService {
             p.setHapticsEnabled(u.hapticsEnabled());
         }
         if (u.coreAesthetic() != null) {
-            String core = u.coreAesthetic().trim().toUpperCase(java.util.Locale.ROOT);
-            if (!core.isEmpty() && !CORES.contains(core)) {
-                throw ApiException.badRequest("CORE_INVALIDO", Msg.t("preferences.core_desconhecido"));
-            }
-            p.setCoreAesthetic(core.isEmpty() ? null : core);
+            p.setCoreAesthetic(PreferenceValueRules.coreAesthetic(u.coreAesthetic()));
         }
         if (u.chromeBackgroundId() != null) {
             String id = u.chromeBackgroundId().isBlank() ? null : u.chromeBackgroundId();
@@ -312,12 +258,7 @@ public class PreferencesService {
             p.getUser().setInterfaceBackgroundPresetId(id);
         }
         if (u.contentContainerColor() != null) {
-            // "" volta ao padrão (branco); qualquer outro valor precisa ser #RRGGBB
-            String c = u.contentContainerColor().trim();
-            if (!c.isEmpty() && !c.matches("^#[0-9A-Fa-f]{6}$")) {
-                throw ApiException.badRequest("COR_INVALIDA", Msg.t("preferences.cor_dos_containers_em_hexadecimal"));
-            }
-            p.setContentContainerColor(c.isEmpty() ? null : c.toUpperCase(java.util.Locale.ROOT));
+            p.setContentContainerColor(PreferenceValueRules.containerColor(u.contentContainerColor())); // "" volta ao branco
         }
         if (u.sizeSystem() != null) {
             p.setSizeSystem(u.sizeSystem());
@@ -329,10 +270,7 @@ public class PreferencesService {
             p.setMannequinSex(u.mannequinSex());
         }
         if (u.mannequinSkinTone() != null) {
-            if (!MannequinGeometry.SKIN_TONES.containsKey(u.mannequinSkinTone())) {
-                throw ApiException.badRequest("TOM_INVALIDO", Msg.t("preferences.tom_de_pele_fora_da"));
-            }
-            p.setMannequinSkinTone(u.mannequinSkinTone());
+            p.setMannequinSkinTone(PreferenceValueRules.skinTone(u.mannequinSkinTone()));
         }
         if (u.mannequinBuild() != null) {
             p.setMannequinBuild(u.mannequinBuild());
@@ -405,11 +343,7 @@ public class PreferencesService {
                     : media.requireOwnedMedia(u.getId(), cmd.coverUrl(), Set.of(MediaService.MediaScope.OWNER), "coverUrl").url());
         }
         if (cmd.country() != null) {
-            String c = cmd.country().trim().toUpperCase(Locale.ROOT);
-            if (!c.isEmpty() && !c.matches("[A-Z]{2}")) {
-                throw ApiException.badRequest("PAIS_INVALIDO", Msg.t("preferences.use_o_codigo_iso_do"));
-            }
-            u.setCountry(c.isEmpty() ? null : c);
+            u.setCountry(PreferenceValueRules.country(cmd.country()));
         }
         if (cmd.sex() != null) {
             u.setSex(cmd.sex());
@@ -422,42 +356,19 @@ public class PreferencesService {
             u.setPronouns(cmd.pronouns().isBlank() ? null : InputSanitizer.moderated("pronouns", cmd.pronouns(), 40));
         }
         if (cmd.links() != null) {
-            u.setLinksJson(Json.write(validLinks(cmd.links())));
+            u.setLinksJson(Json.write(PreferenceValueRules.links(cmd.links())));
         }
         if (cmd.mannequinFace() != null) {
-            Map<String, Object> face = new java.util.LinkedHashMap<>();
-            face.put("offsetX", clampNum(cmd.mannequinFace().get("offsetX"), -0.3, 0.3, 0));
-            face.put("offsetY", clampNum(cmd.mannequinFace().get("offsetY"), -0.3, 0.3, 0));
-            face.put("scale", clampNum(cmd.mannequinFace().get("scale"), 0.6, 1.8, 1));
+            Map<String, Object> face = PreferenceValueRules.mannequinFace(cmd.mannequinFace());
             preferences.findByUserId(u.getId()).ifPresent(p -> p.setMannequinFaceJson(Json.write(face)));
         }
         audit.log(user, AuditActions.ALTERACAO_PERFIL, "user:" + u.getId(), Map.of());
         return Views.user(u);
     }
 
-    /** Links do perfil (Editar perfil, formato do Instagram): até 5, só http(s), título curto. */
+    /** Mantido para os testes existentes; a regra está em {@link PreferenceValueRules#links}. */
     static List<Map<String, String>> validLinks(List<Map<String, String>> links) {
-        if (links.size() > 5) {
-            throw ApiException.badRequest("LINKS_DEMAIS", Msg.t("preferences.use_ate_5_links"));
-        }
-        List<Map<String, String>> out = new java.util.ArrayList<>();
-        for (Map<String, String> l : links) {
-            String url = l.get("url") == null ? "" : l.get("url").trim();
-            if (url.isEmpty()) {
-                continue;
-            }
-            if (!url.matches("(?i)https?://[^\\s<>\"]{3,300}")) {
-                throw ApiException.badRequest("LINK_INVALIDO", Msg.t("preferences.link_invalido_use_um_endereco"));
-            }
-            String title = l.get("title") == null || l.get("title").isBlank() ? url.replaceFirst("(?i)^https?://", "") : l.get("title").trim();
-            out.add(Map.of("title", InputSanitizer.clean(title.length() > 40 ? title.substring(0, 40) : title, 40), "url", url));
-        }
-        return out;
-    }
-
-    private static double clampNum(Object v, double min, double max, double def) {
-        double d = v instanceof Number n ? n.doubleValue() : def;
-        return Math.max(min, Math.min(max, d));
+        return PreferenceValueRules.links(links);
     }
 
     /** RF23.CA04 — @ já em uso é recusado com sugestões. */

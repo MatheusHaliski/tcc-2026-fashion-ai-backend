@@ -1,0 +1,7 @@
+# 03 baseline: caracterizacao no codigo ORIGINAL (antes da extracao), base 04bf53f
+# mvn -B -q -pl fai-application -Dtest=PreferencesServiceTest,PreferencesServiceCharacterizationTest,CreatorOptOutPreferencesTest -Dsurefire.failIfNoSpecifiedTests=false test
+# PreferencesService.java = 540 linhas
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CreatorOptOutPreferencesTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.PreferencesServiceCharacterizationTest
+Tests run: 10, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.PreferencesServiceTest
+TOTAL: 21 testes, 0 falhas, 0 erros

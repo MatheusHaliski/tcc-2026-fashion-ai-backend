@@ -1,0 +1,13 @@
+# 03 depois da extracao de PreferenceValueRules
+# mvn -B -q -pl fai-application -Dtest=PreferencesServiceTest,PreferencesServiceCharacterizationTest,CreatorOptOutPreferencesTest,PreferenceValueRulesTest,WardrobePrefillTest -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.CreatorOptOutPreferencesTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.PreferencesServiceCharacterizationTest
+Tests run: 10, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.PreferencesServiceTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.PreferenceValueRulesTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.WardrobePrefillTest
+TOTAL: 30 testes, 0 falhas, 0 erros
+
+# consumidor HTTP (fai-web): mvn -B -q -pl fai-web -am -Dtest=ControllerDelegacaoTest -Dsurefire.failIfNoSpecifiedTests=false test
+Tests run: 697, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.web.controller.ControllerDelegacaoTest
+
+# linhas: PreferencesService.java 540 -> 451; PreferenceValueRules.java (novo) 169
