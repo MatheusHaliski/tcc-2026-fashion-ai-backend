@@ -57,3 +57,8 @@ Esse julgamento não é o mesmo que o score automático. Copilot/Scheme e o edit
 O scanner encontrou 10 componentes fortemente conectados no grafo de imports estáticos tanto na baseline quanto depois. O grupo dos cards agora inclui os módulos extraídos; ao normalizar esses caminhos para o módulo de origem não aparecem grupos cíclicos novos. Isso não resolve os ciclos antigos nem comprova ausência de ciclos dinâmicos. Os grupos completos estão em `inventory.json`.
 
 Princípios aplicados: SRP por responsabilidade; DIP já existente preservado nos adapters/portas; contratos de substituição e APIs mantidos. Nenhuma interface Java foi criada somente para cumprir um padrão.
+
+
+## Checkpoint adicional — 30/10/2026
+
+Nova auditoria por AST e primeiro lote de histórico do Atelier documentados em [gof/INDEX.md](gof/INDEX.md). Este adendo preserva o relato anterior e distingue a base5166f88c das novas alterações ainda não commitadas. Inventário abrangente não equivale a revisão semântica concluída.

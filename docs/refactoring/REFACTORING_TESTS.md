@@ -57,3 +57,13 @@ Script: `scripts/refactoring/browser-regression.cjs before|after`, servidor Next
 - Maven usa Java 21 e cache local. Não foi iniciado Spring contra o banco de produção.
 
 O scanner/inventário usa apenas Git e stdlib, sem importar módulos da aplicação. Os comandos CLI Python por módulo e arquivo com `--help` terminaram com saídas idênticas. Não foram executadas operações --apply ou --watch.
+
+
+## Checkpoint adicional — 30/10/2026
+
+Nova auditoria por AST e primeiro lote de histórico do Atelier documentados em [gof/INDEX.md](gof/INDEX.md). Este adendo preserva o relato anterior e distingue a base5166f88c das novas alterações ainda não commitadas. Inventário abrangente não equivale a revisão semântica concluída.
+
+
+### Continuação publicada em PR
+
+Histórico e inspetor isolados; editor915→632 linhas, total combinado981 (+66).14 testes funcionais,14 da auditoria, tipagem, build completo e browser smoke passaram. Limites e três famílias/23 padrões em gof/LINE_LIMITS.md e gof/PATTERN_DECISIONS.md. A refatoração de todo o repositório não está concluída; pendências explícitas na matriz.

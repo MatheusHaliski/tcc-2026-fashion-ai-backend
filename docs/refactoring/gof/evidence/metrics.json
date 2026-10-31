@@ -1,0 +1,36 @@
+{
+  "flow": "FLOW-A3D-HISTORY-001",
+  "editor_lines_before": 915,
+  "editor_lines_after": 632,
+  "new_runtime_module_lines": 38,
+  "runtime_total_before": 915,
+  "runtime_total_after": 981,
+  "editor_reduction_percent": 30.93,
+  "branch_syntax_before_editor": 135,
+  "branch_syntax_after_editor": 109,
+  "branch_syntax_new_helper": 4,
+  "functions_before_editor": 88,
+  "functions_after_editor": 70,
+  "functions_new_helper": 3,
+  "imports_before_editor": 14,
+  "imports_after_editor": 16,
+  "jsx_byte_identical": false,
+  "new_import_cycles": 0,
+  "new_history_tests_lines": 57,
+  "notes": [
+    "Branch syntax counts are not per-function cyclomatic complexity",
+    "No global branch/duplication reduction claimed",
+    "Runtime helper + editor counted together; audit/test/docs overhead reported separately"
+  ],
+  "baseline_revision": "5166f88ca8f866cbc0465996015cafc69852e8d7",
+  "flows": [
+    "FLOW-A3D-HISTORY-001",
+    "FLOW-A3D-INSPECTOR-002"
+  ],
+  "extracted_modules": {
+    "lib/atelier3d/history.ts": 38,
+    "components/atelier3d/scene-inspector.tsx": 200,
+    "components/atelier3d/scene-fields.tsx": 111
+  },
+  "branch_syntax_combined_after": 135
+}

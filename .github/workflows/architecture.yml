@@ -1,0 +1,27 @@
+name: Architecture size inventory
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  line-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate inventory and line policy
+        run: python -m unittest scripts.refactoring.test_audit_repository scripts.refactoring.test_line_policy
+      - name: Report every tracked source (triage, not automatic approval)
+        run: python -m scripts.refactoring.line_policy --output /tmp/fashionai-line-limits.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fashionai-line-limits
+          path: /tmp/fashionai-line-limits.csv

@@ -95,8 +95,21 @@ it("requires reconfirmation when catalog gender changes since the saved version"
     ).disabled,
   ).toBe(true);
   fireEvent.change(input, { target: { value: "0.12" } });
+  fireEvent.click(screen.getByRole("button", { name: "Desfazer", exact: true }));
+  expect((input as HTMLInputElement).value).toBe("0");
+  fireEvent.click(screen.getByRole("button", { name: "Refazer", exact: true }));
+  expect((input as HTMLInputElement).value).toBe("0.12");
+  fireEvent.change(screen.getByLabelText("Rotação — graus Y"), { target: { value: "180" } });
+  fireEvent.change(screen.getByLabelText("Cor", { exact: true }), { target: { value: "#2266aa" } });
+  fireEvent.change(screen.getByLabelText("Repetição da textura", { exact: true }), { target: { value: "3" } });
+  fireEvent.change(screen.getByLabelText("Posição do vértice Z"), { target: { value: "0.2" } });
   fireEvent.click(screen.getByRole("button", { name: "Salvar", exact: true }));
   await waitFor(() => expect(client.save).toHaveBeenCalled());
   expect(client.save.mock.calls[0][0].confirmedTipoLookId).toBeNull();
   expect(client.save.mock.calls[0][0].genderEvidenceHash).toBe("changed");
+  const saved = client.save.mock.calls[0][0].document;
+  expect(saved.nodes.n0.position).toEqual([0.12, 0, 0]);
+  expect(saved.nodes.n0.rotation[1]).toBeCloseTo(Math.PI);
+  expect(saved.materials["n0.p0"]).toMatchObject({ color: "#2266aa", repeat: [3, 3] });
+  expect(saved.vertices["n0.p0"][0]).toEqual([0, 0, 0.2]);
 });

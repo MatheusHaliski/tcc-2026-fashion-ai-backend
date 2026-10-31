@@ -1,0 +1,12 @@
+frontend: 9225 chaves · backend: 2827 chaves
+erros: 0 · avisos: 10 · chaves do frontend sem referência direta: 844
+aviso fe:en: igual ao pt-BR (não traduzido?) heist.who.vendor = Tião
+aviso fe:es: igual ao pt-BR (não traduzido?) heist.who.vendor = Tião
+aviso be:en: igual ao pt-BR (não traduzido?) flairLooks.sao_paulo_tropical = São Paulo Tropical
+aviso be:en: igual ao pt-BR (não traduzido?) flairModes.sao_paulo = São Paulo
+aviso be:en: igual ao pt-BR (não traduzido?) flairModes.sao_paulo_tropical_market = São Paulo — Tropical Market
+aviso be:en: igual ao pt-BR (não traduzido?) wardrobeCreator.sao_gabriel = São Gabriel
+aviso be:es: igual ao pt-BR (não traduzido?) flairLooks.sao_paulo_tropical = São Paulo Tropical
+aviso be:es: igual ao pt-BR (não traduzido?) flairModes.sao_paulo = São Paulo
+aviso be:es: igual ao pt-BR (não traduzido?) flairModes.sao_paulo_tropical_market = São Paulo — Tropical Market
+aviso be:es: igual ao pt-BR (não traduzido?) wardrobeCreator.sao_gabriel = São Gabriel

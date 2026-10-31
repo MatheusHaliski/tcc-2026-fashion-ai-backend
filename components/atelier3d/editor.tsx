@@ -11,21 +11,19 @@ import {
   exportGlb,
   downloadBlob,
   updateNode,
-  updateMaterial,
   EMPTY_DOCUMENT,
   type LoadedAsset,
   type SceneDocument,
-  type NodeEdit,
-  type MaterialEdit,
-  type Vec3,
 } from "@/lib/atelier3d/document";
 import { sceneApi, type SceneAccess } from "./scene-api";
+import { createSceneHistory, commitSceneEdit, travelSceneHistory, type SceneHistory } from "@/lib/atelier3d/history";
 import type {
   SceneResponse,
   SceneVersion,
   Asset,
   GenderEvidence,
 } from "./contracts";
+import { SceneInspector } from "./scene-inspector";
 import { GenderPanel } from "./gender-panel";
 import { GuestPanel } from "./guest-panel";
 import type { Tool, View } from "./viewport";
@@ -40,11 +38,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
   const [scene, setScene] = useState<SceneResponse | null>(null),
     [asset, setAsset] = useState<Asset | null>(null),
     [loaded, setLoaded] = useState<LoadedAsset | null>(null);
-  const [history, setHistory] = useState<{
-    past: SceneDocument[];
-    doc: SceneDocument;
-    future: SceneDocument[];
-  }>({ past: [], doc: EMPTY_DOCUMENT, future: [] });
+  const [history, setHistory] = useState<SceneHistory>(() => createSceneHistory(EMPTY_DOCUMENT));
   const doc = history.doc;
   const [selected, setSelected] = useState(""),
     [tool, setTool] = useState<Tool>("translate"),
@@ -91,7 +85,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
       activeAsset.current = next;
       setLoaded(next);
       setAsset(meta);
-      setHistory({ past: [], doc: structuredClone(document), future: [] });
+      setHistory(createSceneHistory(structuredClone(document)));
       setSelected(next.nodes.keys().next().value ?? "");
       setVertex(0);
       setFit((n) => n + 1);
@@ -127,7 +121,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
         activeAsset.current = null;
         setLoaded(null);
         setAsset(null);
-        setHistory({ past: [], doc: EMPTY_DOCUMENT, future: [] });
+        setHistory(createSceneHistory(EMPTY_DOCUMENT));
       }
       setDirty(false);
       setConflict(false);
@@ -209,31 +203,13 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
   }, []);
   function change(next: SceneDocument) {
     if (busyRef.current || !scene?.edit) return;
-    setHistory((h) => ({
-      past: [...h.past, h.doc].slice(-30),
-      doc: next,
-      future: [],
-    }));
+    setHistory((history) => commitSceneEdit(history, next));
     setDirty(true);
     setPaused(false);
   }
   function travel(direction: "undo" | "redo") {
     if (busyRef.current || !scene?.edit) return;
-    setHistory((h) => {
-      if (direction === "undo" && h.past.length)
-        return {
-          past: h.past.slice(0, -1),
-          doc: h.past.at(-1)!,
-          future: [h.doc, ...h.future],
-        };
-      if (direction === "redo" && h.future.length)
-        return {
-          past: [...h.past, h.doc],
-          doc: h.future[0],
-          future: h.future.slice(1),
-        };
-      return h;
-    });
+    setHistory((history) => travelSceneHistory(history, direction));
     setDirty(true);
     setPaused(false);
   }
@@ -391,11 +367,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
       activeAsset.current = next;
       setLoaded(next);
       setAsset(meta);
-      setHistory({
-        past: [],
-        doc: structuredClone(version.document),
-        future: [],
-      });
+      setHistory(createSceneHistory(structuredClone(version.document)));
       setIds(version.gender.sources.map((p) => p.id));
       setConfirmed(version.confirmedTipoLookId);
       setConfirmedHash(version.gender.hash);
@@ -409,23 +381,6 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
       setBusy(false);
     }
   }
-  const primitive = loaded
-    ? [...loaded.primitives.entries()].find(([, mesh]) => {
-        let o: typeof mesh.parent | typeof mesh = mesh;
-        while (o) {
-          if (o === loaded.nodes.get(selected)) return true;
-          o = o.parent;
-        }
-        return false;
-      })
-    : undefined;
-  const node = loaded
-    ? (doc.nodes[selected] ?? loaded.baseline.nodes[selected])
-    : undefined;
-  const material =
-    primitive && loaded
-      ? (doc.materials[primitive[0]] ?? loaded.baseline.materials[primitive[0]])
-      : undefined;
   return (
     <div className={styles.editor}>
       {projectId && (
@@ -600,149 +555,16 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
                 }
               />
             </div>
-            <aside className={`${styles.panel} ${styles.inspector}`}>
-              <fieldset disabled={!canEdit} className={styles.stack}>
-                <h2 className="type-h3">{t("atelier3d.inspector")}</h2>
-                {node && (
-                  <>
-                    <VectorField
-                      label={t("atelier3d.position")}
-                      value={node.position}
-                      onChange={(position) =>
-                        change(
-                          updateNode(
-                            doc,
-                            selected,
-                            { position },
-                            loaded.baseline,
-                          ),
-                        )
-                      }
-                    />
-                    <VectorField
-                      label={t("atelier3d.rotation")}
-                      value={
-                        node.rotation.map((n) => (n * 180) / Math.PI) as Vec3
-                      }
-                      onChange={(rotation) =>
-                        change(
-                          updateNode(
-                            doc,
-                            selected,
-                            {
-                              rotation: rotation.map(
-                                (n) => (n * Math.PI) / 180,
-                              ) as Vec3,
-                            },
-                            loaded.baseline,
-                          ),
-                        )
-                      }
-                    />
-                    <VectorField
-                      label={t("atelier3d.scale")}
-                      value={node.scale}
-                      min={0.001}
-                      onChange={(scale) =>
-                        change(
-                          updateNode(doc, selected, { scale }, loaded.baseline),
-                        )
-                      }
-                    />
-                    <label className={styles.check}>
-                      <input
-                        type="checkbox"
-                        checked={node.visible}
-                        onChange={(e) =>
-                          change(
-                            updateNode(
-                              doc,
-                              selected,
-                              { visible: e.target.checked },
-                              loaded.baseline,
-                            ),
-                          )
-                        }
-                      />
-                      {t("atelier3d.visible")}
-                    </label>
-                  </>
-                )}
-                {material && primitive && (
-                  <MaterialFields
-                    material={material}
-                    onChange={(value) =>
-                      change(
-                        updateMaterial(
-                          doc,
-                          primitive[0],
-                          value,
-                          loaded.baseline,
-                        ),
-                      )
-                    }
-                  />
-                )}
-                <h3 className="type-h3">{t("atelier3d.vertices")}</h3>
-                {asset?.inspection.skinned ||
-                asset?.inspection.morphs ||
-                asset?.inspection.animated ? (
-                  <p>{t("atelier3d.deformableWarning")}</p>
-                ) : (
-                  primitive && (
-                    <>
-                      <Field
-                        id="vertex-index"
-                        label={t("atelier3d.vertexIndex")}
-                      >
-                        <Input
-                          id="vertex-index"
-                          type="number"
-                          min={0}
-                          max={
-                            primitive[1].geometry.getAttribute("position")
-                              .count - 1
-                          }
-                          value={vertex}
-                          onChange={(e) =>
-                            setVertex(
-                              Math.min(
-                                primitive[1].geometry.getAttribute("position")
-                                  .count - 1,
-                                Math.max(0, Math.floor(Number(e.target.value))),
-                              ),
-                            )
-                          }
-                        />
-                      </Field>
-                      <VectorField
-                        label={t("atelier3d.vertexPosition")}
-                        value={
-                          doc.vertices[primitive[0]]?.[vertex] ??
-                          (Array.from(
-                            loaded.originalPositions
-                              .get(primitive[0])!
-                              .slice(vertex * 3, vertex * 3 + 3),
-                          ) as Vec3)
-                        }
-                        onChange={(point) =>
-                          change({
-                            ...doc,
-                            vertices: {
-                              ...doc.vertices,
-                              [primitive[0]]: {
-                                ...doc.vertices[primitive[0]],
-                                [vertex]: point,
-                              },
-                            },
-                          })
-                        }
-                      />
-                    </>
-                  )
-                )}
-              </fieldset>
-            </aside>
+            <SceneInspector
+              loaded={loaded}
+              document={doc}
+              selected={selected}
+              inspection={asset?.inspection}
+              editable={canEdit}
+              vertex={vertex}
+              onVertexChange={setVertex}
+              onChange={change}
+            />
           </div>
           <p className="type-caption">
             {asset?.filename} · {asset?.inspection.vertices}{" "}
@@ -806,110 +628,5 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
         </Button>
       </Dialog>
     </div>
-  );
-}
-function VectorField({
-  label,
-  value,
-  onChange,
-  min,
-}: {
-  label: string;
-  value: Vec3;
-  onChange: (value: Vec3) => void;
-  min?: number;
-}) {
-  return (
-    <fieldset>
-      <legend className="label">{label}</legend>
-      <div className={styles.vector}>
-        {(["X", "Y", "Z"] as const).map((axis, i) => (
-          <label key={axis}>
-            {axis}
-            <Input
-              aria-label={`${label} ${axis}`}
-              type="number"
-              step="0.01"
-              min={min}
-              value={Number(value[i].toFixed(5))}
-              onChange={(e) => {
-                const n = e.target.valueAsNumber;
-                if (!Number.isFinite(n) || (min !== undefined && n < min))
-                  return;
-                const next = [...value] as Vec3;
-                next[i] = n;
-                onChange(next);
-              }}
-            />
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-function MaterialFields({
-  material,
-  onChange,
-}: {
-  material: MaterialEdit;
-  onChange: (v: Partial<MaterialEdit>) => void;
-}) {
-  const { t } = useI18n();
-  return (
-    <>
-      <h3 className="type-h3">{t("atelier3d.material")}</h3>
-      <Field id="material-color" label={t("common.color")}>
-        <Input
-          id="material-color"
-          type="color"
-          value={material.color}
-          onChange={(e) => onChange({ color: e.target.value })}
-        />
-      </Field>
-      {(["roughness", "metalness"] as const).map((field) => (
-        <Field
-          key={field}
-          id={`material-${field}`}
-          label={t(`atelier3d.${field}`)}
-        >
-          <Input
-            id={`material-${field}`}
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={material[field]}
-            onChange={(e) => onChange({ [field]: Number(e.target.value) })}
-          />
-        </Field>
-      ))}
-      <Field id="texture-repeat" label={t("atelier3d.textureRepeat")}>
-        <Input
-          id="texture-repeat"
-          type="number"
-          min={0.01}
-          max={100}
-          step={0.1}
-          value={material.repeat[0]}
-          onChange={(e) => {
-            const n = e.target.valueAsNumber;
-            if (n > 0 && n <= 100) onChange({ repeat: [n, n] });
-          }}
-        />
-      </Field>
-      <Field id="texture-rotation" label={t("atelier3d.textureRotation")}>
-        <Input
-          id="texture-rotation"
-          type="number"
-          min={-360}
-          max={360}
-          value={Math.round((material.rotation * 180) / Math.PI)}
-          onChange={(e) => {
-            const n = e.target.valueAsNumber;
-            if (Number.isFinite(n)) onChange({ rotation: (n * Math.PI) / 180 });
-          }}
-        />
-      </Field>
-    </>
   );
 }

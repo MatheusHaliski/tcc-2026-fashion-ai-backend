@@ -1,0 +1,24 @@
+family,pattern,status,evidence,decision
+Criacionais,Factory Method,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Criacionais,Abstract Factory,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Criacionais,Builder,EXISTING_REVIEWED_SOURCE,lib/avatar3d/human/shoes.ts:51,Acumula atributos geométricos e produz ShoePart; não alterado neste PR.
+Criacionais,Prototype,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Criacionais,Singleton,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Estruturais,Adapter,EXISTING_REVIEWED_SOURCE,fai-infrastructure/ai-providers/src/main/java/br/com/fashionai/infrastructure/ai/image/RembgAdapter.java,BackgroundRemovalPort adaptado ao contrato HTTP rembg; sem chamar serviço real.
+Estruturais,Bridge,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Estruturais,Composite,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Estruturais,Decorator,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Estruturais,Facade,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Estruturais,Flyweight,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Estruturais,Proxy,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Comportamentais,Strategy,EXISTING_REVIEWED_SOURCE,fai-application/src/main/java/br/com/fashionai/application/catalog/image/FramingStrategy.java,Contrato de enquadramento e implementações por categoria; não alterados neste PR.
+Comportamentais,State,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Comportamentais,Template Method,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Comportamentais,Observer,EXISTING_REVIEWED_SOURCE,fai-application/src/main/java/br/com/fashionai/application/service/ChallengeService.java:853,Listeners transacionais after-commit; ordem e idempotência ainda exigem caracterização específica.
+Comportamentais,Mediator,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Comportamentais,Memento,IMPLEMENTED_THIS_PR,lib/atelier3d/history.ts,Transições de snapshots testadas sem React/rede; integração no editor validada.
+Comportamentais,Command,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Comportamentais,Chain of Responsibility,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Comportamentais,Iterator,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Comportamentais,Visitor,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
+Comportamentais,Interpreter,PENDING_REPOSITORY_REVIEW,,Ainda não há evidência suficiente para afirmar aplicação global. Usar somente após justificar variação/colaboração e regressão do fluxo.
