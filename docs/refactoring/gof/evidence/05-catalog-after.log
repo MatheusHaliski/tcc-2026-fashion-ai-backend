@@ -1,0 +1,20 @@
+# 05 catalogo — depois da extracao de CatalogPhotoChoice, 2026-10-31
+$ mvn -B -pl fai-application -Dtest='CatalogPhotoChoiceTest,CatalogServicePhotoChoiceTest,CatalogServiceTest,CatalogSearchResolveTest,PhysicalStorePurchaseTest,WardrobeServiceCadastroTest,AssetCatalogServiceTest,CatalogImagePipelineServiceTest,CatalogImageIdentityTest' -Dsurefire.failIfNoSpecifiedTests=false test
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.catalog.CatalogPhotoChoiceTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.catalog.CatalogServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.catalog.CatalogSearchResolveTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.catalog.image.CatalogImageIdentityTest
+[INFO] Tests run: 40, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.catalog.image.CatalogImagePipelineServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.catalog.CatalogServicePhotoChoiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.assets.AssetCatalogServiceTest
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.WardrobeServiceCadastroTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in br.com.fashionai.application.service.PhysicalStorePurchaseTest
+[INFO] Tests run: 96, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+$ python /home/user/tcc-2026-fashion-ai-backend/scripts/refactoring/line_ratchet.py   (da raiz da worktree)
+VIOLAÇÃO .../service/IdentityService.java: cresceu para 1079 linhas (teto congelado 1007)   <- arquivo NAO tocado; base bcaee73 anterior ao lote 02
+VIOLAÇÃO .../service/SchemeService.java: cresceu para 1311 linhas (teto congelado 1271)     <- arquivo NAO tocado; base anterior ao baseline
+APERTAR .../catalog/CatalogService.java: teto 847 -> 811
+APERTAR .../service/IdentitySecurityTest.java: teto 596 -> 530                            <- arquivo NAO tocado
+2593 arquivos governados; 264 congelados; 2 violações (0 nos arquivos deste lote)

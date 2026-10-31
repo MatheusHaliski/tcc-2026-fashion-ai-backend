@@ -352,20 +352,12 @@ public class CatalogService {
      * sem foto marcada como principal ficava sem imagem mesmo tendo fotos.
      */
     Map<UUID, CatalogImage> mainImages(List<UUID> ids) {
-        Map<UUID, CatalogImage> main = new HashMap<>();
-        for (CatalogImage i : images.findByProductIdInAndPrimaryTrue(ids)) {
-            if (usable(i)) {
-                main.putIfAbsent(i.getProductId(), i);
-            }
-        }
         // a foto canônica do pipeline de imagens passa na frente da principal da ingestão
-        images.findByProductIdInAndCanonicalTrue(ids).stream().filter(CatalogService::usable).forEach(c -> main.put(c.getProductId(), c));
-        List<UUID> missing = ids.stream().filter(id -> !main.containsKey(id)).toList();
+        Map<UUID, CatalogImage> main = CatalogPhotoChoice.primaryThenCanonical(images.findByProductIdInAndPrimaryTrue(ids),
+                images.findByProductIdInAndCanonicalTrue(ids));
+        List<UUID> missing = CatalogPhotoChoice.missing(ids, main);
         if (!missing.isEmpty()) {
-            images.findByProductIdIn(missing).stream().filter(CatalogService::usable)
-                    .sorted(Comparator.comparing((CatalogImage i) -> i.getCreatedAt() == null ? java.time.Instant.MAX : i.getCreatedAt())
-                            .thenComparing(i -> String.valueOf(i.getImageUrl())))
-                    .forEach(i -> main.putIfAbsent(i.getProductId(), i));
+            CatalogPhotoChoice.fillWithOldest(main, images.findByProductIdIn(missing));
         }
         return main;
     }
@@ -381,31 +373,12 @@ public class CatalogService {
     private Map<UUID, CatalogImage> mainImagesFor(List<CatalogProduct> productList,
                                                 Map<UUID, List<CatalogVariant>> variantsBy) {
         List<UUID> ids = productList.stream().map(CatalogProduct::getId).toList();
-        Map<UUID, CatalogProduct> context = productList.stream().collect(Collectors.toMap(CatalogProduct::getId, p -> p));
+        CatalogPhotoChoice choice = new CatalogPhotoChoice(productList, variantsBy);
         Map<UUID, CatalogImage> main = mainImages(ids);
-        main.entrySet().removeIf(e->!CatalogImageIdentity.matches(e.getValue(),context.get(e.getKey()),null,
-                variantsBy.getOrDefault(e.getKey(),List.of())));
-        List<UUID> pending = ids.stream().filter(id -> !"READY".equals(CatalogImagePipelineService.photoSet(main.get(id),context.get(id),
-                variantsBy.getOrDefault(id,List.of())).get("status"))).toList();
-        if (!pending.isEmpty()) images.findByProductIdIn(pending).stream().filter(CatalogService::usable)
-                .filter(image -> CatalogImageIdentity.matches(image,context.get(image.getProductId()),null,
-                        variantsBy.getOrDefault(image.getProductId(),List.of())))
-                .sorted(Comparator.comparing((CatalogImage image) -> !"READY".equals(CatalogImagePipelineService.photoSet(image,context.get(image.getProductId()),
-                                variantsBy.getOrDefault(image.getProductId(),List.of())).get("status")))
-                        .thenComparing(image -> !image.isCanonical()).thenComparing(image -> !image.isPrimary())
-                        .thenComparing(image -> String.valueOf(image.getId())))
-                .forEach(image -> {
-                    UUID id = image.getProductId();
-                    if (!main.containsKey(id) || "READY".equals(CatalogImagePipelineService.photoSet(image,context.get(id),variantsBy.getOrDefault(id,List.of())).get("status"))
-                            && !"READY".equals(CatalogImagePipelineService.photoSet(main.get(id),context.get(id),variantsBy.getOrDefault(id,List.of())).get("status"))) main.put(id,image);
-                });
+        choice.dropForeign(main);
+        List<UUID> pending = choice.notReady(ids, main);
+        if (!pending.isEmpty()) choice.preferReady(main, images.findByProductIdIn(pending));
         return main;
-    }
-
-    private static boolean usable(CatalogImage i) {
-        return i.getUsageStatus() != br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED
-                && !"REJECTED".equals(i.getReviewStatus())
-                && i.getImageUrl() != null && !i.getImageUrl().isBlank();
     }
 
     static final double NO_PHOTO_PENALTY = 0.10;
@@ -455,7 +428,7 @@ public class CatalogService {
             }
             CatalogVariant selectedVariant=vs.stream().filter(v->wanted!=null&&wanted.equals(v.getColor())).findFirst().orElse(null);
             CatalogImage selectedPhoto=selectedVariant==null?primary.get(p.getId())
-                    :selectedImage(p,colorPhotos.getOrDefault(p.getId(),List.of()),vs,selectedVariant,null);
+                    :CatalogPhotoChoice.select(p,colorPhotos.getOrDefault(p.getId(),List.of()),vs,selectedVariant,null);
             Map<String, Object> m = card(p, b, selectedPhoto, vs);
             m.put("variants", vs.stream().map(this::variantMap).toList());
             // a variante da cor pedida ("501 preto" → variante Black) vem pré-selecionada
@@ -622,7 +595,7 @@ public class CatalogService {
                 throw ApiException.badRequest("CATALOG_IMAGE_VARIANT_MISMATCH","A foto não pertence à variante selecionada.");
         }
         CatalogImage selected=variantId==null&&imageId==null ? mainImagesFor(List.of(p),Map.of(p.getId(),productVariants)).get(p.getId())
-                : selectedImage(p,imgs,productVariants,requested,imageId);
+                : CatalogPhotoChoice.select(p,imgs,productVariants,requested,imageId);
         Map<String, Object> m = card(p, b, selected, productVariants);
         if (requested!=null) applyVariant(m,requested);
         // CatalogProductImage: viewType, qualityScore, sourceUrl, processedUrl e papel (canônica, alternativa, detalhe)
@@ -646,15 +619,6 @@ public class CatalogService {
         m.put("variants", productVariants.stream().map(this::variantMap).toList());
         m.put("aliases", productAliases.findByProductId(p.getId()).stream().map(CatalogProductAlias::getAlias).toList());
         return m;
-    }
-
-    private CatalogImage selectedImage(CatalogProduct product,List<CatalogImage> candidates,List<CatalogVariant> productVariants,
-                                       CatalogVariant requested,UUID imageId) {
-        return candidates.stream().filter(CatalogService::usable).filter(i->imageId==null||imageId.equals(i.getId()))
-                .filter(i->CatalogImageIdentity.matches(i,product,requested,productVariants))
-                .sorted(Comparator.comparing((CatalogImage i)->!"READY".equals(CatalogImagePipelineService.photoSet(i,product,productVariants).get("status")))
-                        .thenComparing(i->!i.isCanonical()).thenComparing(i->!i.isPrimary()).thenComparing(i->String.valueOf(i.getId())))
-                .findFirst().orElse(null);
     }
 
     private Map<String, Object> variantMap(CatalogVariant v) {
@@ -735,7 +699,7 @@ public class CatalogService {
                 .filter(v -> v.getProductId().equals(p.getId())).orElseThrow(()->ApiException.notFound("Catalog variant"));
         List<CatalogVariant> productVariants=variants.findByProductIdOrderByVariantKey(p.getId());
         CatalogImage chosen = variant==null ? mainImagesFor(List.of(p),Map.of(p.getId(),productVariants)).get(p.getId())
-                : selectedImage(p,images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()),productVariants,variant,null);
+                : CatalogPhotoChoice.select(p,images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()),productVariants,variant,null);
         if (variant == null) {
             UUID effective = CatalogImageIdentity.effectiveVariantId(chosen,p,productVariants);
             variant = productVariants.stream().filter(v -> v.getId().equals(effective)).findFirst().orElse(null);
