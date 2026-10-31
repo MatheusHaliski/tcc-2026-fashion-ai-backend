@@ -371,7 +371,7 @@ export function signAtlas(q: Quality, locale: SceneLocale = sceneLocale()): Sign
     });
     // sanefas (nome na faixa da frente do toldo) e lonas
     SHOP_KINDS.forEach((kind) => {
-      const s = SHOPS[kind]; if (s.awning === undefined) return;
+      const s = { ...SHOPS[kind], ...copy[kind] }; if (s.awning === undefined) return;
       const [a, b, striped] = AWNINGS[s.awning];
       for (const [cell, label] of [[SIGN.valance(s.awning), true], [SIGN.cloth(s.awning), false]] as const) {
         const x = (cell % SIGN_COLS) * CW, y = Math.floor(cell / SIGN_COLS) * CH;
