@@ -10,6 +10,7 @@ import numpy as np
 from rq import Queue, Retry, get_current_job
 
 from services.garment_gpu import quality
+from services.garment_gpu.analysis import classify
 from services.garment_gpu.image_ops import make_catalog_png, make_cutout_png, mask_png, open_png, png_bytes
 from services.garment_gpu.jobstore import ACTIVE, JobNotFound, public_view
 from services.garment_gpu.metrics import QA_SCORE, QA_VERDICTS, STAGE_OUTCOMES, STAGE_SECONDS
@@ -112,13 +113,14 @@ def run_segment(job_id: str) -> dict:
         STAGE_SECONDS.labels("segment").observe(time.perf_counter() - started)
     STAGE_OUTCOMES.labels("segment", "ok").inc()
     seg = {**metrics, "models": RUNTIME["segment"].models, "seconds": round(time.perf_counter() - started, 3)}
-    reconstruct = record["mode"] == "reconstruct"
+    verdict = classify(np.asarray(image), mask, record["category"])
+    reconstruct, output = route(record["mode"], verdict["needs_reconstruction"])
 
     def attach(r):
         r["artifacts"].update(mask=artifact_key(job_id, "mask"), segmented=artifact_key(job_id, "segmented"))
-        r["segmentation"] = seg
+        r["segmentation"], r["analysis"] = seg, verdict
         r["review"] = {"status": "pending" if reconstruct else "not_required"}
-        r["output"] = "reconstruction_pending" if reconstruct else "segmentation_only_no_reconstruction"
+        r["output"] = output
     if reconstruct:
         record = jobs.update(job_id, {"status": "queued", "stage": "reconstruct"}, event="segmentado; na fila de reconstrução",
                              mutate=attach)
@@ -127,6 +129,22 @@ def run_segment(job_id: str) -> dict:
         record = jobs.update(job_id, {"status": "completed", "stage": "done"}, event="segmentação concluída", mutate=attach)
     write_metadata(store, record)
     return {"job_id": job_id, "status": record["status"]}
+
+
+def reconstruct_worker_alive() -> bool:
+    redis = RUNTIME["redis"]
+    return any(json.loads(raw).get("stage") == "reconstruct"
+               for raw in (redis.get(k) for k in redis.scan_iter("fai:worker:*")) if raw)
+
+
+def route(mode: str, needs: bool) -> tuple[bool, str]:
+    """Phase 1 → Phase 2. segment: never reconstruct; reconstruct: always; auto: only when the analysis says the
+    cut-out is not yet a flat product (worn, occluded or truncated) and a generative worker is up."""
+    if mode == "reconstruct" or (mode == "auto" and needs and reconstruct_worker_alive()):
+        return True, "reconstruction_pending"
+    if mode == "auto" and needs:
+        return False, "needs_reconstruction_unavailable"   # cut-out kept, but it is NOT a final flat product
+    return False, "flat_product" if mode == "auto" else "segmentation_only_no_reconstruction"
 
 
 def run_reconstruct(job_id: str) -> dict:
@@ -146,7 +164,8 @@ def run_reconstruct(job_id: str) -> dict:
         for attempt in range(settings.recon_max_attempts):
             seed, generated = base_seed + attempt, attempt + 1
             candidate = engine.generate([reference, original], prompt, seed, output_size(settings))
-            qa = quality.compare(original, mask, candidate, settings)
+            qa = quality.compare(original, mask, candidate, settings,
+                                 worn=bool((record.get("analysis") or {}).get("metrics", {}).get("person")))
             QA_SCORE.observe(qa["score"])
             QA_VERDICTS.labels(qa["verdict"]).inc()
             if best is None or (VERDICT_RANK[qa["verdict"]], qa["score"]) > (VERDICT_RANK[best[1]["verdict"]], best[1]["score"]):

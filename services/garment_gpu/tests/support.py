@@ -48,7 +48,7 @@ class FakeSegmentEngine:
         mask = np.zeros(px.shape[:2], np.uint8)
         x1, y1, x2, y2 = (int(v) for v in box)
         mask[y1:y2, x1:x2] = orange[y1:y2, x1:x2]
-        return mask, 0.97
+        return mask, 0.97, 1.0
 
     def run(self, image, category, bbox=None):
         return run_segmentation(self, image, category, bbox)

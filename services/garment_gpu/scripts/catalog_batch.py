@@ -21,7 +21,7 @@ import numpy as np
 from PIL import Image
 
 from services.garment_gpu.scripts import catalog_report, catalog_source
-from services.garment_gpu.scripts.catalog_classify import classify
+from services.garment_gpu.analysis import classify
 
 THUMB = (320, 420)
 
@@ -50,13 +50,13 @@ class GpuClient:
         session.headers["X-API-Key"] = self.key
         return session
 
-    def segment(self, image: bytes, category: str, session=None) -> dict:
+    def segment(self, image: bytes, category: str, session=None, mode: str = "auto") -> dict:
         session = session or self._session()
         started = time.perf_counter()
         res = session.post(f"{self.base}/v1/garments", timeout=60,
                            files={"image": ("photo.jpg", image, "image/jpeg")},
-                           data={"category": category, "mode": "segment", "framing": "cutout",
-                                 "background": "transparent"})
+                           data={"category": category, "mode": mode, "framing": "catalog",
+                                 "background": "white"})
         if res.status_code >= 400:
             raise RuntimeError(api_error(res))
         job_id = res.json()["job_id"]
@@ -68,7 +68,7 @@ class GpuClient:
             job = body.json()
             if job["status"] == "completed":
                 images = {name: session.get(f"{self.base}/v1/jobs/{job_id}/image", params={"variant": name},
-                                            timeout=60).content for name in ("segmented", "mask")}
+                                            timeout=60).content for name in ("final", "mask")}
                 session.delete(f"{self.base}/v1/jobs/{job_id}", timeout=30)
                 return {"job": job, **images, "seconds": round(time.perf_counter() - started, 2)}
             if job["status"] == "failed":
@@ -90,25 +90,25 @@ def thumbnail(data: bytes, path: Path, background=(240, 240, 240)) -> str:
     return f"{path.parent.name}/{path.name}"   # o relatório fica um nível acima de thumbs/
 
 
-def process(product: dict, gpu: GpuClient, out: Path, session=None, keep_full: bool = True) -> dict:
+def process(product: dict, gpu: GpuClient, out: Path, session=None, keep_full: bool = True, mode: str = "auto") -> dict:
     row = {"id": product["id"], "name": product.get("product_name"), "category": product.get("category"),
            "class": "FAILED", "metrics": {}}
     try:
         raw = catalog_source.download(product["image_url"])
         category = catalog_source.CATEGORY_MAP.get(product.get("category"), "auto")
-        result = gpu.segment(raw, category, session=session)
-        with Image.open(io.BytesIO(raw)) as photo:
-            rgb = np.asarray(photo.convert("RGB"))
-        with Image.open(io.BytesIO(result["mask"])) as mask_image:
-            mask = np.asarray(mask_image.convert("L")) > 127
-        verdict = classify(rgb, mask, category)
+        result = gpu.segment(raw, category, session=session, mode=mode)
+        verdict = result["job"].get("analysis")
+        if not verdict:  # mode=segment: the server does not route, classify here from the mask
+            with Image.open(io.BytesIO(raw)) as photo, Image.open(io.BytesIO(result["mask"])) as mask_image:
+                verdict = classify(np.asarray(photo.convert("RGB")), np.asarray(mask_image.convert("L")) > 127, category)
         row.update(verdict, gpu_seconds=result["seconds"],
+                   output=result["job"].get("output"), quality=(result["job"].get("quality") or {}).get("verdict"),
                    segmentation={k: v for k, v in (result["job"].get("segmentation") or {}).items()
-                                 if k in {"mask_score", "detection_score", "detection_label"}})
+                                 if k in {"mask_score", "detection_score", "detection_label", "mask_inside_box"}})
         if keep_full:
-            (out / "cutouts" / f"{product['id']}.png").write_bytes(result["segmented"])
+            (out / "cutouts" / f"{product['id']}.png").write_bytes(result["final"])
         row["thumb_in"] = thumbnail(raw, out / "thumbs" / f"{product['id']}-in.jpg")
-        row["thumb_out"] = thumbnail(result["segmented"], out / "thumbs" / f"{product['id']}-out.jpg")
+        row["thumb_out"] = thumbnail(result["final"], out / "thumbs" / f"{product['id']}-out.jpg")
     except Exception as exc:  # download, API or decoding: the batch must not stop
         row["reason"] = f"{type(exc).__name__}: {str(exc)[:120]}"
     return row
@@ -132,7 +132,7 @@ def run(args) -> dict:
     started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool, (out / "audit.jsonl").open("a", encoding="utf-8") as audit:
         sessions = [gpu._session() for _ in range(args.concurrency)]
-        futures = [pool.submit(process, product, gpu, out, sessions[i % len(sessions)], not args.no_cutouts)
+        futures = [pool.submit(process, product, gpu, out, sessions[i % len(sessions)], not args.no_cutouts, args.mode)
                    for i, product in enumerate(products)]
         for done, future in enumerate(futures, 1):
             row = future.result()
@@ -155,7 +155,9 @@ def main(argv=None) -> int:
     parser.add_argument("--category", help="só uma categoria (upper_piece, lower_piece, ...)")
     parser.add_argument("--sequential", action="store_true", help="ordem por id em vez de amostra determinística")
     parser.add_argument("--concurrency", type=int, default=3, help="fotos em paralelo (a GPU tem fila própria)")
-    parser.add_argument("--job-timeout", type=int, default=300)
+    parser.add_argument("--mode", choices=("auto", "segment"), default="auto",
+                        help="auto: o servidor manda à Fase 2 o que não for peça esticada; segment: só Fase 1")
+    parser.add_argument("--job-timeout", type=int, default=1800, help="reconstrução na Fase 2 pode levar minutos na fila")
     parser.add_argument("--no-cutouts", action="store_true", help="não guarda os PNGs grandes, só as miniaturas")
     parser.add_argument("--gpu-hour-usd", type=float, default=0.70, help="preço/hora da GPU para a projeção de custo")
     parser.add_argument("--workers", type=int, default=1, help="workers de segmentação na projeção")

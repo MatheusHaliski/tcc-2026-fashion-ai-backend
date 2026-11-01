@@ -10,7 +10,7 @@ import pytest
 from PIL import Image
 
 from services.garment_gpu.scripts import catalog_batch, catalog_report, catalog_source
-from services.garment_gpu.scripts.catalog_classify import classify
+from services.garment_gpu.analysis import classify
 from services.garment_gpu.tests.support import ORANGE, png
 
 SKIN = (224, 172, 140)
@@ -60,13 +60,13 @@ class FakeGpu(BaseHTTPRequestHandler):
         cutout = rgb.convert("RGBA")
         cutout.putalpha(Image.fromarray((mask * 255).astype(np.uint8)))
         job_id = f"{len(self.jobs):032x}"
-        FakeGpu.jobs[job_id] = {"mask": png(Image.fromarray((mask * 255).astype(np.uint8))), "segmented": png(cutout)}
+        FakeGpu.jobs[job_id] = {"mask": png(Image.fromarray((mask * 255).astype(np.uint8))), "final": png(cutout)}
         self._send(202, {"job_id": job_id, "status": "queued"})
 
     def do_GET(self):
         job_id = self.path.split("/v1/jobs/")[1].split("/")[0].split("?")[0]
         if "/image" in self.path:
-            variant = "mask" if "variant=mask" in self.path else "segmented"
+            variant = "mask" if "variant=mask" in self.path else "final"
             return self._send(200, self.jobs[job_id][variant], "image/png")
         self._send(200, {"job_id": job_id, "status": "completed",
                          "segmentation": {"mask_score": 0.98, "detection_label": "t-shirt"}})

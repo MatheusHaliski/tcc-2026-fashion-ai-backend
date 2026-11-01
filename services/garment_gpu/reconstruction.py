@@ -39,8 +39,10 @@ def build_prompt(category: str, name: str | None = None, color: str | None = Non
     return (
         f"Create a professional e-commerce product photograph of the {subject}{color_clause} shown in picture 1. "
         "Use picture 2 only as a reference for parts of the garment that are hidden or cut off in picture 1. "
-        "Show the garment alone, centered, front-facing, flat and fully visible, on a pure white seamless studio "
-        "background with soft even lighting. Remove any person, body part, hanger or mannequin completely. "
+        "Show it as a flat lay: the garment alone, laid flat and stretched smooth on a surface, seen from directly "
+        "above, centered, symmetric, front side up, sleeves and legs extended naturally, on a pure white seamless "
+        "background with soft even lighting. There is no body inside it: no person, body part, mannequin, hanger, "
+        "ghost-mannequin hollow or wrinkles from being worn. "
         f"{GUARD} Reconstruct missing fabric naturally and symmetrically, consistent with the visible parts."
     )
 

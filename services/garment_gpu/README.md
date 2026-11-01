@@ -108,6 +108,20 @@ O QA **não certifica** escudos, logotipos, texto e costuras (`requires_human_re
 humana (`POST /review`). Calibração inicial com fotos reais de pessoas vestindo a peça: mesma peça → `pass` com
 ΔE 0,4–6,5; peça trocada → `fail`. Recalibre os limiares com o seu acervo.
 
+## Fase 1 → Fase 2 (`mode=auto`)
+
+A Fase 1 só preserva pixels reais: ela nunca transforma uma peça vestida em peça esticada. Com `mode=auto`, a API
+segmenta, analisa o recorte (`analysis.py`) e decide sozinha:
+
+* **foto de produto** (sem pessoa, peça inteira) → para na Fase 1: `output=flat_product`;
+* **peça vestida, coberta por mão/braço ou cortada pela foto** → vai para a Fase 2, que gera a peça em *flat lay*
+  (esticada sobre uma superfície, vista de cima, sem corpo nem manequim fantasma);
+* sem worker da Fase 2 no ar → devolve o recorte com `output=needs_reconstruction_unavailable` (não é produto final).
+
+Proteções da segmentação: o SAM gera três máscaras e fica com a que pertence à caixa do detector; máscara que
+vaza da caixa (pernas sob shorts, cabelo sobre camisa) é recusada com `MASK_OUTSIDE_DETECTION` em vez de entregar o
+corpo; buraco de pele dentro da peça (mão na frente) fica aberto para a Fase 2 repintar, em vez de colar a mão.
+
 ## Lote do catálogo (enquadramento full frame)
 
 `catalog_batch` percorre o catálogo, manda cada foto para a GPU e guarda o recorte enquadrado. Ele **só lê** o MySQL
@@ -116,7 +130,7 @@ humana (`POST /review`). Calibração inicial com fotos reais de pessoas vestind
 | Classe | Significado | Precisa da Fase 2? |
 |---|---|---|
 | `COMPLETE_PRODUCT` | peça sozinha, completa | não |
-| `COMPLETE_ON_MODEL` | modelo vestindo, mas a peça aparece inteira | não |
+| `COMPLETE_ON_MODEL` | modelo vestindo a peça: o recorte ainda tem forma de corpo | **sim** (tecido esticado) |
 | `OCCLUDED` | braço ou mão na frente da peça | sim |
 | `CUT` | a foto corta a peça na borda | sim |
 
@@ -132,7 +146,7 @@ A saída traz `index.html` (grade visual com original × recorte e as métricas 
 que é o que define o custo da A100 — além das horas e do custo da segmentação (`--gpu-hour-usd`, `--workers`).
 
 Rode primeiro um piloto (algumas centenas de produtos, a amostra é determinística), confira a grade e só então
-processe tudo com `--offset` em páginas. Os limiares da classificação estão no topo de `catalog_classify.py`.
+processe tudo com `--offset` em páginas. Os limiares da classificação estão no topo de `analysis.py`.
 
 ## Fase 3 — distribuição, escala e métricas
 

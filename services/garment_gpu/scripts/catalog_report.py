@@ -6,7 +6,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from services.garment_gpu.scripts.catalog_classify import CLASSES
+from services.garment_gpu.analysis import CLASSES
 
 LABELS = {**CLASSES, "NO_GARMENT": "nenhuma peça detectada", "FAILED": "falhou (download/API)"}
 COLORS = {"COMPLETE_PRODUCT": "#1a7f37", "COMPLETE_ON_MODEL": "#2f6fd6", "OCCLUDED": "#b26a00", "CUT": "#b26a00",

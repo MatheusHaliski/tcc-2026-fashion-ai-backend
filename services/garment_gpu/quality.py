@@ -97,7 +97,7 @@ def skin_fraction(rgb: np.ndarray) -> float:
     return float(np.mean((cb >= 77) & (cb <= 127) & (cr >= 133) & (cr <= 173)))
 
 
-def compare(original: Image.Image, original_mask: np.ndarray, candidate: Image.Image, settings) -> dict:
+def compare(original: Image.Image, original_mask: np.ndarray, candidate: Image.Image, settings, worn: bool = False) -> dict:
     """original + mask = what the camera saw; candidate = the reconstruction on white."""
     original = original.convert("RGB")
     candidate = candidate.convert("RGB")
@@ -129,7 +129,7 @@ def compare(original: Image.Image, original_mask: np.ndarray, candidate: Image.I
         flags.append("BACKGROUND_NOT_CLEAN")
     if extra_skin > 0.08:
         flags.append("POSSIBLE_PERSON_LEFT")
-    if iou < 0.35:
+    if iou < 0.35 and not worn:  # worn → flat lay changes the silhouette on purpose
         flags.append("SILHOUETTE_CHANGED")
     hard_fail = delta_e > settings.qa_max_delta_e * 1.5 or "POSSIBLE_PERSON_LEFT" in flags
     verdict = "fail" if hard_fail else ("pass" if score >= settings.qa_min_score and not flags else "warn")

@@ -111,7 +111,7 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
         category: Literal["upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "auto"] = Form("auto"),
         background: Literal["white", "transparent"] = Form("white"),
         framing: Literal["catalog", "cutout"] = Form("catalog"),
-        mode: Literal["segment", "reconstruct"] = Form("segment"),
+        mode: Literal["segment", "reconstruct", "auto"] = Form("segment"),
         bbox: str | None = Form(None),
         prompt: str | None = Form(None, max_length=2000),
         name: str | None = Form(None, max_length=80),
@@ -141,7 +141,7 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
                 coords = check_bbox(json.loads(bbox), picture.width, picture.height)
             except (ValueError, TypeError):
                 fail(422, "INVALID_BBOX", "bbox deve ser [x1,y1,x2,y2] em pixels dentro da imagem")
-        if prompt and mode != "reconstruct":
+        if prompt and mode == "segment":
             fail(422, "PROMPT_REQUIRES_RECONSTRUCT", "prompt só vale para mode=reconstruct")
         if mode == "reconstruct" and not stage_alive("reconstruct"):
             # sem worker generativo no ar o job ficaria parado até o prazo do cliente: recusa já, ele usa outro provedor
