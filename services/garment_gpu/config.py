@@ -64,6 +64,7 @@ class Settings:
     recon_lora_scale: float = 1.0
     recon_lora_weight_name: str = ""
     recon_back_view: bool = True
+    recon_quantize: str = "none"
     recon_max_side: int = 1024
     recon_max_attempts: int = 2
     qa_min_score: float = 0.62
@@ -86,6 +87,9 @@ def load(env=None) -> Settings:
     device = env.get("FAI_DEVICE", "cuda").strip().lower()
     if device not in {"cuda", "cpu"}:
         raise ValueError("FAI_DEVICE deve ser cuda ou cpu")
+    quantize = env.get("RECON_QUANTIZE", "none").strip().lower()
+    if quantize not in {"none", "nf4"} or (quantize == "nf4" and device != "cuda"):
+        raise ValueError("RECON_QUANTIZE deve ser none ou nf4 (nf4 exige FAI_DEVICE=cuda)")
     if device == "cpu" and offload != "none":
         raise ValueError("RECON_OFFLOAD (CPU offload) só existe com FAI_DEVICE=cuda")
     return Settings(
@@ -123,6 +127,7 @@ def load(env=None) -> Settings:
         recon_lora_scale=_float(env, "RECON_LORA_SCALE", 1.0, 0.0, 2.0),
         recon_lora_weight_name=env.get("RECON_LORA_WEIGHT_NAME", "").strip(),
         recon_back_view=_bool(env, "RECON_BACK_VIEW", True),
+        recon_quantize=quantize,
         recon_max_side=_int(env, "RECON_MAX_SIDE", 1024, 384, 2048),
         recon_max_attempts=_int(env, "RECON_MAX_ATTEMPTS", 2, 1, 5),
         qa_min_score=_float(env, "QA_MIN_SCORE", 0.62, 0.0, 1.0),
