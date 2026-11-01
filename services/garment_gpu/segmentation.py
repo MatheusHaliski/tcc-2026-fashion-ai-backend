@@ -53,16 +53,21 @@ class SegmentEngine:
         return pick_box(boxes, scores, labels, image.width, image.height)
 
     def segment(self, image: Image.Image, box):
+        """SAM proposes three masks for the box; we keep the one that actually belongs to it.
+
+        With a single mask SAM often returns the most contrasting object inside the box instead of the garment —
+        bare legs under a pair of shorts, or the model's hair when the garment blends into the background."""
         inputs = self.sam_processor(images=image, input_boxes=[[box]], return_tensors="pt").to(self.device)
         with self.torch.inference_mode():
-            outputs = self.sam_model(**inputs, multimask_output=False)
+            outputs = self.sam_model(**inputs, multimask_output=True)
         area = image.width * image.height
         masks = self.sam_processor.post_process_masks(
             outputs.pred_masks.cpu(), inputs["original_sizes"],
             max_hole_area=area * 0.001, max_sprinkle_area=area * 0.0005,
         )[0]
-        score = float(outputs.iou_scores.flatten()[0].item()) if getattr(outputs, "iou_scores", None) is not None else None
-        return np.asarray(masks[0, 0].numpy(), dtype=np.uint8), score
+        scores = (outputs.iou_scores.detach().cpu().numpy().reshape(-1)
+                  if getattr(outputs, "iou_scores", None) is not None else None)
+        return pick_mask([np.asarray(masks[0, i].numpy(), dtype=np.uint8) for i in range(masks.shape[1])], scores, box)
 
     def run(self, image: Image.Image, category: str, bbox=None):
         return run_segmentation(self, image, category, bbox)
@@ -86,6 +91,26 @@ def pick_box(boxes, scores, labels, width: int, height: int):
                  "detections": len(boxes)}
 
 
+def inside_box(mask: np.ndarray, box) -> float:
+    """Share of the mask lying inside the detector's box. A garment fills its own box; legs below a pair of shorts,
+    or hair above a shirt, fall almost entirely outside it."""
+    total = float(np.count_nonzero(mask))
+    if not total:
+        return 0.0
+    x1, y1, x2, y2 = (int(round(v)) for v in box)
+    return float(np.count_nonzero(mask[max(0, y1):y2, max(0, x1):x2])) / total
+
+
+def pick_mask(candidates, scores, box):
+    """Best candidate: the one that stays inside the box, with SAM's own confidence as the tie-break."""
+    if not candidates:
+        raise SegmentationError("NO_MASK", "SAM não devolveu máscara")
+    fits = [inside_box(mask, box) for mask in candidates]
+    confidence = [float(scores[i]) if scores is not None and i < len(scores) else 0.0 for i in range(len(candidates))]
+    best = max(range(len(candidates)), key=lambda i: (round(fits[i], 2), confidence[i]))
+    return candidates[best], (confidence[best] or None), fits[best]
+
+
 def run_segmentation(engine, image: Image.Image, category: str, bbox=None):
     """Shared by the real engine and test doubles: detect (unless a manual box came in), segment, clean, validate."""
     if category not in PROMPTS:
@@ -95,14 +120,21 @@ def run_segmentation(engine, image: Image.Image, category: str, bbox=None):
         box, detection = check_bbox(bbox, image.width, image.height), {"detection_label": "manual_bbox"}
     else:
         box, detection = engine.detect(image, category)
-    raw_mask, sam_score = engine.segment(image, box)
-    mask = clean_mask(raw_mask, box)
+    raw_mask, sam_score, box_fit = engine.segment(image, box)
+    if box_fit < engine.settings.mask_min_inside_box:
+        raise SegmentationError("MASK_OUTSIDE_DETECTION",
+                                f"A máscara ficou {1 - box_fit:.0%} fora da caixa detectada: provavelmente pele, "
+                                "cabelo ou fundo, e não a peça")
+    from services.garment_gpu.analysis import skin_holes
+
+    mask = clean_mask(raw_mask, box, keep_open=skin_holes(np.asarray(image), clean_mask(raw_mask, box)))
     fraction = float(np.mean(mask > 0))
     if not engine.settings.mask_min_fraction <= fraction <= engine.settings.mask_max_fraction:
         raise SegmentationError("INCONSISTENT_MASK",
                                 f"Máscara inconsistente: {fraction:.1%} do quadro (aceito "
                                 f"{engine.settings.mask_min_fraction:.1%}–{engine.settings.mask_max_fraction:.0%})")
-    metrics = {"box": [round(v, 2) for v in box], "mask_fraction": round(fraction, 4), **detection}
+    metrics = {"box": [round(v, 2) for v in box], "mask_fraction": round(fraction, 4),
+               "mask_inside_box": round(box_fit, 4), **detection}
     if sam_score is not None:
         metrics["mask_score"] = round(sam_score, 4)
     return mask, metrics

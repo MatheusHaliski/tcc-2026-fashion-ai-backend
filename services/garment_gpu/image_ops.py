@@ -57,7 +57,7 @@ def check_bbox(box, width: int, height: int):
     return [x1, y1, x2, y2]
 
 
-def clean_mask(mask, box=None, min_island_fraction: float = 0.02) -> np.ndarray:
+def clean_mask(mask, box=None, min_island_fraction: float = 0.02, keep_open=None) -> np.ndarray:
     """Keeps the connected components that matter (the largest, plus islands ≥2% of it that touch the box) and fills
     enclosed holes. SAM sometimes leaves specks of skin/background; we never add pixels the model did not select
     except fully enclosed holes inside the garment."""
@@ -80,8 +80,10 @@ def clean_mask(mask, box=None, min_island_fraction: float = 0.02) -> np.ndarray:
         for idx in range(1, count + 1):
             if keep[idx] and sizes[idx - 1] != largest and not (inside & (labels == idx)).any():
                 keep[idx] = False
-    cleaned = keep[labels]
-    return ndimage.binary_fill_holes(cleaned).astype(np.uint8)
+    cleaned = ndimage.binary_fill_holes(keep[labels])
+    if keep_open is not None:  # e.g. a hand inside the garment: never paste it into the cut-out
+        cleaned &= ~np.asarray(keep_open, dtype=bool)
+    return cleaned.astype(np.uint8)
 
 
 def _alpha(image: Image.Image, mask) -> Image.Image:

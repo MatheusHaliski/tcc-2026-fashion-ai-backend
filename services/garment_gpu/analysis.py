@@ -1,5 +1,6 @@
-"""Classifies a segmentation result for the catalogue batch: does the cut-out already show the whole garment, or does
-the photo need generative reconstruction (Phase 2) first?
+"""Phase 1 → Phase 2 routing: is the segmented cut-out already a final flat product, or must the generative stage
+rebuild it? Phase 1 only keeps real pixels, so it can never flatten a garment that a person is wearing: any photo
+with a model goes to Phase 2, as do occluded and truncated garments. Used by the API (mode=auto) and the batch.
 
 Signals (input photo + garment mask returned by the GPU API, same frame):
 * CUT       — the garment touches the photo border: part of it is outside the picture.
@@ -17,7 +18,7 @@ MIN_SOLIDITY_UPPER = 0.70
 
 CLASSES = {
     "COMPLETE_PRODUCT": "peça sozinha, completa",
-    "COMPLETE_ON_MODEL": "com modelo, peça completa",
+    "COMPLETE_ON_MODEL": "vestida por modelo → reconstrução (tecido esticado)",
     "OCCLUDED": "com modelo, parte coberta → reconstrução",
     "CUT": "peça cortada pela foto → reconstrução",
 }
@@ -69,6 +70,16 @@ def enclosed_skin(skin_free: np.ndarray, hull: np.ndarray, inside_share: float =
     return keep[labels]
 
 
+def skin_holes(rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    """Enclosed holes of the garment mask that are skin: a hand or forearm in front of the fabric. Filling them would
+    paste the hand into the cut-out (the error seen in the pilot), so they stay open for Phase 2 to repaint."""
+    from scipy import ndimage
+
+    mask = np.asarray(mask) > 0
+    holes = ndimage.binary_fill_holes(mask) & ~mask
+    return holes & skin(np.asarray(rgb)[..., :3])
+
+
 def classify(rgb: np.ndarray, mask: np.ndarray, category: str | None = None) -> dict:
     mask = np.asarray(mask) > 0
     h, w = mask.shape
@@ -93,7 +104,7 @@ def classify(rgb: np.ndarray, mask: np.ndarray, category: str | None = None) -> 
         klass = "OCCLUDED"
     else:
         klass = "COMPLETE_ON_MODEL" if person else "COMPLETE_PRODUCT"
-    return {"class": klass, "needs_reconstruction": klass in {"CUT", "OCCLUDED"},
+    return {"class": klass, "needs_reconstruction": klass != "COMPLETE_PRODUCT",
             "metrics": {"mask_fraction": round(area / (h * w), 4), "touches": touches, "person": person,
                         "skin_outside": round(skin_outside, 4), "skin_in_hull": round(skin_in_hull, 4),
                         "solidity": round(solidity, 4)}}
