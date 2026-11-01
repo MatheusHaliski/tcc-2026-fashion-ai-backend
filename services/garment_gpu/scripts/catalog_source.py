@@ -2,13 +2,18 @@
 bounded image downloader. Nothing here writes to the database."""
 from __future__ import annotations
 
+import io
 import ipaddress
 import os
 import socket
 import urllib.request
 from urllib.parse import quote, urlparse, urlunparse
 
+from PIL import Image, ImageOps
+
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
+UPLOAD_FORMATS = {"JPEG", "PNG", "WEBP"}      # what the GPU API accepts
+UPLOAD_MAX_PIXELS = 12_000_000                # below the API's 16 MP cap; Phase 1 works at ~1 MP anyway
 CATEGORY_MAP = {"upper_piece": "upper_piece", "lower_piece": "lower_piece", "shoes_piece": "shoes_piece",
                 "accessory_piece": "accessory_piece", "full_body_piece": "auto"}
 
@@ -88,3 +93,27 @@ def download(url: str, timeout: int = 30, opener=None) -> bytes:
     if not data:
         raise ValueError("DOWNLOAD_VAZIO")
     return data
+
+
+def prepare_upload(data: bytes, max_pixels: int = UPLOAD_MAX_PIXELS) -> bytes:
+    """Catalogue photos come in any size and format (AVIF, GIF, 40 MP JPEGs). The API refuses them, so the batch
+    sends a JPEG/PNG/WEBP of at most `max_pixels`, upright. Photos already within the contract go untouched."""
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            fmt, width, height = image.format, image.width, image.height
+            if fmt in UPLOAD_FORMATS and width * height <= max_pixels:
+                return data
+            image = ImageOps.exif_transpose(image)
+            scale = min(1.0, (max_pixels / (width * height)) ** 0.5)
+            if scale < 1.0:
+                image = image.resize((max(1, int(width * scale)), max(1, int(height * scale))),
+                                     Image.Resampling.LANCZOS)
+            alpha = image.mode in {"RGBA", "LA", "PA"} or "transparency" in image.info
+            out = io.BytesIO()
+            if alpha:
+                image.convert("RGBA").save(out, "PNG", optimize=True)
+            else:
+                image.convert("RGB").save(out, "JPEG", quality=92)
+            return out.getvalue()
+    except (OSError, ValueError, Image.DecompressionBombError) as exc:
+        raise ValueError(f"FORMATO_NAO_SUPORTADO: {exc}") from exc

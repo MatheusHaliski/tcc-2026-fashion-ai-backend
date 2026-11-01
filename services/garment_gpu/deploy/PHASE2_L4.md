@@ -8,14 +8,15 @@ cabem na L4 de 24 GB junto com os 2 GB da Fase 1. Troca: um pouco de qualidade e
 Não precisa de cota nova: continua sendo uma GPU. Quando a cota de A100 sair, siga `PHASE2_GCP.md`.
 
 ## 1. Mais memória RAM na VM (no seu Mac)
-O carregamento e a quantização usam RAM; os 16 GB da `g2-standard-4` são pouco. A `g2-standard-8` (32 GB) tem a
-mesma L4:
+Com `RECON_OFFLOAD=model`, os pesos que não estão em uso esperam na **RAM**: o worker da Fase 2 sozinho ocupa ~19 GB,
+além da Fase 1, da API e do armazenamento. Na `g2-standard-8` (32 GB) o kernel matou o worker por falta de memória
+(medido: `OOMKilled=true`, e a API parou de responder). A `g2-standard-12` (48 GB) tem a mesma L4:
 ```bash
 gcloud compute instances stop fai-gpu-1 --zone=us-west4-a
-gcloud compute instances set-machine-type fai-gpu-1 --zone=us-west4-a --machine-type=g2-standard-8
+gcloud compute instances set-machine-type fai-gpu-1 --zone=us-west4-a --machine-type=g2-standard-12
 gcloud compute instances start fai-gpu-1 --zone=us-west4-a
 ```
-Os contêineres, o Tailscale e o Funnel voltam sozinhos.
+Os contêineres, o Tailscale e o Funnel voltam sozinhos. Confira com `free -g` (total ~47).
 
 ## 2. Ligar o worker da Fase 2 (na `fai-gpu-1`)
 ```bash

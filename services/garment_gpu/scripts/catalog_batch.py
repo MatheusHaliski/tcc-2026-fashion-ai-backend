@@ -94,7 +94,7 @@ def process(product: dict, gpu: GpuClient, out: Path, session=None, keep_full: b
     row = {"id": product["id"], "name": product.get("product_name"), "category": product.get("category"),
            "class": "FAILED", "metrics": {}}
     try:
-        raw = catalog_source.download(product["image_url"])
+        raw = catalog_source.prepare_upload(catalog_source.download(product["image_url"]))
         category = catalog_source.CATEGORY_MAP.get(product.get("category"), "auto")
         result = gpu.segment(raw, category, session=session, mode=mode)
         verdict = result["job"].get("analysis")
