@@ -14,6 +14,7 @@ para revisão posterior e estudo. Ele descreve o estado de **01/11/2026**; onde 
 | [infraestrutura-e-operacao.md](infraestrutura-e-operacao.md) | Google Cloud, Tailscale, Docker, segurança, custos, como operar |
 | [piloto-e-decisoes.md](piloto-e-decisoes.md) | Piloto com 200 produtos reais, erros encontrados, decisões e seus porquês |
 | [fase3-provador.md](fase3-provador.md) | Estudo do provador/avatar e o plano para vestir a peça no avatar |
+| [handoff-nova-sessao.md](handoff-nova-sessao.md) | Prompt inicial para outra sessão do Claude: estado, segredos (só nomes), plano RunPod com orçamento |
 
 Código: `services/garment_gpu/` (serviço Python) e os adaptadores Java `GarmentGpu*Adapter` em
 `fai-infrastructure/ai-providers`. Guia operacional curto: `services/garment_gpu/README.md` e
