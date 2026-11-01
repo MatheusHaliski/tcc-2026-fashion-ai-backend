@@ -53,6 +53,7 @@ num primeiro critério), o que motivou o plano de usar o SAM 3D Body.
 | Pilha inteira numa A100 da Vultr (`deploy/VULTR_A100.md`); GCP parada como reserva | esperar a cota de A100 na GCP (~2 dias úteis, já negada uma vez) | crédito de conta nova e A100 sem pedido de cota; na Vultr a VM desligada cobra, então ela é destruída ao fim de cada lote |
 | Fase 1 do catálogo no Mac (M3 Pro, MPS); GPU alugada só para a lista da Fase 2 | catálogo inteiro na GPU alugada | a Fase 1 cabe no Mac e sai de graça; todo o crédito do RunPod vai para a Fase 2, que o Mac não roda (~58 GB) |
 | Vultr descartada; RunPod com crédito pré-pago | Vultr | Vultr sem A100/H100 de 1 GPU disponível e cartão recusado para o crédito promocional |
+| Pod do RunPod com processos vigiados por `scripts/runpod_start.sh` (sem Docker); venv, pesos, Redis e RustFS no network volume | reproduzir o compose dentro do pod | o pod é um contêiner sem Docker; com tudo no volume, um pod novo (outra máquina, mesmo template) sobe em ~2 min, então parar/encerrar entre lotes não perde nada |
 | Agendador próprio para o LoRA Lightning | agendador padrão do Qwen | com o padrão, o primeiro flat lay saiu como ruído sobre a silhueta (8 passos sem o `shift` da destilação) |
 | Aprovação humana de toda reconstrução | aprovação automática pelo QA | o QA não certifica logotipos, escudos e textos |
 

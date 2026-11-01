@@ -68,6 +68,7 @@ As VMs cobram por hora **ligadas**: desligue ao fim de cada lote (`gcloud comput
 | Tarefa | Onde |
 |---|---|
 | Subir/atualizar o servidor central | `services/garment_gpu/README.md` (`docker compose up -d`) |
+| Fase 2 do catálogo no RunPod (A100, sem Docker) | `services/garment_gpu/deploy/RUNPOD.md` (`scripts/runpod_start.sh`) |
 | Instalar a Fase 2 | `services/garment_gpu/deploy/PHASE2_GCP.md` |
 | Rodar o lote/piloto do catálogo | `python -m services.garment_gpu.scripts.catalog_batch` (só lê o MySQL) |
 | Ver filas e workers | `GET /v1/admin/queues` com a chave admin |
