@@ -4,7 +4,8 @@
 
 | VM | GPU | Papel | Rede |
 |---|---|---|---|
-| `fai-gpu-1` | 1× A100 80 GB (`a2-ultragpu-1g`), antes L4 (`g2-standard-4` → `-12`) | API, Redis, RustFS, workers das Fases 1 e 2 (`deploy/A100_SINGLE.md`) | sem IP público; Cloud NAT para saída; SSH pelo IAP; API publicada em HTTPS pelo Tailscale Funnel |
+| `fai-gpu-vultr` (Vultr) | 1× A100 (80 GB; 40 GB com Fase 2 em 4 bits) | API, Redis, RustFS, Fases 1 e 2 (`deploy/VULTR_A100.md`); IP público só com SSH, API pelo Funnel |
+| `fai-gpu-1` | 1× A100 80 GB (`a2-ultragpu-1g`), antes L4 (`g2-standard-4` → `-12`) | reserva parada (GCP); plano com cota de A100 em `deploy/A100_SINGLE.md` | sem IP público; Cloud NAT para saída; SSH pelo IAP; API publicada em HTTPS pelo Tailscale Funnel |
 | `fai-gpu-a100` | 1× A100 80 GB (`a2-ultragpu-1g`) | worker da Fase 2 | sem IP público; entra na fila e no armazenamento da `fai-gpu-1` pelo Tailscale |
 
 Imagem das VMs: Deep Learning VM do Google (`common-cu129-ubuntu-2204-nvidia-580`, driver NVIDIA 580 já incluído).

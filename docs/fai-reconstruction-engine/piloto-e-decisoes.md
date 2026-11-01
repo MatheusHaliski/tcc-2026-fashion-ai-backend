@@ -50,6 +50,7 @@ num primeiro critério), o que motivou o plano de usar o SAM 3D Body.
 | Lightning (8 passos) | 40 passos | ~5× mais rápido e barato; qualidade a confirmar no próximo piloto |
 | Fase 3 por textura nos moldes do avatar | malha `.glb` gerada da foto | o avatar já veste moldes com esqueleto; malha gerada é estática e exigiria retopologia e pesos de pele |
 | Fases 1 e 2 numa única A100 80 GB (`fai-gpu-1`) | L4 com Fase 2 em 4 bits; segunda VM só para a Fase 2 | cota de uma GPU; na L4 a Fase 2 precisou de 4 bits, offload e 48 GB de RAM e levou ~77 s por imagem (~350 h para o catálogo) |
+| Pilha inteira numa A100 da Vultr (`deploy/VULTR_A100.md`); GCP parada como reserva | esperar a cota de A100 na GCP (~2 dias úteis, já negada uma vez) | crédito de conta nova e A100 sem pedido de cota; na Vultr a VM desligada cobra, então ela é destruída ao fim de cada lote |
 | Agendador próprio para o LoRA Lightning | agendador padrão do Qwen | com o padrão, o primeiro flat lay saiu como ruído sobre a silhueta (8 passos sem o `shift` da destilação) |
 | Aprovação humana de toda reconstrução | aprovação automática pelo QA | o QA não certifica logotipos, escudos e textos |
 
