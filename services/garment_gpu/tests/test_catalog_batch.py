@@ -233,3 +233,22 @@ def test_prepara_foto_grande_ou_em_formato_recusado_pela_api():
 
     with pytest.raises(ValueError, match="FORMATO_NAO_SUPORTADO"):
         catalog_source.prepare_upload(b"<html>not an image</html>")
+
+
+def test_prepara_foto_girada_pelo_exif_sem_distorcer():
+    exif = Image.Exif()
+    exif[0x0112] = 6                                                  # câmera de pé: girar 90°
+    rotated = _encoded(Image.new("RGB", (400, 300), ORANGE), "JPEG", exif=exif)
+    with Image.open(io.BytesIO(catalog_source.prepare_upload(rotated, max_pixels=30_000))) as out:
+        assert out.width < out.height and abs(out.height / out.width - 4 / 3) < 0.02
+
+
+def test_prepara_foto_pesada_cabe_no_limite_de_bytes_da_api():
+    noise = Image.fromarray(np.random.default_rng(0).integers(0, 256, (300, 300, 4), dtype=np.uint8), "RGBA")
+    tiff = _encoded(noise, "TIFF")
+    out = catalog_source.prepare_upload(tiff, max_bytes=60_000)
+    assert len(out) <= 60_000
+    with Image.open(io.BytesIO(out)) as image:
+        assert image.format == "PNG" and image.width == image.height     # menor, mas sem distorcer
+    big_jpeg = _encoded(Image.fromarray(np.asarray(noise)[..., :3]), "JPEG", quality=100)
+    assert len(catalog_source.prepare_upload(big_jpeg, max_bytes=len(big_jpeg) - 1)) < len(big_jpeg)
