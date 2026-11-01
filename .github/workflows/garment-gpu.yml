@@ -24,8 +24,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install -r services/garment_gpu/requirements-test.txt
-      - name: API, RQ (SimpleWorker em fakeredis), QA, S3 (moto), segurança e export LoRA — redes neurais substituídas
+      - run: python -m pip install -r services/garment_gpu/requirements-test.txt -r services/garment_gpu/requirements-batch.txt
+      - name: API, RQ (SimpleWorker em fakeredis), QA, S3 (moto), segurança, export LoRA e lote do catálogo — redes neurais substituídas
         run: python -m pytest services/garment_gpu/tests -q
       - name: Sintaxe
         run: python -m compileall -q services/garment_gpu
