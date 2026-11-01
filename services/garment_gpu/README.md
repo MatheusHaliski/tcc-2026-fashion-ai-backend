@@ -40,6 +40,9 @@ lista modelo, papel, licença e origem — rastreabilidade dos pesos. Depois do 
 | L40S 48 GB | reconstrução | `RECON_OFFLOAD=model` |
 | A100/H100 80 GB | reconstrução em produção | `RECON_OFFLOAD=none` |
 
+Pod do RunPod (contêiner sem Docker): `scripts/runpod_start.sh` sobe Redis, RustFS, API e os dois workers como
+processos vigiados, com venv, pesos e dados no network volume — guia em `deploy/RUNPOD.md`.
+
 São pontos de partida, não garantias: meça VRAM/latência no seu hardware (DCGM no perfil `monitoring`). Os pesos do
 Qwen-Image-Edit ocupam dezenas de GB em disco — reserve ≥ 80 GB livres.
 
