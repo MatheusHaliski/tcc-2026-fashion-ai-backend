@@ -108,6 +108,32 @@ O QA **não certifica** escudos, logotipos, texto e costuras (`requires_human_re
 humana (`POST /review`). Calibração inicial com fotos reais de pessoas vestindo a peça: mesma peça → `pass` com
 ΔE 0,4–6,5; peça trocada → `fail`. Recalibre os limiares com o seu acervo.
 
+## Lote do catálogo (enquadramento full frame)
+
+`catalog_batch` percorre o catálogo, manda cada foto para a GPU e guarda o recorte enquadrado. Ele **só lê** o MySQL
+(as mesmas variáveis `MYSQL_*` do backend); nada é gravado no banco. Cada foto é classificada em:
+
+| Classe | Significado | Precisa da Fase 2? |
+|---|---|---|
+| `COMPLETE_PRODUCT` | peça sozinha, completa | não |
+| `COMPLETE_ON_MODEL` | modelo vestindo, mas a peça aparece inteira | não |
+| `OCCLUDED` | braço ou mão na frente da peça | sim |
+| `CUT` | a foto corta a peça na borda | sim |
+
+```bash
+pip install -r services/garment_gpu/requirements-batch.txt
+export FAI_API_URL=https://… FAI_API_KEY=…            # chave com escopos submit|read
+export MYSQL_HOST=… MYSQL_PORT=… MYSQL_DATABASE=… MYSQL_USER=… MYSQL_PASSWORD=… MYSQL_SSL_MODE=REQUIRED
+python -m services.garment_gpu.scripts.catalog_batch --limit 200 --out work/catalog-pilot
+```
+
+A saída traz `index.html` (grade visual com original × recorte e as métricas de cada foto), `summary.json`,
+`audit.jsonl` e os PNGs. O resumo projeta, para o catálogo inteiro, **quantas peças precisariam de reconstrução** —
+que é o que define o custo da A100 — além das horas e do custo da segmentação (`--gpu-hour-usd`, `--workers`).
+
+Rode primeiro um piloto (algumas centenas de produtos, a amostra é determinística), confira a grade e só então
+processe tudo com `--offset` em páginas. Os limiares da classificação estão no topo de `catalog_classify.py`.
+
 ## Fase 3 — distribuição, escala e métricas
 
 * **Workers em outras máquinas:** `compose.worker.yaml` + `.env.worker.example` sobem só um worker GPU apontando

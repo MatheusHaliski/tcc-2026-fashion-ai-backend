@@ -1,0 +1,4 @@
+# Lote do catálogo (scripts/catalog_batch.py): cliente HTTP da API privada e leitura do MySQL do backend.
+-r requirements-api.txt
+requests>=2.32,<3
+PyMySQL>=1.1,<2
