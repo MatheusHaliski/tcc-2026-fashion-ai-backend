@@ -57,6 +57,7 @@ services:
     environment:
       <<: *backend-env
       WORKER_STAGE: reconstruct
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
     volumes: ["hf-models:/models", "./loras:/loras:ro"]
     shm_size: "8gb"
     depends_on: *depends

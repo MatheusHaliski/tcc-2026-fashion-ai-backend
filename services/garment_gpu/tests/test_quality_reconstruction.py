@@ -98,3 +98,7 @@ def test_quantizacao_nf4_para_a_fase_2_caber_na_l4():
         config.load({"RECON_QUANTIZE": "nf4", "FAI_DEVICE": "cpu"})
     with pytest.raises(ValueError):
         config.load({"RECON_QUANTIZE": "int3"})
+    with pytest.raises(ValueError):
+        config.load({"RECON_QUANTIZE": "nf4", "RECON_OFFLOAD": "sequential"})
+    offloaded = quantization_kwargs(config.load({"RECON_QUANTIZE": "nf4", "RECON_OFFLOAD": "model"}), torch)
+    assert "device_map" not in offloaded and "quantization_config" in offloaded

@@ -92,6 +92,8 @@ def load(env=None) -> Settings:
         raise ValueError("RECON_QUANTIZE deve ser none ou nf4 (nf4 exige FAI_DEVICE=cuda)")
     if device == "cpu" and offload != "none":
         raise ValueError("RECON_OFFLOAD (CPU offload) só existe com FAI_DEVICE=cuda")
+    if quantize == "nf4" and offload == "sequential":
+        raise ValueError("RECON_QUANTIZE=nf4 aceita RECON_OFFLOAD=none ou model (sequential não funciona com 4 bits)")
     return Settings(
         redis_url=env.get("REDIS_URL", Settings.redis_url),
         s3_endpoint=env.get("S3_ENDPOINT", Settings.s3_endpoint),

@@ -22,6 +22,7 @@ Os contêineres, o Tailscale e o Funnel voltam sozinhos.
 cd ~/fashionai && git pull origin main && cd services/garment_gpu
 cat >> .env <<'CFG'
 RECON_QUANTIZE=nf4
+RECON_OFFLOAD=model
 RECON_LORA_PATH=lightx2v/Qwen-Image-Edit-2511-Lightning
 RECON_LORA_WEIGHT_NAME=Qwen-Image-Edit-2511-Lightning-8steps-V1.0-bf16.safetensors
 RECON_STEPS=8
@@ -30,7 +31,7 @@ RECONSTRUCT_GPU=0
 CFG
 sudo docker compose --profile reconstruct up -d --build gpu-reconstruct
 sudo docker compose logs -f gpu-reconstruct      # 1ª vez baixa ~60 GB; espere "modelos carregados"
-nvidia-smi                                       # os dois workers na mesma L4, somando ~18–20 GB
+nvidia-smi                                       # parado: Fase 2 quase sem VRAM; gerando: ~12–16 GB
 ```
 Se o `.env` já tiver alguma dessas variáveis, edite a linha existente em vez de duplicar.
 
@@ -41,5 +42,10 @@ curl -s localhost:8000/v1/admin/queues -H "X-API-Key: $(sed -n 's/^ADMIN=//p' ~/
 Deve listar um worker `reconstruct`. Depois rode o piloto no Mac (`catalog_batch --limit 200`): fotos com modelo
 passam a sair em flat lay, com as costas.
 
-Se aparecer `CUDA out of memory`, desligue a geração das costas (`RECON_BACK_VIEW=false`) ou baixe
-`RECON_MAX_SIDE` para 768 e recrie o contêiner.
+**Por que `RECON_OFFLOAD=model`:** em 4 bits os pesos somam ~17 GB. Carregados todos de uma vez na GPU, sobram
+~3 GB ao lado da Fase 1, e a geração falha com `CUDA out of memory` (medido no primeiro teste). Com o offload, só o
+componente em uso fica na GPU (codificador de texto, depois o transformer, depois o VAE); o resto espera na RAM
+(por isso a `g2-standard-8`). Custa alguns segundos por imagem, para trocar os componentes de lugar.
+
+Se ainda faltar memória: `RECON_BACK_VIEW=false` (sem vista de costas) ou `RECON_MAX_SIDE=768`, e recrie o
+contêiner (`sudo docker compose --profile reconstruct up -d --force-recreate gpu-reconstruct`).
