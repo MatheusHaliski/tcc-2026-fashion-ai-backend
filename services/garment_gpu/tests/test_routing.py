@@ -96,3 +96,32 @@ def test_mascara_fora_da_caixa_e_recusada_em_vez_de_entregar_o_corpo():
     with pytest.raises(SegmentationError) as err:
         run_segmentation(LegsEngine(), person_photo(), "lower_piece")
     assert err.value.code == "MASK_OUTSIDE_DETECTION"
+
+
+def test_fase_2_gera_tambem_as_costas_para_o_avatar(client, settings, redis, runtime):
+    job_id = submit(client, person_photo(), mode="reconstruct")
+    drain(settings, redis)
+    body = job(client, job_id)
+    assert "reconstructed_back" in body["images"] and body["reconstruction"]["back"]["inferred"] is True
+    front, back = runtime["pipeline"].calls[0], runtime["pipeline"].calls[-1]
+    assert "BACK of exactly the same garment" in back["prompt"] and "Do not copy front logos" in back["prompt"]
+    assert back["image"][0].size == (front["width"], front["height"])   # a frente já gerada é a referência
+    img = client.get(f"/v1/jobs/{job_id}/image?variant=reconstructed_back", headers={"X-API-Key": KEYS["backend"]})
+    assert img.status_code == 200 and img.headers["x-fai-ai-generated"] == "true"
+
+
+def test_costas_nao_se_aplicam_a_calcados_nem_quando_desligadas(settings, redis, store, runtime):
+    from dataclasses import replace
+
+    from services.garment_gpu import stages
+
+    app = TestClient(create_app(settings, redis=redis, store=store))
+    res = app.post("/v1/garments", headers={"X-API-Key": KEYS["backend"]},
+                   data={"category": "shoes_piece", "mode": "reconstruct"},
+                   files={"image": ("p.png", png(person_photo()), "image/png")})
+    drain(settings, redis)
+    assert "reconstructed_back" not in job(app, res.json()["job_id"])["images"]
+    stages.RUNTIME["settings"] = replace(settings, recon_back_view=False)
+    job_id = submit(app, person_photo(), mode="reconstruct")
+    drain(settings, redis)
+    assert "reconstructed_back" not in job(app, job_id)["images"]

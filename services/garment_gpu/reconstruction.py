@@ -47,6 +47,25 @@ def build_prompt(category: str, name: str | None = None, color: str | None = Non
     )
 
 
+BACK_VIEW_CATEGORIES = {"upper_piece", "lower_piece", "auto"}
+
+
+def build_back_prompt(category: str, name: str | None = None, color: str | None = None) -> str:
+    """Back of the same garment, for the avatar's back panel (Phase 3). Picture 1 is the front flat lay already
+    generated; picture 2 is the original photo. Front-only details must not migrate to the back."""
+    subject = _clean_hint(name) or NOUNS.get(category, "garment")
+    tint = _clean_hint(color)
+    color_clause = f" in its original {tint} color" if tint else ""
+    return (
+        f"Picture 1 is the front of a {subject}{color_clause} laid flat. Create the BACK of exactly the same garment "
+        "as a flat lay product photograph: same fabric, color, size, proportions, silhouette, trims and seams, laid "
+        "flat and stretched smooth on a surface, seen from directly above, back side up, centered, on a pure white "
+        "seamless background. Use picture 2 only for details of the back that are visible in it. Do not copy front "
+        "logos, prints, buttons, plackets or pockets to the back, and do not invent brand markings or text. There is "
+        "no body inside it: no person, body part, mannequin, hanger or ghost-mannequin hollow."
+    )
+
+
 class ReconstructionEngine:
     def __init__(self, settings, pipeline=None, torch_module=None):
         self.settings = settings
