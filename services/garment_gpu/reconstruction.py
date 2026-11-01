@@ -5,6 +5,8 @@ hidden details. The model returns a front-facing catalogue photo on white. It is
 such, compared automatically against the original and kept as `pending` until a person approves it."""
 from __future__ import annotations
 
+import math
+
 from PIL import Image
 
 from services.garment_gpu.image_ops import fit_within
@@ -89,6 +91,10 @@ class ReconstructionEngine:
             pipe.load_lora_weights(settings.recon_lora_path, adapter_name="fai_garment", **extra)
             pipe.set_adapters(["fai_garment"], adapter_weights=[settings.recon_lora_scale])
             self.models["lora"] = settings.recon_lora_path
+            self.models["lora_layers"] = require_lora_layers(pipe.transformer, settings.recon_lora_path)
+            if is_lightning(settings.recon_lora_path):
+                use_lightning_scheduler(pipe)
+                self.models["scheduler"] = "lightning"
         if settings.recon_offload == "model":
             # one component on the GPU at a time: text encoder, then transformer, then VAE. With nf4 this is what
             # lets Phase 2 share the 24 GB L4 with Phase 1 (all 4-bit weights at once leave no room to generate).
@@ -99,8 +105,8 @@ class ReconstructionEngine:
             pipe.enable_sequential_cpu_offload()
         else:
             pipe.to(settings.device)
-        if settings.recon_offload != "none" or quantized:
-            enable_vae_tiling(pipe)
+        if settings.recon_offload == "sequential":
+            enable_vae_tiling(pipe)   # with model offload the VAE runs alone on the GPU and needs no tiling
         pipe.set_progress_bar_config(disable=True)
         self.pipeline = pipe
 
@@ -139,6 +145,35 @@ def quantization_kwargs(settings, torch) -> dict:
     if settings.recon_offload == "model":
         return {"quantization_config": config}  # placement left to enable_model_cpu_offload
     return {"quantization_config": config, "device_map": "cuda"}
+
+
+# Scheduler the Lightning LoRAs were distilled with (lightx2v/Qwen-Image-Lightning README): shift 3 and no
+# shift_terminal. The stock Qwen scheduler (shift_terminal 0.02) leaves visible noise after 8 steps.
+LIGHTNING_SCHEDULER = {
+    "base_image_seq_len": 256, "base_shift": math.log(3), "invert_sigmas": False, "max_image_seq_len": 8192,
+    "max_shift": math.log(3), "num_train_timesteps": 1000, "shift": 1.0, "shift_terminal": None,
+    "stochastic_sampling": False, "time_shift_type": "exponential", "use_beta_sigmas": False,
+    "use_dynamic_shifting": True, "use_exponential_sigmas": False, "use_karras_sigmas": False,
+}
+
+
+def is_lightning(lora_path: str) -> bool:
+    return "lightning" in (lora_path or "").lower()
+
+
+def use_lightning_scheduler(pipe) -> None:
+    from diffusers import FlowMatchEulerDiscreteScheduler
+
+    pipe.scheduler = FlowMatchEulerDiscreteScheduler.from_config(LIGHTNING_SCHEDULER)
+
+
+def require_lora_layers(transformer, lora_path: str) -> int:
+    """A LoRA whose keys do not match the transformer loads with only a warning and changes nothing; with a
+    Lightning LoRA that means 8 steps of an undistilled model, i.e. noise. Refuse to start instead."""
+    layers = sum(1 for module in transformer.modules() if hasattr(module, "lora_A"))
+    if layers == 0:
+        raise RuntimeError(f"LoRA {lora_path} não foi aplicado a nenhuma camada do transformer")
+    return layers
 
 
 def enable_vae_tiling(pipe) -> None:

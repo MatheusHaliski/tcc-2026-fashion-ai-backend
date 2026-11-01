@@ -4,7 +4,7 @@
 
 | VM | GPU | Papel | Rede |
 |---|---|---|---|
-| `fai-gpu-1` | 1× NVIDIA L4 24 GB (`g2-standard-4`) | API, Redis, RustFS, worker da Fase 1 | sem IP público; Cloud NAT para saída; SSH pelo IAP; API publicada em HTTPS pelo Tailscale Funnel |
+| `fai-gpu-1` | 1× A100 80 GB (`a2-ultragpu-1g`), antes L4 (`g2-standard-4` → `-12`) | API, Redis, RustFS, workers das Fases 1 e 2 (`deploy/A100_SINGLE.md`) | sem IP público; Cloud NAT para saída; SSH pelo IAP; API publicada em HTTPS pelo Tailscale Funnel |
 | `fai-gpu-a100` | 1× A100 80 GB (`a2-ultragpu-1g`) | worker da Fase 2 | sem IP público; entra na fila e no armazenamento da `fai-gpu-1` pelo Tailscale |
 
 Imagem das VMs: Deep Learning VM do Google (`common-cu129-ubuntu-2204-nvidia-580`, driver NVIDIA 580 já incluído).
@@ -46,7 +46,8 @@ Contêineres: Docker Engine + Compose; NVIDIA Container Toolkit configurado com 
 | Fase 1 em CPU (validação sem GPU) | 10–15 s por foto |
 | Fase 1 na L4 | **1,95–2,6 s por foto** (4,3 s no primeiro job, aquecimento do CUDA) |
 | VRAM do worker da Fase 1 | 2,2 GB de 23 GB |
-| Fase 2 na A100 | ainda não medida (estimativa: ~5–8 s por imagem com Lightning) |
+| Fase 2 na L4 (nf4 + offload, Lightning 8 passos) | **~77 s por imagem** (3 gerações em 3 min 51 s) |
+| Fase 2 na A100 | ainda não medida (estimativa: ~5–10 s por imagem com Lightning) |
 
 ## Custos (referência, preços sob demanda do GCP)
 
