@@ -85,12 +85,12 @@ def load(env=None) -> Settings:
     if offload not in {"none", "model", "sequential"}:
         raise ValueError("RECON_OFFLOAD deve ser none, model ou sequential")
     device = env.get("FAI_DEVICE", "cuda").strip().lower()
-    if device not in {"cuda", "cpu"}:
-        raise ValueError("FAI_DEVICE deve ser cuda ou cpu")
+    if device not in {"cuda", "cpu", "mps"}:
+        raise ValueError("FAI_DEVICE deve ser cuda, cpu ou mps (GPU do Mac, só Fase 1)")
     quantize = env.get("RECON_QUANTIZE", "none").strip().lower()
     if quantize not in {"none", "nf4"} or (quantize == "nf4" and device != "cuda"):
         raise ValueError("RECON_QUANTIZE deve ser none ou nf4 (nf4 exige FAI_DEVICE=cuda)")
-    if device == "cpu" and offload != "none":
+    if device != "cuda" and offload != "none":
         raise ValueError("RECON_OFFLOAD (CPU offload) só existe com FAI_DEVICE=cuda")
     if quantize == "nf4" and offload == "sequential":
         raise ValueError("RECON_QUANTIZE=nf4 aceita RECON_OFFLOAD=none ou model (sequential não funciona com 4 bits)")

@@ -1,6 +1,8 @@
 """Stage 1 — Grounding DINO finds the garment, SAM 2.1 cuts its real pixels. Runs on our GPU; nothing leaves it."""
 from __future__ import annotations
 
+import os
+
 import numpy as np
 from PIL import Image
 
@@ -25,11 +27,15 @@ class SegmentationError(ValueError):
 
 class SegmentEngine:
     def __init__(self, settings):
+        if settings.device == "mps":   # Apple GPU: operators MPS lacks fall back to the CPU instead of failing
+            os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
         import torch
         from transformers import AutoModelForZeroShotObjectDetection, AutoProcessor, Sam2Model, Sam2Processor
 
         if settings.device == "cuda" and not torch.cuda.is_available():
             raise RuntimeError("Worker precisa de uma GPU CUDA NVIDIA. Confira nvidia-smi e o NVIDIA Container Toolkit.")
+        if settings.device == "mps" and not torch.backends.mps.is_available():
+            raise RuntimeError("FAI_DEVICE=mps exige um Mac com Apple Silicon e PyTorch com suporte a MPS.")
         self.torch = torch
         self.settings = settings
         self.device = torch.device(settings.device)

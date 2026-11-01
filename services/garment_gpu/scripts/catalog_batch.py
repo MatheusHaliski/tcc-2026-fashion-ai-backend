@@ -121,7 +121,12 @@ def run(args) -> dict:
     gpu = GpuClient(os.environ["FAI_API_URL"], os.environ["FAI_API_KEY"], timeout=args.job_timeout)
     conn = catalog_source.connect()
     try:
-        products = catalog_source.fetch_products(conn, args.limit, args.offset, args.category, sample=not args.sequential)
+        if args.ids_file:   # e.g. phase2_ids.txt from catalog_local: only what needs the big GPU
+            ids = [line.strip() for line in args.ids_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+            products = catalog_source.fetch_by_ids(conn, ids[args.offset:args.offset + args.limit])
+        else:
+            products = catalog_source.fetch_products(conn, args.limit, args.offset, args.category,
+                                                     sample=not args.sequential)
         catalogue_size = catalog_source.count_products(conn)
     finally:
         if conn is not None:
@@ -154,6 +159,7 @@ def main(argv=None) -> int:
     parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--category", help="só uma categoria (upper_piece, lower_piece, ...)")
     parser.add_argument("--sequential", action="store_true", help="ordem por id em vez de amostra determinística")
+    parser.add_argument("--ids-file", type=Path, help="só estes produtos (um id por linha; ex.: phase2_ids.txt)")
     parser.add_argument("--concurrency", type=int, default=3, help="fotos em paralelo (a GPU tem fila própria)")
     parser.add_argument("--mode", choices=("auto", "segment"), default="auto",
                         help="auto: o servidor manda à Fase 2 o que não for peça esticada; segment: só Fase 1")
