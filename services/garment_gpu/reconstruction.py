@@ -89,14 +89,18 @@ class ReconstructionEngine:
             pipe.load_lora_weights(settings.recon_lora_path, adapter_name="fai_garment", **extra)
             pipe.set_adapters(["fai_garment"], adapter_weights=[settings.recon_lora_scale])
             self.models["lora"] = settings.recon_lora_path
-        if quantized:
-            pass  # 4-bit weights are already placed on the GPU by device_map
-        elif settings.recon_offload == "model":
+        if settings.recon_offload == "model":
+            # one component on the GPU at a time: text encoder, then transformer, then VAE. With nf4 this is what
+            # lets Phase 2 share the 24 GB L4 with Phase 1 (all 4-bit weights at once leave no room to generate).
             pipe.enable_model_cpu_offload()
+        elif quantized:
+            pass  # 4-bit weights are already placed on the GPU by device_map
         elif settings.recon_offload == "sequential":
             pipe.enable_sequential_cpu_offload()
         else:
             pipe.to(settings.device)
+        if settings.recon_offload != "none" or quantized:
+            enable_vae_tiling(pipe)
         pipe.set_progress_bar_config(disable=True)
         self.pipeline = pipe
 
@@ -132,7 +136,16 @@ def quantization_kwargs(settings, torch) -> dict:
         quant_backend="bitsandbytes_4bit",
         quant_kwargs={"load_in_4bit": True, "bnb_4bit_quant_type": "nf4", "bnb_4bit_compute_dtype": torch.bfloat16},
         components_to_quantize=["transformer", "text_encoder"])
+    if settings.recon_offload == "model":
+        return {"quantization_config": config}  # placement left to enable_model_cpu_offload
     return {"quantization_config": config, "device_map": "cuda"}
+
+
+def enable_vae_tiling(pipe) -> None:
+    """Encodes/decodes the image in tiles: avoids the VAE memory peak on GPUs with little free VRAM."""
+    vae = getattr(pipe, "vae", None)
+    if vae is not None and hasattr(vae, "enable_tiling"):
+        vae.enable_tiling()
 
 
 def output_size(settings, canvas=(1024, 1536)) -> tuple[int, int]:
