@@ -6,7 +6,7 @@ import ipaddress
 import os
 import socket
 import urllib.request
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse, urlunparse
 
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
 CATEGORY_MAP = {"upper_piece": "upper_piece", "lower_piece": "lower_piece", "shoes_piece": "shoes_piece",
@@ -76,7 +76,11 @@ def download(url: str, timeout: int = 30, opener=None) -> bytes:
         raise ValueError("URL_INVALIDA")
     if opener is None and not _public_host(parsed.hostname):
         raise ValueError("HOST_NAO_PUBLICO")
-    request = urllib.request.Request(url, headers={"User-Agent": "FashionAI-catalog-batch/1.0"})
+    # catalogue URLs carry accents and other non-ASCII characters; urllib needs them percent-encoded
+    safe = urlunparse(parsed._replace(path=quote(parsed.path, safe="/%"),
+                                      query=quote(parsed.query, safe="=&%+"),
+                                      fragment=""))
+    request = urllib.request.Request(safe, headers={"User-Agent": "FashionAI-catalog-batch/1.0"})
     with (opener or urllib.request.urlopen)(request, timeout=timeout) as response:
         data = response.read(MAX_IMAGE_BYTES + 1)
     if len(data) > MAX_IMAGE_BYTES:

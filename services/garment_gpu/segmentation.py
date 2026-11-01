@@ -13,8 +13,6 @@ PROMPTS = {
     "accessory_piece": "handbag. backpack. cap. hat. belt. scarf. sunglasses. watch.",
 }
 PROMPTS["auto"] = "garment. clothing. " + " ".join(p for k, p in PROMPTS.items() if k != "auto")
-MIN_MASK_FRACTION = 0.005
-MAX_MASK_FRACTION = 0.92
 
 
 class SegmentationError(ValueError):
@@ -100,8 +98,10 @@ def run_segmentation(engine, image: Image.Image, category: str, bbox=None):
     raw_mask, sam_score = engine.segment(image, box)
     mask = clean_mask(raw_mask, box)
     fraction = float(np.mean(mask > 0))
-    if fraction < MIN_MASK_FRACTION or fraction > MAX_MASK_FRACTION:
-        raise SegmentationError("INCONSISTENT_MASK", "Máscara inconsistente; revise o bbox ou a foto")
+    if not engine.settings.mask_min_fraction <= fraction <= engine.settings.mask_max_fraction:
+        raise SegmentationError("INCONSISTENT_MASK",
+                                f"Máscara inconsistente: {fraction:.1%} do quadro (aceito "
+                                f"{engine.settings.mask_min_fraction:.1%}–{engine.settings.mask_max_fraction:.0%})")
     metrics = {"box": [round(v, 2) for v in box], "mask_fraction": round(fraction, 4), **detection}
     if sam_score is not None:
         metrics["mask_score"] = round(sam_score, 4)
