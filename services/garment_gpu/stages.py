@@ -14,7 +14,8 @@ from services.garment_gpu.analysis import classify
 from services.garment_gpu.image_ops import make_catalog_png, make_cutout_png, mask_png, open_png, png_bytes
 from services.garment_gpu.jobstore import ACTIVE, JobNotFound, public_view
 from services.garment_gpu.metrics import QA_SCORE, QA_VERDICTS, STAGE_OUTCOMES, STAGE_SECONDS
-from services.garment_gpu.reconstruction import build_prompt, output_size, to_canvas
+from services.garment_gpu.reconstruction import (BACK_VIEW_CATEGORIES, build_back_prompt, build_prompt, output_size,
+                                                 to_canvas)
 from services.garment_gpu.segmentation import SegmentationError
 
 RUNTIME: dict = {}
@@ -131,6 +132,23 @@ def run_segment(job_id: str) -> dict:
     return {"job_id": job_id, "status": record["status"]}
 
 
+def back_view(job_id: str, record: dict, front, original, mask, seed: int) -> dict | None:
+    """Phase 3 input: the back of the same garment, generated from the front flat lay. Always an AI inference (the
+    back is rarely photographed), so it carries its own QA and goes through the same human review."""
+    if record["category"] not in BACK_VIEW_CATEGORIES:
+        return None
+    settings, engine = RUNTIME["settings"], RUNTIME["reconstruct"]
+    hints = record.get("hints", {})
+    image = engine.generate([front, original], build_back_prompt(record["category"], hints.get("name"),
+                                                                  hints.get("color")), seed + 1000, output_size(settings))
+    qa = quality.compare(original, mask, image, settings, worn=True)
+    final = to_canvas(image)
+    if record["background"] == "transparent":
+        final = quality.white_to_alpha(final)
+    RUNTIME["store"].put(artifact_key(job_id, "reconstructed_back"), png_bytes(final, optimize=True), "image/png")
+    return {"seed": seed + 1000, "inferred": True, "quality": {k: qa.get(k) for k in ("verdict", "score", "flags", "delta_e")}}
+
+
 def reconstruct_worker_alive() -> bool:
     redis = RUNTIME["redis"]
     return any(json.loads(raw).get("stage") == "reconstruct"
@@ -177,6 +195,7 @@ def run_reconstruct(job_id: str) -> dict:
         if record["background"] == "transparent":
             final = quality.white_to_alpha(final)
         store.put(artifact_key(job_id, "reconstructed"), png_bytes(final, optimize=True), "image/png")
+        back = back_view(job_id, record, candidate, original, mask, seed) if settings.recon_back_view else None
     except Exception as exc:
         _technical_failure(job_id, "reconstruct", exc)
         raise
@@ -187,10 +206,12 @@ def run_reconstruct(job_id: str) -> dict:
             "steps": settings.recon_steps,
             "true_cfg_scale": settings.recon_true_cfg, "prompt_kind": "custom" if record.get("prompt") else "default",
             "prompt": prompt,
-            "ai_generated": True, "seconds": round(time.perf_counter() - started, 3)}
+            "ai_generated": True, "back": back, "seconds": round(time.perf_counter() - started, 3)}
 
     def attach(r):
         r["artifacts"]["reconstructed"] = artifact_key(job_id, "reconstructed")
+        if back:
+            r["artifacts"]["reconstructed_back"] = artifact_key(job_id, "reconstructed_back")
         r["reconstruction"], r["quality"] = info, qa
         r["output"] = "generative_reconstruction_requires_review"
     try:

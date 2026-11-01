@@ -19,7 +19,7 @@ from services.garment_gpu.security import Client, KeyRing
 from services.garment_gpu.storage import ObjectNotFound, S3Store
 
 JOB_ID = re.compile(r"^[0-9a-f]{32}$")
-VARIANTS = ("final", "segmented", "reconstructed", "mask", "input")
+VARIANTS = ("final", "segmented", "reconstructed", "reconstructed_back", "mask", "input")
 
 
 def fail(status: int, code: str, message: str, headers: dict | None = None):
@@ -190,7 +190,7 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
         except Exception:
             fail(503, "STORAGE_UNAVAILABLE", "Imagem temporariamente indisponível")
         headers = {"Cache-Control": "private, max-age=300", "X-Content-Type-Options": "nosniff",
-                   "X-FAI-Variant": variant, "X-FAI-AI-Generated": "true" if variant == "reconstructed" else "false",
+                   "X-FAI-Variant": variant, "X-FAI-AI-Generated": "true" if variant.startswith("reconstructed") else "false",
                    "X-FAI-Review": record.get("review", {}).get("status", "not_required")}
         return Response(data, media_type="image/png", headers=headers)
 
