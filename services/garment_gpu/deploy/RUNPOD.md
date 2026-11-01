@@ -116,7 +116,7 @@ cd ~/fashionai && set -a; source ~/fai-catalog.env; set +a && ~/.venv-fai/bin/py
 grep -o 'job in [0-9:.]*s on' /workspace/logs/reconstruct.log | tail -n 10 | awk '{split($3,t,":"); sub(/s$/,"",t[3]); s+=t[1]*3600+t[2]*60+t[3]; n++} END {if (n) printf "%d jobs: %.1f s/job = %.1f s/imagem\n", n, s/n, s/n/2}'
 ```
 Projeção: `custo_fase2 = imagens_restantes × s_por_imagem / 3600 × PRECO_HORA` (~16.200 imagens com costas). Cole a
-saída e as miniaturas na conversa. **Primeiro**: confirmar que o flat lay saiu limpo (não ruído sobre a silhueta).
+saída e as miniaturas na conversa. Frente em `cutouts/`, costas em `backs/` (miniaturas `*-back.jpg` no `index.html`). **Primeiro**: confirmar que o flat lay saiu limpo (não ruído sobre a silhueta).
 
 Se não couber no orçamento, em ordem, e só com a sua aprovação para o que reduz qualidade:
 1. `RECON_MAX_ATTEMPTS=1` (já é o padrão);

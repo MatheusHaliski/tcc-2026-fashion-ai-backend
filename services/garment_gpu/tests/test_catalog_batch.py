@@ -34,9 +34,11 @@ def garment_mask(image):
 
 
 class FakeGpu(BaseHTTPRequestHandler):
-    """Mimics /v1/garments: one job, then segmented (cut-out) and mask."""
+    """Mimics /v1/garments: one job, then segmented (cut-out) and mask; worn photos (skin) also get the Phase 2
+    back view, announced in the job's `images` like the real API does."""
 
     jobs: dict = {}
+    broken_back = False
 
     def log_message(self, *a):
         pass
@@ -61,15 +63,23 @@ class FakeGpu(BaseHTTPRequestHandler):
         cutout.putalpha(Image.fromarray((mask * 255).astype(np.uint8)))
         job_id = f"{len(self.jobs):032x}"
         FakeGpu.jobs[job_id] = {"mask": png(Image.fromarray((mask * 255).astype(np.uint8))), "final": png(cutout)}
+        if (np.asarray(rgb) == SKIN).all(-1).any():
+            FakeGpu.jobs[job_id]["reconstructed_back"] = png(Image.new("RGB", (60, 90), (10, 20, 200)))
         self._send(202, {"job_id": job_id, "status": "queued"})
 
     def do_GET(self):
         job_id = self.path.split("/v1/jobs/")[1].split("/")[0].split("?")[0]
+        job = self.jobs[job_id]
         if "/image" in self.path:
-            variant = "mask" if "variant=mask" in self.path else "final"
-            return self._send(200, self.jobs[job_id][variant], "image/png")
-        self._send(200, {"job_id": job_id, "status": "completed",
-                         "segmentation": {"mask_score": 0.98, "detection_label": "t-shirt"}})
+            variant = self.path.split("variant=")[1]
+            if variant == "reconstructed_back" and self.broken_back:
+                return self._send(410, {"detail": {"code": "EXPIRED", "message": "Imagem expirada"}})
+            return self._send(200, job[variant], "image/png")
+        body = {"job_id": job_id, "status": "completed", "images": {name: "/..." for name in job},
+                "segmentation": {"mask_score": 0.98, "detection_label": "t-shirt"}}
+        if "reconstructed_back" in job:
+            body["reconstruction"] = {"back": {"inferred": True, "quality": {"verdict": "warn"}}}
+        self._send(200, body)
 
     def do_DELETE(self):
         self._send(204, b"")
@@ -79,6 +89,7 @@ class FakeGpu(BaseHTTPRequestHandler):
 def gpu_url():
     server = HTTPServer(("127.0.0.1", 0), FakeGpu)
     FakeGpu.jobs = {}
+    FakeGpu.broken_back = False
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{server.server_port}"
     server.shutdown()
@@ -120,7 +131,7 @@ def test_lote_completo_gera_recortes_auditoria_e_relatorio(gpu_url, tmp_path, mo
     assert sorted(r["class"] for r in rows) == ["COMPLETE_ON_MODEL", "COMPLETE_PRODUCT", "CUT", "OCCLUDED"]
     assert all(r["gpu_seconds"] is not None and r["segmentation"]["mask_score"] == 0.98 for r in rows)
     assert len(list((tmp_path / "cutouts").glob("*.png"))) == 4
-    assert len(list((tmp_path / "thumbs").glob("*.jpg"))) == 8
+    assert len(list((tmp_path / "thumbs").glob("*.jpg"))) == 8 + 3   # + costas das 3 fotos com pessoa
     summary = json.loads((tmp_path / "summary.json").read_text())
     # vestida, ocluída e cortada vão para a Fase 2 (critério do #429): 3 de 4
     assert summary["reconstruction_share"] == 0.75 and summary["projected_reconstructions"] == 10741
@@ -253,3 +264,47 @@ def test_prepara_foto_pesada_cabe_no_limite_de_bytes_da_api():
         assert image.format == "PNG" and image.width == image.height     # menor, mas sem distorcer
     big_jpeg = _encoded(Image.fromarray(np.asarray(noise)[..., :3]), "JPEG", quality=100)
     assert len(catalog_source.prepare_upload(big_jpeg, max_bytes=len(big_jpeg) - 1)) < len(big_jpeg)
+
+
+def lote_de_duas(gpu_url, monkeypatch):
+    products = [{"id": "produto", "product_name": "Blusa", "category": "upper_piece", "image_url": "https://cdn.example/0.jpg"},
+                {"id": "vestida", "product_name": "Camisa", "category": "upper_piece", "image_url": "https://cdn.example/1.jpg"}]
+    images = [photo(person=False), photo()]
+    monkeypatch.setattr(catalog_source, "connect", lambda: None)
+    monkeypatch.setattr(catalog_source, "fetch_products", lambda *a, **k: products)
+    monkeypatch.setattr(catalog_source, "count_products", lambda conn: 2)
+    monkeypatch.setattr(catalog_source, "download",
+                        lambda url, **kw: png(images[int(url.rsplit("/", 1)[1].split(".")[0])]))
+    monkeypatch.setenv("FAI_API_URL", gpu_url)
+    monkeypatch.setenv("FAI_API_KEY", "k" * 64)
+
+
+def test_costas_da_fase_2_sao_baixadas_antes_de_apagar_o_job(gpu_url, tmp_path, monkeypatch):
+    lote_de_duas(gpu_url, monkeypatch)
+
+    assert catalog_batch.main(["--limit", "2", "--concurrency", "1", "--out", str(tmp_path)]) == 0
+
+    rows = {r["id"]: r for r in map(json.loads, (tmp_path / "audit.jsonl").read_text().splitlines())}
+    assert [p.name for p in (tmp_path / "backs").glob("*.png")] == ["vestida.png"]
+    with Image.open(tmp_path / "backs" / "vestida.png") as back:
+        assert back.getpixel((5, 5))[:3] == (10, 20, 200)
+    assert rows["vestida"]["thumb_back"] == "thumbs/vestida-back.jpg" and rows["vestida"]["back_quality"] == "warn"
+    assert "thumb_back" not in rows["produto"]   # foto de produto termina na Fase 1: não há costas
+    assert json.loads((tmp_path / "summary.json").read_text())["backs_saved"] == 1
+    page = (tmp_path / "index.html").read_text()
+    assert "thumbs/vestida-back.jpg" in page and "costas: warn" in page and "costas guardadas: 1" in page
+
+
+def test_sem_cutouts_guarda_so_a_miniatura_das_costas(gpu_url, tmp_path, monkeypatch):
+    lote_de_duas(gpu_url, monkeypatch)
+    catalog_batch.main(["--limit", "2", "--no-cutouts", "--out", str(tmp_path)])
+    assert not list((tmp_path / "backs").glob("*.png")) and (tmp_path / "thumbs" / "vestida-back.jpg").exists()
+
+
+def test_erro_ao_baixar_as_costas_nao_vira_png_falso(gpu_url, tmp_path, monkeypatch):
+    lote_de_duas(gpu_url, monkeypatch)
+    FakeGpu.broken_back = True
+    catalog_batch.main(["--limit", "2", "--concurrency", "1", "--out", str(tmp_path)])
+    rows = {r["id"]: r for r in map(json.loads, (tmp_path / "audit.jsonl").read_text().splitlines())}
+    assert rows["vestida"]["class"] == "FAILED" and "EXPIRED" in rows["vestida"]["reason"]
+    assert rows["produto"]["class"] == "COMPLETE_PRODUCT" and not list((tmp_path / "backs").glob("*"))

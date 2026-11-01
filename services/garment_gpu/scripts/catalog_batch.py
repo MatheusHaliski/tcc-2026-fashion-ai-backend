@@ -24,6 +24,7 @@ from services.garment_gpu.scripts import catalog_report, catalog_source
 from services.garment_gpu.analysis import classify
 
 THUMB = (320, 420)
+BACK_VARIANTS = ("reconstructed_back",)
 
 
 def api_error(response) -> str:
@@ -38,7 +39,7 @@ def api_error(response) -> str:
 
 
 class GpuClient:
-    """Submits a photo, polls the job and downloads the cut-out and its mask."""
+    """Submits a photo, polls the job and downloads the cut-out, its mask and, when Phase 2 made one, the back."""
 
     def __init__(self, base_url: str, api_key: str, timeout: int = 300, poll: float = 2.0):
         self.base, self.key, self.timeout, self.poll = base_url.rstrip("/"), api_key, timeout, poll
@@ -67,8 +68,10 @@ class GpuClient:
             body.raise_for_status()
             job = body.json()
             if job["status"] == "completed":
-                images = {name: session.get(f"{self.base}/v1/jobs/{job_id}/image", params={"variant": name},
-                                            timeout=60).content for name in ("final", "mask")}
+                # Download everything the job announces BEFORE deleting it: the back (Phase 3 input) costs as much
+                # GPU as the front and exists only on the server.
+                variants = ["final", "mask"] + [v for v in BACK_VARIANTS if v in (job.get("images") or {})]
+                images = {name: self._image(session, job_id, name) for name in variants}
                 session.delete(f"{self.base}/v1/jobs/{job_id}", timeout=30)
                 return {"job": job, **images, "seconds": round(time.perf_counter() - started, 2)}
             if job["status"] == "failed":
@@ -77,6 +80,12 @@ class GpuClient:
                 raise RuntimeError(f"{error.get('code', 'FALHOU')}: {error.get('message', '')}".strip(": "))
         session.delete(f"{self.base}/v1/jobs/{job_id}", timeout=30)
         raise RuntimeError("PRAZO_ESGOTADO")
+
+    def _image(self, session, job_id: str, variant: str) -> bytes:
+        res = session.get(f"{self.base}/v1/jobs/{job_id}/image", params={"variant": variant}, timeout=60)
+        if res.status_code >= 400:   # never save an error body as if it were the PNG
+            raise RuntimeError(f"imagem {variant}: {api_error(res)}")
+        return res.content
 
 
 def thumbnail(data: bytes, path: Path, background=(240, 240, 240)) -> str:
@@ -109,6 +118,13 @@ def process(product: dict, gpu: GpuClient, out: Path, session=None, keep_full: b
             (out / "cutouts" / f"{product['id']}.png").write_bytes(result["final"])
         row["thumb_in"] = thumbnail(raw, out / "thumbs" / f"{product['id']}-in.jpg")
         row["thumb_out"] = thumbnail(result["final"], out / "thumbs" / f"{product['id']}-out.jpg")
+        back = result.get("reconstructed_back")
+        if back:
+            if keep_full:
+                (out / "backs" / f"{product['id']}.png").write_bytes(back)
+            row["thumb_back"] = thumbnail(back, out / "thumbs" / f"{product['id']}-back.jpg")
+            row["back_quality"] = (((result["job"].get("reconstruction") or {}).get("back") or {})
+                                   .get("quality") or {}).get("verdict")
     except Exception as exc:  # download, API or decoding: the batch must not stop
         row["reason"] = f"{type(exc).__name__}: {str(exc)[:120]}"
     return row
@@ -116,7 +132,7 @@ def process(product: dict, gpu: GpuClient, out: Path, session=None, keep_full: b
 
 def run(args) -> dict:
     out = args.out
-    for sub in ("thumbs", "cutouts"):
+    for sub in ("thumbs", "cutouts", "backs"):
         (out / sub).mkdir(parents=True, exist_ok=True)
     gpu = GpuClient(os.environ["FAI_API_URL"], os.environ["FAI_API_KEY"], timeout=args.job_timeout)
     conn = catalog_source.connect()

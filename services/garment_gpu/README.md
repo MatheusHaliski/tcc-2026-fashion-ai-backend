@@ -144,8 +144,9 @@ export MYSQL_HOST=… MYSQL_PORT=… MYSQL_DATABASE=… MYSQL_USER=… MYSQL_PAS
 python -m services.garment_gpu.scripts.catalog_batch --limit 200 --out work/catalog-pilot
 ```
 
-A saída traz `index.html` (grade visual com original × recorte e as métricas de cada foto), `summary.json`,
-`audit.jsonl` e os PNGs. O resumo projeta, para o catálogo inteiro, **quantas peças precisariam de reconstrução** —
+A saída traz `index.html` (grade visual com original × recorte × costas e as métricas de cada foto), `summary.json`,
+`audit.jsonl` e os PNGs: `cutouts/<id>.png` (Fase 1 ou flat lay de frente) e `backs/<id>.png` (costas geradas pela
+Fase 2, com o QA delas em `back_quality`). Tudo é baixado antes de o job ser apagado no servidor. O resumo projeta, para o catálogo inteiro, **quantas peças precisariam de reconstrução** —
 que é o que define o custo da A100 — além das horas e do custo da segmentação (`--gpu-hour-usd`, `--workers`).
 
 Rode primeiro um piloto (algumas centenas de produtos, a amostra é determinística), confira a grade e só então
