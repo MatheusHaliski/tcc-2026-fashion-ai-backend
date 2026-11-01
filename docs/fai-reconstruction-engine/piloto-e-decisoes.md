@@ -1,0 +1,62 @@
+# Piloto com produtos reais e registro de decisões
+
+## Piloto de 01/11/2026 — 200 produtos do catálogo
+
+Amostra determinística de 200 dos 14.321 produtos (`catalog_batch --limit 200`), uma foto por produto, Fase 1 na L4.
+A classificação abaixo é a do critério **antigo** (antes do #429), que ainda não mandava toda peça vestida para a
+Fase 2.
+
+| Resultado | Fotos |
+|---|---|
+| Com modelo, peça inteira visível | 74 |
+| Peça sozinha (foto de produto), completa | 65 |
+| Peça cortada pela borda da foto | 28 |
+| Mão/braço sobre a peça | 5 |
+| Falhou | 28 |
+
+- **56% das fotos têm pessoa** (97 de 172 processadas). Projeção no catálogo: ~8.100 peças precisam da Fase 2.
+- Corte pela borda (28) foi muito mais comum que oclusão por braço (5): fotos de catálogo enquadradas no tronco.
+- **Falhas:** 14 recusas 422 sem motivo registrado (o cliente só guardava o status; corrigido no #428), 8 máscaras
+  acima de 92% do quadro (fotos de produto bem recortadas), 2 sem peça detectada, 2 links quebrados (404), 2 URLs
+  com acento (corrigido no #428).
+
+### O que a revisão visual mostrou (e os números não)
+
+A grade do relatório revelou erros que as métricas classificavam como "completo":
+
+| Erro observado | Exemplos | Causa | Correção (#429) |
+|---|---|---|---|
+| Produto final mostra o **corpo** e não a peça (grave) | cabelo no lugar da blusa (3), pernas no lugar do short (2), mancha de pele (1) | o SAM, com uma máscara só, pegou o objeto de maior contraste na caixa | três máscaras + escolha pela caixa; recusa `MASK_OUTSIDE_DETECTION` |
+| Recorte errado dentro da peça (mão/braço na frente) | blusas com mão na cintura | o preenchimento de buracos colava a mão no recorte | buracos de pele ficam abertos; Fase 2 repinta |
+| Peça com forma de corpo ("vestimenta fantasma") | todas as fotos com modelo | a Fase 1 só preserva pixels reais | toda peça vestida vai para a Fase 2, que gera flat lay |
+| Calçados e acessórios "sem mudança" | tênis, relógio, boné | o lote usava o quadro original | lote passou a usar o enquadramento centralizado |
+| Só o logotipo de uma camiseta preta | 1 | peça escura em fundo escuro | sem correção automática ainda; vai para revisão |
+| Só uma meia de um kit de três | 1 | o detector escolhe uma caixa | pendente: várias caixas para pares e kits |
+
+Também ficou claro que a detecção de pele por cor confunde roupa bege/creme/rosa com pele (25% de falsos suspeitos
+num primeiro critério), o que motivou o plano de usar o SAM 3D Body.
+
+## Decisões e porquês
+
+| Decisão | Alternativa descartada | Por quê |
+|---|---|---|
+| Workers com `SimpleWorker` (sem fork) | worker padrão do RQ | o padrão recarregava os pesos a cada foto e fazer fork com CUDA iniciado é inseguro |
+| RustFS + rclone | MinIO | imagens do MinIO saíram do Docker Hub |
+| Tailscale Funnel | Cloudflare Tunnel, IP público | sem domínio próprio; a política da organização proíbe IP público |
+| VMs sem IP público + NAT + IAP | desligar a política da organização | menos superfície de ataque, sem pedir permissão de admin da organização |
+| Rotear pelo servidor (`mode=auto`) | cliente decidir | a decisão depende da máscara, que só o servidor tem |
+| Toda peça vestida → Fase 2 | só ocluída/cortada | a Fase 1 nunca estica tecido; o produto final é flat lay |
+| Recusar máscara suspeita | entregar e revisar depois | um recorte com o corpo no catálogo é pior que nenhum |
+| Lightning (8 passos) | 40 passos | ~5× mais rápido e barato; qualidade a confirmar no próximo piloto |
+| Fase 3 por textura nos moldes do avatar | malha `.glb` gerada da foto | o avatar já veste moldes com esqueleto; malha gerada é estática e exigiria retopologia e pesos de pele |
+| Aprovação humana de toda reconstrução | aprovação automática pelo QA | o QA não certifica logotipos, escudos e textos |
+
+## Pendências conhecidas (01/11/2026)
+
+- Rodar a Fase 2 de verdade na A100 e repetir o piloto (qualidade do flat lay, tempo, custo reais).
+- Validar com os modelos reais a escolha entre as três máscaras do SAM.
+- Trocar a heurística de pele pelo SAM 3D Body (licença disponível; token só no `.env` da VM).
+- Várias caixas para pares e kits (calçados, meias).
+- Painel de revisão humana (hoje só pela API).
+- CI da `main` com falhas antigas, fora deste serviço (testes do front, do catálogo Python e gitleaks), que impedem
+  o deploy automático do backend no Railway.
