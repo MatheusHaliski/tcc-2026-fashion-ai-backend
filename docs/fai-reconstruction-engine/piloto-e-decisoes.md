@@ -49,7 +49,20 @@ num primeiro critério), o que motivou o plano de usar o SAM 3D Body.
 | Recusar máscara suspeita | entregar e revisar depois | um recorte com o corpo no catálogo é pior que nenhum |
 | Lightning (8 passos) | 40 passos | ~5× mais rápido e barato; qualidade a confirmar no próximo piloto |
 | Fase 3 por textura nos moldes do avatar | malha `.glb` gerada da foto | o avatar já veste moldes com esqueleto; malha gerada é estática e exigiria retopologia e pesos de pele |
+| Fases 1 e 2 numa única A100 80 GB (`fai-gpu-1`) | L4 com Fase 2 em 4 bits; segunda VM só para a Fase 2 | cota de uma GPU; na L4 a Fase 2 precisou de 4 bits, offload e 48 GB de RAM e levou ~77 s por imagem (~350 h para o catálogo) |
+| Agendador próprio para o LoRA Lightning | agendador padrão do Qwen | com o padrão, o primeiro flat lay saiu como ruído sobre a silhueta (8 passos sem o `shift` da destilação) |
 | Aprovação humana de toda reconstrução | aprovação automática pelo QA | o QA não certifica logotipos, escudos e textos |
+
+## Primeiro teste da Fase 2 (L4, 01/11/2026)
+
+| Problema | Causa | Correção |
+|---|---|---|
+| `CUDA out of memory` em todo job | pesos em 4 bits (~17 GB) todos na GPU ao lado da Fase 1 | `RECON_OFFLOAD=model` com nf4 (#435) |
+| Worker morto pelo kernel, API sem responder | offload põe ~19 GB de pesos na RAM; 32 GB não bastaram | `g2-standard-12` (48 GB) |
+| L4 esgotada em `us-west4-a` e `us-west4-c` | falta de estoque do Google | VM recriada de uma imagem em `us-east4-c` |
+| Fotos recusadas (> 16 MP, formato) | fotos do catálogo fora do contrato da API | lote reduz e converte (#436, #437) |
+| Flat lay com ruído sobre a peça | LoRA Lightning com o agendador errado | agendador da destilação |
+| ~77 s por imagem, ~4 min por peça | L4 em 4 bits com offload | troca para A100 (`deploy/A100_SINGLE.md`) |
 
 ## Pendências conhecidas (01/11/2026)
 

@@ -102,3 +102,34 @@ def test_quantizacao_nf4_para_a_fase_2_caber_na_l4():
         config.load({"RECON_QUANTIZE": "nf4", "RECON_OFFLOAD": "sequential"})
     offloaded = quantization_kwargs(config.load({"RECON_QUANTIZE": "nf4", "RECON_OFFLOAD": "model"}), torch)
     assert "device_map" not in offloaded and "quantization_config" in offloaded
+
+
+def test_lightning_usa_o_agendador_da_destilacao_e_exige_lora_aplicado():
+    import math
+
+    from services.garment_gpu import reconstruction as rec
+
+    assert rec.is_lightning("lightx2v/Qwen-Image-Edit-2511-Lightning") and not rec.is_lightning("/loras/fai.safetensors")
+
+    class Pipe:
+        scheduler = None
+
+    pipe = Pipe()
+    rec.use_lightning_scheduler(pipe)
+    cfg = pipe.scheduler.config
+    assert cfg.shift_terminal is None and cfg.use_dynamic_shifting
+    assert math.isclose(cfg.base_shift, math.log(3)) and math.isclose(cfg.max_shift, math.log(3))
+
+    class Layer:
+        lora_A = object()
+
+    class Transformer:
+        def __init__(self, layers):
+            self.layers = layers
+
+        def modules(self):
+            return iter(self.layers)
+
+    assert rec.require_lora_layers(Transformer([Layer(), object(), Layer()]), "x") == 2
+    with pytest.raises(RuntimeError, match="não foi aplicado"):
+        rec.require_lora_layers(Transformer([object()]), "x")
