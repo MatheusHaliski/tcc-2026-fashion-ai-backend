@@ -26,6 +26,17 @@ from services.garment_gpu.scripts.catalog_classify import classify
 THUMB = (320, 420)
 
 
+def api_error(response) -> str:
+    """The API's own error code/message; the bare HTTP status does not say what the photo did wrong."""
+    try:
+        detail = response.json().get("detail")
+    except ValueError:
+        detail = None
+    if isinstance(detail, dict):
+        return f"{detail.get('code', response.status_code)}: {detail.get('message', '')}".strip(": ")
+    return f"HTTP {response.status_code}"
+
+
 class GpuClient:
     """Submits a photo, polls the job and downloads the cut-out and its mask."""
 
@@ -46,7 +57,8 @@ class GpuClient:
                            files={"image": ("photo.jpg", image, "image/jpeg")},
                            data={"category": category, "mode": "segment", "framing": "cutout",
                                  "background": "transparent"})
-        res.raise_for_status()
+        if res.status_code >= 400:
+            raise RuntimeError(api_error(res))
         job_id = res.json()["job_id"]
         deadline = time.perf_counter() + self.timeout
         while time.perf_counter() < deadline:
@@ -61,7 +73,8 @@ class GpuClient:
                 return {"job": job, **images, "seconds": round(time.perf_counter() - started, 2)}
             if job["status"] == "failed":
                 session.delete(f"{self.base}/v1/jobs/{job_id}", timeout=30)
-                raise RuntimeError((job.get("error") or {}).get("code", "FALHOU"))
+                error = job.get("error") or {}
+                raise RuntimeError(f"{error.get('code', 'FALHOU')}: {error.get('message', '')}".strip(": "))
         session.delete(f"{self.base}/v1/jobs/{job_id}", timeout=30)
         raise RuntimeError("PRAZO_ESGOTADO")
 
@@ -74,7 +87,7 @@ def thumbnail(data: bytes, path: Path, background=(240, 240, 240)) -> str:
         canvas = canvas.convert("RGB")
         canvas.thumbnail(THUMB, Image.Resampling.LANCZOS)
         canvas.save(path, "JPEG", quality=82)
-    return path.name
+    return f"{path.parent.name}/{path.name}"   # o relatório fica um nível acima de thumbs/
 
 
 def process(product: dict, gpu: GpuClient, out: Path, session=None, keep_full: bool = True) -> dict:
@@ -116,6 +129,7 @@ def run(args) -> dict:
     print(f"catálogo: {catalogue_size} produtos em {catalog_source.describe_target()} · lote: {len(products)} · "
           f"GPU: {os.environ['FAI_API_URL']} · {args.concurrency} em paralelo")
     rows: list[dict] = []
+    started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool, (out / "audit.jsonl").open("a", encoding="utf-8") as audit:
         sessions = [gpu._session() for _ in range(args.concurrency)]
         futures = [pool.submit(process, product, gpu, out, sessions[i % len(sessions)], not args.no_cutouts)
@@ -126,7 +140,8 @@ def run(args) -> dict:
             audit.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
             if done % 10 == 0 or done == len(futures):
                 print(f"  {done}/{len(futures)}")
-    summary = catalog_report.summarize(rows, catalogue_size, args.gpu_hour_usd, args.workers)
+    summary = catalog_report.summarize(rows, catalogue_size, args.gpu_hour_usd, args.workers,
+                                       elapsed=time.perf_counter() - started)
     report = catalog_report.write_report(out, rows, summary)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     print(f"relatório: {report}")

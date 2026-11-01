@@ -13,14 +13,19 @@ COLORS = {"COMPLETE_PRODUCT": "#1a7f37", "COMPLETE_ON_MODEL": "#2f6fd6", "OCCLUD
           "NO_GARMENT": "#a40e26", "FAILED": "#a40e26"}
 
 
-def summarize(rows: list[dict], catalogue_size: int, gpu_hour_usd: float, workers: int) -> dict:
+def summarize(rows: list[dict], catalogue_size: int, gpu_hour_usd: float, workers: int,
+              elapsed: float | None = None) -> dict:
+    """Projection uses the measured THROUGHPUT, not the per-photo latency: with several photos in flight the
+    latency of each one includes queue time and would overestimate the batch by a wide margin."""
     counts = Counter(r["class"] for r in rows)
     done = [r for r in rows if r.get("gpu_seconds") is not None]
     mean = sum(r["gpu_seconds"] for r in done) / len(done) if done else None
     reconstruct = counts["OCCLUDED"] + counts["CUT"]
     share = reconstruct / len(rows) if rows else 0.0
-    hours = (mean * catalogue_size / max(workers, 1) / 3600) if mean else None
+    per_hour = (len(done) / elapsed * 3600) if elapsed and done else None
+    hours = (catalogue_size / (per_hour * max(workers, 1))) if per_hour else None
     return {"total": len(rows), "counts": dict(counts), "mean_gpu_seconds": round(mean, 2) if mean else None,
+            "photos_per_hour": round(per_hour) if per_hour else None,
             "reconstruction_share": round(share, 4), "projected_reconstructions": round(share * catalogue_size),
             "projected_segment_hours": round(hours, 1) if hours else None,
             "projected_segment_usd": round(hours * gpu_hour_usd, 2) if hours else None}
@@ -45,7 +50,8 @@ td{{border:1px solid #ccc;padding:4px 10px}} .grid{{display:grid;grid-template-c
 figure{{margin:0;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px}} img{{width:49%;height:180px;object-fit:contain;background:#eee}}
 code{{font-size:11px;word-break:break-all}}</style>
 <h1>Piloto de enquadramento — GPU própria</h1>
-<p>{summary['total']} produtos · {summary['mean_gpu_seconds']} s/foto na GPU · precisariam de reconstrução:
+<p>{summary['total']} produtos · {summary['mean_gpu_seconds']} s/foto (latência) ·
+{summary.get('photos_per_hour') or '–'} fotos/h de vazão medida · precisariam de reconstrução:
 <b>{summary['reconstruction_share']:.0%}</b> (projeção no catálogo: ~{summary['projected_reconstructions']} peças) ·
 segmentação do catálogo inteiro: ~{summary['projected_segment_hours']} h ≈ US$ {summary['projected_segment_usd']}</p>
 <table>{rows_html}</table><div class="grid">{''.join(cards)}</div></html>"""

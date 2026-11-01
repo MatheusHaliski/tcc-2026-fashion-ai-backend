@@ -51,6 +51,8 @@ class Settings:
     device: str = "cuda"
     detector_model: str = "IDEA-Research/grounding-dino-tiny"
     segmenter_model: str = "facebook/sam2.1-hiera-tiny"
+    mask_min_fraction: float = 0.005
+    mask_max_fraction: float = 0.92
     box_threshold: float = 0.30
     text_threshold: float = 0.25
     recon_model: str = "Qwen/Qwen-Image-Edit-2511"
@@ -105,6 +107,8 @@ def load(env=None) -> Settings:
         device=device,
         detector_model=env.get("DETECTOR_MODEL", Settings.detector_model),
         segmenter_model=env.get("SEGMENTER_MODEL", Settings.segmenter_model),
+        mask_min_fraction=_float(env, "MASK_MIN_FRACTION", 0.005, 0.0001, 0.5),
+        mask_max_fraction=_float(env, "MASK_MAX_FRACTION", 0.92, 0.5, 1.0),
         box_threshold=_float(env, "BOX_THRESHOLD", 0.30, 0.05, 0.95),
         text_threshold=_float(env, "TEXT_THRESHOLD", 0.25, 0.05, 0.95),
         recon_model=env.get("RECON_MODEL", Settings.recon_model),

@@ -31,8 +31,11 @@ def png(image: Image.Image) -> bytes:
 class FakeSegmentEngine:
     models = {"detector": "fake-dino", "segmenter": "fake-sam"}
 
-    def __init__(self):
+    def __init__(self, settings=None):
+        from services.garment_gpu import config
+
         self.calls = []
+        self.settings = settings or config.load({})
 
     def detect(self, image, category):
         self.calls.append(("detect", category))

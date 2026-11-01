@@ -152,8 +152,61 @@ def test_download_recusa_url_privada_ou_nao_http():
             catalog_source.download(url)
 
 
-def test_projecao_usa_media_real_e_preco_da_gpu():
-    rows = [{"class": "COMPLETE_PRODUCT", "gpu_seconds": 2.0}, {"class": "OCCLUDED", "gpu_seconds": 2.0}]
-    summary = catalog_report.summarize(rows, 3600, gpu_hour_usd=0.70, workers=1)
-    assert summary["mean_gpu_seconds"] == 2.0 and summary["projected_segment_hours"] == 2.0
-    assert summary["projected_segment_usd"] == 1.4 and summary["projected_reconstructions"] == 1800
+def test_projecao_usa_vazao_medida_e_nao_a_latencia():
+    # 2 fotos em 2 s de relógio = 3600 fotos/h, embora cada uma leve 10 s (fila com várias em voo)
+    rows = [{"class": "COMPLETE_PRODUCT", "gpu_seconds": 10.0}, {"class": "OCCLUDED", "gpu_seconds": 10.0}]
+    summary = catalog_report.summarize(rows, 3600, gpu_hour_usd=0.70, workers=1, elapsed=2.0)
+    assert summary["photos_per_hour"] == 3600 and summary["mean_gpu_seconds"] == 10.0
+    assert summary["projected_segment_hours"] == 1.0 and summary["projected_segment_usd"] == 0.7
+    assert summary["projected_reconstructions"] == 1800
+    assert catalog_report.summarize(rows, 3600, 0.70, workers=3, elapsed=2.0)["projected_segment_hours"] == 0.3
+    assert catalog_report.summarize(rows, 3600, 0.70, workers=1)["photos_per_hour"] is None
+
+
+def test_miniaturas_apontam_para_a_subpasta_thumbs(tmp_path):
+    (tmp_path / "thumbs").mkdir()
+    name = catalog_batch.thumbnail(png(photo()), tmp_path / "thumbs" / "x.jpg")
+    assert name == "thumbs/x.jpg" and (tmp_path / name).exists()
+
+
+def test_erro_da_api_mostra_o_codigo_e_nao_so_o_status():
+    class Response:
+        status_code = 422
+
+        @staticmethod
+        def json():
+            return {"detail": {"code": "INVALID_IMAGE", "message": "Envie JPG, PNG ou WEBP"}}
+
+    assert catalog_batch.api_error(Response()) == "INVALID_IMAGE: Envie JPG, PNG ou WEBP"
+
+    class Plain(Response):
+        status_code = 503
+
+        @staticmethod
+        def json():
+            raise ValueError("sem corpo")
+
+    assert catalog_batch.api_error(Plain()) == "HTTP 503"
+
+
+def test_download_codifica_url_com_acento(monkeypatch):
+    seen = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        @staticmethod
+        def read(n):
+            return b"x" * 10
+
+    def opener(request, timeout=None):
+        seen["url"] = request.full_url
+        return FakeResponse()
+
+    catalog_source.download("https://cdn.example/catálogo/peça ©.jpg", opener=opener)
+    assert seen["url"] == "https://cdn.example/cat%C3%A1logo/pe%C3%A7a%20%C2%A9.jpg"
+    assert seen["url"].isascii()
