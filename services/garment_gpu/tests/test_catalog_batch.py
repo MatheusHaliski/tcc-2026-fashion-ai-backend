@@ -210,3 +210,26 @@ def test_download_codifica_url_com_acento(monkeypatch):
     catalog_source.download("https://cdn.example/catálogo/peça ©.jpg", opener=opener)
     assert seen["url"] == "https://cdn.example/cat%C3%A1logo/pe%C3%A7a%20%C2%A9.jpg"
     assert seen["url"].isascii()
+
+
+def _encoded(image, fmt, **kw):
+    buf = io.BytesIO()
+    image.save(buf, fmt, **kw)
+    return buf.getvalue()
+
+
+def test_prepara_foto_grande_ou_em_formato_recusado_pela_api():
+    small = _encoded(Image.new("RGB", (40, 30), ORANGE), "JPEG")
+    assert catalog_source.prepare_upload(small) is small            # já dentro do contrato: intocada
+
+    big = _encoded(Image.new("RGB", (400, 300), ORANGE), "JPEG")
+    with Image.open(io.BytesIO(catalog_source.prepare_upload(big, max_pixels=30_000))) as out:
+        assert out.format == "JPEG" and out.width * out.height <= 30_000
+        assert abs(out.width / out.height - 4 / 3) < 0.02            # sem distorcer
+
+    gif = _encoded(Image.new("P", (40, 30)), "GIF", transparency=0)
+    with Image.open(io.BytesIO(catalog_source.prepare_upload(gif))) as out:
+        assert out.format == "PNG" and out.mode == "RGBA"            # transparência preservada
+
+    with pytest.raises(ValueError, match="FORMATO_NAO_SUPORTADO"):
+        catalog_source.prepare_upload(b"<html>not an image</html>")
