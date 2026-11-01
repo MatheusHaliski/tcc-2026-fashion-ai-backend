@@ -5,3 +5,4 @@ transformers>=4.56,<5
 accelerate>=1.1,<2
 safetensors>=0.4.5,<1
 peft>=0.15,<1
+bitsandbytes>=0.45,<1   # RECON_QUANTIZE=nf4: Fase 2 em 4 bits numa GPU de 24 GB (L4)

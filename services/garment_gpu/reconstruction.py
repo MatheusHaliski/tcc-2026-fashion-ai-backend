@@ -80,15 +80,18 @@ class ReconstructionEngine:
             raise RuntimeError("Reconstrução precisa de GPU CUDA NVIDIA (Qwen-Image-Edit não é viável em CPU).")
         self.torch = torch
         dtype = torch.bfloat16 if settings.device == "cuda" else torch.float32
-        pipe = QwenImageEditPlusPipeline.from_pretrained(settings.recon_model, torch_dtype=dtype)
-        self.models = {"reconstruction": settings.recon_model}
+        quantized = quantization_kwargs(settings, torch)
+        pipe = QwenImageEditPlusPipeline.from_pretrained(settings.recon_model, torch_dtype=dtype, **quantized)
+        self.models = {"reconstruction": settings.recon_model, **({"quantization": "nf4"} if quantized else {})}
         if settings.recon_lora_path:
             # local file, or a Hub repo + file (e.g. lightx2v/Qwen-Image-Edit-2511-Lightning, 8 steps, true_cfg 1.0)
             extra = {"weight_name": settings.recon_lora_weight_name} if settings.recon_lora_weight_name else {}
             pipe.load_lora_weights(settings.recon_lora_path, adapter_name="fai_garment", **extra)
             pipe.set_adapters(["fai_garment"], adapter_weights=[settings.recon_lora_scale])
             self.models["lora"] = settings.recon_lora_path
-        if settings.recon_offload == "model":
+        if quantized:
+            pass  # 4-bit weights are already placed on the GPU by device_map
+        elif settings.recon_offload == "model":
             pipe.enable_model_cpu_offload()
         elif settings.recon_offload == "sequential":
             pipe.enable_sequential_cpu_offload()
@@ -115,6 +118,21 @@ class ReconstructionEngine:
         else:
             result = self.pipeline(**call)
         return result.images[0].convert("RGB")
+
+
+def quantization_kwargs(settings, torch) -> dict:
+    """RECON_QUANTIZE=nf4: transformer (~20B) and text encoder in 4-bit NF4 (bitsandbytes), ~40 GB → ~16 GB of VRAM.
+    Lets Phase 2 run on a 24 GB L4 next to the Phase 1 worker when no A100 quota is available; a little quality
+    and speed are traded for it, so the pilot must confirm the result."""
+    if settings.recon_quantize != "nf4":
+        return {}
+    from diffusers.quantizers import PipelineQuantizationConfig
+
+    config = PipelineQuantizationConfig(
+        quant_backend="bitsandbytes_4bit",
+        quant_kwargs={"load_in_4bit": True, "bnb_4bit_quant_type": "nf4", "bnb_4bit_compute_dtype": torch.bfloat16},
+        components_to_quantize=["transformer", "text_encoder"])
+    return {"quantization_config": config, "device_map": "cuda"}
 
 
 def output_size(settings, canvas=(1024, 1536)) -> tuple[int, int]:
