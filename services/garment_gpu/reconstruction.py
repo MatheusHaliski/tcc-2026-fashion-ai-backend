@@ -64,7 +64,9 @@ class ReconstructionEngine:
         pipe = QwenImageEditPlusPipeline.from_pretrained(settings.recon_model, torch_dtype=dtype)
         self.models = {"reconstruction": settings.recon_model}
         if settings.recon_lora_path:
-            pipe.load_lora_weights(settings.recon_lora_path, adapter_name="fai_garment")
+            # local file, or a Hub repo + file (e.g. lightx2v/Qwen-Image-Edit-2511-Lightning, 8 steps, true_cfg 1.0)
+            extra = {"weight_name": settings.recon_lora_weight_name} if settings.recon_lora_weight_name else {}
+            pipe.load_lora_weights(settings.recon_lora_path, adapter_name="fai_garment", **extra)
             pipe.set_adapters(["fai_garment"], adapter_weights=[settings.recon_lora_scale])
             self.models["lora"] = settings.recon_lora_path
         if settings.recon_offload == "model":
