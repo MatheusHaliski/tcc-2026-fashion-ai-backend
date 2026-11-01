@@ -80,3 +80,21 @@ def test_motor_repassa_parametros_ao_pipeline_qwen():
     assert call["generator"] == 11 and "mannequin" in call["negative_prompt"]
     canvas = to_canvas(out)
     assert canvas.size == (1024, 1536) and canvas.getpixel((0, 0)) == (255, 255, 255)
+
+
+def test_quantizacao_nf4_para_a_fase_2_caber_na_l4():
+    import torch
+
+    from services.garment_gpu.reconstruction import quantization_kwargs
+
+    assert quantization_kwargs(SETTINGS, torch) == {}
+    nf4 = config.load({"RECON_QUANTIZE": "nf4"})
+    kwargs = quantization_kwargs(nf4, torch)
+    assert kwargs["device_map"] == "cuda"
+    quant = kwargs["quantization_config"]
+    assert quant.quant_backend == "bitsandbytes_4bit" and set(quant.components_to_quantize) == {"transformer", "text_encoder"}
+    assert quant.quant_kwargs["bnb_4bit_quant_type"] == "nf4"
+    with pytest.raises(ValueError):
+        config.load({"RECON_QUANTIZE": "nf4", "FAI_DEVICE": "cpu"})
+    with pytest.raises(ValueError):
+        config.load({"RECON_QUANTIZE": "int3"})
