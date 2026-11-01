@@ -8,9 +8,12 @@ from pathlib import Path
 
 from services.garment_gpu.analysis import CLASSES
 
-LABELS = {**CLASSES, "NO_GARMENT": "nenhuma peça detectada", "FAILED": "falhou (download/API)"}
+RECONSTRUCT_CLASSES = {"COMPLETE_ON_MODEL", "OCCLUDED", "CUT"}   # same rule as analysis.classify (#429)
+LABELS = {**CLASSES, "NO_GARMENT": "nenhuma peça detectada", "FAILED": "falhou (download/API)",
+          "REJECTED": "recusada pela Fase 1 (sem peça ou máscara suspeita)"}
 COLORS = {"COMPLETE_PRODUCT": "#1a7f37", "COMPLETE_ON_MODEL": "#2f6fd6", "OCCLUDED": "#b26a00", "CUT": "#b26a00",
-          "NO_GARMENT": "#a40e26", "FAILED": "#a40e26"}
+          "NO_GARMENT": "#a40e26", "FAILED": "#a40e26",
+          "REJECTED": "#a40e26"}
 
 
 def summarize(rows: list[dict], catalogue_size: int, gpu_hour_usd: float, workers: int,
@@ -20,7 +23,7 @@ def summarize(rows: list[dict], catalogue_size: int, gpu_hour_usd: float, worker
     counts = Counter(r["class"] for r in rows)
     done = [r for r in rows if r.get("gpu_seconds") is not None]
     mean = sum(r["gpu_seconds"] for r in done) / len(done) if done else None
-    reconstruct = counts["OCCLUDED"] + counts["CUT"]
+    reconstruct = sum(1 for r in rows if r.get("needs_reconstruction", r["class"] in RECONSTRUCT_CLASSES))
     share = reconstruct / len(rows) if rows else 0.0
     per_hour = (len(done) / elapsed * 3600) if elapsed and done else None
     hours = (catalogue_size / (per_hour * max(workers, 1))) if per_hour else None

@@ -62,6 +62,20 @@ def fetch_products(conn, limit: int, offset: int = 0, category: str | None = Non
         return list(cur.fetchall())
 
 
+def fetch_by_ids(conn, ids: list[str], chunk: int = 500) -> list[dict]:
+    """Same photo choice as fetch_products, for a list of product ids (e.g. the Phase 2 list made on the Mac),
+    returned in the list's order."""
+    sql = SELECT.format(category="AND p.id IN %(ids)s", order="id")
+    found: list[dict] = []
+    for start in range(0, len(ids), chunk):
+        part = tuple(ids[start:start + chunk])
+        with conn.cursor() as cur:
+            cur.execute(sql, {"ids": part, "limit": len(part), "offset": 0})
+            found.extend(cur.fetchall())
+    position = {pid: i for i, pid in enumerate(ids)}
+    return sorted(found, key=lambda row: position.get(row["id"], len(ids)))
+
+
 def count_products(conn) -> int:
     with conn.cursor() as cur:
         cur.execute("SELECT COUNT(*) AS n FROM catalog_products")

@@ -122,10 +122,11 @@ def test_lote_completo_gera_recortes_auditoria_e_relatorio(gpu_url, tmp_path, mo
     assert len(list((tmp_path / "cutouts").glob("*.png"))) == 4
     assert len(list((tmp_path / "thumbs").glob("*.jpg"))) == 8
     summary = json.loads((tmp_path / "summary.json").read_text())
-    assert summary["reconstruction_share"] == 0.5 and summary["projected_reconstructions"] == 7160
+    # vestida, ocluída e cortada vão para a Fase 2 (critério do #429): 3 de 4
+    assert summary["reconstruction_share"] == 0.75 and summary["projected_reconstructions"] == 10741
     assert summary["projected_segment_hours"] > 0
     page = (tmp_path / "index.html").read_text()
-    assert "Piloto de enquadramento" in page and "50%" in page and "Peça 0" in page
+    assert "Piloto de enquadramento" in page and "75%" in page and "Peça 0" in page
 
 
 def test_falha_de_download_nao_derruba_o_lote(gpu_url, tmp_path, monkeypatch):

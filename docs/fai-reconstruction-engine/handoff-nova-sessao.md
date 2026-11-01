@@ -46,24 +46,29 @@ Preços de referência (confirmar no painel; as fontes divergem): A100 80 GB Com
 Secure Cloud ~US$ 1,49–1,79/h; cobrança por segundo; network volume US$ 0,07/GB/mês (cobra parado ou ligado);
 container disk apaga ao parar. Preferir Secure Cloud (fotos com pessoas; LGPD) se a diferença for pequena.
 
+Divisão de trabalho (decidida em 01/11): a Fase 1 do catálogo inteiro roda NO MAC do usuário (M3 Pro 18 GB, GPU via
+MPS, grátis; guia services/garment_gpu/deploy/MAC_PHASE1.md, script scripts/catalog_local.py, que retoma de onde
+parou e gera phase2_ids.txt). O RunPod recebe SÓ a lista da Fase 2 (`catalog_batch --ids-file phase2_ids.txt`).
+A Fase 2 não cabe no Mac (~58 GB; bitsandbytes é só NVIDIA).
+
 Divisão do orçamento (US$ 100):
 | Item | US$ |
 |---|---|
 | Network volume 150 GB por 1 mês (pesos ~70 GB, imagens, jobs) | ~11 |
 | Instalação, download dos pesos, testes (~3 h) | ~5 |
-| Fase 1 em todo o catálogo (~14.321 × ~1–1,5 s ≈ 4–6 h) | ~8 |
+| Refazer a Fase 1 no servidor só para as peças da lista (~8.100 × ~1 s ≈ 2–3 h) | ~4 |
 | Reserva (falhas, novas tentativas) | ~10 |
-| Fase 2 | ~65 → ~40–45 h de A100 |
+| Fase 2 | ~70 → ~45–50 h de A100 |
 
-Conta-chave: 16.200 imagens em ~42 h exige ≤ ~9 s/imagem. A100 80 GB em bf16 completo (RECON_QUANTIZE=none,
+Conta-chave: ~16.200 imagens em ~47 h exige ≤ ~10 s/imagem. A100 80 GB em bf16 completo (RECON_QUANTIZE=none,
 RECON_OFFLOAD=none) é estimada em ~8–12 s (não medido). Por isso a execução tem portões:
-1. Teste de 10 fotos → medir s/imagem real (log "Successfully completed ... in"). Projeção:
+1. Teste de 10 fotos da lista → medir s/imagem real (log "Successfully completed ... in"). Projeção:
    custo_fase2 = imagens_restantes × s_por_imagem / 3600 × preço_hora.
 2. Se não couber: (a) RECON_MAX_ATTEMPTS=1 (obrigatório desde o início); (b) primeira passada só de frente
    (RECON_BACK_VIEW=false; ~8.100 imagens) e costas depois, se sobrar crédito; (c) RECON_MAX_SIDE=768 (~1,7× mais
    rápido, menos detalhe). Nunca reduzir a qualidade sem o usuário aprovar.
-3. Piloto de 200 → revisão humana das miniaturas com o pod PARADO (parado só cobra o volume).
-4. Catálogo em lotes de 2.000 (`catalog_batch --limit 2000 --offset N`), conferindo o saldo a cada lote.
+3. Piloto de 200 da lista → revisão humana das miniaturas com o pod PARADO (parado só cobra o volume).
+4. Resto da lista em lotes de 2.000 (`--ids-file ... --limit 2000 --offset N`), conferindo o saldo a cada lote.
 5. Ao terminar: baixar os resultados, apagar pod e volume.
 
 ## Primeira tarefa de código (antes de o usuário criar o pod)
@@ -120,5 +125,7 @@ Fase 3 itens 2–4 (gravar o flat lay aprovado no photoSet com ensaio/--apply; m
 SAM 3D Body na análise); detecção de pares e kits (várias caixas); painel de revisão humana; CI da main com falhas
 antigas fora deste serviço (vitest do front, testes Python do catálogo, gitleaks).
 
-Comece confirmando que leu os documentos e então implemente a primeira tarefa de código.
+Se o usuário ainda estiver rodando a Fase 1 no Mac, ajude com MAC_PHASE1.md e analise o relatório (index.html,
+summary.json) que ele enviar. Comece confirmando que leu os documentos e então implemente a primeira tarefa de
+código.
 ```

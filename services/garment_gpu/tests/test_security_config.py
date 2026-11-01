@@ -41,7 +41,7 @@ def test_entradas_invalidas_derrubam_a_subida(spec):
 def test_config_valida_limites():
     s = config.load({"RECON_OFFLOAD": "model", "MAX_UPLOAD_MB": "8"})
     assert s.recon_offload == "model" and s.device == "cuda" and s.max_upload_bytes == 8 * 1024 * 1024
-    for env in ({"RECON_OFFLOAD": "gpu"}, {"FAI_DEVICE": "mps"}, {"MAX_UPLOAD_MB": "0"}, {"QA_MIN_SCORE": "2"},
+    for env in ({"RECON_OFFLOAD": "gpu"}, {"FAI_DEVICE": "rocm"}, {"MAX_UPLOAD_MB": "0"}, {"QA_MIN_SCORE": "2"},
                 {"FAI_DEVICE": "cpu", "RECON_OFFLOAD": "model"}):
         with pytest.raises(ValueError):
             config.load(env)
