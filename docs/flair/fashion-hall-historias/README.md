@@ -9,6 +9,9 @@ portais, abertos no nível básico, são:
 | 1 | Oscar Winner | **Noite Aurum** | drama de bastidores com infiltração leve, contra o relógio | [oscar-winner-noite-aurum.md](oscar-winner-noite-aurum.md) |
 | 2 | MET Gala Heist | **Gala Lumière** | ação furtiva (o jogo que já existe em `components/heist` e `lib/heist`) | [met-gala-heist-gala-lumiere.md](met-gala-heist-gala-lumiere.md) |
 
+As regras do deck nos dois portais (quantas cartas, orçamento de mala, requisitos mínimos, cartas-chave, momentos
+críticos e o papel do Hype) estão em [deck-de-cartas.md](deck-de-cartas.md).
+
 Os Desafios de Montagem e as Partidas FLAIR continuam no sistema de cartas; os portais do Hall ficam com a parte de
 ação. O deck de cartas é o mesmo nos dois mundos: o que a pessoa coleciona no app é o que ela veste e usa no jogo.
 
