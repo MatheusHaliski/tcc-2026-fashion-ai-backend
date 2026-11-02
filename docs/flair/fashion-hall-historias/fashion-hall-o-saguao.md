@@ -103,6 +103,10 @@ do deck (hoje derivado de material e estação) pode, com uma peça Aurora de IM
 pessoa. Correr de verdade na sala daria fôlego na fuga da Gala Lumière. É a frase do Aurora, "o corpo é o controle",
 aplicada a um jogo que já existe. Nada disso é prometido para o TCC; é a porta que se deixa aberta.
 
+**O lado do ambiente do loop** (escanear o quarto real e viver nele no app) está desenhado à parte, como RF56, em
+[`docs/aurora_cps/digital-twin-do-quarto-real.md`](../../aurora_cps/digital-twin-do-quarto-real.md): é independente
+dos portais e torna o quarto digital o gêmeo do quarto físico, não só do guarda-roupa.
+
 **O que não fazer:** não misturar dado biométrico com Hype, nível FLAIR ou ranking. O Aurora é explícito sobre safety e
 cibersegurança (§9); o Hall segue a regra do deck: biometria, quando existir, muda a partida e só a partida.
 
