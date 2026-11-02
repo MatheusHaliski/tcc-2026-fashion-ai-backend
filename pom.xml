@@ -137,7 +137,7 @@
                 <!-- Cobertura de testes (rubrica): relatório por módulo em target/site/jacoco após `mvn verify` -->
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.15</version>
+                <version>0.8.16</version>
                 <executions>
                     <execution>
                         <goals>
