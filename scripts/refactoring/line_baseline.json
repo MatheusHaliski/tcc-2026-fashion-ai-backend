@@ -732,10 +732,6 @@
    "max": 714,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "lib/avatar3d/human/locomotion.ts": {
-   "max": 1005,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "lib/avatar3d/human/three-human.ts": {
    "max": 333,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
