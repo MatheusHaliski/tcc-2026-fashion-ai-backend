@@ -12,60 +12,18 @@
  */
 import * as THREE from "three";
 import type { Prop } from "@/lib/heist/types";
-import type { SceneLocale } from "../interior-copy";
 import { BOX0, CYL, CYL0, QuadBuilder, SPH, geo } from "../interior-batch";
 import { fabric, glow, solid } from "../interior-mats";
-import { SANS, drawnTexture, fit, rand, type Quality } from "../interior-tex";
+import { rand, type Quality } from "../interior-tex";
 import { cctvTexture, foot, type PropsCtx } from "../interior-props";
 import { type RoomsCtx, A, beacon } from "./kit";
 import type { AreaModule } from "./types";
 import { Fr, SM, lathe, light, localeOf, mazeInfo, once, pbrMat, rbox, sign, signOn, texCeilMineral, texPaintSeg, texVinyl, tube } from "./servico-kit";
 import { cctvCam, smokeDetector, wallClock } from "./servico-pecas";
+import { planTexture, showTexture } from "./seguranca-tex";
+import { cafe, coordDesk, racks } from "./seguranca-moveis";
 
 const room = "seguranca", H = 3.2;
-const SHOW: Record<SceneLocale, { head: string; scene: string; scenes: string[]; dj: string; hall: string; alarm: string; where: string }> = {
-  "pt-BR": { head: "PALCO · PISTA", scene: "CENA", scenes: ["ÂMBAR LENTO", "ROSA PULSO", "BRANCO DESFILE", "VIOLETA PISTA"], dj: "DJ 124 BPM", hall: "SALÃO 412 CONVIDADOS", alarm: "ALARME", where: "SALA DAS JOIAS" },
-  en: { head: "STAGE · FLOOR", scene: "SCENE", scenes: ["SLOW AMBER", "PINK PULSE", "RUNWAY WHITE", "FLOOR VIOLET"], dj: "DJ 124 BPM", hall: "HALL 412 GUESTS", alarm: "ALARM", where: "JEWEL ROOM" },
-  es: { head: "ESCENARIO · PISTA", scene: "ESCENA", scenes: ["ÁMBAR LENTO", "ROSA PULSO", "BLANCO DESFILE", "VIOLETA PISTA"], dj: "DJ 124 BPM", hall: "SALÓN 412 INVITADOS", alarm: "ALARMA", where: "SALA DE LAS JOYAS" },
-};
-/** Uma tela do painel do palco e da pista (quatro cenas que se revezam e a tela do alarme). */
-function showTexture(loc: SceneLocale, k: number, alarm: boolean): THREE.Texture {
-  const t = SHOW[loc];
-  return drawnTexture(`seg-show-${loc}-${k}-${alarm ? 1 : 0}`, 512, 288, (g, w, h) => {
-    if (alarm) {
-      g.fillStyle = "#3a0306"; g.fillRect(0, 0, w, h); g.fillStyle = "#ff2a2a"; g.fillRect(0, 0, w, 56);
-      g.fillStyle = "#ffffff"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `800 40px ${SANS}`; g.fillText(t.alarm, w / 2, 30);
-      g.fillStyle = "#ffb3b3"; const px = fit(g, t.where, (p) => `800 ${p}px ${SANS}`, 46, w - 40); g.font = `800 ${px}px ${SANS}`; g.fillText(t.where, w / 2, h * 0.52);
-      g.font = `600 22px ${SANS}`; g.fillText("23:1" + k + ":0" + (k * 3 % 10), w / 2, h * 0.8);
-      return;
-    }
-    const cols = ["#ffb35a", "#ff5fa8", "#f4f4f4", "#a36bff"], c = cols[k];
-    g.fillStyle = "#06090f"; g.fillRect(0, 0, w, h);
-    g.fillStyle = "#14243a"; g.fillRect(0, 0, w, 40); g.fillStyle = "#cfe8ff"; g.font = `700 22px ${SANS}`; g.textBaseline = "middle"; g.textAlign = "left"; g.fillText(t.head, 14, 21);
-    g.textAlign = "right"; g.fillText(`23:0${k * 2}`, w - 14, 21);
-    t.scenes.forEach((s, i) => { const y = 64 + i * 42; g.fillStyle = i === k ? c : "#1a2433"; g.fillRect(12, y, 220, 34); g.fillStyle = i === k ? "#0b0b0b" : "#8fa6c0"; g.textAlign = "left"; g.font = `700 16px ${SANS}`; g.fillText(`${t.scene} ${i + 1}  ${s}`, 20, y + 17); });
-    // mini planta da pista com os refletores na cor da cena
-    g.strokeStyle = "#3e5a7a"; g.lineWidth = 2; g.strokeRect(250, 58, 248, 150);
-    for (let i = 0; i < 12; i++) { const x = 266 + (i % 6) * 43, y = 76 + Math.floor(i / 6) * 112; g.fillStyle = (i + k) % 3 === 0 ? "#ffffff" : c; g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.fill(); }
-    g.fillStyle = c; g.globalAlpha = 0.25; g.beginPath(); g.ellipse(374, 133, 90, 40, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
-    for (let i = 0; i < 9; i++) { g.fillStyle = "#cfe8ff"; g.beginPath(); g.arc(320 + (i * 37) % 120, 118 + (i * 23) % 36, 4, 0, Math.PI * 2); g.fill(); }
-    g.fillStyle = "#cfe8ff"; g.textAlign = "left"; g.font = `600 18px ${SANS}`; g.fillText(t.dj, 14, h - 46); g.fillText(t.hall, 14, h - 20);
-    for (let i = 0; i < 24; i++) { const v = 0.3 + 0.7 * Math.abs(Math.sin(i * 0.9 + k * 1.7)); g.fillStyle = c; g.fillRect(260 + i * 10, h - 18 - v * 50, 7, v * 50); }
-  });
-}
-/** Planta do museu na parede (traços ciano, o ponto vermelho é o diamante). */
-function planTexture(label: string): THREE.Texture {
-  return drawnTexture(`seg-plan-${label}`, 512, 512, (g, w, h) => {
-    g.fillStyle = "#0e1a26"; g.fillRect(0, 0, w, h); g.strokeStyle = "rgba(127,215,255,0.18)"; g.lineWidth = 1;
-    for (let k = 0; k < 16; k++) { g.beginPath(); g.moveTo((k / 16) * w, 0); g.lineTo((k / 16) * w, h); g.stroke(); g.beginPath(); g.moveTo(0, (k / 16) * h); g.lineTo(w, (k / 16) * h); g.stroke(); }
-    g.strokeStyle = "#7fd7ff"; g.lineWidth = 3;
-    const rect = (x0: number, z0: number, x1: number, z1: number) => g.strokeRect(((x0 + 24) / 48) * w, ((z0 + 24) / 48) * h, ((x1 - x0) / 48) * w, ((z1 - z0) / 48) * h);
-    rect(-22, -22, -12.5, -6.5); rect(-12, -22, 12, -6.5); rect(12.5, -22, 22, -6.5); rect(-22, -6, -12.5, 16); rect(-12, -6, 12, 14); rect(12.5, -6, 22, 4); rect(12.5, 4.5, 22, 14); rect(-8, 14.5, 8, 24); rect(-22, 16.5, -8.5, 24);
-    g.fillStyle = "#ff4b4b"; g.beginPath(); g.arc(((-17.25 + 24) / 48) * w, ((-14.25 + 24) / 48) * h, 8, 0, Math.PI * 2); g.fill();
-    for (const [x, z] of [[-20.2, 4.8], [-13.25, 15], [-17.25, -5], [0, 5], [17, -1]]) { g.fillStyle = "#ffe36a"; g.beginPath(); g.arc(((x + 24) / 48) * w, ((z + 24) / 48) * h, 4, 0, Math.PI * 2); g.fill(); }
-    g.fillStyle = "#7fd7ff"; g.font = `600 22px ${SANS}`; g.fillText(label, 16, h - 18);
-  });
-}
 
 /* ---------- móveis da planta desenhados pela sala ---------- */
 /** Console de monitoramento: tampo de borda boleada, calha de cabos, seis telas das câmeras num quadro de parede,
@@ -148,79 +106,6 @@ function fusePanel(p: Prop, c: PropsCtx) {
   for (const y of [1.0, 1.9]) f.cyl(S.chrome, w / 2 - 0.01, y, d / 2 + 0.01, 0.01, 0.1, 8);
   for (const x of [-0.3, -0.1, 0.1, 0.3]) f.cyl(S.galv, x, 2.12, -0.02, 0.016, H - 2.12, 8);
   f.box(S.galv, 0, H - 0.12, 0, w + 0.2, 0.06, 0.2);
-}
-/* ---------- móveis próprios da sala ---------- */
-/** Mesa de coordenação: base de carregamento com seis rádios, headsets, telefone, livro de ocorrências, luminária. */
-function coordDesk(p: Prop, c: PropsCtx) {
-  const S = SM(c.q), F = foot(p), f = Fr.at(c, room, F.cx, 0, F.cz, F.yaw), w = F.w, d = F.d, R = rand(523);
-  for (const s of [-1, 1]) f.box(S.steelBlack, s * (w / 2 - 0.02), 0, 0, 0.04, 0.72, d - 0.04);
-  f.box(S.steelBlack, 0, 0.12, -d / 2 + 0.06, w - 0.06, 0.55, 0.02);
-  f.rbox(solid("seg-top", "#2a2d31", { rough: 0.55 }), 0, 0.72, 0, w, 0.035, d, 0.012, 0, true);
-  f.rbox(S.rubber, 0, 0.715, d / 2 - 0.02, w, 0.045, 0.05, 0.02);
-  // gabinete do computador e nobreak embaixo
-  f.rbox(S.plasticBlack, -w / 2 + 0.2, 0, -0.05, 0.2, 0.45, 0.45, 0.01); f.i("seg-ledOn", SPH(6), glow("seg-ledBlue", "#5ab4ff", 2.2), -w / 2 + 0.25, 0.4, 0.18, 0, 0.005);
-  f.rbox(S.plasticBlack, w / 2 - 0.2, 0, -0.1, 0.18, 0.25, 0.38, 0.01);
-  // base de rádios (seis), com antena e LED de carga
-  const base = f.sub(-0.35, 0.755, -0.22);
-  base.rbox(S.plasticBlack, 0, 0, 0, 0.6, 0.06, 0.16, 0.01);
-  for (let k = 0; k < 6; k++) { const x = -0.25 + k * 0.1; base.rbox(S.plasticBlack, x, 0.05, 0, 0.06, 0.16, 0.035, 0.008, 0, false); base.i("seg-antenna", CYL0(6), S.plasticBlack, x + 0.015, 0.21, 0, 0, 0.006, 0.09, 0.006); base.i("seg-ledCharge", SPH(6), glow(k % 4 === 1 ? "seg-ledAmberS" : "seg-ledGreenS", k % 4 === 1 ? "#ffb02a" : "#37ff6e", 2.2), x, 0.035, 0.081, 0, 0.005); }
-  // dois headsets (arco, conchas e haste do microfone)
-  for (const [x, z, ry] of [[0.25, -0.05, 0.4], [0.55, 0.12, -0.3]] as [number, number, number][]) {
-    const h = f.sub(x, 0.79, z, ry);
-    h.g(S.plasticBlack, geo("seg-headband", () => new THREE.TorusGeometry(0.085, 0.008, 6, 20, Math.PI)), 0, 0, 0, 0, 1, 1, 1, Math.PI / 2, 0);
-    for (const s of [-1, 1]) h.g(S.plasticBlack, lathe("earcup", [[0, 0], [0.04, 0], [0.042, 0.02], [0.03, 0.035], [0, 0.036]], 14), s * 0.085, -0.02, 0, 0, 1, 1, 1, 0, s * Math.PI / 2);
-    h.g(S.plasticBlack, tube([[0.1, -0.02, 0], [0.11, -0.01, 0.07], [0.06, -0.015, 0.13]], 0.004, 10, 5), 0, 0, 0);
-  }
-  // telefone, livro de ocorrências aberto com canetas, prancheta, copo de café e a luminária articulada
-  f.rbox(S.plasticBlack, 0.0, 0.755, 0.18, 0.2, 0.06, 0.22, 0.02, 0.1); f.box(S.plasticBlack, 0.0, 0.81, 0.13, 0.19, 0.04, 0.05, 0.1);
-  f.box(S.plasticBlue, -0.25, 0.755, 0.15, 0.48, 0.012, 0.32, -0.05); f.box(S.paper, -0.37, 0.768, 0.15, 0.22, 0.004, 0.3, -0.05); f.box(S.paper, -0.13, 0.768, 0.15, 0.22, 0.004, 0.3, -0.05);
-  for (let k = 0; k < 9; k++) f.i("seg-line", BOX0(), S.plasticBlue, -0.25 + (k % 2 ? 0.12 : -0.12), 0.7725, 0.04 + Math.floor(k / 2) * 0.05, -0.05, 0.18, 0.0005, 0.002);
-  f.cylX(S.plasticBlue, -0.05, 0.775, 0.27, 0.005, 0.14, 6); f.cylX(S.plasticRed, -0.05, 0.775, 0.29, 0.005, 0.14, 6);
-  f.g(S.paper, lathe("cup", [[0, 0], [0.032, 0], [0.042, 0.11], [0, 0.11]], 14), 0.62, 0.755, -0.25);
-  // luminária de mesa: base, haste, braço e cúpula voltada para o livro
-  f.cyl(S.steelBlack, -0.68, 0.755, -0.25, 0.07, 0.02, 14); f.cyl(S.steelBlack, -0.68, 0.775, -0.25, 0.01, 0.42, 8);
-  f.cylZ(S.steelBlack, -0.68, 1.19, -0.08, 0.01, 0.36, 8); f.g(S.steelBlack, geo("seg-lampHead", () => new THREE.ConeGeometry(0.07, 0.11, 16, 1, true)), -0.68, 1.15, 0.1);
-  f.g(S.opalWarm, SPH(8), -0.68, 1.11, 0.1, 0, 0.03);
-  light(c, room, f.p(-0.68, 1.0, 0.1), "#ffe4b8", 1.6, 1.8);
-  void R;
-}
-/** Dois racks ventilados de 42U (porta perfurada; o da direita aberto: switches, gravadores e o nobreak). */
-function racks(p: Prop, c: PropsCtx) {
-  const S = SM(c.q), F = foot(p), f = Fr.at(c, room, F.cx, 0, F.cz, F.yaw), d = F.d, R = rand(541), H2 = 2.0;
-  const mesh = solid("seg-mesh", "#16181b", { metal: 0.5, rough: 0.6, transparent: true, opacity: 0.88 });
-  for (let k = 0; k < 2; k++) {
-    const g = f.sub(-0.3 + k * 0.6, 0, 0);
-    g.box(S.steelBlack, 0, 0.05, 0, 0.6, H2 - 0.05, d); for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.i("seg-rackFoot", CYL0(8), S.steelBlack, sx * 0.25, 0, sz * (d / 2 - 0.08), 0, 0.025, 0.05, 0.025);
-    for (let j = 0; j < 2; j++) g.cyl(S.steelBlack, -0.12 + j * 0.24, H2, -0.1, 0.07, 0.02, 18);
-    // equipamentos (vistos pela porta perfurada ou com a porta aberta)
-    for (let u = 0; u < 9; u++) {
-      const y = 0.12 + u * 0.2, kind = (u + k) % 3;
-      g.box(kind === 2 ? S.plasticGrey : S.plasticBlack, 0, y, d / 2 - 0.08, 0.5, kind === 0 ? 0.088 : 0.17, 0.05);
-      for (let l = 0; l < (kind === 0 ? 8 : 4); l++) { const bl = R() > 0.3; g.i(bl ? "seg-ledBlink" : "seg-ledOn", SPH(5), bl ? glow("seg-ledBlinkG", "#46ff7c", 2.4) : glow("seg-ledAmberS", "#ffb02a", 2.2), -0.2 + l * 0.055, y + 0.05, d / 2 - 0.054, 0, 0.004); }
-      if (kind === 0) for (let l = 0; l < 6; l++) g.i("seg-patch", BOX0(), [S.plasticBlue, S.plasticYellow, S.plasticRed, S.plasticGreen][l % 4], -0.15 + l * 0.05, y + 0.02, d / 2 - 0.05, 0, 0.012, 0.05, 0.03);
-    }
-    const open = k === 1, dr = g.sub(-0.3, 0, d / 2 + 0.005, open ? -1.25 : 0);
-    dr.box(S.steelBlack, 0.3, 0.06, 0, 0.6, H2 - 0.08, 0.008); dr.box(mesh, 0.3, 0.2, 0.006, 0.5, H2 - 0.4, 0.004);
-    dr.box(S.chrome, 0.54, 0.95, 0.02, 0.025, 0.18, 0.025);
-    dr.box(S.paper, 0.3, H2 - 0.16, 0.007, 0.16, 0.05, 0.002);
-  }
-  // nobreak no pé do rack aberto
-  f.rbox(S.plasticBlack, 0.3, 0.05, 0.05, 0.48, 0.26, d - 0.2, 0.01); f.box(glow("seg-upsLcd", "#5ab4ff", 1.3), 0.3, 0.2, d / 2 - 0.05, 0.1, 0.04, 0.002);
-}
-/** Armário do café: duas portas, cafeteira com jarra, canecas, copos de papel, açucareiro e lixeira ao lado. */
-function cafe(p: Prop, c: PropsCtx) {
-  const S = SM(c.q), F = foot(p), f = Fr.at(c, room, F.cx, 0, F.cz, F.yaw), w = F.w, d = F.d;
-  f.rbox(S.paintCream, 0, 0.06, 0, w, 0.82, d, 0.01, 0, true); f.box(S.plasticBlack, 0, 0, 0.02, w - 0.04, 0.06, d - 0.06);
-  for (const s of [-1, 1]) { f.box(S.paintCream, s * w / 4, 0.1, d / 2 + 0.004, w / 2 - 0.012, 0.74, 0.016); f.box(S.chrome, s * 0.04, 0.6, d / 2 + 0.018, 0.012, 0.1, 0.014); }
-  f.box(solid("seg-cafeTop", "#3a3d42", { rough: 0.4 }), 0, 0.88, 0, w + 0.02, 0.03, d + 0.02);
-  const m = f.sub(-0.1, 0.91, -0.05);
-  m.rbox(S.plasticBlack, 0, 0, 0, 0.22, 0.04, 0.24, 0.01); m.rbox(S.plasticBlack, 0, 0, -0.08, 0.22, 0.36, 0.08, 0.02); m.rbox(S.plasticBlack, 0, 0.3, 0.02, 0.22, 0.06, 0.2, 0.02);
-  m.g(S.glassClear, lathe("carafe", [[0, 0], [0.07, 0], [0.075, 0.08], [0.05, 0.16], [0.04, 0.18], [0, 0.18]], 18), 0, 0.04, 0.03);
-  m.g(solid("seg-coffee", "#2a160b", { rough: 0.1 }), lathe("coffeeIn", [[0, 0], [0.066, 0], [0.068, 0.07], [0, 0.07]], 18), 0, 0.045, 0.03);
-  m.i("seg-ledRed", SPH(6), glow("seg-ledRedS", "#ff2a2a", 2.4), 0.08, 0.022, 0.121, 0, 0.005);
-  for (let k = 0; k < 3; k++) f.g([S.porcelain, S.plasticBlue, S.paintRed][k], lathe("mug", [[0, 0], [0.04, 0], [0.042, 0.1], [0.038, 0.1], [0.036, 0.008], [0, 0.008]], 16), 0.12 + (k % 2) * 0.09, 0.91, -0.1 + k * 0.08);
-  f.cyl(S.paper, 0.2, 0.91, 0.17, 0.035, 0.2, 12); f.cyl(S.glassClear, -0.25, 0.91, 0.18, 0.04, 0.1, 12);
-  f.cyl(S.plasticGrey, w / 2 + 0.2, 0, 0.05, 0.13, 0.36, 16);
 }
 
 /* ---------- decoração da sala ---------- */
