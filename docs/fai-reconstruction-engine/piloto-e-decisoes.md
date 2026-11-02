@@ -56,6 +56,7 @@ num primeiro critério), o que motivou o plano de usar o SAM 3D Body.
 | Pod do RunPod com processos vigiados por `scripts/runpod_start.sh` (sem Docker); venv, pesos, Redis e RustFS no network volume | reproduzir o compose dentro do pod | o pod é um contêiner sem Docker; com tudo no volume, um pod novo (outra máquina, mesmo template) sobe em ~2 min, então parar/encerrar entre lotes não perde nada |
 | Agendador próprio para o LoRA Lightning | agendador padrão do Qwen | com o padrão, o primeiro flat lay saiu como ruído sobre a silhueta (8 passos sem o `shift` da destilação) |
 | `catalog_batch` baixa também as costas (`backs/<id>.png`) antes de apagar o job; erro ao baixar marca a foto como falha e não apaga o job | guardar só a imagem final | as costas custam tanto de GPU quanto a frente e só existiam no servidor: o lote as descartava |
+| Lista da Fase 2 em `mode=reconstruct` (padrão com `--ids-file`), `retry_ids.txt` e checagem de `/health` antes do lote | `mode=auto` para tudo | no `auto`, foto enviada com o worker da Fase 2 recarregando volta só com o recorte, sem erro; no teste do RunPod a URL antiga (VM desligada) e a porta não exposta falharam em silêncio |
 | Aprovação humana de toda reconstrução | aprovação automática pelo QA | o QA não certifica logotipos, escudos e textos |
 
 ## Primeiro teste da Fase 2 (L4, 01/11/2026)

@@ -97,10 +97,18 @@ terminal web não derruba nada. Variável faltando ou inválida: o script para e
 A URL é `https://<pod-id>-8000.proxy.runpod.net` (o script imprime; o id está no painel). Ela muda a cada pod novo.
 🖥️ Mac:
 ```bash
-sed -i '' "s#^FAI_API_URL=.*#FAI_API_URL=https://<pod-id>-8000.proxy.runpod.net#" ~/fai-catalog.env
+sed -i '' -E 's#FAI_API_URL=[^[:space:]"]*#FAI_API_URL=https://<pod-id>-8000.proxy.runpod.net#' ~/fai-catalog.env
 ```
+O `sed` troca o valor em qualquer posição da linha (no `~/fai-catalog.env` ela não começa por `FAI_API_URL=`).
+Confira mostrando só a URL (o resto da linha tem outras configurações) e teste a API:
 ```bash
-set -a; source ~/fai-catalog.env; set +a; curl -s "$FAI_API_URL/v1/admin/queues" -H "X-API-Key: $(sed -n 's/^ADMIN=//p' ~/fai-garment-keys.txt)"
+grep -o 'FAI_API_URL=[^[:space:]"]*' ~/fai-catalog.env; set -a; source ~/fai-catalog.env; set +a; curl -sS -m 30 -i "$FAI_API_URL/health" | head -n 1
+```
+`HTTP/2 200` é a API. `HTTP/2 404` com `server: cloudflare` é o proxy do RunPod sem a porta: no painel, **Edit Pod →
+Expose HTTP Ports** `8888,8000` (o pod reinicia; rode o passo 5 de novo). O `catalog_batch` faz essa checagem sozinho e
+para antes do primeiro produto se a URL não for a API.
+```bash
+curl -sS "$FAI_API_URL/v1/admin/queues" -H "X-API-Key: $(sed -n 's/^ADMIN=//p' ~/fai-garment-keys.txt)"; echo
 ```
 Devem aparecer um worker `segment` e um `reconstruct` com `gpu: NVIDIA A100...`. 🌐 **Railway** (opcional, só se o
 app precisar da GPU durante o lote): `GARMENT_GPU_URL` = a URL do pod; a chave não muda. Com o pod desligado o
@@ -137,6 +145,10 @@ export RECON_BACK_VIEW=false && bash /workspace/fashionai/services/garment_gpu/s
 ~/.venv-fai/bin/python -m services.garment_gpu.scripts.catalog_batch --ids-file ~/catalog-fase1/phase2_ids.txt \
   --limit 200 --offset 10 --concurrency 3 --gpu-hour-usd PRECO_HORA --out ~/catalog-fase2/piloto-200
 ```
+Com `--ids-file`, o lote usa `mode=reconstruct`: se o worker da Fase 2 estiver fora do ar (caiu e está
+recarregando), a API recusa a foto (`RECONSTRUCT_UNAVAILABLE`) em vez de devolver só o recorte. Cada lote grava
+`retry_ids.txt` com o que falhou; refaça com `--ids-file ~/catalog-fase2/piloto-200/retry_ids.txt --out ...-retry`.
+
 Terminado, **pare ou encerre o pod** (🌐 *Stop* / *Terminate*) e revise `~/catalog-fase2/piloto-200/index.html` com
 calma: com o pod parado só o volume cobra.
 
@@ -146,7 +158,8 @@ Pod novo com o mesmo template e volume (passo 4), `runpod_start.sh` (passo 5), U
 ~/.venv-fai/bin/python -m services.garment_gpu.scripts.catalog_batch --ids-file ~/catalog-fase1/phase2_ids.txt \
   --limit 2000 --offset 210 --concurrency 3 --gpu-hour-usd PRECO_HORA --out ~/catalog-fase2/lote-210
 ```
-Próximos: `--offset 2210`, `4210`, … até o fim da lista. Entre um lote e outro, confira o saldo (🌐 **Billing**) e
+Próximos: `--offset 2210`, `4210`, … até o fim da lista. Ao fim de cada lote, se ele avisar `produto(s) para
+refazer`, rode `--ids-file <lote>/retry_ids.txt` antes de parar o pod. Entre um lote e outro, confira o saldo (🌐 **Billing**) e
 refaça a projeção com o tempo medido.
 
 ## 10. Ao terminar (🌐 painel)

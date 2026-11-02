@@ -24,6 +24,7 @@ from services.garment_gpu.scripts import catalog_report, catalog_source
 from services.garment_gpu.analysis import classify
 
 THUMB = (320, 420)
+RETRY_FILE = "retry_ids.txt"   # failed or Phase-2-less products: rerun with --ids-file
 BACK_VARIANTS = ("reconstructed_back",)
 
 
@@ -50,6 +51,23 @@ class GpuClient:
         session = requests.Session()
         session.headers["X-API-Key"] = self.key
         return session
+
+    def check(self, session=None) -> None:
+        """Stops before the batch, with the reason, when FAI_API_URL is not this API (old server off, wrong URL,
+        RunPod port not exposed): otherwise every product would fail one by one with a bare network error."""
+        session = session or self._session()
+        try:
+            res = session.get(f"{self.base}/health", timeout=30)
+        except Exception as exc:
+            raise SystemExit(f"API não respondeu em {self.base} ({type(exc).__name__}): confira FAI_API_URL e se o "
+                             "servidor está ligado") from None
+        try:
+            ours = res.status_code == 200 and res.json().get("service") == "fai-garment-api"
+        except ValueError:
+            ours = False
+        if not ours:
+            raise SystemExit(f"{self.base}/health respondeu HTTP {res.status_code}, mas não é a API do FashionAI "
+                             "(no RunPod: a porta 8000 está em Expose HTTP Ports do pod?)")
 
     def segment(self, image: bytes, category: str, session=None, mode: str = "auto", hints: dict | None = None) -> dict:
         session = session or self._session()
@@ -137,6 +155,7 @@ def run(args) -> dict:
     for sub in ("thumbs", "cutouts", "backs"):
         (out / sub).mkdir(parents=True, exist_ok=True)
     gpu = GpuClient(os.environ["FAI_API_URL"], os.environ["FAI_API_KEY"], timeout=args.job_timeout)
+    gpu.check()
     conn = catalog_source.connect()
     try:
         if args.ids_file:   # e.g. phase2_ids.txt from catalog_local: only what needs the big GPU
@@ -150,7 +169,7 @@ def run(args) -> dict:
         if conn is not None:
             conn.close()
     print(f"catálogo: {catalogue_size} produtos em {catalog_source.describe_target()} · lote: {len(products)} · "
-          f"GPU: {os.environ['FAI_API_URL']} · {args.concurrency} em paralelo")
+          f"GPU: {os.environ['FAI_API_URL']} · modo {args.mode} · {args.concurrency} em paralelo")
     rows: list[dict] = []
     started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool, (out / "audit.jsonl").open("a", encoding="utf-8") as audit:
@@ -161,12 +180,18 @@ def run(args) -> dict:
             row = future.result()
             rows.append(row)
             audit.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
+            audit.flush()   # an interrupted batch keeps every row already done
             if done % 10 == 0 or done == len(futures):
                 print(f"  {done}/{len(futures)}")
     summary = catalog_report.summarize(rows, catalogue_size, args.gpu_hour_usd, args.workers,
                                        elapsed=time.perf_counter() - started)
+    retry = [row["id"] for row in rows if catalog_report.needs_retry(row)]
+    (out / RETRY_FILE).write_text("".join(f"{pid}\n" for pid in retry), encoding="utf-8")
     report = catalog_report.write_report(out, rows, summary)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
+    if retry:
+        print(f"ATENÇÃO: {len(retry)} produto(s) para refazer (falha, ou Fase 2 fora do ar no modo auto): "
+              f"--ids-file {out / RETRY_FILE}")
     print(f"relatório: {report}")
     return summary
 
@@ -179,14 +204,18 @@ def main(argv=None) -> int:
     parser.add_argument("--sequential", action="store_true", help="ordem por id em vez de amostra determinística")
     parser.add_argument("--ids-file", type=Path, help="só estes produtos (um id por linha; ex.: phase2_ids.txt)")
     parser.add_argument("--concurrency", type=int, default=3, help="fotos em paralelo (a GPU tem fila própria)")
-    parser.add_argument("--mode", choices=("auto", "segment"), default="auto",
-                        help="auto: o servidor manda à Fase 2 o que não for peça esticada; segment: só Fase 1")
+    parser.add_argument("--mode", choices=("auto", "segment", "reconstruct"), default=None,
+                        help="auto (padrão): o servidor decide a Fase 2; reconstruct (padrão com --ids-file): sempre "
+                             "Fase 2, e a API recusa a foto se o worker dela estiver fora do ar; segment: só Fase 1")
     parser.add_argument("--job-timeout", type=int, default=1800, help="reconstrução na Fase 2 pode levar minutos na fila")
     parser.add_argument("--no-cutouts", action="store_true", help="não guarda os PNGs grandes, só as miniaturas")
     parser.add_argument("--gpu-hour-usd", type=float, default=0.70, help="preço/hora da GPU para a projeção de custo")
     parser.add_argument("--workers", type=int, default=1, help="workers de segmentação na projeção")
     parser.add_argument("--out", type=Path, default=Path("work/catalog-pilot"))
     args = parser.parse_args(argv)
+    # The Phase 2 list is already classified: in auto, a photo sent while the Phase 2 worker is down or reloading
+    # would silently come back as a Phase 1 cut-out. In reconstruct the API refuses it (RECONSTRUCT_UNAVAILABLE).
+    args.mode = args.mode or ("reconstruct" if args.ids_file else "auto")
     for name in ("FAI_API_URL", "FAI_API_KEY"):
         if not os.environ.get(name):
             raise SystemExit(f"{name} não definida")
