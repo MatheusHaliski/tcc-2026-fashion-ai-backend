@@ -1,0 +1,310 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`retrato dos objetos das pessoas (holds.ts) > garfo, fone (cabeça e pescoço), touca, botões do dólmã, violino, ponto e gravata-borboleta 1`] = `
+{
+  "bowtie": {
+    "meshes": 3,
+    "names": [
+      "Group:gravata-borboleta",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "4edaeb01a04f700d51ce427e0bafc01f43ae8169741f1058dfdeb1b8da6c7db8",
+  },
+  "buttons": {
+    "meshes": 1,
+    "names": [
+      "Mesh:botoes-dolma",
+    ],
+    "sha": "64f5d2a7b0363667b5737490e7a1ddb7a77ee79551bcb9f91e24f7bf9e568447",
+  },
+  "earpiece": {
+    "meshes": 2,
+    "names": [
+      "Group:ponto",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "4d7e649ba503f3d80d32aee4ceffd82256953f249639b35235b5430749328136",
+  },
+  "fork": {
+    "meshes": 1,
+    "names": [
+      "Group:garfo",
+      "Mesh:",
+    ],
+    "sha": "68200868c0ed097636179e8921d503bf04c6eefd545e8cee5fa0bec4c183447a",
+  },
+  "headOff": {
+    "meshes": 1,
+    "names": [
+      "Group:fone-pescoco",
+      "Mesh:",
+    ],
+    "sha": "5a0655701fa8e2ff157e3d4599f09dccde50b545387d6aa34bb20f9aa41b9d88",
+  },
+  "headOn": {
+    "meshes": 1,
+    "names": [
+      "Group:fone-cabeca",
+      "Mesh:",
+    ],
+    "sha": "2286b9b6487636c578399b339ef532ff7b9d1dabf615a0f750f08a56befd729b",
+  },
+  "toque": {
+    "meshes": 1,
+    "names": [
+      "Group:touca",
+      "Mesh:",
+    ],
+    "sha": "a27cf933ac85446c40a7ba886d1909ef3ea48019e2444ec27c3f13ef19c56fb4",
+  },
+  "violin": {
+    "meshes": 2,
+    "names": [
+      "Group:violino",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "f8435662e37db13ece3586387f6648c38f4348357cba6b50c529b0b0cc7c925a",
+  },
+}
+`;
+
+exports[`retrato dos objetos das pessoas (holds.ts) > joias (três estilos) e lenço de bolso 1`] = `
+{
+  "earrings-diamond": {
+    "meshes": 2,
+    "names": [
+      "Group:brincos",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "d301da7dfdc93217b04f631e3cb2dfa27d6ae344264edfd1281f12aeae2be6b9",
+  },
+  "earrings-gold": {
+    "meshes": 1,
+    "names": [
+      "Group:brincos",
+      "Mesh:",
+    ],
+    "sha": "c8de337fe6dbe446a481432fd932456b737fa0f388201dc0dddfcfde963d35e8",
+  },
+  "earrings-pearl": {
+    "meshes": 2,
+    "names": [
+      "Group:brincos",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "6cbcbc0bad1d6c539673af77de03cc46bf42d6f9e11b899cfbeb620d35b38d49",
+  },
+  "necklace-diamond": {
+    "meshes": 2,
+    "names": [
+      "Group:colar",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "15f85cec249d4e9a4bd3e918534bb6aac47af526baadacf4d48cdddaadbba618",
+  },
+  "necklace-gold": {
+    "meshes": 1,
+    "names": [
+      "Group:colar",
+      "Mesh:",
+    ],
+    "sha": "fb22f4296283c76b6cdec2995f3bd4a2f090dd6476c0c00552b3bf3d81140719",
+  },
+  "necklace-pearl": {
+    "meshes": 1,
+    "names": [
+      "Group:colar",
+      "Mesh:",
+    ],
+    "sha": "6f031a311b61e5bf3d39640660ce5abcff5c69194848df33a7ef823e3658a9b0",
+  },
+  "pocket": {
+    "meshes": 1,
+    "names": [
+      "Mesh:lenco",
+    ],
+    "sha": "ab40426bbb900f890db65e3dac7893fddcd91e0c27e04fb55696a79f44912313",
+  },
+}
+`;
+
+exports[`retrato dos objetos das pessoas (holds.ts) > objetos na mão (makeHold) e mão de cada um (HOLD_SIDE) 1`] = `
+{
+  "camera": {
+    "meshes": 5,
+    "names": [
+      "Group:segura-camera",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "dbe8a7078c2a7f65f06a6066413926769c748eed829ce90face08e51676982b4",
+  },
+  "diamond": {
+    "meshes": 1,
+    "names": [
+      "Group:segura-diamond",
+      "Mesh:",
+    ],
+    "sha": "b27fe7634cec88804eaa2e8e95f49205d9f6775b2d1648810ebdb4e01f6373d9",
+  },
+  "flashlight": {
+    "meshes": 4,
+    "names": [
+      "Group:segura-flashlight",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Object3D:",
+    ],
+    "sha": "939f36c2ad0cb01bc50efbefe5e389426c26a908060c5eba0ad94d44f4b0c804",
+  },
+  "glass": {
+    "meshes": 2,
+    "names": [
+      "Group:segura-glass",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "25505f5bdb4ca43d81523fe625018083b4378dacd2a48213d83e33357f8c6e8b",
+  },
+  "headphones": {
+    "meshes": 1,
+    "names": [
+      "Group:segura-headphones",
+      "Mesh:",
+    ],
+    "sha": "e983b8862500950d064e3be73b6f1ee645a05bfe5c9217cddbd4d1a8a82baeed",
+  },
+  "knife": {
+    "meshes": 2,
+    "names": [
+      "Group:segura-knife",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "edc591e6451c2051b516bc958b4558d0abb8327247f2a2d4a2c884623085e621",
+  },
+  "phone": {
+    "meshes": 2,
+    "names": [
+      "Group:segura-phone",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "8f4d2cc2bff1469254e1f09881b11140d3955d3ba781de8ca8b0619631327c11",
+  },
+  "pistol": {
+    "meshes": 4,
+    "names": [
+      "Group:segura-pistol",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Object3D:boca",
+    ],
+    "sha": "80ae6b55972f36242239d5e368aa514cb18ea783d30004319f9cb91f533479d4",
+  },
+  "plate": {
+    "meshes": 2,
+    "names": [
+      "Group:segura-plate",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "5e37a3e077496a856729d3ea21ca51c6229aaa2881c13b3bee17658819ed9d98",
+  },
+  "tablet": {
+    "meshes": 2,
+    "names": [
+      "Group:segura-tablet",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "b61268a2cc6ad343a8429db65896b5df80f50841f094f768c1153661d5eb62ea",
+  },
+  "tray": {
+    "meshes": 6,
+    "names": [
+      "Group:segura-tray",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "4bb367ffe0b2ef61b2da9f466061648a69c461aa48265928205f26a16bc6fd49",
+  },
+  "violin": {
+    "meshes": 2,
+    "names": [
+      "Group:segura-violin",
+      "Mesh:",
+      "Mesh:",
+    ],
+    "sha": "85b89799a6dee0cb643374614ce8f7b403d1aba3d31fd6168dc06f6d444c0788",
+  },
+}
+`;
+
+exports[`retrato dos objetos das pessoas (holds.ts) > objetos na mão (makeHold) e mão de cada um (HOLD_SIDE) 2`] = `
+{
+  "camera": 1,
+  "diamond": 0,
+  "flashlight": 1,
+  "glass": 0,
+  "headphones": 1,
+  "knife": 1,
+  "phone": 1,
+  "pistol": 1,
+  "plate": 0,
+  "tablet": 0,
+  "tray": 0,
+  "violin": 1,
+}
+`;
+
+exports[`retrato dos objetos das pessoas (holds.ts) > placeInHand põe o quadro da pegada na mão certa 1`] = `
+{
+  "a": {
+    "pos": [
+      0,
+      0.0558,
+      0.012,
+    ],
+    "quat": [
+      0,
+      0,
+      0,
+      1,
+    ],
+  },
+  "b": {
+    "pos": [
+      0.0133,
+      0.0529,
+      0.0179,
+    ],
+    "quat": [
+      0.0535,
+      0.0574,
+      -0.1054,
+      0.9913,
+    ],
+  },
+  "leftChild": "LeftHand",
+  "rightChild": "RightHand",
+}
+`;
