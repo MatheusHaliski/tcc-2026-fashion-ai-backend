@@ -22,6 +22,27 @@ export interface ModelDef {
 
 export const MODELS: Record<string, ModelDef> = {
   djBooth: { file: "djBooth.glb", height: 1.15, fit: "height" },
+  djSpeaker: { file: "djSpeaker.glb", height: 2.2, fit: "height" },
+  dessertTable: { file: "dessertTable.glb", height: 1, fit: "footprint" },
+  buffetTable: { file: "buffetTable.glb", height: 1, fit: "footprint" },
+  patronTable: { file: "patronTable.glb", height: 1, fit: "footprint" },
+  serviceBuffet: { file: "serviceBuffet.glb", height: 1, fit: "footprint" },
+  vestConsole: { file: "vestConsole.glb", height: 1, fit: "footprint" },
+  vestFloral: { file: "vestFloral.glb", height: 2.2, fit: "height" },
+  monumentalVase: { file: "monumentalVase.glb", height: 1.7, fit: "height" },
+  stoneBench: { file: "stoneBench.glb", height: 1, fit: "footprint" },
+  valetStand: { file: "valetStand.glb", height: 1.2, fit: "height" },
+  newsstand: { file: "newsstand.glb", height: 2.4, fit: "height" },
+  loungeArmchair: { file: "loungeArmchair.glb", height: 0.85, fit: "height" },
+  loungeCoffee: { file: "loungeCoffee.glb", height: 1, fit: "footprint" },
+  loungeStool: { file: "loungeStool.glb", height: 0.75, fit: "height" },
+  loungeScreen: { file: "loungeScreen.glb", height: 1.8, fit: "height" },
+  terracoBed: { file: "terracoBed.glb", height: 1, fit: "footprint" },
+  terracoChair: { file: "terracoChair.glb", height: 0.8, fit: "height" },
+  terracoUrn: { file: "terracoUrn.glb", height: 1.3, fit: "height" },
+  terracoFire: { file: "terracoFire.glb", height: 0.45, fit: "height" },
+  terracoDrinks: { file: "terracoDrinks.glb", height: 1, fit: "footprint" },
+  terracoTotem: { file: "terracoTotem.glb", height: 2.2, fit: "height" },
 };
 
 export const hasModel = (model: string | undefined): model is string => !!model && Object.prototype.hasOwnProperty.call(MODELS, model);
