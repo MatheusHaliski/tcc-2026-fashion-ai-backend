@@ -119,7 +119,13 @@ segmenta, analisa o recorte (`analysis.py`) e decide sozinha:
 * **foto de produto** (sem pessoa, peça inteira) → para na Fase 1: `output=flat_product`;
 * **peça vestida, coberta por mão/braço ou cortada pela foto** → vai para a Fase 2, que gera a peça em *flat lay*
   (esticada sobre uma superfície, vista de cima, sem corpo nem manequim fantasma);
-* sem worker da Fase 2 no ar → devolve o recorte com `output=needs_reconstruction_unavailable` (não é produto final).
+* sem worker da Fase 2 no ar → devolve o recorte com `output=needs_reconstruction_unavailable` (não é produto final);
+* calçados e acessórios → sempre param na Fase 1 (são fotografados como produto).
+
+Fidelidade da Fase 2 (`prompts.py`, `reference.py`): com o Lightning (`true_cfg 1.0`) o prompt negativo é ignorado,
+então as proibições ficam no prompt positivo (nada de estampa, logo, texto ou etiqueta que a foto não mostre; tipo,
+gola e manga como na foto); o espaço coberto por mãos chega à Fase 2 preenchido com a cor do tecido; o lote envia o
+nome e a cor do produto; o QA das costas compara a cor com a da frente (`BACK_COLOR_MISMATCH`).
 
 Proteções da segmentação: o SAM gera três máscaras e fica com a que pertence à caixa do detector; máscara que
 vaza da caixa (pernas sob shorts, cabelo sobre camisa) é recusada com `MASK_OUTSIDE_DETECTION` em vez de entregar o

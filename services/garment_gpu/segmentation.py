@@ -131,9 +131,11 @@ def run_segmentation(engine, image: Image.Image, category: str, bbox=None):
         raise SegmentationError("MASK_OUTSIDE_DETECTION",
                                 f"A máscara ficou {1 - box_fit:.0%} fora da caixa detectada: provavelmente pele, "
                                 "cabelo ou fundo, e não a peça")
-    from services.garment_gpu.analysis import skin_holes
+    from services.garment_gpu.analysis import skin
 
-    mask = clean_mask(raw_mask, box, keep_open=skin_holes(np.asarray(image), clean_mask(raw_mask, box)))
+    # Skin is never added by hole filling (a hand on the fabric stays a hole for Phase 2). The holes used to be
+    # looked up on an already-filled mask, so none were ever found and the hand was pasted into the cut-out.
+    mask = clean_mask(raw_mask, box, keep_open=skin(np.asarray(image)))
     fraction = float(np.mean(mask > 0))
     if not engine.settings.mask_min_fraction <= fraction <= engine.settings.mask_max_fraction:
         raise SegmentationError("INCONSISTENT_MASK",
