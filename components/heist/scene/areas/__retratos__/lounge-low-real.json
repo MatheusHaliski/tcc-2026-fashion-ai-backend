@@ -1,0 +1,2837 @@
+{
+ "surfaces": {
+  "lounge": {
+   "floor": "MeshStandardMaterial|lounge-floor-low|ffffff|1|0|000000|1|1|0|0|1|1|1|0.85|||-|512x512/srgb/1000|-|512x512//1000|512x512//1000|0.9|{}",
+   "floorTile": [
+    1.4142135623730951,
+    1.4142135623730951
+   ],
+   "floorMirror": [
+    0.42,
+    0.035
+   ],
+   "wall": "MeshStandardMaterial|lounge-wall-low|ffffff|1|0|000000|1|1|0|0|1|1|1|0.55|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1.1|{}",
+   "wallTile": [
+    0.64,
+    0.64
+   ],
+   "ceil": null,
+   "trims": false
+  }
+ },
+ "props": [
+  "bar-116:bar:",
+  "sofa-117:sofa:",
+  "sofa-118:sofa:",
+  "table-119:table:1",
+  "table-120:table:1",
+  "mirror-121:mirror:1",
+  "piano-122:piano:",
+  "loungeArmchair-123:fixture:loungeArmchair",
+  "loungeArmchair-124:fixture:loungeArmchair",
+  "loungeArmchair-125:fixture:loungeArmchair",
+  "loungeCoffee-126:fixture:loungeCoffee",
+  "loungeCoffee-127:fixture:loungeCoffee",
+  "loungeStool-128:fixture:loungeStool",
+  "loungeStool-129:fixture:loungeStool",
+  "loungeStool-130:fixture:loungeStool",
+  "loungeStool-131:fixture:loungeStool",
+  "loungeScreen-132:fixture:loungeScreen"
+ ],
+ "keys": {
+  "lounge": [
+   {
+    "p": [
+     17.25,
+     3.05,
+     9.25
+    ],
+    "aim": [
+     16.6,
+     0,
+     9.4
+    ],
+    "angle": 1.15,
+    "i": 32,
+    "color": "#ffc98a"
+   },
+   {
+    "p": [
+     19.9,
+     2.25,
+     9.5
+    ],
+    "aim": [
+     19.4,
+     0,
+     9.5
+    ],
+    "angle": 1.05,
+    "i": 16,
+    "color": "#ffb466"
+   }
+  ]
+ },
+ "anchors": [
+  {
+   "x": 20.3,
+   "y": 1.9,
+   "z": 7.5,
+   "color": "#ffb466",
+   "intensity": 6,
+   "distance": 4.2,
+   "room": "lounge"
+  },
+  {
+   "x": 20.3,
+   "y": 1.9,
+   "z": 9.5,
+   "color": "#ffb466",
+   "intensity": 6,
+   "distance": 4.2,
+   "room": "lounge"
+  },
+  {
+   "x": 20.3,
+   "y": 1.9,
+   "z": 11.5,
+   "color": "#ffb466",
+   "intensity": 6,
+   "distance": 4.2,
+   "room": "lounge"
+  },
+  {
+   "x": 19.2,
+   "y": 0.6,
+   "z": 9.5,
+   "color": "#ff9a48",
+   "intensity": 2.4,
+   "distance": 2.4,
+   "room": "lounge"
+  },
+  {
+   "x": 15.78,
+   "y": 1.04,
+   "z": 6.98,
+   "color": "#ffc27a",
+   "intensity": 4.2,
+   "distance": 4.2,
+   "room": "lounge"
+  },
+  {
+   "x": 17.06,
+   "y": 1.04,
+   "z": 13.3,
+   "color": "#ffc27a",
+   "intensity": 4.2,
+   "distance": 4.2,
+   "room": "lounge"
+  },
+  {
+   "x": 13.25,
+   "y": 1.4,
+   "z": 5,
+   "color": "#ffb466",
+   "intensity": 2.2,
+   "distance": 3,
+   "room": "lounge",
+   "flicker": 1
+  },
+  {
+   "x": 14.65,
+   "y": 0.67,
+   "z": 7.06,
+   "color": "#ffb15e",
+   "intensity": 1.6,
+   "distance": 2.6,
+   "room": "lounge",
+   "flicker": 1
+  },
+  {
+   "x": 15.34,
+   "y": 0.67,
+   "z": 12.15,
+   "color": "#ffb15e",
+   "intensity": 1.6,
+   "distance": 2.6,
+   "room": "lounge",
+   "flicker": 1
+  },
+  {
+   "x": 17.25,
+   "y": 3.45,
+   "z": 9.25,
+   "color": "#ffd29a",
+   "intensity": 13,
+   "distance": 8.5,
+   "room": "lounge"
+  },
+  {
+   "x": 21.45,
+   "y": 2.1,
+   "z": 9.5,
+   "color": "#ffb258",
+   "intensity": 9,
+   "distance": 5.5,
+   "room": "lounge"
+  },
+  {
+   "x": 21.6,
+   "y": 2.2,
+   "z": 7.1,
+   "color": "#ffc887",
+   "intensity": 2.6,
+   "distance": 3,
+   "room": "lounge"
+  },
+  {
+   "x": 21.6,
+   "y": 2.2,
+   "z": 11.9,
+   "color": "#ffc887",
+   "intensity": 2.6,
+   "distance": 3,
+   "room": "lounge"
+  },
+  {
+   "x": 13,
+   "y": 2.7,
+   "z": 7.1,
+   "color": "#ffd8a8",
+   "intensity": 2.4,
+   "distance": 2.6,
+   "room": "lounge"
+  },
+  {
+   "x": 12.8,
+   "y": 2.45,
+   "z": 5.55,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 12.8,
+   "y": 2.45,
+   "z": 8.6,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 12.8,
+   "y": 2.5,
+   "z": 11.68,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 12.8,
+   "y": 2.5,
+   "z": 13.52,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 15.55,
+   "y": 2.5,
+   "z": 4.8,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 18.45,
+   "y": 2.5,
+   "z": 4.8,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 21.7,
+   "y": 2.55,
+   "z": 13.5,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 15.67,
+   "y": 2.65,
+   "z": 13.7,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 18.83,
+   "y": 2.65,
+   "z": 13.7,
+   "color": "#ffbf75",
+   "intensity": 3,
+   "distance": 4,
+   "room": "lounge"
+  },
+  {
+   "x": 13.3,
+   "y": 1.45,
+   "z": 5.32,
+   "color": "#ffc27a",
+   "intensity": 4,
+   "distance": 4.4,
+   "room": "lounge"
+  }
+ ],
+ "flames": [
+  [
+   20.03,
+   1.155,
+   8.45
+  ],
+  [
+   20.03,
+   1.155,
+   10.45
+  ],
+  [
+   20.03,
+   1.155,
+   12.1
+  ],
+  [
+   12.7,
+   1.29,
+   4.77
+  ],
+  [
+   13.8,
+   1.29,
+   4.77
+  ],
+  [
+   14.71,
+   0.498,
+   7.18
+  ],
+  [
+   14.57,
+   0.486,
+   7.06
+  ],
+  [
+   14.73,
+   0.51,
+   6.96
+  ],
+  [
+   15.22,
+   0.498,
+   12.21
+  ],
+  [
+   15.34,
+   0.486,
+   12.07
+  ],
+  [
+   15.44,
+   0.51,
+   12.23
+  ]
+ ],
+ "beacons": [
+  {
+   "room": "lounge",
+   "pos": [
+    12.66,
+    3.59,
+    8.15
+   ],
+   "normal": [
+    1,
+    0,
+    0
+   ]
+  }
+ ],
+ "cones": [
+  {
+   "room": "lounge",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    20.35,
+    2.2,
+    7.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "lounge",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    20.35,
+    2.2,
+    9.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "lounge",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    20.35,
+    2.2,
+    11.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "animated": [],
+ "ticks": [],
+ "groupAfterTick1": [
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "lounge",
+   "pos": [
+    20.35,
+    2.2,
+    7.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "lounge",
+   "pos": [
+    20.35,
+    2.2,
+    9.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "lounge",
+   "pos": [
+    20.35,
+    2.2,
+    11.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "groupAfterTick2": [
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "lounge",
+   "pos": [
+    20.35,
+    2.2,
+    7.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "lounge",
+   "pos": [
+    20.35,
+    2.2,
+    9.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "lounge",
+   "pos": [
+    20.35,
+    2.2,
+    11.5
+   ],
+   "rot": [
+    -1.571,
+    -1.525,
+    -1.571
+   ],
+   "scale": [
+    0.42,
+    1.101,
+    0.42
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "batch": [
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|plainfloor-marbleBlack-low-|ffffff|1|0|000000|1|1|0|0|1|1|0|1|||-|512x512/srgb/1000|-|512x512//1000|512x512//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 900,
+   "bbox": [
+    19.87,
+    0,
+    6.57,
+    20.95,
+    0.1,
+    12.43
+   ],
+   "hash": "62045674"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|misc-grain-low-#3b2414-0-0|3b2414|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 14892,
+   "bbox": [
+    12.5,
+    0.012,
+    4.5,
+    22,
+    4.6,
+    14.012
+   ],
+   "hash": "eb3e657a"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|plainfloor-marbleBlack-low-|ffffff|1|0|000000|1|1|0|0|1|1|0|1|||-|512x512/srgb/1000|-|512x512//1000|512x512//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 6192,
+   "bbox": [
+    12.55,
+    0.38,
+    4.61,
+    20.612,
+    1.1,
+    13.595
+   ],
+   "hash": "521a33a8"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-onyxGlow-low|ffffff|0.1|0|ffe2c0|0.95|1|0|0|1|1|0|1.1|||-|512x512/srgb/1000|512x512/srgb/1000|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 309,
+   "bbox": [
+    19.796,
+    0.13,
+    6.496,
+    21.995,
+    3.65,
+    12.504
+   ],
+   "hash": "e99b1020"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-brass|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 58944,
+   "bbox": [
+    12.5,
+    0,
+    4.5,
+    22,
+    4.6,
+    14
+   ],
+   "hash": "b89ff47c"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|misc-leather-low-#3d0d12-0-0|3d0d12|1|0|000000|1|1|0|0|1|1|0|1|||-|128x128/srgb/1000|-|128x128//1000|128x128//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 16734,
+   "bbox": [
+    17.99,
+    0.47,
+    6.387,
+    20.403,
+    1.145,
+    12.613
+   ],
+   "hash": "386182c7"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshBasicMaterial|glow-lounge-barUnder|ffd162|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 138,
+   "bbox": [
+    19.855,
+    0.098,
+    6.555,
+    20.9,
+    0.104,
+    12.445
+   ],
+   "hash": "fe67588c"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-steel|b9bcbf|0.22|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1812,
+   "bbox": [
+    15.541,
+    0.45,
+    6.65,
+    21.105,
+    1.378,
+    13.302
+   ],
+   "hash": "e277aa5a"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-darkSteel|2a2d31|0.45|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    12.54,
+    0.921,
+    8.07,
+    20.93,
+    3.56,
+    10.4
+   ],
+   "hash": "eb0f175a"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-label|ffffff|0.55|0|000000|1|1|0|2|1|1|0|1|||-|1024x512/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 7680,
+   "bbox": [
+    20.338,
+    0.512,
+    6.287,
+    21.877,
+    2.746,
+    12.72
+   ],
+   "hash": "602e0cc6"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-board|a07a4a|0.8|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    20.67,
+    0.922,
+    10.7,
+    20.93,
+    0.942,
+    11.1
+   ],
+   "hash": "ffb17276"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|glass-lounge-glass|e8f0f0|0.03|0|000000|1|0.22|1|2|1|0|0|1.6|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 7212,
+   "bbox": [
+    13.231,
+    0.42,
+    4.68,
+    22,
+    2.598,
+    12.78
+   ],
+   "hash": "30a424d6"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-menuMat|ffffff|0.85|0|000000|1|1|0|2|1|1|0|1|||-|256x384/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    20.015,
+    1.1,
+    8.1,
+    20.085,
+    1.246,
+    10.95
+   ],
+   "hash": "25fca556"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-leaf|24401f|0.7|0|000000|1|1|0|2|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 480,
+   "bbox": [
+    13.243,
+    0.852,
+    4.689,
+    20.152,
+    1.46,
+    10.653
+   ],
+   "hash": "2087c02b"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|fabric-lounge-velvetOx-low|4e101b|0.74|0|000000|1|1|0|0|1|1|0|0.6|0|1|dbaaae|128x128/srgb/1000|-|128x128//1000|-|0.35|{}",
+   "cast": true,
+   "receive": true,
+   "n": 24696,
+   "bbox": [
+    12.95,
+    0.1,
+    5.75,
+    16.65,
+    0.8,
+    13.9
+   ],
+   "hash": "04316912"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|fabric-lounge-velvetOx-low|4e101b|0.74|0|000000|1|1|0|0|1|1|0|0.6|0|1|dbaaae|128x128/srgb/1000|-|128x128//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 18588,
+   "bbox": [
+    12.965,
+    0.53,
+    5.706,
+    16.694,
+    0.815,
+    13.885
+   ],
+   "hash": "901bc536"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|fabric-lounge-velvetTeal-low|0f3b40|0.75|0|000000|1|1|0|0|1|1|0|0.6|0|1|aed2d0|128x128/srgb/1000|-|128x128//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 11664,
+   "bbox": [
+    13.052,
+    0.493,
+    6.027,
+    16.384,
+    0.924,
+    13.798
+   ],
+   "hash": "c5557994"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|fabric-lounge-brocade-low|8a6a2a|0.6|0|000000|1|1|0|0|1|1|0|0.6|0|1|f5e5be|128x128/srgb/1000|-|128x128//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 5832,
+   "bbox": [
+    13.063,
+    0.496,
+    6.875,
+    15.507,
+    0.922,
+    13.787
+   ],
+   "hash": "e40c3371"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|fabric-lounge-throw-low|c9b48a|0.95|0|000000|1|1|0|2|1|1|0|0.6|0|1|ded2be|128x128/srgb/1000|-|128x128//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 5184,
+   "bbox": [
+    13.26,
+    0.492,
+    8.223,
+    14.177,
+    0.865,
+    13.615
+   ],
+   "hash": "7b74f806"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-brass|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 10800,
+   "bbox": [
+    13.125,
+    0,
+    5.145,
+    19.625,
+    1.41,
+    13.55
+   ],
+   "hash": "7e1938aa"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-shadeSilk|e9cfa2|0.92|0|ff9c48|0.6|1|0|2|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 5568,
+   "bbox": [
+    13.052,
+    0.92,
+    5.072,
+    17.235,
+    1.62,
+    13.475
+   ],
+   "hash": "a2f10ed4"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-photo|3a3530|0.4|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    15.558,
+    0.635,
+    6.925,
+    16.916,
+    0.735,
+    13.297
+   ],
+   "hash": "ce0b381e"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 18312,
+   "bbox": [
+    12.49,
+    0.72,
+    4.49,
+    22.01,
+    4.6,
+    14.01
+   ],
+   "hash": "156a55ba"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|misc-grain-low-#3b2414-0-0|3b2414|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 17328,
+   "bbox": [
+    12.5,
+    0,
+    4.5,
+    22,
+    4.335,
+    14
+   ],
+   "hash": "281a9ba4"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 15924,
+   "bbox": [
+    12.486,
+    0.93,
+    4.505,
+    22.015,
+    3.805,
+    12.988
+   ],
+   "hash": "e895e304"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-agedMirror-low|b3a182|0.1|1|000000|1|1|0|0|1|1|0|0.95|||-|256x256/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    12.52,
+    1.03,
+    4.635,
+    21.996,
+    3.5,
+    12.91
+   ],
+   "hash": "a401b34c"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|lacquer|050506|0.12|0|000000|1|1|0|0|1|1|0|1.2|1|0|000000|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 5736,
+   "bbox": [
+    17.582,
+    0,
+    4.82,
+    20.301,
+    1.807,
+    13.917
+   ],
+   "hash": "04023fb1"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-black|0b0b0c|0.55|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 180,
+   "bbox": [
+    18.549,
+    0,
+    4.558,
+    22,
+    2.835,
+    13.329
+   ],
+   "hash": "3263df5a"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-pianoPlate|b48a3c|0.35|0.85|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 219,
+   "bbox": [
+    17.645,
+    0.9,
+    12.575,
+    19.055,
+    0.9,
+    13.845
+   ],
+   "hash": "745e4892"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-ivory|f1ebdc|0.32|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    17.705,
+    0.74,
+    12.315,
+    18.995,
+    0.762,
+    12.465
+   ],
+   "hash": "e6a8ef26"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|lacquer|050506|0.12|0|000000|1|1|0|0|1|1|0|1.2|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 4020,
+   "bbox": [
+    17.6,
+    0,
+    4.817,
+    20.291,
+    1.045,
+    12.645
+   ],
+   "hash": "03832835"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-scoreMat|ffffff|0.9|0|000000|1|1|0|2|1|1|0|1|||-|512x360/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    18.035,
+    0.826,
+    12.582,
+    18.665,
+    1.031,
+    12.628
+   ],
+   "hash": "c11c2b39"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|misc-leather-low-#6c3519-0-0|6c3519|1|0|000000|1|1|0|0|1|1|0|1|||-|128x128/srgb/1000|-|128x128//1000|128x128//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 26460,
+   "bbox": [
+    15.3,
+    0.1,
+    5.75,
+    17.1,
+    0.8,
+    12.55
+   ],
+   "hash": "64d5833a"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|misc-leather-low-#6c3519-0-0|6c3519|1|0|000000|1|1|0|0|1|1|0|1|||-|128x128/srgb/1000|-|128x128//1000|128x128//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 7212,
+   "bbox": [
+    15.305,
+    0.53,
+    5.712,
+    17.085,
+    0.815,
+    12.587
+   ],
+   "hash": "c4bc2663"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|glass-lounge-smoke|2a2622|0.08|0|000000|1|0.5|1|2|1|0|0|1.6|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    14.4,
+    0.12,
+    6.5,
+    15.95,
+    0.13,
+    12.4
+   ],
+   "hash": "87c97186"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-paper|efe6d2|0.9|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 288,
+   "bbox": [
+    14.466,
+    0.13,
+    6.583,
+    15.867,
+    0.445,
+    12.274
+   ],
+   "hash": "eb3b20ae"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-bookMat|ffffff|0.7|0|000000|1|1|0|0|1|1|0|1|||-|1024x256/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 48,
+   "bbox": [
+    14.46,
+    0.159,
+    6.576,
+    15.874,
+    0.446,
+    12.287
+   ],
+   "hash": "3912e246"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|misc-leather-low-#3d0d12-0-0|3d0d12|1|0|000000|1|1|0|0|1|1|0|1|||-|128x128/srgb/1000|-|128x128//1000|128x128//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 4032,
+   "bbox": [
+    19.21,
+    0.67,
+    6.74,
+    19.63,
+    0.762,
+    12.26
+   ],
+   "hash": "bd08cce6"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-screenArt|ffffff|0.22|0.1|000000|1|1|0|0|1|1|0|1.1|||-|1024x640/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 18,
+   "bbox": [
+    18.739,
+    0.1,
+    4.86,
+    20.274,
+    1.74,
+    5.069
+   ],
+   "hash": "f90a5038"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-nightGlass|ffffff|0.05|0.3|ffffff|0.35|1|0|0|1|1|0|1.4|||-|256x512/srgb/1001|256x512/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 441,
+   "bbox": [
+    13.28,
+    0.98,
+    13.996,
+    21.22,
+    3.45,
+    13.996
+   ],
+   "hash": "cfed51a0"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-bronze|6a4a26|0.32|0.9|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 972,
+   "bbox": [
+    13.28,
+    0.98,
+    13.965,
+    21.22,
+    3.45,
+    13.995
+   ],
+   "hash": "5a405bc4"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|fabric-lounge-curtain-low|2e0d2a|0.72|0|000000|1|1|0|0|1|1|0|0.6|0|1|c8b0d4|128x128/srgb/1000|-|128x128//1000|-|0.35|{}",
+   "cast": true,
+   "receive": true,
+   "n": 31428,
+   "bbox": [
+    12.675,
+    0,
+    13.83,
+    21.825,
+    3.83,
+    13.99
+   ],
+   "hash": "a83447e1"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshBasicMaterial|glow-lounge-coveLed|ffffb6|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 144,
+   "bbox": [
+    12.5,
+    4.18,
+    4.5,
+    22,
+    4.192,
+    14
+   ],
+   "hash": "a2e5bc76"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshBasicMaterial|glow-lounge-coveWash|eda75e|||-||1|1|0|2|0|0||||-|32x128//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    12.5,
+    4.594,
+    4.5,
+    22,
+    4.594,
+    14
+   ],
+   "hash": "745255a6"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshBasicMaterial|glow-lounge-coveWallWash|cb8f50|||-||1|1|0|2|0|0||||-|32x128//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    12.5,
+    4.31,
+    4.5,
+    22,
+    4.61,
+    14
+   ],
+   "hash": "cde0db06"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-cofferMat|ffffff|0.35|0.15|000000|1|1|0|0|1|1|0|0.8|||-|512x512/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 150,
+   "bbox": [
+    12.5,
+    4.6,
+    4.5,
+    22,
+    4.6,
+    14
+   ],
+   "hash": "e63fd61e"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-frost|e9d2a8|0.5|0|ff9c48|0.62|0.93|1|2|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2064,
+   "bbox": [
+    16.658,
+    2.78,
+    8.658,
+    17.842,
+    3.92,
+    9.842
+   ],
+   "hash": "34a1b422"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-amberGlass|b8641e|0.18|0|ff7a22|0.75|0.88|1|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2916,
+   "bbox": [
+    20.22,
+    2.18,
+    7.372,
+    20.48,
+    2.46,
+    11.628
+   ],
+   "hash": "cde36916"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshPhysicalMaterial|lounge-onyxTop-low|c9a77a|0.08|0|ff9c4a|0.18|1|0|0|1|1|0|1.2|1|0|000000|512x512/srgb/1000|512x512/srgb/1000|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    21.67,
+    0.94,
+    6.08,
+    22.01,
+    0.985,
+    12.92
+   ],
+   "hash": "7ef09b7c"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.6|0|ffffff|0.9|1|0|0|1|1|0|1|||-|1024x256/srgb/1001|1024x256/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    21.93,
+    3,
+    8.9,
+    21.93,
+    3.3,
+    10.1
+   ],
+   "hash": "0c5fb3fe"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-paintingMat|ffffff|0.55|0|000000|1|1|0|0|1|1|0|1|||-|768x512/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    12.53,
+    1.68,
+    6.17,
+    12.53,
+    2.92,
+    8.03
+   ],
+   "hash": "d3d2bb5a"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshBasicMaterial|glow-lounge-picSlot|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    12.695,
+    3.1,
+    6.625,
+    12.725,
+    3.108,
+    7.575
+   ],
+   "hash": "f691748a"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-clockFace|efe6cf|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 384,
+   "bbox": [
+    20.82,
+    2.62,
+    4.549,
+    21.08,
+    2.88,
+    4.555
+   ],
+   "hash": "8227a636"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-frostSconce|ecd6ae|0.5|0|ffa456|0.7|1|0|2|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 4320,
+   "bbox": [
+    12.54,
+    2.29,
+    4.54,
+    21.96,
+    2.695,
+    13.96
+   ],
+   "hash": "8b10d82e"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshBasicMaterial|glow-lounge-sconceWash|bc834c|||-||1|1|0|2|0|0||||-|128x128//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 54,
+   "bbox": [
+    12.506,
+    1.75,
+    4.506,
+    21.994,
+    3.45,
+    14.12
+   ],
+   "hash": "11ba0c9e"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-standWood|2a1a10|0.6|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 480,
+   "bbox": [
+    12.68,
+    0,
+    4.86,
+    21.59,
+    0.12,
+    13.84
+   ],
+   "hash": "0fa5f9f6"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-celadon|3f6e66|0.22|0|000000|1|1|0|0|1|1|0|1.2|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 1344,
+   "bbox": [
+    21.08,
+    0.12,
+    4.83,
+    21.62,
+    0.62,
+    5.37
+   ],
+   "hash": "0d3ee8e6"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-crackle|cfc6b2|0.3|0|000000|1|1|0|0|1|1|0|1.1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 1680,
+   "bbox": [
+    12.71,
+    0.12,
+    13.39,
+    13.13,
+    1.02,
+    13.81
+   ],
+   "hash": "0445e53e"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-reed|b59a6a|0.9|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 432,
+   "bbox": [
+    12.801,
+    0.402,
+    13.459,
+    13.039,
+    1.598,
+    13.741
+   ],
+   "hash": "78ebd15e"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|misc-grain-low-#5a2414-0-0|5a2414|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 432,
+   "bbox": [
+    12.5,
+    0,
+    4.5,
+    22,
+    0.002,
+    14
+   ],
+   "hash": "8fd3d416"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|solid-lounge-rugEdge|2a1612|1|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    13.45,
+    0,
+    5.55,
+    17.45,
+    0.009,
+    13.35
+   ],
+   "hash": "fb6f5cba"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-rugMat-a-low|ffffff|0.96|0|000000|1|1|0|0|1|1|0|0.35|||-|384x384/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    13.45,
+    0.009,
+    5.55,
+    16.6,
+    0.009,
+    8.65
+   ],
+   "hash": "2a0108f2"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-fringeMat|ffffff|0.95|0|000000|1|1|0|2|1|1|0|1|||-|256x64/srgb/1000|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    13.35,
+    0.003,
+    5.55,
+    17.55,
+    0.003,
+    13.35
+   ],
+   "hash": "043558b6"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshStandardMaterial|lounge-rugMat-b-low|ffffff|0.96|0|000000|1|1|0|0|1|1|0|0.35|||-|384x576/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    13.7,
+    0.009,
+    11.25,
+    17.45,
+    0.009,
+    13.35
+   ],
+   "hash": "64157222"
+  },
+  {
+   "room": "lounge",
+   "mat": "MeshBasicMaterial|lounge-contactMat|ffffff|||-||0.6|1|0|1|0|0||||-|128x128//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": false,
+   "n": 36,
+   "bbox": [
+    14.21,
+    0.01,
+    5.61,
+    17.24,
+    0.01,
+    12.69
+   ],
+   "hash": "ae0c1166"
+  }
+ ],
+ "inst": [
+  {
+   "room": "lounge",
+   "key": "lounge-flute",
+   "mat": "MeshStandardMaterial|solid-brass|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 24,
+   "colors": false,
+   "matrices": "9566c0ed",
+   "geo": {
+    "n": 52,
+    "bbox": [
+     -1,
+     -0.5,
+     -1,
+     1,
+     0.5,
+     1
+    ],
+    "hash": "fd18bd1a"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-iceCube",
+   "mat": "MeshStandardMaterial|solid-lounge-ice|e9f4f7|0.12|0|000000|1|0.6|1|0|1|1|0|1.6|||-|-|-|-|-|1|{}",
+   "count": 80,
+   "colors": false,
+   "matrices": "16c275eb",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-btl0",
+   "mat": "MeshStandardMaterial|solid-lounge-bottleGlass|ffffff|0.05|0|000000|1|0.84|1|0|1|1|0|1.7|||-|-|-|-|-|1|{}",
+   "count": 32,
+   "colors": true,
+   "matrices": "90e043ae",
+   "geo": {
+    "n": 135,
+    "bbox": [
+     -0.037,
+     0,
+     -0.038,
+     0.037,
+     0.33,
+     0.038
+    ],
+    "hash": "e7a12906"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-capsule",
+   "mat": "MeshStandardMaterial|solid-lounge-cork|9b7651|0.9|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 34,
+   "colors": false,
+   "matrices": "34fce2c2",
+   "geo": {
+    "n": 64,
+    "bbox": [
+     -0.951,
+     0,
+     -1,
+     0.951,
+     1,
+     1
+    ],
+    "hash": "6abdc0f0"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-btl3",
+   "mat": "MeshStandardMaterial|solid-lounge-bottleGlass|ffffff|0.05|0|000000|1|0.84|1|0|1|1|0|1.7|||-|-|-|-|-|1|{}",
+   "count": 34,
+   "colors": true,
+   "matrices": "73d5f63f",
+   "geo": {
+    "n": 72,
+    "bbox": [
+     -0.042,
+     0,
+     -0.042,
+     0.042,
+     0.305,
+     0.042
+    ],
+    "hash": "6ff3910d"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-capsule",
+   "mat": "MeshStandardMaterial|solid-lounge-foil|7a1420|0.35|0.8|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 64,
+   "colors": false,
+   "matrices": "94767613",
+   "geo": {
+    "n": 64,
+    "bbox": [
+     -0.951,
+     0,
+     -1,
+     0.951,
+     1,
+     1
+    ],
+    "hash": "6abdc0f0"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-btl2",
+   "mat": "MeshStandardMaterial|solid-lounge-bottleGlass|ffffff|0.05|0|000000|1|0.84|1|0|1|1|0|1.7|||-|-|-|-|-|1|{}",
+   "count": 32,
+   "colors": true,
+   "matrices": "97c38365",
+   "geo": {
+    "n": 40,
+    "bbox": [
+     -0.046,
+     0,
+     -0.046,
+     0.046,
+     0.285,
+     0.046
+    ],
+    "hash": "90b2aa42"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-btl1",
+   "mat": "MeshStandardMaterial|solid-lounge-bottleGlass|ffffff|0.05|0|000000|1|0.84|1|0|1|1|0|1.7|||-|-|-|-|-|1|{}",
+   "count": 30,
+   "colors": true,
+   "matrices": "43c4426d",
+   "geo": {
+    "n": 153,
+    "bbox": [
+     -0.066,
+     0,
+     -0.066,
+     0.066,
+     0.26,
+     0.066
+    ],
+    "hash": "b47a87d0"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-stopper",
+   "mat": "MeshStandardMaterial|solid-lounge-bottleGlass|ffffff|0.05|0|000000|1|0.84|1|0|1|1|0|1.7|||-|-|-|-|-|1|{}",
+   "count": 32,
+   "colors": true,
+   "matrices": "75e52d1e",
+   "geo": {
+    "n": 77,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "4cb1fdd0"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-limeHalf",
+   "mat": "MeshStandardMaterial|solid-lounge-lime|6d9a2a|0.55|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 4,
+   "colors": false,
+   "matrices": "fd0aa9cd",
+   "geo": {
+    "n": 91,
+    "bbox": [
+     -0.03,
+     0,
+     -0.03,
+     0.03,
+     0.03,
+     0.03
+    ],
+    "hash": "45745e3e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-glass2",
+   "mat": "MeshPhysicalMaterial|glass-lounge-glass|e8f0f0|0.03|0|000000|1|0.22|1|2|1|0|0|1.6|1|0|000000|-|-|-|-|1|{}",
+   "count": 17,
+   "colors": false,
+   "matrices": "0ad16ee9",
+   "geo": {
+    "n": 119,
+    "bbox": [
+     -0.042,
+     0,
+     -0.042,
+     0.042,
+     0.09,
+     0.042
+    ],
+    "hash": "0d71d7a3"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-fillMix",
+   "mat": "MeshStandardMaterial|solid-lounge-drinkAmber|b8641c|0.05|0|000000|1|0.82|1|0|1|1|0|1.3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "9e954595",
+   "geo": {
+    "n": 76,
+    "bbox": [
+     -1,
+     0,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "469ed62a"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-glass0",
+   "mat": "MeshPhysicalMaterial|glass-lounge-glass|e8f0f0|0.03|0|000000|1|0.22|1|2|1|0|0|1.6|1|0|000000|-|-|-|-|1|{}",
+   "count": 4,
+   "colors": false,
+   "matrices": "8ba90303",
+   "geo": {
+    "n": 170,
+    "bbox": [
+     -0.058,
+     0,
+     -0.058,
+     0.058,
+     0.142,
+     0.058
+    ],
+    "hash": "a67b8e1b"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-coupeDrink",
+   "mat": "MeshStandardMaterial|solid-lounge-drinkRose|d0485a|0.05|0|000000|1|0.8|1|0|1|1|0|1.3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "ea745e33",
+   "geo": {
+    "n": 45,
+    "bbox": [
+     -0.049,
+     0.104,
+     -0.05,
+     0.049,
+     0.132,
+     0.05
+    ],
+    "hash": "2d8e7178"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-glass1",
+   "mat": "MeshPhysicalMaterial|glass-lounge-glass|e8f0f0|0.03|0|000000|1|0.22|1|2|1|0|0|1.6|1|0|000000|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "f92937cd",
+   "geo": {
+    "n": 136,
+    "bbox": [
+     -0.062,
+     0,
+     -0.062,
+     0.062,
+     0.172,
+     0.062
+    ],
+    "hash": "ac5f01e8"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-martiniDrink",
+   "mat": "MeshStandardMaterial|solid-lounge-drinkGold|e2c46a|0.05|0|000000|1|0.78|1|0|1|1|0|1.3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "f92937cd",
+   "geo": {
+    "n": 59,
+    "bbox": [
+     -0.049,
+     0.115,
+     -0.05,
+     0.049,
+     0.165,
+     0.05
+    ],
+    "hash": "e1409bd1"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-olive",
+   "mat": "MeshStandardMaterial|solid-lounge-olive|5d6b2a|0.4|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "1d382e4d",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "d92ada47"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-fill2",
+   "mat": "MeshStandardMaterial|solid-lounge-drinkAmber|b8641c|0.05|0|000000|1|0.82|1|0|1|1|0|1.3|||-|-|-|-|-|1|{}",
+   "count": 5,
+   "colors": false,
+   "matrices": "3ab6d0a9",
+   "geo": {
+    "n": 76,
+    "bbox": [
+     -1,
+     0,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "469ed62a"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-glass3",
+   "mat": "MeshPhysicalMaterial|glass-lounge-glass|e8f0f0|0.03|0|000000|1|0.22|1|2|1|0|0|1.6|1|0|000000|-|-|-|-|1|{}",
+   "count": 25,
+   "colors": false,
+   "matrices": "63772893",
+   "geo": {
+    "n": 105,
+    "bbox": [
+     -0.033,
+     0,
+     -0.034,
+     0.033,
+     0.15,
+     0.034
+    ],
+    "hash": "72b7c178"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-fill3",
+   "mat": "MeshStandardMaterial|solid-lounge-drinkAmber|b8641c|0.05|0|000000|1|0.82|1|0|1|1|0|1.3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "17f6fa81",
+   "geo": {
+    "n": 76,
+    "bbox": [
+     -1,
+     0,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "469ed62a"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-votive",
+   "mat": "MeshPhysicalMaterial|glass-lounge-glass|e8f0f0|0.03|0|000000|1|0.22|1|2|1|0|0|1.6|1|0|000000|-|-|-|-|1|{}",
+   "count": 3,
+   "colors": false,
+   "matrices": "143ceb1b",
+   "geo": {
+    "n": 30,
+    "bbox": [
+     -0.033,
+     0,
+     -0.034,
+     0.033,
+     0.075,
+     0.034
+    ],
+    "hash": "ea4322fd"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "candle",
+   "mat": "MeshStandardMaterial|solid-candle|f3ead6|0.7|0|3a2a10|0.4|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 11,
+   "colors": false,
+   "matrices": "06234ad7",
+   "geo": {
+    "n": 64,
+    "bbox": [
+     -0.951,
+     0,
+     -1,
+     0.951,
+     1,
+     1
+    ],
+    "hash": "6abdc0f0"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "flame",
+   "mat": "MeshBasicMaterial|glow-flame|ffffb6|||-||1|1|0|2|0|0||||-|-|-|-|-|-|{}",
+   "count": 11,
+   "colors": false,
+   "matrices": "ed353f99",
+   "geo": {
+    "n": 42,
+    "bbox": [
+     -0.476,
+     -1.4,
+     -0.412,
+     0.476,
+     1.4,
+     0.412
+    ],
+    "hash": "2c2f4db2"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-nut",
+   "mat": "MeshStandardMaterial|solid-lounge-nutMat|a9773e|0.7|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 12,
+   "colors": false,
+   "matrices": "c71e12d8",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-roseBud",
+   "mat": "MeshStandardMaterial|solid-lounge-rose|8e1426|0.7|0|000000|1|1|0|2|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 8,
+   "colors": false,
+   "matrices": "0b7484f9",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "d92ada47"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-bunFoot",
+   "mat": "MeshStandardMaterial|misc-grain-low-#3b2414-0-0|3b2414|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "count": 24,
+   "colors": false,
+   "matrices": "2d12d527",
+   "geo": {
+    "n": 120,
+    "bbox": [
+     -0.051,
+     0,
+     -0.052,
+     0.051,
+     0.1,
+     0.052
+    ],
+    "hash": "5e43b3ec"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-nail",
+   "mat": "MeshStandardMaterial|solid-brass|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 306,
+   "colors": false,
+   "matrices": "2d4473df",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-button",
+   "mat": "MeshPhysicalMaterial|fabric-lounge-velvetOx-low|4e101b|0.74|0|000000|1|1|0|0|1|1|0|0.6|0|1|dbaaae|128x128/srgb/1000|-|128x128//1000|-|0.35|{}",
+   "count": 50,
+   "colors": false,
+   "matrices": "3d42a68d",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-lampGlow",
+   "mat": "MeshBasicMaterial|glow-lounge-lampGlowMat|ffffdb|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 3,
+   "colors": false,
+   "matrices": "3a1e0567",
+   "geo": {
+    "n": 77,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "4cb1fdd0"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-finial",
+   "mat": "MeshStandardMaterial|solid-brass|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "5ea59855",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "d92ada47"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-coupeDrink",
+   "mat": "MeshStandardMaterial|solid-lounge-drinkGold|e2c46a|0.05|0|000000|1|0.78|1|0|1|1|0|1.3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "a145bf15",
+   "geo": {
+    "n": 45,
+    "bbox": [
+     -0.049,
+     0.104,
+     -0.05,
+     0.049,
+     0.132,
+     0.05
+    ],
+    "hash": "2d8e7178"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-pearl",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 187,
+   "colors": false,
+   "matrices": "fa88f937",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-string",
+   "mat": "MeshStandardMaterial|solid-lounge-steel|b9bcbf|0.22|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 28,
+   "colors": false,
+   "matrices": "cf820de4",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-keyGap",
+   "mat": "MeshStandardMaterial|solid-black|0b0b0c|0.55|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 52,
+   "colors": false,
+   "matrices": "06b62eff",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-keyBlack",
+   "mat": "MeshStandardMaterial|solid-lounge-ebony|120c09|0.35|0|000000|1|1|0|0|1|1|0|0.8|||-|-|-|-|-|1|{}",
+   "count": 37,
+   "colors": false,
+   "matrices": "975b560a",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-button",
+   "mat": "MeshStandardMaterial|misc-leather-low-#3d0d12-0-0|3d0d12|1|0|000000|1|1|0|0|1|1|0|1|||-|128x128/srgb/1000|-|128x128//1000|128x128//1000|1|{}",
+   "count": 18,
+   "colors": false,
+   "matrices": "060396c2",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-button",
+   "mat": "MeshStandardMaterial|misc-leather-low-#6c3519-0-0|6c3519|1|0|000000|1|1|0|0|1|1|0|1|||-|128x128/srgb/1000|-|128x128//1000|128x128//1000|1|{}",
+   "count": 14,
+   "colors": false,
+   "matrices": "620379bd",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-decanterFill",
+   "mat": "MeshStandardMaterial|solid-lounge-drinkAmber|b8641c|0.05|0|000000|1|0.82|1|0|1|1|0|1.3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "2e1993f7",
+   "geo": {
+    "n": 85,
+    "bbox": [
+     -0.07,
+     0.01,
+     -0.07,
+     0.07,
+     0.1,
+     0.07
+    ],
+    "hash": "3da1ae22"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-tassel",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 18,
+   "colors": false,
+   "matrices": "f369a329",
+   "geo": {
+    "n": 35,
+    "bbox": [
+     -0.03,
+     -0.12,
+     -0.03,
+     0.03,
+     0,
+     0.03
+    ],
+    "hash": "1e130ede"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-tasselKnob",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 18,
+   "colors": false,
+   "matrices": "3955cb49",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-fringeBit",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 120,
+   "colors": false,
+   "matrices": "967f55f1",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-dentil",
+   "mat": "MeshStandardMaterial|misc-grain-low-#3b2414-0-0|3b2414|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "count": 540,
+   "colors": false,
+   "matrices": "08bc104d",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-roseLeaf",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 16,
+   "colors": false,
+   "matrices": "8dccc685",
+   "geo": {
+    "n": 45,
+    "bbox": [
+     -0.05,
+     -0.02,
+     0,
+     0.05,
+     0.02,
+     0.12
+    ],
+    "hash": "b52e955d"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-drop",
+   "mat": "MeshStandardMaterial|solid-lounge-crystal|f7f2ff|0.02|0.1|000000|1|0.86|1|0|1|1|0|2.4|||-|-|-|-|-|1|{}",
+   "count": 50,
+   "colors": false,
+   "matrices": "700bf59b",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     -1.6,
+     -0.5,
+     0.5,
+     1.6,
+     0.5
+    ],
+    "hash": "f72a8176"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-chBulb",
+   "mat": "MeshBasicMaterial|glow-lounge-chBulbMat|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 3,
+   "colors": false,
+   "matrices": "f60d5a3f",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "d92ada47"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-pBulb",
+   "mat": "MeshBasicMaterial|glow-lounge-pBulbMat|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 3,
+   "colors": false,
+   "matrices": "832d503e",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "d92ada47"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-knob",
+   "mat": "MeshStandardMaterial|solid-brass|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 11,
+   "colors": false,
+   "matrices": "bfa9857b",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "d92ada47"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-shelfLed",
+   "mat": "MeshBasicMaterial|glow-lounge-shelfLedMat|ffffd0|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 12,
+   "colors": false,
+   "matrices": "bf11a905",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-rosetteCorner",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 8,
+   "colors": false,
+   "matrices": "1d89f9b1",
+   "geo": {
+    "n": 77,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "4cb1fdd0"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-clockTick",
+   "mat": "MeshStandardMaterial|solid-black|0b0b0c|0.55|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 12,
+   "colors": false,
+   "matrices": "5085c53d",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-sconceBulb",
+   "mat": "MeshBasicMaterial|glow-lounge-sconceBulbMat|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 9,
+   "colors": false,
+   "matrices": "d49b8555",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "d92ada47"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "frond",
+   "mat": "MeshStandardMaterial|frondMat|ffffff|0.7|0|000000|1|1|0|2|1|1|0|0.5|||-|256x512/srgb/1001|-|-|-|1|{}",
+   "count": 13,
+   "colors": false,
+   "matrices": "a1f9a7dc",
+   "geo": {
+    "n": 18,
+    "bbox": [
+     -0.275,
+     0,
+     0.069,
+     0.275,
+     0.808,
+     0.985
+    ],
+    "hash": "7cd0aec0"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "lounge-plume",
+   "mat": "MeshStandardMaterial|solid-lounge-plumeMat|e7d8b4|1|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 9,
+   "colors": false,
+   "matrices": "0f887a7b",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -0.05,
+     -0.2,
+     -0.05,
+     0.05,
+     0.2,
+     0.05
+    ],
+    "hash": "9a621f1f"
+   }
+  },
+  {
+   "room": "lounge",
+   "key": "beaconDome",
+   "mat": "MeshStandardMaterial|solid-beaconOff|5a1010|0.2|0|000000|1|0.85|1|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "28b121b9",
+   "geo": {
+    "n": 117,
+    "bbox": [
+     -0.08,
+     0,
+     -0.08,
+     0.08,
+     0.08,
+     0.08
+    ],
+    "hash": "556fe0d6"
+   }
+  }
+ ],
+ "canvas": {
+  "calls": 2351,
+  "sizes": [
+   "256x256",
+   "256x512",
+   "32x128",
+   "1024x256",
+   "128x128",
+   "256x512",
+   "128x128"
+  ],
+  "digest": "f1648e23"
+ }
+}

@@ -1,0 +1,2522 @@
+{
+ "surfaces": {
+  "cofre": {
+   "floor": "MeshStandardMaterial|cofre-piso-high|ffffff|1|0|000000|1|1|0|0|1|1|1|1.1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "floorTile": [
+    1.5,
+    1.5
+   ],
+   "floorMirror": [
+    1,
+    0.06
+   ],
+   "wall": "MeshStandardMaterial|cofre-damasco-high-v|ffffff|1|0|000000|1|1|0|0|1|1|1|0.7|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|0.8|{}",
+   "wallTile": [
+    0.64,
+    0.64
+   ],
+   "ceil": "MeshPhysicalMaterial|cofre-laca|1c0d17|0.3|0|000000|1|1|0|0|1|1|0|1.2|0.9|0|000000|-|-|-|-|1|{}",
+   "trims": false
+  }
+ },
+ "props": [
+  "pedestal-163:pedestal:",
+  "case-164:case:4",
+  "case-165:case:4",
+  "case-166:case:4",
+  "case-167:case:4",
+  "restorationTable-168:fixture:restorationTable",
+  "photoStation-169:fixture:photoStation",
+  "flatFiles-170:fixture:flatFiles",
+  "collectionCart-171:fixture:collectionCart"
+ ],
+ "keys": {
+  "cofre": [
+   {
+    "p": [
+     -17.25,
+     4.75,
+     -14.25
+    ],
+    "aim": [
+     -17.25,
+     0,
+     -14.25
+    ],
+    "angle": 0.62,
+    "i": 95,
+    "color": "#f2f6ff"
+   }
+  ]
+ },
+ "anchors": [
+  {
+   "x": -17.25,
+   "y": 3.8,
+   "z": -14.25,
+   "color": "#f2f6ff",
+   "intensity": 14,
+   "distance": 6,
+   "room": "cofre"
+  },
+  {
+   "x": -20.7,
+   "y": 1.55,
+   "z": -18.5,
+   "color": "#fff4e6",
+   "intensity": 3.5,
+   "distance": 2.6,
+   "room": "cofre"
+  },
+  {
+   "x": -20.7,
+   "y": 1.55,
+   "z": -10.5,
+   "color": "#fff4e6",
+   "intensity": 3.5,
+   "distance": 2.6,
+   "room": "cofre"
+  },
+  {
+   "x": -13.55,
+   "y": 1.55,
+   "z": -20.7,
+   "color": "#fff4e6",
+   "intensity": 3.5,
+   "distance": 2.6,
+   "room": "cofre"
+  },
+  {
+   "x": -19.75,
+   "y": 1.3,
+   "z": -20.9,
+   "color": "#fff4e6",
+   "intensity": 2.2,
+   "distance": 2.2,
+   "room": "cofre"
+  },
+  {
+   "x": -14.82,
+   "y": 1.15,
+   "z": -7.55,
+   "color": "#eef6ff",
+   "intensity": 2.4,
+   "distance": 2.4,
+   "room": "cofre"
+  },
+  {
+   "x": -13.35,
+   "y": 1.3,
+   "z": -7.75,
+   "color": "#f4f8ff",
+   "intensity": 2.6,
+   "distance": 2.6,
+   "room": "cofre"
+  },
+  {
+   "x": -17.25,
+   "y": 4.6,
+   "z": -14.25,
+   "color": "#f0f5ff",
+   "intensity": 30,
+   "distance": 9,
+   "room": "cofre"
+  },
+  {
+   "x": -20.8,
+   "y": 4.75,
+   "z": -20.8,
+   "color": "#dbe6ff",
+   "intensity": 8,
+   "distance": 7,
+   "room": "cofre"
+  },
+  {
+   "x": -13.7,
+   "y": 4.75,
+   "z": -20.8,
+   "color": "#dbe6ff",
+   "intensity": 8,
+   "distance": 7,
+   "room": "cofre"
+  },
+  {
+   "x": -20.8,
+   "y": 4.75,
+   "z": -7.7,
+   "color": "#dbe6ff",
+   "intensity": 8,
+   "distance": 7,
+   "room": "cofre"
+  },
+  {
+   "x": -13.7,
+   "y": 4.75,
+   "z": -7.7,
+   "color": "#dbe6ff",
+   "intensity": 8,
+   "distance": 7,
+   "room": "cofre"
+  },
+  {
+   "x": -21.5,
+   "y": 2,
+   "z": -14.25,
+   "color": "#ffcf9e",
+   "intensity": 2.4,
+   "distance": 3,
+   "room": "cofre"
+  },
+  {
+   "x": -17.25,
+   "y": 1.8,
+   "z": -21.55,
+   "color": "#ffcf9e",
+   "intensity": 1.4,
+   "distance": 2.2,
+   "room": "cofre"
+  },
+  {
+   "x": -12.8,
+   "y": 3.2,
+   "z": -15,
+   "color": "#3dff8a",
+   "intensity": 0.6,
+   "distance": 2,
+   "room": "cofre"
+  }
+ ],
+ "flames": [],
+ "beacons": [
+  {
+   "room": "cofre",
+   "pos": [
+    -21.84,
+    4.46,
+    -14.25
+   ],
+   "normal": [
+    1,
+    0,
+    0
+   ]
+  },
+  {
+   "room": "cofre",
+   "pos": [
+    -12.66,
+    4.46,
+    -10.5
+   ],
+   "normal": [
+    -1,
+    0,
+    0
+   ]
+  }
+ ],
+ "cones": [
+  {
+   "room": "cofre",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    -15.818,
+    4.76,
+    -13.657
+   ],
+   "rot": [
+    -2.299,
+    -1.014,
+    -2.381
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "cofre",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    -17.843,
+    4.76,
+    -12.818
+   ],
+   "rot": [
+    -2.707,
+    0.359,
+    2.98
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "cofre",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    -18.682,
+    4.76,
+    -14.843
+   ],
+   "rot": [
+    -0.843,
+    1.014,
+    0.761
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "cofre",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    -16.657,
+    4.76,
+    -15.682
+   ],
+   "rot": [
+    -0.435,
+    -0.359,
+    -0.162
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "animated": [
+  {
+   "kind": "diamond",
+   "room": "cofre",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    -17.25,
+    1.2,
+    -14.25
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.07,
+    0.07,
+    0.07
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshPhysicalMaterial|(sem nome)|f4fbff|0|0.05|000000|1|1|0|0|1|1|0|3.2|1|0|000000|-|-|-|-|1|{}",
+   "geo": {
+    "n": 192,
+    "bbox": [
+     -1,
+     -0.86,
+     -1,
+     1,
+     0.32,
+     1
+    ],
+    "hash": "dce38965"
+   },
+   "children": 0
+  },
+  {
+   "kind": "glint",
+   "room": "cofre",
+   "type": "Sprite",
+   "name": "",
+   "pos": [
+    -17.22,
+    1.27,
+    -14.23
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "visible": true,
+   "renderOrder": 6,
+   "mat": "SpriteMaterial|(sem nome)|ffffff|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "geo": {
+    "n": 4,
+    "bbox": [
+     -0.5,
+     -0.5,
+     0,
+     0.5,
+     0.5,
+     0
+    ],
+    "hash": "062275b5"
+   },
+   "children": 0
+  }
+ ],
+ "ticks": [
+  "cofre"
+ ],
+ "groupAfterTick1": [
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -17.25,
+    1.2,
+    -14.25
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.07,
+    0.07,
+    0.07
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshPhysicalMaterial|(sem nome)|f4fbff|0|0.05|000000|1|1|0|0|1|1|0|3.2|1|0|000000|-|-|-|-|1|{}",
+   "geo": {
+    "n": 192,
+    "bbox": [
+     -1,
+     -0.86,
+     -1,
+     1,
+     0.32,
+     1
+    ],
+    "hash": "dce38965"
+   },
+   "children": 0
+  },
+  {
+   "type": "Sprite",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -17.22,
+    1.27,
+    -14.23
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "visible": true,
+   "renderOrder": 6,
+   "mat": "SpriteMaterial|(sem nome)|ffffff|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "geo": {
+    "n": 4,
+    "bbox": [
+     -0.5,
+     -0.5,
+     0,
+     0.5,
+     0.5,
+     0
+    ],
+    "hash": "062275b5"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -15.818,
+    4.76,
+    -13.657
+   ],
+   "rot": [
+    -2.299,
+    -1.014,
+    -2.381
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -17.843,
+    4.76,
+    -12.818
+   ],
+   "rot": [
+    -2.707,
+    0.359,
+    2.98
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -18.682,
+    4.76,
+    -14.843
+   ],
+   "rot": [
+    -0.843,
+    1.014,
+    0.761
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -16.657,
+    4.76,
+    -15.682
+   ],
+   "rot": [
+    -0.435,
+    -0.359,
+    -0.162
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "groupAfterTick2": [
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -17.25,
+    1.2,
+    -14.25
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.07,
+    0.07,
+    0.07
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshPhysicalMaterial|(sem nome)|f4fbff|0|0.05|000000|1|1|0|0|1|1|0|3.2|1|0|000000|-|-|-|-|1|{}",
+   "geo": {
+    "n": 192,
+    "bbox": [
+     -1,
+     -0.86,
+     -1,
+     1,
+     0.32,
+     1
+    ],
+    "hash": "dce38965"
+   },
+   "children": 0
+  },
+  {
+   "type": "Sprite",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -17.22,
+    1.27,
+    -14.23
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "visible": true,
+   "renderOrder": 6,
+   "mat": "SpriteMaterial|(sem nome)|ffffff|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "geo": {
+    "n": 4,
+    "bbox": [
+     -0.5,
+     -0.5,
+     0,
+     0.5,
+     0.5,
+     0
+    ],
+    "hash": "062275b5"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -15.818,
+    4.76,
+    -13.657
+   ],
+   "rot": [
+    -2.299,
+    -1.014,
+    -2.381
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -17.843,
+    4.76,
+    -12.818
+   ],
+   "rot": [
+    -2.707,
+    0.359,
+    2.98
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -18.682,
+    4.76,
+    -14.843
+   ],
+   "rot": [
+    -0.843,
+    1.014,
+    0.761
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "cofre",
+   "pos": [
+    -16.657,
+    4.76,
+    -15.682
+   ],
+   "rot": [
+    -0.435,
+    -0.359,
+    -0.162
+   ],
+   "scale": [
+    0.3,
+    3.929,
+    0.3
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "batch": [
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-neroPeca-high|ffffff|1|0|000000|1|1|0|0|1|1|0|1.2|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 3744,
+   "bbox": [
+    -17.758,
+    0,
+    -14.758,
+    -16.742,
+    1,
+    -13.742
+   ],
+   "hash": "ba5f2678"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|galeria-latao|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 29736,
+   "bbox": [
+    -22.017,
+    0,
+    -22.017,
+    -12.483,
+    1.85,
+    -6.36
+   ],
+   "hash": "c64526e2"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-anelTrava|e8c77f|0.3|0.9|ffd98a|0.12|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1152,
+   "bbox": [
+    -17.605,
+    0.37,
+    -14.605,
+    -16.895,
+    0.75,
+    -13.895
+   ],
+   "hash": "434ed06e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-neroPeca-high|ffffff|1|0|000000|1|1|0|0|1|1|0|1.2|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1320,
+   "bbox": [
+    -22,
+    0,
+    -22,
+    -12.5,
+    1.05,
+    -6.5
+   ],
+   "hash": "1f4d9450"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-placaPedMat|ffffff|0.35|0.7|000000|1|1|0|0|1|1|0|1|||-|8x8/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -17.36,
+    0.097,
+    -13.809,
+    -17.14,
+    0.142,
+    -13.809
+   ],
+   "hash": "bf8112a5"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|fabric-cofre-veludoAmeixa-high|2c0a1e|0.8|0|000000|1|1|0|0|1|1|0|0.6|0|1|bea5b2|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 3771,
+   "bbox": [
+    -21.988,
+    0,
+    -21.988,
+    -12.7,
+    3.6,
+    -8.8
+   ],
+   "hash": "d9d91a39"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|cofre-vidroCampanula|eef4f6|0.03|0|000000|1|0.06|1|2|1|0|0|1.8|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 4080,
+   "bbox": [
+    -17.475,
+    1.09,
+    -14.475,
+    -17.025,
+    1.525,
+    -14.025
+   ],
+   "hash": "13a41042"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|cofre-vidroAresta|7fb3a4|0.08|0|000000|1|0.55|1|0|1|0|0|1.4|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2412,
+   "bbox": [
+    -21.017,
+    1.424,
+    -21.017,
+    -12.9,
+    1.638,
+    -9
+   ],
+   "hash": "ff95bb5e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|misc-grain-high-#3b2414-0-0|3b2414|1|0|000000|1|1|0|0|1|1|0|1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 15000,
+   "bbox": [
+    -22.025,
+    -0.012,
+    -22.025,
+    -12.475,
+    4.25,
+    -6.475
+   ],
+   "hash": "9ba44178"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|misc-grain-high-#3b2414-0-0|3b2414|1|0|000000|1|1|0|0|1|1|0|1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 7884,
+   "bbox": [
+    -22.035,
+    0.158,
+    -22.035,
+    -12.465,
+    4.25,
+    -6.34
+   ],
+   "hash": "cb30723e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|fabric-cofre-veludoPreto-high|0c0b0e|0.85|0|000000|1|1|0|0|1|1|0|0.6|0|1|a0a0a0|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 864,
+   "bbox": [
+    -21.94,
+    0.699,
+    -21.96,
+    -12.91,
+    1.17,
+    -9.01
+   ],
+   "hash": "9e8f8b23"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|cofre-vidro|e4eeec|0.03|0|000000|1|0.13|1|2|1|0|0|1.8|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 918,
+   "bbox": [
+    -21.69,
+    0,
+    -21.77,
+    -12.9,
+    3.2,
+    -9
+   ],
+   "hash": "93467acc"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-luzVitrine|110f0d|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 108,
+   "bbox": [
+    -21.056,
+    1.614,
+    -21.056,
+    -12.95,
+    1.62,
+    -9.05
+   ],
+   "hash": "84c2c06a"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-luzNicho|050302|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 30,
+   "bbox": [
+    -21.98,
+    0.39,
+    -21.98,
+    -12.75,
+    3.12,
+    -8.85
+   ],
+   "hash": "464dd397"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-etiquetaMat-<uuid>|ffffff|0.6|0.2|ffffff|0.14|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 144,
+   "bbox": [
+    -21.975,
+    0.121,
+    -21.975,
+    -13.19,
+    3.037,
+    -6.512
+   ],
+   "hash": "2f321834"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|galeria-ouroBranco|dfe2e6|0.16|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6912,
+   "bbox": [
+    -21.882,
+    0.909,
+    -21.914,
+    -14.672,
+    1.255,
+    -7.661
+   ],
+   "hash": "9da53550"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|galeria-veludoPreto|0e0e10|0.9|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 5616,
+   "bbox": [
+    -21.972,
+    0.86,
+    -21.326,
+    -13.294,
+    1.3,
+    -7.567
+   ],
+   "hash": "0b3dc16c"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-acoBranco|b9bcb8|0.42|0.35|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 360,
+   "bbox": [
+    -16.2,
+    0,
+    -8.3,
+    -12.8,
+    0.83,
+    -7
+   ],
+   "hash": "6e7663fe"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-acoBranco|b9bcb8|0.42|0.35|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1968,
+   "bbox": [
+    -16.26,
+    0.2,
+    -8.118,
+    -14.45,
+    1.476,
+    -7.282
+   ],
+   "hash": "e4f4e788"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-caixaAcida|cfc8b8|0.85|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 432,
+   "bbox": [
+    -21.54,
+    0.22,
+    -7.879,
+    -14.603,
+    2.04,
+    -6.38
+   ],
+   "hash": "b8384c3e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|fabric-cofre-musselina-high|cfc7b4|0.95|0|000000|1|1|0|0|1|1|0|0.6|0|1|e1ddd2|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 3372,
+   "bbox": [
+    -20.02,
+    0.74,
+    -8.14,
+    -14.41,
+    0.93,
+    -6.68
+   ],
+   "hash": "f6526992"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-pretoFosco|141416|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6096,
+   "bbox": [
+    -21.72,
+    0,
+    -21.444,
+    -12.829,
+    5.2,
+    -6.58
+   ],
+   "hash": "35066f57"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-prancheta|6b4a2a|0.7|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -15.444,
+    0.86,
+    -8.104,
+    -15.156,
+    0.868,
+    -7.736
+   ],
+   "hash": "62820f9e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-laudoMat-pt|ffffff|0.9|0|ffffff|0.1|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -15.427,
+    0.869,
+    -8.092,
+    -15.173,
+    0.869,
+    -7.768
+   ],
+   "hash": "a23dba40"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-acoCinza|8d9298|0.38|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 510,
+   "bbox": [
+    -21.73,
+    0,
+    -16.1,
+    -12,
+    3.06,
+    -7.491
+   ],
+   "hash": "2f8887ba"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|fabric-cofre-luvaAlgodao-high|f5f3ee|0.95|0|000000|1|1|0|0|1|1|0|0.6|0|1|f9f7f4|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 3816,
+   "bbox": [
+    -16.125,
+    0.855,
+    -8.034,
+    -15.816,
+    0.885,
+    -7.722
+   ],
+   "hash": "7b8fbbe6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-lente|dfe9ee|0.02|0|000000|1|0.4|1|0|1|0|0|2|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 864,
+   "bbox": [
+    -15.588,
+    0.864,
+    -8.038,
+    -13.32,
+    1.326,
+    -7.455
+   ],
+   "hash": "c47db3d8"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-madeiraClara|c9a77a|0.6|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 96,
+   "bbox": [
+    -15.977,
+    0.862,
+    -7.435,
+    -15.823,
+    0.874,
+    -7.365
+   ],
+   "hash": "2e0aadb6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|fabric-cofre-cerdas-high|2a2018|0.8|0|000000|1|1|0|0|1|1|0|0.6|0|1|a3a2a1|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 96,
+   "bbox": [
+    -16.007,
+    0.856,
+    -7.451,
+    -15.961,
+    0.88,
+    -7.414
+   ],
+   "hash": "c9db7ded"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-caixaNitrila|2f63b8|0.6|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -14.597,
+    0.86,
+    -8.076,
+    -14.443,
+    0.93,
+    -7.824
+   ],
+   "hash": "98c27be6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-ledLupa|111213|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1152,
+   "bbox": [
+    -14.926,
+    1.216,
+    -7.623,
+    -14.714,
+    1.324,
+    -7.437
+   ],
+   "hash": "7143a66e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-cinza18|7b7b78|0.95|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -13.7,
+    0.77,
+    -7.9,
+    -13,
+    0.79,
+    -7.3
+   ],
+   "hash": "bedac836"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-pretoFosco|141416|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -13.39,
+    0.79,
+    -7.35,
+    -13.31,
+    1.94,
+    -7.29
+   ],
+   "hash": "791a8e92"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-painelLed|0d0e0e|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 12,
+   "bbox": [
+    -13.857,
+    1.384,
+    -7.503,
+    -12.843,
+    1.516,
+    -7.337
+   ],
+   "hash": "493ef442"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-regua|f2f0e8|0.7|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -13.5,
+    0.79,
+    -7.785,
+    -13.2,
+    0.793,
+    -7.755
+   ],
+   "hash": "40042bd4"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-cartaoCoresMat|ffffff|0.8|0|000000|1|1|0|0|1|1|0|1|||-|8x8/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -13.63,
+    0.792,
+    -7.775,
+    -13.51,
+    0.792,
+    -7.685
+   ],
+   "hash": "a40e4072"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-telaNotebook|040508|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -13.149,
+    0.797,
+    -8.017,
+    -12.852,
+    0.983,
+    -7.892
+   ],
+   "hash": "18d5dc00"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-acoCinza|8d9298|0.38|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -21.75,
+    0.08,
+    -7.55,
+    -20.25,
+    0.96,
+    -6.55
+   ],
+   "hash": "8ca2c096"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-tampoBranco|eae7df|0.7|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -21.76,
+    0.96,
+    -7.56,
+    -20.24,
+    0.985,
+    -6.54
+   ],
+   "hash": "bc5b8024"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|fabric-cofre-roloTecido-high|d8c6e8|0.8|0|000000|1|1|0|0|1|1|0|0.6|0|1|e7dcf0|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 240,
+   "bbox": [
+    -21.754,
+    0.985,
+    -7.14,
+    -21.046,
+    1.095,
+    -6.96
+   ],
+   "hash": "ac3f82d6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-tuboPapel|efe9dc|0.8|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 120,
+   "bbox": [
+    -21.78,
+    1.019,
+    -7.11,
+    -21.02,
+    1.061,
+    -6.99
+   ],
+   "hash": "775b4592"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-papelSeda|f6f4ee|0.95|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -21.627,
+    0.985,
+    -7.556,
+    -21.073,
+    1.005,
+    -7.144
+   ],
+   "hash": "24e711aa"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-inox|c4c8cc|0.25|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1608,
+   "bbox": [
+    -20.05,
+    -0.28,
+    -7.75,
+    -19.45,
+    1.047,
+    -6.62
+   ],
+   "hash": "55ac6056"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-rosso-high-m|ffffff|1|0|000000|1|1|0|0|1|1|0|1.1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{\"mirror\":[0.9,0.05]}",
+   "cast": false,
+   "receive": true,
+   "n": 48,
+   "bbox": [
+    -22,
+    0.003,
+    -22,
+    -12.5,
+    0.003,
+    -6.5
+   ],
+   "hash": "dfbda7a6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-lataoPiso-high|c9a24b|0.22|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{\"mirror\":[0.6,0.5]}",
+   "cast": false,
+   "receive": true,
+   "n": 2928,
+   "bbox": [
+    -21.656,
+    0.003,
+    -21.656,
+    -12.844,
+    0.004,
+    -6.844
+   ],
+   "hash": "dbf922ba"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-ranhura|2a2d31|0.5|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 54,
+   "bbox": [
+    -12.48,
+    0.004,
+    -15.9,
+    -12.02,
+    0.004,
+    -14.12
+   ],
+   "hash": "eb13951e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-thassos-high-m|ffffff|1|0|000000|1|1|0|0|1|1|0|1.1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{\"mirror\":[0.9,0.05]}",
+   "cast": false,
+   "receive": true,
+   "n": 624,
+   "bbox": [
+    -19.72,
+    0.003,
+    -16.72,
+    -14.78,
+    0.003,
+    -11.78
+   ],
+   "hash": "630190e6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|cofre-laca|1c0d17|0.3|0|000000|1|1|0|0|1|1|0|1.2|0.9|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    -22,
+    4.25,
+    -22,
+    -12.5,
+    4.6,
+    -6.5
+   ],
+   "hash": "efe1764e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 16608,
+   "bbox": [
+    -22.001,
+    0,
+    -22.001,
+    -12.499,
+    5.14,
+    -6.499
+   ],
+   "hash": "9852dd6e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|cofre-laca|1c0d17|0.3|0|000000|1|1|0|0|1|1|0|1.2|0.9|0|000000|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 756,
+   "bbox": [
+    -22.36,
+    3.38,
+    -22.36,
+    -12.14,
+    5.2,
+    -6.14
+   ],
+   "hash": "aee5e3d6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|fabric-cofre-veludoAmeixa-high|2c0a1e|0.8|0|000000|1|1|0|0|1|1|0|0.6|0|1|bea5b2|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": true,
+   "receive": true,
+   "n": 3360,
+   "bbox": [
+    -20.69,
+    0.95,
+    -21.974,
+    -18.31,
+    3.4,
+    -21.85
+   ],
+   "hash": "ae61abe6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-ouroVelho|b48a3c|0.36|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1512,
+   "bbox": [
+    -20.8,
+    1.39,
+    -21.956,
+    -18.2,
+    3.69,
+    -21.796
+   ],
+   "hash": "a3ad16ee"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-luarVidro|505d86|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -20,
+    0.9,
+    -22.2,
+    -19,
+    2.6,
+    -22.2
+   ],
+   "hash": "82f74472"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-luarPiso|505a7c|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -20.075,
+    0.006,
+    -20.305,
+    -18.925,
+    0.006,
+    -19.355
+   ],
+   "hash": "4c28f4be"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshPhysicalMaterial|cofre-lacaDupla|1c0d17|0.3|0|000000|1|1|0|2|1|1|0|1.2|0.9|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 432,
+   "bbox": [
+    -19.33,
+    4.7,
+    -16.33,
+    -15.17,
+    5.2,
+    -12.17
+   ],
+   "hash": "1a6a14d6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-folhaOuro|b8914a|0.34|1|000000|1|1|0|1|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 4104,
+   "bbox": [
+    -19.25,
+    4.76,
+    -16.25,
+    -15.25,
+    5.16,
+    -12.25
+   ],
+   "hash": "03e511ce"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-lenteSpot|141415|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 972,
+   "bbox": [
+    -20.845,
+    4.778,
+    -20.844,
+    -13.655,
+    5.18,
+    -7.656
+   ],
+   "hash": "355e31de"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|galeria-plastico|e8e6e0|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1092,
+   "bbox": [
+    -21.871,
+    1.55,
+    -21.851,
+    -12.629,
+    5.2,
+    -6.485
+   ],
+   "hash": "9c79be40"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-grelha|2a2224|0.5|0.5|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 216,
+   "bbox": [
+    -17.7,
+    5.18,
+    -18.415,
+    -16.8,
+    5.2,
+    -17.985
+   ],
+   "hash": "ed4f367e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-acoNegro|151618|0.4|0.6|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1800,
+   "bbox": [
+    -20.641,
+    0.05,
+    -17.642,
+    -13.859,
+    1.62,
+    -10.858
+   ],
+   "hash": "5fc8e798"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|galeria-domo|14161a|0.05|0|000000|1|0.88|1|0|1|1|0|1.6|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1026,
+   "bbox": [
+    -17.575,
+    5.045,
+    -7.874,
+    -17.425,
+    5.12,
+    -7.726
+   ],
+   "hash": "ecefb52a"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.35|0.8|ffffff|0.35|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -18.25,
+    2.94,
+    -21.988,
+    -16.25,
+    3.36,
+    -21.988
+   ],
+   "hash": "508755f6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|galeria-caixaSaida|e9e9e4|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 936,
+   "bbox": [
+    -12.669,
+    3.1,
+    -15.23,
+    -12.45,
+    3.6,
+    -14.77
+   ],
+   "hash": "462f38ca"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.6|0|ffffff|0.9|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -12.552,
+    3.125,
+    -15.21,
+    -12.552,
+    3.255,
+    -14.79
+   ],
+   "hash": "28ea6f3a"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-emergencia|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 96,
+   "bbox": [
+    -12.692,
+    3.519,
+    -15.182,
+    -12.65,
+    3.581,
+    -14.818
+   ],
+   "hash": "d331132e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-cortica|9c7a52|0.95|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -14.8,
+    1.25,
+    -6.51,
+    -13.8,
+    1.95,
+    -6.49
+   ],
+   "hash": "d5869df6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|cofre-laudoParede-pt|ffffff|0.9|0|ffffff|0.08|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 12,
+   "bbox": [
+    -14.661,
+    1.431,
+    -6.522,
+    -13.888,
+    1.75,
+    -6.522
+   ],
+   "hash": "3def6fa6"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|galeria-lcd|98cfaf|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -17.535,
+    1.617,
+    -6.531,
+    -17.465,
+    1.653,
+    -6.531
+   ],
+   "hash": "3bad638e"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshBasicMaterial|cofre-vieira|030201|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 60,
+   "bbox": [
+    -21.984,
+    1.9,
+    -21.984,
+    -12.516,
+    4.2,
+    -6.516
+   ],
+   "hash": "992c5752"
+  },
+  {
+   "room": "cofre",
+   "mat": "MeshStandardMaterial|solid-darkSteel|2a2d31|0.45|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    -21.96,
+    4.37,
+    -14.33,
+    -12.54,
+    4.43,
+    -10.42
+   ],
+   "hash": "eb4de0ce"
+  }
+ ],
+ "inst": [
+  {
+   "room": "cofre",
+   "key": "galeria-tiaraPonta",
+   "mat": "MeshStandardMaterial|galeria-ouroBranco|dfe2e6|0.16|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 78,
+   "colors": false,
+   "matrices": "d855d254",
+   "geo": {
+    "n": 34,
+    "bbox": [
+     -0.951,
+     0,
+     -0.809,
+     0.951,
+     1,
+     1
+    ],
+    "hash": "35d9f276"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-tiaraGema",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 76,
+   "colors": false,
+   "matrices": "96768ab8",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-tiaraGema",
+   "mat": "MeshStandardMaterial|cofre-esmeralda|1f8a5a|0.03|0|0a3a20|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "20f262d9",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-perola",
+   "mat": "MeshStandardMaterial|galeria-perola|f3ece0|0.18|0|000000|1|1|0|0|1|1|0|1.6|||-|-|-|-|-|1|{}",
+   "count": 162,
+   "colors": false,
+   "matrices": "f8a5d6b0",
+   "geo": {
+    "n": 99,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "dfbf41d0"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-colar-b",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 61,
+   "colors": false,
+   "matrices": "12455b65",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-colar-o",
+   "mat": "MeshStandardMaterial|galeria-ouroBranco|dfe2e6|0.16|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 32,
+   "colors": false,
+   "matrices": "98786028",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-colar-c",
+   "mat": "MeshStandardMaterial|cofre-safira|2a4bd8|0.03|0|1a2a80|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "6c6c7791",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-brincoTopo",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 6,
+   "colors": false,
+   "matrices": "5ce26623",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-brincoGota",
+   "mat": "MeshStandardMaterial|cofre-rubi|c2102a|0.03|0|600010|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "0679e11f",
+   "geo": {
+    "n": 99,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "dfbf41d0"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-brincoGota",
+   "mat": "MeshStandardMaterial|cofre-perolaGota|f3ece0|0.18|0|000000|1|1|0|0|1|1|0|1.6|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "0b64c6ef",
+   "geo": {
+    "n": 99,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "dfbf41d0"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-anelAro",
+   "mat": "MeshStandardMaterial|galeria-ouro|d8b25c|0.22|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 6,
+   "colors": false,
+   "matrices": "6f8658d9",
+   "geo": {
+    "n": 133,
+    "bbox": [
+     -0.011,
+     -0.011,
+     -0.002,
+     0.011,
+     0.011,
+     0.002
+    ],
+    "hash": "497af47b"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-anelGema",
+   "mat": "MeshStandardMaterial|cofre-rubi|c2102a|0.03|0|600010|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "d07364e2",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-anelGema",
+   "mat": "MeshStandardMaterial|cofre-safira|2a4bd8|0.03|0|1a2a80|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "2bd5c156",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-anelGema",
+   "mat": "MeshStandardMaterial|cofre-esmeralda|1f8a5a|0.03|0|0a3a20|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "27790f16",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-broche",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 21,
+   "colors": false,
+   "matrices": "7b995ffa",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-colar-c",
+   "mat": "MeshStandardMaterial|cofre-rubi|c2102a|0.03|0|600010|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "b5eb58e7",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-colar-c",
+   "mat": "MeshStandardMaterial|cofre-esmeralda|1f8a5a|0.03|0|0a3a20|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "1926de35",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-brincoGota",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "5282ba23",
+   "geo": {
+    "n": 99,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "dfbf41d0"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "galeria-tiaraGema",
+   "mat": "MeshStandardMaterial|cofre-safira|2a4bd8|0.03|0|1a2a80|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "0f64c6d9",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-borla",
+   "mat": "MeshStandardMaterial|cofre-ouroVelho|b48a3c|0.36|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "a6fdb6c5",
+   "geo": {
+    "n": 43,
+    "bbox": [
+     -0.029,
+     -0.12,
+     -0.03,
+     0.029,
+     0,
+     0.03
+    ],
+    "hash": "a7105b32"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-ledPoste",
+   "mat": "MeshBasicMaterial|cofre-ledPoste|41ff99|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 6,
+   "colors": false,
+   "matrices": "a762a4a9",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-lenteLaser",
+   "mat": "MeshBasicMaterial|cofre-lenteLaser|ff4545|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 22,
+   "colors": false,
+   "matrices": "8595799b",
+   "geo": {
+    "n": 14,
+    "bbox": [
+     -0.014,
+     -0.014,
+     0,
+     0.014,
+     0.014,
+     0
+    ],
+    "hash": "718c5c60"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-ledCamera",
+   "mat": "MeshBasicMaterial|cofre-ledVermelho|ff4343|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 4,
+   "colors": false,
+   "matrices": "0d148f7f",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "cofre-percevejo",
+   "mat": "MeshStandardMaterial|cofre-vermelhoAlfinete|b3121e|0.3|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "00399e8b",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "cofre",
+   "key": "beaconDome",
+   "mat": "MeshStandardMaterial|solid-beaconOff|5a1010|0.2|0|000000|1|0.85|1|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "ddaa1983",
+   "geo": {
+    "n": 117,
+    "bbox": [
+     -0.08,
+     0,
+     -0.08,
+     0.08,
+     0.08,
+     0.08
+    ],
+    "hash": "556fe0d6"
+   }
+  }
+ ],
+ "canvas": {
+  "calls": 24,
+  "sizes": [
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8"
+  ],
+  "digest": "b2eceb1d"
+ }
+}
