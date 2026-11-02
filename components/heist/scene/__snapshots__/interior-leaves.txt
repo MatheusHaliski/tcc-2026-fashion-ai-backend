@@ -1,0 +1,66 @@
+leaf {"style":"grand","w":1.5,"h":4,"pull":1,"front":"salao","back":"vestibulo","closer":true}
+  misc-grain-low-#3b2414-0-0/3b2414/1/0/map/1/1//0 c1r1 3108:3728ab3604a7e1d4:36f10124d4ee298a:5ccd3f3b5901b43e
+  solid-gold/b48a3c/0.38/1//1/1//0 c1r1 6600:60c06235a4fd1420:d908e134e1c897e1:3a3a98931bf8c730
+  solid-brass/c9a24b/0.28/1//1/1//0 c1r1 2616:d687d834a8c9840d:25c41c80ede1c7ff:6dc0c7e5b233eb60
+leaf {"style":"grand","w":1.5,"h":4,"pull":-1,"front":"galeria","back":"salao"}
+  misc-grain-low-#3b2414-0-0/3b2414/1/0/map/1/1//0 c1r1 3108:3728ab3604a7e1d4:36f10124d4ee298a:5ccd3f3b5901b43e
+  solid-gold/b48a3c/0.38/1//1/1//0 c1r1 6600:60c06235a4fd1420:d908e134e1c897e1:3a3a98931bf8c730
+  solid-brass/c9a24b/0.28/1//1/1//0 c1r1 2436:1d7b1f10c746e7f4:360f0a865cc7208d:3806ec9b41164d79
+leaf {"style":"steel","w":1,"h":2.6,"pull":1,"front":"vestibulo","back":"servico","closer":true}
+  solid-vestibulo-door-steelPaint/4d5761/0.48/0.45//1/1//0 c1r1 912:581f9fc7cfd6694e:220899972fce4d5b:8e3f975d253bcdfc
+  glass-vestibulo-door-wire/c3ccd0/0.12/0//1/0.38/t/2 c1r1 36:b32feaa1c58b6706:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-vestibulo-door-inox/b9bdc1/0.3/0.95//1/1//0 c1r1 2028:03bd839af59d5560:1427f4018f0d51f0:53b31109e5d70bfe
+  solid-vestibulo-door-rubber/121212/0.85/0//1/1//0 c1r1 36:83e510402f32e2c6:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-vestibulo-door-steelPaintLight/8a9095/0.5/0.4//1/1//0 c1r1 180:b3b81fa0b04e726f:5cbaef2778c8d3c4:8d1cd8a48cf26a81
+leaf {"style":"steel","w":0.9,"h":2.6,"pull":-1,"front":"doca","back":"servico"}
+  solid-vestibulo-door-steelPaintLight/8a9095/0.5/0.4//1/1//0 c1r1 912:121ef7acd09dc6e7:2c3d9b55f0e6e50f:8e3f975d253bcdfc
+  glass-vestibulo-door-wire/c3ccd0/0.12/0//1/0.38/t/2 c1r1 36:90280f580429c962:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-vestibulo-door-inox/b9bdc1/0.3/0.95//1/1//0 c1r1 2028:5698430a40045d99:1427f4018f0d51f0:53b31109e5d70bfe
+  solid-vestibulo-door-rubber/121212/0.85/0//1/1//0 c1r1 36:c32404dfa9f53e55:8ee90d65a8faa46e:8a585ea7ce960960
+leaf {"style":"padded","w":1,"h":2.6,"pull":1,"front":"lounge","back":"salao","closer":true}
+  misc-grain-low-#5a2414-0-0/5a2414/1/0/map/1/1//0 c1r1 36:ea372a0f087eb7a3:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-vestibulo-door-leatherOx/4a1418/0.55/0//1/1//0 c1r1 29928:fdec81b8fca10721:4521567aa355895d:799d4f227e21df72
+  solid-brass/c9a24b/0.28/1//1/1//0 c1r1 18732:824660bb69ee1ef5:89ab654b85e5485e:49714b658f6d7dba
+leaf {"style":"stage","w":1,"h":2.6,"pull":-1,"front":"bastidores","back":"salao","stencil":"PALCO","closer":true}
+  solid-vestibulo-door-stage-PALCO/ffffff/0.72/0/map/1/1//0 c1r1 624:e9faf1ccb6b9680e:69d3f4612f9a06fc:a9248e0e1f21c772
+  solid-vestibulo-door-rubber/121212/0.85/0//1/1//0 c1r1 2688:4ec3181d2b31ab51:98b010e50fcd9ffc:d03d1619697c4f8a
+  glass-vestibulo-door-wire/c3ccd0/0.12/0//1/0.38/t/2 c1r1 84:e5ebe61fc73adf07:3c45c4151bd19c5c:058e6e7035d11335
+  solid-vestibulo-door-alu/a8adb3/0.35/0.85//1/1//0 c1r1 1884:ab38fd1c59f996ad:3bad50c16fc2c7cc:b8a64c2064b5e9d7
+  solid-vestibulo-door-blackDoorBase/141416/0.7/0//1/1//0 c1r1 180:b01c0e0fc5e35e85:5cbaef2778c8d3c4:8d1cd8a48cf26a81
+leaf {"style":"french","w":0.9,"h":2.6,"pull":1,"front":"terraco","back":"lounge"}
+  solid-vestibulo-door-whitePaint/e9e5dc/0.42/0//1/1//0 c1r1 588:0c422c322412fb2c:e34d76b7b5c7380a:bbc13faeca8fad63
+  glass-vestibulo-door-glass/dbe8ea/0.04/0//1/0.2/t/2 c1r1 36:564c8893064bd82d:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-brass/c9a24b/0.28/1//1/1//0 c1r1 2232:4073f0f2897bd062:e9554e2da83fe12d:4f2a13c22b608f35
+leaf {"style":"jib","w":1,"h":2.6,"pull":1,"front":"salao","back":"servico","wallUv":{"origin":3.5,"dir":-1}}
+  solid-vestibulo-door-steelPaintLight/8a9095/0.5/0.4//1/1//0 c1r1 36:7c03f7656c023c4c:8ee90d65a8faa46e:8a585ea7ce960960
+  plainwall-limestone-low-/ffffff/1/0/map/1/1//0 c1r1 6:80c8028d9b8d9f8b:618ed70a8ce6c6dd:2ea70b8de820ee9d
+  plainfloor-marbleBlack-low-/ffffff/1/0/map/1/1//0 c1r1 36:94fcf867266a29ac:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-vestibulo-door-inox/b9bdc1/0.3/0.95//1/1//0 c1r1 1212:d9d823ac010c0430:a85d482ef2c42399:b86fe49b3e689bcb
+leaf {"style":"jib","w":1,"h":2.6,"pull":-1,"front":"servico","back":"salao"}
+  solid-vestibulo-door-steelPaintLight/8a9095/0.5/0.4//1/1//0 c1r1 36:7c03f7656c023c4c:8ee90d65a8faa46e:8a585ea7ce960960
+  plainwall-limestone-low-/ffffff/1/0/map/1/1//0 c1r1 6:dac902f65ce9223f:ce31029ca7828194:c222ff89a5f97317
+  plainfloor-marbleBlack-low-/ffffff/1/0/map/1/1//0 c1r1 36:223de1424fe3333e:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-vestibulo-door-inox/b9bdc1/0.3/0.95//1/1//0 c1r1 1212:76bc0034ed021591:a85d482ef2c42399:b86fe49b3e689bcb
+leaf {"style":"vault","w":1.4,"h":2.8,"pull":1,"front":"galeria","back":"cofre"}
+  solid-vestibulo-door-vaultSteel/8f949a/0.2/0.95//1/1//0 c1r1 324:6fc0042fc0d88eb4:2f0c842b26ca208e:2c55f881d9d8376b
+  solid-vestibulo-door-vaultDark/5c6167/0.32/0.9//1/1//0 c1r1 1188:6352d925e3433367:4ed9c3b5e56ec196:649ae48fa4654be8
+  solid-vestibulo-door-vaultJewel/ffffff/0.28/0.95/map/1/1//0 c1r1 36:1d7f6cc64c9c3306:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-chrome/d9dadc/0.12/1//1/1//0 c1r1 7608:43309abbc19bf85c:df81ebfb2b272d69:0e69be4ceace0b4f
+  solid-brass/c9a24b/0.28/1//1/1//0 c1r1 792:ab143e3c5a074de1:5f4b4932d41f2311:e4d8b6d8244f98fd
+  glass-vestibulo-door-glass/dbe8ea/0.04/0//1/0.2/t/2 c1r1 36:f06f425771c8e6fc:8ee90d65a8faa46e:8a585ea7ce960960
+leaf {"style":"vault","w":1.4,"h":2.8,"pull":-1,"front":"cofre","back":"galeria"}
+  solid-vestibulo-door-vaultSteel/8f949a/0.2/0.95//1/1//0 c1r1 324:f4b7457d686060ac:2f0c842b26ca208e:f673bec941cb5f7a
+  solid-vestibulo-door-vaultDark/5c6167/0.32/0.9//1/1//0 c1r1 1188:227a76e35b9d5b66:4ed9c3b5e56ec196:ba263f447e0bb449
+  solid-vestibulo-door-vaultJewel/ffffff/0.28/0.95/map/1/1//0 c1r1 36:f1505951feb6ccce:8ee90d65a8faa46e:8a585ea7ce960960
+  solid-chrome/d9dadc/0.12/1//1/1//0 c1r1 7608:bc2ad24cb3842b57:df81ebfb2b272d69:7fa3d7b6afce87cc
+  solid-brass/c9a24b/0.28/1//1/1//0 c1r1 792:eed442f10f43cea1:5f4b4932d41f2311:4fee751586db3759
+  glass-vestibulo-door-glass/dbe8ea/0.04/0//1/0.2/t/2 c1r1 36:e2fbd48b7c0a2464:8ee90d65a8faa46e:8a585ea7ce960960
+arm 1 0 72:8698d0a2e099c664:3ceec91fd6b33170:f5513f3184dce964
+arm 1 0.8 72:c625bd478876d6e2:3ceec91fd6b33170:e729358cb2d1645b
+arm 1 1.6 72:03adc0928e2162d6:3ceec91fd6b33170:cd32bad3e2ee29c1
+arm -1 0 72:b77a9a47ea59988f:3ceec91fd6b33170:3bab0003ae5c112c
+arm -1 0.8 72:9d0f99e416c75e5d:3ceec91fd6b33170:5616e3144d744d6b
+arm -1 1.6 72:a5e8a481d9e42dd5:3ceec91fd6b33170:08a35f526f08f874
+consts [0.5,0.12] {"grand":0.075,"steel":0.05,"padded":0.08,"stage":0.055,"french":0.055,"jib":0.06,"vault":0.3} walnut=misc-grain-low-#3b2414-0-0 gold=solid-gold brass=solid-brass chrome=solid-chrome steelPaint=solid-vestibulo-door-steelPaint steelPaintLight=solid-vestibulo-door-steelPaintLight inox=solid-vestibulo-door-inox rubber=solid-vestibulo-door-rubber leather=solid-vestibulo-door-leatherOx mahogany=misc-grain-low-#5a2414-0-0 blackDoor=solid-vestibulo-door-blackDoorBase alu=solid-vestibulo-door-alu whitePaint=solid-vestibulo-door-whitePaint vaultSteel=solid-vestibulo-door-vaultSteel vaultDark=solid-vestibulo-door-vaultDark limestone=plainwall-limestone-low- marbleDark=plainfloor-marbleBlack-low- glassClear=glass-vestibulo-door-glass glassWire=glass-vestibulo-door-wire
+drawn vestibulo-door-jeweled 512x512 srgb=true n=13554 7b6cc736d4f2d74f
+drawn vestibulo-door-stage-PALCO 512x1280 srgb=true n=1911 34c411607b9dd3eb
