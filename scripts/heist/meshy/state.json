@@ -1,0 +1,25 @@
+{
+ "djBooth": {
+  "preview": "01a199f1-33b7-73e4-84c7-45bd19ee8d20",
+  "previewAt": 1793584084497,
+  "previewCredits": 20,
+  "refine": "01a199f2-2e37-7282-97a4-5db73fa825b4",
+  "refineAt": 1793584148581,
+  "refineCredits": 10,
+  "thumbnail": "https://assets.meshy.ai/16c69792-9156-44f9-addb-2b401cf36e68/tasks/01a199f2-2e37-7282-97a4-5db73fa825b4/output/preview.png?Expires=4947177600&Signature=DOh4Rwxlv2EI2nBbKAy4ubqDCbbBBWVFqUjtQdzMuCiEcKL5rqBdrUqiGX4Dw66zg7XM7HmO9aeOdirtXBwOPVEYEvZfJuKAxfHTcNwRudUA790NXafUMX~R48LW5ObmroM~mw8DVK065nl7wUoDxAN4jWuQza8pJgqVUs8d4At5W1yz2v37Wmrnss-ccZSG-lhIrBPzjvIRZT8Xdij6h37WTTgGPBx23DnOiNQ~aOkdNk5RZZoJc13BOsbqLXnPq3p63Q9kIGV9ULwasZbNalrz-1jYe0Sw3WhJzC9b68oQjKT5NeYSkCdGcqt14kyudR6QVi5co0pFlzxKDEqCfA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "done": 1793584202042,
+  "bytes": 694864
+ },
+ "djSpeaker": {
+  "preview": "01a19a51-95b1-74ba-b508-295c6cd3bbe2",
+  "previewAt": 1793590401101
+ },
+ "dessertTable": {
+  "preview": "01a19a51-95b2-7201-ac33-bf550d08819a",
+  "previewAt": 1793590401657
+ },
+ "buffetTable": {
+  "preview": "01a19a51-95b1-74b8-a5d3-6e041f25d7cd",
+  "previewAt": 1793590401240
+ }
+}

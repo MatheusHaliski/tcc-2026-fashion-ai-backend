@@ -20,6 +20,8 @@ export interface ModelDef {
   lift?: number;
 }
 
-export const MODELS: Record<string, ModelDef> = {};
+export const MODELS: Record<string, ModelDef> = {
+  djBooth: { file: "djBooth.glb", height: 1.15, fit: "height" },
+};
 
 export const hasModel = (model: string | undefined): model is string => !!model && Object.prototype.hasOwnProperty.call(MODELS, model);
