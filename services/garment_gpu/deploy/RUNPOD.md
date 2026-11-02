@@ -111,6 +111,10 @@ backend cai para os outros provedores. Ao terminar, volte a URL antiga ou apague
 cd ~/fashionai && set -a; source ~/fai-catalog.env; set +a && ~/.venv-fai/bin/python -m services.garment_gpu.scripts.catalog_batch \
   --ids-file ~/catalog-fase1/phase2_ids.txt --limit 10 --concurrency 2 --out ~/catalog-fase2/teste-10
 ```
+Sem a lista da Fase 1 (`phase2_ids.txt`), teste com a amostra fixa do catálogo: `--limit 20` sem `--ids-file` (o
+servidor decide a Fase 2 sozinho). A amostra é determinística, então repetir os mesmos 20 compara antes e depois de
+uma correção. O `audit.jsonl` e o `summary.json` só ficam completos quando o lote termina: espere o `relatório:` final.
+
 🟣 Tempo real por imagem (cada job da Fase 2 gera frente + costas):
 ```bash
 grep -o 'job in [0-9:.]*s on' /workspace/logs/reconstruct.log | tail -n 10 | awk '{split($3,t,":"); sub(/s$/,"",t[3]); s+=t[1]*3600+t[2]*60+t[3]; n++} END {if (n) printf "%d jobs: %.1f s/job = %.1f s/imagem\n", n, s/n, s/n/2}'

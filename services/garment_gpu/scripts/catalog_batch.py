@@ -51,13 +51,13 @@ class GpuClient:
         session.headers["X-API-Key"] = self.key
         return session
 
-    def segment(self, image: bytes, category: str, session=None, mode: str = "auto") -> dict:
+    def segment(self, image: bytes, category: str, session=None, mode: str = "auto", hints: dict | None = None) -> dict:
         session = session or self._session()
         started = time.perf_counter()
         res = session.post(f"{self.base}/v1/garments", timeout=60,
                            files={"image": ("photo.jpg", image, "image/jpeg")},
-                           data={"category": category, "mode": mode, "framing": "catalog",
-                                 "background": "white"})
+                           data={"category": category, "mode": mode, "framing": "catalog", "background": "white",
+                                 **{k: str(v)[:80] for k, v in (hints or {}).items() if v}})
         if res.status_code >= 400:
             raise RuntimeError(api_error(res))
         job_id = res.json()["job_id"]
@@ -105,7 +105,9 @@ def process(product: dict, gpu: GpuClient, out: Path, session=None, keep_full: b
     try:
         raw = catalog_source.prepare_upload(catalog_source.download(product["image_url"]))
         category = catalog_source.CATEGORY_MAP.get(product.get("category"), "auto")
-        result = gpu.segment(raw, category, session=session, mode=mode)
+        # name and colour tell Phase 2 what the garment is (body, turtleneck, short sleeves) when the photo cuts it
+        hints = {"name": product.get("product_name"), "color": product.get("color")}
+        result = gpu.segment(raw, category, session=session, mode=mode, hints=hints)
         verdict = result["job"].get("analysis")
         if not verdict:  # mode=segment: the server does not route, classify here from the mask
             with Image.open(io.BytesIO(raw)) as photo, Image.open(io.BytesIO(result["mask"])) as mask_image:

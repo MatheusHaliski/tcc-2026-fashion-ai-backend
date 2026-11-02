@@ -61,6 +61,10 @@ Com `mode=auto`, a API analisa o recorte junto com a foto original e decide:
 | `OCCLUDED` | manchas de pele **cercadas** pela peça (mão/braço na frente) > 4% da área da peça, ou parte de cima muito côncava | Fase 2 |
 | `CUT` | a peça encosta na borda da foto (1% de margem) | Fase 2 — completar o que ficou fora |
 
+Calçados e acessórios (`shoes_piece`, `accessory_piece`) nunca vão para a Fase 2 no `auto`, mesmo cortados ou ao
+lado de uma pessoa: são fotografados como produto, e a Fase 2 chegou a desenhar roupa para um par de tênis (teste no
+RunPod, 02/11/2026). O recorte da Fase 1 é o produto final deles.
+
 Sem worker da Fase 2 no ar, o job termina com o recorte e `output=needs_reconstruction_unavailable`: o cliente sabe
 que **não** é produto final. `mode=segment` nunca reconstrói; `mode=reconstruct` sempre reconstrói.
 
@@ -71,12 +75,16 @@ ver [fase3-provador.md](fase3-provador.md).
 
 ## Fase 2 — reconstrução
 
-- **Entradas:** imagem 1 = recorte da Fase 1 em fundo branco; imagem 2 = foto original (só como referência das
-  partes escondidas).
+- **Entradas:** imagem 1 = recorte da Fase 1 em fundo branco, com o espaço coberto por mãos ou antebraços preenchido
+  com a cor do tecido vizinho (`reference.py`; sem isso o modelo desenhava um vazado onde estava a mão); imagem 2 =
+  foto original (só como referência das partes escondidas). O nome e a cor do produto entram no prompt.
 - **Instrução:** peça em *flat lay* — deitada e esticada sobre uma superfície, vista de cima, centralizada,
   simétrica, frente para cima, mangas e pernas estendidas, fundo branco; sem pessoa, parte do corpo, manequim,
   cabide, efeito "manequim fantasma" ou vincos de uso; preservar cores, estampas, logotipos, escudos e costuras e
-  **não inventar marcas** (essa frase nunca é removida, nem quando o cliente manda o próprio texto).
+  **não inventar marcas** (essa frase nunca é removida, nem quando o cliente manda o próprio texto). Com o LoRA
+  Lightning o `true_cfg` é 1.0 e o prompt negativo é ignorado, então as proibições ficam no prompt positivo
+  (`prompts.py`): manter tipo, gola, manga e comprimento da foto; o que é liso nas fotos fica liso (sem estampa,
+  logotipo, texto, etiqueta, bordado, listra, debrum, bolso, botão ou vazado inventados).
 - **Tentativas:** até `RECON_MAX_ATTEMPTS` sementes; fica a de melhor QA.
 - **QA automático** (`quality.py`), contra os pixels fotografados:
 
@@ -88,6 +96,7 @@ ver [fase3-provador.md](fase3-provador.md).
 | Silhueta | IoU das máscaras | < 0,35 alerta — **exceto** quando a origem estava vestida (o flat lay muda a silhueta de propósito) |
 | Fundo | bordas brancas | < 85% alerta |
 | Pessoa restante | pele a mais que na peça original | > 8% reprova |
+| Costas × frente | ΔE entre as cores dominantes das duas vistas geradas | > 10 (`BACK_COLOR_MISMATCH`), no máximo `warn` |
 
   Nota = 0,35·cor + 0,20·histograma + 0,20·SSIM + 0,15·IoU + 0,10·fundo; `pass` exige nota ≥ 0,62 sem alertas.
   O QA **não certifica** logotipos, escudos e textos: toda reconstrução fica `review.status=pending` até uma pessoa
