@@ -1,0 +1,26 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`retrato do áudio sintetizado (HeistAudio) > mesmo grafo de nós, parâmetros e amostras para a sessão de exemplo 1`] = `
+{
+  "buffers": 80,
+  "events": 2110,
+  "musicNodes": {
+    "convolver": 1,
+    "destination": 1,
+    "filter": 11,
+    "gain": 18,
+    "osc": 9,
+    "source": 2,
+  },
+  "nodes": {
+    "convolver": 1,
+    "destination": 1,
+    "filter": 77,
+    "gain": 306,
+    "osc": 90,
+    "panner": 66,
+    "source": 66,
+  },
+  "sha": "b5960ace163e5b19531235b3374367ef20e3a5b1ebe80b379e3f28c6db4c31db",
+}
+`;
