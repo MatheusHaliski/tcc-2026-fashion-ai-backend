@@ -5,102 +5,20 @@
  * a treliça quadrada com talhas de corrente, oito moving heads e duas line arrays penduradas; três globos espelhados com
  * motor e cabo e os pin spots que os acendem; os pontinhos de luz girando no piso e no teto; as luzes coloridas da
  * pista seguindo a batida (122 bpm). Quando o alarme toca, a música para: a festa apaga e ficam as luzes da casa.
+ * As texturas desenhadas estão em salao-dj-tex.ts e a pista, a treliça e as line arrays em salao-dj-rig.ts.
  */
 import * as THREE from "three";
 import { baseProps } from "@/lib/heist/level";
 import type { Prop } from "@/lib/heist/types";
-import { BOX0, CYL, CYL0, SPH, geo, mat, mul } from "../interior-batch";
+import { BOX0, CYL, CYL0, SPH, geo, mat } from "../interior-batch";
 import type { LightAnchor, PropsCtx } from "../interior-props";
 import { type RoomsCtx, A } from "./kit";
-import { BeamSet, ROOM, L, bx, fbm, foot, hash2, lathe, rand, roundedBox, salaoBeamMaterial, salaoGlow, salaoMat, salaoSolid, salaoTexture, sparkleTexture, spotTexture, surface, surfaceMat, tube, worldOf, type Foot } from "./salao-kit";
-import type { Quality } from "../interior-tex";
+import { BeamSet, ROOM, L, bx, foot, lathe, roundedBox, salaoBeamMaterial, salaoGlow, salaoMat, salaoSolid, sparkleTexture, spotTexture, tube, worldOf, type Foot } from "./salao-kit";
+import { ballTiles, cdjTop, facade, glintTexture, grille, laptopScreen, mixerTop, waveTexture } from "./salao-dj-tex";
+import { DANCE, TRUSS, danceFloor, flownArray, trussRig } from "./salao-dj-rig";
 
-/** A pista (sem colisão): retângulo no piso e altura do tablado. */
-export const DANCE = { x0: 3.2, x1: 9.8, z0: 1.5, z1: 7.5, h: 0.025 };
+export { DANCE } from "./salao-dj-rig";
 export const BPM = 122;
-const TRUSS = { x0: 3.4, x1: 9.6, z0: 1.7, z1: 7.3, y: 6.0, s: 0.29 };
-
-/* ======================= texturas ======================= */
-/** Tablado de nogueira escura envernizada: réguas de 0,12 m com comprimentos desencontrados (textura de 1,2 × 1,2 m). */
-function danceWood(q: Quality) {
-  return surface(`danceWood-${q}`, q === "high" ? 1024 : 512, (u, v, o) => {
-    const rows = 10, row = Math.floor(v * rows), lv = v * rows % 1;
-    const len = 0.45 + hash2(row, 1, 5) * 0.4, off = hash2(row, 2, 5), x = (u + off) / len, seg = Math.floor(x), lu = x % 1;
-    const gap = lv < 0.025 || lu < 0.006, tone = hash2(row, seg, 9), grain = Math.sin((u * 60 + fbm(u * 4, v * 2, 8, 13 + row, 3) * 7) * 2.4) * 0.5 + 0.5;
-    const b = 0.11 + 0.05 * tone + 0.025 * grain;
-    if (gap) { o[0] = 0.02; o[1] = 0.015; o[2] = 0.01; o[3] = 0.3; o[4] = 0.6; return; }
-    o[0] = b * 1.25; o[1] = b * 0.78; o[2] = b * 0.5; o[3] = 0.5 + 0.03 * grain; o[4] = 0.07 + 0.04 * grain;
-  }, 0.8);
-}
-/** Topo de um player (sem marca): visor, prato com anel de LED, botões de play/cue, fader de tempo. */
-function cdjTop(): THREE.Texture {
-  return salaoTexture("cdjTop", 400, 512, (g, w, h) => {
-    g.fillStyle = "#18191c"; g.fillRect(0, 0, w, h);
-    g.strokeStyle = "#2c2e33"; g.lineWidth = 3; g.strokeRect(6, 6, w - 12, h - 12);
-    g.fillStyle = "#06090c"; g.fillRect(40, 30, w - 80, 90); g.strokeStyle = "#3a6f8f"; g.lineWidth = 2; g.strokeRect(40, 30, w - 80, 90);
-    const cx = w * 0.46, cy = h * 0.6, r = w * 0.33;
-    const ring = g.createRadialGradient(cx, cy, r * 0.82, cx, cy, r); ring.addColorStop(0, "#7e848c"); ring.addColorStop(1, "#c9ced4"); g.fillStyle = ring; g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
-    g.fillStyle = "#0c0d0f"; g.beginPath(); g.arc(cx, cy, r * 0.84, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = "#1e2024"; g.lineWidth = 2; for (let k = 0; k < 48; k++) { const a = (k / 48) * Math.PI * 2; g.beginPath(); g.moveTo(cx + Math.cos(a) * r * 0.35, cy + Math.sin(a) * r * 0.35); g.lineTo(cx + Math.cos(a) * r * 0.8, cy + Math.sin(a) * r * 0.8); g.stroke(); }
-    g.strokeStyle = "#ff8a2a"; g.lineWidth = 4; g.beginPath(); g.arc(cx, cy, r * 0.27, -0.6, 3.6); g.stroke();
-    g.fillStyle = "#2a2c30"; g.beginPath(); g.arc(cx, cy, r * 0.22, 0, Math.PI * 2); g.fill();
-    for (const [bx2, by, col] of [[56, h - 70, "#38e070"], [56, h - 140, "#ff9a2a"]] as [number, number, string][]) { g.fillStyle = "#2a2c30"; g.beginPath(); g.arc(bx2, by, 26, 0, Math.PI * 2); g.fill(); g.strokeStyle = col; g.lineWidth = 4; g.beginPath(); g.arc(bx2, by, 26, 0, Math.PI * 2); g.stroke(); }
-    g.fillStyle = "#08090a"; g.fillRect(w - 46, h * 0.36, 14, h * 0.5); g.fillStyle = "#9aa0a8"; g.fillRect(w - 56, h * 0.58, 34, 18);
-    for (let k = 0; k < 8; k++) { g.fillStyle = k % 3 === 0 ? "#3a3d43" : "#2b2d32"; g.fillRect(48 + k * 38, 140, 28, 14); }
-  });
-}
-/** Topo do mixer de quatro canais: botões giratórios, medidores de LED, faders e o crossfader. */
-function mixerTop(): THREE.Texture {
-  return salaoTexture("mixerTop", 400, 500, (g, w, h) => {
-    g.fillStyle = "#1a1b1e"; g.fillRect(0, 0, w, h); g.strokeStyle = "#2e3035"; g.lineWidth = 3; g.strokeRect(6, 6, w - 12, h - 12);
-    for (let ch = 0; ch < 4; ch++) {
-      const x = 52 + ch * 82;
-      for (let k = 0; k < 4; k++) { g.fillStyle = "#30333a"; g.beginPath(); g.arc(x, 50 + k * 58, 17, 0, Math.PI * 2); g.fill(); g.strokeStyle = "#cfd3d8"; g.lineWidth = 3; g.beginPath(); g.moveTo(x, 50 + k * 58); g.lineTo(x + 10, 40 + k * 58); g.stroke(); }
-      for (let k = 0; k < 10; k++) { g.fillStyle = k < 6 ? "#1d6e3a" : k < 8 ? "#8a7a1d" : "#7a1d1d"; g.fillRect(x + 26, 300 - k * 11, 10, 8); }
-      g.fillStyle = "#07080a"; g.fillRect(x - 4, 300, 8, 120);
-    }
-    g.fillStyle = "#07080a"; g.fillRect(110, h - 50, 180, 8);
-  });
-}
-/** Ondas das faixas (tela dos players e do notebook): corre no tique. */
-function waveTexture(): THREE.Texture {
-  const t = salaoTexture("waveform", 1024, 128, (g, w, h) => {
-    g.fillStyle = "#04060a"; g.fillRect(0, 0, w, h);
-    const R = rand(321);
-    for (let x = 0; x < w; x++) {
-      const beat = Math.max(0, Math.sin((x / w) * Math.PI * 64)) ** 6, amp = (0.25 + 0.55 * beat + 0.2 * R()) * h * 0.45;
-      g.fillStyle = beat > 0.4 ? "#ff9b3d" : R() > 0.5 ? "#3ab8ff" : "#d9f2ff"; g.fillRect(x, h / 2 - amp, 1, amp * 2);
-    }
-    g.fillStyle = "rgba(255,255,255,0.8)"; g.fillRect(w / 2, 0, 2, h);
-  });
-  t.wrapS = THREE.RepeatWrapping; return t;
-}
-/** Tela do notebook: dois decks com as ondas, biblioteca de faixas (linhas) e botões. */
-function laptopScreen(): THREE.Texture {
-  return salaoTexture("laptopScreen", 512, 320, (g, w, h) => {
-    g.fillStyle = "#0b0d12"; g.fillRect(0, 0, w, h);
-    for (const y of [14, 84]) { g.fillStyle = "#05070a"; g.fillRect(10, y, w - 20, 60); const R = rand(y); for (let x = 12; x < w - 12; x += 2) { const a = (0.2 + 0.8 * R()) * 26; g.fillStyle = R() > 0.6 ? "#ff9b3d" : "#3ab8ff"; g.fillRect(x, y + 30 - a, 1.5, a * 2); } }
-    for (let k = 0; k < 9; k++) { g.fillStyle = k === 3 ? "#1f4d7a" : k % 2 ? "#151922" : "#11151c"; g.fillRect(10, 160 + k * 17, w - 20, 15); g.fillStyle = "#6c7684"; g.fillRect(20, 165 + k * 17, 90 + (k * 37) % 120, 5); g.fillRect(260, 165 + k * 17, 40, 5); }
-  });
-}
-/** Grade de chapa perfurada das caixas. */
-function grille(): THREE.Texture {
-  const t = salaoTexture("grille", 256, 256, (g, w, h) => {
-    g.fillStyle = "#151517"; g.fillRect(0, 0, w, h);
-    for (let y = 0; y < h; y += 8) for (let x = (y / 8) % 2 ? 4 : 0; x < w; x += 8) { g.fillStyle = "#050506"; g.beginPath(); g.arc(x + 2, y + 2, 2.4, 0, Math.PI * 2); g.fill(); }
-  });
-  t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
-}
-/** Frente da cabine: laca negra com filete dourado e o medalhão da Gala. */
-function facade(): THREE.Texture {
-  return salaoTexture("djFacade", 1024, 448, (g, w, h) => {
-    const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, "#151417"); bg.addColorStop(1, "#070608"); g.fillStyle = bg; g.fillRect(0, 0, w, h);
-    g.strokeStyle = "#b9924a"; g.lineWidth = 4; g.strokeRect(26, 26, w - 52, h - 52); g.lineWidth = 1.5; g.strokeRect(38, 38, w - 76, h - 76);
-    const cx = w / 2, cy = h / 2; g.strokeStyle = "#d8b56a"; g.lineWidth = 5; g.beginPath(); g.arc(cx, cy, 118, 0, Math.PI * 2); g.stroke(); g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, 104, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = "#e3c27a"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = "italic 600 120px 'Didot', 'Bodoni 72', Georgia, serif"; g.fillText("GL", cx, cy + 6);
-    g.font = "500 30px 'Didot', 'Bodoni 72', Georgia, serif"; g.fillText("G A L A   L U M I È R E", cx, h - 74);
-  });
-}
 
 /* ======================= cabine do DJ (móvel da planta) ======================= */
 const facadeMat = () => salaoMat("djFacade", () => new THREE.MeshPhysicalMaterial({ map: facade(), roughness: 0.22, clearcoat: 0.8, clearcoatRoughness: 0.22, envMapIntensity: 1.0 }));
@@ -185,62 +103,6 @@ export function djSpeaker(p: Prop, c: PropsCtx) {
 
 /* ======================= pista, treliça, luzes e globos (decoração animada) ======================= */
 const PALETTE = ["#ff2fa8", "#29d6ff", "#ffb340", "#8a5cff", "#fff1dc", "#ff4e3a"].map((c) => new THREE.Color(c));
-
-function danceFloor(c: RoomsCtx) {
-  const q = c.q, { x0, x1, z0, z1, h } = DANCE, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, w = x1 - x0, d = z1 - z0;
-  // tablado de nogueira envernizada (reflexo planar como o piso) e a borda chanfrada de alumínio
-  const wood = surfaceMat(`danceWood-${q}`, danceWood(q), { mirror: [0.6, 0.04], env: 0.9 });
-  const top = new THREE.BoxGeometry(w, h, d), uv = top.getAttribute("uv") as THREE.BufferAttribute, pos = top.getAttribute("position") as THREE.BufferAttribute;
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) + w / 2) / 1.2, (pos.getZ(i) + d / 2) / 1.2);
-  c.batch.add(ROOM, wood, top.translate(0, h / 2, 0), mat(cx, 0, cz), { receive: true });
-  const ramp = (len: number) => geo(`salao-ramp${len.toFixed(2)}`, () => { const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(0.08, 0); s.lineTo(0.08, h + 0.004); s.lineTo(0.06, h + 0.006); s.lineTo(0, 0.002); s.closePath(); return new THREE.ExtrudeGeometry(s, { depth: len, bevelEnabled: false }).translate(0, 0, -len / 2); });
-  const alu = salaoSolid("aluEdge", "#c3c7cc", { metal: 0.95, rough: 0.25, env: 1.4 });
-  c.batch.add(ROOM, alu, ramp(d + 0.16), mat(x1, 0, cz, 0)); c.batch.add(ROOM, alu, ramp(d + 0.16), mat(x0, 0, cz, Math.PI));
-  c.batch.add(ROOM, alu, ramp(w + 0.16), mat(cx, 0, z1, Math.PI / 2)); c.batch.add(ROOM, alu, ramp(w + 0.16), mat(cx, 0, z0, -Math.PI / 2));
-  // copos esquecidos na beira da pista (taças de champanhe e copos de drinque)
-  const R = rand(77), cup = lathe("partyCup", [[0, 0], [0.028, 0], [0.033, 0.095], [0.031, 0.095], [0.026, 0.004], [0, 0.004]], 14);
-  for (let k = 0; k < 7; k++) { const side = k % 4, t = R(); const x = side < 2 ? x0 + 0.25 + t * (w - 0.5) : side === 2 ? x0 + 0.22 : x1 - 0.22, z = side === 0 ? z0 + 0.2 : side === 1 ? z1 - 0.2 : z0 + 0.4 + t * (d - 0.8); c.inst.add(ROOM, "salao-floorCup", cup, c.P.glass, mat(x, h, z, R() * 3)); }
-}
-
-function trussRig(c: RoomsCtx) {
-  const steel = salaoSolid("truss", "#cfd3d7", { metal: 0.9, rough: 0.3, env: 1.2 }), dark = salaoSolid("hoist", "#1a1b1e", { metal: 0.4, rough: 0.5 });
-  const { x0, x1, z0, z1, y, s } = TRUSS, hs = s / 2, chord = CYL(10), diag = geo("salao-trussDiag", () => new THREE.CylinderGeometry(0.011, 0.011, 1, 6));
-  const edge = (ax: number, az: number, bx2: number, bz: number) => {
-    const alongX = Math.abs(bx2 - ax) > 0.01, len = alongX ? bx2 - ax : bz - az, mx = (ax + bx2) / 2, mz = (az + bz) / 2;
-    for (const oy of [0, s]) for (const oh of [-hs, hs]) c.batch.add(ROOM, steel, chord, alongX ? mat(mx, y + oy, mz + oh, 0, 0.024, len, 0.024, 0, Math.PI / 2) : mat(mx + oh, y + oy, mz, 0, 0.024, len, 0.024, Math.PI / 2, 0), { cast: true });
-    const n = Math.floor(Math.abs(len) / s);
-    for (let i = 0; i < n; i++) {
-      const a = (alongX ? ax : az) + Math.sign(len) * (i + 0.5) * s, sgn = i % 2 ? 1 : -1, L2 = Math.SQRT2 * s;
-      for (const oh of [-hs, hs]) c.inst.add(ROOM, "salao-trussDiag", diag, steel, alongX ? mat(a, y + hs, mz + oh, 0, 1, L2, 1, 0, sgn * Math.PI / 4) : mat(mx + oh, y + hs, a, 0, 1, L2, 1, sgn * Math.PI / 4, 0));
-      for (const oy of [0, s]) c.inst.add(ROOM, "salao-trussDiag", diag, steel, alongX ? mat(a, y + oy, mz, sgn * Math.PI / 4, 1, L2, 1, Math.PI / 2, 0) : mat(mx, y + oy, a, sgn * Math.PI / 4, 1, L2, 1, 0, Math.PI / 2));
-    }
-  };
-  edge(x0, z0, x1, z0); edge(x0, z1, x1, z1); edge(x0, z0, x0, z1); edge(x1, z0, x1, z1);
-  // barras transversais para os globos, cantos e talhas (motor, corrente até a treliça e cinta de aço até o teto)
-  for (const x of [5.0, 7.6]) c.batch.add(ROOM, steel, chord, mat(x, y + s, (z0 + z1) / 2, 0, 0.026, z1 - z0, 0.026, Math.PI / 2, 0));
-  const link = geo("salao-hoistLink", () => new THREE.TorusGeometry(0.02, 0.006, 5, 10).scale(1, 1.5, 1));
-  for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1]]) {
-    c.batch.add(ROOM, steel, BOX0(), mat(x, y - 0.02, z, 0, s + 0.05, s + 0.05, s + 0.05), { cast: true });
-    c.batch.add(ROOM, dark, BOX0(), mat(x, y + 0.75, z, 0, 0.24, 0.34, 0.26), { cast: true });
-    for (let k = 0; k < 9; k++) c.inst.add(ROOM, "salao-hoistLink", link, steel, mat(x, y + s + 0.03 + k * 0.05, z, (k % 2) * Math.PI / 2));
-    c.batch.add(ROOM, dark, CYL(6), mat(x, (y + 1.1 + 9.18) / 2, z, 0, 0.012, 9.18 - y - 1.1, 0.012));
-  }
-}
-
-/** Uma line array pendurada na quina da treliça junto ao DJ: cinco caixas em curva J, viradas para a pista. */
-function flownArray(c: RoomsCtx, x: number, z: number) {
-  const tol = salaoSolid("tolex", "#151517", { rough: 0.92 }), gm = salaoMat("grilleMat", () => new THREE.MeshStandardMaterial({ map: grille(), roughness: 0.6, metalness: 0.5 }));
-  const yaw = -Math.PI / 2;                                                       // frente para −x (a pista)
-  c.batch.add(ROOM, salaoSolid("bumper", "#2a2b2e", { metal: 0.5, rough: 0.45 }), BOX0(), mat(x, TRUSS.y - 0.12, z, yaw, 0.6, 0.06, 0.5));
-  let yy = TRUSS.y - 0.12, ang = 0;
-  for (let k = 0; k < 5; k++) {
-    ang += 0.05 + k * 0.035; const hh = 0.17;
-    const at = mul(mat(x, yy, z, yaw), mat(0, 0, 0, 0, 1, 1, 1, ang));
-    c.batch.add(ROOM, tol, BOX0(), mul(at, mat(0, -hh, 0, 0, 0.56, hh - 0.005, 0.44)), { cast: true });
-    c.batch.add(ROOM, gm, geo("salao-planeZ", () => new THREE.PlaneGeometry(1, 1)), mul(at, mat(0, -hh / 2, 0.221, 0, 0.52, hh - 0.03, 1)));
-    yy -= hh * Math.cos(ang);
-  }
-}
 
 /** Pista, treliça, moving heads, line arrays, globos, pin spots, pontinhos de luz, telas da cabine e o tique da música. */
 export function dressDj(c: RoomsCtx, pins: BeamSet) {
@@ -361,27 +223,5 @@ export function dressDj(c: RoomsCtx, pins: BeamSet) {
   };
   step(0, true);
   c.ticks.push({ room: ROOM, tick: (t, _dt, v) => step(t, !v.alarm) });
-}
-
-/** Ladrilhos de espelho do globo (emissivo): rejunte escuro, quadradinhos em cinzas e alguns acesos com as cores da festa. */
-function ballTiles(): THREE.Texture {
-  return salaoTexture("ballTiles", 512, 256, (g, w, h) => {
-    g.fillStyle = "#050506"; g.fillRect(0, 0, w, h);
-    const R = rand(4242), cols = 96, rows = 48, tw = w / cols, th = h / rows;
-    const hot = ["#ffffff", "#ffe6c4", "#ff9bd6", "#9be8ff", "#ffd27a"];
-    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-      const r = R(), l = r > 0.94 ? 1 : 0.08 + 0.3 * R() * R();
-      g.fillStyle = r > 0.94 ? hot[Math.floor(R() * hot.length)] : `rgb(${Math.round(l * 255)},${Math.round(l * 250)},${Math.round(l * 245)})`;
-      g.fillRect(i * tw + 0.6, j * th + 0.6, tw - 1.2, th - 1.2);
-    }
-  });
-}
-
-/** Estrela de quatro pontas (brilho nos espelhos do globo). */
-function glintTexture(): THREE.Texture {
-  return salaoTexture("glint", 128, 128, (g, w, h) => {
-    const c = w / 2, grd = g.createRadialGradient(c, c, 0, c, c, c * 0.3); grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = grd; g.fillRect(0, 0, w, h);
-    for (const a of [0, Math.PI / 2]) { g.save(); g.translate(c, c); g.rotate(a); const lg = g.createLinearGradient(-c, 0, c, 0); lg.addColorStop(0, "rgba(255,255,255,0)"); lg.addColorStop(0.5, "rgba(255,255,255,1)"); lg.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = lg; g.beginPath(); g.moveTo(-c, 0); g.lineTo(0, -2.5); g.lineTo(c, 0); g.lineTo(0, 2.5); g.closePath(); g.fill(); g.restore(); }
-  }, false);
 }
 export type { Foot };

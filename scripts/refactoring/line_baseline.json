@@ -92,14 +92,6 @@
    "max": 379,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "components/heist/game.tsx": {
-   "max": 409,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/heist/people/people.tsx": {
-   "max": 302,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "components/heist/scene/exterior-facade.tsx": {
    "max": 313,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -122,10 +114,6 @@
   },
   "components/heist/scene/interior-props.ts": {
    "max": 671,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/heist/scene/interior-rooms.ts": {
-   "max": 444,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/heist/scene/interior-tex.ts": {

@@ -1,0 +1,7681 @@
+{
+ "low": {
+  "area": "salao",
+  "props": [
+   "djBooth-107:fixture:djBooth",
+   "djSpeaker-108:fixture:djSpeaker",
+   "djSpeaker-109:fixture:djSpeaker",
+   "dessertTable-110:fixture:dessertTable",
+   "buffetTable-111:fixture:buffetTable",
+   "serviceBuffet-112:fixture:serviceBuffet",
+   "patronTable-113:fixture:patronTable",
+   "patronTable-114:fixture:patronTable",
+   "patronTable-115:fixture:patronTable"
+  ],
+  "propAdds": 2746,
+  "adds": 4803,
+  "order": "db7b7a13",
+  "batch": {
+   "salao|lacquer|MeshPhysicalMaterial|#050506|r0.12|m0|e#000000×1|sheen#000000|o1|side0|t0|vc0|cbbec9ce|cast1|recv1": {
+    "n": 2,
+    "hash": "7e77965e",
+    "first": [
+     10.4,
+     0.05,
+     3.325
+    ]
+   },
+   "salao|salao-djFacade|MeshPhysicalMaterial|#ffffff|r0.22|m0|e#000000×1|sheen#000000|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|cbbec9ce|cast1|recv1": {
+    "n": 1,
+    "hash": "d258c84b",
+    "first": [
+     10.025,
+     0.07,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|8281d87c|cast0|recv1": {
+    "n": 2,
+    "hash": "93b23bff",
+    "first": [
+     10.42,
+     0,
+     4.5
+    ]
+   },
+   "salao|lacquer|MeshPhysicalMaterial|#050506|r0.12|m0|e#000000×1|sheen#000000|o1|side0|t0|vc0|e0ee27d6|cast1|recv1": {
+    "n": 1,
+    "hash": "29a2a622",
+    "first": [
+     10.4,
+     1,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|1|1|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc1|4a4d7b60|cast0|recv1": {
+    "n": 1,
+    "hash": "af234815",
+    "first": [
+     10.44,
+     1.05,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0.25|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.25|e#000000×1|o1|side0|t0|vc1|d3da9568|cast1|recv1": {
+    "n": 3,
+    "hash": "a9c564f5",
+    "first": [
+     10.55,
+     1.054,
+     3.88
+    ]
+   },
+   "salao|salao-cdjTopMat|MeshStandardMaterial|#ffffff|r0.45|m0.2|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|64a77526|cast0|recv1": {
+    "n": 2,
+    "hash": "88a7c6c4",
+    "first": [
+     10.55,
+     1.155,
+     3.88
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|fb8f8c60|cast0|recv1": {
+    "n": 2,
+    "hash": "dac6f8e0",
+    "first": [
+     10.59,
+     1.154,
+     3.892
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|7757adb0|cast0|recv1": {
+    "n": 2,
+    "hash": "dac6f8e0",
+    "first": [
+     10.59,
+     1.154,
+     3.892
+    ]
+   },
+   "salao|salao-mixerTopMat|MeshStandardMaterial|#ffffff|r0.5|m0.2|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|64a77526|cast0|recv1": {
+    "n": 1,
+    "hash": "9b80f438",
+    "first": [
+     10.55,
+     1.15,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|19772570|cast0|recv1": {
+    "n": 2,
+    "hash": "c52c734a",
+    "first": [
+     10.42,
+     1.05,
+     5.37
+    ]
+   },
+   "salao|salao-tint-0|0.75|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0.75|e#000000×1|o1|side0|t0|vc1|6da2f81c|cast0|recv1": {
+    "n": 2,
+    "hash": "8ca5829c",
+    "first": [
+     10.42,
+     1.155,
+     5.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|e2e8a950|cast0|recv1": {
+    "n": 1,
+    "hash": "ea2e6916",
+    "first": [
+     10.68,
+     1.05,
+     3.48
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|27446b64|cast0|recv1": {
+    "n": 1,
+    "hash": "ad5432d0",
+    "first": [
+     10.68,
+     1.07,
+     3.48
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|6a4d1944|cast0|recv1": {
+    "n": 1,
+    "hash": "e801edf3",
+    "first": [
+     10.54,
+     1.38,
+     3.74
+    ]
+   },
+   "salao|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|4b806056|cast0|recv1": {
+    "n": 1,
+    "hash": "6f0da13b",
+    "first": [
+     10.16,
+     1.054,
+     5.5
+    ]
+   },
+   "salao|solid-salao-water|MeshStandardMaterial|#bcd7e6|r0.05|m0|e#000000×1|o0.45|side0|t1|vc0|2526515e|cast0|recv1": {
+    "n": 1,
+    "hash": "190e28c9",
+    "first": [
+     10.16,
+     1.058,
+     5.5
+    ]
+   },
+   "salao|solid-black|MeshStandardMaterial|#0b0b0c|r0.55|m0|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 2,
+    "hash": "cc77ac35",
+    "first": [
+     10.22,
+     1.054,
+     3.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|7197c7d8|cast0|recv1": {
+    "n": 1,
+    "hash": "4e5dc2f8",
+    "first": [
+     10.6,
+     0.45,
+     4.92
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|cd6ad628|cast0|recv1": {
+    "n": 1,
+    "hash": "6f949a50",
+    "first": [
+     10.4,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|37c05db3|cast0|recv1": {
+    "n": 1,
+    "hash": "6f949a50",
+    "first": [
+     10.4,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|7b073398|cast0|recv1": {
+    "n": 1,
+    "hash": "6f949a50",
+    "first": [
+     10.4,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|bcce1eb2|cast0|recv1": {
+    "n": 1,
+    "hash": "6f949a50",
+    "first": [
+     10.4,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|3940b260|cast0|recv1": {
+    "n": 3,
+    "hash": "181f7f3a",
+    "first": [
+     11.12,
+     0.012,
+     4.46
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|4a4d7b60|cast0|recv1": {
+    "n": 1,
+    "hash": "9ddb1032",
+    "first": [
+     10.45,
+     0.445,
+     3.8
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|e5a7cafc|cast0|recv1": {
+    "n": 26,
+    "hash": "7623b714",
+    "first": [
+     10.45,
+     0.445,
+     3.58
+    ]
+   },
+   "salao|salao-tint-0|0|1|1|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc1|9e726bd0|cast0|recv1": {
+    "n": 1,
+    "hash": "84a537cb",
+    "first": [
+     10.45,
+     0.445,
+     4.85
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|5732d120|cast0|recv1": {
+    "n": 1,
+    "hash": "127b86cd",
+    "first": [
+     10.45,
+     0.46,
+     5.35
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|83fdb1b8|cast0|recv1": {
+    "n": 16,
+    "hash": "f102799a",
+    "first": [
+     10.4,
+     1.15,
+     4.402
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|ac44499c|cast1|recv1": {
+    "n": 16,
+    "hash": "8fd2b83d",
+    "first": [
+     10.45,
+     0,
+     2.25
+    ]
+   },
+   "salao|salao-grilleMat|MeshStandardMaterial|#ffffff|r0.6|m0.5|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|f3270086|cast0|recv1": {
+    "n": 16,
+    "hash": "34f93959",
+    "first": [
+     10.089,
+     0.27,
+     2.25
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|021e94ec|cast0|recv1": {
+    "n": 8,
+    "hash": "8b88dfe7",
+    "first": [
+     10.45,
+     0.22,
+     1.918
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|eb085db8|cast0|recv1": {
+    "n": 2,
+    "hash": "36c88bb8",
+    "first": [
+     10.45,
+     1.09,
+     2.25
+    ]
+   },
+   "salao|fabric-linen-low|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|03c0a580|cast1|recv1": {
+    "n": 1,
+    "hash": "11201892",
+    "first": [
+     -8,
+     0.865,
+     13.4
+    ]
+   },
+   "salao|fabric-linen-low|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|2e206934|cast1|recv1": {
+    "n": 1,
+    "hash": "6acb0bcd",
+    "first": [
+     -8,
+     0,
+     13.4
+    ]
+   },
+   "salao|fabric-salao-satin-low|MeshPhysicalMaterial|#e8d3a6|r0.4|m0|e#000000×1|sheen#fff7e5|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|cbbec9ce|cast0|recv1": {
+    "n": 2,
+    "hash": "189aba42",
+    "first": [
+     -8,
+     0.9,
+     13.38
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 8,
+    "hash": "e89a9b02",
+    "first": [
+     -8,
+     0.9,
+     13.655
+    ]
+   },
+   "salao|misc-marbleWhite-low--0-0|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast1|recv1": {
+    "n": 3,
+    "hash": "96fa8224",
+    "first": [
+     -6.75,
+     0.9,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 3,
+    "hash": "0e8060a8",
+    "first": [
+     -6.75,
+     1.044,
+     13.409
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|050be223|cast1|recv1": {
+    "n": 1,
+    "hash": "4e386104",
+    "first": [
+     -8,
+     0.96,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|9b666816|cast1|recv1": {
+    "n": 1,
+    "hash": "b5f29082",
+    "first": [
+     -8,
+     1.085,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|aa2ca2c6|cast0|recv1": {
+    "n": 5,
+    "hash": "7f9b72a4",
+    "first": [
+     -8,
+     1.097,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|3372a852|cast1|recv1": {
+    "n": 1,
+    "hash": "ac4ab231",
+    "first": [
+     -8,
+     1.255,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|363bf316|cast1|recv1": {
+    "n": 1,
+    "hash": "258cb9e9",
+    "first": [
+     -8,
+     1.405,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|fabc61c2|cast1|recv1": {
+    "n": 1,
+    "hash": "b5c75005",
+    "first": [
+     -8,
+     1.545,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|dd5207fe|cast1|recv1": {
+    "n": 1,
+    "hash": "4c280345",
+    "first": [
+     -8,
+     1.675,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|f8d09c1c|cast0|recv1": {
+    "n": 1,
+    "hash": "602d8ef2",
+    "first": [
+     -8,
+     1.795,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|4b7012c6|cast0|recv1": {
+    "n": 1,
+    "hash": "a0b9d391",
+    "first": [
+     -8,
+     1.795,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|2f9fcdff|cast0|recv1": {
+    "n": 1,
+    "hash": "068be80a",
+    "first": [
+     -6.75,
+     1.06,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|cd92e9d0|cast0|recv1": {
+    "n": 1,
+    "hash": "f79d6555",
+    "first": [
+     -6.75,
+     1.08,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|88b872e6|cast0|recv1": {
+    "n": 1,
+    "hash": "0fb180a1",
+    "first": [
+     -9.25,
+     1,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|a5396a88|cast0|recv1": {
+    "n": 1,
+    "hash": "66d9b19a",
+    "first": [
+     -9.25,
+     1,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|9008f425|cast0|recv1": {
+    "n": 1,
+    "hash": "a0e43f0c",
+    "first": [
+     -9.25,
+     1.012,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|74e0d868|cast0|recv1": {
+    "n": 1,
+    "hash": "2e5b1f8f",
+    "first": [
+     -9.25,
+     1.22,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|f6c20bad|cast0|recv1": {
+    "n": 1,
+    "hash": "4f4a6fa7",
+    "first": [
+     -9.25,
+     1.232,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|b5e8d498|cast0|recv1": {
+    "n": 1,
+    "hash": "4a4ea573",
+    "first": [
+     -9.25,
+     1.42,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|87d5d545|cast0|recv1": {
+    "n": 1,
+    "hash": "37a932da",
+    "first": [
+     -9.25,
+     1.432,
+     13.62
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 4,
+    "hash": "a0deb7e1",
+    "first": [
+     -7.45,
+     0.904,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|fe2d4b08|cast0|recv1": {
+    "n": 2,
+    "hash": "0d97deeb",
+    "first": [
+     -8.62,
+     0.9,
+     13.16
+    ]
+   },
+   "salao|glass-salao-cloche|MeshPhysicalMaterial|#eef6f8|r0.04|m0|e#000000×1|sheen#000000|o0.18|side2|t1|vc0|a35289bc|cast0|recv1": {
+    "n": 2,
+    "hash": "926d0056",
+    "first": [
+     -8.62,
+     0.98,
+     13.16
+    ]
+   },
+   "salao|glass-salao-cloche|MeshPhysicalMaterial|#eef6f8|r0.04|m0|e#000000×1|sheen#000000|o0.18|side2|t1|vc0|dde3c28c|cast0|recv1": {
+    "n": 2,
+    "hash": "2d2b4bd4",
+    "first": [
+     -8.62,
+     1.143,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|69898c20|cast0|recv1": {
+    "n": 1,
+    "hash": "0926eeeb",
+    "first": [
+     -8.15,
+     0.904,
+     13.13
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|5a0905d6|cast0|recv1": {
+    "n": 2,
+    "hash": "f53e668f",
+    "first": [
+     -6.15,
+     0.9,
+     13.6
+    ]
+   },
+   "salao|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|fdaca49e|cast0|recv1": {
+    "n": 2,
+    "hash": "3d5231db",
+    "first": [
+     -6.15,
+     0.98,
+     13.6
+    ]
+   },
+   "salao|solid-candle|MeshStandardMaterial|#f3ead6|r0.7|m0|e#3a2a10×0.4|o1|side0|t0|vc0|2526515e|cast0|recv1": {
+    "n": 2,
+    "hash": "bb66d0dc",
+    "first": [
+     -6.15,
+     0.98,
+     13.6
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|e4aaa868|cast0|recv1": {
+    "n": 48,
+    "hash": "899ea824",
+    "first": [
+     -6.13,
+     0.83,
+     12.84
+    ]
+   },
+   "salao|salao-tint-2|0|0.6|0.5|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side2|t0|vc1|bad7f9a4|cast0|recv1": {
+    "n": 7,
+    "hash": "6b35fc73",
+    "first": [
+     -8.068,
+     1.733,
+     13.591
+    ]
+   },
+   "salao|salao-tint-2|0|0.6|0.5|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side2|t0|vc1|cac98714|cast0|recv1": {
+    "n": 7,
+    "hash": "b2346022",
+    "first": [
+     -8.052,
+     1.762,
+     13.568
+    ]
+   },
+   "salao|salao-tint-2|0|0.6|0.5|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side2|t0|vc1|a36dc6c4|cast0|recv1": {
+    "n": 6,
+    "hash": "d1f8eefd",
+    "first": [
+     -8.029,
+     1.756,
+     13.552
+    ]
+   },
+   "salao|salao-tint-2|0|0.6|0.5|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side2|t0|vc1|3c60fe24|cast0|recv1": {
+    "n": 6,
+    "hash": "05dc4fde",
+    "first": [
+     -8.001,
+     1.739,
+     13.546
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|d7b99334|cast0|recv1": {
+    "n": 18,
+    "hash": "fee25081",
+    "first": [
+     -9.385,
+     1.008,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|201e2dd2|cast0|recv1": {
+    "n": 3,
+    "hash": "03488b07",
+    "first": [
+     -9.385,
+     1.05,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|491b8f4e|cast0|recv1": {
+    "n": 4,
+    "hash": "8bd33400",
+    "first": [
+     -9.345,
+     1.05,
+     13.525
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|8def7a3e|cast0|recv1": {
+    "n": 4,
+    "hash": "1c706698",
+    "first": [
+     -9.25,
+     1.05,
+     13.485
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|201c8d12|cast0|recv1": {
+    "n": 4,
+    "hash": "a3a89371",
+    "first": [
+     -9.155,
+     1.05,
+     13.525
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|00dd4072|cast0|recv1": {
+    "n": 3,
+    "hash": "901ee533",
+    "first": [
+     -9.115,
+     1.05,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.2|1.5|MeshStandardMaterial|#ffffff|r0.2|m0|e#000000×1|o1|side0|t0|vc1|d88fd7e0|cast0|recv1": {
+    "n": 18,
+    "hash": "413c9e6d",
+    "first": [
+     -9.385,
+     1.1,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|9f8c4948|cast0|recv1": {
+    "n": 8,
+    "hash": "3c2c3584",
+    "first": [
+     -7.26,
+     0.934,
+     13.22
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|b31ab8e4|cast0|recv1": {
+    "n": 4,
+    "hash": "6ff24d11",
+    "first": [
+     -7.26,
+     0.934,
+     13.22
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|77c8f100|cast0|recv1": {
+    "n": 2,
+    "hash": "b0427524",
+    "first": [
+     -7.385,
+     0.934,
+     13.22
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|b00e5a3c|cast0|recv1": {
+    "n": 2,
+    "hash": "b0115762",
+    "first": [
+     -7.51,
+     0.934,
+     13.22
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|fa1a0894|cast0|recv1": {
+    "n": 2,
+    "hash": "fd671c74",
+    "first": [
+     -8.69,
+     0.98,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|088f1ed4|cast0|recv1": {
+    "n": 2,
+    "hash": "8e54be33",
+    "first": [
+     -8.664,
+     0.98,
+     13.105
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|fe0e4d8c|cast0|recv1": {
+    "n": 2,
+    "hash": "5c32d163",
+    "first": [
+     -8.604,
+     0.98,
+     13.092
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|a5482f74|cast0|recv1": {
+    "n": 1,
+    "hash": "1a4c80ef",
+    "first": [
+     -8.557,
+     0.98,
+     13.13
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|f8e4e7e8|cast0|recv1": {
+    "n": 7,
+    "hash": "1d3f60a7",
+    "first": [
+     -6.35,
+     0.98,
+     13.14
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|5f6a2d00|cast0|recv1": {
+    "n": 28,
+    "hash": "14427011",
+    "first": [
+     -6.34,
+     0.994,
+     13.15
+    ]
+   },
+   "salao|salao-tint-0|0|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0|e#000000×1|o1|side0|t0|vc1|d9ff7450|cast0|recv1": {
+    "n": 10,
+    "hash": "b314f3c6",
+    "first": [
+     -9.55,
+     0.91,
+     13.23
+    ]
+   },
+   "salao|salao-tint-0|0|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0|e#000000×1|o1|side0|t0|vc1|e7d8ecf0|cast0|recv1": {
+    "n": 10,
+    "hash": "71527b9c",
+    "first": [
+     -9.55,
+     0.932,
+     13.23
+    ]
+   },
+   "salao|salao-tint-0|0|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0|e#000000×1|o1|side0|t0|vc1|03d00e80|cast0|recv1": {
+    "n": 10,
+    "hash": "0c66878a",
+    "first": [
+     -9.55,
+     0.952,
+     13.23
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|8592cec8|cast0|recv1": {
+    "n": 9,
+    "hash": "e744d5bb",
+    "first": [
+     -8.22,
+     0.93,
+     13.13
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|6d2977f0|cast0|recv1": {
+    "n": 10,
+    "hash": "9d9b999c",
+    "first": [
+     -9.88,
+     0.904,
+     13.15
+    ]
+   },
+   "salao|fabric-linen-low|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|40ac4f20|cast1|recv1": {
+    "n": 1,
+    "hash": "8bca3fed",
+    "first": [
+     8,
+     0.865,
+     13.4
+    ]
+   },
+   "salao|fabric-linen-low|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|e81f446c|cast1|recv1": {
+    "n": 1,
+    "hash": "523546f5",
+    "first": [
+     8,
+     0,
+     13.4
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|88b872e6|cast0|recv1": {
+    "n": 13,
+    "hash": "5a8b1d71",
+    "first": [
+     9.15,
+     0.9,
+     13.72
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|51721a86|cast0|recv1": {
+    "n": 6,
+    "hash": "62372cc3",
+    "first": [
+     8.9,
+     0.95,
+     13.72
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast1|recv1": {
+    "n": 3,
+    "hash": "76c5d7c6",
+    "first": [
+     8.9,
+     1.03,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|8a066f34|cast0|recv1": {
+    "n": 1,
+    "hash": "329eadae",
+    "first": [
+     8.9,
+     1.128,
+     13.58
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|f021dc76|cast0|recv1": {
+    "n": 3,
+    "hash": "93d674f3",
+    "first": [
+     8.9,
+     1.13,
+     13.58
+    ]
+   },
+   "salao|solid-black|MeshStandardMaterial|#0b0b0c|r0.55|m0|e#000000×1|o1|side0|t0|vc0|51721a86|cast0|recv1": {
+    "n": 3,
+    "hash": "967fee7b",
+    "first": [
+     8.9,
+     1.3,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|17c7fae0|cast0|recv1": {
+    "n": 6,
+    "hash": "5cc97041",
+    "first": [
+     9.03,
+     0.9,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|64b05f00|cast0|recv1": {
+    "n": 1,
+    "hash": "55b85ab7",
+    "first": [
+     8.1,
+     1.128,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|7361fd5c|cast0|recv1": {
+    "n": 1,
+    "hash": "2b0169ab",
+    "first": [
+     7.3,
+     1.128,
+     13.58
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|8b9eb75e|cast0|recv1": {
+    "n": 1,
+    "hash": "365c5a99",
+    "first": [
+     6.5,
+     0.96,
+     13.58
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|555733f4|cast0|recv1": {
+    "n": 1,
+    "hash": "7c1b4b97",
+    "first": [
+     6.5,
+     1.2,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|431b16e8|cast0|recv1": {
+    "n": 1,
+    "hash": "267a6e59",
+    "first": [
+     6.5,
+     1.23,
+     13.58
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|a6b51d20|cast0|recv1": {
+    "n": 9,
+    "hash": "001b04a0",
+    "first": [
+     6.5,
+     1.39,
+     13.58
+    ]
+   },
+   "salao|misc-grain-low-#b08a5a-0-0|MeshStandardMaterial|#b08a5a|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast0|recv1": {
+    "n": 1,
+    "hash": "a3ae6b01",
+    "first": [
+     6.5,
+     0.904,
+     13.13
+    ]
+   },
+   "salao|salao-tint-0|1|0.1|1.5|MeshStandardMaterial|#ffffff|r0.1|m1|e#000000×1|o1|side0|t0|vc1|7a98b140|cast1|recv1": {
+    "n": 1,
+    "hash": "1c9c72b5",
+    "first": [
+     9.92,
+     0.9,
+     13.4
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|f24009fe|cast1|recv1": {
+    "n": 1,
+    "hash": "8444be74",
+    "first": [
+     9.45,
+     0.9,
+     13.7
+    ]
+   },
+   "salao|solid-bottleGreen|MeshStandardMaterial|#1d4d2b|r0.08|m0|e#000000×1|o0.85|side0|t1|vc0|335e7e69|cast0|recv1": {
+    "n": 2,
+    "hash": "bda71be5",
+    "first": [
+     9.48,
+     0.94,
+     13.68
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|65fd6720|cast0|recv1": {
+    "n": 14,
+    "hash": "f3a0982e",
+    "first": [
+     8.886,
+     1.132,
+     13.537
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|d64029b0|cast0|recv1": {
+    "n": 14,
+    "hash": "663e8c39",
+    "first": [
+     8.008,
+     1.132,
+     13.667
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|61c56aa0|cast0|recv1": {
+    "n": 14,
+    "hash": "c109e1fd",
+    "first": [
+     7.425,
+     1.132,
+     13.644
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|afcfa7c4|cast0|recv1": {
+    "n": 54,
+    "hash": "5cd9c6dd",
+    "first": [
+     9.12,
+     0.916,
+     13.21
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|00097df0|cast0|recv1": {
+    "n": 9,
+    "hash": "1bc44dc1",
+    "first": [
+     9.12,
+     0.931,
+     13.21
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|039587c0|cast0|recv1": {
+    "n": 10,
+    "hash": "723c7d66",
+    "first": [
+     8.848,
+     0.931,
+     13.21
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|a516e640|cast0|recv1": {
+    "n": 9,
+    "hash": "de0cccd1",
+    "first": [
+     8.848,
+     0.931,
+     13.135
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|efa152d0|cast0|recv1": {
+    "n": 9,
+    "hash": "d0b4c728",
+    "first": [
+     8.78,
+     0.931,
+     13.135
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|d0eec780|cast0|recv1": {
+    "n": 9,
+    "hash": "85b0cd0f",
+    "first": [
+     9.12,
+     0.931,
+     13.06
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|8f6cb9f0|cast0|recv1": {
+    "n": 8,
+    "hash": "ebd4322d",
+    "first": [
+     9.052,
+     0.931,
+     13.06
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|8697dc80|cast0|recv1": {
+    "n": 13,
+    "hash": "c2f34911",
+    "first": [
+     6.6,
+     1.042,
+     13.572
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|094e4880|cast0|recv1": {
+    "n": 13,
+    "hash": "e15c0360",
+    "first": [
+     6.596,
+     1.06,
+     13.556
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|426b604c|cast0|recv1": {
+    "n": 5,
+    "hash": "286285fe",
+    "first": [
+     6.35,
+     1.02,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0|e#000000×1|o1|side0|t0|vc1|793c1554|cast0|recv1": {
+    "n": 10,
+    "hash": "73e3053b",
+    "first": [
+     6.41,
+     1.25,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|9f8c12d8|cast0|recv1": {
+    "n": 2,
+    "hash": "5c88df72",
+    "first": [
+     6.66,
+     0.93,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|b8dd8a80|cast0|recv1": {
+    "n": 2,
+    "hash": "b8b03b09",
+    "first": [
+     6.56,
+     0.93,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|8d491398|cast0|recv1": {
+    "n": 12,
+    "hash": "caeb97b2",
+    "first": [
+     6.68,
+     0.93,
+     13.06
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|47e51dc8|cast0|recv1": {
+    "n": 12,
+    "hash": "121b6b09",
+    "first": [
+     5.8,
+     0.904,
+     13.25
+    ]
+   },
+   "salao|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast1|recv1": {
+    "n": 6,
+    "hash": "0931660f",
+    "first": [
+     -11.53,
+     0.1,
+     12.8
+    ]
+   },
+   "salao|salao-verdeAlpi|MeshStandardMaterial|#ffffff|r0.12|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|d397ed08|cast1|recv1": {
+    "n": 1,
+    "hash": "f1bac1d8",
+    "first": [
+     -11.53,
+     0.885,
+     12.8
+    ]
+   },
+   "salao|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|7bff954a|cast0|recv1": {
+    "n": 3,
+    "hash": "4dff35b0",
+    "first": [
+     -11.24,
+     0.42,
+     13.507
+    ]
+   },
+   "salao|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast0|recv1": {
+    "n": 35,
+    "hash": "70698507",
+    "first": [
+     -11.24,
+     0.74,
+     12.8
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|b55be940|cast0|recv1": {
+    "n": 1,
+    "hash": "5b33c897",
+    "first": [
+     -11.53,
+     0.92,
+     12.85
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|528784a4|cast1|recv1": {
+    "n": 1,
+    "hash": "85287fdb",
+    "first": [
+     -11.58,
+     0.92,
+     12.35
+    ]
+   },
+   "salao|solid-black|MeshStandardMaterial|#0b0b0c|r0.55|m0|e#000000×1|o1|side0|t0|vc0|7775fc66|cast0|recv1": {
+    "n": 1,
+    "hash": "63849e00",
+    "first": [
+     -11.58,
+     1,
+     12.25
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|0b1e6d80|cast0|recv1": {
+    "n": 1,
+    "hash": "2835d20a",
+    "first": [
+     -11.7,
+     0.92,
+     12
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|f24009fe|cast0|recv1": {
+    "n": 1,
+    "hash": "effb34ed",
+    "first": [
+     -11.45,
+     0.92,
+     11.8
+    ]
+   },
+   "salao|solid-bottleAmber|MeshStandardMaterial|#8a4b12|r0.08|m0|e#000000×1|o0.85|side0|t1|vc0|335e7e69|cast0|recv1": {
+    "n": 1,
+    "hash": "3222bdff",
+    "first": [
+     -11.45,
+     0.96,
+     11.8
+    ]
+   },
+   "salao|salao-marquetryMat|MeshPhysicalMaterial|#ffffff|r0.3|m0|e#000000×1|sheen#000000|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|c3f70606|cast1|recv1": {
+    "n": 3,
+    "hash": "05f69028",
+    "first": [
+     -6.8,
+     0.738,
+     -3.5
+    ]
+   },
+   "salao|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|099ab876|cast1|recv1": {
+    "n": 3,
+    "hash": "919de718",
+    "first": [
+     -6.8,
+     0.698,
+     -3.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|bb68bd02|cast0|recv1": {
+    "n": 3,
+    "hash": "56ac9e7d",
+    "first": [
+     -6.8,
+     0.726,
+     -3.5
+    ]
+   },
+   "salao|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|697bba2b|cast1|recv1": {
+    "n": 3,
+    "hash": "fd487bef",
+    "first": [
+     -6.8,
+     0,
+     -3.5
+    ]
+   },
+   "salao|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|ee88c028|cast0|recv1": {
+    "n": 12,
+    "hash": "11f52b38",
+    "first": [
+     -6.8,
+     0,
+     -3.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|c1fc4aea|cast0|recv1": {
+    "n": 12,
+    "hash": "59b854de",
+    "first": [
+     -6.496,
+     0.03,
+     -3.196
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|3f7adce0|cast0|recv1": {
+    "n": 3,
+    "hash": "3fbc7cd5",
+    "first": [
+     -6.8,
+     0.75,
+     -3.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|c49e5259|cast0|recv1": {
+    "n": 3,
+    "hash": "a506051f",
+    "first": [
+     -6.8,
+     0.88,
+     -3.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|7775fc66|cast0|recv1": {
+    "n": 12,
+    "hash": "c39b645a",
+    "first": [
+     -6.731,
+     1.465,
+     -3.431
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|88b872e6|cast0|recv1": {
+    "n": 12,
+    "hash": "023f507e",
+    "first": [
+     -6.662,
+     1.465,
+     -3.362
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|67027a28|cast0|recv1": {
+    "n": 24,
+    "hash": "4dc58b6c",
+    "first": [
+     -6.209,
+     0.762,
+     -3.255
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|b59f6218|cast0|recv1": {
+    "n": 24,
+    "hash": "191095da",
+    "first": [
+     -6.415,
+     0.751,
+     -3.124
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|6e873b28|cast0|recv1": {
+    "n": 24,
+    "hash": "685da19a",
+    "first": [
+     -6.415,
+     0.78,
+     -3.124
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|0.5|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|cac98714|cast0|recv1": {
+    "n": 15,
+    "hash": "e482bcac",
+    "first": [
+     -6.754,
+     0.916,
+     -3.362
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|0.5|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|5da79354|cast0|recv1": {
+    "n": 15,
+    "hash": "a5342704",
+    "first": [
+     -6.737,
+     0.904,
+     -3.641
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|0.5|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|04eba654|cast0|recv1": {
+    "n": 12,
+    "hash": "223e9c90",
+    "first": [
+     -6.654,
+     0.903,
+     -3.549
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|0.5|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|29910d64|cast0|recv1": {
+    "n": 12,
+    "hash": "4f62b6ea",
+    "first": [
+     -6.702,
+     0.907,
+     -3.383
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|0.5|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|c1f446c4|cast0|recv1": {
+    "n": 12,
+    "hash": "cf3980b8",
+    "first": [
+     -6.87,
+     0.939,
+     -3.404
+    ]
+   },
+   "salao|salao-sm-rosette-low|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.8,0.05]|map=8x8/srgb/1001/1,1|normalMap=8x8//1001/1,1|roughnessMap=8x8//1001/1,1|8bf081be|cast0|recv1": {
+    "n": 1,
+    "hash": "e5ac0ab6",
+    "first": [
+     0,
+     0.003,
+     4.5
+    ]
+   },
+   "salao|salao-sm-meander-low|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.7,0.05]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|3bd3cb92|cast0|recv1": {
+    "n": 4,
+    "hash": "a7658b64",
+    "first": [
+     -7.425,
+     0.003,
+     -5.425
+    ]
+   },
+   "salao|salao-sm-meander-low|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.7,0.05]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|ce043f5a|cast0|recv1": {
+    "n": 2,
+    "hash": "d692dad9",
+    "first": [
+     -11.425,
+     0.003,
+     1.45
+    ]
+   },
+   "salao|salao-sm-meander-low|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.7,0.05]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|e137928a|cast0|recv1": {
+    "n": 2,
+    "hash": "f71cde9a",
+    "first": [
+     -11.425,
+     0.003,
+     12.55
+    ]
+   },
+   "salao|salao-rugMat|MeshStandardMaterial|#ffffff|r0.96|m0|e#000000×1|o1|side0|t1|vc0|map=8x8/srgb/1001/1,1|49934646|cast0|recv1": {
+    "n": 3,
+    "hash": "1df72780",
+    "first": [
+     -6.8,
+     0.002,
+     -3.5
+    ]
+   },
+   "salao|plainfloor-marbleBlack-low-|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast0|recv1": {
+    "n": 5,
+    "hash": "8060725c",
+    "first": [
+     6.2,
+     0,
+     -5.98
+    ]
+   },
+   "salao|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|fa6cec8e|cast0|recv1": {
+    "n": 5,
+    "hash": "70b3106a",
+    "first": [
+     6.2,
+     1,
+     -5.96
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|0.5|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|d3d2f334|cast0|recv1": {
+    "n": 8,
+    "hash": "f50700bb",
+    "first": [
+     -11.97,
+     1.45,
+     -2.55
+    ]
+   },
+   "salao|fabric-salao-djVelvet-low|MeshPhysicalMaterial|#08070b|r0.85|m0|e#000000×1|sheen#a5a3ab|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|47872d6c|cast0|recv1": {
+    "n": 1,
+    "hash": "f439c195",
+    "first": [
+     11.72,
+     0.08,
+     4.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|72476ee6|cast0|recv1": {
+    "n": 1,
+    "hash": "f6a7a048",
+    "first": [
+     11.7,
+     4.92,
+     4.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|dde3c28c|cast0|recv1": {
+    "n": 2,
+    "hash": "33bb69cc",
+    "first": [
+     11.7,
+     4.92,
+     2.25
+    ]
+   },
+   "salao|glow-salao-monogramGlow|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8/srgb/1001/1,1|242ec776|cast0|recv1": {
+    "n": 1,
+    "hash": "cc69a370",
+    "first": [
+     11.66,
+     3.25,
+     4.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|07510446|cast0|recv1": {
+    "n": 6,
+    "hash": "a16b6d5f",
+    "first": [
+     -9.6,
+     5.4,
+     -5.43
+    ]
+   },
+   "salao|plainfloor-marbleBlack-low-|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|e53b0726|cast0|recv1": {
+    "n": 6,
+    "hash": "ba16c107",
+    "first": [
+     -9.6,
+     6,
+     -5.43
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|68c1d745|cast0|recv1": {
+    "n": 6,
+    "hash": "3e5d92aa",
+    "first": [
+     -9.6,
+     6.025,
+     -5.43
+    ]
+   },
+   "salao|fabric-salao-drapeVelvet-low|MeshPhysicalMaterial|#4a0d18|r0.82|m0|e#000000×1|sheen#daa7ad|o1|side2|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|28dd1ccd|cast1|recv1": {
+    "n": 4,
+    "hash": "dbefd6f5",
+    "first": [
+     -10.88,
+     0,
+     13.78
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|f26cce2e|cast0|recv1": {
+    "n": 4,
+    "hash": "696b2865",
+    "first": [
+     -10.76,
+     1.1,
+     13.77
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|68dacef9|cast0|recv1": {
+    "n": 4,
+    "hash": "82de9a36",
+    "first": [
+     -10.81,
+     0.86,
+     13.68
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|dba54689|cast0|recv1": {
+    "n": 4,
+    "hash": "e9a6ee07",
+    "first": [
+     -10.9,
+     1.1,
+     13.93
+    ]
+   },
+   "salao|fabric-salao-drapeVelvet-low|MeshPhysicalMaterial|#4a0d18|r0.82|m0|e#000000×1|sheen#daa7ad|o1|side2|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|cbbec9ce|cast1|recv1": {
+    "n": 2,
+    "hash": "14cdd530",
+    "first": [
+     -8,
+     4.4,
+     13.78
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|57359912|cast0|recv1": {
+    "n": 4,
+    "hash": "f0ccb962",
+    "first": [
+     -6.8,
+     9.48,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|e48e9cd0|cast0|recv1": {
+    "n": 4,
+    "hash": "7aea5fa5",
+    "first": [
+     -6.8,
+     6.4,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|a0a43248|cast0|recv1": {
+    "n": 4,
+    "hash": "13b4f1e7",
+    "first": [
+     -6.8,
+     7.38,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|314f2968|cast0|recv1": {
+    "n": 4,
+    "hash": "37ff0d16",
+    "first": [
+     -6.8,
+     6.68,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|be0f22c4|cast0|recv1": {
+    "n": 104,
+    "hash": "19320653",
+    "first": [
+     -5.85,
+     6.68,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|82c3a768|cast0|recv1": {
+    "n": 4,
+    "hash": "504de36b",
+    "first": [
+     -6.8,
+     6.95,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|3d4a8208|cast0|recv1": {
+    "n": 4,
+    "hash": "6d387b10",
+    "first": [
+     -6.8,
+     7.18,
+     -3.5
+    ]
+   },
+   "salao|salao-sm-danceWood-low|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.6,0.04]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|df53139a|cast0|recv1": {
+    "n": 1,
+    "hash": "c4ff4817",
+    "first": [
+     6.5,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.5|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|856afb79|cast0|recv1": {
+    "n": 2,
+    "hash": "bf9c387e",
+    "first": [
+     9.8,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.5|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|5145d291|cast0|recv1": {
+    "n": 2,
+    "hash": "df616df8",
+    "first": [
+     6.5,
+     0,
+     7.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.25|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|5a4d9088|cast1|recv1": {
+    "n": 16,
+    "hash": "4503f386",
+    "first": [
+     6.5,
+     6,
+     1.555
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.25|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|5a4d9088|cast0|recv1": {
+    "n": 2,
+    "hash": "e4b29fbc",
+    "first": [
+     5,
+     6.29,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.25|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|209734c4|cast1|recv1": {
+    "n": 4,
+    "hash": "9edb840c",
+    "first": [
+     3.4,
+     5.98,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0.5|e#000000×1|o1|side0|t0|vc1|45a9fb10|cast1|recv1": {
+    "n": 4,
+    "hash": "f13c8d82",
+    "first": [
+     3.4,
+     6.75,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0.5|e#000000×1|o1|side0|t0|vc1|446eb4f8|cast0|recv1": {
+    "n": 4,
+    "hash": "eb6decbe",
+    "first": [
+     3.4,
+     8.14,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0.5|e#000000×1|o1|side0|t0|vc1|c95ef2e0|cast0|recv1": {
+    "n": 2,
+    "hash": "9b6e3fdf",
+    "first": [
+     9.65,
+     5.88,
+     1.65
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|e9306ce8|cast1|recv1": {
+    "n": 8,
+    "hash": "bf255d43",
+    "first": [
+     4.4,
+     5.97,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|4861a834|cast0|recv1": {
+    "n": 8,
+    "hash": "9a7d385b",
+    "first": [
+     4.4,
+     5.96,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|bf22ecd0|cast0|recv1": {
+    "n": 3,
+    "hash": "a111dd26",
+    "first": [
+     5,
+     5.67,
+     3.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|f663e7c8|cast0|recv1": {
+    "n": 3,
+    "hash": "26389788",
+    "first": [
+     5,
+     6.03,
+     3.5
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|9063c390|cast0|recv1": {
+    "n": 3,
+    "hash": "02eb850b",
+    "first": [
+     4,
+     5.84,
+     1.7
+    ]
+   },
+   "salao|salao-waveMat|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|ee859e3a|cast0|recv1": {
+    "n": 2,
+    "hash": "0d0fe007",
+    "first": [
+     10.4,
+     1.157,
+     3.88
+    ]
+   },
+   "salao|salao-laptopScrMat|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|aef3df4a|cast0|recv1": {
+    "n": 1,
+    "hash": "c8e64f25",
+    "first": [
+     10.296,
+     1.306,
+     5.5
+    ]
+   },
+   "salao|salao-djLed|MeshBasicMaterial|#ffb36b|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 2,
+    "hash": "eb27bf86",
+    "first": [
+     9.998,
+     0.075,
+     4.5
+    ]
+   },
+   "salao|solid-black|MeshStandardMaterial|#0b0b0c|r0.55|m0|e#000000×1|o1|side0|t0|vc0|dfaef666|cast0|recv1": {
+    "n": 6,
+    "hash": "959dae8d",
+    "first": [
+     -9.2,
+     4.86,
+     13.45
+    ]
+   },
+   "salao|solid-darkSteel|MeshStandardMaterial|#2a2d31|r0.45|m0.7|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 2,
+    "hash": "7b6df557",
+    "first": [
+     -11.9,
+     4.55,
+     6
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|8d15a870|cast0|recv1": {
+    "n": 48,
+    "hash": "0805eaf7",
+    "first": [
+     -6.5,
+     7.38,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|35edfadc|cast0|recv1": {
+    "n": 104,
+    "hash": "028eae93",
+    "first": [
+     -5.69,
+     6.78,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.25|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|58f5adc4|cast0|recv1": {
+    "n": 36,
+    "hash": "73a11d69",
+    "first": [
+     3.4,
+     6.32,
+     1.7
+    ]
+   }
+  },
+  "inst": {
+   "salao|salao-gooseBulb|glow-bulbWarm|MeshBasicMaterial|#ffffe4|o1|side0|t0|vc0|dba54689": {
+    "n": 1,
+    "hash": "a74e2088",
+    "first": [
+     10.54,
+     1.36,
+     3.74
+    ]
+   },
+   "salao|salao-powerLed|glow-ledGreen|MeshBasicMaterial|#41ff99|o1|side0|t0|vc0|653101c0": {
+    "n": 2,
+    "hash": "9e929a6e",
+    "first": [
+     10.088,
+     1.03,
+     2.51
+    ]
+   },
+   "salao|salao-pfTop|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|653101c0": {
+    "n": 7,
+    "hash": "6c7b3b34",
+    "first": [
+     -8.69,
+     1.013,
+     13.16
+    ]
+   },
+   "salao|salao-verrine|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|2ed824e8": {
+    "n": 10,
+    "hash": "249bed1f",
+    "first": [
+     -9.55,
+     0.904,
+     13.23
+    ]
+   },
+   "salao|salao-tentCard|solid-paperWhite|MeshStandardMaterial|#f1eee6|r0.9|m0|e#000000×1|o1|side0|t0|vc0|78d5b562": {
+    "n": 8,
+    "hash": "1a5a172e",
+    "first": [
+     -6.75,
+     0.904,
+     12.97
+    ]
+   },
+   "salao|salao-flame|glow-flame|MeshBasicMaterial|#ffffb6|o1|side0|t1|vc0|926b7e69": {
+    "n": 14,
+    "hash": "4b3166d5",
+    "first": [
+     -6.15,
+     1.16,
+     13.6
+    ]
+   },
+   "salao|salao-garlandRose|solid-salao-roseWhite|MeshStandardMaterial|#ffffff|r0.72|m0|e#000000×1|o1|side2|t0|vc0|96043346": {
+    "n": 90,
+    "hash": "f9cad4e5",
+    "first": [
+     -6.1,
+     0.85,
+     12.85
+    ]
+   },
+   "salao|salao-cakePearl|solid-salao-pearl|MeshStandardMaterial|#f7f1e6|r0.15|m0|e#000000×1|o1|side0|t0|vc0|dba54689": {
+    "n": 296,
+    "hash": "6b6a3356",
+    "first": [
+     -8.203,
+     1.091,
+     13.62
+    ]
+   },
+   "salao|salao-macShell|solid-salao-macShell|MeshStandardMaterial|#ffffff|r0.62|m0|e#000000×1|o1|side0|t0|vc0|65c0fd26": {
+    "n": 285,
+    "hash": "43a423f5",
+    "first": [
+     -6.919,
+     1.105,
+     13.62
+    ]
+   },
+   "salao|salao-macFill|solid-salao-macFill|MeshStandardMaterial|#f6ead8|r0.8|m0|e#000000×1|o1|side0|t0|vc0|4fbc98be": {
+    "n": 285,
+    "hash": "d0ab24b7",
+    "first": [
+     -6.919,
+     1.105,
+     13.62
+    ]
+   },
+   "salao|salao-blueFlame|glow-salao-blueFlame|MeshBasicMaterial|#61c9ff|o1|side0|t1|vc0|73cb9e40": {
+    "n": 6,
+    "hash": "57834736",
+    "first": [
+     9.03,
+     0.95,
+     13.58
+    ]
+   },
+   "salao|salao-coupe|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|09115087": {
+    "n": 55,
+    "hash": "f2db40f0",
+    "first": [
+     10.132,
+     0.96,
+     13.612
+    ]
+   },
+   "salao|salao-fizz|solid-champagne|MeshStandardMaterial|#e6c46a|r0.1|m0|e#000000×1|o0.75|side0|t1|vc0|1cd5de2a": {
+    "n": 55,
+    "hash": "f2db40f0",
+    "first": [
+     10.132,
+     0.96,
+     13.612
+    ]
+   },
+   "salao|salao-napkin|fabric-linen-low|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|cbbec9ce": {
+    "n": 17,
+    "hash": "4845d653",
+    "first": [
+     5.8,
+     0.904,
+     13.62
+    ]
+   },
+   "salao|salao-knobBrass|solid-brass|MeshStandardMaterial|#c9a24b|r0.28|m1|e#000000×1|o1|side0|t0|vc0|c1fc4aea": {
+    "n": 3,
+    "hash": "599fc459",
+    "first": [
+     -11.205,
+     0.5,
+     13.223
+    ]
+   },
+   "salao|salao-pullBrass|solid-brass|MeshStandardMaterial|#c9a24b|r0.28|m1|e#000000×1|o1|side0|t0|vc0|2a9fe5cb": {
+    "n": 2,
+    "hash": "496f1243",
+    "first": [
+     -11.215,
+     0.8,
+     13.35
+    ]
+   },
+   "salao|salao-goblet|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|c17c0360": {
+    "n": 40,
+    "hash": "3cc966a5",
+    "first": [
+     -11.68,
+     0.95,
+     13
+    ]
+   },
+   "salao|salao-cutlery|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce": {
+    "n": 12,
+    "hash": "fed8e0e2",
+    "first": [
+     -11.72,
+     0.98,
+     12.08
+    ]
+   },
+   "salao|salao-dinnerPlate|solid-salao-porcelain|MeshStandardMaterial|#f7f5f0|r0.25|m0|e#000000×1|o1|side0|t0|vc0|319dd5d3": {
+    "n": 28,
+    "hash": "ef5a5f78",
+    "first": [
+     -11.58,
+     0.92,
+     13.6
+    ]
+   },
+   "salao|salao-chairLeg|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|9fc51fd5": {
+    "n": 96,
+    "hash": "581567a9",
+    "first": [
+     -5.862,
+     0,
+     -3.337
+    ]
+   },
+   "salao|salao-chairRail|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|fa6cec8e": {
+    "n": 24,
+    "hash": "d4782c15",
+    "first": [
+     -5.784,
+     0,
+     -3.079
+    ]
+   },
+   "salao|salao-chairSeat|fabric-salao-plumVelvet-low|MeshPhysicalMaterial|#4d1230|r0.75|m0|e#000000×1|sheen#d9b8c5|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|26098e78": {
+    "n": 24,
+    "hash": "d4782c15",
+    "first": [
+     -5.784,
+     0,
+     -3.079
+    ]
+   },
+   "salao|salao-chairPost|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|322ffd4d": {
+    "n": 48,
+    "hash": "b360b7ec",
+    "first": [
+     -5.558,
+     0,
+     -3.161
+    ]
+   },
+   "salao|salao-chairMedal|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|6e423648": {
+    "n": 24,
+    "hash": "9b573db1",
+    "first": [
+     -5.566,
+     0.78,
+     -2.977
+    ]
+   },
+   "salao|salao-chairPad|fabric-salao-plumVelvet-low|MeshPhysicalMaterial|#4d1230|r0.75|m0|e#000000×1|sheen#d9b8c5|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|1d2f40f5": {
+    "n": 24,
+    "hash": "debef1d7",
+    "first": [
+     -5.571,
+     0.78,
+     -2.979
+    ]
+   },
+   "salao|salao-chairPadBack|fabric-salao-plumVelvet-low|MeshPhysicalMaterial|#4d1230|r0.75|m0|e#000000×1|sheen#d9b8c5|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|1d2f40f5": {
+    "n": 24,
+    "hash": "939fd1f3",
+    "first": [
+     -5.562,
+     0.78,
+     -2.975
+    ]
+   },
+   "salao|salao-chairStar|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|c4de8af4": {
+    "n": 24,
+    "hash": "5665cc91",
+    "first": [
+     -5.541,
+     1,
+     -2.965
+    ]
+   },
+   "salao|salao-charger|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|9524dd16": {
+    "n": 24,
+    "hash": "ed08f1b7",
+    "first": [
+     -6.209,
+     0.751,
+     -3.255
+    ]
+   },
+   "salao|salao-napkinFold|fabric-linen-low|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|41b28839": {
+    "n": 24,
+    "hash": "2269d893",
+    "first": [
+     -6.209,
+     0.776,
+     -3.255
+    ]
+   },
+   "salao|salao-menu|salao-menuCard|MeshStandardMaterial|#ffffff|r0.85|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|b53b5026": {
+    "n": 24,
+    "hash": "d7520022",
+    "first": [
+     -6.218,
+     0.795,
+     -3.259
+    ]
+   },
+   "salao|salao-fork|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|4a9bc9e6": {
+    "n": 72,
+    "hash": "84fb024b",
+    "first": [
+     -6.291,
+     0.751,
+     -3.083
+    ]
+   },
+   "salao|salao-knife|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|097dfa0e": {
+    "n": 72,
+    "hash": "703b6119",
+    "first": [
+     -6.145,
+     0.751,
+     -3.434
+    ]
+   },
+   "salao|salao-wine|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|e822a136": {
+    "n": 24,
+    "hash": "90a579b9",
+    "first": [
+     -6.224,
+     0.751,
+     -3.532
+    ]
+   },
+   "salao|salao-flute|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|03de5ed9": {
+    "n": 24,
+    "hash": "5981b00a",
+    "first": [
+     -6.368,
+     0.751,
+     -3.419
+    ]
+   },
+   "salao|salao-wineFill|solid-salao-redWine|MeshStandardMaterial|#4a0b16|r0.05|m0|e#000000×1|o0.88|side0|t1|vc0|e8a3a412": {
+    "n": 18,
+    "hash": "415fc7ca",
+    "first": [
+     -6.224,
+     0.751,
+     -3.532
+    ]
+   },
+   "salao|salao-placeCard|salao-placeCard|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|e8fbcae6": {
+    "n": 24,
+    "hash": "8acc6c64",
+    "first": [
+     -6.301,
+     0.751,
+     -3.293
+    ]
+   },
+   "salao|candle|solid-candle|MeshStandardMaterial|#f3ead6|r0.7|m0|e#3a2a10×0.4|o1|side0|t0|vc0|4b7012c6": {
+    "n": 15,
+    "hash": "fb133939",
+    "first": [
+     -6.8,
+     1.51,
+     -3.5
+    ]
+   },
+   "salao|flame|glow-flame|MeshBasicMaterial|#ffffb6|o1|side0|t1|vc0|dc3eaa38": {
+    "n": 15,
+    "hash": "546b6651",
+    "first": [
+     -6.8,
+     1.698,
+     -3.5
+    ]
+   },
+   "salao|salao-votive|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|80e0acd4": {
+    "n": 12,
+    "hash": "71c6378a",
+    "first": [
+     -6.545,
+     0.75,
+     -3.245
+    ]
+   },
+   "salao|salao-votiveWax|solid-candle|MeshStandardMaterial|#f3ead6|r0.7|m0|e#3a2a10×0.4|o1|side0|t0|vc0|88b872e6": {
+    "n": 12,
+    "hash": "de357dfb",
+    "first": [
+     -6.545,
+     0.754,
+     -3.245
+    ]
+   },
+   "salao|salao-dado-18|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|aa64248e": {
+    "n": 6,
+    "hash": "9bfec0d7",
+    "first": [
+     3.95,
+     0.575,
+     -5.976
+    ]
+   },
+   "salao|salao-dado-24|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|19b966ae": {
+    "n": 1,
+    "hash": "ca0cb408",
+    "first": [
+     10.3,
+     0.575,
+     -5.976
+    ]
+   },
+   "salao|salao-dado-20|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|9f8fe22e": {
+    "n": 1,
+    "hash": "80b1994b",
+    "first": [
+     -11.976,
+     0.575,
+     -5.5
+    ]
+   },
+   "salao|salao-dado-22|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|ba853bae": {
+    "n": 3,
+    "hash": "020e19f1",
+    "first": [
+     -11.976,
+     0.575,
+     -3.65
+    ]
+   },
+   "salao|salao-boss|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|f00b51c9": {
+    "n": 1,
+    "hash": "8019f4e3",
+    "first": [
+     -11.97,
+     2.9,
+     -2.55
+    ]
+   },
+   "salao|salao-dado-19|misc-grain-low-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|00541556": {
+    "n": 3,
+    "hash": "47015736",
+    "first": [
+     11.976,
+     0.575,
+     4.667
+    ]
+   },
+   "salao|salao-bergLegs|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|570bf1d6": {
+    "n": 48,
+    "hash": "602d8d82",
+    "first": [
+     -10.386,
+     5.4,
+     -5.529
+    ]
+   },
+   "salao|salao-bergSeat|fabric-salao-boxVelvet-low|MeshPhysicalMaterial|#5b1430|r0.8|m0|e#000000×1|sheen#dab8c3|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|f6f0f2fa": {
+    "n": 12,
+    "hash": "6940d097",
+    "first": [
+     -10.08,
+     5.7,
+     -5.38
+    ]
+   },
+   "salao|salao-bergBack|fabric-salao-boxVelvet-low|MeshPhysicalMaterial|#5b1430|r0.8|m0|e#000000×1|sheen#dab8c3|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|96539438": {
+    "n": 12,
+    "hash": "8616fb98",
+    "first": [
+     -10.157,
+     5.82,
+     -5.68
+    ]
+   },
+   "salao|salao-bergFrame|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|e16a94f6": {
+    "n": 12,
+    "hash": "5ba70d53",
+    "first": [
+     -10.142,
+     6.26,
+     -5.622
+    ]
+   },
+   "salao|salao-bergArm|fabric-salao-boxVelvet-low|MeshPhysicalMaterial|#5b1430|r0.8|m0|e#000000×1|sheen#dab8c3|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|fd1afa89": {
+    "n": 24,
+    "hash": "5af42f06",
+    "first": [
+     -10.4,
+     5.96,
+     -5.298
+    ]
+   },
+   "salao|salao-boxShade|fabric-salao-boxShade-low|MeshPhysicalMaterial|#f1d9a6|r0.8|m0|e#000000×1|sheen#f6e7cb|o1|side2|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|9b696972": {
+    "n": 6,
+    "hash": "5a514834",
+    "first": [
+     -9.6,
+     6.32,
+     -5.43
+    ]
+   },
+   "salao|salao-boxBulb|glow-bulbWarm|MeshBasicMaterial|#ffffe4|o1|side0|t0|vc0|dba54689": {
+    "n": 6,
+    "hash": "c62a9561",
+    "first": [
+     -9.6,
+     6.3,
+     -5.43
+    ]
+   },
+   "salao|salao-fringe|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|5eb696f9": {
+    "n": 46,
+    "hash": "50099311",
+    "first": [
+     -10.88,
+     4.355,
+     13.68
+    ]
+   },
+   "salao|salao-chCandle|solid-candle|MeshStandardMaterial|#f3ead6|r0.7|m0|e#3a2a10×0.4|o1|side0|t0|vc0|4b7012c6": {
+    "n": 104,
+    "hash": "14db2c15",
+    "first": [
+     -5.69,
+     6.8,
+     -3.5
+    ]
+   },
+   "salao|salao-chBulb|glow-bulbWarm|MeshBasicMaterial|#ffffe4|o1|side0|t0|vc0|464055b3": {
+    "n": 104,
+    "hash": "f57c58d2",
+    "first": [
+     -5.69,
+     6.95,
+     -3.5
+    ]
+   },
+   "salao|salao-prism|solid-salao-crystal|MeshStandardMaterial|#f4f6ff|r0.02|m0.1|e#000000×1|o0.86|side0|t1|vc0|04fa259e": {
+    "n": 312,
+    "hash": "2a4a9e14",
+    "first": [
+     -5.85,
+     6.62,
+     -3.5
+    ]
+   },
+   "salao|salao-bead|solid-salao-crystal|MeshStandardMaterial|#f4f6ff|r0.02|m0.1|e#000000×1|o0.86|side0|t1|vc0|dba54689": {
+    "n": 416,
+    "hash": "a5f072d8",
+    "first": [
+     -5.875,
+     6.589,
+     -3.405
+    ]
+   },
+   "salao|salao-prismBig|solid-salao-crystal|MeshStandardMaterial|#f4f6ff|r0.02|m0.1|e#000000×1|o0.86|side0|t1|vc0|04fa259e": {
+    "n": 4,
+    "hash": "2f5e0d85",
+    "first": [
+     -6.8,
+     6.28,
+     -3.5
+    ]
+   },
+   "salao|salao-ball|solid-salao-crystal|MeshStandardMaterial|#f4f6ff|r0.02|m0.1|e#000000×1|o0.86|side0|t1|vc0|c21baec2": {
+    "n": 4,
+    "hash": "3d7bcc93",
+    "first": [
+     -6.8,
+     6.38,
+     -3.5
+    ]
+   },
+   "salao|salao-floorCup|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|0e13c6fa": {
+    "n": 7,
+    "hash": "32e87c78",
+    "first": [
+     8.224,
+     0.025,
+     1.7
+    ]
+   },
+   "salao|beaconDome|solid-beaconOff|MeshStandardMaterial|#5a1010|r0.2|m0|e#000000×1|o0.85|side0|t1|vc0|6e12da98": {
+    "n": 2,
+    "hash": "0fd4e7e6",
+    "first": [
+     -11.84,
+     4.6,
+     6
+    ]
+   },
+   "salao|salao-chainLink|solid-salao-bronze|MeshStandardMaterial|#8a6430|r0.32|m1|e#000000×1|o1|side0|t0|vc0|fddc85d6": {
+    "n": 78,
+    "hash": "18f01854",
+    "first": [
+     -6.8,
+     9.28,
+     -3.5
+    ]
+   },
+   "salao|salao-trussDiag|solid-salao-truss|MeshStandardMaterial|#cfd3d7|r0.3|m0.9|e#000000×1|o1|side0|t0|vc0|626c644a": {
+    "n": 320,
+    "hash": "bbe66487",
+    "first": [
+     3.545,
+     6.145,
+     1.555
+    ]
+   }
+  },
+  "anchors": [
+   {
+    "x": 10.54,
+    "y": 1.33,
+    "z": 3.74,
+    "color": "#ffd8a0",
+    "intensity": 1.6,
+    "distance": 2.2,
+    "room": "salao"
+   },
+   {
+    "x": 11,
+    "y": 3.4,
+    "z": 4.5,
+    "color": "#ffc983",
+    "intensity": 4,
+    "distance": 4,
+    "room": "salao"
+   },
+   {
+    "x": -9.6,
+    "y": 6.35,
+    "z": -5.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": -2.4,
+    "y": 6.35,
+    "z": -5.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": 6,
+    "y": 6.35,
+    "z": -5.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": -9.4,
+    "y": 6.35,
+    "z": 13.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": -1.6,
+    "y": 6.35,
+    "z": 13.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": 6.6,
+    "y": 6.35,
+    "z": 13.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": -6.8,
+    "y": 6.75,
+    "z": -3.5,
+    "color": "#ffd29a",
+    "intensity": 26,
+    "distance": 12,
+    "room": "salao"
+   },
+   {
+    "x": 6,
+    "y": 6.85,
+    "z": -3.4,
+    "color": "#ffd29a",
+    "intensity": 26,
+    "distance": 12,
+    "room": "salao"
+   },
+   {
+    "x": -8,
+    "y": 6.95,
+    "z": 11.6,
+    "color": "#ffd29a",
+    "intensity": 26,
+    "distance": 12,
+    "room": "salao"
+   },
+   {
+    "x": 8,
+    "y": 6.95,
+    "z": 11.6,
+    "color": "#ffd29a",
+    "intensity": 26,
+    "distance": 12,
+    "room": "salao"
+   },
+   {
+    "x": 9,
+    "y": 0.12,
+    "z": 4.5,
+    "color": "#ffb36b",
+    "intensity": 2.5,
+    "distance": 3,
+    "room": "salao"
+   },
+   {
+    "x": 4.6,
+    "y": 5.2,
+    "z": 3,
+    "color": "#ff3db0",
+    "intensity": 2.25,
+    "distance": 8.5,
+    "room": "salao"
+   },
+   {
+    "x": 8.2,
+    "y": 5.2,
+    "z": 6,
+    "color": "#32cfff",
+    "intensity": 2.25,
+    "distance": 8.5,
+    "room": "salao"
+   },
+   {
+    "x": 6.6,
+    "y": 5.2,
+    "z": 4.6,
+    "color": "#ffb85a",
+    "intensity": 1.8,
+    "distance": 8.5,
+    "room": "salao"
+   },
+   {
+    "x": 10.3,
+    "y": 3.2,
+    "z": -2.2,
+    "color": "#fff0dc",
+    "intensity": 5,
+    "distance": 6,
+    "room": "salao"
+   },
+   {
+    "x": -8,
+    "y": 4.6,
+    "z": 13.1,
+    "color": "#fff0d8",
+    "intensity": 9,
+    "distance": 5.5,
+    "room": "salao"
+   },
+   {
+    "x": 8,
+    "y": 4.6,
+    "z": 13.1,
+    "color": "#fff0d8",
+    "intensity": 9,
+    "distance": 5.5,
+    "room": "salao"
+   }
+  ],
+  "flames": [
+   [
+    -6.15,
+    1.16,
+    13.6
+   ],
+   [
+    -9.85,
+    1.16,
+    13.6
+   ],
+   [
+    -6.8,
+    1.698,
+    -3.5
+   ],
+   [
+    -6.662,
+    1.683,
+    -3.362
+   ],
+   [
+    -6.938,
+    1.683,
+    -3.362
+   ],
+   [
+    -6.938,
+    1.683,
+    -3.638
+   ],
+   [
+    -6.662,
+    1.683,
+    -3.638
+   ],
+   [
+    -6.545,
+    0.795,
+    -3.245
+   ],
+   [
+    -7.055,
+    0.795,
+    -3.245
+   ],
+   [
+    -7.055,
+    0.795,
+    -3.755
+   ],
+   [
+    -6.545,
+    0.795,
+    -3.755
+   ],
+   [
+    -6.6,
+    1.698,
+    2
+   ],
+   [
+    -6.462,
+    1.683,
+    2.138
+   ],
+   [
+    -6.738,
+    1.683,
+    2.138
+   ],
+   [
+    -6.738,
+    1.683,
+    1.862
+   ],
+   [
+    -6.462,
+    1.683,
+    1.862
+   ],
+   [
+    -6.345,
+    0.795,
+    2.255
+   ],
+   [
+    -6.855,
+    0.795,
+    2.255
+   ],
+   [
+    -6.855,
+    0.795,
+    1.745
+   ],
+   [
+    -6.345,
+    0.795,
+    1.745
+   ],
+   [
+    -6.6,
+    1.698,
+    7.2
+   ],
+   [
+    -6.462,
+    1.683,
+    7.338
+   ],
+   [
+    -6.738,
+    1.683,
+    7.338
+   ],
+   [
+    -6.738,
+    1.683,
+    7.062
+   ],
+   [
+    -6.462,
+    1.683,
+    7.062
+   ],
+   [
+    -6.345,
+    0.795,
+    7.455
+   ],
+   [
+    -6.855,
+    0.795,
+    7.455
+   ],
+   [
+    -6.855,
+    0.795,
+    6.945
+   ],
+   [
+    -6.345,
+    0.795,
+    6.945
+   ]
+  ],
+  "beacons": [
+   {
+    "room": "salao",
+    "pos": [
+     -11.84,
+     4.64,
+     6
+    ],
+    "normal": [
+     1,
+     0,
+     0
+    ]
+   },
+   {
+    "room": "salao",
+    "pos": [
+     11.84,
+     4.64,
+     12.45
+    ],
+    "normal": [
+     -1,
+     0,
+     0
+    ]
+   }
+  ],
+  "cones": 0,
+  "ticks": [
+   "salao",
+   "salao"
+  ],
+  "loose0": [
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     11.6,
+     2.6,
+     4.5
+    ],
+    "rot": [
+     0,
+     -1.571,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "75d7b386",
+    "mats": [
+     "glow-salao-djStars|MeshBasicMaterial|#e9f3ff|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "1840cd6e",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "210cdd2b"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "95c809de",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "4030691c"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0c96adef",
+    "mats": [
+     "glow-salao-mhLens|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0"
+    ],
+    "instances": "33ce0c2c"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c7ee88c6",
+    "mats": [
+     "salao-beam-mh|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "7effe8da"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotGoboMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "9070699f"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotSoftMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "859e7417"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 3,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "d0b83de2",
+    "mats": [
+     "salao-mirrorBall|MeshStandardMaterial|#dfe3e8|r0.12|m1|e#ffffff×0.6|o1|side0|t0|vc0|emissiveMap=8x8/srgb/1001/1,1"
+    ],
+    "instances": "e2cfb931"
+   },
+   {
+    "type": "Points",
+    "room": "salao",
+    "renderOrder": 6,
+    "visible": true,
+    "count": null,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "2d2e252a",
+    "mats": [
+     "PointsMaterial|PointsMaterial|#ffffff|o1|side0|t1|vc1|map=8x8//1001/1,1"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.5,
+     0.029,
+     4.5
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "6295c48a",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#f3ebdf|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.3,
+     9.1,
+     4.5
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c3b56446",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#c4bdb3|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 9,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0e6c5256",
+    "mats": [
+     "salao-beam-pin|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "5edb22b5"
+   }
+  ],
+  "looseParty": [
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     11.6,
+     2.6,
+     4.5
+    ],
+    "rot": [
+     0,
+     -1.571,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "75d7b386",
+    "mats": [
+     "glow-salao-djStars|MeshBasicMaterial|#e9f3ff|o0.96|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "1840cd6e",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "4175e475"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "95c809de",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "c3d39998"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0c96adef",
+    "mats": [
+     "glow-salao-mhLens|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0"
+    ],
+    "instances": "173ebfb9"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c7ee88c6",
+    "mats": [
+     "salao-beam-mh|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "ed98ee0a"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotGoboMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "8ffbdc93"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotSoftMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "971ba6e5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 3,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "d0b83de2",
+    "mats": [
+     "salao-mirrorBall|MeshStandardMaterial|#dfe3e8|r0.12|m1|e#ffffff×0.6|o1|side0|t0|vc0|emissiveMap=8x8/srgb/1001/1,1"
+    ],
+    "instances": "461faee9"
+   },
+   {
+    "type": "Points",
+    "room": "salao",
+    "renderOrder": 6,
+    "visible": true,
+    "count": null,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "2d2e252a",
+    "mats": [
+     "PointsMaterial|PointsMaterial|#ffffff|o1|side0|t1|vc1|map=8x8//1001/1,1"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.5,
+     0.029,
+     4.5
+    ],
+    "rot": [
+     0,
+     0.185,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "6295c48a",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#f3ebdf|o0.756|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.3,
+     9.1,
+     4.5
+    ],
+    "rot": [
+     0,
+     -0.185,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c3b56446",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#c4bdb3|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 9,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0e6c5256",
+    "mats": [
+     "salao-beam-pin|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "5edb22b5"
+   }
+  ],
+  "looseAlarm": [
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     11.6,
+     2.6,
+     4.5
+    ],
+    "rot": [
+     0,
+     -1.571,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "75d7b386",
+    "mats": [
+     "glow-salao-djStars|MeshBasicMaterial|#e9f3ff|o0.913|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "1840cd6e",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "4175e475"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "95c809de",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "c3d39998"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0c96adef",
+    "mats": [
+     "glow-salao-mhLens|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0"
+    ],
+    "instances": "173ebfb9"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": false,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c7ee88c6",
+    "mats": [
+     "salao-beam-mh|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "ed98ee0a"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": false,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotGoboMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "8ffbdc93"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": false,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotSoftMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "971ba6e5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 3,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "d0b83de2",
+    "mats": [
+     "salao-mirrorBall|MeshStandardMaterial|#dfe3e8|r0.12|m1|e#ffffff×0.6|o1|side0|t0|vc0|emissiveMap=8x8/srgb/1001/1,1"
+    ],
+    "instances": "07f6a383"
+   },
+   {
+    "type": "Points",
+    "room": "salao",
+    "renderOrder": 6,
+    "visible": true,
+    "count": null,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "2d2e252a",
+    "mats": [
+     "PointsMaterial|PointsMaterial|#ffffff|o1|side0|t1|vc1|map=8x8//1001/1,1"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.5,
+     0.029,
+     4.5
+    ],
+    "rot": [
+     0,
+     0.45,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "6295c48a",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#f3ebdf|o0.25|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.3,
+     9.1,
+     4.5
+    ],
+    "rot": [
+     0,
+     -0.45,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c3b56446",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#c4bdb3|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 9,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0e6c5256",
+    "mats": [
+     "salao-beam-pin|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "5edb22b5"
+   }
+  ],
+  "surfaces": {
+   "salao": {
+    "floor": "salao-sm-floor-low|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.8,0.05]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1",
+    "floorTile": [
+     2.4,
+     2.4
+    ],
+    "floorMirror": [
+     0.8,
+     0.05
+    ],
+    "wall": "salao-sm-stone-low|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1",
+    "wallTile": [
+     2.4,
+     1.2
+    ],
+    "trims": false
+   }
+  },
+  "keys": {
+   "salao": [
+    {
+     "p": [
+      6.6,
+      9,
+      4.5
+     ],
+     "aim": [
+      6.6,
+      0,
+      4.5
+     ],
+     "angle": 0.78,
+     "i": 70,
+     "color": "#ffd9b0"
+    },
+    {
+     "p": [
+      -6.6,
+      9,
+      3
+     ],
+     "aim": [
+      -6.6,
+      0,
+      3.2
+     ],
+     "angle": 0.85,
+     "i": 75,
+     "color": "#ffd29a"
+    },
+    {
+     "p": [
+      0,
+      9.2,
+      11.6
+     ],
+     "aim": [
+      0,
+      0,
+      12.2
+     ],
+     "angle": 0.85,
+     "i": 70,
+     "color": "#ffdcae"
+    },
+    {
+     "p": [
+      -2,
+      9.2,
+      -3
+     ],
+     "aim": [
+      -2,
+      0,
+      -3.2
+     ],
+     "angle": 0.85,
+     "i": 65,
+     "color": "#ffdcae"
+    }
+   ]
+  }
+ },
+ "high": {
+  "area": "salao",
+  "props": [
+   "djBooth-107:fixture:djBooth",
+   "djSpeaker-108:fixture:djSpeaker",
+   "djSpeaker-109:fixture:djSpeaker",
+   "dessertTable-110:fixture:dessertTable",
+   "buffetTable-111:fixture:buffetTable",
+   "serviceBuffet-112:fixture:serviceBuffet",
+   "patronTable-113:fixture:patronTable",
+   "patronTable-114:fixture:patronTable",
+   "patronTable-115:fixture:patronTable"
+  ],
+  "propAdds": 2746,
+  "adds": 5427,
+  "order": "710fcd8e",
+  "batch": {
+   "salao|lacquer|MeshPhysicalMaterial|#050506|r0.12|m0|e#000000×1|sheen#000000|o1|side0|t0|vc0|cbbec9ce|cast1|recv1": {
+    "n": 2,
+    "hash": "7e77965e",
+    "first": [
+     10.4,
+     0.05,
+     3.325
+    ]
+   },
+   "salao|salao-djFacade|MeshPhysicalMaterial|#ffffff|r0.22|m0|e#000000×1|sheen#000000|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|cbbec9ce|cast1|recv1": {
+    "n": 1,
+    "hash": "d258c84b",
+    "first": [
+     10.025,
+     0.07,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|8281d87c|cast0|recv1": {
+    "n": 2,
+    "hash": "93b23bff",
+    "first": [
+     10.42,
+     0,
+     4.5
+    ]
+   },
+   "salao|lacquer|MeshPhysicalMaterial|#050506|r0.12|m0|e#000000×1|sheen#000000|o1|side0|t0|vc0|e0ee27d6|cast1|recv1": {
+    "n": 1,
+    "hash": "29a2a622",
+    "first": [
+     10.4,
+     1,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|1|1|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc1|4a4d7b60|cast0|recv1": {
+    "n": 1,
+    "hash": "af234815",
+    "first": [
+     10.44,
+     1.05,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0.25|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.25|e#000000×1|o1|side0|t0|vc1|d3da9568|cast1|recv1": {
+    "n": 3,
+    "hash": "a9c564f5",
+    "first": [
+     10.55,
+     1.054,
+     3.88
+    ]
+   },
+   "salao|salao-cdjTopMat|MeshStandardMaterial|#ffffff|r0.45|m0.2|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|64a77526|cast0|recv1": {
+    "n": 2,
+    "hash": "88a7c6c4",
+    "first": [
+     10.55,
+     1.155,
+     3.88
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|fb8f8c60|cast0|recv1": {
+    "n": 2,
+    "hash": "dac6f8e0",
+    "first": [
+     10.59,
+     1.154,
+     3.892
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|7757adb0|cast0|recv1": {
+    "n": 2,
+    "hash": "dac6f8e0",
+    "first": [
+     10.59,
+     1.154,
+     3.892
+    ]
+   },
+   "salao|salao-mixerTopMat|MeshStandardMaterial|#ffffff|r0.5|m0.2|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|64a77526|cast0|recv1": {
+    "n": 1,
+    "hash": "9b80f438",
+    "first": [
+     10.55,
+     1.15,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|19772570|cast0|recv1": {
+    "n": 2,
+    "hash": "c52c734a",
+    "first": [
+     10.42,
+     1.05,
+     5.37
+    ]
+   },
+   "salao|salao-tint-0|0.75|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0.75|e#000000×1|o1|side0|t0|vc1|6da2f81c|cast0|recv1": {
+    "n": 2,
+    "hash": "8ca5829c",
+    "first": [
+     10.42,
+     1.155,
+     5.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|e2e8a950|cast0|recv1": {
+    "n": 1,
+    "hash": "ea2e6916",
+    "first": [
+     10.68,
+     1.05,
+     3.48
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|27446b64|cast0|recv1": {
+    "n": 1,
+    "hash": "ad5432d0",
+    "first": [
+     10.68,
+     1.07,
+     3.48
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|6a4d1944|cast0|recv1": {
+    "n": 1,
+    "hash": "e801edf3",
+    "first": [
+     10.54,
+     1.38,
+     3.74
+    ]
+   },
+   "salao|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|4b806056|cast0|recv1": {
+    "n": 1,
+    "hash": "6f0da13b",
+    "first": [
+     10.16,
+     1.054,
+     5.5
+    ]
+   },
+   "salao|solid-salao-water|MeshStandardMaterial|#bcd7e6|r0.05|m0|e#000000×1|o0.45|side0|t1|vc0|2526515e|cast0|recv1": {
+    "n": 1,
+    "hash": "190e28c9",
+    "first": [
+     10.16,
+     1.058,
+     5.5
+    ]
+   },
+   "salao|solid-black|MeshStandardMaterial|#0b0b0c|r0.55|m0|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 2,
+    "hash": "cc77ac35",
+    "first": [
+     10.22,
+     1.054,
+     3.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|7197c7d8|cast0|recv1": {
+    "n": 1,
+    "hash": "4e5dc2f8",
+    "first": [
+     10.6,
+     0.45,
+     4.92
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|cd6ad628|cast0|recv1": {
+    "n": 1,
+    "hash": "6f949a50",
+    "first": [
+     10.4,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|37c05db3|cast0|recv1": {
+    "n": 1,
+    "hash": "6f949a50",
+    "first": [
+     10.4,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|7b073398|cast0|recv1": {
+    "n": 1,
+    "hash": "6f949a50",
+    "first": [
+     10.4,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|bcce1eb2|cast0|recv1": {
+    "n": 1,
+    "hash": "6f949a50",
+    "first": [
+     10.4,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|3940b260|cast0|recv1": {
+    "n": 3,
+    "hash": "181f7f3a",
+    "first": [
+     11.12,
+     0.012,
+     4.46
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|4a4d7b60|cast0|recv1": {
+    "n": 1,
+    "hash": "9ddb1032",
+    "first": [
+     10.45,
+     0.445,
+     3.8
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|e5a7cafc|cast0|recv1": {
+    "n": 26,
+    "hash": "7623b714",
+    "first": [
+     10.45,
+     0.445,
+     3.58
+    ]
+   },
+   "salao|salao-tint-0|0|1|1|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc1|9e726bd0|cast0|recv1": {
+    "n": 1,
+    "hash": "84a537cb",
+    "first": [
+     10.45,
+     0.445,
+     4.85
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|5732d120|cast0|recv1": {
+    "n": 1,
+    "hash": "127b86cd",
+    "first": [
+     10.45,
+     0.46,
+     5.35
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|83fdb1b8|cast0|recv1": {
+    "n": 16,
+    "hash": "f102799a",
+    "first": [
+     10.4,
+     1.15,
+     4.402
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|ac44499c|cast1|recv1": {
+    "n": 16,
+    "hash": "8fd2b83d",
+    "first": [
+     10.45,
+     0,
+     2.25
+    ]
+   },
+   "salao|salao-grilleMat|MeshStandardMaterial|#ffffff|r0.6|m0.5|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|f3270086|cast0|recv1": {
+    "n": 16,
+    "hash": "34f93959",
+    "first": [
+     10.089,
+     0.27,
+     2.25
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|021e94ec|cast0|recv1": {
+    "n": 8,
+    "hash": "8b88dfe7",
+    "first": [
+     10.45,
+     0.22,
+     1.918
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|eb085db8|cast0|recv1": {
+    "n": 2,
+    "hash": "36c88bb8",
+    "first": [
+     10.45,
+     1.09,
+     2.25
+    ]
+   },
+   "salao|fabric-linen-high|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|03c0a580|cast1|recv1": {
+    "n": 1,
+    "hash": "11201892",
+    "first": [
+     -8,
+     0.865,
+     13.4
+    ]
+   },
+   "salao|fabric-linen-high|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|2e206934|cast1|recv1": {
+    "n": 1,
+    "hash": "6acb0bcd",
+    "first": [
+     -8,
+     0,
+     13.4
+    ]
+   },
+   "salao|fabric-salao-satin-high|MeshPhysicalMaterial|#e8d3a6|r0.4|m0|e#000000×1|sheen#fff7e5|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|cbbec9ce|cast0|recv1": {
+    "n": 2,
+    "hash": "189aba42",
+    "first": [
+     -8,
+     0.9,
+     13.38
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 8,
+    "hash": "e89a9b02",
+    "first": [
+     -8,
+     0.9,
+     13.655
+    ]
+   },
+   "salao|misc-marbleWhite-high--0-0|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast1|recv1": {
+    "n": 3,
+    "hash": "96fa8224",
+    "first": [
+     -6.75,
+     0.9,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 3,
+    "hash": "0e8060a8",
+    "first": [
+     -6.75,
+     1.044,
+     13.409
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|050be223|cast1|recv1": {
+    "n": 1,
+    "hash": "4e386104",
+    "first": [
+     -8,
+     0.96,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|9b666816|cast1|recv1": {
+    "n": 1,
+    "hash": "b5f29082",
+    "first": [
+     -8,
+     1.085,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|aa2ca2c6|cast0|recv1": {
+    "n": 5,
+    "hash": "7f9b72a4",
+    "first": [
+     -8,
+     1.097,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|3372a852|cast1|recv1": {
+    "n": 1,
+    "hash": "ac4ab231",
+    "first": [
+     -8,
+     1.255,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|363bf316|cast1|recv1": {
+    "n": 1,
+    "hash": "258cb9e9",
+    "first": [
+     -8,
+     1.405,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|fabc61c2|cast1|recv1": {
+    "n": 1,
+    "hash": "b5c75005",
+    "first": [
+     -8,
+     1.545,
+     13.62
+    ]
+   },
+   "salao|salao-fondantSatin|MeshPhysicalMaterial|#fbf5ea|r0.42|m0|e#4a3f33×1|sheen#ffffff|o1|side0|t0|vc0|dd5207fe|cast1|recv1": {
+    "n": 1,
+    "hash": "4c280345",
+    "first": [
+     -8,
+     1.675,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|f8d09c1c|cast0|recv1": {
+    "n": 1,
+    "hash": "602d8ef2",
+    "first": [
+     -8,
+     1.795,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|4b7012c6|cast0|recv1": {
+    "n": 1,
+    "hash": "a0b9d391",
+    "first": [
+     -8,
+     1.795,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|2f9fcdff|cast0|recv1": {
+    "n": 1,
+    "hash": "068be80a",
+    "first": [
+     -6.75,
+     1.06,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|cd92e9d0|cast0|recv1": {
+    "n": 1,
+    "hash": "f79d6555",
+    "first": [
+     -6.75,
+     1.08,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|88b872e6|cast0|recv1": {
+    "n": 1,
+    "hash": "0fb180a1",
+    "first": [
+     -9.25,
+     1,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|a5396a88|cast0|recv1": {
+    "n": 1,
+    "hash": "66d9b19a",
+    "first": [
+     -9.25,
+     1,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|9008f425|cast0|recv1": {
+    "n": 1,
+    "hash": "a0e43f0c",
+    "first": [
+     -9.25,
+     1.012,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|74e0d868|cast0|recv1": {
+    "n": 1,
+    "hash": "2e5b1f8f",
+    "first": [
+     -9.25,
+     1.22,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|f6c20bad|cast0|recv1": {
+    "n": 1,
+    "hash": "4f4a6fa7",
+    "first": [
+     -9.25,
+     1.232,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|b5e8d498|cast0|recv1": {
+    "n": 1,
+    "hash": "4a4ea573",
+    "first": [
+     -9.25,
+     1.42,
+     13.62
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|87d5d545|cast0|recv1": {
+    "n": 1,
+    "hash": "37a932da",
+    "first": [
+     -9.25,
+     1.432,
+     13.62
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 4,
+    "hash": "a0deb7e1",
+    "first": [
+     -7.45,
+     0.904,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|fe2d4b08|cast0|recv1": {
+    "n": 2,
+    "hash": "0d97deeb",
+    "first": [
+     -8.62,
+     0.9,
+     13.16
+    ]
+   },
+   "salao|glass-salao-cloche|MeshPhysicalMaterial|#eef6f8|r0.04|m0|e#000000×1|sheen#000000|o0.18|side2|t1|vc0|a35289bc|cast0|recv1": {
+    "n": 2,
+    "hash": "926d0056",
+    "first": [
+     -8.62,
+     0.98,
+     13.16
+    ]
+   },
+   "salao|glass-salao-cloche|MeshPhysicalMaterial|#eef6f8|r0.04|m0|e#000000×1|sheen#000000|o0.18|side2|t1|vc0|dde3c28c|cast0|recv1": {
+    "n": 2,
+    "hash": "2d2b4bd4",
+    "first": [
+     -8.62,
+     1.143,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|69898c20|cast0|recv1": {
+    "n": 1,
+    "hash": "0926eeeb",
+    "first": [
+     -8.15,
+     0.904,
+     13.13
+    ]
+   },
+   "salao|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|5a0905d6|cast0|recv1": {
+    "n": 2,
+    "hash": "f53e668f",
+    "first": [
+     -6.15,
+     0.9,
+     13.6
+    ]
+   },
+   "salao|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|fdaca49e|cast0|recv1": {
+    "n": 2,
+    "hash": "3d5231db",
+    "first": [
+     -6.15,
+     0.98,
+     13.6
+    ]
+   },
+   "salao|solid-candle|MeshStandardMaterial|#f3ead6|r0.7|m0|e#3a2a10×0.4|o1|side0|t0|vc0|2526515e|cast0|recv1": {
+    "n": 2,
+    "hash": "bb66d0dc",
+    "first": [
+     -6.15,
+     0.98,
+     13.6
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|e4aaa868|cast0|recv1": {
+    "n": 48,
+    "hash": "899ea824",
+    "first": [
+     -6.13,
+     0.83,
+     12.84
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|d7b99334|cast0|recv1": {
+    "n": 18,
+    "hash": "fee25081",
+    "first": [
+     -9.385,
+     1.008,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|201e2dd2|cast0|recv1": {
+    "n": 3,
+    "hash": "03488b07",
+    "first": [
+     -9.385,
+     1.05,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|491b8f4e|cast0|recv1": {
+    "n": 4,
+    "hash": "8bd33400",
+    "first": [
+     -9.345,
+     1.05,
+     13.525
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|8def7a3e|cast0|recv1": {
+    "n": 4,
+    "hash": "1c706698",
+    "first": [
+     -9.25,
+     1.05,
+     13.485
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|201c8d12|cast0|recv1": {
+    "n": 4,
+    "hash": "a3a89371",
+    "first": [
+     -9.155,
+     1.05,
+     13.525
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|00dd4072|cast0|recv1": {
+    "n": 3,
+    "hash": "901ee533",
+    "first": [
+     -9.115,
+     1.05,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.2|1.5|MeshStandardMaterial|#ffffff|r0.2|m0|e#000000×1|o1|side0|t0|vc1|d88fd7e0|cast0|recv1": {
+    "n": 18,
+    "hash": "413c9e6d",
+    "first": [
+     -9.385,
+     1.1,
+     13.62
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|9f8c4948|cast0|recv1": {
+    "n": 8,
+    "hash": "3c2c3584",
+    "first": [
+     -7.26,
+     0.934,
+     13.22
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|b31ab8e4|cast0|recv1": {
+    "n": 4,
+    "hash": "6ff24d11",
+    "first": [
+     -7.26,
+     0.934,
+     13.22
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|77c8f100|cast0|recv1": {
+    "n": 2,
+    "hash": "b0427524",
+    "first": [
+     -7.385,
+     0.934,
+     13.22
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|b00e5a3c|cast0|recv1": {
+    "n": 2,
+    "hash": "b0115762",
+    "first": [
+     -7.51,
+     0.934,
+     13.22
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|fa1a0894|cast0|recv1": {
+    "n": 2,
+    "hash": "fd671c74",
+    "first": [
+     -8.69,
+     0.98,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|088f1ed4|cast0|recv1": {
+    "n": 2,
+    "hash": "8e54be33",
+    "first": [
+     -8.664,
+     0.98,
+     13.105
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|fe0e4d8c|cast0|recv1": {
+    "n": 2,
+    "hash": "5c32d163",
+    "first": [
+     -8.604,
+     0.98,
+     13.092
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|a5482f74|cast0|recv1": {
+    "n": 1,
+    "hash": "1a4c80ef",
+    "first": [
+     -8.557,
+     0.98,
+     13.13
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|f8e4e7e8|cast0|recv1": {
+    "n": 7,
+    "hash": "1d3f60a7",
+    "first": [
+     -6.35,
+     0.98,
+     13.14
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|5f6a2d00|cast0|recv1": {
+    "n": 28,
+    "hash": "14427011",
+    "first": [
+     -6.34,
+     0.994,
+     13.15
+    ]
+   },
+   "salao|salao-tint-0|0|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0|e#000000×1|o1|side0|t0|vc1|d9ff7450|cast0|recv1": {
+    "n": 10,
+    "hash": "b314f3c6",
+    "first": [
+     -9.55,
+     0.91,
+     13.23
+    ]
+   },
+   "salao|salao-tint-0|0|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0|e#000000×1|o1|side0|t0|vc1|e7d8ecf0|cast0|recv1": {
+    "n": 10,
+    "hash": "71527b9c",
+    "first": [
+     -9.55,
+     0.932,
+     13.23
+    ]
+   },
+   "salao|salao-tint-0|0|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0|e#000000×1|o1|side0|t0|vc1|03d00e80|cast0|recv1": {
+    "n": 10,
+    "hash": "0c66878a",
+    "first": [
+     -9.55,
+     0.952,
+     13.23
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|8592cec8|cast0|recv1": {
+    "n": 9,
+    "hash": "e744d5bb",
+    "first": [
+     -8.22,
+     0.93,
+     13.13
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|6d2977f0|cast0|recv1": {
+    "n": 10,
+    "hash": "9d9b999c",
+    "first": [
+     -9.88,
+     0.904,
+     13.15
+    ]
+   },
+   "salao|fabric-linen-high|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|40ac4f20|cast1|recv1": {
+    "n": 1,
+    "hash": "8bca3fed",
+    "first": [
+     8,
+     0.865,
+     13.4
+    ]
+   },
+   "salao|fabric-linen-high|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|e81f446c|cast1|recv1": {
+    "n": 1,
+    "hash": "523546f5",
+    "first": [
+     8,
+     0,
+     13.4
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|88b872e6|cast0|recv1": {
+    "n": 13,
+    "hash": "5a8b1d71",
+    "first": [
+     9.15,
+     0.9,
+     13.72
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|51721a86|cast0|recv1": {
+    "n": 6,
+    "hash": "62372cc3",
+    "first": [
+     8.9,
+     0.95,
+     13.72
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast1|recv1": {
+    "n": 3,
+    "hash": "76c5d7c6",
+    "first": [
+     8.9,
+     1.03,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|8a066f34|cast0|recv1": {
+    "n": 1,
+    "hash": "329eadae",
+    "first": [
+     8.9,
+     1.128,
+     13.58
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|f021dc76|cast0|recv1": {
+    "n": 3,
+    "hash": "93d674f3",
+    "first": [
+     8.9,
+     1.13,
+     13.58
+    ]
+   },
+   "salao|solid-black|MeshStandardMaterial|#0b0b0c|r0.55|m0|e#000000×1|o1|side0|t0|vc0|51721a86|cast0|recv1": {
+    "n": 3,
+    "hash": "967fee7b",
+    "first": [
+     8.9,
+     1.3,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|17c7fae0|cast0|recv1": {
+    "n": 6,
+    "hash": "5cc97041",
+    "first": [
+     9.03,
+     0.9,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|64b05f00|cast0|recv1": {
+    "n": 1,
+    "hash": "55b85ab7",
+    "first": [
+     8.1,
+     1.128,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|7361fd5c|cast0|recv1": {
+    "n": 1,
+    "hash": "2b0169ab",
+    "first": [
+     7.3,
+     1.128,
+     13.58
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|8b9eb75e|cast0|recv1": {
+    "n": 1,
+    "hash": "365c5a99",
+    "first": [
+     6.5,
+     0.96,
+     13.58
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|555733f4|cast0|recv1": {
+    "n": 1,
+    "hash": "7c1b4b97",
+    "first": [
+     6.5,
+     1.2,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|431b16e8|cast0|recv1": {
+    "n": 1,
+    "hash": "267a6e59",
+    "first": [
+     6.5,
+     1.23,
+     13.58
+    ]
+   },
+   "salao|salao-tint-2|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side2|t0|vc1|a6b51d20|cast0|recv1": {
+    "n": 9,
+    "hash": "001b04a0",
+    "first": [
+     6.5,
+     1.39,
+     13.58
+    ]
+   },
+   "salao|misc-grain-high-#b08a5a-0-0|MeshStandardMaterial|#b08a5a|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast0|recv1": {
+    "n": 1,
+    "hash": "a3ae6b01",
+    "first": [
+     6.5,
+     0.904,
+     13.13
+    ]
+   },
+   "salao|salao-tint-0|1|0.1|1.5|MeshStandardMaterial|#ffffff|r0.1|m1|e#000000×1|o1|side0|t0|vc1|7a98b140|cast1|recv1": {
+    "n": 1,
+    "hash": "1c9c72b5",
+    "first": [
+     9.92,
+     0.9,
+     13.4
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|f24009fe|cast1|recv1": {
+    "n": 1,
+    "hash": "8444be74",
+    "first": [
+     9.45,
+     0.9,
+     13.7
+    ]
+   },
+   "salao|solid-bottleGreen|MeshStandardMaterial|#1d4d2b|r0.08|m0|e#000000×1|o0.85|side0|t1|vc0|335e7e69|cast0|recv1": {
+    "n": 2,
+    "hash": "bda71be5",
+    "first": [
+     9.48,
+     0.94,
+     13.68
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|65fd6720|cast0|recv1": {
+    "n": 14,
+    "hash": "f3a0982e",
+    "first": [
+     8.886,
+     1.132,
+     13.537
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|d64029b0|cast0|recv1": {
+    "n": 14,
+    "hash": "663e8c39",
+    "first": [
+     8.008,
+     1.132,
+     13.667
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|61c56aa0|cast0|recv1": {
+    "n": 14,
+    "hash": "c109e1fd",
+    "first": [
+     7.425,
+     1.132,
+     13.644
+    ]
+   },
+   "salao|salao-tint-0|0|0.9|1|MeshStandardMaterial|#ffffff|r0.9|m0|e#000000×1|o1|side0|t0|vc1|afcfa7c4|cast0|recv1": {
+    "n": 54,
+    "hash": "5cd9c6dd",
+    "first": [
+     9.12,
+     0.916,
+     13.21
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|00097df0|cast0|recv1": {
+    "n": 9,
+    "hash": "1bc44dc1",
+    "first": [
+     9.12,
+     0.931,
+     13.21
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|039587c0|cast0|recv1": {
+    "n": 10,
+    "hash": "723c7d66",
+    "first": [
+     8.848,
+     0.931,
+     13.21
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|a516e640|cast0|recv1": {
+    "n": 9,
+    "hash": "de0cccd1",
+    "first": [
+     8.848,
+     0.931,
+     13.135
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|efa152d0|cast0|recv1": {
+    "n": 9,
+    "hash": "d0b4c728",
+    "first": [
+     8.78,
+     0.931,
+     13.135
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|d0eec780|cast0|recv1": {
+    "n": 9,
+    "hash": "85b0cd0f",
+    "first": [
+     9.12,
+     0.931,
+     13.06
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|8f6cb9f0|cast0|recv1": {
+    "n": 8,
+    "hash": "ebd4322d",
+    "first": [
+     9.052,
+     0.931,
+     13.06
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|8697dc80|cast0|recv1": {
+    "n": 13,
+    "hash": "c2f34911",
+    "first": [
+     6.6,
+     1.042,
+     13.572
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|094e4880|cast0|recv1": {
+    "n": 13,
+    "hash": "e15c0360",
+    "first": [
+     6.596,
+     1.06,
+     13.556
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|426b604c|cast0|recv1": {
+    "n": 5,
+    "hash": "286285fe",
+    "first": [
+     6.35,
+     1.02,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0|e#000000×1|o1|side0|t0|vc1|793c1554|cast0|recv1": {
+    "n": 10,
+    "hash": "73e3053b",
+    "first": [
+     6.41,
+     1.25,
+     13.58
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|9f8c12d8|cast0|recv1": {
+    "n": 2,
+    "hash": "5c88df72",
+    "first": [
+     6.66,
+     0.93,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|b8dd8a80|cast0|recv1": {
+    "n": 2,
+    "hash": "b8b03b09",
+    "first": [
+     6.56,
+     0.93,
+     13.16
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|8d491398|cast0|recv1": {
+    "n": 12,
+    "hash": "caeb97b2",
+    "first": [
+     6.68,
+     0.93,
+     13.06
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|47e51dc8|cast0|recv1": {
+    "n": 12,
+    "hash": "121b6b09",
+    "first": [
+     5.8,
+     0.904,
+     13.25
+    ]
+   },
+   "salao|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast1|recv1": {
+    "n": 6,
+    "hash": "0931660f",
+    "first": [
+     -11.53,
+     0.1,
+     12.8
+    ]
+   },
+   "salao|salao-verdeAlpi|MeshStandardMaterial|#ffffff|r0.12|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|d397ed08|cast1|recv1": {
+    "n": 1,
+    "hash": "f1bac1d8",
+    "first": [
+     -11.53,
+     0.885,
+     12.8
+    ]
+   },
+   "salao|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|7bff954a|cast0|recv1": {
+    "n": 3,
+    "hash": "4dff35b0",
+    "first": [
+     -11.24,
+     0.42,
+     13.507
+    ]
+   },
+   "salao|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast0|recv1": {
+    "n": 35,
+    "hash": "70698507",
+    "first": [
+     -11.24,
+     0.74,
+     12.8
+    ]
+   },
+   "salao|salao-tint-0|0|0.7|1|MeshStandardMaterial|#ffffff|r0.7|m0|e#000000×1|o1|side0|t0|vc1|b55be940|cast0|recv1": {
+    "n": 1,
+    "hash": "5b33c897",
+    "first": [
+     -11.53,
+     0.92,
+     12.85
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|528784a4|cast1|recv1": {
+    "n": 1,
+    "hash": "85287fdb",
+    "first": [
+     -11.58,
+     0.92,
+     12.35
+    ]
+   },
+   "salao|solid-black|MeshStandardMaterial|#0b0b0c|r0.55|m0|e#000000×1|o1|side0|t0|vc0|7775fc66|cast0|recv1": {
+    "n": 1,
+    "hash": "63849e00",
+    "first": [
+     -11.58,
+     1,
+     12.25
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|1|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|0b1e6d80|cast0|recv1": {
+    "n": 1,
+    "hash": "2835d20a",
+    "first": [
+     -11.7,
+     0.92,
+     12
+    ]
+   },
+   "salao|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|f24009fe|cast0|recv1": {
+    "n": 1,
+    "hash": "effb34ed",
+    "first": [
+     -11.45,
+     0.92,
+     11.8
+    ]
+   },
+   "salao|solid-bottleAmber|MeshStandardMaterial|#8a4b12|r0.08|m0|e#000000×1|o0.85|side0|t1|vc0|335e7e69|cast0|recv1": {
+    "n": 1,
+    "hash": "3222bdff",
+    "first": [
+     -11.45,
+     0.96,
+     11.8
+    ]
+   },
+   "salao|salao-marquetryMat|MeshPhysicalMaterial|#ffffff|r0.3|m0|e#000000×1|sheen#000000|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|c3f70606|cast1|recv1": {
+    "n": 3,
+    "hash": "05f69028",
+    "first": [
+     -6.8,
+     0.738,
+     -3.5
+    ]
+   },
+   "salao|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|099ab876|cast1|recv1": {
+    "n": 3,
+    "hash": "919de718",
+    "first": [
+     -6.8,
+     0.698,
+     -3.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|bb68bd02|cast0|recv1": {
+    "n": 3,
+    "hash": "56ac9e7d",
+    "first": [
+     -6.8,
+     0.726,
+     -3.5
+    ]
+   },
+   "salao|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|697bba2b|cast1|recv1": {
+    "n": 3,
+    "hash": "fd487bef",
+    "first": [
+     -6.8,
+     0,
+     -3.5
+    ]
+   },
+   "salao|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|ee88c028|cast0|recv1": {
+    "n": 12,
+    "hash": "11f52b38",
+    "first": [
+     -6.8,
+     0,
+     -3.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|c1fc4aea|cast0|recv1": {
+    "n": 12,
+    "hash": "59b854de",
+    "first": [
+     -6.496,
+     0.03,
+     -3.196
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|3f7adce0|cast0|recv1": {
+    "n": 3,
+    "hash": "3fbc7cd5",
+    "first": [
+     -6.8,
+     0.75,
+     -3.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|c49e5259|cast0|recv1": {
+    "n": 3,
+    "hash": "a506051f",
+    "first": [
+     -6.8,
+     0.88,
+     -3.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|7775fc66|cast0|recv1": {
+    "n": 12,
+    "hash": "c39b645a",
+    "first": [
+     -6.731,
+     1.465,
+     -3.431
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|88b872e6|cast0|recv1": {
+    "n": 12,
+    "hash": "023f507e",
+    "first": [
+     -6.662,
+     1.465,
+     -3.362
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|67027a28|cast0|recv1": {
+    "n": 24,
+    "hash": "4dc58b6c",
+    "first": [
+     -6.209,
+     0.762,
+     -3.255
+    ]
+   },
+   "salao|salao-tint-0|0|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m0|e#000000×1|o1|side0|t0|vc1|b59f6218|cast0|recv1": {
+    "n": 24,
+    "hash": "191095da",
+    "first": [
+     -6.415,
+     0.751,
+     -3.124
+    ]
+   },
+   "salao|salao-tint-0|0|0.8|1|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc1|6e873b28|cast0|recv1": {
+    "n": 24,
+    "hash": "685da19a",
+    "first": [
+     -6.415,
+     0.78,
+     -3.124
+    ]
+   },
+   "salao|salao-sm-rosette-high|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.8,0.05]|map=8x8/srgb/1001/1,1|normalMap=8x8//1001/1,1|roughnessMap=8x8//1001/1,1|8bf081be|cast0|recv1": {
+    "n": 1,
+    "hash": "e5ac0ab6",
+    "first": [
+     0,
+     0.003,
+     4.5
+    ]
+   },
+   "salao|salao-sm-meander-high|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.7,0.05]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|3bd3cb92|cast0|recv1": {
+    "n": 4,
+    "hash": "a7658b64",
+    "first": [
+     -7.425,
+     0.003,
+     -5.425
+    ]
+   },
+   "salao|salao-sm-meander-high|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.7,0.05]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|ce043f5a|cast0|recv1": {
+    "n": 2,
+    "hash": "d692dad9",
+    "first": [
+     -11.425,
+     0.003,
+     1.45
+    ]
+   },
+   "salao|salao-sm-meander-high|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.7,0.05]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|e137928a|cast0|recv1": {
+    "n": 2,
+    "hash": "f71cde9a",
+    "first": [
+     -11.425,
+     0.003,
+     12.55
+    ]
+   },
+   "salao|salao-rugMat|MeshStandardMaterial|#ffffff|r0.96|m0|e#000000×1|o1|side0|t1|vc0|map=8x8/srgb/1001/1,1|49934646|cast0|recv1": {
+    "n": 3,
+    "hash": "1df72780",
+    "first": [
+     -6.8,
+     0.002,
+     -3.5
+    ]
+   },
+   "salao|plainfloor-marbleBlack-high-|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|cbbec9ce|cast0|recv1": {
+    "n": 5,
+    "hash": "8060725c",
+    "first": [
+     6.2,
+     0,
+     -5.98
+    ]
+   },
+   "salao|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|fa6cec8e|cast0|recv1": {
+    "n": 5,
+    "hash": "70b3106a",
+    "first": [
+     6.2,
+     1,
+     -5.96
+    ]
+   },
+   "salao|salao-tint-0|0|0.6|0.5|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side0|t0|vc1|d3d2f334|cast0|recv1": {
+    "n": 8,
+    "hash": "f50700bb",
+    "first": [
+     -11.97,
+     1.45,
+     -2.55
+    ]
+   },
+   "salao|fabric-salao-djVelvet-high|MeshPhysicalMaterial|#08070b|r0.85|m0|e#000000×1|sheen#a5a3ab|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|47872d6c|cast0|recv1": {
+    "n": 1,
+    "hash": "f439c195",
+    "first": [
+     11.72,
+     0.08,
+     4.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|72476ee6|cast0|recv1": {
+    "n": 1,
+    "hash": "f6a7a048",
+    "first": [
+     11.7,
+     4.92,
+     4.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|dde3c28c|cast0|recv1": {
+    "n": 2,
+    "hash": "33bb69cc",
+    "first": [
+     11.7,
+     4.92,
+     2.25
+    ]
+   },
+   "salao|glow-salao-monogramGlow|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8/srgb/1001/1,1|242ec776|cast0|recv1": {
+    "n": 1,
+    "hash": "cc69a370",
+    "first": [
+     11.66,
+     3.25,
+     4.5
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|07510446|cast0|recv1": {
+    "n": 6,
+    "hash": "a16b6d5f",
+    "first": [
+     -9.6,
+     5.4,
+     -5.43
+    ]
+   },
+   "salao|plainfloor-marbleBlack-high-|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|e53b0726|cast0|recv1": {
+    "n": 6,
+    "hash": "ba16c107",
+    "first": [
+     -9.6,
+     6,
+     -5.43
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|68c1d745|cast0|recv1": {
+    "n": 6,
+    "hash": "3e5d92aa",
+    "first": [
+     -9.6,
+     6.025,
+     -5.43
+    ]
+   },
+   "salao|fabric-salao-drapeVelvet-high|MeshPhysicalMaterial|#4a0d18|r0.82|m0|e#000000×1|sheen#daa7ad|o1|side2|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|28dd1ccd|cast1|recv1": {
+    "n": 4,
+    "hash": "dbefd6f5",
+    "first": [
+     -10.88,
+     0,
+     13.78
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|f26cce2e|cast0|recv1": {
+    "n": 4,
+    "hash": "696b2865",
+    "first": [
+     -10.76,
+     1.1,
+     13.77
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|68dacef9|cast0|recv1": {
+    "n": 4,
+    "hash": "82de9a36",
+    "first": [
+     -10.81,
+     0.86,
+     13.68
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|dba54689|cast0|recv1": {
+    "n": 4,
+    "hash": "e9a6ee07",
+    "first": [
+     -10.9,
+     1.1,
+     13.93
+    ]
+   },
+   "salao|fabric-salao-drapeVelvet-high|MeshPhysicalMaterial|#4a0d18|r0.82|m0|e#000000×1|sheen#daa7ad|o1|side2|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|cbbec9ce|cast1|recv1": {
+    "n": 2,
+    "hash": "14cdd530",
+    "first": [
+     -8,
+     4.4,
+     13.78
+    ]
+   },
+   "salao|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|57359912|cast0|recv1": {
+    "n": 4,
+    "hash": "f0ccb962",
+    "first": [
+     -6.8,
+     9.48,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|e48e9cd0|cast0|recv1": {
+    "n": 4,
+    "hash": "7aea5fa5",
+    "first": [
+     -6.8,
+     6.4,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|a0a43248|cast0|recv1": {
+    "n": 4,
+    "hash": "13b4f1e7",
+    "first": [
+     -6.8,
+     7.38,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|314f2968|cast0|recv1": {
+    "n": 4,
+    "hash": "37ff0d16",
+    "first": [
+     -6.8,
+     6.68,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|be0f22c4|cast0|recv1": {
+    "n": 104,
+    "hash": "19320653",
+    "first": [
+     -5.85,
+     6.68,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|82c3a768|cast0|recv1": {
+    "n": 4,
+    "hash": "504de36b",
+    "first": [
+     -6.8,
+     6.95,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|3d4a8208|cast0|recv1": {
+    "n": 4,
+    "hash": "6d387b10",
+    "first": [
+     -6.8,
+     7.18,
+     -3.5
+    ]
+   },
+   "salao|salao-sm-danceWood-high|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.6,0.04]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|df53139a|cast0|recv1": {
+    "n": 1,
+    "hash": "c4ff4817",
+    "first": [
+     6.5,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.5|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|856afb79|cast0|recv1": {
+    "n": 2,
+    "hash": "bf9c387e",
+    "first": [
+     9.8,
+     0,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.5|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|5145d291|cast0|recv1": {
+    "n": 2,
+    "hash": "df616df8",
+    "first": [
+     6.5,
+     0,
+     7.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.25|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|5a4d9088|cast1|recv1": {
+    "n": 16,
+    "hash": "4503f386",
+    "first": [
+     6.5,
+     6,
+     1.555
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.25|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|5a4d9088|cast0|recv1": {
+    "n": 2,
+    "hash": "e4b29fbc",
+    "first": [
+     5,
+     6.29,
+     4.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.25|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|209734c4|cast1|recv1": {
+    "n": 4,
+    "hash": "9edb840c",
+    "first": [
+     3.4,
+     5.98,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0.5|e#000000×1|o1|side0|t0|vc1|45a9fb10|cast1|recv1": {
+    "n": 4,
+    "hash": "f13c8d82",
+    "first": [
+     3.4,
+     6.75,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0.5|e#000000×1|o1|side0|t0|vc1|446eb4f8|cast0|recv1": {
+    "n": 4,
+    "hash": "eb6decbe",
+    "first": [
+     3.4,
+     8.14,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0.5|e#000000×1|o1|side0|t0|vc1|c95ef2e0|cast0|recv1": {
+    "n": 2,
+    "hash": "9b6e3fdf",
+    "first": [
+     9.65,
+     5.88,
+     1.65
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|e9306ce8|cast1|recv1": {
+    "n": 8,
+    "hash": "bf255d43",
+    "first": [
+     4.4,
+     5.97,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|4861a834|cast0|recv1": {
+    "n": 8,
+    "hash": "9a7d385b",
+    "first": [
+     4.4,
+     5.96,
+     1.7
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|bf22ecd0|cast0|recv1": {
+    "n": 3,
+    "hash": "a111dd26",
+    "first": [
+     5,
+     5.67,
+     3.5
+    ]
+   },
+   "salao|salao-tint-0|0|0.5|1|MeshStandardMaterial|#ffffff|r0.5|m0|e#000000×1|o1|side0|t0|vc1|f663e7c8|cast0|recv1": {
+    "n": 3,
+    "hash": "26389788",
+    "first": [
+     5,
+     6.03,
+     3.5
+    ]
+   },
+   "salao|salao-tint-0|0.5|0.4|1|MeshStandardMaterial|#ffffff|r0.4|m0.5|e#000000×1|o1|side0|t0|vc1|9063c390|cast0|recv1": {
+    "n": 3,
+    "hash": "02eb850b",
+    "first": [
+     4,
+     5.84,
+     1.7
+    ]
+   },
+   "salao|salao-waveMat|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|ee859e3a|cast0|recv1": {
+    "n": 2,
+    "hash": "0d0fe007",
+    "first": [
+     10.4,
+     1.157,
+     3.88
+    ]
+   },
+   "salao|salao-laptopScrMat|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|aef3df4a|cast0|recv1": {
+    "n": 1,
+    "hash": "c8e64f25",
+    "first": [
+     10.296,
+     1.306,
+     5.5
+    ]
+   },
+   "salao|salao-djLed|MeshBasicMaterial|#eac290|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 2,
+    "hash": "eb27bf86",
+    "first": [
+     9.998,
+     0.075,
+     4.5
+    ]
+   },
+   "salao|solid-black|MeshStandardMaterial|#0b0b0c|r0.55|m0|e#000000×1|o1|side0|t0|vc0|dfaef666|cast0|recv1": {
+    "n": 6,
+    "hash": "959dae8d",
+    "first": [
+     -9.2,
+     4.86,
+     13.45
+    ]
+   },
+   "salao|solid-darkSteel|MeshStandardMaterial|#2a2d31|r0.45|m0.7|e#000000×1|o1|side0|t0|vc0|cbbec9ce|cast0|recv1": {
+    "n": 2,
+    "hash": "7b6df557",
+    "first": [
+     -11.9,
+     4.55,
+     6
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|8d15a870|cast0|recv1": {
+    "n": 48,
+    "hash": "0805eaf7",
+    "first": [
+     -6.5,
+     7.38,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|35edfadc|cast0|recv1": {
+    "n": 104,
+    "hash": "028eae93",
+    "first": [
+     -5.69,
+     6.78,
+     -3.5
+    ]
+   },
+   "salao|salao-tint-0|1|0.3|1.25|MeshStandardMaterial|#ffffff|r0.3|m1|e#000000×1|o1|side0|t0|vc1|58f5adc4|cast0|recv1": {
+    "n": 36,
+    "hash": "73a11d69",
+    "first": [
+     3.4,
+     6.32,
+     1.7
+    ]
+   }
+  },
+  "inst": {
+   "salao|salao-gooseBulb|glow-bulbWarm|MeshBasicMaterial|#ffffe4|o1|side0|t0|vc0|dba54689": {
+    "n": 1,
+    "hash": "a74e2088",
+    "first": [
+     10.54,
+     1.36,
+     3.74
+    ]
+   },
+   "salao|salao-powerLed|glow-ledGreen|MeshBasicMaterial|#41ff99|o1|side0|t0|vc0|653101c0": {
+    "n": 2,
+    "hash": "9e929a6e",
+    "first": [
+     10.088,
+     1.03,
+     2.51
+    ]
+   },
+   "salao|salao-pfTop|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|653101c0": {
+    "n": 7,
+    "hash": "6c7b3b34",
+    "first": [
+     -8.69,
+     1.013,
+     13.16
+    ]
+   },
+   "salao|salao-verrine|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|2ed824e8": {
+    "n": 10,
+    "hash": "249bed1f",
+    "first": [
+     -9.55,
+     0.904,
+     13.23
+    ]
+   },
+   "salao|salao-tentCard|solid-paperWhite|MeshStandardMaterial|#f1eee6|r0.9|m0|e#000000×1|o1|side0|t0|vc0|78d5b562": {
+    "n": 8,
+    "hash": "1a5a172e",
+    "first": [
+     -6.75,
+     0.904,
+     12.97
+    ]
+   },
+   "salao|salao-flame|glow-flame|MeshBasicMaterial|#ffffb6|o1|side0|t1|vc0|926b7e69": {
+    "n": 14,
+    "hash": "4b3166d5",
+    "first": [
+     -6.15,
+     1.16,
+     13.6
+    ]
+   },
+   "salao|salao-garlandRose|solid-salao-roseWhite|MeshStandardMaterial|#ffffff|r0.72|m0|e#000000×1|o1|side2|t0|vc0|075025c2": {
+    "n": 90,
+    "hash": "f9cad4e5",
+    "first": [
+     -6.1,
+     0.85,
+     12.85
+    ]
+   },
+   "salao|salao-cakePearl|solid-salao-pearl|MeshStandardMaterial|#f7f1e6|r0.15|m0|e#000000×1|o1|side0|t0|vc0|dba54689": {
+    "n": 296,
+    "hash": "6b6a3356",
+    "first": [
+     -8.203,
+     1.091,
+     13.62
+    ]
+   },
+   "salao|salao-sugarRose|solid-salao-sugarRose|MeshStandardMaterial|#ffffff|r0.6|m0|e#000000×1|o1|side2|t0|vc0|075025c2": {
+    "n": 26,
+    "hash": "41417603",
+    "first": [
+     -8.068,
+     1.733,
+     13.591
+    ]
+   },
+   "salao|salao-macShell|solid-salao-macShell|MeshStandardMaterial|#ffffff|r0.62|m0|e#000000×1|o1|side0|t0|vc0|c4b0898e": {
+    "n": 285,
+    "hash": "43a423f5",
+    "first": [
+     -6.919,
+     1.105,
+     13.62
+    ]
+   },
+   "salao|salao-macFill|solid-salao-macFill|MeshStandardMaterial|#f6ead8|r0.8|m0|e#000000×1|o1|side0|t0|vc0|4fbc98be": {
+    "n": 285,
+    "hash": "d0ab24b7",
+    "first": [
+     -6.919,
+     1.105,
+     13.62
+    ]
+   },
+   "salao|salao-blueFlame|glow-salao-blueFlame|MeshBasicMaterial|#61c9ff|o1|side0|t1|vc0|73cb9e40": {
+    "n": 6,
+    "hash": "57834736",
+    "first": [
+     9.03,
+     0.95,
+     13.58
+    ]
+   },
+   "salao|salao-coupe|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|09115087": {
+    "n": 55,
+    "hash": "f2db40f0",
+    "first": [
+     10.132,
+     0.96,
+     13.612
+    ]
+   },
+   "salao|salao-fizz|solid-champagne|MeshStandardMaterial|#e6c46a|r0.1|m0|e#000000×1|o0.75|side0|t1|vc0|1cd5de2a": {
+    "n": 55,
+    "hash": "f2db40f0",
+    "first": [
+     10.132,
+     0.96,
+     13.612
+    ]
+   },
+   "salao|salao-napkin|fabric-linen-high|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|cbbec9ce": {
+    "n": 17,
+    "hash": "4845d653",
+    "first": [
+     5.8,
+     0.904,
+     13.62
+    ]
+   },
+   "salao|salao-knobBrass|solid-brass|MeshStandardMaterial|#c9a24b|r0.28|m1|e#000000×1|o1|side0|t0|vc0|c1fc4aea": {
+    "n": 3,
+    "hash": "599fc459",
+    "first": [
+     -11.205,
+     0.5,
+     13.223
+    ]
+   },
+   "salao|salao-pullBrass|solid-brass|MeshStandardMaterial|#c9a24b|r0.28|m1|e#000000×1|o1|side0|t0|vc0|2a9fe5cb": {
+    "n": 2,
+    "hash": "496f1243",
+    "first": [
+     -11.215,
+     0.8,
+     13.35
+    ]
+   },
+   "salao|salao-goblet|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|c17c0360": {
+    "n": 40,
+    "hash": "3cc966a5",
+    "first": [
+     -11.68,
+     0.95,
+     13
+    ]
+   },
+   "salao|salao-cutlery|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|cbbec9ce": {
+    "n": 12,
+    "hash": "fed8e0e2",
+    "first": [
+     -11.72,
+     0.98,
+     12.08
+    ]
+   },
+   "salao|salao-dinnerPlate|solid-salao-porcelain|MeshStandardMaterial|#f7f5f0|r0.25|m0|e#000000×1|o1|side0|t0|vc0|319dd5d3": {
+    "n": 28,
+    "hash": "ef5a5f78",
+    "first": [
+     -11.58,
+     0.92,
+     13.6
+    ]
+   },
+   "salao|salao-chairLeg|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|9fc51fd5": {
+    "n": 96,
+    "hash": "581567a9",
+    "first": [
+     -5.862,
+     0,
+     -3.337
+    ]
+   },
+   "salao|salao-chairRail|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|fa6cec8e": {
+    "n": 24,
+    "hash": "d4782c15",
+    "first": [
+     -5.784,
+     0,
+     -3.079
+    ]
+   },
+   "salao|salao-chairSeat|fabric-salao-plumVelvet-high|MeshPhysicalMaterial|#4d1230|r0.75|m0|e#000000×1|sheen#d9b8c5|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|26098e78": {
+    "n": 24,
+    "hash": "d4782c15",
+    "first": [
+     -5.784,
+     0,
+     -3.079
+    ]
+   },
+   "salao|salao-chairPost|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|322ffd4d": {
+    "n": 48,
+    "hash": "b360b7ec",
+    "first": [
+     -5.558,
+     0,
+     -3.161
+    ]
+   },
+   "salao|salao-chairMedal|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|6e423648": {
+    "n": 24,
+    "hash": "9b573db1",
+    "first": [
+     -5.566,
+     0.78,
+     -2.977
+    ]
+   },
+   "salao|salao-chairPad|fabric-salao-plumVelvet-high|MeshPhysicalMaterial|#4d1230|r0.75|m0|e#000000×1|sheen#d9b8c5|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|1d2f40f5": {
+    "n": 24,
+    "hash": "debef1d7",
+    "first": [
+     -5.571,
+     0.78,
+     -2.979
+    ]
+   },
+   "salao|salao-chairPadBack|fabric-salao-plumVelvet-high|MeshPhysicalMaterial|#4d1230|r0.75|m0|e#000000×1|sheen#d9b8c5|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|1d2f40f5": {
+    "n": 24,
+    "hash": "939fd1f3",
+    "first": [
+     -5.562,
+     0.78,
+     -2.975
+    ]
+   },
+   "salao|salao-chairStar|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|c4de8af4": {
+    "n": 24,
+    "hash": "5665cc91",
+    "first": [
+     -5.541,
+     1,
+     -2.965
+    ]
+   },
+   "salao|salao-charger|solid-goldBright|MeshStandardMaterial|#e0b85a|r0.2|m1|e#000000×1|o1|side0|t0|vc0|9524dd16": {
+    "n": 24,
+    "hash": "ed08f1b7",
+    "first": [
+     -6.209,
+     0.751,
+     -3.255
+    ]
+   },
+   "salao|salao-napkinFold|fabric-linen-high|MeshPhysicalMaterial|#efe8da|r0.9|m0|e#000000×1|sheen#f5f0e8|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|41b28839": {
+    "n": 24,
+    "hash": "2269d893",
+    "first": [
+     -6.209,
+     0.776,
+     -3.255
+    ]
+   },
+   "salao|salao-menu|salao-menuCard|MeshStandardMaterial|#ffffff|r0.85|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|b53b5026": {
+    "n": 24,
+    "hash": "d7520022",
+    "first": [
+     -6.218,
+     0.795,
+     -3.259
+    ]
+   },
+   "salao|salao-fork|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|4a9bc9e6": {
+    "n": 72,
+    "hash": "84fb024b",
+    "first": [
+     -6.291,
+     0.751,
+     -3.083
+    ]
+   },
+   "salao|salao-knife|solid-chrome|MeshStandardMaterial|#d9dadc|r0.12|m1|e#000000×1|o1|side0|t0|vc0|097dfa0e": {
+    "n": 72,
+    "hash": "703b6119",
+    "first": [
+     -6.145,
+     0.751,
+     -3.434
+    ]
+   },
+   "salao|salao-wine|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|e822a136": {
+    "n": 24,
+    "hash": "90a579b9",
+    "first": [
+     -6.224,
+     0.751,
+     -3.532
+    ]
+   },
+   "salao|salao-flute|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|03de5ed9": {
+    "n": 24,
+    "hash": "5981b00a",
+    "first": [
+     -6.368,
+     0.751,
+     -3.419
+    ]
+   },
+   "salao|salao-wineFill|solid-salao-redWine|MeshStandardMaterial|#4a0b16|r0.05|m0|e#000000×1|o0.88|side0|t1|vc0|e8a3a412": {
+    "n": 18,
+    "hash": "415fc7ca",
+    "first": [
+     -6.224,
+     0.751,
+     -3.532
+    ]
+   },
+   "salao|salao-placeCard|salao-placeCard|MeshStandardMaterial|#ffffff|r0.8|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1001/1,1|e8fbcae6": {
+    "n": 24,
+    "hash": "8acc6c64",
+    "first": [
+     -6.301,
+     0.751,
+     -3.293
+    ]
+   },
+   "salao|candle|solid-candle|MeshStandardMaterial|#f3ead6|r0.7|m0|e#3a2a10×0.4|o1|side0|t0|vc0|4b7012c6": {
+    "n": 15,
+    "hash": "fb133939",
+    "first": [
+     -6.8,
+     1.51,
+     -3.5
+    ]
+   },
+   "salao|flame|glow-flame|MeshBasicMaterial|#ffffb6|o1|side0|t1|vc0|dc3eaa38": {
+    "n": 15,
+    "hash": "546b6651",
+    "first": [
+     -6.8,
+     1.698,
+     -3.5
+    ]
+   },
+   "salao|salao-votive|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|80e0acd4": {
+    "n": 12,
+    "hash": "71c6378a",
+    "first": [
+     -6.545,
+     0.75,
+     -3.245
+    ]
+   },
+   "salao|salao-votiveWax|solid-candle|MeshStandardMaterial|#f3ead6|r0.7|m0|e#3a2a10×0.4|o1|side0|t0|vc0|88b872e6": {
+    "n": 12,
+    "hash": "de357dfb",
+    "first": [
+     -6.545,
+     0.754,
+     -3.245
+    ]
+   },
+   "salao|salao-centerRose|solid-salao-roseWhite|MeshStandardMaterial|#ffffff|r0.72|m0|e#000000×1|o1|side2|t0|vc0|075025c2": {
+    "n": 66,
+    "hash": "6eb44b1d",
+    "first": [
+     -6.754,
+     0.916,
+     -3.362
+    ]
+   },
+   "salao|salao-dado-18|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|aa64248e": {
+    "n": 6,
+    "hash": "9bfec0d7",
+    "first": [
+     3.95,
+     0.575,
+     -5.976
+    ]
+   },
+   "salao|salao-dado-24|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|19b966ae": {
+    "n": 1,
+    "hash": "ca0cb408",
+    "first": [
+     10.3,
+     0.575,
+     -5.976
+    ]
+   },
+   "salao|salao-dado-20|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|9f8fe22e": {
+    "n": 1,
+    "hash": "80b1994b",
+    "first": [
+     -11.976,
+     0.575,
+     -5.5
+    ]
+   },
+   "salao|salao-dado-22|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|ba853bae": {
+    "n": 3,
+    "hash": "020e19f1",
+    "first": [
+     -11.976,
+     0.575,
+     -3.65
+    ]
+   },
+   "salao|salao-boss|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|f00b51c9": {
+    "n": 1,
+    "hash": "8019f4e3",
+    "first": [
+     -11.97,
+     2.9,
+     -2.55
+    ]
+   },
+   "salao|salao-dado-19|misc-grain-high-#3b2414-0-0|MeshStandardMaterial|#3b2414|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1|00541556": {
+    "n": 3,
+    "hash": "47015736",
+    "first": [
+     11.976,
+     0.575,
+     4.667
+    ]
+   },
+   "salao|salao-bergLegs|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|570bf1d6": {
+    "n": 48,
+    "hash": "602d8d82",
+    "first": [
+     -10.386,
+     5.4,
+     -5.529
+    ]
+   },
+   "salao|salao-bergSeat|fabric-salao-boxVelvet-high|MeshPhysicalMaterial|#5b1430|r0.8|m0|e#000000×1|sheen#dab8c3|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|f6f0f2fa": {
+    "n": 12,
+    "hash": "6940d097",
+    "first": [
+     -10.08,
+     5.7,
+     -5.38
+    ]
+   },
+   "salao|salao-bergBack|fabric-salao-boxVelvet-high|MeshPhysicalMaterial|#5b1430|r0.8|m0|e#000000×1|sheen#dab8c3|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|96539438": {
+    "n": 12,
+    "hash": "8616fb98",
+    "first": [
+     -10.157,
+     5.82,
+     -5.68
+    ]
+   },
+   "salao|salao-bergFrame|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|e16a94f6": {
+    "n": 12,
+    "hash": "5ba70d53",
+    "first": [
+     -10.142,
+     6.26,
+     -5.622
+    ]
+   },
+   "salao|salao-bergArm|fabric-salao-boxVelvet-high|MeshPhysicalMaterial|#5b1430|r0.8|m0|e#000000×1|sheen#dab8c3|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|fd1afa89": {
+    "n": 24,
+    "hash": "5af42f06",
+    "first": [
+     -10.4,
+     5.96,
+     -5.298
+    ]
+   },
+   "salao|salao-boxShade|fabric-salao-boxShade-high|MeshPhysicalMaterial|#f1d9a6|r0.8|m0|e#000000×1|sheen#f6e7cb|o1|side2|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|9b696972": {
+    "n": 6,
+    "hash": "5a514834",
+    "first": [
+     -9.6,
+     6.32,
+     -5.43
+    ]
+   },
+   "salao|salao-boxBulb|glow-bulbWarm|MeshBasicMaterial|#ffffe4|o1|side0|t0|vc0|dba54689": {
+    "n": 6,
+    "hash": "c62a9561",
+    "first": [
+     -9.6,
+     6.3,
+     -5.43
+    ]
+   },
+   "salao|salao-fringe|solid-gold|MeshStandardMaterial|#b48a3c|r0.38|m1|e#000000×1|o1|side0|t0|vc0|5eb696f9": {
+    "n": 46,
+    "hash": "50099311",
+    "first": [
+     -10.88,
+     4.355,
+     13.68
+    ]
+   },
+   "salao|salao-chCandle|solid-candle|MeshStandardMaterial|#f3ead6|r0.7|m0|e#3a2a10×0.4|o1|side0|t0|vc0|4b7012c6": {
+    "n": 104,
+    "hash": "14db2c15",
+    "first": [
+     -5.69,
+     6.8,
+     -3.5
+    ]
+   },
+   "salao|salao-chBulb|glow-bulbWarm|MeshBasicMaterial|#ffffe4|o1|side0|t0|vc0|464055b3": {
+    "n": 104,
+    "hash": "f57c58d2",
+    "first": [
+     -5.69,
+     6.95,
+     -3.5
+    ]
+   },
+   "salao|salao-prism|solid-salao-crystal|MeshStandardMaterial|#f4f6ff|r0.02|m0.1|e#000000×1|o0.86|side0|t1|vc0|04fa259e": {
+    "n": 520,
+    "hash": "36d4e45f",
+    "first": [
+     -5.85,
+     6.62,
+     -3.5
+    ]
+   },
+   "salao|salao-bead|solid-salao-crystal|MeshStandardMaterial|#f4f6ff|r0.02|m0.1|e#000000×1|o0.86|side0|t1|vc0|dba54689": {
+    "n": 832,
+    "hash": "b952384d",
+    "first": [
+     -5.864,
+     6.619,
+     -3.447
+    ]
+   },
+   "salao|salao-prismBig|solid-salao-crystal|MeshStandardMaterial|#f4f6ff|r0.02|m0.1|e#000000×1|o0.86|side0|t1|vc0|04fa259e": {
+    "n": 4,
+    "hash": "2f5e0d85",
+    "first": [
+     -6.8,
+     6.28,
+     -3.5
+    ]
+   },
+   "salao|salao-ball|solid-salao-crystal|MeshStandardMaterial|#f4f6ff|r0.02|m0.1|e#000000×1|o0.86|side0|t1|vc0|c21baec2": {
+    "n": 4,
+    "hash": "3d7bcc93",
+    "first": [
+     -6.8,
+     6.38,
+     -3.5
+    ]
+   },
+   "salao|salao-floorCup|glass-clear|MeshPhysicalMaterial|#dfe9ee|r0.04|m0|e#000000×1|sheen#000000|o0.16|side2|t1|vc0|0e13c6fa": {
+    "n": 7,
+    "hash": "32e87c78",
+    "first": [
+     8.224,
+     0.025,
+     1.7
+    ]
+   },
+   "salao|beaconDome|solid-beaconOff|MeshStandardMaterial|#5a1010|r0.2|m0|e#000000×1|o0.85|side0|t1|vc0|6e12da98": {
+    "n": 2,
+    "hash": "0fd4e7e6",
+    "first": [
+     -11.84,
+     4.6,
+     6
+    ]
+   },
+   "salao|salao-chainLink|solid-salao-bronze|MeshStandardMaterial|#8a6430|r0.32|m1|e#000000×1|o1|side0|t0|vc0|fddc85d6": {
+    "n": 78,
+    "hash": "18f01854",
+    "first": [
+     -6.8,
+     9.28,
+     -3.5
+    ]
+   },
+   "salao|salao-trussDiag|solid-salao-truss|MeshStandardMaterial|#cfd3d7|r0.3|m0.9|e#000000×1|o1|side0|t0|vc0|626c644a": {
+    "n": 320,
+    "hash": "bbe66487",
+    "first": [
+     3.545,
+     6.145,
+     1.555
+    ]
+   }
+  },
+  "anchors": [
+   {
+    "x": 10.54,
+    "y": 1.33,
+    "z": 3.74,
+    "color": "#ffd8a0",
+    "intensity": 1.6,
+    "distance": 2.2,
+    "room": "salao"
+   },
+   {
+    "x": 11,
+    "y": 3.4,
+    "z": 4.5,
+    "color": "#ffc983",
+    "intensity": 4,
+    "distance": 4,
+    "room": "salao"
+   },
+   {
+    "x": -9.6,
+    "y": 6.35,
+    "z": -5.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": -2.4,
+    "y": 6.35,
+    "z": -5.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": 6,
+    "y": 6.35,
+    "z": -5.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": -9.4,
+    "y": 6.35,
+    "z": 13.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": -1.6,
+    "y": 6.35,
+    "z": 13.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": 6.6,
+    "y": 6.35,
+    "z": 13.43,
+    "color": "#ffc77f",
+    "intensity": 2.2,
+    "distance": 3,
+    "room": "salao",
+    "flicker": 0.2
+   },
+   {
+    "x": -6.8,
+    "y": 6.75,
+    "z": -3.5,
+    "color": "#ffd29a",
+    "intensity": 26,
+    "distance": 12,
+    "room": "salao"
+   },
+   {
+    "x": 6,
+    "y": 6.85,
+    "z": -3.4,
+    "color": "#ffd29a",
+    "intensity": 26,
+    "distance": 12,
+    "room": "salao"
+   },
+   {
+    "x": -8,
+    "y": 6.95,
+    "z": 11.6,
+    "color": "#ffd29a",
+    "intensity": 26,
+    "distance": 12,
+    "room": "salao"
+   },
+   {
+    "x": 8,
+    "y": 6.95,
+    "z": 11.6,
+    "color": "#ffd29a",
+    "intensity": 26,
+    "distance": 12,
+    "room": "salao"
+   },
+   {
+    "x": 9,
+    "y": 0.12,
+    "z": 4.5,
+    "color": "#ffb36b",
+    "intensity": 2.5,
+    "distance": 3,
+    "room": "salao"
+   },
+   {
+    "x": 4.6,
+    "y": 5.2,
+    "z": 3,
+    "color": "#ff3db0",
+    "intensity": 2.25,
+    "distance": 8.5,
+    "room": "salao"
+   },
+   {
+    "x": 8.2,
+    "y": 5.2,
+    "z": 6,
+    "color": "#32cfff",
+    "intensity": 2.25,
+    "distance": 8.5,
+    "room": "salao"
+   },
+   {
+    "x": 6.6,
+    "y": 5.2,
+    "z": 4.6,
+    "color": "#ffb85a",
+    "intensity": 1.8,
+    "distance": 8.5,
+    "room": "salao"
+   },
+   {
+    "x": 10.3,
+    "y": 3.2,
+    "z": -2.2,
+    "color": "#fff0dc",
+    "intensity": 5,
+    "distance": 6,
+    "room": "salao"
+   },
+   {
+    "x": -8,
+    "y": 4.6,
+    "z": 13.1,
+    "color": "#fff0d8",
+    "intensity": 9,
+    "distance": 5.5,
+    "room": "salao"
+   },
+   {
+    "x": 8,
+    "y": 4.6,
+    "z": 13.1,
+    "color": "#fff0d8",
+    "intensity": 9,
+    "distance": 5.5,
+    "room": "salao"
+   }
+  ],
+  "flames": [
+   [
+    -6.15,
+    1.16,
+    13.6
+   ],
+   [
+    -9.85,
+    1.16,
+    13.6
+   ],
+   [
+    -6.8,
+    1.698,
+    -3.5
+   ],
+   [
+    -6.662,
+    1.683,
+    -3.362
+   ],
+   [
+    -6.938,
+    1.683,
+    -3.362
+   ],
+   [
+    -6.938,
+    1.683,
+    -3.638
+   ],
+   [
+    -6.662,
+    1.683,
+    -3.638
+   ],
+   [
+    -6.545,
+    0.795,
+    -3.245
+   ],
+   [
+    -7.055,
+    0.795,
+    -3.245
+   ],
+   [
+    -7.055,
+    0.795,
+    -3.755
+   ],
+   [
+    -6.545,
+    0.795,
+    -3.755
+   ],
+   [
+    -6.6,
+    1.698,
+    2
+   ],
+   [
+    -6.462,
+    1.683,
+    2.138
+   ],
+   [
+    -6.738,
+    1.683,
+    2.138
+   ],
+   [
+    -6.738,
+    1.683,
+    1.862
+   ],
+   [
+    -6.462,
+    1.683,
+    1.862
+   ],
+   [
+    -6.345,
+    0.795,
+    2.255
+   ],
+   [
+    -6.855,
+    0.795,
+    2.255
+   ],
+   [
+    -6.855,
+    0.795,
+    1.745
+   ],
+   [
+    -6.345,
+    0.795,
+    1.745
+   ],
+   [
+    -6.6,
+    1.698,
+    7.2
+   ],
+   [
+    -6.462,
+    1.683,
+    7.338
+   ],
+   [
+    -6.738,
+    1.683,
+    7.338
+   ],
+   [
+    -6.738,
+    1.683,
+    7.062
+   ],
+   [
+    -6.462,
+    1.683,
+    7.062
+   ],
+   [
+    -6.345,
+    0.795,
+    7.455
+   ],
+   [
+    -6.855,
+    0.795,
+    7.455
+   ],
+   [
+    -6.855,
+    0.795,
+    6.945
+   ],
+   [
+    -6.345,
+    0.795,
+    6.945
+   ]
+  ],
+  "beacons": [
+   {
+    "room": "salao",
+    "pos": [
+     -11.84,
+     4.64,
+     6
+    ],
+    "normal": [
+     1,
+     0,
+     0
+    ]
+   },
+   {
+    "room": "salao",
+    "pos": [
+     11.84,
+     4.64,
+     12.45
+    ],
+    "normal": [
+     -1,
+     0,
+     0
+    ]
+   }
+  ],
+  "cones": 0,
+  "ticks": [
+   "salao",
+   "salao"
+  ],
+  "loose0": [
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     11.6,
+     2.6,
+     4.5
+    ],
+    "rot": [
+     0,
+     -1.571,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "75d7b386",
+    "mats": [
+     "glow-salao-djStars|MeshBasicMaterial|#e9f3ff|o0.913|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "1840cd6e",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "210cdd2b"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "95c809de",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "4030691c"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0c96adef",
+    "mats": [
+     "glow-salao-mhLens|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0"
+    ],
+    "instances": "33ce0c2c"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c7ee88c6",
+    "mats": [
+     "salao-beam-mh|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "7effe8da"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotGoboMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "9070699f"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotSoftMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "859e7417"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 3,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "01e756da",
+    "mats": [
+     "salao-mirrorBall|MeshStandardMaterial|#dfe3e8|r0.12|m1|e#ffffff×0.6|o1|side0|t0|vc0|emissiveMap=8x8/srgb/1001/1,1"
+    ],
+    "instances": "e2cfb931"
+   },
+   {
+    "type": "Points",
+    "room": "salao",
+    "renderOrder": 6,
+    "visible": true,
+    "count": null,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "2d2e252a",
+    "mats": [
+     "PointsMaterial|PointsMaterial|#ffffff|o1|side0|t1|vc1|map=8x8//1001/1,1"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.5,
+     0.029,
+     4.5
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "6295c48a",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#f3ebdf|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.3,
+     9.1,
+     4.5
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c3b56446",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#c4bdb3|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 9,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0e6c5256",
+    "mats": [
+     "salao-beam-pin|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "5edb22b5"
+   }
+  ],
+  "looseParty": [
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     11.6,
+     2.6,
+     4.5
+    ],
+    "rot": [
+     0,
+     -1.571,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "75d7b386",
+    "mats": [
+     "glow-salao-djStars|MeshBasicMaterial|#e9f3ff|o0.96|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "1840cd6e",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "4175e475"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "95c809de",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "c3d39998"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0c96adef",
+    "mats": [
+     "glow-salao-mhLens|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0"
+    ],
+    "instances": "173ebfb9"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c7ee88c6",
+    "mats": [
+     "salao-beam-mh|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "ed98ee0a"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotGoboMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "8ffbdc93"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotSoftMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "971ba6e5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 3,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "01e756da",
+    "mats": [
+     "salao-mirrorBall|MeshStandardMaterial|#dfe3e8|r0.12|m1|e#ffffff×0.6|o1|side0|t0|vc0|emissiveMap=8x8/srgb/1001/1,1"
+    ],
+    "instances": "461faee9"
+   },
+   {
+    "type": "Points",
+    "room": "salao",
+    "renderOrder": 6,
+    "visible": true,
+    "count": null,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "2d2e252a",
+    "mats": [
+     "PointsMaterial|PointsMaterial|#ffffff|o1|side0|t1|vc1|map=8x8//1001/1,1"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.5,
+     0.029,
+     4.5
+    ],
+    "rot": [
+     0,
+     0.185,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "6295c48a",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#f3ebdf|o0.756|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.3,
+     9.1,
+     4.5
+    ],
+    "rot": [
+     0,
+     -0.185,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c3b56446",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#c4bdb3|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 9,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0e6c5256",
+    "mats": [
+     "salao-beam-pin|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "5edb22b5"
+   }
+  ],
+  "looseAlarm": [
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     11.6,
+     2.6,
+     4.5
+    ],
+    "rot": [
+     0,
+     -1.571,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "75d7b386",
+    "mats": [
+     "glow-salao-djStars|MeshBasicMaterial|#e9f3ff|o0.913|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "1840cd6e",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "4175e475"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "95c809de",
+    "mats": [
+     "solid-salao-headBody|MeshStandardMaterial|#151619|r0.42|m0.45|e#000000×1|o1|side0|t0|vc0"
+    ],
+    "instances": "c3d39998"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0c96adef",
+    "mats": [
+     "glow-salao-mhLens|MeshBasicMaterial|#ffffff|o1|side0|t0|vc0"
+    ],
+    "instances": "173ebfb9"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": false,
+    "count": 8,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c7ee88c6",
+    "mats": [
+     "salao-beam-mh|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "ed98ee0a"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": false,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotGoboMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "8ffbdc93"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": false,
+    "count": 4,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c72fb416",
+    "mats": [
+     "salao-spotSoftMat|MeshBasicMaterial|#ffffff|o1|side0|t1|vc0|map=8x8//1001/1,1"
+    ],
+    "instances": "971ba6e5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 0,
+    "visible": true,
+    "count": 3,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "01e756da",
+    "mats": [
+     "salao-mirrorBall|MeshStandardMaterial|#dfe3e8|r0.12|m1|e#ffffff×0.6|o1|side0|t0|vc0|emissiveMap=8x8/srgb/1001/1,1"
+    ],
+    "instances": "07f6a383"
+   },
+   {
+    "type": "Points",
+    "room": "salao",
+    "renderOrder": 6,
+    "visible": true,
+    "count": null,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "2d2e252a",
+    "mats": [
+     "PointsMaterial|PointsMaterial|#ffffff|o1|side0|t1|vc1|map=8x8//1001/1,1"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.5,
+     0.029,
+     4.5
+    ],
+    "rot": [
+     0,
+     0.45,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "6295c48a",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#f3ebdf|o0.25|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 3,
+    "visible": true,
+    "count": 1,
+    "pos": [
+     6.3,
+     9.1,
+     4.5
+    ],
+    "rot": [
+     0,
+     -0.45,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "c3b56446",
+    "mats": [
+     "MeshBasicMaterial|MeshBasicMaterial|#c4bdb3|o1|side0|t1|vc0|map=8x8//1000/2,2"
+    ],
+    "instances": "811c9dc5"
+   },
+   {
+    "type": "Mesh",
+    "room": "salao",
+    "renderOrder": 4,
+    "visible": true,
+    "count": 9,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "rot": [
+     0,
+     0,
+     0
+    ],
+    "scale": [
+     1,
+     1,
+     1
+    ],
+    "geo": "0e6c5256",
+    "mats": [
+     "salao-beam-pin|ShaderMaterial|o1|side2|t1|vc0"
+    ],
+    "instances": "5edb22b5"
+   }
+  ],
+  "surfaces": {
+   "salao": {
+    "floor": "salao-sm-floor-high|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|mirror[0.8,0.05]|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1",
+    "floorTile": [
+     2.4,
+     2.4
+    ],
+    "floorMirror": [
+     0.8,
+     0.05
+    ],
+    "wall": "salao-sm-stone-high|MeshStandardMaterial|#ffffff|r1|m0|e#000000×1|o1|side0|t0|vc0|map=8x8/srgb/1000/1,1|normalMap=8x8//1000/1,1|roughnessMap=8x8//1000/1,1",
+    "wallTile": [
+     2.4,
+     1.2
+    ],
+    "trims": false
+   }
+  },
+  "keys": {
+   "salao": [
+    {
+     "p": [
+      6.6,
+      9,
+      4.5
+     ],
+     "aim": [
+      6.6,
+      0,
+      4.5
+     ],
+     "angle": 0.78,
+     "i": 70,
+     "color": "#ffd9b0"
+    },
+    {
+     "p": [
+      -6.6,
+      9,
+      3
+     ],
+     "aim": [
+      -6.6,
+      0,
+      3.2
+     ],
+     "angle": 0.85,
+     "i": 75,
+     "color": "#ffd29a"
+    },
+    {
+     "p": [
+      0,
+      9.2,
+      11.6
+     ],
+     "aim": [
+      0,
+      0,
+      12.2
+     ],
+     "angle": 0.85,
+     "i": 70,
+     "color": "#ffdcae"
+    },
+    {
+     "p": [
+      -2,
+      9.2,
+      -3
+     ],
+     "aim": [
+      -2,
+      0,
+      -3.2
+     ],
+     "angle": 0.85,
+     "i": 65,
+     "color": "#ffdcae"
+    }
+   ]
+  }
+ }
+}

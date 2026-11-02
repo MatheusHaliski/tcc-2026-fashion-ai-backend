@@ -5,216 +5,21 @@
  * almofadas e a parede de guarda-volumes com nichos numerados e cabides), arara de latão, banco escultural "Silhouette",
  * mesa floral (gueridom de nero e o arranjo de rosas, orquídeas, esporas e eucalipto até 2,2 m), aparador das taças de
  * boas-vindas, painel dos pavimentos, totem acessível com mapa tátil e braile, pórtico do detector, pedestais com cordão,
- * porta-guarda-chuvas, cabideiro e o extintor no nicho.
+ * porta-guarda-chuvas, cabideiro e o extintor no nicho. O balcão fica em vestibulo-desk.ts e a chapelaria (balcão,
+ * guarda-volumes e arara) em vestibulo-cloak.ts — reexportados daqui; o que os construtores dividem está em
+ * vestibulo-furniture-kit.ts.
  */
 import * as THREE from "three";
 import type { Prop } from "@/lib/heist/types";
 import { BOX0, CYL, CYL0, SPH, mat, mul } from "../interior-batch";
-import { foot, type LightAnchor, type PropsCtx } from "../interior-props";
+import { foot } from "../interior-props";
 import { roseGeometry } from "../interior-hall";
 import type { RoomsCtx } from "./kit";
-import { BOXC, ROOM, VM, beam, frameGeo, lathe, onWall, prism, raisedPanel, vCopy, vFabric, vGeo, vGlow, vMat, vSolid, vTex, type VPalette } from "./vestibulo-kit";
+import { BOXC, ROOM, VM, beam, frameGeo, lathe, onWall, vFabric, vGeo, vGlow, vMat, vSolid, vTex, vCopy } from "./vestibulo-kit";
+import { L, PLANE_UP, PLANE_V, W, light, reseed, rnd, type Ctx } from "./vestibulo-furniture-kit";
 
-type Foot = ReturnType<typeof foot>;
-type Ctx = Pick<PropsCtx, "q" | "batch" | "inst" | "anchors" | "copy">;
-/** Matriz no referencial do móvel (frente para +z local). */
-const L = (f: Foot, x: number, y: number, z: number, ry = 0, sx = 1, sy = sx, sz = sx, rx = 0, rz = 0) => mul(mat(f.cx, 0, f.cz, f.yaw), mat(x, y, z, ry, sx, sy, sz, rx, rz));
-const W = (f: Foot, x: number, y: number, z: number) => new THREE.Vector3(x, y, z).applyMatrix4(mat(f.cx, 0, f.cz, f.yaw));
-const light = (c: Ctx, v: THREE.Vector3, color: string, intensity: number, distance: number, o: Partial<LightAnchor> = {}) => c.anchors.push({ x: v.x, y: v.y, z: v.z, color, intensity, distance, room: ROOM, ...o });
-let seed = 1;
-const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-
-/* ======================= balcão de credenciamento "Nocturne" ======================= */
-/** Arco da frente (convexo para a entrada): corda 3 m, flecha 0,28 m; a recepcionista fica do lado de trás (−z local). */
-export function desk(p: Prop, c: Ctx) {
-  const f = foot(p), V = VM(c.q), half = f.w / 2, sag = 0.28, R = (half * half + sag * sag) / (2 * sag), cz = f.d / 2 - R, depth = 0.66;
-  const arc = (r: number, n = 24): [number, number][] => { const a = Math.asin(half / R), out: [number, number][] = []; for (let i = 0; i <= n; i++) { const t = -a + (i / n) * 2 * a; out.push([Math.sin(t) * r, cz + Math.cos(t) * r]); } return out; };
-  const band = (r0: number, r1: number) => [...arc(r1), ...arc(r0).reverse()];
-  const P = (pts: [number, number][], y0: number, y1: number) => prism(pts, y0, y1);
-  const add = (m: THREE.Material, g: THREE.BufferGeometry, x = 0, y = 0, z = 0, cast = false) => c.batch.add(ROOM, m, g, L(f, x, y, z), { cast });
-  // rodapé recuado de nero com a fita de luz embaixo (o balcão "flutua"), corpo de laca negra e o tampo alto de nero
-  add(V.nero, vGeo(`deskPlinth${f.w}`, () => P(band(R - depth + 0.05, R - 0.05), 0, 0.1)));
-  c.inst.add(ROOM, "vestibulo-deskLed", BOX0(), vGlow("deskLed", "#ffcf8a", 1.8), L(f, 0, 0.1, f.d / 2 - 0.1, 0, f.w - 0.5, 0.008, 0.02));
-  add(V.blackLacquer, vGeo(`deskBody${f.w}`, () => P(band(R - depth, R), 0.1, 1.04)), 0, 0, 0, true);
-  add(V.nero, vGeo(`deskTop${f.w}`, () => P(band(R - 0.3, R + 0.06), 1.04, 1.1)), 0, 0, 0, true);
-  add(V.brass, vGeo(`deskEdge${f.w}`, () => P(band(R + 0.055, R + 0.07), 1.035, 1.105)));
-  add(V.brass, vGeo(`deskKick${f.w}`, () => P(band(R - 0.002, R + 0.008), 0.1, 0.14)));
-  // aletas verticais de latão na frente curva (a cada ~19 cm) e a faixa dourada no alto
-  const a0 = Math.asin(half / R);
-  for (let k = 1; k < 16; k++) { const t = -a0 + (k / 16) * 2 * a0; c.inst.add(ROOM, "vestibulo-deskFin", BOX0(), V.brass, mul(L(f, Math.sin(t) * (R + 0.012), 0.16, cz + Math.cos(t) * (R + 0.012)), mat(0, 0, 0, t, 0.022, 0.84, 0.024))); }
-  add(V.gilt, vGeo(`deskBand${f.w}`, () => P(band(R - 0.001, R + 0.006), 0.96, 0.99)));
-  // lado de trás: mesa de trabalho a 0,76 m em nogueira com quatro gaveteiros e puxadores de latão
-  add(V.walnut, vGeo(`deskWork${f.w}`, () => P(band(R - depth - 0.14, R - depth + 0.02), 0.73, 0.77)), 0, 0, 0, true);
-  for (const x of [-1.05, -0.35, 0.35, 1.05]) {
-    const t = Math.asin(x / (R - depth)), zz = cz + Math.cos(t) * (R - depth) - 0.02;
-    for (let k = 0; k < 3; k++) {
-      c.batch.add(ROOM, V.walnut, raisedPanel("drawer", 0.52, 0.16, 0.014, 0.006), mul(L(f, x, 0.21 + k * 0.19, zz), mat(0, 0, 0, Math.PI - t)));
-      c.inst.add(ROOM, "vestibulo-drawerPull", CYL(10), V.brass, mul(L(f, x, 0.21 + k * 0.19, zz - 0.03), mat(0, 0, 0, -t, 0.008, 0.14, 0.008, 0, Math.PI / 2)));
-    }
-  }
-  // sobre o tampo: livro de presença aberto com caneta, leitores de QR, bandejas de pulseiras, tablet, orquídea
-  const book = guestBookTexture(c);
-  const pageM = vMat("guestBookMat", () => new THREE.MeshStandardMaterial({ map: book, roughness: 0.85 }));
-  c.batch.add(ROOM, V.leather, BOX0(), L(f, -0.15, 1.1, 0.12, 0.12, 0.52, 0.018, 0.36));
-  c.batch.add(ROOM, pageM, vGeo("bookPages", () => { const g = new THREE.PlaneGeometry(0.48, 0.32, 8, 1), pp = g.getAttribute("position") as THREE.BufferAttribute; for (let i = 0; i < pp.count; i++) pp.setZ(i, 0.012 * Math.sin(Math.abs(pp.getX(i)) / 0.24 * Math.PI * 0.5 + Math.PI * 0.5) + 0.004); g.rotateX(-Math.PI / 2); return g; }), L(f, -0.15, 1.12, 0.12, 0.12));
-  c.batch.add(ROOM, V.blackLacquer, CYL(8), L(f, 0.05, 1.135, 0.2, 0.7, 0.005, 0.15, 0.005, 0, Math.PI / 2));
-  c.batch.add(ROOM, V.gilt, CYL(8), L(f, 0.0, 1.135, 0.18, 0.7, 0.0055, 0.03, 0.0055, 0, Math.PI / 2));
-  for (const x of [-1.05, 0.65]) qrReader(c, V, f, x, 1.1, 0.0);
-  for (const [x, col] of [[0.25, "#f3d06a"], [0.42, "#e8e2d6"]] as [number, string][]) {
-    c.batch.add(ROOM, V.brass, lathe("tray", [[0, 0], [0.09, 0], [0.1, 0.012], [0.095, 0.016], [0, 0.006]], 20), L(f, x, 1.1, 0.05, 0, 1, 1, 1));
-    for (let k = 0; k < 9; k++) c.inst.add(ROOM, "vestibulo-wristband", vGeo("wristbandGeo", () => new THREE.TorusGeometry(0.03, 0.006, 4, 14).rotateX(Math.PI / 2).scale(1, 1, 0.5)), vFabric(`band-${col}`, col, c.q), L(f, x + (k % 3 - 1) * 0.045, 1.11 + Math.floor(k / 3) * 0.006, 0.05 + (Math.floor(k / 3) - 1) * 0.04, k));
-  }
-  c.batch.add(ROOM, V.bronze, BOX0(), L(f, 0.95, 1.1, -0.12, -0.25 + Math.PI, 0.05, 0.12, 0.04));
-  c.batch.add(ROOM, V.blackMatte, BOX0(), L(f, 0.95, 1.2, -0.11, -0.25 + Math.PI, 0.26, 0.18, 0.012, -0.35));
-  c.batch.add(ROOM, vGlow("tabletScreen", "#a8c8ff", 0.9), PLANE_UP(), L(f, 0.95, 1.29, -0.104, Math.PI - 0.25, 0.24, 1, 0.16, Math.PI / 2 - 0.35));
-  orchid(c, V, f, 1.25, 1.1, -0.05);
-  // luminária de mesa de latão com cúpula verde na mesa de trabalho (ilumina o livro)
-  c.batch.add(ROOM, V.brass, lathe("deskLampV", [[0, 0], [0.08, 0], [0.08, 0.015], [0.012, 0.03], [0.012, 0.36], [0, 0.36]], 14), L(f, -0.95, 0.77, -0.46));
-  c.batch.add(ROOM, vSolid("lampShadeGreen", "#0d4a2e", { rough: 0.22, env: 1.2, side: THREE.DoubleSide }), vGeo("lampShadeV", () => new THREE.CylinderGeometry(0.035, 0.13, 0.1, 18, 1, true)), L(f, -0.95, 1.15, -0.42, 0, 1, 1, 1, 0.15));
-  c.inst.add(ROOM, "vestibulo-deskLampBulb", SPH(8), V.bulb, L(f, -0.95, 1.12, -0.42, 0, 0.03));
-  light(c, W(f, -0.6, 1.4, -0.2), "#ffdcaa", 3.2, 3.2);
-  // placa pendurada sobre o balcão: vidro negro com letras douradas, presa por duas correntes ao teto
-  const tx = vCopy(c.copy);
-  const sign = vTex(`deskSign-${tx.checkin}`, 1024, 256, (g, w, h) => {
-    g.fillStyle = "#08080a"; g.fillRect(0, 0, w, h); g.strokeStyle = "#c9a24b"; g.lineWidth = 6; g.strokeRect(14, 14, w - 28, h - 28);
-    g.fillStyle = "#e3c27a"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `600 ${Math.round(h * 0.38)}px 'Didot', 'Bodoni 72', Georgia, 'DejaVu Serif', serif`; g.fillText(tx.checkin, w / 2, h * 0.52);
-  });
-  const sm = vMat(`deskSignMat-${tx.checkin}`, () => new THREE.MeshStandardMaterial({ map: sign, roughness: 0.15, metalness: 0.2, emissiveMap: sign, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 0.25 }));
-  c.batch.add(ROOM, V.brass, BOX0(), L(f, 0, 3.0, 0.0, 0, 2.06, 0.56, 0.035));
-  for (const s of [1, -1]) c.batch.add(ROOM, sm, PLANE_V(), L(f, 0, 3.28, s * 0.0185, s > 0 ? 0 : Math.PI, 2.0, 0.5, 1));
-  for (const x of [-0.85, 0.85]) c.batch.add(ROOM, V.brass, CYL0(6), L(f, x, 3.56, 0, 0, 0.006, 6.5 - 3.56, 0.006));
-}
-const PLANE_V = () => vGeo("planeV", () => new THREE.PlaneGeometry(1, 1).translate(0, 0, 0));
-const PLANE_UP = () => vGeo("planeUp", () => new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2));
-/** Páginas do livro de presença: duas colunas manuscritas com assinaturas. */
-function guestBookTexture(c: Ctx): THREE.Texture {
-  const tx = vCopy(c.copy);
-  return vTex(`guestBook-${tx.guestBook}`, 1024, 680, (g, w, h) => {
-    g.fillStyle = "#f4ecd9"; g.fillRect(0, 0, w, h);
-    const sh = g.createLinearGradient(w / 2 - 40, 0, w / 2 + 40, 0); sh.addColorStop(0, "rgba(0,0,0,0)"); sh.addColorStop(0.5, "rgba(80,60,30,0.35)"); sh.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = sh; g.fillRect(w / 2 - 40, 0, 80, h);
-    g.fillStyle = "#6a1418"; g.font = `600 30px 'Didot', Georgia, serif`; g.textAlign = "center"; g.fillText(tx.guestBook, w * 0.25, 52); g.fillText("Gala Lumière", w * 0.75, 52);
-    g.strokeStyle = "rgba(120,100,70,0.35)"; g.lineWidth = 1.5;
-    for (let y = 90; y < h - 20; y += 34) for (const x0 of [30, w / 2 + 30]) { g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + w / 2 - 70, y); g.stroke(); }
-    g.strokeStyle = "#1b2a52"; g.lineWidth = 2.2;
-    for (let k = 0; k < 22; k++) {
-      const col = k < 12 ? 0 : 1, row = k % 12, x0 = col * w / 2 + 40 + (row % 3) * 20, y0 = 84 + row * 34;
-      g.beginPath(); g.moveTo(x0, y0); for (let i = 1; i < 24; i++) g.lineTo(x0 + i * (8 + (k % 5)), y0 - 6 * Math.sin(i * 0.9 + k) - (i % 4 === 0 ? 8 : 0)); g.stroke();
-    }
-  });
-}
-/** Leitor de QR de balcão: base de bronze, coluna, cabeça inclinada com vidro escuro e o LED verde. */
-function qrReader(c: Ctx, V: VPalette, f: Foot, x: number, y: number, z: number) {
-  c.batch.add(ROOM, V.bronze, lathe("qrBase", [[0, 0], [0.06, 0], [0.06, 0.012], [0.02, 0.02], [0, 0.02]], 16), L(f, x, y, z));
-  c.batch.add(ROOM, V.bronze, CYL0(10), L(f, x, y + 0.02, z, 0, 0.012, 0.12, 0.012));
-  c.batch.add(ROOM, V.blackMatte, BOX0(), L(f, x, y + 0.13, z, 0, 0.1, 0.035, 0.08, 0.5));
-  c.batch.add(ROOM, vSolid("qrGlass", "#101820", { rough: 0.05, metal: 0.3, env: 1.4 }), BOX0(), L(f, x, y + 0.135, z + 0.012, 0, 0.07, 0.03, 0.05, 0.5));
-  c.inst.add(ROOM, "vestibulo-qrLed", SPH(6), V.ledGreen, L(f, x + 0.035, y + 0.16, z + 0.03, 0, 0.005));
-}
-/** Orquídea branca num cachepô de nero: hastes arqueadas com flores. */
-function orchid(c: Ctx, V: VPalette, f: Foot, x: number, y: number, z: number) {
-  c.batch.add(ROOM, V.nero, lathe("orchidPot", [[0, 0], [0.07, 0], [0.085, 0.14], [0.08, 0.15], [0, 0.15]], 18), L(f, x, y, z));
-  const bloom = vGeo("orchidBloom", () => { const s = new THREE.Shape(); for (let i = 0; i <= 10; i++) { const a = (i / 10) * Math.PI * 2, r = 0.028 * (0.6 + 0.4 * Math.abs(Math.cos(a * 2.5))); if (i) s.lineTo(Math.cos(a) * r, Math.sin(a) * r); else s.moveTo(Math.cos(a) * r, Math.sin(a) * r); } return new THREE.ShapeGeometry(s, 2); });
-  const bm = vSolid("orchidWhite", "#fbf6f2", { rough: 0.6, side: THREE.DoubleSide, env: 0.4 });
-  for (let s = 0; s < 2; s++) {
-    const pts: THREE.Vector3[] = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(W(f, x + (s ? -1 : 1) * t * t * 0.18, y + 0.14 + t * 0.42 - t * t * 0.12, z + t * 0.05)); }
-    c.batch.add(ROOM, vSolid("orchidStem", "#3c5a2a", { rough: 0.7 }), new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 12, 0.004, 5, false));
-    for (let k = 3; k <= 8; k++) { const q = pts[k]; c.inst.add(ROOM, "vestibulo-orchid", bloom, bm, mat(q.x, q.y - 0.02, q.z + 0.02, f.yaw + k, 1, 1, 1, -0.3)); }
-  }
-}
-
-/* ======================= chapelaria ======================= */
-/** Balcão da chapelaria (frente para oeste): almofadas de nogueira, tampo de latão, campainha, fichas, aba de passagem. */
-export function coatCheck(p: Prop, c: Ctx) {
-  const f = foot(p), V = VM(c.q), w = f.w, d = f.d, h = 1.05;
-  c.batch.add(ROOM, V.nero, BOX0(), L(f, 0, 0, 0.02, 0, w - 0.04, 0.12, d - 0.04));
-  c.batch.add(ROOM, V.walnut, BOX0(), L(f, 0, 0.12, 0, 0, w, h - 0.16, d), { cast: true });
-  const n = Math.round(w / 0.6);
-  for (let k = 0; k < n; k++) {
-    const x = -w / 2 + (k + 0.5) * (w / n);
-    c.batch.add(ROOM, V.walnut, raisedPanel("coatPanel", w / n - 0.14, 0.58, 0.018, 0.01), L(f, x, 0.6, d / 2));
-    c.batch.add(ROOM, V.gilt, frameGeo("coatPanelFrame", w / n - 0.1, 0.64, 0.015, 0.024, 0.004), L(f, x, 0.6, d / 2));
-  }
-  c.batch.add(ROOM, V.mahogany, BOX0(), L(f, 0, h - 0.04, 0.02, 0, w + 0.06, 0.04, d + 0.08));
-  c.batch.add(ROOM, V.brass, BOX0(), L(f, 0, h, 0.02, 0, w + 0.04, 0.012, d + 0.06));
-  // campainha, porta-fichas numeradas e o bloco de tíquetes; a aba de passagem na ponta sul
-  c.batch.add(ROOM, V.brass, lathe("bellBase", [[0, 0], [0.05, 0], [0.05, 0.01], [0, 0.01]], 18), L(f, w / 2 - 0.35, h + 0.012, 0.1));
-  c.batch.add(ROOM, V.giltBright, vGeo("bellDome", () => new THREE.SphereGeometry(0.04, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2)), L(f, w / 2 - 0.35, h + 0.022, 0.1));
-  for (let k = 0; k < 10; k++) c.inst.add(ROOM, "vestibulo-coatTicket", BOX0(), V.paper, L(f, -0.8 + k * 0.05, h + 0.012, 0.12, 0.05 * (k % 3), 0.035, 0.05, 0.003, -0.25));
-  c.batch.add(ROOM, V.brass, BOX0(), L(f, -0.8 + 0.22, h + 0.012, 0.1, 0, 0.56, 0.012, 0.03));
-  c.batch.add(ROOM, V.walnut, BOX0(), L(f, -w / 2 + 0.35, h - 0.02, 0, 0, 0.6, 0.03, d - 0.02));
-  for (const s of [-1, 1]) c.inst.add(ROOM, "vestibulo-hinge", CYL(8), V.brass, L(f, -w / 2 + 0.66, h - 0.01, s * 0.2, 0, 0.01, 0.08, 0.01, Math.PI / 2, 0));
-  // placa sobre o balcão e a luz da chapelaria
-  const tx = vCopy(c.copy);
-  const t = vTex(`coatSign-${tx.coat}`, 512, 160, (g, ww, hh) => { g.fillStyle = "#141010"; g.fillRect(0, 0, ww, hh); g.fillStyle = "#e2c27a"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `600 ${Math.round(hh * 0.42)}px 'Didot', Georgia, serif`; g.fillText(tx.coat, ww / 2, hh / 2); });
-  c.batch.add(ROOM, V.brass, BOX0(), L(f, 0.5, h + 0.012, -0.05, 0, 0.42, 0.012, 0.12));
-  c.batch.add(ROOM, vMat(`coatSignMat-${tx.coat}`, () => new THREE.MeshStandardMaterial({ map: t, roughness: 0.3 })), PLANE_V(), L(f, 0.5, h + 0.09, -0.04, 0, 0.36, 0.11, 1, -0.3));
-  light(c, W(f, 0, 2.3, -0.4), "#ffd9a8", 3.4, 3.6);
-}
-
-/** Parede de guarda-volumes atrás do balcão (parede leste, z 19,5…23,5): nichos numerados em cima, cabides embaixo. */
-export function cloakWall(c: RoomsCtx) {
-  const V = VM(c.q), w = "E" as const, z0 = 19.5, z1 = 23.5, len = z1 - z0, mid = (z0 + z1) / 2, at = (s: number, y: number, off: number) => onWall(w, s, y, off);
-  const D = 0.36, top = 2.66, ybase = 1.98, rows = 3, cols = 12, cw = len / cols, ch = 0.21;
-  // fundo, laterais, rodapé e a cornija de mogno
-  c.batch.add(ROOM, V.walnut, BOX0(), mul(at(mid, 0, 0.025), mat(0, 0, 0, 0, len, top, 0.05)));
-  for (const s of [z0 + 0.02, z1 - 0.02]) c.batch.add(ROOM, V.walnut, BOX0(), mul(at(s, 0, D / 2), mat(0, 0, 0, 0, 0.04, top, D)), { cast: true });
-  c.batch.add(ROOM, V.nero, BOX0(), mul(at(mid, 0, D / 2), mat(0, 0, 0, 0, len, 0.1, D)));
-  c.batch.add(ROOM, V.mahogany, BOX0(), mul(at(mid, top, D / 2 + 0.03), mat(0, 0, 0, 0, len + 0.1, 0.07, D + 0.06)));
-  // nichos numerados (3 fileiras × 12): interior escuro, prateleiras e divisões de nogueira, plaquinhas de latão
-  c.batch.add(ROOM, vSolid("cubbyDark", "#1a120c", { rough: 0.9 }), BOX0(), mul(at(mid, ybase, 0.06), mat(0, 0, 0, 0, len - 0.04, rows * ch, 0.02)));
-  for (let r = 0; r <= rows; r++) c.batch.add(ROOM, V.walnut, BOX0(), mul(at(mid, ybase + r * ch - 0.01, D / 2), mat(0, 0, 0, 0, len - 0.04, 0.02, D)));
-  for (let k = 1; k < cols; k++) c.inst.add(ROOM, "vestibulo-cubbyDiv", BOX0(), V.walnut, mul(at(z0 + k * cw, ybase, D / 2), mat(0, 0, 0, 0, 0.018, rows * ch, D)));
-  const nums = vTex("cubbyNumbers", 1024, 384, (g, ww, hh) => {
-    g.fillStyle = "#b8924a"; g.fillRect(0, 0, ww, hh); g.fillStyle = "#2a1d0a"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `700 64px 'DejaVu Sans', Arial, sans-serif`;
-    for (let r = 0; r < 3; r++) for (let k = 0; k < 12; k++) g.fillText(String(101 + r * 12 + k), (k + 0.5) * (ww / 12), (r + 0.5) * (hh / 3));
-  });
-  const numM = vMat("cubbyNumMat", () => new THREE.MeshStandardMaterial({ map: nums, metalness: 0.85, roughness: 0.3 }));
-  for (let r = 0; r < rows; r++) {
-    const g = vGeo(`cubbyRow${r}`, () => { const pg = new THREE.PlaneGeometry(len, 0.04); const uv = pg.getAttribute("uv") as THREE.BufferAttribute; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i), (2 - r) / 3 + 0.06 + uv.getY(i) * 0.21); return pg; });
-    c.batch.add(ROOM, numM, g, at(mid, ybase + r * ch - 0.01, D + 0.001));
-  }
-  // o que está guardado: caixas, bolsas e o porta-joias de veludo (a peça da chapelaria, em frente à interação)
-  for (let k = 0; k < 16; k++) { const r = k % rows, col = (k * 5 + r) % cols; c.inst.add(ROOM, "vestibulo-cubbyBox", BOX0(), [V.velvetRed, V.leather, V.paper][k % 3], mul(at(z0 + (col + 0.5) * cw, ybase + r * ch + 0.005, 0.2), mat(0, 0, 0, 0.2 * (k % 2), cw * 0.55, ch * 0.5, 0.18))); }
-  c.batch.add(ROOM, vFabric("jewelBox", "#3b0d26", c.q, { sheen: "#c070a0" }), BOX0(), mul(at(20.4, ybase + 0.005, 0.22), mat(0, 0, 0, 0, 0.16, 0.09, 0.13)));
-  c.batch.add(ROOM, V.giltBright, BOX0(), mul(at(20.4, ybase + 0.095, 0.22), mat(0, 0, 0, 0, 0.165, 0.008, 0.135)));
-  // trilho de casacos (1,82 m) com cabides de madeira e casacos de gala
-  c.batch.add(ROOM, V.brass, CYL(10), mul(at(mid, 1.82, 0.2), mat(0, 0, 0, 0, 0.016, len - 0.12, 0.016, 0, Math.PI / 2)));
-  seed = 77; const cols2 = ["#141416", "#2b1d16", "#3a3a3d", "#5a1d2a", "#1c2630", "#e8e2d6", "#0f2b23"];
-  for (let k = 0; k < 15; k++) {
-    const s = z0 + 0.3 + k * 0.25 + (rnd() - 0.5) * 0.06, col = cols2[Math.floor(rnd() * cols2.length)];
-    if (Math.abs(s - 20.4) < 0.2) continue;                                       // a frente do porta-joias fica livre
-    c.inst.add(ROOM, "vestibulo-hanger", vGeo("hangerGeo", () => new THREE.TorusGeometry(0.2, 0.01, 4, 16, Math.PI).rotateZ(Math.PI)), V.walnut, mul(at(s, 1.76, 0.2), mat(0, 0, 0, Math.PI / 2, 1, 0.35, 1)));
-    c.inst.add(ROOM, `vestibulo-coatV-${col}`, coatGeo(), vFabric(`coatV-${col}`, col, c.q), mul(at(s, 1.16, 0.2), mat(0, 0, 0, Math.PI / 2 + (rnd() - 0.5) * 0.25)));
-  }
-  // placa CHAPELARIA no alto
-  const tx = vCopy(c.copy);
-  const t = vTex(`cloakSign-${tx.coat}`, 1024, 220, (g, ww, hh) => { g.fillStyle = "#0b0a0a"; g.fillRect(0, 0, ww, hh); g.strokeStyle = "#c9a24b"; g.lineWidth = 6; g.strokeRect(12, 12, ww - 24, hh - 24); g.fillStyle = "#e6c77f"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `600 ${Math.round(hh * 0.42)}px 'Didot', 'Bodoni 72', Georgia, serif`; g.fillText(tx.coat, ww / 2, hh * 0.54); });
-  c.batch.add(ROOM, V.brass, BOX0(), mul(at(mid, 2.92, 0.015), mat(0, 0, 0, 0, 2.3, 0.5, 0.03)));
-  c.batch.add(ROOM, vMat(`cloakSignMat-${tx.coat}`, () => new THREE.MeshStandardMaterial({ map: t, roughness: 0.2, emissiveMap: t, emissive: new THREE.Color("#ffffff"), emissiveIntensity: 0.2 })), PLANE_V(), mul(at(mid, 3.17, 0.032), mat(0, 0, 0, 0, 2.2, 0.44, 1)));
-}
-/** Casaco no cabide: cápsula achatada com os ombros estreitando no alto. */
-function coatGeo(): THREE.BufferGeometry {
-  return vGeo("coatV", () => { const g = new THREE.CapsuleGeometry(0.17, 0.8, 4, 12).scale(1, 1, 0.34); const p = g.getAttribute("position") as THREE.BufferAttribute; for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y > 0.35) { const k = (y - 0.35) / 0.25; p.setX(i, p.getX(i) * (1 - 0.35 * k)); } } g.computeVertexNormals(); return g; });
-}
-
-/** Arara da chapelaria (esconderijo): latão escovado, pés em arco, prateleira de baixo, casacos e capas de roupa. */
-export function rack(p: Prop, c: Ctx) {
-  const f = foot(p), V = VM(c.q), H = 1.85, w = f.w;
-  for (const s of [-1, 1]) {
-    c.batch.add(ROOM, V.brass, CYL0(10), L(f, s * (w / 2 - 0.04), 0.05, 0, 0, 0.014, H - 0.05, 0.014));
-    c.batch.add(ROOM, V.brass, vGeo("rackFoot", () => new THREE.TorusGeometry(0.22, 0.012, 6, 16, Math.PI)), L(f, s * (w / 2 - 0.04), 0.02, 0, Math.PI / 2, 1, 0.25, 1));
-    c.batch.add(ROOM, V.brass, SPH(10), L(f, s * (w / 2 - 0.04), H + 0.02, 0, 0, 0.025));
-  }
-  c.batch.add(ROOM, V.brass, CYL(10), L(f, 0, H, 0, 0, 0.015, w - 0.06, 0.015, 0, Math.PI / 2));
-  c.batch.add(ROOM, V.walnut, BOX0(), L(f, 0, 0.18, 0, 0, w - 0.1, 0.025, 0.36));
-  seed = 31;
-  for (let k = 0; k < 7; k++) {
-    const x = -w / 2 + 0.14 + k * ((w - 0.28) / 6), col = ["#141416", "#2b1d16", "#5a1d2a", "#3a3a3d"][k % 4];
-    if (k % 3 === 1) c.inst.add(ROOM, "vestibulo-garmentBag", vGeo("garmentBagV", () => new THREE.BoxGeometry(0.06, 1.25, 0.55).translate(0, -0.62, 0)), vFabric("garmentBagV", "#1b1c20", c.q, { rough: 0.6 }), L(f, x, H - 0.05, 0, (rnd() - 0.5) * 0.2));
-    else c.inst.add(ROOM, `vestibulo-coatV-${col}`, coatGeo(), vFabric(`coatV-${col}`, col, c.q), L(f, x, H - 0.66, 0, Math.PI / 2 + (rnd() - 0.5) * 0.2));
-  }
-  for (let k = 0; k < 3; k++) c.inst.add(ROOM, "vestibulo-shoeBox", BOX0(), V.paper, L(f, -0.3 + k * 0.32, 0.205, 0, 0.1 * k, 0.26, 0.1, 0.18));
-}
+export { desk } from "./vestibulo-desk";
+export { cloakWall, coatCheck, rack } from "./vestibulo-cloak";
 
 /* ======================= banco escultural "Silhouette" ======================= */
 export function bench(p: Prop, c: Ctx) {
@@ -257,7 +62,7 @@ export function floralTable(p: Prop, c: Ctx) {
   const vy = top;
   c.batch.add(ROOM, V.bronze, lathe("floralVase", [[0, 0], [0.13, 0], [0.14, 0.02], [0.09, 0.08], [0.1, 0.2], [0.17, 0.36], [0.2, 0.44], [0.18, 0.46], [0, 0.46]], 32), L(f, 0, vy, 0), { cast: true });
   const base = vy + 0.44;
-  seed = 4242;
+  reseed(4242);
   const rose = roseGeometry(c.q), roseMat = vSolid("roseFloral", "#ffffff", { rough: 0.68, side: THREE.DoubleSide, env: 0.4 });
   const leaf = vGeo("floralLeaf", () => { const s = new THREE.Shape(); s.moveTo(0, 0); s.quadraticCurveTo(0.06, 0.1, 0, 0.22); s.quadraticCurveTo(-0.06, 0.1, 0, 0); return new THREE.ShapeGeometry(s, 3); });
   const leafM = vSolid("floralLeafM", "#2f5230", { rough: 0.65, side: THREE.DoubleSide, env: 0.3 }), euM = vSolid("eucalyptus", "#7d978a", { rough: 0.75, side: THREE.DoubleSide, env: 0.3 });
