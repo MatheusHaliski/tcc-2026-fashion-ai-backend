@@ -156,7 +156,10 @@ Fase 2, com o QA delas em `back_quality`). Tudo é baixado antes de o job ser ap
 que é o que define o custo da A100 — além das horas e do custo da segmentação (`--gpu-hour-usd`, `--workers`).
 
 Rode primeiro um piloto (algumas centenas de produtos, a amostra é determinística), confira a grade e só então
-processe tudo com `--offset` em páginas. Os limiares da classificação estão no topo de `analysis.py`.
+processe tudo com `--offset` em páginas. Antes do primeiro produto o lote confere se `FAI_API_URL` é esta API
+(`/health`). Com `--ids-file` (lista da Fase 2) o padrão é `--mode reconstruct`: worker da Fase 2 fora do ar vira falha
+`RECONSTRUCT_UNAVAILABLE`, não um recorte silencioso. Falhas e recortes sem Fase 2 vão para `retry_ids.txt`; o
+`audit.jsonl` é gravado linha a linha. Os limiares da classificação estão no topo de `analysis.py`.
 
 ## Fase 3 — distribuição, escala e métricas
 
