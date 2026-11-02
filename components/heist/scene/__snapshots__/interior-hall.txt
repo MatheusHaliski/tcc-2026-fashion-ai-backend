@@ -1,0 +1,226 @@
+low chandeliers -8.25,7.3,4.5 8.25,7.3,4.5
+low B salao misc-plaster-low--0-0/ffffff/1/0/map/1/1//0 c1r1 480:9196fa86f3e2bc13:37e1a6790c5656b7:8f11559045290a9f
+low B salao misc-plaster-low--0-0/ffffff/1/0/map/1/1//0 c0r1 6372:aaeb8efee8047233:b90968c7803d9c46:7aeb7adffff77840
+low B salao plainwall-limestone-low-#d9d0bf/d9d0bf/1/0/map/1/1//0 c0r1 36540:36342c2f7a2091f7:d8666f8225d4a7a4:da41521f904e5219
+low B salao solid-gold/b48a3c/0.38/1//1/1//0 c0r1 44568:071a1eb7de5bc8c2:f776cbf7c7afabc6:a9b9bd97470e7c8c
+low B salao glow-cove/ffffc6/-/-//-/1//0 c0r1 6912:0310090342f2485b:b8c81068933504d1:cb7beab3af6bc2cb
+low B salao glow-oculusNight/7698dd/-/-//-/1//0 c0r1 288:fe2a74a1d65aa1de:1097f1c10eb0f18d:3cd12338a77fee5e
+low B salao plainwall-limestone-low-#d9d0bf/d9d0bf/1/0/map/1/1//0 c1r1 25596:1b124e98fe913418:fb697d04a36df686:5d61dcabc1f7c39c
+low B salao fabric-hallDrape-low/2a1240/0.8/0/map/1/1//0 c0r1 684:4fce14c7cf9c393b:c73f6f8f90aa0cd6:0b7bb37b0943c231
+low B salao salao-archDrape/3b1858/0.9/0//0.95/1//0 c0r1 63936:f6a73f89e4a0f685:ddc7ebecf15440fd:c91d90d2763fd401
+low B salao MeshStandardMaterial/ffffff/0.2/0.2/map/0.9/1//0 c0r1 660:04e9f71ca80f7526:bfd58b7bac537316:2b55e2cf5f07a507
+low B salao solid-windowNight/0b1220/0.1/0.2//0.6/1//0 c0r1 1539:8e5839bfc152f131:abce7d6bd913e66f:f7dec2fe12af05c5
+low B salao MeshStandardMaterial/ffffff/0.75/0/map/1/1//2 c0r1 144:ab69832eb6e5b5ec:68f47bd5be9b4f27:f206a2b11c069fcd
+low B salao MeshStandardMaterial/ffffff/0.75/0/map/1/1//2 c0r1 144:0fa612799d7aedc7:68f47bd5be9b4f27:e05bc124bf5fdec7
+low B salao solid-brass/c9a24b/0.28/1//1/1//0 c0r1 72:34648ecadb134d7c:82f74fad8c9aad01:9e06089328352c3f
+low B salao MeshStandardMaterial/ffffff/0.35/0/map/0.18/1//0 c0r1 6:79600fcc5fa60ab8:48cdfbba3339273a:48aaedc57127af1c
+low B salao solid-mossBase/1f2a1b/1/0//1/1//0 c0r1 384:42009d803796fe49:4739231639e0f45b:0e3d3a4cfa50c627
+low B salao solid-ribMat/203222/0.95/0//1/1//0 c0r1 11520:2d38435c669f59bb:df5cb79ed01c32d5:16bad5f111afa7f8
+low B salao solid-goldBright/e0b85a/0.2/1//1/1//0 c0r1 744:70e9065f3aa51b3d:4ae1a7e2b2898120:2468db4a42b35c1b
+low I salao baluster plainwall-limestone-low-#d9d0bf/d9d0bf/1/0/map/1/1//0 n262 77:5130449191fc5564:5149e0e4b910a82e:f89962e72b0c3ce8 mc02cce43341cb1a5 c-
+low I salao downlight glow-bulbWarm/ffffe4/-/-//-/1//0 n40 14:19e5ded7fbfe074c:da0bfb381c6672c0:a68346a643fa5b97 mfbfdf23d3486ce04 c-
+low I salao uplight glow-ledAmber/fffd45/-/-//-/1//0 n4 24:3eb973d358fee50e:ab7eeb31c5494e92:dfc18c7fbd8cf432 m75e0edd55ca928bd c-
+low I salao candle solid-candle/f3ead6/0.7/0//0.4/1//0 n90 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m279476e832dcc4aa c-
+low I salao sconceBulb glow-flame/ffffb6/-/-//-/1/t/0 n30 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af m9a7d0832c47bc81b c-
+low I salao picLight glow-bulbWarm/ffffe4/-/-//-/1//0 n1 24:3eb973d358fee50e:ab7eeb31c5494e92:dfc18c7fbd8cf432 m65185240afbfbdf8 c-
+low I salao chCandle solid-candle/f3ead6/0.7/0//0.4/1//0 n32 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m03e6f8e8080ca517 c-
+low I salao chBulb glow-bulbWarm/ffffe4/-/-//-/1//0 n32 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af m7355744607c35097 c-
+low I salao flame glow-flame/ffffb6/-/-//-/1/t/0 n60 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af m352484b6e9b7e7a6 c-
+low I salao rose solid-roseMat/ffffff/0.72/0//1/1//2 n603 528:de7f20337c33928f:-:a1c01ec38c54323b m2d5e2cffe876d928 ce42d31b73eb70735
+low I salao leaf solid-leafMat/2f5a2c/0.7/0//1/1//2 n117 8:fe012063eee947ea:0faca7a1b5556ea5:b494483ec4a623ce md4a0ffb27cb5bb1a c-
+low I salao fallenPetal solid-roseMat/ffffff/0.72/0//1/1//2 n99 6:ba598d3e8d659837:9bd5cb379ffe08d1:da4894501548e90d m06c97c1b64c70fb0 cb7e3b2d14612e5c8
+low F -11.3,2.071,-5.38
+low F -10.951,2.033,-5.031
+low F -11.649,2.033,-5.031
+low F -11.649,2.033,-5.729
+low F -10.951,2.033,-5.729
+low F -4,2.071,-5.38
+low F -3.651,2.033,-5.031
+low F -4.349,2.033,-5.031
+low F -4.349,2.033,-5.729
+low F -3.651,2.033,-5.729
+low F -4,2.071,13.38
+low F -4.349,2.033,13.031
+low F -3.651,2.033,13.031
+low F -3.651,2.033,13.729
+low F -4.349,2.033,13.729
+low F 4,2.071,13.38
+low F 3.651,2.033,13.031
+low F 4.349,2.033,13.031
+low F 4.349,2.033,13.729
+low F 3.651,2.033,13.729
+low F 1.127,2.423,4.967
+low F 1.403,2.401,5.081
+low F 1.013,2.401,5.243
+low F 0.851,2.401,4.852
+low F 1.242,2.401,4.691
+low F 0.467,2.423,5.627
+low F 0.743,2.401,5.513
+low F 0.581,2.401,5.903
+low F 0.191,2.401,5.742
+low F 0.352,2.401,5.351
+low F -0.467,2.423,5.627
+low F -0.352,2.401,5.351
+low F -0.191,2.401,5.742
+low F -0.581,2.401,5.903
+low F -0.743,2.401,5.513
+low F -1.127,2.423,4.967
+low F -1.242,2.401,4.691
+low F -0.851,2.401,4.852
+low F -1.013,2.401,5.243
+low F -1.403,2.401,5.081
+low F -1.127,2.423,4.033
+low F -1.403,2.401,3.919
+low F -1.013,2.401,3.757
+low F -0.851,2.401,4.148
+low F -1.242,2.401,4.309
+low F -0.467,2.423,3.373
+low F -0.743,2.401,3.487
+low F -0.581,2.401,3.097
+low F -0.191,2.401,3.258
+low F -0.352,2.401,3.649
+low F 0.467,2.423,3.373
+low F 0.352,2.401,3.649
+low F 0.191,2.401,3.258
+low F 0.581,2.401,3.097
+low F 0.743,2.401,3.487
+low F 1.127,2.423,4.033
+low F 1.242,2.401,4.309
+low F 0.851,2.401,4.148
+low F 1.013,2.401,3.757
+low F 1.403,2.401,3.919
+low G dome  8af338d2eb49945e MeshStandardMaterial/ffffff/0.85/0/map/1/1//1 539:983282579dcadeb5:c289d725a365b4cb:df829f9c408de151
+low G dome  1b110f3ae29805e9 MeshStandardMaterial/ffffff/0.85/0/map/1/1//1 539:14d9f7c058062c27:c289d725a365b4cb:482866f2453e7752
+low G dome  7f8b9eb2724cf4fb MeshStandardMaterial/ffffff/0.85/0/map/1/1//1 539:983282579dcadeb5:c289d725a365b4cb:df829f9c408de151
+low chandelier-out 17,3.44,9.3
+low kit B lounge solid-gold/b48a3c/0.38/1//1/1//0 c0r1 5664:e837d1ed314f9520:caa4befb0ffc4d23:6d31a6247aaf0757
+low kit B galeria solid-gold/b48a3c/0.38/1//1/1//0 c0r1 1632:1a250e88de9a6a29:3930fb923f32e595:dbc0c0cc3dac5c1f
+low kit I lounge chCandle solid-candle/f3ead6/0.7/0//0.4/1//0 n16 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m818e2e68d3231467 c-
+low kit I lounge chBulb glow-bulbWarm/ffffe4/-/-//-/1//0 n16 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af m8467b9ffac1781d2 c-
+low kit I galeria candle solid-candle/f3ead6/0.7/0//0.4/1//0 n5 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m1c38525e182345d9 c-
+low kit I galeria flame glow-flame/ffffb6/-/-//-/1/t/0 n5 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af mb07aab7295c9928a c-
+low kit F -11.5,2.208,-14
+low kit F -11.279,2.184,-14.221
+low kit F -11.279,2.184,-13.779
+low kit F -11.721,2.184,-13.779
+low kit F -11.721,2.184,-14.221
+low rose 528:de7f20337c33928f:-:a1c01ec38c54323b
+high chandeliers -8.25,7.3,4.5 8.25,7.3,4.5
+high B salao misc-plaster-high--0-0/ffffff/1/0/map/1/1//0 c1r1 480:9196fa86f3e2bc13:37e1a6790c5656b7:8f11559045290a9f
+high B salao misc-plaster-high--0-0/ffffff/1/0/map/1/1//0 c0r1 6372:aaeb8efee8047233:b90968c7803d9c46:7aeb7adffff77840
+high B salao plainwall-limestone-high-#d9d0bf/d9d0bf/1/0/map/1/1//0 c0r1 36540:36342c2f7a2091f7:d8666f8225d4a7a4:da41521f904e5219
+high B salao solid-gold/b48a3c/0.38/1//1/1//0 c0r1 44568:071a1eb7de5bc8c2:f776cbf7c7afabc6:a9b9bd97470e7c8c
+high B salao glow-cove/ffffc6/-/-//-/1//0 c0r1 6912:0310090342f2485b:b8c81068933504d1:cb7beab3af6bc2cb
+high B salao glow-oculusNight/7698dd/-/-//-/1//0 c0r1 288:fe2a74a1d65aa1de:1097f1c10eb0f18d:3cd12338a77fee5e
+high B salao plainwall-limestone-high-#d9d0bf/d9d0bf/1/0/map/1/1//0 c1r1 25596:1b124e98fe913418:fb697d04a36df686:5d61dcabc1f7c39c
+high B salao fabric-hallDrape-high/2a1240/0.8/0/map/1/1//0 c0r1 684:4fce14c7cf9c393b:c73f6f8f90aa0cd6:0b7bb37b0943c231
+high B salao salao-archDrape/3b1858/0.9/0//0.95/1//0 c0r1 63936:f6a73f89e4a0f685:ddc7ebecf15440fd:c91d90d2763fd401
+high B salao MeshStandardMaterial/ffffff/0.2/0.2/map/0.9/1//0 c0r1 660:04e9f71ca80f7526:bfd58b7bac537316:2b55e2cf5f07a507
+high B salao solid-windowNight/0b1220/0.1/0.2//0.6/1//0 c0r1 1539:8e5839bfc152f131:abce7d6bd913e66f:f7dec2fe12af05c5
+high B salao MeshStandardMaterial/ffffff/0.75/0/map/1/1//2 c0r1 144:ab69832eb6e5b5ec:68f47bd5be9b4f27:f206a2b11c069fcd
+high B salao MeshStandardMaterial/ffffff/0.75/0/map/1/1//2 c0r1 144:0fa612799d7aedc7:68f47bd5be9b4f27:e05bc124bf5fdec7
+high B salao solid-brass/c9a24b/0.28/1//1/1//0 c0r1 72:34648ecadb134d7c:82f74fad8c9aad01:9e06089328352c3f
+high B salao MeshStandardMaterial/ffffff/0.35/0/map/0.18/1//0 c0r1 6:79600fcc5fa60ab8:48cdfbba3339273a:48aaedc57127af1c
+high B salao solid-mossBase/1f2a1b/1/0//1/1//0 c0r1 384:42009d803796fe49:4739231639e0f45b:0e3d3a4cfa50c627
+high B salao solid-ribMat/203222/0.95/0//1/1//0 c0r1 11520:2d38435c669f59bb:df5cb79ed01c32d5:16bad5f111afa7f8
+high B salao solid-goldBright/e0b85a/0.2/1//1/1//0 c0r1 744:70e9065f3aa51b3d:4ae1a7e2b2898120:2468db4a42b35c1b
+high I salao baluster plainwall-limestone-high-#d9d0bf/d9d0bf/1/0/map/1/1//0 n262 77:5130449191fc5564:5149e0e4b910a82e:f89962e72b0c3ce8 mc02cce43341cb1a5 c-
+high I salao downlight glow-bulbWarm/ffffe4/-/-//-/1//0 n40 14:19e5ded7fbfe074c:da0bfb381c6672c0:a68346a643fa5b97 mfbfdf23d3486ce04 c-
+high I salao uplight glow-ledAmber/fffd45/-/-//-/1//0 n4 24:3eb973d358fee50e:ab7eeb31c5494e92:dfc18c7fbd8cf432 m75e0edd55ca928bd c-
+high I salao candle solid-candle/f3ead6/0.7/0//0.4/1//0 n90 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m279476e832dcc4aa c-
+high I salao sconceBulb glow-flame/ffffb6/-/-//-/1/t/0 n30 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af m9a7d0832c47bc81b c-
+high I salao picLight glow-bulbWarm/ffffe4/-/-//-/1//0 n1 24:3eb973d358fee50e:ab7eeb31c5494e92:dfc18c7fbd8cf432 m65185240afbfbdf8 c-
+high I salao chCandle solid-candle/f3ead6/0.7/0//0.4/1//0 n32 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m03e6f8e8080ca517 c-
+high I salao chBulb glow-bulbWarm/ffffe4/-/-//-/1//0 n32 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af m7355744607c35097 c-
+high I salao crystal solid-crystalMat/f6f3ff/0.02/0.1//1/0.85/t/0 n192 24:9c5c94961a1a2af4:1ef7c46a1d706828:45ad89889891ea68 m7a3ed85860be140e c-
+high I salao flame glow-flame/ffffb6/-/-//-/1/t/0 n60 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af m352484b6e9b7e7a6 c-
+high I salao rose solid-roseMat/ffffff/0.72/0//1/1//2 n1506 888:2eb8acb46d641d51:-:95cddb7e03267ac3 mc811ade4d7d9b35d ca009ba50ef3296c4
+high I salao leaf solid-leafMat/2f5a2c/0.7/0//1/1//2 n260 8:fe012063eee947ea:0faca7a1b5556ea5:b494483ec4a623ce me0de3cbb85588e0a c-
+high I salao pearl solid-pearl/f7f1e6/0.15/0//1/1//0 n200 63:499e3d9b8f120640:0f57d82ad28769fa:499e3d9b8f120640 m39a9be3b474e34fd c-
+high I salao fallenPetal solid-roseMat/ffffff/0.72/0//1/1//2 n220 6:ba598d3e8d659837:9bd5cb379ffe08d1:da4894501548e90d m2cb86385883a753c ceb75f944665c529f
+high F -11.3,2.071,-5.38
+high F -10.951,2.033,-5.031
+high F -11.649,2.033,-5.031
+high F -11.649,2.033,-5.729
+high F -10.951,2.033,-5.729
+high F -4,2.071,-5.38
+high F -3.651,2.033,-5.031
+high F -4.349,2.033,-5.031
+high F -4.349,2.033,-5.729
+high F -3.651,2.033,-5.729
+high F -4,2.071,13.38
+high F -4.349,2.033,13.031
+high F -3.651,2.033,13.031
+high F -3.651,2.033,13.729
+high F -4.349,2.033,13.729
+high F 4,2.071,13.38
+high F 3.651,2.033,13.031
+high F 4.349,2.033,13.031
+high F 4.349,2.033,13.729
+high F 3.651,2.033,13.729
+high F 1.127,2.423,4.967
+high F 1.403,2.401,5.081
+high F 1.013,2.401,5.243
+high F 0.851,2.401,4.852
+high F 1.242,2.401,4.691
+high F 0.467,2.423,5.627
+high F 0.743,2.401,5.513
+high F 0.581,2.401,5.903
+high F 0.191,2.401,5.742
+high F 0.352,2.401,5.351
+high F -0.467,2.423,5.627
+high F -0.352,2.401,5.351
+high F -0.191,2.401,5.742
+high F -0.581,2.401,5.903
+high F -0.743,2.401,5.513
+high F -1.127,2.423,4.967
+high F -1.242,2.401,4.691
+high F -0.851,2.401,4.852
+high F -1.013,2.401,5.243
+high F -1.403,2.401,5.081
+high F -1.127,2.423,4.033
+high F -1.403,2.401,3.919
+high F -1.013,2.401,3.757
+high F -0.851,2.401,4.148
+high F -1.242,2.401,4.309
+high F -0.467,2.423,3.373
+high F -0.743,2.401,3.487
+high F -0.581,2.401,3.097
+high F -0.191,2.401,3.258
+high F -0.352,2.401,3.649
+high F 0.467,2.423,3.373
+high F 0.352,2.401,3.649
+high F 0.191,2.401,3.258
+high F 0.581,2.401,3.097
+high F 0.743,2.401,3.487
+high F 1.127,2.423,4.033
+high F 1.242,2.401,4.309
+high F 0.851,2.401,4.148
+high F 1.013,2.401,3.757
+high F 1.403,2.401,3.919
+high G dome  8af338d2eb49945e MeshStandardMaterial/ffffff/0.85/0/map/1/1//1 539:983282579dcadeb5:c289d725a365b4cb:df829f9c408de151
+high G dome  1b110f3ae29805e9 MeshStandardMaterial/ffffff/0.85/0/map/1/1//1 539:14d9f7c058062c27:c289d725a365b4cb:482866f2453e7752
+high G dome  7f8b9eb2724cf4fb MeshStandardMaterial/ffffff/0.85/0/map/1/1//1 539:983282579dcadeb5:c289d725a365b4cb:df829f9c408de151
+high chandelier-out 17,3.44,9.3
+high kit B lounge solid-gold/b48a3c/0.38/1//1/1//0 c0r1 5664:e837d1ed314f9520:caa4befb0ffc4d23:6d31a6247aaf0757
+high kit B galeria solid-gold/b48a3c/0.38/1//1/1//0 c0r1 1632:1a250e88de9a6a29:3930fb923f32e595:dbc0c0cc3dac5c1f
+high kit I lounge chCandle solid-candle/f3ead6/0.7/0//0.4/1//0 n16 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m818e2e68d3231467 c-
+high kit I lounge chBulb glow-bulbWarm/ffffe4/-/-//-/1//0 n16 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af m8467b9ffac1781d2 c-
+high kit I lounge crystal solid-crystalMat/f6f3ff/0.02/0.1//1/0.85/t/0 n96 24:9c5c94961a1a2af4:1ef7c46a1d706828:45ad89889891ea68 m1972c324110a842f c-
+high kit I galeria candle solid-candle/f3ead6/0.7/0//0.4/1//0 n5 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m1c38525e182345d9 c-
+high kit I galeria flame glow-flame/ffffb6/-/-//-/1/t/0 n5 42:9ef7cdbf4c732ada:7fc17f0f190c815a:34528edb819456af mb07aab7295c9928a c-
+high kit F -11.5,2.208,-14
+high kit F -11.279,2.184,-14.221
+high kit F -11.279,2.184,-13.779
+high kit F -11.721,2.184,-13.779
+high kit F -11.721,2.184,-14.221
+high rose 888:2eb8acb46d641d51:-:95cddb7e03267ac3
+consts 9.5 5 [{"x":-8.25,"z":4.5,"r":3,"rise":1.4},{"x":0,"z":4.5,"r":4,"rise":1.8},{"x":8.25,"z":4.5,"r":3,"rise":1.4}]
+wall N 1,0,0,0,0,1,0,0,0,0,1,0,2.5,1.2,-5.7,1
+wall S -1,0,0,0,0,1,0,0,0,0,-1,0,2.5,1.2,13.7,1
+wall W 0,0,-1,0,0,1,0,0,1,0,0,0,-11.7,1.2,2.5,1
+wall E 0,0,1,0,0,1,0,0,-1,0,0,0,11.7,1.2,2.5,1
+drawn archWash 256x256 srgb=true n=2 7a4627dbad7d365f
+drawn domeCoffers 1024x512 srgb=true n=1066 47b184d00a333175
+drawn fanlight 512x256 srgb=true n=62 f45f34059f440537
+drawn posterAurora-VESTIDO AURORA-Instituto do Traje · Museu Vesper 768x1152 srgb=true n=156 3f78a8d89a56d7f3

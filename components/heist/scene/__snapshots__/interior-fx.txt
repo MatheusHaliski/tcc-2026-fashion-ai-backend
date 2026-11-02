@@ -1,0 +1,123 @@
+MOOD {"vestibulo":"warm","salao":"warm","lounge":"warm","terraco":"warm","galeria":"gallery","bastidores":"backstage","servico":"cool","seguranca":"cool","doca":"cool","cofre":"vault"} PROBE_AT {"vestibulo":[0,1.8,19.4],"salao":[0,2.2,9.2],"galeria":[0,1.8,-12.6],"lounge":[17,1.7,9.6],"terraco":[17.2,1.8,-14],"bastidores":[17,1.7,-1.2],"servico":[-17.25,1.6,4.75],"seguranca":[-20.2,1.6,4.8],"doca":[-15,2,20.2],"cofre":[-15.6,1.8,-12]} GAIN 1.8
+view vestibulo false seen=vestibulo lit=vestibulo core=vestibulo
+view vestibulo true seen=vestibulo,galeria,rua,doca,salao,cofre,terraco,servico,lounge,bastidores,beiral,beco lit=vestibulo,galeria,rua,doca,salao,cofre,terraco core=vestibulo,galeria
+view salao false seen=salao,galeria lit=salao,galeria core=salao
+view salao true seen=salao,galeria,vestibulo,servico,lounge,bastidores,cofre,terraco,rua,doca,seguranca,beiral,beco lit=salao,galeria,vestibulo,servico,lounge,bastidores,cofre,terraco core=salao,galeria
+view cofre false seen=cofre,beiral,terraco lit=cofre,beiral core=cofre
+view cofre true seen=cofre,galeria,servico,beiral,salao,terraco,doca,seguranca,vestibulo,lounge,bastidores,beco lit=cofre,galeria,servico,beiral,salao,terraco core=cofre,galeria
+view servico false seen=servico lit=servico core=servico
+view servico true seen=servico,galeria,doca,salao,cofre,seguranca,terraco,rua,vestibulo,lounge,bastidores,beiral,beco lit=servico,galeria,doca,salao,cofre,seguranca,terraco core=servico,galeria
+view terraco false seen=terraco,beiral,beco,cofre lit=terraco,beiral,beco core=terraco
+view terraco true seen=terraco,galeria,bastidores,beiral,beco,salao,cofre,lounge,vestibulo,servico lit=terraco,galeria,bastidores,beiral,beco,salao,cofre core=terraco,galeria
+flicker vestibulo 0 1,1,1
+flicker vestibulo 1 0.762,0.918,0.961
+flicker vestibulo 0 1,1,1
+flicker vestibulo 1 0.884,0.931,0.802
+flicker vestibulo 0 1,1,1
+flicker salao 0 1,1,1
+flicker salao 1 0.879,1.06,0.793
+flicker salao 0 1,1,1
+flicker salao 1 0.918,0.94,0.767
+flicker salao 0 1,1,1
+flicker galeria 0 1,1,1
+flicker galeria 1 0.939,0.906,0.838
+flicker galeria 0 1,1,1
+flicker galeria 1 0.882,0.767,0.88
+flicker galeria 0 1,1,1
+flicker lounge 0 1,1,1
+flicker lounge 1 0.857,0.827,0.985
+flicker lounge 0 1,1,1
+flicker lounge 1 0.829,0.918,0.978
+flicker lounge 0 1,1,1
+flicker terraco 0 1,1,1
+flicker terraco 1 0.965,0.871,0.759
+flicker terraco 0 1,1,1
+flicker terraco 1 0.87,0.829,0.9
+flicker terraco 0 1,1,1
+flicker bastidores 0 1,1,1
+flicker bastidores 1 0.837,0.936,0.935
+flicker bastidores 0 1,1,1
+flicker bastidores 1 0.903,1.025,0.896
+flicker bastidores 0 1,1,1
+flicker servico 0 1,1,1
+flicker servico 1 0.15,0.15,0.15
+flicker servico 0 1,1,1
+flicker servico 1 0.15,0.15,0.15
+flicker servico 0 1,1,1
+flicker seguranca 0 1,1,1
+flicker seguranca 1 0.15,0.15,0.15
+flicker seguranca 0 1,1,1
+flicker seguranca 1 0.15,0.15,0.15
+flicker seguranca 0 1,1,1
+flicker doca 0 1,1,1
+flicker doca 1 0.15,0.15,0.15
+flicker doca 0 1,1,1
+flicker doca 1 0.15,0.15,1
+flicker doca 0 1,1,1
+flicker cofre 0 1,1,1
+flicker cofre 1 0.81,0.832,0.893
+flicker cofre 0 1,1,1
+flicker cofre 1 0.867,0.964,0.874
+flicker cofre 0 1,1,1
+pool 0 -0.7,1.7,11.2/fff1dc/25.208/4 1.9,3.1,11.2/ffb46b/55.56/6 -2,1,9.2/ffb46b/16.2/3 0.6,2.4,9.2/7fe0a8/7.2/5 3.2,3.8,9.2/fff1dc/3.96/7 0.6,2.4,19.4/7fe0a8/28.8/5
+pool 0.016 -0.7,1.7,11.2/fff1dc/25.208/4 1.9,3.1,11.2/ffb46b/55.56/6 -2,1,9.2/ffb46b/16.2/3 0.6,2.4,9.2/7fe0a8/7.2/5 3.2,3.8,9.2/fff1dc/3.96/7 0.6,2.4,19.4/7fe0a8/28.8/5
+pool 0.3 -0.7,1.7,11.2/fff1dc/25.208/4 1.9,3.1,11.2/ffb46b/55.56/6 -2,1,9.2/ffb46b/16.2/3 0.6,2.4,9.2/7fe0a8/7.2/5 -0.7,1.7,21.4/fff1dc/0/4 0.6,2.4,19.4/7fe0a8/28.8/5
+key salao 0,9.2,11.6 aim=0,10.4 0.78 ffdcae 126 true
+key salao -8.25,8.9,4.5 aim=-6.5,4.5 0.8 ffd29a 100.8 true
+key galeria 5,5.25,-14 aim=5,-14.5 1 fff1dc 81 true
+key terraco 5,5.25,-14 aim=5,-14.5 1 fff1dc 0 false
+key rua 5,5.25,-14 aim=5,-14.5 1 fff1dc 0 false
+env salao x@salao 0.525 {"envBase":0.7} same=true map=true
+env galeria x@galeria 0.49 {"envBase":0.7} same=true map=true
+env cofre x@cofre 1.12 {"envBase":0.7} same=true map=true
+envMirror true 0.8 basic=true
+apply x@lounge
+mirror floor-x+mirror {"mirror":true,"envBase":0.66} 0.66 floorMirror tMirror,uMirrorMat,uMirrorOn,uMirrorK,uMirrorF0 daae5763532ec64d 2f4114e3c17e4873 floors=1 floorMirror
+vision interior-vision 20 items=32
+  20.4,9.5 28ea18b076a47490 20 false
+  -12.65,0.48 1087dac1748b0949 20 false
+  -11.94,7 3ccc1c193c0e3534 20 false
+  15.6,2.06 7608c96548960b40 20 false
+  -6.5,-13.05 4d483e60177152de 20 false
+  -17.68,16.53 9de4abe514b69d33 20 false
+  -19.7,2.325 0492eff30863597d 20 false
+  -21.85,4.75 9fa8e4e73e2ed4bc 20 false
+  -17.25,-14.25 e012581aa9f28f1b 20 false
+  22.25,-14 917453ec6d3b325d 20 false
+  19.5,-22.25 713efa2a4907d17d 20 false
+  -19.5,-22.25 01c465cb807ccfda 20 false
+  19.9,-1.5 3af535c10dd1d990 20 false
+  -21.25,-5.25 7bd64cebba93a380 20 false
+  14.9,-19.7 b925380dd4d67175 20 false
+  -10.3,22.1 165a58c00c214a7d 20 false
+  -21.3,-18.5 6341632ac46e517c 20 false
+  -21.3,-10.5 8f16193b5a22fc1b 20 false
+  -13.55,-21.3 d28b8e0800879338 20 false
+  -19.75,-21.4 466247bad3e2d191 20 false
+  7.4,20.4 543f83a692405512 20 false
+  13.8,-1.6 d17c772b2cc1b9f7 20 false
+  19.2,2.6 a24ffbac7c098036 20 false
+  7.2,18.6 acf04b955f35e8cb 20 false
+  -15.8,22.6 5485396e90ae3ec5 20 false
+  -8.25,21.25 f672e32844dcffea 20 false
+  0,14.25 e6c3a7dc80c52bf3 20 false
+  -19,16.25 0c7af74b66f99705 20 false
+  -12.25,10 f0bdf82f568cf8f3 20 false
+  12.25,-2 e38ef234d0e73f2b 20 false
+  -12.25,-15 28d8f16ecb69790f 20 false
+  -17.5,-6.25 71e2905d98f6b26e 20 false
+visionOn true 14 1
+beacons interior-beacons false ff4545 ff2929 doca/0/3/e205ab53c6ae142b servico/1.37/3/fe57ef718c64e72a
+alarm true ff1a1a 1.912 true/10.4 false/11.77
+halos low salao/halos-salao/5/2:1761490c6105818a:-:-/4b92bb9d0bfc8f03 lounge/halos-lounge/5/1:573a28f343de8a9f:-:-/1108d388c5aa9af4 {"uTime":3.5,"uMap":"tex","uScale":0.8}
+halos high salao/halos-salao/5/2:1761490c6105818a:-:-/4b92bb9d0bfc8f03 lounge/halos-lounge/5/1:573a28f343de8a9f:-:-/1108d388c5aa9af4 {"uTime":3.5,"uMap":"tex","uScale":1}
+doors 0.1 0.072/0.024 0/0 led=ff4040
+doors 0.1 0.144/0.09 0/0 led=ff4040
+doors 0.3 0.36/0.473 0/0 led=ff4040
+doors 0.3 0.576/0.982 0/0 led=ff4040
+doors 0.4 0.864/1.521 0/0 led=ff4040
+doorsSnap 1/1.602 1/-2.75 led=41ff99
+anim 0.3 screen:1.396:-:true:0:1,1,1:149327802707a625 cctv:1.162:0:true:0:1,1,1:149327802707a625 cctv:1.152:2:true:0:1,1,1:149327802707a625 cctv:1.187:4:true:0:1,1,1:149327802707a625 cctv:1.233:11:true:0:1,1,1:149327802707a625 steam:1:-:true:0:1.073,1.081,1.126:846cb34cd10ba444 diamond:1:-:true:0.105:1,1,1:149327802707a625 glint:1:-:true:0:0.183,0.183,0.183:149327802707a625
+anim 7.2 screen:1.142:-:true:0:1,1,1:149327802707a625 cctv:1.154:1:true:0:1,1,1:149327802707a625 cctv:1.158:3:true:0:1,1,1:149327802707a625 cctv:0.144:10:true:0:1,1,1:149327802707a625 cctv:1.242:12:true:0:1,1,1:149327802707a625 steam:1:-:true:0:0.952,1.249,1.066:e0f135d73e7a8798 diamond:1:-:false:2.52:1,1,1:149327802707a625 glint:1:-:false:0:0.18,0.18,0.18:149327802707a625
+anim 12.9 screen:1.435:-:true:0:1,1,1:149327802707a625 cctv:1.153:2:true:0:1,1,1:149327802707a625 cctv:1.189:4:true:0:1,1,1:149327802707a625 cctv:0.148:11:true:0:1,1,1:149327802707a625 cctv:1.249:0:true:0:1,1,1:149327802707a625 steam:1:-:true:0:1.009,1.25,1.122:632e6a82f15aae5d diamond:1:-:true:4.515:1,1,1:149327802707a625 glint:1:-:true:0:0.18,0.18,0.18:149327802707a625
+anim 26.1 screen:1.23:-:true:0:1,1,1:149327802707a625 cctv:1.179:5:true:0:1,1,1:149327802707a625 cctv:1.227:11:true:0:1,1,1:149327802707a625 cctv:1.25:0:true:0:1,1,1:149327802707a625 cctv:1.227:3:true:0:1,1,1:149327802707a625 steam:1:-:true:0:1.057,0.894,1.117:fd5fc91d4cf88f44 diamond:1:-:true:9.135:1,1,1:149327802707a625 glint:1:-:true:0:0.18,0.18,0.18:149327802707a625
