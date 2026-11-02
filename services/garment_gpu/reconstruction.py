@@ -11,61 +11,9 @@ from PIL import Image
 
 from services.garment_gpu.image_ops import fit_within
 
-NOUNS = {
-    "upper_piece": "top garment",
-    "lower_piece": "bottom garment",
-    "shoes_piece": "pair of shoes",
-    "accessory_piece": "fashion accessory",
-    "auto": "garment",
-}
-GUARD = ("Preserve the existing colors, patterns, trims, collar, logos, crests, printed text, stitching, fabric "
-         "texture and proportions exactly. Do not invent additional brand markings, text or decorations.")
-NEGATIVE = ("person, human, body, skin, arms, hands, face, neck, mannequin, hanger, extra logos, invented text, "
-            "watermark, deformed, blurry, low quality, cluttered background, shadows on background")
-
-
-def _clean_hint(value: str | None, limit: int = 80) -> str:
-    if not value:
-        return ""
-    return " ".join("".join(ch for ch in value if ch.isprintable()).split())[:limit]
-
-
-def build_prompt(category: str, name: str | None = None, color: str | None = None, custom: str | None = None) -> str:
-    """Catalogue prompt for picture 1 (cut-out) + picture 2 (original). A client prompt replaces the description but
-    never the guard sentence: brand marks must not be invented."""
-    if custom:
-        return f"{_clean_hint(custom, 2000)} {GUARD}"
-    subject = _clean_hint(name) or NOUNS.get(category, "garment")
-    tint = _clean_hint(color)
-    color_clause = f" in its original {tint} color" if tint else ""
-    return (
-        f"Create a professional e-commerce product photograph of the {subject}{color_clause} shown in picture 1. "
-        "Use picture 2 only as a reference for parts of the garment that are hidden or cut off in picture 1. "
-        "Show it as a flat lay: the garment alone, laid flat and stretched smooth on a surface, seen from directly "
-        "above, centered, symmetric, front side up, sleeves and legs extended naturally, on a pure white seamless "
-        "background with soft even lighting. There is no body inside it: no person, body part, mannequin, hanger, "
-        "ghost-mannequin hollow or wrinkles from being worn. "
-        f"{GUARD} Reconstruct missing fabric naturally and symmetrically, consistent with the visible parts."
-    )
-
-
-BACK_VIEW_CATEGORIES = {"upper_piece", "lower_piece", "auto"}
-
-
-def build_back_prompt(category: str, name: str | None = None, color: str | None = None) -> str:
-    """Back of the same garment, for the avatar's back panel (Phase 3). Picture 1 is the front flat lay already
-    generated; picture 2 is the original photo. Front-only details must not migrate to the back."""
-    subject = _clean_hint(name) or NOUNS.get(category, "garment")
-    tint = _clean_hint(color)
-    color_clause = f" in its original {tint} color" if tint else ""
-    return (
-        f"Picture 1 is the front of a {subject}{color_clause} laid flat. Create the BACK of exactly the same garment "
-        "as a flat lay product photograph: same fabric, color, size, proportions, silhouette, trims and seams, laid "
-        "flat and stretched smooth on a surface, seen from directly above, back side up, centered, on a pure white "
-        "seamless background. Use picture 2 only for details of the back that are visible in it. Do not copy front "
-        "logos, prints, buttons, plackets or pockets to the back, and do not invent brand markings or text. There is "
-        "no body inside it: no person, body part, mannequin, hanger or ghost-mannequin hollow."
-    )
+# Prompts moved to prompts.py; re-exported here so callers keep importing them from reconstruction.
+from services.garment_gpu.prompts import (BACK_VIEW_CATEGORIES, GUARD, NEGATIVE, NOUNS,  # noqa: F401
+                                          build_back_prompt, build_prompt)
 
 
 class ReconstructionEngine:
