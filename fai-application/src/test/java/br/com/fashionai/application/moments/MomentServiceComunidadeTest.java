@@ -194,43 +194,43 @@ class MomentServiceComunidadeTest extends MomentServiceFixture {
         Scheme s = w.looksOf(w.me).get(0);
         MomentSubmission sub = submission(m, w.me, s, 0, 60);
         hypeOf(s.getId(), w.me.getId(), 40, false);
-        Map<String, Object> v = svc.submissionView(sub, me, Map.of(), false);
+        Map<String, Object> v = new MomentCommunity(svc.ctx).submissionView(sub, me, Map.of(), false);
         assertThat(v.get("hype")).isEqualTo(40);
         assertThat(v.get("scheme")).isNotNull();
         sub.setSchemeId(UUID.randomUUID());
-        assertThat(svc.submissionView(sub, null, Map.of(), false)).doesNotContainKey("scheme").containsEntry("mine", false);
+        assertThat(new MomentCommunity(svc.ctx).submissionView(sub, null, Map.of(), false)).doesNotContainKey("scheme").containsEntry("mine", false);
     }
 
     @Test
     void lookPublicamenteListado() {
         Moment m = active("pl");
         Scheme s = w.looksOf(w.me).get(0);
-        assertThat(MomentService.publiclyListed(m, null)).isFalse();
-        assertThat(MomentService.publiclyListed(m, s)).isTrue();
+        assertThat(MomentRules.publiclyListed(m, null)).isFalse();
+        assertThat(MomentRules.publiclyListed(m, s)).isTrue();
         s.setVisibility(Visibility.PRIVATE);
-        assertThat(MomentService.publiclyListed(m, s)).isFalse();
+        assertThat(MomentRules.publiclyListed(m, s)).isFalse();
         m.setVisibility(MomentVisibility.FRIENDS);
-        assertThat(MomentService.publiclyListed(m, s)).isTrue();
+        assertThat(MomentRules.publiclyListed(m, s)).isTrue();
         m.setVisibility(MomentVisibility.PUBLIC);
         m.setGroupId(UUID.randomUUID());
-        assertThat(MomentService.publiclyListed(m, s)).isTrue();
+        assertThat(MomentRules.publiclyListed(m, s)).isTrue();
     }
 
     @Test
     void badgeNaoDuplica() {
-        svc.grantBadge(w.me.getId(), "MOMENT_X");
-        svc.grantBadge(w.me.getId(), "MOMENT_X");
+        new MomentSubmissionFlow(svc.ctx).grantBadge(w.me.getId(), "MOMENT_X");
+        new MomentSubmissionFlow(svc.ctx).grantBadge(w.me.getId(), "MOMENT_X");
         assertThat(MemoryRepository.<UserAchievement>rows(kit.dep(UserAchievementRepository.class))).hasSize(1);
     }
 
     @Test
     void flairPeloTipoOuPeloGrupo() {
         Moment m = active("flair");
-        assertThat(svc.isFlair(m)).isFalse();
+        assertThat(new MomentQueries(svc.ctx).isFlair(m)).isFalse();
         m.setType(MomentType.PRIVATE_GROUP);
-        assertThat(svc.isFlair(m)).isTrue();
+        assertThat(new MomentQueries(svc.ctx).isFlair(m)).isTrue();
         m.setType(MomentType.COMMUNITY);
         m.setGroupId(UUID.randomUUID());
-        assertThat(svc.isFlair(m)).isTrue();
+        assertThat(new MomentQueries(svc.ctx).isFlair(m)).isTrue();
     }
 }

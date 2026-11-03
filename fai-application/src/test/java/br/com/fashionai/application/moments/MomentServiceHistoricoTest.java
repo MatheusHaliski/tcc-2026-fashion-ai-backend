@@ -119,16 +119,16 @@ class MomentServiceHistoricoTest extends MomentServiceFixture {
     @Test
     void desfechoDaParticipacao() {
         MomentParticipation p = new MomentParticipation();
-        assertThat(MomentService.outcome(p)).isEqualTo("PARTICIPATED");
+        assertThat(MomentRules.outcome(p)).isEqualTo("PARTICIPATED");
         p.setStatus(MomentParticipationStatus.COMPLETED);
-        assertThat(MomentService.outcome(p)).isEqualTo("COMPLETED");
+        assertThat(MomentRules.outcome(p)).isEqualTo("COMPLETED");
         p.setRanking(2);
         p.setPercentile(10);
-        assertThat(MomentService.outcome(p)).isEqualTo("TOP_10");
+        assertThat(MomentRules.outcome(p)).isEqualTo("TOP_10");
         p.setPercentile(50);
-        assertThat(MomentService.outcome(p)).isEqualTo("COMPLETED");
+        assertThat(MomentRules.outcome(p)).isEqualTo("COMPLETED");
         p.setRanking(1);
-        assertThat(MomentService.outcome(p)).isEqualTo("WINNER");
+        assertThat(MomentRules.outcome(p)).isEqualTo("WINNER");
     }
 
     @Test
@@ -226,13 +226,13 @@ class MomentServiceHistoricoTest extends MomentServiceFixture {
         hypeOf(b, w.rival.getId(), 20, true);
         hypeOf(c, w.rival.getId(), 30, false);
         hypeRows.get(c).setScore(null);
-        assertThat(svc.hypeScores(HypeEntityType.SCHEME, List.of(a, b, c), w.me.getId())).containsOnlyKeys(a, b);
-        assertThat(svc.hypeScores(HypeEntityType.SCHEME, List.of(a, b), null)).containsOnlyKeys(b);
-        assertThat(svc.hypeScores(HypeEntityType.SCHEME, List.of(), null)).isEmpty();
-        assertThat(svc.hypeScores(HypeEntityType.SCHEME, null, null)).isEmpty();
-        assertThat(svc.hypeScore(HypeEntityType.SCHEME, null, null)).isNull();
-        assertThat(MomentService.rounded(null)).isNull();
-        assertThat(MomentService.rounded(2.6)).isEqualTo(3);
+        assertThat(new MomentQueries(svc.ctx).hypeScores(HypeEntityType.SCHEME, List.of(a, b, c), w.me.getId())).containsOnlyKeys(a, b);
+        assertThat(new MomentQueries(svc.ctx).hypeScores(HypeEntityType.SCHEME, List.of(a, b), null)).containsOnlyKeys(b);
+        assertThat(new MomentQueries(svc.ctx).hypeScores(HypeEntityType.SCHEME, List.of(), null)).isEmpty();
+        assertThat(new MomentQueries(svc.ctx).hypeScores(HypeEntityType.SCHEME, null, null)).isEmpty();
+        assertThat(new MomentQueries(svc.ctx).hypeScore(HypeEntityType.SCHEME, null, null)).isNull();
+        assertThat(MomentRules.rounded(null)).isNull();
+        assertThat(MomentRules.rounded(2.6)).isEqualTo(3);
     }
 
     @Test
@@ -275,32 +275,32 @@ class MomentServiceHistoricoTest extends MomentServiceFixture {
     @Test
     void escopoPorPais() {
         Moment m = active("pais");
-        assertThat(svc.inScope(m, "US")).isTrue();
+        assertThat(new MomentQueries(svc.ctx).inScope(m, "US")).isTrue();
         m.setScope(MomentScope.REGION);
         m.setCountry("br");
-        assertThat(svc.inScope(m, "BR")).isTrue();
-        assertThat(svc.inScope(m, "US")).isFalse();
-        assertThat(svc.inScope(m, null)).isTrue();
+        assertThat(new MomentQueries(svc.ctx).inScope(m, "BR")).isTrue();
+        assertThat(new MomentQueries(svc.ctx).inScope(m, "US")).isFalse();
+        assertThat(new MomentQueries(svc.ctx).inScope(m, null)).isTrue();
         m.setCountry(null);
-        assertThat(svc.inScope(m, "US")).isTrue();
+        assertThat(new MomentQueries(svc.ctx).inScope(m, "US")).isTrue();
         w.me.setCountry(" ");
-        assertThat(svc.countryOf(me)).isNull();
-        assertThat(svc.countryOf(null)).isNull();
+        assertThat(new MomentQueries(svc.ctx).countryOf(me)).isNull();
+        assertThat(new MomentQueries(svc.ctx).countryOf(null)).isNull();
         kit.dep(UserRepository.class).save(w.me);
     }
 
     @Test
     void auxiliaresEstaticos() {
-        assertThat(MomentService.strings(List.of(1, "a"))).containsExactly("1", "a");
-        assertThat(MomentService.strings("x")).isEmpty();
-        assertThat(MomentService.nz(null)).isZero();
-        assertThat(MomentService.nz(4)).isEqualTo(4);
-        assertThat(MomentService.nonNull(null)).isEmpty();
-        assertThat(MomentService.nonNull(List.of(1))).containsExactly(1);
-        assertThat(MomentService.index(List.of("aa", "b", "cc"), String::length)).containsEntry(2, "aa").containsEntry(1, "b");
-        assertThat(MomentService.top(Map.of("a", 3, "b", 5, "c", 1), 2)).extracting(e -> e.get("key")).containsExactly("b", "a");
-        assertThat(MomentService.explain(null)).isEmpty();
-        assertThat(MomentService.explain(new MomentMatch.Result(50, Map.of(), null, List.of("style:a,b", "solto"))))
+        assertThat(MomentRules.strings(List.of(1, "a"))).containsExactly("1", "a");
+        assertThat(MomentRules.strings("x")).isEmpty();
+        assertThat(MomentRules.nz(null)).isZero();
+        assertThat(MomentRules.nz(4)).isEqualTo(4);
+        assertThat(MomentRules.nonNull(null)).isEmpty();
+        assertThat(MomentRules.nonNull(List.of(1))).containsExactly(1);
+        assertThat(MomentRules.index(List.of("aa", "b", "cc"), String::length)).containsEntry(2, "aa").containsEntry(1, "b");
+        assertThat(MomentRules.top(Map.of("a", 3, "b", 5, "c", 1), 2)).extracting(e -> e.get("key")).containsExactly("b", "a");
+        assertThat(MomentRules.explain(null)).isEmpty();
+        assertThat(MomentRules.explain(new MomentMatch.Result(50, Map.of(), null, List.of("style:a,b", "solto"))))
                 .extracting(e -> e.get("kind")).containsExactly("style", "solto");
     }
 }
