@@ -40,7 +40,7 @@ class CbcRulesRequisitosTest {
         for (int i = 0; i < kv.length; i += 2) {
             r.put((String) kv[i], kv[i + 1]);
         }
-        return CbcRules.requirement(r, slots, board, cards, 5, ctx);
+        return CbcRequirements.requirement(r, slots, board, cards, 5, ctx);
     }
 
     @Test
@@ -60,7 +60,7 @@ class CbcRulesRequisitosTest {
     void requisitosDeNotaMarcaESintonia() {
         assertThat(req("type", "ovrAvg", "min", 70).ok()).isTrue();
         assertThat(req("type", "ovrAvg", "min", 71).have()).isEqualTo(70);
-        assertThat(CbcRules.requirement(Map.of("type", "ovrAvg"), slots, Map.of(), List.of(), 0, ctx).ok()).isFalse();
+        assertThat(CbcRequirements.requirement(Map.of("type", "ovrAvg"), slots, Map.of(), List.of(), 0, ctx).ok()).isFalse();
         assertThat(req("type", "ovrMin", "min", 60).ok()).isFalse();
         assertThat(req("type", "ovrMin", "min", 60, "count", 2).ok()).isTrue();
         assertThat(req("type", "brand", "anyOf", List.of("NORTE"), "count", 2).ok()).isTrue();
@@ -85,13 +85,13 @@ class CbcRulesRequisitosTest {
         assertThat(req("type", "origin").have()).isEqualTo(2);
         assertThat(req("type", "origin", "only", "ai").ok()).isFalse();
         assertThat(req("type", "noBuy").have()).isEqualTo(1);
-        assertThat(CbcRules.requirement(Map.of("type", "noBuy"), slots, board, cards, 0,
+        assertThat(CbcRequirements.requirement(Map.of("type", "noBuy"), slots, board, cards, 0,
                 new CbcRules.Context(null, null, null, null, null, null, TODAY)).have()).isEqualTo(2);
         assertThat(req("type", "rediscovery").have()).isEqualTo(1);
         assertThat(req("type", "rediscovery", "idleDays", 1, "count", 2).ok()).isTrue();
         assertThat(req("type", "strictPosition").ok()).isTrue();
         Map<String, CbcRules.Card> trocado = Map.of("s1", b, "s2", a, "s3", c);
-        assertThat(CbcRules.requirement(Map.of("type", "strictPosition"), slots, trocado, cards, 0, ctx).have()).isEqualTo(1);
+        assertThat(CbcRequirements.requirement(Map.of("type", "strictPosition"), slots, trocado, cards, 0, ctx).have()).isEqualTo(1);
         assertThat(req("type", "inventado").ok()).isFalse();
     }
 
@@ -141,7 +141,7 @@ class CbcRulesRequisitosTest {
         CbcRules.Slot errado = new CbcRules.Slot("y", "ANY", Map.of("category", "lower_piece", "subcategory", List.of("jeans")));
         assertThat(CbcRules.misses(errado, a)).containsExactly("category", "subcategory");
         assertThat(CbcRules.misses(tudo, null)).isEmpty();
-        assertThat(CbcRules.listOrOne(5)).isEmpty();
+        assertThat(CbcSlotAccepts.listOrOne(5)).isEmpty();
     }
 
     @Test
@@ -158,10 +158,10 @@ class CbcRulesRequisitosTest {
         assertThat(CbcRules.colorHarmony("blue", "orange")).isTrue();
         assertThat(CbcRules.colorHarmony("red", "blue")).isFalse();
         assertThat(CbcRules.colorHarmony("purple", "green")).isFalse();
-        assertThat(CbcRules.colorMatch(null, "red")).isFalse();
-        assertThat(CbcRules.colorMatch("crimson", "red")).isTrue();
-        assertThat(CbcRules.colorMatch("multicolor", "print")).isFalse();
-        assertThat(CbcRules.colorMatch("xyz", "red")).isFalse();
+        assertThat(CbcSintonia.colorMatch(null, "red")).isFalse();
+        assertThat(CbcSintonia.colorMatch("crimson", "red")).isTrue();
+        assertThat(CbcSintonia.colorMatch("multicolor", "print")).isFalse();
+        assertThat(CbcSintonia.colorMatch("xyz", "red")).isFalse();
     }
 
     @Test
@@ -171,12 +171,12 @@ class CbcRulesRequisitosTest {
         CbcRules.Card mesmoEstilo = card("SUP", "BRONZE", 1, "", "PIECE", Set.of("a"), Set.of("blue"), null, null, null);
         CbcRules.Card corVizinha = card("SUP", "BRONZE", 1, null, "PIECE", Set.of("c"), Set.of("orange"), null, null, null);
         CbcRules.Card nada = card("SUP", "BRONZE", 1, "Outra", "PIECE", Set.of("c"), Set.of("blue"), null, null, null);
-        assertThat(CbcRules.harmonious(x, null)).isFalse();
-        assertThat(CbcRules.harmonious(x, mesmaMarca)).isTrue();
-        assertThat(CbcRules.harmonious(x, mesmoEstilo)).isTrue();
-        assertThat(CbcRules.harmonious(x, corVizinha)).isTrue();
-        assertThat(CbcRules.harmonious(x, nada)).isFalse();
-        assertThat(CbcRules.harmonious(mesmoEstilo, x)).isTrue();
+        assertThat(CbcSintonia.harmonious(x, null)).isFalse();
+        assertThat(CbcSintonia.harmonious(x, mesmaMarca)).isTrue();
+        assertThat(CbcSintonia.harmonious(x, mesmoEstilo)).isTrue();
+        assertThat(CbcSintonia.harmonious(x, corVizinha)).isTrue();
+        assertThat(CbcSintonia.harmonious(x, nada)).isFalse();
+        assertThat(CbcSintonia.harmonious(mesmoEstilo, x)).isTrue();
     }
 
     @Test
@@ -185,7 +185,7 @@ class CbcRulesRequisitosTest {
         assertThat(CbcRules.themeAny(a, new CbcRules.Context(null, null, null, null, null, null, null))).isFalse();
         assertThat(CbcRules.themeAny(a, new CbcRules.Context(null, null, null, Set.of("casual"), null, null, null))).isTrue();
         assertThat(CbcRules.themeAny(a, new CbcRules.Context(null, null, Set.of("black"), null, null, null, null))).isTrue();
-        assertThat(CbcRules.themeFocus(a, null)).isFalse();
+        assertThat(CbcSintonia.themeFocus(a, null)).isFalse();
         assertThat(CbcRules.idleDays(a, null)).isZero();
         assertThat(CbcRules.idleDays(c, TODAY)).isZero();
     }
@@ -232,11 +232,11 @@ class CbcRulesRequisitosTest {
         assertThat(CbcRules.hasTheme(null)).isFalse();
         assertThat(CbcRules.hasTheme(List.of(Map.of("type", "tier")))).isFalse();
         assertThat(CbcRules.hasTheme(List.of(Map.of("type", "theme")))).isTrue();
-        assertThat(CbcRules.tier(null)).isEqualTo("BRONZE");
-        assertThat(CbcRules.intOf("3", 7)).isEqualTo(7);
-        assertThat(CbcRules.strings(java.util.Arrays.asList("a", null, 2))).containsExactly("a", "2");
-        assertThat(CbcRules.intersects(null, Set.of("a"))).isFalse();
-        assertThat(CbcRules.intersects(Set.of("a"), Set.of())).isFalse();
+        assertThat(CbcValues.tier(null)).isEqualTo("BRONZE");
+        assertThat(CbcValues.intOf("3", 7)).isEqualTo(7);
+        assertThat(CbcValues.strings(java.util.Arrays.asList("a", null, 2))).containsExactly("a", "2");
+        assertThat(CbcValues.intersects(null, Set.of("a"))).isFalse();
+        assertThat(CbcValues.intersects(Set.of("a"), Set.of())).isFalse();
         assertThat(CbcRules.norm(java.util.Arrays.asList(" A ", null, " ", "b"))).containsExactly("a", "b");
         assertThat(CbcRules.norm(null)).isEmpty();
     }
