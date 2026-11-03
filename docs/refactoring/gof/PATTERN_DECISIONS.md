@@ -44,3 +44,10 @@ Os outros18 padrões permanecem com análise/aplicação global pendente. Não h
 ## Continuação: todos os23 implementados em uma colaboração executável
 
 O checkpoint anterior avaliava os23 e implementava Memento no editor. A exigência posterior de todos os padrões gerou FLOW-AUDIT-GOF-003: motor offline integrado à CLI/CI, com32 testes de auditoria e CSV legado preservado. A tabela inicial permanece como decisão histórica do fluxo do editor; a adoção atual por padrão está em PATTERN_COVERAGE.csv e GOF_EXECUTION.md. Todos os23 têm implementação no motor, sem afirmar aplicação em todos os módulos de negócio.
+
+## Aplicações nos lotes de redução
+
+| Lote | Família | Padrão | Arquivo | Motivo |
+|---|---|---|---|---|
+| R76-heist-exterior-rua | Estrutural | Facade | `components/heist/scene/exterior-alley-tex.ts` | Interface única (reexports) sobre os sete módulos de texturas do beco (ruído, canvas/PBR, chão e paredes, traços e folhas, decalques, placas, texturas pequenas); os consumidores não mudaram de import. |
+| R80-seal | Estrutural | Facade | `fai-application/.../service/SealService.java` | O bean público (controllers e outros serviços não mudaram) mantém transações, construtor, records e assinaturas e delega a 15 colaboradores package-private por caso de uso (emissores, Hype, views, formulário, Copilot, candidatos, sugestões, vitrine, medalhões, roteamento, respostas, revisão, promoções). |
