@@ -1,6 +1,6 @@
 # Lote R84-hype — `HypeQueryService` como Facade; job, cálculo, configuração e marcos por responsabilidade
 
-Base: `claude/relaxed-pasteur-5b5466`. Branch: `worktree-agent-aebea2ff79a070fc5`.
+Base: `claude/relaxed-pasteur-5b5466` (merge final feito antes da entrega; único conflito: a tabela de `PATTERN_DECISIONS.md`, resolvida mantendo as duas linhas). Branch: `worktree-agent-aebea2ff79a070fc5`.
 Pacote: `fai-application/src/main/java/br/com/fashionai/application/hype/`.
 
 ## Resultado por arquivo
@@ -125,7 +125,7 @@ python3 scripts/refactoring/line_ratchet.py
 | Após calculadora, configuração, marcos e job | 130 testes, 0 falhas |
 | Após o Facade do `HypeQueryService` e a divisão do `HypeMilestoneTest` (23 classes) | **130 testes, 0 falhas, 0 erros** (retratos estáveis em 4 execuções seguidas) |
 | `fai-web` install (compila tudo que depende; `ServiceFakes` sem alteração) | BUILD SUCCESS |
-| Suíte completa de `fai-application` | 2034 testes, 0 falhas, 0 erros, 27 skipped |
+| Suíte completa de `fai-application` | 2034 testes, 0 falhas, 0 erros, 27 skipped; depois do merge final da base: 2042, 0 falhas, 0 erros, 27 skipped |
 | `fai-web` `ControllerDelegacaoTest`, `HypeController*Test`, `InsightsAccessTest` | 706 testes, 0 falhas, 0 erros (a seleção inclui os testes de controller do pacote) |
 | Catraca | os 6 arquivos do lote só como `APERTAR` (1512 → 248, 530 → 225, 379 → 229, 283 → 215, 263 → 206, 424 → 329); nenhum arquivo novo acima do limite; 0 violações |
 
