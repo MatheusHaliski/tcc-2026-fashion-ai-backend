@@ -572,14 +572,6 @@
    "max": 254,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "scripts/catalog/fashn_open.py": {
-   "max": 465,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/catalog/ingest.py": {
-   "max": 439,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "scripts/catalog/normalize_product.py": {
    "max": 292,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -588,32 +580,12 @@
    "max": 300,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "scripts/catalog/process_catalog_images.py": {
-   "max": 697,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/catalog/process_local_sd.py": {
-   "max": 930,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/catalog/providers/official_sitemap.py": {
-   "max": 691,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "scripts/catalog/tests/test_catalog_image_updates.py": {
    "max": 527,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/catalog/tests/test_category_frame_revert.py": {
    "max": 439,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/catalog/tests/test_official_sitemap.py": {
-   "max": 504,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/catalog/tests/test_process_local_sd.py": {
-   "max": 466,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/cloud/deploy_fashn_vertex.py": {
