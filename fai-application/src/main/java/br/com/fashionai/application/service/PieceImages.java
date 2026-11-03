@@ -2,8 +2,8 @@ package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.service.WardrobeService.CatalogPick;
 import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.Model3dStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
 
@@ -14,7 +14,7 @@ final class PieceImages {
     private PieceImages() {
     }
 
-    /** RF47 — produto do catálogo global: referência ao produto e a foto oficial (ou a padrão, sem foto). */
+    /** RF47 — produto do catálogo global: referência ao produto, a foto oficial (ou a padrão) e o modelo 3D do produto. */
     static void fromCatalog(WardrobeItem w, CatalogPick pick, AssetCatalogService assets) {
         w.setCatalogProductId(pick.productId());
         w.setCatalogVariantId(pick.variantId());
@@ -32,6 +32,13 @@ final class PieceImages {
                 : br.com.fashionai.domain.model.enums.ImageOrigin.DEFAULT);
         w.setModerationStatus(ModerationStatus.APPROVED);
         w.setPhotoProcessingStatus(PhotoProcessingStatus.COMPLETED);
+        if (pick.model3dUrl() != null && !pick.model3dUrl().isBlank()) {
+            // etapa 3: o modelo de vitrine publicado do produto vira o 3D da peça (manequim, quarto, visualizador),
+            // o mesmo campo do RF16; sem esqueleto, não veste o avatar
+            w.setModel3dUrl(pick.model3dUrl());
+            w.setModel3dStatus(Model3dStatus.COMPLETED);
+            w.setModel3dGeneratedAt(java.time.Instant.now());
+        }
     }
 
     /** Imagem padrão da peça ({@code /public/assets_pecas}) quando a pessoa deixa a foto vazia. */

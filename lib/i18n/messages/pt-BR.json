@@ -2676,6 +2676,7 @@
   "model3d.relevo_aviso": "Relevo gerado a partir da foto — não é uma reconstrução fiel da peça.",
   "model3d.tentar_gratis": "Tentar de novo (grátis)",
   "model3d.ver": "Ver em 3D",
+  "model3d.vitrine_aviso": "Modelo 3D de vitrine da peça. No avatar que se mexe, a peça aparece pelo molde com a foto.",
   "model3d.viewer_aviso": "Modelo 3D gerado a partir da foto da peça: serve para ver volume e proporção, não substitui a foto de produto.",
   "model3dPanel.a_geracao_3d_falhou": "A geração 3D falhou.",
   "model3dPanel.arquivo_glb_salvo": "Modelo 3D salvo",

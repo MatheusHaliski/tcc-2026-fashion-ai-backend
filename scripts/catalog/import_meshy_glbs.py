@@ -64,6 +64,16 @@ def query(conn, sql: str, params: dict | None = None) -> list[dict]:
         return list(cur.fetchall())
 
 
+def existing_models(conn) -> list[dict] | None:
+    """Modelos já gravados; None quando a tabela ainda não existe (V86 não aplicada): o ensaio segue, o --apply não."""
+    try:
+        return query(conn, EXISTING)
+    except Exception as exc:   # noqa: BLE001 - só "tabela inexistente" (MySQL 1146) vira None
+        if getattr(exc, "args", (None,))[0] == 1146:
+            return None
+        raise
+
+
 def renditions(data: bytes) -> dict[str, tuple[bytes, str]]:
     """WEB (sempre, se couber) e DESKTOP_HIGH (o original, quando é outro arquivo e cabe em 12 MB)."""
     web = web_rendition(data)
@@ -89,9 +99,9 @@ def grade(path: Path | None, codex_review: str) -> tuple[dict, int | None, str]:
     return {**q, "original_bytes": len(data)}, len(web[0]) if web else None, web[1] if web else ""
 
 
-def assess(rows: list[dict], root: Path, conn) -> list[dict]:
+def assess(rows: list[dict], root: Path, conn, models: list[dict]) -> list[dict]:
     matches = resolve(conn, rows)
-    existing = {(str(e["catalog_product_id"]), e["sha256"]) for e in query(conn, EXISTING)}
+    existing = {(str(e["catalog_product_id"]), e["sha256"]) for e in models}
     out = []
     for i, r in enumerate(rows):
         path = locate(root, r.get("glb", ""))
@@ -136,9 +146,9 @@ def report_row(item: dict, root: Path, pieces: dict[str, int]) -> list:
             item["status"]]
 
 
-def missing(conn, items: list[dict]) -> tuple[list[str], list[str]]:
+def missing(conn, items: list[dict], models: list[dict]) -> tuple[list[str], list[str]]:
     """(faltam, revisar): flat lay aprovado sem modelo BOM publicado; revisar = os que entram como DRAFT."""
-    covered = {str(e["catalog_product_id"]) for e in query(conn, EXISTING) if e["status"] == "PUBLISHED"}
+    covered = {str(e["catalog_product_id"]) for e in models if e["status"] == "PUBLISHED"}
     covered |= {i["product_id"] for i in items if i["status"] in ("IMPORTAR", "IMPORTADO") and i["grade"] == "BOM"}
     draft = {i["product_id"] for i in items if i["status"] in ("IMPORTAR", "IMPORTADO") and i["grade"] == "REVISAR"}
     todo = sorted(str(r["product_id"]) for r in query(conn, APPROVED_FLAT_LAYS) if str(r["product_id"]) not in covered)
@@ -174,7 +184,11 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
     parser.add_argument("--apply", action="store_true", help="envia e grava no banco (produção: só com autorização)")
     args = parser.parse_args(argv)
     conn, target = connect()
-    items = assess(read_manifest(args.manifest), args.root, conn)
+    models = existing_models(conn)
+    if models is None and args.apply:
+        print("catalog_product_models_3d não existe: aplique a migration V86 (deploy do backend) antes do --apply")
+        return 2
+    items = assess(read_manifest(args.manifest), args.root, conn, models or [])
     pieces = pieces_without_model(conn, [i["product_id"] for i in items if i["status"] == "IMPORTAR"])
     if args.apply:
         run_apply(conn, make_storage(), items)
@@ -185,7 +199,7 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
         writer = csv.writer(handle)
         writer.writerow(REPORT)
         writer.writerows(report_row(i, args.root, pieces) for i in items)
-    todo, review = missing(conn, items)
+    todo, review = missing(conn, items, models or [])
     (args.out_dir / "faltam.txt").write_text("".join(f"{p}\n" for p in todo), encoding="utf-8")
     (args.out_dir / "revisar.txt").write_text("".join(f"{p}\n" for p in review), encoding="utf-8")
     counts: dict[str, int] = {}
@@ -193,6 +207,8 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
         label = f"{item['status']} {item['grade']}" if item["status"] in ("IMPORTAR", "IMPORTADO") else item["status"]
         counts[label] = counts.get(label, 0) + 1
     print(f"glb do Codex: {len(items)} arquivos · {'GRAVANDO' if args.apply else 'ensaio (nada é gravado)'} · {target}")
+    if models is None:
+        print("  aviso: catalog_product_models_3d ainda não existe (V86 não aplicada); contado como vazio")
     for key, count in sorted(counts.items()):
         print(f"  {count:5d}  {key}")
     print(f"  {sum(pieces.values()):5d}  peças de guarda-roupa que recebem o modelo (vindas desses produtos)")

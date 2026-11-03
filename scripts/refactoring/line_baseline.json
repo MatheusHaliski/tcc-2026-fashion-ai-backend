@@ -49,7 +49,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/catalog/catalog-search.tsx": {
-   "max": 567,
+   "max": 489,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/catalog/fitting-room.test.tsx": {
@@ -229,7 +229,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogService.java": {
-   "max": 811,
+   "max": 774,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/catalog/image/CatalogImageBatchCli.java": {
@@ -537,7 +537,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java": {
-   "max": 1001,
+   "max": 995,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/taxonomy/Taxonomy.java": {

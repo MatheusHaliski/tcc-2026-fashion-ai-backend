@@ -51,6 +51,8 @@ class Cursor:
         elif "LOWER(b.name) IN" in head:
             self._rows = [p for p in CATALOG if p["brand"].lower() in params["brands"]]
         elif "FROM catalog_product_models_3d" in head:
+            if c.no_table:
+                raise RuntimeError(1146, "Table 'catalog_product_models_3d' doesn't exist")
             self._rows = c.existing
         elif "flat_lay_status" in head:
             self._rows = [{"product_id": p} for p in c.flat_lays]
@@ -64,8 +66,9 @@ class Cursor:
 
 
 class Conn:
-    def __init__(self, existing=(), flat_lays=(), pieces=None, fail_on=None):
+    def __init__(self, existing=(), flat_lays=(), pieces=None, fail_on=None, no_table=False):
         self.existing, self.flat_lays, self.pieces = list(existing), list(flat_lays), dict(pieces or {})
+        self.no_table = no_table
         self.fail_on, self.writes, self.commits, self.rollbacks = fail_on, [], 0, 0
 
     def cursor(self):
@@ -208,6 +211,16 @@ def test_apply_failure_rolls_back_and_deletes_uploads(tmp_path):
     assert code == 1 and conn.commits == 0 and conn.rollbacks == 3
     assert storage.client.objects == {} and len(storage.client.deleted) == 3
     assert rows["c6"]["situacao"] == "FALHOU RuntimeError"
+
+
+def test_without_the_v86_table_dry_run_works_and_apply_refuses(tmp_path, capsys):
+    code, rows, out = run(tmp_path, Conn(no_table=True, flat_lays=[P2]))
+    assert code == 0 and rows["c6"]["situacao"] == "IMPORTAR" and "V86 não aplicada" in capsys.readouterr().out
+    manifest = tmp_path / "manifesto.csv"
+    conn, storage = Conn(no_table=True), Storage()
+    assert imp.main(["--manifest", str(manifest), "--root", str(tmp_path), "--out-dir", str(tmp_path / "x"), "--apply"],
+                    connect=lambda: (conn, "teste"), make_storage=lambda: storage) == 2
+    assert conn.writes == [] and storage.client.objects == {}
 
 
 def test_upload_is_read_back_and_tampered_copy_removed():

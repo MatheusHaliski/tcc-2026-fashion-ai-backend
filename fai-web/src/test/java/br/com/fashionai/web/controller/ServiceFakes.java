@@ -4496,7 +4496,7 @@ final class ServiceFakes {
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.PieceView createFromCatalog(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.WardrobeService.PieceForm a1, br.com.fashionai.application.service.WardrobeService.CatalogPick a2) {
+        public br.com.fashionai.application.view.Views.PieceView createFromCatalog(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.WardrobeService.PieceForm a1, br.com.fashionai.application.service.CatalogPick a2) {
             return (br.com.fashionai.application.view.Views.PieceView) Fk.call(this, "createFromCatalog", br.com.fashionai.application.view.Views.PieceView.class, new Object[]{a0, a1, a2});
         }
 
