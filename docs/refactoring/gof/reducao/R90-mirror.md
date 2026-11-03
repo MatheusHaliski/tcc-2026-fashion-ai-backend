@@ -97,7 +97,7 @@ python3 scripts/refactoring/line_ratchet.py
 | Original: `MirrorServiceTest` + `MirrorScoresTest` + `MirrorWardrobePickerTest` + caracterização | 19 testes, 0 falhas |
 | Após o Facade (mesmos dois retratos) + testes do Copilot e contrato de desafios | **28 testes, 0 falhas, 0 erros** |
 | `install` de `fai-web` com dependências (`ServiceFakes` sem alteração) | sucesso (sem erros de compilação) |
-| Suíte completa de `fai-application` (depois) | 2042 testes, 0 falhas, 0 erros, 27 skipped — BUILD SUCCESS |
+| Suíte completa de `fai-application` (depois) | 2042 testes antes do merge da base e 2048 depois (com R84/R87), 0 falhas, 0 erros, 27 skipped |
 | `fai-web` `ControllerDelegacaoTest` + `ContratoRotasPorTagTest` | 698 testes, 0 falhas — BUILD SUCCESS |
 | Catraca | `MirrorService.java` só como `APERTAR` (1254 → 210); 0 violações; nenhum arquivo novo acima do limite |
 
