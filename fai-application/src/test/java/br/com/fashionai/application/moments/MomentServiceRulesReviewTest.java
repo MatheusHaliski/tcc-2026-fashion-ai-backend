@@ -71,14 +71,14 @@ class MomentServiceRulesReviewTest extends MomentServiceRulesFixture {
     @Test
     void parseDeDataHoraRespeitaOffsetOuFusoDoMomento() {
         java.time.ZoneId sp = java.time.ZoneId.of("America/Sao_Paulo");
-        assertThat(MomentService.parseInstant("2026-11-09T18:30", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T21:30:00Z"));
-        assertThat(MomentService.parseInstant("2026-11-09T18:30:15", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T21:30:15Z"));
-        assertThat(MomentService.parseInstant("2026-11-09T18:30", "startAt", java.time.ZoneId.of("Asia/Tokyo"))).isEqualTo(Instant.parse("2026-11-09T09:30:00Z"));
-        assertThat(MomentService.parseInstant("2026-11-09T18:30:00Z", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T18:30:00Z"));
-        assertThat(MomentService.parseInstant("2026-11-09T18:30-03:00", "startAt", java.time.ZoneId.of("UTC"))).isEqualTo(Instant.parse("2026-11-09T21:30:00Z"));
-        assertThat(MomentService.parseInstant("2026-11-09", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T03:00:00Z"));
-        assertThatThrownBy(() -> MomentService.parseInstant("09/11/2026 18:30", "startAt", sp)).isInstanceOf(ApiException.class);
-        assertThatThrownBy(() -> MomentService.parseInstant(" ", "startAt", sp)).isInstanceOf(ApiException.class);
+        assertThat(MomentInput.parseInstant("2026-11-09T18:30", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T21:30:00Z"));
+        assertThat(MomentInput.parseInstant("2026-11-09T18:30:15", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T21:30:15Z"));
+        assertThat(MomentInput.parseInstant("2026-11-09T18:30", "startAt", java.time.ZoneId.of("Asia/Tokyo"))).isEqualTo(Instant.parse("2026-11-09T09:30:00Z"));
+        assertThat(MomentInput.parseInstant("2026-11-09T18:30:00Z", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T18:30:00Z"));
+        assertThat(MomentInput.parseInstant("2026-11-09T18:30-03:00", "startAt", java.time.ZoneId.of("UTC"))).isEqualTo(Instant.parse("2026-11-09T21:30:00Z"));
+        assertThat(MomentInput.parseInstant("2026-11-09", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T03:00:00Z"));
+        assertThatThrownBy(() -> MomentInput.parseInstant("09/11/2026 18:30", "startAt", sp)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> MomentInput.parseInstant(" ", "startAt", sp)).isInstanceOf(ApiException.class);
     }
 
     private MomentService.AdminMomentRequest adminRequest(String season, String start, String end, String tz) {
@@ -126,9 +126,9 @@ class MomentServiceRulesReviewTest extends MomentServiceRulesFixture {
         org.mockito.Mockito.when(query.currentOf(org.mockito.ArgumentMatchers.eq(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(Map.of(personal, hypeRow(owner, 72, false), open, hypeRow(owner, 55, true), thin, hypeRow(owner, null, true)));
         List<UUID> ids = List.of(personal, open, thin);
-        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, owner)).containsOnly(Map.entry(personal, 72.0), Map.entry(open, 55.0));
-        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, other)).containsOnly(Map.entry(open, 55.0));
-        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, null)).containsOnly(Map.entry(open, 55.0));
+        assertThat(new MomentQueries(withHype.ctx).hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, owner)).containsOnly(Map.entry(personal, 72.0), Map.entry(open, 55.0));
+        assertThat(new MomentQueries(withHype.ctx).hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, other)).containsOnly(Map.entry(open, 55.0));
+        assertThat(new MomentQueries(withHype.ctx).hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, null)).containsOnly(Map.entry(open, 55.0));
     }
 
     private static br.com.fashionai.domain.model.HypeScoreCurrent hypeRow(UUID owner, Integer score, boolean publicEligible) {

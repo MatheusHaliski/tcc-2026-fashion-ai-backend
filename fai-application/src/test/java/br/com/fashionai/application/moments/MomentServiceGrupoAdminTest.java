@@ -125,20 +125,20 @@ class MomentServiceGrupoAdminTest extends MomentServiceFixture {
     @Test
     void lerDataComOffsetHoraDeParedeOuSoData() {
         ZoneId sp = ZoneId.of("America/Sao_Paulo");
-        assertThat(MomentService.parseInstant("2026-11-09T18:30:00Z", "x", sp)).isEqualTo(java.time.Instant.parse("2026-11-09T18:30:00Z"));
-        assertThat(MomentService.parseInstant(" 2026-11-09T18:30 ", "x", sp)).isEqualTo(java.time.Instant.parse("2026-11-09T21:30:00Z"));
-        assertThat(MomentService.parseInstant("2026-11-09", "x", sp)).isEqualTo(java.time.Instant.parse("2026-11-09T03:00:00Z"));
-        assertThatThrownBy(() -> MomentService.parseInstant(" ", "x", sp)).isInstanceOf(ApiException.class);
+        assertThat(MomentInput.parseInstant("2026-11-09T18:30:00Z", "x", sp)).isEqualTo(java.time.Instant.parse("2026-11-09T18:30:00Z"));
+        assertThat(MomentInput.parseInstant(" 2026-11-09T18:30 ", "x", sp)).isEqualTo(java.time.Instant.parse("2026-11-09T21:30:00Z"));
+        assertThat(MomentInput.parseInstant("2026-11-09", "x", sp)).isEqualTo(java.time.Instant.parse("2026-11-09T03:00:00Z"));
+        assertThatThrownBy(() -> MomentInput.parseInstant(" ", "x", sp)).isInstanceOf(ApiException.class);
     }
 
     @Test
     void slugRepetidoGanhaSufixoENomeLongoEhCortado() {
-        String s1 = svc.slugFor("Ação É Já", null);
+        String s1 = new MomentGroups(svc.ctx).slugFor("Ação É Já", null);
         assertThat(s1).startsWith("acao-e-ja-g-");
         Moment m = active(s1);
-        String s2 = svc.slugFor("Ação É Já", null);
+        String s2 = new MomentGroups(svc.ctx).slugFor("Ação É Já", null);
         assertThat(s2).isEqualTo("acao-e-ja-1");
-        assertThat(svc.slugFor("a".repeat(60), "XY")).startsWith("a".repeat(40) + "-xy-");
+        assertThat(new MomentGroups(svc.ctx).slugFor("a".repeat(60), "XY")).startsWith("a".repeat(40) + "-xy-");
         assertThat(m.getId()).isNotNull();
     }
 
