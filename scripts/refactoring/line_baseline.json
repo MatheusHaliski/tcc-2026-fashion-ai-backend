@@ -240,22 +240,6 @@
    "max": 1025,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/FabricFrame.java": {
-   "max": 581,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/ProductRuleFrame.java": {
-   "max": 757,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/ProductSegmenter.java": {
-   "max": 253,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/SemanticCropper.java": {
-   "max": 296,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/imaging/BrandReader.java": {
    "max": 680,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
