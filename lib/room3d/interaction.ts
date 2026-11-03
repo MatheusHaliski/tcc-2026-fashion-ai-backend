@@ -1,7 +1,10 @@
 import * as THREE from "three";
-import { walkArea, type RoomBounds } from "./room-bounds";
+import type { RoomBounds } from "./room-bounds";
 import { CORNERS } from "./camera-views";
 import { DEFAULT_CAMERA_OPTIONS, type CameraOptions } from "./room-settings";
+import { GOAL_STUCK_S, stepToward } from "./room-walk";
+export { BODY_RADIUS, GOAL_REACHED, GOAL_STUCK_S, MAX_STEP_DT, WALK_SPEED, moveInRoom, penetration, stepToward, type GoalStep, type OrientedCollider } from "./room-walk";
+export { CHAIR, HAND_REACH, HAND_SPEED, keepInFront, nudgeHand, seatOf, thighDrop } from "./room-body";
 export type Arm = "Left" | "Right";
 export interface RoomTarget {
   /** puxador (porta/gaveta), peça (pegar) ou varão (pendurar de volta a peça que está na mão) */
@@ -20,8 +23,6 @@ export interface RoomAction {
 export const PICK_RADIUS = .95;
 /** Tempo do braço até a peça ao pegar ou pendurar com X (s). */
 export const REACH_S = .45;
-/** Mão por teclas (setas + W/S com A/D apertado): velocidade (m/s) e alcance máximo a partir do ombro (m). */
-export const HAND_SPEED = .55, HAND_REACH = .72;
 const ARM_KEYS = ["KeyA", "KeyD"];
 /** Setas e W/S que movem a mão enquanto A ou D está apertado (em vez de andar). */
 export const HAND_KEYS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyW", "KeyS"];
@@ -215,136 +216,3 @@ export function arrowAnywhere(event: { code: string; target: EventTarget | null 
 /** Comandos dos botões da interface para a cena 3D (disparados no canvas): girar a cena (±1) e aproximar/afastar (±1). */
 export const ROOM_TURN_EVENT = "fai:room-turn", ROOM_ZOOM_EVENT = "fai:room-zoom";
 export const ROOM_CAMERA_EVENT = "fai:room-camera-axis";
-/** Raio do tronco do personagem nos obstáculos (m). */
-export const BODY_RADIUS = .18;
-/**
- * Obstáculo com caixa orientada: `userData.collider = { hx, hz }` são as meias-medidas no espaço local do objeto (o
- * espelho fica girado 28°: a caixa alinhada aos eixos dele cobriria um triângulo vazio ou deixaria passar pela quina).
- */
-export interface OrientedCollider { hx: number; hz: number }
-/** Quanto o tronco (raio BODY_RADIUS) entra no obstáculo: 0 = livre; > 0 = sobreposição na direção mais rasa (m). */
-export function penetration(solid: THREE.Object3D, position: THREE.Vector3): number {
-  const collider = solid.userData?.collider as OrientedCollider | undefined;
-  if (collider) {
-    const local = solid.worldToLocal(new THREE.Vector3(position.x, solid.getWorldPosition(new THREE.Vector3()).y, position.z));
-    const ox = collider.hx + BODY_RADIUS - Math.abs(local.x), oz = collider.hz + BODY_RADIUS - Math.abs(local.z);
-    return ox > 0 && oz > 0 ? Math.min(ox, oz) : 0;
-  }
-  const box = new THREE.Box3().setFromObject(solid).expandByScalar(BODY_RADIUS);
-  const ox = Math.min(position.x - box.min.x, box.max.x - position.x), oz = Math.min(position.z - box.min.z, box.max.z - position.z);
-  return ox > 0 && oz > 0 ? Math.min(ox, oz) : 0;
-}
-/** Velocidade de caminhada (m/s) e o maior passo por quadro (s): setas, direcional e caminhada até um ponto andam igual. */
-export const WALK_SPEED = 1.05, MAX_STEP_DT = .05;
-/** Caminhada até um ponto: distância que conta como chegada (m) e tempo sem se aproximar até desistir (s). */
-export const GOAL_REACHED = .03, GOAL_STUCK_S = 1;
-const UP = new THREE.Vector3(0, 1, 0);
-/**
- * Passo dentro do quarto: as paredes limitam o centro do personagem (folga do tronco) e os obstáculos bloqueiam. Um
- * passo bloqueado desliza ao longo do obstáculo (só x ou só z); já sobreposto (uma porta abriu sobre o personagem), só
- * aceita passos que diminuem a sobreposição, então ele sai e nunca entra mais.
- */
-function walker(position: THREE.Vector3, bounds: number | RoomBounds, solids: Iterable<THREE.Object3D>) {
-  const list = [...solids], area = walkArea(bounds);
-  const overlap = (p: THREE.Vector3) => list.reduce((sum, solid) => sum + penetration(solid, p), 0);
-  const start = overlap(position);
-  const attempt = (sx: number, sz: number) => {
-    // Keep the torso outside the wardrobe and the walls; moving fronts, the 2nd wardrobe and the mirror add their own colliders.
-    const next = new THREE.Vector3(THREE.MathUtils.clamp(position.x + sx, area.minX, area.maxX), position.y, THREE.MathUtils.clamp(position.z + sz, area.minZ, area.maxZ));
-    const after = overlap(next);
-    return after === 0 || after < start - 1e-6 ? next : null;
-  };
-  return { attempt, slide: (sx: number, sz: number) => attempt(sx, sz) ?? (sx ? attempt(sx, 0) : null) ?? (sz ? attempt(0, sz) : null) };
-}
-/**
- * Frame-independent movement, normalized diagonals, conservative wardrobe/room bounds. Obstacles (wardrobe fronts, the
- * mirror) block the step; a diagonal into an obstacle slides along it (x or z alone). Already overlapping (a door swung
- * into the avatar), only steps that reduce the overlap are accepted, so the avatar walks out and never further in.
- * `bounds`: as paredes do quarto (room-bounds.ts) ou, no formato antigo, a borda direita do guarda-roupa. `yaw`: giro da
- * câmera (rad) — as setas seguem a tela (↑ anda para o fundo da vista); 0 = ↑ para −z, como na visão geral.
- */
-export function moveInRoom(position: THREE.Vector3, keys: Set<string>, dt: number, bounds: number | RoomBounds, solids: Iterable<THREE.Object3D> = [], yaw = 0, stick?: THREE.Vector2): number {
-  const dx = Number(keys.has("ArrowRight")) - Number(keys.has("ArrowLeft")) + (stick?.x ?? 0);
-  const dz = Number(keys.has("ArrowDown")) - Number(keys.has("ArrowUp")) + (stick?.y ?? 0);
-  if (!dx && !dz) return 0;
-  const step = new THREE.Vector3(dx, 0, dz).normalize().applyAxisAngle(UP, yaw).multiplyScalar(Math.min(dt, MAX_STEP_DT) * WALK_SPEED * Math.min(1, Math.hypot(dx, dz)));
-  if (Math.abs(step.x) < 1e-9) step.x = 0;
-  if (Math.abs(step.z) < 1e-9) step.z = 0;
-  const next = walker(position, bounds, solids).slide(step.x, step.z);
-  if (next) position.copy(next);
-  return Math.atan2(step.x, step.z);
-}
-export interface GoalStep { heading: number; moved: number; arrived: boolean; side: number }
-/**
- * Um passo da caminhada até `goal` (no chão), com a mesma velocidade, paredes e colisões das setas: reto até o ponto
- * (o último passo para em cima dele); bloqueado, desliza ao longo do obstáculo se isso ainda aproxima; senão contorna —
- * desvia 45°, 90° ou 135° do rumo do ponto, sempre para o mesmo lado (`side`, devolvido para o próximo passo) até o
- * caminho reto abrir: sem a memória do lado, ziguezagueia na frente do obstáculo. `heading` é o rumo do passo dado.
- */
-export function stepToward(position: THREE.Vector3, goal: THREE.Vector3, dt: number, bounds: number | RoomBounds, solids: Iterable<THREE.Object3D> = [], side = 0): GoalStep {
-  const to = new THREE.Vector3(goal.x - position.x, 0, goal.z - position.z), dist = to.length();
-  const heading = Math.atan2(to.x, to.z);
-  if (dist <= GOAL_REACHED) return { heading, moved: 0, arrived: true, side: 0 };
-  const len = Math.min(dist, Math.min(dt, MAX_STEP_DT) * WALK_SPEED), { attempt, slide } = walker(position, bounds, solids);
-  const left = (p: THREE.Vector3) => Math.hypot(goal.x - p.x, goal.z - p.z);
-  const moves = (p: THREE.Vector3 | null): p is THREE.Vector3 => !!p && Math.hypot(p.x - position.x, p.z - position.z) > 1e-6;
-  const go = (next: THREE.Vector3, s: number): GoalStep => {
-    const moved = Math.hypot(next.x - position.x, next.z - position.z), along = Math.atan2(next.x - position.x, next.z - position.z);
-    position.copy(next);
-    return { heading: along, moved, arrived: left(position) <= GOAL_REACHED, side: s };
-  };
-  to.divideScalar(dist);
-  const direct = attempt(to.x * len, to.z * len);
-  if (moves(direct)) return go(direct, 0);
-  if (!side) { const glide = slide(to.x * len, to.z * len); if (moves(glide) && left(glide) < dist - len * .2) return go(glide, 0); }
-  const turned = (s: number, turn: number) => { const d = to.clone().applyAxisAngle(UP, s * turn).multiplyScalar(len); return slide(d.x, d.z); };
-  for (const turn of [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4]) {
-    if (side) { const next = turned(side, turn); if (moves(next)) return go(next, side); continue; }
-    const options = [1, -1].map(s => ({ s, next: turned(s, turn) })).filter((o): o is { s: number; next: THREE.Vector3 } => moves(o.next));
-    if (options.length) { const pick = options.sort((a, b) => left(a.next) - left(b.next))[0]; return go(pick.next, pick.s); }
-  }
-  if (side) return stepToward(position, goal, dt, bounds, solids, 0);    // o lado lembrado fechou: escolhe de novo
-  return { heading, moved: 0, arrived: false, side: 0 };
-}
-
-/**
- * Cadeira do quarto: virada 35°, topo do assento a 0,475 m; sentado, o quadril fica 6 cm para trás do centro do assento
- * (as costas chegam ao espaldar) e 9 cm acima dele (a articulação fica dentro da pelve, não no tecido).
- */
-export const CHAIR = { yaw: THREE.MathUtils.degToRad(35), seatTop: 0.475, back: 0.06, hip: 0.09 } as const;
-/** Ponto do quadril sentado numa cadeira em `at` (chão): x/z para trás do centro, y = topo do assento. */
-export function seatOf(at: readonly [number, number, number], chair: typeof CHAIR = CHAIR): THREE.Vector3 {
-  return new THREE.Vector3(at[0] - Math.sin(chair.yaw) * chair.back, at[1] + chair.seatTop, at[2] - Math.cos(chair.yaw) * chair.back);
-}
-/**
- * Sentado: quanto a coxa desce abaixo da horizontal (rad) para o pé tocar o chão com a canela na vertical — quadril
- * em `hipY`, coxa e canela com os comprimentos do próprio esqueleto e tornozelo a `ankle` do chão. Limitado (pernas
- * curtas balançam um pouco acima do chão; longas inclinam a coxa para baixo).
- */
-export function thighDrop(hipY: number, thigh: number, shin: number, ankle: number): number {
-  return Math.asin(THREE.MathUtils.clamp((hipY - shin - ankle) / Math.max(0.05, thigh), -0.35, 0.6));
-}
-
-/**
- * Mão por teclas (A ou D apertado): as setas movem o ponto que a mão persegue pela tela (lados e altura) e W/S para
- * dentro e para fora da cena — esticar e recolher o braço dobra o cotovelo. `view` é a base horizontal da câmera.
- */
-export function nudgeHand(target: THREE.Vector3, keys: Set<string>, dt: number, view: { right: THREE.Vector3; forward: THREE.Vector3 }, shoulder: THREE.Vector3, facing: number): THREE.Vector3 {
-  const x = Number(keys.has("ArrowRight")) - Number(keys.has("ArrowLeft"));
-  const y = Number(keys.has("ArrowUp")) - Number(keys.has("ArrowDown"));
-  const z = Number(keys.has("KeyW")) - Number(keys.has("KeyS"));
-  const step = Math.min(dt, MAX_STEP_DT) * HAND_SPEED;
-  target.addScaledVector(view.right, x * step).addScaledVector(UP, y * step).addScaledVector(view.forward, z * step);
-  return keepInFront(target, shoulder, facing, HAND_REACH);
-}
-/**
- * O ponto da mão sempre na frente do corpo (pelo menos `min` à frente do ombro, na direção `facing`) e a até `reach`
- * do ombro: sem isso, um alvo atrás das costas torcia o braço para trás.
- */
-export function keepInFront(target: THREE.Vector3, shoulder: THREE.Vector3, facing: number, reach = Infinity, min = .12): THREE.Vector3 {
-  const fwd = new THREE.Vector3(Math.sin(facing), 0, Math.cos(facing)), offset = target.clone().sub(shoulder);
-  const ahead = offset.dot(fwd);
-  if (ahead < min) offset.addScaledVector(fwd, min - ahead);
-  if (Number.isFinite(reach)) offset.clampLength(0, reach);
-  return target.copy(shoulder).add(offset);
-}

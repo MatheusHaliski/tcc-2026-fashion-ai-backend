@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import {protectAvatarCamera} from "@/lib/scene3d/mirror-camera";
@@ -8,32 +8,18 @@ import type { HumanParts } from "@/components/three/human-avatar";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
-import { arrowAnywhere, CHAIR, HAND_KEYS, HAND_REACH, keepInFront, moveInRoom, nudgeHand, REACH_S, ROOM_TURN_EVENT, RoomInteraction, thighDrop, type Arm } from "@/lib/room3d/interaction";
+import { CHAIR, HAND_REACH, keepInFront, moveInRoom, nudgeHand, REACH_S, RoomInteraction, thighDrop } from "@/lib/room3d/interaction";
 import { inputYaw, reachPlane, ROOM, viewYaw } from "@/lib/room3d/room-bounds";
 import { MIRROR_NORMAL, MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionChoreo, reactionKindOf, type ReactionChoreo } from "@/lib/room3d/mirror-session";
 import { poseYaw, viewPose, type ViewPose } from "@/lib/room3d/camera-views";
 import { stepSwing, SWING_REST, type Swing } from "@/lib/room3d/cloth-motion";
+import { reachHand } from "./reach-hand";
+import { useRoomAvatarInput } from "./use-room-avatar-input";
+export { reachHand } from "./reach-hand";
 export interface RoomGameplay {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction;
   /** prova no espelho dentro do quarto (lib/room3d/mirror-session.ts): fase pela distância, trocas e reação */
   session?: MirrorSession; reduced?: boolean;
-}
-/** CCD solves actual hand bones in world space. Targets remain within arm reach. */
-export function reachHand(parts: HumanParts, arm: Arm, desired: THREE.Vector3) {
-  const human = parts.human, hand = human.bone(`${arm}Hand`), shoulder = human.bone(`${arm}Arm`);
-  const origin = shoulder.getWorldPosition(new THREE.Vector3());
-  const fore = human.bone(`${arm}ForeArm`);
-  const length = origin.distanceTo(fore.getWorldPosition(new THREE.Vector3())) + fore.getWorldPosition(new THREE.Vector3()).distanceTo(hand.getWorldPosition(new THREE.Vector3()));
-  const target = desired.clone().sub(origin).clampLength(0, length * .98).add(origin);
-  for (let iteration = 0; iteration < 7; iteration++) for (const bone of [fore, shoulder]) {
-    human.root.updateWorldMatrix(true, true);
-    const pivot = bone.getWorldPosition(new THREE.Vector3());
-    const from = hand.getWorldPosition(new THREE.Vector3()).sub(pivot).normalize(), to = target.clone().sub(pivot).normalize();
-    const delta = new THREE.Quaternion().setFromUnitVectors(from, to);
-    const parent = bone.parent!.getWorldQuaternion(new THREE.Quaternion());
-    bone.quaternion.premultiply(parent.clone().invert().multiply(delta).multiply(parent));
-  }
-  human.root.updateWorldMatrix(true, true);
 }
 /** Abertura mínima da lente (graus) na vista do quarto. */
 const ROOM_FOV = 50;
@@ -53,42 +39,7 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
   const walkYaw = useRef(0);
   // para onde a mão vai (mirando com A/D ou pegando com X): o corpo vira para lá, como uma pessoa, no quadro seguinte
   const aimAt = useRef<THREE.Vector3 | null>(null);
-  useEffect(() => {
-    const canvas = gl.domElement; canvas.tabIndex = 0; canvas.dataset.roomControls = "true";
-    const editable = (target: EventTarget | null) => target instanceof HTMLElement && (!!target.closest("input,textarea,select,[contenteditable=true]"));
-    const down = (event: KeyboardEvent) => {
-      if (editable(event.target)) return;
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyA", "KeyD"].includes(event.code) || (engine.aiming && HAND_KEYS.includes(event.code))) { event.preventDefault(); engine.keyDown(event.code); }
-      else if (event.code === "KeyX" && !event.repeat) { event.preventDefault(); engine.interact(); }
-      else if ((event.code === "KeyQ" || event.code === "KeyE") && !event.repeat) { event.preventDefault(); engine.turn(event.code === "KeyQ" ? 1 : -1); }   // girar a cena
-    };
-    // botões de girar a cena (room-scene-controls.tsx)
-    const turn = (event: Event) => engine.turn(Math.sign(Number((event as CustomEvent).detail) || 0));
-    const up = (event: KeyboardEvent) => engine.keyUp(event.code, arm => parts.current?.human.bone(`${arm}Hand`).getWorldPosition(new THREE.Vector3()));
-    // A = o braço que aparece à esquerda da tela, D = o da direita: de frente para a câmera o braço esquerdo do
-    // personagem fica à direita e, pelo lado do personagem, as teclas pareceriam invertidas
-    engine.armFor = (code) => {
-      const human = parts.current?.human; if (!human) return code === "KeyA" ? "Left" : "Right";
-      const x = (bone: string) => human.bone(bone).getWorldPosition(new THREE.Vector3()).project(camera).x;
-      const leftOnScreenLeft = x("LeftArm") <= x("RightArm");
-      return (code === "KeyA") === leftOnScreenLeft ? "Left" : "Right";
-    };
-    const move = (event: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect(); pointer.current.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2);
-      if (engine.grip) engine.grip.progress?.((event.movementY - event.movementX) * .004);
-      if (engine.aiming && (event.movementX || event.movementY)) engine.handTarget = null;   // mexeu o cursor: a mão volta a segui-lo
-    };
-    // na prova (aba espelho dentro do quarto) as setas valem na página inteira: o foco está nos controles ao lado e
-    // basta andar para fora do espelho para voltar ao quarto
-    const downAnywhere = (event: KeyboardEvent) => {
-      if (arrowAnywhere(event, canvas, !!sessionRef.current?.active, editable)) { event.preventDefault(); engine.keyDown(event.code); }
-    };
-    const focus = () => canvas.focus(), blur = () => engine.blur();
-    canvas.addEventListener("pointerdown", focus); canvas.addEventListener("pointermove", move);
-    canvas.addEventListener("keydown", down); window.addEventListener("keydown", downAnywhere); window.addEventListener("keyup", up); window.addEventListener("blur", blur); canvas.addEventListener("blur", blur); canvas.addEventListener(ROOM_TURN_EVENT, turn);
-    return () => { const lens = camera as THREE.PerspectiveCamera; if (lens.userData.baseFov) { lens.fov = lens.userData.baseFov; lens.updateProjectionMatrix(); }
-      canvas.removeEventListener("pointerdown", focus); canvas.removeEventListener("pointermove", move); canvas.removeEventListener("blur", blur); canvas.removeEventListener("keydown", down); canvas.removeEventListener(ROOM_TURN_EVENT, turn); window.removeEventListener("keydown", downAnywhere); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); engine.blur(); engine.armFor = null; engine.ready = false; engine.notify(); };
-  }, [camera, engine, gl]);
+  useRoomAvatarInput(camera, gl, engine, sessionRef, parts, pointer);
   useFrame(({ clock }, dt) => {
     if (!actor.current || !parts.current) return;
     // andando: setas/direcional ou a caminhada até um ponto ("Ir ao espelho", "Voltar ao quarto") — as duas contam

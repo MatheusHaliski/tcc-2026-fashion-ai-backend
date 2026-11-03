@@ -1,8 +1,10 @@
 import * as THREE from "three";
 import {mirrorCameraPose} from "@/lib/scene3d/mirror-camera";
-import { kindOf } from "@/lib/avatar3d/human/garments";
 import { BODY_RADIUS } from "./interaction";
 import { clampCamera, ROOM, roomCenter, roomView, rotateView, walkArea, type RoomBounds } from "./room-bounds";
+import type { HandSlot } from "./mirror-pieces";
+export { HAND_SLOTS, HAND_TO_API, assetStateOf, handSlotOf, handsOf, type AssetState, type HandPiece, type HandSlot, type MirrorSlots } from "./mirror-pieces";
+export { reactionChoreo, reactionKindOf, type ReactionChoreo, type ReactionKind } from "./mirror-reaction";
 
 /**
  * Prova de roupa no quarto (RF27 + RF28 num fluxo só): o personagem caminha até o espelho e a prova abre sozinha, sem
@@ -14,70 +16,11 @@ import { clampCamera, ROOM, roomCenter, roomView, rotateView, walkArea, type Roo
  *    falha mantém a roupa anterior — o estado do espelho só muda com a resposta do servidor;
  *  - a reação do personagem a cada troca, por lugar do corpo (versão reduzida com movimento reduzido).
  */
-export const HAND_SLOTS = ["upper", "lower", "shoes", "accessory"] as const;
-export type HandSlot = (typeof HAND_SLOTS)[number];
 export type MirrorPhase = "room" | "approach" | "tryon" | "exit";
-/** Estado do asset da peça na prova: modelo 3D próprio, molde 3D paramétrico (aproximação), só imagem 2D, foto pendente. */
-export type AssetState = "MODEL_3D" | "MOULD_3D" | "IMAGE_2D" | "PENDING";
-
-export interface HandPiece {
-  id: string; name: string; slot: HandSlot; apiSlot: string | null; category?: string | null; subcategory?: string | null;
-  imageUrl?: string | null; thumbnailUrl?: string | null; asset: AssetState;
-  /** true: vestida no espelho; false: na lista do espelho ou na mão do personagem, ainda por vestir */
-  worn: boolean;
-  /** true: está na lista do espelho (persistida no servidor, `rack`); false: só na mão do personagem */
-  listed?: boolean;
-}
-
 /** Zona do espelho em metros: entra a menos de `enter`, sai só a mais de `exit`; tempos mínimos em cada borda (ms). */
 export const MIRROR_ZONE = { enter: 1.15, exit: 1.7, dwellMs: 350, exitMs: 250 } as const;
 /** Duração da reação à troca (ms) — normal e com movimento reduzido. */
 export const REACTION_MS = { normal: 2200, reduced: 600 } as const;
-
-const API_TO_HAND: Record<string, HandSlot> = { outer_layer: "upper", upper: "upper", dress: "upper", lower: "lower", shoes: "shoes", accessory: "accessory" };
-const CATEGORY_TO_HAND: Record<string, HandSlot> = { upper_piece: "upper", full_body_piece: "upper", lower_piece: "lower", shoes_piece: "shoes", accessory_piece: "accessory" };
-/** Lugar do corpo na prova: pelo slot do espelho (camada externa e vestido contam como parte de cima), senão pela categoria. */
-export function handSlotOf(p: { category?: string | null }, apiSlot?: string | null): HandSlot {
-  return (apiSlot && API_TO_HAND[apiSlot]) || CATEGORY_TO_HAND[p.category ?? ""] || "accessory";
-}
-/** Slot do espelho (API) que recebe a peça escolhida para um lugar do corpo. */
-export const HAND_TO_API: Record<HandSlot, string> = { upper: "upper", lower: "lower", shoes: "shoes", accessory: "accessory" };
-
-export function assetStateOf(p: { model3dUrl?: string | null; category?: string | null; subcategory?: string | null; photoProcessingStatus?: string | null }): AssetState {
-  if (p.photoProcessingStatus && !["COMPLETED", "FAILED", "SKIPPED"].includes(p.photoProcessingStatus)) return "PENDING";
-  if (p.model3dUrl) return "MODEL_3D";
-  return kindOf({ category: p.category, subcategory: p.subcategory }) ? "MOULD_3D" : "IMAGE_2D";
-}
-
-export type MirrorSlots = Record<string, { id: string } | { id: string }[] | null | undefined>;
-type SourcePiece = { id: string; name: string; category?: string | null; subcategory?: string | null; imageUrl?: string | null; thumbnailUrl?: string | null; model3dUrl?: string | null; photoProcessingStatus?: string | null };
-/**
- * As "roupas em mãos", por lugar do corpo: o que está vestido no espelho, depois o resto da lista do espelho (peças
- * trazidas do quarto para provar, persistidas no servidor — QUARTO-ESPELHO) e, por fim, a peça segurada no quarto se ainda
- * não estiver na lista. Cada peça aparece uma vez só.
- */
-export function handsOf(slots: MirrorSlots, held: SourcePiece | null, lookup: (id: string) => SourcePiece | null, rack: (SourcePiece & { slot?: string | null })[] = []): Record<HandSlot, HandPiece[]> {
-  const hands: Record<HandSlot, HandPiece[]> = { upper: [], lower: [], shoes: [], accessory: [] };
-  for (const [apiSlot, v] of Object.entries(slots)) {
-    for (const ref of Array.isArray(v) ? v : v ? [v] : []) {
-      const src = lookup(ref.id) ?? (ref as SourcePiece);
-      const slot = handSlotOf(src, apiSlot);
-      hands[slot].push({ id: src.id, name: src.name ?? "", slot, apiSlot, category: src.category, subcategory: src.subcategory, imageUrl: src.imageUrl, thumbnailUrl: src.thumbnailUrl, asset: assetStateOf(src), worn: true, listed: rack.some((r) => r.id === src.id) });
-    }
-  }
-  const has = (id: string) => Object.values(hands).some((list) => list.some((p) => p.id === id));
-  for (const r of rack) {
-    if (has(r.id)) continue;
-    const src = { ...r, ...(lookup(r.id) ?? {}) };
-    const slot = handSlotOf(src, r.slot);
-    hands[slot].push({ id: r.id, name: src.name ?? "", slot, apiSlot: r.slot ?? null, category: src.category, subcategory: src.subcategory, imageUrl: src.imageUrl, thumbnailUrl: src.thumbnailUrl, asset: assetStateOf(src), worn: false, listed: true });
-  }
-  if (held && !has(held.id)) {
-    const slot = handSlotOf(held);
-    hands[slot].unshift({ id: held.id, name: held.name, slot, apiSlot: null, category: held.category, subcategory: held.subcategory, imageUrl: held.imageUrl, thumbnailUrl: held.thumbnailUrl, asset: assetStateOf(held), worn: false, listed: false });
-  }
-  return hands;
-}
 
 export interface Reaction { slot: HandSlot; at: number; n: number }
 export class MirrorSession {
@@ -250,48 +193,4 @@ export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THRE
   const base = { position: new THREE.Vector3(1 + closetRight * 0.25, 2.65, 5.8), target: new THREE.Vector3(closetRight * 0.25, 1.1, 0.85) };
   if (bounds) return roomView(base.position, base.target, actor, view, bounds, prev, track);
   return view ? rotateView(base.position, base.target, view) : base;
-}
-
-/** Como a pessoa reage ao ver a peça nova no espelho — varia de uma troca para a outra (nunca a mesma em sequência). */
-export type ReactionKind = "alivio" | "alegria" | "ajuste" | "conferir";
-const REACTIONS: Record<HandSlot, ReactionKind[]> = {
-  upper: ["alegria", "ajuste", "alivio", "conferir"], lower: ["conferir", "ajuste", "alegria"],
-  shoes: ["conferir", "alegria", "alivio"], accessory: ["ajuste", "alivio", "conferir"],
-};
-/** A reação da troca número `n` naquele lugar do corpo. */
-export function reactionKindOf(slot: HandSlot, n: number): ReactionKind {
-  const list = REACTIONS[slot]; return list[((Math.trunc(n) % list.length) + list.length) % list.length];
-}
-/** Canais da reação para o controlador aplicar (rad; `bounce` e `turn` em m e rad) e para onde vão as mãos. */
-export interface ReactionChoreo {
-  arms: number; spine: number; knee: number; foot: number; head: number; breath: number; shoulders: number; look: number; bounce: number; turn: number;
-  hands: "chest" | "hips" | "hem" | "collar" | null; handsWeight: number;
-}
-/**
- * Coreografia da reação ao vestir, em t ∈ [0,1) — sem julgamento, só o gesto, e tudo volta a zero no fim:
- *  - alívio: inspira (peito e ombros sobem, cabeça ergue) e solta o ar (ombros caem relaxados);
- *  - alegria: mãos juntas no peito, um pulinho duplo e o tronco balançando;
- *  - ajuste: olha a peça e ajeita (barra da camisa/calça; gola, no acessório), apoiando o peso;
- *  - conferir: vira de um lado e do outro para ver o caimento (sapato: olha os pés e bate o pé; calça: dobra o joelho).
- * Movimento reduzido: o mesmo gesto bem menor, sem pulo e quase sem giro.
- */
-export function reactionChoreo(kind: ReactionKind, slot: HandSlot, t: number, reduced: boolean): ReactionChoreo {
-  const u = Math.min(1, Math.max(0, t)), k = reduced ? 0.35 : 1, motion = reduced ? 0 : 1, bell = Math.sin(u * Math.PI);
-  const win = (a: number, b: number) => (u <= a || u >= b ? 0 : Math.sin(((u - a) / (b - a)) * Math.PI));
-  const zero: ReactionChoreo = { arms: 0, spine: 0, knee: 0, foot: 0, head: 0, breath: 0, shoulders: 0, look: 0, bounce: 0, turn: 0, hands: null, handsWeight: 0 };
-  switch (kind) {
-    case "alivio": {
-      const inhale = win(0, 0.55), exhale = win(0.45, 1);
-      return { ...zero, breath: 0.12 * inhale * k, shoulders: (0.16 * inhale - 0.08 * exhale) * k, look: (-0.12 * inhale + 0.08 * exhale) * k, arms: 0.1 * exhale * k, head: 0.04 * Math.sin(u * Math.PI * 2) * k };
-    }
-    case "alegria":
-      return { ...zero, hands: "chest", handsWeight: win(0.05, 0.8) * (reduced ? 0.5 : 1), bounce: 0.035 * Math.abs(Math.sin(u * Math.PI * 2)) * bell * motion,
-        spine: 0.16 * Math.sin(u * Math.PI * 3) * bell * k, head: 0.12 * Math.sin(u * Math.PI * 2) * k, shoulders: 0.06 * bell * k };
-    case "ajuste":
-      return { ...zero, hands: slot === "accessory" ? "collar" : "hem", handsWeight: win(0.1, 0.85) * (reduced ? 0.5 : 1),
-        look: 0.28 * win(0, 0.75) * k, spine: 0.06 * Math.sin(u * Math.PI * 2) * k, knee: slot === "lower" ? 0.18 * win(0.4, 0.9) * k : 0 };
-    default:
-      return { ...zero, turn: (motion ? 0.42 : 0.12) * Math.sin(u * Math.PI * 2) * bell, look: (slot === "shoes" ? 0.38 : 0.12) * win(0, 0.8) * k,
-        foot: slot === "shoes" ? 0.4 * Math.abs(Math.sin(u * Math.PI * 3)) * win(0.3, 1) * k : 0, knee: slot === "lower" ? 0.4 * win(0.5, 1) * k : 0, arms: 0.08 * bell * k };
-  }
 }
