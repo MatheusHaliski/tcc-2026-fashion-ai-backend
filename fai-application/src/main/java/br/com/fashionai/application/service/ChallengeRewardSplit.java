@@ -27,7 +27,7 @@ enum ChallengeRewardSplit {
             int pool = teamFraction < FLOOR ? 0 : (int) Math.round(reward * teamFraction);
             int each = members.isEmpty() ? 0 : pool / members.size();
             Map<String, Object> summary = new LinkedHashMap<>();
-            summary.put("teamFraction", ChallengeService.round2(teamFraction));
+            summary.put("teamFraction", ChallengeRules.round2(teamFraction));
             summary.put("rewardEach", each);
             return new Outcome(summary, members.stream().map(m -> each).toList(), List.of());
         }
@@ -76,7 +76,7 @@ enum ChallengeRewardSplit {
             }).toList();
             Map<String, Object> summary = new LinkedHashMap<>();
             if (!members.isEmpty()) {
-                summary.put("fraction", ChallengeService.round2(members.get(0).fraction()));
+                summary.put("fraction", ChallengeRules.round2(members.get(0).fraction()));
             }
             return new Outcome(summary, points, List.of());
         }

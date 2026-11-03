@@ -59,6 +59,8 @@ class ChallengeSecurityTest {
     private ChallengeTemplateRepository templates;
     private MediaService media;
     private ChallengeService service;
+    /** Colaborador do Espelho de Verdade com os mesmos dublês do serviço (o Facade do R82 delega para ele). */
+    private ChallengeRealMirror mirror;
     private ChallengeInstance instance;
     private ChallengeParticipant authorRow;
     private ChallengeParticipant mateRow;
@@ -99,6 +101,7 @@ class ChallengeSecurityTest {
 
         service = new ChallengeService(templates, instances, participants, evidence, null, votes, null, null, null, null, null,
                 follows, null, null, null, null, null, media, guard, null, null);
+        mirror = new ChallengeRealMirror(guard, null, participants, evidence, media, null, null);
     }
 
     private ChallengeParticipant participant(UUID userId, boolean consent) {
@@ -157,17 +160,17 @@ class ChallengeSecurityTest {
         User owner = new User();
         owner.assignId(author);
 
-        ChallengeService.MirrorUpload up = service.storePrivateMirrorPhoto(owner, instanceId, original);
+        ChallengeService.MirrorUpload up = mirror.storePrivateMirrorPhoto(owner, instanceId, original);
 
         String key = putKeys.get(0);
         assertThat(key).startsWith("restricted/challenges/" + instanceId + "/" + author + "/").endsWith(".jpg")
                 .contains(up.photoId().toString());
-        assertThat(key).doesNotContain(ChallengeService.today().toString());       // nada de data adivinhável no nome
+        assertThat(key).doesNotContain(ChallengeRules.today().toString());       // nada de data adivinhável no nome
         byte[] stored = putBytes.get(0);
         assertThat(ImageOps.detectMime(stored)).isEqualTo("image/jpeg");
         assertThat(contains(stored, "GPSLatitude")).isFalse();
         assertThat(contains(stored, "Exif")).isFalse();
-        assertThat(ChallengeService.mirrorPhotoUrl(instanceId, up.photoId().toString()))
+        assertThat(ChallengeRules.mirrorPhotoUrl(instanceId, up.photoId().toString()))
                 .isEqualTo("/api/challenges/" + instanceId + "/mirror-photos/" + up.photoId());
     }
 
@@ -199,7 +202,7 @@ class ChallengeSecurityTest {
 
     @Test
     void detalheDevolveURLDaApiENuncaDoStorage() {
-        List<Map<String, Object>> photos = service.mirrorPhotos(instance, authorRow);
+        List<Map<String, Object>> photos = mirror.mirrorPhotos(instance, authorRow);
         assertThat(photos).hasSize(1);
         assertThat(photos.get(0)).containsEntry("url", "/api/challenges/" + instanceId + "/mirror-photos/" + photoId)
                 .containsEntry("day", "2026-09-28").doesNotContainValue("http://api/media/restricted/challenges/x.jpg");
