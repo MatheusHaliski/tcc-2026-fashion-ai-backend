@@ -9,6 +9,7 @@ grava prévias 900×1200 em --out-dir. ``--apply`` envia ao armazenamento do app
     python scripts/catalog/apply_flat_lays.py --lots ~/catalog-fase2/lote-020 --approved aprovados.txt --out-dir /tmp/fl
     python scripts/catalog/apply_flat_lays.py --lots ~/catalog-fase2/lote-020 --approved aprovados.txt --apply
     python scripts/catalog/apply_flat_lays.py --clear --approved remover.txt --apply     # desfaz (volta ao recorte real)
+    ... --recover-source   # lotes anteriores ao registro de image_id (flat_lay_source.py)
 """
 from __future__ import annotations
 
@@ -23,6 +24,11 @@ from pathlib import Path
 from urllib.parse import quote
 
 from PIL import Image
+
+try:
+    from .flat_lay_source import recover
+except ImportError:   # rodado como script: scripts/catalog no sys.path
+    from flat_lay_source import recover
 
 VERSION = "FLAT_LAY_V1"
 FRAME = (900, 1200)                      # quadro 3:4 do Total frame
@@ -93,7 +99,7 @@ def metadata(row: dict) -> str:
         "version": VERSION, "aiGenerated": True, "reviewedBy": "human", "productId": row["id"],
         "imageId": row["image_id"], "originalUrl": row["original_url"], "photoUrl": row.get("photo_url"),
         "sourceSha256": row.get("source_sha256"), "quality": row.get("quality"), "backQuality": row.get("back_quality"),
-        "lot": row["lot"].name, "width": FRAME[0], "height": FRAME[1], "background": "#FFFFFF",
+        "lot": row["lot"].name, "sourceRecovered": bool(row.get("source_recovered")), "width": FRAME[0], "height": FRAME[1], "background": "#FFFFFF",
         "appliedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }, ensure_ascii=False)
 
@@ -186,6 +192,8 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
     parser.add_argument("--clear", action="store_true", help="remove o flat lay destes produtos (volta ao recorte real)")
     parser.add_argument("--out-dir", type=Path, help="salva as prévias 900×1200 aqui")
     parser.add_argument("--audit", type=Path, default=Path("flat-lays-audit.jsonl"))
+    parser.add_argument("--recover-source", action="store_true",
+                        help="lotes antigos sem image_id: refaz a escolha da foto no banco (só se nada mudou depois)")
     args = parser.parse_args(argv)
     if not args.clear and not args.lots:
         parser.error("--lots é obrigatório (pastas dos lotes do catalog_batch)")
@@ -203,10 +211,12 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
         print(f"remover flat lay: {len(ids)} produtos · {removed} imagens alteradas · {mode} · {target}")
         return 0
     rows = load_lots(args.lots)
+    refused = recover(conn, rows, ids) if args.recover_source else {}
     storage = make_storage() if args.apply else None
     results, planned = [], []
     for product_id in ids:
         reason, front = plan(rows.get(product_id))
+        reason = refused.get(product_id, reason)
         if reason:
             results.append({"id": product_id, "status": "SKIPPED", "reason": reason})
         else:
