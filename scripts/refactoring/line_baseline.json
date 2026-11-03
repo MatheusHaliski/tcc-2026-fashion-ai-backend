@@ -476,42 +476,6 @@
    "max": 269,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "lib/avatar3d/human/eyes.ts": {
-   "max": 259,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-fit.ts": {
-   "max": 257,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-photo.ts": {
-   "max": 428,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-trims.ts": {
-   "max": 257,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garments.test.ts": {
-   "max": 475,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garments.ts": {
-   "max": 1205,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/hair-geometry.ts": {
-   "max": 408,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/hair-strands.ts": {
-   "max": 714,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/three-human.ts": {
-   "max": 333,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "lib/avatar3d/image-stats.ts": {
    "max": 284,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
