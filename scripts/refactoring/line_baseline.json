@@ -340,10 +340,6 @@
    "max": 463,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/service/ExplorerService.java": {
-   "max": 523,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/service/IdentityService.java": {
    "max": 1007,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -394,14 +390,6 @@
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/SealService.java": {
    "max": 474,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/service/SearchService.java": {
-   "max": 877,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/service/ShowcaseService.java": {
-   "max": 899,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/SocialService.java": {
