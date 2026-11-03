@@ -85,14 +85,14 @@ jobs:
           /tmp/fashionai-lighthouse-tools/node_modules/.bin/lhci autorun
       - name: Relatório Lighthouse
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fashionai-lighthouse
           path: /tmp/fashionai-lighthouse
           if-no-files-found: ignore
       - name: Capturas e relatório da auditoria
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fashionai-ux-audit
           path: /tmp/fashionai-ux-audit
