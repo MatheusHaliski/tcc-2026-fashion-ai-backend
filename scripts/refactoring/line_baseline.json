@@ -228,18 +228,6 @@
    "max": 811,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/CatalogImageBatchCli.java": {
-   "max": 456,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/CatalogImagePipeline.java": {
-   "max": 432,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/CatalogImagePipelineService.java": {
-   "max": 1025,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/imaging/BrandReader.java": {
    "max": 680,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -462,10 +450,6 @@
   },
   "fai-application/src/test/java/br/com/fashionai/application/catalog/CatalogServiceTest.java": {
    "max": 439,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/test/java/br/com/fashionai/application/catalog/image/CatalogImagePipelineServiceTest.java": {
-   "max": 843,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/test/java/br/com/fashionai/application/insights/InsightNewContextsTest.java": {
