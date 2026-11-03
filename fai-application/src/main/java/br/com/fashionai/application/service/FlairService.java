@@ -1,37 +1,15 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.flair.FlairEngine;
 import br.com.fashionai.application.flair.FlairEngine.Card;
 import br.com.fashionai.application.flair.FlairEngine.Deck;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.FlairCoinEntry;
 import br.com.fashionai.domain.model.FlairCombination;
-import br.com.fashionai.domain.model.FlairMatch;
-import br.com.fashionai.domain.model.FlairMatchEntry;
 import br.com.fashionai.domain.model.FlairProfile;
-import br.com.fashionai.domain.model.FlairRedemption;
-import br.com.fashionai.domain.model.FlairTeam;
-import br.com.fashionai.domain.model.FlairTeamMember;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.Model3dStatus;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.FlairCoinEntryRepository;
 import br.com.fashionai.domain.repository.FlairCombinationRepository;
@@ -47,31 +25,16 @@ import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.security.SecureRandom;
-import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * FLAIR (card Trello · jogo de cartas): as cartas são as peças e os decks são os esquemas do usuário. Jogos:
@@ -95,35 +58,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class FlairService {
-    static final String CASA = "CASA";
-    static final int DUEL_REWARDS_PER_DAY = 5;
-    static final List<String> ARENA_OCCASIONS = List.of("casual", "work", "party", "date", "travel", "festival", "formal", "beach", "sport", "night_out");
-    static final Map<String, Integer> SKINS = Map.of("BRAND_FRAME", 300, "HOLOGRAFICO", 500, "CHAMPION", 800);
-    static final Set<String> GAME_TYPES = Set.of("COMBINACAO", "COLECAO", "DUELO_PATROCINADO");
-    private static final SecureRandom RANDOM = new SecureRandom();
-
-    private final FlairProfileRepository profiles;
-    private final FlairCoinEntryRepository coins;
-    private final FlairCombinationRepository combinations;
-    private final FlairRedemptionRepository redemptions;
-    private final FlairTeamRepository teams;
-    private final FlairTeamMemberRepository members;
-    private final FlairMatchRepository matches;
-    private final FlairMatchEntryRepository entries;
-    private final UserRepository users;
-    private final WardrobeItemRepository pieces;
-    private final SchemeRepository schemes;
-    private final SchemeItemRepository schemeItems;
-    private final BrandProfileRepository brands;
-    private final ReactionRepository reactions;
-    private final SchemeService schemeService;
-    private final InstitutionalService institutional;
-    private final Guard guard;
-    private final org.springframework.context.ApplicationEventPublisher events;
-    private final FaiPointsService faiPoints;
-    private final HypeScoreCurrentRepository hypeScores;
-    private final HypeScoreConfig hypeConfig;
-    private final AtelierRewardSystem atelier;
+    private final FlairServiceParts parts;
 
     public FlairService(FlairProfileRepository profiles, FlairCoinEntryRepository coins, FlairCombinationRepository combinations,
                         FlairRedemptionRepository redemptions, FlairTeamRepository teams, FlairTeamMemberRepository members,
@@ -133,28 +68,8 @@ public class FlairService {
                         InstitutionalService institutional, Guard guard, org.springframework.context.ApplicationEventPublisher events,
                         FaiPointsService faiPoints, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig,
                         AtelierRewardSystem atelier) {
-        this.atelier = atelier;
-        this.hypeScores = hypeScores;
-        this.hypeConfig = hypeConfig;
-        this.events = events;
-        this.faiPoints = faiPoints;
-        this.profiles = profiles;
-        this.coins = coins;
-        this.combinations = combinations;
-        this.redemptions = redemptions;
-        this.teams = teams;
-        this.members = members;
-        this.matches = matches;
-        this.entries = entries;
-        this.users = users;
-        this.pieces = pieces;
-        this.schemes = schemes;
-        this.schemeItems = schemeItems;
-        this.brands = brands;
-        this.reactions = reactions;
-        this.schemeService = schemeService;
-        this.institutional = institutional;
-        this.guard = guard;
+        this.parts = FlairServiceParts.of(profiles, coins, combinations, redemptions, teams, members, matches, entries, users, pieces,
+                schemes, schemeItems, brands, reactions, schemeService, institutional, guard, events, faiPoints, hypeScores, hypeConfig, atelier);
     }
 
     static LocalDate today() {
@@ -165,637 +80,116 @@ public class FlairService {
         return FlairEngine.season(today());
     }
 
-    // ================================================================== cartas e decks
-
-    // ================================================================== HypeScore v2 (RF53 · Lote 8)
-
-    /** Estados v2 de várias entidades numa consulta (o que o job gravou; o jogo nunca recalcula). */
-    Map<UUID, HypeScoreCurrent> hypeStates(HypeEntityType type, Collection<UUID> ids) {
-        List<UUID> list = ids == null ? List.of() : ids.stream().filter(Objects::nonNull).distinct().toList();
-        if (list.isEmpty()) {
-            return Map.of();
-        }
-        return hypeScores.findByEntityTypeAndEntityIdInAndAlgorithmVersion(type, list, hypeConfig.algorithmVersion()).stream()
-                .collect(Collectors.toMap(HypeScoreCurrent::getEntityId, Function.identity(), (a, b) -> a));
-    }
-
-    /** Hype v2 como o jogo enxerga a peça: só o público ({@link FlairEngine.Hype#of}); sem linha = {@code NONE}. */
-    static FlairEngine.Hype gameHype(HypeScoreCurrent c) {
-        if (c == null) {
-            return FlairEngine.Hype.NONE;
-        }
-        BigDecimal rarity = c.getDimensions() == null ? null : c.getDimensions().getRarity();
-        return FlairEngine.Hype.of(c.isPublicEligible(), c.getStatus() == null ? null : c.getStatus().name(),
-                c.getScore() == null ? null : c.getScore().doubleValue(), c.getLevel() == null ? null : c.getLevel().name(),
-                rarity == null ? null : rarity.doubleValue());
-    }
-
     /** HypeScore v2 PÚBLICO de looks (atributo HYPE do FLAIR): ausente no mapa = sem Hype público (neutro no jogo). */
     public Map<UUID, Double> publicLookHype(Collection<UUID> schemeIds) {
-        Map<UUID, Double> out = new LinkedHashMap<>();
-        hypeStates(HypeEntityType.SCHEME, schemeIds).forEach((id, c) -> {
-            Double score = gameHype(c).score();
-            if (score != null) {
-                out.put(id, score);
-            }
-        });
-        return out;
+        return parts.decks().publicLookHype(schemeIds);
     }
 
     public Double publicLookHype(UUID schemeId) {
-        return schemeId == null ? null : publicLookHype(List.of(schemeId)).get(schemeId);
+        return parts.decks().publicLookHype(schemeId);
     }
 
     /** Cartas de várias peças com o Hype v2 em lote (uma consulta para todas). */
     public List<Card> cardsOf(List<WardrobeItem> ws) {
-        Map<UUID, HypeScoreCurrent> states = hypeStates(HypeEntityType.PIECE, ws.stream().map(WardrobeItem::getId).toList());
-        String season = season();
-        return ws.stream().map(w -> FlairEngine.card(input(w, gameHype(states.get(w.getId()))), season)).toList();
+        return parts.decks().cardsOf(ws);
     }
 
-    FlairEngine.PieceInput input(WardrobeItem w, FlairEngine.Hype hype) {
-        BrandProfile bp = w.getBrandProfile();
-        Object overall = Json.map(w.getPhotoQualityScoresJson()).get("overall");
-        String brandName = w.getBrandName() != null && !w.getBrandName().isBlank() ? w.getBrandName() : bp != null ? bp.getBrandName() : null;
-        return new FlairEngine.PieceInput(w.getId().toString(), w.getName(), w.getCategory(), w.getSubcategory(),
-                w.getStudioImageUrl() != null ? Views.studioThumb(w.getStudioImageUrl()) : w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl(),
-                Taxonomy.hex(w.getColor()), brandName, bp != null || w.getBrand() != null, bp == null ? null : bp.getOwner().getId().toString(),
-                Json.csv(w.getStyleTags()), Json.csv(w.getOccasionTags()), w.getMaterial(), overall instanceof Number n ? n.doubleValue() : null,
-                w.getStudioImageUrl() != null, w.getStudioDetailUrl() != null, w.getModel3dStatus() == Model3dStatus.COMPLETED,
-                w.getMannequinImageUrl() != null, w.isDefaultImage(), hype, Json.strings(w.getSealIdsJson()).size());
-    }
-
-    /** Uma carta (o Hype v2 da peça numa consulta); para várias, {@link #cardsOf}. */
     Card card(WardrobeItem w) {
-        return cardsOf(List.of(w)).get(0);
-    }
-
-    Deck deck(Scheme s) {
-        List<Card> cards = cardsOf(schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem)
-                .filter(Objects::nonNull).toList());
-        return FlairEngine.deck(s.getId().toString(), s.getTitle(), cards, s.getSeason() == null ? null : s.getSeason().name(), season());
+        return parts.decks().card(w);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> cards(CurrentUser user) {
-        List<Card> cs = cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
-                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("season", season());
-        out.put("cards", cs);
-        out.put("album", album(cs));
-        return out;
-    }
-
-    /** Álbum: para cada categoria, as 4 raridades — completa quem tem carta de cada. */
-    static Map<String, Object> album(List<Card> cs) {
-        List<String> cats = List.of("upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece");
-        List<Map<String, Object>> rows = new ArrayList<>();
-        int got = 0;
-        for (String c : cats) {
-            Map<String, Boolean> have = new LinkedHashMap<>();
-            for (String r : FlairEngine.RARITIES) {
-                boolean h = cs.stream().anyMatch(x -> c.equals(x.category()) && r.equals(x.rarity()));
-                have.put(r, h);
-                got += h ? 1 : 0;
-            }
-            rows.add(Map.of("category", c, "rarities", have));
-        }
-        return Map.of("slots", cats.size() * FlairEngine.RARITIES.size(), "collected", got, "rows", rows);
+        return parts.decks().cards(user);
     }
 
     @Transactional(readOnly = true)
     public List<Deck> decks(CurrentUser user) {
-        return schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED).stream()
-                .map(this::deck).filter(d -> !d.cards().isEmpty()).sorted(Comparator.comparingInt(Deck::power).reversed()).toList();
+        return parts.decks().decks(user);
     }
 
     @Transactional(readOnly = true)
     public Deck deckOf(CurrentUser viewer, UUID schemeId) {
-        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
-        if (!schemeService.canView(viewer, s)) {
-            throw ApiException.notFound("Esquema");
-        }
-        return deck(s);
+        return parts.decks().deckOf(viewer, schemeId);
     }
-
-    private Scheme ownDeckScheme(CurrentUser user, UUID schemeId) {
-        Scheme s = schemeService.owned(user, schemeId);
-        if (s.getStatus() == SchemeStatus.ARCHIVED) {
-            throw ApiException.badRequest("DECK_ARQUIVADO", Msg.t("flair.esse_esquema_esta_arquivado"));
-        }
-        return s;
-    }
-
-    // ================================================================== perfil, coins e rank
 
     FlairProfile profile(UUID userId) {
-        return profiles.findByUserId(userId).orElseGet(() -> {
-            FlairProfile p = new FlairProfile();
-            p.setUser(users.findById(userId).orElseThrow());
-            return profiles.save(p);
-        });
+        return parts.wallet().profile(userId);
     }
 
     /** Recompensa idempotente: (motivo, referência) paga uma vez só. */
     boolean award(UUID userId, int delta, int rankPoints, String reason, String ref) {
-        if (coins.existsByUserIdAndReasonAndRef(userId, reason, ref)) {
-            return false;
-        }
-        FlairCoinEntry e = new FlairCoinEntry();
-        e.setUser(users.findById(userId).orElseThrow());
-        e.setDelta(delta);
-        e.setReason(reason);
-        e.setRef(ref);
-        coins.save(e);
-        FlairProfile p = profile(userId);
-        p.setCoins(p.getCoins() + delta);
-        p.setRankPoints(p.getRankPoints() + rankPoints);
-        return true;
+        return parts.wallet().award(userId, delta, rankPoints, reason, ref);
     }
 
     @Transactional
     public Map<String, Object> me(CurrentUser user) {
-        FlairProfile p = profile(user.id());
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("coins", p.getCoins());
-        out.put("rank", FlairEngine.rank(p.getRankPoints()));
-        out.put("wins", p.getWins());
-        out.put("losses", p.getLosses());
-        out.put("draws", p.getDraws());
-        out.put("skins", Json.strings(p.getSkinsJson()));
-        out.put("activeSkin", p.getActiveSkin());
-        out.put("skinShop", SKINS);
-        out.put("season", season());
-        out.put("team", members.findByUserId(user.id()).map(m -> teamView(m.getTeam(), user)).orElse(null));
-        out.put("ledger", coins.findTop30ByUserIdOrderByCreatedAtDesc(user.id()).stream()
-                .map(e -> Map.of("delta", e.getDelta(), "reason", e.getReason(), "ref", e.getRef(), "at", e.getCreatedAt())).toList());
-        out.put("recent", entries.findTop30ByUserIdOrderByCreatedAtDesc(user.id()).stream().limit(10).map(this::entryView).toList());
-        out.put("ethics", Msg.t("flair.sem_apostas_coins_vem_do"));
-        return out;
+        return parts.wallet().me(user);
     }
 
     @Transactional
     public Map<String, Object> buySkin(CurrentUser user, String skin, boolean activate) {
-        String code = skin == null ? "" : skin.toUpperCase(Locale.ROOT);
-        Integer price = SKINS.get(code);
-        if (price == null) {
-            throw ApiException.notFound("Skin");
-        }
-        FlairProfile p = profile(user.id());
-        List<String> owned = new ArrayList<>(Json.strings(p.getSkinsJson()));
-        if (!owned.contains(code)) {
-            if (p.getCoins() < price) {
-                throw new ApiException(409, "COINS_INSUFICIENTES", Msg.t("flair.faltam_coins_para_esta_skin", (price - p.getCoins())));
-            }
-            award(user.id(), -price, 0, "SKIN", code);
-            owned.add(code);
-            p.setSkinsJson(Json.write(owned));
-        }
-        if (activate) {
-            p.setActiveSkin(code);
-        }
-        return me(user);
+        return parts.wallet().buySkin(user, skin, activate);
     }
-
-    // ================================================================== quests
-
-    record Quest(String code, String label, String period, int coins, String rule) {
-    }
-
-    static final List<Quest> QUESTS = List.of(
-            new Quest("SEASONAL_LOOK", Msg.k("flair.look_da_estacao"), "DAY", 50, Msg.k("flair.um_deck_com_3_cartas")),
-            new Quest("BRAND_COLLECTOR", Msg.k("flair.colecionador_de_marca"), "DAY", 30, Msg.k("flair.um_deck_com_3_pecas")),
-            new Quest("VERSATILE_MASTER", Msg.k("flair.mestre_da_versatilidade"), "DAY", 40, Msg.k("flair.um_deck_com_range_medio")),
-            new Quest("GLOW_UP", Msg.k("flair.glow_up"), "DAY", 45, Msg.k("flair.um_deck_com_glow_medio")),
-            new Quest("STYLE_CURATOR", Msg.k("flair.curadoria_de_estilo"), "WEEK", 200, Msg.k("flair.curtir_10_looks_da_comunidade")),
-            new Quest("WARDROBE_MAVEN", Msg.k("flair.guarda_roupa_em_dia"), "WEEK", 150, Msg.k("flair.cadastrar_3_pecas_novas_nesta")),
-            new Quest("DUEL_CHAMPION", Msg.k("flair.campeao_de_duelos"), "WEEK", 200, Msg.k("flair.vencer_5_duelos_nesta_semana")),
-            new Quest("POWER_DECK", Msg.k("flair.deck_poderoso"), "WEEK", 300, Msg.k("flair.montar_um_deck_com_poder")));
-
-    static final Map<String, String> CATEGORY_LABELS = Map.of("upper_piece", Msg.k("flair.parte_de_cima"), "lower_piece", Msg.k("flair.parte_de_baixo"),
-            "shoes_piece", Msg.k("flair.calcado"), "accessory_piece", Msg.k("flair.acessorio"), "full_body_piece", Msg.k("flair.peca_inteira"));
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> quests(CurrentUser user) {
-        List<Deck> ds = decks(user);
-        LocalDate day = today(), weekStart = day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        Instant since = weekStart.atStartOfDay(FaiPointsService.ZONE).toInstant();
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (Quest q : QUESTS) {
-            double progress, target;
-            switch (q.code()) {
-                case "SEASONAL_LOOK" -> { progress = ds.stream().mapToLong(d -> d.cards().stream().filter(c -> c.stats().get("SYNC") == 100).count()).max().orElse(0); target = 3; }
-                case "BRAND_COLLECTOR" -> { progress = ds.stream().mapToDouble(d -> d.brandMultiplier() >= 1.2 ? 3 : d.brandMultiplier() >= 1.1 ? 2 : d.topBrand() == null ? 0 : 1).max().orElse(0); target = 3; }
-                case "VERSATILE_MASTER" -> { progress = ds.stream().mapToInt(d -> d.avg().get("RANGE")).max().orElse(0); target = 71; }
-                case "GLOW_UP" -> { progress = ds.stream().mapToInt(d -> d.avg().get("GLOW")).max().orElse(0); target = 66; }
-                case "STYLE_CURATOR" -> { progress = reactions.countByActorIdAndCreatedAtAfter(user.id(), since); target = 10; }
-                case "WARDROBE_MAVEN" -> { progress = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getCreatedAt() != null && w.getCreatedAt().isAfter(since)).count(); target = 3; }
-                case "DUEL_CHAMPION" -> { progress = entries.findByUserIdAndCreatedAtAfter(user.id(), since).stream().filter(e -> "DUEL".equals(e.getMatch().getMode()) && Objects.equals(e.getSide(), e.getMatch().getWinnerSide())).count(); target = 5; }
-                default -> { progress = ds.stream().mapToInt(Deck::power).max().orElse(0); target = 351; }
-            }
-            String ref = "DAY".equals(q.period()) ? day.toString() : weekStart.toString();
-            boolean claimed = coins.existsByUserIdAndReasonAndRef(user.id(), "QUEST_" + q.code(), ref);
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("code", q.code());
-            m.put("label", q.label());
-            m.put("period", q.period());
-            m.put("rule", q.rule());
-            m.put("coins", q.coins());
-            m.put("progress", Math.min(progress, target));
-            m.put("target", target);
-            m.put("done", progress >= target);
-            m.put("claimed", claimed);
-            out.add(m);
-        }
-        return out;
+        return parts.quests().quests(user);
     }
 
     @Transactional
     public Map<String, Object> claimQuest(CurrentUser user, String code) {
-        Map<String, Object> q = quests(user).stream().filter(x -> x.get("code").equals(code)).findFirst().orElseThrow(() -> ApiException.notFound("Quest"));
-        if (!Boolean.TRUE.equals(q.get("done"))) {
-            throw new ApiException(409, "QUEST_INCOMPLETA", Msg.t("flair.esta_quest_ainda_nao_foi"));
-        }
-        LocalDate day = today();
-        String ref = "DAY".equals(q.get("period")) ? day.toString() : day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toString();
-        if (!award(user.id(), (Integer) q.get("coins"), 10, "QUEST_" + code, ref)) {
-            throw ApiException.conflict("QUEST_JA_RESGATADA", Msg.t("flair.recompensa_ja_resgatada_neste_periodo"));
-        }
-        faiPoints.award(user.id(), "FLAIR_QUEST", "QUEST", "QUEST_" + code + ":" + ref, null);   // RF41
-        atelier.grant(AtelierGrants.quest(user.id(), code, (String) q.get("label"), (String) q.get("period"), ref, Instant.now()));
-        return me(user);
-    }
-
-    // ================================================================== duelo 1×1 e treino contra a Casa
-
-    /** Deck da Casa do dia: uma peça pública de cada categoria, sorteada pela data (igual para todos no dia). */
-    Deck houseDeck() {
-        List<WardrobeItem> pub = pieces.findAllPublic(PageRequest.of(0, 400));
-        Random r = new Random(today().toEpochDay());
-        List<WardrobeItem> picked = new ArrayList<>();
-        for (String cat : List.of("upper_piece", "lower_piece", "shoes_piece", "accessory_piece")) {
-            List<WardrobeItem> c = pub.stream().filter(w -> cat.equals(w.getCategory())).toList();
-            if (!c.isEmpty()) {
-                picked.add(c.get(r.nextInt(c.size())));
-            }
-        }
-        return FlairEngine.deck(null, Msg.t("flair.deck_da_casa", today()), cardsOf(picked), season(), season());
-    }
-
-    /** Melhor deck público de outra pessoa (o que ela mostraria numa vitrine). */
-    Optional<Map.Entry<Scheme, Deck>> bestPublicDeck(CurrentUser viewer, User owner) {
-        return schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(owner.getId(), SchemeStatus.ARCHIVED).stream()
-                .filter(s -> s.getStatus() == SchemeStatus.PUBLISHED && schemeService.canView(viewer, s))
-                .map(s -> Map.entry(s, deck(s))).filter(e -> !e.getValue().cards().isEmpty())
-                .max(Comparator.comparingInt(e -> e.getValue().power()));
+        return parts.quests().claimQuest(user, code);
     }
 
     @Transactional
     public Map<String, Object> duel(CurrentUser user, UUID schemeId, String opponent) {
-        guard.requireCanCreate(user);
-        Scheme mine = ownDeckScheme(user, schemeId);
-        Deck a = deck(mine);
-        if (a.cards().isEmpty()) {
-            throw ApiException.badRequest("DECK_VAZIO", Msg.t("flair.esse_esquema_nao_tem_pecas"));
-        }
-        boolean house = opponent == null || opponent.isBlank() || CASA.equalsIgnoreCase(opponent);
-        User rival = null;
-        Scheme rivalScheme = null;
-        Deck b;
-        if (house) {
-            b = houseDeck();
-        } else {
-            rival = users.findByUsernameIgnoreCase(opponent.replaceFirst("^@", "")).orElseThrow(() -> ApiException.notFound("Oponente"));
-            if (rival.getId().equals(user.id())) {
-                throw ApiException.badRequest("DUELO_CONSIGO", Msg.t("common.escolha_outra_pessoa_ou_a"));
-            }
-            var best = bestPublicDeck(user, rival).orElseThrow(() -> new ApiException(409, "SEM_DECK_PUBLICO", Msg.t("flair.ainda_nao_tem_um_look", opponent)));
-            rivalScheme = best.getKey();
-            b = best.getValue();
-        }
-        FlairEngine.DuelResult r = FlairEngine.duel(a, b);
-        FlairMatch m = new FlairMatch();
-        m.setMode(house ? "TREINO" : "DUEL");
-        m.setStatus("FINISHED");
-        m.setPlayDate(today());
-        m.setCreatedByUser(users.findById(user.id()).orElseThrow());
-        m.setWinnerSide(r.winner());
-        m.setTheme(house ? CASA : "@" + rival.getUsername());
-        m.setResultJson(Json.write(Map.of("rounds", r.rounds(), "winsA", r.winsA(), "winsB", r.winsB())));
-        matches.save(m);
-        entry(m, users.findById(user.id()).orElseThrow(), mine, "A", a, null);
-        entry(m, rival, rivalScheme, "B", b, null);
-        FlairProfile p = profile(user.id());
-        String outcome = "DRAW".equals(r.winner()) ? "DRAW" : "A".equals(r.winner()) ? "WIN" : "LOSS";
-        switch (outcome) {
-            case "WIN" -> p.setWins(p.getWins() + 1);
-            case "LOSS" -> p.setLosses(p.getLosses() + 1);
-            default -> p.setDraws(p.getDraws() + 1);
-        }
-        // recompensa do sistema (nada sai do oponente), com teto diário de duelos premiados
-        Instant dayStart = today().atStartOfDay(FaiPointsService.ZONE).toInstant();
-        boolean rewarded = coins.countByUserIdAndReasonAndCreatedAtAfter(user.id(), "DUEL", dayStart) < DUEL_REWARDS_PER_DAY;
-        int coinsWon = !rewarded ? 0 : "WIN".equals(outcome) ? (house ? 20 : 40) : "DRAW".equals(outcome) ? 15 : 5;
-        if (coinsWon > 0) {
-            award(user.id(), coinsWon, "WIN".equals(outcome) ? 25 : "DRAW".equals(outcome) ? 8 : 2, "DUEL", m.getId().toString());
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("matchId", m.getId());
-        out.put("mode", m.getMode());
-        out.put("me", a);
-        out.put("opponent", Map.of("label", house ? Msg.t("common.a_casa") : "@" + rival.getUsername(), "deck", b));
-        out.put("rounds", r.rounds());
-        out.put("score", Map.of("me", r.winsA(), "opponent", r.winsB()));
-        out.put("outcome", outcome);
-        out.put("coins", coinsWon);
-        out.put("rewardCapReached", !rewarded);
-        out.put("faiPoints", faiPoints.game(user.id(), "FLAIR_DUEL", m.getId().toString(), outcome));   // RF41
-        out.put("profile", me(user));
-        rightsCheck(user.id());
-        return out;
-    }
-
-    private void entry(FlairMatch m, User u, Scheme s, String side, Deck d, Double score) {
-        FlairMatchEntry e = new FlairMatchEntry();
-        e.setMatch(m);
-        e.setUser(u);
-        e.setScheme(s);
-        e.setSide(side);
-        e.setDeckPower(d.power());
-        e.setScore(score == null ? null : BigDecimal.valueOf(score));
-        e.setBrandPiecesJson(Json.write(d.cards().stream().map(Card::brandName).filter(Objects::nonNull).map(x -> x.toLowerCase(Locale.ROOT)).toList()));
-        entries.save(e);
-    }
-
-    private Map<String, Object> entryView(FlairMatchEntry e) {
-        FlairMatch m = e.getMatch();
-        Map<String, Object> v = new LinkedHashMap<>();
-        v.put("matchId", m.getId());
-        v.put("mode", m.getMode());
-        v.put("theme", m.getTheme());
-        v.put("date", m.getPlayDate());
-        v.put("deck", e.getScheme() == null ? null : e.getScheme().getTitle());
-        v.put("power", e.getDeckPower());
-        v.put("score", e.getScore());
-        v.put("outcome", m.getWinnerSide() == null ? null : m.getWinnerSide().equals("DRAW") ? "DRAW" : m.getWinnerSide().equals(e.getSide()) ? "WIN" : "LOSS");
-        return v;
-    }
-
-    // ================================================================== batalha de ocasião do dia
-
-    static String arenaTheme(LocalDate d) {
-        return ARENA_OCCASIONS.get((int) Math.floorMod(d.toEpochDay(), ARENA_OCCASIONS.size()));
-    }
-
-    FlairMatch arenaMatch(LocalDate d, UUID creator) {
-        return entries.findByMatchModeAndMatchPlayDateOrderByScoreDesc("ARENA", d).stream().map(FlairMatchEntry::getMatch).findFirst().orElseGet(() -> {
-            FlairMatch m = new FlairMatch();
-            m.setMode("ARENA");
-            m.setStatus("OPEN");
-            m.setPlayDate(d);
-            m.setTheme(arenaTheme(d));
-            m.setCreatedByUser(users.findById(creator).orElseThrow());
-            return matches.save(m);
-        });
+        return parts.duels().duel(user, schemeId, opponent);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> arena(CurrentUser viewer) {
-        LocalDate d = today();
-        List<FlairMatchEntry> es = entries.findByMatchModeAndMatchPlayDateOrderByScoreDesc("ARENA", d);
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("date", d);
-        out.put("theme", arenaTheme(d));
-        out.put("rule", Msg.t("flair.tema_do_dia_igual_para"));
-        List<Map<String, Object>> board = new ArrayList<>();
-        for (int i = 0; i < es.size(); i++) {
-            FlairMatchEntry e = es.get(i);
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("position", i + 1);
-            m.put("user", Views.user(e.getUser()));
-            m.put("deck", e.getScheme() == null ? null : e.getScheme().getTitle());
-            m.put("score", e.getScore());
-            m.put("power", e.getDeckPower());
-            m.put("you", viewer != null && e.getUser() != null && e.getUser().getId().equals(viewer.id()));
-            board.add(m);
-        }
-        out.put("leaderboard", board);
-        return out;
+        return parts.arena().arena(viewer);
     }
 
     @Transactional
     public Map<String, Object> joinArena(CurrentUser user, UUID schemeId) {
-        guard.requireCanCreate(user);
-        LocalDate d = today();
-        if (entries.findFirstByUserIdAndMatchModeAndMatchPlayDate(user.id(), "ARENA", d).isPresent()) {
-            throw ApiException.conflict("JA_NA_ARENA", Msg.t("flair.voce_ja_inscreveu_um_deck"));
-        }
-        Scheme s = ownDeckScheme(user, schemeId);
-        Deck deck = deck(s);
-        double score = FlairEngine.occasionScore(deck, arenaTheme(d));
-        FlairMatch m = arenaMatch(d, user.id());
-        entry(m, users.findById(user.id()).orElseThrow(), s, "SOLO", deck, score);
-        award(user.id(), 10 + (int) Math.round(score / 5), 5, "ARENA", d.toString());
-        faiPoints.game(user.id(), "FLAIR_ARENA", d.toString(), null);   // RF41: inscrever o deck do dia é jogar
-        rightsCheck(user.id());
-        return arena(user);
-    }
-
-    // ================================================================== equipes 3×3 e liga
-
-    private Map<String, Object> teamView(FlairTeam t, CurrentUser viewer) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", t.getId());
-        m.put("name", t.getName());
-        m.put("code", t.getCode());
-        m.put("color", t.getColor());
-        m.put("points", t.getPoints());
-        m.put("owner", Views.user(t.getOwner()));
-        m.put("members", members.findByTeamIdOrderByCreatedAtAsc(t.getId()).stream().map(x -> Map.of("user", Views.user(x.getUser()), "role", x.getRole())).toList());
-        m.put("mine", viewer != null && members.findByUserId(viewer.id()).map(x -> x.getTeam().getId().equals(t.getId())).orElse(false));
-        return m;
+        return parts.arena().joinArena(user, schemeId);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> league(CurrentUser viewer) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("teams", teams.findTop20ByOrderByPointsDesc().stream().map(t -> teamView(t, viewer)).toList());
-        out.put("mine", viewer == null ? null : members.findByUserId(viewer.id()).map(m -> teamView(m.getTeam(), viewer)).orElse(null));
-        out.put("players", profiles.findTop20ByOrderByRankPointsDesc().stream().map(p -> Map.of("user", Views.user(p.getUser()), "rank", FlairEngine.rank(p.getRankPoints()), "wins", p.getWins())).toList());
-        out.put("rule", Msg.t("flair.equipes_de_ate_5_no"));
-        if (viewer != null) {
-            out.put("battles", members.findByUserId(viewer.id()).map(m -> matches.findTop20ByTeamAIdOrTeamBIdOrderByCreatedAtDesc(m.getTeam().getId(), m.getTeam().getId()).stream()
-                    .map(x -> Map.of("id", x.getId(), "theme", String.valueOf(x.getTheme()), "winner", String.valueOf(x.getWinnerSide()), "date", String.valueOf(x.getPlayDate()),
-                            "side", x.getTeamAId().equals(m.getTeam().getId()) ? "A" : "B")).toList()).orElse(List.of()));
-        }
-        return out;
+        return parts.teams().league(viewer);
     }
 
     @Transactional
     public Map<String, Object> createTeam(CurrentUser user, String name, String color) {
-        guard.requireCanCreate(user);
-        if (members.findByUserId(user.id()).isPresent()) {
-            throw ApiException.conflict("JA_EM_EQUIPE", Msg.t("flair.saia_da_equipe_atual_antes"));
-        }
-        FlairTeam t = new FlairTeam();
-        t.setName(InputSanitizer.required("name", InputSanitizer.moderated("name", name, 40), 3, 40));
-        t.setColor(color != null && color.matches("#[0-9A-Fa-f]{6}") ? color.toUpperCase(Locale.ROOT) : "#2D55C9");
-        String code;
-        do {
-            code = "T" + Long.toString(Math.abs(RANDOM.nextLong()), 36).toUpperCase(Locale.ROOT).substring(0, 6);
-        } while (teams.findByCode(code).isPresent());
-        t.setCode(code);
-        t.setOwner(users.findById(user.id()).orElseThrow());
-        teams.save(t);
-        addMember(t, user.id(), "CAPITAO");
-        return league(user);
-    }
-
-    private void addMember(FlairTeam t, UUID userId, String role) {
-        FlairTeamMember m = new FlairTeamMember();
-        m.setTeam(t);
-        m.setUser(users.findById(userId).orElseThrow());
-        m.setRole(role);
-        members.save(m);
+        return parts.teams().createTeam(user, name, color);
     }
 
     @Transactional
     public Map<String, Object> joinTeam(CurrentUser user, String code) {
-        guard.requireCanCreate(user);
-        FlairTeam t = teams.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound("Equipe"));
-        if (members.findByUserId(user.id()).isPresent()) {
-            throw ApiException.conflict("JA_EM_EQUIPE", Msg.t("flair.voce_ja_esta_numa_equipe"));
-        }
-        if (members.countByTeamId(t.getId()) >= 5) {
-            throw ApiException.conflict("EQUIPE_CHEIA", Msg.t("flair.a_equipe_ja_tem_5"));
-        }
-        addMember(t, user.id(), "MEMBRO");
-        return league(user);
+        return parts.teams().joinTeam(user, code);
     }
 
     @Transactional
     public Map<String, Object> leaveTeam(CurrentUser user) {
-        members.findByUserId(user.id()).ifPresent(m -> {
-            FlairTeam t = m.getTeam();
-            members.delete(m);
-            members.flush();
-            if (members.countByTeamId(t.getId()) == 0) {
-                teams.delete(t);
-            }
-        });
-        return league(user);
-    }
-
-    /** Os 3 melhores decks de uma equipe (o melhor deck de cada integrante, os 3 mais fortes). */
-    List<Map.Entry<Scheme, Deck>> teamDecks(FlairTeam t, CurrentUser viewer) {
-        return members.findByTeamIdOrderByCreatedAtAsc(t.getId()).stream()
-                .map(m -> bestPublicDeck(viewer, m.getUser()).orElse(null)).filter(Objects::nonNull)
-                .sorted(Comparator.comparingInt((Map.Entry<Scheme, Deck> e) -> e.getValue().power()).reversed()).limit(3).toList();
+        return parts.teams().leaveTeam(user);
     }
 
     @Transactional
     public Map<String, Object> teamBattle(CurrentUser user, String opponentCode) {
-        guard.requireCanCreate(user);
-        FlairTeam mine = members.findByUserId(user.id()).map(FlairTeamMember::getTeam).orElseThrow(() -> new ApiException(409, "SEM_EQUIPE", Msg.t("flair.entre_numa_equipe_para_desafiar")));
-        FlairTeam rival = teams.findByCode(opponentCode == null ? "" : opponentCode.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound(Msg.t("flair.equipe_adversaria")));
-        if (rival.getId().equals(mine.getId())) {
-            throw ApiException.badRequest("MESMA_EQUIPE", Msg.t("flair.escolha_outra_equipe"));
-        }
-        boolean playedToday = matches.findTop20ByTeamAIdOrTeamBIdOrderByCreatedAtDesc(mine.getId(), mine.getId()).stream()
-                .anyMatch(x -> today().equals(x.getPlayDate()) && (rival.getId().equals(x.getTeamAId()) || rival.getId().equals(x.getTeamBId())));
-        if (playedToday) {
-            throw ApiException.conflict("JA_DUELARAM_HOJE", Msg.t("flair.suas_equipes_ja_se_enfrentaram"));
-        }
-        List<Map.Entry<Scheme, Deck>> a = teamDecks(mine, user), b = teamDecks(rival, user);
-        if (a.isEmpty() || b.isEmpty()) {
-            throw new ApiException(409, "SEM_DECKS", Msg.t("flair.cada_equipe_precisa_de_ao"));
-        }
-        List<Map<String, Object>> duels = new ArrayList<>();
-        int wa = 0, wb = 0;
-        for (int i = 0; i < Math.max(a.size(), b.size()); i++) {
-            Map.Entry<Scheme, Deck> x = i < a.size() ? a.get(i) : null, y = i < b.size() ? b.get(i) : null;
-            String w;
-            List<FlairEngine.Round> rounds = List.of();
-            if (x == null) {
-                w = "B";
-            } else if (y == null) {
-                w = "A";
-            } else {
-                FlairEngine.DuelResult r = FlairEngine.duel(x.getValue(), y.getValue());
-                w = r.winner();
-                rounds = r.rounds();
-            }
-            wa += "A".equals(w) ? 1 : 0;
-            wb += "B".equals(w) ? 1 : 0;
-            Map<String, Object> d = new LinkedHashMap<>();
-            d.put("slot", i + 1);
-            d.put("a", x == null ? null : Map.of("user", Views.user(x.getKey().getUser()), "deck", x.getKey().getTitle(), "power", x.getValue().power()));
-            d.put("b", y == null ? null : Map.of("user", Views.user(y.getKey().getUser()), "deck", y.getKey().getTitle(), "power", y.getValue().power()));
-            d.put("winner", w);
-            d.put("rounds", rounds);
-            duels.add(d);
-        }
-        String winner = wa == wb ? "DRAW" : wa > wb ? "A" : "B";
-        FlairMatch m = new FlairMatch();
-        m.setMode("TEAM");
-        m.setStatus("FINISHED");
-        m.setPlayDate(today());
-        m.setTheme(mine.getName() + " × " + rival.getName());
-        m.setCreatedByUser(users.findById(user.id()).orElseThrow());
-        m.setTeamAId(mine.getId());
-        m.setTeamBId(rival.getId());
-        m.setWinnerSide(winner);
-        m.setResultJson(Json.write(Map.of("duels", duels, "winsA", wa, "winsB", wb)));
-        matches.save(m);
-        a.forEach(e -> entry(m, e.getKey().getUser(), e.getKey(), "A", e.getValue(), null));
-        b.forEach(e -> entry(m, e.getKey().getUser(), e.getKey(), "B", e.getValue(), null));
-        // RF41: quem dispara a partida joga (e vence, se o time dele vencer); antes do laço para contar os dois lançamentos
-        int teamFai = faiPoints.game(user.id(), "FLAIR_TEAM", m.getId().toString(), "A".equals(winner) ? "WIN" : "PLAYED");
-        if ("DRAW".equals(winner)) {
-            mine.setPoints(mine.getPoints() + 1);
-            rival.setPoints(rival.getPoints() + 1);
-        } else {
-            FlairTeam w = "A".equals(winner) ? mine : rival;
-            w.setPoints(w.getPoints() + 3);
-            members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x -> award(x.getUser().getId(), 30, 20, "TEAM_WIN", m.getId().toString()));
-            // RF41: a vitória vale FAI Points para cada integrante do time vencedor (idempotente para quem disparou)
-            members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x ->
-                    faiPoints.award(x.getUser().getId(), "GAME_WON", "GAME", "FLAIR_TEAM:" + m.getId(), null));
-            // Atelier: cada integrante do time vencedor ganha um fragmento da obra coletiva (idempotente por partida)
-            FlairTeam lost = w == mine ? rival : mine;
-            members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x ->
-                    atelier.grant(AtelierGrants.teamWin(x.getUser().getId(), m.getId(), w.getId(), w.getName(), lost.getName())));
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("matchId", m.getId());
-        out.put("teamA", teamView(mine, user));
-        out.put("teamB", teamView(rival, user));
-        out.put("duels", duels);
-        out.put("score", Map.of("a", wa, "b", wb));
-        out.put("winner", winner);
-        out.put("faiPoints", teamFai);
-        members.findByTeamIdOrderByCreatedAtAsc(mine.getId()).forEach(x -> rightsCheck(x.getUser().getId()));
-        return out;
+        return parts.teamBattle().teamBattle(user, opponentCode);
     }
 
     /** Card RF38 — uma vitória pode completar uma combinação: reavalia os direitos a cupom depois do commit. */
     public void rightsCheck(UUID userId) {
-        events.publishEvent(new br.com.fashionai.application.events.DomainEvents.CouponRightsCheck(userId));
-    }
-
-    // ================================================================== combinações das lojas (cupons)
-
-    /** Loja das combinações: marca/celebridade validada pela administração e com conta ativa (igual aos selos). */
-    private User brandOwner(CurrentUser user) {
-        guard.requireApprovedInstitutional(user, "flair:combinations", Msg.t("flair.so_perfis_de_marca_ou"));
-        return users.findById(user.id()).orElseThrow();
+        parts.wallet().rightsCheck(userId);
     }
 
     /** Loja apta a oferecer cupom: perfil de marca/celebridade aprovado e conta ativa (pendente, suspensa ou excluída não). */
     static boolean sellerActive(User owner) {
-        return owner != null && owner.getStatus() == AccountStatus.ACTIVE
-                && (owner.getProfileType() == ProfileType.MARCA || owner.getProfileType() == ProfileType.CELEBRIDADE);
+        return FlairCombinationRules.sellerActive(owner);
     }
 
     public record CombinationForm(String name, String description, String gameType, List<String> requiredCategories,
@@ -807,311 +201,49 @@ public class FlairService {
 
     @Transactional
     public Map<String, Object> saveCombination(CurrentUser user, UUID id, CombinationForm f) {
-        User brand = brandOwner(user);
-        FlairCombination c = id == null ? new FlairCombination() : combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
-        if (id != null && !c.getBrand().getId().equals(brand.getId())) {
-            throw guard.deny(user, "flair:combination:" + id, Msg.t("flair.combinacao_de_outra_loja"));
-        }
-        c.setBrand(brand);
-        c.setName(InputSanitizer.required("name", InputSanitizer.moderated("name", f.name(), 120), 3, 120));
-        c.setDescription(f.description() == null ? null : InputSanitizer.clean(f.description(), 600));
-        String type = f.gameType() == null ? "COMBINACAO" : f.gameType().toUpperCase(Locale.ROOT);
-        if (!GAME_TYPES.contains(type)) {
-            throw ApiException.badRequest("TIPO_INVALIDO", "Tipos: " + GAME_TYPES);
-        }
-        c.setGameType(type);
-        c.setRequiredCategoriesJson(Json.write(clean(f.requiredCategories(), Taxonomy.SUBCATEGORIES.keySet())));
-        c.setRequiredStylesJson(Json.write(clean(f.requiredStyles(), null)));
-        c.setRequiredOccasionsJson(Json.write(clean(f.requiredOccasions(), null)));
-        c.setMinBrandPieces(clamp(f.minBrandPieces(), 0, 10));
-        c.setMinDeckPower(clamp(f.minDeckPower(), 0, 1000));
-        c.setMinRarity(f.minRarity() == null || f.minRarity().isBlank() ? null : FlairEngine.RARITIES.contains(f.minRarity().toUpperCase(Locale.ROOT)) ? f.minRarity().toUpperCase(Locale.ROOT) : null);
-        c.setMinWins("DUELO_PATROCINADO".equals(type) ? Math.max(1, clamp(f.minWins(), 1, 20)) : 0);
-        if (Json.strings(c.getRequiredCategoriesJson()).isEmpty() && Json.strings(c.getRequiredStylesJson()).isEmpty()
-                && Json.strings(c.getRequiredOccasionsJson()).isEmpty() && c.getMinBrandPieces() == 0 && c.getMinDeckPower() == 0
-                && c.getMinRarity() == null && !"DUELO_PATROCINADO".equals(type)) {
-            throw ApiException.badRequest("SEM_REQUISITOS", Msg.t("flair.defina_ao_menos_um_requisito"));
-        }
-        c.setCouponTitle(InputSanitizer.required("couponTitle", InputSanitizer.moderated("couponTitle", f.couponTitle(), 120), 3, 120));
-        if (f.discountPercent() == null && f.discountAmount() == null) {
-            throw ApiException.badRequest("DESCONTO_OBRIGATORIO", Msg.t("flair.informe_o_desconto_em_ou"));
-        }
-        c.setDiscountPercent(f.discountPercent() == null ? null : clamp(f.discountPercent(), 1, 90));
-        c.setDiscountAmount(f.discountAmount());
-        c.setMinPurchase(f.minPurchase());
-        c.setValidDays(clamp(f.validDays() == null ? 30 : f.validDays(), 7, 120));
-        c.setStock(f.stock() == null ? null : Math.max(1, f.stock()));
-        c.setActive(f.active() == null || f.active());
-        c.setStartsAt(f.startsAt());
-        c.setEndsAt(f.endsAt());
-        c.setAccentColor(f.accentColor() != null && f.accentColor().matches("#[0-9A-Fa-f]{6}") ? f.accentColor().toUpperCase(Locale.ROOT) : null);
-        c.setStoreUrl(SealService.storeUrl(f.storeUrl()));
-        combinations.save(c);
-        return combinationView(c, null, null);
+        return parts.combinationAdmin().saveCombination(user, id, f);
     }
 
     @Transactional
     public void deleteCombination(CurrentUser user, UUID id) {
-        User brand = brandOwner(user);
-        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
-        if (!c.getBrand().getId().equals(brand.getId())) {
-            throw guard.deny(user, "flair:combination:" + id, Msg.t("flair.combinacao_de_outra_loja"));
-        }
-        if (c.getRedeemed() > 0) {
-            c.setActive(false);                       // com cupons emitidos, só desativa (os cupons continuam válidos)
-        } else {
-            combinations.delete(c);
-        }
-    }
-
-    private static List<String> clean(List<String> v, Set<String> allowed) {
-        return v == null ? List.of() : v.stream().filter(x -> x != null && !x.isBlank()).map(x -> x.trim().toLowerCase(Locale.ROOT))
-                .filter(x -> allowed == null || allowed.contains(x)).distinct().limit(6).toList();
-    }
-
-    private static int clamp(Integer v, int min, int max) {
-        return v == null ? min : Math.max(min, Math.min(max, v));
+        parts.combinationAdmin().deleteCombination(user, id);
     }
 
     boolean available(FlairCombination c) {
-        Instant now = Instant.now();
-        return c.isActive() && sellerActive(c.getBrand()) && (c.getStartsAt() == null || !now.isBefore(c.getStartsAt())) && (c.getEndsAt() == null || now.isBefore(c.getEndsAt()))
-                && (c.getStock() == null || c.getRedeemed() < c.getStock());
-    }
-
-    private String brandNameOf(User owner) {
-        return brands.findByOwnerId(owner.getId()).map(BrandProfile::getBrandName).orElse(owner.getDisplayName());
-    }
-
-    private boolean isBrandCard(Card c, User owner, String brandName) {
-        return owner.getId().toString().equals(c.brandOwner()) || c.brandName() != null && c.brandName().equalsIgnoreCase(brandName);
-    }
-
-    /** Requisitos da combinação contra um deck (ou contra o guarda-roupa, no tipo COLECAO). */
-    List<Map<String, Object>> check(FlairCombination c, Deck deck, List<Card> wardrobe, CurrentUser user) {
-        List<Card> cs = "COLECAO".equals(c.getGameType()) ? wardrobe : deck == null ? List.of() : deck.cards();
-        String bn = brandNameOf(c.getBrand());
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (String cat : Json.strings(c.getRequiredCategoriesJson())) {
-            out.add(req("CATEGORY", cat, "Categoria: " + CATEGORY_LABELS.getOrDefault(cat, cat), cs.stream().anyMatch(x -> cat.equals(x.category()))));
-        }
-        for (String st : Json.strings(c.getRequiredStylesJson())) {
-            out.add(req("STYLE", st, "Estilo: " + st, cs.stream().anyMatch(x -> x.styles().contains(st))));
-        }
-        for (String oc : Json.strings(c.getRequiredOccasionsJson())) {
-            out.add(req("OCCASION", oc, Msg.t("flair.ocasiao", oc), cs.stream().anyMatch(x -> x.occasions().contains(oc))));
-        }
-        if (c.getMinBrandPieces() > 0) {
-            long n = cs.stream().filter(x -> isBrandCard(x, c.getBrand(), bn)).count();
-            out.add(req("BRAND", String.valueOf(n), Msg.t("flair.peca_s", (c.getMinBrandPieces()), bn, n), n >= c.getMinBrandPieces()));
-        }
-        if (c.getMinDeckPower() > 0 && !"COLECAO".equals(c.getGameType())) {
-            int p = deck == null ? 0 : deck.power();
-            out.add(req("POWER", String.valueOf(p), Msg.t("flair.poder_do_deck", c.getMinDeckPower(), p), p >= c.getMinDeckPower()));
-        }
-        if (c.getMinRarity() != null) {
-            int need = FlairEngine.RARITIES.indexOf(c.getMinRarity());
-            out.add(req("RARITY", c.getMinRarity(), Msg.t("flair.uma_carta_ou_melhor", c.getMinRarity()), cs.stream().anyMatch(x -> FlairEngine.RARITIES.indexOf(x.rarity()) >= need)));
-        }
-        if ("DUELO_PATROCINADO".equals(c.getGameType()) && user != null) {
-            Instant since = today().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay(FaiPointsService.ZONE).toInstant();
-            long wins = entries.findByUserIdAndCreatedAtAfter(user.id(), since).stream()
-                    .filter(e -> Objects.equals(e.getSide(), e.getMatch().getWinnerSide()) && FlairModesService.COMPETITIVE.contains(e.getMatch().getMode()))
-                    .filter(e -> Json.strings(e.getBrandPiecesJson()).contains(bn.toLowerCase(Locale.ROOT))).count();
-            out.add(req("WINS", String.valueOf(wins), Msg.t("flair.vitoria_s_nesta_semana_com", (c.getMinWins()), bn, wins), wins >= c.getMinWins()));
-        }
-        return out;
-    }
-
-    private static Map<String, Object> req(String kind, String value, String label, boolean ok) {
-        return Map.of("kind", kind, "value", value, "label", label, "ok", ok);
-    }
-
-    Map<String, Object> combinationView(FlairCombination c, CurrentUser viewer, Deck deck) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", c.getId());
-        m.put("brand", Views.user(c.getBrand()));
-        m.put("brandName", brandNameOf(c.getBrand()));
-        m.put("brandSlug", brands.findByOwnerId(c.getBrand().getId()).map(BrandProfile::getSlug).orElse(null));
-        m.put("name", c.getName());
-        m.put("description", c.getDescription());
-        m.put("gameType", c.getGameType());
-        m.put("requiredCategories", Json.strings(c.getRequiredCategoriesJson()));
-        m.put("requiredStyles", Json.strings(c.getRequiredStylesJson()));
-        m.put("requiredOccasions", Json.strings(c.getRequiredOccasionsJson()));
-        m.put("minBrandPieces", c.getMinBrandPieces());
-        m.put("minDeckPower", c.getMinDeckPower());
-        m.put("minRarity", c.getMinRarity());
-        m.put("minWins", c.getMinWins());
-        m.put("coupon", Map.of("title", c.getCouponTitle(), "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(),
-                "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(), "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "validDays", c.getValidDays()));
-        m.put("stock", c.getStock());
-        m.put("redeemed", c.getRedeemed());
-        m.put("active", c.isActive());
-        m.put("available", available(c));
-        m.put("startsAt", c.getStartsAt());
-        m.put("endsAt", c.getEndsAt());
-        m.put("accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor());
-        m.put("storeUrl", c.getStoreUrl());
-        if (viewer != null) {
-            m.put("redemption", redemptions.findByCombinationIdAndUserId(c.getId(), viewer.id()).map(this::redemptionView).orElse(null));
-        }
-        return m;
+        return parts.combinationRules().available(c);
     }
 
     /** Combinações ativas de todas as lojas, cada uma com o melhor deck do jogador e o checklist dos requisitos. */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> combinationsFor(CurrentUser user) {
-        List<Deck> ds = user == null ? List.of() : decks(user);
-        List<Card> wardrobe = user == null ? List.of() : cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
-                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (FlairCombination c : combinations.findByActiveTrueOrderByCreatedAtDesc()) {
-            if (!sellerActive(c.getBrand())) {
-                continue;                                  // loja aguardando aprovação (ou suspensa) não aparece na vitrine
-            }
-            Map<String, Object> v = combinationView(c, user, null);
-            if (user != null) {
-                Deck best = null;
-                List<Map<String, Object>> bestChecks = check(c, null, wardrobe, user);
-                long bestOk = bestChecks.stream().filter(x -> Boolean.TRUE.equals(x.get("ok"))).count();
-                if (!"COLECAO".equals(c.getGameType())) {
-                    for (Deck d : ds) {
-                        List<Map<String, Object>> ch = check(c, d, wardrobe, user);
-                        long ok = ch.stream().filter(x -> Boolean.TRUE.equals(x.get("ok"))).count();
-                        if (best == null || ok > bestOk || ok == bestOk && d.power() > best.power()) {
-                            best = d;
-                            bestChecks = ch;
-                            bestOk = ok;
-                        }
-                    }
-                }
-                v.put("bestDeck", best == null ? null : Map.of("schemeId", best.schemeId(), "title", best.title(), "power", best.power()));
-                v.put("checks", bestChecks);
-                v.put("complete", !bestChecks.isEmpty() && bestChecks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok"))));
-            }
-            out.add(v);
-        }
-        return out;
+        return parts.redemptions().combinationsFor(user);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> checkCombination(CurrentUser user, UUID id, UUID schemeId) {
-        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
-        Deck d = schemeId == null ? null : deck(schemeService.owned(user, schemeId));
-        List<Card> wardrobe = cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
-        List<Map<String, Object>> checks = check(c, d, wardrobe, user);
-        return Map.of("combination", combinationView(c, user, d), "deck", d == null ? Map.of() : d, "checks", checks,
-                "complete", !checks.isEmpty() && checks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok"))));
+        return parts.redemptions().checkCombination(user, id, schemeId);
     }
 
     /** Troca o deck pelo cupom da loja: um por pessoa e combinação, com estoque e validade. */
     @Transactional
     public Map<String, Object> redeem(CurrentUser user, UUID id, UUID schemeId) {
-        guard.requireCanCreate(user);
-        FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
-        if (!available(c)) {
-            throw new ApiException(409, "COMBINACAO_INDISPONIVEL", Msg.t("flair.esta_combinacao_nao_esta_mais"));
-        }
-        if (redemptions.findByCombinationIdAndUserId(c.getId(), user.id()).isPresent()) {
-            throw ApiException.conflict("CUPOM_JA_EMITIDO", Msg.t("flair.voce_ja_completou_esta_combinacao"));
-        }
-        Scheme s = "COLECAO".equals(c.getGameType()) || schemeId == null ? null : ownDeckScheme(user, schemeId);
-        Deck d = s == null ? null : deck(s);
-        List<Card> wardrobe = cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
-        List<Map<String, Object>> checks = check(c, d, wardrobe, user);
-        if (checks.isEmpty() || !checks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok")))) {
-            throw new ApiException(422, "COMBINACAO_INCOMPLETA", Msg.t("flair.o_deck_ainda_nao_completa"), Map.of("checks", checks));
-        }
-        FlairRedemption r = new FlairRedemption();
-        r.setCombination(c);
-        r.setUser(users.findById(user.id()).orElseThrow());
-        r.setScheme(s);
-        String code;
-        do {
-            code = "FLR-" + token(4) + "-" + token(4);
-        } while (redemptions.existsByCode(code));
-        r.setCode(code);
-        r.setStatus("EMITIDO");
-        r.setDeckPower(d == null ? null : d.power());
-        r.setExpiresAt(Instant.now().plus(c.getValidDays(), ChronoUnit.DAYS));
-        redemptions.save(r);
-        c.setRedeemed(c.getRedeemed() + 1);
-        award(user.id(), 0, 50, "REDEMPTION", c.getId().toString());
-        // Atelier: concluir a jornada da marca/celebridade vale um convite de temporada daquele perfil
-        atelier.grant(AtelierGrants.brandJourney(user.id(), c.getId(), c.getName(), c.getBrand().getId(), brandNameOf(c.getBrand()), Instant.now()));
-        return redemptionView(r);
-    }
-
-    private static String token(int n) {
-        String alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        StringBuilder b = new StringBuilder();
-        for (int i = 0; i < n; i++) {
-            b.append(alphabet.charAt(RANDOM.nextInt(alphabet.length())));
-        }
-        return b.toString();
-    }
-
-    Map<String, Object> redemptionView(FlairRedemption r) {
-        FlairCombination c = r.getCombination();
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", r.getId());
-        m.put("code", r.getCode());
-        m.put("status", r.getStatus().equals("EMITIDO") && r.getExpiresAt().isBefore(Instant.now()) ? "EXPIRADO" : r.getStatus());
-        m.put("expiresAt", r.getExpiresAt());
-        m.put("usedAt", r.getUsedAt());
-        m.put("createdAt", r.getCreatedAt());
-        m.put("deck", r.getScheme() == null ? null : r.getScheme().getTitle());
-        m.put("deckPower", r.getDeckPower());
-        m.put("user", Views.user(r.getUser()));
-        m.put("combination", Map.of("id", c.getId(), "name", c.getName(), "brandName", brandNameOf(c.getBrand()), "coupon", c.getCouponTitle(),
-                "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(), "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(),
-                "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor()));
-        return m;
+        return parts.redemptions().redeem(user, id, schemeId);
     }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> vouchers(CurrentUser user) {
-        return redemptions.findByUserIdOrderByCreatedAtDesc(user.id()).stream().map(this::redemptionView).toList();
+        return parts.redemptions().vouchers(user);
     }
 
     /** Aba "Minhas combinações FLAIR" (dono) / "Combinações FLAIR" (visitante) do perfil da loja. */
     @Transactional(readOnly = true)
     public Map<String, Object> brandTab(CurrentUser viewer, String slug) {
-        User owner = institutional.institutionalUser(slug);
-        boolean admin = viewer != null && viewer.id().equals(owner.getId());
-        List<FlairCombination> cs = combinations.findByBrandIdOrderByCreatedAtDesc(owner.getId());
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("admin", admin);
-        out.put("brandName", brandNameOf(owner));
-        out.put("participating", owner.getProfileType() == ProfileType.MARCA || owner.getProfileType() == ProfileType.CELEBRIDADE);
-        out.put("combinations", cs.stream().filter(c -> admin || available(c)).map(c -> combinationView(c, viewer, null)).toList());
-        if (admin) {
-            List<FlairRedemption> rs = redemptions.findByCombinationBrandIdOrderByCreatedAtDesc(owner.getId());
-            out.put("redemptions", rs.stream().limit(100).map(this::redemptionView).toList());
-            out.put("stats", Map.of("issued", rs.size(), "used", rs.stream().filter(r -> "USADO".equals(r.getStatus())).count()));
-            out.put("gameTypes", List.of(Map.of("id", "COMBINACAO", "label", Msg.t("flair.combinacao_um_deck")), Map.of("id", "COLECAO", "label", Msg.t("flair.colecao_guarda_roupa_inteiro")),
-                    Map.of("id", "DUELO_PATROCINADO", "label", Msg.t("flair.duelo_patrocinado_vitorias_com_peca"))));
-        }
-        return out;
+        return parts.combinationAdmin().brandTab(viewer, slug);
     }
 
     /** No caixa: a loja confere o código e marca o cupom como usado. */
     @Transactional
     public Map<String, Object> validateCode(CurrentUser user, String code) {
-        User brand = brandOwner(user);
-        FlairRedemption r = redemptions.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound("Cupom"));
-        if (!r.getCombination().getBrand().getId().equals(brand.getId())) {
-            throw ApiException.notFound("Cupom");
-        }
-        if ("USADO".equals(r.getStatus())) {
-            throw ApiException.conflict("CUPOM_USADO", Msg.t("flair.cupom_ja_usado_em", r.getUsedAt()));
-        }
-        if (r.getExpiresAt().isBefore(Instant.now())) {
-            throw ApiException.conflict("CUPOM_EXPIRADO", Msg.t("common.cupom_expirado"));
-        }
-        r.setStatus("USADO");
-        r.setUsedAt(Instant.now());
-        return redemptionView(r);
+        return parts.combinationAdmin().validateCode(user, code);
     }
 }
