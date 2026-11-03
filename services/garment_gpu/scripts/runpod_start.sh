@@ -96,6 +96,17 @@ worker_alive() {
   return 1
 }
 
+# Batimentos de workers que já não rodam: valem até 120 s no Redis, e o start seguinte dizia "pronto" na hora (03/11,
+# após um restart), com o worker da Fase 2 ainda carregando: as fotos enviadas nesse intervalo saíam sem Fase 2.
+forget_workers() {
+  [ -f "$RUN/fai.env" ] || return 0
+  local pass key
+  pass=$(sed -n "s/^REDIS_PASSWORD=//p" "$RUN/fai.env" | tr -d "'")
+  for key in $(REDISCLI_AUTH="$pass" redis-cli -h 127.0.0.1 --scan --pattern 'fai:worker:*' 2>/dev/null); do
+    REDISCLI_AUTH="$pass" redis-cli -h 127.0.0.1 del "$key" >/dev/null 2>&1
+  done
+}
+
 # "Pronto" só com os workers no ar: lote enviado antes disso volta só com o recorte da Fase 1 (teste de 03/11/2026).
 # FAI_READY_TIMEOUT=0 pula a espera. Ctrl+C interrompe só a espera; os serviços continuam rodando.
 wait_workers() {
@@ -129,6 +140,7 @@ start_all() {
   if wanted redis; then
     supervise redis redis-server "$RUN/redis.conf"
     wait_for redis "REDISCLI_AUTH=\"\$REDIS_PASSWORD\" redis-cli -h 127.0.0.1 ping | grep -q PONG"
+    running segment || running reconstruct || forget_workers   # Redis do volume pode guardar batimentos antigos
   fi
   if wanted storage; then
     # Chaves pelo ambiente (herdado pelo vigia), nunca na linha de comando: o ps mostraria os valores.
@@ -158,6 +170,7 @@ stop_all() {
   local name pid
   for name in reconstruct segment api storage redis; do
     running "$name" || continue
+    if [ "$name" = redis ]; then forget_workers; fi   # workers já parados: seus batimentos não podem sobrar
     pid=$(cat "$RUN/$name.pid")
     kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
     for _ in $(seq 20); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
