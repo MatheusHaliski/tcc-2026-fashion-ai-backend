@@ -183,8 +183,8 @@ class SchemeServiceTest {
         Map<String, Object> current = Map.of("title", "A", "occasion", List.of("casual"), "season", "SUMMER");
         String json = "{\"changes\":[{\"field\":\"title\",\"proposed\":\"Noite\",\"reason\":\"r\"},{\"field\":\"occasion\",\"proposed\":[\"party\"]},"
                 + "{\"field\":\"season\",\"proposed\":\"MONSOON\"},{\"field\":\"inexistente\",\"proposed\":1}]}";
-        assertThat(schemes.parseDiff(json, current)).hasSize(2);
-        assertThat(schemes.parseDiff("nada", current)).isNull();
+        assertThat(SchemeAiEdit.parseDiff(json, current)).hasSize(2);
+        assertThat(SchemeAiEdit.parseDiff("nada", current)).isNull();
         Map<String, Object> accepted = Map.of("title", "Noite elegante", "description", "Para jantar", "occasion", List.of("party"), "style", List.of("classic"),
                 "season", "WINTER", "mood", "ELEGANT", "visibility", "FOLLOWERS");
         assertThat(schemes.applyDiff(ana, id, accepted)).containsKey("scheme");
@@ -245,15 +245,15 @@ class SchemeServiceTest {
         for (String st : List.of("disponivel", "indisponivel", "rascunhos", "outro")) {
             schemes.mine(ana, null, st, null, "growth", null, 0, 20);
         }
-        assertThat(SchemeService.lookSort("maior_hype")).isEqualTo("hype_desc");
-        assertThat(SchemeService.lookSort("menor_hype")).isEqualTo("hype_asc");
-        assertThat(SchemeService.lookSort(null)).isEqualTo("recent");
-        assertThat(SchemeService.hypeMinimum("viral", new int[]{20, 40, 60, 80, 90})).isNotNull();
-        assertThat(SchemeService.hypeMinimum(null, null)).isNull();
+        assertThat(SchemeLookFilters.lookSort("maior_hype")).isEqualTo("hype_desc");
+        assertThat(SchemeLookFilters.lookSort("menor_hype")).isEqualTo("hype_asc");
+        assertThat(SchemeLookFilters.lookSort(null)).isEqualTo("recent");
+        assertThat(SchemeLookFilters.hypeMinimum("viral", new int[]{20, 40, 60, 80, 90})).isNotNull();
+        assertThat(SchemeLookFilters.hypeMinimum(null, null)).isNull();
         assertThat(SchemeService.moreRestrictive(Visibility.PUBLIC, Visibility.FOLLOWERS)).isEqualTo(Visibility.FOLLOWERS);
         assertThat(SchemeService.moreRestrictive(null, Visibility.PUBLIC)).isEqualTo(Visibility.PUBLIC);
-        assertThat(SchemeService.cardHypeLabel(null, null, true)).isNull();
-        assertThat(SchemeService.placeholder(mine.get(0)).getWidth()).isEqualTo(420);
+        assertThat(SchemeHype.cardHypeLabel(null, null, true)).isNull();
+        assertThat(SchemeCards.placeholder(mine.get(0)).getWidth()).isEqualTo(420);
         assertThat(schemes.suggestSealsAfterSave(ana, archived)).isNotNull();
     }
 
