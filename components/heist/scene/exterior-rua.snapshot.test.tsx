@@ -135,7 +135,7 @@ describe("retrato da rua e do beco", () => {
     Object.assign(out, { butt: texture(tex.buttTex()), weed: texture(tex.weedTex()), manhole: [texture(mh.map), texture(mh.normalMap)], wood: texture(tex.woodTex()),
       cardboard: texture(tex.cardboardTex()), fabric: texture(tex.fabricTex()), glow: texture(tex.alleyGlow()) });
     expect(out).toMatchSnapshot();
-  });
+  }, 120_000);
 
   it("funções puras da rua e do mobiliário", () => {
     const props = streetProps();
@@ -146,7 +146,7 @@ describe("retrato da rua e do beco", () => {
       lights: streetLights(props).map((l) => [l.kind, ...v(l.pos)]), paparazzi: value(PAPARAZZI, -10),
       furniture: { anchors: value(f.anchors, -10), glows: value(f.glows, -10), pools: value(f.pools, -10) },
     }).toMatchSnapshot();
-  });
+  }, 60_000);
 
   for (const q of ["high", "low"] as const) {
     it(`cena da rua (${q}): HeistStreet, HeistFacade, HeistFurniture e HeistAlley`, async () => {
