@@ -159,7 +159,9 @@ Rode primeiro um piloto (algumas centenas de produtos, a amostra é determiníst
 processe tudo com `--offset` em páginas. Antes do primeiro produto o lote confere se `FAI_API_URL` é esta API
 (`/health`). Com `--ids-file` (lista da Fase 2) o padrão é `--mode reconstruct`: worker da Fase 2 fora do ar vira falha
 `RECONSTRUCT_UNAVAILABLE`, não um recorte silencioso. Falhas e recortes sem Fase 2 vão para `retry_ids.txt`; o
-`audit.jsonl` é gravado linha a linha. Os limiares da classificação estão no topo de `analysis.py`.
+`audit.jsonl` é gravado linha a linha. Cada linha traz a identidade da foto usada (`image_id`, `image_version`,
+`original_url`, `source_sha256` de `catalog_images` e `photo_url`, a URL enviada): é por ela que um resultado
+aprovado poderá voltar ao catálogo, recusando a linha que tiver mudado desde o lote. Os limiares da classificação estão no topo de `analysis.py`.
 
 ## Fase 3 — distribuição, escala e métricas
 

@@ -272,6 +272,38 @@ python scripts/catalog/process_whole_frames.py --apply --limit 500              
   A gravação confere `source_sha256` e incrementa `version` (a linha mudou desde a análise → pulada).
 - A API devolve `catalogImage.whole` com `processed: true`; a Peça inteira da interface usa essa imagem.
 
+## Flat lay da GPU própria no Total frame — `apply_flat_lays.py` (`FLAT_LAY_V1`)
+
+Leva ao catálogo os flat lays da Fase 2 (`services/garment_gpu`, Qwen-Image-Edit no RunPod) **aprovados na revisão
+humana**. No Total frame, o produto passa a mostrar a peça esticada com o selo **IA** (`CatalogFlatLayFrame`); sem flat
+lay aprovado (ou se a foto de origem mudou), continua a Peça inteira real acima. As colunas são próprias
+(`flat_lay_url`, `flat_lay_back_url`, `flat_lay_json`, `flat_lay_status`, V85): o recorte real não é tocado.
+
+1. Rode os lotes com o `catalog_batch` atual (a auditoria precisa trazer `image_id`; lotes antigos são pulados com
+   `NO_IMAGE_ID` — refaça esses produtos).
+2. Monte a lista de aprovados a partir do que teve Fase 2 e tire o que reprovou na grade (`index.html`):
+   ```bash
+   cat ~/catalog-fase2/lote-*/audit.jsonl | python3 -c "import sys, json; [print(r['id']) for r in map(json.loads, sys.stdin) if r.get('output') == 'generative_reconstruction_requires_review']" | sort -u > ~/catalog-fase2/aprovados.txt
+   ```
+3. Ensaio (confere no banco, só leitura, que cada foto continua a mesma e grava prévias 900×1200):
+   ```bash
+   python scripts/catalog/apply_flat_lays.py --lots ~/catalog-fase2/lote-* --approved ~/catalog-fase2/aprovados.txt --out-dir /tmp/flat-lays
+   ```
+4. Gravação (com autorização): mesmas variáveis `MYSQL_*` do backend (usuário com escrita) e do armazenamento
+   (`S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_REGION`, `STORAGE_PUBLIC_BASE_URL`),
+   copiadas do Railway para um arquivo local, nunca para o chat:
+   ```bash
+   python scripts/catalog/apply_flat_lays.py --lots ~/catalog-fase2/lote-* --approved ~/catalog-fase2/aprovados.txt --apply
+   ```
+5. Desfazer (volta ao recorte real): `--clear --approved remover.txt --apply`.
+
+- Só entra produto aprovado **e** com `output=generative_reconstruction_requires_review`; recorte só da Fase 1
+  (`NOT_RECONSTRUCTED`), produto fora dos lotes (`NOT_IN_LOTS`) e arquivo faltando são pulados.
+- Frente e costas vão para `catalog/flatlay/<uuid>/<sha256>.jpg` (mesmo armazenamento e verificação da Peça inteira).
+  `flat_lay_json` guarda `imageId`, `originalUrl`, `sourceSha256`, QA, lote, data e `aiGenerated: true`.
+- A gravação exige a mesma linha, a mesma `image_url` e o mesmo `source_sha256` do lote; linha alterada → `STALE`, e
+  as imagens enviadas são apagadas do bucket. Auditoria em `flat-lays-audit.jsonl`.
+
 ## Peça inteira LOCAL com Stable Diffusion — `process_local_sd.py` (sem API paga)
 
 O lote de packshot por API externa parou por falta de créditos; este é o substituto que roda na máquina do lote

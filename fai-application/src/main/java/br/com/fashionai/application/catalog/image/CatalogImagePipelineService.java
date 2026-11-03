@@ -949,9 +949,9 @@ public class CatalogImagePipelineService {
 
     /** Total frame requires a source-bound derivative with measured, complete semantic isolation. */
     static Map<String, Object> wholeFrame(CatalogImage canonical) {
-        // Legacy studio/background/skin heuristics cannot prove semantic isolation.
-        // Only a derivative with current source-bound preflight evidence is exposed.
-        return processedWhole(canonical);
+        // Legacy studio/background/skin heuristics cannot prove semantic isolation. Exposed: the approved flat lay
+        // (AI, labelled, CatalogFlatLayFrame) or a derivative with current source-bound preflight evidence.
+        return CatalogFlatLayFrame.orElse(canonical, processedWhole(canonical));
     }
 
     static boolean validPreflight(Object raw) {

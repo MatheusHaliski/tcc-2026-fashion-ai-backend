@@ -21,16 +21,27 @@ CATEGORY_MAP = {"upper_piece": "upper_piece", "lower_piece": "lower_piece", "sho
 
 # One photo per product: the primary image first, then the oldest non-rejected one. The sample is deterministic
 # (SHA2 of the id) so a rerun of the pilot sees the same products; --offset walks the whole catalogue in pages.
+# image_id/image_version/original_url/source_sha256 identify the exact catalog_images row the result came from: writing
+# a flat lay back to the catalogue (apply_flat_lays) must refuse a row that changed since the batch.
 SELECT = """
-SELECT id, category, subcategory, product_name, color, image_url FROM (
+SELECT id, category, subcategory, product_name, color, image_url,
+       image_id, image_version, original_url, source_sha256 FROM (
   SELECT p.id, p.category, p.subcategory, p.product_name, COALESCE(p.color_name, p.color) AS color,
          COALESCE(i.stored_url, i.image_url) AS image_url,
+         i.id AS image_id, i.version AS image_version, i.image_url AS original_url, i.source_sha256,
          ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY i.is_primary DESC, i.created_at ASC) AS rn,
          SHA2(p.id, 256) AS sample_key
     FROM catalog_products p JOIN catalog_images i ON i.product_id = p.id
    WHERE i.usage_status <> 'REJECTED' {category}
 ) ranked WHERE rn = 1 ORDER BY {order} LIMIT %(limit)s OFFSET %(offset)s
 """
+
+IMAGE_FIELDS = ("image_id", "image_version", "original_url", "source_sha256")
+
+
+def image_ref(product: dict) -> dict:
+    """The catalog_images row behind a batch result, recorded in audit.jsonl (photo_url = the URL actually sent)."""
+    return {**{name: product.get(name) for name in IMAGE_FIELDS}, "photo_url": product.get("image_url")}
 
 
 def connect():
