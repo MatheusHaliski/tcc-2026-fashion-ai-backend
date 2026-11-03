@@ -65,8 +65,8 @@ class FlairModesFacadeCharacterizationTest {
         assertThat(FlairModesService.TERRITORIES).hasSize(15);
         assertThat(FlairModesService.CITIES).hasSize(7);
         assertThat(FlairModesService.COMPETITIVE).hasSize(10);
-        assertThat(FlairModesService.DECK_RULE).containsEntry("upper_piece", 4).containsEntry("wildcard", 1);
-        assertThat(FlairModesService.RUNWAY_THEMES).hasSize(6);
+        assertThat(FlairDeckMode.DECK_RULE).containsEntry("upper_piece", 4).containsEntry("wildcard", 1);
+        assertThat(FlairRunwayMode.RUNWAY_THEMES).hasSize(6);
         assertThat(sha(FlairModesService.MODES)).isEqualTo("4a5b18ea8fa99586e987dd84996e426bd9414bf0360dc9124821f96dc9d0251e");
         assertThat(sha(FlairModesService.BOARD)).isEqualTo("945164fc4071bbd7f0edf82c3509b465f1ea993fa6ef69cfc61ee76deadba15f");
         assertThat(sha(FlairModesService.TERRITORIES)).isEqualTo("304b0b8cd15c44f9a7491bc2ccd15a0212c86f9b90b1211521802b667afc3e37");
@@ -76,28 +76,28 @@ class FlairModesFacadeCharacterizationTest {
                 c.get("chessBoard"), c.get("ethics")))).isEqualTo("d28721a31f8524e82cb5e41ac7c580fdce32350e0ad293ff2610a9c05fb0b858");
         assertThat(c.keySet()).containsExactly("architecture", "modes", "stats", "themes", "squadSituations", "divisions", "bosses", "board",
                 "territories", "chessBoard", "roles", "ethics");
-        assertThat(FlairModesService.territory("CONQUEST", "LUXURY").theme()).isEqualTo("RED_CARPET");
-        assertThat(code(() -> FlairModesService.territory("CONQUEST", "HARAJUKU"))).isEqualTo("404:NAO_ENCONTRADO");
+        assertThat(FlairModeCatalog.territory("CONQUEST", "LUXURY").theme()).isEqualTo("RED_CARPET");
+        assertThat(code(() -> FlairModeCatalog.territory("CONQUEST", "HARAJUKU"))).isEqualTo("404:NAO_ENCONTRADO");
         assertThat(FlairModesService.BOARD.get(3).type()).isEqualTo("AIRPORT");
         assertThat(FlairModesService.BOARD.get(27).theme()).isEqualTo("WEDDING_GUEST");
     }
 
     @Test
     void utilitariosPurosDoServico() {
-        assertThat(FlairModesService.house(null)).isTrue();
-        assertThat(FlairModesService.house(" casa ")).isTrue();
-        assertThat(FlairModesService.house("bia")).isFalse();
-        assertThat(FlairModesService.num(3.7)).isEqualTo(3);
-        assertThat(FlairModesService.num("x")).isZero();
-        assertThat(FlairModesService.stylePoints(Map.of("hype", 9))).isEqualTo(9);
-        assertThat(FlairModesService.stylePoints(Map.of("hype", 9, "stylePoints", 4))).isEqualTo(4);
+        assertThat(FlairModeLooks.house(null)).isTrue();
+        assertThat(FlairModeLooks.house(" casa ")).isTrue();
+        assertThat(FlairModeLooks.house("bia")).isFalse();
+        assertThat(FlairModeValues.num(3.7)).isEqualTo(3);
+        assertThat(FlairModeValues.num("x")).isZero();
+        assertThat(FlairLeagueMode.stylePoints(Map.of("hype", 9))).isEqualTo(9);
+        assertThat(FlairLeagueMode.stylePoints(Map.of("hype", 9, "stylePoints", 4))).isEqualTo(4);
         UUID u = UUID.randomUUID();
-        assertThat(FlairModesService.ids(List.of(u.toString(), "", "  "))).containsExactly(u);
-        assertThat(FlairModesService.ids("nada")).isEmpty();
-        assertThat(FlairModesService.seasonKey()).matches("\\d{4}-T\\d{2}");
-        assertThat(FlairModesService.weekKey()).matches("\\d{4}-W\\d{2}");
-        assertThat(FlairModesService.runwaySeason()).matches("\\d{2}");
-        assertThat(FlairModesService.RUNWAY_THEMES).contains(FlairModesService.runwayTheme().code());
+        assertThat(FlairModeValues.ids(List.of(u.toString(), "", "  "))).containsExactly(u);
+        assertThat(FlairModeValues.ids("nada")).isEmpty();
+        assertThat(FlairModeValues.seasonKey()).matches("\\d{4}-T\\d{2}");
+        assertThat(FlairModeValues.weekKey()).matches("\\d{4}-W\\d{2}");
+        assertThat(FlairRunwayMode.runwaySeason()).matches("\\d{2}");
+        assertThat(FlairRunwayMode.RUNWAY_THEMES).contains(FlairRunwayMode.runwayTheme().code());
     }
 
     @Test
@@ -123,7 +123,7 @@ class FlairModesFacadeCharacterizationTest {
         modes.saveRoster(ana, looks.subList(0, 2), List.of(looks.get(2)), null);
         List<FlairModeState> rows = MemoryRepository.rows(kit.dep(FlairModeStateRepository.class));
         FlairModeState s = rows.stream().filter(x -> "LEAGUE".equals(x.getMode())).findFirst().orElseThrow();
-        assertThat(s.getSeasonKey()).isEqualTo(FlairModesService.seasonKey());
+        assertThat(s.getSeasonKey()).isEqualTo(FlairModeValues.seasonKey());
         Map<String, Object> st = Json.map(s.getStateJson());
         assertThat(st.keySet()).containsExactlyInAnyOrder("starters", "reserves", "specials", "played", "wins", "draws", "losses", "points", "stylePoints");
         Map<String, Object> league = modes.league(ana);
