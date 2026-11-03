@@ -1,0 +1,1134 @@
+{
+ "surfaces": {
+  "doca": {
+   "floor": "MeshStandardMaterial|doca-floor|ffffff|1|0|000000|1|1|0|0|1|1|1|1|||-|512x512/srgb/1000|-|512x512//1000|512x512//1000|1|{}",
+   "floorTile": [
+    6,
+    6
+   ],
+   "floorMirror": [
+    0.32,
+    0.03
+   ],
+   "wall": "MeshStandardMaterial|doca-wall|ffffff|1|0|000000|1|1|0|0|1|1|1|0.5|||-|512x512/srgb/1000|-|512x512//1000|512x512//1000|1|{}",
+   "wallTile": [
+    3.2,
+    6
+   ],
+   "ceil": "MeshStandardMaterial|doca-deck|ffffff|1|0.55|000000|1|1|0|0|1|1|1|0.6|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "trims": false
+  }
+ },
+ "props": [
+  "crate-188:crate:",
+  "docaShelf-189:fixture:docaShelf",
+  "docaShelf-190:fixture:docaShelf",
+  "docaBench-191:fixture:docaBench",
+  "docaFountain-192:fixture:docaFountain",
+  "docaBooth-193:fixture:docaBooth",
+  "docaPallets-194:fixture:docaPallets",
+  "docaFlightCases-195:fixture:docaFlightCases",
+  "docaPalletJack-196:fixture:docaPalletJack",
+  "docaStacker-197:fixture:docaStacker",
+  "docaHotBoxes-198:fixture:docaHotBoxes"
+ ],
+ "keys": {
+  "doca": [
+   {
+    "p": [
+     -19.6,
+     4.55,
+     20.3
+    ],
+    "aim": [
+     -19.2,
+     0,
+     20.3
+    ],
+    "angle": 1.1,
+    "i": 32,
+    "color": "#eef3ff"
+   },
+   {
+    "p": [
+     -12.6,
+     4.55,
+     20.3
+    ],
+    "aim": [
+     -12.6,
+     0,
+     20.3
+    ],
+    "angle": 1.15,
+    "i": 34,
+    "color": "#eef3ff"
+   }
+  ]
+ },
+ "anchors": [
+  {
+   "x": -21.2,
+   "y": 2.05,
+   "z": 20.4,
+   "color": "#eef6ff",
+   "intensity": 2.6,
+   "distance": 3.2,
+   "room": "doca",
+   "flicker": 0
+  },
+  {
+   "x": -19.6,
+   "y": 4.27,
+   "z": 18.6,
+   "color": "#eef3ff",
+   "intensity": 10.5,
+   "distance": 9.5,
+   "room": "doca",
+   "flicker": 0
+  },
+  {
+   "x": -15.25,
+   "y": 4.27,
+   "z": 18.6,
+   "color": "#eef3ff",
+   "intensity": 10.5,
+   "distance": 9.5,
+   "room": "doca",
+   "flicker": 0
+  },
+  {
+   "x": -10.9,
+   "y": 4.27,
+   "z": 18.6,
+   "color": "#eef3ff",
+   "intensity": 10.5,
+   "distance": 9.5,
+   "room": "doca",
+   "flicker": 0
+  },
+  {
+   "x": -19.6,
+   "y": 4.27,
+   "z": 22,
+   "color": "#eef3ff",
+   "intensity": 10.5,
+   "distance": 9.5,
+   "room": "doca",
+   "flicker": 0
+  },
+  {
+   "x": -15.25,
+   "y": 4.27,
+   "z": 22,
+   "color": "#eef3ff",
+   "intensity": 10.5,
+   "distance": 9.5,
+   "room": "doca",
+   "flicker": 1
+  },
+  {
+   "x": -10.9,
+   "y": 4.27,
+   "z": 22,
+   "color": "#eef3ff",
+   "intensity": 10.5,
+   "distance": 9.5,
+   "room": "doca",
+   "flicker": 0
+  }
+ ],
+ "flames": [],
+ "beacons": [
+  {
+   "room": "doca",
+   "pos": [
+    -21.84,
+    4.24,
+    23
+   ],
+   "normal": [
+    1,
+    0,
+    0
+   ]
+  }
+ ],
+ "cones": [],
+ "animated": [
+  {
+   "kind": "cctv",
+   "room": "doca",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    1,
+    1,
+    1
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshBasicMaterial|(sem nome)|ffffff|||-||1|0|0|1|1|0||||-|320x200/srgb/1001|-|-|-|-|{}",
+   "geo": {
+    "n": 4,
+    "bbox": [
+     -0.5,
+     -0.5,
+     0,
+     0.5,
+     0.5,
+     0
+    ],
+    "hash": "3e400417"
+   },
+   "children": 0
+  }
+ ],
+ "ticks": [
+  "doca",
+  "doca"
+ ],
+ "groupAfterTick1": [
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "doca",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    1,
+    1,
+    1
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshBasicMaterial|(sem nome)|ffffff|||-||1|0|0|1|1|0||||-|320x200/srgb/1001|-|-|-|-|{}",
+   "geo": {
+    "n": 4,
+    "bbox": [
+     -0.5,
+     -0.5,
+     0,
+     0.5,
+     0.5,
+     0
+    ],
+    "hash": "3e400417"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "doca",
+   "pos": [
+    0,
+    0,
+    24.06
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    1,
+    1,
+    1
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshStandardMaterial|doca-galv|a3a8ac|0.42|0.85|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "geo": {
+    "n": 3060,
+    "bbox": [
+     -21,
+     0,
+     -0.025,
+     -17,
+     4.198,
+     0.025
+    ],
+    "hash": "cc1a8286"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "doca",
+   "pos": [
+    -21.88,
+    4.55,
+    18.1
+   ],
+   "rot": [
+    7.5,
+    0,
+    0
+   ],
+   "scale": [
+    1,
+    1,
+    1
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshStandardMaterial|solid-darkSteel|2a2d31|0.45|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "geo": {
+    "n": 348,
+    "bbox": [
+     -0.03,
+     -0.252,
+     -0.28,
+     0.03,
+     0.28,
+     0.28
+    ],
+    "hash": "e4eb945e"
+   },
+   "children": 0
+  }
+ ],
+ "groupAfterTick2": [
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "doca",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    1,
+    1,
+    1
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshBasicMaterial|(sem nome)|ffffff|||-||1|0|0|1|1|0||||-|320x200/srgb/1001|-|-|-|-|{}",
+   "geo": {
+    "n": 4,
+    "bbox": [
+     -0.5,
+     -0.5,
+     0,
+     0.5,
+     0.5,
+     0
+    ],
+    "hash": "3e400417"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "doca",
+   "pos": [
+    0,
+    3.984,
+    24.06
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ],
+   "scale": [
+    1,
+    0.04,
+    1
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshStandardMaterial|doca-galv|a3a8ac|0.42|0.85|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "geo": {
+    "n": 3060,
+    "bbox": [
+     -21,
+     0,
+     -0.025,
+     -17,
+     4.198,
+     0.025
+    ],
+    "hash": "cc1a8286"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "doca",
+   "pos": [
+    -21.88,
+    4.55,
+    18.1
+   ],
+   "rot": [
+    18.75,
+    0,
+    0
+   ],
+   "scale": [
+    1,
+    1,
+    1
+   ],
+   "visible": true,
+   "renderOrder": 0,
+   "mat": "MeshStandardMaterial|solid-darkSteel|2a2d31|0.45|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "geo": {
+    "n": 348,
+    "bbox": [
+     -0.03,
+     -0.252,
+     -0.28,
+     0.03,
+     0.28,
+     0.28
+    ],
+    "hash": "e4eb945e"
+   },
+   "children": 0
+  }
+ ],
+ "batch": [
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|misc-crate-low--0-0|ffffff|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    -12.6,
+    0.1,
+    16.55,
+    -9.62,
+    1.9,
+    23.78
+   ],
+   "hash": "134c6240"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-matte|ffffff|0.82|0.05|000000|1|1|0|0|1|1|1|0.5|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 7428,
+   "bbox": [
+    -22,
+    0,
+    16.6,
+    -9.6,
+    2.518,
+    24
+   ],
+   "hash": "d4d164af"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|misc-crate-low--0-0|ffffff|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1800,
+   "bbox": [
+    -21.8,
+    0.1,
+    16.513,
+    -9.3,
+    1.93,
+    23.805
+   ],
+   "hash": "3039dd84"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-film|e6eef2|0.12|0|000000|1|0.38|1|2|1|0|0|1.4|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    -14.39,
+    0.15,
+    22.942,
+    -10.455,
+    1.908,
+    23.99
+   ],
+   "hash": "bae8682e"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-signs|ffffff|0.55|0.02|ffffff|0.12|1|0|2|1|1|0|1|||-|1024x1024/srgb/1001|1024x1024/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1398,
+   "bbox": [
+    -21.988,
+    0.12,
+    16.527,
+    -8.512,
+    5.74,
+    23.995
+   ],
+   "hash": "f770b1ea"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-paint|ffffff|0.48|0.35|000000|1|1|0|0|1|1|1|0.8|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 1080,
+   "bbox": [
+    -22.06,
+    0,
+    16.5,
+    -10.615,
+    5.98,
+    24
+   ],
+   "hash": "917d27d1"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-paint|ffffff|0.48|0.35|000000|1|1|0|0|1|1|1|0.8|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 15252,
+   "bbox": [
+    -22.01,
+    0,
+    16.5,
+    -8.497,
+    6,
+    24
+   ],
+   "hash": "3abe7ad7"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|solid-rubber|151515|0.9|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6432,
+   "bbox": [
+    -22,
+    -0.035,
+    16.545,
+    -8.5,
+    1.883,
+    24
+   ],
+   "hash": "340904aa"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-plastic|ffffff|0.45|0|000000|1|1|0|0|1|1|1|0.7|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 9576,
+   "bbox": [
+    -21.81,
+    0.05,
+    16.519,
+    -8.512,
+    5.12,
+    24
+   ],
+   "hash": "9e3218f0"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-galv|a3a8ac|0.42|0.85|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 10128,
+   "bbox": [
+    -21.98,
+    0,
+    16.67,
+    -8.51,
+    6,
+    24
+   ],
+   "hash": "63034dc4"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-lit|ffffff|0.4|0|ffffff|1.4|1|0|0|1|1|0|1|||-|1024x1024/srgb/1001|1024x1024/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 18,
+   "bbox": [
+    -19.31,
+    0.938,
+    16.771,
+    -8.53,
+    4.73,
+    23.378
+   ],
+   "hash": "00231e8b"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-alu|c4c8cc|0.36|0.55|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1008,
+   "bbox": [
+    -13.016,
+    0.15,
+    16.505,
+    -10.82,
+    2.12,
+    20.628
+   ],
+   "hash": "d848b942"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|solid-chrome|d9dadc|0.12|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2688,
+   "bbox": [
+    -21.785,
+    0.25,
+    16.565,
+    -8.66,
+    1.742,
+    23.608
+   ],
+   "hash": "bbf5b13b"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-inox|c8ccd0|0.22|1|000000|1|1|0|0|1|1|0|1.2|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -8.92,
+    0.02,
+    16.98,
+    -8.58,
+    0.88,
+    17.32
+   ],
+   "hash": "3cfa6726"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-inox|c8ccd0|0.22|1|000000|1|1|0|0|1|1|0|1.2|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 156,
+   "bbox": [
+    -8.94,
+    0.855,
+    16.96,
+    -8.56,
+    0.91,
+    17.34
+   ],
+   "hash": "8c57ae9a"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshPhysicalMaterial|glass-clear|dfe9ee|0.04|0|000000|1|0.16|1|2|1|0|0|1.6|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 180,
+   "bbox": [
+    -21.94,
+    0.97,
+    19.626,
+    -15.651,
+    2.28,
+    23.83
+   ],
+   "hash": "c1182c9a"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshBasicMaterial|glow-fluoro|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -21.225,
+    2.235,
+    20.09,
+    -21.175,
+    2.255,
+    20.71
+   ],
+   "hash": "169c2816"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-laminate|151517|1|0|000000|1|1|0|0|1|1|0|0.8|||-|-|-|128x128//1000|128x128//1000|0.8|{}",
+   "cast": true,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    -13.006,
+    0.15,
+    19.981,
+    -11.794,
+    1.9,
+    20.619
+   ],
+   "hash": "cc7cca9a"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshBasicMaterial|glow-ledGreen|41ff99|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -16.15,
+    0.934,
+    23.435,
+    -16.09,
+    0.938,
+    23.465
+   ],
+   "hash": "07434b9a"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-plastic|ffffff|0.45|0|000000|1|1|0|0|1|1|1|0.7|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    -9.528,
+    0.12,
+    23.275,
+    -8.572,
+    1.42,
+    23.925
+   ],
+   "hash": "e7432d7d"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|solid-black|0b0b0c|0.55|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1188,
+   "bbox": [
+    -21.96,
+    -0.003,
+    16.503,
+    -8.502,
+    4.77,
+    23.6
+   ],
+   "hash": "7950ca73"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-galv|a3a8ac|0.42|0.85|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -21.3,
+    4.25,
+    23.39,
+    -16.7,
+    4.95,
+    23.99
+   ],
+   "hash": "f072996e"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|solid-yellow|e2b31c|0.6|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 144,
+   "bbox": [
+    -20.19,
+    0,
+    16.505,
+    -8.505,
+    1.2,
+    22.69
+   ],
+   "hash": "e167c5c6"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.6|0|ffffff|0.35|1|0|0|1|1|0|1|||-|1024x256/srgb/1001|1024x256/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -8.515,
+    2.785,
+    18.25,
+    -8.515,
+    3.115,
+    19.55
+   ],
+   "hash": "9cad7328"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.6|0|ffffff|0.35|1|0|0|1|1|0|1|||-|1024x256/srgb/1001|1024x256/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -14.9,
+    3.29,
+    16.515,
+    -12.3,
+    3.91,
+    16.515
+   ],
+   "hash": "2e9a0ea0"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|misc-grain-low-#3b2414-0-0|3b2414|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -8.536,
+    1.2,
+    17.38,
+    -8.512,
+    1.94,
+    18.32
+   ],
+   "hash": "4fe528a6"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|doca-marks|ffffff|0.6|0|000000|1|1|1|0|1|0|0|1|||-|1024x1024/srgb/1001|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 252,
+   "bbox": [
+    -22.075,
+    0.003,
+    16.5,
+    -8.555,
+    0.004,
+    24.075
+   ],
+   "hash": "d4bd3c27"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|misc-grain-low-#b08a5a-0-0|b08a5a|1|0|000000|1|1|0|0|1|1|0|1|||-|256x256/srgb/1000|-|256x256//1000|256x256//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    -21.96,
+    0.018,
+    21.488,
+    -21.77,
+    1.322,
+    21.592
+   ],
+   "hash": "34925836"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshStandardMaterial|solid-darkSteel|2a2d31|0.45|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -21.96,
+    4.15,
+    22.92,
+    -21.84,
+    4.21,
+    23.08
+   ],
+   "hash": "4e71a6e6"
+  },
+  {
+   "room": "doca",
+   "mat": "MeshBasicMaterial|glow-doca-gateLeak|a06f3f|||-||1|1|0|2|0|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -21,
+    0,
+    23.95,
+    -17,
+    0.06,
+    23.95
+   ],
+   "hash": "6cc40f46"
+  }
+ ],
+ "inst": [
+  {
+   "room": "doca",
+   "key": "doca-screw",
+   "mat": "MeshStandardMaterial|solid-chrome|d9dadc|0.12|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 26,
+   "colors": false,
+   "matrices": "7e39aaaf",
+   "geo": {
+    "n": 40,
+    "bbox": [
+     -0.866,
+     0,
+     -1,
+     0.866,
+     1,
+     1
+    ],
+    "hash": "d6013d24"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-ball",
+   "mat": "MeshStandardMaterial|solid-chrome|d9dadc|0.12|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 16,
+   "colors": false,
+   "matrices": "285bd5c5",
+   "geo": {
+    "n": 77,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "4cb1fdd0"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-bottleCap",
+   "mat": "MeshStandardMaterial|doca-plastic|ffffff|0.45|0|000000|1|1|0|0|1|1|1|0.7|||-|-|-|-|-|1|{}",
+   "count": 144,
+   "colors": false,
+   "matrices": "748d1285",
+   "geo": {
+    "n": 52,
+    "bbox": [
+     -1,
+     0,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "1481457a"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-sprinkler",
+   "mat": "MeshStandardMaterial|solid-brass|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 16,
+   "colors": false,
+   "matrices": "a7edfdc5",
+   "geo": {
+    "n": 64,
+    "bbox": [
+     -0.029,
+     -0.02,
+     -0.03,
+     0.029,
+     0.02,
+     0.03
+    ],
+    "hash": "4975fdc0"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-sprDefl",
+   "mat": "MeshStandardMaterial|solid-brass|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 16,
+   "colors": false,
+   "matrices": "8ce7f605",
+   "geo": {
+    "n": 76,
+    "bbox": [
+     -0.035,
+     -0.002,
+     -0.035,
+     0.035,
+     0.002,
+     0.035
+    ],
+    "hash": "a67f2b3e"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-smoke",
+   "mat": "MeshStandardMaterial|solid-plastic|d8d8d4|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 3,
+   "colors": false,
+   "matrices": "188b5851",
+   "geo": {
+    "n": 100,
+    "bbox": [
+     -0.075,
+     -0.02,
+     -0.075,
+     0.075,
+     0.02,
+     0.075
+    ],
+    "hash": "f492ca2e"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-fin",
+   "mat": "MeshStandardMaterial|doca-paint|ffffff|0.48|0.35|000000|1|1|0|0|1|1|1|0.8|||-|-|-|-|-|1|{}",
+   "count": 72,
+   "colors": false,
+   "matrices": "5f139895",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.5,
+     0,
+     -0.5,
+     0.5,
+     1,
+     0.5
+    ],
+    "hash": "759c344e"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-ufoLens",
+   "mat": "MeshBasicMaterial|glow-fluoro|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 6,
+   "colors": false,
+   "matrices": "4a59aaed",
+   "geo": {
+    "n": 26,
+    "bbox": [
+     -0.16,
+     0,
+     -0.16,
+     0.16,
+     0,
+     0.16
+    ],
+    "hash": "f5cdbb56"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-emHead",
+   "mat": "MeshStandardMaterial|solid-plastic|d8d8d4|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 6,
+   "colors": false,
+   "matrices": "5fe991f5",
+   "geo": {
+    "n": 77,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "4cb1fdd0"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "doca-emLed",
+   "mat": "MeshBasicMaterial|glow-ledGreen|41ff99|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 3,
+   "colors": false,
+   "matrices": "9bc7bf84",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "doca",
+   "key": "beaconDome",
+   "mat": "MeshStandardMaterial|solid-beaconOff|5a1010|0.2|0|000000|1|0.85|1|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "edf38195",
+   "geo": {
+    "n": 117,
+    "bbox": [
+     -0.08,
+     0,
+     -0.08,
+     0.08,
+     0.08,
+     0.08
+    ],
+    "hash": "556fe0d6"
+   }
+  }
+ ],
+ "canvas": {
+  "calls": 61,
+  "sizes": [
+   "320x200",
+   "1024x256",
+   "1024x256"
+  ],
+  "digest": "70bd4b8c"
+ }
+}

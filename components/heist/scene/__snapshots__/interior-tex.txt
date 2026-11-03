@@ -1,0 +1,76 @@
+floor terrazzo low 8x8 a4e33f5225a26628 8x8 599205de9f6438a2 8x8 430e0896b283e082 srgb//8/1000
+floor checker low 8x8 3a253f55dd5fca42 8x8 599205de9f6438a2 8x8 e7b7536961bea73a srgb//8/1000
+floor parquet low 8x8 7644677e849f4fe8 8x8 599205de9f6438a2 8x8 ab1a018bebeb25d3 srgb//8/1000
+floor carpet low 8x8 f33aac6c65c096b6 8x8 22098bf328a5897e 8x8 c3a2e919f8d06a94 srgb//8/1000
+floor stage low 8x8 658e1beb9d5db328 8x8 599205de9f6438a2 8x8 f9a03711faec6b5c srgb//8/1000
+floor concrete low 8x8 54ef8a7e6dd885ff 8x8 543679f2c1c1de33 8x8 cb1eb39d5dc5c902 srgb//8/1000
+floor marbleBlack low 8x8 e3a99bc44978f601 8x8 599205de9f6438a2 8x8 591a5fce5b64dac8 srgb//8/1000
+floor pavers low 8x8 10b81fd9ce759f06 8x8 41a511929f0ffae5 8x8 5997a5e272fa71b2 srgb//8/1000
+floor galleryMarble low 8x8 74c32f0f6af782c4 8x8 599205de9f6438a2 8x8 3f3180d5ea296b05 srgb//8/1000
+wall limestone low 8x8 a2e72dddb2b7a6ac 8x8 599205de9f6438a2 8x8 9b97e1100013c0c4
+wall galleryPaint low 8x8 78f5841698159bf5 8x8 41a511929f0ffae5 8x8 0de1c5a8d7754ff9
+wall damaskGreen low 8x8 8779fb53cf18eef1 8x8 345a5693fbe9fdfa 8x8 0de1c5a8d7754ff9
+wall woodPanel low 8x8 e8fe3f7ee269d428 8x8 599205de9f6438a2 8x8 9f5de6e7fcb92415
+wall blackPaint low 8x8 e3a99bc44978f601 8x8 599205de9f6438a2 8x8 6ea460393586553a
+wall drywall low 8x8 4838059f50400a6a 8x8 345a5693fbe9fdfa 8x8 ae1f5c1795460603
+wall cmu low 8x8 b814758c45288a74 8x8 599205de9f6438a2 8x8 ce477501edc5dcfa
+wall damaskPlum low 8x8 eed6113d01271769 8x8 345a5693fbe9fdfa 8x8 0de1c5a8d7754ff9
+wall damaskTeal low 8x8 c867756a20320487 8x8 345a5693fbe9fdfa 8x8 0de1c5a8d7754ff9
+misc plaster low 8x8 792f6aeb56b947b4 8x8 345a5693fbe9fdfa 8x8 c612ec1a06b1c173
+misc acoustic low 8x8 57948e629db3772b 8x8 599205de9f6438a2 8x8 c63e6114f5d48de2
+misc marbleWhite low 8x8 251227cf10efc6dd 8x8 599205de9f6438a2 8x8 522e6ae345bc1a45
+misc fabric low 8x8 6ad6f37f15004c08 8x8 599205de9f6438a2 8x8 b0a9189b6bddf506
+misc brushed low 8x8 16807e88ea4cf03a 8x8 41a511929f0ffae5 8x8 1bdfb43236082517
+misc grain low 8x8 e3684a2c9c3a45e4 8x8 345a5693fbe9fdfa 8x8 e42dd830b854c4da
+misc leather low 8x8 e3684a2c9c3a45e4 8x8 543679f2c1c1de33 8x8 7844c485a573c70f
+misc crate low 8x8 9667d2a7fde61bf7 8x8 345a5693fbe9fdfa 8x8 5f65ff51151663ed
+misc hedge low 8x8 27c508af7798a467 8x8 e884694f8e80985c 8x8 4cacbc188cd74703
+floor terrazzo high 8x8 a4e33f5225a26628 8x8 599205de9f6438a2 8x8 430e0896b283e082 srgb//8/1000
+floor checker high 8x8 3a253f55dd5fca42 8x8 599205de9f6438a2 8x8 e7b7536961bea73a srgb//8/1000
+floor parquet high 8x8 7644677e849f4fe8 8x8 599205de9f6438a2 8x8 ab1a018bebeb25d3 srgb//8/1000
+floor carpet high 8x8 f33aac6c65c096b6 8x8 22098bf328a5897e 8x8 c3a2e919f8d06a94 srgb//8/1000
+floor stage high 8x8 658e1beb9d5db328 8x8 599205de9f6438a2 8x8 f9a03711faec6b5c srgb//8/1000
+floor concrete high 8x8 54ef8a7e6dd885ff 8x8 543679f2c1c1de33 8x8 cb1eb39d5dc5c902 srgb//8/1000
+floor marbleBlack high 8x8 e3a99bc44978f601 8x8 599205de9f6438a2 8x8 591a5fce5b64dac8 srgb//8/1000
+floor pavers high 8x8 10b81fd9ce759f06 8x8 41a511929f0ffae5 8x8 5997a5e272fa71b2 srgb//8/1000
+floor galleryMarble high 8x8 74c32f0f6af782c4 8x8 599205de9f6438a2 8x8 3f3180d5ea296b05 srgb//8/1000
+wall limestone high 8x8 a2e72dddb2b7a6ac 8x8 599205de9f6438a2 8x8 9b97e1100013c0c4
+wall galleryPaint high 8x8 78f5841698159bf5 8x8 41a511929f0ffae5 8x8 0de1c5a8d7754ff9
+wall damaskGreen high 8x8 8779fb53cf18eef1 8x8 345a5693fbe9fdfa 8x8 0de1c5a8d7754ff9
+wall woodPanel high 8x8 e8fe3f7ee269d428 8x8 599205de9f6438a2 8x8 9f5de6e7fcb92415
+wall blackPaint high 8x8 e3a99bc44978f601 8x8 599205de9f6438a2 8x8 6ea460393586553a
+wall drywall high 8x8 4838059f50400a6a 8x8 345a5693fbe9fdfa 8x8 ae1f5c1795460603
+wall cmu high 8x8 b814758c45288a74 8x8 599205de9f6438a2 8x8 ce477501edc5dcfa
+wall damaskPlum high 8x8 eed6113d01271769 8x8 345a5693fbe9fdfa 8x8 0de1c5a8d7754ff9
+wall damaskTeal high 8x8 c867756a20320487 8x8 345a5693fbe9fdfa 8x8 0de1c5a8d7754ff9
+misc plaster high 8x8 792f6aeb56b947b4 8x8 345a5693fbe9fdfa 8x8 c612ec1a06b1c173
+misc acoustic high 8x8 57948e629db3772b 8x8 599205de9f6438a2 8x8 c63e6114f5d48de2
+misc marbleWhite high 8x8 251227cf10efc6dd 8x8 599205de9f6438a2 8x8 522e6ae345bc1a45
+misc fabric high 8x8 6ad6f37f15004c08 8x8 599205de9f6438a2 8x8 b0a9189b6bddf506
+misc brushed high 8x8 16807e88ea4cf03a 8x8 41a511929f0ffae5 8x8 1bdfb43236082517
+misc grain high 8x8 e3684a2c9c3a45e4 8x8 345a5693fbe9fdfa 8x8 e42dd830b854c4da
+misc leather high 8x8 e3684a2c9c3a45e4 8x8 543679f2c1c1de33 8x8 7844c485a573c70f
+misc crate high 8x8 9667d2a7fde61bf7 8x8 345a5693fbe9fdfa 8x8 5f65ff51151663ed
+misc hedge high 8x8 27c508af7798a467 8x8 e884694f8e80985c 8x8 4cacbc188cd74703
+fbm ec62258f74d4e041
+rand 0 0.279,0.676,0.507,0.935,0.697,0.686,0.533,0.374,0.015,0.496,0.13,0.132
+rand 1 0.279,0.676,0.507,0.935,0.697,0.686,0.533,0.374,0.015,0.496,0.13,0.132
+rand 91 0.685,0.556,0.105,0.497,0.576,0.092,0.407,0.84,0.499,0.278,0.289,0.195
+rand 400 0.466,0.374,0.073,0.504,0.467,0.328,0.496,0.859,0.17,0.451,0.36,0.143
+TILE {"terrazzo":[2,2],"checker":[1.2,1.2],"parquet":[2,2],"carpet":[1.2,1.2],"stage":[3,3],"concrete":[3,3],"marbleBlack":[1.2,1.2],"pavers":[2.4,2.4],"galleryMarble":[2,2],"limestone":[2.4,1.2],"galleryPaint":[2,2],"damaskGreen":[0.8,0.8],"woodPanel":[1,1.1],"blackPaint":[2,2],"drywall":[2,2],"cmu":[1.6,0.8],"damaskPlum":[0.8,0.8],"damaskTeal":[0.8,0.8],"plaster":[2,2],"acoustic":[1.2,1.2],"marbleWhite":[1,1],"fabric":[0.5,0.5],"brushed":[1,1],"grain":[1,1],"leather":[0.4,0.4],"crate":[1.2,1.2],"hedge":[0.6,0.6]}
+fonts 'Didot', 'Bodoni 72', 'Bodoni MT', 'Playfair Display', Georgia, 'Times New Roman', 'DejaVu Serif', serif | 'Helvetica Neue', 'Futura', 'Avenir Next', Arial, 'DejaVu Sans', sans-serif | 'Marker Felt', 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', 'DejaVu Sans', cursive
+drawn callsheet-GALA LUMIÈRE — FOLHA DE CHAMADA 600x820 srgb=true n=48 53e477828201ec9f
+drawn cctv-0 320x200 srgb=true n=47 837a69f88a1fe2a6
+drawn cctv-1 320x200 srgb=true n=47 f6151245fd01b723
+drawn cctv-10 320x200 srgb=true n=47 59acefed40067f65
+drawn cctv-11 320x200 srgb=true n=47 a46e1d6345d27f76
+drawn cctv-12 320x200 srgb=true n=47 8d32fc433363777b
+drawn cctv-2 320x200 srgb=true n=47 d09d96ad064fa562
+drawn cctv-3 320x200 srgb=true n=47 8041838b8f90bd87
+drawn cctv-4 320x200 srgb=true n=47 38ff8b9117a1db2e
+drawn cctv-5 320x200 srgb=true n=47 9fe304ca74db0b54
+drawn cctv-6 320x200 srgb=true n=47 0f849282762f6659
+drawn cctv-7 320x200 srgb=true n=47 3247a69f89a24185
+drawn cctv-8 320x200 srgb=true n=47 ffd3fedd9a0a18a1
+drawn cctv-9 320x200 srgb=true n=47 cd8deffbc7183581
+drawn placard-Diamante da coleção de Celine Dion 800x520 srgb=true n=160 9c5d78cdf31cf508

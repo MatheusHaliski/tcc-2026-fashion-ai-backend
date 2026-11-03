@@ -1,0 +1,144 @@
+{
+ "floorOak": {
+  "calls": 6,
+  "sizes": [
+   "512x512",
+   "512x512",
+   "512x512"
+  ],
+  "digest": "f2705531"
+ },
+ "graniteMat": {
+  "calls": 6,
+  "sizes": [
+   "256x256",
+   "256x256",
+   "256x256"
+  ],
+  "digest": "30bf622f"
+ },
+ "plasterMat": {
+  "calls": 6,
+  "sizes": [
+   "256x256",
+   "256x256",
+   "256x256"
+  ],
+  "digest": "e20fa4b3"
+ },
+ "clothWall": {
+  "calls": 6,
+  "sizes": [
+   "256x256",
+   "256x256",
+   "256x256"
+  ],
+  "digest": "57a8fc96"
+ },
+ "wallBase": {
+  "calls": 0,
+  "sizes": [],
+  "digest": "811c9dc5"
+ },
+ "wallTextAtlasPt": {
+  "calls": 62,
+  "sizes": [
+   "1024x1024"
+  ],
+  "digest": "d2eaa299"
+ },
+ "wallTextAtlasEn": {
+  "calls": 54,
+  "sizes": [
+   "2048x2048"
+  ],
+  "digest": "94d1dbf7"
+ },
+ "creditsAtlas": {
+  "calls": 47,
+  "sizes": [
+   "1024x512"
+  ],
+  "digest": "a6d2687b"
+ },
+ "friezeText": {
+  "calls": 14,
+  "sizes": [
+   "2048x128"
+  ],
+  "digest": "93201760"
+ },
+ "labelAtlas": {
+  "calls": 502,
+  "sizes": [
+   "1024x512"
+  ],
+  "digest": "4f9fd57d"
+ },
+ "labelAtlasEs": {
+  "calls": 490,
+  "sizes": [
+   "2048x1024"
+  ],
+  "digest": "c8fc76ab"
+ },
+ "artAtlas": {
+  "calls": 6746,
+  "sizes": [
+   "1024x768"
+  ],
+  "digest": "2e82bf21"
+ },
+ "auroraTex": {
+  "calls": 20,
+  "sizes": [
+   "256x512"
+  ],
+  "digest": "c833431d"
+ },
+ "laylightMat": {
+  "calls": 57,
+  "sizes": [
+   "256x256"
+  ],
+  "digest": "a117b420"
+ },
+ "poolTex": {
+  "calls": 6,
+  "sizes": [
+   "256x256"
+  ],
+  "digest": "9c867d57"
+ },
+ "coveTex": {
+  "calls": 6,
+  "sizes": [
+   "16x256"
+  ],
+  "digest": "7ff94439"
+ },
+ "satinDegrade": {
+  "calls": 6,
+  "sizes": [
+   "8x256"
+  ],
+  "digest": "19146731"
+ },
+ "consts": {
+  "HB_TILE": 1.5273506473629428,
+  "SECTION": {
+   "joias": "#4f1a3f",
+   "aurora": "#1b2c52",
+   "atelie": "#174a38"
+  },
+  "LABEL": [
+   4,
+   4,
+   15
+  ],
+  "ART": [
+   4,
+   2
+  ]
+ }
+}

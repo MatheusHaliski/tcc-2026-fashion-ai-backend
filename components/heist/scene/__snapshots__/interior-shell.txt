@@ -1,0 +1,63 @@
+cellRoom 6c3a5e05366bd8ff inner 075459b9e635d99b parapet 4317bdc98e36ea90
+B servico floor-concrete-low/ffffff/1/0/map/1/1//0 c0r1 1332:2c2b88e3ef331d84:41b2d5bf0b249fea:256470dfeaeb781c
+B cofre floor-marbleBlack-low/ffffff/1/0/map/1/1//0 c0r1 978:16d661b59eeca9b5:1cae4f246699928e:b4aa66289ee0017d
+B galeria floor-galleryMarble-low/ffffff/1/0/map/1/1//0 c0r1 2316:c2ab19aa72bad071:c74b6bca1432fb4c:678d5c8315f71790
+B terraco floor-pavers-low/ffffff/1/0/map/1/1//0 c0r1 978:a9b4f618362bc72b:5bc15070116c7c8d:b4aa66289ee0017d
+B bastidores floor-stage-low/ffffff/1/0/map/1/1//0 c0r1 606:992a7196d68e09d3:b6253494b581edd3:26df032839bba2cf
+B lounge floor-parquet-low/ffffff/1/0/map/1/1//0 c0r1 600:3bfe90dabddd94bb:6c99f012ef4b4623:f270e59487c0399c
+B salao floor-terrazzo-low/ffffff/1/0/map/1/1//0 c0r1 2898:0373a32bbd45e794:3fba9ed18b9901dd:02a123f043885a2a
+B vestibulo floor-checker-low/ffffff/1/0/map/1/1//0 c0r1 966:f2316807035ef721:57ca14017e2cd931:fb9528bf7516c34f
+B doca floor-concrete-low/ffffff/1/0/map/1/1//0 c0r1 684:6b155aeae85a063b:5b3ec6e0bcdeec24:ed75f78b6dbae2a8
+B seguranca floor-concrete-low/ffffff/1/0/map/1/1//0 c0r1 6:9501ee5ff2ecf475:71e12b7b00329331:da4894501548e90d
+B cofre wall-damaskPlum-low/ffffff/1/0/map/1/1//0 c1r1 270:39a004d9d5197aa1:fcfde5c6622cd645:4342e1847ad35d17
+B galeria wall-galleryPaint-low/ffffff/1/0/map/1/1//0 c1r1 252:f8fe8a9b426e9270:4c42c2c4ef17158c:a53f96584c30c453
+B terraco wall-limestone-low/ffffff/1/0/map/1/1//0 c1r1 168:0af2fca3fe402030:6cf798dde845aa78:f59b77b8dc669440
+B servico wall-drywall-low/ffffff/1/0/map/1/1//0 c1r1 1494:01547e326ff2b237:369acb6eb5dfd58b:dffe07cad0c33a15
+B salao wall-limestone-low/ffffff/1/0/map/1/1//0 c1r1 360:d9153fc3c58b9f62:63fa6820308743c9:44ab7930ccc6c9b0
+B bastidores wall-blackPaint-low/ffffff/1/0/map/1/1//0 c1r1 216:9e52f2fd87dcf24c:2012292c8a6061e5:65aff386c462d723
+B seguranca wall-drywall-low/ffffff/1/0/map/1/1//0 c1r1 132:5053e27f3b5df277:b41b7592efe7665a:3c000c14e071c514
+B lounge wall-damaskTeal-low/ffffff/1/0/map/1/1//0 c1r1 144:54942ee5eea536b6:fe84bf3956a6d9f4:fcaf9d46f6a4642a
+B vestibulo wall-limestone-low/ffffff/1/0/map/1/1//0 c1r1 216:afeb44fb734ce114:f27ec0ef27be222a:65aff386c462d723
+B doca wall-cmu-low/ffffff/1/0/map/1/1//0 c1r1 252:ecf54027430624ed:3cdd87702a2a19b0:f1fa92b121ba24c1
+B cofre solid-brass/c9a24b/0.28/1//1/1//0 c0r1 252:e65d91060edd7882:5e23d9a69ffa4e9f:d6ed38162e6f846e
+B cofre misc-plaster-low--0-0/ffffff/1/0/map/1/1//0 c0r1 252:d4d0589461666d28:5e23d9a69ffa4e9f:d6ed38162e6f846e
+B cofre solid-gold/b48a3c/0.38/1//1/1//0 c0r1 252:bc276d182eac97e0:5e23d9a69ffa4e9f:d6ed38162e6f846e
+B galeria solid-black/0b0b0c/0.55/0//1/1//0 c0r1 252:09478424f22de291:5e23d9a69ffa4e9f:d6ed38162e6f846e
+B servico solid-rubber/151515/0.9/0//1/1//0 c0r1 2772:4adbddeeae441c41:f4a69e0e61439151:bf7ce45c83acf09b
+B salao plainfloor-marbleBlack-low-/ffffff/1/0/map/1/1//0 c0r1 324:4a3d6793639363b1:1599ef1805666988:2be398a61fcfab79
+B seguranca solid-rubber/151515/0.9/0//1/1//0 c0r1 180:d8a901a044144102:0ae71b6d79e06aa6:25cd82410fe82252
+B lounge misc-grain-low-#5a2414-0-0/5a2414/1/0/map/1/1//0 c0r1 432:e6291a98d666e4b3:919a850db8520892:c451ae7bed5986a7
+B lounge misc-plaster-low--0-0/ffffff/1/0/map/1/1//0 c0r1 216:e687051285a1224a:d0722aa59b26fd12:1f0793d6ee486352
+B lounge solid-gold/b48a3c/0.38/1//1/1//0 c0r1 216:2c8d7e445bacfe85:d0722aa59b26fd12:1f0793d6ee486352
+B vestibulo plainfloor-marbleBlack-low-/ffffff/1/0/map/1/1//0 c0r1 252:34b8d0c8022aeec6:5e23d9a69ffa4e9f:d6ed38162e6f846e
+B vestibulo misc-plaster-low--0-0/ffffff/1/0/map/1/1//0 c0r1 504:5708d36eb9ca0a8b:b41215d444b55874:42bf1571138478ff
+B servico misc-acoustic-low--0-1/ffffff/1/0/map/1/1//0 c1r1 6:be8bc92ad4d8ff3d:01cd2936b9c5815c:ad2f21a101bd6d34
+B cofre solid-ceilDark/0d0d10/0.9/0//1/1//0 c1r1 6:126bd46fb8a093f8:8fbb678e0f019c5a:ad2f21a101bd6d34
+B galeria solid-ceilDark/0d0d10/0.9/0//1/1//0 c1r1 6:ef791775746658e5:db256a8bdb64436a:ad2f21a101bd6d34
+B bastidores solid-ceilDark/0d0d10/0.9/0//1/1//0 c1r1 6:725869208940f2ec:7bb1c431499d8784:ad2f21a101bd6d34
+B lounge solid-ceilDark/0d0d10/0.9/0//1/1//0 c1r1 6:cc6a1b1c0f896067:d1d55add72506d73:ad2f21a101bd6d34
+B vestibulo misc-plaster-low--0-1/ffffff/1/0/map/1/1//0 c1r1 6:acfd548cf230db68:af062c66c32e568e:ad2f21a101bd6d34
+B doca solid-ceilDark/0d0d10/0.9/0//1/1//0 c1r1 6:5f9950000e5c2e48:10e468773a06c3c3:ad2f21a101bd6d34
+B servico wall-drywall-low/ffffff/1/0/map/1/1//0 c0r1 438:3f528e1f25acfe3f:b9911c83c7315caa:8dd1665aa8d01870
+B terraco plainwall-limestone-low-#d9d0bf/d9d0bf/1/0/map/1/1//0 c0r1 1620:03943e773181745e:b5a92c7187100cba:242b2e93050a3bfd
+door carpetGate h2.6 {"along":"x","lo":"rua","hi":"rua","c":0,"w0":-1.5,"w1":1.5,"t0":31,"t1":31.5}
+door front h4.2 {"along":"x","lo":"vestibulo","hi":"rua","c":0,"w0":-2,"w1":2,"t0":24,"t1":24.5}
+door dockGate h4.2 {"along":"x","lo":"doca","hi":"rua","c":-19,"w0":-21,"w1":-17,"t0":24,"t1":24.5}
+door side h2.6 {"along":"z","lo":"doca","hi":"vestibulo","c":21.25,"w0":20,"w1":22.5,"t0":-8.5,"t1":-8}
+door main h4 {"along":"x","lo":"salao","hi":"vestibulo","c":0,"w0":-2,"w1":2,"t0":14,"t1":14.5}
+door service h2.6 {"along":"x","lo":"servico","hi":"doca","c":-19,"w0":-20,"w1":-18,"t0":16,"t1":16.5}
+door staff h2.6 {"along":"z","lo":"servico","hi":"salao","c":10,"w0":9,"w1":11,"t0":-12.5,"t1":-12}
+door lounge h2.6 {"along":"z","lo":"salao","hi":"lounge","c":10,"w0":9,"w1":11,"t0":12,"t1":12.5}
+door backstage h2.6 {"along":"x","lo":"bastidores","hi":"lounge","c":17,"w0":16,"w1":18,"t0":4,"t1":4.5}
+door stage h2.6 {"along":"z","lo":"salao","hi":"bastidores","c":-2,"w0":-3,"w1":-1,"t0":12,"t1":12.5}
+door gallery h4 {"along":"x","lo":"galeria","hi":"salao","c":0,"w0":-2,"w1":2,"t0":-6.5,"t1":-6}
+door vault h2.8 {"along":"z","lo":"cofre","hi":"galeria","c":-15,"w0":-16,"w1":-14,"t0":-12.5,"t1":-12}
+door terrace h2.6 {"along":"z","lo":"galeria","hi":"terraco","c":-15,"w0":-16,"w1":-14,"t0":12,"t1":12.5}
+door staffTerrace h2.6 {"along":"x","lo":"terraco","hi":"bastidores","c":17,"w0":16,"w1":18,"t0":-6.5,"t1":-6}
+door vent h0.8 {"along":"x","lo":"cofre","hi":"servico","c":-17.5,"w0":-18,"w1":-17,"t0":-6.5,"t1":-6}
+door secDoor h2.6 {"along":"z","lo":"seguranca","hi":"servico","c":4.75,"w0":4,"w1":5.5,"t0":-18.5,"t1":-18}
+door windowT h2.6 {"along":"x","lo":"beiral","hi":"terraco","c":19.5,"w0":19,"w1":20,"t0":-22.5,"t1":-22}
+door windowC h2.6 {"along":"x","lo":"beiral","hi":"cofre","c":-19.5,"w0":-20,"w1":-19,"t0":-22.5,"t1":-22}
+door fireEscape h2.6 {"along":"z","lo":"terraco","hi":"beco","c":-14,"w0":-15,"w1":-13,"t0":22,"t1":22.5}
+roomAt -,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,cofre,cofre,cofre,cofre,cofre,servico,servico,servico,seguranca,seguranca,servico,servico,servico,doca,doca,doca,-,cofre,cofre,cofre,cofre,cofre,servico,servico,servico,servico,servico,servico,servico,servico,doca,doca,doca,-,cofre,cofre,cofre,cofre,cofre,servico,servico,servico,servico,servico,servico,servico,servico,doca,doca,doca,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,-,doca,doca,doca,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,-,doca,doca,doca,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,vestibulo,vestibulo,vestibulo,vestibulo,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,vestibulo,vestibulo,vestibulo,vestibulo,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,vestibulo,vestibulo,vestibulo,vestibulo,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,vestibulo,vestibulo,vestibulo,vestibulo,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,vestibulo,vestibulo,vestibulo,vestibulo,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,-,-,-,-,-,galeria,galeria,galeria,galeria,galeria,salao,salao,salao,salao,salao,salao,salao,-,-,-,-,-,terraco,terraco,terraco,terraco,terraco,bastidores,bastidores,bastidores,bastidores,lounge,lounge,lounge,-,-,-,-,-,terraco,terraco,terraco,terraco,terraco,bastidores,bastidores,bastidores,bastidores,lounge,lounge,lounge,-,-,-,-,-,terraco,terraco,terraco,terraco,terraco,bastidores,bastidores,bastidores,bastidores,lounge,lounge,lounge,-,-,-,-,-,beco,beco,beco,beco,beco,beco,beco,beco,beco,beco,beco,beco,beco,beco,beco,beco
+STYLE {"vestibulo":{"h":6.5,"floor":"checker","wall":"limestone","ceil":"plaster","base":"marble","crown":true},"salao":{"h":9.5,"floor":"terrazzo","wall":"limestone","ceil":null,"base":"marble","crown":false},"galeria":{"h":5.5,"floor":"galleryMarble","wall":"galleryPaint","ceil":"dark","base":"black","crown":false},"lounge":{"h":4.6,"floor":"parquet","wall":"damaskTeal","ceil":"dark","base":"wood","crown":true},"bastidores":{"h":4.6,"floor":"stage","wall":"blackPaint","ceil":"dark","base":null,"crown":false},"servico":{"h":3.6,"floor":"concrete","wall":"drywall","ceil":"acoustic","base":"rubber","crown":false},"seguranca":{"h":3.6,"floor":"concrete","wall":"drywall","ceil":null,"base":"rubber","crown":false},"doca":{"h":6,"floor":"concrete","wall":"cmu","ceil":"dark","base":null,"crown":false},"cofre":{"h":5.2,"floor":"marbleBlack","wall":"damaskPlum","ceil":"dark","base":"brass","crown":true},"terraco":{"h":7,"floor":"pavers","wall":"limestone","ceil":null,"base":null,"crown":false}} vestibulo,salao,galeria,lounge,terraco,bastidores,servico,seguranca,doca,cofre 3.2 1.15

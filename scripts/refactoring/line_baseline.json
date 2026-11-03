@@ -104,22 +104,6 @@
    "max": 531,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "components/heist/scene/interior-fx.ts": {
-   "max": 505,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/heist/scene/interior-hall.ts": {
-   "max": 398,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/heist/scene/interior-props.ts": {
-   "max": 671,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/heist/scene/interior-tex.ts": {
-   "max": 412,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "components/interactions.tsx": {
    "max": 361,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -746,10 +730,6 @@
   },
   "lib/avatar3d/human/hair-strands.ts": {
    "max": 714,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/locomotion.ts": {
-   "max": 1005,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/avatar3d/human/three-human.ts": {

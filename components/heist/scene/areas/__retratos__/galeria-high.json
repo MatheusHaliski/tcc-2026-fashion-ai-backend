@@ -1,0 +1,3152 @@
+{
+ "surfaces": {
+  "galeria": {
+   "floor": "MeshStandardMaterial|galeria-parquet-high|ffffff|1|0|000000|1|1|0|0|1|1|1|0.9|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "floorTile": [
+    1.5273506473629428,
+    1.5273506473629428
+   ],
+   "floorMirror": [
+    0.42,
+    0.035
+   ],
+   "wall": "MeshStandardMaterial|galeria-casca-high|4a4541|1|0|000000|1|1|0|0|1|1|1|0.5|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "wallTile": [
+    2,
+    2
+   ],
+   "ceil": "MeshStandardMaterial|galeria-gesso-high-#d8ccb8|d8ccb8|1|0|000000|1|1|0|0|1|1|0|0.7|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "trims": false
+  }
+ },
+ "props": [
+  "case-147:case:1",
+  "case-148:case:0",
+  "case-149:case:2",
+  "case-150:case:3",
+  "case-151:case:3",
+  "case-152:case:3",
+  "case-153:case:3",
+  "bench-154:bench:",
+  "statue-155:statue:0",
+  "statue-156:statue:0",
+  "statue-157:statue:1",
+  "statue-158:statue:2",
+  "jewelVitrine-159:fixture:jewelVitrine",
+  "sketchTable-160:fixture:sketchTable",
+  "catalogStand-161:fixture:catalogStand",
+  "audioGuide-162:fixture:audioGuide"
+ ],
+ "keys": {
+  "galeria": [
+   {
+    "p": [
+     0,
+     5,
+     -13.6
+    ],
+    "aim": [
+     0,
+     0.6,
+     -17
+    ],
+    "angle": 0.72,
+    "i": 52,
+    "color": "#fff1dc"
+   },
+   {
+    "p": [
+     -6.5,
+     5,
+     -10.6
+    ],
+    "aim": [
+     -6.5,
+     0.4,
+     -14.5
+    ],
+    "angle": 0.85,
+    "i": 44,
+    "color": "#fff1dc"
+   },
+   {
+    "p": [
+     6.5,
+     5,
+     -10.6
+    ],
+    "aim": [
+     6.5,
+     0.4,
+     -14.5
+    ],
+    "angle": 0.85,
+    "i": 44,
+    "color": "#fff1dc"
+   }
+  ]
+ },
+ "anchors": [
+  {
+   "x": 0,
+   "y": 2.2,
+   "z": -16.9,
+   "color": "#fff1dc",
+   "intensity": 9,
+   "distance": 4.5,
+   "room": "galeria"
+  },
+  {
+   "x": -6.5,
+   "y": 2.2,
+   "z": -14.4,
+   "color": "#fff1dc",
+   "intensity": 5.5,
+   "distance": 4.5,
+   "room": "galeria"
+  },
+  {
+   "x": 6.5,
+   "y": 2.2,
+   "z": -14.4,
+   "color": "#fff1dc",
+   "intensity": 5.5,
+   "distance": 4.5,
+   "room": "galeria"
+  },
+  {
+   "x": -10.8,
+   "y": 2,
+   "z": -19,
+   "color": "#fff1dc",
+   "intensity": 3,
+   "distance": 3,
+   "room": "galeria"
+  },
+  {
+   "x": 10.8,
+   "y": 2,
+   "z": -19,
+   "color": "#fff1dc",
+   "intensity": 3,
+   "distance": 3,
+   "room": "galeria"
+  },
+  {
+   "x": -10.8,
+   "y": 2,
+   "z": -10,
+   "color": "#fff1dc",
+   "intensity": 3,
+   "distance": 3,
+   "room": "galeria"
+  },
+  {
+   "x": 10.8,
+   "y": 2,
+   "z": -10,
+   "color": "#fff1dc",
+   "intensity": 3,
+   "distance": 3,
+   "room": "galeria"
+  },
+  {
+   "x": -3.5,
+   "y": 3.3,
+   "z": -19.6,
+   "color": "#ffe9cc",
+   "intensity": 6,
+   "distance": 4.5,
+   "room": "galeria"
+  },
+  {
+   "x": 3.5,
+   "y": 3.3,
+   "z": -19.6,
+   "color": "#ffe9cc",
+   "intensity": 6,
+   "distance": 4.5,
+   "room": "galeria"
+  },
+  {
+   "x": -9,
+   "y": 3,
+   "z": -8.6,
+   "color": "#ffe9cc",
+   "intensity": 5.5,
+   "distance": 4.5,
+   "room": "galeria"
+  },
+  {
+   "x": 9,
+   "y": 3,
+   "z": -8.6,
+   "color": "#ffe9cc",
+   "intensity": 5.5,
+   "distance": 4.5,
+   "room": "galeria"
+  },
+  {
+   "x": -6.5,
+   "y": 1.5,
+   "z": -18.8,
+   "color": "#fff4e6",
+   "intensity": 2.6,
+   "distance": 2.4,
+   "room": "galeria"
+  },
+  {
+   "x": 6.5,
+   "y": 1.6,
+   "z": -10.3,
+   "color": "#fff0d6",
+   "intensity": 2.4,
+   "distance": 2.6,
+   "room": "galeria"
+  },
+  {
+   "x": 4.35,
+   "y": 1.1,
+   "z": -7.3,
+   "color": "#c9a4ff",
+   "intensity": 0.8,
+   "distance": 1.6,
+   "room": "galeria"
+  },
+  {
+   "x": -11.4,
+   "y": 3,
+   "z": -19,
+   "color": "#ffd9b0",
+   "intensity": 1.8,
+   "distance": 3,
+   "room": "galeria"
+  },
+  {
+   "x": 11.4,
+   "y": 3,
+   "z": -19,
+   "color": "#ffd9b0",
+   "intensity": 1.8,
+   "distance": 3,
+   "room": "galeria"
+  },
+  {
+   "x": -11.4,
+   "y": 3,
+   "z": -10,
+   "color": "#ffd9b0",
+   "intensity": 1.8,
+   "distance": 3,
+   "room": "galeria"
+  },
+  {
+   "x": 11.4,
+   "y": 3,
+   "z": -10,
+   "color": "#ffd9b0",
+   "intensity": 1.8,
+   "distance": 3,
+   "room": "galeria"
+  },
+  {
+   "x": -2,
+   "y": 4.7,
+   "z": -16.2,
+   "color": "#ffe8cc",
+   "intensity": 6.5,
+   "distance": 9,
+   "room": "galeria"
+  },
+  {
+   "x": -2,
+   "y": 4.7,
+   "z": -12.3,
+   "color": "#ffe8cc",
+   "intensity": 6.5,
+   "distance": 9,
+   "room": "galeria"
+  },
+  {
+   "x": 2,
+   "y": 4.7,
+   "z": -16.2,
+   "color": "#ffe8cc",
+   "intensity": 6.5,
+   "distance": 9,
+   "room": "galeria"
+  },
+  {
+   "x": 2,
+   "y": 4.7,
+   "z": -12.3,
+   "color": "#ffe8cc",
+   "intensity": 6.5,
+   "distance": 9,
+   "room": "galeria"
+  },
+  {
+   "x": 0,
+   "y": 1.3,
+   "z": -21.1,
+   "color": "#ff8a4a",
+   "intensity": 8,
+   "distance": 6,
+   "room": "galeria"
+  },
+  {
+   "x": 0,
+   "y": 3.4,
+   "z": -21.2,
+   "color": "#e87aa8",
+   "intensity": 3.5,
+   "distance": 4.5,
+   "room": "galeria"
+  },
+  {
+   "x": -9.9,
+   "y": 2.8,
+   "z": -21.2,
+   "color": "#ffe6c4",
+   "intensity": 2.6,
+   "distance": 4.2,
+   "room": "galeria"
+  },
+  {
+   "x": -6,
+   "y": 2.8,
+   "z": -21.2,
+   "color": "#ffe6c4",
+   "intensity": 2.6,
+   "distance": 4.2,
+   "room": "galeria"
+  },
+  {
+   "x": 6,
+   "y": 2.8,
+   "z": -21.2,
+   "color": "#ffe6c4",
+   "intensity": 2.6,
+   "distance": 4.2,
+   "room": "galeria"
+  },
+  {
+   "x": 9.9,
+   "y": 2.8,
+   "z": -21.2,
+   "color": "#ffe6c4",
+   "intensity": 2.6,
+   "distance": 4.2,
+   "room": "galeria"
+  },
+  {
+   "x": 6,
+   "y": 2.8,
+   "z": -7.3,
+   "color": "#ffe6c4",
+   "intensity": 2.6,
+   "distance": 4.2,
+   "room": "galeria"
+  },
+  {
+   "x": -6,
+   "y": 2.8,
+   "z": -7.3,
+   "color": "#ffe6c4",
+   "intensity": 2.6,
+   "distance": 4.2,
+   "room": "galeria"
+  },
+  {
+   "x": -11.2,
+   "y": 2.8,
+   "z": -12.25,
+   "color": "#ffe6c4",
+   "intensity": 2.6,
+   "distance": 4.2,
+   "room": "galeria"
+  },
+  {
+   "x": 11.2,
+   "y": 2.8,
+   "z": -12.25,
+   "color": "#ffe6c4",
+   "intensity": 2.6,
+   "distance": 4.2,
+   "room": "galeria"
+  },
+  {
+   "x": 0,
+   "y": 4.4,
+   "z": -6.85,
+   "color": "#3dff8a",
+   "intensity": 0.7,
+   "distance": 2.5,
+   "room": "galeria"
+  }
+ ],
+ "flames": [],
+ "beacons": [
+  {
+   "room": "galeria",
+   "pos": [
+    -11.82,
+    4.12,
+    -17.25
+   ],
+   "normal": [
+    1,
+    0,
+    0
+   ]
+  },
+  {
+   "room": "galeria",
+   "pos": [
+    11.82,
+    4.12,
+    -12.25
+   ],
+   "normal": [
+    -1,
+    0,
+    0
+   ]
+  }
+ ],
+ "cones": [
+  {
+   "room": "galeria",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    -1.174,
+    4.842,
+    -14.31
+   ],
+   "rot": [
+    -2.378,
+    0.305,
+    2.861
+   ],
+   "scale": [
+    0.5,
+    4.447,
+    0.5
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "galeria",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    1.174,
+    4.842,
+    -14.31
+   ],
+   "rot": [
+    -2.378,
+    -0.305,
+    -2.861
+   ],
+   "scale": [
+    0.5,
+    4.447,
+    0.5
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "galeria",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    -6.009,
+    4.851,
+    -10.45
+   ],
+   "rot": [
+    -2.283,
+    -0.079,
+    -3.05
+   ],
+   "scale": [
+    0.45,
+    5.409,
+    0.45
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "galeria",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    6.009,
+    4.851,
+    -10.45
+   ],
+   "rot": [
+    -2.283,
+    0.079,
+    3.05
+   ],
+   "scale": [
+    0.45,
+    5.409,
+    0.45
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "galeria",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    -3.5,
+    4.838,
+    -18.187
+   ],
+   "rot": [
+    -2.475,
+    0,
+    -3.142
+   ],
+   "scale": [
+    0.4,
+    3.74,
+    0.4
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "room": "galeria",
+   "type": "Mesh",
+   "name": "",
+   "pos": [
+    3.5,
+    4.838,
+    -18.187
+   ],
+   "rot": [
+    -2.475,
+    0,
+    -3.142
+   ],
+   "scale": [
+    0.4,
+    3.74,
+    0.4
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "animated": [],
+ "ticks": [],
+ "groupAfterTick1": [
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    -1.174,
+    4.842,
+    -14.31
+   ],
+   "rot": [
+    -2.378,
+    0.305,
+    2.861
+   ],
+   "scale": [
+    0.5,
+    4.447,
+    0.5
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    1.174,
+    4.842,
+    -14.31
+   ],
+   "rot": [
+    -2.378,
+    -0.305,
+    -2.861
+   ],
+   "scale": [
+    0.5,
+    4.447,
+    0.5
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    -6.009,
+    4.851,
+    -10.45
+   ],
+   "rot": [
+    -2.283,
+    -0.079,
+    -3.05
+   ],
+   "scale": [
+    0.45,
+    5.409,
+    0.45
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    6.009,
+    4.851,
+    -10.45
+   ],
+   "rot": [
+    -2.283,
+    0.079,
+    3.05
+   ],
+   "scale": [
+    0.45,
+    5.409,
+    0.45
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    -3.5,
+    4.838,
+    -18.187
+   ],
+   "rot": [
+    -2.475,
+    0,
+    -3.142
+   ],
+   "scale": [
+    0.4,
+    3.74,
+    0.4
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    3.5,
+    4.838,
+    -18.187
+   ],
+   "rot": [
+    -2.475,
+    0,
+    -3.142
+   ],
+   "scale": [
+    0.4,
+    3.74,
+    0.4
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "groupAfterTick2": [
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    -1.174,
+    4.842,
+    -14.31
+   ],
+   "rot": [
+    -2.378,
+    0.305,
+    2.861
+   ],
+   "scale": [
+    0.5,
+    4.447,
+    0.5
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    1.174,
+    4.842,
+    -14.31
+   ],
+   "rot": [
+    -2.378,
+    -0.305,
+    -2.861
+   ],
+   "scale": [
+    0.5,
+    4.447,
+    0.5
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    -6.009,
+    4.851,
+    -10.45
+   ],
+   "rot": [
+    -2.283,
+    -0.079,
+    -3.05
+   ],
+   "scale": [
+    0.45,
+    5.409,
+    0.45
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    6.009,
+    4.851,
+    -10.45
+   ],
+   "rot": [
+    -2.283,
+    0.079,
+    3.05
+   ],
+   "scale": [
+    0.45,
+    5.409,
+    0.45
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    -3.5,
+    4.838,
+    -18.187
+   ],
+   "rot": [
+    -2.475,
+    0,
+    -3.142
+   ],
+   "scale": [
+    0.4,
+    3.74,
+    0.4
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  },
+  {
+   "type": "Mesh",
+   "name": "",
+   "room": "galeria",
+   "pos": [
+    3.5,
+    4.838,
+    -18.187
+   ],
+   "rot": [
+    -2.475,
+    0,
+    -3.142
+   ],
+   "scale": [
+    0.4,
+    3.74,
+    0.4
+   ],
+   "visible": true,
+   "renderOrder": 3,
+   "mat": "ShaderMaterial|(sem nome)|-|||-||1|1|2|2|0|0||||-|-|-|-|-|-|{}",
+   "geo": {
+    "n": 50,
+    "bbox": [
+     -1,
+     -1,
+     -1,
+     1,
+     0,
+     1
+    ],
+    "hash": "d5709d42"
+   },
+   "children": 0
+  }
+ ],
+ "batch": [
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-acoPreto|121314|0.45|0.6|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6708,
+   "bbox": [
+    -12,
+    0,
+    -22,
+    12,
+    5.1,
+    -6.47
+   ],
+   "hash": "76d47884"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-laca|16171a|0.32|0|000000|1|1|0|0|1|1|0|1.1|0.8|0|000000|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 288,
+   "bbox": [
+    -11.6,
+    0.03,
+    -20,
+    11.6,
+    1.01,
+    -7.09
+   ],
+   "hash": "288aafda"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-latao|c9a24b|0.28|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 22620,
+   "bbox": [
+    -12,
+    0,
+    -22,
+    12,
+    4.332,
+    -6.5
+   ],
+   "hash": "6a00fe05"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-veludoDeck-piso1-high|0c1328|0.92|0|000000|1|1|0|0|1|1|0|0.4|0|0.7|16203d|8x8/srgb/1000|-|8x8//1000|-|0.3|{}",
+   "cast": false,
+   "receive": true,
+   "n": 996,
+   "bbox": [
+    -0.985,
+    0.42,
+    -17.985,
+    0.985,
+    0.507,
+    -16.015
+   ],
+   "hash": "bb73e24a"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-vidro|e4eeec|0.03|0|000000|1|0.13|1|2|1|0|0|1.8|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2292,
+   "bbox": [
+    -11.972,
+    0.42,
+    -21.972,
+    11.972,
+    2.5,
+    -7.43
+   ],
+   "hash": "6b04258c"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-vidroAresta|7fb3a4|0.08|0|000000|1|0.55|1|0|1|0|0|1.4|1|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2820,
+   "bbox": [
+    -11.601,
+    0.42,
+    -20.001,
+    11.601,
+    2.502,
+    -8.999
+   ],
+   "hash": "6adcd770"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-acoPreto|121314|0.45|0.6|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 324,
+   "bbox": [
+    -11.606,
+    0.02,
+    -20.006,
+    11.606,
+    2.72,
+    -7.04
+   ],
+   "hash": "8fdbf92e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-difusor|e1cdb0|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 42,
+   "bbox": [
+    -11.49,
+    2.278,
+    -19.89,
+    11.49,
+    2.478,
+    -9.11
+   ],
+   "hash": "468e4cda"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-cromo|d9dadc|0.12|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 432,
+   "bbox": [
+    -5.672,
+    0.458,
+    -16.002,
+    7.352,
+    0.482,
+    -13.59
+   ],
+   "hash": "0396fce6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-plastico|e8e6e0|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2484,
+   "bbox": [
+    -12.015,
+    1.55,
+    -21.892,
+    12.015,
+    5.5,
+    -6.608
+   ],
+   "hash": "13b67ad2"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-manequim|e9e2d4|0.62|0|000000|1|1|0|0|1|1|0|0.6|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 9240,
+   "bbox": [
+    -9.17,
+    1.18,
+    -17.139,
+    9.17,
+    2.095,
+    -7.461
+   ],
+   "hash": "90bbd824"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-manequim|e9e2d4|0.62|0|000000|1|1|0|0|1|1|0|0.6|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 23712,
+   "bbox": [
+    -9.212,
+    0.947,
+    -17.085,
+    9.251,
+    2.306,
+    -7.515
+   ],
+   "hash": "5c7f4ae2"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-aurora|ffffff|0.42|0|000000|1|1|0|2|1|1|0|1|0.2|1|fff3e0|8x8/srgb/1001|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 7488,
+   "bbox": [
+    -0.962,
+    0.51,
+    -18.314,
+    0.961,
+    1.9,
+    -16.199
+   ],
+   "hash": "b459d8d7"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-auroraTule|f6eaff|0.6|0|000000|1|0.32|1|2|1|0|0|1|0|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 7488,
+   "bbox": [
+    -1.046,
+    0.51,
+    -18.517,
+    1.032,
+    1.9,
+    -16.148
+   ],
+   "hash": "12078cec"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-auroraCinto|d9b46a|0.3|0|000000|1|1|0|2|1|1|0|1|0.2|1|fff1c8|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1920,
+   "bbox": [
+    -0.17,
+    1.512,
+    -17.143,
+    0.17,
+    1.548,
+    -16.857
+   ],
+   "hash": "d0403f76"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-etiquetaMat-<uuid>|ffffff|0.75|0|ffffff|0.16|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 102,
+   "bbox": [
+    -10.402,
+    0.06,
+    -20.214,
+    10.402,
+    0.695,
+    -7.17
+   ],
+   "hash": "2fb30a00"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-veludoDeck-piso0-high|2a0d20|0.92|0|000000|1|1|0|0|1|1|0|0.4|0|0.7|401832|8x8/srgb/1000|-|8x8//1000|-|0.3|{}",
+   "cast": false,
+   "receive": true,
+   "n": 996,
+   "bbox": [
+    -7.385,
+    0.42,
+    -15.385,
+    -5.615,
+    0.507,
+    -13.615
+   ],
+   "hash": "e329adda"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-luvaMarfim|efe6d5|0.35|0|000000|1|1|0|2|1|1|0|1|0.2|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2136,
+   "bbox": [
+    -6.797,
+    1.326,
+    -14.651,
+    -6.228,
+    1.663,
+    -14.362
+   ],
+   "hash": "117398a6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|fabric-galeria-veludoNoite-high|141c3a|0.55|0|000000|1|1|0|0|1|1|0|0.6|0|1|b3bcff|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": true,
+   "receive": true,
+   "n": 6912,
+   "bbox": [
+    -6.836,
+    0.51,
+    -14.887,
+    -6.178,
+    1.9,
+    -14.226
+   ],
+   "hash": "849c95b0"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|fabric-galeria-estola-high|f4f1ea|0.95|0|000000|1|1|0|0|1|1|0|0.6|0|1|ffffff|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": true,
+   "receive": true,
+   "n": 2160,
+   "bbox": [
+    -6.749,
+    1.76,
+    -14.718,
+    -6.251,
+    1.95,
+    -14.302
+   ],
+   "hash": "f35a1a7a"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-veludoDeck-piso2-high|0a2219|0.92|0|000000|1|1|0|0|1|1|0|0.4|0|0.7|133528|8x8/srgb/1000|-|8x8//1000|-|0.3|{}",
+   "cast": false,
+   "receive": true,
+   "n": 996,
+   "bbox": [
+    5.615,
+    0.42,
+    -15.385,
+    7.385,
+    0.507,
+    -13.615
+   ],
+   "hash": "a50de58a"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-carmim|8e0f24|0.38|0|000000|1|1|0|2|1|1|0|1|0.2|1|ff9aa8|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 8064,
+   "bbox": [
+    5.81,
+    0.51,
+    -15.298,
+    7.211,
+    1.9,
+    -13.896
+   ],
+   "hash": "8fa6770d"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-carmimTule|a3122c|0.6|0|000000|1|0.86|1|2|1|0|0|1|0|1|ff8fa0|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 10800,
+   "bbox": [
+    5.71,
+    0.515,
+    -15.229,
+    7.29,
+    1.005,
+    -13.851
+   ],
+   "hash": "d2abf765"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-veludoDeck-paredeJ-high|2a0d20|0.92|0|000000|1|1|0|0|1|1|0|0.4|0|0.7|401832|8x8/srgb/1000|-|8x8//1000|-|0.3|{}",
+   "cast": false,
+   "receive": true,
+   "n": 360,
+   "bbox": [
+    -11.585,
+    0.8,
+    -19.985,
+    -10.415,
+    2.282,
+    -9.015
+   ],
+   "hash": "9ce66a26"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-vitrineFundo|957e65|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    -11.574,
+    0.83,
+    -19.96,
+    11.574,
+    2.28,
+    -9.04
+   ],
+   "hash": "19e67c56"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|fabric-galeria-feltro-cabeca-high|cfc3ad|0.95|0|000000|1|1|0|0|1|1|0|0.6|0|1|e1dacf|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 5280,
+   "bbox": [
+    -11.52,
+    1.097,
+    -19.745,
+    11.52,
+    1.677,
+    -9.565
+   ],
+   "hash": "6b3076f6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|fabric-galeria-feltro-capelina-high|151517|0.95|0|000000|1|1|0|0|1|1|0|0.6|0|1|a1a1a1|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1920,
+   "bbox": [
+    -11.717,
+    1.417,
+    -18.68,
+    11.457,
+    1.743,
+    -9.35
+   ],
+   "hash": "d5e1e82a"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-fitaRosa|c75a7c|0.35|0|000000|1|1|0|2|1|1|0|1|0.2|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 384,
+   "bbox": [
+    -11.533,
+    1.464,
+    -18.492,
+    11.273,
+    1.67,
+    -9.538
+   ],
+   "hash": "de56e1a2"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|fabric-galeria-feltro-cloche-high|6b5a7a|0.95|0|000000|1|1|0|0|1|1|0|0.6|0|1|b2adb8|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 672,
+   "bbox": [
+    -11.295,
+    1.482,
+    -19.185,
+    -11.025,
+    1.642,
+    -18.915
+   ],
+   "hash": "3bd6f51e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-fitaPreta|111111|0.3|0|000000|1|1|0|2|1|1|0|1|0.2|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1152,
+   "bbox": [
+    -11.29,
+    1.5,
+    -19.18,
+    -11.03,
+    1.514,
+    -18.92
+   ],
+   "hash": "065dea1e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|fabric-galeria-veludoVinho-high|4a0f22|0.8|0|000000|1|1|0|0|1|1|0|0.6|0|1|a9a0a2|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1008,
+   "bbox": [
+    -11.01,
+    1.252,
+    -19.76,
+    11.53,
+    1.689,
+    -10.4
+   ],
+   "hash": "cdb821d4"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-veu|1a1a1e|0.8|0|000000|1|0.35|1|2|1|0|0|1|0|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 2052,
+   "bbox": [
+    -10.984,
+    1.169,
+    -19.786,
+    11.504,
+    1.652,
+    -10.374
+   ],
+   "hash": "1a6e6c72"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-veludoDeck-paredeA-high|0a2219|0.92|0|000000|1|1|0|0|1|1|0|0.4|0|0.7|133528|8x8/srgb/1000|-|8x8//1000|-|0.3|{}",
+   "cast": false,
+   "receive": true,
+   "n": 360,
+   "bbox": [
+    10.415,
+    0.8,
+    -19.985,
+    11.585,
+    2.282,
+    -9.015
+   ],
+   "hash": "692fd716"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-pelicaMarfim|efe6d5|0.45|0|000000|1|1|0|2|1|1|0|1|0.2|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 7320,
+   "bbox": [
+    11.39,
+    1.202,
+    -19.586,
+    11.45,
+    1.812,
+    -19.344
+   ],
+   "hash": "03704cc6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-acrilico|e8eef0|0.05|0|000000|1|0.35|1|0|1|0|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 432,
+   "bbox": [
+    11.12,
+    1.022,
+    -19.59,
+    11.46,
+    1.202,
+    -18.71
+   ],
+   "hash": "6d2fe346"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-pelicaPreta|151517|0.5|0|000000|1|1|0|2|1|1|0|1|0.2|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 4584,
+   "bbox": [
+    10.85,
+    0.86,
+    -18.786,
+    11.19,
+    1.502,
+    -9.901
+   ],
+   "hash": "8746f2f7"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-cetimVinho|5a0f22|0.35|0|000000|1|1|0|2|1|1|0|1|0.2|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 3996,
+   "bbox": [
+    -11.279,
+    1.01,
+    -18.591,
+    11.25,
+    1.16,
+    -10.063
+   ],
+   "hash": "b5e429d7"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-ouro|d8b25c|0.22|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1296,
+   "bbox": [
+    10.885,
+    1,
+    -19.066,
+    11.175,
+    1.164,
+    -10.034
+   ],
+   "hash": "5ded23fc"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-bolsaDourada|c9a24b|0.35|0.85|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 924,
+   "bbox": [
+    10.85,
+    0.86,
+    -19.199,
+    10.98,
+    1.01,
+    -18.906
+   ],
+   "hash": "b3ca77e9"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-leque|e9d6c0|0.5|0|000000|1|1|0|2|1|1|0|1|0.2|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 288,
+   "bbox": [
+    -11.464,
+    0.992,
+    -10.1,
+    -10.818,
+    1.53,
+    -9.332
+   ],
+   "hash": "2e545698"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-madreperola|efe8e0|0.25|0|000000|1|1|0|0|1|1|0|1.5|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 144,
+   "bbox": [
+    -11.426,
+    0.952,
+    -9.906,
+    -10.894,
+    1.332,
+    -9.545
+   ],
+   "hash": "440eb9be"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-cetimMarfim|eee3cf|0.35|0|000000|1|1|0|2|1|1|0|1|0.2|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 3072,
+   "bbox": [
+    -11.019,
+    0.864,
+    -10.766,
+    -10.741,
+    0.971,
+    -10.483
+   ],
+   "hash": "fd2b2dbc"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-papel|f1ede4|0.9|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 216,
+   "bbox": [
+    -4.78,
+    0.338,
+    -11.234,
+    1.403,
+    0.474,
+    -7.182
+   ],
+   "hash": "d30a4576"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-granito-high-s|ffffff|1|0|000000|1|1|0|0|1|1|0|1.1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 2160,
+   "bbox": [
+    -9.34,
+    0,
+    -20.804,
+    9.34,
+    0.26,
+    -7.26
+   ],
+   "hash": "5e02bfa6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|plainwall-limestone-high-#d9d0bf|d9d0bf|1|0|000000|1|1|0|0|1|1|0|0.6|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    -3.78,
+    0.13,
+    -20.78,
+    3.78,
+    0.93,
+    -20.22
+   ],
+   "hash": "30ea4166"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-granito-high-s|ffffff|1|0|000000|1|1|0|0|1|1|0|1.1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 696,
+   "bbox": [
+    -12,
+    0,
+    -22,
+    12,
+    1.02,
+    -6.5
+   ],
+   "hash": "c7215448"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-gessoEstatua|ece6da|0.55|0|ece6da|0.07|1|0|0|1|1|0|0.8|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 20508,
+   "bbox": [
+    -3.764,
+    1.02,
+    -20.695,
+    3.834,
+    2.948,
+    -20.266
+   ],
+   "hash": "10d43e30"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-gessoEstatua|ece6da|0.55|0|ece6da|0.07|1|0|0|1|1|0|0.8|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 3840,
+   "bbox": [
+    -3.684,
+    1.899,
+    -20.697,
+    3.726,
+    2.411,
+    -20.304
+   ],
+   "hash": "36c15faa"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-cordaoVinho|5a0f22|0.6|0|000000|1|1|0|2|1|1|0|1|0|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 3600,
+   "bbox": [
+    -9.411,
+    0.537,
+    -7.952,
+    9.411,
+    0.588,
+    -7.169
+   ],
+   "hash": "62d70566"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-bronzeSeda|3a2412|0.5|0|000000|1|1|0|2|1|1|0|1|0.2|1|c98a4a|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 8064,
+   "bbox": [
+    -9.671,
+    0.275,
+    -8.164,
+    -8.333,
+    1.665,
+    -7.035
+   ],
+   "hash": "8ba90152"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-plisse|f1ece2|0.62|0|000000|1|1|0|2|1|1|0|1|0|1|ffffff|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 6912,
+   "bbox": [
+    8.612,
+    0.275,
+    -7.926,
+    9.388,
+    1.665,
+    -7.274
+   ],
+   "hash": "a2c915dc"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-plisse|f1ece2|0.62|0|000000|1|1|0|2|1|1|0|1|0|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 216,
+   "bbox": [
+    8.64,
+    1.68,
+    -7.535,
+    9.36,
+    2.035,
+    -7.414
+   ],
+   "hash": "9b4ec5a6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-bronze|5c432a|0.36|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 4104,
+   "bbox": [
+    -12.03,
+    0,
+    -19.5,
+    -6,
+    2.88,
+    -13.76
+   ],
+   "hash": "da87e6e4"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-bronze|5c432a|0.36|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 4068,
+   "bbox": [
+    -12.06,
+    0,
+    -19.47,
+    3.745,
+    5.47,
+    -10.63
+   ],
+   "hash": "30ec79d6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-veludoDeck-joia-high|2a0d20|0.92|0|000000|1|1|0|0|1|1|0|0.4|0|0.7|401832|8x8/srgb/1000|-|8x8//1000|-|0.3|{}",
+   "cast": false,
+   "receive": true,
+   "n": 576,
+   "bbox": [
+    -6.94,
+    0.95,
+    -19.44,
+    -6.06,
+    0.962,
+    -18.56
+   ],
+   "hash": "96dd16e6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-jvLuz|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 96,
+   "bbox": [
+    -6.62,
+    1.666,
+    -19.12,
+    -6.38,
+    1.666,
+    -18.88
+   ],
+   "hash": "643dc7e6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-veludoPreto|0e0e10|0.9|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1296,
+   "bbox": [
+    -6.77,
+    0.962,
+    -19.152,
+    -6.244,
+    1.28,
+    -18.83
+   ],
+   "hash": "b045a6f4"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|misc-grain-high-#b08a5a-0-0|b08a5a|1|0|000000|1|1|0|0|1|1|0|1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 228,
+   "bbox": [
+    5.5,
+    0,
+    -10.45,
+    7.5,
+    0.75,
+    -9.55
+   ],
+   "hash": "6fdec47e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|misc-grain-high-#b08a5a-0-0|b08a5a|1|0|000000|1|1|0|0|1|1|0|1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 852,
+   "bbox": [
+    5.557,
+    0.12,
+    -10.392,
+    7.443,
+    0.81,
+    -9.608
+   ],
+   "hash": "9f1e9634"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|fabric-linen-high|efe8da|0.9|0|000000|1|1|0|0|1|1|0|0.6|0|1|f5f0e8|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    5.53,
+    0.75,
+    -10.42,
+    7.47,
+    0.758,
+    -9.58
+   ],
+   "hash": "67ab7606"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-arteMat-high|ffffff|0.88|0|ffffff|0.1|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 66,
+   "bbox": [
+    -11.984,
+    0.762,
+    -21.984,
+    11.984,
+    2.125,
+    -7.078
+   ],
+   "hash": "9ef5fd38"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-fitaMetrica|e8c43a|0.55|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 756,
+   "bbox": [
+    6.911,
+    0.761,
+    -10.309,
+    7.427,
+    0.774,
+    -10.213
+   ],
+   "hash": "943f8c4e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-aco|c4c8cc|0.2|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    6.778,
+    0.763,
+    -10.357,
+    6.922,
+    0.767,
+    -10.243
+   ],
+   "hash": "5eb194f6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-lapis|2b2b2e|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    6.138,
+    0.762,
+    -9.778,
+    6.222,
+    0.768,
+    -9.622
+   ],
+   "hash": "d700f1fe"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-traje-linhaRosa|d97a96|0.5|0|000000|1|1|0|2|1|1|0|1|0|1|ffffff|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 192,
+   "bbox": [
+    5.622,
+    0.768,
+    -9.738,
+    5.658,
+    0.802,
+    -9.702
+   ],
+   "hash": "4694fa2e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-capaLivro|3a1d33|0.6|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -4.78,
+    0.863,
+    -7.535,
+    -4.479,
+    0.993,
+    -7.065
+   ],
+   "hash": "75ca7746"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-audioTelaMat-pt|ffffff|||-||1|0|0|1|1|0||||-|8x8/srgb/1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    4.483,
+    0.835,
+    -7.46,
+    4.587,
+    1.005,
+    -7.14
+   ],
+   "hash": "a274ab08"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-granito-high-m|ffffff|1|0|000000|1|1|0|0|1|1|0|1.1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{\"mirror\":[0.9,0.05]}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -12,
+    0.003,
+    -22,
+    12.5,
+    0.003,
+    -6
+   ],
+   "hash": "08b6d1fa"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-gesso-high-#3d3834|3d3834|1|0|000000|1|1|0|0|1|1|0|0.7|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    -12,
+    4.332,
+    -22,
+    12,
+    4.8,
+    -6.5
+   ],
+   "hash": "2de28566"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-gesso-high-#cdbfa9|cdbfa9|1|0|000000|1|1|0|0|1|1|0|0.7|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": true,
+   "receive": true,
+   "n": 15876,
+   "bbox": [
+    -12.3,
+    -0.02,
+    -22.3,
+    12.3,
+    5.5,
+    -6.2
+   ],
+   "hash": "9ed435b6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 11496,
+   "bbox": [
+    -12,
+    1.241,
+    -22,
+    12,
+    5.123,
+    -6.5
+   ],
+   "hash": "8c12456e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-tecido-high|ffffff|1|0|000000|1|1|0|0|1|1|1|0.35|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|0.7|{}",
+   "cast": false,
+   "receive": true,
+   "n": 756,
+   "bbox": [
+    -12,
+    0,
+    -22,
+    12,
+    4.3,
+    -6.5
+   ],
+   "hash": "7dd9e31b"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-gesso-high-#cdbfa9|cdbfa9|1|0|000000|1|1|0|0|1|1|0|0.7|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 34956,
+   "bbox": [
+    -12.05,
+    0.222,
+    -22.05,
+    12.06,
+    5.5,
+    -6.435
+   ],
+   "hash": "fb54ea72"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-vinil-legendas-<uuid>|ffffff|0.55|0.1|ffffff|0.3|1|1|0|1|0|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 30,
+   "bbox": [
+    -11.988,
+    1.2,
+    -19.8,
+    11.988,
+    3.8,
+    -6.508
+   ],
+   "hash": "7d446e0a"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.35|0.8|ffffff|0.2|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -11.988,
+    3.225,
+    -15.9,
+    -11.988,
+    3.675,
+    -14.1
+   ],
+   "hash": "c9a6008a"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.6|0|ffffff|0.45|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    11.988,
+    3.132,
+    -15.75,
+    11.988,
+    3.507,
+    -14.25
+   ],
+   "hash": "83d908d1"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-vinil-textos-<uuid>|ffffff|0.55|0.1|ffffff|0.32|1|1|0|1|0|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    -11.225,
+    1.1,
+    -21.992,
+    11.225,
+    3.8,
+    -6.508
+   ],
+   "hash": "25829902"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-friso-<uuid>|ffffff|0.3|0.7|ffffff|0.38|1|1|0|1|0|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -10,
+    4.366,
+    -21.992,
+    10,
+    4.766,
+    -21.992
+   ],
+   "hash": "7849631a"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-passepartout|ece5d6|0.92|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -11.988,
+    1.305,
+    -21.988,
+    11.988,
+    2.195,
+    -7.43
+   ],
+   "hash": "c52d3c4e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshPhysicalMaterial|galeria-laca|16171a|0.32|0|000000|1|1|0|0|1|1|0|1.1|0.8|0|000000|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1152,
+   "bbox": [
+    -12,
+    1.241,
+    -22,
+    -4.866,
+    2.259,
+    -7.366
+   ],
+   "hash": "70427876"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.6|0|ffffff|0.35|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    2.55,
+    1.325,
+    -6.506,
+    3.55,
+    1.575,
+    -6.506
+   ],
+   "hash": "adda8ee2"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-auroraLuz|ffffff|||-||1|0|0|1|1|0||||-|8x8/srgb/1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 171,
+   "bbox": [
+    -1.45,
+    0,
+    -21.991,
+    1.45,
+    4,
+    -21.991
+   ],
+   "hash": "f60e690f"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-metalBranco|dcdad4|0.5|0.3|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 756,
+   "bbox": [
+    -9.204,
+    5.456,
+    -20.253,
+    11.176,
+    5.492,
+    -8.248
+   ],
+   "hash": "191536f6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-lanternim|7c6a55|||-||1|0|0|1|1|0||||-|8x8/srgb/1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    -3.72,
+    5.47,
+    -17.845,
+    3.72,
+    5.47,
+    -10.655
+   ],
+   "hash": "f1fcfe16"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-placaPista-<uuid>|ffffff|0.4|0|ffffff|0.3|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -6.81,
+    0.909,
+    -13.105,
+    -6.19,
+    1.251,
+    -12.895
+   ],
+   "hash": "6ba576de"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-caixaSaida|e9e9e4|0.5|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 36,
+   "bbox": [
+    -0.25,
+    4.47,
+    -6.525,
+    0.25,
+    4.67,
+    -6.475
+   ],
+   "hash": "e22df5fa"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|(sem nome)|ffffff|0.6|0|ffffff|0.9|1|0|0|1|1|0|1|||-|8x8/srgb/1001|8x8/srgb/1001|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 6,
+   "bbox": [
+    -0.22,
+    4.5,
+    -6.552,
+    0.22,
+    4.64,
+    -6.552
+   ],
+   "hash": "fab8feaa"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-vermelho|a8141c|0.45|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 228,
+   "bbox": [
+    -3.225,
+    0.32,
+    -6.665,
+    -3.075,
+    1.39,
+    -6.477
+   ],
+   "hash": "3cfce6f2"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-lcd|98cfaf|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 12,
+   "bbox": [
+    -11.969,
+    1.617,
+    -21.035,
+    11.969,
+    1.653,
+    -20.965
+   ],
+   "hash": "05b2ba26"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-lenteSensor|1a1d22|0.1|0|000000|1|1|0|0|1|1|0|1.4|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 1200,
+   "bbox": [
+    -11.84,
+    3.57,
+    -21.84,
+    11.84,
+    3.63,
+    -6.66
+   ],
+   "hash": "77f84b1e"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|galeria-domo|14161a|0.05|0|000000|1|0.88|1|0|1|1|0|1.6|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 3078,
+   "bbox": [
+    -8.075,
+    4.945,
+    -21.074,
+    8.075,
+    5.02,
+    -7.326
+   ],
+   "hash": "0c26ac76"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshStandardMaterial|solid-darkSteel|2a2d31|0.45|0.7|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "cast": false,
+   "receive": true,
+   "n": 72,
+   "bbox": [
+    -11.94,
+    4.03,
+    -17.33,
+    11.94,
+    4.09,
+    -12.17
+   ],
+   "hash": "636034b6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-lavagemJ|a27082|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 54,
+   "bbox": [
+    -11.98,
+    0.4,
+    -21.98,
+    -4.3,
+    4.5,
+    -6.52
+   ],
+   "hash": "a2f8d928"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-lavagemV|73907b|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 54,
+   "bbox": [
+    4.3,
+    0.4,
+    -21.98,
+    11.98,
+    4.5,
+    -6.52
+   ],
+   "hash": "855678d0"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-lavagemA|757c9e|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 12,
+   "bbox": [
+    -4.4,
+    0.5,
+    -21.98,
+    4.4,
+    3.9,
+    -21.98
+   ],
+   "hash": "3ac412e6"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-sancaLuz|bca17f|||-||1|1|0|2|0|0||||-|8x8//1001|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 24,
+   "bbox": [
+    -11.9,
+    5.488,
+    -21.9,
+    11.9,
+    5.488,
+    -6.6
+   ],
+   "hash": "7eeb4796"
+  },
+  {
+   "room": "galeria",
+   "mat": "MeshBasicMaterial|galeria-sancaLed|ffffe3|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "cast": false,
+   "receive": true,
+   "n": 144,
+   "bbox": [
+    -12,
+    5.142,
+    -22,
+    12,
+    5.152,
+    -6.5
+   ],
+   "hash": "d021f466"
+  }
+ ],
+ "inst": [
+  {
+   "room": "galeria",
+   "key": "galeria-fibra",
+   "mat": "MeshBasicMaterial|galeria-fibraLuz|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 158,
+   "colors": false,
+   "matrices": "e9494e2d",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-ledSensor",
+   "mat": "MeshBasicMaterial|galeria-ledVerde|41ff99|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 3,
+   "colors": false,
+   "matrices": "82097a50",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-conta",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 587,
+   "colors": false,
+   "matrices": "41b9e8d4",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-gemaAzul",
+   "mat": "MeshStandardMaterial|galeria-safira|2a4bd8|0.03|0|1a2a80|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "169ac8c6",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-lamina",
+   "mat": "MeshStandardMaterial|misc-grain-high-#b08a5a-0-0|b08a5a|1|0|000000|1|1|0|0|1|1|0|1|||-|8x8/srgb/1000|-|8x8//1000|8x8//1000|1|{}",
+   "count": 45,
+   "colors": false,
+   "matrices": "5595f53e",
+   "geo": {
+    "n": 2292,
+    "bbox": [
+     -0.02,
+     -0.004,
+     -0.299,
+     0.02,
+     0.444,
+     0.299
+    ],
+    "hash": "ceedbc0a"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-petala",
+   "mat": "MeshStandardMaterial|galeria-petalaOuro|d6a64a|0.3|1|000000|1|1|0|0|1|1|0|1.3|||-|-|-|-|-|1|{}",
+   "count": 1084,
+   "colors": false,
+   "matrices": "055d1b7f",
+   "geo": {
+    "n": 63,
+    "bbox": [
+     -0.03,
+     -0.045,
+     0.002,
+     0.03,
+     0.045,
+     0.012
+    ],
+    "hash": "d0df2c81"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-colar-b",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 23,
+   "colors": false,
+   "matrices": "c853a335",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-colar-o",
+   "mat": "MeshStandardMaterial|galeria-ouroBranco|dfe2e6|0.16|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 12,
+   "colors": false,
+   "matrices": "c0e94c4b",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-colar-c",
+   "mat": "MeshStandardMaterial|galeria-safiraRosa|f06a9a|0.03|0|801a40|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "3fa78710",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-brincoTopo",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "8119bc2f",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-brincoGota",
+   "mat": "MeshStandardMaterial|galeria-safiraRosa|f06a9a|0.03|0|801a40|0.4|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "5e171d6f",
+   "geo": {
+    "n": 99,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "dfbf41d0"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-anelAro",
+   "mat": "MeshStandardMaterial|galeria-ouro|d8b25c|0.22|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "3da189ed",
+   "geo": {
+    "n": 133,
+    "bbox": [
+     -0.011,
+     -0.011,
+     -0.002,
+     0.011,
+     0.011,
+     0.002
+    ],
+    "hash": "497af47b"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-anelGema",
+   "mat": "MeshStandardMaterial|galeria-cristal|f4f8ff|0.02|0.1|9fb4ff|0.35|1|0|0|1|1|0|3|||-|-|-|-|-|1|{}",
+   "count": 1,
+   "colors": false,
+   "matrices": "61aeed93",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -1,
+     -0.8,
+     -1,
+     1,
+     0.8,
+     1
+    ],
+    "hash": "1bcb76e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-amostra",
+   "mat": "MeshPhysicalMaterial|fabric-galeria-amostra-high|ffffff|0.6|0|000000|1|1|0|0|1|1|0|0.6|0|1|ffffff|8x8/srgb/1000|-|8x8//1000|-|0.35|{}",
+   "count": 7,
+   "colors": true,
+   "matrices": "42127890",
+   "geo": {
+    "n": 24,
+    "bbox": [
+     -0.055,
+     0,
+     -0.04,
+     0.055,
+     0.003,
+     0.04
+    ],
+    "hash": "3618a816"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-alfinete",
+   "mat": "MeshStandardMaterial|galeria-aco|c4c8cc|0.2|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 7,
+   "colors": false,
+   "matrices": "26928547",
+   "geo": {
+    "n": 28,
+    "bbox": [
+     -1,
+     0,
+     -1,
+     1,
+     1,
+     1
+    ],
+    "hash": "fec7cb72"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-cabecaAlfinete",
+   "mat": "MeshStandardMaterial|galeria-cabeca0|b3121e|0.3|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 3,
+   "colors": false,
+   "matrices": "1cb38cce",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-cabecaAlfinete",
+   "mat": "MeshStandardMaterial|galeria-cabeca1|e8c43a|0.3|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "00a6e72b",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-cabecaAlfinete",
+   "mat": "MeshStandardMaterial|galeria-cabeca2|2a4bd8|0.3|0|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "8fb0468f",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-ledCarga",
+   "mat": "MeshBasicMaterial|galeria-ledVerde|41ff99|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 6,
+   "colors": false,
+   "matrices": "e8037a89",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-bossaRoseta",
+   "mat": "MeshStandardMaterial|solid-gold|b48a3c|0.38|1|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 20,
+   "colors": false,
+   "matrices": "870524ad",
+   "geo": {
+    "n": 77,
+    "bbox": [
+     -1,
+     -1,
+     -0.951,
+     1,
+     1,
+     0.951
+    ],
+    "hash": "4cb1fdd0"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-ledVermelho",
+   "mat": "MeshBasicMaterial|galeria-ledVermelhoLuz|ff4343|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 13,
+   "colors": false,
+   "matrices": "8ed3608e",
+   "geo": {
+    "n": 49,
+    "bbox": [
+     -1,
+     -1,
+     -0.866,
+     1,
+     1,
+     0.866
+    ],
+    "hash": "baa658e6"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-spotSuporte",
+   "mat": "MeshStandardMaterial|galeria-acoPreto|121314|0.45|0.6|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 26,
+   "colors": false,
+   "matrices": "9370768a",
+   "geo": {
+    "n": 240,
+    "bbox": [
+     -0.06,
+     -0.18,
+     -0.045,
+     0.06,
+     0,
+     0.045
+    ],
+    "hash": "461f3436"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-spotCorpo",
+   "mat": "MeshStandardMaterial|galeria-acoPreto|121314|0.45|0.6|000000|1|1|0|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 26,
+   "colors": false,
+   "matrices": "e1582898",
+   "geo": {
+    "n": 2160,
+    "bbox": [
+     -0.05,
+     -0.049,
+     -0.09,
+     0.05,
+     0.049,
+     0.085
+    ],
+    "hash": "2bfbed26"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "galeria-spotLente",
+   "mat": "MeshBasicMaterial|galeria-lenteSpot|ffffff|||-||1|0|0|1|1|0||||-|-|-|-|-|-|{}",
+   "count": 26,
+   "colors": false,
+   "matrices": "e1582898",
+   "geo": {
+    "n": 20,
+    "bbox": [
+     -0.034,
+     -0.033,
+     -0.091,
+     0.034,
+     0.033,
+     -0.091
+    ],
+    "hash": "52add626"
+   }
+  },
+  {
+   "room": "galeria",
+   "key": "beaconDome",
+   "mat": "MeshStandardMaterial|solid-beaconOff|5a1010|0.2|0|000000|1|0.85|1|0|1|1|0|1|||-|-|-|-|-|1|{}",
+   "count": 2,
+   "colors": false,
+   "matrices": "d6217255",
+   "geo": {
+    "n": 117,
+    "bbox": [
+     -0.08,
+     0,
+     -0.08,
+     0.08,
+     0.08,
+     0.08
+    ],
+    "hash": "556fe0d6"
+   }
+  }
+ ],
+ "canvas": {
+  "calls": 24,
+  "sizes": [
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8",
+   "8x8"
+  ],
+  "digest": "583bf457"
+ }
+}
