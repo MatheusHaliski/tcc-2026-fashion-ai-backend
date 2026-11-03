@@ -95,7 +95,7 @@ final class FlairDeckMode {
         for (String cat : List.of("upper_piece", "lower_piece", "shoes_piece", "accessory_piece")) {
             long n = have.getOrDefault(cat, 0L);
             if (n < DECK_RULE.get(cat)) {
-                throw ApiException.badRequest("DECK_INVALIDO", Msg.t("flairModes.faltam_cartas_de", FlairService.CATEGORY_LABELS.getOrDefault(cat, cat), n, DECK_RULE.get(cat)));
+                throw ApiException.badRequest("DECK_INVALIDO", Msg.t("flairModes.faltam_cartas_de", FlairCombinationRules.CATEGORY_LABELS.getOrDefault(cat, cat), n, DECK_RULE.get(cat)));
             }
             spare += n - DECK_RULE.get(cat);
         }

@@ -15,7 +15,12 @@ import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.FlairCoinEntryRepository;
 import br.com.fashionai.domain.repository.FlairProfileRepository;
 import br.com.fashionai.domain.repository.FlairRedemptionRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
+import br.com.fashionai.domain.repository.SchemeItemRepository;
+import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.UserRepository;
+import br.com.fashionai.domain.repository.WardrobeItemRepository;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -82,19 +87,22 @@ class FlairServiceFacadeCharacterizationTest {
     @Test
     void tabelasEstaticasEMapeamentoDaPecaNaoMudam() {
         List<Object> r = new ArrayList<>();
-        r.add(List.of(FlairService.CASA, FlairService.DUEL_REWARDS_PER_DAY, FlairService.ARENA_OCCASIONS, FlairService.SKINS,
-                FlairService.GAME_TYPES, FlairService.CATEGORY_LABELS));
-        r.add(FlairService.QUESTS);
+        r.add(List.of(FlairDuelGame.CASA, FlairDuelGame.DUEL_REWARDS_PER_DAY, FlairArena.ARENA_OCCASIONS, FlairWallet.SKINS,
+                FlairCombinationAdmin.GAME_TYPES, FlairCombinationRules.CATEGORY_LABELS));
+        r.add(FlairQuests.QUESTS);
         for (int d = 0; d < 12; d++) {
-            r.add(FlairService.arenaTheme(LocalDate.of(2026, 1, 1).plusDays(d)));
+            r.add(FlairArena.arenaTheme(LocalDate.of(2026, 1, 1).plusDays(d)));
         }
         List<WardrobeItem> ws = world.piecesOf(world.me);
+        FlairDecks deckReader = new FlairDecks(kit.dep(WardrobeItemRepository.class), kit.dep(SchemeRepository.class),
+                kit.dep(SchemeItemRepository.class), kit.dep(SchemeService.class), kit.dep(HypeScoreCurrentRepository.class),
+                kit.dep(HypeScoreConfig.class));
         for (WardrobeItem w : ws) {
-            r.add(flair.input(w, FlairEngine.Hype.NONE));
+            r.add(deckReader.input(w, FlairEngine.Hype.NONE));
         }
         List<FlairEngine.Card> cs = flair.cardsOf(ws);
-        r.add(FlairService.album(cs).keySet());
-        r.add(FlairService.gameHype(null));
+        r.add(FlairDecks.album(cs).keySet());
+        r.add(FlairDecks.gameHype(null));
         assertThat(Retrato.sha("flair-service-tabelas", semIds(Retrato.of(r))))
                 .isEqualTo("0bd50e26ceef4a8911361c6661832d430ad4cac23a18ae6d32bcb3424a492549");
         assertThat(FlairService.today()).isEqualTo(LocalDate.now(FaiPointsService.ZONE));

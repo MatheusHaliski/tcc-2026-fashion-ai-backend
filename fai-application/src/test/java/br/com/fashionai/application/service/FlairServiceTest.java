@@ -124,7 +124,7 @@ class FlairServiceTest {
         assertThat(board).hasSize(2);
         assertThat(map(board.get(0)).get("position")).isEqualTo(1);
         assertThatThrownBy(() -> flair.joinArena(ana, looks.get(1))).isInstanceOf(ApiException.class);
-        assertThat(FlairService.arenaTheme(java.time.LocalDate.of(2026, 1, 1))).isIn(FlairService.ARENA_OCCASIONS);
+        assertThat(FlairArena.arenaTheme(java.time.LocalDate.of(2026, 1, 1))).isIn(FlairArena.ARENA_OCCASIONS);
     }
 
     @Test
@@ -177,7 +177,7 @@ class FlairServiceTest {
     void questsMostramProgressoEResgateUmaVezPorPeriodo() {
         world.piecesOf(world.me).subList(0, 3).forEach(w -> w.markCreatedAt(Instant.now()));   // 3 peças novas nesta semana
         List<Map<String, Object>> qs = flair.quests(ana);
-        assertThat(qs).hasSize(FlairService.QUESTS.size());
+        assertThat(qs).hasSize(FlairQuests.QUESTS.size());
         Map<String, Object> maven = qs.stream().filter(q -> "WARDROBE_MAVEN".equals(q.get("code"))).findFirst().orElseThrow();
         assertThat(maven.get("done")).isEqualTo(true);
         assertThat(flair.claimQuest(ana, "WARDROBE_MAVEN")).containsKey("coins");
