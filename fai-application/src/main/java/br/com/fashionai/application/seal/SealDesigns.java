@@ -1,23 +1,12 @@
 package br.com.fashionai.application.seal;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.domain.model.enums.SealTier;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * RF25 — criador de selo. O desenho segue o medalhão do logo FashionAI: borda (bisel), campo entre a borda e o
@@ -75,16 +64,9 @@ public final class SealDesigns {
     /** Demais textos editáveis da folha e o limite de cada um (título = label, legenda = caption). */
     public static final Map<String, Integer> FOLHA_TEXT_LIMITS = Map.of("series", 40, "subtitle", 36, "style", 28, "year", 6, "emblem", 4);
     public static final List<String> CORE_MODES = List.of("ELEMENT", "IMAGE", "TEXT");
-    /** Prefixo do id do modelo por tipo ("circular/07", "folha/mat-04", "fai/03"). */
-    private static final Map<String, String> TEMPLATE_PREFIX = Map.of("CIRCULAR", "circular", "FOLHA", "folha", "FASHIONAI", "fai");
-    /** Modelos por tipo ("fai", "circular", "folha"): id → cor dominante (folha sem cor). */
-    private static final Map<String, Map<String, String>> TEMPLATES = loadTemplates();
-    private static final Map<String, Set<String>> TEMPLATE_IDS = templateIds();
-    private static final Pattern TEXT_OK = Pattern.compile("[\\p{L}\\p{N} &+'.,·!?()/-]*");
-    private static final Set<String> ELEMENT_IDS = ids(ELEMENTS);
-    private static final Set<String> PATTERN_IDS = ids(PATTERNS);
-    private static final Set<String> MATERIAL_IDS = ids(MATERIALS);
-    private static final Pattern HEX = Pattern.compile("^#[0-9A-Fa-f]{6}$");
+    static final Set<String> ELEMENT_IDS = ids(ELEMENTS);
+    static final Set<String> PATTERN_IDS = ids(PATTERNS);
+    static final Set<String> MATERIAL_IDS = ids(MATERIALS);
 
     private SealDesigns() {
     }
@@ -97,7 +79,7 @@ public final class SealDesigns {
         m.put("materials", MATERIALS);
         m.put("palettes", PALETTES);
         m.put("kinds", KINDS);
-        m.put("templates", TEMPLATE_IDS);
+        m.put("templates", SealDesignTemplates.TEMPLATE_IDS);
         m.put("uploadRule", Msg.t("sealDesigns.imagem_quadrada_1_1_tolerancia"));
         return m;
     }
@@ -121,137 +103,7 @@ public final class SealDesigns {
 
     /** Valida e normaliza o JSON do desenho vindo do formulário; ids inválidos viram 400 com o campo apontado. */
     public static Map<String, Object> normalize(Map<String, Object> raw) {
-        if (raw == null || raw.isEmpty()) {
-            return null;
-        }
-        Map<String, String> errors = new LinkedHashMap<>();
-        Map<String, Object> out = new LinkedHashMap<>();
-        String template = raw.get("template") == null || String.valueOf(raw.get("template")).isBlank() ? null : String.valueOf(raw.get("template")).trim().toLowerCase(Locale.ROOT);
-        String mode = upper(raw.get("mode"), template == null ? "GENERATED" : "TEMPLATE");
-        if (!mode.equals("GENERATED") && !mode.equals("UPLOAD") && !mode.equals("TEMPLATE")) {
-            errors.put("mode", Msg.t("sealDesigns.use_generated_ou_upload"));
-            mode = "GENERATED";
-        }
-        String kind = upper(raw.get("kind"), template == null ? "CIRCULAR" : kindOfTemplate(template));
-        if (!KINDS.contains(kind)) {
-            errors.put("kind", Msg.t("sealDesigns.tipo_desconhecido"));
-            kind = "CIRCULAR";
-        }
-        if (!kind.equals("CIRCULAR")) {
-            mode = "TEMPLATE";                                    // folha e padrão FashionAI são sempre um modelo
-        }
-        if (mode.equals("TEMPLATE")) {
-            Set<String> known = TEMPLATE_IDS.getOrDefault(TEMPLATE_PREFIX.get(kind), Set.of());
-            if (template == null || !template.startsWith(TEMPLATE_PREFIX.get(kind) + "/") || !known.contains(template)) {
-                errors.put("template", Msg.t("sealDesigns.modelo_desconhecido"));
-            }
-        } else {
-            template = null;
-        }
-        out.put("kind", kind);
-        out.put("mode", mode);
-        out.put("template", template);
-        if (kind.equals("FOLHA")) {
-            out.put("label", text(raw.get("label"), LABEL_MAX, "label", errors));
-            out.put("caption", text(raw.get("caption"), CAPTION_MAX, "caption", errors));
-            Map<String, Object> texts = section(raw, "texts");
-            Map<String, Object> tx = new LinkedHashMap<>();
-            for (String k : List.of("series", "subtitle", "style", "year", "emblem")) {
-                String v = text(texts.get(k), FOLHA_TEXT_LIMITS.get(k), "texts." + k, errors);
-                if (v != null) {
-                    tx.put(k, v);
-                }
-            }
-            out.put("texts", tx);
-        }
-        if (!kind.equals("FASHIONAI") && !mode.equals("UPLOAD")) {
-            out.put("core", core(section(raw, "core"), errors));           // núcleo do circular / emblema da folha
-        }
-        String palette = raw.get("palette") == null ? null : upper(raw.get("palette"), null);
-        if (palette != null && !PALETTES.containsKey(palette)) {
-            errors.put("palette", Msg.t("sealDesigns.paleta_desconhecida"));
-        }
-        out.put("palette", palette);
-
-        Map<String, Object> border = section(raw, "border");
-        Map<String, Object> b = new LinkedHashMap<>();
-        b.put("material", material(border.get("material"), "FOSCO", "border.material", errors));
-        b.put("color", color(border.get("color"), "#2B2622", "border.color", errors));
-        b.put("width", clamp(number(border.get("width"), 0.06), 0.03, 0.12));
-        out.put("border", b);
-
-        Map<String, Object> field = section(raw, "field");
-        Map<String, Object> f = new LinkedHashMap<>();
-        String pattern = upper(field.get("pattern"), "MALHA");
-        if (!PATTERN_IDS.contains(pattern)) {
-            errors.put("field.pattern", Msg.t("sealDesigns.padrao_desconhecido"));
-        }
-        f.put("pattern", pattern);
-        f.put("material", material(field.get("material"), "FOSCO", "field.material", errors));
-        f.put("color", color(field.get("color"), "#F58220", "field.color", errors));
-        f.put("lineColor", color(field.get("lineColor"), "#F6E8CF", "field.lineColor", errors));
-        List<String> nodes = new ArrayList<>();
-        if (field.get("nodeColors") instanceof List<?> l) {
-            for (Object o : l) {
-                if (nodes.size() >= 6) {
-                    break;
-                }
-                String c = String.valueOf(o);
-                if (HEX.matcher(c).matches()) {
-                    nodes.add(c.toUpperCase(Locale.ROOT));
-                }
-            }
-        }
-        if (nodes.isEmpty()) {
-            nodes.addAll(List.of("#F9B21C", "#2E86C1", "#6DB33F", "#7A4E2D"));
-        }
-        f.put("nodeColors", nodes);
-        f.put("density", (int) clamp(number(field.get("density"), 2), 1, 3));
-        f.put("seed", (int) clamp(number(field.get("seed"), 1), 1, 9999));
-        out.put("field", f);
-
-        Map<String, Object> center = section(raw, "center");
-        Map<String, Object> c = new LinkedHashMap<>();
-        c.put("material", material(center.get("material"), "FOSCO", "center.material", errors));
-        c.put("color", color(center.get("color"), "#F6E8CF", "center.color", errors));
-        c.put("radius", clamp(number(center.get("radius"), 0.45), 0.3, 0.6));
-        out.put("center", c);
-
-        Map<String, Object> element = section(raw, "element");
-        Map<String, Object> e = new LinkedHashMap<>();
-        String id = upper(element.get("id"), "BAG");
-        if (!ELEMENT_IDS.contains(id)) {
-            errors.put("element.id", Msg.t("sealDesigns.elemento_central_desconhecido"));
-        }
-        e.put("id", id);
-        e.put("material", material(element.get("material"), "FOSCO", "element.material", errors));
-        e.put("color", color(element.get("color"), "#2B2622", "element.color", errors));
-        String text = element.get("text") == null ? "FAI" : String.valueOf(element.get("text")).trim().toUpperCase(Locale.ROOT);
-        text = text.replaceAll("[^A-Z0-9&+]", "");
-        if (text.isEmpty()) {
-            text = "FAI";
-        }
-        if (text.length() > 3) {
-            errors.put("element.text", Msg.t("sealDesigns.no_maximo_3_caracteres"));
-            text = text.substring(0, 3);
-        }
-        e.put("text", text);
-        out.put("element", e);
-
-        Object upload = raw.get("uploadUrl");
-        String uploadUrl = upload == null || String.valueOf(upload).isBlank() ? null : String.valueOf(upload).trim();
-        if (mode.equals("UPLOAD")) {
-            if (uploadUrl == null) {
-                errors.put("uploadUrl", Msg.t("sealDesigns.envie_a_imagem_do_selo"));
-            } else if (!(uploadUrl.startsWith("/media/") || uploadUrl.startsWith("http://") || uploadUrl.startsWith("https://"))) {
-                errors.put("uploadUrl", Msg.t("sealDesigns.url_de_upload_invalida"));
-            }
-        }
-        out.put("uploadUrl", uploadUrl);
-        if (!errors.isEmpty()) {
-            throw ApiException.badRequest("SELO_DESIGN_INVALIDO", Msg.t("sealDesigns.revise_o_desenho_do_selo"), Map.of("fields", errors));
-        }
-        return out;
+        return SealDesignNormalizer.normalize(raw);
     }
 
     /** Monta um desenho inteiro a partir de uma paleta (o formulário usa como ponto de partida). */
@@ -315,39 +167,6 @@ public final class SealDesigns {
         return (Map<String, Object>) d.computeIfAbsent(key, k -> new LinkedHashMap<String, Object>());
     }
 
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> section(Map<String, Object> raw, String key) {
-        return raw.get(key) instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
-    }
-
-    /** Núcleo editável: elemento da arte, imagem enviada pelo emissor (recortada no disco/emblema) ou texto livre. */
-    private static Map<String, Object> core(Map<String, Object> raw, Map<String, String> errors) {
-        Map<String, Object> c = new LinkedHashMap<>();
-        String mode = upper(raw.get("mode"), "ELEMENT");
-        if (!CORE_MODES.contains(mode)) {
-            errors.put("core.mode", Msg.t("sealDesigns.nucleo_modo"));
-            mode = "ELEMENT";
-        }
-        c.put("mode", mode);
-        Object img = raw.get("imageUrl");
-        String imageUrl = img == null || String.valueOf(img).isBlank() ? null : String.valueOf(img).trim();
-        if (imageUrl != null && !(imageUrl.startsWith("/media/") || imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
-            errors.put("core.imageUrl", Msg.t("sealDesigns.url_de_upload_invalida"));
-        }
-        if (mode.equals("IMAGE") && imageUrl == null) {
-            errors.put("core.imageUrl", Msg.t("sealDesigns.nucleo_sem_imagem"));
-        }
-        String text = text(raw.get("text"), CORE_TEXT_MAX, "core.text", errors);
-        if (mode.equals("TEXT") && text == null) {
-            errors.put("core.text", Msg.t("sealDesigns.nucleo_sem_texto"));
-        }
-        c.put("imageUrl", imageUrl);
-        c.put("text", text);
-        c.put("textColor", raw.get("textColor") == null ? null : color(raw.get("textColor"), null, "core.textColor", errors));
-        c.put("zoom", clamp(number(raw.get("zoom"), 1), 1, 3));
-        return c;
-    }
-
     /** Título padrão da folha a partir do nome do selo (só os caracteres que a folha imprime, até {@link #LABEL_MAX}). */
     public static String labelFrom(String name) {
         String t = name == null ? "" : name.replaceAll("[^\\p{L}\\p{N} &+'.,·!?()/-]", "").replaceAll("\\s+", " ").trim();
@@ -355,127 +174,8 @@ public final class SealDesigns {
         return t.isEmpty() ? "FASHION AI" : t;
     }
 
-    /** Texto curto impresso no selo de folha: sem quebras, sem marcação e com limite de tamanho. */
-    private static String text(Object v, int max, String field, Map<String, String> errors) {
-        if (v == null) {
-            return null;
-        }
-        String t = String.valueOf(v).replaceAll("\\s+", " ").trim();
-        if (t.isEmpty()) {
-            return null;
-        }
-        if (t.length() > max) {
-            errors.put(field, Msg.t("sealDesigns.texto_longo", max));
-            t = t.substring(0, max);
-        }
-        if (!TEXT_OK.matcher(t).matches()) {
-            errors.put(field, Msg.t("sealDesigns.texto_caracteres"));
-        }
-        return t;
-    }
-
-    private static String kindOfTemplate(String template) {
-        if (template.startsWith("folha/")) {
-            return "FOLHA";
-        }
-        return template.startsWith("fai/") ? "FASHIONAI" : "CIRCULAR";
-    }
-
     /** Modelo circular de centro liso com a cor mais próxima (distância RGB ponderada) — usado pela sugestão "Com IA". */
     public static String nearestCircular(String hex) {
-        int[] c = rgb(hex);
-        String best = "circular/01";
-        double bd = Double.MAX_VALUE;
-        for (Map.Entry<String, String> e : TEMPLATES.getOrDefault("circular", Map.of()).entrySet()) {
-            if (e.getValue() == null) {
-                continue;
-            }
-            int[] t = rgb(e.getValue());
-            double rm = (c[0] + t[0]) / 2.0;
-            double d = (2 + rm / 256) * Math.pow(c[0] - t[0], 2) + 4 * Math.pow(c[1] - t[1], 2) + (2 + (255 - rm) / 256) * Math.pow(c[2] - t[2], 2);
-            if (d < bd) {
-                bd = d;
-                best = e.getKey();
-            }
-        }
-        return best;
-    }
-
-    private static int[] rgb(String hex) {
-        String h = hex == null || !HEX.matcher(hex).matches() ? "#F58220" : hex;
-        int n = Integer.parseInt(h.substring(1), 16);
-        return new int[]{(n >> 16) & 255, (n >> 8) & 255, n & 255};
-    }
-
-    /** Catálogo de modelos gerado junto com as artes do frontend (seals/templates.json, scripts/selos/build_templates.py). */
-    private static Map<String, Map<String, String>> loadTemplates() {
-        Map<String, Map<String, String>> out = new LinkedHashMap<>();
-        try (InputStream in = SealDesigns.class.getClassLoader().getResourceAsStream("seals/templates.json")) {
-            if (in != null) {
-                Map<String, Object> m = Json.map(new String(in.readAllBytes(), StandardCharsets.UTF_8));
-                m.forEach((kind, list) -> {
-                    Map<String, String> byId = new LinkedHashMap<>();
-                    if (list instanceof Collection<?> c) {
-                        for (Object o : c) {
-                            if (o instanceof Map<?, ?> t && t.get("id") != null) {
-                                // centro estampado (plain=false) não entra na sugestão por cor
-                                boolean plain = !Boolean.FALSE.equals(t.get("plain"));
-                                byId.put(String.valueOf(t.get("id")), plain && t.get("color") != null ? String.valueOf(t.get("color")) : null);
-                            }
-                        }
-                    }
-                    out.put(kind, Collections.unmodifiableMap(byId));
-                });
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("seals/templates.json ilegível", e);
-        }
-        return Collections.unmodifiableMap(out);
-    }
-
-    private static Map<String, Set<String>> templateIds() {
-        Map<String, Set<String>> out = new HashMap<>();
-        TEMPLATES.forEach((k, v) -> out.put(k, Set.copyOf(v.keySet())));
-        return Map.copyOf(out);
-    }
-
-    private static String upper(Object v, String dflt) {
-        return v == null || String.valueOf(v).isBlank() ? dflt : String.valueOf(v).trim().toUpperCase(Locale.ROOT);
-    }
-
-    private static String material(Object v, String dflt, String field, Map<String, String> errors) {
-        String m = upper(v, dflt);
-        if (!MATERIAL_IDS.contains(m)) {
-            errors.put(field, Msg.t("sealDesigns.material_desconhecido"));
-            return dflt;
-        }
-        return m;
-    }
-
-    private static String color(Object v, String dflt, String field, Map<String, String> errors) {
-        if (v == null || String.valueOf(v).isBlank()) {
-            return dflt;
-        }
-        String c = String.valueOf(v).trim();
-        if (!HEX.matcher(c).matches()) {
-            errors.put(field, Msg.t("sealDesigns.cor_em_hexadecimal_rrggbb"));
-            return dflt;
-        }
-        return c.toUpperCase(Locale.ROOT);
-    }
-
-    private static double number(Object v, double dflt) {
-        if (v instanceof Number n) {
-            return n.doubleValue();
-        }
-        try {
-            return v == null ? dflt : Double.parseDouble(String.valueOf(v));
-        } catch (NumberFormatException e) {
-            return dflt;
-        }
-    }
-
-    private static double clamp(double v, double min, double max) {
-        return Math.max(min, Math.min(max, v));
+        return SealDesignTemplates.nearestCircular(hex);
     }
 }
