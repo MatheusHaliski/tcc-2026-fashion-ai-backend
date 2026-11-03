@@ -90,8 +90,8 @@ class CbcRulesTest {
         assertThat(CbcRules.colorHarmony("blue", "orange")).isTrue();         // complementares
         assertThat(CbcRules.colorHarmony("yellow", "green")).isTrue();        // vizinhas na roda
         assertThat(CbcRules.colorHarmony("red", "blue")).isFalse();
-        assertThat(CbcRules.colorMatch("charcoal", "black")).isTrue();        // grafite vale como preto no tema
-        assertThat(CbcRules.colorMatch("multicolor", "print")).isFalse();     // "Especiais" não viram família
+        assertThat(CbcSintonia.colorMatch("charcoal", "black")).isTrue();        // grafite vale como preto no tema
+        assertThat(CbcSintonia.colorMatch("multicolor", "print")).isFalse();     // "Especiais" não viram família
     }
 
     @Test

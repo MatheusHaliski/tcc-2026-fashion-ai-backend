@@ -1,24 +1,20 @@
 package br.com.fashionai.application.flair;
 
-import br.com.fashionai.application.ai.local.ColorMath;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+
+import static br.com.fashionai.application.flair.CbcRequirements.requirement;
+import static br.com.fashionai.application.flair.CbcSintonia.harmonious;
+import static br.com.fashionai.application.flair.CbcSintonia.positionOk;
+import static br.com.fashionai.application.flair.CbcSintonia.themeFocus;
 
 /**
  * FLAIR-UT §14 — motor dos Desafios de Montagem, sem I/O e sem IA: requisitos, sintonia por vaga e a história escrita
@@ -193,423 +189,48 @@ public final class CbcRules {
         return new Evaluation(results, reqs, total, 3 * slots.size(), filled, complete, ok, rediscovered);
     }
 
-    static RequirementResult requirement(Map<String, Object> r, List<Slot> slots, Map<String, Card> board, List<Card> cards, int sintonia, Context ctx) {
-        String type = String.valueOf(r.get("type"));
-        int n = slots.size();
-        Map<String, Object> args = new LinkedHashMap<>(r);
-        args.remove("type");
-        switch (type) {
-            case "tier" -> {
-                if (r.get("only") != null) {
-                    String only = tier(r.get("only"));
-                    int have = (int) cards.stream().filter(c -> only.equals(c.tier())).count();
-                    return new RequirementResult(type, have >= n, have, n, args);
-                }
-                if (r.get("max") != null) {
-                    int max = TIERS.indexOf(tier(r.get("max")));
-                    int have = (int) cards.stream().filter(c -> TIERS.indexOf(c.tier()) <= max).count();
-                    return new RequirementResult(type, have >= n, have, n, args);
-                }
-                if (r.get("exact") != null) {
-                    String exact = tier(r.get("exact"));
-                    int need = intOf(r.get("count"), 1);
-                    int have = (int) cards.stream().filter(c -> exact.equals(c.tier())).count();
-                    return new RequirementResult(type, have == need, have, need, args);
-                }
-                int min = TIERS.indexOf(tier(r.get("min")));
-                int need = intOf(r.get("count"), n);
-                int have = (int) cards.stream().filter(c -> TIERS.indexOf(c.tier()) >= min).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "ovrAvg" -> {
-                int min = intOf(r.get("min"), 0);
-                int avg = cards.isEmpty() ? 0 : (int) Math.round(cards.stream().mapToInt(Card::ovr).average().orElse(0));
-                return new RequirementResult(type, cards.size() == n && avg >= min, avg, min, args);
-            }
-            case "ovrMin" -> {
-                // sem "count": todas as cartas; com "count": pelo menos N ("3 cartas com nota acima de 80")
-                int min = intOf(r.get("min"), 0);
-                int need = intOf(r.get("count"), n);
-                int have = (int) cards.stream().filter(c -> c.ovr() >= min).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "brand" -> {
-                // marca específica ("3 cartas da Norte"): quando o desafio é de uma marca, o nome vem do perfil dela
-                Set<String> wanted = norm(strings(r.get("anyOf")));
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> c.brand() != null && wanted.contains(c.brand().trim().toLowerCase(Locale.ROOT))).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "sintonia" -> {
-                int min = intOf(r.get("min"), 0);
-                return new RequirementResult(type, sintonia >= min, sintonia, min, args);
-            }
-            case "sameBrand" -> {
-                int need = intOf(r.get("count"), 2);
-                Map<String, Integer> byBrand = new HashMap<>();
-                cards.stream().map(Card::brand).filter(b -> b != null && !b.isBlank())
-                        .forEach(b -> byBrand.merge(b.trim().toLowerCase(Locale.ROOT), 1, Integer::sum));
-                int have = byBrand.values().stream().max(Integer::compare).orElse(0);
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "distinctBrands" -> {
-                int need = intOf(r.get("count"), 2);
-                int have = (int) cards.stream().map(Card::brand).filter(b -> b != null && !b.isBlank())
-                        .map(b -> b.trim().toLowerCase(Locale.ROOT)).distinct().count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "tag" -> {
-                String field = String.valueOf(r.getOrDefault("field", "style"));
-                Set<String> wanted = norm(strings(r.get("anyOf")));
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> tagMatch(c, field, wanted)).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "theme" -> {
-                // P1: qualquer interpretação do Momento (ou as tags do desafio) vale — nunca só a escolhida
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> themeAny(c, ctx)).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "hype" -> {
-                String dim = String.valueOf(r.getOrDefault("dim", "HYP")).toUpperCase(Locale.ROOT);
-                int min = intOf(r.get("min"), 0);
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> c.hype().get(dim) != null && c.hype().get(dim) >= min).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "origin" -> {
-                String only = String.valueOf(r.getOrDefault("only", "PIECE")).toUpperCase(Locale.ROOT);
-                int have = (int) cards.stream().filter(c -> only.equals(c.originType())).count();
-                return new RequirementResult(type, have >= n, have, n, args);
-            }
-            case "noBuy" -> {
-                // C2: a peça já estava no guarda-roupa antes do início (sem início, basta a peça existir)
-                int have = (int) cards.stream().filter(c -> c.pieceAddedAt() != null
-                        && (ctx.startAt() == null || c.pieceAddedAt().isBefore(ctx.startAt()))).count();
-                return new RequirementResult(type, have >= n, have, n, args);
-            }
-            case "rediscovery" -> {
-                int days = intOf(r.get("idleDays"), REDISCOVERY_DAYS);
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> idleDays(c, ctx.today()) >= days).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "strictPosition" -> {
-                int have = (int) slots.stream().filter(s -> board.get(s.key()) != null && positionOk(s, board.get(s.key()))).count();
-                return new RequirementResult(type, have >= n, have, n, args);
-            }
-            default -> {
-                return new RequirementResult(type, false, 0, 1, args);
-            }
-        }
-    }
-
     /** O que falta à carta para completar a vaga (lista vazia = aceita). Vaga sem {@code accepts} aceita qualquer carta. */
     public static List<String> misses(Slot s, Card c) {
-        List<String> out = new ArrayList<>();
-        Map<String, Object> a = s.accepts();
-        if (a.isEmpty() || c == null) {
-            return out;
-        }
-        if (a.get("tier") != null) {
-            Set<String> tiers = new HashSet<>();
-            strings(a.get("tier")).forEach(t -> tiers.add(t.toUpperCase(Locale.ROOT)));
-            if (a.get("tier") instanceof String one) {
-                tiers.add(one.toUpperCase(Locale.ROOT));
-            }
-            if (!tiers.contains(c.tier())) {
-                out.add("tier");
-            }
-        }
-        if (a.get("minOvr") instanceof Number n && c.ovr() < n.intValue()) {
-            out.add("minOvr");
-        }
-        if (a.get("brand") != null && (c.brand() == null || !norm(listOrOne(a.get("brand"))).contains(c.brand().trim().toLowerCase(Locale.ROOT)))) {
-            out.add("brand");
-        }
-        if (a.get("category") != null && (c.category() == null || !norm(listOrOne(a.get("category"))).contains(c.category().toLowerCase(Locale.ROOT)))) {
-            out.add("category");
-        }
-        if (a.get("subcategory") != null && (c.subcategory() == null || !norm(listOrOne(a.get("subcategory"))).contains(c.subcategory().toLowerCase(Locale.ROOT)))) {
-            out.add("subcategory");
-        }
-        if (a.get("color") != null && !colorsMatch(c.colors(), norm(listOrOne(a.get("color"))))) {
-            out.add("color");
-        }
-        if (a.get("style") != null && !intersects(c.styles(), norm(listOrOne(a.get("style"))))) {
-            out.add("style");
-        }
-        if (a.get("occasion") != null && !intersects(c.occasions(), norm(listOrOne(a.get("occasion"))))) {
-            out.add("occasion");
-        }
-        if (a.get("material") != null && !intersects(c.materials(), norm(listOrOne(a.get("material"))))) {
-            out.add("material");
-        }
-        if (a.get("origin") != null && !String.valueOf(a.get("origin")).equalsIgnoreCase(c.originType())) {
-            out.add("origin");
-        }
-        return out;
-    }
-
-    static List<String> listOrOne(Object v) {
-        return v instanceof String s ? List.of(s) : strings(v);
+        return CbcSlotAccepts.misses(s, c);
     }
 
     // ================================================================== sintonia
-    static boolean positionOk(Slot s, Card c) {
-        return s.position() == null || ANY.equals(s.position()) || s.position().equals(c.position());
-    }
-
-    /** +1 vizinhança: mesma marca, um estilo em comum ou cores em harmonia com a carta da vaga ao lado. */
-    static boolean harmonious(Card a, Card b) {
-        if (a == null || b == null) {
-            return false;
-        }
-        if (a.brand() != null && b.brand() != null && !a.brand().isBlank() && a.brand().trim().equalsIgnoreCase(b.brand().trim())) {
-            return true;
-        }
-        if (intersects(a.styles(), b.styles())) {
-            return true;
-        }
-        for (String x : a.colors()) {
-            for (String y : b.colors()) {
-                if (colorHarmony(x, y)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /** Roda de famílias da taxonomia: neutros combinam com tudo; mesma família, vizinhas e complementares combinam. */
-    static final List<String> WHEEL = List.of("Vermelho", "Laranja", "Amarelo", "Verde", "Azul", "Roxo", "Rosa");
-    static final Set<Set<String>> COMPLEMENTS = Set.of(Set.of("Azul", "Laranja"), Set.of("Vermelho", "Verde"), Set.of("Roxo", "Amarelo"));
-
     public static boolean colorHarmony(String x, String y) {
-        if (x == null || y == null) {
-            return false;
-        }
-        if (x.equals(y) || ColorMath.isNeutral(x) || ColorMath.isNeutral(y)) {
-            return true;
-        }
-        String fx = Taxonomy.COLOR_FAMILY.get(x);
-        String fy = Taxonomy.COLOR_FAMILY.get(y);
-        if (fx == null || fy == null) {
-            return false;
-        }
-        if ("Especiais".equals(fx) || "Especiais".equals(fy) || fx.equals(fy)) {
-            return true;
-        }
-        int ix = WHEEL.indexOf(fx);
-        int iy = WHEEL.indexOf(fy);
-        if (ix >= 0 && iy >= 0) {
-            int d = Math.abs(ix - iy);
-            if (d == 1 || d == WHEEL.size() - 1) {
-                return true;
-            }
-        }
-        return COMPLEMENTS.contains(Set.of(fx, fy));
-    }
-
-    /** Cor da carta conta como a do tema quando é a mesma ou da mesma família ("grafite" vale como "preto"). */
-    static boolean colorMatch(String cardColor, String tagColor) {
-        if (cardColor == null || tagColor == null) {
-            return false;
-        }
-        if (cardColor.equals(tagColor)) {
-            return true;
-        }
-        String fc = Taxonomy.COLOR_FAMILY.get(cardColor);
-        return fc != null && !"Especiais".equals(fc) && fc.equals(Taxonomy.COLOR_FAMILY.get(tagColor));
-    }
-
-    static boolean colorsMatch(Set<String> cardColors, Set<String> tagColors) {
-        for (String c : cardColors) {
-            for (String t : tagColors) {
-                if (colorMatch(c, t)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    static boolean matchesInterpretation(Card c, Interpretation i) {
-        return intersects(c.styles(), i.styles()) || colorsMatch(c.colors(), i.colors());
+        return CbcSintonia.colorHarmony(x, y);
     }
 
     /** Tema em "qualquer leitura": alguma interpretação, ou as tags do Momento e do desafio. */
     public static boolean themeAny(Card c, Context ctx) {
-        if (ctx == null || !ctx.hasTheme()) {
-            return false;
-        }
-        for (Interpretation i : ctx.interpretations()) {
-            if (matchesInterpretation(c, i)) {
-                return true;
-            }
-        }
-        return intersects(c.styles(), ctx.styles()) || colorsMatch(c.colors(), ctx.colors()) || intersects(c.occasions(), ctx.occasions());
-    }
-
-    /** +1 tema da sintonia: com leitura escolhida, a interpretação dela (ou as tags do próprio desafio); senão, qualquer uma. */
-    static boolean themeFocus(Card c, Context ctx) {
-        Interpretation chosen = ctx == null ? null : ctx.chosenInterpretation();
-        if (chosen == null) {
-            return themeAny(c, ctx);
-        }
-        return matchesInterpretation(c, chosen) || intersects(c.styles(), ctx.styles()) || colorsMatch(c.colors(), ctx.colors());
-    }
-
-    static boolean tagMatch(Card c, String field, Set<String> wanted) {
-        return switch (field) {
-            case "color" -> colorsMatch(c.colors(), wanted);
-            case "occasion" -> intersects(c.occasions(), wanted);
-            case "material" -> intersects(c.materials(), wanted);
-            default -> intersects(c.styles(), wanted);
-        };
+        return CbcSintonia.themeAny(c, ctx);
     }
 
     /** Dias sem uso: desde o último uso; nunca usada, desde que entrou no guarda-roupa; peça removida = 0. */
     public static long idleDays(Card c, LocalDate today) {
-        if (today == null) {
-            return 0;
-        }
-        if (c.pieceLastWorn() != null) {
-            return ChronoUnit.DAYS.between(c.pieceLastWorn(), today);
-        }
-        if (c.pieceAddedAt() != null) {
-            return ChronoUnit.DAYS.between(c.pieceAddedAt().atZone(ZoneOffset.UTC).toLocalDate(), today);
-        }
-        return 0;
+        return CbcSintonia.idleDays(c, today);
     }
 
     /** A interpretação que mais combina com as cartas da pessoa (sugestão, nunca obrigação). */
     public static String suggestInterpretation(Collection<Card> cards, List<Interpretation> interpretations) {
-        String best = null;
-        int bestCount = 0;
-        for (Interpretation i : interpretations) {
-            int n = (int) cards.stream().filter(c -> matchesInterpretation(c, i)).count();
-            if (n > bestCount) {
-                best = i.key();
-                bestCount = n;
-            }
-        }
-        return best;
+        return CbcSintonia.suggestInterpretation(cards, interpretations);
     }
 
     /** A1: o desafio não exige nível acima de Bronze (aberto a quem tem só peças baratas). */
     public static boolean levelOpen(List<Map<String, Object>> requirements) {
-        for (Map<String, Object> r : requirements == null ? List.<Map<String, Object>>of() : requirements) {
-            if (!"tier".equals(r.get("type"))) {
-                continue;
-            }
-            if (r.get("min") != null && TIERS.indexOf(tier(r.get("min"))) > 0) {
-                return false;
-            }
-            if (r.get("exact") != null && TIERS.indexOf(tier(r.get("exact"))) > 0) {
-                return false;
-            }
-            if (r.get("only") != null && TIERS.indexOf(tier(r.get("only"))) > 0) {
-                return false;
-            }
-        }
-        return true;
+        return CbcValidation.levelOpen(requirements);
     }
 
     // ================================================================== validação (administração)
     /** Erros de forma das vagas e requisitos (lista vazia = válido). */
     public static List<String> validate(List<Slot> slots, List<Map<String, Object>> requirements) {
-        List<String> errors = new ArrayList<>();
-        if (slots == null || slots.size() < MIN_SLOTS || slots.size() > MAX_SLOTS) {
-            errors.add("slots.count");
-            return errors;
-        }
-        Set<String> keys = new HashSet<>();
-        for (Slot s : slots) {
-            if (s.key() == null || !s.key().matches("[a-z0-9_-]{1,40}") || !keys.add(s.key())) {
-                errors.add("slots.key:" + s.key());
-            }
-            if (s.position() != null && !POSITIONS.contains(s.position())) {
-                errors.add("slots.position:" + s.position());
-            }
-            for (String k : s.accepts().keySet()) {
-                if (!ACCEPT_KEYS.contains(k)) {
-                    errors.add("slots.accepts:" + k);
-                }
-            }
-        }
-        for (Map<String, Object> r : requirements == null ? List.<Map<String, Object>>of() : requirements) {
-            Object type = r.get("type");
-            if (!(type instanceof String t) || !TYPES.contains(t)) {
-                errors.add("requirements.type:" + type);
-                continue;
-            }
-            if ("tier".equals(t)) {
-                Object v = r.get("only") != null ? r.get("only") : r.get("max") != null ? r.get("max") : r.get("exact") != null ? r.get("exact") : r.get("min");
-                if (v == null || !TIERS.contains(String.valueOf(v).toUpperCase(Locale.ROOT))) {
-                    errors.add("requirements.tier");
-                }
-            }
-            if ("tag".equals(t) && (!TAG_FIELDS.contains(String.valueOf(r.get("field"))) || strings(r.get("anyOf")).isEmpty())) {
-                errors.add("requirements.tag");
-            }
-            if ("brand".equals(t) && strings(r.get("anyOf")).isEmpty()) {
-                errors.add("requirements.brand");
-            }
-            if ("hype".equals(t) && !HYPE_DIMS.contains(String.valueOf(r.getOrDefault("dim", "HYP")).toUpperCase(Locale.ROOT))) {
-                errors.add("requirements.hype");
-            }
-            Object count = r.get("count");
-            if (count instanceof Number c && (c.intValue() < 1 || c.intValue() > slots.size())) {
-                errors.add("requirements.count:" + t);
-            }
-        }
-        return errors;
+        return CbcValidation.validate(slots, requirements);
     }
 
     public static boolean hasTheme(List<Map<String, Object>> requirements) {
-        return requirements != null && requirements.stream().anyMatch(r -> "theme".equals(r.get("type")));
+        return CbcValidation.hasTheme(requirements);
     }
 
     // ================================================================== apoio
-    static String tier(Object v) {
-        return v == null ? "BRONZE" : String.valueOf(v).toUpperCase(Locale.ROOT);
-    }
-
-    static int intOf(Object v, int def) {
-        return v instanceof Number n ? n.intValue() : def;
-    }
-
-    @SuppressWarnings("unchecked")
-    static List<String> strings(Object v) {
-        if (v instanceof Collection<?> c) {
-            return c.stream().filter(Objects::nonNull).map(String::valueOf).toList();
-        }
-        return List.of();
-    }
-
-    static boolean intersects(Set<String> a, Set<String> b) {
-        if (a == null || b == null || a.isEmpty() || b.isEmpty()) {
-            return false;
-        }
-        for (String x : a) {
-            if (b.contains(x)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static Set<String> norm(Collection<String> values) {
-        Set<String> out = new LinkedHashSet<>();
-        if (values != null) {
-            for (String v : values) {
-                if (v != null && !v.isBlank()) {
-                    out.add(v.trim().toLowerCase(Locale.ROOT));
-                }
-            }
-        }
-        return out;
+        return CbcValues.norm(values);
     }
 }

@@ -208,7 +208,7 @@ class LensScanProvenanceCharacterizationTest {
         LensViews.ScanView v = scan(true);
         LensDetection d = savedDetections.get(0);
         assertThat(d.getScanId()).isEqualTo(v.id());
-        assertThat(d.getLabel()).isEqualTo(LensService.defaultLabel("upper_piece", "jacket"));
+        assertThat(d.getLabel()).isEqualTo(LensDetectionFields.defaultLabel("upper_piece", "jacket"));
         assertThat(d.getConfidence()).isEqualByComparingTo("0.924");
         assertThat(d.getConfidence().scale()).isEqualTo(3);
         assertThat(d.getAttributeConfidenceJson()).startsWith("{\"detection\":0.9235,\"pattern\":");

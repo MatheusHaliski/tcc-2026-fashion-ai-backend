@@ -265,7 +265,7 @@ public final class LocalAdvisors {
             changes.add(new FieldChange("visibility", current.get("visibility"), "PRIVATE", Msg.t("localAdvisors.voce_pediu_para_restringir_a")));
         }
         if (text.matches(".*(titulo|nome|renomear|title).*") || changes.stream().anyMatch(c -> c.field().equals("style"))) {
-            String proposed = LocalSchemeComposer.title(sty, occ, season);
+            String proposed = LocalSchemeLabels.title(sty, occ, season);
             if (!proposed.equals(current.get("title"))) {
                 changes.add(new FieldChange("title", current.get("title"), proposed, Msg.t("localAdvisors.titulo_coerente_com_o_novo")));
             }
@@ -274,7 +274,7 @@ public final class LocalAdvisors {
             String proposed = "Look " + String.join(", ", sty) + " pensado para " + String.join(" e ", occ) + ".";
             changes.add(new FieldChange("description", current.get("description"), proposed, Msg.t("localAdvisors.descricao_gerada_a_partir_das")));
         }
-        String mood = LocalSchemeComposer.mood(sty, occ);
+        String mood = LocalSchemeLabels.mood(sty, occ);
         if (!changes.isEmpty() && !mood.equals(current.get("mood"))) {
             changes.add(new FieldChange("mood", current.get("mood"), mood, Msg.t("localAdvisors.humor_derivado_do_estilo_e")));
         }

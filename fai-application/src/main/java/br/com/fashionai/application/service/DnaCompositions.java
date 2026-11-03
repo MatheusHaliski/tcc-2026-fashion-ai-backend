@@ -102,7 +102,7 @@ final class DnaCompositions {
                 pm.remove("id");
                 pm.remove("imageUrl");
                 pm.put("material", w.getMaterial());
-                pm.put("analysis", SchemeService.pieceAnalysis(w)); // estampa, textura, caimento lidos da foto (RF4)
+                pm.put("analysis", SchemeAiPayloads.pieceAnalysis(w)); // estampa, textura, caimento lidos da foto (RF4)
                 return pm;
             }).toList());
             catalog.add(m);
