@@ -74,7 +74,7 @@ public final class ProductSegmenter {
             fg[i] = ((px[i] >>> 24) & 0xFF) > ALPHA_ON;
         }
         int[] labels = new int[n];
-        List<int[]> comps = components(fg, w, h, labels); // {label, size, x0, y0, x1, y1}
+        List<int[]> comps = ConnectedComponents.components(fg, w, h, labels); // {label, size, x0, y0, x1, y1}
         if (comps.isEmpty()) {
             return new Segmentation(img, w, h, new boolean[n], new NRect(0, 0, 0, 0), List.of(), 0, 0, cut.confidence(),
                     cut.backgroundRgb(), Set.of(), 0, false, 0, "NO_PRODUCT");
@@ -155,48 +155,6 @@ public final class ProductSegmenter {
         }
         double share = (double) clear / px.length;
         return share < 0.05 ? null : new ImageOps.Cutout(img, 1 - share, 0.95, 0xFFFFFF);
-    }
-
-    /** Rotulagem 4-conexa; devolve os componentes do maior para o menor. */
-    static List<int[]> components(boolean[] fg, int w, int h, int[] labels) {
-        List<int[]> out = new ArrayList<>();
-        int[] stack = new int[fg.length];
-        int next = 0;
-        for (int s = 0; s < fg.length; s++) {
-            if (!fg[s] || labels[s] != 0) {
-                continue;
-            }
-            int label = ++next, top = 0, size = 0, x0 = w, y0 = h, x1 = -1, y1 = -1;
-            stack[top++] = s;
-            labels[s] = label;
-            while (top > 0) {
-                int i = stack[--top], x = i % w, y = i / w;
-                size++;
-                x0 = Math.min(x0, x);
-                y0 = Math.min(y0, y);
-                x1 = Math.max(x1, x);
-                y1 = Math.max(y1, y);
-                if (x > 0 && fg[i - 1] && labels[i - 1] == 0) {
-                    labels[i - 1] = label;
-                    stack[top++] = i - 1;
-                }
-                if (x < w - 1 && fg[i + 1] && labels[i + 1] == 0) {
-                    labels[i + 1] = label;
-                    stack[top++] = i + 1;
-                }
-                if (y > 0 && fg[i - w] && labels[i - w] == 0) {
-                    labels[i - w] = label;
-                    stack[top++] = i - w;
-                }
-                if (y < h - 1 && fg[i + w] && labels[i + w] == 0) {
-                    labels[i + w] = label;
-                    stack[top++] = i + w;
-                }
-            }
-            out.add(new int[]{label, size, x0, y0, x1, y1});
-        }
-        out.sort((a, b) -> Integer.compare(b[1], a[1]));
-        return out;
     }
 
     /** Linhas do topo muito mais estreitas que a peça (gancho do cabide) saem da máscara; devolve o novo topo. */

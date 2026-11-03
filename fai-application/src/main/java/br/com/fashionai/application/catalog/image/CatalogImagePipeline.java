@@ -1,9 +1,7 @@
 package br.com.fashionai.application.catalog.image;
 
-import br.com.fashionai.application.imaging.BrandRegions;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.GarmentCrop;
-import br.com.fashionai.application.moderation.ImageSafetyPorts.PersonParts;
 import br.com.fashionai.application.moderation.ImageSafetyPorts.PersonSegmentationPort;
 import br.com.fashionai.application.vision.landmarks.LandmarkDetector;
 
@@ -16,7 +14,6 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -30,10 +27,6 @@ import java.util.Set;
  */
 public final class CatalogImagePipeline {
     public static final String VERSION = "CATALOG_IMAGE_PIPELINE_V4";
-    /** vistas que a origem declara de fato (PACKSHOT, OTHER e DETAIL não dizem qual lado da peça aparece) */
-    static final Set<String> VIEWS = Set.of("FRONT", "BACK", "SIDE", "TOP");
-    /** Área mínima da peça num packshot (fração da foto): no acervo o menor acessório aprovado ocupa 13%; abaixo de 8% é fragmento. */
-    static final double MIN_PRODUCT_AREA = 0.08;
     public static final Set<String> ACCEPTED_MIME = Set.of("image/jpeg", "image/png", "image/webp");
 
     public record Request(byte[] bytes, String category, String subcategory, String imageType, boolean persist) {
@@ -95,40 +88,24 @@ public final class CatalogImagePipeline {
     private final ImageQualityAnalyzer analyzer = new ImageQualityAnalyzer();
     private final CatalogImageValidator validator = new CatalogImageValidator();
     private final SemanticRegionRegistry registry;
-    private final PersonSegmentationPort persons;
+    private final CatalogPersonEvidence people;
 
     public CatalogImagePipeline(SemanticRegionRegistry registry, PersonSegmentationPort persons) {
         this.registry = registry;
-        this.persons = persons;
+        this.people = new CatalogPersonEvidence(persons);
     }
 
     public Analysis run(Request req) {
         List<Stage> stages = new ArrayList<>();
         long t = System.nanoTime();
         // VALIDATION — pelo conteúdo (magic bytes), não pelo Content-Type do servidor
-        String mime = ImageOps.detectMime(req.bytes());
-        String sha = sha256(req.bytes());
-        if (mime == null || !ACCEPTED_MIME.contains(mime)) {
-            return Analysis.rejected("UNSUPPORTED_MIME", mime, 0, 0, sha, List.of(stage("VALIDATION", t, "mime")));
+        CatalogSourceIntake.Decoded source = CatalogSourceIntake.decode(req.bytes(), t);
+        if (source.rejected() != null) {
+            return source.rejected();
         }
-        if (req.bytes().length > ImageOps.MAX_UPLOAD_BYTES) {
-            return Analysis.rejected("IMAGE_TOO_LARGE", mime, 0, 0, sha, List.of(stage("VALIDATION", t, "bytes")));
-        }
-        Optional<ImageOps.Dimensions> dims = ImageOps.dimensions(req.bytes());
-        if (dims.isPresent() && ((long) dims.get().width() * dims.get().height() > ImageOps.maxPixels()
-                || Math.max(dims.get().width(), dims.get().height()) > ImageOps.maxSide())) {
-            return Analysis.rejected("IMAGE_TOO_LARGE", mime, dims.get().width(), dims.get().height(), sha, List.of(stage("VALIDATION", t, "pixels")));
-        }
-        BufferedImage src;
-        try {
-            src = ImageOps.decode(req.bytes());
-        } catch (RuntimeException e) {
-            return Analysis.rejected("UNREADABLE_IMAGE", mime, 0, 0, sha, List.of(stage("VALIDATION", t, "decode")));
-        }
+        String mime = source.mime(), sha = source.sha();
+        BufferedImage src = source.image();
         int w = src.getWidth(), h = src.getHeight();
-        if (Math.min(w, h) < ImageQualityAnalyzer.MIN_SOURCE_SIDE) {
-            return Analysis.rejected("IMAGE_TOO_SMALL", mime, w, h, sha, List.of(stage("VALIDATION", t, w + "x" + h)));
-        }
         String phash = PerceptualHash.dHash(src);
         stages.add(stage("VALIDATION", t, mime + " " + w + "x" + h));
 
@@ -143,7 +120,7 @@ public final class CatalogImagePipeline {
             // máscara própria (fundo de estúdio)
             FabricFrame.Mask mask = FabricFrame.mask(seg, type);
             FabricFrame.Result fabric = FabricFrame.find(mask, type, req.subcategory(), null);
-            ProductRuleFrame.Result productFrame = checkPerson(src,
+            ProductRuleFrame.Result productFrame = people.checkPerson(src,
                     ProductRuleFrame.find(mask, seg, type, req.subcategory(), registry, ProductRuleFrame.ASPECT_W, ProductRuleFrame.ASPECT_H, null));
             Map<String, Object> early = new LinkedHashMap<>();
             early.put("fabricFrame", fabric.toMap());
@@ -151,7 +128,7 @@ public final class CatalogImagePipeline {
             return Analysis.rejected(seg.empty() ? "NO_PRODUCT" : "IMAGE_TOO_SMALL", mime, w, h, sha, stages, early);
         }
         t = System.nanoTime();
-        double human = humanEvidence(src, seg);
+        double human = people.humanEvidence(src, seg);
         stages.add(stage("DISTRACTOR_REMOVAL", t, "distractors=" + seg.distractors().size() + " hanger=" + seg.hangerTrimmed()
                 + " human=" + NRect.r4(human)));
 
@@ -163,12 +140,7 @@ public final class CatalogImagePipeline {
         FramingStrategy.Focus focus = FramingStrategy.forType(type).focus(seg.productBox(), profile, lm);
         GarmentCrop.LowerRegion lower = type == PieceType.LOWER_PIECE ? GarmentCrop.lowerRegion(product, human >= 0.06) : null;
         if (lower != null) {
-            ImageOps.Box region = lower.box();
-            NRect waist = new NRect(region.x() / (double) seg.width(), region.y() / (double) seg.height(),
-                    region.w() / (double) seg.width(), region.h() / (double) seg.height());
-            focus = new FramingStrategy.Focus(profile.focus().name(), waist.sub(new NRect(0, 0, 1, 0.50)),
-                    List.of(new SemanticRegionRegistry.Region("waistband", waist.sub(new NRect(0.05, 0, 0.9, 0.12)))),
-                    lower.estimatedPerson() ? "ESTIMATED_PERSON_WAIST" : "WAIST_TO_CROTCH_MASK");
+            focus = CatalogCropGeometry.waistFocus(seg, profile, lower);
         }
         stages.add(stage("ROI", t, focus.name() + " via " + focus.source()));
 
@@ -176,31 +148,22 @@ public final class CatalogImagePipeline {
         // cabide nem pessoa; o segmentador de pessoa, quando existe, confere o quadro escolhido
         t = System.nanoTime();
         FabricFrame.Mask mask = FabricFrame.mask(seg, type);
-        FabricFrame.Result fabric = FabricFrame.find(mask, type, req.subcategory(), focus);
-        if (fabric.ok()) {
-            NRect fc = fabric.crop();
-            BufferedImage selected = ImageOps.crop(seg.cutout(), new ImageOps.Box((int) Math.round(fc.x() * seg.width()), (int) Math.round(fc.y() * seg.height()),
-                    (int) Math.round(fc.w() * seg.width()), (int) Math.round(fc.h() * seg.height())));
-            if (fabricHumanEvidence(selected)) {
-                fabric = new FabricFrame.Result(false, "HUMAN_IN_FABRIC_FRAME", fc, fabric.target(), fabric.anchorSource(), fabric.anchorX(),
-                        fabric.anchorY(), fabric.region(), fabric.fabricCoverage(), fabric.skinExcluded(), fabric.cropWidthPx(), fabric.erosionPx());
-            }
-        }
+        FabricFrame.Result fabric = people.checkFabric(seg, FabricFrame.find(mask, type, req.subcategory(), focus));
         stages.add(stage("FABRIC_FRAME", t, fabric.ok() ? "ok " + fabric.target() : String.valueOf(fabric.reason())));
 
         // REGRA DO PRODUTO no quadro do editor (lote de enquadramento do acervo, V3): a mesma regra do card, 3:4, sobre a
         // mesma máscara; o segmentador de pessoa, quando existe, confere o quadro escolhido
         t = System.nanoTime();
-        ProductRuleFrame.Result productFrame = checkPerson(src,
+        ProductRuleFrame.Result productFrame = people.checkPerson(src,
                 ProductRuleFrame.find(mask, seg, type, req.subcategory(), registry, ProductRuleFrame.ASPECT_W, ProductRuleFrame.ASPECT_H, focus));
         stages.add(stage("PRODUCT_RULE_FRAME", t, productFrame.ok() ? "ok " + productFrame.target() : String.valueOf(productFrame.reason())));
 
         // SEMANTIC REFRAMING
         t = System.nanoTime();
-        SemanticCropper.Result crop = cropper.crop(w, h, registry.aspectRatio(), seg.productBox(), centroid(seg), focus, profile,
+        SemanticCropper.Result crop = cropper.crop(w, h, registry.aspectRatio(), seg.productBox(), CatalogCropGeometry.centroid(seg), focus, profile,
                 seg.distractors(), seg.truncatedSides());
         if (type == PieceType.UPPER_PIECE || type == PieceType.LOWER_PIECE || type == PieceType.FULL_BODY_PIECE) {
-            crop = fabricCover(seg, product, crop, focus, lower == null ? ImageOps.alphaBounds(product) : lower.box(), type == PieceType.LOWER_PIECE);
+            crop = CatalogCropGeometry.fabricCover(seg, product, crop, focus, lower == null ? ImageOps.alphaBounds(product) : lower.box(), type == PieceType.LOWER_PIECE);
         }
         stages.add(stage("REFRAMING", t, "cropScore=" + NRect.r4(crop.best().score()) + " fill=" + NRect.r4(crop.best().fill())));
 
@@ -209,7 +172,7 @@ public final class CatalogImagePipeline {
             NRect c = crop.best().crop();
             BufferedImage selected = ImageOps.crop(product, new ImageOps.Box((int) Math.round(c.x() * seg.width()), (int) Math.round(c.y() * seg.height()),
                     (int) Math.round(c.w() * seg.width()), (int) Math.round(c.h() * seg.height())));
-            human = cropHumanEvidence(selected);
+            human = people.cropHumanEvidence(selected);
         }
 
         // BACKGROUND NORMALIZATION + DETAIL PRESERVATION (só nível B)
@@ -230,25 +193,12 @@ public final class CatalogImagePipeline {
                     + " color=" + NRect.r4(color)));
         }
 
-        // REGRA DE ENQUADRAMENTO (§9.1): recorte fora da regra ou vista declarada diferente da exigida vão para revisão
-        if (crop.rule() != null && Boolean.FALSE.equals(crop.compliance().get("ok"))) {
-            extra.add("FRAMING_RULE_NOT_MET");
-        }
-        // fragmento: num packshot a peça nunca ocupa só uma lasca da foto — peça clara sobre fundo claro faz a segmentação
-        // pegar só o detalhe escuro (patch, logo) e o recorte vira um close do detalhe. Foto de detalhe declarada fica de fora.
-        NRect box = seg.productBox();
-        if (!"DETAIL".equalsIgnoreCase(req.imageType()) && box.w() * box.h() < MIN_PRODUCT_AREA) {
-            extra.add("SEGMENTATION_FRAGMENT");
-        }
-        String required = crop.rule() == null ? "ANY" : crop.rule().view();
-        String declared = req.imageType() == null ? null : req.imageType().toUpperCase(java.util.Locale.ROOT);
-        if (!"ANY".equals(required) && declared != null && VIEWS.contains(declared) && !declared.equals(required)) {
-            extra.add("VIEW_MISMATCH_" + required);
-        }
+        // REGRA DE ENQUADRAMENTO (§9.1), fragmento da segmentação e vista declarada diferente da exigida: revisão
+        CatalogAnalysisReport.reviewReasons(extra, crop, seg, req.imageType());
 
         // QUALITY CHECK
         t = System.nanoTime();
-        Boolean logoInside = logoInside(product, crop.best().crop());
+        Boolean logoInside = CatalogCropGeometry.logoInside(product, crop.best().crop());
         ImageQualityAnalyzer.Report report = analyzer.analyze(src, seg, crop, human, color, logoInside, reconstruction);
         CatalogImageValidator.Verdict verdict = validator.validate(report.metrics(), report.overall(), human, req.persist(), seg);
         List<String> reasons = new ArrayList<>(verdict.reasons());
@@ -259,159 +209,11 @@ public final class CatalogImagePipeline {
         }
         stages.add(stage("VALIDATING", t, outcome + " overall=" + report.overall()));
         boolean detailView = "DETAIL".equalsIgnoreCase(req.imageType()) || seg.truncatedSides().size() >= 3;
-        Map<String, Object> debug = new LinkedHashMap<>();
-        debug.put("bbox", seg.productBox().toMap());
-        debug.put("distractors", seg.distractors().stream().map(NRect::toMap).toList());
-        debug.put("focus", focus.rect().toMap());
-        debug.put("critical", focus.critical().stream().map(r -> Map.of("name", r.name(), "rect", r.rect().toMap())).toList());
-        debug.put("landmarks", lm.landmarks().stream().filter(LandmarkDetector.Landmark::visible).map(LandmarkDetector.Landmark::toMap).toList());
-        debug.put("candidates", crop.candidates().stream().map(SemanticCropper.Candidate::toMap).toList());
-        debug.put("finalCrop", crop.best().crop().toMap());
-        debug.put("truncated", seg.truncatedSides());
-        debug.put("hangerTrimmed", seg.hangerTrimmed());
-        debug.put("registryVersion", registry.version());
-        debug.put("sourceHumanEvidence", NRect.r4(sourceHuman));
-        debug.put("cropHumanEvidence", NRect.r4(human));
-        debug.put("fabricFrame", fabric.toMap());
-        debug.put("productFrame", productFrame.toMap());
-        if (crop.rule() != null) {
-            debug.put("framingRule", crop.rule().toMap());
-            debug.put("ruleCompliance", crop.compliance());
-        }
+        Map<String, Object> debug = CatalogAnalysisReport.debug(seg, focus, lm, crop, registry.version(), sourceHuman, human, fabric, productFrame);
         return new Analysis(outcome, List.copyOf(reasons), verdict.manualReview() || outcome == CatalogImageValidator.Outcome.NEEDS_REPROCESSING,
                 verdict.confidence(), mime, w, h, sha, phash, type, seg.productBox(), focus, crop, report.metrics(), report.overall(),
                 String.format("#%06x", seg.backgroundRgb() & 0xFFFFFF), detailView, rendered, List.copyOf(stages), debug,
                 req.persist() ? CatalogPreviewRenderer.render(src, seg, product, productFrame, sourceHuman, detailView) : null);
-    }
-
-    private static SemanticCropper.Result fabricCover(ProductSegmenter.Segmentation seg, BufferedImage product,
-                                                       SemanticCropper.Result prior, FramingStrategy.Focus focus, ImageOps.Box region, boolean lower) {
-        var found = GarmentCrop.find(product, lower ? 2 : 4, lower ? 1 : 5, focus.rect().cx() * seg.width(), lower ? region.y() + Math.min(region.h(), region.w() / 2.0) * 0.32 : focus.rect().cy() * seg.height(), region);
-        Map<String, Object> compliance = new LinkedHashMap<>(prior.compliance());
-        compliance.put("mode", "GARMENT_COVER");
-        compliance.put("pipelineVersion", GarmentCrop.VERSION);
-        if (found.isEmpty()) {
-            compliance.put("foregroundOnly", false);
-            compliance.put("ok", false);
-            return new SemanticCropper.Result(prior.best(), prior.detail(), prior.analysis(), prior.candidates(), prior.rule(), compliance);
-        }
-        ImageOps.Box box = found.get();
-        NRect crop = new NRect(box.x() / (double) seg.width(), box.y() / (double) seg.height(),
-                box.w() / (double) seg.width(), box.h() / (double) seg.height());
-        double fx = (focus.rect().cx() - crop.x()) / crop.w(), fy = (focus.rect().cy() - crop.y()) / crop.h();
-        boolean focused = fx >= 0 && fx <= 1 && fy >= 0 && fy <= 1;
-        double critical = focus.critical().stream().mapToDouble(r -> r.rect().insideOf(crop)).max().orElse(1);
-        Map<String, Double> parts = new LinkedHashMap<>(prior.best().parts());
-        parts.put("completeness", 1.0); // the whole-piece analysis ROI and source are retained separately
-        parts.put("critical", critical);
-        parts.put("focus", focused ? 1.0 : focus.rect().insideOf(crop));
-        parts.put("occupancy", 1.0);
-        parts.put("margin", 1.0);
-        parts.put("padding", 1.0);
-        parts.put("foregroundCoverage", 1.0);
-        compliance.put("aspect", lower ? "2:1" : "4:5");
-        compliance.put("foregroundOnly", true);
-        compliance.put("foregroundCoverage", 1.0);
-        compliance.put("frameFilledByProduct", 1.0);
-        compliance.put("widthFilledByProduct", 1.0);
-        compliance.put("productInsideFrame", NRect.r4(seg.productBox().insideOf(crop)));
-        compliance.put("focusCenter", Map.of("x", NRect.r4(fx), "y", NRect.r4(fy)));
-        compliance.put("focusInTopHalf", focused && fy <= 0.5);
-        compliance.put("ok", focused && (prior.rule() == null || !prior.rule().focusTopHalf() || fy <= 0.5));
-        double score = 0.7 + 0.2 * parts.get("focus") + 0.1 * parts.get("distractor");
-        var candidate = new SemanticCropper.Candidate(crop, score, 1, 0, parts);
-        List<SemanticCropper.Candidate> candidates = new ArrayList<>();
-        candidates.add(candidate); candidates.addAll(prior.candidates());
-        return new SemanticCropper.Result(candidate, prior.detail(), prior.analysis(), List.copyOf(candidates), prior.rule(), compliance);
-    }
-
-    private double cropHumanEvidence(BufferedImage selected) {
-        int[] pixels = selected.getRGB(0, 0, selected.getWidth(), selected.getHeight(), null, 0, selected.getWidth());
-        boolean[] opaque = new boolean[pixels.length];
-        java.util.Arrays.fill(opaque, true);
-        double skin = ProductSegmenter.foreignSkin(pixels, opaque);
-        if (persons != null && persons.available()) {
-            try {
-                Optional<PersonParts> parts = persons.segment(selected);
-                if (parts.isPresent()) skin = Math.max(skin, parts.get().person() * (parts.get().bodySkin() + parts.get().faceSkin()));
-            } catch (RuntimeException ignored) { /* local evidence remains available */ }
-        }
-        // This crop promises fabric only: residual hands/skin require review even when they occupy a small region.
-        return skin > 0.005 ? Math.max(0.06, skin) : 0;
-    }
-
-    /**
-     * Segunda opinião sobre o quadro da regra do produto: com o segmentador de pessoa, pele/rosto no quadro (parte da foto)
-     * recusa — numa parte de cima/baixo, o quadro mostraria a pessoa; num objeto, ele não está isolado.
-     */
-    private ProductRuleFrame.Result checkPerson(BufferedImage src, ProductRuleFrame.Result r) {
-        if (!r.ok() || persons == null || !persons.available()) return r;
-        NRect c = r.crop().clampTo(new NRect(0, 0, 1, 1));
-        int x = (int) Math.round(c.x() * src.getWidth()), y = (int) Math.round(c.y() * src.getHeight());
-        int cw = Math.min(src.getWidth() - x, (int) Math.round(c.w() * src.getWidth())), ch = Math.min(src.getHeight() - y, (int) Math.round(c.h() * src.getHeight()));
-        if (cw < 8 || ch < 8 || !fabricHumanEvidence(ImageOps.crop(src, new ImageOps.Box(x, y, cw, ch)))) return r;
-        boolean garment = r.rule() != null && r.rule().fit() == SemanticRegionRegistry.FramingRule.Fit.COVER
-                && r.rule().align() == SemanticRegionRegistry.FramingRule.Align.TOP;
-        return new ProductRuleFrame.Result(false, garment ? "HUMAN_IN_FRAME" : "PIECE_NOT_ISOLATED", r.crop(), r.aspectW(), r.aspectH(),
-                r.rule(), r.ruleOrigin(), r.registryVersion(), r.pieceType(), r.subcategory(), r.target(), r.focusName(), r.focus(),
-                r.product(), true, r.skinShare(), r.garmentCoverage(), r.coverageScope(), r.objectInside(), r.padding(), r.background(),
-                r.truncated(), r.sideView(), r.compliance(), r.cropWidthPx(), r.observations());
-    }
-
-    /**
-     * Segunda opinião sobre o quadro só de tecido: o segmentador de pessoa, quando existe, não pode ver pele/rosto no quadro.
-     * Sem ele vale a máscara do tecido (que já tirou as manchas de pele); a heurística local de pele daria falso positivo em
-     * estampas bege/rosadas.
-     */
-    private boolean fabricHumanEvidence(BufferedImage selected) {
-        if (persons == null || !persons.available()) return false;
-        try {
-            Optional<PersonParts> parts = persons.segment(selected);
-            return parts.isPresent() && parts.get().person() * (parts.get().bodySkin() + parts.get().faceSkin()) > 0.02;
-        } catch (RuntimeException e) {
-            return false;
-        }
-    }
-
-    /** Pele estranha à peça (segmentador próprio) combinada com o segmentador de pessoa, quando disponível. */
-    double humanEvidence(BufferedImage src, ProductSegmenter.Segmentation seg) {
-        double evidence = seg.foreignSkin();
-        if (persons != null && persons.available()) {
-            try {
-                Optional<PersonParts> parts = persons.segment(src);
-                if (parts.isPresent()) {
-                    double skin = parts.get().person() * (parts.get().bodySkin() + parts.get().faceSkin());
-                    evidence = Math.max(evidence, skin / Math.max(0.05, seg.coverage()));
-                }
-            } catch (RuntimeException ignored) {
-                // segmentador indisponível não derruba o pipeline: fica a evidência local
-            }
-        }
-        return Math.min(1, evidence);
-    }
-
-    static Boolean logoInside(BufferedImage product, NRect crop) {
-        try {
-            double[] box = BrandRegions.detectLogo(product);
-            return box == null ? null : NRect.of(box).insideOf(crop) >= 0.9;
-        } catch (RuntimeException e) {
-            return null;
-        }
-    }
-
-    /** visualCenter: centróide da máscara (peso real da peça, não o meio da caixa — manga aberta não puxa o centro). */
-    static NRect centroid(ProductSegmenter.Segmentation seg) {
-        double sx = 0, sy = 0;
-        long n = 0;
-        boolean[] m = seg.mask();
-        for (int i = 0; i < m.length; i += 2) {
-            if (m[i]) {
-                sx += i % seg.width();
-                sy += i / seg.width();
-                n++;
-            }
-        }
-        return n == 0 ? seg.productBox() : new NRect(sx / n / seg.width(), sy / n / seg.height(), 0, 0);
     }
 
     static Stage stage(String name, long startNanos, String note) {

@@ -228,34 +228,6 @@
    "max": 811,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/CatalogImageBatchCli.java": {
-   "max": 456,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/CatalogImagePipeline.java": {
-   "max": 432,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/CatalogImagePipelineService.java": {
-   "max": 1025,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/FabricFrame.java": {
-   "max": 581,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/ProductRuleFrame.java": {
-   "max": 757,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/ProductSegmenter.java": {
-   "max": 253,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/SemanticCropper.java": {
-   "max": 296,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/imaging/BrandReader.java": {
    "max": 680,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -372,20 +344,12 @@
    "max": 523,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/service/FaiPointsService.java": {
-   "max": 411,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/service/IdentityService.java": {
    "max": 1007,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/InstitutionalService.java": {
    "max": 767,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/service/InventoryScoreService.java": {
-   "max": 1178,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/IssuerReviewService.java": {
@@ -486,10 +450,6 @@
   },
   "fai-application/src/test/java/br/com/fashionai/application/catalog/CatalogServiceTest.java": {
    "max": 439,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/test/java/br/com/fashionai/application/catalog/image/CatalogImagePipelineServiceTest.java": {
-   "max": 843,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/test/java/br/com/fashionai/application/insights/InsightNewContextsTest.java": {
@@ -722,26 +682,6 @@
   },
   "scripts/cloud/photo_sets_vertex.py": {
    "max": 269,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/estados_ts.py": {
-   "max": 337,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/gerar.py": {
-   "max": 1430,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/modelo.py": {
-   "max": 1061,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/tsmodelo.py": {
-   "max": 313,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/unidades.py": {
-   "max": 565,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/docs/taxonomia_entidades.py": {
