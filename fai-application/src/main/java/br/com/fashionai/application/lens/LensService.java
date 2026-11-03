@@ -797,7 +797,7 @@ public class LensService {
                 RecommendationScoring.usage(wears), RecommendationScoring.sustainability(wears, 1, 1));
     }
 
-    /** Os seis números do look recriado, no mesmo cálculo do Copilot ({@code CopilotService.scoreLooks}). */
+    /** Os seis números do look recriado, no mesmo cálculo do Copilot ({@code CopilotTools.scoreLooks}). */
     private RecommendationScoring.Scores lookScores(Ctx ctx, List<WardrobeItem> look, Map<UUID, HypeScoreCurrent> hype,
                                                     LocalDate today, int slots) {
         Integer compat = null;
