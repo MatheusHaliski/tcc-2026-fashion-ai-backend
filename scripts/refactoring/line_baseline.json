@@ -320,14 +320,6 @@
    "max": 513,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/lens/LensService.java": {
-   "max": 1363,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/lens/LensSimilarity.java": {
-   "max": 259,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/multiplatform/AvatarCanonicalManifest.java": {
    "max": 318,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -522,10 +514,6 @@
   },
   "fai-application/src/test/java/br/com/fashionai/application/insights/InsightServiceTest.java": {
    "max": 436,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/test/java/br/com/fashionai/application/lens/LensServiceTest.java": {
-   "max": 721,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/test/java/br/com/fashionai/application/service/Avatar3dServiceTest.java": {
