@@ -279,8 +279,10 @@ humana**. No Total frame, o produto passa a mostrar a peça esticada com o selo 
 lay aprovado (ou se a foto de origem mudou), continua a Peça inteira real acima. As colunas são próprias
 (`flat_lay_url`, `flat_lay_back_url`, `flat_lay_json`, `flat_lay_status`, V85): o recorte real não é tocado.
 
-1. Rode os lotes com o `catalog_batch` atual (a auditoria precisa trazer `image_id`; lotes antigos são pulados com
-   `NO_IMAGE_ID` — refaça esses produtos).
+1. Rode os lotes com o `catalog_batch` atual (a auditoria traz `image_id`). Lotes anteriores a esse registro saem
+   `NO_IMAGE_ID`; com `--recover-source` (`flat_lay_source.py`) o script refaz no banco, só leitura, a mesma escolha de
+   foto do lote e aceita o produto só se nenhuma foto dele mudou depois do início do lote (`updated_at`, UTC); senão,
+   `SOURCE_CHANGED_SINCE_BATCH`. O `flat_lay_json` registra `sourceRecovered: true`.
 2. Monte a lista de aprovados a partir do que teve Fase 2 e tire o que reprovou na grade (`index.html`):
    ```bash
    cat ~/catalog-fase2/lote-*/audit.jsonl | python3 -c "import sys, json; [print(r['id']) for r in map(json.loads, sys.stdin) if r.get('output') == 'generative_reconstruction_requires_review']" | sort -u > ~/catalog-fase2/aprovados.txt
