@@ -724,26 +724,6 @@
    "max": 555,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "lib/heist/ai.ts": {
-   "max": 375,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/heist/level.ts": {
-   "max": 432,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/heist/looks.ts": {
-   "max": 259,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/heist/sim.ts": {
-   "max": 820,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/heist/types.ts": {
-   "max": 276,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "lib/room3d/interaction.ts": {
    "max": 350,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
