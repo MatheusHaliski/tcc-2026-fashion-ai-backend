@@ -2,7 +2,6 @@ package br.com.fashionai.application.lens;
 
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.service.MultiPieceService;
-import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.domain.model.LensFeedback;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.WardrobeItem;
