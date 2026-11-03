@@ -92,14 +92,6 @@
    "max": 379,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "components/heist/scene/exterior-facade.tsx": {
-   "max": 313,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/heist/scene/exterior-street.tsx": {
-   "max": 500,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "components/interactions.tsx": {
    "max": 361,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
