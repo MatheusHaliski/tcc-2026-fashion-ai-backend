@@ -1,0 +1,182 @@
+login.email = Session{accessToken=jwt:ana, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#1, user=UserCard{id=#2, username=ana, displayName=Ana, avatarUrl=null, profileType=PESSOAL, verified=false, country=BR, privateAccount=false, }, status=ACTIVE, emailVerified=true, warnings=[], }
+email = 
+notifications = notify[#2, null, NEW_LOGIN_DEVICE, SESSION, null, §i18n:identity.novo_acesso_a_sua_conta§, §i18n:identity.login_em_se_nao_foiSafari macOS§, {ip=1.1.1.1, }]; 
+audit = log[#2, LOGIN_SUCESSO, auth, SUCESSO, 1.1.1.1, Mozilla/5.0 (Macintosh; Mac OS X) Safari/605, {newDevice=true, }]; 
+storage = 
+rateLimit = tryAcquire[#2, login-fail, 5, PT15M]; release[#2, login-fail]; reset[#2, login-fail]; 
+hasher = hash[fashion-ai-timing-#3]; matches[Senha@Forte1, h:Senha@Forte1]; needsRehash[h:Senha@Forte1]; 
+tokens = issueAccessToken[User(#2), #1]; accessTokenTtl[]; 
+issuerReview = 
+login.mesmoAparelho = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+email = 
+notifications = 
+audit = log[anonymous, LOGIN_FALHO, auth, FALHA, 1.1.1.1, Mozilla/5.0 (Macintosh; Mac OS X) Safari/605, {reason=usuario_inexistente, }]; 
+storage = 
+rateLimit = 
+hasher = matches[Senha@Forte1, h:fashion-ai-timing-#3]; 
+tokens = 
+issuerReview = 
+login.inexistente = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.nulo = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.senhaErrada = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+email = 
+notifications = 
+audit = log[anonymous, LOGIN_FALHO, auth, FALHA, 1.1.1.1, null, {reason=usuario_inexistente, }]; log[anonymous, LOGIN_FALHO, auth, FALHA, null, null, {reason=usuario_inexistente, }]; log[#2, LOGIN_FALHO, auth, FALHA, 1.1.1.1, ua, {reason=senha, }]; 
+storage = 
+rateLimit = tryAcquire[#2, login-fail, 5, PT15M]; 
+hasher = matches[x, h:fashion-ai-timing-#3]; matches[, h:fashion-ai-timing-#3]; matches[errada, h:Senha@Forte1]; 
+tokens = 
+issuerReview = 
+login.rehash = Session{accessToken=jwt:bia, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#4, user=UserCard{id=#5, username=bia, displayName=Bia, avatarUrl=null, profileType=PESSOAL, verified=false, country=BR, privateAccount=false, }, status=ACTIVE, emailVerified=true, warnings=[], }
+email = 
+notifications = notify[#5, null, NEW_LOGIN_DEVICE, SESSION, null, §i18n:identity.novo_acesso_a_sua_conta§, §i18n:identity.login_em_se_nao_foidispositivo desconhecido§, {ip=2.2.2.2, }]; 
+audit = log[#5, LOGIN_SUCESSO, auth, SUCESSO, 2.2.2.2, null, {newDevice=true, }]; 
+storage = 
+rateLimit = tryAcquire[#5, login-fail, 5, PT15M]; release[#5, login-fail]; reset[#5, login-fail]; 
+hasher = matches[Senha@Forte1, old:Senha@Forte1]; needsRehash[old:Senha@Forte1]; hash[Senha@Forte1]; 
+tokens = issueAccessToken[User(#5), #4]; accessTokenTtl[]; 
+issuerReview = 
+login.suspensa = ApiException(CONTA_INDISPONIVEL,403,Esta conta não está disponível.,{})
+login.chute0 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.chute1 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.chute2 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.chute3 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.chute4 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.bloqueada = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+email = 
+notifications = 
+audit = log[#6, LOGIN_FALHO, auth, FALHA, 3.3.3.3, ua, {reason=senha, }]; log[#6, LOGIN_FALHO, auth, FALHA, 3.3.3.3, ua, {reason=senha, }]; log[#6, LOGIN_FALHO, auth, FALHA, 3.3.3.3, ua, {reason=senha, }]; log[#6, LOGIN_FALHO, auth, FALHA, 3.3.3.3, ua, {reason=senha, }]; log[#6, LOGIN_FALHO, auth, FALHA, 3.3.3.3, ua, {reason=senha, }]; log[#6, LOGIN_BLOQUEADO_TENTATIVAS, auth, BLOQUEADO, 3.3.3.3, ua, {resetAt=<t>, }]; 
+storage = 
+rateLimit = tryAcquire[#6, login-fail, 5, PT15M]; release[#6, login-fail]; tryAcquire[#6, login-fail, 5, PT15M]; tryAcquire[#6, login-fail, 5, PT15M]; tryAcquire[#6, login-fail, 5, PT15M]; tryAcquire[#6, login-fail, 5, PT15M]; tryAcquire[#6, login-fail, 5, PT15M]; tryAcquire[#6, login-fail, 5, PT15M]; status[#6, login-fail, 5, PT15M]; 
+hasher = matches[Senha@Forte1, h:Senha@Forte1]; matches[x0, h:Senha@Forte1]; matches[x1, h:Senha@Forte1]; matches[x2, h:Senha@Forte1]; matches[x3, h:Senha@Forte1]; matches[x4, h:Senha@Forte1]; matches[Senha@Forte1, h:Senha@Forte1]; 
+tokens = 
+issuerReview = 
+2fa.semCodigo = ApiException(DOIS_FATORES_NECESSARIO,401,Enviamos um código de verificação para o seu e-mail.,{twoFactorRequired=true, })
+2fa.semCodigoAberto = ApiException(NAO_AUTENTICADO,401,Código de verificação inválido.,{})
+2fa.expirado = ApiException(NAO_AUTENTICADO,401,Código de verificação inválido ou expirado.,{})
+2fa.errado = ApiException(NAO_AUTENTICADO,401,Código de verificação inválido ou expirado.,{})
+2fa.certo = Session{accessToken=jwt:bia, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#7, user=UserCard{id=#5, username=bia, displayName=Bia, avatarUrl=null, profileType=PESSOAL, verified=false, country=BR, privateAccount=false, }, status=ACTIVE, emailVerified=true, warnings=[], }
+email = send[bia@example.com, Seu código de acesso ao Fashion AI, <p>Código: <b><code></b> (válido por 10 minutos).</p>, SECURITY]; 
+notifications = notify[#5, null, NEW_LOGIN_DEVICE, SESSION, null, §i18n:identity.novo_acesso_a_sua_conta§, §i18n:identity.login_em_se_nao_foiFirefox Linux§, {ip=2.2.2.2, }]; 
+audit = log[#5, LOGIN_FALHO, auth, FALHA, 2.2.2.2, Firefox Linux, {reason=2fa, }]; log[#5, LOGIN_SUCESSO, auth, SUCESSO, 2.2.2.2, Firefox Linux, {newDevice=true, }]; 
+storage = 
+rateLimit = tryAcquire[#5, login-fail, 5, PT15M]; release[#5, login-fail]; tryAcquire[#5, login-fail, 5, PT15M]; release[#5, login-fail]; tryAcquire[#5, login-fail, 5, PT15M]; release[#5, login-fail]; tryAcquire[#5, login-fail, 5, PT15M]; release[#5, login-fail]; tryAcquire[#5, login-fail, 5, PT15M]; tryAcquire[#5, login-fail, 5, PT15M]; release[#5, login-fail]; reset[#5, login-fail]; 
+hasher = matches[Senha@Forte1, h:Senha@Forte1]; needsRehash[h:Senha@Forte1]; matches[Senha@Forte1, h:Senha@Forte1]; needsRehash[h:Senha@Forte1]; matches[Senha@Forte1, h:Senha@Forte1]; needsRehash[h:Senha@Forte1]; matches[Senha@Forte1, h:Senha@Forte1]; needsRehash[h:Senha@Forte1]; matches[Senha@Forte1, h:Senha@Forte1]; needsRehash[h:Senha@Forte1]; 
+tokens = issueAccessToken[User(#5), #7]; accessTokenTtl[]; 
+issuerReview = 
+user = [User(#2), ana, Ana, ana@example.com, <hex>, h:Senha@Forte1, PESSOAL, ACTIVE, true, BR, null, null, null, false, null, false, true]
+user = [User(#5), bia, Bia, bia@example.com, <hex>, h:Senha@Forte1, PESSOAL, ACTIVE, true, BR, null, null, null, false, null, false, true]
+user = [User(#6), caio, Caio, caio@example.com, <hex>, h:Senha@Forte1, PESSOAL, ACTIVE, true, BR, null, null, null, false, null, false, false]
+code = [User(#5), TWO_FACTOR, <hex>, 0, true, 10min, true]
+code = [User(#5), TWO_FACTOR, <hex>, 0, true, 0min, false]
+code = [User(#5), TWO_FACTOR, <hex>, 1, true, 60min, false]
+refresh = [User(#2), #1, null, true, 43200min, 1.1.1.1, Mozilla/5.0 (Macintosh; Mac OS X) Safari/605, Safari macOS, BR, false]
+refresh = [User(#5), #4, null, false, 1440min, 2.2.2.2, null, Dispositivo, BR, false]
+refresh = [User(#5), #7, null, false, 1440min, 2.2.2.2, Firefox Linux, Tablet, BR, false]
+buckets = {login-fail:#2=1, login-fail:#6=6, }
+objects = []
+refresh.vazio = ApiException(NAO_AUTENTICADO,401,Sessão expirada. Faça login novamente.,{})
+refresh.desconhecido = ApiException(NAO_AUTENTICADO,401,Sessão expirada. Faça login novamente.,{})
+refresh.ok = Session{accessToken=jwt:ana, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#1, user=UserCard{id=#2, username=ana, displayName=Ana, avatarUrl=null, profileType=PESSOAL, verified=false, country=BR, privateAccount=false, }, status=ACTIVE, emailVerified=true, warnings=[], }
+refresh.reuso = ApiException(NAO_AUTENTICADO,401,Sessão encerrada por segurança. Faça login novamente.,{})
+sessionActive = [false, false, false]
+email = 
+notifications = 
+audit = log[#2, REFRESH_REUTILIZADO, session:#1, BLOQUEADO, 5.5.5.5, ua, {}]; 
+storage = 
+rateLimit = 
+hasher = 
+tokens = issueAccessToken[User(#2), #1]; accessTokenTtl[]; 
+issuerReview = 
+refresh.expirado = ApiException(NAO_AUTENTICADO,401,Sessão expirada. Faça login novamente.,{})
+refresh.contaExcluida = ApiException(NAO_AUTENTICADO,401,Conta indisponível.,{})
+email = 
+notifications = 
+audit = 
+storage = 
+rateLimit = 
+hasher = 
+tokens = 
+issuerReview = 
+email = 
+notifications = notify[#2, null, NEW_LOGIN_DEVICE, SESSION, null, §i18n:identity.novo_acesso_a_sua_conta§, §i18n:identity.login_em_se_nao_foiSafari iOS§, {ip=1.1.1.1, }]; notify[#2, null, NEW_LOGIN_DEVICE, SESSION, null, §i18n:identity.novo_acesso_a_sua_conta§, §i18n:identity.login_em_se_nao_foiChrome Windows§, {ip=1.1.1.1, }]; 
+audit = log[#2, LOGIN_SUCESSO, auth, SUCESSO, 1.1.1.1, iPhone Safari, {newDevice=true, }]; log[#2, LOGIN_SUCESSO, auth, SUCESSO, 1.1.1.1, Windows Chrome, {newDevice=true, }]; 
+storage = 
+rateLimit = tryAcquire[#2, login-fail, 5, PT15M]; release[#2, login-fail]; reset[#2, login-fail]; tryAcquire[#2, login-fail, 5, PT15M]; release[#2, login-fail]; reset[#2, login-fail]; 
+hasher = matches[Senha@Forte1, h:Senha@Forte1]; needsRehash[h:Senha@Forte1]; matches[Senha@Forte1, h:Senha@Forte1]; needsRehash[h:Senha@Forte1]; 
+tokens = issueAccessToken[User(#2), #8]; accessTokenTtl[]; issueAccessToken[User(#2), #9]; accessTokenTtl[]; 
+issuerReview = 
+sessions.count = 2
+revokeSession.alheia = ApiException(NAO_ENCONTRADO,404,Sessão não encontrado(a).,{})
+revokeSession = ok
+logout = ok
+revokeOtherSessions = 0
+email = 
+notifications = 
+audit = log[CurrentUser{id=#2, username=ana, role=USER, profileType=PESSOAL, emailVerified=true, status=ACTIVE, ip=127.0.0.1, userAgent=JUnit, }, SESSAO_REVOGADA, session:#9, {}]; log[CurrentUser{id=#2, username=ana, role=USER, profileType=PESSOAL, emailVerified=true, status=ACTIVE, ip=127.0.0.1, userAgent=JUnit, }, LOGOUT, session:#8, {}]; 
+storage = 
+rateLimit = 
+hasher = 
+tokens = 
+issuerReview = 
+reset.inexistente = ok
+reset.pedido = ok
+email = send[ana@example.com, Redefinição de senha — Fashion AI, <p>Recebemos um pedido para redefinir sua senha.</p><p><a href='/reset-password?token=<hex>'>Redefinir senha</a> (válido por 30 minutos).</p><p>Se não foi você, ignore este e-mail.</p>, SECURITY]; send[ana@example.com, Redefinição de senha — Fashion AI, <p>Recebemos um pedido para redefinir sua senha.</p><p><a href='/reset-password?token=<hex>'>Redefinir senha</a> (válido por 30 minutos).</p><p>Se não foi você, ignore este e-mail.</p>, SECURITY]; send[ana@example.com, Redefinição de senha — Fashion AI, <p>Recebemos um pedido para redefinir sua senha.</p><p><a href='/reset-password?token=<hex>'>Redefinir senha</a> (válido por 30 minutos).</p><p>Se não foi você, ignore este e-mail.</p>, SECURITY]; send[ana@example.com, Redefinição de senha — Fashion AI, <p>Recebemos um pedido para redefinir sua senha.</p><p><a href='/reset-password?token=<hex>'>Redefinir senha</a> (válido por 30 minutos).</p><p>Se não foi você, ignore este e-mail.</p>, SECURITY]; send[ana@example.com, Redefinição de senha — Fashion AI, <p>Recebemos um pedido para redefinir sua senha.</p><p><a href='/reset-password?token=<hex>'>Redefinir senha</a> (válido por 30 minutos).</p><p>Se não foi você, ignore este e-mail.</p>, SECURITY]; 
+notifications = notify[#2, null, PASSWORD_RESET, USER, #2, §i18n:identity.pedido_de_redefinicao_de_senha§, §i18n:identity.se_nao_foi_voce_ignore§, null]; notify[#2, null, PASSWORD_RESET, USER, #2, §i18n:identity.pedido_de_redefinicao_de_senha§, §i18n:identity.se_nao_foi_voce_ignore§, null]; notify[#2, null, PASSWORD_RESET, USER, #2, §i18n:identity.pedido_de_redefinicao_de_senha§, §i18n:identity.se_nao_foi_voce_ignore§, null]; notify[#2, null, PASSWORD_RESET, USER, #2, §i18n:identity.pedido_de_redefinicao_de_senha§, §i18n:identity.se_nao_foi_voce_ignore§, null]; notify[#2, null, PASSWORD_RESET, USER, #2, §i18n:identity.pedido_de_redefinicao_de_senha§, §i18n:identity.se_nao_foi_voce_ignore§, null]; 
+audit = log[#2, RECUPERACAO_SENHA, auth, SOLICITADA, 1.1.1.1, ua, {}]; log[#2, RECUPERACAO_SENHA, auth, SOLICITADA, 1.1.1.1, ua, {}]; log[#2, RECUPERACAO_SENHA, auth, SOLICITADA, 1.1.1.1, ua, {}]; log[#2, RECUPERACAO_SENHA, auth, SOLICITADA, 1.1.1.1, ua, {}]; log[#2, RECUPERACAO_SENHA, auth, SOLICITADA, 1.1.1.1, ua, {}]; 
+storage = 
+rateLimit = tryAcquire[#2, password-reset, 5, PT1H]; tryAcquire[#2, password-reset, 5, PT1H]; tryAcquire[#2, password-reset, 5, PT1H]; tryAcquire[#2, password-reset, 5, PT1H]; tryAcquire[#2, password-reset, 5, PT1H]; tryAcquire[#2, password-reset, 5, PT1H]; 
+hasher = 
+tokens = 
+issuerReview = 
+reset.tokenNulo = ApiException(LINK_INVALIDO,400,Link inválido ou expirado. Peça uma nova redefinição.,{})
+reset.fraca = ApiException(FORMULARIO_INVALIDO,400,Corrija os campos destacados.,{password=A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial., confirmPassword=As senhas não coincidem., })
+reset.nula = ApiException(FORMULARIO_INVALIDO,400,Corrija os campos destacados.,{password=A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial., })
+reset.ok = ok
+reset.reuso = ApiException(LINK_INVALIDO,400,Link inválido ou expirado. Peça uma nova redefinição.,{})
+email = 
+notifications = 
+audit = log[#2, TROCA_SENHA, user:#2, SUCESSO, null, null, {via=reset, }]; 
+storage = 
+rateLimit = reset[#2, login-fail]; 
+hasher = hash[Nova@Senha1]; 
+tokens = 
+issuerReview = 
+change.errada = ApiException(SENHA_ATUAL_INCORRETA,400,Senha atual incorreta.,{})
+change.fraca = ApiException(FORMULARIO_INVALIDO,400,Corrija os campos destacados.,{password=A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial., confirmPassword=As senhas não coincidem., })
+change.ok = 1
+reauth.ok = ok
+reauth.errada = ApiException(REAUTENTICACAO_FALHOU,401,Confirme sua senha para alterar dados sensíveis.,{})
+reauth.inexistente = ApiException(NAO_ENCONTRADO,404,Usuário não encontrado(a).,{})
+login.depois0 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.depois1 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.depois2 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+login.depois3 = ApiException(NAO_AUTENTICADO,401,E-mail/usuário ou senha incorretos. Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos; se esqueceu a senha, recupere-a.,{})
+email = 
+notifications = notify[#2, null, NEW_LOGIN_DEVICE, SESSION, null, §i18n:identity.novo_acesso_a_sua_conta§, §i18n:identity.login_em_se_nao_foiNavegador§, {ip=1.1.1.1, }]; 
+audit = log[#2, LOGIN_FALHO, auth, FALHA, null, null, {reason=troca_senha, }]; log[#2, LOGIN_SUCESSO, auth, SUCESSO, 1.1.1.1, x, {newDevice=true, }]; log[CurrentUser{id=#2, username=ana, role=USER, profileType=PESSOAL, emailVerified=true, status=ACTIVE, ip=127.0.0.1, userAgent=JUnit, }, TROCA_SENHA, user:#2, {sessoesEncerradas=1, }]; log[#2, LOGIN_FALHO, auth, FALHA, null, null, {reason=reautenticacao, }]; log[#2, LOGIN_FALHO, auth, FALHA, 1.1.1.1, x, {reason=senha, }]; log[#2, LOGIN_FALHO, auth, FALHA, 1.1.1.1, x, {reason=senha, }]; log[#2, LOGIN_FALHO, auth, FALHA, 1.1.1.1, x, {reason=senha, }]; log[#2, LOGIN_FALHO, auth, FALHA, 1.1.1.1, x, {reason=senha, }]; 
+storage = 
+rateLimit = tryAcquire[#2, login-fail, 5, PT15M]; tryAcquire[#2, login-fail, 5, PT15M]; release[#2, login-fail]; tryAcquire[#2, login-fail, 5, PT15M]; release[#2, login-fail]; reset[#2, login-fail]; tryAcquire[#2, login-fail, 5, PT15M]; release[#2, login-fail]; tryAcquire[#2, login-fail, 5, PT15M]; release[#2, login-fail]; tryAcquire[#2, login-fail, 5, PT15M]; tryAcquire[#2, login-fail, 5, PT15M]; tryAcquire[#2, login-fail, 5, PT15M]; tryAcquire[#2, login-fail, 5, PT15M]; tryAcquire[#2, login-fail, 5, PT15M]; 
+hasher = matches[errada, h:Nova@Senha1]; matches[Nova@Senha1, h:Nova@Senha1]; matches[Nova@Senha1, h:Nova@Senha1]; needsRehash[h:Nova@Senha1]; matches[Nova@Senha1, h:Nova@Senha1]; hash[Outra@Senha2]; matches[Outra@Senha2, h:Outra@Senha2]; matches[, h:Outra@Senha2]; matches[z, h:Outra@Senha2]; matches[z, h:Outra@Senha2]; matches[z, h:Outra@Senha2]; matches[z, h:Outra@Senha2]; 
+tokens = issueAccessToken[User(#2), #10]; accessTokenTtl[]; 
+issuerReview = 
+user = [User(#2), ana, Ana, ana@example.com, <hex>, h:Outra@Senha2, PESSOAL, ACTIVE, true, BR, null, null, null, false, null, false, true]
+user = [User(#5), bia, Bia, bia@example.com, <hex>, h:Senha@Forte1, PESSOAL, ACTIVE, true, BR, null, null, null, false, null, false, true]
+user = [User(#6), caio, Caio, caio@example.com, <hex>, h:Senha@Forte1, PESSOAL, ACTIVE, true, BR, null, null, null, false, null, false, false]
+code = [User(#5), TWO_FACTOR, <hex>, 0, true, 10min, true]
+code = [User(#5), TWO_FACTOR, <hex>, 0, true, 0min, false]
+code = [User(#5), TWO_FACTOR, <hex>, 1, true, 60min, false]
+code = [User(#2), PASSWORD_RESET, <hex>, 0, true, 30min, true]
+code = [User(#2), PASSWORD_RESET, <hex>, 0, true, 30min, true]
+code = [User(#2), PASSWORD_RESET, <hex>, 0, true, 30min, true]
+code = [User(#2), PASSWORD_RESET, <hex>, 0, true, 30min, true]
+code = [User(#2), PASSWORD_RESET, <hex>, 0, true, 30min, true]
+refresh = [User(#2), #1, null, true, 43200min, 1.1.1.1, Mozilla/5.0 (Macintosh; Mac OS X) Safari/605, Safari macOS, BR, true]
+refresh = [User(#5), #4, null, false, 10min, 2.2.2.2, null, Dispositivo, BR, false]
+refresh = [User(#5), #7, null, false, 1440min, 2.2.2.2, Firefox Linux, Tablet, BR, false]
+refresh = [User(#2), #1, #11, true, 43200min, 4.4.4.4, Edg/120 Android, Safari macOS, BR, true]
+refresh = [User(#2), #8, null, false, 1440min, 1.1.1.1, iPhone Safari, A, BR, true]
+refresh = [User(#2), #9, null, true, 43200min, 1.1.1.1, Windows Chrome, B, BR, true]
+refresh = [User(#2), #10, null, false, 1440min, 1.1.1.1, x, C, BR, true]
+buckets = {login-fail:#2=5, login-fail:#6=6, password-reset:#2=6, }
+objects = []
