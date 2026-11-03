@@ -7,6 +7,10 @@ quantidades e quais colunas parecem ligar um produto a um modelo 3D. O ``export`
     python scripts/catalog/codex_glb_index.py schema ~/glb-analise/codex.sqlite
     python scripts/catalog/codex_glb_index.py export ~/glb-analise/codex.sqlite --table meshy_jobs \\
         --product-col product_id --glb-col glb_path [--task-col task_id] --out ~/glb-analise/manifesto.csv
+    python scripts/catalog/codex_glb_index.py archive ~/glb-analise/generated-glbs.sqlite3 --out ~/glb-analise
+
+``archive`` é o formato FAI_GLB_ARCHIVE_V1 (o .glb em pedaços dentro do SQLite, veja codex_glb_archive.py): remonta
+cada .glb base, confere o SHA-256 e grava ``<out>/glb/<id>.glb`` e ``<out>/manifesto.csv`` apontando para eles.
 """
 from __future__ import annotations
 
@@ -16,6 +20,11 @@ import re
 import sqlite3
 import sys
 from pathlib import Path
+
+try:
+    from .codex_glb_archive import export_archive, is_archive
+except ImportError:   # rodado como script: scripts/catalog no sys.path
+    from codex_glb_archive import export_archive, is_archive
 
 PRODUCT = re.compile(r"(catalog_)?product(_id)?$|^piece_id$|^item_id$|^produto", re.I)
 GLB = re.compile(r"glb|model(3d)?_?(url|path|key|file)|mesh_?(url|path)|asset_?(url|path|key)", re.I)
@@ -79,6 +88,9 @@ def main(argv=None) -> int:
     dump.add_argument("--glb-col", required=True)
     dump.add_argument("--task-col")
     dump.add_argument("--out", type=Path, default=Path("manifesto.csv"))
+    archive = sub.add_parser("archive", help="remonta os .glb do arquivo FAI_GLB_ARCHIVE_V1 e grava o manifesto")
+    archive.add_argument("db", type=Path)
+    archive.add_argument("--out", type=Path, default=Path("."))
     args = parser.parse_args(argv)
     conn = open_ro(args.db)
     try:
@@ -89,7 +101,15 @@ def main(argv=None) -> int:
                 print(f"{t['table']}: {t['rows']} linhas · {len(t['columns'])} colunas" + (f" · {marks}" if marks else ""))
             found = candidates(tables)
             print("\nmanifesto provável: " + (", ".join(t["table"] for t in found) if found else "nenhuma tabela liga produto a glb"))
+            if is_archive(conn):
+                print("formato FAI_GLB_ARCHIVE_V1 (.glb em pedaços): use o subcomando archive")
             return 0
+        if args.cmd == "archive":
+            if not is_archive(conn):
+                raise SystemExit("o SQLite não está no formato FAI_GLB_ARCHIVE_V1")
+            count = export_archive(conn, args.out)
+            print(f"{count} .glb base → {args.out / 'glb'} · manifesto → {args.out / 'manifesto.csv'}")
+            return 0 if count else 1
         count = export(conn, args.table, args.product_col, args.glb_col, args.task_col, args.out)
         print(f"{count} linhas → {args.out}")
         return 0 if count else 1

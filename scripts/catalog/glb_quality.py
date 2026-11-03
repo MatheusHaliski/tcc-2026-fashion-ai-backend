@@ -5,7 +5,8 @@ accessors, vale também com Draco), texturas (quantidade e resolução, lidas do
 caixa da malha (min/max do POSITION, obrigatório no glTF) e tamanho do arquivo. Devolve uma nota:
 
 - ``BOM``: pronto para o visualizador;
-- ``REVISAR``: abre, mas tem algo a conferir à mão (textura grande, malha pesada, arquivo acima do perfil WEB);
+- ``REVISAR``: abre, mas tem algo a conferir à mão (textura grande, malha pesada, arquivo acima do perfil WEB, peça
+  fina demais de lado);
 - ``RUIM``: não serve (sem textura, malha quase vazia, peça achatada, arquivo inválido ou grande demais).
 """
 from __future__ import annotations
@@ -22,6 +23,7 @@ MIN_TRIANGLES = 2_000            # abaixo disso a roupa vira um bloco
 HEAVY_TRIANGLES = 300_000        # acima disso pesa no celular
 MAX_TEXTURE = 4096
 FLAT_RATIO = 0.02                # menor lado da caixa / maior lado: abaixo disso é uma placa, não uma peça
+THIN_RATIO = 0.10                # profundidade (Z) / maior lado da frente (X, Y): relevo, não volume de peça vestida
 BAD = {"INVALID_GLB", "NO_MESH", "NO_TEXTURE", "TOO_FEW_TRIANGLES", "FLAT_MESH", "TOO_LARGE"}
 COMPONENT_COUNT = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}
 
@@ -121,6 +123,8 @@ def issues(r: dict) -> list[str]:
     dims = r["dimensions"]
     if dims and max(dims) > 0 and min(dims) / max(dims) < FLAT_RATIO:
         found.append("FLAT_MESH")
+    elif dims and max(dims[:2]) > 0 and dims[2] / max(dims[:2]) < THIN_RATIO:
+        found.append("THIN_PROFILE")   # Meshy de uma foto só: frente boa, de lado parece um relevo
     if r["bytes"] > DESKTOP_BYTES:
         found.append("TOO_LARGE")
     elif r["bytes"] > WEB_BYTES:

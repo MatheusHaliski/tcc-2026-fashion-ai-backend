@@ -1,51 +1,45 @@
 #!/usr/bin/env python3
 """Etapa 3, lote do Codex: reaproveita os .glb que o Codex já gerou na Meshy e deixa para a geração só o que falta.
 
-Entrada: o manifesto produto × .glb (codex_glb_index.py export) e a pasta com os arquivos extraídos do pacote. Para cada
-linha: identifica a peça no catálogo (id, nome, categoria, marca), mede a qualidade do .glb (glb_quality.py) e decide:
+Entrada: o manifesto (codex_glb_index.py archive/export) e a pasta com os .glb. Para cada linha: liga ao produto do
+catálogo (codex_catalog_match.py), monta a versão WEB ≤ 6 MB (glb_web_rendition.py), mede a qualidade dela
+(glb_quality.py), soma a revisão visual do Codex e decide:
 
-- ``BOM``/``REVISAR``: entra como asset 3D do produto (garment_assets_3d, status DRAFT, origem GENERATED, sem esqueleto:
-  aparece no visualizador da peça, nunca veste o avatar; a revisão humana continua no GarmentAssetService);
-- ``RUIM``, sem produto ou já importado: não entra.
+- ``IMPORTAR``: nota BOM (vira PUBLISHED) ou REVISAR (vira DRAFT) em catalog_product_models_3d (V86), o modelo de vitrine
+  do produto. Sem esqueleto: nunca veste o avatar (isso é o garment_assets_3d APPROVED);
+- ``GERAR_DE_NOVO``: nota RUIM, quarentena do Codex ou sem versão que caiba no WEB;
+- ``SEM_PRODUTO``, ``JA_IMPORTADO``, ``DUPLICADO``: não entra.
 
-Saídas: ``relatorio.csv`` (peça, arquivo, nota, métricas, situação) e ``faltam.txt`` (produtos com flat lay aprovado
-sem modelo 3D bom: a entrada da geração da etapa 3). Por padrão é um ensaio, com o banco só lido. ``--apply`` envia ao
-armazenamento do app e grava, e só roda com autorização explícita.
+Saídas: ``relatorio.csv``, ``faltam.txt`` (flat lay aprovado sem modelo BOM publicado: a entrada da geração da etapa 3)
+e ``revisar.txt`` (o subconjunto de faltam.txt que entrou como DRAFT). Por padrão é um ensaio, com o banco só lido.
+``--apply`` envia ao bucket e grava, e só roda com autorização explícita.
 
     python scripts/catalog/import_meshy_glbs.py --manifest manifesto.csv --root ~/glb-analise --out-dir ~/glb-analise
-    python scripts/catalog/import_meshy_glbs.py --manifest manifesto.csv --root ~/glb-analise --apply
 """
 from __future__ import annotations
 
 import argparse
 import csv
 import hashlib
-import json
-import re
 import sys
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from .glb_quality import inspect, rendition_profile
+    from .codex_catalog_match import resolve
+    from .glb_quality import DESKTOP_BYTES, inspect
+    from .glb_web_rendition import web_rendition
+    from .meshy_glb_apply import apply_one, pieces_without_model
 except ImportError:   # rodado como script: scripts/catalog no sys.path
-    from glb_quality import inspect, rendition_profile
+    from codex_catalog_match import resolve
+    from glb_quality import DESKTOP_BYTES, inspect
+    from glb_web_rendition import web_rendition
+    from meshy_glb_apply import apply_one, pieces_without_model
 
-VERSION = "MESHY_GLB_V1"
-UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-PRODUCTS = """SELECT p.id, p.product_name, p.category, p.subcategory, b.name AS brand
-  FROM catalog_products p LEFT JOIN brands b ON b.id = p.brand_id WHERE p.id IN %(ids)s"""
-EXISTING = """SELECT catalog_product_id, JSON_UNQUOTE(JSON_EXTRACT(metrics_json, '$.import.sha256')) AS sha, status
-  FROM garment_assets_3d WHERE catalog_product_id IS NOT NULL AND status <> 'RETIRED'"""
+EXISTING = """SELECT catalog_product_id, sha256, status FROM catalog_product_models_3d WHERE status <> 'RETIRED'"""
 APPROVED_FLAT_LAYS = "SELECT DISTINCT product_id FROM catalog_images WHERE flat_lay_status = 'APPROVED'"
-INSERT = """INSERT INTO garment_assets_3d (id, catalog_product_id, status, rig_standard, source, logo_authorization,
-  metrics_json, renditions_json, review_notes, created_at, updated_at, created_by, last_modified_by, version)
-  VALUES (%(id)s, %(product_id)s, 'DRAFT', 'NONE', 'GENERATED', 'PENDING', %(metrics)s, %(renditions)s, %(notes)s,
-  %(now)s, %(now)s, 'import_meshy_glbs', 'import_meshy_glbs', 0)"""
-NOTES = "Meshy (lote do Codex) sem esqueleto: visualizador da peça, não veste o avatar. Revisar cor, estampa e logo."
-REPORT = ["arquivo", "product_id", "nome", "categoria", "subcategoria", "marca", "nota", "triangulos", "vertices",
-          "texturas", "maior_textura", "mb", "problemas", "situacao"]
+REPORT = ["arquivo", "codex_id", "product_id", "ligacao", "nome", "categoria", "subcategoria", "marca", "nota",
+          "triangulos", "texturas", "maior_textura", "mb_original", "mb_web", "receita_web", "revisao_codex",
+          "problemas", "pecas_guarda_roupa", "situacao"]
 RANK = {"BOM": 0, "REVISAR": 1, "RUIM": 2}
 
 
@@ -55,7 +49,7 @@ def read_manifest(path: Path) -> list[dict]:
 
 
 def locate(root: Path, glb: str) -> Path | None:
-    """Arquivo do manifesto dentro da pasta extraída: caminho relativo ou, se o Codex gravou outro, pelo nome."""
+    """Arquivo do manifesto dentro da pasta: caminho relativo ou, se o Codex gravou outro, pelo nome (único)."""
     name = glb.split("?")[0].rstrip("/").split("/")[-1]
     direct = (root / glb.lstrip("/")).resolve()
     if direct.is_file() and root.resolve() in direct.parents:
@@ -70,27 +64,49 @@ def query(conn, sql: str, params: dict | None = None) -> list[dict]:
         return list(cur.fetchall())
 
 
+def renditions(data: bytes) -> dict[str, tuple[bytes, str]]:
+    """WEB (sempre, se couber) e DESKTOP_HIGH (o original, quando é outro arquivo e cabe em 12 MB)."""
+    web = web_rendition(data)
+    if web is None:
+        return {}
+    out = {"WEB": web}
+    if web[1] != "original" and len(data) <= DESKTOP_BYTES:
+        out["DESKTOP_HIGH"] = (data, "original")
+    return out
+
+
+def grade(path: Path | None, codex_review: str) -> tuple[dict, int | None, str]:
+    """Qualidade da versão WEB (é ela que o app baixa), tamanho e receita; quarentena do Codex rebaixa para RUIM."""
+    if path is None:
+        return {"grade": "RUIM", "issues": ["FILE_NOT_FOUND"], "bytes": 0}, None, ""
+    data = path.read_bytes()
+    web = web_rendition(data)
+    q = inspect(web[0] if web else data)
+    if web is None:
+        q = {**q, "grade": "RUIM", "issues": q["issues"] + ["NO_WEB_RENDITION"]}
+    if codex_review.upper().startswith("QUARANTINE"):
+        q = {**q, "grade": "RUIM", "issues": q["issues"] + ["CODEX_QUARANTINE"]}
+    return {**q, "original_bytes": len(data)}, len(web[0]) if web else None, web[1] if web else ""
+
+
 def assess(rows: list[dict], root: Path, conn) -> list[dict]:
-    """Uma linha do relatório por arquivo do manifesto, com a situação de cada um."""
-    ids = tuple(sorted({r["product_id"] for r in rows if UUID.match(r["product_id"])}))
-    products = {str(p["id"]): p for p in query(conn, PRODUCTS, {"ids": ids})} if ids else {}
-    existing = {(str(e["catalog_product_id"]), e["sha"]) for e in query(conn, EXISTING)}
+    matches = resolve(conn, rows)
+    existing = {(str(e["catalog_product_id"]), e["sha256"]) for e in query(conn, EXISTING)}
     out = []
-    for r in rows:
+    for i, r in enumerate(rows):
         path = locate(root, r.get("glb", ""))
-        data = path.read_bytes() if path else b""
-        q = inspect(data) if path else {"grade": "RUIM", "issues": ["FILE_NOT_FOUND"], "bytes": 0}
-        sha = hashlib.sha256(data).hexdigest() if path else None
-        product = products.get(r["product_id"])
+        q, web_bytes, recipe = grade(path, r.get("codex_quality") or "")
+        sha = hashlib.sha256(path.read_bytes()).hexdigest() if path else None
+        product, match = matches[i]
+        pid = str(product["id"]) if product else ""
         if product is None:
             status = "SEM_PRODUTO"
-        elif (r["product_id"], sha) in existing:
+        elif (pid, sha) in existing:
             status = "JA_IMPORTADO"
-        elif q["grade"] == "RUIM" or rendition_profile(q["bytes"]) is None:
-            status = "GERAR_DE_NOVO"
         else:
-            status = "IMPORTAR"
-        out.append({"row": r, "path": path, "sha": sha, "quality": q, "product": product or {}, "status": status})
+            status = "GERAR_DE_NOVO" if q["grade"] == "RUIM" else "IMPORTAR"
+        out.append({"row": r, "path": path, "sha": sha, "quality": q, "grade": q["grade"], "web_bytes": web_bytes,
+                    "recipe": recipe, "product": product or {}, "product_id": pid, "match": match, "status": status})
     keep_best(out)
     return out
 
@@ -99,65 +115,34 @@ def keep_best(items: list[dict]) -> None:
     """Dois .glb do mesmo produto: entra o de melhor nota (empate: o mais leve); o outro fica como DUPLICADO."""
     best: dict[str, dict] = {}
     for item in (i for i in items if i["status"] == "IMPORTAR"):
-        key = (RANK[item["quality"]["grade"]], item["quality"]["bytes"])
-        current = best.get(item["row"]["product_id"])
-        if current is None or key < (RANK[current["quality"]["grade"]], current["quality"]["bytes"]):
+        key = (RANK[item["grade"]], item["web_bytes"])
+        current = best.get(item["product_id"])
+        if current is None or key < (RANK[current["grade"]], current["web_bytes"]):
             if current:
                 current["status"] = "DUPLICADO"
-            best[item["row"]["product_id"]] = item
+            best[item["product_id"]] = item
         else:
             item["status"] = "DUPLICADO"
 
 
-def report_row(item: dict, root: Path) -> list:
-    q, p = item["quality"], item["product"]
-    name = str(item["path"].relative_to(root)) if item["path"] else item["row"].get("glb", "")
-    return [name, item["row"]["product_id"], p.get("product_name", "?"), p.get("category", ""), p.get("subcategory", ""),
-            p.get("brand", ""), q["grade"], q.get("triangles", ""), q.get("vertices", ""), q.get("textures", ""),
-            q.get("max_texture", ""), round(q["bytes"] / 1e6, 2), " ".join(q["issues"]), item["status"]]
+def report_row(item: dict, root: Path, pieces: dict[str, int]) -> list:
+    q, p, r = item["quality"], item["product"], item["row"]
+    name = str(item["path"].relative_to(root)) if item["path"] else r.get("glb", "")
+    mb = lambda n: round(n / 1e6, 2) if n else ""   # noqa: E731
+    return [name, r.get("codex_product_id", ""), item["product_id"], item["match"], p.get("product_name", "?"),
+            p.get("category", ""), p.get("subcategory", ""), p.get("brand", ""), item["grade"], q.get("triangles", ""),
+            q.get("textures", ""), q.get("max_texture", ""), mb(q.get("original_bytes")), mb(item["web_bytes"]),
+            item["recipe"], r.get("codex_quality", ""), " ".join(q["issues"]), pieces.get(item["product_id"], 0),
+            item["status"]]
 
 
-def missing(conn, items: list[dict]) -> list[str]:
-    """Flat lay aprovado (saída da etapa 2) sem modelo 3D bom, nem já gravado nem entrando agora."""
-    covered = {str(e["catalog_product_id"]) for e in query(conn, EXISTING)}
-    covered |= {i["row"]["product_id"] for i in items if i["status"] in ("IMPORTAR", "JA_IMPORTADO")}
-    return sorted(str(r["product_id"]) for r in query(conn, APPROVED_FLAT_LAYS) if str(r["product_id"]) not in covered)
-
-
-def store(storage, data: bytes, sha: str) -> str:
-    """Envia e relê o .glb (mesma verificação do FrameStorage); devolve a chave servida por /media/."""
-    key = f"catalog/model3d/{uuid.uuid4().hex}/{sha}.glb"
-    client, bucket = storage.client, storage.bucket
-    client.put_object(Bucket=bucket, Key=key, Body=data, ContentType="model/gltf-binary", IfNoneMatch="*")
-    body = client.get_object(Bucket=bucket, Key=key)["Body"]
-    try:
-        verified = body.read(len(data) + 1)
-    finally:
-        body.close()
-    if hashlib.sha256(verified).hexdigest() != sha:
-        client.delete_object(Bucket=bucket, Key=key)
-        raise ValueError("GLB_UPLOAD_VERIFICATION_FAILED")
-    return key
-
-
-def apply_one(conn, storage, item: dict) -> None:
-    data, q = item["path"].read_bytes(), item["quality"]
-    key = store(storage, data, item["sha"])
-    imported = {"version": VERSION, "origin": "codex", "generator": "meshy", "sha256": item["sha"],
-                "meshyTaskId": item["row"].get("meshy_task_id") or None, "file": item["path"].name,
-                "importedAt": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    rendition = {"key": key, "bytes": len(data), "triangles": q["triangles"], "sha256": item["sha"]}
-    try:
-        with conn.cursor() as cur:
-            cur.execute(INSERT, {"id": str(uuid.uuid4()), "product_id": item["row"]["product_id"],
-                                 "metrics": json.dumps({"import": imported, "quality": q}, ensure_ascii=False),
-                                 "renditions": json.dumps({rendition_profile(len(data)): rendition}),
-                                 "notes": NOTES, "now": datetime.now(timezone.utc).replace(tzinfo=None)})
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        storage.client.delete_object(Bucket=storage.bucket, Key=key)   # nada de .glb órfão no bucket
-        raise
+def missing(conn, items: list[dict]) -> tuple[list[str], list[str]]:
+    """(faltam, revisar): flat lay aprovado sem modelo BOM publicado; revisar = os que entram como DRAFT."""
+    covered = {str(e["catalog_product_id"]) for e in query(conn, EXISTING) if e["status"] == "PUBLISHED"}
+    covered |= {i["product_id"] for i in items if i["status"] in ("IMPORTAR", "IMPORTADO") and i["grade"] == "BOM"}
+    draft = {i["product_id"] for i in items if i["status"] in ("IMPORTAR", "IMPORTADO") and i["grade"] == "REVISAR"}
+    todo = sorted(str(r["product_id"]) for r in query(conn, APPROVED_FLAT_LAYS) if str(r["product_id"]) not in covered)
+    return todo, [p for p in todo if p in draft]
 
 
 def _real_connect():
@@ -172,37 +157,46 @@ def _real_storage():
     return FrameStorage()
 
 
+def run_apply(conn, storage, items: list[dict]) -> None:
+    for item in (i for i in items if i["status"] == "IMPORTAR"):
+        try:
+            done = apply_one(conn, storage, {**item, "renditions": renditions(item["path"].read_bytes())})
+            item["status"], item["pieces"] = f"IMPORTADO_{done['status']}", done["pieces"]
+        except Exception as exc:   # um arquivo com problema não para o lote
+            item["status"] = f"FALHOU {type(exc).__name__}"
+
+
 def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--manifest", type=Path, required=True, help="product_id,glb[,meshy_task_id]")
-    parser.add_argument("--root", type=Path, required=True, help="pasta com os .glb extraídos do pacote")
+    parser.add_argument("--manifest", type=Path, required=True, help="manifesto.csv do codex_glb_index.py")
+    parser.add_argument("--root", type=Path, required=True, help="pasta com os .glb (a do manifesto)")
     parser.add_argument("--out-dir", type=Path, default=Path("."), help="onde gravar relatorio.csv e faltam.txt")
     parser.add_argument("--apply", action="store_true", help="envia e grava no banco (produção: só com autorização)")
     args = parser.parse_args(argv)
     conn, target = connect()
     items = assess(read_manifest(args.manifest), args.root, conn)
-    storage = make_storage() if args.apply else None
-    for item in (i for i in items if i["status"] == "IMPORTAR" and storage is not None):
-        try:
-            apply_one(conn, storage, item)
-            item["status"] = "IMPORTADO"
-        except Exception as exc:   # um arquivo com problema não para o lote
-            item["status"] = f"FALHOU {type(exc).__name__}"
+    pieces = pieces_without_model(conn, [i["product_id"] for i in items if i["status"] == "IMPORTAR"])
+    if args.apply:
+        run_apply(conn, make_storage(), items)
+    for item in items:
+        item["status"] = "IMPORTADO" if item["status"].startswith("IMPORTADO") else item["status"]
     args.out_dir.mkdir(parents=True, exist_ok=True)
     with (args.out_dir / "relatorio.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(REPORT)
-        writer.writerows(report_row(i, args.root) for i in items)
-    todo = missing(conn, items)
+        writer.writerows(report_row(i, args.root, pieces) for i in items)
+    todo, review = missing(conn, items)
     (args.out_dir / "faltam.txt").write_text("".join(f"{p}\n" for p in todo), encoding="utf-8")
+    (args.out_dir / "revisar.txt").write_text("".join(f"{p}\n" for p in review), encoding="utf-8")
     counts: dict[str, int] = {}
     for item in items:
-        counts[item["status"]] = counts.get(item["status"], 0) + 1
-    mode = "GRAVANDO" if args.apply else "ensaio (nada é gravado)"
-    print(f"glb do Codex: {len(items)} arquivos · {mode} · {target}")
+        label = f"{item['status']} {item['grade']}" if item["status"] in ("IMPORTAR", "IMPORTADO") else item["status"]
+        counts[label] = counts.get(label, 0) + 1
+    print(f"glb do Codex: {len(items)} arquivos · {'GRAVANDO' if args.apply else 'ensaio (nada é gravado)'} · {target}")
     for key, count in sorted(counts.items()):
         print(f"  {count:5d}  {key}")
-    print(f"  {len(todo):5d}  ainda sem modelo 3D (faltam.txt → geração da etapa 3)")
+    print(f"  {sum(pieces.values()):5d}  peças de guarda-roupa que recebem o modelo (vindas desses produtos)")
+    print(f"  {len(todo):5d}  flat lay aprovado ainda sem modelo 3D bom (faltam.txt; {len(review)} em DRAFT: revisar.txt)")
     return 1 if any(i["status"].startswith("FALHOU") for i in items) else 0
 
 
