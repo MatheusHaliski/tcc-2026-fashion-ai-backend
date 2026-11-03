@@ -1,6 +1,6 @@
 # Lote R86-copilot — `CopilotService` como Facade e `CopilotLexicon` por família de vocabulário
 
-Base: `claude/relaxed-pasteur-5b5466` (`3c82992`). Branch: `worktree-agent-a11169b68b30dd414`.
+Base: `claude/relaxed-pasteur-5b5466` (`3c82992`; merge de `6f8b647` antes do commit final, sem arquivos do Copilot). Branch: `worktree-agent-a11169b68b30dd414`.
 Pacote: `fai-application/src/main/java/br/com/fashionai/application/service/`.
 
 ## Resultado por arquivo
@@ -68,10 +68,11 @@ Rodado 3× no original (mesmo MD5). Registra como comportamento atual um `Unsupp
 |---|---|---|
 | Antes (original), testes do lote | `mvn -B -o -pl fai-application -Djacoco.skip=true -Dsurefire.failIfNoSpecifiedTests=false "-Dtest=Copilot*Test,SealPolicyChatTest,PersonalInsights*Test,LensService*Test,SchemeService*Test" test` | 55 testes, 0 falhas (com o retrato) |
 | Depois, mesma lista | idem | **55 testes, 0 falhas** (retrato idêntico) |
-| Suíte completa `fai-application`, depois | `mvn -B -o -pl fai-application -Djacoco.skip=true test` | ver relatório do integrador abaixo |
-| `fai-web` (compila tudo que depende) | `mvn -B -q -o -pl fai-web -am -Djacoco.skip=true -DskipTests install` | ver abaixo |
-| `fai-web` | `mvn -B -o -pl fai-web -Djacoco.skip=true -Dsurefire.failIfNoSpecifiedTests=false "-Dtest=ControllerDelegacaoTest,SealCopilotRoutesTest" test` | ver abaixo |
-| Catraca | `python3 scripts/refactoring/line_ratchet.py` | `APERTAR CopilotService.java 1419 -> 217`, `APERTAR CopilotLexicon.java 317 -> 217`; 0 violações |
+| Suíte completa `fai-application`, depois | `mvn -B -o -pl fai-application -Djacoco.skip=true test` | **2031 testes, 0 falhas, 27 skipped** (2030 da base + o retrato) |
+| Suíte completa depois do merge da base (`6f8b647`) | idem | 2037 testes (+6 vindos da base), 0 falhas, 27 skipped |
+| Compilação de tudo que depende | `mvn -B -q -o -pl fai-web -am -Djacoco.skip=true -DskipTests install` | sucesso (`ServiceFakes` compila sem mudança) |
+| `fai-web` após o merge | `mvn -B -o -pl fai-web -Djacoco.skip=true -Dsurefire.failIfNoSpecifiedTests=false "-Dtest=ControllerDelegacaoTest,SealCopilotRoutesTest" test` | 708 testes (697 `ControllerDelegacaoTest`, 2 `SealCopilotRoutesTest` e outros do padrão), 0 falhas |
+| Catraca | `python3 scripts/refactoring/line_ratchet.py` | `APERTAR CopilotService.java 1419 -> 217`, `APERTAR CopilotLexicon.java 317 -> 217`; 0 violações (também após o merge) |
 
 Sem banco, servidor, rede, IA paga, migration ou mudança de DTO/URL/i18n/autorização/transação.
 
