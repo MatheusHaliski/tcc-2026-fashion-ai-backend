@@ -178,13 +178,16 @@ class HypeSnapshotGoldenTest {
         m.put("status", c.getStatus());
         m.put("score", c.getScore());
         m.put("level", c.getLevel());
-        m.put("dimensions", HypeQueryService.dimensions(c.getDimensions()));
+        m.put("dimensions", HypeCards.dimensions(c.getDimensions()));
         m.put("delta", List.of(String.valueOf(c.getDeltaPoints()), String.valueOf(c.getDeltaPercent()), String.valueOf(c.getDirection())));
         m.put("momentum", c.getMomentum());
         m.put("public", c.isPublicEligible());
         m.put("cuts", List.of(String.valueOf(c.getCategory()), String.valueOf(c.getStyles()), String.valueOf(c.getOccasions()), String.valueOf(c.getCountry()),
                 String.valueOf(c.getRegion()), String.valueOf(c.getCategories()), String.valueOf(c.getSubcategories())));
-        m.put("signals", c.getSignalsJson());
+        // byType: a contagem de cada sinal nasce de Map.of(current, previous, total), cuja ordem muda a cada JVM — ordena só ali
+        m.put("signals", c.getSignalsJson() == null ? null : c.getSignalsJson().replaceAll(
+                "\\{\"(current|previous|total)\":(\\d+),\"(current|previous|total)\":(\\d+),\"(current|previous|total)\":(\\d+)}", "<$1=$2 $3=$4 $5=$6>")
+                .replaceAll("<(?=[^>]*current=(\\d+))(?=[^>]*previous=(\\d+))(?=[^>]*total=(\\d+))[^>]*>", "{current=$1,previous=$2,total=$3}"));
         m.put("reasons", c.getReasonsJson());
         m.put("window", c.getWindowEnd() != null && c.getCalculatedAt() != null && c.getWindowStart() != null
                 && ChronoUnit.DAYS.between(c.getWindowStart(), c.getWindowEnd()) == 84);
@@ -198,7 +201,7 @@ class HypeSnapshotGoldenTest {
         m.put("status", s.getStatus());
         m.put("score", s.getScore());
         m.put("level", s.getLevel());
-        m.put("dimensions", HypeQueryService.dimensions(s.getDimensions()));
+        m.put("dimensions", HypeCards.dimensions(s.getDimensions()));
         m.put("public", s.isPublicEligible());
         return m;
     }

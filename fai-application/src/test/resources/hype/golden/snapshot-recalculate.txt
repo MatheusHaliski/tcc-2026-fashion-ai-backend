@@ -25,7 +25,7 @@
   momentum=STABLE,
   public=true,
   cuts=[upper_piece, casual,street, work, BR, AMERICA_DO_SUL, upper_piece, t_shirt],
-  signals={"engagementRate":2.4099,"windowCurrent":3.7,"windowPrevious":3.35,"growthPercent":5.5,"weekly":[3.7,3.35,5.675,2.85],"activeWeeks":8,"cohortPresence":0.75,"events":80.0,"ageDays":91,"byType":{"LIKE_CREATED":{"previous":2,"total":16,"current":4},"PIECE_USED":{"previous":0,"total":4,"current":0},"PIECE_VIEWED":{"previous":1,"total":12,"current":2},"SAVE_CREATED":{"previous":1,"total":8,"current":0}}},
+  signals={"engagementRate":2.4099,"windowCurrent":3.7,"windowPrevious":3.35,"growthPercent":5.5,"weekly":[3.7,3.35,5.675,2.85],"activeWeeks":8,"cohortPresence":0.75,"events":80.0,"ageDays":91,"byType":{"LIKE_CREATED":{current=4,previous=2,total=16},"PIECE_USED":{current=0,previous=0,total=4},"PIECE_VIEWED":{current=2,previous=1,total=12},"SAVE_CREATED":{current=0,previous=1,total=8}}},
   reasons=[{"code":"LIKES_GROWTH","tone":"POSITIVE","value":100.0},{"code":"VIEWS_GROWTH","tone":"POSITIVE","value":100.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"ORIGINALITY_STRONG","tone":"POSITIVE","dimension":"ORIGINALITY","value":93.8},{"code":"RARITY_STRONG","tone":"POSITIVE","dimension":"RARITY","value":85.0},{"code":"NOVELTY_LOW","tone":"NEGATIVE","dimension":"NOVELTY","value":12.2}],
   window=true}
 {
@@ -49,7 +49,7 @@
   momentum=STABLE,
   public=true,
   cuts=[shoes_piece, casual,street, work, FR, EUROPA, shoes_piece, casual_sneakers],
-  signals={"engagementRate":2.1039,"windowCurrent":6.1,"windowPrevious":8.6,"growthPercent":-21.6,"similarGrowthPercent":-15.2,"weekly":[6.1,8.6,3.75,0.0],"activeWeeks":2,"cohortPresence":1.0,"events":21.0,"ageDays":14,"byType":{"LIKE_CREATED":{"previous":4,"total":9,"current":2},"PIECE_USED":{"previous":2,"total":6,"current":2},"PIECE_VIEWED":{"previous":1,"total":2,"current":1},"SAVE_CREATED":{"previous":2,"total":4,"current":2}}},
+  signals={"engagementRate":2.1039,"windowCurrent":6.1,"windowPrevious":8.6,"growthPercent":-21.6,"similarGrowthPercent":-15.2,"weekly":[6.1,8.6,3.75,0.0],"activeWeeks":2,"cohortPresence":1.0,"events":21.0,"ageDays":14,"byType":{"LIKE_CREATED":{current=2,previous=4,total=9},"PIECE_USED":{current=2,previous=2,total=6},"PIECE_VIEWED":{current=1,previous=1,total=2},"SAVE_CREATED":{current=2,previous=2,total=4}}},
   reasons=[{"code":"LIKES_DECLINE","tone":"NEGATIVE","value":50.0},{"code":"SIMILAR_DECLINE","tone":"NEGATIVE","dimension":"TREND","value":15.0},{"code":"POPULARITY_LOW","tone":"NEGATIVE","dimension":"POPULARITY","value":18.8},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":18.8},{"code":"LONGEVITY_LOW","tone":"NEGATIVE","dimension":"LONGEVITY","value":25.0},{"code":"NOVELTY_STRONG","tone":"POSITIVE","dimension":"NOVELTY","value":72.4}],
   window=true}
 {
@@ -73,7 +73,7 @@
   momentum=STABLE,
   public=false,
   cuts=[lower_piece, classic, work, null, null, lower_piece, jeans],
-  signals={"engagementRate":2.9533,"windowCurrent":9.1,"windowPrevious":10.35,"growthPercent":-9.4,"weekly":[9.1,10.35,9.5,8.75],"activeWeeks":8,"cohortPresence":0.5,"events":85.0,"ageDays":151,"byType":{"LIKE_CREATED":{"previous":0,"total":22,"current":4},"PIECE_USED":{"previous":4,"total":17,"current":4},"PIECE_VIEWED":{"previous":4,"total":15,"current":6},"SAVE_CREATED":{"previous":4,"total":19,"current":1}}},
+  signals={"engagementRate":2.9533,"windowCurrent":9.1,"windowPrevious":10.35,"growthPercent":-9.4,"weekly":[9.1,10.35,9.5,8.75],"activeWeeks":8,"cohortPresence":0.5,"events":85.0,"ageDays":151,"byType":{"LIKE_CREATED":{current=4,previous=0,total=22},"PIECE_USED":{current=4,previous=4,total=17},"PIECE_VIEWED":{current=6,previous=4,total=15},"SAVE_CREATED":{current=1,previous=4,total=19}}},
   reasons=[{"code":"POPULAR_NOT_GROWING","tone":"NEUTRAL","dimension":"TREND","value":50.3},{"code":"VIEWS_GROWTH","tone":"POSITIVE","value":50.0},{"code":"LIKES_NEW","tone":"POSITIVE","value":4.0},{"code":"SAVES_DECLINE","tone":"NEGATIVE","value":75.0},{"code":"POPULARITY_STRONG","tone":"POSITIVE","dimension":"POPULARITY","value":75.0},{"code":"ENGAGEMENT_STRONG","tone":"POSITIVE","dimension":"ENGAGEMENT","value":100.0},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":18.8},{"code":"NOVELTY_LOW","tone":"NEGATIVE","dimension":"NOVELTY","value":3.1}],
   window=true}
 {
@@ -97,7 +97,7 @@
   momentum=RISING,
   public=false,
   cuts=[upper_piece, classic, work, US, AMERICA_DO_NORTE, upper_piece, t_shirt],
-  signals={"engagementRate":2.3421,"windowCurrent":14.08,"windowPrevious":8.75,"growthPercent":45.3,"similarGrowthPercent":5.5,"weekly":[14.075,8.750000000000002,8.75,4.9],"activeWeeks":4,"cohortPresence":0.75,"events":67.0,"ageDays":26,"byType":{"LIKE_CREATED":{"previous":4,"total":13,"current":4},"PIECE_USED":{"previous":2,"total":10,"current":4},"PIECE_VIEWED":{"previous":10,"total":22,"current":1},"SAVE_CREATED":{"previous":2,"total":22,"current":3}}},
+  signals={"engagementRate":2.3421,"windowCurrent":14.08,"windowPrevious":8.75,"growthPercent":45.3,"similarGrowthPercent":5.5,"weekly":[14.075,8.750000000000002,8.75,4.9],"activeWeeks":4,"cohortPresence":0.75,"events":67.0,"ageDays":26,"byType":{"LIKE_CREATED":{current=4,previous=4,total=13},"PIECE_USED":{current=4,previous=2,total=10},"PIECE_VIEWED":{current=1,previous=10,total=22},"SAVE_CREATED":{current=3,previous=2,total=22}}},
   reasons=[{"code":"USES_GROWTH","tone":"POSITIVE","value":100.0},{"code":"SAVES_GROWTH","tone":"POSITIVE","value":50.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":90.0},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":25.0},{"code":"TREND_VELOCITY_STRONG","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":70.6},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":6.3},{"code":"NOVELTY_MODERATE","tone":"NEUTRAL","dimension":"NOVELTY","value":54.8}],
   window=true}
 {
@@ -121,7 +121,7 @@
   momentum=COOLING,
   public=false,
   cuts=[shoes_piece, casual,street, work, BR, AMERICA_DO_SUL, shoes_piece, casual_sneakers],
-  signals={"engagementRate":1.8858,"windowCurrent":5.05,"windowPrevious":18.13,"growthPercent":-61.9,"similarGrowthPercent":0.3,"weekly":[5.05,18.125,4.0,0.0],"activeWeeks":3,"cohortPresence":0.5,"events":39.0,"ageDays":153,"byType":{"LIKE_CREATED":{"previous":7,"total":7,"current":0},"PIECE_USED":{"previous":10,"total":12,"current":0},"PIECE_VIEWED":{"previous":5,"total":14,"current":6},"SAVE_CREATED":{"previous":2,"total":6,"current":3}}},
+  signals={"engagementRate":1.8858,"windowCurrent":5.05,"windowPrevious":18.13,"growthPercent":-61.9,"similarGrowthPercent":0.3,"weekly":[5.05,18.125,4.0,0.0],"activeWeeks":3,"cohortPresence":0.5,"events":39.0,"ageDays":153,"byType":{"LIKE_CREATED":{current=0,previous=7,total=7},"PIECE_USED":{current=0,previous=10,total=12},"PIECE_VIEWED":{current=6,previous=5,total=14},"SAVE_CREATED":{current=3,previous=2,total=6}}},
   reasons=[{"code":"SAVES_GROWTH","tone":"POSITIVE","value":50.0},{"code":"VIEWS_GROWTH","tone":"POSITIVE","value":20.0},{"code":"LIKES_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"USES_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"POPULARITY_LOW","tone":"NEGATIVE","dimension":"POPULARITY","value":0.0},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":0.0},{"code":"TREND_LOW","tone":"NEGATIVE","dimension":"TREND","value":7.1}],
   window=true}
 {
@@ -145,7 +145,7 @@
   momentum=RISING,
   public=true,
   cuts=[lower_piece, classic, work, FR, EUROPA, lower_piece, jeans],
-  signals={"engagementRate":2.8637,"windowCurrent":11.85,"windowPrevious":6.85,"growthPercent":50.8,"similarGrowthPercent":49.6,"weekly":[11.85,6.85,13.9,25.6],"activeWeeks":12,"cohortPresence":0.5,"events":187.0,"ageDays":108,"byType":{"LIKE_CREATED":{"previous":0,"total":55,"current":4},"PIECE_USED":{"previous":0,"total":33,"current":8},"PIECE_VIEWED":{"previous":10,"total":47,"current":1},"SAVE_CREATED":{"previous":3,"total":52,"current":1}}},
+  signals={"engagementRate":2.8637,"windowCurrent":11.85,"windowPrevious":6.85,"growthPercent":50.8,"similarGrowthPercent":49.6,"weekly":[11.85,6.85,13.9,25.6],"activeWeeks":12,"cohortPresence":0.5,"events":187.0,"ageDays":108,"byType":{"LIKE_CREATED":{current=4,previous=0,total=55},"PIECE_USED":{current=8,previous=0,total=33},"PIECE_VIEWED":{current=1,previous=10,total=47},"SAVE_CREATED":{current=1,previous=3,total=52}}},
   reasons=[{"code":"USES_NEW","tone":"POSITIVE","value":8.0},{"code":"LIKES_NEW","tone":"POSITIVE","value":4.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":90.0},{"code":"SAVES_DECLINE","tone":"NEGATIVE","value":67.0},{"code":"SIMILAR_GROWTH","tone":"POSITIVE","dimension":"TREND","value":50.0},{"code":"POPULARITY_STRONG","tone":"POSITIVE","dimension":"POPULARITY","value":93.8},{"code":"ENGAGEMENT_STRONG","tone":"POSITIVE","dimension":"ENGAGEMENT","value":93.8},{"code":"TREND_VELOCITY_STRONG","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":99.1}],
   window=true}
 {
@@ -169,7 +169,7 @@
   momentum=COOLING,
   public=false,
   cuts=[upper_piece, classic, work, null, null, upper_piece, t_shirt],
-  signals={"engagementRate":2.2232,"windowCurrent":3.9,"windowPrevious":5.95,"growthPercent":-22.9,"weekly":[3.9000000000000004,5.95,2.1750000000000003,5.1],"activeWeeks":7,"cohortPresence":0.25,"events":40.0,"ageDays":45,"byType":{"LIKE_CREATED":{"previous":2,"total":10,"current":2},"PIECE_USED":{"previous":0,"total":8,"current":0},"PIECE_VIEWED":{"previous":2,"total":13,"current":2},"SAVE_CREATED":{"previous":2,"total":9,"current":1}}},
+  signals={"engagementRate":2.2232,"windowCurrent":3.9,"windowPrevious":5.95,"growthPercent":-22.9,"weekly":[3.9000000000000004,5.95,2.1750000000000003,5.1],"activeWeeks":7,"cohortPresence":0.25,"events":40.0,"ageDays":45,"byType":{"LIKE_CREATED":{current=2,previous=2,total=10},"PIECE_USED":{current=0,previous=0,total=8},"PIECE_VIEWED":{current=2,previous=2,total=13},"SAVE_CREATED":{current=1,previous=2,total=9}}},
   reasons=[{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"POPULARITY_LOW","tone":"NEGATIVE","dimension":"POPULARITY","value":0.0},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":25.0},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":25.0},{"code":"RARITY_STRONG","tone":"POSITIVE","dimension":"RARITY","value":85.0},{"code":"LONGEVITY_STRONG","tone":"POSITIVE","dimension":"LONGEVITY","value":80.4},{"code":"NOVELTY_MODERATE","tone":"NEUTRAL","dimension":"NOVELTY","value":35.4}],
   window=true}
 {
@@ -193,7 +193,7 @@
   momentum=CLASSIC,
   public=false,
   cuts=[shoes_piece, classic, work, US, AMERICA_DO_NORTE, shoes_piece, casual_sneakers],
-  signals={"engagementRate":2.6154,"windowCurrent":10.15,"windowPrevious":9.0,"growthPercent":9.6,"similarGrowthPercent":-20.9,"weekly":[10.15,9.0,7.449999999999999,7.35],"activeWeeks":10,"cohortPresence":1.0,"events":77.0,"ageDays":90,"byType":{"LIKE_CREATED":{"previous":4,"total":18,"current":2},"PIECE_USED":{"previous":0,"total":15,"current":1},"PIECE_VIEWED":{"previous":0,"total":20,"current":2},"SAVE_CREATED":{"previous":4,"total":24,"current":4}}},
+  signals={"engagementRate":2.6154,"windowCurrent":10.15,"windowPrevious":9.0,"growthPercent":9.6,"similarGrowthPercent":-20.9,"weekly":[10.15,9.0,7.449999999999999,7.35],"activeWeeks":10,"cohortPresence":1.0,"events":77.0,"ageDays":90,"byType":{"LIKE_CREATED":{current=2,previous=4,total=18},"PIECE_USED":{current=1,previous=0,total=15},"PIECE_VIEWED":{current=2,previous=0,total=20},"SAVE_CREATED":{current=4,previous=4,total=24}}},
   reasons=[{"code":"CLASSIC_PROFILE","tone":"POSITIVE","dimension":"LONGEVITY","value":83.3},{"code":"VIEWS_NEW","tone":"POSITIVE","value":2.0},{"code":"LIKES_DECLINE","tone":"NEGATIVE","value":50.0},{"code":"SIMILAR_DECLINE","tone":"NEGATIVE","dimension":"TREND","value":21.0},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":25.0},{"code":"LONGEVITY_STRONG","tone":"POSITIVE","dimension":"LONGEVITY","value":83.3},{"code":"NOVELTY_LOW","tone":"NEGATIVE","dimension":"NOVELTY","value":12.5}],
   window=true}
 {
@@ -217,7 +217,7 @@
   momentum=RISING,
   public=true,
   cuts=[lower_piece, casual,street, work, BR, AMERICA_DO_SUL, lower_piece, jeans],
-  signals={"engagementRate":2.6814,"windowCurrent":8.75,"windowPrevious":4.93,"growthPercent":48.3,"similarGrowthPercent":50.4,"weekly":[8.75,4.925,10.8,9.0],"activeWeeks":8,"cohortPresence":0.5,"events":101.0,"ageDays":54,"byType":{"LIKE_CREATED":{"previous":4,"total":43,"current":8},"PIECE_USED":{"previous":0,"total":21,"current":2},"PIECE_VIEWED":{"previous":5,"total":22,"current":0},"SAVE_CREATED":{"previous":1,"total":15,"current":0}}},
+  signals={"engagementRate":2.6814,"windowCurrent":8.75,"windowPrevious":4.93,"growthPercent":48.3,"similarGrowthPercent":50.4,"weekly":[8.75,4.925,10.8,9.0],"activeWeeks":8,"cohortPresence":0.5,"events":101.0,"ageDays":54,"byType":{"LIKE_CREATED":{current=8,previous=4,total=43},"PIECE_USED":{current=2,previous=0,total=21},"PIECE_VIEWED":{current=0,previous=5,total=22},"SAVE_CREATED":{current=0,previous=1,total=15}}},
   reasons=[{"code":"LIKES_GROWTH","tone":"POSITIVE","value":100.0},{"code":"USES_NEW","tone":"POSITIVE","value":2.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"SIMILAR_GROWTH","tone":"POSITIVE","dimension":"TREND","value":50.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"TREND_VELOCITY_STRONG","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":95.3},{"code":"ORIGINALITY_STRONG","tone":"POSITIVE","dimension":"ORIGINALITY","value":81.3},{"code":"RARITY_STRONG","tone":"POSITIVE","dimension":"RARITY","value":85.0}],
   window=true}
 {
@@ -241,7 +241,7 @@
   momentum=RISING,
   public=false,
   cuts=[upper_piece, classic, work, FR, EUROPA, upper_piece, t_shirt],
-  signals={"engagementRate":2.1731,"windowCurrent":16.88,"windowPrevious":8.0,"growthPercent":80.7,"similarGrowthPercent":5.5,"weekly":[16.875,8.0,0.0,0.0],"activeWeeks":2,"cohortPresence":0.75,"events":25.0,"ageDays":45,"byType":{"LIKE_CREATED":{"previous":2,"total":2,"current":0},"PIECE_USED":{"previous":0,"total":7,"current":7},"PIECE_VIEWED":{"previous":0,"total":7,"current":7},"SAVE_CREATED":{"previous":4,"total":9,"current":5}}},
+  signals={"engagementRate":2.1731,"windowCurrent":16.88,"windowPrevious":8.0,"growthPercent":80.7,"similarGrowthPercent":5.5,"weekly":[16.875,8.0,0.0,0.0],"activeWeeks":2,"cohortPresence":0.75,"events":25.0,"ageDays":45,"byType":{"LIKE_CREATED":{current=0,previous=2,total=2},"PIECE_USED":{current=7,previous=0,total=7},"PIECE_VIEWED":{current=7,previous=0,total=7},"SAVE_CREATED":{current=5,previous=4,total=9}}},
   reasons=[{"code":"SAVES_GROWTH","tone":"POSITIVE","value":25.0},{"code":"VIEWS_NEW","tone":"POSITIVE","value":7.0},{"code":"USES_NEW","tone":"POSITIVE","value":7.0},{"code":"POPULARITY_LOW","tone":"NEGATIVE","dimension":"POPULARITY","value":0.0},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":25.0},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":6.3},{"code":"LONGEVITY_LOW","tone":"NEGATIVE","dimension":"LONGEVITY","value":23.0},{"code":"NOVELTY_MODERATE","tone":"NEUTRAL","dimension":"NOVELTY","value":35.4}],
   window=true}
 {
@@ -265,7 +265,7 @@
   momentum=COOLING,
   public=false,
   cuts=[shoes_piece, classic, work, null, null, shoes_piece, casual_sneakers],
-  signals={"engagementRate":1.6096,"windowCurrent":0.8,"windowPrevious":7.05,"growthPercent":-62.2,"similarGrowthPercent":-20.9,"weekly":[0.8,7.05,0.0,0.0],"activeWeeks":2,"cohortPresence":1.0,"events":22.0,"ageDays":82,"byType":{"LIKE_CREATED":{"previous":5,"total":5,"current":0},"PIECE_USED":{"previous":4,"total":4,"current":0},"PIECE_VIEWED":{"previous":4,"total":13,"current":9}}},
+  signals={"engagementRate":1.6096,"windowCurrent":0.8,"windowPrevious":7.05,"growthPercent":-62.2,"similarGrowthPercent":-20.9,"weekly":[0.8,7.05,0.0,0.0],"activeWeeks":2,"cohortPresence":1.0,"events":22.0,"ageDays":82,"byType":{"LIKE_CREATED":{current=0,previous=5,total=5},"PIECE_USED":{current=0,previous=4,total=4},"PIECE_VIEWED":{current=9,previous=4,total=13}}},
   reasons=[{"code":"VIEWS_GROWTH","tone":"POSITIVE","value":125.0},{"code":"LIKES_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"USES_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"SIMILAR_DECLINE","tone":"NEGATIVE","dimension":"TREND","value":21.0},{"code":"POPULARITY_LOW","tone":"NEGATIVE","dimension":"POPULARITY","value":0.0},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":0.0},{"code":"TREND_LOW","tone":"NEGATIVE","dimension":"TREND","value":9.9},{"code":"LONGEVITY_LOW","tone":"NEGATIVE","dimension":"LONGEVITY","value":16.7}],
   window=true}
 {
@@ -289,7 +289,7 @@
   momentum=RISING,
   public=false,
   cuts=[lower_piece, casual,street, work, US, AMERICA_DO_NORTE, lower_piece, jeans],
-  signals={"engagementRate":2.2444,"windowCurrent":17.8,"windowPrevious":5.05,"growthPercent":158.4,"weekly":[17.8,5.050000000000001,16.575,14.325],"activeWeeks":5,"cohortPresence":0.5,"events":169.0,"ageDays":35,"byType":{"LIKE_CREATED":{"previous":0,"total":50,"current":10},"PIECE_USED":{"previous":0,"total":37,"current":7},"PIECE_VIEWED":{"previous":6,"total":48,"current":3},"SAVE_CREATED":{"previous":3,"total":34,"current":1}}},
+  signals={"engagementRate":2.2444,"windowCurrent":17.8,"windowPrevious":5.05,"growthPercent":158.4,"weekly":[17.8,5.050000000000001,16.575,14.325],"activeWeeks":5,"cohortPresence":0.5,"events":169.0,"ageDays":35,"byType":{"LIKE_CREATED":{current=10,previous=0,total=50},"PIECE_USED":{current=7,previous=0,total=37},"PIECE_VIEWED":{current=3,previous=6,total=48},"SAVE_CREATED":{current=1,previous=3,total=34}}},
   reasons=[{"code":"LIKES_NEW","tone":"POSITIVE","value":10.0},{"code":"USES_NEW","tone":"POSITIVE","value":7.0},{"code":"SAVES_DECLINE","tone":"NEGATIVE","value":67.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":50.0},{"code":"POPULARITY_STRONG","tone":"POSITIVE","dimension":"POPULARITY","value":75.0},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":25.0},{"code":"TREND_STRONG","tone":"POSITIVE","dimension":"TREND","value":90.6},{"code":"TREND_VELOCITY_STRONG","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":99.9}],
   window=true}
 {
@@ -313,7 +313,7 @@
   momentum=COOLING,
   public=true,
   cuts=[upper_piece, classic, work, BR, AMERICA_DO_SUL, upper_piece, t_shirt],
-  signals={"engagementRate":2.5935,"windowCurrent":4.25,"windowPrevious":7.58,"growthPercent":-31.4,"weekly":[4.25,7.575,5.075,1.2750000000000001],"activeWeeks":8,"cohortPresence":0.25,"events":37.0,"ageDays":89,"byType":{"LIKE_CREATED":{"previous":2,"total":8,"current":2},"PIECE_USED":{"previous":0,"total":12,"current":3},"PIECE_VIEWED":{"previous":1,"total":8,"current":0},"SAVE_CREATED":{"previous":3,"total":9,"current":0}}},
+  signals={"engagementRate":2.5935,"windowCurrent":4.25,"windowPrevious":7.58,"growthPercent":-31.4,"weekly":[4.25,7.575,5.075,1.2750000000000001],"activeWeeks":8,"cohortPresence":0.25,"events":37.0,"ageDays":89,"byType":{"LIKE_CREATED":{current=2,previous=2,total=8},"PIECE_USED":{current=3,previous=0,total=12},"PIECE_VIEWED":{current=0,previous=1,total=8},"SAVE_CREATED":{current=0,previous=3,total=9}}},
   reasons=[{"code":"USES_NEW","tone":"POSITIVE","value":3.0},{"code":"SAVES_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"POPULARITY_LOW","tone":"NEGATIVE","dimension":"POPULARITY","value":6.3},{"code":"TREND_LOW","tone":"NEGATIVE","dimension":"TREND","value":26.0},{"code":"ORIGINALITY_MODERATE","tone":"NEUTRAL","dimension":"ORIGINALITY","value":43.8},{"code":"NOVELTY_LOW","tone":"NEGATIVE","dimension":"NOVELTY","value":12.8}],
   window=true}
 {
@@ -337,7 +337,7 @@
   momentum=CLASSIC,
   public=true,
   cuts=[shoes_piece, casual,street, work, FR, EUROPA, shoes_piece, casual_sneakers],
-  signals={"engagementRate":2.5032,"windowCurrent":5.08,"windowPrevious":5.05,"growthPercent":0.3,"weekly":[5.075,5.05,5.65,9.725],"activeWeeks":7,"cohortPresence":0.5,"events":63.0,"ageDays":47,"byType":{"LIKE_CREATED":{"previous":1,"total":15,"current":3},"PIECE_USED":{"previous":1,"total":14,"current":0},"PIECE_VIEWED":{"previous":3,"total":17,"current":1},"SAVE_CREATED":{"previous":2,"total":17,"current":1}}},
+  signals={"engagementRate":2.5032,"windowCurrent":5.08,"windowPrevious":5.05,"growthPercent":0.3,"weekly":[5.075,5.05,5.65,9.725],"activeWeeks":7,"cohortPresence":0.5,"events":63.0,"ageDays":47,"byType":{"LIKE_CREATED":{current=3,previous=1,total=15},"PIECE_USED":{current=0,previous=1,total=14},"PIECE_VIEWED":{current=1,previous=3,total=17},"SAVE_CREATED":{current=1,previous=2,total=17}}},
   reasons=[{"code":"CLASSIC_PROFILE","tone":"POSITIVE","dimension":"LONGEVITY","value":83.9},{"code":"LIKES_GROWTH","tone":"POSITIVE","value":200.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":67.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"TREND_VELOCITY_STRONG","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":76.1},{"code":"ORIGINALITY_MODERATE","tone":"NEUTRAL","dimension":"ORIGINALITY","value":31.3},{"code":"RARITY_STRONG","tone":"POSITIVE","dimension":"RARITY","value":85.0},{"code":"LONGEVITY_STRONG","tone":"POSITIVE","dimension":"LONGEVITY","value":83.9}],
   window=true}
 {
@@ -361,7 +361,7 @@
   momentum=EMERGING,
   public=false,
   cuts=[lower_piece, classic, work, null, null, lower_piece, jeans],
-  signals={"engagementRate":2.1184,"windowCurrent":12.2,"windowPrevious":5.65,"growthPercent":75.7,"weekly":[12.2,5.65,8.825,10.8],"activeWeeks":6,"cohortPresence":0.25,"events":57.0,"ageDays":103,"byType":{"LIKE_CREATED":{"previous":1,"total":14,"current":0},"PIECE_USED":{"previous":0,"total":11,"current":0},"PIECE_VIEWED":{"previous":2,"total":19,"current":2},"SAVE_CREATED":{"previous":3,"total":13,"current":7}}},
+  signals={"engagementRate":2.1184,"windowCurrent":12.2,"windowPrevious":5.65,"growthPercent":75.7,"weekly":[12.2,5.65,8.825,10.8],"activeWeeks":6,"cohortPresence":0.25,"events":57.0,"ageDays":103,"byType":{"LIKE_CREATED":{current=0,previous=1,total=14},"PIECE_USED":{current=0,previous=0,total=11},"PIECE_VIEWED":{current=2,previous=2,total=19},"SAVE_CREATED":{current=7,previous=3,total=13}}},
   reasons=[{"code":"SMALL_BUT_GROWING","tone":"POSITIVE","dimension":"TREND","value":85.0},{"code":"EMERGING_PROFILE","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":98.2},{"code":"SAVES_GROWTH","tone":"POSITIVE","value":133.0},{"code":"POPULARITY_LOW","tone":"NEGATIVE","dimension":"POPULARITY","value":12.5},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":25.0},{"code":"TREND_STRONG","tone":"POSITIVE","dimension":"TREND","value":85.0},{"code":"TREND_VELOCITY_STRONG","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":98.2},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":18.8}],
   window=true}
 {
@@ -385,7 +385,7 @@
   momentum=COOLING,
   public=false,
   cuts=[upper_piece, classic, work, US, AMERICA_DO_NORTE, upper_piece, t_shirt],
-  signals={"engagementRate":2.347,"windowCurrent":2.23,"windowPrevious":8.35,"growthPercent":-54.0,"similarGrowthPercent":5.5,"weekly":[2.225,8.35,1.3250000000000002,2.8],"activeWeeks":9,"cohortPresence":0.75,"events":80.0,"ageDays":76,"byType":{"LIKE_CREATED":{"previous":3,"total":16,"current":1},"PIECE_USED":{"previous":5,"total":17,"current":1},"PIECE_VIEWED":{"previous":1,"total":25,"current":5},"SAVE_CREATED":{"previous":1,"total":22,"current":0}}},
+  signals={"engagementRate":2.347,"windowCurrent":2.23,"windowPrevious":8.35,"growthPercent":-54.0,"similarGrowthPercent":5.5,"weekly":[2.225,8.35,1.3250000000000002,2.8],"activeWeeks":9,"cohortPresence":0.75,"events":80.0,"ageDays":76,"byType":{"LIKE_CREATED":{current=1,previous=3,total=16},"PIECE_USED":{current=1,previous=5,total=17},"PIECE_VIEWED":{current=5,previous=1,total=25},"SAVE_CREATED":{current=0,previous=1,total=22}}},
   reasons=[{"code":"VIEWS_GROWTH","tone":"POSITIVE","value":400.0},{"code":"USES_DECLINE","tone":"NEGATIVE","value":80.0},{"code":"LIKES_DECLINE","tone":"NEGATIVE","value":67.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":25.0},{"code":"TREND_LOW","tone":"NEGATIVE","dimension":"TREND","value":13.3},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":6.3},{"code":"RARITY_STRONG","tone":"POSITIVE","dimension":"RARITY","value":85.0}],
   window=true}
 {
@@ -409,7 +409,7 @@
   momentum=STABLE,
   public=true,
   cuts=[shoes_piece, classic, work, BR, AMERICA_DO_SUL, shoes_piece, casual_sneakers],
-  signals={"engagementRate":2.026,"windowCurrent":7.5,"windowPrevious":9.38,"growthPercent":-15.2,"similarGrowthPercent":-21.6,"weekly":[7.5,9.375,20.125,14.7],"activeWeeks":6,"cohortPresence":1.0,"events":87.0,"ageDays":105,"byType":{"LIKE_CREATED":{"previous":4,"total":22,"current":0},"PIECE_USED":{"previous":5,"total":32,"current":3},"PIECE_VIEWED":{"previous":5,"total":23,"current":0},"SAVE_CREATED":{"previous":0,"total":10,"current":3}}},
+  signals={"engagementRate":2.026,"windowCurrent":7.5,"windowPrevious":9.38,"growthPercent":-15.2,"similarGrowthPercent":-21.6,"weekly":[7.5,9.375,20.125,14.7],"activeWeeks":6,"cohortPresence":1.0,"events":87.0,"ageDays":105,"byType":{"LIKE_CREATED":{current=0,previous=4,total=22},"PIECE_USED":{current=3,previous=5,total=32},"PIECE_VIEWED":{current=0,previous=5,total=23},"SAVE_CREATED":{current=3,previous=0,total=10}}},
   reasons=[{"code":"SAVES_NEW","tone":"POSITIVE","value":3.0},{"code":"LIKES_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"USES_DECLINE","tone":"NEGATIVE","value":40.0},{"code":"SIMILAR_DECLINE","tone":"NEGATIVE","dimension":"TREND","value":22.0},{"code":"ENGAGEMENT_LOW","tone":"NEGATIVE","dimension":"ENGAGEMENT","value":6.3},{"code":"NOVELTY_LOW","tone":"NEGATIVE","dimension":"NOVELTY","value":8.8}],
   window=true}
 {
@@ -433,7 +433,7 @@
   momentum=RISING,
   public=true,
   cuts=[lower_piece, classic, work, FR, EUROPA, lower_piece, jeans],
-  signals={"engagementRate":2.8529,"windowCurrent":27.75,"windowPrevious":18.48,"growthPercent":43.2,"similarGrowthPercent":59.7,"weekly":[27.75,18.475,15.25,18.25],"activeWeeks":11,"cohortPresence":0.5,"events":187.0,"ageDays":81,"byType":{"LIKE_CREATED":{"previous":5,"total":49,"current":6},"PIECE_USED":{"previous":10,"total":59,"current":1},"PIECE_VIEWED":{"previous":3,"total":37,"current":0},"SAVE_CREATED":{"previous":3,"total":42,"current":12}}},
+  signals={"engagementRate":2.8529,"windowCurrent":27.75,"windowPrevious":18.48,"growthPercent":43.2,"similarGrowthPercent":59.7,"weekly":[27.75,18.475,15.25,18.25],"activeWeeks":11,"cohortPresence":0.5,"events":187.0,"ageDays":81,"byType":{"LIKE_CREATED":{current=6,previous=5,total=49},"PIECE_USED":{current=1,previous=10,total=59},"PIECE_VIEWED":{current=0,previous=3,total=37},"SAVE_CREATED":{current=12,previous=3,total=42}}},
   reasons=[{"code":"SAVES_GROWTH","tone":"POSITIVE","value":300.0},{"code":"LIKES_GROWTH","tone":"POSITIVE","value":20.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"USES_DECLINE","tone":"NEGATIVE","value":90.0},{"code":"SIMILAR_GROWTH","tone":"POSITIVE","dimension":"TREND","value":60.0},{"code":"POPULARITY_STRONG","tone":"POSITIVE","dimension":"POPULARITY","value":81.3},{"code":"ENGAGEMENT_STRONG","tone":"POSITIVE","dimension":"ENGAGEMENT","value":81.3},{"code":"TREND_STRONG","tone":"POSITIVE","dimension":"TREND","value":74.3}],
   window=true}
 {
@@ -458,7 +458,7 @@
   momentum=COOLING,
   public=true,
   cuts=[null, casual, party,work, BR, AMERICA_DO_SUL, lower_piece,shoes_piece,upper_piece, casual_sneakers,jeans,t_shirt],
-  signals={"engagementRate":2.8537,"windowCurrent":6.15,"windowPrevious":17.75,"growthPercent":-55.9,"weekly":[6.15,17.75,16.5,5.25],"activeWeeks":5,"cohortPresence":0.75,"influence":0.5,"events":56.0,"ageDays":79,"byType":{"COMMENT_CREATED":{"previous":1,"total":7,"current":1},"LIKE_CREATED":{"previous":3,"total":16,"current":4},"LOOK_REMIXED":{"previous":4,"total":7,"current":0},"LOOK_VIEWED":{"previous":0,"total":17,"current":8}}},
+  signals={"engagementRate":2.8537,"windowCurrent":6.15,"windowPrevious":17.75,"growthPercent":-55.9,"weekly":[6.15,17.75,16.5,5.25],"activeWeeks":5,"cohortPresence":0.75,"influence":0.5,"events":56.0,"ageDays":79,"byType":{"COMMENT_CREATED":{current=1,previous=1,total=7},"LIKE_CREATED":{current=4,previous=3,total=16},"LOOK_REMIXED":{current=0,previous=4,total=7},"LOOK_VIEWED":{current=8,previous=0,total=17}}},
   reasons=[{"code":"POPULAR_NOT_GROWING","tone":"NEUTRAL","dimension":"TREND","value":11.5},{"code":"LIKES_GROWTH","tone":"POSITIVE","value":33.0},{"code":"VIEWS_NEW","tone":"POSITIVE","value":8.0},{"code":"REMIXES_DECLINE","tone":"NEGATIVE","value":100.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"POPULARITY_STRONG","tone":"POSITIVE","dimension":"POPULARITY","value":76.9},{"code":"ENGAGEMENT_STRONG","tone":"POSITIVE","dimension":"ENGAGEMENT","value":99.7},{"code":"TREND_LOW","tone":"NEGATIVE","dimension":"TREND","value":11.5}],
   window=true}
 {
@@ -483,7 +483,7 @@
   momentum=RISING,
   public=true,
   cuts=[null, casual, party,work, FR, EUROPA, shoes_piece,upper_piece, casual_sneakers,t_shirt],
-  signals={"engagementRate":2.6559,"windowCurrent":3.75,"windowPrevious":0.0,"growthPercent":125.0,"weekly":[3.75,0.0,0.0,0.0],"revival":true,"activeWeeks":1,"cohortPresence":0.625,"influence":4.0,"events":3.0,"ageDays":86,"byType":{"COMMENT_CREATED":{"previous":0,"total":2,"current":2},"LIKE_CREATED":{"previous":0,"total":1,"current":1}}},
+  signals={"engagementRate":2.6559,"windowCurrent":3.75,"windowPrevious":0.0,"growthPercent":125.0,"weekly":[3.75,0.0,0.0,0.0],"revival":true,"activeWeeks":1,"cohortPresence":0.625,"influence":4.0,"events":3.0,"ageDays":86,"byType":{"COMMENT_CREATED":{current=2,previous=0,total=2},"LIKE_CREATED":{current=1,previous=0,total=1}}},
   reasons=[{"code":"COMMENTS_NEW","tone":"POSITIVE","value":2.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"ENGAGEMENT_STRONG","tone":"POSITIVE","dimension":"ENGAGEMENT","value":99.5},{"code":"TREND_VELOCITY_STRONG","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":65.1},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":12.1},{"code":"RARITY_STRONG","tone":"POSITIVE","dimension":"RARITY","value":85.0},{"code":"LONGEVITY_LOW","tone":"NEGATIVE","dimension":"LONGEVITY","value":8.3},{"code":"NOVELTY_STRONG","tone":"POSITIVE","dimension":"NOVELTY","value":75.0}],
   window=true}
 {
@@ -508,7 +508,7 @@
   momentum=COOLING,
   public=true,
   cuts=[null, casual, party,work, FR, EUROPA, lower_piece,shoes_piece, casual_sneakers,jeans],
-  signals={"engagementRate":2.9628,"windowCurrent":14.33,"windowPrevious":28.23,"growthPercent":-44.5,"weekly":[14.325,28.225,10.6,3.0],"activeWeeks":2,"cohortPresence":0.75,"influence":3.0,"events":37.0,"ageDays":12,"byType":{"LIKE_CREATED":{"previous":0,"total":15,"current":8},"LOOK_REMIXED":{"previous":8,"total":12,"current":2},"LOOK_VIEWED":{"previous":3,"total":10,"current":1}}},
+  signals={"engagementRate":2.9628,"windowCurrent":14.33,"windowPrevious":28.23,"growthPercent":-44.5,"weekly":[14.325,28.225,10.6,3.0],"activeWeeks":2,"cohortPresence":0.75,"influence":3.0,"events":37.0,"ageDays":12,"byType":{"LIKE_CREATED":{current=8,previous=0,total=15},"LOOK_REMIXED":{current=2,previous=8,total=12},"LOOK_VIEWED":{current=1,previous=3,total=10}}},
   reasons=[{"code":"POPULAR_NOT_GROWING","tone":"NEUTRAL","dimension":"TREND","value":20.1},{"code":"LIKES_NEW","tone":"POSITIVE","value":8.0},{"code":"REMIXES_DECLINE","tone":"NEGATIVE","value":75.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":67.0},{"code":"POPULARITY_STRONG","tone":"POSITIVE","dimension":"POPULARITY","value":74.0},{"code":"ENGAGEMENT_STRONG","tone":"POSITIVE","dimension":"ENGAGEMENT","value":99.7},{"code":"TREND_LOW","tone":"NEGATIVE","dimension":"TREND","value":20.1},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":7.1}],
   window=true}
 {
@@ -533,7 +533,7 @@
   momentum=RISING,
   public=false,
   cuts=[null, casual, party,work, null, null, upper_piece, t_shirt],
-  signals={"engagementRate":4.1497,"windowCurrent":28.1,"windowPrevious":14.28,"growthPercent":80.0,"weekly":[28.1,14.275,8.525,11.0],"activeWeeks":8,"cohortPresence":0.25,"influence":5.0,"events":87.0,"ageDays":52,"byType":{"COMMENT_CREATED":{"previous":2,"total":19,"current":1},"LIKE_CREATED":{"previous":1,"total":21,"current":3},"LOOK_REMIXED":{"previous":3,"total":23,"current":8},"LOOK_VIEWED":{"previous":7,"total":24,"current":4}}},
+  signals={"engagementRate":4.1497,"windowCurrent":28.1,"windowPrevious":14.28,"growthPercent":80.0,"weekly":[28.1,14.275,8.525,11.0],"activeWeeks":8,"cohortPresence":0.25,"influence":5.0,"events":87.0,"ageDays":52,"byType":{"COMMENT_CREATED":{current=1,previous=2,total=19},"LIKE_CREATED":{current=3,previous=1,total=21},"LOOK_REMIXED":{current=8,previous=3,total=23},"LOOK_VIEWED":{current=4,previous=7,total=24}}},
   reasons=[{"code":"LIKES_GROWTH","tone":"POSITIVE","value":200.0},{"code":"REMIXES_GROWTH","tone":"POSITIVE","value":167.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":43.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"POPULARITY_STRONG","tone":"POSITIVE","dimension":"POPULARITY","value":80.2},{"code":"ENGAGEMENT_STRONG","tone":"POSITIVE","dimension":"ENGAGEMENT","value":100.0},{"code":"TREND_VELOCITY_STRONG","tone":"POSITIVE","dimension":"TREND_VELOCITY","value":91.8},{"code":"ORIGINALITY_LOW","tone":"NEGATIVE","dimension":"ORIGINALITY","value":0.0}],
   window=true}
 {
@@ -558,7 +558,7 @@
   momentum=RISING,
   public=true,
   cuts=[null, casual, party,work, BR, AMERICA_DO_SUL, lower_piece,shoes_piece,upper_piece, casual_sneakers,jeans,t_shirt],
-  signals={"engagementRate":3.6058,"windowCurrent":24.65,"windowPrevious":11.7,"growthPercent":88.1,"weekly":[24.65,11.7,17.9,17.75],"activeWeeks":6,"cohortPresence":0.8125,"influence":4.0,"events":60.0,"ageDays":40,"byType":{"COMMENT_CREATED":{"previous":3,"total":19,"current":5},"LIKE_CREATED":{"previous":7,"total":13,"current":2},"LOOK_REMIXED":{"previous":0,"total":13,"current":4},"LOOK_VIEWED":{"previous":5,"total":15,"current":2}}},
+  signals={"engagementRate":3.6058,"windowCurrent":24.65,"windowPrevious":11.7,"growthPercent":88.1,"weekly":[24.65,11.7,17.9,17.75],"activeWeeks":6,"cohortPresence":0.8125,"influence":4.0,"events":60.0,"ageDays":40,"byType":{"COMMENT_CREATED":{current=5,previous=3,total=19},"LIKE_CREATED":{current=2,previous=7,total=13},"LOOK_REMIXED":{current=4,previous=0,total=13},"LOOK_VIEWED":{current=2,previous=5,total=15}}},
   reasons=[{"code":"COMMENTS_GROWTH","tone":"POSITIVE","value":67.0},{"code":"REMIXES_NEW","tone":"POSITIVE","value":4.0},{"code":"LIKES_DECLINE","tone":"NEGATIVE","value":71.0},{"code":"VIEWS_DECLINE","tone":"NEGATIVE","value":60.0},{"code":"LIMITED_EDITION","tone":"POSITIVE","dimension":"RARITY"},{"code":"POPULARITY_STRONG","tone":"POSITIVE","dimension":"POPULARITY","value":77.9},{"code":"ENGAGEMENT_STRONG","tone":"POSITIVE","dimension":"ENGAGEMENT","value":99.9},{"code":"TREND_STRONG","tone":"POSITIVE","dimension":"TREND","value":81.3}],
   window=true}
 {

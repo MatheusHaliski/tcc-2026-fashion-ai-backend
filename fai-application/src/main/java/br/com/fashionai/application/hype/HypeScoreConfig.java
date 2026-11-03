@@ -6,10 +6,7 @@ import br.com.fashionai.domain.model.enums.HypeSignalType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -81,9 +78,9 @@ public class HypeScoreConfig {
                            @Value("${fashionai.hype.integrity.new-account-weight:0.5}") double newAccountWeight,
                            @Value("${fashionai.hype.history-max-days:365}") int historyMaxDays) {
         this.algorithmVersion = algorithmVersion;
-        this.pieceWeights = dimensions(pieceWeights);
-        this.lookWeights = dimensions(lookWeights);
-        this.signalWeights = signals(signalWeights);
+        this.pieceWeights = HypeConfigParsing.dimensions(pieceWeights);
+        this.lookWeights = HypeConfigParsing.dimensions(lookWeights);
+        this.signalWeights = HypeConfigParsing.signals(signalWeights);
         this.windowDays = Math.max(1, windowDays);
         this.horizonWeeks = Math.max(4, horizonWeeks);
         this.decayHalfLifeDays = Math.max(0.5, decayHalfLifeDays);
@@ -91,7 +88,7 @@ public class HypeScoreConfig {
         this.minSignalEvents = Math.max(1, minSignalEvents);
         this.growthSmoothing = Math.max(0.5, growthSmoothing);
         this.engagementPrior = Math.max(1, engagementPrior);
-        this.levelThresholds = thresholds(levelThresholds);
+        this.levelThresholds = HypeConfigParsing.thresholds(levelThresholds);
         this.stablePoints = Math.max(0, stablePoints);
         this.deltaWindowDays = Math.max(1, deltaWindowDays);
         this.staleAfterHours = Math.max(1, staleAfterHours);
@@ -104,71 +101,6 @@ public class HypeScoreConfig {
     public static HypeScoreConfig defaults() {
         return new HypeScoreConfig(DEFAULT_VERSION, DEFAULT_PIECE_WEIGHTS, DEFAULT_LOOK_WEIGHTS, DEFAULT_SIGNAL_WEIGHTS, 7, 12, 7, 30, 3, 3, 20,
                 "20,40,60,75,90", 2, 7, 24, 7, 0.5, 365);
-    }
-
-    static Map<Dimension, Double> dimensions(String spec) {
-        Map<Dimension, Double> out = new EnumMap<>(Dimension.class);
-        for (Map.Entry<String, Double> e : pairs(spec).entrySet()) {
-            try {
-                out.put(Dimension.valueOf(e.getKey().toUpperCase(Locale.ROOT)), e.getValue());
-            } catch (IllegalArgumentException ignored) {
-                // dimensão desconhecida na propriedade: ignorada (não derruba o boot)
-            }
-        }
-        return Collections.unmodifiableMap(out);
-    }
-
-    static Map<HypeSignalType, Double> signals(String spec) {
-        Map<HypeSignalType, Double> out = new EnumMap<>(HypeSignalType.class);
-        for (Map.Entry<String, Double> e : pairs(spec).entrySet()) {
-            try {
-                out.put(HypeSignalType.valueOf(e.getKey().toUpperCase(Locale.ROOT)), e.getValue());
-            } catch (IllegalArgumentException ignored) {
-                // sinal desconhecido: ignorado
-            }
-        }
-        return Collections.unmodifiableMap(out);
-    }
-
-    private static Map<String, Double> pairs(String spec) {
-        Map<String, Double> out = new LinkedHashMap<>();
-        if (spec == null) {
-            return out;
-        }
-        for (String part : spec.split(",")) {
-            String[] kv = part.trim().split("=");
-            if (kv.length == 2) {
-                try {
-                    out.put(kv[0].trim(), Math.max(0, Double.parseDouble(kv[1].trim())));
-                } catch (NumberFormatException ignored) {
-                    // valor inválido: ignorado
-                }
-            }
-        }
-        return out;
-    }
-
-    private static int[] thresholds(String spec) {
-        int[] fallback = {20, 40, 60, 75, 90};
-        if (spec == null) {
-            return fallback;
-        }
-        String[] parts = spec.split(",");
-        if (parts.length != fallback.length) {
-            return fallback;
-        }
-        int[] out = new int[parts.length];
-        for (int i = 0; i < parts.length; i++) {
-            try {
-                out[i] = Integer.parseInt(parts[i].trim());
-            } catch (NumberFormatException e) {
-                return fallback;
-            }
-            if (i > 0 && out[i] <= out[i - 1]) {
-                return fallback;
-            }
-        }
-        return out;
     }
 
     /** Classificação semântica do score (0–19 LOW_SIGNAL · 20–39 NICHE · 40–59 RELEVANT · 60–74 HOT · 75–89 TRENDING · 90–100 VIRAL). */
