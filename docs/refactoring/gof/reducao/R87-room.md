@@ -102,7 +102,7 @@ python3 scripts/refactoring/line_ratchet.py
 | Original: testes do quarto e consumidores + caracterização | 65 testes, 0 falhas |
 | Após o Facade (mesmo retrato) + `RoomInventoryApplyTest` | **68 testes, 0 falhas, 0 erros** |
 | `install` de `fai-web` com dependências (`ServiceFakes` sem alteração) | sucesso |
-| Suíte completa de `fai-application` (depois) | 2032 testes, 0 falhas, 0 erros, 27 skipped |
+| Suíte completa de `fai-application` (depois; e após o merge da base, que trouxe R82/R83/R84/R86) | 2032 testes, 0 falhas, 27 skipped; após o merge 2046, 0 falhas, 27 skipped |
 | `fai-web` `ControllerDelegacaoTest` + `ContratoRotasPorTagTest` | 698 testes, 0 falhas |
 | Catraca | `RoomService.java` só como `APERTAR` (1436 → 246); 0 violações; nenhum arquivo novo acima do limite |
 
