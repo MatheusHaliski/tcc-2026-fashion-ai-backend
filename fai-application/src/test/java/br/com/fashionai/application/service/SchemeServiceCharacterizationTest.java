@@ -208,10 +208,10 @@ class SchemeServiceCharacterizationTest {
         p.add("improve", schemes.improve(ana, id, "deixe mais elegante para a noite"));
         p.add("improve.null", schemes.improve(ana, id, null));
         Map<String, Object> current = Map.of("title", "A", "occasion", List.of("casual"), "season", "SUMMER", "visibility", "PUBLIC");
-        p.add("parseDiff", schemes.parseDiff("antes {\"changes\":[{\"field\":\"title\",\"proposed\":\"Noite\",\"reason\":\"r\"},"
+        p.add("parseDiff", SchemeAiEdit.parseDiff("antes {\"changes\":[{\"field\":\"title\",\"proposed\":\"Noite\",\"reason\":\"r\"},"
                 + "{\"field\":\"occasion\",\"proposed\":[\"party\"]},{\"field\":\"season\",\"proposed\":\"MONSOON\"},"
                 + "{\"field\":\"visibility\",\"proposed\":\"FOLLOWERS\"},{\"field\":\"inexistente\",\"proposed\":1}]} depois", current));
-        p.add("parseDiff.none", String.valueOf(schemes.parseDiff("nada", current)));
+        p.add("parseDiff.none", String.valueOf(SchemeAiEdit.parseDiff("nada", current)));
         Map<String, Object> accepted = new LinkedHashMap<>();
         accepted.put("title", "Noite elegante");
         accepted.put("description", "Para jantar");
@@ -265,43 +265,44 @@ class SchemeServiceCharacterizationTest {
         for (Scheme s : w.anaLooks) {
             p.add("kindOf." + s.getTitle(), SchemeService.kindOf(s));
             for (String st : List.of("", "todos", "favorites", "available", "unavailable", "published", "drafts", "archived", "x")) {
-                p.add("stateMatches." + s.getTitle() + "." + st, SchemeService.stateMatches(s, st));
+                p.add("stateMatches." + s.getTitle() + "." + st, SchemeLookFilters.stateMatches(s, st));
             }
         }
-        p.add("stateMatches.null", SchemeService.stateMatches(w.anaLooks.get(0), null));
+        p.add("stateMatches.null", SchemeLookFilters.stateMatches(w.anaLooks.get(0), null));
         for (String raw : new String[]{null, " HYPE ", "hype_desc", "maior_hype", "hype_asc", "menor_hype", "growth", "em_crescimento", "x"}) {
-            p.add("lookSort." + raw, SchemeService.lookSort(raw));
+            p.add("lookSort." + raw, SchemeLookFilters.lookSort(raw));
         }
         int[] t = HypeScoreConfig.defaults().levelThresholds();
         for (String level : new String[]{null, " ", "low_signal", "NICHE", "relevant", "HOT", "trending", "VIRAL", "x"}) {
-            p.add("hypeMinimum." + level, List.of(String.valueOf(SchemeService.hypeMinimum(level, t)),
-                    String.valueOf(SchemeService.hypeMinimum(level, new int[]{1, 2}))));
+            p.add("hypeMinimum." + level, List.of(String.valueOf(SchemeLookFilters.hypeMinimum(level, t)),
+                    String.valueOf(SchemeLookFilters.hypeMinimum(level, new int[]{1, 2}))));
         }
         Map<UUID, HypeScoreCurrent> hype = w.kit.dep(HypeScoreCurrentRepository.class).findAll().stream()
                 .filter(h -> h.getEntityType() == HypeEntityType.SCHEME).collect(Collectors.toMap(HypeScoreCurrent::getEntityId, h -> h));
         for (String order : new String[]{null, "hype", "hype_desc", "hype_asc", "growth", "recent"}) {
             for (Integer min : new Integer[]{null, 0, 40, 60, 92}) {
-                p.add("byHype." + order + "." + min, SchemeService.byHype(w.anaLooks, order, min, hype).stream().map(Scheme::getTitle).toList());
+                p.add("byHype." + order + "." + min, SchemeLookFilters.byHype(w.anaLooks, order, min, hype).stream().map(Scheme::getTitle).toList());
             }
         }
         for (HypeLevel level : new HypeLevel[]{null, HypeLevel.values()[0], HypeLevel.VIRAL}) {
-            p.add("cardHypeLabel." + level, List.of(String.valueOf(SchemeService.cardHypeLabel(BigDecimal.valueOf(89.6), level, true)),
-                    String.valueOf(SchemeService.cardHypeLabel(BigDecimal.valueOf(89.6), level, false)),
-                    String.valueOf(SchemeService.cardHypeLabel(null, level, true))));
+            p.add("cardHypeLabel." + level, List.of(String.valueOf(SchemeHype.cardHypeLabel(BigDecimal.valueOf(89.6), level, true)),
+                    String.valueOf(SchemeHype.cardHypeLabel(BigDecimal.valueOf(89.6), level, false)),
+                    String.valueOf(SchemeHype.cardHypeLabel(null, level, true))));
         }
+        SchemeHype hypeState = new SchemeHype(w.kit.dep(HypeScoreCurrentRepository.class), HypeScoreConfig.defaults());
         for (HypeScoreCurrent h : hype.values().stream().sorted(java.util.Comparator.comparing(HypeScoreCurrent::getEntityId)).toList()) {
-            p.add("cardHypeLabel.row." + h.getEntityId(), List.of(String.valueOf(schemes.cardHypeLabel(h, true)),
-                    String.valueOf(schemes.cardHypeLabel(h, false))));
+            p.add("cardHypeLabel.row." + h.getEntityId(), List.of(String.valueOf(hypeState.cardHypeLabel(h, true)),
+                    String.valueOf(hypeState.cardHypeLabel(h, false))));
         }
-        p.add("cardHypeLabel.null", String.valueOf(schemes.cardHypeLabel(null, true)));
+        p.add("cardHypeLabel.null", String.valueOf(hypeState.cardHypeLabel(null, true)));
         for (WardrobeItem piece : List.of(mine.get(0), mine.get(2), mine.get(8))) {
-            p.add("placeholder." + piece.getSubcategory(), SchemeService.placeholder(piece));
+            p.add("placeholder." + piece.getSubcategory(), SchemeCards.placeholder(piece));
         }
         WardrobeItem unnamed = Kit.piece(w.ana, "x", "upper_piece", null, "beige");
         unnamed.setName(" ");
-        p.add("placeholder.unnamed", SchemeService.placeholder(unnamed));
+        p.add("placeholder.unnamed", SchemeCards.placeholder(unnamed));
         WardrobeItem longName = Kit.piece(w.ana, "Camiseta de algodão orgânico listrada", "upper_piece", "t_shirt", "white");
-        p.add("placeholder.long", SchemeService.placeholder(longName));
-        p.add("pieceAnalysis", List.of(String.valueOf(SchemeService.pieceAnalysis(mine.get(0))), String.valueOf(SchemeService.pieceAnalysis(mine.get(1)))));
+        p.add("placeholder.long", SchemeCards.placeholder(longName));
+        p.add("pieceAnalysis", List.of(String.valueOf(SchemeAiPayloads.pieceAnalysis(mine.get(0))), String.valueOf(SchemeAiPayloads.pieceAnalysis(mine.get(1)))));
     }
 }
