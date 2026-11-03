@@ -170,10 +170,10 @@ class SearchHypeV2Test {
         Scheme a = look("a");
         Scheme b = look("b");
         // o v1 (100 × nulo) não muda nada: o que entra é o Hype público passado
-        assertThat(SearchService.relevance(a, List.of(), Set.of(), 80.0)).isEqualTo(SearchService.relevance(b, List.of(), Set.of(), 80.0));
+        assertThat(SearchMatching.relevance(a, List.of(), Set.of(), 80.0)).isEqualTo(SearchMatching.relevance(b, List.of(), Set.of(), 80.0));
         // sem Hype público = neutro (0,5), igual a um score 50 — nunca 0
-        assertThat(SearchService.relevance(a, List.of(), Set.of(), null)).isEqualTo(SearchService.relevance(a, List.of(), Set.of(), 50.0));
-        assertThat(SearchService.relevance(a, List.of(), Set.of(), null)).isGreaterThan(SearchService.relevance(a, List.of(), Set.of(), 0.0));
+        assertThat(SearchMatching.relevance(a, List.of(), Set.of(), null)).isEqualTo(SearchMatching.relevance(a, List.of(), Set.of(), 50.0));
+        assertThat(SearchMatching.relevance(a, List.of(), Set.of(), null)).isGreaterThan(SearchMatching.relevance(a, List.of(), Set.of(), 0.0));
     }
 
     @Test
@@ -234,11 +234,11 @@ class SearchHypeV2Test {
     void unknownLevelIsABadRequestAndNoLevelMeansNoFilter() {
         assertThatThrownBy(() -> search.communityFeed(null, null, 10, new SearchService.Filters(null, null, null, null, null, "MUITO_ESTILOSO")))
                 .isInstanceOf(ApiException.class);
-        assertThat(SearchService.parseLevel(" ")).isNull();
-        assertThat(SearchService.parseLevel("viral")).isEqualTo(HypeLevel.VIRAL);
-        assertThat(SearchService.levelMinimum(config, HypeLevel.HOT)).isEqualTo(60);
-        assertThat(SearchService.meetsLevel(null, null, config)).isTrue();
-        assertThat(SearchService.meetsLevel(null, HypeLevel.LOW_SIGNAL, config)).isFalse();   // sem Hype público nunca passa
+        assertThat(SearchHype.parseLevel(" ")).isNull();
+        assertThat(SearchHype.parseLevel("viral")).isEqualTo(HypeLevel.VIRAL);
+        assertThat(SearchHype.levelMinimum(config, HypeLevel.HOT)).isEqualTo(60);
+        assertThat(SearchHype.meetsLevel(null, null, config)).isTrue();
+        assertThat(SearchHype.meetsLevel(null, HypeLevel.LOW_SIGNAL, config)).isFalse();   // sem Hype público nunca passa
     }
 
     @Test
@@ -271,14 +271,14 @@ class SearchHypeV2Test {
     @Test
     void summaryHidesPersonalHypeFromThirdPartiesAndNeverTurnsMissingIntoZero() {
         HypeScoreCurrent personal = row(HypeEntityType.SCHEME, UUID.randomUUID(), 77, false);
-        assertThat(SearchService.hypeSummary(personal, false, config)).containsEntry("status", "NOT_CALCULATED").doesNotContainKey("score");
-        assertThat(SearchService.hypeSummary(personal, true, config)).containsEntry("status", "AVAILABLE").containsEntry("score", 77.0)
+        assertThat(SearchHype.hypeSummary(personal, false, config)).containsEntry("status", "NOT_CALCULATED").doesNotContainKey("score");
+        assertThat(SearchHype.hypeSummary(personal, true, config)).containsEntry("status", "AVAILABLE").containsEntry("score", 77.0)
                 .containsEntry("level", "TRENDING");
         HypeScoreCurrent insufficient = row(HypeEntityType.SCHEME, UUID.randomUUID(), 0, true);
         insufficient.setStatus(HypeStatus.INSUFFICIENT_DATA);
         insufficient.setScore(null);
-        assertThat(SearchService.hypeSummary(insufficient, false, config)).containsEntry("status", "INSUFFICIENT_DATA").containsEntry("score", null);
-        assertThat(SearchService.hypeSummary(null, false, config)).containsEntry("status", "NOT_CALCULATED");
+        assertThat(SearchHype.hypeSummary(insufficient, false, config)).containsEntry("status", "INSUFFICIENT_DATA").containsEntry("score", null);
+        assertThat(SearchHype.hypeSummary(null, false, config)).containsEntry("status", "NOT_CALCULATED");
     }
 
     private static Share share(User by, TargetType type, UUID target, String caption, Instant at) {

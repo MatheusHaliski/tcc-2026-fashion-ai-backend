@@ -20,7 +20,9 @@ class IdentityAllSessionsTest {
    when(repository.findByUserIdAndRevokedAtIsNullAndExpiresAtAfter(eq(owner),any())).thenReturn(List.of(a,b));
    when(repository.findByFamilyId(current)).thenReturn(List.of(a)); when(repository.findByFamilyId(other)).thenReturn(List.of(b)); when(repository.findByFamilyId(stranger)).thenReturn(List.of(c));
    IdentityService service = mock(IdentityService.class,CALLS_REAL_METHODS);
-   Field field = IdentityService.class.getDeclaredField("refreshTokens"); field.setAccessible(true); field.set(service,repository);
+   // as sessões ficam no colaborador IdentitySessions (R95): o serviço sem construtor recebe só esse caso de uso
+   Field field = IdentityService.class.getDeclaredField("cases"); field.setAccessible(true);
+   field.set(service, new IdentityUseCases(null, null, null, new IdentitySessions(repository, null, null), null, null, null, null));
    assertThat(service.sessionActive(current)).isTrue(); assertThat(service.sessionActive(other)).isTrue();
    assertThat(service.revokeOtherSessions(owner,null)).isEqualTo(2);
    assertThat(service.sessionActive(current)).isFalse(); assertThat(service.sessionActive(other)).isFalse(); assertThat(service.sessionActive(stranger)).isTrue();

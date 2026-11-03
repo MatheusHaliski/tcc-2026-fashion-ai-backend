@@ -1,0 +1,796 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > funções puras de room-props: deg, pointer, croqui por categoria e texto em canvas 1`] = `
+{
+  "deg": 1.5707963267948966,
+  "pointer": [
+    "onPointerOver",
+    "onPointerOut",
+  ],
+  "sketch": [
+    "609642700e5daf89",
+    "c772829f772b8574",
+    "f30922a5712a149c",
+    "a8410788fa652c26",
+    "cf05c10d88589ad0",
+  ],
+  "text": [
+    "ef8ac70f8ccd3238",
+    "c6ba23a95d9b7f6f",
+  ],
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > hung-garment: cada tipo pendurado no varão (x e z), encurtado e balançando; sapato e acessório na prateleira > depois de 4 quadros 1`] = `"49e7ad45e3c0a092"`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > hung-garment: cada tipo pendurado no varão (x e z), encurtado e balançando; sapato e acessório na prateleira > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,1.2,0,1",
+  "Group#hung-a[] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.2,0,1",
+  "Group[] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.2,0,1",
+  "Group[] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.2,0,1",
+  "Mesh[] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.23,0,1 geo=v171 5e9e2c7501e031d5 mat=MeshStandardMaterial:ebb8ae66f1d9e779",
+  "Mesh[] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.2,0,1 geo=v40 40af3b306b5c41dc mat=MeshStandardMaterial:ebb8ae66f1d9e779",
+  "Mesh[] 0.034,-0.969,-0.246,0,0.132,0.248,-0.96,0,0.991,0,0.137,0,-0.014,1.16,0.099,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:ebb8ae66f1d9e779",
+  "Mesh[] 0.034,0.969,-0.246,0,-0.132,0.248,0.96,0,0.991,0,0.137,0,0.014,1.16,-0.099,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:ebb8ae66f1d9e779",
+  "Mesh[CR] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.2,0,1 geo=v805 8ad7944016b2e96e mat=MeshPhysicalMaterial:8f8c7b94150a0ec4",
+  "Mesh[CR] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.2,0,1 geo=v805 ccbada5e2d92dd00 mat=MeshPhysicalMaterial:8f8c7b94150a0ec4",
+  "Group[] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.08,0,1",
+  "Points[H] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0,1.08,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Mesh[] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0.074,1.12,-0.238,1 geo=v221 baf037bd98665d3b mat=MeshStandardMaterial:332fe00fed38216b",
+  "PointLight[] 0.137,0,-0.991,0,0,1,0,0,0.991,0,0.137,0,0.347,0.89,0.048,1 light=ffe6a0/1.4/1.1/2/false",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,1.1,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.3,1.2,0,1",
+  "Group#hung-b[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.2,0,1",
+  "Group[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.2,0,1",
+  "Group[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.2,0,1",
+  "Mesh[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.23,0,1 geo=v171 5e9e2c7501e031d5 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.2,0,1 geo=v40 40af3b306b5c41dc mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.246,-0.969,0.034,0,0.96,0.248,0.132,0,-0.136,0,0.991,0,0.201,1.16,-0.014,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.246,0.969,0.034,0,-0.96,0.248,-0.132,0,-0.136,0,0.991,0,0.399,1.16,0.014,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[CR] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.2,0,1 geo=v805 834a4338fc41c797 mat=MeshPhysicalMaterial:c5aeb6a142a1792b",
+  "Mesh[CR] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.2,0,1 geo=v805 4b29fe86fc341193 mat=MeshPhysicalMaterial:c5aeb6a142a1792b",
+  "Group[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.08,0,1",
+  "Points[H] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.3,1.08,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.3,1.1,0,1",
+  "Group[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.33,1.08,0.05,1",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.336,1.114,0.05,1 geo=v28 0a041aeef2fdd893 mat=MeshBasicMaterial:d718e6602e0dba1a",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.33,1.08,0.051,1 geo=v4 4c42591459747ad7 mat=MeshBasicMaterial:f6e592729fb96656",
+  "Group[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.27,0.98,0.05,1",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.276,1.014,0.05,1 geo=v28 0a041aeef2fdd893 mat=MeshBasicMaterial:d718e6602e0dba1a",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.27,0.98,0.051,1 geo=v4 4c42591459747ad7 mat=MeshBasicMaterial:02bb6ea250404bbb",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.6,1.2,0,1",
+  "Group#hung-c[] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.2,0,1",
+  "Group[] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.2,0,1",
+  "Group[] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.2,0,1",
+  "Mesh[] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.23,0,1 geo=v171 5e9e2c7501e031d5 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.2,0,1 geo=v40 40af3b306b5c41dc mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.034,-0.969,-0.246,0,0.132,0.248,-0.96,0,0.991,0,0.136,0,0.586,1.16,0.099,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.034,0.969,-0.246,0,-0.132,0.248,0.96,0,0.991,0,0.136,0,0.614,1.16,-0.099,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[CR] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.2,0,1 geo=v805 fe76b00c4b3dc3a7 mat=MeshPhysicalMaterial:3b371855fd6a7ac8",
+  "Mesh[CR] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.2,0,1 geo=v805 c836847e5d3e0de9 mat=MeshPhysicalMaterial:2a2a61c4884dd0c7",
+  "Group[] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.08,0,1",
+  "Points[H] 0.136,0,-0.991,0,0,1,0,0,0.991,0,0.136,0,0.6,1.08,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.6,1.1,0,1",
+  "Group[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.62,0.88,0.05,1",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.626,0.914,0.05,1 geo=v28 0a041aeef2fdd893 mat=MeshBasicMaterial:d718e6602e0dba1a",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.62,0.88,0.051,1 geo=v4 8f8011a0c79f4423 mat=MeshBasicMaterial:0e54c686def1327b",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.9,1.2,0,1",
+  "Group#hung-d[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.2,0,1",
+  "Group[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.2,0,1",
+  "Group[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.2,0,1",
+  "Mesh[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.23,0,1 geo=v171 5e9e2c7501e031d5 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.2,0,1 geo=v40 40af3b306b5c41dc mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.246,-0.969,0.034,0,0.96,0.248,0.131,0,-0.136,0,0.991,0,0.801,1.16,-0.014,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.246,0.969,0.034,0,-0.96,0.248,-0.131,0,-0.136,0,0.991,0,0.999,1.16,0.014,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[CR] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.2,0,1 geo=v805 7d473ad32a627745 mat=MeshPhysicalMaterial:83da2f98044d3525",
+  "Mesh[CR] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.2,0,1 geo=v805 26995bb15df71fea mat=MeshPhysicalMaterial:83da2f98044d3525",
+  "Group[] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.08,0,1",
+  "Points[H] 0.991,0,0.136,0,0,1,0,0,-0.136,0,0.991,0,0.9,1.08,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.9,1.1,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1.2,1.2,0,1",
+  "Group#hung-e[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.2,0,1",
+  "Group[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.2,0,1",
+  "Group[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.2,0,1",
+  "Mesh[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.23,0,1 geo=v171 5e9e2c7501e031d5 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.2,0,1 geo=v40 40af3b306b5c41dc mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.034,-0.969,-0.246,0,0.131,0.248,-0.96,0,0.991,0,0.135,0,1.186,1.16,0.099,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.034,0.969,-0.246,0,-0.131,0.248,0.96,0,0.991,0,0.135,0,1.214,1.16,-0.099,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0,1,0,0,-0.135,0,0.991,0,0.991,0,0.135,0,1.2,1.135,0,1 geo=v52 f4ab86539939d59c mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[CR] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.2,0,1 geo=v805 941ad4b03231a690 mat=MeshPhysicalMaterial:dd756ca74a64df88",
+  "Mesh[CR] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.2,0,1 geo=v805 5ba3dfe6c5bff40a mat=MeshPhysicalMaterial:dd756ca74a64df88",
+  "Group[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.08,0,1",
+  "Points[H] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.2,1.08,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1.2,1.1,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1.5,1.2,0,1",
+  "Group#hung-f[] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.2,0,1",
+  "Group[] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.2,0,1",
+  "Group[] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.2,0,1",
+  "Mesh[] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.23,0,1 geo=v171 5e9e2c7501e031d5 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.2,0,1 geo=v40 40af3b306b5c41dc mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.246,-0.969,0.033,0,0.96,0.248,0.131,0,-0.135,0,0.991,0,1.401,1.16,-0.013,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.246,0.969,0.033,0,-0.96,0.248,-0.131,0,-0.135,0,0.991,0,1.599,1.16,0.013,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0,1,0,0,-0.991,0,-0.135,0,-0.135,0,0.991,0,1.5,1.135,0,1 geo=v52 f4ab86539939d59c mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[CR] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.2,0,1 geo=v805 0f4eb488bb71cdd2 mat=MeshPhysicalMaterial:7b76a9e688bbd697",
+  "Mesh[CR] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.2,0,1 geo=v805 624586e9ffe4e4c7 mat=MeshPhysicalMaterial:7b76a9e688bbd697",
+  "Group[] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.08,0,1",
+  "Points[H] 0.991,0,0.135,0,0,1,0,0,-0.135,0,0.991,0,1.5,1.08,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1.5,1.1,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1.8,1.2,0,1",
+  "Group#hung-g[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.2,0,1",
+  "Group[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.2,0,1",
+  "Group[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.2,0,1",
+  "Mesh[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.23,0,1 geo=v171 5e9e2c7501e031d5 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.2,0,1 geo=v40 40af3b306b5c41dc mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.033,-0.969,-0.246,0,0.13,0.248,-0.96,0,0.991,0,0.135,0,1.787,1.16,0.099,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0.033,0.969,-0.246,0,-0.13,0.248,0.96,0,0.991,0,0.135,0,1.813,1.16,-0.099,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0,1,0,0,-0.135,0,0.991,0,0.991,0,0.135,0,1.8,1.135,0,1 geo=v52 f4ab86539939d59c mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[CR] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.2,0,1 geo=v805 d8e89281991fb6bc mat=MeshPhysicalMaterial:d598393ccfef15a0",
+  "Mesh[CR] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.2,0,1 geo=v805 7f10c77cb6e8c367 mat=MeshPhysicalMaterial:d598393ccfef15a0",
+  "Group[] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.08,0,1",
+  "Points[H] 0.135,0,-0.991,0,0,1,0,0,0.991,0,0.135,0,1.8,1.08,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1.8,1.1,0,1",
+  "Group#shelf-s[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0.17,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.055,0.17,0,1",
+  "Mesh[C] 1,0,0,0,0,1,0,0,0,0,1,0,-0.055,0.205,0,1 geo=v3876 8ccf0214eba65915 mat=MeshStandardMaterial:552524d6640d14cb",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.055,0.176,0,1 geo=v24 0c46c5454facda27 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.055,0.17,0,1",
+  "Mesh[C] 1,0,0,0,0,1,0,0,0,0,1,0,0.055,0.205,0,1 geo=v3876 8ccf0214eba65915 mat=MeshStandardMaterial:552524d6640d14cb",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.055,0.176,0,1 geo=v24 0c46c5454facda27 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,0,-1,0,0,1,0,0,0,0.245,0,1 geo=v4 9f860454fa6f4d6d mat=MeshStandardMaterial:e3eee9091d7ddf90",
+  "Group#shelf-t[H] 1,0,0,0,0,1,0,0,0,0,1,0,0.3,0.17,0,1",
+  "Mesh[C] 1,0,0,0,0,1,0,0,0,0,1,0,0.3,0.25,0,1 geo=v3876 41cebe7b3dc61823 mat=MeshStandardMaterial:2b9f25dafe01a46e",
+  "Group#hung-h[H] 0,0,-1,0,0,1,0,0,1,0,0,0,0,0,0,1",
+  "Group[] 0,0,-1,0,0,1,0,0,1,0,0,0,0,0,0,1",
+  "Group[] 0,0,-1,0,0,1,0,0,1,0,0,0,0,0,0,1",
+  "Mesh[] 0,0,-1,0,0,1,0,0,1,0,0,0,0,0.03,0,1 geo=v171 5e9e2c7501e031d5 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0,0,-1,0,0,1,0,0,1,0,0,0,0,0,0,1 geo=v40 40af3b306b5c41dc mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0,-0.969,-0.248,0,0,0.248,-0.969,0,1,0,0,0,0,-0.04,0.1,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[] 0,0.969,-0.248,0,0,0.248,0.969,0,1,0,0,0,0,-0.04,-0.1,1 geo=v52 db8f14f1c4d04ec3 mat=MeshStandardMaterial:aec870f6efabfdb9",
+  "Mesh[CR] 0,0,-1,0,0,1,0,0,1,0,0,0,0,0,0,1 geo=v805 316977453c98714f mat=MeshPhysicalMaterial:8f8c7b94150a0ec4",
+  "Mesh[CR] 0,0,-1,0,0,1,0,0,1,0,0,0,0,0,0,1 geo=v805 b071aeaa3c9be5f2 mat=MeshPhysicalMaterial:8f8c7b94150a0ec4",
+  "Group[] 0,0,-1,0,0,1,0,0,1,0,0,0,0,-0.12,0,1",
+  "Points[H] 0,0,-1,0,0,1,0,0,1,0,0,0,0,-0.12,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,-0.1,0,1",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > nomes exportados pelos módulos do lote 1`] = `
+{
+  "controller": [
+    "default:function",
+    "reachHand:function",
+  ],
+  "creator": [
+    "AVAILABILITY:object",
+    "SLOT_LABELS:object",
+    "StoreSwatch:function",
+    "WardrobeCreatorTab:function",
+    "finishOf:function",
+  ],
+  "hung": [
+    "HUNG_DEPTH:object",
+    "HUNG_LENGTH:object",
+    "HungGarment:function",
+    "ShelfPiece:function",
+    "averageColor:function",
+    "clothFolds:function",
+    "hangJitter:function",
+    "hungKindOf:function",
+    "hungProfile:function",
+    "hungShape:function",
+  ],
+  "interaction": [
+    "BODY_RADIUS:number",
+    "CHAIR:object",
+    "GOAL_REACHED:number",
+    "GOAL_STUCK_S:number",
+    "HAND_KEYS:object",
+    "HAND_REACH:number",
+    "HAND_SPEED:number",
+    "MAX_STEP_DT:number",
+    "PICK_RADIUS:number",
+    "REACH_S:number",
+    "ROOM_CAMERA_EVENT:string",
+    "ROOM_TURN_EVENT:string",
+    "ROOM_ZOOM_EVENT:string",
+    "RoomInteraction:function",
+    "WALK_SPEED:number",
+    "arrowAnywhere:function",
+    "keepInFront:function",
+    "moveInRoom:function",
+    "nudgeHand:function",
+    "penetration:function",
+    "seatOf:function",
+    "stepToward:function",
+    "thighDrop:function",
+  ],
+  "props": [
+    "ClosetLights:function",
+    "Cobweb:function",
+    "CorkBoard:function",
+    "DressForm:function",
+    "DustPuff:function",
+    "EmptyDrawerCharm:function",
+    "FaiBox:function",
+    "FaiMedallion:function",
+    "FaiNeonSign:function",
+    "FaiRug:function",
+    "GoldDot:function",
+    "HangTag:function",
+    "KeyHook:function",
+    "Label3D:function",
+    "Lamp:function",
+    "LightSwitch:function",
+    "RoomDoor:function",
+    "RoomWindow:function",
+    "Sparkles:function",
+    "TailorTape:function",
+    "WallCalendar:function",
+    "WindowLight:function",
+    "deg:function",
+    "pointer:object",
+    "sketchDraw:function",
+    "textTex:function",
+    "useCanvasTex:function",
+  ],
+  "scene": [
+    "LEVELS:object",
+    "default:function",
+    "kelvinColor:function",
+    "moduleAnchor:function",
+    "moduleFacing:function",
+    "shownHits:function",
+  ],
+  "session": [
+    "EYE_HEIGHT:number",
+    "HAND_SLOTS:object",
+    "HAND_TO_API:object",
+    "MIRROR_COLLIDER:object",
+    "MIRROR_NORMAL:object",
+    "MIRROR_ZONE:object",
+    "MirrorSession:function",
+    "REACTION_MS:object",
+    "assetStateOf:function",
+    "awayPoint:function",
+    "cameraFor:function",
+    "facingYaw:function",
+    "handSlotOf:function",
+    "handsOf:function",
+    "mirrorDistance:function",
+    "mirrorFront:function",
+    "mirrorRoute:function",
+    "reactionChoreo:function",
+    "reactionKindOf:function",
+  ],
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: box > depois de 4 quadros 1`] = `
+{
+  "objects": 16,
+  "sha": "32292524acff3d41",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: box > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[C] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.32,0.3,1 geo=v24 bc3ead35366b8c5f mat=MeshStandardMaterial:ace58104a00e070c",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.32,0.451,1 geo=v4 a6dc5f556c9c4fd0 mat=MeshStandardMaterial:fd60de94b359abe3",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.37,0.452,1 geo=v4 e97bbaf613e1c95b mat=MeshBasicMaterial:b9ed95126a55c228",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.44,0.15,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.445,0.3,1 geo=v24 94dc1631f5314253 mat=MeshStandardMaterial:8db2c716210d2e15",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.3,0.3,1 geo=v24 11150bc82df221f3 mat=MeshStandardMaterial:03769f164292066a",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.26,0.48,0.46,1 geo=v4 10850ed976213f82 mat=MeshBasicMaterial:137c9b3af5eaac68",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[C] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.32,0.3,1 geo=v24 bc3ead35366b8c5f mat=MeshStandardMaterial:ace58104a00e070c",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.32,0.451,1 geo=v4 a6dc5f556c9c4fd0 mat=MeshStandardMaterial:fd60de94b359abe3",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.37,0.452,1 geo=v4 e97bbaf613e1c95b mat=MeshBasicMaterial:b9ed95126a55c228",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.44,0.15,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.445,0.3,1 geo=v24 94dc1631f5314253 mat=MeshStandardMaterial:8db2c716210d2e15",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.3,0.3,1 geo=v24 11150bc82df221f3 mat=MeshStandardMaterial:03769f164292066a",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: brand > depois de 4 quadros 1`] = `
+{
+  "objects": 15,
+  "sha": "95df10a17d5eb54a",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: brand > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group#fai-medalhao[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.302,1 geo=v4 c1a91b55a5dd2f7b mat=MeshBasicMaterial:90aff993648c65dd",
+  "Mesh[] 1,0,0,0,0,0,1,0,0,-1,0,0,0.1,0.2,0.318,1 geo=v388 bff43663d0dd54b7 mat=MeshStandardMaterial:b3e79d58ef378a43",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.335,1 geo=v66 12832e4c15fdbd41 mat=MeshBasicMaterial:975cc85c977350d8",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.336,1 geo=v1067 f0d7d96c33e36c84 mat=MeshBasicMaterial:d7383059024c14f9",
+  "Group#fai-medalhao[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.302,1 geo=v4 8bb6a007aa274f49 mat=MeshBasicMaterial:90aff993648c65dd",
+  "Mesh[] 1,0,0,0,0,0,1,0,0,-1,0,0,0.1,0.2,0.318,1 geo=v388 07307ea02d67d719 mat=MeshStandardMaterial:b3e79d58ef378a43",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.335,1 geo=v66 0358c367c7d42ee1 mat=MeshBasicMaterial:975cc85c977350d8",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.336,1 geo=v1067 ce8794373e647944 mat=MeshBasicMaterial:d7383059024c14f9",
+  "Mesh#fai-neon[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v4 85cf3a0a7980bb68 mat=MeshBasicMaterial:b4a9eb5c4994d1f4",
+  "Mesh#fai-neon[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v4 0132c8b784c62eed mat=MeshBasicMaterial:b4a9eb5c4994d1f4",
+  "Mesh#fai-tapete[R] 1,0,0,0,0,0,-1,0,0,1,0,0,0.1,0.2,0.3,1 geo=v66 e1b6ff685b2da528 mat=MeshStandardMaterial:3dd4484c2e3054c5",
+  "Mesh#fai-tapete[R] 1,0,0,0,0,0,-1,0,0,1,0,0,0.1,0.2,0.3,1 geo=v66 b773aef3232b5419 mat=MeshStandardMaterial:e548839705e35d65",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: bust > depois de 4 quadros 1`] = `
+{
+  "objects": 20,
+  "sha": "3bbebb3e8a52dd0c",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: bust > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.22,0.3,1 geo=v148 24369bc9b23ae972 mat=MeshStandardMaterial:f4af24c21f032ebf",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.7,0.3,1 geo=v64 23a13eeb3c3929ae mat=MeshStandardMaterial:4a7bbc8ee64e0291",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,1.15,0.3,1",
+  "Mesh[C] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,1.15,0.3,1 geo=v330 23a0a83dc2127718 mat=MeshStandardMaterial:c506a5c0d47d5327",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,1.45,0.455,1 geo=v24 cdf218f0039444b5 mat=MeshStandardMaterial:959d876f71780dfb",
+  "Mesh[] 0.939,0.336,-0.068,0,-0.343,0.921,-0.187,0,0,0.199,0.98,0,0.26,1.59,0.38,1 geo=v52 99b47f2df0041c36 mat=MeshStandardMaterial:b4927ffc15d4c61e",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,1.81,0.3,1 geo=v76 a423351bec4de79d mat=MeshStandardMaterial:4a7bbc8ee64e0291",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.27,0.49,1 geo=v4 7d3912f16ada6ed7 mat=MeshBasicMaterial:41b65892e0225c8b",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1,0,1,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,0.02,1,1 geo=v148 24369bc9b23ae972 mat=MeshStandardMaterial:f4af24c21f032ebf",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,0.5,1,1 geo=v64 23a13eeb3c3929ae mat=MeshStandardMaterial:4a7bbc8ee64e0291",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1,0.95,1,1",
+  "Mesh[C] 1,0,0,0,0,1,0,0,0,0,1,0,1,0.95,1,1 geo=v330 23a0a83dc2127718 mat=MeshStandardMaterial:c506a5c0d47d5327",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,1.25,1.155,1 geo=v24 cdf218f0039444b5 mat=MeshStandardMaterial:959d876f71780dfb",
+  "Mesh[] 0.98,-0.044,0.194,0,0.199,0.215,-0.956,0,0,0.976,0.219,0,1.16,1.39,1.08,1 geo=v52 99b47f2df0041c36 mat=MeshStandardMaterial:b4927ffc15d4c61e",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,1.61,1,1 geo=v76 a423351bec4de79d mat=MeshStandardMaterial:4a7bbc8ee64e0291",
+  "PointLight[] 1,0,0,0,0,1,0,0,0,0,1,0,1,1.25,1.4,1 light=ffe6a0/0.6/1/2/false",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,0.07,1.19,1 geo=v4 7d3912f16ada6ed7 mat=MeshBasicMaterial:41b65892e0225c8b",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: challenges > depois de 4 quadros 1`] = `
+{
+  "objects": 87,
+  "sha": "3d18e3bb1fd5e44d",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: challenges > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v24 64852dd93724215a mat=MeshStandardMaterial:4be0eea2b3b0da0c",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.296,1 geo=v24 69485cf8ef9b74ed mat=MeshStandardMaterial:f4a051a046769afc",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.23,0.46,0.314,1 geo=v4 7368772423b4ff7b mat=MeshBasicMaterial:3cd186cbd3cc20dd",
+  "Group[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.24,0.28,0.316,1",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.24,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:caf5a0d04630652a",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.239,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:bc65d56aef2614e7",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.234,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.245,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:88c96a3f273999f8",
+  "Group[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.07,0.28,0.316,1",
+  "Mesh[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.07,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:caf5a0d04630652a",
+  "Mesh[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.069,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:d66688f487314327",
+  "Mesh[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.066,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.074,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:f65fccdf976c15ba",
+  "Group[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.1,0.28,0.316,1",
+  "Mesh[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.1,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.1,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.103,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.097,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:437d3bfef505b8af",
+  "Group[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.27,0.28,0.316,1",
+  "Mesh[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.27,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.27,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.271,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.269,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:822eb769fe378099",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.44,0.28,0.316,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.44,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.44,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.44,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.44,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:a7d4bfbd70ee80e8",
+  "Group[] 1,0.02,0,0,-0.02,1,0,0,0,0,1,0,-0.24,0.04,0.316,1",
+  "Mesh[] 1,0.02,0,0,-0.02,1,0,0,0,0,1,0,-0.24,0.04,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 1,0.02,0,0,-0.02,1,0,0,0,0,1,0,-0.24,0.052,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 1,0.02,0,0,-0.02,1,0,0,0,0,1,0,-0.241,0.115,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 1,0.02,0,0,-0.02,1,0,0,0,0,1,0,-0.239,-0.024,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:bdc142490530f93b",
+  "Group[] 0.999,0.04,0,0,-0.04,0.999,0,0,0,0,1,0,-0.07,0.04,0.316,1",
+  "Mesh[] 0.999,0.04,0,0,-0.04,0.999,0,0,0,0,1,0,-0.07,0.04,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 0.999,0.04,0,0,-0.04,0.999,0,0,0,0,1,0,-0.07,0.052,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 0.999,0.04,0,0,-0.04,0.999,0,0,0,0,1,0,-0.073,0.115,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.999,0.04,0,0,-0.04,0.999,0,0,0,0,1,0,-0.067,-0.024,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:6408180e6587ba56",
+  "Group[] 0.998,0.06,0,0,-0.06,0.998,0,0,0,0,1,0,0.1,0.04,0.316,1",
+  "Mesh[] 0.998,0.06,0,0,-0.06,0.998,0,0,0,0,1,0,0.1,0.04,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 0.998,0.06,0,0,-0.06,0.998,0,0,0,0,1,0,0.099,0.052,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 0.998,0.06,0,0,-0.06,0.998,0,0,0,0,1,0,0.096,0.115,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.998,0.06,0,0,-0.06,0.998,0,0,0,0,1,0,0.104,-0.024,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:42999d9d2907dd2f",
+  "Group[] 0.997,0.08,0,0,-0.08,0.997,0,0,0,0,1,0,0.27,0.04,0.316,1",
+  "Mesh[] 0.997,0.08,0,0,-0.08,0.997,0,0,0,0,1,0,0.27,0.04,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 0.997,0.08,0,0,-0.08,0.997,0,0,0,0,1,0,0.269,0.052,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 0.997,0.08,0,0,-0.08,0.997,0,0,0,0,1,0,0.264,0.115,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.997,0.08,0,0,-0.08,0.997,0,0,0,0,1,0,0.275,-0.024,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:cd5d768aa06244c0",
+  "Group[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,0.44,0.04,0.316,1",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,0.44,0.04,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,0.441,0.052,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,0.446,0.115,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,0.435,-0.024,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:0261d2a3de4be6a5",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v24 64852dd93724215a mat=MeshStandardMaterial:4be0eea2b3b0da0c",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.296,1 geo=v24 69485cf8ef9b74ed mat=MeshStandardMaterial:f4a051a046769afc",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.23,0.46,0.314,1 geo=v4 7368772423b4ff7b mat=MeshBasicMaterial:3cd186cbd3cc20dd",
+  "Group[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.24,0.28,0.316,1",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.24,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.239,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.234,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.997,-0.08,0,0,0.08,0.997,0,0,0,0,1,0,-0.245,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:88c96a3f273999f8",
+  "Group[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.07,0.28,0.316,1",
+  "Mesh[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.07,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.069,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.066,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.998,-0.06,0,0,0.06,0.998,0,0,0,0,1,0,-0.074,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:f65fccdf976c15ba",
+  "Group[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.1,0.28,0.316,1",
+  "Mesh[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.1,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.1,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.103,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 0.999,-0.04,0,0,0.04,0.999,0,0,0,0,1,0,0.097,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:437d3bfef505b8af",
+  "Group[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.27,0.28,0.316,1",
+  "Mesh[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.27,0.28,0.316,1 geo=v4 c2429086c0d7d518 mat=MeshStandardMaterial:bd2472c0015dd963",
+  "Mesh[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.27,0.292,0.317,1 geo=v4 22cca3450a71035c mat=MeshStandardMaterial:44fa72fd8c5a74d1",
+  "Mesh[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.271,0.355,0.32,1 geo=v81 fc7b08fa1b20b3b4 mat=MeshStandardMaterial:0ecb8445a1577028",
+  "Mesh[] 1,-0.02,0,0,0.02,1,0,0,0,0,1,0,0.269,0.216,0.318,1 geo=v4 8183fee4b77aafe6 mat=MeshBasicMaterial:822eb769fe378099",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v4 5df7afacd38f784a mat=MeshStandardMaterial:45b7f6e65d76f993",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.415,0.304,1 geo=v24 cccb2f0c63fccbbe mat=MeshStandardMaterial:af8d11963404169b",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v4 5df7afacd38f784a mat=MeshStandardMaterial:4218a095fcbd97fb",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.415,0.304,1 geo=v24 cccb2f0c63fccbbe mat=MeshStandardMaterial:af8d11963404169b",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v4 c2491904852279d0 mat=MeshStandardMaterial:efa20165dabdffbe",
+  "Mesh[] 0.878,0.479,0,0,-0.479,0.878,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v4 212325fa2cfb6101 mat=MeshStandardMaterial:efa20165dabdffbe",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: charm > depois de 4 quadros 1`] = `
+{
+  "objects": 10,
+  "sha": "e6424887b4a15928",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: charm > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.06,0.02,0.02,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.06,0.02,0.02,1 geo=v3876 0c41f73a6ace5886 mat=MeshStandardMaterial:9df257e048c92986",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.06,0.038,0.02,1 geo=v81 525530626bb81e71 mat=MeshStandardMaterial:e116d235c3f1cbc5",
+  "Group[] 0.878,0,-0.479,0,-0.479,0,-0.878,0,0,1,0,0,0.048,0.012,0.03,1",
+  "Mesh[] 0.878,0,-0.479,0,-0.479,0,-0.878,0,0,1,0,0,0.048,0.012,0.03,1 geo=v24 2a215837d0383462 mat=MeshStandardMaterial:0df9f09526e5260a",
+  "Mesh[] 0.878,0,-0.479,0,-0.479,0,-0.878,0,0,1,0,0,0.087,0.012,0.06,1 geo=v24 ba82aaf1e9b24016 mat=MeshStandardMaterial:0df9f09526e5260a",
+  "Mesh[] 0.878,0,-0.479,0,-0.479,0,-0.878,0,0,1,0,0,0.029,0.017,-0.005,1 geo=v24 b9ec9f4813b8b863 mat=MeshStandardMaterial:dd81d2dc45e0f6b0",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0.07,0.08,1 geo=v4 6c688b6415b40048 mat=MeshBasicMaterial:00da2f06e6c7cba0",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: closetLights > depois de 4 quadros 1`] = `
+{
+  "objects": 27,
+  "sha": "80e37b5453834479",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: closetLights > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.6,0.28,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.61,0.26,1 geo=v24 d9dabbb9c54e39c8 mat=MeshStandardMaterial:4cd940214f0f8306",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.6,2.6,0.28,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.6,2.63,0.26,1 geo=v28 2aaf71aa07278d54 mat=MeshBasicMaterial:41c4b93cf004b340",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.6,2.6,0.28,1 geo=v221 0ece4743ca8c62c9 mat=MeshStandardMaterial:36ed2aa66e73bb11",
+  "PointLight[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.6,2.55,0.33,1 light=ffe2a0/0.25/0.8/2/false",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.6,0.28,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.63,0.26,1 geo=v28 2aaf71aa07278d54 mat=MeshBasicMaterial:41c4b93cf004b340",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.6,0.28,1 geo=v221 0ece4743ca8c62c9 mat=MeshStandardMaterial:82e396b240848987",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.6,2.6,0.28,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.6,2.63,0.26,1 geo=v28 2aaf71aa07278d54 mat=MeshBasicMaterial:41c4b93cf004b340",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.6,2.6,0.28,1 geo=v221 0ece4743ca8c62c9 mat=MeshStandardMaterial:36ed2aa66e73bb11",
+  "PointLight[] 1,0,0,0,0,1,0,0,0,0,1,0,0.6,2.55,0.33,1 light=ffe2a0/0.25/0.8/2/false",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.6,0.28,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.61,0.26,1 geo=v24 4dd3b9b0d100e09b mat=MeshStandardMaterial:4cd940214f0f8306",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.45,2.6,0.28,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.45,2.63,0.26,1 geo=v28 2aaf71aa07278d54 mat=MeshBasicMaterial:41c4b93cf004b340",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.45,2.6,0.28,1 geo=v221 0ece4743ca8c62c9 mat=MeshStandardMaterial:36ed2aa66e73bb11",
+  "PointLight[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.45,2.55,0.33,1 light=ffe2a0/0.25/0.8/2/false",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.6,0.28,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.63,0.26,1 geo=v28 2aaf71aa07278d54 mat=MeshBasicMaterial:41c4b93cf004b340",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.6,0.28,1 geo=v221 0ece4743ca8c62c9 mat=MeshStandardMaterial:82e396b240848987",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.45,2.6,0.28,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.45,2.63,0.26,1 geo=v28 2aaf71aa07278d54 mat=MeshBasicMaterial:41c4b93cf004b340",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.45,2.6,0.28,1 geo=v221 0ece4743ca8c62c9 mat=MeshStandardMaterial:36ed2aa66e73bb11",
+  "PointLight[] 1,0,0,0,0,1,0,0,0,0,1,0,0.45,2.55,0.33,1 light=ffe2a0/0.25/0.8/2/false",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: cobweb > depois de 4 quadros 1`] = `
+{
+  "objects": 2,
+  "sha": "5a14e9b27414811a",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: cobweb > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.14,0.19,0.006,1 geo=v4 9bf0d35b178dec51 mat=MeshBasicMaterial:f6a12b30ffa6912f",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: doors > depois de 4 quadros 1`] = `
+{
+  "objects": 9,
+  "sha": "15e11a836b09bb42",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: doors > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[R] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v72 04c01a43763a8d76 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[R] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,1.225,0.32,1 geo=v24 ec3666eac164fc2f mat=MeshStandardMaterial:dc3c2e9a03cd1d1f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.42,1.2,0.36,1 geo=v221 61c942dbf19c91e9 mat=MeshStandardMaterial:a5d3673e69ec6245",
+  "Group[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.1,0.2,0.3,1",
+  "Mesh[R] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.1,0.2,0.3,1 geo=v72 04c01a43763a8d76 mat=MeshStandardMaterial:f145701ab9db6c98",
+  "Mesh[R] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.117,1.225,0.311,1 geo=v24 ec3666eac164fc2f mat=MeshStandardMaterial:302119b63a4398a5",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.323,1.2,0.063,1 geo=v221 61c942dbf19c91e9 mat=MeshStandardMaterial:a5d3673e69ec6245",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: dust > depois de 4 quadros 1`] = `
+{
+  "objects": 4,
+  "sha": "f462bfefe2759e4b",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: dust > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Points[H] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Points[H] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+  "Points[H] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1 geo=v40 20bb244b426b0101 mat=PointsMaterial:c8d39a5a669ec056",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: keys > depois de 4 quadros 1`] = `
+{
+  "objects": 27,
+  "sha": "e468ff4f13149db0",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: keys > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v24 85dc0afb27d8a3de mat=MeshStandardMaterial:d9080d8b422ce291",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.02,0.19,0.32,1",
+  "Mesh[] 1,0,0,0,0,0,1,0,0,-1,0,0,-0.02,0.19,0.32,1 geo=v40 038055b9e7e90ece mat=MeshStandardMaterial:d8887205bc91ed23",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.04,0.19,0.32,1",
+  "Mesh[] 1,0,0,0,0,0,1,0,0,-1,0,0,0.04,0.19,0.32,1 geo=v40 038055b9e7e90ece mat=MeshStandardMaterial:d8887205bc91ed23",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.19,0.32,1",
+  "Mesh[] 1,0,0,0,0,0,1,0,0,-1,0,0,0.1,0.19,0.32,1 geo=v40 038055b9e7e90ece mat=MeshStandardMaterial:d8887205bc91ed23",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.26,0.311,1 geo=v4 58fcfcd26ea86ad6 mat=MeshBasicMaterial:d82886dcec236d4e",
+  "Group[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.1,0.2,0.3,1",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.1,0.2,0.3,1 geo=v24 85dc0afb27d8a3de mat=MeshStandardMaterial:d9080d8b422ce291",
+  "Group[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.052,0.19,0.412,1",
+  "Mesh[] 0.54,0,-0.841,0,0.841,0,0.54,0,0,-1,0,0,0.052,0.19,0.412,1 geo=v40 038055b9e7e90ece mat=MeshStandardMaterial:d8887205bc91ed23",
+  "Group[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.069,0.13,0.423,1",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.069,0.13,0.423,1 geo=v153 e6751fb3c0a7763d mat=MeshStandardMaterial:a5d3673e69ec6245",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.069,0.095,0.423,1 geo=v24 2b20f10cd623a069 mat=MeshStandardMaterial:a5d3673e69ec6245",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.071,0.055,0.424,1 geo=v4 e98a8bafc3da10c3 mat=MeshBasicMaterial:e5caf68969992579",
+  "Group[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.084,0.19,0.361,1",
+  "Mesh[] 0.54,0,-0.841,0,0.841,0,0.54,0,0,-1,0,0,0.084,0.19,0.361,1 geo=v40 038055b9e7e90ece mat=MeshStandardMaterial:d8887205bc91ed23",
+  "Group[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.101,0.13,0.372,1",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.101,0.13,0.372,1 geo=v153 e6751fb3c0a7763d mat=MeshStandardMaterial:a5d3673e69ec6245",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.101,0.095,0.372,1 geo=v24 2b20f10cd623a069 mat=MeshStandardMaterial:a5d3673e69ec6245",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.103,0.055,0.373,1 geo=v4 e98a8bafc3da10c3 mat=MeshBasicMaterial:29893c6e7a0bf771",
+  "Group[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.117,0.19,0.311,1",
+  "Mesh[] 0.54,0,-0.841,0,0.841,0,0.54,0,0,-1,0,0,0.117,0.19,0.311,1 geo=v40 038055b9e7e90ece mat=MeshStandardMaterial:d8887205bc91ed23",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.109,0.26,0.306,1 geo=v4 58fcfcd26ea86ad6 mat=MeshBasicMaterial:56cf2459c4bc655c",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: label > depois de 4 quadros 1`] = `
+{
+  "objects": 3,
+  "sha": "25735b09aad59cd7",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: label > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v4 369fb11b61c79a4a mat=MeshBasicMaterial:26ddee4b73798dbc",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0,0,0,1 geo=v4 d784d618bd09e2cd mat=MeshBasicMaterial:526b53a77962f295",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: lamps > depois de 4 quadros 1`] = `
+{
+  "objects": 12,
+  "sha": "a70b90ed90e3c115",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: lamps > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.5,0.3,1 geo=v52 c3388e0b79eb9874 mat=MeshStandardMaterial:6e3846a44afc5480",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.21,0.3,1 geo=v124 98bee7397007a78b mat=MeshStandardMaterial:558f14718d3673a1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.86,0.3,1 geo=v50 d639dfc344f023eb mat=MeshStandardMaterial:1f1afaf4829258c1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.77,0.3,1 geo=v225 7bbf4578c731be19 mat=MeshStandardMaterial:e89e7020d97baf44",
+  "PointLight[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.8,0.3,1 light=ffcf8a/2.2/3.5/2/false",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.5,0.3,1 geo=v52 c3388e0b79eb9874 mat=MeshStandardMaterial:6e3846a44afc5480",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.21,0.3,1 geo=v124 98bee7397007a78b mat=MeshStandardMaterial:558f14718d3673a1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.86,0.3,1 geo=v50 d639dfc344f023eb mat=MeshStandardMaterial:620d0e1d24ba62ba",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.77,0.3,1 geo=v225 7bbf4578c731be19 mat=MeshStandardMaterial:e89e7020d97baf44",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: sparkles > depois de 4 quadros 1`] = `
+{
+  "objects": 3,
+  "sha": "a417d03ff6f7ee3d",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: sparkles > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Points[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1 geo=v24 7421396515cea8ad mat=PointsMaterial:b97af50281c17847",
+  "Points[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1 geo=v6 147cc75ca77b343c mat=PointsMaterial:b97af50281c17847",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: switches > depois de 4 quadros 1`] = `
+{
+  "objects": 9,
+  "sha": "761dadd2d3f0e078",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: switches > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v3876 bda9dee35f02a4c2 mat=MeshStandardMaterial:40b19125d7b3b403",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.312,1 geo=v24 3f739a23e1378178 mat=MeshStandardMaterial:0000037c0e73a9eb",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.115,0.301,1 geo=v4 3802db2c0046d401 mat=MeshBasicMaterial:036c84303d629083",
+  "Group[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.1,0.2,0.3,1",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.1,0.2,0.3,1 geo=v3876 bda9dee35f02a4c2 mat=MeshStandardMaterial:40b19125d7b3b403",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.11,0.2,0.306,1 geo=v24 3f739a23e1378178 mat=MeshStandardMaterial:9754e88f36f7a2e9",
+  "Mesh[] 0.54,0,-0.841,0,0,1,0,0,0.841,0,0.54,0,0.101,0.115,0.301,1 geo=v4 3802db2c0046d401 mat=MeshBasicMaterial:3c55c9a43cebae15",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: tags > depois de 4 quadros 1`] = `
+{
+  "objects": 8,
+  "sha": "d5d61b2ff07499da",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: tags > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0,0,0,1",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.006,0.034,0,1 geo=v28 0a041aeef2fdd893 mat=MeshBasicMaterial:d718e6602e0dba1a",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0,0,0.001,1 geo=v4 4c42591459747ad7 mat=MeshBasicMaterial:dc2f4547754176f5",
+  "Group[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.106,0.234,0.3,1 geo=v28 0a041aeef2fdd893 mat=MeshBasicMaterial:d718e6602e0dba1a",
+  "Mesh[] 0.984,-0.179,0,0,0.179,0.984,0,0,0,0,1,0,0.1,0.2,0.301,1 geo=v4 f044fa5faf9f5006 mat=MeshBasicMaterial:02bb6ea250404bbb",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1 geo=v221 baf037bd98665d3b mat=MeshStandardMaterial:332fe00fed38216b",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: windowLight > depois de 4 quadros 1`] = `
+{
+  "objects": 4,
+  "sha": "709f95df25702539",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: windowLight > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group#window-light[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.2,0.3,1",
+  "Object3D[] 1,0,0,0,0,1,0,0,0,0,1,0,0.5,-1.8,2.8,1",
+  "SpotLight[] 1,0,0,0,0,1,0,0,0,0,1,0,0.1,0.4,0.6,1 light=dfeaff/1.2/6/2/false",
+]
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: windows > depois de 4 quadros 1`] = `
+{
+  "objects": 68,
+  "sha": "22623b1abb0c6d39",
+}
+`;
+
+exports[`retrato dos objetos do quarto e da roupa pendurada > room-props: windows > objetos 1`] = `
+[
+  "Scene[] 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2,0,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2,0,1 geo=v4 ab57aecb7019c6df mat=MeshBasicMaterial:fdb3292b6702916e",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.56,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,1.44,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.51,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.51,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2,0.012,1 geo=v24 b206e9eb55f3e7e8 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.05,0.012,1 geo=v24 3d7d65ecab207060 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0,1.4,0.06,1 geo=v24 94cdcfc696f59b58 mat=MeshStandardMaterial:7ba5f310272cb7a4",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,-0.66,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:4b3d4f82505c7cb8",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.66,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:4b3d4f82505c7cb8",
+  "Group#window-light[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2,0,1",
+  "Object3D[] 1,0,0,0,0,1,0,0,0,0,1,0,0.4,0,2.5,1",
+  "SpotLight[] 1,0,0,0,0,1,0,0,0,0,1,0,0,2.2,0.3,1 light=dfeaff/1.2/6/2/false",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,1,2,0,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,2,0,1 geo=v4 ab57aecb7019c6df mat=MeshBasicMaterial:e294b69b140458d6",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,2.56,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,1.44,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.49,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1.51,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,2,0.012,1 geo=v24 b206e9eb55f3e7e8 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,2.05,0.012,1 geo=v24 3d7d65ecab207060 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1,1.4,0.06,1 geo=v24 94cdcfc696f59b58 mat=MeshStandardMaterial:7ba5f310272cb7a4",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,0.34,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:4b3d4f82505c7cb8",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1.66,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:4b3d4f82505c7cb8",
+  "Group#window-light[] 1,0,0,0,0,1,0,0,0,0,1,0,1,2,0,1",
+  "Object3D[] 1,0,0,0,0,1,0,0,0,0,1,0,1.4,0,2.5,1",
+  "SpotLight[] 1,0,0,0,0,1,0,0,0,0,1,0,1,2.2,0.3,1 light=ffcf8a/2.2/6/2/false",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,2,2,0,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2,2,0,1 geo=v4 ab57aecb7019c6df mat=MeshBasicMaterial:d6bc4647e73dc241",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2,2.56,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2,1.44,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1.49,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2.51,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2,2,0.012,1 geo=v24 b206e9eb55f3e7e8 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2,2.05,0.012,1 geo=v24 3d7d65ecab207060 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2,1.4,0.06,1 geo=v24 94cdcfc696f59b58 mat=MeshStandardMaterial:7ba5f310272cb7a4",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,1.34,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:4b3d4f82505c7cb8",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2.66,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:4b3d4f82505c7cb8",
+  "Group#window-light[] 1,0,0,0,0,1,0,0,0,0,1,0,2,2,0,1",
+  "Object3D[] 1,0,0,0,0,1,0,0,0,0,1,0,2.4,0,2.5,1",
+  "SpotLight[] 1,0,0,0,0,1,0,0,0,0,1,0,2,2.2,0.3,1 light=ffcf8a/2.2/6/2/false",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,3,2,0,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3,2,0,1 geo=v4 ab57aecb7019c6df mat=MeshBasicMaterial:301456aa4cfe7542",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3,2.56,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3,1.44,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2.49,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3.51,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3,2,0.012,1 geo=v24 b206e9eb55f3e7e8 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3,2.05,0.012,1 geo=v24 3d7d65ecab207060 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3,1.4,0.06,1 geo=v24 94cdcfc696f59b58 mat=MeshStandardMaterial:7ba5f310272cb7a4",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,2.34,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:32744b0fa6733dfa",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3.66,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:32744b0fa6733dfa",
+  "Group[] 1,0,0,0,0,1,0,0,0,0,1,0,4,2,0,1",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,4,2,0,1 geo=v4 ab57aecb7019c6df mat=MeshBasicMaterial:d5853305f743209a",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,4,2.56,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,4,1.44,0.012,1 geo=v24 cd65c4a638caae13 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3.49,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,4.51,2,0.012,1 geo=v24 0c0743e41dfd714f mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,4,2,0.012,1 geo=v24 b206e9eb55f3e7e8 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,4,2.05,0.012,1 geo=v24 3d7d65ecab207060 mat=MeshStandardMaterial:17e65d24ad5bba7f",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,4,1.4,0.06,1 geo=v24 94cdcfc696f59b58 mat=MeshStandardMaterial:7ba5f310272cb7a4",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,3.34,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:4b3d4f82505c7cb8",
+  "Mesh[] 1,0,0,0,0,1,0,0,0,0,1,0,4.66,2.02,0.05,1 geo=v24 613741d942ace094 mat=MeshStandardMaterial:4b3d4f82505c7cb8",
+  "Group#window-light[] 1,0,0,0,0,1,0,0,0,0,1,0,4,2,0,1",
+  "Object3D[] 1,0,0,0,0,1,0,0,0,0,1,0,4.4,0,2.5,1",
+  "SpotLight[] 1,0,0,0,0,1,0,0,0,0,1,0,4,2.2,0.3,1 light=dfeaff/1.2/6/2/false",
+]
+`;
