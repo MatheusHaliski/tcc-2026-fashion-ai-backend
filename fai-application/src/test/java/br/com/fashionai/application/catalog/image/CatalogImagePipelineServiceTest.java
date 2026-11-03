@@ -655,12 +655,12 @@ class CatalogImagePipelineServiceTest {
 
     @Test
     void readyRequiresMeasuredCompleteIsolationAtOrAboveExactly25Percent() {
-        assertThat(CatalogImagePipelineService.validPreflight(sourcePreflight())).isTrue();
+        assertThat(CatalogSourcePreflight.valid(sourcePreflight())).isTrue();
         for (Map.Entry<String,Object> invalid : Map.<String,Object>of("sourceGarmentHeightFraction", .249,
                 "measurementReliable", false, "isolationVerified", false, "humanAssessmentComplete", false,
                 "complete", false, "occluded", true, "status", "REVIEW").entrySet()) {
             Map<String,Object> evidence=sourcePreflight(); evidence.put(invalid.getKey(),invalid.getValue());
-            assertThat(CatalogImagePipelineService.validPreflight(evidence)).as(invalid.getKey()).isFalse();
+            assertThat(CatalogSourcePreflight.valid(evidence)).as(invalid.getKey()).isFalse();
         }
         CatalogImage i=image("https://brand.com/proof.png",CatalogImageType.FRONT,null);
         i.setSourceSha256("a".repeat(64));

@@ -27,6 +27,11 @@ class CatalogFlatLayFrameTest {
         return image;
     }
 
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> whole(Map<String, Object> card) {
+        return (Map<String, Object>) card.get("whole");
+    }
+
     private static String json(CatalogImage image, Map<String, Object> changes) {
         Map<String, Object> info = new LinkedHashMap<>(Map.of("version", "FLAT_LAY_V1", "imageId", image.getId().toString(),
                 "originalUrl", SOURCE, "sourceSha256", SHA, "aiGenerated", true, "background", "#FFFFFF"));
@@ -36,7 +41,7 @@ class CatalogFlatLayFrameTest {
 
     @Test
     void flatLayAprovadoViraOTotalFrameMarcadoComoIa() {
-        Map<String, Object> frame = CatalogImagePipelineService.wholeFrame(approved());
+        Map<String, Object> frame = CatalogFlatLayFrame.of(approved());
         assertThat(frame).isNotNull();
         assertThat(frame.get("url")).isEqualTo("https://media.example/catalog/flatlay/x/front.jpg");
         assertThat(frame.get("backUrl")).isEqualTo("https://media.example/catalog/flatlay/x/back.jpg");
@@ -49,7 +54,7 @@ class CatalogFlatLayFrameTest {
     void semAprovacaoOuComFotoTrocadaVoltaAoRecorteReal() {
         CatalogImage pending = approved();
         pending.setFlatLayStatus("PENDING");
-        assertThat(CatalogImagePipelineService.wholeFrame(pending)).isNull();   // sem Peça inteira real: nada
+        assertThat(CatalogFlatLayFrame.of(pending)).isNull();
 
         CatalogImage swapped = approved();
         swapped.setImageUrl("https://loja.example/outra-foto.jpg");
@@ -84,11 +89,34 @@ class CatalogFlatLayFrameTest {
     }
 
     @Test
-    void semFlatLayOFallbackDePixelsReaisContinuaValendo() {
-        Map<String, Object> real = Map.of("url", "https://media.example/catalog/whole/y.jpg", "version", "WHOLE_FRAME_V3");
+    void cardComPhotoSetDefaultGanhaOFlatLayNoTotalFrameSemMudarOTecido() {
+        // o caso do app em 03/11: produto com photo set DEFAULT mostrava o asset padrão também no Total frame
+        Map<String, Object> card = new LinkedHashMap<>(Map.of("url", "https://media.example/default/blusa.png", "mode", "DEFAULT",
+                "defaultAssetUrl", "https://media.example/default/blusa.png"));
+        Map<String, Object> shown = CatalogFlatLayFrame.onCard(approved(), card);
+        assertThat(shown).containsEntry("mode", "DEFAULT").containsEntry("url", "https://media.example/default/blusa.png");
+        assertThat(whole(shown)).containsEntry("aiGenerated", true).containsEntry("version", "FLAT_LAY_V1");
+        assertThat(card).doesNotContainKey("whole");   // não altera o mapa de quem chamou
+
+        Map<String, Object> realWhole = new LinkedHashMap<>(Map.of("mode", "PROCESSED", "whole", Map.of("version", "WHOLE_FRAME_V3")));
+        assertThat(whole(CatalogFlatLayFrame.onCard(approved(), realWhole))).containsEntry("version", "FLAT_LAY_V1");
+    }
+
+    @Test
+    void semCardAprovadoOFlatLayAindaApareceNoTotalFrame() {
+        CatalogImage image = approved();
+        Map<String, Object> shown = CatalogFlatLayFrame.onCard(image, null);
+        assertThat(shown).containsEntry("mode", "DEFAULT").containsEntry("sourceUrl", SOURCE).containsEntry("imageId", image.getId());
+        assertThat(whole(shown)).containsEntry("url", "https://media.example/catalog/flatlay/x/front.jpg");
+    }
+
+    @Test
+    void semFlatLayValidoOCardContinuaComoVeio() {
+        Map<String, Object> card = Map.of("url", "https://media.example/catalog/framed/y.jpg", "mode", "PROCESSED");
         CatalogImage none = new CatalogImage();
         ReflectionTestUtils.setField(none, "id", UUID.randomUUID());
-        assertThat(CatalogFlatLayFrame.orElse(none, real)).isSameAs(real);
-        assertThat(CatalogFlatLayFrame.orElse(approved(), real)).containsEntry("version", "FLAT_LAY_V1");
+        assertThat(CatalogFlatLayFrame.onCard(none, card)).isSameAs(card);
+        assertThat(CatalogFlatLayFrame.onCard(none, null)).isNull();
+        assertThat(CatalogImagePipelineService.wholeFrame(approved())).isNull();   // o recorte real não vira flat lay
     }
 }

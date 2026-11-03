@@ -463,7 +463,7 @@ public class CatalogImagePipelineService {
             Map<String,Object> selectedPhotoSet = boundPhotoSet(image,product);
             Object sourceMetrics = selectedPhotoSet.get("metrics");
             if (frames != null && frames.whole() != null && sourceMetrics instanceof Map<?,?> verifiedMetrics
-                    && validPreflight(verifiedMetrics.get("preflight"))) {
+                    && CatalogSourcePreflight.valid(verifiedMetrics.get("preflight"))) {
                 String wholeUrl = put(key + "whole.png", ImageOps.png(frames.whole()), "image/png");
                 Map<String, Object> whole = new LinkedHashMap<>(frames.wholeMetadata());
                 whole.put("url", wholeUrl); whole.put("rendered", true); whole.put("processed", true);
@@ -894,7 +894,7 @@ public class CatalogImagePipelineService {
         if("READY".equals(m.get("status")) && (!validSha256(image.getSourceSha256())
                 || !derivativeUrl(m.get("wholeUrl"), image.getImageUrl()) || !derivativeUrl(m.get("fabricUrl"), image.getImageUrl())
                 || Objects.equals(m.get("wholeUrl"),m.get("fabricUrl"))
-                || !(m.get("metrics") instanceof Map<?,?> metrics) || !validPreflight(metrics.get("preflight")))) return Map.of();
+                || !(m.get("metrics") instanceof Map<?,?> metrics) || !CatalogSourcePreflight.valid(metrics.get("preflight")))) return Map.of();
         return (Map<String,Object>)m;
     }
 
@@ -903,7 +903,12 @@ public class CatalogImagePipelineService {
         return cardImage(canonical,product,List.of());
     }
 
+    /** Card do produto. O flat lay aprovado (CatalogFlatLayFrame) entra por último: vale em qualquer caminho abaixo. */
     public static Map<String, Object> cardImage(CatalogImage canonical,CatalogProduct product,List<CatalogVariant> productVariants) {
+        return CatalogFlatLayFrame.onCard(canonical, photoCard(canonical, product, productVariants));
+    }
+
+    private static Map<String, Object> photoCard(CatalogImage canonical,CatalogProduct product,List<CatalogVariant> productVariants) {
         if (canonical == null || product == null || !Objects.equals(canonical.getProductId(),product.getId())) return null;
         if(!CatalogImageIdentity.matches(canonical,product,null,productVariants)) return null;
         Map<String, Object> photo = photoSet(canonical, product,productVariants);
@@ -949,21 +954,9 @@ public class CatalogImagePipelineService {
 
     /** Total frame requires a source-bound derivative with measured, complete semantic isolation. */
     static Map<String, Object> wholeFrame(CatalogImage canonical) {
-        // Legacy studio/background/skin heuristics cannot prove semantic isolation. Exposed: the approved flat lay
-        // (AI, labelled, CatalogFlatLayFrame) or a derivative with current source-bound preflight evidence.
-        return CatalogFlatLayFrame.orElse(canonical, processedWhole(canonical));
-    }
-
-    static boolean validPreflight(Object raw) {
-        if (!(raw instanceof Map<?, ?> evidence)) return false;
-        double height = number(evidence.get("sourceGarmentHeightFraction"));
-        return "CATALOG_SOURCE_PREFLIGHT_V1".equals(evidence.get("version"))
-                && "PASS".equals(evidence.get("status"))
-                && Boolean.TRUE.equals(evidence.get("measurementReliable"))
-                && Boolean.TRUE.equals(evidence.get("complete")) && Boolean.FALSE.equals(evidence.get("occluded"))
-                && Boolean.TRUE.equals(evidence.get("isolationVerified"))
-                && Boolean.TRUE.equals(evidence.get("humanAssessmentComplete"))
-                && Double.isFinite(height) && height >= .25 && height <= 1;
+        // Legacy studio/background/skin heuristics cannot prove semantic isolation.
+        // Only a derivative with current source-bound preflight evidence is exposed.
+        return processedWhole(canonical);
     }
 
     /** Versão da Peça inteira processada (lote process_whole_frames): a peça recortada sem pessoa, 900×1200. */
@@ -984,7 +977,7 @@ public class CatalogImagePipelineService {
                 || !sameId(canonical.getVariantId(),info.get("variantId"))
                 || info.containsKey("imageId")&&!sameId(canonical.getId(),info.get("imageId"))
                 || !derivativeUrl(canonical.getWholeUrl(),canonical.getImageUrl())
-                || !validPreflight(info.get("preflight"))) return null;
+                || !CatalogSourcePreflight.valid(info.get("preflight"))) return null;
         if (info.get("truncated") instanceof List<?> sides && !sides.isEmpty()) return null;
         if (!(info.get("box") instanceof Map<?, ?> box)) return null;
         double x = number(box.get("x")), y = number(box.get("y")), w = number(box.get("w")), h = number(box.get("h"));
