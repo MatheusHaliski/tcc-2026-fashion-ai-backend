@@ -123,8 +123,8 @@ python3 scripts/refactoring/line_ratchet.py
 | Após dividir os testes e o Facade do `FlairChallengeService` | **82 testes, 0 falhas, 0 erros** (12 classes) |
 | `fai-web` install (compila tudo que depende) | BUILD SUCCESS |
 | `fai-web` `ControllerDelegacaoTest` + `ContratoRotasPorTagTest` | 698 testes, 0 falhas |
-| Suíte completa de `fai-application` (depois) | 2032 testes, 0 falhas, 0 erros, 27 skipped |
-| Catraca | os 4 arquivos só como `APERTAR` (1852 → 239, 1035 → 155, 486 → 263, 432 → 141); 0 violações |
+| Suíte completa de `fai-application` (depois) | 2032 testes, 0 falhas, 0 erros, 27 skipped; após o merge da base (R81/R83/R85): 2039, 0 falhas |
+| Catraca (após o merge) | os 4 arquivos só como `APERTAR` (1852 → 239, 1035 → 155, 486 → 263, 432 → 141); 3177 arquivos, 0 violações |
 
 Sem banco, servidor, rede externa, IA paga, migration ou mudança de DTO/URL/i18n.
 
