@@ -162,13 +162,13 @@ class CatalogImageFramesCharacterizationTest {
         }
         int[] labels = new int[blob.length];
         List<String> comps = new ArrayList<>();
-        ProductSegmenter.components(blob, w, h, labels).forEach(c -> comps.add(java.util.Arrays.toString(c)));
+        ConnectedComponents.components(blob, w, h, labels).forEach(c -> comps.add(java.util.Arrays.toString(c)));
         r.put("pure.components", comps + canon(labels));
         r.put("pure.erode", canon(FabricFrame.erode(blob, w, h, 2)));
-        r.put("pure.halfSpans", canon(ProductRuleFrame.halfSpans(blob, w, 30, 0, h)));
-        r.put("pure.cover", String.valueOf(ProductRuleFrame.cover(blob, w, 30, 2, 3, 12, h, h, 2, 30, 3, 4)));
-        r.put("pure.medianRow", ProductRuleFrame.medianRowWidth(blob, w, new br.com.fashionai.application.imaging.ImageOps.Box(0, 0, w, h), 5, 40)
-                + "/" + ProductRuleFrame.rowsBox(blob, w, new br.com.fashionai.application.imaging.ImageOps.Box(2, 2, 50, 40), 10, 30));
+        r.put("pure.halfSpans", canon(CoverSearch.halfSpans(blob, w, 30, 0, h)));
+        r.put("pure.cover", String.valueOf(CoverSearch.cover(blob, w, 30, 2, 3, 12, h, h, 2, 30, 3, 4)));
+        r.put("pure.medianRow", CoverSearch.medianRowWidth(blob, w, new br.com.fashionai.application.imaging.ImageOps.Box(0, 0, w, h), 5, 40)
+                + "/" + CoverSearch.rowsBox(blob, w, new br.com.fashionai.application.imaging.ImageOps.Box(2, 2, 50, 40), 10, 30));
         NRect product = new NRect(0.2, 0.15, 0.5, 0.6);
         FramingStrategy.Focus focus = new FramingStrategy.Focus("f", new NRect(0.3, 0.2, 0.1, 0.1),
                 List.of(new SemanticRegionRegistry.Region("c", new NRect(0.3, 0.25, 0.1, 0.1))), "REGISTRY");
