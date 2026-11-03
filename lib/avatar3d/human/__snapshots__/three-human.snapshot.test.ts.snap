@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`caracterização — humano em three.js > corpo, olhos, córnea, linha d'água e esqueleto (sem e com abertura medida) 1`] = `
+{
+  "canonico": "2df51fe0a47113c3abc432cb13b37578d29650fde2e5ad41b4d716afeaab7215",
+  "estreito": "1925b89084dea1faf27fd1fced2165b31d7ae961a7738808573d37698eb646a8",
+  "neutro": "b9324e07c6b213f3661850c7309d18d4c2adc9eba3d9af45cbe448dacba968d5",
+}
+`;
+
+exports[`caracterização — humano em three.js > normais de base, esqueleto, pele e máscara da orelha 1`] = `"4edaf6e1fd8d25da4db617737b02effd5aee4b4767483a40925f943627f790e9"`;
+
+exports[`caracterização — olhos > cor da íris por padrão e sombra da esclera 1`] = `
+{
+  "CRYPT": "e79ad549ede961dc9add01d23dfcfd34fe6f22cfbf5c6fd5146b0d089b95fc0e",
+  "RADIAL": "3088b194da63ac3ce1a49aa549d37aa2cd897e794bd3dd7445aa1b3c86365743",
+  "RING": "d3168aa05035ca664a0f04d41207ba2b90f0fef15ca669780b6db771910889a4",
+  "UNIFORM": "153a64f8b4b1b83d7152796a69f5993bae698a3e4a5808502bd7b770c514b96b",
+  "esclera-0": "d3077e10f3d704b50e8ea9617b5bcf21fd99b43b3c6eff6c869f24d58cae8602",
+  "esclera-0.5": "1453e1b8f3ff9bbf8e1fdd145bf1c0f074e1982c784c6c9c390d4e74250c3c9a",
+  "esclera-undefined": "5ed5bfbacd7b515631b59659b8207285f038b6f219949fe9ed511bcba3362f68",
+  "undefined": "153a64f8b4b1b83d7152796a69f5993bae698a3e4a5808502bd7b770c514b96b",
+}
+`;
+
+exports[`caracterização — olhos > rig, abertura, córnea e linha d'água 1`] = `
+{
+  "canonico": "cdef30fc0fc22f00e1c011d73e665b84e9e305cc3086866debbfb9e3bab1710c",
+  "estreito": "2c51ad39fa13a2e17b41693cf3deb57eb8167750ac4b01a6e6b49145c7a6d7c3",
+  "tex": "0681ae8ae754460a36e8142c3d9ec82a959e43f2ca3c18dd498ca9221c251719",
+}
+`;
