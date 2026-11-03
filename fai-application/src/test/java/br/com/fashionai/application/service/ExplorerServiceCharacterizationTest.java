@@ -229,7 +229,7 @@ class ExplorerServiceCharacterizationTest {
         return new ExplorerService(analytics, brands, bonds, ai, hype, HypeScoreConfig.defaults(), pieces, schemes);
     }
 
-    private static List<List<Object>> aggs(List<ExplorerService.Agg> list) {
+    private static List<List<Object>> aggs(List<ExplorerInsights.Agg> list) {
         return list.stream().map(a -> List.<Object>of(a.key(), a.value(), a.items())).toList();
     }
 
@@ -271,18 +271,18 @@ class ExplorerServiceCharacterizationTest {
                 String.valueOf(c.protectedNames()), c.webSearch(), String.valueOf(c.local().get()), String.valueOf(c.parser().apply("  texto  ")),
                 String.valueOf(c.parser().apply(" "))));
 
-        p.add("hypeRankings", explorer.hypeRankings());
-        p.add("seasonAverages", aggs(explorer.seasonAverages()));
-        p.add("publicPieces", explorer.publicPieces().stream().map(x -> List.of(x.piece(), x.score())).toList());
-        p.add("brandKey", java.util.Arrays.asList(ExplorerService.brandKey(null), ExplorerService.brandKey(pieceRows.get(1)),
-                ExplorerService.brandKey(pieceRows.get(8)), ExplorerService.brandKey(pieceRows.get(11))));
-        p.add("brandHype.bonded", ExplorerService.brandHype(List.of(80.0, 70.0, 61.0), List.of(10.0), null));
-        p.add("brandHype.group", ExplorerService.brandHype(List.of(80.0), List.of(90.0, 10.0, 50.0, 60.0, 70.0, 80.0), HypeScoreConfig.defaults()));
-        p.add("brandHype.none", ExplorerService.brandHype(null, List.of(1.0, 2.0), null));
-        p.add("brandHype.nulls", ExplorerService.brandHype(null, null, null));
-        p.add("averageBy", aggs(ExplorerService.averageBy(List.of("a1", "a2", "a3", "b1", "b2", "c1", "c2", "c3", "c4", " 9", "d"),
+        p.add("hypeRankings", explorer.globalInsights.hypeRankings());
+        p.add("seasonAverages", aggs(explorer.globalInsights.seasonAverages()));
+        p.add("publicPieces", explorer.hypes.publicPieces().stream().map(x -> List.of(x.piece(), x.score())).toList());
+        p.add("brandKey", java.util.Arrays.asList(ExplorerHype.brandKey(null), ExplorerHype.brandKey(pieceRows.get(1)),
+                ExplorerHype.brandKey(pieceRows.get(8)), ExplorerHype.brandKey(pieceRows.get(11))));
+        p.add("brandHype.bonded", ExplorerHype.brandHype(List.of(80.0, 70.0, 61.0), List.of(10.0), null));
+        p.add("brandHype.group", ExplorerHype.brandHype(List.of(80.0), List.of(90.0, 10.0, 50.0, 60.0, 70.0, 80.0), HypeScoreConfig.defaults()));
+        p.add("brandHype.none", ExplorerHype.brandHype(null, List.of(1.0, 2.0), null));
+        p.add("brandHype.nulls", ExplorerHype.brandHype(null, null, null));
+        p.add("averageBy", aggs(ExplorerInsights.averageBy(List.of("a1", "a2", "a3", "b1", "b2", "c1", "c2", "c3", "c4", " 9", "d"),
                 x -> x.substring(0, 1), x -> x.startsWith("d") ? null : Double.valueOf(x.substring(1)), 2)));
-        p.add("averageBy.all", aggs(ExplorerService.averageBy(List.of("a1", "a2", "a3", "c1", "c2", "c3", "c9"), x -> x.substring(0, 1),
+        p.add("averageBy.all", aggs(ExplorerInsights.averageBy(List.of("a1", "a2", "a3", "c1", "c2", "c3", "c9"), x -> x.substring(0, 1),
                 x -> Double.valueOf(x.substring(1)), 0)));
         p.add("constants", List.of(ExplorerService.MIN_DATA, ExplorerService.MIN_BRAND_ITEMS, ExplorerService.BRAND_TOP_ITEMS,
                 ExplorerService.RANKING_ROWS, Set.of(HypeLevel.values()).size()));

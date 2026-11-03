@@ -132,7 +132,7 @@ class ShowcaseServiceTest {
         assertThat(showcase.runway(null, new ShowcaseService.RunwayFilter(null, null, null, List.of(), List.of(), List.of(), "FEMININO", null, 1))).isNotEmpty();
         assertThatThrownBy(() -> showcase.runway(ana, new ShowcaseService.RunwayFilter("NADA", null, null, List.of(), List.of(), List.of(), null, 6, 0)))
                 .isInstanceOf(ApiException.class);
-        assertThat(ShowcaseService.count(List.of("a", "b", "a"))).hasSize(2);
+        assertThat(ShowcaseRunwayOrder.count(List.of("a", "b", "a"))).hasSize(2);
     }
 
     @Test
@@ -162,6 +162,6 @@ class ShowcaseServiceTest {
         assertThatThrownBy(() -> showcase.list(ana, "estrela", ShowcaseService.Kind.COLLECTIONS)).isInstanceOf(ApiException.class);
         assertThat(ShowcaseService.kind("colecoes")).isEqualTo(ShowcaseService.Kind.COLLECTIONS);
         assertThatThrownBy(() -> ShowcaseService.kind("nada")).isInstanceOf(ApiException.class);
-        assertThat(ShowcaseService.period(era)).contains("2010");
+        assertThat(ShowcaseGroupings.period(era)).contains("2010");
     }
 }

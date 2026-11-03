@@ -199,40 +199,40 @@ class ShowcaseServiceCharacterizationTest {
     private void rules(CurrentUser me) {
         add("rules.kind", Arrays.asList(ShowcaseService.kind("eras"), ShowcaseService.kind("Collections"), ShowcaseService.kind("COLECOES"),
                 attempt(() -> ShowcaseService.kind(null)), attempt(() -> ShowcaseService.kind("nada"))));
-        add("rules.period", w.groups.stream().map(ShowcaseService::period).map(String::valueOf).toList());
-        add("rules.count", Arrays.asList(ShowcaseService.count(List.of("b", "a", "b", "c", "a", "b")), ShowcaseService.count(List.of())));
+        add("rules.period", w.groups.stream().map(ShowcaseGroupings::period).map(String::valueOf).toList());
+        add("rules.count", Arrays.asList(ShowcaseRunwayOrder.count(List.of("b", "a", "b", "c", "a", "b")), ShowcaseRunwayOrder.count(List.of())));
         add("rules.constants", List.of(ShowcaseService.RUNWAY_RANKINGS, ShowcaseService.SHOWCASE_SORTS, ShowcaseService.RUNWAY_MAX,
                 ShowcaseService.RUNWAY_TOP, ShowcaseService.W_LIKES, ShowcaseService.W_ITEMS, ShowcaseService.ERA_TYPES,
                 ShowcaseService.COLLECTION_TYPES, ShowcaseService.MANNEQUIN_PHOTO_CATEGORIES));
-        add("rules.piece", w.items.stream().map(ShowcaseService::piece).toList());
-        add("rules.mannequin", List.of(showcase.mannequin(w.me, List.of()), showcase.mannequin(w.quiet, w.items.subList(0, 3)),
-                showcase.mannequin(w.quiet, w.items.subList(1, 3)), showcase.mannequin(w.marca, List.of(), me),
-                showcase.mannequin(w.celeb, List.of(), null), showcase.mannequin(w.me, List.of(), me),
-                showcase.mannequin(w.rui, w.items.subList(2, 3), me)));
-        add("rules.look", List.of(showcase.look(w.looks.get(3), null), showcase.look(w.looks.get(3), as(w.rui)),
-                showcase.look(w.looks.get(7), as(w.looks.get(7).getUser()), null)));
+        add("rules.piece", w.items.stream().map(ShowcaseMannequin::piece).toList());
+        add("rules.mannequin", List.of(showcase.mannequins.mannequin(w.me, List.of()), showcase.mannequins.mannequin(w.quiet, w.items.subList(0, 3)),
+                showcase.mannequins.mannequin(w.quiet, w.items.subList(1, 3)), showcase.mannequins.mannequin(w.marca, List.of(), me),
+                showcase.mannequins.mannequin(w.celeb, List.of(), null), showcase.mannequins.mannequin(w.me, List.of(), me),
+                showcase.mannequins.mannequin(w.rui, w.items.subList(2, 3), me)));
+        add("rules.look", List.of(showcase.mannequins.look(w.looks.get(3), null), showcase.mannequins.look(w.looks.get(3), as(w.rui)),
+                showcase.mannequins.look(w.looks.get(7), as(w.looks.get(7).getUser()), null)));
         add("rules.hypeOf", showcase.hypeOf(HypeEntityType.SCHEME, w.looks.stream().map(Scheme::getId).toList()).keySet().stream().sorted().toList());
         List<Object> entries = new ArrayList<>();
         for (DailyLook dl : w.daily) {
-            ShowcaseService.RunwayEntry e = showcase.entry(dl);
+            ShowcaseService.RunwayEntry e = showcase.runwayFlow.entry(dl);
             entries.add(Arrays.asList(e.dl(), e.country(), e.region(), e.colors(), e.occasions(), e.styles(), e.sex()));
         }
         add("rules.entry", entries);
-        List<ShowcaseService.RunwayEntry> pool = w.daily.stream().map(showcase::entry).toList();
+        List<ShowcaseService.RunwayEntry> pool = w.daily.stream().map(showcase.runwayFlow::entry).toList();
         Map<UUID, HypeScoreCurrent> hype = showcase.hypeOf(HypeEntityType.SCHEME, w.looks.stream().map(Scheme::getId).toList());
         for (String ranking : List.of("TOP100_GLOBAL", "EM_ALTA", "RECENTES", "SEGUINDO")) {
-            add("rules.runwayOrder." + ranking, pool.stream().sorted(ShowcaseService.runwayOrder(ranking, e -> hype.get(e.dl().getScheme().getId())))
+            add("rules.runwayOrder." + ranking, pool.stream().sorted(ShowcaseRunwayOrder.runwayOrder(ranking, e -> hype.get(e.dl().getScheme().getId())))
                     .map(e -> e.dl().getScheme()).toList());
         }
         for (String sort : Arrays.asList(null, "HYPE", "GROWTH", "CURTIDAS", "RECENTES", "x")) {
             for (boolean self : List.of(false, true)) {
-                Comparator<Scheme> c = ShowcaseService.order(sort, s -> hype.get(s.getId()), self, Scheme::getLikeCount, Scheme::getCreatedAt);
+                Comparator<Scheme> c = ShowcaseGroupingItems.order(sort, s -> hype.get(s.getId()), self, Scheme::getLikeCount, Scheme::getCreatedAt);
                 add("rules.order." + sort + "." + self, w.looks.stream().sorted(c).toList());
             }
         }
         List<HypeScoreCurrent> group = new ArrayList<>(w.rows.subList(5, 9));
         group.add(null);
-        add("rules.groupHype", List.of(ShowcaseService.groupHype(group, false, null), ShowcaseService.groupHype(group, true, HypeScoreConfig.defaults()),
-                ShowcaseService.groupHype(List.of(), false, null)));
+        add("rules.groupHype", List.of(ShowcaseInsights.groupHype(group, false, null), ShowcaseInsights.groupHype(group, true, HypeScoreConfig.defaults()),
+                ShowcaseInsights.groupHype(List.of(), false, null)));
     }
 }

@@ -176,12 +176,12 @@ class SearchServiceCharacterizationTest {
                 search.visible(null, w.looks.get(6), Set.of()), search.visible(null, w.looks.get(7), Set.of()),
                 search.visible(as(w.ana), w.looks.get(7), Set.of()), search.visible(null, p1, Set.of()),
                 search.visible(null, w.items.get(5), Set.of()), search.visible(null, w.items.get(6), Set.of())));
-        add("rules.showcaseAllows", List.of(SearchService.showcaseAllows(null, w.bia), SearchService.showcaseAllows(as(w.bia), w.bia),
-                SearchService.showcaseAllows(null, w.ana)));
-        add("rules.blockedFor", List.of(search.blockedFor(null), search.blockedFor(w.me.getId())));
-        add("rules.dnaStyles", List.of(search.dnaStyles(null), search.dnaStyles(w.me.getId()), search.dnaStyles(w.ana.getId())));
-        add("rules.sharerVisible", List.of(search.sharerVisible(null, null, Set.of()), search.sharerVisible(null, w.duda, Set.of()),
-                search.sharerVisible(null, w.ana, Set.of(w.ana.getId())), search.sharerVisible(null, w.ana, Set.of())));
+        add("rules.showcaseAllows", List.of(SearchVisibility.showcaseAllows(null, w.bia), SearchVisibility.showcaseAllows(as(w.bia), w.bia),
+                SearchVisibility.showcaseAllows(null, w.ana)));
+        add("rules.blockedFor", List.of(search.visibility.blockedFor(null), search.visibility.blockedFor(w.me.getId())));
+        add("rules.dnaStyles", List.of(search.feed.dnaStyles(null), search.feed.dnaStyles(w.me.getId()), search.feed.dnaStyles(w.ana.getId())));
+        add("rules.sharerVisible", List.of(search.visibility.sharerVisible(null, null, Set.of()), search.visibility.sharerVisible(null, w.duda, Set.of()),
+                search.visibility.sharerVisible(null, w.ana, Set.of(w.ana.getId())), search.visibility.sharerVisible(null, w.ana, Set.of())));
         SearchService.Filters all = f("casual", "work", "blue", "nike", "upper_piece", " hot ");
         add("rules.filters", List.of(all.empty(), all.chips(), f(null, " ", null, null, null, "HOT").empty(),
                 new SearchService.Filters(null, null, null, null, null).chips()));
@@ -190,16 +190,16 @@ class SearchServiceCharacterizationTest {
                 f(null, null, "blue", null, null, null), f(null, null, null, "NIKE", null, null), f(null, null, null, null, "upper_piece", null),
                 f("party", null, null, null, null, null), f(null, null, "red", null, null, null), f(null, null, null, "Zara", null, null),
                 f(null, null, null, null, "footwear", null), f(null, "party", null, null, null, null))) {
-            matches.add(SearchService.matches(x, s1, w.itemsByScheme.get(s1.getId())));
-            matches.add(SearchService.matches(x, p1));
+            matches.add(SearchMatching.matches(x, s1, w.itemsByScheme.get(s1.getId())));
+            matches.add(SearchMatching.matches(x, p1));
         }
         add("rules.matches", matches);
-        add("rules.relevance", List.of(SearchService.relevance(s1, List.of(), Set.of(), 80.0), SearchService.relevance(s1, List.of(), Set.of(), null),
-                SearchService.relevance(s6, List.of(), Set.of("party"), 140.0), SearchService.relevance(s6, List.of(), Set.of("party", "x"), -3.0),
-                SearchService.relevance(w.hoursAgo(-5), List.of("a"), Set.of("a"), 50.0)));
+        add("rules.relevance", List.of(SearchMatching.relevance(s1, List.of(), Set.of(), 80.0), SearchMatching.relevance(s1, List.of(), Set.of(), null),
+                SearchMatching.relevance(s6, List.of(), Set.of("party"), 140.0), SearchMatching.relevance(s6, List.of(), Set.of("party", "x"), -3.0),
+                SearchMatching.relevance(w.hoursAgo(-5), List.of("a"), Set.of("a"), 50.0)));
         Scheme draft = new Scheme();
         draft.markCreatedAt(SearchServiceCharacterizationFixture.T0);
-        p.add("rules.publishedAt", List.of(SearchService.publishedAt(draft), w.label(SearchService.publishedAt(s1))));
+        p.add("rules.publishedAt", List.of(SearchMatching.publishedAt(draft), w.label(SearchMatching.publishedAt(s1))));
         HypeScoreCurrent pub = w.rows.get(0);
         HypeScoreCurrent personal = w.rows.get(2);
         HypeScoreCurrent rising = w.rows.get(3);
@@ -209,28 +209,28 @@ class SearchServiceCharacterizationTest {
         noScore.setCalculatedAt(SearchServiceCharacterizationFixture.T0);
         List<Object> hype = new ArrayList<>();
         for (HypeScoreCurrent c : Arrays.asList(null, pub, personal, rising, noScore)) {
-            hype.add(Arrays.asList(SearchService.publicRow(c) != null, SearchService.publicScore(c), SearchService.scoreFor(c, true),
-                    SearchService.scoreFor(c, false), SearchService.trendFor(c, true), SearchService.growthFor(c, true),
-                    SearchService.growthFor(c, false), SearchService.risingFor(c, false), SearchService.risingFor(c, true),
-                    SearchService.meetsLevel(c, null, null), SearchService.meetsLevel(c, HypeLevel.HOT, HypeScoreConfig.defaults()),
-                    SearchService.meetsLevel(c, HypeLevel.RELEVANT, null), SearchService.hypeSummary(c, false, null),
-                    SearchService.hypeSummary(c, true, HypeScoreConfig.defaults())));
+            hype.add(Arrays.asList(SearchHype.publicRow(c) != null, SearchHype.publicScore(c), SearchHype.scoreFor(c, true),
+                    SearchHype.scoreFor(c, false), SearchHype.trendFor(c, true), SearchHype.growthFor(c, true),
+                    SearchHype.growthFor(c, false), SearchHype.risingFor(c, false), SearchHype.risingFor(c, true),
+                    SearchHype.meetsLevel(c, null, null), SearchHype.meetsLevel(c, HypeLevel.HOT, HypeScoreConfig.defaults()),
+                    SearchHype.meetsLevel(c, HypeLevel.RELEVANT, null), SearchHype.hypeSummary(c, false, null),
+                    SearchHype.hypeSummary(c, true, HypeScoreConfig.defaults())));
         }
         add("rules.hype", hype);
         List<Object> levels = new ArrayList<>();
         for (HypeLevel l : HypeLevel.values()) {
-            levels.add(List.of(l, SearchService.levelMinimum(null, l), SearchService.levelMinimum(HypeScoreConfig.defaults(), l)));
+            levels.add(List.of(l, SearchHype.levelMinimum(null, l), SearchHype.levelMinimum(HypeScoreConfig.defaults(), l)));
         }
-        levels.add(SearchService.levelMinimum(null, null));
-        levels.add(Arrays.asList(SearchService.parseLevel(null), SearchService.parseLevel(" "), SearchService.parseLevel(" viral ")));
-        levels.add(attempt(() -> SearchService.parseLevel("nada")));
+        levels.add(SearchHype.levelMinimum(null, null));
+        levels.add(Arrays.asList(SearchHype.parseLevel(null), SearchHype.parseLevel(" "), SearchHype.parseLevel(" viral ")));
+        levels.add(attempt(() -> SearchHype.parseLevel("nada")));
         add("rules.levels", levels);
-        add("rules.round1", List.of(SearchService.round1(1.25), SearchService.round1(-1.25), SearchService.round1(59.95)));
-        add("rules.hypeRows", List.of(SearchService.hypeRows(null, null, HypeEntityType.SCHEME, List.of(s1.getId())).size(),
-                SearchService.hypeRows(w.hype, HypeScoreConfig.defaults(), HypeEntityType.SCHEME, Arrays.asList(null, null)).size(),
-                SearchService.hypeRows(w.hype, HypeScoreConfig.defaults(), HypeEntityType.SCHEME, List.of(s1.getId(), s1.getId(), s6.getId())).keySet()
+        add("rules.round1", List.of(SearchHype.round1(1.25), SearchHype.round1(-1.25), SearchHype.round1(59.95)));
+        add("rules.hypeRows", List.of(SearchHype.hypeRows(null, null, HypeEntityType.SCHEME, List.of(s1.getId())).size(),
+                SearchHype.hypeRows(w.hype, HypeScoreConfig.defaults(), HypeEntityType.SCHEME, Arrays.asList(null, null)).size(),
+                SearchHype.hypeRows(w.hype, HypeScoreConfig.defaults(), HypeEntityType.SCHEME, List.of(s1.getId(), s1.getId(), s6.getId())).keySet()
                         .stream().sorted().toList(),
-                search.hypeRows(HypeEntityType.PIECE, List.of(p1.getId(), id(999))).keySet()));
+                SearchHype.hypeRows(w.hype, HypeScoreConfig.defaults(), HypeEntityType.PIECE, List.of(p1.getId(), id(999))).keySet()));
         SearchService.Cursor c = new SearchService.Cursor(SearchServiceCharacterizationFixture.T0, id(7));
         add("rules.cursor", Arrays.asList(c.encode(), String.valueOf(SearchService.Cursor.parse(c.encode())), SearchService.Cursor.parse(null) == null,
                 SearchService.Cursor.parse(" ") == null,
@@ -238,8 +238,8 @@ class SearchServiceCharacterizationTest {
                 c.before(SearchServiceCharacterizationFixture.T0.minusSeconds(1), id(9)), attempt(() -> SearchService.Cursor.parse("bm9wZQ"))));
         add("rules.offset", Arrays.asList(SearchService.encodeOffset(30), SearchService.offsetOf(SearchService.encodeOffset(30)), SearchService.offsetOf(null),
                 SearchService.offsetOf(SearchService.encodeOffset(50_000)), SearchService.offsetOf(c.encode()),
-                attempt(() -> SearchService.offsetOf("%%%")), SearchService.TABS, SearchService.NEUTRAL_HYPE, SearchService.TRENDING_POOL));
-        add("rules.alternatives", List.of(search.alternatives(""), search.alternatives("casul"), search.alternatives("nik"), search.alternatives("partyy")));
+                attempt(() -> SearchService.offsetOf("%%%")), SearchService.TABS, SearchMatching.NEUTRAL_HYPE, SearchSuggestions.TRENDING_POOL));
+        add("rules.alternatives", List.of(search.suggestions.alternatives(""), search.suggestions.alternatives("casul"), search.suggestions.alternatives("nik"), search.suggestions.alternatives("partyy")));
         add("rules.personProfiles", search.personProfiles(null, List.of()));
     }
 }

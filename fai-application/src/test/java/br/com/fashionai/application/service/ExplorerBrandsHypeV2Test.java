@@ -223,11 +223,11 @@ class ExplorerBrandsHypeV2Test {
 
     @Test
     void brandHypeRulesAreDescriptiveAndNeverZero() {
-        assertThat(ExplorerService.brandHype(List.of(), List.of(), config)).containsEntry("value", null).containsEntry("basis", null);
-        assertThat(ExplorerService.brandHype(List.of(90.0, 90.0), List.of(10.0, 20.0, 30.0), config))
+        assertThat(ExplorerHype.brandHype(List.of(), List.of(), config)).containsEntry("value", null).containsEntry("basis", null);
+        assertThat(ExplorerHype.brandHype(List.of(90.0, 90.0), List.of(10.0, 20.0, 30.0), config))
                 .containsEntry("basis", "BRAND_GROUP").containsEntry("value", 20.0).containsEntry("level", "NICHE");
         // BRAND_GROUP = média das 5 mais relevantes (constância, não pico)
-        assertThat(ExplorerService.brandHype(List.of(), List.of(10.0, 90.0, 80.0, 70.0, 60.0, 50.0), config)).containsEntry("value", 70.0);
+        assertThat(ExplorerHype.brandHype(List.of(), List.of(10.0, 90.0, 80.0, 70.0, 60.0, 50.0), config)).containsEntry("value", 70.0);
     }
 
     // ------------------------------------------------------------------ Insights globais (P2-04)
