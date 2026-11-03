@@ -33,7 +33,7 @@ de frente, com as **mangas abertas**, o que resolve o caso em que hoje as mangas
 
 1. **Vista de costas na Fase 2:** gerar uma segunda imagem com as costas da peça (mesma instrução de flat lay), com
    aviso de que é reconstrução quando as costas não aparecem em nenhuma foto.
-2. **Gravar no catálogo:** o resultado aprovado entra no `photoSet` da imagem do catálogo (`wholeUrl` e a nova
+2. **Gravar no catálogo** (feito em 03/11/2026 para o Total frame: `scripts/catalog/apply_flat_lays.py`, colunas `flat_lay_*` da V85; o provador ainda lê o `photoSet`): o resultado aprovado entra no `photoSet` da imagem do catálogo (`wholeUrl` e a nova
    vista de costas), de onde o provador já lê. Script com ensaio por padrão e `--apply` explícito.
 3. **Mapeamento por painéis no avatar:** trocar a projeção só frontal por frente, costas e mangas, usando os pontos
    da peça no flat lay (ombros, cava, barra) para casar com o molde.

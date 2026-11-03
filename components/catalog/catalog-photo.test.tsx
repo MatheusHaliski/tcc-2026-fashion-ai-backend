@@ -22,6 +22,19 @@ describe("semanticCropStyle", () => {
 });
 
 describe("CatalogPhoto", () => {
+  it("shows the approved flat lay from our GPU in Total frame, always with the AI label", () => {
+    const flatLay = { url: "/media/catalog/flatlay/front.jpg", rendered: true, aiGenerated: true, box: { x: 0, y: 0, w: 1, h: 1 },
+      width: 900, height: 1200, background: "#FFFFFF", version: "FLAT_LAY_V1" };
+    const { container } = render(<CatalogPhoto requiredFrame alt="Camiseta" framing="WHOLE"
+      image={{ url: "/media/fabric.png", mode: "PROCESSED", whole: flatLay }} />);
+    expect(container.querySelector("img")!.getAttribute("src")).toBe(mediaUrl("/media/catalog/flatlay/front.jpg"));
+    expect(container.querySelector("[data-ai]")).not.toBeNull();
+    expect(container.querySelector(".catalog-photo-ai")).not.toBeNull();
+    const real = render(<CatalogPhoto requiredFrame alt="Camiseta" framing="WHOLE"
+      image={{ url: "/media/fabric.png", mode: "PROCESSED", whole: { ...flatLay, aiGenerated: false } }} />);
+    expect(real.container.querySelector(".catalog-photo-ai")).toBeNull();   // recorte de pixels reais: sem selo
+  });
+
   it("displays the persisted Total frame directly, without a second browser crop or margin", () => {
     const { container, rerender } = render(<CatalogPhoto requiredFrame alt="Camisa" framing="WHOLE" image={{ url: "/media/fabric.png", mode: "PROCESSED",
       whole: { url: "/media/whole.png", rendered: true, box: { x: 0, y: 0, w: 1, h: 1 }, width: 900, height: 1200, background: "#ffffff" } }} />);

@@ -119,7 +119,7 @@ def thumbnail(data: bytes, path: Path, background=(240, 240, 240)) -> str:
 
 def process(product: dict, gpu: GpuClient, out: Path, session=None, keep_full: bool = True, mode: str = "auto") -> dict:
     row = {"id": product["id"], "name": product.get("product_name"), "category": product.get("category"),
-           "class": "FAILED", "metrics": {}}
+           "class": "FAILED", "metrics": {}, **catalog_source.image_ref(product)}
     try:
         raw = catalog_source.prepare_upload(catalog_source.download(product["image_url"]))
         category = catalog_source.CATEGORY_MAP.get(product.get("category"), "auto")

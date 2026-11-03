@@ -108,3 +108,24 @@ def test_url_errada_para_o_lote_antes_do_primeiro_produto(catalogue, monkeypatch
             catalog_batch.main(["--limit", "2", "--out", str(catalogue["out"])])
     finally:
         server.shutdown()
+
+
+def test_auditoria_registra_a_linha_de_catalog_images_de_cada_resultado(catalogue, monkeypatch):
+    rows = [{**p, "image_id": f"img-{p['id']}", "image_version": 3, "original_url": f"https://loja.example/{p['id']}.jpg",
+             "source_sha256": "a" * 64} for p in PRODUCTS]
+    monkeypatch.setattr(catalog_source, "fetch_by_ids", lambda conn, ids: [r for r in rows if r["id"] in ids])
+    monkeypatch.setattr(catalog_source, "download", lambda url, **kw: (_ for _ in ()).throw(OSError("404"))
+                        if "1.jpg" in url else png(photo()))
+    catalog_batch.main(["--ids-file", catalogue["ids"], "--out", str(catalogue["out"])])
+    got = audit(catalogue["out"])
+    assert got["produto"]["image_id"] == "img-produto" and got["produto"]["image_version"] == 3
+    assert got["produto"]["original_url"] == "https://loja.example/produto.jpg"
+    assert got["produto"]["photo_url"] == "https://cdn.example/0.jpg" and got["produto"]["source_sha256"] == "a" * 64
+    assert got["vestida"]["class"] == "FAILED" and got["vestida"]["image_id"] == "img-vestida"   # falha também
+
+
+def test_consulta_do_catalogo_devolve_a_identidade_da_imagem():
+    for column in ("i.id AS image_id", "i.version AS image_version", "i.image_url AS original_url", "i.source_sha256"):
+        assert column in catalog_source.SELECT
+    assert catalog_source.image_ref({"image_url": "u"}) == {"image_id": None, "image_version": None,
+                                                            "original_url": None, "source_sha256": None, "photo_url": "u"}

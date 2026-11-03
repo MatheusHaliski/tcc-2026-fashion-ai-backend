@@ -119,6 +119,19 @@ public class CatalogImage extends VersionedAuditableEntity {
     @Column(name = "whole_pipeline_version", length = 40)
     private String wholePipelineVersion;
 
+    /** Flat lay aprovado (V85): reconstrução por IA da Fase 2 (GPU própria), exibida no Total frame com selo de IA. */
+    @Column(name = "flat_lay_url", length = 1024)
+    private String flatLayUrl;
+
+    @Column(name = "flat_lay_back_url", length = 1024)
+    private String flatLayBackUrl;
+
+    @Column(name = "flat_lay_json", columnDefinition = "json")
+    private String flatLayJson;
+
+    @Column(name = "flat_lay_status", length = 24)
+    private String flatLayStatus;
+
     @Column(name = "attempts", nullable = false)
     private int attempts;
 
