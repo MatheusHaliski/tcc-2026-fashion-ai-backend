@@ -207,12 +207,12 @@ class MomentServiceConsultasTest extends MomentServiceFixture {
     @Test
     void competitivoDependeDaNaturezaDoModoEDaConfiguracao() {
         Moment m = active("comp");
-        assertThat(svc.competitive(m)).isTrue();
+        assertThat(new MomentQueries(svc.ctx).competitive(m)).isTrue();
         m.setSettingsJson("{\"allowVoting\":false}");
-        assertThat(svc.competitive(m)).isFalse();
+        assertThat(new MomentQueries(svc.ctx).competitive(m)).isFalse();
         m.setFlairMode(FlairMomentMode.BATTLE);
-        assertThat(svc.competitive(m)).isTrue();
+        assertThat(new MomentQueries(svc.ctx).competitive(m)).isTrue();
         m.setNature(MomentNature.RELIGIOUS);
-        assertThat(svc.competitive(m)).isFalse();
+        assertThat(new MomentQueries(svc.ctx).competitive(m)).isFalse();
     }
 }
