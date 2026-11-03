@@ -1,34 +1,17 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import java.util.HashSet;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.taxonomy.WorldRegions;
-import br.com.fashionai.domain.model.enums.FollowStatus;
-import br.com.fashionai.domain.repository.FollowRepository;
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.DailyLook;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeGrouping;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.GroupingType;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.MannequinSex;
-import br.com.fashionai.domain.model.enums.Model3dStatus;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.DailyLookRepository;
+import br.com.fashionai.domain.repository.FollowRepository;
 import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.SchemeGroupingRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
@@ -39,23 +22,13 @@ import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 
 /**
  * Vitrines 3D (cards Trello "Passarela 3D", "Eras da celebridade" e "Coleções da marca", e o botão "Gerar 3D" das
@@ -83,220 +56,55 @@ public class ShowcaseService {
     static final double W_LIKES = 0.75, W_ITEMS = 0.25;
     static final int RUNWAY_MAX = 24;
 
-    private final SchemeRepository schemes;
-    private final SchemeItemRepository schemeItems;
-    private final WardrobeItemRepository pieces;
-    private final SchemeGroupingRepository groupings;
-    private final DailyLookRepository dailyLooks;
-    private final DailyLookService dailyLookService;
-    private final UserPreferencesRepository preferences;
-    private final CelebrityProfileRepository celebrities;
-    private final SchemeService schemeService;
-    private final InstitutionalService institutional;
-    private final Model3dService model3d;
-    private final Guard guard;
-    private final Avatar3dService avatars3d;
-    private final UserRepository users;
-    private final MediaService media;
-    private final FollowRepository follows;
-    /** HypeScore v2: estado atual lido direto do repositório (GET nunca recalcula nem emite sinal). */
-    private final HypeScoreCurrentRepository hypeScores;
-    private final HypeScoreConfig hypeConfig;
+    // Colaboradores por caso de uso (package-private, sem Spring): o serviço é a fachada transacional.
+    final ShowcaseHype hypes;
+    final ShowcaseMannequin mannequins;
+    final ShowcaseLooks3d looks3d;
+    final ShowcasePhotos photos;
+    final ShowcaseRunway runwayFlow;
+    final ShowcaseGroupings groupingsBase;
+    final ShowcaseGroupingItems groupingItems;
+    final ShowcaseInsights groupingInsights;
+    final ShowcaseStage stageFlow;
 
     public ShowcaseService(FollowRepository follows, UserRepository users, MediaService media, SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
                            SchemeGroupingRepository groupings, DailyLookRepository dailyLooks, DailyLookService dailyLookService,
                            UserPreferencesRepository preferences, CelebrityProfileRepository celebrities,
                            SchemeService schemeService, InstitutionalService institutional, Model3dService model3d, Guard guard,
                            Avatar3dService avatars3d, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig) {
-        this.avatars3d = avatars3d;
-        this.schemes = schemes;
-        this.schemeItems = schemeItems;
-        this.pieces = pieces;
-        this.groupings = groupings;
-        this.dailyLooks = dailyLooks;
-        this.dailyLookService = dailyLookService;
-        this.preferences = preferences;
-        this.celebrities = celebrities;
-        this.schemeService = schemeService;
-        this.institutional = institutional;
-        this.model3d = model3d;
-        this.guard = guard;
-        this.users = users;
-        this.media = media;
-        this.follows = follows;
-        this.hypeScores = hypeScores;
-        this.hypeConfig = hypeConfig;
+        this.hypes = new ShowcaseHype(hypeScores, hypeConfig);
+        this.mannequins = new ShowcaseMannequin(schemeItems, preferences, avatars3d, hypes, hypeConfig);
+        this.looks3d = new ShowcaseLooks3d(schemes, schemeItems, pieces, schemeService, model3d, guard, mannequins);
+        this.photos = new ShowcasePhotos(pieces, groupings, schemeService, guard, media);
+        this.runwayFlow = new ShowcaseRunway(schemeItems, dailyLooks, dailyLookService, users, follows, schemeService, mannequins, hypes, hypeConfig);
+        this.groupingsBase = new ShowcaseGroupings(institutional, groupings, schemes, pieces, schemeService, guard, hypes);
+        this.groupingItems = new ShowcaseGroupingItems(groupingsBase, schemeItems, schemeService, hypes);
+        this.groupingInsights = new ShowcaseInsights(groupingsBase, hypes, hypeConfig);
+        this.stageFlow = new ShowcaseStage(groupingsBase, celebrities, mannequins, hypes);
     }
 
     /** Estado v2 de uma lista numa consulta (sem repositório = vazio: tudo neutro, nada vira 0). */
     Map<UUID, HypeScoreCurrent> hypeOf(HypeEntityType type, Collection<UUID> ids) {
-        return SearchService.hypeRows(hypeScores, hypeConfig, type, ids);
-    }
-
-    private static boolean self(CurrentUser viewer, User owner) {
-        return viewer != null && owner != null && viewer.id().equals(owner.getId());
+        return hypes.of(type, ids);
     }
 
     // ================================================================== look no manequim ("Gerar 3D")
 
     @Transactional(readOnly = true)
     public Map<String, Object> look3d(CurrentUser viewer, UUID schemeId) {
-        Scheme s = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
-        if (s.getStatus() == SchemeStatus.ARCHIVED && (viewer == null || !viewer.id().equals(s.getUser().getId()))
-                || !schemeService.canView(viewer, s)) {
-            throw ApiException.notFound("Esquema");
-        }
-        return look(s, viewer);
+        return looks3d.look3d(viewer, schemeId);
     }
 
     /** Uma peça sozinha no manequim (card de peça): o modelo do RF16 quando existe, senão a foto aplicada. */
     @Transactional(readOnly = true)
     public Map<String, Object> piece3d(CurrentUser viewer, UUID pieceId) {
-        WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
-        guard.requireView(viewer, w.getUser().getId(), SchemeService.moreRestrictive(w.getVisibility(), w.getUser().getProfileVisibility()), "piece:" + pieceId);
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("pieceId", w.getId());
-        out.put("title", w.getName());
-        out.put("owner", Views.user(w.getUser()));
-        out.put("mannequin", mannequin(w.getUser(), List.of(w), viewer));
-        out.put("pieces", List.of(piece(w)));
-        boolean own = viewer != null && viewer.id().equals(w.getUser().getId());
-        out.put("canRequest", own && canRequest(w));
-        out.put("missing3d", w.getModel3dStatus() == Model3dStatus.COMPLETED ? 0 : 1);
-        return out;
-    }
-
-    Map<String, Object> look(Scheme s, CurrentUser viewer) {
-        return look(s, viewer, hypeOf(HypeEntityType.SCHEME, List.of(s.getId())).get(s.getId()));
-    }
-
-    /** Look no manequim com o Hype v2 já carregado ({@code hype}: resumo dos cards; público, ou pessoal para o dono). */
-    Map<String, Object> look(Scheme s, CurrentUser viewer, HypeScoreCurrent hype) {
-        List<WardrobeItem> ws = schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem)
-                .filter(Objects::nonNull).toList();
-        boolean own = viewer != null && viewer.id().equals(s.getUser().getId());
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("schemeId", s.getId());
-        out.put("title", s.getTitle());
-        out.put("owner", Views.user(s.getUser()));
-        out.put("hype", SearchService.hypeSummary(hype, own, hypeConfig));
-        out.put("likes", s.getLikeCount());       // popularidade, à parte do Hype
-        out.put("mannequin", mannequin(s.getUser(), ws, viewer));
-        out.put("pieces", ws.stream().map(ShowcaseService::piece).toList());
-        long ready = ws.stream().filter(w -> w.getModel3dStatus() == Model3dStatus.COMPLETED && w.getModel3dUrl() != null).count();
-        out.put("ready3d", ready);
-        out.put("missing3d", ws.size() - ready);
-        out.put("canRequest", own && ws.stream().anyMatch(this::canRequest));
-        return out;
-    }
-
-    private boolean canRequest(WardrobeItem w) {
-        return !w.isDefaultImage() && w.getImageUrl() != null && w.getModel3dStatus() != Model3dStatus.COMPLETED
-                && w.getModel3dStatus() != Model3dStatus.QUEUED && w.getModel3dStatus() != Model3dStatus.PROCESSING;
-    }
-
-    static Map<String, Object> piece(WardrobeItem w) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", w.getId());
-        m.put("name", w.getName());
-        m.put("slot", MirrorService.slotOf(w));
-        m.put("category", w.getCategory());
-        m.put("subcategory", w.getSubcategory());
-        m.put("imageUrl", w.getImageUrl());                 // recorte sem fundo: é o que "veste" o manequim
-        m.put("studioUrl", w.getStudioImageUrl());
-        m.put("colorHex", Taxonomy.hex(w.getColor()));
-        m.put("model3dStatus", w.getModel3dStatus() == null ? null : w.getModel3dStatus().name());
-        m.put("model3dUrl", w.getModel3dStatus() == Model3dStatus.COMPLETED ? w.getModel3dUrl() : null);
-        m.put("defaultImage", w.isDefaultImage());
-        return m;
-    }
-
-    /**
-     * Manequim da pessoa: sexo do cadastro (RF1) → preferência do provador → sexo das peças → feminino padrão.
-     * Com foto de perfil, a cabeça do manequim recebe a foto; sem foto, é o manequim padrão (cabeça lisa).
-     */
-    Map<String, Object> mannequin(User u, List<WardrobeItem> ws) {
-        return mannequin(u, ws, null);
-    }
-
-    /**
-     * Com o Avatar 3D (RF40) confirmado e visível para quem está vendo (público na Passarela, ou o próprio dono), a
-     * cabeça é o busto da pessoa ({@code head=AVATAR}); senão continua a foto de perfil ou o manequim padrão.
-     */
-    Map<String, Object> mannequin(User u, List<WardrobeItem> ws, CurrentUser viewer) {
-        Map<String, Object> m = mannequinBase(u, ws);
-        if (u.getProfileType() != ProfileType.MARCA) {
-            avatars3d.forMannequin(u.getId(), viewer == null ? null : viewer.id()).ifPresent(a -> {
-                m.put("avatar", a);
-                m.put("head", "AVATAR");
-            });
-        }
-        return m;
-    }
-
-    private Map<String, Object> mannequinBase(User u, List<WardrobeItem> ws) {
-        MannequinSex sex = u.getSex();
-        String source = "cadastro";
-        var prefs = preferences.findByUserId(u.getId());
-        if (sex == null && prefs.isPresent() && prefs.get().getMannequinSex() != null) {
-            sex = prefs.get().getMannequinSex();
-            source = "provador";
-        }
-        if (sex == null) {
-            long fem = ws.stream().filter(w -> "FEMININO".equalsIgnoreCase(w.getSex())).count();
-            long mas = ws.stream().filter(w -> "MASCULINO".equalsIgnoreCase(w.getSex())).count();
-            if (fem != mas) {
-                sex = fem > mas ? MannequinSex.FEMININO : MannequinSex.MASCULINO;
-                source = "pecas";
-            } else {
-                sex = MannequinSex.FEMININO;
-                source = "padrao";
-            }
-        }
-        String photo = u.getAvatarUrl();
-        if (u.getProfileType() == ProfileType.MARCA) {
-            photo = null;                                   // logo não vira rosto: marca desfila com o manequim padrão
-        }
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("sex", sex.name());
-        m.put("sexSource", source);
-        m.put("photoUrl", photo);
-        // a foto de perfil não vai para a cabeça 3D (levava o fundo e a roupa para o rosto): o rosto só vem do Avatar 3D
-        m.put("head", "PADRAO");
-        m.put("skinTone", prefs.map(p -> p.getMannequinSkinTone()).orElse(null));
-        m.put("build", prefs.map(p -> p.getMannequinBuild() == null ? null : p.getMannequinBuild().name()).orElse(null));
-        m.put("face", prefs.map(p -> p.getMannequinFaceJson() == null ? null : br.com.fashionai.application.common.Json.map(p.getMannequinFaceJson())).orElse(null));
-        return m;
+        return looks3d.piece3d(viewer, pieceId);
     }
 
     /** Dono pede o RF16 para todas as peças do esquema que ainda não têm modelo 3D (cada uma vira um job). */
     @Transactional
     public Map<String, Object> requestModels(CurrentUser user, UUID schemeId) {
-        guard.requireCanCreate(user);
-        Scheme s = schemeService.owned(user, schemeId);
-        int requested = 0;
-        List<Map<String, Object>> skipped = new ArrayList<>();
-        for (SchemeItem si : schemeItems.findBySchemeIdOrderBySortOrder(s.getId())) {
-            WardrobeItem w = si.getWardrobeItem();
-            if (w == null || w.getModel3dStatus() == Model3dStatus.COMPLETED) {
-                continue;
-            }
-            if (!w.getUser().getId().equals(user.id())) {
-                skipped.add(Map.of("id", w.getId(), "name", w.getName(), "reason", Msg.t("showcase.peca_de_outra_pessoa")));
-                continue;
-            }
-            try {
-                model3d.request(w);
-                requested++;
-            } catch (ApiException ex) {
-                skipped.add(Map.of("id", w.getId(), "name", w.getName(), "reason", ex.getMessage()));
-            }
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("requested", requested);
-        out.put("skipped", skipped);
-        out.put("look", look(s, user));
-        return out;
+        return looks3d.requestModels(user, schemeId);
     }
 
     // ================================================================== Foto com meu manequim (RF4 · RF5)
@@ -304,81 +112,26 @@ public class ShowcaseService {
     /** Só peça superior (inclui camadas externas) e de corpo inteiro: inferior, calçado e acessório não vestem sozinhos. */
     static final Set<String> MANNEQUIN_PHOTO_CATEGORIES = Set.of("upper_piece", "full_body_piece");
 
-    /**
-     * RF4 — a foto da peça vestindo o manequim da pessoa (rosto 3D a partir da foto de perfil) ou o manequim padrão
-     * masc./fem. quando não há foto. A imagem é renderizada no navegador (Three.js, mesmo manequim da Passarela) e
-     * enviada aqui; o servidor valida, recodifica e guarda.
-     */
     @Transactional
     public Map<String, Object> pieceMannequinPhoto(CurrentUser user, UUID id, byte[] bytes) {
-        guard.requireCanCreate(user);
-        WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
-        guard.requireOwner(user, w.getUser().getId(), "piece:" + id);
-        if (!MANNEQUIN_PHOTO_CATEGORIES.contains(w.getCategory())) {
-            throw new ApiException(422, "SEM_FOTO_NO_MANEQUIM", Msg.t("showcase.a_foto_com_manequim_e"));
-        }
-        String url = storeMannequinPhoto(user, "pieces/" + id, bytes);
-        w.setMannequinImageUrl(url);
-        w.setMannequinImageFace(faceOf(w.getUser()));
-        return Map.of("url", url, "face", w.getMannequinImageFace());
+        return photos.pieceMannequinPhoto(user, id, bytes);
     }
 
     /** RF5 — o look inteiro (todas as peças do esquema) no manequim; opcionalmente vira a foto do post (capa). */
     @Transactional
     public Map<String, Object> schemeMannequinPhoto(CurrentUser user, UUID id, byte[] bytes, boolean asCover) {
-        guard.requireCanCreate(user);
-        Scheme s = schemeService.owned(user, id);
-        String url = storeMannequinPhoto(user, "schemes/" + id, bytes);
-        s.setMannequinImageUrl(url);
-        s.setMannequinImageFace(faceOf(s.getUser()));
-        if (asCover) {
-            s.setCoverImageUrl(url);
-        }
-        return Map.of("url", url, "face", s.getMannequinImageFace(), "cover", asCover);
+        return photos.schemeMannequinPhoto(user, id, bytes, asCover);
     }
 
     @Transactional
     public void deleteMannequinPhoto(CurrentUser user, String kind, UUID id) {
-        if ("scheme".equals(kind)) {
-            Scheme s = schemeService.owned(user, id);
-            if (s.getMannequinImageUrl() != null && s.getMannequinImageUrl().equals(s.getCoverImageUrl())) {
-                s.setCoverImageUrl(null);
-            }
-            s.setMannequinImageUrl(null);
-            s.setMannequinImageFace(null);
-        } else {
-            WardrobeItem w = pieces.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
-            guard.requireOwner(user, w.getUser().getId(), "piece:" + id);
-            w.setMannequinImageUrl(null);
-            w.setMannequinImageFace(null);
-        }
-    }
-
-    private String storeMannequinPhoto(CurrentUser user, String base, byte[] bytes) {
-        br.com.fashionai.application.imaging.ImageOps.requireAcceptedImage(bytes);
-        java.awt.image.BufferedImage img = br.com.fashionai.application.imaging.ImageOps.scaleToFit(
-                br.com.fashionai.application.imaging.ImageOps.decode(bytes), 1600, 1600);
-        byte[] jpeg = br.com.fashionai.application.imaging.ImageOps.jpeg(img, 0.92f);
-        return media.put("users/" + user.id() + "/" + base + "/mannequin-" + System.currentTimeMillis() + ".jpg", jpeg, "image/jpeg").url();
-    }
-
-    private static String faceOf(User u) {
-        return u.getAvatarUrl() != null && u.getProfileType() != ProfileType.MARCA ? "FOTO" : "PADRAO";
+        photos.deleteMannequinPhoto(user, kind, id);
     }
 
     /** Foto da era / arte da coleção (header da busca e vitrine da mini loja 3D): só o dono do agrupamento envia. */
     @Transactional
     public Map<String, Object> groupingCover(CurrentUser user, UUID id, byte[] bytes) {
-        guard.requireCanCreate(user);
-        SchemeGrouping g = groupings.findById(id).orElseThrow(() -> ApiException.notFound("Agrupamento"));
-        guard.requireOwner(user, g.getOwner().getId(), "grouping:" + id);
-        br.com.fashionai.application.imaging.ImageOps.requireAcceptedImage(bytes);
-        java.awt.image.BufferedImage img = br.com.fashionai.application.imaging.ImageOps.scaleToFit(
-                br.com.fashionai.application.imaging.ImageOps.decode(bytes), 1800, 1200);
-        byte[] jpeg = br.com.fashionai.application.imaging.ImageOps.jpeg(img, 0.9f);
-        String url = media.put("users/" + user.id() + "/groupings/" + id + "/cover-" + System.currentTimeMillis() + ".jpg", jpeg, "image/jpeg").url();
-        g.setCoverUrl(url);
-        return Map.of("id", g.getId(), "coverUrl", url);
+        return photos.groupingCover(user, id, bytes);
     }
 
     // ================================================================== Passarela 3D (Explorar)
@@ -398,186 +151,14 @@ public class ShowcaseService {
     record RunwayEntry(DailyLook dl, String country, String region, Set<String> colors, Set<String> occasions, Set<String> styles, String sex) {
     }
 
-    RunwayEntry entry(DailyLook dl) {
-        Scheme s = dl.getScheme();
-        List<WardrobeItem> ws = schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem).filter(Objects::nonNull).toList();
-        Set<String> colors = new java.util.TreeSet<>(), occ = new java.util.TreeSet<>(), styles = new java.util.TreeSet<>();
-        for (WardrobeItem w : ws) {
-            if (w.getColor() != null) {
-                colors.add(Taxonomy.COLOR_FAMILY.getOrDefault(w.getColor(), w.getColor()));
-            }
-            occ.addAll(Json.csv(w.getOccasionTags()));
-            styles.addAll(Json.csv(w.getStyleTags()));
-        }
-        occ.addAll(Json.csv(s.getOccasion()));
-        styles.addAll(Json.csv(s.getStyle()));
-        User u = dl.getUser();
-        String country = u.getCountry() == null ? null : u.getCountry().toUpperCase(Locale.ROOT);
-        return new RunwayEntry(dl, country, WorldRegions.of(country), colors, occ, styles, u.getSex() == null ? null : u.getSex().name());
-    }
-
     @Transactional
     public Map<String, Object> runway(CurrentUser viewer, Integer limit) {
         return runway(viewer, RunwayFilter.of(limit));
     }
 
-    /**
-     * O desfile do dia: o Look do Dia de hoje de cada perfil visível. Quem registrou look na última semana e não trocou
-     * hoje continua desfilando com o último (mesma virada de dia do RF6). Rankings: Top 100 Global (HypeScore v2 público;
-     * sem Hype público = no fim), Top 100 Regional (região do mundo), Top 100 do país, Seguindo, Em alta (crescimento:
-     * momento RISING/EMERGING e dimensão TREND do v2 — não curtidas) e Recentes; filtros por região, cores, ocasiões,
-     * estilos e manequim. Cada linha da tabela e cada look trazem {@code hype} (resumo v2). Como seria inviável desfilar todo mundo, a passarela 3D mostra um lote de até 24
-     * looks por vez ({@code limit}/{@code offset}) e a tabela lateral vai até o Top 100.
-     */
     @Transactional
     public Map<String, Object> runway(CurrentUser viewer, RunwayFilter f) {
-        LocalDate today = LocalDate.now(FaiPointsService.ZONE);
-        Set<UUID> recent = new LinkedHashSet<>();
-        for (DailyLook dl : dailyLooks.findByLookDateGreaterThanEqual(today.minusDays(7))) {
-            recent.add(dl.getUser().getId());
-        }
-        recent.forEach(dailyLookService::today);
-        int max = Math.max(1, Math.min(RUNWAY_MAX, f.limit() == null ? 12 : f.limit()));
-        int offset = Math.max(0, f.offset() == null ? 0 : f.offset());
-        String ranking = f.ranking() == null || f.ranking().isBlank() ? "TOP100_GLOBAL" : f.ranking().toUpperCase(Locale.ROOT);
-        if (!RUNWAY_RANKINGS.contains(ranking)) {
-            throw ApiException.badRequest("RANKING_INVALIDO", "Rankings: " + RUNWAY_RANKINGS);
-        }
-        User me = viewer == null ? null : users.findById(viewer.id()).orElse(null);
-        List<RunwayEntry> pool = dailyLooks.findByLookDate(today).stream()
-                .filter(dl -> dl.getUser().getStatus() == AccountStatus.ACTIVE && !dl.getUser().isRunwayOptOut() && SearchService.showcaseAllows(viewer, dl.getUser()))
-                .filter(dl -> dl.getScheme().getStatus() != SchemeStatus.ARCHIVED && schemeService.canView(viewer, dl.getScheme()))
-                .map(this::entry).toList();
-
-        // escopo do ranking
-        String region = f.region() == null || f.region().isBlank() ? null : f.region().toUpperCase(Locale.ROOT);
-        String country = f.country() == null || f.country().isBlank() ? null : f.country().toUpperCase(Locale.ROOT);
-        if ("TOP100_REGIONAL".equals(ranking) && region == null) {
-            region = me == null ? "AMERICA_DO_SUL" : WorldRegions.of(me.getCountry());
-        }
-        if ("TOP100_PAIS".equals(ranking) && country == null) {
-            country = me == null || me.getCountry() == null ? "BR" : me.getCountry().toUpperCase(Locale.ROOT);
-        }
-        Set<UUID> following = new HashSet<>();
-        if ("SEGUINDO".equals(ranking)) {
-            if (viewer == null) {
-                throw ApiException.unauthorized(Msg.t("showcase.entre_na_conta_para_ver"));
-            }
-            follows.findByFollowerIdAndStatus(viewer.id(), FollowStatus.ACEITO).forEach(x -> following.add(x.getFollowing().getId()));
-            following.add(viewer.id());
-        }
-        final String fr = region, fc = country;
-        List<RunwayEntry> scoped = pool.stream()
-                .filter(e -> fr == null || fr.equals(e.region()))
-                .filter(e -> fc == null || fc.equals(e.country()))
-                .filter(e -> following.isEmpty() || following.contains(e.dl().getUser().getId()))
-                .toList();
-        // facetas (contagens do escopo, antes dos filtros de cor/ocasião/estilo)
-        Map<String, Object> facets = new LinkedHashMap<>();
-        facets.put("regions", WorldRegions.codes().stream().map(c -> Map.of("code", c, "label", WorldRegions.label(c), "count", pool.stream().filter(e -> c.equals(e.region())).count()))
-                .filter(m -> ((Long) m.get("count")) > 0 || "AMERICA_DO_SUL".equals(m.get("code"))).toList());
-        facets.put("countries", count(scoped.stream().map(RunwayEntry::country).filter(Objects::nonNull).toList()));
-        facets.put("colors", count(scoped.stream().flatMap(e -> e.colors().stream()).toList()));
-        facets.put("occasions", count(scoped.stream().flatMap(e -> e.occasions().stream()).toList()));
-        facets.put("styles", count(scoped.stream().flatMap(e -> e.styles().stream()).toList()));
-        // filtros
-        List<String> colors = f.colors() == null ? List.of() : f.colors(), occ = f.occasions() == null ? List.of() : f.occasions(),
-                styles = f.styles() == null ? List.of() : f.styles();
-        String sex = f.sex() == null || f.sex().isBlank() ? null : f.sex().toUpperCase(Locale.ROOT);
-        // HypeScore v2 do pool inteiro numa consulta; a ORDEM usa só o Hype público (é um ranking compartilhado)
-        Map<UUID, HypeScoreCurrent> hype = hypeOf(HypeEntityType.SCHEME, pool.stream().map(e -> e.dl().getScheme().getId()).toList());
-        Comparator<RunwayEntry> order = runwayOrder(ranking, e -> hype.get(e.dl().getScheme().getId()));
-        List<RunwayEntry> ranked = scoped.stream()
-                .filter(e -> colors.isEmpty() || colors.stream().anyMatch(e.colors()::contains))
-                .filter(e -> occ.isEmpty() || occ.stream().anyMatch(e.occasions()::contains))
-                .filter(e -> styles.isEmpty() || styles.stream().anyMatch(e.styles()::contains))
-                .filter(e -> sex == null || sex.equals(e.sex()))
-                .sorted(order).limit(RUNWAY_TOP).toList();
-
-        Integer yourPosition = null;
-        List<Map<String, Object>> table = new ArrayList<>();
-        for (int i = 0; i < ranked.size(); i++) {
-            RunwayEntry e = ranked.get(i);
-            boolean you = viewer != null && viewer.id().equals(e.dl().getUser().getId());
-            if (you) {
-                yourPosition = i + 1;
-            }
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("position", i + 1);
-            row.put("schemeId", e.dl().getScheme().getId());
-            row.put("title", e.dl().getScheme().getTitle());
-            row.put("owner", Views.user(e.dl().getUser()));
-            row.put("hype", SearchService.hypeSummary(hype.get(e.dl().getScheme().getId()), you, hypeConfig));
-            row.put("likes", e.dl().getScheme().getLikeCount());       // popularidade, exibida à parte
-            row.put("country", e.country());
-            row.put("region", WorldRegions.label(e.region()));
-            row.put("you", you);
-            table.add(row);
-        }
-        List<Map<String, Object>> looks = new ArrayList<>();
-        for (int i = offset; i < Math.min(ranked.size(), offset + max); i++) {
-            RunwayEntry e = ranked.get(i);
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("position", i + 1);
-            m.put("you", viewer != null && viewer.id().equals(e.dl().getUser().getId()));
-            m.put("source", e.dl().getSource().name());
-            m.put("carriedOver", e.dl().getMaterializedFrom() != null);
-            m.put("country", e.country());
-            m.put("region", WorldRegions.label(e.region()));
-            m.put("look", look(e.dl().getScheme(), viewer, hype.get(e.dl().getScheme().getId())));
-            looks.add(m);
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("date", today);
-        out.put("nextUpdate", ZonedDateTime.now(FaiPointsService.ZONE).toLocalDate().plusDays(1).atStartOfDay(FaiPointsService.ZONE).toInstant());
-        out.put("totalToday", pool.size());
-        out.put("total", ranked.size());
-        out.put("ranking", ranking);
-        out.put("rankings", RUNWAY_RANKINGS);
-        out.put("algorithmVersion", hypeConfig == null ? null : hypeConfig.algorithmVersion());
-        out.put("applied", Map.of("region", region == null ? "" : region, "country", country == null ? "" : country, "colors", colors, "occasions", occ, "styles", styles,
-                "sex", sex == null ? "" : sex));
-        out.put("batch", Map.of("offset", offset, "limit", max, "from", ranked.isEmpty() ? 0 : offset + 1, "to", Math.min(ranked.size(), offset + max),
-                "hasNext", offset + max < ranked.size(), "hasPrev", offset > 0));
-        out.put("looks", looks);
-        out.put("table", table);
-        out.put("facets", facets);
-        if (viewer != null) {
-            Map<String, Object> you = new LinkedHashMap<>();
-            you.put("optedOut", me != null && me.isRunwayOptOut());
-            you.put("hasLook", dailyLooks.findByUserIdAndLookDate(viewer.id(), today).isPresent());
-            you.put("position", yourPosition);
-            you.put("region", me == null ? null : WorldRegions.of(me.getCountry()));
-            you.put("country", me == null ? null : me.getCountry());
-            out.put("you", you);
-        }
-        return out;
-    }
-
-    /**
-     * Ordem de cada ranking da Passarela. Top 100: HypeScore v2 PÚBLICO (sem Hype público = por último, nunca 0).
-     * Em alta: crescimento — momento RISING/EMERGING primeiro, depois a dimensão TREND e o score (curtidas e salvos são
-     * popularidade e não entram). Recentes: hora do Look do Dia. Desempate estável: mais recente, depois o id.
-     */
-    static Comparator<RunwayEntry> runwayOrder(String ranking, Function<RunwayEntry, HypeScoreCurrent> hype) {
-        Comparator<RunwayEntry> recent = Comparator.comparing((RunwayEntry e) -> e.dl().getCreatedAt() == null ? Instant.EPOCH : e.dl().getCreatedAt())
-                .reversed().thenComparing(e -> e.dl().getScheme().getId());
-        Comparator<Double> desc = Comparator.nullsLast(Comparator.reverseOrder());
-        return switch (ranking) {
-            case "EM_ALTA" -> Comparator.comparing((RunwayEntry e) -> SearchService.risingFor(hype.apply(e), false) ? 0 : 1)
-                    .thenComparing(e -> SearchService.trendFor(hype.apply(e), false), desc)
-                    .thenComparing(e -> SearchService.publicScore(hype.apply(e)), desc)
-                    .thenComparing(recent);
-            case "RECENTES" -> recent;
-            default -> Comparator.comparing((RunwayEntry e) -> SearchService.publicScore(hype.apply(e)), desc).thenComparing(recent);
-        };
-    }
-
-    static List<Map<String, Object>> count(List<String> values) {
-        Map<String, Long> c = new java.util.TreeMap<>();
-        values.forEach(v -> c.merge(v, 1L, Long::sum));
-        return c.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .map(e -> Map.<String, Object>of("value", e.getKey(), "count", e.getValue())).toList();
+        return runwayFlow.runway(viewer, f);
     }
 
     // ================================================================== Eras (celebridade) e Coleções (marca) — RF22
@@ -593,307 +174,28 @@ public class ShowcaseService {
         };
     }
 
-    private User owner(String slug, Kind kind) {
-        User u = institutional.institutionalUser(slug);
-        if (kind == Kind.ERAS && u.getProfileType() != ProfileType.CELEBRIDADE) {
-            throw ApiException.notFound(Msg.t("showcase.eras_so_perfis_de_celebridade"));
-        }
-        if (kind == Kind.COLLECTIONS && u.getProfileType() != ProfileType.MARCA) {
-            throw ApiException.notFound(Msg.t("showcase.colecoes_so_perfis_de_marca"));
-        }
-        return u;
-    }
-
-    private List<SchemeGrouping> groupingsOf(User u, Kind kind) {
-        Set<GroupingType> types = kind == Kind.ERAS ? ERA_TYPES : COLLECTION_TYPES;
-        return groupings.findByOwnerIdOrderByCreatedAtDesc(u.getId()).stream().filter(g -> types.contains(g.getType()))
-                .sorted(Comparator.comparingInt(SchemeGrouping::getSortOrder)
-                        .thenComparing(g -> g.getPeriodFrom() == null ? Integer.MAX_VALUE : g.getPeriodFrom()))
-                .toList();
-    }
-
-    private List<Scheme> visibleSchemes(CurrentUser viewer, User u) {
-        boolean self = viewer != null && viewer.id().equals(u.getId());
-        return schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(u.getId(), SchemeStatus.ARCHIVED).stream()
-                .filter(s -> self || s.getStatus() == SchemeStatus.PUBLISHED)
-                .filter(s -> schemeService.canView(viewer, s)).toList();
-    }
-
-    private List<WardrobeItem> visiblePieces(CurrentUser viewer, User u) {
-        return pieces.findByUserIdOrderByCreatedAtDesc(u.getId()).stream()
-                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
-                .filter(w -> guard.canView(viewer, u.getId(), SchemeService.moreRestrictive(w.getVisibility(), u.getProfileVisibility())))
-                .toList();
-    }
-
     /** Lista de eras/coleções com contagem, capa (ou a capa do esquema mais hypado) e período. */
     @Transactional(readOnly = true)
     public Map<String, Object> list(CurrentUser viewer, String slug, Kind kind) {
-        User u = owner(slug, kind);
-        List<Scheme> ss = visibleSchemes(viewer, u);
-        List<WardrobeItem> ps = visiblePieces(viewer, u);
-        Map<UUID, HypeScoreCurrent> hype = hypeOf(HypeEntityType.SCHEME, ss.stream().map(Scheme::getId).toList());
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (SchemeGrouping g : groupingsOf(u, kind)) {
-            out.add(groupingCard(g, ss, ps, hype, self(viewer, u)));
-        }
-        Map<String, Object> res = new LinkedHashMap<>();
-        res.put("kind", kind.name());
-        res.put("owner", Views.user(u));
-        res.put("items", out);
-        res.put("ungrouped", Map.of("schemes", ss.stream().filter(s -> s.getGroupingId() == null).count(),
-                "pieces", ps.stream().filter(w -> w.getGroupingId() == null).count()));
-        return res;
+        return groupingsBase.list(viewer, slug, kind);
     }
 
-    /** Card da era/coleção. Sem capa enviada, usa a capa do look de maior HypeScore v2 (público, ou pessoal para o dono). */
-    private Map<String, Object> groupingCard(SchemeGrouping g, List<Scheme> ss, List<WardrobeItem> ps, Map<UUID, HypeScoreCurrent> hype, boolean self) {
-        List<Scheme> gs = ss.stream().filter(s -> g.getId().equals(s.getGroupingId())).toList();
-        List<WardrobeItem> gp = ps.stream().filter(w -> g.getId().equals(w.getGroupingId())).toList();
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", g.getId());
-        m.put("type", g.getType().name());
-        m.put("label", g.getLabel());
-        m.put("description", g.getDescription());
-        m.put("periodFrom", g.getPeriodFrom());
-        m.put("periodTo", g.getPeriodTo());
-        m.put("period", period(g));
-        m.put("editorial", br.com.fashionai.application.common.Json.map(g.getEditorialJson()));
-        m.put("accentColor", g.getAccentColor() == null ? "#2D55C9" : g.getAccentColor());
-        String cover = g.getCoverUrl();
-        String coverSource = "upload";
-        if (cover == null) {
-            cover = gs.stream().filter(s -> s.getCoverImageUrl() != null)
-                    .max(Comparator.comparing((Scheme s) -> SearchService.scoreFor(hype.get(s.getId()), self), Comparator.nullsFirst(Comparator.naturalOrder())))
-                    .map(Scheme::getCoverImageUrl).orElse(gp.stream().map(w -> w.getStudioImageUrl() != null ? w.getStudioImageUrl() : w.getImageUrl())
-                            .filter(Objects::nonNull).findFirst().orElse(null));
-            coverSource = cover == null ? "nenhuma" : "esquema";
-        }
-        m.put("coverUrl", cover);
-        m.put("coverSource", coverSource);
-        m.put("schemes", gs.size());
-        m.put("pieces", gp.size());
-        return m;
-    }
-
-    static String period(SchemeGrouping g) {
-        if (g.getPeriodFrom() == null) {
-            return null;
-        }
-        return g.getPeriodTo() == null || g.getPeriodTo().equals(g.getPeriodFrom()) ? String.valueOf(g.getPeriodFrom())
-                : g.getPeriodFrom() + "–" + g.getPeriodTo();
-    }
-
-    /**
-     * Busca da aba Eras/Coleções: esquemas e peças filtrados por era/coleção (ou todas), texto e ano; o header traz a
-     * foto/arte da era ou coleção escolhida.
-     */
     @Transactional(readOnly = true)
     public Map<String, Object> items(CurrentUser viewer, String slug, Kind kind, UUID groupingId, String q, String type,
                                      String sort, Integer year) {
-        User u = owner(slug, kind);
-        List<SchemeGrouping> gs = groupingsOf(u, kind);
-        Set<UUID> ids = new LinkedHashSet<>();
-        SchemeGrouping selected = null;
-        for (SchemeGrouping g : gs) {
-            boolean inYear = year == null || g.getPeriodFrom() != null && year >= g.getPeriodFrom()
-                    && year <= (g.getPeriodTo() == null ? g.getPeriodFrom() : g.getPeriodTo());
-            if ((groupingId == null || g.getId().equals(groupingId)) && inYear) {
-                ids.add(g.getId());
-            }
-            if (g.getId().equals(groupingId)) {
-                selected = g;
-            }
-        }
-        if (groupingId != null && selected == null) {
-            throw ApiException.notFound(kind == Kind.ERAS ? "Era" : Msg.t("showcase.colecao"));
-        }
-        String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
-        String t = type == null ? "TODOS" : type.toUpperCase(Locale.ROOT);
-        boolean self = self(viewer, u);
-        List<Scheme> allSchemes = visibleSchemes(viewer, u);
-        List<WardrobeItem> allPieces = visiblePieces(viewer, u);
-        // P1-05: HypeScore v2 dos looks e peças do perfil (duas consultas), lido antes de ordenar
-        Map<UUID, HypeScoreCurrent> schemeHype = hypeOf(HypeEntityType.SCHEME, allSchemes.stream().map(Scheme::getId).toList());
-        Map<UUID, HypeScoreCurrent> pieceHype = hypeOf(HypeEntityType.PIECE, allPieces.stream().map(WardrobeItem::getId).toList());
-        List<Scheme> ss = allSchemes.stream().filter(s -> s.getGroupingId() != null && ids.contains(s.getGroupingId()))
-                .filter(s -> needle.isEmpty() || contains(s.getTitle(), needle) || contains(s.getTags(), needle) || contains(s.getStyle(), needle))
-                .sorted(order(sort, s -> schemeHype.get(s.getId()), self, Scheme::getLikeCount, Scheme::getCreatedAt)).toList();
-        List<WardrobeItem> ps = allPieces.stream().filter(w -> w.getGroupingId() != null && ids.contains(w.getGroupingId()))
-                .filter(w -> needle.isEmpty() || contains(w.getName(), needle) || contains(w.getBrandName(), needle) || contains(w.getTags(), needle))
-                .sorted(order(sort, w -> pieceHype.get(w.getId()), self, WardrobeItem::getLikesCount, WardrobeItem::getCreatedAt)).toList();
-        Map<UUID, SchemeGrouping> byId = new HashMap<>();
-        gs.forEach(g -> byId.put(g.getId(), g));
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("kind", kind.name());
-        out.put("header", selected == null ? null : groupingCard(selected, allSchemes, allPieces, schemeHype, self));
-        out.put("schemes", t.equals("PECAS") ? List.of() : ss.stream().limit(60).map(s -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())));
-            m.put("grouping", byId.get(s.getGroupingId()).getLabel());
-            return m;
-        }).toList());
-        out.put("pieces", t.equals("ESQUEMAS") ? List.of() : ps.stream().limit(60).map(w -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("piece", Views.piece(w, null, null));
-            m.put("grouping", byId.get(w.getGroupingId()).getLabel());
-            return m;
-        }).toList());
-        out.put("years", gs.stream().filter(g -> g.getPeriodFrom() != null).flatMap(g -> java.util.stream.IntStream
-                .rangeClosed(g.getPeriodFrom(), g.getPeriodTo() == null ? g.getPeriodFrom() : g.getPeriodTo()).boxed()).distinct().sorted().toList());
-        out.put("sorts", SHOWCASE_SORTS);
-        return out;
-    }
-
-    private static boolean contains(String hay, String needle) {
-        return hay != null && hay.toLowerCase(Locale.ROOT).contains(needle);
+        return groupingItems.items(viewer, slug, kind, groupingId, q, type, sort, year);
     }
 
     /** Ordenações da busca de Eras/Coleções (ordenação, nunca aba): HYPE (v2), GROWTH (em crescimento), CURTIDAS, RECENTES. */
     public static final List<String> SHOWCASE_SORTS = List.of("HYPE", "GROWTH", "CURTIDAS", "RECENTES");
 
-    /**
-     * P1-05 — ordem dos looks/peças de uma era ou coleção. HYPE = HypeScore v2 (público para quem visita; o dono do perfil
-     * usa o pessoal), sem Hype = por último; GROWTH = variação de 7 dias em pontos e, no empate, a dimensão TREND
-     * (crescimento ≠ popularidade); CURTIDAS = popularidade; RECENTES = cadastro. Desempate: mais recente.
-     */
-    static <T> Comparator<T> order(String sort, Function<T, HypeScoreCurrent> hype, boolean self,
-                                   java.util.function.ToLongFunction<T> likes, Function<T, Instant> created) {
-        String s = sort == null ? "HYPE" : sort.toUpperCase(Locale.ROOT);
-        Comparator<T> recent = Comparator.comparing(created, Comparator.nullsLast(Comparator.reverseOrder()));
-        Comparator<Double> desc = Comparator.nullsLast(Comparator.reverseOrder());
-        return switch (s) {
-            case "CURTIDAS", "LIKES" -> Comparator.comparingLong(likes).reversed().thenComparing(recent);
-            case "RECENTES", "RECENT" -> recent;
-            case "GROWTH", "CRESCIMENTO", "EM_CRESCIMENTO" -> Comparator.comparing((T x) -> SearchService.growthFor(hype.apply(x), self), desc)
-                    .thenComparing(x -> SearchService.trendFor(hype.apply(x), self), desc)
-                    .thenComparing(recent);
-            default -> Comparator.comparing((T x) -> SearchService.scoreFor(hype.apply(x), self), desc).thenComparing(recent);
-        };
-    }
-
-    /**
-     * Hype v2 de uma era/coleção: {@code {top, avg, level, items}} sobre os looks e peças com Hype disponível (público
-     * para quem visita; pessoal para o dono). {@code level} é a faixa da média. Sem item com Hype = tudo nulo ("—").
-     */
-    static Map<String, Object> groupHype(List<HypeScoreCurrent> rows, boolean self, HypeScoreConfig cfg) {
-        List<Double> scores = rows.stream().map(c -> SearchService.scoreFor(c, self)).filter(Objects::nonNull).toList();
-        Map<String, Object> h = new LinkedHashMap<>();
-        Double avg = scores.isEmpty() ? null : SearchService.round1(scores.stream().mapToDouble(Double::doubleValue).average().orElse(0));
-        h.put("top", scores.isEmpty() ? null : SearchService.round1(scores.stream().mapToDouble(Double::doubleValue).max().orElse(0)));
-        h.put("avg", avg);
-        h.put("level", avg == null ? null : (cfg == null ? HypeScoreConfig.defaults() : cfg).level(avg).name());
-        h.put("items", scores.size());
-        return h;
-    }
-
-    /**
-     * Insights de eras/coleções. A pontuação (ranking, plateia, fogos) é de POPULARIDADE: 0,75·curtidas + 0,25·itens,
-     * cada termo dividido pelo maior valor do próprio perfil — o HypeScore não entra (popularidade ≠ Hype). O Hype v2 vem
-     * à parte em {@code hype} (maior e médio, com faixa); {@code mostHype} é a era/coleção de maior Hype médio.
-     * A plateia do palco (ou o público em volta da mini loja) é proporcional à pontuação: o 1º lugar lota.
-     */
     @Transactional(readOnly = true)
     public Map<String, Object> insights(CurrentUser viewer, String slug, Kind kind) {
-        User u = owner(slug, kind);
-        List<Scheme> ss = visibleSchemes(viewer, u);
-        List<WardrobeItem> ps = visiblePieces(viewer, u);
-        boolean self = self(viewer, u);
-        Map<UUID, HypeScoreCurrent> schemeHype = hypeOf(HypeEntityType.SCHEME, ss.stream().map(Scheme::getId).toList());
-        Map<UUID, HypeScoreCurrent> pieceHype = hypeOf(HypeEntityType.PIECE, ps.stream().map(WardrobeItem::getId).toList());
-        List<Map<String, Object>> rows = new ArrayList<>();
-        double maxLikes = 0, maxItems = 0;
-        for (SchemeGrouping g : groupingsOf(u, kind)) {
-            List<Scheme> gs = ss.stream().filter(s -> g.getId().equals(s.getGroupingId())).toList();
-            List<WardrobeItem> gp = ps.stream().filter(w -> g.getId().equals(w.getGroupingId())).toList();
-            long likes = gs.stream().mapToLong(Scheme::getLikeCount).sum() + gp.stream().mapToLong(WardrobeItem::getLikesCount).sum();
-            List<HypeScoreCurrent> groupRows = new ArrayList<>();
-            gs.forEach(s -> groupRows.add(schemeHype.get(s.getId())));
-            gp.forEach(w -> groupRows.add(pieceHype.get(w.getId())));
-            Map<String, Object> r = groupingCard(g, ss, ps, schemeHype, self);
-            r.put("likes", likes);
-            r.put("hype", groupHype(groupRows, self, hypeConfig));
-            r.put("items", gs.size() + gp.size());
-            r.put("comments", gs.stream().mapToLong(Scheme::getCommentCount).sum());
-            r.put("shares", gs.stream().mapToLong(Scheme::getShareCount).sum());
-            r.put("topScheme", gs.stream().filter(s -> SearchService.scoreFor(schemeHype.get(s.getId()), self) != null)
-                    .max(Comparator.comparing((Scheme s) -> SearchService.scoreFor(schemeHype.get(s.getId()), self)))
-                    .map(s -> Map.of("id", s.getId(), "title", s.getTitle())).orElse(null));
-            maxLikes = Math.max(maxLikes, likes);
-            maxItems = Math.max(maxItems, gs.size() + gp.size());
-            rows.add(r);
-        }
-        for (Map<String, Object> r : rows) {
-            double score = W_LIKES * norm(((Number) r.get("likes")).doubleValue(), maxLikes)
-                    + W_ITEMS * norm(((Number) r.get("items")).doubleValue(), maxItems);
-            r.put("score", Math.round(score * 1000) / 10.0);
-        }
-        rows.sort(Comparator.comparingDouble((Map<String, Object> r) -> ((Number) r.get("score")).doubleValue()).reversed());
-        double top = rows.isEmpty() ? 0 : ((Number) rows.get(0).get("score")).doubleValue();
-        int capacity = kind == Kind.ERAS ? 120 : 80;
-        for (int i = 0; i < rows.size(); i++) {
-            Map<String, Object> r = rows.get(i);
-            double s = ((Number) r.get("score")).doubleValue();
-            double fraction = top <= 0 ? 0 : s / top;
-            r.put("rank", i + 1);
-            r.put("audienceFraction", Math.round(fraction * 100) / 100.0);
-            r.put("audience", (int) Math.round(fraction * capacity));
-            r.put("capacity", capacity);
-            r.put("fireworks", kind == Kind.COLLECTIONS ? Math.max(0, 4 - i) * (fraction >= 0.25 ? 1 : 0) : 0);
-            r.put("spotlights", Math.max(1, 4 - i));
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("kind", kind.name());
-        out.put("owner", Views.user(u));
-        out.put("ranking", rows);
-        out.put("mostLiked", rows.stream().max(Comparator.comparingLong(r -> ((Number) r.get("likes")).longValue())).map(r -> r.get("label")).orElse(null));
-        // maior Hype MÉDIO v2 (sem Hype em nenhuma = nulo, "—"); popularidade fica no mostLiked e na pontuação
-        out.put("mostHype", rows.stream().filter(r -> avgHype(r) != null)
-                .max(Comparator.comparing((Map<String, Object> r) -> avgHype(r)).thenComparing(r -> String.valueOf(r.get("label")), Comparator.reverseOrder()))
-                .map(r -> r.get("label")).orElse(null));
-        out.put("algorithmVersion", hypeConfig == null ? null : hypeConfig.algorithmVersion());
-        out.put("method", Msg.t("showcase.pontuacao_popularidade", (kind == Kind.ERAS ? "eras" : Msg.t("showcase.colecoes")), capacity));
-        return out;
+        return groupingInsights.insights(viewer, slug, kind);
     }
 
-    private static Double avgHype(Map<String, Object> row) {
-        return row.get("hype") instanceof Map<?, ?> h && h.get("avg") instanceof Number n ? n.doubleValue() : null;
-    }
-
-    private static double norm(double v, double max) {
-        return max <= 0 ? 0 : v / max;
-    }
-
-    /**
-     * My Stage 3D (aba Eras): a foto oficial da celebridade na cabeça do manequim, vestindo o look de maior HypeScore v2
-     * (público para quem visita; sem Hype = o mais recente), no palco com as cores das eras.
-     */
     @Transactional(readOnly = true)
     public Map<String, Object> stage(CurrentUser viewer, String slug, UUID schemeId) {
-        User u = owner(slug, Kind.ERAS);
-        List<Scheme> ss = visibleSchemes(viewer, u);
-        boolean self = self(viewer, u);
-        Map<UUID, HypeScoreCurrent> hype = hypeOf(HypeEntityType.SCHEME, ss.stream().map(Scheme::getId).toList());
-        // visibleSchemes já vem do mais recente para o mais antigo: a ordem estável deixa o recente na frente do empate
-        List<Scheme> ranked = ss.stream().sorted(Comparator.comparing((Scheme s) -> SearchService.scoreFor(hype.get(s.getId()), self),
-                Comparator.nullsLast(Comparator.reverseOrder()))).toList();
-        Scheme chosen = schemeId == null ? ranked.stream().findFirst().orElse(null)
-                : ss.stream().filter(s -> s.getId().equals(schemeId)).findFirst().orElseThrow(() -> ApiException.notFound("Esquema"));
-        String photo = celebrities.findByOwnerId(u.getId()).map(c -> c.getAvatarUrl()).filter(Objects::nonNull).orElse(u.getAvatarUrl());
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("celebrity", Views.user(u));
-        out.put("photoUrl", photo);
-        out.put("look", chosen == null ? null : look(chosen, viewer, hype.get(chosen.getId())));
-        if (chosen == null) {
-            Map<String, Object> m = mannequin(u, List.of());
-            m.put("photoUrl", photo);
-            // a foto de perfil não vai para a cabeça 3D (levava o fundo e a roupa para o rosto): o rosto só vem do Avatar 3D
-        m.put("head", "PADRAO");
-            out.put("mannequin", m);
-        }
-        out.put("eras", groupingsOf(u, Kind.ERAS).stream().map(g -> Map.of("id", g.getId(), "label", g.getLabel(),
-                "accentColor", g.getAccentColor() == null ? "#2D55C9" : g.getAccentColor())).toList());
-        out.put("looks", ranked.stream().limit(12).map(s -> Map.of("id", s.getId(), "title", s.getTitle())).toList());
-        return out;
+        return stageFlow.stage(viewer, slug, schemeId);
     }
 }

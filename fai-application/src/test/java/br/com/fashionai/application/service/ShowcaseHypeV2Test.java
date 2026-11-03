@@ -142,7 +142,7 @@ class ShowcaseHypeV2Test {
         score(mid, 41, true);
         Map<UUID, HypeScoreCurrent> map = showcase.hypeOf(HypeEntityType.SCHEME, List.of(v1Star.getId(), personal.getId(), best.getId(), mid.getId()));
         List<ShowcaseService.RunwayEntry> list = new ArrayList<>(List.of(entry(v1Star, t), entry(personal, t), entry(mid, t), entry(best, t)));
-        list.sort(ShowcaseService.runwayOrder("TOP100_GLOBAL", e -> map.get(e.dl().getScheme().getId())));
+        list.sort(ShowcaseRunwayOrder.runwayOrder("TOP100_GLOBAL", e -> map.get(e.dl().getScheme().getId())));
         assertThat(list).extracting(e -> e.dl().getScheme().getTitle()).startsWith("best", "mid").containsOnly("best", "mid", "v1", "personal");
     }
 
@@ -164,7 +164,7 @@ class ShowcaseHypeV2Test {
         g.setMomentum(HypeMomentum.STABLE);
         Map<UUID, HypeScoreCurrent> map = showcase.hypeOf(HypeEntityType.SCHEME, rows.stream().map(HypeScoreCurrent::getEntityId).toList());
         List<ShowcaseService.RunwayEntry> list = new ArrayList<>(List.of(entry(popular, t), entry(growing, t), entry(rising, t)));
-        list.sort(ShowcaseService.runwayOrder("EM_ALTA", e -> map.get(e.dl().getScheme().getId())));
+        list.sort(ShowcaseRunwayOrder.runwayOrder("EM_ALTA", e -> map.get(e.dl().getScheme().getId())));
         assertThat(list).extracting(e -> e.dl().getScheme().getTitle()).containsExactly("rising", "growing", "popular");
     }
 
@@ -222,15 +222,15 @@ class ShowcaseHypeV2Test {
         Map<UUID, HypeScoreCurrent> map = showcase.hypeOf(HypeEntityType.SCHEME, List.of(a.getId(), b.getId(), c.getId(), d.getId()));
 
         List<Scheme> byHype = new ArrayList<>(List.of(a, d, c, b));
-        byHype.sort(ShowcaseService.order("HYPE", s -> map.get(s.getId()), false, Scheme::getLikeCount, Scheme::getCreatedAt));
+        byHype.sort(ShowcaseGroupingItems.order("HYPE", s -> map.get(s.getId()), false, Scheme::getLikeCount, Scheme::getCreatedAt));
         assertThat(byHype).extracting(Scheme::getTitle).containsExactly("b", "c", "a", "d");
 
         List<Scheme> ownView = new ArrayList<>(List.of(a, d, c, b));
-        ownView.sort(ShowcaseService.order("HYPE", s -> map.get(s.getId()), true, Scheme::getLikeCount, Scheme::getCreatedAt));
+        ownView.sort(ShowcaseGroupingItems.order("HYPE", s -> map.get(s.getId()), true, Scheme::getLikeCount, Scheme::getCreatedAt));
         assertThat(ownView).extracting(Scheme::getTitle).startsWith("d", "b", "c");   // o dono ordena pelo pessoal
 
         List<Scheme> byGrowth = new ArrayList<>(List.of(a, b, c, d));
-        byGrowth.sort(ShowcaseService.order("GROWTH", s -> map.get(s.getId()), false, Scheme::getLikeCount, Scheme::getCreatedAt));
+        byGrowth.sort(ShowcaseGroupingItems.order("GROWTH", s -> map.get(s.getId()), false, Scheme::getLikeCount, Scheme::getCreatedAt));
         assertThat(byGrowth).extracting(Scheme::getTitle).containsExactly("c", "b", "a", "d");
         assertThat(ShowcaseService.SHOWCASE_SORTS).contains("HYPE", "GROWTH");
     }
@@ -278,7 +278,7 @@ class ShowcaseHypeV2Test {
         insufficient.setStatus(HypeStatus.INSUFFICIENT_DATA);
         insufficient.setScore(null);
         java.util.ArrayList<HypeScoreCurrent> list = new java.util.ArrayList<>(java.util.Arrays.asList(privateOnly, insufficient, null));
-        Map<String, Object> h = ShowcaseService.groupHype(list, false, config);
+        Map<String, Object> h = ShowcaseInsights.groupHype(list, false, config);
         assertThat(h).containsEntry("top", null).containsEntry("avg", null).containsEntry("level", null).containsEntry("items", 0);
     }
 
