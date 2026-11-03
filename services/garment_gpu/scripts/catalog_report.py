@@ -16,6 +16,11 @@ COLORS = {"COMPLETE_PRODUCT": "#1a7f37", "COMPLETE_ON_MODEL": "#2f6fd6", "OCCLUD
           "REJECTED": "#a40e26"}
 
 
+def needs_retry(row: dict) -> bool:
+    """Failed, or came back as a Phase 1 cut-out only because the Phase 2 worker was down (mode=auto)."""
+    return row["class"] == "FAILED" or row.get("output") == "needs_reconstruction_unavailable"
+
+
 def summarize(rows: list[dict], catalogue_size: int, gpu_hour_usd: float, workers: int,
               elapsed: float | None = None) -> dict:
     """Projection uses the measured THROUGHPUT, not the per-photo latency: with several photos in flight the
@@ -29,6 +34,7 @@ def summarize(rows: list[dict], catalogue_size: int, gpu_hour_usd: float, worker
     hours = (catalogue_size / (per_hour * max(workers, 1))) if per_hour else None
     return {"total": len(rows), "counts": dict(counts), "mean_gpu_seconds": round(mean, 2) if mean else None,
             "backs_saved": sum(1 for r in rows if r.get("thumb_back")),
+            "retry": sum(1 for r in rows if needs_retry(r)),
             "photos_per_hour": round(per_hour) if per_hour else None,
             "reconstruction_share": round(share, 4), "projected_reconstructions": round(share * catalogue_size),
             "projected_segment_hours": round(hours, 1) if hours else None,
@@ -59,7 +65,7 @@ code{{font-size:11px;word-break:break-all}}</style>
 <p>{summary['total']} produtos · {summary['mean_gpu_seconds']} s/foto (latência) ·
 {summary.get('photos_per_hour') or '–'} fotos/h de vazão medida · precisariam de reconstrução:
 <b>{summary['reconstruction_share']:.0%}</b> (projeção no catálogo: ~{summary['projected_reconstructions']} peças) ·
-costas guardadas: {summary.get('backs_saved', 0)} ·
+costas guardadas: {summary.get('backs_saved', 0)} · para refazer: {summary.get('retry', 0)} (retry_ids.txt) ·
 segmentação do catálogo inteiro: ~{summary['projected_segment_hours']} h ≈ US$ {summary['projected_segment_usd']}</p>
 <table>{rows_html}</table><div class="grid">{''.join(cards)}</div></html>"""
     path = out / "index.html"

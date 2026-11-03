@@ -65,7 +65,9 @@ um clique, com as mesmas variáveis, o que importa porque o pod é recriado vár
 
 Os demais valores já têm padrão no `runpod_env.py`: `RECON_QUANTIZE=none`, `RECON_OFFLOAD=none`, LoRA Lightning
 8 passos, `RECON_TRUE_CFG=1.0`, **`RECON_MAX_ATTEMPTS=1`**, `RECON_BACK_VIEW=true`, `RECON_MAX_SIDE=1024`,
-`METRICS_PUBLIC=false`, `HF_HOME=/workspace/hf`. Só acrescente uma variável no template para mudar um padrão.
+`METRICS_PUBLIC=false`. A pasta dos pesos é escolhida sozinha: a do volume que já tem os pesos do Qwen
+(`/workspace/.cache/huggingface`, que é o `HF_HOME` da imagem, ou `/workspace/hf`); para forçar outra, `FAI_HF_HOME`.
+Só acrescente uma variável no template para mudar um padrão.
 
 ## 4. Criar o pod (🌐 painel)
 **Pods → Deploy**: **Secure Cloud** (fotos com pessoas, LGPD), **A100 80GB** (SXM ou PCIe), **1 GPU**, **On-Demand**
@@ -81,10 +83,15 @@ cd /workspace && git clone https://github.com/MatheusHaliski/tcc-2026-fashion-ai
 bash /workspace/fashionai/services/garment_gpu/scripts/runpod_start.sh
 ```
 Na primeira subida o script instala o redis-server, baixa o RustFS 1.0.4 (SHA-256 conferido), cria a venv no volume
-(~5–10 min, uma vez só; log em `/workspace/logs/install.log`) e os workers baixam os pesos (~60 GB, ~10–20 min):
-```bash
-tail -f /workspace/logs/reconstruct.log     # espere "modelos carregados" com 'scheduler': 'lightning'
-```
+(~5–10 min, uma vez só; log em `/workspace/logs/install.log`) e os workers baixam os pesos (~60 GB, ~10–20 min). Se a
+imagem não tiver PyTorch no `python3` (a `runpod/pytorch` 1.4.0 não tem), a venv recebe `torch` e `torchvision` juntos
+do índice do PyTorch que o driver aguenta (CUDA 13 → cu130, 12.8+ → cu128, senão cu126) e o script confere que o
+torch enxerga a GPU. O `hf_transfer` (download rápido, ligado pela imagem) também vai para a venv.
+
+O script **só termina quando os dois workers carregaram os modelos** (`pronto: workers no ar. Pode rodar o lote.`),
+mostrando a cada minuto o tamanho da pasta de pesos e a última linha do log. É o mesmo sinal que a API usa: lote
+enviado antes disso volta só com o recorte da Fase 1. Ctrl+C interrompe só a espera (os serviços continuam);
+`runpod_start.sh status` diz depois se cada worker já carregou. Limite de espera: `FAI_READY_TIMEOUT` (3600 s).
 Em todo pod novo (o volume já tem venv e pesos, sobe em ~2 min):
 ```bash
 cd /workspace/fashionai && git pull origin main && bash services/garment_gpu/scripts/runpod_start.sh
@@ -97,10 +104,18 @@ terminal web não derruba nada. Variável faltando ou inválida: o script para e
 A URL é `https://<pod-id>-8000.proxy.runpod.net` (o script imprime; o id está no painel). Ela muda a cada pod novo.
 🖥️ Mac:
 ```bash
-sed -i '' "s#^FAI_API_URL=.*#FAI_API_URL=https://<pod-id>-8000.proxy.runpod.net#" ~/fai-catalog.env
+sed -i '' -E 's#FAI_API_URL=[^[:space:]"]*#FAI_API_URL=https://<pod-id>-8000.proxy.runpod.net#' ~/fai-catalog.env
 ```
+O `sed` troca o valor em qualquer posição da linha (no `~/fai-catalog.env` ela não começa por `FAI_API_URL=`).
+Confira mostrando só a URL (o resto da linha tem outras configurações) e teste a API:
 ```bash
-set -a; source ~/fai-catalog.env; set +a; curl -s "$FAI_API_URL/v1/admin/queues" -H "X-API-Key: $(sed -n 's/^ADMIN=//p' ~/fai-garment-keys.txt)"
+grep -o 'FAI_API_URL=[^[:space:]"]*' ~/fai-catalog.env; set -a; source ~/fai-catalog.env; set +a; curl -sS -m 30 -i "$FAI_API_URL/health" | head -n 1
+```
+`HTTP/2 200` é a API. `HTTP/2 404` com `server: cloudflare` é o proxy do RunPod sem a porta: no painel, **Edit Pod →
+Expose HTTP Ports** `8888,8000` (o pod reinicia; rode o passo 5 de novo). O `catalog_batch` faz essa checagem sozinho e
+para antes do primeiro produto se a URL não for a API.
+```bash
+curl -sS "$FAI_API_URL/v1/admin/queues" -H "X-API-Key: $(sed -n 's/^ADMIN=//p' ~/fai-garment-keys.txt)"; echo
 ```
 Devem aparecer um worker `segment` e um `reconstruct` com `gpu: NVIDIA A100...`. 🌐 **Railway** (opcional, só se o
 app precisar da GPU durante o lote): `GARMENT_GPU_URL` = a URL do pod; a chave não muda. Com o pod desligado o
@@ -111,6 +126,10 @@ backend cai para os outros provedores. Ao terminar, volte a URL antiga ou apague
 cd ~/fashionai && set -a; source ~/fai-catalog.env; set +a && ~/.venv-fai/bin/python -m services.garment_gpu.scripts.catalog_batch \
   --ids-file ~/catalog-fase1/phase2_ids.txt --limit 10 --concurrency 2 --out ~/catalog-fase2/teste-10
 ```
+Sem a lista da Fase 1 (`phase2_ids.txt`), teste com a amostra fixa do catálogo: `--limit 20` sem `--ids-file` (o
+servidor decide a Fase 2 sozinho). A amostra é determinística, então repetir os mesmos 20 compara antes e depois de
+uma correção. O `audit.jsonl` e o `summary.json` só ficam completos quando o lote termina: espere o `relatório:` final.
+
 🟣 Tempo real por imagem (cada job da Fase 2 gera frente + costas):
 ```bash
 grep -o 'job in [0-9:.]*s on' /workspace/logs/reconstruct.log | tail -n 10 | awk '{split($3,t,":"); sub(/s$/,"",t[3]); s+=t[1]*3600+t[2]*60+t[3]; n++} END {if (n) printf "%d jobs: %.1f s/job = %.1f s/imagem\n", n, s/n, s/n/2}'
@@ -133,6 +152,10 @@ export RECON_BACK_VIEW=false && bash /workspace/fashionai/services/garment_gpu/s
 ~/.venv-fai/bin/python -m services.garment_gpu.scripts.catalog_batch --ids-file ~/catalog-fase1/phase2_ids.txt \
   --limit 200 --offset 10 --concurrency 3 --gpu-hour-usd PRECO_HORA --out ~/catalog-fase2/piloto-200
 ```
+Com `--ids-file`, o lote usa `mode=reconstruct`: se o worker da Fase 2 estiver fora do ar (caiu e está
+recarregando), a API recusa a foto (`RECONSTRUCT_UNAVAILABLE`) em vez de devolver só o recorte. Cada lote grava
+`retry_ids.txt` com o que falhou; refaça com `--ids-file ~/catalog-fase2/piloto-200/retry_ids.txt --out ...-retry`.
+
 Terminado, **pare ou encerre o pod** (🌐 *Stop* / *Terminate*) e revise `~/catalog-fase2/piloto-200/index.html` com
 calma: com o pod parado só o volume cobra.
 
@@ -142,7 +165,8 @@ Pod novo com o mesmo template e volume (passo 4), `runpod_start.sh` (passo 5), U
 ~/.venv-fai/bin/python -m services.garment_gpu.scripts.catalog_batch --ids-file ~/catalog-fase1/phase2_ids.txt \
   --limit 2000 --offset 210 --concurrency 3 --gpu-hour-usd PRECO_HORA --out ~/catalog-fase2/lote-210
 ```
-Próximos: `--offset 2210`, `4210`, … até o fim da lista. Entre um lote e outro, confira o saldo (🌐 **Billing**) e
+Próximos: `--offset 2210`, `4210`, … até o fim da lista. Ao fim de cada lote, se ele avisar `produto(s) para
+refazer`, rode `--ids-file <lote>/retry_ids.txt` antes de parar o pod. Entre um lote e outro, confira o saldo (🌐 **Billing**) e
 refaça a projeção com o tempo medido.
 
 ## 10. Ao terminar (🌐 painel)
@@ -159,3 +183,6 @@ refaça a projeção com o tempo medido.
 | `CUDA out of memory` no `reconstruct.log` | confira se nada mais usa a GPU (`nvidia-smi`); a A100 80 GB comporta Fase 1 (~2 GB) + Fase 2 bf16 (~58 GB) |
 | Pod parado não liga de novo (sem A100 livre) | crie um pod novo com o mesmo template e volume; tudo que importa está no volume |
 | `pip install falhou` | veja `/workspace/logs/install.log`; apague `/workspace/venv-fai` e rode de novo |
+| `a venv não passou na verificação` / `torch não enxerga a GPU` | driver da máquina mais antigo que o torch instalado: apague `/workspace/venv-fai` e rode de novo (o índice é escolhido pelo driver) ou crie o pod em outra máquina |
+| `workers fora do ar após 3600s` | veja `tail -n 30 /workspace/logs/reconstruct.log`; download lento demais: `FAI_READY_TIMEOUT=7200` |
+| Os pesos estão baixando de novo | `runpod_start.sh` mostra `pesos em <pasta>`; se houver duas cópias, a menor é sobra (`du -sh /workspace/hf /workspace/.cache/huggingface`) e pode ser apagada com os workers parados |

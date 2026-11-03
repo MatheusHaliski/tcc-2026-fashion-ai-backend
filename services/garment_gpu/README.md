@@ -119,7 +119,13 @@ segmenta, analisa o recorte (`analysis.py`) e decide sozinha:
 * **foto de produto** (sem pessoa, peça inteira) → para na Fase 1: `output=flat_product`;
 * **peça vestida, coberta por mão/braço ou cortada pela foto** → vai para a Fase 2, que gera a peça em *flat lay*
   (esticada sobre uma superfície, vista de cima, sem corpo nem manequim fantasma);
-* sem worker da Fase 2 no ar → devolve o recorte com `output=needs_reconstruction_unavailable` (não é produto final).
+* sem worker da Fase 2 no ar → devolve o recorte com `output=needs_reconstruction_unavailable` (não é produto final);
+* calçados e acessórios → sempre param na Fase 1 (são fotografados como produto).
+
+Fidelidade da Fase 2 (`prompts.py`, `reference.py`): com o Lightning (`true_cfg 1.0`) o prompt negativo é ignorado,
+então as proibições ficam no prompt positivo (nada de estampa, logo, texto ou etiqueta que a foto não mostre; tipo,
+gola e manga como na foto); o espaço coberto por mãos chega à Fase 2 preenchido com a cor do tecido; o lote envia o
+nome e a cor do produto; o QA das costas compara a cor com a da frente (`BACK_COLOR_MISMATCH`).
 
 Proteções da segmentação: o SAM gera três máscaras e fica com a que pertence à caixa do detector; máscara que
 vaza da caixa (pernas sob shorts, cabelo sobre camisa) é recusada com `MASK_OUTSIDE_DETECTION` em vez de entregar o
@@ -150,7 +156,12 @@ Fase 2, com o QA delas em `back_quality`). Tudo é baixado antes de o job ser ap
 que é o que define o custo da A100 — além das horas e do custo da segmentação (`--gpu-hour-usd`, `--workers`).
 
 Rode primeiro um piloto (algumas centenas de produtos, a amostra é determinística), confira a grade e só então
-processe tudo com `--offset` em páginas. Os limiares da classificação estão no topo de `analysis.py`.
+processe tudo com `--offset` em páginas. Antes do primeiro produto o lote confere se `FAI_API_URL` é esta API
+(`/health`). Com `--ids-file` (lista da Fase 2) o padrão é `--mode reconstruct`: worker da Fase 2 fora do ar vira falha
+`RECONSTRUCT_UNAVAILABLE`, não um recorte silencioso. Falhas e recortes sem Fase 2 vão para `retry_ids.txt`; o
+`audit.jsonl` é gravado linha a linha. Cada linha traz a identidade da foto usada (`image_id`, `image_version`,
+`original_url`, `source_sha256` de `catalog_images` e `photo_url`, a URL enviada): é por ela que um resultado
+aprovado poderá voltar ao catálogo, recusando a linha que tiver mudado desde o lote. Os limiares da classificação estão no topo de `analysis.py`.
 
 ## Fase 3 — distribuição, escala e métricas
 

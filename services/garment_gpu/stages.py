@@ -16,6 +16,7 @@ from services.garment_gpu.jobstore import ACTIVE, JobNotFound, public_view
 from services.garment_gpu.metrics import QA_SCORE, QA_VERDICTS, STAGE_OUTCOMES, STAGE_SECONDS
 from services.garment_gpu.reconstruction import (BACK_VIEW_CATEGORIES, build_back_prompt, build_prompt, output_size,
                                                  to_canvas)
+from services.garment_gpu.reference import fill_occlusions
 from services.garment_gpu.segmentation import SegmentationError
 
 RUNTIME: dict = {}
@@ -141,12 +142,13 @@ def back_view(job_id: str, record: dict, front, original, mask, seed: int) -> di
     hints = record.get("hints", {})
     image = engine.generate([front, original], build_back_prompt(record["category"], hints.get("name"),
                                                                   hints.get("color")), seed + 1000, output_size(settings))
-    qa = quality.compare(original, mask, image, settings, worn=True)
+    qa = quality.flag_back_color(quality.compare(original, mask, image, settings, worn=True), front, image, settings)
     final = to_canvas(image)
     if record["background"] == "transparent":
         final = quality.white_to_alpha(final)
     RUNTIME["store"].put(artifact_key(job_id, "reconstructed_back"), png_bytes(final, optimize=True), "image/png")
-    return {"seed": seed + 1000, "inferred": True, "quality": {k: qa.get(k) for k in ("verdict", "score", "flags", "delta_e")}}
+    kept = ("verdict", "score", "flags", "delta_e", "front_back_delta_e")
+    return {"seed": seed + 1000, "inferred": True, "quality": {k: qa.get(k) for k in kept}}
 
 
 def reconstruct_worker_alive() -> bool:
@@ -174,7 +176,8 @@ def run_reconstruct(job_id: str) -> dict:
     try:
         original = open_png(store.get(record["artifacts"]["input"])).convert("RGB")
         mask = np.asarray(open_png(store.get(record["artifacts"]["mask"])).convert("L")) > 127
-        reference = open_png(make_catalog_png(original, mask.astype(np.uint8), "white")).convert("RGB")
+        filled, filled_mask, filled_px = fill_occlusions(original, mask)   # hand holes → fabric, not a "cut-out"
+        reference = open_png(make_catalog_png(filled, filled_mask.astype(np.uint8), "white")).convert("RGB")
         hints = record.get("hints", {})
         prompt = build_prompt(record["category"], hints.get("name"), hints.get("color"), record.get("prompt"))
         base_seed = record.get("seed") if record.get("seed") is not None else random.randrange(2 ** 31 - 16)
@@ -205,7 +208,7 @@ def run_reconstruct(job_id: str) -> dict:
     info = {"models": engine.models, "seed": seed, "candidates": generated, "chosen_candidate": chosen,
             "steps": settings.recon_steps,
             "true_cfg_scale": settings.recon_true_cfg, "prompt_kind": "custom" if record.get("prompt") else "default",
-            "prompt": prompt,
+            "prompt": prompt, "occlusion_fill_px": filled_px,
             "ai_generated": True, "back": back, "seconds": round(time.perf_counter() - started, 3)}
 
     def attach(r):

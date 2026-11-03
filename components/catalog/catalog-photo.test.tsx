@@ -22,6 +22,32 @@ describe("semanticCropStyle", () => {
 });
 
 describe("CatalogPhoto", () => {
+  it("shows the approved flat lay from our GPU in Total frame, always with the AI label", () => {
+    const flatLay = { url: "/media/catalog/flatlay/front.jpg", rendered: true, aiGenerated: true, box: { x: 0, y: 0, w: 1, h: 1 },
+      width: 900, height: 1200, background: "#FFFFFF", version: "FLAT_LAY_V1" };
+    const { container } = render(<CatalogPhoto requiredFrame alt="Camiseta" framing="WHOLE"
+      image={{ url: "/media/fabric.png", mode: "PROCESSED", whole: flatLay }} />);
+    expect(container.querySelector("img")!.getAttribute("src")).toBe(mediaUrl("/media/catalog/flatlay/front.jpg"));
+    expect(container.querySelector("[data-ai]")).not.toBeNull();
+    const badge = container.querySelector(".catalog-photo-ai")!;
+    expect(badge.textContent).toBe("FAI");
+    expect(badge.getAttribute("aria-label")).toMatch(/IA|AI/);   // a sigla não basta: quem usa leitor de tela ouve que é IA
+    const real = render(<CatalogPhoto requiredFrame alt="Camiseta" framing="WHOLE"
+      image={{ url: "/media/fabric.png", mode: "PROCESSED", whole: { ...flatLay, aiGenerated: false } }} />);
+    expect(real.container.querySelector(".catalog-photo-ai")).toBeNull();   // recorte de pixels reais: sem selo
+  });
+
+  it("card in DEFAULT mode shows the flat lay in Total frame and keeps the default asset in Fabric", () => {
+    const image = { url: "/media/default/blusa.png", mode: "DEFAULT" as const,
+      whole: { url: "/media/catalog/flatlay/blusa.jpg", rendered: true, aiGenerated: true, box: { x: 0, y: 0, w: 1, h: 1 }, width: 900, height: 1200 } };
+    const total = render(<CatalogPhoto requiredFrame alt="Blusa" framing="WHOLE" category="upper_piece" image={image} />);
+    expect(total.container.querySelector("img")!.getAttribute("src")).toBe(mediaUrl("/media/catalog/flatlay/blusa.jpg"));
+    expect(total.container.querySelector(".catalog-photo-ai")).not.toBeNull();
+    const fabric = render(<CatalogPhoto requiredFrame alt="Blusa" framing="FABRIC" category="upper_piece" image={image} />);
+    expect(fabric.container.querySelector("[data-mode='whole']")).toBeNull();
+    expect(fabric.container.innerHTML).not.toContain("flatlay");
+  });
+
   it("displays the persisted Total frame directly, without a second browser crop or margin", () => {
     const { container, rerender } = render(<CatalogPhoto requiredFrame alt="Camisa" framing="WHOLE" image={{ url: "/media/fabric.png", mode: "PROCESSED",
       whole: { url: "/media/whole.png", rendered: true, box: { x: 0, y: 0, w: 1, h: 1 }, width: 900, height: 1200, background: "#ffffff" } }} />);

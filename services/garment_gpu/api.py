@@ -60,7 +60,7 @@ def create_app(settings=None, redis=None, store=None, enqueue=None) -> FastAPI:
         return dependency
 
     def stage_alive(stage: str) -> bool:
-        """True when some worker of this stage sent a heartbeat recently (keys expire after 60 s)."""
+        """True when some worker of this stage sent a heartbeat recently (keys expire after 120 s)."""
         return any(json.loads(raw).get("stage") == stage
                    for raw in (redis.get(k) for k in redis.scan_iter("fai:worker:*")) if raw)
 

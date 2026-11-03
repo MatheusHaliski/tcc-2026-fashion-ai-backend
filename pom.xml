@@ -29,9 +29,9 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <springdoc.version>3.1.1</springdoc.version>
-        <aws-sdk.version>2.57.3</aws-sdk.version>
-        <anthropic-java.version>3.3.0</anthropic-java.version>
-        <onnxruntime.version>1.31.0</onnxruntime.version>
+        <aws-sdk.version>2.57.7</aws-sdk.version>
+        <anthropic-java.version>2.73.0</anthropic-java.version>
+        <onnxruntime.version>1.31.1</onnxruntime.version>
         <bouncycastle.version>1.86</bouncycastle.version>
         <lombok.version>1.18.48</lombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
@@ -137,7 +137,7 @@
                 <!-- Cobertura de testes (rubrica): relatório por módulo em target/site/jacoco após `mvn verify` -->
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.15</version>
+                <version>0.8.16</version>
                 <executions>
                     <execution>
                         <goals>

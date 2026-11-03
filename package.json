@@ -19,7 +19,7 @@
     "lint:styles": "stylelint \"app/(site)/globals.css\" \"app/\\(site\\)/_styles/*.css\" \"lib/design/typography.css\""
   },
   "dependencies": {
-    "@mediapipe/tasks-vision": "1.1.1",
+    "@mediapipe/tasks-vision": "1.2.0",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "@vladmandic/face-api": "1.7.15",
@@ -30,7 +30,7 @@
     "react-dom": "^19.3.1",
     "recharts": "^3.10.1",
     "sharp": "0.35.5",
-    "three": "^0.186.0",
+    "three": "^0.187.0",
     "topojson-client": "^3.1.0",
     "world-atlas": "^2.0.2"
   },
@@ -40,7 +40,7 @@
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/d3-geo": "^3.1.1",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/qrcode": "1.5.6",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",

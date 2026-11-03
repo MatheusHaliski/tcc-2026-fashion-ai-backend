@@ -24,55 +24,15 @@ die() { echo "ERRO: $*" >&2; exit 1; }
 
 check_volume() {
   [ -d "$WS" ] && [ -w "$WS" ] || die "$WS não existe ou não é gravável: o pod precisa do network volume em $WS"
-  mkdir -p "$LOGS" "$RUN" "$WS/bin" "$WS/hf" "$WS/redis" "${FAI_S3_DATA:-$WS/rustfs}"
+  mkdir -p "$LOGS" "$RUN" "$WS/bin" "$WS/redis" "${FAI_S3_DATA:-$WS/rustfs}"
   chmod 700 "$RUN"
   local free_gb
   free_gb=$(df -Pk "$WS" | awk 'NR==2 {print int($4/1048576)}')
   say "volume $WS: ${free_gb} GB livres (pesos da Fase 2 ~60 GB na primeira subida)"
 }
 
-ensure_redis() {
-  command -v redis-server >/dev/null && return 0
-  say "instalando redis-server (disco do contêiner; refeito a cada pod novo, ~20 s)"
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get update -qq >/dev/null && apt-get install -y -qq redis-server >/dev/null
-}
-
-ensure_rustfs() {
-  [ -x "$RUSTFS_BIN" ] && return 0
-  command -v unzip >/dev/null || { apt-get update -qq >/dev/null && apt-get install -y -qq unzip >/dev/null; }
-  say "baixando RustFS $RUSTFS_VERSION para o volume"
-  local tmp
-  tmp=$(mktemp -d)
-  curl -fsSL --retry 3 -o "$tmp/rustfs.zip" "$RUSTFS_URL"
-  echo "$RUSTFS_SHA256  $tmp/rustfs.zip" | sha256sum -c --quiet - || die "SHA-256 do RustFS não confere"
-  unzip -q -o "$tmp/rustfs.zip" -d "$tmp"
-  install -m 755 "$tmp/rustfs" "$RUSTFS_BIN"
-  rm -rf "$tmp"
-}
-
-ensure_venv() {
-  # --system-site-packages: torch/torchvision vêm da imagem CUDA do template, como no Dockerfile.worker.
-  local want
-  python3 -c 'import torch' 2>/dev/null || say "AVISO: python3 sem torch; use o template PyTorch do RunPod"
-  want=$( { python3 -c 'import sys, torch; print(sys.version, torch.__version__)' 2>/dev/null || python3 -V
-            cat "$SVC"/requirements-api.txt "$SVC"/requirements-segment.txt "$SVC"/requirements-reconstruct.txt; } \
-          | sha256sum | cut -c1-16)
-  if [ -x "$VENV/bin/python" ] && [ "$(cat "$VENV/.fai-installed" 2>/dev/null)" = "$want" ]; then
-    return 0
-  fi
-  say "instalando dependências na venv do volume (uma vez; log em $LOGS/install.log)"
-  python3 -m venv --system-site-packages "$VENV" >>"$LOGS/install.log" 2>&1 \
-    || die "python3 -m venv falhou (veja $LOGS/install.log)"
-  python3 -m pip freeze 2>/dev/null | grep -iE '^(torch|torchvision)==' > "$RUN/constraints.txt" || true
-  "$VENV/bin/pip" install -q --upgrade pip >>"$LOGS/install.log" 2>&1
-  "$VENV/bin/pip" install -q -c "$RUN/constraints.txt" -r "$SVC/requirements-segment.txt" \
-    -r "$SVC/requirements-reconstruct.txt" >>"$LOGS/install.log" 2>&1 \
-    || die "pip install falhou (veja $LOGS/install.log)"
-  "$VENV/bin/python" -c "import torch, torchvision, transformers, diffusers, peft; print('torch', torch.__version__, 'cuda', torch.version.cuda)" \
-    | tee -a "$LOGS/install.log"
-  echo "$want" > "$VENV/.fai-installed"
-}
+# shellcheck source=runpod_install.sh
+. "$(dirname "$0")/runpod_install.sh"   # ensure_redis, ensure_rustfs, ensure_venv
 
 write_config() {
   ( cd "$REPO" && PYTHONPATH="$REPO" python3 -m services.garment_gpu.scripts.runpod_env \
@@ -127,6 +87,48 @@ wait_for() {
 
 wanted() { [[ " $SERVICES " == *" $1 "* ]]; }
 
+# Mesmo sinal que a API usa no mode=auto: o batimento do worker no Redis, que só começa com os modelos carregados.
+worker_alive() {
+  local key
+  for key in $(REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h 127.0.0.1 --scan --pattern 'fai:worker:*' 2>/dev/null); do
+    REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h 127.0.0.1 get "$key" 2>/dev/null | grep -q "\"stage\": \"$1\"" && return 0
+  done
+  return 1
+}
+
+# Batimentos de workers que já não rodam: valem até 120 s no Redis, e o start seguinte dizia "pronto" na hora (03/11,
+# após um restart), com o worker da Fase 2 ainda carregando: as fotos enviadas nesse intervalo saíam sem Fase 2.
+forget_workers() {
+  [ -f "$RUN/fai.env" ] || return 0
+  local pass key
+  pass=$(sed -n "s/^REDIS_PASSWORD=//p" "$RUN/fai.env" | tr -d "'")
+  for key in $(REDISCLI_AUTH="$pass" redis-cli -h 127.0.0.1 --scan --pattern 'fai:worker:*' 2>/dev/null); do
+    REDISCLI_AUTH="$pass" redis-cli -h 127.0.0.1 del "$key" >/dev/null 2>&1
+  done
+}
+
+# "Pronto" só com os workers no ar: lote enviado antes disso volta só com o recorte da Fase 1 (teste de 03/11/2026).
+# FAI_READY_TIMEOUT=0 pula a espera. Ctrl+C interrompe só a espera; os serviços continuam rodando.
+wait_workers() {
+  local timeout="${FAI_READY_TIMEOUT:-3600}" started pending stage elapsed
+  [ "$timeout" = 0 ] && return 0
+  started=$(date +%s)
+  say "esperando os workers carregarem os modelos (pesos em $HF_HOME; na 1ª vez baixa ~60 GB)"
+  while :; do
+    pending=""
+    for stage in segment reconstruct; do
+      if wanted "$stage" && ! worker_alive "$stage"; then pending="$pending $stage"; fi
+    done
+    [ -z "$pending" ] && { say "pronto: workers no ar. Pode rodar o lote."; return 0; }
+    elapsed=$(( $(date +%s) - started ))
+    [ "$elapsed" -lt "$timeout" ] || die "workers fora do ar após ${timeout}s:$pending (veja $LOGS/<worker>.log)"
+    if [ $(( elapsed % 60 )) -lt 10 ]; then
+      say "aguardando:$pending · pesos: $(du -sh "$HF_HOME" 2>/dev/null | cut -f1) · $(tail -n 1 "$LOGS/reconstruct.log" 2>/dev/null | cut -c1-110)"
+    fi
+    sleep 10
+  done
+}
+
 start_all() {
   check_volume
   wanted redis && ensure_redis
@@ -138,6 +140,7 @@ start_all() {
   if wanted redis; then
     supervise redis redis-server "$RUN/redis.conf"
     wait_for redis "REDISCLI_AUTH=\"\$REDIS_PASSWORD\" redis-cli -h 127.0.0.1 ping | grep -q PONG"
+    running segment || running reconstruct || forget_workers   # Redis do volume pode guardar batimentos antigos
   fi
   if wanted storage; then
     # Chaves pelo ambiente (herdado pelo vigia), nunca na linha de comando: o ps mostraria os valores.
@@ -158,8 +161,8 @@ start_all() {
     "$py" -m services.garment_gpu.worker --stage segment
   wanted reconstruct && supervise reconstruct env CUDA_VISIBLE_DEVICES="$RECONSTRUCT_GPU" WORKER_METRICS_PORT=9102 \
     "$py" -m services.garment_gpu.worker --stage reconstruct
-  say "pronto. Workers carregam os modelos em segundo plano: tail -f $LOGS/reconstruct.log (espere 'modelos carregados')"
   say "URL pública: https://${RUNPOD_POD_ID:-<pod-id>}-8000.proxy.runpod.net"
+  wait_workers
 }
 
 stop_all() {
@@ -167,6 +170,7 @@ stop_all() {
   local name pid
   for name in reconstruct segment api storage redis; do
     running "$name" || continue
+    if [ "$name" = redis ]; then forget_workers; fi   # workers já parados: seus batimentos não podem sobrar
     pid=$(cat "$RUN/$name.pid")
     kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
     for _ in $(seq 20); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
@@ -182,6 +186,15 @@ status_all() {
     if running "$name"; then echo "$name: no ar (pid $(cat "$RUN/$name.pid"))"; else echo "$name: parado"; fi
   done
   curl -fsS -m 3 http://127.0.0.1:8000/health 2>/dev/null && echo || echo "API: sem resposta em 127.0.0.1:8000"
+  if [ -f "$RUN/fai.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    . "$RUN/fai.env"
+    set +a
+    for name in segment reconstruct; do
+      if worker_alive "$name"; then echo "worker $name: modelos carregados"; else echo "worker $name: ainda não"; fi
+    done
+  fi
   command -v nvidia-smi >/dev/null && nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader
   df -h "$WS" | awk 'NR==2 {print "volume: " $3 " usados, " $4 " livres"}'
   grep -h "Successfully completed\|modelos carregados" "$LOGS"/segment.log "$LOGS"/reconstruct.log 2>/dev/null | tail -n 3 || true

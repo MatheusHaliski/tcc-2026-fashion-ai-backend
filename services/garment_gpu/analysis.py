@@ -15,6 +15,10 @@ BORDER_FRACTION = 0.01
 PERSON_SKIN_FRACTION = 0.01
 OCCLUSION_SKIN_FRACTION = 0.04
 MIN_SOLIDITY_UPPER = 0.70
+# Shoes and accessories are photographed as products: touching the border or appearing next to a person does not
+# make them need a flat lay, and Phase 2 drew a pajama set for a pair of sneakers (RunPod test, 02/11/2026). Their
+# Phase 1 cut-out is the final image; mode=reconstruct still reaches Phase 2 with a product-photo prompt.
+NO_RECONSTRUCTION = {"shoes_piece", "accessory_piece"}
 
 CLASSES = {
     "COMPLETE_PRODUCT": "peça sozinha, completa",
@@ -104,7 +108,8 @@ def classify(rgb: np.ndarray, mask: np.ndarray, category: str | None = None) -> 
         klass = "OCCLUDED"
     else:
         klass = "COMPLETE_ON_MODEL" if person else "COMPLETE_PRODUCT"
-    return {"class": klass, "needs_reconstruction": klass != "COMPLETE_PRODUCT",
+    needs = klass != "COMPLETE_PRODUCT" and category not in NO_RECONSTRUCTION
+    return {"class": klass, "needs_reconstruction": needs,
             "metrics": {"mask_fraction": round(area / (h * w), 4), "touches": touches, "person": person,
                         "skin_outside": round(skin_outside, 4), "skin_in_hull": round(skin_in_hull, 4),
                         "solidity": round(solidity, 4)}}

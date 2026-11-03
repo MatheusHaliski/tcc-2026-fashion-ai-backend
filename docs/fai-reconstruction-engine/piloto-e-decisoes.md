@@ -56,6 +56,10 @@ num primeiro critério), o que motivou o plano de usar o SAM 3D Body.
 | Pod do RunPod com processos vigiados por `scripts/runpod_start.sh` (sem Docker); venv, pesos, Redis e RustFS no network volume | reproduzir o compose dentro do pod | o pod é um contêiner sem Docker; com tudo no volume, um pod novo (outra máquina, mesmo template) sobe em ~2 min, então parar/encerrar entre lotes não perde nada |
 | Agendador próprio para o LoRA Lightning | agendador padrão do Qwen | com o padrão, o primeiro flat lay saiu como ruído sobre a silhueta (8 passos sem o `shift` da destilação) |
 | `catalog_batch` baixa também as costas (`backs/<id>.png`) antes de apagar o job; erro ao baixar marca a foto como falha e não apaga o job | guardar só a imagem final | as costas custam tanto de GPU quanto a frente e só existiam no servidor: o lote as descartava |
+| Lista da Fase 2 em `mode=reconstruct` (padrão com `--ids-file`), `retry_ids.txt` e checagem de `/health` antes do lote | `mode=auto` para tudo | no `auto`, foto enviada com o worker da Fase 2 recarregando volta só com o recorte, sem erro; no teste do RunPod a URL antiga (VM desligada) e a porta não exposta falharam em silêncio |
+| `runpod_start.sh` escolhe a pasta dos pesos pelo que já está no volume, instala torch+torchvision pelo driver e só diz "pronto" com os dois workers no Redis | seguir o `HF_HOME` da imagem e o torch do `python3` | em 02–03/11 a imagem `runpod/pytorch` 1.4.0 veio sem torch no `python3` e com outro `HF_HOME`: o pip trouxe torch sem torchvision, os 58 GB começaram a baixar de novo e duas fotos foram enviadas antes da Fase 2 carregar |
+| Flat lay aprovado no Total frame por colunas próprias (`flat_lay_*`, V85), com selo IA e o recorte real como fallback | gravar nas colunas `whole_*` | `whole_*` é o contrato `WHOLE_FRAME_V3` de pixels reais (SHA da origem, preflight): o flat lay passaria por recorte real e o `process_whole_frames` o sobrescreveria |
+| Flat lay aplicado ao card do produto por último (`CatalogFlatLayFrame.onCard`), em qualquer caminho | só no `wholeFrame` do recorte real | em 03/11 os 83 primeiros flat lays foram gravados (`83 APPLIED`) mas o app mostrava o asset padrão: produtos com photo set saíam em modo `DEFAULT` antes de o flat lay ser consultado, e a interface priorizava o `DEFAULT` sobre o Total frame |
 | Aprovação humana de toda reconstrução | aprovação automática pelo QA | o QA não certifica logotipos, escudos e textos |
 
 ## Primeiro teste da Fase 2 (L4, 01/11/2026)
@@ -69,9 +73,29 @@ num primeiro critério), o que motivou o plano de usar o SAM 3D Body.
 | Flat lay com ruído sobre a peça | LoRA Lightning com o agendador errado | agendador da destilação |
 | ~77 s por imagem, ~4 min por peça | L4 em 4 bits com offload | troca para A100 (`deploy/A100_SINGLE.md`) |
 
+## Teste da Fase 2 na A100 do RunPod (02/11/2026)
+
+Pod Secure Cloud com A100-SXM4-80GB: modelo completo em bf16 (57,5 GB de VRAM com a Fase 1), LoRA Lightning aplicado
+em 720 camadas, agendador da destilação, pesos carregados em 157 s a partir do network volume. Amostra de 20 produtos
+do catálogo em `mode=auto` (a lista da Fase 1 no Mac ainda não existia): 18 processados até a cópia dos resultados,
+11 com Fase 2 (frente + costas), 7 só com a Fase 1. O tempo por imagem não foi medido (o `audit.jsonl` só é gravado
+no fim do lote e foi copiado antes; o log do worker ficou no volume).
+
+**O ruído sumiu:** todos os flat lays saíram nítidos, em fundo branco, centralizados e sem corpo. As fotos de produto
+da Fase 1 (gorro, relógio, chinelo, meia) estavam corretas. Mas só ~3 das 11 reconstruções serviriam ao catálogo:
+
+| Erro observado | Exemplos | Causa | Correção |
+|---|---|---|---|
+| Estampas, logotipos, textos e etiquetas inventados | estampa no peito de uma camiseta lisa, texto na lateral da legging, logo na barra, etiquetas no pescoço, bordado na gola | com o Lightning, `true_cfg = 1.0`, e nesse valor o diffusers **ignora o prompt negativo**; o prompt ainda pedia "foto de e-commerce" | proibições no prompt positivo (`prompts.py`: "o que é liso nas fotos fica liso"), sem "e-commerce" |
+| Estrutura inventada quando a foto corta a peça | manga curta virou manga longa; gola alta virou gola redonda | a foto mostra só o tronco e o lote não mandava o nome do produto | o prompt fixa tipo, gola, manga e comprimento da foto; o lote envia nome e cor do catálogo |
+| Mão sobre o tecido virou vazado "de design" | blusa verde com recorte na cintura, frente e costas | o espaço da mão chegava branco à Fase 2; e a Fase 1 nem deixava o buraco aberto (os buracos de pele eram procurados numa máscara já preenchida) | Fase 1 nunca acrescenta pele ao preencher buracos; antes da Fase 2 o espaço da mão (buraco ou "dente" na borda) recebe a cor do tecido vizinho (`reference.py`) |
+| Calçado transformado em roupa | tênis virou conjunto de pijama; sandália virou uniforme | sapato encostando na borda contava como peça cortada; o prompt só falava de roupa | calçados e acessórios não vão para a Fase 2 no `auto`; em `mode=reconstruct` usam prompt de foto de produto |
+| Frente e costas de cores diferentes | camisa cinza: frente preta, costas azul-marinho | o QA comparava cada vista só com a foto | QA das costas compara com a frente: `BACK_COLOR_MISMATCH` |
+| Objeto errado | mulher sentada: saiu uma calça cor de caramelo (a cadeira) | pose confusa; o detector escolheu a cadeira | **sem correção automática ainda**: a cor da cadeira e a do vestido diferem só ΔE ≈ 13, então um filtro pela cor cadastrada não separa os dois; fica para a revisão humana e para o SAM 3D Body |
+
 ## Pendências conhecidas (01/11/2026)
 
-- Rodar a Fase 2 de verdade na A100 e repetir o piloto (qualidade do flat lay, tempo, custo reais).
+- Repetir os mesmos 20 produtos no RunPod com as correções de 02/11 e medir o tempo por imagem.
 - Validar com os modelos reais a escolha entre as três máscaras do SAM.
 - Trocar a heurística de pele pelo SAM 3D Body (licença disponível; token só no `.env` da VM).
 - Várias caixas para pares e kits (calçados, meias).
