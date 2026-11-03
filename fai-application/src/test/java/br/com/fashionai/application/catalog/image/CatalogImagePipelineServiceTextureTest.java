@@ -30,8 +30,8 @@ class CatalogImagePipelineServiceTextureTest extends CatalogImagePipelineService
         }
         stored.put("whole-back.png", backWhole); stored.put("whole-front.png", frontWhole);
         assertThat(service.texturePhoto(admin, product.getId(), true).bytes()).isEqualTo(frontWhole);
-        assertThat(CatalogImagePipelineService.viewRank(front)).isLessThan(CatalogImagePipelineService.viewRank(back));
-        assertThat(CatalogImagePipelineService.viewRank(image("https://brand.com/x.png", null, null))).isZero();
+        assertThat(CatalogTextureTransport.viewRank(front)).isLessThan(CatalogTextureTransport.viewRank(back));
+        assertThat(CatalogTextureTransport.viewRank(image("https://brand.com/x.png", null, null))).isZero();
         // costas: a foto marcada BACK, mesmo sem ser a canônica e com a frente escolhida explicitamente
         var BACK = CatalogImagePipelineService.TextureView.BACK;
         assertThat(service.texturePhoto(admin, product.getId(), true, null, null, BACK).bytes()).isEqualTo(backWhole);

@@ -51,10 +51,10 @@ class CatalogImagePipelineServiceRetratoTest extends CatalogImagePipelineService
         r.call(label + " cardImage(3)", () -> CatalogImagePipelineService.cardImage(i, product, productVariants));
         r.call(label + " photoSet(2)", () -> CatalogImagePipelineService.photoSet(i, product));
         r.call(label + " photoSet(3)", () -> CatalogImagePipelineService.photoSet(i, product, productVariants));
-        r.call(label + " wholeFrame", () -> CatalogImagePipelineService.wholeFrame(i));
+        r.call(label + " wholeFrame", () -> CatalogPhotoEvidence.wholeFrame(i));
         r.call(label + " vtonGarment", () -> CatalogImagePipelineService.vtonGarment(i));
-        r.call(label + " viewRank", () -> CatalogImagePipelineService.viewRank(i));
-        r.call(label + " view", () -> service.view(i));
+        r.call(label + " viewRank", () -> CatalogTextureTransport.viewRank(i));
+        r.call(label + " view", () -> service.debug(admin, i.getId()));
     }
 
     private void texture(String label, boolean isolated, UUID variantId, UUID imageId,
@@ -228,17 +228,17 @@ class CatalogImagePipelineServiceRetratoTest extends CatalogImagePipelineService
                 "nota url", "https://evil.com?x=.brand.com")) {
             CatalogImage probe = new CatalogImage();
             probe.setImageUrl(url);
-            r.line("host " + url, String.valueOf(CatalogImagePipelineService.host(url)));
+            r.line("host " + url, String.valueOf(CatalogImageBindings.host(url)));
             r.line("allowsPersistence " + url, service.allowsPersistence(product, probe));
         }
-        r.line("validPreflight", List.of(CatalogImagePipelineService.validPreflight(sourcePreflight()),
-                CatalogImagePipelineService.validPreflight(Map.of()), CatalogImagePipelineService.validPreflight(null)));
+        r.line("validPreflight", List.of(CatalogPhotoEvidence.validPreflight(sourcePreflight()),
+                CatalogPhotoEvidence.validPreflight(Map.of()), CatalogPhotoEvidence.validPreflight(null)));
         r.line("gateReasons", List.of(String.valueOf(CatalogImagePipelineService.gateReasons(List.of())),
                 CatalogImagePipelineService.gateReasons(List.of("A".repeat(300), "B".repeat(300))).length()));
         r.line("qualityScore", String.valueOf(CatalogImagePipelineService.qualityScore(0.123456)));
         r.line("dimension", String.valueOf(CatalogImagePipelineService.dimension(0)));
         CatalogImage copy = new CatalogImage();
-        CatalogImagePipelineService.copyAnalysis(jeans, copy);
+        CatalogImageColumns.copyAnalysis(jeans, copy);
         r.line("copyAnalysis", CatalogImageRetrato.row(copy));
         CatalogProduct shoe = new CatalogProduct();
         shoe.assignId(newId());

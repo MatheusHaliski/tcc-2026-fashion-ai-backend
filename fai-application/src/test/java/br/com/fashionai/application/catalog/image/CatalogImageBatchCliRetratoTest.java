@@ -52,7 +52,7 @@ class CatalogImageBatchCliRetratoTest {
                 List.of("--fast"), List.of("--threads", " 12 "))) {
             String value;
             try {
-                int n = CatalogImageBatchCli.threads(args.toArray(String[]::new));
+                int n = CatalogBatchArgs.threads(args.toArray(String[]::new));
                 value = args.isEmpty() ? (n == Math.max(1, Runtime.getRuntime().availableProcessors() - 1) ? "padrão" : "?") : String.valueOf(n);
             } catch (IllegalArgumentException e) {
                 value = "erro: " + e.getMessage();
@@ -106,7 +106,7 @@ class CatalogImageBatchCliRetratoTest {
         PrintStream broken = new PrintStream(closed, false, StandardCharsets.UTF_8);
         broken.close();
         r.line("run stdout fechado", String.valueOf(cli.run(new ByteArrayInputStream(stdin.toString().getBytes(StandardCharsets.UTF_8)), broken, 2)));
-        r.line("error", CatalogImageBatchCli.error("i", "op", "CODE", null));
+        r.line("error", CatalogBatchReport.error("i", "op", "CODE", null));
         assertThat(r.text()).isEqualTo(CatalogImageRetrato.golden(r.text(), "batch-cli-retrato.txt"));
     }
 }

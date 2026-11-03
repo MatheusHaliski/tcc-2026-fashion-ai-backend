@@ -41,18 +41,18 @@ class CatalogImagePipelineServiceCardTest extends CatalogImagePipelineServiceFix
         packshot.setWidth(864); packshot.setHeight(1152);
         packshot.setCropJson(Json.write(Map.of("product", Map.of("x", 0.12, "y", 0.19, "w", 0.75, "h", 0.6), "background", "#f4f5f7")));
         packshot.setMetricsJson(Json.write(Map.of("debug", Map.of("productFrame", Map.of("model", false), "sourceHumanEvidence", 0.0, "truncated", List.of()))));
-        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(packshot)).isNull();
 
         // foto com modelo, com pele de pessoa ou sem fundo de estúdio: o card continua no recorte de sempre
         packshot.setMetricsJson(Json.write(Map.of("debug", Map.of("productFrame", Map.of("model", true)))));
-        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(packshot)).isNull();
         packshot.setMetricsJson(Json.write(Map.of("debug", Map.of("sourceHumanEvidence", 0.02))));
-        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(packshot)).isNull();
         packshot.setMetricsJson(null);
         packshot.setCropJson(Json.write(Map.of("product", Map.of("x", 0.12, "y", 0.19, "w", 0.75, "h", 0.6))));
-        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(packshot)).isNull();
         packshot.setCropJson(Json.write(Map.of("product", Map.of("x", 0.5, "y", 0.5, "w", 0.9, "h", 0.9), "background", "#ffffff")));
-        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(packshot)).isNull();
     }
 
     @Test
@@ -60,7 +60,7 @@ class CatalogImagePipelineServiceCardTest extends CatalogImagePipelineServiceFix
         CatalogImage jeans = new CatalogImage();
         jeans.setImageUrl("https://img.brand.com/jeans-modelo.jpg");
         jeans.setMetricsJson(Json.write(Map.of("debug", Map.of("productFrame", Map.of("model", true), "sourceHumanEvidence", 0.04))));
-        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(jeans)).isNull();
 
         jeans.setWholeUrl("https://media.fashion-ai.app/catalog/whole/a/b.jpg");
         jeans.setWholeStatus("DONE");
@@ -71,33 +71,33 @@ class CatalogImagePipelineServiceCardTest extends CatalogImagePipelineServiceFix
                 "version", CatalogImagePipelineService.WHOLE_PROCESSED_VERSION, "sourceUrl", jeans.getImageUrl(),
                 "sourceSha256", jeans.getSourceSha256(), "preflight", sourcePreflight()));
         jeans.setWholeJson(Json.write(info));
-        Map<String, Object> whole = CatalogImagePipelineService.wholeFrame(jeans);
+        Map<String, Object> whole = CatalogPhotoEvidence.wholeFrame(jeans);
         assertThat(whole).containsEntry("url", "https://media.fashion-ai.app/catalog/whole/a/b.jpg").containsEntry("processed", true)
                 .containsEntry("version", CatalogImagePipelineService.WHOLE_PROCESSED_VERSION).containsEntry("width", 900).containsEntry("height", 1200);
         assertThat(whole.get("truncated")).isEqualTo(List.of());
 
         jeans.setWholeUrl(jeans.getImageUrl());
-        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(jeans)).isNull();
         jeans.setWholeUrl("data:image/png;base64,aGVsbG8=");
-        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(jeans)).isNull();
         jeans.setWholeUrl("https://media.fashion-ai.app/catalog/whole/a/b.jpg");
         jeans.setSourceSha256("invalid");info.put("sourceSha256","invalid");jeans.setWholeJson(Json.write(info));
-        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(jeans)).isNull();
         jeans.setSourceSha256("a".repeat(64));info.put("sourceSha256",jeans.getSourceSha256());jeans.setWholeJson(Json.write(info));
 
         info.put("truncated", List.of("bottom")); jeans.setWholeJson(Json.write(info));
-        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(jeans)).isNull();
         info.put("truncated", List.of()); jeans.setWholeJson(Json.write(info));
         jeans.setSourceSha256("b".repeat(64));
-        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(jeans)).isNull();
         jeans.setSourceSha256("a".repeat(64));
 
         // processamento com falha ou caixa inválida: sem Peça inteira (a interface mostra o enquadramento de tecido)
         jeans.setWholeStatus("FAILED");
-        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(jeans)).isNull();
         jeans.setWholeStatus("DONE");
         jeans.setWholeJson(Json.write(Map.of("box", Map.of("x", 0.6, "y", 0.1, "w", 0.6, "h", 0.5))));
-        assertThat(CatalogImagePipelineService.wholeFrame(jeans)).isNull();
+        assertThat(CatalogPhotoEvidence.wholeFrame(jeans)).isNull();
     }
 
     @Test
@@ -125,12 +125,12 @@ class CatalogImagePipelineServiceCardTest extends CatalogImagePipelineServiceFix
 
     @Test
     void readyRequiresMeasuredCompleteIsolationAtOrAboveExactly25Percent() {
-        assertThat(CatalogImagePipelineService.validPreflight(sourcePreflight())).isTrue();
+        assertThat(CatalogPhotoEvidence.validPreflight(sourcePreflight())).isTrue();
         for (Map.Entry<String,Object> invalid : Map.<String,Object>of("sourceGarmentHeightFraction", .249,
                 "measurementReliable", false, "isolationVerified", false, "humanAssessmentComplete", false,
                 "complete", false, "occluded", true, "status", "REVIEW").entrySet()) {
             Map<String,Object> evidence=sourcePreflight(); evidence.put(invalid.getKey(),invalid.getValue());
-            assertThat(CatalogImagePipelineService.validPreflight(evidence)).as(invalid.getKey()).isFalse();
+            assertThat(CatalogPhotoEvidence.validPreflight(evidence)).as(invalid.getKey()).isFalse();
         }
         CatalogImage i=image("https://brand.com/proof.png",CatalogImageType.FRONT,null);
         i.setSourceSha256("a".repeat(64));
