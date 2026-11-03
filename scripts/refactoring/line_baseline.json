@@ -412,10 +412,6 @@
    "max": 259,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/service/MirrorService.java": {
-   "max": 1254,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/service/Model3dService.java": {
    "max": 455,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
