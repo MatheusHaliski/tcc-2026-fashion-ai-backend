@@ -12,6 +12,8 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import fashn_open as fo  # noqa: E402
+import fashn_open_models as fo_models  # noqa: E402  — import_birefnet lê PACKAGE daqui
+import fashn_open_weights as fo_weights  # noqa: E402  — verify/download leem assets() daqui
 
 try:
     import torch  # noqa: F401
@@ -146,7 +148,7 @@ class AssetsTest(unittest.TestCase):
         def fetch(url, dest):
             fetched.append(url)
             Path(dest).write_bytes(content[url.rsplit("/", 1)[1]])
-        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(fo, "assets", return_value=manifest):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(fo_weights, "assets", return_value=manifest):
             done = fo.download(Path(tmp), fetch=fetch, log=lambda m: None)
             self.assertEqual(len(done), 2); self.assertEqual(fetched, ["https://huggingface.co/org/demo/resolve/rev/a.bin", "https://huggingface.co/org/demo/resolve/rev/birefnet.py"])
             self.assertEqual(fo.verify(Path(tmp)), [])
@@ -156,14 +158,14 @@ class AssetsTest(unittest.TestCase):
 
     def test_download_recusa_conteudo_adulterado(self):
         _, manifest = fake_manifest()
-        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(fo, "assets", return_value=manifest):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(fo_weights, "assets", return_value=manifest):
             with self.assertRaisesRegex(ValueError, "FASHN_OPEN_SHA256_MISMATCH:demo/a.bin"):
                 fo.download(Path(tmp), fetch=lambda url, dest: Path(dest).write_bytes(b"alpha" * 10 + b"!"), log=lambda m: None)
             self.assertEqual(list(Path(tmp).rglob("a.bin*")), [], "nem o .part fica")
 
     def test_verify_lista_ausente_tamanho_e_hash(self):
         content, manifest = fake_manifest()
-        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(fo, "assets", return_value=manifest):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(fo_weights, "assets", return_value=manifest):
             root = Path(tmp)
             self.assertEqual(fo.verify(root), ["ausente: demo/a.bin", "ausente: birefnet/code/birefnet.py"])
             (root / "demo").mkdir(); (root / "demo/a.bin").write_bytes(b"x")
@@ -183,7 +185,7 @@ class AssetsTest(unittest.TestCase):
 
 class ImportTest(unittest.TestCase):
     def test_importa_o_codigo_do_birefnet_como_pacote_isolado(self):
-        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(fo, "PACKAGE", "fashn_open_birefnet_test"):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(fo_models, "PACKAGE", "fashn_open_birefnet_test"):
             code = Path(tmp) / "code"
             code.mkdir()
             (code / "BiRefNet_config.py").write_text("X = 20\n", encoding="utf-8")
