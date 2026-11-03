@@ -111,7 +111,7 @@ function kitOf(kit: CityKit) {
 }
 
 /* ---------- testes ---------- */
-describe("retrato das texturas da rua (exterior-textures)", () => {
+describe("retrato das texturas da rua (exterior-textures)", { timeout: 60_000 }, () => {
   it("auxiliares de ruído e sorteio", () => {
     const r = prng(7);
     const f = fieldOf(16, 3, 3, 2);
@@ -174,7 +174,7 @@ describe("retrato das texturas da rua (exterior-textures)", () => {
   });
 });
 
-describe("retrato das texturas da cidade (exterior-citytex)", () => {
+describe("retrato das texturas da cidade (exterior-citytex)", { timeout: 60_000 }, () => {
   it("tabelas e UV das células", () => {
     expect({
       cell: [cellUV(0, 4, 8), cellUV(13, 4, 8), cellUV(31, 8, 4, 0)].map((u) => u.map(num)),
@@ -208,7 +208,7 @@ describe("retrato das texturas da cidade (exterior-citytex)", () => {
   });
 });
 
-describe("retrato da quadra (exterior-blocks)", () => {
+describe("retrato da quadra (exterior-blocks)", { timeout: 60_000 }, () => {
   it("constantes, alturas e peças repetidas", () => {
     const parts: Record<string, unknown> = {};
     for (const [k, make] of Object.entries(PARTS)) parts[k] = geoOf(make());

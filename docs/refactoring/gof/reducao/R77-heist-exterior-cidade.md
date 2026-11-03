@@ -50,7 +50,9 @@ passo que justifique Strategy/Builder além do que o código já fazia.
   `PARTS`, constantes e alturas, o `cityPlan()` e `buildCity()`/`buildCity(true)` com contagens e hash das geometrias
   fundidas por material, das matrizes das instâncias (3 casas), das cores e das âncoras/poças/brilhos.
 - Depois da divisão: snapshot idêntico (nenhuma linha alterada no `.snap`, 10/10).
-- `npx vitest run components/heist components/lab "app/(site)/lab"`: 12 arquivos, 72 testes, todos verdes.
+- `npx vitest run components/heist components/lab "app/(site)/lab"`: 12 arquivos, 72 testes, todos verdes antes do
+  merge da base; depois de `git merge claude/relaxed-pasteur-5b5466`, 17 arquivos, 97 testes, todos verdes. O retrato
+  tem `timeout: 60_000` por `describe` (as texturas em qualidade high passam de 5 s com os workers em paralelo).
 - `npx tsc --noEmit`: sem erros.
 - `python3 scripts/refactoring/line_ratchet.py`: lote só como `APERTAR`.
 
