@@ -22,10 +22,29 @@ final class CatalogFlatLayFrame {
     private CatalogFlatLayFrame() {
     }
 
-    /** O flat lay aprovado ou, sem ele (ou desatualizado), o Total frame de pixels reais recebido. */
-    static Map<String, Object> orElse(CatalogImage image, Map<String, Object> fallback) {
+    /**
+     * Card do produto com o flat lay aprovado como Total frame, por cima de qualquer outro (photo set, recorte real): as
+     * regras daqueles caminhos (contexto do whole_json, status do photo set) não se aplicam a ele. Sem card (foto sem
+     * enquadramento aprovado), cria um no modo DEFAULT: o Tecido segue mostrando o asset padrão e só o Total frame
+     * mostra o flat lay, com selo de IA. Sem flat lay válido, devolve o card como veio.
+     */
+    static Map<String, Object> onCard(CatalogImage image, Map<String, Object> card) {
         Map<String, Object> flatLay = of(image);
-        return flatLay != null ? flatLay : fallback;
+        if (flatLay == null) {
+            return card;
+        }
+        Map<String, Object> withFlatLay = new LinkedHashMap<>();
+        if (card == null) {
+            withFlatLay.put("url", image.getFlatLayUrl());
+            withFlatLay.put("mode", "DEFAULT");
+            withFlatLay.put("sourceUrl", image.getImageUrl());
+            withFlatLay.put("aspect", "3:4");
+            withFlatLay.put("imageId", image.getId());
+        } else {
+            withFlatLay.putAll(card);
+        }
+        withFlatLay.put("whole", flatLay);
+        return withFlatLay;
     }
 
     static Map<String, Object> of(CatalogImage image) {
