@@ -4,6 +4,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { catalogApi, type CatalogProduct } from "@/lib/api/catalog";
 import { ApiError } from "@/lib/api/client";
 import { useCatalogPreview } from "./use-catalog-preview";
+import { storePreview } from "@/lib/catalog/preview-store";
 const previewCache = { version: "CATALOG_PREVIEW_FRAMES_V2", status: "READY", persisted: true };
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -291,4 +292,20 @@ it("prioritizes a selected queued garment while sharing the same request and res
   await act(async () => { pending.get("selected-priority-2")!(); });
   await waitFor(() => expect(hooks.every(hook => !hook.result.current.pending)).toBe(true));
   expect(request.mock.calls.filter(([id]) => id === "selected-priority-3")).toHaveLength(1);
+});
+
+it("keeps the approved flat lay: no preview request, no stale stored preview, no fallback to the default asset", async () => {
+  // o caso do app em 03/11: o card vinha com o flat lay, a prévia pedida depois o trocava pelo asset padrão
+  const whole = { url: "https://api.example/media/catalog/flatlay/x.jpg", box: { x: 0, y: 0, w: 1, h: 1 }, rendered: true,
+    aiGenerated: true, version: "FLAT_LAY_V1" };
+  const product = { id: "flat-lay-card", category: "upper_piece", imageUrl: "https://brand.example/blusa.jpg",
+    catalogImage: { url: whole.url, mode: "DEFAULT" as const, sourceUrl: "https://brand.example/blusa.jpg", whole } } as CatalogProduct;
+  const stale = { ...product, catalogImage: { url: "https://media.example/default/blusa.png", mode: "DEFAULT" as const } };
+  storePreview(product, stale);   // prévia antiga guardada no navegador: não pode voltar por cima do flat lay
+  const request = vi.spyOn(catalogApi, "previewImage").mockResolvedValue(stale);
+  const result = renderHook(() => useCatalogPreview(product));
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(request).not.toHaveBeenCalled();
+  expect(result.result.current.product.catalogImage?.whole).toEqual(whole);
+  expect(result.result.current.failed).toBeNull();
 });
