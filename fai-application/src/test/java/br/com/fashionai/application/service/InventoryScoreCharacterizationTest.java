@@ -66,17 +66,17 @@ class InventoryScoreCharacterizationTest {
         score.invalidate(new DomainEvents.RoomOrganized(me));
         p.add("invalidado RoomOrganized", score.compute(me, true) != cached);
         p.add("isolado", score.computeIsolated(me, true).score());
-        p.add("computeNow igual", score.computeNow(me).dims());
+        p.add("computeNow igual", score.ctx.calculator.computeNow(me).dims());
         for (String code : List.of("C", "D", "U", "V", "O", "R", "I", "u", "X")) {
             p.add("explain " + code, attempt(() -> score.explain(ana, code)));
         }
         p.add("improvementHints", score.improvementHints(me));
         p.add("highlightsTab", score.highlightsTab(ana));
-        p.add("highlights", score.highlights(me, r));
-        p.add("evolution", score.evolution(me, r));
-        p.add("records", score.records(me, r));
-        p.add("monthDelta", score.monthDelta(me, r));
-        p.add("suggestedChallenges", score.suggestedChallenges(r));
+        p.add("highlights", score.ctx.cards.highlights(me, r));
+        p.add("evolution", score.ctx.progress.evolution(me, r));
+        p.add("records", score.ctx.progress.records(me, r));
+        p.add("monthDelta", score.ctx.progress.monthDelta(me, r));
+        p.add("suggestedChallenges", score.ctx.tab.suggestedChallenges(r));
         p.add("album", score.album(ana));
         p.add("highlightsTab caio", score.highlightsTab(Kit.as(sc.caio)));
         p.add("album caio", score.album(Kit.as(sc.caio)));
@@ -85,9 +85,9 @@ class InventoryScoreCharacterizationTest {
 
         Map<UUID, Scheme> byId = new LinkedHashMap<>();
         sc.looks.stream().filter(s -> s.getStatus() != SchemeStatus.ARCHIVED).forEach(s -> byId.put(s.getId(), s));
-        p.add("usageDays janela", score.usageDays(me, sc.today.minusDays(90), byId));
-        p.add("usageDays tudo", score.usageDays(me, LocalDate.of(2000, 1, 1), byId));
-        p.add("exposureDays", score.exposureDays(me, sc.pieces, sc.today.minusDays(90), sc.today));
+        p.add("usageDays janela", score.ctx.history.usageDays(me, sc.today.minusDays(90), byId));
+        p.add("usageDays tudo", score.ctx.history.usageDays(me, LocalDate.of(2000, 1, 1), byId));
+        p.add("exposureDays", score.ctx.history.exposureDays(me, sc.pieces, sc.today.minusDays(90), sc.today));
 
         p.add("rankings sem opt-in", score.rankings(ana));
         p.add("optIn ana", score.optIn(ana, true, true, "  São <b>Paulo</b>  "));
@@ -119,19 +119,19 @@ class InventoryScoreCharacterizationTest {
         for (WardrobeItem w : sc.pieces) {
             p.add("peça " + w.getName(), List.of(InventoryScoreService.completeness(w), InventoryScoreService.catalogReady(w),
                     InventoryScoreService.missingFields(w), String.valueOf(InventoryScoreService.family(w.getColor())),
-                    InventoryScoreService.detected(w), InventoryScoreService.detectedConfidence(w)));
+                    InventoryCompleteness.detected(w), InventoryCompleteness.detectedConfidence(w)));
         }
         Map<UUID, TreeSet<LocalDate>> usage = new LinkedHashMap<>();
         usage.put(sc.pieces.get(0).getId(), new TreeSet<>(List.of(sc.today.minusDays(9), sc.today.minusDays(70))));
         usage.put(sc.pieces.get(5).getId(), new TreeSet<>(List.of(sc.today.minusDays(80))));
         for (int n : new int[]{0, 5, 7}) {
             WardrobeItem w = sc.pieces.get(n);
-            p.add("lastUse/daysSince " + n, java.util.Arrays.asList(InventoryScoreService.lastUse(w, usage),
-                    InventoryScoreService.daysSince(w, usage, sc.today)));
+            p.add("lastUse/daysSince " + n, java.util.Arrays.asList(InventoryScoreRules.lastUse(w, usage),
+                    InventoryScoreRules.daysSince(w, usage, sc.today)));
         }
         for (int[] look : InventoryScoreScenario.LOOKS) {
             List<UUID> ids = java.util.Arrays.stream(look).mapToObj(i -> sc.pieces.get(i).getId()).toList();
-            p.add("comboKeyOf " + java.util.Arrays.toString(look), String.valueOf(InventoryScoreService.comboKeyOf(ids, byId)));
+            p.add("comboKeyOf " + java.util.Arrays.toString(look), String.valueOf(InventoryScoreRules.comboKeyOf(ids, byId)));
         }
         p.add("combos", InventoryScoreService.combos(sc.pieces.subList(0, 12), 5, Set.of()));
         p.add("entropy", List.of(InventoryScoreService.entropy(List.of("a", "a", "b", "c"), 3), InventoryScoreService.entropy(List.of("a"), 1),
