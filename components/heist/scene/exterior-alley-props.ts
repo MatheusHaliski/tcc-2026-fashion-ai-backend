@@ -15,74 +15,19 @@
  *  - becoRecycling: coleta seletiva do museu (quatro cestos com tampa colorida num suporte).
  *
  * Tudo vai para um `Bag` por material (exterior-alley-geo.ts): uma chamada de desenho por material, não por objeto.
+ *
+ * A pegada e as peças repetidas ficam em exterior-alley-foot e exterior-alley-pieces; as caçambas em
+ * exterior-alley-dumpster (reexportadas daqui).
  */
 import * as THREE from "three";
-import { SIDEWALK_Y } from "@/lib/heist/level";
 import type { Prop } from "@/lib/heist/types";
-import { Bag, box0, cyl0, mul, rod, taper, tm, tube, type V3 } from "./exterior-alley-geo";
-import { rng, type Rect01 } from "./exterior-alley-tex";
-
-export const Y0 = SIDEWALK_Y;
-/** Pegada do móvel: centro, largura (x local), fundo (z local; a frente olha para +z local) e giro. */
-export interface Foot { cx: number; cz: number; w: number; d: number; yaw: number }
-export function footOf(p: Prop): Foot {
-  const yaw = p.yaw ?? 0;
-  if (p.shape.type === "circle") return { cx: p.shape.x, cz: p.shape.z, w: p.shape.r * 2, d: p.shape.r * 2, yaw };
-  const sx = p.shape.x1 - p.shape.x0, sz = p.shape.z1 - p.shape.z0, swap = Math.abs(Math.sin(yaw)) > 0.5;
-  return { cx: (p.shape.x0 + p.shape.x1) / 2, cz: (p.shape.z0 + p.shape.z1) / 2, w: swap ? sz : sx, d: swap ? sx : sz, yaw };
-}
-/** Matriz no referencial do móvel (y a partir do chão do beco). */
-export const L = (f: Foot, x: number, y: number, z: number, ry = 0, sx = 1, sy = sx, sz = sx, rx = 0, rz = 0) => mul(tm(f.cx, Y0, f.cz, f.yaw), tm(x, y, z, ry, sx, sy, sz, rx, rz));
-const B = (bag: Bag, key: string, f: Foot, x: number, y: number, z: number, sx: number, sy: number, sz: number, color?: THREE.ColorRepresentation, ry = 0, rx = 0, rz = 0) =>
-  bag.add(key, box0(), { m: L(f, x, y, z, ry, sx, sy, sz, rx, rz), color, worldUv: true });
-/** Plano (olha para +z) com UV dentro de um retângulo da folha. */
-export function planeUV(w: number, h: number, r: Rect01): THREE.BufferGeometry {
-  const g = new THREE.PlaneGeometry(w, h), a = g.getAttribute("uv") as THREE.BufferAttribute;
-  for (let i = 0; i < a.count; i++) a.setXY(i, r.u0 + (r.u1 - r.u0) * a.getX(i), r.v0 + (r.v1 - r.v0) * a.getY(i));
-  return g;
-}
-
-/* ---------- peças repetidas ---------- */
-/** Saco de lixo: icosaedro amassado (ruído por posição, igual nos vértices repetidos), achatado no chão, com o nó. */
-export function bagGeo(seed: number, w: number, h: number): THREE.BufferGeometry {
-  const g = new THREE.IcosahedronGeometry(0.5, 3), p = g.getAttribute("position") as THREE.BufferAttribute, r = rng(seed);
-  const k = [r() * 6, r() * 6, r() * 6, 2 + r() * 2, 3 + r() * 3];
-  for (let i = 0; i < p.count; i++) {
-    const v = new THREE.Vector3(p.getX(i), p.getY(i), p.getZ(i)).normalize();
-    const n = 0.1 * Math.sin(v.x * k[3] + k[0]) * Math.sin(v.y * k[4] + k[1]) + 0.05 * Math.sin(v.z * 9 + k[2]) * Math.sin(v.x * 11 + k[1]) + 0.025 * Math.sin((v.x + v.y * 2 + v.z) * 23 + k[0]);
-    const rr = 0.5 * (1 + n);
-    let y = v.y * rr; if (y < -0.32) y = -0.32 - (y + 0.32) * 0.15;          // assenta no chão
-    p.setXYZ(i, v.x * rr * (1 + 0.15 * Math.max(0, -v.y)), y, v.z * rr * (1 + 0.15 * Math.max(0, -v.y)));
-  }
-  g.scale(w, h, w * 0.92); g.translate(0, 0.32 * h, 0);
-  const knot = new THREE.ConeGeometry(0.07, 0.16, 7).translate(0, 0.82 * h, 0);
-  const ears = [new THREE.SphereGeometry(0.055, 6, 4).scale(1.6, 0.6, 0.8).translate(0.07, 0.9 * h, 0), new THREE.SphereGeometry(0.055, 6, 4).scale(1.6, 0.6, 0.8).translate(-0.07, 0.9 * h, 0.02)];
-  const parts = [g, knot, ...ears].map((x) => x.toNonIndexed());
-  const out = new THREE.BufferGeometry(); const pos: number[] = [];
-  for (const x of parts) pos.push(...(x.getAttribute("position").array as Float32Array));
-  out.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); out.computeVertexNormals();
-  return out;
-}
-/** Palete PBR (1,2 × 1,0 × 0,144 m): tábuas de cima, travessas, nove blocos e as tábuas de baixo. Base em y = 0. */
-export function pallet(bag: Bag, at: THREE.Matrix4, tone: THREE.ColorRepresentation, seed: number) {
-  const r = rng(seed), add = (x: number, y: number, z: number, sx: number, sy: number, sz: number) => {
-    const c = new THREE.Color(tone).multiplyScalar(0.82 + r() * 0.3);
-    bag.add("wood", box0(), { m: mul(at, tm(x, y, z, (r() - 0.5) * 0.015, sx, sy, sz)), color: c, worldUv: true });
-  };
-  for (const x of [-0.55, 0, 0.55]) add(x, 0, 0, 0.1, 0.022, 1.0);                                   // tábuas de baixo
-  for (const x of [-0.55, 0, 0.55]) for (const z of [-0.45, 0, 0.45]) add(x, 0.022, z, 0.1, 0.078, 0.1); // blocos
-  for (const z of [-0.45, 0, 0.45]) add(0, 0.1, z, 1.2, 0.022, 0.1);                                  // travessas
-  for (let k = 0; k < 7; k++) add(0, 0.122, -0.45 + k * 0.15, 1.2, 0.022, k === 0 || k === 6 ? 0.1 : 0.085); // tábuas de cima
-}
-/** Botijão P45 (0,375 × 1,3 m): pé, corpo com ombros, alça de proteção e válvula. Base em y = 0. */
-export function cylinderP45(bag: Bag, at: THREE.Matrix4, color: THREE.ColorRepresentation) {
-  const body = new THREE.LatheGeometry([[0, 0.06], [0.18, 0.06], [0.187, 0.1], [0.187, 1.02], [0.17, 1.1], [0.12, 1.15], [0.05, 1.17], [0, 1.17]].map(([x, y]) => new THREE.Vector2(x, y)), 20);
-  bag.add("paintGloss", body, { m: at, color });
-  bag.add("rusty", cyl0(0.17, 0.175, 0.07, 18, true), { m: at, color: "#3a3d40" });                     // pé
-  bag.add("rusty", new THREE.TorusGeometry(0.12, 0.012, 5, 18).rotateX(Math.PI / 2), { m: mul(at, tm(0, 1.29, 0)), color: "#4a4d50" });
-  for (const a of [0, Math.PI]) bag.add("rusty", box0(), { m: mul(at, tm(Math.cos(a) * 0.12, 1.16, Math.sin(a) * 0.12, 0, 0.025, 0.13, 0.025)), color: "#4a4d50" });
-  bag.add("galv", cyl0(0.022, 0.022, 0.09, 8), { m: mul(at, tm(0, 1.17, 0)) });
-}
+import { Bag, box0, cyl0, mul, rod, taper, tm, tube } from "./exterior-alley-geo";
+import { type Rect01, rng } from "./exterior-alley-tex";
+import { B, type Foot, footOf, L, planeUV } from "./exterior-alley-foot";
+import { bagGeo, cylinderP45, pallet } from "./exterior-alley-pieces";
+export { footOf, L, planeUV, Y0, type Foot } from "./exterior-alley-foot";
+export { bagGeo, cylinderP45, pallet } from "./exterior-alley-pieces";
+export { dumpster } from "./exterior-alley-dumpster";
 
 /* ======================= móveis do beco ======================= */
 export function buildFixture(bag: Bag, p: Prop, signs: Record<string, Rect01>) {
@@ -274,32 +219,4 @@ function recycling(bag: Bag, f: Foot, signs: Record<string, Rect01>) {
   }
   bag.add("signs", planeUV(f.w - 0.2, 0.22, signs.bins), { m: L(f, 0, 1.2, -0.08) });                          // placa da coleta seletiva
   for (const x of [-f.w / 2 + 0.05, f.w / 2 - 0.05]) bag.add("galv", cyl0(0.018, 0.018, 0.32, 6), { m: L(f, x, 1.04, -0.1) });
-}
-
-/* ======================= caçambas ======================= */
-/** Contêiner metálico de carga frontal (o da planta: 1,6 × 2,4 × 1,3 m): corpo com frente inclinada, nervuras, bolsos de
- * içamento, tampas de plástico (uma aberta, com sacos aparecendo), dreno, rodízios e a etiqueta da coleta. */
-export function dumpster(bag: Bag, p: Prop, signs: Record<string, Rect01>, seed: number) {
-  if (p.shape.type !== "box") return;
-  const s = p.shape, cx = (s.x0 + s.x1) / 2, cz = (s.z0 + s.z1) / 2, W = s.z1 - s.z0, D = s.x1 - s.x0, r = rng(seed);
-  // referencial: x local ao longo do comprimento (z do mundo), frente (+z local) virada para o beco (−x do mundo)
-  const f: Foot = { cx, cz, w: W, d: D, yaw: -Math.PI / 2 };
-  const green = new THREE.Color("#22503d").multiplyScalar(0.9 + r() * 0.15);
-  // corpo: caixa afunilada (frente inclinada) sobre o chassi
-  const body = new THREE.BoxGeometry(W - 0.06, 1.1, D - 0.1, 1, 1, 1).translate(0, 0.55, 0), pa = body.getAttribute("position") as THREE.BufferAttribute;
-  for (let i = 0; i < pa.count; i++) if (pa.getZ(i) > 0 && pa.getY(i) < 0.3) pa.setZ(i, pa.getZ(i) - 0.28);   // frente inclinada embaixo
-  body.computeVertexNormals();
-  bag.add("paint", body, { m: L(f, 0, 0.16, -0.02), color: green });
-  for (let k = 0; k < 4; k++) B(bag, "paint", f, -W / 2 + 0.25 + k * ((W - 0.5) / 3), 0.16, D / 2 - 0.08, 0.06, 1.1, 0.04, green.clone().multiplyScalar(0.85));   // nervuras
-  B(bag, "paint", f, 0, 1.22, 0, W, 0.06, D, green.clone().multiplyScalar(0.8));               // borda
-  for (const sx of [-1, 1]) { B(bag, "paint", f, sx * (W / 2 + 0.04), 0.7, 0, 0.1, 0.18, 0.5, "#1a1a1a"); }   // bolsos de içamento
-  B(bag, "paint", f, 0, 0.1, 0, W - 0.1, 0.08, D - 0.3, "#1b1b1b");                              // chassi
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { bag.add("rubber", new THREE.CylinderGeometry(0.075, 0.075, 0.06, 12).rotateX(Math.PI / 2), { m: L(f, sx * (W / 2 - 0.25), 0.075, sz * (D / 2 - 0.35)) }); bag.add("galv", box0(), { m: L(f, sx * (W / 2 - 0.25), 0.1, sz * (D / 2 - 0.35), 0, 0.1, 0.06, 0.1) }); }
-  bag.add("galv", cyl0(0.03, 0.03, 0.06, 10), { m: L(f, W / 2 - 0.2, 0.22, D / 2 - 0.29, 0, 1, 1, 1, Math.PI / 2) });     // dreno
-  // tampas de plástico preto: a de trás fechada, a da frente aberta para trás (sacos à mostra)
-  const lid0 = L(f, -W / 4, 1.25, -D / 2 + 0.04), lid1 = L(f, W / 4, 1.25, -D / 2 + 0.04);
-  bag.add("plastic", box0(), { m: mul(lid0, tm(0, 0, D / 2 - 0.02, 0, W / 2 - 0.04, 0.05, D - 0.04)), color: "#121212" });
-  bag.add("plastic", box0(), { m: mul(lid1, mul(tm(0, 0, 0, 0, 1, 1, 1, -1.9), tm(0, 0, D / 2 - 0.02, 0, W / 2 - 0.04, 0.05, D - 0.04))), color: "#151515" });
-  for (let k = 0; k < 3; k++) bag.add("bag", bagGeo(seed * 3 + k, 0.55, 0.45), { m: L(f, W / 4 + (k - 1) * 0.32, 0.95, (r() - 0.5) * 0.3, r() * 6) });
-  bag.add("signs", planeUV(0.5, 0.25, signs.dumpLabel), { m: L(f, -W / 4, 0.75, D / 2 - 0.045) });
 }

@@ -22,6 +22,8 @@ keys/
 **/*firebase*.json
 **/*secret*.json
 node_modules/
+# symlink de node_modules em worktrees (sem barra final: casa também com link)
+node_modules
 tmp/
 .next/
 out/
