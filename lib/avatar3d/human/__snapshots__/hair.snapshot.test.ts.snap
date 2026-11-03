@@ -1,0 +1,153 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`caracterização — cabelo (FEMININO) > calota, cortina e cobertura (com e sem base, volumes) 1`] = `
+{
+  "cacheado-1-false": "3357e75feb5977b556c8e093783a402ab53895605a135621ee739dc33cf07f64",
+  "cacheado-1-true": "0a911c1f2446422a73b753297e664f16efaca3c3f4c359b12272495fb850ff36",
+  "cacheado-1.4-false": "aa056f484dbf22514d79966e6ba8df40e056300339c68b09ff54108d54158271",
+  "careca-1-false": "null",
+  "careca-1-true": "null",
+  "careca-1.4-false": "null",
+  "cortina-1-false": "d2784b9593105e59c7dec5e49f1faa09c23584f6603a9d7724eb79a157f68cb6",
+  "cortina-1-true": "7c27fd14023499e381f01a6620643aec8da54092c64b668163058e2df9cc44dc",
+  "cortina-1.4-false": "6ce2be1cac6fd76560b96587fcd85e06a2bdfa2175864303869879f1660def7c",
+  "crespo-1-false": "4a2a02b9c26a6d749be24b06408bc1c2d282744a637e4ca52bc91a9f7fc21654",
+  "crespo-1-true": "386afdd651b3d4a2433a8f5ce9423493962a1c12c3b241d66c165a3510cdf0cd",
+  "crespo-1.4-false": "280e0b42d2f93f743c3ea59fceff07e3acb1d943b76cdd9ec1a5256d5f319be0",
+  "curto-1-false": "f42ebc6829594bcb189d69c97174a28fba0a91ee3ac8dcf259c8522744dcade7",
+  "curto-1-true": "64820e496df4e5df24a0444588009c6a0b3be536218a287891bfe5ca196fc02d",
+  "curto-1.4-false": "7b7eb22777aa8015074b35a3d8187d1c7d7708ed8634f0b71507e2936f27a75c",
+  "desfiada-1-false": "bd33d029e465736e951adf297b9d188302b29baf82ff4e220a05439f9bf63c16",
+  "desfiada-1-true": "c8b57ef9291ac8636e8ebad02ca2c496156167a1767cc19fd4b51d14aa17d5cf",
+  "desfiada-1.4-false": "070f1c89261d3be7ee162cdd99455854a9ce9a97f9e1588c95785195a2df103f",
+  "escuro-1-false": "94b6bf23f49f1eb968b6e3428d2630cd952092890ca6f9db359fa89a2d6b1971",
+  "escuro-1-true": "142b55d2b485488dfd5b0962548aca9b14362918e18255fd55970b466e9a8ea6",
+  "escuro-1.4-false": "c95c610f3d2ebf0e48fc7e235e834db97f9879e14a4429ab9bbc3d52a701a9b4",
+  "lateral-1-false": "f42ebc6829594bcb189d69c97174a28fba0a91ee3ac8dcf259c8522744dcade7",
+  "lateral-1-true": "64820e496df4e5df24a0444588009c6a0b3be536218a287891bfe5ca196fc02d",
+  "lateral-1.4-false": "7b7eb22777aa8015074b35a3d8187d1c7d7708ed8634f0b71507e2936f27a75c",
+  "lenco-1-false": "1d016fec7595cdbc376fa713d8efeb71aad31c7a5c6c8ffc329fd6acae74ec46",
+  "lenco-1-true": "1d016fec7595cdbc376fa713d8efeb71aad31c7a5c6c8ffc329fd6acae74ec46",
+  "lenco-1.4-false": "f536ff864c6ada8970eb80f8ba2ad38db0a73d12a5244fa8dd96f1965c4daebb",
+  "longo-1-false": "fa0041c3e77d7b3f8a0fd2389dcc4ea91b6c47f9e4175bd7abbc567dcc3cf4c4",
+  "longo-1-true": "26762f5bfc66a2b4d20611707311449e9fb40ecdd57fa91dedaf6323839b6fe7",
+  "longo-1.4-false": "e888bc68126b0b66c46a47927333a6e644fad39d2b25d3c74b741013c0f59c0a",
+  "medio-1-false": "0e4ac26b12a094fe79aab90c49449dc18cdf0195c442d00d49c0569d83dd272a",
+  "medio-1-true": "dd47ba9820962cfccae4e9938f459cc3ce35484b7c330648b1e7bc428ad3aff6",
+  "medio-1.4-false": "d3ed1678148813c8f237c4bc69d90f7b1d3cc852a9af7cc02b0b4da59d3be40d",
+  "ondulado-1-false": "7cea3f14789eb71e6d15de02263e011c07e1cd3228ff570b5cbef5625ee3fd1b",
+  "ondulado-1-true": "f86fa41d936e7299a622193309cfd2313a3b4e0a5510ade3973426b579dcb0a7",
+  "ondulado-1.4-false": "ad180f3ce01d053777d3283e683f4c9ba25d855af5d7c09f77ac040524f281dd",
+  "raspado-1-false": "ab50a180052e9e50abd180f4eee612f9fb11439d57ea06d4b59d33e48a67ea00",
+  "raspado-1-true": "ab50a180052e9e50abd180f4eee612f9fb11439d57ea06d4b59d33e48a67ea00",
+  "raspado-1.4-false": "ab50a180052e9e50abd180f4eee612f9fb11439d57ea06d4b59d33e48a67ea00",
+  "reta-1-false": "ddf7120ce5aab08177b03a29592f7b0002607de439550ff6acbbbd04bf2f279d",
+  "reta-1-true": "0c35cc4070302161e87d3c20215769992f537a196a27548e50e7d28c92c7e72e",
+  "reta-1.4-false": "c59e75c099e0a80d12d2e9159fe98ed74f6caf6d2b0838cb3e4bf7bad4350012",
+}
+`;
+
+exports[`caracterização — cabelo (FEMININO) > penteado, fios nos três níveis, JSON e malha combinada 1`] = `
+{
+  "cacheado": "7b33739facb03c379d3c9dd0925bd80e1fa92aff5f95553c26621478ee31d4eb",
+  "careca": "sem base",
+  "cortina": "89ebc9878b02ff8457459607fbe9bcdef4ad2dd2eec0060292185a9583ab5c5c",
+  "crespo": "033a9e180352212cb0b56fab6b2ac7fd4fbab915aedb15fab0693a448efe6fa6",
+  "curto": "ee6190fe506d17dfe7e908ea12cd95ddfa7b75815390f3ffd054aec8175499ae",
+  "desfiada": "97d57f28676af86a443f5a011a12b296e91e0190f57a0c5b71ab351ba9330866",
+  "escuro": "841d308d75395e2afafe164519cf71f86ccc36687939b0cd9b689c17c0160670",
+  "kinds": "20b9466e28cf59ce1e9b20176b5472d7190746a6b2a7ad075aa8b5449ccb1390",
+  "lateral": "dfdb672aacb5cd02ac4b4b97ce1a975ff9eecbb607b68a02dacfd9f030e9eff2",
+  "lenco": "sem contexto",
+  "longo": "686789b03cee66673b98f351fd0cbee6d0b0ab5ca4c7290e85e6e06880e23a8b",
+  "medio": "d352a0d09648d1513576f192d6a85fdaddac2d289b437de3e5948d747d52ff75",
+  "ondulado": "490badcacc950b91aae6795b061bcea405b0d1953aecb752f1cb87bc2ce80c75",
+  "raspado": "sem contexto",
+  "reta": "b01d6b3539f9923209109b050db148f88ef91ceee0c9a7504231770765b0ae19",
+}
+`;
+
+exports[`caracterização — cabelo (FEMININO) > quadro da cabeça, linha do cabelo e máscara da orelha 1`] = `
+{
+  "ear": "78fca2affaa645d338b8f90aec369cd1ca304965f55e1e608c86f37fe8dcd6c6",
+  "frame": "3f37c5367e53c19674648e692e50bbf3fd05c98f1088884270cf84a2b759789c",
+  "lines": "2b67a9eaeeb5293886b11c745ee4ee2f6cf1a910a11529995ac322c47047f757",
+}
+`;
+
+exports[`caracterização — cabelo (MASCULINO) > calota, cortina e cobertura (com e sem base, volumes) 1`] = `
+{
+  "cacheado-1-false": "0b993f70d99372469c11317fcf95f5c2af9fc6129412009832a2456af9ab6de6",
+  "cacheado-1-true": "97a80435088e38a97e4b3f50f215df96444a588bc236b963174b900728dac7a4",
+  "cacheado-1.4-false": "6b3ecf77e0f72144db0676434a7f49ba0f4180edb696d0b003ae2cbd99aaf502",
+  "careca-1-false": "null",
+  "careca-1-true": "null",
+  "careca-1.4-false": "null",
+  "cortina-1-false": "a42f3e435753ac3ae87cdeeb59414454ff32411de46c22bf74aae2d08a4f2caf",
+  "cortina-1-true": "12912d75c7fca516c699da922c72ba670b380cb95b73b4d8e80e20cdbc5c43ec",
+  "cortina-1.4-false": "ad42d69bf7c61764d03d9b0466ce9804083edef7bb6c050c7b9bebe5ae50a137",
+  "crespo-1-false": "2c6d200cf104d3723d31e18109b81c93afea922bef4e7a24bea45b7258729c7e",
+  "crespo-1-true": "8f4b02fe9c4b58cd98d9b115cbf56024203041892ed680e77449d894add92a82",
+  "crespo-1.4-false": "293694bed45868617dae0cf8dec366c9eca5efffd40f313e2e6e16558bd4a610",
+  "curto-1-false": "a4a8027f17298ea8c47b3946c5303c8549c3ce45a7a1a13ab47627f675072368",
+  "curto-1-true": "80ab5551187cdde25d2d2f677a6b02eef025a0ae4441189ad6cb14aeaffb6b96",
+  "curto-1.4-false": "ea4039db3c344443d962a2e9c2b45562f6af8ace22e1416d68ffb77662fe9f6d",
+  "desfiada-1-false": "ff03e75c607c44afe84b8e60d818b2764169ed9116e186de8756cdf29f0857e9",
+  "desfiada-1-true": "1571013259b712c0fbf6ed9325acca44a293342f7b4377b7c03c2fe88e9e2085",
+  "desfiada-1.4-false": "142d5db12471e4a5bd5c959f0f9753db561e783f10047f6b0248cef11adf27a4",
+  "escuro-1-false": "2a4a3123de2c6a4d915a07124d2840de3bad63dcc919fd5620dc47c4bacffcc3",
+  "escuro-1-true": "54bf4bfc4ad0cf05a81f1ec433ba6020073407e05bed84be7a3ca45f22c0c749",
+  "escuro-1.4-false": "72820796de9dbf0c9b66dd4f28cc244032e748135e16854009f57eaa8a60305b",
+  "lateral-1-false": "a4a8027f17298ea8c47b3946c5303c8549c3ce45a7a1a13ab47627f675072368",
+  "lateral-1-true": "80ab5551187cdde25d2d2f677a6b02eef025a0ae4441189ad6cb14aeaffb6b96",
+  "lateral-1.4-false": "ea4039db3c344443d962a2e9c2b45562f6af8ace22e1416d68ffb77662fe9f6d",
+  "lenco-1-false": "88c449a6653916136390dc5e74ece7494acf466d19c32242d6988067602b1589",
+  "lenco-1-true": "88c449a6653916136390dc5e74ece7494acf466d19c32242d6988067602b1589",
+  "lenco-1.4-false": "9e74d289f63e22fedbd3ecbc7f23a2be67fe4560ba354e5c5c7ae9b4b84adafc",
+  "longo-1-false": "8bd2dfe9ecaadf02d3ffd32a4ea1dbe7a467a66db7c09e1d4ea19d882a812039",
+  "longo-1-true": "d920e9f5a04dfcb11481512fefad5f0227880e38e15331c2afcb53b41e46a9fe",
+  "longo-1.4-false": "0db465b2a36ea46ad6311d06b85af0aa95b059ea102fe5a1c771fb366d1b2c55",
+  "medio-1-false": "d5bcdf4efde6441d1051a03837e14443e873abc00fce3fb76745942dea849f18",
+  "medio-1-true": "9e047976d46795043c7f75b7523e541de47b786d5c6f2c6f6113ec17a4cca090",
+  "medio-1.4-false": "fba84c6a442c9c712c911e5425855f9a58db91543038dc247be96cf0b0db605c",
+  "ondulado-1-false": "e03793c3c5013aa6502a7c7abf2dc87d34f682bba58369ceb92f590c37b59b11",
+  "ondulado-1-true": "b34d65916984c65bd5506041f5cddee8758dddea0078f2bd2b02fe9f1739e65c",
+  "ondulado-1.4-false": "d34a94d5271ccde39f08630e30c2e7cf9538a01ace215fc903ff5c0e1489475e",
+  "raspado-1-false": "6e3ce2d46c6b00217ae5304ed4923cc24e0922baf142d9d2903c3fd9ac851193",
+  "raspado-1-true": "6e3ce2d46c6b00217ae5304ed4923cc24e0922baf142d9d2903c3fd9ac851193",
+  "raspado-1.4-false": "6e3ce2d46c6b00217ae5304ed4923cc24e0922baf142d9d2903c3fd9ac851193",
+  "reta-1-false": "f6f03e4e6a20ade7a12df55028cc5302b63d4a754ce82b257825916b403555de",
+  "reta-1-true": "1fadf9eca7629a704605fe969eef853d0191e723898715d41823f069f747bdf2",
+  "reta-1.4-false": "0368b19125c91224f1aeaa029146b99a44e2c5a30de09eea023b237ab03d5353",
+}
+`;
+
+exports[`caracterização — cabelo (MASCULINO) > penteado, fios nos três níveis, JSON e malha combinada 1`] = `
+{
+  "cacheado": "bedb55581fb6fb90340aa3c9a216514124ce1f5b5e3c918705086b624b75effb",
+  "careca": "sem base",
+  "cortina": "77d018231307369820f47ae4ec0ca57a0e8ecaf98a182a43a7dde4dcf11619ef",
+  "crespo": "c032e3605070a8ead9fcf4cd3ca7d5af0f7d6563f65aa51c4d09d9e179095e98",
+  "curto": "98e717ab330d815d18ad683e1dbe0decd534e9b972a461c4f09b0748ca4b0fdd",
+  "desfiada": "3085b14cb97db4d164a14ba89478587234b276494ceaad804230fa185e3d3200",
+  "escuro": "5e77ce314f16743cbb909793420501dcc5304d024a3212f542f0b722b613292e",
+  "kinds": "20b9466e28cf59ce1e9b20176b5472d7190746a6b2a7ad075aa8b5449ccb1390",
+  "lateral": "ce2653de2a88b5b323410997b582e6b9eb0530edd7c9f4bd9c5e14ce2ffa338f",
+  "lenco": "sem contexto",
+  "longo": "01b01df61a9ab8e72f7d87a5879178d74952f57e657da32abe31a0d6775771f3",
+  "medio": "5ef60dbe82356a2110273ff1a6d4e958bec2cfe45b1e6bf47f6f70feee938f7c",
+  "ondulado": "f0f28a20d352b936fbca552a78a1bc2cda654fbfb08e18e223ee28e4c8c76697",
+  "raspado": "sem contexto",
+  "reta": "942bc3d9f470a483e397969c3a844c3e4ecc6cad53be08200a54fe830f260413",
+}
+`;
+
+exports[`caracterização — cabelo (MASCULINO) > quadro da cabeça, linha do cabelo e máscara da orelha 1`] = `
+{
+  "ear": "78fca2affaa645d338b8f90aec369cd1ca304965f55e1e608c86f37fe8dcd6c6",
+  "frame": "ab218d6022df56d6aea4bc517f3218ae47c85b16044f72ca83a961976a148f26",
+  "lines": "b871a6b13531bd607e92a856472e9e471ff0bdcabd23134af2a17756d377905a",
+}
+`;
+
+exports[`caracterização — material dos fios > uniformes, chave de programa e shader por nível 1`] = `"8bef7b61669dae76478ad8d06265419d024f49fe62ebda667ff77052810a8091"`;
