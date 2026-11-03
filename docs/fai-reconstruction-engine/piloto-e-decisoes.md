@@ -57,6 +57,7 @@ num primeiro critério), o que motivou o plano de usar o SAM 3D Body.
 | Agendador próprio para o LoRA Lightning | agendador padrão do Qwen | com o padrão, o primeiro flat lay saiu como ruído sobre a silhueta (8 passos sem o `shift` da destilação) |
 | `catalog_batch` baixa também as costas (`backs/<id>.png`) antes de apagar o job; erro ao baixar marca a foto como falha e não apaga o job | guardar só a imagem final | as costas custam tanto de GPU quanto a frente e só existiam no servidor: o lote as descartava |
 | Lista da Fase 2 em `mode=reconstruct` (padrão com `--ids-file`), `retry_ids.txt` e checagem de `/health` antes do lote | `mode=auto` para tudo | no `auto`, foto enviada com o worker da Fase 2 recarregando volta só com o recorte, sem erro; no teste do RunPod a URL antiga (VM desligada) e a porta não exposta falharam em silêncio |
+| `runpod_start.sh` escolhe a pasta dos pesos pelo que já está no volume, instala torch+torchvision pelo driver e só diz "pronto" com os dois workers no Redis | seguir o `HF_HOME` da imagem e o torch do `python3` | em 02–03/11 a imagem `runpod/pytorch` 1.4.0 veio sem torch no `python3` e com outro `HF_HOME`: o pip trouxe torch sem torchvision, os 58 GB começaram a baixar de novo e duas fotos foram enviadas antes da Fase 2 carregar |
 | Aprovação humana de toda reconstrução | aprovação automática pelo QA | o QA não certifica logotipos, escudos e textos |
 
 ## Primeiro teste da Fase 2 (L4, 01/11/2026)

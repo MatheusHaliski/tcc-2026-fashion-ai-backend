@@ -65,7 +65,9 @@ um clique, com as mesmas variáveis, o que importa porque o pod é recriado vár
 
 Os demais valores já têm padrão no `runpod_env.py`: `RECON_QUANTIZE=none`, `RECON_OFFLOAD=none`, LoRA Lightning
 8 passos, `RECON_TRUE_CFG=1.0`, **`RECON_MAX_ATTEMPTS=1`**, `RECON_BACK_VIEW=true`, `RECON_MAX_SIDE=1024`,
-`METRICS_PUBLIC=false`, `HF_HOME=/workspace/hf`. Só acrescente uma variável no template para mudar um padrão.
+`METRICS_PUBLIC=false`. A pasta dos pesos é escolhida sozinha: a do volume que já tem os pesos do Qwen
+(`/workspace/.cache/huggingface`, que é o `HF_HOME` da imagem, ou `/workspace/hf`); para forçar outra, `FAI_HF_HOME`.
+Só acrescente uma variável no template para mudar um padrão.
 
 ## 4. Criar o pod (🌐 painel)
 **Pods → Deploy**: **Secure Cloud** (fotos com pessoas, LGPD), **A100 80GB** (SXM ou PCIe), **1 GPU**, **On-Demand**
@@ -81,10 +83,15 @@ cd /workspace && git clone https://github.com/MatheusHaliski/tcc-2026-fashion-ai
 bash /workspace/fashionai/services/garment_gpu/scripts/runpod_start.sh
 ```
 Na primeira subida o script instala o redis-server, baixa o RustFS 1.0.4 (SHA-256 conferido), cria a venv no volume
-(~5–10 min, uma vez só; log em `/workspace/logs/install.log`) e os workers baixam os pesos (~60 GB, ~10–20 min):
-```bash
-tail -f /workspace/logs/reconstruct.log     # espere "modelos carregados" com 'scheduler': 'lightning'
-```
+(~5–10 min, uma vez só; log em `/workspace/logs/install.log`) e os workers baixam os pesos (~60 GB, ~10–20 min). Se a
+imagem não tiver PyTorch no `python3` (a `runpod/pytorch` 1.4.0 não tem), a venv recebe `torch` e `torchvision` juntos
+do índice do PyTorch que o driver aguenta (CUDA 13 → cu130, 12.8+ → cu128, senão cu126) e o script confere que o
+torch enxerga a GPU. O `hf_transfer` (download rápido, ligado pela imagem) também vai para a venv.
+
+O script **só termina quando os dois workers carregaram os modelos** (`pronto: workers no ar. Pode rodar o lote.`),
+mostrando a cada minuto o tamanho da pasta de pesos e a última linha do log. É o mesmo sinal que a API usa: lote
+enviado antes disso volta só com o recorte da Fase 1. Ctrl+C interrompe só a espera (os serviços continuam);
+`runpod_start.sh status` diz depois se cada worker já carregou. Limite de espera: `FAI_READY_TIMEOUT` (3600 s).
 Em todo pod novo (o volume já tem venv e pesos, sobe em ~2 min):
 ```bash
 cd /workspace/fashionai && git pull origin main && bash services/garment_gpu/scripts/runpod_start.sh
@@ -176,3 +183,6 @@ refaça a projeção com o tempo medido.
 | `CUDA out of memory` no `reconstruct.log` | confira se nada mais usa a GPU (`nvidia-smi`); a A100 80 GB comporta Fase 1 (~2 GB) + Fase 2 bf16 (~58 GB) |
 | Pod parado não liga de novo (sem A100 livre) | crie um pod novo com o mesmo template e volume; tudo que importa está no volume |
 | `pip install falhou` | veja `/workspace/logs/install.log`; apague `/workspace/venv-fai` e rode de novo |
+| `a venv não passou na verificação` / `torch não enxerga a GPU` | driver da máquina mais antigo que o torch instalado: apague `/workspace/venv-fai` e rode de novo (o índice é escolhido pelo driver) ou crie o pod em outra máquina |
+| `workers fora do ar após 3600s` | veja `tail -n 30 /workspace/logs/reconstruct.log`; download lento demais: `FAI_READY_TIMEOUT=7200` |
+| Os pesos estão baixando de novo | `runpod_start.sh` mostra `pesos em <pasta>`; se houver duas cópias, a menor é sobra (`du -sh /workspace/hf /workspace/.cache/huggingface`) e pode ser apagada com os workers parados |
