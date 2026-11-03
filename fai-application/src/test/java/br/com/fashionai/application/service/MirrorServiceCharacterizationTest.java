@@ -201,9 +201,9 @@ class MirrorServiceCharacterizationTest {
         }
         r.step("localInterpretation.nulo", () -> MirrorService.localInterpretation(null, List.of()));
         r.step("keywords", () -> MirrorService.KEYWORDS.size());
-        r.step("hasWord", () -> List.of(MirrorService.hasWord("so hot today", "hot"), MirrorService.hasWord("photo", "hot")));
+        r.step("hasWord", () -> List.of(MirrorInterpretation.hasWord("so hot today", "hot"), MirrorInterpretation.hasWord("photo", "hot")));
         for (WardrobeItem w : anaPieces) {
-            r.step("slotOf." + w.getSubcategory(), () -> MirrorService.slotOf(w) + "/" + MirrorService.schemeSlot(MirrorService.slotOf(w)));
+            r.step("slotOf." + w.getSubcategory(), () -> MirrorService.slotOf(w) + "/" + MirrorSlots.schemeSlot(MirrorService.slotOf(w)));
         }
         List<WardrobeItem> all = anaPieces;
         MirrorService.Interpretation work = MirrorService.localInterpretation("trabalho no frio", List.of(piece("blazer")));
@@ -212,13 +212,13 @@ class MirrorServiceCharacterizationTest {
         r.step("localCompose.festa", () -> MirrorService.localCompose(party, all, Set.of()).stream().map(WardrobeItem::getId).toList());
         r.step("localCompose.semNada", () -> MirrorService.localCompose(party, all.subList(9, 12), Set.of()).stream().map(WardrobeItem::getId).toList());
         List<WardrobeItem> shoes = all.stream().filter(w -> MirrorService.slotOf(w).equals("shoes")).toList();
-        r.step("localAlternatives", () -> MirrorService.localAlternatives(shoes, all.subList(0, 2)));
-        r.step("localAlternatives.semContexto", () -> MirrorService.localAlternatives(all.subList(0, 5), List.of()));
-        r.step("localTakeOneOff.estampa", () -> MirrorService.localTakeOneOff(all.subList(9, 14), all.subList(0, 14)));
-        r.step("localTakeOneOff.cor", () -> MirrorService.localTakeOneOff(List.of(all.get(9), all.get(13)), all.subList(0, 10)));
+        r.step("localAlternatives", () -> MirrorSlotSuggestions.localAlternatives(shoes, all.subList(0, 2)));
+        r.step("localAlternatives.semContexto", () -> MirrorSlotSuggestions.localAlternatives(all.subList(0, 5), List.of()));
+        r.step("localTakeOneOff.estampa", () -> MirrorTakeOneOff.localTakeOneOff(all.subList(9, 14), all.subList(0, 14)));
+        r.step("localTakeOneOff.cor", () -> MirrorTakeOneOff.localTakeOneOff(List.of(all.get(9), all.get(13)), all.subList(0, 10)));
         for (int[] look : new int[][]{{0, 4}, {3, 6}, {11}, {0, 13}, {17, 5}, {16, 6}}) {
             List<WardrobeItem> l = java.util.Arrays.stream(look).mapToObj(all::get).toList();
-            r.step("silhouette." + java.util.Arrays.toString(look), () -> MirrorService.silhouette(l));
+            r.step("silhouette." + java.util.Arrays.toString(look), () -> MirrorStateView.silhouette(l));
         }
         Map<String, Object> slots = new LinkedHashMap<>();
         r.step("missing.vazio", () -> MirrorService.missing(slots));
@@ -227,14 +227,14 @@ class MirrorServiceCharacterizationTest {
         slots.put("shoes", id(2).toString());
         slots.put("accessory", List.of(id(3).toString(), "lixo", id(4).toString()));
         slots.put("rack", List.of(id(5).toString(), id(5).toString(), "x"));
-        r.step("complete", () -> MirrorService.complete(slots) + "/" + MirrorService.allIds(slots) + "/" + MirrorService.rack(slots));
+        r.step("complete", () -> MirrorService.complete(slots) + "/" + MirrorSlots.allIds(slots) + "/" + MirrorSlots.rack(slots));
         for (int i = 0; i < 26; i++) {
-            MirrorService.addToRack(slots, id(500 + i % 25));
+            MirrorSlots.addToRack(slots, id(500 + i % 25));
         }
-        r.step("rack.teto", () -> MirrorService.rack(slots));
-        r.step("single.invalido", () -> String.valueOf(MirrorService.single(Map.of("upper", "nada"), "upper")));
-        r.step("key", () -> MirrorService.key(List.of(id(2), id(1))));
-        r.step("constantes", () -> List.of(MirrorService.SLOTS, MirrorService.MAX_ACCESSORIES, MirrorService.MAX_SHOWN, MirrorService.MAX_RACK));
+        r.step("rack.teto", () -> MirrorSlots.rack(slots));
+        r.step("single.invalido", () -> String.valueOf(MirrorSlots.single(Map.of("upper", "nada"), "upper")));
+        r.step("key", () -> MirrorSlots.key(List.of(id(2), id(1))));
+        r.step("constantes", () -> List.of(MirrorService.SLOTS, MirrorService.MAX_ACCESSORIES, MirrorService.MAX_SHOWN, MirrorSlots.MAX_RACK));
     }
 
     /** Respostas de IA roteirizadas: o parser de cada chamada roda sobre um texto fixo (válido ou que deve ser descartado). */
