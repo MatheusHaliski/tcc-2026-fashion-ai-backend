@@ -416,14 +416,6 @@
    "max": 1852,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/service/CopilotLexicon.java": {
-   "max": 317,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/service/CopilotService.java": {
-   "max": 1419,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/service/CouponService.java": {
    "max": 463,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
