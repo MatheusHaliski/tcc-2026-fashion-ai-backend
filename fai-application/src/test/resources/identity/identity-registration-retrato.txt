@@ -1,0 +1,196 @@
+upload.tipoInvalido = ApiException(TIPO_INVALIDO,400,Tipo de arquivo inválido.,{allowed=[activity-proof, avatar, identity, logo, official-photo], })
+upload.tipoNulo = ApiException(TIPO_INVALIDO,400,Tipo de arquivo inválido.,{allowed=[activity-proof, avatar, identity, logo, official-photo], })
+upload.grande = ApiException(ARQUIVO_GRANDE,400,A imagem deve ter até 8 MB.,{})
+upload.naoImagem = ApiException(FORMATO_INVALIDO,400,Formato não aceito. Use JPG, PNG ou WebP.,{})
+upload.limite = ApiException(LIMITE_ENVIOS,429,Muitos envios em pouco tempo. Tente de novo em alguns minutos.,{})
+email = 
+notifications = 
+audit = 
+storage = put[pending/#1/logo.jpg, bytes[644], image/jpeg]; put[pending/#2/logo.jpg, bytes[644], image/jpeg]; put[pending/#3/logo.jpg, bytes[644], image/jpeg]; put[pending/#4/logo.jpg, bytes[644], image/jpeg]; put[pending/#5/logo.jpg, bytes[644], image/jpeg]; put[pending/#6/logo.jpg, bytes[644], image/jpeg]; put[pending/#7/logo.jpg, bytes[644], image/jpeg]; put[pending/#8/logo.jpg, bytes[644], image/jpeg]; put[pending/#9/logo.jpg, bytes[644], image/jpeg]; put[pending/#10/logo.jpg, bytes[644], image/jpeg]; put[pending/#11/logo.jpg, bytes[644], image/jpeg]; put[pending/#12/logo.jpg, bytes[644], image/jpeg]; put[pending/#13/logo.jpg, bytes[644], image/jpeg]; put[pending/#14/logo.jpg, bytes[644], image/jpeg]; put[pending/#15/logo.jpg, bytes[644], image/jpeg]; put[pending/#16/logo.jpg, bytes[644], image/jpeg]; put[pending/#17/logo.jpg, bytes[644], image/jpeg]; put[pending/#18/logo.jpg, bytes[644], image/jpeg]; put[pending/#19/logo.jpg, bytes[644], image/jpeg]; put[pending/#20/logo.jpg, bytes[644], image/jpeg]; put[pending/#21/logo.jpg, bytes[644], image/jpeg]; put[pending/#22/logo.jpg, bytes[644], image/jpeg]; put[pending/#23/logo.jpg, bytes[644], image/jpeg]; put[pending/#24/logo.jpg, bytes[644], image/jpeg]; put[pending/#25/logo.jpg, bytes[644], image/jpeg]; put[pending/#26/logo.jpg, bytes[644], image/jpeg]; put[pending/#27/logo.jpg, bytes[644], image/jpeg]; put[pending/#28/logo.jpg, bytes[644], image/jpeg]; put[pending/#29/logo.jpg, bytes[644], image/jpeg]; put[pending/#30/logo.jpg, bytes[644], image/jpeg]; 
+rateLimit = tryAcquire[#31, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; tryAcquire[#32, pre-registration-upload, 30, PT1H]; 
+hasher = hash[fashion-ai-timing-#33]; 
+tokens = 
+issuerReview = 
+upload.avatar = {height=640, kind=avatar, url=http://media/pending/#34/avatar.jpg, width=640, }
+upload.logo = {height=498, kind=logo, url=http://media/pending/#35/logo.jpg, width=640, }
+upload.activity-proof = {height=700, kind=activity-proof, url=http://media/restricted/pending/#36/activity-proof.jpg, width=900, }
+upload.official-photo = {height=700, kind=official-photo, url=http://media/pending/#37/official-photo.jpg, width=900, }
+upload.identity = {height=700, kind=identity, url=http://media/restricted/pending/#38/identity.jpg, width=900, }
+email = 
+notifications = 
+audit = 
+storage = put[pending/#34/avatar.jpg, bytes[142546], image/jpeg]; put[pending/#35/logo.jpg, bytes[134654], image/jpeg]; put[restricted/pending/#36/activity-proof.jpg, bytes[215840], image/jpeg]; put[pending/#37/official-photo.jpg, bytes[215840], image/jpeg]; put[restricted/pending/#38/identity.jpg, bytes[215840], image/jpeg]; 
+rateLimit = tryAcquire[#39, pre-registration-upload, 30, PT1H]; tryAcquire[#39, pre-registration-upload, 30, PT1H]; tryAcquire[#39, pre-registration-upload, 30, PT1H]; tryAcquire[#39, pre-registration-upload, 30, PT1H]; tryAcquire[#40, pre-registration-upload, 30, PT1H]; 
+hasher = 
+tokens = 
+issuerReview = 
+register.pessoal = Session{accessToken=jwt:ana.clara, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#41, user=UserCard{id=#42, username=ana.clara, displayName=Ana Clara, avatarUrl=http://media/users/#42/profile/avatar-<ms>.jpg, profileType=PESSOAL, verified=false, country=PT, privateAccount=true, }, status=PENDING_EMAIL_VERIFICATION, emailVerified=false, warnings=[Confirme seu e-mail para criar e editar conteúdo (acesso limitado).], }
+email = send[ana@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; 
+notifications = notify[#42, null, WELCOME, USER, #42, §i18n:identity.boas_vindas_ao_fashion_ai§, §i18n:identity.monte_seu_guarda_roupa_crie§, null]; notify[#42, null, EMAIL_CONFIRMATION, USER, #42, §i18n:identity.confirme_seu_e_mail§, §i18n:identity.enviamos_um_codigo_para_atea***@exemplo.com§, null]; 
+audit = log[#42, CADASTRO_CONTA, user:#42, SUCESSO, 1.1.1.1, Mozilla/5.0 (Windows NT 10.0) Chrome/120, {profileType=PESSOAL, }]; 
+storage = keyOf[http://media/pending/#34/avatar.jpg]; publicUrl[pending/#34/avatar.jpg]; get[pending/#34/avatar.jpg]; put[users/#42/profile/avatar-<ms>.jpg, bytes[142546], image/jpeg]; keyOf[http://media/pending/#34/avatar.jpg]; publicUrl[pending/#34/avatar.jpg]; 
+rateLimit = 
+hasher = hash[Senha@Forte1]; 
+tokens = issueAccessToken[User(#42), #41]; accessTokenTtl[]; 
+issuerReview = 
+register.semArroba = Session{accessToken=jwt:bruno_souza, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#43, user=UserCard{id=#44, username=bruno_souza, displayName=Bruno Souza, avatarUrl=null, profileType=PESSOAL, verified=false, country=BR, privateAccount=true, }, status=PENDING_EMAIL_VERIFICATION, emailVerified=false, warnings=[Confirme seu e-mail para criar e editar conteúdo (acesso limitado).], }
+email = send[bruno@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; 
+notifications = notify[#44, null, WELCOME, USER, #44, §i18n:identity.boas_vindas_ao_fashion_ai§, §i18n:identity.monte_seu_guarda_roupa_crie§, null]; notify[#44, null, EMAIL_CONFIRMATION, USER, #44, §i18n:identity.confirme_seu_e_mail§, §i18n:identity.enviamos_um_codigo_para_ateb***@exemplo.com§, null]; 
+audit = log[#44, CADASTRO_CONTA, user:#44, SUCESSO, null, null, {profileType=PESSOAL, }]; 
+storage = 
+rateLimit = 
+hasher = hash[Senha@Forte1]; 
+tokens = issueAccessToken[User(#44), #43]; accessTokenTtl[]; 
+issuerReview = 
+register.marca = Session{accessToken=jwt:atelierlume, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#45, user=UserCard{id=#46, username=atelierlume, displayName=Atelier Lume, avatarUrl=http://media/users/#46/profile/logo-<ms>.jpg, profileType=MARCA, verified=false, country=BR, privateAccount=true, }, status=PENDING_EMAIL_VERIFICATION, emailVerified=false, warnings=[Confirme seu e-mail para criar e editar conteúdo (acesso limitado).], }
+email = send[marca@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; send[marca@exemplo.com, Cadastro recebido — pendente de validação, <p>Recebemos o cadastro de <b>Atelier Lume</b> como marca.</p><p>Status: <b>pendente_validação</b>. Um administrador do Fashion AI vai revisar os dados e você receberá a resposta por e-mail.</p>, SECURITY]; 
+notifications = notify[#46, null, WELCOME, USER, #46, §i18n:identity.boas_vindas_ao_fashion_ai§, §i18n:identity.monte_seu_guarda_roupa_crie§, null]; notify[#46, null, EMAIL_CONFIRMATION, USER, #46, §i18n:identity.confirme_seu_e_mail§, §i18n:identity.enviamos_um_codigo_para_atem***@exemplo.com§, null]; 
+audit = log[#46, CADASTRO_CONTA, user:#46, SUCESSO, 2.2.2.2, ua, {profileType=MARCA, }]; 
+storage = keyOf[http://media/pending/#35/logo.jpg]; publicUrl[pending/#35/logo.jpg]; get[pending/#35/logo.jpg]; keyOf[http://media/restricted/pending/#36/activity-proof.jpg]; publicUrl[restricted/pending/#36/activity-proof.jpg]; get[restricted/pending/#36/activity-proof.jpg]; put[users/#46/profile/logo-<ms>.jpg, bytes[134654], image/jpeg]; put[restricted/users/#46/documents/activity-proof-<ms>.jpg, bytes[215840], image/jpeg]; keyOf[http://media/pending/#35/logo.jpg]; publicUrl[pending/#35/logo.jpg]; keyOf[http://media/pending/#35/logo.jpg]; publicUrl[pending/#35/logo.jpg]; keyOf[http://media/restricted/pending/#36/activity-proof.jpg]; publicUrl[restricted/pending/#36/activity-proof.jpg]; 
+rateLimit = 
+hasher = hash[Senha@Forte1]; 
+tokens = issueAccessToken[User(#46), #45]; accessTokenTtl[]; 
+issuerReview = submitted[#46]; 
+register.celebridade = Session{accessToken=jwt:samuel, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#47, user=UserCard{id=#48, username=samuel, displayName=Samuel Rosa, avatarUrl=http://media/users/#48/profile/avatar-<ms>.jpg, profileType=CELEBRIDADE, verified=false, country=BR, privateAccount=true, }, status=PENDING_EMAIL_VERIFICATION, emailVerified=false, warnings=[Confirme seu e-mail para criar e editar conteúdo (acesso limitado).], }
+email = send[samuel@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; send[samuel@exemplo.com, Cadastro recebido — pendente de validação, <p>Recebemos o cadastro de <b>Samuel Rosa</b> como celebridade.</p><p>Status: <b>pendente_validação</b>. Um administrador do Fashion AI vai revisar os dados e você receberá a resposta por e-mail.</p>, SECURITY]; 
+notifications = notify[#48, null, WELCOME, USER, #48, §i18n:identity.boas_vindas_ao_fashion_ai§, §i18n:identity.monte_seu_guarda_roupa_crie§, null]; notify[#48, null, EMAIL_CONFIRMATION, USER, #48, §i18n:identity.confirme_seu_e_mail§, §i18n:identity.enviamos_um_codigo_para_ates***@exemplo.com§, null]; 
+audit = log[#48, CADASTRO_CONTA, user:#48, SUCESSO, 3.3.3.3, ua, {profileType=CELEBRIDADE, }]; 
+storage = keyOf[http://media/pending/#34/avatar.jpg]; publicUrl[pending/#34/avatar.jpg]; get[pending/#34/avatar.jpg]; keyOf[http://media/pending/#37/official-photo.jpg]; publicUrl[pending/#37/official-photo.jpg]; get[pending/#37/official-photo.jpg]; keyOf[http://media/restricted/pending/#38/identity.jpg]; publicUrl[restricted/pending/#38/identity.jpg]; get[restricted/pending/#38/identity.jpg]; put[users/#48/profile/avatar-<ms>.jpg, bytes[142546], image/jpeg]; put[users/#48/profile/official-photo-<ms>.jpg, bytes[215840], image/jpeg]; put[restricted/users/#48/documents/identity-<ms>.jpg, bytes[215840], image/jpeg]; keyOf[http://media/pending/#34/avatar.jpg]; publicUrl[pending/#34/avatar.jpg]; keyOf[http://media/pending/#37/official-photo.jpg]; publicUrl[pending/#37/official-photo.jpg]; keyOf[http://media/pending/#37/official-photo.jpg]; publicUrl[pending/#37/official-photo.jpg]; keyOf[http://media/restricted/pending/#38/identity.jpg]; publicUrl[restricted/pending/#38/identity.jpg]; 
+rateLimit = 
+hasher = hash[Senha@Forte1]; 
+tokens = issueAccessToken[User(#48), #47]; accessTokenTtl[]; 
+issuerReview = submitted[#48]; 
+register.marcaMesmoNome = Session{accessToken=jwt:lume2, expiresInSeconds=900, refreshToken=<hex>, refreshExpiresAt=<t>, sessionId=#49, user=UserCard{id=#50, username=lume2, displayName=Atelier, avatarUrl=http://media/users/#50/profile/logo-<ms>.jpg, profileType=MARCA, verified=false, country=BR, privateAccount=true, }, status=PENDING_EMAIL_VERIFICATION, emailVerified=false, warnings=[Confirme seu e-mail para criar e editar conteúdo (acesso limitado).], }
+email = send[marca2@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; send[marca2@exemplo.com, Cadastro recebido — pendente de validação, <p>Recebemos o cadastro de <b>Atelier</b> como marca.</p><p>Status: <b>pendente_validação</b>. Um administrador do Fashion AI vai revisar os dados e você receberá a resposta por e-mail.</p>, SECURITY]; 
+notifications = notify[#50, null, WELCOME, USER, #50, §i18n:identity.boas_vindas_ao_fashion_ai§, §i18n:identity.monte_seu_guarda_roupa_crie§, null]; notify[#50, null, EMAIL_CONFIRMATION, USER, #50, §i18n:identity.confirme_seu_e_mail§, §i18n:identity.enviamos_um_codigo_para_atem***@exemplo.com§, null]; 
+audit = log[#50, CADASTRO_CONTA, user:#50, SUCESSO, 2.2.2.2, ua, {profileType=MARCA, }]; 
+storage = keyOf[http://media/pending/#35/logo.jpg]; publicUrl[pending/#35/logo.jpg]; get[pending/#35/logo.jpg]; put[users/#50/profile/logo-<ms>.jpg, bytes[134654], image/jpeg]; keyOf[http://media/pending/#35/logo.jpg]; publicUrl[pending/#35/logo.jpg]; keyOf[http://media/pending/#35/logo.jpg]; publicUrl[pending/#35/logo.jpg]; 
+rateLimit = 
+hasher = hash[Senha@Forte1]; 
+tokens = issueAccessToken[User(#50), #49]; accessTokenTtl[]; 
+issuerReview = submitted[#50]; 
+register.emailEmUso = ApiException(EMAIL_EM_USO,409,Este e-mail já está cadastrado. Faça login ou recupere a senha.,{})
+register.arrobaEmUso = ApiException(USERNAME_EM_USO,400,Este @ já está em uso.,{suggestions=[ana.clara_style, ana.clara.fai, ana.clara_26], })
+register.arquivoExterno = ApiException(FORMULARIO_INVALIDO,400,Corrija os campos destacados.,{avatarUrl=Envie o arquivo pelo formulário de cadastro., })
+register.arquivoDeOutroTipo = ApiException(FORMULARIO_INVALIDO,400,Corrija os campos destacados.,{avatarUrl=Envie o arquivo pelo formulário de cadastro., })
+email = 
+notifications = 
+audit = 
+storage = keyOf[https://evil.com/a.jpg]; keyOf[http://media/pending/#35/logo.jpg]; publicUrl[pending/#35/logo.jpg]; 
+rateLimit = 
+hasher = 
+tokens = 
+issuerReview = 
+user = [User(#42), ana.clara, Ana Clara, ana@exemplo.com, <hex>, h:Senha@Forte1, PESSOAL, PENDING_EMAIL_VERIFICATION, false, PT, 1990-05-01, FEMININO, http://media/users/#42/profile/avatar-<ms>.jpg, true, 2026-10, true, false]
+user = [User(#44), bruno_souza, Bruno Souza, bruno@exemplo.com, <hex>, h:Senha@Forte1, PESSOAL, PENDING_EMAIL_VERIFICATION, false, BR, null, MASCULINO, null, true, 2026-10, true, false]
+user = [User(#46), atelierlume, Atelier Lume, marca@exemplo.com, <hex>, h:Senha@Forte1, MARCA, PENDING_EMAIL_VERIFICATION, false, BR, null, null, http://media/users/#46/profile/logo-<ms>.jpg, true, 2026-10, true, false]
+user = [User(#48), samuel, Samuel Rosa, samuel@exemplo.com, <hex>, h:Senha@Forte1, CELEBRIDADE, PENDING_EMAIL_VERIFICATION, false, BR, 1980-01-01, MASCULINO, http://media/users/#48/profile/avatar-<ms>.jpg, true, 2026-10, true, false]
+user = [User(#50), lume2, Atelier, marca2@exemplo.com, <hex>, h:Senha@Forte1, MARCA, PENDING_EMAIL_VERIFICATION, false, BR, null, null, http://media/users/#50/profile/logo-<ms>.jpg, true, 2026-10, true, false]
+prefs = [User(#42), PT_BR, FEMININO]
+prefs = [User(#44), PT_BR, MASCULINO]
+prefs = [User(#46), PT_BR, null]
+prefs = [User(#48), PT_BR, MASCULINO]
+prefs = [User(#50), PT_BR, null]
+brand = [User(#46), Atelier Lume, atelier-lume, http://media/users/#46/profile/logo-<ms>.jpg, 11222333000181, Atelier Lume Ltda,  Atelier Lume , casual, https://www.atelierlume.com.br, contato@lume.com, #lume, http://media/restricted/users/#46/documents/activity-proof-<ms>.jpg, BR, PENDENTE]
+brand = [User(#50), Atelier Lume Ltda, atelier-lume-ltda, http://media/users/#50/profile/logo-<ms>.jpg, 11222333000181, Atelier Lume Ltda, null, null, https://atelierlume.com.br, null, null, null, BR, PENDENTE]
+celebrity = [User(#48), Samuel Rosa, samuel-rosa, http://media/users/#48/profile/official-photo-<ms>.jpg, Samuel Rosa Silva, http://media/restricted/users/#48/documents/identity-<ms>.jpg, ["música"], {"instagram":1000}, https://instagram.com/samuelrosa, Banda, agente@x.com, ["street"], true, PENDENTE]
+code = [User(#42), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#44), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#46), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#48), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#50), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+refresh = [User(#42), #41, null, true, 43200min, 1.1.1.1, Mozilla/5.0 (Windows NT 10.0) Chrome/120, Chrome Windows, PT, false]
+refresh = [User(#44), #43, null, true, 43200min, null, null, Dispositivo, BR, false]
+refresh = [User(#46), #45, null, true, 43200min, 2.2.2.2, ua, Navegador, BR, false]
+refresh = [User(#48), #47, null, true, 43200min, 3.3.3.3, ua, Navegador, BR, false]
+refresh = [User(#50), #49, null, true, 43200min, 2.2.2.2, ua, Navegador, BR, false]
+buckets = {pre-registration-upload:#31=1, pre-registration-upload:#32=31, pre-registration-upload:#39=4, pre-registration-upload:#40=1, }
+objects = [pending/#34/avatar.jpg, pending/#35/logo.jpg, restricted/pending/#36/activity-proof.jpg, pending/#37/official-photo.jpg, restricted/pending/#38/identity.jpg, users/#42/profile/avatar-<ms>.jpg, users/#46/profile/logo-<ms>.jpg, restricted/users/#46/documents/activity-proof-<ms>.jpg, users/#48/profile/avatar-<ms>.jpg, users/#48/profile/official-photo-<ms>.jpg, restricted/users/#48/documents/identity-<ms>.jpg, users/#50/profile/logo-<ms>.jpg]
+resend.limite = ok
+resend.sexto = ApiException(COTA_ESGOTADA,429,Limite de reenvios atingido.,{resetAt=<t>, })
+email = send[marca@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; send[marca@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; send[marca@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; send[marca@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; send[marca@exemplo.com, Confirme seu e-mail no Fashion AI, <p>Seu código de confirmação é <b style='font-size:22px;letter-spacing:4px'><code></b>.</p><p>Ou abra: <a href='/verify-email?code=<code>'>confirmar e-mail</a>. Vale por 24 horas.</p>, SECURITY]; 
+notifications = 
+audit = 
+storage = 
+rateLimit = tryAcquire[#46, email-verification, 5, PT24H]; tryAcquire[#46, email-verification, 5, PT24H]; tryAcquire[#46, email-verification, 5, PT24H]; tryAcquire[#46, email-verification, 5, PT24H]; tryAcquire[#46, email-verification, 5, PT24H]; tryAcquire[#46, email-verification, 5, PT24H]; status[#46, email-verification, 5, PT24H]; 
+hasher = 
+tokens = 
+issuerReview = 
+verify.errado = ApiException(CODIGO_INVALIDO,400,Código incorreto. Restam 4 tentativas.,{})
+verify.marca = UserCard{id=#46, username=atelierlume, displayName=Atelier Lume, avatarUrl=http://media/users/#46/profile/logo-<ms>.jpg, profileType=MARCA, verified=false, country=BR, privateAccount=true, }
+verify.jaConfirmado = UserCard{id=#46, username=atelierlume, displayName=Atelier Lume, avatarUrl=http://media/users/#46/profile/logo-<ms>.jpg, profileType=MARCA, verified=false, country=BR, privateAccount=true, }
+verify.pessoal = UserCard{id=#42, username=ana.clara, displayName=Ana Clara, avatarUrl=http://media/users/#42/profile/avatar-<ms>.jpg, profileType=PESSOAL, verified=false, country=PT, privateAccount=true, }
+resend.jaConfirmado = ok
+email = 
+notifications = 
+audit = log[CurrentUser{id=#46, username=atelierlume, role=USER, profileType=MARCA, emailVerified=false, status=PENDING_EMAIL_VERIFICATION, ip=127.0.0.1, userAgent=JUnit, }, EMAIL_CONFIRMADO, user:#46, {}]; log[CurrentUser{id=#42, username=ana.clara, role=USER, profileType=PESSOAL, emailVerified=false, status=PENDING_EMAIL_VERIFICATION, ip=127.0.0.1, userAgent=JUnit, }, EMAIL_CONFIRMADO, user:#42, {}]; 
+storage = 
+rateLimit = tryAcquire[#46, code-attempt:EMAIL_VERIFICATION, 10, PT1H]; tryAcquire[#46, code-attempt:EMAIL_VERIFICATION, 10, PT1H]; tryAcquire[#42, code-attempt:EMAIL_VERIFICATION, 10, PT1H]; 
+hasher = 
+tokens = 
+issuerReview = emailConfirmed[User(#46)]; 
+validatePassword.null = {password=A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial., }
+validatePassword.curta1! = {password=A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial., }
+validatePassword.semnumero!A = {password=A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial., }
+validatePassword.Senha@Forte1 = {}
+validatePassword.SENHAFORTE1 = {password=A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial., }
+validatePassword.senha@forte1 = {password=A senha precisa de no mínimo 8 caracteres, 1 letra maiúscula, 1 número e 1 caractere especial., }
+validCnpj.null = false
+validCnpj.11.222.333/0001-81 = true
+validCnpj.11111111111111 = false
+validCnpj.11.222.333/0001-82 = false
+validCnpj.123 = false
+username.null = [, false, O @ precisa de ao menos 3 caracteres (letras, números, ponto ou _).]
+username. @Ana.Clara!  = [ana.clara, false, null]
+username.demo_x = [demo_x, true, Este @ é reservado. Escolha outro.]
+username.admin = [admin, true, Este @ é reservado. Escolha outro.]
+username.ab = [ab, false, O @ precisa de ao menos 3 caracteres (letras, números, ponto ou _).]
+username.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, false, null]
+reserved.null = false
+problem.null = O @ precisa de ao menos 3 caracteres (letras, números, ponto ou _).
+suggest = [ana_clara, admin1, fashion_ze]
+suggestions = [ana.clara_style, ana.clara.fai, ana.clara_26]
+mask = [a***@x.com, ***@x.com, ***semarroba]
+escape = [, &lt;b&gt;&amp;&lt;/b&gt;]
+findByEmail = [true, false]
+purge = 5
+email = 
+notifications = 
+audit = 
+storage = listOlderThan[pending/, <t>, 2000]; delete[pending/#34/avatar.jpg]; delete[pending/#35/logo.jpg]; delete[pending/#37/official-photo.jpg]; listOlderThan[restricted/pending/, <t>, 2000]; delete[restricted/pending/#36/activity-proof.jpg]; delete[restricted/pending/#38/identity.jpg]; delete[restricted/pending/old/identity.jpg]; 
+rateLimit = 
+hasher = 
+tokens = 
+issuerReview = 
+user = [User(#42), ana.clara, Ana Clara, ana@exemplo.com, <hex>, h:Senha@Forte1, PESSOAL, ACTIVE, true, PT, 1990-05-01, FEMININO, http://media/pending/keep/avatar.jpg, true, 2026-10, true, false]
+user = [User(#44), bruno_souza, Bruno Souza, bruno@exemplo.com, <hex>, h:Senha@Forte1, PESSOAL, PENDING_EMAIL_VERIFICATION, false, BR, null, MASCULINO, null, true, 2026-10, true, false]
+user = [User(#46), atelierlume, Atelier Lume, marca@exemplo.com, <hex>, h:Senha@Forte1, MARCA, PENDING_VALIDATION, true, BR, null, null, http://media/users/#46/profile/logo-<ms>.jpg, true, 2026-10, true, false]
+user = [User(#48), samuel, Samuel Rosa, samuel@exemplo.com, <hex>, h:Senha@Forte1, CELEBRIDADE, PENDING_EMAIL_VERIFICATION, false, BR, 1980-01-01, MASCULINO, http://media/users/#48/profile/avatar-<ms>.jpg, true, 2026-10, true, false]
+user = [User(#50), lume2, Atelier, marca2@exemplo.com, <hex>, h:Senha@Forte1, MARCA, PENDING_EMAIL_VERIFICATION, false, BR, null, null, http://media/users/#50/profile/logo-<ms>.jpg, true, 2026-10, true, false]
+prefs = [User(#42), PT_BR, FEMININO]
+prefs = [User(#44), PT_BR, MASCULINO]
+prefs = [User(#46), PT_BR, null]
+prefs = [User(#48), PT_BR, MASCULINO]
+prefs = [User(#50), PT_BR, null]
+brand = [User(#46), Atelier Lume, atelier-lume, http://media/users/#46/profile/logo-<ms>.jpg, 11222333000181, Atelier Lume Ltda,  Atelier Lume , casual, https://www.atelierlume.com.br, contato@lume.com, #lume, http://media/restricted/users/#46/documents/activity-proof-<ms>.jpg, BR, PENDENTE]
+brand = [User(#50), Atelier Lume Ltda, atelier-lume-ltda, http://media/users/#50/profile/logo-<ms>.jpg, 11222333000181, Atelier Lume Ltda, null, null, https://atelierlume.com.br, null, null, null, BR, PENDENTE]
+celebrity = [User(#48), Samuel Rosa, samuel-rosa, http://media/users/#48/profile/official-photo-<ms>.jpg, Samuel Rosa Silva, http://media/restricted/users/#48/documents/identity-<ms>.jpg, ["música"], {"instagram":1000}, https://instagram.com/samuelrosa, Banda, agente@x.com, ["street"], true, PENDENTE]
+code = [User(#42), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#44), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#46), EMAIL_VERIFICATION, <hex>, 0, true, 1440min, true]
+code = [User(#48), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#50), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#46), EMAIL_VERIFICATION, <hex>, 0, true, 1440min, true]
+code = [User(#46), EMAIL_VERIFICATION, <hex>, 0, true, 1440min, true]
+code = [User(#46), EMAIL_VERIFICATION, <hex>, 0, true, 1440min, true]
+code = [User(#46), EMAIL_VERIFICATION, <hex>, 0, true, 1440min, true]
+code = [User(#46), EMAIL_VERIFICATION, <hex>, 0, false, 1440min, true]
+code = [User(#46), EMAIL_VERIFICATION, <hex>, 1, true, 60min, false]
+code = [User(#42), EMAIL_VERIFICATION, <hex>, 0, true, 60min, false]
+refresh = [User(#42), #41, null, true, 43200min, 1.1.1.1, Mozilla/5.0 (Windows NT 10.0) Chrome/120, Chrome Windows, PT, false]
+refresh = [User(#44), #43, null, true, 43200min, null, null, Dispositivo, BR, false]
+refresh = [User(#46), #45, null, true, 43200min, 2.2.2.2, ua, Navegador, BR, false]
+refresh = [User(#48), #47, null, true, 43200min, 3.3.3.3, ua, Navegador, BR, false]
+refresh = [User(#50), #49, null, true, 43200min, 2.2.2.2, ua, Navegador, BR, false]
+buckets = {code-attempt:EMAIL_VERIFICATION:#42=1, code-attempt:EMAIL_VERIFICATION:#46=2, email-verification:#46=6, pre-registration-upload:#31=1, pre-registration-upload:#32=31, pre-registration-upload:#39=4, pre-registration-upload:#40=1, }
+objects = [pending/#34/avatar.jpg, pending/#35/logo.jpg, restricted/pending/#36/activity-proof.jpg, pending/#37/official-photo.jpg, restricted/pending/#38/identity.jpg, users/#42/profile/avatar-<ms>.jpg, users/#46/profile/logo-<ms>.jpg, restricted/users/#46/documents/activity-proof-<ms>.jpg, users/#48/profile/avatar-<ms>.jpg, users/#48/profile/official-photo-<ms>.jpg, restricted/users/#48/documents/identity-<ms>.jpg, users/#50/profile/logo-<ms>.jpg, pending/keep/avatar.jpg, restricted/pending/old/identity.jpg]
