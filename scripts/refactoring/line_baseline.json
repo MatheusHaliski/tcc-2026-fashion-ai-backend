@@ -700,26 +700,6 @@
    "max": 269,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "scripts/diagramas/v5/estados_ts.py": {
-   "max": 337,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/gerar.py": {
-   "max": 1430,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/modelo.py": {
-   "max": 1061,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/tsmodelo.py": {
-   "max": 313,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/unidades.py": {
-   "max": 565,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "scripts/docs/taxonomia_entidades.py": {
    "max": 287,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
