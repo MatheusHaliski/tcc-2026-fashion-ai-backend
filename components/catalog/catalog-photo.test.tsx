@@ -29,7 +29,9 @@ describe("CatalogPhoto", () => {
       image={{ url: "/media/fabric.png", mode: "PROCESSED", whole: flatLay }} />);
     expect(container.querySelector("img")!.getAttribute("src")).toBe(mediaUrl("/media/catalog/flatlay/front.jpg"));
     expect(container.querySelector("[data-ai]")).not.toBeNull();
-    expect(container.querySelector(".catalog-photo-ai")).not.toBeNull();
+    const badge = container.querySelector(".catalog-photo-ai")!;
+    expect(badge.textContent).toBe("FAI");
+    expect(badge.getAttribute("aria-label")).toMatch(/IA|AI/);   // a sigla não basta: quem usa leitor de tela ouve que é IA
     const real = render(<CatalogPhoto requiredFrame alt="Camiseta" framing="WHOLE"
       image={{ url: "/media/fabric.png", mode: "PROCESSED", whole: { ...flatLay, aiGenerated: false } }} />);
     expect(real.container.querySelector(".catalog-photo-ai")).toBeNull();   // recorte de pixels reais: sem selo
