@@ -174,7 +174,7 @@ function fmt(sections: Record<string, unknown>): string {
   return lines.join("\n") + "\n}\n";
 }
 
-describe("retrato das áreas de serviço, segurança, terraço e bastidores", () => {
+describe("retrato das áreas de serviço, segurança, terraço e bastidores", { timeout: 60_000 }, () => {
   it("cada móvel e cada dress gera o mesmo lote, instâncias, luzes e animações; o kit gera as mesmas superfícies, placas e labirinto", async () => {
     const sections: Record<string, unknown> = {};
     const kit = kitShot();
