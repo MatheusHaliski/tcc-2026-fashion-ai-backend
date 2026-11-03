@@ -282,7 +282,7 @@ class RevertAuditRecordTest(unittest.TestCase):
         storage.store.return_value = {"stored_url": MEDIA + "/catalog/framed/4444/d.jpg", "assets_json": "{}", "owned_key": "k", "render_info": {}}
         analyzer = self.analyzer(frame=frame_of())
         analyzer.frame_storage = storage
-        with patch("scripts.catalog.process_catalog_images.public_image_url", side_effect=lambda url: url):
+        with patch("catalog_image_audit.public_image_url", side_effect=lambda url: url):
             result, _ = self.run_record(self.record(), analyzer)
         self.assertNotIn("error", result)
         self.assertNotIn("frame_revert", result)

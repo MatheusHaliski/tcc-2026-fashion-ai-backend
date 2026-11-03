@@ -178,7 +178,7 @@ class ProcessCatalogImagesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             downloader = ImageDownloader(Path(directory))
             downloader.proxy_blocked = True
-            with patch("scripts.catalog.process_catalog_images.public_image_url") as validate:
+            with patch("catalog_image_download.public_image_url") as validate:
                 with self.assertRaisesRegex(DownloadFailure, "NETWORK_PROXY_BLOCKED"):
                     downloader.get("https://cdn.example/a.jpg")
                 validate.assert_not_called()
@@ -264,7 +264,7 @@ class DownloadAuthorizationTest(unittest.TestCase):
         from process_catalog_images import CheckedRedirect, DownloadFailure
         from unittest.mock import patch
         import urllib.request
-        with patch('process_catalog_images.public_image_url', side_effect=lambda url:url):
+        with patch("catalog_image_download.public_image_url", side_effect=lambda url:url):
             with self.assertRaisesRegex(DownloadFailure,'UNAUTHORIZED'):
                 CheckedRedirect(['brand.example']).redirect_request(
                     urllib.request.Request('https://brand.example/a'),None,302,'redirect',{},'https://evil.example?x=.brand.example')

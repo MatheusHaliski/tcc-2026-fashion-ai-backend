@@ -229,7 +229,7 @@ class ForcedAuditRecordTest(unittest.TestCase):
         storage.store.return_value = {"stored_url": "https://media.example.com/f.jpg", "assets_json": "{}", "owned_key": "k", "render_info": {"upscaleFactor": 1.0}}
         analyzer = self.analyzer(storage=storage)
         analyzer.analyze.return_value = response(product=PRODUCT)
-        with patch("scripts.catalog.process_catalog_images.public_image_url", side_effect=lambda url: url):
+        with patch("catalog_image_audit.public_image_url", side_effect=lambda url: url):
             result = audit_record(self.record(), downloader, analyzer, checkpoint, apply=True)
         self.assertNotIn("error", result, result.get("status_note"))
         downloader.get.assert_called_with("https://brand.example/a.jpg", allowed_domains=None)
@@ -288,7 +288,7 @@ class ForcedAuditRecordTest(unittest.TestCase):
                 storage.store.return_value = {"stored_url": "https://media.example.com/f.jpg", "assets_json": "{}", "owned_key": "k", "render_info": {}}
                 analyzer = self.analyzer(storage=storage)
                 analyzer.analyze.return_value = response()
-                with patch("scripts.catalog.process_catalog_images.public_image_url", side_effect=lambda url: url):
+                with patch("catalog_image_audit.public_image_url", side_effect=lambda url: url):
                     result = audit_record(self.record(), downloader, analyzer, checkpoint, apply=True)
                 self.assertNotIn("error", result, result.get("status_note"))
                 analyzer.analyze.assert_called_once()
