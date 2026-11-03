@@ -3,42 +3,15 @@ import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
-import { useI18n, tr } from "@/lib/i18n/i18n";
+import { useI18n } from "@/lib/i18n/i18n";
 import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
-import type { BlockFinish, Finishes } from "@/components/room3d/wardrobe-preview";
+import type { Finishes } from "@/components/room3d/wardrobe-preview";
+import { AVAILABILITY, SLOT_LABELS, PREVIEW_SLOTS, empty, finishOf, higher, local, type Form, type Mine, type Options, type Part, type StoreItem } from "./wardrobe-creator-model";
+import { StoreSwatch } from "./store-swatch";
+export { AVAILABILITY, SLOT_LABELS, finishOf, type CreatorBlock, type CreatorMaterial, type StoreItem } from "./wardrobe-creator-model";
+export { StoreSwatch } from "./store-swatch";
 
 const WardrobePreview = dynamic(() => import("@/components/room3d/wardrobe-preview"), { ssr: false, loading: () => <Skeleton className="h-full" /> });
-
-export interface CreatorBlock { slotType: string; moldId: string; widthCm: number; label: string; basePrice: number; minLevel: string; materials: string[]; }
-export interface CreatorMaterial { code: string; label: string; roughness: number; metalness: number; priceFactor: number; minLevel: string; colors: string[]; }
-interface Options { blocks: CreatorBlock[]; materials: CreatorMaterial[]; colors: Record<string, string>; levels: string[]; identity: { name: string; logoUrl?: string | null; slug?: string | null; kind: string }; seals: { id: string; name: string; availableFrom: string; availableUntil: string }[]; currency: string; }
-export interface StoreItem {
-  sku: string; name: string; kind: "COMPONENT" | "WARDROBE"; description?: string | null; moldId: string; slotType: string; blockLabel: string; widthCm?: number; material?: string | null; materialLabel?: string | null;
-  colorName?: string | null; finish?: BlockFinish & { colorName?: string; texture?: string; creator?: string; sealId?: string }; bundle?: { slotType: string; moldId: string; material: string; colorName: string; finish: BlockFinish }[];
-  rarity?: string; pricePoints: number; requiredLevel: string; stock?: number | null; stockLeft?: number | null; sold: number; perUserLimit?: number | null; availableFrom?: string | null; availableUntil?: string | null;
-  availability: "DISPONIVEL" | "EM_BREVE" | "EXPIRADO" | "ESGOTADO" | "INATIVO"; requiresSeal: boolean; active: boolean; labelText?: string | null; logoUrl?: string | null; artUrl?: string | null;
-  seal?: { id: string; name: string } | null; creator?: { name: string; logoUrl?: string | null; slug?: string | null; kind: string } | null;
-  ownedCount?: number; blocker?: string | null; levelOk?: boolean; affordable?: boolean; owned?: boolean; compatibleModules?: string[];
-}
-interface Mine { identity: Options["identity"]; items: StoreItem[]; stats: { items: number; sold: number; points: number }; }
-interface Part { moldId: string; material: string; colorName: string; color: string; }
-interface Form { kind: "COMPONENT" | "WARDROBE"; name: string; description: string; labelText: string; logoUrl: string; artUrl: string; sealId: string; pricePoints: string; requiredLevel: string; stock: string; perUserLimit: string; availableFrom: string; availableUntil: string; requiresSeal: boolean; active: boolean; }
-
-export const AVAILABILITY: Record<string, { label: string; tone?: "mark" | "thread" | "chalk" }> = {
-  DISPONIVEL: { get label() { return tr("room3d.wardrobeCreator.a_venda"); }, tone: "thread" }, EM_BREVE: { get label() { return tr("room3d.wardrobeCreator.em_breve"); }, tone: "chalk" }, EXPIRADO: { label: "expirado", tone: "mark" }, ESGOTADO: { label: "esgotado", tone: "mark" }, INATIVO: { get label() { return tr("room3d.wardrobeCreator.fora_da_loja"); } },
-};
-/** Blocos da pré-visualização: o FAI Origem e os móveis à parte (sapateira, vitrine, porta-joias, ilha). */
-export const SLOT_LABELS: Record<string, string> = { get MIRROR() { return tr("room3d.wardrobeCreator.espelho"); }, get DOOR() { return tr("room3d.wardrobeCreator.portas"); }, get DRAWER() { return tr("room3d.wardrobeCreator.gavetas"); }, get HANDLE() { return tr("common.puxadores"); }, get TOP() { return tr("common.maleiro"); }, get BASE() { return tr("common.base"); }, get HANGER() { return tr("common.cabides"); }, get LOGO() { return tr("common.placa_de_logo"); }, LIGHT: "LED", get RUG() { return tr("common.tapete"); }, get SHOE_RACK() { return tr("room3d.roomScene.sapateira"); }, get BAG_DISPLAY() { return tr("room3d.roomScene.vitrine_de_bolsas"); }, get JEWELRY() { return tr("common.porta_joias"); }, get ISLAND() { return tr("common.ilha_central"); } };
-const PREVIEW_SLOTS = ["DOOR", "DRAWER", "HANDLE", "TOP", "BASE", "HANGER", "LOGO", "LIGHT", "RUG", "SHOE_RACK", "BAG_DISPLAY", "JEWELRY", "ISLAND"];
-const LV = ["ESTREIA", "STUDIO", "LOFT"];
-const higher = (a: string, b: string) => (LV.indexOf(a) >= LV.indexOf(b) ? a : b);
-const empty: Form = { kind: "WARDROBE", name: "", description: "", labelText: "", logoUrl: "", artUrl: "", sealId: "", pricePoints: "", requiredLevel: "ESTREIA", stock: "", perUserLimit: "", availableFrom: "", availableUntil: "", requiresSeal: false, active: true };
-const local = (iso?: string | null) => (iso ? new Date(iso).toISOString().slice(0, 16) : "");
-
-/** Acabamento de uma parte (material + cor), no formato que a cena 3D e a loja usam. */
-export function finishOf(m: CreatorMaterial | undefined, p: Part): BlockFinish {
-  return { color: p.color, roughness: m?.roughness, metalness: m?.metalness, material: m?.code };
-}
 
 /**
  * RF39 — "Criar guarda-roupa 3D": criador de blocos do FAI Origem para marcas e celebridades. Cada bloco (porta,
@@ -238,19 +211,6 @@ export function WardrobeCreatorTab() {
       <Dialog open={!!confirmDel} onClose={() => setConfirmDel(null)} title={confirmDel?.sold ? t("room3d.wardrobeCreator.retirar_da_loja") : t("room3d.wardrobeCreator.excluir_item")} footer={<><Button onClick={() => setConfirmDel(null)}>{t("common.cancel")}</Button><Button variant="danger" onClick={() => confirmDel && remove(confirmDel)}>{t("common.confirm")}</Button></>}>
         <p className="type-body">{confirmDel?.sold ? t("room3d.wardrobeCreator.ja_foi_vendido_ele_sai", { name: confirmDel.name, sold: confirmDel.sold }) : t("room3d.wardrobeCreator.sera_excluido", { name: confirmDel?.name })}</p>
       </Dialog>
-    </div>
-  );
-}
-
-/** Amostra do item na loja: faixas com as cores/materiais dos blocos + logo/arte da marca. */
-export function StoreSwatch({ item, className = "h-20" }: { item: StoreItem; className?: string }) {
-  const parts = item.kind === "WARDROBE" && item.bundle?.length ? item.bundle.map((b) => ({ k: b.slotType, color: b.finish?.color ?? "#ccc", metal: (b.finish?.metalness ?? 0) > 0.8 })) : [{ k: item.slotType, color: item.finish?.color ?? "#ccc", metal: (item.finish?.metalness ?? 0) > 0.8 }];
-  const logo = item.logoUrl ?? item.creator?.logoUrl ?? null;
-  return (
-    <div className={`relative flex overflow-hidden rounded ${className}`} style={item.artUrl ? { backgroundImage: `url(${mediaUrl(item.artUrl)})`, backgroundSize: "cover" } : undefined}>
-      {!item.artUrl && parts.map((p) => <span key={p.k} className="flex-1" style={{ background: p.metal ? `linear-gradient(135deg, ${p.color}, #ffffff 45%, ${p.color})` : item.finish?.material === "VIDRO" ? `${p.color}99` : p.color }} title={p.k} />)}
-      {logo && <img src={mediaUrl(logo)} alt="" className="absolute bottom-1 right-1 h-7 w-7 rounded-full bg-white object-contain p-0.5 shadow" />}
-      {item.labelText && <span className="absolute left-1 top-1 rounded bg-black/50 px-1 type-caption text-white">{item.labelText}</span>}
     </div>
   );
 }
