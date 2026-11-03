@@ -32,9 +32,9 @@ class MomentServiceRulesTest extends MomentServiceRulesFixture {
         assertThat(service.canSee(ana, priv)).isTrue();
         assertThat(service.canSee(admin, priv)).isTrue();
         // descoberta pública (home) nunca lista o privado para quem não é membro
-        List<Moment> forBia = service.visibleLive(bia, null);
+        List<Moment> forBia = new MomentQueries(service.ctx).visibleLive(bia, null);
         assertThat(forBia).containsExactly(pub);
-        assertThat(service.visibleLive(ana, null)).containsExactlyInAnyOrder(pub, priv);
+        assertThat(new MomentQueries(service.ctx).visibleLive(ana, null)).containsExactlyInAnyOrder(pub, priv);
     }
 
     @Test

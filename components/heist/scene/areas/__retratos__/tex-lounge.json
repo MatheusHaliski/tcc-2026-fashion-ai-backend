@@ -1,0 +1,231 @@
+{
+ "parquetSurface": {
+  "calls": 6,
+  "sizes": [
+   "512x512",
+   "512x512",
+   "512x512"
+  ],
+  "digest": "10ead288"
+ },
+ "damaskSurface": {
+  "calls": 1133,
+  "sizes": [
+   "256x256",
+   "256x256",
+   "256x256",
+   "256x256"
+  ],
+  "digest": "ea636cb1"
+ },
+ "rugA": {
+  "calls": 6721,
+  "sizes": [
+   "384x384"
+  ],
+  "digest": "19dbe058"
+ },
+ "rugB": {
+  "calls": 8888,
+  "sizes": [
+   "384x576"
+  ],
+  "digest": "df69a198"
+ },
+ "fringeTexture": {
+  "calls": 601,
+  "sizes": [
+   "256x64"
+  ],
+  "digest": "7c44f637"
+ },
+ "agedMirrorTexture": {
+  "calls": 164,
+  "sizes": [
+   "256x256"
+  ],
+  "digest": "5d85852f"
+ },
+ "onyxSurface": {
+  "calls": 6,
+  "sizes": [
+   "512x512",
+   "512x512",
+   "512x512"
+  ],
+  "digest": "67175e17"
+ },
+ "cofferTexture": {
+  "calls": 306,
+  "sizes": [
+   "512x512"
+  ],
+  "digest": "edb4c1fe"
+ },
+ "labelAtlas": {
+  "calls": 368,
+  "sizes": [
+   "1024x512"
+  ],
+  "digest": "2d7f687a"
+ },
+ "menuTexture": {
+  "calls": 83,
+  "sizes": [
+   "256x384"
+  ],
+  "digest": "57706fc9"
+ },
+ "scoreTexture": {
+  "calls": 837,
+  "sizes": [
+   "512x360"
+  ],
+  "digest": "0807b5e9"
+ },
+ "bookAtlas": {
+  "calls": 84,
+  "sizes": [
+   "1024x256"
+  ],
+  "digest": "5eb19cfa"
+ },
+ "paintingTexture": {
+  "calls": 5794,
+  "sizes": [
+   "768x512"
+  ],
+  "digest": "2bdcd38c"
+ },
+ "screenTexture": {
+  "calls": 290,
+  "sizes": [
+   "1024x640"
+  ],
+  "digest": "15b694ef"
+ },
+ "consts": {
+  "PARQUET_TILE": 1.4142135623730951,
+  "DAMASK_TILE": 0.64,
+  "LABELS": [
+   [
+    "VESPER",
+    "Cognac XO",
+    "#1d1208",
+    "#d9b46a"
+   ],
+   [
+    "LUMIÈRE",
+    "London Dry Gin",
+    "#f2efe6",
+    "#1d3b52"
+   ],
+   [
+    "NOIR 1957",
+    "Rum envelhecido",
+    "#120c0a",
+    "#c9a25a"
+   ],
+   [
+    "CELESTE",
+    "Amaro",
+    "#1f3a5c",
+    "#e8d8b0"
+   ],
+   [
+    "CAIRN 18",
+    "Single malt",
+    "#e9dfc6",
+    "#5a2a16"
+   ],
+   [
+    "ROSSO",
+    "Vermute di Gala",
+    "#7a1420",
+    "#f1e2c4"
+   ],
+   [
+    "FÉE VERTE",
+    "Absinto",
+    "#0f3a24",
+    "#e6e0b8"
+   ],
+   [
+    "SOMBRA",
+    "Mezcal joven",
+    "#d8d2c2",
+    "#262220"
+   ],
+   [
+    "AURORA",
+    "Cachaça de alambique",
+    "#f0e6cc",
+    "#7a4a12"
+   ],
+   [
+    "ROSA",
+    "Licor de pétalas",
+    "#f1d6db",
+    "#6a1f33"
+   ],
+   [
+    "PORTO 1963",
+    "Vintage",
+    "#2a0d10",
+    "#d8b56c"
+   ],
+   [
+    "FINO",
+    "Xerez seco",
+    "#efe7cf",
+    "#3b5a2a"
+   ],
+   [
+    "MARQUISE",
+    "Champagne brut",
+    "#0e0e10",
+    "#d6b46a"
+   ],
+   [
+    "ORCHIDÉE",
+    "Crème de violette",
+    "#3a2550",
+    "#e8dcf0"
+   ],
+   [
+    "BERGAMOTA",
+    "Licor cítrico",
+    "#f2e8b8",
+    "#305a3a"
+   ],
+   [
+    "NUIT",
+    "Bourbon de pequeno lote",
+    "#1a1410",
+    "#e0c48a"
+   ]
+  ],
+  "BOOKS": [
+   [
+    "MODA E RUÍNA",
+    "#1b1b1d",
+    "#d8b46a"
+   ],
+   [
+    "ATELIÊS DE PARIS",
+    "#e8e1d2",
+    "#7a1a20"
+   ],
+   [
+    "LUMIÈRE · 1957",
+    "#3a2a1a",
+    "#efe2c4"
+   ],
+   [
+    "O CORTE PERFEITO",
+    "#14303a",
+    "#e6d6a8"
+   ]
+  ]
+ }
+}

@@ -78,7 +78,7 @@ class MomentServiceJobTest extends MomentServiceFixture {
         vote(m, a, w.friend, MomentVoteDimension.CREATIVE);
         vote(m, b2, w.me, MomentVoteDimension.ELEGANT);
 
-        svc.end(m);
+        new MomentLifecycle(svc.ctx).end(m);
 
         assertThat(m.getStatus()).isEqualTo(MomentStatus.ENDED);
         assertThat(pa.getRanking()).isEqualTo(1);
@@ -111,7 +111,7 @@ class MomentServiceJobTest extends MomentServiceFixture {
         part(m, w.rival, MomentParticipationStatus.INTERESTED);
         submission(m, w.me, w.looksOf(w.me).get(0), 0, 50);
 
-        svc.end(m);
+        new MomentLifecycle(svc.ctx).end(m);
 
         Map<String, Object> memory = Json.map(m.getMemoryJson());
         assertThat(memory.get("goalReached")).isEqualTo(true);
@@ -131,7 +131,7 @@ class MomentServiceJobTest extends MomentServiceFixture {
         moments.save(m);
         when(points.award(any(), anyString(), anyString(), anyString(), any())).thenReturn(new FaiPointsService.Award(false, 0, false, null, null, false));
         submission(m, w.me, w.looksOf(w.me).get(0), 0, 50);
-        svc.end(m);
+        new MomentLifecycle(svc.ctx).end(m);
         assertThat(Json.map(m.getMemoryJson())).containsEntry("goalReached", true);
         verify(points, never()).award(any(), anyString(), anyString(), anyString(), any());
     }
@@ -140,11 +140,11 @@ class MomentServiceJobTest extends MomentServiceFixture {
     void lookDaMemoriaSoMostraAutorEmMomentoPublicoOuDeGrupo() {
         Moment m = active("mem");
         MomentSubmission s = submission(m, w.me, w.looksOf(w.me).get(0), 1, 10);
-        assertThat(svc.memoryLook(s, m).get("user")).isNotNull();
+        assertThat(new MomentLifecycle(svc.ctx).memoryLook(s, m).get("user")).isNotNull();
         m.setVisibility(MomentVisibility.INVITE_ONLY);
-        assertThat(svc.memoryLook(s, m)).containsKey("title").containsEntry("user", null);
+        assertThat(new MomentLifecycle(svc.ctx).memoryLook(s, m)).containsKey("title").containsEntry("user", null);
         s.setSchemeId(UUID.randomUUID());
-        assertThat(svc.memoryLook(s, m)).doesNotContainKey("title");
+        assertThat(new MomentLifecycle(svc.ctx).memoryLook(s, m)).doesNotContainKey("title");
     }
 
     @Test
@@ -154,7 +154,7 @@ class MomentServiceJobTest extends MomentServiceFixture {
         moments.save(m);
         var p = part(m, w.me, MomentParticipationStatus.SUBMITTED);
         submission(m, w.me, w.looksOf(w.me).get(0), 1, 10);
-        svc.end(m);
+        new MomentLifecycle(svc.ctx).end(m);
         assertThat(p.getRanking()).isNull();
         assertThat(Json.map(m.getMemoryJson())).containsEntry("winner", null);
     }

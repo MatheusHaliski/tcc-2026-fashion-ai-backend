@@ -7,12 +7,22 @@
  * No centro, a instalação floral da gala: o balcão redondo coberto de rosas e, sobre ele, uma coroa de rosas de quase
  * sete metros (nervuras floridas que se abrem e se fecham num remate dourado), fios de pérolas, castiçais acesos sobre
  * as rosas e pétalas caídas no terrazzo. Tudo instanciado: ~1 000 rosas num punhado de chamadas de desenho.
+ *
+ * Aqui fica a montagem do salão (buildHall); os arcos (interior-hall-arches), a rosa, o castiçal e o lustre
+ * (interior-hall-ornaments), os estandartes, o cartaz e os caixotões (interior-hall-textures) e a instalação floral
+ * (interior-hall-floral) ficam nos arquivos ao lado.
  */
 import * as THREE from "three";
-import { Batch, BOX0, CYL, CYL0, Instances, SPH, geo, mat, mul } from "./interior-batch";
-import { M, fabric, glow, solid, type Palette } from "./interior-mats";
-import { SERIF, drawGown, drawnTexture, fit, spaced, type Quality } from "./interior-tex";
+import { Batch, BOX0, CYL, CYL0, Instances, geo, mat, mul } from "./interior-batch";
+import { M, fabric, glow } from "./interior-mats";
+import type { Quality } from "./interior-tex";
 import type { InteriorCopy } from "./interior-copy";
+import { ARCHES, PILASTERS, archDrapeMaterial, archFillGeo, archFrameGeo, fanlightTexture, pleatedArchGeo } from "./interior-hall-arches";
+import { candelabra, chandelier } from "./interior-hall-ornaments";
+import { bannerTexture, domeTexture, posterTexture } from "./interior-hall-textures";
+
+export { candelabra, chandelier, roseGeometry } from "./interior-hall-ornaments";
+export { buildFloral } from "./interior-hall-floral";
 
 export type WallSide = "N" | "S" | "W" | "E";
 /** Matriz de um ponto na parede do salão: s ao longo da parede (x no norte/sul, z no leste/oeste), y, afastado `off` da face. */
@@ -28,188 +38,6 @@ export const HALL_H = 9.5, BALC_Y = 5.0;
 const BALC_T = 0.4, BALC_D = 1.2;
 export const DOMES: { x: number; z: number; r: number; rise: number }[] = [{ x: -8.25, z: 4.5, r: 3, rise: 1.4 }, { x: 0, z: 4.5, r: 4, rise: 1.8 }, { x: 8.25, z: 4.5, r: 3, rise: 1.4 }];
 
-/* ---------- arcos ---------- */
-interface Arch { wall: WallSide; s: number; r: number; spring: number; door?: number; panel?: boolean }
-const ARCHES: Arch[] = [
-  { wall: "N", s: -8, r: 2.7, spring: 2.3, panel: true }, { wall: "N", s: 0, r: 2.7, spring: 2.3, door: 4 },
-  { wall: "S", s: -8, r: 2.7, spring: 2.3, panel: true }, { wall: "S", s: 0, r: 2.7, spring: 2.3, door: 4 }, { wall: "S", s: 8, r: 2.7, spring: 2.3, panel: true },
-  { wall: "W", s: 2.5, r: 3, spring: 2, panel: true }, { wall: "W", s: 10, r: 1.7, spring: 2.2, door: 2.6 },
-  { wall: "E", s: -1, r: 3.5, spring: 1.5 }, { wall: "E", s: 10, r: 1.7, spring: 2.2, door: 2.6 },
-];
-/** Pilastras (posição ao longo de cada parede). */
-const PILASTERS: Record<WallSide, number[]> = { N: [-11.3, -4, 3.1, 9.3, 11.3], S: [-11.3, -4, 4, 11.3], W: [-4.6, 6.6, 12.9], E: [-5.2, 3.8, 7.4, 12.9] };
-
-function archFrameGeo(r: number, spring: number, t: number, depth: number): THREE.BufferGeometry {
-  return geo(`archframe${r}-${spring}-${t}-${depth}`, () => {
-    const s = new THREE.Shape();
-    s.moveTo(-r - t, 0); s.lineTo(-r - t, spring); s.absarc(0, spring, r + t, Math.PI, 0, true); s.lineTo(r + t, 0); s.lineTo(r, 0); s.lineTo(r, spring);
-    s.absarc(0, spring, r, 0, Math.PI, false); s.lineTo(-r, 0); s.closePath();
-    const g = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 1, curveSegments: 28 });
-    return g;
-  });
-}
-/** Região dentro do arco acima de y0 (tímpano sobre a porta ou o fundo do arco inteiro), com uv 0–1. */
-function archFillGeo(r: number, spring: number, y0: number): THREE.BufferGeometry {
-  return geo(`archfill${r}-${spring}-${y0}`, () => {
-    const s = new THREE.Shape();
-    if (y0 <= spring) { s.moveTo(-r, y0); s.lineTo(r, y0); s.lineTo(r, spring); s.absarc(0, spring, r, 0, Math.PI, false); s.lineTo(-r, y0); }
-    else { const half = Math.sqrt(Math.max(0, r * r - (y0 - spring) ** 2)), a0 = Math.atan2(y0 - spring, half); s.moveTo(half, y0); s.absarc(0, spring, r, a0, Math.PI - a0, false); s.lineTo(half, y0); }
-    const g = new THREE.ShapeGeometry(s, 28); const p = g.getAttribute("position") as THREE.BufferAttribute, uv = g.getAttribute("uv") as THREE.BufferAttribute;
-    const top = spring + r; for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + r) / (2 * r), (p.getY(i) - y0) / (top - y0));
-    return g;
-  });
-}
-function fanlightTexture(): THREE.Texture {
-  return drawnTexture("fanlight", 512, 256, (g, w, h) => {
-    g.fillStyle = "#1a1208"; g.fillRect(0, 0, w, h);
-    const grd = g.createRadialGradient(w / 2, h, 10, w / 2, h, h); grd.addColorStop(0, "#ffd38a"); grd.addColorStop(1, "#5a3a14"); g.fillStyle = grd; g.fillRect(0, 0, w, h);
-    g.strokeStyle = "#2a1c0c"; g.lineWidth = 7;
-    for (let k = 0; k <= 10; k++) { const a = Math.PI + (k / 10) * Math.PI; g.beginPath(); g.moveTo(w / 2, h); g.lineTo(w / 2 + Math.cos(a) * w, h + Math.sin(a) * h * 2); g.stroke(); }
-    for (const rr of [0.3, 0.62, 0.95]) { g.beginPath(); g.arc(w / 2, h, rr * h, Math.PI, 0); g.stroke(); }
-  });
-}
-/** Luz do refletor no pé do arco (emissiva da cortina): forte embaixo e no meio, sumindo para cima e para os lados. */
-function archWashTexture(): THREE.Texture {
-  return drawnTexture("archWash", 256, 256, (g, w, h) => {
-    const img = g.createImageData(w, h);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const u = (x + 0.5) / w, v = 1 - (y + 0.5) / h, k = Math.min(1, 0.05 + 0.95 * Math.exp(-3.1 * v) * Math.exp(-(((u - 0.5) / 0.3) ** 2)));
-      const i = (y * w + x) * 4; img.data[i] = img.data[i + 1] = img.data[i + 2] = Math.round(k * 255); img.data[i + 3] = 255;
-    }
-    g.putImageData(img, 0, 0);
-  });
-}
-/**
- * Cortina de veludo pregueada que preenche o arco (corta no semicírculo): pregas de ~0,2 m com até `depth` de fundo.
- * A cor por vértice marca crista clara e vale escuro — vale para a cor e para a luz emissiva do refletor (ver archDrapeMaterial).
- */
-function pleatedArchGeo(r: number, spring: number, depth: number, pleat: number): THREE.BufferGeometry {
-  return geo(`pleatArch${r}-${spring}-${depth}-${pleat}`, () => {
-    const N = Math.max(4, Math.round((2 * r) / pleat)), per = 6, nu = N * per, nv = 16, pos: number[] = [], uv: number[] = [], col: number[] = [], idx: number[] = [];
-    for (let i = 0; i <= nu; i++) {
-      const u = i / nu, x = -r + 2 * r * u, top = spring + Math.sqrt(Math.max(0, r * r - x * x)) - 0.012;
-      const fold = 0.5 + 0.5 * Math.cos(((i % per) / per) * Math.PI * 2), k = 0.42 + 0.58 * fold;
-      for (let j = 0; j <= nv; j++) { const y = (top * j) / nv; pos.push(x, y, depth * fold); uv.push(u, y / (spring + r)); col.push(k, k, k); }
-    }
-    for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) { const a = i * (nv + 1) + j, b = a + nv + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-    g.setIndex(idx); g.computeVertexNormals(); return g;
-  });
-}
-/** Veludo ameixa iluminado de baixo: a cor por vértice (pregas) multiplica também a emissão. */
-function archDrapeMaterial(): THREE.MeshStandardMaterial {
-  const m = new THREE.MeshStandardMaterial({ color: "#3b1858", roughness: 0.9, metalness: 0, vertexColors: true, emissive: new THREE.Color("#ff9a48"), emissiveMap: archWashTexture(), emissiveIntensity: 0.95, envMapIntensity: 0.35 });
-  m.name = "salao-archDrape";
-  m.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\n#ifdef USE_COLOR\n\ttotalEmissiveRadiance *= vColor.rgb;\n#endif"); };
-  m.customProgramCacheKey = () => "salao-archDrape";
-  return m;
-}
-
-/* ---------- rosa (instanciada) ---------- */
-/** Botão de rosa: anéis de pétalas curvas abrindo para fora (high: 3 anéis; low: 2). Raio ~1, base em y = 0. */
-export function roseGeometry(q: Quality): THREE.BufferGeometry {
-  return geo(`rose-${q}`, () => {
-    const rings = q === "high" ? [{ n: 4, r: 0.18, out: 0.18, h: 0.75 }, { n: 6, r: 0.45, out: 0.4, h: 0.68 }, { n: 8, r: 0.75, out: 0.55, h: 0.5 }] : [{ n: 5, r: 0.3, out: 0.3, h: 0.7 }, { n: 7, r: 0.7, out: 0.55, h: 0.5 }];
-    const pos: number[] = [], idx: number[] = []; const SA = q === "high" ? 3 : 2, SU = 2;
-    rings.forEach((ring, ri) => {
-      for (let p = 0; p < ring.n; p++) {
-        const c = (p / ring.n) * Math.PI * 2 + ri * 0.6, half = (Math.PI / ring.n) * 1.25, base = pos.length / 3;
-        for (let u = 0; u <= SU; u++) for (let a = 0; a <= SA; a++) {
-          const t = u / SU, wTaper = Math.sin(Math.PI * (0.2 + 0.8 * t)) * 0.9 + 0.1, ang = c + (a / SA - 0.5) * 2 * half * wTaper;
-          const rad = ring.r + ring.out * t * t + 0.06 * Math.sin((a / SA) * Math.PI), y = ring.h * t * (1.15 - 0.3 * t) + 0.12 * ri * (1 - t);
-          pos.push(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
-        }
-        for (let u = 0; u < SU; u++) for (let a = 0; a < SA; a++) { const k = base + u * (SA + 1) + a; idx.push(k, k + SA + 1, k + 1, k + 1, k + SA + 1, k + SA + 2); }
-      }
-    });
-    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-    const bud = new THREE.SphereGeometry(0.22, 8, 6).translate(0, 0.42, 0);
-    const merged = new THREE.BufferGeometry(); const bp = bud.toNonIndexed().getAttribute("position").array as Float32Array, gp = g.toNonIndexed();
-    const all = new Float32Array(gp.getAttribute("position").array.length + bp.length); all.set(gp.getAttribute("position").array as Float32Array); all.set(bp, gp.getAttribute("position").array.length);
-    merged.setAttribute("position", new THREE.BufferAttribute(all, 3)); merged.computeVertexNormals();
-    return merged;
-  });
-}
-const leafGeometry = () => geo("leaf", () => { const s = new THREE.Shape(); s.moveTo(0, 0); s.quadraticCurveTo(0.45, 0.5, 0, 1.2); s.quadraticCurveTo(-0.45, 0.5, 0, 0); return new THREE.ShapeGeometry(s, 4); });
-const petalGeometry = () => geo("petal", () => { const s = new THREE.Shape(); s.moveTo(0, 0); s.quadraticCurveTo(0.6, 0.4, 0.1, 1); s.quadraticCurveTo(-0.5, 0.5, 0, 0); return new THREE.ShapeGeometry(s, 3).rotateX(-Math.PI / 2); });
-
-const ROSE_COLORS: [string, number][] = [["#f4c3cf", 4], ["#f8dbe2", 3], ["#f3ece0", 3], ["#ef9a8c", 1.5], ["#c0304f", 1.2], ["#ecd3a8", 1.5], ["#e7a6bb", 2]];
-function roseColor(r: () => number): THREE.Color {
-  const tot = ROSE_COLORS.reduce((a, [, w]) => a + w, 0); let x = r() * tot;
-  for (const [c, w] of ROSE_COLORS) { x -= w; if (x <= 0) return new THREE.Color(c).multiplyScalar(0.92 + r() * 0.12); }
-  return new THREE.Color(ROSE_COLORS[0][0]);
-}
-
-/* ---------- castiçal ---------- */
-const candelabraStem = () => geo("candStem", () => new THREE.LatheGeometry([[0.16, 0], [0.16, 0.03], [0.06, 0.06], [0.05, 0.25], [0.09, 0.3], [0.03, 0.36], [0.035, 0.75], [0.07, 0.8], [0.03, 0.84]].map(([x, y]) => new THREE.Vector2(x, y)), 16));
-/** Castiçal de cinco velas em ouro velho (escala s), com velas e chamas instanciadas. */
-export function candelabra(room: string, at: THREE.Matrix4, s: number, P: Palette, batch: Batch, inst: Instances, flames: THREE.Vector3[]) {
-  batch.add(room, P.gold, candelabraStem(), mul(at, mat(0, 0, 0, 0, s)));
-  const arms = 4, armR = 0.26 * s, y = 0.78 * s;
-  for (let k = 0; k < arms; k++) {
-    const a = (k / arms) * Math.PI * 2 + Math.PI / 4, x = Math.cos(a) * armR, z = Math.sin(a) * armR;
-    batch.add(room, P.gold, CYL(8), mul(at, mat(x / 2, y, z / 2, -a, 0.012 * s, armR, 0.012 * s, 0, Math.PI / 2)));
-    batch.add(room, P.gold, CYL0(10), mul(at, mat(x, y, z, 0, 0.03 * s, 0.04 * s, 0.03 * s)));
-  }
-  const tips: [number, number, number][] = [[0, 0.84 * s, 0], ...Array.from({ length: arms }, (_, k) => { const a = (k / arms) * Math.PI * 2 + Math.PI / 4; return [Math.cos(a) * armR, y + 0.04 * s, Math.sin(a) * armR] as [number, number, number]; })];
-  const v = new THREE.Vector3();
-  for (const [x, yy, z] of tips) {
-    inst.add(room, "candle", CYL0(8), P.candle, mul(at, mat(x, yy, z, 0, 0.018 * s, 0.22 * s, 0.018 * s)));
-    inst.add(room, "flame", geo("flameGeo", () => new THREE.SphereGeometry(1, 6, 5).scale(0.5, 1.4, 0.5)), P.flame, mul(at, mat(x, yy + 0.25 * s, z, 0, 0.022 * s)));
-    v.set(x, yy + 0.25 * s, z).applyMatrix4(at); flames.push(v.clone());
-  }
-}
-
-/* ---------- textos do salão ---------- */
-function bannerTexture(copy: InteriorCopy, kind: "a" | "b"): THREE.Texture {
-  return drawnTexture(`hallBanner-${kind}-${copy.bannerA}-${copy.posterTitle}`, 512, 640, (g, w, h) => {
-    const grd = g.createLinearGradient(0, 0, 0, h); grd.addColorStop(0, "#2b0b1c"); grd.addColorStop(0.55, "#6d1e3d"); grd.addColorStop(1, "#c86b7a"); g.fillStyle = grd; g.fillRect(0, 0, w, h);
-    g.strokeStyle = "#d8b56a"; g.lineWidth = 6; g.strokeRect(18, 18, w - 36, h - 36);
-    g.fillStyle = "#f3dfb4"; g.textAlign = "center"; g.textBaseline = "middle";
-    if (kind === "a") {
-      fit(g, copy.bannerA, (p) => `600 ${p}px ${SERIF}`, 74, w - 90); spaced(g, copy.bannerA, w / 2, h * 0.22, 6);
-      const au = g.createLinearGradient(0, h * 0.35, 0, h * 0.95); au.addColorStop(0, "#f7e3b5"); au.addColorStop(0.5, "#f1a8bf"); au.addColorStop(1, "#b9a3ff");
-      drawGown(g, w / 2, h * 0.34, h * 0.56, au);
-    } else {
-      g.font = `italic 400 ${Math.round(h * 0.16)}px ${SERIF}`; g.fillText(copy.bannerB, w / 2, h * 0.42);
-      g.font = `400 ${Math.round(h * 0.045)}px ${SERIF}`; spaced(g, copy.exhibitSub, w / 2, h * 0.6, 5);
-      g.font = `600 ${Math.round(h * 0.06)}px ${SERIF}`; spaced(g, copy.bannerA, w / 2, h * 0.84, 6);
-    }
-  });
-}
-/** Cartaz-pista do salão: "VESTIDO AURORA · CASA ORVALHO" com o ano bem grande (o código do teclado da doca). */
-function posterTexture(copy: InteriorCopy): THREE.Texture {
-  return drawnTexture(`posterAurora-${copy.posterTitle}-${copy.posterFoot}`, 768, 1152, (g, w, h) => {
-    const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, "#160a14"); bg.addColorStop(0.5, "#3a1430"); bg.addColorStop(1, "#140810"); g.fillStyle = bg; g.fillRect(0, 0, w, h);
-    const glowG = g.createRadialGradient(w / 2, h * 0.5, 20, w / 2, h * 0.5, w * 0.7); glowG.addColorStop(0, "rgba(255,190,150,0.45)"); glowG.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = glowG; g.fillRect(0, 0, w, h);
-    const au = g.createLinearGradient(0, h * 0.28, 0, h * 0.75); au.addColorStop(0, "#fde7b8"); au.addColorStop(0.45, "#f3a3b8"); au.addColorStop(1, "#a88bff");
-    drawGown(g, w / 2, h * 0.27, h * 0.46, au);
-    g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#e9cf94";
-    g.font = `500 ${Math.round(h * 0.024)}px ${SERIF}`; spaced(g, copy.posterKicker, w / 2, h * 0.06, 10);
-    fit(g, copy.posterTitle, (p) => `600 ${p}px ${SERIF}`, Math.round(h * 0.07), w * 0.86); spaced(g, copy.posterTitle, w / 2, h * 0.13, 4);
-    g.font = `400 ${Math.round(h * 0.03)}px ${SERIF}`; spaced(g, copy.posterHouse, w / 2, h * 0.2, 12);
-    // o ano: o maior elemento do cartaz
-    g.fillStyle = "#ffe2a6"; g.shadowColor = "rgba(0,0,0,0.6)"; g.shadowBlur = 18;
-    g.font = `700 ${Math.round(h * 0.2)}px ${SERIF}`; g.fillText(copy.posterYear, w / 2, h * 0.84);
-    g.shadowBlur = 0; g.fillStyle = "#d9bf86"; g.font = `400 ${Math.round(h * 0.022)}px ${SERIF}`; g.fillText(copy.posterFoot, w / 2, h * 0.955);
-    g.strokeStyle = "#c9a45a"; g.lineWidth = 4; g.strokeRect(14, 14, w - 28, h - 28);
-  });
-}
-function domeTexture(): THREE.Texture {
-  return drawnTexture("domeCoffers", 1024, 512, (g, w, h) => {
-    g.fillStyle = "#d9cdb3"; g.fillRect(0, 0, w, h);
-    const rows = [[0.18, 0.32], [0.36, 0.5], [0.54, 0.68], [0.72, 0.86]], cols = 24;
-    for (const [a, b] of rows) for (let c = 0; c < cols; c++) {
-      const x0 = (c / cols) * w + 6, x1 = ((c + 1) / cols) * w - 6, y0 = a * h, y1 = b * h;
-      const grd = g.createLinearGradient(0, y0, 0, y1); grd.addColorStop(0, "#9c8b6e"); grd.addColorStop(1, "#c9b993"); g.fillStyle = grd; g.fillRect(x0, y0, x1 - x0, y1 - y0);
-      g.fillStyle = "#e9dfc6"; g.fillRect(x0 + 5, y0 + 5, x1 - x0 - 10, y1 - y0 - 10);
-      g.fillStyle = "#c39a4a"; g.beginPath(); g.arc((x0 + x1) / 2, (y0 + y1) / 2, Math.min(x1 - x0, y1 - y0) * 0.16, 0, Math.PI * 2); g.fill();
-    }
-    g.fillStyle = "#b58f45"; g.fillRect(0, h * 0.9, w, h * 0.04); g.fillRect(0, h * 0.13, w, h * 0.02);
-    const ocu = g.createLinearGradient(0, 0, 0, h * 0.13); ocu.addColorStop(0, "#fff1cf"); ocu.addColorStop(1, "#d9c08a"); g.fillStyle = ocu; g.fillRect(0, 0, w, h * 0.13);
-  });
-}
 
 export interface HallOut { flames: THREE.Vector3[]; chandeliers: THREE.Vector3[]; screen?: THREE.Mesh }
 
@@ -342,91 +170,3 @@ export function buildHall(q: Quality, copy: InteriorCopy, batch: Batch, inst: In
   return { flames, chandeliers };
 }
 const PLANE_ = () => geo("plane", () => new THREE.PlaneGeometry(1, 1));
-
-/** Lustre de cristal: haste, dois anéis de braços com lâmpadas de vela e cascata de cristais. */
-export function chandelier(room: string, x: number, y: number, z: number, ceiling: number, q: Quality, P: Palette, batch: Batch, inst: Instances, out: THREE.Vector3[], scale = 1) {
-  const s = scale;
-  batch.add(room, P.gold, CYL(8), mat(x, (ceiling + y + 0.9 * s) / 2, z, 0, 0.018, ceiling - y - 0.9 * s, 0.018));
-  batch.add(room, P.gold, geo("chBody", () => new THREE.LatheGeometry([[0.02, 0], [0.12, 0.05], [0.07, 0.25], [0.1, 0.5], [0.05, 0.7], [0.08, 0.85], [0.02, 0.92]].map(([a, b]) => new THREE.Vector2(a, b)), 16)), mat(x, y, z, 0, s));
-  const crystal = geo("crystal", () => new THREE.OctahedronGeometry(1, 0).scale(0.5, 1.3, 0.5));
-  const crystalMat = solid("crystalMat", "#f6f3ff", { metal: 0.1, rough: 0.02, env: 2.2, transparent: true, opacity: 0.85 });
-  for (const [ry, rr, n] of [[0.32, 0.85, 10], [0.62, 0.5, 6]] as [number, number, number][]) {
-    batch.add(room, P.gold, geo(`chRing${rr}`, () => new THREE.TorusGeometry(rr, 0.015, 6, 48).rotateX(Math.PI / 2)), mat(x, y + ry * s, z, 0, s));
-    for (let k = 0; k < n; k++) {
-      const a = (k / n) * Math.PI * 2, px = x + Math.cos(a) * rr * s, pz = z + Math.sin(a) * rr * s;
-      batch.add(room, P.gold, CYL0(8), mat(px, y + ry * s, pz, 0, 0.03 * s, 0.05 * s, 0.03 * s));
-      inst.add(room, "chCandle", CYL0(8), P.candle, mat(px, y + (ry + 0.05) * s, pz, 0, 0.016 * s, 0.12 * s, 0.016 * s));
-      inst.add(room, "chBulb", geo("flameGeo", () => new THREE.SphereGeometry(1, 6, 5).scale(0.5, 1.4, 0.5)), P.bulbWarm, mat(px, y + (ry + 0.2) * s, pz, 0, 0.03 * s));
-      if (q === "high") for (let d = 0; d < 3; d++) inst.add(room, "crystal", crystal, crystalMat, mat(px, y + (ry - 0.06 - d * 0.08) * s, pz, a, 0.022 * s));
-    }
-    if (q === "high") for (let k = 0; k < n * 3; k++) { const a = (k / (n * 3)) * Math.PI * 2; inst.add(room, "crystal", crystal, crystalMat, mat(x + Math.cos(a) * rr * 0.7 * s, y + (ry - 0.2) * s, z + Math.sin(a) * rr * 0.7 * s, a, 0.028 * s)); }
-  }
-  out.push(new THREE.Vector3(x, y + 0.4 * s, z));
-}
-
-/** A instalação floral do centro do salão (prop "floral", r 1,6 m): balcão de rosas e a coroa de rosas. */
-export function buildFloral(q: Quality, cx: number, cz: number, rad: number, batch: Batch, inst: Instances, flames: THREE.Vector3[]) {
-  const P = M(q), room = "salao", rose = roseGeometry(q), leaf = leafGeometry(), petal = petalGeometry();
-  const roseMat = solid("roseMat", "#ffffff", { rough: 0.72, side: THREE.DoubleSide, env: 0.4 });
-  const leafMat = solid("leafMat", "#2f5a2c", { rough: 0.7, side: THREE.DoubleSide, env: 0.3 });
-  let seed = 7; const r = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-  const dense = q === "high" ? 1 : 0.45, R = rad - 0.08, H = 1.05;
-  batch.add(room, solid("mossBase", "#1f2a1b", { rough: 1 }), CYL0(32), mat(cx, 0, cz, 0, R - 0.06, H, R - 0.06));
-  const put = (x: number, y: number, z: number, nx: number, ny: number, nz: number, s: number) => {
-    const m = new THREE.Matrix4(), up = new THREE.Vector3(nx, ny, nz).normalize(), qq = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
-    qq.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * Math.PI * 2));
-    m.compose(new THREE.Vector3(x, y, z), qq, new THREE.Vector3(s, s, s)); inst.add(room, "rose", rose, roseMat, m, roseColor(r));
-  };
-  // lateral do balcão (em fiadas) e o topo em cúpula baixa
-  const side = Math.round(2 * Math.PI * R / 0.17);
-  for (let row = 0; row < 7; row++) for (let k = 0; k < side; k++) {
-    if (r() > dense) continue;
-    const a = (k + (row % 2) * 0.5) / side * Math.PI * 2 + r() * 0.05, y = 0.1 + row * 0.15 + r() * 0.03;
-    put(cx + Math.cos(a) * R, y, cz + Math.sin(a) * R, Math.cos(a), 0.15, Math.sin(a), 0.085 + r() * 0.03);
-  }
-  for (let ring = 0; ring < 9; ring++) {
-    const rr = R * (1 - ring / 9) * 0.98, n = Math.max(1, Math.round(2 * Math.PI * rr / 0.17));
-    for (let k = 0; k < n; k++) { if (r() > dense) continue; const a = (k / n) * Math.PI * 2 + ring * 0.4, y = H + 0.06 + 0.22 * (1 - (rr / R) ** 2); put(cx + Math.cos(a) * rr, y, cz + Math.sin(a) * rr, Math.cos(a) * rr / R * 0.6, 1, Math.sin(a) * rr / R * 0.6, 0.09 + r() * 0.03); }
-  }
-  for (let k = 0; k < 260 * dense; k++) {
-    const a = r() * Math.PI * 2, y = 0.08 + r() * (H + 0.1), m = mat(cx + Math.cos(a) * (R + 0.02), y, cz + Math.sin(a) * (R + 0.02), -a + Math.PI / 2, 0.09 + r() * 0.04, 0.09 + r() * 0.04, 1, -0.4 + r() * 0.8, (r() - 0.5) * 1.2);
-    inst.add(room, "leaf", leaf, leafMat, m);
-  }
-  // a coroa: 8 nervuras que se abrem até 2,1 m e se fecham no remate a ~6,8 m
-  const ribs = 8, top = 6.8;
-  const ribMat = solid("ribMat", "#203222", { rough: 0.95 });
-  for (let k = 0; k < ribs; k++) {
-    const a = (k / ribs) * Math.PI * 2;
-    const pts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 16; i++) { const t = i / 16, rr = 1.05 + 1.05 * Math.sin(Math.PI * Math.min(1, t * 1.15)) * (1 - t * 0.55) - 0.75 * t * t, y = H + 0.15 + (top - H - 0.15) * t; pts.push(new THREE.Vector3(cx + Math.cos(a) * Math.max(0.12, rr), y, cz + Math.sin(a) * Math.max(0.12, rr))); }
-    const curve = new THREE.CatmullRomCurve3(pts);
-    batch.add(room, ribMat, new THREE.TubeGeometry(curve, 40, 0.1, 6, false));
-    const len = curve.getLength(), n = Math.round(len / (0.16 / Math.max(0.5, dense)));
-    for (let i = 0; i < n; i++) {
-      const t = i / n, p = curve.getPointAt(t), tan = curve.getTangentAt(t), out = new THREE.Vector3(p.x - cx, 0, p.z - cz).normalize();
-      for (const [side2, lift] of [[0, 0], [1, 0.4], [-1, 0.4]]) {
-        if (side2 !== 0 && r() > dense * 0.8) continue;
-        const perp = new THREE.Vector3().crossVectors(tan, out).normalize().multiplyScalar(side2 * 0.11);
-        const nrm = out.clone().multiplyScalar(1).add(new THREE.Vector3(0, lift, 0)).add(perp.clone().multiplyScalar(4));
-        put(p.x + perp.x + out.x * 0.05, p.y + perp.y, p.z + perp.z + out.z * 0.05, nrm.x, nrm.y + 0.2, nrm.z, 0.075 + r() * 0.03);
-      }
-    }
-    // fio de pérolas em catenária até a próxima nervura (na altura de maior abertura)
-    if (q === "high") {
-      const b = ((k + 1) / ribs) * Math.PI * 2, y0 = H + 2.2, ra = 2.05;
-      const pA = new THREE.Vector3(cx + Math.cos(a) * ra, y0, cz + Math.sin(a) * ra), pB = new THREE.Vector3(cx + Math.cos(b) * ra, y0, cz + Math.sin(b) * ra);
-      for (let i = 1; i < 26; i++) { const t = i / 26, p = pA.clone().lerp(pB, t); p.y -= Math.sin(Math.PI * t) * 0.55; inst.add(room, "pearl", SPH(8), solid("pearl", "#f7f1e6", { rough: 0.15, env: 1.6 }), mat(p.x, p.y, p.z, 0, 0.028)); }
-    }
-  }
-  // remate: esfera de rosas brancas e a estrela dourada
-  for (let k = 0; k < 40 * dense + 10; k++) { const u = r() * Math.PI * 2, v = Math.acos(2 * r() - 1), rr = 0.42; put(cx + Math.sin(v) * Math.cos(u) * rr, top + 0.25 + Math.cos(v) * rr, cz + Math.sin(v) * Math.sin(u) * rr, Math.sin(v) * Math.cos(u), Math.cos(v), Math.sin(v) * Math.sin(u), 0.08); }
-  const star = geo("finialStar", () => { const s = new THREE.Shape(); for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, rr = i % 2 ? 0.16 : 0.42; if (i === 0) s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); else s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } s.closePath(); return new THREE.ExtrudeGeometry(s, { depth: 0.06, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 1 }).translate(0, 0, -0.03); });
-  for (const ry of [0, Math.PI / 2]) batch.add(room, P.goldBright, star, mat(cx, top + 0.95, cz, ry));
-  // castiçais sobre as rosas, na borda do balcão
-  for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2 + Math.PI / 8; candelabra(room, mat(cx + Math.cos(a) * (R - 0.3), H + 0.12, cz + Math.sin(a) * (R - 0.3), a), 1.15, P, batch, inst, flames); }
-  // pétalas caídas no terrazzo em volta
-  for (let k = 0; k < 220 * dense; k++) {
-    const a = r() * Math.PI * 2, d = rad + 0.05 + Math.pow(r(), 2) * 2.4;
-    inst.add(room, "fallenPetal", petal, roseMat, mat(cx + Math.cos(a) * d, 0.004 + r() * 0.002, cz + Math.sin(a) * d, r() * Math.PI * 2, 0.03 + r() * 0.02), roseColor(r));
-  }
-}

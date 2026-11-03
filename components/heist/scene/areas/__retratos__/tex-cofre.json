@@ -1,0 +1,86 @@
+{
+ "floorNero": {
+  "calls": 6,
+  "sizes": [
+   "512x512",
+   "512x512",
+   "512x512"
+  ],
+  "digest": "9094ebd6"
+ },
+ "neroMat": {
+  "calls": 0,
+  "sizes": [],
+  "digest": "811c9dc5"
+ },
+ "rossoMat": {
+  "calls": 6,
+  "sizes": [
+   "256x256",
+   "256x256",
+   "256x256"
+  ],
+  "digest": "911872bd"
+ },
+ "thassosMat": {
+  "calls": 6,
+  "sizes": [
+   "256x256",
+   "256x256",
+   "256x256"
+  ],
+  "digest": "6e829ca4"
+ },
+ "inlayBrass": {
+  "calls": 0,
+  "sizes": [],
+  "digest": "811c9dc5"
+ },
+ "damaskMat": {
+  "calls": 6,
+  "sizes": [
+   "512x512",
+   "512x512",
+   "512x512"
+  ],
+  "digest": "8967dfea"
+ },
+ "lacquerPlum": {
+  "calls": 0,
+  "sizes": [],
+  "digest": "811c9dc5"
+ },
+ "ringTex": {
+  "calls": 198,
+  "sizes": [
+   "1024x64"
+  ],
+  "digest": "f6be877e"
+ },
+ "reportTex": {
+  "calls": 168,
+  "sizes": [
+   "512x700"
+  ],
+  "digest": "df3d8d7e"
+ },
+ "reportTexEn": {
+  "calls": 168,
+  "sizes": [
+   "512x700"
+  ],
+  "digest": "889e352a"
+ },
+ "tagAtlas": {
+  "calls": 142,
+  "sizes": [
+   "1024x256"
+  ],
+  "digest": "ce636af0"
+ },
+ "consts": {
+  "NERO_TILE": 1.5,
+  "DAMASK_TILE": 0.64,
+  "LABEL_N": 16
+ }
+}
