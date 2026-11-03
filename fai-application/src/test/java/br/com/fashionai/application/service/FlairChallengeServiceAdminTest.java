@@ -292,19 +292,19 @@ class FlairChallengeServiceAdminTest {
     // ------------------------------------------------------------------ apoio
     @Test
     void apoioDeConversao() {
-        assertThat(FlairChallengeService.position(null)).isEqualTo("ANY");
-        assertThat(FlairChallengeService.position("sup")).isEqualTo("SUP");
-        assertThat(FlairChallengeService.uuid(null)).isNull();
-        assertThat(FlairChallengeService.uuid("x")).isNull();
+        assertThat(FlairChallengeValues.position(null)).isEqualTo("ANY");
+        assertThat(FlairChallengeValues.position("sup")).isEqualTo("SUP");
+        assertThat(FlairChallengeValues.uuid(null)).isNull();
+        assertThat(FlairChallengeValues.uuid("x")).isNull();
         UUID id = UUID.randomUUID();
-        assertThat(FlairChallengeService.uuid(id.toString())).isEqualTo(id);
-        assertThat(FlairChallengeService.strings(List.of("a", 1))).containsExactly("a", "1");
-        assertThat(FlairChallengeService.strings("b")).containsExactly("b");
-        assertThat(FlairChallengeService.strings(" ")).isEmpty();
-        assertThat(FlairChallengeService.strings(3)).isEmpty();
-        assertThat(FlairChallengeService.instant(null, "f")).isNull();
-        assertThat(FlairChallengeService.instant(" ", "f")).isNull();
-        assertThat(FlairChallengeService.accepts(Map.of("accepts", "x"))).isEmpty();
-        assertThat(FlairChallengeService.accepts(Map.of("accepts", Map.of("tier", "OURO")))).containsEntry("tier", "OURO");
+        assertThat(FlairChallengeValues.uuid(id.toString())).isEqualTo(id);
+        assertThat(FlairChallengeValues.strings(List.of("a", 1))).containsExactly("a", "1");
+        assertThat(FlairChallengeValues.strings("b")).containsExactly("b");
+        assertThat(FlairChallengeValues.strings(" ")).isEmpty();
+        assertThat(FlairChallengeValues.strings(3)).isEmpty();
+        assertThat(FlairChallengeValues.instant(null, "f")).isNull();
+        assertThat(FlairChallengeValues.instant(" ", "f")).isNull();
+        assertThat(FlairChallengeValues.accepts(Map.of("accepts", "x"))).isEmpty();
+        assertThat(FlairChallengeValues.accepts(Map.of("accepts", Map.of("tier", "OURO")))).containsEntry("tier", "OURO");
     }
 }
