@@ -23,8 +23,8 @@ import java.util.UUID;
 /**
  * Governança da leitura do Lens (RF54 + RF24.CA13/CA16): traduz o resultado do detector de várias peças
  * ({@link MultiPieceService.PieceDetection} com o {@link AiOutcome} governado) para a proveniência do scan e as linhas
- * de peça. Puro: sem repositório, storage, cota ou relógio — {@link LensService#process} continua dono da transação,
- * da gravação e da devolução da cota.
+ * de peça. Puro: sem repositório, storage, cota ou relógio — {@link LensScanRecorder#process} continua dono
+ * da gravação e da devolução da cota, dentro da transação do {@link LensService}.
  * <ul>
  *   <li>Falha do detector ({@code det == null}) é {@code FAILED}, nunca um sucesso fictício; sem peças é
  *       {@code NO_FASHION_FOUND}.</li>
@@ -97,7 +97,7 @@ final class LensScanProvenance {
         d.setSubcategory(p.subcategory());
         d.setMaterial(p.material());
         d.setSex(p.sex());
-        d.setLabel(p.name() != null && !p.name().isBlank() ? p.name() : LensService.defaultLabel(p.category(), p.subcategory()));
+        d.setLabel(p.name() != null && !p.name().isBlank() ? p.name() : LensDetectionFields.defaultLabel(p.category(), p.subcategory()));
         d.setColorsJson(Json.write(read.colors()));
         d.setPattern(read.pattern());
         d.setStyleTags(Json.csv(p.style()));
@@ -107,7 +107,7 @@ final class LensScanProvenance {
         conf.put("detection", p.confidence());
         conf.put("pattern", Math.round(read.patternConfidence() * 100) / 100.0);
         d.setAttributeConfidenceJson(Json.write(conf));
-        d.setEmbeddingJson(Json.write(LensService.round4(read.embedding())));
+        d.setEmbeddingJson(Json.write(LensDetectionFields.round4(read.embedding())));
         d.setEmbeddingModel(GarmentEmbedder.MODEL.key());
         d.setStatus(LensDetectionStatus.DETECTED);
         return d;
