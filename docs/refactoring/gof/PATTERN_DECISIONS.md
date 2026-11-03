@@ -50,3 +50,4 @@ O checkpoint anterior avaliava os23 e implementava Memento no editor. A exigênc
 | Lote | Família | Padrão | Arquivo | Motivo |
 |---|---|---|---|---|
 | R76-heist-exterior-rua | Estrutural | Facade | `components/heist/scene/exterior-alley-tex.ts` | Interface única (reexports) sobre os sete módulos de texturas do beco (ruído, canvas/PBR, chão e paredes, traços e folhas, decalques, placas, texturas pequenas); os consumidores não mudaram de import. |
+| R80-seal | Estrutural | Facade | `fai-application/.../service/SealService.java` | O bean público (controllers e outros serviços não mudaram) mantém transações, construtor, records e assinaturas e delega a 15 colaboradores package-private por caso de uso (emissores, Hype, views, formulário, Copilot, candidatos, sugestões, vitrine, medalhões, roteamento, respostas, revisão, promoções). |
