@@ -226,6 +226,7 @@ public class PhysicalStoreService {
         order.setPricePoints(listing.getPricePoints());
         order.setShippingAddress(Json.write(address));
         order.setStatus("PROCESSING");
+        PhysicalStoreReturnPolicy.current().attach(order);
         orders.save(order);
         FaiPointsLedgerEntry debit = PhysicalStoreViews.pointsEntry(buyer.id(), -listing.getPricePoints(), "PHYSICAL_STORE_PURCHASE", "PHYSICAL_ORDER", order.getId().toString());
         if (requestRef != null) debit.setIdempotencyKey(buyer.id() + ":PHYSICAL_STORE_PURCHASE:" + requestRef);

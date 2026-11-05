@@ -11,3 +11,15 @@ export interface StoreOrder {
 }
 export const variantLabel = (v: { colorName: string | null; sizeLabel: string | null; sku?: string | null }, noColor: string) =>
   `${v.colorName ?? noColor} · ${v.sizeLabel ?? '—'}${v.sku ? ` · ${v.sku}` : ''}`;
+
+/** RF-PESQ-02 — pós-venda. */
+export type ReturnStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'IN_TRANSIT' | 'RECEIVED' | 'INSPECTED' | 'REFUNDED' | 'EXCHANGED' | 'CLOSED';
+export type ReturnReason = 'FIT_TOO_SMALL' | 'FIT_TOO_LARGE' | 'COLOR_DIFFERS' | 'QUALITY_DEFECT' | 'WRONG_ITEM' | 'CHANGED_MIND' | 'OTHER';
+export interface ReturnEligibility { eligible: boolean; reason: 'CASE_ALREADY_OPEN' | 'NOT_DELIVERED' | 'WINDOW_EXPIRED' | null; deadlineAt: string | null; policyVersion: string; windowDays: number; legacyPolicy: boolean; reasonCodes: ReturnReason[] }
+export interface ReturnEvent { id: string; fromStatus: string | null; toStatus: string; notes: string | null; at: string }
+export interface ReturnCase {
+  id: string; orderId: string; kind: 'RETURN' | 'EXCHANGE'; reasonCode: ReturnReason; reasonNotes: string | null; variantId: string | null; exchangeVariantId: string | null; exchangeOrderId: string | null;
+  status: ReturnStatus; policyVersion: string; windowDays: number; deadlineAt: string; inspectionOutcome: 'AS_DECLARED' | 'DIVERGENT' | null; divergenceReason: string | null; restocked: boolean; refunded: boolean;
+  fitFeedbackConsent: boolean; closedAt: string | null; version: number; role: 'BUYER' | 'SELLER' | 'OPERATOR'; createdAt: string; events: ReturnEvent[]; evidence: { id: string; uploaderId: string; createdAt: string }[];
+}
+export interface ReturnRequestForm { kind: 'RETURN' | 'EXCHANGE'; reasonCode: ReturnReason; reasonNotes: string; exchangeVariantId: string | null; fitFeedbackConsent: boolean }

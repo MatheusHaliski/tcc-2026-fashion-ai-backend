@@ -63,4 +63,11 @@ public class PhysicalStoreOrder extends AuditableEntity {
 
     @Column(name = "variant_size", length = 40)
     private String variantSize;
+
+    /** RF-PESQ-02 — política de troca/devolução congelada na compra; mudanças futuras não alcançam este pedido. */
+    @Column(name = "return_window_days")
+    private Integer returnWindowDays;
+
+    @Column(name = "return_policy_version", length = 20)
+    private String returnPolicyVersion;
 }
