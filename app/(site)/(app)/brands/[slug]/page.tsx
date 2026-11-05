@@ -26,6 +26,7 @@ import { RoomStore } from "@/components/room3d/room-store";
 import { PhysicalStoreSellerManager } from "@/components/points/physical-store";
 import { ReturnsInbox } from "@/components/points/store-returns-inbox";
 import { FittingAppointmentsInbox } from "@/components/try-on/fitting-appointments";
+import { AccessibilityDeclarations } from "@/components/catalog/accessibility-declarations";
 import { IssuerCenter, IssuerCenterButton, useIssuerReview } from "@/components/issuer-review";
 import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
 import { InsightStrip } from "@/components/insights/insight-strip";
@@ -139,7 +140,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} brand={{ name: (brand.brandName as string) ?? h.name ?? owner.displayName, logoUrl: (brand.logoUrl as string) ?? h.logoUrl ?? null }} />}
       {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
       {tab === "GUARDA_ROUPA" && (admin ? <WardrobeCreatorTab /> : user ? <RoomStore creatorSlug={slug} compact /> : <EmptyState title={t("brands.slug.entre_para_ver_os_itens")} hint={t("brands.slug.componentes_e_guarda_roupas_inteiros")} />)}
-      {tab === "PHYSICAL_STORE" && admin && <><PhysicalStoreSellerManager /><div className="mt-8"><ReturnsInbox /></div><div className="mt-8"><FittingAppointmentsInbox /></div></>}
+      {tab === "PHYSICAL_STORE" && admin && <><PhysicalStoreSellerManager /><div className="mt-8"><ReturnsInbox /></div><div className="mt-8"><FittingAppointmentsInbox /></div><div className="mt-8"><AccessibilityDeclarations /></div></>}
       {tab === "CUPONS" && admin && <BrandCouponsTab ownerId={ownerId ?? ""} celebrity={isCeleb} onCreateFlair={() => { setTab("FLAIR"); setFlairNew((n) => n + 1); }} />}
       {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.looks_de_qualquer_usuario_que")}</p><div className="grid-looks social-card-grid">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} extra={promotionNote(e.promotion)} />)}</div></> : <EmptyState title={t("brands.slug.nenhum_esquema_em_destaque_ainda")} hint={t("brands.slug.aparecem_aqui_os_looks_que")} />)}
       {tab === "PECAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<HighlightedPieces>("piece").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.pecas_que_compoem_os_looks")}</p><div className="grid-cards">{only<HighlightedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} seals={badges(e.seals)} extra={<span className="caption">{rich("brands.slug.no_look", { schemeTitle: e.schemeTitle, value: e.author ? ` · @${e.author.username}` : "" }, { 0: ($c) => <Link className="underline" href={`/schemes/${e.schemeId}`}>{$c}</Link> })}</span>} />)}</div></> : <EmptyState title={t("brands.slug.nenhuma_peca_em_destaque_ainda")} hint={t("brands.slug.as_pecas_dos_looks_com")} />)}
