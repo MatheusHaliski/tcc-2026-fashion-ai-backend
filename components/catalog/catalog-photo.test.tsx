@@ -102,7 +102,7 @@ describe("CatalogPhoto", () => {
     const b = render(<CatalogPhoto alt="" image={{ url: "https://media.fashion-ai.app/card.jpg", mode: "PROCESSED" }} />);
     expect(b.container.querySelector("[data-mode='processed']")).not.toBeNull();
     const c = render(<CatalogPhoto alt="" />);
-    expect(c.container.innerHTML).toBe("");
+    expect(c.container.querySelector("[data-mode=default]")).toBeTruthy();
   });
 });
 
@@ -207,4 +207,20 @@ it("retries an unavailable required image without exposing an unframed source", 
   result.rerender(<CatalogPhoto {...props} framing="WHOLE" />);
   result.rerender(<CatalogPhoto {...props} framing="FABRIC" />);
   expect(result.container.querySelector("[role=alert]")).toBeNull();
+});
+
+
+it("keeps a labeled category illustration after every image candidate fails", () => {
+  const result = render(<CatalogPhoto alt="Jeans" category="lower_piece" subcategory="jeans" color="blue"
+    image={{ url: "/media/jeans.png", mode: "PROCESSED" }} />);
+  fireEvent.error(result.container.querySelector("img")!);
+  expect(result.container.querySelector("[data-mode=default]")).toBeTruthy();
+  expect(result.container.textContent).toContain("Ilustração de referência");
+  expect(result.container.querySelector("img")?.getAttribute("src")).toContain("/api/catalog/default-asset?");
+});
+
+it("uses a labeled category illustration when no photo URL exists", () => {
+  const result = render(<CatalogPhoto alt="Casaco" category="upper_piece" subcategory="coat" />);
+  expect(result.container.querySelector("[data-mode=default]")).toBeTruthy();
+  expect(result.container.textContent).toContain("Ilustração de referência");
 });
