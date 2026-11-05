@@ -5,12 +5,19 @@ import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { storeApi } from "@/lib/store/api";
 import { variantLabel, type StoreVariant, type VariantForm } from "@/lib/store/types";
+import { demandApi } from "@/lib/store/demand";
 import { Button, Chip, Dialog, Field, Input, Select, Skeleton, useToast } from "@/components/ui";
 
 /** RF-PESQ-01 — escolha explícita de cor e tamanho no resgate; esgotado e "sem informação" são estados distintos. */
-export function VariantPicker({ listingId, value, onChange }: { listingId: string; value: string | null; onChange: (variant: StoreVariant | null, required: boolean) => void }) {
-  const { t } = useI18n();
+export function VariantPicker({ listingId, productId, value, onChange }: { listingId: string; productId?: string; value: string | null; onChange: (variant: StoreVariant | null, required: boolean) => void }) {
+  const { t } = useI18n(); const toast = useToast();
   const checkout = useApi((signal) => storeApi.checkout(listingId, signal), [listingId]);
+  // RF-PESQ-10 — "quis e não havia": só entra nos números agregados da marca com consentimento, sem identidade.
+  async function wanted(variant: StoreVariant) {
+    if (!productId) return;
+    try { const out = await demandApi.record({ productId, variantId: variant.id, sizeLabel: variant.sizeLabel, kind: "UNAVAILABLE" }); toast.info(t(out.recorded ? "demand.recorded" : "demand.notRecorded")); }
+    catch (error) { toast.fromError(error); }
+  }
   if (checkout.loading || !checkout.data) return <Skeleton className="h-16" />;
   if (checkout.error) return <p role="alert">{checkout.error.message}</p>;
   if (checkout.data.variantInfo === "MISSING") return <p className="type-body-sm text-muted" role="note">{t("physicalStore.variant.missing")}</p>;
@@ -28,6 +35,7 @@ export function VariantPicker({ listingId, value, onChange }: { listingId: strin
       })}
     </div>
     {!value && <p className="type-caption text-muted" role="status">{t("physicalStore.variant.required")}</p>}
+    {productId && checkout.data.variants.some((variant) => variant.availability === "SOLD_OUT") && <div className="flex flex-wrap gap-2">{checkout.data.variants.filter((variant) => variant.availability === "SOLD_OUT").map((variant) => <Button key={variant.id} size="sm" onClick={() => void wanted(variant)}>{t("demand.wanted", { variant: variantLabel(variant, t("physicalStore.variant.noColor")) })}</Button>)}</div>}
   </fieldset>;
 }
 

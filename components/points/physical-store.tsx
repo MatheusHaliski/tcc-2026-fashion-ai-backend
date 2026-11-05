@@ -83,7 +83,7 @@ export function PhysicalStore({ creatorSlug }: { creatorSlug?: string }) {
         </div>
       </li>)}</ul>}
     <Dialog open={!!checkout} onClose={() => !busy && setCheckout(null)} title={t("physicalStore.checkoutTitle")} footer={<><Button disabled={busy} onClick={() => setCheckout(null)}>{t("common.cancel")}</Button><Button variant="primary" loading={busy} disabled={(variant.required && !variant.chosen) || addressFields.some((field) => field !== "complement" && !address[field].trim())} onClick={redeem}>{t("physicalStore.confirmRedeem")}</Button></>}>
-      {checkout && <div className="mb-3"><VariantPicker listingId={checkout.id} value={variant.chosen?.id ?? null} onChange={(chosen, required) => setVariant({ chosen, required })} /></div>}
+      {checkout && <div className="mb-3"><VariantPicker listingId={checkout.id} productId={checkout.product.id} value={variant.chosen?.id ?? null} onChange={(chosen, required) => setVariant({ chosen, required })} /></div>}
       <p className="mb-3 type-body-sm text-muted">{t("physicalStore.shippingHint")}</p>
       <div className="grid gap-x-3 sm:grid-cols-2">{addressFields.map((field) => <Field key={field} label={t(`physicalStore.address.${field}`)}>
         <Input required={field !== "complement"} maxLength={field === "fullName" ? 120 : field === "street" ? 180 : 120} value={address[field]} onChange={(event) => setAddress((value) => ({ ...value, [field]: event.target.value }))} />
