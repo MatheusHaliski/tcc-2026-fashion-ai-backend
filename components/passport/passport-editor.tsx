@@ -144,7 +144,7 @@ export function PassportEditor({ pieceId }: { pieceId: string }) {
       catch (failure) { setError(failure instanceof Error ? failure.message : t('passport.failed')); }
       finally { setBusy(false); }
     }}>{t('passport.create')}</Button></section> : <p role="alert">{query.error.message}</p> : query.data?.pieceId === pieceId ? <PassportForm key={query.data.id} data={query.data} reload={query.reload} /> : query.loading ? <Skeleton className="h-64" /> : null}
-    <p><Link href={`/pieces/${encodeURIComponent(pieceId)}/passport/repairs`} className="btn">{t('repair.title')}</Link></p>
+    <p className="flex flex-wrap gap-2"><Link href={`/pieces/${encodeURIComponent(pieceId)}/sheet`} className="btn">{t('sheet.title')}</Link><Link href={`/pieces/${encodeURIComponent(pieceId)}/passport/repairs`} className="btn">{t('repair.title')}</Link></p>
     <PassportTransfers />
   </main>;
 }
