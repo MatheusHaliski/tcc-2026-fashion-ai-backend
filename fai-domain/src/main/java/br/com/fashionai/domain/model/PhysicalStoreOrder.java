@@ -50,4 +50,17 @@ public class PhysicalStoreOrder extends AuditableEntity {
 
     @Column(name = "delivered_at")
     private Instant deliveredAt;
+
+    /** RF-PESQ-01 — variante resgatada; os campos de texto são um retrato do SKU no momento da compra. */
+    @Column(name = "variant_id", length = 36)
+    private UUID variantId;
+
+    @Column(name = "variant_sku", length = 80)
+    private String variantSku;
+
+    @Column(name = "variant_color", length = 120)
+    private String variantColor;
+
+    @Column(name = "variant_size", length = 40)
+    private String variantSize;
 }

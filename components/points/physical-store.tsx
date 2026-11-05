@@ -8,12 +8,14 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { Badge, Button, Dialog, EmptyState, ErrorState, Field, Input, SegmentPicker, Select, SkeletonGrid, Textarea, useToast } from "@/components/ui";
 import { CatalogPhoto } from "@/components/catalog/catalog-photo";
 import { FaiIcon } from "@/components/fai-icon";
+import { SellerVariantManager, VariantPicker } from "@/components/points/store-variants";
+import type { StoreVariant } from "@/lib/store/types";
 
 type Segment = "CLOTHING" | "SHOES" | "ACCESSORIES";
 type CatalogCategory = "upper_piece" | "lower_piece" | "full_body_piece" | "shoes_piece" | "accessory_piece";
-type CatalogProduct = { id: string; productName: string; category: CatalogCategory; imageUrl?: string | null; catalogImage?: { url: string; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: { x: number; y: number; w: number; h: number }; background?: string } | null };
+type CatalogProduct = { id: string; productName: string; category: CatalogCategory; imageUrl?: string | null; catalogImage?: { url: string; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: { x: number; y: number; w: number; h: number }; background?: string } | null; variants?: { id: string; colorName?: string | null; color?: string | null; sku?: string | null }[] };
 type Seller = { name?: string; slug?: string; logoUrl?: string | null; kind?: string };
-type Listing = { id: string; product: CatalogProduct; description?: string | null; pricePoints: number; requiredLevel: string; levelOk: boolean; affordable: boolean; stock?: number; active: boolean; seller?: Seller };
+type Listing = { id: string; product: CatalogProduct; description?: string | null; pricePoints: number; requiredLevel: string; levelOk: boolean; affordable: boolean; stock?: number; active: boolean; seller?: Seller; variantInfo?: "MISSING" | "PRESENT"; variantCount?: number };
 type Order = { id: string; listingId: string; product: CatalogProduct; seller?: Seller; pricePoints: number; status: string; trackingCode?: string | null; trackingUrl?: string | null; buyer?: string; shippingAddress?: Record<string, string | null> };
 const SEGMENTS: { id: Segment; label: string }[] = [
   { id: "CLOTHING", label: "physicalStore.clothing" },
@@ -39,6 +41,8 @@ export function PhysicalStore({ creatorSlug }: { creatorSlug?: string }) {
   const [segment, setSegment] = useState<Segment>("CLOTHING");
   const [checkout, setCheckout] = useState<Listing | null>(null);
   const [address, setAddress] = useState(EMPTY_ADDRESS);
+  // RF-PESQ-01 — a variante escolhida vai no pedido; `required` vem do checkout (oferta com variantes cadastradas)
+  const [variant, setVariant] = useState<{ chosen: StoreVariant | null; required: boolean }>({ chosen: null, required: false });
   const [busy, setBusy] = useState(false);
   const purchaseKeys = useRef(new PurchaseKeys());
   const [query, setQuery] = useState("");
@@ -50,10 +54,10 @@ export function PhysicalStore({ creatorSlug }: { creatorSlug?: string }) {
     if (!checkout || busy) return;
     setBusy(true);
     try {
-      await api.post(`/api/physical-store/listings/${checkout.id}/redeem`, { shippingAddress: address }, { headers: purchaseKeys.current.headers(checkout.id) });
+      await api.post(`/api/physical-store/listings/${checkout.id}/redeem`, { shippingAddress: address, variantId: variant.chosen?.id ?? null }, { headers: purchaseKeys.current.headers(checkout.id) });
       purchaseKeys.current.settle();
       toast.success(t("physicalStore.orderPlaced"));
-      setCheckout(null); setAddress(EMPTY_ADDRESS); listings.reload();
+      setCheckout(null); setAddress(EMPTY_ADDRESS); setVariant({ chosen: null, required: false }); listings.reload();
     } catch (error) { purchaseKeys.current.settle(error); toast.fromError(error); listings.reload(); }
     finally { setBusy(false); }
   }
@@ -75,10 +79,11 @@ export function PhysicalStore({ creatorSlug }: { creatorSlug?: string }) {
           <p className="flex items-center gap-1 font-semibold"><FaiIcon id="ACT-40" size={20} decorative />{fmtNumber(listing.pricePoints)}</p>
           {!listing.levelOk && <Badge tone="mark"><span className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-400 shadow-[0_0_8px_3px_rgba(251,113,133,0.8)]" aria-hidden />{t("physicalStore.locked", { level: t(`levelProgress.name.${listing.requiredLevel}`) })}</Badge>}
           {listing.levelOk && !listing.affordable && <p className="type-caption text-muted">{t("physicalStore.notEnoughPoints")}</p>}
-          <Button variant="primary" disabled={!listing.levelOk || !listing.affordable || busy} onClick={() => setCheckout(listing)}>{t("physicalStore.redeem")}</Button>
+          <Button variant="primary" disabled={!listing.levelOk || !listing.affordable || busy} onClick={() => { setVariant({ chosen: null, required: listing.variantInfo === "PRESENT" }); setCheckout(listing); }}>{t("physicalStore.redeem")}</Button>
         </div>
       </li>)}</ul>}
-    <Dialog open={!!checkout} onClose={() => !busy && setCheckout(null)} title={t("physicalStore.checkoutTitle")} footer={<><Button disabled={busy} onClick={() => setCheckout(null)}>{t("common.cancel")}</Button><Button variant="primary" loading={busy} disabled={addressFields.some((field) => field !== "complement" && !address[field].trim())} onClick={redeem}>{t("physicalStore.confirmRedeem")}</Button></>}>
+    <Dialog open={!!checkout} onClose={() => !busy && setCheckout(null)} title={t("physicalStore.checkoutTitle")} footer={<><Button disabled={busy} onClick={() => setCheckout(null)}>{t("common.cancel")}</Button><Button variant="primary" loading={busy} disabled={(variant.required && !variant.chosen) || addressFields.some((field) => field !== "complement" && !address[field].trim())} onClick={redeem}>{t("physicalStore.confirmRedeem")}</Button></>}>
+      {checkout && <div className="mb-3"><VariantPicker listingId={checkout.id} value={variant.chosen?.id ?? null} onChange={(chosen, required) => setVariant({ chosen, required })} /></div>}
       <p className="mb-3 type-body-sm text-muted">{t("physicalStore.shippingHint")}</p>
       <div className="grid gap-x-3 sm:grid-cols-2">{addressFields.map((field) => <Field key={field} label={t(`physicalStore.address.${field}`)}>
         <Input required={field !== "complement"} maxLength={field === "fullName" ? 120 : field === "street" ? 180 : 120} value={address[field]} onChange={(event) => setAddress((value) => ({ ...value, [field]: event.target.value }))} />
@@ -93,6 +98,7 @@ export function PhysicalStoreSellerManager() {
   const [segment, setSegment] = useState<Segment>("CLOTHING");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [editing, setEditing] = useState<Listing | null>(null);
+  const [variantsOf, setVariantsOf] = useState<Listing | null>(null);
   const [price, setPrice] = useState("100");
   const [level, setLevel] = useState("ESTREIA");
   const [description, setDescription] = useState("");
@@ -144,8 +150,9 @@ export function PhysicalStoreSellerManager() {
     </div>
     {mine.error ? <ErrorState error={mine.error} onRetry={mine.reload} /> : mine.loading && !mine.data ? <SkeletonGrid /> : (mine.data ?? []).length === 0 ? <EmptyState title={t("physicalStore.noListings")} /> : <ul className="grid gap-3">{mine.data!.map((item) => <li key={item.id} className="surface flex flex-wrap items-center justify-between gap-3 p-4">
       <div className="min-w-0"><b>{item.product.productName}</b><p className="type-caption text-muted">{fmtNumber(item.pricePoints)} {t("nav.points")} · {t("physicalStore.stockManagedByAdmin", { count: item.stock ?? 0 })} · {t(`levelProgress.name.${item.requiredLevel}`)}</p></div>
-      <div className="flex gap-2"><Button size="sm" onClick={() => beginEdit(item)}>{t("common.edit")}</Button><Button size="sm" variant="danger" disabled={busy} onClick={() => remove(item)}>{t("common.remove")}</Button></div>
+      <div className="flex gap-2"><Button size="sm" onClick={() => beginEdit(item)}>{t("common.edit")}</Button><Button size="sm" onClick={() => setVariantsOf(item)}>{t("physicalStore.variant.manage")} ({item.variantCount ?? 0})</Button><Button size="sm" variant="danger" disabled={busy} onClick={() => remove(item)}>{t("common.remove")}</Button></div>
     </li>)}</ul>}
+    {variantsOf && <SellerVariantManager listingId={variantsOf.id} name={variantsOf.product.productName} catalogVariants={variantsOf.product.variants ?? []} open onClose={() => { setVariantsOf(null); mine.reload(); }} />}
   </div>;
 }
 
