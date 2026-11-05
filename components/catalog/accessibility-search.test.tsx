@@ -15,7 +15,7 @@ describe("RF-PESQ-08 accessibility search", () => {
     } });
     renderApp(<AccessibilitySearch />);
     expect(screen.getByText("Escolha ao menos um filtro")).toBeTruthy();
-    fireEvent.click(screen.getByRole("checkbox", { name: "Abertura frontal" }));
+    fireEvent.click(screen.getByRole("button", { name: "Abertura frontal" }));
     await screen.findByText("Camisa magnética");
     expect(screen.getByText("abertura frontal")).toBeTruthy();
     expect(screen.getByText("fechamento magnético")).toBeTruthy();

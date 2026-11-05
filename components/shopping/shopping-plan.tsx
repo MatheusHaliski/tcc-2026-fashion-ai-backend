@@ -46,8 +46,8 @@ export function ShoppingPlanner() {
   }
   return <div className="grid gap-4">
     <Card><h2 className="type-h3">{t("shopping.inputs")}</h2>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={t("shopping.occasions")}>{OCCASIONS.map((occasion) => <Chip key={occasion} role="checkbox" aria-checked={occasions.includes(occasion)} active={occasions.includes(occasion)} onClick={() => toggle(occasions, occasion, setOccasions)}>{t(`shopping.occasion.${occasion}`)}</Chip>)}</div>
-      <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={t("shopping.restrictions")}>{SLOTS.map((slot) => <Chip key={slot} role="checkbox" aria-checked={excluded.includes(slot)} active={excluded.includes(slot)} onClick={() => toggle(excluded, slot, setExcluded)}>{t("shopping.exclude", { slot: label(slot) })}</Chip>)}</div>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t("shopping.occasions")}>{OCCASIONS.map((occasion) => <Chip key={occasion} active={occasions.includes(occasion)} onClick={() => toggle(occasions, occasion, setOccasions)}>{t(`shopping.occasion.${occasion}`)}</Chip>)}</div>
+      <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={t("shopping.restrictions")}>{SLOTS.map((slot) => <Chip key={slot} active={excluded.includes(slot)} onClick={() => toggle(excluded, slot, setExcluded)}>{t("shopping.exclude", { slot: label(slot) })}</Chip>)}</div>
       <div className="mt-2 grid gap-2 sm:grid-cols-3">
         <Field id="plan-budget" label={t("shopping.budget")}><Input id="plan-budget" type="number" min={0} value={budget} onChange={(event) => setBudget(event.target.value)} /></Field>
         <Field id="plan-currency" label={t("sourcing.currency")}><Input id="plan-currency" maxLength={3} value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} /></Field>

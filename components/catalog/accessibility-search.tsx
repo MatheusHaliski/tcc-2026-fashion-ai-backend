@@ -30,7 +30,7 @@ export function AccessibilitySearch() {
   const search = useApi((signal) => accessibilityApi.search(filters, category, signal), [JSON.stringify(filters), category], { enabled: active });
   return <div className="grid gap-4">
     <p className="type-body-sm text-muted">{t("accessibility.searchHint")}</p>
-    <div className="flex flex-wrap gap-2" role="group" aria-label={t("accessibility.filtersLabel")}>{FILTER_KEYS.map((key) => <Chip key={key} active={filters[key]} role="checkbox" aria-checked={filters[key]} onClick={() => setFilters({ ...filters, [key]: !filters[key] })}>{t(`accessibility.filter.${key}`)}</Chip>)}</div>
+    <div className="flex flex-wrap gap-2" role="group" aria-label={t("accessibility.filtersLabel")}>{FILTER_KEYS.map((key) => <Chip key={key} active={filters[key]} onClick={() => setFilters({ ...filters, [key]: !filters[key] })}>{t(`accessibility.filter.${key}`)}</Chip>)}</div>
     <Select aria-label={t("common.category")} value={category} onChange={(event) => setCategory(event.target.value)}>{CATEGORIES.map((value) => <option key={value} value={value}>{value ? t(`accessibility.category.${value}`) : t("common.all")}</option>)}</Select>
     {!active ? <EmptyState title={t("accessibility.pickFilters")} hint={t("accessibility.noProfile")} />
       : search.error ? <ErrorState error={search.error} onRetry={search.reload} />
