@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { positionalGroups } from "./position-weld";
 import type { LoadedAsset, SceneDocument, Vec3 } from "./document";
 
 /** Reads effective local coordinates without changing the renderer's mutable geometry. */
@@ -46,21 +47,9 @@ export function requireStaticAsset(asset: LoadedAsset): void {
   if (unsupported) throw Error("ATELIER_COMMAND_STATIC");
 }
 
-/** Laplacian smoothing with welded seams and fixed open boundaries (neck, cuffs, hems). */
+/** Laplacian smoothing with tolerance-welded seams and fixed open boundaries (neck, cuffs, hems). */
 export function smoothPoints(mesh: THREE.Mesh, original: Float32Array, points: Vec3[]): Vec3[] {
-  const groups: number[][] = [];
-  const groupByPosition = new Map<string, number>();
-  const groupOf = points.map((_, i) => {
-    const key = `${original[i * 3]},${original[i * 3 + 1]},${original[i * 3 + 2]}`;
-    let group = groupByPosition.get(key);
-    if (group === undefined) {
-      group = groups.length;
-      groupByPosition.set(key, group);
-      groups.push([]);
-    }
-    groups[group].push(i);
-    return group;
-  });
+  const { groups, groupOf } = positionalGroups(original);
   const neighbors = groups.map(() => new Set<number>());
   const edges = new Map<string, number>();
   const indices = mesh.geometry.index;
