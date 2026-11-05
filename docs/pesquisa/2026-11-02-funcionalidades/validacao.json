@@ -1,0 +1,13 @@
+{
+  "features": 39,
+  "dimensions": 6,
+  "individual_rationales": 234,
+  "requirements_shortlist": 10,
+  "public_sources": 7,
+  "page_entries": 93,
+  "weight_total": 100,
+  "score_adjustments": [],
+  "evidence_paths_and_lines": "validated",
+  "application_tests": "not run",
+  "revision": "6bd645813426978634b7678ac7765ee89f8caea3"
+}
