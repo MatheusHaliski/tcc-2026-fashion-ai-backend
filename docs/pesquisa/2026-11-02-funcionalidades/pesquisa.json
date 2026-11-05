@@ -1,0 +1,2736 @@
+{
+  "date": "2026-11-02",
+  "timezone": "America/Sao_Paulo",
+  "repository": "MatheusHaliski/tcc-2026-fashion-ai-backend",
+  "revision": "6bd645813426978634b7678ac7765ee89f8caea3",
+  "main_verified_equal": true,
+  "method": "Parecer técnico-funcional preliminar por inspeção estática e pesquisa pública; sem testes funcionais, produção ou pesquisa com usuários.",
+  "weights_percent": {
+    "utility": 25,
+    "completeness": 20,
+    "usability": 15,
+    "reliability": 15,
+    "security": 15,
+    "integration": 10
+  },
+  "score_precision": "Decimal, ROUND_HALF_UP, 1 casa; não é medida estatística nem fórmula normativa",
+  "score_adjustments": [],
+  "features": [
+    {
+      "id": "CC-01",
+      "title": "Cadastrar e editar peça do guarda-roupa",
+      "description": "Registrar atributos, origem de imagem, conservação e publicação de uma peça.",
+      "scores": {
+        "utility": 9,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 8,
+        "security": 8.5,
+        "integration": 8.5
+      },
+      "score": 8.3,
+      "evidence": [
+        {
+          "path": "components/piece-form.tsx",
+          "line": 14,
+          "note": "Contrato inclui taxonomia, origem, condição, conservação e visibilidade; payload tipa/converte campos."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java",
+          "line": 654,
+          "note": "Update transacional exige criação autorizada e propriedade, valida e projeta a peça."
+        }
+      ],
+      "strengths": [
+        "Boa cobertura dos atributos relevantes para moda e revenda.",
+        "Atualização integra projeção e evento de domínio; autorização explícita."
+      ],
+      "gaps": [
+        "O formulário agrega cadastro, sugestões de selos, marca e aparência: carga cognitiva deve ser medida com usuários.",
+        "Não há evidência nesta leitura de validação de medidas físicas por tamanho no cadastro; tamanho é rótulo, não prova de caimento."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Registrar e atualizar peças próprias é a base para composição, revenda e reutilização no FashionAI.",
+        "completeness": "O contrato abrange taxonomia, condição, cuidados, origem e privacidade, mas tamanho cadastrado continua sendo rótulo sem prova física de caimento.",
+        "usability": "Há campos dirigidos por taxonomia e agrupamento de detalhes, porém a amplitude do formulário indica carga cognitiva ainda não medida com usuários.",
+        "reliability": "O update valida formulário, usa transação e publica projeção/evento; não executei regressão nem avaliei falhas reais de infraestrutura.",
+        "security": "O caso de uso exige permissão de criação e peça própria; a inspeção não substitui teste de autorização ou auditoria de segurança completa.",
+        "integration": "O mesmo registro alimenta projeção, evento de domínio, card e guarda-roupa, com boa reutilização dos dados."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "CC-02",
+      "title": "Exibir cards de peça e look com informações, selos e Hype",
+      "description": "Representar a peça/look em versão resumida ou ampliada, com dados de moda e sinais sociais.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 8,
+        "usability": 7,
+        "reliability": 7.5,
+        "security": 7.5,
+        "integration": 8.5
+      },
+      "score": 7.9,
+      "evidence": [
+        {
+          "path": "components/piece-card-panels.tsx",
+          "line": 54,
+          "note": "Tabs Info/Hype têm navegação por setas, foco e associações ARIA."
+        },
+        {
+          "path": "components/piece-card.tsx",
+          "line": 94,
+          "note": "Card exibe conservação; arte, foto, flags e selos são compostos no mesmo componente."
+        },
+        {
+          "path": "components/scheme-card.tsx",
+          "line": 266,
+          "note": "TipoLook salvo é exibido no card de look."
+        }
+      ],
+      "strengths": [
+        "Reuso entre contextos e hierarquia Info/Hype com controle por teclado.",
+        "Informações de peça e sinais Hype aparecem no próprio card, sem exigir tela separada."
+      ],
+      "gaps": [
+        "A variedade de presets e densidade de sinais precisa de testes visuais em mobile, zoom e leitor de tela; esta análise não os executou.",
+        "Fallback de fotografia pode virar ilustração genérica; a anatomia deveria distinguir isso de uma foto real e de imagem gerada em toda exibição."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Os cards concentram fotografia e atributos de decisão de moda, reduzindo a necessidade de navegar para detalhes.",
+        "completeness": "Existem versões resumidas/ampliadas, Info/Hype, selos, conservação e TipoLook salvo, mas nem todo contexto de fallback explicita a origem da imagem.",
+        "usability": "Tabs têm foco e navegação por setas, mas densidade visual e combinações de layout não foram avaliadas em navegador ou leitor de tela nesta pesquisa.",
+        "reliability": "Componentes reutilizam modelos e estados de carregamento/Hype; não foi medida a estabilidade de todas as combinações de arte e imagem.",
+        "security": "O card distingue dados próprios e visibilidade, porém a proteção efetiva depende dos endpoints e não foi validada integralmente nesta leitura de UI.",
+        "integration": "Peça e look integram dados do domínio, selos, Hype, arte e modal de detalhe, oferecendo integração funcional visível no código."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "CC-03",
+      "title": "Organizar e filtrar guarda-roupa pessoal",
+      "description": "Consultar inventário com categorias, disponibilidade, Hype, selos, paginação e ordenação.",
+      "scores": {
+        "utility": 9,
+        "completeness": 8,
+        "usability": 8,
+        "reliability": 7.5,
+        "security": 8.5,
+        "integration": 8.5
+      },
+      "score": 8.3,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java",
+          "line": 544,
+          "note": "ClosetFilter contém categoria/cor/estação/ocasião/estilo/estado/consulta/ordenação/página/Hype/selo."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java",
+          "line": 557,
+          "note": "Leitura distingue dono, visibilidade e moderação; depois filtra, ordena e pagina."
+        }
+      ],
+      "strengths": [
+        "Filtragem útil para reutilizar o que o usuário já possui.",
+        "Consulta a guarda-roupa alheio passa por política de visibilidade e moderação."
+      ],
+      "gaps": [
+        "A consulta materializa a lista do dono antes de filtrar/ordenar/paginar em memória: risco de escala para grandes inventários, sem medição de latência nesta pesquisa.",
+        "Disponibilidade enumera apenas AVAILABLE/UNAVAILABLE/ARCHIVED; não modela por si um ciclo operacional de lavanderia/reserva/reparo."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Encontrar e reutilizar roupas já possuídas atende diretamente à finalidade central de um guarda-roupa digital.",
+        "completeness": "Filtros, ordenação, Hype, selos e disponibilidade existem, mas a disponibilidade genérica ainda não representa etapas de lavanderia ou reserva.",
+        "usability": "A API suporta filtros úteis e paginação, mas facilidade de uso e descoberta dos controles não foram verificadas com usuários.",
+        "reliability": "A consulta aplica políticas de acesso e filtros, porém materializa toda a lista do dono antes de paginar, deixando risco de escala não quantificado.",
+        "security": "Leitura de terceiros passa por visibilidade e moderação, enquanto a própria pessoa tem contexto diferenciado; não houve teste de penetração.",
+        "integration": "O inventário conecta peças, Hype, vínculos aprovados, visualização e disponibilidade em uma mesma consulta."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "CC-04",
+      "title": "Criar, editar, publicar e reutilizar looks",
+      "description": "Combinar peças próprias em um look com atributos, arte, privacidade e referências de remix.",
+      "scores": {
+        "utility": 9,
+        "completeness": 7.5,
+        "usability": 7.5,
+        "reliability": 8,
+        "security": 8.5,
+        "integration": 8.5
+      },
+      "score": 8.2,
+      "evidence": [
+        {
+          "path": "components/scheme-builder.tsx",
+          "line": 95,
+          "note": "Wizard condiciona avanço às peças/título; payload inclui itens, ocasião/estilo e background."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java",
+          "line": 425,
+          "note": "Criação exige autorização e ao menos uma peça; remix verifica visibilidade de origem."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java",
+          "line": 906,
+          "note": "Edição verifica propriedade, mantém itens quando ausentes no payload e revalida composição."
+        }
+      ],
+      "strengths": [
+        "Fluxo conecta criação manual/assistida, preview e composição persistida.",
+        "Protege propriedade e visibilidade da origem do remix."
+      ],
+      "gaps": [
+        "O payload do builder observado não inclui TipoLook e o record SchemeForm não o declara; há lacuna entre criação manual e o tipo que o espelho persiste/exibe.",
+        "Pré-requisitos e número de etapas requerem teste de conclusão com usuários, não realizado nesta avaliação."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Combinar roupas em looks é um dos casos de uso centrais que dá valor ao cadastro prévio de peças.",
+        "completeness": "O fluxo cobre composição, arte, privacidade, edição e remix, mas TipoLook não aparece no payload do builder manual observado.",
+        "usability": "O wizard permite voltar e condiciona avanço a pré-requisitos, mas o esforço para concluir várias etapas não foi medido empiricamente.",
+        "reliability": "Criação/edição verificam peças e composição e mantêm atualização transacional, sem execução dos testes nesta pesquisa.",
+        "security": "O serviço verifica permissão de criação, propriedade na edição e visibilidade do remix de origem, com cobertura estática clara.",
+        "integration": "Looks reaproveitam peças, arte, publicação e origem de remix, mas a integração do campo TipoLook entre todos os criadores ainda é parcial."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "CC-05",
+      "title": "Pesquisar catálogo oficial e adicionar produto ao guarda-roupa",
+      "description": "Encontrar produtos/variantes de marcas oficiais, manter referência de origem e registrar a escolha pessoal.",
+      "scores": {
+        "utility": 9,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 7.5,
+        "security": 8.5,
+        "integration": 8
+      },
+      "score": 8.2,
+      "evidence": [
+        {
+          "path": "components/catalog/catalog-search.tsx",
+          "line": 134,
+          "note": "Parâmetros incluem categoria, subcategoria, marca, consulta, código, cor e gênero; efeitos cancelam buscas antigas."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogService.java",
+          "line": 692,
+          "note": "Caso de uso de adição ao guarda-roupa existe no serviço de catálogo."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogIngestService.java",
+          "line": 284,
+          "note": "Só aceita imagem HTTPS e mantém REFERENCE_ONLY salvo permissão da fonte para persistir."
+        }
+      ],
+      "strengths": [
+        "Catálogo e peças pessoais são integrados, com variante e referência oficial.",
+        "Regras explícitas para persistência/licença das imagens reduzem cópia indiscriminada."
+      ],
+      "gaps": [
+        "O fluxo não comprova estoque/tamanho/preço atual do varejista no momento de intenção de compra; essas evidências exigem conectores e timestamps por oferta.",
+        "Cancelamento/ordenação de respostas tem suporte no cliente, mas performance e disponibilidade das fontes não foram medidas nesta pesquisa."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "O catálogo oficial liga descoberta de produtos e variantes à montagem de um guarda-roupa e à intenção de compra.",
+        "completeness": "Busca, variantes, adição e referência oficial existem, mas não foi identificado neste fluxo um contrato de estoque/preço atual por oferta e tamanho.",
+        "usability": "Filtros combináveis e cancelamento de buscas antigas favorecem interação responsiva, cuja latência real não foi medida.",
+        "reliability": "O cliente protege contra respostas de buscas obsoletas, mas disponibilidade das fontes e fidelidade de imagens externas não foram verificadas em execução.",
+        "security": "O ingest mantém regra explícita HTTPS e persistência somente quando autorizada pela fonte; isso não certifica segurança integral da cadeia.",
+        "integration": "Produto oficial e variante entram no registro pessoal mantendo referência de origem, embora a conexão com disponibilidade atual do varejista permaneça incompleta."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "CC-06",
+      "title": "Busca unificada de peças, looks e perfis",
+      "description": "Descobrir conteúdo de moda com filtros combináveis e respeito à visibilidade.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 7,
+        "security": 8,
+        "integration": 8
+      },
+      "score": 7.9,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/SearchService.java",
+          "line": 92,
+          "note": "Cinco abas de busca e filtros de estilo, ocasião, cor, marca, categoria e Hype."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/SearchService.java",
+          "line": 803,
+          "note": "Busca de peças usa índice opcional ou banco; resultados passam por visibilidade e filtros."
+        }
+      ],
+      "strengths": [
+        "A mesma descoberta cobre conteúdo e entidades sociais, com atributos de moda.",
+        "Existe fallback de busca sem índice e filtro explícito de conteúdo visível."
+      ],
+      "gaps": [
+        "Caminho do índice limita a 200 IDs antes dos filtros finais: filtros seletivos podem produzir páginas incompletas; requer teste de recall/paginação.",
+        "Relevância por intenção, sinônimos de moda e equivalência de termos deve ser avaliada por conjunto rotulado, ausente nesta pesquisa."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Descobrir roupas, looks e perfis com atributos de moda amplia o aproveitamento do conteúdo do sistema.",
+        "completeness": "A busca contempla cinco abas e filtros combináveis, sem demonstração de avaliação de relevância por intenção ou terminologia de moda.",
+        "usability": "Filtros e abas oferecem organização funcional, mas sucesso de tarefas e encontrabilidade não foram observados em uso real.",
+        "reliability": "Há fallback de índice para banco, mas o caminho indexado limita200 IDs antes dos filtros finais, com risco de páginas incompletas não quantificado.",
+        "security": "Os resultados inspecionados passam por visibilidade e bloqueios, sem prova dinâmica de que todos os caminhos de busca respeitam as mesmas regras.",
+        "integration": "O serviço reúne catálogo social, Hype público, peças e looks, com integração ampla observável no código."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "CC-07",
+      "title": "Captura orientada e padronização da fotografia da peça",
+      "description": "Orientar a captura e apresentar enquadramento total/tecido com alternativas e fallback.",
+      "scores": {
+        "utility": 9,
+        "completeness": 7,
+        "usability": 7,
+        "reliability": 6.5,
+        "security": 7.5,
+        "integration": 8
+      },
+      "score": 7.6,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/vision/capture/AdaptiveCaptureEngine.java",
+          "line": 116,
+          "note": "Política prioriza refazer foto de baixa qualidade/região cortada e limita pedidos complementares."
+        },
+        {
+          "path": "components/catalog/catalog-photo.tsx",
+          "line": 62,
+          "note": "WHOLE/FABRIC resolvem recortes, origem, cadeia de alternativas, falha e retry."
+        },
+        {
+          "path": "components/catalog/default-garment-photo.tsx",
+          "line": 5,
+          "note": "Fallback usa ilustração pela categoria/cor, com data-mode=default."
+        }
+      ],
+      "strengths": [
+        "Captura tem política explícita de qualidade e limite de insistência.",
+        "Falhas não precisam deixar card vazio; existe ilustração de fallback e ação de retry."
+      ],
+      "gaps": [
+        "Fallback garante presença visual, não fidelidade à fotografia da peça; componente não apresenta por si texto de origem/qualidade ao usuário.",
+        "Não há validação empírica aqui de remoção humana, contorno, logotipos ou cobertura de tecido em amostra de fotos reais; essa capacidade merece benchmark separado."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Fotografias confiáveis são essenciais para reconhecer roupas e apresentar produtos de moda com precisão.",
+        "completeness": "Há política de captura, qualidade, modos total/tecido e fallback, mas a fidelidade do produto em casos difíceis não foi comprovada.",
+        "usability": "A política limita insistência e oferece refazer/retry, embora orientações e substituições por ilustração ainda precisem de validação com usuários.",
+        "reliability": "O fallback evita vazio, mas não comprova remoção humana, preservação de logo ou contorno; nenhum benchmark de fotografias reais foi executado.",
+        "security": "O escopo lido mostra contratos e alternativas controladas, mas não incluiu auditoria integral de upload, armazenamento e privacidade das imagens.",
+        "integration": "A política backend e a apresentação de modos/fallback frontend estão conectadas, com lacuna na comunicação uniforme da procedência do resultado."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "CC-08",
+      "title": "Gerar, revisar, aprovar e descartar foto de estúdio",
+      "description": "Manter uma foto aprovada publicada enquanto novas versões aguardam revisão do proprietário.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 8.5,
+        "usability": 7.5,
+        "reliability": 8.5,
+        "security": 8.5,
+        "integration": 8
+      },
+      "score": 8.3,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/StudioVersionFlow.java",
+          "line": 52,
+          "note": "Oferta de mesma origem preserva versão aprovada e insere nova versão pendente."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java",
+          "line": 793,
+          "note": "Aprovação/descarte exigem criação autorizada e peça própria antes de delegar fluxo."
+        },
+        {
+          "path": "components/expanded-card/expanded-piece.tsx",
+          "line": 100,
+          "note": "Editor amplia dados e integra ações de edição da peça/foto."
+        }
+      ],
+      "strengths": [
+        "Reprocessamento não substitui silenciosamente uma imagem aprovada.",
+        "Política de versões e comandos de decisão estão separadas da interface e protegidas por propriedade."
+      ],
+      "gaps": [
+        "Histórico é curto/metadados e limpeza de mídia é best-effort; não equivale a DAM com retenção/restauração ilimitadas.",
+        "Qualidade visual do resultado do provedor é uma dependência externa; testes estáticos de fluxo não a certificam."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Revisar resultados antes de trocar a imagem publicada protege a representação visual de produtos de moda.",
+        "completeness": "O fluxo cobre geração, pendência, aprovação e descarte, com histórico curto que não equivale a retenção/restauração ilimitadas.",
+        "usability": "Ações estão disponíveis no detalhe da peça, mas clareza e esforço do fluxo de revisão não foram observados em navegador.",
+        "reliability": "A lógica mantém foto aprovada enquanto a substituta aguarda decisão e separa política de versões, embora a qualidade visual do provedor não seja certificada.",
+        "security": "Aprovação e descarte exigem peça própria e autorização no serviço, sem afirmar cobertura dinâmica de todas as rotas.",
+        "integration": "Metadata, armazenamento, comandos de revisão e interface de detalhe compartilham o fluxo de versões, com limpeza de mídia em melhor esforço."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "CC-09",
+      "title": "Analisar cápsula e versatilidade do guarda-roupa",
+      "description": "Mostrar peças-base, looks existentes e fator de versatilidade.",
+      "scores": {
+        "utility": 8,
+        "completeness": 7,
+        "usability": 7.5,
+        "reliability": 7,
+        "security": 7.5,
+        "integration": 8
+      },
+      "score": 7.5,
+      "evidence": [
+        {
+          "path": "components/lookbook-tabs.tsx",
+          "line": 318,
+          "note": "Cápsula lê /api/me/capsule e permite categoria."
+        },
+        {
+          "path": "components/lookbook-tabs.tsx",
+          "line": 325,
+          "note": "Exibe peças-base, total de looks e fator; cards apontam às peças."
+        }
+      ],
+      "strengths": [
+        "Transforma dados já cadastrados em apoio à reutilização.",
+        "Integra composição e guarda-roupa em uma visão resumida compreensível."
+      ],
+      "gaps": [
+        "A superfície observada descreve combinações/uso existentes; não é planejamento de mala ou cobertura de agenda com restrições.",
+        "Não foi demonstrado aqui como o fator é validado contra preferências reais ou se evita recomendar compras desnecessárias."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Analisar versatilidade ajuda a reaproveitar roupas e perceber o valor de combinações já cadastradas.",
+        "completeness": "A cápsula mostra peças-base, looks e fator, mas a superfície observada não realiza planejamento de agenda ou compras com restrições.",
+        "usability": "Números resumidos, filtro por categoria e links às peças tornam a informação acessível, sem validação empírica de compreensão.",
+        "reliability": "A UI consome resultados do serviço, mas não foi verificada a estabilidade dos cálculos nem sua validação contra preferências reais.",
+        "security": "A consulta usa contexto pessoal autenticado no caminho /api/me/capsule, mas o backend completo desse recurso não foi auditado nesta amostra.",
+        "integration": "A cápsula conecta dados do guarda-roupa e looks existentes, servindo como base concreta para extensão de planejamento."
+      },
+      "area": "Peças, looks e catálogo"
+    },
+    {
+      "id": "3D-01",
+      "title": "Criar, ajustar e versionar avatar por fotografia",
+      "description": "Avatar persistente com ajustes de aparência, qualidade, histórico e aprovação para exibição.",
+      "scores": {
+        "utility": 8,
+        "completeness": 8,
+        "usability": 7,
+        "reliability": 7,
+        "security": 8.5,
+        "integration": 8
+      },
+      "score": 7.8,
+      "evidence": [
+        {
+          "path": "components/avatar3d/my-avatar.tsx",
+          "line": 288,
+          "note": "Salvar exige consentimento, versão construída e verificações de qualidade."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/Avatar3dService.java",
+          "line": 123,
+          "note": "Backend exige consentimento, sanitiza qualidade e diferencia APPROVED/NEEDS_REFINEMENT."
+        }
+      ],
+      "strengths": [
+        "Fluxo inclui criação, ajustes, restauração/exclusão e controle de exposição pública.",
+        "Aprovação de identidade e moderação da textura são controles distintos; não há aprovação remota por omissão."
+      ],
+      "gaps": [
+        "A fidelidade visual de rosto/pele/cabelo não foi medida nesta análise estática.",
+        "Uma foto e métricas de qualidade do pipeline não constituem certificação biométrica nem prova de semelhança validada por usuários."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Uma identidade reutilizável no provador atende diretamente apresentação e experimentação de moda; o valor é avaliação técnica, sem pesquisa de adoção.",
+        "completeness": "Código cobre criação, ajuste, versões, aprovação e exclusão; não se comprovou fidelidade de todas as características pessoais.",
+        "usability": "A UI possui avisos e ajuste manual, mas não houve teste de tarefas ou acessibilidade no navegador para confirmar facilidade de uso.",
+        "reliability": "Gates e versões reduzem estados inválidos no desenho do código; estabilidade, precisão e desempenho em execução não foram medidos.",
+        "security": "Consentimento explícito, controle de publicidade e moderação são demonstrados no backend, sem constituir auditoria de segurança completa.",
+        "integration": "O avatar é consumido pelo provador e outros fluxos, mas consistência entre todas as plataformas não foi verificada."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "3D-02",
+      "title": "Estimar proporções do corpo por SAM 3D Body",
+      "description": "Envio consentido para medição GPU e retorno restrito de proporções do corpo.",
+      "scores": {
+        "utility": 8,
+        "completeness": 7,
+        "usability": 7,
+        "reliability": 8,
+        "security": 9,
+        "integration": 7
+      },
+      "score": 7.7,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/AvatarBodyScanService.java",
+          "line": 54,
+          "note": "Guarda autorização/consentimento, indisponibilidade explícita e limite horário por usuário."
+        },
+        {
+          "path": "services/anatomical_vton/api.py",
+          "line": 42,
+          "note": "Valida engine/device e allowlist de proporções; retorna meshReturned=false e metrologyCertified=false."
+        }
+      ],
+      "strengths": [
+        "Minimização de dado: contrato exclui a malha/pontos e declara limites da medição.",
+        "Recusa razões inválidas e trata GPU indisponível; não simula inferência real."
+      ],
+      "gaps": [
+        "Contrato atual não entrega GLB do corpo ou de vestimenta ao consumidor.",
+        "Disponibilidade, latência e erro antropométrico em operação não foram testados; não se pode pontuar precisão real a partir do código."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Proporções personalizadas são relevantes para apresentação corporal e futura prova, sem comprovação de precisão clínica ou comercial.",
+        "completeness": "O fluxo cobre envio, consentimento e resposta validada, mas entrega somente proporções e não uma malha exportável.",
+        "usability": "Limites e recusas são explícitos, enquanto entendimento das mensagens e fricção do envio não foram testados com pessoas.",
+        "reliability": "Allowlist, validação de valores e diagnóstico de GPU são controles estáticos fortes; não houve inferência para medir disponibilidade ou erro.",
+        "security": "O código exige consentimento por envio e minimiza biometria retornada, com rate limit e sem malha/pontos no contrato.",
+        "integration": "O contrato é compatível com proporções do avatar, mas não integra automaticamente graduação de roupa ou recomendação oficial por marca."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "3D-03",
+      "title": "Provar combinações de lojas e guarda-roupa no avatar",
+      "description": "Sessão de peças de múltiplas marcas com palco, contexto de loja, restauração e provas salvas.",
+      "scores": {
+        "utility": 9,
+        "completeness": 8,
+        "usability": 8,
+        "reliability": 7,
+        "security": 7,
+        "integration": 8
+      },
+      "score": 8.0,
+      "evidence": [
+        {
+          "path": "components/try-on/fitting-room.tsx",
+          "line": 52,
+          "note": "Compõe sessão, palco, ambiente contextual, provas salvas e compartilhamento."
+        },
+        {
+          "path": "lib/hooks/use-fitting-session.ts",
+          "line": 44,
+          "note": "Commit e restauração em sessionStorage; seleção de catálogo, variantes e troca de tamanho na mesma sessão."
+        }
+      ],
+      "strengths": [
+        "Combina origem de catálogo/guarda-roupa e preserva referência de variante.",
+        "Separação de sessão e apresentação permite adaptar o ambiente sem mudar o corpo do avatar."
+      ],
+      "gaps": [
+        "Frontend observado usa armazenamento local para esta sessão; há outro serviço multiplataforma cuja adoção neste fluxo precisa ser reconciliada.",
+        "Qualidade de textura/logos/costuras não é comprovada por compor corretamente a UI; requer avaliação visual controlada."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Combinar peças de marcas e guarda-roupa resolve uma tarefa central de descoberta e composição antes da compra, por avaliação de domínio.",
+        "completeness": "A página compõe seleção, variantes, prova salva e compartilhamento; a coerência visual dos produtos não foi confirmada em execução.",
+        "usability": "Slots e ações diretas dão clareza estrutural à UI; a nota não pressupõe teste de navegabilidade nem métricas de abandono.",
+        "reliability": "Restauração e estado de sessão estão explícitos, mas não houve ensaio de falhas, desempenho ou consistência entre dispositivos.",
+        "security": "As operações de negócio são separadas da apresentação; este recorte não certifica todos os controles de acesso ou persistência local.",
+        "integration": "Integra catálogo, guarda-roupa e avatar, embora o fluxo web local e o serviço multiplataforma ainda precisem de reconciliação."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "3D-04",
+      "title": "Escolher tamanho e visualizar folga no molde",
+      "description": "Grade de referência de letras/números com ajuste visual e indicação regional de caimento.",
+      "scores": {
+        "utility": 8,
+        "completeness": 6,
+        "usability": 8,
+        "reliability": 5,
+        "security": 7,
+        "integration": 5
+      },
+      "score": 6.7,
+      "evidence": [
+        {
+          "path": "lib/tryon/sizes.ts",
+          "line": 1,
+          "note": "Comentário explicita grade padrão, calibrada pelo avatar, sem tabela oficial por produto."
+        },
+        {
+          "path": "lib/avatar3d/human/garment-fit.ts",
+          "line": 236,
+          "note": "applySize transforma passos da grade em folga radial e comprimentos; não carrega GLB distinto por tamanho."
+        }
+      ],
+      "strengths": [
+        "Escolha imediata, acessível em radiogroup, com feedback regional e persistência da preferência.",
+        "Regras são explícitas e determinísticas, com limites de ajuste do molde."
+      ],
+      "gaps": [
+        "Visualização não usa automaticamente a tabela específica da marca/produto.",
+        "Converter degraus genéricos em folga e comprimento não garante ajuste físico ou graduação industrial por tamanho.",
+        "Seleção P/M/G/GG não equivale hoje a quatro assets certificados por peça."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Escolher um tamanho visualmente tem utilidade alta na comparação de roupa, desde que seus limites sejam comunicados.",
+        "completeness": "Há grades e feedback regional, mas faltam assets por tamanho e ligação automática à tabela real de cada produto.",
+        "usability": "Chips em radiogroup e indicação do tamanho natural são evidências de uma interação simples; eficácia acessível não foi testada no navegador.",
+        "reliability": "As regras usam passos genéricos e aproximação de folga, portanto não sustentam garantia de ajuste físico ou precisão industrial.",
+        "security": "Esta seleção usa dados de apresentação e não exige uma nova inferência biométrica, mas a nota não substitui revisão completa de privacidade.",
+        "integration": "Persistência da escolha chega ao molde, mas não há integração demonstrada com a tabela oficial do produto ou GLB específico."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "3D-05",
+      "title": "Recomendar tamanho por tabela de produto e feedback",
+      "description": "Backend calcula recomendação com protocolos de medidas, revisões de tabela, preferência e experiências anteriores.",
+      "scores": {
+        "utility": 9,
+        "completeness": 7,
+        "usability": 5,
+        "reliability": 8,
+        "security": 8,
+        "integration": 5
+      },
+      "score": 7.3,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/fit/FitService.java",
+          "line": 107,
+          "note": "Recomendação versionada/idempotente combina tabela e perfil; grava revisão e validade."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/fit/FitEngine.java",
+          "line": 12,
+          "note": "Estados NO_CHART, INSUFFICIENT_MEASUREMENTS, AMBIGUOUS e incompatibilidades são explícitos."
+        },
+        {
+          "path": "components/fit/ProductFitDialog.tsx",
+          "line": 17,
+          "note": "O diálogo observado usa GRIDS e SizeReferenceTable genéricas, sem consultar chart do produto."
+        }
+      ],
+      "strengths": [
+        "Modelo distingue protocolos de medida, informação ausente e resultado ambíguo.",
+        "Backend confere propriedade, permissão de edição de tabela e concorrência."
+      ],
+      "gaps": [
+        "O fluxo visual auditado ainda não integra esse backend: o diálogo apresenta grade genérica.",
+        "Configuração restringe famílias a TSHIRT/JEANS; expansão para todas as categorias não está comprovada.",
+        "Não há avaliação empírica aqui de redução de trocas ou acurácia da recomendação."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Resolver qual tamanho comprar é uma necessidade decisiva do varejo; o potencial de reduzir trocas ainda não foi medido.",
+        "completeness": "Backend cobre tabela, protocolos, ambiguidades e feedback, porém famílias limitadas e UI genérica deixam o fluxo incompleto.",
+        "usability": "O diálogo auditado não expõe o resultado do motor específico do produto, comprometendo acesso do usuário ao valor implementado no backend.",
+        "reliability": "Protocolos explícitos, validade e estados de insuficiência favorecem comportamento previsível; acurácia real não foi exercitada.",
+        "security": "Propriedade, permissão de edição, revisão e concorrência estão presentes no código, sem alegação de pentest ou teste de produção.",
+        "integration": "A coexistência de motor específico e diálogo de grade genérica demonstra uma lacuna de integração na jornada observada."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "3D-06",
+      "title": "Gerar modelo GLB de vitrine a partir da fotografia",
+      "description": "Job de reconstrução com provedores, estados, retry e alternativa local de relevo.",
+      "scores": {
+        "utility": 8,
+        "completeness": 6,
+        "usability": 6,
+        "reliability": 7,
+        "security": 7,
+        "integration": 6
+      },
+      "score": 6.8,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/Model3dService.java",
+          "line": 87,
+          "note": "Cria jobs, evita duplicação durante processamento e exige foto real."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/Model3dService.java",
+          "line": 257,
+          "note": "Alternativa local gera relevo quando não há resultado do provedor."
+        },
+        {
+          "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/GarmentAsset3d.java",
+          "line": 16,
+          "note": "Entidade diferencia GLB de vitrine de asset rigado/aprovado para vestir."
+        }
+      ],
+      "strengths": [
+        "Pipeline identifica relevo vs reconstrução e persiste estado, resultado e notificações.",
+        "Limite de bytes e validação de GLB existem no caminho remoto."
+      ],
+      "gaps": [
+        "model3dUrl armazena um único resultado de vitrine; não é contrato de assets P/M/G/GG.",
+        "Reconstrução ou relevo não implicam roupa isolada, rigada, aprovada e geometricamente adequada ao avatar.",
+        "Custo/latência/qualidade real dos provedores não foram exercitados nesta pesquisa."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Um asset da peça é útil para visualização e reaproveitamento, mas o valor depende de preservar sua identidade e geometria.",
+        "completeness": "Jobs e resultados existem, enquanto assets P/M/G/GG e vestibilidade aprovada não fazem parte do model3dUrl auditado.",
+        "usability": "Estados, retry e notificação oferecem feedback estrutural; espera percebida e entendimento da distinção relevo/reconstrução não foram testados.",
+        "reliability": "Validação de GLB, limite de tamanho e estados de falha são evidências de engenharia, sem comprovar qualidade da geometria ou SLA dos provedores.",
+        "security": "A requisição é documentada como chamada após validação de posse e sujeita ao motor de IA; não foi auditada toda a superfície de geração externa.",
+        "integration": "O resultado é persistido e notificado, mas a entidade de vitrine é distinta do asset vestível usado pelo provador certificado."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "3D-07",
+      "title": "Provar roupa na fotografia com IA",
+      "description": "Renderização 2D de peças elegíveis de catálogo/guarda-roupa na foto consentida da pessoa.",
+      "scores": {
+        "utility": 8,
+        "completeness": 7,
+        "usability": 7,
+        "reliability": 7,
+        "security": 8,
+        "integration": 7
+      },
+      "score": 7.4,
+      "evidence": [
+        {
+          "path": "components/try-on/gpu-look-dialog.tsx",
+          "line": 85,
+          "note": "UI distingue resultado 2D, consentimento e categorias suportadas; não certifica caimento/tamanho."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/AnatomicalTryOnService.java",
+          "line": 32,
+          "note": "Render exige permissão, peça e processingConsent; catálogo passa por regras de elegibilidade."
+        }
+      ],
+      "strengths": [
+        "A interface explicita que imagem gerada não certifica tamanho; evita confundir foto convincente com medição.",
+        "Há mapeamento de códigos de recusa para orientações e envio de consentimento explícito."
+      ],
+      "gaps": [
+        "Calçados/acessórios não são vestidos pelo mesmo modelo GPU nesse caminho.",
+        "Resultado fotográfico não supre malha 3D reutilizável ou simulação de tecido.",
+        "Sem teste remoto não há evidência desta auditoria de disponibilidade, latência ou preservação consistente de marcas."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Ver a roupa na própria fotografia pode apoiar decisão de estilo, mas não comprova tamanho e não foi avaliado em estudo de compra.",
+        "completeness": "O fluxo recebe foto, peças e resposta, porém o modelo GPU exclui calçados e acessórios e não gera roupa 3D reutilizável.",
+        "usability": "A interface traduz recusas e pede consentimento, sem evidência desta pesquisa sobre compreensão ou taxa de conclusão.",
+        "reliability": "Validações e códigos de recusa são observáveis no código, mas nenhuma inferência foi executada para medir preservação visual ou disponibilidade.",
+        "security": "Consentimento, autorização e elegibilidade das imagens são tratados no caminho auditado, sem validação operacional completa de retenção.",
+        "integration": "Conecta foto, catálogo e guarda-roupa, mantendo limitação de categorias e separação entre resultado 2D e malha 3D."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "3D-08",
+      "title": "Organizar quarto e experimentar no espelho 3D",
+      "description": "Ambiente pessoal com navegação/controle de câmera e estado de aproximação ao espelho.",
+      "scores": {
+        "utility": 6,
+        "completeness": 7,
+        "usability": 6,
+        "reliability": 7,
+        "security": 7,
+        "integration": 8
+      },
+      "score": 6.7,
+      "evidence": [
+        {
+          "path": "lib/room3d/mirror-session.ts",
+          "line": 83,
+          "note": "Sessão tem fases, abertura manual e trava de reabertura, com atualização por proximidade."
+        },
+        {
+          "path": "lib/scene3d/mirror-camera.ts",
+          "line": 3,
+          "note": "Câmera calcula enquadramento angular de cabeça/pés e proteção do envelope do avatar."
+        },
+        {
+          "path": "lib/room3d/room-bounds.ts",
+          "line": 96,
+          "note": "clampCamera confina câmera às paredes."
+        }
+      ],
+      "strengths": [
+        "Políticas explícitas para estados do espelho, limites de câmera e evitar atravessar envelope do avatar.",
+        "Integra inventário/roupas à representação pessoal do usuário."
+      ],
+      "gaps": [
+        "Os algoritmos existentes não provam ausência de clipping em todos os corpos, roupas e dispositivos.",
+        "O benefício de navegação espacial sobre seleção direta para concluir uma compra ainda precisa de teste de tarefas.",
+        "Não se presume que os bugs históricos de câmera continuem; não houve validação visual neste estudo."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "O quarto acrescenta organização e experiência pessoal, mas sua vantagem sobre seleção direta para tarefas de compra ainda precisa ser demonstrada.",
+        "completeness": "Fases do espelho, abertura manual e câmera têm implementação; cobertura de todos os corpos, roupas e dispositivos não foi confirmada.",
+        "usability": "Navegação espacial exige mais decisões e não houve teste de tarefas para confirmar que os controles são claros e eficientes.",
+        "reliability": "Limites de câmera e cálculo de enquadramento estão explícitos, sem prova visual aqui de ausência universal de clipping.",
+        "security": "O recorte mostra limites e validação de estado de vista, mas não é auditoria completa de propriedade dos itens e configuração do quarto.",
+        "integration": "O ambiente reutiliza roupas e avatar e se integra ao espelho, embora consistência fim a fim não tenha sido exercitada."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "3D-09",
+      "title": "Aprovar assets vestíveis e sincronizar sessão entre plataformas",
+      "description": "Backend distingue assets rigados/aprovados de previews, com revisão de sessão e perfil de qualidade.",
+      "scores": {
+        "utility": 8,
+        "completeness": 7,
+        "usability": 6,
+        "reliability": 8,
+        "security": 8,
+        "integration": 6
+      },
+      "score": 7.3,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/multiplatform/GarmentAssetService.java",
+          "line": 44,
+          "note": "Registro exige admin, origem/rig/renditions e gate; revisão humana é operação separada."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/multiplatform/TryOnSessionService.java",
+          "line": 28,
+          "note": "Contrato usa If-Match/412, quatro slots e modo MESH_3D/PREVIEW_2D."
+        },
+        {
+          "path": "lib/hooks/use-fitting-session.ts",
+          "line": 44,
+          "note": "Sessão web auditada ainda grava preferências localmente; não demonstra integração com esse backend."
+        }
+      ],
+      "strengths": [
+        "Separação correta entre GLB de vitrine e vestimenta aprovada evita falsa equivalência.",
+        "Controle de concorrência e fallback de qualidade estão expressos no contrato."
+      ],
+      "gaps": [
+        "Existência do backend não demonstra cobertura pelos clientes Unreal/mobile/web nem operação em produção.",
+        "Contrato observado tem renditions por perfil de qualidade, sem grade oficial por tamanho.",
+        "Integração do fluxo web local com sessão multiplataforma precisa ser concluída e testada."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Assets realmente vestíveis e continuidade entre aparelhos são relevantes para experimentação consistente em canais de varejo.",
+        "completeness": "Backend possui aprovação e sessão versionada, mas não demonstra cobertura de clientes nem graduação de asset por tamanho.",
+        "usability": "PREVIEW_2D e MESH_3D são distinguíveis no contrato, sem comprovação de comunicação e recuperação de conflitos nas interfaces finais.",
+        "reliability": "If-Match/412, gate e revisão humana sustentam previsibilidade arquitetural; sincronização real e performance não foram testadas.",
+        "security": "Registro/revisão restritos a admin e validações de renditions estão no código, sem equivaler à verificação operacional de todos os arquivos.",
+        "integration": "A sessão web observada usa storage local, logo a ponte com o backend multiplataforma ainda não está demonstrada neste fluxo."
+      },
+      "area": "Avatar, prova e caimento"
+    },
+    {
+      "id": "AT-01",
+      "title": "Projetos colaborativos de design",
+      "description": "Criar especificação, convidar participantes, comentar, revisar e publicar revisões do projeto.",
+      "scores": {
+        "utility": 9,
+        "completeness": 8,
+        "usability": 7,
+        "reliability": 8,
+        "security": 8.5,
+        "integration": 7
+      },
+      "score": 8.1,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/atelierproject/AtelierProjectService.java",
+          "line": 48,
+          "note": "Criação idempotente; publicação, convite e revisão com versões/papéis."
+        },
+        {
+          "path": "components/atelier-projects/project-detail.tsx",
+          "line": 77,
+          "note": "UI de comentários ancorados, decisões e gestão de membros."
+        }
+      ],
+      "strengths": [
+        "Fluxo atravessa criação, revisão e colaboração; inclui conflitos de versão e chaves idempotentes.",
+        "Papéis EDITOR/REVIEWER/VIEWER e separação do revisor em relação ao autor."
+      ],
+      "gaps": [
+        "Comentários são texto com âncora categórica; o contrato não modela discussão espacial em ponto da peça, anexos ou tarefas resolvidas.",
+        "Rascunho usa versão global do projeto; não equivale a coedição simultânea."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Centraliza especificação, colaboração e decisões, reduzindo perda de contexto entre design e revisão; valor potencial, sem métrica de adoção.",
+        "completeness": "O serviço implementa criação, edição, revisão, convites e arquivo, mas não modela execução fabril ou tarefas espaciais no produto.",
+        "usability": "A UI organiza design, histórico e colaboração e apresenta erros/conflitos; esforço de navegação e acessibilidade efetiva não foram testados.",
+        "reliability": "Versões esperadas, requestId e checks de revisão de origem tratam repetição e concorrência no código; sem execução ponta a ponta nesta pesquisa.",
+        "security": "Papéis, bloqueios de conta e revisão por outra pessoa aparecem no serviço; isso não equivale a uma auditoria de segurança completa.",
+        "integration": "Ficha técnica e editor pertencem ao projeto, mas cotação, produção e venda não estão no contrato inspecionado."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-02",
+      "title": "Editor interativo de arquivos GLB",
+      "description": "Importar GLB, editar transformações/material/vértices permitidos, manter versões e exportar.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 6.5,
+        "usability": 6.5,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 7
+      },
+      "score": 7.4,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/atelier3d/GlbInspector.java",
+          "line": 11,
+          "note": "Limite8MiB e inspeção de contêiner/texturas/URIs."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/atelier3d/Atelier3dService.java",
+          "line": 95,
+          "note": "Validação do documento no servidor; proíbe vértices em malhas deformáveis."
+        },
+        {
+          "path": "components/atelier3d/scene-inspector.tsx",
+          "line": 139,
+          "note": "Aviso e bloqueio de edição de vértices para rig/morph/animação."
+        }
+      ],
+      "strengths": [
+        "Validação no servidor complementa os controles do cliente.",
+        "Preserva original, edita documento e bloqueia operações incompatíveis com deformação."
+      ],
+      "gaps": [
+        "O escopo implementado é transformação/material/vértice de malha estática, não modelagem completa de moda com costura, retopologia, simulação física e graduação industrial.",
+        "Limite8MiB e allowlist de extensões precisam ser considerados ao prometer importação de acervos profissionais; não são defeitos por si só."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Importar e ajustar assets é útil à apresentação de design, embora não substitua ferramentas de modelagem industrial.",
+        "completeness": "Há transformações, materiais e vértices, porém operações de vértice são explicitamente vetadas em assets com rig/morph/animação e não há modelagem de tecido no contrato.",
+        "usability": "Controles numéricos, viewport e avisos estão implementados; curva de aprendizagem, precisão e adequação mobile não foram medidas.",
+        "reliability": "Inspeção limitada de GLB e validação server-side reduzem falhas previsíveis; compatibilidade de assets de marcas não foi exercitada nesta análise.",
+        "security": "Controle de projeto e rejeição de URIs externas delimitam acesso/conteúdo; nenhum pentest ou verificação de ambiente foi feito.",
+        "integration": "Assets/versões conectam-se ao Atelier, mas o código lido não transforma automaticamente o GLB em peça graduada e validada para o provador."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-03",
+      "title": "Convidados externos no editor",
+      "description": "Compartilhar acesso temporário de visualização/edição e permissão de exportação por projeto.",
+      "scores": {
+        "utility": 8,
+        "completeness": 7.5,
+        "usability": 7,
+        "reliability": 8,
+        "security": 8.5,
+        "integration": 7
+      },
+      "score": 7.7,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/atelier3d/Atelier3dService.java",
+          "line": 57,
+          "note": "Valida hash, expiração, revogação e papel do guest."
+        },
+        {
+          "path": "components/atelier3d/guest-panel.tsx",
+          "line": 36,
+          "note": "Cria convite com papel/horas/exportação e entrega token em fragmento da URL."
+        }
+      ],
+      "strengths": [
+        "Convite tem validade, revogação e permissão de exportação distinta de edição.",
+        "Capacidade é escopada ao projeto; token persistido como hash."
+      ],
+      "gaps": [
+        "O salvamento concorre por expectedSequence; visitantes não recebem colaboração em tempo real com presença, cursor ou mesclagem de operações.",
+        "Compartilhar um link-capacidade exige UX explícita de revogação e cuidados; eficácia desse entendimento precisa de teste com usuários."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Convidar designer ou revisor sem exigir uma conta completa favorece colaboração externa; ganho de conversão não foi medido.",
+        "completeness": "Papéis, validade, revogação e exportação estão presentes; coedição simultânea com presença e merge de operações não integra esse fluxo.",
+        "usability": "Formulário e link com fragmento oferecem um caminho direto; compreensão das permissões por pessoas convidadas precisa de teste.",
+        "reliability": "Sequência esperada e revogação/expiração são conferidas no backend, mas recuperação de conflitos reais entre convidados não foi simulada nesta pesquisa.",
+        "security": "Token hash, comparação resistente a timing e escopo de projeto constam do serviço; risco de compartilhamento indevido do link continua inerente à capacidade.",
+        "integration": "Funciona sobre os mesmos assets/projetos, com pouca integração explícita a tarefas ou revisão técnica estruturada."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-04",
+      "title": "Ficha técnica versionada e exportável",
+      "description": "Consultar/imprimir/exportar a especificação, medidas e revisão de um projeto.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 7,
+        "usability": 7.5,
+        "reliability": 8,
+        "security": 8,
+        "integration": 7.5
+      },
+      "score": 7.8,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/atelierproject/AtelierProjectService.java",
+          "line": 155,
+          "note": "Exportação vinculada à revisão e declara productionApproved=false."
+        },
+        {
+          "path": "components/atelier-projects/printable-tech-pack.tsx",
+          "line": 18,
+          "note": "Tela imprimível, campos faltantes, medidas/protocolos e pareceres."
+        }
+      ],
+      "strengths": [
+        "Documento identifica projeto/revisão, protocolos de medidas, lacunas e revisão.",
+        "Distingue aprovação para exposição de aprovação de fabricação."
+      ],
+      "gaps": [
+        "O próprio contrato exclui molde industrial, pedido e aprovação de produção; não deve ser apresentado como prontidão fabril.",
+        "Especificação usa campos textuais e lista simples de pontos de medida; não há na estrutura lida BOM/consumo/custo/graduação por tamanho."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Documento versionado reduz ambiguidade ao comunicar uma peça a revisor/fornecedor, sem prometer prontidão para fabricação.",
+        "completeness": "Exporta campos, medidas, protocolos e pareceres; o contrato marca productionApproved=false e não inclui BOM/graduação/custo.",
+        "usability": "Tela imprimível mostra campos ausentes e revisão, mas legibilidade impressa e uso em produção não foram validados.",
+        "reliability": "Exportação usa revisão identificável e conteúdo imutável, reduzindo divergência entre versões; não se testou geração real neste estudo.",
+        "security": "Backend verifica leitura do projeto e React escapa textos; não é certificação de ausência de vulnerabilidades.",
+        "integration": "Integra o histórico e a revisão do Atelier, faltando um contrato operacional com cotação e fabricação."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-05",
+      "title": "Votação de interesse em criações",
+      "description": "Registrar e retirar interesse em uma revisão publicada com prazo.",
+      "scores": {
+        "utility": 7,
+        "completeness": 7,
+        "usability": 7.5,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 6
+      },
+      "score": 7.2,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/atelierproject/AtelierProjectService.java",
+          "line": 145,
+          "note": "Voto por usuário/revisão com prazo e verificação de acesso."
+        },
+        {
+          "path": "components/atelier-projects/project-detail.tsx",
+          "line": 55,
+          "note": "UI de contagem, prazo, registrar/retirar interesse."
+        }
+      ],
+      "strengths": [
+        "Voto é vinculado à revisão e considera prazo, acesso revogado e projeto arquivado.",
+        "Distingue intenção da comunidade de cobrança/pedido."
+      ],
+      "gaps": [
+        "Interesse é booleano: o contrato não captura tamanho, faixa de preço ou quantidade para orientar viabilidade de lote.",
+        "Não existe neste fluxo conversão de interesse em cotação ou reserva; isso limita seu uso no varejo sob demanda."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Interesse da comunidade ajuda priorizar propostas, mas sinal booleano tem alcance limitado para estimar demanda comercial.",
+        "completeness": "O fluxo registra/retira interesse por revisão e prazo; não coleta grade, quantidade ou faixa de preço.",
+        "usability": "Botão com aria-pressed e prazo oferece feedback previsto no código; entendimento e acessibilidade não foram exercitados.",
+        "reliability": "Voto único por usuário/revisão e verificação de prazo são mecanismos visíveis, sem ensaio de concorrência nesta pesquisa.",
+        "security": "Leitura, revogação e projeto arquivado são considerados; resistência a contas múltiplas ou manipulação de demanda não foi demonstrada.",
+        "integration": "O voto aparece na revisão, mas não alimenta diretamente uma cotação ou reserva no fluxo examinado."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-06",
+      "title": "Copilot de combinações e orientação",
+      "description": "Assistente com peças do próprio guarda-roupa, descoberta, reuso e ações de criação.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 7.5,
+        "usability": 7.5,
+        "reliability": 7,
+        "security": 8,
+        "integration": 8
+      },
+      "score": 7.8,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/CopilotService.java",
+          "line": 703,
+          "note": "Despacho por intenções e limpeza da entrada; resposta inclui ações/contexto."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/CopilotService.java",
+          "line": 1331,
+          "note": "Resposta informa fallback, explicação e quota."
+        },
+        {
+          "path": "app/(site)/(app)/copilot/page.tsx",
+          "line": 88,
+          "note": "Conversa em estado local; sugestões salvas separadamente em localStorage."
+        }
+      ],
+      "strengths": [
+        "Respostas podem se referir a peças válidas e alimentar ações concretas; considera reutilização antes de compra.",
+        "Contrato informa fallback/quota e permite distinguir texto gerado de rotas locais."
+      ],
+      "gaps": [
+        "O chat lido mantém mensagens em estado React; persistência observada em localStorage é de looks salvos, não do histórico completo da conversa.",
+        "Qualidade de combinações e explicações ainda demanda avaliação quantitativa por usuários; esta leitura não certifica gosto/adequação."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Conecta a dúvida do usuário a peças possuídas, reutilização e ações concretas; não há nesta avaliação medição de benefício real.",
+        "completeness": "Múltiplas intenções e fallback cobrem orientação e combinação, mas histórico integral da conversa não aparece como persistência no cliente lido.",
+        "usability": "Chat, sugestões e chips oferecem feedback e ações; clareza das respostas e facilidade de seleção demandam teste com usuários.",
+        "reliability": "Entrada é sanitizada e resposta fornece fallback/quota; qualidade semântica e latência dos provedores não foram medidas.",
+        "security": "O serviço opera sob usuário/contexto e valida referências no fluxo de recomendações; robustez completa de prompt injection não foi certificada.",
+        "integration": "Reusa guarda-roupa, DNA, clima e criação de esquemas, aproximando orientação e execução no produto."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-07",
+      "title": "Autopiloto de looks diários e semanais",
+      "description": "Sugerir/confirmar combinações, planejar dias e editar o plano usando ocasião, humor e clima.",
+      "scores": {
+        "utility": 9,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 8.5
+      },
+      "score": 8.2,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/AutopilotService.java",
+          "line": 270,
+          "note": "Escolha de candidatas já validadas com justificação e contexto."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/AutopilotService.java",
+          "line": 581,
+          "note": "Plano semanal persiste dias, lacunas, justificativas e alterações."
+        },
+        {
+          "path": "app/(site)/(app)/autopilot/page.tsx",
+          "line": 35,
+          "note": "Confirmação explícita de look e navegação para o esquema salvo."
+        }
+      ],
+      "strengths": [
+        "Fecha ciclo sugestão→confirmação e planejamento→edição; usa itens reais do usuário.",
+        "Preserva justificativas, dias com lacunas e scores para as combinações existentes."
+      ],
+      "gaps": [
+        "O fluxo lido agenda looks, mas não reserva itens por ciclos de lavagem/secagem ou limita peso/volume de mala.",
+        "Para varejo, compra sugerida permanece separada da peça possuída, corretamente; aquisição/estoque/entrega não são resolvidos por esse fluxo."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Planejamento diário/semanal atende uma necessidade recorrente de vestir-se com o acervo existente; impacto em retenção é hipótese.",
+        "completeness": "Oferece alternativas, confirmação, plano e edição; restrições de bagagem/lavanderia não fazem parte do contrato inspecionado.",
+        "usability": "Justificativas, lacunas e edição manual estão expostas; o percurso de completar uma semana não foi validado com usuários.",
+        "reliability": "Candidatas já validadas e fallback reduzem dependência de geração livre; não foram medidos erros, carga ou indisponibilidade.",
+        "security": "Plano e peças são associados ao usuário e confirmação é explícita; não se executaram testes de autorização neste estudo.",
+        "integration": "DNA, clima, itens, scores e esquemas salvos se conectam ao plano, com separação de sugestões de compra."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-08",
+      "title": "DNA de estilo e identidade de moda",
+      "description": "Sintetizar perfil estilístico, sinais de uso e narrativas de identidade com controles de privacidade.",
+      "scores": {
+        "utility": 7.5,
+        "completeness": 7.5,
+        "usability": 7,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 8
+      },
+      "score": 7.6,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/DnaService.java",
+          "line": 267,
+          "note": "Síntese com opção de pular identidade de vida e atualização separada."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/DnaService.java",
+          "line": 299,
+          "note": "Privacidade por campos e invalidação de imagem derivada."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/DnaService.java",
+          "line": 311,
+          "note": "Sinal de feedback positivo tem peso dobrado na síntese."
+        }
+      ],
+      "strengths": [
+        "Combina preferências e uso observado; identidade de vida não é obrigatória.",
+        "Controle por campo e snapshots permitem preservar privacidade e evolução do perfil."
+      ],
+      "gaps": [
+        "Pesos heurísticos como dobrar looks com feedback positivo precisam de apresentação compreensível; o algoritmo não demonstra por si só validade psicométrica.",
+        "DNA visual não deve ser tratado como medida objetiva de identidade ou substituto de preferências explícitas; validação com públicos diversos permanece necessária."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Perfil de estilo pode orientar combinações e expressão pessoal, embora validade do retrato de identidade não seja demonstrada só pelo algoritmo.",
+        "completeness": "Síntese, vida opcional, privacidade e histórico estão presentes; explicabilidade das inferências e correções pelo usuário exigem evolução.",
+        "usability": "Opcionalidade e controles por campo são escolhas de UX observáveis no contrato, sem comprovação de compreensão na prática.",
+        "reliability": "Snapshots e atualização parcial distinguem mudanças de identidade; qualidade das heurísticas não foi avaliada quantitativamente.",
+        "security": "Privacidade por campo e geração sem identidade de vida mitigam exposição, mas não se testou a propagação de dados em todos os consumidores.",
+        "integration": "Sinais de looks/feedback alimentam o DNA e as recomendações; integra expressão pessoal com uso do guarda-roupa."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-09",
+      "title": "Passaporte digital e compartilhamento privado",
+      "description": "Manter declarações de origem/composição/cuidados/histórico e compartilhar apenas campos autorizados.",
+      "scores": {
+        "utility": 9,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 8.5,
+        "security": 9,
+        "integration": 7.5
+      },
+      "score": 8.4,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+          "line": 156,
+          "note": "Declaração e eventos com versão, correções, idempotência e autoria."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+          "line": 202,
+          "note": "Compartilhamento com escopo/expiração e revogação."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+          "line": 247,
+          "note": "Saída declara OWNER_DECLARED e NOT_VERIFIED, sem alegar autenticação de marca."
+        }
+      ],
+      "strengths": [
+        "É um fluxo de produto já existente; não precisa ser proposto novamente como novidade.",
+        "Segrega narrativa privada por dono, escopo público, expiração e procedência declarada."
+      ],
+      "gaps": [
+        "Evidência apresentada é marcada PRESENTED_UNVERIFIED; não há nesse contrato uma cadeia de atestação de composição ou autenticidade por marca/oficina.",
+        "Histórico autodeclarado ajuda confiança, mas não comprova impacto ambiental, conformidade regulatória ou fabricação."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Histórico e cuidado apoiam segunda vida e confiança, sem confundir declaração do dono com prova de autenticidade.",
+        "completeness": "Criação, declaração, eventos, correções e compartilhamento estão presentes; atestação por marca/oficina não é o nível atual de evidência.",
+        "usability": "Editor tem seções e formulários, mas esforço para registrar histórico e consentir escopos precisa de pesquisa de usabilidade.",
+        "reliability": "Locks, versões, idempotência e expiração são verificáveis no serviço; testes reais de disponibilidade não foram executados.",
+        "security": "Campos compartilháveis limitados, links revogáveis e narrativas privadas por autor oferecem uma boa base estática de privacidade.",
+        "integration": "Reaproveita peça, composição/cuidados e transferência; integração com emissores externos de evidência ainda é uma expansão."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "AT-10",
+      "title": "Transferência e apoio à segunda vida da peça",
+      "description": "Oferecer/aceitar transferência, preservar autoria histórica e reaproveitar informações em revenda/doação.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 7,
+        "usability": 7,
+        "reliability": 8.5,
+        "security": 9,
+        "integration": 7.5
+      },
+      "score": 8.0,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+          "line": 256,
+          "note": "Dados de revenda dependem da peça disponível e marcada para vender/doar."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+          "line": 304,
+          "note": "Aceite valida destinatário, token, versão, prazo e posse; mantém item histórico."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+          "line": 336,
+          "note": "Fotos de catálogo são preservadas; outros casos usam imagem default fixa de camiseta."
+        },
+        {
+          "path": "components/passport/passport-transfers.tsx",
+          "line": 14,
+          "note": "UI de aceite com retries e estado explícito."
+        }
+      ],
+      "strengths": [
+        "Transação preserva autoria e evita transportar campos pessoais/selos para o novo dono.",
+        "Aceite exige destinatário específico e token; retry devolve mesma transferência."
+      ],
+      "gaps": [
+        "No ramo não CATALOG do aceite, o código fixa default de camiseta independentemente da categoria original: risco concreto de representação errada de calças/casacos transferidos.",
+        "A projeção de revenda é informativa: não representa checkout, pagamento, frete, disputa ou inspeção física."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Facilita preservar o histórico útil durante troca ou revenda, respeitando a autoria anterior; não é um checkout de varejo.",
+        "completeness": "Oferta, aceite, cancelamento e projeção de revenda estão implementados, mas a imagem default fixa para casos não CATALOG deixa uma lacuna de representação.",
+        "usability": "Aceite orienta token e prazo, porém colagem de token e recuperação do fluxo não foram avaliadas com usuários.",
+        "reliability": "Locks, checagens de posse/versão e retry retornando o mesmo resultado tratam integridade de transferência no código.",
+        "security": "Destinatário específico, hash e segregação de dados/selos limitam exposição; o estudo não comprova segurança operacional.",
+        "integration": "Transferência integra guarda-roupa/passaporte/revenda, mas pedidos, frete, pagamento e disputa são fluxos distintos ainda ausentes nessa projeção."
+      },
+      "area": "Design, IA e circularidade"
+    },
+    {
+      "id": "SOC01",
+      "title": "Feed e interações sociais de moda",
+      "description": "Descobrir looks, peças e perfis com filtros de estilo, ocasião, marca e Hype.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 7,
+        "security": 8,
+        "integration": 8.5
+      },
+      "score": 8.0,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/SearchService.java",
+          "line": 430,
+          "note": "Feed limita tamanho, respeita bloqueios e integra sinais DNA/Hype; lê janelas de candidatos limitadas."
+        },
+        {
+          "path": "components/feed-discovery.tsx",
+          "line": 14,
+          "note": "Painel reaproveita busca; busca paralela, loading, retry, empty e exclusão de bloqueados."
+        }
+      ],
+      "strengths": [
+        "Há fluxo integrado de descoberta, busca e conteúdo social; filtros alinhados à linguagem de moda.",
+        "Estados de carregamento, erro e vazio estão explícitos no frontend."
+      ],
+      "gaps": [
+        "O feed consultado lê até400 esquemas e200 compartilhamentos antes de montar candidatos: alcance e custo de ordenação precisam ser medidos em bases maiores.",
+        "A observação estática não comprova satisfação, diversidade de exposição ou relevância da ordenação para compras; essas métricas devem orientar evolução."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Filtros de estilo/ocasião e descoberta de peças/perfis atendem diretamente inspiração e busca de moda, segundo SearchService, sem medir adoção real.",
+        "completeness": "Frontend e backend cobrem busca, feed, estados e visibilidade; as janelas fixas de candidatos400/200 limitam a avaliação de completude em escala.",
+        "usability": "FeedDiscovery possui skeleton, retry, empty e nomes acessíveis; a nota é potencial de usabilidade por inspeção, sem sessão observada.",
+        "reliability": "Paginação e limites existem, mas a ordenação de conjuntos parciais e a latência precisam de testes de carga que não foram executados.",
+        "security": "Guardas de visibilidade e bloqueio aparecem no serviço e no painel; não foi feito teste adversarial de vazamento.",
+        "integration": "Conteúdo social, DNA, marcas, busca e Hype participam da mesma descoberta, com evidência explícita no contrato do feed."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC02",
+      "title": "Perfis, conexões e privacidade social",
+      "description": "Manter identidade pessoal/institucional, seguir perfis, aceitar solicitações e bloquear relações.",
+      "scores": {
+        "utility": 8,
+        "completeness": 8,
+        "usability": 8,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 8.5
+      },
+      "score": 8.0,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/ProfileService.java",
+          "line": 197,
+          "note": "Fluxos de follow/unfollow/respond e block; resposta exige dono do vínculo."
+        },
+        {
+          "path": "components/profile-header.tsx",
+          "line": 18,
+          "note": "Header concentra identidade, contadores, ações e progressão de nível."
+        }
+      ],
+      "strengths": [
+        "Relações sociais têm comportamentos distintos de seguir, responder e bloquear, em vez de uma lista sem governança.",
+        "Identidade e contadores aproximam criadores, marcas e usuários; há nomes acessíveis e tradução."
+      ],
+      "gaps": [
+        "Header combina identidade, seguidores, Hype e nível; hierarquia e compreensão dessa densidade devem ser validadas com tarefas reais, sem tratar complexidade visual como defeito já confirmado.",
+        "A leitura do perfil não demonstra qualidade de matching entre comprador e criador nem eficácia contra abuso; avaliação de conversão e denúncias ainda é necessária."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Perfis e relações conectam quem veste/cria a marcas e criadores, um habilitador relevante para social commerce, sem presumir conversão medida.",
+        "completeness": "ProfileService oferece seguir, deixar de seguir, responder e bloquear; completude de todas as combinações de conta não foi exercitada.",
+        "usability": "ProfileHeader agrupa identidade, ações e contadores com texto traduzível; densidade visual exige teste com usuários.",
+        "reliability": "Existe serviço central de vínculos e operações específicas; não foi validado comportamento sob corrida, indisponibilidade ou tráfego real.",
+        "security": "Respond exige proprietário do vínculo e há bloqueio explícito; isso é evidência de controle, não certificação de segurança.",
+        "integration": "O header aceita Hype e progresso e o perfil expõe peças/looks/conexões, ligando módulos de identidade e moda."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC03",
+      "title": "HypeScore, tendências e explicabilidade",
+      "description": "Apresentar relevância social de peças e looks com motivos compreensíveis e respeito à visibilidade.",
+      "scores": {
+        "utility": 7.5,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 8.5
+      },
+      "score": 7.8,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/hype/HypeQueryService.java",
+          "line": 60,
+          "note": "Consultas separam Hype de compatibilidade de estilo e restringem ranking público à elegibilidade pública."
+        },
+        {
+          "path": "components/hype/hype-explanation.tsx",
+          "line": 12,
+          "note": "Resumo, razões e aviso de que relevância não equivale a qualidade/estilo."
+        }
+      ],
+      "strengths": [
+        "A distinção explícita entre relevância, qualidade e compatibilidade reduz interpretação enganosa do score.",
+        "Leitura do estado calculado e cache por geração evita recalcular tudo em cada GET."
+      ],
+      "gaps": [
+        "O score social, por desenho, não responde durabilidade, vestibilidade ou custo-benefício; essas informações não podem ser deduzidas da nota Hype.",
+        "O código e a explicação não certificam calibração estatística, resistência a campanhas coordenadas ou justiça de exposição; exigem avaliação específica."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Relevância social ajuda descoberta e comparação de tendências; não substitui qualidade física ou vestibilidade, o que limita sua utilidade para compra.",
+        "completeness": "Consultas, snapshots, motivos e componente de explicação existem; calibração e eficácia de proteção contra manipulação não foram verificadas.",
+        "usability": "HypeExplanation oferece motivos e disclaimer; compreensão dos sinais e do número não foi observada em uso.",
+        "reliability": "Leitura de estado persistido/cache evita recálculo por GET; frescor, qualidade dos sinais e desempenho não foram medidos.",
+        "security": "HypeQueryService restringe rankings públicos à elegibilidade e separa dados pessoais; a avaliação não cobre auditoria adversarial.",
+        "integration": "Hype é consumido por feed, marcas, perfis e políticas de selo, com contratos separados de compatibilidade de estilo."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC04",
+      "title": "Auras e personalização licenciada dos cards",
+      "description": "Escolher acabamento visual, movimento e arte conforme nível e licença do usuário.",
+      "scores": {
+        "utility": 7,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 8.5
+      },
+      "score": 7.7,
+      "evidence": [
+        {
+          "path": "components/hype/aura-hype-picker.tsx",
+          "line": 24,
+          "note": "Permissões vindas do servidor, fallback local, separação de exemplos e respeito a reduced motion."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/AuraPermissionsService.java",
+          "line": 15,
+          "note": "Servidor exige tier para acabamentos; combinação com BackgroundStudioService.requireAuraAccess protege salvamento."
+        }
+      ],
+      "strengths": [
+        "Limite de nível existe também no backend; cadeado visual não é a única barreira.",
+        "Amostras são marcadas como demonstração e animação respeita preferência de redução de movimento."
+      ],
+      "gaps": [
+        "A utilidade direta para escolher ou comprar roupa é menor do que a do conteúdo da peça; o recurso deve ser avaliado como expressão/retorno ao app, não prova de melhoria no varejo.",
+        "A matriz de permissões e a licença da arte são conceitos distintos; a jornada precisa explicar a diferença e medir entendimento, sem assumir que testes de shader/preview garantem acessibilidade global."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Auras oferecem expressão e identidade visual, mas seu efeito na decisão de vestir/comprar é indireto e ainda precisa de validação de valor.",
+        "completeness": "Picker, permissões no servidor e licença em serviço próprio formam fluxo existente; combinatória visual/licenças não foi exercitada integralmente.",
+        "usability": "Preview identificado como demo, estados de nível e reduced motion favorecem entendimento; não houve validação de contraste/performance no navegador.",
+        "reliability": "Permissões são buscadas com refresh e estados de erro/loading afetam desbloqueio; cache/concorrência entre concessão e seleção não foram testados.",
+        "security": "AuraPermissionsService exige nível no backend, além do cadeado visual; configuração completa de licença não foi revalidada neste recorte.",
+        "integration": "Acabamentos estão ligados a cards, nível e licenças de marcas, com catálogo compartilhado de presets."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC05",
+      "title": "Selos de marcas/celebridades e vínculo com looks",
+      "description": "Criar políticas de selo e solicitar/aplicar vínculos com consentimento de imagem e autorização.",
+      "scores": {
+        "utility": 8,
+        "completeness": 8,
+        "usability": 7,
+        "reliability": 7.5,
+        "security": 8.5,
+        "integration": 8.5
+      },
+      "score": 7.9,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealService.java",
+          "line": 1372,
+          "note": "Aceite de vínculo tem contrato explícito de imageRightsConsent; há governança de emissor/dono em criação/edição."
+        },
+        {
+          "path": "components/look-seal-verification.tsx",
+          "line": 18,
+          "note": "UI distingue candidatos, consentimento e retry antes de vincular arte ao look."
+        }
+      ],
+      "strengths": [
+        "Vínculo e consentimento são tratados como operações próprias, não apenas uma imagem decorativa.",
+        "Políticas e relações com peças, esquemas e Hype permitem collabs contextualizadas."
+      ],
+      "gaps": [
+        "A criação/validação de políticas é conceitualmente complexa; conclusão de tarefa por marcas deve ser medida, não inferida pela existência do wizard.",
+        "Selo de vínculo/participação não demonstra autenticidade física da peça nem certificação de qualidade; essa distinção deve acompanhar o recurso e futuras integrações."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Selos conectam peças/looks a emissores e campanhas, útil para collab e vínculo de marca; não atestam autenticidade física por si só.",
+        "completeness": "Wizard, sugestão, aceite, consentimento e políticas aparecem no código; falta comprovar conclusão por emissores reais em tarefas.",
+        "usability": "O fluxo inclui consentimento e feedback de candidatos, mas regras numerosas podem demandar suporte; essa carga não foi medida.",
+        "reliability": "Validações de vínculo e operações transacionais sustentam o fluxo; não foi medida a estabilidade da cadeia completa de emissor até renderização.",
+        "security": "Exigência de emissor/dono e consentimento explícito é observável em SealService; a nota não comprova licenciamento jurídico nem pentest.",
+        "integration": "O modelo vincula marcas/celebridades, peças, esquemas, Hype e benefícios, com pontos de integração concretos."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC06",
+      "title": "Desafios de looks e tendências comunitárias",
+      "description": "Participar em desafios de moda, registrar evidências, votar e receber recompensas.",
+      "scores": {
+        "utility": 8,
+        "completeness": 8,
+        "usability": 7,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 8.5
+      },
+      "score": 7.8,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/ChallengeService.java",
+          "line": 1333,
+          "note": "Inscrição verifica participante ativo, dono do esquema e peças próprias; recusa inscrição repetida em modos single-shot."
+        },
+        {
+          "path": "components/challenges/community-trends.tsx",
+          "line": 14,
+          "note": "Superfície de tendências conectada a desafios e conteúdo comunitário."
+        }
+      ],
+      "strengths": [
+        "Regras verificam propriedade e estado, evitando que inscrição seja apenas um botão sem validação.",
+        "Eventos de criação/uso de looks se conectam às recompensas e à progressão do guarda-roupa."
+      ],
+      "gaps": [
+        "Eventos digitais comprovam ações no app, não necessariamente uso real prolongado, reparo ou impacto ambiental; novas recompensas dessa natureza exigem evidências específicas.",
+        "Modos e condições numerosos aumentam carga cognitiva; retenção saudável, fraude e entendimento precisam de medição por desafio."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Desafios estimulam composição e reutilização de looks; benefício de engajamento e impacto ambiental ainda são hipóteses a medir.",
+        "completeness": "Catálogo, participação, evidência, inscrição, votação e resultado existem em ChallengeService; a experiência por modo não foi executada.",
+        "usability": "Modos e estados próprios tornam a experiência expressiva, porém aumentam carga de entendimento; a nota é heurística sem tarefas observadas.",
+        "reliability": "Guardas de estado, anti-repetição e integração com pontos são visíveis; qualidade da evidência real e resistência a fraude não foram testadas.",
+        "security": "Inscrição exige dono do look/peças e participante ativo, o que estabelece proteção de propriedade no caminho examinado.",
+        "integration": "Looks, eventos do guarda-roupa, tendências e recompensas estão conectados por serviços e componentes existentes."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC07",
+      "title": "FAI Points, progressão e recompensas",
+      "description": "Ganhar pontos, entender progresso e resgatar benefícios ou itens conforme saldo e nível.",
+      "scores": {
+        "utility": 7.5,
+        "completeness": 8.5,
+        "usability": 7.5,
+        "reliability": 8,
+        "security": 8,
+        "integration": 8.5
+      },
+      "score": 8.0,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/FaiPointsService.java",
+          "line": 108,
+          "note": "Award verifica idempotência e tetos diário/semanal; operações de compra/resgate usam saldo e requisitos de nível."
+        },
+        {
+          "path": "components/points/hub.tsx",
+          "line": 18,
+          "note": "Hub integra saldo, nível, itens disponíveis/acessíveis e notificações em modos navegáveis."
+        }
+      ],
+      "strengths": [
+        "Ledger, idempotência e limites de concessão são controles técnicos relevantes para evitar crédito duplicado.",
+        "A progressão tem integração com atividades e loja, em vez de pontuação isolada sem destino."
+      ],
+      "gaps": [
+        "O saldo representa moeda interna; não deve ser interpretado como dinheiro, reputação comercial ou sustentabilidade sem regras explícitas.",
+        "Equilíbrio de concessão/gasto e efeito sobre comportamento de consumo não podem ser comprovados por inspeção estática; exigem indicadores de economia e abuso."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Pontos dão retorno às ações e acesso a benefícios, mas valor central de moda depende de o incentivo aumentar uso útil do guarda-roupa.",
+        "completeness": "Extrato/saldo, níveis, concessões e loja estão implementados; há destinos para a moeda interna em vez de pontuação apenas decorativa.",
+        "usability": "O hub mostra saldo, nível e itens acessíveis; entendimento da economia e equivalência de benefícios não foi testado com usuários.",
+        "reliability": "Ledger, idempotência e tetos diário/semanal reduzem riscos de crédito duplicado no desenho; nenhuma corrida ou carga foi executada aqui.",
+        "security": "Operações de compra/concessão verificam saldo, estado e limites; fraude e configuração de regras ainda requerem teste específico.",
+        "integration": "Atividades de criação, jogos, desafios e lojas compartilham progressão, como demonstrado por FaiPointsService e PointsHub."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC08",
+      "title": "FLAIR e jogos de moda",
+      "description": "Transformar peças e looks em cartas, decks, combinações e experiências de jogo.",
+      "scores": {
+        "utility": 6.5,
+        "completeness": 8,
+        "usability": 6.5,
+        "reliability": 7,
+        "security": 7.5,
+        "integration": 8.5
+      },
+      "score": 7.2,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/FlairService.java",
+          "line": 240,
+          "note": "Cartas e decks derivam do guarda-roupa, com fluxos próprios de quests, duelo e arena."
+        },
+        {
+          "path": "components/flair/hub.tsx",
+          "line": 21,
+          "note": "Hub consulta múltiplos sistemas de cartas/decks/momentos/missões/moedas e consolida disponibilidade."
+        }
+      ],
+      "strengths": [
+        "Há ligação funcional com roupas, esquemas e economia do aplicativo; o jogo não é um módulo completamente externo à temática.",
+        "A arquitetura de hubs diferencia disponibilidade e caminhos de jogo."
+      ],
+      "gaps": [
+        "O impacto sobre decisão de vestir/comprar é indireto; jogos devem justificar seu custo de manutenção por retenção e retorno às funções de moda.",
+        "O hub depende de várias respostas para compor estado; a leitura estática não demonstra tempo até interação, tolerância sob rede ruim ou equilíbrio das experiências."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Cartas e jogos usam o acervo de moda, mas apoio à decisão de vestir/comprar é menos direto; a nota não nega valor de entretenimento.",
+        "completeness": "Há cartas, decks, quests, arena e combinações; existência de muitos modos não comprova qualidade equivalente de cada jornada.",
+        "usability": "O hub consolida muitos subsistemas e opções, elevando a necessidade de validação de orientação e descoberta por iniciantes.",
+        "reliability": "Consolidação depende de várias respostas API e disponibilidade por modo; não foi medida tolerância de rede, latência ou equilíbrio do jogo.",
+        "security": "Fluxos são por usuário e operações de jogo possuem serviços próprios; não foram executados testes de exploração da economia.",
+        "integration": "Peças/looks viram cartas e alimentam desafios, moedas e benefícios, uma conexão temática explícita no código."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC09",
+      "title": "Cupons e benefícios de marcas",
+      "description": "Detectar direitos de cupom, emitir/resgatar e acompanhar utilização e expiração.",
+      "scores": {
+        "utility": 8,
+        "completeness": 8,
+        "usability": 7.5,
+        "reliability": 7.5,
+        "security": 8,
+        "integration": 8
+      },
+      "score": 7.9,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/CouponService.java",
+          "line": 213,
+          "note": "Resgate exige direito do usuário ainda pendente, vincula cupom emitido e muda estado; validação trata expiração."
+        },
+        {
+          "path": "components/coupons/my-coupons.tsx",
+          "line": 16,
+          "note": "UI oferece filtros por emitido/usado/expirado, loading/erro/retry e fluxo de confirmação."
+        }
+      ],
+      "strengths": [
+        "Estados de direito e cupom são separados, possibilitando rastreabilidade de concessão e uso.",
+        "Caminhos de marca/celebridade e recompensas já convergem para uma superfície de benefícios."
+      ],
+      "gaps": [
+        "Ter um cupom emitido no app não comprova que o checkout externo da marca aceitou e conciliou o benefício; essa fronteira precisa de validação com o varejista.",
+        "Métricas de retorno incremental e abusos em campanhas não aparecem como resultado validado nesta análise; devem ser avaliadas antes de prometer ganho de vendas."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Cupons conectam participação e marcas à intenção de compra, com valor comercial plausível que ainda precisa de mensuração incremental.",
+        "completeness": "O fluxo oferece direito, emissão, resgate, dispensa e expiração; conciliação com checkout externo não está comprovada na análise.",
+        "usability": "MyCoupons traz filtros por estado e confirmação/retry; clareza das regras e aceitação no estabelecimento dependem de pesquisa de uso.",
+        "reliability": "Transações e rejeição de direito já decidido reduzem inconsistência; aceitação/baixa externa não foi testada.",
+        "security": "ownRight e validações de expiração/estado estabelecem escopo por usuário, sem constituir garantia de integração antifraude ponta a ponta.",
+        "integration": "Selos e FLAIR alimentam direitos de cupom numa UI comum, reduzindo fragmentação entre recompensas e varejo."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC10",
+      "title": "Loja de produtos físicos com FAI Points",
+      "description": "Marcas/celebridades aprovadas oferecem produtos físicos, com resgate, estoque, endereço e envio.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 6.5,
+        "usability": 7.5,
+        "reliability": 8,
+        "security": 8,
+        "integration": 8.5
+      },
+      "score": 7.8,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+          "line": 176,
+          "note": "Compra trava donos e estoque, verifica saldo/nível, rejeita compra própria e reaproveita request idempotente."
+        },
+        {
+          "path": "components/points/physical-store.tsx",
+          "line": 49,
+          "note": "Checkout envia endereço com chave idempotente; mostra disponibilidade, requisito de nível e saldo."
+        }
+      ],
+      "strengths": [
+        "Existe fluxo concreto de produto físico, e não apenas vitrine: débito/crédito, estoque e acompanhamento de envio estão presentes.",
+        "Controles de concorrência e idempotência protegem contra repetição de compra e estoque negativo no caminho examinado."
+      ],
+      "gaps": [
+        "ListingForm possui productId e OrderForm somente endereço; esse contrato não permite escolher/reservar SKU de cor/tamanho, lacuna importante para vestuário.",
+        "O serviço examinado cobre envio/entrega, mas não expõe fluxo de troca/devolução/estorno; não é uma comprovação de pós-venda completo."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Resgate de roupa física com envio é ligação direta com varejo; a utilidade depende de selecionar corretamente a variante.",
+        "completeness": "Compra, estoque e envio existem, porém OrderForm recebe somente endereço e não há fluxo de retorno/estorno no serviço consultado.",
+        "usability": "UI apresenta saldo, nível e endereço com estados de erro, mas não oferece seleção de SKU/tamanho no contrato analisado.",
+        "reliability": "Travas de estoque/donos e chave idempotente são controles claros de concorrência; não houve execução de carga ou pedidos reais.",
+        "security": "Vendedores devem ser aprovados, dados de estoque são filtrados e o serviço impede compra própria; privacidade logística não foi auditada integralmente.",
+        "integration": "Catálogo, emissores, saldo, resgate e acompanhamento de envio participam de uma jornada comercial existente."
+      },
+      "area": "Social, gamificação e varejo"
+    },
+    {
+      "id": "SOC11",
+      "title": "Conta, consentimentos e controle de dados",
+      "description": "Gerir privacidade, dados sensíveis, consentimentos, exportação e exclusão da conta.",
+      "scores": {
+        "utility": 8.5,
+        "completeness": 8,
+        "usability": 7,
+        "reliability": 8,
+        "security": 8.5,
+        "integration": 8
+      },
+      "score": 8.1,
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/AccountService.java",
+          "line": 385,
+          "note": "Concessão/revogação por finalidade, versão de política, auditoria; exportação e exclusão possuem operações próprias."
+        },
+        {
+          "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/User.java",
+          "line": 35,
+          "note": "Campos sensíveis usam conversor de cifragem e e-mail possui hash para unicidade/busca."
+        }
+      ],
+      "strengths": [
+        "Há mecanismos concretos de consentimento por finalidade, revogação e controle de acesso ao dado, úteis em um app com fotos e medidas corporais.",
+        "Cifragem e separação do hash do e-mail evitam tratar dado sensível como texto aberto na entidade."
+      ],
+      "gaps": [
+        "Controles declarados não equivalem a certificação LGPD, pentest ou prova de eliminação em todos os provedores externos; essas verificações estão fora deste levantamento.",
+        "O usuário precisa compreender quais dados alimentam recomendação/3D/marketing; usabilidade de consentimento e de exclusão deve ser validada com linguagem e tarefas reais."
+      ],
+      "confidence": "média",
+      "score_rationale": {
+        "utility": "Controle de fotos, dados e consentimentos sustenta confiança em recursos de corpo/3D e relacionamento comercial, sem equivaler a validação jurídica.",
+        "completeness": "Consentimento, revogação, exportação e exclusão com carência aparecem no serviço; eliminação em todos os provedores não foi testada.",
+        "usability": "Finalidades são nomeadas e auditadas, porém compreensão do consentimento e facilidade de exclusão precisam de tarefas observadas.",
+        "reliability": "Política versionada e auditoria favorecem rastreabilidade; falhas de provedor e consistência da limpeza total não foram exercitadas.",
+        "security": "Cifragem, hash do e-mail e autorização por usuário são evidências concretas; não se alega conformidade LGPD certificada ou pentest.",
+        "integration": "Preferências/consentimentos, identidade e limpeza de dados se conectam a vários módulos, algo essencial às fotos e recomendações de moda."
+      },
+      "area": "Social, gamificação e varejo"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "RFSOC01",
+      "title": "Resgate por SKU, cor e tamanho com estoque específico",
+      "kind": "extensão de fluxo existente",
+      "actor": "Comprador e marca/celebridade vendedora",
+      "trigger": "Selecionar um produto físico de vestuário para resgatar",
+      "behavior": "Exigir escolha explícita de variante de cor e tamanho disponível; vincular essa variante ao pedido e debitar o estoque correspondente.",
+      "acceptance": [
+        "O checkout mostra apenas variantes pertencentes ao produto e distingue indisponível de informação ausente.",
+        "O servidor rejeita variante de outro produto, tamanho inexistente e estoque esgotado antes de debitar pontos.",
+        "Duas compras concorrentes do último SKU geram no máximo um débito/pedido concluído; repetir a chave devolve o mesmo pedido.",
+        "Pedido, histórico e preparação de envio exibem o SKU escolhido; variante não pode ser trocada silenciosamente."
+      ],
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+          "line": 45,
+          "note": "ListingForm identifica produto, não SKU; OrderForm da linha48 contém somente endereço."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+          "line": 196,
+          "note": "Estoque é bloqueado por listing no contrato atual."
+        }
+      ],
+      "rationale": "Fecha a distância entre provar um tamanho no avatar e receber fisicamente a variante correta; evita tratar estoque do produto como estoque de cada tamanho.",
+      "research_id": "RF-PESQ-01",
+      "origin": "social",
+      "priority": "P1",
+      "effort": "Média/alta",
+      "dependencies": "Catálogo de variantes confiável; vínculo entre estoque e SKU; transação/ledger.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    },
+    {
+      "id": "RFSOC02",
+      "title": "Troca/devolução rastreável e estorno de FAI Points",
+      "kind": "extensão de pós-venda existente",
+      "actor": "Comprador, vendedor e operador de atendimento",
+      "trigger": "Solicitar troca/devolução de um pedido elegível",
+      "behavior": "Registrar motivo por peça/variante, aplicar política vigente de prazo e condição, acompanhar coleta/recebimento/inspeção e executar estorno ou troca de forma idempotente.",
+      "acceptance": [
+        "Elegibilidade usa a política vinculada ao pedido, com prazos e exceções visíveis antes da confirmação; alterações futuras de política não alteram o pedido antigo.",
+        "Somente comprador e equipe autorizada acessam o caso; imagens/comprovantes seguem acesso restrito.",
+        "Estorno é lançado uma única vez no ledger após evento de recebimento/aprovação e não por repetição do clique.",
+        "Peça devolvida não retorna ao estoque vendável sem inspeção; divergência de condição possui motivo e trilha.",
+        "Motivos de caimento podem alimentar feedback de tamanho somente com base legal/consentimento apropriado e sem exposição pública."
+      ],
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+          "line": 254,
+          "note": "Rastreamento atual atualiza envio/entrega; o serviço consultado não define fluxo de retorno/estorno."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/FaiPointsService.java",
+          "line": 108,
+          "note": "Ledger e idempotência existentes são base reutilizável, mas não implementam sozinhos o novo processo."
+        }
+      ],
+      "rationale": "Vestibilidade, cor e qualidade material afetam troca de roupas; uma loja com entrega necessita também um pós-venda explícito e auditável.",
+      "research_id": "RF-PESQ-02",
+      "origin": "social",
+      "priority": "P1",
+      "effort": "Alta",
+      "dependencies": "Pedido por variante; política de devolução; estados de recebimento e ledger.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    },
+    {
+      "id": "PROP-CAT-02",
+      "title": "Ciclo de lavanderia e disponibilidade para vestir",
+      "kind": "novo fluxo sobre conservação/cuidados/disponibilidade existentes",
+      "actor": "Proprietário da peça",
+      "trigger": "Marcar peça usada, enviada à lavanderia ou devolvida limpa",
+      "behavior": "Organizar lotes de lavagem com instruções declaradas, indisponibilizar temporariamente as peças e avisar quando looks planejados usam peça ainda indisponível.",
+      "acceptance": [
+        "Modelar transições limpa→usada→lavagem→limpa sem confundir com condição física ou arquivo.",
+        "Sugerir agrupamento apenas com composição/instrução conhecida; exigir confirmação e sinalizar dado ausente.",
+        "Impedir operações em peças de outro usuário e registrar mudança com data.",
+        "Retirar temporariamente da recomendação de looks prontos e restaurar após confirmação de disponibilidade."
+      ],
+      "evidence": [
+        {
+          "path": "components/piece-detail-facts.tsx",
+          "line": 19,
+          "note": "Conservação e lavagem já são mostradas, não se propõe recriar campos."
+        },
+        {
+          "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/enums/AvailabilityStatus.java",
+          "line": 4,
+          "note": "Disponibilidade atual tem três estados genéricos."
+        }
+      ],
+      "rationale": "Resolve uma restrição diária real entre guarda-roupa digital e roupa utilizável.",
+      "research_id": "RF-PESQ-03",
+      "origin": "cards",
+      "priority": "P1",
+      "effort": "Média",
+      "dependencies": "Cuidados estruturados e declarados; disponibilidade da peça; agenda.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    },
+    {
+      "id": "RF-AT-P02",
+      "title": "Lista de materiais e cotação de produção vinculada à revisão",
+      "kind": "novo fluxo de varejo/fabricação a partir do Atelier existente",
+      "actor": "Designer, marca e fornecedor convidado",
+      "trigger": "Revisão técnica liberada para solicitar cotação.",
+      "behavior": "Compor BOM com materiais/aviamentos/consumo e receber cotações por quantidade, prazo e tamanho, sem transformar voto em compra automática.",
+      "acceptance": [
+        "Cotação aponta revisão imutável, quantidades por tamanho, moeda, preço unitário, custo de amostra, validade e prazo.",
+        "Fornecedor só vê o projeto/itens concedidos; preço e dados comerciais têm visibilidade controlada.",
+        "Revisão modificada sinaliza cotação desatualizada; aceite registra autor e versão.",
+        "Pré-venda/pagamento ficam fora do MVP; interesse da comunidade não gera dívida ou promessa de entrega."
+      ],
+      "evidence": [
+        {
+          "path": "components/atelier-projects/contracts.ts",
+          "line": 4,
+          "note": "Especificação atual tem tecido/acabamentos textuais, sem BOM/custos."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/atelierproject/AtelierProjectService.java",
+          "line": 159,
+          "note": "Escopo atual exclui pedido e promessa de produção."
+        }
+      ],
+      "rationale": "Transforma especificação criativa em conversa comercial verificável; diferencia orçamento de execução física e evita ampliar requisitos financeiros cedo demais.",
+      "research_id": "RF-PESQ-04",
+      "origin": "atelier",
+      "priority": "P1",
+      "effort": "Média/alta",
+      "dependencies": "Revisões técnicas e permissões do Atelier; cadastro de materiais/fornecedores.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    },
+    {
+      "id": "RF-AT-P03",
+      "title": "Ordem de reparo com evidência emitida pela oficina",
+      "kind": "extensão do passaporte existente",
+      "actor": "Proprietário e prestador de ajuste/reparo",
+      "trigger": "Usuário solicita conserto ou ajuste de uma peça com passaporte.",
+      "behavior": "Registrar diagnóstico, orçamento consentido, autorização, serviço realizado e declaração do prestador, mantendo autodeclaração separada de atestação.",
+      "acceptance": [
+        "Ordem passa por SOLICITADA, ORÇADA, AUTORIZADA, EM_SERVIÇO, ENTREGUE/CANCELADA; orçamento não pode ser aceito por terceiro.",
+        "Comprovante registra prestador, data, serviço, revisão e escopo autorizado de compartilhamento; recibo privado não aparece no QR público.",
+        "Uma correção mantém histórico anterior e autoria; revogação de acesso impede nova consulta do prestador.",
+        "Atestação significa serviço declarado pelo prestador, não certificação de autenticidade ou alegação ambiental."
+      ],
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+          "line": 35,
+          "note": "REPAIR já é tipo de evento declarado pelo dono."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+          "line": 193,
+          "note": "Evidência apresentada é UNVERIFIED."
+        }
+      ],
+      "rationale": "Dá utilidade operacional e rastreabilidade à segunda vida, em vez de duplicar apenas o formulário de histórico já existente.",
+      "research_id": "RF-PESQ-05",
+      "origin": "atelier",
+      "priority": "P1",
+      "effort": "Média/alta",
+      "dependencies": "Passaporte/eventos; identidade do prestador; anexos com acesso controlado.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    },
+    {
+      "title": "Aprovação de amostra e lote de produção no Atelier",
+      "kind": "Extensão do Atelier colaborativo existente",
+      "actor": "Designer, marca e produtor",
+      "trigger": "Revisão da ficha técnica pronta para amostra",
+      "behavior": "Congelar revisão comBOM, tolerâncias e anexos, receber amostra, registrar desvios e aprovar explicitamente a revisão/lote para produção.",
+      "acceptance": [
+        "Pedido referencia revisão imutável da ficha técnica.",
+        "Troca de tecido ou modelagem invalida aprovação anterior.",
+        "Desvios podem ser aceitos com justificativa ou devolvidos.",
+        "Voto social não autoriza produção, cobrança nem representa aprovação técnica."
+      ],
+      "rationale": "Hipótese de conectar criação digital à fabricação real; medir retrabalho, ambiguidades e lead time em piloto com produtores.",
+      "source_urls": [
+        "https://www.iso.org/standard/78176.html",
+        "https://www.nngroup.com/articles/ten-usability-heuristics/"
+      ],
+      "research_id": "RF-PESQ-06",
+      "origin": "market",
+      "priority": "P2",
+      "effort": "Alta",
+      "dependencies": "BOM/cotação; revisão congelada; evidência da amostra e papel de aprovador.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello.",
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/atelierproject/AtelierProjectService.java",
+          "line": 159,
+          "note": "Projeto colaborativo é base existente; aprovação de lote produtivo é expansão a validar."
+        }
+      ]
+    },
+    {
+      "id": "RF-3D-NEW-03",
+      "title": "Agendar prova física com seleção de tamanhos e reserva temporária",
+      "kind": "novo fluxo de varejo candidato; verificar duplicações na consolidação",
+      "actor": "Comprador, loja e vendedor autorizado",
+      "trigger": "Pessoa escolhe peças no provador e solicita experimentar em loja",
+      "behavior": "Gerar lista de prova física por SKU/tamanho, consultar disponibilidade e solicitar agenda/reserva com prazo, sem presumir estoque pela existência do item no catálogo.",
+      "acceptance": [
+        "Confirmação de agenda depende de aceite/integração real da loja e informa prazo/estado.",
+        "Reserva expira de forma idempotente, cancela sem duplicação e não revela medidas/fotos ao vendedor por padrão.",
+        "Item sem estoque ou sem integração é apresentado como solicitação pendente, nunca como reserva confirmada.",
+        "Concilia resultado da prova e libera reserva sem publicar automaticamente dados sociais."
+      ],
+      "evidence": [
+        "components/try-on/fitting-room.tsx:65",
+        "fai-application/src/main/java/br/com/fashionai/application/multiplatform/TryOnSessionService.java:28"
+      ],
+      "rationale": "Transforma descoberta/prova virtual em visita assistida; é diferente de apenas sincronizar quatro slots entre aparelhos.",
+      "research_id": "RF-PESQ-07",
+      "origin": "3d",
+      "priority": "P2",
+      "effort": "Alta",
+      "dependencies": "Parceria com lojas; agenda e estoque com confirmação, expiração e cancelamento.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    },
+    {
+      "id": "RFSOC03",
+      "title": "Busca de roupas por acessibilidade de uso e conforto verificável",
+      "kind": "novo RF de catálogo/descoberta; não confundir com efeitos sensoriais do quarto",
+      "actor": "Usuário com preferência de vestibilidade e marca fornecedora de dados",
+      "trigger": "Ativar filtros de facilidade de vestir, fechamento e sensibilidade ao tecido",
+      "behavior": "Consultar atributos declarados/verificados de fechamento, abertura, costura/etiqueta e contato com o tecido, distinguindo informação desconhecida de atributo confirmado.",
+      "acceptance": [
+        "A marca informa atributos estruturados e a origem da declaração; o app não infere acessibilidade somente pela fotografia ou pelo nome do tecido.",
+        "O usuário pode filtrar sem fornecer diagnóstico ou condição de saúde; preferências não são publicadas no perfil.",
+        "Resultados distinguem declarado, revisado e sem informação, sem classificar ausência de dado como inadequação.",
+        "A ficha do produto descreve o atributo em linguagem concreta, por exemplo abertura frontal e fechamento magnético, sem prometer resultado clínico.",
+        "Critérios de aceitação são avaliados em tarefas com usuários do público-alvo antes de alegar adequação ou acessibilidade validada."
+      ],
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/SearchService.java",
+          "line": 98,
+          "note": "Filters atuais atendem estilo, ocasião, cor, marca, categoria e Hype; não estabelecem critérios de facilidade de vestir."
+        },
+        {
+          "path": "lib/sensory.ts",
+          "line": 1,
+          "note": "Sensory existente sintetiza som/háptico no quarto; não é cadastro de acessibilidade da roupa."
+        }
+      ],
+      "rationale": "Conecta design funcional à compra e descoberta, ampliando utilidade para além de estética e medidas; requer dados do produto, não suposições de IA.",
+      "research_id": "RF-PESQ-08",
+      "origin": "social",
+      "priority": "P1",
+      "effort": "Média",
+      "dependencies": "Taxonomia funcional e evidência editorial; preferência voluntária, sem inferir diagnóstico.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    },
+    {
+      "id": "PROP-CAT-01",
+      "title": "Lista de compras por lacunas e orçamento do guarda-roupa",
+      "kind": "extensão de cápsula/catálogo; não é nova recomendação de tamanho",
+      "actor": "Proprietário do guarda-roupa",
+      "trigger": "Informar ocasiões recorrentes, restrições e orçamento e solicitar plano de compras",
+      "behavior": "Identificar lacunas que impedem looks para as ocasiões e priorizar compras compatíveis com peças existentes, explicando a necessidade e respeitando o orçamento.",
+      "acceptance": [
+        "Informar quais peças existentes cada candidato complementa e quais ocasiões cobre.",
+        "Exibir preço/fonte/moeda e data da consulta; itens sem preço confirmado ficam fora do somatório garantido.",
+        "Permitir marcar já possuo/não preciso e recalcular sem sugerir automaticamente a mesma compra.",
+        "Não executar compra; excluir peças privadas de terceiros das evidências."
+      ],
+      "evidence": [
+        {
+          "path": "components/lookbook-tabs.tsx",
+          "line": 318,
+          "note": "Cápsula existente serve como ponto de partida."
+        },
+        {
+          "path": "components/catalog/catalog-search.tsx",
+          "line": 134,
+          "note": "Busca existente permite localizar complementos."
+        }
+      ],
+      "rationale": "Acrescenta uma decisão econômica e explicável à cápsula já existente, em vez de recriar catálogo ou recomendação de tamanho.",
+      "research_id": "RF-PESQ-09",
+      "origin": "cards",
+      "priority": "P2",
+      "effort": "Média",
+      "dependencies": "Cápsula e Copilot existentes; preço/orçamento declarados e cobertura do guarda-roupa.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    },
+    {
+      "id": "RFSOC04",
+      "title": "Painel de demanda de varejo agregado e consentido",
+      "kind": "novo RF B2B apoiado em catálogo/loja existentes",
+      "actor": "Marca/celebridade aprovada e usuário que autoriza contribuição analítica",
+      "trigger": "Consultar interesse agregado por produto, cor, tamanho e disponibilidade",
+      "behavior": "Agregar apenas eventos consentidos de interesse/indisponibilidade, com minimização e limiares de publicação, para orientar reposição e sortimento sem expor usuários.",
+      "acceptance": [
+        "A contribuição é opcional, tem finalidade explícita e pode ser revogada sem impedir funcionalidades essenciais do guarda-roupa.",
+        "O painel não mostra identificadores, fotos, medidas corporais ou histórico individual; recortes raros são suprimidos conforme limiar configurado e revisado pela equipe de privacidade.",
+        "Combinações de filtros não permitem reconstruir um grupo pequeno; aplicar testes de reidentificação/ataque por diferença antes de liberar novos recortes.",
+        "Marca vê somente seu próprio catálogo; eventuais dados de comparação externos precisam de política e autorização próprias.",
+        "Métrica informa período, tamanho de amostra, atrasos e diferença entre interesse, intenção e venda realizada; não prometer previsão de demanda validada."
+      ],
+      "evidence": [
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+          "line": 96,
+          "note": "Operação comercial e catálogo por vendedor já existem como base de escopo."
+        },
+        {
+          "path": "fai-application/src/main/java/br/com/fashionai/application/service/AccountService.java",
+          "line": 385,
+          "note": "Finalidades e revogação de consentimento existentes são ponto de integração, não autorização implícita para analytics novo."
+        }
+      ],
+      "rationale": "Ajuda a priorizar tamanhos/cores em falta e decisões de sortimento; o benefício deve ser medido por reposição útil e vendas, preservando confiança do usuário.",
+      "research_id": "RF-PESQ-10",
+      "origin": "social",
+      "priority": "P2",
+      "effort": "Alta",
+      "dependencies": "Eventos consentidos, agregação com limiar mínimo e controle de finalidade/retirada.",
+      "scope_note": "Candidato de pesquisa; IDs não substituem nem renumeram os RFs oficiais do Trello."
+    }
+  ],
+  "sources": [
+    {
+      "title": "ISO/IEC 25010:2023 — Product quality model",
+      "url": "https://www.iso.org/standard/78176.html",
+      "claim": "A página oficial descreve um modelo de qualidade de produto com nove características e uso em requisitos, objetivos e aceitação.",
+      "application": "Estruturar critérios de adequação funcional, confiabilidade, segurança e integração na avaliação do FashionAI.",
+      "caution": "Não foi adquirido o texto integral; a rubrica e os pesos do relatório são decisões próprias, não fórmula ISO nem certificação ISO.",
+      "accessed_at": "2026-11-02"
+    },
+    {
+      "title": "WCAG 2.2 — W3C Recommendation",
+      "url": "https://www.w3.org/TR/WCAG22/",
+      "claim": "Os critérios de sucesso são verificáveis e independentes de tecnologia; WCAG2.2 cobre acessibilidade em diferentes dispositivos.",
+      "application": "Avaliar navegação por teclado, foco, nomes acessíveis, mensagens de estado e controles de cards, filtros, editor e provador.",
+      "caution": "Presença de aria no código não demonstra conformidade; exigir testes de teclado, leitor de tela e contraste no produto executado.",
+      "accessed_at": "2026-11-02"
+    },
+    {
+      "title": "10 Usability Heuristics for User Interface Design — Nielsen Norman Group",
+      "url": "https://www.nngroup.com/articles/ten-usability-heuristics/",
+      "claim": "Heurísticas incluem visibilidade de estado, linguagem do usuário, controle/liberdade, consistência, prevenção e recuperação de erros.",
+      "application": "Justificar notas de UX pelos estados de carregamento/erro/vazio, cancelamento e clareza de fluxos moda/design.",
+      "caution": "São heurísticas gerais, não medidas de satisfação, conversão ou sucesso de tarefa de usuários reais.",
+      "accessed_at": "2026-11-02"
+    },
+    {
+      "title": "How to Conduct a Heuristic Evaluation — Nielsen Norman Group",
+      "url": "https://www.nngroup.com/articles/how-to-conduct-a-heuristic-evaluation/",
+      "claim": "Avaliações independentes e consolidação de achados são recomendadas; avaliação heurística complementa e não substitui pesquisa com usuários.",
+      "application": "Separar avaliações dos agentes, consolidar evidências e revisar divergências antes de atribuir nota final.",
+      "caution": "Agentes não equivalem a participantes humanos independentes nem a auditoria completa de interface; avaliação de código tem alcance menor.",
+      "accessed_at": "2026-11-02"
+    },
+    {
+      "title": "Textile Apparel and the Digital Product Passport — European Commission",
+      "url": "https://single-market-economy.ec.europa.eu/single-market/digital-product-passport/textile-apparel_en",
+      "claim": "Vestuário têxtil é grupo prioritário no plano ESPR2025–2030. Conteúdo específico será definido em ato delegado futuro; a página indica adoção planejada noQ42027 com cronograma sujeito a evolução.",
+      "application": "Planejar extensão interoperável do passaporte existente, incluindo composição, reparos, origem documentada e acesso porQR.",
+      "caution": "Não declarar obrigação universal já vigente, aplicabilidade automática ao Brasil, autenticidade garantida ou conformidade regulatória do passaporte FAI.",
+      "accessed_at": "2026-11-02"
+    },
+    {
+      "title": "GS1 Digital Link Standard: URI Syntax",
+      "url": "https://ref.gs1.org/standards/digital-link/uri-syntax/",
+      "claim": "O padrão fornece representação consistente de identificadores GS1 em endereços web e sua ligação a informações/serviços; a versão consultada é1.7.0, ratificada em agosto2026.",
+      "application": "Vincular produto, variante, lote ou serial a páginas de passaporte por identificadores padronizados, respeitando permissões.",
+      "caution": "QR/link por si só não autentica uma peça física; licenciamento/atribuição de identificadores e eventuais mecanismos antifraude são problemas separados.",
+      "accessed_at": "2026-11-02"
+    },
+    {
+      "title": "Product Variant Structured Data — Google Search Central",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/product-variants",
+      "claim": "ProductGroup e propriedades de variação permitem representar tamanhos/cores e URLs específicas; elegibilidade de busca depende de diretrizes e acesso às páginas.",
+      "application": "Planejar URLs de variante e consistência entre imagem, tamanho, cor, preço e estoque em catálogo e varejo.",
+      "caution": "Marcação não garante resultado enriquecido, ranking ou aumento de vendas; páginas protegidas por login/noindex têm limitações de indexação.",
+      "accessed_at": "2026-11-02"
+    }
+  ],
+  "candidate_pool": {
+    "cards": [
+      {
+        "id": "PROP-CAT-01",
+        "title": "Lista de compras por lacunas e orçamento do guarda-roupa",
+        "kind": "extensão de cápsula/catálogo; não é nova recomendação de tamanho",
+        "actor": "Proprietário do guarda-roupa",
+        "trigger": "Informar ocasiões recorrentes, restrições e orçamento e solicitar plano de compras",
+        "behavior": "Identificar lacunas que impedem looks para as ocasiões e priorizar compras compatíveis com peças existentes, explicando a necessidade e respeitando o orçamento.",
+        "acceptance": [
+          "Informar quais peças existentes cada candidato complementa e quais ocasiões cobre.",
+          "Exibir preço/fonte/moeda e data da consulta; itens sem preço confirmado ficam fora do somatório garantido.",
+          "Permitir marcar já possuo/não preciso e recalcular sem sugerir automaticamente a mesma compra.",
+          "Não executar compra; excluir peças privadas de terceiros das evidências."
+        ],
+        "evidence": [
+          {
+            "path": "components/lookbook-tabs.tsx",
+            "line": 318,
+            "note": "Cápsula existente serve como ponto de partida."
+          },
+          {
+            "path": "components/catalog/catalog-search.tsx",
+            "line": 134,
+            "note": "Busca existente permite localizar complementos."
+          }
+        ],
+        "rationale": "Acrescenta uma decisão econômica e explicável à cápsula já existente, em vez de recriar catálogo ou recomendação de tamanho."
+      },
+      {
+        "id": "PROP-CAT-02",
+        "title": "Ciclo de lavanderia e disponibilidade para vestir",
+        "kind": "novo fluxo sobre conservação/cuidados/disponibilidade existentes",
+        "actor": "Proprietário da peça",
+        "trigger": "Marcar peça usada, enviada à lavanderia ou devolvida limpa",
+        "behavior": "Organizar lotes de lavagem com instruções declaradas, indisponibilizar temporariamente as peças e avisar quando looks planejados usam peça ainda indisponível.",
+        "acceptance": [
+          "Modelar transições limpa→usada→lavagem→limpa sem confundir com condição física ou arquivo.",
+          "Sugerir agrupamento apenas com composição/instrução conhecida; exigir confirmação e sinalizar dado ausente.",
+          "Impedir operações em peças de outro usuário e registrar mudança com data.",
+          "Retirar temporariamente da recomendação de looks prontos e restaurar após confirmação de disponibilidade."
+        ],
+        "evidence": [
+          {
+            "path": "components/piece-detail-facts.tsx",
+            "line": 19,
+            "note": "Conservação e lavagem já são mostradas, não se propõe recriar campos."
+          },
+          {
+            "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/enums/AvailabilityStatus.java",
+            "line": 4,
+            "note": "Disponibilidade atual tem três estados genéricos."
+          }
+        ],
+        "rationale": "Resolve uma restrição diária real entre guarda-roupa digital e roupa utilizável."
+      },
+      {
+        "id": "PROP-CAT-03",
+        "title": "Observação de oferta real por variante do varejista",
+        "kind": "extensão varejista do catálogo; requer parceiros/fontes autorizadas",
+        "actor": "Consumidor e marca/lojista integrado",
+        "trigger": "Salvar interesse num produto, variante e tamanho",
+        "behavior": "Registrar observações de preço/estoque/disponibilidade e alertar quando a oferta atender à condição escolhida, sem apresentar referência histórica como estoque atual.",
+        "acceptance": [
+          "Vincular observação a produto, variante, tamanho, lojista, moeda e timestamp.",
+          "Sinalizar estoque desconhecido ou dado vencido e deixar de afirmar disponibilidade.",
+          "Deduplicar alertas por mudança e permitir revogar inscrição.",
+          "Não coletar de fonte sem autorização nem prometer reserva/checkout sem confirmação do varejista."
+        ],
+        "evidence": [
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogService.java",
+            "line": 692,
+            "note": "Cadastro de produto pessoal a partir do catálogo já existe."
+          },
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogIngestService.java",
+            "line": 300,
+            "note": "Autorização da fonte é precedente técnico existente."
+          }
+        ],
+        "rationale": "Fecha a distância entre descoberta visual e decisão de compra sem duplicar recomendações de caimento."
+      },
+      {
+        "id": "PROP-CAT-04",
+        "title": "Ficha de qualidade e origem da representação fotográfica",
+        "kind": "extensão da padronização de fotos e cards",
+        "actor": "Proprietário/revisor de catálogo e visitante autorizado",
+        "trigger": "Consultar ou reprocessar representação da peça",
+        "behavior": "Distinguir foto original, recorte processado, reconstrução por IA e ilustração substituta; informar revisão e permitir comparar sem confundir placeholder com fotografia do produto.",
+        "acceptance": [
+          "Exibir origem efetiva de cada imagem, inclusive quando o fallback ocorre durante o carregamento.",
+          "Preservar original e aprovação; retry não deve substituir silenciosamente conteúdo aprovado.",
+          "Mostrar pendência de revisão e permitir rejeitar resultado com motivo contorno/cor/logo/peça errada.",
+          "Métricas de qualidade e transformações têm versão/proveniência; não expor URL privada nem dado biométrico."
+        ],
+        "evidence": [
+          {
+            "path": "components/catalog/catalog-photo.tsx",
+            "line": 76,
+            "note": "Fallback automático existe, mas estado visual não é texto de procedência."
+          },
+          {
+            "path": "components/catalog/default-garment-photo.tsx",
+            "line": 8,
+            "note": "Há marcador técnico data-mode=default que pode alimentar a ficha."
+          }
+        ],
+        "rationale": "Melhora confiança em moda e varejo, onde cor, marca, estampa e fidelidade da peça são informação de compra."
+      }
+    ],
+    "3d": [
+      {
+        "id": "RF-3D-EXT-01",
+        "title": "Asset vestível certificado por produto, variante e tamanho",
+        "kind": "expansão de assets vestíveis/fit existentes",
+        "actor": "Marca ou curador autorizado e comprador",
+        "trigger": "Marca publica tabela revisada ou pessoa escolhe outro tamanho",
+        "behavior": "Associar asset aprovado por variante e tamanho à revisão da tabela e à geometria/rig, carregando o asset correspondente no provador.",
+        "acceptance": [
+          "Distinguir grade por tamanho de rendition por qualidade, sem multiplicar reconstrução do corpo a cada clique.",
+          "Bloquear publicação sem tabela autorizada e medições geométricas compatíveis; manter PENDING quando faltarem dados.",
+          "Registrar hash do asset, origem/licença, revisão da tabela, tamanho e rig; alteração de tabela invalida aprovação antiga conforme política versionada.",
+          "Exibir separadamente preview genérico, reconstrução de vitrine e asset vestível validado."
+        ],
+        "evidence": [
+          "fai-domain/src/main/java/br/com/fashionai/domain/model/GarmentAsset3d.java:16",
+          "lib/avatar3d/human/garment-fit.ts:236"
+        ],
+        "rationale": "Fecha lacuna concreta entre tamanho genérico, grade comercial e geometria vestível; não vende SAM Body como gerador de roupas."
+      },
+      {
+        "id": "RF-3D-EXT-02",
+        "title": "Evidência de caimento com validação pós-compra por região",
+        "kind": "expansão de FitFeedback/recomendação existentes",
+        "actor": "Comprador e analista autorizado da marca",
+        "trigger": "Usuário registra experiência após usar o produto/tamanho",
+        "behavior": "Consolidar experiência regional vinculada à revisão da tabela, comparando recomendação anterior e resultado real, com estatísticas agregadas para revisão da tabela.",
+        "acceptance": [
+          "Distinguir experiência declarada de compra comprovada sem rotular ambas como evidência equivalente.",
+          "Não inferir ajuste físico a partir apenas do avatar ou render 2D.",
+          "Agregação da marca exige consentimento/base apropriada e limiar de coorte configurado com revisão de privacidade; sem expor medidas individuais.",
+          "Revisão da tabela mantém histórico e invalida recomendações antigas de maneira rastreável."
+        ],
+        "evidence": [
+          "fai-application/src/main/java/br/com/fashionai/application/fit/FitService.java:131",
+          "components/try-on/gpu-look-dialog.tsx:85"
+        ],
+        "rationale": "Feedback já existe, mas sua utilização como governança/calibração de produto é uma expansão mensurável: taxa de recomendação confirmada e erro regional."
+      },
+      {
+        "id": "RF-3D-NEW-03",
+        "title": "Agendar prova física com seleção de tamanhos e reserva temporária",
+        "kind": "novo fluxo de varejo candidato; verificar duplicações na consolidação",
+        "actor": "Comprador, loja e vendedor autorizado",
+        "trigger": "Pessoa escolhe peças no provador e solicita experimentar em loja",
+        "behavior": "Gerar lista de prova física por SKU/tamanho, consultar disponibilidade e solicitar agenda/reserva com prazo, sem presumir estoque pela existência do item no catálogo.",
+        "acceptance": [
+          "Confirmação de agenda depende de aceite/integração real da loja e informa prazo/estado.",
+          "Reserva expira de forma idempotente, cancela sem duplicação e não revela medidas/fotos ao vendedor por padrão.",
+          "Item sem estoque ou sem integração é apresentado como solicitação pendente, nunca como reserva confirmada.",
+          "Concilia resultado da prova e libera reserva sem publicar automaticamente dados sociais."
+        ],
+        "evidence": [
+          "components/try-on/fitting-room.tsx:65",
+          "fai-application/src/main/java/br/com/fashionai/application/multiplatform/TryOnSessionService.java:28"
+        ],
+        "rationale": "Transforma descoberta/prova virtual em visita assistida; é diferente de apenas sincronizar quatro slots entre aparelhos."
+      },
+      {
+        "id": "RF-3D-NEW-04",
+        "title": "Orçamento de ajuste de roupa a partir de incompatibilidade regional",
+        "kind": "novo fluxo de serviço; integra fit e histórico de reparos existentes",
+        "actor": "Dono da peça e profissional de ajuste autorizado",
+        "trigger": "Produto serve parcialmente e a pessoa solicita ajuste",
+        "behavior": "Criar solicitação com regiões de ajuste e fotos/medidas estritamente autorizadas, obter orçamento e registrar execução no histórico da peça.",
+        "acceptance": [
+          "Sistema não promete que todo tecido/modelo permite ajuste: profissional confirma viabilidade antes do aceite.",
+          "Compartilhamento de medidas é opt-in por destinatário e revogável; nenhuma publicação automática de foto corporal.",
+          "Registrar proposta, prazo, valor, autorização e resultado, distinguindo declaração de comprovante.",
+          "Atualizar recomendação para a peça ajustada sem sobrescrever a tabela original do produto comercial."
+        ],
+        "evidence": [
+          "fai-application/src/main/java/br/com/fashionai/application/fit/FitContracts.java:16",
+          "fai-application/src/main/java/br/com/fashionai/application/fit/FitService.java:131"
+        ],
+        "rationale": "Ataca utilidade/segunda vida em vez de descartar uma roupa por ajuste localizado. Deve ser deduplicado com o passaporte na consolidação."
+      }
+    ],
+    "atelier": [
+      {
+        "id": "RF-AT-P01",
+        "title": "Matriz técnica de graduação por tamanho e revisão",
+        "kind": "extensão do Atelier/tech-pack existente",
+        "actor": "Designer e revisor técnico",
+        "trigger": "Publicar revisão destinada a avaliar uma peça em mais de um tamanho.",
+        "behavior": "Vincular medidas graduadas P/M/G/GG ou grade específica, protocolos, tolerâncias e origem à revisão técnica e ao asset compatível.",
+        "acceptance": [
+          "Cada tamanho referencia grade, unidade, protocolo, fonte e versão; medidas de corpo e medidas da roupa não são intercambiáveis.",
+          "Ausência de tabela/asset ou protocolo compatível produz pendência explícita; não inventar centímetros nem gerar versões por simples escala global.",
+          "Mudança de tabela ou GLB invalida a aprovação correspondente e preserva a revisão anterior.",
+          "Exportação contém matriz/tolerâncias e identifica quais tamanhos foram revisados; não anuncia precisão física sem validação."
+        ],
+        "evidence": [
+          {
+            "path": "components/atelier-projects/contracts.ts",
+            "line": 6,
+            "note": "Medida atual: point/protocol/centimeters, sem tamanho/tolerância."
+          },
+          {
+            "path": "components/atelier-projects/contracts.ts",
+            "line": 17,
+            "note": "Tech-pack distingue aprovação de exposição de produção."
+          }
+        ],
+        "rationale": "Conecta design, medidas e provador ao processo real de produto sem confundir recomendação de tamanho com graduação de modelagem."
+      },
+      {
+        "id": "RF-AT-P02",
+        "title": "Lista de materiais e cotação de produção vinculada à revisão",
+        "kind": "novo fluxo de varejo/fabricação a partir do Atelier existente",
+        "actor": "Designer, marca e fornecedor convidado",
+        "trigger": "Revisão técnica liberada para solicitar cotação.",
+        "behavior": "Compor BOM com materiais/aviamentos/consumo e receber cotações por quantidade, prazo e tamanho, sem transformar voto em compra automática.",
+        "acceptance": [
+          "Cotação aponta revisão imutável, quantidades por tamanho, moeda, preço unitário, custo de amostra, validade e prazo.",
+          "Fornecedor só vê o projeto/itens concedidos; preço e dados comerciais têm visibilidade controlada.",
+          "Revisão modificada sinaliza cotação desatualizada; aceite registra autor e versão.",
+          "Pré-venda/pagamento ficam fora do MVP; interesse da comunidade não gera dívida ou promessa de entrega."
+        ],
+        "evidence": [
+          {
+            "path": "components/atelier-projects/contracts.ts",
+            "line": 4,
+            "note": "Especificação atual tem tecido/acabamentos textuais, sem BOM/custos."
+          },
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/atelierproject/AtelierProjectService.java",
+            "line": 159,
+            "note": "Escopo atual exclui pedido e promessa de produção."
+          }
+        ],
+        "rationale": "Transforma especificação criativa em conversa comercial verificável; diferencia orçamento de execução física e evita ampliar requisitos financeiros cedo demais."
+      },
+      {
+        "id": "RF-AT-P03",
+        "title": "Ordem de reparo com evidência emitida pela oficina",
+        "kind": "extensão do passaporte existente",
+        "actor": "Proprietário e prestador de ajuste/reparo",
+        "trigger": "Usuário solicita conserto ou ajuste de uma peça com passaporte.",
+        "behavior": "Registrar diagnóstico, orçamento consentido, autorização, serviço realizado e declaração do prestador, mantendo autodeclaração separada de atestação.",
+        "acceptance": [
+          "Ordem passa por SOLICITADA, ORÇADA, AUTORIZADA, EM_SERVIÇO, ENTREGUE/CANCELADA; orçamento não pode ser aceito por terceiro.",
+          "Comprovante registra prestador, data, serviço, revisão e escopo autorizado de compartilhamento; recibo privado não aparece no QR público.",
+          "Uma correção mantém histórico anterior e autoria; revogação de acesso impede nova consulta do prestador.",
+          "Atestação significa serviço declarado pelo prestador, não certificação de autenticidade ou alegação ambiental."
+        ],
+        "evidence": [
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+            "line": 35,
+            "note": "REPAIR já é tipo de evento declarado pelo dono."
+          },
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java",
+            "line": 193,
+            "note": "Evidência apresentada é UNVERIFIED."
+          }
+        ],
+        "rationale": "Dá utilidade operacional e rastreabilidade à segunda vida, em vez de duplicar apenas o formulário de histórico já existente."
+      },
+      {
+        "id": "RF-AT-P04",
+        "title": "Cápsula de viagem com restrições de lavagem, peso e volume",
+        "kind": "extensão do Autopilot existente",
+        "actor": "Pessoa preparando guarda-roupa para viagem/eventos",
+        "trigger": "Usuário fornece datas, ocasiões, bagagem e disponibilidade de lavanderia.",
+        "behavior": "Selecionar um subconjunto possuído que cubra eventos com reuso permitido, intervalos de lavagem e orçamento físico de bagagem.",
+        "acceptance": [
+          "Plano associa looks às datas e lista única de peças com estimativas declaradas de peso/volume ou pendências.",
+          "Peça suja/indisponível não é planejada sem uma ação de cuidado possível antes do uso.",
+          "Alteração de ocasião ou item indisponível recalcula apenas dias afetados, explica trocas e preserva edições manuais até confirmação.",
+          "Itens de compra são sugestões separadas e só entram como possuídos após ação explícita; não inventar estoque, entrega ou medidas."
+        ],
+        "evidence": [
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/AutopilotService.java",
+            "line": 581,
+            "note": "Plano semanal e lacunas já existem."
+          },
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/AutopilotService.java",
+            "line": 631,
+            "note": "Edição manual por dia é ponto de integração existente."
+          }
+        ],
+        "rationale": "Aproveita combinações/contexto já prontos e acrescenta restrição prática de vestuário, com resultado observável: eventos cobertos e bagagem compatível."
+      }
+    ],
+    "social": [
+      {
+        "id": "RFSOC01",
+        "title": "Resgate por SKU, cor e tamanho com estoque específico",
+        "kind": "extensão de fluxo existente",
+        "actor": "Comprador e marca/celebridade vendedora",
+        "trigger": "Selecionar um produto físico de vestuário para resgatar",
+        "behavior": "Exigir escolha explícita de variante de cor e tamanho disponível; vincular essa variante ao pedido e debitar o estoque correspondente.",
+        "acceptance": [
+          "O checkout mostra apenas variantes pertencentes ao produto e distingue indisponível de informação ausente.",
+          "O servidor rejeita variante de outro produto, tamanho inexistente e estoque esgotado antes de debitar pontos.",
+          "Duas compras concorrentes do último SKU geram no máximo um débito/pedido concluído; repetir a chave devolve o mesmo pedido.",
+          "Pedido, histórico e preparação de envio exibem o SKU escolhido; variante não pode ser trocada silenciosamente."
+        ],
+        "evidence": [
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+            "line": 45,
+            "note": "ListingForm identifica produto, não SKU; OrderForm da linha48 contém somente endereço."
+          },
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+            "line": 196,
+            "note": "Estoque é bloqueado por listing no contrato atual."
+          }
+        ],
+        "rationale": "Fecha a distância entre provar um tamanho no avatar e receber fisicamente a variante correta; evita tratar estoque do produto como estoque de cada tamanho."
+      },
+      {
+        "id": "RFSOC02",
+        "title": "Troca/devolução rastreável e estorno de FAI Points",
+        "kind": "extensão de pós-venda existente",
+        "actor": "Comprador, vendedor e operador de atendimento",
+        "trigger": "Solicitar troca/devolução de um pedido elegível",
+        "behavior": "Registrar motivo por peça/variante, aplicar política vigente de prazo e condição, acompanhar coleta/recebimento/inspeção e executar estorno ou troca de forma idempotente.",
+        "acceptance": [
+          "Elegibilidade usa a política vinculada ao pedido, com prazos e exceções visíveis antes da confirmação; alterações futuras de política não alteram o pedido antigo.",
+          "Somente comprador e equipe autorizada acessam o caso; imagens/comprovantes seguem acesso restrito.",
+          "Estorno é lançado uma única vez no ledger após evento de recebimento/aprovação e não por repetição do clique.",
+          "Peça devolvida não retorna ao estoque vendável sem inspeção; divergência de condição possui motivo e trilha.",
+          "Motivos de caimento podem alimentar feedback de tamanho somente com base legal/consentimento apropriado e sem exposição pública."
+        ],
+        "evidence": [
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+            "line": 254,
+            "note": "Rastreamento atual atualiza envio/entrega; o serviço consultado não define fluxo de retorno/estorno."
+          },
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/FaiPointsService.java",
+            "line": 108,
+            "note": "Ledger e idempotência existentes são base reutilizável, mas não implementam sozinhos o novo processo."
+          }
+        ],
+        "rationale": "Vestibilidade, cor e qualidade material afetam troca de roupas; uma loja com entrega necessita também um pós-venda explícito e auditável."
+      },
+      {
+        "id": "RFSOC03",
+        "title": "Busca de roupas por acessibilidade de uso e conforto verificável",
+        "kind": "novo RF de catálogo/descoberta; não confundir com efeitos sensoriais do quarto",
+        "actor": "Usuário com preferência de vestibilidade e marca fornecedora de dados",
+        "trigger": "Ativar filtros de facilidade de vestir, fechamento e sensibilidade ao tecido",
+        "behavior": "Consultar atributos declarados/verificados de fechamento, abertura, costura/etiqueta e contato com o tecido, distinguindo informação desconhecida de atributo confirmado.",
+        "acceptance": [
+          "A marca informa atributos estruturados e a origem da declaração; o app não infere acessibilidade somente pela fotografia ou pelo nome do tecido.",
+          "O usuário pode filtrar sem fornecer diagnóstico ou condição de saúde; preferências não são publicadas no perfil.",
+          "Resultados distinguem declarado, revisado e sem informação, sem classificar ausência de dado como inadequação.",
+          "A ficha do produto descreve o atributo em linguagem concreta, por exemplo abertura frontal e fechamento magnético, sem prometer resultado clínico.",
+          "Critérios de aceitação são avaliados em tarefas com usuários do público-alvo antes de alegar adequação ou acessibilidade validada."
+        ],
+        "evidence": [
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/SearchService.java",
+            "line": 98,
+            "note": "Filters atuais atendem estilo, ocasião, cor, marca, categoria e Hype; não estabelecem critérios de facilidade de vestir."
+          },
+          {
+            "path": "lib/sensory.ts",
+            "line": 1,
+            "note": "Sensory existente sintetiza som/háptico no quarto; não é cadastro de acessibilidade da roupa."
+          }
+        ],
+        "rationale": "Conecta design funcional à compra e descoberta, ampliando utilidade para além de estética e medidas; requer dados do produto, não suposições de IA."
+      },
+      {
+        "id": "RFSOC04",
+        "title": "Painel de demanda de varejo agregado e consentido",
+        "kind": "novo RF B2B apoiado em catálogo/loja existentes",
+        "actor": "Marca/celebridade aprovada e usuário que autoriza contribuição analítica",
+        "trigger": "Consultar interesse agregado por produto, cor, tamanho e disponibilidade",
+        "behavior": "Agregar apenas eventos consentidos de interesse/indisponibilidade, com minimização e limiares de publicação, para orientar reposição e sortimento sem expor usuários.",
+        "acceptance": [
+          "A contribuição é opcional, tem finalidade explícita e pode ser revogada sem impedir funcionalidades essenciais do guarda-roupa.",
+          "O painel não mostra identificadores, fotos, medidas corporais ou histórico individual; recortes raros são suprimidos conforme limiar configurado e revisado pela equipe de privacidade.",
+          "Combinações de filtros não permitem reconstruir um grupo pequeno; aplicar testes de reidentificação/ataque por diferença antes de liberar novos recortes.",
+          "Marca vê somente seu próprio catálogo; eventuais dados de comparação externos precisam de política e autorização próprias.",
+          "Métrica informa período, tamanho de amostra, atrasos e diferença entre interesse, intenção e venda realizada; não prometer previsão de demanda validada."
+        ],
+        "evidence": [
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java",
+            "line": 96,
+            "note": "Operação comercial e catálogo por vendedor já existem como base de escopo."
+          },
+          {
+            "path": "fai-application/src/main/java/br/com/fashionai/application/service/AccountService.java",
+            "line": 385,
+            "note": "Finalidades e revogação de consentimento existentes são ponto de integração, não autorização implícita para analytics novo."
+          }
+        ],
+        "rationale": "Ajuda a priorizar tamanhos/cores em falta e decisões de sortimento; o benefício deve ser medido por reposição útil e vendas, preservando confiança do usuário."
+      }
+    ],
+    "market": [
+      {
+        "title": "Cuidados e manutenção por compatibilidade de peças",
+        "kind": "Extensão do guarda-roupa/passaporte",
+        "actor": "Dono da peça",
+        "trigger": "Selecionar roupas para lavar ou registrar uso",
+        "behavior": "Montar grupos compatíveis a partir de instruções declaradas/verificadas e agendar cuidado ou reparo, explicando conflitos e dados ausentes.",
+        "acceptance": [
+          "Não misturar automaticamente peças com instruções conflitantes.",
+          "Distinguir etiqueta/documento do fabricante de instrução declarada pelo usuário.",
+          "Sem instrução confiável, exibir informação insuficiente e permitir cuidado manual.",
+          "Registrar manutenção no passaporte somente mediante confirmação do dono."
+        ],
+        "rationale": "Hipótese: aumentar retenção por utilidade recorrente e evitar danos; validar frequência de uso e compreensão com usuários antes de estimar impacto.",
+        "source_urls": [
+          "https://single-market-economy.ec.europa.eu/single-market/digital-product-passport/textile-apparel_en"
+        ]
+      },
+      {
+        "title": "Orçamento e aprovação de ajustes de alfaiataria",
+        "kind": "Novo fluxo conectado ao provador/passaporte",
+        "actor": "Cliente e profissional de ajuste",
+        "trigger": "Avaliação de caimento indicar necessidade de ajuste ou usuário solicitar reparo",
+        "behavior": "Solicitar orçamento por tipo de alteração, compartilhar apenas medidas autorizadas, aprovar escopo/preço e registrar conclusão.",
+        "acceptance": [
+          "Caimento estimado não deve virar ordem de corte automática.",
+          "Somente medidas selecionadas são compartilhadas com prestador aceito.",
+          "Mudança de preço/escopo exige nova aprovação.",
+          "Recusa/cancelamento não registra reparo como concluído."
+        ],
+        "rationale": "Hipótese de serviço de segunda vida e receita; exige descoberta com costureiros, capacidade de atendimento e política de disputas.",
+        "source_urls": [
+          "https://single-market-economy.ec.europa.eu/single-market/digital-product-passport/textile-apparel_en",
+          "https://www.nngroup.com/articles/ten-usability-heuristics/"
+        ]
+      },
+      {
+        "title": "Disponibilidade e alerta por variante de produto",
+        "kind": "Extensão do catálogo/varejo",
+        "actor": "Comprador e varejista integrado",
+        "trigger": "Selecionar produto+tamanho+cor indisponível ou preço-alvo",
+        "behavior": "Seguir uma variante identificada, exibir origem e atualização de disponibilidade/preço e notificar alterações via consentimento.",
+        "acceptance": [
+          "Tamanho/cor/loja são preservados no link de retorno.",
+          "Sem feed autorizado, mostrar disponibilidade não verificada em vez de estoque presumido.",
+          "Alertas repetidos do mesmo evento são deduplicados.",
+          "Usuário pode cancelar alertas e preferências de canal."
+        ],
+        "rationale": "Hipótese de reduzir busca repetida e abandono; validar cobertura de parceiros, latência de atualização e taxa de alertas úteis, sem promessa de conversão.",
+        "source_urls": [
+          "https://developers.google.com/search/docs/appearance/structured-data/product-variants",
+          "https://www.nngroup.com/articles/ten-usability-heuristics/"
+        ]
+      },
+      {
+        "title": "Aprovação de amostra e lote de produção no Atelier",
+        "kind": "Extensão do Atelier colaborativo existente",
+        "actor": "Designer, marca e produtor",
+        "trigger": "Revisão da ficha técnica pronta para amostra",
+        "behavior": "Congelar revisão comBOM, tolerâncias e anexos, receber amostra, registrar desvios e aprovar explicitamente a revisão/lote para produção.",
+        "acceptance": [
+          "Pedido referencia revisão imutável da ficha técnica.",
+          "Troca de tecido ou modelagem invalida aprovação anterior.",
+          "Desvios podem ser aceitos com justificativa ou devolvidos.",
+          "Voto social não autoriza produção, cobrança nem representa aprovação técnica."
+        ],
+        "rationale": "Hipótese de conectar criação digital à fabricação real; medir retrabalho, ambiguidades e lead time em piloto com produtores.",
+        "source_urls": [
+          "https://www.iso.org/standard/78176.html",
+          "https://www.nngroup.com/articles/ten-usability-heuristics/"
+        ]
+      },
+      {
+        "title": "Compra consciente com utilidade marginal no guarda-roupa",
+        "kind": "Extensão das recomendações/Copilot",
+        "actor": "Usuário considerando uma compra",
+        "trigger": "Comparar um produto do catálogo ao próprio guarda-roupa",
+        "behavior": "Mostrar combinações adicionais possíveis, alternativas já possuídas, custo por uso estimado com premissas editáveis e opção não comprar.",
+        "acceptance": [
+          "Explicar quais peças do guarda-roupa sustentam cada combinação.",
+          "Identificar estimativas e premissas de frequência/vida útil.",
+          "Não publicar economia ambiental sem dados/metodologia verificáveis.",
+          "Separar recomendação orgânica, patrocínio e comissão comercial."
+        ],
+        "rationale": "Hipótese de aumentar confiança e aproveitamento; pode reduzir compras no curto prazo, então validar alinhamento do modelo de negócio.",
+        "source_urls": [
+          "https://www.nngroup.com/articles/ten-usability-heuristics/",
+          "https://single-market-economy.ec.europa.eu/single-market/digital-product-passport/textile-apparel_en"
+        ]
+      },
+      {
+        "title": "Descoberta de moda inclusiva por características funcionais",
+        "kind": "Novo domínio de descoberta, extensão do catálogo",
+        "actor": "Consumidor com preferências de mobilidade, fechamento ou sensibilidade",
+        "trigger": "Selecionar características desejadas da roupa",
+        "behavior": "Filtrar por tipos de fechamento, facilidade de vestir, costuras e composição declaradas, sem inferir diagnósticos de saúde.",
+        "acceptance": [
+          "Atributos mostram fonte e possibilidade de informação desconhecida.",
+          "Ausência de informação não é rotulada como incompatibilidade.",
+          "O usuário pode usar sem declarar condição clínica.",
+          "Fluxo de filtro funciona por teclado, tem rótulos acessíveis e comunica quantidade de resultados."
+        ],
+        "rationale": "Hipótese de atender necessidades pouco cobertas; descoberta deve incluir pessoas com deficiência e profissionais, sem promessas clínicas.",
+        "source_urls": [
+          "https://www.w3.org/TR/WCAG22/",
+          "https://www.nngroup.com/articles/how-to-conduct-a-heuristic-evaluation/"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Notas de especialistas em escala0–10, fundamentadas em leitura estática, devem ser identificadas como avaliação heurística/técnica; não são nota de usuários ou certificação.",
+    "Pesos pedidos pelo coordenador: utilidade25%, completude20%, usabilidade15%, confiabilidade15%, segurança15%, integração10%. Essa ponderação é uma escolha explícita da pesquisa, não uma fórmula ISO.",
+    "Para pontuar usabilidade a partir de código, avaliar affordances, estados e acessibilidade implementada como indícios; validar desenho final e sucesso de tarefa em teste com usuários reais.",
+    "Segurança/confiabilidade não observadas exigem confiança menor e lacuna de verificação, não nota zero automática.",
+    "Distinguir existência de teste da execução e resultado do teste; nenhum teste de aplicação foi executado nesta frente de pesquisa.",
+    "Os RF sugeridos são hipóteses propostas; o coordenador deve confrontá-los com fontes do repositório para remover duplicidades e nomeá-los como extensão quando já houver parte implementada.",
+    "Não estimar retorno financeiro, redução de devoluções, benefício ambiental ou demanda comercial sem pesquisa/telemetria."
+  ]
+}
