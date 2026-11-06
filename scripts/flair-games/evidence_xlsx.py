@@ -62,4 +62,4 @@ def main(folder: str) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "docs/flair/flair-3d-100-jogos/evidencias")
+    main(sys.argv[1] if len(sys.argv) > 1 else "docs/flair/flair-3d/evidencias")

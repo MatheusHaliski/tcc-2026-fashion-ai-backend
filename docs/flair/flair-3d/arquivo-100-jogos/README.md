@@ -1,5 +1,7 @@
 # FLAIR 3D — 100 ideias de jogos FLAIR (pesquisa de design)
 
+> **Arquivo.** O FLAIR 3D foi reduzido a cinco jogos, um por capítulo (1, 31, 43, 70 e 96). As fichas abaixo guardam o estudo original dos 100; os dados dos outros 95 ficam em `scripts/flair-games/data/arquivo/` e não entram na migração.
+
 > Pedido de 05/11/2026. O **Meu Quarto** deixa de ser uma área própria do app e passa a ser um **componente** do jogo
 > **FLAIR 3D**, continuação da franquia FashionAI. Este estudo levanta 100 ideias de jogos FLAIR para o FLAIR
 > 3D, cada uma definida em uma frase por campo. É um documento de pesquisa e proposta: **nenhum jogo daqui está

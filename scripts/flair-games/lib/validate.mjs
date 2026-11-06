@@ -3,7 +3,7 @@
  * são devolvidos de uma vez para o agente de dados corrigir a série inteira numa passada. Nada aqui grava arquivo.
  */
 import {
-  ACCEPT_KEYS, BANDS, DISTRICT_BY_SERIES, EFFECT_KINDS, FICHA_KEYS, GAMES_PER_SERIES, HEX_RE, HYPE_DIMS, LANGS, MAX_SLOTS, MIN_SLOTS,
+  ACCEPT_KEYS, BANDS, DISTRICT_BY_SERIES, EFFECT_KINDS, FICHA_KEYS, GAMES_PER_SERIES, HEX_RE, MAX_GAME_NUMBER, HYPE_DIMS, LANGS, MAX_SLOTS, MIN_SLOTS,
   MODULE_IDS, PARTIAL_MODES, PLAY_MODES, POSITIONS, PROP_KINDS, REWARD_CODE_RE, REWARD_TYPES, SERIES, SLOT_KEY_RE, SLUG_RE, TAG_FIELDS,
   TIERS, TOTAL_GAMES, TYPES, slugPrefix,
 } from "./constants.mjs";
@@ -139,7 +139,7 @@ export function validateGame(g, ctx) {
   const label = isObj(g) && isInt(g.number) ? `jogo ${g.number}` : `jogo ? (${ctx.file ?? "?"})`;
   const add = (m) => errors.push(`${label}: ${m}`);
   if (!isObj(g)) return [`${label}: esperado objeto`];
-  if (!isInt(g.number) || g.number < 1 || g.number > TOTAL_GAMES) add(`number: inteiro 1..${TOTAL_GAMES}`);
+  if (!isInt(g.number) || g.number < 1 || g.number > MAX_GAME_NUMBER) add(`number: inteiro 1..${MAX_GAME_NUMBER}`);
   else if (ctx.numbers.has(g.number)) add("number: repetido no catálogo");
   ctx.numbers.add(g.number);
   if (!SERIES.includes(g.series)) add(`series: ${SERIES.join("|")}`);
@@ -167,7 +167,7 @@ export function validateGame(g, ctx) {
 
 /**
  * Valida o catálogo inteiro. `files` = [{file, series, games}], `reservedSlugs` = os da V56. Sem `allowPartial`
- * exige 20 jogos por série e 100 no total.
+ * exige GAMES_PER_SERIES jogos por série e TOTAL_GAMES no total (hoje 1 e 5).
  */
 export function validateCatalog(files, { reservedSlugs = [], allowPartial = false } = {}) {
   const ctx = { numbers: new Set(), slugs: new Set(reservedSlugs), rewardCodes: new Set() };

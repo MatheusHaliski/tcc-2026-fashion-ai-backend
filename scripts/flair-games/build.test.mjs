@@ -77,10 +77,9 @@ test("fixture válida não gera erros", async () => {
   assert.deepEqual(errorsOf(await fixture()), []);
 });
 
-test("exige 100 jogos sem --allow-partial", async () => {
+test("exige os 5 jogos (um por capítulo) sem --allow-partial", async () => {
   const errors = errorsOf(await fixture(), { allowPartial: false });
-  assert.ok(errors.some((e) => e.includes("esperados 100")));
-  assert.ok(errors.some((e) => e.includes("esperados 20")));
+  assert.ok(errors.some((e) => e.includes("esperados 5")));
 });
 
 test("lista todos os erros de uma vez com o número do jogo", async () => {

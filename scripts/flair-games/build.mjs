@@ -4,13 +4,13 @@
  * valida tudo de uma vez, deriva dificuldade/raridade/níveis e grava, de forma determinística e ordenada por número:
  *   1. a migração V98__flair_3d_jogos.sql (DDL fixo + 1 INSERT de flair_challenges por jogo + colecionáveis);
  *   2. public/flair/games/<slug>.webp (miniaturas 640×400 a partir de scene_json, via scene-svg.mjs + sharp);
- *   3. docs/flair/flair-3d-100-jogos/catalogo.gen.md (tabela resumo e regra de derivação).
+ *   3. docs/flair/flair-3d/catalogo.gen.md (tabela resumo e regra de derivação).
  *
  * Uso: node scripts/flair-games/build.mjs [--data <dir>] [--out <dir>] [--allow-partial] [--no-thumbs]
  *   --data           pasta com serie-*.json (padrão scripts/flair-games/data)
  *   --out            grava as três saídas dentro desta pasta (V98__flair_3d_jogos.sql, thumbs/, catalogo.gen.md)
  *                    em vez dos caminhos do repositório; use para provar o build sem tocar na migração real
- *   --allow-partial  aceita menos de 100 jogos (fixtures, séries ainda em escrita)
+ *   --allow-partial  aceita menos de 5 jogos (fixtures, séries ainda em escrita)
  *   --no-thumbs      não gera miniaturas (mais rápido; a V98 continua apontando para /flair/games/<slug>.webp)
  * Sai com 1 quando há erros de validação (todos listados, com o número do jogo) e 2 quando não há dados.
  */

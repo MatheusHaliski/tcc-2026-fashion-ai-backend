@@ -15,7 +15,7 @@ o corredor dos portais, a procedência dos itens, a ligação com o Aurora CPS, 
 decisão web × nativo) está em [fashion-hall-o-saguao.md](fashion-hall-o-saguao.md).
 
 **FLAIR 3D (05/11/2026).** O Meu Quarto deixa de ser área própria e vira componente do jogo FLAIR 3D; o
-estudo com 100 ideias de jogos FLAIR para esse mundo está em [`../flair-3d-100-jogos/`](../flair-3d-100-jogos/README.md).
+estudo com 100 ideias de jogos FLAIR para esse mundo está em [`../flair-3d/`](../flair-3d/arquivo-100-jogos/README.md).
 
 Os Desafios de Montagem e as Partidas FLAIR continuam no sistema de cartas; os portais do Hall ficam com a parte de
 ação. O deck de cartas é o mesmo nos dois mundos: o que a pessoa coleciona no app é o que ela veste e usa no jogo.

@@ -18,8 +18,8 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Os 100 jogos do FLAIR 3D (desenho R17): o catálogo JSON (scripts/flair-games/data) é a fonte da V98. Cada jogo passa
- * pelas mesmas regras de vaga e requisito do motor (CbcRules.validate), os números 1..100 e os slugs são únicos, e a V98
+ * Os 5 jogos do FLAIR 3D, um por capítulo (os outros 95 ficam em data/arquivo, fora da V98): o catálogo JSON (scripts/flair-games/data) é a fonte da V98. Cada jogo passa
+ * pelas mesmas regras de vaga e requisito do motor (CbcRules.validate), os números (1..100, os do catálogo original) e os slugs são únicos, e a V98
  * gerada traz exatamente um INSERT por jogo com o id previsto. As faixas de nível, guarda-roupa e Hype são as do código.
  */
 class Flair3dSeedTest {
@@ -41,9 +41,9 @@ class Flair3dSeedTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void osCemJogosPassamPelasRegrasDoMotor() throws IOException {
+    void osCincoJogosPassamPelasRegrasDoMotor() throws IOException {
         List<Map<String, Object>> games = catalog();
-        assertThat(games).as("100 jogos em scripts/flair-games/data").hasSize(100);
+        assertThat(games).as("5 jogos (um por capítulo) em scripts/flair-games/data").hasSize(5);
         Set<Integer> numbers = new HashSet<>();
         Set<String> slugs = new HashSet<>();
         for (Map<String, Object> g : games) {

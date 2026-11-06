@@ -13,7 +13,7 @@ Marcações: **[existe]** já está no código; **[novo]** é proposta deste des
 
 | Segmento | Jogos | Observação |
 | --- | --- | --- |
-| FLAIR 3D | os 100 jogos de cenário (séries A–E, `docs/flair/flair-3d-100-jogos/`) | cenário 3D por ambiente; vagas viram encaixes em objetos |
+| FLAIR 3D | os 100 jogos de cenário (séries A–E, `docs/flair/flair-3d/`) | cenário 3D por ambiente; vagas viram encaixes em objetos |
 | FLAIR 3D | Roubo ao Afterparty | aventura 3D com avatar (nível Loft) |
 | FLAIR 3D | Met Gala Heist | fora da lista, em produção; sem mudanças |
 | FLAIR CBC | Desafios de Montagem | passam a ser desafios de links (seção 2) |

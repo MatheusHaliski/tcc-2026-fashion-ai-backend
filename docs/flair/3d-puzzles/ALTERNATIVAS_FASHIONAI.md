@@ -3,7 +3,7 @@
 Data: 06/11/2026. Escopo: estudo do código e proposta. Nenhum código do app mudou. Este documento complementa o
 estudo de design de puzzles da Insomniac (`docs/flair/3d-puzzles/ESTUDO_INSOMNIAC.md`, escrito em paralelo).
 
-**Nomes usados.** Todo jogo do FashionAI é FLAIR, em dois segmentos. **FLAIR 3D** reúne os 100 jogos de ambiente (`scripts/flair-games/data/serie-{a..e}.json`, `docs/flair/flair-3d-100-jogos/`) e as aventuras 3D, como o Afterparty. **FLAIR Card Building Challenge** reúne os desafios de montagem (CBC) e os modos de batalha de cartas: duelo, equipes, arena e os 15 modos de look.
+**Nomes usados.** Todo jogo do FashionAI é FLAIR, em dois segmentos. **FLAIR 3D** reúne os 100 jogos de ambiente (`scripts/flair-games/data/serie-{a..e}.json`, `docs/flair/flair-3d/`) e as aventuras 3D, como o Afterparty. **FLAIR Card Building Challenge** reúne os desafios de montagem (CBC) e os modos de batalha de cartas: duelo, equipes, arena e os 15 modos de look.
 
 **Pedido do dono (resumo):** trocar as fotos e a inserção de cartas nos cenários por cenas 3D ultrarrealistas, no
 estilo dos puzzles de Spider-Man 2 (Insomniac). As peças devem encaixar com efeito perfeito, num uso realista e útil,

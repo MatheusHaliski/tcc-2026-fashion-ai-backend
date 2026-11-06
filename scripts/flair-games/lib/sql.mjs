@@ -6,7 +6,7 @@
 import { SEED_AT, gameId, thumbnailPath } from "./constants.mjs";
 import { withPhoto } from "./venue-map.mjs";
 
-export const DDL = `-- FLAIR 3D: 100 jogos FLAIR como linhas de flair_challenges (docs/flair/flair-3d-100-jogos). Arquivo GERADO por
+export const DDL = `-- FLAIR 3D: 100 jogos FLAIR como linhas de flair_challenges (docs/flair/flair-3d). Arquivo GERADO por
 -- scripts/flair-games/build.mjs a partir de scripts/flair-games/data/serie-*.json: não editar à mão.
 
 ALTER TABLE flair_challenges

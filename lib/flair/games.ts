@@ -1,5 +1,5 @@
 /**
- * FLAIR 3D — os 100 jogos FLAIR (docs/flair/flair-3d-100-jogos) sobre /api/flair/games. Cada jogo é um Desafio
+ * FLAIR 3D — os 100 jogos FLAIR (docs/flair/flair-3d) sobre /api/flair/games. Cada jogo é um Desafio
  * de Montagem com série, distrito, raridade, nível de FAI XP e nível do guarda-roupa exigidos, deck, regras de Hype,
  * efeitos por vaga e recompensas extras. O acesso vem SEMPRE do servidor (`access`): o cliente nunca compara o nível
  * local com um valor fixo; sem resposta, o jogo fica bloqueado (fail closed). Aqui ficam o contrato TS, as constantes
