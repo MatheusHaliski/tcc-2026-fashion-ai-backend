@@ -1,0 +1,1161 @@
+{
+  "revision": "9f5512a774b2d6978228735361c228cd42c46b36",
+  "exercicios": [
+    {
+      "numero": 1,
+      "titulo": "TipoLook no espelho e no detalhe do look",
+      "situacao": "Base implementada para espelho → look; o builder manual ainda tem contrato distinto.",
+      "arquivo": "01-tipo-look.md",
+      "sql": "sql/01-tipo-look.sql"
+    },
+    {
+      "numero": 2,
+      "titulo": "Estado de conservação da peça",
+      "situacao": "FK, opções, service e formulário já implementados; reutilizar a estrutura existente.",
+      "arquivo": "02-conservacao.md",
+      "sql": "sql/02-conservacao.sql"
+    },
+    {
+      "numero": 3,
+      "titulo": "Instrução de lavagem",
+      "situacao": "Tabela, FK, repository, API de opções e leitura existem; escrita estruturada ainda precisa ser integrada.",
+      "arquivo": "03-lavagem.md",
+      "sql": "sql/03-lavagem.sql"
+    },
+    {
+      "numero": 4,
+      "titulo": "Intensidade térmica do look",
+      "situacao": "Proposta: não foi localizada entidade NivelTermico; estação não substitui intensidade térmica.",
+      "arquivo": "04-nivel-termico.md",
+      "sql": "sql/04-nivel-termico.sql"
+    },
+    {
+      "numero": 5,
+      "titulo": "Origem adquirida, herdada ou trocada",
+      "situacao": "A coluna piece_origin existe e é lida pelo quarto; falta uma escolha estruturada no formulário comum.",
+      "arquivo": "05-origem-peca.md",
+      "sql": "sql/05-origem-peca.sql"
+    },
+    {
+      "numero": 6,
+      "titulo": "Estação preferida do look",
+      "situacao": "Base implementada com enum Season persistido como texto; não é necessário criar tabela de estações.",
+      "arquivo": "06-estacao-look.md",
+      "sql": "sql/06-estacao-look.sql"
+    },
+    {
+      "numero": 7,
+      "titulo": "Tipo de iluminação e temperatura do quarto",
+      "situacao": "Parcial: kelvin/intensidade/on já são guardados em modules_json; falta a FK TipoIluminacao exigida.",
+      "arquivo": "07-iluminacao-quarto.md",
+      "sql": "sql/07-iluminacao-quarto.sql"
+    },
+    {
+      "numero": 8,
+      "titulo": "Nome do módulo de armazenamento",
+      "situacao": "Parcial: gavetas já têm renameDrawer e drawer_labels_json; nomes genéricos de módulos precisam preservar IDs e endereços.",
+      "arquivo": "08-nome-modulo.md",
+      "sql": "sql/08-nome-modulo.sql"
+    },
+    {
+      "numero": 9,
+      "titulo": "Categoria principal da marca",
+      "situacao": "Parcial: fashion_category é texto; não há FK CategoriaMarca nesse modelo.",
+      "arquivo": "09-categoria-marca.md",
+      "sql": "sql/09-categoria-marca.sql"
+    },
+    {
+      "numero": 10,
+      "titulo": "Área artística principal da celebridade",
+      "situacao": "Parcial: areas_json suporta lista; o modelo não distingue área principal por FK.",
+      "arquivo": "10-area-artistica.md",
+      "sql": "sql/10-area-artistica.sql"
+    },
+    {
+      "numero": 11,
+      "titulo": "Prazo de disponibilidade do selo",
+      "situacao": "Base implementada com available_from/available_until e validação de ordem.",
+      "arquivo": "11-prazo-selo.md",
+      "sql": "sql/11-prazo-selo.sql"
+    },
+    {
+      "numero": 12,
+      "titulo": "Política do selo: quantidade mínima por cor",
+      "situacao": "Estrutura rules/count/color já existe e é validada; usar a política estruturada, não texto livre.",
+      "arquivo": "12-quantidade-cor.md",
+      "sql": "sql/12-quantidade-cor.sql"
+    },
+    {
+      "numero": 13,
+      "titulo": "Política do selo: marca exigida",
+      "situacao": "Parcial: a regra atual guarda brand como texto e compara similaridade; isso não é uma FK de marca.",
+      "arquivo": "13-marca-politica.md",
+      "sql": "sql/13-marca-politica.sql"
+    },
+    {
+      "numero": 14,
+      "titulo": "Canal de utilização do cupom",
+      "situacao": "Proposta: há cupons de promoções e de FLAIR; canal precisa cobrir os dois fluxos sem tratar CouponRight como cupom emitido.",
+      "arquivo": "14-canal-cupom.md",
+      "sql": "sql/14-canal-cupom.sql"
+    },
+    {
+      "numero": 15,
+      "titulo": "Valor mínimo de compra do cupom",
+      "situacao": "Parcial: FlairCombination.minPurchase existe, mas precisa validação forte e snapshot; promoções possuem outro modelo.",
+      "arquivo": "15-minimo-compra.md",
+      "sql": "sql/15-minimo-compra.sql"
+    },
+    {
+      "numero": 16,
+      "titulo": "CBC: modalidade/cenário preferido",
+      "situacao": "Parcial: desafios têm scenario e validação própria; preferência individual não deve reescrever o desafio global.",
+      "arquivo": "16-preferencia-cbc.md",
+      "sql": "sql/16-preferencia-cbc.sql"
+    },
+    {
+      "numero": 17,
+      "titulo": "Tipo de dinâmica da Trend",
+      "situacao": "Base implementada: kind validado contra cinco códigos, com lista filtrável e publicação separada.",
+      "arquivo": "17-dinamica-trend.md",
+      "sql": "sql/17-dinamica-trend.sql"
+    },
+    {
+      "numero": 18,
+      "titulo": "Peça Assinatura do perfil e histórico",
+      "situacao": "Proposta: não foi localizada relação de Peça Assinatura pessoal; não confundir com assinatura de marca/estilo.",
+      "arquivo": "18-peca-assinatura.md",
+      "sql": "sql/18-peca-assinatura.sql"
+    },
+    {
+      "numero": 19,
+      "titulo": "Modalidade visual da peça na AURA",
+      "situacao": "Parcial: existe aura.format no contrato da Aura comum; explicitar validação/persistência sem criar modalidade paralela.",
+      "arquivo": "19-modalidade-aura.md",
+      "sql": "sql/19-modalidade-aura.sql"
+    },
+    {
+      "numero": 20,
+      "titulo": "Variante do catálogo por SKU e cor",
+      "situacao": "A query por identificador já correlaciona SKU e cor na mesma variante; manter isso e testar seleção/criação.",
+      "arquivo": "20-sku-cor.md",
+      "sql": "sql/20-sku-cor.sql"
+    }
+  ],
+  "anchors": [
+    {
+      "path": "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V60__tipo_look_no_espelho.sql",
+      "line": 3,
+      "text": "CREATE TABLE IF NOT EXISTS TipoLook (",
+      "marker": "CREATE TABLE IF NOT EXISTS TipoLook"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/Scheme.java",
+      "line": 43,
+      "text": "    private TipoLook tipoLook;",
+      "marker": "private TipoLook tipoLook"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/view/Views.java",
+      "line": 206,
+      "text": "    public record TipoLookView(UUID id, String codigo, String nome) { }",
+      "marker": "public record TipoLookView"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/TipoLookRepository.java",
+      "line": 8,
+      "text": "public interface TipoLookRepository extends JpaRepository<TipoLook, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/MirrorService.java",
+      "line": 332,
+      "text": "    public Map<String, Object> updateTipoLook(CurrentUser user, UUID tipoLookId) {",
+      "marker": "public Map<String, Object> updateTipoLook"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/MirrorService.java",
+      "line": 1166,
+      "text": "        scheme.setTipoLook(mirror.getTipoLook());",
+      "marker": "scheme.setTipoLook"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java",
+      "line": 417,
+      "text": "    public record SchemeForm(String title, String description, List<String> occasion, List<String> style, Season season,",
+      "marker": "public record SchemeForm"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/TipoLookController.java",
+      "line": 12,
+      "text": "public class TipoLookController {",
+      "marker": "class TipoLookController"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/MirrorController.java",
+      "line": 30,
+      "text": "    public record TipoLookRequest(@NotNull UUID tipoLookId) { }",
+      "marker": "public record TipoLookRequest"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/SchemeController.java",
+      "line": 29,
+      "text": "public class SchemeController {",
+      "marker": "class SchemeController"
+    },
+    {
+      "path": "components/mirror/mirror-controls.tsx",
+      "line": 161,
+      "text": "  const tipos = useApi<TipoLook[]>((signal) => api.get(\"/api/tipos-look\", { signal }), []);",
+      "marker": "const tipos ="
+    },
+    {
+      "path": "components/scheme-card.tsx",
+      "line": 266,
+      "text": "      {scheme.tipoLook && <p className=\"type-caption text-muted\">{t(\"lookType.label\")}: {scheme.tipoLook.nome}</p>}",
+      "marker": "scheme.tipoLook"
+    },
+    {
+      "path": "components/scheme-builder.tsx",
+      "line": 71,
+      "text": "  const [form, setForm] = useState({ title: initial?.title ?? \"\", description: initial?.description ?? \"\", occasion: initial?.occasion ?? [], style: initial?.style ?? [], season: initial?.season ?? \"\", mood: initial?.mood ?? \"\", visibility: initial?.visibility ?? \"PRIVATE\", publish: false, lookDoDia: initial?.lookDoDia ?? false, tags: (initial?.tags ?? []).join(\", \") });",
+      "marker": "const [form, setForm]"
+    },
+    {
+      "path": "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V77__wardrobe_conservation_and_wash_references.sql",
+      "line": 3,
+      "text": "CREATE TABLE IF NOT EXISTS `EstadoConservacao` (",
+      "marker": "CREATE TABLE IF NOT EXISTS `EstadoConservacao`"
+    },
+    {
+      "path": "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V83__conservation_options.sql",
+      "line": 3,
+      "text": "ALTER TABLE `EstadoConservacao` ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT TRUE;",
+      "marker": "ALTER TABLE `EstadoConservacao` ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT TRUE;"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/EstadoConservacao.java",
+      "line": 16,
+      "text": "public class EstadoConservacao extends AuditableEntity {",
+      "marker": "public class EstadoConservacao"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/WardrobeItem.java",
+      "line": 167,
+      "text": "    private EstadoConservacao estadoConservacao;",
+      "marker": "private EstadoConservacao estadoConservacao"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java",
+      "line": 337,
+      "text": "    public record PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,",
+      "marker": "public record PieceForm"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/EstadoConservacaoRepository.java",
+      "line": 9,
+      "text": "public interface EstadoConservacaoRepository extends JpaRepository<EstadoConservacao, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/PieceConservationService.java",
+      "line": 21,
+      "text": "    public void apply(WardrobeItem piece, UUID id, boolean clear) {",
+      "marker": "public void apply"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/PieceFormWriter.java",
+      "line": 77,
+      "text": "            conservation.apply(w, f.estadoConservacaoId(), Boolean.TRUE.equals(f.clearEstadoConservacao()));",
+      "marker": "conservation.apply"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/PieceReferenceController.java",
+      "line": 24,
+      "text": "    @GetMapping({\"/api/estados-conservacao\", \"/api/opcoes/estados-conservacao\"})",
+      "marker": "@GetMapping({"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/WardrobeController.java",
+      "line": 99,
+      "text": "    @PutMapping(\"/api/pieces/{id}\")",
+      "marker": "@PutMapping(\"/api/pieces/{id}\")"
+    },
+    {
+      "path": "components/piece-conservation-field.tsx",
+      "line": 9,
+      "text": "export function PieceConservationField({ value, selectedName, onChange, error, disabled = false }: {",
+      "marker": "export function PieceConservationField"
+    },
+    {
+      "path": "components/piece-form.tsx",
+      "line": 124,
+      "text": "      <PieceConservationField value={value.estadoConservacaoId ?? \"\"} selectedName={value.estadoConservacaoNome}",
+      "marker": "<PieceConservationField"
+    },
+    {
+      "path": "components/expanded-card/expanded-piece.tsx",
+      "line": 107,
+      "text": "    setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? \"\", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? \"\", size: p.size ?? \"m\", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? \"\", visibility: p.visibility, forSale: p.forSale, seals: p.seals ?? [], condition: p.condition ?? \"\", estadoConservacaoId: p.estadoConservacao?.id ?? null, estadoConservacaoNome: p.estadoConservacao?.nome ?? null, careInstructions: p.careInstructions ?? \"\", background: p.background ?? null });",
+      "marker": "estadoConservacaoId: p.estadoConservacao"
+    },
+    {
+      "path": "components/piece-card-panels.tsx",
+      "line": 47,
+      "text": "  const condition = conservationLabel(piece, t);",
+      "marker": "const condition ="
+    },
+    {
+      "path": "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V77__wardrobe_conservation_and_wash_references.sql",
+      "line": 13,
+      "text": "CREATE TABLE IF NOT EXISTS `TipoLavagem` (",
+      "marker": "CREATE TABLE IF NOT EXISTS `TipoLavagem`"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/WardrobeItem.java",
+      "line": 172,
+      "text": "    private TipoLavagem tipoLavagem;",
+      "marker": "private TipoLavagem tipoLavagem"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java",
+      "line": 337,
+      "text": "    public record PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,",
+      "marker": "public record PieceForm"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/view/Views.java",
+      "line": 118,
+      "text": "                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()));",
+      "marker": "tipoLavagem(w.getTipoLavagem())"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/TipoLavagemRepository.java",
+      "line": 9,
+      "text": "public interface TipoLavagemRepository extends JpaRepository<TipoLavagem, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/PieceFormWriter.java",
+      "line": 77,
+      "text": "            conservation.apply(w, f.estadoConservacaoId(), Boolean.TRUE.equals(f.clearEstadoConservacao()));",
+      "marker": "conservation.apply"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/PieceTaxonomyWriter.java",
+      "line": 89,
+      "text": "                f.tags(), f.notes(), f.condition(), f.purchaseDate(), f.purchaseLocation(), f.sku(), f.careInstructions(),",
+      "marker": "f.tags()"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/PieceReferenceController.java",
+      "line": 31,
+      "text": "    @GetMapping(\"/api/tipos-lavagem\")",
+      "marker": "@GetMapping(\"/api/tipos-lavagem\")"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/WardrobeController.java",
+      "line": 99,
+      "text": "    @PutMapping(\"/api/pieces/{id}\")",
+      "marker": "@PutMapping(\"/api/pieces/{id}\")"
+    },
+    {
+      "path": "components/piece-form.tsx",
+      "line": 14,
+      "text": "export interface PieceFormValue {",
+      "marker": "export interface PieceFormValue"
+    },
+    {
+      "path": "components/expanded-card/expanded-piece.tsx",
+      "line": 107,
+      "text": "    setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? \"\", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? \"\", size: p.size ?? \"m\", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? \"\", visibility: p.visibility, forSale: p.forSale, seals: p.seals ?? [], condition: p.condition ?? \"\", estadoConservacaoId: p.estadoConservacao?.id ?? null, estadoConservacaoNome: p.estadoConservacao?.nome ?? null, careInstructions: p.careInstructions ?? \"\", background: p.background ?? null });",
+      "marker": "setForm({ ...EMPTY_PIECE"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/Scheme.java",
+      "line": 75,
+      "text": "    private Season season;",
+      "marker": "private Season season"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java",
+      "line": 417,
+      "text": "    public record SchemeForm(String title, String description, List<String> occasion, List<String> style, Season season,",
+      "marker": "public record SchemeForm"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java",
+      "line": 503,
+      "text": "    private void applyForm(Scheme s, SchemeForm f) {",
+      "marker": "private void applyForm"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/MirrorService.java",
+      "line": 83,
+      "text": "    public record Interpretation(List<String> occasion, String mood, List<UUID> anchors, List<String> constraints, String season) {",
+      "marker": "public record Interpretation"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/SchemeController.java",
+      "line": 29,
+      "text": "public class SchemeController {",
+      "marker": "class SchemeController"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/MirrorController.java",
+      "line": 17,
+      "text": "public class MirrorController {",
+      "marker": "class MirrorController"
+    },
+    {
+      "path": "components/scheme-builder.tsx",
+      "line": 71,
+      "text": "  const [form, setForm] = useState({ title: initial?.title ?? \"\", description: initial?.description ?? \"\", occasion: initial?.occasion ?? [], style: initial?.style ?? [], season: initial?.season ?? \"\", mood: initial?.mood ?? \"\", visibility: initial?.visibility ?? \"PRIVATE\", publish: false, lookDoDia: initial?.lookDoDia ?? false, tags: (initial?.tags ?? []).join(\", \") });",
+      "marker": "const [form, setForm]"
+    },
+    {
+      "path": "lib/api/types.ts",
+      "line": 50,
+      "text": "export interface TipoLook extends ReferenceOption {}",
+      "marker": "export interface TipoLook"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/view/Views.java",
+      "line": 223,
+      "text": "    public record SchemeView(UUID id, UserCard owner, String title, String description, String creationMode,",
+      "marker": "public record SchemeView"
+    },
+    {
+      "path": "components/mirror/mirror-controls.tsx",
+      "line": 143,
+      "text": "export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d, held, arrivedId, pins }: {",
+      "marker": "export function MirrorControls"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/WardrobeItem.java",
+      "line": 321,
+      "text": "    private String pieceOrigin;",
+      "marker": "private String pieceOrigin"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java",
+      "line": 337,
+      "text": "    public record PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,",
+      "marker": "public record PieceForm"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/WardrobeItemRepository.java",
+      "line": 19,
+      "text": "public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<WardrobeItem> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/PieceFormWriter.java",
+      "line": 28,
+      "text": "final class PieceFormWriter {",
+      "marker": "class PieceFormWriter"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/passport/ReceivedPassportPiece.java",
+      "line": 31,
+      "text": "        next.setPieceOrigin(\"TROCADA\");",
+      "marker": "next.setPieceOrigin"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/PieceReferenceController.java",
+      "line": 15,
+      "text": "public class PieceReferenceController {",
+      "marker": "public class PieceReferenceController"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/WardrobeController.java",
+      "line": 99,
+      "text": "    @PutMapping(\"/api/pieces/{id}\")",
+      "marker": "@PutMapping(\"/api/pieces/{id}\")"
+    },
+    {
+      "path": "components/piece-form.tsx",
+      "line": 14,
+      "text": "export interface PieceFormValue {",
+      "marker": "export interface PieceFormValue"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/RoomService.java",
+      "line": 757,
+      "text": "        m.put(\"origin\", w.getPieceOrigin());",
+      "marker": "m.put(\"origin\", w.getPieceOrigin())"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/Scheme.java",
+      "line": 75,
+      "text": "    private Season season;",
+      "marker": "private Season season"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/enums/Season.java",
+      "line": 4,
+      "text": "public enum Season {",
+      "marker": "public enum Season"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java",
+      "line": 417,
+      "text": "    public record SchemeForm(String title, String description, List<String> occasion, List<String> style, Season season,",
+      "marker": "public record SchemeForm"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/view/Views.java",
+      "line": 250,
+      "text": "                s.getSeason() == null ? null : s.getSeason().name(), s.getMood() == null ? null : s.getMood().name(),",
+      "marker": "s.getSeason() == null"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/SchemeRepository.java",
+      "line": 19,
+      "text": "public interface SchemeRepository extends JpaRepository<Scheme, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java",
+      "line": 517,
+      "text": "        s.setSeason(f.season());",
+      "marker": "s.setSeason(f.season())"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/SchemeController.java",
+      "line": 29,
+      "text": "public class SchemeController {",
+      "marker": "class SchemeController"
+    },
+    {
+      "path": "components/scheme-builder.tsx",
+      "line": 71,
+      "text": "  const [form, setForm] = useState({ title: initial?.title ?? \"\", description: initial?.description ?? \"\", occasion: initial?.occasion ?? [], style: initial?.style ?? [], season: initial?.season ?? \"\", mood: initial?.mood ?? \"\", visibility: initial?.visibility ?? \"PRIVATE\", publish: false, lookDoDia: initial?.lookDoDia ?? false, tags: (initial?.tags ?? []).join(\", \") });",
+      "marker": "const [form, setForm]"
+    },
+    {
+      "path": "components/lookbook-tabs.tsx",
+      "line": 52,
+      "text": "export function LookbookTabs({ ownerId, initialTab = \"closet\", initialSaved = \"looks\" }: { ownerId: string; initialTab?: TabId; initialSaved?: SavedView }) {",
+      "marker": "export function LookbookTabs"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/RoomLayout.java",
+      "line": 28,
+      "text": "    private String modulesJson;",
+      "marker": "private String modulesJson"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/RoomLayoutRepository.java",
+      "line": 15,
+      "text": "public interface RoomLayoutRepository extends JpaRepository<RoomLayout, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/RoomService.java",
+      "line": 424,
+      "text": "    public Map<String, Object> setLight(CurrentUser user, Integer kelvin, Double intensity, Boolean on) {",
+      "marker": "public Map<String, Object> setLight(CurrentUser user, Integer"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/RoomController.java",
+      "line": 140,
+      "text": "    public record LightRequest(Integer kelvin, Double intensity, Boolean on) {",
+      "marker": "public record LightRequest"
+    },
+    {
+      "path": "components/room3d/room-settings-panel.tsx",
+      "line": 30,
+      "text": "export function RoomSettingsPanel({ settings: s, onChange, gl, walking, onWalking, light, outfit, onFurniture, onPhoto, onKeys, onSaveFavorite, onRecallFavorite, onClearFavorite, help }: RoomSettingsPanelProps) {",
+      "marker": "export function RoomSettingsPanel"
+    },
+    {
+      "path": "components/room3d/room-scene.tsx",
+      "line": 86,
+      "text": "export function kelvinColor(k: number) {",
+      "marker": "export function kelvinColor(k: number) {"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/RoomLayout.java",
+      "line": 31,
+      "text": "    private String drawerLabelsJson;",
+      "marker": "private String drawerLabelsJson"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/RoomStorageEntry.java",
+      "line": 27,
+      "text": "    private String address;",
+      "marker": "private String address"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/RoomLayoutRepository.java",
+      "line": 15,
+      "text": "public interface RoomLayoutRepository extends JpaRepository<RoomLayout, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/RoomStorageEntryRepository.java",
+      "line": 15,
+      "text": "public interface RoomStorageEntryRepository extends JpaRepository<RoomStorageEntry, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/RoomService.java",
+      "line": 1097,
+      "text": "    public Map<String, String> renameDrawer(CurrentUser user, int drawer, String label) {",
+      "marker": "public Map<String, String> renameDrawer"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/RoomService.java",
+      "line": 1118,
+      "text": "    public Map<String, Object> showInRoom(CurrentUser user, UUID pieceId) {",
+      "marker": "public Map<String, Object> showInRoom"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/RoomController.java",
+      "line": 71,
+      "text": "    @PutMapping(\"/api/me/room/drawers/{drawer}\")",
+      "marker": "@PutMapping(\"/api/me/room/drawers/{drawer}\")"
+    },
+    {
+      "path": "components/expanded-card/expanded-piece.tsx",
+      "line": 54,
+      "text": "interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }",
+      "marker": "interface PieceDetail"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/BrandProfile.java",
+      "line": 67,
+      "text": "    private String fashionCategory;",
+      "marker": "private String fashionCategory"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/BrandProfileRepository.java",
+      "line": 19,
+      "text": "public interface BrandProfileRepository extends JpaRepository<BrandProfile, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/InstitutionalService.java",
+      "line": 724,
+      "text": "    public Map<String, Object> updateBrand(CurrentUser user, Map<String, String> fields) {",
+      "marker": "public Map<String, Object> updateBrand"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/ProfileController.java",
+      "line": 113,
+      "text": "    public Map<String, Object> updateBrand(CurrentUser user, @RequestBody Map<String, String> fields) {",
+      "marker": "public Map<String, Object> updateBrand"
+    },
+    {
+      "path": "components/edit-profile.tsx",
+      "line": 16,
+      "text": "export function EditProfileForm({ onDone }: { onDone?: () => void }) {",
+      "marker": "export function EditProfileForm"
+    },
+    {
+      "path": "components/institutional-profile-card.tsx",
+      "line": 36,
+      "text": "  const category = profile.category ?? profile.fashionCategory;",
+      "marker": "const category ="
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/CelebrityProfile.java",
+      "line": 58,
+      "text": "    private String areasJson;",
+      "marker": "private String areasJson"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/CelebrityProfileRepository.java",
+      "line": 19,
+      "text": "public interface CelebrityProfileRepository extends JpaRepository<CelebrityProfile, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/InstitutionalService.java",
+      "line": 750,
+      "text": "    public Map<String, Object> updateCelebrity(CurrentUser user, Map<String, Object> fields) {",
+      "marker": "public Map<String, Object> updateCelebrity"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/ProfileController.java",
+      "line": 119,
+      "text": "    public Map<String, Object> updateCelebrity(CurrentUser user, @RequestBody Map<String, Object> fields) {",
+      "marker": "public Map<String, Object> updateCelebrity"
+    },
+    {
+      "path": "components/edit-profile.tsx",
+      "line": 16,
+      "text": "export function EditProfileForm({ onDone }: { onDone?: () => void }) {",
+      "marker": "export function EditProfileForm"
+    },
+    {
+      "path": "components/profile-header.tsx",
+      "line": 18,
+      "text": "export function ProfileHeader({ photoUrl, photo, username, displayName, verified, kindLabel, category, bio, link, counts, actions, onCounts, cover, hype, levelProgress }: {",
+      "marker": "export function ProfileHeader"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/Seal.java",
+      "line": 58,
+      "text": "    private Instant availableFrom;",
+      "marker": "private Instant availableFrom"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/SealRepository.java",
+      "line": 19,
+      "text": "public interface SealRepository extends JpaRepository<Seal, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Seal> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealFormWriter.java",
+      "line": 137,
+      "text": "        if (f.availableFrom() != null && f.availableUntil() != null && f.availableUntil().isBefore(f.availableFrom())) {",
+      "marker": "f.availableUntil().isBefore"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/SealController.java",
+      "line": 27,
+      "text": "public class SealController {",
+      "marker": "class SealController"
+    },
+    {
+      "path": "components/seal-wizard.tsx",
+      "line": 27,
+      "text": "export function SealWizard({ form, setForm, premium, brandName, onSave }: { form: SealFormState; setForm: Dispatch<SetStateAction<SealFormState>>; premium?: boolean; brandName?: string | null; onSave: () => Promise<boolean> }) {",
+      "marker": "export function SealWizard"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealFormWriter.java",
+      "line": 125,
+      "text": "            cfg.put(\"policy\", policy);",
+      "marker": "cfg.put(\"policy\", policy)"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/SealRepository.java",
+      "line": 19,
+      "text": "public interface SealRepository extends JpaRepository<Seal, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Seal> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealPolicies.java",
+      "line": 54,
+      "text": "    public record Rule(String quantifier, int count, String color, String brand, String category, String subcategory, HypeLevel hypeMin) {",
+      "marker": "public record Rule"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealPolicyNormalizer.java",
+      "line": 51,
+      "text": "                int count = 1;",
+      "marker": "int count = 1"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealPolicyEvaluator.java",
+      "line": 100,
+      "text": "                    default -> pass.size() >= r.count();",
+      "marker": "pass.size() >= r.count()"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/SealController.java",
+      "line": 27,
+      "text": "public class SealController {",
+      "marker": "class SealController"
+    },
+    {
+      "path": "components/seal-policy-editor.tsx",
+      "line": 115,
+      "text": "export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {",
+      "marker": "export function SealPolicyEditor"
+    },
+    {
+      "path": "components/manual-seal-policy.tsx",
+      "line": 11,
+      "text": "export function ManualSealPolicy({ value, onChange, tier, onTier, brandName }: { value: SealPolicy; onChange: (value: SealPolicy) => void; tier: SealTierId; onTier: (tier: SealTierId) => void; brandName?: string | null }) {",
+      "marker": "export function ManualSealPolicy"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealPolicies.java",
+      "line": 54,
+      "text": "    public record Rule(String quantifier, int count, String color, String brand, String category, String subcategory, HypeLevel hypeMin) {",
+      "marker": "public record Rule"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealPolicyEvaluator.java",
+      "line": 159,
+      "text": "        if (r.brand() != null) {",
+      "marker": "if (r.brand() != null)"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/BrandRepository.java",
+      "line": 19,
+      "text": "public interface BrandRepository extends JpaRepository<Brand, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/BrandProfileRepository.java",
+      "line": 19,
+      "text": "public interface BrandProfileRepository extends JpaRepository<BrandProfile, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealFormWriter.java",
+      "line": 125,
+      "text": "            cfg.put(\"policy\", policy);",
+      "marker": "cfg.put(\"policy\", policy)"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/SealController.java",
+      "line": 27,
+      "text": "public class SealController {",
+      "marker": "class SealController"
+    },
+    {
+      "path": "components/seal-policy-editor.tsx",
+      "line": 115,
+      "text": "export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {",
+      "marker": "export function SealPolicyEditor"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/Promotion.java",
+      "line": 27,
+      "text": "public class Promotion extends VersionedAuditableEntity {",
+      "marker": "public class Promotion"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/FlairCombination.java",
+      "line": 24,
+      "text": "public class FlairCombination extends VersionedAuditableEntity {",
+      "marker": "public class FlairCombination"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/PromotionRedemption.java",
+      "line": 28,
+      "text": "public class PromotionRedemption extends AuditableEntity {",
+      "marker": "public class PromotionRedemption"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/FlairRedemption.java",
+      "line": 24,
+      "text": "public class FlairRedemption extends VersionedAuditableEntity {",
+      "marker": "public class FlairRedemption"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/PromotionRepository.java",
+      "line": 19,
+      "text": "public interface PromotionRepository extends JpaRepository<Promotion, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/FlairCombinationRepository.java",
+      "line": 14,
+      "text": "public interface FlairCombinationRepository extends JpaRepository<FlairCombination, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealService.java",
+      "line": 407,
+      "text": "    public record PromotionForm(PromotionType type, String title, String description, String rules, Integer discountPercent,",
+      "marker": "public record PromotionForm"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/FlairService.java",
+      "line": 801,
+      "text": "    public record CombinationForm(String name, String description, String gameType, List<String> requiredCategories,",
+      "marker": "public record CombinationForm"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealPromotionWriter.java",
+      "line": 156,
+      "text": "    Map<String, Object> redeem(CurrentUser user, UUID promotionId) {",
+      "marker": "Map<String, Object> redeem("
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/FlairService.java",
+      "line": 1010,
+      "text": "    public Map<String, Object> redeem(CurrentUser user, UUID id, UUID schemeId) {",
+      "marker": "public Map<String, Object> redeem("
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/SealPromotionController.java",
+      "line": 43,
+      "text": "    @PostMapping(\"/api/promotions\")",
+      "marker": "@PostMapping(\"/api/promotions\")"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/FlairController.java",
+      "line": 165,
+      "text": "    @PostMapping(\"/api/flair/brand/combinations\")",
+      "marker": "@PostMapping(\"/api/flair/brand/combinations\")"
+    },
+    {
+      "path": "components/flair/brand-flair-tab.tsx",
+      "line": 27,
+      "text": "export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: number }) {",
+      "marker": "export function BrandFlairTab"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/FlairCombination.java",
+      "line": 69,
+      "text": "    private BigDecimal minPurchase;",
+      "marker": "private BigDecimal minPurchase"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/FlairService.java",
+      "line": 841,
+      "text": "        c.setMinPurchase(f.minPurchase());",
+      "marker": "c.setMinPurchase(f.minPurchase())"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/FlairService.java",
+      "line": 1055,
+      "text": "    Map<String, Object> redemptionView(FlairRedemption r) {",
+      "marker": "Map<String, Object> redemptionView("
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/SealPromotionReads.java",
+      "line": 30,
+      "text": "final class SealPromotionReads {",
+      "marker": "class SealPromotionReads"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/FlairController.java",
+      "line": 26,
+      "text": "public class FlairController {",
+      "marker": "class FlairController"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/SealPromotionController.java",
+      "line": 28,
+      "text": "public class SealPromotionController {",
+      "marker": "class SealPromotionController"
+    },
+    {
+      "path": "components/flair/brand-flair-tab.tsx",
+      "line": 27,
+      "text": "export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: number }) {",
+      "marker": "export function BrandFlairTab"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/FlairChallenge.java",
+      "line": 47,
+      "text": "    private String scenario;",
+      "marker": "private String scenario"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/FlairChallengeRepository.java",
+      "line": 11,
+      "text": "public interface FlairChallengeRepository extends JpaRepository<FlairChallenge, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/FlairChallengeService.java",
+      "line": 905,
+      "text": "        if (r.scenario() == null || !r.scenario().matches(\"[a-z0-9-]{2,40}\")) {",
+      "marker": "r.scenario() == null"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/FlairChallengeController.java",
+      "line": 24,
+      "text": "public class FlairChallengeController {",
+      "marker": "class FlairChallengeController"
+    },
+    {
+      "path": "components/flair/cbc.tsx",
+      "line": 149,
+      "text": "export function CbcPlay({ slug }: { slug: string }) {",
+      "marker": "export function CbcPlay"
+    },
+    {
+      "path": "components/flair/cbc-scene.tsx",
+      "line": 74,
+      "text": "export function CbcScene({ scenario, slots, placed, results, labelOf, onPick, readOnly }: {",
+      "marker": "export function CbcScene("
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/CommunityTrend.java",
+      "line": 14,
+      "text": "    @Column(nullable = false, length = 40) private String kind;",
+      "marker": "private String kind"
+    },
+    {
+      "path": "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V63__community_trends.sql",
+      "line": 2,
+      "text": "CREATE TABLE IF NOT EXISTS community_trends (",
+      "marker": "CREATE TABLE IF NOT EXISTS community_trends ("
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/CommunityTrendRepository.java",
+      "line": 13,
+      "text": "public interface CommunityTrendRepository extends JpaRepository<CommunityTrend, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/CommunityTrendService.java",
+      "line": 22,
+      "text": "    public static final List<String> KINDS = List.of(\"PASSA_O_LOOK\", \"COR_EM_COMUM\", \"REINTERPRETACAO\", \"PECA_ASSINATURA\", \"DUETO_CRIATIVO\");",
+      "marker": "public static final List<String> KINDS"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/CommunityTrendService.java",
+      "line": 53,
+      "text": "    public Map<String, Object> publish(CurrentUser user, UUID id) {",
+      "marker": "public Map<String, Object> publish"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/CommunityTrendController.java",
+      "line": 12,
+      "text": "@RequestMapping(\"/api/challenges/trends\")",
+      "marker": "@RequestMapping"
+    },
+    {
+      "path": "components/challenges/community-trends.tsx",
+      "line": 14,
+      "text": "export function CommunityTrends() {",
+      "marker": "export function CommunityTrends"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/WardrobeItem.java",
+      "line": 56,
+      "text": "    private String name;",
+      "marker": "private String name"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/WardrobeItemRepository.java",
+      "line": 19,
+      "text": "public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<WardrobeItem> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/ProfileService.java",
+      "line": 104,
+      "text": "    public Map<String, Object> profile(CurrentUser viewer, String idOrUsername) {",
+      "marker": "public Map<String, Object> profile(CurrentUser viewer, String idOrUsername)"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/ProfileController.java",
+      "line": 16,
+      "text": "public class ProfileController {",
+      "marker": "class ProfileController"
+    },
+    {
+      "path": "components/edit-profile.tsx",
+      "line": 16,
+      "text": "export function EditProfileForm({ onDone }: { onDone?: () => void }) {",
+      "marker": "export function EditProfileForm"
+    },
+    {
+      "path": "components/public-profile-card.tsx",
+      "line": 12,
+      "text": "export function PublicProfileCard({ profile }: { profile: PublicProfileSummary }) {",
+      "marker": "export function PublicProfileCard"
+    },
+    {
+      "path": "components/background-studio.tsx",
+      "line": 24,
+      "text": "export interface BgConfig { auraImpersonation?: boolean | null; impersonationData?: Record<string,unknown> | null; compositionPreset?: FashionPreset | null; border?: CardBorderConfig | null; auraMetamorphose?: \"OFF\" | \"PRISMA\" | \"CONSTELACAO\" | \"FIO_VIVO\" | \"HOLOGRAFIA\" | null; auraMetamorphosePreset?: string | null; auraEntitlementCode?: string | null; auraHype?: string | null; color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: \"IMAGEM_UNICA\" | \"MOSAICO\" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }",
+      "marker": "export interface BgConfig"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/WardrobeItemRepository.java",
+      "line": 19,
+      "text": "public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<WardrobeItem> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/StudioArtworkRules.java",
+      "line": 19,
+      "text": "final class StudioArtworkRules {",
+      "marker": "class StudioArtworkRules"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/service/BackgroundStudioService.java",
+      "line": 620,
+      "text": "    public Map<String, Object> savePiece(CurrentUser user, UUID pieceId, Object cfg) {",
+      "marker": "public Map<String, Object> savePiece"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/BackgroundController.java",
+      "line": 77,
+      "text": "    @PutMapping(\"/api/pieces/{id}/background\")",
+      "marker": "@PutMapping(\"/api/pieces/{id}/background\")"
+    },
+    {
+      "path": "components/background-studio.tsx",
+      "line": 181,
+      "text": "        {([\"IMAGEM_UNICA\", \"MOSAICO\"] as const).map((format) => <button key={format} type=\"button\" className=\"opt-tile aura-format-tile\"",
+      "marker": "([\"IMAGEM_UNICA\", \"MOSAICO\"] as const)"
+    },
+    {
+      "path": "components/card-art.tsx",
+      "line": 14,
+      "text": "export function CardArtLayer({ art }: { art: CardArt }) {",
+      "marker": "export function CardArtLayer"
+    },
+    {
+      "path": "components/expanded-card/expanded-piece.tsx",
+      "line": 63,
+      "text": "export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {",
+      "marker": "export function ExpandedPiece"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/CatalogProduct.java",
+      "line": 71,
+      "text": "    private String sku;",
+      "marker": "private String sku"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/model/CatalogVariant.java",
+      "line": 34,
+      "text": "    private String sku;",
+      "marker": "private String sku"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/CatalogProductRepository.java",
+      "line": 79,
+      "text": "    Page<CatalogProduct> browseByIdentifier(@Param(\"brandId\") String brandId, @Param(\"category\") String category, @Param(\"subcategory\") String subcategory,",
+      "marker": "Page<CatalogProduct> browseByIdentifier"
+    },
+    {
+      "path": "fai-domain/src/main/java/br/com/fashionai/domain/repository/CatalogVariantRepository.java",
+      "line": 17,
+      "text": "public interface CatalogVariantRepository extends JpaRepository<CatalogVariant, UUID> {",
+      "marker": "public interface"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogService.java",
+      "line": 647,
+      "text": "    public record AddRequest(UUID productId, UUID variantId, String size, ItemCondition condition, BigDecimal price,",
+      "marker": "public record AddRequest"
+    },
+    {
+      "path": "fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogService.java",
+      "line": 660,
+      "text": "        CatalogVariant variant = a.variantId() == null ? null : variants.findById(a.variantId())",
+      "marker": "CatalogVariant variant = a.variantId()"
+    },
+    {
+      "path": "fai-web/src/main/java/br/com/fashionai/web/controller/CatalogController.java",
+      "line": 34,
+      "text": "    @GetMapping(\"/api/catalog/search\")",
+      "marker": "@GetMapping(\"/api/catalog/search\")"
+    },
+    {
+      "path": "components/catalog/catalog-search.tsx",
+      "line": 60,
+      "text": "  const [picking, setPicking] = useState<string | null>(null);",
+      "marker": "const [picking"
+    },
+    {
+      "path": "lib/api/catalog.ts",
+      "line": 28,
+      "text": "export interface CatalogProduct {",
+      "marker": "export interface CatalogProduct {"
+    },
+    {
+      "path": "components/expanded-card/expanded-piece.tsx",
+      "line": 63,
+      "text": "export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {",
+      "marker": "export function ExpandedPiece"
+    }
+  ]
+}
