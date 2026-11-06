@@ -17,12 +17,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.*;
@@ -358,25 +352,7 @@ public class GarmentPassportService {
         document.setCommandKey(commandKey); document.setExpiresAt(now().plus(Duration.ofDays(365)));
         evidence.saveAndFlush(document); touch(p); return evidenceView(document);
     }
-    static byte[] safeImage(byte[] bytes) {
-        if(bytes==null||bytes.length<8||bytes.length>2*1024*1024) throw ApiException.badRequest("PASSPORT_IMAGE_SIZE","Envie uma imagem PNG ou JPEG de até 2 MB.");
-        boolean png=bytes[0]==(byte)137&&bytes[1]==80&&bytes[2]==78&&bytes[3]==71&&bytes[4]==13&&bytes[5]==10&&bytes[6]==26&&bytes[7]==10;
-        boolean jpeg=bytes[0]==(byte)255&&bytes[1]==(byte)216&&bytes[2]==(byte)255;
-        if(!png&&!jpeg) throw ApiException.badRequest("PASSPORT_IMAGE_TYPE","Somente fotos PNG e JPEG são aceitas.");
-        try(ImageInputStream in=ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
-            Iterator<ImageReader> readers=ImageIO.getImageReaders(in);
-            if(!readers.hasNext()) throw new IllegalArgumentException();
-            ImageReader reader=readers.next();
-            try {
-                reader.setInput(in,true,true); int width=reader.getWidth(0),height=reader.getHeight(0);
-                if(width<1||height<1||width>6000||height>6000||(long)width*height>12_000_000) throw new IllegalArgumentException();
-                BufferedImage image=reader.read(0);
-                ByteArrayOutputStream output=new ByteArrayOutputStream(); ImageIO.write(image,"png",output);
-                if(output.size()>8*1024*1024) throw new IllegalArgumentException();
-                return output.toByteArray();
-            } finally { reader.dispose(); }
-        } catch(Exception ex) { throw ApiException.badRequest("PASSPORT_INVALID_IMAGE","Imagem inválida ou dimensões muito grandes."); }
-    }
+    static byte[] safeImage(byte[] bytes) { return br.com.fashionai.application.common.SafeImage.png(bytes,"PASSPORT"); }
     public List<EvidenceView> myEvidence(CurrentUser user, UUID id) {
         authenticated(user);
         return evidence.findByPassportIdAndControllerId(id,user.id()).stream().filter(e->e.getDeletedAt()==null).map(this::evidenceView).toList();

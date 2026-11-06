@@ -170,7 +170,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
           {m3d.pieceId && (m3d.progress.phase !== "none" || m3d.paused) && <Model3dStepBar progress={m3d.progress} paused={m3d.paused} idle={m3d.idle} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
             onRetry={() => void m3d.model.request()} />}
           {size && onSizeChange && (
-            <SizePicker grid={size.grid} options={size.options} chosen={item.size ?? null} natural={size.natural} fit={size.fit}
+            <SizePicker grid={size.grid} options={size.options} chosen={item.size ?? null} natural={size.natural} fit={size.fit} productId={item.productId ?? null}
               feedback={size.feedback} personalized={!!body?.personalized}
               label={t("size.tamanho_de", { name: item.name })} onPick={(label) => onSizeChange(item, label)} />
           )}
