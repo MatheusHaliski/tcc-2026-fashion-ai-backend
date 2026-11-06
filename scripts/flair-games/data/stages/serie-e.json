@@ -1,0 +1,63 @@
+{
+  "93": {
+    "photo": "boate",
+    "anchors": {
+      "tema1_sup": {
+        "x": 51,
+        "y": 88,
+        "fx": "neon",
+        "on": "pista de dança iluminada",
+        "size": 9
+      },
+      "tema1_inf": {
+        "x": 86,
+        "y": 72,
+        "fx": "neon",
+        "on": "escada com LEDs azuis",
+        "size": 9
+      },
+      "tema2_sup": {
+        "x": 70,
+        "y": 38,
+        "fx": "neon",
+        "on": "bar superior com garrafas iluminadas",
+        "size": 22
+      },
+      "tema2_inf": {
+        "x": 62,
+        "y": 63,
+        "fx": "neon",
+        "on": "bar inferior",
+        "size": 16
+      },
+      "tema3_cal": {
+        "x": 27,
+        "y": 83,
+        "fx": "candle",
+        "on": "sofás vermelhos do camarote",
+        "size": 12
+      },
+      "tema4_ace": {
+        "x": 39,
+        "y": 24,
+        "fx": "lamp",
+        "on": "lustre de cristal",
+        "size": 7
+      },
+      "tema5_a": {
+        "x": 76,
+        "y": 20,
+        "fx": "screen",
+        "on": "telão",
+        "size": 20
+      },
+      "tema5_b": {
+        "x": 14,
+        "y": 52,
+        "fx": "neon",
+        "on": "sacada com grade iluminada",
+        "size": 20
+      }
+    }
+  }
+}

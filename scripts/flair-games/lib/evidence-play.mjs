@@ -54,6 +54,12 @@ export async function playGame(page, app, game, shotPath, { log = () => {}, apiB
   const enabled = await submit.isEnabled();
   const check = api.check;
   if (check) row.prerequisites = check.evaluation.requirements.map((r) => `${r.type}${r.args?.min != null ? ` ≥ ${r.args.min}` : ""}${r.args?.count ? ` ×${r.args.count}` : ""}: ${r.ok ? "ok" : "falhou"} (${r.have}/${r.need})`);
+  // a cena com as cartas inseridas (efeitos de luz, Aura Hype e Metamorfose/Impersonation) antes da entrega
+  const stage = page.locator(".cbc-stage-art").first();
+  await stage.scrollIntoViewIfNeeded().catch(() => {});
+  await sleep(2600);
+  row.sceneShot = shotPath.replace(/\.jpg$/, "-cena.jpg");
+  await stage.screenshot({ path: row.sceneShot, type: "jpeg", quality: 85 }).catch(() => { row.sceneShot = null; });
   if (!enabled) { row.note += "entrega desabilitada: requisitos não cumpridos"; row.screenshot = await shot(page, shotPath); return row; }
   await submit.click();
   const reward = page.getByRole("dialog").filter({ hasText: T.rewardTitle });

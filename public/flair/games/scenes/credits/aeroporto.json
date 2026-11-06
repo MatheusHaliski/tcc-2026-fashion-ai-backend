@@ -1,0 +1,50 @@
+{
+  "title": "Empty gate area at Heathrow",
+  "creator": "Grendelkhan",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Empty_gate_area_at_Heathrow.jpg",
+  "provider": "wikimedia",
+  "file": "/flair/games/scenes/aeroporto.webp",
+  "objects": [
+    {
+      "name": "painel de voos suspenso",
+      "x": 28,
+      "y": 14
+    },
+    {
+      "name": "fileiras de assentos pretos",
+      "x": 55,
+      "y": 70
+    },
+    {
+      "name": "pilar em Y branco",
+      "x": 55,
+      "y": 30
+    },
+    {
+      "name": "janelão com luzes da pista",
+      "x": 75,
+      "y": 42
+    },
+    {
+      "name": "monitores de embarque",
+      "x": 83,
+      "y": 28
+    },
+    {
+      "name": "lixeiras de inox",
+      "x": 17,
+      "y": 56
+    },
+    {
+      "name": "spots do teto",
+      "x": 63,
+      "y": 20
+    },
+    {
+      "name": "corrimão de vidro",
+      "x": 88,
+      "y": 49
+    }
+  ]
+}

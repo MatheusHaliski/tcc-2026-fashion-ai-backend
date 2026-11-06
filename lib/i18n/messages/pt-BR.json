@@ -9356,5 +9356,10 @@
   "games.scene.room": "Sua Suíte de Vidro como cenário: as vagas preenchidas acendem os módulos do quarto.",
   "games.scene.room_loading": "Montando a suíte…",
   "cbc.line.FLAIR_GLASS": "Jogo concluído",
-  "cbc.line.FLAIR_GLASS_PERFECT": "Partida perfeita"
+  "cbc.line.FLAIR_GLASS_PERFECT": "Partida perfeita",
+  "games.scene.aura": "Aura Hype",
+  "games.scene.announce": "{slot}: {effect} +{bonus}; Aura Hype {from} → {to}.",
+  "games.scene.perfect": "Montagem perfeita: a cena acende a luz dourada.",
+  "games.scene.credit": "Foto: {title} · {creator} · {license}.",
+  "games.scene.source": "Ver a foto original"
 }

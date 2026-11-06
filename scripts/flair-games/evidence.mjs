@@ -65,6 +65,7 @@ try {
     try { row = await playGame(page, APP, g, shotPath, { log: console.log }); }
     catch (e) { row = { number: g.number, slug: g.slug, name: g.names["pt-BR"], series: g.series, completed: false, note: `erro: ${String(e.message).slice(0, 200)}`, screenshot: existsSync(shotPath) ? shotPath : null }; console.log(`${g.number} ${g.slug}: ERRO ${e.message}`); }
     if (row.screenshot) row.screenshot = row.screenshot.replace(`${OUT}/`, "");
+    if (row.sceneShot) row.sceneShot = row.sceneShot.replace(`${OUT}/`, "");
     results.set(g.number, row);
     writeFileSync(resultsPath, JSON.stringify([...results.values()].sort((a, b) => a.number - b.number), null, 2));
   }

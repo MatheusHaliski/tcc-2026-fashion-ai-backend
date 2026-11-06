@@ -4,6 +4,7 @@
  * colunas da V56 mais as novas. Determinístico: mesma entrada, mesmo arquivo, ordenado por número.
  */
 import { SEED_AT, gameId, thumbnailPath } from "./constants.mjs";
+import { withPhoto } from "./venue-map.mjs";
 
 export const DDL = `-- Glass Empire: 100 jogos FLAIR como linhas de flair_challenges (docs/flair/glass-empire-100-jogos). Arquivo GERADO por
 -- scripts/flair-games/build.mjs a partir de scripts/flair-games/data/serie-*.json: não editar à mão.
@@ -86,25 +87,25 @@ export function catalogInserts(game, d) {
 }
 
 /** INSERT de flair_challenges do jogo, com as colunas da V56 e as novas (scenario 'livre', R8). */
-export function challengeInsert(game, d) {
+export function challengeInsert(game, d, credits = {}) {
   const n = game.number;
   const values = [
     literal(gameId(n)), literal(game.slug), literal(game.names["pt-BR"]), json(game.names), literal(game.descriptions["pt-BR"]),
     json(game.descriptions), literal("livre"), literal(d.difficulty), literal("ACTIVE"), null,
     json((game.slots ?? []).map(slotRow)), json(game.requirements ?? []), literal(d.themeTags.join(",")), d.points, game.repeatLimit ?? 1, null,
     false, true, 1000 + n, 0, literal(SEED_AT), literal(SEED_AT), literal(game.series), n, literal(game.district), literal(d.rarity),
-    literal(d.requiredTier), literal(d.requiredWardrobeLevel), json(game.deck), json(game.hype), json(game.ficha), json(game.scene),
+    literal(d.requiredTier), literal(d.requiredWardrobeLevel), json(game.deck), json(game.hype), json(game.ficha), json(withPhoto(game, credits)),
     json(game.rewards ?? []), literal(thumbnailPath(game.slug)),
   ];
   return insert("flair_challenges", CHALLENGE_COLUMNS, values);
 }
 
 /** Migração inteira: DDL fixo + blocos por jogo em ordem de número. `entries` = [{game, derived}]. */
-export function migration(entries) {
+export function migration(entries, credits = {}) {
   const sorted = [...entries].sort((a, b) => a.game.number - b.game.number);
   const blocks = sorted.map(({ game, derived }) => {
     const head = `-- ${String(game.number).padStart(3, "0")} · Série ${game.series} · ${game.names["pt-BR"]}`;
-    return [head, ...catalogInserts(game, derived), challengeInsert(game, derived)].join("\n");
+    return [head, ...catalogInserts(game, derived), challengeInsert(game, derived, credits)].join("\n");
   });
   return `${DDL}\n${blocks.join("\n\n")}\n`;
 }

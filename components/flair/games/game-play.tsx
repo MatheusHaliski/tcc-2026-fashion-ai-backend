@@ -7,6 +7,8 @@ import { Badge, Button, Chip, cn, Dialog, EmptyState, ErrorState, PageHeader, Sk
 import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { CbcRewardDialog } from "@/components/flair/cbc";
 import { CbcScene } from "@/components/flair/cbc-scene";
+import { PhotoSceneArt } from "@/components/flair/games/photo-scene";
+import { slotPosition } from "@/lib/flair/cbc";
 import { HowItWorks } from "@/components/guide/guide";
 import { GameLock } from "@/components/flair/games/game-lock";
 import { GameSidePanel, RewardList } from "@/components/flair/games/game-side-panel";
@@ -30,7 +32,10 @@ export function GamePlay({ slug }: { slug: string }) {
   const scene = toScene(d.scene);
   const delivered = d.mySubmissions[0];
   const pickingSlot = p.picking ? d.slots.find((s) => s.key === p.picking) : undefined;
-  const stage = <CbcScene scenario={d.scenario} scene={scene} slots={d.slots} placed={p.placedCards} results={p.check?.evaluation.slots} labelOf={slotLabel} onPick={p.allowed && !p.readOnly ? (s) => p.setPicking(s) : undefined} readOnly={!p.allowed || p.readOnly} />;
+  const glass = p.result?.glass ?? p.check?.glass;
+  const photo = d.scene?.photo && scene ? <PhotoSceneArt photo={d.scene.photo} credit={d.scene.credit} placed={p.placedCards} results={(p.result ?? p.check)?.evaluation.slots} glass={glass?.slots} perfect={!!glass?.perfect}
+    pins={d.slots.map((s, i) => { const [x, y] = slotPosition(scene, s.key, i, d.slots.length); return { key: s.key, n: i + 1, x, y, label: slotLabel(s), fx: d.scene.fx?.[s.key] ?? "spot", size: d.scene.sizes?.[s.key] ?? 12 }; })} /> : undefined;
+  const stage = <CbcScene scenario={d.scenario} scene={scene} slots={d.slots} placed={p.placedCards} results={p.check?.evaluation.slots} labelOf={slotLabel} onPick={p.allowed && !p.readOnly ? (s) => p.setPicking(s) : undefined} readOnly={!p.allowed || p.readOnly} art={photo} />;
   return (
     <>
       <div className="flair-section-head">

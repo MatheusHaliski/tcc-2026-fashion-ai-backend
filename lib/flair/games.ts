@@ -50,7 +50,13 @@ export interface GamesSummary { total: number; playable: number; byTier?: Record
 export interface GameSlot extends CbcSlot { optional: boolean; effects: Partial<Record<"comum" | "metamorfose" | "impersonation", string | null>>; bonus?: Record<string, number> }
 export interface GameFicha { objective?: string | null; scenario?: string | null; mandatory?: string | null; sequence?: string | null; reward?: string | null; hypePlay?: string | null; hypePartial?: string | null }
 /** Cena vinda da API: as vagas podem trazer um terceiro elemento, o módulo do quarto (série A). */
-export interface GameScene extends Omit<Scene, "slots"> { slots: Record<string, [number, number] | [number, number, string]> }
+/** Crédito da fotografia do cenário (licença livre; public/flair/games/scenes/credits.json). */
+export interface GameSceneCredit { title?: string | null; creator?: string | null; license: string; source?: string | null }
+/** Tipo de luz do ambiente em cada vaga (o efeito usa a luz do lugar: holofote, flash, neon, vela, vitrine…). */
+export type SceneFx = "spot" | "flash" | "neon" | "candle" | "vitrine" | "mirror" | "rack" | "daylight" | "screen" | "lamp";
+export const SCENE_FX: SceneFx[] = ["spot", "flash", "neon", "candle", "vitrine", "mirror", "rack", "daylight", "screen", "lamp"];
+export interface GameScene extends Omit<Scene, "slots"> { slots: Record<string, [number, number] | [number, number, string]>; venue?: string | null; photo?: string | null; credit?: GameSceneCredit | null;
+  /** tipo de luz por vaga, o objeto da foto onde a vaga está e a largura dele (% da foto) */ fx?: Record<string, SceneFx>; anchors?: Record<string, string>; sizes?: Record<string, number> }
 export interface GameDetail extends GameSummary, CbcDetail { slots: GameSlot[]; ficha: GameFicha; scene: GameScene; hypeRules: Record<string, unknown> }
 
 export interface GlassSlot { slot: string; cardId: string; hypeBand: HypeBand; hypeBonus: number; effect: { kind: EffectKind; bonus: number; text?: string | null }; matchBand: HypeBand; matchDelta: number }

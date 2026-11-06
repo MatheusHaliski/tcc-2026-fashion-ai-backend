@@ -1,0 +1,89 @@
+/* ── Glass Empire · luz do ambiente por vaga (components/flair/games/photo-scene-fx.tsx) ──────────────────────────────
+   Cada tipo usa a luz do lugar; --i/--n numeram os elementos que a Aura Hype multiplica; [data-meta] = Metamorfose ou
+   Impersonation (a transformação própria de cada luz). Variáveis herdadas da vaga: --x, --y, --gep-light, --gep-aura,
+   --gep-power, --gep-hue. Movimento reduzido: tudo parado no estado final. */
+.gfx { position: absolute; inset: 0; pointer-events: none; }
+.gfx-items { position: absolute; inset: 0; }
+.gfx-items > i { position: absolute; display: block; }
+
+/* spot · canhões seguidores (palco, passarela) */
+.gfx-beam { left: calc(var(--x) + (var(--i) - (var(--n) - 1) / 2) * var(--s) * 1.2); top: -4%; width: calc(var(--s) * 1.5); height: calc(var(--y) + 8%); translate: -50% 0; transform-origin: 50% 0;
+  rotate: calc((var(--i) - (var(--n) - 1) / 2) * -14deg); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, #fffbe8f0, color-mix(in srgb, var(--gep-light) 45%, transparent) 60%, transparent); filter: blur(7px); mix-blend-mode: screen; opacity: calc(.42 * var(--gep-power) * var(--gep-k)); }
+.gfx-spot[data-meta] .gfx-beam { background: linear-gradient(180deg, color-mix(in srgb, var(--gep-light) 85%, #fff), color-mix(in srgb, var(--gep-light) 55%, transparent) 60%, transparent); opacity: calc(.55 * var(--gep-power)); }
+.gfx-gobo { position: absolute; left: var(--x); top: var(--y); width: calc(var(--s) * 2.2); height: calc(var(--s) * 1); translate: -50% -30%; border-radius: 50%; background: repeating-conic-gradient(var(--gep-light) 0 10deg, transparent 10deg 30deg); mask-image: radial-gradient(ellipse, #000 30%, transparent 70%); -webkit-mask-image: radial-gradient(ellipse, #000 30%, transparent 70%); mix-blend-mode: screen; opacity: .55; }
+.gfx-haze { position: absolute; inset: 0 0 30% 0; opacity: var(--gep-k); background: radial-gradient(ellipse calc(var(--s) * 4) calc(var(--s) * 3) at var(--x) calc(var(--y) - var(--s) * 1.5), #ffffff2e, transparent 70%); filter: blur(18px); mix-blend-mode: screen; }
+
+/* flash · rajadas de imprensa */
+.gfx-burst { left: calc(var(--x) + (sin(calc(var(--i) * 83deg)) * var(--s) * 1.8)); top: calc(var(--y) - var(--s) * 1.4 + (cos(calc(var(--i) * 61deg)) * var(--s) * 1.3)); width: 46px; height: 46px; translate: -50% -50%;
+  background: radial-gradient(circle, #fff 0, #fff 12%, #ffffff66 28%, transparent 62%), linear-gradient(90deg, transparent 46%, #ffffffcc 50%, transparent 54%), linear-gradient(0deg, transparent 46%, #ffffffaa 50%, transparent 54%);
+  mix-blend-mode: screen; opacity: .9; }
+.gfx-flash[data-meta] .gfx-burst { background: radial-gradient(circle, #fff 0, #ffe9a8 14%, #ffcf5a77 30%, transparent 64%), linear-gradient(90deg, transparent 44%, #ffd76acc 50%, transparent 56%), linear-gradient(0deg, transparent 46%, #ffd76a99 50%, transparent 54%); width: 64px; height: 64px; }
+
+/* neon · lasers e mudança de cor do neon (boate, show, avenida) */
+.gfx-laser { left: var(--x); top: -6%; width: 3px; height: calc(var(--y) + 30%); transform-origin: 50% 0; rotate: calc((var(--i) - (var(--n) - 1) / 2) * 9deg);
+  background: linear-gradient(180deg, var(--gep-aura), color-mix(in srgb, var(--gep-aura) 30%, transparent)); box-shadow: 0 0 10px var(--gep-aura), 0 0 22px var(--gep-aura); mix-blend-mode: screen; opacity: calc(.8 * var(--gep-k)); }
+.gfx-neon-shift { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; mask-image: radial-gradient(ellipse calc(var(--s) * 1.4) calc(var(--s) * 2) at var(--x) var(--y), #000 0, transparent 72%); -webkit-mask-image: radial-gradient(ellipse calc(var(--s) * 1.4) calc(var(--s) * 2) at var(--x) var(--y), #000 0, transparent 72%);
+  filter: saturate(2.2) brightness(1.25) hue-rotate(calc(var(--gep-hue) + 40deg)); opacity: 0; }
+.gfx-neon[data-meta] .gfx-neon-shift { opacity: .9; }
+
+/* candle · luz quente e bokeh (restaurante, camarote) */
+.gfx-bokeh { left: calc(var(--x) + sin(calc(var(--i) * 71deg)) * var(--s) * 1.6); top: calc(var(--y) - var(--s) * .5 + cos(calc(var(--i) * 53deg)) * var(--s) * .9); width: calc(14px + (var(--i) * 3px) % 20px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, #ffd9a0ee 0, #ffb45a88 45%, transparent 70%); mix-blend-mode: screen; opacity: .75; filter: blur(1px); }
+.gfx-candle[data-meta] .gfx-bokeh { background: radial-gradient(circle, #fff6d8 0, #ffd76acc 40%, transparent 70%); }
+
+/* vitrine · vidro com reflexo e spots internos (loja, showroom, leilão, cofre) */
+.gfx-pane { position: absolute; left: var(--x); top: var(--y); width: calc(var(--s) * 1.15); aspect-ratio: 4 / 5; translate: -50% -55%; opacity: var(--gep-k); border: 1px solid #ffffff55; border-radius: 4px;
+  background: linear-gradient(115deg, transparent 20%, #ffffff40 32%, transparent 40%, transparent 62%, #ffffff26 70%, transparent 76%); box-shadow: inset 0 0 30px color-mix(in srgb, var(--gep-light) 35%, transparent); mix-blend-mode: screen; }
+.gfx-vitrine[data-meta] .gfx-pane { background: conic-gradient(from 210deg at 30% 30%, #ff7ad944, #7fe7ff44, #ffd76a44, #b18cff44, #ff7ad944), linear-gradient(115deg, transparent 20%, #fff6 32%, transparent 40%); }
+.gfx-downlight { left: calc(var(--x) + (var(--i) - (var(--n) - 1) / 2) * var(--s) * .5); top: calc(var(--y) - var(--s) * 3); width: calc(var(--s) * .55); height: calc(var(--s) * 2.9); translate: -50% 0; clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, #fff7e0dd, transparent); filter: blur(3px); mix-blend-mode: screen; opacity: calc(.4 * var(--gep-power) * var(--gep-k)); }
+
+/* mirror · espelho e lâmpadas de camarim */
+.gfx-mirror { position: absolute; left: var(--x); top: var(--y); width: calc(var(--s) * 1.1); aspect-ratio: 1 / 2; translate: -50% -60%; border-radius: 8px; background: linear-gradient(120deg, transparent 30%, #ffffff55 42%, transparent 52%); mix-blend-mode: screen; }
+.gfx-mirror[data-meta] .gfx-mirror, .gfx-mirror[data-meta] > .gfx-mirror { background: conic-gradient(from 0deg, #ff7ad955, #7fe7ff55, #ffd76a55, #b18cff55, #ff7ad955); mask-image: radial-gradient(ellipse, #000 45%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse, #000 45%, transparent 75%); }
+.gfx-bulb { left: calc(var(--x) + cos(calc(var(--i) * 360deg / var(--n))) * var(--s) * .75); top: calc(var(--y) - var(--s) * .4 + sin(calc(var(--i) * 360deg / var(--n))) * var(--s) * 1.5); width: 12px; height: 12px; border-radius: 50%; translate: -50% -50%;
+  background: radial-gradient(circle, #fff 0, #ffe2a8 40%, transparent 72%); box-shadow: 0 0 12px #ffd38a; mix-blend-mode: screen; }
+
+/* rack · fita de LED e tingimento das roupas */
+.gfx-led { left: calc(var(--x) - var(--s) + var(--i) * (var(--s) * 2 / var(--n))); top: calc(var(--y) - var(--s) * 1.6); width: calc(var(--s) * 2 / var(--n)); height: 4px; background: linear-gradient(90deg, transparent, #fff8e8, transparent); box-shadow: 0 6px 22px #fff2d0aa; mix-blend-mode: screen; }
+.gfx-rack-tint { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; mask-image: radial-gradient(ellipse calc(var(--s) * 1.2) calc(var(--s) * 2) at var(--x) var(--y), #000 0, transparent 75%); -webkit-mask-image: radial-gradient(ellipse calc(var(--s) * 1.2) calc(var(--s) * 2) at var(--x) var(--y), #000 0, transparent 75%);
+  filter: sepia(1) saturate(3.5) hue-rotate(var(--gep-hue)) brightness(1.08); mix-blend-mode: color; opacity: .7; }
+
+/* daylight · sol e poeira (praia, serra, rooftop, feira) */
+.gfx-sunbeam { left: calc(var(--x) - var(--s) * 2 + var(--i) * var(--s)); top: -10%; width: calc(var(--s) * .8); height: 140%; rotate: -24deg; transform-origin: 50% 0; background: linear-gradient(180deg, #fff6d6cc, #ffe6a333 60%, transparent); filter: blur(10px); mix-blend-mode: screen; opacity: calc(.3 * var(--gep-power) * var(--gep-k)); }
+.gfx-daylight[data-meta] .gfx-sunbeam { background: linear-gradient(180deg, #ffd27acc, #ff9a4a44 60%, transparent); }
+.gfx-dust { position: absolute; left: var(--x); top: var(--y); width: calc(var(--s) * 2); aspect-ratio: 1; translate: -50% -70%; background: radial-gradient(circle at 20% 30%, #fff 0 1px, transparent 2px), radial-gradient(circle at 70% 60%, #fff 0 1px, transparent 2px), radial-gradient(circle at 45% 80%, #fff 0 1.2px, transparent 2px), radial-gradient(circle at 80% 20%, #fff 0 1px, transparent 2px); opacity: .7; mix-blend-mode: screen; }
+
+/* screen · tela acesa (telão, redação, estúdio) */
+.gfx-screen { position: absolute; left: var(--x); top: var(--y); width: calc(var(--s) * 1.6); aspect-ratio: 16 / 9; translate: -50% -50%; border-radius: 4px; background: repeating-linear-gradient(0deg, #ffffff10 0 2px, transparent 2px 4px), color-mix(in srgb, var(--gep-light) 35%, #0000); box-shadow: 0 0 40px color-mix(in srgb, var(--gep-light) 60%, transparent); mix-blend-mode: screen; overflow: hidden; }
+.gfx-screen img { width: 100%; height: 100%; object-fit: contain; opacity: .9; filter: drop-shadow(0 0 6px #fff8); }
+
+/* lamp · abajur ou lustre com cristais */
+.gfx-crystal { left: calc(var(--x) + sin(calc(var(--i) * 97deg)) * var(--s) * .9); top: calc(var(--y) - var(--s) * .3 + cos(calc(var(--i) * 41deg)) * var(--s) * .8); width: 9px; height: 9px; translate: -50% -50%;
+  background: radial-gradient(circle, #fff 0, #fff4 50%, transparent 70%); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); filter: drop-shadow(0 0 5px #ffe7b0); }
+
+/* Impersonation: a peça entra no ambiente conforme a luz (em pé, pendurada, exposta, refletida) */
+.gfx-piece { position: absolute; left: var(--x); top: var(--y); width: calc(var(--s) * 1.1); aspect-ratio: 1 / 2; translate: -50% -90%; }
+.gfx-piece-hanging { translate: -50% -100%; } .gfx-piece-displayed { translate: -50% -84%; }
+.gfx-piece-reflected { opacity: .72; filter: blur(.4px) saturate(.9); }
+.gfx-piece-reflected .gfx-cutout { transform: scaleX(-1); }
+.gfx-cutout { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(0 0 6px var(--gep-light)) drop-shadow(0 10px 14px #0009); }
+.gfx-reflection { position: absolute; left: 0; top: 100%; width: 100%; height: 50%; object-fit: contain; object-position: top; transform: scaleY(-1); opacity: .26; mask-image: linear-gradient(0deg, transparent, #000); -webkit-mask-image: linear-gradient(0deg, transparent, #000); }
+.gfx-shadow { position: absolute; left: 12%; right: 12%; bottom: -3%; height: 9%; border-radius: 50%; background: radial-gradient(ellipse, #000b, transparent 70%); filter: blur(4px); }
+.gfx-piece-hanging .gfx-shadow { display: none; }
+.gfx-hanger { position: absolute; left: 50%; top: -6%; width: 30%; height: 8%; translate: -50% 0; border: 2px solid #d9d9d9; border-bottom: 0; border-radius: 50% 50% 0 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion="true"]) .gfx-beam { animation: gfx-sweep-beam 5s calc(var(--i) * .6s) ease-in-out infinite alternate; }
+  html:not([data-reduce-motion="true"]) .gfx-burst { animation: gfx-pop 1.8s calc(var(--i) * .27s) ease-out infinite; }
+  html:not([data-reduce-motion="true"]) .gfx-laser { animation: gfx-fan 3.4s calc(var(--i) * .2s) ease-in-out infinite alternate; }
+  html:not([data-reduce-motion="true"]) .gfx-bokeh, html:not([data-reduce-motion="true"]) .gfx-bulb, html:not([data-reduce-motion="true"]) .gfx-crystal { animation: gfx-flicker 2.6s calc(var(--i) * .19s) ease-in-out infinite; }
+  html:not([data-reduce-motion="true"]) .gfx-dust { animation: gfx-drift 6s ease-in-out infinite alternate; }
+  html:not([data-reduce-motion="true"]) .gfx-neon-shift { transition: opacity 1s 1s ease; }
+}
+@keyframes gfx-sweep-beam { to { rotate: calc((var(--i) - (var(--n) - 1) / 2) * -14deg + 6deg); } }
+@keyframes gfx-pop { 0%, 60%, 100% { opacity: 0; scale: .4; } 8% { opacity: 1; scale: 1.1; } 20% { opacity: .2; } }
+@keyframes gfx-fan { to { rotate: calc((var(--i) - (var(--n) - 1) / 2) * 13deg); } }
+@keyframes gfx-flicker { 50% { opacity: .45; scale: .9; } }
+@keyframes gfx-drift { to { translate: -46% -76%; } }

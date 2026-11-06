@@ -9356,5 +9356,10 @@
   "games.scene.room": "Your Glass Suite as the scene: filled slots light up the room modules.",
   "games.scene.room_loading": "Building the suite…",
   "cbc.line.FLAIR_GLASS": "Game completed",
-  "cbc.line.FLAIR_GLASS_PERFECT": "Perfect match"
+  "cbc.line.FLAIR_GLASS_PERFECT": "Perfect match",
+  "games.scene.aura": "Hype Aura",
+  "games.scene.announce": "{slot}: {effect} +{bonus}; Hype Aura {from} → {to}.",
+  "games.scene.perfect": "Perfect build: the scene lights up in gold.",
+  "games.scene.credit": "Photo: {title} · {creator} · {license}.",
+  "games.scene.source": "View the original photo"
 }

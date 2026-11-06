@@ -8,6 +8,9 @@ import { derive } from "./lib/derive.mjs";
 import { evaluate, glass } from "./lib/mock-engine.mjs";
 import { bank } from "./lib/mock-bank.mjs";
 import { thumbnailPath } from "./lib/constants.mjs";
+import { withPhoto } from "./lib/venue-map.mjs";
+import { applyStage, loadStages } from "./lib/stages.mjs";
+import { readCredits, ROOT } from "./build.mjs";
 
 const PORT = Number(process.argv[2] ?? 8098);
 const TARGET = new URL(process.argv[3] ?? "http://localhost:8099");
@@ -22,6 +25,9 @@ const iso = (d = new Date()) => d.toISOString();
 
 const files = await loadSeries(process.env.MOCK_DATA ?? new URL("./data/", import.meta.url).pathname);
 const games = files.flatMap((f) => (Array.isArray(f.games) ? f.games : [])).map((g) => ({ ...g, ...derive(g) })).sort((a, b) => a.number - b.number);
+const CREDITS = await readCredits(ROOT);
+const STAGES = await loadStages(process.env.MOCK_DATA ?? new URL("./data/", import.meta.url).pathname);
+for (const g of games) if (STAGES[g.number]) g.scene = applyStage(g, STAGES[g.number], CREDITS);
 const banks = new Map(games.map((g) => [g.slug, bank(g)]));
 let current = games[0]?.slug;
 const submissions = new Map();
@@ -40,7 +46,7 @@ const summary = (g) => ({ id: `7d-${g.number}`, slug: g.slug, name: txt(g.names)
   rewards: (g.rewards ?? []).map((r) => ({ type: r.type, code: r.code, name: txt(r.names), condition: r.condition ?? null })) });
 const detail = (g) => ({ ...summary(g), slots: g.slots.map((s) => ({ key: s.key, position: s.position, label: txt(s.label), optional: !!s.optional, effects: Object.fromEntries(Object.entries(s.effects ?? {}).map(([k, v]) => [k, txt(v)])), bonus: s.bonus ?? {} })),
   themeTags: g.themeTags, interpretations: [], suggestedInterpretation: null, mySubmissions: submissions.has(g.slug) ? [submissions.get(g.slug).submission] : [], communityOpen: false, community: [],
-  memory: { builds: 0, people: 0, averageSintonia: null, readings: null, season: "SPRING" }, ficha: Object.fromEntries(Object.entries(g.ficha ?? {}).map(([k, v]) => [k, txt(v)])), scene: g.scene, hypeRules: g.hype });
+  memory: { builds: 0, people: 0, averageSintonia: null, readings: null, season: "SPRING" }, ficha: Object.fromEntries(Object.entries(g.ficha ?? {}).map(([k, v]) => [k, txt(v)])), scene: withPhoto(g, CREDITS), hypeRules: g.hype });
 const counts = (list, key) => list.reduce((a, g) => ({ ...a, [g[key]]: (a[g[key]] ?? 0) + 1 }), {});
 
 function story(g, ev) {
