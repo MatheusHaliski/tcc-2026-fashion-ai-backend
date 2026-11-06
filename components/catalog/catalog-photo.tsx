@@ -86,7 +86,7 @@ export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, al
     );
   }
   const src = chain[crop ? failed - 1 : failed];
-  if (!src) return placeholder ? <>{placeholder}</> : null;
+  if (!src) return <>{defaultPhoto}</>;
   const processed = !wholeMode && src === mediaUrl(image?.url) && image?.mode === "PROCESSED";
   return (
     <span className={cn("catalog-photo", processed ? "is-processed" : "is-contained", wholeMode && "is-whole-fallback", className)} data-mode={processed ? "processed" : wholeMode ? "whole-original" : "original"}>

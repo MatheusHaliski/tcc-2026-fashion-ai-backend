@@ -47,7 +47,7 @@ export const SLOT_KEY_RE = /^[a-z0-9_]+$/;
 export const REWARD_CODE_RE = /^[A-Z0-9-]{1,40}$/;
 
 // saídas (R14)
-export const MIGRATION_FILE = "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V86__glass_empire_jogos.sql";
+export const MIGRATION_FILE = "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V98__glass_empire_jogos.sql";
 export const V56_FILE = "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V56__desafios_de_montagem.sql";
 export const THUMBS_DIR = "public/flair/games";
 export const CATALOG_MD = "docs/flair/glass-empire-100-jogos/catalogo.gen.md";

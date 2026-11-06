@@ -220,13 +220,13 @@ test("build com fixture grava SQL, miniaturas e catálogo em --out; sem --allow-
     const r = await build({ data: "scripts/flair-games/fixtures", out, allowPartial: true, thumbs: true });
     assert.deepEqual(r.errors, []);
     assert.equal(r.entries.length, 2);
-    assert.ok((await stat(join(out, "V86__glass_empire_jogos.sql"))).size > 1000);
+    assert.ok((await stat(join(out, "V98__glass_empire_jogos.sql"))).size > 1000);
     assert.ok((await stat(join(out, "thumbs/b21-primeira-passarela.webp"))).size > 500);
     const md = await readFile(join(out, "catalogo.gen.md"), "utf8");
     assert.ok(md.includes("| 021 | Primeira Passarela (`b21-primeira-passarela`) | B | RUNWAY | EASY | COMMON | ESTREIA | EM_MONTAGEM | 15 | 3/4 | não |"));
     assert.ok(md.includes("R26"));
     const again = await build({ data: "scripts/flair-games/fixtures", out, allowPartial: true, thumbs: false });
-    assert.equal(await readFile(join(out, "V86__glass_empire_jogos.sql"), "utf8"), (await readFile(r.written[0], "utf8")), "determinístico");
+    assert.equal(await readFile(join(out, "V98__glass_empire_jogos.sql"), "utf8"), (await readFile(r.written[0], "utf8")), "determinístico");
     assert.deepEqual(again.errors, []);
     const missing = await build({ data: "scripts/flair-games/nao-existe", out, allowPartial: true, thumbs: false });
     assert.ok(missing.errors[0].startsWith("nenhum serie-*.json"));

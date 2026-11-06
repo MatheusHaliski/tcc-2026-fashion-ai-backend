@@ -48,7 +48,7 @@ class GarmentPassportServiceTest {
         when(pieces.findForSealRequest(any())).thenAnswer(call->pieces.findById(call.getArgument(0)));
         when(transfers.lockById(any())).thenAnswer(call->transfers.findById(call.getArgument(0)));
         when(transfers.passportIdOf(any())).thenAnswer(call->transfers.findById(call.getArgument(0)).map(PassportTransfer::getPassportId));
-        service=new GarmentPassportService(passports,holdings,events,shares,evidence,transfers,pieces,users,guard,lifecycle,true,Clock.fixed(now,ZoneOffset.UTC));
+        service=new GarmentPassportService(passports,holdings,events,shares,evidence,transfers,pieces,users,guard,lifecycle,mock(br.com.fashionai.application.assets.AssetCatalogService.class),true,Clock.fixed(now,ZoneOffset.UTC));
         ana=person("ana"); bia=person("bia"); other=person("other");
         piece=new WardrobeItem(); piece.setUser(ana); piece.setName("Jaqueta azul"); piece.setCategory("upper_piece"); piece.setSubcategory("jacket");
         piece.setColor("blue"); piece.setMaterial("Cotton"); piece.setCareInstructions("Cold wash"); piece.setImageUrl("/media/ana-private-photo.jpg");

@@ -1,0 +1,60 @@
+{
+  "title": "Hotel du Louvre Paris Junior Suite Room 401",
+  "creator": "Tips For Travellers",
+  "license": "CC BY 2.0",
+  "source": "https://www.flickr.com/photos/8327374@N02/5552931843",
+  "provider": "flickr",
+  "file": "/flair/games/scenes/suite-espelho.webp",
+  "objects": [
+    {
+      "name": "espelho de corpo inteiro (porta do armário)",
+      "x": 15,
+      "y": 48
+    },
+    {
+      "name": "segundo espelho de porta",
+      "x": 39,
+      "y": 50
+    },
+    {
+      "name": "cama de casal",
+      "x": 78,
+      "y": 72
+    },
+    {
+      "name": "poltrona listrada",
+      "x": 20,
+      "y": 88
+    },
+    {
+      "name": "poltrona listrada",
+      "x": 42,
+      "y": 90
+    },
+    {
+      "name": "escrivaninha com orquídea",
+      "x": 52,
+      "y": 56
+    },
+    {
+      "name": "abajur laranja",
+      "x": 46,
+      "y": 47
+    },
+    {
+      "name": "TV de parede",
+      "x": 56,
+      "y": 39
+    },
+    {
+      "name": "janela com cortinas",
+      "x": 68,
+      "y": 44
+    },
+    {
+      "name": "abajur de cabeceira",
+      "x": 98,
+      "y": 52
+    }
+  ]
+}

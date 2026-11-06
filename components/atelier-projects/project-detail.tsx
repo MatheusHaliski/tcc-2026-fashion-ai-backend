@@ -8,9 +8,11 @@ import { useI18n } from '@/lib/i18n/i18n';
 import { Button, Card, ErrorState, Field, Input, PageHeader, Select, Skeleton, Tabs, Textarea } from '@/components/ui';
 import { changedFields, draftFrom, type MemberRole, type ProjectDetail, type ProjectDraft, type Revision, type Specification } from './contracts';
 import { downloadTechPack, projectApi } from './project-api';
+import { SourcingPanel } from './sourcing-panel';
+import { ProductionPanel } from './production-panel';
 import { ProjectForm } from './project-form';
 import styles from './atelier-projects.module.css';
-const PANELS = ['design', 'revisions', 'collaboration'] as const;
+const PANELS = ['design', 'revisions', 'collaboration', 'sourcing', 'production'] as const;
 export function AtelierProjectDetail({ id }: { id: string }) {
   const query = useApi(signal => projectApi.get(id, signal), [id]);
   if (!query.data) return query.error ? <ErrorState error={query.error} onRetry={query.reload}/> : <Skeleton className="h-64"/>;
@@ -57,6 +59,8 @@ function ProjectEditor({ detail, onChange, onReload }: { detail: ProjectDetail; 
       </aside>
     </div>}
     {tab === 'revisions' && <RevisionHistory detail={detail} items={history.data?.items ?? []} loading={history.loading} error={history.error} page={historyPage} hasMore={history.data?.hasMore ?? false} setPage={setHistoryPage} onRetry={history.reload} onExport={r => void action.run(() => downloadTechPack(detail.project.id, r))} onRestore={revision => { setSourceRevisionId(revision.id); updateDraft({ title: revision.title, brief: revision.brief, visibility: detail.project.visibility, specification: structuredClone(revision.specification), rightsAccepted: false }); setTab('design'); }}/>}
+    {tab === 'sourcing' && <SourcingPanel detail={detail}/>}
+    {tab === 'production' && <ProductionPanel detail={detail}/>}
     {tab === 'collaboration' && <Collaboration detail={detail} participant={participant} busy={action.busy} run={operation => void action.run(operation)} accept={accept}/>}
   </div>;
 }

@@ -8,6 +8,7 @@ import type { CbcSlotResult } from "@/lib/flair/cbc";
 import type { GameSceneCredit, GlassSlot, SceneFx } from "@/lib/flair/games";
 import { useGameLabels } from "@/components/flair/games/game-card";
 import { PhotoSceneHit } from "@/components/flair/games/photo-scene-hit";
+import { PhotoSceneLinks } from "@/components/flair/games/photo-scene-links";
 
 export interface PhotoPin { key: string; n: number; x: number; y: number; label: string; fx: SceneFx; size: number }
 
@@ -33,6 +34,7 @@ export function PhotoSceneArt({ photo, credit, pins, placed, results, glass, per
       <div className={cn("gep", perfect && "is-perfect", filled.length > 0 && "is-awake")} style={{ "--gep-life": life.toFixed(3), "--gep-crowd": Math.max(0.35, Math.min(1, 1 / Math.sqrt(Math.max(1, filled.length)))).toFixed(2) } as CSSProperties} aria-hidden>
         <img className="gep-photo" src={src} alt="" decoding="async" />
         <span className="gep-grade" />
+        <PhotoSceneLinks pins={pins} results={results} glass={glass} filledKeys={new Set(filled.map((p) => p.key))} />
         {filled.map((p) => (
           <PhotoSceneHit key={`${p.key}:${placed[p.key]!.id}`} photo={src} x={p.x} y={p.y} size={p.size} fx={p.fx} card={placed[p.key]!} label={p.label}
             result={bySlot.get(p.key)} glass={byGlass.get(p.key)} latest={p.key === latest} />

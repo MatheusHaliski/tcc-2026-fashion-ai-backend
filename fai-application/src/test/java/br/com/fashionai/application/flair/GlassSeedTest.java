@@ -18,14 +18,14 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Os 100 jogos do Glass Empire (desenho R17): o catálogo JSON (scripts/flair-games/data) é a fonte da V86. Cada jogo passa
- * pelas mesmas regras de vaga e requisito do motor (CbcRules.validate), os números 1..100 e os slugs são únicos, e a V86
+ * Os 100 jogos do Glass Empire (desenho R17): o catálogo JSON (scripts/flair-games/data) é a fonte da V98. Cada jogo passa
+ * pelas mesmas regras de vaga e requisito do motor (CbcRules.validate), os números 1..100 e os slugs são únicos, e a V98
  * gerada traz exatamente um INSERT por jogo com o id previsto. As faixas de nível, guarda-roupa e Hype são as do código.
  */
 class GlassSeedTest {
     static final Path DATA = Path.of("..", "scripts", "flair-games", "data");
     static final Path MIGRATION = Path.of("..", "fai-infrastructure", "persistence-mysql", "src", "main", "resources", "db", "migration",
-            "V86__glass_empire_jogos.sql");
+            "V98__glass_empire_jogos.sql");
     static final Set<String> BANDS = Set.of("LOW_SIGNAL", "NICHE", "RELEVANT", "HOT", "TRENDING", "VIRAL");
     static final Set<String> DISTRICTS = Set.of("SUITE", "RUNWAY", "CITY", "BACKSTAGE", "COMMUNITY");
 

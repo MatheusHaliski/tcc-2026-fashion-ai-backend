@@ -2,16 +2,16 @@
 /**
  * Gerador do catálogo Glass Empire (desenho §4, §6 R12–R16, R25): lê scripts/flair-games/data/serie-{a..e}.json,
  * valida tudo de uma vez, deriva dificuldade/raridade/níveis e grava, de forma determinística e ordenada por número:
- *   1. a migração V86__glass_empire_jogos.sql (DDL fixo + 1 INSERT de flair_challenges por jogo + colecionáveis);
+ *   1. a migração V98__glass_empire_jogos.sql (DDL fixo + 1 INSERT de flair_challenges por jogo + colecionáveis);
  *   2. public/flair/games/<slug>.webp (miniaturas 640×400 a partir de scene_json, via scene-svg.mjs + sharp);
  *   3. docs/flair/glass-empire-100-jogos/catalogo.gen.md (tabela resumo e regra de derivação).
  *
  * Uso: node scripts/flair-games/build.mjs [--data <dir>] [--out <dir>] [--allow-partial] [--no-thumbs]
  *   --data           pasta com serie-*.json (padrão scripts/flair-games/data)
- *   --out            grava as três saídas dentro desta pasta (V86__glass_empire_jogos.sql, thumbs/, catalogo.gen.md)
+ *   --out            grava as três saídas dentro desta pasta (V98__glass_empire_jogos.sql, thumbs/, catalogo.gen.md)
  *                    em vez dos caminhos do repositório; use para provar o build sem tocar na migração real
  *   --allow-partial  aceita menos de 100 jogos (fixtures, séries ainda em escrita)
- *   --no-thumbs      não gera miniaturas (mais rápido; a V86 continua apontando para /flair/games/<slug>.webp)
+ *   --no-thumbs      não gera miniaturas (mais rápido; a V98 continua apontando para /flair/games/<slug>.webp)
  * Sai com 1 quando há erros de validação (todos listados, com o número do jogo) e 2 quando não há dados.
  */
 import { readdir, readFile, mkdir, writeFile } from "node:fs/promises";
@@ -81,7 +81,7 @@ export async function readCredits(root) {
 export function outputPaths(root, out) {
   if (!out) return { sql: join(root, MIGRATION_FILE), thumbs: join(root, THUMBS_DIR), md: join(root, CATALOG_MD) };
   const base = resolve(out);
-  return { sql: join(base, "V86__glass_empire_jogos.sql"), thumbs: join(base, "thumbs"), md: join(base, "catalogo.gen.md") };
+  return { sql: join(base, "V98__glass_empire_jogos.sql"), thumbs: join(base, "thumbs"), md: join(base, "catalogo.gen.md") };
 }
 
 /**
@@ -104,7 +104,7 @@ export async function build(opts, { root = ROOT, log = () => {}, sharpImpl } = {
   const stages = await loadStages(dataDir);
   const stageErrs = files.flatMap((f) => f.games.flatMap((g) => stageErrors(g, stages[g.number], new Set(Object.keys(credits)))));
   if (stageErrs.length > 0) return { errors: stageErrs, entries: [], written: [] };
-  // o palco (foto e âncoras sobre objetos reais) vira a cena gravada na V86 e usada nas miniaturas
+  // o palco (foto e âncoras sobre objetos reais) vira a cena gravada na V98 e usada nas miniaturas
   const entries = files.flatMap((f) => f.games.map((game) => {
     const staged = { ...game, scene: applyStage(game, stages[game.number], credits) };
     return { game: staged, derived: derive(game) };

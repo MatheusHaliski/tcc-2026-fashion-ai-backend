@@ -59,4 +59,17 @@ describe("PhotoSceneArt · a foto do ambiente reage às cartas", () => {
     expect(screen.getByText(/LAX Nightclub · MIXEvent · CC BY 2.0/)).toBeTruthy();
     expect(screen.getByRole("link").getAttribute("href")).toContain("commons.wikimedia.org");
   });
+
+  it("cartas vizinhas em harmonia ganham um fio de luz; com Metamorfose, um circuito com pulso; sem harmonia, nada liga", () => {
+    const r = (slot: string, neighbor: boolean) => ({ slot, position: "SUP", cardId: slot, positionOk: true, neighbor, theme: false, sintonia: neighbor ? 2 : 1 });
+    const placed = { palco: card("a", "OURO"), imprensa: card("b", "PRATA"), espelho: card("c", "BRONZE") };
+    const { container, rerender } = renderApp(<PhotoSceneArt photo="/x.webp" pins={pins} placed={placed} results={[r("palco", true), r("imprensa", true), r("espelho", false)]}
+      glass={[glass("palco", "COMUM", "RELEVANT", "RELEVANT"), glass("imprensa", "COMUM", "NICHE", "NICHE"), glass("espelho", "COMUM", "NICHE", "NICHE")]} />);
+    expect(container.querySelectorAll(".gep-link").length).toBe(1);            // palco–imprensa; imprensa–espelho não harmoniza
+    expect(container.querySelector(".gep-link.is-circuit")).toBeNull();
+    rerender(<PhotoSceneArt photo="/x.webp" pins={pins} placed={placed} results={[r("palco", true), r("imprensa", true), r("espelho", true)]}
+      glass={[glass("palco", "METAMORFOSE", "RELEVANT", "TRENDING"), glass("imprensa", "COMUM", "NICHE", "NICHE"), glass("espelho", "COMUM", "NICHE", "NICHE")]} />);
+    expect(container.querySelectorAll(".gep-link").length).toBe(2);
+    expect(container.querySelectorAll(".gep-link.is-circuit .gep-link-pulse").length).toBe(1);
+  });
 });

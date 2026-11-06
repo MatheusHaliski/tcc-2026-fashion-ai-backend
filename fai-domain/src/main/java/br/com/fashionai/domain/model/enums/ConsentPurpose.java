@@ -11,5 +11,7 @@ public enum ConsentPurpose {
     FACIAL_RECOGNITION,
     LOCATION_HISTORY,
     /** RF4 · uso das fotos e correções das peças para treinar e avaliar os modelos de visão (opt-in, revogável). */
-    AI_MODEL_TRAINING
+    AI_MODEL_TRAINING,
+    /** RF-PESQ-10 · contribuir eventos de interesse/indisponibilidade a painéis agregados de marcas (opt-in, revogável). */
+    RETAIL_DEMAND_ANALYTICS
 }

@@ -19,4 +19,8 @@ public interface PhysicalStoreListingRepository extends JpaRepository<PhysicalSt
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select l from PhysicalStoreListing l where l.id = :id")
     Optional<PhysicalStoreListing> lockById(@Param("id") UUID id);
+
+    /** RF-PESQ-07 — oferta ativa de um vendedor para um produto do catálogo (prova física por SKU). */
+    @Query("select l from PhysicalStoreListing l where l.sellerUserId = :seller and l.product.id = :product and l.active = true")
+    List<PhysicalStoreListing> findActiveBySellerAndProduct(@Param("seller") UUID seller, @Param("product") UUID product);
 }

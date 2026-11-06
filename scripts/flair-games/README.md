@@ -5,7 +5,7 @@ Os 100 jogos FLAIR (docs/flair/glass-empire-100-jogos) são **dados**: cada sér
 
 | Saída | Caminho | Conteúdo |
 |---|---|---|
-| Migração | `fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V86__glass_empire_jogos.sql` | DDL fixo (colunas novas de `flair_challenges`, tabela `flair_game_rewards`, regras `FLAIR_GLASS*`), um colecionável de `room_catalog` por recompensa ITEM e **um INSERT de `flair_challenges` por jogo**, ordenado por número |
+| Migração | `fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V98__glass_empire_jogos.sql` | DDL fixo (colunas novas de `flair_challenges`, tabela `flair_game_rewards`, regras `FLAIR_GLASS*`), um colecionável de `room_catalog` por recompensa ITEM e **um INSERT de `flair_challenges` por jogo**, ordenado por número |
 | Miniaturas | `public/flair/games/<slug>.webp` | 640×400 a partir de `scene_json` (`scene-svg.mjs` + sharp); sem IA |
 | Catálogo | `docs/flair/glass-empire-100-jogos/catalogo.gen.md` | tabela resumo com os campos derivados e a regra de derivação por extenso |
 

@@ -1,5 +1,5 @@
 /**
- * Geração da migração V86__glass_empire_jogos.sql (desenho §1.1, R9, R12, R14): cabeçalho DDL fixo, regras de
+ * Geração da migração V98__glass_empire_jogos.sql (desenho §1.1, R9, R12, R14): cabeçalho DDL fixo, regras de
  * pontos, um colecionável de room_catalog por recompensa ITEM e um INSERT de flair_challenges por jogo, com as mesmas
  * colunas da V56 mais as novas. Determinístico: mesma entrada, mesmo arquivo, ordenado por número.
  */

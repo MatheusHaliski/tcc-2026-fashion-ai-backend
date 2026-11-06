@@ -1,6 +1,7 @@
 package br.com.fashionai.application.passport;
 
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -16,12 +17,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.*;
@@ -46,21 +41,22 @@ public class GarmentPassportService {
     private final ApplicationEventPublisher lifecycle;
     private final boolean enabled;
     private final Clock clock;
+    private final AssetCatalogService assets;
 
     @org.springframework.beans.factory.annotation.Autowired
     public GarmentPassportService(GarmentPassportRepository passports, PassportHoldingRepository holdings,
             PassportEventRepository events, PassportShareRepository shares, PassportEvidenceRepository evidence,
             PassportTransferRepository transfers, WardrobeItemRepository pieces, UserRepository users, Guard guard, ApplicationEventPublisher lifecycle,
-            @Value("${fashionai.passport.enabled:true}") boolean enabled) {
-        this(passports, holdings, events, shares, evidence, transfers, pieces, users, guard, lifecycle, enabled, Clock.systemUTC());
+            AssetCatalogService assets, @Value("${fashionai.passport.enabled:true}") boolean enabled) {
+        this(passports, holdings, events, shares, evidence, transfers, pieces, users, guard, lifecycle, assets, enabled, Clock.systemUTC());
     }
     GarmentPassportService(GarmentPassportRepository passports, PassportHoldingRepository holdings,
             PassportEventRepository events, PassportShareRepository shares, PassportEvidenceRepository evidence,
             PassportTransferRepository transfers, WardrobeItemRepository pieces, UserRepository users, Guard guard, ApplicationEventPublisher lifecycle,
-            boolean enabled, Clock clock) {
+            AssetCatalogService assets, boolean enabled, Clock clock) {
         this.passports=passports; this.holdings=holdings; this.events=events; this.shares=shares;
         this.evidence=evidence; this.transfers=transfers; this.pieces=pieces; this.users=users; this.guard=guard; this.lifecycle=lifecycle;
-        this.enabled=enabled; this.clock=clock;
+        this.enabled=enabled; this.clock=clock; this.assets=assets;
     }
     private Instant now() { return clock.instant(); }
     private void feature() { if (!enabled) throw new ApiException(404,"PASSPORT_DISABLED","Passaporte indisponível neste ambiente."); }
@@ -327,18 +323,7 @@ public class GarmentPassportService {
         // Keep the old item and all looks/photos with their historical author. No personal fields or seals follow.
         original.markAvailable(false); original.setAvailabilityStatus(AvailabilityStatus.ARCHIVED); original.setVisibility(Visibility.PRIVATE);
         original.setForSale(false); original.setForDonation(false); pieces.save(original);
-        WardrobeItem next=new WardrobeItem(); next.setUser(recipient); next.setName(original.getName()); next.setCategory(original.getCategory());
-        next.setSubcategory(original.getSubcategory()); next.setColor(original.getColor()); next.setMaterial(original.getMaterial());
-        next.setBrandName(original.getBrandName()); next.setSizeLabel(original.getSizeLabel()); next.setVisibility(Visibility.PRIVATE);
-        next.setCatalogProductId(original.getCatalogProductId()); next.setCatalogVariantId(original.getCatalogVariantId());
-        next.setCondition(original.getCondition()); next.setCareInstructions(p.getCare()==null?null:p.getCare().substring(0,Math.min(p.getCare().length(),512))); next.setPieceOrigin("TROCADA");
-        next.setRemixedFromPieceId(original.getId()); next.setModerationStatus(ModerationStatus.PENDING);
-        if(original.getImageOrigin()==ImageOrigin.CATALOG) {
-            next.setImageUrl(original.getImageUrl()); next.setImageOrigin(ImageOrigin.CATALOG);
-        } else {
-            next.setImageUrl("/_derived/pecas_default/01_parte_superior_01_camiseta_referencia_preview.webp");
-            next.setImageOrigin(ImageOrigin.DEFAULT); next.setDefaultImage(true);
-        }
+        WardrobeItem next = ReceivedPassportPiece.create(original, recipient, p.getCare(), assets);
         pieces.saveAndFlush(next);
         PassportHolding current=new PassportHolding(); current.setPassportId(p.getId()); current.setActivePassportId(p.getId());
         current.setOwnerId(recipient.getId()); current.setPieceId(next.getId()); current.setStartedAt(now()); holdings.save(current);
@@ -367,25 +352,7 @@ public class GarmentPassportService {
         document.setCommandKey(commandKey); document.setExpiresAt(now().plus(Duration.ofDays(365)));
         evidence.saveAndFlush(document); touch(p); return evidenceView(document);
     }
-    static byte[] safeImage(byte[] bytes) {
-        if(bytes==null||bytes.length<8||bytes.length>2*1024*1024) throw ApiException.badRequest("PASSPORT_IMAGE_SIZE","Envie uma imagem PNG ou JPEG de até 2 MB.");
-        boolean png=bytes[0]==(byte)137&&bytes[1]==80&&bytes[2]==78&&bytes[3]==71&&bytes[4]==13&&bytes[5]==10&&bytes[6]==26&&bytes[7]==10;
-        boolean jpeg=bytes[0]==(byte)255&&bytes[1]==(byte)216&&bytes[2]==(byte)255;
-        if(!png&&!jpeg) throw ApiException.badRequest("PASSPORT_IMAGE_TYPE","Somente fotos PNG e JPEG são aceitas.");
-        try(ImageInputStream in=ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
-            Iterator<ImageReader> readers=ImageIO.getImageReaders(in);
-            if(!readers.hasNext()) throw new IllegalArgumentException();
-            ImageReader reader=readers.next();
-            try {
-                reader.setInput(in,true,true); int width=reader.getWidth(0),height=reader.getHeight(0);
-                if(width<1||height<1||width>6000||height>6000||(long)width*height>12_000_000) throw new IllegalArgumentException();
-                BufferedImage image=reader.read(0);
-                ByteArrayOutputStream output=new ByteArrayOutputStream(); ImageIO.write(image,"png",output);
-                if(output.size()>8*1024*1024) throw new IllegalArgumentException();
-                return output.toByteArray();
-            } finally { reader.dispose(); }
-        } catch(Exception ex) { throw ApiException.badRequest("PASSPORT_INVALID_IMAGE","Imagem inválida ou dimensões muito grandes."); }
-    }
+    static byte[] safeImage(byte[] bytes) { return br.com.fashionai.application.common.SafeImage.png(bytes,"PASSPORT"); }
     public List<EvidenceView> myEvidence(CurrentUser user, UUID id) {
         authenticated(user);
         return evidence.findByPassportIdAndControllerId(id,user.id()).stream().filter(e->e.getDeletedAt()==null).map(this::evidenceView).toList();

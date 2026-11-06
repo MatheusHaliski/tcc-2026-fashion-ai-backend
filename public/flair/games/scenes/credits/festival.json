@@ -1,0 +1,45 @@
+{
+  "title": "Beach-Please-2022-crowd-stage-lights-night-performance",
+  "creator": "PinkBeachPlanet",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Beach-Please-2022-crowd-stage-lights-night-performance.jpg",
+  "provider": "wikimedia",
+  "file": "/flair/games/scenes/festival.webp",
+  "objects": [
+    {
+      "name": "palco principal com músicos",
+      "x": 53,
+      "y": 72
+    },
+    {
+      "name": "treliça de iluminação",
+      "x": 50,
+      "y": 29
+    },
+    {
+      "name": "telão esquerdo",
+      "x": 21,
+      "y": 66
+    },
+    {
+      "name": "telão direito",
+      "x": 82,
+      "y": 66
+    },
+    {
+      "name": "feixes de luz amarelos",
+      "x": 82,
+      "y": 30
+    },
+    {
+      "name": "canhões de luz da treliça",
+      "x": 42,
+      "y": 32
+    },
+    {
+      "name": "plateia de mãos erguidas",
+      "x": 50,
+      "y": 92
+    }
+  ]
+}
