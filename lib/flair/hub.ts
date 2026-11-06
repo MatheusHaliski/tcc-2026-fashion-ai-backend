@@ -7,7 +7,7 @@
  * desafios com prazo (Desafios do guarda-roupa) e coleção (cartas, decks, combinações das lojas, carteira, missões).
  */
 export type HubGroup = "play" | "calendar" | "challenges" | "collection";
-export type HubModeId = "matches" | "cbc" | "moments" | "challenges" | "cards" | "decks" | "shops" | "wallet" | "quests";
+export type HubModeId = "matches" | "cbc" | "games" | "moments" | "challenges" | "cards" | "decks" | "shops" | "wallet" | "quests";
 
 /** Demonstração gravada: vídeo otimizado (MP4 + WebM), capa e duração. `recorded` = gravação do app em ambiente de teste. */
 export interface HubDemo { mp4: string; webm: string; poster: string; seconds: number; recorded: boolean }
@@ -22,11 +22,13 @@ export interface HubMode {
   demo: HubDemo;
 }
 
-const demo = (id: HubModeId, seconds: number): HubDemo => ({ mp4: `/flair/demos/${id}.mp4`, webm: `/flair/demos/${id}.webm`, poster: `/flair/demos/${id}.jpg`, seconds, recorded: true });
+const demo = (id: HubModeId, seconds: number, recorded = true): HubDemo => ({ mp4: `/flair/demos/${id}.mp4`, webm: `/flair/demos/${id}.webm`, poster: `/flair/demos/${id}.jpg`, seconds, recorded });
 
 export const HUB_MODES: HubMode[] = [
   { id: "matches", group: "play", href: "/flair/partidas", guide: "flair.matches", demo: demo("matches", 19) },
   { id: "cbc", group: "play", href: "/flair/desafios", guide: "flair.cbc", demo: demo("cbc", 20) },
+  // Glass Empire: a demonstração ainda vai ser gravada (recorded:false até os arquivos media/flair/demos/games.* existirem)
+  { id: "games", group: "play", href: "/flair/jogos", guide: "flair.games", demo: demo("games", 14, false) },
   { id: "moments", group: "calendar", href: "/moments", guide: "moments.calendar", demo: demo("moments", 13) },
   { id: "challenges", group: "challenges", href: "/challenges", guide: "challenges.progress", demo: demo("challenges", 15) },
   { id: "cards", group: "collection", href: "/flair/cartas", guide: "flair.cards", demo: demo("cards", 12) },
@@ -58,7 +60,7 @@ export const LEGACY_TABS: Record<string, { mode: HubModeId; href: string }> = {
 };
 
 /** Seção da central que cada sub-rota /flair/* representa (para o "voltar" reabrir o item certo). */
-export const SECTION_MODE: Record<string, HubModeId> = { partidas: "matches", desafios: "cbc", cartas: "cards", decks: "decks", lojas: "shops", carteira: "wallet", missoes: "quests" };
+export const SECTION_MODE: Record<string, HubModeId> = { partidas: "matches", desafios: "cbc", jogos: "games", cartas: "cards", decks: "decks", lojas: "shops", carteira: "wallet", missoes: "quests" };
 
 /** A seleção fica no navegador, por conta: ao voltar de uma partida, o mesmo item continua escolhido. */
 const KEY = "fai.flair.hub.selected";
@@ -86,6 +88,8 @@ export interface HubSummary {
   decks?: number | null;
   cards?: number | null;
   cbc?: { now: number; upcoming: number; always: number } | null;
+  /** Glass Empire (GET /api/flair/games/summary): quantos jogos existem e quantos a pessoa já pode jogar */
+  games?: { total: number; playable: number } | null;
   moments?: { active: number; upcoming: number } | null;
   challenges?: { active: number; invites: number } | null;
   combos?: { active: number; ready: number } | null;
@@ -104,6 +108,12 @@ export function availability(id: HubModeId, s: HubSummary): HubAvailability {
       if (!c) return { available: true, status: null, action: "play" };
       if (c.now + c.always === 0) return { available: false, status: { key: c.upcoming > 0 ? "flair.hub.status.cbc_soon" : "flair.hub.status.cbc_none", vars: { n: c.upcoming } }, action: "open" };
       return { available: true, status: { key: "flair.hub.status.cbc_open", vars: { n: c.now + c.always } }, action: "play" };
+    }
+    case "games": {
+      const g = s.games;
+      if (!g) return { available: true, status: null, action: "play" };
+      if (g.total === 0) return { available: false, status: { key: "flair.hub.status.games_none" }, action: "open" };
+      return { available: true, status: { key: "flair.hub.status.games", vars: { n: g.playable, total: g.total } }, action: g.playable > 0 ? "play" : "open" };
     }
     case "moments": {
       const m = s.moments;

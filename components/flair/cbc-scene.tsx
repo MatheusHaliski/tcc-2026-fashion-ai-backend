@@ -11,8 +11,9 @@ import { cn } from "@/components/ui";
  * (aria-hidden); quem descreve a cena são as vagas, que são botões de verdade, e a história escrita ao lado. No celular
  * as vagas saem do desenho e viram uma grade embaixo (a cena fica com marcadores numerados).
  */
-export function CbcSceneArt({ scenario, className, pins }: { scenario: string; className?: string; pins?: { n: number; x: number; y: number; lit: boolean }[] }) {
-  const scene = sceneOf(scenario);
+export function CbcSceneArt({ scenario, scene: given, className, pins }: { scenario: string; scene?: Scene; className?: string; pins?: { n: number; x: number; y: number; lit: boolean }[] }) {
+  // `scene` vindo da API (Glass Empire, scene_json) vence o kit local do cenário
+  const scene = given ?? sceneOf(scenario);
   const gid = `cbc-sky-${scenario}`;
   return (
     <svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" className={cn("cbc-art", className)} aria-hidden focusable="false">
@@ -71,17 +72,17 @@ function Prop({ p, scene }: { p: SceneProp; scene: Scene }): ReactNode {
 export interface PlacedCard { card: FlairCollectionCard }
 
 /** O palco do desafio: arte + vagas. Cada vaga é um botão (abre a escolha de carta) com rótulo, posição pedida e estado. */
-export function CbcScene({ scenario, slots, placed, results, labelOf, onPick, readOnly }: {
-  scenario: string; slots: { key: string; position: string; label?: string | null }[]; placed: Record<string, FlairCollectionCard | undefined>;
+export function CbcScene({ scenario, scene: given, slots, placed, results, labelOf, onPick, readOnly }: {
+  scenario: string; scene?: Scene; slots: { key: string; position: string; label?: string | null }[]; placed: Record<string, FlairCollectionCard | undefined>;
   results?: CbcSlotResult[]; labelOf: (slot: CbcSlot | { key: string; position: string; label?: string | null }) => string; onPick?: (slot: string) => void; readOnly?: boolean;
 }) {
   const { t } = useI18n();
-  const scene = sceneOf(scenario);
+  const scene = given ?? sceneOf(scenario);
   const bySlot = new Map((results ?? []).map((r) => [r.slot, r]));
   const pins = slots.map((s, i) => { const [x, y] = slotPosition(scene, s.key, i, slots.length); return { n: i + 1, x, y, lit: !!placed[s.key] }; });
   return (
     <div className="cbc-stage" style={{ "--cbc-accent": scene.accent } as CSSProperties}>
-      <div className="cbc-stage-art"><CbcSceneArt scenario={scenario} pins={pins} /></div>
+      <div className="cbc-stage-art"><CbcSceneArt scenario={scenario} scene={given} pins={pins} /></div>
       <ol className="cbc-slots" aria-label={t("cbc.slots_label")}>
         {slots.map((s, i) => {
           const [x, y] = slotPosition(scene, s.key, i, slots.length);

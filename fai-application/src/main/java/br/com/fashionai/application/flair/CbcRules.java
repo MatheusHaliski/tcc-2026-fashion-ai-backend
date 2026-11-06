@@ -9,7 +9,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -47,9 +46,13 @@ public final class CbcRules {
     public static final List<String> TIERS = List.of("BRONZE", "PRATA", "OURO", "ESPECIAL");
     public static final Set<String> POSITIONS = Set.of("SUP", "INF", "CAL", "ACE", "VES", "LOOK", ANY);
     public static final Set<String> TYPES = Set.of("tier", "ovrAvg", "ovrMin", "sintonia", "sameBrand", "distinctBrands", "brand", "tag", "theme",
-            "hype", "origin", "noBuy", "rediscovery", "strictPosition");
-    /** O que uma vaga do mosaico pode exigir da carta que a completa (opcional, conforme o enredo do desafio). */
-    public static final Set<String> ACCEPT_KEYS = Set.of("tier", "minOvr", "brand", "category", "subcategory", "color", "style", "occasion", "material", "origin");
+            "hype", "origin", "noBuy", "rediscovery", "strictPosition", "cards", "mala", "position", "distinctTags", "hypeBand");
+    /**
+     * O que uma vaga do mosaico pode exigir da carta que a completa (opcional, conforme o enredo do desafio).
+     * {@code optional=true} marca a vaga como opcional (Glass Empire): não entra em {@code complete} nem em {@link #misses}.
+     */
+    public static final Set<String> ACCEPT_KEYS = Set.of("tier", "minOvr", "brand", "category", "subcategory", "color", "style", "occasion", "material",
+            "origin", "optional");
     public static final Set<String> TAG_FIELDS = Set.of("color", "style", "occasion", "material");
     public static final Set<String> HYPE_DIMS = Set.of("POP", "ENG", "TRD", "ORI", "RAR", "LON", "NOV", "HYP");
 
@@ -66,6 +69,16 @@ public final class CbcRules {
         public Slot {
             accepts = accepts == null ? Map.of() : accepts;
         }
+
+        /** Vaga opcional: pode ficar vazia sem impedir a entrega; a carta colocada nela conta normalmente. */
+        public boolean optional() {
+            return Boolean.TRUE.equals(accepts.get("optional"));
+        }
+    }
+
+    /** Número de vagas NÃO opcionais (o {@code n} dos requisitos "para todas as cartas" e o mínimo de {@code complete}). */
+    public static int requiredSlots(List<Slot> slots) {
+        return slots == null ? 0 : (int) slots.stream().filter(s -> !s.optional()).count();
     }
 
     /**
@@ -159,6 +172,10 @@ public final class CbcRules {
     }
 
     // ================================================================== avaliação
+    /**
+     * {@code complete} = todas as vagas NÃO opcionais preenchidas; {@code sintoniaMax} continua 3 × TODAS as vagas (as opcionais
+     * somam sintonia quando preenchidas), por isso uma montagem sem as opcionais nunca chega ao máximo.
+     */
     public static Evaluation evaluate(List<Slot> slots, Map<String, Card> placed, List<Map<String, Object>> requirements, Context ctx) {
         Map<String, Card> board = placed == null ? Map.of() : placed;
         List<SlotResult> results = new ArrayList<>();
@@ -181,7 +198,7 @@ public final class CbcRules {
         }
         List<Card> cards = slots.stream().map(s -> board.get(s.key())).filter(Objects::nonNull).toList();
         int filled = cards.size();
-        boolean complete = filled == slots.size();
+        boolean complete = slots.stream().allMatch(s -> s.optional() || board.get(s.key()) != null);
         List<RequirementResult> reqs = new ArrayList<>();
         for (Map<String, Object> r : requirements == null ? List.<Map<String, Object>>of() : requirements) {
             reqs.add(requirement(r, slots, board, cards, total, ctx));
@@ -193,116 +210,9 @@ public final class CbcRules {
         return new Evaluation(results, reqs, total, 3 * slots.size(), filled, complete, ok, rediscovered);
     }
 
+    /** Um requisito da DSL ({@link CbcRequirements}: tipos clássicos e os do Glass Empire). */
     static RequirementResult requirement(Map<String, Object> r, List<Slot> slots, Map<String, Card> board, List<Card> cards, int sintonia, Context ctx) {
-        String type = String.valueOf(r.get("type"));
-        int n = slots.size();
-        Map<String, Object> args = new LinkedHashMap<>(r);
-        args.remove("type");
-        switch (type) {
-            case "tier" -> {
-                if (r.get("only") != null) {
-                    String only = tier(r.get("only"));
-                    int have = (int) cards.stream().filter(c -> only.equals(c.tier())).count();
-                    return new RequirementResult(type, have >= n, have, n, args);
-                }
-                if (r.get("max") != null) {
-                    int max = TIERS.indexOf(tier(r.get("max")));
-                    int have = (int) cards.stream().filter(c -> TIERS.indexOf(c.tier()) <= max).count();
-                    return new RequirementResult(type, have >= n, have, n, args);
-                }
-                if (r.get("exact") != null) {
-                    String exact = tier(r.get("exact"));
-                    int need = intOf(r.get("count"), 1);
-                    int have = (int) cards.stream().filter(c -> exact.equals(c.tier())).count();
-                    return new RequirementResult(type, have == need, have, need, args);
-                }
-                int min = TIERS.indexOf(tier(r.get("min")));
-                int need = intOf(r.get("count"), n);
-                int have = (int) cards.stream().filter(c -> TIERS.indexOf(c.tier()) >= min).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "ovrAvg" -> {
-                int min = intOf(r.get("min"), 0);
-                int avg = cards.isEmpty() ? 0 : (int) Math.round(cards.stream().mapToInt(Card::ovr).average().orElse(0));
-                return new RequirementResult(type, cards.size() == n && avg >= min, avg, min, args);
-            }
-            case "ovrMin" -> {
-                // sem "count": todas as cartas; com "count": pelo menos N ("3 cartas com nota acima de 80")
-                int min = intOf(r.get("min"), 0);
-                int need = intOf(r.get("count"), n);
-                int have = (int) cards.stream().filter(c -> c.ovr() >= min).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "brand" -> {
-                // marca específica ("3 cartas da Norte"): quando o desafio é de uma marca, o nome vem do perfil dela
-                Set<String> wanted = norm(strings(r.get("anyOf")));
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> c.brand() != null && wanted.contains(c.brand().trim().toLowerCase(Locale.ROOT))).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "sintonia" -> {
-                int min = intOf(r.get("min"), 0);
-                return new RequirementResult(type, sintonia >= min, sintonia, min, args);
-            }
-            case "sameBrand" -> {
-                int need = intOf(r.get("count"), 2);
-                Map<String, Integer> byBrand = new HashMap<>();
-                cards.stream().map(Card::brand).filter(b -> b != null && !b.isBlank())
-                        .forEach(b -> byBrand.merge(b.trim().toLowerCase(Locale.ROOT), 1, Integer::sum));
-                int have = byBrand.values().stream().max(Integer::compare).orElse(0);
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "distinctBrands" -> {
-                int need = intOf(r.get("count"), 2);
-                int have = (int) cards.stream().map(Card::brand).filter(b -> b != null && !b.isBlank())
-                        .map(b -> b.trim().toLowerCase(Locale.ROOT)).distinct().count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "tag" -> {
-                String field = String.valueOf(r.getOrDefault("field", "style"));
-                Set<String> wanted = norm(strings(r.get("anyOf")));
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> tagMatch(c, field, wanted)).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "theme" -> {
-                // P1: qualquer interpretação do Momento (ou as tags do desafio) vale — nunca só a escolhida
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> themeAny(c, ctx)).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "hype" -> {
-                String dim = String.valueOf(r.getOrDefault("dim", "HYP")).toUpperCase(Locale.ROOT);
-                int min = intOf(r.get("min"), 0);
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> c.hype().get(dim) != null && c.hype().get(dim) >= min).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "origin" -> {
-                String only = String.valueOf(r.getOrDefault("only", "PIECE")).toUpperCase(Locale.ROOT);
-                int have = (int) cards.stream().filter(c -> only.equals(c.originType())).count();
-                return new RequirementResult(type, have >= n, have, n, args);
-            }
-            case "noBuy" -> {
-                // C2: a peça já estava no guarda-roupa antes do início (sem início, basta a peça existir)
-                int have = (int) cards.stream().filter(c -> c.pieceAddedAt() != null
-                        && (ctx.startAt() == null || c.pieceAddedAt().isBefore(ctx.startAt()))).count();
-                return new RequirementResult(type, have >= n, have, n, args);
-            }
-            case "rediscovery" -> {
-                int days = intOf(r.get("idleDays"), REDISCOVERY_DAYS);
-                int need = intOf(r.get("count"), 1);
-                int have = (int) cards.stream().filter(c -> idleDays(c, ctx.today()) >= days).count();
-                return new RequirementResult(type, have >= need, have, need, args);
-            }
-            case "strictPosition" -> {
-                int have = (int) slots.stream().filter(s -> board.get(s.key()) != null && positionOk(s, board.get(s.key()))).count();
-                return new RequirementResult(type, have >= n, have, n, args);
-            }
-            default -> {
-                return new RequirementResult(type, false, 0, 1, args);
-            }
-        }
+        return CbcRequirements.evaluate(r, slots, board, cards, sintonia, ctx);
     }
 
     /** O que falta à carta para completar a vaga (lista vazia = aceita). Vaga sem {@code accepts} aceita qualquer carta. */
@@ -461,15 +371,6 @@ public final class CbcRules {
         return matchesInterpretation(c, chosen) || intersects(c.styles(), ctx.styles()) || colorsMatch(c.colors(), ctx.colors());
     }
 
-    static boolean tagMatch(Card c, String field, Set<String> wanted) {
-        return switch (field) {
-            case "color" -> colorsMatch(c.colors(), wanted);
-            case "occasion" -> intersects(c.occasions(), wanted);
-            case "material" -> intersects(c.materials(), wanted);
-            default -> intersects(c.styles(), wanted);
-        };
-    }
-
     /** Dias sem uso: desde o último uso; nunca usada, desde que entrou no guarda-roupa; peça removida = 0. */
     public static long idleDays(Card c, LocalDate today) {
         if (today == null) {
@@ -560,6 +461,7 @@ public final class CbcRules {
             if ("hype".equals(t) && !HYPE_DIMS.contains(String.valueOf(r.getOrDefault("dim", "HYP")).toUpperCase(Locale.ROOT))) {
                 errors.add("requirements.hype");
             }
+            errors.addAll(CbcRequirements.validateShape(t, r, slots));
             Object count = r.get("count");
             if (count instanceof Number c && (c.intValue() < 1 || c.intValue() > slots.size())) {
                 errors.add("requirements.count:" + t);

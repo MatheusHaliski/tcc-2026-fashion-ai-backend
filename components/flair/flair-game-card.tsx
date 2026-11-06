@@ -1,16 +1,20 @@
 "use client";
-import { useState } from "react";
-import { LedNumber } from "@/components/led-number";
-import { STAT_META } from "./flair-card";
+import { FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
+import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
+import { FlairPieceCardArt, FlairPieceCardBack, FlairPieceCardHeader } from "./flair-piece-card-art";
+import { FlairPieceCardPanels } from "./flair-piece-card-panels";
 
 /**
  * Carta FLAIR (FLAIR-UT §3, seção E da prancha): a cópia da peça que a pessoa gerou com "Converter para FLAIR".
- * Frente: nota (OVR) e posição no alto, foto no centro, nome e marca, e a lista dos atributos reais de jogo. O Hype detalhado fica
- * no verso; dados ausentes aparecem como "—", nunca como zero. O nível (Bronze, Prata, Ouro,
- * Especial) é o metal e também vem escrito no rodapé (nunca só pela cor); o acabamento "raro" vem do Hype, não do preço.
- * Verso (↻): atributos de jogo, habilidade, temporada e o que decidiu o nível.
+ * Desde 06/11/2026 (docs/flair/carta-flair-peca-2026-11-06.md) ela tem a MESMA anatomia do card comum da peça
+ * (components/piece-card.tsx): cabeçalho, foto (.pc-media), identificação (.pc-id) e a janela segmentada Info | Hype.
+ * A única diferença é a arte de fundo por nível (FlairPieceCardArt: bronze, prata, ouro, especial) e a tinta sobre ela.
+ * No cabeçalho, no lugar de quem publicou, ficam a nota (OVR em LED), a posição e o nível ESCRITO (nunca só pela cor);
+ * o acabamento "raro" vem do Hype, não do preço. Dados ausentes aparecem como "—", nunca como zero.
+ * Com `flip`, vira como o card comum (↻ no cabeçalho): carta de peça mostra o verso do card comum (HypeCardBack);
+ * as demais, um verso simples com os atributos de jogo. Sem `flip` (escolha de carta, prévia), só a frente.
  */
 export type FlairTier = "BRONZE" | "PRATA" | "OURO" | "ESPECIAL";
 export const FLAIR_TIERS: FlairTier[] = ["ESPECIAL", "OURO", "PRATA", "BRONZE"];
@@ -29,44 +33,38 @@ export interface FlairCollectionCard {
   createdAt?: string; basis?: { priceUsed?: number | null; priceVerified?: boolean; cappedByUnverifiedPrice?: boolean } | null;
 }
 
-export function FlairGameCard({ card, size = "md", flip = true }: { card: FlairCollectionCard; size?: "sm" | "md" | "lg"; flip?: boolean }) {
-  const { t, fmtPrice } = useI18n();
-  const [back, setBack] = useState(false);
+export function FlairGameCard({ card, size = "md", flip = true, interactive = true }: { card: FlairCollectionCard; size?: "sm" | "md" | "lg"; flip?: boolean;
+  /** false = carta dentro de um botão (escolhedor de cartas): janela fixa, sem botões aninhados */ interactive?: boolean }) {
+  const { t } = useI18n();
   const tierName = t(`flairCard.tier.${card.tier}`);
   const label = t("flairCard.aria", { tier: tierName, rare: card.rare ? ` ${t("flairCard.rare")}` : "", ovr: card.ovr, name: card.name, brand: card.brandName ? `, ${card.brandName}` : "" });
-  const statKeys = Object.keys(card.stats ?? {}).length ? Object.keys(card.stats!) : Object.keys(STAT_META);
-  const value = (k: (typeof HYPE_KEYS)[number]) => { const v = card.hype?.[k]; return v == null ? "—" : String(Math.round(v)); };
-  return (
-    <article className={`fgc fgc-${size} tier-${card.tier.toLowerCase()} ${card.rare ? "is-rare" : ""} ${card.state === "LOCKED_CHALLENGE" ? "is-locked" : ""}`} aria-label={label}>
-      {!back ? (
-        <div className="fgc-face"><span className="fgc-metal-light" aria-hidden="true" />
-          <div className="fgc-top">
-            <span className="fgc-ovr tabular" aria-hidden><b><LedNumber value={card.ovr} /></b><small>{card.position}</small></span>
-            {card.brandName && <span className="fgc-brand-mark" aria-hidden>{card.brandName.slice(0, 1).toUpperCase()}</span>}
+  const locked = card.state === "LOCKED_CHALLENGE";
+  const classes = ["fai-card", "piece-card", "pc", "flair-piece-card", `fpc-${size}`, `tier-${card.tier.toLowerCase()}`, card.rare && "is-rare", locked && "is-locked"].filter(Boolean).join(" ");
+  const front = (
+    <article className={classes} data-card-mode="feed" aria-label={label}>
+      <FlairPieceCardArt />
+      <div className="pc-frame">
+        <div className="pc-content">
+          <FlairPieceCardHeader card={card} tierName={tierName} flip={flip} />
+          <div className="pc-media fpc-media">
+            {card.imageUrl ? <img src={mediaUrl(card.imageUrl)} alt="" loading="lazy" decoding="async" className="is-contain" /> : null}
           </div>
-          <div className="fgc-photo"><span className="fgc-photo-halo" aria-hidden="true" />{card.imageUrl ? <img src={mediaUrl(card.imageUrl)} alt="" loading="lazy" decoding="async" /> : null}</div>
-          <p className="fgc-name">{card.name}</p>
-          <p className="fgc-brand">{card.brandName ?? t("flairCard.semMarca")}</p>
-          <dl className="fgc-hype fgc-attributes tabular" aria-label={t("flairCard.statsLabel")}>
-            {statKeys.map(k => <div key={k} title={STAT_META[k]?.hint ?? k}><dd>{card.stats?.[k] == null ? "—" : Math.round(card.stats[k])}</dd><dt>{k}</dt></div>)}
-          </dl>
-          <p className="fgc-foot"><span>{tierName}{card.rare ? ` · ${t("flairCard.rare")}` : ""}</span><span aria-hidden>FAI</span></p>
+          <div className="pc-id">
+            <span className="pc-name">{card.name}</span>
+            <span className="pc-sub">{card.brandName ?? t("flairCard.semMarca")} · {t("flairCard.season", { season: seasonName(t, card.season) })}</span>
+            <FlairPieceCardPanels card={card} interactive={interactive} />
+          </div>
         </div>
-      ) : (
-        <div className="fgc-face fgc-back">
-          <p className="fgc-back-title">{card.name}</p>
-          {card.stats && <ul className="fgc-stats">{Object.entries(card.stats).map(([k, v]) => <li key={k}><span>{k}</span><span className="fgc-bar"><i style={{ width: `${Math.max(0, Math.min(100, v))}%` }} /></span><b className="tabular">{v}</b></li>)}</ul>}
-          <dl className="fgc-hype tabular" aria-label={card.hype ? t("flairCard.hypeLabel") : t("flairCard.noHype")}>
-            {HYPE_KEYS.map(k => <div key={k}><dd>{value(k)}</dd><dt>{k}</dt></div>)}
-          </dl>
-          {card.ability?.name && <p className="fgc-ability"><b>{card.ability.name}</b>{card.ability.text ? ` · ${card.ability.text}` : ""}</p>}
-          <p className="fgc-meta">{t("flairCard.season", { season: seasonName(t, card.season) })}</p>
-          {card.basis?.priceUsed != null && <p className="fgc-meta">{t(card.priceVerified ? "flairCard.priceVerified" : "flairCard.priceTyped", { price: fmtPrice(card.basis.priceUsed) })}</p>}
-          {card.basis?.cappedByUnverifiedPrice && <p className="fgc-meta">{t("flairCard.unverified")}</p>}
-          {card.state === "LOCKED_CHALLENGE" && <p className="fgc-meta">{t("flairCard.locked")}</p>}
-        </div>
-      )}
-      {flip && <button type="button" className="fgc-flip" aria-pressed={back} aria-label={back ? t("flairCard.front") : t("flairCard.back")} title={back ? t("flairCard.front") : t("flairCard.back")} onClick={() => setBack((b) => !b)}>↻</button>}
+      </div>
     </article>
+  );
+  if (!flip) return front;
+  return (
+    <FashionCard name={card.name} className={`fpc-flip fpc-${size}`}>
+      <FashionCardFront>{front}</FashionCardFront>
+      <FashionCardBack>
+        {card.originType === "PIECE" ? <HypeCardBack type="PIECE" id={card.originId} name={card.name} /> : <FlairPieceCardBack card={card} />}
+      </FashionCardBack>
+    </FashionCard>
   );
 }

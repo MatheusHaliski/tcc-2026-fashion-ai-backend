@@ -33,8 +33,6 @@ function FaiXpIcon() {
 function useIsActive() {
   const pathname = usePathname(); const { user } = useAuth();
   return (href: string) => {
-    // /mirror só redireciona para o espelho dentro do Meu Quarto: o quadro do redirecionamento já acende o quarto
-    if (href === "/room" && pathname === "/mirror") return true;
     if (href === "/lookbook") return pathname === "/lookbook" || (!!user && pathname === `/u/${user.username}`);
     if (href === "/schemes/new" || href === "/feed") return pathname === href;
     return pathname === href || pathname.startsWith(href + "/");
@@ -61,7 +59,7 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
             <ul>
               {items.map((n) => {
                 const on = n.href.startsWith("/admin") ? pathname.startsWith("/admin") : isActive(n.href);
-                // navegação derivada (Espelho dentro do Meu Quarto): o pai continua visível e o sub-item recuado é a página atual
+                // navegação derivada (lib/nav/active-override.ts): o pai continua visível e o sub-item recuado é a página atual
                 const child = on && sub?.parent === n.href ? sub : null;
                 return (
                   <li key={n.href}>

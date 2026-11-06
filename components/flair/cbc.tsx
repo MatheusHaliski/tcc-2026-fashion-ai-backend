@@ -297,7 +297,7 @@ function Picker({ slot, cards, placed, onPick }: { slot: CbcSlot; cards: FlairCo
             <li key={c.id}>
               <button type="button" className={cn("cbc-pick", here && "is-here", elsewhere && "is-elsewhere", !fits(c) && "is-off")} onClick={() => onPick(c.id)} aria-pressed={here}
                 aria-label={`${c.name} · ${c.position} · ${c.ovr}${here ? ` · ${t("cbc.pick_here")}` : elsewhere ? ` · ${t("cbc.pick_move")}` : ""}`}>
-                <FlairGameCard card={c} size="sm" flip={false} />
+                <FlairGameCard card={c} size="sm" flip={false} interactive={false} />
                 <span className="cbc-pick-tag">{here ? t("cbc.pick_here") : elsewhere ? t("cbc.pick_move") : fits(c) ? t(`cbc.position.${c.position}`) : t("cbc.pick_off", { position: t(`cbc.position.${c.position}`) })}</span>
               </button>
             </li>

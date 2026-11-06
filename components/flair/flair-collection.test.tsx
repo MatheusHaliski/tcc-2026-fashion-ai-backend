@@ -20,18 +20,19 @@ const CARD = (over: Partial<FlairCollectionCard> = {}): FlairCollectionCard => (
 const shares = (calls: { method: string; path: string }[]) => calls.filter((c) => c.method === "POST" && c.path.includes("/shares"));
 
 describe("Carta FLAIR", () => {
-  it("frente com nota, posição, nível e atributos; no verso, sem Hype público, '—' e nunca 0", () => {
+  it("frente com nota, posição, nível e atributos; na aba Hype, sem Hype público, '—' e nunca 0", () => {
     loggedAs();
     renderApp(<FlairGameCard card={CARD({ rare: true })} />);
     const card = screen.getByRole("article", { name: /Carta FLAIR Prata rara, nota 68, Tênis Aero, Norte Sport/ });
     expect(card.textContent).toContain("68");
     expect(card.textContent).toContain("CAL");
     expect(card.textContent).toMatch(/Prata · rara/);
-    expect(Array.from(card.querySelectorAll(".fgc-attributes dd")).map(d => d.textContent)).toEqual(["40", "60"]);
-    fireEvent.click(screen.getByRole("button", { name: "Ver o verso da carta" }));
+    // a janela segmentada do card comum abre na aba Hype: a matriz do snapshot, vazia, mostra "—" (nunca 0)
+    expect(card.querySelectorAll(".fashion-hype-cell dd")).toHaveLength(8);
+    expect(Array.from(card.querySelectorAll(".fashion-hype-cell dd")).every(d => d.textContent === "—")).toBe(true);
+    fireEvent.click(screen.getByRole("tab", { name: /Info/ }));
     expect(screen.getByText("EDGE")).toBeTruthy();
-    expect(card.querySelectorAll(".fgc-hype dd")).toHaveLength(8);
-    expect(Array.from(card.querySelectorAll(".fgc-hype dd")).every(d => d.textContent === "—")).toBe(true);
+    expect(Array.from(card.querySelectorAll(".fpc-stat b")).map(d => d.textContent)).toEqual(["40", "60"]);
   });
 
   it("Minhas cartas FLAIR: separadas por nível, com a contagem", async () => {

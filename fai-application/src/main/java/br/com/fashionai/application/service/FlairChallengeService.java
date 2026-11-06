@@ -3,6 +3,7 @@ package br.com.fashionai.application.service;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.flair.CbcCardMapper;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair.CbcStory;
 import br.com.fashionai.application.moments.MomentService;
@@ -17,7 +18,6 @@ import br.com.fashionai.domain.model.FlairChallengeSubmission;
 import br.com.fashionai.domain.model.Moment;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.UserAchievement;
-import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.FlairChallengeDifficulty;
 import br.com.fashionai.domain.model.enums.FlairChallengeStatus;
 import br.com.fashionai.domain.model.enums.MomentNature;
@@ -39,7 +39,6 @@ import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -215,7 +214,7 @@ public class FlairChallengeService {
         List<Map<String, Object>> memories = new ArrayList<>();
         for (FlairChallenge c : all) {
             Moment m = c.getMomentId() == null ? null : ms.get(c.getMomentId());
-            if ((c.getMomentId() != null && m == null) || !visibleTo(viewer, c, m)) {
+            if (c.getSeries() != null || (c.getMomentId() != null && m == null) || !visibleTo(viewer, c, m)) {
                 continue;
             }
             Window w = window(c, m, now);
@@ -684,38 +683,9 @@ public class FlairChallengeService {
         return out;
     }
 
-    /** Cartas no formato do motor: tags do retrato da geração ou, em cartas antigas, da peça; datas da peça viva. */
+    /** Cartas no formato do motor ({@link CbcCardMapper}): tags do retrato ou da peça; datas da peça viva. */
     Map<UUID, CbcRules.Card> models(Collection<FlairCardInstance> list) {
-        Set<UUID> pieceIds = list.stream().filter(c -> "PIECE".equals(c.getOriginType())).map(FlairCardInstance::getOriginId).collect(Collectors.toSet());
-        Map<UUID, WardrobeItem> byId = pieces.findAllById(pieceIds).stream().collect(Collectors.toMap(WardrobeItem::getId, Function.identity()));
-        Map<UUID, CbcRules.Card> out = new LinkedHashMap<>();
-        for (FlairCardInstance c : list) {
-            WardrobeItem w = "PIECE".equals(c.getOriginType()) ? byId.get(c.getOriginId()) : null;
-            Map<String, Object> tags = c.getTagsJson() != null ? Json.map(c.getTagsJson()) : FlairCollectionService.tagsOf(w);
-            Map<String, Double> hype = new HashMap<>();
-            if (c.getHypeJson() != null) {
-                Json.map(c.getHypeJson()).forEach((k, v) -> {
-                    if (v instanceof Number n) {
-                        hype.put(k, n.doubleValue());
-                    }
-                });
-            }
-            Instant added = null;
-            LocalDate lastWorn = null;
-            if (w != null) {
-                added = w.getCreatedAt();
-                if (w.getPurchaseDate() != null) {
-                    // comprada antes de entrar no app: vale a data da compra (C2 olha a compra, não o cadastro)
-                    Instant bought = w.getPurchaseDate().atStartOfDay(ZoneOffset.UTC).toInstant();
-                    added = added == null || bought.isBefore(added) ? bought : added;
-                }
-                lastWorn = w.getLastWornDate();
-            }
-            out.put(c.getId(), new CbcRules.Card(c.getId(), c.getPosition(), c.getTier(), c.getOvr(), c.getBrandName(), c.getOriginType(),
-                    Set.copyOf(strings(tags.get("styles"))), Set.copyOf(strings(tags.get("colors"))), Set.copyOf(strings(tags.get("occasions"))),
-                    Set.copyOf(strings(tags.get("materials"))), hype, added, lastWorn, c.getCategory(), c.getSubcategory()));
-        }
-        return out;
+        return CbcCardMapper.models(list, pieces, FlairCollectionService::tagsOf);
     }
 
     List<Map<String, Object>> snapshot(Build b) {
@@ -791,7 +761,7 @@ public class FlairChallengeService {
         int base = basePoints(c, b.moment(), b.window());
         String ref = c.getRepeatLimit() > 1 ? c.getId() + ":" + attempt : c.getId().toString();
         if (base > 0 && b.evaluation().ok()) {
-            out.add(new Line("FLAIR_CBC", base, ref, "challenge"));
+            out.add(new Line(c.getSeries() != null ? "FLAIR_GLASS" : "FLAIR_CBC", base, ref, "challenge"));
         }
         if (b.evaluation().ok() && !b.evaluation().rediscovered().isEmpty()) {
             out.add(new Line("FLAIR_CBC_REDISCOVERY", REDISCOVERY_BONUS, c.getId().toString(), "rediscovery"));

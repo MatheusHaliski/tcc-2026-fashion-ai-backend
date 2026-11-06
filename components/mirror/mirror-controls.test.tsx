@@ -79,7 +79,7 @@ describe("MirrorControls — sem formulário", () => {
     expect(within(row).getByRole("link", { name: "Camiseta preta" }).getAttribute("href")).toBe("/pieces/a");
     fireEvent.click(within(row).getByRole("button", { name: /Mais ações/ }));
     expect((await screen.findByRole("menuitem", { name: "Provar no provador" })).getAttribute("href")).toBe("/try-on?provar=w.a");
-    expect(screen.getByRole("menuitem", { name: "Mostrar no quarto" }).getAttribute("href")).toBe("/room?piece=a");
+    expect(screen.queryByRole("menuitem", { name: "Mostrar no quarto" })).toBeNull();          // sem anfitrião com cena, não há "Mostrar no quarto"
     expect(calls.some((c) => c.path.includes("/swap"))).toBe(false);
   });
 

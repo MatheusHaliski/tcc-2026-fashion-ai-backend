@@ -98,4 +98,53 @@ public class FlairChallenge extends VersionedAuditableEntity {
 
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
+
+    // ================================================================== Glass Empire (V86): os 100 jogos FLAIR
+    /** Série do jogo (A–E); nulo = Desafio de Montagem clássico (fora do catálogo de jogos). */
+    @Column(length = 1)
+    private String series;
+
+    /** Número do jogo no catálogo (1–100), ordem de navegação. */
+    @Column(name = "game_number")
+    private Integer gameNumber;
+
+    /** SUITE, RUNWAY, CITY, BACKSTAGE ou COMMUNITY (distrito do Glass Empire). */
+    @Column(length = 20)
+    private String district;
+
+    /** COMMON, RARE, LEGENDARY ou COLLAB_DROP. */
+    @Column(length = 12)
+    private String rarity;
+
+    /** Nível FAI exigido para jogar (ESTREIA, STUDIO, LOFT); conferido no servidor antes de check/submit. */
+    @Column(name = "required_level", nullable = false, length = 20)
+    private String requiredLevel = "ESTREIA";
+
+    /** Faixa do guarda-roupa exigida (EM_MONTAGEM … MAISON_CLOSET, pelo Inventory Score). */
+    @Column(name = "required_wardrobe_level", nullable = false, length = 24)
+    private String requiredWardrobeLevel = "EM_MONTAGEM";
+
+    /** {minCards, maxCards, mala}. */
+    @Column(name = "deck_json", columnDefinition = "json")
+    private String deckJson;
+
+    /** {deckMin, mandatoryMin, mandatoryMax, play:{mode,…}, partial:{mode}}. */
+    @Column(name = "hype_json", columnDefinition = "json")
+    private String hypeJson;
+
+    /** Ficha do jogo: {objective, scenario, mandatory, sequence, reward, hypePlay, hypePartial}, cada um por idioma. */
+    @Column(name = "ficha_json", columnDefinition = "json")
+    private String fichaJson;
+
+    /** Kit 2D da cena (céu, chão, horizonte, props e coordenadas das vagas). */
+    @Column(name = "scene_json", columnDefinition = "json")
+    private String sceneJson;
+
+    /** [{type: ITEM|SPECIAL_CARD, code, names{…}, condition?}]. */
+    @Column(name = "rewards_json", columnDefinition = "json")
+    private String rewardsJson;
+
+    /** Capa do jogo no app (/flair/games/<slug>.webp). */
+    @Column(length = 160)
+    private String thumbnail;
 }

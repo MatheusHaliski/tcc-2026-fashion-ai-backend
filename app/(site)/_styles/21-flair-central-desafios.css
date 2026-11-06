@@ -138,7 +138,6 @@ button.cbc-slot-btn:hover { border-color: var(--line); background: var(--surface
 .cbc-pick:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .cbc-pick.is-here { border-color: var(--thread); background: var(--thread-soft); }
 .cbc-pick.is-elsewhere { opacity: .7; }
-.cbc-pick.is-off .fgc { filter: grayscale(.4); }
 .cbc-pick-tag { font-family: var(--font-data); font-size: var(--text-label); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .cbc-pick.is-here .cbc-pick-tag { color: var(--thread-ink); }
 /* história e entregas */
@@ -162,7 +161,6 @@ button.cbc-slot-btn:hover { border-color: var(--line); background: var(--surface
 .gd-tile.is-on { border-color: var(--ink); }
 .gd-match { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; }
 .gd-match-side { display: grid; justify-items: center; gap: 4px; }
-.gd-match-side .fgc { --fgc-w: 120px; }
 .gd-match-score { display: grid; gap: 6px; justify-items: center; padding: 10px; }
 .gd-match-score > b { font-size: var(--text-h1); }
 .gd-rounds { display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; width: 100%; font-family: var(--font-data); font-size: var(--text-caption); }
@@ -171,7 +169,6 @@ button.cbc-slot-btn:hover { border-color: var(--line); background: var(--surface
 .gd-rounds li.is-win { color: var(--ink); } .gd-rounds li.is-win i { background: var(--thread); }
 .gd-convert { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; }
 .gd-convert .gd-card-frame { width: 150px; }
-.gd-convert .fgc { --fgc-w: 150px; }
 .gd-convert-arrow { display: grid; justify-items: center; gap: 4px; }
 .gd-deck { display: grid; gap: 8px; padding: 12px; width: min(340px, 100%); }
 .gd-deck-power { display: flex; align-items: baseline; gap: 8px; } .gd-deck-power b { font-size: var(--text-h1); }
