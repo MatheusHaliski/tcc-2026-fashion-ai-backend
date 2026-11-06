@@ -142,3 +142,30 @@ paramétrico vestido com a foto: um .glb rígido sem esqueleto atravessaria o co
 braços. Para vestir de verdade, cada modelo precisaria de rig + métricas (GarmentFitGate) e virar
 `garment_assets_3d` APPROVED. Efeito colateral bom: a peça do catálogo com modelo chega ao provador como
 `COMPLETED` e ele não pede outra geração RF16.
+
+## Provador veste o `.glb` do produto (06/11/2026)
+
+Pedido: o avatar do provador vestir o `.glb` da peça em vez do molde paramétrico, respeitando P/M/G/GG.
+
+**SAM 3D Body não resolve isto:** ele reconstrói o *corpo* de uma pessoa numa foto (malha MHR, pose); não veste
+roupa. O caminho usado é geométrico, sem IA nem GPU (nada pago): encaixe pela categoria, membros alinhados aos eixos
+do avatar, volume onde a Meshy deixou a peça rasa, colisão, transferência de pesos de pele por membro e volta ao
+repouso (detalhes em `fase3-provador.md`).
+
+**Medido** (corpo feminino padrão, pose de exibição; render em Chromium/three.js em frente, lado, costas, braços
+para frente, caminhada e agachamento):
+
+| Peça (.glb WEB) | Resultado | Dentro do corpo | Esticamento p95 | Mais longe da pele |
+|---|---|---|---|---|
+| VMHARUKI Blazer, P (−1) | aceito | 0,01% | 1,44 | 6 cm |
+| VMHARUKI Blazer, M (0) | aceito | 0,01% | 1,58 | 7 cm |
+| VMHARUKI Blazer, GG (+2) | recusado (ESTICADA 1,87) → molde | — | — | — |
+| Jeans VMRIVER, M | aceito | 0% | 1,00 | 9 cm |
+| Camiseta Billabong (foto com manga aberta) | recusada (ESTICADA 1,87) → molde | — | — | — |
+
+Tempo do ajuste: 0,55 s por peça (33 mil vértices), uma vez por corpo × peça × tamanho. As iterações que mais
+contaram: pesos da manga pela altura do eixo do braço, corte da fusão manga × tronco, solda das costuras de UV
+(1,8 s → 0,55 s e fim das fendas no jeans agachado) e limite do volume (espinhos de 60 cm na camiseta).
+
+**Situação dos dados:** o `--apply` da importação ainda não rodou (nenhum `.glb` em `catalog/model3d/` no bucket);
+até lá nenhum produto tem modelo e o provador segue com o molde.
