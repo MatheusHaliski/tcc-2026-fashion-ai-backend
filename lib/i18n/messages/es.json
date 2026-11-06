@@ -9930,5 +9930,18 @@
   "games.scene.announce": "{slot}: {effect} +{bonus}; Aura Hype {from} → {to}.",
   "games.scene.perfect": "Montaje perfecto: la escena se enciende en dorado.",
   "games.scene.credit": "Foto: {title} · {creator} · {license}.",
-  "games.scene.source": "Ver la foto original"
+  "games.scene.source": "Ver la foto original",
+  "flair.match.title": "Escenario del enfrentamiento: {a} × {b}",
+  "flair.match.score": "Marcador: {a} {sa}, {b} {sb}",
+  "flair.match.round": "Ronda {n}",
+  "flair.match.pair": "Pareja {n} · {label}",
+  "flair.match.wins": "gana {side}",
+  "flair.match.theme": "Tema de la partida",
+  "flair.match.skip": "Mostrar todas las rondas",
+  "flair.match.effect_line": "{side}: {effect}, Aura Hype {from} → {to}.",
+  "flair.match.announce": "Ronda {n} de {total} · {round}: {result}. {effects}",
+  "flair.match.final_win": "{side} gana el enfrentamiento: luz dorada en el escenario.",
+  "flair.match.final_draw": "Empate en el enfrentamiento: el escenario queda dividido.",
+  "hypeLive.up": "El Hype subió {n, plural, one {# punto} other {# puntos}}",
+  "hypeLive.down": "El Hype bajó {n, plural, one {# punto} other {# puntos}}"
 }

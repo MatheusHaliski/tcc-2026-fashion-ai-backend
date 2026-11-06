@@ -71,7 +71,8 @@ function Announce({ pin, glass, perfect }: { pin?: PhotoPin; glass?: GlassSlot; 
   return <p className="sr-only" role="status" aria-live="polite">{text}{perfect ? ` ${t("games.scene.perfect")}` : ""}</p>;
 }
 
-function PhotoCredit({ credit }: { credit: GameSceneCredit }) {
+/** Crédito da fotografia (licença livre) sob a cena; também usado no palco dos confrontos. */
+export function PhotoCredit({ credit }: { credit: GameSceneCredit }) {
   const { t } = useI18n();
   return (
     <p className="gep-credit">

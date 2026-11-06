@@ -9930,5 +9930,18 @@
   "games.scene.announce": "{slot}: {effect} +{bonus}; Aura Hype {from} → {to}.",
   "games.scene.perfect": "Montagem perfeita: a cena acende a luz dourada.",
   "games.scene.credit": "Foto: {title} · {creator} · {license}.",
-  "games.scene.source": "Ver a foto original"
+  "games.scene.source": "Ver a foto original",
+  "flair.match.title": "Palco do confronto: {a} × {b}",
+  "flair.match.score": "Placar: {a} {sa}, {b} {sb}",
+  "flair.match.round": "Rodada {n}",
+  "flair.match.pair": "Par {n} · {label}",
+  "flair.match.wins": "vence {side}",
+  "flair.match.theme": "Tema da partida",
+  "flair.match.skip": "Mostrar todas as rodadas",
+  "flair.match.effect_line": "{side}: {effect}, Aura Hype {from} → {to}.",
+  "flair.match.announce": "Rodada {n} de {total} · {round}: {result}. {effects}",
+  "flair.match.final_win": "{side} vence o confronto: luz dourada no palco.",
+  "flair.match.final_draw": "Empate no confronto: o palco fica dividido.",
+  "hypeLive.up": "Hype subiu {n, plural, one {# ponto} other {# pontos}}",
+  "hypeLive.down": "Hype caiu {n, plural, one {# ponto} other {# pontos}}"
 }

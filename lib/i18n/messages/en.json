@@ -9930,5 +9930,18 @@
   "games.scene.announce": "{slot}: {effect} +{bonus}; Hype Aura {from} → {to}.",
   "games.scene.perfect": "Perfect build: the scene lights up in gold.",
   "games.scene.credit": "Photo: {title} · {creator} · {license}.",
-  "games.scene.source": "View the original photo"
+  "games.scene.source": "View the original photo",
+  "flair.match.title": "Match stage: {a} × {b}",
+  "flair.match.score": "Score: {a} {sa}, {b} {sb}",
+  "flair.match.round": "Round {n}",
+  "flair.match.pair": "Pair {n} · {label}",
+  "flair.match.wins": "{side} wins",
+  "flair.match.theme": "Match theme",
+  "flair.match.skip": "Show all rounds",
+  "flair.match.effect_line": "{side}: {effect}, Aura Hype {from} → {to}.",
+  "flair.match.announce": "Round {n} of {total} · {round}: {result}. {effects}",
+  "flair.match.final_win": "{side} wins the match: golden light on stage.",
+  "flair.match.final_draw": "The match is a draw: the stage stays split.",
+  "hypeLive.up": "Hype rose {n, plural, one {# point} other {# points}}",
+  "hypeLive.down": "Hype fell {n, plural, one {# point} other {# points}}"
 }
