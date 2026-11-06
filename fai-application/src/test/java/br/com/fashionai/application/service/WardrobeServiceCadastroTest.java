@@ -124,7 +124,7 @@ class WardrobeServiceCadastroTest {
     @Test
     void cadastroPeloCatalogoUsaAFotoOficial() {
         UUID product = UUID.randomUUID();
-        var pick = new WardrobeService.CatalogPick(product, null, "/catalogo/p.jpg", "/catalogo/p-thumb.jpg", Map.of("crop", 1));
+        var pick = new CatalogPick(product, null, "/catalogo/p.jpg", "/catalogo/p-thumb.jpg", Map.of("crop", 1));
         Views.PieceView v = service.createFromCatalog(ana, simple(null), pick);
         WardrobeItem w = service.owned(ana, v.id());
         assertThat(w.getCatalogProductId()).isEqualTo(product);
@@ -135,13 +135,13 @@ class WardrobeServiceCadastroTest {
         assertThat(w.getBrandName()).isNull();
 
         // produto sem foto: imagem padrão
-        Views.PieceView semFoto = service.createFromCatalog(ana, simple(null), new WardrobeService.CatalogPick(product, null, " "));
+        Views.PieceView semFoto = service.createFromCatalog(ana, simple(null), new CatalogPick(product, null, " "));
         WardrobeItem w2 = service.owned(ana, semFoto.id());
         assertThat(w2.isDefaultImage()).isTrue();
         assertThat(w2.getImageOrigin()).isEqualTo(ImageOrigin.DEFAULT);
         assertThat(w2.getImageUrl()).isEqualTo("/assets_pecas/padrao.png");
         // foto sem miniatura: a própria foto
-        Views.PieceView semThumb = service.createFromCatalog(ana, simple(null), new WardrobeService.CatalogPick(product, null, "/c.jpg"));
+        Views.PieceView semThumb = service.createFromCatalog(ana, simple(null), new CatalogPick(product, null, "/c.jpg"));
         assertThat(service.owned(ana, semThumb.id()).getThumbnailUrl()).isEqualTo("/c.jpg");
     }
 

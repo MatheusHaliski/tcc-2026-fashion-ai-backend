@@ -36,6 +36,8 @@ export interface CatalogProduct {
   source: { type: string; domain: string; productUrl: string; status: string; lastVerifiedAt: string }; ingestionStatus: string; ownersCount: number;
   matchScore?: MatchScore; matchPercent?: number; variants?: CatalogVariant[]; selectedVariant?: CatalogVariant | null;
   images?: CatalogProductImage[]; aliases?: string[];
+  /** Etapa 3: modelo 3D de vitrine publicado do produto (/media/…, sem esqueleto: manequim, quarto, visualizador). */
+  model3dUrl?: string | null;
 }
 export interface SearchIntent { brand?: string | null; brandKnown: boolean; category?: string | null; subcategory?: string | null; keywords: string[]; color?: string | null; design?: DesignTraits | null }
 export interface SearchResponse { intent: SearchIntent; results: CatalogProduct[]; total: number; enoughInput: boolean; canSearchOfficial?: boolean; message?: string | null }

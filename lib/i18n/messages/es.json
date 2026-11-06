@@ -2728,6 +2728,7 @@
   "model3d.relevo_aviso": "Relieve generado a partir de la foto — no es una reconstrucción fiel de la prenda.",
   "model3d.tentar_gratis": "Intentar de nuevo (gratis)",
   "model3d.ver": "Ver en 3D",
+  "model3d.vitrine_aviso": "Modelo 3D de vitrina de la prenda. En el avatar que se mueve, la prenda se muestra con su molde y la foto.",
   "model3d.viewer_aviso": "Modelo 3D generado a partir de la foto de la prenda: sirve para ver volumen y proporción, no reemplaza la foto de producto.",
   "model3dPanel.a_geracao_3d_falhou": "La generación 3D falló.",
   "model3dPanel.arquivo_glb_salvo": "Modelo 3D guardado",

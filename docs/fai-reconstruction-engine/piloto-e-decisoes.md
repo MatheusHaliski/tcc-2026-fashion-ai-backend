@@ -102,3 +102,43 @@ da Fase 1 (gorro, relógio, chinelo, meia) estavam corretas. Mas só ~3 das 11 r
 - Painel de revisão humana (hoje só pela API).
 - CI da `main` com falhas antigas, fora deste serviço (testes do front, do catálogo Python e gitleaks), que impedem
   o deploy automático do backend no Railway.
+
+## Etapa 3 — .glb da Meshy do lote do Codex (03/11/2026)
+
+**Pacote** `fashionai-mysql-mac.tar.gz` (1,16 GB, `transfers/meshy/<data>/` no bucket): SHA256SUMS conferido. Não
+traz dump de banco nem .glb soltos: os .glb estão dentro do SQLite `generated-glbs.sqlite3` (formato
+`FAI_GLB_ARCHIVE_V1`), em pedaços de 1 MiB (`glb_files` → `glb_file_parts` → `glb_blobs`). São 146 produtos ×
+5 arquivos (`base` + P/M/G/GG, a mesma malha escalada "relative visual scaling only"); só o `base` é usado.
+Os ids do Codex são 20 hex, não o UUID do catálogo: a ligação é pela URL oficial (única por cor) e, sem ela, por
+marca + nome (nome repetido entre cores = ambíguo, não entra).
+
+**Medições (146 .glb base, meshy-6-lite, exportados pelo Blender):**
+
+| Medida | Valor |
+|---|---|
+| Triângulos | 28.251–31.430 (mediana 31.046), 1 malha, 1 material PBR |
+| Texturas | 3 × 2048 px (cor JPEG, metal/rugosidade JPEG, normal map **PNG**) |
+| Tamanho | 4,8–13,7 MB (mediana 8,1): 133 acima do perfil WEB (6 MB), 4 acima de 12 MB |
+| Versão WEB (só texturas) | 113 com normal → JPEG, 24 com texturas em 1024 px, 9 já cabiam; máx. 5,96 MB, mediana 4,69 |
+| Espessura (Z / maior lado da frente) | mediana 0,15; 11 abaixo de 0,10 (relevo: `THIN_PROFILE`, REVISAR); 1 jeans com 0,03 |
+| Escala | normalizada (maior lado ≈ 1,9), sem medida da marca: cada tela encaixa o modelo na caixa da peça |
+| Revisão do Codex | 136 sem pessoa visível; 9 em quarentena por artefato; 1 com manequim → os 10 viram RUIM |
+
+Renders de frente, lado e costas (three.js no Chromium) de 20 peças, com a foto oficial ao lado: a frente
+reproduz cor, estampa e logo; as costas dos aprovados pelo Codex são plausíveis; as quarentenas têm defeito real
+(costas cinzas na Vans infantil, torso de manequim no VMCHITA, punhos escuros nos VMWILLOW); de lado, camisetas,
+jeans e regatas ficam finos.
+
+**Decisão — onde o modelo entra:** tabela nova `catalog_product_models_3d` (V97), não `garment_assets_3d`. O
+`garment_assets_3d` é o asset que veste o avatar (esqueleto, GarmentFitGate); o .glb da Meshy não tem esqueleto nem
+métricas de vestir, e marcar APPROVED sem elas furaria o gate. O modelo do produto (PUBLISHED) vai como
+`model3dUrl` no card do catálogo (lista, busca, detalhe) e é copiado para `wardrobe_items.model3d_url` (o campo de
+vitrine do RF16) quando a pessoa leva a peça; o `--apply` também preenche as peças que já vieram desse produto.
+
+**Onde aparece:** card do catálogo ("Ver em 3D"), card expandido da peça, painel 3D da peça, peça exposta no
+Meu Quarto 3D e o manequim de cápsula (a reserva quando o avatar humano não carrega). **Onde não aparece:** em
+corpo humano (provador, espelho, visualizador do look, desfile e o avatar do quarto), que continua com o molde
+paramétrico vestido com a foto: um .glb rígido sem esqueleto atravessaria o corpo ao andar, sentar e levantar os
+braços. Para vestir de verdade, cada modelo precisaria de rig + métricas (GarmentFitGate) e virar
+`garment_assets_3d` APPROVED. Efeito colateral bom: a peça do catálogo com modelo chega ao provador como
+`COMPLETED` e ele não pede outra geração RF16.

@@ -2728,6 +2728,7 @@
   "model3d.relevo_aviso": "Relief generated from the photo — not a faithful reconstruction of the piece.",
   "model3d.tentar_gratis": "Try again (free)",
   "model3d.ver": "View in 3D",
+  "model3d.vitrine_aviso": "Showcase 3D model of the piece. On the moving avatar, the piece is shown with its pattern and photo.",
   "model3d.viewer_aviso": "3D model generated from the piece photo: it shows volume and proportion, it does not replace the product photo.",
   "model3dPanel.a_geracao_3d_falhou": "3D generation failed.",
   "model3dPanel.arquivo_glb_salvo": "3D model saved",

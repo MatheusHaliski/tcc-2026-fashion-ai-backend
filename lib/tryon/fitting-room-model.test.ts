@@ -27,6 +27,13 @@ describe("product data survives the fitting adapters",()=>{
     product.catalogImage!.whole = { url: "/media/whole-shorts.png", box: { x: 0, y: 0, w: 1, h: 1 }, processed: true, rendered: true };
     expect(processedImageOf(product)).toBe("/media/whole-shorts.png");
   });
+  it("carries the product showcase model so the fitting room never asks for another 3D generation", () => {
+    const base = { id: "tee", brand: null, productName: "Tee", category: "upper_piece", subcategory: "t_shirt",
+      catalogImage: { imageId: "f", mode: "PROCESSED", url: "/media/tee.jpg" } } as unknown as CatalogProduct;
+    const withModel = fromCatalog({ ...base, model3dUrl: "/media/catalog/model3d/x/tee.glb" }, null, undefined)!;
+    expect(withModel).toMatchObject({ model3dUrl: "/media/catalog/model3d/x/tee.glb", model3dStatus: "COMPLETED" });
+    expect(fromCatalog(base, null, undefined)).toMatchObject({ model3dUrl: null, model3dStatus: null });
+  });
   it("keeps catalogue material, product color and high-rise name through to the render spec",()=>{
     const product={id:"jeans",brand:null,productName:"Jeans cintura alta",category:"lower_piece",subcategory:"jeans",material:"DENIM",colorHex:"#234567",variation:"SKINNY",attributes:{RISE:["LOW_RISE"]}} as CatalogProduct;
     const fitting=fromCatalog(product,null,undefined)!;
