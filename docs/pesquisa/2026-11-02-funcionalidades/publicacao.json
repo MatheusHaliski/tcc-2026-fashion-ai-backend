@@ -1,0 +1,30 @@
+{
+  "prepared_on": "2026-11-05",
+  "timezone": "America/Sao_Paulo",
+  "research_date": "2026-11-02",
+  "evaluated_revision": "6bd645813426978634b7678ac7765ee89f8caea3",
+  "publication_base_revision": "6b370d9ab4cee1078e14d752689c24edc305b387",
+  "documentation_only": true,
+  "assessed_macro_features": 39,
+  "individual_dimension_rationales": 234,
+  "candidate_requirements": 10,
+  "public_sources": 7,
+  "inventoried_pages": 93,
+  "internal_rf_ids": 39,
+  "official_rf_renumbering": false,
+  "evidence_references_checked_against_historical_blobs": 94,
+  "score_recalculation": "39/39 passed; Decimal HALF_UP; weights total100%",
+  "application_tests_run": false,
+  "browser_tests_run": false,
+  "live_data_accessed": false,
+  "paid_inference_run": false,
+  "limitations": [
+    "Static assessment of the recorded revision, not production validation",
+    "No new empirical evaluation of commits after the research snapshot"
+  ],
+  "line_ratchet": {
+    "governed_files": 3158,
+    "frozen_files": 222,
+    "violations": 0
+  }
+}

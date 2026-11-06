@@ -41,6 +41,9 @@
   gap: 0.4rem;
 }
 .tree button {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
   text-align: start;
   overflow-wrap: anywhere;
 }

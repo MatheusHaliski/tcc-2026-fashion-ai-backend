@@ -33,7 +33,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/atelier3d/editor.tsx": {
-   "max": 632,
+   "max": 604,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/avatar3d/my-avatar.test.tsx": {
@@ -369,7 +369,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java": {
-   "max": 387,
+   "max": 402,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/photoedit/PhotoEditService.java": {

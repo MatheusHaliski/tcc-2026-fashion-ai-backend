@@ -9,6 +9,7 @@ import {
   type Inspection,
   type Vec3,
 } from "@/lib/atelier3d/document";
+import { SceneCommandPanel } from "./scene-command-panel";
 import { MaterialFields, VectorField } from "./scene-fields";
 import styles from "./editor.module.css";
 
@@ -56,6 +57,9 @@ export function SceneInspector({
     <aside className={`${styles.panel} ${styles.inspector}`}>
       <fieldset disabled={!canEdit} className={styles.stack}>
         <h2 className="type-h3">{t("atelier3d.inspector")}</h2>
+        <SceneCommandPanel key={`${selected}:${primitive?.[0] ?? ""}`} asset={loaded} document={doc}
+          selected={selected} primitive={primitive?.[0]} editable={canEdit}
+          deformationBlocked={!!(inspection?.skinned || inspection?.morphs || inspection?.animated)} onChange={change} />
         {node && (
           <>
             <VectorField
