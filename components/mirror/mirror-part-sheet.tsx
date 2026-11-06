@@ -11,7 +11,7 @@ import type { MirrorData, MirrorPart, MirrorPieceRef } from "@/components/mirror
 /*
  * Folha de uma parte do look (Parte de cima, Peça única, Parte de baixo, Calçado, Acessório): tudo em botões e listas.
  *  - Vestindo agora: o card compacto de peça (o mesmo do Provador) com Tirar, Manter (âncora do Vista-me) e, no menu ⋯,
- *    Mostrar no quarto, Provar no provador e Tirar da lista do espelho.
+ *    Provar no provador e Tirar da lista do espelho (Mostrar no quarto só quando um anfitrião com cena o oferece).
  *  - Roupas em mãos (vocabulário do quarto): a lista do espelho — peças trazidas do quarto para esta parte, ainda não
  *    vestidas (tocar veste; "Tirar da lista" devolve ao guarda-roupa) — e a peça segurada pelo personagem.
  *  - Do guarda-roupa: todas as peças que servem nesta parte (a Parte de cima junta camisetas e jaquetas/blazers).
@@ -76,7 +76,7 @@ export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTog
               {worn.map((p) => {
                 const asset = assetStateOf(p); const pin = pinned.has(p.id);
                 const menu: MenuItem[] = [
-                  showInRoom ? { label: t("mirror.sheet.mostrar_no_quarto"), onSelect: () => showInRoom(p) } : { label: t("mirror.sheet.mostrar_no_quarto"), href: `/room?piece=${encodeURIComponent(p.id)}` },
+                  ...(showInRoom ? [{ label: t("mirror.sheet.mostrar_no_quarto"), onSelect: () => showInRoom(p) }] : []),
                   { label: t("mirror.provar_no_provador"), href: `/try-on?provar=w.${encodeURIComponent(p.id)}` },
                   { label: t("mirror.sheet.tirar_da_lista"), onSelect: () => void unlist(p), danger: true },
                 ];

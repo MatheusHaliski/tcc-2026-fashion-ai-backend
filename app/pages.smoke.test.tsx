@@ -42,8 +42,8 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=
 
 describe("telas do app abrem sem quebrar", () => {
   // Rotas de redirecionamento não têm conteúdo: /lookbook é testado abaixo; /dashboard em celebrity-profile.test.tsx;
-  // /mirror (o Espelho fica dentro do Meu Quarto) em mirror-redirect.test.tsx.
-  const entries = Object.entries(pages).filter(([p]) => p !== "./(site)/page.tsx" && !p.includes("[...missing]") && !p.includes("/lookbook/page.tsx") && !p.includes("/mirror/page.tsx") && p !== "./(site)/(app)/dashboard/page.tsx");
+  // /room (links antigos do Meu Quarto) em mirror-redirect.test.tsx, mas fica aqui: mostra o esqueleto enquanto redireciona.
+  const entries = Object.entries(pages).filter(([p]) => p !== "./(site)/page.tsx" && !p.includes("[...missing]") && !p.includes("/lookbook/page.tsx") && p !== "./(site)/(app)/dashboard/page.tsx");
 
   it("há telas para testar", () => { expect(entries.length).toBeGreaterThan(20); });
 

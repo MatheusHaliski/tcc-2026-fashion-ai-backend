@@ -73,9 +73,9 @@ export function FlairModes({ initial, onPlayed, skin }: { initial?: string | nul
               <span className="fm-card-emoji" aria-hidden>{loftUnlocked ? "✨" : "🔒"}</span><p className="type-h3">{t("afterparty.title")}</p><p className="type-body-sm text-muted">{t("afterparty.lead")}</p>
               <p className="type-caption">{loftUnlocked ? t("flair.modes.afterparty.open") : t("flair.modes.afterparty.locked", { level: t("levelProgress.name.LOFT") })}</p>
             </Link>
-            <Link href={loftUnlocked ? "/flair/heist" : "/points"} className={cn("fm-card", !loftUnlocked && "fm-card-locked")} aria-label={loftUnlocked ? t("galaHeist.open") : t("flair.modes.afterparty.locked", { level: t("levelProgress.name.LOFT") })}>
-              <span className="fm-card-emoji" aria-hidden>{loftUnlocked ? "💎" : "🔒"}</span><p className="type-h3">{t("galaHeist.title")}</p><p className="type-body-sm text-muted">{t("galaHeist.lead")}</p>
-              <p className="type-caption">{loftUnlocked ? t("galaHeist.open") : t("flair.modes.afterparty.locked", { level: t("levelProgress.name.LOFT") })}</p>
+            <Link href="/flair/jogos" className="fm-card" aria-label={t("flair.modes.glass.open")}>
+              <span className="fm-card-emoji" aria-hidden>🏙️</span><p className="type-h3">{t("flair.hub.mode.games.title")}</p><p className="type-body-sm text-muted">{t("flair.hub.mode.games.lead")}</p>
+              <p className="type-caption">{t("flair.modes.glass.open")}</p>
             </Link>
           </div>
         </section>

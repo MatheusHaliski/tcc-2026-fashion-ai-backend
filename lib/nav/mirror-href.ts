@@ -1,18 +1,19 @@
 /*
- * O Espelho é uma navegação derivada do Meu Quarto (RF27 ↔ RF28): não há mais tela própria — o link leva ao quarto, que
- * vai até o espelho e abre a prova ali mesmo. `/mirror` continua existindo só para redirecionar links antigos.
+ * O Espelho (RF28) tem casa própria: /mirror. O Meu Quarto deixou de ser uma tela (o quarto continua como dados e como
+ * cenário dos jogos da Suíte de Vidro), e os links do app — detalhe da peça, insights, lookbook — apontam direto ao espelho.
  *
- *   /room?espelho=1                 quarto com a prova do espelho aberta
- *   /room?espelho=1&vestir=<id>     leva a peça ao espelho (lista do espelho) e veste
- *   /room?espelho=1&vista=2d        abre com a prévia 2D (foto parada do mesmo avatar) no painel
+ *   /mirror                       o espelho com o look de agora
+ *   /mirror?vestir=<id>           veste a peça ao abrir (parâmetro de uma vez só: sai da URL depois)
+ *   /mirror?vestir=<id>&vista=2d  idem, com a prévia 2D (o palco do espelho já é a foto parada do avatar)
  *
- * `?piece=` no quarto continua significando "Mostrar no quarto" (RF32.CA09) e por isso não é reaproveitado.
+ * `/room` e `/room?espelho=1…` (links antigos) são redirecionados em app/(site)/(app)/room/page.tsx.
  */
-export const MIRROR_ROOM_PATH = "/room?espelho=1";
+export const MIRROR_ROOM_PATH = "/mirror";
 
 export function mirrorHref({ piece, vista }: { piece?: string | null; vista?: string | null } = {}): string {
-  const q = new URLSearchParams({ espelho: "1" });
+  const q = new URLSearchParams();
   if (piece) q.set("vestir", piece);
   if (vista === "2d") q.set("vista", "2d");
-  return `/room?${q.toString()}`;
+  const s = q.toString();
+  return s ? `${MIRROR_ROOM_PATH}?${s}` : MIRROR_ROOM_PATH;
 }

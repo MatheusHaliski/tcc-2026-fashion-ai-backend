@@ -274,7 +274,7 @@ describe("ExpandedPiece — o dono", () => {
     await waitFor(() => expect(api.calls.some((c) => c.method === "PATCH" && (c.body as { favorite?: boolean }).favorite === false)).toBe(true));
     await openMore();
     expect(await screen.findByRole("menuitem", { name: "Marcar como favorita" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "Mostrar no quarto" }).getAttribute("href")).toBe("/room?piece=p1");
+    expect(screen.queryByRole("menuitem", { name: "Mostrar no quarto" })).toBeNull();          // o Meu Quarto deixou de ser uma tela
     expect(screen.getByRole("menuitem", { name: "Foto com meu manequim" })).toBeTruthy();
   });
 

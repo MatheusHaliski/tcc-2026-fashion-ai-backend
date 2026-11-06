@@ -975,7 +975,7 @@ public class InventoryScoreService {
         out.put("eligible", r.eligible());
         out.put("weakest", weakest);
         out.put("actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_pecas_esquecidas"), "filter", "state:forgotten"),
-                Map.of("label", Msg.t("common.criar_look_com_elas"), "action", "compose_forgotten"), Map.of("label", Msg.t("inventoryScore.abrir_meu_quarto"), "href", "/room")));
+                Map.of("label", Msg.t("common.criar_look_com_elas"), "action", "compose_forgotten"), Map.of("label", Msg.t("inventoryScore.abrir_meu_quarto"), "href", "/flair/jogos?district=SUITE")));
         out.put("suggestedChallenges", suggestedChallenges(r));
         return out;
     }

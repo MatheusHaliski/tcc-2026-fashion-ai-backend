@@ -1,0 +1,285 @@
+[
+  {
+    "number": 1,
+    "slug": "a01-espelho-partido",
+    "series": "A",
+    "district": "SUITE",
+    "names": { "pt-BR": "Espelho Partido", "en": "Shattered Mirror", "es": "Espejo Roto" },
+    "descriptions": {
+      "pt-BR": "Recompor o espelho da suíte com cinco cacos de cor.",
+      "en": "Piece the suite mirror back together with five shards of colour.",
+      "es": "Recomponer el espejo de la suite con cinco esquirlas de color."
+    },
+    "points": 25,
+    "repeatLimit": 1,
+    "adapted": false,
+    "themeTags": ["minimal", "black", "silver"],
+    "deck": { "minCards": 4, "maxCards": 5, "mala": null },
+    "hype": {
+      "deckMin": "LOW_SIGNAL",
+      "mandatoryMin": "NICHE",
+      "mandatoryMax": "TRENDING",
+      "play": { "mode": "BONUS_ABOVE_RELEVANT", "cap": 3 },
+      "partial": { "mode": "UP_DOWN" }
+    },
+    "slots": [
+      {
+        "key": "caco_central",
+        "position": "VES",
+        "optional": false,
+        "accepts": {},
+        "label": { "pt-BR": "Caco central", "en": "Centre shard", "es": "Esquirla central" },
+        "story": {
+          "pt-BR": "No caco central, {name}{brand, select, none {} other { da {brand}}} devolve o reflexo inteiro.",
+          "en": "In the centre shard, {name}{brand, select, none {} other { by {brand}}} brings the whole reflection back.",
+          "es": "En la esquirla central, {name}{brand, select, none {} other { de {brand}}} devuelve el reflejo entero."
+        },
+        "effects": {
+          "comum": { "pt-BR": "O caco se encaixa e brilha.", "en": "The shard clicks into place and shines.", "es": "La esquirla encaja y brilla." },
+          "metamorfose": { "pt-BR": "O espelho muda de cor com a peça.", "en": "The mirror changes colour with the piece.", "es": "El espejo cambia de color con la prenda." },
+          "impersonation": { "pt-BR": "O reflexo veste a peça por você.", "en": "The reflection wears the piece for you.", "es": "El reflejo viste la prenda por ti." }
+        },
+        "bonus": { "metamorfose": 2, "impersonation": 3 }
+      },
+      {
+        "key": "caco_esquerdo",
+        "position": "SUP",
+        "optional": false,
+        "accepts": { "color": ["black", "silver"] },
+        "label": { "pt-BR": "Caco esquerdo", "en": "Left shard", "es": "Esquirla izquierda" },
+        "story": {
+          "pt-BR": "À esquerda, {name}{brand, select, none {} other { da {brand}}} segura a luz da janela.",
+          "en": "On the left, {name}{brand, select, none {} other { by {brand}}} holds the window light.",
+          "es": "A la izquierda, {name}{brand, select, none {} other { de {brand}}} sostiene la luz de la ventana."
+        },
+        "effects": {
+          "comum": { "pt-BR": "Um brilho frio atravessa o caco.", "en": "A cold glint crosses the shard.", "es": "Un brillo frío cruza la esquirla." },
+          "metamorfose": { "pt-BR": "A janela escurece e o caco acende.", "en": "The window darkens and the shard lights up.", "es": "La ventana se oscurece y la esquirla se enciende." },
+          "impersonation": { "pt-BR": "O reflexo pisca para você.", "en": "The reflection winks at you.", "es": "El reflejo te guiña." }
+        },
+        "bonus": { "metamorfose": 1, "impersonation": 2 }
+      },
+      {
+        "key": "caco_direito",
+        "position": "INF",
+        "optional": false,
+        "accepts": {},
+        "label": { "pt-BR": "Caco direito", "en": "Right shard", "es": "Esquirla derecha" },
+        "story": {
+          "pt-BR": "À direita, {name}{brand, select, none {} other { da {brand}}} fecha a moldura.",
+          "en": "On the right, {name}{brand, select, none {} other { by {brand}}} closes the frame.",
+          "es": "A la derecha, {name}{brand, select, none {} other { de {brand}}} cierra el marco."
+        },
+        "effects": {
+          "comum": { "pt-BR": "A moldura se alinha.", "en": "The frame lines up.", "es": "El marco se alinea." },
+          "metamorfose": { "pt-BR": "A moldura ganha um veio dourado.", "en": "The frame gains a golden vein.", "es": "El marco gana una veta dorada." },
+          "impersonation": { "pt-BR": "O reflexo ajeita a gola por você.", "en": "The reflection fixes your collar for you.", "es": "El reflejo te arregla el cuello." }
+        },
+        "bonus": { "metamorfose": 1, "impersonation": 2 }
+      },
+      {
+        "key": "caco_do_chao",
+        "position": "CAL",
+        "optional": false,
+        "accepts": {},
+        "label": { "pt-BR": "Caco do chão", "en": "Floor shard", "es": "Esquirla del suelo" },
+        "story": {
+          "pt-BR": "No chão, {name}{brand, select, none {} other { da {brand}}} apoia o espelho inteiro.",
+          "en": "On the floor, {name}{brand, select, none {} other { by {brand}}} props the whole mirror up.",
+          "es": "En el suelo, {name}{brand, select, none {} other { de {brand}}} sostiene el espejo entero."
+        },
+        "effects": {
+          "comum": { "pt-BR": "O tapete recebe o último caco.", "en": "The rug receives the last shard.", "es": "La alfombra recibe la última esquirla." },
+          "metamorfose": { "pt-BR": "O tapete muda de textura.", "en": "The rug changes texture.", "es": "La alfombra cambia de textura." },
+          "impersonation": { "pt-BR": "O reflexo dá um passo à frente.", "en": "The reflection steps forward.", "es": "El reflejo da un paso al frente." }
+        },
+        "bonus": { "metamorfose": 1, "impersonation": 2 }
+      },
+      {
+        "key": "lasca",
+        "position": "ACE",
+        "optional": true,
+        "accepts": {},
+        "label": { "pt-BR": "Lasca", "en": "Splinter", "es": "Astilla" },
+        "story": {
+          "pt-BR": "Uma lasca a mais: {name}{brand, select, none {} other { da {brand}}} completa o detalhe.",
+          "en": "One extra splinter: {name}{brand, select, none {} other { by {brand}}} completes the detail.",
+          "es": "Una astilla más: {name}{brand, select, none {} other { de {brand}}} completa el detalle."
+        },
+        "effects": {
+          "comum": { "pt-BR": "A lasca brilha de leve.", "en": "The splinter glints softly.", "es": "La astilla brilla suavemente." },
+          "metamorfose": { "pt-BR": "A lasca vira um prisma.", "en": "The splinter becomes a prism.", "es": "La astilla se vuelve un prisma." },
+          "impersonation": { "pt-BR": "O reflexo mostra o acessório de perto.", "en": "The reflection shows the accessory up close.", "es": "El reflejo muestra el accesorio de cerca." }
+        },
+        "bonus": { "metamorfose": 1, "impersonation": 2 }
+      }
+    ],
+    "requirements": [
+      { "type": "distinctTags", "field": "color", "count": 3 },
+      { "type": "position", "position": "VES", "count": 1 },
+      { "type": "cards", "min": 4 },
+      { "type": "hypeBand", "min": "NICHE", "count": 2 }
+    ],
+    "rewards": [
+      { "type": "ITEM", "code": "GE-A01-MOLDURA-PRISMA", "names": { "pt-BR": "Moldura prisma", "en": "Prism frame", "es": "Marco prisma" } },
+      { "type": "SPECIAL_CARD", "code": "GE-A01-ESPELHO-INTEIRO", "names": { "pt-BR": "Espelho inteiro", "en": "Whole mirror", "es": "Espejo entero" }, "condition": "perfect" }
+    ],
+    "ficha": {
+      "objective": { "pt-BR": "Recompor o espelho com cinco cacos.", "en": "Piece the mirror together with five shards.", "es": "Recomponer el espejo con cinco esquirlas." },
+      "scenario": { "pt-BR": "A suíte ao anoitecer: o espelho caiu e a luz da janela corta os cacos.", "en": "The suite at dusk: the mirror fell and the window light cuts across the shards.", "es": "La suite al anochecer: el espejo cayó y la luz de la ventana corta las esquirlas." },
+      "mandatory": { "pt-BR": "Um vestido no caco central; três cores distintas.", "en": "A dress in the centre shard; three distinct colours.", "es": "Un vestido en la esquirla central; tres colores distintos." },
+      "sequence": { "pt-BR": "Centro, esquerda, direita, chão e, se quiser, a lasca.", "en": "Centre, left, right, floor and, if you like, the splinter.", "es": "Centro, izquierda, derecha, suelo y, si quieres, la astilla." },
+      "reward": { "pt-BR": "Moldura prisma; com montagem perfeita, a carta Espelho inteiro.", "en": "Prism frame; with a perfect build, the Whole mirror card.", "es": "Marco prisma; con montaje perfecto, la carta Espejo entero." },
+      "hypePlay": { "pt-BR": "Cada carta acima de Relevante dá +1 (até 3).", "en": "Each card above Relevant gives +1 (up to 3).", "es": "Cada carta por encima de Relevante da +1 (hasta 3)." },
+      "hypePartial": { "pt-BR": "Parciais sobem ou descem uma faixa.", "en": "Partials move one band up or down.", "es": "Las parciales suben o bajan una franja." }
+    },
+    "scene": {
+      "sky": ["#1B2440", "#3A3F6B"],
+      "ground": "#2C2F45",
+      "horizon": 62,
+      "accent": "#8FD3F4",
+      "props": [
+        { "k": "mirror", "x": 80, "y": 62, "s": 1.4 },
+        { "k": "window", "x": 16, "y": 24, "s": 1.2 },
+        { "k": "moon", "x": 138, "y": 16, "s": 0.8 },
+        { "k": "door", "x": 130, "y": 62 }
+      ],
+      "slots": {
+        "caco_central": [50, 56, "mirror"],
+        "caco_esquerdo": [22, 48, "door:1"],
+        "caco_direito": [78, 50, "door:2"],
+        "caco_do_chao": [50, 82, "rug"],
+        "lasca": [88, 80, "jewelry"]
+      }
+    }
+  },
+  {
+    "number": 21,
+    "slug": "b21-primeira-passarela",
+    "series": "B",
+    "district": "RUNWAY",
+    "names": { "pt-BR": "Primeira Passarela", "en": "First Runway", "es": "Primera Pasarela" },
+    "descriptions": {
+      "pt-BR": "Abrir o desfile com três cartas Bronze e um acessório forte.",
+      "en": "Open the show with three Bronze cards and a bold accessory.",
+      "es": "Abrir el desfile con tres cartas Bronce y un accesorio fuerte."
+    },
+    "points": 15,
+    "repeatLimit": 1,
+    "themeTags": ["streetwear", "white"],
+    "deck": { "minCards": 3, "maxCards": 4, "mala": 8 },
+    "hype": {
+      "deckMin": "LOW_SIGNAL",
+      "mandatoryMin": "LOW_SIGNAL",
+      "mandatoryMax": "VIRAL",
+      "play": { "mode": "NONE" },
+      "partial": { "mode": "NONE" }
+    },
+    "slots": [
+      {
+        "key": "entrada",
+        "position": "SUP",
+        "optional": false,
+        "accepts": { "tier": "BRONZE" },
+        "label": { "pt-BR": "Entrada", "en": "Entrance", "es": "Entrada" },
+        "story": {
+          "pt-BR": "Na entrada, {name}{brand, select, none {} other { da {brand}}} abre o desfile.",
+          "en": "At the entrance, {name}{brand, select, none {} other { by {brand}}} opens the show.",
+          "es": "En la entrada, {name}{brand, select, none {} other { de {brand}}} abre el desfile."
+        },
+        "effects": {
+          "comum": { "pt-BR": "As luzes acendem.", "en": "The lights come on.", "es": "Las luces se encienden." },
+          "metamorfose": { "pt-BR": "A passarela muda de cor.", "en": "The runway changes colour.", "es": "La pasarela cambia de color." },
+          "impersonation": { "pt-BR": "Você desfila a peça.", "en": "You walk the piece.", "es": "Desfilas la prenda." }
+        },
+        "bonus": { "metamorfose": 1, "impersonation": 2 }
+      },
+      {
+        "key": "meio",
+        "position": "INF",
+        "optional": false,
+        "accepts": { "tier": "BRONZE" },
+        "label": { "pt-BR": "Meio da passarela", "en": "Mid-runway", "es": "Medio de la pasarela" },
+        "story": {
+          "pt-BR": "No meio, {name}{brand, select, none {} other { da {brand}}} segura o ritmo.",
+          "en": "Mid-runway, {name}{brand, select, none {} other { by {brand}}} keeps the pace.",
+          "es": "En el medio, {name}{brand, select, none {} other { de {brand}}} mantiene el ritmo."
+        },
+        "effects": {
+          "comum": { "pt-BR": "O público acompanha.", "en": "The crowd follows.", "es": "El público acompaña." },
+          "metamorfose": { "pt-BR": "O chão vira espelho.", "en": "The floor turns into a mirror.", "es": "El suelo se vuelve espejo." },
+          "impersonation": { "pt-BR": "Você faz a pausa do meio.", "en": "You do the mid-runway pause.", "es": "Haces la pausa del medio." }
+        },
+        "bonus": { "metamorfose": 1, "impersonation": 2 }
+      },
+      {
+        "key": "final",
+        "position": "CAL",
+        "optional": false,
+        "accepts": { "tier": "BRONZE" },
+        "label": { "pt-BR": "Final", "en": "Finale", "es": "Final" },
+        "story": {
+          "pt-BR": "No final, {name}{brand, select, none {} other { da {brand}}} fecha a volta.",
+          "en": "At the finale, {name}{brand, select, none {} other { by {brand}}} closes the walk.",
+          "es": "Al final, {name}{brand, select, none {} other { de {brand}}} cierra la vuelta."
+        },
+        "effects": {
+          "comum": { "pt-BR": "Aplausos.", "en": "Applause.", "es": "Aplausos." },
+          "metamorfose": { "pt-BR": "Chuva de confete.", "en": "Confetti rain.", "es": "Lluvia de confeti." },
+          "impersonation": { "pt-BR": "Você agradece ao público.", "en": "You thank the crowd.", "es": "Agradeces al público." }
+        },
+        "bonus": { "metamorfose": 1, "impersonation": 2 }
+      },
+      {
+        "key": "acessorio",
+        "position": "ACE",
+        "optional": true,
+        "accepts": {},
+        "label": { "pt-BR": "Acessório", "en": "Accessory", "es": "Accesorio" },
+        "story": {
+          "pt-BR": "O detalhe: {name}{brand, select, none {} other { da {brand}}} rouba a foto.",
+          "en": "The detail: {name}{brand, select, none {} other { by {brand}}} steals the photo.",
+          "es": "El detalle: {name}{brand, select, none {} other { de {brand}}} se roba la foto."
+        },
+        "effects": {
+          "comum": { "pt-BR": "Um flash a mais.", "en": "One more flash.", "es": "Un flash más." },
+          "metamorfose": { "pt-BR": "O acessório brilha sozinho.", "en": "The accessory glows on its own.", "es": "El accesorio brilla solo." },
+          "impersonation": { "pt-BR": "Você posa com o acessório.", "en": "You pose with the accessory.", "es": "Posas con el accesorio." }
+        },
+        "bonus": { "metamorfose": 1, "impersonation": 2 }
+      }
+    ],
+    "requirements": [
+      { "type": "tier", "only": "BRONZE", "count": 3 },
+      { "type": "cards", "min": 3 }
+    ],
+    "rewards": [
+      { "type": "ITEM", "code": "GE-B21-LUZ-DE-PASSARELA", "names": { "pt-BR": "Luz de passarela", "en": "Runway light", "es": "Luz de pasarela" } }
+    ],
+    "ficha": {
+      "objective": { "pt-BR": "Abrir o desfile com três Bronze.", "en": "Open the show with three Bronze.", "es": "Abrir el desfile con tres Bronce." },
+      "scenario": { "pt-BR": "A passarela vazia, as luzes apagadas: o primeiro desfile de quem está começando.", "en": "The empty runway, lights off: the first show of someone just starting.", "es": "La pasarela vacía, las luces apagadas: el primer desfile de quien empieza." },
+      "mandatory": { "pt-BR": "Três cartas Bronze nas três vagas da passarela.", "en": "Three Bronze cards in the three runway slots.", "es": "Tres cartas Bronce en las tres casillas de la pasarela." },
+      "sequence": { "pt-BR": "Entrada, meio, final e, se quiser, o acessório.", "en": "Entrance, middle, finale and, if you like, the accessory.", "es": "Entrada, medio, final y, si quieres, el accesorio." },
+      "reward": { "pt-BR": "Luz de passarela para o quarto.", "en": "A runway light for the room.", "es": "Luz de pasarela para la habitación." },
+      "hypePlay": { "pt-BR": "Sem bônus de Hype neste jogo.", "en": "No Hype bonus in this game.", "es": "Sin bono de Hype en este juego." },
+      "hypePartial": { "pt-BR": "Parciais não mudam a faixa.", "en": "Partials do not change the band.", "es": "Las parciales no cambian la franja." }
+    },
+    "scene": {
+      "sky": ["#141414", "#3A3A3A"],
+      "ground": "#232323",
+      "horizon": 58,
+      "accent": "#F2F2F2",
+      "props": [
+        { "k": "runway", "x": 80, "y": 58 },
+        { "k": "lights", "x": 0, "y": 6 }
+      ],
+      "slots": {
+        "entrada": [50, 44],
+        "meio": [50, 66],
+        "final": [50, 86],
+        "acessorio": [84, 76]
+      }
+    }
+  }
+]

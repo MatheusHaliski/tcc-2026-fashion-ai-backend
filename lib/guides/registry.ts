@@ -30,6 +30,8 @@ export const GUIDES: Record<string, GuideDef> = Object.fromEntries([
   g("games.hub", "games", 3, false, 2),
   g("flair.matches", "flairMatch", 3, true, 1, "matches"),
   g("flair.cbc", "cbc", 3, true, 1, "cbc"),
+  // Glass Empire reaproveita o exemplo animado do CBC (R4): mesma mecânica de vaga + carta
+  g("flair.games", "cbc", 3, true, 1, "games"),
   g("moments.calendar", "calendar", 3, true, 1, "moments"),
   g("challenges.progress", "challenge", 3, true, 1, "challenges"),
   g("flair.cards", "flairCards", 3, true, 1, "cards"),

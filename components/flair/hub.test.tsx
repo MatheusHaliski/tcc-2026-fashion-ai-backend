@@ -22,6 +22,7 @@ const ROUTES = {
   "GET /api/flair/decks": [{ schemeId: "s1", title: "Look", cards: [], combos: [], brandMultiplier: 1, seasonBonus: 0, power: 100, avg: {}, abilities: [] }],
   "GET /api/me/flair/cards": { season: "SPRING", counts: { ESPECIAL: 0, OURO: 1, PRATA: 0, BRONZE: 0 }, total: 1, cards: [] },
   "GET /api/flair/challenges": { now: [{ id: "c1" }], upcoming: [], always: [{ id: "c2" }, { id: "c3" }], memories: [], groups: [], season: "SPRING" },
+  "GET /api/flair/games/summary": { total: 100, playable: 37, byTier: { ESTREIA: 37, STUDIO: 45, LOFT: 18 } },
   "GET /api/moments": { now: "2026-10-10T12:00:00Z", active: [], upcoming: [], featured: null },
   "GET /api/me/challenges": { active: [{ id: "ch1" }], invites: [] },
   "GET /api/flair/combinations": [],
@@ -44,6 +45,12 @@ describe("modelo da central", () => {
       expect(m.demo.seconds).toBeGreaterThanOrEqual(10); expect(m.demo.seconds).toBeLessThanOrEqual(20);
     }
     expect(hubMode("cbc").group).toBe("play");
+    // Glass Empire entra no grupo Jogar logo depois dos Desafios de Montagem e antes dos Momentos (R5)
+    const ids = HUB_MODES.map((m) => m.id);
+    expect(ids.indexOf("games")).toBe(ids.indexOf("cbc") + 1);
+    expect(ids.indexOf("moments")).toBe(ids.indexOf("games") + 1);
+    expect(hubMode("games")).toMatchObject({ group: "play", href: "/flair/jogos", guide: "flair.games" });
+    expect(hubMode("games").demo.recorded).toBe(false);
     expect(Object.values(LEGACY_TABS).every((l) => l.href.startsWith("/flair/"))).toBe(true);
   });
   it("disponibilidade: sem decks o modo de partidas vira destravar; desafios abertos contam; sem missões fica indisponível", () => {
@@ -51,6 +58,10 @@ describe("modelo da central", () => {
     expect(availability("matches", { decks: 2 })).toMatchObject({ available: true, action: "play", status: { key: "flair.hub.status.decks", vars: { n: 2 } } });
     expect(availability("cbc", { cbc: { now: 1, upcoming: 0, always: 2 } })).toMatchObject({ available: true, status: { vars: { n: 3 } } });
     expect(availability("cbc", { cbc: { now: 0, upcoming: 2, always: 0 } })).toMatchObject({ available: false, status: { key: "flair.hub.status.cbc_soon" } });
+    expect(availability("games", { games: { total: 100, playable: 37 } })).toMatchObject({ available: true, action: "play", status: { key: "flair.hub.status.games", vars: { n: 37, total: 100 } } });
+    expect(availability("games", { games: { total: 100, playable: 0 } })).toMatchObject({ available: true, action: "open" });
+    expect(availability("games", { games: { total: 0, playable: 0 } })).toMatchObject({ available: false, status: { key: "flair.hub.status.games_none" } });
+    expect(availability("games", {})).toMatchObject({ available: true, status: null });
     expect(availability("quests", { quests: { done: 0, total: 0 } }).available).toBe(false);
     expect(availability("challenges", { challenges: { active: 1, invites: 0 } }).action).toBe("continue");
     expect(availability("wallet", {}).available).toBe(true);
@@ -72,6 +83,13 @@ describe("FlairHub", () => {
     expect(screen.getByRole("tabpanel").textContent).toContain("Complete o mini mapa");
     expect(push).not.toHaveBeenCalled();
     expect(readSelected(ME.user.id)).toBe("cbc");
+    // o modo Glass Empire aparece logo depois, com a situação vinda de /api/flair/games/summary
+    const tabs = screen.getAllByRole("tab").map((x) => x.textContent ?? "");
+    expect(tabs.findIndex((x) => x.includes("Glass Empire"))).toBe(tabs.findIndex((x) => x.includes("Desafios de Montagem")) + 1);
+    fireEvent.click(screen.getByRole("tab", { name: /Glass Empire/ }));
+    await waitFor(() => expect(screen.getByText("37 de 100 jogos liberados")).toBeTruthy());
+    expect(screen.getByRole("tabpanel").textContent).toContain("100 jogos FLAIR");
+    fireEvent.click(cbc);
     cleanup();
     renderApp(<FlairHub />);
     await waitFor(() => expect(screen.getByRole("tab", { name: /Desafios de Montagem/ }).getAttribute("aria-selected")).toBe("true"));
