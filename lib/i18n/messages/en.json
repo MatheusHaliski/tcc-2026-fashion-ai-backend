@@ -9797,5 +9797,21 @@
   "size.nao_altera_avatar": "Choosing a size does not change your avatar's measurements.",
   "size.ver_medidas": "See registered measurements",
   "size.ocultar_medidas": "Hide measurements",
-  "size.salvo_indisponivel": "{title} worn again. Choose another size for: {pieces} (the saved size is no longer available)."
+  "size.salvo_indisponivel": "{title} worn again. Choose another size for: {pieces} (the saved size is no longer available).",
+  "editor3d.base.hint": "Editing starts from the subcategory base piece (or the piece's own 3D model). The base never changes: you model on top of it and save only your customization.",
+  "editor3d.base.source": "Editing base",
+  "editor3d.base.piece": "Base piece: {name}",
+  "editor3d.base.ownGlb": "Piece's own 3D model",
+  "editor3d.base.origin.PIECE_GLB": "Piece's own 3D model",
+  "editor3d.base.origin.STATIC_GLB": "Published base piece: {name}",
+  "editor3d.base.origin.PROCEDURAL": "Procedural base piece: {name}",
+  "editor3d.base.download": "Download base GLB",
+  "editor3d.base.loadError": "This base could not be loaded. The current edit was kept.",
+  "editor3d.base.switchTitle": "Switch the editing base",
+  "editor3d.base.switchHint": "There are unsaved changes. Switching the base discards the current edit and starts again on the chosen base.",
+  "editor3d.base.switchConfirm": "Discard changes and switch base",
+  "atelier3d.create.base": "Taxonomy base piece",
+  "atelier3d.create.category": "Category",
+  "atelier3d.create.subcategory": "Subcategory",
+  "atelier3d.create.baseScope": "Each subcategory has a base piece (a GLB published by the team or a procedural base). Start from it to avoid early modelling mistakes."
 }

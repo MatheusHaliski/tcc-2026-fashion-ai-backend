@@ -9797,5 +9797,21 @@
   "size.nao_altera_avatar": "Elegir la talla no altera las medidas de tu avatar.",
   "size.ver_medidas": "Ver medidas registradas",
   "size.ocultar_medidas": "Ocultar medidas",
-  "size.salvo_indisponivel": "{title} vestida de nuevo. Elige otra talla para: {pieces} (la talla guardada ya no está disponible)."
+  "size.salvo_indisponivel": "{title} vestida de nuevo. Elige otra talla para: {pieces} (la talla guardada ya no está disponible).",
+  "editor3d.base.hint": "La edición parte de una pieza base de la subcategoría (o del modelo 3D propio de la pieza). La base nunca cambia: modelas sobre ella y guardas solo tu personalización.",
+  "editor3d.base.source": "Base de la edición",
+  "editor3d.base.piece": "Pieza base: {name}",
+  "editor3d.base.ownGlb": "Modelo 3D propio de la pieza",
+  "editor3d.base.origin.PIECE_GLB": "Modelo 3D propio de la pieza",
+  "editor3d.base.origin.STATIC_GLB": "Pieza base publicada: {name}",
+  "editor3d.base.origin.PROCEDURAL": "Pieza base procedural: {name}",
+  "editor3d.base.download": "Descargar GLB base",
+  "editor3d.base.loadError": "No se pudo cargar esa base. La edición actual se mantuvo.",
+  "editor3d.base.switchTitle": "Cambiar la base de la edición",
+  "editor3d.base.switchHint": "Hay cambios sin guardar. Cambiar la base descarta la edición actual y empieza de nuevo sobre la base elegida.",
+  "editor3d.base.switchConfirm": "Descartar cambios y cambiar la base",
+  "atelier3d.create.base": "Pieza base de la taxonomía",
+  "atelier3d.create.category": "Categoría",
+  "atelier3d.create.subcategory": "Subcategoría",
+  "atelier3d.create.baseScope": "Cada subcategoría tiene una pieza base (GLB publicado por el equipo o base procedural). Empieza por ella para evitar errores de modelado inicial."
 }

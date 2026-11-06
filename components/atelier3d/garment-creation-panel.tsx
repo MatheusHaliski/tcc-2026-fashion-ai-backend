@@ -3,7 +3,11 @@ import { useRef, useState } from "react";
 import { Button, Dialog, Field, Input } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 import { createGarmentTemplate, GARMENT_TEMPLATES, type GarmentTemplate } from "@/lib/atelier3d/garment-template";
+import { createBasePiece } from "@/lib/atelier3d/base-pieces";
+import { BasePiecePicker, DEFAULT_BASE_PIECE, type BasePieceChoice } from "./base-piece-picker";
 import styles from "./editor.module.css";
+
+type Kind = GarmentTemplate | "base";
 
 interface Props {
   editable: boolean;
@@ -11,10 +15,14 @@ interface Props {
   onCreate: (file: File) => Promise<void>;
 }
 
-/** Creates a local prototype then goes through the same validated upload path as imported GLBs. */
+/**
+ * Creates a local prototype (quick template or the base piece of a taxonomy subcategory) then goes through the same
+ * validated upload path as imported GLBs. Base pieces are the recommended start: the shape is already right.
+ */
 export function GarmentCreationPanel({ editable, dirty, onCreate }: Props) {
   const { t } = useI18n();
-  const [kind, setKind] = useState<GarmentTemplate>("tee");
+  const [kind, setKind] = useState<Kind>("base");
+  const [base, setBase] = useState<BasePieceChoice>(DEFAULT_BASE_PIECE);
   const [color, setColor] = useState("#2867ad");
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -27,13 +35,14 @@ export function GarmentCreationPanel({ editable, dirty, onCreate }: Props) {
     setBusy(true);
     setError(false);
     try {
-      const bytes = await createGarmentTemplate(kind, color);
+      const bytes = kind === "base" ? await createBasePiece(base.category, base.subcategory, color) : await createGarmentTemplate(kind, color);
       if (!current.current.editable) return;
       if (current.current.dirty && !dirty) {
         setConfirm(true);
         return;
       }
-      await current.current.onCreate(new File([bytes], `fai-${kind}-prototype.glb`, { type: "model/gltf-binary" }));
+      const name = kind === "base" ? `fai-${base.subcategory}-base.glb` : `fai-${kind}-prototype.glb`;
+      await current.current.onCreate(new File([bytes], name, { type: "model/gltf-binary" }));
     } catch {
       setError(true);
     } finally {
@@ -45,10 +54,11 @@ export function GarmentCreationPanel({ editable, dirty, onCreate }: Props) {
     <p className="type-caption">{t("atelier3d.create.scope")}</p>
     <fieldset disabled={!editable || busy} className={styles.toolbar}>
       <legend className="sr-only">{t("atelier3d.create.title")}</legend>
-      {GARMENT_TEMPLATES.map((value) => <label className={styles.check} key={value}>
+      {(["base", ...GARMENT_TEMPLATES] as Kind[]).map((value) => <label className={styles.check} key={value}>
         <input type="radio" name="garment-template" value={value} checked={kind === value} onChange={() => setKind(value)} />
         {t(`atelier3d.create.${value}`)}
       </label>)}
+      {kind === "base" && <><p className="type-caption">{t("atelier3d.create.baseScope")}</p><BasePiecePicker value={base} onChange={setBase} disabled={!editable || busy} /></>}
       <Field id="garment-template-color" label={t("atelier3d.create.color")}>
         <Input id="garment-template-color" type="color" value={color} onChange={(event) => setColor(event.target.value)} />
       </Field>

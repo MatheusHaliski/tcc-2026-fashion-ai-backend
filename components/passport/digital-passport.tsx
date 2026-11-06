@@ -54,7 +54,7 @@ export function DigitalPassportSheet({ pieceId }: { pieceId: string }) {
       <Row label={t('sheet.field.modelReview')} field={{ value: sheet.model3d.quarantine ? t('sheet.quarantine', { status: sheet.model3d.quarantine }) : t(`sheet.modelReview.${sheet.model3d.reviewStatus}`), provenance: sheet.model3d.tryOnApproved ? 'VERIFIED' : 'ESTIMATED', informed: sheet.model3d.kind !== 'NONE' }} />
       <Row label={t('sheet.field.modelOrigin')} field={{ value: sheet.model3d.origin, provenance: sheet.model3d.provenance, informed: !!sheet.model3d.origin }} /></dl>
       {sheet.model3d.displayAllowed && sheet.model3d.viewerUrl.informed && <div className="grid gap-2"><Button onClick={() => setView3d((value) => !value)}>{t(view3d ? 'sheet.hide3d' : 'sheet.view3d')}</Button>{view3d && <div className="h-[360px] overflow-hidden rounded-lg border border-line-soft"><PieceModelViewer url={mediaUrl(String(sheet.model3d.viewerUrl.value)) ?? ''} name={String(sheet.identification.name.value ?? '')} /></div>}<p className="type-caption text-muted">{t('sheet.notApprovedForTryOn')}</p></div>}
-      {sheet.access === 'OWNER' && sheet.model3d.displayAllowed && <Link className="btn" href={`/pieces/${encodeURIComponent(pieceId)}/editor-3d`}>{t('sheet.openEditor')}</Link>}
+      {sheet.access === 'OWNER' && <Link className="btn" href={`/pieces/${encodeURIComponent(pieceId)}/editor-3d`}>{t('sheet.openEditor')}</Link>}
     </Card>
     <p className="type-caption text-muted">{t('sheet.notices')}</p>
   </div>;

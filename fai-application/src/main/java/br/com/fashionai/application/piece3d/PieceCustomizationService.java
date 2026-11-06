@@ -4,6 +4,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.domain.model.GarmentAsset3d;
 import br.com.fashionai.domain.model.Piece3dCustomization;
 import br.com.fashionai.domain.model.WardrobeItem;
@@ -19,17 +20,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * RF — editor 3D da peça. A personalização é por pessoa e vinculada à peça original: o GLB nunca é modificado; só o
  * proprietário salva; modelos em quarentena (asset não aprovado) não são oferecidos como aprovados para o provador;
  * escala é identificada como ajuste visual e não altera medidas oficiais, tamanhos comerciais nem o passaporte.
+ * Toda peça com categoria conhecida tem uma peça base da subcategoria ({@link BasePieceCatalog}); a pessoa modela por
+ * cima da base, ou do GLB próprio da peça quando existe. A chave da base escolhida fica gravada com a personalização.
  */
 @Service
 @Transactional
 public class PieceCustomizationService {
-    public record SaveCmd(long expectedRevision, CustomizationDocument document, String requestId) { }
+    /** {@code baseKey}: URL do GLB da peça ou {@code template:<subcategoria>@<versão>}; nulo escolhe o GLB da peça, senão a base. */
+    public record SaveCmd(long expectedRevision, CustomizationDocument document, String requestId, String baseKey) { }
 
     private final Piece3dCustomizationRepository customizations;
     private final WardrobeItemRepository pieces;
@@ -51,8 +56,7 @@ public class PieceCustomizationService {
     public Map<String, Object> save(CurrentUser user, UUID pieceId, SaveCmd cmd) {
         WardrobeItem w = owned(user, pieceId);
         if (cmd == null || cmd.requestId() == null || !cmd.requestId().matches("[a-zA-Z0-9_-]{8,80}")) throw ApiException.badRequest("IDEMPOTENCY_KEY_REQUIRED", "Envie uma chave de pedido válida.");
-        String base = baseModel(w);
-        if (base == null) throw ApiException.conflict("CUSTOMIZATION_NO_MODEL", "Esta peça ainda não tem modelo 3D compatível para editar.");
+        String base = chooseBase(w, cmd.baseKey());
         CustomizationDocument document = (cmd.document() == null ? CustomizationDocument.empty() : cmd.document()).validated();
         Piece3dCustomization c = customizations.lockByPieceIdAndOwnerId(pieceId, user.id()).orElseGet(() -> {
             Piece3dCustomization fresh = new Piece3dCustomization();
@@ -73,14 +77,21 @@ public class PieceCustomizationService {
 
     private Map<String, Object> view(WardrobeItem w, Piece3dCustomization c, boolean owner) {
         String base = baseModel(w);
+        Optional<String> baseSub = BasePieceCatalog.resolve(w.getCategory(), w.getSubcategory());
+        boolean available = base != null || baseSub.isPresent();
         List<GarmentAsset3d> found = assets.findByPieceIdOrderByCreatedAtDesc(w.getId());
         GarmentAsset3d approved = found.stream().filter(a -> a.getStatus() == GarmentAssetStatus.APPROVED).findFirst().orElse(null);
         GarmentAsset3d other = found.stream().filter(a -> a.getStatus() != GarmentAssetStatus.APPROVED).findFirst().orElse(null);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("pieceId", w.getId());
+        out.put("category", w.getCategory());
+        out.put("subcategory", w.getSubcategory());
+        out.put("colorHex", Taxonomy.hex(w.getColor()));
         out.put("baseModelUrl", base);
-        out.put("modelAvailable", base != null);
-        out.put("editable", owner && base != null);
+        out.put("basePiece", baseSub.<Object>map(sub -> Map.of("available", true, "subcategory", sub, "key", BasePieceCatalog.key(sub), "version", BasePieceCatalog.VERSION))
+                .orElse(Map.of("available", false)));
+        out.put("modelAvailable", available);
+        out.put("editable", owner && available);
         out.put("viewOnly", !owner);
         out.put("assetApproval", approved != null ? "APPROVED" : other != null ? other.getStatus().name() : "NONE");
         out.put("quarantine", approved == null && other != null);
@@ -89,7 +100,8 @@ public class PieceCustomizationService {
         out.put("document", c == null ? CustomizationDocument.empty() : Json.read(c.getDocumentJson(), CustomizationDocument.class));
         out.put("revision", c == null ? 0 : c.getRevision());
         out.put("savedAt", c == null ? null : c.getUpdatedAt());
-        out.put("baseChanged", c != null && base != null && !base.equals(c.getBaseModelUrl()));
+        out.put("savedBaseKey", c == null ? null : c.getBaseModelUrl());
+        out.put("baseChanged", c != null && base != null && !BasePieceCatalog.isKey(c.getBaseModelUrl()) && !base.equals(c.getBaseModelUrl()));
         out.put("scaleIsVisualOnly", true);
         out.put("affectsOfficialMeasurements", false);
         out.put("affectsPassport", false);
@@ -99,6 +111,16 @@ public class PieceCustomizationService {
 
     private static String baseModel(WardrobeItem w) {
         return w.getModel3dStatus() == Model3dStatus.COMPLETED && w.getModel3dUrl() != null ? w.getModel3dUrl() : null;
+    }
+
+    /** A base gravada só pode ser o GLB da própria peça ou a peça base da subcategoria resolvida. */
+    private static String chooseBase(WardrobeItem w, String requested) {
+        String glb = baseModel(w);
+        String template = BasePieceCatalog.resolve(w.getCategory(), w.getSubcategory()).map(BasePieceCatalog::key).orElse(null);
+        if (requested == null || requested.isBlank()) requested = glb != null ? glb : template;
+        if (requested == null) throw ApiException.conflict("CUSTOMIZATION_NO_MODEL", "Esta peça ainda não tem modelo 3D compatível para editar.");
+        if (!requested.equals(glb) && !requested.equals(template)) throw ApiException.badRequest("CUSTOMIZATION_BASE_INVALID", "Base inválida: use o GLB da peça ou a peça base da subcategoria.");
+        return requested;
     }
 
     private WardrobeItem visible(CurrentUser user, UUID pieceId) {

@@ -34,6 +34,15 @@ grade de referência ao modelo sem distinguir disponibilidade, medidas cadastrad
 - Editor 3D da peça: V96 `piece_3d_customizations`; `PieceCustomizationService` (só o dono salva; original intacto;
   documento validado; escala identificada como visual; `fitClaim = NONE`); tela `/pieces/[id]/editor-3d` reutilizando o
   viewport/inspetor do Atelier com câmera, ferramentas, desfazer/refazer, restaurar com confirmação e salvar.
+- Peças base por subcategoria (editor 3D e Atelier): toda subcategoria ativa da taxonomia (e os códigos legados ainda
+  em uso) tem uma peça base — GLB publicado pela equipe em `public/garment-templates/<subcategoria>.glb` ou, na falta
+  dele, base procedural com partes nomeadas (`lib/atelier3d/base-pieces*.ts`: 19 partes de cima, 14 de baixo, 5 peças
+  inteiras, 19 calçados, 23 acessórios). O editor da peça abre sempre sobre uma base (`lib/piece3d/base-source.ts`):
+  a peça base da subcategoria ou o GLB próprio da peça; a pessoa modela por cima e a base nunca muda. A chave da base
+  (`template:<sub>@<versão>` ou URL do GLB) é gravada com a personalização (`PieceCustomizationService.SaveCmd.baseKey`,
+  validada contra `BasePieceCatalog`), o editor reabre na mesma base e trocar de base com alterações pendentes pede
+  confirmação. O painel de criação do Atelier ganhou o modo "Peça base da taxonomia" (categoria + subcategoria).
+  Peças base são volumes de exploração: sem rig, sem tamanho certificado, nunca aprovadas para o provador por si.
 - Tamanho: `SizeOptionsService` (`/api/catalog/products/{id}/size-options`) distingue tamanho comercial com disponibilidade
   da loja, medidas da tabela por produto (unidade, protocolo, origem oficial × outro método) e variação visual estimada;
   `SizePicker` bloqueia tamanhos indisponíveis, informa ausência de 3D sem equivalência e marca aproximações; provas salvas
