@@ -3,38 +3,40 @@
 Gerado por `python3 scripts/flair-modes/sheets.py` a partir de `fichas.json` (não edite à mão).
 A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do cenário.
 
+**Segmentos.** Todo jogo do FashionAI se chama FLAIR, em dois segmentos: FLAIR 3D (os 100 jogos de cenário e as aventuras 3D) e FLAIR Card Building Challenge (desafios de links entre cartas e as batalhas com elencos montados; ver docs/flair/cbc/FLAIR_CBC.md).
+
 **Regra comum.** Todo jogo tem cenário fotográfico real e, a cada carta inserida, um efeito visual na cena: clarão, a luz do lugar acende sobre o objeto onde a carta entra, Aura Hype pela faixa da carta e, quando houver, Metamorfose ou Impersonation. Sem permissão Loft, o efeito é o comum; a Aura Hype aparece sempre.
 
 **Faixas de Hype.** Faixas de Hype (as mesmas do FLAIR 3D): Sinal baixo 0–19 · Nicho 20–39 · Relevante 40–59 · Em alta 60–74 · Em tendência 75–89 · Viral 90–100.
 
-| Código | Jogo | Grupo | Participantes | Cartas mínimas | Hype mínimo |
-| --- | --- | --- | --- | --- | --- |
-| DUEL | Duelo de Estilo 1×1 | Partidas clássicas | 2 jogadores (1×1); contra outra pessoa ou contra a Casa. | Deck com 5 cartas FLAIR (uma carta destaque por rodada). | Média do deck ≥ Nicho (20). |
-| TREINO | Treino com a Casa | Partidas clássicas | 1 jogador contra a Casa (IA). | Deck com 5 cartas FLAIR. | Sem mínimo (Sinal baixo aceito): é treino. |
-| ARENA | Batalha de Ocasião do dia | Partidas clássicas | Todos os jogadores do dia (placar aberto); um deck por pessoa. | Deck com 5 cartas FLAIR, ao menos 2 com estilo ou cor do tema. | Média do deck ≥ Nicho (20). |
-| TEAM | Equipes 3×3 e Liga | Partidas clássicas | 2 equipes de 3 a 5 integrantes; 3 pares duelam. | 3 decks de 5 cartas (um por titular). | Cada deck ≥ Nicho (20) e média da equipe ≥ Relevante (40). |
-| BATTLE | Battle of Looks | Modos de look | 2 jogadores (look × look) ou contra a Casa. | 1 look com ao menos 3 peças (parte de cima, parte de baixo e calçado). | Hype do look ≥ Nicho (20). |
-| SQUAD | FLAIR Squad | Modos de look | 2 jogadores (5 looks × 5 looks). | 5 looks com ao menos 3 peças cada (15 cartas). | Cada look ≥ Nicho (20). |
-| LEAGUE | Fashion League | Modos de look | Liga com todos os jogadores da divisão; rodadas 1×1. | 5 looks titulares e 3 reservas (8 looks) e até 5 cartas especiais. | Média dos titulares ≥ Relevante (40). |
-| TOUR | Fashion World Tour | Modos de look | 1 jogador contra os desafios do tabuleiro. | 3 looks prontos (um por rolagem do dia), com ao menos 3 peças. | Hype do look ≥ Nicho (20); casas de gala pedem Relevante (40). |
-| CONQUEST | FLAIR Conquest | Modos de look | 2 jogadores (atacante × defensor). | 3 looks com ao menos 3 peças. | Atacar uma região dominada exige média ≥ Relevante (40). |
-| DECK | Deck Battle | Modos de look | 2 jogadores. | 12 cartas: 4 partes de cima, 3 de baixo, 2 calçados, 2 acessórios e 1 curinga. | Média do deck ≥ Nicho (20). |
-| WARDROBE | Wardrobe Wars | Modos de look | 2 jogadores (guarda-roupa × guarda-roupa). | 12 cartas FLAIR no guarda-roupa (o modo mede o conjunto). | Sem mínimo por carta; a rodada de comunidade usa a média de Hype. |
-| RUNWAY | FLAIR Runway | Modos de look | Até 8 looks na competição. | 1 look com ao menos 4 peças. | Hype do look ≥ Relevante (40). |
-| DRAFT | FLAIR Draft | Modos de look | 2 jogadores. | Nenhuma carta própria: todos escolhem do mesmo monte de 20 peças (9 escolhas por lado). | Sem mínimo: o monte é comum. |
-| TAG_TEAM | FLAIR Tag Team | Modos de look | 4 jogadores (2 duplas). | 1 look por pessoa com ao menos 3 peças. | Média da dupla ≥ Nicho (20). |
-| BOSS | Fashion Boss | Modos de look | 1 jogador contra o chefe (IA). | 1 look com ao menos 4 peças. | Cresce por chefe: Nicho (20) no primeiro até Em tendência (75) no último. |
-| COMBO | Combo Battle | Modos de look | 2 jogadores. | 1 look com ao menos 4 peças (para ativar combos). | Hype do look ≥ Nicho (20). |
-| MONOPOLY | Fashion Monopoly | Modos de look | 2 jogadores. | 3 looks com ao menos 3 peças. | Comprar uma boutique exige look ≥ Relevante (40). |
-| CHESS | FLAIR Chess | Modos de look | 2 jogadores. | 9 cartas (tabuleiro 3×3), com 1 HERO. | A carta HERO precisa de Hype ≥ Em alta (60). |
-| ULTIMATE | FLAIR Ultimate Team | Modos de look | 2 jogadores. | 7 looks titulares com ao menos 3 peças. | ICON ≥ Em tendência (75), TREND ≥ Em alta (60) e média ≥ Relevante (40). |
-| CBC | Desafios de Montagem | Montagem | 1 jogador. | As vagas obrigatórias do desafio (3 a 6 cartas). | Definido por desafio; padrão Nicho (20). |
-| AFTERPARTY | Roubo ao Afterparty | Metamorfose | 1 jogador. | 1 deck de 3 cartas para as transformações do avatar. | Hype do deck ≥ Relevante (40); exige nível Loft. |
-| HEIST | Met Gala Heist | Metamorfose | Em produção. | Em produção. | Em produção. |
+| Código | Jogo | Segmento | Grupo | Participantes | Cartas mínimas | Hype mínimo |
+| --- | --- | --- | --- | --- | --- | --- |
+| DUEL | Duelo de Estilo 1×1 | FLAIR CBC | Partidas clássicas | 2 jogadores (1×1); contra outra pessoa ou contra a Casa. | Deck com 5 cartas FLAIR (uma carta destaque por rodada). | Média do deck ≥ Nicho (20). |
+| TREINO | Treino com a Casa | FLAIR CBC | Partidas clássicas | 1 jogador contra a Casa (IA). | Deck com 5 cartas FLAIR. | Sem mínimo (Sinal baixo aceito): é treino. |
+| ARENA | Batalha de Ocasião do dia | FLAIR CBC | Partidas clássicas | Todos os jogadores do dia (placar aberto); um deck por pessoa. | Deck com 5 cartas FLAIR, ao menos 2 com estilo ou cor do tema. | Média do deck ≥ Nicho (20). |
+| TEAM | Equipes 3×3 e Liga | FLAIR CBC | Partidas clássicas | 2 equipes de 3 a 5 integrantes; 3 pares duelam. | 3 decks de 5 cartas (um por titular). | Cada deck ≥ Nicho (20) e média da equipe ≥ Relevante (40). |
+| BATTLE | Battle of Looks | FLAIR CBC | Modos de look | 2 jogadores (look × look) ou contra a Casa. | 1 look com ao menos 3 peças (parte de cima, parte de baixo e calçado). | Hype do look ≥ Nicho (20). |
+| SQUAD | FLAIR Squad | FLAIR CBC | Modos de look | 2 jogadores (5 looks × 5 looks). | 5 looks com ao menos 3 peças cada (15 cartas). | Cada look ≥ Nicho (20). |
+| LEAGUE | Fashion League | FLAIR CBC | Modos de look | Liga com todos os jogadores da divisão; rodadas 1×1. | 5 looks titulares e 3 reservas (8 looks) e até 5 cartas especiais. | Média dos titulares ≥ Relevante (40). |
+| TOUR | Fashion World Tour | FLAIR CBC | Modos de look | 1 jogador contra os desafios do tabuleiro. | 3 looks prontos (um por rolagem do dia), com ao menos 3 peças. | Hype do look ≥ Nicho (20); casas de gala pedem Relevante (40). |
+| CONQUEST | FLAIR Conquest | FLAIR CBC | Modos de look | 2 jogadores (atacante × defensor). | 3 looks com ao menos 3 peças. | Atacar uma região dominada exige média ≥ Relevante (40). |
+| DECK | Deck Battle | FLAIR CBC | Modos de look | 2 jogadores. | 12 cartas: 4 partes de cima, 3 de baixo, 2 calçados, 2 acessórios e 1 curinga. | Média do deck ≥ Nicho (20). |
+| WARDROBE | Wardrobe Wars | FLAIR CBC | Modos de look | 2 jogadores (guarda-roupa × guarda-roupa). | 12 cartas FLAIR no guarda-roupa (o modo mede o conjunto). | Sem mínimo por carta; a rodada de comunidade usa a média de Hype. |
+| RUNWAY | FLAIR Runway | FLAIR CBC | Modos de look | Até 8 looks na competição. | 1 look com ao menos 4 peças. | Hype do look ≥ Relevante (40). |
+| DRAFT | FLAIR Draft | FLAIR CBC | Modos de look | 2 jogadores. | Nenhuma carta própria: todos escolhem do mesmo monte de 20 peças (9 escolhas por lado). | Sem mínimo: o monte é comum. |
+| TAG_TEAM | FLAIR Tag Team | FLAIR CBC | Modos de look | 4 jogadores (2 duplas). | 1 look por pessoa com ao menos 3 peças. | Média da dupla ≥ Nicho (20). |
+| BOSS | Fashion Boss | FLAIR CBC | Modos de look | 1 jogador contra o chefe (IA). | 1 look com ao menos 4 peças. | Cresce por chefe: Nicho (20) no primeiro até Em tendência (75) no último. |
+| COMBO | Combo Battle | FLAIR CBC | Modos de look | 2 jogadores. | 1 look com ao menos 4 peças (para ativar combos). | Hype do look ≥ Nicho (20). |
+| MONOPOLY | Fashion Monopoly | FLAIR CBC | Modos de look | 2 jogadores. | 3 looks com ao menos 3 peças. | Comprar uma boutique exige look ≥ Relevante (40). |
+| CHESS | FLAIR Chess | FLAIR CBC | Modos de look | 2 jogadores. | 9 cartas (tabuleiro 3×3), com 1 HERO. | A carta HERO precisa de Hype ≥ Em alta (60). |
+| ULTIMATE | FLAIR Ultimate Team | FLAIR CBC | Modos de look | 2 jogadores. | 7 looks titulares com ao menos 3 peças. | ICON ≥ Em tendência (75), TREND ≥ Em alta (60) e média ≥ Relevante (40). |
+| CBC | Desafios de Montagem | FLAIR CBC | Montagem | 1 jogador. | As vagas obrigatórias do desafio (3 a 6 cartas). | Definido por desafio; padrão Nicho (20). |
+| AFTERPARTY | Roubo ao Afterparty | FLAIR 3D | Metamorfose | 1 jogador. | 1 deck de 3 cartas para as transformações do avatar. | Hype do deck ≥ Relevante (40); exige nível Loft. |
+| HEIST | Met Gala Heist | FLAIR 3D | Metamorfose | Em produção. | Em produção. | Em produção. |
 
 ## Duelo de Estilo 1×1 (DUEL)
 
-- **Na lista:** na lista. **Foto:** passarela (foto pendente).
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** passarela (foto pendente).
 - **Cenário:** Passarela de desfile com plateia dos dois lados; cada jogador ocupa uma ponta.
 - **Objetivo:** Vencer 3 das 5 rodadas de atributo (EDGE, RANGE, CLOUT, GLOW, ART) com a média do deck.
 - **Participantes:** 2 jogadores (1×1); contra outra pessoa ou contra a Casa.
@@ -48,7 +50,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Treino com a Casa (TREINO)
 
-- **Na lista:** na lista. **Foto:** estudio-foto.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** estudio-foto.
 - **Cenário:** Estúdio fotográfico com fundo infinito, softboxes e tochas.
 - **Objetivo:** Testar um deck contra a Casa nas 5 rodadas de atributo sem risco no ranking.
 - **Participantes:** 1 jogador contra a Casa (IA).
@@ -62,7 +64,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Batalha de Ocasião do dia (ARENA)
 
-- **Na lista:** na lista. **Foto:** tapete-vermelho (foto pendente).
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** tapete-vermelho (foto pendente).
 - **Cenário:** Tapete vermelho de estreia com parede de imprensa; o tema do dia muda a decoração.
 - **Objetivo:** Inscrever um deck no tema do dia e subir no placar diário de todos os jogadores.
 - **Participantes:** Todos os jogadores do dia (placar aberto); um deck por pessoa.
@@ -76,7 +78,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Equipes 3×3 e Liga (TEAM)
 
-- **Na lista:** na lista. **Foto:** backstage (foto pendente).
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** backstage (foto pendente).
 - **Cenário:** Backstage de desfile com dois corredores de araras e espelhos, um por equipe.
 - **Objetivo:** Vencer 2 dos 3 duelos entre os pares das equipes e somar pontos na liga semanal.
 - **Participantes:** 2 equipes de 3 a 5 integrantes; 3 pares duelam.
@@ -90,7 +92,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Battle of Looks (BATTLE)
 
-- **Na lista:** na lista. **Foto:** boate.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** boate.
 - **Cenário:** Boate com pista, bar iluminado e lustres; o tema sorteado muda a luz da pista.
 - **Objetivo:** Vencer um look contra outro num tema sorteado que muda os pesos dos 10 atributos.
 - **Participantes:** 2 jogadores (look × look) ou contra a Casa.
@@ -104,7 +106,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## FLAIR Squad (SQUAD)
 
-- **Na lista:** na lista. **Foto:** restaurante.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** restaurante.
 - **Cenário:** Cinco ambientes em sequência, um por situação: restaurante (Date Night), redação (Business Meeting), festival, praia (Beach Club) e tapete vermelho.
 - **Objetivo:** Vencer 3 das 5 situações com 5 looks diferentes: diversidade vence especialização.
 - **Participantes:** 2 jogadores (5 looks × 5 looks).
@@ -118,7 +120,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Fashion League (LEAGUE)
 
-- **Na lista:** na lista. **Foto:** palco-show.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** palco-show.
 - **Cenário:** Palco de show com telão e plateia: cada rodada da liga é uma apresentação.
 - **Objetivo:** Somar pontos na temporada (vitória 3, empate 1) e subir de divisão até FLAIR Elite.
 - **Participantes:** Liga com todos os jogadores da divisão; rodadas 1×1.
@@ -132,7 +134,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Fashion World Tour (TOUR)
 
-- **Na lista:** na lista. **Foto:** aeroporto.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** aeroporto.
 - **Cenário:** Tabuleiro Paris → São Paulo: a casa sorteada abre a foto da cidade (aeroporto, rua neon, cidade histórica).
 - **Objetivo:** Rolar o dado, cair numa casa de evento e cumprir o desafio com um look.
 - **Participantes:** 1 jogador contra os desafios do tabuleiro.
@@ -146,7 +148,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## FLAIR Conquest (CONQUEST)
 
-- **Na lista:** na lista. **Foto:** torre-vidro.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** torre-vidro.
 - **Cenário:** Torre de vidro com vista da cidade: cada região de estilo é um andar iluminado.
 - **Objetivo:** Conquistar regiões de estilo vencendo 2 de 3 confrontos como atacante ou defensor.
 - **Participantes:** 2 jogadores (atacante × defensor).
@@ -160,7 +162,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Deck Battle (DECK)
 
-- **Na lista:** na lista. **Foto:** showroom.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** showroom.
 - **Cenário:** Showroom de marca com araras e balcões: a mão de cartas vira o look montado no balcão.
 - **Objetivo:** Receber 7 das 12 cartas do deck e montar o melhor look para o desafio.
 - **Participantes:** 2 jogadores.
@@ -174,7 +176,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Wardrobe Wars (WARDROBE)
 
-- **Na lista:** na lista. **Foto:** closet-luxo.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** closet-luxo.
 - **Cenário:** Closet de luxo com nichos iluminados, um lado para cada guarda-roupa.
 - **Objetivo:** Vencer 4 das 7 rodadas: qualidade, diversidade, versatilidade, originalidade, coleção, sustentabilidade e comunidade.
 - **Participantes:** 2 jogadores (guarda-roupa × guarda-roupa).
@@ -188,7 +190,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## FLAIR Runway (RUNWAY)
 
-- **Na lista:** na lista. **Foto:** passarela (foto pendente).
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** passarela (foto pendente).
 - **Cenário:** Passarela de desfile com júri e imprensa nas laterais.
 - **Objetivo:** Passar da qualificação à final com o look mais bem avaliado (40% IA, 30% tema, 20% comunidade, 10% originalidade).
 - **Participantes:** Até 8 looks na competição.
@@ -202,7 +204,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## FLAIR Draft (DRAFT)
 
-- **Na lista:** na lista. **Foto:** showroom.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** showroom.
 - **Cenário:** Showroom com 20 peças expostas no meio, dois lados escolhendo em turnos.
 - **Objetivo:** Escolher peças em turnos de um monte comum de 20 e vencer 2 de 3 looks.
 - **Participantes:** 2 jogadores.
@@ -216,7 +218,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## FLAIR Tag Team (TAG_TEAM)
 
-- **Na lista:** na lista. **Foto:** camarote.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** camarote.
 - **Cenário:** Camarote de festa com duas mesas, uma por dupla.
 - **Objetivo:** Vencer com a dupla somando os looks e o Team Harmony entre eles.
 - **Participantes:** 4 jogadores (2 duplas).
@@ -230,7 +232,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Fashion Boss (BOSS)
 
-- **Na lista:** na lista. **Foto:** salao-gala.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** salao-gala.
 - **Cenário:** Salão de gala com lustres; cada chefe ocupa o fundo do salão.
 - **Objetivo:** Vencer os chefes da IA (The Minimalist, Street King, Luxury Queen, Color Master, Vintage Collector, Avant-Garde AI), cada um com uma regra de moda.
 - **Participantes:** 1 jogador contra o chefe (IA).
@@ -244,7 +246,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Combo Battle (COMBO)
 
-- **Na lista:** na lista. **Foto:** estudio-foto.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** estudio-foto.
 - **Cenário:** Estúdio fotográfico onde cada combo ativa uma luz diferente.
 - **Objetivo:** Vencer ativando sinergias entre peças (Streetwear, Classic Formal, Monochrome, Brand Loyalty, Mix & Match, Vintage Revival).
 - **Participantes:** 2 jogadores.
@@ -258,7 +260,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Fashion Monopoly (MONOPOLY)
 
-- **Na lista:** na lista. **Foto:** rua-neon.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** rua-neon.
 - **Cenário:** Rua de compras com letreiros de neon: cada distrito é um quarteirão.
 - **Objetivo:** Conquistar distritos e boutiques; o dono recebe bônus com cartas do estilo do território.
 - **Participantes:** 2 jogadores.
@@ -272,7 +274,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## FLAIR Chess (CHESS)
 
-- **Na lista:** na lista. **Foto:** galeria-arte.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** galeria-arte.
 - **Cenário:** Galeria de arte: o tabuleiro 3×3 fica nas paredes, cada quadro uma casa.
 - **Objetivo:** Vencer pela posição: cartas vizinhas se influenciam, HERO vale ×1,25 e SUPPORT reforça as vizinhas.
 - **Participantes:** 2 jogadores.
@@ -286,7 +288,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## FLAIR Ultimate Team (ULTIMATE)
 
-- **Na lista:** na lista. **Foto:** auditorio.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** auditorio.
 - **Cenário:** Auditório de teatro: os 7 titulares ocupam os camarotes iluminados.
 - **Objetivo:** Vencer com 7 looks em funções (ICON, TREND, SOCIAL, CREATIVE, CLASSIC, WILD CARD, SPECIAL) somando Team Rating, Chemistry e Diversity.
 - **Participantes:** 2 jogadores.
@@ -300,7 +302,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Desafios de Montagem (CBC)
 
-- **Na lista:** na lista. **Foto:** showroom.
+- **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** showroom.
 - **Cenário:** Foto de ambiente por desafio (como no FLAIR 3D): cada vaga do mini mapa fica sobre um objeto real da foto.
 - **Objetivo:** Completar o mini mapa do desafio com cartas FLAIR; posição certa, vizinhança e tema dão sintonia.
 - **Participantes:** 1 jogador.
@@ -314,7 +316,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Roubo ao Afterparty (AFTERPARTY)
 
-- **Na lista:** na lista (nível Loft). **Foto:** rooftop (foto pendente).
+- **Segmento:** FLAIR 3D. **Na lista:** na lista (nível Loft). **Foto:** rooftop (foto pendente).
 - **Cenário:** Rooftop de festa em 3D ao anoitecer, com bar, pista e área VIP.
 - **Objetivo:** Explorar o rooftop, transformar o avatar com looks e recuperar o item VIP sem ser notado.
 - **Participantes:** 1 jogador.
@@ -328,7 +330,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Met Gala Heist (HEIST)
 
-- **Na lista:** fora da lista (em produção). **Foto:** sem foto (fora da lista).
+- **Segmento:** FLAIR 3D. **Na lista:** fora da lista (em produção). **Foto:** sem foto (fora da lista).
 - **Cenário:** Cenário 3D próprio em produção; não é alterado nem usado como imagem de outros jogos.
 - **Objetivo:** Em produção para o novo FLAIR 3D.
 - **Participantes:** Em produção.

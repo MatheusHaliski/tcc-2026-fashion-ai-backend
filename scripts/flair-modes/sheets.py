@@ -1,4 +1,4 @@
-"""Fichas dos jogos FLAIR que não fazem parte do FLAIR 3D.
+"""Fichas dos jogos FLAIR fora dos 100 jogos de cenário FLAIR 3D.
 
 Lê docs/flair/modos-flair/fichas.json e escreve, na mesma pasta:
 - modos-flair.xlsx: uma linha por jogo com cenário (miniatura da foto embutida), objetivo, participantes, cartas mínimas,
@@ -22,7 +22,7 @@ SCENES = ROOT / "public" / "flair" / "games" / "scenes"
 THUMB = (192, 120)
 
 COLUMNS = [
-    ("Código", "code", 12), ("Jogo", "name", 24), ("Grupo", "group", 16), ("Na lista?", "list", 16),
+    ("Código", "code", 12), ("Jogo", "name", 24), ("Segmento", "segment", 14), ("Grupo", "group", 16), ("Na lista?", "list", 16),
     ("Foto do cenário", None, 28), ("Cenário", "scene", 40), ("Objetivo", "objective", 44),
     ("Participantes", "participants", 26), ("Cartas mínimas obrigatórias", "minCards", 34),
     ("Hype mínimo obrigatório", "minHype", 30), ("Efeito visual ao inserir uma carta", "insert", 46),
@@ -73,7 +73,7 @@ def write_xlsx(data: dict) -> Path:
                 cell.alignment = Alignment(wrap_text=True, vertical="bottom")
     rules = wb.create_sheet("Regras")
     rules.column_dimensions["A"].width = 120
-    for i, line in enumerate([data["rule"], data["hypeBands"]], start=1):
+    for i, line in enumerate([data["segments"], data["rule"], data["hypeBands"]], start=1):
         rules.cell(row=i, column=1, value=line).alignment = Alignment(wrap_text=True, vertical="top")
     out = DOCS / "modos-flair.xlsx"
     wb.save(out)
@@ -87,22 +87,24 @@ def write_markdown(data: dict) -> Path:
         "Gerado por `python3 scripts/flair-modes/sheets.py` a partir de `fichas.json` (não edite à mão).",
         "A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do cenário.",
         "",
+        f"**Segmentos.** {data['segments']}",
+        "",
         f"**Regra comum.** {data['rule']}",
         "",
         f"**Faixas de Hype.** {data['hypeBands']}",
         "",
-        "| Código | Jogo | Grupo | Participantes | Cartas mínimas | Hype mínimo |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Código | Jogo | Segmento | Grupo | Participantes | Cartas mínimas | Hype mínimo |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
     ]
     for g in data["games"]:
-        lines.append(f"| {g['code']} | {g['name']} | {g['group']} | {g['participants']} | {g['minCards']} | {g['minHype']} |")
+        lines.append(f"| {g['code']} | {g['name']} | {g['segment']} | {g['group']} | {g['participants']} | {g['minCards']} | {g['minHype']} |")
     for g in data["games"]:
         _, label = photo_status(g)
         lines += [
             "",
             f"## {g['name']} ({g['code']})",
             "",
-            f"- **Na lista:** {g['list']}. **Foto:** {label}.",
+            f"- **Segmento:** {g['segment']}. **Na lista:** {g['list']}. **Foto:** {label}.",
             f"- **Cenário:** {g['scene']}",
             f"- **Objetivo:** {g['objective']}",
             f"- **Participantes:** {g['participants']}",
