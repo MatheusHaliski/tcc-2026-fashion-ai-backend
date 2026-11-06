@@ -4,12 +4,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Captura o JSON da resposta do /submit (ou /check) do jogo para registrar cartas, requisitos e recompensas. */
 function captureApi(page, slug) {
-  const seen = { check: null, submit: null };
+  const seen = { check: null, checkFilled: -1, submit: null };
   page.on("response", async (res) => {
     const url = res.url();
     if (!url.includes(`/api/flair/games/${encodeURIComponent(slug)}/`)) return;
     try {
-      if (url.endsWith("/check") && res.ok()) seen.check = await res.json();
+      if (url.endsWith("/check") && res.ok()) {
+        // as conferências podem voltar fora de ordem: fica a que cobre mais vagas preenchidas (o cliente faz o mesmo por sequência)
+        const filled = Object.keys(res.request().postDataJSON()?.slots ?? {}).length;
+        const body = await res.json();
+        if (filled >= seen.checkFilled) { seen.check = body; seen.checkFilled = filled; }
+      }
       if (url.endsWith("/submit")) seen.submit = { status: res.status(), body: await res.json().catch(() => null) };
     } catch { /* resposta não JSON: ignora */ }
   });
@@ -46,8 +51,8 @@ export async function playGame(page, app, game, shotPath, { log = () => {}, apiB
     if (await dialog.isVisible().catch(() => false)) await page.keyboard.press("Escape");
     await sleep(150);
   }
-  // espera a última conferência do servidor
-  await page.waitForFunction(() => !document.querySelector('[aria-busy="true"]'), null, { timeout: 15000 }).catch(() => {});
+  // espera a conferência do servidor que já inclui todas as cartas inseridas
+  for (let waited = 0; api.checkFilled < row.cardsInserted.length && waited < 15000; waited += 250) await sleep(250);
   await sleep(900);
   const submit = page.getByRole("button", { name: T.submit, exact: true });
   await submit.waitFor({ timeout: 15000 });
