@@ -73,7 +73,8 @@ class PhysicalStorePurchaseTest {
                 .filter(e -> e.getIdempotencyKey().equals(inv.getArgument(0))).findFirst());
         when(orders.save(any())).thenAnswer(inv -> { PhysicalStoreOrder o = inv.getArgument(0); o.assignId(UUID.randomUUID()); created.add(o); return o; });
         when(orders.findById(any())).thenAnswer(inv -> created.stream().filter(o -> o.getId().equals(inv.getArgument(0))).findFirst());
-        store = new PhysicalStoreService(listings, orders, mock(CatalogProductRepository.class), mock(BrandRepository.class), ledger, users,
+        store = new PhysicalStoreService(listings, orders, mock(br.com.fashionai.domain.repository.PhysicalStoreVariantRepository.class),
+                mock(CatalogProductRepository.class), mock(BrandRepository.class), ledger, users,
                 mock(Guard.class), mock(CatalogService.class), mock(WardrobeCreatorService.class));
         this.listingId = listingId;
     }

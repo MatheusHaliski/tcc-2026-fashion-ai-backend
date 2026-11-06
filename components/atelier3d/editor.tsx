@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ApiError } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
-import { Button, Dialog, Field, Input, Select } from "@/components/ui";
+import { Button, Dialog, Select } from "@/components/ui";
 import {
   loadGlb,
   disposeAsset,
@@ -23,6 +23,8 @@ import type {
   Asset,
   GenderEvidence,
 } from "./contracts";
+import { GarmentCreationPanel } from "./garment-creation-panel";
+import { EditorFileToolbar } from "./editor-file-toolbar";
 import { SceneInspector } from "./scene-inspector";
 import { GenderPanel } from "./gender-panel";
 import { GuestPanel } from "./guest-panel";
@@ -411,49 +413,19 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
           </Button>
         </div>
       )}
-      <div className={styles.toolbar}>
-        <Field id="atelier-glb-file" label={t("atelier3d.import")}>
-          <Input
-            id="atelier-glb-file"
-            type="file"
-            accept=".glb,model/gltf-binary"
-            disabled={!canEdit}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void upload(file);
-              e.target.value = "";
-            }}
-          />
-        </Field>
-        <Button
-          disabled={!canEdit || !dirty || !evidence || conflict}
-          onClick={() => void save()}
-        >
-          {t("common.save")}
-        </Button>
-        <Button
-          disabled={
-            !loaded || !effectiveConfirmed || !canExport || dirty || busy
-          }
-          onClick={() => void download()}
-        >
-          {t("atelier3d.export")}
-        </Button>
-        <Button
-          disabled={busy}
-          onClick={() => (dirty ? setConfirmReload(true) : void reload())}
-        >
-          {t("atelier3d.reload")}
-        </Button>
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={autosave}
-            onChange={(e) => setAutosave(e.target.checked)}
-          />
-          {t("atelier3d.autosave")}
-        </label>
-      </div>
+      <EditorFileToolbar
+        canEdit={canEdit}
+        canSave={canEdit && dirty && !!evidence && !conflict}
+        canExport={!!loaded && !!effectiveConfirmed && canExport && !dirty && !busy}
+        busy={busy}
+        autosave={autosave}
+        onAutosave={setAutosave}
+        onUpload={(file) => void upload(file)}
+        onSave={() => void save()}
+        onExport={() => void download()}
+        onReload={() => dirty ? setConfirmReload(true) : void reload()}
+      />
+      <GarmentCreationPanel editable={canEdit} dirty={dirty} onCreate={upload} />
       {!loaded ? (
         <p>{t("atelier3d.empty")}</p>
       ) : (

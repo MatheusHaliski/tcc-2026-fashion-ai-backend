@@ -11,13 +11,14 @@ import br.com.fashionai.domain.model.CatalogProduct;
 import br.com.fashionai.domain.model.FaiPointsLedgerEntry;
 import br.com.fashionai.domain.model.PhysicalStoreListing;
 import br.com.fashionai.domain.model.PhysicalStoreOrder;
-import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.PhysicalStoreVariant;
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository;
 import br.com.fashionai.domain.repository.PhysicalStoreListingRepository;
 import br.com.fashionai.domain.repository.PhysicalStoreOrderRepository;
+import br.com.fashionai.domain.repository.PhysicalStoreVariantRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
@@ -25,8 +26,6 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -45,32 +44,40 @@ public class PhysicalStoreService {
     public record ListingForm(UUID productId, String description, Integer pricePoints, String requiredLevel, Boolean active) { }
     public record ShippingAddress(String fullName, String phone, String postalCode, String state, String city,
                                   String neighborhood, String street, String number, String complement) { }
-    public record OrderForm(ShippingAddress shippingAddress) { }
+    /** RF-PESQ-01 — {@code variantId} é obrigatório quando a oferta tem variantes cadastradas. */
+    public record OrderForm(ShippingAddress shippingAddress, UUID variantId) {
+        public OrderForm(ShippingAddress shippingAddress) {
+            this(shippingAddress, null);
+        }
+    }
     public record StockForm(Integer quantity) { }
     public record ShipmentForm(String status, String trackingCode, String trackingUrl) { }
 
     private final PhysicalStoreListingRepository listings;
     private final PhysicalStoreOrderRepository orders;
+    private final PhysicalStoreVariantRepository variants;
     private final CatalogProductRepository products;
     private final BrandRepository brands;
     private final FaiPointsLedgerEntryRepository ledger;
     private final UserRepository users;
     private final Guard guard;
     private final CatalogService catalog;
-    private final WardrobeCreatorService creator;
+    private final PhysicalStoreViews views;
 
     public PhysicalStoreService(PhysicalStoreListingRepository listings, PhysicalStoreOrderRepository orders,
-                                CatalogProductRepository products, BrandRepository brands, FaiPointsLedgerEntryRepository ledger, UserRepository users,
-                                Guard guard, CatalogService catalog, WardrobeCreatorService creator) {
+                                PhysicalStoreVariantRepository variants, CatalogProductRepository products, BrandRepository brands,
+                                FaiPointsLedgerEntryRepository ledger, UserRepository users, Guard guard, CatalogService catalog,
+                                WardrobeCreatorService creator) {
         this.listings = listings;
         this.orders = orders;
+        this.variants = variants;
         this.products = products;
         this.brands = brands;
         this.ledger = ledger;
         this.users = users;
         this.guard = guard;
         this.catalog = catalog;
-        this.creator = creator;
+        this.views = new PhysicalStoreViews(catalog, creator, users);
     }
 
     @Transactional(readOnly = true)
@@ -82,9 +89,9 @@ public class PhysicalStoreService {
         FaiPointsService.Level level = FaiPointsService.Level.of(ledger.lifetime(viewer.id()));
         long balance = ledger.balance(viewer.id());
         return listings.findByActiveTrueOrderByCreatedAtDesc().stream()
-                .filter(l -> l.getStockQuantity() > 0 && sellerActive(l.getSellerUserId()))
+                .filter(l -> PhysicalStoreViews.sellableStock(l, variantsOf(l)) > 0 && sellerActive(l.getSellerUserId()))
                 .filter(l -> belongs(l.getProduct().getCategory(), normalized))
-                .map(l -> listingView(l, false, level, balance))
+                .map(l -> views.listingView(l, false, level, balance, variantsOf(l)))
                 .toList();
     }
 
@@ -92,7 +99,7 @@ public class PhysicalStoreService {
     public List<Map<String, Object>> mine(CurrentUser user) {
         requireSeller(user);
         return listings.findBySellerUserIdOrderByCreatedAtDesc(user.id()).stream()
-                .map(l -> listingView(l, true, FaiPointsService.Level.of(ledger.lifetime(user.id())), ledger.balance(user.id())))
+                .map(l -> views.listingView(l, true, FaiPointsService.Level.of(ledger.lifetime(user.id())), ledger.balance(user.id()), variantsOf(l)))
                 .toList();
     }
 
@@ -147,7 +154,8 @@ public class PhysicalStoreService {
         listing.setPricePoints(form.pricePoints());
         listing.setRequiredLevel(requiredLevel);
         listing.setActive(form.active() == null || form.active());
-        return listingView(listings.save(listing), true, FaiPointsService.Level.of(ledger.lifetime(user.id())), ledger.balance(user.id()));
+        PhysicalStoreListing saved = listings.save(listing);
+        return views.listingView(saved, true, FaiPointsService.Level.of(ledger.lifetime(user.id())), ledger.balance(user.id()), variantsOf(saved));
     }
 
     @Transactional
@@ -174,7 +182,7 @@ public class PhysicalStoreService {
      */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public Map<String, Object> buy(CurrentUser buyer, UUID listingId, OrderForm form, String requestKey) {
-        ShippingAddress address = validateAddress(form == null ? null : form.shippingAddress());
+        ShippingAddress address = PhysicalStoreForms.validateAddress(form == null ? null : form.shippingAddress());
         PhysicalStoreListing preview = listings.findById(listingId).orElseThrow(() -> ApiException.notFound(Msg.t("physicalStore.oferta")));
         UUID sellerId = preview.getSellerUserId();
         if (buyer.id().equals(sellerId)) throw ApiException.conflict("COMPRA_PROPRIA", Msg.t("physicalStore.compra_propria"));
@@ -186,7 +194,7 @@ public class PhysicalStoreService {
             if (done.isPresent()) {
                 PhysicalStoreOrder previous = orders.findById(UUID.fromString(done.get().getRefId()))
                         .orElseThrow(() -> ApiException.notFound(Msg.t("physicalStore.oferta")));
-                Map<String, Object> view = new LinkedHashMap<>(orderView(previous, false));
+                Map<String, Object> view = new LinkedHashMap<>(views.orderView(previous, false));
                 view.put("repeated", true);
                 return view;
             }
@@ -195,7 +203,9 @@ public class PhysicalStoreService {
         if (!listing.isActive() || !sellerActive(listing.getSellerUserId())) {
             throw ApiException.conflict("OFERTA_INDISPONIVEL", Msg.t("physicalStore.oferta_indisponivel"));
         }
-        if (listing.getStockQuantity() < 1) throw ApiException.conflict("ESGOTADO", Msg.t("physicalStore.esgotado"));
+        // RF-PESQ-01 — a variante é validada e travada antes de qualquer débito; sem variantes, vale o estoque da oferta.
+        PhysicalStoreVariant variant = PhysicalStoreVariantStock.pick(variants, listing, form == null ? null : form.variantId());
+        if (variant == null && listing.getStockQuantity() < 1) throw ApiException.conflict("ESGOTADO", Msg.t("physicalStore.esgotado"));
         FaiPointsService.Level currentLevel = FaiPointsService.Level.of(ledger.lifetime(buyer.id()));
         if (!currentLevel.atLeast(FaiPointsService.Level.parse(listing.getRequiredLevel()))) {
             throw ApiException.conflict("NIVEL_INSUFICIENTE", Msg.t("physicalStore.nivel_insuficiente", listing.getRequiredLevel()));
@@ -205,31 +215,36 @@ public class PhysicalStoreService {
             throw ApiException.conflict("SALDO_INSUFICIENTE", Msg.t("physicalStore.saldo_insuficiente", balance, listing.getPricePoints()));
         }
 
-        listing.setStockQuantity(listing.getStockQuantity() - 1);
         PhysicalStoreOrder order = new PhysicalStoreOrder();
+        if (variant == null) {
+            listing.setStockQuantity(listing.getStockQuantity() - 1);
+        } else {
+            PhysicalStoreVariantStock.debit(variant, order);
+        }
         order.setListing(listing);
         order.setBuyerUserId(buyer.id());
         order.setPricePoints(listing.getPricePoints());
         order.setShippingAddress(Json.write(address));
         order.setStatus("PROCESSING");
+        PhysicalStoreReturnPolicy.current().attach(order);
         orders.save(order);
-        FaiPointsLedgerEntry debit = pointsEntry(buyer.id(), -listing.getPricePoints(), "PHYSICAL_STORE_PURCHASE", "PHYSICAL_ORDER", order.getId().toString());
+        FaiPointsLedgerEntry debit = PhysicalStoreViews.pointsEntry(buyer.id(), -listing.getPricePoints(), "PHYSICAL_STORE_PURCHASE", "PHYSICAL_ORDER", order.getId().toString());
         if (requestRef != null) debit.setIdempotencyKey(buyer.id() + ":PHYSICAL_STORE_PURCHASE:" + requestRef);
         ledger.save(debit);
-        ledger.save(pointsEntry(sellerId, listing.getPricePoints(), "PHYSICAL_STORE_SALE", "PHYSICAL_ORDER", order.getId().toString()));
-        return orderView(order, false);
+        ledger.save(PhysicalStoreViews.pointsEntry(sellerId, listing.getPricePoints(), "PHYSICAL_STORE_SALE", "PHYSICAL_ORDER", order.getId().toString()));
+        return views.orderView(order, false);
     }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> myOrders(CurrentUser buyer) {
-        return orders.findByBuyerUserIdOrderByCreatedAtDesc(buyer.id()).stream().map(o -> orderView(o, false)).toList();
+        return orders.findByBuyerUserIdOrderByCreatedAtDesc(buyer.id()).stream().map(o -> views.orderView(o, false)).toList();
     }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> adminListings(CurrentUser admin) {
         guard.requireAdmin(admin);
         return listings.findAllByOrderByCreatedAtDesc().stream()
-                .map(l -> listingView(l, true, FaiPointsService.Level.ESTREIA, 0))
+                .map(l -> views.listingView(l, true, FaiPointsService.Level.ESTREIA, 0, variantsOf(l)))
                 .toList();
     }
 
@@ -241,13 +256,13 @@ public class PhysicalStoreService {
         }
         PhysicalStoreListing listing = listings.lockById(listingId).orElseThrow(() -> ApiException.notFound("Store listing"));
         listing.setStockQuantity(form.quantity());
-        return listingView(listing, true, FaiPointsService.Level.ESTREIA, 0);
+        return views.listingView(listing, true, FaiPointsService.Level.ESTREIA, 0, variantsOf(listing));
     }
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> adminOrders(CurrentUser admin) {
         guard.requireAdmin(admin);
-        return orders.findAllByOrderByCreatedAtDesc().stream().map(o -> orderView(o, true)).toList();
+        return orders.findAllByOrderByCreatedAtDesc().stream().map(o -> views.orderView(o, true)).toList();
     }
 
     @Transactional
@@ -262,13 +277,22 @@ public class PhysicalStoreService {
         if ("DELIVERED".equals(status) && !"SHIPPED".equals(order.getStatus()) && !"DELIVERED".equals(order.getStatus())) {
             throw ApiException.conflict("TRANSICAO_INVALIDA", "Ship the order before marking it delivered.");
         }
-        String trackingUrl = cleanTrackingUrl(form.trackingUrl());
+        String trackingUrl = PhysicalStoreForms.cleanTrackingUrl(form.trackingUrl());
         order.setTrackingCode(form.trackingCode() == null ? null : InputSanitizer.clean(form.trackingCode(), 120));
         order.setTrackingUrl(trackingUrl);
         order.setStatus(status);
         if ("SHIPPED".equals(status) && order.getShippedAt() == null) order.setShippedAt(Instant.now());
         if ("DELIVERED".equals(status) && order.getDeliveredAt() == null) order.setDeliveredAt(Instant.now());
-        return orderView(order, true);
+        return views.orderView(order, true);
+    }
+
+    /** Projeção de pedido reutilizada pelo pós-venda (RF-PESQ-02). */
+    Map<String, Object> orderView(PhysicalStoreOrder order, boolean adminView) {
+        return views.orderView(order, adminView);
+    }
+
+    private List<PhysicalStoreVariant> variantsOf(PhysicalStoreListing listing) {
+        return variants.findByListingIdOrderByVariantKeyAsc(listing.getId());
     }
 
     private void requireSeller(CurrentUser user) {
@@ -286,85 +310,5 @@ public class PhysicalStoreService {
             case "ACCESSORIES" -> "accessory_piece".equals(category);
             default -> CATEGORIES.contains(category);
         };
-    }
-
-    private Map<String, Object> listingView(PhysicalStoreListing listing, boolean sellerView,
-                                            FaiPointsService.Level level, long balance) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("id", listing.getId());
-        out.put("product", catalog.product(listing.getProduct().getId()));
-        out.put("description", listing.getDescription());
-        out.put("pricePoints", listing.getPricePoints());
-        out.put("requiredLevel", listing.getRequiredLevel());
-        out.put("levelOk", level.atLeast(FaiPointsService.Level.parse(listing.getRequiredLevel())));
-        out.put("affordable", balance >= listing.getPricePoints());
-        out.put("stock", listing.getStockQuantity());
-        out.put("active", listing.isActive());
-        out.put("seller", creator.identity(users.findById(listing.getSellerUserId()).orElseThrow()));
-        out.put("createdAt", listing.getCreatedAt());
-        if (!sellerView) out.remove("stock");
-        return out;
-    }
-
-    private Map<String, Object> orderView(PhysicalStoreOrder order, boolean adminView) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("id", order.getId());
-        out.put("listingId", order.getListing().getId());
-        out.put("product", catalog.product(order.getListing().getProduct().getId()));
-        out.put("seller", creator.identity(users.findById(order.getListing().getSellerUserId()).orElseThrow()));
-        out.put("pricePoints", order.getPricePoints());
-        out.put("status", order.getStatus());
-        out.put("trackingCode", order.getTrackingCode());
-        out.put("trackingUrl", order.getTrackingUrl());
-        out.put("shippedAt", order.getShippedAt());
-        out.put("deliveredAt", order.getDeliveredAt());
-        out.put("createdAt", order.getCreatedAt());
-        if (adminView) {
-            out.put("shippingAddress", Json.read(order.getShippingAddress(), Map.class));
-            out.put("buyer", users.findById(order.getBuyerUserId()).map(User::getUsername).orElse(null));
-        }
-        return out;
-    }
-
-    private FaiPointsLedgerEntry pointsEntry(UUID userId, int delta, String action, String refType, String refId) {
-        FaiPointsLedgerEntry entry = new FaiPointsLedgerEntry();
-        entry.setUserId(userId);
-        entry.setDelta(delta);
-        entry.setActionCode(action);
-        entry.setRefType(refType);
-        entry.setRefId(refId);
-        entry.setIdempotencyKey(userId + ":" + action + ":" + refId);
-        entry.setCountsLifetime(false);
-        return entry;
-    }
-
-    private ShippingAddress validateAddress(ShippingAddress address) {
-        if (address == null) throw ApiException.badRequest("ENDERECO_OBRIGATORIO", Msg.t("physicalStore.endereco_obrigatorio"));
-        return new ShippingAddress(
-                required(address.fullName(), 120, "fullName"),
-                required(address.phone(), 40, "phone"),
-                required(address.postalCode(), 20, "postalCode"),
-                required(address.state(), 80, "state"),
-                required(address.city(), 120, "city"),
-                required(address.neighborhood(), 120, "neighborhood"),
-                required(address.street(), 180, "street"),
-                required(address.number(), 30, "number"),
-                address.complement() == null || address.complement().isBlank() ? null : InputSanitizer.clean(address.complement(), 160));
-    }
-
-    private String required(String value, int max, String field) {
-        if (value == null || value.isBlank() || value.trim().length() > max) {
-            throw ApiException.badRequest("ENDERECO_INVALIDO", Msg.t("physicalStore.endereco_invalido"), Map.of("field", field));
-        }
-        return InputSanitizer.clean(value, max);
-    }
-
-    private String cleanTrackingUrl(String value) {
-        if (value == null || value.isBlank()) return null;
-        String url = value.trim();
-        if (!url.matches("https://[^\\s]{1,1000}")) {
-            throw ApiException.badRequest("RASTREIO_INVALIDO", "Tracking links must use HTTPS.");
-        }
-        return url;
     }
 }
