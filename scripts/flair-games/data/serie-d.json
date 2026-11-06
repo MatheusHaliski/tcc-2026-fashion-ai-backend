@@ -361,7 +361,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D61-MAQUINA-COSTURA-VIDRO",
+        "code": "F3D-D61-MAQUINA-COSTURA-VIDRO",
         "names": {
           "pt-BR": "Máquina de costura de vidro",
           "en": "Glass sewing machine",
@@ -370,7 +370,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-D61-APRENDIZ-DE-CELINA",
+        "code": "F3D-D61-APRENDIZ-DE-CELINA",
         "names": {
           "pt-BR": "Aprendiz de Celina",
           "en": "Celina Apprentice",
@@ -904,7 +904,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D62-RELOGIO-DE-ATELIE",
+        "code": "F3D-D62-RELOGIO-DE-ATELIE",
         "names": {
           "pt-BR": "Relógio de ateliê",
           "en": "Atelier clock",
@@ -1470,7 +1470,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D63-PLACA-NEON-ABERTO",
+        "code": "F3D-D63-PLACA-NEON-ABERTO",
         "names": {
           "pt-BR": "Placa Aberto de néon",
           "en": "Neon Open sign",
@@ -1970,7 +1970,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D64-REDOMA-DE-LEILAO",
+        "code": "F3D-D64-REDOMA-DE-LEILAO",
         "names": {
           "pt-BR": "Redoma de leilão",
           "en": "Auction dome",
@@ -2492,7 +2492,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D65-COFRE-DE-VIDRO",
+        "code": "F3D-D65-COFRE-DE-VIDRO",
         "names": {
           "pt-BR": "Cofre de vidro",
           "en": "Glass vault",
@@ -3088,7 +3088,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D66-CAIXA-DE-ENTREGAS",
+        "code": "F3D-D66-CAIXA-DE-ENTREGAS",
         "names": {
           "pt-BR": "Caixa de entregas de vidro",
           "en": "Glass delivery box",
@@ -3697,7 +3697,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D67-ARQUIVO-DE-GAVETAS",
+        "code": "F3D-D67-ARQUIVO-DE-GAVETAS",
         "names": {
           "pt-BR": "Arquivo de gavetas de vidro",
           "en": "Glass drawer archive",
@@ -4233,7 +4233,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D68-TRIPE-DE-ESTUDIO",
+        "code": "F3D-D68-TRIPE-DE-ESTUDIO",
         "names": {
           "pt-BR": "Tripé de estúdio",
           "en": "Studio tripod",
@@ -4709,7 +4709,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D69-TRIO-DE-MOLDURAS",
+        "code": "F3D-D69-TRIO-DE-MOLDURAS",
         "names": {
           "pt-BR": "Trio de molduras de carta",
           "en": "Card frame trio",
@@ -5305,7 +5305,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D70-ESPELHO-ATENDIMENTO",
+        "code": "F3D-D70-ESPELHO-ATENDIMENTO",
         "names": {
           "pt-BR": "Espelho de atendimento",
           "en": "Client mirror",
@@ -5914,7 +5914,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D71-ARARA-DE-ALUGUEL",
+        "code": "F3D-D71-ARARA-DE-ALUGUEL",
         "names": {
           "pt-BR": "Arara de aluguel com etiquetas",
           "en": "Rental rail with tags",
@@ -6496,7 +6496,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D72-TANQUE-MINIATURA",
+        "code": "F3D-D72-TANQUE-MINIATURA",
         "names": {
           "pt-BR": "Tanque de tingimento em miniatura",
           "en": "Miniature dye tank",
@@ -6939,7 +6939,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D73-LUPA-DE-RESTAURO",
+        "code": "F3D-D73-LUPA-DE-RESTAURO",
         "names": {
           "pt-BR": "Lupa de restauro",
           "en": "Restoration loupe",
@@ -7449,7 +7449,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D74-CORTINA-DE-PROVADOR",
+        "code": "F3D-D74-CORTINA-DE-PROVADOR",
         "names": {
           "pt-BR": "Cortina de provador",
           "en": "Fitting room curtain",
@@ -8025,7 +8025,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D75-CRACHA-IMPRENSA",
+        "code": "F3D-D75-CRACHA-IMPRENSA",
         "names": {
           "pt-BR": "Crachá Imprensa",
           "en": "Press badge",
@@ -8598,7 +8598,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D76-CONVITE-DE-VIDRO",
+        "code": "F3D-D76-CONVITE-DE-VIDRO",
         "names": {
           "pt-BR": "Convite de vidro emoldurado",
           "en": "Framed glass invitation",
@@ -9138,7 +9138,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D77-OBRA-EMOLDURADA",
+        "code": "F3D-D77-OBRA-EMOLDURADA",
         "names": {
           "pt-BR": "Obra fictícia emoldurada",
           "en": "Framed fictional artwork",
@@ -9616,7 +9616,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D78-EDICAO-IMPRESSA",
+        "code": "F3D-D78-EDICAO-IMPRESSA",
         "names": {
           "pt-BR": "Edição impressa",
           "en": "Printed issue",
@@ -10319,7 +10319,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D79-MAQUINA-DE-LAVAR-VIDRO",
+        "code": "F3D-D79-MAQUINA-DE-LAVAR-VIDRO",
         "names": {
           "pt-BR": "Máquina de lavar de vidro",
           "en": "Glass washing machine",
@@ -10930,7 +10930,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-D80-ESTANDE-MINIATURA",
+        "code": "F3D-D80-ESTANDE-MINIATURA",
         "names": {
           "pt-BR": "Estande em miniatura",
           "en": "Miniature stand",
@@ -10939,7 +10939,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-D80-PECA-MARCA-PARCEIRA",
+        "code": "F3D-D80-PECA-MARCA-PARCEIRA",
         "names": {
           "pt-BR": "Peça exclusiva de marca parceira (sujeita à política de selos)",
           "en": "Partner brand exclusive piece (subject to the seal policy)",

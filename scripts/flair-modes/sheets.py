@@ -1,4 +1,4 @@
-"""Fichas dos jogos FLAIR que não fazem parte do Glass Empire.
+"""Fichas dos jogos FLAIR que não fazem parte do FLAIR 3D.
 
 Lê docs/flair/modos-flair/fichas.json e escreve, na mesma pasta:
 - modos-flair.xlsx: uma linha por jogo com cenário (miniatura da foto embutida), objetivo, participantes, cartas mínimas,
@@ -82,7 +82,7 @@ def write_xlsx(data: dict) -> Path:
 
 def write_markdown(data: dict) -> Path:
     lines = [
-        "# Jogos FLAIR fora do Glass Empire: fichas",
+        "# Jogos FLAIR fora do FLAIR 3D: fichas",
         "",
         "Gerado por `python3 scripts/flair-modes/sheets.py` a partir de `fichas.json` (não edite à mão).",
         "A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do cenário.",

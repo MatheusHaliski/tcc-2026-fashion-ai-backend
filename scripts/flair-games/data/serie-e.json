@@ -367,7 +367,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E81-MOLDURA-DUELO",
+        "code": "F3D-E81-MOLDURA-DUELO",
         "names": {
           "pt-BR": "Moldura Duelo",
           "en": "Duel frame",
@@ -972,7 +972,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E82-FAIXA-DE-CAMPEAO",
+        "code": "F3D-E82-FAIXA-DE-CAMPEAO",
         "names": {
           "pt-BR": "Faixa de campeão de distrito",
           "en": "District champion sash",
@@ -1465,7 +1465,7 @@
     "rewards": [
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-E83-PECA-EXCLUSIVA-MARCA",
+        "code": "F3D-E83-PECA-EXCLUSIVA-MARCA",
         "names": {
           "pt-BR": "Peça exclusiva da marca (tiragem, pela política de selos e com estoque)",
           "en": "Exclusive brand piece (limited run, through the seal policy and subject to stock)",
@@ -1984,7 +1984,7 @@
     "rewards": [
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-E84-CARTA-DA-ERA",
+        "code": "F3D-E84-CARTA-DA-ERA",
         "names": {
           "pt-BR": "Carta Especial da Era (tiragem, pela política do emissor)",
           "en": "Special card of the Era (limited run, through the issuer policy)",
@@ -2583,7 +2583,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E85-MESA-DE-CLUBE",
+        "code": "F3D-E85-MESA-DE-CLUBE",
         "names": {
           "pt-BR": "Mesa de clube para a suíte",
           "en": "Club table for the suite",
@@ -3010,7 +3010,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E86-MOLDURA-REMIX",
+        "code": "F3D-E86-MOLDURA-REMIX",
         "names": {
           "pt-BR": "Moldura Remix",
           "en": "Remix frame",
@@ -3367,7 +3367,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E87-FITA-ESCOLHA-COMUNIDADE",
+        "code": "F3D-E87-FITA-ESCOLHA-COMUNIDADE",
         "names": {
           "pt-BR": "Fita Escolha da Comunidade",
           "en": "Community Choice ribbon",
@@ -3977,7 +3977,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E88-TACA-DAS-ESTACOES",
+        "code": "F3D-E88-TACA-DAS-ESTACOES",
         "names": {
           "pt-BR": "Taça das estações",
           "en": "Cup of the seasons",
@@ -4594,7 +4594,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E89-INSIGNIA-DAS-LENDAS",
+        "code": "F3D-E89-INSIGNIA-DAS-LENDAS",
         "names": {
           "pt-BR": "Insígnia do Salão das Lendas",
           "en": "Hall of Legends insignia",
@@ -4603,7 +4603,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-E89-LENDA-VIVA",
+        "code": "F3D-E89-LENDA-VIVA",
         "names": {
           "pt-BR": "Lenda Viva (carta Especial da temporada)",
           "en": "Living Legend (Special card of the season)",
@@ -4982,7 +4982,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E90-CORRENTE-DE-VIDRO",
+        "code": "F3D-E90-CORRENTE-DE-VIDRO",
         "names": {
           "pt-BR": "Corrente de vidro para a suíte",
           "en": "Glass chain for the suite",
@@ -5446,7 +5446,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E91-JANELA-DE-MENTORIA",
+        "code": "F3D-E91-JANELA-DE-MENTORIA",
         "names": {
           "pt-BR": "Janela de mentoria para a suíte",
           "en": "Mentorship window for the suite",
@@ -6002,7 +6002,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E92-CADEIRA-DE-ESPERA",
+        "code": "F3D-E92-CADEIRA-DE-ESPERA",
         "names": {
           "pt-BR": "Cadeira de espera de vidro",
           "en": "Glass waiting chair",
@@ -6496,7 +6496,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E93-SILHUETA-RIVAL",
+        "code": "F3D-E93-SILHUETA-RIVAL",
         "names": {
           "pt-BR": "Silhueta Rival para a parede da suíte",
           "en": "Rival silhouette for the suite wall",
@@ -7014,7 +7014,7 @@
     "rewards": [
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-E94-PECA-EXCLUSIVA-EMISSOR",
+        "code": "F3D-E94-PECA-EXCLUSIVA-EMISSOR",
         "names": {
           "pt-BR": "Peça exclusiva do emissor (carta Especial, pela política de selos)",
           "en": "Exclusive issuer piece (Special card, through the seal policy)",
@@ -7615,7 +7615,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E95-PORTA-DE-CORREDOR-DUPLA",
+        "code": "F3D-E95-PORTA-DE-CORREDOR-DUPLA",
         "names": {
           "pt-BR": "Porta de corredor dupla",
           "en": "Double corridor door",
@@ -8187,7 +8187,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E96-MONOGRAMA-RISCADO",
+        "code": "F3D-E96-MONOGRAMA-RISCADO",
         "names": {
           "pt-BR": "Monograma Vellard riscado para a vitrine",
           "en": "Crossed-out Vellard monogram for the display case",
@@ -8196,7 +8196,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-E96-QUEDA-DE-VELLARD",
+        "code": "F3D-E96-QUEDA-DE-VELLARD",
         "names": {
           "pt-BR": "Queda de Vellard",
           "en": "Fall of Vellard",
@@ -8681,7 +8681,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E97-PASSAPORTE-CARIMBADO",
+        "code": "F3D-E97-PASSAPORTE-CARIMBADO",
         "names": {
           "pt-BR": "Passaporte carimbado do festival",
           "en": "Stamped festival passport",
@@ -8690,7 +8690,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-E97-PECA-EXCLUSIVA-ESTANDE",
+        "code": "F3D-E97-PECA-EXCLUSIVA-ESTANDE",
         "names": {
           "pt-BR": "Peça exclusiva do estande (pela política de selos, com estoque)",
           "en": "Exclusive stand piece (through the seal policy, subject to stock)",
@@ -9069,7 +9069,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E98-FOTO-DO-BAIRRO",
+        "code": "F3D-E98-FOTO-DO-BAIRRO",
         "names": {
           "pt-BR": "Foto do bairro emoldurada",
           "en": "Framed neighbourhood photo",
@@ -9180,18 +9180,18 @@
   },
   {
     "number": 99,
-    "slug": "e99-capitulo-final-imperio-de-vidro",
+    "slug": "e99-capitulo-final-coroa-de-vidro",
     "series": "E",
     "district": "COMMUNITY",
     "names": {
-      "pt-BR": "Capítulo Final: Império de Vidro",
-      "en": "Final Chapter: Glass Empire",
-      "es": "Capítulo Final: Imperio de Vidrio"
+      "pt-BR": "Capítulo Final: Coroa de Vidro",
+      "en": "Final Chapter: Glass Crown",
+      "es": "Capítulo Final: Corona de Vidrio"
     },
     "descriptions": {
-      "pt-BR": "Atravessar a campanha de cinco capítulos do Glass Empire (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.",
-      "en": "Cross the five-chapter Glass Empire campaign (suite, runway, streets, ateliers, community) with a deck that evolves through provenance, all the way to the Tower.",
-      "es": "Atravesar la campaña de cinco capítulos del Glass Empire (suite, pasarela, calles, talleres, comunidad) con un mazo que evoluciona por procedencia, hasta la Torre."
+      "pt-BR": "Atravessar a campanha de cinco capítulos do FLAIR 3D (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.",
+      "en": "Cross the five-chapter FLAIR 3D campaign (suite, runway, streets, ateliers, community) with a deck that evolves through provenance, all the way to the Tower.",
+      "es": "Atravesar la campaña de cinco capítulos del FLAIR 3D (suite, pasarela, calles, talleres, comunidad) con un mazo que evoluciona por procedencia, hasta la Torre."
     },
     "points": 150,
     "repeatLimit": 1,
@@ -9686,7 +9686,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E99-CHAVE-DA-TORRE",
+        "code": "F3D-E99-CHAVE-DA-TORRE",
         "names": {
           "pt-BR": "Chave da Torre de Vidro",
           "en": "Key to the Glass Tower",
@@ -9695,7 +9695,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-E99-IMPERIO-DE-VIDRO",
+        "code": "F3D-E99-IMPERIO-DE-VIDRO",
         "names": {
           "pt-BR": "Imperatriz ou Imperador de Vidro",
           "en": "Glass Empress or Emperor",
@@ -9705,9 +9705,9 @@
     ],
     "ficha": {
       "objective": {
-        "pt-BR": "Atravessar a campanha de cinco capítulos do Glass Empire (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.",
-        "en": "Cross the five-chapter Glass Empire campaign (suite, runway, streets, ateliers, community) with a deck that evolves through provenance, all the way to the Tower.",
-        "es": "Atravesar la campaña de cinco capítulos del Glass Empire (suite, pasarela, calles, talleres, comunidad) con un mazo que evoluciona por procedencia, hasta la Torre."
+        "pt-BR": "Atravessar a campanha de cinco capítulos do FLAIR 3D (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.",
+        "en": "Cross the five-chapter FLAIR 3D campaign (suite, runway, streets, ateliers, community) with a deck that evolves through provenance, all the way to the Tower.",
+        "es": "Atravesar la campaña de cinco capítulos del FLAIR 3D (suite, pasarela, calles, talleres, comunidad) con un mazo que evoluciona por procedencia, hasta la Torre."
       },
       "scenario": {
         "pt-BR": "A cidade inteira, um distrito por capítulo, com a Torre de Vidro no fim.",
@@ -10078,7 +10078,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-E100-GAVETA-DE-HERANCA",
+        "code": "F3D-E100-GAVETA-DE-HERANCA",
         "names": {
           "pt-BR": "Gaveta de herança de vidro",
           "en": "Glass inheritance drawer",

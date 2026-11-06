@@ -99,7 +99,7 @@ public class FlairChallenge extends VersionedAuditableEntity {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 
-    // ================================================================== Glass Empire (V86): os 100 jogos FLAIR
+    // ================================================================== FLAIR 3D (V86): os 100 jogos FLAIR
     /** Série do jogo (A–E); nulo = Desafio de Montagem clássico (fora do catálogo de jogos). */
     @Column(length = 1)
     private String series;
@@ -108,7 +108,7 @@ public class FlairChallenge extends VersionedAuditableEntity {
     @Column(name = "game_number")
     private Integer gameNumber;
 
-    /** SUITE, RUNWAY, CITY, BACKSTAGE ou COMMUNITY (distrito do Glass Empire). */
+    /** SUITE, RUNWAY, CITY, BACKSTAGE ou COMMUNITY (distrito do FLAIR 3D). */
     @Column(length = 20)
     private String district;
 

@@ -7,7 +7,7 @@ import type { MatchScene } from "@/lib/flair/match-scene";
 import type { MatchWinner } from "@/lib/flair/match-stage";
 
 /**
- * A fotografia do palco do confronto com as inserções das cartas, reaproveitando a cena do Glass Empire: cada carta é
+ * A fotografia do palco do confronto com as inserções das cartas, reaproveitando a cena do FLAIR 3D: cada carta é
  * uma PhotoSceneHit (clarão → cone → a foto reacende → Aura Hype → efeito → legenda) dentro de um invólucro que diz o
  * papel dela na rodada — vencedora (inserção completa), perdedora (apagada, sem reacender a foto) ou empate (média).
  * As cartas do mesmo lado com sinergia na rodada se ligam por fios de luz (um conjunto de ligações por lado). A cena
@@ -28,7 +28,7 @@ export function MatchStageArt({ photo, scene, progress, final, onPhotoError }: {
       {(["A", "B"] as const).map((side) => {
         const hits = scene.hits.filter((h) => h.side === side);
         return (
-          <PhotoSceneLinks key={side} pins={scene.pins[side]} results={hits.map((h) => h.result)} glass={hits.map((h) => h.glass)}
+          <PhotoSceneLinks key={side} pins={scene.pins[side]} results={hits.map((h) => h.result)} flair3d={hits.map((h) => h.flair3d)}
             filledKeys={new Set(hits.map((h) => h.key))} />
         );
       })}
@@ -36,7 +36,7 @@ export function MatchStageArt({ photo, scene, progress, final, onPhotoError }: {
         <div key={`${h.key}:${h.card.id}`} className={cn("gms-hit", `is-${h.effect.role}`, `side-${h.side.toLowerCase()}`, h.moment.decisive && "is-decisive")}
           data-effect={h.effect.kind} style={{ "--x": `${h.anchor.x}%`, "--y": `${h.anchor.y}%`, "--s": `${h.anchor.size}%` } as CSSProperties}>
           <PhotoSceneHit photo={photo} x={h.anchor.x} y={h.anchor.y} size={h.anchor.size} fx={h.anchor.fx} card={h.card} label={h.card.name}
-            result={h.result} glass={h.glass} latest={h.latest} />
+            result={h.result} flair3d={h.flair3d} latest={h.latest} />
         </div>
       ))}
       <span className="gep-vignette" />

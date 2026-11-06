@@ -1,4 +1,4 @@
-// Joga um jogo Glass Empire na interface real (Playwright) sobre a API simulada e devolve o registro da evidência.
+// Joga um jogo FLAIR 3D na interface real (Playwright) sobre a API simulada e devolve o registro da evidência.
 const T = { submit: "Entregar", rewardTitle: "Montagem entregue", pickerBank: "Banco de cartas" };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -77,7 +77,7 @@ export async function playGame(page, app, game, shotPath, { log = () => {}, apiB
     row.cardsUsed = (body.submission?.cards ?? []).map((c) => `${c.slot}: ${c.name} (${c.tier} · ${c.ovr}) sintonia ${c.sintonia}`);
     row.prerequisites = body.evaluation.requirements.map((r) => `${r.type}${r.args?.min != null ? ` ≥ ${r.args.min}` : ""}${r.args?.count ? ` ×${r.args.count}` : ""}: ${r.ok ? "ok" : "falhou"} (${r.have}/${r.need})`);
     row.rewards = [...body.points.lines.map((l) => `${l.action}: +${l.points} FAI Points (${l.granted ? "creditado" : "previsto"})`), ...(body.rewards ?? []).map((w) => `${w.type}: ${w.name} [${w.state}]`)];
-    row.note += `sintonia ${body.evaluation.sintonia}/${body.evaluation.sintoniaMax}; pontuação Glass ${body.glass?.score}/${body.glass?.scoreMax}${body.glass?.perfect ? "; montagem perfeita" : ""}`;
+    row.note += `sintonia ${body.evaluation.sintonia}/${body.evaluation.sintoniaMax}; pontuação FLAIR 3D ${body.flair3d?.score}/${body.flair3d?.scoreMax}${body.flair3d?.perfect ? "; montagem perfeita" : ""}`;
   } else row.note += `entrega respondeu ${api.submit?.status ?? "sem resposta"}`;
   log(`${row.number} ${row.name}: ${row.completed ? "concluído" : "não concluído"}`);
   return row;

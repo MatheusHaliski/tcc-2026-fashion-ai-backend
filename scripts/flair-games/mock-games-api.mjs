@@ -1,11 +1,11 @@
-// API simulada dos jogos Glass Empire para gravar evidências na interface real (nunca em produção).
+// API simulada dos jogos FLAIR 3D para gravar evidências na interface real (nunca em produção).
 // Serve /api/flair/games*, /api/me/flair/cards (banco gerado por jogo), /api/me/points, /api/me/room,
 // /api/me/aura-permissions; o resto é repassado à API simulada da Central FLAIR (scripts/flair-demos/mock-api.mjs).
 // Uso: node scripts/flair-games/mock-games-api.mjs [porta=8098] [alvo=http://localhost:8099]   MOCK_TIER=LOFT|STUDIO|ESTREIA
 import { createServer, request as httpRequest } from "node:http";
 import { loadSeries } from "./build.mjs";
 import { derive } from "./lib/derive.mjs";
-import { evaluate, glass } from "./lib/mock-engine.mjs";
+import { evaluate, flair3d } from "./lib/mock-engine.mjs";
 import { bank } from "./lib/mock-bank.mjs";
 import { thumbnailPath } from "./lib/constants.mjs";
 import { withPhoto } from "./lib/venue-map.mjs";
@@ -58,11 +58,11 @@ function story(g, ev) {
 }
 function check(g, body) {
   const ev = evaluate(g, body?.slots ?? {}, banks.get(g.slug));
-  const gl = glass(g, ev, TIER);
-  const lines = []; if (ev.ok) lines.push({ action: "FLAIR_GLASS", points: g.points, ref: `7d-${g.number}`, label: "" });
-  if (gl.perfect) lines.push({ action: "FLAIR_GLASS_PERFECT", points: 10, ref: `7d-${g.number}`, label: "" });
+  const gl = flair3d(g, ev, TIER);
+  const lines = []; if (ev.ok) lines.push({ action: "FLAIR_3D", points: g.points, ref: `7d-${g.number}`, label: "" });
+  if (gl.perfect) lines.push({ action: "FLAIR_3D_PERFECT", points: 10, ref: `7d-${g.number}`, label: "" });
   const { board, ...evaluation } = ev;
-  return { status: "OPEN", interpretation: body?.interpretation ?? "own", evaluation, story: story(g, ev), points: { lines, total: lines.reduce((a, l) => a + l.points, 0) }, attemptsLeft: submissions.has(g.slug) ? 0 : 1, canSubmit: ev.ok && !submissions.has(g.slug), glass: gl, cardsIn: ev.slots.filter((r) => r.cardId).map((r) => ({ slot: r.slot, card: board[r.slot] })) };
+  return { status: "OPEN", interpretation: body?.interpretation ?? "own", evaluation, story: story(g, ev), points: { lines, total: lines.reduce((a, l) => a + l.points, 0) }, attemptsLeft: submissions.has(g.slug) ? 0 : 1, canSubmit: ev.ok && !submissions.has(g.slug), flair3d: gl, cardsIn: ev.slots.filter((r) => r.cardId).map((r) => ({ slot: r.slot, card: board[r.slot] })) };
 }
 const json = (res, status, body) => { res.writeHead(status, { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*", "access-control-expose-headers": "*" }); res.end(body === undefined ? "" : JSON.stringify(body)); };
 const err = (res, status, code, message, details = {}) => json(res, status, { status, code, message, details, path: "", timestamp: iso() });
@@ -99,7 +99,7 @@ createServer(async (req, res) => {
     const lines = r.points.lines.map((l) => ({ ...l, granted: true, capReached: false }));
     const submission = { id: `sub-${g.slug}`, attempt: 1, createdAt: iso(), interpretation: r.interpretation, sintonia: r.evaluation.sintonia, sintoniaMax: r.evaluation.sintoniaMax, points: r.points.total, story: r.story,
       cards: r.cardsIn.map(({ slot, card }) => ({ slot, cardId: card.id, name: card.name, brandName: card.brandName, tier: card.tier, ovr: card.ovr, rare: card.rare, position: card.position, imageUrl: null, sintonia: r.evaluation.slots.find((s) => s.slot === slot)?.sintonia ?? 0 })) };
-    const rewards = (g.rewards ?? []).filter((w) => w.condition !== "perfect" || r.glass.perfect).map((w) => ({ type: w.type, code: w.code, name: txt(w.names), state: "DELIVERED" }));
+    const rewards = (g.rewards ?? []).filter((w) => w.condition !== "perfect" || r.flair3d.perfect).map((w) => ({ type: w.type, code: w.code, name: txt(w.names), state: "DELIVERED" }));
     submissions.set(g.slug, { submission, rewards });
     const { cardsIn, canSubmit, attemptsLeft, ...out } = r;
     return json(res, 201, { ...out, points: { lines, total: lines.reduce((a2, l) => a2 + l.points, 0) }, submission, group: null, locked: false, rewards });

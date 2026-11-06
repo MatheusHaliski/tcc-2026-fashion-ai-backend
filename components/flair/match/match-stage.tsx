@@ -37,7 +37,7 @@ export function MatchStage({ data, labelA, labelB, overlay }: {
   };
   const verdict = (m: MatchMoment) => (m.winner === "DRAW" ? t("common.empate") : t("flair.match.wins", { side: sideName(m.winner) }));
   const effects = (hits: SceneHit[]) => hits.map((h) => t("flair.match.effect_line", {
-    side: sideName(h.side), effect: L.effect(h.effect.kind), from: L.band(h.glass.hypeBand), to: L.band(h.glass.matchBand),
+    side: sideName(h.side), effect: L.effect(h.effect.kind), from: L.band(h.flair3d.hypeBand), to: L.band(h.flair3d.matchBand),
   })).join(" ");
   const nowHits = scene.hits.filter((h) => h.latest);
   const finalText = final ? (final === "DRAW" ? t("flair.match.final_draw") : t("flair.match.final_win", { side: sideName(final) })) : "";

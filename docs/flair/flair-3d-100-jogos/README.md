@@ -1,8 +1,8 @@
-# Glass Empire — 100 ideias de jogos FLAIR (pesquisa de design)
+# FLAIR 3D — 100 ideias de jogos FLAIR (pesquisa de design)
 
 > Pedido de 05/11/2026. O **Meu Quarto** deixa de ser uma área própria do app e passa a ser um **componente** do jogo
-> **Glass Empire**, continuação da franquia FashionAI. Este estudo levanta 100 ideias de jogos FLAIR para o Glass
-> Empire, cada uma definida em uma frase por campo. É um documento de pesquisa e proposta: **nenhum jogo daqui está
+> **FLAIR 3D**, continuação da franquia FashionAI. Este estudo levanta 100 ideias de jogos FLAIR para o FLAIR
+> 3D, cada uma definida em uma frase por campo. É um documento de pesquisa e proposta: **nenhum jogo daqui está
 > implementado**, e nada aqui cria RF numerado nem altera regras vigentes de Hype, FAI Points ou loja.
 
 ## 1. O que a pesquisa leu antes de propor
@@ -25,14 +25,14 @@ Tycoon, Met Gala Heist: The Afterparty, Backstage Chaos, Cyber-Street Festival, 
 portais do Hall (Noite Aurum, Gala Lumière) **não são repetidos**: as 100 ideias abaixo são novas e, quando encostam
 nesses mundos, dizem como.
 
-## 2. Glass Empire: onde o quarto entra
+## 2. FLAIR 3D: onde o quarto entra
 
-O Glass Empire é uma **cidade de vidro** dividida em distritos; a pessoa tem uma **Suíte de Vidro**, que é o Meu Quarto
+O FLAIR 3D é uma **cidade de vidro** dividida em distritos; a pessoa tem uma **Suíte de Vidro**, que é o Meu Quarto
 de hoje (móvel FAI Origem, espelho, maleiro, gavetas, cesto, arara, cadeira, vitrine, interruptor, janela, caixa FAI,
 chave) convertido em componente jogável. A suíte continua sendo o gêmeo digital do guarda-roupa real e vira, ao mesmo
 tempo, **mapa, saguão e cofre**:
 
-| Papel da suíte no Glass Empire | Como aparece |
+| Papel da suíte no FLAIR 3D | Como aparece |
 |---|---|
 | **Mapa** | 20 jogos (série A) usam os próprios elementos do quarto como vagas do cenário |
 | **Saguão** | o corredor dos portais (parede leste) leva aos distritos das séries B a E |
@@ -162,7 +162,7 @@ Os valores em P são indicativos e seguem a escala dos Desafios de Montagem (15 
 | 46 | Praia de Vidro | C | 96 | Chefe: Vellard | E |
 | 47 | Festival de Inverno | C | 97 | Festival das Marcas | E |
 | 48 | Avenida LED | C | 98 | Tapete do Bairro | E |
-| 49 | Mercado de Pulgas | C | 99 | Capítulo Final: Império de Vidro | E |
+| 49 | Mercado de Pulgas | C | 99 | Capítulo Final: Coroa de Vidro | E |
 | 50 | Conexão em Lisboa | C | 100 | Herança | E |
 
 ## 5. O que fica explícito como limite

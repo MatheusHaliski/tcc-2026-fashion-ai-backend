@@ -13,7 +13,7 @@ const routes = (level: string) => ({
 });
 
 describe("FLAIR game categories", () => {
-  it("keeps the Afterparty locked below Loft and directs users to FAI XP; Glass Empire is never locked here", async () => {
+  it("keeps the Afterparty locked below Loft and directs users to FAI XP; FLAIR 3D is never locked here", async () => {
     loggedAs(ME, routes("STUDIO"));
     renderApp(<FlairModes />);
 
@@ -22,7 +22,7 @@ describe("FLAIR game categories", () => {
     const locked = await screen.findAllByRole("link", { name: /Bloqueado até o nível Loft/ });
     expect(locked.length).toBe(1);
     for (const l of locked) expect(l.getAttribute("href")).toBe("/points");
-    expect(screen.getByRole("link", { name: "Jogar Glass Empire" }).getAttribute("href")).toBe("/flair/jogos");
+    expect(screen.getByRole("link", { name: "Jogar FLAIR 3D" }).getAttribute("href")).toBe("/flair/jogos");
   });
 
   it("opens the Metamorfose game at Loft; the MET Gala Heist card is no longer listed (the route stays)", async () => {
@@ -32,6 +32,6 @@ describe("FLAIR game categories", () => {
     const game = await screen.findByRole("link", { name: "Jogar FLAIR Metamorfose" });
     expect(game.getAttribute("href")).toBe("/flair/aventura");
     expect(screen.queryByRole("link", { name: "Jogar o MET Gala Heist" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Jogar Glass Empire" }).getAttribute("href")).toBe("/flair/jogos");
+    expect(screen.getByRole("link", { name: "Jogar FLAIR 3D" }).getAttribute("href")).toBe("/flair/jogos");
   });
 });

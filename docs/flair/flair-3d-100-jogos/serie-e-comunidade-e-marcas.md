@@ -1,6 +1,6 @@
 # Série E — Comunidade, duelos, Momentos, marcas e celebridades
 
-Vinte jogos sociais do Glass Empire: duelos, ligas, grupos, temporadas de marca e celebridade (sempre pela política de
+Vinte jogos sociais do FLAIR 3D: duelos, ligas, grupos, temporadas de marca e celebridade (sempre pela política de
 selos), o antagonista Vellard e o arco final. Regras compartilhadas no [README](README.md).
 
 ## 81 · Duelo de Espelhos
@@ -291,9 +291,9 @@ selos), o antagonista Vellard e o arco final. Regras compartilhadas no [README](
 - **Hype na jogada:** nenhum; o voto é cego para Hype.
 - **Parciais → Hype do deck:** votos recebidos sobem uma faixa a carta mais citada; nada desce.
 
-## 99 · Capítulo Final: Império de Vidro
+## 99 · Capítulo Final: Coroa de Vidro
 
-- **Objetivo:** atravessar a campanha de cinco capítulos do Glass Empire (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.
+- **Objetivo:** atravessar a campanha de cinco capítulos do FLAIR 3D (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.
 - **Cenário:** a cidade inteira, um distrito por capítulo, com a Torre de Vidro no fim.
 - **Peças obrigatórias:** 1 carta com procedência de cada série (A a E).
 - **Hype mínimo do deck:** Nicho.

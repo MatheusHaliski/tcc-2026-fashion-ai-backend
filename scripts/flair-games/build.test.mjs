@@ -1,5 +1,5 @@
 /**
- * Testes do gerador do catálogo Glass Empire (node --test scripts/flair-games/build.test.mjs): derivação R16 nas
+ * Testes do gerador do catálogo FLAIR 3D (node --test scripts/flair-games/build.test.mjs): derivação R16 nas
  * bordas, validação que lista erros com o número do jogo, SQL determinístico e escapado, SVG com todos os objetos e
  * uma miniatura real gerada em pasta temporária a partir da fixture.
  */
@@ -94,7 +94,7 @@ test("lista todos os erros de uma vez com o número do jogo", async () => {
   a01.themeTags = [];
   b21.number = 1;
   b21.scene.slots.entrada = [50, 44, "door:1"];
-  b21.rewards[0].code = "GE-A01-MOLDURA-PRISMA";
+  b21.rewards[0].code = "F3D-A01-MOLDURA-PRISMA";
   delete b21.names.es;
   b21.scene.ground = "red";
   const errors = errorsOf([a01, b21]);
@@ -108,7 +108,7 @@ test("lista todos os erros de uma vez com o número do jogo", async () => {
   has("themeTags");
   has("number: repetido");
   has("moduleId só na série A");
-  has('"GE-A01-MOLDURA-PRISMA" repetido');
+  has('"F3D-A01-MOLDURA-PRISMA" repetido');
   has("names.es: texto obrigatório");
   has("scene.ground: cor");
 });
@@ -160,14 +160,14 @@ test("um INSERT de flair_challenges por jogo, ids e colunas novas", async () => 
   assert.ok(sql.includes("'/flair/games/a01-espelho-partido.webp'"));
   assert.ok(!sql.includes("\\"), "sem barras invertidas");
   assert.ok(DDL.includes("ADD COLUMN required_wardrobe_level VARCHAR(24) NOT NULL DEFAULT 'EM_MONTAGEM'"));
-  assert.ok(DDL.includes("('FLAIR_GLASS',0,10,NULL,TRUE,") && DDL.includes("('FLAIR_GLASS_PERFECT',10,3,NULL,TRUE,"));
+  assert.ok(DDL.includes("('FLAIR_3D',0,10,NULL,TRUE,") && DDL.includes("('FLAIR_3D_PERFECT',10,3,NULL,TRUE,"));
 });
 
 test("colecionável só para recompensa ITEM, inativo e sem preço", async () => {
   const [a01] = await fixture();
   const rows = catalogInserts(a01, derive(a01));
   assert.equal(rows.length, 1);
-  assert.ok(rows[0].includes("('GE-A01-MOLDURA-PRISMA','Moldura prisma','GLASS-DECOR','DECOR',40,'{}','LEGENDARY',0,'STUDIO','COLLECTIBLE',FALSE,"));
+  assert.ok(rows[0].includes("('F3D-A01-MOLDURA-PRISMA','Moldura prisma','FLAIR3D-DECOR','DECOR',40,'{}','LEGENDARY',0,'STUDIO','COLLECTIBLE',FALSE,"));
   assert.ok(challengeInsert(a01, derive(a01)).includes("'a01-espelho-partido','Espelho Partido'"));
 });
 
@@ -220,13 +220,13 @@ test("build com fixture grava SQL, miniaturas e catálogo em --out; sem --allow-
     const r = await build({ data: "scripts/flair-games/fixtures", out, allowPartial: true, thumbs: true });
     assert.deepEqual(r.errors, []);
     assert.equal(r.entries.length, 2);
-    assert.ok((await stat(join(out, "V98__glass_empire_jogos.sql"))).size > 1000);
+    assert.ok((await stat(join(out, "V98__flair_3d_jogos.sql"))).size > 1000);
     assert.ok((await stat(join(out, "thumbs/b21-primeira-passarela.webp"))).size > 500);
     const md = await readFile(join(out, "catalogo.gen.md"), "utf8");
     assert.ok(md.includes("| 021 | Primeira Passarela (`b21-primeira-passarela`) | B | RUNWAY | EASY | COMMON | ESTREIA | EM_MONTAGEM | 15 | 3/4 | não |"));
     assert.ok(md.includes("R26"));
     const again = await build({ data: "scripts/flair-games/fixtures", out, allowPartial: true, thumbs: false });
-    assert.equal(await readFile(join(out, "V98__glass_empire_jogos.sql"), "utf8"), (await readFile(r.written[0], "utf8")), "determinístico");
+    assert.equal(await readFile(join(out, "V98__flair_3d_jogos.sql"), "utf8"), (await readFile(r.written[0], "utf8")), "determinístico");
     assert.deepEqual(again.errors, []);
     const missing = await build({ data: "scripts/flair-games/nao-existe", out, allowPartial: true, thumbs: false });
     assert.ok(missing.errors[0].startsWith("nenhum serie-*.json"));

@@ -11,15 +11,15 @@ import java.util.Map;
 import static br.com.fashionai.application.flair.CbcRules.intOf;
 
 /**
- * Glass Empire — o Hype dentro da partida, puro e sem escrita: a faixa de uma carta pela nota HYP do retrato, o teto
+ * FLAIR 3D — o Hype dentro da partida, puro e sem escrita: a faixa de uma carta pela nota HYP do retrato, o teto
  * ({@code mandatoryMax}: só rebaixa, nunca reprova), o bônus de jogada ({@code hype.play}) e o deslocamento da faixa de
  * partida ({@code hype.partial}).
  *
  * <p>Limiares (coerentes com o HypeScoreConfig padrão): NICHE ≥ 20, RELEVANT ≥ 40, HOT ≥ 60, TRENDING ≥ 75, VIRAL ≥ 90;
  * carta sem HYP público = LOW_SIGNAL.</p>
  */
-public final class GlassHype {
-    private GlassHype() {
+public final class Flair3dHype {
+    private Flair3dHype() {
     }
 
     public enum Band { LOW_SIGNAL, NICHE, RELEVANT, HOT, TRENDING, VIRAL }

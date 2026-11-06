@@ -1,4 +1,4 @@
-# Glass Empire — catálogo gerado dos 100 jogos
+# FLAIR 3D — catálogo gerado dos 100 jogos
 
 Arquivo GERADO por `scripts/flair-games/build.mjs` a partir de `scripts/flair-games/data/serie-*.json`: não editar à mão.
 Jogos no catálogo: 100.
@@ -111,7 +111,7 @@ Jogos no catálogo: 100.
 | 096 | Chefe: Vellard (`e96-chefe-vellard`) | E | COMMUNITY | LEGENDARY | LEGENDARY | LOFT | CLOSET_INTELIGENTE | 80 | 7/9 | não |
 | 097 | Festival das Marcas (`e97-festival-das-marcas`) | E | COMMUNITY | HARD | COLLAB_DROP | LOFT | VERSATIL | 50 | 6/8 | não |
 | 098 | Tapete do Bairro (`e98-tapete-do-bairro`) | E | COMMUNITY | EASY | COMMON | ESTREIA | EM_MONTAGEM | 20 | 3/5 | não |
-| 099 | Capítulo Final: Império de Vidro (`e99-capitulo-final-imperio-de-vidro`) | E | COMMUNITY | LEGENDARY | LEGENDARY | LOFT | CLOSET_ASSINATURA | 150 | 10/11 | sim |
+| 099 | Capítulo Final: Coroa de Vidro (`e99-capitulo-final-coroa-de-vidro`) | E | COMMUNITY | LEGENDARY | LEGENDARY | LOFT | CLOSET_ASSINATURA | 150 | 10/11 | sim |
 | 100 | Herança (`e100-heranca`) | E | COMMUNITY | HARD | RARE | STUDIO | MAISON_CLOSET | 40 | 5/5 | não |
 
 ## Regra de derivação (desenho §6 R16)
@@ -129,10 +129,10 @@ Os agentes de dados escrevem só a ficha (pontos, vagas, recompensas, `themeTags
 ## Visibilidade da carta Especial (R26)
 
 `FlairCollectionService.visible()` esconde cartas que não são de peça (originType ≠ PIECE) nas vistas de terceiros: a carta Especial ganha num jogo
-(originType PROGRAM, acquiredVia GLASS_EMPIRE) aparece só na coleção do próprio dono. As capturas de evidência são feitas com a sessão do dono.
+(originType PROGRAM, acquiredVia FLAIR_3D) aparece só na coleção do próprio dono. As capturas de evidência são feitas com a sessão do dono.
 
 ## Identificadores
 
 - `flair_challenges.id` = `7d000000-0000-4000-8000-` + número com 12 dígitos; `slug` = `<série minúscula><nn>-<nome>`; `scenario` = `livre`; `sort_order` = 1000 + número.
 - Miniatura: `/flair/games/<slug>.webp` (640×400), gerada de `scene_json` por `scripts/flair-games/scene-svg.mjs`.
-- Recompensas ITEM viram linhas inativas de `room_catalog` (kind COLLECTIBLE, mold GLASS-DECOR), concedidas só pelo jogo.
+- Recompensas ITEM viram linhas inativas de `room_catalog` (kind COLLECTIBLE, mold FLAIR3D-DECOR), concedidas só pelo jogo.

@@ -24,14 +24,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Glass Empire — recompensas extras de um jogo entregue ({@code rewards_json}): um Item do quarto (inventário, origem
- * GLASS_EMPIRE) ou uma carta Especial (R1: origem PROGRAM apontando para a linha de {@code flair_game_rewards}). Cada
+ * FLAIR 3D — recompensas extras de um jogo entregue ({@code rewards_json}): um Item do quarto (inventário, origem
+ * FLAIR_3D) ou uma carta Especial (R1: origem PROGRAM apontando para a linha de {@code flair_game_rewards}). Cada
  * (pessoa, jogo, código) é concedida UMA vez: a linha gravada é a idempotência; repetir devolve o estado atual.
  * Roda dentro da transação do submit ({@link FlairGameService#submit}).
  */
 @Component
-public class GlassRewards {
-    public static final String SOURCE = "GLASS_EMPIRE";
+public class Flair3dRewards {
+    public static final String SOURCE = "FLAIR_3D";
     public static final String DELIVERED = "DELIVERED";
     public static final String PENDING = "PENDING";
     public static final String ITEM = "ITEM";
@@ -44,7 +44,7 @@ public class GlassRewards {
     private final FlairCardInstanceRepository cards;
     private Clock clock = Clock.systemUTC();
 
-    public GlassRewards(FlairGameRewardRepository rewards, RoomCatalogItemRepository catalog, RoomInventoryItemRepository inventory,
+    public Flair3dRewards(FlairGameRewardRepository rewards, RoomCatalogItemRepository catalog, RoomInventoryItemRepository inventory,
                         FlairCardInstanceRepository cards) {
         this.rewards = rewards;
         this.catalog = catalog;

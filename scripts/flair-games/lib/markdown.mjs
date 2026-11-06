@@ -1,5 +1,5 @@
 /**
- * docs/flair/glass-empire-100-jogos/catalogo.gen.md: a tabela resumo do catálogo com as colunas derivadas (R16),
+ * docs/flair/flair-3d-100-jogos/catalogo.gen.md: a tabela resumo do catálogo com as colunas derivadas (R16),
  * a regra de derivação por extenso e a nota sobre a visibilidade da carta Especial (R26). Arquivo gerado: o build
  * sobrescreve a cada execução.
  */
@@ -28,7 +28,7 @@ function counts(entries, pick) {
 export function catalogMarkdown(entries, meta = {}) {
   const sorted = [...entries].sort((a, b) => a.game.number - b.game.number);
   const lines = [
-    "# Glass Empire — catálogo gerado dos 100 jogos",
+    "# FLAIR 3D — catálogo gerado dos 100 jogos",
     "",
     `Arquivo GERADO por \`scripts/flair-games/build.mjs\` a partir de \`${meta.dataDir ?? "scripts/flair-games/data"}/serie-*.json\`: não editar à mão.`,
     `Jogos no catálogo: ${sorted.length}${meta.partial ? " (geração parcial com --allow-partial)" : ""}.`,
@@ -54,13 +54,13 @@ export function catalogMarkdown(entries, meta = {}) {
     "## Visibilidade da carta Especial (R26)",
     "",
     "`FlairCollectionService.visible()` esconde cartas que não são de peça (originType ≠ PIECE) nas vistas de terceiros: a carta Especial ganha num jogo",
-    "(originType PROGRAM, acquiredVia GLASS_EMPIRE) aparece só na coleção do próprio dono. As capturas de evidência são feitas com a sessão do dono.",
+    "(originType PROGRAM, acquiredVia FLAIR_3D) aparece só na coleção do próprio dono. As capturas de evidência são feitas com a sessão do dono.",
     "",
     "## Identificadores",
     "",
     "- `flair_challenges.id` = `7d000000-0000-4000-8000-` + número com 12 dígitos; `slug` = `<série minúscula><nn>-<nome>`; `scenario` = `livre`; `sort_order` = 1000 + número.",
     "- Miniatura: `/flair/games/<slug>.webp` (640×400), gerada de `scene_json` por `scripts/flair-games/scene-svg.mjs`.",
-    "- Recompensas ITEM viram linhas inativas de `room_catalog` (kind COLLECTIBLE, mold GLASS-DECOR), concedidas só pelo jogo.",
+    "- Recompensas ITEM viram linhas inativas de `room_catalog` (kind COLLECTIBLE, mold FLAIR3D-DECOR), concedidas só pelo jogo.",
     "",
   ];
   return lines.join("\n");

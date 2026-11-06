@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Glass Empire — erros do jogador numa vaga preenchida, puro. Cada erro tira pontos do placar Glass da partida (o placar
+ * FLAIR 3D — erros do jogador numa vaga preenchida, puro. Cada erro tira pontos do placar FLAIR 3D da partida (o placar
  * nunca fica negativo) e a cena mostra a falha no objeto da vaga:
  * <ul>
  *   <li>{@code REFUSED} −2: a vaga recusa a carta (filtro de nível, marca, cor…); a entrega fica bloqueada;</li>
@@ -19,8 +19,8 @@ import java.util.Map;
  * Nada sai da carteira (FAI Points e coins): pela regra ética do FLAIR o erro custa placar, faixa de Hype da partida,
  * bônus de montagem perfeita e a recompensa especial, nunca saldo.
  */
-public final class GlassPenalties {
-    private GlassPenalties() {
+public final class Flair3dPenalties {
+    private Flair3dPenalties() {
     }
 
     public enum Code {
@@ -47,7 +47,7 @@ public final class GlassPenalties {
     }
 
     /** Erros da vaga preenchida; vaga vazia não tem erro (só não pontua). */
-    public static List<Penalty> of(SlotResult r, GlassHype.Band cardBand, GlassHype.Band mandatoryMax) {
+    public static List<Penalty> of(SlotResult r, Flair3dHype.Band cardBand, Flair3dHype.Band mandatoryMax) {
         List<Penalty> out = new ArrayList<>();
         if (r == null || r.cardId() == null) {
             return out;
@@ -71,7 +71,7 @@ public final class GlassPenalties {
         return penalties == null ? 0 : penalties.stream().mapToInt(Penalty::points).sum();
     }
 
-    /** Placar Glass com os erros descontados, nunca abaixo de zero. */
+    /** Placar FLAIR 3D com os erros descontados, nunca abaixo de zero. */
     public static int score(int sintonia, int hypeTotal, int effectTotal, int penaltyTotal) {
         return Math.max(0, sintonia + hypeTotal + effectTotal - penaltyTotal);
     }

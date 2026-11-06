@@ -2,7 +2,7 @@ package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.service.FaiPointsService.Level;
-import br.com.fashionai.application.service.GlassAccess.WardrobeLevel;
+import br.com.fashionai.application.service.Flair3dAccess.WardrobeLevel;
 import br.com.fashionai.domain.model.FlairChallenge;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,20 +22,20 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Glass Empire — bloqueio por nível: limiares dos pontos vitalícios (299/300 e 899/900), faixas do guarda-roupa
+ * FLAIR 3D — bloqueio por nível: limiares dos pontos vitalícios (299/300 e 899/900), faixas do guarda-roupa
  * (299/300, 959/960, score nulo), visitante nunca "pode jogar", e os 403 com código e detalhes.
  */
-class GlassAccessTest {
+class Flair3dAccessTest {
     private FaiPointsService points;
     private InventoryScoreService inventory;
-    private GlassAccess access;
+    private Flair3dAccess access;
     private final UUID ana = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
         points = mock(FaiPointsService.class);
         inventory = mock(InventoryScoreService.class);
-        access = new GlassAccess(points, inventory);
+        access = new Flair3dAccess(points, inventory);
     }
 
     static FlairChallenge game(String tier, String wardrobe) {
@@ -72,8 +72,8 @@ class GlassAccessTest {
     @Test
     void meLeNivelEGuardaRoupaUmaVezCada() {
         lifetime(950, 700);
-        GlassAccess.Me me = access.me(ana);
-        assertThat(me).isEqualTo(new GlassAccess.Me(Level.LOFT, WardrobeLevel.BEM_CURADO, 700));
+        Flair3dAccess.Me me = access.me(ana);
+        assertThat(me).isEqualTo(new Flair3dAccess.Me(Level.LOFT, WardrobeLevel.BEM_CURADO, 700));
         verify(points).level(ana);
         verify(inventory).compute(ana, true);
     }
@@ -102,7 +102,7 @@ class GlassAccessTest {
     void guardaRoupaInelegivelOuSemAvaliacaoEhEmMontagem() {
         when(points.level(ana)).thenReturn(Level.STUDIO);
         when(inventory.compute(ana, true)).thenReturn(score(850, false));
-        assertThat(access.me(ana)).isEqualTo(new GlassAccess.Me(Level.STUDIO, WardrobeLevel.EM_MONTAGEM, null));
+        assertThat(access.me(ana)).isEqualTo(new Flair3dAccess.Me(Level.STUDIO, WardrobeLevel.EM_MONTAGEM, null));
         when(inventory.compute(ana, true)).thenReturn(null);
         assertThat(access.me(ana).wardrobe()).isEqualTo(WardrobeLevel.EM_MONTAGEM);
     }
@@ -110,9 +110,9 @@ class GlassAccessTest {
     // ------------------------------------------------------------------ check / require
     @Test
     void visitanteVeOsMotivosMasNuncaPodeJogar() {
-        GlassAccess.Me me = access.me(null);
+        Flair3dAccess.Me me = access.me(null);
         verifyNoInteractions(points, inventory);
-        GlassAccess.Access a = access.check(game("ESTREIA", "EM_MONTAGEM"), me, false);
+        Flair3dAccess.Access a = access.check(game("ESTREIA", "EM_MONTAGEM"), me, false);
         assertThat(a.tierOk()).isTrue();
         assertThat(a.wardrobeOk()).isTrue();
         assertThat(a.allowed()).isFalse();
@@ -122,8 +122,8 @@ class GlassAccessTest {
 
     @Test
     void checkInformaCadaRequisitoSeparado() {
-        GlassAccess.Me me = new GlassAccess.Me(Level.LOFT, WardrobeLevel.ORGANIZADO, 320);
-        GlassAccess.Access a = access.check(game("STUDIO", "VERSATIL"), me, true);
+        Flair3dAccess.Me me = new Flair3dAccess.Me(Level.LOFT, WardrobeLevel.ORGANIZADO, 320);
+        Flair3dAccess.Access a = access.check(game("STUDIO", "VERSATIL"), me, true);
         assertThat(a.tierOk()).isTrue();
         assertThat(a.wardrobeOk()).isFalse();
         assertThat(a.allowed()).isFalse();
@@ -132,7 +132,7 @@ class GlassAccessTest {
 
     @Test
     void requireDevolve403ComCodigoEDetalhesDoNivel() {
-        GlassAccess.Me me = new GlassAccess.Me(Level.STUDIO, WardrobeLevel.MAISON_CLOSET, 990);
+        Flair3dAccess.Me me = new Flair3dAccess.Me(Level.STUDIO, WardrobeLevel.MAISON_CLOSET, 990);
         assertThatThrownBy(() -> access.require(game("LOFT", "EM_MONTAGEM"), me))
                 .isInstanceOfSatisfying(ApiException.class, e -> {
                     assertThat(e.status()).isEqualTo(403);
@@ -143,7 +143,7 @@ class GlassAccessTest {
 
     @Test
     void requireDevolve403ComCodigoEDetalhesDoGuardaRoupa() {
-        GlassAccess.Me me = new GlassAccess.Me(Level.LOFT, WardrobeLevel.ORGANIZADO, 310);
+        Flair3dAccess.Me me = new Flair3dAccess.Me(Level.LOFT, WardrobeLevel.ORGANIZADO, 310);
         assertThatThrownBy(() -> access.require(game("ESTREIA", "BEM_CURADO"), me))
                 .isInstanceOfSatisfying(ApiException.class, e -> {
                     assertThat(e.status()).isEqualTo(403);
@@ -155,12 +155,12 @@ class GlassAccessTest {
 
     @Test
     void nivelExigidoInvalidoNoCatalogoEhErroClaroNaoJogoAberto() {
-        assertThatThrownBy(() -> GlassAccess.requiredTier(game("PENTHOUSE", "EM_MONTAGEM")))
+        assertThatThrownBy(() -> Flair3dAccess.requiredTier(game("PENTHOUSE", "EM_MONTAGEM")))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("a01-espelho-partido").hasMessageContaining("PENTHOUSE");
-        assertThatThrownBy(() -> GlassAccess.requiredWardrobe(game("LOFT", "ARRUMADO")))
+        assertThatThrownBy(() -> Flair3dAccess.requiredWardrobe(game("LOFT", "ARRUMADO")))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("ARRUMADO");
-        assertThat(GlassAccess.requiredTier(game(null, null))).isEqualTo(Level.ESTREIA);
-        assertThat(GlassAccess.requiredWardrobe(game(null, null))).isEqualTo(WardrobeLevel.EM_MONTAGEM);
+        assertThat(Flair3dAccess.requiredTier(game(null, null))).isEqualTo(Level.ESTREIA);
+        assertThat(Flair3dAccess.requiredWardrobe(game(null, null))).isEqualTo(WardrobeLevel.EM_MONTAGEM);
         when(points.level(any())).thenReturn(null);
         when(inventory.compute(any(), eq(true))).thenReturn(null);
         assertThat(access.me(ana).tier()).isEqualTo(Level.ESTREIA);

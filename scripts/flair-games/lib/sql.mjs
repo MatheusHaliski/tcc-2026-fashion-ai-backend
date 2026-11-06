@@ -1,12 +1,12 @@
 /**
- * Geração da migração V98__glass_empire_jogos.sql (desenho §1.1, R9, R12, R14): cabeçalho DDL fixo, regras de
+ * Geração da migração V98__flair_3d_jogos.sql (desenho §1.1, R9, R12, R14): cabeçalho DDL fixo, regras de
  * pontos, um colecionável de room_catalog por recompensa ITEM e um INSERT de flair_challenges por jogo, com as mesmas
  * colunas da V56 mais as novas. Determinístico: mesma entrada, mesmo arquivo, ordenado por número.
  */
 import { SEED_AT, gameId, thumbnailPath } from "./constants.mjs";
 import { withPhoto } from "./venue-map.mjs";
 
-export const DDL = `-- Glass Empire: 100 jogos FLAIR como linhas de flair_challenges (docs/flair/glass-empire-100-jogos). Arquivo GERADO por
+export const DDL = `-- FLAIR 3D: 100 jogos FLAIR como linhas de flair_challenges (docs/flair/flair-3d-100-jogos). Arquivo GERADO por
 -- scripts/flair-games/build.mjs a partir de scripts/flair-games/data/serie-*.json: não editar à mão.
 
 ALTER TABLE flair_challenges
@@ -39,8 +39,8 @@ CREATE TABLE flair_game_rewards (
 );
 
 INSERT INTO fai_points_rules (action_code, points, daily_cap, weekly_cap, once_per_ref, description) VALUES
-('FLAIR_GLASS',0,10,NULL,TRUE,'Jogo Glass Empire concluído (valor do jogo)'),
-('FLAIR_GLASS_PERFECT',10,3,NULL,TRUE,'Jogo Glass Empire com montagem perfeita');
+('FLAIR_3D',0,10,NULL,TRUE,'Jogo FLAIR 3D concluído (valor do jogo)'),
+('FLAIR_3D_PERFECT',10,3,NULL,TRUE,'Jogo FLAIR 3D com montagem perfeita');
 `;
 
 const CHALLENGE_COLUMNS = ["id", "slug", "name", "names_json", "description", "descriptions_json", "scenario", "difficulty", "status", "moment_id",
@@ -81,8 +81,8 @@ function insert(table, columns, values) {
 /** INSERTs de room_catalog (um por recompensa ITEM): colecionável inativo na loja, concedido só pelo jogo. */
 export function catalogInserts(game, d) {
   return (game.rewards ?? []).filter((r) => r.type === "ITEM").map((r) => insert("room_catalog", CATALOG_COLUMNS, [
-    literal(r.code), literal(r.names["pt-BR"]), literal("GLASS-DECOR"), literal("DECOR"), 40, literal("{}"), literal(d.rarity), 0,
-    literal(d.requiredTier), literal("COLLECTIBLE"), false, literal(`Glass Empire · ${game.names["pt-BR"]}`), literal(SEED_AT), 0,
+    literal(r.code), literal(r.names["pt-BR"]), literal("FLAIR3D-DECOR"), literal("DECOR"), 40, literal("{}"), literal(d.rarity), 0,
+    literal(d.requiredTier), literal("COLLECTIBLE"), false, literal(`FLAIR 3D · ${game.names["pt-BR"]}`), literal(SEED_AT), 0,
   ]));
 }
 

@@ -1,7 +1,7 @@
-# Lote R90-glass-empire-motor — requisitos do motor CBC extraídos de `CbcRules` + tipos do Glass Empire
+# Lote R90-flair-3d-motor — requisitos do motor CBC extraídos de `CbcRules` + tipos do FLAIR 3D
 
 Branch: `claude/adoring-davinci-mufbri`. Pacote: `fai-application/src/main/java/br/com/fashionai/application/flair/`.
-Motivo: os 100 jogos do Glass Empire pedem cinco tipos novos na DSL de requisitos, vagas opcionais e duas regras puras
+Motivo: os 100 jogos do FLAIR 3D pedem cinco tipos novos na DSL de requisitos, vagas opcionais e duas regras puras
 novas (faixas de Hype e efeitos por vaga). `CbcRules.java` está congelado (615) e não podia crescer, então a avaliação
 de requisitos (o `switch` de `requirement(...)`, ~110 linhas, e o helper `tagMatch` usado só por ele) saiu para arquivos
 próprios e o original delega.
@@ -10,10 +10,10 @@ próprios e o original delega.
 
 | Arquivo | Antes | Depois | Arquivos novos (linhas) | Padrão GoF |
 |---|---:|---:|---|---|
-| `flair/CbcRules.java` (`java-other`, 250; congelado) | 615 | 517 | `CbcRequirements.java` (86), `CbcRequirementsBoard.java` (95), `CbcRequirementsTags.java` (152), `GlassHype.java` (118), `GlassEffects.java` (74) | nenhum |
+| `flair/CbcRules.java` (`java-other`, 250; congelado) | 615 | 517 | `CbcRequirements.java` (86), `CbcRequirementsBoard.java` (95), `CbcRequirementsTags.java` (152), `Flair3dHype.java` (118), `Flair3dEffects.java` (74) | nenhum |
 
-Testes novos (≤400 cada): `CbcRequirementsTest` (152), `CbcOptionalSlotsTest` (121), `GlassHypeTest` (161),
-`GlassEffectsTest` (74).
+Testes novos (≤400 cada): `CbcRequirementsTest` (152), `CbcOptionalSlotsTest` (121), `Flair3dHypeTest` (161),
+`Flair3dEffectsTest` (74).
 
 ## Como foi dividido
 
@@ -25,7 +25,7 @@ Testes novos (≤400 cada): `CbcRequirementsTest` (152), `CbcOptionalSlotsTest` 
   - `CbcRequirementsTags` — tipos que olham as tags da carta: `brand`, `sameBrand`, `distinctBrands`, `tag`, `theme`,
     `hype`, `origin`, `noBuy`, `rediscovery` e os novos `distinctTags {field, count}` (cores contadas por família da
     taxonomia, como `colorMatch` já faz) e `hypeBand {min, count, scope, positions}` (faixa pela nota HYP via
-    `GlassHype.bandOf`; sem `scope` = pelo menos `count`; `all` = todas as colocadas; `positions` = cartas nas posições
+    `Flair3dHype.bandOf`; sem `scope` = pelo menos `count`; `all` = todas as colocadas; `positions` = cartas nas posições
     listadas, `count` padrão = nº de posições).
   - Tipo desconhecido continua reprovando com `(ok=false, have=0, need=1)`.
 - Os corpos dos 14 casos clássicos foram movidos sem alteração (mesmos comentários, mesmos `have/need`), com uma
@@ -42,11 +42,11 @@ Testes novos (≤400 cada): `CbcRequirementsTest` (152), `CbcOptionalSlotsTest` 
   opcionais preenchidas (Javadoc), `sintoniaMax` continua `3 × todas as vagas`, e `n` em `CbcRequirements` é o número
   de vagas não opcionais (tier only/max, ovrAvg, ovrMin sem count, origin, noBuy, strictPosition, cards sem min).
   `misses()` não olha `optional` (a chave não é uma exigência da carta).
-- `GlassHype` (público, puro): `Band` (LOW_SIGNAL…VIRAL), limiares 20/40/60/75/90, `bandOf`, `parse`, `clampMax`,
+- `Flair3dHype` (público, puro): `Band` (LOW_SIGNAL…VIRAL), limiares 20/40/60/75/90, `bandOf`, `parse`, `clampMax`,
   `shifted`, `playBonus` (NONE, BONUS_ABOVE_RELEVANT{cap}, LOW_IS_GOOD{bonus}, DIMENSION{dim, per, cap}, TIEBREAK),
   `partialShift` (NONE, UP_ONLY, UP_DOWN, ALL_UP_IF_COMPLETE) e `perfect(ev, requiredSlots)` = `ok && sintonia ≥ 2 × vagas
   obrigatórias` (R2).
-- `GlassEffects` (público, puro): `Kind` (COMUM, METAMORFOSE, IMPERSONATION), `Effect(slot, kind, bonus)`, `of`, `bonusOf`,
+- `Flair3dEffects` (público, puro): `Kind` (COMUM, METAMORFOSE, IMPERSONATION), `Effect(slot, kind, bonus)`, `of`, `bonusOf`,
   `all` e `total`; o chamador decide `metamorfoseAllowed` e as vagas `impersonationReady` (nível e aura, R21).
 
 ## Por que nenhum padrão GoF
@@ -63,7 +63,7 @@ Caracterização: `CbcRulesTest` (8) e `CbcRulesRequisitosTest` (12) rodados ant
 
 ```
 mvn -B -ntp -o -q -pl fai-application -am -Djacoco.skip=true test -Dsurefire.failIfNoSpecifiedTests=false \
-    -Dtest='CbcRulesTest,CbcRulesRequisitosTest,CbcRequirementsTest,CbcOptionalSlotsTest,GlassHypeTest,GlassEffectsTest,CbcSeedTest,FlairChallengeServiceTest'
+    -Dtest='CbcRulesTest,CbcRulesRequisitosTest,CbcRequirementsTest,CbcOptionalSlotsTest,Flair3dHypeTest,Flair3dEffectsTest,CbcSeedTest,FlairChallengeServiceTest'
 python -m scripts.refactoring.line_ratchet --update && python -m scripts.refactoring.line_ratchet
 ```
 
@@ -71,7 +71,7 @@ python -m scripts.refactoring.line_ratchet --update && python -m scripts.refacto
 |---|---|
 | Original, `CbcRulesTest` + `CbcRulesRequisitosTest` | 8 + 12 testes, 0 falhas |
 | Após a extração, os mesmos | 8 + 12 testes, 0 falhas |
-| Novos: `CbcRequirementsTest`, `CbcOptionalSlotsTest`, `GlassHypeTest`, `GlassEffectsTest` | 8 + 5 + 7 + 3 testes, 0 falhas |
+| Novos: `CbcRequirementsTest`, `CbcOptionalSlotsTest`, `Flair3dHypeTest`, `Flair3dEffectsTest` | 8 + 5 + 7 + 3 testes, 0 falhas |
 | `CbcSeedTest` (16 desafios da V56 continuam válidos) + `FlairChallengeServiceTest` | 1 + 10 testes, 0 falhas |
 | Catraca | `CbcRules.java` 615 → 517 (`--update`); 0 violações; nenhum arquivo novo acima do limite |
 

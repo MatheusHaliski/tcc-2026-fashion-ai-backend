@@ -1,5 +1,5 @@
-// Porte simplificado (JS) do motor CBC + bloco Glass para a API simulada das evidências.
-// Não é a fonte da verdade: as regras reais estão em CbcRules/CbcRequirements/GlassHype/GlassEffects (Java).
+// Porte simplificado (JS) do motor CBC + bloco FLAIR 3D para a API simulada das evidências.
+// Não é a fonte da verdade: as regras reais estão em CbcRules/CbcRequirements/Flair3dHype/Flair3dEffects (Java).
 import { BANDS, TIERS } from "./constants.mjs";
 
 const COLOR_FAMILY = { black: "Especiais", white: "Especiais", gray: "Especiais", beige: "Especiais", brown: "Especiais", silver: "Especiais", gold: "Amarelo",
@@ -100,7 +100,7 @@ export function evaluate(game, placed, bank) {
   return { slots: results, requirements, sintonia: total, sintoniaMax: 3 * slots.length, filled: cards.length, complete, ok, rediscovered, board };
 }
 
-export function glass(game, ev, tier) {
+export function flair3d(game, ev, tier) {
   const loft = tier === "LOFT"; const required = game.slots.filter((s) => !s.optional).length;
   const maxBand = bandIndex(game.hype?.mandatoryMax ?? "VIRAL"); const play = game.hype?.play ?? { mode: "NONE" }; const partial = game.hype?.partial ?? { mode: "NONE" };
   let hypeTotal = 0, effectTotal = 0, penaltyTotal = 0;
@@ -111,7 +111,7 @@ export function glass(game, ev, tier) {
     if (play.mode === "BONUS_ABOVE_RELEVANT") hb = Math.min(play.cap ?? 3, Math.max(0, band - 2));
     else if (play.mode === "LOW_IS_GOOD") hb = band <= 1 ? (play.bonus ?? 2) : 0;
     else if (play.mode === "DIMENSION") hb = Math.min(play.cap ?? 3, Math.floor((c.hype?.[play.dim ?? "TRD"] ?? 0) / (play.per ?? 25)));
-    // carta fora da posição não aciona Metamorfose nem Impersonation (GlassPenalties no servidor)
+    // carta fora da posição não aciona Metamorfose nem Impersonation (Flair3dPenalties no servidor)
     const kind = !r.positionOk ? "COMUM" : loft && c.impersonationReady ? "IMPERSONATION" : loft && r.sintonia >= 2 ? "METAMORFOSE" : "COMUM";
     const penalties = [!r.accepted && ["REFUSED", 2], !r.positionOk && ["MISPLACED", 1], r.sintonia === 0 && ["NO_SINTONIA", 1], bandOf(c.hype?.HYP) > maxBand && ["OVEREXPOSED", 1]]
       .filter(Boolean).map(([code, points]) => ({ code, points }));

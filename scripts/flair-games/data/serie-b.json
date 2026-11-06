@@ -440,7 +440,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B21-PISO-ESPELHO-NEGRO",
+        "code": "F3D-B21-PISO-ESPELHO-NEGRO",
         "names": {
           "pt-BR": "Piso Espelho Negro",
           "en": "Black Mirror floor",
@@ -897,7 +897,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B22-MOLDURA-CAPA-DE-JORNAL",
+        "code": "F3D-B22-MOLDURA-CAPA-DE-JORNAL",
         "names": {
           "pt-BR": "Moldura Capa de Jornal",
           "en": "Front Page frame",
@@ -1390,7 +1390,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B23-CADEIRA-PRIMEIRA-FILA",
+        "code": "F3D-B23-CADEIRA-PRIMEIRA-FILA",
         "names": {
           "pt-BR": "Cadeira Primeira Fila",
           "en": "Front Row chair",
@@ -1900,7 +1900,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B24-RELOGIO-DE-BASTIDOR",
+        "code": "F3D-B24-RELOGIO-DE-BASTIDOR",
         "names": {
           "pt-BR": "Relógio de bastidor",
           "en": "Backstage clock",
@@ -2323,7 +2323,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B25-CAPA-EMOLDURADA",
+        "code": "F3D-B25-CAPA-EMOLDURADA",
         "names": {
           "pt-BR": "Capa emoldurada",
           "en": "Framed cover",
@@ -2805,7 +2805,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B26-POSTER-STREET-STYLE",
+        "code": "F3D-B26-POSTER-STREET-STYLE",
         "names": {
           "pt-BR": "Pôster Street Style",
           "en": "Street Style poster",
@@ -3291,7 +3291,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B27-GUARDA-CHUVA-TRANSPARENTE",
+        "code": "F3D-B27-GUARDA-CHUVA-TRANSPARENTE",
         "names": {
           "pt-BR": "Guarda-chuva transparente",
           "en": "Clear umbrella",
@@ -3889,7 +3889,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B28-LOOKBOOK-IMPRESSO",
+        "code": "F3D-B28-LOOKBOOK-IMPRESSO",
         "names": {
           "pt-BR": "Lookbook impresso",
           "en": "Printed lookbook",
@@ -4365,7 +4365,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B29-TROFEU-CRITICA",
+        "code": "F3D-B29-TROFEU-CRITICA",
         "names": {
           "pt-BR": "Troféu Crítica",
           "en": "Critics trophy",
@@ -4858,7 +4858,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B30-PLACA-TAPETE",
+        "code": "F3D-B30-PLACA-TAPETE",
         "names": {
           "pt-BR": "Placa de vidro Tapete",
           "en": "Carpet glass plate",
@@ -4873,9 +4873,9 @@
         "es": "Recorrer una alfombra de vidrio de seis placas sin agrietar ninguna."
       },
       "scenario": {
-        "pt-BR": "O tapete de gala do Glass Empire, de vidro transparente sobre a cidade.",
-        "en": "The Glass Empire gala carpet, clear glass above the city.",
-        "es": "La alfombra de gala del Glass Empire, de vidrio transparente sobre la ciudad."
+        "pt-BR": "O tapete de gala do FLAIR 3D, de vidro transparente sobre a cidade.",
+        "en": "The FLAIR 3D gala carpet, clear glass above the city.",
+        "es": "La alfombra de gala del FLAIR 3D, de vidrio transparente sobre la ciudad."
       },
       "mandatory": {
         "pt-BR": "Um vestido de gala e um calçado de salto ou social (uma peça de ocasião formal, festa ou cerimônia); mala 18; todas as cartas pelo menos Relevante.",
@@ -5397,7 +5397,7 @@
     "rewards": [
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-B31-PROVA-COM-LINA-VALE",
+        "code": "F3D-B31-PROVA-COM-LINA-VALE",
         "names": {
           "pt-BR": "Prova com Lina Vale",
           "en": "Fitting with Lina Vale",
@@ -5984,7 +5984,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B32-ARARA-CAMARIM",
+        "code": "F3D-B32-ARARA-CAMARIM",
         "names": {
           "pt-BR": "Arara Camarim",
           "en": "Dressing Room rack",
@@ -6480,7 +6480,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B33-TRILHA-DE-ENCERRAMENTO",
+        "code": "F3D-B33-TRILHA-DE-ENCERRAMENTO",
         "names": {
           "pt-BR": "Trilha de encerramento",
           "en": "Closing soundtrack",
@@ -6930,7 +6930,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B34-CRACHA-CASTING",
+        "code": "F3D-B34-CRACHA-CASTING",
         "names": {
           "pt-BR": "Crachá Casting",
           "en": "Casting badge",
@@ -7327,7 +7327,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B35-CORTINA-VIDRO-FOSCO",
+        "code": "F3D-B35-CORTINA-VIDRO-FOSCO",
         "names": {
           "pt-BR": "Cortina de vidro fosco",
           "en": "Frosted glass curtain",
@@ -7804,7 +7804,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B36-ETIQUETA-SEM-LOGO",
+        "code": "F3D-B36-ETIQUETA-SEM-LOGO",
         "names": {
           "pt-BR": "Etiqueta Sem Logo",
           "en": "No-Logo label",
@@ -8225,7 +8225,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B37-REDOMA-DE-VIDRO",
+        "code": "F3D-B37-REDOMA-DE-VIDRO",
         "names": {
           "pt-BR": "Redoma de vidro",
           "en": "Glass dome",
@@ -8707,7 +8707,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B38-TAPETE-GELO",
+        "code": "F3D-B38-TAPETE-GELO",
         "names": {
           "pt-BR": "Tapete Gelo",
           "en": "Ice rug",
@@ -8722,9 +8722,9 @@
         "es": "Desfilar en una pasarela de hielo donde las prendas ligeras derriten placas y las de invierno las vuelven a congelar."
       },
       "scenario": {
-        "pt-BR": "A passarela de inverno do Glass Empire, gelo sobre vidro, seis placas.",
-        "en": "The winter runway of the Glass Empire, ice over glass, six plates.",
-        "es": "La pasarela de invierno del Glass Empire, hielo sobre vidrio, seis placas."
+        "pt-BR": "A passarela de inverno do FLAIR 3D, gelo sobre vidro, seis placas.",
+        "en": "The winter runway of the FLAIR 3D, ice over glass, six plates.",
+        "es": "La pasarela de invierno del FLAIR 3D, hielo sobre vidrio, seis placas."
       },
       "mandatory": {
         "pt-BR": "Duas peças de inverno (lã, cashmere, fleece, tricô, pele sintética, veludo cotelê ou couro) e uma bota.",
@@ -9304,7 +9304,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B39-MANEQUIM-DE-VIDRO",
+        "code": "F3D-B39-MANEQUIM-DE-VIDRO",
         "names": {
           "pt-BR": "Manequim de vidro",
           "en": "Glass mannequin",
@@ -9916,7 +9916,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-B40-ILUMINACAO-QUATRO-BLOCOS",
+        "code": "F3D-B40-ILUMINACAO-QUATRO-BLOCOS",
         "names": {
           "pt-BR": "Iluminação Quatro Blocos",
           "en": "Four Blocks lighting",
@@ -9925,7 +9925,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-B40-DIRETOR-CRIATIVO",
+        "code": "F3D-B40-DIRETOR-CRIATIVO",
         "names": {
           "pt-BR": "Diretor Criativo",
           "en": "Creative Director",

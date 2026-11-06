@@ -333,7 +333,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C41-BILHETE-LINHA-DE-VIDRO",
+        "code": "F3D-C41-BILHETE-LINHA-DE-VIDRO",
         "names": {
           "pt-BR": "Bilhete Linha de Vidro",
           "en": "Glass Line ticket",
@@ -759,7 +759,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C42-SACOLA-DE-FEIRA",
+        "code": "F3D-C42-SACOLA-DE-FEIRA",
         "names": {
           "pt-BR": "Sacola de feira",
           "en": "Market tote",
@@ -1208,7 +1208,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C43-LUMINARIA-POR-DO-SOL",
+        "code": "F3D-C43-LUMINARIA-POR-DO-SOL",
         "names": {
           "pt-BR": "Luminária Pôr do Sol",
           "en": "Sunset lamp",
@@ -1659,7 +1659,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C44-CAPA-DE-CHUVA",
+        "code": "F3D-C44-CAPA-DE-CHUVA",
         "names": {
           "pt-BR": "Capa de chuva transparente",
           "en": "Clear raincoat",
@@ -2156,7 +2156,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C45-MOCHILA-DE-TRILHA",
+        "code": "F3D-C45-MOCHILA-DE-TRILHA",
         "names": {
           "pt-BR": "Mochila de trilha",
           "en": "Trail backpack",
@@ -2579,7 +2579,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C46-GUARDA-SOL-LISTRADO",
+        "code": "F3D-C46-GUARDA-SOL-LISTRADO",
         "names": {
           "pt-BR": "Guarda-sol listrado",
           "en": "Striped beach umbrella",
@@ -3099,7 +3099,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C47-PULSEIRA-DO-FESTIVAL",
+        "code": "F3D-C47-PULSEIRA-DO-FESTIVAL",
         "names": {
           "pt-BR": "Pulseira do festival",
           "en": "Festival wristband",
@@ -3593,7 +3593,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C48-PISO-LED",
+        "code": "F3D-C48-PISO-LED",
         "names": {
           "pt-BR": "Piso LED para a suíte",
           "en": "LED floor for the suite",
@@ -4087,7 +4087,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C49-SELO-GARIMPO",
+        "code": "F3D-C49-SELO-GARIMPO",
         "names": {
           "pt-BR": "Selo Garimpo em moldura",
           "en": "Framed Thrift Find seal",
@@ -4500,7 +4500,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C50-ETIQUETA-LIS",
+        "code": "F3D-C50-ETIQUETA-LIS",
         "names": {
           "pt-BR": "Etiqueta de mala LIS",
           "en": "LIS luggage tag",
@@ -5030,7 +5030,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C51-ABADA-BLOCO-DE-VIDRO",
+        "code": "F3D-C51-ABADA-BLOCO-DE-VIDRO",
         "names": {
           "pt-BR": "Abadá Bloco de Vidro",
           "en": "Glass Block parade shirt",
@@ -5547,7 +5547,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C52-PODIO-MINIATURA",
+        "code": "F3D-C52-PODIO-MINIATURA",
         "names": {
           "pt-BR": "Pódio em miniatura",
           "en": "Miniature podium",
@@ -6025,7 +6025,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C53-PLANTA-DE-VIDRO",
+        "code": "F3D-C53-PLANTA-DE-VIDRO",
         "names": {
           "pt-BR": "Planta de vidro",
           "en": "Glass plant",
@@ -6443,7 +6443,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C54-BICICLETA-DE-VIDRO",
+        "code": "F3D-C54-BICICLETA-DE-VIDRO",
         "names": {
           "pt-BR": "Bicicleta de vidro",
           "en": "Glass bicycle",
@@ -6844,7 +6844,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C55-CADEIRA-DE-CINEMA",
+        "code": "F3D-C55-CADEIRA-DE-CINEMA",
         "names": {
           "pt-BR": "Cadeira de cinema",
           "en": "Cinema chair",
@@ -7287,7 +7287,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C56-MALA-DE-MAO-VIDRO",
+        "code": "F3D-C56-MALA-DE-MAO-VIDRO",
         "names": {
           "pt-BR": "Mala de mão Vidro",
           "en": "Glass carry-on",
@@ -7754,7 +7754,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C57-LUMINARIA-LAMPIAO",
+        "code": "F3D-C57-LUMINARIA-LAMPIAO",
         "names": {
           "pt-BR": "Luminária Lampião",
           "en": "Lantern lamp",
@@ -8295,7 +8295,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C58-GLOBO-DE-NEVE",
+        "code": "F3D-C58-GLOBO-DE-NEVE",
         "names": {
           "pt-BR": "Globo de neve da capital",
           "en": "Capital snow globe",
@@ -8742,7 +8742,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C59-RELOGIO-CONTAGEM",
+        "code": "F3D-C59-RELOGIO-CONTAGEM",
         "names": {
           "pt-BR": "Relógio de contagem regressiva",
           "en": "Countdown clock",
@@ -9251,7 +9251,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-C60-ABOBORA-DE-VIDRO",
+        "code": "F3D-C60-ABOBORA-DE-VIDRO",
         "names": {
           "pt-BR": "Abóbora de vidro",
           "en": "Glass pumpkin",

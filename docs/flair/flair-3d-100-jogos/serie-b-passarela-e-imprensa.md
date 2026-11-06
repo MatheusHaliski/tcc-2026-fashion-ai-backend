@@ -1,6 +1,6 @@
 # Série B — Passarela, tapete e imprensa
 
-Vinte jogos no distrito das passarelas do Glass Empire: desfiles, tapetes, júri, editoriais e fotógrafos. Regras
+Vinte jogos no distrito das passarelas do FLAIR 3D: desfiles, tapetes, júri, editoriais e fotógrafos. Regras
 compartilhadas no [README](README.md).
 
 ## 21 · Passarela Espelhada
@@ -150,7 +150,7 @@ compartilhadas no [README](README.md).
 ## 30 · Tapete de Vidro
 
 - **Objetivo:** percorrer um tapete de vidro de seis placas, cada uma rachando se a peça pousada tiver OVR abaixo do exigido.
-- **Cenário:** o tapete de gala do Glass Empire, de vidro transparente sobre a cidade.
+- **Cenário:** o tapete de gala do FLAIR 3D, de vidro transparente sobre a cidade.
 - **Peças obrigatórias:** 1 VES ou LOOK de gala e 1 CAL de salto ou social.
 - **Hype mínimo do deck:** Relevante.
 - **Cartas mínimas:** 6.
@@ -278,7 +278,7 @@ compartilhadas no [README](README.md).
 ## 38 · Passarela de Gelo
 
 - **Objetivo:** desfilar numa passarela de gelo onde cada peça leve derrete uma placa e cada peça de inverno a congela de volta.
-- **Cenário:** a passarela de inverno do Glass Empire, gelo sobre vidro, seis placas.
+- **Cenário:** a passarela de inverno do FLAIR 3D, gelo sobre vidro, seis placas.
 - **Peças obrigatórias:** 2 peças de inverno e 1 CAL de bota.
 - **Hype mínimo do deck:** Sinal baixo.
 - **Cartas mínimas:** 6.

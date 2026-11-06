@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/** Glass Empire — os 100 jogos FLAIR (linhas de flair_challenges com série), com bloqueio por nível no servidor. */
+/** FLAIR 3D — os 100 jogos FLAIR (linhas de flair_challenges com série), com bloqueio por nível no servidor. */
 @RestController
-@Tag(name = "Glass Empire — jogos FLAIR")
+@Tag(name = "FLAIR 3D — jogos FLAIR")
 public class FlairGameController {
     private final FlairGameService service;
 
@@ -52,14 +52,14 @@ public class FlairGameController {
     }
 
     @PostMapping("/api/flair/games/{slug}/check")
-    @Operation(summary = "Confere a montagem (403 abaixo do nível exigido) e devolve o resultado do CBC com o bloco glass")
+    @Operation(summary = "Confere a montagem (403 abaixo do nível exigido) e devolve o resultado do CBC com o bloco flair3d")
     public Map<String, Object> check(CurrentUser user, @PathVariable String slug, @RequestBody FlairChallengeService.BuildRequest body) {
         return service.check(user, slug, body);
     }
 
     @PostMapping("/api/flair/games/{slug}/submit")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Entrega atômica (403 abaixo do nível exigido): CBC + glass + bônus de perfeição + recompensas extras")
+    @Operation(summary = "Entrega atômica (403 abaixo do nível exigido): CBC + flair3d + bônus de perfeição + recompensas extras")
     public Map<String, Object> submit(CurrentUser user, @PathVariable String slug, @RequestBody FlairChallengeService.BuildRequest body) {
         return service.submit(user, slug, body);
     }

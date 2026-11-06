@@ -1,11 +1,11 @@
-# Jogos FLAIR fora do Glass Empire: fichas
+# Jogos FLAIR fora do FLAIR 3D: fichas
 
 Gerado por `python3 scripts/flair-modes/sheets.py` a partir de `fichas.json` (não edite à mão).
 A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do cenário.
 
 **Regra comum.** Todo jogo tem cenário fotográfico real e, a cada carta inserida, um efeito visual na cena: clarão, a luz do lugar acende sobre o objeto onde a carta entra, Aura Hype pela faixa da carta e, quando houver, Metamorfose ou Impersonation. Sem permissão Loft, o efeito é o comum; a Aura Hype aparece sempre.
 
-**Faixas de Hype.** Faixas de Hype (as mesmas do Glass Empire): Sinal baixo 0–19 · Nicho 20–39 · Relevante 40–59 · Em alta 60–74 · Em tendência 75–89 · Viral 90–100.
+**Faixas de Hype.** Faixas de Hype (as mesmas do FLAIR 3D): Sinal baixo 0–19 · Nicho 20–39 · Relevante 40–59 · Em alta 60–74 · Em tendência 75–89 · Viral 90–100.
 
 | Código | Jogo | Grupo | Participantes | Cartas mínimas | Hype mínimo |
 | --- | --- | --- | --- | --- | --- |
@@ -301,16 +301,16 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 ## Desafios de Montagem (CBC)
 
 - **Na lista:** na lista. **Foto:** showroom.
-- **Cenário:** Foto de ambiente por desafio (como no Glass Empire): cada vaga do mini mapa fica sobre um objeto real da foto.
+- **Cenário:** Foto de ambiente por desafio (como no FLAIR 3D): cada vaga do mini mapa fica sobre um objeto real da foto.
 - **Objetivo:** Completar o mini mapa do desafio com cartas FLAIR; posição certa, vizinhança e tema dão sintonia.
 - **Participantes:** 1 jogador.
 - **Cartas mínimas obrigatórias:** As vagas obrigatórias do desafio (3 a 6 cartas).
 - **Hype mínimo obrigatório:** Definido por desafio; padrão Nicho (20).
-- **Efeito visual ao inserir uma carta:** Mesma inserção do Glass Empire: clarão, a luz do lugar acende sobre o objeto, a foto reacende e a legenda conta o efeito.
+- **Efeito visual ao inserir uma carta:** Mesma inserção do FLAIR 3D: clarão, a luz do lugar acende sobre o objeto, a foto reacende e a legenda conta o efeito.
 - **Aura Hype:** Anéis, raios e partículas pela faixa de partida da carta, na escala do objeto da foto.
 - **Aura Metamorfose:** Varredura de cor, brilhos e circuito de luz entre cartas vizinhas em harmonia.
 - **Aura Impersonation:** A peça aparece no lugar real da foto (de pé, pendurada, exposta ou refletida no espelho).
-- **Hoje → depois:** Hoje usa o mapa desenhado; passa a usar foto real com a mesma inserção do Glass Empire.
+- **Hoje → depois:** Hoje usa o mapa desenhado; passa a usar foto real com a mesma inserção do FLAIR 3D.
 
 ## Roubo ao Afterparty (AFTERPARTY)
 
@@ -330,7 +330,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 - **Na lista:** fora da lista (em produção). **Foto:** sem foto (fora da lista).
 - **Cenário:** Cenário 3D próprio em produção; não é alterado nem usado como imagem de outros jogos.
-- **Objetivo:** Em produção para o novo Glass Empire.
+- **Objetivo:** Em produção para o novo FLAIR 3D.
 - **Participantes:** Em produção.
 - **Cartas mínimas obrigatórias:** Em produção.
 - **Hype mínimo obrigatório:** Em produção.

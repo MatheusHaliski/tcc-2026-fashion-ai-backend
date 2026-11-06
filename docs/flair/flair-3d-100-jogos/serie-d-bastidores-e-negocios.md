@@ -1,6 +1,6 @@
 # Série D — Bastidores, ateliês, negócios e infiltração
 
-Vinte jogos no distrito dos ateliês do Glass Empire: costura, lojas, leilões, estúdios, revistas, lavanderias e
+Vinte jogos no distrito dos ateliês do FLAIR 3D: costura, lojas, leilões, estúdios, revistas, lavanderias e
 infiltração por disfarce (no espírito da Gala Lumière, sem repeti-la). Regras compartilhadas no [README](README.md).
 
 ## 61 · Ateliê de Celina

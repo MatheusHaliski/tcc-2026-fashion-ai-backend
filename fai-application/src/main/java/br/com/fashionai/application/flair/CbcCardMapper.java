@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Carta FLAIR ({@link FlairCardInstance}) no formato do motor ({@link CbcRules.Card}): as tags vêm do retrato da geração
  * ({@code tags_json}) ou, em cartas antigas, da peça (função {@code tagsOf}); os números de Hype do retrato; as datas
- * ("entrou em", "última vez usada") da peça viva. Compartilhado pelos Desafios de Montagem e pelos jogos do Glass Empire.
+ * ("entrou em", "última vez usada") da peça viva. Compartilhado pelos Desafios de Montagem e pelos jogos do FLAIR 3D.
  */
 public final class CbcCardMapper {
     private CbcCardMapper() {

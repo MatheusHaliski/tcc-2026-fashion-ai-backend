@@ -1,5 +1,5 @@
 /**
- * Vocabulário do catálogo Glass Empire (desenho §4 e §6): o que o motor CBC estendido aceita (CbcRules.java), os
+ * Vocabulário do catálogo FLAIR 3D (desenho §4 e §6): o que o motor CBC estendido aceita (CbcRules.java), os
  * níveis dos três eixos de bloqueio, os objetos de cena do CbcSceneArt e as regras fixas do gerador. Fonte única para
  * validação, derivação, SQL e miniaturas.
  */
@@ -47,10 +47,10 @@ export const SLOT_KEY_RE = /^[a-z0-9_]+$/;
 export const REWARD_CODE_RE = /^[A-Z0-9-]{1,40}$/;
 
 // saídas (R14)
-export const MIGRATION_FILE = "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V98__glass_empire_jogos.sql";
+export const MIGRATION_FILE = "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V98__flair_3d_jogos.sql";
 export const V56_FILE = "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V56__desafios_de_montagem.sql";
 export const THUMBS_DIR = "public/flair/games";
-export const CATALOG_MD = "docs/flair/glass-empire-100-jogos/catalogo.gen.md";
+export const CATALOG_MD = "docs/flair/flair-3d-100-jogos/catalogo.gen.md";
 export const DATA_DIR = "scripts/flair-games/data";
 export const SEED_AT = "2026-11-05 12:00:00";
 export const ID_PREFIX = "7d000000-0000-4000-8000-";

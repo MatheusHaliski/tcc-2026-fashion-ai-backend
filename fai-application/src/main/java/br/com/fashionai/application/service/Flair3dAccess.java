@@ -12,13 +12,13 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Glass Empire — bloqueio por nível (integridade no servidor): cada jogo exige um nível FAI (pontos vitalícios,
+ * FLAIR 3D — bloqueio por nível (integridade no servidor): cada jogo exige um nível FAI (pontos vitalícios,
  * {@link FaiPointsService#level}) e uma faixa do guarda-roupa (Inventory Score, {@link InventoryScoreService#compute}).
  * {@link #me} lê os dois UMA vez por requisição; {@link #check} só informa (catálogo e detalhe nunca bloqueiam a
  * leitura); {@link #require} é a primeira instrução de check/submit e devolve 403 com código e detalhes.
  */
 @Component
-public class GlassAccess {
+public class Flair3dAccess {
     /** Faixas do Inventory Score (0–1000) que o catálogo usa como "nível do guarda-roupa". */
     public enum WardrobeLevel {
         EM_MONTAGEM(0, 299), ORGANIZADO(300, 499), VERSATIL(500, 649), BEM_CURADO(650, 799),
@@ -82,7 +82,7 @@ public class GlassAccess {
     private final FaiPointsService points;
     private final InventoryScoreService inventory;
 
-    public GlassAccess(FaiPointsService points, InventoryScoreService inventory) {
+    public Flair3dAccess(FaiPointsService points, InventoryScoreService inventory) {
         this.points = points;
         this.inventory = inventory;
     }
@@ -138,12 +138,12 @@ public class GlassAccess {
     public void require(FlairChallenge game, Me me) {
         Access a = check(game, me, true);
         if (!a.tierOk()) {
-            throw new ApiException(403, "FAI_LEVEL_REQUIRED", Msg.t("glass.level_required", Msg.t("glass.tier." + a.requiredTier())),
+            throw new ApiException(403, "FAI_LEVEL_REQUIRED", Msg.t("flair3d.level_required", Msg.t("flair3d.tier." + a.requiredTier())),
                     Map.of("requiredTier", a.requiredTier(), "currentTier", a.currentTier()));
         }
         if (!a.wardrobeOk()) {
             throw new ApiException(403, "WARDROBE_LEVEL_REQUIRED",
-                    Msg.t("glass.wardrobe_required", Msg.t("glass.wardrobe." + a.requiredWardrobeLevel())),
+                    Msg.t("flair3d.wardrobe_required", Msg.t("flair3d.wardrobe." + a.requiredWardrobeLevel())),
                     Map.of("requiredWardrobeLevel", a.requiredWardrobeLevel(), "currentWardrobeLevel", a.currentWardrobeLevel()));
         }
     }

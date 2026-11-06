@@ -13,7 +13,7 @@ import { GameCard, useGameLabels } from "@/components/flair/games/game-card";
 import { GameFilters } from "@/components/flair/games/game-filters";
 
 /**
- * Catálogo do Glass Empire (/flair/jogos): voltar à central, faixa com o nível e o guarda-roupa da pessoa (do servidor),
+ * Catálogo do FLAIR 3D (/flair/jogos): voltar à central, faixa com o nível e o guarda-roupa da pessoa (do servidor),
  * filtros em chips (estado na URL) e a grade de jogos agrupada por série com contadores. A API devolve a lista inteira
  * com `access` por jogo; o filtro é local. Loading/erro nunca liberam nada: sem resposta não há card para jogar.
  */

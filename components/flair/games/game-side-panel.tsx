@@ -15,12 +15,12 @@ interface Props {
 /**
  * Painel lateral do jogo: ficha (objetivo, peças obrigatórias, sequência, deck, Hype), requisitos ✓/✗ (do servidor),
  * efeitos por vaga (Comum/Metamorfose/Impersonation com o texto do servidor), Hype de partida por carta (faixa real →
- * faixa de partida), pontos previstos (sintonia + pontuação Glass + linhas) e recompensas. Tudo vem do /check; nada
+ * faixa de partida), pontos previstos (sintonia + pontuação FLAIR 3D + linhas) e recompensas. Tudo vem do /check; nada
  * é anunciado como recebido antes do servidor confirmar.
  */
 export function GameSidePanel({ d, check, checking, filled, requiredSlots, result, canSubmit, submitting, onSubmit, onClear }: Props) {
   const { t } = useI18n(); const L = useGameLabels(); const { requirement, slotLabel } = useGameTexts();
-  const ev = check?.evaluation; const glass = check?.glass;
+  const ev = check?.evaluation; const flair3d = check?.flair3d;
   const labelOf = (key: string) => slotLabel(d.slots.find((s) => s.key === key) ?? { key });
   const reqs: CbcRequirementResult[] = ev?.requirements ?? d.requirements.map((r) => ({ ...r, ok: false, have: 0, need: 0, args: r }) as CbcRequirementResult);
   const rewards = result?.rewards?.length ? result.rewards : d.rewards;
@@ -48,9 +48,9 @@ export function GameSidePanel({ d, check, checking, filled, requiredSlots, resul
       </div>
       <div className="cbc-block">
         <p className="label">{t("games.effects.title")}</p>
-        {glass && glass.slots.length > 0 ? (
+        {flair3d && flair3d.slots.length > 0 ? (
           <ul className="ge-effects" data-testid="ge-effects">
-            {glass.slots.map((s) => (
+            {flair3d.slots.map((s) => (
               <li key={s.slot}>
                 <span>{labelOf(s.slot)}</span>
                 <span className={cn("ge-effect-kind", `is-${s.effect.kind.toLowerCase()}`)}>{L.effect(s.effect.kind)} {t("games.effects.bonus", { n: s.effect.bonus })}</span>
@@ -62,25 +62,25 @@ export function GameSidePanel({ d, check, checking, filled, requiredSlots, resul
       </div>
       <div className="cbc-block">
         <p className="label">{t("games.hype.title")}</p>
-        {glass && glass.slots.length > 0 ? (
+        {flair3d && flair3d.slots.length > 0 ? (
           <ul className="ge-hype" data-testid="ge-hype">
-            {glass.slots.map((s) => {
+            {flair3d.slots.map((s) => {
               const dir = bandIndex(s.matchBand) > bandIndex(s.hypeBand) ? "is-up" : bandIndex(s.matchBand) < bandIndex(s.hypeBand) ? "is-down" : "";
               return <li key={s.slot}><span>{labelOf(s.slot)}</span><span className={cn("ge-hype-arrow", dir)}><b>{L.band(s.hypeBand)}</b><span aria-hidden>→</span><b>{L.band(s.matchBand)}</b>{s.hypeBonus > 0 && <small className="tabular"> +{s.hypeBonus}</small>}</span></li>;
             })}
-            <li className="type-caption text-muted"><span>{t("games.hype.total", { n: glass.hypeTotal })}</span></li>
+            <li className="type-caption text-muted"><span>{t("games.hype.total", { n: flair3d.hypeTotal })}</span></li>
           </ul>
         ) : <p className="type-caption text-muted">{t("games.hype.empty")}</p>}
       </div>
       <div className="cbc-block">
         <p className="label">{t("cbc.sintonia")}</p>
         <div className="cbc-sync"><div className="hype-bar"><i style={{ width: `${ev && ev.sintoniaMax ? (ev.sintonia / ev.sintoniaMax) * 100 : 0}%`, background: "var(--thread)" }} /></div><b className="tabular">{ev ? `${ev.sintonia}/${ev.sintoniaMax}` : `0/${d.slots.length * 3}`}</b></div>
-        {glass && <p className="ge-score"><span className="tabular">{t("games.score", { score: glass.score, max: glass.scoreMax })}</span>{(glass.penaltyTotal ?? 0) > 0 && <small className="ge-score-errors tabular">{t("games.penalties", { n: glass.penaltyTotal })}</small>}{glass.perfect && <Badge tone="thread">{t("games.perfect")}</Badge>}</p>}
+        {flair3d && <p className="ge-score"><span className="tabular">{t("games.score", { score: flair3d.score, max: flair3d.scoreMax })}</span>{(flair3d.penaltyTotal ?? 0) > 0 && <small className="ge-score-errors tabular">{t("games.penalties", { n: flair3d.penaltyTotal })}</small>}{flair3d.perfect && <Badge tone="thread">{t("games.perfect")}</Badge>}</p>}
       </div>
       <div className="cbc-block">
         <p className="label">{t("cbc.points_preview")}</p>
         <ul className="cbc-lines">
-          {(check?.points.lines ?? [{ action: "FLAIR_GLASS", points: d.pointsPreview, ref: d.id, label: t("cbc.line.FLAIR_GLASS") }]).map((l, i) => <PointsLine key={i} l={l} />)}
+          {(check?.points.lines ?? [{ action: "FLAIR_3D", points: d.pointsPreview, ref: d.id, label: t("cbc.line.FLAIR_3D") }]).map((l, i) => <PointsLine key={i} l={l} />)}
         </ul>
         <p className="cbc-total"><FaiIcon id="ACT-40" size={24} decorative /><b className="tabular">+{check?.points.total ?? d.pointsPreview}</b><span className="type-caption text-muted">{t("cbc.points_after_confirm")}</span></p>
         {d.mine && d.repeatLimit > 1 && <p className="type-caption text-muted tabular">{t("cbc.attempts_left", { n: d.mine.attemptsLeft })}</p>}

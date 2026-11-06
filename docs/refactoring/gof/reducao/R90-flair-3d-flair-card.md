@@ -1,4 +1,4 @@
-# Lote R90-glass-empire-flair-card — carta FLAIR da peça com a anatomia do card comum
+# Lote R90-flair-3d-flair-card — carta FLAIR da peça com a anatomia do card comum
 
 Pedido: a carta FLAIR das peças passa a ter o mesmo desenho do card comum (janela segmentada Info + Hype), com a
 arte de fundo por nível (bronze, prata, ouro, especial) como única diferença. Detalhe em

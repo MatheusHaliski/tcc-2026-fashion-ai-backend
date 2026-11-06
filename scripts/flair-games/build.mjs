@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Gerador do catálogo Glass Empire (desenho §4, §6 R12–R16, R25): lê scripts/flair-games/data/serie-{a..e}.json,
+ * Gerador do catálogo FLAIR 3D (desenho §4, §6 R12–R16, R25): lê scripts/flair-games/data/serie-{a..e}.json,
  * valida tudo de uma vez, deriva dificuldade/raridade/níveis e grava, de forma determinística e ordenada por número:
- *   1. a migração V98__glass_empire_jogos.sql (DDL fixo + 1 INSERT de flair_challenges por jogo + colecionáveis);
+ *   1. a migração V98__flair_3d_jogos.sql (DDL fixo + 1 INSERT de flair_challenges por jogo + colecionáveis);
  *   2. public/flair/games/<slug>.webp (miniaturas 640×400 a partir de scene_json, via scene-svg.mjs + sharp);
- *   3. docs/flair/glass-empire-100-jogos/catalogo.gen.md (tabela resumo e regra de derivação).
+ *   3. docs/flair/flair-3d-100-jogos/catalogo.gen.md (tabela resumo e regra de derivação).
  *
  * Uso: node scripts/flair-games/build.mjs [--data <dir>] [--out <dir>] [--allow-partial] [--no-thumbs]
  *   --data           pasta com serie-*.json (padrão scripts/flair-games/data)
- *   --out            grava as três saídas dentro desta pasta (V98__glass_empire_jogos.sql, thumbs/, catalogo.gen.md)
+ *   --out            grava as três saídas dentro desta pasta (V98__flair_3d_jogos.sql, thumbs/, catalogo.gen.md)
  *                    em vez dos caminhos do repositório; use para provar o build sem tocar na migração real
  *   --allow-partial  aceita menos de 100 jogos (fixtures, séries ainda em escrita)
  *   --no-thumbs      não gera miniaturas (mais rápido; a V98 continua apontando para /flair/games/<slug>.webp)
@@ -81,7 +81,7 @@ export async function readCredits(root) {
 export function outputPaths(root, out) {
   if (!out) return { sql: join(root, MIGRATION_FILE), thumbs: join(root, THUMBS_DIR), md: join(root, CATALOG_MD) };
   const base = resolve(out);
-  return { sql: join(base, "V98__glass_empire_jogos.sql"), thumbs: join(base, "thumbs"), md: join(base, "catalogo.gen.md") };
+  return { sql: join(base, "V98__flair_3d_jogos.sql"), thumbs: join(base, "thumbs"), md: join(base, "catalogo.gen.md") };
 }
 
 /**

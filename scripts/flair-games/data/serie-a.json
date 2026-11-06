@@ -337,7 +337,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A01-MOLDURA-PRISMA",
+        "code": "F3D-A01-MOLDURA-PRISMA",
         "names": {
           "pt-BR": "Moldura de espelho Prisma",
           "en": "Prism mirror frame",
@@ -346,7 +346,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-A01-ESPELHO-INTEIRO",
+        "code": "F3D-A01-ESPELHO-INTEIRO",
         "names": {
           "pt-BR": "Espelho Inteiro",
           "en": "Whole Mirror",
@@ -856,7 +856,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A02-CAIXA-DE-LOOK-DOURADA",
+        "code": "F3D-A02-CAIXA-DE-LOOK-DOURADA",
         "names": {
           "pt-BR": "Caixa de look dourada",
           "en": "Golden look box",
@@ -1478,7 +1478,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A03-PUXADORES-VIDRO-FUME",
+        "code": "F3D-A03-PUXADORES-VIDRO-FUME",
         "names": {
           "pt-BR": "Puxadores Vidro Fumê",
           "en": "Smoked Glass handles",
@@ -1892,7 +1892,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A04-CABIDE-DOURADO",
+        "code": "F3D-A04-CABIDE-DOURADO",
         "names": {
           "pt-BR": "Cabide dourado extra",
           "en": "Extra golden hanger",
@@ -2441,7 +2441,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A05-CESTO-VIME-CLARO",
+        "code": "F3D-A05-CESTO-VIME-CLARO",
         "names": {
           "pt-BR": "Cesto Vime Claro",
           "en": "Light Wicker basket",
@@ -2936,7 +2936,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A06-LUMINARIA-UNBOXING",
+        "code": "F3D-A06-LUMINARIA-UNBOXING",
         "names": {
           "pt-BR": "Luminária de unboxing (item surpresa revelado)",
           "en": "Unboxing lamp (the revealed surprise item)",
@@ -3352,7 +3352,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A07-CHAVE-DUPLICADA",
+        "code": "F3D-A07-CHAVE-DUPLICADA",
         "names": {
           "pt-BR": "Chave Duplicada",
           "en": "Duplicate Key",
@@ -3829,7 +3829,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A08-INTERRUPTOR-LATAO",
+        "code": "F3D-A08-INTERRUPTOR-LATAO",
         "names": {
           "pt-BR": "Interruptor Latão",
           "en": "Brass switch",
@@ -4364,7 +4364,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A09-CORTINA-LINHO-CRU",
+        "code": "F3D-A09-CORTINA-LINHO-CRU",
         "names": {
           "pt-BR": "Cortina Linho Cru",
           "en": "Raw Linen curtain",
@@ -4846,7 +4846,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A10-BUSTO-ALFAIATE",
+        "code": "F3D-A10-BUSTO-ALFAIATE",
         "names": {
           "pt-BR": "Busto Alfaiate com fita métrica",
           "en": "Tailor dress form with tape measure",
@@ -5342,7 +5342,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A11-ARARA-CROMADA",
+        "code": "F3D-A11-ARARA-CROMADA",
         "names": {
           "pt-BR": "Arara Cromada",
           "en": "Chrome rack",
@@ -5746,7 +5746,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A12-PLACA-PECA-ICONE",
+        "code": "F3D-A12-PLACA-PECA-ICONE",
         "names": {
           "pt-BR": "Placa Peça Ícone gravada",
           "en": "Engraved Icon Piece plaque",
@@ -6143,7 +6143,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A13-MONOGRAMA-SERIFADO",
+        "code": "F3D-A13-MONOGRAMA-SERIFADO",
         "names": {
           "pt-BR": "Variação Monograma Serifado",
           "en": "Serif Monogram variation",
@@ -6738,7 +6738,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A14-FITA-LED-AMBAR",
+        "code": "F3D-A14-FITA-LED-AMBAR",
         "names": {
           "pt-BR": "Fita de LED Âmbar para a base",
           "en": "Amber LED strip for the base",
@@ -7349,7 +7349,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A15-AGENDA-DE-VIDRO",
+        "code": "F3D-A15-AGENDA-DE-VIDRO",
         "names": {
           "pt-BR": "Calendário Agenda de Vidro",
           "en": "Glass Planner calendar",
@@ -7889,7 +7889,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A16-MOLDURA-VIDRO-LAPIDADO",
+        "code": "F3D-A16-MOLDURA-VIDRO-LAPIDADO",
         "names": {
           "pt-BR": "Moldura de portal Vidro Lapidado",
           "en": "Cut Glass portal frame",
@@ -8448,7 +8448,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A17-QUADRO-CORTICA-PRETA",
+        "code": "F3D-A17-QUADRO-CORTICA-PRETA",
         "names": {
           "pt-BR": "Quadro Cortiça Preta",
           "en": "Black Cork board",
@@ -8948,7 +8948,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A18-FITA-ALFAIATE-DE-VIDRO",
+        "code": "F3D-A18-FITA-ALFAIATE-DE-VIDRO",
         "names": {
           "pt-BR": "Fita métrica Alfaiate de Vidro",
           "en": "Glass Tailor tape measure",
@@ -9542,7 +9542,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A19-BOTAO-COBERTURA",
+        "code": "F3D-A19-BOTAO-COBERTURA",
         "names": {
           "pt-BR": "Botão de elevador Cobertura",
           "en": "Rooftop lift button",
@@ -9551,7 +9551,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-A19-RESIDENTE-DA-TORRE",
+        "code": "F3D-A19-RESIDENTE-DA-TORRE",
         "names": {
           "pt-BR": "Residente da Torre",
           "en": "Tower Resident",
@@ -9702,9 +9702,9 @@
       "es": "La Mudanza"
     },
     "descriptions": {
-      "pt-BR": "Encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o Glass Empire.",
-      "en": "Pack the whole suite into six moving boxes, proving that each box closes with a coherent set, because the room is moving to the Glass Empire.",
-      "es": "Embalar la suite entera en seis cajas de mudanza, probando que cada caja cierra con un conjunto coherente, porque el cuarto se va al Glass Empire."
+      "pt-BR": "Encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o FLAIR 3D.",
+      "en": "Pack the whole suite into six moving boxes, proving that each box closes with a coherent set, because the room is moving to the FLAIR 3D.",
+      "es": "Embalar la suite entera en seis cajas de mudanza, probando que cada caja cierra con un conjunto coherente, porque el cuarto se va al FLAIR 3D."
     },
     "points": 100,
     "repeatLimit": 1,
@@ -10170,7 +10170,7 @@
     "rewards": [
       {
         "type": "ITEM",
-        "code": "GE-A20-CHAVE-SUITE-DE-VIDRO",
+        "code": "F3D-A20-CHAVE-SUITE-DE-VIDRO",
         "names": {
           "pt-BR": "Chave Suíte de Vidro",
           "en": "Glass Suite key",
@@ -10179,7 +10179,7 @@
       },
       {
         "type": "SPECIAL_CARD",
-        "code": "GE-A20-ULTIMA-NOITE-NO-QUARTO",
+        "code": "F3D-A20-ULTIMA-NOITE-NO-QUARTO",
         "names": {
           "pt-BR": "Última Noite no Quarto",
           "en": "Last Night in the Room",
@@ -10190,9 +10190,9 @@
     ],
     "ficha": {
       "objective": {
-        "pt-BR": "Encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o Glass Empire.",
-        "en": "Pack the whole suite into six moving boxes, proving that each box closes with a coherent set, because the room is moving to the Glass Empire.",
-        "es": "Embalar la suite entera en seis cajas de mudanza, probando que cada caja cierra con un conjunto coherente, porque el cuarto se va al Glass Empire."
+        "pt-BR": "Encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o FLAIR 3D.",
+        "en": "Pack the whole suite into six moving boxes, proving that each box closes with a coherent set, because the room is moving to the FLAIR 3D.",
+        "es": "Embalar la suite entera en seis cajas de mudanza, probando que cada caja cierra con un conjunto coherente, porque el cuarto se va al FLAIR 3D."
       },
       "scenario": {
         "pt-BR": "A suíte sendo desmontada, parede por parede, até ficar só o espelho.",

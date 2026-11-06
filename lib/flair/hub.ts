@@ -27,7 +27,7 @@ const demo = (id: HubModeId, seconds: number, recorded = true): HubDemo => ({ mp
 export const HUB_MODES: HubMode[] = [
   { id: "matches", group: "play", href: "/flair/partidas", guide: "flair.matches", demo: demo("matches", 19) },
   { id: "cbc", group: "play", href: "/flair/desafios", guide: "flair.cbc", demo: demo("cbc", 20) },
-  // Glass Empire: a demonstração ainda vai ser gravada (recorded:false até os arquivos media/flair/demos/games.* existirem)
+  // FLAIR 3D: a demonstração ainda vai ser gravada (recorded:false até os arquivos media/flair/demos/games.* existirem)
   { id: "games", group: "play", href: "/flair/jogos", guide: "flair.games", demo: demo("games", 14, false) },
   { id: "moments", group: "calendar", href: "/moments", guide: "moments.calendar", demo: demo("moments", 13) },
   { id: "challenges", group: "challenges", href: "/challenges", guide: "challenges.progress", demo: demo("challenges", 15) },
@@ -88,7 +88,7 @@ export interface HubSummary {
   decks?: number | null;
   cards?: number | null;
   cbc?: { now: number; upcoming: number; always: number } | null;
-  /** Glass Empire (GET /api/flair/games/summary): quantos jogos existem e quantos a pessoa já pode jogar */
+  /** FLAIR 3D (GET /api/flair/games/summary): quantos jogos existem e quantos a pessoa já pode jogar */
   games?: { total: number; playable: number } | null;
   moments?: { active: number; upcoming: number } | null;
   challenges?: { active: number; invites: number } | null;

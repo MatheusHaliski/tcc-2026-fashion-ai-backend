@@ -12,7 +12,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Glass Empire — vagas opcionais: {@code complete}, o {@code n} dos requisitos "para todas", sintoniaMax e validação. */
+/** FLAIR 3D — vagas opcionais: {@code complete}, o {@code n} dos requisitos "para todas", sintoniaMax e validação. */
 class CbcOptionalSlotsTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 11, 5);
     private static final Instant START = Instant.parse("2026-11-01T00:00:00Z");
@@ -59,7 +59,7 @@ class CbcOptionalSlotsTest {
         assertThat(tres.sintoniaMax()).isEqualTo(15);
         assertThat(tres.slots().get(3).cardId()).isNull();
         assertThat(tres.sintonia()).isEqualTo(6);     // 3 × (posição + vizinhança); sem tema
-        assertThat(GlassHype.perfect(tres, CbcRules.requiredSlots(slots))).isTrue();
+        assertThat(Flair3dHype.perfect(tres, CbcRules.requiredSlots(slots))).isTrue();
 
         CbcRules.Evaluation faltaObrigatoria = CbcRules.evaluate(slots, board(a, null, c, extra), List.of(), ctx);
         assertThat(faltaObrigatoria.complete()).isFalse();
@@ -116,6 +116,6 @@ class CbcOptionalSlotsTest {
         assertThat(vazia.complete()).isTrue();
         assertThat(vazia.sintoniaMax()).isEqualTo(9);
         assertThat(CbcRules.requiredSlots(todasOpcionais)).isZero();
-        assertThat(GlassHype.perfect(vazia, 0)).isTrue();
+        assertThat(Flair3dHype.perfect(vazia, 0)).isTrue();
     }
 }

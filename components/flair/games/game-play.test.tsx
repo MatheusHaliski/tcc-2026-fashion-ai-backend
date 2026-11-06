@@ -6,9 +6,9 @@ import type { GameAccess, GameCheck, GameDetail } from "@/lib/flair/games";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
 
 /**
- * Tela de um jogo do Glass Empire: bloqueado pelo servidor não busca o banco de cartas e mostra os motivos; liberado
- * monta vaga a vaga, confere no servidor (requisitos novos, efeitos por vaga, Hype de partida, pontuação Glass e
- * prévia da partida perfeita), entrega e recebe o modal do CBC mais as recompensas Glass; um 403 de nível no check vira
+ * Tela de um jogo do FLAIR 3D: bloqueado pelo servidor não busca o banco de cartas e mostra os motivos; liberado
+ * monta vaga a vaga, confere no servidor (requisitos novos, efeitos por vaga, Hype de partida, pontuação FLAIR 3D e
+ * prévia da partida perfeita), entrega e recebe o modal do CBC mais as recompensas FLAIR 3D; um 403 de nível no check vira
  * o mesmo painel de bloqueio. Na série A o quarto 3D só entra com WebGL — aqui (jsdom) fica a cena 2D.
  */
 vi.mock("next/navigation", async (orig) => ({ ...(await orig<typeof import("next/navigation")>()), useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }), useSearchParams: () => new URLSearchParams(""), usePathname: () => "/flair/jogos/a01-espelho-partido" }));
@@ -23,7 +23,7 @@ const detail = (over: Partial<GameDetail> = {}): GameDetail => ({
   requirements: [{ type: "cards", min: 2 }, { type: "hypeBand", min: "NICHE", count: 1 }, { type: "distinctTags", field: "color", count: 2 }, { type: "position", position: "ACE", count: 1 }, { type: "mala", max: 6 }],
   number: 1, series: "A", district: "SUITE", rarity: "LEGENDARY", requiredTier: "ESTREIA", requiredWardrobeLevel: "ORGANIZADO", thumbnail: null,
   deck: { minCards: 2, maxCards: 3, mala: 6 }, hype: { deckMin: "LOW_SIGNAL", mandatoryMin: "NICHE", mandatoryMax: "TRENDING" }, access: open,
-  rewards: [{ type: "ITEM", code: "GE-A01-MOLDURA", name: "Moldura prisma" }, { type: "SPECIAL_CARD", code: "GE-A01-ESPELHO", name: "Espelho inteiro", condition: "perfect" }],
+  rewards: [{ type: "ITEM", code: "F3D-A01-MOLDURA", name: "Moldura prisma" }, { type: "SPECIAL_CARD", code: "F3D-A01-ESPELHO", name: "Espelho inteiro", condition: "perfect" }],
   slots: [
     { key: "caco_central", position: "VES", label: "Caco central", optional: false, effects: { comum: "O caco reflete.", metamorfose: "O espelho se refaz.", impersonation: "Outra pessoa no reflexo." }, bonus: { metamorfose: 1, impersonation: 2 } },
     { key: "porta", position: "ACE", label: "Porta", optional: true, effects: { comum: "A porta range.", metamorfose: null, impersonation: null } },
@@ -42,8 +42,8 @@ const check = (slots: Record<string, string>): GameCheck => {
       requirements: [{ type: "cards", ok: n >= 2, have: n, need: 2, args: { min: 2 } }, { type: "hypeBand", ok: true, have: n, need: 1, args: { min: "NICHE", count: 1 } }, { type: "distinctTags", ok: n >= 2, have: n, need: 2, args: { field: "color", count: 2 } },
         { type: "position", ok: !!slots.porta, have: slots.porta ? 1 : 0, need: 1, args: { position: "ACE", count: 1 } }, { type: "mala", ok: true, have: 2 * n, need: 6, args: { max: 6 } }] },
     story: [{ key: null, vars: {}, text: { "pt-BR": "A suíte amanhece em cacos.", en: "Shards at dawn.", es: "Trizas al amanecer." } }, ...Object.entries(slots).map(([slot, cardId]) => ({ key: "cbc.story.generic", vars: { name: CARDS.cards.find((c) => c.id === cardId)!.name, brand: "Atelier Lumi", color: "none" }, slot, sintonia: 2 }))],
-    points: { lines: [{ action: "FLAIR_GLASS", points: 25, ref: "g1", label: "" }, ...(complete ? [{ action: "FLAIR_GLASS_PERFECT", points: 10, ref: "g1", label: "" }] : [])], total: complete ? 35 : 25 },
-    glass: { slots: Object.entries(slots).map(([slot, cardId]) => ({ slot, cardId, hypeBand: band(cardId), hypeBonus: cardId === "c1" ? 1 : 0, effect: { kind: slot === "caco_central" ? "METAMORFOSE" : "COMUM", bonus: slot === "caco_central" ? 1 : 0, text: slot === "caco_central" ? "O espelho se refaz." : "Reflexo limpo." }, matchBand: cardId === "c1" ? "HOT" : "NICHE", matchDelta: cardId === "c1" ? 1 : 0 })),
+    points: { lines: [{ action: "FLAIR_3D", points: 25, ref: "g1", label: "" }, ...(complete ? [{ action: "FLAIR_3D_PERFECT", points: 10, ref: "g1", label: "" }] : [])], total: complete ? 35 : 25 },
+    flair3d: { slots: Object.entries(slots).map(([slot, cardId]) => ({ slot, cardId, hypeBand: band(cardId), hypeBonus: cardId === "c1" ? 1 : 0, effect: { kind: slot === "caco_central" ? "METAMORFOSE" : "COMUM", bonus: slot === "caco_central" ? 1 : 0, text: slot === "caco_central" ? "O espelho se refaz." : "Reflexo limpo." }, matchBand: cardId === "c1" ? "HOT" : "NICHE", matchDelta: cardId === "c1" ? 1 : 0 })),
       hypeTotal: slots.caco_central === "c1" ? 1 : 0, effectTotal: slots.caco_central ? 1 : 0, score: 2 * n + (slots.caco_central ? 2 : 0), scoreMax: 15, perfect: complete } };
 };
 const forbidden = (code: string, details: Record<string, string>) => () => new Response(JSON.stringify({ status: 403, code, message: "nível insuficiente", details }), { status: 403, headers: { "content-type": "application/json" } });
@@ -95,7 +95,7 @@ describe("partida", () => {
     const { calls } = loggedAs(ME, { "GET /api/flair/games/a01-espelho-partido": detail(), "GET /api/me/flair/cards": CARDS });
     renderApp(<GamePlay slug="a01-espelho-partido" />);
     expect(await screen.findByRole("heading", { name: "Espelho Partido" })).toBeTruthy();
-    expect(screen.getByText("Glass Empire · Série A · Jogo 1")).toBeTruthy();
+    expect(screen.getByText("FLAIR 3D · Série A · Jogo 1")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Todos os jogos/ }).getAttribute("href")).toBe("/flair/jogos");
     await screen.findByRole("button", { name: /Caco central/ });
     expect(screen.getByRole("button", { name: /Porta \(opcional\)/ })).toBeTruthy();
@@ -113,7 +113,7 @@ describe("partida", () => {
     expect(calls.some((c) => c.path === "/api/me/room")).toBe(false);
   });
 
-  it("coloca cartas, confere no servidor (efeitos, Hype de partida, pontuação Glass, prévia da partida perfeita), entrega e recebe o modal com as recompensas", async () => {
+  it("coloca cartas, confere no servidor (efeitos, Hype de partida, pontuação FLAIR 3D, prévia da partida perfeita), entrega e recebe o modal com as recompensas", async () => {
     let submitted = false;
     const { calls } = loggedAs(ME, {
       "GET /api/flair/games/a01-espelho-partido": () => detail(submitted ? { mine: { submissions: 1, attemptsLeft: 0, done: true }, mySubmissions: [{ id: "s1", attempt: 1, createdAt: "2026-10-10T12:00:00Z", interpretation: "own", sintonia: 6, sintoniaMax: 9, points: 35, story: [], cards: [] }] } : {}),
@@ -122,7 +122,7 @@ describe("partida", () => {
       "POST /api/flair/games/a01-espelho-partido/submit": (_u: URL, init: RequestInit) => {
         submitted = true; const c = check((JSON.parse(String(init.body)) as { slots: Record<string, string> }).slots);
         return { ...c, points: { lines: c.points.lines.map((l) => ({ ...l, granted: true })), total: 35 }, submission: { id: "s1", attempt: 1, createdAt: "2026-10-10T12:00:00Z", interpretation: "own", sintonia: 6, sintoniaMax: 9, points: 35, story: c.story, cards: [] }, group: null, locked: false,
-          rewards: [{ type: "ITEM", code: "GE-A01-MOLDURA", name: "Moldura prisma", state: "DELIVERED" }, { type: "SPECIAL_CARD", code: "GE-A01-ESPELHO", name: "Espelho inteiro", state: "DELIVERED", condition: "perfect" }] };
+          rewards: [{ type: "ITEM", code: "F3D-A01-MOLDURA", name: "Moldura prisma", state: "DELIVERED" }, { type: "SPECIAL_CARD", code: "F3D-A01-ESPELHO", name: "Espelho inteiro", state: "DELIVERED", condition: "perfect" }] };
       },
     });
     renderApp(<GamePlay slug="a01-espelho-partido" />);
@@ -139,7 +139,7 @@ describe("partida", () => {
     const effects = await screen.findByTestId("ge-effects");
     expect(effects.textContent).toContain("Caco central"); expect(effects.textContent).toContain("Metamorfose +1"); expect(effects.textContent).toContain("O espelho se refaz.");
     expect(screen.getByTestId("ge-hype").textContent).toContain("Relevante→Em alta +1");
-    expect(screen.getByText("Pontuação Glass 4 de 15")).toBeTruthy();
+    expect(screen.getByText("Pontuação FLAIR 3D 4 de 15")).toBeTruthy();
     expect(screen.queryByText("Partida perfeita")).toBeNull();
     expect((screen.getByRole("button", { name: "Entregar" }) as HTMLButtonElement).disabled).toBe(true);
     expect(calls.filter((c) => c.path.endsWith("/submit")).length).toBe(0);
@@ -151,11 +151,11 @@ describe("partida", () => {
     fireEvent.click((await screen.findAllByRole("button", { name: /Camisa de linho/ }))[0]);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect((screen.getByRole("button", { name: "Entregar" }) as HTMLButtonElement).disabled).toBe(false), { timeout: 3000 });
-    expect(screen.getByText("Pontuação Glass 8 de 15")).toBeTruthy();
-    expect(screen.getAllByText("Partida perfeita").length).toBeGreaterThan(0);   /* selo + linha de pontos FLAIR_GLASS_PERFECT (prévia) */
+    expect(screen.getByText("Pontuação FLAIR 3D 8 de 15")).toBeTruthy();
+    expect(screen.getAllByText("Partida perfeita").length).toBeGreaterThan(0);   /* selo + linha de pontos FLAIR_3D_PERFECT (prévia) */
     expect(screen.getByText("+35")).toBeTruthy();
     expect(screen.getByText("A suíte amanhece em cacos.")).toBeTruthy();
-    // entrega: uma chamada; o modal do CBC mais a lista de recompensas Glass com o estado real
+    // entrega: uma chamada; o modal do CBC mais a lista de recompensas FLAIR 3D com o estado real
     fireEvent.click(screen.getByRole("button", { name: "Entregar" }));
     const reward = await screen.findByRole("dialog");
     expect(reward.textContent).toContain("Montagem entregue"); expect(reward.textContent).toContain("Creditado");

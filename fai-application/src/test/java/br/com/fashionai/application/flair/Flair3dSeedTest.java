@@ -2,7 +2,7 @@ package br.com.fashionai.application.flair;
 
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.service.FaiPointsService;
-import br.com.fashionai.application.service.GlassAccess;
+import br.com.fashionai.application.service.Flair3dAccess;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -18,14 +18,14 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Os 100 jogos do Glass Empire (desenho R17): o catálogo JSON (scripts/flair-games/data) é a fonte da V98. Cada jogo passa
+ * Os 100 jogos do FLAIR 3D (desenho R17): o catálogo JSON (scripts/flair-games/data) é a fonte da V98. Cada jogo passa
  * pelas mesmas regras de vaga e requisito do motor (CbcRules.validate), os números 1..100 e os slugs são únicos, e a V98
  * gerada traz exatamente um INSERT por jogo com o id previsto. As faixas de nível, guarda-roupa e Hype são as do código.
  */
-class GlassSeedTest {
+class Flair3dSeedTest {
     static final Path DATA = Path.of("..", "scripts", "flair-games", "data");
     static final Path MIGRATION = Path.of("..", "fai-infrastructure", "persistence-mysql", "src", "main", "resources", "db", "migration",
-            "V98__glass_empire_jogos.sql");
+            "V98__flair_3d_jogos.sql");
     static final Set<String> BANDS = Set.of("LOW_SIGNAL", "NICHE", "RELEVANT", "HOT", "TRENDING", "VIRAL");
     static final Set<String> DISTRICTS = Set.of("SUITE", "RUNWAY", "CITY", "BACKSTAGE", "COMMUNITY");
 
@@ -70,8 +70,8 @@ class GlassSeedTest {
             for (String k : List.of("deckMin", "mandatoryMin", "mandatoryMax")) {
                 assertThat(BANDS).as(slug + " " + k).contains(String.valueOf(hype.get(k)));
             }
-            assertThat(GlassHype.PLAY_MODES).as(slug + " play").contains(String.valueOf(((Map<String, Object>) hype.get("play")).get("mode")));
-            assertThat(GlassHype.PARTIAL_MODES).as(slug + " partial").contains(String.valueOf(((Map<String, Object>) hype.get("partial")).get("mode")));
+            assertThat(Flair3dHype.PLAY_MODES).as(slug + " play").contains(String.valueOf(((Map<String, Object>) hype.get("play")).get("mode")));
+            assertThat(Flair3dHype.PARTIAL_MODES).as(slug + " partial").contains(String.valueOf(((Map<String, Object>) hype.get("partial")).get("mode")));
             int points = ((Number) g.get("points")).intValue();
             assertThat(points).as("pontos " + slug).isBetween(0, 200);
         }
@@ -88,9 +88,9 @@ class GlassSeedTest {
             assertThat(sql).as("nível válido " + number).containsAnyOf(
                     Stream.of(FaiPointsService.Level.values()).map(l -> "'" + l.name() + "'").toArray(String[]::new));
         }
-        for (GlassAccess.WardrobeLevel w : GlassAccess.WardrobeLevel.values()) {
+        for (Flair3dAccess.WardrobeLevel w : Flair3dAccess.WardrobeLevel.values()) {
             assertThat(w.name()).isNotBlank();
         }
-        assertThat(sql).contains("FLAIR_GLASS").contains("FLAIR_GLASS_PERFECT").contains("flair_game_rewards");
+        assertThat(sql).contains("FLAIR_3D").contains("FLAIR_3D_PERFECT").contains("flair_game_rewards");
     }
 }

@@ -18,10 +18,10 @@ import { useGameTexts } from "@/components/flair/games/use-game-texts";
 import { useGameLabels } from "@/components/flair/games/game-card";
 
 /**
- * Tela de um jogo do Glass Empire (/flair/jogos/[slug]). Bloqueado (access.allowed=false no detalhe, ou 403 do servidor
+ * Tela de um jogo do FLAIR 3D (/flair/jogos/[slug]). Bloqueado (access.allowed=false no detalhe, ou 403 do servidor
  * em check/submit) → painel de bloqueio, sem buscar o banco de cartas. Liberado → cenário (na série A, a Suíte de Vidro
  * em 3D acima das vagas; sem WebGL, só a cena 2D), vagas, história, painel lateral e a entrega com o modal de
- * recompensa do CBC mais a lista de recompensas Glass. Tudo o que conta vem do servidor.
+ * recompensa do CBC mais a lista de recompensas FLAIR 3D. Tudo o que conta vem do servidor.
  */
 export function GamePlay({ slug }: { slug: string }) {
   const { t } = useI18n(); const L = useGameLabels(); const { slotLabel, storyText } = useGameTexts();
@@ -32,8 +32,8 @@ export function GamePlay({ slug }: { slug: string }) {
   const scene = toScene(d.scene);
   const delivered = d.mySubmissions[0];
   const pickingSlot = p.picking ? d.slots.find((s) => s.key === p.picking) : undefined;
-  const glass = p.result?.glass ?? p.check?.glass;
-  const photo = d.scene?.photo && scene ? <PhotoSceneArt photo={d.scene.photo} credit={d.scene.credit} placed={p.placedCards} results={(p.result ?? p.check)?.evaluation.slots} glass={glass?.slots} perfect={!!glass?.perfect}
+  const flair3d = p.result?.flair3d ?? p.check?.flair3d;
+  const photo = d.scene?.photo && scene ? <PhotoSceneArt photo={d.scene.photo} credit={d.scene.credit} placed={p.placedCards} results={(p.result ?? p.check)?.evaluation.slots} flair3d={flair3d?.slots} perfect={!!flair3d?.perfect}
     pins={d.slots.map((s, i) => { const [x, y] = slotPosition(scene, s.key, i, d.slots.length); return { key: s.key, n: i + 1, x, y, label: slotLabel(s), fx: d.scene.fx?.[s.key] ?? "spot", size: d.scene.sizes?.[s.key] ?? 12 }; })} /> : undefined;
   const stage = <CbcScene scenario={d.scenario} scene={scene} slots={d.slots} placed={p.placedCards} results={p.check?.evaluation.slots} labelOf={slotLabel} onPick={p.allowed && !p.readOnly ? (s) => p.setPicking(s) : undefined} readOnly={!p.allowed || p.readOnly} art={photo} />;
   return (
