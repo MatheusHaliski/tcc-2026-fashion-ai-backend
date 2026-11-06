@@ -429,12 +429,6 @@ public class WardrobeService {
      * {@code catalogImage}: a imagem do card ({@code CatalogImagePipelineService.cardImage}) — com o recorte semântico
      * da canônica (nível A, a foto não é copiada) ou os assets processados (nível B); null = foto inteira.
      */
-    public record CatalogPick(UUID productId, UUID variantId, String imageUrl, String thumbnailUrl, Map<String, Object> catalogImage) {
-        public CatalogPick(UUID productId, UUID variantId, String imageUrl) {
-            this(productId, variantId, imageUrl, null, null);
-        }
-    }
-
     @Transactional
     public Views.PieceView createFromCatalog(CurrentUser user, PieceForm form, CatalogPick pick) {
         return createInternal(user, form, Objects.requireNonNull(pick));

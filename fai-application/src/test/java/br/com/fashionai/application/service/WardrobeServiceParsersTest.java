@@ -605,7 +605,7 @@ class WardrobeServiceParsersTest {
                 null, null, null, null, BigDecimal.ONE, null, null, null, null, null, null, null, null, null, null, null, null, null, null, UUID.randomUUID());
         assertThat(comSessao.captureSessionId()).isNotNull();
         assertThat(comSessao.attributes()).isNull();
-        var pick = new WardrobeService.CatalogPick(UUID.randomUUID(), null, "/img.png");
+        var pick = new CatalogPick(UUID.randomUUID(), null, "/img.png");
         assertThat(pick.thumbnailUrl()).isNull();
         assertThat(new WardrobeService.ClosetFilter(null, null, null, null, null, null, null, null, 0, 0).seal()).isNull();
         assertThat(new WardrobeService.ClosetFilter(null, null, null, null, null, null, null, null, 0, 0, "HOT").hypeLevel()).isEqualTo("HOT");

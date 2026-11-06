@@ -4,6 +4,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.CatalogPick;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
@@ -71,6 +72,7 @@ public class CatalogService {
     private final OfficialCatalogDiscovery discovery;
     private final WardrobeService wardrobe;
     private CatalogTextInterpreter textInterpreter;
+    private CatalogProductModels productModels;
     private final CatalogNormalizer norm = CatalogNormalizer.get();
     private final CatalogMatchScorer scorer = new CatalogMatchScorer(norm);
 
@@ -94,6 +96,18 @@ public class CatalogService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setTextInterpreter(CatalogTextInterpreter textInterpreter) {
         this.textInterpreter = textInterpreter;
+    }
+
+    /** Modelo 3D de vitrine publicado do produto (etapa 3, V97): sem ele, os cards saem como antes, sem model3dUrl. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setProductModels(CatalogProductModels productModels) {
+        this.productModels = productModels;
+    }
+
+    private void withModels(List<Map<String, Object>> cards) {
+        if (productModels != null) {
+            productModels.decorate(cards);
+        }
     }
 
     /** Campos do formulário de busca (qualquer combinação de 2–3 já basta). */
@@ -340,9 +354,10 @@ public class CatalogService {
             Brand b = brandById.computeIfAbsent(p.getBrandId(), id -> brands.findById(id).orElse(null));
             List<CatalogVariant> productVariants = variantsBy.getOrDefault(p.getId(), List.of());
             Map<String, Object> m = card(p, b, primary.get(p.getId()), productVariants);
-            m.put("variants", productVariants.stream().map(this::variantMap).toList());
+            m.put("variants", productVariants.stream().map(CatalogCards::variantMap).toList());
             out.add(m);
         }
+        withModels(out);
         return out;
     }
 
@@ -430,9 +445,9 @@ public class CatalogService {
             CatalogImage selectedPhoto=selectedVariant==null?primary.get(p.getId())
                     :CatalogPhotoChoice.select(p,colorPhotos.getOrDefault(p.getId(),List.of()),vs,selectedVariant,null);
             Map<String, Object> m = card(p, b, selectedPhoto, vs);
-            m.put("variants", vs.stream().map(this::variantMap).toList());
+            m.put("variants", vs.stream().map(CatalogCards::variantMap).toList());
             // a variante da cor pedida ("501 preto" → variante Black) vem pré-selecionada
-            if (selectedVariant != null) applyVariant(m, selectedVariant);
+            if (selectedVariant != null) CatalogCards.applyVariant(m, selectedVariant);
             m.put("matchScore", s.toMap());
             m.put("matchPercent", (int) Math.round(s.total() * 100));
             out.add(m);
@@ -441,7 +456,9 @@ public class CatalogService {
         // o "% compatível" mostrado não muda
         out.sort(Comparator.comparingDouble((Map<String, Object> m) -> orderScore(m)).reversed()
                 .thenComparing(m -> -((Number) m.get("ownersCount")).intValue()));
-        return out.size() > limit ? out.subList(0, limit) : out;
+        List<Map<String, Object>> top = out.size() > limit ? out.subList(0, limit) : out;
+        withModels(top);
+        return top;
     }
 
     static CatalogMatchScorer.Candidate candidate(CatalogProduct p, Brand b, List<String> aliases, List<CatalogVariant> vs) {
@@ -478,44 +495,7 @@ public class CatalogService {
     }
 
     private Map<String, Object> card(CatalogProduct p, Brand b, CatalogImage img, List<CatalogVariant> productVariants) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", p.getId());
-        m.put("brand", b == null ? null : Map.of("id", b.getId(), "name", b.getName(), "slug", b.getSlug(),
-                "logoUrl", String.valueOf(b.getLogoUrl())));
-        // produtos importados antes da limpeza podem trazer marcação HTML da loja no título
-        m.put("productName", CatalogIngestService.plainText(p.getProductName()));
-        m.put("modelName", CatalogIngestService.plainText(p.getModelName()));
-        m.put("category", p.getCategory());
-        m.put("subcategory", p.getSubcategory());
-        m.put("color", p.getColor());
-        m.put("colorName", p.getColorName());
-        m.put("colorHex", p.getColor() == null ? null : Taxonomy.hex(p.getColor()));
-        m.put("material", p.getMaterial());
-        m.put("variation", p.getVariationCode());
-        m.put("attributes", TaxonomyAttribute.toMap(p.getAttributes(), java.util.Set.of()));
-        m.put("collection", p.getCollection());
-        m.put("description", p.getDescription());
-        DesignTraits design = designOf(p);
-        m.put("design", design.isEmpty() ? null : design.toMap());
-        m.put("gender", p.getGender());
-        m.put("productCode", p.getProductCode());
-        m.put("sku", p.getSku());
-        Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img, p, productVariants);
-        UUID effective = CatalogImageIdentity.effectiveVariantId(img, p, productVariants);
-        if (effective != null) {
-            if (catalogImage != null) catalogImage.put("variantId", effective);
-            productVariants.stream().filter(v -> effective.equals(v.getId())).findFirst().ifPresent(v -> applyVariant(m, v));
-        }
-        m.put("imageUrl", catalogImage == null ? null : catalogImage.get("url"));
-        m.put("imageProcessingStatus", catalogImage != null ? "READY" : img != null && List.of("PENDING", "DOWNLOADING").contains(img.getProcessingStatus()) ? "PENDING" : "ERROR");
-        m.put("catalogImage", catalogImage);
-        m.put("imageSource", img == null ? null : CatalogIngestService.provenance(img));
-        m.put("source", Map.of("type", p.getSourceType().name(), "domain", String.valueOf(p.getSourceDomain()),
-                "productUrl", String.valueOf(p.getOfficialProductUrl()), "status", p.getSourceStatus().name(),
-                "lastVerifiedAt", String.valueOf(p.getLastVerifiedAt())));
-        m.put("ingestionStatus", p.getIngestionStatus().name());
-        m.put("ownersCount", p.getOwnersCount());
-        return m;
+        return CatalogCards.card(p, b, img, productVariants);
     }
 
     private Map<String, Object> intentMap(Resolved r) {
@@ -597,7 +577,8 @@ public class CatalogService {
         CatalogImage selected=variantId==null&&imageId==null ? mainImagesFor(List.of(p),Map.of(p.getId(),productVariants)).get(p.getId())
                 : CatalogPhotoChoice.select(p,imgs,productVariants,requested,imageId);
         Map<String, Object> m = card(p, b, selected, productVariants);
-        if (requested!=null) applyVariant(m,requested);
+        withModels(List.of(m));
+        if (requested!=null) CatalogCards.applyVariant(m,requested);
         // CatalogProductImage: viewType, qualityScore, sourceUrl, processedUrl e papel (canônica, alternativa, detalhe)
         m.put("images", imgs.stream().filter(i -> CatalogImageIdentity.matches(i,p,null,productVariants)).map(i -> {
             Map<String, Object> im = new LinkedHashMap<>();
@@ -616,28 +597,9 @@ public class CatalogService {
             im.put("provenance", CatalogIngestService.provenance(i));
             return im;
         }).toList());
-        m.put("variants", productVariants.stream().map(this::variantMap).toList());
+        m.put("variants", productVariants.stream().map(CatalogCards::variantMap).toList());
         m.put("aliases", productAliases.findByProductId(p.getId()).stream().map(CatalogProductAlias::getAlias).toList());
         return m;
-    }
-
-    private Map<String, Object> variantMap(CatalogVariant v) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", v.getId());
-        m.put("key", v.getVariantKey());
-        m.put("color", v.getColor());
-        m.put("colorName", v.getColorName());
-        m.put("code", v.getVariantCode());
-        m.put("sku", v.getSku());
-        return m;
-    }
-
-    private void applyVariant(Map<String, Object> card, CatalogVariant variant) {
-        String color = variant.getColor() == null ? (String) card.get("color") : variant.getColor();
-        card.put("selectedVariant", variantMap(variant));
-        card.put("color", color);
-        if (variant.getColorName() != null) card.put("colorName", variant.getColorName());
-        card.put("colorHex", color == null ? null : Taxonomy.hex(color));
     }
 
     /**
@@ -734,8 +696,9 @@ public class CatalogService {
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
                 a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
                 a.background());
-        Views.PieceView view = wardrobe.createFromCatalog(user, form, new WardrobeService.CatalogPick(p.getId(),
-                variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card));
+        Views.PieceView view = wardrobe.createFromCatalog(user, form, new CatalogPick(p.getId(),
+                variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card,
+                productModels == null ? null : productModels.url(p.getId())));
         if (Boolean.TRUE.equals(a.favorite())) {
             view = wardrobe.toggles(user, view.id(), true, null, null);
         }

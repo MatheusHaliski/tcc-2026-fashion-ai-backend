@@ -1,0 +1,82 @@
+{
+  "api": "In-memory fixture; no production or database",
+  "rendering": "Actual browser WebGL via software renderer",
+  "checks": [
+    "Clothing mesh taper enters undo/redo and saved document",
+    "tee: created, rendered, saved and exported binary GLB",
+    "skirt: created, rendered, saved and exported binary GLB",
+    "trousers: created, rendered, saved and exported binary GLB",
+    "Saved garment reloads from simulated API",
+    "Unsaved replacement asks confirmation; 409 preserves local draft",
+    "Viewer cannot create, edit or export through UI",
+    "Mobile viewport has no document horizontal overflow",
+    "Revoked guest cannot reload scene"
+  ],
+  "pageErrors": [],
+  "assets": [
+    {
+      "id": "asset1",
+      "filename": "fai-tee-prototype.glb",
+      "bytes": 23824,
+      "sha256": "f31cbf26643c24634556d8c3786fcb7a6f20a6cace8da71f40921554eeae38a2",
+      "inspection": {
+        "nodes": 5,
+        "meshes": 4,
+        "materials": 1,
+        "vertices": 490,
+        "primitives": {
+          "n1.p0": 196,
+          "n2.p0": 98,
+          "n3.p0": 98,
+          "n4.p0": 98
+        },
+        "skinned": false,
+        "morphs": false,
+        "animated": false,
+        "extensions": []
+      }
+    },
+    {
+      "id": "asset2",
+      "filename": "fai-skirt-prototype.glb",
+      "bytes": 12004,
+      "sha256": "5f216794d6f740817edc67e6047ca436ec46fa050726d3621f7bf74609cd96da",
+      "inspection": {
+        "nodes": 3,
+        "meshes": 2,
+        "materials": 1,
+        "vertices": 245,
+        "primitives": {
+          "n1.p0": 147,
+          "n2.p0": 98
+        },
+        "skinned": false,
+        "morphs": false,
+        "animated": false,
+        "extensions": []
+      }
+    },
+    {
+      "id": "asset3",
+      "filename": "fai-trousers-prototype.glb",
+      "bytes": 23704,
+      "sha256": "66bcbbf19c352fc13dc62a9b6078e77050d12fdbd4db2e9cf5ddfc76a5a11ef9",
+      "inspection": {
+        "nodes": 5,
+        "meshes": 4,
+        "materials": 1,
+        "vertices": 490,
+        "primitives": {
+          "n1.p0": 98,
+          "n2.p0": 147,
+          "n3.p0": 147,
+          "n4.p0": 98
+        },
+        "skinned": false,
+        "morphs": false,
+        "animated": false,
+        "extensions": []
+      }
+    }
+  ]
+}

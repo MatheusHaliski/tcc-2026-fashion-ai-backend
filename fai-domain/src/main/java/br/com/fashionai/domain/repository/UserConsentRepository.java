@@ -20,4 +20,7 @@ public interface UserConsentRepository extends JpaRepository<UserConsent, UUID> 
     List<UserConsent> findByUserId(UUID userId);
 
     Optional<UserConsent> findByUserIdAndPurpose(UUID userId, ConsentPurpose purpose);
+
+    /** RF-PESQ-10 — contas com consentimento revogado para uma finalidade (exclusão das agregações). */
+    List<UserConsent> findByPurposeAndGrantedFalse(ConsentPurpose purpose);
 }

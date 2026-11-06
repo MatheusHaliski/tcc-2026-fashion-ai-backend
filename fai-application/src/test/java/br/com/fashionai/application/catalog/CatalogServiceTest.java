@@ -366,7 +366,7 @@ class CatalogServiceTest {
         UUID alternateId=alternate.getId();
         assertThatThrownBy(()->catalog.product(p.getId(),alternateId,canonical.getId())).isInstanceOf(ApiException.class);
         assertThat(canonical.isCanonical()).isTrue();assertThat(selected.isCanonical()).isFalse();
-        org.mockito.ArgumentCaptor<WardrobeService.CatalogPick> picked=org.mockito.ArgumentCaptor.forClass(WardrobeService.CatalogPick.class);
+        org.mockito.ArgumentCaptor<br.com.fashionai.application.service.CatalogPick> picked=org.mockito.ArgumentCaptor.forClass(br.com.fashionai.application.service.CatalogPick.class);
         when(kit.dep(WardrobeService.class).createFromCatalog(any(),any(),picked.capture()))
                 .thenReturn(Views.piece(Kit.piece(user,"Red product",p.getCategory(),p.getSubcategory(),"red"),null,null));
         catalog.addToWardrobe(ana,new CatalogService.AddRequest(p.getId(),alternateId,null,null,null,null,null,null,null,null,

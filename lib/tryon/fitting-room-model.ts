@@ -121,6 +121,9 @@ export function fromCatalog(
     textureImageId: imageId ?? null,
     textureRevision: `${(hash >>> 0).toString(16)}-${revision.length}`,
     processedUrl: processedImageOf(p),
+    // modelo de vitrine do produto (etapa 3): a peça já chega com 3D e o provador não pede outra geração
+    model3dUrl: p.model3dUrl ?? null,
+    model3dStatus: p.model3dUrl ? "COMPLETED" : null,
     officialUrl:
       p.source?.productUrl && p.source.productUrl !== "null"
         ? p.source.productUrl

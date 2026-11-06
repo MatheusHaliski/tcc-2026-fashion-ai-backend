@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import dynamic from "next/dynamic";
-import { useAuth } from "@/lib/auth/session";
 import { ApiError, api } from "@/lib/api/client";
 import { useVisibleRefresh } from "@/lib/hooks/use-visible-refresh";
 import { useApi } from "@/lib/hooks/use-api";
 import type { Store } from "@/lib/tryon/fitting-room-model";
-import { catalogApi, enoughToSearch, type CatalogProduct, type CatalogSummary, type CatalogVariant, type DesignTraits, type DiscoverResponse, type MatchReason, type SearchResponse } from "@/lib/api/catalog";
+import { catalogApi, enoughToSearch, type CatalogProduct, type CatalogSummary, type CatalogVariant, type DesignTraits, type DiscoverResponse, type SearchResponse } from "@/lib/api/catalog";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
 import { label, useTaxonomy, subcategoryLabel, CATEGORY_LABEL } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -16,22 +14,20 @@ import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guid
 import { Badge, Button, Chip, Field, Input, Pagination, Skeleton, cn } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { CatalogBrandGrid } from "./catalog-brand-grid";
-import { hasUsableCatalogPreview, useCatalogPreview } from "./use-catalog-preview";
-import { DefaultGarmentPhoto } from "./default-garment-photo";
-import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
 import { usePhotoFraming } from "@/lib/photo-framing";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
 import { CatalogResultsGrid } from "@/components/catalog/catalog-results-grid";
+import { CatalogResultCard } from "./catalog-result-card";
+export { CatalogResultCard } from "./catalog-result-card";
 
 export interface CatalogSearchContext { category: string; subcategory: string; brand: string; query: string }
 import { storeCount } from "./catalog-brand-grid";
 export { storeCount } from "./catalog-brand-grid";
 
 const BRAND_PAGE_SIZE = 12;
-const ProductFitDialog = dynamic(() => import("@/components/fit/ProductFitDialog").then(module => module.ProductFitDialog), { ssr: false });
 
 /**
  * RF47 · Busca catalogada: categoria → subcategoria → marca → nome/modelo. Duas ou três informações já disparam a busca
@@ -474,18 +470,6 @@ export function designLabels(d: DesignTraits, t: T): string[] {
   (d.anyColors ?? []).forEach((c) => out.push(label(c)));
   return out;
 }
-function reasonLabel(r: MatchReason, t: T): string {
-  switch (r.facet) {
-    case "pattern": return t(`catalog.design.pattern.${r.value}`);
-    case "placement": return t(`catalog.design.placement.${r.value}`);
-    case "size": return t(`catalog.design.size.${r.value}`);
-    case "sides": return r.value.includes("+") ? t("catalog.design.sides.both") : t(`catalog.design.sides.${r.value}`);
-    case "baseColor": return t("catalog.design.base_color", { cor: label(r.value).toLowerCase() });
-    case "printColor": return t("catalog.design.print_color", { cor: label(r.value).toLowerCase() });
-    default: return label(r.value);
-  }
-}
-
 /** "Entendemos: logo em toda a peça · frente e verso · cinza · preto" — o que foi lido da descrição digitada. */
 function DesignUnderstood({ design }: { design: DesignTraits }) {
   const { t } = useI18n();
@@ -502,66 +486,4 @@ function DesignUnderstood({ design }: { design: DesignTraits }) {
 
 function placeholderFor(category: string, t: (k: string) => string) {
   return category === "shoes_piece" ? t("catalog.ex_tenis") : category === "lower_piece" ? t("catalog.ex_calca") : t("catalog.ex_camiseta");
-}
-
-/** Card de resultado: foto oficial dominante (ou a ilustração da categoria), marca, nome, modelo, cor, tipo e fonte. */
-export function CatalogResultCard({ product: original, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange, busy, disabled }: {
-  product: CatalogProduct;
-  onPick: (variant: CatalogVariant | null, prepared: CatalogProduct, prepare: () => CatalogProduct | Promise<CatalogProduct>) => void; busy?: boolean; disabled?: boolean;
-  pickLabel?: string;
-  selectedVariant?: CatalogVariant | null;
-  onVariantChange?: (variant: CatalogVariant) => void;
-}) {
-  const { t } = useI18n();
-  const { user } = useAuth();
-  const [fitOpen, setFitOpen] = useState(false);
-  const tax = useTaxonomy();
-  const [localVariant, setLocalVariant] = useState<CatalogVariant | null>(original.selectedVariant ?? null);
-  const variant = controlledVariant === undefined ? localVariant : controlledVariant;
-  const requestProduct = useMemo(() => variant ? { ...original, selectedVariant: variant } : original, [original, variant]);
-  const preview = useCatalogPreview(requestProduct);
-  const p = preview.product;
-  const setVariant = (next: CatalogVariant) => {
-    if (controlledVariant === undefined) setLocalVariant(next);
-    onVariantChange?.(next);
-  };
-  const img = p.catalogImage?.url ?? p.imageUrl;
-  const [framing] = usePhotoFraming();
-  const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
-  return (
-    <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
-      <div className="catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
-        {!hasUsableCatalogPreview(p) || preview.failed || !img
-          ? <><DefaultGarmentPhoto category={p.category} subcategory={p.subcategory} color={variant?.color ?? p.color} colorHex={variant?.color ? undefined : p.colorHex} framing={framing} alt={t("catalog.defaultIllustration")}/>{preview.failed && <button type="button" className="btn btn-sm catalog-photo-retry" onClick={preview.retry}>{t("common.retry")}</button>}</>
-          : <CatalogPhoto requiredFrame onRetry={preview.retry} framing={framing} image={p.catalogImage} category={p.category} subcategory={p.subcategory} color={variant?.color ?? p.color} colorHex={variant?.color ? undefined : p.colorHex} alt={`${p.brand?.name ?? ""} ${p.productName}`}/>}
-
-        {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}
-        {p.ingestionStatus === "DISCOVERED" && <Badge tone="chalk" className="catalog-card-new">{t("catalog.loja_oficial")}</Badge>}
-      </div>
-      <div className="catalog-card-body">
-        <p className="flex items-center gap-1.5 type-caption text-muted"><BrandLogo name={p.brand?.name} src={p.brand?.logoUrl} size={18} />{p.brand?.name}</p>
-        <h3 className="type-h3 leading-tight">{p.productName}</h3>
-        <p className="type-body-sm text-muted">{[p.modelName && p.modelName !== p.productName ? p.modelName : null, subcategoryLabel(p.subcategory)].filter(Boolean).join(" · ")}</p>
-        {p.description && <p className="catalog-card-desc type-caption text-muted">{p.description}</p>}
-        {(p.matchScore?.reasons?.length ?? 0) > 0 && (
-          <ul className="catalog-reasons" aria-label={t("catalog.design.por_que_esta")}>
-            {p.matchScore!.reasons!.slice(0, 5).map((r) => (
-              <li key={`${r.facet}:${r.value}`} className={cn("catalog-reason", r.ok ? "is-ok" : "is-miss")}>
-                <span aria-hidden>{r.ok ? "✓" : "✗"}</span><span className="sr-only">{r.ok ? t("catalog.design.tem") : t("catalog.design.nao_tem")}</span>{reasonLabel(r, t)}
-              </li>
-            ))}
-          </ul>
-        )}
-        {(p.variants?.length ?? 0) > 1 ? (
-          <div className="mt-1.5 flex flex-wrap gap-1" role="group" aria-label={t("common.color")}>
-            {p.variants!.map((v) => <button key={v.id} type="button" className={cn("catalog-swatch", (variant?.id ?? p.selectedVariant?.id) === v.id && "is-active")} title={v.colorName ?? v.color ?? v.key} aria-label={v.colorName ?? v.color ?? v.key} aria-pressed={(variant?.id ?? null) === v.id} onClick={() => setVariant(v)} disabled={disabled || busy} style={{ background: tax?.colors?.[v.color ?? ""] ?? "var(--surface-3)" }} />)}
-          </div>
-        ) : p.colorName ? <p className="mt-1 flex items-center gap-1.5 type-body-sm"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: p.colorHex ?? undefined }} />{p.colorName}</p> : null}
-        <p className="mt-1 type-caption text-faint">{t("catalog.fonte", { fonte: source })}</p>
-        {user && <Button size="sm" className="mt-2 self-start" onClick={() => setFitOpen(true)}>{t("size.botao")}</Button>}
-        <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant, p, preview.prepare)} loading={busy} disabled={disabled}>{busy ? t("catalog.verificando_foto") : pickLabel ?? t("catalog.e_esta")}</Button>
-      </div>
-      {fitOpen && <ProductFitDialog product={p} open onClose={() => setFitOpen(false)} />}
-    </article>
-  );
 }
