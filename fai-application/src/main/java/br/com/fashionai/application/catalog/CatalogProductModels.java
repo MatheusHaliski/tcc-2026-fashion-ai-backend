@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Etapa 3 — URL do modelo 3D de vitrine (PUBLISHED, V86) de cada produto do catálogo, para o card, o detalhe e a peça
+ * Etapa 3 — URL do modelo 3D de vitrine (PUBLISHED, V97) de cada produto do catálogo, para o card, o detalhe e a peça
  * que alguém leva do catálogo para o guarda-roupa. Uma consulta por lista, nunca uma por card.
  *
  * <p>Serve o arquivo do perfil WEB (≤ 6 MB: é o que o navegador baixa); sem ele, o DESKTOP_HIGH. A chave tem de ser

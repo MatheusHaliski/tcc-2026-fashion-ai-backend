@@ -215,7 +215,7 @@ def test_apply_failure_rolls_back_and_deletes_uploads(tmp_path):
 
 def test_without_the_v86_table_dry_run_works_and_apply_refuses(tmp_path, capsys):
     code, rows, out = run(tmp_path, Conn(no_table=True, flat_lays=[P2]))
-    assert code == 0 and rows["c6"]["situacao"] == "IMPORTAR" and "V86 não aplicada" in capsys.readouterr().out
+    assert code == 0 and rows["c6"]["situacao"] == "IMPORTAR" and "V97 não aplicada" in capsys.readouterr().out
     manifest = tmp_path / "manifesto.csv"
     conn, storage = Conn(no_table=True), Storage()
     assert imp.main(["--manifest", str(manifest), "--root", str(tmp_path), "--out-dir", str(tmp_path / "x"), "--apply"],

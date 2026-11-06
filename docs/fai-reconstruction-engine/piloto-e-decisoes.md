@@ -129,7 +129,7 @@ reproduz cor, estampa e logo; as costas dos aprovados pelo Codex são plausívei
 (costas cinzas na Vans infantil, torso de manequim no VMCHITA, punhos escuros nos VMWILLOW); de lado, camisetas,
 jeans e regatas ficam finos.
 
-**Decisão — onde o modelo entra:** tabela nova `catalog_product_models_3d` (V86), não `garment_assets_3d`. O
+**Decisão — onde o modelo entra:** tabela nova `catalog_product_models_3d` (V97), não `garment_assets_3d`. O
 `garment_assets_3d` é o asset que veste o avatar (esqueleto, GarmentFitGate); o .glb da Meshy não tem esqueleto nem
 métricas de vestir, e marcar APPROVED sem elas furaria o gate. O modelo do produto (PUBLISHED) vai como
 `model3dUrl` no card do catálogo (lista, busca, detalhe) e é copiado para `wardrobe_items.model3d_url` (o campo de

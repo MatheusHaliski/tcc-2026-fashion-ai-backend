@@ -1,4 +1,4 @@
-"""Gravação de um .glb da Meshy como modelo 3D de vitrine do produto (catalog_product_models_3d, V86).
+"""Gravação de um .glb da Meshy como modelo 3D de vitrine do produto (catalog_product_models_3d, V97).
 
 Uma transação por produto. Ordem: envia as versões ao bucket (com releitura e conferência do SHA, como o FrameStorage),
 aposenta o PUBLISHED anterior, insere o novo e completa as peças do guarda-roupa que vieram desse produto e ainda não têm

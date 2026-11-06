@@ -98,7 +98,7 @@ public class CatalogService {
         this.textInterpreter = textInterpreter;
     }
 
-    /** Modelo 3D de vitrine publicado do produto (etapa 3, V86): sem ele, os cards saem como antes, sem model3dUrl. */
+    /** Modelo 3D de vitrine publicado do produto (etapa 3, V97): sem ele, os cards saem como antes, sem model3dUrl. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setProductModels(CatalogProductModels productModels) {
         this.productModels = productModels;

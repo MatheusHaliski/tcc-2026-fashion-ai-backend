@@ -5,7 +5,7 @@ Entrada: o manifesto (codex_glb_index.py archive/export) e a pasta com os .glb. 
 catálogo (codex_catalog_match.py), monta a versão WEB ≤ 6 MB (glb_web_rendition.py), mede a qualidade dela
 (glb_quality.py), soma a revisão visual do Codex e decide:
 
-- ``IMPORTAR``: nota BOM (vira PUBLISHED) ou REVISAR (vira DRAFT) em catalog_product_models_3d (V86), o modelo de vitrine
+- ``IMPORTAR``: nota BOM (vira PUBLISHED) ou REVISAR (vira DRAFT) em catalog_product_models_3d (V97), o modelo de vitrine
   do produto. Sem esqueleto: nunca veste o avatar (isso é o garment_assets_3d APPROVED);
 - ``GERAR_DE_NOVO``: nota RUIM, quarentena do Codex ou sem versão que caiba no WEB;
 - ``SEM_PRODUTO``, ``JA_IMPORTADO``, ``DUPLICADO``: não entra.
@@ -65,7 +65,7 @@ def query(conn, sql: str, params: dict | None = None) -> list[dict]:
 
 
 def existing_models(conn) -> list[dict] | None:
-    """Modelos já gravados; None quando a tabela ainda não existe (V86 não aplicada): o ensaio segue, o --apply não."""
+    """Modelos já gravados; None quando a tabela ainda não existe (V97 não aplicada): o ensaio segue, o --apply não."""
     try:
         return query(conn, EXISTING)
     except Exception as exc:   # noqa: BLE001 - só "tabela inexistente" (MySQL 1146) vira None
@@ -186,7 +186,7 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
     conn, target = connect()
     models = existing_models(conn)
     if models is None and args.apply:
-        print("catalog_product_models_3d não existe: aplique a migration V86 (deploy do backend) antes do --apply")
+        print("catalog_product_models_3d não existe: aplique a migration V97 (deploy do backend) antes do --apply")
         return 2
     items = assess(read_manifest(args.manifest), args.root, conn, models or [])
     pieces = pieces_without_model(conn, [i["product_id"] for i in items if i["status"] == "IMPORTAR"])
@@ -208,7 +208,7 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
         counts[label] = counts.get(label, 0) + 1
     print(f"glb do Codex: {len(items)} arquivos · {'GRAVANDO' if args.apply else 'ensaio (nada é gravado)'} · {target}")
     if models is None:
-        print("  aviso: catalog_product_models_3d ainda não existe (V86 não aplicada); contado como vazio")
+        print("  aviso: catalog_product_models_3d ainda não existe (V97 não aplicada); contado como vazio")
     for key, count in sorted(counts.items()):
         print(f"  {count:5d}  {key}")
     print(f"  {sum(pieces.values()):5d}  peças de guarda-roupa que recebem o modelo (vindas desses produtos)")
