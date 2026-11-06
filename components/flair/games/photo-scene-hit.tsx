@@ -37,9 +37,12 @@ export function PhotoSceneHit({ photo, x, y, size, fx, card, label, result, glas
     "--gep-power": power.toFixed(2), "--gep-aura-rings": String(Math.min(3, Math.floor(aura / 2) + 1)), "--gep-rays": aura >= 4 ? "1" : "0",
   } as CSSProperties;
   const dir = match > real ? "up" : match < real ? "down" : "same";
+  // erro do jogador: a luz do objeto falha em vermelho e o placar perde os pontos (GlassPenalties)
+  const errors = glass?.penalties ?? [];
+  const lost = errors.reduce((sum, e) => sum + e.points, 0);
   const piece = card.imageUrl ? mediaUrl(card.imageUrl) ?? card.imageUrl : null;
   return (
-    <div className={cn("gep-hit", `fx-${fx}`, `is-${kind.toLowerCase()}`, `tier-${card.tier.toLowerCase()}`, `band-${aura}`, sintonia >= 2 && "is-tuned", latest && "is-latest")} style={style}>
+    <div className={cn("gep-hit", `fx-${fx}`, `is-${kind.toLowerCase()}`, `tier-${card.tier.toLowerCase()}`, `band-${aura}`, sintonia >= 2 && "is-tuned", latest && "is-latest", lost > 0 && "is-error")} style={style}>
       <span className="gep-flash" />
       <img className="gep-relight" src={photo} alt="" decoding="async" />
       {fx !== "spot" && <span className="gep-cone" />}
@@ -57,13 +60,14 @@ export function PhotoSceneHit({ photo, x, y, size, fx, card, label, result, glas
       {kind !== "COMUM" && <span className="gep-glints"><i /><i /><i /><i /><i /><i /></span>}
       <span className={cn("gep-callout", `is-${kind.toLowerCase()}`)}>
         <b className="gep-callout-slot">{label}</b>
-        <span className="gep-callout-mini" title={L.effect(kind)}>{kind === "IMPERSONATION" ? "◉" : kind === "METAMORFOSE" ? "◆" : "●"}{glass && glass.effect.bonus > 0 ? ` +${glass.effect.bonus}` : ""}{glass && match > real ? " ↑" : glass && match < real ? " ↓" : ""}</span>
+        <span className="gep-callout-mini" title={L.effect(kind)}>{kind === "IMPERSONATION" ? "◉" : kind === "METAMORFOSE" ? "◆" : "●"}{glass && glass.effect.bonus > 0 ? ` +${glass.effect.bonus}` : ""}{glass && match > real ? " ↑" : glass && match < real ? " ↓" : ""}{lost > 0 ? ` −${lost}` : ""}</span>
         <span className="gep-callout-kind">{L.effect(kind)}{glass && glass.effect.bonus > 0 ? ` ${t("games.effects.bonus", { n: glass.effect.bonus })}` : ""}</span>
         {glass && (
           <span className={cn("gep-callout-aura", `is-${dir}`)}>
             {t("games.scene.aura")} · {L.band(glass.hypeBand)}{dir !== "same" ? ` ${dir === "up" ? "↑" : "↓"} ${L.band(glass.matchBand)}` : ""}{glass.hypeBonus > 0 ? ` ${t("games.effects.bonus", { n: glass.hypeBonus })}` : ""}
           </span>
         )}
+        {lost > 0 && <span className="gep-callout-error">{errors.map((e) => t(`games.penalty.${e.code}`, { n: e.points })).join(" · ")}</span>}
         {latest && glass?.effect.text && <span className="gep-callout-text">{glass.effect.text}</span>}
       </span>
     </div>

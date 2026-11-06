@@ -126,3 +126,11 @@ html[data-theme="contrast"] .gep-callout { background: #000; border-color: #fff;
 }
 @keyframes gep-link-draw { from { stroke-dashoffset: 100; opacity: 0; } }
 @keyframes gep-link-run { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+/* erro do jogador: a luz do objeto falha em vermelho, a foto não reacende e a legenda mostra os pontos perdidos */
+.gep-hit.is-error .gep-flash { background: radial-gradient(circle, #ff5a4ecc, transparent 70%); animation: gep-error-flicker 900ms steps(2, jump-none) 3; }
+.gep-hit.is-error .gep-relight { filter: grayscale(0.7) brightness(0.75); }
+.gep-hit.is-error .gep-ring { border-color: #ff5a4e; }
+.gep-callout-error { display: block; color: #ffb4ad; font-weight: 600; }
+.ge-score-errors { margin-left: var(--space-2); color: var(--color-mark-ink); }
+@keyframes gep-error-flicker { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.15; } }
+@media (prefers-reduced-motion: reduce) { .gep-hit.is-error .gep-flash { animation: none; opacity: 0.6; } }

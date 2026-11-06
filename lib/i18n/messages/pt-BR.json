@@ -9943,5 +9943,10 @@
   "flair.match.final_win": "{side} vence o confronto: luz dourada no palco.",
   "flair.match.final_draw": "Empate no confronto: o palco fica dividido.",
   "hypeLive.up": "Hype subiu {n, plural, one {# ponto} other {# pontos}}",
-  "hypeLive.down": "Hype caiu {n, plural, one {# ponto} other {# pontos}}"
+  "hypeLive.down": "Hype caiu {n, plural, one {# ponto} other {# pontos}}",
+  "games.penalty.REFUSED": "vaga recusou a carta −{n}",
+  "games.penalty.MISPLACED": "fora da posição −{n}",
+  "games.penalty.NO_SINTONIA": "sem sintonia −{n}",
+  "games.penalty.OVEREXPOSED": "Hype acima do máximo −{n}",
+  "games.penalties": "Erros: −{n} no placar"
 }

@@ -9943,5 +9943,10 @@
   "flair.match.final_win": "{side} wins the match: golden light on stage.",
   "flair.match.final_draw": "The match is a draw: the stage stays split.",
   "hypeLive.up": "Hype rose {n, plural, one {# point} other {# points}}",
-  "hypeLive.down": "Hype fell {n, plural, one {# point} other {# points}}"
+  "hypeLive.down": "Hype fell {n, plural, one {# point} other {# points}}",
+  "games.penalty.REFUSED": "slot refused the card −{n}",
+  "games.penalty.MISPLACED": "wrong position −{n}",
+  "games.penalty.NO_SINTONIA": "no sintonia −{n}",
+  "games.penalty.OVEREXPOSED": "Hype above the maximum −{n}",
+  "games.penalties": "Mistakes: −{n} on the score"
 }

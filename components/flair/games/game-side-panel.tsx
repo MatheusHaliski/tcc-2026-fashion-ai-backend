@@ -75,7 +75,7 @@ export function GameSidePanel({ d, check, checking, filled, requiredSlots, resul
       <div className="cbc-block">
         <p className="label">{t("cbc.sintonia")}</p>
         <div className="cbc-sync"><div className="hype-bar"><i style={{ width: `${ev && ev.sintoniaMax ? (ev.sintonia / ev.sintoniaMax) * 100 : 0}%`, background: "var(--thread)" }} /></div><b className="tabular">{ev ? `${ev.sintonia}/${ev.sintoniaMax}` : `0/${d.slots.length * 3}`}</b></div>
-        {glass && <p className="ge-score"><span className="tabular">{t("games.score", { score: glass.score, max: glass.scoreMax })}</span>{glass.perfect && <Badge tone="thread">{t("games.perfect")}</Badge>}</p>}
+        {glass && <p className="ge-score"><span className="tabular">{t("games.score", { score: glass.score, max: glass.scoreMax })}</span>{(glass.penaltyTotal ?? 0) > 0 && <small className="ge-score-errors tabular">{t("games.penalties", { n: glass.penaltyTotal })}</small>}{glass.perfect && <Badge tone="thread">{t("games.perfect")}</Badge>}</p>}
       </div>
       <div className="cbc-block">
         <p className="label">{t("cbc.points_preview")}</p>

@@ -4,6 +4,7 @@ import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair.GlassEffects;
 import br.com.fashionai.application.flair.GlassHype;
+import br.com.fashionai.application.flair.GlassPenalties;
 import br.com.fashionai.domain.model.FlairChallenge;
 
 import java.util.ArrayList;
@@ -17,18 +18,21 @@ import java.util.UUID;
 /**
  * Glass Empire — o resultado "glass" de uma partida, sem I/O: por vaga preenchida a faixa de Hype da carta, o bônus de
  * jogada, o efeito (Comum/Metamorfose/Impersonation) e a faixa de partida; totais, pontuação e "perfeito" (R2:
- * requisitos cumpridos e sintonia ≥ 2 por vaga obrigatória). Quem chama já leu as cartas, as peças e as auras.
+ * requisitos cumpridos e sintonia ≥ 2 por vaga obrigatória). Erros do jogador
+ * (GlassPenalties) descontam do placar, que nunca fica negativo; carta fora da posição não aciona Metamorfose nem
+ * Impersonation. Quem chama já leu as cartas, as peças e as auras.
  */
 final class FlairGameGlass {
     private FlairGameGlass() {
     }
 
-    record Glass(List<Map<String, Object>> slots, int hypeTotal, int effectTotal, int score, int scoreMax, boolean perfect) {
+    record Glass(List<Map<String, Object>> slots, int hypeTotal, int effectTotal, int penaltyTotal, int score, int scoreMax, boolean perfect) {
         Map<String, Object> toMap() {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("slots", slots);
             m.put("hypeTotal", hypeTotal);
             m.put("effectTotal", effectTotal);
+            m.put("penaltyTotal", penaltyTotal);
             m.put("score", score);
             m.put("scoreMax", scoreMax);
             m.put("perfect", perfect);
@@ -52,6 +56,7 @@ final class FlairGameGlass {
         List<Map<String, Object>> slots = new ArrayList<>();
         int hypeTotal = 0;
         int effectTotal = 0;
+        int penaltyTotal = 0;
         for (CbcRules.SlotResult r : results) {
             if (r.cardId() == null) {
                 continue;
@@ -60,17 +65,22 @@ final class FlairGameGlass {
             CbcRules.Card card = models.get(r.cardId());
             GlassHype.Band band = GlassHype.bandOf(card);
             int hypeBonus = GlassHype.playBonus(card, play, max);
-            GlassEffects.Effect effect = GlassEffects.of(r, bonus(slot), player.metamorfoseAllowed(), player.impersonationReady().contains(r.cardId()));
+            boolean placed = r.positionOk();
+            GlassEffects.Effect effect = GlassEffects.of(r, bonus(slot), placed && player.metamorfoseAllowed(), placed && player.impersonationReady().contains(r.cardId()));
+            List<GlassPenalties.Penalty> penalties = GlassPenalties.of(r, band, max);
             int delta = GlassHype.partialShift(r, partial, complete);
             hypeTotal += hypeBonus;
             effectTotal += effect.bonus();
-            slots.add(slotView(r, band, hypeBonus, effect, slot, GlassHype.shifted(GlassHype.clampMax(band, max), delta), delta));
+            penaltyTotal += GlassPenalties.total(penalties);
+            Map<String, Object> view = slotView(r, band, hypeBonus, effect, slot, GlassHype.shifted(GlassHype.clampMax(band, max), delta), delta);
+            view.put("penalties", penalties.stream().map(GlassPenalties.Penalty::toMap).toList());
+            slots.add(view);
         }
         int sintonia = FlairGameViews.intOf(evaluation.get("sintonia"));
         int sintoniaMax = FlairGameViews.intOf(evaluation.get("sintoniaMax"));
         int scoreMax = sintoniaMax + raw.values().stream().mapToInt(s -> playCap(play) + maxEffect(s)).sum();
         boolean perfect = Boolean.TRUE.equals(evaluation.get("ok")) && sintonia >= 2 * requiredSlots(g);
-        return new Glass(slots, hypeTotal, effectTotal, sintonia + hypeTotal + effectTotal, scoreMax, perfect);
+        return new Glass(slots, hypeTotal, effectTotal, penaltyTotal, GlassPenalties.score(sintonia, hypeTotal, effectTotal, penaltyTotal), scoreMax, perfect);
     }
 
     static Map<String, Object> slotView(CbcRules.SlotResult r, GlassHype.Band band, int hypeBonus, GlassEffects.Effect effect,

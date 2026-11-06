@@ -59,8 +59,11 @@ export interface GameScene extends Omit<Scene, "slots"> { slots: Record<string, 
   /** tipo de luz por vaga, o objeto da foto onde a vaga está e a largura dele (% da foto) */ fx?: Record<string, SceneFx>; anchors?: Record<string, string>; sizes?: Record<string, number> }
 export interface GameDetail extends GameSummary, CbcDetail { slots: GameSlot[]; ficha: GameFicha; scene: GameScene; hypeRules: Record<string, unknown> }
 
-export interface GlassSlot { slot: string; cardId: string; hypeBand: HypeBand; hypeBonus: number; effect: { kind: EffectKind; bonus: number; text?: string | null }; matchBand: HypeBand; matchDelta: number }
-export interface GlassResult { slots: GlassSlot[]; hypeTotal: number; effectTotal: number; score: number; scoreMax: number; perfect: boolean }
+/** Erro do jogador numa vaga (GlassPenalties no servidor): tira pontos do placar Glass, que nunca fica negativo. */
+export type GlassPenaltyCode = "REFUSED" | "MISPLACED" | "NO_SINTONIA" | "OVEREXPOSED";
+export interface GlassPenalty { code: GlassPenaltyCode; points: number }
+export interface GlassSlot { slot: string; cardId: string; hypeBand: HypeBand; hypeBonus: number; effect: { kind: EffectKind; bonus: number; text?: string | null }; matchBand: HypeBand; matchDelta: number; penalties?: GlassPenalty[] }
+export interface GlassResult { slots: GlassSlot[]; hypeTotal: number; effectTotal: number; penaltyTotal?: number; score: number; scoreMax: number; perfect: boolean }
 export interface GameCheck extends CbcCheck { glass: GlassResult }
 export interface GameSubmitResult extends CbcSubmitResult { glass: GlassResult; rewards: GameReward[] }
 

@@ -234,7 +234,12 @@ class FlairGameServiceTest {
         assertThat(map(slots.get(0), "effect")).containsEntry("kind", "COMUM").containsEntry("bonus", 0).containsEntry("text", "Reflexo simples");
         assertThat(glass).containsEntry("hypeTotal", 1).containsEntry("effectTotal", 0).containsEntry("perfect", false);
         Map<String, Object> ev = map(out, "evaluation");
-        assertThat(glass.get("score")).isEqualTo((Integer) ev.get("sintonia") + 1);
+        // erros (GlassPenalties): o caco VIRAL passa do teto HOT (superexposição) e a base está fora da posição
+        assertThat(list(slots.get(0), "penalties")).extracting(p -> p.get("code")).contains("OVEREXPOSED");
+        assertThat(list(slots.get(2), "penalties")).extracting(p -> p.get("code")).contains("MISPLACED");
+        int penalties = (Integer) glass.get("penaltyTotal");
+        assertThat(penalties).isGreaterThanOrEqualTo(2);
+        assertThat(glass.get("score")).isEqualTo(Math.max(0, (Integer) ev.get("sintonia") + 1 - penalties));
         assertThat((Integer) glass.get("scoreMax")).isGreaterThan((Integer) ev.get("sintoniaMax"));
         Map<String, Object> open = list(out, "story").get(0);
         assertThat(open.get("key")).isNull();
@@ -312,7 +317,16 @@ class FlairGameServiceTest {
 
         Map<String, Object> out = service.submit(anaU, g.getSlug(), req);
 
-        assertThat(map(out, "glass")).containsEntry("perfect", false).containsEntry("score", 4);
+        Map<String, Object> glass = map(out, "glass");
+        assertThat(glass).containsEntry("perfect", false);
+        // caco e moldura fora da posição perdem 1 ponto cada (MISPLACED) e não acionam Metamorfose nem Impersonation
+        List<Map<String, Object>> slots = list(glass, "slots");
+        assertThat(slots.subList(0, 2)).allSatisfy(s -> assertThat(list(s, "penalties")).extracting(p -> p.get("code")).containsExactly("MISPLACED"));
+        assertThat(list(slots.get(2), "penalties")).isEmpty();
+        assertThat(glass).containsEntry("penaltyTotal", 2).containsEntry("score", 2);          // sintonia 4 − 2 de erros
+        assertThat(list(glass, "slots")).allSatisfy(s -> assertThat(map(s, "effect")).containsEntry("kind", "COMUM"));
+        int raw = (Integer) map(out, "evaluation").get("sintonia") + (Integer) glass.get("hypeTotal") + (Integer) glass.get("effectTotal");
+        assertThat(glass.get("score")).isEqualTo(Math.max(0, raw - (Integer) glass.get("penaltyTotal")));
         verify(points, never()).award(any(), eq("FLAIR_GLASS_PERFECT"), anyString(), anyString(), any());
         assertThat(list(out, "rewards")).extracting(r -> r.get("code")).containsExactly("GE-A01-MOLDURA");
         assertThat(list(out, "rewards").get(0)).containsEntry("state", "PENDING");
