@@ -56,7 +56,7 @@ class RepairOrderServiceTest {
         when(passports.lockById(any())).thenAnswer(inv -> passports.findById(inv.getArgument(0)));
         service = new RepairOrderService(orders, events, receipts, passports, passportEvents, users, guard, clock);
         passportService = new GarmentPassportService(passports, MemoryRepository.of(PassportHoldingRepository.class), passportEvents, shares, MemoryRepository.of(PassportEvidenceRepository.class),
-                MemoryRepository.of(PassportTransferRepository.class), pieces, users, guard, mock(ApplicationEventPublisher.class), true, clock);
+                MemoryRepository.of(PassportTransferRepository.class), pieces, users, guard, mock(ApplicationEventPublisher.class), mock(br.com.fashionai.application.assets.AssetCatalogService.class), true, clock);
         owner = person("ana"); tailor = person("oficina"); stranger = person("bia");
         WardrobeItem piece = new WardrobeItem(); piece.setUser(owner); piece.setName("Casaco"); piece.setCategory("upper_piece"); piece.setImageOrigin(ImageOrigin.USER_PHOTO); pieces.save(piece);
         passport = new GarmentPassport(); passport.setPieceId(piece.getId()); passport.setOwnerId(owner.getId()); passport.setOrigin("COMPRADA"); passport.setStateUpdatedAt(clock.instant()); passports.save(passport);
