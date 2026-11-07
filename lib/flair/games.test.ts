@@ -3,7 +3,7 @@ import { ApiError } from "@/lib/api/client";
 import { applyFilters, bandIndex, groupBySeries, hasFilter, isLocked, isNightScene, litModules, lockFromError, lockReasonKeys, parseFilters, serializeFilters, thumbnailOf, toScene, type GameAccess, type GameScene, type GameSummary } from "@/lib/flair/games";
 
 /**
- * Glass Empire — helpers puros: filtros ↔ URL, filtro local sobre a lista inteira, grupos por série, cadeado (sempre a
+ * FLAIR 3D MAKE UP — helpers puros: filtros ↔ URL, filtro local sobre a lista inteira, grupos por série, cadeado (sempre a
  * partir do `access` do servidor; 403 vira o mesmo bloqueio), miniatura, cena da API e módulos do quarto que acendem.
  */
 const open: GameAccess = { allowed: true, tierOk: true, wardrobeOk: true, requiredTier: "ESTREIA", currentTier: "LOFT", requiredWardrobeLevel: "EM_MONTAGEM", currentWardrobeLevel: "BEM_CURADO" };

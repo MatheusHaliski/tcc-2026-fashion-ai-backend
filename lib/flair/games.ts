@@ -1,5 +1,5 @@
 /**
- * Glass Empire — os 100 jogos FLAIR (docs/flair/glass-empire-100-jogos) sobre /api/flair/games. Cada jogo é um Desafio
+ * FLAIR 3D MAKE UP — os 100 jogos FLAIR (docs/flair/flair-3d) sobre /api/flair/games. Cada jogo é um Desafio
  * de Montagem com série, distrito, raridade, nível de FAI XP e nível do guarda-roupa exigidos, deck, regras de Hype,
  * efeitos por vaga e recompensas extras. O acesso vem SEMPRE do servidor (`access`): o cliente nunca compara o nível
  * local com um valor fixo; sem resposta, o jogo fica bloqueado (fail closed). Aqui ficam o contrato TS, as constantes
@@ -50,13 +50,22 @@ export interface GamesSummary { total: number; playable: number; byTier?: Record
 export interface GameSlot extends CbcSlot { optional: boolean; effects: Partial<Record<"comum" | "metamorfose" | "impersonation", string | null>>; bonus?: Record<string, number> }
 export interface GameFicha { objective?: string | null; scenario?: string | null; mandatory?: string | null; sequence?: string | null; reward?: string | null; hypePlay?: string | null; hypePartial?: string | null }
 /** Cena vinda da API: as vagas podem trazer um terceiro elemento, o módulo do quarto (série A). */
-export interface GameScene extends Omit<Scene, "slots"> { slots: Record<string, [number, number] | [number, number, string]> }
+/** Crédito da fotografia do cenário (licença livre; public/flair/games/scenes/credits.json). */
+export interface GameSceneCredit { title?: string | null; creator?: string | null; license: string; source?: string | null }
+/** Tipo de luz do ambiente em cada vaga (o efeito usa a luz do lugar: holofote, flash, neon, vela, vitrine…). */
+export type SceneFx = "spot" | "flash" | "neon" | "candle" | "vitrine" | "mirror" | "rack" | "daylight" | "screen" | "lamp";
+export const SCENE_FX: SceneFx[] = ["spot", "flash", "neon", "candle", "vitrine", "mirror", "rack", "daylight", "screen", "lamp"];
+export interface GameScene extends Omit<Scene, "slots"> { slots: Record<string, [number, number] | [number, number, string]>; venue?: string | null; photo?: string | null; credit?: GameSceneCredit | null;
+  /** tipo de luz por vaga, o objeto da foto onde a vaga está e a largura dele (% da foto) */ fx?: Record<string, SceneFx>; anchors?: Record<string, string>; sizes?: Record<string, number> }
 export interface GameDetail extends GameSummary, CbcDetail { slots: GameSlot[]; ficha: GameFicha; scene: GameScene; hypeRules: Record<string, unknown> }
 
-export interface GlassSlot { slot: string; cardId: string; hypeBand: HypeBand; hypeBonus: number; effect: { kind: EffectKind; bonus: number; text?: string | null }; matchBand: HypeBand; matchDelta: number }
-export interface GlassResult { slots: GlassSlot[]; hypeTotal: number; effectTotal: number; score: number; scoreMax: number; perfect: boolean }
-export interface GameCheck extends CbcCheck { glass: GlassResult }
-export interface GameSubmitResult extends CbcSubmitResult { glass: GlassResult; rewards: GameReward[] }
+/** Erro do jogador numa vaga (Flair3dPenalties no servidor): tira pontos do placar FLAIR 3D MAKE UP, que nunca fica negativo. */
+export type Flair3dPenaltyCode = "REFUSED" | "MISPLACED" | "NO_SINTONIA" | "OVEREXPOSED";
+export interface Flair3dPenalty { code: Flair3dPenaltyCode; points: number }
+export interface Flair3dSlot { slot: string; cardId: string; hypeBand: HypeBand; hypeBonus: number; effect: { kind: EffectKind; bonus: number; text?: string | null }; matchBand: HypeBand; matchDelta: number; penalties?: Flair3dPenalty[] }
+export interface Flair3dResult { slots: Flair3dSlot[]; hypeTotal: number; effectTotal: number; penaltyTotal?: number; score: number; scoreMax: number; perfect: boolean }
+export interface GameCheck extends CbcCheck { flair3d: Flair3dResult }
+export interface GameSubmitResult extends CbcSubmitResult { flair3d: Flair3dResult; rewards: GameReward[] }
 
 // ================================================================== filtros e URL
 export interface GameFilters {

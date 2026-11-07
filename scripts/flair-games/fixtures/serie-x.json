@@ -121,8 +121,8 @@
       { "type": "hypeBand", "min": "NICHE", "count": 2 }
     ],
     "rewards": [
-      { "type": "ITEM", "code": "GE-A01-MOLDURA-PRISMA", "names": { "pt-BR": "Moldura prisma", "en": "Prism frame", "es": "Marco prisma" } },
-      { "type": "SPECIAL_CARD", "code": "GE-A01-ESPELHO-INTEIRO", "names": { "pt-BR": "Espelho inteiro", "en": "Whole mirror", "es": "Espejo entero" }, "condition": "perfect" }
+      { "type": "ITEM", "code": "F3D-A01-MOLDURA-PRISMA", "names": { "pt-BR": "Moldura prisma", "en": "Prism frame", "es": "Marco prisma" } },
+      { "type": "SPECIAL_CARD", "code": "F3D-A01-ESPELHO-INTEIRO", "names": { "pt-BR": "Espelho inteiro", "en": "Whole mirror", "es": "Espejo entero" }, "condition": "perfect" }
     ],
     "ficha": {
       "objective": { "pt-BR": "Recompor o espelho com cinco cacos.", "en": "Piece the mirror together with five shards.", "es": "Recomponer el espejo con cinco esquirlas." },
@@ -254,7 +254,7 @@
       { "type": "cards", "min": 3 }
     ],
     "rewards": [
-      { "type": "ITEM", "code": "GE-B21-LUZ-DE-PASSARELA", "names": { "pt-BR": "Luz de passarela", "en": "Runway light", "es": "Luz de pasarela" } }
+      { "type": "ITEM", "code": "F3D-B21-LUZ-DE-PASSARELA", "names": { "pt-BR": "Luz de passarela", "en": "Runway light", "es": "Luz de pasarela" } }
     ],
     "ficha": {
       "objective": { "pt-BR": "Abrir o desfile com três Bronze.", "en": "Open the show with three Bronze.", "es": "Abrir el desfile con tres Bronce." },

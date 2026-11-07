@@ -12,7 +12,7 @@ import { cn } from "@/components/ui";
  * as vagas saem do desenho e viram uma grade embaixo (a cena fica com marcadores numerados).
  */
 export function CbcSceneArt({ scenario, scene: given, className, pins }: { scenario: string; scene?: Scene; className?: string; pins?: { n: number; x: number; y: number; lit: boolean }[] }) {
-  // `scene` vindo da API (Glass Empire, scene_json) vence o kit local do cenário
+  // `scene` vindo da API (FLAIR 3D MAKE UP, scene_json) vence o kit local do cenário
   const scene = given ?? sceneOf(scenario);
   const gid = `cbc-sky-${scenario}`;
   return (
@@ -72,17 +72,18 @@ function Prop({ p, scene }: { p: SceneProp; scene: Scene }): ReactNode {
 export interface PlacedCard { card: FlairCollectionCard }
 
 /** O palco do desafio: arte + vagas. Cada vaga é um botão (abre a escolha de carta) com rótulo, posição pedida e estado. */
-export function CbcScene({ scenario, scene: given, slots, placed, results, labelOf, onPick, readOnly }: {
+export function CbcScene({ scenario, scene: given, slots, placed, results, labelOf, onPick, readOnly, art }: {
   scenario: string; scene?: Scene; slots: { key: string; position: string; label?: string | null }[]; placed: Record<string, FlairCollectionCard | undefined>;
   results?: CbcSlotResult[]; labelOf: (slot: CbcSlot | { key: string; position: string; label?: string | null }) => string; onPick?: (slot: string) => void; readOnly?: boolean;
+  /** arte no lugar do desenho 2D (FLAIR 3D MAKE UP: a fotografia do ambiente com os efeitos de cada carta) */ art?: ReactNode;
 }) {
   const { t } = useI18n();
   const scene = given ?? sceneOf(scenario);
   const bySlot = new Map((results ?? []).map((r) => [r.slot, r]));
   const pins = slots.map((s, i) => { const [x, y] = slotPosition(scene, s.key, i, slots.length); return { n: i + 1, x, y, lit: !!placed[s.key] }; });
   return (
-    <div className="cbc-stage" style={{ "--cbc-accent": scene.accent } as CSSProperties}>
-      <div className="cbc-stage-art"><CbcSceneArt scenario={scenario} scene={given} pins={pins} /></div>
+    <div className={cn("cbc-stage", !!art && "is-photo")} style={{ "--cbc-accent": scene.accent } as CSSProperties}>
+      <div className={cn("cbc-stage-art", !!art && "is-photo")}>{art ?? <CbcSceneArt scenario={scenario} scene={given} pins={pins} />}</div>
       <ol className="cbc-slots" aria-label={t("cbc.slots_label")}>
         {slots.map((s, i) => {
           const [x, y] = slotPosition(scene, s.key, i, slots.length);

@@ -1,6 +1,6 @@
-"""Planilha de evidências dos jogos Glass Empire.
+"""Planilha de evidências dos jogos FLAIR 3D MAKE UP.
 
-Lê evidencias/resultados.json (gerado por evidence.mjs) e escreve jogos-glass-empire.xlsx com as colunas
+Lê evidencias/resultados.json (gerado por evidence.mjs) e escreve jogos-flair-3d.xlsx com as colunas
 pedidas: Conseguiu concluir?, Cartas inseridas, Cartas utilizadas, Pré-requisitos, Recompensa ganha e Foto de evidência
 (hiperlink relativo para a captura). Uso: python3 scripts/flair-games/evidence_xlsx.py <pasta-evidencias>
 """
@@ -25,7 +25,7 @@ def main(folder: str) -> None:
     rows = json.loads((out_dir / "resultados.json").read_text(encoding="utf-8"))
     wb = Workbook()
     ws = wb.active
-    ws.title = "Jogos Glass Empire"
+    ws.title = "Jogos FLAIR 3D MAKE UP"
     for i, (title, width) in enumerate(COLUMNS, start=1):
         cell = ws.cell(row=1, column=i, value=title)
         cell.font = Font(bold=True, color="FFFFFF")
@@ -56,10 +56,10 @@ def main(folder: str) -> None:
     summary.append(["Concluídos", done])
     summary.append(["Não concluídos", len(rows) - done])
     summary.append(["Ambiente", rows[0].get("environment", "") if rows else ""])
-    target = out_dir / "jogos-glass-empire.xlsx"
+    target = out_dir / "jogos-flair-3d.xlsx"
     wb.save(target)
     print(f"{target}: {len(rows)} linhas, {done} concluídos")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "docs/flair/glass-empire-100-jogos/evidencias")
+    main(sys.argv[1] if len(sys.argv) > 1 else "docs/flair/flair-3d-make-up/evidencias")

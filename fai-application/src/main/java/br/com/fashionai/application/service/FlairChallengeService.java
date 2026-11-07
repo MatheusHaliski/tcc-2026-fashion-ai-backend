@@ -761,7 +761,7 @@ public class FlairChallengeService {
         int base = basePoints(c, b.moment(), b.window());
         String ref = c.getRepeatLimit() > 1 ? c.getId() + ":" + attempt : c.getId().toString();
         if (base > 0 && b.evaluation().ok()) {
-            out.add(new Line(c.getSeries() != null ? "FLAIR_GLASS" : "FLAIR_CBC", base, ref, "challenge"));
+            out.add(new Line(c.getSeries() != null ? "FLAIR_3D" : "FLAIR_CBC", base, ref, "challenge"));
         }
         if (b.evaluation().ok() && !b.evaluation().rediscovered().isEmpty()) {
             out.add(new Line("FLAIR_CBC_REDISCOVERY", REDISCOVERY_BONUS, c.getId().toString(), "rediscovery"));

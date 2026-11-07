@@ -13,6 +13,14 @@ const COLORS = ["black", "white", "blue", "red", "green", "beige", "yellow", "pi
 const STYLES = ["casual", "classic", "minimal", "streetwear", "elegant"];
 const MATERIALS = ["COTTON", "LINEN", "DENIM", "SILK", "LEATHER", "WOOL", "NYLON"];
 const OCCASIONS = ["work", "party", "casual", "sport", "travel"];
+const IMAGES = {
+  SUP: ["/assets_pecas/01_Parte_superior/01_camiseta_referencia.png", "/assets_pecas/01_Parte_superior/02_shirt_camisa.png", "/assets_pecas/01_Parte_superior/03_blouse_blusa.png", "/assets_pecas/01_Parte_superior/04_tank_top_regata.png", "/assets_pecas/01_Parte_superior/05_crop_top_cropped.png", "/assets_pecas/01_Parte_superior/06_polo_shirt_camisa_polo.png"],
+  INF: ["/assets_pecas/02_Parte_inferior/01_jeans.png", "/assets_pecas/02_Parte_inferior/02_calca_casual.png", "/assets_pecas/02_Parte_inferior/03_calca_alfaiataria.png", "/assets_pecas/02_Parte_inferior/04_calca_cargo.png", "/assets_pecas/02_Parte_inferior/05_calca_chino.png", "/assets_pecas/02_Parte_inferior/06_calca_moletom.png"],
+  CAL: ["/assets_pecas/03_Calcados/01_tenis_casual.png", "/assets_pecas/03_Calcados/02_tenis_corrida.png", "/assets_pecas/03_Calcados/03_tenis_treino.png", "/assets_pecas/03_Calcados/04_tenis_skate.png", "/assets_pecas/03_Calcados/05_loafer.png", "/assets_pecas/03_Calcados/06_tenis_cano_alto.png"],
+  ACE: ["/assets_pecas/04_Acessorios/01_bolsa_transversal.png", "/assets_pecas/04_Acessorios/02_bolsa_mao.png", "/assets_pecas/04_Acessorios/03_clutch.png", "/assets_pecas/04_Acessorios/04_tote.png", "/assets_pecas/04_Acessorios/05_mochila.png", "/assets_pecas/04_Acessorios/06_cinto.png"],
+  VES: ["/assets_pecas/05_Corpo_inteiro/01_vestido.png", "/assets_pecas/05_Corpo_inteiro/02_macacao.png", "/assets_pecas/05_Corpo_inteiro/03_macaquinho.png", "/assets_pecas/05_Corpo_inteiro/04_conjunto_coordenado.png", "/assets_pecas/05_Corpo_inteiro/05_jardineira.png"],
+  LOOK: ["/assets_pecas/05_Corpo_inteiro/01_vestido.png", "/assets_pecas/05_Corpo_inteiro/02_macacao.png", "/assets_pecas/05_Corpo_inteiro/03_macaquinho.png", "/assets_pecas/05_Corpo_inteiro/04_conjunto_coordenado.png", "/assets_pecas/05_Corpo_inteiro/05_jardineira.png"],
+};
 const TIER_OVR = { BRONZE: 58, PRATA: 70, OURO: 80, ESPECIAL: 88 };
 const first = (v) => (Array.isArray(v) ? v[0] : v);
 const fieldKey = { color: "colors", style: "styles", occasion: "occasions", material: "materials" };
@@ -23,7 +31,7 @@ export function bank(game) {
     const a = s.accepts ?? {};
     const tier = first(a.tier) ?? "PRATA";
     const card = { id: `gc-${game.number}-${i + 1}`, originType: a.origin ?? "PIECE", originId: `p-${game.number}-${i + 1}`, season: "SPRING", tier, ovr: Math.max(TIER_OVR[tier] ?? 70, a.minOvr ?? 0),
-      rare: false, position, name: `${NAMES[position][i % 5]} ${i + 1}`, brandName: first(a.brand) ?? BRANDS[i % BRANDS.length], imageUrl: null, category: null, subcategory: null,
+      rare: false, position, name: `${NAMES[position][i % 5]} ${i + 1}`, brandName: first(a.brand) ?? BRANDS[i % BRANDS.length], imageUrl: IMAGES[position][i % IMAGES[position].length], category: null, subcategory: null,
       hype: { POP: 55, ENG: 50, TRD: 45, ORI: 50, RAR: 40, LON: 55, NOV: 45, HYP: 50 }, stats: { EDGE: 60, RANGE: 60, CLOUT: 60, GLOW: 60, ART: 60, SYNC: 60 }, rarity: "STANDARD", ability: null,
       priceVerified: true, state: "AVAILABLE", tradeable: true, acquiredVia: "GENERATED", pieceAddedDaysAgo: 120, idleDays: 0, impersonationReady: i === 0,
       tags: { styles: [first(a.style) ?? STYLES[i % STYLES.length]], colors: [first(a.color) ?? COLORS[i % COLORS.length]], occasions: [first(a.occasion) ?? OCCASIONS[i % OCCASIONS.length]], materials: [first(a.material) ?? MATERIALS[i % MATERIALS.length]] } };

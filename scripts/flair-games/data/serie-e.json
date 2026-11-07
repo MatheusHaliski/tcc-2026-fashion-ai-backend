@@ -1,0 +1,573 @@
+[
+  {
+    "number": 96,
+    "slug": "e96-chefe-vellard",
+    "series": "E",
+    "district": "COMMUNITY",
+    "names": {
+      "pt-BR": "Chefe: Vellard",
+      "en": "Boss: Vellard",
+      "es": "Jefe: Vellard"
+    },
+    "descriptions": {
+      "pt-BR": "Derrotar Augusto Vellard, antagonista fictício, em três confrontos de evidência, imagem e roupa, nunca de força.",
+      "en": "Defeat Augusto Vellard, a fictional antagonist, in three confrontations of evidence, image and clothing, never of force.",
+      "es": "Derrotar a Augusto Vellard, antagonista ficticio, en tres enfrentamientos de evidencia, imagen y ropa, nunca de fuerza."
+    },
+    "points": 80,
+    "repeatLimit": 1,
+    "adapted": false,
+    "themeTags": [
+      "glam",
+      "tailored",
+      "black",
+      "gold"
+    ],
+    "deck": {
+      "minCards": 7,
+      "maxCards": 9,
+      "mala": 20
+    },
+    "hype": {
+      "deckMin": "NICHE",
+      "mandatoryMin": "NICHE",
+      "mandatoryMax": "TRENDING",
+      "play": {
+        "mode": "LOW_IS_GOOD",
+        "bonus": 1
+      },
+      "partial": {
+        "mode": "UP_DOWN"
+      }
+    },
+    "slots": [
+      {
+        "key": "imagem_gala",
+        "position": "VES",
+        "optional": false,
+        "accepts": {
+          "occasion": [
+            "party",
+            "formal",
+            "ceremony",
+            "wedding",
+            "night_out",
+            "social"
+          ]
+        },
+        "label": {
+          "pt-BR": "Confronto imagem: look de gala",
+          "en": "Image confrontation: gala look",
+          "es": "Enfrentamiento imagen: look de gala"
+        },
+        "story": {
+          "pt-BR": "No confronto de imagem, {name}{brand, select, none {} other { da {brand}}} entra no showroom como look de gala.",
+          "en": "In the image confrontation, {name}{brand, select, none {} other { by {brand}}} enters the showroom as the gala look.",
+          "es": "En el enfrentamiento de imagen, {name}{brand, select, none {} other { de {brand}}} entra en el showroom como look de gala."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 2,
+          "impersonation": 3
+        }
+      },
+      {
+        "key": "imagem_cal",
+        "position": "CAL",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Confronto imagem: calçado",
+          "en": "Image confrontation: shoes",
+          "es": "Enfrentamiento imagen: calzado"
+        },
+        "story": {
+          "pt-BR": "Diante do manequim sabotado, {name}{brand, select, none {} other { da {brand}}} sustenta a imagem.",
+          "en": "Before the sabotaged mannequin, {name}{brand, select, none {} other { by {brand}}} holds the image.",
+          "es": "Ante el maniquí saboteado, {name}{brand, select, none {} other { de {brand}}} sostiene la imagen."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "imagem_ace",
+        "position": "ACE",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Confronto imagem: acessório",
+          "en": "Image confrontation: accessory",
+          "es": "Enfrentamiento imagen: accesorio"
+        },
+        "story": {
+          "pt-BR": "No confronto de imagem, {name}{brand, select, none {} other { da {brand}}} fecha a gala que Vellard tentou desmontar.",
+          "en": "In the image confrontation, {name}{brand, select, none {} other { by {brand}}} closes the gala Vellard tried to take apart.",
+          "es": "En el enfrentamiento de imagen, {name}{brand, select, none {} other { de {brand}}} cierra la gala que Vellard intentó desmontar."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "evidencia_vintage",
+        "position": "ANY",
+        "optional": false,
+        "accepts": {
+          "style": [
+            "vintage",
+            "classic",
+            "glam",
+            "y2k",
+            "romantic",
+            "grunge"
+          ]
+        },
+        "label": {
+          "pt-BR": "Confronto evidência: peça de arquivo",
+          "en": "Evidence confrontation: archive piece",
+          "es": "Enfrentamiento evidencia: prenda de archivo"
+        },
+        "story": {
+          "pt-BR": "Como evidência, {name}{brand, select, none {} other { da {brand}}} é a peça de arquivo que o livro-caixa não explica.",
+          "en": "As evidence, {name}{brand, select, none {} other { by {brand}}} is the archive piece the ledger cannot explain.",
+          "es": "Como evidencia, {name}{brand, select, none {} other { de {brand}}} es la prenda de archivo que el libro de caja no explica."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "evidencia_ace",
+        "position": "ACE",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Confronto evidência: acessório com uso",
+          "en": "Evidence confrontation: worn accessory",
+          "es": "Enfrentamiento evidencia: accesorio con uso"
+        },
+        "story": {
+          "pt-BR": "Com marcas de uso, {name}{brand, select, none {} other { da {brand}}} prova a procedência contra Vellard.",
+          "en": "With signs of wear, {name}{brand, select, none {} other { by {brand}}} proves the provenance against Vellard.",
+          "es": "Con marcas de uso, {name}{brand, select, none {} other { de {brand}}} prueba la procedencia contra Vellard."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "roupa_dna",
+        "position": "ANY",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Confronto roupa: a peça do seu DNA",
+          "en": "Clothing confrontation: your DNA piece",
+          "es": "Enfrentamiento ropa: la prenda de tu ADN"
+        },
+        "story": {
+          "pt-BR": "No confronto de roupa, {name}{brand, select, none {} other { da {brand}}} é a peça de maior sintonia com o seu DNA.",
+          "en": "In the clothing confrontation, {name}{brand, select, none {} other { by {brand}}} is the piece with the most sintonia with your DNA.",
+          "es": "En el enfrentamiento de ropa, {name}{brand, select, none {} other { de {brand}}} es la prenda de mayor sintonía con tu ADN."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 2,
+          "impersonation": 3
+        }
+      },
+      {
+        "key": "roupa_defesa",
+        "position": "ANY",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Confronto roupa: o que a defende",
+          "en": "Clothing confrontation: what defends it",
+          "es": "Enfrentamiento ropa: lo que la defiende"
+        },
+        "story": {
+          "pt-BR": "Ao lado, {name}{brand, select, none {} other { da {brand}}} defende a peça do DNA contra a última sabotagem.",
+          "en": "Beside it, {name}{brand, select, none {} other { by {brand}}} defends the DNA piece against the last sabotage.",
+          "es": "Al lado, {name}{brand, select, none {} other { de {brand}}} defiende la prenda del ADN contra el último sabotaje."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "roupa_extra",
+        "position": "SUP",
+        "optional": true,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Confronto roupa: reforço",
+          "en": "Clothing confrontation: reinforcement",
+          "es": "Enfrentamiento ropa: refuerzo"
+        },
+        "story": {
+          "pt-BR": "Como reforço, {name}{brand, select, none {} other { da {brand}}} cobre a vaga que Vellard bloqueou.",
+          "en": "As reinforcement, {name}{brand, select, none {} other { by {brand}}} covers the slot Vellard blocked.",
+          "es": "Como refuerzo, {name}{brand, select, none {} other { de {brand}}} cubre la casilla que Vellard bloqueó."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "livro_caixa",
+        "position": "ANY",
+        "optional": true,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Livro-caixa",
+          "en": "Ledger",
+          "es": "Libro de caja"
+        },
+        "story": {
+          "pt-BR": "No livro-caixa, {name}{brand, select, none {} other { da {brand}}} aparece como a última prova contra a Casa Vellard.",
+          "en": "In the ledger, {name}{brand, select, none {} other { by {brand}}} appears as the final proof against the House of Vellard.",
+          "es": "En el libro de caja, {name}{brand, select, none {} other { de {brand}}} aparece como la última prueba contra la Casa Vellard."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Vellard responde com uma sabotagem e bloqueia uma vaga por rodada.",
+            "en": "Vellard answers with a sabotage and blocks one slot per round.",
+            "es": "Vellard responde con un sabotaje y bloquea una casilla por ronda."
+          },
+          "metamorfose": {
+            "pt-BR": "O showroom vira vidro e a sabotagem seguinte fica visível.",
+            "en": "The showroom turns into glass and the next sabotage becomes visible.",
+            "es": "El showroom se vuelve vidrio y el siguiente sabotaje queda visible."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar encara Vellard vestindo a peça e a sabotagem falha.",
+            "en": "The avatar faces Vellard wearing the piece and the sabotage fails.",
+            "es": "El avatar encara a Vellard con la prenda puesta y el sabotaje falla."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      }
+    ],
+    "requirements": [
+      {
+        "type": "position",
+        "position": "VES",
+        "count": 1
+      },
+      {
+        "type": "tag",
+        "field": "occasion",
+        "anyOf": [
+          "party",
+          "formal",
+          "ceremony",
+          "wedding",
+          "night_out",
+          "social"
+        ],
+        "count": 1
+      },
+      {
+        "type": "tag",
+        "field": "style",
+        "anyOf": [
+          "vintage",
+          "classic",
+          "glam",
+          "y2k",
+          "romantic",
+          "grunge"
+        ],
+        "count": 1
+      },
+      {
+        "type": "hypeBand",
+        "min": "NICHE",
+        "scope": "all"
+      },
+      {
+        "type": "mala",
+        "max": 20
+      }
+    ],
+    "rewards": [
+      {
+        "type": "ITEM",
+        "code": "F3D-E96-MONOGRAMA-RISCADO",
+        "names": {
+          "pt-BR": "Monograma Vellard riscado para a vitrine",
+          "en": "Crossed-out Vellard monogram for the display case",
+          "es": "Monograma Vellard tachado para la vitrina"
+        }
+      },
+      {
+        "type": "SPECIAL_CARD",
+        "code": "F3D-E96-QUEDA-DE-VELLARD",
+        "names": {
+          "pt-BR": "Queda de Vellard",
+          "en": "Fall of Vellard",
+          "es": "Caída de Vellard"
+        }
+      }
+    ],
+    "ficha": {
+      "objective": {
+        "pt-BR": "Derrotar Augusto Vellard (antagonista fictício) em três confrontos de evidência, imagem e roupa, nunca de força.",
+        "en": "Defeat Augusto Vellard (a fictional antagonist) in three confrontations of evidence, image and clothing, never of force.",
+        "es": "Derrotar a Augusto Vellard (antagonista ficticio) en tres enfrentamientos de evidencia, imagen y ropa, nunca de fuerza."
+      },
+      "scenario": {
+        "pt-BR": "O showroom de vidro da Casa Vellard, com o manequim sabotado e o livro-caixa.",
+        "en": "The glass showroom of the House of Vellard, with the sabotaged mannequin and the ledger.",
+        "es": "El showroom de vidrio de la Casa Vellard, con el maniquí saboteado y el libro de caja."
+      },
+      "mandatory": {
+        "pt-BR": "Um look de gala (imagem), uma peça de arquivo ou vintage (evidência) e uma peça de alta sintonia com o DNA próprio (roupa); mala 20.",
+        "en": "One gala look (image), one archive or vintage piece (evidence) and one piece of high sintonia with your own DNA (clothing); bag 20.",
+        "es": "Un look de gala (imagen), una prenda de archivo o vintage (evidencia) y una prenda de alta sintonía con el ADN propio (ropa); maleta 20."
+      },
+      "sequence": {
+        "pt-BR": "Confronto imagem (gala), confronto evidência (vintage e acessório com uso), confronto roupa (a peça do DNA e o que a defende); reforço e livro-caixa são opcionais.",
+        "en": "Image confrontation (gala), evidence confrontation (vintage and a worn accessory), clothing confrontation (the DNA piece and what defends it); reinforcement and ledger are optional.",
+        "es": "Enfrentamiento imagen (gala), enfrentamiento evidencia (vintage y accesorio con uso), enfrentamiento ropa (la prenda del ADN y lo que la defiende); refuerzo y libro de caja son opcionales."
+      },
+      "reward": {
+        "pt-BR": "80 P (uma vez por dificuldade), XP, o monograma Vellard riscado para a vitrine e a carta Especial Queda de Vellard.",
+        "en": "80 P (once per difficulty), XP, the crossed-out Vellard monogram for the display case and the Fall of Vellard Special card.",
+        "es": "80 P (una vez por dificultad), XP, el monograma Vellard tachado para la vitrina y la carta Especial Caída de Vellard."
+      },
+      "hypePlay": {
+        "pt-BR": "Vellard compra peças Virais: uma carta Viral é sabotada antes de entrar, salvo com Metamorfose.",
+        "en": "Vellard buys Viral pieces: a Viral card is sabotaged before it enters, unless Metamorphosis is active.",
+        "es": "Vellard compra prendas Virales: una carta Viral es saboteada antes de entrar, salvo con Metamorfosis."
+      },
+      "hypePartial": {
+        "pt-BR": "Confronto vencido sobe uma faixa a peça; sabotagem sofrida desce uma faixa.",
+        "en": "A won confrontation moves the piece up one band; a suffered sabotage moves it down one.",
+        "es": "Un enfrentamiento ganado sube una franja la prenda; un sabotaje sufrido la baja una franja."
+      }
+    },
+    "scene": {
+      "sky": [
+        "#0B0B10",
+        "#2E2436"
+      ],
+      "ground": "#17141C",
+      "horizon": 60,
+      "accent": "#D4AF37",
+      "props": [
+        {
+          "k": "building",
+          "x": 80,
+          "y": 60,
+          "s": 1.5
+        },
+        {
+          "k": "rack",
+          "x": 30,
+          "y": 64
+        },
+        {
+          "k": "table",
+          "x": 130,
+          "y": 70,
+          "s": 0.9
+        },
+        {
+          "k": "lights",
+          "x": 0,
+          "y": 4
+        },
+        {
+          "k": "moon",
+          "x": 140,
+          "y": 14,
+          "s": 0.8
+        }
+      ],
+      "slots": {
+        "imagem_gala": [
+          22,
+          44
+        ],
+        "imagem_cal": [
+          50,
+          44
+        ],
+        "imagem_ace": [
+          78,
+          44
+        ],
+        "evidencia_vintage": [
+          22,
+          64
+        ],
+        "evidencia_ace": [
+          50,
+          64
+        ],
+        "roupa_dna": [
+          78,
+          64
+        ],
+        "roupa_defesa": [
+          22,
+          84
+        ],
+        "roupa_extra": [
+          50,
+          84
+        ],
+        "livro_caixa": [
+          78,
+          84
+        ]
+      }
+    }
+  }
+]

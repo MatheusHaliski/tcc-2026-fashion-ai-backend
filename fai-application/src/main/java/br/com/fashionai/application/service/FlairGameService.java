@@ -32,30 +32,30 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Glass Empire — os 100 jogos FLAIR: linhas de {@code flair_challenges} com {@code series} que o motor dos Desafios de
- * Montagem avalia. Este serviço aplica o bloqueio por nível ({@link GlassAccess}: PRIMEIRA instrução de check/submit),
+ * FLAIR 3D MAKE UP — os 100 jogos FLAIR: linhas de {@code flair_challenges} com {@code series} que o motor dos Desafios de
+ * Montagem avalia. Este serviço aplica o bloqueio por nível ({@link Flair3dAccess}: PRIMEIRA instrução de check/submit),
  * reaproveita janela, limite, avaliação, história e pontos do {@link FlairChallengeService}, e acrescenta o resultado
- * "glass" (Hype de partida e efeitos, {@link FlairGameGlass}), o bônus FLAIR_GLASS_PERFECT e as recompensas extras
- * ({@link GlassRewards}). Catálogo e detalhe só informam o acesso; nunca bloqueiam a leitura.
+ * "flair3d" (Hype de partida e efeitos, {@link FlairGame3dScore}), o bônus FLAIR_3D_PERFECT e as recompensas extras
+ * ({@link Flair3dRewards}). Catálogo e detalhe só informam o acesso; nunca bloqueiam a leitura.
  */
 @Service
 public class FlairGameService {
     public static final int PERFECT_BONUS = 10;
-    public static final String PERFECT_ACTION = "FLAIR_GLASS_PERFECT";
+    public static final String PERFECT_ACTION = "FLAIR_3D_PERFECT";
 
     public record Filters(String level, String wardrobe, String difficulty, String rarity, String series, String district, String q) {
     }
 
     private final FlairChallengeRepository challenges;
     private final FlairChallengeService cbc;
-    private final GlassAccess access;
-    private final GlassRewards rewards;
+    private final Flair3dAccess access;
+    private final Flair3dRewards rewards;
     private final FlairCardInstanceRepository cards;
     private final WardrobeItemRepository pieces;
     private final AuraPermissionsService auras;
     private final FaiPointsService points;
 
-    public FlairGameService(FlairChallengeRepository challenges, FlairChallengeService cbc, GlassAccess access, GlassRewards rewards,
+    public FlairGameService(FlairChallengeRepository challenges, FlairChallengeService cbc, Flair3dAccess access, Flair3dRewards rewards,
                             FlairCardInstanceRepository cards, WardrobeItemRepository pieces, AuraPermissionsService auras,
                             FaiPointsService points) {
         this.challenges = challenges;
@@ -87,7 +87,7 @@ public class FlairGameService {
     @Transactional(readOnly = true)
     public Map<String, Object> summary(CurrentUser viewer) {
         List<FlairChallenge> all = games();
-        GlassAccess.Me me = access.me(viewer == null ? null : viewer.id());
+        Flair3dAccess.Me me = access.me(viewer == null ? null : viewer.id());
         Map<String, Integer> byTier = new LinkedHashMap<>();
         for (Level l : Level.values()) {
             byTier.put(l.name(), 0);
@@ -108,7 +108,7 @@ public class FlairGameService {
     @Transactional(readOnly = true)
     public Map<String, Object> list(CurrentUser viewer, Filters f) {
         List<FlairChallenge> all = games().stream().filter(c -> matches(c, f)).toList();
-        GlassAccess.Me me = access.me(viewer == null ? null : viewer.id());
+        Flair3dAccess.Me me = access.me(viewer == null ? null : viewer.id());
         Map<UUID, List<FlairChallengeSubmission>> mine = cbc.mineBy(viewer, all);
         Instant now = cbc.now();
         List<Map<String, Object>> games = new ArrayList<>();
@@ -146,7 +146,7 @@ public class FlairGameService {
         return hay.contains(q.trim().toLowerCase(Locale.ROOT));
     }
 
-    /** Detalhe do CBC + campos Glass; o acesso é informado, nunca bloqueia a leitura. */
+    /** Detalhe do CBC + campos FLAIR 3D MAKE UP; o acesso é informado, nunca bloqueia a leitura. */
     @Transactional(readOnly = true)
     public Map<String, Object> detail(CurrentUser viewer, String slug) {
         FlairChallenge g = game(slug);
@@ -161,7 +161,7 @@ public class FlairGameService {
         FlairChallenge g = game(slug);
         access.require(g, access.me(user.id()));
         Map<String, Object> out = cbc.check(user, g.getSlug(), req);
-        if (glass(user, g, out).perfect()) {
+        if (flair3d(user, g, out).perfect()) {
             FlairGameViews.perfectLine(out, g, null);
         }
         return out;
@@ -173,7 +173,7 @@ public class FlairGameService {
         FlairChallenge g = game(slug);
         access.require(g, access.me(user.id()));
         Map<String, Object> out = cbc.submit(user, g.getSlug(), req);
-        boolean perfect = glass(user, g, out).perfect();
+        boolean perfect = flair3d(user, g, out).perfect();
         if (perfect) {
             FlairGameViews.perfectLine(out, g, points.award(user.id(), PERFECT_ACTION, "FLAIR_CHALLENGE", g.getId().toString(), PERFECT_BONUS));
         }
@@ -181,32 +181,32 @@ public class FlairGameService {
         return out;
     }
 
-    /** Anexa {@code glass} e troca a abertura da história pelo cenário da ficha (R8). */
+    /** Anexa {@code flair3d} e troca a abertura da história pelo cenário da ficha (R8). */
     @SuppressWarnings("unchecked")
-    FlairGameGlass.Glass glass(CurrentUser user, FlairChallenge g, Map<String, Object> out) {
+    FlairGame3dScore.Score flair3d(CurrentUser user, FlairChallenge g, Map<String, Object> out) {
         Map<String, Object> evaluation = out.get("evaluation") instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
         List<CbcRules.SlotResult> results = FlairGameViews.slotResults(evaluation);
         List<FlairCardInstance> placed = cards.findAllById(results.stream().map(CbcRules.SlotResult::cardId).filter(Objects::nonNull).toList());
         Map<UUID, WardrobeItem> byPiece = CbcCardMapper.pieces(placed, pieces);
         Map<UUID, CbcRules.Card> models = CbcCardMapper.models(placed, byPiece, FlairCollectionService::tagsOf);
-        FlairGameGlass.Glass glass = FlairGameGlass.of(g, evaluation, results, models, player(user, placed, byPiece));
-        out.put("glass", glass.toMap());
+        FlairGame3dScore.Score flair3d = FlairGame3dScore.of(g, evaluation, results, models, player(user, placed, byPiece));
+        out.put("flair3d", flair3d.toMap());
         out.put("story", FlairGameViews.story(out.get("story"), g));
-        return glass;
+        return flair3d;
     }
 
     /** R21: Metamorfose e Impersonation exigem a aura (nível Loft); Impersonation ainda exige a peça pronta. */
-    FlairGameGlass.Player player(CurrentUser user, List<FlairCardInstance> placed, Map<UUID, WardrobeItem> byPiece) {
+    FlairGame3dScore.Player player(CurrentUser user, List<FlairCardInstance> placed, Map<UUID, WardrobeItem> byPiece) {
         boolean metamorfose = auras.canUserEquipAura(user.id(), AuraType.AURA_METAMORPHOSE);
         Set<UUID> ready = new HashSet<>();
         if (auras.canUserEquipAura(user.id(), AuraType.AURA_IMPERSONATION)) {
             for (FlairCardInstance c : placed) {
                 WardrobeItem w = "PIECE".equals(c.getOriginType()) ? byPiece.get(c.getOriginId()) : null;
-                if (w != null && FlairGameGlass.impersonationReady(w.getBackgroundConfigJson())) {
+                if (w != null && FlairGame3dScore.impersonationReady(w.getBackgroundConfigJson())) {
                     ready.add(c.getId());
                 }
             }
         }
-        return new FlairGameGlass.Player(metamorfose, ready);
+        return new FlairGame3dScore.Player(metamorfose, ready);
     }
 }

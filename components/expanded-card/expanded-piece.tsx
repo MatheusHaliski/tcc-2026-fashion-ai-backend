@@ -49,7 +49,7 @@ import { PieceDetailFacts } from "@/components/piece-detail-facts";
 import { PieceCardPanels } from "@/components/piece-card-panels";
 import { fashionCardLevel } from "@/lib/hype/fashion-card";
 import { AuraHype } from "@/components/hype/aura-hype";
-import { useTheme } from "@/lib/theme/theme";
+import { useAuraLive } from "@/lib/hype/use-aura-live";
 import { PieceGallery, type Slide } from "./piece-gallery";
 interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }
 
@@ -69,11 +69,9 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null); const savingRef = useRef(false); const [editErrors, setEditErrors] = useState<Record<string, string>>({}); const tax = useTaxonomy();
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
   const replaceRef = useRef<HTMLInputElement>(null);
-  const { prefs } = useTheme();
   const auraMode = data?.piece?.background?.auraHype as string | undefined;
-  const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
+  const { auraEnabled, hype, hypeState, live } = useAuraLive("PIECE", id, auraMode, false);
   const depth = useFashionDepth(auraEnabled && !headerExtra);
-  const hype = useHypeSummary("PIECE", id, auraEnabled, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const sealsOf = usePieceSeals(p ? [p] : [], { anonymous: !user });
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
@@ -174,7 +172,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   return (
     <>
       <article {...surface} ref={node=>{artRef(node);depth.ref.current=node;}} {...depth.events} data-inview={inView} data-fashion-level={auraEnabled?(fashionCardLevel(hype.summary)??"PENDING"):undefined} className={`fai-card is-expanded piece-detail ${auraEnabled?"is-fashion-hype":""} ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
-        <CardBorder entityId={`PIECE:${p.id}`} background={p.background} auraHype={auraEnabled} hype={hypeViewState(hype.summary,hype)}/>
+        <CardBorder entityId={`PIECE:${p.id}`} background={p.background} auraHype={auraEnabled} hype={hypeState} live={live}/>
         {auraEnabled&&<span className="fashion-depth-glare" aria-hidden/>}
         <ArtStage bg={p.background} art={art} density="expanded" pieceHex={p.colorHex} />
         <div className="pc-frame"><div className="pc-content">
@@ -182,7 +180,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
         <div className="pd-layout">
           <div className="pd-media relative">
             {auraEnabled&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
-            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined} presetId={p.background?.auraMetamorphosePreset as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} summary={hype.summary} mode={auraMode} showScore={false}/>}</>} />
+            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined} presetId={p.background?.auraMetamorphosePreset as string | undefined} live={live}/>{auraEnabled && <AuraHype state={hypeState} summary={hype.summary} mode={auraMode} showScore={false}/>}</>} />
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>
           <div className="pd-info">
@@ -194,7 +192,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               {primary}
             </section>
             <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />
-            <PieceCardPanels piece={p} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} />
+            <PieceCardPanels piece={p} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} live={live} />
             <section className="pd-section" aria-labelledby={`pd-facts-${p.id}`}>
               <h3 id={`pd-facts-${p.id}`} className="pd-h">{t("pieceDetail.detalhes")}</h3>
               <PieceDetailFacts piece={p}/>

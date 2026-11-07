@@ -1,6 +1,6 @@
-// Evidências dos jogos Glass Empire: capturas da central FLAIR, do catálogo e de cada jogo jogado até a entrega,
+// Evidências dos jogos FLAIR 3D MAKE UP: capturas da central FLAIR, do catálogo e de cada jogo jogado até a entrega,
 // sobre a API simulada (scripts/flair-games/mock-games-api.mjs). Gera evidencias/resultados.json (planilha via
-// evidence_xlsx.py). Uso: node scripts/flair-games/evidence.mjs [--only a01,b21] [--out docs/flair/glass-empire-100-jogos/evidencias]
+// evidence_xlsx.py). Uso: node scripts/flair-games/evidence.mjs [--only a01,b21] [--out docs/flair/flair-3d-make-up/evidencias]
 //   Requer: app em DEMO_APP (padrão http://localhost:3000) apontando para a API simulada; Chromium pré-instalado.
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
@@ -15,7 +15,7 @@ const APP = process.env.DEMO_APP ?? "http://localhost:3000";
 const EXEC = process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome";
 const args = process.argv.slice(2);
 const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null; };
-const OUT = resolve(ROOT, opt("--out") ?? "docs/flair/glass-empire-100-jogos/evidencias");
+const OUT = resolve(ROOT, opt("--out") ?? "docs/flair/flair-3d-make-up/evidencias");
 const only = opt("--only")?.split(",").map((s) => s.trim()).filter(Boolean);
 const skipMenus = args.includes("--no-menus");
 mkdirSync(OUT, { recursive: true });
@@ -65,6 +65,7 @@ try {
     try { row = await playGame(page, APP, g, shotPath, { log: console.log }); }
     catch (e) { row = { number: g.number, slug: g.slug, name: g.names["pt-BR"], series: g.series, completed: false, note: `erro: ${String(e.message).slice(0, 200)}`, screenshot: existsSync(shotPath) ? shotPath : null }; console.log(`${g.number} ${g.slug}: ERRO ${e.message}`); }
     if (row.screenshot) row.screenshot = row.screenshot.replace(`${OUT}/`, "");
+    if (row.sceneShot) row.sceneShot = row.sceneShot.replace(`${OUT}/`, "");
     results.set(g.number, row);
     writeFileSync(resultsPath, JSON.stringify([...results.values()].sort((a, b) => a.number - b.number), null, 2));
   }

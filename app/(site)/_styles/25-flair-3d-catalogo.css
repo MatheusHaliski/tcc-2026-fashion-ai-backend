@@ -1,0 +1,89 @@
+/* ── FLAIR 3D MAKE UP (/flair/jogos · components/flair/games/) ─────────────────────────────────────────────────────────────
+   Catálogo dos 100 jogos: faixa de nível, filtros em chips, grade por série com miniaturas 16:10, selos de raridade e
+   cadeado com motivo; a tela do jogo reaproveita .cbc-play/.cbc-stage e acrescenta o quarto como cenário, a ficha, os
+   efeitos por vaga e a Hype de partida. Só tokens do tema; gutter de 16 px no celular vem do layout. */
+.ge-me { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 14px; margin-bottom: 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft); }
+.ge-me-item { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-body-sm); font-weight: 600; color: var(--ink); }
+.ge-me-item small { font-weight: 400; color: var(--muted); }
+.ge-me .btn { margin-left: auto; }
+/* filtros: um grupo por eixo, chips reaproveitados (.chip), tudo rolável no celular */
+.ge-filters { display: grid; gap: 8px; padding: 10px 14px 12px; margin-bottom: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft); }
+.ge-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ge-filter-name { flex: 0 0 auto; min-width: 96px; font-family: var(--font-data); font-size: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--muted); }
+.ge-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+@media (max-width: 639px) {
+  .ge-filter { flex-wrap: nowrap; align-items: flex-start; }
+  .ge-filter-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; margin-right: -14px; padding-right: 14px; scrollbar-width: thin; }
+  .ge-filter-chips .chip { flex: none; }
+}
+.ge-filter-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line-soft); }
+.ge-filter-search { display: flex; align-items: center; gap: 8px; flex: 1 1 220px; }
+.ge-filter-search input { flex: 1; }
+/* grade por série */
+.ge-series { display: grid; gap: 10px; }
+.ge-series-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.ge-series-head h2 { margin: 0; }
+.ge-series-count { font-family: var(--font-data); font-size: var(--text-label); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.ge-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+/* o card de um jogo */
+.ge-card { position: relative; display: grid; grid-template-rows: auto 1fr; overflow: hidden; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft); box-shadow: var(--shadow); }
+.ge-card.is-locked { border-style: dashed; }
+.ge-card.is-done { opacity: .9; }
+.ge-card-art { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface-2); }
+.ge-card-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ge-card.is-locked .ge-card-art img { filter: grayscale(.5) brightness(.65); }
+.ge-card-n { position: absolute; right: 10px; top: 10px; padding: .15rem .55rem; border-radius: 999px; background: var(--ink); color: var(--surface); font-family: var(--font-data); font-size: var(--text-label); letter-spacing: .04em; }
+.ge-card-art .cbc-diff { left: 10px; top: 10px; }
+:root[data-theme="contrast"] .ge-card-n { background: var(--line); color: #000; }
+.ge-card-body { display: grid; gap: 6px; padding: 12px 14px 14px; align-content: start; }
+.ge-badges { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.ge-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+/* selos de raridade: a cor só reforça; o texto diz a raridade */
+.ge-rarity { display: inline-flex; align-items: center; gap: 4px; padding: .15rem .6rem; border-radius: 999px; border: 1px solid var(--line-soft); background: var(--surface-2); color: var(--ink); font-family: var(--font-data); font-size: var(--text-label); letter-spacing: .04em; text-transform: uppercase; }
+.ge-rarity.is-rare { background: var(--thread-soft); color: var(--thread-ink); border-color: transparent; }
+.ge-rarity.is-legendary { background: var(--mark-soft); color: var(--mark-ink); border-color: transparent; }
+.ge-rarity.is-collab_drop { background: var(--chalk-soft); color: var(--chalk-ink); border-color: transparent; }
+/* cadeado: sobre a arte do card e como painel na tela do jogo */
+.ge-lock { position: absolute; inset: 0; display: grid; align-content: end; gap: 4px; padding: 10px 12px; color: #fff; background: linear-gradient(to top, rgba(0, 0, 0, .78), rgba(0, 0, 0, .15) 70%, transparent); }
+.ge-lock-title { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: var(--text-body-sm); }
+.ge-lock ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: var(--text-caption); }
+.ge-lock a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.ge-lock a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ge-lock-panel { display: grid; gap: 10px; padding: clamp(14px, 2vw, 24px); margin-bottom: 16px; border-radius: var(--radius); background: var(--surface); border: 1.5px dashed var(--line); }
+.ge-lock-panel ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.ge-lock-panel li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: var(--text-body); }
+.ge-lock-panel li small { color: var(--muted); }
+.ge-lock-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 639px) { .ge-lock-actions .btn { flex: 1 1 auto; } }
+/* a suíte como cenário (série A): o quarto 3D read-only acima das vagas; sem WebGL cai para a cena 2D */
+.ge-room { position: relative; aspect-ratio: 16 / 9; min-height: 240px; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line-soft); background: var(--surface-2); }
+.ge-room > canvas, .ge-room .room3d-loading { position: absolute; inset: 0; }
+.ge-room-note { margin: 6px 0 0; font-size: var(--text-caption); color: var(--muted); }
+/* painel lateral do jogo: ficha, efeitos, Hype e recompensas usam o mesmo bloco do CBC */
+.ge-ficha { display: grid; gap: 6px; margin: 0; }
+.ge-ficha div { display: grid; gap: 1px; }
+.ge-ficha dt { font-family: var(--font-data); font-size: var(--text-label); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.ge-ficha dd { margin: 0; font-size: var(--text-body-sm); color: var(--ink); }
+.ge-ficha-nums { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0; padding: 0; list-style: none; font-size: var(--text-caption); color: var(--muted); }
+.ge-ficha-nums li::before { content: "· "; }
+.ge-slot-optional { font-family: var(--font-data); font-size: var(--text-label); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.ge-effects, .ge-hype, .ge-rewards { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: var(--text-body-sm); }
+.ge-effects li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: baseline; }
+.ge-effects li p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: var(--text-caption); }
+.ge-effect-kind { display: inline-flex; align-items: center; gap: 4px; padding: .1rem .5rem; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-family: var(--font-data); font-size: var(--text-label); letter-spacing: .04em; text-transform: uppercase; }
+.ge-effect-kind.is-metamorfose { background: var(--thread-soft); color: var(--thread-ink); }
+.ge-effect-kind.is-impersonation { background: var(--mark-soft); color: var(--mark-ink); }
+.ge-hype li { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.ge-hype-arrow { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-data); font-size: var(--text-caption); color: var(--muted); }
+.ge-hype-arrow b { color: var(--ink); }
+.ge-hype-arrow.is-up b:last-child { color: var(--thread-ink); }
+.ge-hype-arrow.is-down b:last-child { color: var(--chalk-ink); }
+.ge-score { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 8px 0 0; font-weight: 700; }
+.ge-score .badge { font-weight: 600; }
+.ge-rewards li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+.ge-rewards li small { grid-column: 1; color: var(--muted); }
+.ge-reward-state { font-family: var(--font-data); font-size: var(--text-label); letter-spacing: .04em; text-transform: uppercase; padding: .1rem .5rem; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.ge-reward-state.is-delivered { background: var(--thread-soft); color: var(--thread-ink); }
+.ge-reward-state.is-skipped { background: var(--chalk-soft); color: var(--chalk-ink); }
+/* banco de cartas próprio do jogo (escolha para a vaga): mesma grade do CBC */
+.ge-picker-note { margin: 0 0 8px; font-size: var(--text-body-sm); color: var(--muted); }

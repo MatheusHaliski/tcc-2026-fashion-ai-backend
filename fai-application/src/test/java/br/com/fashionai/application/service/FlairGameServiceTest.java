@@ -46,7 +46,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Glass Empire — serviço dos jogos: bloqueio por nível ANTES de qualquer avaliação do CBC, check com o bloco glass,
+ * FLAIR 3D MAKE UP — serviço dos jogos: bloqueio por nível ANTES de qualquer avaliação do CBC, check com o bloco flair3d,
  * submit com bônus de perfeição e recompensas, 404 para linha sem série, catálogo e resumo com contagens.
  */
 class FlairGameServiceTest {
@@ -58,8 +58,8 @@ class FlairGameServiceTest {
             + "{\"key\":\"extra\",\"position\":\"ACE\",\"accepts\":{\"optional\":true}}]";
     static final String HYPE = "{\"deckMin\":\"LOW_SIGNAL\",\"mandatoryMin\":\"NICHE\",\"mandatoryMax\":\"HOT\",\"play\":{\"mode\":\"BONUS_ABOVE_RELEVANT\",\"cap\":3},\"partial\":{\"mode\":\"UP_DOWN\"}}";
     static final String FICHA = "{\"objective\":{\"pt-BR\":\"Junte os cacos\",\"en\":\"Gather the shards\"},\"scenario\":{\"pt-BR\":\"O espelho partiu\",\"en\":\"The mirror broke\",\"es\":\"El espejo se rompió\"}}";
-    static final String REWARDS = "[{\"type\":\"ITEM\",\"code\":\"GE-A01-MOLDURA\",\"names\":{\"pt-BR\":\"Moldura Prisma\"}},"
-            + "{\"type\":\"SPECIAL_CARD\",\"code\":\"GE-A01-ESPELHO\",\"names\":{\"pt-BR\":\"Espelho Inteiro\"},\"condition\":\"perfect\"}]";
+    static final String REWARDS = "[{\"type\":\"ITEM\",\"code\":\"F3D-A01-MOLDURA\",\"names\":{\"pt-BR\":\"Moldura Prisma\"}},"
+            + "{\"type\":\"SPECIAL_CARD\",\"code\":\"F3D-A01-ESPELHO\",\"names\":{\"pt-BR\":\"Espelho Inteiro\"},\"condition\":\"perfect\"}]";
 
     private Kit kit;
     private FlairGameService service;
@@ -67,7 +67,7 @@ class FlairGameServiceTest {
     private FaiPointsService points;
     private InventoryScoreService inventory;
     private AuraPermissionsService auras;
-    private GlassRewards rewards;
+    private Flair3dRewards rewards;
     private User ana;
     private CurrentUser anaU;
 
@@ -91,8 +91,8 @@ class FlairGameServiceTest {
         real.useClock(Clock.fixed(NOW, ZoneOffset.UTC));
         cbc = Mockito.spy(real);
         kit.with(cbc);
-        kit.real(GlassAccess.class);
-        rewards = Mockito.spy(kit.build(GlassRewards.class));
+        kit.real(Flair3dAccess.class);
+        rewards = Mockito.spy(kit.build(Flair3dRewards.class));
         kit.with(rewards);
         service = kit.build(FlairGameService.class);
     }
@@ -216,7 +216,7 @@ class FlairGameServiceTest {
 
     // ------------------------------------------------------------------ check
     @Test
-    void checkAnexaOBlocoGlassETrocaAAberturaDaHistoriaPeloCenarioDaFicha() {
+    void checkAnexaOBloco3dETrocaAAberturaDaHistoriaPeloCenarioDaFicha() {
         FlairChallenge g = game(1, "a01-espelho-partido", "ESTREIA", "EM_MONTAGEM");
         FlairCardInstance caco = card("CAL", "black", "edgy", 95.0, null);       // VIRAL, teto HOT → joga como HOT
         FlairCardInstance moldura = card("SUP", "black", "edgy", 50.0, null);    // RELEVANT
@@ -225,17 +225,22 @@ class FlairGameServiceTest {
         Map<String, Object> out = service.check(anaU, g.getSlug(), build("caco", caco, "moldura", moldura, "base", base));
 
         verify(cbc).check(eq(anaU), eq("a01-espelho-partido"), any());
-        Map<String, Object> glass = map(out, "glass");
-        List<Map<String, Object>> slots = list(glass, "slots");
+        Map<String, Object> flair3d = map(out, "flair3d");
+        List<Map<String, Object>> slots = list(flair3d, "slots");
         assertThat(slots).extracting(s -> s.get("slot")).containsExactly("caco", "moldura", "base");
         assertThat(slots.get(0)).containsEntry("hypeBand", "VIRAL").containsEntry("hypeBonus", 1).containsEntry("matchBand", "TRENDING").containsEntry("matchDelta", 1);
         assertThat(slots.get(1)).containsEntry("hypeBand", "RELEVANT").containsEntry("hypeBonus", 0).containsEntry("matchBand", "HOT");
         assertThat(slots.get(2)).containsEntry("hypeBand", "LOW_SIGNAL").containsEntry("hypeBonus", 0).containsEntry("matchBand", "LOW_SIGNAL").containsEntry("matchDelta", 0);
         assertThat(map(slots.get(0), "effect")).containsEntry("kind", "COMUM").containsEntry("bonus", 0).containsEntry("text", "Reflexo simples");
-        assertThat(glass).containsEntry("hypeTotal", 1).containsEntry("effectTotal", 0).containsEntry("perfect", false);
+        assertThat(flair3d).containsEntry("hypeTotal", 1).containsEntry("effectTotal", 0).containsEntry("perfect", false);
         Map<String, Object> ev = map(out, "evaluation");
-        assertThat(glass.get("score")).isEqualTo((Integer) ev.get("sintonia") + 1);
-        assertThat((Integer) glass.get("scoreMax")).isGreaterThan((Integer) ev.get("sintoniaMax"));
+        // erros (Flair3dPenalties): o caco VIRAL passa do teto HOT (superexposição) e a base está fora da posição
+        assertThat(list(slots.get(0), "penalties")).extracting(p -> p.get("code")).contains("OVEREXPOSED");
+        assertThat(list(slots.get(2), "penalties")).extracting(p -> p.get("code")).contains("MISPLACED");
+        int penalties = (Integer) flair3d.get("penaltyTotal");
+        assertThat(penalties).isGreaterThanOrEqualTo(2);
+        assertThat(flair3d.get("score")).isEqualTo(Math.max(0, (Integer) ev.get("sintonia") + 1 - penalties));
+        assertThat((Integer) flair3d.get("scoreMax")).isGreaterThan((Integer) ev.get("sintoniaMax"));
         Map<String, Object> open = list(out, "story").get(0);
         assertThat(open.get("key")).isNull();
         assertThat(open.get("text")).isEqualTo(Map.of("pt-BR", "O espelho partiu", "en", "The mirror broke", "es", "El espejo se rompió"));
@@ -253,18 +258,18 @@ class FlairGameServiceTest {
         FlairCardInstance base = card("INF", "black", "edgy", null, null);
         FlairChallengeService.BuildRequest req = build("caco", caco, "moldura", moldura, "base", base);
 
-        List<Map<String, Object>> without = list(map(service.check(anaU, g.getSlug(), req), "glass"), "slots");
+        List<Map<String, Object>> without = list(map(service.check(anaU, g.getSlug(), req), "flair3d"), "slots");
         assertThat(without).allSatisfy(s -> assertThat(map(s, "effect")).containsEntry("kind", "COMUM"));
 
         when(auras.canUserEquipAura(ana.getId(), AuraType.AURA_METAMORPHOSE)).thenReturn(true);
         when(auras.canUserEquipAura(ana.getId(), AuraType.AURA_IMPERSONATION)).thenReturn(true);
-        Map<String, Object> glass = map(service.check(anaU, g.getSlug(), req), "glass");
-        List<Map<String, Object>> with = list(glass, "slots");
+        Map<String, Object> flair3d = map(service.check(anaU, g.getSlug(), req), "flair3d");
+        List<Map<String, Object>> with = list(flair3d, "slots");
         assertThat(map(with.get(0), "effect")).containsEntry("kind", "IMPERSONATION").containsEntry("bonus", 3).containsEntry("text", "Reflexo da estrela");
         assertThat(map(with.get(1), "effect")).containsEntry("kind", "METAMORFOSE").containsEntry("bonus", 1);
         assertThat(map(with.get(2), "effect")).containsEntry("kind", "METAMORFOSE");
-        assertThat(glass).containsEntry("effectTotal", 5).containsEntry("perfect", true);
-        assertThat(list(map(service.check(anaU, g.getSlug(), req), "points"), "lines")).extracting(l -> l.get("action")).contains("FLAIR_GLASS_PERFECT");
+        assertThat(flair3d).containsEntry("effectTotal", 5).containsEntry("perfect", true);
+        assertThat(list(map(service.check(anaU, g.getSlug(), req), "points"), "lines")).extracting(l -> l.get("action")).contains("FLAIR_3D_PERFECT");
     }
 
     // ------------------------------------------------------------------ submit
@@ -273,9 +278,9 @@ class FlairGameServiceTest {
     void submitPerfeitoLancaOBonusEEntregaAsRecompensasNumaResposta() {
         FlairChallenge g = game(1, "a01-espelho-partido", "ESTREIA", "EM_MONTAGEM");
         RoomCatalogItem sku = new RoomCatalogItem();
-        sku.setSku("GE-A01-MOLDURA");
+        sku.setSku("F3D-A01-MOLDURA");
         sku.setName("Moldura Prisma");
-        sku.setMoldId("GLASS-DECOR");
+        sku.setMoldId("FLAIR3D-DECOR");
         sku.setSlotType("DECOR");
         sku.setRarity("COMMON");
         sku.setRequiredLevel("ESTREIA");
@@ -286,15 +291,15 @@ class FlairGameServiceTest {
         Map<String, Object> out = service.submit(anaU, g.getSlug(), req);
 
         verify(cbc).submit(eq(anaU), eq("a01-espelho-partido"), any());
-        assertThat(map(out, "glass")).containsEntry("perfect", true);
-        verify(points).award(ana.getId(), "FLAIR_GLASS", "FLAIR_CHALLENGE", g.getId().toString(), 20);
-        verify(points).award(ana.getId(), "FLAIR_GLASS_PERFECT", "FLAIR_CHALLENGE", g.getId().toString(), 10);
+        assertThat(map(out, "flair3d")).containsEntry("perfect", true);
+        verify(points).award(ana.getId(), "FLAIR_3D", "FLAIR_CHALLENGE", g.getId().toString(), 20);
+        verify(points).award(ana.getId(), "FLAIR_3D_PERFECT", "FLAIR_CHALLENGE", g.getId().toString(), 10);
         Map<String, Object> pts = map(out, "points");
-        assertThat(list(pts, "lines")).extracting(l -> l.get("action")).containsExactly("FLAIR_GLASS", "FLAIR_GLASS_PERFECT");
+        assertThat(list(pts, "lines")).extracting(l -> l.get("action")).containsExactly("FLAIR_3D", "FLAIR_3D_PERFECT");
         assertThat(list(pts, "lines").get(1)).containsEntry("granted", true).containsEntry("points", 10);
         assertThat(pts).containsEntry("total", 30);
         List<Map<String, Object>> rewardsOut = list(out, "rewards");
-        assertThat(rewardsOut).extracting(r -> r.get("code")).containsExactly("GE-A01-MOLDURA", "GE-A01-ESPELHO");
+        assertThat(rewardsOut).extracting(r -> r.get("code")).containsExactly("F3D-A01-MOLDURA", "F3D-A01-ESPELHO");
         assertThat(rewardsOut).extracting(r -> r.get("state")).containsOnly("DELIVERED");
         UUID submissionId = (UUID) map(out, "submission").get("id");
         List<FlairGameReward> rows = MemoryRepository.rows(kit.dep(FlairGameRewardRepository.class));
@@ -312,9 +317,18 @@ class FlairGameServiceTest {
 
         Map<String, Object> out = service.submit(anaU, g.getSlug(), req);
 
-        assertThat(map(out, "glass")).containsEntry("perfect", false).containsEntry("score", 4);
-        verify(points, never()).award(any(), eq("FLAIR_GLASS_PERFECT"), anyString(), anyString(), any());
-        assertThat(list(out, "rewards")).extracting(r -> r.get("code")).containsExactly("GE-A01-MOLDURA");
+        Map<String, Object> flair3d = map(out, "flair3d");
+        assertThat(flair3d).containsEntry("perfect", false);
+        // caco e moldura fora da posição perdem 1 ponto cada (MISPLACED) e não acionam Metamorfose nem Impersonation
+        List<Map<String, Object>> slots = list(flair3d, "slots");
+        assertThat(slots.subList(0, 2)).allSatisfy(s -> assertThat(list(s, "penalties")).extracting(p -> p.get("code")).containsExactly("MISPLACED"));
+        assertThat(list(slots.get(2), "penalties")).isEmpty();
+        assertThat(flair3d).containsEntry("penaltyTotal", 2).containsEntry("score", 2);          // sintonia 4 − 2 de erros
+        assertThat(list(flair3d, "slots")).allSatisfy(s -> assertThat(map(s, "effect")).containsEntry("kind", "COMUM"));
+        int raw = (Integer) map(out, "evaluation").get("sintonia") + (Integer) flair3d.get("hypeTotal") + (Integer) flair3d.get("effectTotal");
+        assertThat(flair3d.get("score")).isEqualTo(Math.max(0, raw - (Integer) flair3d.get("penaltyTotal")));
+        verify(points, never()).award(any(), eq("FLAIR_3D_PERFECT"), anyString(), anyString(), any());
+        assertThat(list(out, "rewards")).extracting(r -> r.get("code")).containsExactly("F3D-A01-MOLDURA");
         assertThat(list(out, "rewards").get(0)).containsEntry("state", "PENDING");
         assertThat(map(out, "points")).containsEntry("total", 20);
     }

@@ -49,7 +49,7 @@ public final class CbcRules {
             "hype", "origin", "noBuy", "rediscovery", "strictPosition", "cards", "mala", "position", "distinctTags", "hypeBand");
     /**
      * O que uma vaga do mosaico pode exigir da carta que a completa (opcional, conforme o enredo do desafio).
-     * {@code optional=true} marca a vaga como opcional (Glass Empire): não entra em {@code complete} nem em {@link #misses}.
+     * {@code optional=true} marca a vaga como opcional (FLAIR 3D MAKE UP): não entra em {@code complete} nem em {@link #misses}.
      */
     public static final Set<String> ACCEPT_KEYS = Set.of("tier", "minOvr", "brand", "category", "subcategory", "color", "style", "occasion", "material",
             "origin", "optional");
@@ -210,7 +210,7 @@ public final class CbcRules {
         return new Evaluation(results, reqs, total, 3 * slots.size(), filled, complete, ok, rediscovered);
     }
 
-    /** Um requisito da DSL ({@link CbcRequirements}: tipos clássicos e os do Glass Empire). */
+    /** Um requisito da DSL ({@link CbcRequirements}: tipos clássicos e os do FLAIR 3D MAKE UP). */
     static RequirementResult requirement(Map<String, Object> r, List<Slot> slots, Map<String, Card> board, List<Card> cards, int sintonia, Context ctx) {
         return CbcRequirements.evaluate(r, slots, board, cards, sintonia, ctx);
     }

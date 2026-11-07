@@ -7,7 +7,7 @@ import { mirrorHref } from "@/lib/nav/mirror-href";
 
 /*
  * O Meu Quarto deixou de ser uma tela: o quarto continua como dados (/api/me/room) e como cenário dos jogos da Suíte de
- * Vidro (Glass Empire, série A). Esta rota só leva os links antigos ao lugar certo:
+ * Vidro (FLAIR 3D MAKE UP, série A). Esta rota só leva os links antigos ao lugar certo:
  *   /room                                  → catálogo de jogos da Suíte (/flair/jogos?district=SUITE)
  *   /room?espelho=1[&vestir=X][&vista=2d]  → o Espelho, agora com casa própria (/mirror?vestir=X&vista=2d)
  *   /room?piece=X ("Mostrar no quarto")    → o Guarda-roupa (/closet)

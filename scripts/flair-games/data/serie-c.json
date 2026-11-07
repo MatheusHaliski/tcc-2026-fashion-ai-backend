@@ -1,0 +1,456 @@
+[
+  {
+    "number": 43,
+    "slug": "c43-rooftop-ao-por-do-sol",
+    "series": "C",
+    "district": "CITY",
+    "names": {
+      "pt-BR": "Rooftop ao Pôr do Sol",
+      "en": "Sunset Rooftop",
+      "es": "Azotea al Atardecer"
+    },
+    "descriptions": {
+      "pt-BR": "Chegar ao rooftop com um look que funcione na luz dourada e sobreviva ao vento quando o sol se põe.",
+      "en": "Reach the rooftop with a look that works in golden light and survives the wind once the sun goes down.",
+      "es": "Llegar a la azotea con un look que funcione con la luz dorada y sobreviva al viento cuando se pone el sol."
+    },
+    "points": 30,
+    "repeatLimit": 1,
+    "adapted": false,
+    "themeTags": [
+      "glam",
+      "chic",
+      "gold",
+      "navy"
+    ],
+    "deck": {
+      "minCards": 5,
+      "maxCards": 7,
+      "mala": null
+    },
+    "hype": {
+      "deckMin": "NICHE",
+      "mandatoryMin": "NICHE",
+      "mandatoryMax": "TRENDING",
+      "play": {
+        "mode": "BONUS_ABOVE_RELEVANT",
+        "cap": 2
+      },
+      "partial": {
+        "mode": "UP_DOWN"
+      }
+    },
+    "slots": [
+      {
+        "key": "dourada",
+        "position": "ANY",
+        "optional": false,
+        "accepts": {
+          "material": [
+            "satin",
+            "silk",
+            "metal",
+            "gold",
+            "silver",
+            "plated",
+            "pearl",
+            "velvet"
+          ]
+        },
+        "label": {
+          "pt-BR": "Luz dourada: peça com brilho",
+          "en": "Golden light: shiny piece",
+          "es": "Luz dorada: prenda con brillo"
+        },
+        "story": {
+          "pt-BR": "Na luz dourada, {name}{brand, select, none {} other { da {brand}}} reflete o último sol do dia.",
+          "en": "In the golden light, {name}{brand, select, none {} other { by {brand}}} catches the last sun of the day.",
+          "es": "Bajo la luz dorada, {name}{brand, select, none {} other { de {brand}}} refleja el último sol del día."
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Na luz dourada, a luz do momento valoriza ou apaga a peça.",
+            "en": "In the golden light, the light of the moment either flatters or dims the piece.",
+            "es": "Bajo la luz dorada, la luz del momento realza o apaga la prenda."
+          },
+          "metamorfose": {
+            "pt-BR": "Na luz dourada, o parapeito vira vidro-espelho e a luz dourada dura mais uma rodada.",
+            "en": "In the golden light, the ledge turns into mirror glass and the golden light lasts one more round.",
+            "es": "Bajo la luz dorada, el parapeto se vuelve vidrio espejo y la luz dorada dura una ronda más."
+          },
+          "impersonation": {
+            "pt-BR": "Na luz dourada, o avatar aparece contra o pôr do sol vestindo a peça e a foto final fica garantida.",
+            "en": "In the golden light, the avatar appears against the sunset wearing the piece and the final photo is guaranteed.",
+            "es": "Bajo la luz dorada, el avatar aparece contra el atardecer con la prenda puesta y la foto final queda garantizada."
+          }
+        }
+      },
+      {
+        "key": "azul",
+        "position": "SUP",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Luz azul: camada",
+          "en": "Blue light: layer",
+          "es": "Luz azul: capa"
+        },
+        "story": {
+          "pt-BR": "Na luz azul, {name}{brand, select, none {} other { da {brand}}} segura o primeiro vento.",
+          "en": "In the blue light, {name}{brand, select, none {} other { by {brand}}} holds off the first gust of wind.",
+          "es": "Bajo la luz azul, {name}{brand, select, none {} other { de {brand}}} frena la primera ráfaga de viento."
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Na luz azul, a luz do momento valoriza ou apaga a peça.",
+            "en": "In the blue light, the light of the moment either flatters or dims the piece.",
+            "es": "Bajo la luz azul, la luz del momento realza o apaga la prenda."
+          },
+          "metamorfose": {
+            "pt-BR": "Na luz azul, o parapeito vira vidro-espelho e a luz dourada dura mais uma rodada.",
+            "en": "In the blue light, the ledge turns into mirror glass and the golden light lasts one more round.",
+            "es": "Bajo la luz azul, el parapeto se vuelve vidrio espejo y la luz dorada dura una ronda más."
+          },
+          "impersonation": {
+            "pt-BR": "Na luz azul, o avatar aparece contra o pôr do sol vestindo a peça e a foto final fica garantida.",
+            "en": "In the blue light, the avatar appears against the sunset wearing the piece and the final photo is guaranteed.",
+            "es": "Bajo la luz azul, el avatar aparece contra el atardecer con la prenda puesta y la foto final queda garantizada."
+          }
+        }
+      },
+      {
+        "key": "noite",
+        "position": "ACE",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Noite: acessório que reflete",
+          "en": "Night: reflective accessory",
+          "es": "Noche: accesorio que refleja"
+        },
+        "story": {
+          "pt-BR": "Na noite, {name}{brand, select, none {} other { da {brand}}} devolve a luz das janelas vizinhas.",
+          "en": "At night, {name}{brand, select, none {} other { by {brand}}} throws back the light of the neighbouring windows.",
+          "es": "De noche, {name}{brand, select, none {} other { de {brand}}} devuelve la luz de las ventanas vecinas."
+        },
+        "bonus": {
+          "metamorfose": 2,
+          "impersonation": 3
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Na noite, a luz do momento valoriza ou apaga a peça.",
+            "en": "At night, the light of the moment either flatters or dims the piece.",
+            "es": "De noche, la luz del momento realza o apaga la prenda."
+          },
+          "metamorfose": {
+            "pt-BR": "Na noite, o parapeito vira vidro-espelho e a luz dourada dura mais uma rodada.",
+            "en": "At night, the ledge turns into mirror glass and the golden light lasts one more round.",
+            "es": "De noche, el parapeto se vuelve vidrio espejo y la luz dorada dura una ronda más."
+          },
+          "impersonation": {
+            "pt-BR": "Na noite, o avatar aparece contra o pôr do sol vestindo a peça e a foto final fica garantida.",
+            "en": "At night, the avatar appears against the sunset wearing the piece and the final photo is guaranteed.",
+            "es": "De noche, el avatar aparece contra el atardecer con la prenda puesta y la foto final queda garantizada."
+          }
+        }
+      },
+      {
+        "key": "foto_inf",
+        "position": "INF",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Foto final: parte de baixo",
+          "en": "Final photo: bottom",
+          "es": "Foto final: parte de abajo"
+        },
+        "story": {
+          "pt-BR": "Na foto final, {name}{brand, select, none {} other { da {brand}}} fecha a silhueta contra o céu.",
+          "en": "In the final photo, {name}{brand, select, none {} other { by {brand}}} completes the silhouette against the sky.",
+          "es": "En la foto final, {name}{brand, select, none {} other { de {brand}}} cierra la silueta contra el cielo."
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Na foto final, a luz do momento valoriza ou apaga a peça.",
+            "en": "In the final photo, the light of the moment either flatters or dims the piece.",
+            "es": "En la foto final, la luz del momento realza o apaga la prenda."
+          },
+          "metamorfose": {
+            "pt-BR": "Na foto final, o parapeito vira vidro-espelho e a luz dourada dura mais uma rodada.",
+            "en": "In the final photo, the ledge turns into mirror glass and the golden light lasts one more round.",
+            "es": "En la foto final, el parapeto se vuelve vidrio espejo y la luz dorada dura una ronda más."
+          },
+          "impersonation": {
+            "pt-BR": "Na foto final, o avatar aparece contra o pôr do sol vestindo a peça e a foto final fica garantida.",
+            "en": "In the final photo, the avatar appears against the sunset wearing the piece and the final photo is guaranteed.",
+            "es": "En la foto final, el avatar aparece contra el atardecer con la prenda puesta y la foto final queda garantizada."
+          }
+        }
+      },
+      {
+        "key": "foto_cal",
+        "position": "CAL",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Foto final: calçado",
+          "en": "Final photo: shoes",
+          "es": "Foto final: calzado"
+        },
+        "story": {
+          "pt-BR": "No parapeito, {name}{brand, select, none {} other { da {brand}}} firma o passo para a foto.",
+          "en": "On the ledge, {name}{brand, select, none {} other { by {brand}}} steadies the step for the photo.",
+          "es": "En el parapeto, {name}{brand, select, none {} other { de {brand}}} afirma el paso para la foto."
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "No parapeito, a luz do momento valoriza ou apaga a peça.",
+            "en": "On the ledge, the light of the moment either flatters or dims the piece.",
+            "es": "En el parapeto, la luz del momento realza o apaga la prenda."
+          },
+          "metamorfose": {
+            "pt-BR": "No parapeito, o parapeito vira vidro-espelho e a luz dourada dura mais uma rodada.",
+            "en": "On the ledge, the ledge turns into mirror glass and the golden light lasts one more round.",
+            "es": "En el parapeto, el parapeto se vuelve vidrio espejo y la luz dorada dura una ronda más."
+          },
+          "impersonation": {
+            "pt-BR": "No parapeito, o avatar aparece contra o pôr do sol vestindo a peça e a foto final fica garantida.",
+            "en": "On the ledge, the avatar appears against the sunset wearing the piece and the final photo is guaranteed.",
+            "es": "En el parapeto, el avatar aparece contra el atardecer con la prenda puesta y la foto final queda garantizada."
+          }
+        }
+      },
+      {
+        "key": "vento",
+        "position": "ACE",
+        "optional": true,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Vento: acessório extra",
+          "en": "Wind: extra accessory",
+          "es": "Viento: accesorio extra"
+        },
+        "story": {
+          "pt-BR": "Quando o vento aperta, {name}{brand, select, none {} other { da {brand}}} segura o cabelo no lugar.",
+          "en": "When the wind picks up, {name}{brand, select, none {} other { by {brand}}} keeps the hair in place.",
+          "es": "Cuando aprieta el viento, {name}{brand, select, none {} other { de {brand}}} sujeta el pelo en su sitio."
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "Quando o vento aperta, a luz do momento valoriza ou apaga a peça.",
+            "en": "When the wind picks up, the light of the moment either flatters or dims the piece.",
+            "es": "Cuando aprieta el viento, la luz del momento realza o apaga la prenda."
+          },
+          "metamorfose": {
+            "pt-BR": "Quando o vento aperta, o parapeito vira vidro-espelho e a luz dourada dura mais uma rodada.",
+            "en": "When the wind picks up, the ledge turns into mirror glass and the golden light lasts one more round.",
+            "es": "Cuando aprieta el viento, el parapeto se vuelve vidrio espejo y la luz dorada dura una ronda más."
+          },
+          "impersonation": {
+            "pt-BR": "Quando o vento aperta, o avatar aparece contra o pôr do sol vestindo a peça e a foto final fica garantida.",
+            "en": "When the wind picks up, the avatar appears against the sunset wearing the piece and the final photo is guaranteed.",
+            "es": "Cuando aprieta el viento, el avatar aparece contra el atardecer con la prenda puesta y la foto final queda garantizada."
+          }
+        }
+      },
+      {
+        "key": "brinde",
+        "position": "ANY",
+        "optional": true,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Brinde",
+          "en": "Toast",
+          "es": "Brindis"
+        },
+        "story": {
+          "pt-BR": "No brinde, {name}{brand, select, none {} other { da {brand}}} aparece no reflexo das taças.",
+          "en": "At the toast, {name}{brand, select, none {} other { by {brand}}} shows up in the reflection of the glasses.",
+          "es": "En el brindis, {name}{brand, select, none {} other { de {brand}}} aparece en el reflejo de las copas."
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "No brinde, a luz do momento valoriza ou apaga a peça.",
+            "en": "At the toast, the light of the moment either flatters or dims the piece.",
+            "es": "En el brindis, la luz del momento realza o apaga la prenda."
+          },
+          "metamorfose": {
+            "pt-BR": "No brinde, o parapeito vira vidro-espelho e a luz dourada dura mais uma rodada.",
+            "en": "At the toast, the ledge turns into mirror glass and the golden light lasts one more round.",
+            "es": "En el brindis, el parapeto se vuelve vidrio espejo y la luz dorada dura una ronda más."
+          },
+          "impersonation": {
+            "pt-BR": "No brinde, o avatar aparece contra o pôr do sol vestindo a peça e a foto final fica garantida.",
+            "en": "At the toast, the avatar appears against the sunset wearing the piece and the final photo is guaranteed.",
+            "es": "En el brindis, el avatar aparece contra el atardecer con la prenda puesta y la foto final queda garantizada."
+          }
+        }
+      }
+    ],
+    "requirements": [
+      {
+        "type": "position",
+        "position": "SUP",
+        "count": 1
+      },
+      {
+        "type": "position",
+        "position": "ACE",
+        "count": 1
+      },
+      {
+        "type": "hypeBand",
+        "min": "NICHE",
+        "scope": "all"
+      },
+      {
+        "type": "cards",
+        "min": 5
+      }
+    ],
+    "rewards": [
+      {
+        "type": "ITEM",
+        "code": "F3D-C43-LUMINARIA-POR-DO-SOL",
+        "names": {
+          "pt-BR": "Luminária Pôr do Sol",
+          "en": "Sunset lamp",
+          "es": "Lámpara Puesta de Sol"
+        }
+      }
+    ],
+    "ficha": {
+      "objective": {
+        "pt-BR": "Chegar ao rooftop com um look que funcione na luz dourada e sobreviva ao vento quando o sol se põe.",
+        "en": "Reach the rooftop with a look that works in golden light and survives the wind once the sun goes down.",
+        "es": "Llegar a la azotea con un look que funcione con la luz dorada y sobreviva al viento cuando se pone el sol."
+      },
+      "scenario": {
+        "pt-BR": "Um rooftop de vidro com três momentos de luz (dourada, azul, noite) e vento crescente.",
+        "en": "A glass rooftop with three moments of light (golden, blue, night) and rising wind.",
+        "es": "Una azotea de vidrio con tres momentos de luz (dorada, azul, noche) y viento creciente."
+      },
+      "mandatory": {
+        "pt-BR": "Uma peça com brilho ou metalizada na luz dourada e uma camada leve na luz azul; todas as cartas pelo menos Nicho.",
+        "en": "A shiny or metallic piece in the golden light and a light layer in the blue light; every card at least Niche.",
+        "es": "Una prenda con brillo o metalizada en la luz dorada y una capa ligera en la luz azul; todas las cartas al menos Nicho."
+      },
+      "sequence": {
+        "pt-BR": "Dourada (peça com brilho), azul (camada), noite (acessório que reflete luz) e foto final (parte de baixo e calçado); o acessório do vento e o brinde são opcionais.",
+        "en": "Golden (shiny piece), blue (layer), night (light-reflecting accessory) and final photo (bottom and shoes); the wind accessory and the toast are optional.",
+        "es": "Dorada (prenda con brillo), azul (capa), noche (accesorio que refleja luz) y foto final (parte de abajo y calzado); el accesorio del viento y el brindis son opcionales."
+      },
+      "reward": {
+        "pt-BR": "30 P, XP e a luminária Pôr do Sol.",
+        "en": "30 P, XP and the Sunset lamp.",
+        "es": "30 P, XP y la lámpara Puesta de Sol."
+      },
+      "hypePlay": {
+        "pt-BR": "Peça Tendência brilha mais na luz dourada (+1 por faixa acima de Relevante, até +2) e some na noite.",
+        "en": "A Trending piece shines brighter in the golden light (+1 per band above Relevant, up to +2) and fades at night.",
+        "es": "Una prenda Tendencia brilla más en la luz dorada (+1 por franja por encima de Relevante, hasta +2) y se apaga de noche."
+      },
+      "hypePartial": {
+        "pt-BR": "Foto final aprovada sobe uma faixa a peça com brilho; vento que levou a camada desce uma faixa.",
+        "en": "An approved final photo raises the shiny piece one band; a layer blown away by the wind drops one band.",
+        "es": "Una foto final aprobada sube una franja a la prenda con brillo; una capa que se llevó el viento baja una franja."
+      }
+    },
+    "scene": {
+      "sky": [
+        "#F7B267",
+        "#3B2A5A"
+      ],
+      "ground": "#2B2340",
+      "horizon": 68,
+      "accent": "#FFD166",
+      "props": [
+        {
+          "k": "sun",
+          "x": 118,
+          "y": 52,
+          "s": 1.3
+        },
+        {
+          "k": "building",
+          "x": 22,
+          "y": 68,
+          "s": 1.1
+        },
+        {
+          "k": "building",
+          "x": 146,
+          "y": 68,
+          "s": 0.9
+        },
+        {
+          "k": "tower",
+          "x": 60,
+          "y": 68,
+          "s": 0.8
+        },
+        {
+          "k": "lights",
+          "x": 90,
+          "y": 6,
+          "s": 0.7
+        }
+      ],
+      "slots": {
+        "dourada": [
+          16,
+          48
+        ],
+        "azul": [
+          39,
+          48
+        ],
+        "noite": [
+          61,
+          48
+        ],
+        "foto_inf": [
+          84,
+          48
+        ],
+        "foto_cal": [
+          16,
+          78
+        ],
+        "vento": [
+          50,
+          78
+        ],
+        "brinde": [
+          84,
+          78
+        ]
+      }
+    }
+  }
+]

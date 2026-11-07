@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Gerador do catálogo Glass Empire (desenho §4, §6 R12–R16, R25): lê scripts/flair-games/data/serie-{a..e}.json,
+ * Gerador do catálogo FLAIR 3D MAKE UP (desenho §4, §6 R12–R16, R25): lê scripts/flair-games/data/serie-{a..e}.json,
  * valida tudo de uma vez, deriva dificuldade/raridade/níveis e grava, de forma determinística e ordenada por número:
- *   1. a migração V86__glass_empire_jogos.sql (DDL fixo + 1 INSERT de flair_challenges por jogo + colecionáveis);
+ *   1. a migração V98__flair_3d_jogos.sql (DDL fixo + 1 INSERT de flair_challenges por jogo + colecionáveis);
  *   2. public/flair/games/<slug>.webp (miniaturas 640×400 a partir de scene_json, via scene-svg.mjs + sharp);
- *   3. docs/flair/glass-empire-100-jogos/catalogo.gen.md (tabela resumo e regra de derivação).
+ *   3. docs/flair/flair-3d-make-up/catalogo.gen.md (tabela resumo e regra de derivação).
  *
  * Uso: node scripts/flair-games/build.mjs [--data <dir>] [--out <dir>] [--allow-partial] [--no-thumbs]
  *   --data           pasta com serie-*.json (padrão scripts/flair-games/data)
- *   --out            grava as três saídas dentro desta pasta (V86__glass_empire_jogos.sql, thumbs/, catalogo.gen.md)
+ *   --out            grava as três saídas dentro desta pasta (V98__flair_3d_jogos.sql, thumbs/, catalogo.gen.md)
  *                    em vez dos caminhos do repositório; use para provar o build sem tocar na migração real
- *   --allow-partial  aceita menos de 100 jogos (fixtures, séries ainda em escrita)
- *   --no-thumbs      não gera miniaturas (mais rápido; a V86 continua apontando para /flair/games/<slug>.webp)
+ *   --allow-partial  aceita menos de 5 jogos (fixtures, séries ainda em escrita)
+ *   --no-thumbs      não gera miniaturas (mais rápido; a V98 continua apontando para /flair/games/<slug>.webp)
  * Sai com 1 quando há erros de validação (todos listados, com o número do jogo) e 2 quando não há dados.
  */
 import { readdir, readFile, mkdir, writeFile } from "node:fs/promises";
@@ -23,6 +23,7 @@ import { catalogMarkdown } from "./lib/markdown.mjs";
 import { migration } from "./lib/sql.mjs";
 import { writeThumbs } from "./lib/thumbs.mjs";
 import { reservedSlugsFrom, validateCatalog } from "./lib/validate.mjs";
+import { applyStage, loadStages, stageErrors } from "./lib/stages.mjs";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -65,11 +66,22 @@ export async function loadSeries(dataDir) {
   return files;
 }
 
+/** Créditos das fotografias dos cenários (vazio enquanto não houver fotos). */
+export async function readCredits(root) {
+  const dir = join(root, "public", "flair", "games", "scenes", "credits");
+  const out = {};
+  try { Object.assign(out, JSON.parse(await readFile(join(root, "public", "flair", "games", "scenes", "credits.json"), "utf8"))); } catch { /* sem arquivo único */ }
+  let names = [];
+  try { names = (await readdir(dir)).filter((n) => n.endsWith(".json")); } catch { return out; }
+  for (const n of names) { try { out[n.replace(/\.json$/, "")] = JSON.parse(await readFile(join(dir, n), "utf8")); } catch { /* crédito ilegível: a foto fica sem uso */ } }
+  return out;
+}
+
 /** Caminhos de saída: os do repositório ou, com --out, todos dentro da pasta indicada. */
 export function outputPaths(root, out) {
   if (!out) return { sql: join(root, MIGRATION_FILE), thumbs: join(root, THUMBS_DIR), md: join(root, CATALOG_MD) };
   const base = resolve(out);
-  return { sql: join(base, "V86__glass_empire_jogos.sql"), thumbs: join(base, "thumbs"), md: join(base, "catalogo.gen.md") };
+  return { sql: join(base, "V98__flair_3d_jogos.sql"), thumbs: join(base, "thumbs"), md: join(base, "catalogo.gen.md") };
 }
 
 /**
@@ -88,15 +100,23 @@ export async function build(opts, { root = ROOT, log = () => {}, sharpImpl } = {
   const reservedSlugs = reservedSlugsFrom(await readFile(join(root, V56_FILE), "utf8"));
   const errors = validateCatalog(files, { reservedSlugs, allowPartial: opts.allowPartial });
   if (errors.length > 0) return { errors, entries: [], written: [] };
-  const entries = files.flatMap((f) => f.games.map((game) => ({ game, derived: derive(game) }))).sort((a, b) => a.game.number - b.game.number);
+  const credits = await readCredits(root);
+  const stages = await loadStages(dataDir);
+  const stageErrs = files.flatMap((f) => f.games.flatMap((g) => stageErrors(g, stages[g.number], new Set(Object.keys(credits)))));
+  if (stageErrs.length > 0) return { errors: stageErrs, entries: [], written: [] };
+  // o palco (foto e âncoras sobre objetos reais) vira a cena gravada na V98 e usada nas miniaturas
+  const entries = files.flatMap((f) => f.games.map((game) => {
+    const staged = { ...game, scene: applyStage(game, stages[game.number], credits) };
+    return { game: staged, derived: derive(game) };
+  })).sort((a, b) => a.game.number - b.game.number);
   const paths = outputPaths(root, opts.out);
   const written = [];
   await mkdir(dirname(paths.sql), { recursive: true });
-  await writeFile(paths.sql, migration(entries), "utf8");
+  await writeFile(paths.sql, migration(entries, credits), "utf8");
   written.push(paths.sql);
   log(`SQL: ${paths.sql} (${entries.length} jogos)`);
   if (opts.thumbs) {
-    const thumbs = await writeThumbs(entries.map((e) => e.game), paths.thumbs, sharpImpl);
+    const thumbs = await writeThumbs(entries.map((e) => e.game), paths.thumbs, sharpImpl, { root, credits });
     written.push(...thumbs);
     log(`miniaturas: ${thumbs.length} em ${paths.thumbs}`);
   }

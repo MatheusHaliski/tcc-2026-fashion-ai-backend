@@ -1,15 +1,20 @@
-// Joga um jogo Glass Empire na interface real (Playwright) sobre a API simulada e devolve o registro da evidência.
+// Joga um jogo FLAIR 3D MAKE UP na interface real (Playwright) sobre a API simulada e devolve o registro da evidência.
 const T = { submit: "Entregar", rewardTitle: "Montagem entregue", pickerBank: "Banco de cartas" };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Captura o JSON da resposta do /submit (ou /check) do jogo para registrar cartas, requisitos e recompensas. */
 function captureApi(page, slug) {
-  const seen = { check: null, submit: null };
+  const seen = { check: null, checkFilled: -1, submit: null };
   page.on("response", async (res) => {
     const url = res.url();
     if (!url.includes(`/api/flair/games/${encodeURIComponent(slug)}/`)) return;
     try {
-      if (url.endsWith("/check") && res.ok()) seen.check = await res.json();
+      if (url.endsWith("/check") && res.ok()) {
+        // as conferências podem voltar fora de ordem: fica a que cobre mais vagas preenchidas (o cliente faz o mesmo por sequência)
+        const filled = Object.keys(res.request().postDataJSON()?.slots ?? {}).length;
+        const body = await res.json();
+        if (filled >= seen.checkFilled) { seen.check = body; seen.checkFilled = filled; }
+      }
       if (url.endsWith("/submit")) seen.submit = { status: res.status(), body: await res.json().catch(() => null) };
     } catch { /* resposta não JSON: ignora */ }
   });
@@ -46,14 +51,20 @@ export async function playGame(page, app, game, shotPath, { log = () => {}, apiB
     if (await dialog.isVisible().catch(() => false)) await page.keyboard.press("Escape");
     await sleep(150);
   }
-  // espera a última conferência do servidor
-  await page.waitForFunction(() => !document.querySelector('[aria-busy="true"]'), null, { timeout: 15000 }).catch(() => {});
+  // espera a conferência do servidor que já inclui todas as cartas inseridas
+  for (let waited = 0; api.checkFilled < row.cardsInserted.length && waited < 15000; waited += 250) await sleep(250);
   await sleep(900);
   const submit = page.getByRole("button", { name: T.submit, exact: true });
   await submit.waitFor({ timeout: 15000 });
   const enabled = await submit.isEnabled();
   const check = api.check;
   if (check) row.prerequisites = check.evaluation.requirements.map((r) => `${r.type}${r.args?.min != null ? ` ≥ ${r.args.min}` : ""}${r.args?.count ? ` ×${r.args.count}` : ""}: ${r.ok ? "ok" : "falhou"} (${r.have}/${r.need})`);
+  // a cena com as cartas inseridas (efeitos de luz, Aura Hype e Metamorfose/Impersonation) antes da entrega
+  const stage = page.locator(".cbc-stage-art").first();
+  await stage.scrollIntoViewIfNeeded().catch(() => {});
+  await sleep(2600);
+  row.sceneShot = shotPath.replace(/\.jpg$/, "-cena.jpg");
+  await stage.screenshot({ path: row.sceneShot, type: "jpeg", quality: 85 }).catch(() => { row.sceneShot = null; });
   if (!enabled) { row.note += "entrega desabilitada: requisitos não cumpridos"; row.screenshot = await shot(page, shotPath); return row; }
   await submit.click();
   const reward = page.getByRole("dialog").filter({ hasText: T.rewardTitle });
@@ -66,7 +77,7 @@ export async function playGame(page, app, game, shotPath, { log = () => {}, apiB
     row.cardsUsed = (body.submission?.cards ?? []).map((c) => `${c.slot}: ${c.name} (${c.tier} · ${c.ovr}) sintonia ${c.sintonia}`);
     row.prerequisites = body.evaluation.requirements.map((r) => `${r.type}${r.args?.min != null ? ` ≥ ${r.args.min}` : ""}${r.args?.count ? ` ×${r.args.count}` : ""}: ${r.ok ? "ok" : "falhou"} (${r.have}/${r.need})`);
     row.rewards = [...body.points.lines.map((l) => `${l.action}: +${l.points} FAI Points (${l.granted ? "creditado" : "previsto"})`), ...(body.rewards ?? []).map((w) => `${w.type}: ${w.name} [${w.state}]`)];
-    row.note += `sintonia ${body.evaluation.sintonia}/${body.evaluation.sintoniaMax}; pontuação Glass ${body.glass?.score}/${body.glass?.scoreMax}${body.glass?.perfect ? "; montagem perfeita" : ""}`;
+    row.note += `sintonia ${body.evaluation.sintonia}/${body.evaluation.sintoniaMax}; pontuação FLAIR 3D MAKE UP ${body.flair3d?.score}/${body.flair3d?.scoreMax}${body.flair3d?.perfect ? "; montagem perfeita" : ""}`;
   } else row.note += `entrega respondeu ${api.submit?.status ?? "sem resposta"}`;
   log(`${row.number} ${row.name}: ${row.completed ? "concluído" : "não concluído"}`);
   return row;

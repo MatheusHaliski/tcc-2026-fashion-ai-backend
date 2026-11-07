@@ -1,0 +1,611 @@
+[
+  {
+    "number": 70,
+    "slug": "d70-cinco-clientes",
+    "series": "D",
+    "district": "BACKSTAGE",
+    "names": {
+      "pt-BR": "Cinco Clientes",
+      "en": "Five Clients",
+      "es": "Cinco Clientas"
+    },
+    "descriptions": {
+      "pt-BR": "Vestir cinco clientes virtuais, cada uma com DNA, ocasião e orçamento de peso, com um único deck e sem repetir peça entre elas.",
+      "en": "Dress five virtual clients, each with her own DNA, occasion and weight budget, from a single deck without repeating a piece between them.",
+      "es": "Vestir a cinco clientas virtuales, cada una con ADN, ocasión y presupuesto de peso, con un solo mazo y sin repetir prenda entre ellas."
+    },
+    "points": 60,
+    "repeatLimit": 1,
+    "adapted": true,
+    "themeTags": [
+      "chic",
+      "classic",
+      "pink",
+      "beige"
+    ],
+    "deck": {
+      "minCards": 11,
+      "maxCards": 11,
+      "mala": null
+    },
+    "hype": {
+      "deckMin": "LOW_SIGNAL",
+      "mandatoryMin": "LOW_SIGNAL",
+      "mandatoryMax": "HOT",
+      "play": {
+        "mode": "BONUS_ABOVE_RELEVANT",
+        "cap": 2
+      },
+      "partial": {
+        "mode": "UP_ONLY"
+      }
+    },
+    "slots": [
+      {
+        "key": "c1_sup",
+        "position": "SUP",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 1, cima",
+          "en": "Client 1, top",
+          "es": "Clienta 1, arriba"
+        },
+        "story": {
+          "pt-BR": "Para a primeira cliente, {name}{brand, select, none {} other { da {brand}}} abre a prova.",
+          "en": "For the first client, {name}{brand, select, none {} other { by {brand}}} opens the fitting.",
+          "es": "Para la primera clienta, {name}{brand, select, none {} other { de {brand}}} abre la prueba."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "c1_inf",
+        "position": "INF",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 1, baixo",
+          "en": "Client 1, bottom",
+          "es": "Clienta 1, abajo"
+        },
+        "story": {
+          "pt-BR": "Na mesma ficha, {name}{brand, select, none {} other { da {brand}}} completa a parte de baixo.",
+          "en": "On the same card, {name}{brand, select, none {} other { by {brand}}} completes the bottom half.",
+          "es": "En la misma ficha, {name}{brand, select, none {} other { de {brand}}} completa la parte de abajo."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "c1_cal",
+        "position": "CAL",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 1, calçado",
+          "en": "Client 1, shoes",
+          "es": "Clienta 1, calzado"
+        },
+        "story": {
+          "pt-BR": "E {name}{brand, select, none {} other { da {brand}}} fecha o look da primeira cliente nos pés.",
+          "en": "And {name}{brand, select, none {} other { by {brand}}} finishes the first client look at the feet.",
+          "es": "Y {name}{brand, select, none {} other { de {brand}}} cierra el look de la primera clienta en los pies."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "c2_sup",
+        "position": "SUP",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 2, cima",
+          "en": "Client 2, top",
+          "es": "Clienta 2, arriba"
+        },
+        "story": {
+          "pt-BR": "A segunda cliente pede ocasião: {name}{brand, select, none {} other { da {brand}}} responde por cima.",
+          "en": "The second client asks for occasion: {name}{brand, select, none {} other { by {brand}}} answers on top.",
+          "es": "La segunda clienta pide ocasión: {name}{brand, select, none {} other { de {brand}}} responde por arriba."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "c2_inf",
+        "position": "INF",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 2, baixo",
+          "en": "Client 2, bottom",
+          "es": "Clienta 2, abajo"
+        },
+        "story": {
+          "pt-BR": "Por baixo, {name}{brand, select, none {} other { da {brand}}} segue o DNA da segunda ficha.",
+          "en": "Below, {name}{brand, select, none {} other { by {brand}}} follows the DNA of the second card.",
+          "es": "Por abajo, {name}{brand, select, none {} other { de {brand}}} sigue el ADN de la segunda ficha."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "c2_ace",
+        "position": "ACE",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 2, acessório",
+          "en": "Client 2, accessory",
+          "es": "Clienta 2, accesorio"
+        },
+        "story": {
+          "pt-BR": "Como detalhe, {name}{brand, select, none {} other { da {brand}}} dá o acabamento que a segunda cliente queria.",
+          "en": "As the detail, {name}{brand, select, none {} other { by {brand}}} gives the finish the second client wanted.",
+          "es": "Como detalle, {name}{brand, select, none {} other { de {brand}}} da el acabado que quería la segunda clienta."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "c3_sup",
+        "position": "SUP",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 3, cima",
+          "en": "Client 3, top",
+          "es": "Clienta 3, arriba"
+        },
+        "story": {
+          "pt-BR": "A terceira cliente é a influenciadora: {name}{brand, select, none {} other { da {brand}}} precisa brilhar.",
+          "en": "The third client is the influencer: {name}{brand, select, none {} other { by {brand}}} needs to shine.",
+          "es": "La tercera clienta es la influencer: {name}{brand, select, none {} other { de {brand}}} necesita brillar."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 2,
+          "impersonation": 3
+        }
+      },
+      {
+        "key": "c3_inf",
+        "position": "INF",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 3, baixo",
+          "en": "Client 3, bottom",
+          "es": "Clienta 3, abajo"
+        },
+        "story": {
+          "pt-BR": "Com {name}{brand, select, none {} other { da {brand}}}, a influenciadora aprova o look inteiro.",
+          "en": "With {name}{brand, select, none {} other { by {brand}}}, the influencer approves the whole look.",
+          "es": "Con {name}{brand, select, none {} other { de {brand}}}, la influencer aprueba el look entero."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 2,
+          "impersonation": 3
+        }
+      },
+      {
+        "key": "c4_cal",
+        "position": "CAL",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 4, calçado",
+          "en": "Client 4, shoes",
+          "es": "Clienta 4, calzado"
+        },
+        "story": {
+          "pt-BR": "A quarta cliente só olha os pés: {name}{brand, select, none {} other { da {brand}}} decide.",
+          "en": "The fourth client only looks at the feet: {name}{brand, select, none {} other { by {brand}}} decides.",
+          "es": "La cuarta clienta solo mira los pies: {name}{brand, select, none {} other { de {brand}}} decide."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "c4_look",
+        "position": "ANY",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 4, peça",
+          "en": "Client 4, piece",
+          "es": "Clienta 4, prenda"
+        },
+        "story": {
+          "pt-BR": "Dentro do orçamento, {name}{brand, select, none {} other { da {brand}}} fecha a quarta ficha.",
+          "en": "Within budget, {name}{brand, select, none {} other { by {brand}}} closes the fourth card.",
+          "es": "Dentro del presupuesto, {name}{brand, select, none {} other { de {brand}}} cierra la cuarta ficha."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      },
+      {
+        "key": "c5_look",
+        "position": "ANY",
+        "optional": false,
+        "accepts": {},
+        "label": {
+          "pt-BR": "Cliente 5, o que sobrou",
+          "en": "Client 5, what is left",
+          "es": "Clienta 5, lo que quedó"
+        },
+        "story": {
+          "pt-BR": "Para a última cliente, {name}{brand, select, none {} other { da {brand}}} é o que sobrou no deck, e serve.",
+          "en": "For the last client, {name}{brand, select, none {} other { by {brand}}} is what was left in the deck, and it works.",
+          "es": "Para la última clienta, {name}{brand, select, none {} other { de {brand}}} es lo que quedó en el mazo, y sirve."
+        },
+        "effects": {
+          "comum": {
+            "pt-BR": "A cliente aceita ou pede troca.",
+            "en": "The client accepts or asks for a swap.",
+            "es": "La clienta acepta o pide cambio."
+          },
+          "metamorfose": {
+            "pt-BR": "A ficha vira vidro e mostra a compatibilidade de cada carta.",
+            "en": "The client card turns to glass and shows how compatible each card is.",
+            "es": "La ficha se vuelve vidrio y muestra la compatibilidad de cada carta."
+          },
+          "impersonation": {
+            "pt-BR": "O avatar demonstra a peça e a cliente aceita sem troca.",
+            "en": "The avatar demonstrates the piece and the client accepts without a swap.",
+            "es": "El avatar muestra la prenda y la clienta acepta sin cambio."
+          }
+        },
+        "bonus": {
+          "metamorfose": 1,
+          "impersonation": 2
+        }
+      }
+    ],
+    "requirements": [
+      {
+        "type": "position",
+        "position": "SUP",
+        "count": 3
+      },
+      {
+        "type": "position",
+        "position": "INF",
+        "count": 3
+      },
+      {
+        "type": "position",
+        "position": "CAL",
+        "count": 2
+      },
+      {
+        "type": "position",
+        "position": "ACE",
+        "count": 1
+      },
+      {
+        "type": "cards",
+        "min": 11
+      }
+    ],
+    "rewards": [
+      {
+        "type": "ITEM",
+        "code": "F3D-D70-ESPELHO-ATENDIMENTO",
+        "names": {
+          "pt-BR": "Espelho de atendimento",
+          "en": "Client mirror",
+          "es": "Espejo de atención"
+        }
+      }
+    ],
+    "ficha": {
+      "objective": {
+        "pt-BR": "Vestir cinco clientes com um único deck sem repetir peça entre elas.",
+        "en": "Dress five clients from a single deck without repeating a piece between them.",
+        "es": "Vestir a cinco clientas con un solo mazo sin repetir prenda entre ellas."
+      },
+      "scenario": {
+        "pt-BR": "A sala de atendimento de vidro com cinco cadeiras e cinco fichas.",
+        "en": "The glass consulting room with five chairs and five client cards.",
+        "es": "La sala de atención de vidrio con cinco sillas y cinco fichas."
+      },
+      "mandatory": {
+        "pt-BR": "Três de cima, três de baixo, dois calçados e um acessório.",
+        "en": "Three tops, three bottoms, two pairs of shoes and one accessory.",
+        "es": "Tres de arriba, tres de abajo, dos calzados y un accesorio."
+      },
+      "sequence": {
+        "pt-BR": "Cliente 1 (3 cartas), cliente 2 (3), cliente 3 (2), cliente 4 (2), cliente 5 (o que sobrou). No app: 11 vagas.",
+        "en": "Client 1 (3 cards), client 2 (3), client 3 (2), client 4 (2), client 5 (what is left). In the app: 11 slots.",
+        "es": "Clienta 1 (3 cartas), clienta 2 (3), clienta 3 (2), clienta 4 (2), clienta 5 (lo que quedó). En la app: 11 casillas."
+      },
+      "reward": {
+        "pt-BR": "60 P (conta no vitalício), XP e o espelho de atendimento.",
+        "en": "60 P (counts toward lifetime), XP and the client mirror.",
+        "es": "60 P (cuenta en el vitalicio), XP y el espejo de atención."
+      },
+      "hypePlay": {
+        "pt-BR": "A faixa só importa para a cliente influenciadora: +1 por faixa acima de Relevante, até +2.",
+        "en": "The band only matters for the influencer client: +1 per band above Relevant, up to +2.",
+        "es": "La franja solo importa para la clienta influencer: +1 por franja por encima de Relevante, hasta +2."
+      },
+      "hypePartial": {
+        "pt-BR": "Cliente satisfeita sobe uma faixa as suas cartas; troca pedida mantém.",
+        "en": "A satisfied client moves her cards up one band; a requested swap keeps them.",
+        "es": "Una clienta satisfecha sube una franja sus cartas; un cambio pedido las mantiene."
+      }
+    },
+    "scene": {
+      "sky": [
+        "#F4D9E2",
+        "#FFF3F7"
+      ],
+      "ground": "#C9A3B2",
+      "horizon": 66,
+      "accent": "#D4537E",
+      "props": [
+        {
+          "k": "table",
+          "x": 80,
+          "y": 66,
+          "s": 1.2
+        },
+        {
+          "k": "mirror",
+          "x": 28,
+          "y": 58
+        },
+        {
+          "k": "door",
+          "x": 136,
+          "y": 62
+        },
+        {
+          "k": "window",
+          "x": 120,
+          "y": 24
+        },
+        {
+          "k": "flower",
+          "x": 16,
+          "y": 76,
+          "s": 0.7
+        }
+      ],
+      "slots": {
+        "c1_sup": [
+          12,
+          44
+        ],
+        "c1_inf": [
+          37,
+          44
+        ],
+        "c1_cal": [
+          63,
+          44
+        ],
+        "c2_sup": [
+          88,
+          44
+        ],
+        "c2_inf": [
+          12,
+          64
+        ],
+        "c2_ace": [
+          37,
+          64
+        ],
+        "c3_sup": [
+          63,
+          64
+        ],
+        "c3_inf": [
+          88,
+          64
+        ],
+        "c4_cal": [
+          12,
+          84
+        ],
+        "c4_look": [
+          50,
+          84
+        ],
+        "c5_look": [
+          88,
+          84
+        ]
+      }
+    }
+  }
+]

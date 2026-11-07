@@ -1,0 +1,84 @@
+{
+  "79": {
+    "photo": "lavanderia",
+    "anchors": {
+      "cor_1": {
+        "x": 16,
+        "y": 56,
+        "fx": "vitrine",
+        "on": "porta de vidro da 1ª lavadora",
+        "size": 22
+      },
+      "cor_2": {
+        "x": 38,
+        "y": 55,
+        "fx": "vitrine",
+        "on": "porta de vidro da 2ª lavadora",
+        "size": 14
+      },
+      "cor_3": {
+        "x": 51,
+        "y": 53,
+        "fx": "vitrine",
+        "on": "porta de vidro da 3ª lavadora",
+        "size": 10
+      },
+      "branco_1": {
+        "x": 61,
+        "y": 51,
+        "fx": "vitrine",
+        "on": "porta da 4ª lavadora",
+        "size": 8
+      },
+      "branco_2": {
+        "x": 68,
+        "y": 49,
+        "fx": "vitrine",
+        "on": "porta da 5ª lavadora",
+        "size": 6
+      },
+      "branco_3": {
+        "x": 76,
+        "y": 47,
+        "fx": "vitrine",
+        "on": "porta da 6ª lavadora",
+        "size": 5
+      },
+      "delicado_1": {
+        "x": 88,
+        "y": 44,
+        "fx": "vitrine",
+        "on": "secadora da esquerda ao fundo",
+        "size": 8
+      },
+      "delicado_2": {
+        "x": 96,
+        "y": 44,
+        "fx": "vitrine",
+        "on": "secadora da direita ao fundo",
+        "size": 8
+      },
+      "pesado_1": {
+        "x": 16,
+        "y": 24,
+        "fx": "lamp",
+        "on": "painel da 1ª lavadora",
+        "size": 18
+      },
+      "pesado_2": {
+        "x": 38,
+        "y": 29,
+        "fx": "lamp",
+        "on": "painel da 2ª lavadora",
+        "size": 12
+      },
+      "pesado_3": {
+        "x": 51,
+        "y": 33,
+        "fx": "lamp",
+        "on": "painel da 3ª lavadora",
+        "size": 9
+      }
+    }
+  }
+}

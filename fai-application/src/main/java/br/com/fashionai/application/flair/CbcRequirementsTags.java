@@ -109,7 +109,7 @@ final class CbcRequirementsTags {
      * padrão = nº de posições.
      */
     private static RequirementResult hypeBand(String type, Map<String, Object> r, List<Card> cards, Map<String, Object> args) {
-        GlassHype.Band min = GlassHype.parse(r.get("min"), GlassHype.Band.LOW_SIGNAL);
+        Flair3dHype.Band min = Flair3dHype.parse(r.get("min"), Flair3dHype.Band.LOW_SIGNAL);
         String scope = r.get("scope") == null ? null : String.valueOf(r.get("scope")).toLowerCase(Locale.ROOT);
         List<Card> subset = cards;
         int need = intOf(r.get("count"), 1);
@@ -118,7 +118,7 @@ final class CbcRequirementsTags {
             subset = cards.stream().filter(c -> positions.contains(c.position())).toList();
             need = intOf(r.get("count"), positions.size());
         }
-        int have = (int) subset.stream().filter(c -> GlassHype.bandOf(c).compareTo(min) >= 0).count();
+        int have = (int) subset.stream().filter(c -> Flair3dHype.bandOf(c).compareTo(min) >= 0).count();
         if ("all".equals(scope)) {
             return new RequirementResult(type, !cards.isEmpty() && have == cards.size(), have, cards.size(), args);
         }

@@ -1,5 +1,5 @@
-// Porte simplificado (JS) do motor CBC + bloco Glass para a API simulada das evidências.
-// Não é a fonte da verdade: as regras reais estão em CbcRules/CbcRequirements/GlassHype/GlassEffects (Java).
+// Porte simplificado (JS) do motor CBC + bloco FLAIR 3D MAKE UP para a API simulada das evidências.
+// Não é a fonte da verdade: as regras reais estão em CbcRules/CbcRequirements/Flair3dHype/Flair3dEffects (Java).
 import { BANDS, TIERS } from "./constants.mjs";
 
 const COLOR_FAMILY = { black: "Especiais", white: "Especiais", gray: "Especiais", beige: "Especiais", brown: "Especiais", silver: "Especiais", gold: "Amarelo",
@@ -100,10 +100,10 @@ export function evaluate(game, placed, bank) {
   return { slots: results, requirements, sintonia: total, sintoniaMax: 3 * slots.length, filled: cards.length, complete, ok, rediscovered, board };
 }
 
-export function glass(game, ev, tier) {
+export function flair3d(game, ev, tier) {
   const loft = tier === "LOFT"; const required = game.slots.filter((s) => !s.optional).length;
   const maxBand = bandIndex(game.hype?.mandatoryMax ?? "VIRAL"); const play = game.hype?.play ?? { mode: "NONE" }; const partial = game.hype?.partial ?? { mode: "NONE" };
-  let hypeTotal = 0, effectTotal = 0;
+  let hypeTotal = 0, effectTotal = 0, penaltyTotal = 0;
   const slots = ev.slots.filter((r) => r.cardId).map((r) => {
     const c = ev.board[r.slot]; const slot = game.slots.find((s) => s.key === r.slot);
     const band = Math.min(bandOf(c.hype?.HYP), maxBand);
@@ -111,15 +111,20 @@ export function glass(game, ev, tier) {
     if (play.mode === "BONUS_ABOVE_RELEVANT") hb = Math.min(play.cap ?? 3, Math.max(0, band - 2));
     else if (play.mode === "LOW_IS_GOOD") hb = band <= 1 ? (play.bonus ?? 2) : 0;
     else if (play.mode === "DIMENSION") hb = Math.min(play.cap ?? 3, Math.floor((c.hype?.[play.dim ?? "TRD"] ?? 0) / (play.per ?? 25)));
-    const kind = loft && c.impersonationReady ? "IMPERSONATION" : loft && r.sintonia >= 2 ? "METAMORFOSE" : "COMUM";
+    // carta fora da posição não aciona Metamorfose nem Impersonation (Flair3dPenalties no servidor)
+    const kind = !r.positionOk ? "COMUM" : loft && c.impersonationReady ? "IMPERSONATION" : loft && r.sintonia >= 2 ? "METAMORFOSE" : "COMUM";
+    const penalties = [!r.accepted && ["REFUSED", 2], !r.positionOk && ["MISPLACED", 1], r.sintonia === 0 && ["NO_SINTONIA", 1], bandOf(c.hype?.HYP) > maxBand && ["OVEREXPOSED", 1]]
+      .filter(Boolean).map(([code, points]) => ({ code, points }));
+    penaltyTotal += penalties.reduce((a, p) => a + p.points, 0);
     const bonus = kind === "COMUM" ? 0 : slot.bonus?.[kind.toLowerCase()] ?? (kind === "METAMORFOSE" ? 1 : 2);
     let delta = 0;
     if (partial.mode === "UP_ONLY" && r.sintonia >= 2) delta = 1;
     if (partial.mode === "UP_DOWN") delta = r.sintonia >= 2 ? 1 : r.sintonia === 0 ? -1 : 0;
     if (partial.mode === "ALL_UP_IF_COMPLETE" && ev.complete) delta = 1;
     hypeTotal += hb; effectTotal += bonus;
-    return { slot: r.slot, cardId: r.cardId, hypeBand: BANDS[band], hypeBonus: hb, effect: { kind, bonus, text: slot.effects?.[kind.toLowerCase()]?.["pt-BR"] ?? "" }, matchBand: BANDS[Math.max(0, Math.min(5, band + delta))], matchDelta: delta };
+    return { slot: r.slot, cardId: r.cardId, hypeBand: BANDS[band], hypeBonus: hb, effect: { kind, bonus, text: slot.effects?.[kind.toLowerCase()]?.["pt-BR"] ?? "" }, matchBand: BANDS[Math.max(0, Math.min(5, band + delta))], matchDelta: delta, penalties };
   });
   const perfect = ev.ok && ev.sintonia >= 2 * required;
-  return { slots, hypeTotal, effectTotal, score: ev.sintonia + hypeTotal + effectTotal, scoreMax: ev.sintoniaMax + game.slots.length * 5, perfect };
+  const score = Math.max(0, ev.sintonia + hypeTotal + effectTotal - penaltyTotal);
+  return { slots, hypeTotal, effectTotal, penaltyTotal, score, scoreMax: ev.sintoniaMax + game.slots.length * 5, perfect };
 }

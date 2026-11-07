@@ -7,6 +7,7 @@ import type { HypeEntity, HypeSummary } from "@/lib/hype/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label, CATEGORY_LABEL, subcategoryLabel } from "@/lib/api/taxonomy";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
+import type { HypeLive } from "@/lib/hype/hype-signal-store";
 import { HypeGuideIcon } from "@/components/hype/hype-guide";
 import { BrandLogo } from "@/components/brand-logo";
 import { hypePreset } from "@/lib/hype/aura-hype-presets";
@@ -23,9 +24,11 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[] }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao">>; summary?: HypeSummary | null; initial?: Tab;
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], live }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao">>; summary?: HypeSummary | null; initial?: Tab;
   /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
-  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][] }) {
+  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][];
+  /** memória e sinal do Hype desta pessoa (deltas do painel desde a última visita) */
+  live?: HypeLive }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>(initial);
   // a aba inicial acompanha a preferência (a AURA Hype salva no navegador chega depois do 1º render) até a pessoa escolher
@@ -73,7 +76,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="pc-panel">
         {tab === "info"
           ? <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
-          : <FashionCardStats summary={summary} type={type} layout={preset?.layout} context={piece} />}
+          : <FashionCardStats summary={summary} type={type} layout={preset?.layout} context={piece} live={live} />}
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 const CHECK_DEBOUNCE_MS = 450;
 
 /**
- * Estado de uma partida do Glass Empire, a mesma lógica do CbcPlay contra /api/flair/games/{slug}: detalhe, banco de
+ * Estado de uma partida do FLAIR 3D MAKE UP, a mesma lógica do CbcPlay contra /api/flair/games/{slug}: detalhe, banco de
  * cartas (só com acesso liberado), vagas preenchidas, leitura, conferência automática no servidor (debounce de 450 ms,
  * a resposta mais recente vence), entrega e recarga. Bloqueio: `access.allowed` do detalhe decide; um 403 do servidor
  * em check/submit vira `lock` com os detalhes da resposta (fail closed — o cliente nunca compara nível local).

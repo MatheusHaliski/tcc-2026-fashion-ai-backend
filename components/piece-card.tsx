@@ -18,14 +18,12 @@ import { ArtStage, artSurfaceProps } from "@/components/piece-art";
 import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
-import { useTheme } from "@/lib/theme/theme";
+import { useAuraLive } from "@/lib/hype/use-aura-live";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { CardBorder } from "@/components/card-border";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
-import { hypeViewState } from "@/lib/hype/model";
-import { useHypeSummary } from "@/lib/hype/use-hype";
 import { CardFashionMeta } from "@/components/card-fashion-meta";
 import { DefaultGarmentPhoto } from "@/components/catalog/default-garment-photo";
 import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, piecePhotoAspect } from "@/components/catalog/catalog-photo";
@@ -66,13 +64,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const { t } = useI18n(); const { user } = useAuth();
   const preview = href === "#";
   const flippable = flip && !preview && !selectable;
-  const { prefs } = useTheme();
   const auraMode = piece.background?.auraHype as string | undefined;
-  const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
+  const { auraEnabled, hype, hypeState, live } = useAuraLive("PIECE", piece.id, auraMode, !selectable);
   const tilt = auraEnabled && !flippable && !preview;
   const depth = useFashionDepth(tilt);
-  const hype = useHypeSummary("PIECE", piece.id, !piece.id.startsWith("preview") && (!selectable || auraEnabled), auraEnabled);
-  const hypeState = hypeViewState(hype.summary, hype);
   const seals = withHypeSeals(brandSeals, hypeSealCodes(hype.summary));
   const openModal = (e: React.MouseEvent) => { if (!detail || href || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openPiece(piece.id); };
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
@@ -104,7 +99,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const media = (
     <>
       {impersonationMedia(piece.background, piece.owner.id) ? <ImpersonationMedia background={piece.background} ownerId={piece.owner.id}/> : piece.defaultImage ? <DefaultGarmentPhoto category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} framing={framing} alt=""/> : whole && (whole.image || whole.sources.length) ? <CatalogPhoto requiredFrame={!!wholeImage} category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} framing="WHOLE" image={wholeImage} fallbackUrl={whole.sources[0]} alternatives={whole.sources.slice(1)} alt="" /> : crop ? <CatalogPhoto category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} requiredFrame image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 100vw, 620px" alt="" loading="lazy" decoding="async" className={img.cover || fillFrame ? "is-cover" : "is-contain"} /> : null}
-      <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} presetId={piece.background?.auraMetamorphosePreset as string | undefined} preview/>{auraEnabled && <AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false} />}
+      <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} presetId={piece.background?.auraMetamorphosePreset as string | undefined} preview live={live}/>{auraEnabled && <AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false} />}
       {(expanded || selectable) && (zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
@@ -121,7 +116,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   
   const card = (
     <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode={expanded ? "expanded" : "feed"} className={`fai-card piece-card ${expanded ? "piece-card-expanded" : ""} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
-      <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState}/>
+      <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState} live={live}/>
       {tilt && <span className="fashion-depth-glare" aria-hidden/>}
       <ArtStage bg={piece.background} art={art} density={expanded ? "expanded" : "compact"} pieceHex={piece.colorHex} animate={preview} />
       <div className="pc-frame">
@@ -135,7 +130,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
               <span className="pc-id">
                 {name}
                 <span className="pc-sub">{secondary}</span>
-                {auraEnabled && <FashionCardStats summary={hype.summary} styles={(piece.style ?? []).map(label)}/>}
+                {auraEnabled && <FashionCardStats summary={hype.summary} styles={(piece.style ?? []).map(label)} live={live}/>}
               </span>
             </button>
           ) : (
@@ -155,7 +150,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
                 {!expanded && <CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} />}
                 {expanded && <PieceDetailFacts piece={piece}/>}
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} />
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} live={live} />
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{<Price value={piece.price} />}</b></span>}
                 {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>

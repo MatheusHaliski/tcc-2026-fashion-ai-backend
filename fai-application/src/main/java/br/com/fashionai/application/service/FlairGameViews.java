@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
-/** Glass Empire — montagem dos JSONs do catálogo e do jogo sobre as projeções do CBC (§1.4 do desenho). */
+/** FLAIR 3D MAKE UP — montagem dos JSONs do catálogo e do jogo sobre as projeções do CBC (§1.4 do desenho). */
 final class FlairGameViews {
     private FlairGameViews() {
     }
@@ -21,7 +21,7 @@ final class FlairGameViews {
     static final List<String> EFFECT_KINDS = List.of("comum", "metamorfose", "impersonation");
 
     /** GameSummary = resumo do CBC + número, série, distrito, raridade, níveis exigidos, capa, deck, Hype, acesso e recompensas. */
-    static Map<String, Object> summary(Map<String, Object> v, FlairChallenge g, GlassAccess.Access access) {
+    static Map<String, Object> summary(Map<String, Object> v, FlairChallenge g, Flair3dAccess.Access access) {
         v.put("number", g.getGameNumber());
         v.put("series", g.getSeries());
         v.put("district", g.getDistrict());
@@ -35,7 +35,7 @@ final class FlairGameViews {
         HYPE_SUMMARY.forEach(k -> h.put(k, hype.get(k)));
         v.put("hype", h);
         v.put("access", access.toMap());
-        v.put("rewards", GlassRewards.promised(g));
+        v.put("rewards", Flair3dRewards.promised(g));
         return v;
     }
 
@@ -145,10 +145,10 @@ final class FlairGameViews {
         return lines;
     }
 
-    /** Linha FLAIR_GLASS_PERFECT somada a {@code points} ({@code award} nulo = prévia do check). */
+    /** Linha FLAIR_3D_PERFECT somada a {@code points} ({@code award} nulo = prévia do check). */
     @SuppressWarnings("unchecked")
     static void perfectLine(Map<String, Object> out, FlairChallenge g, FaiPointsService.Award award) {
-        Map<String, Object> line = new LinkedHashMap<>(new FlairChallengeService.Line("FLAIR_GLASS_PERFECT", FlairGameService.PERFECT_BONUS,
+        Map<String, Object> line = new LinkedHashMap<>(new FlairChallengeService.Line("FLAIR_3D_PERFECT", FlairGameService.PERFECT_BONUS,
                 g.getId().toString(), "perfect").toMap());
         if (award != null) {
             line.put("granted", award.granted());

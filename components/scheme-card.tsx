@@ -3,7 +3,7 @@ import { CardFashionMeta } from "@/components/card-fashion-meta";
 import { CardBorder } from "@/components/card-border";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
-import { useTheme } from "@/lib/theme/theme";
+import { useAuraLive } from "@/lib/hype/use-aura-live";
 import Link from "next/link";
 import { MediaImage } from "@/components/media-image";
 import { Price } from "@/components/price";
@@ -30,8 +30,6 @@ import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
 import {PieceCardPanels} from "@/components/piece-card-panels";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
-import { hypeViewState } from "@/lib/hype/model";
-import { useHypeSummary } from "@/lib/hype/use-hype";
 
 
 /** `kind: "HYPE"` = Selo de Hype FashionAI (RF53): automático, derivado do Hype atual — sem emissor nem vínculo. */
@@ -202,12 +200,9 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const preview = href === "#";
   const social = !expanded && !compact;
   const flippable = flip && !preview && !expanded;
-  const { prefs } = useTheme();
   const studio = studioOf(scheme.background);
   const auraMode = studio.auraHype ?? undefined;
-  const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
-  const hype = useHypeSummary("SCHEME", scheme.id, !scheme.id.startsWith("preview"), auraEnabled);
-  const hypeState = hypeViewState(hype.summary, hype);
+  const { auraEnabled, hype, hypeState, live } = useAuraLive("SCHEME", scheme.id, auraMode);
   const [analysis, setAnalysis] = useState(false);
   // Clique no título abre o modal com o esquema ampliado (RF7); a página continua acessível por nova aba.
   const openModal = (e: React.MouseEvent) => { if (!detail || expanded || preview || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openScheme(scheme.id); };
@@ -270,13 +265,13 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`} style={social?{aspectRatio:"4 / 3"}:undefined}>{cover && <MediaImage src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
   const chips = [...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).concat(scheme.season ? [label(scheme.season.toLowerCase())] : []);
 
-  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} infoRows={social?[[t("common.pecas"),String(items.length)],...(scheme.season?[[t("common.season"),label(scheme.season.toLowerCase())] as [string,ReactNode]]:[])]:[]}/>;
+  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} infoRows={social?[[t("common.pecas"),String(items.length)],...(scheme.season?[[t("common.season"),label(scheme.season.toLowerCase())] as [string,ReactNode]]:[])]:[]}/>;
   const card = (
     <article data-card-mode={expanded?"expanded":social?"feed":"compact"} className={`fai-card scheme-card ${social?"scheme-card-social":""} ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
         trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
-      <CardBorder entityId={`SCHEME:${scheme.id}`} background={{...scheme.background,...studio}} auraHype={auraEnabled} hype={hypeState}/>
-      <div className="scheme-stage"><AuraMetamorphose mode={studio.auraMetamorphose} presetId={studio.auraMetamorphosePreset} preview={!expanded}/>{auraEnabled&&<AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false}/>}
+      <CardBorder entityId={`SCHEME:${scheme.id}`} background={{...scheme.background,...studio}} auraHype={auraEnabled} hype={hypeState} live={live}/>
+      <div className="scheme-stage"><AuraMetamorphose mode={studio.auraMetamorphose} presetId={studio.auraMetamorphosePreset} preview={!expanded} live={live}/>{auraEnabled&&<AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false}/>}
         {hasArt && art && <CardArtLayer art={art} />}
         {compact ? (
           <div className="scheme-container is-compact" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone}>
