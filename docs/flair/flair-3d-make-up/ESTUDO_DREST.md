@@ -2,7 +2,8 @@
 
 Pesquisa web de 07/11/2026 para o FLAIR 3D MAKE UP (FashionAI, público 13+), um jogo de styling e maquiagem no estilo do
 DREST, só que em cenas 3D. Nenhum código foi alterado. Complementa `REUSO_PROVADOR_E_AVATAR.md` (mesma pasta). A pedido
-da dona do projeto, a **§4 (progressão por nível)** é a parte mais detalhada e a **§5** descreve o guarda-roupa de cada jogo.
+da dona do projeto, a **§4 (progressão por nível)** é a parte mais detalhada, a **§5** descreve o guarda-roupa de cada jogo e a **§6**
+lista os tipos de maquiagem.
 
 **Legenda.** **[D]** documentado ou oficial (lojas de apps, site, termos, notas de versão). **[P]** imprensa ou
 entrevista. **[C]** comunidade: avaliações de loja, blogs, espelhos e agregadores, sempre anedóticos. **[I]** inferência
@@ -24,6 +25,8 @@ agregadores. Valores de XP, curva de níveis e árvore exata de categorias **nã
    Dress Up Game", foi refeito em Unity e lançado em **04/11/2024**, para iOS e Android **[D/P]**(S11, S13, S40).
 5. No 2.0 a peça comprada **não é sua para sempre: vale 5 usos** e depois precisa ser renovada. Cabelo e maquiagem
    ficam travados atrás de tickets ou kits pagos. A queixa nº 1 dos jogadores é a economia **[C]**(S2, S6, S7, S8).
+6. A maquiagem mistura troca peça a peça (olhos, sobrancelhas, lábios, pele, unhas) e looks prontos de 1 toque, com
+   marcas reais por tempo limitado (Gucci Beauty, NARS, Lisa Eldridge, Bakeup). Base e corretivo não foram confirmados (§6).
 
 ## 1. Identificação e linha do tempo
 
@@ -176,11 +179,11 @@ prática, o **custo e a renovação dos itens freiam o meio do jogo mais que o X
 - **Desafios de beleza patrocinados:** duram de 1 a 4 semanas e dão prêmio físico. Gucci Beauty (29 itens, S53); NARS (30
   produtos e 62 variantes de intensidade, 15 vencedores escolhidos pela diretora artística); Lisa Eldridge (12 tons de
   batom); Bakeup (7 looks e mais 2 de Pride) **[P]**(S26, S27, S30, S32).
-- **Beleza é consumível ou travada:** "Brown Lip Kit" (US$ 2,99 ou 4,99), Booster Hair (R$ 6,90), presets de maquiagem
-  (US$ 9,99 por 5), cores de olho (US$ 15 por 5), estilos de delineado (US$ 1,99 por 6) **[D/C]**(S4, S5, S46).
+- **Beleza é consumível ou travada:** kits, presets e boosters pagos, nenhum destravado por nível. Ver §6.4
+  **[D/C]**(S4, S5, S46).
 - **Não encontramos XP próprio de maquiagem** nem nível de maquiadora **[não confirmado]**. Jogadores desconfiam que
   maquiagem e acessórios **não sobem a nota** **[C]**(S7). Lição para o FLAIR: o brief precisa **pontuar a maquiagem
-  explicitamente**.
+  explicitamente**. Produtos, menu e preços de beleza estão na §6.
 
 ### 4.9 O que faz voltar e o que afasta
 
@@ -260,7 +263,85 @@ A divisão por tipo de peça acima é o padrão observado em avaliações e na i
   15 diamantes que entregou 2 usos em vez de 5 **[C]**(S2, S8). Na prática é **aluguel por uso** **[I]**. O "vault"
   aparece como compra que some depois de duas vezes, e não confirmamos para que serve **[C]**(S6).
 
-## 6. Monetização
+## 6. Tipos de maquiagem e beleza
+
+### 6.1 Como a beleza evoluiu
+
+- **2020: maquiagem da casa.** Mary Greenwell desenhou "todo o portfólio de maquiagem digital". Havia dois jeitos de
+  maquiar:
+  - **elemento por elemento** ("trocar o delineado num instante", "mudar a cor do lábio", cílios);
+  - **looks prontos de 1 toque**, em edição limitada: "Fashion Fantasy", "Verdant Summer" (paleta verde), "Summer
+    Sunset" (olho amarelo e laranja, pele e boca mínimas).
+
+  Valiam para os 12 avatares, e o app trazia tutoriais da própria Greenwell **[P]**(S54–S56).
+- **2021: Beauty Mode.** Close no rosto e no tronco, com poses novas. A "Variant technology" deixa escolher **como**
+  aplicar cada produto. Gucci Beauty (29 itens, mais de 40 looks), depois NARS. Desafios de beleza sem marca previstos
+  para janeiro de 2022 **[P]**(S26, S27, S53, S57).
+- **2022–2023:** Lisa Eldridge (12 tons de batom e filtro de prova no Instagram) e Bakeup (7 looks e mais 2 de Pride)
+  **[P]**(S30, S32, S58).
+- **2.0 (2024–2026):** a descrição fala em "iluminar e contornar" e em olhos, sobrancelhas e lábios. Os looks seguem
+  as estéticas **glam, edgy, clean, creative** e "polished, contemporary, timeless". Há kits pagos **[D/C]**(S1, S5, S10, S46).
+
+### 6.2 Tipos de produto
+
+| Tipo | Situação | Marcas reais e exemplos | Fonte |
+|---|---|---|---|
+| Base, pele, corretivo | **Não confirmado.** O tom de pele vem do avatar; Greenwell ajustou cada produto a cada tom | — | [P/I](S26, S53) |
+| Contorno e iluminador | Citados na descrição do 2.0 ("highlight, contour"). Bronzer não confirmado | — | [D](S10) |
+| Blush | Sim | NARS | [P](S27) |
+| Sombra | Sim | Gucci Palette Beauté des Yeux Floral (9 tons), NARS, paletas dos looks Greenwell | [P](S26, S27, S56) |
+| Delineado | Sim. O 2.0 vende estilos (6 por US$ 1,99) | Gucci, NARS | [P/C](S26, S27, S46, S55) |
+| Máscara e cílios | Sim | Gucci, NARS, "lashes" (2020) | [P](S26, S27, S55) |
+| Sobrancelhas | Sim (descrição do 2.0) | — | [D](S10) |
+| Cor dos olhos | Vendida no 2.0 (5 por US$ 15) | — | [C](S46) |
+| Batom, gloss, cor de lábio | Sim | Gucci Rouge de Beauté Brillant, NARS Air Matte, Lisa Eldridge (linhas Luxuriously Lucent e Insanely Saturated), "Brown Lip Kit" (2.0) | [P/D](S5, S27, S30, S57) |
+| Lápis de boca | **Não confirmado** (o conteúdo do "Lip Kit" não é descrito) | — | [D](S5) |
+| Unhas | Sim | Gucci Vernis à Ongles | [P](S57) |
+| Adornos e arte facial | Sim, em evento | Bakeup: Disco Veiler (malha e microcristais) e Playbox (gemas, de um ponto no olho a um raio no rosto inteiro) | [P](S32, S58) |
+| Cabelo (junto com a beleza) | Sim | Penteados Sam McKnight e Artist Series, cor e gloss Josh Wood, Booster Hair (R$ 6,90) | [P/D](S4, S39, S42) |
+
+### 6.3 Como o menu de beleza é organizado
+
+- **Dois caminhos** **[P]**(S54, S55):
+  - montar **produto a produto**, por área do rosto: olhos, sobrancelhas, lábios, pele (iluminar e contornar) e unhas;
+  - aplicar um **look pronto** com 1 toque.
+- **Variações:** cada produto tem tom e intensidade. A Gucci tinha 29 itens que geravam mais de 40 looks; a NARS, 30
+  produtos com 62 variantes **[P]**(S27, S57).
+- **Looks prontos:** agrupados por estética (glam, edgy, clean, creative) **[D]**(S10). O cabelo tem aba própria, com
+  ícones de tranças, rabos de cavalo e chapéus **[D]**(S3).
+- **Não confirmado:** os nomes exatos das abas e se existe algum pincel ou aplicação livre. Ao que tudo indica, tudo é
+  escolhido em lista **[I]**.
+
+### 6.4 Marcas reais ou genéricas; grátis, por nível ou pago
+
+- **Marcas reais, sempre por tempo limitado:** Gucci Beauty (72 h para a WWD, até 08/10 para a FashionUnited), NARS
+  (9 dias), Lisa Eldridge (1 mês) e Bakeup (cerca de 1 mês). Depois disso o produto só aparece nos looks já enviados
+  por outros jogadores. Há link para comprar no site da marca **[P]**(S27, S30, S32, S53, S57).
+- **Genéricos:** a maquiagem da casa (Greenwell), os desafios de beleza sem marca de 2022 e, no 2.0, os presets e kits,
+  que não citam marca **[P/D/I]**(S5, S53, S55).
+- **Grátis:** os desafios de beleza de 2021 eram gratuitos, e quem jogava ganhava um produto digital para usar depois
+  **[P]**(S53). As fontes não dizem se os elementos básicos eram grátis.
+- **Pago ou travado:**
+  - No app original, os "looks de maquiagem ilimitados" acabaram, dando lugar a usos limitados **[C]**(S45).
+  - No 2.0, os looks de maquiagem ficam travados atrás de tickets (antes ganhos jogando, hoje pagos) ou de kits:
+    Brown Lip Kit (US$ 2,99 ou 4,99), presets (US$ 9,99 por 5), cores de olho, estilos de delineado
+    **[D/C]**(S5, S6, S46).
+  - Os boosters liberam "todas as categorias" por 1 ou 2 horas **[D]**(S1).
+- **Por nível:** nenhuma fonte diz que maquiagem se destrava por nível **[não confirmado]**.
+
+### 6.5 Como a maquiagem pesa na nota
+
+- **Desafio comum:** quem dá a nota é a comunidade, em estrelas. A maquiagem é um dos 4 elementos do photoshoot, mas
+  nenhuma fonte documenta quanto ela pesa **[P]**(S18).
+- **Desafio de maquiador ou de marca:** quem escolhe o vencedor é um especialista. Greenwell julgou o "Summer Sunset"
+  (bônus de 2.500 DD), e a diretora artística da NARS escolheu 15 vencedores **[P]**(S27, S56). Nos desafios
+  patrocinados, o brief pede os produtos da marca **[P/I]**(S53, S57).
+- **Percepção dos jogadores:** desconfiam que looks **sem** acessórios, maquiagem ou props tiram nota maior
+  **[C]**(S7).
+- **Para o FLAIR [I]:** a nota deve ter critérios de maquiagem explícitos e verificáveis (técnica, paleta, área do
+  rosto), tanto no checklist do brief quanto no júri.
+
+## 7. Monetização
 
 - **Grátis:** baixar, desafios diários, votar e moedas ganhas jogando **[D/C]**(S1).
 - **IAP (EUA e Brasil) [D](S1, S4, S5):** Gem Offer e Gem Packs de US$ 1,99 a 9,99 (no Brasil, R$ 12,90 e R$ 29,90 nos itens listados); Drest Dollar e Style
@@ -282,7 +363,7 @@ A divisão por tipo de peça acima é o padrão observado em avaliações e na i
   de IAP **[D/P/C]**(S11, S12, S37, S43). Os "£72,5 mi de receita em 2022" da BeautyMatter são **pouco confiáveis**:
   batem com o mercado mobile global citado pela Glossy **[I]**(S34, S42).
 
-## 7. Visual e tecnologia
+## 8. Visual e tecnologia
 
 - **Motor:** Unity no 2.0, com Braze, Singular, Firebase e HelpShift **[D/P]**(S11, S12, S40).
 - **Avatares:** as supermodelos foram capturadas em **estúdio de fotografia 3D** e refinadas por uma equipe interna
@@ -298,7 +379,7 @@ A divisão por tipo de peça acima é o padrão observado em avaliações e na i
 - **Foto:** o "photoshoot" fica salvo no perfil e pode ser compartilhado. As locações recriam lugares reais (lojas
   Manolo Blahnik, sala anos 70, capa de revista). O app vibra a cada troca de item **[P/C]**(S7, S17, S38).
 
-## 8. Avaliações, classificação etária e controvérsias
+## 9. Avaliações, classificação etária e controvérsias
 
 - **Notas:** iOS nos EUA 4,5 (4,9 mil avaliações), no Reino Unido 4,3 e no Brasil 4,5 (663); Android ~4,1 (3,7 mil)
   **[D/C]**(S1, S4, S6, S12).
@@ -313,9 +394,9 @@ A divisão por tipo de peça acima é o padrão observado em avaliações e na i
 - **Controvérsias:** nenhum escândalo na imprensa. Pontos sensíveis: a BoF (2019) citou o "compulsion loop"
   **[P]**(S19); em 2023 falava-se de "metaverso", mas o produto "não é Web3" **[P]**(S35); há rastreamento declarado
   num app 13+ **[D]**(S1); os termos se contradizem sobre a idade nos concursos **[D]**(S15); as métricas da empresa
-  divergem das de terceiros (§6).
+  divergem das de terceiros (§7).
 
-## 9. Lições para o FLAIR 3D MAKE UP
+## 10. Lições para o FLAIR 3D MAKE UP
 
 - **Copiar [I]:** brief curto ligado ao calendário (o Momento do FashionAI); envio, janela de votação e estrelas; ranks
   com nome de carreira (de estagiária de beleza a ícone); eventos com catálogo temático; close de beleza com produto,
@@ -359,12 +440,14 @@ A divisão por tipo de peça acima é o padrão observado em avaliações e na i
 - **Prêmios reais:** sorteio depende de autorização, mas concurso **exclusivamente cultural**, sem compra nem sorte, é
   dispensado (Lei 5.768/1971, validar). O DREST também exclui países e limita a maiores de 18.
 
-## 10. O que não foi possível confirmar
+## 11. O que não foi possível confirmar
 
 - **Progressão:** XP por estrela ou por voto, número de níveis, ranks intermediários, tabela de desbloqueio por nível,
   estrutura do Luxe Pass e do Luxe Plus, e se as gift boxes são aleatórias.
 - **Guarda-roupa:** nomes oficiais das abas e subcategorias, existência de páginas de marca, função do "vault", lista
   exata do que é grátis, preço de cada peça no 2.0.
+- **Maquiagem:** base, corretivo, bronzer e lápis de boca; nomes das abas de beleza; existência de aplicação livre;
+  peso da maquiagem na nota; qualquer desbloqueio por nível.
 - **Avatares e marcas:** **Adriana Lima** não aparece em nenhuma fonte (Irina Shayk está confirmada); se há modelos
   masculinos (jogadores pedem); se a Farfetch segue no 2.0; termos financeiros com as marcas.
 - **Fora de alcance:** textos completos de Vogue Business, WWD (S44), BoF e Fast Company (paywall ou bloqueio); nada
@@ -424,4 +507,9 @@ A divisão por tipo de peça acima é o padrão observado em avaliações e na i
 - S50 Lei 15.211/2025 (Planalto, bloqueado daqui): https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/L15211.htm
 - S51 Vaga de "Avatar production intern": https://hitmarker.net/jobs/into-games-avatar-production-intern-drest-kickstart-scheme-900239
 - S52 Blog ha-na (2020) [C]: https://ha-na.nl/2020/05/drest-app/
-- S53 FashionUnited, Beauty Mode (só trecho de busca): https://fashionunited.com/news/fashion/drest-adds-beauty-mode-with-gucci-partnership/2021100442559
+- S53 FashionUnited, Beauty Mode: https://fashionunited.com/news/fashion/drest-adds-beauty-mode-with-gucci-partnership/2021100442559
+- S54 PAPER, Mary Greenwell (2020): https://www.papermag.com/drest-makeup-filters-mary-greenwell
+- S55 Cosmetics Business, Greenwell (2020): https://cosmeticsbusiness.com/drest-the-high-fashion-gaming-app-breaks-into-beauty-164685
+- S56 TheIndustry.beauty, "Summer Sunset": https://theindustry.beauty/mary-greenwell-launches-summer-sunset-makeup-look-within-drest/
+- S57 WWD via Yahoo, Gucci Beauty: https://www.yahoo.com/lifestyle/drest-launches-beauty-mode-gucci-215104095.html
+- S58 FashionUnited, Bakeup: https://fashionunited.com/news/fashion/drest-teams-up-with-experimental-beauty-brand-bakeup/2023051653907
