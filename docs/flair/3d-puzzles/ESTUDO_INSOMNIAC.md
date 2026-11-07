@@ -2,7 +2,7 @@
 
 Pedido (06/11/2026): migrar as fotos 2D dos cenários e a inserção de cartas do deck para um padrão 3D
 "ultrarrealista", "semelhante aos gráficos do Spider-Man 2 da Insomniac", com encaixe perfeito e efeitos visuais e
-sonoros. Vale para os dois segmentos FLAIR: **FLAIR 3D** (os 100 jogos de cenário e as aventuras 3D, como o
+sonoros. Vale para os dois segmentos FLAIR: **FLAIR 3D MAKE UP** (os 100 jogos de cenário e as aventuras 3D, como o
 Afterparty) e **FLAIR Card Building Challenge** (desafios de montagem e modos de batalha de cartas: duelo, equipes,
 arena e os 15 modos de look). Este documento estuda **como a Insomniac desenha e apresenta os puzzles** e **o que dessa tecnologia é
 viável num navegador**. É estudo, não plano de implementação nem código.
@@ -234,7 +234,7 @@ interiores reais de marcas sem autorização [I].
 4. **Áudio desenha o feedback.** Projetar o som primeiro e derivar o padrão de vibração do envelope dele; foley de
    tecido/acessório real em camadas, com reverb do tipo de ambiente (provador seco, clube com cauda longa). [D §3]
 5. **Tier é material, não só número.** BRONZE/PRATA/OURO/ESPECIAL mudam luz, partícula e stinger em intensidade
-   crescente; Hype define o raio/brilho dos anéis. Mesma gramática em FLAIR 3D e FLAIR Card Building Challenge. [I]
+   crescente; Hype define o raio/brilho dos anéis. Mesma gramática em FLAIR 3D MAKE UP e FLAIR Card Building Challenge. [I]
 6. **O cenário é o puzzle.** Vagas são objetos diegéticos (cabide, manequim, mesa, passarela) iluminados no próprio
    3D; HUD só para o que não tem lugar no mundo. Transição de câmera contínua para a vaga, sem modal. [D/G §1]
 7. **Erro é resultado, não punição.** Carta incompatível não é atraída e volta ao deck com mola; motivo em uma

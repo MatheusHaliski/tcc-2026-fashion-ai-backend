@@ -12,7 +12,7 @@ import { cn } from "@/components/ui";
  * as vagas saem do desenho e viram uma grade embaixo (a cena fica com marcadores numerados).
  */
 export function CbcSceneArt({ scenario, scene: given, className, pins }: { scenario: string; scene?: Scene; className?: string; pins?: { n: number; x: number; y: number; lit: boolean }[] }) {
-  // `scene` vindo da API (FLAIR 3D, scene_json) vence o kit local do cenário
+  // `scene` vindo da API (FLAIR 3D MAKE UP, scene_json) vence o kit local do cenário
   const scene = given ?? sceneOf(scenario);
   const gid = `cbc-sky-${scenario}`;
   return (
@@ -75,7 +75,7 @@ export interface PlacedCard { card: FlairCollectionCard }
 export function CbcScene({ scenario, scene: given, slots, placed, results, labelOf, onPick, readOnly, art }: {
   scenario: string; scene?: Scene; slots: { key: string; position: string; label?: string | null }[]; placed: Record<string, FlairCollectionCard | undefined>;
   results?: CbcSlotResult[]; labelOf: (slot: CbcSlot | { key: string; position: string; label?: string | null }) => string; onPick?: (slot: string) => void; readOnly?: boolean;
-  /** arte no lugar do desenho 2D (FLAIR 3D: a fotografia do ambiente com os efeitos de cada carta) */ art?: ReactNode;
+  /** arte no lugar do desenho 2D (FLAIR 3D MAKE UP: a fotografia do ambiente com os efeitos de cada carta) */ art?: ReactNode;
 }) {
   const { t } = useI18n();
   const scene = given ?? sceneOf(scenario);

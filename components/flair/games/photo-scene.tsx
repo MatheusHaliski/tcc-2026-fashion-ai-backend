@@ -13,7 +13,7 @@ import { PhotoSceneLinks } from "@/components/flair/games/photo-scene-links";
 export interface PhotoPin { key: string; n: number; x: number; y: number; label: string; fx: SceneFx; size: number }
 
 /**
- * Cenário fotográfico do FLAIR 3D: uma fotografia real do ambiente (loja, vitrine, camarim, boate, palco, camarote…)
+ * Cenário fotográfico do FLAIR 3D MAKE UP: uma fotografia real do ambiente (loja, vitrine, camarim, boate, palco, camarote…)
  * que reage às cartas. A cena começa apagada e dessaturada e ganha luz e cor à medida que as vagas são preenchidas; cada
  * carta é uma {@link PhotoSceneHit} na posição da vaga, com o efeito e a Aura Hype que o servidor calculou (flair3d.slots);
  * a montagem perfeita acende a luz dourada com um reflexo de lente. A arte é decorativa (aria-hidden): as vagas são os

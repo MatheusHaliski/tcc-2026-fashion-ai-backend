@@ -1,5 +1,5 @@
 /**
- * docs/flair/flair-3d/catalogo.gen.md: a tabela resumo do catálogo com as colunas derivadas (R16),
+ * docs/flair/flair-3d-make-up/catalogo.gen.md: a tabela resumo do catálogo com as colunas derivadas (R16),
  * a regra de derivação por extenso e a nota sobre a visibilidade da carta Especial (R26). Arquivo gerado: o build
  * sobrescreve a cada execução.
  */
@@ -28,7 +28,7 @@ function counts(entries, pick) {
 export function catalogMarkdown(entries, meta = {}) {
   const sorted = [...entries].sort((a, b) => a.game.number - b.game.number);
   const lines = [
-    "# FLAIR 3D — catálogo gerado dos 5 jogos",
+    "# FLAIR 3D MAKE UP — catálogo gerado dos 5 jogos",
     "",
     `Arquivo GERADO por \`scripts/flair-games/build.mjs\` a partir de \`${meta.dataDir ?? "scripts/flair-games/data"}/serie-*.json\`: não editar à mão.`,
     `Jogos no catálogo: ${sorted.length}${meta.partial ? " (geração parcial com --allow-partial)" : ""}.`,

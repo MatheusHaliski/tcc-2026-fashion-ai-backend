@@ -5,7 +5,7 @@ import { isLocked, lockReasonKeys, thumbnailOf, type GameAccess, type GameSummar
 import { Badge, cn } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 
-/** Rótulos dos níveis e faixas do FLAIR 3D (nível de XP reaproveita levelProgress.name.*). */
+/** Rótulos dos níveis e faixas do FLAIR 3D MAKE UP (nível de XP reaproveita levelProgress.name.*). */
 export function useGameLabels() {
   const { t } = useI18n();
   return {

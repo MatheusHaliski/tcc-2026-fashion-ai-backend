@@ -10,7 +10,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** FLAIR 3D — os tipos novos da DSL (cards, mala, position, distinctTags, hypeBand), a forma deles e o despacho. */
+/** FLAIR 3D MAKE UP — os tipos novos da DSL (cards, mala, position, distinctTags, hypeBand), a forma deles e o despacho. */
 class CbcRequirementsTest {
     private static CbcRules.Card card(String pos, String tier, Set<String> styles, Set<String> colors, Set<String> occasions, Set<String> materials,
                                       Double hyp) {

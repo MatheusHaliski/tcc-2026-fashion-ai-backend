@@ -7,7 +7,7 @@ import type { MatchScene } from "@/lib/flair/match-scene";
 import type { MatchWinner } from "@/lib/flair/match-stage";
 
 /**
- * A fotografia do palco do confronto com as inserções das cartas, reaproveitando a cena do FLAIR 3D: cada carta é
+ * A fotografia do palco do confronto com as inserções das cartas, reaproveitando a cena do FLAIR 3D MAKE UP: cada carta é
  * uma PhotoSceneHit (clarão → cone → a foto reacende → Aura Hype → efeito → legenda) dentro de um invólucro que diz o
  * papel dela na rodada — vencedora (inserção completa), perdedora (apagada, sem reacender a foto) ou empate (média).
  * As cartas do mesmo lado com sinergia na rodada se ligam por fios de luz (um conjunto de ligações por lado). A cena

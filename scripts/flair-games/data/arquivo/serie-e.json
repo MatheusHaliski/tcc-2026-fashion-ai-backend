@@ -8618,9 +8618,9 @@
       "es": "Capítulo Final: Corona de Vidrio"
     },
     "descriptions": {
-      "pt-BR": "Atravessar a campanha de cinco capítulos do FLAIR 3D (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.",
-      "en": "Cross the five-chapter FLAIR 3D campaign (suite, runway, streets, ateliers, community) with a deck that evolves through provenance, all the way to the Tower.",
-      "es": "Atravesar la campaña de cinco capítulos del FLAIR 3D (suite, pasarela, calles, talleres, comunidad) con un mazo que evoluciona por procedencia, hasta la Torre."
+      "pt-BR": "Atravessar a campanha de cinco capítulos do FLAIR 3D MAKE UP (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.",
+      "en": "Cross the five-chapter FLAIR 3D MAKE UP campaign (suite, runway, streets, ateliers, community) with a deck that evolves through provenance, all the way to the Tower.",
+      "es": "Atravesar la campaña de cinco capítulos del FLAIR 3D MAKE UP (suite, pasarela, calles, talleres, comunidad) con un mazo que evoluciona por procedencia, hasta la Torre."
     },
     "points": 150,
     "repeatLimit": 1,
@@ -9134,9 +9134,9 @@
     ],
     "ficha": {
       "objective": {
-        "pt-BR": "Atravessar a campanha de cinco capítulos do FLAIR 3D (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.",
-        "en": "Cross the five-chapter FLAIR 3D campaign (suite, runway, streets, ateliers, community) with a deck that evolves through provenance, all the way to the Tower.",
-        "es": "Atravesar la campaña de cinco capítulos del FLAIR 3D (suite, pasarela, calles, talleres, comunidad) con un mazo que evoluciona por procedencia, hasta la Torre."
+        "pt-BR": "Atravessar a campanha de cinco capítulos do FLAIR 3D MAKE UP (suíte, passarela, ruas, ateliês, comunidade) com um deck que evolui por procedência, até a Torre.",
+        "en": "Cross the five-chapter FLAIR 3D MAKE UP campaign (suite, runway, streets, ateliers, community) with a deck that evolves through provenance, all the way to the Tower.",
+        "es": "Atravesar la campaña de cinco capítulos del FLAIR 3D MAKE UP (suite, pasarela, calles, talleres, comunidad) con un mazo que evoluciona por procedencia, hasta la Torre."
       },
       "scenario": {
         "pt-BR": "A cidade inteira, um distrito por capítulo, com a Torre de Vidro no fim.",

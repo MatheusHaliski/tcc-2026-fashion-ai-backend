@@ -1,4 +1,4 @@
-// Fotografias reais dos cenários FLAIR 3D, com licença livre (Openverse: CC0, CC BY, CC BY-SA, domínio público).
+// Fotografias reais dos cenários FLAIR 3D MAKE UP, com licença livre (Openverse: CC0, CC BY, CC BY-SA, domínio público).
 // `search`: consulta a API pública do Openverse por ambiente, guarda os candidatos e monta folhas de contato para revisão.
 // `fetch`: baixa os escolhidos (scenes.json), redimensiona para 1600×1000 WebP em public/flair/games/scenes e grava credits.json.
 // Uso: node scripts/flair-games/photos.mjs search | fetch     (nunca usa IA; as fontes e licenças ficam em credits.json)

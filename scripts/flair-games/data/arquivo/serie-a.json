@@ -9237,9 +9237,9 @@
       "es": "La Mudanza"
     },
     "descriptions": {
-      "pt-BR": "Encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o FLAIR 3D.",
-      "en": "Pack the whole suite into six moving boxes, proving that each box closes with a coherent set, because the room is moving to the FLAIR 3D.",
-      "es": "Embalar la suite entera en seis cajas de mudanza, probando que cada caja cierra con un conjunto coherente, porque el cuarto se va al FLAIR 3D."
+      "pt-BR": "Encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o FLAIR 3D MAKE UP.",
+      "en": "Pack the whole suite into six moving boxes, proving that each box closes with a coherent set, because the room is moving to the FLAIR 3D MAKE UP.",
+      "es": "Embalar la suite entera en seis cajas de mudanza, probando que cada caja cierra con un conjunto coherente, porque el cuarto se va al FLAIR 3D MAKE UP."
     },
     "points": 100,
     "repeatLimit": 1,
@@ -9725,9 +9725,9 @@
     ],
     "ficha": {
       "objective": {
-        "pt-BR": "Encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o FLAIR 3D.",
-        "en": "Pack the whole suite into six moving boxes, proving that each box closes with a coherent set, because the room is moving to the FLAIR 3D.",
-        "es": "Embalar la suite entera en seis cajas de mudanza, probando que cada caja cierra con un conjunto coherente, porque el cuarto se va al FLAIR 3D."
+        "pt-BR": "Encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o FLAIR 3D MAKE UP.",
+        "en": "Pack the whole suite into six moving boxes, proving that each box closes with a coherent set, because the room is moving to the FLAIR 3D MAKE UP.",
+        "es": "Embalar la suite entera en seis cajas de mudanza, probando que cada caja cierra con un conjunto coherente, porque el cuarto se va al FLAIR 3D MAKE UP."
       },
       "scenario": {
         "pt-BR": "A suíte sendo desmontada, parede por parede, até ficar só o espelho.",

@@ -12,7 +12,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** FLAIR 3D — vagas opcionais: {@code complete}, o {@code n} dos requisitos "para todas", sintoniaMax e validação. */
+/** FLAIR 3D MAKE UP — vagas opcionais: {@code complete}, o {@code n} dos requisitos "para todas", sintoniaMax e validação. */
 class CbcOptionalSlotsTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 11, 5);
     private static final Instant START = Instant.parse("2026-11-01T00:00:00Z");

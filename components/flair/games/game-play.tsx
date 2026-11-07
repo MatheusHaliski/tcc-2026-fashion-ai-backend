@@ -18,10 +18,10 @@ import { useGameTexts } from "@/components/flair/games/use-game-texts";
 import { useGameLabels } from "@/components/flair/games/game-card";
 
 /**
- * Tela de um jogo do FLAIR 3D (/flair/jogos/[slug]). Bloqueado (access.allowed=false no detalhe, ou 403 do servidor
+ * Tela de um jogo do FLAIR 3D MAKE UP (/flair/jogos/[slug]). Bloqueado (access.allowed=false no detalhe, ou 403 do servidor
  * em check/submit) → painel de bloqueio, sem buscar o banco de cartas. Liberado → cenário (na série A, a Suíte de Vidro
  * em 3D acima das vagas; sem WebGL, só a cena 2D), vagas, história, painel lateral e a entrega com o modal de
- * recompensa do CBC mais a lista de recompensas FLAIR 3D. Tudo o que conta vem do servidor.
+ * recompensa do CBC mais a lista de recompensas FLAIR 3D MAKE UP. Tudo o que conta vem do servidor.
  */
 export function GamePlay({ slug }: { slug: string }) {
   const { t } = useI18n(); const L = useGameLabels(); const { slotLabel, storyText } = useGameTexts();

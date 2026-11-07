@@ -11,7 +11,7 @@ import java.util.Map;
 import static br.com.fashionai.application.flair.CbcRules.intOf;
 
 /**
- * FLAIR 3D — o Hype dentro da partida, puro e sem escrita: a faixa de uma carta pela nota HYP do retrato, o teto
+ * FLAIR 3D MAKE UP — o Hype dentro da partida, puro e sem escrita: a faixa de uma carta pela nota HYP do retrato, o teto
  * ({@code mandatoryMax}: só rebaixa, nunca reprova), o bônus de jogada ({@code hype.play}) e o deslocamento da faixa de
  * partida ({@code hype.partial}).
  *

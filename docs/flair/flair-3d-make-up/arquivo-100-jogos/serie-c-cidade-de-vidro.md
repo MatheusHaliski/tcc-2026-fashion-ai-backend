@@ -1,6 +1,6 @@
 # Série C — Ruas, viagens e estações da cidade de vidro
 
-Vinte jogos no distrito das ruas do FLAIR 3D: transporte, feiras, clima, viagens e datas do calendário da moda.
+Vinte jogos no distrito das ruas do FLAIR 3D MAKE UP: transporte, feiras, clima, viagens e datas do calendário da moda.
 Regras compartilhadas no [README](README.md).
 
 ## 41 · Metrô das Oito

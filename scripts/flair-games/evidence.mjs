@@ -1,6 +1,6 @@
-// Evidências dos jogos FLAIR 3D: capturas da central FLAIR, do catálogo e de cada jogo jogado até a entrega,
+// Evidências dos jogos FLAIR 3D MAKE UP: capturas da central FLAIR, do catálogo e de cada jogo jogado até a entrega,
 // sobre a API simulada (scripts/flair-games/mock-games-api.mjs). Gera evidencias/resultados.json (planilha via
-// evidence_xlsx.py). Uso: node scripts/flair-games/evidence.mjs [--only a01,b21] [--out docs/flair/flair-3d/evidencias]
+// evidence_xlsx.py). Uso: node scripts/flair-games/evidence.mjs [--only a01,b21] [--out docs/flair/flair-3d-make-up/evidencias]
 //   Requer: app em DEMO_APP (padrão http://localhost:3000) apontando para a API simulada; Chromium pré-instalado.
 import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
@@ -15,7 +15,7 @@ const APP = process.env.DEMO_APP ?? "http://localhost:3000";
 const EXEC = process.env.PW_CHROMIUM ?? "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome";
 const args = process.argv.slice(2);
 const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null; };
-const OUT = resolve(ROOT, opt("--out") ?? "docs/flair/flair-3d/evidencias");
+const OUT = resolve(ROOT, opt("--out") ?? "docs/flair/flair-3d-make-up/evidencias");
 const only = opt("--only")?.split(",").map((s) => s.trim()).filter(Boolean);
 const skipMenus = args.includes("--no-menus");
 mkdirSync(OUT, { recursive: true });

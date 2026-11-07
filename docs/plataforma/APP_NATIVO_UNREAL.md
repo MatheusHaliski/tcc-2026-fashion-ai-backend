@@ -1,7 +1,7 @@
-# FashionAI como app de loja (App Store, PlayStation Store, Xbox) com Unreal Engine para o FLAIR 3D
+# FashionAI como app de loja (App Store, PlayStation Store, Xbox) com Unreal Engine para o FLAIR 3D MAKE UP
 
 > Estudo feito em 07/11/2026 a pedido da dona do projeto: "projetar o app como um aplicativo de Apple Store/PS Store/Xbox
-> Store, para poder renderizar os gráficos do FLAIR 3D. A versão web app (fashion-ai.com) é temporária e vamos utilizar
+> Store, para poder renderizar os gráficos do FLAIR 3D MAKE UP. A versão web app (fashion-ai.com) é temporária e vamos utilizar
 > como teste para o futuro aplicativo que suportará uma carga maior de dados e Unreal Engine 3D".
 >
 > **Legenda**: **[D]** documentado em fonte oficial (Epic, Apple, Sony, Microsoft, Google, lei ou órgão público);
@@ -9,9 +9,9 @@
 > dia em que o item for implementado. Nada aqui foi submetido a nenhuma loja; não é parecer jurídico.
 >
 > Complementa `docs/multiplataforma/` (plano de 10/10/2026, esqueleto em `clients/unreal/FashionAI/`). Este documento
-> foca o FLAIR 3D e **corrige três pontos** daquele plano: a licença do MetaHuman mudou em 2025 (§1.4); a diretriz
+> foca o FLAIR 3D MAKE UP e **corrige três pontos** daquele plano: a licença do MetaHuman mudou em 2025 (§1.4); a diretriz
 > Apple 4.8 não exige mais "Sign in with Apple" por nome (§2.1); e o ECA Digital proíbe caixas de recompensa para
-> menores desde 17/03/2026 (§3.4). Contexto do jogo: `docs/flair/flair-3d/CINCO_JOGOS.md`,
+> menores desde 17/03/2026 (§3.4). Contexto do jogo: `docs/flair/flair-3d-make-up/CINCO_JOGOS.md`,
 > `docs/flair/cbc/CINCO_ELENCOS.md`, `docs/flair/cbc/FLAIR_CBC.md` e `docs/flair/3d-puzzles/*.md`.
 
 ## 0. Resumo executivo
@@ -20,7 +20,7 @@
    a UE6 deve ter prévias em 2027 [D/P]. Começar na 5.8 e planejar migração para a 6 na fase de consoles [I].
 2. **Licença**: grátis até US$ 1 mi de receita bruta vitalícia **por produto**; depois, 5% sobre o que passar disso,
    contando compras dentro do app e publicidade, cobrados pelo bruto (antes da taxa da loja) [D/P].
-3. **iPhone/iPad não rodam Lumen** e Nanite não é suportado oficialmente no iOS [D]. O FLAIR 3D no celular usa o
+3. **iPhone/iPad não rodam Lumen** e Nanite não é suportado oficialmente no iOS [D]. O FLAIR 3D MAKE UP no celular usa o
    renderizador Mobile, com luz pré-calculada e LODs; o visual "Lumen" fica para Mac M2+, PC e consoles [D/I].
 4. **MetaHuman** deixou de ser exclusivo da Unreal (junho/2025) e roda em celular com LOD 3, cabelo em cards e
    texturas de 2048 [D]. O rosto do avatar do jogador é dado biométrico pela LGPD; tratar com cuidado (§3.4).
@@ -33,14 +33,14 @@
    certificação (TRC) ficam sob NDA [D/P]. No Xbox, a documentação do GDK ficou pública em 2026, o ID@Xbox não cobra
    taxa de certificação e os kits saem com o conceito aprovado [D]. Os dois exigem empresa constituída [I].
 8. **Web continua**: rede social, loja, guarda-roupa, administração e o resgate de prêmios reais ficam em
-   fashion-ai.com; o app nativo concentra os 5 jogos FLAIR 3D, o provador 3D e o CBC [I].
+   fashion-ai.com; o app nativo concentra os 5 jogos FLAIR 3D MAKE UP, o provador 3D e o CBC [I].
 9. **Pixel Streaming** só serve para testes e demonstrações com hora marcada: cada sessão ocupa uma GPU na nuvem
    (~US$ 0,50/h por GPU T4 nos EUA) [D/P].
 10. **Roteiro** (§4.3): Fase 0 web e protótipo (3–4 meses), Fase 1 iOS/iPadOS (9–15 meses), Fase 2 Windows/Mac
     (+3–6 meses), Fase 3 consoles (+9–18 meses após aprovação). Uma equipe de TCC entrega com realismo a Fase 0 e um
     vertical slice de **um** jogo; os cinco jogos pedem equipe profissional [I].
 
-## 1. Unreal Engine 5 para o FLAIR 3D
+## 1. Unreal Engine 5 para o FLAIR 3D MAKE UP
 
 ### 1.1 Versão
 
@@ -74,7 +74,7 @@ escrito antes de fechar contrato com marca [verificar].
 
 ### 1.3 O que cada plataforma renderiza de fato
 
-| Alvo | Renderizador e recursos | Limites que importam para o FLAIR 3D |
+| Alvo | Renderizador e recursos | Limites que importam para o FLAIR 3D MAKE UP |
 |---|---|---|
 | **iPhone/iPad** (Metal) | Renderizador **Mobile**; na 5.8 o padrão móvel é o deferred multi-pass [D]. **Lumen não funciona em iOS/iPadOS** [D]; Lumen móvel é experimental e só no Android de ponta [D]. Nanite **não consta** como suportado em iOS; há relatos de hacks em fórum [D/P]. Shader Model 6 em iOS é experimental, A15+ [D] | Cada cenário pede luz pré-calculada (lightmaps), reflection captures, LODs manuais, até 75 ossos por personagem e texturas de até 2048 [D/I]. Memória: um iPhone 13 libera ~2,2 GB ao app com a entitlement `increased-memory-limit` [D/P]. Calor: aparelhos reduzem o clock em sessões longas; a meta é 30 fps estáveis e não 60 [I] |
 | **Mac** (Apple Silicon) | Desktop renderer; **Nanite em M2 ou posterior** com SM6 e macOS 15+; M1 fica de fora [D: blog Epic] | Lumen: suporte em Mac existe, mas o desempenho tem de ser medido; usar Lumen Lite onde houver [I/verificar] |
@@ -339,7 +339,7 @@ O público mínimo de 13 anos é decisão do produto. A loja pode classificar ac
 
 ```
  fashion-ai.com (Next.js 16)                 App nativo Unreal 5.8 (iOS/iPadOS → Win/Mac → PS5/Xbox)
- social · loja · guarda-roupa · admin        FLAIR 3D (5 cenários) · CBC 3D · provador 3D · avatar
+ social · loja · guarda-roupa · admin        FLAIR 3D MAKE UP (5 cenários) · CBC 3D · provador 3D · avatar
  resgate de prêmios · conta/privacidade      módulos: FaiCore (HTTP/sessão/cache) · FaiFlair · FaiAvatar
         │  BFF (cookies)                     FaiPlatform (StoreKit, PSN, Xbox, push, Keychain)
         └────────────── HTTPS/JSON ──────────────┘
@@ -377,7 +377,7 @@ O público mínimo de 13 anos é decisão do produto. A loja pode classificar ac
 | Loja de marcas, cupons, compra de produto físico | **Fica** (pagamento fora do IAP é obrigatório para bem físico) | Vitrine com link só para maiores de 18 no Brasil [D/I] |
 | Guarda-roupa (upload, fotos, recorte, catálogo) | **Fica** como fluxo principal | Visualizar e escolher peças; upload pela câmera na Fase 1+ |
 | Administração, painel de marcas, emissores de selo | **Fica** só no web | — |
-| FLAIR 3D (5 jogos) e CBC com elenco 3D | Protótipo leve (Three.js) e Pixel Streaming de teste | **Vai** para o app (experiência principal) |
+| FLAIR 3D MAKE UP (5 jogos) e CBC com elenco 3D | Protótipo leve (Three.js) e Pixel Streaming de teste | **Vai** para o app (experiência principal) |
 | Provador 3D e avatar | Prévia leve | **Vai**: corpo, Impersonation e tecido |
 | Conta, privacidade, exclusão, consentimentos | **Fica** | Também no app (exclusão obrigatória na Apple) |
 | Resgate de prêmio real (endereço, documento) | **Fica** | Só o status [I] |
@@ -387,7 +387,7 @@ O público mínimo de 13 anos é decisão do produto. A loja pode classificar ac
 | Fase | Escopo | Duração [I] | Equipe [I] | Custo direto [I] |
 |---|---|---|---|---|
 | **0 — Web e protótipos** | Regras dos 5 jogos validadas no web (já no servidor); 1 cenário em Unreal (suíte) com encaixe e Aura; Pixel Streaming para banca e marcas; telemetria de funil no web; resolver B1–B5; parecer sobre a Lei 5.768; decidir monetização sem caixa de recompensa | 3–4 meses | dona + 1 dev Unreal + 1 artista 3D (parcial) | Mac Apple Silicon e iPhone de teste (~R$ 15–30 mil, se não houver); nuvem de GPU US$ 50–300/mês com teto |
-| **1 — iOS/iPadOS** | App Unreal com conta, avatar, os 5 jogos FLAIR 3D, CBC 3D, download por chunk, IAP só se houver item pago, TestFlight, App Review | 9–15 meses | 4–7 pessoas: 2 Unreal (C++/Blueprint), 1 tech artist, 1–2 artistas 3D, 1 backend, QA parcial | Pessoal ~R$ 0,6–2 mi (mercado BR) ou escopo menor num TCC; Apple US$ 99/ano; CDN |
+| **1 — iOS/iPadOS** | App Unreal com conta, avatar, os 5 jogos FLAIR 3D MAKE UP, CBC 3D, download por chunk, IAP só se houver item pago, TestFlight, App Review | 9–15 meses | 4–7 pessoas: 2 Unreal (C++/Blueprint), 1 tech artist, 1–2 artistas 3D, 1 backend, QA parcial | Pessoal ~R$ 0,6–2 mi (mercado BR) ou escopo menor num TCC; Apple US$ 99/ano; CDN |
 | **1b — Android de ponta** (recomendado) | Mesmo app no Play, lista de aparelhos permitidos | +2–4 meses | +1 dev | Play US$ 25; aparelhos |
 | **2 — Windows e Mac** | Qualidade alta (Lumen Lite/Nanite onde houver), mouse/teclado e controle, Microsoft Store (12%) ou Epic (royalty isento/3,5%) | +3–6 meses | 2–4 pessoas | PC com GPU; certificado de código se fora da Store |
 | **3 — PS5 e Xbox Series X\|S** | Cadastro em PlayStation Partners e ID@Xbox **no início da Fase 1** (prazos longos); port, navegação por controle, TRC/XR, classificação, contas de menor | +9–18 meses após aprovação | 5–8 pessoas + QA de certificação terceirizado | Kits (empréstimo Sony; Xbox com o conceito), QA de certificação (dezenas de milhares de US$ [P]), jurídico |

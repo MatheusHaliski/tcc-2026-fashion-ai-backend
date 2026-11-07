@@ -1,5 +1,5 @@
 /**
- * Testes do gerador do catálogo FLAIR 3D (node --test scripts/flair-games/build.test.mjs): derivação R16 nas
+ * Testes do gerador do catálogo FLAIR 3D MAKE UP (node --test scripts/flair-games/build.test.mjs): derivação R16 nas
  * bordas, validação que lista erros com o número do jogo, SQL determinístico e escapado, SVG com todos os objetos e
  * uma miniatura real gerada em pasta temporária a partir da fixture.
  */

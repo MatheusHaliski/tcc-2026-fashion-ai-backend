@@ -14,7 +14,7 @@ críticos e o papel do Hype) estão em [deck-de-cartas.md](deck-de-cartas.md). O
 o corredor dos portais, a procedência dos itens, a ligação com o Aurora CPS, o rascunho do RF55 Smart Mirror em casa e a
 decisão web × nativo) está em [fashion-hall-o-saguao.md](fashion-hall-o-saguao.md).
 
-**FLAIR 3D (05/11/2026).** O Meu Quarto deixa de ser área própria e vira componente do jogo FLAIR 3D; o
+**FLAIR 3D MAKE UP (05/11/2026).** O Meu Quarto deixa de ser área própria e vira componente do jogo FLAIR 3D MAKE UP; o
 estudo com 100 ideias de jogos FLAIR para esse mundo está em [`../flair-3d/`](../flair-3d/arquivo-100-jogos/README.md).
 
 Os Desafios de Montagem e as Partidas FLAIR continuam no sistema de cartas; os portais do Hall ficam com a parte de

@@ -1,4 +1,4 @@
-# FLAIR 3D: a protagonista, a atividade-puzzle e as roupas como recursos de RPG
+# FLAIR 3D MAKE UP: a protagonista, a atividade-puzzle e as roupas como recursos de RPG
 
 Data: 07/11/2026. Escopo: estudo de game design com pesquisa e leitura do código. Nenhum código mudou. Complementa
 `CINCO_JOGOS.md` (os cinco jogos), `../cbc/CINCO_ELENCOS.md` e `../cbc/FLAIR_CBC.md` (links do CBC),
@@ -10,7 +10,7 @@ Store, PS Store e Xbox, com o web como banco de testes), sobre a base de `docs/m
 lei); **[P]** imprensa, guia ou wiki, descrevendo o jogo de fora; **[I]** inferência e proposta deste estudo.
 **[decidir]** marca escolha da dona do projeto. Os números entre colchetes, como [3], remetem às fontes no fim.
 
-**Pedido da dona (literal):** "Na realidade, pensei nos jogos do FLAIR 3D como sendo composto por um personagem
+**Pedido da dona (literal):** "Na realidade, pensei nos jogos do FLAIR 3D MAKE UP como sendo composto por um personagem
 protagonista que é o próprio Avatar do usuário ou outro personagem concedido pelo próprio app de maneira promocional.
 Este personagem realizará uma ação ou participará de uma atividade do mundo da moda semelhante a um puzzle do Spider
 Man 2 onde o Peter realiza alguma atividade. Estude como isto faria sentido para o Fashion AI, onde roupas e acessórios
@@ -337,7 +337,7 @@ ocasião 1; verde vale 1, laranja 0,5; química de 0 a 100 [D] (`fai-application
 | ≥ 70 · Coerência | o atributo que mais acendeu linhas dá +10 ao atributo ligado: marca → CLOUT, estilo → EDGE, cor → Brilho na foto, ocasião → RANGE |
 | 100 · Look Lendário | foto final especial e partículas da carta em todas as peças |
 
-Um só sistema de conjunto no FLAIR 3D: os combos de `FlairEngine.deck` (sinergia de estilo, ocasião e estação,
+Um só sistema de conjunto no FLAIR 3D MAKE UP: os combos de `FlairEngine.deck` (sinergia de estilo, ocasião e estação,
 contraste de materiais e multiplicador de marca) [D] continuam valendo só nos duelos, para não contar duas vezes. O
 loadout que fecha um elenco no CBC pode ser salvo e usado no 3D, e assim os dois segmentos se reforçam.
 

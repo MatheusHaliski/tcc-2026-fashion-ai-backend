@@ -24,7 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * FLAIR 3D — recompensas extras: idempotência por (pessoa, jogo, código), carta Especial própria para cada pessoa
+ * FLAIR 3D MAKE UP — recompensas extras: idempotência por (pessoa, jogo, código), carta Especial própria para cada pessoa
  * (R1: origem PROGRAM apontando para a linha da recompensa), Item sem sku no catálogo fica PENDING sem falhar e a
  * condição "perfect" só com sintonia máxima.
  */

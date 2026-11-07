@@ -1,4 +1,4 @@
-// Porte simplificado (JS) do motor CBC + bloco FLAIR 3D para a API simulada das evidências.
+// Porte simplificado (JS) do motor CBC + bloco FLAIR 3D MAKE UP para a API simulada das evidências.
 // Não é a fonte da verdade: as regras reais estão em CbcRules/CbcRequirements/Flair3dHype/Flair3dEffects (Java).
 import { BANDS, TIERS } from "./constants.mjs";
 

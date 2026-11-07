@@ -1,7 +1,7 @@
 /**
  * Palco fotográfico do confronto: lê a configuração por modo (lib/flair/match-stages.json — foto real licenciada e seis
  * âncoras por lado, ancoradas em objetos da foto: lado A à esquerda, lado B à direita) e transforma os momentos revelados
- * em inserções da cena do FLAIR 3D (PhotoSceneHit): uma carta por lado e por momento, com Flair3dSlot (faixa real, faixa
+ * em inserções da cena do FLAIR 3D MAKE UP (PhotoSceneHit): uma carta por lado e por momento, com Flair3dSlot (faixa real, faixa
  * de partida, efeito e texto) e CbcSlotResult (sintonia 3 vencedor / 1 empate / 0 perdedor; `neighbor` = o lado tem
  * sinergia na rodada, o que liga por luz as cartas vizinhas do mesmo lado). Puro: sem texto de interface.
  */
@@ -36,7 +36,7 @@ export interface SceneHit {
 }
 export interface MatchScene { hits: SceneHit[]; pins: Record<MatchSide, PhotoPin[]>; score: Record<MatchSide, number> }
 
-/** A carta do momento no formato que a cena do FLAIR 3D desenha (só id, nome, nível e imagem importam ali). */
+/** A carta do momento no formato que a cena do FLAIR 3D MAKE UP desenha (só id, nome, nível e imagem importam ali). */
 export function sceneCard(c: MatchCard): FlairCollectionCard {
   return {
     id: c.id, originType: "PIECE", originId: c.id, season: "", tier: c.tier, ovr: 0, rare: c.tier === "ESPECIAL", position: "", name: c.name,

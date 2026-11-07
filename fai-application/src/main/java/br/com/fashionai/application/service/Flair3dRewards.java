@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * FLAIR 3D — recompensas extras de um jogo entregue ({@code rewards_json}): um Item do quarto (inventário, origem
+ * FLAIR 3D MAKE UP — recompensas extras de um jogo entregue ({@code rewards_json}): um Item do quarto (inventário, origem
  * FLAIR_3D) ou uma carta Especial (R1: origem PROGRAM apontando para a linha de {@code flair_game_rewards}). Cada
  * (pessoa, jogo, código) é concedida UMA vez: a linha gravada é a idempotência; repetir devolve o estado atual.
  * Roda dentro da transação do submit ({@link FlairGameService#submit}).

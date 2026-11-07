@@ -1,4 +1,4 @@
-// Ambientes fotográficos dos cenários FLAIR 3D. Cada id vira public/flair/games/scenes/<id>.webp (1600×1000) com
+// Ambientes fotográficos dos cenários FLAIR 3D MAKE UP. Cada id vira public/flair/games/scenes/<id>.webp (1600×1000) com
 // crédito em public/flair/games/scenes/credits.json. Fotos reais com licença livre, sem rostos identificáveis.
 export const VENUES = [
   { id: "closet-luxo", district: "SUITE", queries: ["walk-in closet luxury interior", "dressing room wardrobe interior"] },

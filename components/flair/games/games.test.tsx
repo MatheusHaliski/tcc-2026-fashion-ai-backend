@@ -6,7 +6,7 @@ import type { GameAccess, GameSummary } from "@/lib/flair/games";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
 
 /**
- * Catálogo do FLAIR 3D (/flair/jogos): faixa com o nível e o guarda-roupa vindos do servidor, grade agrupada por
+ * Catálogo do FLAIR 3D MAKE UP (/flair/jogos): faixa com o nível e o guarda-roupa vindos do servidor, grade agrupada por
  * série com contadores, miniaturas, cadeado com motivo e links para destravar, filtros em chips espelhados na URL,
  * "Só o que posso jogar", busca, estado vazio e o convite a entrar quando não há sessão.
  */
@@ -40,7 +40,7 @@ describe("catálogo", () => {
   it("mostra nível e guarda-roupa do servidor, agrupa por série com contadores, miniaturas e selos; bloqueado tem cadeado com motivo e links", async () => {
     const { calls } = loggedAs(ME, { "GET /api/flair/games": LIST });
     renderApp(<GamesCatalog />);
-    expect(await screen.findByRole("heading", { name: "FLAIR 3D" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "FLAIR 3D MAKE UP" })).toBeTruthy();
     expect(screen.getByRole("link", { name: /Central FLAIR/ }).getAttribute("href")).toBe("/flair?mode=games");
     expect((await screen.findByTestId("ge-me")).textContent).toContain("Seu nível: Studio");
     expect(screen.getByTestId("ge-me").textContent).toContain("Seu guarda-roupa: Bem curado");

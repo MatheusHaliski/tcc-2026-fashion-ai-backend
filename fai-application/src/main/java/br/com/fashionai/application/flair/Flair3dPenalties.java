@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * FLAIR 3D — erros do jogador numa vaga preenchida, puro. Cada erro tira pontos do placar FLAIR 3D da partida (o placar
+ * FLAIR 3D MAKE UP — erros do jogador numa vaga preenchida, puro. Cada erro tira pontos do placar FLAIR 3D MAKE UP da partida (o placar
  * nunca fica negativo) e a cena mostra a falha no objeto da vaga:
  * <ul>
  *   <li>{@code REFUSED} −2: a vaga recusa a carta (filtro de nível, marca, cor…); a entrega fica bloqueada;</li>
@@ -71,7 +71,7 @@ public final class Flair3dPenalties {
         return penalties == null ? 0 : penalties.stream().mapToInt(Penalty::points).sum();
     }
 
-    /** Placar FLAIR 3D com os erros descontados, nunca abaixo de zero. */
+    /** Placar FLAIR 3D MAKE UP com os erros descontados, nunca abaixo de zero. */
     public static int score(int sintonia, int hypeTotal, int effectTotal, int penaltyTotal) {
         return Math.max(0, sintonia + hypeTotal + effectTotal - penaltyTotal);
     }

@@ -1,4 +1,4 @@
-// API simulada dos jogos FLAIR 3D para gravar evidências na interface real (nunca em produção).
+// API simulada dos jogos FLAIR 3D MAKE UP para gravar evidências na interface real (nunca em produção).
 // Serve /api/flair/games*, /api/me/flair/cards (banco gerado por jogo), /api/me/points, /api/me/room,
 // /api/me/aura-permissions; o resto é repassado à API simulada da Central FLAIR (scripts/flair-demos/mock-api.mjs).
 // Uso: node scripts/flair-games/mock-games-api.mjs [porta=8098] [alvo=http://localhost:8099]   MOCK_TIER=LOFT|STUDIO|ESTREIA

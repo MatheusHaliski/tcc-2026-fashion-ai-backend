@@ -6,7 +6,7 @@
 import { SEED_AT, gameId, thumbnailPath } from "./constants.mjs";
 import { withPhoto } from "./venue-map.mjs";
 
-export const DDL = `-- FLAIR 3D: 100 jogos FLAIR como linhas de flair_challenges (docs/flair/flair-3d). Arquivo GERADO por
+export const DDL = `-- FLAIR 3D MAKE UP: 100 jogos FLAIR como linhas de flair_challenges (docs/flair/flair-3d). Arquivo GERADO por
 -- scripts/flair-games/build.mjs a partir de scripts/flair-games/data/serie-*.json: não editar à mão.
 
 ALTER TABLE flair_challenges
@@ -39,8 +39,8 @@ CREATE TABLE flair_game_rewards (
 );
 
 INSERT INTO fai_points_rules (action_code, points, daily_cap, weekly_cap, once_per_ref, description) VALUES
-('FLAIR_3D',0,10,NULL,TRUE,'Jogo FLAIR 3D concluído (valor do jogo)'),
-('FLAIR_3D_PERFECT',10,3,NULL,TRUE,'Jogo FLAIR 3D com montagem perfeita');
+('FLAIR_3D',0,10,NULL,TRUE,'Jogo FLAIR 3D MAKE UP concluído (valor do jogo)'),
+('FLAIR_3D_PERFECT',10,3,NULL,TRUE,'Jogo FLAIR 3D MAKE UP com montagem perfeita');
 `;
 
 const CHALLENGE_COLUMNS = ["id", "slug", "name", "names_json", "description", "descriptions_json", "scenario", "difficulty", "status", "moment_id",
@@ -82,7 +82,7 @@ function insert(table, columns, values) {
 export function catalogInserts(game, d) {
   return (game.rewards ?? []).filter((r) => r.type === "ITEM").map((r) => insert("room_catalog", CATALOG_COLUMNS, [
     literal(r.code), literal(r.names["pt-BR"]), literal("FLAIR3D-DECOR"), literal("DECOR"), 40, literal("{}"), literal(d.rarity), 0,
-    literal(d.requiredTier), literal("COLLECTIBLE"), false, literal(`FLAIR 3D · ${game.names["pt-BR"]}`), literal(SEED_AT), 0,
+    literal(d.requiredTier), literal("COLLECTIBLE"), false, literal(`FLAIR 3D MAKE UP · ${game.names["pt-BR"]}`), literal(SEED_AT), 0,
   ]));
 }
 

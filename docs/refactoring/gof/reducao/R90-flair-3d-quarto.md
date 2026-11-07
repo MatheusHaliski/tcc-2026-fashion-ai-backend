@@ -1,6 +1,6 @@
 # Lote R90-flair-3d-quarto — o Meu Quarto deixa de ser tela; o Espelho ganha casa própria
 
-Parte do FLAIR 3D (100 jogos FLAIR): o quarto continua existindo como dados (`/api/me/room`, `RoomController`/
+Parte do FLAIR 3D MAKE UP (100 jogos FLAIR): o quarto continua existindo como dados (`/api/me/room`, `RoomController`/
 `RoomService` intactos) e como cenário dos jogos da Suíte de Vidro (`components/room3d/*` e `lib/room3d/*` não foram
 tocados). O que sai é a **tela** `/room`; o espelho 2D que vivia dentro dela (vista "flat mirror", aparelho sem WebGL)
 passa a ser a tela `/mirror`.

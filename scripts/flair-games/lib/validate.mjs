@@ -1,5 +1,5 @@
 /**
- * Validação do catálogo FLAIR 3D (desenho §4, R12, R15): cada erro é uma frase com o número do jogo, e todos
+ * Validação do catálogo FLAIR 3D MAKE UP (desenho §4, R12, R15): cada erro é uma frase com o número do jogo, e todos
  * são devolvidos de uma vez para o agente de dados corrigir a série inteira numa passada. Nada aqui grava arquivo.
  */
 import {

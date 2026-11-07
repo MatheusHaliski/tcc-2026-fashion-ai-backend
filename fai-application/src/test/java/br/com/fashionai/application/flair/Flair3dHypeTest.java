@@ -10,7 +10,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** FLAIR 3D — faixas de Hype (limiares exatos), teto, bônus de jogada, faixa de partida e "perfeito". */
+/** FLAIR 3D MAKE UP — faixas de Hype (limiares exatos), teto, bônus de jogada, faixa de partida e "perfeito". */
 class Flair3dHypeTest {
     private static CbcRules.Card card(Map<String, Double> hype) {
         return new CbcRules.Card(UUID.randomUUID(), "SUP", "OURO", 80, "Norte", "PIECE", Set.of("street"), Set.of("black"), Set.of(), Set.of(), hype,

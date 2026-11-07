@@ -15,7 +15,7 @@ interface Props {
 /**
  * Painel lateral do jogo: ficha (objetivo, peças obrigatórias, sequência, deck, Hype), requisitos ✓/✗ (do servidor),
  * efeitos por vaga (Comum/Metamorfose/Impersonation com o texto do servidor), Hype de partida por carta (faixa real →
- * faixa de partida), pontos previstos (sintonia + pontuação FLAIR 3D + linhas) e recompensas. Tudo vem do /check; nada
+ * faixa de partida), pontos previstos (sintonia + pontuação FLAIR 3D MAKE UP + linhas) e recompensas. Tudo vem do /check; nada
  * é anunciado como recebido antes do servidor confirmar.
  */
 export function GameSidePanel({ d, check, checking, filled, requiredSlots, result, canSubmit, submitting, onSubmit, onClear }: Props) {

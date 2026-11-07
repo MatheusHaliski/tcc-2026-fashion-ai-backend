@@ -3,7 +3,7 @@
 Data: 06/11/2026. Escopo: estudo do código e proposta. Nenhum código do app mudou. Este documento complementa o
 estudo de design de puzzles da Insomniac (`docs/flair/3d-puzzles/ESTUDO_INSOMNIAC.md`, escrito em paralelo).
 
-**Nomes usados.** Todo jogo do FashionAI é FLAIR, em dois segmentos. **FLAIR 3D** reúne os 100 jogos de ambiente (`scripts/flair-games/data/serie-{a..e}.json`, `docs/flair/flair-3d/`) e as aventuras 3D, como o Afterparty. **FLAIR Card Building Challenge** reúne os desafios de montagem (CBC) e os modos de batalha de cartas: duelo, equipes, arena e os 15 modos de look.
+**Nomes usados.** Todo jogo do FashionAI é FLAIR, em dois segmentos. **FLAIR 3D MAKE UP** reúne os 100 jogos de ambiente (`scripts/flair-games/data/serie-{a..e}.json`, `docs/flair/flair-3d-make-up/`) e as aventuras 3D, como o Afterparty. **FLAIR Card Building Challenge** reúne os desafios de montagem (CBC) e os modos de batalha de cartas: duelo, equipes, arena e os 15 modos de look.
 
 **Pedido do dono (resumo):** trocar as fotos e a inserção de cartas nos cenários por cenas 3D ultrarrealistas, no
 estilo dos puzzles de Spider-Man 2 (Insomniac). As peças devem encaixar com efeito perfeito, num uso realista e útil,
@@ -325,7 +325,7 @@ NATURAL 6, LAVANDERIA 2. Total: 100.
 Nas 825 vagas, a contagem por posição é: ANY 245, SUP 167, ACE 145, INF 134, CAL 106, VES 28. Como 30% das vagas são
 ANY, todo kit precisa de PODIO ou MANEQUIM com representação adaptativa.
 
-**22 jogos fora dos 100** (FLAIR Card Building Challenge, mais as aventuras FLAIR 3D Afterparty e Heist; `docs/flair/modos-flair/README.md`; a lógica de palco está em `lib/flair/match-stage.ts`/`match-scene.ts`):
+**22 jogos fora dos 100** (FLAIR Card Building Challenge, mais as aventuras FLAIR 3D MAKE UP Afterparty e Heist; `docs/flair/modos-flair/README.md`; a lógica de palco está em `lib/flair/match-stage.ts`/`match-scene.ts`):
 
 | Jogo | Ambiente | Kit | Encaixes (lado A e lado B) |
 |---|---|---|---|
@@ -348,7 +348,7 @@ ANY, todo kit precisa de PODIO ou MANEQUIM com representação adaptativa.
 | MONOPOLY | rua-neon | RUA | MANEQUIM em vitrine por quarteirão |
 | CHESS | galeria-arte | GALERIA | QUADRO 3×3 na parede |
 | ULTIMATE | auditorio | PASSARELA (auditório) | PODIO×7 nos camarotes |
-| CBC | showroom e outros por desafio | conforme o ambiente do desafio | Iguais aos dos 100 jogos FLAIR 3D |
+| CBC | showroom e outros por desafio | conforme o ambiente do desafio | Iguais aos dos 100 jogos FLAIR 3D MAKE UP |
 | AFTERPARTY | rooftop (3D próprio) | LOUNGE (rooftop) | Migrar o salão de cápsulas para o kit, mantendo as regras do servidor |
 | HEIST | fora da lista | não se aplica | Não é alterado nem usado como imagem ou kit |
 

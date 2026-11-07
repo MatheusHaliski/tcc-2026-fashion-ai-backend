@@ -46,7 +46,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * FLAIR 3D — serviço dos jogos: bloqueio por nível ANTES de qualquer avaliação do CBC, check com o bloco flair3d,
+ * FLAIR 3D MAKE UP — serviço dos jogos: bloqueio por nível ANTES de qualquer avaliação do CBC, check com o bloco flair3d,
  * submit com bônus de perfeição e recompensas, 404 para linha sem série, catálogo e resumo com contagens.
  */
 class FlairGameServiceTest {

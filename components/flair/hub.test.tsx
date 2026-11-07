@@ -45,7 +45,7 @@ describe("modelo da central", () => {
       expect(m.demo.seconds).toBeGreaterThanOrEqual(10); expect(m.demo.seconds).toBeLessThanOrEqual(20);
     }
     expect(hubMode("cbc").group).toBe("play");
-    // FLAIR 3D entra no grupo Jogar logo depois dos Desafios de Montagem e antes dos Momentos (R5)
+    // FLAIR 3D MAKE UP entra no grupo Jogar logo depois dos Desafios de Montagem e antes dos Momentos (R5)
     const ids = HUB_MODES.map((m) => m.id);
     expect(ids.indexOf("games")).toBe(ids.indexOf("cbc") + 1);
     expect(ids.indexOf("moments")).toBe(ids.indexOf("games") + 1);
@@ -83,12 +83,12 @@ describe("FlairHub", () => {
     expect(screen.getByRole("tabpanel").textContent).toContain("Complete o mini mapa");
     expect(push).not.toHaveBeenCalled();
     expect(readSelected(ME.user.id)).toBe("cbc");
-    // o modo FLAIR 3D aparece logo depois, com a situação vinda de /api/flair/games/summary
+    // o modo FLAIR 3D MAKE UP aparece logo depois, com a situação vinda de /api/flair/games/summary
     const tabs = screen.getAllByRole("tab").map((x) => x.textContent ?? "");
-    expect(tabs.findIndex((x) => x.includes("FLAIR 3D"))).toBe(tabs.findIndex((x) => x.includes("Desafios de Montagem")) + 1);
-    fireEvent.click(screen.getByRole("tab", { name: /FLAIR 3D/ }));
+    expect(tabs.findIndex((x) => x.includes("FLAIR 3D MAKE UP"))).toBe(tabs.findIndex((x) => x.includes("Desafios de Montagem")) + 1);
+    fireEvent.click(screen.getByRole("tab", { name: /FLAIR 3D MAKE UP/ }));
     await waitFor(() => expect(screen.getByText("3 de 5 jogos liberados")).toBeTruthy());
-    expect(screen.getByRole("tabpanel").textContent).toContain("5 jogos FLAIR 3D");
+    expect(screen.getByRole("tabpanel").textContent).toContain("5 jogos FLAIR 3D MAKE UP");
     fireEvent.click(cbc);
     cleanup();
     renderApp(<FlairHub />);

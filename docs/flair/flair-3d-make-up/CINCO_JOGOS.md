@@ -1,6 +1,6 @@
-# FLAIR 3D: os cinco jogos
+# FLAIR 3D MAKE UP: os cinco jogos
 
-O FLAIR 3D tem cinco jogos, um por capítulo, para que cada um ganhe cenário 3D, protagonistas e objetivo trabalhados a
+O FLAIR 3D MAKE UP tem cinco jogos, um por capítulo, para que cada um ganhe cenário 3D, protagonistas e objetivo trabalhados a
 fundo. As regras de vaga, requisito, Hype e recompensa de cada jogo estão em `scripts/flair-games/data/serie-*.json`
 e valem no servidor; este documento descreve a experiência 3D por cima delas. Base técnica e de linguagem:
 `docs/flair/3d-puzzles/ESTUDO_INSOMNIAC.md` (princípios) e `ALTERNATIVAS_FASHIONAI.md` (kits, encaixes e orçamento).

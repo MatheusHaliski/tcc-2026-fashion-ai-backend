@@ -1,9 +1,9 @@
-# FLAIR 3D — 100 ideias de jogos FLAIR (pesquisa de design)
+# FLAIR 3D MAKE UP — 100 ideias de jogos FLAIR (pesquisa de design)
 
-> **Arquivo.** O FLAIR 3D foi reduzido a cinco jogos, um por capítulo (1, 31, 43, 70 e 96). As fichas abaixo guardam o estudo original dos 100; os dados dos outros 95 ficam em `scripts/flair-games/data/arquivo/` e não entram na migração.
+> **Arquivo.** O FLAIR 3D MAKE UP foi reduzido a cinco jogos, um por capítulo (1, 31, 43, 70 e 96). As fichas abaixo guardam o estudo original dos 100; os dados dos outros 95 ficam em `scripts/flair-games/data/arquivo/` e não entram na migração.
 
 > Pedido de 05/11/2026. O **Meu Quarto** deixa de ser uma área própria do app e passa a ser um **componente** do jogo
-> **FLAIR 3D**, continuação da franquia FashionAI. Este estudo levanta 100 ideias de jogos FLAIR para o FLAIR
+> **FLAIR 3D MAKE UP**, continuação da franquia FashionAI. Este estudo levanta 100 ideias de jogos FLAIR para o FLAIR
 > 3D, cada uma definida em uma frase por campo. É um documento de pesquisa e proposta: **nenhum jogo daqui está
 > implementado**, e nada aqui cria RF numerado nem altera regras vigentes de Hype, FAI Points ou loja.
 
@@ -27,14 +27,14 @@ Tycoon, Met Gala Heist: The Afterparty, Backstage Chaos, Cyber-Street Festival, 
 portais do Hall (Noite Aurum, Gala Lumière) **não são repetidos**: as 100 ideias abaixo são novas e, quando encostam
 nesses mundos, dizem como.
 
-## 2. FLAIR 3D: onde o quarto entra
+## 2. FLAIR 3D MAKE UP: onde o quarto entra
 
-O FLAIR 3D é uma **cidade de vidro** dividida em distritos; a pessoa tem uma **Suíte de Vidro**, que é o Meu Quarto
+O FLAIR 3D MAKE UP é uma **cidade de vidro** dividida em distritos; a pessoa tem uma **Suíte de Vidro**, que é o Meu Quarto
 de hoje (móvel FAI Origem, espelho, maleiro, gavetas, cesto, arara, cadeira, vitrine, interruptor, janela, caixa FAI,
 chave) convertido em componente jogável. A suíte continua sendo o gêmeo digital do guarda-roupa real e vira, ao mesmo
 tempo, **mapa, saguão e cofre**:
 
-| Papel da suíte no FLAIR 3D | Como aparece |
+| Papel da suíte no FLAIR 3D MAKE UP | Como aparece |
 |---|---|
 | **Mapa** | 20 jogos (série A) usam os próprios elementos do quarto como vagas do cenário |
 | **Saguão** | o corredor dos portais (parede leste) leva aos distritos das séries B a E |
