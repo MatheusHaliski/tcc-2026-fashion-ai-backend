@@ -1,9 +1,8 @@
 # FLAIR 3D MAKE UP: como implementar a maquiagem, o júri e o palco que reage
 
-Data: 07/11/2026. Escopo: pesquisa técnica com leitura do código. Nenhum código mudou. Complementa `ESTUDO_DREST.md`
-(o jogo de referência), `REUSO_PROVADOR_E_AVATAR.md` (câmeras, avatar, catálogo e módulos de reuso; este documento
-**não repete** as tabelas de lá, só aprofunda), `CINCO_JOGOS.md`, `PROTAGONISTA_E_RECURSOS.md` e
-`docs/plataforma/APP_NATIVO_UNREAL.md`.
+Data: 07/11/2026. Pesquisa técnica com leitura do código; nenhum código mudou. Complementa `ESTUDO_DREST.md`,
+`REUSO_PROVADOR_E_AVATAR.md` (câmeras, avatar, catálogo e módulos de reuso, cujas tabelas este documento **não repete**),
+`CINCO_JOGOS.md`, `PROTAGONISTA_E_RECURSOS.md` e `docs/plataforma/APP_NATIVO_UNREAL.md`.
 
 **Legenda:** **[D]** documentado (código do repositório com caminho, documentação oficial, texto de lei); **[P]**
 imprensa, comunidade ou material de fornecedor; **[I]** inferência e proposta deste estudo. **[decidir]** marca escolha
@@ -21,16 +20,15 @@ da dona. Números entre colchetes, como [8], remetem às fontes no fim.
    `MeshPhysicalMaterial` que a pele já usa: rugosidade, especular tingido, clearcoat, iridescência e brilho [1][2].
 3. **Unreal**: o MetaHuman já expõe base, olhos com duas cores, blush, lábios e unhas como parâmetros [8][9][10]; o
    avatar próprio usa Material Layers sobre um render target no UV canônico [11][12]. Decal não serve [13].
-4. **Try-on comercial** (Perfect Corp, ModiFace, Banuba) é pago, fechado ou manda foto à nuvem: só referência ou
-   parceria de dados. A base é o MediaPipe que o repositório já usa (Apache-2.0, no aparelho) [16][17].
-5. **Catálogo**: tom = variante (`catalog_variants`) com Lab, subtom, acabamento e cobertura numa tabela nova
-   `catalog_shades`, vinda de feed da marca, nunca de raspagem [31].
-6. **Júri sem IA paga**: regras determinísticas no servidor (tema, harmonia em LCh/ΔE00, intensidade, ponto focal,
+4. **Try-on comercial** (Perfect Corp, ModiFace, Banuba) é pago, fechado ou manda foto à nuvem; a base é o MediaPipe
+   já usado (Apache-2.0, no aparelho) [16][17]. **Catálogo**: tom = variante, com Lab, subtom, acabamento e cobertura
+   numa tabela nova `catalog_shades`, vinda de feed da marca, nunca de raspagem [31].
+5. **Júri sem IA paga**: regras determinísticas no servidor (tema, harmonia em LCh/ΔE00, intensidade, ponto focal,
    acabamento, base relativa ao melhor tom do catálogo) mais voto às cegas da comunidade, como o DREST [25]. **A nota
    nunca depende do tom de pele**, e um teste com 10 tons (escala Monk [27]) garante o mesmo máximo para todos.
-7. **O palco reage à nota**: close-up no rosto na ponta da passarela, plateia em três níveis de custo, palmas
+6. **O palco reage à nota**: close-up no rosto na ponta da passarela, plateia em três níveis de custo, palmas
    sintetizadas por Web Audio [39]; a amiga reage com morphs feitos dos 468 pontos, como a boca do Heist já faz.
-8. **Plano**: ≈ 7 semanas-pessoa além do MVP de reuso (`REUSO_PROVADOR_E_AVATAR.md` §5.1), em cinco fases jogáveis.
+7. **Plano**: ≈ 8 semanas-pessoa além do MVP de reuso (`REUSO_PROVADOR_E_AVATAR.md` §5.1), em cinco fases jogáveis.
 
 ## 1. Renderizar maquiagem num rosto 3D
 
@@ -85,10 +83,9 @@ resultado = mix(pele, mix(pele·tinta, S·detalhe, c), α·m)
   blush pigmentado continua visível nela. É o que Kubelka-Munk modela com absorção e espalhamento, medido em bases,
   blushes e batons reais por Huang et al. [5]; Li, Zhou e Lin simulam base, blush, batom e sombra em camadas
   intrínsecas [6]; e um trabalho de 2025 aproxima KM direto de sRGB [7], que é o que cabe num shader de celular.
-- Base: o tom sugerido é o de menor ΔE00 ao Lab da pele medida (`skin-tone.ts`), com o ângulo h°ab desempatando o
-  subtom. A sugestão "este tom combina" é calculada **no aparelho** e não vai ao servidor.
-- Contorno e iluminador mudam valor, não matiz: contorno com tinta neutra-fria e `c` baixo; iluminador soma até 15% de
-  `S` e mexe no acabamento. `pele_borrada` é uma cópia 128² do atlas no UV canônico, feita uma vez.
+- Base: o tom sugerido é o de menor ΔE00 ao Lab da pele medida (`skin-tone.ts`), com h°ab desempatando o subtom,
+  calculado **no aparelho**. Contorno e iluminador mudam valor, não matiz: contorno com tinta neutra-fria e `c` baixo;
+  iluminador soma até 15% de `S` e mexe no acabamento. `pele_borrada` é uma cópia 128² do atlas, feita uma vez.
 
 ### 1.5 Acabamentos como parâmetros PBR
 
@@ -113,22 +110,20 @@ resultado = mix(pele, mix(pele·tinta, S·detalhe, c), α·m)
 
 ### 1.6 Unhas, cílios e sobrancelhas [I]
 
-- **Unhas**: tampas finas presas aos ossos distais (o rig Mixamo do corpo tem `HandIndex3` e afins), 10 instâncias numa
-  malha com material físico próprio, para o esmalte usar a tabela da §1.5 sem tocar a pele. O exportador
-  (`scripts/avatar3d/body-export/export_body.py`) já lê os grupos de vértices do MPFB; sem grupo de unha, selecionar a
-  ponta dorsal da falange distal. A câmera ganha a parada "mãos" (REUSO §5.1).
-- **Cílios**: cards com alfa ao longo da pálpebra superior (marcos 246, 161–157, 173 e o espelho), no padrão das fibras
-  de `brows.ts`. Máscara = comprimento, curvatura e espessura; cílio postiço = outro card.
-- **Sobrancelha**: o produto tinge as fibras e preenche falhas no atlas, sem formato genérico (cabeçalho de
-  `brows.ts`) [D].
+- **Unhas**: 10 tampas finas numa malha presa aos ossos distais (o rig Mixamo tem `HandIndex3` e afins), com material
+  físico próprio, para o esmalte usar a §1.5 sem tocar a pele. O exportador (`body-export/export_body.py`) já lê os
+  grupos de vértices do MPFB; sem grupo de unha, selecionar a ponta dorsal da falange distal.
+- **Cílios**: cards com alfa na pálpebra superior (marcos 246, 161–157, 173 e o espelho), como as fibras de
+  `brows.ts`; máscara = comprimento, curvatura e espessura. **Sobrancelha**: o produto tinge as fibras e preenche
+  falhas no atlas, sem formato genérico (cabeçalho de `brows.ts`) [D].
 
 ### 1.7 No Unreal Engine 5
 
 - **Elenco fictício em MetaHuman** (Lina Vale, a amiga): base e corretivo (intensidade, cor, rugosidade), olhos (tipo,
   cor primária e secundária, rugosidade, opacidade, metalicidade), blush (tipo, cor, intensidade, rugosidade) e lábios
-  (tipo, cor, rugosidade, opacidade, metalicidade) [D][8][9]; a pele tem cor de unhas própria e a montagem "unbaked"
-  expõe todos os parâmetros do material [D][10]. O JSON de produto da §3 mapeia para esses campos via
-  `UMaterialInstanceDynamic`; contorno, iluminador e glitter, que não estão na estrutura, vão numa camada própria [I].
+  (tipo, cor, rugosidade, opacidade, metalicidade) [D][8][9]; unhas têm cor própria na pele e a montagem "unbaked"
+  expõe todo o material [D][10]. O JSON da §3 mapeia para esses campos via `UMaterialInstanceDynamic`; contorno,
+  iluminador e glitter, fora da estrutura, vão numa camada própria [I].
 - **Avatar do jogador** (corpo MPFB2 importado, caminho (a) de `APP_NATIVO_UNREAL.md` §1.4): pele com **Material
   Layers** (pele + maquiagem, com Layer Blend por máscara) [D][11] lendo um render target no UV canônico, exportado como
   segundo canal de UV. Compor com `DrawMaterialToRenderTarget` por camada, ou `Begin/End Draw Canvas` para várias, porque
@@ -137,13 +132,12 @@ resultado = mix(pele, mix(pele·tinta, S·detalhe, c), α·m)
   mistura normais [D][13]; em malha animada o decal "escorrega" [I]. **Runtime Virtual Texture também não**: no máximo
   3 camadas [D][14] e feito para cenário estático [I].
 
-### 1.8 Desempenho no celular [I]
+**Desempenho no celular** [I]:
 
-- Memória: cor 1024² RGBA8 (4 MiB), acabamento 2 × 512² (2 MiB) e pele borrada 128²; 2048² só no close-up do desktop.
-  Render target não se comprime em tempo real, então as máscaras estáticas vão em KTX2 [P][15].
-- Compor só na mudança (debounce de um quadro), aquecer o shader com `renderer.compile` ao abrir o lugar e usar uma
-  chave de cache por combinação de recursos, para não recompilar a cada produto.
-- Medir em aparelho real (`renderer.info`, Safari Web Inspector): o tamanho máximo de textura relatado engana [P][15].
+- Memória: cor 1024² RGBA8 (4 MiB), acabamento 2 × 512² (2 MiB), pele borrada 128²; 2048² só no close-up do desktop.
+  Render target não se comprime em tempo real; as máscaras estáticas vão em KTX2 [P][15].
+- Compor só na mudança, aquecer o shader com `renderer.compile` ao abrir o lugar e fixar a chave de cache por
+  combinação de recursos. Medir em aparelho real: o tamanho máximo de textura relatado engana [P][15].
 
 ## 2. Tecnologias de try-on e licenças
 
@@ -154,17 +148,15 @@ resultado = mix(pele, mix(pele·tinta, S·detalhe, c), α·m)
 | ModiFace (L'Oréal) | SDK, API e miniprograma; TF.js no navegador [P][19] | Navegador ou app | Só parceiros corporativos [P][19] | Parceria com marcas do grupo, sem dependência |
 | Banuba | SDK de maquiagem AR, web em WebAssembly [P][20] | No aparelho (alegação do fornecedor) | Pago por plataforma e mês; teste de 14 dias [P][20] | Fora: o projeto não paga licença |
 | Snap Camera Kit | Lentes AR em app e site próprios | Lente no aparelho | Gratuito e monetizável; termos de 13/02/2026 pedem conteúdo 13+, atribuição e aceite dos termos da Snap [D][21] | Fora do núcleo: rosto real na câmera e terceiro no fluxo |
-| Meta Spark | Plataforma AR | — | Encerrada em 14/01/2025 [P][22] | Descartar |
-| Jeeliz FaceFilter | Rastreamento de rosto WebGL | No aparelho | Apache-2.0 segundo espelhos; demos com licença própria [P][24] | Redundante com o MediaPipe |
+| Meta Spark; Jeeliz FaceFilter | Plataforma AR; rastreamento de rosto WebGL | —; no aparelho | Spark encerrado em 14/01/2025 [P][22]; Jeeliz Apache-2.0 segundo espelhos, demos com licença própria [P][24] | Descartar; redundante com o MediaPipe |
 | BeautyGAN, PSGAN, EleGANt | Transferência de maquiagem foto → foto | GPU | EleGANt: CC BY-NC-SA 4.0 [D][23] | Fora: não comercial, GPU e foto de rosto |
 | Huang 2013; Li 2015; KM 2025 | Modelos físicos de cosmético [5][6][7] | — | Artigos | **Ideias** para a mistura da §1.4 |
 
-Conclusão [I]: o FashionAI não precisa de try-on de terceiro, porque maquia **avatares**, não o vídeo do rosto. O atlas
-do avatar já é dado biométrico guardado em chave privada (`V25__avatar_3d.sql`) [D]; a maquiagem é composta no
-navegador e o servidor recebe só ids de produto e parâmetros. Pela LGPD, dado biométrico é sensível (art. 5º, II), com as
-bases do art. 11 e o melhor interesse do adolescente no art. 14 [D][32]. O mercado confirma o desenho: o **Beauty Mode**
-do DREST (2021, com Gucci Beauty) é um close-up do rosto do modelo com tons e intensidade de marcas reais e compra do
-produto [P][25].
+Conclusão [I]: o FashionAI maquia **avatares**, não o vídeo do rosto, e não precisa de try-on de terceiro. O atlas do
+avatar já é dado biométrico em chave privada (`V25__avatar_3d.sql`) [D], sensível pela LGPD (art. 5º, II; bases do
+art. 11; melhor interesse do adolescente no art. 14) [D][32]: a maquiagem é composta no navegador e o servidor recebe
+só ids de produto e parâmetros. O **Beauty Mode** do DREST (2021, com Gucci Beauty) confirma o desenho: close-up do
+rosto do modelo, tons e intensidade de marcas reais e compra do produto [P][25].
 
 ## 3. Modelo de dados do produto de maquiagem
 
@@ -210,15 +202,14 @@ subtons, porque catálogos reais se concentram nos tons claros e poucas marcas c
 
 ### 4.1 Briefing do desafio
 
-Campo novo `makeupBrief` em `scripts/flair-games/data/serie-*.json`, que já têm `themeTags` e vagas por posição [D/I]:
+Campo novo `makeupBrief` em `scripts/flair-games/data/serie-*.json`, que já têm `themeTags` e vagas por posição; as
+palavras do tema viram tags por dicionário estático em pt-BR, en e es, sem modelo de linguagem [D/I]:
 
 ```json
 "makeupBrief": { "occasion": "PASSARELA_EDITORIAL", "palette": ["#1B1B1B", "#C0C0C0"], "harmony": "ECO_OU_ANALOGA",
   "intensity": [0.55, 0.9], "focus": "OLHOS", "finishes": { "prefer": ["METALLIC", "GLOSS"], "avoid": ["GLITTER"] },
   "tags": { "want": ["futurista", "prata"], "avoid": ["romantico"] }, "base": "OPCIONAL", "nails": "COMBINAR" }
 ```
-
-Palavras do tema viram tags por dicionário estático em pt-BR, en e es, sem modelo de linguagem.
 
 ### 4.2 Regras (100 pontos) [I]
 
@@ -237,9 +228,8 @@ Palavras do tema viram tags por dicionário estático em pt-BR, en e es, sem mod
   `deltaE2000` de `identity/metrics.ts`. Os setores de matiz simplificam os modelos de Matsuda usados por Cohen-Or et
   al. [D][30]; o projeto já faz harmonia por família em `LocalSchemeComposer.harmony` e `CbcRules.harmonious` [D].
 - **Equidade**: a pele só entra em R4 (dentro do rosto) e R6 (relativa ao catálogo), então uma pele retinta não perde
-  ponto porque a marca não fez o tom dela [P][26]. Com a modelo da casa, a pele é a da personagem.
-- **Pele no servidor**: R6 lê o `skin` de `user_avatars_3d.model_json` [D] só quando a protagonista é o avatar, reduz a
-  Lab e nunca registra em log (um teste Java espelha `identity/privacy.ts`).
+  ponto porque a marca não fez o tom dela [P][26]. R6 lê o `skin` de `user_avatars_3d.model_json` [D] só quando a
+  protagonista é o avatar, reduz a Lab e nunca o registra em log; com a modelo da casa, a pele é a da personagem.
 - **Integração**: o juiz devolve 0–100 e a converte em sintonia por vaga de maquiagem (0–3), que entra no placar
   existente; produto vetado segue `Flair3dPenalties` (REFUSED −2) e nada sai da carteira [D]. A montagem perfeita
   (sintonia ≥ 2 por vaga obrigatória) continua pagando +10 FAI Points [D: `CINCO_JOGOS.md`].
@@ -248,12 +238,11 @@ Palavras do tema viram tags por dicionário estático em pt-BR, en e es, sem mod
 ### 4.3 Voto da comunidade, como o DREST [I]
 
 - O modo `COMUNIDADE` de `ChallengeService` já tem voto às cegas até o resultado, reações por emoji e frases prontas,
-  sem texto livre [D]. O arquivo está congelado (1.852 linhas), então o voto no look entra num colaborador novo
+  sem texto livre [D]; como o arquivo está congelado (1.852 linhas), o voto no look entra num colaborador novo
   (`FlairLookVoting`) que reusa `ChallengeVoteRepository`.
-- Ranking = 0,6 júri + 0,4 comunidade (média bayesiana, mínimo de 20 votos, peso por conta limitado). A reação ao vivo
-  usa só o júri, que é instantâneo; a comunidade muda ranking e selo depois.
-- Look público de quem tem menos de 18 sai na **modelo da casa** ou no manequim, e o avatar próprio só para amigos
-  (`PROTAGONISTA_E_RECURSOS.md` §6 já põe o rosto de 13–17 como privado por padrão) [decidir].
+- Ranking = 0,6 júri + 0,4 comunidade (média bayesiana, mínimo de 20 votos, peso por conta limitado); a reação ao vivo
+  usa só o júri. Look público de menor de 18 sai na **modelo da casa**; o avatar próprio, só para amigos (o rosto de
+  13–17 já é privado por padrão em `PROTAGONISTA_E_RECURSOS.md` §6) [decidir].
 
 ### 4.4 Da nota à reação
 
@@ -267,21 +256,20 @@ amiga e gritos da plateia em pt-BR, en e es.
 ### 5.1 A passarela (web) [I]
 
 - **Roteiro**: entrada (murmúrio) → caminhada (olhares seguem a modelo) → pose na ponta com **close-up no rosto**
-  (paradas do rosto, REUSO §1.3 e §5.1) → pico da reação → giro e saída (decaimento). O close-up antes do aplauso liga a
-  maquiagem à resposta da plateia.
-- **Dinâmica**: intensidade-alvo pela faixa, suavizada (τ ≈ 0,4 s), com contágio: cada assento atrasa pela distância à
-  modelo mais um sorteio, e 10% de "puxadores" começam antes. Função pura em `lib/venue3d/crowd-dynamics.ts`.
+  (paradas do rosto, REUSO §5.1) → pico da reação → giro e saída. O close-up antes do aplauso liga a maquiagem à
+  resposta. **Dinâmica** (função pura, `lib/venue3d/crowd-dynamics.ts`): alvo pela faixa, suavizado (τ ≈ 0,4 s), com
+  contágio: cada assento atrasa pela distância à modelo mais um sorteio, e 10% de "puxadores" começam antes.
 - **Plateia, do mais barato ao mais rico**: (a) silhuetas instanciadas com mãos (REUSO §4.2) sobre a `Audience` de
   `components/three/runway-scene.tsx` [D]; (b) uma `InstancedMesh` de pessoa low-poly com 2–3 morphs (mãos juntas,
   mãos separadas, de pé) por instância, via `setMorphAt` e `morphTexture` [D][36]; (c) skinning instanciado ou textura
   de animação de vértices, que a comunidade leva a dezenas de milhares de instâncias em poucas chamadas [P][38], só no
   desktop. Primeira fila: 4–8 humanos com `cheer`, `photo` e o `clap` novo.
-- **Flashes**: sprites aditivos instanciados, em quantidade pela faixa, nunca mais de 3 por segundo na tela
-  (WCAG 2.3.1 [D][45]; `reduceFlashes` em `components/heist/settings.ts`).
-- **Som**: cada palma é uma rajada de ruído de 10–30 ms num passa-banda de 1–2,5 kHz; quatro camadas (esparsa, média,
-  densa, gritos e assobios) pré-renderizadas em `OfflineAudioContext` como laços de 4 s e misturadas por `GainNode` com
-  `setTargetAtTime`, espalhadas por `StereoPannerNode` [D][39]. Reaproveita as camadas com crossfade e o murmúrio de
-  `components/heist/audio.ts` e o som desligado por padrão de `lib/sensory.ts` (ETI-06) [D]. Nenhum arquivo de áudio.
+- **Flashes**: sprites aditivos instanciados, pela faixa, nunca mais de 3 por segundo (WCAG 2.3.1 [D][45];
+  `reduceFlashes` em `components/heist/settings.ts`). **Som**: cada palma é uma rajada de ruído de 10–30 ms num
+  passa-banda de 1–2,5 kHz; quatro camadas (esparsa, média, densa, gritos e assobios) pré-renderizadas em
+  `OfflineAudioContext` como laços de 4 s, misturadas por `GainNode` com `setTargetAtTime` e espalhadas por
+  `StereoPannerNode` [D][39], como as camadas e o murmúrio de `components/heist/audio.ts`, com som desligado por
+  padrão (`lib/sensory.ts`, ETI-06) [D] e nenhum arquivo de áudio.
 
 ### 5.2 A amiga no provador (web) [I]
 
@@ -291,9 +279,8 @@ amiga e gritos da plateia em pt-BR, en e es.
   em O). Os nomes seguem as 52 blendshapes do Face Landmarker (`mouthSmileLeft`, `browInnerUp`, `jawOpen`…) [16], no
   padrão ARKit, para o Unreal mapear sem tradução.
 - **Corpo**: gestos procedurais existentes (`talk`, `wave`, `point`, `cheer` em `locomotion-social.ts`; `clap` em
-  `locomotion-dance-moves.ts`) [D]; se entrarem clipes GLB, `crossFadeTo` mistura os estados [D][37]. O olhar segue a
-  região que a pessoa edita (a parada de câmera ativa).
-- **Máquina de estados** (redutor puro): `observa` → `micro` (a cada produto, debounce de 600 ms; o delta da regra
+  `locomotion-dance-moves.ts`) [D], ou clipes GLB misturados por `crossFadeTo` [D][37]; o olhar segue a parada de câmera
+  ativa. **Máquina de estados** (redutor puro): `observa` → `micro` (a cada produto, debounce de 600 ms; o delta da regra
   decide aceno, sobrancelha ou "hmm") → `veredito` (no "pronto", pela faixa do servidor) → `sugere` (a regra mais
   fraca, em tom construtivo) → `observa`. Falas por chave i18n em `aria-live`; voz do navegador opcional e desligada.
 
@@ -313,14 +300,15 @@ amiga e gritos da plateia em pt-BR, en e es.
 
 | Fase | Entrega jogável | Semanas-pessoa |
 |---|---|---|
-| F0 Dados e júri | `beauty_piece`, `catalog_shades`, 60 tons fictícios, `makeupBrief`, juiz com testes de cor e equidade | 1,5 |
-| F1 Maquiagem no rosto | Compositor no UV canônico, material do rosto, 7 camadas (base, corretivo, blush, iluminador, sombra, delineador, batom/gloss), painel e câmera no rosto; cenas de laboratório em 10 tons | 3 |
+| F0 Dados e júri | `beauty_piece`, `catalog_shades`, 60 tons fictícios, `makeupBrief`, juiz com testes de cor e equidade | 2 |
+| F1 Maquiagem no rosto | Compositor no UV canônico, material do rosto, 7 camadas (base, corretivo, blush, iluminador, sombra, delineador, batom/gloss), painel e câmera no rosto; cenas de laboratório em 10 tons | 3,5 |
 | F2 Desafio 1: passarela | Briefing, envio, nota, faixa, plateia, som, close-up na ponta | 2,5 |
 | F3 Amiga no provador | Morphs, gestos, máquina de estados, falas | 2 |
 | F4 Completar | Unhas, cílios, contorno, glitter, voto da comunidade | 2,5 |
 | F5 Unreal | Fatia vertical depois da Fase 0 de `APP_NATIVO_UNREAL.md` §4.3 | — |
 
-F0–F4 somam ≈ 11,5 semanas-pessoa, das quais ≈ 4,5 já estão no MVP de reuso: o acréscimo deste estudo é ≈ 7.
+F0–F4 somam ≈ 12,5 semanas-pessoa, das quais ≈ 4,5 já estão no MVP de reuso: o acréscimo deste estudo é ≈ 8 (os ≈ 40
+dias da tabela abaixo).
 
 ### 6.2 Módulos novos (os de reuso estão em REUSO §5.1)
 
@@ -346,8 +334,8 @@ F0–F4 somam ≈ 11,5 semanas-pessoa, das quais ≈ 4,5 já estão no MVP de re
   `nails: {variantId}`: opacidade cortada em 0–1, `placement` em enum (`PADRAO`, `ESFUMADO`, `GATINHO`…), variante
   desconhecida = REFUSED, e nenhuma imagem, marco ou pele no corpo. Resposta: `{score, parts[{rule, points, basis}],
   tier, perfect, cues[]}`, com `basis` explicando cada número, como `FlairTier.Result.basis()` [D].
-- `POST /api/flair/makeup/looks/{id}/votes` e `GET /api/flair/makeup/looks/{id}`, com resultado às cegas até o fim.
-- O servidor recalcula tudo; nota mandada pelo cliente é ignorada.
+- `POST /api/flair/makeup/looks/{id}/votes` e `GET /api/flair/makeup/looks/{id}`, com resultado às cegas até o fim. O
+  servidor recalcula tudo; nota mandada pelo cliente é ignorada.
 
 ### 6.4 Testes
 
@@ -358,7 +346,8 @@ F0–F4 somam ≈ 11,5 semanas-pessoa, das quais ≈ 4,5 já estão no MVP de re
   no albedo), acabamentos, redutor da amiga, plateia monótona na nota e com histerese, flashes ≤ 3/s.
 - **Cena e aparelho**: renderizador de teste do R3F como em `components/three/scenes.test.tsx` (material compila, `uv1`
   presente, chamadas no orçamento); laboratório `/lab/scenes?s=makeup-…` com ganchos `__lab` nos 10 tons; iPhone 11
-  (mínimo da UE 5.8) e um Android médio com `renderer.info`. Antes de commitar, `python -m scripts.refactoring.line_ratchet`.
+  (mínimo da UE 5.8) e um Android médio com `renderer.info`. Antes de commitar:
+  `python -m scripts.refactoring.line_ratchet`.
 
 ### 6.5 Riscos (os de câmera e reuso estão em REUSO §5.4)
 
@@ -375,12 +364,10 @@ F0–F4 somam ≈ 11,5 semanas-pessoa, das quais ≈ 4,5 já estão no MVP de re
 
 ### 6.6 Decisões para a dona [decidir]
 
-1. Desafio 1 na passarela (proposto) ou direto no provador com a amiga?
-2. Produto de catálogo jogável por todos (proposto, sem pay-to-win) e "nécessaire" própria como bônus de reuso?
-3. Para 13–17, link de compra escondido ou só rotulado?
-4. Pesos do ranking: 0,6 júri + 0,4 comunidade?
-5. Voto público com o avatar próprio só para maiores de 18?
-6. Qual marca real convidar a mandar feed depois da "FashionAI Beauty"?
+1. Desafio 1 na passarela (proposto) ou direto no provador com a amiga? 2. Produto de catálogo jogável por todos
+(proposto, sem pay-to-win) e "nécessaire" própria como bônus de reuso? 3. Para 13–17, link de compra escondido ou só
+rotulado? 4. Ranking 0,6 júri + 0,4 comunidade? 5. Voto público com o avatar próprio só para maiores de 18? 6. Qual
+marca real convidar a mandar feed depois da "FashionAI Beauty"?
 
 ## Fontes
 
