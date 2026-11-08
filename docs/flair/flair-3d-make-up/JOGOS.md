@@ -3,7 +3,8 @@
 Os jogos 1 a 5 foram definidos pela dona do projeto em 08/11/2026 e substituem os anteriores (Espelho Partido,
 Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), que ainda estão nos dados do app até a
 implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
-**Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+**Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois jogos ligados ao
+editor de peças 3D do FAI Atelier: **Clube do Coração** (jogo 8) e **My Favorite Singer** (jogo 9). Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
@@ -183,6 +184,68 @@ moedas para expandir a loja, contratar assistentes e desbloquear coleções rara
   punição por erro delas e sem tratar o trabalho delas como descartável.
 - **Prazo [proposta]:** o relógio é opcional para quem tem 13 a 17 anos; quem joga sem relógio ganha um pouco menos.
 
+## O editor de peças 3D que os jogos 8 e 9 usam
+
+O editor fica no FAI Atelier, em `/atelier/projects/{id}/editor` (`components/atelier3d/editor.tsx`,
+`lib/atelier3d/document.ts`, serviços `Atelier3dService` e `GlbInspector`). Ele roda no navegador com three.js. O
+Blender 4.3.2 só foi usado numa auditoria fora do app em 05/11, que listou operadores sem executar nenhum
+(`docs/atelier3d/auditoria-2026-11-05/blender-report.md`).
+
+**O que o editor já faz:**
+
+- Criar uma base de camiseta, saia ou calça.
+- Mudar cor e material (roughness, metalness) e mover, girar e escalar partes.
+- Editar vértices, desfazer e refazer, salvar versões e exportar o GLB.
+
+**O que ainda não faz, e os dois jogos vão precisar:**
+
+- Estampa, listras, escudo ou logo, e mapas de textura novos.
+- Peça pronta para vestir o avatar: hoje a peça sai estática, sem rig.
+- Arquivos acima de 8 MiB.
+
+[proposta] Até o editor ganhar estampa e peça vestível, a peça criada aparece num manequim no palco do jogo.
+
+## Jogo 8 · Clube do Coração
+
+**Definição da dona:** "Clube do Coração. Esse aí conecta com o criador e editor de peças .glb".
+
+- **O que é [proposta, decidir]:** entendemos "clube do coração" como o time de futebol de que a pessoa é torcedora.
+  Ela cria no editor 3D uma peça para o clube: camisa, jaqueta ou acessório de torcida.
+- **Partida [proposta]:**
+  1. Escolher o clube.
+  2. Receber um brief da semana, como uma data histórica do clube, um clássico ou as cores de uma temporada.
+  3. Criar a peça a partir de uma base do editor.
+  4. A peça desfila no manequim ou no avatar diante da torcida virtual.
+- **Nota [proposta]:**
+  - Cores próximas da paleta do clube, medidas pela ciência de cor que o motor já usa.
+  - Cumprir o brief.
+  - Voto da comunidade.
+- **Torcidas [proposta]:** a soma das notas da semana gera um ranking entre torcidas, clube contra clube. A torcida que
+  vence ganha um selo coletivo, nunca saldo.
+- **Licença:** nome, escudo, mascote e camisa oficial dos clubes são marcas. Sem licença, o jogo usa só as cores e
+  descreve o clube em texto, sem escudo.
+
+## Jogo 9 · My Favorite Singer
+
+**Definição da dona:** "My Favorite Singer, que você criaria uma peça única de uma cantora ou de um cantor com base em
+uma era ou período da carreira dela, coleção da carreira dela."
+
+- **Partida [proposta]:**
+  1. Escolher uma cantora ou um cantor e uma era da carreira, pelo nome e ano do álbum ou da turnê.
+  2. O jogo mostra o perfil da era, que nós escrevemos: paleta, materiais, silhuetas e símbolos marcantes.
+  3. Criar no editor 3D uma peça única daquela era.
+  4. A peça desfila num palco que lembra a era, sem copiar cenário de show.
+- **Nota [proposta]:**
+  - Quanto a peça combina com o perfil da era: cor, material e silhueta.
+  - Voto da comunidade na criatividade.
+  - A nota nunca depende de pele, corpo ou rosto.
+- **Coleção [proposta]:** cada peça criada entra numa vitrine "Eras" no perfil. Com uma peça de cada era de um mesmo
+  artista, a pessoa completa a "coleção da carreira", que rende um selo.
+- **Uso nos outros jogos [proposta, decidir]:** a peça criada vira uma carta e pode entrar no deck da Passarela ou no
+  Dress the Star, quando ela puder vestir o avatar.
+- **Licença:** nome do artista e título do álbum podem ser citados como referência. Foto, voz, rosto, música e nome de
+  turnê registrado como marca só com licença. A peça é homenagem, não produto oficial do artista.
+
 ## O que ainda falta decidir
 
 1. O segmento volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
@@ -193,4 +256,6 @@ moedas para expandir a loja, contratar assistentes e desbloquear coleções rara
 6. Quais marcas, celebridades e filmes procurar primeiro para licença.
 7. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
 8. Fashion Detective e Boutique Tycoon: confirmar o caso sem violência e o relógio opcional para menores.
-9. Qual jogo detalhar primeiro.
+9. Clube do Coração é mesmo o time de futebol do coração? E o ranking entre torcidas?
+10. My Favorite Singer: a peça criada vira carta para os outros jogos?
+11. Qual jogo detalhar primeiro.
