@@ -5,7 +5,8 @@ Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), q
 implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
 **Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois modos ligados ao
 editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Depois vieram **O Labirinto** (jogo 10),
-**Meu Piloto Favorito** (11, também com o editor 3D e o Copilot) e **Around the World** (jogo 12). São 12 no total. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+**Meu Piloto Favorito** (11, também com o editor 3D e o Copilot), **Around the World** (jogo 12) e **Meu Super-Herói
+Favorito** (13, editor 3D e Copilot). O 14 ainda será definido pela dona. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
@@ -398,6 +399,42 @@ deck de cartas em que você entrou na partida."
 - **Cuidado.** As regiões são descritas com pessoas de moda locais ou pesquisa, sem estereótipo nem caricatura.
 - [decidir] Quais 8 regiões entram, e se o look-guia de cada uma usa marcas reais (com licença) ou só a estética.
 
+## Modo 13 · Meu Super-Herói Favorito
+
+**Definição da dona:** "meu super-herói favorito, semelhante aos outros modos que editam peças de roupa GLB. Este aqui
+foca nos universos de super-heróis de Marvel e DC, de uma forma em que você pode conversar com o Copilot dentro deste
+contexto, sugerir peças, ter opções de peças reais de super-heróis, tais como Homem-Aranha, Homem de Ferro, etc."
+
+- **Licença, antes de tudo.** Personagens, uniformes, nomes, emblemas e logos da Marvel (Disney) e da DC (Warner Bros.
+  Discovery) são protegidos por direito autoral e marca. Oferecer o uniforme real do Homem-Aranha ou a armadura do
+  Homem de Ferro como peça editável copia um desenho protegido e precisa de licença, mesmo num app gratuito. Por isso o
+  modo tem duas camadas:
+  - **Sem licença (a que dá para construir agora):** o Copilot entende o nome do herói que a pessoa escreve e traduz em
+    traços genéricos de arquétipo, sem copiar o uniforme oficial, sem emblema e sem nome na peça.
+  - **Com licença (depende de contrato com a Disney ou a Warner):** as peças oficiais entram como opções prontas, com
+    as regras do licenciador.
+- **Peças de arquétipo [proposta].** Bases novas no editor 3D, cada uma dividida em zonas que se pintam separadas:
+  - Traje colante, com tronco, braços, pernas, luvas e botas.
+  - Armadura, com placas de peito, ombros, braços e pernas, em acabamento metálico ou fosco.
+  - Capa, máscara, cinto de utilidades e luvas.
+  - Emblema próprio, desenhado pela pessoa, no lugar do símbolo de um herói existente. Depende da estampa, que o editor
+    ainda não tem.
+- **O Copilot do modo [proposta].** O motor local do Copilot ganha vocabulário de super-herói: traje, armadura, capa,
+  máscara, emblema, cinto, metálico, brilho de energia. Também ganha os nomes dos heróis mais conhecidos, ligados a
+  traços genéricos.
+  - Exemplo: "quero algo no estilo do Homem de Ferro" vira a sugestão de base de armadura, acabamento metálico em
+    vermelho e dourado e um brilho no peito. A resposta diz que é uma criação inspirada, não o uniforme oficial.
+  - Toda resposta é uma ação que o editor sabe fazer neste modo; pedido fora do contexto recebe sugestões do que dá
+    para pedir.
+- **Depois de criar [proposta].** O traje aparece num manequim ou no avatar, numa cena de cidade à noite ou num terraço,
+  com uma pose de herói e sem luta. Pode ser salvo no FAI Atelier e, se a pessoa quiser, publicado na galeria, que
+  recusa nome e emblema de personagem protegido.
+- [decidir] Buscar licença com a Disney ou a Warner, ou ficar só nos arquétipos e em heróis criados pela pessoa.
+
+## Modo 14 · a definir
+
+A dona pediu mais dois modos e descreveu só o 13. O 14 fica reservado até ela defini-lo.
+
 ## O que ainda falta decidir
 
 1. O segmento volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
@@ -413,4 +450,6 @@ deck de cartas em que você entrou na partida."
 10. O Labirinto: entrar com o deck ou o guarda-roupa, e se as peças achadas ficam depois do jogo.
 11. Meu Piloto Favorito: construir as bases de capacete e macacão e a estampa (número e faixas) no editor.
 12. Around the World: as 8 regiões e se o look-guia usa marcas reais.
-13. Qual jogo detalhar primeiro.
+13. Meu Super-Herói Favorito: licença com Disney ou Warner, ou só arquétipos e heróis próprios.
+14. Definir o modo 14.
+15. Qual jogo detalhar primeiro.
