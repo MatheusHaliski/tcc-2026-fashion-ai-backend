@@ -13,7 +13,11 @@ simples de cada jogo, que antes eram propostas separadas, estão em `OBJETIVOS_P
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
-O plano dele está em `PLANO.md`. [decidir] O segmento volta a se chamar "FLAIR 3D" no app?
+O plano dele está em `../flair-3d-make-up/PLANO.md`.
+
+**Estrutura final do FLAIR (definida pela dona):** FLAIR Card Building Challenge; FLAIR 3D, com as modalidades deste
+documento; e FLAIR 3D MAKE UP, focado em vestimenta e maquiagem no estilo DREST, com níveis de desbloqueio. O resumo
+está em `../ESTRUTURA_FLAIR.md`.
 
 ## Regras comuns
 
@@ -21,7 +25,7 @@ O plano dele está em `PLANO.md`. [decidir] O segmento volta a se chamar "FLAIR 
   catálogo: peças, maquiagem, cabelo e acessórios. Tocar num item veste o avatar na hora.
 - **Câmera.** A mesma do provador, com órbita e zoom em detalhes do corpo (`components/three/fitting-camera.tsx`,
   `lib/scene3d/detail-camera.ts`). Hoje ela vai da gola ao calçado; rosto e mãos entram como paradas novas
-  (`REUSO_PROVADOR_E_AVATAR.md`).
+  (`../flair-3d-make-up/REUSO_PROVADOR_E_AVATAR.md`).
 - **A roupa é o foco.** O avatar fica de pé, posa, desfila ou caminha rápido. Painéis de LED, outdoors, plateia,
   flashes e fogos ficam atrás ou ao lado e nunca cobrem a roupa. A exceção de movimento é o jogo 2, em que a luta
   roda sozinha e o jogador só escolhe a roupa.
@@ -155,13 +159,13 @@ realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP). Onde voce te
 completar mini-jogos, os quais são exatamente iguais ao sentido e objetivo do DREST, aumenta seu nivel desbloqueando
 recursos e itens promocionais (a unica diferença do meu app para o DREST é justamente a questao da camera)".
 
-- **Mini-jogos [proposta].** Os tipos de desafio do DREST, descritos no `ESTUDO_DREST.md` §5: ensaio de fotos, mood
+- **Mini-jogos [proposta].** Os tipos de desafio do DREST, descritos no `../flair-3d-make-up/ESTUDO_DREST.md` §5: ensaio de fotos, mood
   board, Beauty Mode (maquiagem), joias, missões de marca e eventos especiais. Em cada um há um brief, a pessoa veste a
   modelo da casa ou o próprio avatar, e o look é avaliado.
-- **Temporada e níveis [proposta].** A Carreira do `PLANO.md`: 30 níveis, cada um com um desbloqueio permanente de
+- **Temporada e níveis [proposta].** A Carreira do `../flair-3d-make-up/PLANO.md`: 30 níveis, cada um com um desbloqueio permanente de
   técnica, acabamento, lugar ou item promocional. A temporada traz briefs e itens próprios.
 - **A diferença.** A câmera 3D do provador, com zoom no rosto e nas mãos para a maquiagem. O DREST mostra uma imagem
-  fixa por pose (`ESTUDO_DREST.md` §8).
+  fixa por pose (`../flair-3d-make-up/ESTUDO_DREST.md` §8).
 - **Peças.** Aqui não há deck: vale o guarda-roupa da pessoa mais o catálogo já desbloqueado.
 
 ## Jogo 6 · Fashion Detective
@@ -523,19 +527,18 @@ vestimenta e isso causa um efeito dentro da partida."
 
 ## O que ainda falta decidir
 
-1. O segmento volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
-2. Tamanho do deck (12 é a proposta) e se o jogo 2 também usa deck.
-3. A fórmula de pontos da Passarela (+10 por peça no tema, +20 pelo look inteiro, máximo de 70).
-4. Partidas ao vivo, contra desfiles gravados, ou os dois.
-5. Quais marcas, celebridades e filmes procurar primeiro para licença.
-6. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
-7. Fashion Detective: solução automática no fim ou escolha do suspeito; roupas do deck ou do guarda-roupa.
+1. Tamanho do deck (12 é a proposta) e se o jogo 2 também usa deck.
+2. A fórmula de pontos da Passarela (+10 por peça no tema, +20 pelo look inteiro, máximo de 70).
+3. Partidas ao vivo, contra desfiles gravados, ou os dois.
+4. Quais marcas, celebridades e filmes procurar primeiro para licença.
+5. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
+6. Fashion Detective: solução automática no fim ou escolha do suspeito; roupas do deck ou do guarda-roupa.
    Boutique 3D: relógio opcional para menores.
-8. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
-9. My Favorite Singer: a peça criada vira carta para os outros jogos?
-10. O Labirinto: entrar com o deck ou o guarda-roupa, e se as peças achadas ficam depois do jogo.
-11. Meu Piloto Favorito: construir as bases de capacete e macacão e a estampa (número e faixas) no editor.
-12. Around the World: as 8 regiões e se o look-guia usa marcas reais.
-13. Meu Super-Herói Favorito: licença com Disney ou Warner, ou só arquétipos e heróis próprios.
-14. Fashion Sports: deck da partida, e trocas só no intervalo ou também durante o jogo.
-15. Qual jogo detalhar primeiro.
+7. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
+8. My Favorite Singer: a peça criada vira carta para os outros jogos?
+9. O Labirinto: entrar com o deck ou o guarda-roupa, e se as peças achadas ficam depois do jogo.
+10. Meu Piloto Favorito: construir as bases de capacete e macacão e a estampa (número e faixas) no editor.
+11. Around the World: as 8 regiões e se o look-guia usa marcas reais.
+12. Meu Super-Herói Favorito: licença com Disney ou Warner, ou só arquétipos e heróis próprios.
+13. Fashion Sports: deck da partida, e trocas só no intervalo ou também durante o jogo.
+14. Qual jogo detalhar primeiro.

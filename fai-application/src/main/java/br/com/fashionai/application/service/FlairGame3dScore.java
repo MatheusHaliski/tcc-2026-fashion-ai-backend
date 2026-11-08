@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * FLAIR 3D MAKE UP — o resultado "flair3d" de uma partida, sem I/O: por vaga preenchida a faixa de Hype da carta, o bônus de
+ * FLAIR 3D — o resultado "flair3d" de uma partida, sem I/O: por vaga preenchida a faixa de Hype da carta, o bônus de
  * jogada, o efeito (Comum/Metamorfose/Impersonation) e a faixa de partida; totais, pontuação e "perfeito" (R2:
  * requisitos cumpridos e sintonia ≥ 2 por vaga obrigatória). Erros do jogador
  * (Flair3dPenalties) descontam do placar, que nunca fica negativo; carta fora da posição não aciona Metamorfose nem

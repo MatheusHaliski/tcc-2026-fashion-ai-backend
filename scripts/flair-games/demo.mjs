@@ -1,4 +1,4 @@
-// Grava a demonstração do modo "FLAIR 3D MAKE UP" da Central FLAIR (catálogo → jogo → vagas → entrega) sobre a API simulada,
+// Grava a demonstração do modo "FLAIR 3D" da Central FLAIR (catálogo → jogo → vagas → entrega) sobre a API simulada,
 // no mesmo formato dos outros clipes: scripts/flair-demos/out/games.raw.webm + games.json; depois
 // `node scripts/flair-demos/encode.mjs games` gera media/flair/demos/games.{mp4,webm,jpg}.
 import { createRequire } from "node:module";

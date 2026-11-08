@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/** FLAIR 3D MAKE UP — os 100 jogos FLAIR (linhas de flair_challenges com série), com bloqueio por nível no servidor. */
+/** FLAIR 3D — os 100 jogos FLAIR (linhas de flair_challenges com série), com bloqueio por nível no servidor. */
 @RestController
-@Tag(name = "FLAIR 3D MAKE UP — jogos FLAIR")
+@Tag(name = "FLAIR 3D — jogos FLAIR")
 public class FlairGameController {
     private final FlairGameService service;
 

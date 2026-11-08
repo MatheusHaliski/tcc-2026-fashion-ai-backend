@@ -9,7 +9,7 @@ Base: `claude/adoring-davinci-mufbri`. Pacotes: `fai-application/.../application
 |---|---:|---:|---|---|
 | `service/FlairChallengeService.java` (`java-service`, 250; congelado) | 1035 | 1005 | `flair/CbcCardMapper.java` (89) | nenhum |
 
-Arquivos novos do FLAIR 3D MAKE UP (sem extração, todos dentro do limite):
+Arquivos novos do FLAIR 3D (sem extração, todos dentro do limite):
 
 | Arquivo novo | Linhas | Responsabilidade |
 |---|---:|---|
@@ -17,7 +17,7 @@ Arquivos novos do FLAIR 3D MAKE UP (sem extração, todos dentro do limite):
 | `service/Flair3dAccess` | 150 | `WardrobeLevel` (faixas do Inventory Score), `Me` (nível FAI + faixa, UMA leitura de cada), `check` (só informa) e `require` (403 `FAI_LEVEL_REQUIRED` / `WARDROBE_LEVEL_REQUIRED`); `Level.valueOf` estrito no catálogo |
 | `service/Flair3dRewards` | 167 | recompensas extras idempotentes por (pessoa, jogo, código) via `flair_game_rewards`: Item do quarto (origem `FLAIR_3D`, `PENDING` sem sku) e carta Especial (R1, `originId` = linha da recompensa) |
 | `service/FlairGameService` | 212 | bean `@Service`: `summary`, `list` (filtros), `detail`, `check`, `submit` (`@Transactional`); bloqueio como PRIMEIRA instrução de check/submit; delega ao `FlairChallengeService` e anexa `glass`, `FLAIR_3D_PERFECT` e `rewards` |
-| `service/FlairGameViews` | 166 | montagem dos JSONs (§1.4): campos FLAIR 3D MAKE UP do resumo, ficha/cena/vagas com `optional`+`effects` no detalhe, contadores, reconstrução de `SlotResult`, abertura da história pela ficha, linha de perfeição |
+| `service/FlairGameViews` | 166 | montagem dos JSONs (§1.4): campos FLAIR 3D do resumo, ficha/cena/vagas com `optional`+`effects` no detalhe, contadores, reconstrução de `SlotResult`, abertura da história pela ficha, linha de perfeição |
 | `service/FlairGame3dScore` | 130 | o bloco `glass` de uma partida, puro: faixa de Hype, bônus de jogada, efeito por vaga, faixa de partida, totais, `scoreMax`, `perfect` (R2) |
 | `controller/FlairGameController` | 66 | 5 rotas `/api/flair/games[/summary|/{slug}[/check|/submit]]` (`summary` declarado antes de `{slug}`) |
 | `model/FlairGameReward` + `repository/FlairGameRewardRepository` | 67 + 17 | entidade `flair_game_rewards` e consultas por (pessoa, jogo[, código]) |

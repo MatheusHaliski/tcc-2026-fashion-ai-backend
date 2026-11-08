@@ -7,7 +7,7 @@ import { storyVars, type CbcRequirement, type CbcRequirementResult, type CbcSlot
 
 /**
  * Textos do jogo: rótulo da vaga (o servidor manda `label`; sem ele, a chave), requisito em linguagem natural (os tipos
- * do CBC reaproveitam cbc.req.*; os do FLAIR 3D MAKE UP — cards, mala, position, distinctTags, hypeBand — usam games.req.*)
+ * do CBC reaproveitam cbc.req.*; os do FLAIR 3D — cards, mala, position, distinctTags, hypeBand — usam games.req.*)
  * e a linha da história (texto por idioma vindo da API, ou a chave i18n com as variáveis). Espelha o useCbcLabels do
  * cbc.tsx, que não é exportado (arquivo congelado).
  */

@@ -12,7 +12,7 @@ import java.util.Set;
 import static br.com.fashionai.application.flair.CbcRules.intOf;
 
 /**
- * FLAIR 3D MAKE UP — o efeito de cada vaga preenchida, puro: IMPERSONATION quando a carta está pronta para impersonação (o
+ * FLAIR 3D — o efeito de cada vaga preenchida, puro: IMPERSONATION quando a carta está pronta para impersonação (o
  * chamador já conferiu o nível e a permissão da aura), senão METAMORFOSE quando a Metamorfose é permitida e a vaga tem
  * sintonia ≥ 2, senão COMUM. O bônus vem de {@code slots_json[].bonus[kind]} (padrão comum 0, metamorfose 1,
  * impersonation 2). Vaga vazia = COMUM sem bônus.

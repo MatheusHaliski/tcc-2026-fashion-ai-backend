@@ -1,13 +1,13 @@
-# Jogos FLAIR fora do FLAIR 3D MAKE UP: fichas
+# Jogos FLAIR fora do FLAIR 3D: fichas
 
 Gerado por `python3 scripts/flair-modes/sheets.py` a partir de `fichas.json` (não edite à mão).
 A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do cenário.
 
-**Segmentos.** Todo jogo do FashionAI se chama FLAIR, em dois segmentos: FLAIR 3D MAKE UP (os 100 jogos de cenário e as aventuras 3D) e FLAIR Card Building Challenge (desafios de links entre cartas e as batalhas com elencos montados; ver docs/flair/cbc/FLAIR_CBC.md).
+**Segmentos.** Todo jogo do FashionAI se chama FLAIR, em dois segmentos: FLAIR 3D (os 100 jogos de cenário e as aventuras 3D) e FLAIR Card Building Challenge (desafios de links entre cartas e as batalhas com elencos montados; ver docs/flair/cbc/FLAIR_CBC.md).
 
 **Regra comum.** Todo jogo tem cenário fotográfico real e, a cada carta inserida, um efeito visual na cena: clarão, a luz do lugar acende sobre o objeto onde a carta entra, Aura Hype pela faixa da carta e, quando houver, Metamorfose ou Impersonation. Sem permissão Loft, o efeito é o comum; a Aura Hype aparece sempre.
 
-**Faixas de Hype.** Faixas de Hype (as mesmas do FLAIR 3D MAKE UP): Sinal baixo 0–19 · Nicho 20–39 · Relevante 40–59 · Em alta 60–74 · Em tendência 75–89 · Viral 90–100.
+**Faixas de Hype.** Faixas de Hype (as mesmas do FLAIR 3D): Sinal baixo 0–19 · Nicho 20–39 · Relevante 40–59 · Em alta 60–74 · Em tendência 75–89 · Viral 90–100.
 
 | Código | Jogo | Segmento | Grupo | Participantes | Cartas mínimas | Hype mínimo |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -303,16 +303,16 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 ## Desafios de Montagem (CBC)
 
 - **Segmento:** FLAIR CBC. **Na lista:** na lista. **Foto:** showroom.
-- **Cenário:** Foto de ambiente por desafio (como no FLAIR 3D MAKE UP): cada vaga do mini mapa fica sobre um objeto real da foto.
+- **Cenário:** Foto de ambiente por desafio (como no FLAIR 3D): cada vaga do mini mapa fica sobre um objeto real da foto.
 - **Objetivo:** Completar o mini mapa do desafio com cartas FLAIR; posição certa, vizinhança e tema dão sintonia.
 - **Participantes:** 1 jogador.
 - **Cartas mínimas obrigatórias:** As vagas obrigatórias do desafio (3 a 6 cartas).
 - **Hype mínimo obrigatório:** Definido por desafio; padrão Nicho (20).
-- **Efeito visual ao inserir uma carta:** Mesma inserção do FLAIR 3D MAKE UP: clarão, a luz do lugar acende sobre o objeto, a foto reacende e a legenda conta o efeito.
+- **Efeito visual ao inserir uma carta:** Mesma inserção do FLAIR 3D: clarão, a luz do lugar acende sobre o objeto, a foto reacende e a legenda conta o efeito.
 - **Aura Hype:** Anéis, raios e partículas pela faixa de partida da carta, na escala do objeto da foto.
 - **Aura Metamorfose:** Varredura de cor, brilhos e circuito de luz entre cartas vizinhas em harmonia.
 - **Aura Impersonation:** A peça aparece no lugar real da foto (de pé, pendurada, exposta ou refletida no espelho).
-- **Hoje → depois:** Hoje usa o mapa desenhado; passa a usar foto real com a mesma inserção do FLAIR 3D MAKE UP.
+- **Hoje → depois:** Hoje usa o mapa desenhado; passa a usar foto real com a mesma inserção do FLAIR 3D.
 
 ## Roubo ao Afterparty (AFTERPARTY)
 
@@ -326,13 +326,13 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 - **Aura Hype:** A faixa da carta define carisma e furtividade, mostrados como halo em volta do avatar.
 - **Aura Metamorfose:** As cartas mudam o avatar e o salão: atributos sobem ou descem com efeito de transformação.
 - **Aura Impersonation:** O avatar assume o look da carta para se misturar aos convidados, com troca completa de roupa.
-- **Hoje → depois:** Retirado da lista de jogos FLAIR (é furtividade, contra a direção do FLAIR 3D MAKE UP); a rota e o código ficam para o futuro Glass Empire.
+- **Hoje → depois:** Retirado da lista de jogos FLAIR (é furtividade, contra a direção do FLAIR 3D); a rota e o código ficam para o futuro Glass Empire.
 
 ## Met Gala Heist (HEIST)
 
 - **Segmento:** fora do FashionAI. **Na lista:** fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire (fora do escopo do FashionAI). **Foto:** sem foto (fora da lista).
 - **Cenário:** Cenário 3D próprio em produção; não é alterado nem usado como imagem de outros jogos.
-- **Objetivo:** Em produção para o novo FLAIR 3D MAKE UP.
+- **Objetivo:** Em produção para o novo FLAIR 3D.
 - **Participantes:** Em produção.
 - **Cartas mínimas obrigatórias:** Em produção.
 - **Hype mínimo obrigatório:** Em produção.

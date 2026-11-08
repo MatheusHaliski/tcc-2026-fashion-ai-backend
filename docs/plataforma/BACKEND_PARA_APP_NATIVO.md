@@ -1,7 +1,7 @@
 # Backend para o app nativo (Unreal): o que o sistema atual oferece
 
 > Estudo de 07/11/2026 sobre `main` (último commit `4fe3364`). Pedido do dono: projetar o FashionAI como aplicativo de
-> loja (App Store, PlayStation Store, Xbox Store) que renderize os gráficos do FLAIR 3D MAKE UP; o web app (fashion-ai.com) é
+> loja (App Store, PlayStation Store, Xbox Store) que renderize os gráficos do FLAIR 3D; o web app (fashion-ai.com) é
 > temporário e serve de banco de testes do app, que vai suportar mais carga de dados e Unreal Engine.
 >
 > Este documento olha **só o que o sistema atual entrega a um cliente Unreal** e o que falta no backend. Motor, regras de
@@ -9,7 +9,7 @@
 > multiplataforma de 10/10/2026 (`docs/multiplataforma/`), cujos contratos (`/api/client/config`, avatar canônico,
 > sessão do provador) já estão no código e são citados aqui sem repetir.
 >
-> Nomes: os jogos são o **FLAIR 3D MAKE UP** (cinco jogos, `docs/flair/flair-3d-make-up/JOGOS.md`) e o **FLAIR Card Building
+> Nomes: os jogos são o **FLAIR 3D** (cinco jogos, `docs/flair/flair-3d/JOGOS.md`) e o **FLAIR Card Building
 > Challenge (CBC)** (cinco elencos, `docs/flair/cbc/CINCO_ELENCOS.md`).
 
 ## Resumo
@@ -22,7 +22,7 @@
 - **Faltam peças inteiras:** vínculo com contas de plataforma (Apple, Google, PSN, Xbox), login por pareamento no
   console, push, telemetria, validação de recibos de loja, manifesto de assets 3D por plataforma e URLs assinadas.
 - **Sob carga, o primeiro gargalo é a sessão.** Cada requisição autenticada lê todos os refresh tokens da família, e
-  essa lista cresce a cada renovação sem nunca ser limpa. Depois vêm o catálogo do FLAIR 3D MAKE UP, recalculado por
+  essa lista cresce a cada renovação sem nunca ser limpa. Depois vêm o catálogo do FLAIR 3D, recalculado por
   requisição, e a soma do extrato de FAI Points.
 - **Dois bloqueios de loja do estudo anterior continuam abertos:** a exclusão de conta agendada nunca é executada (B1)
   e `/media/**` é público (B2).
@@ -70,14 +70,14 @@ mudança de formato. **Só web** = continua no navegador.
 | Grupo | Endpoints | Código | Classe | Observações para o cliente Unreal |
 |---|---|---|---|---|
 | Configuração do app | `GET /api/client/config` (público) | `MultiplatformController`, `ClientConfigService` | Pronto | Já traz `contractVersion "1.0"`, `minVersion`, `updateRequired`, perfil de qualidade e capacidades. Falta um mapa `features` e as URLs base dos assets (§5 e §6) |
-| FLAIR 3D MAKE UP: catálogo | `GET /api/flair/games/summary`, `GET /api/flair/games?level&wardrobe&difficulty&rarity&series&district&q`, `GET /api/flair/games/{slug}` | `FlairGameController`, `FlairGameService`, `FlairGameViews` | Ajustar | `scene` é o `scene_json` (V98): um layout **2D** (céu, chão, `props` com x/y no `viewBox` 160×100 e `slots` com coordenadas em %), feito para o SVG de `components/flair/cbc-scene.tsx`. Para a Unreal falta um bloco `scene3d` (mapa ou nível, versão do conteúdo, socket de cada vaga). `thumbnail` é `/flair/games/*.webp`, servido pelo `public/` do Next. O javadoc ainda fala em "100 jogos", mas `V98__flair_3d_jogos.sql` insere 5 |
-| FLAIR 3D MAKE UP: jogar | `POST /api/flair/games/{slug}/check`, `POST .../submit` (corpo `BuildRequest {slots: {vaga: cardId}, interpretation}`) | `FlairGameService.check/submit`, `Flair3dAccess`, `FlairGame3dScore`, `Flair3dRewards` | Pronto (regra) / Ajustar (formato) | O servidor é a autoridade: bloqueio por nível (403 com código), pontuação, penalidades, efeitos de Aura, bônus de perfeição e recompensas, tudo numa transação. Isso combina com um cliente que só desenha. Faltam `Idempotency-Key` no `submit` (rede móvel instável) e esquema tipado do bloco `flair3d` (`slots[].effect/kind/bonus/text`, `hypeTotal`, `penalties`, `perfect`) |
+| FLAIR 3D: catálogo | `GET /api/flair/games/summary`, `GET /api/flair/games?level&wardrobe&difficulty&rarity&series&district&q`, `GET /api/flair/games/{slug}` | `FlairGameController`, `FlairGameService`, `FlairGameViews` | Ajustar | `scene` é o `scene_json` (V98): um layout **2D** (céu, chão, `props` com x/y no `viewBox` 160×100 e `slots` com coordenadas em %), feito para o SVG de `components/flair/cbc-scene.tsx`. Para a Unreal falta um bloco `scene3d` (mapa ou nível, versão do conteúdo, socket de cada vaga). `thumbnail` é `/flair/games/*.webp`, servido pelo `public/` do Next. O javadoc ainda fala em "100 jogos", mas `V98__flair_3d_jogos.sql` insere 5 |
+| FLAIR 3D: jogar | `POST /api/flair/games/{slug}/check`, `POST .../submit` (corpo `BuildRequest {slots: {vaga: cardId}, interpretation}`) | `FlairGameService.check/submit`, `Flair3dAccess`, `FlairGame3dScore`, `Flair3dRewards` | Pronto (regra) / Ajustar (formato) | O servidor é a autoridade: bloqueio por nível (403 com código), pontuação, penalidades, efeitos de Aura, bônus de perfeição e recompensas, tudo numa transação. Isso combina com um cliente que só desenha. Faltam `Idempotency-Key` no `submit` (rede móvel instável) e esquema tipado do bloco `flair3d` (`slots[].effect/kind/bonus/text`, `hypeTotal`, `penalties`, `perfect`) |
 | FLAIR CBC (elencos) | `GET /api/flair/challenges[/{idOrSlug}]`, `POST .../check`, `POST .../submit`, `POST /api/flair/moments/{id}/challenges` | `FlairChallengeController`, `FlairChallengeService`, `CbcRules`, `CbcRequirements*` | Ajustar | O motor de links do elenco (`fai-application/.../flair/CbcLinks.java`, commit `4fe3364`) **ainda não sai em resposta nenhuma**. A tela do elenco precisa da força e da cor de cada linha e da química por carta e do elenco no `check` |
 | Partidas e modos | `/api/flair/duels`, `/arena`, `/teams/**`, `/api/flair/modes/**` (batalha, squad, liga, passarela, turnê, territórios, combo, tag-team, chefes, wardrobe wars, draft, deck, xadrez, ultimate), `/api/flair/adventure/**` | `FlairController`, `FlairModesController`, `FlairCardModesController`, `FlairAdventureController` | Pronto (lógica) / Ajustar (formato) | Tudo se resolve no servidor por turno, numa requisição; não há PvP em tempo real. As respostas são `Map` sem esquema |
 | Cartas e decks | `GET /api/flair/cards`, `GET /api/me/flair/cards`, `GET /api/users/{id}/flair/cards`, `POST /api/flair/cards[/preview]`, `GET /api/flair/decks[/{schemeId}]` | `FlairController`, `FlairCollectionController`, `FlairCollectionService` | Ajustar | A carta traz dados (`ovr`, `stats`, `tier`, `rarity`, `imageUrl`, `tags`), mas a **arte** (aura × material × skin × mosaico × moldura) é montada no cliente por `lib/card-art.ts` e `lib/fashion-card.ts` a partir do manifesto. A Unreal teria de reimplementar essa composição, ou o servidor passa a gerar a textura da carta (já existe o precedente `GET /api/schemes/*/card.png`). `/api/me/flair/cards` devolve a coleção inteira, sem paginação |
 | Carteira e recompensas | `GET /api/flair/me` (coins, rank, extrato dos últimos 30), `GET /api/flair/quests`, `POST /api/flair/quests/{code}/claim`, `GET /api/flair/vouchers`, `POST /api/flair/skins/{skin}`, `GET /api/me/points`, `GET /api/points/shop`, `POST /api/points/shop/{sku}/purchase` (com `Idempotency-Key`), `GET /api/me/coupons`, `POST /api/me/coupon-rights/{id}/redeem` | `FlairController`, `FlairService`, `HighlightsController`, `FaiPointsService`, `CouponController` | Pronto | FAI Points e coins só se **ganham**, nunca se compram (`FlairService`, l. 88–89; `docs/multiplataforma/05-lojas-e-comercio.md` §3.4), então não há compra dentro do app aqui. Cupom de marca abre a loja externa: fora do console |
 | Combinações das lojas (marcas) | `GET /api/flair/combinations`, `.../check`, `.../redeem`; `/api/flair/brand/**`; `GET /api/institutional/{slug}/flair` | `FlairController` | Pronto (resgate) / Só web (gestão pela marca) | A marca cria e valida no portal web; o jogador só vê e resgata |
-| Aura | `GET /api/me/aura-permissions`; `/api/aura-store/**` (licença de arte paga em pontos, só marcas e celebridades aprovadas) | `AuraPermissionsController`, `AuraCommerceController`, `AuraPermissionsService` | Pronto (permissões) / Só web (loja) | As permissões decidem Metamorfose e Impersonation no FLAIR 3D MAKE UP (`FlairGameService.player`) |
+| Aura | `GET /api/me/aura-permissions`; `/api/aura-store/**` (licença de arte paga em pontos, só marcas e celebridades aprovadas) | `AuraPermissionsController`, `AuraCommerceController`, `AuraPermissionsService` | Pronto (permissões) / Só web (loja) | As permissões decidem Metamorfose e Impersonation no FLAIR 3D (`FlairGameService.player`) |
 | Avatar 3D | `GET/POST/PATCH/DELETE /api/me/avatar3d`, `/versions`, `/versions/{n}/approve`, `/restore`, `POST /body-scan`, `POST /stylized-portrait`, `GET /api/avatar3d/{userId}/texture`, `GET /api/me/avatar3d/canonical` | `Avatar3dController`, `Avatar3dService`, `AvatarCanonicalService` | Pronto (leitura) / Ajustar (captura) | O `model_json` v1 tem `shape` 468×3 em cm (`lib/avatar3d/model.ts`; `Avatar3dModelRules.SHAPE_LEN`), `skin`, `hair`, `body` com a origem de cada medida e `bodySkin`, mais o atlas do rosto em JPEG. A captura (MediaPipe e face-api no navegador: `lib/avatar3d/detect.ts`, `pipeline.ts`) e a deformação do corpo e do rosto (`lib/avatar3d/human/*`) são **TypeScript** e precisam ser portadas. O corpo base `FAI_BODY_V1` está em `public/avatar3d/body/` (`fai-body-v1.bin` com 4,3 MB, mais `.json`) |
 | Provador e manequim | `GET /api/try-on/session`, `PUT/DELETE .../slots/{slot}` (ETag/If-Match); `GET /api/pieces/{id}/look3d`, `GET /api/schemes/{id}/look3d` | `MultiplatformController`, `TryOnSessionService`, `ShowcaseController` | Pronto (sessão) / Ajustar (`look3d`) | A sessão já devolve a representação por perfil (`MESH_3D` com `url`, `bytes`, `triangles`, `sha256`, ou `PREVIEW_2D`). O `look3d` foi feito para a cena three.js |
 | Guarda-roupa | `GET /api/me/closet`, `GET /api/pieces/{id}`, upload multipart de imagem, `GET /api/taxonomy`; `POST/GET /api/pieces/{id}/model3d` | `WardrobeController`, `WardrobeService`, `Model3dService` | Pronto (leitura) / Só web (edição, no início) | O `POST .../model3d` dispara geração 3D (RF16) que pode usar provedor pago quando há chave configurada. O app não deve chamar automaticamente |
@@ -139,7 +139,7 @@ Pontos de atenção:
 ### 3.2 O que um pipeline de assets da Unreal pede do backend
 
 - **No pacote instalado (Pak/IoStore, por plataforma):** corpo `FAI_BODY_V1` já importado como Skeletal Mesh, os cinco
-  cenários do FLAIR 3D MAKE UP (suíte, camarim, rooftop, boutique, salão de gala), molduras e materiais das cartas, a interface
+  cenários do FLAIR 3D (suíte, camarim, rooftop, boutique, salão de gala), molduras e materiais das cartas, a interface
   e as fontes. Isso é cozido no CI de build, não pelo backend.
 - **Sob demanda (chunks ou downloads):** rendições de roupa por perfil de qualidade, vídeos de aura e material
   (convertidos para o formato de mídia de cada plataforma [verificar suporte a MP4 nos consoles]), texturas do avatar
@@ -182,7 +182,7 @@ Pontos de atenção:
    por família em 30 dias, lidas em **cada** chamada. *Sugestão:* consulta `EXISTS` com índice
    `(family_id, revoked_at, expires_at)`, conjunto de famílias revogadas no Redis com TTL igual ao do access token, e
    job diário que apaga tokens vencidos.
-2. **Catálogo do FLAIR 3D MAKE UP e do CBC.** `FlairGameService.list` e `FlairChallengeService` leem `flair_challenges`
+2. **Catálogo do FLAIR 3D e do CBC.** `FlairGameService.list` e `FlairChallengeService` leem `flair_challenges`
    inteira, as entregas da pessoa e o nível (soma no extrato e Inventory Score) **a cada requisição**. O catálogo só
    muda por migração. *Sugestão:* catálogo em cache com ETag por `contentVersion`, e a parte "minha" (acesso e
    tentativas) num endpoint separado e leve.
@@ -207,7 +207,7 @@ só se surgir partida PvP ao vivo.
 
 | Área | Web (fashion-ai.com) | App nativo (Unreal) |
 |---|---|---|
-| FLAIR 3D MAKE UP (cinco jogos) | protótipo e banco de testes | **essencial**: cena 3D, encaixes, efeitos de Aura, avatar ou manequim |
+| FLAIR 3D (cinco jogos) | protótipo e banco de testes | **essencial**: cena 3D, encaixes, efeitos de Aura, avatar ou manequim |
 | FLAIR CBC (tela do elenco) | protótipo | **essencial**: formação, linhas de link e química |
 | Avatar 3D | captura e edição (hoje) | **essencial**: ver e vestir; captura no celular depois do porte do MediaPipe |
 | Carteira de recompensas (FAI Points, coins, vouchers, cupons) | sim | **essencial** (só leitura e resgate; nada se compra com dinheiro) |
@@ -246,7 +246,7 @@ esquema é uma migração nova (nunca editar V98 ou anteriores). Os arquivos nov
 | # | Mudança | Onde | Esforço | Riscos e dependências |
 |---|---|---|---|---|
 | 0 | Fechar os bloqueios de loja **B1** (agendar `AccountService.purgeScheduledDeletions`, que hoje não tem chamador) e **B2** (leitura de mídia pessoal por URL assinada) | `AccountService`, `S3MediaStorageAdapter`, `MediaProxyController`, `SecurityConfig.PUBLIC_GET` | M | B1 executa exclusões reais pendentes em produção e precisa de decisão do dono e de revisão da fila. B2 muda URLs que o web usa |
-| 1 | Estratégia de versão: rotas remodeladas em **`/api/v2/...`** (FLAIR 3D MAKE UP, CBC, cartas, carteira, manifesto), o restante em v1; `X-FAI-Contract` informativo; grupo OpenAPI `v2` | `fai-web` (controllers novos), `OpenApiConfig` | P | Duplicar lógica: o v2 deve só adaptar a saída dos mesmos serviços |
+| 1 | Estratégia de versão: rotas remodeladas em **`/api/v2/...`** (FLAIR 3D, CBC, cartas, carteira, manifesto), o restante em v1; `X-FAI-Contract` informativo; grupo OpenAPI `v2` | `fai-web` (controllers novos), `OpenApiConfig` | P | Duplicar lógica: o v2 deve só adaptar a saída dos mesmos serviços |
 | 2 | **DTOs tipados** (records) para jogo, vaga, `flair3d`, carta, deck, carteira e erro, com esquema no OpenAPI | `fai-application` (views), `fai-web` | M–G | Caracterizar a saída v1 antes (regra do `CLAUDE.md`); muitos `Map` aninhados |
 | 3 | **Pacote de traduções** `GET /api/v2/i18n/{locale}?ns=` com ETag, mais a regra "v2 devolve chave e variáveis" | fonte única com `lib/i18n/messages/*.json` | M | Duas fontes de verdade, se o catálogo não sair do `lib/` do web |
 | 4 | `/api/client/config` com `features` e `assetBases` (API, mídia, conteúdo); URLs absolutas no v2 | `ClientConfigService` | P | — |
@@ -264,6 +264,6 @@ esquema é uma migração nova (nunca editar V98 ou anteriores). Os arquivos nov
 | 16 | **SSE** `GET /api/v2/events` (notificações, recompensas, Momentos) | controller novo | M | Conexões abertas por réplica; proxy da Railway [verificar timeouts] |
 | 17 | **Recibos de loja:** tabela `entitlements` e verificadores (App Store Server API, Play Developer API, Microsoft Store, Steam, Epic, consoles) + notificações servidor a servidor de reembolso | módulo novo | G | **Só depois** de verificar as regras de cada loja (`docs/multiplataforma/05` §3.7). Hoje não há produto pago e FAI Points não se vendem |
 
-**Ordem mínima para um vertical slice do FLAIR 3D MAKE UP no app** (celular e Windows, contas de teste): 0 (B2) → 1 → 2
-(só FLAIR 3D MAKE UP e carteira) → 3 → 4 → 5 → 6 → 9 → 11 → 12 (só o conteúdo dos cinco cenários). Os itens 7, 8, 14–17 entram
+**Ordem mínima para um vertical slice do FLAIR 3D no app** (celular e Windows, contas de teste): 0 (B2) → 1 → 2
+(só FLAIR 3D e carteira) → 3 → 4 → 5 → 6 → 9 → 11 → 12 (só o conteúdo dos cinco cenários). Os itens 7, 8, 14–17 entram
 quando houver loja de console ou compra.

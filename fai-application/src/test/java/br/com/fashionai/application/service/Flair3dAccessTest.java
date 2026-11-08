@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * FLAIR 3D MAKE UP — bloqueio por nível: limiares dos pontos vitalícios (299/300 e 899/900), faixas do guarda-roupa
+ * FLAIR 3D — bloqueio por nível: limiares dos pontos vitalícios (299/300 e 899/900), faixas do guarda-roupa
  * (299/300, 959/960, score nulo), visitante nunca "pode jogar", e os 403 com código e detalhes.
  */
 class Flair3dAccessTest {

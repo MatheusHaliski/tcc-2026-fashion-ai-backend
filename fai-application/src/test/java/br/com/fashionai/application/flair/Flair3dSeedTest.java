@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Os 5 jogos do FLAIR 3D MAKE UP, um por capítulo (os outros 95 ficam em data/arquivo, fora da V98): o catálogo JSON (scripts/flair-games/data) é a fonte da V98. Cada jogo passa
+ * Os 5 jogos do FLAIR 3D, um por capítulo (os outros 95 ficam em data/arquivo, fora da V98): o catálogo JSON (scripts/flair-games/data) é a fonte da V98. Cada jogo passa
  * pelas mesmas regras de vaga e requisito do motor (CbcRules.validate), os números (1..100, os do catálogo original) e os slugs são únicos, e a V98
  * gerada traz exatamente um INSERT por jogo com o id previsto. As faixas de nível, guarda-roupa e Hype são as do código.
  */

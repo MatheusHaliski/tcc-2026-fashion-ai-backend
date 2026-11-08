@@ -2,7 +2,7 @@
 
 Todo jogo do FashionAI se chama **FLAIR**. Há dois segmentos:
 
-- **FLAIR 3D MAKE UP**: jogos em cenário 3D, com encaixe de cartas em objetos reais da cena (estudo em `docs/flair/3d-puzzles/`).
+- **FLAIR 3D**: jogos em cenário 3D, com encaixe de cartas em objetos reais da cena (estudo em `docs/flair/3d-puzzles/`).
 - **FLAIR Card Building Challenge (FLAIR CBC)**: montar um conjunto de cartas cujas **linhas de conexão** acendem quando
   duas cartas vizinhas têm algo em comum, no espírito do antigo SBC do FIFA 21 (jogadores da mesma liga, clube ou
   nacionalidade formavam links completos). A diferença: aqui a recompensa vai além do jogo.
@@ -13,7 +13,7 @@ Marcações: **[existe]** já está no código; **[novo]** é proposta deste des
 
 | Segmento | Jogos | Observação |
 | --- | --- | --- |
-| FLAIR 3D MAKE UP | os cinco jogos, um por capítulo (`docs/flair/flair-3d-make-up/JOGOS.md`) | cenário 3D por ambiente; vagas viram encaixes em objetos |
+| FLAIR 3D | os cinco jogos, um por capítulo (`docs/flair/flair-3d/JOGOS.md`) | cenário 3D por ambiente; vagas viram encaixes em objetos |
 | fora do FashionAI | Roubo ao Afterparty | fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire |
 | fora do FashionAI | Met Gala Heist | fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire |
 | FLAIR CBC | os cinco elencos oficiais (`CINCO_ELENCOS.md`) | substituem os 16 Desafios de Montagem oficiais, que ficam arquivados |
@@ -55,7 +55,7 @@ número mínimo de linhas verdes e número mínimo de linhas ligadas por um atri
 - **Linha vermelha**: a linha pisca vermelho e apaga, com som abafado. Erro, não punição de saldo.
 - **Circuito completo** (todas as linhas verdes): pulso que percorre o conjunto inteiro e libera a peça do quebra-cabeça
   (seção 4).
-- **Aura Hype**: a faixa de Hype da carta dá brilho e partículas à carta, como no FLAIR 3D MAKE UP.
+- **Aura Hype**: a faixa de Hype da carta dá brilho e partículas à carta, como no FLAIR 3D.
 - **Aura Metamorfose**: carta com química 3 e permissão Loft transforma a cor das linhas dela na paleta da carta.
 - **Aura Impersonation**: com o conjunto completo e a permissão, o avatar veste o look montado.
 

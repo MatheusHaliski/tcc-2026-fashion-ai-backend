@@ -15,6 +15,7 @@ Regras de todos os objetivos:
 
 
 
+
 ## Jogo 3 · Dress the Star: Adivinhar pelo look
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
@@ -93,16 +94,20 @@ Regras de todos os objetivos:
 | Vestido de Formatura (57) | Cumprir as 4 regras do tema "Noite Estrelada" | Pinta o vestido por zonas | Azul-escuro dominante; 1 zona brilhante; comprimento longo; no máximo 3 cores |
 | Uniforme Escolar Reinventado (58) | Cumprir as 4 regras de uma escola inventada | Pinta camisa e calça ou bermuda | As 2 cores da escola; tecido fosco; peças com mobilidade; sem marca |
 
-## Jogo 10 · O Labirinto: Enigmas do espelho
+## Jogo 10 · O Labirinto: Espelhos, portas e passagens
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
 | --- | --- | --- | --- |
+| Escada de Espelhos (63) | Passar pelos 5 espelhos; cada um soma 1 regra às anteriores | Ajusta o look a cada espelho | 20 por espelho na primeira tentativa |
+| Três Portas (64) | Chegar à saída escolhendo uma porta em cada uma das 3 salas | Escolhe a porta (cada uma pede um tema) e veste o tema | Porta difícil vale 3 estrelas na sala, média 2, fácil 1; meta: 6 estrelas |
+| Corredor de Holofotes (65) | Acender os 5 holofotes com um único look | Monta um look que cumpra as 5 condições (ex.: 1 peça de couro, 1 vermelha, 1 de festa...) | 20 por holofote aceso |
+| Jardim das Cores (66) | Abrir os 6 canteiros com no máximo 8 trocas de peça | Veste a cor de cada canteiro na ordem | 6 canteiros com até 8 trocas = 100; até 10 trocas = 80; até 12 = 60 |
 | Camadas na Ordem (46) | Vestir 5 peças de frio na ordem certa em até 3 tentativas | Põe camiseta, malha, colete, casaco e cachecol na ordem | 1ª tentativa = 100; 2ª = 80; 3ª = 60 |
 | Combinação Secreta (47) | Descobrir as 4 cores que o espelho guarda em até 6 tentativas | Veste 4 peças por tentativa; o espelho diz quantas cores estão na vaga certa | 1ª ou 2ª tentativa = 100; até a 4ª = 80; até a 6ª = 60 |
 
 ## Jogo 12 · Around the World
 
-### Percurso, mapa e espelhos
+### Percurso pela cidade e pelo ano
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
 | --- | --- | --- | --- |
@@ -110,10 +115,6 @@ Regras de todos os objetivos:
 | Metrô de Moda (60) | Cumprir as 6 estações | Troca exatamente 1 peça por estação para cumprir o evento dela | 17 por estação na primeira tentativa |
 | Shopping de 4 Andares (61) | Fechar o look do pedido com 1 item de cada andar (calçados, acessórios, roupas e beleza) | Escolhe 1 item por andar | 25 por item que cumpre o pedido |
 | Roda das Estações (62) | Vestir as 4 estações em sequência, repetindo ao menos 1 peça da estação anterior | Monta 4 looks com o deck | 25 por estação adequada com a peça repetida |
-| Escada de Espelhos (63) | Passar pelos 5 espelhos; cada um soma 1 regra às anteriores | Ajusta o look a cada espelho | 20 por espelho na primeira tentativa |
-| Três Portas (64) | Chegar à saída escolhendo uma porta em cada uma das 3 salas | Escolhe a porta (cada uma pede um tema) e veste o tema | Porta difícil vale 3 estrelas na sala, média 2, fácil 1; meta: 6 estrelas |
-| Corredor de Holofotes (65) | Acender os 5 holofotes com um único look | Monta um look que cumpra as 5 condições (ex.: 1 peça de couro, 1 vermelha, 1 de festa...) | 20 por holofote aceso |
-| Jardim das Cores (66) | Abrir os 6 canteiros com no máximo 8 trocas de peça | Veste a cor de cada canteiro na ordem | 6 canteiros com até 8 trocas = 100; até 10 trocas = 80; até 12 = 60 |
 
 ### Clima da viagem
 

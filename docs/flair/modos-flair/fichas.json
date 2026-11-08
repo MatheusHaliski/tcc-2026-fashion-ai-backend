@@ -1,5 +1,5 @@
 {
-  "hypeBands": "Faixas de Hype (as mesmas do FLAIR 3D MAKE UP): Sinal baixo 0–19 · Nicho 20–39 · Relevante 40–59 · Em alta 60–74 · Em tendência 75–89 · Viral 90–100.",
+  "hypeBands": "Faixas de Hype (as mesmas do FLAIR 3D): Sinal baixo 0–19 · Nicho 20–39 · Relevante 40–59 · Em alta 60–74 · Em tendência 75–89 · Viral 90–100.",
   "rule": "Todo jogo tem cenário fotográfico real e, a cada carta inserida, um efeito visual na cena: clarão, a luz do lugar acende sobre o objeto onde a carta entra, Aura Hype pela faixa da carta e, quando houver, Metamorfose ou Impersonation. Sem permissão Loft, o efeito é o comum; a Aura Hype aparece sempre.",
   "games": [
     {
@@ -351,16 +351,16 @@
       "group": "Montagem",
       "list": "na lista",
       "venue": "showroom",
-      "scene": "Foto de ambiente por desafio (como no FLAIR 3D MAKE UP): cada vaga do mini mapa fica sobre um objeto real da foto.",
+      "scene": "Foto de ambiente por desafio (como no FLAIR 3D): cada vaga do mini mapa fica sobre um objeto real da foto.",
       "objective": "Completar o mini mapa do desafio com cartas FLAIR; posição certa, vizinhança e tema dão sintonia.",
       "participants": "1 jogador.",
       "minCards": "As vagas obrigatórias do desafio (3 a 6 cartas).",
       "minHype": "Definido por desafio; padrão Nicho (20).",
-      "insert": "Mesma inserção do FLAIR 3D MAKE UP: clarão, a luz do lugar acende sobre o objeto, a foto reacende e a legenda conta o efeito.",
+      "insert": "Mesma inserção do FLAIR 3D: clarão, a luz do lugar acende sobre o objeto, a foto reacende e a legenda conta o efeito.",
       "auraHype": "Anéis, raios e partículas pela faixa de partida da carta, na escala do objeto da foto.",
       "metamorfose": "Varredura de cor, brilhos e circuito de luz entre cartas vizinhas em harmonia.",
       "impersonation": "A peça aparece no lugar real da foto (de pé, pendurada, exposta ou refletida no espelho).",
-      "today": "Hoje usa o mapa desenhado; passa a usar foto real com a mesma inserção do FLAIR 3D MAKE UP."
+      "today": "Hoje usa o mapa desenhado; passa a usar foto real com a mesma inserção do FLAIR 3D."
     },
     {
       "code": "AFTERPARTY",
@@ -378,7 +378,7 @@
       "auraHype": "A faixa da carta define carisma e furtividade, mostrados como halo em volta do avatar.",
       "metamorfose": "As cartas mudam o avatar e o salão: atributos sobem ou descem com efeito de transformação.",
       "impersonation": "O avatar assume o look da carta para se misturar aos convidados, com troca completa de roupa.",
-      "today": "Retirado da lista de jogos FLAIR (é furtividade, contra a direção do FLAIR 3D MAKE UP); a rota e o código ficam para o futuro Glass Empire."
+      "today": "Retirado da lista de jogos FLAIR (é furtividade, contra a direção do FLAIR 3D); a rota e o código ficam para o futuro Glass Empire."
     },
     {
       "code": "HEIST",
@@ -388,7 +388,7 @@
       "list": "fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire (fora do escopo do FashionAI)",
       "venue": null,
       "scene": "Cenário 3D próprio em produção; não é alterado nem usado como imagem de outros jogos.",
-      "objective": "Em produção para o novo FLAIR 3D MAKE UP.",
+      "objective": "Em produção para o novo FLAIR 3D.",
       "participants": "Em produção.",
       "minCards": "Em produção.",
       "minHype": "Em produção.",
@@ -399,5 +399,5 @@
       "today": "Removido da lista de opções por pedido do usuário; código mantido sem mudanças."
     }
   ],
-  "segments": "Todo jogo do FashionAI se chama FLAIR, em dois segmentos: FLAIR 3D MAKE UP (os 100 jogos de cenário e as aventuras 3D) e FLAIR Card Building Challenge (desafios de links entre cartas e as batalhas com elencos montados; ver docs/flair/cbc/FLAIR_CBC.md)."
+  "segments": "Todo jogo do FashionAI se chama FLAIR, em dois segmentos: FLAIR 3D (os 100 jogos de cenário e as aventuras 3D) e FLAIR Card Building Challenge (desafios de links entre cartas e as batalhas com elencos montados; ver docs/flair/cbc/FLAIR_CBC.md)."
 }

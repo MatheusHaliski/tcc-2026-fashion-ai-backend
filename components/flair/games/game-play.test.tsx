@@ -6,9 +6,9 @@ import type { GameAccess, GameCheck, GameDetail } from "@/lib/flair/games";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
 
 /**
- * Tela de um jogo do FLAIR 3D MAKE UP: bloqueado pelo servidor não busca o banco de cartas e mostra os motivos; liberado
- * monta vaga a vaga, confere no servidor (requisitos novos, efeitos por vaga, Hype de partida, pontuação FLAIR 3D MAKE UP e
- * prévia da partida perfeita), entrega e recebe o modal do CBC mais as recompensas FLAIR 3D MAKE UP; um 403 de nível no check vira
+ * Tela de um jogo do FLAIR 3D: bloqueado pelo servidor não busca o banco de cartas e mostra os motivos; liberado
+ * monta vaga a vaga, confere no servidor (requisitos novos, efeitos por vaga, Hype de partida, pontuação FLAIR 3D e
+ * prévia da partida perfeita), entrega e recebe o modal do CBC mais as recompensas FLAIR 3D; um 403 de nível no check vira
  * o mesmo painel de bloqueio. Na série A o quarto 3D só entra com WebGL — aqui (jsdom) fica a cena 2D.
  */
 vi.mock("next/navigation", async (orig) => ({ ...(await orig<typeof import("next/navigation")>()), useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }), useSearchParams: () => new URLSearchParams(""), usePathname: () => "/flair/jogos/a01-espelho-partido" }));
@@ -95,7 +95,7 @@ describe("partida", () => {
     const { calls } = loggedAs(ME, { "GET /api/flair/games/a01-espelho-partido": detail(), "GET /api/me/flair/cards": CARDS });
     renderApp(<GamePlay slug="a01-espelho-partido" />);
     expect(await screen.findByRole("heading", { name: "Espelho Partido" })).toBeTruthy();
-    expect(screen.getByText("FLAIR 3D MAKE UP · Série A · Jogo 1")).toBeTruthy();
+    expect(screen.getByText("FLAIR 3D · Série A · Jogo 1")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Todos os jogos/ }).getAttribute("href")).toBe("/flair/jogos");
     await screen.findByRole("button", { name: /Caco central/ });
     expect(screen.getByRole("button", { name: /Porta \(opcional\)/ })).toBeTruthy();
@@ -113,7 +113,7 @@ describe("partida", () => {
     expect(calls.some((c) => c.path === "/api/me/room")).toBe(false);
   });
 
-  it("coloca cartas, confere no servidor (efeitos, Hype de partida, pontuação FLAIR 3D MAKE UP, prévia da partida perfeita), entrega e recebe o modal com as recompensas", async () => {
+  it("coloca cartas, confere no servidor (efeitos, Hype de partida, pontuação FLAIR 3D, prévia da partida perfeita), entrega e recebe o modal com as recompensas", async () => {
     let submitted = false;
     const { calls } = loggedAs(ME, {
       "GET /api/flair/games/a01-espelho-partido": () => detail(submitted ? { mine: { submissions: 1, attemptsLeft: 0, done: true }, mySubmissions: [{ id: "s1", attempt: 1, createdAt: "2026-10-10T12:00:00Z", interpretation: "own", sintonia: 6, sintoniaMax: 9, points: 35, story: [], cards: [] }] } : {}),
@@ -139,7 +139,7 @@ describe("partida", () => {
     const effects = await screen.findByTestId("ge-effects");
     expect(effects.textContent).toContain("Caco central"); expect(effects.textContent).toContain("Metamorfose +1"); expect(effects.textContent).toContain("O espelho se refaz.");
     expect(screen.getByTestId("ge-hype").textContent).toContain("Relevante→Em alta +1");
-    expect(screen.getByText("Pontuação FLAIR 3D MAKE UP 4 de 15")).toBeTruthy();
+    expect(screen.getByText("Pontuação FLAIR 3D 4 de 15")).toBeTruthy();
     expect(screen.queryByText("Partida perfeita")).toBeNull();
     expect((screen.getByRole("button", { name: "Entregar" }) as HTMLButtonElement).disabled).toBe(true);
     expect(calls.filter((c) => c.path.endsWith("/submit")).length).toBe(0);
@@ -151,11 +151,11 @@ describe("partida", () => {
     fireEvent.click((await screen.findAllByRole("button", { name: /Camisa de linho/ }))[0]);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect((screen.getByRole("button", { name: "Entregar" }) as HTMLButtonElement).disabled).toBe(false), { timeout: 3000 });
-    expect(screen.getByText("Pontuação FLAIR 3D MAKE UP 8 de 15")).toBeTruthy();
+    expect(screen.getByText("Pontuação FLAIR 3D 8 de 15")).toBeTruthy();
     expect(screen.getAllByText("Partida perfeita").length).toBeGreaterThan(0);   /* selo + linha de pontos FLAIR_3D_PERFECT (prévia) */
     expect(screen.getByText("+35")).toBeTruthy();
     expect(screen.getByText("A suíte amanhece em cacos.")).toBeTruthy();
-    // entrega: uma chamada; o modal do CBC mais a lista de recompensas FLAIR 3D MAKE UP com o estado real
+    // entrega: uma chamada; o modal do CBC mais a lista de recompensas FLAIR 3D com o estado real
     fireEvent.click(screen.getByRole("button", { name: "Entregar" }));
     const reward = await screen.findByRole("dialog");
     expect(reward.textContent).toContain("Montagem entregue"); expect(reward.textContent).toContain("Creditado");

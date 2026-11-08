@@ -1,4 +1,4 @@
-// Evidências dos jogos FLAIR 3D MAKE UP: capturas da central FLAIR, do catálogo e de cada jogo jogado até a entrega,
+// Evidências dos jogos FLAIR 3D: capturas da central FLAIR, do catálogo e de cada jogo jogado até a entrega,
 // sobre a API simulada (scripts/flair-games/mock-games-api.mjs). Gera evidencias/resultados.json (planilha via
 // evidence_xlsx.py). Uso: node scripts/flair-games/evidence.mjs [--only a01,b21] [--out docs/flair/flair-3d-make-up/evidencias]
 //   Requer: app em DEMO_APP (padrão http://localhost:3000) apontando para a API simulada; Chromium pré-instalado.

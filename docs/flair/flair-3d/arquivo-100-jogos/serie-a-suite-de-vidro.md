@@ -1,4 +1,4 @@
-# Série A — Suíte de Vidro: o quarto como componente do FLAIR 3D MAKE UP
+# Série A — Suíte de Vidro: o quarto como componente do FLAIR 3D
 
 Vinte jogos em que o mapa é o próprio Meu Quarto convertido em componente: cada elemento (espelho, maleiro, gavetas,
 cesto, arara, cadeira, vitrine, interruptor, janela, caixa FAI, chave, quadro, fita, calendário, corredor) vira vaga
@@ -310,7 +310,7 @@ ou regra. Vocabulário e regras compartilhadas no [README](README.md).
 
 ## 20 · A Mudança
 
-- **Objetivo:** encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o FLAIR 3D MAKE UP.
+- **Objetivo:** encaixotar a suíte inteira em seis caixas de mudança, provando que cada caixa fecha com um conjunto coerente, porque o quarto vai para o FLAIR 3D.
 - **Cenário:** a suíte sendo desmontada, parede por parede, até ficar só o espelho.
 - **Peças obrigatórias:** 1 carta de cada posição (SUP, INF, CAL, ACE, VES ou LOOK).
 - **Hype mínimo do deck:** Sinal baixo.

@@ -13,21 +13,21 @@ const routes = (level: string) => ({
 });
 
 describe("FLAIR game categories", () => {
-  it("lists FLAIR 3D MAKE UP for everyone, never locked here; the Afterparty card is gone below Loft (the route stays)", async () => {
+  it("lists FLAIR 3D for everyone, never locked here; the Afterparty card is gone below Loft (the route stays)", async () => {
     loggedAs(ME, routes("STUDIO"));
     renderApp(<FlairModes />);
 
     expect(await screen.findByRole("heading", { name: "FLAIR" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "FLAIR 3D MAKE UP" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "FLAIR 3D" })).toBeTruthy();
     expect(screen.queryAllByRole("link", { name: /Bloqueado até o nível Loft/ })).toHaveLength(0);
-    expect(screen.getByRole("link", { name: "Jogar FLAIR 3D MAKE UP" }).getAttribute("href")).toBe("/flair/jogos");
+    expect(screen.getByRole("link", { name: "Jogar FLAIR 3D" }).getAttribute("href")).toBe("/flair/jogos");
   });
 
   it("at Loft neither the Afterparty nor the MET Gala Heist is listed (both stay for the future Glass Empire game)", async () => {
     loggedAs(ME, routes("LOFT"));
     renderApp(<FlairModes />);
 
-    expect(await screen.findByRole("link", { name: "Jogar FLAIR 3D MAKE UP" })).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Jogar FLAIR 3D" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Jogar FLAIR Metamorfose" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Jogar o MET Gala Heist" })).toBeNull();
     expect(document.querySelector('a[href="/flair/aventura"]')).toBeNull();

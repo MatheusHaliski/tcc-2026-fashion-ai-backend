@@ -1,5 +1,5 @@
 /**
- * FLAIR 3D MAKE UP — os 100 jogos FLAIR (docs/flair/flair-3d) sobre /api/flair/games. Cada jogo é um Desafio
+ * FLAIR 3D — os 100 jogos FLAIR (docs/flair/flair-3d) sobre /api/flair/games. Cada jogo é um Desafio
  * de Montagem com série, distrito, raridade, nível de FAI XP e nível do guarda-roupa exigidos, deck, regras de Hype,
  * efeitos por vaga e recompensas extras. O acesso vem SEMPRE do servidor (`access`): o cliente nunca compara o nível
  * local com um valor fixo; sem resposta, o jogo fica bloqueado (fail closed). Aqui ficam o contrato TS, as constantes
@@ -59,7 +59,7 @@ export interface GameScene extends Omit<Scene, "slots"> { slots: Record<string, 
   /** tipo de luz por vaga, o objeto da foto onde a vaga está e a largura dele (% da foto) */ fx?: Record<string, SceneFx>; anchors?: Record<string, string>; sizes?: Record<string, number> }
 export interface GameDetail extends GameSummary, CbcDetail { slots: GameSlot[]; ficha: GameFicha; scene: GameScene; hypeRules: Record<string, unknown> }
 
-/** Erro do jogador numa vaga (Flair3dPenalties no servidor): tira pontos do placar FLAIR 3D MAKE UP, que nunca fica negativo. */
+/** Erro do jogador numa vaga (Flair3dPenalties no servidor): tira pontos do placar FLAIR 3D, que nunca fica negativo. */
 export type Flair3dPenaltyCode = "REFUSED" | "MISPLACED" | "NO_SINTONIA" | "OVEREXPOSED";
 export interface Flair3dPenalty { code: Flair3dPenaltyCode; points: number }
 export interface Flair3dSlot { slot: string; cardId: string; hypeBand: HypeBand; hypeBonus: number; effect: { kind: EffectKind; bonus: number; text?: string | null }; matchBand: HypeBand; matchDelta: number; penalties?: Flair3dPenalty[] }

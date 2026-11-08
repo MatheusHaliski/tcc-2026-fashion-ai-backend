@@ -1,5 +1,5 @@
 /* ── FLAIR · palco do confronto (components/flair/match/*) ─────────────────────────────────────────────────────────────
-   A foto real do ambiente do modo recebe, rodada a rodada, a carta de cada lado como uma inserção da cena do FLAIR 3D MAKE UP
+   A foto real do ambiente do modo recebe, rodada a rodada, a carta de cada lado como uma inserção da cena do FLAIR 3D
    (.gep-hit, 26/27). O invólucro .gms-hit diz o papel da carta na rodada: is-winner (inserção completa e mais luz),
    is-loser (apagada: sem clarão, cone nem foto reacesa; a área da foto fica dessaturada) e is-draw (intensidade média).
    Lado A à esquerda (cor --thread), lado B à direita (cor --mark). No fim (.is-final) o lado vencedor recebe a luz
