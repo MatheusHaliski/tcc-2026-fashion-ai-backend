@@ -5,8 +5,8 @@ Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), q
 implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
 **Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois modos ligados ao
 editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Depois vieram **O Labirinto** (jogo 10),
-**Meu Piloto Favorito** (11, também com o editor 3D e o Copilot), **Around the World** (jogo 12) e **Meu Super-Herói
-Favorito** (13, editor 3D e Copilot). O 14 ainda será definido pela dona. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+**Meu Piloto Favorito** (11, também com o editor 3D e o Copilot), **Around the World** (jogo 12) , **Meu Super-Herói
+Favorito** (13, editor 3D e Copilot) e **Fashion Football** (jogo 14). São 14 no total. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
@@ -431,9 +431,43 @@ contexto, sugerir peças, ter opções de peças reais de super-heróis, tais co
   recusa nome e emblema de personagem protegido.
 - [decidir] Buscar licença com a Disney ou a Warner, ou ficar só nos arquétipos e em heróis criados pela pessoa.
 
-## Modo 14 · a definir
+## Jogo 14 · Fashion Football
 
-A dona pediu mais dois modos e descreveu só o 13. O 14 fica reservado até ela defini-lo.
+**Definição da dona:** "um jogo de futebol em que os jogadores jogam automaticamente, ou seja, você não controla eles. A
+única coisa que você faz é mudar a vestimenta deles. Ou seja, você pode mudar chuteiras, calções, camisas, meias do
+jogador de futebol para melhorar o desempenho dele na partida, surtir um efeito especial, melhorar a defesa do time, a
+qualidade técnica e ganhar o jogo. Você não controla os jogadores ativamente, como é no FC27. Você apenas muda a
+vestimenta e isso causa um efeito dentro da partida."
+
+- **O papel do jogador.** Só vestir o time. A partida roda sozinha, como no Dress Fighter: ninguém passa, chuta nem
+  corre comandado pelo jogador.
+- **O time [proposta].** 5 jogadores, como no futsal, para a câmera mostrar os uniformes inteiros e a partida ser
+  curta. Cada jogador tem 4 vagas: camisa, calção, meias e chuteira.
+- **Atributos [proposta].** Derivados de dados que as cartas já têm, com as mesmas regras do Dress Fighter:
+
+  | Peça | Pesa em |
+  | --- | --- |
+  | Chuteira | velocidade e técnica: chuteira leve dá velocidade; de couro ou travas firmes dá técnica |
+  | Camisa | resistência: tecido respirável cansa menos no segundo tempo |
+  | Calção | agilidade: tecido leve e com elasticidade |
+  | Meias | defesa: meias grossas protegem e firmam a marcação |
+  | Carta Especial ou habilidade | um efeito especial, como um chute com rastro de luz ou um goleiro que defende mais |
+
+  As peças do mesmo jogador e do time que combinam por cor ou marca somam bônus de conjunto, com o motor de links do
+  FLAIR CBC (`CbcLinks`): um uniforme bem ligado joga melhor junto.
+- **Partida [proposta].**
+  1. Vestir os 5 jogadores no painel de baixo, vendo os atributos do time mudarem.
+  2. O adversário aparece com o uniforme dele.
+  3. O primeiro tempo roda sozinho em cerca de 2 minutos, com os lances principais em destaque.
+  4. No intervalo, a pessoa pode trocar peças de qualquer jogador.
+  5. O segundo tempo roda, e sai o placar.
+- **Justiça [proposta].** O servidor simula a partida a partir dos atributos e de um sorteio com semente, e a mesma
+  partida sempre dá o mesmo resultado na revisão. Nada é pago para ganhar atributo, e a derrota não tira saldo.
+- **A roupa aparece [proposta].** A câmera fica aberta sobre a quadra. Os efeitos especiais saem da peça que os
+  concede e nunca cobrem o uniforme. Nos lances em destaque, a câmera aproxima o jogador e a peça que fez a diferença.
+- **Licença.** Escudos, uniformes e nomes de clubes, seleções e campeonatos reais são marcas. Sem licença, os times
+  usam só cores e nomes inventados.
+- [decidir] As peças vêm do deck da partida? Pode trocar peça só no intervalo ou também durante o jogo?
 
 ## O que ainda falta decidir
 
@@ -451,5 +485,5 @@ A dona pediu mais dois modos e descreveu só o 13. O 14 fica reservado até ela 
 11. Meu Piloto Favorito: construir as bases de capacete e macacão e a estampa (número e faixas) no editor.
 12. Around the World: as 8 regiões e se o look-guia usa marcas reais.
 13. Meu Super-Herói Favorito: licença com Disney ou Warner, ou só arquétipos e heróis próprios.
-14. Definir o modo 14.
+14. Fashion Football: deck da partida, e trocas só no intervalo ou também durante o jogo.
 15. Qual jogo detalhar primeiro.
