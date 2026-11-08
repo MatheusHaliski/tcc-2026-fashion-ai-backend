@@ -1,103 +1,143 @@
-# FLAIR 3D MAKE UP: os cinco jogos
+# FLAIR 3D: os cinco jogos
 
-O FLAIR 3D MAKE UP tem cinco jogos, um por capítulo, para que cada um ganhe cenário 3D, protagonistas e objetivo trabalhados a
-fundo. As regras de vaga, requisito, Hype e recompensa de cada jogo estão em `scripts/flair-games/data/serie-*.json`
-e valem no servidor; este documento descreve a experiência 3D por cima delas. Base técnica e de linguagem:
-`docs/flair/3d-puzzles/ESTUDO_INSOMNIAC.md` (princípios) e `ALTERNATIVAS_FASHIONAI.md` (kits, encaixes e orçamento).
+Os cinco jogos abaixo foram definidos pela dona do projeto em 08/11/2026 e substituem os anteriores (Espelho Partido,
+Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), que ainda estão nos dados do app até a
+implementação destes. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
-Regras comuns aos cinco:
+O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
+O plano dele está em `PLANO.md`. [decidir] O segmento dos cinco volta a se chamar "FLAIR 3D" no app?
 
-- **Protagonista do jogador**: o avatar 3D da pessoa (busto do rosto + corpo) entra em cena e veste as cartas quando a
-  Aura Impersonation é permitida (nível Loft). Sem a permissão, um manequim veste as peças no lugar do avatar.
-- **Encaixe**: cada vaga é um encaixe 3D num objeto real do cenário. A carta arrastada é atraída quando chega perto, e o
-  encaixe mostra antes de soltar se a posição serve. Soltar confirma com um clique de som, uma pausa de um quadro e a luz
-  do objeto acendendo.
-- **Efeitos**: Aura Hype com anéis e partículas pela faixa; Metamorfose transforma o material do objeto na paleta da
-  carta; Impersonation veste o avatar com a peça.
-- **Erros** (já no servidor, `Flair3dPenalties`): vaga que recusa a carta −2; fora da posição −1 e sem efeito de Aura;
-  sem sintonia −1; Hype acima do máximo −1. A luz do objeto falha em vermelho e o placar mostra os pontos perdidos;
-  nada sai da carteira.
-- **Vitória**: entregar com todas as vagas obrigatórias preenchidas, cada carta aceita pela vaga e os requisitos
-  cumpridos. **Montagem perfeita**: sintonia de pelo menos 2 por vaga obrigatória, o que paga +10 FAI Points e a
-  carta especial do jogo, quando houver.
+## Regras comuns
 
-## Capítulo A · 1 · Espelho Partido (a suíte)
+- **Tela, como no DREST.** O painel de cima mostra o avatar e o cenário em 3D. O painel de baixo mostra o deck ou o
+  catálogo: peças, maquiagem, cabelo e acessórios. Tocar num item veste o avatar na hora.
+- **Câmera.** A mesma do provador, com órbita e zoom em detalhes do corpo (`components/three/fitting-camera.tsx`,
+  `lib/scene3d/detail-camera.ts`). Hoje ela vai da gola ao calçado; rosto e mãos entram como paradas novas
+  (`REUSO_PROVADOR_E_AVATAR.md`).
+- **A roupa é o foco.** O avatar fica de pé, posa, desfila ou caminha rápido. Painéis de LED, outdoors, plateia,
+  flashes e fogos ficam atrás ou ao lado e nunca cobrem a roupa. A exceção de movimento é o jogo 2, que é luta.
+- **Deck da partida (jogos 1, 3 e 4).** Antes de entrar, a pessoa escolhe as cartas do guarda-roupa que leva. Durante a
+  partida, só essas cartas podem ser vestidas. [proposta] Deck de até 12 cartas, travado ao entrar, sem troca no meio.
+- **Proteções.** Público a partir de 13 anos:
+  - Numa passarela pública com outras pessoas, quem tem 13 a 17 anos desfila com dublê ou manequim, nunca com o rosto
+    do próprio avatar.
+  - A nota nunca depende de pele, corpo ou rosto.
+  - Não há pacote aleatório pago.
+  - O erro custa pontos da partida, nunca saldo da carteira.
+- **Marcas, celebridades e filmes reais.** Nome e logo de marca, imagem de celebridade e cena de filme precisam de
+  licença antes de ir para o público (Lei 9.279/96 e direitos de imagem e autorais). Até lá, o jogo usa os dados
+  (marca, país, estilo) sem logos, fotos nem trechos de filmes.
 
-- **Protagonistas**: o avatar do jogador e o Smart Mirror da suíte, rachado em sete cacos, que fala pela legenda.
-- **Objetivo**: recompor o espelho com peças cuja cor dominante combine com a paleta de cada caco.
-- **Cenário 3D**: a suíte à noite, só o abajur aceso. Cama, closet entreaberto e o espelho de corpo inteiro no centro,
-  com os sete cacos soltos no ar diante da moldura.
-- **Encaixes**: o caco central (peça inteira), os cacos esquerdo e direito (parte de cima e parte de baixo), o caco do
-  chão (calçado), dois cacos do topo (acessórios) e um caco livre.
-- **Entrada da carta**: o caco gira até alinhar e cola na moldura com um estalo de vidro. O reflexo do caco passa a
-  mostrar a peça, e o quarto ganha um pouco mais de luz a cada caco.
-- **Aura**: Hype acima de Relevante dá brilho ao caco (até +3); Metamorfose deixa o caco espelhado com a cor da carta;
-  Impersonation põe o avatar diante do espelho vestindo a peça.
-- **Requisitos**: três famílias de cor diferentes, uma peça de metal, quatro cartas com Hype de Nicho ou mais e cinco
-  cartas no mínimo.
-- **Erro visível**: caco fora de tom racha de novo e escurece o canto do quarto.
-- **Recompensa**: 25 FAI Points, a moldura Prisma para o quarto e, com o espelho inteiro em harmonia, a carta
-  especial Espelho Inteiro.
+## Jogo 1 · A Passarela
 
-## Capítulo B · 31 · Prova com a Estrela (o camarim)
+**Definição da dona:** "objetivo deve ser vestir seu avatar com roupas que atendam o tema. Por exemplo, se o tema for
+Brasil, voce ganha pontos se vestir com marcas brasileiras. Só vale utilizar roupas que voce submeteu ao entrar na
+partida (seu deck) e não roupas do seu guarda-roupa que não trouxe para ela. O objetivo só é revelado ao entrar na
+partida." Antes ela também escreveu: "quanto mais pecas o avatar se vestir com as roupas que acertam objetivo, mais
+pontos o jogador ganha".
 
-- **Protagonistas**: Lina Vale, estrela fictícia, com DNA de Estilo próprio; o avatar do jogador como stylist.
-- **Objetivo**: vestir Lina para três eventos (coletiva, estreia e after), respeitando o DNA dela a cada prova.
-- **Cenário 3D**: camarim com espelho de lâmpadas, arara, três cabides vazios e o manequim de Lina no centro.
-- **Encaixes**: coletiva (parte de cima e de baixo, sóbrias), estreia (vestido), after (parte de cima, de baixo e
-  acessório) e cabides extras opcionais.
-- **Entrada da carta**: a peça pousa no cabide e Lina experimenta: troca de roupa atrás do biombo, volta com a peça e
-  reage com expressão de aprovação ou recusa, conforme a prova.
-- **Aura**: peça Viral rouba a cena (−5 de confiança, exceto no after); peças discretas ganham +1. Metamorfose
-  transforma o espelho de lâmpadas na cor da peça; Impersonation põe o avatar ao lado de Lina com a mesma peça.
-- **Requisitos**: dois estilos entre alfaiataria, minimalista, clássico e chique; uma cor neutra ou vermelho; todas as
-  cartas com Hype de Nicho ou mais; mala de no máximo 20 pontos de peso.
-- **Erro visível**: prova recusada faz Lina devolver a peça ao cabide, e as lâmpadas da metade dela apagam.
-- **Recompensa**: 45 FAI Points, XP e a carta especial Prova com Lina Vale, numerada.
+- **Estratégia.** Como o tema só aparece depois que o deck trava, a pessoa leva um deck variado de marcas, cores,
+  estilos e ocasiões.
+- **Temas possíveis com dados que o app já tem [proposta]:**
+  - "Brasil": a marca da carta tem país BR (`Brand.country`, `BrandProfile.country`).
+  - "Nike": a marca é Nike (com licença, a passarela ganha os painéis de LED da marca).
+  - "Noite": a ocasião é festa.
+  - "Monocromático": todas as peças são da mesma família de cor.
+  - "Clássico": a peça tem o estilo clássico.
+- **Pontuação [proposta]:**
+  - Cada peça vestida que atende o tema vale +10, contada por posição do corpo: parte de cima, parte de baixo,
+    calçado, até 2 acessórios, ou peça inteira no lugar de cima e baixo.
+  - Look inteiro dentro do tema ganha +20.
+  - Peça fora do tema não tira ponto: só não soma.
+  - Máximo de 70 pontos.
+  - Empate: vence quem tem mais peças no tema; depois, o voto da plateia.
+- **Partida [proposta]:**
+  1. Escolher o deck.
+  2. Entrar na sala, de 4 a 8 participantes.
+  3. O tema é revelado.
+  4. Vestir no painel de baixo, só com cartas do deck, com 2 minutos e contagem visível.
+  5. Cada um desfila na sua vez, e a plateia reage pela nota.
+  6. Ranking final.
+- **Partida sem esperar [proposta]:** quem não acha sala joga contra desfiles gravados de outras pessoas.
+- **Cenário [proposta]:** uma passarela real por tema, como uma inspirada na São Paulo Fashion Week para "Brasil", ou a
+  passarela com LED da Nike, com licença.
+- **Recompensa [proposta]:** FAI Points pela colocação e itens do jogo. Cupom de marca só com parceria assinada.
 
-## Capítulo C · 43 · Rooftop ao Pôr do Sol (a cidade)
+## Jogo 2 · Street Fighter (nome de trabalho: Batalha de Rua)
 
-- **Protagonistas**: o avatar do jogador e o vento, que cresce a cada momento da luz.
-- **Objetivo**: chegar ao rooftop com um look que funcione na luz dourada e sobreviva ao vento do anoitecer.
-- **Cenário 3D**: rooftop com guarda-corpo de vidro, bar e lounge. A luz muda em três momentos (dourada, azul e noite),
-  com iluminação pré-calculada para cada um, como Spider-Man 2 faz por hora do dia.
-- **Encaixes**: a peça com brilho na luz dourada, a camada na luz azul, o acessório que reflete à noite, a parte de
-  baixo e o calçado da foto final, e o acessório do vento e o brinde opcionais.
-- **Entrada da carta**: a peça entra no avatar, e o céu avança para o próximo momento; o vento mexe a peça leve.
-- **Aura**: peça em tendência brilha mais na luz dourada (até +2) e some à noite; Metamorfose tinge o céu com a paleta
-  da carta; Impersonation faz o avatar posar para a foto final.
-- **Requisitos**: uma parte de cima, um acessório, todas as cartas com Hype de Nicho ou mais e cinco cartas.
-- **Erro visível**: a camada fora de posição voa com o vento, e a luz do bar pisca.
-- **Recompensa**: 30 FAI Points, XP e a luminária Pôr do Sol.
+**Definição da dona:** "diferentes tipos de roupa influenciam na velocidade, na combatividade, na defesa e no dano
+gerado ao atacar e o dano recebido, além de roupas que concedem superpoderes."
 
-## Capítulo D · 70 · Cinco Clientes (a boutique)
+- **Nome.** "Street Fighter" é marca registrada da Capcom e não pode ser o nome do jogo. "Batalha de Rua" é só um nome
+  de trabalho até a dona escolher. [decidir]
+- **Direção anterior.** Este é o único jogo com combate. A dona tinha dito que os jogos 3D não teriam combate; aqui a
+  definição pede luta de forma explícita.
+- **Atributos [proposta].** Derivados só de dados que a carta já tem: material, categoria, nível, os atributos FLAIR
+  (EDGE, RANGE, CLOUT, GLOW, ART, SYNC) e a habilidade da carta (`FlairAbility`). A tabela de material está em
+  `PROTAGONISTA_E_RECURSOS.md` §3.2.
 
-- **Protagonistas**: cinco clientes com DNA, ocasião e orçamento próprios, entre elas uma influenciadora; o avatar do
-  jogador como vendedor.
-- **Objetivo**: vestir as cinco com um único deck de 11 cartas, sem repetir peça entre elas.
-- **Cenário 3D**: boutique com cinco provadores, araras, sapateira e balcão. É o protótipo recomendado pelo estudo de
-  alternativas, porque usa todas as posições de carta.
-- **Encaixes**: um manequim por cliente, com cabide, sapateira e vitrine de acessórios conforme as peças pedidas.
-- **Entrada da carta**: a peça vai da arara ao manequim da cliente; ela sai do provador vestindo e reage.
-- **Aura**: a faixa só importa para a influenciadora (até +2); Metamorfose acende a vitrine do provador; Impersonation
-  faz o avatar apresentar o look ao lado da cliente.
-- **Requisitos**: três partes de cima, três de baixo, dois calçados, um acessório e as 11 cartas.
-- **Erro visível**: cliente insatisfeita devolve a peça ao balcão, e o provador dela apaga.
-- **Recompensa**: 60 FAI Points e o espelho de atendimento.
+  | Atributo | De onde vem |
+  | --- | --- |
+  | Velocidade | movimento do material e o calçado: tênis dá mais, salto alto dá menos |
+  | Combatividade e dano ao atacar | EDGE da carta e acessórios rígidos, como metal e couro |
+  | Defesa e dano recebido | resistência do material: couro, denim e casaco protegem mais |
+  | Superpoder | carta Especial, habilidade da carta ou Aura Metamorfose |
 
-## Capítulo E · 96 · Chefe: Vellard (o salão de gala)
+- **Partida [proposta]:** luta 1 contra 1 em rounds, vista de lado, com impactos estilizados, sem sangue e adequada a
+  13 anos ou mais. A câmera fica aberta para a roupa continuar visível.
+- [decidir] Este jogo também usa o deck da partida?
 
-- **Protagonistas**: Augusto Vellard, antagonista fictício que sabotou um manequim, e o avatar do jogador.
-- **Objetivo**: vencer Vellard em três confrontos (imagem, evidência e roupa), sempre por estilo, nunca por força.
-- **Cenário 3D**: o salão de gala e o showroom da Casa Vellard, com lustres, o manequim sabotado e o livro-caixa sobre
-  a mesa.
-- **Encaixes**: confronto de imagem (look de gala, calçado e acessório), de evidência (peça de arquivo e acessório com
-  uso) e de roupa (a peça do DNA, o que a defende e o reforço), mais o livro-caixa opcional.
-- **Entrada da carta**: cada peça entra no manequim do confronto, e Vellard responde com a dele. O lustre acima de quem
-  vence a rodada acende.
-- **Aura**: Vellard sabota uma carta Viral antes de entrar, salvo com Metamorfose; Impersonation põe o avatar frente a
-  frente com Vellard no confronto final.
-- **Requisitos**: um look de gala, uma ocasião formal ou de festa, um estilo vintage, clássico, glam, y2k, romântico ou
-  grunge, todas as cartas com Hype de Nicho ou mais e mala de no máximo 20.
-- **Erro visível**: carta sabotada racha no manequim, e os lustres do lado do jogador piscam.
-- **Recompensa**: 80 FAI Points, XP, o monograma Vellard riscado para a vitrine e a carta especial Queda de Vellard.
+## Jogo 3 · Vista a Celebridade
+
+**Definição da dona:** "Semelhante ao jogo da passarela, neste voce também deve registrar seu deck inicial e o jogo da
+dicas de filmes, musicas, series para que os usuarios submetam pecas de roupa para tentar adivinhar."
+
+- **Partida [proposta]:**
+  1. Registrar o deck.
+  2. O jogo mostra uma pista de cada vez: um filme, uma música ou uma série ligados à celebridade.
+  3. Depois de cada pista, a pessoa veste peças do deck que lembrem o estilo dela.
+  4. No fim, a celebridade é revelada.
+- **Pontuação [proposta]:** pontos pelas peças que batem com o perfil de estilo da celebridade, que nós escrevemos
+  (estilos, cores, ocasiões e marcas típicas). Quem acerta com menos pistas ganha mais. Um palpite opcional do nome
+  vale bônus.
+- **Imagem e nome.** As pistas são texto e a revelação mostra o nome e o perfil de estilo, sem foto e sem sugerir
+  apoio da celebridade. Foto, voz ou rosto só com licença.
+
+## Jogo 4 · Personagem de Filme
+
+**Definição da dona:** "voce deve escolher seu deck inicial. O jogo mostra da dicas da cena do filme e os usuarios
+devem tentar adivinhar qual filme/serie está sendo exibido no objetivo."
+
+- **Partida [proposta]:**
+  1. Escolher o deck.
+  2. O jogo descreve a cena aos poucos, por texto e por um cenário 3D nosso que lembra a cena sem copiar o filme.
+  3. A pessoa veste o personagem com peças do deck e escolhe o título entre 4 opções.
+- **Pontuação [proposta]:** acertar o título vale a maior parte. As peças que batem com o figurino do personagem somam
+  pontos.
+- **Direito autoral.** Nada de imagens, trechos ou trilhas dos filmes. O título pode ser citado como referência.
+
+## Jogo 5 · Road to Glory (FLAIR 3D MAKE UP)
+
+**Definição da dona:** "semelhante ao DREST, este jogo foca pura e simplesmente em vestimenta, make up e cabelo (na
+realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP). Onde voce tem varios níveis de temporada e, apos
+completar mini-jogos, os quais são exatamente iguais ao sentido e objetivo do DREST, aumenta seu nivel desbloqueando
+recursos e itens promocionais (a unica diferença do meu app para o DREST é justamente a questao da camera)".
+
+- **Mini-jogos [proposta].** Os tipos de desafio do DREST, descritos no `ESTUDO_DREST.md` §5: ensaio de fotos, mood
+  board, Beauty Mode (maquiagem), joias, missões de marca e eventos especiais. Em cada um há um brief, a pessoa veste a
+  modelo da casa ou o próprio avatar, e o look é avaliado.
+- **Temporada e níveis [proposta].** A Carreira do `PLANO.md`: 30 níveis, cada um com um desbloqueio permanente de
+  técnica, acabamento, lugar ou item promocional. A temporada traz briefs e itens próprios.
+- **A diferença.** A câmera 3D do provador, com zoom no rosto e nas mãos para a maquiagem. O DREST mostra uma imagem
+  fixa por pose (`ESTUDO_DREST.md` §8).
+- **Peças.** Aqui não há deck: vale o guarda-roupa da pessoa mais o catálogo já desbloqueado.
+
+## O que ainda falta decidir
+
+1. O segmento dos cinco jogos volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
+2. O nome do jogo 2 no lugar de "Street Fighter".
+3. Tamanho do deck (12 é a proposta) e se o jogo 2 também usa deck.
+4. A fórmula de pontos da Passarela (+10 por peça no tema, +20 pelo look inteiro, máximo de 70).
+5. Partidas ao vivo, contra desfiles gravados, ou os dois.
+6. Quais marcas, celebridades e filmes procurar primeiro para licença.
