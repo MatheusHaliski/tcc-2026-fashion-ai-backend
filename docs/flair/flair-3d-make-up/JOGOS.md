@@ -6,7 +6,7 @@ implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the 
 **Fashion Detective** (jogo 6) e **Boutique 3D** (jogo 7, antes Boutique Tycoon). Por último ela criou dois modos ligados ao
 editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Depois vieram **O Labirinto** (jogo 10),
 **Meu Piloto Favorito** (11, também com o editor 3D e o Copilot), **Around the World** (jogo 12) , **Meu Super-Herói
-Favorito** (13, editor 3D e Copilot), **Fashion Football** (jogo 14) e **Batalha de Looks** (jogo 15).
+Favorito** (13, editor 3D e Copilot), **Fashion Sports** (jogo 14, antes Fashion Football) e **Batalha de Looks** (jogo 15).
 
 Os modos que usam o editor 3D (8, 9, 11 e 13) formam o **Grupo Ateliê 3D**, uma entrada só no menu. Os objetivos
 simples de cada jogo, que antes eram propostas separadas, estão em `OBJETIVOS_POR_JOGO.md`. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
@@ -440,7 +440,11 @@ contexto, sugerir peças, ter opções de peças reais de super-heróis, tais co
   recusa nome e emblema de personagem protegido.
 - [decidir] Buscar licença com a Disney ou a Warner, ou ficar só nos arquétipos e em heróis criados pela pessoa.
 
-## Jogo 14 · Fashion Football
+## Jogo 14 · Fashion Sports
+
+**Nome.** A dona mudou o nome de Fashion Football para Fashion Sports. O futebol de 5 abaixo é o esporte principal;
+tênis, basquete 3×3, vôlei de praia, corrida, skate, golfe, dança e revezamento entram como rodadas, descritas em
+`OBJETIVOS_POR_JOGO.md`. Em todos, o jogo roda sozinho e o jogador só veste.
 
 **Definição da dona:** "um jogo de futebol em que os jogadores jogam automaticamente, ou seja, você não controla eles. A
 única coisa que você faz é mudar a vestimenta deles. Ou seja, você pode mudar chuteiras, calções, camisas, meias do
@@ -531,5 +535,5 @@ vestimenta e isso causa um efeito dentro da partida."
 11. Meu Piloto Favorito: construir as bases de capacete e macacão e a estampa (número e faixas) no editor.
 12. Around the World: as 8 regiões e se o look-guia usa marcas reais.
 13. Meu Super-Herói Favorito: licença com Disney ou Warner, ou só arquétipos e heróis próprios.
-14. Fashion Football: deck da partida, e trocas só no intervalo ou também durante o jogo.
+14. Fashion Sports: deck da partida, e trocas só no intervalo ou também durante o jogo.
 15. Qual jogo detalhar primeiro.

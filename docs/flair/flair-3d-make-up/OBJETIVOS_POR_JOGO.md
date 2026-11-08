@@ -126,12 +126,12 @@ Regras de todos os objetivos:
 | Metrô de Moda (60) | Cumprir as 6 estações | Troca exatamente 1 peça por estação para cumprir o evento dela | 17 por estação na primeira tentativa |
 | Roda das Estações (62) | Vestir as 4 estações em sequência, repetindo ao menos 1 peça da estação anterior | Monta 4 looks com o deck | 25 por estação adequada com a peça repetida |
 
-## Jogo 14 · Fashion Football: Outros esportes que rodam sozinhos
+## Jogo 14 · Fashion Sports: Outros esportes que rodam sozinhos
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
 | --- | --- | --- | --- |
 | Fashion Tennis (27) | Vencer 2 sets contra o adversário | Veste camisa, short ou saia, tênis e boné ou viseira | Tênis de quadra erra menos; tecido leve cansa menos no 2º set; boné ou viseira erra menos com sol |
-| Basquete 3×3 de Rua (28) | Chegar a 21 pontos antes do adversário | Veste os 3 jogadores: camisa, short e tênis | Coesão do uniforme como no Fashion Football; tênis de cano alto defende mais; tecido leve corre mais |
+| Basquete 3×3 de Rua (28) | Chegar a 21 pontos antes do adversário | Veste os 3 jogadores: camisa, short e tênis | Coesão do uniforme como no Fashion Sports; tênis de cano alto defende mais; tecido leve corre mais |
 | Vôlei de Praia 2×2 (29) | Vencer 2 sets | Veste a dupla: camiseta esportiva, bermuda, boné e óculos | Tecido leve e proteção solar cansam menos; dupla com o mesmo uniforme se entende melhor |
 | Corrida de Rua 5 km (30) | Terminar abaixo do tempo-alvo (ex.: 30 minutos simulados) | Veste camiseta, short ou legging, tênis e boné | Tênis de corrida dá ritmo; tecido respirável segura o ritmo no fim |
 | Skate Park (32) | Somar 70 pontos de estilo em 3 voltas | Veste camiseta, calça, tênis e boné | Tênis de sola reta acerta mais manobras; roupa com mobilidade faz mais manobras |
