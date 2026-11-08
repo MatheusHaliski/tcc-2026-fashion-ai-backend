@@ -13,14 +13,6 @@ Regras de todos os objetivos:
 - **Real:** marca, celebridade, clube ou filme real só com licença. Sem pacote aleatório pago.
 
 
-## Jogo 1 · A Passarela: Com amigos na passarela
-
-| Objetivo | O que vence | Você faz | Pontos ou regra |
-| --- | --- | --- | --- |
-| Look em Dupla (77) | Você e o amigo vestirem a mesma paleta sorteada sem ver o look um do outro | Cada um veste as 4 vagas | 25 por vaga em que as cores dos dois batem |
-| Troca de Uma Carta (79) | Cumprir o tema usando a carta que o amigo te emprestou | Cada um empresta 1 carta ao outro e monta o look | 25 por peça no tema (até 75); +25 se a carta emprestada liga em verde |
-| Desafio da Turma (82) | Os 3 do grupo cumprirem o tema usando a mesma peça-chave (ex.: jaqueta jeans) | Cada um monta o seu look | 50 se os 3 usam a peça-chave; +50 se os 3 cumprem o tema |
-| Foto da Turma (85) | Os 4 amigos vestirem a paleta de 2 cores da foto | Cada um monta o seu look | 25 por pessoa dentro da paleta |
 
 ## Jogo 3 · Dress the Star: Adivinhar pelo look
 
@@ -28,7 +20,6 @@ Regras de todos os objetivos:
 | --- | --- | --- | --- |
 | Para Onde Ela Vai? (40) | Acertar 8 de 10 | Uma personagem passa vestida; você escolhe o destino dela entre 4 (entrevista, praia, casamento, academia...) | 10 por acerto |
 | Look Relâmpago (41) | Recriar 4 de 4 peças de um look visto por 10 segundos | Monta o mesmo look com o catálogo | 25 por vaga igual em tipo de peça e família de cor |
-| Telefone sem Fio Fashion (83) | O 4º look da corrente ficar igual ao 1º | Vê o look anterior por 5 segundos e o recria com suas cartas | 25 por vaga igual (tipo de peça e família de cor) entre o 1º e o 4º |
 
 ## Jogo 4 · Personagem de Filme: Época
 
@@ -57,7 +48,6 @@ Regras de todos os objetivos:
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
 | --- | --- | --- | --- |
-| Estilista do Amigo (78) | Tirar 5 estrelas do amigo | Ele escolhe a ocasião e 1 peça obrigatória; você veste o manequim dele com as cartas dele | As estrelas que ele dá, de 1 a 5 |
 | Álbum de Estilos (95) | Completar as 8 páginas na temporada (minimalista, boho, streetwear, clássico, romântico, esportivo, glam, vintage) | Monta 1 look de 4 peças do estilo para cada página | 1 página por look aprovado |
 | Passaporte de Ocasiões (96) | Ganhar os 6 carimbos no mês (trabalho, festa, viagem, esporte, casamento, casual) | Monta 1 look aprovado para cada ocasião | 1 carimbo por ocasião |
 | Coleção Arco-Íris (97) | Ganhar os 7 carimbos de cor em 7 dias | Cada dia, um look com 3 peças ou mais na cor do dia | 1 carimbo por dia cumprido |
@@ -139,7 +129,9 @@ Regras de todos os objetivos:
 | Maratona de Dança (35) | Dançar as 8 músicas do baile até o fim | Veste o look do baile | A energia cai a cada música; calçado confortável e roupa com mobilidade gastam menos |
 | Revezamento 4×100 (38) | Vencer a final contra 3 equipes | Veste os 4 corredores | Tênis de corrida dá velocidade; uniforme igual erra menos a passagem do bastão |
 
-## Jogo 15 · Batalha de Looks: Vestir por regra clara
+## Jogo 15 · Batalha de Looks
+
+### Vestir por regra clara
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
 | --- | --- | --- | --- |
@@ -155,11 +147,22 @@ Regras de todos os objetivos:
 | Contraste Perfeito (24) | Parte de cima e de baixo em cores complementares (azul e laranja, vermelho e verde, roxo e amarelo) | Escolhe as 4 peças | 50 pelo par complementar; 25 por calçado ou acessório que repete uma das duas cores |
 | Textura Total (25) | Usar 3 materiais diferentes, todos certos para a estação sorteada | Escolhe as 4 peças | 25 por material diferente e adequado (até 75); +25 se nenhum é inadequado |
 | Look de Uma Marca Só (26) | As 4 vagas da marca sorteada | Escolhe as 4 peças | 25 por peça da marca |
-| Corrida do Tema (80) | Ser o primeiro da sala de 4 a cumprir as 4 regras do tema | Monta o look | 1º = 3 pontos, 2º = 2, 3º = 1 |
-| Votação Cega da Semana (81) | Ter a maior média de estrelas no tema da semana | Monta o look; ele aparece num manequim, sem nome | Média das estrelas, com no mínimo 20 votos |
-| Bingo Fashion (84) | Completar uma linha da cartela 3×3 em até 3 looks | Monta looks que marquem casas (couro, listrado, vermelho, festa...) | Linha em 1 look = 100; em 2 = 80; em 3 = 60 |
-| Look em 60 Segundos (86) | Cumprir as 3 regras do pedido do dia em 60 segundos | Monta o look | 33 por regra; dias seguidos rendem um selo, e faltar não tira nada |
 | Restauro de Look (99) | Atualizar um look dos anos 2000 trocando no máximo 2 peças | Escolhe as 2 trocas | 50 se o look fica com 3 linhas verdes; +50 se cumpre o estilo atual pedido |
 
+### Com amigos e comunidade
+
+| Objetivo | O que vence | Você faz | Pontos ou regra |
+| --- | --- | --- | --- |
+| Look em Dupla (77) | Você e o amigo vestirem a mesma paleta sorteada sem ver o look um do outro | Cada um veste as 4 vagas | 25 por vaga em que as cores dos dois batem |
+| Estilista do Amigo (78) | Tirar 5 estrelas do amigo | Ele escolhe a ocasião e 1 peça obrigatória; você veste o manequim dele com as cartas dele | As estrelas que ele dá, de 1 a 5 |
+| Troca de Uma Carta (79) | Cumprir o tema usando a carta que o amigo te emprestou | Cada um empresta 1 carta ao outro e monta o look | 25 por peça no tema (até 75); +25 se a carta emprestada liga em verde |
+| Corrida do Tema (80) | Ser o primeiro da sala de 4 a cumprir as 4 regras do tema | Monta o look | 1º = 3 pontos, 2º = 2, 3º = 1 |
+| Votação Cega da Semana (81) | Ter a maior média de estrelas no tema da semana | Monta o look; ele aparece num manequim, sem nome | Média das estrelas, com no mínimo 20 votos |
+| Desafio da Turma (82) | Os 3 do grupo cumprirem o tema usando a mesma peça-chave (ex.: jaqueta jeans) | Cada um monta o seu look | 50 se os 3 usam a peça-chave; +50 se os 3 cumprem o tema |
+| Telefone sem Fio Fashion (83) | O 4º look da corrente ficar igual ao 1º | Vê o look anterior por 5 segundos e o recria com suas cartas | 25 por vaga igual (tipo de peça e família de cor) entre o 1º e o 4º |
+| Bingo Fashion (84) | Completar uma linha da cartela 3×3 em até 3 looks | Monta looks que marquem casas (couro, listrado, vermelho, festa...) | Linha em 1 look = 100; em 2 = 80; em 3 = 60 |
+| Foto da Turma (85) | Os 4 amigos vestirem a paleta de 2 cores da foto | Cada um monta o seu look | 25 por pessoa dentro da paleta |
+| Look em 60 Segundos (86) | Cumprir as 3 regras do pedido do dia em 60 segundos | Monta o look | 33 por regra; dias seguidos rendem um selo, e faltar não tira nada |
+
 Todos os jogos mantêm o objetivo principal descrito em `JOGOS.md`; os grupos acima são rodadas extras dentro deles.
-O Dress Fighter (jogo 2) não ganhou grupo extra.
+O Dress Fighter (jogo 2) e A Passarela (jogo 1) não ganharam grupo extra.

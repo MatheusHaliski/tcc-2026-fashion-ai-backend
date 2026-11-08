@@ -516,6 +516,8 @@ vestimenta e isso causa um efeito dentro da partida."
   - **Sala de 4:** o mesmo objetivo para todos; vale também a Corrida do Tema (o primeiro a chegar a 100% leva mais).
   - **Sozinho:** o Look em 60 Segundos do dia e o Bingo Fashion.
   - **Semanal:** a Votação Cega, com os looks em manequins sem nome.
+  - **Com amigos:** Look em Dupla, Estilista do Amigo, Troca de Uma Carta, Desafio da Turma, Telefone sem Fio
+    Fashion e Foto da Turma.
 - **Cena [proposta].** Uma passarela curta, com os dois looks lado a lado no fim de cada rodada; a plateia reage à nota,
   e a roupa sempre fica visível.
 
