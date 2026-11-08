@@ -67,7 +67,7 @@ Regras de todos os objetivos:
 | Peça Intrusa (45) | Acertar 8 de 10 | Toca na peça que quebra o tema do look | 10 por acerto |
 | Quem é o Dono? (48) | Entregar 6 de 6 peças ao dono certo | Lê o perfil de 3 personagens e entrega cada peça a um deles | 17 por acerto |
 
-## Jogo 7 · Boutique Tycoon / Ateliê 3D: Rotina da loja
+## Jogo 7 · Boutique 3D: Rotina da loja
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
 | --- | --- | --- | --- |

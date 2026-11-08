@@ -3,7 +3,7 @@
 Os jogos 1 a 5 foram definidos pela dona do projeto em 08/11/2026 e substituem os anteriores (Espelho Partido,
 Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), que ainda estão nos dados do app até a
 implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
-**Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois modos ligados ao
+**Fashion Detective** (jogo 6) e **Boutique 3D** (jogo 7, antes Boutique Tycoon). Por último ela criou dois modos ligados ao
 editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Depois vieram **O Labirinto** (jogo 10),
 **Meu Piloto Favorito** (11, também com o editor 3D e o Copilot), **Around the World** (jogo 12) , **Meu Super-Herói
 Favorito** (13, editor 3D e Copilot), **Fashion Football** (jogo 14) e **Batalha de Looks** (jogo 15).
@@ -224,7 +224,7 @@ dependendo da escolha da vestimenta. Você pode ter um resultado dentro da cutsc
   estereótipo a partir da roupa.
 - [decidir] As roupas vêm do deck da partida ou do guarda-roupa inteiro?
 
-## Jogo 7 · Boutique Tycoon / Ateliê 3D
+## Jogo 7 · Boutique 3D
 
 **Modo pedido pela dona (texto que ela trouxe):** gestão de uma maison ou boutique conceito, do corte do tecido ao
 desfile. Clientes virtuais chegam com pedidos sob medida e prazos curtos (por exemplo, "preciso de um vestido
@@ -524,7 +524,7 @@ vestimenta e isso causa um efeito dentro da partida."
 5. Quais marcas, celebridades e filmes procurar primeiro para licença.
 6. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
 7. Fashion Detective: solução automática no fim ou escolha do suspeito; roupas do deck ou do guarda-roupa.
-   Boutique Tycoon: relógio opcional para menores.
+   Boutique 3D: relógio opcional para menores.
 8. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
 9. My Favorite Singer: a peça criada vira carta para os outros jogos?
 10. O Labirinto: entrar com o deck ou o guarda-roupa, e se as peças achadas ficam depois do jogo.
