@@ -453,8 +453,28 @@ vestimenta e isso causa um efeito dentro da partida."
   | Meias | defesa: meias grossas protegem e firmam a marcação |
   | Carta Especial ou habilidade | um efeito especial, como um chute com rastro de luz ou um goleiro que defende mais |
 
-  As peças do mesmo jogador e do time que combinam por cor ou marca somam bônus de conjunto, com o motor de links do
-  FLAIR CBC (`CbcLinks`): um uniforme bem ligado joga melhor junto.
+- **Uniforme do time.** Regra da dona: "os jogadores do time, todos eles, devem vestir o mesmo uniforme. [...] é
+  possível você variar o uniforme do jogador? Sim, porém, se você variar demais o uniforme dos jogadores do seu time,
+  você vai notar um efeito negativo, ou seja, o time vai começar a jogar pior, já que os jogadores vão ter mais problema
+  em se reconhecer."
+  - **Coesão [proposta].** Para cada vaga (camisa, calção, meias e chuteira), o jogo compara as peças dos 4 jogadores
+    de linha. Peça igual à da maioria conta como coesa. A coesão do time vai de 0 a 100% (16 peças comparadas).
+  - **Efeito [proposta].**
+
+    | Coesão | Efeito na partida |
+    | --- | --- |
+    | 100% | bônus de entrosamento: passes mais certos |
+    | 75% a 99% | sem efeito: uma ou duas peças diferentes, para ajustar um jogador |
+    | 50% a 74% | os jogadores se reconhecem pior: mais passes errados |
+    | abaixo de 50% | o time se perde em campo: muitos passes errados e menos chances de gol |
+
+    Variar uma peça pode compensar, por exemplo uma chuteira mais rápida só no atacante. Variar demais custa mais do que
+    rende.
+  - **O goleiro [proposta].** Como no futebol de verdade, o goleiro veste um uniforme diferente sem perder coesão.
+  - **Na tela [proposta].** Um medidor de coesão no painel de baixo muda a cada peça trocada. Na partida, um passe
+    errado por falta de coesão mostra os dois jogadores com uniformes diferentes em destaque.
+  - Dentro de cada jogador, as peças que combinam por cor ou marca ainda somam um bônus pequeno, pelo motor de links do
+    FLAIR CBC (`CbcLinks`).
 - **Partida [proposta].**
   1. Vestir os 5 jogadores no painel de baixo, vendo os atributos do time mudarem.
   2. O adversário aparece com o uniforme dele.
