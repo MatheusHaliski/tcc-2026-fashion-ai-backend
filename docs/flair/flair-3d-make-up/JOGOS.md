@@ -163,20 +163,61 @@ recursos e itens promocionais (a unica diferença do meu app para o DREST é jus
 
 **Modo pedido pela dona (texto que ela trouxe):** investigação urbana em que a roupa é o passe de acesso. Para entrar
 num evento de gala de luxo, o avatar precisa vestir peças de alta-costura de determinado designer; para entrar num clube
-underground, a estética streetwear ou alternativa. O jogador analisa cenas investigando tecidos, desgaste das roupas e
-marcas deixadas nos suspeitos para descobrir a profissão e os hábitos de quem é investigado.
+underground, a estética streetwear ou alternativa. O jogador analisa tecidos, desgaste das roupas e marcas deixadas nos
+suspeitos para descobrir a profissão e os hábitos de quem é investigado.
 
-- **A porta [proposta]:** o código de vestimenta de cada lugar é a fechadura. O avatar caminha até a entrada; se o
-  look cumpre o código (designer, estética, ocasião), a porta abre. Não há esconder, fugir nem lutar: a infiltração é
-  só estar vestido certo, o que mantém a roupa como foco.
-- **As pistas [proposta]:** a câmera de zoom do provador vira a lupa. A pessoa examina tecido, costura, desgaste e
-  manchas nas peças de um manequim ou de um personagem parado e conclui profissão, rotina ou ocasião.
-- **O caso [proposta]:** mistério sem violência, adequado a 13 anos ou mais, como uma peça de arquivo que sumiu, uma
-  coleção vazada antes do desfile ou um designer anônimo. Sem crime de sangue nem vítima ferida.
-- **Cuidado [proposta]:** a dedução usa profissão, rotina, ocasião e época. Não usa classe social, para não ensinar
+**Regras da dona:** "crie uma série de salões limitados do jogo, cenas cutscenes limitadas e ações do usuário limitadas.
+O usuário não realiza combate, não realiza movimentação e não empunha a arma, aponta a arma, não realiza nenhuma ação de
+combate com arma. Ele apenas escolhe roupas que são usadas para aumentar a sua defesa e combatividade automática. [...]
+E as cutscenes, movimentações através das salas, vão acontecendo naturalmente, automaticamente, através do jogo,
+dependendo da escolha da vestimenta. Você pode ter um resultado dentro da cutscene, dentro do jogo, favorável ou não.
+[...] O jogo deve durar no máximo 45 minutos para ser zerado, completado."
+
+- **A única ação do jogador.** Escolher a roupa no painel de baixo. Andar entre salas, entrar, conversar, examinar
+  pistas, defender-se e reagir a um confronto acontecem sozinhos, nas cutscenes. Ninguém comandado pelo jogador empunha
+  ou aponta arma.
+- **O caso [proposta].** Um caso por partida, em 6 salões fixos, por exemplo: a entrada da gala, o salão principal, o
+  camarim, o clube underground, o ateliê e o arquivo. Cada salão tem um código de vestimenta e um desafio.
+- **Cada salão em 4 passos [proposta]:**
+  1. Uma cutscene curta apresenta o salão, o código de vestimenta e quem está ali (até 40 segundos).
+  2. A pessoa escolhe o look (até 2 minutos, com o relógio opcional para quem tem 13 a 17 anos).
+  3. O jogo calcula o resultado a partir do look.
+  4. A cutscene do resultado roda: favorável ou desfavorável (até 60 segundos), e o personagem segue sozinho para o
+     próximo salão.
+- **Como o look decide [proposta]:**
+  - **Acesso:** o look cumpre o código de vestimenta do salão (designer, estética, ocasião).
+  - **Desafio:** a defesa ou a combatividade automáticas passam do limite do salão. Esses atributos vêm das mesmas regras
+    do Dress Fighter (material, calçado, EDGE, habilidade e carta Especial).
+
+  | Acesso | Desafio | Resultado |
+  | --- | --- | --- |
+  | cumpre | passa | favorável: a pista inteira e um atalho para o próximo salão |
+  | cumpre | não passa | favorável em parte: metade da pista |
+  | não cumpre | passa | favorável em parte: entra por outro caminho, metade da pista |
+  | não cumpre | não passa | desfavorável: sem pista, segue mesmo assim |
+
+  O desfavorável nunca encerra a partida: o personagem sempre segue para o próximo salão, para o jogo terminar no tempo.
+- **Confronto automático [proposta].** Quando o salão tem um desafio de combatividade (um segurança que barra a porta,
+  um rival que tenta sabotar), o confronto é uma cutscene estilizada, sem sangue e adequada a 13 anos ou mais. A roupa
+  continua visível, e o resultado vem dos atributos.
+- **O final [proposta].** Depois do sexto salão, a solução é automática: com 5 pistas ou mais, o detetive revela o caso
+  inteiro (final favorável); com menos, revela parte e mostra o que faltou (final parcial), para a pessoa tentar de novo.
+  [decidir] Ou a pessoa escolhe o suspeito no fim, como uma única ação além de vestir.
+- **Limites [proposta].**
+
+  | Item | Limite |
+  | --- | --- |
+  | Salões por caso | 6 |
+  | Cutscenes | 1 de abertura, 2 por salão (apresentação e resultado), 2 finais: 15 no total |
+  | Ações do jogador | 1 look por salão: 6 escolhas no caso |
+  | Duração | cerca de 4 a 6 minutos por salão, mais abertura e final: entre 30 e 40 minutos, nunca acima de 45 |
+
+  As cutscenes podem ser aceleradas ou puladas, e a partida salva a cada salão para continuar depois.
+- **Pistas no tecido [proposta].** Na cutscene de resultado favorável, a câmera de zoom do provador aproxima o tecido,
+  a costura ou o desgaste da peça examinada, e a pista aparece escrita. A pessoa só assiste; não precisa procurar.
+- **Cuidado [proposta].** A dedução usa profissão, rotina, ocasião e época. Não usa classe social, para não ensinar
   estereótipo a partir da roupa.
-- **Direção anterior:** a dona tinha pedido que os jogos 3D não tivessem furtividade. Aqui a "camuflagem" é só o código
-  de vestimenta na porta, sem mecânica de esconder.
+- [decidir] As roupas vêm do deck da partida ou do guarda-roupa inteiro?
 
 ## Jogo 7 · Boutique Tycoon / Ateliê 3D
 
@@ -268,7 +309,8 @@ uma era ou período da carreira dela, coleção da carreira dela."
 4. Partidas ao vivo, contra desfiles gravados, ou os dois.
 5. Quais marcas, celebridades e filmes procurar primeiro para licença.
 6. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
-7. Fashion Detective e Boutique Tycoon: confirmar o caso sem violência e o relógio opcional para menores.
+7. Fashion Detective: solução automática no fim ou escolha do suspeito; roupas do deck ou do guarda-roupa.
+   Boutique Tycoon: relógio opcional para menores.
 8. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
 9. My Favorite Singer: a peça criada vira carta para os outros jogos?
 10. Qual jogo detalhar primeiro.
