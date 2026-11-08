@@ -18,7 +18,8 @@ O plano dele está em `PLANO.md`. [decidir] O segmento volta a se chamar "FLAIR 
   `lib/scene3d/detail-camera.ts`). Hoje ela vai da gola ao calçado; rosto e mãos entram como paradas novas
   (`REUSO_PROVADOR_E_AVATAR.md`).
 - **A roupa é o foco.** O avatar fica de pé, posa, desfila ou caminha rápido. Painéis de LED, outdoors, plateia,
-  flashes e fogos ficam atrás ou ao lado e nunca cobrem a roupa. A exceção de movimento é o jogo 2, que é luta.
+  flashes e fogos ficam atrás ou ao lado e nunca cobrem a roupa. A exceção de movimento é o jogo 2, em que a luta
+  roda sozinha e o jogador só escolhe a roupa.
 - **Deck da partida (jogos 1, 3 e 4).** Antes de entrar, a pessoa escolhe as cartas do guarda-roupa que leva. Durante a
   partida, só essas cartas podem ser vestidas. [proposta] Deck de até 12 cartas, travado ao entrar, sem troca no meio.
 - **Proteções.** Público a partir de 13 anos:
@@ -66,28 +67,39 @@ pontos o jogador ganha".
   passarela com LED da Nike, com licença.
 - **Recompensa [proposta]:** FAI Points pela colocação e itens do jogo. Cupom de marca só com parceria assinada.
 
-## Jogo 2 · Street Fighter (nome de trabalho: Batalha de Rua)
+## Jogo 2 · Dress Fighter
 
 **Definição da dona:** "diferentes tipos de roupa influenciam na velocidade, na combatividade, na defesa e no dano
-gerado ao atacar e o dano recebido, além de roupas que concedem superpoderes."
+gerado ao atacar e o dano recebido, além de roupas que concedem superpoderes." Depois: "Mude o nome para Dress Fighter.
+Jogo semelhante ao Street Fight, só vou mudar o nome porque não posso copiar o nome de outra empresa [...]. Aqui neste
+jogo você não pode atacar o seu oponente como é no Street Fighter. Na realidade, o jogo realiza o ataque. Você só
+escolhe as roupas. As vestimentas causam algum tipo de aumento na sua combatividade, defesa e superpoderes e efeitos
+especiais."
 
-- **Nome.** "Street Fighter" é marca registrada da Capcom e não pode ser o nome do jogo. "Batalha de Rua" é só um nome
-  de trabalho até a dona escolher. [decidir]
-- **Direção anterior.** Este é o único jogo com combate. A dona tinha dito que os jogos 3D não teriam combate; aqui a
-  definição pede luta de forma explícita.
+- **Nome.** Dress Fighter. Antes de lançar, vale uma busca de marca no INPI para confirmar que o nome está livre.
+- **O papel do jogador.** Só vestir. A luta acontece sozinha, como um autobattler: o jogador não aperta botão de
+  ataque, não esquiva e não controla o personagem durante o combate.
+- **Partida [proposta]:**
+  1. Escolher as peças no painel de baixo, vendo os atributos do avatar mudarem a cada peça.
+  2. O oponente aparece com o look dele, e os dois atributos ficam lado a lado.
+  3. A luta roda sozinha em 3 rounds, com impactos estilizados, sem sangue e adequada a 13 anos ou mais.
+  4. Resultado, e entre um round e outro a pessoa pode trocar uma peça, se a regra da partida permitir [decidir].
 - **Atributos [proposta].** Derivados só de dados que a carta já tem: material, categoria, nível, os atributos FLAIR
   (EDGE, RANGE, CLOUT, GLOW, ART, SYNC) e a habilidade da carta (`FlairAbility`). A tabela de material está em
   `PROTAGONISTA_E_RECURSOS.md` §3.2.
 
   | Atributo | De onde vem |
   | --- | --- |
-  | Velocidade | movimento do material e o calçado: tênis dá mais, salto alto dá menos |
+  | Velocidade, quem ataca primeiro | movimento do material e o calçado: tênis dá mais, salto alto dá menos |
   | Combatividade e dano ao atacar | EDGE da carta e acessórios rígidos, como metal e couro |
   | Defesa e dano recebido | resistência do material: couro, denim e casaco protegem mais |
-  | Superpoder | carta Especial, habilidade da carta ou Aura Metamorfose |
+  | Superpoder e efeito especial | carta Especial, habilidade da carta ou Aura Metamorfose |
 
-- **Partida [proposta]:** luta 1 contra 1 em rounds, vista de lado, com impactos estilizados, sem sangue e adequada a
-  13 anos ou mais. A câmera fica aberta para a roupa continuar visível.
+- **A luta mostra a roupa [proposta].** A câmera fica aberta e de lado, para as duas roupas aparecerem inteiras. Os
+  efeitos especiais e os superpoderes saem da peça que os concede (um brilho na jaqueta, um rastro no tênis) e nunca
+  cobrem o look.
+- **Justiça [proposta].** O servidor calcula a luta a partir dos atributos e de um sorteio com semente, e a mesma
+  partida sempre dá o mesmo resultado na revisão. Nada é pago para ganhar atributo, e a derrota não tira saldo.
 - [decidir] Este jogo também usa o deck da partida?
 
 ## Jogo 3 · Dress the Star (Vista a Celebridade)
@@ -251,13 +263,12 @@ uma era ou período da carreira dela, coleção da carreira dela."
 ## O que ainda falta decidir
 
 1. O segmento volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
-2. O nome do jogo 2 no lugar de "Street Fighter".
-3. Tamanho do deck (12 é a proposta) e se o jogo 2 também usa deck.
-4. A fórmula de pontos da Passarela (+10 por peça no tema, +20 pelo look inteiro, máximo de 70).
-5. Partidas ao vivo, contra desfiles gravados, ou os dois.
-6. Quais marcas, celebridades e filmes procurar primeiro para licença.
-7. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
-8. Fashion Detective e Boutique Tycoon: confirmar o caso sem violência e o relógio opcional para menores.
-9. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
-10. My Favorite Singer: a peça criada vira carta para os outros jogos?
-11. Qual jogo detalhar primeiro.
+2. Tamanho do deck (12 é a proposta) e se o jogo 2 também usa deck.
+3. A fórmula de pontos da Passarela (+10 por peça no tema, +20 pelo look inteiro, máximo de 70).
+4. Partidas ao vivo, contra desfiles gravados, ou os dois.
+5. Quais marcas, celebridades e filmes procurar primeiro para licença.
+6. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
+7. Fashion Detective e Boutique Tycoon: confirmar o caso sem violência e o relógio opcional para menores.
+8. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
+9. My Favorite Singer: a peça criada vira carta para os outros jogos?
+10. Qual jogo detalhar primeiro.
