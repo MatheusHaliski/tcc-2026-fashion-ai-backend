@@ -365,9 +365,9 @@
     {
       "code": "AFTERPARTY",
       "name": "Roubo ao Afterparty",
-      "segment": "FLAIR 3D MAKE UP",
+      "segment": "fora do FashionAI",
       "group": "Metamorfose",
-      "list": "na lista (nível Loft)",
+      "list": "fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire (fora do escopo do FashionAI)",
       "venue": "rooftop",
       "scene": "Rooftop de festa em 3D ao anoitecer, com bar, pista e área VIP.",
       "objective": "Explorar o rooftop, transformar o avatar com looks e recuperar o item VIP sem ser notado.",
@@ -378,14 +378,14 @@
       "auraHype": "A faixa da carta define carisma e furtividade, mostrados como halo em volta do avatar.",
       "metamorfose": "As cartas mudam o avatar e o salão: atributos sobem ou descem com efeito de transformação.",
       "impersonation": "O avatar assume o look da carta para se misturar aos convidados, com troca completa de roupa.",
-      "today": "Já tem cenário 3D e efeitos; recebe a ficha com mínimo de cartas e Hype explícitos."
+      "today": "Retirado da lista de jogos FLAIR (é furtividade, contra a direção do FLAIR 3D MAKE UP); a rota e o código ficam para o futuro Glass Empire."
     },
     {
       "code": "HEIST",
       "name": "Met Gala Heist",
-      "segment": "FLAIR 3D MAKE UP",
+      "segment": "fora do FashionAI",
       "group": "Metamorfose",
-      "list": "fora da lista (em produção)",
+      "list": "fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire (fora do escopo do FashionAI)",
       "venue": null,
       "scene": "Cenário 3D próprio em produção; não é alterado nem usado como imagem de outros jogos.",
       "objective": "Em produção para o novo FLAIR 3D MAKE UP.",

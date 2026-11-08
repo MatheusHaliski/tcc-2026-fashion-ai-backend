@@ -31,8 +31,8 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 | CHESS | FLAIR Chess | FLAIR CBC | Modos de look | 2 jogadores. | 9 cartas (tabuleiro 3×3), com 1 HERO. | A carta HERO precisa de Hype ≥ Em alta (60). |
 | ULTIMATE | FLAIR Ultimate Team | FLAIR CBC | Modos de look | 2 jogadores. | 7 looks titulares com ao menos 3 peças. | ICON ≥ Em tendência (75), TREND ≥ Em alta (60) e média ≥ Relevante (40). |
 | CBC | Desafios de Montagem | FLAIR CBC | Montagem | 1 jogador. | As vagas obrigatórias do desafio (3 a 6 cartas). | Definido por desafio; padrão Nicho (20). |
-| AFTERPARTY | Roubo ao Afterparty | FLAIR 3D MAKE UP | Metamorfose | 1 jogador. | 1 deck de 3 cartas para as transformações do avatar. | Hype do deck ≥ Relevante (40); exige nível Loft. |
-| HEIST | Met Gala Heist | FLAIR 3D MAKE UP | Metamorfose | Em produção. | Em produção. | Em produção. |
+| AFTERPARTY | Roubo ao Afterparty | fora do FashionAI | Metamorfose | 1 jogador. | 1 deck de 3 cartas para as transformações do avatar. | Hype do deck ≥ Relevante (40); exige nível Loft. |
+| HEIST | Met Gala Heist | fora do FashionAI | Metamorfose | Em produção. | Em produção. | Em produção. |
 
 ## Duelo de Estilo 1×1 (DUEL)
 
@@ -316,7 +316,7 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 
 ## Roubo ao Afterparty (AFTERPARTY)
 
-- **Segmento:** FLAIR 3D MAKE UP. **Na lista:** na lista (nível Loft). **Foto:** rooftop (foto pendente).
+- **Segmento:** fora do FashionAI. **Na lista:** fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire (fora do escopo do FashionAI). **Foto:** rooftop (foto pendente).
 - **Cenário:** Rooftop de festa em 3D ao anoitecer, com bar, pista e área VIP.
 - **Objetivo:** Explorar o rooftop, transformar o avatar com looks e recuperar o item VIP sem ser notado.
 - **Participantes:** 1 jogador.
@@ -326,11 +326,11 @@ A planilha `modos-flair.xlsx` tem o mesmo conteúdo, com a miniatura da foto do 
 - **Aura Hype:** A faixa da carta define carisma e furtividade, mostrados como halo em volta do avatar.
 - **Aura Metamorfose:** As cartas mudam o avatar e o salão: atributos sobem ou descem com efeito de transformação.
 - **Aura Impersonation:** O avatar assume o look da carta para se misturar aos convidados, com troca completa de roupa.
-- **Hoje → depois:** Já tem cenário 3D e efeitos; recebe a ficha com mínimo de cartas e Hype explícitos.
+- **Hoje → depois:** Retirado da lista de jogos FLAIR (é furtividade, contra a direção do FLAIR 3D MAKE UP); a rota e o código ficam para o futuro Glass Empire.
 
 ## Met Gala Heist (HEIST)
 
-- **Segmento:** FLAIR 3D MAKE UP. **Na lista:** fora da lista (em produção). **Foto:** sem foto (fora da lista).
+- **Segmento:** fora do FashionAI. **Na lista:** fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire (fora do escopo do FashionAI). **Foto:** sem foto (fora da lista).
 - **Cenário:** Cenário 3D próprio em produção; não é alterado nem usado como imagem de outros jogos.
 - **Objetivo:** Em produção para o novo FLAIR 3D MAKE UP.
 - **Participantes:** Em produção.

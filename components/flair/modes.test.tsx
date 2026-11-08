@@ -13,25 +13,23 @@ const routes = (level: string) => ({
 });
 
 describe("FLAIR game categories", () => {
-  it("keeps the Afterparty locked below Loft and directs users to FAI XP; FLAIR 3D MAKE UP is never locked here", async () => {
+  it("lists FLAIR 3D MAKE UP for everyone, never locked here; the Afterparty card is gone below Loft (the route stays)", async () => {
     loggedAs(ME, routes("STUDIO"));
     renderApp(<FlairModes />);
 
     expect(await screen.findByRole("heading", { name: "FLAIR" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "FLAIR METAMORFOSE" })).toBeTruthy();
-    const locked = await screen.findAllByRole("link", { name: /Bloqueado até o nível Loft/ });
-    expect(locked.length).toBe(1);
-    for (const l of locked) expect(l.getAttribute("href")).toBe("/points");
+    expect(screen.getByRole("heading", { name: "FLAIR 3D MAKE UP" })).toBeTruthy();
+    expect(screen.queryAllByRole("link", { name: /Bloqueado até o nível Loft/ })).toHaveLength(0);
     expect(screen.getByRole("link", { name: "Jogar FLAIR 3D MAKE UP" }).getAttribute("href")).toBe("/flair/jogos");
   });
 
-  it("opens the Metamorfose game at Loft; the MET Gala Heist card is no longer listed (the route stays)", async () => {
+  it("at Loft neither the Afterparty nor the MET Gala Heist is listed (both stay for the future Glass Empire game)", async () => {
     loggedAs(ME, routes("LOFT"));
     renderApp(<FlairModes />);
 
-    const game = await screen.findByRole("link", { name: "Jogar FLAIR Metamorfose" });
-    expect(game.getAttribute("href")).toBe("/flair/aventura");
+    expect(await screen.findByRole("link", { name: "Jogar FLAIR 3D MAKE UP" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Jogar FLAIR Metamorfose" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Jogar o MET Gala Heist" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Jogar FLAIR 3D MAKE UP" }).getAttribute("href")).toBe("/flair/jogos");
+    expect(document.querySelector('a[href="/flair/aventura"]')).toBeNull();
   });
 });

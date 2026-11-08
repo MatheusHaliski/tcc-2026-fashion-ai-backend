@@ -14,8 +14,8 @@ Marcações: **[existe]** já está no código; **[novo]** é proposta deste des
 | Segmento | Jogos | Observação |
 | --- | --- | --- |
 | FLAIR 3D MAKE UP | os cinco jogos, um por capítulo (`docs/flair/flair-3d-make-up/CINCO_JOGOS.md`) | cenário 3D por ambiente; vagas viram encaixes em objetos |
-| FLAIR 3D MAKE UP | Roubo ao Afterparty | aventura 3D com avatar (nível Loft) |
-| FLAIR 3D MAKE UP | Met Gala Heist | fora da lista, em produção; sem mudanças |
+| fora do FashionAI | Roubo ao Afterparty | fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire |
+| fora do FashionAI | Met Gala Heist | fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire |
 | FLAIR CBC | os cinco elencos oficiais (`CINCO_ELENCOS.md`) | substituem os 16 Desafios de Montagem oficiais, que ficam arquivados |
 | FLAIR CBC | Combinações das lojas de marca | já trocam um conjunto por cupom [existe]; ganham links e o quebra-cabeça |
 | FLAIR CBC | Duelo 1×1, Treino, Batalha de Ocasião, Equipes 3×3 e os 15 modos de look | [decidir] proposta: o elenco ou o look que entra na batalha é montado como um CBC, e a química dos links vira bônus na partida, como os elencos do FIFA |
