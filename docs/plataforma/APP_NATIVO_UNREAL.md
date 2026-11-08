@@ -1,5 +1,11 @@
 # FashionAI como app de loja (App Store, PlayStation Store, Xbox) com Unreal Engine para o FLAIR 3D MAKE UP
 
+> **Decisão da dona (08/11/2026).** O FLAIR 3D MAKE UP fica com gráficos e mecânica simples: movimento só de pose,
+> desfile ou caminhada rápida, cenário mínimo em volta da roupa e nada de furtividade, combate ou coleta de recursos.
+> Por isso o app continua **provisoriamente como web app** (fashion-ai.com, three.js, luz pré-calculada), sem venda em
+> loja virtual por enquanto. Este estudo fica como caminho futuro, se campanhas de marca pedirem fidelidade que o
+> navegador não alcance. As regras brasileiras (ECA Digital, Lei 5.768, LGPD e licença de marca) valem também no web.
+
 > Estudo feito em 07/11/2026 a pedido da dona do projeto: "projetar o app como um aplicativo de Apple Store/PS Store/Xbox
 > Store, para poder renderizar os gráficos do FLAIR 3D MAKE UP. A versão web app (fashion-ai.com) é temporária e vamos utilizar
 > como teste para o futuro aplicativo que suportará uma carga maior de dados e Unreal Engine 3D".
