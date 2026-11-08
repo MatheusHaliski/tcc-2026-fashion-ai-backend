@@ -6,7 +6,10 @@ implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the 
 **Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois modos ligados ao
 editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Depois vieram **O Labirinto** (jogo 10),
 **Meu Piloto Favorito** (11, também com o editor 3D e o Copilot), **Around the World** (jogo 12) , **Meu Super-Herói
-Favorito** (13, editor 3D e Copilot) e **Fashion Football** (jogo 14). São 14 no total. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+Favorito** (13, editor 3D e Copilot), **Fashion Football** (jogo 14) e **Batalha de Looks** (jogo 15).
+
+Os modos que usam o editor 3D (8, 9, 11 e 13) formam o **Grupo Ateliê 3D**, uma entrada só no menu. Os objetivos
+simples de cada jogo, que antes eram propostas separadas, estão em `OBJETIVOS_POR_JOGO.md`. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
@@ -239,7 +242,13 @@ moedas para expandir a loja, contratar assistentes e desbloquear coleções rara
   punição por erro delas e sem tratar o trabalho delas como descartável.
 - **Prazo [proposta]:** o relógio é opcional para quem tem 13 a 17 anos; quem joga sem relógio ganha um pouco menos.
 
-## O editor de peças 3D que os jogos 8 e 9 usam
+## Grupo Ateliê 3D (modos 8, 9, 11 e 13)
+
+Clube do Coração, My Favorite Singer, Meu Piloto Favorito e Meu Super-Herói Favorito aparecem no menu como uma
+entrada só, o Ateliê 3D, porque todos criam peças no mesmo editor com o mesmo Copilot. Dentro dele a pessoa escolhe o
+modo ou um dos desafios de criação de `OBJETIVOS_POR_JOGO.md` (tênis, jaqueta, bolsa, óculos e outros).
+
+## O editor de peças 3D que o Grupo Ateliê 3D usa
 
 O editor fica no FAI Atelier, em `/atelier/projects/{id}/editor` (`components/atelier3d/editor.tsx`,
 `lib/atelier3d/document.ts`, serviços `Atelier3dService` e `GlbInspector`). Ele roda no navegador com three.js. O
@@ -488,6 +497,23 @@ vestimenta e isso causa um efeito dentro da partida."
 - **Licença.** Escudos, uniformes e nomes de clubes, seleções e campeonatos reais são marcas. Sem licença, os times
   usam só cores e nomes inventados.
 - [decidir] As peças vêm do deck da partida? Pode trocar peça só no intervalo ou também durante o jogo?
+
+## Jogo 15 · Batalha de Looks
+
+**Pedido da dona:** um jogo que agrupe os objetivos de "vestir por regra clara".
+
+- **Objetivo.** Vencer a batalha: fazer mais pontos que o adversário em 3 rodadas, cada rodada com um objetivo de
+  regra clara sorteado (por exemplo, look monocromático, dress code do convite, vista o clima ou mala de 5 peças).
+- **Você faz.** Só monta o look no painel de baixo, para o objetivo da rodada.
+- **Pontos.** O servidor confere as regras do objetivo e dá de 0 a 100 por rodada (as tabelas estão em
+  `OBJETIVOS_POR_JOGO.md`). Vence quem somar mais nas 3 rodadas; empate vai para o voto da plateia.
+- **Formatos [proposta]:**
+  - **Duelo 1×1:** os dois recebem o mesmo objetivo ao mesmo tempo.
+  - **Sala de 4:** o mesmo objetivo para todos; vale também a Corrida do Tema (o primeiro a chegar a 100% leva mais).
+  - **Sozinho:** o Look em 60 Segundos do dia e o Bingo Fashion.
+  - **Semanal:** a Votação Cega, com os looks em manequins sem nome.
+- **Cena [proposta].** Uma passarela curta, com os dois looks lado a lado no fim de cada rodada; a plateia reage à nota,
+  e a roupa sempre fica visível.
 
 ## O que ainda falta decidir
 
