@@ -4,7 +4,8 @@ Os jogos 1 a 5 foram definidos pela dona do projeto em 08/11/2026 e substituem o
 Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), que ainda estão nos dados do app até a
 implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
 **Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois modos ligados ao
-editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). O último, por enquanto, é
+**O Labirinto** (jogo 10). Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
@@ -301,6 +302,46 @@ uma era ou período da carreira dela, coleção da carreira dela."
 - **Licença:** nome do artista e título do álbum podem ser citados como referência. Foto, voz, rosto, música e nome de
   turnê registrado como marca só com licença. A peça é homenagem, não produto oficial do artista.
 
+## Jogo 10 · O Labirinto
+
+**Definição da dona:** "É, obviamente, um labirinto onde você entra e você destrava portas e passagens através de
+espelhos que exigem que você tenha uma certa combinação de roupa. Irão existir peças de roupa através do cenário,
+através do labirinto, e chaves que só são abertas ou liberadas quando você apresenta ao espelho uma combinação de roupa
+permitida."
+
+- **Direção anterior.** A dona tinha pedido jogos sem coleta de recursos e sem o jogador se mover. Aqui a definição pede
+  andar pelo labirinto e pegar peças pelo caminho, então isso vale para este jogo. Para manter a simplicidade, a
+  proposta é andar por toque, sem controle livre.
+- **Andar [proposta].** O labirinto é uma grade de salas. A pessoa toca na porta ou no corredor e o avatar caminha
+  sozinho até lá, numa caminhada simples, com a roupa sempre visível.
+- **Espelhos [proposta].** Cada espelho mostra, em texto, a combinação que aceita. Ao chegar, a pessoa veste o look no
+  painel de baixo e apresenta ao espelho:
+  - Se a combinação for permitida, o espelho acende e abre a passagem ou libera uma chave.
+  - Se não for, o espelho ondula em vermelho e diz o que faltou. Pode tentar de novo, sem perder saldo.
+- **Combinações [proposta].** Regras que usam dados que as cartas já têm e os mesmos links do FLAIR CBC, por exemplo:
+  - "Três peças da mesma família de cor."
+  - "Um calçado de couro e um acessório de metal."
+  - "Um look inteiro de festa."
+  - "Duas peças da mesma marca."
+  - "Nenhuma linha vermelha entre as peças", contada com o motor de links do CBC (`CbcLinks`).
+- **Peças pelo caminho [proposta].** Algumas salas têm uma peça num manequim ou numa arara. Com um toque, ela entra
+  na mala do labirinto, que vale só nesta partida e soma às peças que a pessoa trouxe. A peça encontrada costuma ser a
+  que falta para um espelho adiante.
+- **Chaves [proposta].** Cada chave abre uma porta trancada. Só sai de um espelho, nunca está solta no chão.
+- **Tamanho [proposta].**
+
+  | Item | Limite |
+  | --- | --- |
+  | Salas | 9, numa grade de 3 por 3 |
+  | Espelhos | 5, dos quais 3 liberam chaves |
+  | Peças pelo caminho | 6 |
+  | Duração | 20 a 30 minutos, com a partida salva a cada espelho |
+
+- **Fim [proposta].** O último espelho abre a saída. Menos tentativas erradas dão mais estrelas, e as estrelas viram
+  pontos. Não há tempo limite para quem tem 13 a 17 anos.
+- [decidir] A pessoa entra com o deck da partida ou com o guarda-roupa inteiro? As peças achadas no labirinto ficam para
+  depois do jogo ou só valem dentro dele?
+
 ## O que ainda falta decidir
 
 1. O segmento volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
@@ -313,4 +354,5 @@ uma era ou período da carreira dela, coleção da carreira dela."
    Boutique Tycoon: relógio opcional para menores.
 8. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
 9. My Favorite Singer: a peça criada vira carta para os outros jogos?
-10. Qual jogo detalhar primeiro.
+10. O Labirinto: entrar com o deck ou o guarda-roupa, e se as peças achadas ficam depois do jogo.
+11. Qual jogo detalhar primeiro.
