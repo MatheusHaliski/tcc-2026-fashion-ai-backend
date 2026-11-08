@@ -17,7 +17,7 @@
 > Complementa `docs/multiplataforma/` (plano de 10/10/2026, esqueleto em `clients/unreal/FashionAI/`). Este documento
 > foca o FLAIR 3D MAKE UP e **corrige três pontos** daquele plano: a licença do MetaHuman mudou em 2025 (§1.4); a diretriz
 > Apple 4.8 não exige mais "Sign in with Apple" por nome (§2.1); e o ECA Digital proíbe caixas de recompensa para
-> menores desde 17/03/2026 (§3.4). Contexto do jogo: `docs/flair/flair-3d-make-up/CINCO_JOGOS.md`,
+> menores desde 17/03/2026 (§3.4). Contexto do jogo: `docs/flair/flair-3d-make-up/JOGOS.md`,
 > `docs/flair/cbc/CINCO_ELENCOS.md`, `docs/flair/cbc/FLAIR_CBC.md` e `docs/flair/3d-puzzles/*.md`.
 
 ## 0. Resumo executivo
@@ -354,7 +354,7 @@ O público mínimo de 13 anos é decisão do produto. A loja pode classificar ac
 ```
 
 - **O servidor decide; o app mostra** [I]: vaga, requisito, sintonia, penalidade e recompensa já são calculados no
-  backend (`CINCO_JOGOS.md`). O cliente Unreal manda "carta X no encaixe Y" e recebe o resultado. Isso impede trapaça
+  backend (`JOGOS.md`). O cliente Unreal manda "carta X no encaixe Y" e recebe o resultado. Isso impede trapaça
   e mantém web e app com as mesmas regras.
 - **Autenticação** [I]: apps chamam `/api/auth/*` direto (sem BFF). Access token curto em memória, refresh token no
   Keychain ou no armazenamento seguro do console, rotação a cada uso, revogação por sessão (tela "Sessões"). No celular,

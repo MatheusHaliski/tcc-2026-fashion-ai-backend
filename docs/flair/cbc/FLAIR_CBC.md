@@ -13,7 +13,7 @@ Marcações: **[existe]** já está no código; **[novo]** é proposta deste des
 
 | Segmento | Jogos | Observação |
 | --- | --- | --- |
-| FLAIR 3D MAKE UP | os cinco jogos, um por capítulo (`docs/flair/flair-3d-make-up/CINCO_JOGOS.md`) | cenário 3D por ambiente; vagas viram encaixes em objetos |
+| FLAIR 3D MAKE UP | os cinco jogos, um por capítulo (`docs/flair/flair-3d-make-up/JOGOS.md`) | cenário 3D por ambiente; vagas viram encaixes em objetos |
 | fora do FashionAI | Roubo ao Afterparty | fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire |
 | fora do FashionAI | Met Gala Heist | fora da lista; código mantido para o futuro jogo de PlayStation Glass Empire |
 | FLAIR CBC | os cinco elencos oficiais (`CINCO_ELENCOS.md`) | substituem os 16 Desafios de Montagem oficiais, que ficam arquivados |

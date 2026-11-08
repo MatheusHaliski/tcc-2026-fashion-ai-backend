@@ -9,7 +9,7 @@
 > multiplataforma de 10/10/2026 (`docs/multiplataforma/`), cujos contratos (`/api/client/config`, avatar canônico,
 > sessão do provador) já estão no código e são citados aqui sem repetir.
 >
-> Nomes: os jogos são o **FLAIR 3D MAKE UP** (cinco jogos, `docs/flair/flair-3d-make-up/CINCO_JOGOS.md`) e o **FLAIR Card Building
+> Nomes: os jogos são o **FLAIR 3D MAKE UP** (cinco jogos, `docs/flair/flair-3d-make-up/JOGOS.md`) e o **FLAIR Card Building
 > Challenge (CBC)** (cinco elencos, `docs/flair/cbc/CINCO_ELENCOS.md`).
 
 ## Resumo

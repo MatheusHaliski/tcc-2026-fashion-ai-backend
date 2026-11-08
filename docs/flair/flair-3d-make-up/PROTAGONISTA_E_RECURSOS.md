@@ -1,7 +1,7 @@
 # FLAIR 3D MAKE UP: a protagonista, a atividade-puzzle e as roupas como recursos de RPG
 
 Data: 07/11/2026. Escopo: estudo de game design com pesquisa e leitura do código. Nenhum código mudou. Complementa
-`CINCO_JOGOS.md` (os cinco jogos), `../cbc/CINCO_ELENCOS.md` e `../cbc/FLAIR_CBC.md` (links do CBC),
+`JOGOS.md` (os cinco jogos), `../cbc/CINCO_ELENCOS.md` e `../cbc/FLAIR_CBC.md` (links do CBC),
 `../3d-puzzles/ESTUDO_INSOMNIAC.md` e `../3d-puzzles/ALTERNATIVAS_FASHIONAI.md`. Plataforma: estudo em andamento em
 `docs/plataforma/` (`APP_NATIVO_UNREAL.md`, `BACKEND_PARA_APP_NATIVO.md`: app nativo em Unreal Engine 5 para App
 Store, PS Store e Xbox, com o web como banco de testes), sobre a base de `docs/multiplataforma/`.

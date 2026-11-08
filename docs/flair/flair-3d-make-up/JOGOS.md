@@ -1,12 +1,13 @@
-# FLAIR 3D: os cinco jogos
+# FLAIR 3D: os jogos
 
-Os cinco jogos abaixo foram definidos pela dona do projeto em 08/11/2026 e substituem os anteriores (Espelho Partido,
+Os jogos 1 a 5 foram definidos pela dona do projeto em 08/11/2026 e substituem os anteriores (Espelho Partido,
 Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), que ainda estão nos dados do app até a
-implementação destes. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
+**Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
-O plano dele está em `PLANO.md`. [decidir] O segmento dos cinco volta a se chamar "FLAIR 3D" no app?
+O plano dele está em `PLANO.md`. [decidir] O segmento volta a se chamar "FLAIR 3D" no app?
 
 ## Regras comuns
 
@@ -88,21 +89,33 @@ gerado ao atacar e o dano recebido, além de roupas que concedem superpoderes."
   13 anos ou mais. A câmera fica aberta para a roupa continuar visível.
 - [decidir] Este jogo também usa o deck da partida?
 
-## Jogo 3 · Vista a Celebridade
+## Jogo 3 · Dress the Star (Vista a Celebridade)
 
-**Definição da dona:** "Semelhante ao jogo da passarela, neste voce também deve registrar seu deck inicial e o jogo da
-dicas de filmes, musicas, series para que os usuarios submetam pecas de roupa para tentar adivinhar."
+**Definição da dona (jogo 3):** "Semelhante ao jogo da passarela, neste voce também deve registrar seu deck inicial e o
+jogo da dicas de filmes, musicas, series para que os usuarios submetam pecas de roupa para tentar adivinhar."
 
-- **Partida [proposta]:**
-  1. Registrar o deck.
-  2. O jogo mostra uma pista de cada vez: um filme, uma música ou uma série ligados à celebridade.
-  3. Depois de cada pista, a pessoa veste peças do deck que lembrem o estilo dela.
-  4. No fim, a celebridade é revelada.
-- **Pontuação [proposta]:** pontos pelas peças que batem com o perfil de estilo da celebridade, que nós escrevemos
-  (estilos, cores, ocasiões e marcas típicas). Quem acerta com menos pistas ganha mais. Um palpite opcional do nome
-  vale bônus.
-- **Imagem e nome.** As pistas são texto e a revelação mostra o nome e o perfil de estilo, sem foto e sem sugerir
-  apoio da celebridade. Foto, voz ou rosto só com licença.
+**Modo pedido depois (texto que a dona trouxe):** um jogador é o Stylist e recebe o nome de uma celebridade, cantora
+ou personagem icônico, com pistas progressivas (trecho de música, filme famoso, ano de destaque). Ele tem tempo limite
+para montar no guarda-roupa 3D o figurino mais representativo, sem usar textos nem nomes das peças. A plateia ou os
+adversários assistem ao desfile e tentam adivinhar quem é. "Quanto mais rápido a plateia adivinhar apenas olhando a
+combinação de roupas (sem precisar liberar pistas extras de áudio/texto), mais pontos o Stylist e quem acertou ganham."
+
+**Variações pedidas pela dona:** partida com amigos, duelo X1 e modo Stylist.
+
+- **Partida com amigos [proposta]:** sala de 3 a 8 pessoas. A vez de Stylist passa de um em um. Quem está na vez monta
+  o figurino e desfila; os outros tentam adivinhar. Pontos para o Stylist e para quem acertou primeiro, maiores quanto
+  menos pistas foram abertas.
+- **Duelo X1 [proposta]:** dois jogadores. Em cada round, cada um veste uma celebridade sorteada para o outro adivinhar.
+  Vence quem fizer o outro acertar mais rápido, somando os rounds (proposta: 3 rounds).
+- **Modo Stylist [proposta]:** sozinho e ranqueado. O desfile vai para uma fila e outros jogadores tentam adivinhar
+  depois. A nota soma a rapidez dos acertos e o quanto as peças batem com o perfil de estilo da celebridade, que nós
+  escrevemos (estilos, cores, ocasiões, marcas e época).
+- **Peças [decidir]:** no ranqueado, só o deck registrado ao entrar, como na definição do jogo 3; na partida com amigos,
+  o guarda-roupa inteiro ou o catálogo, para ser mais leve.
+- **Palpite seguro [proposta]:** o palpite é escolhido numa lista de nomes que se completa ao digitar, sem chat livre,
+  para proteger quem tem 13 a 17 anos. Entre adultos e amigos confirmados, o chat pode ser liberado.
+- **Imagem e nome:** as pistas são texto e a revelação mostra o nome e o perfil de estilo, sem foto e sem sugerir apoio
+  da celebridade. Trecho de música ou foto só com licença; até lá, a pista cita o título da música ou do filme.
 
 ## Jogo 4 · Personagem de Filme
 
@@ -133,11 +146,51 @@ recursos e itens promocionais (a unica diferença do meu app para o DREST é jus
   fixa por pose (`ESTUDO_DREST.md` §8).
 - **Peças.** Aqui não há deck: vale o guarda-roupa da pessoa mais o catálogo já desbloqueado.
 
+## Jogo 6 · Fashion Detective
+
+**Modo pedido pela dona (texto que ela trouxe):** investigação urbana em que a roupa é o passe de acesso. Para entrar
+num evento de gala de luxo, o avatar precisa vestir peças de alta-costura de determinado designer; para entrar num clube
+underground, a estética streetwear ou alternativa. O jogador analisa cenas investigando tecidos, desgaste das roupas e
+marcas deixadas nos suspeitos para descobrir a profissão e os hábitos de quem é investigado.
+
+- **A porta [proposta]:** o código de vestimenta de cada lugar é a fechadura. O avatar caminha até a entrada; se o
+  look cumpre o código (designer, estética, ocasião), a porta abre. Não há esconder, fugir nem lutar: a infiltração é
+  só estar vestido certo, o que mantém a roupa como foco.
+- **As pistas [proposta]:** a câmera de zoom do provador vira a lupa. A pessoa examina tecido, costura, desgaste e
+  manchas nas peças de um manequim ou de um personagem parado e conclui profissão, rotina ou ocasião.
+- **O caso [proposta]:** mistério sem violência, adequado a 13 anos ou mais, como uma peça de arquivo que sumiu, uma
+  coleção vazada antes do desfile ou um designer anônimo. Sem crime de sangue nem vítima ferida.
+- **Cuidado [proposta]:** a dedução usa profissão, rotina, ocasião e época. Não usa classe social, para não ensinar
+  estereótipo a partir da roupa.
+- **Direção anterior:** a dona tinha pedido que os jogos 3D não tivessem furtividade. Aqui a "camuflagem" é só o código
+  de vestimenta na porta, sem mecânica de esconder.
+
+## Jogo 7 · Boutique Tycoon / Ateliê 3D
+
+**Modo pedido pela dona (texto que ela trouxe):** gestão de uma maison ou boutique conceito, do corte do tecido ao
+desfile. Clientes virtuais chegam com pedidos sob medida e prazos curtos (por exemplo, "preciso de um vestido
+sustentável para um show pop em 3 minutos"). O jogador escolhe moldes, ajusta o caimento 3D no manequim, gerencia
+costureiras e equilibra luxo e popularidade da loja. O sucesso da cliente no evento e a avaliação do público geram
+moedas para expandir a loja, contratar assistentes e desbloquear coleções raras.
+
+- **Base que já existe:** o editor 3D de peças do ateliê (`lib/atelier3d`, `components/atelier3d`) e o manequim do
+  provador servem para escolher o molde e ajustar o caimento.
+- **Cliente [proposta]:** cada pedido tem ocasião, estilo, cor e prazo. A cliente veste o resultado e caminha até o
+  espelho ou numa mini passarela; a reação dela e a do público dão a nota.
+- **Loja [proposta]:** as moedas são as moedas do jogo (FLAIR Coins), nunca dinheiro real, e não se compram pacotes
+  aleatórios. Expandir a loja abre novos tipos de pedido e coleções.
+- **Equipe [proposta]:** costureiras e assistentes são personagens da loja com tempo de trabalho e especialidade, sem
+  punição por erro delas e sem tratar o trabalho delas como descartável.
+- **Prazo [proposta]:** o relógio é opcional para quem tem 13 a 17 anos; quem joga sem relógio ganha um pouco menos.
+
 ## O que ainda falta decidir
 
-1. O segmento dos cinco jogos volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
+1. O segmento volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
 2. O nome do jogo 2 no lugar de "Street Fighter".
 3. Tamanho do deck (12 é a proposta) e se o jogo 2 também usa deck.
 4. A fórmula de pontos da Passarela (+10 por peça no tema, +20 pelo look inteiro, máximo de 70).
 5. Partidas ao vivo, contra desfiles gravados, ou os dois.
 6. Quais marcas, celebridades e filmes procurar primeiro para licença.
+7. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
+8. Fashion Detective e Boutique Tycoon: confirmar o caso sem violência e o relógio opcional para menores.
+9. Qual jogo detalhar primeiro.
