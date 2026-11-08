@@ -36,7 +36,9 @@ Regras de todos os objetivos:
 | --- | --- | --- | --- |
 | Adivinhe a Década (39) | Fazer mais pontos na sala, vestindo e adivinhando | Na sua vez, veste a década sorteada (anos 70, 80, 90 ou 2000); nas outras, escolhe a década entre 4 | Acerto em até 10 s = 3 pontos para quem vestiu e quem acertou; até 20 s = 2; até 30 s = 1 |
 
-## Jogo 5 · Road to Glory (FLAIR 3D MAKE UP): Mini-jogos de beleza, estilo e temporada
+## Jogo 5 · Road to Glory (FLAIR 3D MAKE UP)
+
+### Maquiagem e cabelo, pela técnica e pela paleta, nunca pela pele
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
 | --- | --- | --- | --- |
@@ -50,6 +52,11 @@ Regras de todos os objetivos:
 | Make que Conversa com a Roupa (74) | 3 produtos que combinam com a cor principal da roupa dada | Escolhe os 3 produtos | 33 por produto da mesma família ou de cor vizinha |
 | Make à Prova de Calor (75) | Chegar ao fim do dia de sol com olhos, boca e sobrancelha intactos | Escolhe produtos à prova d'água e mate | 33 por área que resiste |
 | Cabelo e Acessório (76) | Formar o par certo de penteado e acessório de cabeça para 3 ocasiões | Escolhe penteado e acessório (tiara, lenço ou boné) | 33 por par permitido |
+
+### Estilo e temporada
+
+| Objetivo | O que vence | Você faz | Pontos ou regra |
+| --- | --- | --- | --- |
 | Estilista do Amigo (78) | Tirar 5 estrelas do amigo | Ele escolhe a ocasião e 1 peça obrigatória; você veste o manequim dele com as cartas dele | As estrelas que ele dá, de 1 a 5 |
 | Álbum de Estilos (95) | Completar as 8 páginas na temporada (minimalista, boho, streetwear, clássico, romântico, esportivo, glam, vintage) | Monta 1 look de 4 peças do estilo para cada página | 1 página por look aprovado |
 | Passaporte de Ocasiões (96) | Ganhar os 6 carimbos no mês (trabalho, festa, viagem, esporte, casamento, casual) | Monta 1 look aprovado para cada ocasião | 1 carimbo por ocasião |
