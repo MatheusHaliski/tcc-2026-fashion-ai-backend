@@ -4,8 +4,8 @@ Os jogos 1 a 5 foram definidos pela dona do projeto em 08/11/2026 e substituem o
 Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), que ainda estão nos dados do app até a
 implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
 **Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois modos ligados ao
-editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). O último, por enquanto, é
-**O Labirinto** (jogo 10). Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Depois vieram **O Labirinto** (jogo 10),
+**Meu Piloto Favorito** (11, também com o editor 3D e o Copilot) e **Around the World** (jogo 12). São 12 no total. Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
@@ -342,6 +342,62 @@ permitida."
 - [decidir] A pessoa entra com o deck da partida ou com o guarda-roupa inteiro? As peças achadas no labirinto ficam para
   depois do jogo ou só valem dentro dele?
 
+## Modo 11 · Meu Piloto Favorito
+
+**Definição da dona:** "meu piloto favorito, onde você pode customizar a roupa e o capacete de um piloto da Fórmula 1.
+E o Copilot deve ser adequado para receber inputs do usuário, prompts, e dar respostas válidas para esse contexto,
+assim como as opções, sugestões e modos de edição devem ser adaptados a isso."
+
+- **O que se cria.** O macacão e o capacete de um piloto, no editor de peças 3D do FAI Atelier, com o mesmo painel de
+  conversa do Clube do Coração.
+- **Bases novas [proposta].** O editor hoje cria camiseta, saia e calça. Este modo precisa de duas bases novas:
+  - **Capacete**, dividido em zonas que se pintam separadas: topo, laterais, queixo, faixa da viseira e viseira.
+  - **Macacão**, dividido em tronco, mangas, pernas, gola e cinto.
+- **Modos de edição do modo [proposta].**
+  - Cor por zona, com acabamento fosco, brilhante, metálico ou cromado; a viseira pode ser transparente, fumê ou
+    espelhada.
+  - Degradê entre duas zonas.
+  - Número do piloto e faixas: dependem da estampa, que o editor ainda não tem (ver "O editor de peças 3D").
+- **O Copilot do modo [proposta].** O motor local do Copilot (`CopilotLexicon`) ganha um vocabulário de automobilismo:
+  capacete, viseira, macacão, faixa, número, degradê, cromado, fosco, cores de equipe.
+  - Exemplo: "capacete amarelo com faixa verde e viseira espelhada" vira três passos com botão "Aplicar": topo e
+    laterais amarelos, faixa da viseira verde, viseira espelhada.
+  - Toda resposta é uma ação que o editor sabe fazer neste modo. Pedido fora do contexto, como "deixa o capacete
+    voando", recebe um aviso curto e sugestões do que dá para pedir.
+  - As cores de cada equipe vêm de uma tabela que nós escrevemos, só com as cores.
+- **Depois de criar [proposta].** O capacete e o macacão aparecem num manequim no grid de largada ou no pódio, sem
+  corrida. Podem ser salvos no FAI Atelier e, se a pessoa quiser, publicados na galeria.
+- **Licença.** "Fórmula 1", "F1", nomes e logos de equipes, patrocinadores, nome e rosto dos pilotos e os desenhos de
+  capacete deles são marcas ou direitos de imagem. Sem licença, o modo usa só as cores e o nome em texto, e a criação é
+  uma homenagem da pessoa, não um produto oficial.
+
+## Jogo 12 · Around the World
+
+**Definição da dona:** "você vai desbloqueando caminhos através de um mapa do mundo que vai passando por diferentes
+regiões do mundo. Cada região do mundo possui uma vestimenta única. Você deve, então, completar a vestimenta com o seu
+deck de cartas em que você entrou na partida."
+
+- **Deck.** Só as cartas do deck com que a pessoa entrou na partida.
+- **O mapa [proposta].** Um mapa-múndi com 8 regiões ligadas por caminhos, por exemplo: Rio de Janeiro, Nova York,
+  Paris, Milão, Lagos, Seul, Tóquio e Sydney. Completar uma região acende os caminhos para as vizinhas, e a pessoa
+  escolhe por onde seguir.
+- **A vestimenta de cada região [proposta].** É a identidade de moda contemporânea do lugar, nunca roupa tradicional
+  ou sagrada usada como fantasia. A região mostra um look-guia, com uma ou duas peças já vestidas pelo jogo, e pede que
+  a pessoa complete o restante com o deck, cumprindo regras com dados que as cartas já têm:
+  - **Clima:** materiais leves no verão do Rio, materiais quentes no inverno de Seul (tabela de material de
+    `PROTAGONISTA_E_RECURSOS.md` §3.2).
+  - **Estética:** alfaiataria em Milão, streetwear em Tóquio.
+  - **Paleta de cores** da região.
+  - **Bônus:** marcas do próprio país da região, pelo país da marca (`Brand.country`).
+- **Cena [proposta].** Em cada região, o avatar caminha por uma rua ou um ponto da cidade, com a roupa sempre visível e
+  o cenário atrás.
+- **Completar [proposta].** O look cumpre as regras da região: o caminho seguinte abre e a região ganha de 1 a 3
+  estrelas pelo quanto cumpriu. Não cumpre: a pessoa tenta de novo com outras cartas do deck, sem perder saldo.
+- **Duração [proposta].** Cerca de 3 minutos por região, uns 25 minutos para a volta inteira, com a partida salva a cada
+  região. A volta completa rende um selo do passaporte no perfil.
+- **Cuidado.** As regiões são descritas com pessoas de moda locais ou pesquisa, sem estereótipo nem caricatura.
+- [decidir] Quais 8 regiões entram, e se o look-guia de cada uma usa marcas reais (com licença) ou só a estética.
+
 ## O que ainda falta decidir
 
 1. O segmento volta a se chamar "FLAIR 3D" no app, com Road to Glory como o modo FLAIR 3D MAKE UP?
@@ -355,4 +411,6 @@ permitida."
 8. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
 9. My Favorite Singer: a peça criada vira carta para os outros jogos?
 10. O Labirinto: entrar com o deck ou o guarda-roupa, e se as peças achadas ficam depois do jogo.
-11. Qual jogo detalhar primeiro.
+11. Meu Piloto Favorito: construir as bases de capacete e macacão e a estampa (número e faixas) no editor.
+12. Around the World: as 8 regiões e se o look-guia usa marcas reais.
+13. Qual jogo detalhar primeiro.
