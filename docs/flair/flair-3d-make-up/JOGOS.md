@@ -3,8 +3,8 @@
 Os jogos 1 a 5 foram definidos pela dona do projeto em 08/11/2026 e substituem os anteriores (Espelho Partido,
 Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), que ainda estão nos dados do app até a
 implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
-**Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois jogos ligados ao
-editor de peças 3D do FAI Atelier: **Clube do Coração** (jogo 8) e **My Favorite Singer** (jogo 9). Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
+**Fashion Detective** (jogo 6) e **Boutique Tycoon / Ateliê 3D** (jogo 7). Por último ela criou dois modos ligados ao
+editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Em cada jogo, **a definição da dona vem citada como ela escreveu**. O que vem depois, marcado
 como **[proposta]**, é detalhe sugerido para ela aprovar ou mudar.
 
 O **FLAIR 3D MAKE UP** é o jogo 5, Road to Glory: "na realidade, é justamente aqui que entra o tal do FLAIR 3D MAKE UP".
@@ -205,25 +205,27 @@ Blender 4.3.2 só foi usado numa auditoria fora do app em 05/11, que listou oper
 
 [proposta] Até o editor ganhar estampa e peça vestível, a peça criada aparece num manequim no palco do jogo.
 
-## Jogo 8 · Clube do Coração
+## Modo 8 · Clube do Coração (modo artístico)
 
-**Definição da dona:** "Clube do Coração. Esse aí conecta com o criador e editor de peças .glb".
+**Definição da dona:** "O clube do coração não precisa ser realmente o clube que a pessoa torce. Pode ser qualquer
+clube. O que acontece é que este modo, na realidade, não é exatamente um jogo, mas será inserido na aba Flare de
+qualquer forma e conecta com o editor de peças 3D. Na realidade, é um jogo artístico, onde existe Copilot, que você
+pode conversar". Antes ela tinha escrito que ele "conecta com o criador e editor de peças .glb".
 
-- **O que é [proposta, decidir]:** entendemos "clube do coração" como o time de futebol de que a pessoa é torcedora.
-  Ela cria no editor 3D uma peça para o clube: camisa, jaqueta ou acessório de torcida.
-- **Partida [proposta]:**
-  1. Escolher o clube.
-  2. Receber um brief da semana, como uma data histórica do clube, um clássico ou as cores de uma temporada.
-  3. Criar a peça a partir de uma base do editor.
-  4. A peça desfila no manequim ou no avatar diante da torcida virtual.
-- **Nota [proposta]:**
-  - Cores próximas da paleta do clube, medidas pela ciência de cor que o motor já usa.
-  - Cumprir o brief.
-  - Voto da comunidade.
-- **Torcidas [proposta]:** a soma das notas da semana gera um ranking entre torcidas, clube contra clube. A torcida que
-  vence ganha um selo coletivo, nunca saldo.
-- **Licença:** nome, escudo, mascote e camisa oficial dos clubes são marcas. Sem licença, o jogo usa só as cores e
-  descreve o clube em texto, sem escudo.
+- **O que é.** Um ateliê criativo dentro da aba FLAIR, sem placar, sem vencedor e sem relógio. A pessoa escolhe
+  qualquer clube e cria uma peça para ele no editor 3D: camisa, jaqueta, cachecol ou acessório.
+- **O Copilot [proposta].** Um painel de conversa ao lado do editor, reaproveitando a conversa que o app já tem
+  (`components/copilot-chat.tsx`) e o motor local do Copilot (`CopilotService` e `CopilotLexicon`), que entende cores,
+  materiais, tipos de peça, estilos e ocasiões em português, inglês e espanhol, sem IA paga.
+  - A pessoa escreve, por exemplo, "camisa retrô anos 80 em vermelho e preto, de algodão".
+  - O Copilot propõe passos com um botão "Aplicar": a base de camiseta, as cores em cada parte da peça e o material
+    fosco do algodão. Cada passo usa um comando que o editor já tem e entra no desfazer.
+  - Quando não entende a frase, o Copilot mostra sugestões de palavras que conhece, em vez de inventar.
+  - As cores de cada clube vêm de uma tabela que nós escrevemos, só com as cores, sem escudo.
+- **Depois de criar [proposta].** A peça pode ser salva no FAI Atelier, mostrada num manequim no palco do modo e, se a
+  pessoa quiser, publicada numa galeria. A galeria tem curtidas, sem ranking.
+- **Licença.** Nome, escudo, mascote e camisa oficial dos clubes são marcas. Sem licença, o modo usa só as cores e o
+  nome em texto, e a peça é uma criação da pessoa, não um produto oficial do clube.
 
 ## Jogo 9 · My Favorite Singer
 
@@ -256,6 +258,6 @@ uma era ou período da carreira dela, coleção da carreira dela."
 6. Quais marcas, celebridades e filmes procurar primeiro para licença.
 7. Dress the Star: no ranqueado só com o deck, e na partida com amigos com o guarda-roupa inteiro?
 8. Fashion Detective e Boutique Tycoon: confirmar o caso sem violência e o relógio opcional para menores.
-9. Clube do Coração é mesmo o time de futebol do coração? E o ranking entre torcidas?
+9. Clube do Coração: a galeria pública entra já, ou fica só a peça salva no FAI Atelier?
 10. My Favorite Singer: a peça criada vira carta para os outros jogos?
 11. Qual jogo detalhar primeiro.
