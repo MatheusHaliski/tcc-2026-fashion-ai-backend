@@ -38,10 +38,23 @@ Correções estruturais:
   "A fazer"/"Fazendo" das Sprints 1–3 arquivadas; etiquetas "SPRINT 04"/"Sprint 04" duplicadas substituídas pela
   "Sprint 04" roxa nos cartões abertos.
 
+## FLAIR reestruturado (modelo de `docs/ESTRUTURA_FLAIR.md` e `docs/JOGOS.md`)
+
+- **RF37** virou o RF guarda-chuva da aba FLAIR: cartas do acervo, hub com os três segmentos e regras comuns
+  (13+, nota sem pele/corpo/rosto, sem aposta nem gasto, recompensa única).
+- **RF49** deixou de ser o FLAIR Metamorfose (substituído) e passou a ser o **FLAIR 3D**. O HU-RF49 tem um CA por
+  modalidade: regras comuns + A Passarela, Dress Fighter, Dress the Star, Personagem de Filme, Fashion Detective,
+  Boutique 3D, Clube do Coração, My Favorite Singer, O Labirinto, Meu Piloto Favorito, Around the World,
+  Meu Super-Herói Favorito, Fashion Sports e Batalha de Looks.
+- **RF53 — FLAIR Card Building Challenge** (novo): links, química, combinações das lojas, cenários e jogos exclusivos
+  de marca/celebridade (CAs que estavam no HU-RF37).
+- **RF54 — FLAIR 3D MAKE UP / Road to Glory** (novo): brief, maquiagem do avatar, juiz por regras, carreira de 30 níveis.
+- Quadro: RF1–RF54 contíguos, um HU por RF. RF41 atualizado para os três segmentos.
+
 ## Decisões pendentes para o time
 
 1. **Numeração repo × Trello:** `docs/novos-rf/README.md` usa RF46 (Creative Engine), RF53 (HypeScore v2), RF54 (Lens)
-   e RF49 (segurança); no Trello são RF44, RF46, RF45, e RF49 é o FLAIR Metamorfose. O README diz que vale o Trello;
+   e RF49 (segurança); no Trello são RF44, RF46, RF45, e RF49 é o FLAIR 3D. O README diz que vale o Trello;
    falta atualizar os docs.
 2. **RF12:** "adicionar mais de uma peça por vez" saiu do título por não ter CA nem aparecer no doc 02. Se for
    requisito, entra como CA no RF4.
