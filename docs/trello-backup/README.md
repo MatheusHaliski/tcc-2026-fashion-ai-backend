@@ -51,6 +51,19 @@ Correções estruturais:
 - **RF54 — FLAIR 3D MAKE UP / Road to Glory** (novo): brief, maquiagem do avatar, juiz por regras, carreira de 30 níveis.
 - Quadro: RF1–RF54 contíguos, um HU por RF. RF41 atualizado para os três segmentos.
 
+## Meu Quarto removido (2026-11-10)
+
+- O RF27 antigo (Meu Quarto 3D), o HU dele e a cópia da Sprint 4 foram renomeados `[REMOVIDO]` e arquivados.
+- **Novo RF27 — Participar da aba Momentos** (calendário da moda integrado aos desafios), com HU-RF27; base em
+  `docs/momentos/MOMENTOS.md`.
+- **RF28** (Smart Mirror / Vista-me) passou a abrir a partir do guarda-roupa, sem endereço no quarto.
+- **RF30** ficou com FAI Points pelo uso e nível do perfil; a loja do quarto saiu.
+- **RF39** virou a venda de **guarda-roupas e mobiliário reais** de marcas e celebridades com entrega em casa.
+  O plano logístico está em `docs/novos-rf/RF39_Plano_Logistico_Mobiliario.md` (marketplace com envio pelo vendedor,
+  frete por CEP e peso cubado, pagamento com split retido, CDC e fases L0–L4; no TCC só sandbox).
+- Menções ao quarto foram retiradas de RF1, RF24, RF25, RF29, RF32, RF40, RF41, RF44 e RF48.
+- `docs/meu_guarda_roupa/01-especificacao-meu-quarto.md` e `docs/novos-rf/RF39_Criar_Guarda_Roupa_3D.md` ficaram obsoletos.
+
 ## Decisões pendentes para o time
 
 1. **Numeração repo × Trello:** `docs/novos-rf/README.md` usa RF46 (Creative Engine), RF53 (HypeScore v2), RF54 (Lens)
