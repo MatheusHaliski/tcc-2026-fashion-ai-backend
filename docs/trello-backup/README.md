@@ -58,9 +58,9 @@ Correções estruturais:
   `docs/momentos/MOMENTOS.md`.
 - **RF28** (Smart Mirror / Vista-me) passou a abrir a partir do guarda-roupa, sem endereço no quarto.
 - **RF30** ficou com FAI Points pelo uso e nível do perfil; a loja do quarto saiu.
-- **RF39** virou a venda de **guarda-roupas e mobiliário reais** de marcas e celebridades com entrega em casa.
-  O plano logístico está em `docs/novos-rf/RF39_Plano_Logistico_Mobiliario.md` (marketplace com envio pelo vendedor,
-  frete por CEP e peso cubado, pagamento com split retido, CDC e fases L0–L4; no TCC só sandbox).
+- **RF39** virou o fluxo **criar no editor 3D → FashionAI fabrica → vende na loja do app → entrega no endereço**, para peças de roupa e mobiliário de closet de marcas e celebridades.
+  Processo: `docs/novos-rf/RF39_Criar_Fabricar_Vender_Entregar.md`; logística: `docs/negocio/FASHION_AI_FURNITURE_DELIVERY.md`
+  (no TCC, fábrica, pagamento e frete só simulados ou em sandbox).
 - Menções ao quarto foram retiradas de RF1, RF24, RF25, RF29, RF32, RF40, RF41, RF44 e RF48.
 - `docs/meu_guarda_roupa/01-especificacao-meu-quarto.md` e `docs/novos-rf/RF39_Criar_Guarda_Roupa_3D.md` ficaram obsoletos.
 
