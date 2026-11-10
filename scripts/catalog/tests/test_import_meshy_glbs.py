@@ -210,7 +210,7 @@ def test_apply_failure_rolls_back_and_deletes_uploads(tmp_path):
     code, rows, _ = run(tmp_path, conn, "--apply", storage=storage)
     assert code == 1 and conn.commits == 0 and conn.rollbacks == 3
     assert storage.client.objects == {} and len(storage.client.deleted) == 3
-    assert rows["c6"]["situacao"] == "FALHOU RuntimeError"
+    assert rows["c6"]["situacao"] == "FALHOU RuntimeError: banco caiu"
 
 
 def test_without_the_v86_table_dry_run_works_and_apply_refuses(tmp_path, capsys):
@@ -221,6 +221,26 @@ def test_without_the_v86_table_dry_run_works_and_apply_refuses(tmp_path, capsys)
     assert imp.main(["--manifest", str(manifest), "--root", str(tmp_path), "--out-dir", str(tmp_path / "x"), "--apply"],
                     connect=lambda: (conn, "teste"), make_storage=lambda: storage) == 2
     assert conn.writes == [] and storage.client.objects == {}
+
+
+def test_dead_connection_still_cleans_the_bucket_and_reconnects(tmp_path):
+    class Dead(Conn):
+        def __init__(self):
+            super().__init__(fail_on="INSERT INTO catalog_product_models_3d")
+            self.pings = 0
+
+        def rollback(self):
+            raise RuntimeError("conexão encerrada")
+
+        def ping(self, reconnect=False):
+            assert reconnect
+            self.pings += 1
+    conn, storage = Dead(), Storage()
+    code, rows, _ = run(tmp_path, conn, "--apply", storage=storage)
+    assert code == 1 and storage.client.objects == {} and len(storage.client.deleted) == 3
+    assert conn.pings == 4                                   # antes de cada peça e antes do faltam.txt
+    assert imp.failure(ValueError("linha 1\nlinha 2")) == "FALHOU ValueError: linha 1 linha 2"
+    assert imp.failure(KeyError()) == "FALHOU KeyError"
 
 
 def test_upload_is_read_back_and_tampered_copy_removed():

@@ -167,13 +167,25 @@ def _real_storage():
     return FrameStorage()
 
 
+def alive(conn) -> None:
+    """A Railway encerra conexão MySQL parada: reabre antes de cada uso longo (o lote leva vários minutos)."""
+    if hasattr(conn, "ping"):
+        conn.ping(reconnect=True)
+
+
+def failure(exc: Exception) -> str:
+    """Tipo e mensagem curta do erro, numa linha (vai para o relatório: diz o que falhou, sem segredo)."""
+    return f"FALHOU {type(exc).__name__}: {' '.join(str(exc).split())[:160]}".rstrip(": ")
+
+
 def run_apply(conn, storage, items: list[dict]) -> None:
     for item in (i for i in items if i["status"] == "IMPORTAR"):
         try:
+            alive(conn)
             done = apply_one(conn, storage, {**item, "renditions": renditions(item["path"].read_bytes())})
             item["status"], item["pieces"] = f"IMPORTADO_{done['status']}", done["pieces"]
         except Exception as exc:   # um arquivo com problema não para o lote
-            item["status"] = f"FALHOU {type(exc).__name__}"
+            item["status"] = failure(exc)
 
 
 def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
@@ -199,6 +211,7 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
         writer = csv.writer(handle)
         writer.writerow(REPORT)
         writer.writerows(report_row(i, args.root, pieces) for i in items)
+    alive(conn)
     todo, review = missing(conn, items, models or [])
     (args.out_dir / "faltam.txt").write_text("".join(f"{p}\n" for p in todo), encoding="utf-8")
     (args.out_dir / "revisar.txt").write_text("".join(f"{p}\n" for p in review), encoding="utf-8")
