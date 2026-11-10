@@ -31,7 +31,7 @@ Correções estruturais:
 - **Temas Futuros eliminados:** as listas de futuros foram arquivadas. RF44–RF52 estão em Requisitos Funcionais
   (Sprint 04), cada um com HU no Product Backlog (HU-RF47 a HU-RF52 criados com os critérios que estavam no RF).
   Os 7 cards de critério de aceite avulsos viraram um CA cada no HU do RF hospedeiro: HU-RF37 (CA11 cenários CBC,
-  CA12 jogos FLAIR exclusivos), HU-RF39 (CA11 editor de assets 3D), HU-RF14 (CA09 peças autorais), HU-RF38 (CA10
+  CA12 jogos FLAIR exclusivos), HU-RF39 (editor de assets 3D, depois absorvido no CA01 do novo RF39), HU-RF14 (CA09 peças autorais), HU-RF38 (CA10
   promoções com Copilot), HU-RF25 (CA11 mercado de selos) e HU-RF32 (CA11 Trends "Passa o Look").
 - RNF: títulos `RNFn — tema` (RN11 → RNF11); RNF14 condensado (6,2 mil → 1,1 mil caracteres) sem repetir RNF1–RNF3.
 - Listas: colunas vazias
