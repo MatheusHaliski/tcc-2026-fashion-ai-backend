@@ -20,6 +20,7 @@ export const BATALHA_LOOKS: NucleoConfig = {
     ...fileira("plateia", -2.6, [-2, -0.5, 1], "#2E3A55"),
     ...fileira("plateia", 2.8, [-2, -0.5, 1], "#2E3A55"),
   ],
+  avatares: { protagonista: ["PROPRIO"], online: { min: 1, max: 3 } },
   vagas: ["SUP", "INF", "CAL", "ACE"],
   zonas: [],
   areas: [],

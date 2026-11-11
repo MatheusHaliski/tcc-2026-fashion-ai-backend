@@ -17,6 +17,7 @@ export const LABIRINTO: NucleoConfig = {
     ],
   },
   personagens: [],
+  avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: ["SUP", "INF", "CAL"],
   zonas: [],
   areas: [],

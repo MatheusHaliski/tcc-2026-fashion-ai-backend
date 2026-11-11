@@ -23,6 +23,7 @@ export const PASSARELA: NucleoConfig = {
     { papel: "fotografo", tipo: "silhueta", pos: [-1.2, 0, -4.6], cor: "#24212F", giro: 20 },
     { papel: "fotografo", tipo: "silhueta", pos: [1.2, 0, -4.6], cor: "#24212F", giro: -20 },
   ],
+  avatares: { protagonista: ["PROPRIO"], online: { min: 4, max: 8 } },
   vagas: ["SUP", "INF", "CAL", "ACE", "VES"],
   zonas: [],
   areas: [],

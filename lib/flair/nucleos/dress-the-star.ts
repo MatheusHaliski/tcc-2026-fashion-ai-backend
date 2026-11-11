@@ -20,6 +20,7 @@ export const DRESS_THE_STAR: NucleoConfig = {
     ...fileira("plateia", -2.6, [-1, 0.5, 2], "#3A2A48"),
     ...fileira("plateia", 2.6, [-1, 0.5, 2], "#3A2A48"),
   ],
+  avatares: { protagonista: ["PROPRIO"], online: { min: 3, max: 8 } },
   vagas: ["SUP", "INF", "CAL", "ACE"],
   zonas: [],
   areas: [],

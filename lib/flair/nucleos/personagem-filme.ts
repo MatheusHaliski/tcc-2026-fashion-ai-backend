@@ -20,6 +20,7 @@ export const PERSONAGEM_FILME: NucleoConfig = {
     { papel: "claquete", tipo: "manequim", pos: [-1.5, 0, -0.4], cor: "#2E2E2E", escala: 0.85, giro: 45 },
     { papel: "camera", tipo: "silhueta", pos: [1.7, 0, -0.8], cor: "#3B3B40", giro: -45 },
   ],
+  avatares: { protagonista: ["PROPRIO"], online: { min: 2, max: 4 } },
   vagas: ["SUP", "INF", "CAL", "ACE"],
   zonas: [],
   areas: [],

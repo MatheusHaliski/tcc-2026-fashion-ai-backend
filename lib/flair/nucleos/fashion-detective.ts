@@ -18,6 +18,7 @@ export const FASHION_DETECTIVE: NucleoConfig = {
     ],
   },
   personagens: [{ papel: "seguranca", tipo: "manequim", pos: [1.4, 0, -2.2], cor: "#121318", giro: -30 }],
+  avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: ["SUP", "INF", "CAL", "ACE", "VES"],
   zonas: [],
   areas: [],

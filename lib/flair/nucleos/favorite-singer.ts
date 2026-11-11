@@ -16,6 +16,7 @@ export const FAVORITE_SINGER: NucleoConfig = {
     ],
   },
   personagens: [],
+  avatares: { protagonista: ["MODELO_CASA", "PROPRIO"], online: null },
   vagas: [],
   zonas: ["CORPO", "MANGAS", "GOLA", "BARRA"],
   areas: [],

@@ -18,6 +18,7 @@ export const DRESS_FIGHTER: NucleoConfig = {
     ],
   },
   personagens: [{ papel: "oponente", tipo: "manequim", pos: [1.6, 0, -0.6], cor: "#5B2A86", giro: -60 }],
+  avatares: { protagonista: ["PROPRIO"], online: { min: 1, max: 1 } },
   vagas: ["SUP", "INF", "CAL", "ACE"],
   zonas: [],
   areas: [],

@@ -21,6 +21,7 @@ export const AROUND_THE_WORLD: NucleoConfig = {
     ...fileira("passante", -1.6, [-3, 0.5], "#4F6D8C"),
     ...fileira("passante", 1.6, [-2], "#8C5A4F"),
   ],
+  avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: ["SUP", "INF", "CAL", "ACE"],
   zonas: [],
   areas: [],

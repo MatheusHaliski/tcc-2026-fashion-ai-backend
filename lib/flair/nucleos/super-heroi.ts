@@ -19,6 +19,7 @@ export const SUPER_HEROI: NucleoConfig = {
     ],
   },
   personagens: [],
+  avatares: { protagonista: ["MODELO_CASA", "PROPRIO"], online: null },
   vagas: [],
   zonas: ["PEITO", "BRACOS", "PERNAS", "CAPA", "EMBLEMA"],
   areas: [],

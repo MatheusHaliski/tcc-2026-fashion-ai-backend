@@ -16,6 +16,7 @@ export const CLUBE_CORACAO: NucleoConfig = {
     ],
   },
   personagens: [],
+  avatares: { protagonista: ["MODELO_CASA", "PROPRIO"], online: null },
   vagas: [],
   zonas: ["CORPO", "MANGAS", "GOLA", "PUNHOS"],
   areas: [],

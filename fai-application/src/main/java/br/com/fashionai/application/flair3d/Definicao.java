@@ -28,6 +28,23 @@ public record Definicao(String codigo, int numero, Objetivo objetivo, List<Strin
         acoes = List.copyOf(acoes);
     }
 
+    /** Núcleo de cartas: recursos (CARTAS e o que mais vier), vagas, deck e se a pessoa desfila. */
+    public static Definicao cartas(String codigo, int numero, Objetivo objetivo, List<String> recursos, List<String> vagas,
+                                   Deck deck, boolean desfile) {
+        return new Definicao(codigo, numero, objetivo, recursos, vagas, List.of(), List.of(), List.of(),
+                desfile ? acoesComDesfile() : ACOES, deck);
+    }
+
+    /** Núcleo do editor: zonas com cor e acabamento, sem deck; {@code opcoes} quando há resposta (emblema). */
+    public static Definicao zonas(String codigo, int numero, Objetivo objetivo, List<String> zonas, List<String> opcoes) {
+        List<String> recursos = opcoes.isEmpty() ? List.of(ZONAS) : List.of(ZONAS, RESPOSTA);
+        return new Definicao(codigo, numero, objetivo, recursos, List.of(), zonas, List.of(), opcoes, ACOES_ZONAS, Deck.SEM_DECK);
+    }
+
+    public static Objetivo objetivo(String codigo, Regra... regras) {
+        return new Objetivo(codigo, List.of(regras));
+    }
+
     /** Ações dos núcleos de cartas, com "desfilar ou caminhar" onde o contrato manda. */
     public static List<String> acoesComDesfile() {
         List<String> out = new java.util.ArrayList<>(ACOES);

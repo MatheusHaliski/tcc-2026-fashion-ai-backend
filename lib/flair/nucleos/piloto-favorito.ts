@@ -18,6 +18,7 @@ export const PILOTO_FAVORITO: NucleoConfig = {
     ],
   },
   personagens: [],
+  avatares: { protagonista: ["MODELO_CASA", "PROPRIO"], online: null },
   vagas: [],
   zonas: ["TOPO", "LATERAIS", "FAIXA_VISEIRA", "VISEIRA"],
   areas: [],

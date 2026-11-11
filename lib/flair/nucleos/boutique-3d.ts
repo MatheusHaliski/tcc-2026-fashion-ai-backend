@@ -18,6 +18,7 @@ export const BOUTIQUE_3D: NucleoConfig = {
     ],
   },
   personagens: [{ papel: "cliente", tipo: "manequim", pos: [1.8, 0, -0.9], cor: "#7A6A8E", giro: -50 }],
+  avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: ["SUP", "INF", "CAL"],
   zonas: [],
   areas: [],

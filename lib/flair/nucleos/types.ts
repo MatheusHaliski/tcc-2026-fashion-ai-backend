@@ -40,6 +40,26 @@ export const NUCLEO_ACOES = [
 ] as const;
 export type NucleoAcao = (typeof NUCLEO_ACOES)[number];
 
+/** Quem aparece na cena (seção "Os avatares de cada partida"). */
+export type AvatarTipo = "PROPRIO" | "MODELO_CASA" | "OUTRO_JOGADOR" | "FIGURANTE";
+
+export interface AvatarSolo {
+  tipo: AvatarTipo;
+  papel: string;
+  quantidade: number;
+}
+
+export interface AvatarOnline {
+  min: number;
+  max: number;
+  porTime?: number | null;
+}
+
+export interface NucleoAvatares {
+  solo: AvatarSolo[];
+  online: AvatarOnline | null;
+}
+
 export type Vaga = "SUP" | "INF" | "CAL" | "ACE" | "VES";
 export type Acabamento = "FOSCO" | "BRILHANTE" | "METALICO" | "ESPELHADO";
 export type AreaMaquiagem = "LABIOS" | "OLHOS" | "BOCHECHAS";
@@ -85,6 +105,7 @@ export interface NucleoDefinicao {
   opcoes: string[];
   acoes: NucleoAcao[];
   deck?: DeckRegras | null;
+  avatares?: NucleoAvatares | null;
 }
 
 export interface NucleoPartida {
@@ -92,6 +113,7 @@ export interface NucleoPartida {
   nucleo: NucleoCodigo;
   status: string;
   semente: number;
+  participantes?: { tipo: AvatarTipo; papel: string; time?: string | null; userId?: string | null }[];
 }
 
 export interface ZonaEscolha {
@@ -192,6 +214,11 @@ export interface NucleoConfig {
   /** códigos das regras do objetivo mais simples (textos em flair3d.nucleo.<CODIGO>.rules.<REGRA>) */
   regras: string[];
   deck: DeckRegras;
+  /**
+   * protagonista: tipos aceitos (o primeiro é o padrão; MODELO_CASA também é a reserva de quem não tem avatar);
+   * online: variações futuras (só dado nesta base). Os figurantes saem de `personagens`.
+   */
+  avatares: { protagonista: AvatarTipo[]; online: AvatarOnline | null };
   /** a luta/partida roda sozinha depois da entrega (DRESS_FIGHTER, FASHION_SPORTS) */
   automatico?: boolean;
 }

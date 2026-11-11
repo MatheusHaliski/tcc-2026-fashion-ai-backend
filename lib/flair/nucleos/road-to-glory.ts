@@ -17,6 +17,7 @@ export const ROAD_TO_GLORY: NucleoConfig = {
     ],
   },
   personagens: [{ papel: "fotografa", tipo: "manequim", pos: [1.7, 0, -0.3], cor: "#5A4A3F", giro: -55 }],
+  avatares: { protagonista: ["PROPRIO", "MODELO_CASA"], online: null },
   vagas: ["SUP", "INF", "CAL", "ACE"],
   zonas: [],
   areas: ["LABIOS", "OLHOS", "BOCHECHAS"],

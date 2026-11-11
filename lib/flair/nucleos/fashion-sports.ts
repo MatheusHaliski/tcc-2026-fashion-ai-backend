@@ -29,6 +29,7 @@ export const FASHION_SPORTS: NucleoConfig = {
     adversario(1, -5.5),
     adversario(2, -5),
   ],
+  avatares: { protagonista: ["PROPRIO"], online: { min: 2, max: 10, porTime: 5 } },
   vagas: ["SUP", "INF", "CAL"],
   zonas: [],
   areas: [],
