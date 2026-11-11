@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -39,7 +40,8 @@ public class AroundTheWorldNucleo implements Flair3dNucleo {
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("RIO_DE_JANEIRO", new Regra("CIMA_LEVE", POR_REGRA),
                 new Regra("BAIXO_LEVE", POR_REGRA), new Regra("COR_QUENTE", POR_REGRA), new Regra("MARCA_BR", POR_REGRA)),
-                List.of(Definicao.CARTAS), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF")), true);
+                List.of(Definicao.CARTAS), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF")), true)
+                .comAvatares(Avatares.solo(null, Avatares.figurante("PASSANTE", 6)));
     }
 
     @Override

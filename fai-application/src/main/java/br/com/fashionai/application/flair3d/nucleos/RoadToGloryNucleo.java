@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -39,12 +40,13 @@ public class RoadToGloryNucleo implements Flair3dNucleo {
 
     @Override
     public Definicao definicao() {
-        Definicao base = Definicao.cartas(codigo(), numero(),
+        return Definicao.cartas(codigo(), numero(),
                 Definicao.objetivo("ENSAIO_VERAO", new Regra("OCASIAO", POR_REGRA), new Regra("MATERIAL_LEVE", POR_REGRA),
                         new Regra("BATOM_CORAL", POR_REGRA), new Regra("ACABAMENTO_BATOM", POR_REGRA)),
-                List.of(Definicao.CARTAS, Definicao.MAQUIAGEM), Definicao.VAGAS, Deck.SEM_DECK, false);
-        return new Definicao(base.codigo(), base.numero(), base.objetivo(), base.recursos(), base.vagas(), base.zonas(),
-                Definicao.AREAS, base.opcoes(), base.acoes(), base.deck());
+                List.of(Definicao.CARTAS, Definicao.MAQUIAGEM), Definicao.VAGAS, Deck.SEM_DECK, false)
+                .comAreas(Definicao.AREAS)
+                .comAvatares(new Avatares(List.of(new Avatares.Solo(Avatares.PROPRIO, Avatares.PROTAGONISTA, 1),
+                        new Avatares.Solo(Avatares.MODELO_CASA, Avatares.PROTAGONISTA, 1)), null));
     }
 
     /** As 4 regras do Ensaio de Verão sobre as peças vestidas e a maquiagem. */

@@ -49,6 +49,10 @@ public class Flair3dMatch {
     @Column(name = "deck_json", columnDefinition = "json")
     private String deckJson;
 
+    /** Quem está na cena: [{tipo, papel, time, userId}] (PROPRIO da pessoa e figurantes, nesta base só solo). */
+    @Column(name = "participantes_json", columnDefinition = "json")
+    private String participantesJson;
+
     @Column(name = "entrega_json", columnDefinition = "json")
     private String entregaJson;
 

@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -41,7 +42,8 @@ public class DressFighterNucleo implements Flair3dNucleo {
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(),
                 Definicao.objetivo("VENCER_2_DE_3", new Regra("VITORIA", 100), new Regra("UM_ROUND", 50)),
-                List.of(Definicao.CARTAS), VAGAS, Deck.ate(6, Obrigatoria.uma("CAL")), false);
+                List.of(Definicao.CARTAS), VAGAS, Deck.ate(6, Obrigatoria.uma("CAL")), false)
+                .comAvatares(Avatares.solo(new Avatares.Online(1, 1, null), Avatares.figurante("OPONENTE", 1)));
     }
 
     @Override

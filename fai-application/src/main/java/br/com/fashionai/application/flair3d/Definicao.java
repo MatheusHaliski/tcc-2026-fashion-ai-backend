@@ -7,7 +7,8 @@ import java.util.List;
  * catálogos de i18n do frontend ({@code flair3d.nucleo.<CODIGO>.*}).
  */
 public record Definicao(String codigo, int numero, Objetivo objetivo, List<String> recursos, List<String> vagas,
-                        List<String> zonas, List<String> areas, List<String> opcoes, List<String> acoes, Deck deck) {
+                        List<String> zonas, List<String> areas, List<String> opcoes, List<String> acoes, Deck deck,
+                        Avatares avatares) {
     public static final String CARTAS = "CARTAS";
     public static final String ZONAS = "ZONAS";
     public static final String MAQUIAGEM = "MAQUIAGEM";
@@ -32,13 +33,26 @@ public record Definicao(String codigo, int numero, Objetivo objetivo, List<Strin
     public static Definicao cartas(String codigo, int numero, Objetivo objetivo, List<String> recursos, List<String> vagas,
                                    Deck deck, boolean desfile) {
         return new Definicao(codigo, numero, objetivo, recursos, vagas, List.of(), List.of(), List.of(),
-                desfile ? acoesComDesfile() : ACOES, deck);
+                desfile ? acoesComDesfile() : ACOES, deck, Avatares.solo(null));
     }
 
     /** Núcleo do editor: zonas com cor e acabamento, sem deck; {@code opcoes} quando há resposta (emblema). */
     public static Definicao zonas(String codigo, int numero, Objetivo objetivo, List<String> zonas, List<String> opcoes) {
         List<String> recursos = opcoes.isEmpty() ? List.of(ZONAS) : List.of(ZONAS, RESPOSTA);
-        return new Definicao(codigo, numero, objetivo, recursos, List.of(), zonas, List.of(), opcoes, ACOES_ZONAS, Deck.SEM_DECK);
+        Avatares avatares = new Avatares(List.of(Avatares.figurante("MANEQUIM", 1), new Avatares.Solo(Avatares.PROPRIO, "OPCIONAL", 1)), null);
+        return new Definicao(codigo, numero, objetivo, recursos, List.of(), zonas, List.of(), opcoes, ACOES_ZONAS, Deck.SEM_DECK, avatares);
+    }
+
+    public Definicao comOpcoes(List<String> novas) {
+        return new Definicao(codigo, numero, objetivo, recursos, vagas, zonas, areas, novas, acoes, deck, avatares);
+    }
+
+    public Definicao comAreas(List<String> novas) {
+        return new Definicao(codigo, numero, objetivo, recursos, vagas, zonas, novas, opcoes, acoes, deck, avatares);
+    }
+
+    public Definicao comAvatares(Avatares novos) {
+        return new Definicao(codigo, numero, objetivo, recursos, vagas, zonas, areas, opcoes, acoes, deck, novos);
     }
 
     public static Objetivo objetivo(String codigo, Regra... regras) {

@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -41,7 +42,8 @@ public class FashionSportsNucleo implements Flair3dNucleo {
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("FUTEBOL_DE_5", new Regra("VITORIA", 100),
                 new Regra("EMPATE", 60), new Regra("COESAO", 0)), List.of(Definicao.CARTAS), VAGAS,
-                Deck.ate(6, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF"), Obrigatoria.uma("CAL")), false);
+                Deck.ate(6, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF"), Obrigatoria.uma("CAL")), false)
+                .comAvatares(Avatares.solo(new Avatares.Online(2, 10, 5), Avatares.figurante("COLEGA", 4), Avatares.figurante("ADVERSARIO", 5)));
     }
 
     public static int forca(Flair3dAtributos a) {

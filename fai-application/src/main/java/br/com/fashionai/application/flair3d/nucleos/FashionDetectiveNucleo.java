@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -42,7 +43,8 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(),
                 Definicao.objetivo("ENTRADA_DA_GALA", new Regra("ACESSO", 50), new Regra("DESAFIO_DEFESA", 50)),
-                List.of(Definicao.CARTAS), Definicao.VAGAS, Deck.ate(6, Obrigatoria.uma("SUP|VES")), false);
+                List.of(Definicao.CARTAS), Definicao.VAGAS, Deck.ate(6, Obrigatoria.uma("SUP|VES")), false)
+                .comAvatares(Avatares.solo(null, Avatares.figurante("SEGURANCA", 1)));
     }
 
     @Override

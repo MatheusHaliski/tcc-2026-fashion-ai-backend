@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -36,7 +37,8 @@ public class PassarelaNucleo implements Flair3dNucleo {
         return Definicao.cartas(codigo(), numero(),
                 Definicao.objetivo("TEMA_BRASIL", new Regra("MARCA_BR", POR_PECA), new Regra("TODAS_BR", TODAS)),
                 List.of(Definicao.CARTAS), Definicao.VAGAS,
-                Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF"), Obrigatoria.uma("CAL")), true);
+                Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF"), Obrigatoria.uma("CAL")), true)
+                .comAvatares(Avatares.solo(new Avatares.Online(4, 8, null), Avatares.figurante("PLATEIA", 12), Avatares.figurante("FOTOGRAFO", 2)));
     }
 
     @Override

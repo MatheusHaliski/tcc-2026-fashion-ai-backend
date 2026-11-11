@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -33,7 +34,8 @@ public class Boutique3dNucleo implements Flair3dNucleo {
     @Override
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("FESTA_EM_PRETO", new Regra("PEDIDO", POR_PECA)),
-                List.of(Definicao.CARTAS), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF")), false);
+                List.of(Definicao.CARTAS), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF")), false)
+                .comAvatares(Avatares.solo(null, Avatares.figurante("CLIENTE", 1)));
     }
 
     static boolean bate(CbcRules.Card c) {

@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -41,11 +42,10 @@ public class PersonagemFilmeNucleo implements Flair3dNucleo {
 
     @Override
     public Definicao definicao() {
-        Definicao base = Definicao.cartas(codigo(), numero(),
+        return Definicao.cartas(codigo(), numero(),
                 Definicao.objetivo("DETETIVE_NOIR", new Regra("TITULO", TITULO), new Regra("FIGURINO", POR_PECA)),
-                List.of(Definicao.CARTAS, Definicao.RESPOSTA), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP")), false);
-        return new Definicao(base.codigo(), base.numero(), base.objetivo(), base.recursos(), base.vagas(), base.zonas(),
-                base.areas(), OPCOES, base.acoes(), base.deck());
+                List.of(Definicao.CARTAS, Definicao.RESPOSTA), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP")), false)
+                .comOpcoes(OPCOES).comAvatares(Avatares.solo(new Avatares.Online(2, 4, null)));
     }
 
     static boolean bate(CbcRules.Card c) {

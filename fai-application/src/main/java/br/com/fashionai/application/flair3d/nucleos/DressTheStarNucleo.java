@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Deck;
@@ -34,7 +35,8 @@ public class DressTheStarNucleo implements Flair3dNucleo {
     @Override
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("ESTRELA_POP_2000", new Regra("FIGURINO", POR_PECA)),
-                List.of(Definicao.CARTAS), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF")), true);
+                List.of(Definicao.CARTAS), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF")), true)
+                .comAvatares(Avatares.solo(new Avatares.Online(3, 8, null)));
     }
 
     static boolean bate(CbcRules.Card c) {
