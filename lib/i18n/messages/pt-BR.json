@@ -1,4 +1,10 @@
 {
+  "pieceReferences.colecao.label": "Coleção",
+  "pieceReferences.colecao.unselected": "Sem coleção",
+  "pieceReferences.colecao.unavailable": "Coleção salva indisponível",
+  "pieceReferences.colecao.loadError": "Não foi possível carregar as coleções.",
+  "pieceReferences.colecao.empty": "Nenhuma coleção cadastrada.",
+  "pieceReferences.colecao.hint": "Escolha a coleção a que esta peça pertence.",
   "atelier3d.commands.title": "Comandos de edição",
   "atelier3d.commands.help": "Edite o objeto ou a malha indicada. As alterações entram no histórico e podem ser desfeitas na barra do editor.",
   "atelier3d.commands.reset-transform": "Restaurar transformação",
