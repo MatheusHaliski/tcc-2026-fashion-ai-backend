@@ -14,7 +14,7 @@ import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
   color: string; material: string; size: string; market?: string; occasion: string[]; style: string[]; seals: string[]; price: string; visibility: string;
-  tags: string; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
+  tags: string; colecaoId?: string | null; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
   estadoConservacaoId?: string | null; estadoConservacaoNome?: string | null; clearEstadoConservacao?: boolean;
   /** RF4 · Estúdio: false = salvar sem a foto de estúdio gerada no rascunho */
   studio?: boolean;
@@ -123,7 +123,8 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, c
       <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
       <PieceConservationField value={value.estadoConservacaoId ?? ""} selectedName={value.estadoConservacaoNome}
         error={err.estadoConservacaoId} onChange={id => onChange({ ...value, estadoConservacaoId: id || null, clearEstadoConservacao: !id })} />
-      <ChipMultiSelect className="sm:col-span-2" legend={t("common.occasion")} max={PIECE_MAX_TAGS} options={occasions.map((o) => ({ id: o, label: label(o) }))} value={value.occasion} onChange={(v) => set("occasion", v)}
+      <PieceColecaoField value={value.colecaoId ?? ""} onChange={id => onChange({ ...value, colecaoId: id || null })} />
+    <ChipMultiSelect className="sm:col-span-2" legend={t("common.occasion")} max={PIECE_MAX_TAGS} options={occasions.map((o) => ({ id: o, label: label(o) }))} value={value.occasion} onChange={(v) => set("occasion", v)}
         error={err.occasion} hint={t("pieceForm.dica_ocasioes")} limitMessage={t("pieceForm.limite_ocasioes")} problem={(v) => tagProblem("occasion", v, tax, value.category)} />
       <ChipMultiSelect className="sm:col-span-2" legend={t("common.style")} max={PIECE_MAX_TAGS} options={(tax?.styles ?? []).map((o) => ({ id: o, label: label(o) }))} value={value.style} onChange={(v) => set("style", v)}
         error={err.style} hint={t("pieceForm.dica_estilos")} limitMessage={t("pieceForm.limite_estilos")} problem={(v) => tagProblem("style", v, tax, value.category)} />
