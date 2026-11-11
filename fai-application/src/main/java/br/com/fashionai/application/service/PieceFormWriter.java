@@ -76,6 +76,10 @@ final class PieceFormWriter {
         if (f.estadoConservacaoId() != null || Boolean.TRUE.equals(f.clearEstadoConservacao())) {
             conservation.apply(w, f.estadoConservacaoId(), Boolean.TRUE.equals(f.clearEstadoConservacao()));
         }
+        if (f.colecaoId() != null) {
+    w.setColecao(colecoes.findById(f.colecaoId())
+        .orElseThrow(() -> ApiException.badRequest("COLECAO_INVALIDA", "Coleção inválida", Map.of())));
+}
         BackgroundStudioService.validateMotionWrite(w.getBackgroundConfigJson(), f.background());
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());
