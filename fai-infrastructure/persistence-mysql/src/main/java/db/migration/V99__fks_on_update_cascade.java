@@ -28,9 +28,12 @@ import java.util.Set;
  *
  * <p>Lê as FKs do INFORMATION_SCHEMA (inclusive as compostas), então cobre as criadas por qualquer migration.
  * Idempotente (FK já na regra é pulada); uma ALTER por FK (DROP + ADD juntos); nunca desliga FOREIGN_KEY_CHECKS.
+ * FK cuja coluna está num CHECK (erro MySQL 3823: ação referencial proibida) fica como está e vai para o log.
  */
 public class V99__fks_on_update_cascade extends BaseJavaMigration {
     private static final Logger log = LoggerFactory.getLogger(V99__fks_on_update_cascade.class);
+    /** ER_CHECK_CONSTRAINT_CLAUSE_USING_FK_REFER_ACTION_COLUMN: coluna usada num CHECK não aceita CASCADE/SET NULL. */
+    static final int CHECK_USES_FK_COLUMN = 3823;
 
     /** Uma FK do schema: colunas na ordem do índice. */
     public record Fk(String name, String table, List<String> columns, String refTable, List<String> refColumns,
@@ -49,6 +52,7 @@ public class V99__fks_on_update_cascade extends BaseJavaMigration {
         Set<String> names = new HashSet<>();
         fks.forEach(fk -> names.add(fk.name().toLowerCase(Locale.ROOT)));
         int applied = 0;
+        List<String> kept = new ArrayList<>();
         for (Fk fk : fks) {
             if (alreadyUnrestricted(fk)) {
                 continue;
@@ -57,10 +61,22 @@ public class V99__fks_on_update_cascade extends BaseJavaMigration {
             names.add(newName.toLowerCase(Locale.ROOT));
             try (Statement st = c.createStatement()) {
                 st.execute(alterSql(fk, newName));
+            } catch (SQLException e) {
+                if (!keepsCurrentRule(e)) {
+                    throw e;
+                }
+                kept.add(fk.table() + "." + fk.name());   // a ALTER é atômica: a FK antiga continua valendo
+                continue;
             }
             applied++;
         }
-        log.info("V99: {} de {} FKs recriadas com ON UPDATE CASCADE", applied, fks.size());
+        log.info("V99: {} de {} FKs recriadas com ON UPDATE CASCADE; mantidas por CHECK na coluna: {}", applied,
+                fks.size(), kept);
+    }
+
+    /** Erro em que o MySQL proíbe a ação referencial nesta FK: mantê-la como está em vez de derrubar a migration. */
+    public static boolean keepsCurrentRule(SQLException e) {
+        return e.getErrorCode() == CHECK_USES_FK_COLUMN;
     }
 
     public static boolean alreadyUnrestricted(Fk fk) {
