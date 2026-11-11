@@ -1,4 +1,10 @@
 {
+  "pieceReferences.colecao.label": "Collection",
+  "pieceReferences.colecao.unselected": "No collection",
+  "pieceReferences.colecao.unavailable": "Saved collection unavailable",
+  "pieceReferences.colecao.loadError": "Could not load collections.",
+  "pieceReferences.colecao.empty": "No collections available.",
+  "pieceReferences.colecao.hint": "Choose the collection this piece belongs to.",
   "atelier3d.commands.title": "Editing commands",
   "atelier3d.commands.help": "Edit the indicated object or mesh. Changes enter the history and can be undone in the editor toolbar.",
   "atelier3d.commands.reset-transform": "Reset transform",
