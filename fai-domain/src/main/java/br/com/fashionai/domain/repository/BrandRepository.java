@@ -26,4 +26,7 @@ public interface BrandRepository extends JpaRepository<Brand, UUID> {
     List<Brand> findTop20ByNameContainingIgnoreCaseOrderByName(String term);
 
     List<Brand> findAllByOrderByName();
+
+    /** FLAIR 3D: a marca de uma carta FLAIR (que guarda só o nome), para saber o país. */
+    Optional<Brand> findFirstByNameIgnoreCase(String name);
 }
