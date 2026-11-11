@@ -187,3 +187,54 @@ ver o objetivo.
 - `POST /api/flair/make-up/briefs/{codigo}/entrega`: corpo `{cartas:{vaga:cardId}, maquiagem:{area:{familia,
   acabamento}}}`; resposta `{pontos, estrelas, regras:[{codigo, ok, pontos}], prestigioGanho, carreira}`. Só cartas da
   própria pessoa (422); nota nunca usa pele nem rosto.
+
+## FLAIR Card Building Challenge: a mesma base, sem cenário 3D
+
+Os cinco elencos de `../cbc/CINCO_ELENCOS.md` ganham a mesma estrutura. Não há cenário 3D: a tela tem o **tabuleiro do
+elenco embaixo** (cartas ligadas por linhas que mudam de cor pela força do link) e a **imagem exclusiva do FashionAI em
+cima**, que se monta como um quebra-cabeça à medida que as linhas acendem.
+
+| Camada | Arquivo |
+| --- | --- |
+| Tabela | na mesma `V99__flair3d_partidas.sql`: `flair_cbc_squad_entregas` (id, user_id, elenco, cartas_json, quimica, ok, edicao, created_at) |
+| Entidade e repositório | `FlairCbcSquadEntrega`, `FlairCbcSquadEntregaRepository` |
+| Elenco (Strategy) | `fai-application/.../flair3d/cbc/elencos/<Nome>Elenco.java`, implementa `FlairCbcElenco`, usando `CbcLinks` |
+| Service | `FlairCbcSquadService`: lista, formação, conferir, entregar e numerar a edição |
+| Controller e rota backend | `FlairCbcSquadController`, `/api/flair/elencos/...` |
+| Rotas frontend | `app/(site)/(app)/flair/elencos/page.tsx` e `.../elencos/[elenco]/page.tsx` |
+| Arquivos frontend | `lib/flair/elencos/` (tipos, API, formações) e `components/flair/elencos/` (tabuleiro, linhas, quebra-cabeça) |
+
+**As formações.** Vagas com posição e coordenada (coluna, linha) e as linhas entre vagas.
+
+| Código | Vagas (fileiras de cima para baixo) | Linhas | Requisitos |
+| --- | --- | --- | --- |
+| `PRIMEIRO_ELENCO` | `acessorio` (ACE) · `cima` (SUP) e `bolsa` (ACE) · `baixo` (INF) · `calcado` (CAL) | 5: acessorio–cima, cima–bolsa, cima–baixo, bolsa–baixo, baixo–calcado | química ≥ 40; 2 linhas verdes |
+| `PALETA_ATELIE` | `ace1`, `ace2` · `sup1`, `sup2` · `inf1`, `inf2` · `cal` | 9: ace1–ace2, ace1–sup1, ace2–sup2, sup1–sup2, sup1–inf1, sup2–inf2, inf1–inf2, inf1–cal, inf2–cal | química ≥ 60; 4 linhas por cor; 7 cartas |
+| `CASA_MARCA` | `ace1`–`ace3` · `sup1`–`sup3` · `inf1`, `inf2` · `cal` | 12: ace1–ace2, ace2–ace3, sup1–sup2, sup2–sup3, inf1–inf2, ace1–sup1, ace2–sup2, ace3–sup3, sup1–inf1, sup3–inf2, inf1–cal, inf2–cal | química ≥ 70; 3 linhas por marca; 2 marcas ou mais; 1 carta Ouro ou Especial |
+| `NOITE_ESTREIA` | `ace1`, `ace2` · `sup1`, `ves` (VES), `sup2` · `inf1`, `inf2` · `cal1`, `cal2` | 13: ace1–ace2, ace1–sup1, ace2–sup2, sup1–ves, ves–sup2, ves–inf1, ves–inf2, sup1–inf1, sup2–inf2, inf1–inf2, inf1–cal1, inf2–cal2, cal1–cal2 | química ≥ 80; 5 linhas por ocasião; nenhuma linha vermelha na `ves` |
+| `ELENCO_LENDARIO` | `ace1`–`ace3` · `sup1`–`sup3` · `inf1`–`inf3` · `cal1`, `cal2` | 17: as 7 horizontais de cada fileira, ace1–sup1, ace2–sup2, ace3–sup3, sup1–inf1, sup2–inf2, sup3–inf3, inf1–cal1, inf2–cal1, inf2–cal2, inf3–cal2 | química 100; nenhuma linha vermelha; 2 cartas Especial; 4 marcas ou mais |
+
+**O tabuleiro (embaixo).** Cada vaga mostra a carta escolhida; a janela de cartas da pessoa abre por vaga, filtrada
+pela posição. Cada linha é desenhada entre as duas vagas, com a cor do nível que o servidor devolve (vermelha,
+laranja ou verde) e ícones dos atributos que ligaram (marca, subcategoria, categoria, estilo, cor, ocasião). A química
+de cada carta (0 a 3) aparece na vaga, e a do elenco (0 a 100) num medidor, junto com a lista de requisitos.
+
+**O quebra-cabeça (em cima).** A imagem do elenco é cortada em tantas peças quanto o número de linhas, na ordem da
+lista de linhas. Peça de linha verde aparece em cor; de linha laranja, só em traço (tons de cinza); de linha vermelha,
+escura; de linha que ainda não existe (vaga vazia), coberta. Ao entregar com todos os requisitos, a imagem se revela
+inteira, com as fotos das peças da pessoa nas posições da formação e a legenda "edição N".
+
+**A imagem.** A arte exclusiva do FashionAI é da dona [decidir]. Até ela chegar, cada elenco usa uma arte provisória em
+SVG feita com as cores da marca (`#C6275E`, `#1F7A76`, `#FBE7EE`) e o logo `/brand/fai-logo.png`, em
+`public/flair/elencos/<codigo>.svg`.
+
+**Comandos.** Setas ou direcional para escolher a vaga; Espaço ou A para abrir as cartas da vaga e pôr a carta;
+Backspace ou B para tirar; Enter ou Start para entregar; O ou Select para ver os requisitos. Toque e mouse em tudo.
+
+**API.**
+- `GET /api/flair/elencos`: `{elencos:[{codigo, vagas, linhas, concluido, edicao}]}` (logado).
+- `GET /api/flair/elencos/{codigo}`: `{codigo, vagas:[{chave, posicao, coluna, linha}], linhas:[{a, b}], requisitos:[{tipo, alvo, ...}]}`.
+- `POST /api/flair/elencos/{codigo}/conferir` com `{cartas:{vaga:cardId}}`: `{links:[{a, b, forca, nivel, atributos}],
+  quimicaCartas:{vaga:0..3}, quimica, requisitos:[{tipo, ok, valor, alvo}], ok}`. Só cartas da própria pessoa (422).
+- `POST /api/flair/elencos/{codigo}/entrega`: o mesmo corpo; recusa se algum requisito falha (422); grava a entrega
+  e devolve o mesmo resultado mais `{edicao}` (ordem de conclusão daquele elenco). Repetir não cria nova edição.
