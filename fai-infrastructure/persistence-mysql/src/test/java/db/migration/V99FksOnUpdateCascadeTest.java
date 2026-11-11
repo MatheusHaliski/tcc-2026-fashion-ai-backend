@@ -3,6 +3,7 @@ package db.migration;
 import db.migration.V99__fks_on_update_cascade.Fk;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
@@ -46,5 +47,11 @@ class V99FksOnUpdateCascadeTest {
         assertThat(V99__fks_on_update_cascade.newName(fk("fk_a", "CASCADE", "RESTRICT"), Set.of())).isEqualTo("fkc_a");
         String semColisao = V99__fks_on_update_cascade.newName(fk("fk_a", "CASCADE", "RESTRICT"), Set.of("fkc_a"));
         assertThat(semColisao).startsWith("fkc_").isNotEqualTo("fkc_a").hasSize(20);
+    }
+
+    @Test
+    void fkComColunaEmCheckEMantidaEOutrosErrosDerrubamAMigration() {
+        assertThat(V99__fks_on_update_cascade.keepsCurrentRule(new SQLException("check", "HY000", 3823))).isTrue();
+        assertThat(V99__fks_on_update_cascade.keepsCurrentRule(new SQLException("órfão", "23000", 1452))).isFalse();
     }
 }
