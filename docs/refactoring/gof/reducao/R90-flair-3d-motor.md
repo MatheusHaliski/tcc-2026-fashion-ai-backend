@@ -1,7 +1,7 @@
-# Lote R90-flair-3d-motor — requisitos do motor CBC extraídos de `CbcRules` + tipos do FLAIR 3D MAKE UP
+# Lote R90-flair-3d-motor — requisitos do motor CBC extraídos de `CbcRules` + tipos do FLAIR 3D
 
 Branch: `claude/adoring-davinci-mufbri`. Pacote: `fai-application/src/main/java/br/com/fashionai/application/flair/`.
-Motivo: os 100 jogos do FLAIR 3D MAKE UP pedem cinco tipos novos na DSL de requisitos, vagas opcionais e duas regras puras
+Motivo: os 100 jogos do FLAIR 3D pedem cinco tipos novos na DSL de requisitos, vagas opcionais e duas regras puras
 novas (faixas de Hype e efeitos por vaga). `CbcRules.java` está congelado (615) e não podia crescer, então a avaliação
 de requisitos (o `switch` de `requirement(...)`, ~110 linhas, e o helper `tagMatch` usado só por ele) saiu para arquivos
 próprios e o original delega.

@@ -1,4 +1,4 @@
-# FLAIR 3D MAKE UP — catálogo gerado dos 5 jogos
+# FLAIR 3D — catálogo gerado dos 5 jogos
 
 Arquivo GERADO por `scripts/flair-games/build.mjs` a partir de `scripts/flair-games/data/serie-*.json`: não editar à mão.
 Jogos no catálogo: 5.

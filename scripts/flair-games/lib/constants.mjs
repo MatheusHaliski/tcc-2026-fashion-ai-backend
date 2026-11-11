@@ -1,5 +1,5 @@
 /**
- * Vocabulário do catálogo FLAIR 3D MAKE UP (desenho §4 e §6): o que o motor CBC estendido aceita (CbcRules.java), os
+ * Vocabulário do catálogo FLAIR 3D (desenho §4 e §6): o que o motor CBC estendido aceita (CbcRules.java), os
  * níveis dos três eixos de bloqueio, os objetos de cena do CbcSceneArt e as regras fixas do gerador. Fonte única para
  * validação, derivação, SQL e miniaturas.
  */
@@ -7,7 +7,7 @@ export const LANGS = ["pt-BR", "en", "es"];
 export const SERIES = ["A", "B", "C", "D", "E"];
 export const DISTRICT_BY_SERIES = { A: "SUITE", B: "RUNWAY", C: "CITY", D: "BACKSTAGE", E: "COMMUNITY" };
 export const DISTRICTS = Object.values(DISTRICT_BY_SERIES);
-/** FLAIR 3D MAKE UP: cinco jogos, um por capítulo (série); os outros 95 ficam em data/arquivo/. */
+/** FLAIR 3D: cinco jogos, um por capítulo (série); os outros 95 ficam em data/arquivo/. */
 export const GAMES_PER_SERIES = 1;
 export const TOTAL_GAMES = 5;
 /** Os números dos jogos continuam os do catálogo original (1..100), para manter ids e slugs estáveis. */
@@ -53,7 +53,7 @@ export const REWARD_CODE_RE = /^[A-Z0-9-]{1,40}$/;
 export const MIGRATION_FILE = "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V98__flair_3d_jogos.sql";
 export const V56_FILE = "fai-infrastructure/persistence-mysql/src/main/resources/db/migration/V56__desafios_de_montagem.sql";
 export const THUMBS_DIR = "public/flair/games";
-export const CATALOG_MD = "docs/flair/flair-3d-make-up/catalogo.gen.md";
+export const CATALOG_MD = "docs/flair/flair-3d/catalogo.gen.md";
 export const DATA_DIR = "scripts/flair-games/data";
 export const SEED_AT = "2026-11-05 12:00:00";
 export const ID_PREFIX = "7d000000-0000-4000-8000-";

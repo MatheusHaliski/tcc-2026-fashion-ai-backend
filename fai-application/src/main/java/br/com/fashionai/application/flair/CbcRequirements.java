@@ -26,7 +26,7 @@ import static br.com.fashionai.application.flair.CbcRules.strings;
  * as cartas" (tier only/max, ovrAvg, ovrMin sem count, origin, noBuy, strictPosition) exigem só as obrigatórias; as cartas
  * das vagas opcionais contam a favor, nunca contra.</p>
  *
- * <p>Tipos do FLAIR 3D MAKE UP: {@code cards {min}}, {@code mala {max}} (pesos Bronze 1, Prata 2, Ouro 3, Especial 4),
+ * <p>Tipos do FLAIR 3D: {@code cards {min}}, {@code mala {max}} (pesos Bronze 1, Prata 2, Ouro 3, Especial 4),
  * {@code position {position, count}}, {@code distinctTags {field, count}} (cores por família da taxonomia) e
  * {@code hypeBand {min, count, scope, positions}} (faixa pela nota HYP, {@link Flair3dHype#bandOf}; sem {@code scope}:
  * pelo menos {@code count} cartas; {@code scope=all}: todas as colocadas; {@code scope=positions}: cartas nas posições
@@ -51,7 +51,7 @@ final class CbcRequirements {
         return byTags != null ? byTags : new RequirementResult(type, false, 0, 1, args);
     }
 
-    /** Erros de forma dos tipos do FLAIR 3D MAKE UP (lista vazia = válido); os tipos clássicos ficam em {@link CbcRules#validate}. */
+    /** Erros de forma dos tipos do FLAIR 3D (lista vazia = válido); os tipos clássicos ficam em {@link CbcRules#validate}. */
     static List<String> validateShape(String t, Map<String, Object> r, List<Slot> slots) {
         List<String> errors = new ArrayList<>();
         if ("cards".equals(t) && (intOf(r.get("min"), 0) < 1 || intOf(r.get("min"), 0) > slots.size())) {

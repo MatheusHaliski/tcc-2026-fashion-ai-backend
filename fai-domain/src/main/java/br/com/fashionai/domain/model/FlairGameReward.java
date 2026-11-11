@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * FLAIR 3D MAKE UP (V86) — recompensa extra de um jogo FLAIR entregue a uma pessoa: um Item do quarto ou uma carta
+ * FLAIR 3D (V86) — recompensa extra de um jogo FLAIR entregue a uma pessoa: um Item do quarto ou uma carta
  * Especial. Uma linha por (pessoa, jogo, código): é ela que torna a entrega idempotente e serve de origem
  * ({@code originId}) da carta Especial criada.
  */

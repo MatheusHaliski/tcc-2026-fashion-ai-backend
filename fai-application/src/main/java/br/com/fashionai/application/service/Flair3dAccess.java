@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * FLAIR 3D MAKE UP — bloqueio por nível (integridade no servidor): cada jogo exige um nível FAI (pontos vitalícios,
+ * FLAIR 3D — bloqueio por nível (integridade no servidor): cada jogo exige um nível FAI (pontos vitalícios,
  * {@link FaiPointsService#level}) e uma faixa do guarda-roupa (Inventory Score, {@link InventoryScoreService#compute}).
  * {@link #me} lê os dois UMA vez por requisição; {@link #check} só informa (catálogo e detalhe nunca bloqueiam a
  * leitura); {@link #require} é a primeira instrução de check/submit e devolve 403 com código e detalhes.

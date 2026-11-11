@@ -73,7 +73,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/flair/modes.tsx": {
-   "max": 427,
+   "max": 422,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/globe-hype.test.tsx": {

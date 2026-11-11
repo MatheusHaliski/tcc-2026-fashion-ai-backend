@@ -19,7 +19,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * FLAIR 3D MAKE UP — o controller só delega (R3: dublê escrito à mão, fora de ServiceFakes/ControllerDelegacaoTest): cada
+ * FLAIR 3D — o controller só delega (R3: dublê escrito à mão, fora de ServiceFakes/ControllerDelegacaoTest): cada
  * rota chama o método certo do serviço com os mesmos argumentos, os filtros viram {@code Filters} na ordem da query e
  * o submit responde 201.
  */

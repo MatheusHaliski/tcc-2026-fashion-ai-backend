@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
-import { hasReachedLevel, type PointsAccount } from "@/lib/points/hub";
+import type { PointsAccount } from "@/lib/points/hub";
 import type { UserCard } from "@/lib/api/types";
 import { Avatar, Badge, Button, Card, cn, ErrorState, Field, Input, Select, Skeleton, useToast } from "@/components/ui";
 import { FaiXpProgress } from "@/components/points/fai-xp-progress";
@@ -56,7 +56,6 @@ export function FlairModes({ initial, onPlayed, skin }: { initial?: string | nul
   const c = catalog.data; const my = looks.data?.looks ?? [];
   const classic = classicModes();
   const account = points.data;
-  const loftUnlocked = hasReachedLevel(account?.level, "LOFT");
   const current = c.modes.find((m) => m.code === mode) ?? classic.find((m) => m.code === mode);
   const isClassic = !!current && !!CLASSIC_ICON[current.code];
   const played = () => { trophies.reload(); onPlayed?.(); };
@@ -69,10 +68,6 @@ export function FlairModes({ initial, onPlayed, skin }: { initial?: string | nul
         <section><h2 className="type-h3 mb-2">{t("flair.modes.category.flair")}</h2><div className="mode-grid">{classic.map((m) => <ModeCard key={m.code} m={m} icon={<FaiIcon id={CLASSIC_ICON[m.code]} size={24} decorative />} onOpen={() => setMode(m.code)} />)}{c.modes.map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
         <section><h2 className="type-h3 mb-2">{t("flair.modes.category.metamorphose")}</h2>
           <div className="mode-grid">
-            <Link href={loftUnlocked ? "/flair/aventura" : "/points"} className={cn("fm-card", !loftUnlocked && "fm-card-locked")} aria-label={loftUnlocked ? t("flair.modes.afterparty.open") : t("flair.modes.afterparty.locked", { level: t("levelProgress.name.LOFT") })}>
-              <span className="fm-card-emoji" aria-hidden>{loftUnlocked ? "✨" : "🔒"}</span><p className="type-h3">{t("afterparty.title")}</p><p className="type-body-sm text-muted">{t("afterparty.lead")}</p>
-              <p className="type-caption">{loftUnlocked ? t("flair.modes.afterparty.open") : t("flair.modes.afterparty.locked", { level: t("levelProgress.name.LOFT") })}</p>
-            </Link>
             <Link href="/flair/jogos" className="fm-card" aria-label={t("flair.modes.flair3d.open")}>
               <span className="fm-card-emoji" aria-hidden>🏙️</span><p className="type-h3">{t("flair.hub.mode.games.title")}</p><p className="type-body-sm text-muted">{t("flair.hub.mode.games.lead")}</p>
               <p className="type-caption">{t("flair.modes.flair3d.open")}</p>

@@ -11,7 +11,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** FLAIR 3D MAKE UP — efeito por vaga (Comum, Metamorfose, Impersonation), bônus por vaga e total. */
+/** FLAIR 3D — efeito por vaga (Comum, Metamorfose, Impersonation), bônus por vaga e total. */
 class Flair3dEffectsTest {
     private static CbcRules.SlotResult slot(String key, boolean filled, int sintonia) {
         return new CbcRules.SlotResult(key, "SUP", filled ? UUID.randomUUID() : null, sintonia > 0, sintonia > 1, sintonia > 2, sintonia);

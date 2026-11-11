@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * FLAIR 3D MAKE UP — os 100 jogos FLAIR: linhas de {@code flair_challenges} com {@code series} que o motor dos Desafios de
+ * FLAIR 3D — os 100 jogos FLAIR: linhas de {@code flair_challenges} com {@code series} que o motor dos Desafios de
  * Montagem avalia. Este serviço aplica o bloqueio por nível ({@link Flair3dAccess}: PRIMEIRA instrução de check/submit),
  * reaproveita janela, limite, avaliação, história e pontos do {@link FlairChallengeService}, e acrescenta o resultado
  * "flair3d" (Hype de partida e efeitos, {@link FlairGame3dScore}), o bônus FLAIR_3D_PERFECT e as recompensas extras
@@ -146,7 +146,7 @@ public class FlairGameService {
         return hay.contains(q.trim().toLowerCase(Locale.ROOT));
     }
 
-    /** Detalhe do CBC + campos FLAIR 3D MAKE UP; o acesso é informado, nunca bloqueia a leitura. */
+    /** Detalhe do CBC + campos FLAIR 3D; o acesso é informado, nunca bloqueia a leitura. */
     @Transactional(readOnly = true)
     public Map<String, Object> detail(CurrentUser viewer, String slug) {
         FlairChallenge g = game(slug);
