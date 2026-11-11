@@ -1,11 +1,11 @@
-/** Núcleo 13: terraço à noite com a cidade ao fundo; traje de herói (arquétipo "armadura") pintado por zonas. */
+/** Núcleo 13: terraço à noite com a cidade ao fundo; traje de herói (arquétipo "armadura") pintado por zonas, com a escolha do emblema. */
 import { acoesDe, SEM_DECK } from "@/lib/flair/nucleos/base";
 import type { NucleoConfig } from "@/lib/flair/nucleos/types";
 
 export const SUPER_HEROI: NucleoConfig = {
   codigo: "SUPER_HEROI",
   numero: 13,
-  recursos: ["ZONAS"],
+  recursos: ["ZONAS", "RESPOSTA"],
   cena: {
     fundo: "#0A1024",
     piso: "#2A2F3A",
@@ -18,13 +18,14 @@ export const SUPER_HEROI: NucleoConfig = {
       { forma: "caixa", pos: [0, 0.5, -2.2], tam: [5, 1, 0.15], cor: "#3A4050" },
     ],
   },
-  personagens: [],
-  avatares: { protagonista: ["MODELO_CASA", "PROPRIO"], online: null },
+  // o manequim do ateliê veste a peça criada (FIGURANTE MANEQUIM na API); o avatar do perfil é opcional
+  personagens: [{ papel: "MANEQUIM", tipo: "manequim", pos: [-1.5, 0, -0.9], cor: "#ECE6DC" }],
+  avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: [],
-  zonas: ["PEITO", "BRACOS", "PERNAS", "CAPA", "EMBLEMA"],
+  zonas: ["PEITO", "CAPA", "BRACOS", "PERNAS"],
   areas: [],
-  opcoes: [],
+  opcoes: ["EMBLEMA_ESTRELA", "EMBLEMA_RAIO", "EMBLEMA_ASA", "EMBLEMA_MORCEGO", "EMBLEMA_ESCUDO_S"],
   acoes: acoesDe({ cartas: false, desfile: false }),
-  regras: ["PEITO_METALICO", "ATE_2_CORES", "CAPA", "SEM_EMBLEMA"],
+  regras: ["PEITO_METALICO", "ATE_2_CORES", "CAPA", "SEM_EMBLEMA_PROTEGIDO"],
   deck: SEM_DECK,
 };

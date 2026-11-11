@@ -1,6 +1,7 @@
 /** Chamadas da API dos núcleos do FLAIR 3D (contrato em docs/flair/flair-3d/BASE_NUCLEOS.md, seção "API"). */
 import { api } from "@/lib/api/client";
 import type {
+  AvatarTipo,
   EfeitosResposta,
   NucleoCodigo,
   NucleoDefinicao,
@@ -27,9 +28,12 @@ export function efeitosDasCartas(codigo: NucleoCodigo, cartas: string[], signal?
   return api.post<EfeitosResposta>(`${BASE}/nucleos/${codigo}/efeitos`, { cartas }, { signal });
 }
 
-/** Abre a partida com o deck escolhido (o servidor confere tamanho, obrigatórias e dono: 422 com o que falta). */
-export function abrirPartida(codigo: NucleoCodigo, deck: string[]): Promise<NucleoPartida> {
-  return api.post<NucleoPartida>(`${BASE}/nucleos/${codigo}/partidas`, { deck });
+/**
+ * Abre a partida com o deck escolhido (o servidor confere tamanho, obrigatórias e dono: 422 DECK_INVALIDO com o que
+ * falta). `avatar` = MODELO_CASA quando a pessoa joga com a modelo da casa (só onde o núcleo aceita).
+ */
+export function abrirPartida(codigo: NucleoCodigo, deck: string[], avatar?: AvatarTipo | null): Promise<NucleoPartida> {
+  return api.post<NucleoPartida>(`${BASE}/nucleos/${codigo}/partidas`, avatar ? { deck, avatar } : { deck });
 }
 
 /** Entrega o look (uma vez, só o dono); o servidor pontua de forma determinística. */

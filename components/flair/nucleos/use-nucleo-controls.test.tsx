@@ -24,7 +24,7 @@ describe("teclado", () => {
     const got: Comando[] = [];
     render(<Harness acoes={NUCLEOS.PASSARELA.acoes} onComando={(c) => got.push(c)} />);
     for (const key of ["ArrowLeft", "ArrowDown", "q", "E", " ", "Backspace", "z", "c", "+", "-", "p", "w", "Enter", "o"]) fireEvent.keyDown(window, { key });
-    expect(got.map((c) => c.acao)).toEqual(["NAVEGAR", "NAVEGAR", "TROCAR_ABA", "TROCAR_ABA", "APLICAR", "TIRAR", "GIRAR", "GIRAR", "ZOOM", "ZOOM", "POSAR", "DESFILAR", "ENTREGAR", "OBJETIVO"]);
+    expect(got.map((c) => c.acao)).toEqual(["NAVEGAR", "NAVEGAR", "TROCAR_ABA", "TROCAR_ABA", "VESTIR", "TIRAR", "GIRAR", "GIRAR", "ZOOM", "ZOOM", "POSAR", "DESFILAR", "ENTREGAR", "VER_OBJETIVO"]);
     expect(got[1]).toEqual({ acao: "NAVEGAR", dir: 1, eixo: "y" });
     cleanup();
     const zonas: Comando[] = [];
@@ -67,8 +67,8 @@ describe("gamepad", () => {
     tick(400);
     expect(getByTestId("pad").textContent).toBe("on");
     expect(got).toEqual([
-      { acao: "APLICAR" }, { acao: "TROCAR_ABA", dir: -1 }, { acao: "ZOOM", dir: 1 },
-      { acao: "TIRAR" }, { acao: "DESFILAR" }, { acao: "OBJETIVO" }, { acao: "ENTREGAR" }, { acao: "NAVEGAR", dir: 1, eixo: "x" },
+      { acao: "VESTIR" }, { acao: "TROCAR_ABA", dir: -1 }, { acao: "ZOOM", dir: 1 },
+      { acao: "TIRAR" }, { acao: "DESFILAR" }, { acao: "VER_OBJETIVO" }, { acao: "ENTREGAR" }, { acao: "NAVEGAR", dir: 1, eixo: "x" },
       { acao: "GIRAR", dir: -1 },
     ]);
     unmount();

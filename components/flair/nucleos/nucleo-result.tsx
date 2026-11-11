@@ -4,16 +4,6 @@ import { cn } from "@/components/ui";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
-/** Evento da cena (luta, partida, rodada): texto pelo código quando houver; senão, o que veio. */
-function eventoCodigo(e: unknown): string {
-  if (typeof e === "string") return e;
-  if (e && typeof e === "object") {
-    const o = e as Record<string, unknown>;
-    return String(o.codigo ?? o.tipo ?? JSON.stringify(o));
-  }
-  return String(e);
-}
-
 export function NucleoResult({ codigo, resultado, onAgain }: { codigo: string; resultado: NucleoResultado; onAgain: () => void }) {
   const tx = useNucleoText();
   const estrelas = Math.max(0, Math.min(3, resultado.estrelas));
@@ -38,10 +28,7 @@ export function NucleoResult({ codigo, resultado, onAgain }: { codigo: string; r
         <>
           <h3 className="type-label">{tx.t("flair3d.ui.result.events")}</h3>
           <ol className="n3d-events">
-            {resultado.eventos.map((e, i) => {
-              const cod = eventoCodigo(e);
-              return <li key={i}>{tx.ou(`flair3d.ui.evento.${cod}`, cod)}</li>;
-            })}
+            {resultado.eventos.map((e, i) => <li key={i}>{tx.evento(e)}</li>)}
           </ol>
         </>
       )}

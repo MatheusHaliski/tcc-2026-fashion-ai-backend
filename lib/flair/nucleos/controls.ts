@@ -19,7 +19,7 @@ const TECLAS: Record<string, Comando> = {
   ArrowDown: { acao: "NAVEGAR", dir: 1, eixo: "y" },
   q: { acao: "TROCAR_ABA", dir: -1 },
   e: { acao: "TROCAR_ABA", dir: 1 },
-  " ": { acao: "APLICAR" },
+  " ": { acao: "VESTIR" },
   Backspace: { acao: "TIRAR" },
   z: { acao: "GIRAR", dir: -1 },
   c: { acao: "GIRAR", dir: 1 },
@@ -30,7 +30,7 @@ const TECLAS: Record<string, Comando> = {
   p: { acao: "POSAR" },
   w: { acao: "DESFILAR" },
   Enter: { acao: "ENTREGAR" },
-  o: { acao: "OBJETIVO" },
+  o: { acao: "VER_OBJETIVO" },
 };
 
 /** Tecla → comando (letras sem diferença de maiúscula); tecla sem ação = null. */
@@ -41,7 +41,7 @@ export function comandoDaTecla(key: string): Comando | null {
 
 /** Botões do layout padrão: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 Select, 9 Start, 12–15 direcional. */
 export const BOTOES: Record<number, Comando> = {
-  0: { acao: "APLICAR" },
+  0: { acao: "VESTIR" },
   1: { acao: "TIRAR" },
   2: { acao: "POSAR" },
   3: { acao: "DESFILAR" },
@@ -49,7 +49,7 @@ export const BOTOES: Record<number, Comando> = {
   5: { acao: "TROCAR_ABA", dir: 1 },
   6: { acao: "ZOOM", dir: -1 },
   7: { acao: "ZOOM", dir: 1 },
-  8: { acao: "OBJETIVO" },
+  8: { acao: "VER_OBJETIVO" },
   9: { acao: "ENTREGAR" },
   12: { acao: "NAVEGAR", dir: -1, eixo: "y" },
   13: { acao: "NAVEGAR", dir: 1, eixo: "y" },
@@ -100,7 +100,7 @@ export const BOTOES_TELA: { id: string; cmd: Comando }[] = [
   { id: "nav-next", cmd: { acao: "NAVEGAR", dir: 1, eixo: "x" } },
   { id: "tab-prev", cmd: { acao: "TROCAR_ABA", dir: -1 } },
   { id: "tab-next", cmd: { acao: "TROCAR_ABA", dir: 1 } },
-  { id: "apply", cmd: { acao: "APLICAR" } },
+  { id: "apply", cmd: { acao: "VESTIR" } },
   { id: "remove", cmd: { acao: "TIRAR" } },
   { id: "turn-left", cmd: { acao: "GIRAR", dir: -1 } },
   { id: "turn-right", cmd: { acao: "GIRAR", dir: 1 } },
@@ -108,5 +108,5 @@ export const BOTOES_TELA: { id: string; cmd: Comando }[] = [
   { id: "zoom-out", cmd: { acao: "ZOOM", dir: -1 } },
   { id: "pose", cmd: { acao: "POSAR" } },
   { id: "walk", cmd: { acao: "DESFILAR" } },
-  { id: "objective", cmd: { acao: "OBJETIVO" } },
+  { id: "objective", cmd: { acao: "VER_OBJETIVO" } },
 ];

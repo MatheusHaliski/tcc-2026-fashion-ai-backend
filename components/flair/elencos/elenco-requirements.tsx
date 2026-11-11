@@ -6,7 +6,8 @@ import type { ElencoConferencia, ElencoRequisito } from "@/lib/flair/elencos/typ
 export function ElencoRequirements({ requisitos, conf, aberto, onToggle }: { requisitos: ElencoRequisito[]; conf: ElencoConferencia | null; aberto: boolean; onToggle: () => void }) {
   const tx = useElencoText();
   const quimica = Math.max(0, Math.min(100, conf?.quimica ?? 0));
-  const lista = conf?.requisitos?.length ? conf.requisitos : requisitos.map((r) => ({ tipo: r.tipo, alvo: r.alvo ?? null, ok: false, valor: null }));
+  // o /conferir devolve {tipo, ok, valor, alvo}; atributo, vaga e nível vêm da definição, na mesma ordem
+  const lista = requisitos.map((r, i) => ({ ...r, ok: false, valor: null as number | string | null, ...(conf?.requisitos?.[i] ?? {}) }));
   return (
     <section className="n3d-objective el-req" aria-labelledby="el-req-title" data-testid="elenco-requirements">
       <div className="n3d-objective-head">

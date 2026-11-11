@@ -10,13 +10,14 @@ import type { FlairCollection } from "@/components/flair/flair-collection";
 import { abrirPartida, buscarNucleo, entregarPartida } from "@/lib/flair/nucleos/api";
 import { mesclarDefinicao } from "@/lib/flair/nucleos/registry";
 import { toEntrega, type Selecao } from "@/lib/flair/nucleos/selection";
-import type { NucleoCodigo, NucleoPartida, NucleoResultado } from "@/lib/flair/nucleos/types";
+import type { AvatarTipo, NucleoCodigo, NucleoPartida, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 export function useNucleoMatch(codigo: NucleoCodigo) {
   const def = useApi((signal) => buscarNucleo(codigo, signal), [codigo]);
   const definicao = useMemo(() => mesclarDefinicao(codigo, def.data), [codigo, def.data]);
   const usaCartas = definicao.recursos.includes("CARTAS");
   const semDeck = !usaCartas || !!definicao.deck?.semDeck;
+  const aceitaModelo = !!definicao.avatares?.solo.some((a) => a.tipo === "MODELO_CASA");
   const bank = useApi<FlairCollection>((signal) => api.get("/api/me/flair/cards", { signal }), [usaCartas], { enabled: usaCartas });
   const [partida, setPartida] = useState<NucleoPartida | null>(null);
   const [deck, setDeck] = useState<string[] | null>(null);
@@ -29,8 +30,8 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
     return p;
   });
 
-  const entrega = useAction(async (sel: Selecao) => {
-    const p = partida ?? (await abrirPartida(codigo, deck ?? []));
+  const entrega = useAction(async (sel: Selecao, avatar: AvatarTipo) => {
+    const p = partida ?? (await abrirPartida(codigo, deck ?? [], aceitaModelo && avatar === "MODELO_CASA" ? avatar : null));
     setPartida(p);
     const r = await entregarPartida(p.id, toEntrega(sel));
     setResultado(r);

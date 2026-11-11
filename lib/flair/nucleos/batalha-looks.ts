@@ -16,9 +16,9 @@ export const BATALHA_LOOKS: NucleoConfig = {
     ],
   },
   personagens: [
-    { papel: "adversario", tipo: "manequim", pos: [1.6, 0, -0.4], cor: "#7A3FC4", giro: -20 },
-    ...fileira("plateia", -2.6, [-2, -0.5, 1], "#2E3A55"),
-    ...fileira("plateia", 2.8, [-2, -0.5, 1], "#2E3A55"),
+    { papel: "ADVERSARIO", tipo: "manequim", pos: [1.6, 0, -0.4], cor: "#7A3FC4", giro: -20 },
+    ...fileira("PLATEIA", -2.6, [-2, -0.5, 1], "#2E3A55"),
+    ...fileira("PLATEIA", 2.8, [-2, -0.5, 1], "#2E3A55"),
   ],
   avatares: { protagonista: ["PROPRIO"], online: { min: 1, max: 3 } },
   vagas: ["SUP", "INF", "CAL", "ACE"],
@@ -26,6 +26,6 @@ export const BATALHA_LOOKS: NucleoConfig = {
   areas: [],
   opcoes: [],
   acoes: acoesDe({ cartas: true, desfile: true }),
-  regras: ["FAMILIA_AZUL", "VENCE"],
+  regras: ["FAMILIA_AZUL"],
   deck: deckDe(8, ["SUP", 1], ["INF", 1], ["CAL", 1]),
 };

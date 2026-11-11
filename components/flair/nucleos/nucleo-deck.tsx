@@ -11,7 +11,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { efeitosDasCartas } from "@/lib/flair/nucleos/api";
-import { alternarCarta, conferirDeck } from "@/lib/flair/nucleos/deck";
+import { alternarCarta, conferirDeck, posicoesDaRegra } from "@/lib/flair/nucleos/deck";
 import type { DeckRegras, EfeitoItem, NucleoCodigo } from "@/lib/flair/nucleos/types";
 
 interface Props {
@@ -23,9 +23,22 @@ interface Props {
   onEntrar: (deck: string[]) => void;
 }
 
-/** Detalhes de um 422 em linhas de texto (lista de faltas, campos ou valores simples). */
-function faltasDoErro(erro: ApiError): string[] {
-  return Object.values(erro.details ?? {}).flatMap((v) => (Array.isArray(v) ? v : [v])).map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v)));
+type Texto = ReturnType<typeof useNucleoText>;
+
+/** 422 DECK_INVALIDO em linhas de texto: o que falta (posição e quantidade), cartas repetidas e o tamanho. */
+function faltasDoErro(erro: ApiError, tx: Texto): string[] {
+  const d = erro.details ?? {};
+  const out: string[] = [];
+  const faltam = Array.isArray(d.faltam) ? (d.faltam as { posicao?: string; quantidade?: number }[]) : [];
+  for (const f of faltam) {
+    const pos = posicoesDaRegra(f.posicao);
+    out.push(tx.t("flair3d.ui.deck.lacks", { n: f.quantidade ?? 1, pos: pos.length ? pos.map(tx.posicao).join(" / ") : tx.t("flair3d.ui.deck.any") }));
+  }
+  if (d.repetidas === true) out.push(tx.t("flair3d.ui.deck.repeated"));
+  if (typeof d.tamanho === "number" && typeof d.tamanhoMax === "number" && d.tamanho > d.tamanhoMax) {
+    out.push(tx.t("flair3d.ui.deck.counter", { n: d.tamanho, max: d.tamanhoMax }));
+  }
+  return out;
 }
 
 export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar }: Props) {
@@ -72,7 +85,7 @@ export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar }:
       {erro && (
         <div className="n3d-error" role="alert">
           <p>{tx.t("flair3d.ui.deck.refused", { msg: erro.message })}</p>
-          <ul>{faltasDoErro(erro).map((f, i) => <li key={i}>{f}</li>)}</ul>
+          <ul>{faltasDoErro(erro, tx).map((f, i) => <li key={i}>{f}</li>)}</ul>
         </div>
       )}
       <button type="button" className="btn btn-primary" disabled={!status.valido || entrando} onClick={() => onEntrar(deck)}>

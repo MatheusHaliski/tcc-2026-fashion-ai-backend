@@ -3,14 +3,14 @@
  * FashionAI. A API manda; isto completa a tela quando um campo não vem.
  */
 import type { BrandEnvironment, ResolvedEnvironment } from "@/lib/tryon/fitting-room";
-import { MAQUIAGEM_AREAS, PALETA_INICIAL } from "@/lib/flair/make-up/palette";
+import { MAQUIAGEM_AREAS, normalizarPaleta, PALETA_INICIAL } from "@/lib/flair/make-up/palette";
 import type { BriefDefinicao } from "@/lib/flair/make-up/types";
 import type { NucleoAcao } from "@/lib/flair/nucleos/types";
 
 export const BRIEFS: BriefDefinicao[] = [
-  { codigo: "ENSAIO_VERAO", nivelMin: 1, regras: regras("OCASIAO", "MATERIAL", "LABIOS_FAMILIA", "LABIOS_ACABAMENTO"), vagas: ["SUP", "INF", "CAL", "ACE", "VES"], areas: MAQUIAGEM_AREAS, paleta: PALETA_INICIAL },
-  { codigo: "ENTREVISTA", nivelMin: 1, regras: regras("OCASIAO", "CALCADO_FECHADO", "LABIOS_FAMILIA", "LABIOS_ACABAMENTO"), vagas: ["SUP", "INF", "CAL", "ACE", "VES"], areas: MAQUIAGEM_AREAS, paleta: PALETA_INICIAL },
-  { codigo: "PRIMEIRO_ENCONTRO", nivelMin: 2, regras: regras("OCASIAO", "ACESSORIO", "LABIOS_FAMILIA", "BOCHECHAS"), vagas: ["SUP", "INF", "CAL", "ACE", "VES"], areas: MAQUIAGEM_AREAS, paleta: PALETA_INICIAL },
+  { codigo: "ENSAIO_VERAO", nivelMin: 1, regras: regras("OCASIAO", "MATERIAL_LEVE", "BATOM_CORAL", "ACABAMENTO_BATOM"), vagas: ["SUP", "INF", "CAL", "ACE", "VES"], areas: MAQUIAGEM_AREAS, paleta: PALETA_INICIAL },
+  { codigo: "ENTREVISTA", nivelMin: 1, regras: regras("OCASIAO", "CALCADO_FECHADO", "LABIOS_NUDE_OU_ROSA", "ACABAMENTO_FOSCO"), vagas: ["SUP", "INF", "CAL", "ACE", "VES"], areas: MAQUIAGEM_AREAS, paleta: PALETA_INICIAL },
+  { codigo: "PRIMEIRO_ENCONTRO", nivelMin: 2, regras: regras("OCASIAO", "ACESSORIO", "LABIOS_VERMELHO_OU_VINHO", "BOCHECHAS_ROSA"), vagas: ["SUP", "INF", "CAL", "ACE", "VES"], areas: MAQUIAGEM_AREAS, paleta: PALETA_INICIAL },
 ];
 
 function regras(...codigos: string[]) {
@@ -18,7 +18,7 @@ function regras(...codigos: string[]) {
 }
 
 /** Ações do MAKE UP: as do contrato, menos desfilar ou caminhar. */
-export const MAKEUP_ACOES: NucleoAcao[] = ["NAVEGAR", "TROCAR_ABA", "APLICAR", "TIRAR", "GIRAR", "ZOOM", "POSAR", "ENTREGAR", "OBJETIVO"];
+export const MAKEUP_ACOES: NucleoAcao[] = ["NAVEGAR", "TROCAR_ABA", "VESTIR", "TIRAR", "GIRAR", "ZOOM", "POSAR", "ENTREGAR", "VER_OBJETIVO"];
 
 /** Prestígio para sair do nível n: 60, 90, 120, 150, 180 nos níveis 1 a 5; depois, round(15 · n^1,5). */
 export function prestigioParaSair(nivel: number): number {
@@ -37,7 +37,7 @@ export function mesclarBrief(codigo: string, api?: Partial<BriefDefinicao> | nul
     regras: api.regras?.length ? api.regras : local.regras,
     vagas: api.vagas?.length ? api.vagas : local.vagas,
     areas: api.areas?.length ? api.areas : local.areas,
-    paleta: api.paleta && Object.keys(api.paleta).length ? api.paleta : local.paleta,
+    paleta: normalizarPaleta(api.paleta) ?? local.paleta,
   };
 }
 

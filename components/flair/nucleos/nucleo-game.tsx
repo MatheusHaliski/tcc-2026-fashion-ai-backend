@@ -29,7 +29,7 @@ interface Props {
   cartas: FlairCollectionCard[];
   entregando: boolean;
   erro: ApiError | null;
-  onEntregar: (sel: Selecao) => void;
+  onEntregar: (sel: Selecao, avatar: AvatarTipo) => void;
 }
 
 export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar }: Props) {
@@ -45,7 +45,7 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar }: 
   const pronto = temEscolha(estado.sel);
 
   const entregar = () => {
-    if (pronto && !entregando) onEntregar(estado.sel);
+    if (pronto && !entregando) onEntregar(estado.sel, efetiva);
   };
   const onComando = (c: Comando) => {
     if (c.acao === "ENTREGAR") entregar();
@@ -62,7 +62,7 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar }: 
         )}
       </div>
       <div className="n3d-bottom">
-        <NucleoObjective definicao={definicao} aberto={estado.objetivo} onToggle={() => disparar({ acao: "OBJETIVO" })} />
+        <NucleoObjective definicao={definicao} aberto={estado.objetivo} onToggle={() => disparar({ acao: "VER_OBJETIVO" })} />
         <NucleoResourceWindow nucleo={definicao.codigo} tabs={tabs} aba={estado.aba} item={estado.item} sel={estado.sel}
           onAba={(index) => dispatch({ type: "aba", index })} onItem={(aba, item) => dispatch({ type: "aplicar", aba, item, tabs })} />
         <NucleoControls acoes={definicao.acoes} gamepad={gamepad} onComando={(c) => disparar(c)} />

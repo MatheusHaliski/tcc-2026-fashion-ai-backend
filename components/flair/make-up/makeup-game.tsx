@@ -18,6 +18,7 @@ import { NucleoResourceWindow } from "@/components/flair/nucleos/nucleo-resource
 import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-controls";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { MAKEUP_ACOES } from "@/lib/flair/make-up/briefs";
+import { normalizarPaleta } from "@/lib/flair/make-up/palette";
 import type { BriefDefinicao } from "@/lib/flair/make-up/types";
 import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
 import { boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
@@ -40,7 +41,7 @@ interface Props {
 
 export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Props) {
   const tx = useNucleoText();
-  const tabs = useMemo(() => buildTabs({ recursos: ["CARTAS", "MAQUIAGEM"], vagas: brief.vagas, zonas: [], areas: brief.areas, opcoes: [], paleta: brief.paleta }, cartas), [brief, cartas]);
+  const tabs = useMemo(() => buildTabs({ recursos: ["CARTAS", "MAQUIAGEM"], vagas: brief.vagas, zonas: [], areas: brief.areas, opcoes: [], paleta: normalizarPaleta(brief.paleta) }, cartas), [brief, cartas]);
   const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardInicial(2, 0));
   const perfil = useMirrorAvatar();
   const [escolha, setEscolha] = useState<AvatarTipo | null>(null);
@@ -71,7 +72,7 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
           temAvatar={!!perfil.avatar} onEscolha={setEscolha} />
       </div>
       <div className="n3d-bottom">
-        <MakeUpObjective brief={brief} aberto={estado.objetivo} onToggle={() => disparar({ acao: "OBJETIVO" })} />
+        <MakeUpObjective brief={brief} aberto={estado.objetivo} onToggle={() => disparar({ acao: "VER_OBJETIVO" })} />
         <div className="mk-resources">
           <div className="mk-groups" role="group" aria-label={tx.t("flair3d.makeup.groups")}>
             {(["ROUPAS", "MAQUIAGEM"] as Grupo[]).map((g) => (

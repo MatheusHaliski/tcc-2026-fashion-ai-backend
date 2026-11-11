@@ -32,7 +32,7 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
   } else if (m.precisaDeck && d.deck) {
     corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} onEntrar={(deck) => void m.entrar(deck)} />;
   } else {
-    corpo = <NucleoGame definicao={d} cartas={m.cartasDaPartida} entregando={m.entregando} erro={m.erroEntrega} onEntregar={(sel) => void m.entregar(sel)} />;
+    corpo = <NucleoGame definicao={d} cartas={m.cartasDaPartida} entregando={m.entregando} erro={m.erroEntrega} onEntregar={(sel, avatar) => void m.entregar(sel, avatar)} />;
   }
   return (
     <>

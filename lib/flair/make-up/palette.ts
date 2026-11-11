@@ -48,3 +48,18 @@ export function tomDe(area: string, familia: string): string {
   const lista = BEAUTY_FAMILIAS[area as AreaMaquiagem] ?? [];
   return lista.find((t) => t.codigo === familia)?.hex ?? "#9A9A9A";
 }
+
+/**
+ * Paleta da API ({familias:{area:[...]}, acabamentos:[...]}) no formato por área da janela de recursos; já no formato
+ * por área, passa direto. Vazia ou desconhecida = null (vale a paleta inicial).
+ */
+export function normalizarPaleta(api: unknown): Paleta | null {
+  if (!api || typeof api !== "object") return null;
+  const p = api as { familias?: Record<string, string[]>; acabamentos?: string[] };
+  if (p.familias && typeof p.familias === "object" && !Array.isArray(p.familias)) {
+    const acabamentos = Array.isArray(p.acabamentos) ? p.acabamentos : [...BEAUTY_ACABAMENTOS];
+    return Object.fromEntries(Object.entries(p.familias).map(([area, familias]) => [area, { familias, acabamentos }]));
+  }
+  const porArea = api as Paleta;
+  return Object.keys(porArea).length ? porArea : null;
+}

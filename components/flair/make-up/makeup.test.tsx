@@ -48,9 +48,9 @@ describe("carreira", () => {
 describe("brief", () => {
   it("Roupas e Maquiagem, comandos sem desfilar e entrega com Prestígio", async () => {
     const { calls } = loggedAs(ME, {
-      "GET /api/flair/make-up/briefs/ENSAIO_VERAO": { codigo: "ENSAIO_VERAO", nivelMin: 1, regras: [{ codigo: "OCASIAO", pontos: 25 }, { codigo: "LABIOS_FAMILIA", pontos: 25 }], vagas: ["SUP", "INF"], areas: ["LABIOS", "BOCHECHAS", "OLHOS"], paleta: null },
+      "GET /api/flair/make-up/briefs/ENSAIO_VERAO": { codigo: "ENSAIO_VERAO", nivelMin: 1, regras: [{ codigo: "OCASIAO", pontos: 25 }, { codigo: "BATOM_CORAL", pontos: 25 }], vagas: ["SUP", "INF"], areas: ["LABIOS", "BOCHECHAS", "OLHOS"], paleta: { familias: { LABIOS: ["NUDE", "CORAL"], BOCHECHAS: ["ROSA"], OLHOS: ["PRETO"] }, acabamentos: ["FOSCO", "CETIM", "GLOSS"] } },
       "GET /api/me/flair/cards": CARDS,
-      "POST /api/flair/make-up/briefs/ENSAIO_VERAO/entrega": { pontos: 50, estrelas: 0, regras: [{ codigo: "OCASIAO", ok: true, pontos: 25 }, { codigo: "LABIOS_FAMILIA", ok: true, pontos: 25 }], prestigioGanho: 0, carreira: { nivel: 1, prestigio: 20, faltaParaProximo: 40, desbloqueios: [] } },
+      "POST /api/flair/make-up/briefs/ENSAIO_VERAO/entrega": { pontos: 50, estrelas: 0, regras: [{ codigo: "OCASIAO", ok: true, pontos: 25 }, { codigo: "BATOM_CORAL", ok: true, pontos: 25 }], prestigioGanho: 0, carreira: { nivel: 1, prestigio: 20, faltaParaProximo: 40, desbloqueios: [] } },
     });
     renderApp(<MakeUpScreen brief="ensaio-verao" />);
     const game = await screen.findByTestId("makeup-game");
@@ -62,6 +62,7 @@ describe("brief", () => {
     expect(within(janela).getAllByRole("button", { pressed: true })).toHaveLength(1);
     fireEvent.click(within(game).getByRole("button", { name: "Maquiagem" }));
     expect(within(janela).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Lábios", "Bochechas", "Olhos"]);
+    expect(within(janela).queryByRole("button", { name: "Vinho" })).toBeNull();
     expect(game.textContent).toContain("Cada tom maquia a área escolhida.");
     fireEvent.click(within(janela).getByRole("button", { name: "Coral" }));
     fireEvent.click(within(janela).getByRole("button", { name: "Gloss" }));

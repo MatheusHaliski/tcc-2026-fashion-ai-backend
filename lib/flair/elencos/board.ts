@@ -4,18 +4,20 @@
  */
 import type { ElencoConferencia, ElencoLink, ElencoLinha, ElencoVaga, LinkNivel } from "@/lib/flair/elencos/types";
 
-export const COLUNAS = 5;
-
-/** Centro da vaga em % do tabuleiro (colunas 0–4; fileiras 0..max). */
-export function posicaoDaVaga(v: ElencoVaga, fileiras: number): { x: number; y: number } {
-  return { x: ((v.coluna + 0.5) / COLUNAS) * 100, y: ((v.linha + 0.5) / Math.max(1, fileiras)) * 100 };
+/** Tamanho da grade da formação: fileiras e colunas que as vagas ocupam. */
+export function gradeDe(vagas: ElencoVaga[]): { fileiras: number; colunas: number } {
+  return {
+    fileiras: vagas.reduce((m, v) => Math.max(m, v.linha + 1), 1),
+    colunas: vagas.reduce((m, v) => Math.max(m, v.coluna + 1), 1),
+  };
 }
 
-export function fileirasDe(vagas: ElencoVaga[]): number {
-  return vagas.reduce((m, v) => Math.max(m, v.linha + 1), 1);
+/** Centro da vaga em % do tabuleiro. */
+export function posicaoDaVaga(v: ElencoVaga, grade: { fileiras: number; colunas: number }): { x: number; y: number } {
+  return { x: ((v.coluna + 0.5) / grade.colunas) * 100, y: ((v.linha + 0.5) / grade.fileiras) * 100 };
 }
 
-const NIVEIS: Record<string, LinkNivel> = { RED: "RED", VERMELHO: "RED", ORANGE: "ORANGE", LARANJA: "ORANGE", GREEN: "GREEN", VERDE: "GREEN" };
+const NIVEIS: Record<string, LinkNivel> = { VERMELHA: "RED", RED: "RED", LARANJA: "ORANGE", ORANGE: "ORANGE", VERDE: "GREEN", GREEN: "GREEN" };
 
 export function nivelDe(nivel: string | null | undefined): LinkNivel | null {
   return nivel ? NIVEIS[nivel.toUpperCase()] ?? null : null;

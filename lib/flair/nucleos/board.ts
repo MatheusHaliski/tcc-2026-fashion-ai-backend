@@ -69,7 +69,7 @@ function comando(s: BoardEstado, c: Comando, tabs: ResourceTab[]): BoardEstado {
     }
     case "TROCAR_ABA":
       return { ...s, aba: ciclo(s.aba + dir, tabs.length), item: 0 };
-    case "APLICAR":
+    case "VESTIR":
       return aplicar(s, tabs, s.aba, s.item);
     case "TIRAR":
       return tabs[s.aba] ? { ...s, sel: removeAt(s.sel, tabs[s.aba]) } : s;
@@ -81,7 +81,7 @@ function comando(s: BoardEstado, c: Comando, tabs: ResourceTab[]): BoardEstado {
       return { ...s, avatar: { ...s.avatar, poses: s.avatar.poses + 1 } };
     case "DESFILAR":
       return { ...s, avatar: { ...s.avatar, desfilando: !s.avatar.desfilando } };
-    case "OBJETIVO":
+    case "VER_OBJETIVO":
       return { ...s, objetivo: !s.objetivo };
     default:
       return s;

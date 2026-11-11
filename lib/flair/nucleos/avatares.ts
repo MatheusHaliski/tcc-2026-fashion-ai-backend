@@ -5,11 +5,12 @@
 import type { AvatarSolo, AvatarTipo, NucleoAvatares, NucleoConfig } from "@/lib/flair/nucleos/types";
 
 export function avataresDoNucleo(config: NucleoConfig): NucleoAvatares {
-  const protagonista: AvatarSolo = { tipo: config.avatares.protagonista[0], papel: "protagonista", quantidade: 1 };
+  // entradas com o mesmo papel são alternativas (PROPRIO ou MODELO_CASA como protagonista), como na API
+  const protagonistas = config.avatares.protagonista.map((tipo): AvatarSolo => ({ tipo, papel: "PROTAGONISTA", quantidade: 1 }));
   const porPapel = new Map<string, number>();
   for (const p of config.personagens) porPapel.set(p.papel, (porPapel.get(p.papel) ?? 0) + 1);
   const figurantes = Array.from(porPapel, ([papel, quantidade]): AvatarSolo => ({ tipo: "FIGURANTE", papel, quantidade }));
-  return { solo: [protagonista, ...figurantes], online: config.avatares.online };
+  return { solo: [...protagonistas, ...figurantes], online: config.avatares.online };
 }
 
 /**

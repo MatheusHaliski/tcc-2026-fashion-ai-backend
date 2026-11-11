@@ -27,7 +27,7 @@ describe("registro dos 15 núcleos", () => {
 
   it("recursos, ações e deck seguem as tabelas do contrato", () => {
     for (const n of NUCLEO_LISTA) {
-      expect(n.acoes).toEqual(expect.arrayContaining(["NAVEGAR", "TROCAR_ABA", "APLICAR", "GIRAR", "ZOOM", "POSAR", "ENTREGAR", "OBJETIVO"]));
+      expect(n.acoes).toEqual(expect.arrayContaining(["NAVEGAR", "TROCAR_ABA", "VESTIR", "GIRAR", "ZOOM", "POSAR", "ENTREGAR", "VER_OBJETIVO"]));
       expect(n.acoes.includes("DESFILAR")).toBe(DESFILE.includes(n.codigo));
       expect(n.acoes.includes("TIRAR")).toBe(n.recursos.includes("CARTAS"));
       expect(n.recursos.includes("ZONAS")).toBe(EDITOR.includes(n.codigo));
@@ -39,21 +39,21 @@ describe("registro dos 15 núcleos", () => {
     expect(NUCLEOS.DRESS_FIGHTER.automatico && NUCLEOS.FASHION_SPORTS.automatico).toBe(true);
     expect(NUCLEOS.PASSARELA.deck).toEqual({ tamanhoMax: 8, obrigatorias: [{ posicao: "SUP", quantidade: 1 }, { posicao: "INF", quantidade: 1 }, { posicao: "CAL", quantidade: 1 }], semDeck: false });
     expect(NUCLEOS.DRESS_FIGHTER.deck.tamanhoMax).toBe(6);
-    expect(NUCLEOS.LABIRINTO.deck.obrigatorias).toEqual([{ posicao: "QUALQUER", quantidade: 3 }]);
+    expect(NUCLEOS.LABIRINTO.deck.obrigatorias).toEqual([{ posicao: "ANY", quantidade: 3 }]);
   });
 
   it("personagens nunca ficam na frente da roupa: atrás (z ≤ 0) ou ao lado (|x| ≥ 1)", () => {
     for (const n of NUCLEO_LISTA) {
       for (const p of n.personagens) expect(p.pos[2] <= 0 || Math.abs(p.pos[0]) >= 1).toBe(true);
     }
-    expect(NUCLEOS.FASHION_SPORTS.personagens.filter((p) => p.papel === "colega")).toHaveLength(4);
-    expect(NUCLEOS.FASHION_SPORTS.personagens.filter((p) => p.papel === "adversario")).toHaveLength(5);
-    expect(NUCLEOS.CLUBE_CORACAO.personagens).toHaveLength(0);
+    expect(NUCLEOS.FASHION_SPORTS.personagens.filter((p) => p.papel === "COLEGA")).toHaveLength(4);
+    expect(NUCLEOS.FASHION_SPORTS.personagens.filter((p) => p.papel === "ADVERSARIO")).toHaveLength(5);
+    expect(NUCLEOS.CLUBE_CORACAO.personagens.map((p) => p.papel)).toEqual(["MANEQUIM"]);
   });
 
   it("avatares: protagonista e figurantes por papel; online só como dado", () => {
     const a = avataresDoNucleo(NUCLEOS.FASHION_SPORTS);
-    expect(a.solo).toEqual([{ tipo: "PROPRIO", papel: "protagonista", quantidade: 1 }, { tipo: "FIGURANTE", papel: "colega", quantidade: 4 }, { tipo: "FIGURANTE", papel: "adversario", quantidade: 5 }]);
+    expect(a.solo).toEqual([{ tipo: "PROPRIO", papel: "PROTAGONISTA", quantidade: 1 }, { tipo: "FIGURANTE", papel: "COLEGA", quantidade: 4 }, { tipo: "FIGURANTE", papel: "ADVERSARIO", quantidade: 5 }]);
     expect(a.online).toEqual({ min: 2, max: 10, porTime: 5 });
     expect(protagonistaEfetiva(["PROPRIO"], null, false)).toBe("MODELO_CASA");
     expect(protagonistaEfetiva(["PROPRIO"], null, true)).toBe("PROPRIO");
@@ -74,7 +74,7 @@ describe("registro dos 15 núcleos", () => {
 describe("deck, abas, estado e comandos", () => {
   it("deck: obrigatórias, alternativas e tamanho máximo", () => {
     expect(posicoesDaRegra("SUP|VES")).toEqual(["SUP", "VES"]);
-    expect(posicoesDaRegra("QUALQUER")).toEqual([]);
+    expect(posicoesDaRegra("ANY")).toEqual([]);
     const regras = NUCLEOS.PASSARELA.deck;
     expect(conferirDeck(regras, [card("a", "SUP"), card("b", "INF")]).valido).toBe(false);
     expect(conferirDeck(regras, [card("a", "SUP"), card("b", "INF")]).obrigatorias[2].falta).toBe(1);
@@ -99,8 +99,8 @@ describe("deck, abas, estado e comandos", () => {
     let s = boardInicial(2, -1);
     const cmd = (c: BoardAcao) => (s = boardReducer(s, c));
     cmd({ type: "comando", comando: { acao: "NAVEGAR", dir: 1, eixo: "x" }, tabs });
-    cmd({ type: "comando", comando: { acao: "APLICAR" }, tabs });
-    expect(s.sel.zonas.CORPO).toEqual({ cor: "#F5F4F0" });
+    cmd({ type: "comando", comando: { acao: "VESTIR" }, tabs });
+    expect(s.sel.zonas.FRENTE).toEqual({ cor: "#F5F4F0" });
     cmd({ type: "comando", comando: { acao: "NAVEGAR", dir: 1, eixo: "y" }, tabs });
     expect(s.item).toBe(5);
     cmd({ type: "comando", comando: { acao: "TROCAR_ABA", dir: -1 }, tabs });
@@ -112,19 +112,19 @@ describe("deck, abas, estado e comandos", () => {
     expect(s.avatar.zoom).toBe(2);
     cmd({ type: "comando", comando: { acao: "POSAR" }, tabs });
     cmd({ type: "comando", comando: { acao: "DESFILAR" }, tabs });
-    cmd({ type: "comando", comando: { acao: "OBJETIVO" }, tabs });
+    cmd({ type: "comando", comando: { acao: "VER_OBJETIVO" }, tabs });
     expect(s.avatar).toMatchObject({ poses: 1, desfilando: true });
     expect(s.objetivo).toBe(true);
   });
 
   it("teclado e gamepad (layout padrão) viram as ações do contrato", () => {
     expect(comandoDaTecla("Q")).toEqual({ acao: "TROCAR_ABA", dir: -1 });
-    expect(comandoDaTecla(" ")).toEqual({ acao: "APLICAR" });
+    expect(comandoDaTecla(" ")).toEqual({ acao: "VESTIR" });
     expect(comandoDaTecla("Enter")).toEqual({ acao: "ENTREGAR" });
     expect(comandoDaTecla("x")).toBeNull();
     const pad = (pressed: number[], axes = [0, 0, 0, 0]) => ({ buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: pressed.includes(i) })), axes });
     const r1 = lerGamepad(pad([0, 9]), PAD_INICIAL, 0);
-    expect(r1.comandos.map((c) => c.acao)).toEqual(["APLICAR", "ENTREGAR"]);
+    expect(r1.comandos.map((c) => c.acao)).toEqual(["VESTIR", "ENTREGAR"]);
     expect(lerGamepad(pad([0, 9]), r1.estado, 16).comandos).toEqual([]);
     const giro = lerGamepad(pad([], [0, 0, 0.9, 0]), PAD_INICIAL, 1000);
     expect(giro.comandos).toEqual([{ acao: "GIRAR", dir: 1 }]);

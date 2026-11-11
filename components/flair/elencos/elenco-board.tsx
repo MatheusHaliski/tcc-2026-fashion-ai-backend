@@ -6,7 +6,7 @@
 import { cn } from "@/components/ui";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useElencoText } from "@/components/flair/elencos/use-elenco-text";
-import { fileirasDe, linkDaLinha, nivelDe, posicaoDaVaga } from "@/lib/flair/elencos/board";
+import { gradeDe, linkDaLinha, nivelDe, posicaoDaVaga } from "@/lib/flair/elencos/board";
 import type { ElencoConferencia, ElencoDefinicao } from "@/lib/flair/elencos/types";
 
 interface Props {
@@ -20,10 +20,10 @@ interface Props {
 
 export function ElencoBoard({ elenco, cartas, banco, conf, selecionada, onVaga }: Props) {
   const tx = useElencoText();
-  const fileiras = fileirasDe(elenco.vagas);
-  const pos = new Map(elenco.vagas.map((v) => [v.chave, posicaoDaVaga(v, fileiras)]));
+  const grade = gradeDe(elenco.vagas);
+  const pos = new Map(elenco.vagas.map((v) => [v.chave, posicaoDaVaga(v, grade)]));
   return (
-    <div className="el-board" data-testid="elenco-board" style={{ ["--el-rows" as string]: fileiras }}>
+    <div className="el-board" data-testid="elenco-board" style={{ ["--el-rows" as string]: grade.fileiras }}>
       <svg className="el-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
         {elenco.linhas.map((l) => {
           const a = pos.get(l.a);

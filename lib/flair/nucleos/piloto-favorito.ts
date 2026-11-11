@@ -17,8 +17,9 @@ export const PILOTO_FAVORITO: NucleoConfig = {
       { forma: "caixa", pos: [-2.4, 0.4, -2], tam: [1.2, 0.8, 0.8], cor: "#C8283A" },
     ],
   },
-  personagens: [],
-  avatares: { protagonista: ["MODELO_CASA", "PROPRIO"], online: null },
+  // o manequim do ateliê veste a peça criada (FIGURANTE MANEQUIM na API); o avatar do perfil é opcional
+  personagens: [{ papel: "MANEQUIM", tipo: "manequim", pos: [-1.6, 0, -0.9], cor: "#ECE6DC" }],
+  avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: [],
   zonas: ["TOPO", "LATERAIS", "FAIXA_VISEIRA", "VISEIRA"],
   areas: [],

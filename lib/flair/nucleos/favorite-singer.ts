@@ -15,13 +15,14 @@ export const FAVORITE_SINGER: NucleoConfig = {
       { forma: "caixa", pos: [1.9, 0.45, -1.4], tam: [1.4, 0.9, 0.7], cor: "#3D2A5C" },
     ],
   },
-  personagens: [],
-  avatares: { protagonista: ["MODELO_CASA", "PROPRIO"], online: null },
+  // o manequim do ateliê veste a peça criada (FIGURANTE MANEQUIM na API); o avatar do perfil é opcional
+  personagens: [{ papel: "MANEQUIM", tipo: "manequim", pos: [-1.4, 0, -0.8], cor: "#ECE6DC" }],
+  avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: [],
-  zonas: ["CORPO", "MANGAS", "GOLA", "BARRA"],
+  zonas: ["FRENTE", "COSTAS", "MANGAS", "GOLA"],
   areas: [],
   opcoes: [],
   acoes: acoesDe({ cartas: false, desfile: false }),
-  regras: ["ROSA_DOMINANTE", "ROXO", "METALICO", "ATE_3_CORES"],
+  regras: ["ROSA_DOMINANTE", "ROXO_EM_UMA_ZONA", "ZONA_METALICA", "ATE_3_CORES"],
   deck: SEM_DECK,
 };

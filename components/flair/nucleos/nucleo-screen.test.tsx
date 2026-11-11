@@ -14,7 +14,7 @@ vi.mock("next/navigation", async (orig) => ({ ...(await orig<typeof import("next
 const card = (id: string, name: string, position: string) => ({ id, originType: "PIECE", originId: `p-${id}`, season: "SPRING", tier: "PRATA", ovr: 70, rare: false, position, name, brandName: "Atelier Lumi", imageUrl: null, hype: null, priceVerified: true, state: "AVAILABLE", tradeable: true, acquiredVia: "GENERATED" });
 const CARDS = { season: "SPRING", counts: { ESPECIAL: 0, OURO: 0, PRATA: 4, BRONZE: 0 }, total: 4, cards: [card("c1", "Camisa verde", "SUP"), card("c2", "Calça linho", "INF"), card("c3", "Tênis azul", "CAL"), card("c4", "Bolsa palha", "ACE")] };
 const def = (codigo: string, numero: number, over: Record<string, unknown> = {}) => ({ codigo, numero, objetivo: { codigo: "BASE", regras: [] }, recursos: [], vagas: [], zonas: [], areas: [], opcoes: [], acoes: [], ...over });
-const RESULT = { pontos: 80, estrelas: 2, resultado: "PONTUADO", regras: [{ codigo: "MARCA_BR", ok: true, pontos: 30 }, { codigo: "TODAS_BR", ok: false, pontos: 0 }], eventos: ["DESFILE"] };
+const RESULT = { pontos: 80, estrelas: 2, resultado: "PONTUADO", regras: [{ codigo: "MARCA_BR", ok: true, pontos: 30 }, { codigo: "TODAS_BR", ok: false, pontos: 0 }], eventos: [{ codigo: "PLACAR", valor: "2-1" }] };
 
 beforeEach(() => localStorage.clear());
 afterEach(() => {
@@ -41,7 +41,7 @@ describe("núcleo de cartas com deck (PASSARELA)", () => {
       "GET /api/me/flair/cards": CARDS,
       "POST /api/flair/3d/nucleos/PASSARELA/efeitos": { efeitos: [{ cardId: "c1", itens: [{ codigo: "MARCA_BR", valor: 10 }] }, { cardId: "c3", itens: [{ codigo: "DEFESA", valor: 12 }] }] },
       "POST /api/flair/3d/nucleos/PASSARELA/partidas": () => (refuse
-        ? new Response(JSON.stringify({ status: 422, code: "DECK_INVALIDO", message: "deck incompleto", details: { faltando: ["CAL"] } }), { status: 422, headers: { "content-type": "application/json" } })
+        ? new Response(JSON.stringify({ status: 422, code: "DECK_INVALIDO", message: "deck incompleto", details: { tamanho: 2, tamanhoMax: 8, repetidas: false, faltam: [{ posicao: "CAL", quantidade: 1 }] } }), { status: 422, headers: { "content-type": "application/json" } })
         : { id: "m1", nucleo: "PASSARELA", status: "ABERTA", semente: 7 }),
       "POST /api/flair/3d/partidas/m1/entrega": RESULT,
     });
@@ -61,7 +61,7 @@ describe("núcleo de cartas com deck (PASSARELA)", () => {
     expect(entrar.disabled).toBe(false);
     fireEvent.click(entrar);
     expect((await within(deck).findByRole("alert")).textContent).toContain("deck incompleto");
-    expect(within(deck).getByRole("alert").textContent).toContain("CAL");
+    expect(within(deck).getByRole("alert").textContent).toContain("Falta: 1 × Calçado");
     refuse = false;
     fireEvent.click(entrar);
     await screen.findByTestId("nucleo-game");
@@ -80,6 +80,7 @@ describe("núcleo de cartas com deck (PASSARELA)", () => {
     expect(within(result).getByLabelText("2 estrelas")).toBeTruthy();
     expect(result.textContent).toContain("Cumprida+10 por peça de marca brasileira");
     expect(result.textContent).toContain("Não cumprida");
+    expect(result.textContent).toContain("Placar: 2-1");
     expect(calls.find((c) => c.path === "/api/flair/3d/partidas/m1/entrega")?.body).toEqual({ cartas: { SUP: "c1" }, zonas: {}, maquiagem: {}, resposta: null });
   });
 });
@@ -89,19 +90,19 @@ describe("núcleo de zonas (CLUBE_CORACAO)", () => {
     const { calls } = loggedAs(ME, {
       "GET /api/flair/3d/nucleos/CLUBE_CORACAO": { message: "fora do ar" },
       "POST /api/flair/3d/nucleos/CLUBE_CORACAO/partidas": { id: "m8", nucleo: "CLUBE_CORACAO", status: "ABERTA", semente: 3 },
-      "POST /api/flair/3d/partidas/m8/entrega": { pontos: 100, estrelas: 3, resultado: "CONCLUIDO", regras: [{ codigo: "CORES_CLUBE", ok: true, pontos: 100 }], eventos: [] },
+      "POST /api/flair/3d/partidas/m8/entrega": { pontos: 100, estrelas: 3, resultado: "CONCLUIDO", regras: [{ codigo: "TODAS_AS_ZONAS", ok: true, pontos: 0 }, { codigo: "CORES_DO_CLUBE", ok: true, pontos: 0 }], eventos: [] },
     });
     renderApp(<NucleoScreen nucleo="CLUBE_CORACAO" />);
     const janela = await screen.findByTestId("nucleo-resource-window");
     expect(screen.queryByTestId("nucleo-deck")).toBeNull();
     expect(await screen.findByTestId("nucleo-scene-fallback")).toBeTruthy();
-    expect(within(janela).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Corpo", "Mangas", "Gola", "Punhos"]);
+    expect(within(janela).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Frente", "Costas", "Mangas", "Gola"]);
     fireEvent.click(within(janela).getByRole("button", { name: "Azul" }));
     fireEvent.click(within(janela).getByRole("button", { name: "Brilhante" }));
     expect(screen.queryByRole("button", { name: "Tirar" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Entregar o look" }));
     expect((await screen.findByTestId("nucleo-result")).textContent).toContain("100 pontos");
-    expect(calls.find((c) => c.path === "/api/flair/3d/partidas/m8/entrega")?.body).toMatchObject({ zonas: { CORPO: { cor: "#1E4FBF", acabamento: "BRILHANTE" } } });
+    expect(calls.find((c) => c.path === "/api/flair/3d/partidas/m8/entrega")?.body).toMatchObject({ zonas: { FRENTE: { cor: "#1E4FBF", acabamento: "BRILHANTE" } } });
     expect(calls.find((c) => c.path.endsWith("/partidas"))?.body).toEqual({ deck: [] });
   });
 });

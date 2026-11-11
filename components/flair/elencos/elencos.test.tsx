@@ -13,16 +13,16 @@ vi.mock("next/navigation", async (orig) => ({ ...(await orig<typeof import("next
 
 const card = (id: string, name: string, position: string) => ({ id, originType: "PIECE", originId: `p-${id}`, season: "SPRING", tier: "PRATA", ovr: 70, rare: false, position, name, brandName: "Atelier Lumi", imageUrl: `/img/${id}.png`, hype: null, priceVerified: true, state: "AVAILABLE", tradeable: true, acquiredVia: "GENERATED" });
 const CARDS = { season: "SPRING", counts: { ESPECIAL: 0, OURO: 0, PRATA: 5, BRONZE: 0 }, total: 5, cards: [card("a1", "Brinco", "ACE"), card("s1", "Camisa", "SUP"), card("b1", "Bolsa", "ACE"), card("i1", "Saia", "INF"), card("c1", "Sapato", "CAL")] };
-const link = (a: string, b: string, nivel: string, atributos: string[] = []) => ({ a, b, forca: nivel === "GREEN" ? 2 : nivel === "ORANGE" ? 1 : 0, nivel, atributos });
+const link = (a: string, b: string, nivel: string, atributos: string[] = []) => ({ a, b, forca: nivel === "VERDE" ? 2 : nivel === "LARANJA" ? 1 : 0, nivel, atributos });
 function conferir(_u: URL, init: RequestInit) {
   const cartas = (JSON.parse(String(init.body)) as { cartas: Record<string, string> }).cartas;
   const has = (...k: string[]) => k.every((x) => cartas[x]);
   const links = [
-    ...(has("acessorio", "cima") ? [link("acessorio", "cima", "GREEN", ["BRAND", "COLOR"])] : []),
-    ...(has("cima", "bolsa") ? [link("cima", "bolsa", "ORANGE", ["STYLE"])] : []),
-    ...(has("cima", "baixo") ? [link("cima", "baixo", "RED")] : []),
-    ...(has("bolsa", "baixo") ? [link("bolsa", "baixo", "GREEN", ["OCCASION"])] : []),
-    ...(has("baixo", "calcado") ? [link("baixo", "calcado", "GREEN", ["BRAND"])] : []),
+    ...(has("acessorio", "cima") ? [link("acessorio", "cima", "VERDE", ["MARCA", "COR"])] : []),
+    ...(has("cima", "bolsa") ? [link("cima", "bolsa", "LARANJA", ["ESTILO"])] : []),
+    ...(has("cima", "baixo") ? [link("cima", "baixo", "VERMELHA")] : []),
+    ...(has("bolsa", "baixo") ? [link("bolsa", "baixo", "VERDE", ["OCASIAO"])] : []),
+    ...(has("baixo", "calcado") ? [link("baixo", "calcado", "VERDE", ["MARCA"])] : []),
   ];
   const full = Object.keys(cartas).length === 5;
   return { links, quimicaCartas: { cima: 2, acessorio: 1 }, quimica: full ? 60 : 20, requisitos: [{ tipo: "QUIMICA", ok: full, valor: full ? 60 : 20, alvo: 40 }, { tipo: "LINHAS_VERDES", ok: full, valor: full ? 3 : 1, alvo: 2 }], ok: full };

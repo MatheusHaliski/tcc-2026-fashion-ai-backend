@@ -15,16 +15,16 @@ export interface ObrigatoriaStatus {
 
 export interface DeckStatus {
   total: number;
-  tamanhoMax: number;
+  tamanhoMax: number | null;
   excesso: number;
   obrigatorias: ObrigatoriaStatus[];
   valido: boolean;
 }
 
-/** "SUP|VES" → ["SUP", "VES"]; "QUALQUER" (ou vazio) → [] (qualquer posição). */
+/** "SUP|VES" → ["SUP", "VES"]; "ANY" (ou vazio) → [] (qualquer posição). */
 export function posicoesDaRegra(posicao: string | null | undefined): string[] {
   const p = (posicao ?? "").trim().toUpperCase();
-  if (!p || p === "QUALQUER" || p === "ANY") return [];
+  if (!p || p === "ANY" || p === "QUALQUER") return [];
   return p.split(/[|,]/).map((x) => x.trim()).filter(Boolean);
 }
 
@@ -34,13 +34,13 @@ export function conferirDeck(regras: DeckRegras, deck: FlairCollectionCard[]): D
     const tem = posicoes.length ? deck.filter((c) => posicoes.includes(c.position)).length : deck.length;
     return { regra, posicoes, tem, falta: Math.max(0, regra.quantidade - tem) };
   });
-  const excesso = Math.max(0, deck.length - regras.tamanhoMax);
+  const excesso = regras.tamanhoMax == null ? 0 : Math.max(0, deck.length - regras.tamanhoMax);
   const valido = deck.length > 0 && excesso === 0 && obrigatorias.every((o) => o.falta === 0);
   return { total: deck.length, tamanhoMax: regras.tamanhoMax, excesso, obrigatorias, valido };
 }
 
 /** Liga/desliga uma carta no deck sem passar do tamanho máximo. */
-export function alternarCarta(deck: string[], id: string, tamanhoMax: number): string[] {
+export function alternarCarta(deck: string[], id: string, tamanhoMax: number | null): string[] {
   if (deck.includes(id)) return deck.filter((x) => x !== id);
-  return deck.length >= tamanhoMax ? deck : [...deck, id];
+  return tamanhoMax != null && deck.length >= tamanhoMax ? deck : [...deck, id];
 }

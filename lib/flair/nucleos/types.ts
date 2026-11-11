@@ -29,14 +29,14 @@ export type NucleoRecurso = "CARTAS" | "ZONAS" | "MAQUIAGEM" | "RESPOSTA";
 export const NUCLEO_ACOES = [
   "NAVEGAR",
   "TROCAR_ABA",
-  "APLICAR",
+  "VESTIR",
   "TIRAR",
   "GIRAR",
   "ZOOM",
   "POSAR",
   "DESFILAR",
   "ENTREGAR",
-  "OBJETIVO",
+  "VER_OBJETIVO",
 ] as const;
 export type NucleoAcao = (typeof NUCLEO_ACOES)[number];
 
@@ -83,13 +83,14 @@ export interface RegraObjetivo {
 }
 
 export interface DeckObrigatoria {
-  /** posição da carta (SUP, INF, CAL, ACE, VES); alternativas separadas por "|"; QUALQUER = qualquer posição */
+  /** posição da carta (SUP, INF, CAL, ACE, VES); alternativas separadas por "|"; ANY = qualquer posição */
   posicao: string;
   quantidade: number;
 }
 
 export interface DeckRegras {
-  tamanhoMax: number;
+  /** nulo nos núcleos sem deck */
+  tamanhoMax: number | null;
   obrigatorias: DeckObrigatoria[];
   semDeck: boolean;
 }
@@ -113,6 +114,7 @@ export interface NucleoPartida {
   nucleo: NucleoCodigo;
   status: string;
   semente: number;
+  deck?: string[];
   participantes?: { tipo: AvatarTipo; papel: string; time?: string | null; userId?: string | null }[];
 }
 
@@ -144,7 +146,7 @@ export interface NucleoResultado {
   estrelas: number;
   resultado: string;
   regras: RegraResultado[];
-  eventos: unknown[];
+  eventos: { codigo: string; valor?: unknown }[];
 }
 
 export interface EfeitoItem {

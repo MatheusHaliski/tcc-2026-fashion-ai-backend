@@ -24,5 +24,5 @@ export const LABIRINTO: NucleoConfig = {
   opcoes: [],
   acoes: acoesDe({ cartas: true, desfile: true }),
   regras: ["MESMA_FAMILIA"],
-  deck: deckDe(8, ["QUALQUER", 3]),
+  deck: deckDe(8, ["ANY", 3]),
 };

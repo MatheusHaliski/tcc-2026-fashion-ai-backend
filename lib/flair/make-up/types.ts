@@ -6,7 +6,7 @@ export interface MakeUpCarreira {
   nivel: number;
   prestigio: number;
   faltaParaProximo: number;
-  desbloqueios: string[];
+  desbloqueios: { tipo: string; codigo: string; nivel: number; liberado: boolean }[];
 }
 
 export interface BriefResumo {
@@ -26,7 +26,8 @@ export interface BriefDefinicao {
   regras: RegraObjetivo[];
   vagas: string[];
   areas: string[];
-  paleta?: Paleta | null;
+  /** a API devolve {familias:{area:[...]}, acabamentos:[...]}; normalizarPaleta passa para o formato por área */
+  paleta?: Paleta | { familias: Record<string, string[]>; acabamentos: string[] } | null;
 }
 
 export interface MakeUpEntrega {

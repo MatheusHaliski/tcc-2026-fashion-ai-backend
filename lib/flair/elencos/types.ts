@@ -23,10 +23,13 @@ export interface ElencoLinha {
   b: string;
 }
 
+/** QUIMICA, LINHAS_VERDES, LINHAS_POR (atributo), SEM_LINHA_VERMELHA (vaga opcional), CARTAS, MARCAS, NIVEL_CARTA (nivel). */
 export interface ElencoRequisito {
   tipo: string;
-  alvo?: number | string | null;
-  [extra: string]: unknown;
+  alvo?: number | null;
+  atributo?: string;
+  vaga?: string;
+  nivel?: string;
 }
 
 export interface ElencoDefinicao {
@@ -36,7 +39,7 @@ export interface ElencoDefinicao {
   requisitos: ElencoRequisito[];
 }
 
-/** Nível do link: o servidor manda RED/ORANGE/GREEN (CbcLinks.Level); VERMELHO/LARANJA/VERDE também valem. */
+/** Nível do link: o servidor manda VERMELHA/LARANJA/VERDE; RED/ORANGE/GREEN (CbcLinks.Level) também valem. */
 export type LinkNivel = "RED" | "ORANGE" | "GREEN";
 
 export interface ElencoLink {
@@ -51,7 +54,7 @@ export interface RequisitoStatus {
   tipo: string;
   ok: boolean;
   valor?: number | string | null;
-  alvo?: number | string | null;
+  alvo?: number | null;
 }
 
 export interface ElencoConferencia {

@@ -15,18 +15,18 @@ import { ElencoRequirements } from "@/components/flair/elencos/elenco-requiremen
 import { useElenco } from "@/components/flair/elencos/use-elenco";
 import { useElencoText } from "@/components/flair/elencos/use-elenco-text";
 import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-controls";
-import { estadoDasPecas, fileirasDe, ordemDeLeitura, posicaoDaVaga, vagaVizinha } from "@/lib/flair/elencos/board";
+import { estadoDasPecas, gradeDe, ordemDeLeitura, posicaoDaVaga, vagaVizinha } from "@/lib/flair/elencos/board";
 import { arteDoElenco, elencoDaRota } from "@/lib/flair/elencos/formacoes";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { NucleoAcao } from "@/lib/flair/nucleos/types";
 
-const ACOES: NucleoAcao[] = ["NAVEGAR", "APLICAR", "TIRAR", "ENTREGAR", "OBJETIVO"];
+const ACOES: NucleoAcao[] = ["NAVEGAR", "VESTIR", "TIRAR", "ENTREGAR", "VER_OBJETIVO"];
 const BOTOES: { id: string; cmd: Comando }[] = [
   { id: "prev", cmd: { acao: "NAVEGAR", dir: -1, eixo: "x" } },
   { id: "next", cmd: { acao: "NAVEGAR", dir: 1, eixo: "x" } },
-  { id: "open", cmd: { acao: "APLICAR" } },
+  { id: "open", cmd: { acao: "VESTIR" } },
   { id: "remove", cmd: { acao: "TIRAR" } },
-  { id: "requirements", cmd: { acao: "OBJETIVO" } },
+  { id: "requirements", cmd: { acao: "VER_OBJETIVO" } },
 ];
 
 function Elenco({ codigo }: { codigo: string }) {
@@ -56,24 +56,24 @@ function Elenco({ codigo }: { codigo: string }) {
     const dir = c.dir ?? 1;
     if (c.acao === "NAVEGAR" && gaveta) setFoco((f) => Math.min(Math.max(0, doDrawer.length - 1), Math.max(0, f + (c.eixo === "y" ? dir * 4 : dir))));
     else if (c.acao === "NAVEGAR") setVaga(vagaVizinha(vagas, atual.chave, dir, c.eixo ?? "x"));
-    else if (c.acao === "APLICAR" && gaveta && doDrawer[foco]) escolher(doDrawer[foco].id);
-    else if (c.acao === "APLICAR") abrir(atual.chave);
+    else if (c.acao === "VESTIR" && gaveta && doDrawer[foco]) escolher(doDrawer[foco].id);
+    else if (c.acao === "VESTIR") abrir(atual.chave);
     else if (c.acao === "TIRAR" && gaveta) setGaveta(false);
     else if (c.acao === "TIRAR") m.tirar(atual.chave);
-    else if (c.acao === "OBJETIVO") setRequisitos((r) => !r);
+    else if (c.acao === "VER_OBJETIVO") setRequisitos((r) => !r);
     else if (c.acao === "ENTREGAR" && pronto) void m.entregar();
   };
   const { disparar } = useNucleoControls({ acoes: ACOES, onComando, ativo: !m.entregando });
 
   if (m.carregando || m.carregandoCartas) return <SkeletonGrid n={3} />;
   if (!m.elenco || !atual) return <EmptyState title={tx.t("flair3d.elencos.notFound")} />;
-  const fileiras = fileirasDe(m.elenco.vagas);
+  const grade = gradeDe(m.elenco.vagas);
   const revelado = m.resultado?.ok
     ? {
         edicao: m.resultado.edicao,
         fotos: m.elenco.vagas.filter((v) => m.cartas[v.chave]).map((v) => {
           const card = m.banco.find((c) => c.id === m.cartas[v.chave]);
-          return { chave: v.chave, ...posicaoDaVaga(v, fileiras), url: card?.imageUrl ?? null, nome: card?.name ?? "" };
+          return { chave: v.chave, ...posicaoDaVaga(v, grade), url: card?.imageUrl ?? null, nome: card?.name ?? "" };
         }),
       }
     : null;
@@ -86,7 +86,7 @@ function Elenco({ codigo }: { codigo: string }) {
         <ElencoDrawer posicao={atual.posicao} cartas={doDrawer} foco={foco} atual={m.cartas[atual.chave] ?? null}
           onEscolher={(c) => escolher(c.id)} onFechar={() => setGaveta(false)} />
       )}
-      <ElencoRequirements requisitos={m.elenco.requisitos} conf={m.conferencia} aberto={requisitos} onToggle={() => disparar({ acao: "OBJETIVO" })} />
+      <ElencoRequirements requisitos={m.elenco.requisitos} conf={m.conferencia} aberto={requisitos} onToggle={() => disparar({ acao: "VER_OBJETIVO" })} />
       <div className="n3d-pad" role="toolbar" aria-label={tx.t("flair3d.ui.controls.toolbar")}>
         {BOTOES.map((b) => <button key={b.id} type="button" className="n3d-pad-btn" onClick={() => disparar(b.cmd)}>{tx.t(`flair3d.elencos.button.${b.id}`)}</button>)}
       </div>

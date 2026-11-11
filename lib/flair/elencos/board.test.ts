@@ -13,6 +13,7 @@ describe("formações", () => {
       const chaves = new Set(f.vagas.map((v) => v.chave));
       for (const l of f.linhas) expect(chaves.has(l.a) && chaves.has(l.b)).toBe(true);
     }
+    expect(formacaoLocal("PRIMEIRO_ELENCO")!.vagas[1]).toEqual({ chave: "cima", posicao: "SUP", coluna: 0, linha: 1 });
     expect(formacaoLocal("NOITE_ESTREIA")!.vagas.find((v) => v.chave === "ves")).toEqual({ chave: "ves", posicao: "VES", coluna: 2, linha: 1 });
     expect(elencoDaRota("casa-marca")).toBe("CASA_MARCA");
     expect(rotaDoElenco("ELENCO_LENDARIO")).toBe("/flair/elencos/elenco-lendario");
@@ -24,9 +25,9 @@ describe("tabuleiro e quebra-cabeça", () => {
   const f = formacaoLocal("PRIMEIRO_ELENCO")!;
   const conf: ElencoConferencia = {
     links: [
-      { a: "acessorio", b: "cima", forca: 2, nivel: "GREEN", atributos: ["BRAND"] },
-      { a: "bolsa", b: "cima", forca: 1, nivel: "ORANGE", atributos: ["COLOR"] },
-      { a: "cima", b: "baixo", forca: 0, nivel: "RED", atributos: [] },
+      { a: "acessorio", b: "cima", forca: 2, nivel: "VERDE", atributos: ["MARCA"] },
+      { a: "bolsa", b: "cima", forca: 1, nivel: "LARANJA", atributos: ["COR"] },
+      { a: "cima", b: "baixo", forca: 0, nivel: "VERMELHA", atributos: [] },
     ],
     quimicaCartas: {}, quimica: 30, requisitos: [], ok: false,
   };
@@ -44,6 +45,7 @@ describe("tabuleiro e quebra-cabeça", () => {
     expect(vagaVizinha(f.vagas, "acessorio", 1, "x")).toBe("cima");
     expect(vagaVizinha(f.vagas, "cima", 1, "x")).toBe("bolsa");
     expect(vagaVizinha(f.vagas, "bolsa", 1, "y")).toBe("baixo");
+    expect(vagaVizinha(f.vagas, "acessorio", 1, "y")).toBe("cima");
     expect(vagaVizinha(f.vagas, "acessorio", -1, "y")).toBe("acessorio");
   });
 });

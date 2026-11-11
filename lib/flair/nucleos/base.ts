@@ -4,7 +4,7 @@
  */
 import type { DeckObrigatoria, DeckRegras, NucleoAcao, NucleoPersonagem } from "@/lib/flair/nucleos/types";
 
-const SEMPRE: NucleoAcao[] = ["NAVEGAR", "TROCAR_ABA", "APLICAR", "GIRAR", "ZOOM", "POSAR", "ENTREGAR", "OBJETIVO"];
+const SEMPRE: NucleoAcao[] = ["NAVEGAR", "TROCAR_ABA", "VESTIR", "GIRAR", "ZOOM", "POSAR", "ENTREGAR", "VER_OBJETIVO"];
 
 /** Ações válidas: todas as comuns, "tirar" nos núcleos de cartas e "desfilar" onde a tabela permite. */
 export function acoesDe(opts: { cartas: boolean; desfile: boolean }): NucleoAcao[] {

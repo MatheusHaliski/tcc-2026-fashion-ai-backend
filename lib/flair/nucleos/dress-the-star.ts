@@ -16,9 +16,9 @@ export const DRESS_THE_STAR: NucleoConfig = {
     ],
   },
   personagens: [
-    { papel: "estrela", tipo: "silhueta", pos: [0, 1.1, -3.3], cor: "#2A1033", escala: 1.1 },
-    ...fileira("plateia", -2.6, [-1, 0.5, 2], "#3A2A48"),
-    ...fileira("plateia", 2.6, [-1, 0.5, 2], "#3A2A48"),
+    { papel: "ESTRELA", tipo: "silhueta", pos: [0, 1.1, -3.3], cor: "#2A1033", escala: 1.1 },
+    ...fileira("PLATEIA", -2.6, [-1, 0.5, 2], "#3A2A48"),
+    ...fileira("PLATEIA", 2.6, [-1, 0.5, 2], "#3A2A48"),
   ],
   avatares: { protagonista: ["PROPRIO"], online: { min: 3, max: 8 } },
   vagas: ["SUP", "INF", "CAL", "ACE"],
@@ -26,6 +26,6 @@ export const DRESS_THE_STAR: NucleoConfig = {
   areas: [],
   opcoes: [],
   acoes: acoesDe({ cartas: true, desfile: true }),
-  regras: ["ESTILO_OU_COR"],
+  regras: ["FIGURINO"],
   deck: deckDe(8, ["SUP", 1], ["INF", 1]),
 };
