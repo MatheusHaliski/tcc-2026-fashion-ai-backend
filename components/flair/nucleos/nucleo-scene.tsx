@@ -6,6 +6,7 @@
 import { Component, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion, useWebGL, type Look3dPiece } from "@/components/three/common";
+import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import type { NucleoConfig } from "@/lib/flair/nucleos/types";
@@ -26,6 +27,7 @@ interface Props {
   config: NucleoConfig;
   avatar: AvatarEstado;
   pecas: Look3dPiece[];
+  protagonista: Protagonista;
 }
 
 function Cena2D({ config, avatar, pecas }: Props) {

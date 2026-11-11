@@ -2,6 +2,7 @@
  * Registro dos 15 núcleos (Strategy no frontend: um arquivo por núcleo, escolhido pelo código da rota). A ordem é a
  * numeração do contrato (docs/flair/flair-3d/BASE_NUCLEOS.md).
  */
+import { avataresDoNucleo } from "@/lib/flair/nucleos/avatares";
 import { AROUND_THE_WORLD } from "@/lib/flair/nucleos/around-the-world";
 import { BATALHA_LOOKS } from "@/lib/flair/nucleos/batalha-looks";
 import { BOUTIQUE_3D } from "@/lib/flair/nucleos/boutique-3d";
@@ -68,6 +69,7 @@ export function definicaoLocal(codigo: NucleoCodigo): NucleoDefinicao {
     opcoes: n.opcoes,
     acoes: n.acoes,
     deck: n.deck,
+    avatares: avataresDoNucleo(n),
   };
 }
 
@@ -88,5 +90,6 @@ export function mesclarDefinicao(codigo: NucleoCodigo, api?: Partial<NucleoDefin
     opcoes: lista(api.opcoes, local.opcoes),
     acoes: lista(api.acoes, local.acoes),
     deck: api.deck ?? local.deck,
+    avatares: api.avatares ?? local.avatares,
   };
 }

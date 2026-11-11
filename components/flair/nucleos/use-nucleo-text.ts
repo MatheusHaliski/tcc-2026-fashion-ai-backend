@@ -43,7 +43,10 @@ export function useNucleoText() {
       item,
       nome: (codigo: string) => ou(`flair3d.nucleo.${codigo}.name`, codigo),
       regra: (codigo: string, regra: string) => ou(`flair3d.nucleo.${codigo}.rules.${regra}`, regra),
-      efeito: (e: EfeitoItem) => ou(`flair3d.ui.efeito.${e.codigo}`, `${e.codigo} ${e.valor}`, { valor: e.valor }),
+      efeito: (e: EfeitoItem) => {
+        const valor = typeof e.valor === "number" && e.valor > 0 ? `+${e.valor}` : String(e.valor);
+        return ou(`flair3d.ui.efeito.${e.codigo}`, `${e.codigo} ${valor}`, { valor });
+      },
       resultado: (r: string) => ou(`flair3d.ui.result.resultado.${r}`, r),
       papel: (p: string) => ou(`flair3d.ui.papel.${p}`, p),
       posicao: (p: string) => ou(`flair3d.ui.tab.${p}`, p),

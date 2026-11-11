@@ -8,7 +8,7 @@ import { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Rig } from "@/components/three/fitting-camera";
 import type { Look3dPiece } from "@/components/three/common";
-import { NucleoAvatar, Silhueta } from "@/components/flair/nucleos/nucleo-avatar";
+import { NucleoAvatar, Silhueta, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import type { CenaProp, NucleoConfig, V3 } from "@/lib/flair/nucleos/types";
 
@@ -19,6 +19,7 @@ export interface NucleoScene3DProps {
   reduzido: boolean;
   desfile: boolean;
   rotulo: string;
+  protagonista: Protagonista;
 }
 
 function Prop({ p }: { p: CenaProp }) {
@@ -42,7 +43,7 @@ export function enquadramento(zoom: number): { dist: number; alvo: V3 } {
   return { dist, alvo: [0, altura, 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo }: NucleoScene3DProps) {
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista }: NucleoScene3DProps) {
   const { cena, personagens } = config;
   const { dist, alvo } = enquadramento(avatar.zoom);
   const target = useMemo<V3>(() => alvo, [alvo[1]]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -61,7 +62,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
           <Silhueta cor={p.cor} escala={p.escala ?? 1} />
         </group>
       ))}
-      <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} />
+      <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} />
       <Rig view="front" target={target} dist={dist} />
     </Canvas>
   );

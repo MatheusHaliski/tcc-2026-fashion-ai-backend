@@ -8,10 +8,18 @@ import { Suspense, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Mannequin } from "@/components/three/mannequin";
-import type { Look3dPiece, Mannequin3d } from "@/components/three/common";
+import type { Avatar3dRef, Look3dPiece, Mannequin3d } from "@/components/three/common";
+import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 
-const MANEQUIM: Mannequin3d = { sex: "FEMININO", head: "PADRAO" };
+/** Protagonista: o Avatar 3D do perfil (PROPRIO) ou a modelo da casa (manequim de vitrine, sem rosto de ninguém). */
+export interface Protagonista {
+  avatar: Avatar3dRef | null;
+  sexo: "FEMININO" | "MASCULINO";
+  corpo: BodyParams | null;
+}
+
+export const MODELO_CASA: Protagonista = { avatar: null, sexo: "FEMININO", corpo: null };
 const DESFILE_Z = 1.6;
 const POSE_S = 1.2;
 
@@ -31,7 +39,17 @@ export function Silhueta({ cor, escala = 1 }: { cor: string; escala?: number }) 
   );
 }
 
-export function NucleoAvatar({ estado, pecas, reduzido, desfile }: { estado: AvatarEstado; pecas: Look3dPiece[]; reduzido: boolean; desfile: boolean }) {
+interface AvatarProps {
+  estado: AvatarEstado;
+  pecas: Look3dPiece[];
+  reduzido: boolean;
+  desfile: boolean;
+  protagonista: Protagonista;
+}
+
+export function NucleoAvatar({ estado, pecas, reduzido, desfile, protagonista }: AvatarProps) {
+  const { avatar, sexo, corpo } = protagonista;
+  const manequim: Mannequin3d = { sex: sexo, head: avatar ? "AVATAR" : "PADRAO", avatar };
   const g = useRef<THREE.Group>(null);
   const pose = useRef({ visto: estado.poses, inicio: -1 });
   useFrame(({ clock }, dt) => {
@@ -53,7 +71,7 @@ export function NucleoAvatar({ estado, pecas, reduzido, desfile }: { estado: Ava
   return (
     <group ref={g} name="nucleo-avatar">
       <Suspense fallback={<Silhueta cor="#ECE6DC" />}>
-        <Mannequin mannequin={MANEQUIM} pieces={pecas} still={reduzido} fallback={<Silhueta cor="#ECE6DC" />} />
+        <Mannequin mannequin={manequim} body={corpo} pieces={pecas} still={reduzido} fallback={<Silhueta cor="#ECE6DC" />} />
       </Suspense>
     </group>
   );
