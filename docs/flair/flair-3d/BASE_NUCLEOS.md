@@ -132,3 +132,58 @@ entregar, a cena mostra o resultado.
 - `POST /api/flair/3d/partidas/{id}/entrega`: corpo `{cartas:{vaga:cardId}, zonas:{zona:{cor, acabamento}}, maquiagem:{area:{familia, acabamento}}, resposta}`; resposta `{pontos, estrelas, resultado, regras:[{codigo, ok, pontos}], eventos:[...]}` (logado, só o dono; entrega uma vez).
 
 Textos de interface ficam nos catálogos de i18n (`flair3d.nucleo.<CODIGO>.*`); a API devolve só códigos.
+
+## FLAIR 3D MAKE UP: a mesma base, mais simples
+
+O FLAIR 3D MAKE UP (Road to Glory) ganha a mesma estrutura, com duas simplificações pedidas pela dona: o efeito de uma
+carta é sempre **vestir** ou **maquiar**, e o cenário é o **provador 3D** reaproveitado.
+
+| Camada | Arquivo |
+| --- | --- |
+| Tabela | na mesma `V99__flair3d_partidas.sql`: `flair_makeup_looks` (id, user_id, brief, look_json, pontos, estrelas, prestigio, created_at) |
+| Entidade e repositório | `FlairMakeUpLook`, `FlairMakeUpLookRepository` |
+| Brief (Strategy) | `fai-application/.../flair3d/makeup/briefs/<Nome>Brief.java`, implementa `FlairMakeUpBrief` |
+| Service | `FlairMakeUpService`: carreira, briefs, entrega e Prestígio |
+| Controller e rota backend | `FlairMakeUpController`, `/api/flair/make-up/...` |
+| Rotas frontend | `app/(site)/(app)/flair/make-up/page.tsx` (carreira e briefs) e `.../make-up/[brief]/page.tsx` (o jogo) |
+| Arquivos frontend | `lib/flair/make-up/` (tipos, API, briefs, paleta) e `components/flair/make-up/` (tela, cenário, recursos) |
+
+**Cenário.** O provador 3D do app (`components/three/fitting-room-scene.tsx` e o palco de `components/try-on/`), com:
+- o logo do FashionAI (`/brand/fai-logo.png`) na parede do fundo, pelo `env.logoUrl` que a cena já aceita;
+- as paredes nas cores do FashionAI: magenta `#C6275E` e verde-petróleo `#1F7A76`, com o tom claro `#FBE7EE` de base.
+
+**Personagens.** Só a protagonista: o próprio avatar ou a modelo da casa. Sem outros personagens nesta base.
+
+**Recursos e efeito de cada carta.**
+
+| Aba | Recurso | Efeito |
+| --- | --- | --- |
+| Roupas | cartas FLAIR do guarda-roupa, por vaga (`SUP`, `INF`, `CAL`, `ACE`, `VES`) | vestir a vaga |
+| Maquiagem | paleta inicial FashionAI Beauty: lábios (nude, rosa, coral, vermelho, vinho), bochechas (pêssego, rosa, bronze), olhos (marrom, dourado, preto), com acabamento fosco, cetim ou gloss | maquiar a área |
+
+Não há deck: valem o guarda-roupa e a paleta liberada no nível.
+
+**Ações e comandos.** Os mesmos da tabela de ações, menos "desfilar ou caminhar": navegar, trocar a aba, vestir ou
+maquiar (Espaço / A), tirar (Backspace / B), girar, aproximar (inclusive no rosto, para a maquiagem), posar, entregar e
+ver o objetivo.
+
+**Os três briefs da base (nível 1 e 2).** Pontos de 0 a 100, 25 por regra; estrelas em 60, 80 e 100.
+
+| Código | Nível | Regras |
+| --- | --- | --- |
+| `ENSAIO_VERAO` | 1 | ocasião casual ou praia; material leve; lábios na família coral; acabamento dos lábios gloss ou cetim |
+| `ENTREVISTA` | 1 | ocasião trabalho ou formal; calçado fechado; lábios nude ou rosa; acabamento fosco |
+| `PRIMEIRO_ENCONTRO` | 2 | ocasião festa ou noite; 1 acessório; lábios vermelho ou vinho; bochechas rosa |
+
+**Carreira e Prestígio** (regras do `../flair-3d-make-up/PLANO.md`):
+- Cada estrela nova num brief vale 0,2 × a base do brief (base 100); repetir o brief só paga as estrelas novas.
+- Prestígio para sair do nível n: 60, 90, 120, 150 e 180 nos níveis 1 a 5; do 6 em diante, round(15 · n^1,5).
+- Cada brief tem um nível mínimo; abaixo dele, a API devolve 403.
+
+**API.**
+- `GET /api/flair/make-up/carreira`: `{nivel, prestigio, faltaParaProximo, desbloqueios[]}` (logado).
+- `GET /api/flair/make-up/briefs`: `{briefs:[{codigo, nivelMin, liberado, melhoresEstrelas}]}` (logado).
+- `GET /api/flair/make-up/briefs/{codigo}`: `{codigo, nivelMin, regras:[{codigo, pontos}], vagas[], areas[], paleta}`.
+- `POST /api/flair/make-up/briefs/{codigo}/entrega`: corpo `{cartas:{vaga:cardId}, maquiagem:{area:{familia,
+  acabamento}}}`; resposta `{pontos, estrelas, regras:[{codigo, ok, pontos}], prestigioGanho, carreira}`. Só cartas da
+  própria pessoa (422); nota nunca usa pele nem rosto.
