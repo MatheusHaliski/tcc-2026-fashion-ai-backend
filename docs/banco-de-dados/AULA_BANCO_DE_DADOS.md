@@ -129,6 +129,33 @@ Cada exercício exige: tabela de opções quando indicada, FK/migration nova, DT
 
 Entrega de cada exercício: migration, arquivos alterados, exemplo de requisição/resposta, testes positivos/negativos e duas evidências visuais (origem e leitura após recarregar). O teste deve demonstrar o comportamento, não apenas espelhar uma função.
 
+<!-- RESOLUCOES_20_BEGIN -->
+### Resoluções passo a passo — atualização de 6/11/2026
+
+As soluções abaixo foram conferidas no código atual e incluem arquivos/linhas, SQL, repository, service, controller, UI, restrições de integridade referencial e alternativas. [Começar pelo guia geral e diagnóstico de FKs](RESOLUCAO_20_EXERCICIOS.md). São roteiros de implementação; SQLs não foram executados no banco e propostas não são declaradas como funcionalidades já entregues.
+
+1. [TipoLook no espelho e no detalhe do look](solucoes/01-tipo-look.md).
+2. [Estado de conservação da peça](solucoes/02-conservacao.md).
+3. [Instrução de lavagem](solucoes/03-lavagem.md).
+4. [Intensidade térmica do look](solucoes/04-nivel-termico.md).
+5. [Origem adquirida, herdada ou trocada](solucoes/05-origem-peca.md).
+6. [Estação preferida do look](solucoes/06-estacao-look.md).
+7. [Tipo de iluminação e temperatura do quarto](solucoes/07-iluminacao-quarto.md).
+8. [Nome do módulo de armazenamento](solucoes/08-nome-modulo.md).
+9. [Categoria principal da marca](solucoes/09-categoria-marca.md).
+10. [Área artística principal da celebridade](solucoes/10-area-artistica.md).
+11. [Prazo de disponibilidade do selo](solucoes/11-prazo-selo.md).
+12. [Política do selo: quantidade mínima por cor](solucoes/12-quantidade-cor.md).
+13. [Política do selo: marca exigida](solucoes/13-marca-politica.md).
+14. [Canal de utilização do cupom](solucoes/14-canal-cupom.md).
+15. [Valor mínimo de compra do cupom](solucoes/15-minimo-compra.md).
+16. [CBC: modalidade/cenário preferido](solucoes/16-preferencia-cbc.md).
+17. [Tipo de dinâmica da Trend](solucoes/17-dinamica-trend.md).
+18. [Peça Assinatura do perfil e histórico](solucoes/18-peca-assinatura.md).
+19. [Modalidade visual da peça na AURA](solucoes/19-modalidade-aura.md).
+20. [Variante do catálogo por SKU e cor](solucoes/20-sku-cor.md).
+<!-- RESOLUCOES_20_END -->
+
 ## 16. Inventário de migrations presentes
 
 - `V1__baseline.sql`
