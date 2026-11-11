@@ -1,4 +1,10 @@
 {
+  "pieceReferences.colecao.label": "Colección",
+  "pieceReferences.colecao.unselected": "Sin colección",
+  "pieceReferences.colecao.unavailable": "Colección guardada no disponible",
+  "pieceReferences.colecao.loadError": "No se pudieron cargar las colecciones.",
+  "pieceReferences.colecao.empty": "No hay colecciones disponibles.",
+  "pieceReferences.colecao.hint": "Elige la colección a la que pertenece esta pieza.",
   "atelier3d.commands.title": "Comandos de edición",
   "atelier3d.commands.help": "Edite el objeto o la malla indicada. Los cambios entran en el historial y se pueden deshacer desde la barra del editor.",
   "atelier3d.commands.reset-transform": "Restaurar transformación",
