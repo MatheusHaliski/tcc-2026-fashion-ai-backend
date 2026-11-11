@@ -165,7 +165,9 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "estado_de_conservacao")
     private EstadoConservacao estadoConservacao;
-
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "colecao_id")
+private Colecao colecao;
     /** Instrução estruturada, sem substituir o campo livre careInstructions. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tipo_lavagem_id")
