@@ -27,7 +27,12 @@ public class PieceReferenceController {
     public List<Views.ReferenceOptionView> estadosConservacao() {
         return estados.findAllByAtivoTrueOrderByNomeAsc().stream().map(Views::estadoConservacao).toList();
     }
-
+@GetMapping("/api/colecoes")
+@Transactional(readOnly = true)
+public List<Views.ReferenceOptionView> colecoes() {
+    return colecoes.findAllByOrderByNomeAsc().stream()
+        .map(c -> new Views.ReferenceOptionView(c.getId(), c.getCodigo(), c.getNome())).toList();
+}
     @GetMapping("/api/tipos-lavagem")
     @Transactional(readOnly = true)
     @Operation(summary = "Instruções de lavagem cadastradas em TipoLavagem")
