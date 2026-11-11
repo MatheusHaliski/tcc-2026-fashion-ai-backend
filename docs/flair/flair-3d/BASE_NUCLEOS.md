@@ -103,6 +103,42 @@ botão "Entrar na partida", que só fica ativo com o deck válido.
 Os personagens são manequins ou silhuetas simples nesta base (sem rosto), posicionados atrás ou ao lado do avatar,
 nunca na frente da roupa.
 
+## Os avatares de cada partida
+
+Os avatares são os mesmos que cada pessoa cria no perfil do FashionAI (`/api/me/avatar3d`, `UserAvatar3d`). Cada
+núcleo e cada variação diz quais avatares entram na partida. Ninguém precisa criar avatar novo para jogar.
+
+**Tipos de avatar na cena:**
+- `PROPRIO`: o avatar do perfil de quem joga.
+- `MODELO_CASA`: uma modelo da casa, para quem não tem avatar ou não quer usá-lo.
+- `OUTRO_JOGADOR`: o avatar do perfil de outra pessoa, nas partidas online.
+- `FIGURANTE`: manequim ou silhueta sem rosto (plateia, oponente-padrão, cliente, colegas de time da Casa).
+
+| Código | Solo (esta base) | Online (variações futuras) |
+| --- | --- | --- |
+| `PASSARELA` | `PROPRIO` + figurantes na plateia | 4 a 8 `OUTRO_JOGADOR` desfilando na mesma sala |
+| `DRESS_FIGHTER` | `PROPRIO` contra um figurante | 1 `OUTRO_JOGADOR` como oponente |
+| `DRESS_THE_STAR` | `PROPRIO` | 3 a 8 `OUTRO_JOGADOR` (stylist e quem adivinha) |
+| `PERSONAGEM_FILME` | `PROPRIO` | 2 a 4 `OUTRO_JOGADOR` |
+| `ROAD_TO_GLORY` | `PROPRIO` ou `MODELO_CASA` | não tem |
+| `FASHION_DETECTIVE` | `PROPRIO` + figurantes | não tem |
+| `BOUTIQUE_3D` | `PROPRIO` + cliente figurante | não tem |
+| `CLUBE_CORACAO`, `FAVORITE_SINGER`, `PILOTO_FAVORITO`, `SUPER_HEROI` | manequim com a peça criada; `PROPRIO` opcional | não tem |
+| `LABIRINTO` | `PROPRIO` | não tem |
+| `AROUND_THE_WORLD` | `PROPRIO` + passantes figurantes | não tem |
+| `FASHION_SPORTS` | `PROPRIO` + 4 colegas e 5 adversários figurantes | até 10 `OUTRO_JOGADOR`: cada pessoa entra com o próprio avatar, 5 por time |
+| `BATALHA_LOOKS` | `PROPRIO` contra um figurante | 1 `OUTRO_JOGADOR` no duelo ou 3 na sala de 4 |
+
+**Privacidade (regra que vale sempre):**
+- Numa partida online, o avatar de outra pessoa só aparece se ela deixou o avatar público
+  (`UserAvatar3d.publicOnRunway`); sem isso, entra um figurante com o nome dela.
+- Quem tem 13 a 17 anos entra em partida online com dublê ou manequim, nunca com o próprio rosto.
+- O avatar só veste as cartas do deck de quem joga; a nota nunca usa pele, corpo ou rosto.
+
+**Na API:** a definição do núcleo ganha `avatares: {solo:[{tipo, papel, quantidade}], online:{min, max, porTime}}`, e
+a partida guarda `participantes:[{tipo, papel, time, userId}]`. Esta base só abre partidas solo; o salão online
+(convite, fila e sincronização) é a próxima etapa.
+
 ## Ações do personagem e comandos do controle
 
 O personagem só faz movimentos simples. Toda ação tem teclado, toque (botão na tela) e gamepad (Gamepad API, layout
