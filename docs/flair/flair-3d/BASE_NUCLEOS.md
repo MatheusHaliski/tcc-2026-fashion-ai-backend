@@ -48,6 +48,38 @@ semente fixa por partida). A nota nunca usa pele, corpo ou rosto; errar nunca ti
 - **Zonas:** do editor, cada uma com cor (hex) e acabamento (`FOSCO`, `BRILHANTE`, `METALICO`, `ESPELHADO`).
 - **Maquiagem:** áreas `LABIOS`, `OLHOS`, `BOCHECHAS`, cada uma com família de cor e acabamento.
 
+## O deck da partida
+
+Antes de jogar, a pessoa monta o deck: escolhe quais cartas FLAIR do guarda-roupa leva para a partida. Durante a
+partida, só as cartas do deck aparecem na janela de recursos e só elas podem ser entregues (o servidor confere).
+
+| Código | Tamanho do deck | Cartas obrigatórias | Efeito de cada carta no jogo |
+| --- | --- | --- | --- |
+| `PASSARELA` | até 8 | 1 parte de cima, 1 parte de baixo, 1 calçado | +10 se a marca é brasileira |
+| `DRESS_FIGHTER` | até 6 | 1 calçado | velocidade, ataque e defesa que a carta soma |
+| `DRESS_THE_STAR` | até 8 | 1 parte de cima, 1 parte de baixo | +25 se bate estilo ou cor da estrela |
+| `PERSONAGEM_FILME` | até 8 | 1 casaco ou parte de cima | +12,5 se bate o figurino do personagem |
+| `ROAD_TO_GLORY` | sem deck: guarda-roupa e catálogo liberado | nenhuma | regras do brief que a carta cumpre |
+| `FASHION_DETECTIVE` | até 6 | 1 parte de cima ou peça inteira | conta no acesso (ocasião) e na defesa |
+| `BOUTIQUE_3D` | até 8 | 1 parte de cima, 1 parte de baixo | +33 se cumpre ocasião festa e cor preta |
+| `CLUBE_CORACAO`, `FAVORITE_SINGER`, `PILOTO_FAVORITO`, `SUPER_HEROI` | sem deck: zonas do editor | nenhuma | — |
+| `LABIRINTO` | até 8 | 3 cartas quaisquer | família de cor que a carta traz para o espelho |
+| `AROUND_THE_WORLD` | até 8 | 1 parte de cima, 1 parte de baixo | regras da região que a carta cumpre |
+| `FASHION_SPORTS` | até 6 | 1 camisa, 1 calção, 1 chuteira | velocidade, técnica, resistência e defesa do uniforme |
+| `BATALHA_LOOKS` | até 8 | 1 parte de cima, 1 parte de baixo, 1 calçado | +25 se é da família de cor da rodada |
+
+**Na tela [frontend]:** antes da partida, a tela do deck mostra as cartas da pessoa com o efeito de cada uma neste
+núcleo (selos como "+10 marca BR" ou "defesa +12"), o contador do deck, a lista de obrigatórias com o que falta e o
+botão "Entrar na partida", que só fica ativo com o deck válido.
+
+**Na API [backend]:**
+- A definição do núcleo ganha `deck: {tamanhoMax, obrigatorias:[{posicao, quantidade}], semDeck}`.
+- `POST /api/flair/3d/nucleos/{codigo}/efeitos` com `{cartas:[cardId]}` devolve `{efeitos:[{cardId, itens:[{codigo,
+  valor}]}]}`: o efeito de cada carta da pessoa neste núcleo (logado; só cartas da própria pessoa).
+- `POST .../partidas` passa a receber `{deck:[cardId]}`: o servidor confere tamanho, obrigatórias e dono (422 com o
+  que falta) e guarda o deck na partida (coluna `deck_json`).
+- A entrega recusa carta fora do deck (422).
+
 ## Cenário e personagens (arquivo do núcleo no frontend)
 
 | Código | Cenário | Personagens além do avatar |
