@@ -11,6 +11,7 @@ import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.ItemCondition;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
+import br.com.fashionai.domain.repository.ColecaoRepository;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,15 +33,17 @@ final class PieceFormWriter {
     private final OwnMedia ownMedia;
     private final MediaService media;
     private final BrandLogoService brandLogos;
+    private final ColecaoRepository colecoes;
 
     PieceFormWriter(PieceConservationService conservation, BrandRepository brands, BrandProfileRepository brandProfiles,
-                    OwnMedia ownMedia, MediaService media, BrandLogoService brandLogos) {
+                    OwnMedia ownMedia, MediaService media, BrandLogoService brandLogos, ColecaoRepository colecoes) {
         this.conservation = conservation;
         this.brands = brands;
         this.brandProfiles = brandProfiles;
         this.ownMedia = ownMedia;
         this.media = media;
         this.brandLogos = brandLogos;
+        this.colecoes = colecoes;
     }
 
     static void validate(PieceForm f) {
@@ -77,9 +80,9 @@ final class PieceFormWriter {
             conservation.apply(w, f.estadoConservacaoId(), Boolean.TRUE.equals(f.clearEstadoConservacao()));
         }
         if (f.colecaoId() != null) {
-    w.setColecao(colecoes.findById(f.colecaoId())
-        .orElseThrow(() -> ApiException.badRequest("COLECAO_INVALIDA", "Coleção inválida", Map.of())));
-}
+            w.setColecao(colecoes.findById(f.colecaoId())
+                    .orElseThrow(() -> ApiException.badRequest("COLECAO_INVALIDA", "Coleção inválida", Map.of())));
+        }
         BackgroundStudioService.validateMotionWrite(w.getBackgroundConfigJson(), f.background());
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());

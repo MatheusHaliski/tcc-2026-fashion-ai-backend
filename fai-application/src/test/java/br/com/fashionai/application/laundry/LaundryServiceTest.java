@@ -102,7 +102,7 @@ class LaundryServiceTest {
     }
 
     @Test void confirmedFinishRestoresAvailabilityOnlyForPiecesTheBatchWithheld() {
-        jeans.markAvailable(false);
+        PieceAvailability.mark(jeans, false);
         var batch = service.createBatch(actor(ana), new LaundryService.BatchForm(List.of(shirt.getId(), jeans.getId()), null, null, true));
         service.finishBatch(actor(ana), (UUID) batch.get("id"), new LaundryService.FinishForm(0, true));
         assertThat(shirt.isDisponivel()).isTrue();

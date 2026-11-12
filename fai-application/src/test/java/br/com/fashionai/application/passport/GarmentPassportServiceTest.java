@@ -245,7 +245,7 @@ class GarmentPassportServiceTest {
     @Test void resaleUsesExistingListingStateAndCannotAdvertiseUnavailablePiece() {
         var p=create(); assertThatThrownBy(()->service.resale(actor(ana),p.id())).isInstanceOf(ApiException.class);
         piece.setForSale(true); assertThat(service.resale(actor(ana),p.id())).containsEntry("authentication","NOT_VERIFIED").containsEntry("pieceId",piece.getId());
-        piece.markAvailable(false); assertThatThrownBy(()->service.resale(actor(ana),p.id())).isInstanceOf(ApiException.class);
+        PieceAvailability.mark(piece, false); assertThatThrownBy(()->service.resale(actor(ana),p.id())).isInstanceOf(ApiException.class);
     }
     @Test void deletingFormerOwnerErasesTheirDocumentsAndNotesWithoutChangingNewOwnership() throws Exception {
         var p=create(); var document=service.uploadEvidence(actor(ana),p.id(),"PURCHASE_RECEIPT",photo(),"evidence_0001");

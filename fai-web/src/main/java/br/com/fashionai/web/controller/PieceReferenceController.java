@@ -1,6 +1,8 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.view.PieceReferenceViews;
 import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.repository.ColecaoRepository;
 import br.com.fashionai.domain.repository.EstadoConservacaoRepository;
 import br.com.fashionai.domain.repository.TipoLavagemRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,10 +17,13 @@ import java.util.List;
 public class PieceReferenceController {
     private final EstadoConservacaoRepository estados;
     private final TipoLavagemRepository lavagens;
+    private final ColecaoRepository colecoes;
 
-    public PieceReferenceController(EstadoConservacaoRepository estados, TipoLavagemRepository lavagens) {
+    public PieceReferenceController(EstadoConservacaoRepository estados, TipoLavagemRepository lavagens,
+                                    ColecaoRepository colecoes) {
         this.estados = estados;
         this.lavagens = lavagens;
+        this.colecoes = colecoes;
     }
 
     @GetMapping({"/api/estados-conservacao", "/api/opcoes/estados-conservacao"})
@@ -27,12 +32,14 @@ public class PieceReferenceController {
     public List<Views.ReferenceOptionView> estadosConservacao() {
         return estados.findAllByAtivoTrueOrderByNomeAsc().stream().map(Views::estadoConservacao).toList();
     }
-@GetMapping("/api/colecoes")
-@Transactional(readOnly = true)
-public List<Views.ReferenceOptionView> colecoes() {
-    return colecoes.findAllByOrderByNomeAsc().stream()
-        .map(c -> new Views.ReferenceOptionView(c.getId(), c.getCodigo(), c.getNome())).toList();
-}
+
+    @GetMapping("/api/colecoes")
+    @Transactional(readOnly = true)
+    @Operation(summary = "Coleções cadastradas na tabela colecao")
+    public List<Views.ReferenceOptionView> colecoes() {
+        return colecoes.findAllByOrderByNomeAsc().stream().map(PieceReferenceViews::colecao).toList();
+    }
+
     @GetMapping("/api/tipos-lavagem")
     @Transactional(readOnly = true)
     @Operation(summary = "Instruções de lavagem cadastradas em TipoLavagem")

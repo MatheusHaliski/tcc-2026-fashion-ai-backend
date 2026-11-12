@@ -17,8 +17,7 @@ export function PieceColecaoField({ value, selectedName, onChange, error, disabl
     const controller = new AbortController();
     setStatus("loading");
     api.get<ReferenceOption[]>("/api/colecoes", { signal: controller.signal, anonymous: true })
-  .then(rows => { if (!controller.signal.aborted) { setOptions(rows); setStatus("ready"); } })
-  .catch(() => { if (!controller.signal.aborted) setStatus("error"); });
+      .then(rows => { if (!controller.signal.aborted) { setOptions(rows); setStatus("ready"); } })
       .catch(() => { if (!controller.signal.aborted) setStatus("error"); });
     return () => controller.abort();
   }, [attempt]);
