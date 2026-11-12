@@ -62,7 +62,7 @@ public final class Views {
                             String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl,
                             boolean aiGeneratedImage, boolean forDonation,
                             String variation, Map<String, List<String>> attributes,
-                            ReferenceOptionView estadoConservacao, ReferenceOptionView tipoLavagem) {
+                            ReferenceOptionView estadoConservacao, ReferenceOptionView tipoLavagem, ReferenceOptionView colecao) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -115,7 +115,7 @@ public final class Views {
                 // taxonomia nova: variação da peça e atributos por dimensão; cor, material, sexo, estilo e ocasião já têm
                 // campo próprio na view e não se repetem aqui
                 w.getVariationCode(), TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS),
-                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()));
+                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()), PieceReferenceViews.colecao(w.getColecao()));
     }
 
     /**
