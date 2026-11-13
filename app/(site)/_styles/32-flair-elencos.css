@@ -1,0 +1,241 @@
+/* ── FLAIR Card Building Challenge · elencos (components/flair/elencos/*) ───────────────────────────────────────────
+   Sem cenário 3D: o quebra-cabeça da arte em cima (.el-jigsaw: peça verde em cor, laranja em traço cinza, vermelha
+   escura, coberta sem link) e o tabuleiro embaixo (.el-board: linhas em SVG na cor do nível e as vagas por cima).
+   Movimento reduzido: as transições somem pela regra global de 01. */
+.el-game {
+  display: grid;
+  gap: 12px;
+}
+
+.el-jigsaw {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #1b1b1f;
+}
+
+.el-pieces {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.el-piece {
+  background-repeat: no-repeat;
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+
+.el-piece.is-laranja {
+  filter: grayscale(1) contrast(1.4);
+  outline: 2px solid #f08a24;
+  outline-offset: -2px;
+}
+
+.el-piece.is-vermelha {
+  filter: brightness(0.25) saturate(0.4);
+}
+
+.el-piece.is-coberta {
+  background-image: none !important;
+  background: repeating-linear-gradient(45deg, #2a2a30 0 8px, #24242a 8px 16px);
+}
+
+.el-jigsaw.is-revealed .el-pieces {
+  gap: 0;
+}
+
+.el-reveal {
+  position: absolute;
+  inset: 0;
+}
+
+.el-photo {
+  position: absolute;
+  width: 14%;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #fffe;
+  box-shadow: 0 4px 14px #0007;
+  font-size: var(--text-caption);
+  text-align: center;
+}
+
+.el-photo img {
+  display: block;
+  width: 100%;
+}
+
+.el-edition {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #c6275e;
+  color: #fff;
+  font-weight: 700;
+}
+
+.el-board {
+  position: relative;
+  height: calc(var(--el-rows, 4) * 104px);
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface-2);
+}
+
+.el-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.el-line {
+  stroke-width: 4;
+  stroke: var(--line);
+  stroke-dasharray: 6 6;
+}
+
+.el-line.is-red {
+  stroke: #d93a3a;
+  stroke-dasharray: none;
+}
+
+.el-line.is-orange {
+  stroke: #f08a24;
+  stroke-dasharray: none;
+}
+
+.el-line.is-green {
+  stroke: #2e9e5b;
+  stroke-dasharray: none;
+}
+
+.el-attrs {
+  position: absolute;
+  display: flex;
+  gap: 2px;
+  transform: translate(-50%, -50%);
+}
+
+.el-attrs i {
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.el-slot {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 17%;
+  max-width: 120px;
+  padding: 4px;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--line-soft);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-caption);
+}
+
+.el-slot.is-filled {
+  border-color: var(--thread);
+}
+
+.el-slot.is-selected {
+  outline: 3px solid var(--focus);
+}
+
+.el-slot img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.el-slot-pos {
+  color: var(--muted);
+}
+
+.el-slot-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.el-chem {
+  display: flex;
+  gap: 2px;
+}
+
+.el-chem b {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.el-chem b.is-on {
+  background: #2e9e5b;
+}
+
+.el-meter {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.el-meter span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #c6275e, #1f7a76);
+}
+
+.el-drawer {
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--thread);
+  background: var(--surface);
+}
+
+.el-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.el-list-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.el-list-item img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.el-list-name {
+  font-weight: 700;
+}
