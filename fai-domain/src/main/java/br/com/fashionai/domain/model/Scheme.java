@@ -42,6 +42,16 @@ public class Scheme extends VersionedAuditableEntity {
     @JoinColumn(name = "tipo_look_id")
     private TipoLook tipoLook;
 
+    /** Coleção do look (FK para a tabela colecao). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "colecao_id")
+    private Colecao colecao;
+
+    /** Intensidade térmica do look (FK para a tabela intensidade_termica). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "intensidade_termica_id")
+    private IntensidadeTermica intensidadeTermica;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

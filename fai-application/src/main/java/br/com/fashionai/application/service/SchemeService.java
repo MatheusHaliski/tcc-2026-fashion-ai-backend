@@ -112,6 +112,9 @@ public class SchemeService {
      */
     private final HypeScoreCurrentRepository hypeScores;
     private final HypeScoreConfig hypeConfig;
+    /** Coleção e intensidade térmica do look (FKs em schemes). Opcional nos testes que montam o serviço sem Spring. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ClassificationService classification;
 
     public SchemeService(SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
                          UserRepository users, ReactionRepository reactions, SavedItemRepository saved,
@@ -259,7 +262,7 @@ public class SchemeService {
             m.put("hypeLevel", level == null ? null : level.name());
             m.put("tags", Json.csv(w.getTags()));
             m.put("notes", InputSanitizer.clean(w.getNotes(), 160));
-            m.put("analysis", pieceAnalysis(w));
+            m.put("analysis", CompositionContext.pieceAnalysis(w));
             catalog.add(m);
         }
         List<AiRequest.AiImage> photos = new ArrayList<>();
@@ -283,7 +286,7 @@ public class SchemeService {
         }
         Map<String, Object> profile = new LinkedHashMap<>();
         users.findById(user.id()).ifPresent(u -> profile.put("country", u.getCountry()));
-        dna.findByUserId(user.id()).ifPresent(d -> profile.put("styleDna", dnaContext(d)));
+        dna.findByUserId(user.id()).ifPresent(d -> profile.put("styleDna", CompositionContext.dnaContext(d)));
         String system = """
                 Você é o Scheme Composer do Fashion AI. Monte EXATAMENTE 3 looks distintos usando SOMENTE as peças do
                 acervo informado (referências p1, p2...). Nunca invente peças. Cada look: 2 a 4 peças, no máximo 1 de cada
@@ -328,34 +331,6 @@ public class SchemeService {
 
     /** Fotos enviadas à IA na etapa 2 (miniaturas das peças mais recentes). */
     static final int MAX_COMPOSE_PHOTOS = 12;
-
-    /** Atributos visuais detectados no RF4 (Piece Analyzer / flat lay): padrão, estampa, textura, cores, caimento. */
-    static Map<String, Object> pieceAnalysis(WardrobeItem w) {
-        Map<String, Object> src = Json.map(w.getFlatLayMetadataJson());
-        Map<String, Object> out = new LinkedHashMap<>();
-        for (String key : List.of("pattern", "print", "texture", "fit", "colors", "dominantColors", "secondaryColors",
-                "neckline", "sleeve", "length", "finish", "silhouette", "season", "attributes")) {
-            Object v = src.get(key);
-            if (v != null && !(v instanceof Map<?, ?>)) {
-                out.put(key, v instanceof String str ? InputSanitizer.clean(str, 120) : v);
-            }
-        }
-        return out.isEmpty() ? null : out;
-    }
-
-    /** Resumo do DNA de estilo (RF19) que orienta cores, silhueta e arquétipo na composição. */
-    static Map<String, Object> dnaContext(StyleDna d) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("archetype", d.getArchetype() == null ? null : d.getArchetype().name());
-        m.put("boldnessIndex", d.getBoldnessIndex());
-        m.put("identityPhrase", d.getIdentityPhrase());
-        m.put("colorPalette", d.getColorPalette());
-        m.put("colorSeason", d.getColorSeason());
-        m.put("styleKeywords", d.getStyleKeywords());
-        m.put("silhouette", d.getSilhouette());
-        m.put("iconPiece", d.getIconPieceName());
-        return m;
-    }
 
     List<LocalSchemeComposer.Composition> parseCompositions(String text, Map<String, WardrobeItem> byRef, ComposeRequest req,
                                                             Set<String> exclude) {
@@ -418,7 +393,18 @@ public class SchemeService {
                              Mood mood, Visibility visibility, DisplayMode displayMode, List<ItemForm> items,
                              CreationMode creationMode, SchemeOrigin origin, UUID remixedFromId, Map<String, Object> background,
                              Boolean applyRecommendedDirection, String cardSkin, String layoutAnatomy, List<String> tags,
-                             List<String> seals, Boolean publish, Boolean lookDoDia) {
+                             List<String> seals, Boolean publish, Boolean lookDoDia, UUID colecaoId,
+                             UUID intensidadeTermicaId) {
+        /** Compatibilidade: quem monta o look por código (provador, espelho, autopiloto) não escolhe coleção nem intensidade. */
+        public SchemeForm(String title, String description, List<String> occasion, List<String> style, Season season,
+                          Mood mood, Visibility visibility, DisplayMode displayMode, List<ItemForm> items,
+                          CreationMode creationMode, SchemeOrigin origin, UUID remixedFromId, Map<String, Object> background,
+                          Boolean applyRecommendedDirection, String cardSkin, String layoutAnatomy, List<String> tags,
+                          List<String> seals, Boolean publish, Boolean lookDoDia) {
+            this(title, description, occasion, style, season, mood, visibility, displayMode, items, creationMode, origin,
+                    remixedFromId, background, applyRecommendedDirection, cardSkin, layoutAnatomy, tags, seals, publish,
+                    lookDoDia, null, null);
+        }
     }
 
     @Transactional
@@ -516,6 +502,9 @@ public class SchemeService {
         s.setStyle(Json.csv(f.style()));
         s.setSeason(f.season());
         s.setMood(f.mood());
+        if (classification != null) {
+            classification.apply(s, f.colecaoId(), f.intensidadeTermicaId());
+        }
         if (f.displayMode() != null) {
             s.setDisplayMode(f.displayMode());
         }

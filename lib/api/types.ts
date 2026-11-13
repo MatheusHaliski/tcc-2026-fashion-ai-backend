@@ -29,7 +29,7 @@ export interface PieceView {
   seals: string[]; price?: number | null; imageUrl?: string | null; originalImageUrl?: string | null; thumbnailUrl?: string | null; defaultImage: boolean;
   /** RF4 · a foto da peça foi recriada por IA a pedido da pessoa: o card mostra o selo "IA" */ aiGeneratedImage?: boolean;
   visibility: string; disponivel: boolean; availabilityStatus: string; condition?: string | null; favorite: boolean; forSale: boolean; wearCount: number;
-  estadoConservacao?: ReferenceOption | null; colecao?: ReferenceOption | null; tipoLavagem?: ReferenceOption | null; careInstructions?: string | null;
+  estadoConservacao?: ReferenceOption | null; colecao?: ReferenceOption | null; intensidadeTermica?: ReferenceOption | null; tipoLavagem?: ReferenceOption | null; careInstructions?: string | null;
   /** "Para doar" (estado público, como "à venda"; os dois são exclusivos — o backend limpa o outro) */ forDonation?: boolean;
   /** variação da subcategoria e quem a escreveu: AI_SUGGESTED/AI até a pessoa trocar ou confirmar (USER_CONFIRMED/USER) */
   variation?: string | null; variationStatus?: string | null; variationSource?: string | null; attributes?: Record<string, string[]>;
@@ -50,7 +50,7 @@ export interface SchemeItemView { id?: string; wardrobeItemId: string; slot: str
 export interface TipoLook extends ReferenceOption {}
 export interface SchemeView {
   fashionCard?: FashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null;
-  tipoLook?: TipoLook | null;
+  tipoLook?: TipoLook | null; colecao?: ReferenceOption | null; intensidadeTermica?: ReferenceOption | null;
   id: string; owner: UserCard; title: string; description?: string | null; creationMode: string; origin: string; style: string[]; occasion: string[];
   season?: string | null; mood?: string | null; visibility: string; status: string; displayMode?: string; disponivel: boolean; lookDoDia: boolean;
   coverImageUrl?: string | null; mannequinImageUrl?: string | null; mannequinImageFace?: string | null; background?: Record<string, unknown>; cardSkin?: string | null; layoutAnatomy?: string | null; containerOrigin?: string;
