@@ -36,13 +36,13 @@ const soma = (partes: Parte[]) => partes.reduce((n, p) => n + triangulosDaParte(
  * arquivo (e um material) no lugar das partes procedurais; sem manifesto, vale a sala toda procedural.
  */
 export function orcamentoDaSala(sala: Sala, personagens: NucleoPersonagem[] = [], manifesto: ManifestoGlb = []): Orcamento {
-  const comGlb = sala.moveis.filter((m) => glbDoMovel(m, manifesto));
-  const semGlb = sala.moveis.filter((m) => !glbDoMovel(m, manifesto));
+  const comGlb = sala.moveis.filter((m) => glbDoMovel(m, manifesto, sala.codigo));
+  const semGlb = sala.moveis.filter((m) => !glbDoMovel(m, manifesto, sala.codigo));
   const partes = [...cascaDaSala(sala), ...semGlb.flatMap(partesNoLugar)];
   const figurantes = figurantesDaCena(sala, personagens);
   const usados = new Set(partes.map((p) => p.mat));
-  for (const m of comGlb) usados.add(`glb:${m.glb?.slug}`);
-  const triGlb = comGlb.reduce((n, m) => n + (glbDoMovel(m, manifesto)?.triangles ?? 0), 0);
+  for (const m of comGlb) usados.add(`glb:${glbDoMovel(m, manifesto, sala.codigo)?.slug}`);
+  const triGlb = comGlb.reduce((n, m) => n + (glbDoMovel(m, manifesto, sala.codigo)?.triangles ?? 0), 0);
   if (figurantes.length > 0) usados.add(MAT_FIGURANTE);
   if (sala.placar) usados.add(MAT_PLACAR);
   const triFigurantes = figurantes.reduce((n, f) => n + soma(partesDoFigurante(f.postura)), 0);

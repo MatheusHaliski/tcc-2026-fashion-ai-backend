@@ -17,10 +17,10 @@ export const SALA_BOUTIQUE_3D: Sala = {
   casca: { piso: "madeira", parede: "parede", teto: "parede", rodape: "metalPreto" },
   materiais: {
     madeira: madeira("#D8BE98", "#B4946A"),
-    parede: reboco("#F4EEE6"),
+    parede: reboco("#E6DDD0"),
     vidro: vidro(),
     metalPreto: metalPintado("#1A1A1C"),
-    tapete: la("#EDE6DA", "#D6CCBC"),
+    tapete: la("#D9CDBB", "#BFB19C"),
     roupas: tecido("#7A6A8E", "#4D4160"),
     estofado: veludo("#B9556F", "#7B2E45"),
     espelho: espelhado(),
@@ -49,10 +49,10 @@ export const SALA_BOUTIQUE_3D: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#FFF3DE", intensidade: 2.3, pos: [2.6, 3.8, 3.4] },
+    principal: { cor: "#FFF3DE", intensidade: 1.8, pos: [2.6, 3.8, 3.4] },
     recorte: { cor: "#FFE2C2", intensidade: 1.4, pos: [-2.5, 3.1, -3.5] },
-    ambiente: { ceu: "#FFF8EE", chao: "#C9B8A3", intensidade: 0.75 },
-    reflexo: 0.8,
+    ambiente: { ceu: "#FFF8EE", chao: "#C9B8A3", intensidade: 0.5 },
+    reflexo: 0.35,
     proprias: [
       { id: "vitrine", tipo: "ponto", cor: "#FFF3DE", intensidade: 8, pos: [0.7, 2.6, -4.2] },
       { id: "espelho", tipo: "ponto", cor: "#FFFFFF", intensidade: 16, pos: [-1.6, 1.4, -2.4], apagada: true },

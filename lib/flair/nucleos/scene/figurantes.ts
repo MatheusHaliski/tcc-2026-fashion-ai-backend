@@ -28,8 +28,8 @@ function braco(): Parte[] {
 
 function tronco(base: number): Parte[] {
   return [
-    cilindro(M, [0.2, 0.15], 0.56, [0, base + 0.28, 0], undefined, 10),
-    esfera(M, [0.25, 0.09, 0.14], [0, base + 0.56, 0], 10),
+    cilindro(M, [0.18, 0.14], 0.56, [0, base + 0.28, 0], undefined, 10),
+    esfera(M, [0.215, 0.07, 0.12], [0, base + 0.55, 0], 10),
     cilindro(M, 0.05, 0.1, [0, base + 0.66, 0], undefined, 8),
     esfera(M, [0.1, 0.125, 0.11], [0, base + 0.82, 0], 12),
   ];
@@ -41,7 +41,7 @@ function emPe(): FiguranteDesc {
     cilindro(M, [0.09, 0.06], 0.8, [-0.09, 0.4, 0], undefined, 8),
     esfera(M, [0.19, 0.13, 0.13], [0, 0.82, 0], 10),
   ];
-  return { corpo: [...pernas, ...tronco(0.8)], braco: braco(), ombros: { e: [0.26, 1.34, 0], d: [-0.26, 1.34, 0] } };
+  return { corpo: [...pernas, ...tronco(0.8)], braco: braco(), ombros: { e: [0.235, 1.34, 0], d: [-0.235, 1.34, 0] } };
 }
 
 function sentada(): FiguranteDesc {
@@ -52,7 +52,7 @@ function sentada(): FiguranteDesc {
     cilindro(M, [0.065, 0.055], 0.46, [-0.09, 0.25, 0.4], undefined, 8),
     esfera(M, [0.19, 0.12, 0.15], [0, 0.5, 0], 10),
   ];
-  return { corpo: [...pernas, ...tronco(0.48)], braco: braco(), ombros: { e: [0.26, 1.02, 0], d: [-0.26, 1.02, 0] } };
+  return { corpo: [...pernas, ...tronco(0.48)], braco: braco(), ombros: { e: [0.235, 1.02, 0], d: [-0.235, 1.02, 0] } };
 }
 
 /** Busto de costura: tronco sem cabeça nem braços, num pé de metal. */

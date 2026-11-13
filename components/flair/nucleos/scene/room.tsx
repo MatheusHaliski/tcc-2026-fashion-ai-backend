@@ -70,7 +70,7 @@ export function Sala3D({ sala, placar }: { sala: Sala; placar: string | null }) 
   const materiais = useRoomMaterials(sala);
   const manifesto = useGlbManifest();
   // móveis com objeto GLB disponível saem da malha fundida: cada um carrega o arquivo e tem a própria reserva
-  const comGlb = useMemo(() => sala.moveis.filter((m) => !m.id && glbDoMovel(m, manifesto)), [sala, manifesto]);
+  const comGlb = useMemo(() => sala.moveis.filter((m) => !m.id && glbDoMovel(m, manifesto, sala.codigo)), [sala, manifesto]);
   const casca = useFundidas(() => cascaDaSala(sala), sala, [sala]);
   const fixos = useFundidas(() => sala.moveis.filter((m) => !m.id && !comGlb.includes(m)).flatMap(partesNoLugar), sala, [sala, comGlb]);
   const animados = useMemo(() => sala.moveis.filter((m) => !!m.id), [sala]);
@@ -83,7 +83,7 @@ export function Sala3D({ sala, placar }: { sala: Sala; placar: string | null }) 
         <Malhas fundidas={fixos} sala={sala} materiais={materiais} sombra />
       </group>
       {comGlb.map((m, i) => (
-        <MovelGlb key={`${m.glb?.slug}-${i}`} movel={m} reserva={<MovelFixo movel={m} sala={sala} materiais={materiais} />} />
+        <MovelGlb key={`${m.tipo}-${i}`} movel={m} slug={glbDoMovel(m, manifesto, sala.codigo)?.slug ?? ""} reserva={<MovelFixo movel={m} sala={sala} materiais={materiais} />} />
       ))}
       {animados.map((m) => <MovelAnimado key={m.id} movel={m} sala={sala} materiais={materiais} />)}
       {sala.placar && <Placar em={sala.placar} texto={placar} />}

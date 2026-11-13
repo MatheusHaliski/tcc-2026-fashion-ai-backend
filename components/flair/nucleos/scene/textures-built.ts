@@ -133,7 +133,7 @@ export const ceu: Desenho = (g, s, m, r) => {
   g.fillRect(0, 0, s, s);
   const noite = parseInt(m.cor.slice(1, 3), 16) + parseInt(m.cor.slice(3, 5), 16) + parseInt(m.cor.slice(5, 7), 16) < 150;
   if (!noite) {
-    manchas(g, s, r, 9, "#FFFFFF", 0.35, 0.16);
+    manchas(g, s, r, 9, "#FFFFFF", 0.16, 0.2);
     return;
   }
   for (let i = 0; i < 160; i++) {

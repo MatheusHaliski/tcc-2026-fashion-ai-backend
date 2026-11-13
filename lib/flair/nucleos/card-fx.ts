@@ -29,11 +29,14 @@ export interface EntradaFx {
   /** true = pontua; false = não pontua (sem clarão, selo cinza com o motivo); null = o servidor ainda não disse */
   pontua: boolean | null;
   selo: EfeitoItem | null;
+  /** código do motivo de a carta não pontuar (MARCA_NAO_BR, FORA_DA_FAMILIA, SEM_BONUS...), quando o servidor diz */
+  motivo: string | null;
   aura: boolean;
   som: SomDeEntrada;
 }
 
 function vale(item: EfeitoItem): boolean {
+  if (item.motivo) return false;
   return typeof item.valor === "number" ? item.valor > 0 : String(item.valor).trim() !== "";
 }
 
@@ -48,14 +51,26 @@ export function pontua(itens: EfeitoItem[] | undefined): boolean | null {
   return itens.some(vale);
 }
 
+/** O motivo de a carta não pontuar neste jogo (item com `motivo: true`), quando o servidor mandou um. */
+export function motivoDaCarta(itens: EfeitoItem[] | undefined): string | null {
+  return itens?.find((i) => i.motivo === true)?.codigo ?? null;
+}
+
 export function auraHype(card: Pick<FlairCollectionCard, "hype" | "rare">): boolean {
   return card.rare || (card.hype?.HYP ?? 0) >= HYPE_ALTO;
 }
 
 const METAL = /metal|corrente|joia|jóia|brinco|colar|anel|pulseira|relogio|relógio|cinto|oculos|óculos/i;
+/** Materiais (como o servidor grava em `tags.materials`, em minúsculas) que soam como metal. */
+const MATERIAL_METAL = /metal|steel|gold|silver|chain|aço|ouro|prata/i;
 
-/** Som da peça ao entrar: metal para joias e ferragens, tecido para o resto (a carta não traz o material). */
-export function materialDoSom(card: Pick<FlairCollectionCard, "name" | "category" | "subcategory">): "tecido" | "metal" {
+/**
+ * Som da peça ao entrar: o material principal da carta (`tags.materials[0]`) decide entre metal e tecido; carta sem
+ * material cai no nome e na categoria (joias e ferragens soam como metal).
+ */
+export function materialDoSom(card: Pick<FlairCollectionCard, "name" | "category" | "subcategory" | "tags">): "tecido" | "metal" {
+  const material = card.tags?.materials?.[0];
+  if (material) return MATERIAL_METAL.test(material) ? "metal" : "tecido";
   const texto = `${card.subcategory ?? ""} ${card.category ?? ""} ${card.name}`;
   return METAL.test(texto) ? "metal" : "tecido";
 }
@@ -69,6 +84,7 @@ export function entradaDaCarta(card: FlairCollectionCard, vaga: string, itens: E
     cor: COR_DO_NIVEL[card.tier],
     pontua: marca,
     selo: seloDaCarta(itens),
+    motivo: marca === false ? motivoDaCarta(itens) : null,
     aura: auraHype(card),
     som: marca === false ? "abafado" : materialDoSom(card),
   };

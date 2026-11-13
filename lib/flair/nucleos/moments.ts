@@ -11,6 +11,8 @@ export type MomentoEvento =
   | { type: "ENTRAR" }
   | { type: "ENTREGUE" }
   | { type: "FIM_ACAO" }
+  /** a ação terminou e a partida segue aberta (LABIRINTO: o espelho não abriu): de volta à preparação */
+  | { type: "REABERTA" }
   | { type: "REINICIAR"; semDeck: boolean };
 
 /** Núcleo sem deck (zonas do editor, guarda-roupa liberado) começa direto na preparação. */
@@ -27,6 +29,8 @@ export function proximoMomento(momento: Momento, evento: MomentoEvento): Momento
       return momento === "PREPARACAO" ? "ACAO" : momento;
     case "FIM_ACAO":
       return momento === "ACAO" ? "RESULTADO" : momento;
+    case "REABERTA":
+      return momento === "ACAO" ? "PREPARACAO" : momento;
     case "REINICIAR":
       return momentoInicial(evento.semDeck);
   }

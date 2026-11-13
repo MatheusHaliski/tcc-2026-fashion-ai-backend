@@ -59,10 +59,10 @@ export const SALA_AROUND_THE_WORLD: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#FFF4D6", intensidade: 2.8, pos: [3.6, 6.6, 3.4] },
+    principal: { cor: "#FFF4D6", intensidade: 2.2, pos: [3.6, 6.6, 3.4] },
     recorte: { cor: "#BFE2FF", intensidade: 1.4, pos: [-3, 5, -5] },
-    ambiente: { ceu: "#BFE2FF", chao: "#CFC8BA", intensidade: 0.95 },
-    reflexo: 0.6,
+    ambiente: { ceu: "#BFE2FF", chao: "#CFC8BA", intensidade: 0.65 },
+    reflexo: 0.35,
     proprias: [
       { id: "vitrine", tipo: "ponto", cor: "#FFF3C4", intensidade: 6, pos: [-3.6, 1.6, -1.5] },
       { id: "mapa", tipo: "ponto", cor: "#FFD27A", intensidade: 8, pos: [2.9, 1.7, 1.0], apagada: true },

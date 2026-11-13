@@ -82,10 +82,10 @@ export const SALA_FASHION_SPORTS: Sala = {
   ],
   figurantes: torcida,
   luzes: {
-    principal: { cor: "#FFFFFF", intensidade: 2.4, pos: [3.6, 6.6, 3.4] },
+    principal: { cor: "#FFFFFF", intensidade: 1.9, pos: [3.6, 6.6, 3.4] },
     recorte: { cor: "#CFE6FF", intensidade: 1.5, pos: [-3, 6, -6] },
-    ambiente: { ceu: "#EAF4FF", chao: "#1E6FA8", intensidade: 0.8 },
-    reflexo: 0.5,
+    ambiente: { ceu: "#EAF4FF", chao: "#1E6FA8", intensidade: 0.55 },
+    reflexo: 0.35,
     proprias: [
       { id: "quadra", tipo: "ponto", cor: "#FFFFFF", intensidade: 70, pos: [0, 6.2, -3] },
       { id: "rastro", tipo: "ponto", cor: "#FF4FA3", intensidade: 8, pos: [0.6, 0.4, 0.4], apagada: true },

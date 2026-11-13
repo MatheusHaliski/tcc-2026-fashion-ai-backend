@@ -61,10 +61,10 @@ export function atelie(codigo: NucleoCodigo, fundo: FundoDoAtelie): Sala {
     ],
     figurantes: fundo.figurantes ?? [],
     luzes: {
-      principal: { cor: "#FFFFFF", intensidade: 2.3, pos: [2.8, 4.0, 3.4] },
+      principal: { cor: "#FFFFFF", intensidade: 1.8, pos: [2.8, 4.0, 3.4] },
       recorte: { cor: "#FFE9D0", intensidade: 1.5, pos: [-2.5, 3.3, -4] },
-      ambiente: fundo.ambiente ?? { ceu: "#FFFFFF", chao: "#B98F62", intensidade: 0.65 },
-      reflexo: 0.7,
+      ambiente: fundo.ambiente ?? { ceu: "#FFFFFF", chao: "#B98F62", intensidade: 0.45 },
+      reflexo: 0.35,
       proprias: [{ id: "bancada", tipo: "ponto", cor: "#FFF4E0", intensidade: 5, pos: [-3.1, 1.5, -2.0] }, ...fundo.luzes],
     },
     fundo: fundo.cor ?? "#D9D6D0",

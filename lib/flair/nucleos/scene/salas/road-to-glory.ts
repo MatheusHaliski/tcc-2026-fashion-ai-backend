@@ -16,7 +16,7 @@ export const SALA_ROAD_TO_GLORY: Sala = {
   cobertura: "teto",
   casca: { piso: "piso", parede: "parede", teto: "parede", rodape: "lacaMagenta" },
   materiais: {
-    parede: reboco("#FBE7EE"),
+    parede: reboco("#F6D5E0"),
     piso: madeira("#D9BC94", "#B89468"),
     magenta: veludo("#C6275E", "#7E1238"),
     lacaMagenta: laca("#C6275E"),
@@ -46,10 +46,10 @@ export const SALA_ROAD_TO_GLORY: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#FFFFFF", intensidade: 2.4, pos: [2.6, 3.6, 3.4] },
+    principal: { cor: "#FFFFFF", intensidade: 1.8, pos: [2.6, 3.6, 3.4] },
     recorte: { cor: "#FFD3E2", intensidade: 1.4, pos: [-2, 2.9, -2.6] },
-    ambiente: { ceu: "#FFF2F6", chao: "#D9BC94", intensidade: 0.75 },
-    reflexo: 0.8,
+    ambiente: { ceu: "#FFF2F6", chao: "#D9BC94", intensidade: 0.5 },
+    reflexo: 0.35,
     proprias: [
       { id: "espelho", tipo: "ponto", cor: "#FFF3D8", intensidade: 6, pos: [0, 1.6, -2.6] },
       { id: "flash", tipo: "ponto", cor: "#FFFFFF", intensidade: 40, pos: [1.9, 1.5, 0.6], apagada: true },

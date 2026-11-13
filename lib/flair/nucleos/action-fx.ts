@@ -5,8 +5,7 @@
  */
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { seloDaCarta } from "@/lib/flair/nucleos/card-fx";
-import type { AcionamentoTipo } from "@/lib/flair/nucleos/moments";
-import type { EfeitoItem, NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
+import type { EfeitoItem, NucleoCodigo, NucleoResultado, PartidaStatus } from "@/lib/flair/nucleos/types";
 
 /** Efeito de cenário de cada jogo (tabela "O que cada carta faz na ação"); os modos do Ateliê acendem um spot. */
 export type EfeitoAcao =
@@ -74,41 +73,53 @@ export function especialOk(r: NucleoResultado): boolean {
 
 /**
  * Passos da ação: nas disputas automáticas (luta, partida) os eventos contam a história; nos demais, cada regra é uma
- * peça agindo, seguida dos eventos. O último passo é sempre o efeito especial.
+ * peça agindo, seguida dos eventos. O último passo é o efeito especial, que só existe quando a etapa terminou: com a
+ * partida EM_ACAO (esperando o acionamento) os passos são só os eventos até aqui, e a próxima resposta traz os mesmos
+ * mais os novos.
  */
 export function passosDaAcao(r: NucleoResultado, automatico = false): PassoAcao[] {
   const regras = r.regras.map((x): PassoAcao => ({ fonte: "regra", codigo: x.codigo, ok: x.ok, pontos: x.pontos, vaga: vagaDaRegra(x.codigo) }));
   const eventos = r.eventos.map((e): PassoAcao => ({ fonte: "evento", codigo: e.codigo, ok: venceu(e.valor), pontos: 0, vaga: null, valor: e.valor }));
   const especial: PassoAcao = { fonte: "especial", codigo: r.resultado, ok: especialOk(r), pontos: r.pontos, vaga: null };
   const corpo = automatico && eventos.length ? eventos : [...regras, ...eventos];
+  if (r.status === "EM_ACAO") return corpo;
   return [...corpo, especial];
 }
 
 /**
- * A janela do acionamento abriu neste ponto da ação? Carta Especial: entre dois rounds. Troca de peça: depois do
- * evento INTERVALO do servidor. `indice` é o próximo passo a mostrar.
+ * A janela do acionamento abriu? Só quando o servidor deixou a partida EM_ACAO e tudo o que ele já mandou apareceu:
+ * depois de cada ROUND (carta Especial) e depois do INTERVALO (troca de peça). `indice` é o próximo passo a mostrar.
  */
-export function janelaDoAcionamento(tipo: AcionamentoTipo, passos: PassoAcao[], indice: number): boolean {
-  const anterior = passos[indice - 1];
-  const proximo = passos[indice];
-  if (!anterior || !proximo) return false;
-  if (tipo === "ESPECIAL") return anterior.codigo === "ROUND" && proximo.codigo === "ROUND";
-  if (tipo === "TROCA") return anterior.codigo === "INTERVALO";
-  return false;
+export function janelaDoAcionamento(status: PartidaStatus | null | undefined, passos: PassoAcao[], indice: number): boolean {
+  return status === "EM_ACAO" && indice >= passos.length;
+}
+
+/** Valor de um evento do resultado (TENTATIVA, FALTAM_PECAS, INTERVALO...), ou undefined se o servidor não mandou. */
+export function valorDoEvento(r: NucleoResultado | null | undefined, codigo: string): unknown {
+  return r?.eventos.find((e) => e.codigo === codigo)?.valor;
+}
+
+/** O look em cena: o da entrega com a troca do intervalo que o servidor aplicou (evento TROCA {vaga, carta}). */
+export function lookComTroca(cartas: Record<string, string>, r: NucleoResultado | null | undefined): Record<string, string> {
+  const troca = valorDoEvento(r, "TROCA");
+  if (!troca || typeof troca !== "object") return cartas;
+  const { vaga, carta } = troca as { vaga?: unknown; carta?: unknown };
+  return typeof vaga === "string" && typeof carta === "string" ? { ...cartas, [vaga]: carta } : cartas;
 }
 
 export interface CartaPontuada {
   vaga: string;
   cardId: string;
-  /** pontos da regra da vaga (servidor) ou null quando o resultado não separa por carta */
+  /** pontos da carta (servidor: `cartas` do resultado ou a regra da vaga) ou null quando o resultado não separa por carta */
   pontos: number | null;
   /** efeito da carta neste jogo (servidor), usado quando o resultado não traz os pontos por carta */
   selo: EfeitoItem | null;
 }
 
 /**
- * Cartas que pontuaram, na ordem das vagas: pela regra da vaga quando o resultado traz uma (FIGURINO_SUP...); senão,
- * pelo efeito que o servidor deu à carta em POST .../efeitos.
+ * Cartas que pontuaram, na ordem em que brilham: as de `cartas` do resultado com pontos acima de zero (o servidor diz
+ * quanto cada uma rendeu). Resposta sem `cartas`: pela regra da vaga quando há uma (FIGURINO_SUP...); senão, pelo
+ * efeito que o servidor deu à carta em POST .../efeitos.
  */
 export function cartasQuePontuaram(
   r: NucleoResultado,
@@ -116,6 +127,11 @@ export function cartasQuePontuaram(
   cards: FlairCollectionCard[],
   efeitos: Map<string, EfeitoItem[]>,
 ): CartaPontuada[] {
+  if (r.cartas?.length) {
+    return r.cartas
+      .filter((c) => c.pontos > 0 && cards.some((k) => k.id === c.cardId))
+      .map((c) => ({ vaga: c.vaga, cardId: c.cardId, pontos: c.pontos, selo: seloDaCarta(efeitos.get(c.cardId)) }));
+  }
   const porVaga = new Map<string, number>();
   for (const regra of r.regras) {
     const vaga = vagaDaRegra(regra.codigo);

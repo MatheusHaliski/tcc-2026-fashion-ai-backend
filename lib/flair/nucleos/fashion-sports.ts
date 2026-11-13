@@ -2,8 +2,8 @@
 import { acoesDe, deckDe } from "@/lib/flair/nucleos/base";
 import type { NucleoConfig, NucleoPersonagem } from "@/lib/flair/nucleos/types";
 
-const colega = (x: number, z: number): NucleoPersonagem => ({ papel: "COLEGA", tipo: "manequim", pos: [x, 0, z], cor: "#1F7A76", escala: 0.9 });
-const adversario = (x: number, z: number): NucleoPersonagem => ({ papel: "ADVERSARIO", tipo: "manequim", pos: [x, 0, z], cor: "#C6275E", escala: 0.9, giro: 180 });
+const colega = (x: number, z: number): NucleoPersonagem => ({ papel: "COLEGA", tipo: "manequim", pos: [x, 0, z], cor: "#1F7A76", escala: 0.9, giro: 180 });
+const adversario = (x: number, z: number): NucleoPersonagem => ({ papel: "ADVERSARIO", tipo: "manequim", pos: [x, 0, z], cor: "#C6275E", escala: 0.9 });
 
 export const FASHION_SPORTS: NucleoConfig = {
   codigo: "FASHION_SPORTS",

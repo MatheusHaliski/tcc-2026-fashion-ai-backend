@@ -22,9 +22,9 @@ class Reserva extends Component<{ children: ReactNode; reserva: ReactNode }, { f
   }
 }
 
-function Objeto({ movel }: { movel: Movel }) {
-  const ref = movel.glb!;
-  const { scene } = useGLTF(urlDoGlb(ref.slug));
+function Objeto({ movel, slug }: { movel: Movel; slug: string }) {
+  const ref = movel.glb ?? { slug };
+  const { scene } = useGLTF(urlDoGlb(slug));
   const { objeto, escala, apoio } = useMemo(() => {
     const copia = scene.clone(true);
     copia.traverse((o) => {
@@ -40,17 +40,17 @@ function Objeto({ movel }: { movel: Movel }) {
     return { objeto: copia, escala: k, apoio: [-centro.x * k, -caixa.min.y * k, -centro.z * k] as [number, number, number] };
   }, [scene, ref.escala, movel]);
   return (
-    <group name={`glb-${ref.slug}`} position={movel.pos} rotation={[0, (movel.giro + (ref.giro ?? 0)) * RAD, 0]}>
+    <group name={`glb-${slug}`} position={movel.pos} rotation={[0, (movel.giro + (ref.giro ?? 0)) * RAD, 0]}>
       <primitive object={objeto} position={apoio} scale={escala} />
     </group>
   );
 }
 
-export function MovelGlb({ movel, reserva }: { movel: Movel; reserva: ReactNode }) {
+export function MovelGlb({ movel, slug, reserva }: { movel: Movel; slug: string; reserva: ReactNode }) {
   return (
     <Reserva reserva={reserva}>
       <Suspense fallback={reserva}>
-        <Objeto movel={movel} />
+        <Objeto movel={movel} slug={slug} />
       </Suspense>
     </Reserva>
   );

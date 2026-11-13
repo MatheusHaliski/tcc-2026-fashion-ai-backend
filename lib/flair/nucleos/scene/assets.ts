@@ -16,6 +16,8 @@ export interface AssetGlb {
   category?: string;
   triangles: number;
   bytes?: number;
+  /** tipo de móvel procedural que o objeto substitui (opcional; sem ele vale o slug igual ao tipo em kebab-case) */
+  movel?: string;
 }
 
 export type ManifestoGlb = AssetGlb[];
@@ -35,13 +37,26 @@ export function lerManifesto(json: unknown): ManifestoGlb {
       category: typeof a.category === "string" ? a.category : undefined,
       triangles: Number(a.triangles) > 0 ? Number(a.triangles) : 0,
       bytes: typeof a.bytes === "number" ? a.bytes : undefined,
+      movel: typeof a.movel === "string" ? a.movel : undefined,
     }));
 }
 
-/** O objeto GLB disponível para o móvel (nulo: o móvel não aponta um slug ou o arquivo não está no manifesto). */
-export function glbDoMovel(m: Movel, manifesto: ManifestoGlb): AssetGlb | null {
-  if (!m.glb) return null;
-  return manifesto.find((a) => a.slug === m.glb?.slug) ?? null;
+/** Slug convencionado de um tipo de móvel: "cadeiraDiretor" → "cadeira-diretor". */
+export function slugDoTipo(tipo: string): string {
+  return tipo.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+}
+
+/**
+ * O objeto GLB disponível para o móvel, ou nulo (a sala usa as partes procedurais). Vale, nesta ordem: o slug que a
+ * descrição aponta (`glb.slug`); um objeto do manifesto marcado para o tipo do móvel (`movel`) ou com o slug
+ * convencionado do tipo — estes dois só quando o objeto serve ao jogo da sala (`games` vazio = todos).
+ */
+export function glbDoMovel(m: Movel, manifesto: ManifestoGlb, codigo?: string): AssetGlb | null {
+  if (manifesto.length === 0) return null;
+  if (m.glb) return manifesto.find((a) => a.slug === m.glb?.slug) ?? null;
+  const serve = (a: AssetGlb) => !a.games || a.games.length === 0 || (!!codigo && a.games.includes(codigo));
+  const convencionado = slugDoTipo(m.tipo);
+  return manifesto.find((a) => serve(a) && (a.movel === m.tipo || a.slug === convencionado)) ?? null;
 }
 
 /** Altura do móvel procedural (do piso dele ao topo), usada para ajustar a escala do GLB. */

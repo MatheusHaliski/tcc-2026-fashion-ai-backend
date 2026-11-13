@@ -16,8 +16,8 @@ export const SALA_FASHION_DETECTIVE: Sala = {
   cobertura: "teto",
   casca: { piso: "marmore", parede: "parede", teto: "parede", rodape: "porta" },
   materiais: {
-    marmore: marmore("#EDE6DA", "#B9AE9C"),
-    parede: reboco("#E4DACA"),
+    marmore: marmore("#D6CCBB", "#8E826F"),
+    parede: reboco("#CFC3AE"),
     latao: metalEscovado("#C9A04A", 0.25),
     veludo: veludo("#651E43", "#2E0A1C"),
     porta: madeiraEncerada("#4A2A1A", "#2A150B"),
@@ -58,10 +58,10 @@ export const SALA_FASHION_DETECTIVE: Sala = {
     { papel: "CONVIDADO", tipo: "silhueta", pos: [3.3, 0, -2.2], cor: "#2E3A4A", giro: -80 },
   ],
   luzes: {
-    principal: { cor: "#FFE7C0", intensidade: 2.2, pos: [3.1, 5.1, 3.4] },
+    principal: { cor: "#FFE7C0", intensidade: 1.8, pos: [3.1, 5.1, 3.4] },
     recorte: { cor: "#FFD9A0", intensidade: 1.8, pos: [-2.5, 4.5, -5] },
-    ambiente: { ceu: "#FFF1D8", chao: "#6B5A48", intensidade: 0.6 },
-    reflexo: 0.7,
+    ambiente: { ceu: "#FFF1D8", chao: "#6B5A48", intensidade: 0.45 },
+    reflexo: 0.35,
     proprias: [
       { id: "lustre", tipo: "ponto", cor: "#FFE9B8", intensidade: 34, pos: [0, 3.9, -2.4] },
       { id: "porta", tipo: "ponto", cor: "#FFD27A", intensidade: 50, pos: [0, 1.8, -6.3], apagada: true },
