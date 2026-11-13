@@ -1,0 +1,241 @@
+/* ── FLAIR 3D · núcleos (components/flair/nucleos/*) ───────────────────────────────────────────────────────────────
+   Layout DREST: cena em cima (.n3d-top), janela de recursos embaixo (.n3d-bottom). Cores do tema (tokens de 01);
+   as cores do cenário chegam por --n3d-fundo e --n3d-piso. Movimento reduzido: sem transições (regra global de 01). */
+.n3d-game {
+  display: grid;
+  gap: 12px;
+}
+
+.n3d-top {
+  position: relative;
+  display: grid;
+  gap: 8px;
+}
+
+.n3d-scene3d,
+.n3d-scene2d {
+  position: relative;
+  height: clamp(260px, 46vh, 520px);
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.n3d-scene2d {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, var(--n3d-fundo, var(--surface-2)) 0 62%, var(--n3d-piso, var(--surface-3)) 62% 100%);
+  color: #fff;
+}
+
+.n3d-scene2d-chars {
+  position: absolute;
+  inset: auto 6% 34% 6%;
+  display: flex;
+  justify-content: space-between;
+  opacity: 0.75;
+}
+
+.n3d-char {
+  width: 18px;
+  height: 48px;
+  border-radius: 9px 9px 4px 4px;
+}
+
+.n3d-scene2d-avatar {
+  width: 54px;
+  height: 140px;
+  border-radius: 27px 27px 8px 8px;
+  background: #ece6dc;
+  box-shadow: 0 8px 18px #0006;
+  transition: transform 0.3s ease;
+}
+
+.n3d-scene2d-note,
+.n3d-scene2d-cast {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: #000a;
+  font-size: var(--text-caption);
+}
+
+.n3d-scene2d-note {
+  top: 10px;
+}
+
+.n3d-scene2d-cast {
+  bottom: 10px;
+}
+
+.n3d-scene2d-cast + .n3d-scene2d-cast {
+  bottom: 38px;
+}
+
+.n3d-cast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
+.n3d-cast-me {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.n3d-cast-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.n3d-bottom {
+  display: grid;
+  gap: 12px;
+}
+
+.n3d-objective,
+.n3d-window,
+.n3d-controls,
+.n3d-result,
+.n3d-deck {
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.n3d-objective-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.n3d-objective-text {
+  margin: 6px 0 0;
+  font-weight: 600;
+}
+
+.n3d-rules,
+.n3d-checklist {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.n3d-rules li,
+.n3d-checklist li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.n3d-rules .is-ok,
+.n3d-checklist .is-ok {
+  color: var(--color-good);
+}
+
+.n3d-rules .is-miss,
+.n3d-checklist .is-miss {
+  color: var(--color-critical);
+}
+
+.n3d-pad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.n3d-pad-btn {
+  min-height: var(--control-sm);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.n3d-help dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.n3d-help dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.n3d-error {
+  color: var(--color-critical);
+}
+
+.n3d-stars .n3d-star {
+  color: var(--line);
+  font-size: 1.75rem;
+}
+
+.n3d-stars .n3d-star.is-on {
+  color: var(--chalk);
+}
+
+.n3d-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.n3d-list-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.n3d-list-num {
+  grid-row: span 2;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--thread);
+}
+
+.n3d-list-res {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+@media (min-width: 900px) {
+  .n3d-bottom {
+    grid-template-columns: 1fr 2fr;
+  }
+
+  .n3d-bottom .n3d-window {
+    grid-row: span 3;
+  }
+
+  .n3d-grid,
+  .n3d-deck-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,124 @@
+/* ── FLAIR 3D MAKE UP (components/flair/make-up/*) ─────────────────────────────────────────────────────────────────
+   Carreira (nível, Prestígio e progresso), lista de briefs com cadeado e o grupo Roupas/Maquiagem da janela de
+   recursos. A cena 2D de reserva usa as cores do FashionAI (magenta, verde-petróleo e o rosa claro de base). */
+.mk-career {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.mk-level {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--thread);
+}
+
+.mk-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.mk-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #c6275e, #1f7a76);
+}
+
+.mk-briefs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mk-brief-link {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.mk-brief.is-locked .mk-brief-link {
+  opacity: 0.6;
+}
+
+.mk-brief-name {
+  font-weight: 700;
+}
+
+.mk-lock {
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
+.mk-resources {
+  display: grid;
+  gap: 8px;
+}
+
+.mk-groups {
+  display: flex;
+  gap: 6px;
+}
+
+.mk-effect {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--muted);
+}
+
+.mk-prestige {
+  font-weight: 700;
+  color: var(--thread);
+}
+
+.mk-scene2d {
+  background: linear-gradient(180deg, #fbe7ee 0 62%, #1f7a76 62% 100%);
+  color: #1f1f1f;
+}
+
+.mk-scene2d::before {
+  content: "";
+  position: absolute;
+  top: 14%;
+  width: 64px;
+  height: 64px;
+  background: url("/brand/fai-logo.png") center / contain no-repeat;
+}
+
+.mk-face {
+  position: absolute;
+  right: 12px;
+  top: 44px;
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: #fffd;
+  list-style: none;
+  font-size: var(--text-caption);
+}
+
+.mk-face li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mk-face .n3d-swatch {
+  width: 16px;
+  height: 16px;
+}
