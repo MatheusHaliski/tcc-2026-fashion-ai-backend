@@ -222,11 +222,6 @@
 .card-preview-mode > .pae-expanded-card > .piece-card { width: 100%; }
 .switch-track:disabled { opacity: .45; cursor: not-allowed; }
 .chip:disabled { opacity: .45; cursor: not-allowed; }
-/* alternativa à ação principal (posição secundária): texto-link, alvo de toque próprio */
-.piece-detail .pd-alt { justify-self: start; min-height: 32px; padding: 0 2px; font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; background: none; border: 0; cursor: pointer; }
-.piece-detail .pd-alt:hover { color: var(--ink); }
-.piece-detail .pd-alt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
-@media (pointer: coarse) { .piece-detail .pd-alt { min-height: var(--touch); } }
 .dialog.dialog-card:focus { outline: none; }
 @container (max-width: 200px) { .fai-card.piece-card .c-post[data-dense] .c-act.is-comment .c-act-n { display: none; } }
 .piece-card .pc-price { flex-wrap: wrap; row-gap: 2px; min-width: 0; }

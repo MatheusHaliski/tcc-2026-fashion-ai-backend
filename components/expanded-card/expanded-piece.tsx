@@ -141,11 +141,10 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   // UMA ação principal, conforme o contexto, e a alternativa em posição secundária (texto-link logo abaixo):
   // o dono monta um look com a peça (ou experimenta no manequim 3D); quem visita experimenta (ou guarda uma cópia)
   const primary = mine
-    ? <><Link href={mirrorHref({ piece: p.id })} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
-        <button type="button" className="pd-alt" onClick={() => setMannequin3d(true)}>{t("pieceDetail.ou_experimente")}</button></>
-    : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
-        </>;
+    ? <Link href={mirrorHref({ piece: p.id })} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
+    : <Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>;
   const more: MenuItem[] = [
+    { label: t("pieceDetail.manequim_3d"), icon: <FaiIcon id="ACT-20" size={20} decorative />, onSelect: () => setMannequin3d(true), hidden: !mine },
     { label: t("pieceDetail.editar_dados"), icon: <FaiIcon id="SOC-11" size={20} decorative />, onSelect: startEdit, hidden: !mine },
     { label: t("pieceDetail.editar_imagem"), icon: <FaiIcon id="NAV-10" size={20} decorative />, onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
     { label: t("pieceDetail.editar_arte"), icon: <FaiIcon id="ACT-14" size={20} decorative />, onSelect: () => setEditArt(true), hidden: !mine },

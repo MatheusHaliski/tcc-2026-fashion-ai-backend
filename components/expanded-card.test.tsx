@@ -246,7 +246,7 @@ describe("ExpandedPiece — o dono", () => {
     expect(looks.querySelectorAll("button")).toHaveLength(1);
     fireEvent.click(within(looks).getByRole("button", { name: /Look de sábado/ }));
     expect(router.push).toHaveBeenCalledWith("/schemes/s1");
-    fireEvent.click(screen.getByRole("button", { name: "ou experimente no manequim 3D" }));
+    expect(screen.queryByRole("button", { name: "ou experimente no manequim 3D" })).toBeNull(); await openMore(); fireEvent.click(screen.getByRole("menuitem", { name: "Ver no manequim 3D" }));
     expect(screen.getByRole("dialog", { name: "Manequim 3D" }).textContent).toContain("3D de Camiseta branca lisa");
     fireEvent.click(screen.getByRole("button", { name: "Fechar 3D" }));
     expect(screen.queryByRole("dialog", { name: "Manequim 3D" })).toBeNull();

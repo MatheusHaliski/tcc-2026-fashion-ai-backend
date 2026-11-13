@@ -28,7 +28,6 @@
 .piece-detail .pd-brand { flex: 1 1 auto; }
 .piece-detail .pd-id .card-seals { flex-basis: 100%; }
 .piece-detail .pd-cta { margin-top: 4px; min-width: 0; }
-.piece-detail .pd-alt { margin-top: 4px; }
 .piece-detail .pd-info > .c-post .c-actions { min-height: 40px; padding: 2px 6px; background: transparent; }
 .piece-detail .pc-panels { padding: 8px; gap: 8px; }
 .piece-detail .pd-section { padding: 8px 12px; }
