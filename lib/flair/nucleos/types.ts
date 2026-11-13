@@ -187,6 +187,8 @@ export interface NucleoPersonagem {
   escala?: number;
   /** rotação em y, em graus (0 = de frente para a câmera) */
   giro?: number;
+  /** como a silhueta aparece: em pé (padrão), sentada (plateia) ou busto de costura (manequim do ateliê) */
+  postura?: "em_pe" | "sentada" | "busto";
 }
 
 export type AbaIcone =

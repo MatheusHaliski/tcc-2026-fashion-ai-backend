@@ -1,6 +1,10 @@
 /** Núcleo 1: passarela com plateia dos dois lados e fotógrafos no fim da passarela (atrás do avatar). */
 import { acoesDe, deckDe, fileira } from "@/lib/flair/nucleos/base";
+import { PASSARELA_CADEIRAS_Z, PASSARELA_FILEIRA_X } from "@/lib/flair/nucleos/scene/salas/passarela";
 import type { NucleoConfig } from "@/lib/flair/nucleos/types";
+
+/** A plateia senta em cadeiras alternadas das duas fileiras. */
+const LUGARES = PASSARELA_CADEIRAS_Z.filter((_, i) => i % 2 === 1 || i === 8);
 
 export const PASSARELA: NucleoConfig = {
   codigo: "PASSARELA",
@@ -10,18 +14,14 @@ export const PASSARELA: NucleoConfig = {
     fundo: "#14121C",
     piso: "#2A2633",
     luz: "#FFE9C7",
-    props: [
-      { forma: "caixa", pos: [0, 0.05, -1], tam: [1.4, 0.1, 9], cor: "#EDE6DA" },
-      { forma: "caixa", pos: [0, 1.6, -5.4], tam: [4, 3.2, 0.2], cor: "#1F1B2B" },
-      { forma: "cilindro", pos: [-1.6, 1.4, -5], tam: [0.08, 2.8, 0.08], cor: "#C9A227", emissiva: true },
-      { forma: "cilindro", pos: [1.6, 1.4, -5], tam: [0.08, 2.8, 0.08], cor: "#C9A227", emissiva: true },
-    ],
+    // a sala inteira (casca, móveis, materiais e luzes) está em lib/flair/nucleos/scene/salas
+    props: [],
   },
   personagens: [
-    ...fileira("PLATEIA", -2, [-3.5, -2, -0.5, 1], "#3A3550"),
-    ...fileira("PLATEIA", 2, [-3.5, -2, -0.5, 1], "#3A3550"),
-    { papel: "FOTOGRAFO", tipo: "silhueta", pos: [-1.2, 0, -4.6], cor: "#24212F", giro: 20 },
-    { papel: "FOTOGRAFO", tipo: "silhueta", pos: [1.2, 0, -4.6], cor: "#24212F", giro: -20 },
+    ...fileira("PLATEIA", -PASSARELA_FILEIRA_X, LUGARES, "#3A3550", "sentada"),
+    ...fileira("PLATEIA", PASSARELA_FILEIRA_X, LUGARES, "#3A3550", "sentada"),
+    { papel: "FOTOGRAFO", tipo: "silhueta", pos: [-1.9, 0, -7.6], cor: "#24212F", giro: 12 },
+    { papel: "FOTOGRAFO", tipo: "silhueta", pos: [1.9, 0, -7.6], cor: "#24212F", giro: -12 },
   ],
   avatares: { protagonista: ["PROPRIO"], online: { min: 4, max: 8 } },
   vagas: ["SUP", "INF", "CAL", "ACE", "VES"],

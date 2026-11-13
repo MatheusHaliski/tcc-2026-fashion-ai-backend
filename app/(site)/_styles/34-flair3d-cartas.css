@@ -1,0 +1,229 @@
+/* ── FLAIR 3D · deck, cartas e régua de vagas (components/flair/nucleos/nucleo-card.tsx, nucleo-resource-*.tsx,
+   e nucleo-slot-ruler.tsx). Carta 5 por 7 no tamanho do porte (--n3d-card-w/h, de lib/flair/nucleos/quadro.ts), uma
+   fileira que rola para os lados e as miniaturas na régua de vagas. */
+.n3d-card {
+  position: relative;
+  display: block;
+  flex: none;
+  width: var(--n3d-card-w, 76px);
+  height: var(--n3d-card-h, 106px);
+  overflow: hidden;
+  border: 3px solid var(--n3d-tier, #9da3aa);
+  border-radius: 8px;
+  background: var(--surface-3);
+}
+
+.n3d-card.is-mini {
+  width: var(--n3d-thumb-w, 44px);
+  height: var(--n3d-thumb-h, 62px);
+  border-width: 2px;
+  border-radius: 6px;
+}
+
+.n3d-card.tier-bronze,
+.n3d-zoom-card.tier-bronze {
+  --n3d-tier: #b07a52;
+}
+
+.n3d-card.tier-prata,
+.n3d-zoom-card.tier-prata {
+  --n3d-tier: #9da3aa;
+}
+
+.n3d-card.tier-ouro,
+.n3d-zoom-card.tier-ouro {
+  --n3d-tier: #e0b04d;
+}
+
+.n3d-card.tier-especial,
+.n3d-zoom-card.tier-especial {
+  --n3d-tier: #7b4fd6;
+}
+
+.n3d-card-photo {
+  position: absolute;
+  inset: 0;
+}
+
+.n3d-card-photo img,
+.n3d-zoom-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.n3d-card-pos {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #000a;
+  color: #fff;
+}
+
+.n3d-card-fx,
+.n3d-card-inuse,
+.n3d-slot-points {
+  position: absolute;
+  right: 2px;
+  padding: 1px 4px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.n3d-card-fx,
+.n3d-slot-points {
+  bottom: 2px;
+  left: 2px;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  background: #165c58;
+}
+
+.n3d-card-fx.is-none {
+  background: #555b63;
+  font-weight: 400;
+}
+
+.n3d-card-inuse {
+  top: 2px;
+  background: #a51f4e;
+}
+
+/* uma fileira de cartas que rola para os lados; 14 px em cima para a carta selecionada subir 12 px */
+.n3d-window.is-row {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.n3d-window-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+}
+
+.n3d-window-head .n3d-tabs {
+  flex: 1;
+  min-width: 0;
+}
+
+.n3d-window.is-row .n3d-tab {
+  min-height: var(--touch);
+}
+
+.n3d-window.is-row .n3d-panel {
+  padding-top: 0;
+}
+
+.n3d-window-actions,
+.n3d-pad.is-deck {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.n3d-submit {
+  min-height: var(--touch);
+  white-space: nowrap;
+}
+
+.n3d-row {
+  display: flex;
+  gap: var(--n3d-gap, 8px);
+  overflow-x: auto;
+  padding: 14px 2px 4px;
+  scroll-snap-type: x proximity;
+}
+
+.n3d-row .n3d-res {
+  flex: none;
+  min-width: var(--touch);
+  min-height: var(--touch);
+  scroll-snap-align: start;
+  transition: transform 0.15s ease;
+}
+
+.n3d-row .n3d-res-carta {
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+}
+
+.n3d-row .n3d-res:not(.n3d-res-carta) {
+  width: var(--n3d-card-w, 76px);
+}
+
+.n3d-row .n3d-res.is-focus {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+  transform: translateY(-12px);
+}
+
+.n3d-row .n3d-res-carta.is-on {
+  box-shadow: none;
+}
+
+.n3d-res.is-nofit {
+  opacity: 0.4;
+}
+
+.n3d-band-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: var(--text-caption);
+}
+
+.n3d-hint {
+  margin: 0;
+  color: var(--muted);
+}
+
+.n3d-ruler {
+  display: flex;
+  justify-content: center;
+  gap: var(--n3d-gap, 8px);
+  overflow-x: auto;
+  padding: 4px 12px;
+  background: var(--surface-2);
+}
+
+.n3d-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: max(var(--n3d-thumb-w, 44px), var(--touch));
+  height: max(var(--n3d-thumb-h, 62px), var(--touch));
+  padding: 0;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.n3d-slot.is-filled {
+  border-style: solid;
+  border-color: transparent;
+}
+
+.n3d-slot.is-active {
+  outline: 2px solid var(--mark);
+  outline-offset: 1px;
+}

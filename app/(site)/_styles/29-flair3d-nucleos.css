@@ -1,6 +1,7 @@
 /* ── FLAIR 3D · núcleos (components/flair/nucleos/*) ───────────────────────────────────────────────────────────────
-   Layout DREST: cena em cima (.n3d-top), janela de recursos embaixo (.n3d-bottom). Cores do tema (tokens de 01);
-   as cores do cenário chegam por --n3d-fundo e --n3d-piso. Movimento reduzido: sem transições (regra global de 01). */
+   Peças comuns: cena, elenco, regras, comandos, resultado e a lista dos núcleos. O layout em duas faixas (.n3d-top e
+   .n3d-bottom) segue no MAKE UP; a tela de jogo dos núcleos usa o quadro de 33-flair3d-quadro.css. Cores do tema
+   (tokens de 01); as cores do cenário chegam por --n3d-fundo e --n3d-piso. Movimento reduzido: regra global de 01. */
 .n3d-game {
   display: grid;
   gap: 12px;
@@ -105,7 +106,6 @@
   gap: 12px;
 }
 
-.n3d-objective,
 .n3d-window,
 .n3d-controls,
 .n3d-result,
@@ -114,18 +114,6 @@
   border-radius: var(--radius);
   border: 1px solid var(--line-soft);
   background: var(--surface);
-}
-
-.n3d-objective-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.n3d-objective-text {
-  margin: 6px 0 0;
-  font-weight: 600;
 }
 
 .n3d-rules,

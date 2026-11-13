@@ -1,0 +1,132 @@
+/* ── FLAIR 3D · efeitos das cartas no cenário (docs/flair/flair-3d/DESENHO_DA_TELA.md, seção 4) ───────────────────
+   Efeito de entrada da carta (components/flair/nucleos/nucleo-card-fx.tsx); a ação fica em 38-flair3d-acao.css.
+   Todo efeito nasce atrás, ao lado ou no piso: nada passa na frente da zona da roupa. Cada um dura menos de 2 s e
+   pisca uma vez só. Com "reduzir movimento" ou efeitos desligados (.is-calm), nada pisca nem se move. */
+.n3d-fx,
+.n3d-act {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* clarão na cor do nível: vem de trás do avatar e aparece dos dois lados da zona da roupa */
+.n3d-fx-glow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--n3d-zona-x, 30%);
+  opacity: 0;
+  animation: n3d-flash 700ms ease-out both;
+}
+
+.n3d-fx-glow.is-left {
+  left: 0;
+  background: radial-gradient(ellipse at 100% 55%, var(--n3d-fx-cor, #fff), transparent 72%);
+}
+
+.n3d-fx-glow.is-right {
+  right: 0;
+  background: radial-gradient(ellipse at 0% 55%, var(--n3d-fx-cor, #fff), transparent 72%);
+}
+
+.n3d-fx.is-calm .n3d-fx-glow {
+  opacity: 0.45;
+  animation: none;
+}
+
+/* Aura Hype: anéis de luz no piso, na faixa abaixo dos pés */
+.n3d-fx-rings {
+  position: absolute;
+  bottom: 1%;
+  left: var(--n3d-zona-x, 30%);
+  width: var(--n3d-zona-w, 40%);
+  height: 6%;
+}
+
+.n3d-fx-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--n3d-fx-cor, #fff);
+  border-radius: 50%;
+  opacity: 0;
+  animation: n3d-ring 900ms ease-out both;
+}
+
+.n3d-fx-ring + .n3d-fx-ring {
+  inset: 18%;
+  animation-delay: 150ms;
+}
+
+.n3d-fx.is-calm .n3d-fx-ring {
+  opacity: 0.7;
+  animation: none;
+}
+
+/* selo do efeito: sobe da peça (ao lado da zona da roupa) até o placar, no canto de cima à direita */
+.n3d-fx-badge {
+  position: absolute;
+  top: 52%;
+  left: calc(var(--n3d-zona-x, 30%) + var(--n3d-zona-w, 40%) + 6px);
+  max-width: calc(var(--n3d-zona-x, 30%) - 12px);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #165c58;
+  color: #fff;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  animation: n3d-rise 900ms ease-in-out both;
+}
+
+.n3d-fx-badge.is-none {
+  background: #555b63;
+  font-weight: 400;
+  animation: none;
+}
+
+.n3d-fx.is-calm .n3d-fx-badge {
+  animation: none;
+}
+
+@keyframes n3d-flash {
+  0% {
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes n3d-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.5);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes n3d-rise {
+  0% {
+    top: 52%;
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 12px;
+    opacity: 0.3;
+  }
+}
