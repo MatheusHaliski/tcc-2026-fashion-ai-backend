@@ -69,7 +69,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
         {tabs.map((x) => (
           <button key={x.key} type="button" role="tab" data-tab={x.key} id={`${id}-${x.key}`} aria-selected={tab === x.key} aria-controls={`${id}-panel`}
             tabIndex={tab === x.key ? 0 : -1} className="pc-seg-btn" onClick={(e) => { e.stopPropagation(); touched.current = true; setTab(x.key); }}>
-            {x.icon}<span>{x.text}{x.key==="info"&&<span className="pc-tab-live-score"><HypeBadge state={hypeViewState(summary,{loading,error})} summary={summary}/></span>}</span>
+            {x.icon}<span>{x.text}{x.key==="hype"&&<span className="pc-tab-live-score"><HypeBadge state={hypeViewState(summary,{loading,error})} summary={summary}/></span>}</span>
           </button>
         ))}
       </div>

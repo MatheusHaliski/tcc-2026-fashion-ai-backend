@@ -47,7 +47,7 @@ describe("FlairGameCard · a carta FLAIR com a anatomia do card comum", () => {
   it("aba Hype (inicial) mostra a matriz do card comum a partir do snapshot; aba Info traz as linhas do jogo", () => {
     loggedAs();
     renderApp(<FlairGameCard card={CARD()} />);
-    const hype = screen.getByRole("tab", { name: "Hype" });
+    const hype = screen.getByRole("tab", { name: /^Hype/ });
     expect(hype.getAttribute("aria-selected")).toBe("true");
     const cells = Array.from(document.querySelectorAll(".fashion-hype-cell")).map((c) => [c.getAttribute("data-dimension"), c.querySelector("dd")?.textContent]);
     expect(cells).toEqual([["POPULARITY", "71"], ["ENGAGEMENT", "66"], ["TREND", "74"], ["TREND_VELOCITY", "—"], ["ORIGINALITY", "55"], ["RARITY", "40"], ["LONGEVITY", "58"], ["NOVELTY", "62"]]);

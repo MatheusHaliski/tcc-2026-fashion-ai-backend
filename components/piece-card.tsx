@@ -115,7 +115,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const name = <span className="pc-name">{piece.name}</span>;
   
   const card = (
-    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode={expanded ? "expanded" : "feed"} className={`fai-card piece-card ${expanded ? "piece-card-expanded" : ""} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
+    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode={expanded ? "expanded" : "feed"} className={`fai-card piece-card ${expanded ? "piece-card-expanded" : selectable ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
       <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState} live={live}/>
       {tilt && <span className="fashion-depth-glare" aria-hidden/>}
       <ArtStage bg={piece.background} art={art} density={expanded ? "expanded" : "compact"} pieceHex={piece.colorHex} animate={preview} />
@@ -139,6 +139,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 ? <div className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</div>
                 : <Link href={link} onClick={openModal} className="pc-media" data-photo-framing={framing} style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <div className="pc-id">
+                {/* janela 1 · identidade: nome, marca/categoria, selos, moda (marca, cor, ocasião, estilo) e preço */}
+                <div className="pc-window is-identity">
                 <span className="seal-row">
                   {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
                   {expanded && zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
@@ -150,8 +152,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
                 {!expanded && <CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} />}
                 {expanded && <PieceDetailFacts piece={piece}/>}
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} live={live} />
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{<Price value={piece.price} />}</b></span>}
+                </div>
+                {/* janela 2 · Info | Hype (o 🔥 e o score ficam no rótulo da aba Hype) */}
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} live={live} />
                 {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>
             </>

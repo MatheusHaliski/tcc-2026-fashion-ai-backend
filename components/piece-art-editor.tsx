@@ -5,8 +5,10 @@ import type { PieceView } from "@/lib/api/types";
 import { api, type ApiError } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Chip, Dialog, SegmentPicker, Switch, useToast } from "@/components/ui";
-import { ArtSegments, AuraMaterialPanel, CLEAR_CARTELA, ColorPanel, ContainerColor, OptionStrip, SeasonalDialog, SkinPicker, useRecommendedSkins, type ArtSegment, type BgConfig } from "@/components/background-studio";
+import { ArtSegments, AuraMaterialPanel, CLEAR_CARTELA, ColorPanel, OptionStrip, SeasonalDialog, SkinPicker, useRecommendedSkins, type ArtSegment, type BgConfig } from "@/components/background-studio";
 import { useUndo } from "@/lib/hooks/use-undo";
+import { PieceContainerPanel } from "@/components/piece-container-panel";
+import { CardBorderDesigner } from "@/components/card-border-designer";
 import { ART_INDEX } from "@/lib/card-art";
 import { PieceCard } from "@/components/piece-card";
 import { CardPreviewModeToggle } from "@/components/card-preview-mode-toggle";
@@ -20,8 +22,8 @@ import {
 const TOGGLES = ["rim", "glow", "glass", "relief", "collage", "particles"] as const;
 
 /**
- * Editor da arte do card da peça (RF11) no padrão único da Arte de fundo: quatro segmentos na horizontal — Cor · Aura &
- * Material · Layout & Estilo (família, composição, efeitos e skin) · Container (cor, sólido/vidro e fundo da foto).
+ * Editor da arte do card da peça (RF11) no padrão único da Arte de fundo: cinco segmentos na horizontal — Cor · Aura &
+ * Material · Layout & Estilo (família, composição, efeitos e skin) · Container (cor, sólido/vidro e fundo da foto) · Borda.
  * A arte só ocupa a faixa entre a borda externa e o container; a prévia ao lado é o PRÓPRIO {@link PieceCard} do feed
  * (ou a moldura do card ampliado), com a mesma largura de uma coluna da grade; nada aqui altera a foto da peça.
  */
@@ -153,19 +155,8 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
           </div>
         )}
 
-        {seg === "container" && (
-          <div className="grid gap-3">
-            <p className="type-caption text-muted">{t("pieceArt.superficie_ajuda")}</p>
-            <ContainerColor value={{ container: { color: art.surface.color } }} skin={studio.skin ?? ""} onChange={(p) => emit({ ...art, surface: { ...art.surface, color: p.container?.color ?? null } })} />
-            <OptionStrip kind="row" title={t("pieceArt.acabamento_do_container")}>
-              {(["solid", "frosted"] as const).map((s) => <Chip key={s} active={art.surface.style === s} onClick={() => emit({ ...art, surface: { ...art.surface, style: s } })}>{t(`pieceArt.surface.${s}`)}</Chip>)}
-            </OptionStrip>
-            <div className="rounded-md border border-line-soft p-3">
-              <p className="label">{t("pieceArt.fundo_da_area_da_peca")}</p>
-              {mediaPanel ?? <p className="type-caption text-muted">{t("pieceArt.fundo_da_area_da_peca_ajuda")}</p>}
-            </div>
-          </div>
-        )}
+        {seg === "container" && <PieceContainerPanel art={art} skin={studio.skin ?? ""} onArt={(next) => emit(next)} mediaPanel={mediaPanel} />}
+        {seg === "borda" && <CardBorderDesigner value={studio.border} background={value} onChange={(border) => setStudio({ border })} />}
 
         <SeasonalDialog open={!!seasonal} onClose={() => setSeasonal(null)} value={studio} onApply={applySeasonal} />
         {actions && <div className="pae-nav">{actions}</div>}
