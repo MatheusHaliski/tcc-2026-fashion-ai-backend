@@ -69,6 +69,8 @@ export function useNucleoText() {
         const vars: Record<string, string> = { valor: v != null && typeof v === "object" ? JSON.stringify(v) : String(v ?? "") };
         if (v && typeof v === "object") Object.entries(v as Record<string, unknown>).forEach(([k, x]) => (vars[k] = String(x)));
         if (vars.vaga) vars.vaga = ou(`flair3d.ui.tab.${vars.vaga}`, vars.vaga);
+        if (vars.acao) vars.acao = ou(`flair3d.ui.acaoCor.${vars.acao}`, vars.acao);
+        if (vars.venceu) vars.desfecho = t(`flair3d.ui.acaoCor.${vars.venceu === "true" ? "ok" : "falhou"}`);
         if (vars.atributo) vars.atributo = ou(`flair3d.ui.hud.attr.${vars.atributo}`, vars.atributo);
         return ou(`flair3d.ui.evento.${e.codigo}`, `${e.codigo}: ${vars.valor}`, vars);
       },

@@ -255,6 +255,24 @@ describe("acionamentos", () => {
     expect(within(acionamento).getByRole("button", { name: "Seguir sem acionar" })).toBeTruthy();
   });
 
+  it("Fashion Sports com lances: cada troca mostra a ação da cor, e a janela reabre a cada resposta do servidor", async () => {
+    const fx = { efeitos: [{ cardId: "c5", itens: [{ codigo: "TECNICA", valor: 6 }, { codigo: "ACAO_CHUTE", valor: 1 }] }] };
+    loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_SPORTS/efeitos": fx });
+    const onAcionar = vi.fn();
+    const intervalo: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], eventos: [{ codigo: "INTERVALO", valor: "0-0" }], status: "EM_ACAO" };
+    const props = { definicao: definicao("FASHION_SPORTS"), cartas: CARTAS, entregando: false, erro: null, momento: "ACAO" as const, onEntregar: vi.fn(), onAcionar };
+    const { rerender } = renderApp(<NucleoGame {...props} resultado={intervalo} />);
+    const chute = (await screen.findByRole("button", { name: /Regata cinza · chute a gol/ })) as HTMLButtonElement;
+    await waitFor(() => expect(chute.disabled).toBe(false));
+    fireEvent.click(chute);
+    expect(onAcionar).toHaveBeenCalledWith({ tipo: "TROCA", cardId: "c5", vaga: "SUP" });
+    const lance = { codigo: "LANCE", valor: { lance: 1, acao: "CHUTE", carta: "c5", venceu: true } };
+    rerender(<NucleoGame {...props} resultado={{ ...intervalo, eventos: [...intervalo.eventos, { codigo: "TROCA", valor: { vaga: "SUP", carta: "c5" } }, lance] }} />);
+    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("Lance 1: chute a gol, deu certo"), { timeout: 4000 });
+    expect(screen.queryByRole("button", { name: /Regata cinza · chute a gol/ })).toBeNull();
+    await waitFor(() => expect((screen.getByRole("button", { name: "Seguir sem acionar" }) as HTMLButtonElement).disabled).toBe(false));
+  });
+
   it("O Labirinto: a tentativa que não abriu o espelho vira dica, com quantas peças faltam", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/LABIRINTO/efeitos": EFEITOS });
     const tentativa: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "NAO_ABRE", regras: [], eventos: [{ codigo: "TENTATIVA", valor: 2 }, { codigo: "FALTAM_PECAS", valor: 1 }], status: "ABERTA" };
@@ -274,7 +292,7 @@ describe("acionamentos", () => {
   it("Fashion Sports: a troca de 1 peça no intervalo só abre quando o servidor deixa a partida EM_ACAO", () => {
     montar({ codigo: "FASHION_SPORTS", momento: "ACAO", resultado: { pontos: 100, estrelas: 3, resultado: "VITORIA", regras: [], eventos: [{ codigo: "PLACAR", valor: "2-1" }] } });
     const acionamento = screen.getByTestId("nucleo-trigger");
-    expect(acionamento.textContent).toContain("Trocar 1 peça no intervalo");
+    expect(acionamento.textContent).toContain("Trocar peça: a cor dela dispara a ação");
     const trocas = within(acionamento).getAllByRole("button") as HTMLButtonElement[];
     expect(trocas.length).toBeGreaterThan(0);
     expect(trocas.every((b) => b.disabled)).toBe(true);

@@ -108,8 +108,13 @@ export function NucleoGame(props: Props) {
     if (preparando) onPrevia?.(estado.sel, efetiva);
   }, [preparando, estado.sel, efetiva, onPrevia]);
   useEffect(() => {
-    if (props.erroAcionar) setAcionou(false);
-  }, [props.erroAcionar]);
+    setAcionou(false);
+  }, [props.erroAcionar, resultado]);
+  /** a ação que a cor da carta dispara ao entrar em campo (item ACAO_* do servidor) */
+  const acaoDaCarta = (id: string) => {
+    const item = efeitos.itens(id)?.find((i) => i.codigo.startsWith("ACAO_"));
+    return item ? tx.efeito(item) : null;
+  };
 
   const entregar = () => {
     if (!preparando || !pronto || entregando) return;
@@ -209,6 +214,7 @@ export function NucleoGame(props: Props) {
                   vagas={vagasDaRegua(tabs).map((v) => v.tab.id)}
                   ocupado={!!props.acionando}
                   erro={props.erroAcionar ?? null}
+                  acaoDe={acaoDaCarta}
                   onAcionar={onAcionar ? acionar : undefined}
                 />
               )}

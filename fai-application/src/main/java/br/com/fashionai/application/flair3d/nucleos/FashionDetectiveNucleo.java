@@ -10,6 +10,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dAtributos;
+import br.com.fashionai.application.flair3d.Flair3dCores;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
@@ -17,6 +18,7 @@ import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,7 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
     public static final Set<String> GALA = Set.of("formal", "party");
     public static final int PECAS_GALA = 2;
     public static final int DEFESA = 50;
+    public static final int PONTOS_POR_COR = 20;
 
     @Override
     public String codigo() {
@@ -63,12 +66,35 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
                 .dividir(desafio ? 50 : 0, c -> Flair3dAtributos.daCarta(c).defesa());
         return Resultado.of(ok * 50, resultado,
                 List.of(RegraResultado.de("ACESSO", acesso, 50), RegraResultado.de("DESAFIO_DEFESA", desafio, 50)),
-                List.of(new Evento("PECAS_DE_GALA", gala), new Evento("DEFESA", defesa))).comCartas(rateio.lista());
+                eventos(vestidas, gala, defesa)).comCartas(rateio.lista());
+    }
+
+    /**
+     * O que as cores do look dão ao detetive ({@link Flair3dCores#DETETIVE}), 20 por peça: verde abre gavetas e armários,
+     * preto dá furtividade, amarelo dá vida, azul dá dano. A pista da carta ("a chave está no armário com a blusa branca")
+     * rende a chave a quem veste uma peça branca na parte de cima e uma verde, que abre o armário.
+     */
+    static List<Evento> eventos(Map<String, CbcRules.Card> vestidas, long gala, int defesa) {
+        Collection<CbcRules.Card> pecas = vestidas.values();
+        List<Evento> out = new ArrayList<>(List.of(new Evento("PECAS_DE_GALA", gala), new Evento("DEFESA", defesa)));
+        long abre = Flair3dCores.quantas(Flair3dCores.DETETIVE, pecas, "ABRIR");
+        out.add(new Evento("GAVETAS", abre));
+        for (String acao : List.of("FURTIVIDADE", "VIDA", "DANO")) {
+            out.add(new Evento(acao, PONTOS_POR_COR * Flair3dCores.quantas(Flair3dCores.DETETIVE, pecas, acao)));
+        }
+        CbcRules.Card cima = vestidas.containsKey("SUP") ? vestidas.get("SUP") : vestidas.get("VES");
+        out.add(new Evento("CHAVE", abre > 0 && "PISTA".equals(Flair3dCores.acao(Flair3dCores.DETETIVE, cima))));
+        return out;
     }
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        return List.of(new Efeito("ACESSO", Flair3dPecas.temOcasiao(carta, GALA) ? 1 : 0),
-                new Efeito("DEFESA", Flair3dAtributos.daCarta(carta).defesa()));
+        List<Efeito> out = new ArrayList<>(List.of(new Efeito("ACESSO", Flair3dPecas.temOcasiao(carta, GALA) ? 1 : 0),
+                new Efeito("DEFESA", Flair3dAtributos.daCarta(carta).defesa())));
+        String acao = Flair3dCores.acao(Flair3dCores.DETETIVE, carta);
+        if (acao != null) {
+            out.add(new Efeito("COR_" + acao, 1));
+        }
+        return out;
     }
 }

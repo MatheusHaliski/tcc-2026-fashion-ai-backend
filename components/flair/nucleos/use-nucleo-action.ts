@@ -50,8 +50,8 @@ export function useNucleoAction(opts: NucleoActionOptions) {
   const tipo = acionamento?.momento === "ACAO" && (acionamento.tipo === "ESPECIAL" || acionamento.tipo === "TROCA") ? acionamento.tipo : null;
   /** a janela abre quando o servidor espera o acionamento e tudo o que ele já mandou apareceu */
   const aberta = !!tipo && momento === "ACAO" && janelaDoAcionamento(resultado?.status, passos, tocador.mostrados);
-  /** o servidor já aplicou o acionamento desta partida (evento ESPECIAL ou TROCA) */
-  const usado = !!tipo && !!resultado?.eventos.some((e) => e.codigo === tipo);
+  /** a carta Especial vale 1 por luta (evento ESPECIAL do servidor); a troca vale 1 por lance, até o apito */
+  const usado = tipo === "ESPECIAL" && !!resultado?.eventos.some((e) => e.codigo === tipo);
 
   return { passos, mostrados, pular: tocador.pular, tipo, aberta, usado };
 }

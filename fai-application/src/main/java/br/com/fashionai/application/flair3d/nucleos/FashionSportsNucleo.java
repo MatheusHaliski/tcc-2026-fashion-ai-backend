@@ -11,6 +11,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dAtributos;
+import br.com.fashionai.application.flair3d.Flair3dCores;
 import br.com.fashionai.application.flair3d.Flair3dErros;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
@@ -29,8 +30,10 @@ import java.util.Map;
  * sai do sorteio da partida (20 a 30). Em cada tempo, mais de 1 ponto de força acima vale um gol do time e mais de 1
  * abaixo, um gol do adversário. Mais gols = vitória (100); iguais = empate (60); menos = derrota (0).
  *
- * <p>A partida anda em duas etapas: a entrega joga o primeiro tempo e para no INTERVALO (EM_ACAO); o acionamento, com no
- * máximo uma troca de peça (carta do deck, na vaga da posição dela), joga o segundo tempo e fecha a partida.</p>
+ * <p>A partida anda em etapas: a entrega joga o primeiro tempo e para no INTERVALO (EM_ACAO). Cada acionamento troca
+ * uma peça (carta do deck, na vaga da posição dela), e a peça que entra dispara na hora a ação da cor dela
+ * ({@link FashionSportsLances}); seguir sem trocar, trocar por peça sem cor de ação ou o terceiro lance joga o resto do
+ * segundo tempo e fecha a partida.</p>
  */
 public class FashionSportsNucleo implements Flair3dNucleo {
     public static final List<String> VAGAS = List.of("SUP", "INF", "CAL");
@@ -91,15 +94,16 @@ public class FashionSportsNucleo implements Flair3dNucleo {
         if (acionamentos.isEmpty()) {
             return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
         }
-        Acionamento.Troca troca = acionamentos.get(0).troca();
-        if (troca != null) {
-            uniforme = comTroca(uniforme, troca, contexto);
-            eventos.add(new Evento("TROCA", Map.of("vaga", troca.vaga(), "carta", troca.carta())));
+        FashionSportsLances lances = new FashionSportsLances(uniforme).jogar(acionamentos, eles, contexto);
+        eventos.addAll(lances.eventos());
+        if (lances.aberto()) {
+            return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
         }
-        int segundoTempo = forca(uniforme);
+        uniforme = lances.uniforme();
+        int segundoTempo = forca(uniforme) + lances.bonus();
         int[] segundo = gols(segundoTempo - eles);
-        int golsNos = primeiro[0] + segundo[0];
-        int golsEles = primeiro[1] + segundo[1];
+        int golsNos = primeiro[0] + segundo[0] + lances.chutes();
+        int golsEles = primeiro[1] + Math.max(0, segundo[1] - lances.desarmes());
         boolean vitoria = golsNos > golsEles;
         boolean empate = golsNos == golsEles;
         eventos.add(new Evento("FORCA_SEGUNDO_TEMPO", segundoTempo));
@@ -129,7 +133,12 @@ public class FashionSportsNucleo implements Flair3dNucleo {
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
         Flair3dAtributos a = Flair3dAtributos.daCarta(carta);
-        return List.of(new Efeito("VELOCIDADE", a.velocidade()), new Efeito("TECNICA", a.tecnica()),
-                new Efeito("RESISTENCIA", a.resistencia()), new Efeito("DEFESA", a.defesa()));
+        List<Efeito> out = new ArrayList<>(List.of(new Efeito("VELOCIDADE", a.velocidade()), new Efeito("TECNICA", a.tecnica()),
+                new Efeito("RESISTENCIA", a.resistencia()), new Efeito("DEFESA", a.defesa())));
+        String acao = Flair3dCores.acao(Flair3dCores.ESPORTE, carta);
+        if (acao != null) {
+            out.add(new Efeito("ACAO_" + acao, 1));
+        }
+        return out;
     }
 }

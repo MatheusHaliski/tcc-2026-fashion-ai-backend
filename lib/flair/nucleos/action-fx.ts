@@ -99,12 +99,15 @@ export function valorDoEvento(r: NucleoResultado | null | undefined, codigo: str
   return r?.eventos.find((e) => e.codigo === codigo)?.valor;
 }
 
-/** O look em cena: o da entrega com a troca do intervalo que o servidor aplicou (evento TROCA {vaga, carta}). */
+/** O look em cena: o da entrega com as trocas que o servidor aplicou, na ordem (eventos TROCA {vaga, carta}). */
 export function lookComTroca(cartas: Record<string, string>, r: NucleoResultado | null | undefined): Record<string, string> {
-  const troca = valorDoEvento(r, "TROCA");
-  if (!troca || typeof troca !== "object") return cartas;
-  const { vaga, carta } = troca as { vaga?: unknown; carta?: unknown };
-  return typeof vaga === "string" && typeof carta === "string" ? { ...cartas, [vaga]: carta } : cartas;
+  let look = cartas;
+  for (const e of r?.eventos ?? []) {
+    if (e.codigo !== "TROCA" || !e.valor || typeof e.valor !== "object") continue;
+    const { vaga, carta } = e.valor as { vaga?: unknown; carta?: unknown };
+    if (typeof vaga === "string" && typeof carta === "string") look = { ...look, [vaga]: carta };
+  }
+  return look;
 }
 
 export interface CartaPontuada {

@@ -35,11 +35,13 @@ interface Props {
   ocupado: boolean;
   /** recusa do servidor ao último acionamento */
   erro: ApiError | null;
+  /** a ação que a cor da carta dispara ao entrar (Fashion Sports), quando o servidor deu uma */
+  acaoDe?: (cardId: string) => string | null;
   /** ausente quando o servidor não aceita acionamento: o painel só explica */
   onAcionar?: (pedido: AcionamentoPedido) => void;
 }
 
-export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, ocupado, erro, onAcionar }: Props) {
+export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, ocupado, erro, acaoDe, onAcionar }: Props) {
   const tx = useNucleoText();
   const opcoes = tipo === "ESPECIAL"
     ? cartas.filter((c) => c.tier === "ESPECIAL")
@@ -57,9 +59,11 @@ export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, oc
     if (tipo === "ESPECIAL") return tx.t("flair3d.ui.trigger.ESPECIAL.use", { nome: c.name });
     const sai = cartas.find((x) => x.id === vestidas[c.position]);
     const vaga = tx.posicao(c.position);
-    return sai
+    const troca = sai
       ? tx.t("flair3d.ui.trigger.TROCA.swap", { vaga, entra: c.name, sai: sai.name })
       : tx.t("flair3d.ui.trigger.TROCA.put", { vaga, entra: c.name });
+    const acao = acaoDe?.(c.id);
+    return acao ? tx.t("flair3d.ui.trigger.TROCA.action", { troca, acao }) : troca;
   };
   const pedido = (c: FlairCollectionCard): AcionamentoPedido => (tipo === "TROCA" ? { tipo, cardId: c.id, vaga: c.position } : { tipo, cardId: c.id });
 
