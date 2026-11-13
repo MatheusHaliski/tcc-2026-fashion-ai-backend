@@ -2,13 +2,11 @@ package br.com.fashionai.application.view;
 
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.domain.model.EstadoConservacao;
 import br.com.fashionai.domain.model.Notification;
 import br.com.fashionai.domain.model.Photo;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.TaxonomyAttribute;
-import br.com.fashionai.domain.model.TipoLavagem;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
@@ -19,6 +17,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static br.com.fashionai.application.view.PieceReferenceViews.estadoConservacao;
+import static br.com.fashionai.application.view.PieceReferenceViews.tipoLavagem;
 
 /** Visões expostas pela API (o frontend nunca recebe entidade JPA nem campo cifrado cru). */
 public final class Views {
@@ -61,8 +62,8 @@ public final class Views {
                             String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
                             String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl,
                             boolean aiGeneratedImage, boolean forDonation,
-                            String variation, Map<String, List<String>> attributes,
-                            ReferenceOptionView estadoConservacao, ReferenceOptionView tipoLavagem, ReferenceOptionView colecao) {
+                            String variation, Map<String, List<String>> attributes, ReferenceOptionView estadoConservacao,
+                            ReferenceOptionView tipoLavagem, ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -115,7 +116,8 @@ public final class Views {
                 // taxonomia nova: variação da peça e atributos por dimensão; cor, material, sexo, estilo e ocasião já têm
                 // campo próprio na view e não se repetem aqui
                 w.getVariationCode(), TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS),
-                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()), PieceReferenceViews.colecao(w.getColecao()));
+                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()),
+                PieceReferenceViews.colecao(w.getColecao()), PieceReferenceViews.intensidadeTermica(w.getIntensidadeTermica()));
     }
 
     /**
@@ -208,14 +210,6 @@ public final class Views {
     /** Opção de catálogo, sem timestamps/autoria internos da entidade JPA. */
     public record ReferenceOptionView(UUID id, String codigo, String nome) { }
 
-    public static ReferenceOptionView estadoConservacao(EstadoConservacao estado) {
-        return estado == null ? null : new ReferenceOptionView(estado.getId(), estado.getCodigo(), estado.getNome());
-    }
-
-    public static ReferenceOptionView tipoLavagem(TipoLavagem tipo) {
-        return tipo == null ? null : new ReferenceOptionView(tipo.getId(), tipo.getCodigo(), tipo.getNome());
-    }
-
     public static TipoLookView tipoLook(br.com.fashionai.domain.model.TipoLook tipo) {
         return tipo == null ? null : new TipoLookView(tipo.getId(), tipo.getCodigo(), tipo.getNome());
     }
@@ -230,7 +224,8 @@ public final class Views {
                              Map<String, Object> renderingMetadata,
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
                              Instant publishedAt, Instant createdAt, Instant updatedAt,
-                             List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace, TipoLookView tipoLook) {
+                             List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace, TipoLookView tipoLook,
+                             ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
@@ -258,7 +253,8 @@ public final class Views {
                 s.isRevalidationPending(), new Counters(s.getLikeCount(), s.getCommentCount(), s.getShareCount(),
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
-                sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace(), tipoLook(s.getTipoLook()));
+                sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace(), tipoLook(s.getTipoLook()),
+                PieceReferenceViews.colecao(s.getColecao()), PieceReferenceViews.intensidadeTermica(s.getIntensidadeTermica()));
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

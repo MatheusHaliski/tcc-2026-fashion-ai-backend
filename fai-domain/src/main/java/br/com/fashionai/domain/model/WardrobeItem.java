@@ -39,7 +39,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "wardrobe_items")
-public class WardrobeItem extends VersionedAuditableEntity {
+public class WardrobeItem extends PieceStudioMedia {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -171,6 +171,11 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @JoinColumn(name = "colecao_id")
     private Colecao colecao;
 
+    /** Intensidade térmica da peça (leve, moderada, alta), escolhida pelo dono (FK para a tabela intensidade_termica). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "intensidade_termica_id")
+    private IntensidadeTermica intensidadeTermica;
+
     /** Instrução estruturada, sem substituir o campo livre careInstructions. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tipo_lavagem_id")
@@ -275,17 +280,6 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(name = "model3d_url", length = 1024)
     private String model3dUrl;
 
-    /** RF4 · Estúdio: foto de produto (fundo de estúdio, luz e sombra) exibida na vitrine; o recorte segue em imageUrl. */
-    @Column(name = "studio_image_url", length = 1024)
-    private String studioImageUrl;
-
-    @Column(name = "studio_backdrop", length = 30)
-    private String studioBackdrop;
-
-    /** RF4 · Estúdio: foto de detalhe 4:5 enquadrada no logo (null quando a peça não tem logo identificado). */
-    @Column(name = "studio_detail_url", length = 1024)
-    private String studioDetailUrl;
-
     /** RF4 · asset canônico frontal (determinístico, sem geração) — o fiel para busca, provador e dataset. */
     @Column(name = "canonical_image_url", length = 1024)
     private String canonicalImageUrl;
@@ -319,12 +313,4 @@ public class WardrobeItem extends VersionedAuditableEntity {
     /** DET-M07 — origem da peça: COMPRADA, GARIMPADA, HERDADA, PRESENTE, FEITA_A_MAO, TROCADA. */
     @Column(name = "piece_origin", length = 20)
     private String pieceOrigin;
-
-    /** Foto com meu manequim (RF4/RF5): a peça ou o look vestindo o manequim da pessoa (ou o padrão masc./fem.). */
-    @Column(name = "mannequin_image_url", length = 1024)
-    private String mannequinImageUrl;
-
-    /** FOTO (rosto da foto de perfil) ou PADRAO (manequim padrão, sem foto de perfil). */
-    @Column(name = "mannequin_image_face", length = 20)
-    private String mannequinImageFace;
 }

@@ -6,8 +6,9 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Field, Select } from "@/components/ui";
 
 /** Values are database UUIDs, never labels or the default legacy GOOD enum. */
-export function PieceColecaoField({ value, selectedName, onChange, error, disabled = false }: {
+export function PieceColecaoField({ value, selectedName, onChange, error, disabled = false, hint }: {
   value: string; selectedName?: string | null; onChange: (id: string) => void; error?: string; disabled?: boolean;
+  /** texto de ajuda; null esconde (no look o contexto já explica) */ hint?: string | null;
 }) {
   const { t } = useI18n();
   const [options, setOptions] = useState<ReferenceOption[]>([]);
@@ -36,7 +37,7 @@ export function PieceColecaoField({ value, selectedName, onChange, error, disabl
         <Button type="button" disabled={disabled} onClick={() => setAttempt(n => n + 1)}>{t("common.retry")}</Button>
       </div>}
       {status === "ready" && options.length === 0 && <p role="status" className="help">{t("pieceReferences.colecao.empty")}</p>}
-      <p className="help">{t("pieceReferences.colecao.hint")}</p>
+      {hint !== null && <p className="help">{hint ?? t("pieceReferences.colecao.hint")}</p>}
     </Field>
   </div>;
 }

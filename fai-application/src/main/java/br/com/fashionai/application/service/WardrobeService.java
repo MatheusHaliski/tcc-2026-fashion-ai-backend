@@ -167,9 +167,9 @@ public class WardrobeService {
 
     private PieceConservationService conservation;
 
-    /** Coleção da peça (FK wardrobe_items.colecao_id). Opcional nos testes que montam o serviço sem Spring. */
+    /** Coleção e intensidade térmica da peça (FKs em wardrobe_items). Opcional nos testes que montam o serviço sem Spring. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private br.com.fashionai.domain.repository.ColecaoRepository colecoes;
+    private ClassificationService classification;
 
     @org.springframework.beans.factory.annotation.Autowired
     void setConservation(PieceConservationService conservation) {
@@ -180,7 +180,7 @@ public class WardrobeService {
     // Objetos sem estado, criados a cada chamada com as dependências deste serviço: leem os campos no momento da chamada
     // e não são beans. Transação, autorização, posse e auditoria continuam nos métodos públicos daqui.
     private PieceFormWriter formWriter() {
-        return new PieceFormWriter(conservation, brands, brandProfiles, ownMedia, media, brandLogos, colecoes);
+        return new PieceFormWriter(conservation, brands, brandProfiles, ownMedia, media, brandLogos, classification);
     }
 
     private DraftPieceImport draftImport() {
@@ -342,8 +342,8 @@ public class WardrobeService {
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                            Map<String, Object> background, UUID captureSessionId, String variation,
-                            Map<String, List<String>> attributes, List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId) {
+                            Map<String, Object> background, UUID captureSessionId, String variation, Map<String, List<String>> attributes,
+                            List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId, UUID intensidadeTermicaId) {
         /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
         public PieceForm {
             occasion = Taxonomy.normalizeTags(occasion);
@@ -363,7 +363,7 @@ public class WardrobeService {
             this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
                     occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
                     careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
-                    variation, attributes, confirmed, null, false, null);
+                    variation, attributes, confirmed, null, false, null, null);
         }
 
         /**

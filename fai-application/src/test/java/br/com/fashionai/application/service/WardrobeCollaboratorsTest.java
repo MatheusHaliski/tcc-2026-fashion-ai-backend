@@ -159,7 +159,8 @@ class WardrobeCollaboratorsTest {
                 "UNISSEX", UUID.randomUUID(), "Marca", "white", "COTTON", "m", "SS26", List.of("casual"), List.of("basic"),
                 List.of("selo"), new BigDecimal("10"), Visibility.PUBLIC, List.of("tag"), "nota", ItemCondition.GOOD,
                 LocalDate.of(2026, 1, 2), "Loja", "SKU1", "Lavar à mão", true, false, "/logo.png", "WEB", "ref",
-                Map.of("aura", "x"), UUID.randomUUID(), null, Map.of(), List.of("name"), UUID.randomUUID(), true, UUID.randomUUID());
+                Map.of("aura", "x"), UUID.randomUUID(), null, Map.of(), List.of("name"), UUID.randomUUID(), true, UUID.randomUUID(),
+                UUID.randomUUID());
 
         WardrobeService.PieceForm r = PieceTaxonomyWriter.resolveLegacy(f);
 

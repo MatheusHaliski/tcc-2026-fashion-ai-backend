@@ -3,9 +3,11 @@ package br.com.fashionai.web.security;
 import br.com.fashionai.application.audit.AuditService;
 import br.com.fashionai.domain.model.Colecao;
 import br.com.fashionai.domain.model.EstadoConservacao;
+import br.com.fashionai.domain.model.IntensidadeTermica;
 import br.com.fashionai.domain.model.TipoLavagem;
 import br.com.fashionai.domain.repository.ColecaoRepository;
 import br.com.fashionai.domain.repository.EstadoConservacaoRepository;
+import br.com.fashionai.domain.repository.IntensidadeTermicaRepository;
 import br.com.fashionai.domain.repository.TipoLavagemRepository;
 import br.com.fashionai.web.config.SecurityConfig;
 import br.com.fashionai.web.controller.PieceReferenceController;
@@ -39,6 +41,7 @@ class PieceReferenceAccessTest {
     private static final UUID STATE_ID = UUID.fromString("a32ea7a1-b97c-4ff9-b47d-72c219667453");
     private static final UUID WASH_ID = UUID.fromString("3333666f-6b13-4cc9-913f-c7e5d529eb79");
     private static final UUID COLLECTION_ID = UUID.fromString("7d0b3a52-6c1e-4f0a-9a43-2f1d5e8c9b10");
+    private static final UUID THERMAL_ID = UUID.fromString("c4f1e0d2-8b3a-4e6f-9d21-5a7b8c9d0e11");
 
     @Autowired
     private MockMvc mvc;
@@ -62,12 +65,17 @@ class PieceReferenceAccessTest {
                 .andExpect(jsonPath("$[0].codigo").value("VERAO"))
                 .andExpect(jsonPath("$[0].nome").value("Verão"))
                 .andExpect(jsonPath("$[0].createdAt").doesNotExist());
+        mvc.perform(get("/api/intensidades-termicas")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(THERMAL_ID.toString()))
+                .andExpect(jsonPath("$[0].codigo").value("ALTA"))
+                .andExpect(jsonPath("$[0].nome").value("Alta (dias frios)"))
+                .andExpect(jsonPath("$[0].updatedAt").doesNotExist());
     }
 
     @Test
     void anonymousMutationsAndUnrelatedRoutesRemainProtected() throws Exception {
         for (String path : List.of("/api/estados-conservacao", "/api/opcoes/estados-conservacao", "/api/tipos-lavagem",
-                "/api/colecoes")) {
+                "/api/colecoes", "/api/intensidades-termicas")) {
             mvc.perform(post(path)).andExpect(status().isUnauthorized());
             mvc.perform(put(path)).andExpect(status().isUnauthorized());
             mvc.perform(patch(path)).andExpect(status().isUnauthorized());
@@ -121,6 +129,15 @@ class PieceReferenceAccessTest {
             summer.setCodigo("VERAO");
             summer.setNome("Verão");
             return repository(ColecaoRepository.class, List.of(summer));
+        }
+
+        @Bean
+        IntensidadeTermicaRepository intensidades() {
+            IntensidadeTermica high = new IntensidadeTermica();
+            high.assignId(THERMAL_ID);
+            high.setCodigo("ALTA");
+            high.setNome("Alta (dias frios)");
+            return repository(IntensidadeTermicaRepository.class, List.of(high));
         }
 
         @Bean
