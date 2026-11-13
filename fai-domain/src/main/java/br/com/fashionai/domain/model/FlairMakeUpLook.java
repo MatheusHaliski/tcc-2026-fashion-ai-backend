@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * FLAIR 3D MAKE UP (V99) — um look entregue num brief: pontos, estrelas e o Prestígio que ele rendeu (só as estrelas
+ * FLAIR 3D MAKE UP (V101) — um look entregue num brief: pontos, estrelas e o Prestígio que ele rendeu (só as estrelas
  * novas no brief contam). A carreira é a soma de {@code prestigio} da pessoa.
  */
 @Getter

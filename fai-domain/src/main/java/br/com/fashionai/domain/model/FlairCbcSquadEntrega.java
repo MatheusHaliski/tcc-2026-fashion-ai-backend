@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * FLAIR Card Building Challenge (V99) — entrega de um dos cinco elencos: as cartas por vaga, a química e a edição (ordem
+ * FLAIR Card Building Challenge (V101) — entrega de um dos cinco elencos: as cartas por vaga, a química e a edição (ordem
  * de conclusão daquele elenco; repetir mantém a edição da primeira conclusão da pessoa).
  */
 @Getter

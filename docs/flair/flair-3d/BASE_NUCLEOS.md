@@ -8,7 +8,7 @@ entre backend e frontend.
 
 | Camada | Arquivo | Uma por núcleo? |
 | --- | --- | --- |
-| Tabela | `V99__flair3d_partidas.sql`: `flair3d_matches` | não, compartilhada |
+| Tabela | `V101__flair3d_partidas.sql`: `flair3d_matches` | não, compartilhada |
 | Entidade e repositório | `Flair3dMatch`, `Flair3dMatchRepository` | não |
 | Núcleo (Strategy) | `fai-application/.../flair3d/nucleos/<Nome>Nucleo.java`, implementa `Flair3dNucleo` | **sim** |
 | Service | `Flair3dNucleoService`: lista, detalhe, abre partida, entrega e pontua delegando ao núcleo | não |
@@ -176,7 +176,7 @@ carta é sempre **vestir** ou **maquiar**, e o cenário é o **provador 3D** rea
 
 | Camada | Arquivo |
 | --- | --- |
-| Tabela | na mesma `V99__flair3d_partidas.sql`: `flair_makeup_looks` (id, user_id, brief, look_json, pontos, estrelas, prestigio, created_at) |
+| Tabela | na mesma `V101__flair3d_partidas.sql`: `flair_makeup_looks` (id, user_id, brief, look_json, pontos, estrelas, prestigio, created_at) |
 | Entidade e repositório | `FlairMakeUpLook`, `FlairMakeUpLookRepository` |
 | Brief (Strategy) | `fai-application/.../flair3d/makeup/briefs/<Nome>Brief.java`, implementa `FlairMakeUpBrief` |
 | Service | `FlairMakeUpService`: carreira, briefs, entrega e Prestígio |
@@ -232,7 +232,7 @@ cima**, que se monta como um quebra-cabeça à medida que as linhas acendem.
 
 | Camada | Arquivo |
 | --- | --- |
-| Tabela | na mesma `V99__flair3d_partidas.sql`: `flair_cbc_squad_entregas` (id, user_id, elenco, cartas_json, quimica, ok, edicao, created_at) |
+| Tabela | na mesma `V101__flair3d_partidas.sql`: `flair_cbc_squad_entregas` (id, user_id, elenco, cartas_json, quimica, ok, edicao, created_at) |
 | Entidade e repositório | `FlairCbcSquadEntrega`, `FlairCbcSquadEntregaRepository` |
 | Elenco (Strategy) | `fai-application/.../flair3d/cbc/elencos/<Nome>Elenco.java`, implementa `FlairCbcElenco`, usando `CbcLinks` |
 | Service | `FlairCbcSquadService`: lista, formação, conferir, entregar e numerar a edição |

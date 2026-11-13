@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * FLAIR 3D (V99) — partida de um dos 15 núcleos (docs/flair/flair-3d/BASE_NUCLEOS.md): a pessoa abre com o deck, o
+ * FLAIR 3D (V101) — partida de um dos 15 núcleos (docs/flair/flair-3d/BASE_NUCLEOS.md): a pessoa abre com o deck, o
  * servidor sorteia a semente, e a entrega (uma só) grava o que foi entregue e o resultado calculado pelo núcleo.
  */
 @Getter
