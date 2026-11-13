@@ -12,7 +12,7 @@ import { pieceCatalogCrop, pieceCatalogSource } from "@/components/catalog/catal
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { label, CATEGORY_LABEL, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
+import { useTaxonomy } from "@/lib/api/taxonomy";
 import { ActionMenu, Button, Dialog, ErrorState, Skeleton, useToast, type MenuItem } from "@/components/ui";
 import { UiIcon } from "@/components/ui/icons";
 import { FaiIcon } from "@/components/fai-icon";
@@ -24,7 +24,7 @@ import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
 
 import { BrandLogo } from "@/components/brand-logo";
-import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
+import { PieceSnapshot } from "@/components/piece-snapshot";
 import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoDialog } from "@/components/mannequin-photo";
 import { Model3dAction, Model3dTechnical, useModel3d } from "@/components/model3d-panel";
 import { EditImageDialog, hasRealLogo, studioMeta, studioNeedsReview, studioVersion } from "@/components/edit-image";
@@ -134,13 +134,6 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   ];
   const vis = mine && p.visibility !== "PUBLIC" ? (p.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
   const rows: [string, ReactNode][] = ([
-    [t("common.category"), [CATEGORY_LABEL[p.category] ?? label(p.category), subcategoryLabel(p.subcategory)].filter(Boolean).join(" · ")],
-    [t("common.color"), <span key="c" className="inline-flex items-center gap-2"><span aria-hidden className="piece-swatch" style={{ background: p.colorHex ?? "#ccc" }} />{label(p.color)}</span>],
-    [t("common.size"), sizeLabel(p.size)],
-    [t("common.material"), label((p.material ?? "").toLowerCase()) || null],
-    [t("common.occasion"), (p.occasion ?? []).map(label).join(", ") || null],
-    [t("common.style"), (p.style ?? []).map(label).join(", ") || null],
-    [t("common.price"), p.price != null && !p.forSale ? <Price key="price" value={p.price} /> : null],
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
     [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
     [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],
@@ -192,12 +185,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               {primary}
             </section>
             <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />
-            <PieceCardPanels piece={p} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} live={live} />
-            <section className="pd-section" aria-labelledby={`pd-facts-${p.id}`}>
-              <h3 id={`pd-facts-${p.id}`} className="pd-h">{t("pieceDetail.detalhes")}</h3>
-              <PieceDetailFacts piece={p}/>
-              <dl className="c-facts">{rows.filter(([key])=>[t("pieceDetail.usos"),t("pieceDetail.situacao"),t("pieceDetail.onde_esta")].includes(key)).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
-            </section>
+            <PieceCardPanels piece={p} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} live={live}
+              info={<><PieceDetailFacts piece={p}/><dl className="c-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl></>} />
             {usedIn.length > 0 && (
               <section className="pd-section" aria-labelledby={`pd-looks-${p.id}`}>
                 <h3 id={`pd-looks-${p.id}`} className="pd-h">{t("common.looks_com_esta_peca")}</h3>
@@ -207,7 +196,6 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
                     <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span><LookHype id={s.schemeId} /></button>))}</div>
               </section>
             )}
-            {mine && <section className="pd-section"><Link className="btn" href={`/pieces/${p.id}/passport`}>{t("passport.title")}</Link></section>}
             {mine && <FlairPieceBlock pieceId={p.id} />}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>
               {mine && studioNeedsReview(p) && (
@@ -216,6 +204,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               {mine && (studioMeta(p).feed?.missing?.length ?? 0) > 0 && (
                 <p className="pd-warn" role="status">{t("pieceDetail.foto_incompleta")} <button type="button" className="underline" onClick={() => setEditImage(true)}>{t("pieceDetail.revisar_foto")}</button></p>
               )}
+              {mine && <Link className="btn btn-sm" href={`/pieces/${p.id}/passport`}>{t("passport.title")}</Link>}
               {!p.defaultImage && <Model3dAction model={model} mine={mine} modelUrl={p.model3dUrl} onView={() => setView3d(true)} />}
               <ActionMenu align="start" direction="up" label={t("common.moreOptions")} trigger={<><UiIcon name="more" />{t("common.moreOptions")}</>} items={more} />
               {mine && <input ref={replaceRef} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-label={t("closet.replaceImage")} onChange={(e) => e.target.files?.[0] && replaceImage(e.target.files[0])} />}

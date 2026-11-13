@@ -24,9 +24,11 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], live }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao">>; summary?: HypeSummary | null; initial?: Tab;
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], info, live }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao">>; summary?: HypeSummary | null; initial?: Tab;
   /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
   auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][];
+  /** ampliado: a ficha completa da peça ocupa a aba Info (fonte única — sem uma seção "Detalhes" repetida abaixo) */
+  info?: ReactNode;
   /** memória e sinal do Hype desta pessoa (deltas do painel desde a última visita) */
   live?: HypeLive }) {
   const { t } = useI18n();
@@ -48,7 +50,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
     if(piece.size) rows.push([t("common.size"),label(piece.size)]);
   }
   const condition = conservationLabel(piece, t);
-  if (condition) rows.push([t("pieceReferences.condition.label"), condition]);
+  if (condition && type === "PIECE") rows.push([t("pieceReferences.condition.label"), condition]);
   rows.push(...infoRows);
   const tabs: { key: Tab; icon: ReactNode; text: string }[] = [
     { key: "info", icon: <InfoIcon />, text: t("pieceCard.tab_info") },
@@ -75,7 +77,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
       </div>
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="pc-panel">
         {tab === "info"
-          ? <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+          ? info ?? <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
           : <FashionCardStats summary={summary} type={type} layout={preset?.layout} context={piece} live={live} />}
       </div>
     </div>

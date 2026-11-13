@@ -154,3 +154,18 @@
   background: var(--surface-2); isolation: isolate; }
 .cbd-preview .card-border { padding: 3px; }
 .cbd-preview-label { font-family: var(--font-data); font-size: var(--text-caption); color: var(--muted); }
+
+/* ---------- card da própria pessoa: sem avatar nem @usuário (autoria redundante no próprio closet/perfil/feed) ---------- */
+:is(.piece-card.is-social, .scheme-card-social)[data-own] .c-header :is(.c-avatar, .c-who-link) { display: none; }
+/* peça: sem autoria o cabeçalho vira uma faixa flutuante sobre a foto (visibilidade e ↻ à direita; avisos da foto à esquerda) */
+.piece-card.is-social[data-own] .pc-header {
+  position: absolute; z-index: 4; top: 12px; left: 14px; right: 14px; min-height: 0; padding: 0; background: none; pointer-events: none;
+}
+.piece-card.is-social[data-own] .pc-header > * { pointer-events: auto; }
+.piece-card.is-social[data-own] .pc-header .c-who { align-items: flex-end; }
+.piece-card.is-social[data-own] .pc-header .c-who > span:not(.c-who-link) {
+  padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+.piece-card.is-social[data-own] .pc-media { margin-top: 8px; height: calc(var(--fc-photo-h) + 28px); }
+/* marca, categoria e estado já aparecem nas janelas (Marca · Info): a linha "marca · estado" sob o nome é redundante */
+.piece-card.is-social .pc-window.is-identity > .pc-sub { display: none; }

@@ -115,7 +115,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const name = <span className="pc-name">{piece.name}</span>;
   
   const card = (
-    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode={expanded ? "expanded" : "feed"} className={`fai-card piece-card ${expanded ? "piece-card-expanded" : selectable ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
+    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode={expanded ? "expanded" : "feed"} data-own={mine || undefined} className={`fai-card piece-card ${expanded ? "piece-card-expanded" : selectable ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
       <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState} live={live}/>
       {tilt && <span className="fashion-depth-glare" aria-hidden/>}
       <ArtStage bg={piece.background} art={art} density={expanded ? "expanded" : "compact"} pieceHex={piece.colorHex} animate={preview} />
@@ -151,11 +151,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 </span>
                 {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
                 {!expanded && <CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} />}
-                {expanded && <PieceDetailFacts piece={piece}/>}
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{<Price value={piece.price} />}</b></span>}
                 </div>
                 {/* janela 2 · Info | Hype (o 🔥 e o score ficam no rótulo da aba Hype) */}
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} live={live} />
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} live={live} info={expanded ? <PieceDetailFacts piece={piece}/> : undefined} />
                 {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>
             </>

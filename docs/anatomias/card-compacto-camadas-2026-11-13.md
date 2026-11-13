@@ -55,3 +55,33 @@ Capturas: [antes](../correcoes/2026-11-13-card-compacto/antes-1440.png) ·
 [peças depois](../correcoes/2026-11-13-card-compacto/pecas-depois.png) ·
 [looks depois](../correcoes/2026-11-13-card-compacto/looks-depois.png) ·
 [criador, aba Borda](../correcoes/2026-11-13-card-compacto/criador-aba-borda.png).
+
+## Card ampliado em janelas (peça e look)
+
+Folha `app/(site)/_styles/30-card-ampliado-janelas.css`. Mesmas camadas do compacto; cada bloco vira uma janela com
+contorno e raio de 12 px, sem linhas divisórias soltas.
+
+| Item | Antes | Agora |
+|---|---|---|
+| Peça ampliada (modal, 1280 px) | 1040 × 808 px | 900 × 725 px |
+| Look ampliado (altura total) | 1273 px | 970 px (foto limitada a 40 % da altura da tela, no máximo 340 px) |
+| Ficha da peça | aba Info **e** seção "Detalhes" (categoria, cor, ocasião, estilo e estado repetidos) | só a aba Info, com a ficha completa |
+| Look · aba Info | estilo, ocasião e "Estado de conservação: Não informado" | estilo, ocasião e estação |
+| Look · chips no rodapé | ocasião, estilo e estação repetidos | removidos (o selo do bloco, se houver, fica) |
+| Peça · opções | "História & cuidados" em seção própria + "Mais opções" em outra | uma única linha de opções |
+| Carta FLAIR | título, nota explicativa e botão em três linhas | título e botão na mesma linha (nota só para leitor de tela) |
+| Rótulo Hype | ícone de chama + 🔥 + score | 🔥 + score |
+
+Nenhuma ação foi removida: reações, remix, 3D, passaporte, edição e as ações do dono do look continuam disponíveis.
+
+## Card compacto do próprio dono
+
+Quando o card é da pessoa logada (`data-own`), o avatar e o "@usuário" saem do cabeçalho — a autoria é redundante no
+próprio closet, perfil e feed. Na peça, o botão ↻ e a visibilidade flutuam sobre a foto, que ganha a altura do
+cabeçalho. A linha "marca · estado" sob o nome também saiu do compacto (os dois dados já estão nas janelas).
+
+Capturas: [peça antes](../correcoes/2026-11-13-card-compacto/ampliado-peca-antes.png) ·
+[peça depois](../correcoes/2026-11-13-card-compacto/ampliado-peca-depois.png) ·
+[look antes](../correcoes/2026-11-13-card-compacto/ampliado-look-antes.png) ·
+[look depois](../correcoes/2026-11-13-card-compacto/ampliado-look-depois.png) ·
+[compacto do dono](../correcoes/2026-11-13-card-compacto/compacto-proprio-dono.png).

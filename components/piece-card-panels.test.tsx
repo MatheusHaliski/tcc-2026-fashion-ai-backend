@@ -37,3 +37,11 @@ it("moves keyboard focus and the selected tab together using the arrow keys", ()
   expect(document.activeElement).toBe(info);
   expect(info.getAttribute("aria-selected")).toBe("true");
 });
+
+it("look não mostra estado de conservação; `info` vira a ficha única da aba Info", () => {
+  const { container, rerender } = renderApp(<PieceCardPanels piece={{ name: "Look de sexta", style: ["basic"] }} type="SCHEME" />);
+  expect(container.textContent).not.toContain("Estado de conservação");
+  rerender(<PieceCardPanels piece={{ name: "Camiseta" }} info={<p data-testid="ficha">ficha completa</p>} />);
+  expect(screen.getByTestId("ficha")).toBeTruthy();
+  expect(container.querySelector(".pc-info")).toBeNull();
+});

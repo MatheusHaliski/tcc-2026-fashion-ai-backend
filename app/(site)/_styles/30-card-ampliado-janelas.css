@@ -1,0 +1,78 @@
+/* =====================================================================================================================
+   Card ampliado (peça e look) — redesenho compacto em janelas. Mesma leitura do card compacto (29-…): fundo artístico,
+   container, fotografia e janelas de dados com contorno próprio. Objetivos: uma única fonte para cada informação
+   (a ficha completa mora na aba Info), ações reunidas, menos espaço em branco e foto proporcional ao conteúdo.
+   ===================================================================================================================== */
+:root { --xc-gap: 8px; --xc-r: 12px; }
+
+/* ---------- peça ampliada ---------- */
+.expanded-page:has(> .piece-detail) { max-width: 900px; }
+.dialog.dialog-card.is-piece { max-width: 900px; }
+.fai-card.piece-detail { border-radius: var(--fc-r); }
+.piece-detail.pc, .piece-card-expanded.pc { --pc-x: var(--fc-band); --pc-r-out: var(--fc-r); --pc-r-in: 14px; }
+.piece-detail > .card-border, .piece-card-expanded > .card-border, .scheme-card.is-expanded > .card-border { padding: var(--fc-border); }
+.piece-detail .c-header { min-height: 40px; }
+@media (min-width: 720px) {
+  .piece-detail .pd-layout { grid-template-columns: minmax(0, .78fr) minmax(320px, 1fr); }
+  .piece-detail .pd-info { border-left: 0; }
+}
+.piece-detail .pd-media { margin: 0 0 var(--xc-gap) var(--xc-gap); border-radius: var(--xc-r); overflow: hidden; box-shadow: inset 0 0 0 1px var(--fc-window-line); }
+.piece-detail .pd-info { gap: var(--xc-gap); padding: 0 var(--xc-gap) var(--xc-gap); }
+@media (max-width: 719px) { .piece-detail .pd-media { margin-right: var(--xc-gap); } .piece-detail .pd-slide { aspect-ratio: 4 / 3; } }
+/* cada bloco é uma janela: sem linhas divisórias soltas */
+.piece-detail :is(.pd-id, .pd-section, .pd-tech, .pc-panels), .piece-detail .pd-info > .c-post {
+  border: 1px solid var(--fc-window-line); border-radius: var(--xc-r); background: var(--fc-window-bg);
+}
+.piece-detail .pd-id { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 12px; }
+.piece-detail .pd-name { flex-basis: 100%; font-size: 20px; }
+.piece-detail .pd-brand { flex: 1 1 auto; }
+.piece-detail .pd-id .card-seals { flex-basis: 100%; }
+.piece-detail .pd-cta { margin-top: 4px; min-width: 0; }
+.piece-detail .pd-alt { margin-top: 4px; }
+.piece-detail .pd-info > .c-post .c-actions { min-height: 40px; padding: 2px 6px; background: transparent; }
+.piece-detail .pc-panels { padding: 8px; gap: 8px; }
+.piece-detail .pd-section { padding: 8px 12px; }
+.piece-detail .pd-h { margin-bottom: 6px; }
+.piece-detail .pd-tech { padding: 6px 12px 10px; }
+/* ficha completa dentro da aba Info: duas colunas curtas, rótulo discreto */
+:is(.piece-detail, .piece-card-expanded) .pc-panel .c-facts { padding: 0; gap: 6px 12px; }
+:is(.piece-detail, .piece-card-expanded) .pc-panel .c-facts + .c-facts { margin-top: 6px; }
+:is(.piece-detail, .piece-card-expanded) .pc-panel .c-facts dt { font-size: 12px; opacity: .7; }
+:is(.piece-detail, .piece-card-expanded) .pc-panel .c-facts dd { margin: 0; font-size: 13px; font-weight: 600; }
+:is(.piece-detail, .piece-card-expanded) .pc-panel .c-facts:empty { display: none; }
+@media (min-width: 900px) {
+  .dialog-card.is-piece .piece-detail.pc .pd-slide { max-height: calc(86dvh - 48px - var(--pc-top) - var(--pc-bottom)); }
+  .dialog-card.is-piece .piece-detail.pc .pd-info { max-height: calc(86dvh - 48px - var(--pc-top) - var(--pc-bottom)); }
+}
+
+/* ---------- look ampliado ---------- */
+.fai-card.scheme-card.is-expanded { border-radius: var(--fc-r); }
+.scheme-card.is-expanded .c-header { min-height: 40px; }
+.scheme-card.is-expanded .scheme-container { display: flex; flex-direction: column; gap: var(--xc-gap); padding: var(--xc-gap); margin: 0 var(--xc-gap) var(--xc-gap); border-radius: 14px; }
+.scheme-card.is-expanded.has-art .scheme-stage { padding: var(--fc-band); }
+.scheme-card.is-expanded.has-art .scheme-container { margin: 0; }
+.scheme-card.is-expanded .c-photo.is-look { aspect-ratio: auto; height: min(40dvh, 340px); border: 0; border-radius: var(--xc-r); box-shadow: inset 0 0 0 1px var(--fc-window-line); }
+.scheme-card.is-expanded .c-photo.is-look img { object-fit: contain; padding: 8px; }
+.fai-card.scheme-card.is-expanded .c-titleblock, .scheme-card.is-expanded .pc-panels {
+  border: 1px solid var(--fc-window-line); border-radius: var(--xc-r); background: var(--fc-window-bg);
+}
+.fai-card.scheme-card.is-expanded .c-titleblock { padding: 10px 12px; gap: 4px; }
+.scheme-card.is-expanded .pc-panels { padding: 8px; gap: 8px; }
+.fai-card.scheme-card.is-expanded .piece2 { margin: 0; border: 1px solid var(--fc-window-line); border-radius: var(--xc-r); background: var(--fc-window-bg); padding: 6px 10px; }
+.fai-card.scheme-card.is-expanded .piece2 + .piece2 { margin-top: 0; }
+/* estilo, ocasião e estação já estão na aba Info: os chips repetidos saem (o selo do bloco, se houver, fica) */
+.scheme-card.is-expanded .c-chip { display: none; }
+.scheme-card.is-expanded .c-chips { padding: 0; border: 0; }
+.scheme-card.is-expanded .c-actions { min-height: 40px; padding: 2px 6px; }
+.fai-card.scheme-card.is-expanded .c-owner { gap: 6px; padding: 8px 10px 10px; border-top: 0; }
+
+/* ---------- limpeza comum ao ampliado ---------- */
+/* 🔥 + score no rótulo Hype dispensa o ícone de chama ao lado */
+:is(.piece-detail, .piece-card-expanded, .scheme-card.is-expanded) .pc-seg-btn[data-tab="hype"]:has(.hype-badge) > svg { display: none; }
+:is(.piece-detail, .piece-card-expanded, .scheme-card.is-expanded) .pc-seg-btn > span { display: inline-flex; align-items: center; gap: 6px; }
+/* carta FLAIR: título e ação na mesma linha; a nota explicativa fica só para leitores de tela */
+.piece-detail .pd-section[aria-labelledby^="pd-flair"] { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.piece-detail .pd-section[aria-labelledby^="pd-flair"] > .pd-h { margin: 0; }
+.piece-detail .pd-section[aria-labelledby^="pd-flair"] > p.type-caption {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
