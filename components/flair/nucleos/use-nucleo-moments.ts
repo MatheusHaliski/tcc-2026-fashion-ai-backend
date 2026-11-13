@@ -2,7 +2,7 @@
 /**
  * O momento da partida (deck, preparação, ação, resultado) como estado explícito da tela: a máquina de
  * lib/flair/nucleos/moments.ts avança pelos fatos da partida (partida aberta, entrega respondida, ação terminada,
- * jogar de novo) e publica cada troca para a cena (fx-events).
+ * partida reaberta, jogar de novo) e publica cada troca para a cena (fx-events).
  */
 import { useCallback, useEffect, useReducer } from "react";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
@@ -39,5 +39,7 @@ export function useNucleoMoments({ codigo, semDeck, precisaDeck, entregue }: Nuc
   }, [codigo, momento]);
 
   const fimDaAcao = useCallback(() => dispatch({ type: "FIM_ACAO" }), []);
-  return { momento: momento as Momento, fimDaAcao };
+  /** a ação terminou com a partida ainda aberta (LABIRINTO): volta à preparação; quem chama limpa a entrega */
+  const reabrir = useCallback(() => dispatch({ type: "REABERTA" }), []);
+  return { momento: momento as Momento, fimDaAcao, reabrir };
 }

@@ -29,7 +29,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("efeito de entrada", () => {
   it("carta que pontua: clarão na cor do nível, o selo do efeito e o som do material", () => {
     const fx = entradaDaCarta(card(), "SUP", [{ codigo: "MARCA_BR", valor: 10 }]);
-    expect(fx).toEqual({ cardId: "c1", vaga: "SUP", tier: "OURO", cor: "#E0B04D", pontua: true, selo: { codigo: "MARCA_BR", valor: 10 }, aura: false, som: "tecido" });
+    expect(fx).toEqual({ cardId: "c1", vaga: "SUP", tier: "OURO", cor: "#E0B04D", pontua: true, selo: { codigo: "MARCA_BR", valor: 10 }, motivo: null, aura: false, som: "tecido" });
     expect(COR_DO_NIVEL).toEqual({ BRONZE: "#B07A52", PRATA: "#9DA3AA", OURO: "#E0B04D", ESPECIAL: "#7B4FD6" });
     expect(ENTRADA_MS).toBeLessThanOrEqual(1000);
   });

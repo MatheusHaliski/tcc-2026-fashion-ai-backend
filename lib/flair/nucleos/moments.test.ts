@@ -103,14 +103,12 @@ describe("passos da ação (só o que o servidor devolveu)", () => {
     expect(especialOk({ pontos: 0, estrelas: 0, resultado: "NAO_ABRE", regras: [], eventos: [] })).toBe(false);
   });
 
-  it("janela do acionamento: carta Especial só entre dois rounds; troca só depois do INTERVALO do servidor", () => {
+  it("janela do acionamento: só com a partida EM_ACAO e depois de tudo o que o servidor mandou aparecer", () => {
     const luta = passosDaAcao(LUTA, true);
-    expect([0, 1, 2, 3, 4].map((i) => janelaDoAcionamento("ESPECIAL", luta, i))).toEqual([false, true, true, false, false]);
-    expect(janelaDoAcionamento("TROCA", luta, 1)).toBe(false);
-    const partida = passosDaAcao({ ...LUTA, eventos: [{ codigo: "INTERVALO", valor: "1-0" }, { codigo: "PLACAR", valor: "2-1" }] }, true);
-    expect(janelaDoAcionamento("TROCA", partida, 1)).toBe(true);
-    expect(janelaDoAcionamento("TROCA", partida, 2)).toBe(false);
-    expect(janelaDoAcionamento("RESPOSTA", partida, 1)).toBe(false);
+    expect([0, 1, luta.length].map((i) => janelaDoAcionamento("EM_ACAO", luta, i))).toEqual([false, false, true]);
+    expect(janelaDoAcionamento("ENTREGUE", luta, luta.length)).toBe(false);
+    expect(janelaDoAcionamento("ABERTA", luta, luta.length)).toBe(false);
+    expect(janelaDoAcionamento(undefined, luta, luta.length)).toBe(false);
   });
 
   it("cartas que pontuaram: pela regra da vaga; sem regra por vaga, pelo efeito que o servidor deu à carta", () => {

@@ -13,9 +13,10 @@ import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { BoardEstado } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
+import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
-import type { EfeitoItem, NucleoDefinicao } from "@/lib/flair/nucleos/types";
+import type { EfeitoItem, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 export interface NucleoDeckBandProps {
   definicao: NucleoDefinicao;
@@ -32,6 +33,8 @@ export interface NucleoDeckBandProps {
   erro: ApiError | null;
   /** aviso da última carta tocada que não cabe na vaga escolhida */
   aviso: string | null;
+  /** última apresentação que não fechou a partida (LABIRINTO: o espelho não abriu e a pessoa pode mudar o look) */
+  tentativa?: NucleoResultado | null;
   onAba: (index: number) => void;
   onItem: (aba: number, item: number) => void;
   onNaoCabe: (x: ItemDaFileira) => void;
@@ -60,7 +63,11 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
   if (props.aviso) dica = props.aviso;
   else if (resposta && !estado.sel.resposta) dica = tx.t("flair3d.ui.trigger.RESPOSTA.need");
   else if (resposta && estado.sel.resposta) dica = tx.t("flair3d.ui.trigger.RESPOSTA.done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) });
-  else if (espelho) dica = tx.t("flair3d.ui.trigger.ESPELHO.hint");
+  else if (props.tentativa) {
+    const n = Number(valorDoEvento(props.tentativa, "TENTATIVA") ?? 1);
+    const faltam = Number(valorDoEvento(props.tentativa, "FALTAM_PECAS") ?? 0);
+    dica = tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });
+  } else if (espelho) dica = tx.t("flair3d.ui.trigger.ESPELHO.hint");
   else if (props.automatico) dica = tx.t("flair3d.ui.auto");
 
   const extra = (

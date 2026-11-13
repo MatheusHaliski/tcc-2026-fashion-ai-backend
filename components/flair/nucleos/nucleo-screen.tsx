@@ -11,6 +11,7 @@ import { NucleoDeck } from "@/components/flair/nucleos/nucleo-deck";
 import { NucleoGame } from "@/components/flair/nucleos/nucleo-game";
 import { useNucleoMatch } from "@/components/flair/nucleos/use-nucleo-match";
 import { useNucleoMoments } from "@/components/flair/nucleos/use-nucleo-moments";
+import { useNucleoPreview } from "@/components/flair/nucleos/use-nucleo-preview";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { codigoDaRota } from "@/lib/flair/nucleos/registry";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
@@ -21,11 +22,19 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
   const d = m.definicao;
   /** cada "jogar de novo" começa uma tela de jogo nova (seleção, câmera e efeitos zerados) */
   const [rodada, setRodada] = useState(0);
+  const previa = useNucleoPreview({ partida: m.garantirPartida });
   const jogarDeNovo = () => {
     setRodada((r) => r + 1);
+    previa.limpar();
     m.reiniciar();
   };
-  const { momento, fimDaAcao } = useNucleoMoments({ codigo, semDeck: m.semDeck, precisaDeck: m.precisaDeck, entregue: !!m.resultado });
+  const { momento, fimDaAcao, reabrir } = useNucleoMoments({ codigo, semDeck: m.semDeck, precisaDeck: m.precisaDeck, entregue: !!m.resultado });
+  /** fim da ação: a partida que segue ABERTA (LABIRINTO) volta à preparação com a tentativa guardada */
+  const fim = () => {
+    if (m.resultado?.status !== "ABERTA") return fimDaAcao();
+    m.retomar();
+    reabrir();
+  };
   const cabecalho = (
     <div className="flair-section-head">
       <Link href="/flair/3d" className="btn btn-sm"><UiIcon name="chevronLeft" size={18} />{tx.t("flair3d.ui.back")}</Link>
@@ -48,8 +57,17 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
         resultado={m.resultado}
         entregando={m.entregando}
         erro={m.erroEntrega}
-        onEntregar={(sel, avatar) => void m.entregar(sel, avatar)}
-        onFimAcao={fimDaAcao}
+        previa={previa.previa}
+        onPrevia={previa.pedir}
+        tentativa={m.tentativa}
+        onEntregar={(sel, avatar) => {
+          previa.limpar();
+          void m.entregar(sel, avatar);
+        }}
+        onAcionar={(p) => void m.acionar({ cardId: p.cardId, vaga: p.vaga })}
+        acionando={m.acionando}
+        erroAcionar={m.erroAcionar}
+        onFimAcao={fim}
         onAgain={jogarDeNovo}
       />
     );

@@ -36,6 +36,7 @@ export function useNucleoText() {
           return ou(`flair3d.nucleo.${nucleo}.opcao.${it.codigo}`, it.codigo);
       }
     };
+    const motivo = (codigo: string | null) => ou(`flair3d.ui.fx.reason.${codigo ?? "default"}`, t("flair3d.ui.fx.reason.default"));
     return {
       t,
       ou,
@@ -51,7 +52,13 @@ export function useNucleoText() {
         if (porVaga && base && hasMessage(locale, base)) return `${t(base)} · ${ou(`flair3d.ui.tab.${porVaga[2]}`, porVaga[2])}`;
         return regra;
       },
+      /** pontos com até duas casas (os pontos por carta vêm assim do servidor) */
+      pontos: (n: number) => t("flair3d.ui.points", { n: new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(n) }),
+      /** motivo de a carta não pontuar, pelo código do servidor (MARCA_NAO_BR, FORA_DA_FAMILIA, SEM_BONUS...) */
+      motivo,
+      atributo: (codigo: string) => ou(`flair3d.ui.hud.attr.${codigo}`, codigo),
       efeito: (e: EfeitoItem) => {
+        if (e.motivo) return motivo(e.codigo);
         const valor = typeof e.valor === "number" && e.valor > 0 ? `+${e.valor}` : String(e.valor);
         const familia = /^FAMILIA_(.+)$/.exec(e.codigo);
         if (familia && !hasMessage(locale, `flair3d.ui.efeito.${e.codigo}`)) return t("flair3d.ui.efeito.FAMILIA", { familia: familia[1].toLowerCase() });
@@ -61,6 +68,8 @@ export function useNucleoText() {
         const v = e.valor;
         const vars: Record<string, string> = { valor: v != null && typeof v === "object" ? JSON.stringify(v) : String(v ?? "") };
         if (v && typeof v === "object") Object.entries(v as Record<string, unknown>).forEach(([k, x]) => (vars[k] = String(x)));
+        if (vars.vaga) vars.vaga = ou(`flair3d.ui.tab.${vars.vaga}`, vars.vaga);
+        if (vars.atributo) vars.atributo = ou(`flair3d.ui.hud.attr.${vars.atributo}`, vars.atributo);
         return ou(`flair3d.ui.evento.${e.codigo}`, `${e.codigo}: ${vars.valor}`, vars);
       },
       resultado: (r: string) => ou(`flair3d.ui.result.resultado.${r}`, r),

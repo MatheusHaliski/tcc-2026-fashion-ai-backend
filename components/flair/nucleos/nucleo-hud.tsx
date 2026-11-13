@@ -33,23 +33,34 @@ export function NucleoHud({ topoEsquerda, topoDireita, baseEsquerda, baseDireita
 interface ScoreProps {
   momento: Momento;
   resultado: NucleoResultado | null;
+  /** prévia do servidor para o look de agora (só na preparação) */
+  previa?: NucleoResultado | null;
   prefs: FxPrefs;
   onPref: (campo: keyof FxPrefs) => void;
 }
 
-/** Pontos e estrelas: os do servidor, e só no resultado (antes da entrega e durante a ação o placar fica em espera). */
-export function NucleoScore({ momento, resultado, prefs, onPref }: ScoreProps) {
+/**
+ * Pontos e estrelas, sempre os do servidor. Na preparação, a prévia do look de agora (nas disputas automáticas, só os
+ * atributos: o desfecho sai na luta ou na partida); durante a ação o placar fica em espera; no resultado, a nota final.
+ */
+export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }: ScoreProps) {
   const tx = useNucleoText();
-  const pronto = momento === "RESULTADO" && !!resultado;
-  const estrelas = pronto && resultado ? Math.max(0, Math.min(3, resultado.estrelas)) : 0;
-  const rotulo = pronto && resultado
-    ? `${tx.t("flair3d.ui.result.points", { n: resultado.pontos })}, ${tx.t("flair3d.ui.result.stars", { n: estrelas })}`
-    : tx.t("flair3d.ui.hud.pending");
+  const aoVivo = momento === "PREPARACAO" ? previa : null;
+  const atributos = aoVivo?.resultado === "PREVIA" ? aoVivo.eventos : [];
+  let nota: NucleoResultado | null = null;
+  if (momento === "RESULTADO") nota = resultado;
+  else if (aoVivo && aoVivo.resultado !== "PREVIA") nota = aoVivo;
+  const estrelas = nota ? Math.max(0, Math.min(3, nota.estrelas)) : 0;
+  let rotulo = tx.t(atributos.length > 0 ? "flair3d.ui.hud.attrs" : "flair3d.ui.hud.pending");
+  if (nota) rotulo = `${tx.t("flair3d.ui.result.points", { n: nota.pontos })}, ${tx.t("flair3d.ui.result.stars", { n: estrelas })}`;
+  if (nota && aoVivo) rotulo = tx.t("flair3d.ui.hud.preview", { nota: rotulo });
+  let estado = "espera";
+  if (nota) estado = aoVivo ? "previa" : "final";
   return (
-    <div className="n3d-score" data-testid="nucleo-score">
+    <div className="n3d-score" data-testid="nucleo-score" data-estado={estado}>
       <p className="n3d-score-line" role="img" aria-label={rotulo}>
         <strong className="n3d-score-points tabular" id="n3d-score-points">
-          {pronto && resultado ? tx.t("flair3d.ui.points", { n: resultado.pontos }) : "—"}
+          {nota ? tx.t("flair3d.ui.points", { n: nota.pontos }) : "—"}
         </strong>
         <span className="n3d-score-stars" aria-hidden>
           {[1, 2, 3].map((i) => (
@@ -57,6 +68,16 @@ export function NucleoScore({ momento, resultado, prefs, onPref }: ScoreProps) {
           ))}
         </span>
       </p>
+      {atributos.length > 0 && (
+        <dl className="n3d-score-attrs tabular" data-testid="nucleo-preview-attrs">
+          {atributos.map((e) => (
+            <div key={e.codigo}>
+              <dt>{tx.atributo(e.codigo)}</dt>
+              <dd>{String(e.valor ?? "")}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       <div className="n3d-prefs" role="group" aria-label={tx.t("flair3d.ui.fx.prefs")}>
         <button type="button" className="n3d-icon-btn" aria-pressed={prefs.som} aria-label={tx.t("flair3d.ui.fx.sound")} title={tx.t("flair3d.ui.fx.sound")} onClick={() => onPref("som")}>
           <HudIcon name={prefs.som ? "som" : "somOff"} />

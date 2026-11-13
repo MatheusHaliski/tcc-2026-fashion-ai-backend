@@ -232,12 +232,13 @@ describe("acionamentos", () => {
     expect((within(acionamento).getByRole("button", { name: "Acionar Tênis azul" }) as HTMLButtonElement).disabled).toBe(true);
     expect(within(acionamento).queryByRole("button", { name: "Seguir sem acionar" })).toBeNull();
     await waitFor(() => expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem").length).toBeGreaterThanOrEqual(2), { timeout: 3000 });
-    expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem")[0].textContent).toBe("Round 1, VELOCIDADE: você 52 × oponente 40");
+    expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem")[0].textContent).toBe("Round 1, Velocidade: você 52 × oponente 40");
   });
 
   it("Dress Fighter com acionamento: a janela abre entre os rounds, a luta espera e 1 carta Especial vale por luta", async () => {
     const onAcionar = vi.fn();
-    montar({ codigo: "DRESS_FIGHTER", momento: "ACAO", resultado: RESULTADO_LUTA, onAcionar });
+    const primeiroRound: NucleoResultado = { ...RESULTADO_LUTA, eventos: RESULTADO_LUTA.eventos.slice(0, 1), status: "EM_ACAO" };
+    montar({ codigo: "DRESS_FIGHTER", momento: "ACAO", resultado: primeiroRound, onAcionar });
     const acionamento = screen.getByTestId("nucleo-trigger");
     const especial = within(acionamento).getByRole("button", { name: "Acionar Tênis azul" }) as HTMLButtonElement;
     expect(especial.disabled).toBe(true);
@@ -251,14 +252,32 @@ describe("acionamentos", () => {
     expect(eventos.some((e) => e.tipo === "acionamento" && e.acionamento === "ESPECIAL" && e.cardId === "c3")).toBe(true);
     expect(especial.disabled).toBe(true);
     expect(within(acionamento).getByRole("status").textContent).toBe("Acionamento já usado nesta partida.");
-    await waitFor(() => expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem").length).toBeGreaterThanOrEqual(2), { timeout: 3000 });
+    expect(within(acionamento).getByRole("button", { name: "Seguir sem acionar" })).toBeTruthy();
   });
 
-  it("Fashion Sports: trocar 1 peça no intervalo só abre com o evento INTERVALO do servidor", () => {
+  it("O Labirinto: a tentativa que não abriu o espelho vira dica, com quantas peças faltam", () => {
+    loggedAs(ME, { "POST /api/flair/3d/nucleos/LABIRINTO/efeitos": EFEITOS });
+    const tentativa: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "NAO_ABRE", regras: [], eventos: [{ codigo: "TENTATIVA", valor: 2 }, { codigo: "FALTAM_PECAS", valor: 1 }], status: "ABERTA" };
+    renderApp(<NucleoGame definicao={definicao("LABIRINTO")} cartas={CARTAS} entregando={false} erro={null} tentativa={tentativa} onEntregar={vi.fn()} />);
+    expect(screen.getByTestId("nucleo-hint").textContent).toContain("Tentativa 2: o espelho não abriu. Faltam 1 peça(s)");
+  });
+
+  it("prévia: cada mudança do look na preparação pede a prévia ao servidor e o placar mostra a nota dela", () => {
+    loggedAs(ME, { "POST /api/flair/3d/nucleos/PASSARELA/efeitos": EFEITOS });
+    const onPrevia = vi.fn();
+    renderApp(<NucleoGame definicao={definicao("PASSARELA")} cartas={CARTAS} entregando={false} erro={null} previa={RESULTADO_PASSARELA} onPrevia={onPrevia} onEntregar={vi.fn()} />);
+    fireEvent.click(fileira()[0]);
+    expect(onPrevia).toHaveBeenLastCalledWith(expect.objectContaining({ cartas: { SUP: "c1" } }), "MODELO_CASA");
+    expect(screen.getByTestId("nucleo-score").dataset.estado).toBe("previa");
+  });
+
+  it("Fashion Sports: a troca de 1 peça no intervalo só abre quando o servidor deixa a partida EM_ACAO", () => {
     montar({ codigo: "FASHION_SPORTS", momento: "ACAO", resultado: { pontos: 100, estrelas: 3, resultado: "VITORIA", regras: [], eventos: [{ codigo: "PLACAR", valor: "2-1" }] } });
     const acionamento = screen.getByTestId("nucleo-trigger");
     expect(acionamento.textContent).toContain("Trocar 1 peça no intervalo");
-    expect((within(acionamento).getByRole("button", { name: "Trocar 1 peça" }) as HTMLButtonElement).disabled).toBe(true);
+    const trocas = within(acionamento).getAllByRole("button") as HTMLButtonElement[];
+    expect(trocas.length).toBeGreaterThan(0);
+    expect(trocas.every((b) => b.disabled)).toBe(true);
     expect(acionamento.dataset.open).toBeUndefined();
   });
 });

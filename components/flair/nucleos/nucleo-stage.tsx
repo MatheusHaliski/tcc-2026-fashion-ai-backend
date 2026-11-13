@@ -35,7 +35,10 @@ export interface NucleoStageProps {
   temAvatar: boolean;
   onEscolha: (tipo: AvatarTipo) => void;
   objetivoAberto: boolean;
+  /** última resposta do servidor (entrega ou acionamento); null na preparação */
   resultado: NucleoResultado | null;
+  /** prévia do look de agora (preparação) */
+  previa: NucleoResultado | null;
   prefs: FxPrefs;
   onPref: (campo: keyof FxPrefs) => void;
   entrada: EntradaNaTela | null;
@@ -53,9 +56,9 @@ export function NucleoStage(props: NucleoStageProps) {
   const naAcao = momento === "ACAO" || momento === "RESULTADO";
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} />
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
-      <NucleoCardFx nucleo={definicao.codigo} atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
+      <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
       <NucleoHud
         topoEsquerda={
@@ -66,7 +69,7 @@ export function NucleoStage(props: NucleoStageProps) {
             <NucleoObjective definicao={definicao} aberto={props.objetivoAberto} onToggle={() => props.onComando({ acao: "VER_OBJETIVO" })} />
           </>
         }
-        topoDireita={<NucleoScore momento={momento} resultado={props.resultado} prefs={prefs} onPref={props.onPref} />}
+        topoDireita={<NucleoScore momento={momento} resultado={props.resultado} previa={props.previa} prefs={prefs} onPref={props.onPref} />}
         baseEsquerda={
           definicao.avatares ? (
             <NucleoCast

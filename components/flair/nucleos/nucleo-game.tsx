@@ -17,8 +17,8 @@ import { NucleoCardZoom } from "@/components/flair/nucleos/nucleo-card-zoom";
 import { NucleoHelp } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoDeckBand } from "@/components/flair/nucleos/nucleo-deck-band";
 import { NucleoObjectiveDetails } from "@/components/flair/nucleos/nucleo-objective";
-import { NucleoResult, type CartaNoResultado } from "@/components/flair/nucleos/nucleo-result";
-import { NucleoSlotRuler, type BrilhoDaVaga } from "@/components/flair/nucleos/nucleo-slot-ruler";
+import { NucleoResult } from "@/components/flair/nucleos/nucleo-result";
+import { NucleoSlotRuler } from "@/components/flair/nucleos/nucleo-slot-ruler";
 import { NucleoStage } from "@/components/flair/nucleos/nucleo-stage";
 import { NucleoTrigger, type AcionamentoPedido } from "@/components/flair/nucleos/nucleo-trigger";
 import { useCardFx } from "@/components/flair/nucleos/use-card-fx";
@@ -29,7 +29,8 @@ import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-control
 import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
-import { cartasQuePontuaram } from "@/lib/flair/nucleos/action-fx";
+import { useResultCards } from "@/components/flair/nucleos/use-result-cards";
+import { lookComTroca } from "@/lib/flair/nucleos/action-fx";
 import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
 import { boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
@@ -56,11 +57,21 @@ interface Props {
   onAgain?: () => void;
   /** só existe quando o servidor aceita o acionamento durante a ação */
   onAcionar?: (pedido: AcionamentoPedido) => void;
+  /** o servidor está respondendo um acionamento */
+  acionando?: boolean;
+  erroAcionar?: ApiError | null;
+  /** prévia do servidor para o look de agora (preparação) */
+  previa?: NucleoResultado | null;
+  /** pede a prévia a cada mudança do look */
+  onPrevia?: (sel: Selecao, avatar: AvatarTipo) => void;
+  /** última apresentação que não fechou a partida (LABIRINTO) */
+  tentativa?: NucleoResultado | null;
 }
 
 const SEM_FIM = () => undefined;
 
-export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar, momento = "PREPARACAO", resultado = null, onFimAcao, onAgain, onAcionar }: Props) {
+export function NucleoGame(props: Props) {
+  const { definicao, cartas, entregando, erro, onEntregar, momento = "PREPARACAO", resultado = null, onFimAcao, onAgain, onAcionar, onPrevia } = props;
   const tx = useNucleoText();
   const codigo = definicao.codigo;
   const config = NUCLEOS[codigo];
@@ -74,7 +85,11 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar, mo
   const [escolha, setEscolha] = useState<AvatarTipo | null>(null);
   const efetiva = protagonistaEfetiva(config.avatares.protagonista, escolha, !!perfil.avatar);
   const protagonista: Protagonista = efetiva === "PROPRIO" ? { avatar: perfil.avatar, sexo: perfil.sex, corpo: perfil.body } : MODELO_CASA;
-  const pecas = useMemo(() => pecasDoLook(estado.sel.cartas, cartas), [estado.sel.cartas, cartas]);
+  /** o look em cena: o da entrega com a troca do intervalo que o servidor aplicou */
+  const vestidas = useMemo(() => lookComTroca(estado.sel.cartas, resultado), [estado.sel.cartas, resultado]);
+  const pecas = useMemo(() => pecasDoLook(vestidas, cartas), [vestidas, cartas]);
+  /** a pessoa já acionou uma carta nesta partida (vale até o servidor confirmar ou recusar) */
+  const [acionou, setAcionou] = useState(false);
   const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"));
   const preparando = momento === "PREPARACAO";
   const acionamento = acionamentoDe(codigo);
@@ -83,11 +98,18 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar, mo
   const emFoco = tabs[estado.aba]?.items[estado.item];
   const zoom = useCardZoom(emFoco?.kind === "carta" ? emFoco.card : null, preparando);
   const entrada = useCardFx({ nucleo: codigo, vestidas: estado.sel.cartas, cards: cartas, itens: efeitos.itens, ativo: preparando, reduzido, prefs: fx.prefs });
-  const acao = useNucleoAction({ nucleo: codigo, momento, resultado, automatico: !!config.automatico, reduzido, prefs: fx.prefs, podeAcionar: !!onAcionar, onFim: onFimAcao ?? SEM_FIM });
+  const acao = useNucleoAction({ nucleo: codigo, momento, resultado, automatico: !!config.automatico, reduzido, prefs: fx.prefs, onFim: onFimAcao ?? SEM_FIM });
 
   useEffect(() => {
     if (estado.sel.resposta && acionamento?.tipo === "RESPOSTA") emitirFx({ tipo: "acionamento", nucleo: codigo, acionamento: "RESPOSTA" });
   }, [estado.sel.resposta, acionamento?.tipo, codigo]);
+
+  useEffect(() => {
+    if (preparando) onPrevia?.(estado.sel, efetiva);
+  }, [preparando, estado.sel, efetiva, onPrevia]);
+  useEffect(() => {
+    if (props.erroAcionar) setAcionou(false);
+  }, [props.erroAcionar]);
 
   const entregar = () => {
     if (!preparando || !pronto || entregando) return;
@@ -109,18 +131,11 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar, mo
   };
   const acionar = (pedido: AcionamentoPedido) => {
     emitirFx({ tipo: "acionamento", nucleo: codigo, acionamento: pedido.tipo, cardId: pedido.cardId });
-    acao.marcarUsado();
+    if (pedido.cardId) setAcionou(true);
     onAcionar?.(pedido);
   };
 
-  const pontuadas = useMemo(
-    () => (momento === "RESULTADO" && resultado ? cartasQuePontuaram(resultado, estado.sel.cartas, cartas, efeitos.porCarta) : []),
-    [momento, resultado, estado.sel.cartas, cartas, efeitos.porCarta],
-  );
-  const textoDaCarta = (p: (typeof pontuadas)[number]) => (p.pontos != null ? tx.t("flair3d.ui.points", { n: p.pontos }) : p.selo ? tx.efeito(p.selo) : "");
-  const brilho: Record<string, BrilhoDaVaga> = {};
-  pontuadas.forEach((p, ordem) => (brilho[p.vaga] = { ordem, texto: textoDaCarta(p) }));
-  const noResultado: CartaNoResultado[] = pontuadas.map((p) => ({ cardId: p.cardId, nome: cartas.find((c) => c.id === p.cardId)?.name ?? "", texto: textoDaCarta(p) }));
+  const pontuadas = useResultCards({ momento, resultado, vestidas, cards: cartas, efeitos: efeitos.porCarta });
 
   return (
     <div className={classesDoQuadro(layout)} style={estiloDoQuadro(layout)} data-testid="nucleo-game" data-momento={momento} data-porte={layout.porte} data-quadro={layout.quadro} data-reduced={reduzido || undefined} data-fx={fx.prefs.efeitos ? "on" : "off"}>
@@ -137,6 +152,7 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar, mo
         onEscolha={setEscolha}
         objetivoAberto={estado.objetivo}
         resultado={resultado}
+        previa={props.previa ?? null}
         prefs={fx.prefs}
         onPref={fx.alternar}
         entrada={entrada}
@@ -149,11 +165,11 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar, mo
       <div className="n3d-lower">
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
-          vestidas={estado.sel.cartas}
+          vestidas={vestidas}
           cards={cartas}
           vaga={estado.vaga}
           bloqueada={!preparando}
-          brilho={brilho}
+          brilho={pontuadas.brilho}
           onVaga={(id) => {
             setAviso(null);
             dispatch({ type: "vaga", id, tabs });
@@ -172,6 +188,7 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar, mo
           entregando={entregando}
           erro={erro}
           aviso={aviso}
+          tentativa={props.tentativa}
           onAba={(index) => dispatch({ type: "aba", index })}
           onItem={(aba, item) => {
             setAviso(null);
@@ -182,12 +199,22 @@ export function NucleoGame({ definicao, cartas, entregando, erro, onEntregar, mo
           onEntregar={entregar}
           acao={
             <NucleoActionPanel nucleo={codigo} passos={acao.passos} mostrados={acao.mostrados} onPular={acao.pular}>
-              {acao.tipo && (acao.tipo === "ESPECIAL" || acao.tipo === "TROCA") && (
-                <NucleoTrigger tipo={acao.tipo} aberta={acao.aberta} usado={acao.usado} cartas={cartas} onAcionar={onAcionar ? acionar : undefined} onSeguir={acao.seguir} />
+              {acao.tipo && (
+                <NucleoTrigger
+                  tipo={acao.tipo}
+                  aberta={acao.aberta}
+                  usado={acao.usado || acionou}
+                  cartas={cartas}
+                  vestidas={vestidas}
+                  vagas={vagasDaRegua(tabs).map((v) => v.tab.id)}
+                  ocupado={!!props.acionando}
+                  erro={props.erroAcionar ?? null}
+                  onAcionar={onAcionar ? acionar : undefined}
+                />
               )}
             </NucleoActionPanel>
           }
-          resultado={resultado ? <NucleoResult codigo={codigo} resultado={resultado} cartas={noResultado} onAgain={onAgain ?? SEM_FIM} /> : null}
+          resultado={resultado ? <NucleoResult codigo={codigo} resultado={resultado} cartas={pontuadas.lista} onAgain={onAgain ?? SEM_FIM} /> : null}
         />
         {estado.objetivo && (
           <NucleoObjectiveDetails definicao={definicao} onFechar={() => disparar({ acao: "VER_OBJETIVO" })}>

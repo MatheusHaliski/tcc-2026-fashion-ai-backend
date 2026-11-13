@@ -37,6 +37,7 @@ export const EFEITOS = {
   efeitos: [
     { cardId: "c1", itens: [{ codigo: "MARCA_BR", valor: 10 }] },
     { cardId: "c3", itens: [{ codigo: "MARCA_BR", valor: 10 }] },
+    { cardId: "c2", itens: [{ codigo: "MARCA_NAO_BR", valor: 0, motivo: true }] },
   ],
 };
 
