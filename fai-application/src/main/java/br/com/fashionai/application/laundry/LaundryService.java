@@ -6,6 +6,7 @@ import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.PieceAvailability;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.laundry.LaundryBatch;
@@ -183,7 +184,7 @@ public class LaundryService {
     /** CA4 — retira da recomendação de looks prontos enquanto a peça está no lote. */
     private void withhold(CurrentUser user, WardrobeItem w, PieceWearState s) {
         if (!w.isDisponivel()) return;
-        w.markAvailable(false); pieces.save(w);
+        PieceAvailability.mark(w, false); pieces.save(w);
         s.setAvailabilityWithheld(true); states.save(s);
         events.publishEvent(new DomainEvents.AvailabilityChanged(user.id(), w.getId(), false));
     }
@@ -192,7 +193,7 @@ public class LaundryService {
         if (!s.isAvailabilityWithheld()) return;
         s.setAvailabilityWithheld(false); states.save(s);
         if (w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED) return;
-        w.markAvailable(true); pieces.save(w);
+        PieceAvailability.mark(w, true); pieces.save(w);
         events.publishEvent(new DomainEvents.AvailabilityChanged(user.id(), w.getId(), true));
     }
 

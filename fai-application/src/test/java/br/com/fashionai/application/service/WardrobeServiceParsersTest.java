@@ -285,7 +285,6 @@ class WardrobeServiceParsersTest {
         assertThat(WardrobeService.extractJson(null)).isEmpty();
         assertThat(WardrobeService.extractJson("{\"a\":1}")).containsEntry("a", 1);
         assertThat(WardrobeService.enumMap(String.class)).isEmpty();
-        assertThat(WardrobeService.emptyReactions()).isEmpty();
         WardrobeItem semId = new WardrobeItem();
         WardrobeItem comId = new WardrobeItem();
         UUID id = UUID.randomUUID();

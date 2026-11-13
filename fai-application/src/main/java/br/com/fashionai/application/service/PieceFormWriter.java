@@ -32,15 +32,18 @@ final class PieceFormWriter {
     private final OwnMedia ownMedia;
     private final MediaService media;
     private final BrandLogoService brandLogos;
+    private final ClassificationService classification;
 
     PieceFormWriter(PieceConservationService conservation, BrandRepository brands, BrandProfileRepository brandProfiles,
-                    OwnMedia ownMedia, MediaService media, BrandLogoService brandLogos) {
+                    OwnMedia ownMedia, MediaService media, BrandLogoService brandLogos,
+                    ClassificationService classification) {
         this.conservation = conservation;
         this.brands = brands;
         this.brandProfiles = brandProfiles;
         this.ownMedia = ownMedia;
         this.media = media;
         this.brandLogos = brandLogos;
+        this.classification = classification;
     }
 
     static void validate(PieceForm f) {
@@ -75,6 +78,9 @@ final class PieceFormWriter {
     void apply(WardrobeItem w, PieceForm f, boolean creating, Map<?, ?> aiPrefill) {
         if (f.estadoConservacaoId() != null || Boolean.TRUE.equals(f.clearEstadoConservacao())) {
             conservation.apply(w, f.estadoConservacaoId(), Boolean.TRUE.equals(f.clearEstadoConservacao()));
+        }
+        if (classification != null) {
+            classification.apply(w, f.colecaoId(), f.intensidadeTermicaId());
         }
         BackgroundStudioService.validateMotionWrite(w.getBackgroundConfigJson(), f.background());
         w.setName(InputSanitizer.moderated("name", f.name(), 120));

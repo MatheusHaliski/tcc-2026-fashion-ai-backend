@@ -17,6 +17,8 @@ export function PieceDetailFacts({piece}:{piece:PieceView}){
   [t('common.occasion'),(piece.occasion??[]).map(label).join(' · ')],
   [t('common.style'),(piece.style??[]).map(label).join(' · ')],
   [t('pieceReferences.condition.label'),conservationLabel(piece,t)],
+  [t('pieceReferences.colecao.label'),piece.colecao?.nome??null],
+  [t('pieceReferences.intensidade.label'),piece.intensidadeTermica?.nome??null],
   [t('pieceReferences.washing'),washing],
   [t('pieceReferences.additionalCare'),additionalCare],
   [t('common.price'),piece.price!=null&&!piece.forSale?<Price value={piece.price}/>:null],

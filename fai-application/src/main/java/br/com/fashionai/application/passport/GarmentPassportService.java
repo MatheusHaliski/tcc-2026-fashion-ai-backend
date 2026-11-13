@@ -321,7 +321,7 @@ public class GarmentPassportService {
         PassportHolding old=holdings.findByActivePassportId(p.getId()).orElseThrow(()->ApiException.conflict("PASSPORT_HOLDING_MISSING","Posse inconsistente."));
         old.setEndedAt(now()); old.setActivePassportId(null); holdings.saveAndFlush(old);
         // Keep the old item and all looks/photos with their historical author. No personal fields or seals follow.
-        original.markAvailable(false); original.setAvailabilityStatus(AvailabilityStatus.ARCHIVED); original.setVisibility(Visibility.PRIVATE);
+        br.com.fashionai.domain.model.PieceAvailability.mark(original, false); original.setAvailabilityStatus(AvailabilityStatus.ARCHIVED); original.setVisibility(Visibility.PRIVATE);
         original.setForSale(false); original.setForDonation(false); pieces.save(original);
         WardrobeItem next = ReceivedPassportPiece.create(original, recipient, p.getCare(), assets);
         pieces.saveAndFlush(next);
