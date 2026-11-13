@@ -31,16 +31,16 @@ export function zonaInvadeRoupa(zona: Zona, ateZ = CAMERA_MAX): boolean {
   return cruzaX && zona.z[1] > ROUPA_ATRAS && zona.z[0] < ateZ;
 }
 
-/** Um ponto com volume (figurante, parte alta de um móvel) cobre a roupa? */
-export function cobreRoupa(x: number, z: number, raio: number, ateZ = CAMERA_MAX): boolean {
-  return Math.abs(x) - raio < ROUPA_MEIA_LARGURA && z + raio > ROUPA_ATRAS && z - raio < ateZ;
+/** Um retângulo no piso (centro e meias medidas) cobre a roupa? */
+export function cobreRoupa(x: number, z: number, meioX: number, meioZ = meioX, ateZ = CAMERA_MAX): boolean {
+  return Math.abs(x) - meioX < ROUPA_MEIA_LARGURA && z + meioZ > ROUPA_ATRAS && z - meioZ < ateZ;
 }
 
 /** Partes do móvel entre o piso e a cabeça que entram na faixa livre (0 = o móvel respeita a zona da roupa). */
 export function partesQueCobremRoupa(m: Movel, ateZ = CAMERA_MAX): number {
   return partesNoLugar(m).filter((p) => {
     const v = volumeDaParte(p);
-    return v.topo > ALTURA_DE_PISO && v.base < ALTURA_LIVRE && cobreRoupa(p.pos[0], p.pos[2], v.raio, ateZ);
+    return v.topo > ALTURA_DE_PISO && v.base < ALTURA_LIVRE && cobreRoupa(p.pos[0], p.pos[2], v.meioX, v.meioZ, ateZ);
   }).length;
 }
 

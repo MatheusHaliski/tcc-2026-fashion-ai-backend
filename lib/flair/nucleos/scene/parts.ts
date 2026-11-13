@@ -95,23 +95,50 @@ export function partesNoLugar(m: Movel): Parte[] {
   });
 }
 
-/** Meia medida da parte no piso (raio de um círculo que a contém), a base e o topo, para as contas de zona. */
-export function volumeDaParte(p: Parte): { raio: number; base: number; topo: number } {
+export interface Volume {
+  /** meias medidas no piso, em x e em z (já com o giro em y) */
+  meioX: number;
+  meioZ: number;
+  base: number;
+  topo: number;
+}
+
+/** Meias medidas de um retângulo a × c girado em y. */
+function girado(a: number, c: number, graus: number): [number, number] {
+  const cos = Math.abs(Math.cos(graus * RAD));
+  const sen = Math.abs(Math.sin(graus * RAD));
+  return [(a * cos + c * sen) / 2, (a * sen + c * cos) / 2];
+}
+
+/** Volume que a parte ocupa (caixa alinhada aos eixos da sala), para as contas de zona. */
+export function volumeDaParte(p: Parte): Volume {
   const [a, b, c] = p.tam;
   const y = p.pos[1];
+  const giro = p.rot?.[1] ?? 0;
   const inclinada = !!p.rot && (p.rot[0] !== 0 || p.rot[2] !== 0);
+  const esfera = (raio: number, meiaAltura: number): Volume => ({ meioX: raio, meioZ: raio, base: y - meiaAltura, topo: y + meiaAltura });
   if (p.forma === "cilindro") {
     const r = Math.max(a, c);
-    const meia = inclinada ? Math.max(r, b / 2) : b / 2;
-    return { raio: inclinada ? meia : r, base: y - meia, topo: y + meia };
+    if (!inclinada) return esfera(r, b / 2);
+    // deitado ao longo de x (rot z = ±90) ou de z (rot x = ±90): um retângulo comprido; outra inclinação, uma esfera
+    const emX = Math.abs(p.rot?.[2] ?? 0) === 90 && (p.rot?.[0] ?? 0) === 0;
+    const emZ = Math.abs(p.rot?.[0] ?? 0) === 90 && (p.rot?.[2] ?? 0) === 0;
+    if (!emX && !emZ) return esfera(Math.max(r, b / 2), Math.max(r, b / 2));
+    const [meioX, meioZ] = emX ? girado(b, 2 * r, giro) : girado(2 * r, b, giro);
+    return { meioX, meioZ, base: y - r, topo: y + r };
   }
-  if (p.forma === "esfera") return { raio: Math.max(a, c), base: y - b, topo: y + b };
-  if (p.forma === "toro") return { raio: a + b, base: y - (inclinada ? b : a + b), topo: y + (inclinada ? b : a + b) };
+  if (p.forma === "esfera") return esfera(Math.max(a, c), b);
+  if (p.forma === "toro") return esfera(a + b, inclinada ? b : a + b);
   if (p.forma === "extrusao") {
     const pontos = p.perfil ?? [];
     const r = Math.max(0, ...pontos.map((q) => Math.hypot(q[0], q[1])));
-    return { raio: r, base: y, topo: y + (inclinada ? c : r) };
+    return { meioX: r, meioZ: r, base: y, topo: y + (inclinada ? c : r) };
   }
-  const meia = (inclinada ? Math.max(a, b, c) : b) / 2;
-  return { raio: Math.hypot(a, inclinada ? Math.max(b, c) : c) / 2, base: y - meia, topo: y + meia };
+  if (inclinada) {
+    const maior = Math.max(a, b, c) / 2;
+    const [meioX, meioZ] = girado(a, Math.max(b, c), giro);
+    return { meioX, meioZ, base: y - maior, topo: y + maior };
+  }
+  const [meioX, meioZ] = girado(a, c, giro);
+  return { meioX, meioZ, base: y - b / 2, topo: y + b / 2 };
 }
