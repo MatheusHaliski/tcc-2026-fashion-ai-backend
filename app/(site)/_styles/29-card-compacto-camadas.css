@@ -6,13 +6,17 @@
    3 fotografia        `.pc-media` · `.c-photo` — poço próprio, altura fixa, a peça inteira (contain)
    4 janelas de dados  janela 1 `.pc-window.is-identity` · `.c-titleblock` (identidade e moda)
                        janela 2 `.pc-panels` (Info | Hype, com 🔥 e score no rótulo da aba Hype)
-   Antes: post de 470 px de largura e 870–978 px de altura (variava com o conteúdo). Agora: 248 × 520 px fixos
-   (≈ 53 % × 55 %); a foto cai de ~34 % para ~25 % da altura do card e as duas janelas passam de ~51 % para ~62 %
+   Antes: post de 470 px de largura e 870–978 px de altura (variava com o conteúdo). Agora: 264 × 552 px fixos
+   (≈ 56 % × 58 %), cantos de 22 px e moldura de 16 px para a arte do criador aparecer inteira; a foto cai de ~34 % para ~25 % da altura do card e as duas janelas passam de ~51 % para ~62 %
    do container (foto ↓ ≈ 30 %, dados ↑ ≈ 40 % na proporção). Conteúdo maior que a janela rola dentro dela — o card nunca muda de tamanho.
    ===================================================================================================================== */
 :root {
-  --fc-w: 248px;
-  --fc-h: 520px;
+  --fc-w: 264px;
+  --fc-h: 552px;
+  /* moldura: faixa da arte entre a borda externa e o container, raio externo e espessura da linha da borda */
+  --fc-band: 16px;
+  --fc-r: 22px;
+  --fc-border: 3px;
   --fc-photo-h: 128px;
   --fc-gap: 6px;
   --fc-window-r: 10px;
@@ -26,7 +30,7 @@
   width: min(var(--fc-w), 100%); height: var(--fc-h); flex: none; justify-self: center;
 }
 .fcard-face > .fai-card:is(.piece-card.is-social, .scheme-card-social) { width: 100%; height: 100%; }
-.fcard:has(.piece-card.is-social, .scheme-card-social) .fcard-face.is-back { overflow: auto; border-radius: var(--card-radius, 10px); }
+.fcard:has(.piece-card.is-social, .scheme-card-social) .fcard-face.is-back { overflow: auto; border-radius: var(--fc-r); }
 
 /* ---------- cabeçalho e ações compactos ---------- */
 :is(.piece-card.is-social, .scheme-card-social) .c-header { min-height: 36px; padding: 2px 2px 2px 10px; gap: 6px; }
@@ -46,10 +50,13 @@
 :is(.piece-card.is-social, .scheme-card-social) .c-extra { padding: 4px 8px; font-size: 12px; flex: none; }
 
 /* ---------- peça: camadas 2 a 4 ---------- */
-.piece-card.is-social.pc { --pc-x: 10px; --pc-r-in: 8px; }
+.fai-card:is(.piece-card.is-social, .scheme-card-social) { border-radius: var(--fc-r); }
+:is(.piece-card.is-social, .scheme-card-social) > .card-border { padding: var(--fc-border); }
+.fcard:has(.piece-card.is-social, .scheme-card-social) .fcard-face.is-back > * { border-radius: var(--fc-r); }
+.piece-card.is-social.pc { --pc-x: var(--fc-band); --pc-r-out: var(--fc-r); --pc-r-in: 12px; }
 .piece-card.is-social .pc-frame, .piece-card.is-social .pc-content { min-height: 0; }
 .piece-card.is-social .pc-media {
-  flex: none; height: var(--fc-photo-h); aspect-ratio: auto !important; margin: 0 8px; border-radius: 8px;
+  flex: none; height: var(--fc-photo-h); aspect-ratio: auto !important; margin: 0 8px; border-radius: 10px;
   box-shadow: inset 0 0 0 1px var(--fc-window-line);
 }
 .piece-card.is-social .pc-media img.is-contain { padding: 6%; }
@@ -60,13 +67,15 @@
 /* ---------- look: camadas 2 a 4 ---------- */
 .scheme-card-social { display: flex; flex-direction: column; }
 .scheme-card-social > .scheme-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.fai-card.scheme-card-social.has-art .scheme-stage { --aura-band: 10px; }
+.fai-card.scheme-card-social.has-art .scheme-stage { --aura-band: var(--fc-band); padding: var(--fc-band); }
+.scheme-card-social.has-art .scheme-container { margin: 0; border-radius: 12px; }
+.scheme-card-social .scheme-container { border-radius: 12px; }
 .scheme-card-social .scheme-container {
   flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--fc-gap); padding: 8px; margin: 0 8px 8px;
 }
 .scheme-card-social:not(.has-art) .scheme-container { margin-top: 0; }
 .scheme-card-social .c-photo.is-look {
-  flex: none; height: var(--fc-photo-h); aspect-ratio: auto !important; border: 0; border-radius: 8px;
+  flex: none; height: var(--fc-photo-h); aspect-ratio: auto !important; border: 0; border-radius: 10px;
   box-shadow: inset 0 0 0 1px var(--fc-window-line);
 }
 .scheme-card-social .c-photo.is-look img { padding: 6px; }

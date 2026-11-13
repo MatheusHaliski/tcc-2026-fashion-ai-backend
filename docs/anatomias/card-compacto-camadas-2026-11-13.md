@@ -21,9 +21,12 @@ e dados.
 
 | Item | Antes | Agora |
 |---|---|---|
-| Card (largura × altura) | 470 × 870–978 px (variava com o conteúdo) | **248 × 520 px fixos** em todas as telas (≈ 53 % × 55 %) |
-| Fotografia | 428 × 321 px (≈ 34 % da altura) | 210 × 128 px (≈ 25 %; ↓ ≈ 30 % na proporção) |
+| Card (largura × altura) | 470 × 870–978 px (variava com o conteúdo) | **264 × 552 px fixos** em todas as telas (≈ 56 % × 58 %) |
+| Fotografia | 428 × 321 px (≈ 34 % da altura) | 214 × 128 px (≈ 23 %; ↓ ≈ 30 % na proporção) |
 | Janelas de dados | ≈ 51 % do card | ≈ 62 % do container (↑ ≈ 40 % na proporção do card) |
+| Moldura da arte (faixa entre a borda e o container) | 12–20 px, variável | **16 px** nas laterais (≈ 23 px em cima e embaixo na peça) |
+| Cantos | raio da skin (6–10 px) | **22 px** no card, 12 px no container, 10 px na foto e nas janelas |
+| Linha da borda | 2 px | **3 px** (cor, degradê ou padrão) |
 | Cabeçalho / ações | 48 / 48 px | 36 / 34 px |
 | Texto | valores 16 px | nome 15 px, valores 12–13 px, rótulos 12 px em versalete (mínimo do projeto: 12 px) |
 
@@ -34,8 +37,8 @@ a janela rola **dentro** dela; o card nunca muda de tamanho, então a grade fica
 ## Grades
 
 `.feed-compact-grid`, `.social-card-grid` e as grades `.grid-cards`/`.grid-looks` que contêm cards sociais usam
-colunas de largura fixa (`repeat(auto-fill, 248px)`), centralizadas, até quatro colunas. No celular (390 px): uma
-coluna de 248 px.
+colunas de largura fixa (`repeat(auto-fill, 264px)`), centralizadas, até quatro colunas. No celular (390 px): uma
+coluna de 264 px.
 
 ## Borda (criador de peça, look e DNA)
 
@@ -46,10 +49,9 @@ linha (Automático, Liso, Brilho, Cintilante, Holográfico). Sem escolha, nada �
 ## Verificação
 
 Medido no Chromium com a página real dos componentes (`PieceCard`, `SchemeCard`) e respostas da API simuladas:
-16 cards em quatro grades (feed, busca de peças, busca de looks, `grid-cards`) em 1440 px e 390 px — todos 248 × 520.
+16 cards em quatro grades (feed, busca de peças, busca de looks, `grid-cards`) em 1440 px e 390 px — todos 264 × 552 (medição final: 9 cards em três grades, 1440 px, com as famílias de arte bento, passarela e blocos).
 
 Capturas: [antes](../correcoes/2026-11-13-card-compacto/antes-1440.png) ·
 [peças depois](../correcoes/2026-11-13-card-compacto/pecas-depois.png) ·
 [looks depois](../correcoes/2026-11-13-card-compacto/looks-depois.png) ·
-[feed depois](../correcoes/2026-11-13-card-compacto/feed-depois.png) ·
 [criador, aba Borda](../correcoes/2026-11-13-card-compacto/criador-aba-borda.png).
