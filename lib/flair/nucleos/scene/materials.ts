@@ -38,6 +38,9 @@ export const laca = (cor: string): MaterialDesc => ({ textura: "laca", cor, rugo
 
 export const tecido = (cor: string, cor2?: string): MaterialDesc => ({ textura: "tecido", cor, cor2, rugosidade: 0.9, metal: 0, px: 256, repete: 0.5 });
 
+/** Tecido de listras largas (toldo). */
+export const listrado = (cor: string, cor2: string): MaterialDesc => ({ textura: "listras", cor, cor2, rugosidade: 0.85, metal: 0, px: 256, repete: 1 });
+
 export const la = (cor: string, cor2: string): MaterialDesc => ({ textura: "la", cor, cor2, rugosidade: 1, metal: 0, px: 512, repete: 1.2 });
 
 export const amostras = (): MaterialDesc => ({ textura: "amostras", cor: "#C6275E", cor2: "#1F7A76", rugosidade: 0.85, metal: 0, px: 256, repete: 0.4 });

@@ -11,6 +11,7 @@ import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dAtributos;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
@@ -18,6 +19,7 @@ import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -49,16 +51,19 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
-        Collection<CbcRules.Card> pecas = contexto.vestidas(entrega).values();
+        Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
+        Collection<CbcRules.Card> pecas = vestidas.values();
         long gala = pecas.stream().filter(c -> Flair3dPecas.temOcasiao(c, GALA)).count();
         int defesa = Flair3dAtributos.soma(pecas).defesa();
         boolean acesso = gala >= PECAS_GALA;
         boolean desafio = defesa >= DEFESA;
         int ok = (acesso ? 1 : 0) + (desafio ? 1 : 0);
         String resultado = ok == 2 ? "FAVORAVEL" : ok == 1 ? "PARCIAL" : "DESFAVORAVEL";
+        Flair3dRateio rateio = new Flair3dRateio(vestidas).dividirEntre(acesso ? 50 : 0, c -> Flair3dPecas.temOcasiao(c, GALA))
+                .dividir(desafio ? 50 : 0, c -> Flair3dAtributos.daCarta(c).defesa());
         return Resultado.of(ok * 50, resultado,
                 List.of(RegraResultado.de("ACESSO", acesso, 50), RegraResultado.de("DESAFIO_DEFESA", desafio, 50)),
-                List.of(new Evento("PECAS_DE_GALA", gala), new Evento("DEFESA", defesa)));
+                List.of(new Evento("PECAS_DE_GALA", gala), new Evento("DEFESA", defesa))).comCartas(rateio.lista());
     }
 
     @Override

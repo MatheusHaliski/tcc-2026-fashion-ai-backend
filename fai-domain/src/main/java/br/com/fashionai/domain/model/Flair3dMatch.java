@@ -15,7 +15,9 @@ import java.util.UUID;
 
 /**
  * FLAIR 3D (V101) — partida de um dos 15 núcleos (docs/flair/flair-3d/BASE_NUCLEOS.md): a pessoa abre com o deck, o
- * servidor sorteia a semente, e a entrega (uma só) grava o que foi entregue e o resultado calculado pelo núcleo.
+ * servidor sorteia a semente, e a entrega grava o que foi entregue e o resultado calculado pelo núcleo. Nos núcleos em
+ * etapas a partida fica EM_ACAO entre a entrega e o último acionamento; o andamento (tentativas e acionamentos) fica em
+ * {@code estado_json}.
  */
 @Getter
 @Setter
@@ -24,6 +26,7 @@ import java.util.UUID;
 @Table(name = "flair3d_matches")
 public class Flair3dMatch {
     public static final String ABERTA = "ABERTA";
+    public static final String EM_ACAO = "EM_ACAO";
     public static final String ENTREGUE = "ENTREGUE";
 
     @Id
@@ -37,7 +40,7 @@ public class Flair3dMatch {
     @Column(nullable = false, length = 32)
     private String nucleo;
 
-    /** ABERTA ou ENTREGUE. */
+    /** ABERTA, EM_ACAO ou ENTREGUE. */
     @Column(nullable = false, length = 16)
     private String status = ABERTA;
 
@@ -55,6 +58,10 @@ public class Flair3dMatch {
 
     @Column(name = "entrega_json", columnDefinition = "json")
     private String entregaJson;
+
+    /** Andamento da partida: {tentativas, acionamentos:[{carta, troca:{vaga, carta}}]}. */
+    @Column(name = "estado_json", columnDefinition = "json")
+    private String estadoJson;
 
     @Column(name = "resultado_json", columnDefinition = "json")
     private String resultadoJson;

@@ -5,7 +5,7 @@
 import { caixa, chanfrada, cilindro, extrusao, movel, plano, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
-const NO_AVATAR = (em: Em): Em => ({ ...em, zona: "avatar" });
+const NO_AVATAR = (em: Em): Em => ({ zona: "avatar", ...em });
 
 /** Tablado redondo (giratório no ateliê), com um aro de metal na borda. */
 export function tablado(em: Em, tampo: string, aro: string, raio = 0.95, altura = 0.12): Movel {

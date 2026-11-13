@@ -10038,6 +10038,7 @@
   "flair3d.ui.scene.fallback": "Cena 2D: este aparelho não mostra a cena 3D.",
   "flair3d.ui.scene.characters": "Na cena: {lista}",
   "flair3d.ui.scene.loading": "Preparando a cena…",
+  "flair3d.ui.scene.still": "Resultado na cena: {pontos} pontos, {estrelas} de 3 estrelas",
   "flair3d.ui.window.title": "Janela de recursos",
   "flair3d.ui.window.tabs": "Abas de recursos",
   "flair3d.ui.window.noTabs": "Este núcleo não tem recursos para escolher.",

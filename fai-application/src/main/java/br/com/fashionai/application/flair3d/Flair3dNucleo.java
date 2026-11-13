@@ -16,10 +16,25 @@ public interface Flair3dNucleo {
 
     Definicao definicao();
 
-    /** Pontua a entrega de forma determinística (o sorteio do contexto vem da semente da partida). */
+    /**
+     * Pontua a entrega de forma determinística (o sorteio do contexto vem da semente da partida). Os núcleos em etapas
+     * leem o andamento do contexto e devolvem o resultado com status EM_ACAO (falta acionamento) ou ABERTA (a pessoa pode
+     * entregar de novo); sem status, a partida fecha.
+     */
     Resultado pontuar(Entrega entrega, Contexto contexto);
 
-    /** O efeito da carta neste núcleo (selos da tela do deck); vazio nos núcleos sem cartas. */
+    /**
+     * Prévia da entrega, sem fechar a partida: os pontos e as regras de agora. Os núcleos que rodam sozinhos devolvem só
+     * os atributos, nunca o desfecho.
+     */
+    default Resultado previa(Entrega entrega, Contexto contexto) {
+        return pontuar(entrega, contexto);
+    }
+
+    /**
+     * O efeito da carta neste núcleo (selos da tela do deck). Carta que não pontua devolve o motivo
+     * ({@link Efeito#motivo}); vazio só nos núcleos sem cartas.
+     */
     default List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
         return List.of();
     }

@@ -6,8 +6,10 @@ import br.com.fashionai.application.flair3d.Flair3dFixtures;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.MemoryRepository;
+import br.com.fashionai.domain.model.FlairCbcSquadEdicao;
 import br.com.fashionai.domain.model.FlairCbcSquadEntrega;
 import br.com.fashionai.domain.repository.FlairCardInstanceRepository;
+import br.com.fashionai.domain.repository.FlairCbcSquadEdicaoRepository;
 import br.com.fashionai.domain.repository.FlairCbcSquadEntregaRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +25,8 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 /**
  * FLAIR CBC — serviço dos elencos com repositórios em memória: formação, conferir só com cartas da pessoa (422), entrega
- * recusada com requisito falhando (422) e a edição pela ordem de conclusão (repetir mantém a edição).
+ * recusada com requisito falhando (422) e a edição pela ordem de conclusão (repetir mantém a edição), tirada do contador
+ * do elenco (a concorrência das primeiras conclusões está em FlairCbcEdicaoConcorrenteTest).
  */
 class FlairCbcSquadServiceTest {
     private Kit kit;
@@ -105,5 +108,34 @@ class FlairCbcSquadServiceTest {
         assertThat(lista.get(0)).containsEntry("codigo", "PRIMEIRO_ELENCO").containsEntry("vagas", 5).containsEntry("linhas", 5)
                 .containsEntry("concluido", true).containsEntry("edicao", 2);
         assertThat(lista.get(1)).containsEntry("concluido", false).containsEntry("edicao", null);
+    }
+
+    @Test
+    void edicaoSaiDoContadorDoElencoMesmoQuandoALeituraDasConclusoesEstaAtrasada() {
+        FlairCbcSquadEntregaRepository entregas = kit.dep(FlairCbcSquadEntregaRepository.class);
+        FlairCbcSquadEdicaoRepository edicoes = kit.dep(FlairCbcSquadEdicaoRepository.class);
+        assertThat(service.entregar(ana, "PRIMEIRO_ELENCO", primeiroVerde(ana))).containsEntry("edicao", 1);
+        // a conclusão da Ana ainda não aparece para a transação da Bia: pela maior edição gravada, a Bia também levaria a 1
+        entregas.deleteAll();
+        assertThat(service.entregar(bia, "PRIMEIRO_ELENCO", primeiroVerde(bia))).containsEntry("edicao", 2);
+        assertThat(service.entregar(bia, "PRIMEIRO_ELENCO", primeiroVerde(bia))).containsEntry("edicao", 2);
+        assertThat(edicoes.findByElenco("PRIMEIRO_ELENCO").orElseThrow().getUltima()).isEqualTo(2);
+        assertThat(edicoes.findByElenco("PALETA_ATELIE")).isEmpty();
+    }
+
+    @Test
+    void elencoSemContadorComecaDaMaiorEdicaoJaDada() {
+        FlairCbcSquadEntrega antiga = new FlairCbcSquadEntrega();
+        antiga.setUserId(UUID.randomUUID());
+        antiga.setElenco("PRIMEIRO_ELENCO");
+        antiga.setCartasJson("{}");
+        antiga.setOk(true);
+        antiga.setEdicao(5);
+        kit.save(FlairCbcSquadEntregaRepository.class, antiga);
+        assertThat(service.entregar(ana, "PRIMEIRO_ELENCO", primeiroVerde(ana))).containsEntry("edicao", 6);
+        List<FlairCbcSquadEdicao> contadores = MemoryRepository.rows(kit.dep(FlairCbcSquadEdicaoRepository.class));
+        assertThat(contadores).hasSize(1);
+        assertThat(contadores.get(0).getElenco()).isEqualTo("PRIMEIRO_ELENCO");
+        assertThat(contadores.get(0).getUltima()).isEqualTo(6);
     }
 }

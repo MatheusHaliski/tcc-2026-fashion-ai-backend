@@ -30,6 +30,7 @@ export type Textura =
   | "borracha"
   | "laca"
   | "tecido"
+  | "listras"
   | "la"
   | "janelas"
   | "led"

@@ -27,6 +27,13 @@ class Flair3dNucleosCartasTest {
         return n.pontuar(e, contexto(7L, cartas));
     }
 
+    /** A partida em etapas jogada até o fim, sem acionar nada (as etapas estão em Flair3dEtapasTest). */
+    static Resultado ateOFim(Flair3dNucleo n, int acionamentos, CbcRules.Card... cartas) {
+        Acionamento[] nada = new Acionamento[acionamentos];
+        java.util.Arrays.fill(nada, Acionamento.NENHUM);
+        return n.pontuar(vestir(cartas), contexto(7L, cartas).comAndamento(Andamento.de(nada)));
+    }
+
     static Resultado jogar(Flair3dNucleo n, CbcRules.Card... cartas) {
         return jogar(n, vestir(cartas), cartas);
     }
@@ -49,14 +56,14 @@ class Flair3dNucleosCartasTest {
 
     @Test
     void dressFighterVenceComAtributosDasPecasEPerdeComSalto() {
-        Resultado vence = jogar(new DressFighterNucleo(), card("SUP", "material:leather"), card("INF", "material:denim"),
+        Resultado vence = ateOFim(new DressFighterNucleo(), 2, card("SUP", "material:leather"), card("INF", "material:denim"),
                 card("CAL", "sub:casual_sneakers"), card("ACE", "material:metal"));
         assertThat(vence.pontos()).isEqualTo(100);
         assertThat(vence.resultado()).isEqualTo("VITORIA");
         assertThat(vence.eventos()).hasSize(3).allMatch(e -> e.codigo().equals("ROUND"));
-        Resultado umRound = jogar(new DressFighterNucleo(), card("SUP"), card("INF"), card("CAL", "sub:casual_sneakers"), card("ACE"));
+        Resultado umRound = ateOFim(new DressFighterNucleo(), 2, card("SUP"), card("INF"), card("CAL", "sub:casual_sneakers"), card("ACE"));
         assertThat(umRound.pontos()).isEqualTo(50);
-        Resultado perde = jogar(new DressFighterNucleo(), card("SUP"), card("INF"), card("CAL", "sub:heels"), card("ACE"));
+        Resultado perde = ateOFim(new DressFighterNucleo(), 2, card("SUP"), card("INF"), card("CAL", "sub:heels"), card("ACE"));
         assertThat(perde.pontos()).isZero();
         assertThat(perde.resultado()).isEqualTo("DERROTA");
     }
@@ -143,12 +150,12 @@ class Flair3dNucleosCartasTest {
     void fashionSportsVenceComUniformeForteEPerdeComFracoDeFormaDeterministica() {
         CbcRules.Card[] forte = {card("SUP", "ovr:90", "material:linen", "material:leather"), card("INF", "ovr:90", "material:denim"),
                 card("CAL", "ovr:90", "sub:casual_sneakers")};
-        Resultado vitoria = jogar(new FashionSportsNucleo(), forte);
+        Resultado vitoria = ateOFim(new FashionSportsNucleo(), 1, forte);
         assertThat(vitoria.pontos()).isEqualTo(100);
         assertThat(vitoria.resultado()).isEqualTo("VITORIA");
         assertThat(vitoria.eventos()).contains(new Resultado.Evento("COESAO", 100));
-        assertThat(jogar(new FashionSportsNucleo(), forte)).isEqualTo(vitoria);
-        Resultado derrota = jogar(new FashionSportsNucleo(), card("SUP", "ovr:10"), card("INF", "ovr:10"), card("CAL", "ovr:10"));
+        assertThat(ateOFim(new FashionSportsNucleo(), 1, forte)).isEqualTo(vitoria);
+        Resultado derrota = ateOFim(new FashionSportsNucleo(), 1, card("SUP", "ovr:10"), card("INF", "ovr:10"), card("CAL", "ovr:10"));
         assertThat(derrota.pontos()).isZero();
         assertThat(derrota.resultado()).isEqualTo("DERROTA");
     }

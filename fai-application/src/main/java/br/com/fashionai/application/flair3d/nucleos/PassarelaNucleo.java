@@ -10,6 +10,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
@@ -50,11 +51,14 @@ public class PassarelaNucleo implements Flair3dNucleo {
                 RegraResultado.de("TODAS_BR", todas, TODAS));
         double bruto = POR_PECA * br + (todas ? TODAS : 0);
         double pontos = Math.min(100, bruto * 100 / MAXIMO);
-        return Resultado.of(pontos, pontos >= 60 ? "APROVADO" : "REPROVADO", regras, List.of());
+        double fator = 100 / MAXIMO;
+        Flair3dRateio rateio = new Flair3dRateio(vestidas).cada(POR_PECA * fator, contexto::brasileira)
+                .dividirEntre(todas ? TODAS * fator : 0, contexto::brasileira);
+        return Resultado.of(pontos, pontos >= 60 ? "APROVADO" : "REPROVADO", regras, List.of()).comCartas(rateio.lista());
     }
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        return contexto.brasileira(carta) ? List.of(new Efeito("MARCA_BR", POR_PECA)) : List.of();
+        return contexto.brasileira(carta) ? List.of(new Efeito("MARCA_BR", POR_PECA)) : List.of(Efeito.motivo("MARCA_NAO_BR"));
     }
 }

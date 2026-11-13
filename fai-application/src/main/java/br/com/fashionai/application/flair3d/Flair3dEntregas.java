@@ -3,6 +3,7 @@ package br.com.fashionai.application.flair3d;
 import br.com.fashionai.application.flair.CbcRules;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,16 +14,23 @@ import java.util.UUID;
 
 /**
  * Forma de uma entrega antes de pontuar: vagas, zonas e áreas que o núcleo usa, carta na vaga da posição dela, sem
- * carta repetida e, nos núcleos com deck, só cartas do deck (422).
+ * carta repetida e, nos núcleos com deck, só cartas do deck (422), inclusive as usadas nos acionamentos.
  */
 public final class Flair3dEntregas {
     private Flair3dEntregas() {
     }
 
     public static void conferir(Definicao d, Entrega e, Map<UUID, CbcRules.Card> cartas, List<UUID> deck) {
+        conferir(d, e, cartas, deck, List.of());
+    }
+
+    /** {@code acionadas}: as cartas dos acionamentos (Especial, troca), que também precisam estar no deck. */
+    public static void conferir(Definicao d, Entrega e, Map<UUID, CbcRules.Card> cartas, List<UUID> deck, Collection<UUID> acionadas) {
         if (!d.deck().semDeck()) {
             Set<UUID> doDeck = new HashSet<>(deck);
-            List<UUID> fora = e.cartas().values().stream().filter(Objects::nonNull).filter(id -> !doDeck.contains(id)).toList();
+            List<UUID> usadas = new ArrayList<>(e.cartas().values());
+            usadas.addAll(acionadas);
+            List<UUID> fora = usadas.stream().filter(Objects::nonNull).filter(id -> !doDeck.contains(id)).distinct().toList();
             if (!fora.isEmpty()) {
                 throw Flair3dErros.invalido("CARTA_FORA_DO_DECK", "carta_fora_do_deck", Map.of("cartas", fora));
             }

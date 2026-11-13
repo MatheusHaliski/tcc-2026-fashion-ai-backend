@@ -10,12 +10,14 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.List;
+import java.util.Map;
 
 /** Núcleo 15 — rodada "Look Monocromático" em azul: 25 por peça da família azul; vence o adversário-padrão (75) com mais de 75. */
 public class BatalhaLooksNucleo implements Flair3dNucleo {
@@ -43,14 +45,19 @@ public class BatalhaLooksNucleo implements Flair3dNucleo {
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
-        List<RegraResultado> regras = Flair3dPecas.porVaga(VAGAS, contexto.vestidas(entrega), "FAMILIA_AZUL", POR_PECA,
-                c -> Flair3dPecas.daFamilia(c, "Azul"));
+        Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
+        List<RegraResultado> regras = Flair3dPecas.porVaga(VAGAS, vestidas, "FAMILIA_AZUL", POR_PECA, BatalhaLooksNucleo::azul);
         double pontos = regras.stream().mapToDouble(RegraResultado::pontos).sum();
-        return Resultado.of(pontos, pontos > ADVERSARIO ? "VITORIA" : "DERROTA", regras, List.of(new Evento("ADVERSARIO", ADVERSARIO)));
+        return Resultado.of(pontos, pontos > ADVERSARIO ? "VITORIA" : "DERROTA", regras, List.of(new Evento("ADVERSARIO", ADVERSARIO)))
+                .comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, BatalhaLooksNucleo::azul).lista());
+    }
+
+    static boolean azul(CbcRules.Card c) {
+        return Flair3dPecas.daFamilia(c, "Azul");
     }
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        return Flair3dPecas.daFamilia(carta, "Azul") ? List.of(new Efeito("FAMILIA_AZUL", POR_PECA)) : List.of();
+        return azul(carta) ? List.of(new Efeito("FAMILIA_AZUL", POR_PECA)) : List.of(Efeito.motivo("FORA_DA_FAMILIA"));
     }
 }

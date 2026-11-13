@@ -174,7 +174,7 @@ class Flair3dNucleoServiceTest {
                 new Flair3dNucleoService.PedidoEfeitos(List.of(farm.getId(), gucci.getId())));
         assertThat(out.get("efeitos")).isEqualTo(List.of(
                 Map.of("cardId", farm.getId(), "itens", List.of(new Efeito("MARCA_BR", 10))),
-                Map.of("cardId", gucci.getId(), "itens", List.of())));
+                Map.of("cardId", gucci.getId(), "itens", List.of(Efeito.motivo("MARCA_NAO_BR")))));
         FlairCardInstance daBia = carta(bia, "SUP");
         assertThat(status(() -> service.efeitos(ana, "PASSARELA", new Flair3dNucleoService.PedidoEfeitos(List.of(daBia.getId())))))
                 .isEqualTo(422);

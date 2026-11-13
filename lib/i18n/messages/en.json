@@ -10038,6 +10038,7 @@
   "flair3d.ui.scene.fallback": "2D scene: this device cannot show the 3D scene.",
   "flair3d.ui.scene.characters": "In the scene: {lista}",
   "flair3d.ui.scene.loading": "Preparing the scene…",
+  "flair3d.ui.scene.still": "Result in the scene: {pontos} points, {estrelas} of 3 stars",
   "flair3d.ui.window.title": "Resource window",
   "flair3d.ui.window.tabs": "Resource tabs",
   "flair3d.ui.window.noTabs": "This core has no resources to choose.",

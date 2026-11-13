@@ -10,11 +10,13 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.List;
+import java.util.Map;
 
 /** Núcleo 7 — Cliente 1 pede "festa à noite, em preto": 33 por peça de ocasião festa e cor preta (3 vagas); 100 com as 3. */
 public class Boutique3dNucleo implements Flair3dNucleo {
@@ -44,14 +46,16 @@ public class Boutique3dNucleo implements Flair3dNucleo {
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
-        List<RegraResultado> regras = Flair3dPecas.porVaga(VAGAS, contexto.vestidas(entrega), "PEDIDO", POR_PECA, Boutique3dNucleo::bate);
+        Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
+        List<RegraResultado> regras = Flair3dPecas.porVaga(VAGAS, vestidas, "PEDIDO", POR_PECA, Boutique3dNucleo::bate);
         boolean todas = regras.stream().allMatch(RegraResultado::ok);
         double pontos = todas ? 100 : regras.stream().mapToDouble(RegraResultado::pontos).sum();
-        return Resultado.of(pontos, pontos >= 60 ? "APROVADO" : "REPROVADO", regras, List.of());
+        Flair3dRateio rateio = new Flair3dRateio(vestidas).cada(todas ? 100.0 / VAGAS.size() : POR_PECA, Boutique3dNucleo::bate);
+        return Resultado.of(pontos, pontos >= 60 ? "APROVADO" : "REPROVADO", regras, List.of()).comCartas(rateio.lista());
     }
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        return bate(carta) ? List.of(new Efeito("PEDIDO", POR_PECA)) : List.of();
+        return bate(carta) ? List.of(new Efeito("PEDIDO", POR_PECA)) : List.of(Efeito.motivo("FORA_DO_PEDIDO"));
     }
 }

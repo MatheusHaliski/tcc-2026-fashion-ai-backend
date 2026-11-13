@@ -3,7 +3,7 @@
  * do dia. A faixa de caminhada em pedra portuguesa passa pelo centro; bancos, postes, vitrines, a placa da região e
  * o mapa das regiões ficam nas laterais.
  */
-import { ceu, luz, madeira, metalPintado, pedra, pedraPortuguesa, reboco, tecido, vidro } from "@/lib/flair/nucleos/scene/materials";
+import { ceu, listrado, luz, madeira, metalPintado, pedra, pedraPortuguesa, reboco, vidro } from "@/lib/flair/nucleos/scene/materials";
 import { bancoRua } from "@/lib/flair/nucleos/scene/moveis/assentos";
 import { faixa } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { poste } from "@/lib/flair/nucleos/scene/moveis/palco";
@@ -25,7 +25,7 @@ export const SALA_AROUND_THE_WORLD: Sala = {
     fachada: reboco("#F2D9B8"),
     vidro: vidro("#CFE6EE"),
     moldura: metalPintado("#24463E"),
-    toldo: tecido("#C6275E", "#FBE7EE"),
+    toldo: listrado("#C6275E", "#FBE7EE"),
     ferro: metalPintado("#1F2226"),
     madeira: madeira("#9A6B3F", "#6B4526"),
     luz: luz("#FFF3C4", 1.8),

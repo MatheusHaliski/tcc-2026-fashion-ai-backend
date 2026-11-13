@@ -10,6 +10,7 @@ import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dBeleza;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
@@ -17,6 +18,7 @@ import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -61,7 +63,11 @@ public class RoadToGloryNucleo implements Flair3dNucleo {
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
-        return Resultado.somando(regras(contexto.vestidas(entrega).values(), entrega), List.of());
+        Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
+        List<RegraResultado> regras = regras(vestidas.values(), entrega);
+        Flair3dRateio rateio = new Flair3dRateio(vestidas).dividirEntre(regras.get(0).pontos(), c -> true)
+                .dividirEntre(regras.get(1).pontos(), c -> true);
+        return Resultado.somando(regras, List.of()).comCartas(rateio.lista());
     }
 
     @Override
