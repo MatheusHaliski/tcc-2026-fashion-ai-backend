@@ -58,7 +58,7 @@ export const SALA_FASHION_DETECTIVE: Sala = {
     { papel: "CONVIDADO", tipo: "silhueta", pos: [3.3, 0, -2.2], cor: "#2E3A4A", giro: -80 },
   ],
   luzes: {
-    principal: { cor: "#FFE7C0", intensidade: 2.2, pos: [1.5, 4.5, 5] },
+    principal: { cor: "#FFE7C0", intensidade: 2.2, pos: [3.1, 5.1, 3.4] },
     recorte: { cor: "#FFD9A0", intensidade: 1.8, pos: [-2.5, 4.5, -5] },
     ambiente: { ceu: "#FFF1D8", chao: "#6B5A48", intensidade: 0.6 },
     reflexo: 0.7,

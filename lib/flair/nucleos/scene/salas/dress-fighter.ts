@@ -52,7 +52,7 @@ export const SALA_DRESS_FIGHTER: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#DCD3FF", intensidade: 2.1, pos: [1, 5, 5] },
+    principal: { cor: "#DCD3FF", intensidade: 2.1, pos: [2.6, 5.6, 3.4] },
     recorte: { cor: "#FF3EA5", intensidade: 2.3, pos: [-3, 4, -4.5] },
     ambiente: { ceu: "#3A2B66", chao: "#0D0B12", intensidade: 0.35 },
     reflexo: 0.5,

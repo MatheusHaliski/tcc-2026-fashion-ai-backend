@@ -6,13 +6,16 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { glbDoMovel } from "@/lib/flair/nucleos/scene/assets";
 import { partesNoLugar } from "@/lib/flair/nucleos/scene/parts";
 import { cascaDaSala } from "@/lib/flair/nucleos/scene/shell";
 import type { Movel, Parte, Sala } from "@/lib/flair/nucleos/scene/types";
+import { MovelGlb } from "@/components/flair/nucleos/scene/glb-prop";
 import { fundirPorMaterial } from "@/components/flair/nucleos/scene/part-geometry";
 import { LuzesDaSala } from "@/components/flair/nucleos/scene/room-lights";
 import { Placar } from "@/components/flair/nucleos/scene/scoreboard";
 import { aplicarNoObjeto, estadoDoAtor, useCena } from "@/components/flair/nucleos/scene/stage-context";
+import { useGlbManifest } from "@/components/flair/nucleos/scene/use-glb-manifest";
 import { fazSombra, useRoomMaterials, type MateriaisDaSala } from "@/components/flair/nucleos/scene/use-room-materials";
 
 const RAD = Math.PI / 180;
@@ -57,10 +60,19 @@ function MovelAnimado({ movel, sala, materiais }: { movel: Movel; sala: Sala; ma
   );
 }
 
+/** Móvel fixo desenhado sozinho (a reserva procedural de um móvel que tem objeto GLB). */
+function MovelFixo({ movel, sala, materiais }: { movel: Movel; sala: Sala; materiais: MateriaisDaSala }) {
+  const fundidas = useFundidas(() => partesNoLugar(movel), sala, [movel, sala]);
+  return <Malhas fundidas={fundidas} sala={sala} materiais={materiais} sombra />;
+}
+
 export function Sala3D({ sala, placar }: { sala: Sala; placar: string | null }) {
   const materiais = useRoomMaterials(sala);
+  const manifesto = useGlbManifest();
+  // móveis com objeto GLB disponível saem da malha fundida: cada um carrega o arquivo e tem a própria reserva
+  const comGlb = useMemo(() => sala.moveis.filter((m) => !m.id && glbDoMovel(m, manifesto)), [sala, manifesto]);
   const casca = useFundidas(() => cascaDaSala(sala), sala, [sala]);
-  const fixos = useFundidas(() => sala.moveis.filter((m) => !m.id).flatMap(partesNoLugar), sala, [sala]);
+  const fixos = useFundidas(() => sala.moveis.filter((m) => !m.id && !comGlb.includes(m)).flatMap(partesNoLugar), sala, [sala, comGlb]);
   const animados = useMemo(() => sala.moveis.filter((m) => !!m.id), [sala]);
   return (
     <group name="sala">
@@ -70,6 +82,9 @@ export function Sala3D({ sala, placar }: { sala: Sala; placar: string | null }) 
       <group name="moveis">
         <Malhas fundidas={fixos} sala={sala} materiais={materiais} sombra />
       </group>
+      {comGlb.map((m, i) => (
+        <MovelGlb key={`${m.glb?.slug}-${i}`} movel={m} reserva={<MovelFixo movel={m} sala={sala} materiais={materiais} />} />
+      ))}
       {animados.map((m) => <MovelAnimado key={m.id} movel={m} sala={sala} materiais={materiais} />)}
       {sala.placar && <Placar em={sala.placar} texto={placar} />}
       <LuzesDaSala sala={sala} />

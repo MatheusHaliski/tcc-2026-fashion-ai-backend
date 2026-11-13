@@ -59,7 +59,7 @@ export const SALA_AROUND_THE_WORLD: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#FFF4D6", intensidade: 2.8, pos: [2, 6, 5] },
+    principal: { cor: "#FFF4D6", intensidade: 2.8, pos: [3.6, 6.6, 3.4] },
     recorte: { cor: "#BFE2FF", intensidade: 1.4, pos: [-3, 5, -5] },
     ambiente: { ceu: "#BFE2FF", chao: "#CFC8BA", intensidade: 0.95 },
     reflexo: 0.6,

@@ -63,7 +63,7 @@ export const SALA_DRESS_THE_STAR: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#FFE7C4", intensidade: 2.3, pos: [1.5, 5, 5.5] },
+    principal: { cor: "#FFE7C4", intensidade: 2.3, pos: [3.1, 5.6, 3.9] },
     recorte: { cor: "#FFB3E1", intensidade: 2, pos: [-3, 5, -4.5] },
     ambiente: { ceu: "#4A2A44", chao: "#120A10", intensidade: 0.35 },
     reflexo: 0.4,

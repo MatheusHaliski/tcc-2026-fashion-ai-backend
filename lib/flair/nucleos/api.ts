@@ -3,6 +3,7 @@ import { api } from "@/lib/api/client";
 import type {
   AvatarTipo,
   EfeitosResposta,
+  NucleoAcionamento,
   NucleoCodigo,
   NucleoDefinicao,
   NucleoEntrega,
@@ -36,7 +37,20 @@ export function abrirPartida(codigo: NucleoCodigo, deck: string[], avatar?: Avat
   return api.post<NucleoPartida>(`${BASE}/nucleos/${codigo}/partidas`, avatar ? { deck, avatar } : { deck });
 }
 
-/** Entrega o look (uma vez, só o dono); o servidor pontua de forma determinística. */
+/**
+ * Entrega o look (só o dono); o servidor pontua de forma determinística. O `status` da resposta diz se a partida
+ * fechou (ENTREGUE), espera um acionamento (EM_ACAO) ou aceita outra entrega (ABERTA, no LABIRINTO).
+ */
 export function entregarPartida(id: string, entrega: NucleoEntrega): Promise<NucleoResultado> {
   return api.post<NucleoResultado>(`${BASE}/partidas/${encodeURIComponent(id)}/entrega`, entrega);
+}
+
+/** Prévia da entrega: pontos e regras de agora, sem fechar a partida (nos jogos automáticos, só os atributos). */
+export function previaPartida(id: string, entrega: NucleoEntrega, signal?: AbortSignal): Promise<NucleoResultado> {
+  return api.post<NucleoResultado>(`${BASE}/partidas/${encodeURIComponent(id)}/previa`, entrega, { signal });
+}
+
+/** Avança a ação de uma partida EM_ACAO, com a carta Especial ou a troca do intervalo quando a pessoa aciona. */
+export function acionarPartida(id: string, acionamento: NucleoAcionamento = {}): Promise<NucleoResultado> {
+  return api.post<NucleoResultado>(`${BASE}/partidas/${encodeURIComponent(id)}/acionar`, acionamento);
 }

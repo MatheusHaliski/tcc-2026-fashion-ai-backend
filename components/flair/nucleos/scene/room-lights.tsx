@@ -44,8 +44,9 @@ export function LuzesDaSala({ sala }: { sala: Sala }) {
       <StudioLight intensity={reflexo} />
       <hemisphereLight args={[ambiente.ceu, ambiente.chao, ambiente.intensidade]} />
       <directionalLight name="luz-principal" position={principal.pos} color={principal.cor} intensity={principal.intensidade} castShadow
-        shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} shadow-normalBias={0.03} shadow-radius={5}
-        shadow-camera-left={-meia} shadow-camera-right={meia} shadow-camera-top={meia} shadow-camera-bottom={-meia} shadow-camera-near={0.5} shadow-camera-far={30} />
+        shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} shadow-normalBias={0.03} shadow-radius={5}>
+        <orthographicCamera attach="shadow-camera" args={[-meia, meia, meia, -meia, 0.5, 30]} />
+      </directionalLight>
       <directionalLight name="luz-recorte" position={recorte.pos} color={recorte.cor} intensity={recorte.intensidade} />
       {proprias.map((l) => <LuzDoLugar key={l.id} luz={l} />)}
     </group>

@@ -27,3 +27,12 @@ Leituras de carta compartilhadas ficaram em classes de regras puras (`Flair3dPec
 os mesmos passos (rounds, zonas, resposta, maquiagem), só a mesma interface. Um `switch` no serviço: cresceria a cada
 jogo derivado e misturaria I/O com regra. Beans Spring por estratégia: as estratégias não têm dependências, então um
 registro estático basta e os testes instanciam sem contexto.
+
+**Partidas em etapas (sem padrão novo).** DRESS_FIGHTER (um round por vez, com a carta Especial), FASHION_SPORTS
+(intervalo com troca) e LABIRINTO (várias apresentações) continuam sendo a mesma Strategy: `pontuar(entrega, contexto)`
+segue puro e recebe no `Contexto` o `Andamento` (tentativa e acionamentos). O núcleo recalcula a partida inteira a
+partir da semente, da entrega e do andamento, e diz no `status` do `Resultado` se a partida fecha, espera um
+acionamento (`EM_ACAO`) ou aceita outra entrega (`ABERTA`); o serviço só grava o que o núcleo devolveu. Alternativa
+descartada: State com uma classe por etapa e o estado da luta serializado, que duplicaria a regra do round em cada
+estado e abriria espaço para o estado gravado divergir da semente. A prévia é um método `default` da Strategy
+(`previa`), que só os dois jogos automáticos sobrescrevem para devolver os atributos em vez do desfecho.

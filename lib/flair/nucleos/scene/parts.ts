@@ -3,7 +3,7 @@
  * construtor 3D gera) e a colocação das partes de um móvel no lugar dele (posição e giro em y).
  */
 import type { V3 } from "@/lib/flair/nucleos/types";
-import type { Movel, Parte, ZonaNome } from "@/lib/flair/nucleos/scene/types";
+import type { GlbRef, Movel, Parte, ZonaNome } from "@/lib/flair/nucleos/scene/types";
 
 const SEG_CILINDRO = 12;
 const SEG_ESFERA = 12;
@@ -76,6 +76,11 @@ export interface Em {
 
 export function movel(tipo: string, em: Em, partes: Parte[]): Movel {
   return { tipo, pos: em.pos, giro: em.giro ?? 0, zona: em.zona ?? "decoracao", partes, id: em.id };
+}
+
+/** O mesmo móvel, com um objeto GLB no lugar das partes quando o arquivo existir (as partes ficam de reserva). */
+export function comGlb(m: Movel, slug: string, extra: Omit<GlbRef, "slug"> = {}): Movel {
+  return { ...m, glb: { slug, ...extra } };
 }
 
 const RAD = Math.PI / 180;

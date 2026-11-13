@@ -49,7 +49,7 @@ export const SALA_BOUTIQUE_3D: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#FFF3DE", intensidade: 2.3, pos: [1, 3.2, 5] },
+    principal: { cor: "#FFF3DE", intensidade: 2.3, pos: [2.6, 3.8, 3.4] },
     recorte: { cor: "#FFE2C2", intensidade: 1.4, pos: [-2.5, 3.1, -3.5] },
     ambiente: { ceu: "#FFF8EE", chao: "#C9B8A3", intensidade: 0.75 },
     reflexo: 0.8,

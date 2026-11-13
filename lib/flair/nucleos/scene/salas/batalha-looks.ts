@@ -62,7 +62,7 @@ export const SALA_BATALHA_LOOKS: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#EAF1FF", intensidade: 2.3, pos: [1.5, 4.6, 5] },
+    principal: { cor: "#EAF1FF", intensidade: 2.3, pos: [3.1, 5.2, 3.4] },
     recorte: { cor: "#4F8BFF", intensidade: 2, pos: [-2.5, 4.4, -4.5] },
     ambiente: { ceu: "#6F7C99", chao: "#14161C", intensidade: 0.4 },
     reflexo: 0.5,

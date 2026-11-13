@@ -37,11 +37,11 @@ function tronco(base: number): Parte[] {
 
 function emPe(): FiguranteDesc {
   const pernas = [
-    cilindro(M, [0.09, 0.06], 0.86, [0.09, 0.43, 0], undefined, 8),
-    cilindro(M, [0.09, 0.06], 0.86, [-0.09, 0.43, 0], undefined, 8),
-    esfera(M, [0.19, 0.13, 0.13], [0, 0.88, 0], 10),
+    cilindro(M, [0.09, 0.06], 0.8, [0.09, 0.4, 0], undefined, 8),
+    cilindro(M, [0.09, 0.06], 0.8, [-0.09, 0.4, 0], undefined, 8),
+    esfera(M, [0.19, 0.13, 0.13], [0, 0.82, 0], 10),
   ];
-  return { corpo: [...pernas, ...tronco(0.86)], braco: braco(), ombros: { e: [0.26, 1.4, 0], d: [-0.26, 1.4, 0] } };
+  return { corpo: [...pernas, ...tronco(0.8)], braco: braco(), ombros: { e: [0.26, 1.34, 0], d: [-0.26, 1.34, 0] } };
 }
 
 function sentada(): FiguranteDesc {

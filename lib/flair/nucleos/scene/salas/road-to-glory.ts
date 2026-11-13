@@ -46,7 +46,7 @@ export const SALA_ROAD_TO_GLORY: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#FFFFFF", intensidade: 2.4, pos: [1, 3, 5] },
+    principal: { cor: "#FFFFFF", intensidade: 2.4, pos: [2.6, 3.6, 3.4] },
     recorte: { cor: "#FFD3E2", intensidade: 1.4, pos: [-2, 2.9, -2.6] },
     ambiente: { ceu: "#FFF2F6", chao: "#D9BC94", intensidade: 0.75 },
     reflexo: 0.8,

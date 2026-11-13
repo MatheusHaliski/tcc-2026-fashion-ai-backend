@@ -60,7 +60,7 @@ export const SALA_LABIRINTO: Sala = {
   ],
   figurantes: [{ papel: "MANEQUIM", tipo: "manequim", pos: [-3.2, 0, -3.2], cor: "#ECE6DC", postura: "busto", giro: 40 }],
   luzes: {
-    principal: { cor: "#F4FFFD", intensidade: 2.0, pos: [1.2, 3.6, 3.6] },
+    principal: { cor: "#F4FFFD", intensidade: 2.0, pos: [2.8, 4.2, 2.6] },
     recorte: { cor: "#9FE7DE", intensidade: 1.8, pos: [-2.5, 3.6, -3.5] },
     ambiente: { ceu: "#DDF3F0", chao: "#3A4544", intensidade: 0.6 },
     reflexo: 0.8,

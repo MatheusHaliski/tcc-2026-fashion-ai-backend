@@ -11,7 +11,7 @@ export const madeiraEncerada = (cor: string, cor2: string): MaterialDesc => made
 
 export const marmore = (cor: string, veio: string): MaterialDesc => ({ textura: "marmore", cor, cor2: veio, rugosidade: 0.16, metal: 0, px: 1024, repete: 3 });
 
-export const tijolo = (cor: string, rejunte: string): MaterialDesc => ({ textura: "tijolo", cor, cor2: rejunte, rugosidade: 0.9, metal: 0, px: 512, repete: 2 });
+export const tijolo = (cor: string, rejunte: string): MaterialDesc => ({ textura: "tijolo", cor, cor2: rejunte, rugosidade: 0.9, metal: 0, px: 512, repete: 1 });
 
 export const ladrilho = (cor: string, cor2: string): MaterialDesc => ({ textura: "ladrilho", cor, cor2, rugosidade: 0.28, metal: 0, px: 512, repete: 2 });
 

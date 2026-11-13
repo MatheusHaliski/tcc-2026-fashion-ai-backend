@@ -54,7 +54,7 @@ export const SALA_PERSONAGEM_FILME: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#F5E2B8", intensidade: 2.2, pos: [1.5, 5, 5] },
+    principal: { cor: "#F5E2B8", intensidade: 2.2, pos: [3.1, 5.6, 3.4] },
     recorte: { cor: "#B9D2FF", intensidade: 1.8, pos: [-3, 4.5, -2.8] },
     ambiente: { ceu: "#55585F", chao: "#1A1A1C", intensidade: 0.4 },
     reflexo: 0.45,

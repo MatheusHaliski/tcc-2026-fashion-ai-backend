@@ -55,7 +55,7 @@ export const SALA_PASSARELA: Sala = {
   ],
   figurantes: [],
   luzes: {
-    principal: { cor: "#FFE9C7", intensidade: 2.3, pos: [1.5, 4.5, 5] },
+    principal: { cor: "#FFE9C7", intensidade: 2.3, pos: [3.1, 5.1, 3.4] },
     recorte: { cor: "#FF9AD5", intensidade: 1.7, pos: [-2.5, 4, -4.5] },
     ambiente: { ceu: "#5A4A70", chao: "#15131A", intensidade: 0.4 },
     reflexo: 0.35,

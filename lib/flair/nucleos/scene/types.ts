@@ -101,6 +101,19 @@ export interface Movel {
   partes: Parte[];
   /** móvel animado pelas sequências (porta, claquete, bola): desenhado à parte, com este nome */
   id?: string;
+  /**
+   * objeto GLB licenciado (public/flair/3d/assets/<slug>.glb) que substitui as partes quando o arquivo existe no
+   * manifesto e carrega; sem ele (ou sem WebGL), valem as partes procedurais
+   */
+  glb?: GlbRef;
+}
+
+export interface GlbRef {
+  slug: string;
+  /** escala fixa; sem ela, o objeto é ajustado à altura do móvel procedural e apoiado no piso */
+  escala?: number;
+  /** giro extra em y (graus), para modelos que vêm virados */
+  giro?: number;
 }
 
 export interface Luz {
