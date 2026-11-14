@@ -105,7 +105,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/multi-piece-review.tsx": {
-   "max": 682,
+   "max": 564,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/photo-edit/look-composition-editor.tsx": {

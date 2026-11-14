@@ -4,7 +4,7 @@
  * marcas de salva/em edição, foto sem peças (foto inteira) e as mensagens de erro da análise por tipo de falha.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
+import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor, within } from "@/test-utils/render";
 import { MultiPieceUpload, type MultiDetection, type PhotoPick } from "./multi-piece-review";
 
 vi.mock("@/components/piece-art-editor", () => ({ PieceArtEditor: () => null }));
@@ -79,8 +79,30 @@ describe("MultiPieceUpload no criador em etapas (onPick)", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Usar esta peça" })[2]);
     await waitFor(() => expect(onPick).toHaveBeenCalledTimes(2));
     const second = onPick.mock.calls[1][0] as PhotoPick;
-    expect(second.value).toMatchObject({ name: "Peça 3", category: "upper_piece", subcategory: "t_shirt" });
+    // reauditoria 14/11/2026: sem tipo lido, nada de "Parte superior · Camiseta" nem "Peça 3" — os campos ficam vazios
+    expect(second.value).toMatchObject({ name: "", category: "", subcategory: "", color: "" });
     expect(second.hint).toBeNull();
+  });
+
+  it("leitura local: aviso de que a IA online não foi usada; com a IA, o aviso não aparece", async () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY, "POST /api/pieces/analysis/multi": { ...DETECTION, source: "local-superficie", pieces: [{ index: 0, name: null, category: null, subcategory: null, color: "blue", box: { x: 23, y: 3, width: 56, height: 93 }, confidence: 0.45 }] } });
+    const onPick = vi.fn();
+    const { container, unmount } = renderApp(<MultiPieceUpload onPick={onPick} />);
+    fireEvent.change(input(container), { target: { files: [jpg()] } });
+    fireEvent.click(screen.getByRole("button", { name: /Analisar peças/ }));
+    expect((await screen.findByTestId("local-reading-note")).textContent).toBe("Leitura local: a IA online não foi usada. A cor foi lida da foto; o tipo e o nome da peça ficam para você informar.");
+    expect(screen.getAllByTestId("detected-piece")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Usar esta peça" }));
+    await waitFor(() => expect(onPick).toHaveBeenCalled());
+    // a cor medida entra; tipo, subtipo e nome ficam para a pessoa (a trava da etapa pede)
+    expect((onPick.mock.calls[0][0] as PhotoPick).value).toMatchObject({ name: "", category: "", subcategory: "", color: "blue" });
+    unmount();
+    mockApi({ "GET /api/taxonomy": TAXONOMY, "POST /api/pieces/analysis/multi": DETECTION });
+    const again = renderApp(<MultiPieceUpload onPick={onPick} />);
+    fireEvent.change(input(again.container), { target: { files: [jpg()] } });
+    fireEvent.click(screen.getByRole("button", { name: /Analisar peças/ }));
+    await screen.findByText("Peças encontradas nas fotos");
+    expect(screen.queryByTestId("local-reading-note")).toBeNull();
   });
 
   it("peça salva e peça em edição não oferecem o botão de novo", async () => {
@@ -94,6 +116,10 @@ describe("MultiPieceUpload no criador em etapas (onPick)", () => {
     rerender(<MultiPieceUpload onPick={() => {}} onAvailable={onAvailable} picked={k1} savedKeys={[k0]} />);
     const rows = screen.getAllByTestId("detected-piece");
     expect(rows[0].textContent).toContain("Salva no guarda-roupa");
+    // cartão da peça salva não espreme o nome ("P… Fot o 1"): o texto guarda largura mínima e o estado desce de linha
+    expect(rows[0].className).toContain("flex-wrap");
+    expect(within(rows[0]).getByTestId("detected-piece-text").className).toContain("min-w-[6rem]");
+    expect(within(rows[0]).getByTestId("detected-piece-state").className).toContain("shrink-0");
     expect(rows[1].textContent).toContain("Em edição");
     expect(rows[1].className).toContain("border-ink");
     expect(screen.getAllByRole("button", { name: "Usar esta peça" })).toHaveLength(1);

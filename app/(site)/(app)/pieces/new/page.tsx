@@ -136,7 +136,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   function applyPhoto(p: PhotoPick) {
     setPhotoPick(p); setPick(null);
     // marca: só a confirmada pelo servidor preenche o campo; a lida com incerteza vira a nota "Usar {marca}" abaixo do campo
-    setValue((v) => ({ ...v, name: p.value.name, category: p.value.category, subcategory: p.value.subcategory, color: p.value.color || v.color, material: p.value.material || v.material,
+    setValue((v) => ({ ...v, name: p.value.name, category: p.value.category || v.category, subcategory: p.value.category ? p.value.subcategory : v.subcategory, color: p.value.color || v.color, material: p.value.material || v.material,
       sex: p.value.sex || v.sex, style: p.value.style.length ? p.value.style : v.style, occasion: p.value.occasion.length ? p.value.occasion : v.occasion,
       size: v.size || p.value.size, price: v.price || p.value.price, useDefaultImage: false,
       // cada peça da foto tem a própria marca: a confirmada pelo servidor entra; sem ela o campo volta vazio (nada herda da peça anterior)

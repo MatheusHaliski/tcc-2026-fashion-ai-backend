@@ -10,29 +10,17 @@ import { FaiIcon } from "@/components/fai-icon";
 import { CaptureGuideDialog } from "@/components/capture/capture-guide-dialog";
 import { guideFor, type CaptureCategory } from "@/lib/capture/capture-guides";
 import { useCaptureTutorialPrefs } from "@/lib/capture/tutorial-prefs";
-import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_MAX_TAGS, PieceMoreDetails, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
+import { PIECE_CATEGORIES, PIECE_MAX_TAGS, PieceMoreDetails, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCreationSteps, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { PieceArtEditor } from "@/components/piece-art-editor";
 import { PieceCard } from "@/components/piece-card";
 import { BrandAutocomplete } from "@/components/catalog/brand-autocomplete";
 import { useAuth } from "@/lib/auth/session";
+import { FULL_BOX as FULL, cropBox, legacyPrefill as initialValue, type BrandHint, type MultiBox, type MultiDetection } from "@/components/pieces/detected-piece";
+import { DetectedPieces, type PhotoItem, type PhotoPick } from "@/components/pieces/detected-pieces";
 
-/** Caixa da peça em % (0–100) da largura e da altura da foto: x/y = canto superior esquerdo. */
-export interface MultiBox { x: number; y: number; width: number; height: number }
-/**
- * Marca lida com incerteza pelo OCR do servidor (tecido dobrado, texto pequeno): `brand` é a marca do catálogo em que as
- * leituras parciais votaram (nula = há texto/logo na peça, mas ilegível), `alternatives` outras marcas possíveis,
- * `evidence` o texto lido. Nunca preenche o campo sozinha: a pessoa toca em "Usar …" ou digita.
- */
-export interface BrandHint { brand?: string | null; alternatives?: string[]; evidence?: string | null; zone?: string | null; confidence?: number }
-export interface DetectedPiece { index: number; name?: string | null; brandName?: string | null; brandHint?: BrandHint | null; category?: string | null; subcategory?: string | null; color?: string | null; material?: string | null; sex?: string | null; style?: string[]; occasion?: string[]; box: MultiBox; confidence: number }
-/**
- * POST /api/pieces/analysis/multi — source: "ia" (visão remota); sem ela, o detector local do servidor: "local-pessoa"
- * (roupa vestida separada pela silhueta: boné, peça de cima, de baixo, calçado), "local-superficie" (peças sobre uma
- * superfície, por contorno e cor) ou "local" (nada separado: a foto inteira, a conferir).
- */
-export type DetectionSource = "ia" | "local" | "local-pessoa" | "local-superficie";
-export interface MultiDetection { draftId: string; originalUrl: string; width: number; height: number; pieces: DetectedPiece[]; source: DetectionSource; aiMessage?: string | null }
+export type { BrandHint, DetectedPiece, DetectionSource, MultiBox, MultiDetection } from "@/components/pieces/detected-piece";
+export type { PhotoPick } from "@/components/pieces/detected-pieces";
 
 interface Row {
   /** posição na detecção; -1 = foto inteira que a pessoa adicionou (sem pré-preenchimento no servidor) */
@@ -44,58 +32,8 @@ interface Row {
   ai?: { id: string; url: string }; useAi?: boolean; aiBusy?: boolean; aiError?: string;
 }
 
-const FULL: MultiBox = { x: 0, y: 0, width: 100, height: 100 };
-/** Folga em volta da caixa no recorte (fração do lado da caixa): a IA devolve a caixa justa e a borda da peça não pode sumir. */
-const CROP_PAD = 0.02;
-
-/**
- * Recorta a caixa (em %) da foto original no navegador. createImageBitmap aplica a orientação EXIF, como o backend faz
- * na análise: as porcentagens valem para a foto na posição em que foi tirada.
- */
-async function cropBox(file: File, box: MultiBox, maxSide?: number): Promise<Blob> {
-  const bmp = await createImageBitmap(file);
-  try {
-    const px = (box.width * CROP_PAD) / 100, py = (box.height * CROP_PAD) / 100;
-    const x0 = Math.max(0, box.x / 100 - px), y0 = Math.max(0, box.y / 100 - py);
-    const x1 = Math.min(1, (box.x + box.width) / 100 + px), y1 = Math.min(1, (box.y + box.height) / 100 + py);
-    const sx = Math.round(x0 * bmp.width), sy = Math.round(y0 * bmp.height);
-    const sw = Math.max(1, Math.round((x1 - x0) * bmp.width)), sh = Math.max(1, Math.round((y1 - y0) * bmp.height));
-    const scale = maxSide ? Math.min(1, maxSide / Math.max(sw, sh)) : 1;
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(sw * scale)); canvas.height = Math.max(1, Math.round(sh * scale));
-    canvas.getContext("2d")!.drawImage(bmp, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-    const type = file.type === "image/png" ? "image/png" : "image/jpeg";
-    return await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("crop"))), type, 0.92));
-  } finally { bmp.close(); }
-}
-
-/** Dados da detecção → formulário completo, com o mesmo preenchimento padrão da análise de uma peça. */
-function initialValue(p: Pick<DetectedPiece, "name" | "brandName" | "category" | "subcategory" | "color" | "material" | "sex" | "style" | "occasion">, tax: Taxonomy | null, fallbackName: string): PieceFormValue {
-  const cat = p.category && tax?.subcategories?.[p.category] ? p.category : "upper_piece";
-  const allowedOccasions = tax?.allowedOccasionsByCategory?.[cat] ?? tax?.occasions;
-  const occasion = keepAllowed(p.occasion, allowedOccasions); const style = keepAllowed(p.style, tax?.styles);
-  // sem nome da IA mas com o tipo lido localmente ("Camiseta", "Bermuda"), o nome é o tipo — não "Peça 1"
-  const typed = p.subcategory && tax?.subcategories?.[cat]?.includes(p.subcategory) ? subcategoryLabel(p.subcategory) : "";
-  return { ...EMPTY_PIECE, useDefaultImage: false, name: p.name || typed || fallbackName, brandName: p.brandName ?? "", category: cat,
-    subcategory: p.subcategory && tax?.subcategories?.[cat]?.includes(p.subcategory) ? p.subcategory : tax?.subcategories?.[cat]?.[0] ?? "",
-    color: p.color ?? "black", material: p.material ?? "COTTON", sex: p.sex ?? "UNISSEX", size: "m", price: "0",
-    occasion: occasion.length ? occasion : [allowedOccasions?.[0] ?? "casual"], style: style.length ? style : ["basic"], background: { skin: "atelier" } };
-}
-
 /** Teto de fotos por envio: cada foto passa pela IA de visão e por uma revisão, então o lote fica revisável. */
 export const MAX_PHOTOS = 10;
-
-/**
- * Peça detectada escolhida para seguir pelo criador em etapas (sem modal): o recorte (ou a foto inteira), o rascunho da
- * análise e os dados que a IA leu, para conferir em Dados → Mais detalhes → Arte → Revisar.
- */
-export interface PhotoPick { key: string; file: File; preview: string; draftId: string; index: number; value: PieceFormValue; photo: number; piece: number; hint?: BrandHint | null }
-
-interface PhotoItem {
-  id: string; file: File; preview: string;
-  status: "idle" | "analyzing" | "ready" | "error" | "done";
-  detection?: MultiDetection; error?: string; saved?: number;
-}
 
 /**
  * Foto opcional do RF4: a pessoa escolhe uma ou várias fotos (cada foto pode ter várias peças), pede a análise e o
@@ -259,62 +197,6 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
         </div>
       ))}
     </div>
-  );
-}
-
-/**
- * Peças achadas em cada foto, na própria página do criador: miniatura recortada, nome lido e "Usar esta peça". A escolhida
- * segue pelas etapas do criador; as já salvas ficam marcadas e a pessoa volta aqui para a próxima.
- */
-function DetectedPieces({ items, onPick, picked, savedKeys, onAvailable }: { items: PhotoItem[]; onPick: (p: PhotoPick) => void; picked: string | null; savedKeys: string[]; onAvailable?: (keys: string[]) => void }) {
-  const { t } = useI18n(); const tax = useTaxonomy();
-  const [thumbs, setThumbs] = useState<Record<string, string>>({});
-  const urls = useRef<string[]>([]);
-  useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
-  const ready = items.filter((i) => i.detection);
-  const entries = ready.flatMap((it) => {
-    const photo = items.indexOf(it) + 1;
-    const pieces = it.detection!.pieces.length ? it.detection!.pieces : [{ index: -1, box: FULL, confidence: 0 } as DetectedPiece];
-    return pieces.map((p, n) => ({ key: `${it.id}#${p.index}`, it, p, photo, piece: n + 1 }));
-  });
-  const keys = entries.map((e) => e.key).join("|");
-  useEffect(() => { onAvailable?.(keys ? keys.split("|") : []); }, [keys]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    entries.forEach((e) => {
-      if (thumbs[e.key]) return;
-      (e.p.index < 0 ? Promise.resolve(e.it.file as Blob) : cropBox(e.it.file, e.p.box, 240))
-        .then((b) => { const u = URL.createObjectURL(b); urls.current.push(u); setThumbs((m) => ({ ...m, [e.key]: u })); }).catch(() => undefined);
-    });
-  }, [keys]); // eslint-disable-line react-hooks/exhaustive-deps
-  async function use(e: (typeof entries)[number]) {
-    const blob = e.p.index < 0 ? e.it.file : await cropBox(e.it.file, e.p.box);
-    const file = blob instanceof File ? blob : new File([blob], `peca-${e.photo}-${e.piece}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type });
-    const preview = URL.createObjectURL(file); urls.current.push(preview);
-    onPick({ key: e.key, file, preview, draftId: e.it.detection!.draftId, index: e.p.index, photo: e.photo, piece: e.piece,
-      value: initialValue(e.p, tax, t("multiPiece.peca_n", { n: e.piece })), hint: e.p.brandHint ?? null });
-  }
-  return (
-    <section className="grid gap-2" aria-label={t("multiPiece.pecas_detectadas")}>
-      <p className="font-medium">{t("multiPiece.pecas_detectadas")}</p>
-      <p className="type-caption text-muted">{t("multiPiece.escolha_e_avance")}</p>
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {entries.map((e) => {
-          const saved = savedKeys.includes(e.key), active = picked === e.key;
-          return (
-            <li key={e.key} className={cn("flex items-center gap-2 rounded border bg-surface p-2", active ? "border-ink" : "border-line-soft")} data-testid="detected-piece">
-              {thumbs[e.key] ? <img src={thumbs[e.key]} alt="" className="h-14 w-14 shrink-0 rounded object-contain bg-surface-2" /> : <span className="h-14 w-14 shrink-0 rounded bg-surface-2" />}
-              <div className="min-w-0 flex-1">
-                <p className="type-body-sm font-medium truncate">{e.p.name || t("multiPiece.peca_n", { n: e.piece })}</p>
-                <p className="type-caption text-muted">{t("multiPiece.foto_n", { n: e.photo })}{e.p.category ? ` · ${CATEGORY_LABEL[e.p.category] ?? label(e.p.category)}` : ""}</p>
-              </div>
-              {saved ? <span className="type-caption font-medium">✓ {t("multiPiece.salva")}</span>
-                : active ? <span className="type-caption font-medium">{t("multiPiece.em_edicao")}</span>
-                : <Button size="sm" onClick={() => void use(e)}>{t("multiPiece.usar_esta_peca")}</Button>}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
   );
 }
 

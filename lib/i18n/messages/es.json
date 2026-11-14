@@ -5430,6 +5430,7 @@
   "multiPiece.escolha_e_avance": "Elige una prenda, revisa los datos y sigue con Siguiente — como en la búsqueda del catálogo. Tras guardar, vuelve aquí para la siguiente.",
   "multiPiece.usar_esta_peca": "Usar esta prenda",
   "multiPiece.em_edicao": "En edición",
+  "multiPiece.leitura_local": "Lectura local: no se usó la IA en línea. El color se leyó de la foto; el tipo y el nombre de la prenda los indicas tú.",
   "pieces.new.escolha_peca_da_foto": "Elige una de las prendas encontradas en la foto antes de guardar.",
   "pieces.new.proxima_peca_da_foto": "Prenda guardada. Elige la siguiente prenda de la foto.",
   "pieces.new.origem_foto": "Tu foto (recorte de la prenda)",

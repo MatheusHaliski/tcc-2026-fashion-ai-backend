@@ -5430,6 +5430,7 @@
   "multiPiece.escolha_e_avance": "Escolha uma peça, confira os dados e siga com Avançar — como na busca catalogada. Depois de salvar, volte aqui para a próxima.",
   "multiPiece.usar_esta_peca": "Usar esta peça",
   "multiPiece.em_edicao": "Em edição",
+  "multiPiece.leitura_local": "Leitura local: a IA online não foi usada. A cor foi lida da foto; o tipo e o nome da peça ficam para você informar.",
   "pieces.new.escolha_peca_da_foto": "Escolha uma das peças encontradas na foto antes de salvar.",
   "pieces.new.proxima_peca_da_foto": "Peça salva. Escolha a próxima peça da foto.",
   "pieces.new.origem_foto": "Sua foto (recorte da peça)",
