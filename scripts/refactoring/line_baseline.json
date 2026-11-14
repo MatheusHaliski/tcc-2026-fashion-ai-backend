@@ -172,10 +172,6 @@
    "max": 295,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "components/three/human-outfit.tsx": {
-   "max": 291,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "components/try-on/fitting-items.tsx": {
    "max": 252,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"

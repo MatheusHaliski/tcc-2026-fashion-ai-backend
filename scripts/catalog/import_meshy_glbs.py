@@ -15,6 +15,8 @@ e ``revisar.txt`` (o subconjunto de faltam.txt que entrou como DRAFT). Por padr�
 ``--apply`` envia ao bucket e grava, e só roda com autorização explícita.
 
     python scripts/catalog/import_meshy_glbs.py --manifest manifesto.csv --root ~/glb-analise --out-dir ~/glb-analise
+
+Outro gerador (manifesto product_id, glb, generator): ``--generator hunyuan3d-2mv+2.1 --origin runpod``.
 """
 from __future__ import annotations
 
@@ -26,11 +28,13 @@ from pathlib import Path
 
 try:
     from .codex_catalog_match import resolve
+    from .glb_source import GENERATORS, ORIGINS, GlbSource
     from .glb_quality import DESKTOP_BYTES, inspect
     from .glb_web_rendition import web_rendition
     from .meshy_glb_apply import apply_one, pieces_without_model
 except ImportError:   # rodado como script: scripts/catalog no sys.path
     from codex_catalog_match import resolve
+    from glb_source import GENERATORS, ORIGINS, GlbSource
     from glb_quality import DESKTOP_BYTES, inspect
     from glb_web_rendition import web_rendition
     from meshy_glb_apply import apply_one, pieces_without_model
@@ -167,13 +171,25 @@ def _real_storage():
     return FrameStorage()
 
 
-def run_apply(conn, storage, items: list[dict]) -> None:
+def alive(conn) -> None:
+    """A Railway encerra conexão MySQL parada: reabre antes de cada uso longo (o lote leva vários minutos)."""
+    if hasattr(conn, "ping"):
+        conn.ping(reconnect=True)
+
+
+def failure(exc: Exception) -> str:
+    """Tipo e mensagem curta do erro, numa linha (vai para o relatório: diz o que falhou, sem segredo)."""
+    return f"FALHOU {type(exc).__name__}: {' '.join(str(exc).split())[:160]}".rstrip(": ")
+
+
+def run_apply(conn, storage, items: list[dict], source: GlbSource) -> None:
     for item in (i for i in items if i["status"] == "IMPORTAR"):
         try:
-            done = apply_one(conn, storage, {**item, "renditions": renditions(item["path"].read_bytes())})
+            alive(conn)
+            done = apply_one(conn, storage, {**item, "renditions": renditions(item["path"].read_bytes())}, source)
             item["status"], item["pieces"] = f"IMPORTADO_{done['status']}", done["pieces"]
         except Exception as exc:   # um arquivo com problema não para o lote
-            item["status"] = f"FALHOU {type(exc).__name__}"
+            item["status"] = failure(exc)
 
 
 def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
@@ -182,7 +198,10 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
     parser.add_argument("--root", type=Path, required=True, help="pasta com os .glb (a do manifesto)")
     parser.add_argument("--out-dir", type=Path, default=Path("."), help="onde gravar relatorio.csv e faltam.txt")
     parser.add_argument("--apply", action="store_true", help="envia e grava no banco (produção: só com autorização)")
+    parser.add_argument("--generator", choices=list(GENERATORS), default="meshy-6-lite", help="quem gerou os .glb")
+    parser.add_argument("--origin", choices=list(ORIGINS), default="codex", help="de onde veio o lote")
     args = parser.parse_args(argv)
+    source = GlbSource(args.generator, args.origin)
     conn, target = connect()
     models = existing_models(conn)
     if models is None and args.apply:
@@ -191,7 +210,7 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
     items = assess(read_manifest(args.manifest), args.root, conn, models or [])
     pieces = pieces_without_model(conn, [i["product_id"] for i in items if i["status"] == "IMPORTAR"])
     if args.apply:
-        run_apply(conn, make_storage(), items)
+        run_apply(conn, make_storage(), items, source)
     for item in items:
         item["status"] = "IMPORTADO" if item["status"].startswith("IMPORTADO") else item["status"]
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -199,6 +218,7 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
         writer = csv.writer(handle)
         writer.writerow(REPORT)
         writer.writerows(report_row(i, args.root, pieces) for i in items)
+    alive(conn)
     todo, review = missing(conn, items, models or [])
     (args.out_dir / "faltam.txt").write_text("".join(f"{p}\n" for p in todo), encoding="utf-8")
     (args.out_dir / "revisar.txt").write_text("".join(f"{p}\n" for p in review), encoding="utf-8")
@@ -206,7 +226,8 @@ def main(argv=None, connect=_real_connect, make_storage=_real_storage) -> int:
     for item in items:
         label = f"{item['status']} {item['grade']}" if item["status"] in ("IMPORTAR", "IMPORTADO") else item["status"]
         counts[label] = counts.get(label, 0) + 1
-    print(f"glb do Codex: {len(items)} arquivos · {'GRAVANDO' if args.apply else 'ensaio (nada é gravado)'} · {target}")
+    mode = "GRAVANDO" if args.apply else "ensaio (nada é gravado)"
+    print(f"glb {source.generator} ({source.origin}): {len(items)} arquivos · {mode} · {target}")
     if models is None:
         print("  aviso: catalog_product_models_3d ainda não existe (V97 não aplicada); contado como vazio")
     for key, count in sorted(counts.items()):

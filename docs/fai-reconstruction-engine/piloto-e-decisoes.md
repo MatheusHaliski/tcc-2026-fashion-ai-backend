@@ -142,3 +142,61 @@ paramétrico vestido com a foto: um .glb rígido sem esqueleto atravessaria o co
 braços. Para vestir de verdade, cada modelo precisaria de rig + métricas (GarmentFitGate) e virar
 `garment_assets_3d` APPROVED. Efeito colateral bom: a peça do catálogo com modelo chega ao provador como
 `COMPLETED` e ele não pede outra geração RF16.
+
+## Provador veste o `.glb` do produto (06/11/2026)
+
+Pedido: o avatar do provador vestir o `.glb` da peça em vez do molde paramétrico, respeitando P/M/G/GG.
+
+**SAM 3D Body não resolve isto:** ele reconstrói o *corpo* de uma pessoa numa foto (malha MHR, pose); não veste
+roupa. O caminho usado é geométrico, sem IA nem GPU (nada pago): encaixe pela categoria, membros alinhados aos eixos
+do avatar, volume onde a Meshy deixou a peça rasa, colisão, transferência de pesos de pele por membro e volta ao
+repouso (detalhes em `fase3-provador.md`).
+
+**Medido** (corpo feminino padrão, pose de exibição; render em Chromium/three.js em frente, lado, costas, braços
+para frente, caminhada e agachamento):
+
+| Peça (.glb WEB) | Resultado | Dentro do corpo | Esticamento p95 | Mais longe da pele |
+|---|---|---|---|---|
+| VMHARUKI Blazer, P (−1) | aceito | 0,01% | 1,44 | 6 cm |
+| VMHARUKI Blazer, M (0) | aceito | 0,01% | 1,58 | 7 cm |
+| VMHARUKI Blazer, GG (+2) | recusado (ESTICADA 1,87) → molde | — | — | — |
+| Jeans VMRIVER, M | aceito | 0% | 1,00 | 9 cm |
+| Camiseta Billabong (foto com manga aberta) | recusada (ESTICADA 1,87) → molde | — | — | — |
+
+Tempo do ajuste: 0,55 s por peça (33 mil vértices), uma vez por corpo × peça × tamanho. As iterações que mais
+contaram: pesos da manga pela altura do eixo do braço, corte da fusão manga × tronco, solda das costuras de UV
+(1,8 s → 0,55 s e fim das fendas no jeans agachado) e limite do volume (espinhos de 60 cm na camiseta).
+
+**Situação dos dados:** o `--apply` da importação ainda não rodou (nenhum `.glb` em `catalog/model3d/` no bucket);
+até lá nenhum produto tem modelo e o provador segue com o molde.
+
+## Geração dos `.glb` que faltam na RunPod: preparação (14/11/2026)
+
+**Importação do lote do Codex:** o bucket de produção continua sem nenhum objeto em `catalog/model3d/` depois do 2º
+`--apply`, então ele também não deixou nenhum `.glb` no bucket. O estado do banco não pôde ser lido da sessão na nuvem (o
+proxy não deixa passar MySQL); a conferência fica com `scripts/catalog/audit_model3d_import.py`, rodado no Mac.
+
+**Modelo escolhido:** Hunyuan3D 2.1, oficial, commit `82920d643c0dc2f7bfd7255f45f62d386edfe60c`.
+- Licença: Tencent Hunyuan 3D 2.1 Community License. Não vale na UE, no Reino Unido nem na Coreia do Sul; acima de
+  1 milhão de MAU exige licença à parte. O projeto (Brasil, TCC) está dentro do território e do limite.
+- Memória (README): 10 GB para a forma, 21 GB para a textura, 29 GB para as duas no mesmo processo. Uma GPU de 24 GB
+  não comporta as duas carregadas ao mesmo tempo; nesse caso a alternativa é o TRELLIS.2 4B (MIT, mínimo de 24 GB,
+  `.glb` PBR).
+- Ambiente: Python 3.10, PyTorch 2.5.1 + cu124 (`scripts/catalog/runpod_setup_hunyuan.sh`).
+- **Vistas:** no código oficial, a forma usa uma imagem só e a pintura condiciona apenas por `input_images[0]`. Passar
+  uma lista em `image_path` quebra a chamada (`image_prompt` fica sem valor). A geração usa a **frente** do flat lay
+  aprovado. As costas são baixadas e servem só para a revisão. Usar as costas de verdade exige outro modelo de forma
+  (Hunyuan3D-2mv aceita frente/costas/lados) ou uma alteração no código da pintura; nada disso entrou sem decisão.
+
+**Decisão (14/11/2026): forma com o Hunyuan3D-2mv, textura com o 2.1.** A forma usa o Hunyuan3D-2mv (repositório
+Hunyuan3D-2, commit `f8db63096c8282cb27354314d896feba5ba6ff8a`, pacote `hy3dgen`, Tencent Hunyuan 3D 2.0 Community
+License, mesmo território), condicionado pela frente e pelas costas do flat lay (só pela frente quando não há costas). A
+textura vem do 2.1, pela frente. Cada etapa roda num processo (`--stage shape`, depois `--stage paint`), então os
+modelos não ficam carregados juntos: o pico esperado é o da textura (~21 GB) e uma GPU de 24 GB serve. Gerador gravado:
+`hunyuan3d-2mv+2.1`.
+
+**Fluxo:** `export_glb_batch.py` (Mac, só lê o banco) → `lote.csv` → `runpod_hunyuan_runner.py` (pod, `--stage shape` e depois `--stage paint`, grava só no volume) → `~/glb-hunyuan` → `import_meshy_glbs.py --generator hunyuan3d-2mv+2.1 --origin runpod` (ensaio; `--apply` só
+com confirmação). O gerador e a origem vão para `catalog_product_models_3d.generator` e `metrics_json.import`.
+
+**A medir no piloto:** GPU, VRAM de pico, segundos por produto, custo por hora e total, e as notas comparadas com a
+Meshy (mesma régua do `glb_quality.py`, renders de frente, lado e costas).
