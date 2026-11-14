@@ -10657,5 +10657,6 @@
   "flair3d.ui.acao.jogada.special": "Point scored and the team celebrates",
   "flair3d.ui.acao.jogada.fail": "The opposing team takes the match",
   "tryOn.referencia_convite": "This is the reference mannequin, not your body.",
-  "tryOn.provando_status_sem_marca": "Trying on {name} on {slot}."
+  "tryOn.provando_status_sem_marca": "Trying on {name} on {slot}.",
+  "search.ha_resultados_em": "There are results for this search in:"
 }

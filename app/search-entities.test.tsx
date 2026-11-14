@@ -14,11 +14,12 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push }
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("Buscar: Marcas e Celebridades em cards", () => {
-  it("marcas: card com logo, @, selo Marca, contador e Abrir perfil; marca do catálogo sem perfil vai às peças", async () => {
+  it("marcas: card com logo, selo Marca e Abrir perfil, sem @ nem contador inventados; marca do catálogo sem perfil vai às peças", async () => {
     nav.search = new URLSearchParams("q=n&tab=MARCAS");
     const api = mockApi({
       "GET /api/search": (url: URL) => ({ results: url.searchParams.get("tab") === "MARCAS"
-        ? [{ name: "Nike", slug: "nike", userId: "b1", registered: true, publicPieces: 12 }, { name: "Marca Nova", registered: false, publicPieces: 3 }]
+        // contrato do servidor (SearchService.brandResults): marca com perfil vem sem contador e sem username; só a do catálogo traz publicPieces
+        ? [{ name: "Nike", slug: "nike", userId: "b1", registered: true }, { name: "Marca Nova", registered: false, publicPieces: 3 }]
         : [{ name: "Bia", slug: "bia", userId: "u2", avatarUrl: "/media/bia.jpg" }], nextCursor: null }),
       "GET /api/public-pieces": { items: [], nextCursor: null },
       "GET /api/catalog/products": { items: [], page: 0, size: 24, total: 0, hasMore: false }, "GET /api/catalog/summary": { products: 14000, brands: 120 },
@@ -27,9 +28,11 @@ describe("Buscar: Marcas e Celebridades em cards", () => {
     const cards = await waitFor(() => { const c = container.querySelectorAll("ul.institutional-profile-feed article.institutional-profile-card"); expect(c).toHaveLength(2); return c; });
     expect(container.querySelector("ul.fai-list")).toBeNull();
     expect(cards[0].querySelector("h2")?.textContent).toBe("Nike");
-    expect(cards[0].querySelector(".institutional-profile-username")?.textContent).toBe("@nike");
+    // regressão da auditoria: o card mostrava "@vento-norte" (o slug, não o @ do perfil) e "0 peças públicas"
+    expect(cards[0].querySelector(".institutional-profile-username")).toBeNull();
+    expect(cards[0].querySelector("dd")).toBeNull();
     expect(screen.getAllByText("Marca").length).toBeGreaterThan(0);
-    expect(cards[0].querySelector("dd")?.textContent).toBe("12");
+    expect(cards[1].querySelector("dd")?.textContent).toBe("3");
     expect((cards[0].querySelector("a.btn") as HTMLAnchorElement).getAttribute("href")).toBe("/brands/nike");
     expect(cards[1].textContent).toContain("Marca do catálogo");
     // marca só do catálogo: "Ver peças" abre o ACERVO inteiro dela (catálogo paginado), sem o termo digitado

@@ -10657,5 +10657,6 @@
   "flair3d.ui.acao.jogada.special": "Punto y el equipo celebra",
   "flair3d.ui.acao.jogada.fail": "El equipo rival se lleva el partido",
   "tryOn.referencia_convite": "Este es el maniquí de referencia, no tu cuerpo.",
-  "tryOn.provando_status_sem_marca": "Probándote {name} en {slot}."
+  "tryOn.provando_status_sem_marca": "Probándote {name} en {slot}.",
+  "search.ha_resultados_em": "Hay resultados para esta búsqueda en:"
 }
