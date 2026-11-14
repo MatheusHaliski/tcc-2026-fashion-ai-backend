@@ -49,3 +49,20 @@ describe("tabuleiro e quebra-cabeça", () => {
     expect(vagaVizinha(f.vagas, "acessorio", -1, "y")).toBe("acessorio");
   });
 });
+
+/**
+ * Regressão da auditoria: no computador a arte do quebra-cabeça ocupava a primeira tela inteira e as vagas do tabuleiro
+ * ficavam abaixo da dobra. A folha de estilo limita a arte a uma fração da altura da tela.
+ */
+describe("tela do elenco — a arte não empurra o tabuleiro para fora da primeira dobra", () => {
+  it("a largura da arte é limitada pela altura da tela (16:10)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const css = readFileSync(join(process.cwd(), "app/(site)/_styles/32-flair-elencos.css"), "utf8");
+    const regra = css.slice(css.indexOf(".el-jigsaw {"), css.indexOf("}", css.indexOf(".el-jigsaw {")));
+    expect(regra).toMatch(/width: min\(100%, calc\(38dvh \* 1\.6\)\)/);
+    expect(regra).toMatch(/aspect-ratio: 16 \/ 10/);
+    // 1440×900: 38% de 900 = 342 px de arte; sobra mais da metade da tela para o tabuleiro
+    expect(0.38 * 900).toBeLessThan(900 / 2);
+  });
+});
