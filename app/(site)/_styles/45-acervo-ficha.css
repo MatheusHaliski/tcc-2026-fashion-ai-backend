@@ -186,3 +186,36 @@
   width: 20px;
   height: 20px;
 }
+
+.acv-ficha-aba,
+.acv-tamanhos,
+.acv-editor3d {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.acv-ficha-aba > *,
+.acv-tamanhos > table {
+  justify-self: stretch;
+}
+
+.acv-tamanhos-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.acv-tamanhos-estado {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+}
+
+.acv-editor3d-lista {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: var(--text-body-sm);
+}
