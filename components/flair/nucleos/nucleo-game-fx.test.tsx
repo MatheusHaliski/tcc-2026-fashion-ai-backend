@@ -293,9 +293,15 @@ describe("acionamentos", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });
     const props = { definicao: definicao("FASHION_DETECTIVE"), cartas: CARTAS, entregando: false, erro: null, onEntregar: vi.fn() };
     const { rerender } = renderApp(<NucleoGame {...props} />);
+    const abertura = screen.getByTestId("nucleo-cutscene");
+    expect(abertura.textContent).toContain("Salão 1 de 6");
+    expect(abertura.textContent).toContain("O detetive chega à gala.");
+    fireEvent.click(within(abertura).getByRole("button", { name: "Escolher o look" }));
+    expect(screen.queryByTestId("nucleo-cutscene")).toBeNull();
     expect(screen.getByTestId("nucleo-hint").textContent).toBe("Salão 1 de 6: Entrada da gala. Código de vestimenta: 2 peças formais ou de festa. Carta de pista: \"Sua mãe costumava deixar a chave no armário com a blusa branca.\"");
     const anterior: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "PARCIAL", regras: [], status: "ABERTA", eventos: [{ codigo: "PROXIMO_SALAO", valor: { salao: 4, codigo: "CLUBE_UNDERGROUND" } }] };
     rerender(<NucleoGame {...props} tentativa={anterior} />);
+    expect(screen.getByTestId("nucleo-cutscene").textContent).toContain("Do mercado, o detetive segue para um clube de tijolo e néon.");
     expect(screen.getByTestId("nucleo-hint").textContent).toContain("Salão 4 de 6: Clube underground. Código de vestimenta: 2 peças de balada, festa ou festival.");
   });
 
@@ -305,7 +311,7 @@ describe("acionamentos", () => {
     const base = { definicao: definicao("FASHION_SPORTS"), cartas: CARTAS, entregando: false, erro: null, onEntregar: vi.fn(), onAcionar: vi.fn() };
     const { rerender } = renderApp(<NucleoGame {...base} />);
     expect(screen.getByTestId("nucleo-hint").textContent).toContain("Modalidade: Futebol de 5.");
-    fireEvent.click(screen.getByRole("tab", { name: /Resposta/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Modalidade/ }));
     fireEvent.click(screen.getByRole("button", { name: "Vôlei de praia" }));
     expect(screen.getByTestId("nucleo-hint").textContent).toContain("Modalidade: Vôlei de praia.");
     const lance = { codigo: "LANCE", valor: { lance: 1, acao: "CHUTE", modalidade: "VOLEI", carta: "c5", venceu: true } };
@@ -313,7 +319,7 @@ describe("acionamentos", () => {
     rerender(<NucleoGame {...base} momento="ACAO" resultado={jogo} />);
     expect(await screen.findByRole("button", { name: /Regata cinza · cortada/ })).toBeTruthy();
     await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("Lance 1: cortada, deu certo"), { timeout: 4000 });
-    expect(screen.getByTestId("nucleo-action").textContent).toContain("Modalidade: Vôlei de praia");
+    expect(screen.getByTestId("nucleo-action").textContent).toContain("Modalidade: Vôlei de praia (placar em sets)");
   });
 
   it("O Labirinto: a tentativa que não abriu o espelho vira dica, com quantas peças faltam", () => {

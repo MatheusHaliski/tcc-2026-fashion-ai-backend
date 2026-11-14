@@ -32,13 +32,15 @@ interface Props {
   protagonista: Protagonista;
   /** resultado da entrega (opcional): a cena toca a sequência automática do jogo e a reação do avatar */
   resultado?: NucleoResultado | null;
+  /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
+  variante?: string | null;
 }
 
 export function NucleoScene(props: Props) {
   const tx = useNucleoText();
   const webgl = useWebGL();
   const reduzido = useReducedMotion();
-  const fallback = <Cena2D config={props.config} avatar={props.avatar} pecas={props.pecas} resultado={props.resultado} />;
+  const fallback = <Cena2D config={props.config} avatar={props.avatar} pecas={props.pecas} resultado={props.resultado} variante={props.variante} />;
   if (webgl === false) return fallback;
   if (webgl === null) return <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div>;
   return (

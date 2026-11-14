@@ -22,6 +22,28 @@ public record FashionSportsModalidade(String codigo, int velocidade, int tecnica
         return TODAS.stream().filter(m -> m.codigo.equals(resposta)).findFirst().orElse(FUTEBOL);
     }
 
+    /**
+     * O placar no jeito da modalidade, a partir dos lances convertidos de cada lado (quem converte mais continua na
+     * frente): gols no futebol, chegadas na corrida, pontos no basquete (12 de base e 3 por lance), nota no skate (60 de
+     * base e 10 por lance) e sets no vôlei e no tênis (no fim, 2 para quem venceu e no máximo 1 para o outro; 1 a 1 no
+     * empate).
+     */
+    public String placar(int nos, int eles, boolean fim) {
+        return switch (codigo) {
+            case "BASQUETE" -> (12 + 3 * nos) + "-" + (12 + 3 * eles);
+            case "SKATE" -> (60 + 10 * nos) + "-" + (60 + 10 * eles);
+            case "VOLEI", "TENIS" -> sets(nos, eles, fim);
+            default -> nos + "-" + eles;
+        };
+    }
+
+    private static String sets(int nos, int eles, boolean fim) {
+        if (!fim || nos == eles) {
+            return Math.min(nos, 1) + "-" + Math.min(eles, 1);
+        }
+        return nos > eles ? "2-" + Math.min(eles, 1) : Math.min(nos, 1) + "-2";
+    }
+
     /** Força do time: média dos atributos do uniforme com os pesos da modalidade. */
     public int forca(Flair3dAtributos a) {
         int pesos = velocidade + tecnica + resistencia + defesa;

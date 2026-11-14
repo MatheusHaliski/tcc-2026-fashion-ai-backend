@@ -90,7 +90,7 @@ public class FashionSportsNucleo implements Flair3dNucleo {
         int eles = PADRAO_MIN + contexto.sorteio().nextInt(PADRAO_FAIXA);
         int[] primeiro = gols(nos - eles);
         List<Evento> eventos = new ArrayList<>(List.of(new Evento("MODALIDADE", modalidade.codigo()), new Evento("FORCA_TIME", nos), new Evento("FORCA_ADVERSARIO", eles),
-                new Evento("COESAO", 100), new Evento("INTERVALO", primeiro[0] + "-" + primeiro[1])));
+                new Evento("COESAO", 100), new Evento("INTERVALO", modalidade.placar(primeiro[0], primeiro[1], false))));
         List<Acionamento> acionamentos = contexto.andamento().acionamentos();
         if (acionamentos.isEmpty()) {
             return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
@@ -108,7 +108,7 @@ public class FashionSportsNucleo implements Flair3dNucleo {
         boolean vitoria = golsNos > golsEles;
         boolean empate = golsNos == golsEles;
         eventos.add(new Evento("FORCA_SEGUNDO_TEMPO", segundoTempo));
-        eventos.add(new Evento("PLACAR", golsNos + "-" + golsEles));
+        eventos.add(new Evento("PLACAR", modalidade.placar(golsNos, golsEles, true)));
         List<RegraResultado> regras = List.of(RegraResultado.de("VITORIA", vitoria, 100), RegraResultado.de("EMPATE", empate, 60),
                 RegraResultado.de("COESAO", true, 0));
         double pontos = vitoria ? 100 : empate ? 60 : 0;

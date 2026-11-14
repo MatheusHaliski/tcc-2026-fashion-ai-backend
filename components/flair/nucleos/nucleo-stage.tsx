@@ -39,6 +39,8 @@ export interface NucleoStageProps {
   resultado: NucleoResultado | null;
   /** prévia do look de agora (preparação) */
   previa: NucleoResultado | null;
+  /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
+  variante?: string | null;
   prefs: FxPrefs;
   onPref: (campo: keyof FxPrefs) => void;
   entrada: EntradaNaTela | null;
@@ -56,7 +58,7 @@ export function NucleoStage(props: NucleoStageProps) {
   const naAcao = momento === "ACAO" || momento === "RESULTADO";
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} />
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}

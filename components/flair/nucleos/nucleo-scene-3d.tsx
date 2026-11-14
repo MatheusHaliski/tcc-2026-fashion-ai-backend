@@ -15,7 +15,7 @@ import { CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
 import { useSceneDirector } from "@/components/flair/nucleos/scene/use-scene-director";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import { figurantesDaCena } from "@/lib/flair/nucleos/scene/budget";
-import { SALAS } from "@/lib/flair/nucleos/scene/registry";
+import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import { placarDaCena } from "@/lib/flair/nucleos/scene/sequences-auto";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import { limiteDaCamera } from "@/lib/flair/nucleos/scene/zones";
@@ -31,6 +31,8 @@ export interface NucleoScene3DProps {
   protagonista: Protagonista;
   /** resultado da entrega: dispara a sequência automática do jogo e a reação do avatar */
   resultado?: NucleoResultado | null;
+  /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
+  variante?: string | null;
 }
 
 /**
@@ -44,8 +46,8 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado }: NucleoScene3DProps) {
-  const sala = SALAS[config.codigo];
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante }: NucleoScene3DProps) {
+  const sala = salaDe(config.codigo, variante);
   const cena = useSceneDirector({ codigo: config.codigo, avatar, resultado, reduzido });
   const { dist, alvo } = enquadramento(avatar.zoom, sala);
   const target = useMemo<V3>(() => alvo, [alvo[1]]); // eslint-disable-line react-hooks/exhaustive-deps

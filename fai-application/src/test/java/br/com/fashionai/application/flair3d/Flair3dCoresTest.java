@@ -106,6 +106,13 @@ class Flair3dCoresTest {
         assertThat(FashionSportsModalidade.FUTEBOL.forca(a)).isEqualTo(FashionSportsNucleo.forca(a)).isEqualTo(24);
         assertThat(FashionSportsModalidade.de("CORRIDA").forca(a)).isEqualTo(35);
         assertThat(FashionSportsModalidade.de("BASQUETE").forca(a)).isEqualTo(21);
+        assertThat(FashionSportsModalidade.FUTEBOL.placar(2, 1, true)).isEqualTo("2-1");
+        assertThat(FashionSportsModalidade.de("BASQUETE").placar(2, 1, true)).isEqualTo("18-15");
+        assertThat(FashionSportsModalidade.de("SKATE").placar(0, 2, true)).isEqualTo("60-80");
+        assertThat(FashionSportsModalidade.de("VOLEI").placar(3, 2, true)).isEqualTo("2-1");
+        assertThat(FashionSportsModalidade.de("TENIS").placar(0, 1, true)).isEqualTo("0-2");
+        assertThat(FashionSportsModalidade.de("VOLEI").placar(2, 2, true)).isEqualTo("1-1");
+        assertThat(FashionSportsModalidade.de("TENIS").placar(1, 0, false)).isEqualTo("1-0");
         assertThat(new FashionSportsNucleo().definicao().opcoes()).containsExactly("FUTEBOL", "BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE");
 
         CbcRules.Card sup = card("SUP", "ovr:60");

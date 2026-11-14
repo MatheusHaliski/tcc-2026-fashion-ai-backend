@@ -45,7 +45,7 @@ carta no deck mostra o mesmo selo.
 ### 1.3 Os outros esportes [feito]
 
 A mesma cor mantém o mesmo papel em todo esporte, para a pessoa aprender uma vez só. A pessoa escolhe a modalidade na
-aba Resposta antes de entregar; sem escolha, vale o futebol de 5.
+aba Modalidade antes de entregar; sem escolha, vale o futebol de 5.
 
 | Cor | Papel | Tênis | Basquete 3×3 | Vôlei de praia | Corrida e revezamento | Skate |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -67,8 +67,20 @@ O que muda de um esporte para outro é o peso de cada atributo do uniforme na fo
 | Corrida e revezamento | 2 | 0 | 2 | 0 |
 | Skate | 1 | 2 | 1 | 0 |
 
-**O que ainda é igual em todos:** a partida continua em dois tempos com placar de gols, e a quadra 3D e os figurantes são
-os do futebol de 5. Placar próprio de cada esporte (sets, cestas, tempo de prova) e cenário próprio ainda não existem.
+Cada modalidade tem o placar no jeito dela e a própria quadra [feito]:
+
+| Modalidade | Placar | Quadra |
+| --- | --- | --- |
+| Futebol de 5 | gols | piso emborrachado azul, duas traves |
+| Basquete 3×3 | pontos (12 de base e 3 por lance convertido) | piso de madeira, tabela na linha de fundo |
+| Vôlei de praia | sets (2 para quem vence, no máximo 1 para o outro; 1 a 1 no empate) | piso cor de areia, rede alta |
+| Tênis | sets, como no vôlei | piso verde, rede baixa |
+| Corrida e revezamento | chegadas | pista vermelha, barreira na linha de fundo |
+| Skate | nota (60 de base e 10 por lance convertido) | concreto, corrimão na linha de fundo |
+
+**O que ainda é igual em todos:** a partida continua em dois tempos, o ginásio (arquibancada, banco e luzes) é o mesmo,
+os figurantes são os do futebol e a bola continua em cena também na corrida e no skate. As quadras novas passam nas
+regras automáticas das salas, mas ainda não foram vistas na tela.
 
 ## 2. Fashion Detective
 
@@ -109,8 +121,14 @@ desafio.
 - O deck do caso passou de 6 para até 12 cartas, porque são 6 looks.
 - Na tela, a dica da preparação mostra o salão da vez, o código de vestimenta e a carta de pista.
 
-**O que ainda não existe:** cada salão usa o mesmo cenário 3D (a entrada da gala) e não há cutscene; o salão muda nas
-regras e nos textos.
+**Cenário e abertura de cada salão [feito]:** os 6 salões dividem a mesma planta (passadeira até a porta dupla do
+fundo) e cada um tem os próprios materiais, móveis e luz: mármore e veludo na entrada, bancos e dois lustres no salão
+principal, araras e cadeiras no camarim, tijolo, néon e caixotes no clube, bancadas e rolos de tecido no ateliê,
+gaveteiros de metal no arquivo. Antes de escolher o look, um cartão de abertura apresenta o salão, o código de
+vestimenta e a carta de pista; ele fica sobre a faixa do deck, nunca sobre a roupa, e fecha sozinho ou no botão.
+
+**O que ainda não existe:** cutscene animada (câmera e personagens em movimento na abertura). Os salões novos passam nas
+regras automáticas das salas, mas ainda não foram vistos na tela.
 
 ### 2.3 Roupa como moeda: estalecas e mercado [feito]
 
@@ -155,6 +173,8 @@ continuam valendo.
 | Mercado e estalecas | `fai-application/.../flair3d/nucleos/FashionDetectiveMercado.java` |
 | Os 6 salões e um salão jogado | `.../nucleos/FashionDetectiveCaso.java`, `.../nucleos/FashionDetectiveSalao.java` |
 | Modalidades do esporte | `.../nucleos/FashionSportsModalidade.java` |
+| Salões e quadras em 3D | `lib/flair/nucleos/scene/salas/fashion-detective-saloes.ts`, `fashion-sports-quadras.ts`, `scene/registry.ts` (`salaDe`) |
+| Abertura do salão | `components/flair/nucleos/nucleo-cutscene.tsx` |
 | Salões já jogados da partida | `fai-application/.../flair3d/Andamento.java` (`anteriores`) |
 | Eventos e selos do detetive | `fai-application/.../flair3d/nucleos/FashionDetectiveNucleo.java` |
 | Testes | `fai-application/src/test/.../flair3d/Flair3dCoresTest.java`, `FashionDetectiveCasoTest.java` |
