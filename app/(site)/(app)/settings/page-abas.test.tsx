@@ -191,16 +191,16 @@ describe("configurações — privacidade", () => {
     renderApp(<SettingsPage />);
     await tab("Privacidade");
     // regressão da auditoria: nada de código em inglês ("FACIAL RECOGNITION") quando o servidor manda o nome
-    expect(await screen.findByRole("switch", { name: "Reconhecimento facial (dado sensível)" })).toBeTruthy();
+    expect(await screen.findByRole("switch", { name: "RECONHECIMENTO FACIAL (DADO SENSÍVEL)" })).toBeTruthy();
     expect(screen.queryByText(/FACIAL RECOGNITION/)).toBeNull();
-    const sw = await screen.findByRole("switch", { name: "Recomendações por IA" });
+    const sw = await screen.findByRole("switch", { name: "RECOMENDAÇÕES POR IA" });
     fireEvent.click(sw);
-    await waitFor(() => expect(screen.getByRole("switch", { name: "Recomendações por IA" }).getAttribute("aria-checked")).toBe("true"));
-    fireEvent.click(screen.getByRole("switch", { name: "Recomendações por IA" }));
+    await waitFor(() => expect(screen.getByRole("switch", { name: "RECOMENDAÇÕES POR IA" }).getAttribute("aria-checked")).toBe("true"));
+    fireEvent.click(screen.getByRole("switch", { name: "RECOMENDAÇÕES POR IA" }));
     expect(await screen.findByText("Consentimento falhou")).toBeTruthy();
     // informação do consentimento sem descrição
-    fireEvent.click(screen.getByRole("button", { name: "Informações sobre Recomendações por IA" }));
-    const dlg = await screen.findByRole("dialog", { name: "Recomendações por IA" });
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre RECOMENDAÇÕES POR IA" }));
+    const dlg = await screen.findByRole("dialog", { name: "RECOMENDAÇÕES POR IA" });
     fireEvent.click(within(dlg).getAllByRole("button", { name: "Fechar" }).at(-1)!);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     // tópicos do Hype: o de notificações tem link que fecha a explicação

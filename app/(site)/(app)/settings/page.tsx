@@ -196,7 +196,7 @@ function Settings() {
             {consents.loading && <Skeleton className="h-32" />}
             {consents.error && <p role="alert" className="type-body-sm text-critical">{t("settingsHelp.consentsError")}</p>}
             <ul className="divide-y divide-line-soft">{(consents.data ?? []).map((c) => {
-              const name = c.title ?? c.label ?? c.purpose.replace(/_/g, " ").toLocaleUpperCase(locale);   // o servidor manda o nome da finalidade em `title`
+              const name = (c.title ?? c.label ?? c.purpose.replace(/_/g, " ")).toLocaleUpperCase(locale);   // o servidor manda o nome da finalidade em `title`
               return <li key={c.purpose} className="flex items-center gap-3 py-2"><div className="min-w-0 flex-1"><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); if (!v && c.purpose === "RETAIL_DEMAND_ANALYTICS") await api.delete("/api/me/retail-demand/contributions"); } catch (e) { notice.fromError(e); } }} label={name} /></div>{infoButton(name, [c.description ?? t("settingsHelp.consentMissing"), t("settingsHelp.consentChoice")])}</li>;
             })}</ul>
           </Card>
