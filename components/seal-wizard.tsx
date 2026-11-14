@@ -38,10 +38,10 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
   const [step, setStep] = useState(editing && (form.policy.referenceModel || form.policy.mode === "HYPE") ? 1 : 0);
   const [saving, setSaving] = useState(false);
   const [reasons, setReasons] = useState<string[]>([]);
-  const steps = [t(creationMode === "HYPE" ? "sealHypeIssuer.criteria" : "sealCopilot.title"), t("sealWizard.passo_dados"), t("sealWizard.passo_arte"), t("sealWizard.passo_revisar")];
+  const steps = [t(creationMode === "HYPE" ? "sealHypeIssuer.criteria" : creationMode === "MANUAL" ? "sealWizard.passo_definir" : "sealCopilot.title"), t("sealWizard.passo_dados"), t("sealWizard.passo_arte"), t("sealWizard.passo_revisar")];
   const named = form.name.trim().length >= 2;
   const policyReady = creationMode === "HYPE" ? !!cleanHype(form.policy.hype) && form.tier !== "PERFIL" : creationMode === "MANUAL" ? !!cleanPolicy(form.policy) && (form.tier !== "PERFIL" || !!form.policy.referenceModel) : ready;
-  const canGo = (i: number) => !saving && (i === 0 || ((policyReady || editing && creationMode === "COPILOT") && (i < 3 || named)));
+  const canGo = (i: number) => !saving && (i === 0 || ((policyReady || editing && creationMode === "COPILOT") && (i < 2 || named)));   // sem nome não passa do passo Dados
 
   function applyDraft(draft: SealPolicyDraft) {
     if (draft.status !== "VALID" || !draft.policy?.referenceModel) return;
@@ -99,10 +99,11 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
         {step === 2 && <SealArt design={form.design} name={form.name} premium={premium} onChange={(design) => setForm((f) => ({ ...f, design }))} />}
         {step === 3 && <><SealReview form={form} premium={premium} onEdit={setStep} />{form.policy.referenceModel && <SealReferencePreview model={form.policy.referenceModel} />}</>}
       </div>
+      {!named && step === 1 && <p className="error-text mt-2" role="note" data-missing-name>{t("sealWizard.falta_nome")}</p>}
       <div className="seal-wizard-nav">
         {step > 0 ? <Button type="button" onClick={() => setStep(step - 1)}>{t("common.back")}</Button> : <span />}
         {step < 3 ? (
-          <Button type="button" variant="primary" disabled={!canGo(step + 1)} onClick={() => setStep(step + 1)} title={!named && step === 2 ? t("sealWizard.falta_nome") : undefined}>{t("common.next")}</Button>
+          <Button type="button" variant="primary" disabled={!canGo(step + 1)} onClick={() => setStep(step + 1)} title={!named && step >= 1 ? t("sealWizard.falta_nome") : undefined}>{t("common.next")}</Button>
         ) : (
           <Button type="button" variant="primary" loading={saving} disabled={!named || !policyReady} onClick={save}>{t("sealWizard.salvar_selo")}</Button>
         )}

@@ -1021,8 +1021,8 @@
   "brands.slug.selo": "sello {value} · {value2} {value3}",
   "brands.slug.selos": "Sellos ({value})",
   "brands.slug.selos_ativos": "{count, plural, =0 {sin sellos activos} one {# sello activo} other {# sellos activos}}",
-  "brands.slug.selos_concedidos_por_este_perfil": "Sellos concedidos por este perfil. Para usar un sello, publica un look compatible con la política — la IA sugiere el vínculo y la marca lo revisa.",
-  "brands.slug.so_o_dono_deste_perfil": "Solo el dueño de este perfil crea, edita o desactiva sellos. Los looks de otros usuarios reciben el sello cuando el SealBond Matcher detecta compatibilidad con la política y tú apruebas el vínculo.",
+  "brands.slug.selos_concedidos_por_este_perfil": "Sellos otorgados por este perfil. Para usar un sello, publica un look compatible con la política: la sugerencia del vínculo aparece en el look. Las celebridades revisan cada vínculo; en las marcas el sello puede salir al instante.",
+  "brands.slug.so_o_dono_deste_perfil": "Solo el dueño de este perfil crea, edita o desactiva sellos. Los looks de otras personas reciben el sello cuando coinciden con la política. Un perfil de celebridad revisa cada vínculo antes; en un perfil de marca el sello sale al instante, salvo que la revisión de sellos esté activada para la marca.",
   "brands.slug.status": "estado",
   "brands.slug.valido": "· válido {value} {value2}",
   "brands.slug.ver_look": "Ver look",
@@ -10658,5 +10658,6 @@
   "flair3d.ui.acao.jogada.fail": "El equipo rival se lleva el partido",
   "tryOn.referencia_convite": "Este es el maniquí de referencia, no tu cuerpo.",
   "tryOn.provando_status_sem_marca": "Probándote {name} en {slot}.",
-  "search.ha_resultados_em": "Hay resultados para esta búsqueda en:"
+  "search.ha_resultados_em": "Hay resultados para esta búsqueda en:",
+  "sealWizard.passo_definir": "Definir sello"
 }

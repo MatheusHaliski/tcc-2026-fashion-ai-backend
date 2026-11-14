@@ -204,3 +204,26 @@ describe("RF25 — medalhão por tipo de selo", () => {
     expect(sealKind({ template: "folha/mat-01" })).toBe("FOLHA");
   });
 });
+
+/** Regressão da auditoria (relatório de selos, defeitos 9 e 10). */
+describe("criador de selo — passo 1 no modo Manual e nome obrigatório no passo Dados", () => {
+  it("no modo Manual o passo 1 não se chama mais \"Copilot · Definir selo\"", () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY });
+    renderApp(<Harness />);
+    expect(screen.getByRole("button", { name: /Copilot · Definir selo/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Manual" }));
+    expect(screen.queryByRole("button", { name: /Copilot · Definir selo/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Definir selo/ })).toBeTruthy();
+  });
+
+  it("sem nome não avança do passo Dados e a tela diz o que falta", () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY });
+    renderApp(<Harness initial={{ ...EMPTY, id: "s1", name: "" }} />);
+    fireEvent.click(screen.getByRole("button", { name: /Dados/ }));
+    expect(screen.getByText("Dê um nome ao selo (mínimo 2 caracteres).")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Avançar" }).hasAttribute("disabled")).toBe(true);
+    fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: "Zara Azul" } });
+    expect(screen.queryByText("Dê um nome ao selo (mínimo 2 caracteres).")).toBeNull();
+    expect(screen.getByRole("button", { name: "Avançar" }).hasAttribute("disabled")).toBe(false);
+  });
+});

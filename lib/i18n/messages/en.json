@@ -1021,8 +1021,8 @@
   "brands.slug.selo": "seal {value} · {value2} {value3}",
   "brands.slug.selos": "Seals ({value})",
   "brands.slug.selos_ativos": "{count, plural, =0 {no active seals} one {# active seal} other {# active seals}}",
-  "brands.slug.selos_concedidos_por_este_perfil": "Seals granted by this profile. To use a seal, publish a look compatible with the policy — AI suggests the bond and the brand reviews it.",
-  "brands.slug.so_o_dono_deste_perfil": "Only the owner of this profile creates, edits or deactivates seals. Other users' looks receive the seal when the SealBond Matcher detects compatibility with the policy and you approve the bond.",
+  "brands.slug.selos_concedidos_por_este_perfil": "Seals granted by this profile. To use a seal, publish a look that matches the policy: the bond suggestion appears on the look. Celebrities review every bond; for brands the seal may be granted right away.",
+  "brands.slug.so_o_dono_deste_perfil": "Only the owner of this profile creates, edits or deactivates seals. Other people's looks receive the seal when they match the policy. A celebrity profile reviews every bond first; on a brand profile the seal is granted right away, unless seal review is turned on for the brand.",
   "brands.slug.status": "status",
   "brands.slug.valido": "· valid {value} {value2}",
   "brands.slug.ver_look": "View look",
@@ -10658,5 +10658,6 @@
   "flair3d.ui.acao.jogada.fail": "The opposing team takes the match",
   "tryOn.referencia_convite": "This is the reference mannequin, not your body.",
   "tryOn.provando_status_sem_marca": "Trying on {name} on {slot}.",
-  "search.ha_resultados_em": "There are results for this search in:"
+  "search.ha_resultados_em": "There are results for this search in:",
+  "sealWizard.passo_definir": "Define the seal"
 }

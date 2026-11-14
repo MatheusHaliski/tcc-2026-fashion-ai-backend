@@ -1021,8 +1021,8 @@
   "brands.slug.selo": "selo {value} · {value2} {value3}",
   "brands.slug.selos": "Selos ({value})",
   "brands.slug.selos_ativos": "{count, plural, =0 {sem selos ativos} one {# selo ativo} other {# selos ativos}}",
-  "brands.slug.selos_concedidos_por_este_perfil": "Selos concedidos por este perfil. Para usar um selo, publique um look compatível com a política — a IA sugere o vínculo e a marca revisa.",
-  "brands.slug.so_o_dono_deste_perfil": "Só o dono deste perfil cria, edita ou desativa selos. Looks de outros usuários recebem o selo quando o SealBond Matcher detecta compatibilidade com a política e você aprova o vínculo.",
+  "brands.slug.selos_concedidos_por_este_perfil": "Selos concedidos por este perfil. Para usar um selo, publique um look compatível com a política: a sugestão do vínculo aparece no look. Celebridades revisam cada vínculo; nas marcas, o selo pode sair na hora.",
+  "brands.slug.so_o_dono_deste_perfil": "Só o dono deste perfil cria, edita ou desativa selos. Looks de outras pessoas recebem o selo quando combinam com a política. Perfil de celebridade revisa cada vínculo antes; em perfil de marca o selo sai na hora, a não ser que a revisão de selos esteja ligada para a marca.",
   "brands.slug.status": "status",
   "brands.slug.valido": "· válido {value} {value2}",
   "brands.slug.ver_look": "Ver look",
@@ -10658,5 +10658,6 @@
   "flair3d.ui.acao.jogada.fail": "O time adversário leva a partida",
   "tryOn.referencia_convite": "Este é o manequim de referência, não o seu corpo.",
   "tryOn.provando_status_sem_marca": "Provando {name} na {slot}.",
-  "search.ha_resultados_em": "Há resultados para esta busca em:"
+  "search.ha_resultados_em": "Há resultados para esta busca em:",
+  "sealWizard.passo_definir": "Definir selo"
 }
