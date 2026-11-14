@@ -2,7 +2,8 @@
 /**
  * Acionamento pela pessoa, o único gesto com a carta que cada jogo permite fora da preparação (tabela "O que cada
  * carta faz na ação, e quando pode ser acionada"). Dress Fighter: entre os rounds, 1 carta Especial do deck por luta.
- * Fashion Sports: no intervalo, trocar no máximo 1 peça por uma carta do deck da mesma posição. A janela abre quando o
+ * Fashion Sports: no segundo tempo, cada troca de peça é um lance. Fashion Detective: no mercado, deixar 1 carta fora do
+ * look no balcão em troca de estalecas do caso. A janela abre quando o
  * servidor deixa a partida EM_ACAO; a pessoa aciona ou segue, e é o servidor que joga a etapa seguinte (e recusa com
  * 422 a carta que não é Especial, a segunda Especial e a troca que não cabe).
  */
@@ -10,6 +11,9 @@ import type { ApiError } from "@/lib/api/client";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { AcionamentoTipo } from "@/lib/flair/nucleos/moments";
+
+/** Quanto o balcão do mercado paga pela carta, pelo nível dela (o servidor decide; aqui é só o rótulo). */
+export const ESTALECAS_DO_NIVEL: Record<string, number> = { BRONZE: 100, PRATA: 200, OURO: 350, ESPECIAL: 500 };
 
 export interface AcionamentoPedido {
   tipo: AcionamentoTipo;
@@ -20,7 +24,7 @@ export interface AcionamentoPedido {
 }
 
 interface Props {
-  tipo: "ESPECIAL" | "TROCA";
+  tipo: "ESPECIAL" | "TROCA" | "MERCADO";
   /** a janela do acionamento está aberta neste ponto da ação */
   aberta: boolean;
   /** já foi usado nesta partida (1 por luta, 1 por intervalo) */
@@ -43,9 +47,11 @@ interface Props {
 
 export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, ocupado, erro, acaoDe, onAcionar }: Props) {
   const tx = useNucleoText();
-  const opcoes = tipo === "ESPECIAL"
-    ? cartas.filter((c) => c.tier === "ESPECIAL")
-    : cartas.filter((c) => vagas.includes(c.position) && vestidas[c.position] !== c.id);
+  const noLook = new Set(Object.values(vestidas));
+  let opcoes: FlairCollectionCard[];
+  if (tipo === "ESPECIAL") opcoes = cartas.filter((c) => c.tier === "ESPECIAL");
+  else if (tipo === "MERCADO") opcoes = cartas.filter((c) => !noLook.has(c.id));
+  else opcoes = cartas.filter((c) => vagas.includes(c.position) && vestidas[c.position] !== c.id);
   const pode = !!onAcionar && aberta && !usado && !ocupado;
   let aviso: string;
   if (!onAcionar) aviso = tx.t("flair3d.ui.trigger.unavailable");
@@ -57,6 +63,7 @@ export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, oc
 
   const rotulo = (c: FlairCollectionCard) => {
     if (tipo === "ESPECIAL") return tx.t("flair3d.ui.trigger.ESPECIAL.use", { nome: c.name });
+    if (tipo === "MERCADO") return tx.t("flair3d.ui.trigger.MERCADO.use", { nome: c.name, n: ESTALECAS_DO_NIVEL[c.tier] ?? 100 });
     const sai = cartas.find((x) => x.id === vestidas[c.position]);
     const vaga = tx.posicao(c.position);
     const troca = sai

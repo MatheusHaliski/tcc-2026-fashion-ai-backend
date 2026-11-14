@@ -273,6 +273,22 @@ describe("acionamentos", () => {
     await waitFor(() => expect((screen.getByRole("button", { name: "Seguir sem acionar" }) as HTMLButtonElement).disabled).toBe(false));
   });
 
+  it("Fashion Detective: no mercado, a carta fora do look vai ao balcão por estalecas e o detetive compra sozinho", async () => {
+    loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });
+    const onAcionar = vi.fn();
+    const mercado: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], eventos: [{ codigo: "MERCADO", valor: 150 }], status: "EM_ACAO" };
+    const props = { definicao: definicao("FASHION_DETECTIVE"), cartas: CARTAS, entregando: false, erro: null, momento: "ACAO" as const, onEntregar: vi.fn(), onAcionar };
+    const { rerender } = renderApp(<NucleoGame {...props} resultado={mercado} />);
+    const balcao = screen.getByRole("button", { name: "Deixar Camisa verde no balcão: +350 estalecas" }) as HTMLButtonElement;
+    await waitFor(() => expect(balcao.disabled).toBe(false));
+    expect(screen.getByTestId("nucleo-action").textContent).toContain("Estalecas ao chegar ao mercado: 150");
+    fireEvent.click(balcao);
+    expect(onAcionar).toHaveBeenCalledWith({ tipo: "MERCADO", cardId: "c1" });
+    const fim: NucleoResultado = { pontos: 50, estrelas: 1, resultado: "PARCIAL", regras: [], status: "ENTREGUE", eventos: [...mercado.eventos, { codigo: "COMPRA", valor: { item: "CHAVE_MESTRA", estalecas: 500 } }] };
+    rerender(<NucleoGame {...props} resultado={fim} />);
+    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("O detetive comprou a chave mestra por 500 estalecas"), { timeout: 4000 });
+  });
+
   it("O Labirinto: a tentativa que não abriu o espelho vira dica, com quantas peças faltam", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/LABIRINTO/efeitos": EFEITOS });
     const tentativa: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "NAO_ABRE", regras: [], eventos: [{ codigo: "TENTATIVA", valor: 2 }, { codigo: "FALTAM_PECAS", valor: 1 }], status: "ABERTA" };

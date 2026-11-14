@@ -10507,5 +10507,18 @@
   "flair3d.ui.efeito.COR_VIDA": "raises the life bar",
   "flair3d.ui.efeito.COR_DANO": "raises damage in a confrontation",
   "flair3d.ui.efeito.COR_PISTA": "may be the piece a clue points to",
-  "flair3d.ui.efeito.COR_MOEDA": "works as currency at the market"
+  "flair3d.ui.efeito.COR_MOEDA": "works as currency at the market",
+  "flair3d.ui.trigger.MERCADO.name": "Market: case estalecas",
+  "flair3d.ui.trigger.MERCADO.none": "There is no card outside the look to leave at the counter.",
+  "flair3d.ui.trigger.MERCADO.wait": "The market opens once the detective has sized up the room.",
+  "flair3d.ui.trigger.MERCADO.open": "Market: leave 1 card outside the look at the counter to earn estalecas, or move on. The card leaves this match only, and the detective buys what is needed.",
+  "flair3d.ui.trigger.MERCADO.use": "Leave {nome} at the counter: +{n} estalecas",
+  "flair3d.ui.trigger.error.CARTA_VESTIDA": "The card left at the counter cannot be one you are wearing.",
+  "flair3d.ui.evento.MERCADO": "Estalecas on reaching the market: {valor}",
+  "flair3d.ui.evento.VENDA": "Card left at the counter: +{estalecas} estalecas",
+  "flair3d.ui.evento.COMPRA": "The detective bought {item} for {estalecas} estalecas",
+  "flair3d.ui.evento.ESTALECAS": "Estalecas left over (they vanish when the case ends): {valor}",
+  "flair3d.ui.mercado.CHAVE_MESTRA": "the master key",
+  "flair3d.ui.mercado.COLETE": "the protective vest",
+  "flair3d.ui.mercado.LANTERNA": "the flashlight"
 }

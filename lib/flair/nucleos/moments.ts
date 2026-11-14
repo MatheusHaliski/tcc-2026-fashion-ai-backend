@@ -49,7 +49,7 @@ export type AcaoDeCarta =
   | "PULAR";
 
 /** Acionamento pela pessoa: um por jogo, no momento em que a tabela do desenho permite. */
-export type AcionamentoTipo = "ESPECIAL" | "ESPELHO" | "TROCA" | "RESPOSTA";
+export type AcionamentoTipo = "ESPECIAL" | "ESPELHO" | "TROCA" | "RESPOSTA" | "MERCADO";
 
 export interface Acionamento {
   tipo: AcionamentoTipo;
@@ -61,6 +61,7 @@ export const ACIONAMENTOS: Partial<Record<NucleoCodigo, Acionamento>> = {
   PERSONAGEM_FILME: { tipo: "RESPOSTA", momento: "PREPARACAO" },
   LABIRINTO: { tipo: "ESPELHO", momento: "PREPARACAO" },
   FASHION_SPORTS: { tipo: "TROCA", momento: "ACAO" },
+  FASHION_DETECTIVE: { tipo: "MERCADO", momento: "ACAO" },
 };
 
 export function acionamentoDe(codigo: NucleoCodigo): Acionamento | null {

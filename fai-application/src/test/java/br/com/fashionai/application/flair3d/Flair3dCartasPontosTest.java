@@ -77,7 +77,8 @@ class Flair3dCartasPontosTest {
         CbcRules.Card festa = card("INF", "occasion:party", "material:denim");
         CbcRules.Card comum = card("CAL");
         // acesso 50 dividido entre as 2 de gala; desafio 50 pela defesa de cada uma (26, 26 e 6)
-        assertThat(cartas(new FashionDetectiveNucleo(), gala, festa, comum)).containsExactly(de(gala, 47.41), de(festa, 47.41), de(comum, 5.17));
+        assertThat(new FashionDetectiveNucleo().pontuar(vestir(gala, festa, comum), contexto(7L, gala, festa, comum)
+                .comAndamento(Andamento.de(Acionamento.NENHUM))).cartas()).containsExactly(de(gala, 47.41), de(festa, 47.41), de(comum, 5.17));
 
         CbcRules.Card cima = card("SUP", "material:linen", "color:red", "brand:Farm");
         CbcRules.Card baixo = card("INF", "material:cotton", "color:orange");

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.flair3d;
 
+import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveNucleo;
 import br.com.fashionai.application.flair3d.nucleos.FashionSportsNucleo;
@@ -12,6 +13,7 @@ import static br.com.fashionai.application.flair3d.Flair3dFixtures.card;
 import static br.com.fashionai.application.flair3d.Flair3dFixtures.contexto;
 import static br.com.fashionai.application.flair3d.Flair3dFixtures.vestir;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 /**
  * A cor da peça decide a ação (docs/flair/flair-3d/CORES_E_ACOES.md): a tabela de cada jogo, os lances do segundo tempo do
@@ -97,23 +99,70 @@ class Flair3dCoresTest {
         assertThat(n.efeitos(verde, contexto(7L, deck))).extracting(Efeito::codigo).contains("ACAO_CHUTE");
     }
 
+    private static Resultado salao(Acionamento a, List<CbcRules.Card> look, CbcRules.Card... deck) {
+        return new FashionDetectiveNucleo().pontuar(vestir(look.toArray(CbcRules.Card[]::new)),
+                contexto(1L, deck).comAndamento(a == null ? Andamento.INICIO : Andamento.de(a)));
+    }
+
     @Test
     void coresDoLookDaoAsAcoesDoDetetiveEAPistaDaBlusaBrancaRendeAChave() {
         CbcRules.Card branca = card("SUP", "color:white", "occasion:formal");
         CbcRules.Card verde = card("INF", "color:olive", "occasion:party");
         CbcRules.Card preto = card("CAL", "color:black");
         CbcRules.Card amarelo = card("ACE", "color:gold");
+        CbcRules.Card[] deck = {branca, verde, preto, amarelo};
         FashionDetectiveNucleo n = new FashionDetectiveNucleo();
 
-        Resultado r = n.pontuar(vestir(branca, verde, preto, amarelo), contexto(1L, branca, verde, preto, amarelo));
+        Resultado mercado = salao(null, List.of(deck), deck);
+        assertThat(mercado.status()).isEqualTo("EM_ACAO");
+        assertThat(valor(mercado, "FURTIVIDADE")).isEqualTo(20L);
+        assertThat(valor(mercado, "VIDA")).isEqualTo(20L);
+        assertThat(valor(mercado, "DANO")).isEqualTo(0L);
+        assertThat(valor(mercado, "MERCADO")).isEqualTo(200);
+        Resultado r = salao(Acionamento.NENHUM, List.of(deck), deck);
+        assertThat(r.fecha()).isTrue();
         assertThat(valor(r, "GAVETAS")).isEqualTo(1L);
-        assertThat(valor(r, "FURTIVIDADE")).isEqualTo(20L);
-        assertThat(valor(r, "VIDA")).isEqualTo(20L);
-        assertThat(valor(r, "DANO")).isEqualTo(0L);
         assertThat(valor(r, "CHAVE")).isEqualTo(true);
-        assertThat(valor(n.pontuar(vestir(branca, preto), contexto(1L, branca, preto)), "CHAVE")).isEqualTo(false);
+        assertThat(valor(salao(Acionamento.NENHUM, List.of(branca, preto), branca, preto), "CHAVE")).isEqualTo(false);
         assertThat(n.efeitos(verde, contexto(1L, verde))).extracting(Efeito::codigo).containsExactly("ACESSO", "DEFESA", "COR_ABRIR");
         assertThat(n.efeitos(card("SUP"), contexto(1L))).extracting(Efeito::codigo).containsExactly("ACESSO", "DEFESA");
-        assertThat(List.copyOf(Flair3dCores.DETETIVE.values())).doesNotHaveDuplicates();
+    }
+
+    @Test
+    void medidoresDasCoresDecidemOConfrontoAutomatico() {
+        CbcRules.Card gala = card("SUP", "ovr:10", "occasion:formal");
+        CbcRules.Card festa = card("INF", "ovr:10", "occasion:party");
+        assertThat(salao(Acionamento.NENHUM, List.of(gala, festa), gala, festa).resultado()).isEqualTo("PARCIAL");
+        CbcRules.Card[] furtivo = {card("SUP", "ovr:10", "occasion:formal", "color:black"), card("INF", "ovr:10", "occasion:party", "color:charcoal")};
+        assertThat(salao(Acionamento.NENHUM, List.of(furtivo), furtivo).resultado()).isEqualTo("FAVORAVEL");
+        CbcRules.Card[] forte = {card("SUP", "ovr:10", "occasion:formal", "color:yellow"), card("INF", "ovr:10", "occasion:party", "color:blue"),
+                card("CAL", "ovr:10", "color:navy")};
+        assertThat(salao(Acionamento.NENHUM, List.of(forte), forte).resultado()).isEqualTo("FAVORAVEL");
+    }
+
+    @Test
+    void cartaDeixadaNoBalcaoViraEstalecasEODetetiveCompraOQuePrecisa() {
+        CbcRules.Card gala = card("SUP", "ovr:10", "occasion:formal");
+        CbcRules.Card festa = card("INF", "ovr:10", "occasion:party");
+        CbcRules.Card ouro = card("ACE", "tier:OURO");
+        Resultado semVenda = salao(Acionamento.NENHUM, List.of(gala, festa), gala, festa, ouro);
+        assertThat(valor(semVenda, "ESTALECAS")).isEqualTo(0);
+        assertThat(semVenda.eventos()).contains(new Resultado.Evento("COMPRA", Map.of("item", "LANTERNA", "estalecas", 150)));
+        assertThat(semVenda.resultado()).isEqualTo("PARCIAL");
+
+        Resultado comVenda = salao(new Acionamento(ouro.id(), null), List.of(gala, festa), gala, festa, ouro);
+        assertThat(comVenda.eventos()).contains(new Resultado.Evento("VENDA", Map.of("carta", ouro.id(), "estalecas", 350)),
+                new Resultado.Evento("COMPRA", Map.of("item", "CHAVE_MESTRA", "estalecas", 500)));
+        assertThat(valor(comVenda, "CHAVE")).isEqualTo(true);
+        assertThat(valor(comVenda, "ESTALECAS")).isEqualTo(0);
+
+        CbcRules.Card especial = card("ACE", "tier:ESPECIAL");
+        Resultado colete = salao(new Acionamento(especial.id(), null), List.of(gala, festa), gala, festa, especial);
+        assertThat(colete.eventos()).extracting(Resultado.Evento::codigo).containsSubsequence("VENDA", "COMPRA", "COMPRA");
+        assertThat(valor(colete, "ESTALECAS")).isEqualTo(0);
+
+        ApiException e = catchThrowableOfType(ApiException.class, () -> salao(new Acionamento(gala.id(), null), List.of(gala, festa), gala, festa));
+        assertThat(e.code()).isEqualTo("CARTA_VESTIDA");
+        assertThat(e.status()).isEqualTo(422);
     }
 }

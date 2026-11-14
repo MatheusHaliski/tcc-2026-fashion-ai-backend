@@ -103,14 +103,14 @@ class Flair3dNucleosCartasTest {
 
     @Test
     void fashionDetectiveFavoravelParcialEDesfavoravel() {
-        Resultado favoravel = jogar(new FashionDetectiveNucleo(), card("SUP", "occasion:formal", "material:leather"),
+        Resultado favoravel = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:formal", "material:leather"),
                 card("INF", "occasion:party", "material:wool"));
         assertThat(favoravel.pontos()).isEqualTo(100);
         assertThat(favoravel.resultado()).isEqualTo("FAVORAVEL");
-        Resultado parcial = jogar(new FashionDetectiveNucleo(), card("SUP", "occasion:formal"), card("INF", "occasion:party"));
+        Resultado parcial = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:formal"), card("INF", "occasion:party"));
         assertThat(parcial.pontos()).isEqualTo(50);
         assertThat(parcial.resultado()).isEqualTo("PARCIAL");
-        Resultado nada = jogar(new FashionDetectiveNucleo(), card("SUP", "occasion:casual"));
+        Resultado nada = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:casual"));
         assertThat(nada.resultado()).isEqualTo("DESFAVORAVEL");
         assertThat(nada.pontos()).isZero();
     }

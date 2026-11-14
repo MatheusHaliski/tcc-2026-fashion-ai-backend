@@ -47,7 +47,8 @@ export function useNucleoAction(opts: NucleoActionOptions) {
   const tocador = useActionPlayback({ ativo: momento === "ACAO", passos, reduzido, continua: emAcao, onPasso, onFim: fim });
   const mostrados = momento === "RESULTADO" ? passos.length : tocador.mostrados;
 
-  const tipo = acionamento?.momento === "ACAO" && (acionamento.tipo === "ESPECIAL" || acionamento.tipo === "TROCA") ? acionamento.tipo : null;
+  const naAcao = acionamento?.momento === "ACAO" ? acionamento.tipo : null;
+  const tipo = naAcao === "ESPECIAL" || naAcao === "TROCA" || naAcao === "MERCADO" ? naAcao : null;
   /** a janela abre quando o servidor espera o acionamento e tudo o que ele já mandou apareceu */
   const aberta = !!tipo && momento === "ACAO" && janelaDoAcionamento(resultado?.status, passos, tocador.mostrados);
   /** a carta Especial vale 1 por luta (evento ESPECIAL do servidor); a troca vale 1 por lance, até o apito */

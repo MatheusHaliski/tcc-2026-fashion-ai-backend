@@ -10507,5 +10507,18 @@
   "flair3d.ui.efeito.COR_VIDA": "aumenta la barra de vida",
   "flair3d.ui.efeito.COR_DANO": "aumenta el daño en el enfrentamiento",
   "flair3d.ui.efeito.COR_PISTA": "puede ser la prenda de una pista",
-  "flair3d.ui.efeito.COR_MOEDA": "vale como moneda de cambio en el mercado"
+  "flair3d.ui.efeito.COR_MOEDA": "vale como moneda de cambio en el mercado",
+  "flair3d.ui.trigger.MERCADO.name": "Mercado: estalecas del caso",
+  "flair3d.ui.trigger.MERCADO.none": "No hay carta fuera del look para dejar en el mostrador.",
+  "flair3d.ui.trigger.MERCADO.wait": "El mercado abre cuando el detective mide el salón.",
+  "flair3d.ui.trigger.MERCADO.open": "Mercado: deja 1 carta fuera del look en el mostrador para ganar estalecas, o sigue. La carta sale solo de esta partida, y el detective compra solo lo que necesita.",
+  "flair3d.ui.trigger.MERCADO.use": "Dejar {nome} en el mostrador: +{n} estalecas",
+  "flair3d.ui.trigger.error.CARTA_VESTIDA": "La carta dejada en el mostrador no puede estar puesta.",
+  "flair3d.ui.evento.MERCADO": "Estalecas al llegar al mercado: {valor}",
+  "flair3d.ui.evento.VENDA": "Carta dejada en el mostrador: +{estalecas} estalecas",
+  "flair3d.ui.evento.COMPRA": "El detective compró {item} por {estalecas} estalecas",
+  "flair3d.ui.evento.ESTALECAS": "Estalecas que sobraron (desaparecen al final del caso): {valor}",
+  "flair3d.ui.mercado.CHAVE_MESTRA": "la llave maestra",
+  "flair3d.ui.mercado.COLETE": "el chaleco de protección",
+  "flair3d.ui.mercado.LANTERNA": "la linterna"
 }

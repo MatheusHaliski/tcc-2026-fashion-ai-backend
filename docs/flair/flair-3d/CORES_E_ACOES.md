@@ -1,7 +1,8 @@
 # FLAIR 3D: a cor da peça decide a ação
 
-Definição da dona (13/11/2026): no Fashion Sports e no Fashion Detective, cada cor de roupa corresponde a uma mecânica do
-jogo. Este documento registra o mapa, o que já está no servidor e o que ainda é desenho.
+Definição da dona (13/11/2026, com as decisões de 14/11/2026 na seção 3): no Fashion Sports e no Fashion Detective, cada
+cor de roupa corresponde a uma mecânica do jogo. Este documento registra o mapa, o que já está no servidor e o que ainda
+é desenho.
 
 Marcações: **[dona]** é o que ela definiu; **[proposta]** é o que completei para o mapa fechar e ela pode trocar;
 **[feito]** está no código; **[desenho]** ainda não está.
@@ -21,8 +22,8 @@ ou rosto.
 | Verde | Chute a gol | gol se a técnica do uniforme + 5 alcança a força do adversário; senão o chute não entra | [dona] [feito] |
 | Amarelo | Drible | +6 de força do time no segundo tempo | [dona] [feito] |
 | Azul | Corrida | +4 de força do time no segundo tempo | [dona] [feito] |
-| Vermelho | Passe | +3 de força do time no segundo tempo | [proposta] [feito] |
-| Branco | Defesa do goleiro | tira 1 gol do adversário no segundo tempo | [proposta] [feito] |
+| Vermelho | Passe | +3 de força do time no segundo tempo | [dona, 14/11] [feito] |
+| Branco | Defesa do goleiro | tira 1 gol do adversário no segundo tempo | [dona, 14/11] [feito] |
 | Outras | Sem ação | a troca só muda os atributos do uniforme | [feito] |
 
 ### 1.2 Quando a ação dispara
@@ -67,10 +68,11 @@ Hoje o servidor só simula o futebol de 5; os outros esportes entram como rodada
 | Amarelo | Aumenta a barra de vida | evento `VIDA`: 20 por peça | [dona] [feito] |
 | Azul | Aumenta o dano no confronto | evento `DANO`: 20 por peça | [dona] [feito] |
 | Branco | Peça de pista | evento `CHAVE` (ver 2.2) | [dona] [feito] |
-| Vermelho | Moeda de troca no mercado | só o selo na carta (ver 2.3) | [dona] [desenho] |
+| Vermelho | Moeda de troca no mercado | selo na carta; qualquer carta fora do look pode ir ao balcão (ver 2.3) | [dona] [feito em parte] |
 
-Os eventos aparecem na ação do Salão 1 e o selo aparece em cada carta do deck. **A nota do salão ainda é a de antes**
-(acesso de gala + defesa): furtividade, vida e dano ainda não mudam o resultado. Isso depende da decisão do item 3.
+Os medidores entram no desafio do salão, que continua automático (decisão de 14/11/2026): o detetive passa quando
+defesa + vida + dano somam 50, ou quando a furtividade chega a 40 e ele passa sem ser visto. A pessoa segue fazendo uma
+coisa só: escolher a roupa. Não há combate nem movimentação comandados por ela.
 
 ### 2.2 Pistas
 
@@ -85,40 +87,41 @@ entende que precisa da blusa branca para achar a chave que abre uma porta.
 - [desenho] Pista errada não trava o caso: o detetive entra por outro caminho e perde a metade da pista, como na tabela
   de acesso e desafio do jogo 6.
 
-### 2.3 Roupa como moeda: estalecas e mercado [desenho]
+### 2.3 Roupa como moeda: estalecas e mercado
 
 Exemplo da dona: o detetive vai ao mercado do mapa, troca 500 estalecas por uma peça vermelha e usa estalecas para
-comprar uma arma nova e desbloquear recursos.
+comprar equipamento e desbloquear recursos. Decisões de 14/11/2026: estaleca é moeda só do caso e o mercado não vende
+arma.
 
-- **Estaleca é moeda só do caso.** Começa em zero a cada caso e some no fim. Não é o saldo da carteira do FashionAI,
-  não se compra com dinheiro e não vira prêmio. Assim seguem valendo as regras do FLAIR: o erro nunca tira saldo e não
-  há compra paga de vantagem.
-- **Ganhar estalecas:** pista inteira (+200), salão favorável (+150), gaveta aberta por peça verde (+50).
-- **Trocar no mercado:** uma peça do deck que a pessoa escolhe deixar no balcão vale estalecas pelo nível da carta
-  (Bronze 100, Prata 200, Ouro 350, Especial 500). A carta sai só do deck desta partida; a carta da coleção da pessoa
-  não é gasta nem transferida.
-- **Comprar no mercado:** uma peça de cor que falta para uma pista (a peça vermelha de 500 estalecas do exemplo), um
-  recurso do caso (lanterna, chave mestra, mapa do salão) ou um equipamento.
-- **Mapa:** o mercado é um ponto fixo entre o salão 3 e o salão 4, visitado uma vez por caso, para o jogo caber nos 45
-  minutos.
+- **Estaleca é moeda só do caso.** Começa em zero e some no fim. Não é o saldo da carteira do FashionAI, não se compra
+  com dinheiro e não vira prêmio. [feito]
+- **Ganhar estalecas:** acesso ao salão (+150) e gaveta aberta por peça verde (+50 cada). [feito]
+- **Deixar uma carta no balcão:** uma carta do deck que não está no look vale estalecas pelo nível (Bronze 100,
+  Prata 200, Ouro 350, Especial 500). A carta sai só do deck desta partida; a carta da coleção não é gasta nem
+  transferida. Carta vestida é recusada. [feito]
+- **Compras automáticas:** o detetive compra sozinho o que precisa, uma de cada no máximo. [feito]
 
-## 3. O que precisa da decisão da dona
+  | Equipamento | Preço | Quando compra | Efeito |
+  | --- | --- | --- | --- |
+  | Chave mestra | 500 | falta a chave | rende a chave do salão |
+  | Colete de proteção | 300 | o desafio não passa | +20 de defesa |
+  | Lanterna | 150 | nenhuma gaveta abriu | abre 1 gaveta |
 
-O pedido novo muda três regras que ela mesma tinha escrito para o Fashion Detective. Segui o pedido novo no mapa de
-cores, mas não construí as partes abaixo sem a confirmação dela:
+- **Como anda a partida:** a entrega mostra os medidores e para no mercado; a pessoa deixa uma carta no balcão ou
+  segue; o salão fecha com o resultado. [feito]
+- [desenho] Comprar uma peça de cor que falta para uma pista (a peça vermelha de 500 estalecas do exemplo) e o mercado
+  como ponto do mapa entre o salão 3 e o salão 4. Hoje só existe o Salão 1, então o mercado fica dentro dele.
 
-1. **Furtividade, barra de vida e dano.** A regra anterior (JOGOS.md, jogo 6, e a diretriz geral do FLAIR 3D) dizia: sem
-   mecânica de furtividade, combate e busca por recursos; o usuário "não realiza combate, não realiza movimentação".
-   Proposta que respeita as duas: as cores só alimentam medidores, e o confronto e a caminhada continuam automáticos, em
-   cutscene. A pessoa segue fazendo uma coisa só: escolher a roupa.
-2. **Comprar arma.** A regra anterior dizia que o detetive "não empunha a arma, aponta a arma, não realiza nenhuma ação
-   de combate com arma", e o app é para 13 anos ou mais. Proposta: o mercado vende equipamento de investigação e
-   proteção (lanterna, lupa, colete, chave mestra) e o dano continua vindo só da roupa azul. Se a dona quiser arma
-   mesmo, ela entra só na cutscene automática e a classificação etária precisa ser revista.
-3. **Fashion Sports deixou de ser 100% automático.** Antes a pessoa só trocava peça no intervalo, uma vez. Agora cada
-   troca do segundo tempo é um lance com ação imediata (até 3). Confirmar se 3 lances é o número certo e se o primeiro
-   tempo também deve ter lances.
-4. **Cores que completei** (vermelho = passe e branco = goleiro no esporte): manter ou trocar.
+## 3. Decisões da dona (14/11/2026: "siga o recomendado")
+
+1. **Furtividade, vida e dano** só alimentam medidores. O confronto e a caminhada continuam automáticos, em cutscene.
+2. **Sem arma no mercado.** O mercado vende equipamento de investigação e proteção. O dano vem só da roupa azul.
+3. **Estalecas** são moeda só do caso: zeram no fim, não tocam a carteira e não gastam a carta da coleção.
+4. **Fashion Sports** fica com até 3 lances no segundo tempo; o primeiro tempo roda sem lances.
+5. **Vermelho é passe e branco é goleiro** nos esportes.
+
+Com isso, as regras antigas do jogo 6 em `JOGOS.md` (sem combate, sem movimentação e sem arma na mão do usuário)
+continuam valendo.
 
 ## 4. Onde está no código
 
@@ -126,6 +129,7 @@ cores, mas não construí as partes abaixo sem a confirmação dela:
 | --- | --- |
 | Tabelas cor → ação | `fai-application/.../flair3d/Flair3dCores.java` |
 | Lances do segundo tempo | `fai-application/.../flair3d/nucleos/FashionSportsLances.java` |
+| Mercado e estalecas | `fai-application/.../flair3d/nucleos/FashionDetectiveMercado.java` |
 | Eventos e selos do detetive | `fai-application/.../flair3d/nucleos/FashionDetectiveNucleo.java` |
 | Testes | `fai-application/src/test/.../flair3d/Flair3dCoresTest.java` |
 | Rótulo da ação na troca | `components/flair/nucleos/nucleo-trigger.tsx` |

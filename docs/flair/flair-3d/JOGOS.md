@@ -229,8 +229,8 @@ dependendo da escolha da vestimenta. Você pode ter um resultado dentro da cutsc
 - **Cores e ações (13/11/2026).** A dona definiu que cada cor de roupa é uma ação do detetive: verde abre gavetas e
   armários, preto dá furtividade, amarelo aumenta a barra de vida, azul aumenta o dano, e outras cores servem de pista
   ("a chave está no armário com a blusa branca") ou de moeda de troca no mercado do mapa (estalecas). O mapa, o que já
-  está no servidor e os pontos em que isso muda as regras acima (furtividade, combate, compra de arma) estão em
-  `CORES_E_ACOES.md`.
+  está no servidor e as decisões de 14/11/2026 estão em `CORES_E_ACOES.md`: as cores só alimentam medidores, o
+  confronto continua automático, o mercado não vende arma e a estaleca é moeda só do caso.
 - [decidir] As roupas vêm do deck da partida ou do guarda-roupa inteiro?
 
 ## Jogo 7 · Boutique 3D
@@ -513,7 +513,7 @@ vestimenta e isso causa um efeito dentro da partida."
   com desarme e carrinho, verde chuta, amarelo dribla, azul corre, em todos os esportes. Acionar é vestir a peça no
   time; a peça que entra dispara a ação da cor dela. O segundo tempo passou a ter até 3 lances
   (`CORES_E_ACOES.md`).
-- [decidir] As peças vêm do deck da partida? O primeiro tempo também deve ter lances?
+- [decidir] As peças vêm do deck da partida?
 
 ## Jogo 15 · Batalha de Looks
 
@@ -549,6 +549,6 @@ vestimenta e isso causa um efeito dentro da partida."
 10. Meu Piloto Favorito: construir as bases de capacete e macacão e a estampa (número e faixas) no editor.
 11. Around the World: as 8 regiões e se o look-guia usa marcas reais.
 12. Meu Super-Herói Favorito: licença com Disney ou Warner, ou só arquétipos e heróis próprios.
-13. Fashion Sports: deck da partida, e quantos lances por tempo. Fashion Detective: furtividade, vida, dano, mercado e
-    compra de arma (`CORES_E_ACOES.md`, seção 3).
+13. Fashion Sports: deck da partida. (Lances, medidores do detetive, mercado e estalecas: decididos em 14/11/2026,
+    `CORES_E_ACOES.md`, seção 3.)
 14. Qual jogo detalhar primeiro.

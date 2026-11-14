@@ -32,7 +32,7 @@ semente fixa por partida). A nota nunca usa pele, corpo ou rosto; errar nunca ti
 | 3 | `DRESS_THE_STAR` | cartas | Vestir a "Estrela Pop dos anos 2000" (estilos y2k ou glam; cores rosa ou prata) | 25 por peça que bate estilo ou cor (4 vagas) |
 | 4 | `PERSONAGEM_FILME` | cartas + resposta | Vestir o "detetive noir" e acertar o filme entre 4 títulos inventados | 50 pelo título certo; 12,5 por peça que bate (casaco, cores preto, bege ou cinza) |
 | 5 | `ROAD_TO_GLORY` | cartas + maquiagem | Brief "Ensaio de Verão" | 25 por regra: ocasião casual ou praia; material leve; batom da família coral; acabamento do batom gloss ou cetim |
-| 6 | `FASHION_DETECTIVE` | cartas | Salão 1, "Entrada da gala" | Acesso: 2 peças ou mais de ocasião formal ou festa; desafio: defesa ≥ 50. Os dois = favorável (100); um = parcial (50); nenhum = desfavorável (0) |
+| 6 | `FASHION_DETECTIVE` | cartas | Salão 1, "Entrada da gala" | Acesso: 2 peças ou mais de ocasião formal ou festa; desafio automático: defesa + vida + dano ≥ 50 ou furtividade ≥ 40 (cores do look). Os dois = favorável (100); um = parcial (50); nenhum = desfavorável (0). A partida para no mercado antes de fechar (`CORES_E_ACOES.md`) |
 | 7 | `BOUTIQUE_3D` | cartas | Cliente 1 pede "festa à noite, em preto" | 33 por peça com ocasião festa e cor preta (3 vagas); 100 com as 3 |
 | 8 | `CLUBE_CORACAO` | zonas do editor | Criar uma camisa do "Clube Atlântico" (azul e branco) | Modo artístico: sem placar; concluído quando todas as zonas usam as 2 cores do clube |
 | 9 | `FAVORITE_SINGER` | zonas do editor | Peça da "Era Neon" | 25 por regra: rosa dominante; roxo em uma zona; 1 zona metálica; até 3 cores |
