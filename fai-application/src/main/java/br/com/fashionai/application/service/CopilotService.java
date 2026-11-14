@@ -385,7 +385,7 @@ public class CopilotService {
         List<String> occasions = new ArrayList<>(requestedOccasions == null ? List.of() : requestedOccasions.stream()
                 .filter(Taxonomy.OCCASIONS::contains).distinct().limit(3).toList());
         Map<String, List<String>> occasionTerms = Map.ofEntries(
-                Map.entry("casual", List.of("casual", "informal", "dia a dia")), Map.entry("work", List.of("work", "trabalho", "escritorio")),
+                Map.entry("casual", List.of("casual", "informal", "dia a dia")), Map.entry("work", List.of("work", "trabalho", "trabalhar", "escritorio")),
                 Map.entry("business", List.of("business", "executivo", "corporativo")), Map.entry("formal", List.of("formal")),
                 Map.entry("party", List.of("party", "festa")), Map.entry("night_out", List.of("night out", "noite")),
                 Map.entry("date", List.of("date", "encontro", "romantico")), Map.entry("wedding", List.of("wedding", "casamento")),
@@ -978,7 +978,7 @@ public class CopilotService {
             requiredPieceIds = searchPieces(user.id(), message, true).stream().map(WardrobeItem::getId).collect(Collectors.toSet());
             if (requiredPieceIds.isEmpty()) {
                 Map<String, Object> noMatch = new LinkedHashMap<>();
-                noMatch.put("text", Msg.t("copilot.nao_encontrei_essa_peca_no"));
+                noMatch.put("text", CopilotScope.aboutWardrobe(message) ? Msg.t("copilot.nao_encontrei_essa_peca_no") : Msg.t("copilot.fora_do_tema", String.join(" · ", promptsFor(req.view()))));
                 noMatch.put("looks", List.of());
                 noMatch.put("suggestions", List.of());
                 noMatch.put("requestedFilters", Map.of("message", InputSanitizer.clean(message, 200)));
