@@ -1,12 +1,16 @@
 "use client";
 /**
- * Quebra-cabeça (em cima): a arte do elenco cortada em tantas peças quanto as linhas, na ordem das linhas. Peça de
- * linha verde em cor, laranja só em traço (tons de cinza), vermelha escura e sem link coberta. Na entrega com todos os
- * requisitos, a arte se revela inteira, com as fotos das peças da pessoa nas posições da formação e "edição N".
+ * Quebra-cabeça (em cima): a arte do elenco recortada em peças com encaixe, uma por linha do tabuleiro, na ordem das
+ * linhas. Enquanto as duas vagas da linha não têm carta, o lugar da peça fica vazio (só o contorno). Com as cartas
+ * postas, a peça aparece solta e escura (link fraco), chega perto em tons de cinza (link médio) e encaixa sozinha, em
+ * cor, quando o link fica forte. Na entrega com todos os requisitos, a arte se completa, com as fotos das peças da
+ * pessoa nas posições da formação e "edição N". Movimento reduzido: as peças mudam de lugar sem transição.
  */
+import { useId } from "react";
 import { cn } from "@/components/ui";
 import { useElencoText } from "@/components/flair/elencos/use-elenco-text";
-import { gradeDoQuebraCabeca, type PecaEstado } from "@/lib/flair/elencos/board";
+import type { PecaEstado } from "@/lib/flair/elencos/board";
+import { ARTE_A, ARTE_L, folgaDaPeca, recortesDoQuebraCabeca } from "@/lib/flair/elencos/jigsaw";
 
 export interface FotoRevelada {
   chave: string;
@@ -25,21 +29,34 @@ interface Props {
 
 export function ElencoJigsaw({ arte, nome, estados, revelado }: Props) {
   const tx = useElencoText();
-  const { colunas, fileiras } = gradeDoQuebraCabeca(estados.length);
-  const pos = (i: number, n: number) => (n > 1 ? (i / (n - 1)) * 100 : 0);
+  const id = useId();
+  const { recortes } = recortesDoQuebraCabeca(estados.length);
+  const verdes = estados.filter((e) => e === "verde").length;
   return (
     <figure className={cn("el-jigsaw", revelado && "is-revealed")} data-testid="elenco-jigsaw">
-      <div className="el-pieces" role="img" aria-label={tx.t("flair3d.elencos.jigsaw", { nome, verdes: estados.filter((e) => e === "verde").length, total: estados.length })}
-        style={{ gridTemplateColumns: `repeat(${colunas}, 1fr)`, gridTemplateRows: `repeat(${fileiras}, 1fr)` }}>
-        {estados.map((estado, i) => {
-          const c = i % colunas;
-          const r = Math.floor(i / colunas);
+      <svg className="el-pieces" viewBox={`0 0 ${ARTE_L} ${ARTE_A}`} preserveAspectRatio="none" role="img"
+        aria-label={tx.t("flair3d.elencos.jigsaw", { nome, verdes, total: estados.length })}>
+        <defs>
+          {recortes.map((r) => (
+            <clipPath key={r.indice} id={`${id}-p${r.indice}`}>
+              <path d={r.d} />
+            </clipPath>
+          ))}
+        </defs>
+        {recortes.map((r) => {
+          const linha = r.indice < estados.length;
+          let estado: PecaEstado | "moldura" = linha ? estados[r.indice] : "moldura";
+          if (revelado) estado = "verde";
+          const folga = folgaDaPeca(r.indice, estado === "moldura" ? "verde" : estado);
           return (
-            <span key={i} className={cn("el-piece", `is-${revelado ? "verde" : estado}`)} data-state={revelado ? "verde" : estado}
-              style={{ backgroundImage: `url("${arte}")`, backgroundSize: `${colunas * 100}% ${fileiras * 100}%`, backgroundPosition: `${pos(c, colunas)}% ${pos(r, fileiras)}%` }} />
+            <g key={r.indice} className={cn(linha ? "el-piece" : "el-frame", `is-${estado}`)} data-state={linha ? estado : undefined}
+              style={{ transform: `translate(${folga.dx}px, ${folga.dy}px) rotate(${folga.giro}deg)`, transformOrigin: `${r.cx}px ${r.cy}px` }}>
+              {estado !== "coberta" && <image href={arte} width={ARTE_L} height={ARTE_A} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-p${r.indice})`} />}
+              <path className="el-cut" d={r.d} />
+            </g>
           );
         })}
-      </div>
+      </svg>
       {revelado && (
         <div className="el-reveal" data-testid="elenco-reveal">
           {revelado.fotos.map((f) => (

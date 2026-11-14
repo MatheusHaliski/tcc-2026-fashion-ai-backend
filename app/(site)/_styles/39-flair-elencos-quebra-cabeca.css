@@ -1,0 +1,63 @@
+/* ================= FLAIR CBC · peças do quebra-cabeça do elenco (components/flair/elencos/elenco-jigsaw.tsx) ====
+   Cada peça é um recorte da arte com encaixe. Sem link: só o contorno do lugar. Link fraco (vermelha): peça solta e
+   escura. Link médio (laranja): quase no lugar, em tons de cinza. Link forte (verde): encaixa sozinha, em cor.
+   Movimento reduzido: as transições somem pela regra global de 01. */
+.el-pieces {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.el-piece,
+.el-frame {
+  /* o centro de cada peça vem do componente, em unidades da arte */
+  transform-box: view-box;
+  /* a peça passa um pouco do ponto e volta: o estalo do encaixe */
+  transition: transform 0.6s cubic-bezier(0.2, 1.35, 0.4, 1), filter 0.4s ease, opacity 0.4s ease;
+}
+
+.el-cut {
+  fill: none;
+  stroke: #0b0b0d;
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.el-piece.is-coberta .el-cut {
+  fill: #24242a;
+  stroke: #4a4a55;
+  stroke-dasharray: 3 3;
+}
+
+.el-piece.is-vermelha {
+  filter: brightness(0.3) saturate(0.4) drop-shadow(0 1px 2px #000a);
+}
+
+.el-piece.is-laranja {
+  filter: grayscale(1) contrast(1.3) drop-shadow(0 1px 2px #0008);
+}
+
+.el-piece.is-laranja .el-cut {
+  stroke: #f08a24;
+  stroke-width: 2;
+}
+
+.el-piece.is-verde .el-cut {
+  stroke: #19c37d;
+  stroke-width: 1.5;
+}
+
+/* a moldura já está no lugar, apagada, até a arte ser completada */
+.el-frame {
+  filter: brightness(0.35) saturate(0.5);
+}
+
+.el-jigsaw.is-revealed .el-frame {
+  filter: none;
+}
+
+.el-jigsaw.is-revealed .el-cut {
+  stroke: transparent;
+}

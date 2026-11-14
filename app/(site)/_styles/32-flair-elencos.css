@@ -1,6 +1,6 @@
 /* ── FLAIR Card Building Challenge · elencos (components/flair/elencos/*) ───────────────────────────────────────────
-   Sem cenário 3D: o quebra-cabeça da arte em cima (.el-jigsaw: peça verde em cor, laranja em traço cinza, vermelha
-   escura, coberta sem link) e o tabuleiro embaixo (.el-board: linhas em SVG na cor do nível e as vagas por cima).
+   Sem cenário 3D: o quebra-cabeça da arte em cima (.el-jigsaw; as peças e o encaixe estão em
+   39-flair-elencos-quebra-cabeca.css) e o tabuleiro embaixo (.el-board: linhas em SVG na cor do nível e as vagas por cima).
    Movimento reduzido: as transições somem pela regra global de 01. */
 .el-game {
   display: grid;
@@ -16,37 +16,6 @@
   border-radius: var(--radius);
   overflow: hidden;
   background: #1b1b1f;
-}
-
-.el-pieces {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  gap: 2px;
-}
-
-.el-piece {
-  background-repeat: no-repeat;
-  transition: filter 0.4s ease, opacity 0.4s ease;
-}
-
-.el-piece.is-laranja {
-  filter: grayscale(1) contrast(1.4);
-  outline: 2px solid #f08a24;
-  outline-offset: -2px;
-}
-
-.el-piece.is-vermelha {
-  filter: brightness(0.25) saturate(0.4);
-}
-
-.el-piece.is-coberta {
-  background-image: none !important;
-  background: repeating-linear-gradient(45deg, #2a2a30 0 8px, #24242a 8px 16px);
-}
-
-.el-jigsaw.is-revealed .el-pieces {
-  gap: 0;
 }
 
 .el-reveal {
