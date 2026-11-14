@@ -2,6 +2,7 @@
    gaveta expandida projetada à frente do móvel, bandeja das peças sem lugar e painel de configuração. */
 .acv-espaco {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   align-items: start;
   min-width: 0;

@@ -2,6 +2,7 @@
    cabeçalho da lista e grade de peças com foto, nome, preço e marcador numerado. */
 .acv-central {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   min-width: 0;
 }
@@ -52,12 +53,14 @@
 
 .acv-central-corpo {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   align-items: start;
 }
 
 .acv-lista {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   min-width: 0;
 }

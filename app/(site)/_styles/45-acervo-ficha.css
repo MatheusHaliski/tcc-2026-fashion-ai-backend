@@ -2,6 +2,7 @@
    painel fora da área .acv, por isso o conteúdo dela repete a classe .acv para herdar as cores. */
 .acv-ficha {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
 }
 
@@ -191,13 +192,24 @@
 .acv-tamanhos,
 .acv-editor3d {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   justify-items: start;
 }
 
-.acv-ficha-aba > *,
-.acv-tamanhos > table {
+.acv-ficha-aba > * {
   justify-self: stretch;
+}
+
+.acv-ficha table {
+  display: block;
+  overflow-x: auto;
+  justify-self: stretch;
+}
+
+.acv-ficha :is(th, td) {
+  padding: 4px 8px 4px 0;
+  vertical-align: top;
 }
 
 .acv-tamanhos-lista {
