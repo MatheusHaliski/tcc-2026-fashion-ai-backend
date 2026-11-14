@@ -42,18 +42,65 @@ final class SearchColorTerm {
     /** O resultado da busca por texto mais as peças públicas da cor nomeada pelo termo, sem repetir peça. */
     static List<WardrobeItem> withColor(List<WardrobeItem> found, String term, Supplier<List<WardrobeItem>> allPublic) {
         Set<String> codes = codesOf(term);
+        List<String> words = List.of();
         if (codes.isEmpty()) {
-            return found;
+            TypeAndColor both = typeAndColor(term);
+            if (both == null) {
+                return found;
+            }
+            codes = both.codes();
+            words = both.words();
         }
         List<WardrobeItem> out = new ArrayList<>(found);
         Set<UUID> seen = new LinkedHashSet<>();
         found.forEach(w -> seen.add(w.getId()));
         for (WardrobeItem w : allPublic.get()) {
-            if (w.getColor() != null && codes.contains(w.getColor()) && seen.add(w.getId())) {
+            if (w.getColor() != null && codes.contains(w.getColor()) && describedBy(w, words) && seen.add(w.getId())) {
                 out.add(w);
             }
         }
         return out;
+    }
+
+    /** As palavras que sobram do termo (o tipo da peça) e os códigos da cor que ele nomeia. */
+    record TypeAndColor(List<String> words, Set<String> codes) {
+    }
+
+    /**
+     * Tipo e cor na mesma busca ("camiseta azul", "azul marinho calça"): a cor é o trecho de uma ou duas palavras que
+     * nomeia uma cor; o resto descreve a peça. Nulo quando não há cor no termo ou quando não sobra palavra nenhuma.
+     */
+    static TypeAndColor typeAndColor(String term) {
+        List<String> all = List.of(fold(term).split("\\s+"));
+        for (int size = Math.min(2, all.size() - 1); size >= 1; size--) {
+            for (int from = 0; from + size <= all.size(); from++) {
+                Set<String> codes = codesOf(String.join(" ", all.subList(from, from + size)));
+                if (!codes.isEmpty()) {
+                    List<String> rest = new ArrayList<>(all.subList(0, from));
+                    rest.addAll(all.subList(from + size, all.size()));
+                    return new TypeAndColor(rest, codes);
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Todas as palavras aparecem no nome da peça ou no nome da subcategoria e da categoria, em qualquer idioma. */
+    private static boolean describedBy(WardrobeItem w, List<String> words) {
+        if (words.isEmpty()) {
+            return true;
+        }
+        StringBuilder text = new StringBuilder(fold(w.getName()));
+        for (String code : new String[]{w.getSubcategory(), w.getCategory()}) {
+            if (code == null) {
+                continue;
+            }
+            text.append(' ').append(fold(code.replace('_', ' ')));
+            for (Locale locale : Msg.SUPPORTED) {
+                text.append(' ').append(Msg.has("taxonomy." + code) ? fold(Msg.t(locale, "taxonomy." + code)) : "");
+            }
+        }
+        return words.stream().allMatch(word -> text.indexOf(word) >= 0);
     }
 
     private static boolean namedIn(String code, String needle) {
