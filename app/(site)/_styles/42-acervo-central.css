@@ -237,7 +237,7 @@
   }
 }
 
-@media (min-width: 1280px) {
+@container acv (min-width: 1180px) {
   .acv-central-corpo {
     grid-template-columns: minmax(0, 1fr) 240px;
   }

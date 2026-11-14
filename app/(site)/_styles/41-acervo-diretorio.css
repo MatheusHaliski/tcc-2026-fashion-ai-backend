@@ -72,6 +72,20 @@
   display: flex;
   align-items: center;
   gap: 2px;
+  min-width: 0;
+}
+
+.acv-dir-item .btn-icon {
+  flex: none;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  border: 0;
+  background: none;
+}
+
+.acv-lateral {
+  min-width: 0;
 }
 
 .acv-dir-linha {
@@ -153,9 +167,9 @@ button.acv-dir-linha {
   }
 }
 
-@media (min-width: 1000px) {
+@container acv (min-width: 880px) {
   .acv-corpo {
-    grid-template-columns: 232px minmax(0, 1fr) 288px;
+    grid-template-columns: 224px minmax(0, 1fr) 264px;
   }
 
   .acv-corpo > .acv-espaco {

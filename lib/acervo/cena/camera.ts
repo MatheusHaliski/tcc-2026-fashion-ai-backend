@@ -16,10 +16,11 @@ export interface Enquadramento {
  */
 export function enquadrar(largura: number, altura: number, vista: VistaDaCena, aspecto: number): Enquadramento {
   const meio = Math.tan((CAMPO_DE_VISAO * Math.PI) / 360);
-  const paraAltura = (altura * 1.25) / (2 * meio);
-  const paraLargura = (largura * 1.25) / (2 * meio * Math.max(0.4, aspecto));
+  const paraAltura = (altura * 1.12) / (2 * meio);
+  const paraLargura = (largura * 1.12) / (2 * meio * Math.max(0.4, aspecto));
   const distancia = Math.max(paraAltura, paraLargura, 1.6);
-  const alvo: V3 = [largura / 2, altura * 0.46, -0.25];
+  const alvo: V3 = [largura / 2, altura * 0.48, -0.25];
   if (vista === "FRONTAL") return { posicao: [largura / 2, altura * 0.5, distancia], alvo };
-  return { posicao: [largura / 2 + distancia * 0.46, altura * 0.72, distancia * 0.98], alvo };
+  const longe = distancia * 1.12;
+  return { posicao: [largura / 2 + longe * 0.38, altura * 0.7, longe * 0.94], alvo };
 }

@@ -69,10 +69,10 @@ function Sala({ largura, dream }: { largura: number; dream: boolean }) {
       </mesh>
       <mesh name="tapete" rotation={[-Math.PI / 2, 0, 0]} position={[meio, 0.004, 1.3]} receiveShadow>
         <circleGeometry args={[Math.max(1.1, largura * 0.45), 40]} />
-        <meshStandardMaterial color={dream ? "#FFFFFF" : "#CFC6B6"} roughness={1} />
+        <meshStandardMaterial color={dream ? "#FFFFFF" : "#C4B8A2"} roughness={1} />
       </mesh>
-      <mesh name="pufe" position={[largura + 0.25, 0.2, 1.5]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.36, 0.4, 0.4, 28]} />
+      <mesh name="pufe" position={[largura + 0.55, 0.19, 0.9]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.28, 0.31, 0.38, 28]} />
         <meshStandardMaterial color={dream ? "#F4F4F0" : "#B9AB96"} roughness={0.95} />
       </mesh>
       {dream && (

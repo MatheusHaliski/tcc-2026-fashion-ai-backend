@@ -5,7 +5,6 @@
  * saem do móvel quando abertas.
  */
 import { useMemo, useRef, type ReactNode } from "react";
-import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
@@ -18,6 +17,7 @@ import type { Celula } from "@/lib/acervo/planta";
 import type { AcervoMovel } from "@/lib/acervo/types";
 import type { CenaProps } from "./cena-tipos";
 import { EncaixeGlb } from "./glb-encaixe";
+import { Marcador3D } from "./marcador-3d";
 import { useMateriaisDoMovel, type MateriaisDoMovel } from "./use-materiais-do-movel";
 
 const COR_PARADO = "#F2A33A";
@@ -27,7 +27,7 @@ interface Props extends Omit<CenaProps, "moveis" | "vista" | "rotulo"> {
   movel: AcervoMovel;
   x: number;
   manifesto: AssetGlb[];
-  /** marcadores numerados em HTML sobre a cena (desligados nos testes, que não têm DOM da cena) */
+  /** marcadores numerados sobre os compartimentos */
   rotulos: boolean;
   carregada: string | null;
   onCarregar: (pieceId: string | null) => void;
@@ -96,11 +96,9 @@ export function Movel3D(props: Props) {
           <boxGeometry args={volume.tam} />
           <meshBasicMaterial color={parado && !atual && !aceso ? COR_PARADO : COR_LIMA} transparent opacity={opacidade} depthWrite={false} />
         </mesh>
-        {props.rotulos && numeros.length > 0 && (
-          <Html position={[volume.pos[0], volume.pos[1], 0.03]} center zIndexRange={[5, 0]}>
-            <span className="acv-cel-marcadores" aria-hidden>{numeros.map((n) => <span key={n} className="acv-marcador">{n}</span>)}</span>
-          </Html>
-        )}
+        {props.rotulos && numeros.map((n, i) => (
+          <Marcador3D key={n} numero={n} pos={[volume.pos[0] + (i - (numeros.length - 1) / 2) * 0.15, volume.pos[1], 0.05]} />
+        ))}
       </group>
     );
   };
