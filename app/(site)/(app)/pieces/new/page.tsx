@@ -8,11 +8,11 @@ import { ApiError, api } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
-import { CATEGORY_LABEL, label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
+import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
-import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, Switch, useToast } from "@/components/ui";
+import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
 import { useApi } from "@/lib/hooks/use-api";
-import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
+import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import type { FlairPreview } from "@/components/flair/flair-collection";
 import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCard } from "@/components/piece-card";
@@ -28,7 +28,7 @@ import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
-import { ProfileVisibilityNotice } from "@/components/follow-requests";
+import { PieceReviewStep, savedVisibility } from "@/components/pieces/piece-review-step";
 import { resolveFraming, usePhotoFraming } from "@/lib/photo-framing";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
@@ -100,10 +100,10 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const saving = useRef(false); const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveProblem, setSaveProblem] = useState<string | null>(null);
-  // Depois de salvar (pedidos de 07/10): "Compartilhar no feed" vem LIGADO — o post é o próprio card, sem descrição;
-  // desligado, nada vai ao feed e a peça fica só no perfil. "Converter para FLAIR" (desligado) cria a cópia em Minhas
-  // cartas FLAIR e não publica nada.
-  const [shareToFeed, setShareToFeed] = useState(true);
+  // Depois de salvar: "Compartilhar no feed" vem DESLIGADO (privacidade: a peça é salva como a revisão mostra); ligado,
+  // o post é o próprio card e a peça privada passa a pública (a revisão avisa). "Converter para FLAIR" (desligado) cria
+  // a cópia em Minhas cartas FLAIR e não publica nada.
+  const [shareToFeed, setShareToFeed] = useState(false);
   const [toFlair, setToFlair] = useState(false);
   const flairDraft = JSON.stringify({ category: value.category, subcategory: value.subcategory || null, price: value.price === "" ? null : Number(value.price),
     brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandId: value.brandId || null, catalogProductId: pick?.product.id ?? null,
@@ -226,7 +226,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: step === "review" ? savedVisibility(value.visibility, shareToFeed) : value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} actions={<CreatorWelcome kind="piece" />} />
@@ -300,30 +300,11 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
           {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} />{nav}</Card>}
           {step === "review" && (
             <Card>
-              <h2 className="type-h3 mb-2">{t("builder.step.review")}</h2>
-              <dl className="c-facts mb-3">
-                {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? subcategoryLabel(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.occasion"), value.occasion.map((o) => label(o)).join(", ") || "—"], [t("common.style"), value.style.map((x) => label(x)).join(", ") || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"], [t("catalog.origem"), origin]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
-              </dl>
-              <section className="after-save" aria-labelledby="after-save-title">
-                <h3 id="after-save-title" className="type-h3">{t("pieces.new.depois_de_salvar")}</h3>
-                <Switch checked={shareToFeed} onChange={setShareToFeed} label={t("pieces.new.opt_share")} hint={t(shareToFeed ? "pieces.new.opt_share_on" : "pieces.new.opt_share_off")} />
-                {shareToFeed && value.visibility === "PRIVATE" && <p role="note" className="after-save-detail type-caption">{t("pieces.new.opt_share_private")}</p>}
-                {shareToFeed && <ProfileVisibilityNotice />}
-                <Switch checked={toFlair} onChange={setToFlair} label={t("pieces.new.opt_flair")} hint={t("pieces.new.opt_flair_hint")} />
-                {toFlair && (
-                  <div className="after-save-detail after-save-flair">
-                    {flairPreview.data ? <>
-                      <FlairGameCard size="sm" flip={false} card={{ id: "preview", originType: "PIECE", originId: "", season: flairPreview.data.season, tier: flairPreview.data.tier, ovr: flairPreview.data.ovr, rare: false,
-                        position: flairPreview.data.position, name: value.name || t("common.peca"), brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, imageUrl: officialImg ?? asset,
-                        hype: null, priceVerified: flairPreview.data.priceVerified, state: "AVAILABLE", tradeable: true, acquiredVia: "GENERATED" }} />
-                      <p className="type-body-sm">{t("pieces.new.opt_flair_preview", { tier: t(`flairCard.tier.${flairPreview.data.tier}`), ovr: flairPreview.data.ovr })}
-                        {flairPreview.data.cappedByUnverifiedPrice && <><br /><span className="type-caption">{t("flairCard.unverified")}</span></>}</p>
-                    </> : <p className="type-caption text-muted">{flairPreview.error ? t("pieces.new.opt_flair_sem_previa") : t("common.loading")}</p>}
-                  </div>
-                )}
-              </section>
-              {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
-              {nav}
+              <PieceReviewStep value={value} origin={origin} image={officialImg ?? asset} shareToFeed={shareToFeed} onShareToFeed={setShareToFeed}
+                toFlair={toFlair} onToFlair={setToFlair} flairPreview={flairPreview}>
+                {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
+                {nav}
+              </PieceReviewStep>
             </Card>
           )}
         </div>
