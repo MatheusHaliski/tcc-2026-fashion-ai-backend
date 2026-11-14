@@ -146,6 +146,20 @@ describe("glb-garment: peça estática vestida no avatar", () => {
     expect(front).toBe(169); expect(back).toBe(169);
   });
 
+  it("profundidade nos dois ombros: a pala acima da axila sai de dentro do corpo do lado esquerdo e do direito", () => {
+    const a = avatar(); const f = a.frame(); const armpit = (f.joint("LeftArm").y + f.joint("RightArm").y) / 2 - 0.05;
+    const y = armpit + 0.02; const field = depthField(f, [1])!;
+    const moved = (x: number) => {
+      const skin = depthAt(field, x, y)!; const mid = (skin.front + skin.back) / 2;
+      const src = source([new THREE.PlaneGeometry(0.03, 0.02, 4, 4).translate(x, y, mid + 0.02)]); const p = src.position.slice();
+      pressOut(p, new Int8Array(p.length / 3), src.index, f, [1, 2], 0.005);
+      let least = Infinity; for (let v = 0; v < p.length / 3; v++) least = Math.min(least, p[v * 3 + 2] - src.position[v * 3 + 2]);
+      return least;
+    };
+    expect(moved(0.08)).toBeGreaterThan(0.01);
+    expect(moved(-0.08)).toBeGreaterThan(0.01);                    // o lado de x negativo também (antes só o positivo saía)
+  });
+
   it("pele coberta: some debaixo da camisa; cabeça, mãos e pés nunca; a borda fica com pele por baixo", () => {
     const a = avatar(); const f = a.frame(); const fit = fitGlbGarment(shirt(), f, piece("upper_piece", "shirt"));
     expect(fit.ok).toBe(true); if (!fit.ok) return;

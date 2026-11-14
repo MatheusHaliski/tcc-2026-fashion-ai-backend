@@ -45,7 +45,13 @@ export function lazyFrame(parts: HumanParts, P: BodyParam): () => BodyFrame {
 export function wearGlb(parts: HumanParts, it: OutfitItem, src: GlbSource | null | undefined, below: GarmentSpec[], frame: () => BodyFrame, meshes: THREE.SkinnedMesh[]): boolean {
   if (!src || !classOf(it.spec.kind)) return false;
   const fit = cachedFit(parts, frame, src, it.spec, below);
-  if (!fit.ok) { console.info(`[FashionAI] .glb de ${it.piece.id} recusado (${fit.reason}): molde`); return false; }
+  if (!fit.ok) {
+    // as medidas vão junto com o motivo: é com elas que o limite do aceite é conferido no corpo de cada pessoa
+    const m = fit.metrics;
+    const measured = m ? ` · esticada ${m.stretch.toFixed(2)} · furada ${(100 * m.pierced).toFixed(1)}% · dentro ${(100 * m.inside).toFixed(1)}% · longe ${m.far.toFixed(2)} m` : "";
+    console.info(`[FashionAI] .glb de ${it.piece.id} recusado (${fit.reason}${measured}): molde`);
+    return false;
+  }
   const m = new THREE.SkinnedMesh(fit.geometry.clone(), wearMaterials(src, it.spec.layer));
   m.name = `peca-${it.piece.id}`; m.castShadow = true; m.frustumCulled = false;
   // texturas são do .glb em cache: o desmonte descarta só os materiais clonados, nunca as texturas compartilhadas
