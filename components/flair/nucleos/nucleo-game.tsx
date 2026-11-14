@@ -113,7 +113,9 @@ export function NucleoGame(props: Props) {
   /** a ação que a cor da carta dispara ao entrar em campo (item ACAO_* do servidor) */
   const acaoDaCarta = (id: string) => {
     const item = efeitos.itens(id)?.find((i) => i.codigo.startsWith("ACAO_"));
-    return item ? tx.efeito(item) : null;
+    if (!item) return null;
+    const modalidade = estado.sel.resposta ?? "FUTEBOL";
+    return tx.ou(`flair3d.ui.acaoCor.${modalidade}.${item.codigo.slice("ACAO_".length)}`, tx.efeito(item));
   };
 
   const entregar = () => {

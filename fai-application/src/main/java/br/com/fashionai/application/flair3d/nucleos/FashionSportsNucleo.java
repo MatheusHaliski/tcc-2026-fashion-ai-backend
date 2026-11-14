@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Núcleo 14 — futebol de 5: um uniforme (camisa, calção e chuteira) para os 4 de linha contra o time-padrão. Coesão 100%
+ * Núcleo 14 — futebol de 5 e as outras modalidades ({@link FashionSportsModalidade}, escolhida na entrega): um uniforme (camisa, calção e chuteira) para os 4 de linha contra o time-padrão. Coesão 100%
  * (uniforme único). A força do time é a média de velocidade, técnica, resistência e defesa do uniforme; a do time-padrão
  * sai do sorteio da partida (20 a 30). Em cada tempo, mais de 1 ponto de força acima vale um gol do time e mais de 1
  * abaixo, um gol do adversário. Mais gols = vitória (100); iguais = empate (60); menos = derrota (0).
@@ -53,17 +53,17 @@ public class FashionSportsNucleo implements Flair3dNucleo {
     @Override
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("FUTEBOL_DE_5", new Regra("VITORIA", 100),
-                new Regra("EMPATE", 60), new Regra("COESAO", 0)), List.of(Definicao.CARTAS), VAGAS,
+                new Regra("EMPATE", 60), new Regra("COESAO", 0)), List.of(Definicao.CARTAS, Definicao.RESPOSTA), VAGAS,
                 Deck.ate(6, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF"), Obrigatoria.uma("CAL")), false)
-                .comAvatares(Avatares.solo(new Avatares.Online(2, 10, 5), Avatares.figurante("COLEGA", 4), Avatares.figurante("ADVERSARIO", 5)));
+                .comOpcoes(FashionSportsModalidade.CODIGOS).comAvatares(Avatares.solo(new Avatares.Online(2, 10, 5), Avatares.figurante("COLEGA", 4), Avatares.figurante("ADVERSARIO", 5)));
     }
 
     public static int forca(Flair3dAtributos a) {
-        return Math.round((a.velocidade() + a.tecnica() + a.resistencia() + a.defesa()) / 4f);
+        return FashionSportsModalidade.FUTEBOL.forca(a);
     }
 
-    static int forca(Map<String, CbcRules.Card> uniforme) {
-        return forca(Flair3dAtributos.soma(uniforme.values()));
+    static int forca(Map<String, CbcRules.Card> uniforme, FashionSportsModalidade modalidade) {
+        return modalidade.forca(Flair3dAtributos.soma(uniforme.values()));
     }
 
     /** Gols de um tempo pela diferença de força: {time, adversário}. */
@@ -85,22 +85,23 @@ public class FashionSportsNucleo implements Flair3dNucleo {
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
         Map<String, CbcRules.Card> uniforme = contexto.vestidas(entrega);
-        int nos = forca(uniforme);
+        FashionSportsModalidade modalidade = FashionSportsModalidade.de(entrega.resposta());
+        int nos = forca(uniforme, modalidade);
         int eles = PADRAO_MIN + contexto.sorteio().nextInt(PADRAO_FAIXA);
         int[] primeiro = gols(nos - eles);
-        List<Evento> eventos = new ArrayList<>(List.of(new Evento("FORCA_TIME", nos), new Evento("FORCA_ADVERSARIO", eles),
+        List<Evento> eventos = new ArrayList<>(List.of(new Evento("MODALIDADE", modalidade.codigo()), new Evento("FORCA_TIME", nos), new Evento("FORCA_ADVERSARIO", eles),
                 new Evento("COESAO", 100), new Evento("INTERVALO", primeiro[0] + "-" + primeiro[1])));
         List<Acionamento> acionamentos = contexto.andamento().acionamentos();
         if (acionamentos.isEmpty()) {
             return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
         }
-        FashionSportsLances lances = new FashionSportsLances(uniforme).jogar(acionamentos, eles, contexto);
+        FashionSportsLances lances = new FashionSportsLances(uniforme, modalidade.codigo()).jogar(acionamentos, eles, contexto);
         eventos.addAll(lances.eventos());
         if (lances.aberto()) {
             return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
         }
         uniforme = lances.uniforme();
-        int segundoTempo = forca(uniforme) + lances.bonus();
+        int segundoTempo = forca(uniforme, modalidade) + lances.bonus();
         int[] segundo = gols(segundoTempo - eles);
         int golsNos = primeiro[0] + segundo[0] + lances.chutes();
         int golsEles = primeiro[1] + Math.max(0, segundo[1] - lances.desarmes());
@@ -127,7 +128,7 @@ public class FashionSportsNucleo implements Flair3dNucleo {
         Flair3dAtributos a = Flair3dAtributos.soma(contexto.vestidas(entrega).values());
         return Resultado.parcial(null, "PREVIA", List.of(), List.of(new Evento("VELOCIDADE", a.velocidade()),
                 new Evento("TECNICA", a.tecnica()), new Evento("RESISTENCIA", a.resistencia()), new Evento("DEFESA", a.defesa()),
-                new Evento("FORCA_TIME", forca(a)), new Evento("COESAO", 100)));
+                new Evento("FORCA_TIME", FashionSportsModalidade.de(entrega.resposta()).forca(a)), new Evento("COESAO", 100)));
     }
 
     @Override

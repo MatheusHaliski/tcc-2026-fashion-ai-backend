@@ -42,20 +42,33 @@ na hora a ação da cor dela.** A pessoa continua sem controlar jogador nenhum.
 Na tela, cada opção de troca mostra a ação: "Parte de cima: Regata cinza no lugar de Camisa verde · chute a gol". A
 carta no deck mostra o mesmo selo.
 
-### 1.3 Os outros esportes [proposta] [desenho]
+### 1.3 Os outros esportes [feito]
 
-A mesma cor mantém o mesmo papel em todo esporte, para a pessoa aprender uma vez só.
+A mesma cor mantém o mesmo papel em todo esporte, para a pessoa aprender uma vez só. A pessoa escolhe a modalidade na
+aba Resposta antes de entregar; sem escolha, vale o futebol de 5.
 
 | Cor | Papel | Tênis | Basquete 3×3 | Vôlei de praia | Corrida e revezamento | Skate |
 | --- | --- | --- | --- | --- | --- | --- |
 | Preto | Defender | devolução defensiva | toco | bloqueio | segurar a posição | equilíbrio na aterrissagem |
 | Verde | Finalizar | winner | arremesso | cortada | sprint final | manobra principal |
 | Amarelo | Enganar | deixadinha | drible e crossover | largada | mudança de ritmo | flip |
-| Azul | Deslocar | chegar na bola | infiltração | cobertura de quadra | ritmo de prova | velocidade na rampa |
+| Azul | Deslocar | chegada na bola | infiltração | cobertura de quadra | ritmo de prova | velocidade na rampa |
 | Vermelho | Ligar | saque | assistência | levantamento | passagem do bastão | linha entre manobras |
-| Branco | Guardar | segundo saque seguro | rebote | defesa de manchete | largada segura | segurança |
+| Branco | Guardar | segundo saque seguro | rebote | defesa de manchete | largada segura | aterrissagem segura |
 
-Hoje o servidor só simula o futebol de 5; os outros esportes entram como rodadas (`OBJETIVOS_POR_JOGO.md`).
+O que muda de um esporte para outro é o peso de cada atributo do uniforme na força do time:
+
+| Modalidade | Velocidade | Técnica | Resistência | Defesa |
+| --- | --- | --- | --- | --- |
+| Futebol de 5 | 1 | 1 | 1 | 1 |
+| Basquete 3×3 | 1 | 2 | 0 | 1 |
+| Vôlei de praia | 0 | 2 | 1 | 1 |
+| Tênis | 1 | 2 | 1 | 0 |
+| Corrida e revezamento | 2 | 0 | 2 | 0 |
+| Skate | 1 | 2 | 1 | 0 |
+
+**O que ainda é igual em todos:** a partida continua em dois tempos com placar de gols, e a quadra 3D e os figurantes são
+os do futebol de 5. Placar próprio de cada esporte (sets, cestas, tempo de prova) e cenário próprio ainda não existem.
 
 ## 2. Fashion Detective
 
@@ -70,47 +83,57 @@ Hoje o servidor só simula o futebol de 5; os outros esportes entram como rodada
 | Branco | Peça de pista | evento `CHAVE` (ver 2.2) | [dona] [feito] |
 | Vermelho | Moeda de troca no mercado | selo na carta; qualquer carta fora do look pode ir ao balcão (ver 2.3) | [dona] [feito em parte] |
 
-Os medidores entram no desafio do salão, que continua automático (decisão de 14/11/2026): o detetive passa quando
-defesa + vida + dano somam 50, ou quando a furtividade chega a 40 e ele passa sem ser visto. A pessoa segue fazendo uma
-coisa só: escolher a roupa. Não há combate nem movimentação comandados por ela.
+Os medidores entram no desafio de cada salão, que continua automático (decisão de 14/11/2026): o detetive passa quando
+defesa + vida + dano alcançam o limite do salão, ou quando a furtividade chega a 40 e ele passa sem ser visto. A pessoa
+segue fazendo uma coisa só: escolher a roupa. Não há combate nem movimentação comandados por ela.
 
-### 2.2 Pistas
+### 2.2 O caso em 6 salões e as cartas de pista [feito]
 
-Exemplo da dona: o detetive lê a carta "Sua mãe costumava deixar a chave no armário com a blusa branca". A pessoa
-entende que precisa da blusa branca para achar a chave que abre uma porta.
+A pessoa veste um look por salão. Cada salão vale 100: acesso 40 (2 peças ou mais do código de vestimenta), desafio 40 e
+pista 20. A pista é a peça que a carta aponta, na cor e no lugar certos; quando ela está guardada num móvel, o look
+precisa também de uma peça verde (ou da lanterna do mercado) para abrir. A pista só conta para quem entrou ou passou no
+desafio.
 
-- [feito] Salão 1: o look rende a chave (evento `CHAVE`) quando tem uma peça branca na parte de cima (a blusa da carta)
-  e uma peça verde, que abre o armário.
-- [desenho] Cada salão traz uma carta de pista diferente, escrita com uma cor ou uma peça ("o recibo estava no bolso do
-  casaco vinho"). A pista certa abre a porta, o cofre ou a gaveta do salão seguinte. A carta nunca diz a cor de forma
-  direta em todos os casos: às vezes diz a peça, a ocasião ou o material.
-- [desenho] Pista errada não trava o caso: o detetive entra por outro caminho e perde a metade da pista, como na tabela
-  de acesso e desafio do jogo 6.
+| # | Salão | Código de vestimenta | Limite do desafio | Carta de pista | Peça pedida | Num móvel |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Entrada da gala | formal ou festa | 50 | "Sua mãe costumava deixar a chave no armário com a blusa branca." | branca, em cima | sim |
+| 2 | Salão principal | formal, festa ou cerimônia | 55 | "Quem derrubou a taça saiu com um lenço vermelho na mão." | vermelha, qualquer lugar | não |
+| 3 | Camarim | trabalho ou casual | 50 | "O recibo ficou na caixa dos sapatos amarelos." | amarela, calçado | sim |
+| — | Mercado | | | | | |
+| 4 | Clube underground | balada, festa ou festival | 60 | "Na porta do clube só passa despercebido quem veste preto em cima." | preta, em cima | não |
+| 5 | Ateliê | trabalho ou casual | 55 | "O molde está na gaveta, junto da calça azul." | azul, parte de baixo | sim |
+| 6 | Arquivo | formal ou trabalho | 65 | "A resposta está na pasta de capa verde, no fundo do arquivo." | verde, qualquer lugar | sim |
 
-### 2.3 Roupa como moeda: estalecas e mercado
+- A nota do caso é a média dos 6 salões. Com 5 pistas ou mais o caso é resolvido; com 3 ou 4, resolvido em parte.
+- Salão sem acesso e sem desafio não trava o caso: o detetive segue para o próximo, sem a pista.
+- O deck do caso passou de 6 para até 12 cartas, porque são 6 looks.
+- Na tela, a dica da preparação mostra o salão da vez, o código de vestimenta e a carta de pista.
+
+**O que ainda não existe:** cada salão usa o mesmo cenário 3D (a entrada da gala) e não há cutscene; o salão muda nas
+regras e nos textos.
+
+### 2.3 Roupa como moeda: estalecas e mercado [feito]
 
 Exemplo da dona: o detetive vai ao mercado do mapa, troca 500 estalecas por uma peça vermelha e usa estalecas para
 comprar equipamento e desbloquear recursos. Decisões de 14/11/2026: estaleca é moeda só do caso e o mercado não vende
 arma.
 
 - **Estaleca é moeda só do caso.** Começa em zero e some no fim. Não é o saldo da carteira do FashionAI, não se compra
-  com dinheiro e não vira prêmio. [feito]
-- **Ganhar estalecas:** acesso ao salão (+150) e gaveta aberta por peça verde (+50 cada). [feito]
+  com dinheiro e não vira prêmio.
+- **Ganhar estalecas:** acesso ao salão (+150), pista do salão (+200) e gaveta aberta por peça verde (+50 cada).
+- **O mercado fica no mapa entre o salão 3 e o salão 4.** A partida para ali uma vez por caso.
 - **Deixar uma carta no balcão:** uma carta do deck que não está no look vale estalecas pelo nível (Bronze 100,
   Prata 200, Ouro 350, Especial 500). A carta sai só do deck desta partida; a carta da coleção não é gasta nem
-  transferida. Carta vestida é recusada. [feito]
-- **Compras automáticas:** o detetive compra sozinho o que precisa, uma de cada no máximo. [feito]
+  transferida. Carta vestida é recusada.
+- **Compras automáticas:** o detetive compra sozinho o que precisa, uma de cada no máximo.
 
-  | Equipamento | Preço | Quando compra | Efeito |
+  | Compra | Preço | Quando compra | Efeito |
   | --- | --- | --- | --- |
-  | Chave mestra | 500 | falta a chave | rende a chave do salão |
-  | Colete de proteção | 300 | o desafio não passa | +20 de defesa |
-  | Lanterna | 150 | nenhuma gaveta abriu | abre 1 gaveta |
+  | Peça da cor da próxima pista | 500 | o deck não tem peça preta de cima para a pista do salão 4 | vale como a peça da pista no salão 4 |
+  | Colete de proteção | 300 | o desafio do salão 3 não passou | +20 de defesa nos salões seguintes |
+  | Lanterna | 150 | o móvel do salão 3 não abriu | abre os móveis dos salões seguintes sem peça verde |
 
-- **Como anda a partida:** a entrega mostra os medidores e para no mercado; a pessoa deixa uma carta no balcão ou
-  segue; o salão fecha com o resultado. [feito]
-- [desenho] Comprar uma peça de cor que falta para uma pista (a peça vermelha de 500 estalecas do exemplo) e o mercado
-  como ponto do mapa entre o salão 3 e o salão 4. Hoje só existe o Salão 1, então o mercado fica dentro dele.
+  A peça comprada é do caso: não vira carta da coleção.
 
 ## 3. Decisões da dona (14/11/2026: "siga o recomendado")
 
@@ -130,7 +153,10 @@ continuam valendo.
 | Tabelas cor → ação | `fai-application/.../flair3d/Flair3dCores.java` |
 | Lances do segundo tempo | `fai-application/.../flair3d/nucleos/FashionSportsLances.java` |
 | Mercado e estalecas | `fai-application/.../flair3d/nucleos/FashionDetectiveMercado.java` |
+| Os 6 salões e um salão jogado | `.../nucleos/FashionDetectiveCaso.java`, `.../nucleos/FashionDetectiveSalao.java` |
+| Modalidades do esporte | `.../nucleos/FashionSportsModalidade.java` |
+| Salões já jogados da partida | `fai-application/.../flair3d/Andamento.java` (`anteriores`) |
 | Eventos e selos do detetive | `fai-application/.../flair3d/nucleos/FashionDetectiveNucleo.java` |
-| Testes | `fai-application/src/test/.../flair3d/Flair3dCoresTest.java` |
+| Testes | `fai-application/src/test/.../flair3d/Flair3dCoresTest.java`, `FashionDetectiveCasoTest.java` |
 | Rótulo da ação na troca | `components/flair/nucleos/nucleo-trigger.tsx` |
 | Textos | `lib/i18n/messages/*.json`: `flair3d.ui.acaoCor.*`, `flair3d.ui.efeito.ACAO_*`, `flair3d.ui.efeito.COR_*` |

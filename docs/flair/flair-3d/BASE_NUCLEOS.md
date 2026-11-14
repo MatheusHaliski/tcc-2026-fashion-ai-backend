@@ -32,7 +32,7 @@ semente fixa por partida). A nota nunca usa pele, corpo ou rosto; errar nunca ti
 | 3 | `DRESS_THE_STAR` | cartas | Vestir a "Estrela Pop dos anos 2000" (estilos y2k ou glam; cores rosa ou prata) | 25 por peça que bate estilo ou cor (4 vagas) |
 | 4 | `PERSONAGEM_FILME` | cartas + resposta | Vestir o "detetive noir" e acertar o filme entre 4 títulos inventados | 50 pelo título certo; 12,5 por peça que bate (casaco, cores preto, bege ou cinza) |
 | 5 | `ROAD_TO_GLORY` | cartas + maquiagem | Brief "Ensaio de Verão" | 25 por regra: ocasião casual ou praia; material leve; batom da família coral; acabamento do batom gloss ou cetim |
-| 6 | `FASHION_DETECTIVE` | cartas | Salão 1, "Entrada da gala" | Acesso: 2 peças ou mais de ocasião formal ou festa; desafio automático: defesa + vida + dano ≥ 50 ou furtividade ≥ 40 (cores do look). Os dois = favorável (100); um = parcial (50); nenhum = desfavorável (0). A partida para no mercado antes de fechar (`CORES_E_ACOES.md`) |
+| 6 | `FASHION_DETECTIVE` | cartas | O caso em 6 salões, um look por salão | Cada salão: acesso 40 (2 peças do código de vestimenta), desafio automático 40 (defesa + vida + dano no limite do salão, ou furtividade 40) e pista 20 (a peça que a carta aponta). Mercado depois do salão 3. Nota = média dos salões; 5 pistas resolvem o caso (`CORES_E_ACOES.md`) |
 | 7 | `BOUTIQUE_3D` | cartas | Cliente 1 pede "festa à noite, em preto" | 33 por peça com ocasião festa e cor preta (3 vagas); 100 com as 3 |
 | 8 | `CLUBE_CORACAO` | zonas do editor | Criar uma camisa do "Clube Atlântico" (azul e branco) | Modo artístico: sem placar; concluído quando todas as zonas usam as 2 cores do clube |
 | 9 | `FAVORITE_SINGER` | zonas do editor | Peça da "Era Neon" | 25 por regra: rosa dominante; roxo em uma zona; 1 zona metálica; até 3 cores |
@@ -40,7 +40,7 @@ semente fixa por partida). A nota nunca usa pele, corpo ou rosto; errar nunca ti
 | 11 | `PILOTO_FAVORITO` | zonas do editor | Capacete da "Equipe Aurora" (amarelo e verde) | 25 por regra: topo amarelo; laterais amarelas; faixa da viseira verde; viseira espelhada |
 | 12 | `AROUND_THE_WORLD` | cartas | Região 1, Rio de Janeiro | 25 por regra: parte de cima leve; parte de baixo leve; cor quente; marca brasileira |
 | 13 | `SUPER_HEROI` | zonas do editor | Arquétipo "armadura" | 25 por regra: peito metálico; até 2 cores; capa presente; nenhum emblema protegido |
-| 14 | `FASHION_SPORTS` | cartas | Futebol de 5: um uniforme para os 4 de linha contra o time-padrão | Atributos de chuteira e camisa; coesão 100% (uniforme único); vitória = 100, empate = 60, derrota = 0. Em etapas: primeiro tempo, intervalo com até 1 troca de peça do deck, segundo tempo; em cada tempo, mais de 1 ponto de força acima do adversário vale um gol e mais de 1 abaixo, um gol contra |
+| 14 | `FASHION_SPORTS` | cartas | Futebol de 5: um uniforme para os 4 de linha contra o time-padrão | Atributos de chuteira e camisa; coesão 100% (uniforme único); vitória = 100, empate = 60, derrota = 0. Seis modalidades, escolhidas na aba Resposta (`CORES_E_ACOES.md`). Em etapas: primeiro tempo, intervalo e segundo tempo com até 3 lances (cada troca de peça dispara a ação da cor da peça que entra); em cada tempo, mais de 1 ponto de força acima do adversário vale um gol e mais de 1 abaixo, um gol contra |
 | 15 | `BATALHA_LOOKS` | cartas | Rodada "Look Monocromático" em azul contra o adversário-padrão (75) | 25 por peça da família azul; vence com mais de 75 |
 
 **Recursos:**
@@ -60,7 +60,7 @@ partida, só as cartas do deck aparecem na janela de recursos e só elas podem s
 | `DRESS_THE_STAR` | até 8 | 1 parte de cima, 1 parte de baixo | +25 se bate estilo ou cor da estrela |
 | `PERSONAGEM_FILME` | até 8 | 1 casaco ou parte de cima | +12,5 se bate o figurino do personagem |
 | `ROAD_TO_GLORY` | sem deck: guarda-roupa e catálogo liberado | nenhuma | regras do brief que a carta cumpre |
-| `FASHION_DETECTIVE` | até 6 | 1 parte de cima ou peça inteira | conta no acesso (ocasião) e na defesa |
+| `FASHION_DETECTIVE` | até 12 | 1 parte de cima ou peça inteira | conta no acesso (ocasião), na defesa e na ação da cor |
 | `BOUTIQUE_3D` | até 8 | 1 parte de cima, 1 parte de baixo | +33 se cumpre ocasião festa e cor preta |
 | `CLUBE_CORACAO`, `FAVORITE_SINGER`, `PILOTO_FAVORITO`, `SUPER_HEROI` | sem deck: zonas do editor | nenhuma | — |
 | `LABIRINTO` | até 8 | 3 cartas quaisquer | família de cor que a carta traz para o espelho |

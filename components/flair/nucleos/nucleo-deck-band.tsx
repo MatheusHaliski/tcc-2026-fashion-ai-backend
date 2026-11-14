@@ -72,6 +72,7 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
     const faltam = Number(valorDoEvento(props.tentativa, "FALTAM_PECAS") ?? 0);
     dica = tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });
   } else if (espelho) dica = tx.t("flair3d.ui.trigger.ESPELHO.hint");
+  else if (props.automatico && abaDaResposta >= 0) dica = tx.t("flair3d.ui.modalidade.hint", { modalidade: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta ?? "FUTEBOL"}`, "") });
   else if (props.automatico) dica = tx.t("flair3d.ui.auto");
 
   const extra = (

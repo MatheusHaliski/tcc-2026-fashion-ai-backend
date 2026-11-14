@@ -29,8 +29,11 @@ final class FashionSportsLances {
     private int desarmes;
     private boolean aberto = true;
 
-    FashionSportsLances(Map<String, CbcRules.Card> uniforme) {
+    private final String modalidade;
+
+    FashionSportsLances(Map<String, CbcRules.Card> uniforme, String modalidade) {
         this.uniforme = uniforme;
+        this.modalidade = modalidade;
     }
 
     /** Joga os acionamentos na ordem; para no primeiro que não dispara ação ou no último lance. */
@@ -49,8 +52,8 @@ final class FashionSportsLances {
                 break;
             }
             lances++;
-            eventos.add(new Evento("LANCE", Map.of("lance", lances, "acao", acao, "carta", troca.carta(),
-                    "venceu", aplicar(acao, adversario))));
+            eventos.add(new Evento("LANCE", Map.of("lance", lances, "acao", acao, "modalidade", modalidade,
+                    "carta", troca.carta(), "venceu", aplicar(acao, adversario))));
             if (lances == MAX) {
                 aberto = false;
             }

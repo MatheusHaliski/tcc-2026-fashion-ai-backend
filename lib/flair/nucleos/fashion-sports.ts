@@ -1,4 +1,4 @@
-/** Núcleo 14: quadra de futebol de 5; 4 colegas atrás do avatar e 5 adversários ao fundo. A partida roda sozinha. */
+/** Núcleo 14: quadra de futebol de 5 (e as outras modalidades, escolhidas na aba de resposta); 4 colegas atrás do avatar e 5 adversários ao fundo. A partida roda sozinha. */
 import { acoesDe, deckDe } from "@/lib/flair/nucleos/base";
 import type { NucleoConfig, NucleoPersonagem } from "@/lib/flair/nucleos/types";
 
@@ -8,7 +8,7 @@ const adversario = (x: number, z: number): NucleoPersonagem => ({ papel: "ADVERS
 export const FASHION_SPORTS: NucleoConfig = {
   codigo: "FASHION_SPORTS",
   numero: 14,
-  recursos: ["CARTAS"],
+  recursos: ["CARTAS", "RESPOSTA"],
   cena: {
     fundo: "#16301F",
     piso: "#2F7A45",
@@ -31,7 +31,8 @@ export const FASHION_SPORTS: NucleoConfig = {
   vagas: ["SUP", "INF", "CAL"],
   zonas: [],
   areas: [],
-  opcoes: [],
+  // a modalidade da partida; sem escolha, o servidor joga o futebol de 5
+  opcoes: ["FUTEBOL", "BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"],
   acoes: acoesDe({ cartas: true, desfile: false }),
   regras: ["VITORIA", "EMPATE", "COESAO"],
   deck: deckDe(6, ["SUP", 1], ["INF", 1], ["CAL", 1]),

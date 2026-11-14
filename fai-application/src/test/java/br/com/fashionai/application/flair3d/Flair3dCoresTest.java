@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.nucleos.FashionSportsModalidade;
 import br.com.fashionai.application.flair3d.nucleos.FashionSportsNucleo;
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +60,7 @@ class Flair3dCoresTest {
 
         Resultado chute = n.pontuar(vestir(sup, inf, cal), contexto(7L, deck).comAndamento(Andamento.de(troca("SUP", verde))));
         assertThat(chute.status()).isEqualTo("EM_ACAO");
-        assertThat(valor(chute, "LANCE")).isEqualTo(Map.of("lance", 1, "acao", "CHUTE", "carta", verde.id(), "venceu", true));
+        assertThat(valor(chute, "LANCE")).isEqualTo(Map.of("lance", 1, "acao", "CHUTE", "modalidade", "FUTEBOL", "carta", verde.id(), "venceu", true));
         assertThat(chute.eventos()).extracting(Resultado.Evento::codigo).doesNotContain("PLACAR");
 
         Andamento doisLances = Andamento.de(troca("SUP", verde), troca("INF", preto), Acionamento.NENHUM);
@@ -95,5 +96,26 @@ class Flair3dCoresTest {
         assertThat(lances(chuteFraco, "venceu")).containsExactly(false);
         assertThat(valor(chuteFraco, "PLACAR")).isEqualTo("0-2");
         assertThat(n.efeitos(verde, contexto(7L, deck))).extracting(Efeito::codigo).contains("ACAO_CHUTE");
+    }
+
+    @Test
+    void modalidadeMudaOPesoDosAtributosEMantemOPapelDeCadaCor() {
+        Flair3dAtributos a = new Flair3dAtributos(40, 10, 5, 20, 30);
+        assertThat(FashionSportsModalidade.de(null)).isEqualTo(FashionSportsModalidade.FUTEBOL);
+        assertThat(FashionSportsModalidade.de("XADREZ")).isEqualTo(FashionSportsModalidade.FUTEBOL);
+        assertThat(FashionSportsModalidade.FUTEBOL.forca(a)).isEqualTo(FashionSportsNucleo.forca(a)).isEqualTo(24);
+        assertThat(FashionSportsModalidade.de("CORRIDA").forca(a)).isEqualTo(35);
+        assertThat(FashionSportsModalidade.de("BASQUETE").forca(a)).isEqualTo(21);
+        assertThat(new FashionSportsNucleo().definicao().opcoes()).containsExactly("FUTEBOL", "BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE");
+
+        CbcRules.Card sup = card("SUP", "ovr:60");
+        CbcRules.Card inf = card("INF", "ovr:60");
+        CbcRules.Card cal = card("CAL", "ovr:60");
+        CbcRules.Card verde = card("SUP", "ovr:60", "color:green");
+        Entrega volei = new Entrega(vestir(sup, inf, cal).cartas(), null, null, "VOLEI");
+        Resultado r = new FashionSportsNucleo().pontuar(volei, contexto(7L, sup, inf, cal, verde).comAndamento(Andamento.de(troca("SUP", verde))));
+        assertThat(valor(r, "MODALIDADE")).isEqualTo("VOLEI");
+        assertThat(lances(r, "modalidade")).containsExactly("VOLEI");
+        assertThat(lances(r, "acao")).containsExactly("CHUTE");
     }
 }

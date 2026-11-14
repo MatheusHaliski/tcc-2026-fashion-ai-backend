@@ -299,6 +299,23 @@ describe("acionamentos", () => {
     expect(screen.getByTestId("nucleo-hint").textContent).toContain("Salão 4 de 6: Clube underground. Código de vestimenta: 2 peças de balada, festa ou festival.");
   });
 
+  it("Fashion Sports em outra modalidade: a mesma cor ganha o nome da ação do esporte escolhido", async () => {
+    const fx = { efeitos: [{ cardId: "c5", itens: [{ codigo: "ACAO_CHUTE", valor: 1 }] }] };
+    loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_SPORTS/efeitos": fx });
+    const base = { definicao: definicao("FASHION_SPORTS"), cartas: CARTAS, entregando: false, erro: null, onEntregar: vi.fn(), onAcionar: vi.fn() };
+    const { rerender } = renderApp(<NucleoGame {...base} />);
+    expect(screen.getByTestId("nucleo-hint").textContent).toContain("Modalidade: Futebol de 5.");
+    fireEvent.click(screen.getByRole("tab", { name: /Resposta/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Vôlei de praia" }));
+    expect(screen.getByTestId("nucleo-hint").textContent).toContain("Modalidade: Vôlei de praia.");
+    const lance = { codigo: "LANCE", valor: { lance: 1, acao: "CHUTE", modalidade: "VOLEI", carta: "c5", venceu: true } };
+    const jogo: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], status: "EM_ACAO", eventos: [{ codigo: "MODALIDADE", valor: "VOLEI" }, lance] };
+    rerender(<NucleoGame {...base} momento="ACAO" resultado={jogo} />);
+    expect(await screen.findByRole("button", { name: /Regata cinza · cortada/ })).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("Lance 1: cortada, deu certo"), { timeout: 4000 });
+    expect(screen.getByTestId("nucleo-action").textContent).toContain("Modalidade: Vôlei de praia");
+  });
+
   it("O Labirinto: a tentativa que não abriu o espelho vira dica, com quantas peças faltam", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/LABIRINTO/efeitos": EFEITOS });
     const tentativa: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "NAO_ABRE", regras: [], eventos: [{ codigo: "TENTATIVA", valor: 2 }, { codigo: "FALTAM_PECAS", valor: 1 }], status: "ABERTA" };

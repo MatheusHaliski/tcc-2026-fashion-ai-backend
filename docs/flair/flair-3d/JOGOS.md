@@ -231,7 +231,9 @@ dependendo da escolha da vestimenta. Você pode ter um resultado dentro da cutsc
   ("a chave está no armário com a blusa branca") ou de moeda de troca no mercado do mapa (estalecas). O mapa, o que já
   está no servidor e as decisões de 14/11/2026 estão em `CORES_E_ACOES.md`: as cores só alimentam medidores, o
   confronto continua automático, o mercado não vende arma e a estaleca é moeda só do caso.
-- [decidir] As roupas vêm do deck da partida ou do guarda-roupa inteiro?
+- **No código (14/11/2026).** O caso de 6 salões, as cartas de pista e o mercado depois do salão 3 estão no servidor e
+  na tela, com deck de até 12 cartas (`CORES_E_ACOES.md`, 2.2 e 2.3). Cenário próprio de cada salão e cutscenes ainda
+  não existem.
 
 ## Jogo 7 · Boutique 3D
 
