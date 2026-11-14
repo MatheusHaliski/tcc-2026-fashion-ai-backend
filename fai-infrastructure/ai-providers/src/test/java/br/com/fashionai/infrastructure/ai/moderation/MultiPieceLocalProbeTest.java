@@ -3,6 +3,7 @@ package br.com.fashionai.infrastructure.ai.moderation;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.LocalPieceRegions;
 import br.com.fashionai.application.imaging.TextReaderPort;
+import br.com.fashionai.application.imaging.Transparency;
 import br.com.fashionai.application.imaging.WornPieceRegions;
 import br.com.fashionai.application.moderation.ImageSafetyPorts;
 import br.com.fashionai.infrastructure.ai.ocr.OnnxTextReader;
@@ -41,7 +42,7 @@ class MultiPieceLocalProbeTest {
         try (Stream<Path> files = Files.list(Path.of(dir))) {
             for (Path f : files.filter(p -> p.toString().matches("(?i).*\\.(jpe?g|png|webp)$")).sorted().toList()) {
                 long t0 = System.currentTimeMillis();
-                BufferedImage img = ImageOps.decode(Files.readAllBytes(f));
+                BufferedImage img = Transparency.onWhite(ImageOps.decode(Files.readAllBytes(f)));   // como o serviço lê
                 Optional<ImageSafetyPorts.ClassMap> map = segmenter.classes(img);
                 List<WornPieceRegions.Worn> worn = map.map(m -> WornPieceRegions.detect(img, m)).orElse(List.of());
                 List<LocalPieceRegions.Region> surface = worn.isEmpty() ? LocalPieceRegions.detect(img) : List.of();

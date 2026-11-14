@@ -1,6 +1,7 @@
 package br.com.fashionai.application.lens;
 
 import br.com.fashionai.application.ai.local.ColorMath;
+import br.com.fashionai.application.imaging.Transparency;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.vision.analysis.GarmentEmbedder;
 import br.com.fashionai.application.vision.analysis.PatternAnalyzer;
@@ -30,7 +31,7 @@ final class LensImageAnalysis {
     }
 
     static Reading read(BufferedImage image, LensViews.Box box, String aiColor) {
-        BufferedImage crop = crop(image, box);
+        BufferedImage crop = Transparency.onWhite(crop(image, box));   // PNG transparente: lido sobre branco
         PatternAnalyzer.Result pattern = PATTERNS.analyze(crop);
         return new Reading(colors(crop, aiColor), pattern.pattern().name().toLowerCase(Locale.ROOT), pattern.confidence(),
                 EMBEDDER.embed(crop));

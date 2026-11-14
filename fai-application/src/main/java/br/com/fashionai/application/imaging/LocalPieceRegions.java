@@ -39,14 +39,14 @@ public final class LocalPieceRegions {
     }
 
     public static List<Region> detect(BufferedImage photo) {
-        BufferedImage img = ImageOps.scaleToFit(photo, 480, 480);
+        BufferedImage img = ImageOps.scaleToFit(Transparency.onWhite(photo), 480, 480);
         int w = img.getWidth(), h = img.getHeight();
         int[] pixels = img.getRGB(0, 0, w, h, null, 0, w);
         // as duas leituras; fica a que separou mais peças (grade de catálogo: o limiar; cama com dobras: as cores);
         // em empate, o limiar (a leitura mais conservadora)
         List<Region> clustered = byClusters(pixels, w, h);
         List<Region> thresholded = byBackground(img, pixels, w, h);
-        return thresholded.size() >= clustered.size() ? thresholded : clustered;
+        return SingleGarmentRegions.unify(pixels, w, h, thresholded.size() >= clustered.size() ? thresholded : clustered);
     }
 
     /** Agrupamento de cores → máscara por cor → componentes; fundo decidido por componente (bordas e área). */
@@ -339,7 +339,7 @@ public final class LocalPieceRegions {
         return dr * dr + dg * dg + db * db;
     }
 
-    private static boolean[] erode(boolean[] in, int w, int h) {
+    static boolean[] erode(boolean[] in, int w, int h) {
         boolean[] out = new boolean[in.length];
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
@@ -350,7 +350,7 @@ public final class LocalPieceRegions {
         return out;
     }
 
-    private static boolean[] dilate(boolean[] in, int w, int h) {
+    static boolean[] dilate(boolean[] in, int w, int h) {
         boolean[] out = new boolean[in.length];
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
