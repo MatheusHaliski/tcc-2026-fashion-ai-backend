@@ -1,4 +1,5 @@
-"""Gravação de um .glb da Meshy como modelo 3D de vitrine do produto (catalog_product_models_3d, V97).
+"""Gravação de um .glb gerado (Meshy, Hunyuan3D…: glb_source.py) como modelo 3D de vitrine do produto
+(catalog_product_models_3d, V97).
 
 Uma transação por produto. Ordem: envia as versões ao bucket (com releitura e conferência do SHA, como o FrameStorage),
 aposenta o PUBLISHED anterior, insere o novo e completa as peças do guarda-roupa que vieram desse produto e ainda não têm
@@ -14,10 +15,13 @@ import json
 import uuid
 from datetime import datetime, timezone
 
+try:
+    from .glb_source import MESHY_CODEX, GlbSource
+except ImportError:   # rodado como script: scripts/catalog no sys.path
+    from glb_source import MESHY_CODEX, GlbSource
+
 VERSION = "MESHY_GLB_V2"
 ACTOR = "import_meshy_glbs"
-NOTES = ("Meshy (lote do Codex) sem esqueleto: vitrine do produto (manequim, quarto, visualizador), não veste o avatar. "
-         "Escala relativa, sem medida da marca.")
 RETIRE = """UPDATE catalog_product_models_3d SET status = 'RETIRED', updated_at = %(now)s, last_modified_by = %(actor)s,
   version = version + 1 WHERE catalog_product_id = %(product_id)s AND status = 'PUBLISHED'"""
 INSERT = """INSERT INTO catalog_product_models_3d (id, catalog_product_id, status, source, generator, sha256,
@@ -56,7 +60,7 @@ def store(storage, data: bytes) -> str:
     return key
 
 
-def apply_one(conn, storage, item: dict) -> dict:
+def apply_one(conn, storage, item: dict, source: GlbSource = MESHY_CODEX) -> dict:
     """Grava o produto do item; devolve {status, url, pieces}. ``item['renditions']``: perfil → (bytes, receita)."""
     keys: list[str] = []
     now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -68,14 +72,14 @@ def apply_one(conn, storage, item: dict) -> dict:
             keys.append(key)
             renditions[profile] = {"key": key, "bytes": len(data), "triangles": q.get("triangles"),
                                    "sha256": hashlib.sha256(data).hexdigest(), "recipe": recipe}
-        imported = {"version": VERSION, "origin": "codex", "generator": "meshy", "sha256": item["sha"],
+        imported = {"version": VERSION, "origin": source.origin, "generator": source.family, "sha256": item["sha"],
                     "meshyTaskId": item["row"].get("meshy_task_id") or None,
                     "codexProductId": item["row"].get("codex_product_id") or None,
                     "codexReview": item["row"].get("codex_quality") or None, "match": item["match"],
                     "importedAt": now.isoformat(timespec="seconds") + "Z"}
         params = {"id": str(uuid.uuid4()), "product_id": item["product_id"], "now": now, "actor": ACTOR,
-                  "status": "PUBLISHED" if publish else "DRAFT", "generator": "meshy-6-lite", "sha": item["sha"],
-                  "renditions": json.dumps(renditions), "notes": NOTES,
+                  "status": "PUBLISHED" if publish else "DRAFT", "generator": source.generator,
+                  "sha": item["sha"], "renditions": json.dumps(renditions), "notes": source.notes,
                   "metrics": json.dumps({"import": imported, "quality": q}, ensure_ascii=False),
                   "published_at": now if publish else None, "published_by": ACTOR if publish else None}
         url, pieces = "/media/" + renditions["WEB"]["key"], 0

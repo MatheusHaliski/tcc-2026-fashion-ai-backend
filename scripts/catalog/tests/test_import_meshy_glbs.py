@@ -4,6 +4,7 @@ grava nada; o --apply publica só nota BOM (REVISAR fica DRAFT), completa as pe�
 falhar, desfaz a transação e apaga o que enviou ao bucket."""
 import csv
 import hashlib
+import json
 import io
 import sys
 from pathlib import Path
@@ -14,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from scripts.catalog import codex_catalog_match as match  # noqa: E402
 from scripts.catalog import import_meshy_glbs as imp  # noqa: E402
 from scripts.catalog import meshy_glb_apply as ap  # noqa: E402
+from scripts.catalog.glb_source import GlbSource  # noqa: E402
 from scripts.catalog.tests.meshy_glb_fixture import meshy_glb  # noqa: E402
 
 P1, P2, P3, P4 = (f"{n}" * 8 + "-1111-4111-8111-" + f"{n}" * 12 for n in "1234")
@@ -270,3 +272,39 @@ def test_missing_file_is_bad_and_locate_never_leaves_root(tmp_path):
     assert imp.locate(tmp_path, "a/x.glb") == (tmp_path / "a" / "x.glb").resolve()
     escaped = imp.locate(tmp_path / "a", "../b/x.glb")          # caminho que sai da pasta: só o nome, dentro dela
     assert escaped == (tmp_path / "a" / "x.glb") and (tmp_path / "a").resolve() in escaped.resolve().parents
+
+
+def test_default_source_keeps_the_meshy_contract(tmp_path):
+    conn = Conn(flat_lays=[P1])
+    run(tmp_path, conn, "--apply", storage=Storage())
+    insert = next(w[1] for w in conn.writes if w[0] == "INSERT catalog_product_models_3d")
+    imported = json.loads(insert["metrics"])["import"]
+    assert insert["generator"] == "meshy-6-lite" and insert["notes"].startswith("Meshy (lote do Codex)")
+    assert (imported["origin"], imported["generator"], imported["version"]) == ("codex", "meshy", ap.VERSION)
+
+
+def test_runpod_hunyuan_lot_links_by_uuid_and_records_the_generator(tmp_path):
+    (tmp_path / "glb").mkdir()
+    (tmp_path / "glb" / f"{P2}.glb").write_bytes(meshy_glb())
+    with (tmp_path / "manifesto.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["product_id", "glb", "generator"])
+        writer.writeheader()
+        writer.writerow({"product_id": P2.upper(), "glb": f"glb/{P2}.glb", "generator": "hunyuan3d-2.1"})
+    conn, out = Conn(flat_lays=[P2]), tmp_path / "saida"
+    code = imp.main(["--manifest", str(tmp_path / "manifesto.csv"), "--root", str(tmp_path), "--out-dir", str(out),
+                     "--generator", "hunyuan3d-2.1", "--origin", "runpod", "--apply"],
+                    connect=lambda: (conn, "teste"), make_storage=Storage)
+    row = next(csv.DictReader((out / "relatorio.csv").open(encoding="utf-8")))
+    assert code == 0 and (row["product_id"], row["ligacao"], row["situacao"]) == (P2, "ID", "IMPORTADO")
+    insert = next(w[1] for w in conn.writes if w[0] == "INSERT catalog_product_models_3d")
+    imported = json.loads(insert["metrics"])["import"]
+    assert insert["generator"] == "hunyuan3d-2.1" and insert["notes"].startswith("Hunyuan3D 2.1")
+    assert (imported["origin"], imported["generator"], imported["meshyTaskId"]) == ("runpod", "hunyuan3d", None)
+
+
+def test_unknown_generator_or_origin_is_refused(tmp_path):
+    for extra in (["--generator", "meshy"], ["--origin", "mac"]):
+        with pytest.raises(SystemExit):
+            imp.main(["--manifest", "m.csv", "--root", str(tmp_path), *extra], connect=lambda: pytest.fail("conectou"))
+    with pytest.raises(ValueError):
+        GlbSource("hunyuan3d-2.1", "meshy")
