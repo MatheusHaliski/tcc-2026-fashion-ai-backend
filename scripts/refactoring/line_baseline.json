@@ -41,7 +41,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/background-studio.tsx": {
-   "max": 346,
+   "max": 337,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/catalog/catalog-search.tsx": {
@@ -117,7 +117,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/piece-art-editor.tsx": {
-   "max": 263,
+   "max": 254,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/room3d/hung-garment.tsx": {
@@ -170,10 +170,6 @@
   },
   "components/three/human-avatar.tsx": {
    "max": 295,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/three/human-outfit.tsx": {
-   "max": 291,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/try-on/fitting-items.tsx": {

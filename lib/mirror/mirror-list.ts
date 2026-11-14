@@ -14,6 +14,8 @@ export interface MirrorRackPiece {
   id: string; name: string; category?: string | null; subcategory?: string | null; slot?: string | null;
   imageUrl?: string | null; thumbnailUrl?: string | null; studioImageUrl?: string | null; colorHex?: string | null;
   variation?: string | null; attributes?: Record<string, string[]> | null; available?: boolean; worn?: boolean;
+  /** modelo 3D da peça: o de produto do catálogo veste o avatar (glb-garment); os outros ficam com o molde */
+  model3dUrl?: string | null;
 }
 
 const SLOT3D: Record<string, string> = { outer_layer: "outer_layer", upper: "upper", dress: "dress", lower: "lower", shoes: "shoes", accessory: "accessory" };
@@ -23,6 +25,6 @@ export function mirrorLook3d(p: MirrorRackPiece, slot?: string | null): Look3dPi
   return {
     id: p.id, name: p.name, slot: SLOT3D[slot ?? p.slot ?? ""] ?? "accessory", category: p.category ?? undefined, subcategory: p.subcategory ?? undefined,
     imageUrl: p.imageUrl ?? p.thumbnailUrl ?? null, studioUrl: p.studioImageUrl ?? null, colorHex: p.colorHex ?? null,
-    variation: p.variation ?? null, attributes: p.attributes ?? null, model3dUrl: null,
+    variation: p.variation ?? null, attributes: p.attributes ?? null, model3dUrl: p.model3dUrl ?? null,
   };
 }

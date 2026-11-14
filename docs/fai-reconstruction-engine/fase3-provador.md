@@ -49,3 +49,30 @@ de frente, com as **mangas abertas**, o que resolve o caso em que hoje as mangas
 - Projeção por painéis exige pontos confiáveis no flat lay; peças fora do padrão (assimétricas, transparentes)
   continuarão aproximadas.
 - O avatar continua sem simulação de tecido: o caimento é aproximado (ver `docs/avatar3d/PIPELINE_VESTIMENTAS_3D.md`).
+
+## Atualização (06/11/2026): opção (b) para quem tem `.glb` de produto
+
+Com os `.glb` da Meshy importados como modelo de vitrine do produto (`catalog_product_models_3d`, V97), o avatar do
+provador e do espelho passa a vestir **esse `.glb`** quando ele existe e passa no aceite; sem `.glb` (ou recusado),
+continua o molde paramétrico acima. Código em `lib/avatar3d/human/glb-garment/` (sem IA, tudo geométrico, ~0,5 s por
+peça, em cache por corpo × peça × tamanho):
+
+1. **Encaixe** (`align.ts`): parte de cima e peça inteira pela largura dos ombros (ou pelo tronco abaixo da axila
+   quando a peça foi fotografada com a manga aberta); parte de baixo pela largura do corpo no cós. Escala uniforme:
+   as proporções do `.glb` ficam. Manga gira até o eixo ombro → mão e perna até quadril → pé. Onde a peça é mais rasa
+   que o corpo (a Meshy faz a peça de uma foto), a profundidade estica por faixa de altura (até 3×).
+2. **Envolvimento** (`wrap.ts`): vértices soldados nas costuras de UV; o que entra no corpo sai pela normal da pele;
+   cada vértice herda os pesos da pele (manga só do braço do mesmo lado, pela altura do eixo; perna só da perna);
+   volta à pose de repouso pela inversa da mistura das matrizes dos ossos e é presa ao mesmo esqueleto do corpo.
+3. **Corte da fusão** (`index.ts`): de uma foto só, a Meshy funde a parte de dentro da manga com a lateral do tronco
+   (e as pernas entre si); esses triângulos viram tiras quando o braço sobe e são cortados abaixo da axila/gancho.
+4. **Tamanho P/M/G/GG**: a folga e o comprimento vêm do mesmo `GarmentSpec` do molde (`applySize`), então o tamanho
+   escolhido no provador muda a largura e o comprimento da peça na mesma regra.
+5. **Aceite** (`LIMITS`): dentro do corpo ≤ 3%, esticamento p95 ≤ 1,8 e nenhum vértice a mais de 25 cm da pele.
+   Recusado → molde, com o motivo no console (`DENTRO_DO_CORPO`, `ESTICADA`, `ESPINHO`, `SEM_ANCORA`, `SEM_CLASSE`).
+
+Só o modelo de produto (`/media/catalog/model3d/…`) veste; o `.glb` do RF16 da pessoa (relevo de uma foto) continua
+só no visualizador. Limites conhecidos: os furos da própria malha da Meshy aparecem (sobre a camiseta de base, no
+blazer); borda serrilhada onde a fusão foi cortada; peça muito larga ou fotografada aberta (camiseta estendida) e
+tamanhos bem acima do corpo costumam ser recusados e ficam com o molde. Não há simulação de tecido: a peça segue o
+esqueleto, não cai nem dobra.

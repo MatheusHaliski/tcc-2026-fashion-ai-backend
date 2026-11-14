@@ -14,7 +14,7 @@ it('keeps garment awards and readable fashion facts outside the Hype tab',()=>{
  const meta=container.querySelector('.card-fashion-meta')!;
  expect([...meta.querySelectorAll('dt')].map(e=>e.textContent)).toEqual(['Marca','Cor','Ocasião','Estilo']);
  expect(meta.textContent).toContain('Nike');expect(meta.textContent).toContain('Casual');
- fireEvent.click(screen.getByRole('tab',{name:'Hype'}));expect(meta.closest('[role="tabpanel"]')).toBeNull();
+ fireEvent.click(screen.getByRole('tab',{name:/^Hype/}));expect(meta.closest('[role="tabpanel"]')).toBeNull();
  expect(meta.isConnected).toBe(true);expect(screen.getByTitle('Seleção oficial · @marca · PECA').isConnected).toBe(true);
 });
 it('shortens outfit posts without losing the full item list in expanded view',()=>{
