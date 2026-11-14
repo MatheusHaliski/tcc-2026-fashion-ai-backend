@@ -7,6 +7,7 @@ import { applyNavOrder, isNavOrder, setNavOrder, useNavOrder } from "@/lib/nav/n
 import { useEffect, useId, useRef, useState, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
+import { useUnreadCount } from "@/lib/notifications/use-unread-count";
 import { useTheme, type ThemeMode } from "@/lib/theme/theme";
 import { api } from "@/lib/api/client";
 import { FaiIcon } from "@/components/fai-icon";
@@ -211,17 +212,11 @@ function useSidebarCollapsed(): [boolean, (v: boolean) => void] {
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n(); const { user, ready } = useAuth(); const { prefs, update } = useTheme();
   const pathname = usePathname(); const router = useRouter(); const isActive = useIsActive();
-  const [unread, setUnread] = useState(0); const [drawer, setDrawer] = useState(false); const [create, setCreate] = useState(false);
+  const [drawer, setDrawer] = useState(false); const [create, setCreate] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useSidebarCollapsed(); const desktop = useIsDesktop();
   useFocusTrap(drawerRef, drawer, () => setDrawer(false));
-  useEffect(() => {
-    if (!user) return;
-    let alive = true;
-    const load = () => api.get<{ unread: number }>("/api/notifications/unread-count").then((r) => alive && setUnread(r.unread)).catch(() => undefined);
-    load(); const h = setInterval(load, 60000);
-    return () => { alive = false; clearInterval(h); };
-  }, [user, pathname]);
+  const unread = useUnreadCount(!!user, pathname);
   useEffect(() => { setDrawer(false); setCreate(false); }, [pathname]);
   // RF23.CA02 — ao entrar, aplica as preferências salvas no servidor (tema, fundo do chrome, cor dos containers…)
   useEffect(() => {

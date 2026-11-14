@@ -10660,5 +10660,6 @@
   "tryOn.provando_status_sem_marca": "Probándote {name} en {slot}.",
   "search.ha_resultados_em": "Hay resultados para esta búsqueda en:",
   "sealWizard.passo_definir": "Definir sello",
-  "settings.sessao_aparelho": "{navegador} en {sistema}"
+  "settings.sessao_aparelho": "{navegador} en {sistema}",
+  "points.hub.valor_variavel": "varía"
 }

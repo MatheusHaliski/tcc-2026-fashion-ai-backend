@@ -73,6 +73,15 @@ describe("seções", () => {
     expect(links.map((l) => l.getAttribute("href"))).toEqual(["/autopilot", "/flair/desafios"]);
   });
 
+  it("regra de valor variável (0 no cadastro) mostra \"varia\", nunca \"+0\" (auditoria)", async () => {
+    loggedAs(ME, { ...ROUTES, "GET /api/me/points": { ...ACCOUNT, rules: [{ action: "FLAIR_3D", points: 0, description: "Jogo FLAIR 3D concluído (valor do jogo)" }, { action: "LOOK_DO_DIA", points: 10, description: "Look do dia confirmado" }] } });
+    renderApp(<PointsSection section="ganhar" />);
+    const variable = (await screen.findByText("Jogo FLAIR 3D concluído (valor do jogo)")).closest("li")!;
+    expect(variable.textContent).toContain("varia");
+    expect(variable.textContent).not.toContain("+0");
+    expect(screen.getByText("Look do dia confirmado").closest("li")!.textContent).toContain("+10");
+  });
+
   it("mostra a progressão FAI XP com o nível localizado e percentual entre limiares", () => {
     loggedAs(ME, {});
     renderApp(<FaiXpProgress account={{ ...ACCOUNT, lifetime: 600, level: "STUDIO", nextLevel: { level: "LOFT", threshold: 900, missing: 300 }, levels: [{ level: "STUDIO", threshold: 300, reached: true }] }} />);
