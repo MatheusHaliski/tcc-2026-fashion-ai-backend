@@ -66,6 +66,8 @@ describe("ACERVO · ficha da peça: Passaporte, Editor 3D e Tamanhos", () => {
     expect(within(ficha).getByText(/em quarentena \(IN_REVIEW\)/)).toBeTruthy();
     expect(within(ficha).getByText(/só assets revisados vestem o avatar no provador/)).toBeTruthy();
     expect(within(ficha).getByText(/não são certificações nem informações oficiais da marca/)).toBeTruthy();
+    fireEvent.click(within(ficha).getByRole("button", { name: "Ver modelo 3D" }));
+    expect(within(ficha).getByRole("button", { name: "Ocultar modelo 3D" })).toBeTruthy();
     expect(within(ficha).getByRole("link", { name: "Declarar composição e cuidados" }).getAttribute("href")).toBe("/pieces/p1/passport");
     expect(within(ficha).getByRole("link", { name: "Abrir o passaporte em página inteira" }).getAttribute("href")).toBe("/pieces/p1/sheet");
   });
