@@ -159,6 +159,34 @@ arma.
 
   A peça comprada é do caso: não vira carta da coleção.
 
+## 2-A. Os outros jogos de cartas: efeito de cena por cor [feito]
+
+Pedido da dona (14/11/2026): todo jogo 3D deve ter, para cada cor de peça do deck, um efeito ao ser inserida. Nos 9
+jogos de cartas além do esporte e do detetive, a cor dá um **efeito de cena**: ao vestir a peça aparece o nome do
+efeito e um pulso de luz na cor da família, ao lado da roupa (nunca sobre ela). No deck, a carta continua mostrando só
+o efeito principal (o que dá pontos); o efeito da cor aparece na carta ampliada e na hora de vestir.
+
+| Jogo | Preto | Verde | Amarelo | Azul | Vermelho | Branco |
+| --- | --- | --- | --- | --- | --- | --- |
+| A Passarela | a luz recorta a silhueta | brisa na passarela | holofote dourado | flashes da plateia | aplausos da plateia | a passarela acende |
+| Dress Fighter | postura de guarda | passo de esquiva | golpe rápido no ar | fôlego | golpe forte no ar | foco |
+| Dress the Star | luz de gala | luz de jardim | chuva de brilho | luz azul suave | o tapete vermelho acende | flashes dos fotógrafos |
+| Personagem de Filme | luz de suspense | luz de aventura | luz de comédia | luz de ficção científica | luz de romance | a claquete bate |
+| Road to Glory | luz de contraste | luz natural | luz dourada | luz fria | luz de destaque | rebatedor de luz |
+| Boutique 3D | vitrine em luz de noite | etiqueta de novidade | placa de destaque | a cliente olha a peça | a cliente sorri | a vitrine acende |
+| O Labirinto | sombras nos espelhos | trilha de luz no piso | luz de lanterna | reflexo azul nos espelhos | os espelhos piscam | clarão nos espelhos |
+| Around the World | noite na cidade | luz de parque | sol da tarde | brisa do mar | festa de rua | luz de inverno |
+| Batalha de Looks | batida de impacto | a torcida vibra | faíscas no palco | onda de luz azul | luz de chamas | luz estroboscópica |
+
+- **Não muda a nota.** Só no Fashion Sports e no Fashion Detective a cor entra na regra do jogo. Nos 9 jogos acima ela
+  é só efeito de cena.
+- **O que aparece hoje:** o nome do efeito e o pulso de luz colorido. A cena 3D ainda não faz a ação descrita (a
+  plateia não aplaude de verdade, a vitrine não acende): isso é o próximo passo, efeito por efeito.
+- **Jogos sem cartas** (Clube do Coração, My Favorite Singer, Meu Piloto Favorito, Meu Super-Herói Favorito): a pessoa
+  pinta zonas, não insere cartas, então não há efeito de cor por carta.
+- Onde está: `Flair3dCores.DE_CENA` e `efeitoDaCor` (servidor), `lib/flair/nucleos/card-fx.ts` e
+  `components/flair/nucleos/nucleo-card-fx.tsx` (tela).
+
 ## 3. Decisões da dona (14/11/2026: "siga o recomendado")
 
 1. **Furtividade, vida e dano** só alimentam medidores. O confronto e a caminhada continuam automáticos, em cutscene.

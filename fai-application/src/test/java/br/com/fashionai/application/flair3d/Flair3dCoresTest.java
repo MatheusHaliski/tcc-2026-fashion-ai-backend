@@ -125,4 +125,27 @@ class Flair3dCoresTest {
         assertThat(lances(r, "modalidade")).containsExactly("VOLEI");
         assertThat(lances(r, "acao")).containsExactly("CHUTE");
     }
+
+    @Test
+    void todoJogoDeCartasTemUmEfeitoParaCadaUmaDasSeisCores() {
+        List<String> deCartas = Flair3dNucleos.TODOS.stream().filter(n -> n.definicao().recursos().contains(Definicao.CARTAS))
+                .map(Flair3dNucleo::codigo).toList();
+        assertThat(deCartas).hasSize(11);
+        String[] cores = {"black", "green", "yellow", "blue", "red", "white"};
+        for (String nucleo : deCartas) {
+            Map<String, String> tabela = Flair3dCores.tabelaDe(nucleo);
+            assertThat(tabela).as(nucleo).isNotNull();
+            assertThat(tabela.keySet()).as(nucleo).containsExactlyInAnyOrderElementsOf(Flair3dCores.FAMILIAS);
+            assertThat(tabela.values()).as(nucleo).doesNotHaveDuplicates();
+            for (int i = 0; i < cores.length; i++) {
+                Efeito e = Flair3dCores.efeitoDaCor(nucleo, card("SUP", "color:" + cores[i]));
+                assertThat(e.valor()).as(nucleo + " " + cores[i]).isEqualTo(i + 1);
+                assertThat(e.codigo()).startsWith("FASHION_SPORTS".equals(nucleo) ? "ACAO_" : "COR_");
+                assertThat(e.motivo()).isFalse();
+            }
+            assertThat(Flair3dCores.efeitoDaCor(nucleo, card("SUP"))).isNull();
+        }
+        assertThat(Flair3dCores.efeitoDaCor("PASSARELA", card("SUP", "color:navy"))).isEqualTo(new Efeito("COR_FLASHES", 4));
+        assertThat(Flair3dCores.efeitoDaCor("CLUBE_CORACAO", card("SUP", "color:black"))).isNull();
+    }
 }

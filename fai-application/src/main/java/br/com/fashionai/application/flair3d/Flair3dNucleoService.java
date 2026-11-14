@@ -82,7 +82,7 @@ public class Flair3dNucleoService {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("cardId", id);
             List<Efeito> itens = n.efeitos(carta, ctx);
-            m.put("itens", itens.isEmpty() && deCartas ? List.of(Efeito.motivo(Efeito.SEM_BONUS)) : itens);
+            m.put("itens", comEfeitoDaCor(n.codigo(), carta, itens.isEmpty() && deCartas ? List.of(Efeito.motivo(Efeito.SEM_BONUS)) : itens));
             out.add(m);
         });
         return Map.of("efeitos", out);
@@ -151,6 +151,18 @@ public class Flair3dNucleoService {
         Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
         Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class));
         return n.previa(e, contexto(user, m, n, e, a)).comStatus(m.getStatus());
+    }
+
+    /** Os itens da carta com o efeito da cor dela no jogo no fim (Flair3dCores), quando há um e o núcleo não o mandou. */
+    private static List<Efeito> comEfeitoDaCor(String nucleo, CbcRules.Card carta, List<Efeito> itens) {
+        Efeito cor = Flair3dCores.efeitoDaCor(nucleo, carta);
+        if (cor == null) {
+            return itens;
+        }
+        List<Efeito> out = new ArrayList<>(itens);
+        out.removeIf(e -> e.codigo().equals(cor.codigo()));
+        out.add(cor);
+        return out;
     }
 
     /** A partida da pessoa (404, 403) no status que a operação pede (409). */

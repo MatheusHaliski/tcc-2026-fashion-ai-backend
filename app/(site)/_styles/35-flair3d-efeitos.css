@@ -130,3 +130,55 @@
     opacity: 0.3;
   }
 }
+
+/* efeito da cor da peça: um pulso de luz na cor da família, à esquerda da roupa, e o nome do efeito */
+.n3d-fx-color {
+  position: absolute;
+  top: 38%;
+  right: calc(100% - var(--n3d-zona-x, 30%) + 6px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: calc(var(--n3d-zona-x, 30%) - 12px);
+}
+
+.n3d-fx-pulse {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--n3d-fx-peca) 0 35%, transparent 70%);
+  box-shadow: 0 0 22px 8px var(--n3d-fx-peca);
+  animation: n3d-pulse 900ms ease-out both;
+}
+
+.n3d-fx-color-badge {
+  padding: 2px 8px;
+  border-left: 4px solid var(--n3d-fx-peca);
+  border-radius: 10px;
+  background: #1b1b1fe6;
+  color: #fff;
+  font-size: var(--text-caption);
+  text-align: right;
+}
+
+.n3d-fx.is-calm .n3d-fx-pulse {
+  animation: none;
+}
+
+@keyframes n3d-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  40% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+}

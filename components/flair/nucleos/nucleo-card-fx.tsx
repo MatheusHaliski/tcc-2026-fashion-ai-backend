@@ -50,7 +50,13 @@ export function NucleoCardFx({ atual, reduzido, efeitos }: Props) {
           {texto}
         </span>
       )}
-      <p className="sr-only" role="status">{atual && texto ? `${atual.card.name}: ${texto}` : ""}</p>
+      {entrada?.efeitoDaCor && atual && (
+        <span key={`cor-${atual.chave}`} className="n3d-fx-color" style={{ "--n3d-fx-peca": entrada.corDaPeca ?? "#888" } as CSSProperties} aria-hidden data-testid="nucleo-fx-color">
+          {efeitos && <span className="n3d-fx-pulse" />}
+          <span className="n3d-fx-color-badge">{tx.efeito(entrada.efeitoDaCor)}</span>
+        </span>
+      )}
+      <p className="sr-only" role="status">{atual ? [texto, entrada?.efeitoDaCor ? tx.efeito(entrada.efeitoDaCor) : null].filter(Boolean).map((x) => `${atual.card.name}: ${x}`).join(". ") : ""}</p>
     </div>
   );
 }
