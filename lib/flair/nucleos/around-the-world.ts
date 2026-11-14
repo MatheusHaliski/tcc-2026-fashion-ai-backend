@@ -10,12 +10,8 @@ export const AROUND_THE_WORLD: NucleoConfig = {
     fundo: "#9FD6F2",
     piso: "#F1EEE6",
     luz: "#FFF1C9",
-    props: [
-      { forma: "caixa", pos: [0, 0.01, -1], tam: [1.2, 0.02, 8], cor: "#2B2B2B" },
-      { forma: "caixa", pos: [-4, 0.02, -2], tam: [3, 0.04, 9], cor: "#E8D3A2" },
-      { forma: "cilindro", pos: [2.6, 1.6, -3], tam: [0.12, 3.2, 0.12], cor: "#6B4A33" },
-      { forma: "esfera", pos: [2.6, 3.3, -3], tam: [0.9, 0.35, 0.9], cor: "#2F8F4E" },
-    ],
+    // a sala inteira (casca, móveis, materiais e luzes) está em lib/flair/nucleos/scene/salas
+    props: [],
   },
   personagens: [
     ...fileira("PASSANTE", -1.6, [-3, 0.5], "#4F6D8C"),

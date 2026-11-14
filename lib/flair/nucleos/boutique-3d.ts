@@ -10,14 +10,10 @@ export const BOUTIQUE_3D: NucleoConfig = {
     fundo: "#F3ECE3",
     piso: "#C9B8A3",
     luz: "#FFF3DE",
-    props: [
-      { forma: "caixa", pos: [-2, 1.5, -2], tam: [1.8, 0.05, 0.05], cor: "#8C7A5B" },
-      { forma: "cilindro", pos: [-2.85, 0.75, -2], tam: [0.04, 1.5, 0.04], cor: "#8C7A5B" },
-      { forma: "cilindro", pos: [-1.15, 0.75, -2], tam: [0.04, 1.5, 0.04], cor: "#8C7A5B" },
-      { forma: "caixa", pos: [2, 0.5, -1.8], tam: [1.6, 1, 0.6], cor: "#6E5440" },
-    ],
+    // a sala inteira (casca, móveis, materiais e luzes) está em lib/flair/nucleos/scene/salas
+    props: [],
   },
-  personagens: [{ papel: "CLIENTE", tipo: "manequim", pos: [1.8, 0, -0.9], cor: "#7A6A8E", giro: -50 }],
+  personagens: [{ papel: "CLIENTE", tipo: "manequim", pos: [1.7, 0, -0.9], cor: "#7A6A8E", giro: -50 }],
   avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: ["SUP", "INF", "CAL"],
   zonas: [],

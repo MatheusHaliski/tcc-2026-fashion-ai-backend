@@ -9,6 +9,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
@@ -24,11 +25,14 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Núcleo 10 — Espelho 1, "3 peças da mesma família de cor": abre (100) ou não abre (0). Quando não abre, o evento
- * FALTAM_PECAS diz quantas peças faltaram na família mais perto de fechar.
+ * Núcleo 10 — Espelho 1, "3 peças da mesma família de cor". A pessoa apresenta o look ao espelho quantas vezes quiser:
+ * quando não abre, o evento FALTAM_PECAS diz quantas peças faltaram na família mais perto de fechar e a partida segue
+ * ABERTA; quando abre, vale 100 na 1ª apresentação, 80 na 2ª, 60 na 3ª e 0 daí em diante (a porta abre do mesmo jeito).
  */
 public class LabirintoNucleo implements Flair3dNucleo {
     public static final int PECAS = 3;
+    /** Pontos de quem abre o espelho, pela apresentação (1ª, 2ª, 3ª); depois disso, zero. */
+    public static final List<Integer> PONTOS_POR_TENTATIVA = List.of(100, 80, 60);
 
     @Override
     public String codigo() {
@@ -56,18 +60,29 @@ public class LabirintoNucleo implements Flair3dNucleo {
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
         Map<String, Integer> porFamilia = new TreeMap<>();
-        contexto.vestidas(entrega).values().forEach(c -> familias(c).forEach(f -> porFamilia.merge(f, 1, Integer::sum)));
+        Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
+        vestidas.values().forEach(c -> familias(c).forEach(f -> porFamilia.merge(f, 1, Integer::sum)));
         Map.Entry<String, Integer> melhor = porFamilia.entrySet().stream().max(Map.Entry.comparingByValue()).orElse(null);
         int maior = melhor == null ? 0 : melhor.getValue();
         boolean abre = maior >= PECAS;
+        int tentativa = Math.max(1, contexto.andamento().tentativas());
         List<Evento> eventos = new ArrayList<>();
         if (melhor != null) {
             eventos.add(new Evento("FAMILIA", codigoFamilia(melhor.getKey())));
         }
+        eventos.add(new Evento("TENTATIVA", tentativa));
         if (!abre) {
             eventos.add(new Evento("FALTAM_PECAS", PECAS - maior));
+            return Resultado.parcial(Resultado.ABERTA, "NAO_ABRE", List.of(RegraResultado.de("MESMA_FAMILIA", false, 100)), eventos);
         }
-        return Resultado.of(abre ? 100 : 0, abre ? "ABRE" : "NAO_ABRE", List.of(RegraResultado.de("MESMA_FAMILIA", abre, 100)), eventos);
+        int pontos = pontos(tentativa);
+        Flair3dRateio rateio = new Flair3dRateio(vestidas).dividirEntre(pontos, c -> familias(c).contains(melhor.getKey()));
+        return Resultado.of(pontos, "ABRE", List.of(RegraResultado.de("MESMA_FAMILIA", true, pontos)), eventos).comCartas(rateio.lista());
+    }
+
+    /** Pontos de quem abre na apresentação dada (1 = primeira). */
+    public static int pontos(int tentativa) {
+        return tentativa <= PONTOS_POR_TENTATIVA.size() ? PONTOS_POR_TENTATIVA.get(tentativa - 1) : 0;
     }
 
     static String codigoFamilia(String familia) {
@@ -76,6 +91,7 @@ public class LabirintoNucleo implements Flair3dNucleo {
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        return familias(carta).stream().map(f -> new Efeito(codigoFamilia(f), 1)).toList();
+        List<Efeito> out = familias(carta).stream().map(f -> new Efeito(codigoFamilia(f), 1)).toList();
+        return out.isEmpty() ? List.of(Efeito.motivo("SEM_FAMILIA_DE_COR")) : out;
     }
 }

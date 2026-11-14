@@ -10,13 +10,10 @@ export const ROAD_TO_GLORY: NucleoConfig = {
     fundo: "#EDE8E1",
     piso: "#D9D2C7",
     luz: "#FFFFFF",
-    props: [
-      { forma: "plano", pos: [0, 1.8, -2.5], tam: [4, 3.6, 1], cor: "#F7F4EF" },
-      { forma: "cilindro", pos: [-1.9, 1, -1.2], tam: [0.04, 2, 0.04], cor: "#2B2B2B" },
-      { forma: "esfera", pos: [-1.9, 2.05, -1.2], tam: [0.35, 0.35, 0.2], cor: "#FFFFFF", emissiva: true },
-    ],
+    // a sala inteira (casca, móveis, materiais e luzes) está em lib/flair/nucleos/scene/salas
+    props: [],
   },
-  personagens: [{ papel: "FOTOGRAFA", tipo: "manequim", pos: [1.7, 0, -0.3], cor: "#5A4A3F", giro: -55 }],
+  personagens: [{ papel: "FOTOGRAFA", tipo: "manequim", pos: [1.9, 0, 0.4], cor: "#5A4A3F", giro: -70 }],
   avatares: { protagonista: ["PROPRIO", "MODELO_CASA"], online: null },
   vagas: ["SUP", "INF", "CAL", "ACE"],
   zonas: [],

@@ -1,5 +1,6 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.flair3d.Acionamento;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleoService;
@@ -68,6 +69,18 @@ class Flair3dControllersTest {
             args.addAll(Arrays.asList(user, partidaId, entrega));
             return RESULTADO;
         }
+
+        @Override
+        public Resultado previa(CurrentUser user, UUID partidaId, Entrega entrega) {
+            args.addAll(Arrays.asList("previa", user, partidaId, entrega));
+            return RESULTADO;
+        }
+
+        @Override
+        public Resultado acionar(CurrentUser user, UUID partidaId, Acionamento acionamento) {
+            args.addAll(Arrays.asList("acionar", user, partidaId, acionamento));
+            return RESULTADO;
+        }
     }
 
     static final class MakeUp extends FlairMakeUpService {
@@ -106,7 +119,7 @@ class Flair3dControllersTest {
         final List<Object> args = new ArrayList<>();
 
         Elencos() {
-            super(null, null);
+            super(null, null, null);
         }
 
         @Override
@@ -135,7 +148,7 @@ class Flair3dControllersTest {
     }
 
     @Test
-    void nucleosDelegamListaDefinicaoEfeitosPartidaEEntrega() {
+    void nucleosDelegamListaDefinicaoEfeitosPartidaEntregaPreviaEAcionamento() {
         Nucleos s = new Nucleos();
         Flair3dNucleoController c = new Flair3dNucleoController(s);
         assertThat(c.lista()).isSameAs(RESPOSTA);
@@ -147,7 +160,11 @@ class Flair3dControllersTest {
         UUID id = UUID.randomUUID();
         Entrega entrega = new Entrega(null, null, null, null);
         assertThat(c.entregar(ANA, id, entrega)).isSameAs(RESULTADO);
-        assertThat(s.args).containsExactly("lista", "PASSARELA", ANA, "PASSARELA", efeitos, ANA, "PASSARELA", abrir, ANA, id, entrega);
+        assertThat(c.previa(ANA, id, entrega)).isSameAs(RESULTADO);
+        Acionamento acionamento = new Acionamento(UUID.randomUUID(), null);
+        assertThat(c.acionar(ANA, id, acionamento)).isSameAs(RESULTADO);
+        assertThat(s.args).containsExactly("lista", "PASSARELA", ANA, "PASSARELA", efeitos, ANA, "PASSARELA", abrir, ANA, id, entrega,
+                "previa", ANA, id, entrega, "acionar", ANA, id, acionamento);
     }
 
     @Test
@@ -179,6 +196,8 @@ class Flair3dControllersTest {
         assertThat(post(Flair3dNucleoController.class, "abrir")).isEqualTo("/api/flair/3d/nucleos/{codigo}/partidas");
         assertThat(method(Flair3dNucleoController.class, "abrir").getAnnotation(ResponseStatus.class).value().value()).isEqualTo(201);
         assertThat(post(Flair3dNucleoController.class, "entregar")).isEqualTo("/api/flair/3d/partidas/{id}/entrega");
+        assertThat(post(Flair3dNucleoController.class, "previa")).isEqualTo("/api/flair/3d/partidas/{id}/previa");
+        assertThat(post(Flair3dNucleoController.class, "acionar")).isEqualTo("/api/flair/3d/partidas/{id}/acionar");
         assertThat(get(FlairMakeUpController.class, "carreira")).isEqualTo("/api/flair/make-up/carreira");
         assertThat(get(FlairMakeUpController.class, "briefs")).isEqualTo("/api/flair/make-up/briefs");
         assertThat(get(FlairMakeUpController.class, "detalhe")).isEqualTo("/api/flair/make-up/briefs/{codigo}");

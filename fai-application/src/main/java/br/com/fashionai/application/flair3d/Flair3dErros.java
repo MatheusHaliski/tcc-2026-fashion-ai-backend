@@ -18,6 +18,10 @@ public final class Flair3dErros {
         return new ApiException(422, "CARTA_ALHEIA", Msg.t("flair3d.erro.carta_alheia"), Map.of("cartas", cartas));
     }
 
+    public static ApiException invalido(String codigo, String chave) {
+        return new ApiException(422, codigo, Msg.t("flair3d.erro." + chave));
+    }
+
     public static ApiException invalido(String codigo, String chave, Map<String, Object> detalhes) {
         return new ApiException(422, codigo, Msg.t("flair3d.erro." + chave), detalhes);
     }

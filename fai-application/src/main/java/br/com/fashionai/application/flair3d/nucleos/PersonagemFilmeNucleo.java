@@ -10,12 +10,14 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -57,12 +59,14 @@ public class PersonagemFilmeNucleo implements Flair3dNucleo {
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
         List<RegraResultado> regras = new ArrayList<>();
         regras.add(RegraResultado.de("TITULO", CERTO.equals(entrega.resposta()), TITULO));
-        regras.addAll(Flair3dPecas.porVaga(VAGAS, contexto.vestidas(entrega), "FIGURINO", POR_PECA, PersonagemFilmeNucleo::bate));
-        return Resultado.somando(regras, List.of());
+        Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
+        regras.addAll(Flair3dPecas.porVaga(VAGAS, vestidas, "FIGURINO", POR_PECA, PersonagemFilmeNucleo::bate));
+        return Resultado.somando(regras, List.of())
+                .comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, PersonagemFilmeNucleo::bate).lista());
     }
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        return bate(carta) ? List.of(new Efeito("FIGURINO", POR_PECA)) : List.of();
+        return bate(carta) ? List.of(new Efeito("FIGURINO", POR_PECA)) : List.of(Efeito.motivo("FORA_DO_FIGURINO"));
     }
 }

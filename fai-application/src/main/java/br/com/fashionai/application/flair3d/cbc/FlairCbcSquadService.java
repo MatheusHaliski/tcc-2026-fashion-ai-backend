@@ -5,7 +5,9 @@ import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Flair3dCartas;
 import br.com.fashionai.application.flair3d.Flair3dErros;
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.domain.model.FlairCbcSquadEdicao;
 import br.com.fashionai.domain.model.FlairCbcSquadEntrega;
+import br.com.fashionai.domain.repository.FlairCbcSquadEdicaoRepository;
 import br.com.fashionai.domain.repository.FlairCbcSquadEntregaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +23,8 @@ import java.util.UUID;
 /**
  * FLAIR Card Building Challenge — os cinco elencos (BASE_NUCLEOS.md). Contexto do Strategy {@link FlairCbcElenco}: lista,
  * formação, conferir (cartas da pessoa, 422) e entrega (422 com requisito falhando), com a edição pela ordem de conclusão
- * do elenco; repetir não cria nova edição.
+ * do elenco; repetir não cria nova edição. A edição sai do contador do elenco, lido com bloqueio de escrita dentro da
+ * transação da entrega: duas primeiras conclusões simultâneas esperam uma pela outra e nunca levam o mesmo número.
  */
 @Service
 public class FlairCbcSquadService {
@@ -29,10 +32,12 @@ public class FlairCbcSquadService {
     }
 
     private final FlairCbcSquadEntregaRepository entregas;
+    private final FlairCbcSquadEdicaoRepository edicoes;
     private final Flair3dCartas cartas;
 
-    public FlairCbcSquadService(FlairCbcSquadEntregaRepository entregas, Flair3dCartas cartas) {
+    public FlairCbcSquadService(FlairCbcSquadEntregaRepository entregas, FlairCbcSquadEdicaoRepository edicoes, Flair3dCartas cartas) {
         this.entregas = entregas;
+        this.edicoes = edicoes;
         this.cartas = cartas;
     }
 
@@ -87,10 +92,10 @@ public class FlairCbcSquadService {
         if (!Boolean.TRUE.equals(out.get("ok"))) {
             throw Flair3dErros.invalido("REQUISITOS_NAO_CUMPRIDOS", "requisitos_nao_cumpridos", Map.of("requisitos", out.get("requisitos")));
         }
+        FlairCbcSquadEdicao contador = contador(e.codigo());
         int edicao = entregas.findFirstByUserIdAndElencoAndOkTrueOrderByCreatedAtAsc(user.id(), e.codigo())
                 .map(FlairCbcSquadEntrega::getEdicao)
-                .orElseGet(() -> entregas.findFirstByElencoAndOkTrueOrderByEdicaoDesc(e.codigo())
-                        .map(FlairCbcSquadEntrega::getEdicao).orElse(0) + 1);
+                .orElseGet(() -> proxima(contador));
         FlairCbcSquadEntrega nova = new FlairCbcSquadEntrega();
         nova.setUserId(user.id());
         nova.setElenco(e.codigo());
@@ -101,6 +106,25 @@ public class FlairCbcSquadService {
         entregas.save(nova);
         out.put("edicao", edicao);
         return out;
+    }
+
+    /**
+     * O contador do elenco, com bloqueio de escrita até o fim da transação: toda entrega do elenco passa por aqui antes de
+     * olhar as conclusões, então a segunda só lê depois que a primeira gravou. Elenco sem linha (novo, fora da migration)
+     * ganha uma, partindo da maior edição já dada.
+     */
+    private FlairCbcSquadEdicao contador(String elenco) {
+        return edicoes.findByElenco(elenco).orElseGet(() -> {
+            FlairCbcSquadEdicao novo = new FlairCbcSquadEdicao(elenco);
+            novo.setUltima(entregas.findFirstByElencoAndOkTrueOrderByEdicaoDesc(elenco).map(FlairCbcSquadEntrega::getEdicao).orElse(0));
+            return edicoes.saveAndFlush(novo);
+        });
+    }
+
+    private int proxima(FlairCbcSquadEdicao contador) {
+        int edicao = contador.proxima();
+        edicoes.save(contador);
+        return edicao;
     }
 
     /** Cartas por vaga, todas da pessoa (422), em vagas do elenco e sem repetir carta (422). */

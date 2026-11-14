@@ -1,0 +1,94 @@
+/* ── FLAIR 3D · quadro da tela de jogo (docs/flair/flair-3d/DESENHO_DA_TELA.md, seção 1) ───────────────────────────
+   components/flair/nucleos/nucleo-game.tsx, nucleo-stage.tsx e nucleo-hud.tsx. As classes de porte (.is-celular,
+   .is-tablet, .is-computador) e de proporção (.is-retrato, .is-paisagem) e as variáveis --n3d-* vêm de
+   lib/flair/nucleos/quadro.ts. Palco em cima, régua de vagas e deck embaixo; nada entra na zona da roupa (.n3d-zone). */
+.n3d-frame {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, var(--n3d-palco, 56fr)) minmax(0, var(--n3d-deck, 44fr));
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.n3d-frame.is-retrato {
+  height: calc(100dvh - var(--header-h));
+  min-height: 560px;
+}
+
+.n3d-frame.is-paisagem {
+  width: min(100%, 1280px, calc((100dvh - var(--header-h) - 32px) * 1.6));
+  min-width: min(100%, 760px);
+  aspect-ratio: 16 / 10;
+  margin-inline: auto;
+  border-color: transparent;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.n3d-stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.n3d-stage .n3d-scene3d,
+.n3d-stage .n3d-scene2d {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+/* textos da cena 2D de reserva: na faixa acima da cabeça e abaixo dos pés, dentro da largura central */
+.n3d-stage .n3d-scene2d-note,
+.n3d-stage .n3d-scene2d-cast {
+  left: var(--n3d-zona-x, 30%);
+  right: var(--n3d-zona-x, 30%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.n3d-stage .n3d-scene2d-note {
+  top: 4px;
+}
+
+.n3d-stage .n3d-scene2d-cast {
+  bottom: 4px;
+}
+
+.n3d-stage .n3d-scene2d-cast + .n3d-scene2d-cast {
+  display: none;
+}
+
+/* zona da roupa: 40% da largura, do topo da cabeça aos pés; fica sempre livre */
+.n3d-zone {
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: var(--n3d-zona-x, 30%);
+  width: var(--n3d-zona-w, 40%);
+  pointer-events: none;
+}
+
+.n3d-lower {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.n3d-band {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 12px 6px;
+}

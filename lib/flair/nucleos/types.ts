@@ -135,28 +135,15 @@ export interface NucleoEntrega {
   resposta?: string | null;
 }
 
-export interface RegraResultado {
-  codigo: string;
-  ok: boolean;
-  pontos: number;
-}
-
-export interface NucleoResultado {
-  pontos: number;
-  estrelas: number;
-  resultado: string;
-  regras: RegraResultado[];
-  eventos: { codigo: string; valor?: unknown }[];
-}
-
-export interface EfeitoItem {
-  codigo: string;
-  valor: number | string;
-}
-
-export interface EfeitosResposta {
-  efeitos: { cardId: string; itens: EfeitoItem[] }[];
-}
+export type {
+  CartaPontos,
+  EfeitoItem,
+  EfeitosResposta,
+  NucleoAcionamento,
+  NucleoResultado,
+  PartidaStatus,
+  RegraResultado,
+} from "@/lib/flair/nucleos/types-resultado";
 
 // ------------------------------------------------------------------ arquivo do núcleo (cenário, personagens, recursos)
 
@@ -187,6 +174,8 @@ export interface NucleoPersonagem {
   escala?: number;
   /** rotação em y, em graus (0 = de frente para a câmera) */
   giro?: number;
+  /** como a silhueta aparece: em pé (padrão), sentada (plateia) ou busto de costura (manequim do ateliê) */
+  postura?: "em_pe" | "sentada" | "busto";
 }
 
 export type AbaIcone =

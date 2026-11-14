@@ -1,0 +1,186 @@
+/* ── FLAIR 3D · informações sobre o palco (components/flair/nucleos/nucleo-hud.tsx, nucleo-objective.tsx e
+   nucleo-cast.tsx): os quatro cantos do palco, sempre mais estreitos que a faixa ao lado da zona da roupa. Em cima à
+   esquerda, o jogo e o objetivo; em cima à direita, pontos, estrelas, som e efeitos; embaixo à esquerda, quem está na
+   partida; embaixo à direita, a câmera. Todo botão tem a área de toque de 44 px (--touch). */
+.n3d-hud {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  max-width: calc(var(--n3d-zona-x, 30%) - 12px);
+  color: #fff;
+  font-size: var(--text-caption);
+}
+
+.n3d-hud-tl {
+  top: 8px;
+  left: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.n3d-hud-tr {
+  top: 8px;
+  right: 8px;
+  justify-content: flex-end;
+}
+
+.n3d-hud-bl {
+  bottom: 8px;
+  left: 8px;
+}
+
+.n3d-hud-br {
+  right: 8px;
+  bottom: 8px;
+  justify-content: flex-end;
+}
+
+.n3d-frame.is-paisagem .n3d-hud-tl {
+  flex-direction: row;
+  align-items: center;
+}
+
+.n3d-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--touch);
+  height: var(--touch);
+  border: 1px solid #fff4;
+  border-radius: 50%;
+  background: #000a;
+  color: #fff;
+}
+
+.n3d-icon-btn[aria-pressed="true"] {
+  border-color: #fff;
+  background: #165c58;
+}
+
+.n3d-icon-btn:disabled {
+  opacity: 0.4;
+}
+
+.n3d-objective {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.n3d-objective-line {
+  display: grid;
+  gap: 2px;
+  min-height: var(--touch);
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: #000a;
+  color: #fff;
+  text-align: left;
+}
+
+.n3d-objective-name {
+  font-weight: 700;
+}
+
+.n3d-objective-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.n3d-frame.is-paisagem .n3d-objective-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.n3d-frame.is-paisagem .n3d-objective-text {
+  display: block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.n3d-objective-more {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+
+.n3d-objective-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.n3d-objective-goal {
+  font-weight: 600;
+}
+
+.n3d-score {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.n3d-score-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px 6px;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: #000a;
+}
+
+.n3d-score-points {
+  font-size: var(--text-body, 1rem);
+}
+
+.n3d-score-stars .n3d-star {
+  color: #fff6;
+}
+
+.n3d-score-stars .n3d-star.is-on {
+  color: #e0b04d;
+}
+
+.n3d-prefs,
+.n3d-pad.is-camera {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.n3d-cast.is-compact {
+  display: grid;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: #000a;
+  color: #fff;
+}
+
+.n3d-cast.is-compact .n3d-cast-me {
+  color: #fff;
+}
+
+.n3d-cast.is-compact .n3d-cast-note,
+.n3d-cast.is-compact .n3d-cast-list {
+  margin: 0;
+  color: #fffc;
+}
+
+.n3d-cast.is-compact .btn {
+  min-height: var(--touch);
+}

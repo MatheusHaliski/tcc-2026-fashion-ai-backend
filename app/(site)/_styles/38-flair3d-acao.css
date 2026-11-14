@@ -1,0 +1,195 @@
+/* ── FLAIR 3D · a ação e o resultado no cenário (docs/flair/flair-3d/DESENHO_DA_TELA.md, seção 4) ────────────────
+   components/flair/nucleos/nucleo-action-fx.tsx, nucleo-action-panel.tsx, nucleo-trigger.tsx e a régua de vagas no
+   resultado. Cada passo do resultado do servidor acende uma luz ao lado da zona da roupa (a camada .n3d-act é
+   posicionada em 35-flair3d-efeitos.css); a cor e a forma mudam com o efeito de cenário do jogo (.fx-*). */
+.n3d-act-lights {
+  position: absolute;
+  top: 40%;
+  right: 12px;
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transform: translateY(-50%);
+}
+
+.n3d-act-light {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #fff8;
+  border-radius: 50%;
+  background: #0008;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.n3d-act-light.is-on {
+  background: var(--n3d-act-cor, #fff);
+  box-shadow: 0 0 10px var(--n3d-act-cor, #fff);
+}
+
+.n3d-act-light.is-miss {
+  border-color: #ff8a8a;
+  background: #7a1f2b;
+}
+
+.n3d-act-light.is-special {
+  width: 18px;
+  height: 18px;
+}
+
+.n3d-act.is-calm .n3d-act-light {
+  box-shadow: none;
+  transition: none;
+}
+
+.fx-led .n3d-act-light,
+.fx-placar .n3d-act-light {
+  width: 22px;
+  height: 6px;
+  border-radius: 2px;
+}
+
+.fx-golpe .n3d-act-light,
+.fx-chute .n3d-act-light {
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.fx-led {
+  --n3d-act-cor: #7fe7ff;
+}
+
+.fx-golpe {
+  --n3d-act-cor: #ff5a5a;
+}
+
+.fx-silhueta {
+  --n3d-act-cor: #ff8ad8;
+}
+
+.fx-refletor,
+.fx-lampada {
+  --n3d-act-cor: #ffe9a8;
+}
+
+.fx-cordao {
+  --n3d-act-cor: #e0b04d;
+}
+
+.fx-arara {
+  --n3d-act-cor: #b48cff;
+}
+
+.fx-espelho {
+  --n3d-act-cor: #9fe7de;
+}
+
+.fx-mapa {
+  --n3d-act-cor: #8ce99a;
+}
+
+.fx-chute {
+  --n3d-act-cor: #ffb347;
+}
+
+.fx-placar {
+  --n3d-act-cor: #5aa9ff;
+}
+
+.n3d-act-caption {
+  position: absolute;
+  top: 46%;
+  left: 8px;
+  max-width: calc(var(--n3d-zona-x, 30%) - 12px);
+  margin: 0;
+  padding: 4px 8px;
+  border-left: 3px solid var(--n3d-act-cor, #fff);
+  border-radius: var(--radius-sm);
+  background: #000a;
+  color: #fff;
+  font-size: var(--text-caption);
+}
+
+.n3d-act-caption.is-miss {
+  border-left-color: #ff8a8a;
+}
+
+.n3d-action-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+}
+
+.n3d-action-count {
+  flex: 1;
+  color: var(--muted);
+}
+
+.n3d-action-log {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 20px;
+  font-size: var(--text-caption);
+}
+
+.n3d-action-log .is-miss {
+  color: var(--color-critical);
+}
+
+.n3d-trigger {
+  padding: 6px 8px;
+  border: 1px dashed var(--line-soft);
+  border-radius: var(--radius-sm);
+}
+
+.n3d-trigger-note {
+  margin: 2px 0 6px;
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.n3d-trigger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.n3d-trigger-actions .btn {
+  min-height: var(--touch);
+}
+
+/* resultado: as cartas que pontuaram brilham uma a uma na régua, com os pontos de cada uma */
+.n3d-slot.is-glow {
+  box-shadow: 0 0 0 2px #e0b04d;
+  animation: n3d-slot-glow 900ms ease-out both;
+  animation-delay: calc(var(--n3d-ordem, 0) * 600ms);
+}
+
+.n3d-frame[data-reduced] .n3d-slot.is-glow,
+.n3d-frame[data-fx="off"] .n3d-slot.is-glow {
+  animation: none;
+}
+
+.n3d-result-cards li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+@keyframes n3d-slot-glow {
+  0% {
+    box-shadow: 0 0 0 2px transparent;
+  }
+
+  50% {
+    box-shadow: 0 0 14px 4px #e0b04d;
+  }
+
+  100% {
+    box-shadow: 0 0 0 2px #e0b04d;
+  }
+}

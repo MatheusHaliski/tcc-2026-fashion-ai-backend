@@ -10,11 +10,8 @@ export const LABIRINTO: NucleoConfig = {
     fundo: "#0F1A1A",
     piso: "#24302F",
     luz: "#9FE7DE",
-    props: [
-      { forma: "caixa", pos: [-2.2, 1.3, -1.5], tam: [0.2, 2.6, 4], cor: "#1F7A76" },
-      { forma: "caixa", pos: [2.2, 1.3, -1.5], tam: [0.2, 2.6, 4], cor: "#1F7A76" },
-      { forma: "plano", pos: [0, 1.3, -3.4], tam: [1.4, 2.4, 1], cor: "#CFE8EC", emissiva: true },
-    ],
+    // a sala inteira (casca, móveis, materiais e luzes) está em lib/flair/nucleos/scene/salas
+    props: [],
   },
   personagens: [],
   avatares: { protagonista: ["PROPRIO"], online: null },

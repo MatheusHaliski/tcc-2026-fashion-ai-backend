@@ -1,5 +1,6 @@
 /** Núcleo 9: ateliê com manequim; peça da "Era Neon" pintada por zonas. */
 import { acoesDe, SEM_DECK } from "@/lib/flair/nucleos/base";
+import { ATELIE_MANEQUIM } from "@/lib/flair/nucleos/scene/salas/atelie-base";
 import type { NucleoConfig } from "@/lib/flair/nucleos/types";
 
 export const FAVORITE_SINGER: NucleoConfig = {
@@ -10,13 +11,11 @@ export const FAVORITE_SINGER: NucleoConfig = {
     fundo: "#1B1030",
     piso: "#2C1D45",
     luz: "#FF7AD9",
-    props: [
-      { forma: "caixa", pos: [0, 2.6, -2.8], tam: [3, 0.1, 0.05], cor: "#FF3EA5", emissiva: true },
-      { forma: "caixa", pos: [1.9, 0.45, -1.4], tam: [1.4, 0.9, 0.7], cor: "#3D2A5C" },
-    ],
+    // a sala inteira (casca, móveis, materiais e luzes) está em lib/flair/nucleos/scene/salas
+    props: [],
   },
   // o manequim do ateliê veste a peça criada (FIGURANTE MANEQUIM na API); o avatar do perfil é opcional
-  personagens: [{ papel: "MANEQUIM", tipo: "manequim", pos: [-1.4, 0, -0.8], cor: "#ECE6DC" }],
+  personagens: [{ papel: "MANEQUIM", tipo: "manequim", pos: ATELIE_MANEQUIM, cor: "#ECE6DC", postura: "busto", giro: 25 }],
   avatares: { protagonista: ["PROPRIO"], online: null },
   vagas: [],
   zonas: ["FRENTE", "COSTAS", "MANGAS", "GOLA"],

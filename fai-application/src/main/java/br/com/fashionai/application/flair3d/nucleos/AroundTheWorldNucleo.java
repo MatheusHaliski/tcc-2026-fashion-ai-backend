@@ -10,6 +10,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
@@ -47,11 +48,19 @@ public class AroundTheWorldNucleo implements Flair3dNucleo {
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
         Map<String, CbcRules.Card> v = contexto.vestidas(entrega);
-        return Resultado.somando(List.of(
+        List<RegraResultado> regras = List.of(
                 RegraResultado.de("CIMA_LEVE", Flair3dPecas.leve(v.get("SUP")), POR_REGRA),
                 RegraResultado.de("BAIXO_LEVE", Flair3dPecas.leve(v.get("INF")), POR_REGRA),
-                RegraResultado.de("COR_QUENTE", v.values().stream().anyMatch(c -> Flair3dPecas.daFamilia(c, Flair3dPecas.QUENTES)), POR_REGRA),
-                RegraResultado.de("MARCA_BR", v.values().stream().anyMatch(contexto::brasileira), POR_REGRA)), List.of());
+                RegraResultado.de("COR_QUENTE", v.values().stream().anyMatch(AroundTheWorldNucleo::quente), POR_REGRA),
+                RegraResultado.de("MARCA_BR", v.values().stream().anyMatch(contexto::brasileira), POR_REGRA));
+        Flair3dRateio rateio = new Flair3dRateio(v).vaga("SUP", regras.get(0).pontos()).vaga("INF", regras.get(1).pontos())
+                .dividirEntre(regras.get(2).pontos(), AroundTheWorldNucleo::quente)
+                .dividirEntre(regras.get(3).pontos(), contexto::brasileira);
+        return Resultado.somando(regras, List.of()).comCartas(rateio.lista());
+    }
+
+    static boolean quente(CbcRules.Card c) {
+        return Flair3dPecas.daFamilia(c, Flair3dPecas.QUENTES);
     }
 
     @Override
@@ -60,7 +69,7 @@ public class AroundTheWorldNucleo implements Flair3dNucleo {
         if (Flair3dPecas.leve(carta) && ("SUP".equals(carta.position()) || "INF".equals(carta.position()))) {
             out.add(new Efeito("SUP".equals(carta.position()) ? "CIMA_LEVE" : "BAIXO_LEVE", POR_REGRA));
         }
-        if (Flair3dPecas.daFamilia(carta, Flair3dPecas.QUENTES)) {
+        if (quente(carta)) {
             out.add(new Efeito("COR_QUENTE", POR_REGRA));
         }
         if (contexto.brasileira(carta)) {

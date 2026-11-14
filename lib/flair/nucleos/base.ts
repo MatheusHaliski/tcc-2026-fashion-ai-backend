@@ -22,6 +22,6 @@ export function deckDe(tamanhoMax: number, ...obrigatorias: [string, number][]):
 export const SEM_DECK: DeckRegras = { tamanhoMax: 0, obrigatorias: [], semDeck: true };
 
 /** Fileira de silhuetas (plateia, passantes) num x fixo, ao longo de z — sempre ao lado do avatar. */
-export function fileira(papel: string, x: number, zs: number[], cor: string): NucleoPersonagem[] {
-  return zs.map((z): NucleoPersonagem => ({ papel, tipo: "silhueta", pos: [x, 0, z], cor, escala: 0.9, giro: x < 0 ? 90 : -90 }));
+export function fileira(papel: string, x: number, zs: number[], cor: string, postura: NucleoPersonagem["postura"] = "em_pe"): NucleoPersonagem[] {
+  return zs.map((z): NucleoPersonagem => ({ papel, tipo: "silhueta", pos: [x, 0, z], cor, escala: 0.9, giro: x < 0 ? 90 : -90, postura }));
 }

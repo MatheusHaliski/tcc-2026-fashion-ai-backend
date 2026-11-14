@@ -6,8 +6,9 @@ import { NucleoList } from "@/components/flair/nucleos/nucleo-list";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 
 /**
- * Tela de um núcleo (layout DREST) com a API simulada: deck com efeitos e obrigatórias (núcleo de cartas), cena 2D de
- * reserva (jsdom não tem WebGL), janela de recursos com abas de cartas, zonas e maquiagem, objetivo, entrega e resultado.
+ * Tela de um núcleo com a API simulada, pelos quatro momentos: deck com efeitos e obrigatórias (núcleo de cartas),
+ * preparação no quadro (cena 2D de reserva, jsdom não tem WebGL; abas de roupas, zonas e maquiagem; objetivo), ação e
+ * resultado.
  */
 vi.mock("next/navigation", async (orig) => ({ ...(await orig<typeof import("next/navigation")>()), useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }), useSearchParams: () => new URLSearchParams(""), usePathname: () => "/flair/3d" }));
 
@@ -68,13 +69,17 @@ describe("núcleo de cartas com deck (PASSARELA)", () => {
     expect(calls.find((c) => c.path.endsWith("/partidas") && c.method === "POST")?.body).toEqual({ deck: ["c1", "c2", "c3"] });
     expect(await screen.findByTestId("nucleo-scene-fallback")).toBeTruthy();
     const janela = screen.getByTestId("nucleo-resource-window");
-    expect(within(janela).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Parte de cima", "Parte de baixo", "Calçado", "Acessório"]);
-    expect(within(janela).getAllByRole("button", { pressed: false })).toHaveLength(1);
+    // as vagas de roupa são uma aba só; a fileira traz as 3 cartas do deck e a régua de vagas escolhe a vaga
+    expect(within(janela).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Roupas"]);
+    expect(within(janela).getAllByRole("button", { pressed: false })).toHaveLength(3);
+    expect(within(screen.getByTestId("nucleo-slot-ruler")).getAllByRole("button").map((b) => b.getAttribute("data-slot"))).toEqual(["SUP", "INF", "CAL", "ACE"]);
     expect(screen.getByTestId("nucleo-objective").textContent).toContain("Tema \"Brasil\"");
     expect(screen.getByTestId("nucleo-cast").textContent).toContain("A modelo da casa");
     fireEvent.keyDown(window, { key: " " });
     expect(within(janela).getAllByRole("button", { pressed: true })).toHaveLength(1);
     fireEvent.keyDown(window, { key: "Enter" });
+    // momento 3 (ação): os passos do servidor aparecem um a um; "Ver o resultado" pula para o momento 4
+    fireEvent.click(await screen.findByRole("button", { name: "Ver o resultado" }));
     const result = await screen.findByTestId("nucleo-result");
     expect(result.textContent).toContain("80 pontos");
     expect(within(result).getByLabelText("2 estrelas")).toBeTruthy();
@@ -101,6 +106,7 @@ describe("núcleo de zonas (CLUBE_CORACAO)", () => {
     fireEvent.click(within(janela).getByRole("button", { name: "Brilhante" }));
     expect(screen.queryByRole("button", { name: "Tirar" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Entregar o look" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Ver o resultado" }));
     expect((await screen.findByTestId("nucleo-result")).textContent).toContain("100 pontos");
     expect(calls.find((c) => c.path === "/api/flair/3d/partidas/m8/entrega")?.body).toMatchObject({ zonas: { FRENTE: { cor: "#1E4FBF", acabamento: "BRILHANTE" } } });
     expect(calls.find((c) => c.path.endsWith("/partidas"))?.body).toEqual({ deck: [] });
@@ -116,14 +122,14 @@ describe("núcleo de maquiagem (ROAD_TO_GLORY)", () => {
     renderApp(<NucleoScreen nucleo="road-to-glory" />);
     const janela = await screen.findByTestId("nucleo-resource-window");
     await settle();
-    expect(within(janela).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Parte de cima", "Parte de baixo", "Lábios", "Olhos", "Bochechas"]);
+    expect(within(janela).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Roupas", "Lábios", "Olhos", "Bochechas"]);
     fireEvent.click(within(janela).getByRole("tab", { name: "Lábios" }));
     expect(within(janela).getByRole("button", { name: "Coral" })).toBeTruthy();
     expect(within(janela).getByRole("button", { name: "Gloss" })).toBeTruthy();
     fireEvent.click(within(janela).getByRole("button", { name: "Coral" }));
     await waitFor(() => expect(within(janela).getByRole("button", { name: "Coral" }).getAttribute("aria-pressed")).toBe("true"));
     fireEvent.keyDown(window, { key: "o" });
-    expect(screen.getByTestId("nucleo-objective").textContent).toContain("Ocasião casual ou praia");
-    expect(screen.getByTestId("nucleo-objective").textContent).toContain("25 pts");
+    expect(screen.getByTestId("nucleo-objective-details").textContent).toContain("Ocasião casual ou praia");
+    expect(screen.getByTestId("nucleo-objective-details").textContent).toContain("25 pts");
   });
 });

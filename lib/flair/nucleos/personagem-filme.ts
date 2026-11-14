@@ -10,15 +10,12 @@ export const PERSONAGEM_FILME: NucleoConfig = {
     fundo: "#16181C",
     piso: "#3A3632",
     luz: "#F5E2B8",
-    props: [
-      { forma: "caixa", pos: [0, 1.6, -3.5], tam: [5, 3.2, 0.1], cor: "#4C5560" },
-      { forma: "cilindro", pos: [-2.2, 1.2, -1.5], tam: [0.05, 2.4, 0.05], cor: "#202020" },
-      { forma: "esfera", pos: [-2.2, 2.4, -1.5], tam: [0.25, 0.25, 0.25], cor: "#FFF4D6", emissiva: true },
-    ],
+    // a sala inteira (casca, móveis, materiais e luzes) está em lib/flair/nucleos/scene/salas
+    props: [],
   },
   personagens: [
-    { papel: "CLAQUETE", tipo: "manequim", pos: [-1.5, 0, -0.4], cor: "#2E2E2E", escala: 0.85, giro: 45 },
-    { papel: "CAMERA", tipo: "silhueta", pos: [1.7, 0, -0.8], cor: "#3B3B40", giro: -45 },
+    { papel: "CLAQUETE", tipo: "manequim", pos: [-2.7, 0, 0.7], cor: "#2E2E2E", escala: 0.95, giro: 60 },
+    { papel: "CAMERA", tipo: "silhueta", pos: [3.0, 0, 1.9], cor: "#3B3B40", giro: -125 },
   ],
   avatares: { protagonista: ["PROPRIO"], online: { min: 2, max: 4 } },
   vagas: ["SUP", "INF", "CAL", "ACE"],

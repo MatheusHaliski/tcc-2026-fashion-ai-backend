@@ -1,10 +1,28 @@
 "use client";
-/** Resultado da entrega: pontos (0 a 100), estrelas (60, 80 e 100), resultado, regras cumpridas ou não e os eventos. */
+/**
+ * Resultado da entrega: pontos (0 a 100), estrelas (60, 80 e 100), resultado, regras cumpridas ou não, as cartas que
+ * pontuaram (com os pontos ou o efeito de cada uma) e os eventos. Tudo como o servidor devolveu.
+ */
 import { cn } from "@/components/ui";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
-export function NucleoResult({ codigo, resultado, onAgain }: { codigo: string; resultado: NucleoResultado; onAgain: () => void }) {
+export interface CartaNoResultado {
+  cardId: string;
+  nome: string;
+  /** pontos ou efeito da carta, já em texto */
+  texto: string;
+}
+
+interface Props {
+  codigo: string;
+  resultado: NucleoResultado;
+  onAgain: () => void;
+  /** cartas que pontuaram, na ordem em que brilham na régua de vagas */
+  cartas?: CartaNoResultado[];
+}
+
+export function NucleoResult({ codigo, resultado, onAgain, cartas = [] }: Props) {
   const tx = useNucleoText();
   const estrelas = Math.max(0, Math.min(3, resultado.estrelas));
   return (
@@ -12,7 +30,9 @@ export function NucleoResult({ codigo, resultado, onAgain }: { codigo: string; r
       <h2 id="n3d-result-title" className="type-h3">{tx.t("flair3d.ui.result.title")}</h2>
       <p className="n3d-result-points tabular">{tx.t("flair3d.ui.result.points", { n: resultado.pontos })}</p>
       <p className="n3d-stars" aria-label={tx.t("flair3d.ui.result.stars", { n: estrelas })}>
-        {[1, 2, 3].map((i) => <span key={i} className={cn("n3d-star", i <= estrelas && "is-on")} aria-hidden>★</span>)}
+        {[1, 2, 3].map((i) => (
+          <span key={i} className={cn("n3d-star", i <= estrelas && "is-on")} aria-hidden>★</span>
+        ))}
       </p>
       {resultado.resultado && <p className="n3d-result-outcome">{tx.resultado(resultado.resultado)}</p>}
       <ul className="n3d-rules">
@@ -24,11 +44,26 @@ export function NucleoResult({ codigo, resultado, onAgain }: { codigo: string; r
           </li>
         ))}
       </ul>
+      {cartas.length > 0 && (
+        <>
+          <h3 className="type-label">{tx.t("flair3d.ui.result.cards")}</h3>
+          <ol className="n3d-result-cards">
+            {cartas.map((c) => (
+              <li key={c.cardId}>
+                <span>{c.nome}</span>
+                <em className="tabular">{c.texto}</em>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
       {resultado.eventos.length > 0 && (
         <>
           <h3 className="type-label">{tx.t("flair3d.ui.result.events")}</h3>
           <ol className="n3d-events">
-            {resultado.eventos.map((e, i) => <li key={i}>{tx.evento(e)}</li>)}
+            {resultado.eventos.map((e, i) => (
+              <li key={i}>{tx.evento(e)}</li>
+            ))}
           </ol>
         </>
       )}

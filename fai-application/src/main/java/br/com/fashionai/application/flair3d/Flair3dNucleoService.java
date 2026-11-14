@@ -21,7 +21,8 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * FLAIR 3D — os 15 núcleos (docs/flair/flair-3d/BASE_NUCLEOS.md). Contexto do Strategy: escolhe o {@link Flair3dNucleo}
  * pelo código, abre a partida (deck conferido, semente sorteada, participantes da cena), confere dono, deck e vagas na
- * entrega e delega a pontuação ao núcleo. A partida é entregue uma vez só (409 na segunda).
+ * entrega e delega a pontuação ao núcleo. A partida fecha na entrega (409 na segunda), salvo nos núcleos em etapas: a
+ * entrega começa a ação (EM_ACAO) e cada acionamento avança; no LABIRINTO a entrega que não abre mantém a partida ABERTA.
  */
 @Service
 public class Flair3dNucleoService {
@@ -65,18 +66,23 @@ public class Flair3dNucleoService {
         return nucleo(codigo).definicao();
     }
 
-    /** O efeito de cada carta da pessoa neste núcleo: {efeitos:[{cardId, itens:[{codigo, valor}]}]}. */
+    /**
+     * O efeito de cada carta da pessoa neste núcleo: {efeitos:[{cardId, itens:[{codigo, valor, motivo}]}]}. Carta que não
+     * pontua num núcleo de cartas leva um item de motivo (o do núcleo, ou SEM_BONUS), nunca a lista vazia.
+     */
     @Transactional(readOnly = true)
     public Map<String, Object> efeitos(CurrentUser user, String codigo, PedidoEfeitos pedido) {
         Flair3dNucleo n = nucleo(codigo);
         List<UUID> ids = pedido == null || pedido.cartas() == null ? List.of() : pedido.cartas();
         Map<UUID, CbcRules.Card> minhas = cartas.daPessoa(user.id(), ids);
         Contexto ctx = new Contexto(minhas, cartas.paises(), null);
+        boolean deCartas = n.definicao().recursos().contains(Definicao.CARTAS);
         List<Map<String, Object>> out = new ArrayList<>();
         minhas.forEach((id, carta) -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("cardId", id);
-            m.put("itens", n.efeitos(carta, ctx));
+            List<Efeito> itens = n.efeitos(carta, ctx);
+            m.put("itens", itens.isEmpty() && deCartas ? List.of(Efeito.motivo(Efeito.SEM_BONUS)) : itens);
             out.add(m);
         });
         return Map.of("efeitos", out);
@@ -110,27 +116,78 @@ public class Flair3dNucleoService {
         return out;
     }
 
-    /** Entrega e pontua: só o dono (403), uma vez (409), cartas da pessoa e do deck nas vagas do núcleo (422). */
+    /**
+     * Entrega e pontua: só o dono (403), com a partida ABERTA (409), cartas da pessoa e do deck nas vagas do núcleo (422).
+     * Fecha a partida, salvo quando o núcleo devolve EM_ACAO (falta acionar) ou ABERTA (LABIRINTO: o espelho não abriu e a
+     * pessoa pode apresentar de novo; cada entrega conta uma tentativa).
+     */
     @Transactional
     public Resultado entregar(CurrentUser user, UUID partidaId, Entrega entrega) {
+        Flair3dMatch m = partida(user, partidaId, Flair3dMatch.ABERTA);
+        Flair3dNucleo n = nucleo(m.getNucleo());
+        Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
+        Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa();
+        return gravar(m, e, a, n.pontuar(e, contexto(user, m, n, e, a)));
+    }
+
+    /**
+     * Avança a ação de uma partida EM_ACAO (409 fora dela) com o acionamento da pessoa: a carta Especial do DRESS_FIGHTER
+     * ou a troca do intervalo do FASHION_SPORTS (422 se não vale). A última etapa fecha a partida com o resultado.
+     */
+    @Transactional
+    public Resultado acionar(CurrentUser user, UUID partidaId, Acionamento acionamento) {
+        Flair3dMatch m = partida(user, partidaId, Flair3dMatch.EM_ACAO);
+        Flair3dNucleo n = nucleo(m.getNucleo());
+        Entrega e = Json.read(m.getEntregaJson(), Entrega.class);
+        Andamento a = Andamento.ler(m.getEstadoJson()).com(acionamento == null ? Acionamento.NENHUM : acionamento);
+        return gravar(m, e, a, n.pontuar(e, contexto(user, m, n, e, a)));
+    }
+
+    /** Prévia da entrega numa partida ABERTA: pontos e regras de agora, sem gravar nada nem contar tentativa. */
+    @Transactional(readOnly = true)
+    public Resultado previa(CurrentUser user, UUID partidaId, Entrega entrega) {
+        Flair3dMatch m = partida(user, partidaId, Flair3dMatch.ABERTA);
+        Flair3dNucleo n = nucleo(m.getNucleo());
+        Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
+        Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa();
+        return n.previa(e, contexto(user, m, n, e, a)).comStatus(m.getStatus());
+    }
+
+    /** A partida da pessoa (404, 403) no status que a operação pede (409). */
+    private Flair3dMatch partida(CurrentUser user, UUID partidaId, String status) {
         Flair3dMatch m = matches.findById(partidaId)
                 .orElseThrow(() -> Flair3dErros.naoEncontrado("PARTIDA_NAO_ENCONTRADA", "partida_nao_encontrada"));
         if (!m.getUserId().equals(user.id())) {
             throw new ApiException(403, "PARTIDA_DE_OUTRA_PESSOA", Msg.t("flair3d.erro.partida_de_outra_pessoa"));
         }
-        if (!Flair3dMatch.ABERTA.equals(m.getStatus())) {
-            throw ApiException.conflict("PARTIDA_JA_ENTREGUE", Msg.t("flair3d.erro.partida_ja_entregue"));
+        if (!status.equals(m.getStatus())) {
+            throw Flair3dMatch.EM_ACAO.equals(status)
+                    ? ApiException.conflict("PARTIDA_SEM_ACAO", Msg.t("flair3d.erro.partida_sem_acao"))
+                    : ApiException.conflict("PARTIDA_JA_ENTREGUE", Msg.t("flair3d.erro.partida_ja_entregue"));
         }
-        Flair3dNucleo n = nucleo(m.getNucleo());
-        Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
-        Map<UUID, CbcRules.Card> minhas = cartas.daPessoa(user.id(), e.cartas().values());
-        Flair3dEntregas.conferir(n.definicao(), e, minhas, Flair3dDeck.ids(m.getDeckJson()));
-        Resultado r = n.pontuar(e, cartas.contexto(minhas, m.getSemente()));
-        m.setStatus(Flair3dMatch.ENTREGUE);
+        return m;
+    }
+
+    /** Cartas da entrega e dos acionamentos, todas da pessoa e do deck (422), no contexto semeado da partida. */
+    private Contexto contexto(CurrentUser user, Flair3dMatch m, Flair3dNucleo n, Entrega e, Andamento a) {
+        List<UUID> usadas = new ArrayList<>(e.cartas().values());
+        usadas.addAll(a.cartas());
+        Map<UUID, CbcRules.Card> minhas = cartas.daPessoa(user.id(), usadas);
+        Flair3dEntregas.conferir(n.definicao(), e, minhas, Flair3dDeck.ids(m.getDeckJson()), a.cartas());
+        return cartas.contexto(minhas, m.getSemente()).comAndamento(a);
+    }
+
+    /** Grava a etapa: entrega, andamento e status; resultado, pontos e estrelas só quando a partida fecha. */
+    private Resultado gravar(Flair3dMatch m, Entrega e, Andamento a, Resultado calculado) {
+        Resultado r = calculado.comStatus(calculado.fecha() ? Flair3dMatch.ENTREGUE : calculado.status());
+        m.setStatus(r.status());
         m.setEntregaJson(Json.write(e));
-        m.setResultadoJson(Json.write(r));
-        m.setPontos(r.pontos());
-        m.setEstrelas(r.estrelas());
+        m.setEstadoJson(Json.write(a));
+        if (r.fecha()) {
+            m.setResultadoJson(Json.write(r));
+            m.setPontos(r.pontos());
+            m.setEstrelas(r.estrelas());
+        }
         matches.save(m);
         return r;
     }

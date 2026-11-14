@@ -1,14 +1,17 @@
 "use client";
 /**
- * Tela de um núcleo (/flair/3d/[nucleo]): deck antes da partida (núcleos com deck), jogo e resultado. Sem resposta da
- * API, a definição do arquivo do núcleo mantém a tela de pé (o servidor continua decidindo a nota).
+ * Tela de um núcleo (/flair/3d/[nucleo]) pelos quatro momentos da partida: deck (núcleos com deck), preparação, ação
+ * e resultado, os três últimos dentro do quadro de jogo. Sem resposta da API, a definição do arquivo do núcleo mantém
+ * a tela de pé (o servidor continua decidindo a nota).
  */
+import { useState } from "react";
 import Link from "next/link";
 import { Badge, EmptyState, PageHeader, SkeletonGrid, UiIcon } from "@/components/ui";
 import { NucleoDeck } from "@/components/flair/nucleos/nucleo-deck";
 import { NucleoGame } from "@/components/flair/nucleos/nucleo-game";
-import { NucleoResult } from "@/components/flair/nucleos/nucleo-result";
 import { useNucleoMatch } from "@/components/flair/nucleos/use-nucleo-match";
+import { useNucleoMoments } from "@/components/flair/nucleos/use-nucleo-moments";
+import { useNucleoPreview } from "@/components/flair/nucleos/use-nucleo-preview";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { codigoDaRota } from "@/lib/flair/nucleos/registry";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
@@ -17,6 +20,21 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
   const tx = useNucleoText();
   const m = useNucleoMatch(codigo);
   const d = m.definicao;
+  /** cada "jogar de novo" começa uma tela de jogo nova (seleção, câmera e efeitos zerados) */
+  const [rodada, setRodada] = useState(0);
+  const previa = useNucleoPreview({ partida: m.garantirPartida });
+  const jogarDeNovo = () => {
+    setRodada((r) => r + 1);
+    previa.limpar();
+    m.reiniciar();
+  };
+  const { momento, fimDaAcao, reabrir } = useNucleoMoments({ codigo, semDeck: m.semDeck, precisaDeck: m.precisaDeck, entregue: !!m.resultado });
+  /** fim da ação: a partida que segue ABERTA (LABIRINTO) volta à preparação com a tentativa guardada */
+  const fim = () => {
+    if (m.resultado?.status !== "ABERTA") return fimDaAcao();
+    m.retomar();
+    reabrir();
+  };
   const cabecalho = (
     <div className="flair-section-head">
       <Link href="/flair/3d" className="btn btn-sm"><UiIcon name="chevronLeft" size={18} />{tx.t("flair3d.ui.back")}</Link>
@@ -27,16 +45,37 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
   let corpo;
   if (m.carregando || (m.banco.loading && !m.banco.data && d.recursos.includes("CARTAS"))) {
     corpo = <SkeletonGrid n={3} />;
-  } else if (m.resultado) {
-    corpo = <NucleoResult codigo={codigo} resultado={m.resultado} onAgain={m.reiniciar} />;
   } else if (m.precisaDeck && d.deck) {
     corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} onEntrar={(deck) => void m.entrar(deck)} />;
   } else {
-    corpo = <NucleoGame definicao={d} cartas={m.cartasDaPartida} entregando={m.entregando} erro={m.erroEntrega} onEntregar={(sel, avatar) => void m.entregar(sel, avatar)} />;
+    corpo = (
+      <NucleoGame
+        key={rodada}
+        definicao={d}
+        cartas={m.cartasDaPartida}
+        momento={momento === "DECK" ? "PREPARACAO" : momento}
+        resultado={m.resultado}
+        entregando={m.entregando}
+        erro={m.erroEntrega}
+        previa={previa.previa}
+        onPrevia={previa.pedir}
+        tentativa={m.tentativa}
+        onEntregar={(sel, avatar) => {
+          previa.limpar();
+          void m.entregar(sel, avatar);
+        }}
+        onAcionar={(p) => void m.acionar({ cardId: p.cardId, vaga: p.vaga })}
+        acionando={m.acionando}
+        erroAcionar={m.erroAcionar}
+        onFimAcao={fim}
+        onAgain={jogarDeNovo}
+      />
+    );
   }
+  const noQuadro = !m.precisaDeck && !m.carregando;
   return (
     <>
-      {cabecalho}
+      {!noQuadro && cabecalho}
       {m.definicaoErro && <p className="n3d-offline" role="status">{tx.t("flair3d.ui.offline")}</p>}
       {corpo}
     </>

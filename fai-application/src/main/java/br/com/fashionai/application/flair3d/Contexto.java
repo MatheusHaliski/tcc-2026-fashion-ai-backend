@@ -10,15 +10,24 @@ import java.util.function.Function;
 
 /**
  * O que o núcleo recebe além da entrega: as cartas da pessoa no formato do motor (por id), o país de uma marca (código
- * ISO de 2 letras, ou nulo) e o sorteio da partida, semeado com a semente dela.
+ * ISO de 2 letras, ou nulo), o sorteio da partida, semeado com a semente dela, e o andamento (tentativa e acionamentos).
  */
-public record Contexto(Map<UUID, CbcRules.Card> cartas, Function<String, String> paisDaMarca, Random sorteio) {
+public record Contexto(Map<UUID, CbcRules.Card> cartas, Function<String, String> paisDaMarca, Random sorteio, Andamento andamento) {
     public static final String BRASIL = "BR";
+
+    public Contexto(Map<UUID, CbcRules.Card> cartas, Function<String, String> paisDaMarca, Random sorteio) {
+        this(cartas, paisDaMarca, sorteio, Andamento.INICIO);
+    }
 
     public Contexto {
         cartas = cartas == null ? Map.of() : cartas;
         paisDaMarca = paisDaMarca == null ? marca -> null : paisDaMarca;
         sorteio = sorteio == null ? new Random(0) : sorteio;
+        andamento = andamento == null ? Andamento.INICIO : andamento;
+    }
+
+    public Contexto comAndamento(Andamento novo) {
+        return new Contexto(cartas, paisDaMarca, sorteio, novo);
     }
 
     /** As cartas entregues por vaga (vagas sem carta conhecida ficam de fora). */

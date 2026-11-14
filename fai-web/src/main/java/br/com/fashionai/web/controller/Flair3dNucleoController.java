@@ -1,5 +1,6 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.flair3d.Acionamento;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleoService;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.UUID;
 
-/** FLAIR 3D — os 15 núcleos (docs/flair/flair-3d/BASE_NUCLEOS.md): lista e definição públicas; deck, partida e entrega logados. */
+/** FLAIR 3D — os 15 núcleos (docs/flair/flair-3d/BASE_NUCLEOS.md): lista e definição públicas; deck, partida, prévia, entrega e acionamento logados. */
 @RestController
 @Tag(name = "FLAIR 3D — núcleos")
 public class Flair3dNucleoController {
@@ -56,8 +57,21 @@ public class Flair3dNucleoController {
     }
 
     @PostMapping("/api/flair/3d/partidas/{id}/entrega")
-    @Operation(summary = "Entrega e pontua a partida (só o dono, 403; uma vez, 409; cartas do deck e da pessoa, 422)")
+    @Operation(summary = "Entrega e pontua a partida (só o dono, 403; partida aberta, 409; cartas do deck e da pessoa, 422); "
+            + "nos núcleos em etapas devolve status EM_ACAO, e no LABIRINTO sem abrir, ABERTA")
     public Resultado entregar(CurrentUser user, @PathVariable UUID id, @RequestBody(required = false) Entrega body) {
         return service.entregar(user, id, body);
+    }
+
+    @PostMapping("/api/flair/3d/partidas/{id}/previa")
+    @Operation(summary = "Prévia da entrega: pontos e regras de agora, sem fechar a partida (nos jogos automáticos, só os atributos)")
+    public Resultado previa(CurrentUser user, @PathVariable UUID id, @RequestBody(required = false) Entrega body) {
+        return service.previa(user, id, body);
+    }
+
+    @PostMapping("/api/flair/3d/partidas/{id}/acionar")
+    @Operation(summary = "Avança a ação de uma partida EM_ACAO (409 fora dela) com a carta Especial ou a troca do intervalo (422 se não vale)")
+    public Resultado acionar(CurrentUser user, @PathVariable UUID id, @RequestBody(required = false) Acionamento body) {
+        return service.acionar(user, id, body);
     }
 }
