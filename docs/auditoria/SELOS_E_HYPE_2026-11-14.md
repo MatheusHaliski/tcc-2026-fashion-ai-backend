@@ -186,3 +186,20 @@ Conclusão da prova: **os 8 estilos leem o Hype real do card**. Os estilos 1, 2,
 - **Influência (remix):** o endpoint de remix só abre o criador de look com o original como base; nenhum look derivado foi salvo, então a dimensão ficou "—".
 - **Criação de selo 100% pela tela até salvar:** o assistente foi percorrido até o passo 3; a gravação foi pelos mesmos endpoints.
 - Combinações "Manual · Peça" e "Hype · Look" para celebridade não foram repetidas (o código trata marca e celebridade igual, mudando só o acabamento Premium).
+
+## Decisões da dona sobre os pontos em aberto (14/11/2026)
+
+1. **Hype não cai ao desfazer curtida: fica como está, desde que o Hype seja sempre dinâmico e acompanhe a tendência
+   social da peça.** Conferido no código e na documentação (`docs/hype/HYPESCORE_ARCHITECTURE.md`): o Hype já é
+   dinâmico. Cada sinal perde peso com a idade (decaimento exponencial, `HypeScoreConfig.decayLambda`); a dimensão
+   Tendência compara os últimos 7 dias com os 7 anteriores; o indicador de subida ou queda compara a nota com a de 7
+   dias antes; e o momento vira "esfriando" quando a tendência cai. A nota é refeita em cerca de 2 minutos depois de
+   uma interação e, de qualquer forma, a cada 6 horas. Ou seja: a peça que para de receber atenção perde Hype com o
+   tempo, mesmo sem ninguém desfazer nada. Nada foi alterado.
+2. **Selo de marca aprovado na hora: mantido**, para evitar burocracia. Nada foi alterado.
+3. **Estilos de painel:** o estilo é escolhido no Background Studio, em AURA Hype. O que mostra a nota geral da peça é
+   o estilo 4, **"Somente Hype Score"**; na prova da seção 5 ele mostrou 38, 56 e 69 nos looks e 52 e 79 nas peças. Os
+   estilos "Maior e menor atributos", "Destaque editorial vivo" e "Três atributos-chave" mostram atributos em destaque,
+   não a nota geral, por isso ficam parecidos em níveis diferentes. Nada foi alterado.
+4. **Marcas reais, "Semana Chanel", miniatura com logo e emblemas de herói: mantidos**, por ser um trabalho acadêmico.
+   Antes de uma publicação comercial o ponto precisa ser revisto.
