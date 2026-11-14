@@ -1,20 +1,23 @@
 /**
  * Depois do encaixe (align.ts), a peça vira roupa do avatar:
  *
- * 1. colisão: o vértice que entra no corpo (ou fica mais perto que a folga) sai pela normal da pele; o deslocamento é
- *    suavizado pela malha da peça para não abrir bicos;
+ * 1. colisão: a parte mais estreita que o corpo alarga (width.ts) e o pano que ficou dentro do corpo sai só em z
+ *    (depth.ts); o que sobra dentro (ou mais perto que a folga) sai pela normal da pele, com o deslocamento suavizado
+ *    pela malha da peça para não abrir bicos;
  * 2. pesos: cada vértice herda os 4 pesos de skinning da pele mais próxima (só das regiões que a peça veste), e os pesos
  *    são suavizados pela malha — a manga acompanha o braço e o tronco acompanha a coluna, sem rasgar na axila;
  * 3. repouso: a posição posada volta para a pose de repouso pela inversa da mistura das matrizes dos ossos, e a malha é
  *    presa ao MESMO esqueleto e bindMatrix do corpo (como o molde): anda, senta e levanta o braço com o avatar.
  */
 import * as THREE from "three";
+import { pressOut } from "./depth";
 import type { BodyFrame, Groups } from "./frame";
+import { widen } from "./width";
 
 export interface WrapMetrics {
   /** fração dos vértices dentro do corpo na pose de exibição, depois da colisão */
   inside: number;
-  /** quanto a colisão esticou as arestas (percentil 95 da razão de comprimento) */
+  /** quanto o ajuste esticou as arestas vistas de frente (percentil 95 da razão de comprimento em x e y) */
   stretch: number;
   /** maior deslocamento da colisão (m) */
   pushed: number;
@@ -121,11 +124,16 @@ function unskin(p: Float32Array, f: BodyFrame, skinIndex: Uint16Array, skinWeigh
   return rest;
 }
 
+/**
+ * Esticamento das arestas (percentil 95 da razão de comprimento) visto de FRENTE: só x e y. Tirar o pano de dentro do
+ * corpo em z (depth.ts) dá à peça rasa da Meshy o volume do corpo — estica na profundidade, sem mudar a frente, que é
+ * o que a foto mostra. O que deforma a peça à vista é alargar, girar e espalhar para os lados.
+ */
 function edgeStretch(before: Float32Array, after: Float32Array, index: ArrayLike<number>): number {
   const r: number[] = [];
-  const len = (p: Float32Array, a: number, b: number) => Math.hypot(p[a * 3] - p[b * 3], p[a * 3 + 1] - p[b * 3 + 1], p[a * 3 + 2] - p[b * 3 + 2]);
+  const len = (p: Float32Array, a: number, b: number) => Math.hypot(p[a * 3] - p[b * 3], p[a * 3 + 1] - p[b * 3 + 1]);
   for (let t = 0; t < index.length; t += 3) for (const [a, b] of [[index[t], index[t + 1]], [index[t + 1], index[t + 2]]]) {
-    const l0 = len(before, a, b); if (l0 > 1e-6) r.push(len(after, a, b) / l0);
+    const l0 = len(before, a, b); if (l0 > 1e-3) r.push(len(after, a, b) / l0);
   }
   r.sort((a, b) => a - b); return r.length ? r[Math.floor(0.95 * (r.length - 1))] : 1;
 }
@@ -154,7 +162,10 @@ export function wrapGarment(posedIn: Float32Array, partIn: Int8Array, indexIn: A
   const w = weld(posedIn, indexIn); const posed = w.pos, index = w.index;
   const part = new Int8Array(posed.length / 3); for (let v = 0; v < w.map.length; v++) part[w.map[v]] = partIn[v];
   const n = posed.length / 3; const adj = neighbours(index, n); const before = posed.slice();
-  const pushed = collide(posed, f, groups, clearance, adj);
+  // a peça mais estreita que o corpo alarga (width.ts) e o pano que ficou dentro do corpo sai só em z (depth.ts);
+  // a colisão pela normal fica com o resto (laterais, axila)
+  const moved = Math.max(widen(posed, part, f, groups, clearance), pressOut(posed, part, index, f, groups, clearance));
+  const pushed = Math.max(moved, collide(posed, f, groups, clearance, adj));
   let inside = 0, far = 0;
   for (let v = 0; v < n; v++) {
     const { d } = signedDistance(f, posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2], groups);

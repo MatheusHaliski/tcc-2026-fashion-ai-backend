@@ -15,6 +15,9 @@ import { specFor } from "../garment-fit";
 import { DEFAULT_BODY, BODY_KEYS, type BodySources } from "../../body-spec";
 import { LIMITS, bodyFrame, fitGlbGarment, splitFused, type GlbSource } from "./index";
 import { alignGarment } from "./align";
+import { coverOf } from "./cover";
+import { depthAt, depthField, pressOut } from "./depth";
+import { labelParts } from "./parts";
 import { wrapGarment } from "./wrap";
 
 const dir = new URL("../../../../public/avatar3d/body/", import.meta.url);
@@ -121,6 +124,90 @@ describe("glb-garment: peça estática vestida no avatar", () => {
     expect(Array.from(out.index)).toEqual([3, 4, 5]);           // a de cima da axila fica; a de baixo e a do gancho saem
   });
 
+  it("profundidade: o pano raso que ficou dentro do corpo sai só em z, para a frente e para trás da pele", () => {
+    const a = avatar(); const f = a.frame(); const chest = f.joint("Neck").y - 0.2;
+    const skinAt = depthAt(depthField(f, [1])!, 0, chest)!; const mid = (skinAt.front + skinAt.back) / 2;
+    // duas placas no esterno, dentro do corpo: uma à frente do meio do corpo, outra atrás
+    const plate = (z: number) => new THREE.PlaneGeometry(0.06, 0.06, 12, 12).translate(0, chest, z);
+    const src = source([plate(mid + 0.03), plate(mid - 0.03)]); const p = src.position.slice();
+    const part = new Int8Array(p.length / 3);
+    const moved = pressOut(p, part, src.index, f, [1, 2], 0.005);
+    expect(moved).toBeGreaterThan(0.02);
+    let front = 0, back = 0;
+    for (let v = 0; v < part.length; v++) {
+      expect(p[v * 3]).toBe(src.position[v * 3]);                 // x e y não mudam: a frente da peça continua igual
+      expect(p[v * 3 + 1]).toBe(src.position[v * 3 + 1]);
+      const skin = f.near(p[v * 3], p[v * 3 + 1], p[v * 3 + 2], [1]);
+      const d = (p[v * 3 + 2] - f.pos[skin * 3 + 2]) * Math.sign(f.nrm[skin * 3 + 2]);
+      if (src.position[v * 3 + 2] > mid) { front++; expect(p[v * 3 + 2]).toBeGreaterThan(src.position[v * 3 + 2]); }
+      else { back++; expect(p[v * 3 + 2]).toBeLessThan(src.position[v * 3 + 2]); }
+      expect(d).toBeGreaterThan(-0.004);                           // fora da pele mais próxima (ou rente a ela)
+    }
+    expect(front).toBe(169); expect(back).toBe(169);
+  });
+
+  it("pele coberta: some debaixo da camisa; cabeça, mãos e pés nunca; a borda fica com pele por baixo", () => {
+    const a = avatar(); const f = a.frame(); const fit = fitGlbGarment(shirt(), f, piece("upper_piece", "shirt"));
+    expect(fit.ok).toBe(true); if (!fit.ok) return;
+    const byGroup = [0, 0, 0, 0, 0, 0]; const total = [0, 0, 0, 0, 0, 0];
+    for (let v = 0; v < f.n; v++) { total[f.group[v]]++; byGroup[f.group[v]] += fit.covered[v]; }
+    expect(byGroup[1] / total[1]).toBeGreaterThan(0.5);            // a maior parte do tronco está debaixo da camisa
+    expect(byGroup[0] + byGroup[4] + byGroup[5]).toBe(0);
+    // some o triângulo com os três vértices cobertos; na borda da peça (um vértice descoberto) a pele continua
+    let hiddenTriangles = 0, edgeTriangles = 0;
+    for (let t = 0; t < f.tri.length; t += 3) {
+      const n = fit.covered[f.tri[t]] + fit.covered[f.tri[t + 1]] + fit.covered[f.tri[t + 2]];
+      if (n === 3) hiddenTriangles++; else if (n > 0) edgeTriangles++;
+    }
+    expect(edgeTriangles).toBeGreaterThan(20);
+    expect(hiddenTriangles).toBeGreaterThan(500);
+    expect(fit.metrics.pierced).toBeLessThan(LIMITS.pierced);
+  });
+
+  it("pele atravessando: debaixo da placa que ficou atrás da pele do peito entra o forro, e conta como furo", () => {
+    const a = avatar(); const f = a.frame(); const chest = f.joint("Neck").y - 0.2;
+    const skin = f.near(0.05, chest, 0.2, [1]);
+    const plate = (z: number) => source([new THREE.PlaneGeometry(0.2, 0.2, 8, 8).translate(0, chest, z)]);
+    const cover = (z: number) => { const s = plate(z); return coverOf(s.position, s.index, new Int8Array(s.position.length / 3), f); };
+    const outside = cover(f.pos[skin * 3 + 2] + 0.02), inside = cover(f.pos[skin * 3 + 2] - 0.05), away = cover(f.pos[skin * 3 + 2] + 0.3);
+    expect(outside.covered[skin]).toBe(1); expect(outside.pierced).toBeLessThan(0.05);
+    expect(inside.covered[skin]).toBe(1); expect(inside.pierced).toBeGreaterThan(0.5);
+    expect(away.covered[skin]).toBe(0);                             // pano longe (30 cm à frente): a pele continua pele
+  });
+
+  it("ilha: a pele descoberta cercada pela peça vira forro; a que chega à cabeça, à mão ou ao pé continua pele", () => {
+    const a = avatar(); const f = a.frame(); const fit = fitGlbGarment(shirt(), f, piece("upper_piece", "shirt"));
+    expect(fit.ok).toBe(true); if (!fit.ok) return;
+    // do pescoço, da mão e do pé chega-se por pele descoberta a toda pele que não está debaixo da peça
+    const next: number[][] = Array.from({ length: f.n }, () => []);
+    for (let t = 0; t < f.tri.length; t += 3) for (const [u, v] of [[0, 1], [1, 2], [2, 0]]) { next[f.tri[t + u]].push(f.tri[t + v]); next[f.tri[t + v]].push(f.tri[t + u]); }
+    const seen = new Uint8Array(f.n); const queue: number[] = [];
+    for (let v = 0; v < f.n; v++) if ([0, 4, 5].includes(f.group[v]) && next[v].length) { seen[v] = 1; queue.push(v); }
+    for (let i = 0; i < queue.length; i++) for (const u of next[queue[i]]) if (!seen[u] && !fit.covered[u]) { seen[u] = 1; queue.push(u); }
+    let stranded = 0, legs = 0;
+    for (let v = 0; v < f.n; v++) { if (next[v].length && !fit.covered[v] && !seen[v]) stranded++; if (f.group[v] === 3 && f.pos[v * 3 + 1] < 0.4 && !fit.covered[v]) legs++; }
+    expect(stranded).toBe(0);
+    expect(legs).toBeGreaterThan(200);                             // a canela, fora da camisa, continua pele
+  });
+
+  it("rótulos: com vão entre manga e tronco, a barra mais larga que o corpo é tronco e o punho abaixo da mão é manga", () => {
+    const a = avatar(); const f = a.frame(); const sh = f.joint("LeftArm"), wrist = f.joint("LeftHand");
+    const half = 0.26, top = sh.y, bottom = wrist.y - 0.12;                 // tronco bem mais largo que o corpo
+    const torso = new THREE.PlaneGeometry(2 * half, top - bottom + 0.1, 30, 60).translate(0, (top + bottom + 0.1) / 2, 0);
+    const sleeve = (side: number) => new THREE.PlaneGeometry(0.1, top - bottom, 6, 60).translate(side * (half + 0.09), (top + bottom) / 2, 0);
+    const src = source([torso, sleeve(1), sleeve(-1)]);
+    const withGap = labelParts(src.position, f, "upper", 0.01, src.index), bodyRule = labelParts(src.position, f, "upper", 0.01);
+    let hemAsSleeve = 0, cuff = 0, cuffAsSleeve = 0, ruleHemAsSleeve = 0;
+    for (let v = 0; v < withGap.length; v++) {
+      const x = Math.abs(src.position[v * 3]), y = src.position[v * 3 + 1];
+      if (x < half + 0.001 && y < top - 0.05) { if (withGap[v] !== 0) hemAsSleeve++; if (bodyRule[v] !== 0) ruleHemAsSleeve++; }
+      if (x > half + 0.03 && y < wrist.y - 0.07) { cuff++; if (Math.abs(withGap[v]) === 1) cuffAsSleeve++; }
+    }
+    expect(hemAsSleeve).toBe(0);
+    expect(ruleHemAsSleeve).toBeGreaterThan(50);                           // sem os triângulos vale a largura do corpo
+    expect(cuff).toBeGreaterThan(10); expect(cuffAsSleeve).toBe(cuff);
+  });
+
   it("recusa com motivo: calçado não tem classe; espinho além do limite volta para o molde", () => {
     const a = avatar(); const f = a.frame();
     expect(fitGlbGarment(shirt(), f, piece("shoes_piece", "casual_sneakers"))).toEqual({ ok: false, reason: "SEM_CLASSE" });
@@ -129,5 +216,10 @@ describe("glb-garment: peça estática vestida no avatar", () => {
       const r = fitGlbGarment(shirt(), f, piece("upper_piece", "shirt"));
       expect(r.ok).toBe(false); if (!r.ok) expect(r.reason).toBe("ESPINHO");
     } finally { LIMITS.far = far; }
+    const pierced = LIMITS.pierced; LIMITS.pierced = -1;
+    try {
+      const r = fitGlbGarment(shirt(), f, piece("upper_piece", "shirt"));
+      expect(r.ok).toBe(false); if (!r.ok) expect(r.reason).toBe("FURADA");
+    } finally { LIMITS.pierced = pierced; }
   });
 });

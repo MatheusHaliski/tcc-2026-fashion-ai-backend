@@ -16,6 +16,7 @@ export interface BodyFrame {
   n: number;
   pos: Float32Array;            // pele posada (n × 3)
   nrm: Float32Array;            // normais da pele posada
+  tri: Uint32Array;             // triângulos da pele (índices em pos)
   group: Uint8Array;
   skinIndex: Uint8Array;        // 4 ossos por vértice da pele
   skinWeight: Float32Array;     // 0–1
@@ -80,7 +81,8 @@ export function bodyFrame(human: Human, asset: BodyAsset, composed: Composed, P:
   const nrm = baseNormals(pos, asset.body.index, asset.body.renderVertex);
   const toBody = human.body.matrixWorld.clone().invert();
   const joint = (name: string) => human.bone(name).getWorldPosition(new THREE.Vector3()).applyMatrix4(toBody);
-  return { n, pos, nrm, group: P.group, skinIndex, skinWeight, bone, joint, near: grid(pos, P.group, n) };
+  const tri = Uint32Array.from(asset.body.index, (i) => asset.body.renderVertex[i]);
+  return { n, pos, nrm, tri, group: P.group, skinIndex, skinWeight, bone, joint, near: grid(pos, P.group, n) };
 }
 
 /** Extensão em x e z da pele dos grupos pedidos numa faixa de altura (null se a faixa não tem pele). */
