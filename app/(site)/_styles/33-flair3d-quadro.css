@@ -5,7 +5,10 @@
 .n3d-frame {
   position: relative;
   display: grid;
-  grid-template-rows: minmax(0, var(--n3d-palco, 56fr)) minmax(0, var(--n3d-deck, 44fr));
+  /* a faixa de baixo nunca fica menor que a régua de vagas + uma carta inteira + as abas: as cartas não são cortadas */
+  grid-template-rows:
+    minmax(0, var(--n3d-palco, 56fr))
+    minmax(calc(var(--n3d-thumb-h, 62px) + var(--n3d-card-h, 106px) + 90px), var(--n3d-deck, 44fr));
   width: 100%;
   overflow: hidden;
   border: 1px solid var(--line-soft);
@@ -23,6 +26,8 @@
   width: min(100%, 1280px, calc((100dvh - var(--header-h) - 32px) * 1.6));
   min-width: min(100%, 760px);
   aspect-ratio: 16 / 10;
+  /* quadro estreito (menu lateral aberto): usa a altura livre da tela em vez de encolher o palco */
+  min-height: min(calc(100dvh - var(--header-h) - 64px), 780px);
   margin-inline: auto;
   border-color: transparent;
   border-radius: 20px;

@@ -73,8 +73,9 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .aura-hype[data-preset-kind="static"] *, .aura-hype[data-preset-kind="static"]::before, .aura-hype[data-preset-kind="static"]::after { animation: none !important; }
 .fashion-hype-level-preview:disabled { opacity: 1; cursor: not-allowed; }
 .hype-demo-label { padding: 4px 8px; }
-.fashion-hype-matrix[data-layout="static-horizontal"] { display: flex; overflow-x: auto; }
-.fashion-hype-matrix[data-layout="static-horizontal"] > div { flex: 0 0 54px; }
+/* Horizontal: uma fileira quando cabe; em card estreito quebra em mais linhas — nenhum número fica escondido. */
+.fashion-hype-matrix[data-layout="static-horizontal"] { display: flex; flex-wrap: wrap; }
+.fashion-hype-matrix[data-layout="static-horizontal"] > div { flex: 1 0 48px; min-width: 0; }
 .fashion-hype-matrix[data-layout="static-vertical"], .fashion-hype-matrix[data-layout="ranked-bars"], .fashion-hype-matrix[data-layout="extremes"], .fashion-hype-matrix[data-layout="momentum"] { grid-template-columns: minmax(0, 1fr); }
 .fashion-hype-matrix[data-layout="static-columns"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .fashion-hype-matrix[data-layout="static-vertical"] .fashion-hype-cell { grid-template-columns: 1fr auto; justify-items: start; }
