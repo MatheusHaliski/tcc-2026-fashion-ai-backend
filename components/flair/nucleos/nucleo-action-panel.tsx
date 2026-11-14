@@ -11,6 +11,8 @@ import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 
 interface Props {
   nucleo: NucleoCodigo;
+  /** a modalidade escolhida (Fashion Sports): o texto do passo fala dela */
+  variante?: string | null;
   passos: PassoAcao[];
   mostrados: number;
   onPular: () => void;
@@ -18,7 +20,7 @@ interface Props {
   children?: ReactNode;
 }
 
-export function NucleoActionPanel({ nucleo, passos, mostrados, onPular, children }: Props) {
+export function NucleoActionPanel({ nucleo, variante, passos, mostrados, onPular, children }: Props) {
   const tx = useNucleoText();
   const vistos = passos.slice(0, mostrados);
   return (
@@ -32,7 +34,7 @@ export function NucleoActionPanel({ nucleo, passos, mostrados, onPular, children
       </div>
       <ol className="n3d-action-log" aria-live="polite">
         {vistos.map((p, i) => (
-          <li key={i} className={p.ok ? "is-ok" : "is-miss"}>{textoDoPasso(tx, nucleo, p)}</li>
+          <li key={i} className={p.ok ? "is-ok" : "is-miss"}>{textoDoPasso(tx, nucleo, p, variante)}</li>
         ))}
       </ol>
       {children}

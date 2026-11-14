@@ -13,6 +13,8 @@ import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 
 interface Props {
   nucleo: NucleoCodigo;
+  /** a modalidade escolhida (Fashion Sports): o texto do passo fala dela */
+  variante?: string | null;
   passos: PassoAcao[];
   /** quantos passos já apareceram */
   mostrados: number;
@@ -20,7 +22,7 @@ interface Props {
   efeitos: boolean;
 }
 
-export function NucleoActionFx({ nucleo, passos, mostrados, reduzido, efeitos }: Props) {
+export function NucleoActionFx({ nucleo, variante, passos, mostrados, reduzido, efeitos }: Props) {
   const tx = useNucleoText();
   const atual = mostrados > 0 ? passos[Math.min(mostrados, passos.length) - 1] : null;
   const calmo = reduzido || !efeitos;
@@ -33,7 +35,7 @@ export function NucleoActionFx({ nucleo, passos, mostrados, reduzido, efeitos }:
       </ol>
       {atual && (
         <p key={mostrados} className={cn("n3d-act-caption", atual.ok ? "is-ok" : "is-miss")} aria-hidden>
-          {textoDoPasso(tx, nucleo, atual)}
+          {textoDoPasso(tx, nucleo, atual, variante)}
         </p>
       )}
     </div>

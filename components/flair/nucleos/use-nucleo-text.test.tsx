@@ -54,3 +54,29 @@ describe("textos dos núcleos FLAIR 3D", () => {
     expect(tx.pontosTotal(73.33333)).toBe("73,33 pontos");
   });
 });
+
+/** Regressão da auditoria: o Fashion Sports dizia "Futebol de 5" depois de a pessoa escolher outra modalidade. */
+describe("Fashion Sports — a modalidade escolhida aparece em todo texto", () => {
+  it("objetivo, cenário e personagens falam da modalidade; sem escolha (ou futebol) fica o texto do futebol de 5", () => {
+    const tx = texto();
+    expect(tx.daVariante("FASHION_SPORTS", "objective", "BASQUETE")).toBe("Basquete 3×3: um uniforme para o seu time contra o time-padrão.");
+    expect(tx.daVariante("FASHION_SPORTS", "scene", "SKATE")).toBe("Pista de skate.");
+    expect(tx.daVariante("FASHION_SPORTS", "characters", "TENIS")).not.toMatch(/5 adversários/);
+    expect(tx.daVariante("FASHION_SPORTS", "objective", "FUTEBOL")).toMatch(/^Futebol de 5/);
+    expect(tx.daVariante("FASHION_SPORTS", "objective", null)).toMatch(/^Futebol de 5/);
+    for (const m of ["BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"]) {
+      expect(tx.daVariante("FASHION_SPORTS", "objective", m)).not.toMatch(/Futebol/i);
+      expect(tx.daVariante("FASHION_SPORTS", "scene", m)).not.toMatch(/futebol/i);
+    }
+  });
+
+  it("a cena da ação fala em jogada e ponto fora do futebol; o evento MODALIDADE diz o esporte", async () => {
+    const { textoDoPasso } = await import("./nucleo-action-text");
+    const tx = texto();
+    const especial = { fonte: "especial" as const, codigo: "VITORIA", ok: true, pontos: 100, vaga: null };
+    expect(textoDoPasso(tx, "FASHION_SPORTS", especial, "BASQUETE")).toBe("Ponto e o time comemora");
+    expect(textoDoPasso(tx, "FASHION_SPORTS", especial, "FUTEBOL")).toBe("Gol e o time comemora");
+    expect(textoDoPasso(tx, "FASHION_SPORTS", especial)).toBe("Gol e o time comemora");
+    expect(tx.evento({ codigo: "MODALIDADE", valor: "BASQUETE" })).toBe("Modalidade: Basquete 3×3 (placar em pontos)");
+  });
+});

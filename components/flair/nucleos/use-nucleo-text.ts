@@ -52,6 +52,9 @@ export function useNucleoText() {
       aba,
       item,
       nome: (codigo: string) => ou(`flair3d.nucleo.${codigo}.name`, codigo),
+      /** objetivo, cenário ou personagens do jogo; com variante escolhida (a modalidade), o texto dela */
+      daVariante: (codigo: string, parte: "objective" | "scene" | "characters", variante?: string | null) =>
+        ou(`flair3d.nucleo.${codigo}.${parte}.${variante ?? ""}`, t(`flair3d.nucleo.${codigo}.${parte}`)),
       regra: (codigo: string, regra: string) => {
         const key = `flair3d.nucleo.${codigo}.rules.${regra}`;
         if (hasMessage(locale, key)) return t(key);
