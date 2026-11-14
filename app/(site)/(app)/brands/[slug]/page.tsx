@@ -6,6 +6,7 @@ import { api, mediaUrl } from "@/lib/api/client";
 import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
+import { issuerMetricLabel, issuerMetricValue } from "@/lib/seals/issuer-metrics";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, SegmentPicker, Select, Skeleton, SkeletonGrid, Tabs, Textarea, cn, useToast } from "@/components/ui";
@@ -204,7 +205,7 @@ function IssuerMetrics() {
   const { data, loading } = useApi<Record<string, unknown>>((signal) => api.get("/api/me/issuer-metrics", { signal }), []);
   if (loading || !data) return <Skeleton className="h-40" />;
   const hype = data.hype && typeof data.hype === "object" ? data.hype as IssuerHypeData : null;
-  return <div className="grid gap-3 sm:grid-cols-3">{Object.entries(data).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => <Card key={k}><p className="label">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</p><p className="hero-number text-3xl">{String(v)}</p></Card>)}{hype && <IssuerHype hype={hype} />}</div>;
+  return <div className="grid gap-3 sm:grid-cols-3">{Object.entries(data).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => <Card key={k}><p className="label">{issuerMetricLabel(k)}</p><p className="hero-number text-3xl">{issuerMetricValue(k, v as number | string)}</p></Card>)}{hype && <IssuerHype hype={hype} />}</div>;
 }
 function IssuerHype({ hype }: { hype: IssuerHypeData }) {
   const { t } = useI18n();

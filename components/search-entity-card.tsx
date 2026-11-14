@@ -8,7 +8,7 @@ import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 
 /** Resultado de Marcas e Celebridades na busca (RF8): o que a API devolve por linha. */
-export interface SearchEntity { id?: string; userId?: string; slug?: string; name?: string; logoUrl?: string | null; registered?: boolean; publicPieces?: number; avatarUrl?: string | null }
+export interface SearchEntity { id?: string; userId?: string; slug?: string; username?: string | null; name?: string; logoUrl?: string | null; registered?: boolean; publicPieces?: number; avatarUrl?: string | null }
 
 /**
  * Buscar → Marcas e Buscar → Celebridades no mesmo card de Buscar → Pessoas (`PublicProfileCard`): capa, avatar/logo,
@@ -20,6 +20,8 @@ export function SearchEntityCard({ kind, row, onSeePieces }: { kind: "MARCAS" | 
   const name = row.name ?? row.slug ?? "";
   const brand = kind === "MARCAS";
   const href = row.registered === false || !row.slug ? null : brand ? `/brands/${encodeURIComponent(row.slug)}` : `/u/${encodeURIComponent(row.slug)}`;
+  // o endereço da marca (slug, "vento-norte") não é o @ do perfil ("vento.norte"): só mostra o @ que o servidor mandar
+  const handle = row.username ?? (brand ? null : row.slug);
   const photo = mediaUrl(row.avatarUrl ?? row.logoUrl);
   const monogram = name.trim().split(/\s+/).map((word) => word[0]).slice(0, 2).join("").toUpperCase();
   const avatar = brand
@@ -36,7 +38,7 @@ export function SearchEntityCard({ kind, row, onSeePieces }: { kind: "MARCAS" | 
             : <span className="institutional-profile-avatar">{avatar}</span>}
           <div className="institutional-profile-identity">
             {href
-              ? <Link href={href} className="institutional-profile-name-link"><h2 className="type-h3">{name}</h2><span className="institutional-profile-username">@{row.slug}</span></Link>
+              ? <Link href={href} className="institutional-profile-name-link"><h2 className="type-h3">{name}</h2>{handle && <span className="institutional-profile-username">@{handle}</span>}</Link>
               : <div className="institutional-profile-name-link"><h2 className="type-h3">{name}</h2></div>}
             <div className="institutional-profile-badges">
               <Badge tone="chalk">{t(brand ? "search.kind_marca" : "search.kind_celebridade")}</Badge>
@@ -45,8 +47,9 @@ export function SearchEntityCard({ kind, row, onSeePieces }: { kind: "MARCAS" | 
             </div>
           </div>
         </header>
-        {brand && <dl className="institutional-profile-stats" aria-label={t("profileHeader.contadores_do_perfil")}>
-          <div><dt>{t("search.pecas_publicas")}</dt><dd className="tabular">{fmtNumber(row.publicPieces ?? 0)}</dd></div>
+        {/* o contador só aparece quando o servidor manda o número (marca do catálogo): nada de "0" inventado */}
+        {brand && typeof row.publicPieces === "number" && <dl className="institutional-profile-stats" aria-label={t("profileHeader.contadores_do_perfil")}>
+          <div><dt>{t("search.pecas_publicas")}</dt><dd className="tabular">{fmtNumber(row.publicPieces)}</dd></div>
         </dl>}
         <div className="institutional-profile-signals">
           {/* o chip "Marca/Criador em alta" (agregado público, só a partir da faixa Em alta), como na lista anterior */}

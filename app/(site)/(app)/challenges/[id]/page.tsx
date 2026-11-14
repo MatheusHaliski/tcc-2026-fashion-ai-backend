@@ -3,6 +3,7 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
+import { label } from "@/lib/api/taxonomy";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Badge, Button, Card, ErrorState, Input, Select, Skeleton, useToast } from "@/components/ui";
@@ -36,7 +37,7 @@ export default function ChallengePage({ params }: { params: Promise<{ id: string
         <div className="grid gap-3">
           {d.me?.progress && <Card><p className="label">{t("challenges.id.meu_progresso")}</p><div className="hype-bar"><i style={{ width: `${Math.min(100, (d.me.fraction ?? 0) * 100)}%`, background: "var(--thread)" }} /></div><p className="type-body tabular mt-1">{d.me.progress.value}/{d.me.progress.target} {d.me.progress.label ?? ""}</p></Card>}
           {d.members ? <Card><p className="label">{t("challenges.id.participantes")}</p><ul className="fai-list">{d.members.map((m) => <li key={m.user.id} className="flex items-center gap-2 py-1.5"><Avatar src={mediaUrl(m.user.avatarUrl)} name={m.user.username} size={26} /><span className="flex-1 type-body-sm">@{m.user.username}{m.team ? <Badge className="ml-1">{m.team}</Badge> : null}</span><span className="type-data tabular">{Math.round(m.fraction * 100)}%</span></li>)}</ul>{d.teamFraction != null && <p className="mt-2 type-caption">{t("challenges.id.equipe", { Math: Math.round(d.teamFraction * 100) })}</p>}</Card> : <Card><p className="label">{t("challenges.id.jogando")}</p><p className="hero-number text-3xl">{d.playing ?? 0}</p><p className="type-caption text-muted">{t("challenges.id.participantes_anonimos")}</p></Card>}
-          {d.decoration && <Card><p className="label">{t("challenges.id.decoracao_do_quarto")}</p><p className="type-body">{d.decoration}</p></Card>}
+          {d.decoration && <Card><p className="label">{t("challenges.id.decoracao_do_quarto")}</p><p className="type-body">{label(String(d.decoration))}</p></Card>}
           {d.result && Object.keys(d.result).length > 0 && <Card><p className="label">{t("common.resultado")}</p><pre className="type-caption whitespace-pre-wrap">{JSON.stringify(d.result, null, 1)}</pre></Card>}
         </div>
         <div className="grid gap-3">

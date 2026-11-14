@@ -52,7 +52,7 @@ export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }
   else if (aoVivo && aoVivo.resultado !== "PREVIA") nota = aoVivo;
   const estrelas = nota ? Math.max(0, Math.min(3, nota.estrelas)) : 0;
   let rotulo = tx.t(atributos.length > 0 ? "flair3d.ui.hud.attrs" : "flair3d.ui.hud.pending");
-  if (nota) rotulo = `${tx.t("flair3d.ui.result.points", { n: nota.pontos })}, ${tx.t("flair3d.ui.result.stars", { n: estrelas })}`;
+  if (nota) rotulo = `${tx.pontosTotal(nota.pontos)}, ${tx.t("flair3d.ui.result.stars", { n: estrelas })}`;
   if (nota && aoVivo) rotulo = tx.t("flair3d.ui.hud.preview", { nota: rotulo });
   let estado = "espera";
   if (nota) estado = aoVivo ? "previa" : "final";
@@ -60,7 +60,7 @@ export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }
     <div className="n3d-score" data-testid="nucleo-score" data-estado={estado}>
       <p className="n3d-score-line" role="img" aria-label={rotulo}>
         <strong className="n3d-score-points tabular" id="n3d-score-points">
-          {nota ? tx.t("flair3d.ui.points", { n: nota.pontos }) : "—"}
+          {nota ? tx.pontos(nota.pontos) : "—"}
         </strong>
         <span className="n3d-score-stars" aria-hidden>
           {[1, 2, 3].map((i) => (

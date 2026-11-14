@@ -183,20 +183,24 @@ describe("configurações — aparência", () => {
 describe("configurações — privacidade", () => {
   it("visibilidade, tópicos do Hype, consentimento ligado e erro ao mudar consentimento", async () => {
     let n = 0;
-    const consent = [{ purpose: "AI_RECOMMENDATION", granted: false }, { purpose: "MARKETING_EMAIL", label: "E-mails", granted: true, description: "Novidades" }];
+    // contrato do servidor (AccountService.consents): o nome da finalidade vem em `title`, já no idioma da pessoa
+    const consent = [{ purpose: "AI_RECOMMENDATION", title: "Recomendações por IA", granted: false }, { purpose: "MARKETING_EMAIL", label: "E-mails", granted: true, description: "Novidades" },
+      { purpose: "FACIAL_RECOGNITION", title: "Reconhecimento facial (dado sensível)", granted: false }];
     const { calls } = loggedAs({ ...ME, user: { ...ME.user, privateAccount: true } }, { "GET /api/me/preferences": PREFS, "GET /api/me/consents": consent, "PUT /api/me/privacy": {},
       "PUT /api/me/consents/AI_RECOMMENDATION": () => (++n === 1 ? [{ ...consent[0], granted: true }, consent[1]] : fail(500, "Consentimento falhou")()) });
     renderApp(<SettingsPage />);
     await tab("Privacidade");
-    // sem rótulo, o nome vem do propósito
-    const sw = await screen.findByRole("switch", { name: "AI RECOMMENDATION" });
+    // regressão da auditoria: nada de código em inglês ("FACIAL RECOGNITION") quando o servidor manda o nome
+    expect(await screen.findByRole("switch", { name: "RECONHECIMENTO FACIAL (DADO SENSÍVEL)" })).toBeTruthy();
+    expect(screen.queryByText(/FACIAL RECOGNITION/)).toBeNull();
+    const sw = await screen.findByRole("switch", { name: "RECOMENDAÇÕES POR IA" });
     fireEvent.click(sw);
-    await waitFor(() => expect(screen.getByRole("switch", { name: "AI RECOMMENDATION" }).getAttribute("aria-checked")).toBe("true"));
-    fireEvent.click(screen.getByRole("switch", { name: "AI RECOMMENDATION" }));
+    await waitFor(() => expect(screen.getByRole("switch", { name: "RECOMENDAÇÕES POR IA" }).getAttribute("aria-checked")).toBe("true"));
+    fireEvent.click(screen.getByRole("switch", { name: "RECOMENDAÇÕES POR IA" }));
     expect(await screen.findByText("Consentimento falhou")).toBeTruthy();
     // informação do consentimento sem descrição
-    fireEvent.click(screen.getByRole("button", { name: "Informações sobre AI RECOMMENDATION" }));
-    const dlg = await screen.findByRole("dialog", { name: "AI RECOMMENDATION" });
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre RECOMENDAÇÕES POR IA" }));
+    const dlg = await screen.findByRole("dialog", { name: "RECOMENDAÇÕES POR IA" });
     fireEvent.click(within(dlg).getAllByRole("button", { name: "Fechar" }).at(-1)!);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     // tópicos do Hype: o de notificações tem link que fecha a explicação
@@ -274,14 +278,18 @@ describe("configurações — dados e sessões", () => {
 
   it("sessões: encerra outra sessão; falha ao sair de todas avisa", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/me/preferences": PREFS,
-      "GET /api/auth/sessions": [{ sessionId: "cur", current: true, createdAt: "2026-10-01T10:00:00Z" }, { sessionId: "s2", device: "Celular", ip: "1.2.3.4", lastUsedAt: "2026-10-20T08:30:00Z" }],
+      "GET /api/auth/sessions": [{ sessionId: "cur", current: true, createdAt: "2026-10-01T10:00:00Z" }, { sessionId: "s2", device: "Celular", ip: "1.2.3.4", lastUsedAt: "2026-10-20T08:30:00Z" },
+        { sessionId: "s3", device: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/140.0.0.0 Safari/537.36", lastUsedAt: "2026-10-21T08:30:00Z" }],
       "DELETE /api/auth/sessions/s2": {}, "DELETE /api/auth/sessions": fail(500, "Não deu para sair") });
     renderApp(<SettingsPage />);
     await tab("Sessões");
-    expect(await screen.findByText(/Celular · 1.2.3.4 · 2026-10-20T08:30/)).toBeTruthy();
+    // regressão da auditoria: data no formato do idioma (não "2026-10-20T08:30") e o navegador em palavras
+    expect(await screen.findByText(/Celular · 1\.2\.3\.4 · 20\/10\/2026/)).toBeTruthy();
+    expect(screen.getByText(/Chrome no Linux · 21\/10\/2026/)).toBeTruthy();
+    expect(screen.queryByText(/Mozilla\/5\.0|2026-10-2\dT/)).toBeNull();
     expect(screen.getByText("· esta sessão")).toBeTruthy();
-    expect(screen.getByText("· esta sessão").parentElement!.textContent).toBe("dispositivo ·  · 2026-10-01T10:00· esta sessão");
-    fireEvent.click(screen.getByRole("button", { name: "Encerrar" }));
+    expect(screen.getByText("· esta sessão").parentElement!.textContent).toMatch(/^dispositivo · 01\/10\/2026[^·]*· esta sessão$/);
+    fireEvent.click(screen.getAllByRole("button", { name: "Encerrar" })[0]);
     expect(await screen.findByText("Sessão encerrada.")).toBeTruthy();
     expect(calls.some((c) => c.method === "DELETE" && c.path === "/api/auth/sessions/s2")).toBe(true);
     await dismiss();

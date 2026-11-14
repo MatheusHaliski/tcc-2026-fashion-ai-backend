@@ -293,7 +293,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   ].filter(Boolean);
 
   const acervoTitle = resultsLayout !== "matrix" && acervo ? (params.q ? t("catalog.todas_com", { total: acervo.total, q: params.q })
-    : params.brand ? t("catalog.todas_de", { total: acervo.total, marca: params.brand }) : t("catalog.todas", { total: acervo.total })) : acervo && (acervo.brandKnown === false ? t("catalog.marca_fora_do_acervo", { marca: ranWith?.brand ?? "" })
+    : params.brand ? t("catalog.todas_de", { total: acervo.total, marca: params.brand }) : t("catalog.todas", { total: acervo.total })) : acervo && (acervo.brandKnown === false && ranWith?.brand ? t("catalog.marca_fora_do_acervo", { marca: ranWith.brand })
     : selectionLabels.length ? t("catalog.selecao_total", { total: acervo.total, filters: selectionLabels.join(" · ") })
     : t("catalog.todas", { total: acervo.total }));
 

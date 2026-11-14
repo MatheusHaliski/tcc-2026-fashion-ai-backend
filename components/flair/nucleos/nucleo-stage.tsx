@@ -61,14 +61,14 @@ export function NucleoStage(props: NucleoStageProps) {
       <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
-      {naAcao && <NucleoActionFx nucleo={definicao.codigo} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
+      {naAcao && <NucleoActionFx nucleo={definicao.codigo} variante={props.variante} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
       <NucleoHud
         topoEsquerda={
           <>
             <Link href="/flair/3d" className="n3d-icon-btn" aria-label={voltar} title={voltar}>
               <HudIcon name="voltar" />
             </Link>
-            <NucleoObjective definicao={definicao} aberto={props.objetivoAberto} onToggle={() => props.onComando({ acao: "VER_OBJETIVO" })} />
+            <NucleoObjective definicao={definicao} variante={props.variante} aberto={props.objetivoAberto} onToggle={() => props.onComando({ acao: "VER_OBJETIVO" })} />
           </>
         }
         topoDireita={<NucleoScore momento={momento} resultado={props.resultado} previa={props.previa} prefs={prefs} onPref={props.onPref} />}

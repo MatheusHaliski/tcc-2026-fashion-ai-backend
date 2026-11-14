@@ -11,7 +11,8 @@ import type { NucleoDefinicao } from "@/lib/flair/nucleos/types";
 
 const PAINEL = "n3d-objective-more";
 
-export function NucleoObjective({ definicao, aberto, onToggle }: { definicao: NucleoDefinicao; aberto: boolean; onToggle: () => void }) {
+/** `variante`: a sala escolhida quando o jogo tem mais de uma (a modalidade do Fashion Sports): o texto fala dela. */
+export function NucleoObjective({ definicao, variante, aberto, onToggle }: { definicao: NucleoDefinicao; variante?: string | null; aberto: boolean; onToggle: () => void }) {
   const tx = useNucleoText();
   const c = definicao.codigo;
   const acao = tx.t(aberto ? "flair3d.ui.objective.hide" : "flair3d.ui.objective.show");
@@ -19,14 +20,14 @@ export function NucleoObjective({ definicao, aberto, onToggle }: { definicao: Nu
     <section className="n3d-objective" aria-labelledby="n3d-objective-title" data-testid="nucleo-objective">
       <button type="button" className="n3d-objective-line" aria-expanded={aberto} aria-controls={PAINEL} title={acao} onClick={onToggle}>
         <span id="n3d-objective-title" className="n3d-objective-name">{tx.nome(c)}</span>
-        <span className="n3d-objective-text">{tx.t(`flair3d.nucleo.${c}.objective`)}</span>
+        <span className="n3d-objective-text">{tx.daVariante(c, "objective", variante)}</span>
         <span className="sr-only">{acao}</span>
       </button>
     </section>
   );
 }
 
-export function NucleoObjectiveDetails({ definicao, onFechar, children }: { definicao: NucleoDefinicao; onFechar: () => void; children?: ReactNode }) {
+export function NucleoObjectiveDetails({ definicao, variante, onFechar, children }: { definicao: NucleoDefinicao; variante?: string | null; onFechar: () => void; children?: ReactNode }) {
   const tx = useNucleoText();
   const c = definicao.codigo;
   return (
@@ -37,15 +38,15 @@ export function NucleoObjectiveDetails({ definicao, onFechar, children }: { defi
           {tx.t("flair3d.ui.objective.hide")}
         </button>
       </div>
-      <p className="n3d-objective-goal">{tx.t(`flair3d.nucleo.${c}.objective`)}</p>
-      <p>{tx.t(`flair3d.nucleo.${c}.scene`)}</p>
-      <p>{tx.t(`flair3d.nucleo.${c}.characters`)}</p>
+      <p className="n3d-objective-goal">{tx.daVariante(c, "objective", variante)}</p>
+      <p>{tx.daVariante(c, "scene", variante)}</p>
+      <p>{tx.daVariante(c, "characters", variante)}</p>
       <h3 className="type-label">{tx.t("flair3d.ui.objective.rules")}</h3>
       <ul className="n3d-rules">
         {definicao.objetivo.regras.map((r) => (
           <li key={r.codigo}>
             <span>{tx.regra(c, r.codigo)}</span>
-            {r.pontos > 0 && <em className="tabular">{tx.t("flair3d.ui.points", { n: r.pontos })}</em>}
+            {r.pontos > 0 && <em className="tabular">{tx.pontos(r.pontos)}</em>}
           </li>
         ))}
       </ul>

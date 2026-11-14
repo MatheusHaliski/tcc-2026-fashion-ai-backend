@@ -69,9 +69,11 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
   function tryOn(item: FittingItem) {
     item = withMySize(item);
     commit(wearItem(items, item));
-    onStatus(t("tryOn.provando_status", {
-      name: item.name, slot: slotNames[item.slot], marca: item.brand?.name ?? "",
-    }));
+    // peça sem marca: a frase sai sem os parênteses vazios ("Provando Jaqueta () na…")
+    const marca = item.brand?.name?.trim();
+    onStatus(marca
+      ? t("tryOn.provando_status", { name: item.name, slot: slotNames[item.slot], marca })
+      : t("tryOn.provando_status_sem_marca", { name: item.name, slot: slotNames[item.slot] }));
   }
 
   function pickProduct(product: CatalogProduct, variant: CatalogVariant | null) {

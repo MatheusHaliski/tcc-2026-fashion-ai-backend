@@ -9,7 +9,9 @@
 
 .el-jigsaw {
   position: relative;
-  margin: 0;
+  /* em tela larga a arte não passa de 38% da altura da tela: as vagas do tabuleiro ficam na primeira dobra */
+  width: min(100%, calc(38dvh * 1.6));
+  margin: 0 auto;
   aspect-ratio: 16 / 10;
   border-radius: var(--radius);
   overflow: hidden;
