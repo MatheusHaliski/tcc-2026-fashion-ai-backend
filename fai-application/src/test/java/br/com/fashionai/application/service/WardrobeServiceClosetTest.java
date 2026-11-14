@@ -256,6 +256,19 @@ class WardrobeServiceClosetTest {
         assertThat(service.schemeVisible(bia, look)).isFalse();
     }
 
+    /** Reauditoria: a peça excluída continuava abrindo para o dono em /pieces/{id}, com as ações todas. */
+    @Test
+    void pecaExcluidaNaoAbreMaisParaODono() {
+        WardrobeItem w = world.piece(world.me, "jeans");
+        w.setAvailabilityStatus(AvailabilityStatus.ARCHIVED);
+        assertThatThrownBy(() -> service.detail(ana, w.getId(), null)).isInstanceOf(ApiException.class)
+                .satisfies(e -> assertThat(((ApiException) e).status()).isEqualTo(404));
+        // a partir de um look dele que ainda a mostra, abre só o retrato guardado
+        Scheme look = world.looksOf(world.me).get(0);
+        Map<String, Object> retrato = service.detail(ana, w.getId(), look.getId());
+        assertThat(retrato).containsEntry("notAvailableAnymore", true).doesNotContainKey("piece");
+    }
+
     @Test
     void estadoDeQuemVeEContagemDeReacoes() {
         WardrobeItem w = world.piece(world.me, "jeans");

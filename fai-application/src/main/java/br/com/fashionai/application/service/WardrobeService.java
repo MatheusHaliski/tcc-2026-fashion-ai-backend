@@ -595,10 +595,10 @@ public class WardrobeService {
         // visibilidade (peça, perfil do dono, bloqueio) e moderação antes de qualquer dado — inclusive do retrato arquivado
         requireVisiblePiece(viewer, w);
         PieceDetailView view = new PieceDetailView(schemeItems, s -> schemeVisible(viewer, s));
-        if (w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED && !owner) {
+        if (w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED) {
             // RF7.CA03 — snapshot do momento da publicação, marcado como "não mais disponível"; só de um look que quem
-            // pede também consegue ver
-            return view.archived(w, id, fromSchemeId);
+            // pede também consegue ver. Para o dono, a peça excluída só abre a partir de um look que ainda a mostra
+            return view.archived(w, id, fromSchemeId, owner);
         }
         // Atualização direta (sem @Version): o detalhe é aberto em paralelo (ex.: antes/depois de a sessão carregar)
         // e mexer na entidade gerava conflito de versão (409) num simples GET.
