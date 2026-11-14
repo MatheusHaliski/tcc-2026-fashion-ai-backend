@@ -125,7 +125,9 @@ export function torsoZone(f: BodyFrame, groups: Groups) {
 export function pressOut(p: Float32Array, part: Int8Array, index: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number): number {
   const fields = new Map<number, DepthField | null>();
   const fieldOf = (label: number) => {
-    if (!fields.has(label)) fields.set(label, depthField(f, skinOf(label), Math.sign(label)));
+    // a pala e o tronco valem para os dois lados do corpo; só manga e perna olham a pele do próprio lado
+    const side = label === YOKE || label === 0 ? 0 : Math.sign(label);
+    if (!fields.has(label)) fields.set(label, depthField(f, skinOf(label), side));
     return fields.get(label)!;
   };
   const zone = torsoZone(f, groups);

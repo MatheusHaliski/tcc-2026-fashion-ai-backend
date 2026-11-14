@@ -35,18 +35,24 @@ describe("outfit-skin", () => {
     expect(lining.userData.buildPath).toBe("GLB_LINING");
   });
 
-  it("soma a cobertura das peças (cada uma com o seu forro) e volta a pele inteira ao vestir de novo", () => {
+  it("a pele só some onde entra um forro: o triângulo que duas peças cobrem em parte cada uma continua pele", () => {
     const p = parts();
     expect(hideSkin(p, Uint8Array.from([1, 1, 0, 0]), "#000000", 1)).toBeNull();   // nenhum triângulo inteiro: sem forro
-    expect(skinOf(p)).toHaveLength(9);
-    const second = hideSkin(p, Uint8Array.from([0, 0, 1, 1]), "#ffffff", 1);
-    expect(skinOf(p)).toEqual([]);                                     // as duas juntas cobrem tudo
-    expect(second).toBeNull();                                         // mas a segunda, sozinha, não fecha triângulo
+    expect(hideSkin(p, Uint8Array.from([0, 0, 1, 1]), "#ffffff", 1)).toBeNull();
+    expect(skinOf(p)).toEqual([0, 1, 2, 3, 4, 5, 0, 2, 5]);            // juntas cobrem os 4 vértices, mas não há forro: sem buraco
+  });
+
+  it("cada peça troca a sua parte, as trocas se somam e vestir de novo devolve a pele inteira", () => {
+    const p = parts();
+    const first = hideSkin(p, Uint8Array.from([1, 1, 1, 0]), "#000000", 1)!;
+    const second = hideSkin(p, Uint8Array.from([0, 1, 1, 1]), "#ffffff", 1)!;
+    expect(indexOf(first.geometry)).toEqual([0, 1, 2]);
+    expect(indexOf(second.geometry)).toEqual([3, 4, 5]);
+    expect(skinOf(p)).toEqual([0, 2, 5]);                               // o que nenhuma das duas cobre inteiro
     showSkin(p);
     expect(skinOf(p)).toEqual([0, 1, 2, 3, 4, 5, 0, 2, 5]);
-    const third = hideSkin(p, Uint8Array.from([0, 1, 1, 1]), "#ffffff", 1)!;
-    expect(skinOf(p)).toEqual([0, 1, 2, 0, 2, 5]);
-    expect(indexOf(third.geometry)).toEqual([3, 4, 5]);
+    hideSkin(p, Uint8Array.from([0, 1, 1, 1]), "#ffffff", 1);
+    expect(skinOf(p)).toEqual([0, 1, 2, 0, 2, 5]);                      // a troca anterior não ficou guardada
   });
 
   it("sem índice guardado, mostrar a pele não faz nada", () => {
