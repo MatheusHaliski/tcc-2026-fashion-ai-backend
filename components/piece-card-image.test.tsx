@@ -30,3 +30,20 @@ it("a imagem padrão da prévia acompanha Tecido e volta à peça inteira", asyn
   expect(result.container.querySelector(".pc-media img")?.getAttribute("src")).toContain("framing=WHOLE");
   result.unmount();
 });
+
+it("prévia com o recorte da foto escolhida (blob:) mostra a peça inteira, não o zoom no tecido", async () => {
+  const { renderApp, loggedAs, ME } = await import("@/test-utils/render");
+  const { PieceCard } = await import("./piece-card");
+  loggedAs(ME);
+  const base = { ...PIECE, id: "preview", defaultImage: false, studioFeedUrl: null, studioThumbUrl: null, studioImageUrl: null };
+  const crop = renderApp(<PieceCard piece={{ ...base, imageUrl: "blob:recorte-da-foto", thumbnailUrl: "blob:recorte-da-foto" }} href="#" framing="FABRIC" />);
+  const img = crop.container.querySelector(".pc-media img")!;
+  expect(img.getAttribute("src")).toBe("blob:recorte-da-foto");
+  expect(img.className).toContain("is-contain");
+  expect(img.className).not.toContain("is-cover");
+  crop.unmount();
+  // foto oficial do catálogo (não é blob:): a prévia em Tecido continua preenchendo o quadro
+  const official = renderApp(<PieceCard piece={{ ...base, imageUrl: "/media/oficial.jpg", thumbnailUrl: "/media/oficial.jpg" }} href="#" framing="FABRIC" />);
+  expect(official.container.querySelector(".pc-media img")!.className).toContain("is-cover");
+  official.unmount();
+});
