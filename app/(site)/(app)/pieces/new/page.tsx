@@ -26,7 +26,7 @@ import { BrandHintNote, MultiPieceUpload, type PhotoPick } from "@/components/mu
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
-import { pieceStepProblem } from "@/lib/pieces/step-guard";
+import { liveFieldErrors, pieceStepProblem, scrollAfterStep } from "@/lib/pieces/step-guard";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
 import { PieceReviewStep, savedVisibility } from "@/components/pieces/piece-review-step";
@@ -218,7 +218,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     ? t("catalog.origem_catalogo", { fonte: pick.product.source?.domain && pick.product.source.domain !== "null" ? pick.product.source.domain : t("catalog.fonte_fashionai") })
     : t("catalog.origem_sem_foto");
   const idx = STEPS.indexOf(step);
-  const go = (s: Step) => { setStep(s); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const go = (s: Step, toProblem = false) => { setStep(s); scrollAfterStep(toProblem); };
   /** Sair da etapa Peça só com os campos obrigatórios preenchidos: senão fica nela, marca os campos e diz o que falta. */
   function advance(s: Step) {
     const missingPhoto = mode === "photos" && !photoPick;
@@ -227,7 +227,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     setStepProblem(problem);
     if (!problem) return go(s);
     setFieldErrors(errors);
-    go("piece");
+    go("piece", true);
   }
   const nav = (
     <div className="mt-4 flex justify-between gap-2">
@@ -279,7 +279,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
-                <PieceFields compact value={value} onChange={(v) => { setValue(v); setStepProblem(null); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
+                <PieceFields compact value={value} onChange={(v) => { setValue(v); setStepProblem(null); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={liveFieldErrors(fieldErrors, value)}
                   afterBrand={mode === "photos" && photoPick?.hint && !value.brandName ? <BrandHintNote hint={photoPick.hint} disabled={false}
                     onUse={(brandName) => setValue((v) => ({ ...v, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }))} /> : null} />
               </section>
