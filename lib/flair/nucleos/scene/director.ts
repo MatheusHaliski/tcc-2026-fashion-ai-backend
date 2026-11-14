@@ -22,6 +22,8 @@ export interface Passo {
   repete?: number;
   /** leva o ator até este lugar durante o passo (e ele fica lá) */
   mover?: Partial<Lugar>;
+  /** de onde o ator parte neste passo, quando não é de onde ele está (a entrada em cena) */
+  de?: Partial<Lugar>;
   /** segura o auge do clipe depois que ele acaba (porta aberta, luz acesa) */
   mantem?: boolean;
 }
@@ -120,6 +122,7 @@ export class Diretor {
       for (const p of passos) {
         const local = agora - t.inicio - p.inicio;
         if (local <= 0) continue;
+        if (p.de) atual = { ...atual, ...p.de };
         const alvo: Lugar = { ...atual, ...p.mover };
         const k = Math.min(1, local / duracaoDoPasso(p));
         const kGiro = suave(k);

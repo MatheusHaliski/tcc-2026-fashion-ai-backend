@@ -127,8 +127,14 @@ principal, araras e cadeiras no camarim, tijolo, néon e caixotes no clube, banc
 gaveteiros de metal no arquivo. Antes de escolher o look, um cartão de abertura apresenta o salão, o código de
 vestimenta e a carta de pista; ele fica sobre a faixa do deck, nunca sobre a roupa, e fecha sozinho ou no botão.
 
-**O que ainda não existe:** cutscene animada (câmera e personagens em movimento na abertura). Os salões novos passam nas
-regras automáticas das salas, mas ainda não foram vistos na tela.
+**Abertura animada [feito]:** a cada salão, a câmera começa alta e aberta, mostrando o salão e a porta do fundo, passa
+pela lateral e assenta no enquadramento normal do avatar, em 6 segundos. Enquanto isso o detetive entra andando pela
+passadeira, de costas para a câmera, vira e posa; os convidados acenam, o segurança se posiciona e a luz do lugar
+acende. Com "reduzir movimento" ligado não há travelling nem entrada: a cena já aparece no enquadramento normal.
+
+**O que ainda não existe:** falas, legendas dentro da cena 3D e cutscene do resultado diferente por salão (o resultado
+usa a mesma sequência nos 6: o detetive vai até a porta e ela abre ou não). Os salões novos e a abertura passam nos
+testes automáticos, mas ainda não foram vistos na tela.
 
 ### 2.3 Roupa como moeda: estalecas e mercado [feito]
 
@@ -174,7 +180,7 @@ continuam valendo.
 | Os 6 salões e um salão jogado | `.../nucleos/FashionDetectiveCaso.java`, `.../nucleos/FashionDetectiveSalao.java` |
 | Modalidades do esporte | `.../nucleos/FashionSportsModalidade.java` |
 | Salões e quadras em 3D | `lib/flair/nucleos/scene/salas/fashion-detective-saloes.ts`, `fashion-sports-quadras.ts`, `scene/registry.ts` (`salaDe`) |
-| Abertura do salão | `components/flair/nucleos/nucleo-cutscene.tsx` |
+| Abertura do salão | cartão: `components/flair/nucleos/nucleo-cutscene.tsx`; câmera e personagens: `lib/flair/nucleos/scene/opening.ts`, `components/flair/nucleos/scene/opening-camera.tsx` |
 | Salões já jogados da partida | `fai-application/.../flair3d/Andamento.java` (`anteriores`) |
 | Eventos e selos do detetive | `fai-application/.../flair3d/nucleos/FashionDetectiveNucleo.java` |
 | Testes | `fai-application/src/test/.../flair3d/Flair3dCoresTest.java`, `FashionDetectiveCasoTest.java` |

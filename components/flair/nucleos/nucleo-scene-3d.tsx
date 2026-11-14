@@ -7,6 +7,7 @@
 import { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Rig } from "@/components/three/fitting-camera";
+import { CameraDeAbertura } from "@/components/flair/nucleos/scene/opening-camera";
 import type { Look3dPiece } from "@/components/three/common";
 import { NucleoAvatar, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
@@ -17,6 +18,7 @@ import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import { figurantesDaCena } from "@/lib/flair/nucleos/scene/budget";
 import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import { placarDaCena } from "@/lib/flair/nucleos/scene/sequences-auto";
+import { temAbertura } from "@/lib/flair/nucleos/scene/opening";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import { limiteDaCamera } from "@/lib/flair/nucleos/scene/zones";
 import type { NucleoConfig, NucleoResultado, V3 } from "@/lib/flair/nucleos/types";
@@ -48,7 +50,7 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
 
 export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante }: NucleoScene3DProps) {
   const sala = salaDe(config.codigo, variante);
-  const cena = useSceneDirector({ codigo: config.codigo, avatar, resultado, reduzido });
+  const cena = useSceneDirector({ codigo: config.codigo, avatar, resultado, reduzido, abertura: variante });
   const { dist, alvo } = enquadramento(avatar.zoom, sala);
   const target = useMemo<V3>(() => alvo, [alvo[1]]); // eslint-disable-line react-hooks/exhaustive-deps
   const figurantes = useMemo(() => figurantesDaCena(sala, config.personagens), [sala, config.personagens]);
@@ -61,6 +63,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} />
       </CenaContexto.Provider>
       <Rig view="front" target={target} dist={dist} />
+      {temAbertura(config.codigo) && <CameraDeAbertura chave={variante} sala={sala} fim={{ pos: [target[0], target[1] + 0.12, target[2] + dist], alvo: target }} reduzido={reduzido} />}
     </Canvas>
   );
 }
