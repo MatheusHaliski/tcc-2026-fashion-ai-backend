@@ -5,6 +5,7 @@
  * núcleos: setas/direcional escolhem a vaga (ou a carta, com a gaveta aberta), Espaço/A abre a gaveta e põe a carta,
  * Backspace/B tira (ou fecha a gaveta), Enter/Start entrega, O/Select mostra os requisitos.
  */
+import { ElencoDelivered } from "@/components/flair/elencos/elenco-delivered";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState, PageHeader, SkeletonGrid, UiIcon } from "@/components/ui";
@@ -93,6 +94,7 @@ function Elenco({ codigo }: { codigo: string }) {
       <p className="mk-effect">{tx.t("flair3d.elencos.help")}</p>
       {m.erroConferir && <p className="n3d-error" role="alert">{tx.t("flair3d.elencos.checkError", { msg: m.erroConferir.message })}</p>}
       {m.erroEntrega && <p className="n3d-error" role="alert">{tx.t("flair3d.ui.submitError", { msg: m.erroEntrega.message })}</p>}
+      {m.resultado?.ok && <ElencoDelivered nome={tx.elenco(codigo)} edicao={m.resultado.edicao} />}
       <button type="button" className="btn btn-primary n3d-submit" disabled={!pronto} onClick={() => void m.entregar()}>
         {tx.t(m.entregando ? "flair3d.ui.submitting" : "flair3d.elencos.submit")}
       </button>
