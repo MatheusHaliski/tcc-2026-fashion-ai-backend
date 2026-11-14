@@ -15,6 +15,7 @@ export const NAV_GROUPS: NavGroup[] = [
   ] },
   { key: "nav.group.wardrobe", items: [
     { href: "/closet", key: "nav.closet", icon: "NAV-02", auth: true },
+    { href: "/acervo", key: "nav.acervo", icon: "ACT-30", auth: true },
     { href: "/pieces/new", key: "nav.addPiece", icon: "ACT-06", auth: true },
     { href: "/mirror", key: "nav.mirror", icon: "ACT-32", auth: true },
     { href: "/atelier", key: "nav.atelier", icon: "NAV-10", auth: true },

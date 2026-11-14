@@ -1,0 +1,188 @@
+/* ── ACERVO · ficha da peça (components/acervo/peca-ficha*.tsx), looks vinculados e modo arrumação. A ficha abre num
+   painel fora da área .acv, por isso o conteúdo dela repete a classe .acv para herdar as cores. */
+.acv-ficha {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.acv-ficha-topo {
+  position: relative;
+  max-width: 220px;
+}
+
+.acv-ficha-topo .acv-foto {
+  border-radius: 12px;
+}
+
+.acv-ficha-aviso {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--acv-alerta);
+  border-radius: 8px;
+  font-size: var(--text-body-sm);
+}
+
+.acv-ficha-dados {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.acv-ficha-dados dt {
+  color: var(--acv-suave);
+  font-size: var(--text-caption);
+}
+
+.acv-ficha-dados dd {
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.acv-ficha-dados dd.is-vazio {
+  color: var(--acv-suave);
+  font-style: italic;
+}
+
+.acv-ficha-local {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) 0;
+  border-block: 1px solid var(--acv-linha);
+  font-size: var(--text-body-sm);
+}
+
+.acv-ficha-mover {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.acv-ficha-medidas summary {
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+
+.acv-ficha-subtitulo {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.acv-ficha-integracoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-2);
+}
+
+.acv-integracao {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--acv-linha);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.acv-integracao:hover {
+  border-color: var(--acv-tinta);
+}
+
+.acv-integracao-nome {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.acv-ficha-looks,
+.acv-looks,
+.acv-look-itens {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acv-look {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--acv-linha);
+  border-radius: 10px;
+}
+
+.acv-look-titulo {
+  color: inherit;
+  font-weight: 600;
+}
+
+.acv-look-itens li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px var(--space-2);
+  font-size: var(--text-body-sm);
+}
+
+.acv-look-itens .acv-foto {
+  grid-row: span 2;
+  border-radius: 6px;
+}
+
+.acv-look-itens li.is-esta .acv-look-nome {
+  font-weight: 600;
+}
+
+.acv-ficha-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.acv-arrumacao {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.acv-arrumacao-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body-sm);
+}
+
+.acv-arrumacao-tabela :is(th, td) {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--acv-linha);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.acv-arrumacao-tabela tbody th {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.acv-arrumacao-tabela .acv-foto {
+  border-radius: 6px;
+}
+
+.acv-arrumacao-tabela td .acv-dica {
+  display: block;
+}
+
+.acv-arrumacao-tabela tr.is-fora {
+  opacity: 0.55;
+}
+
+.acv-arrumacao-tabela input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
