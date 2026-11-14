@@ -20,27 +20,33 @@ interface Props {
   onAgain: () => void;
   /** cartas que pontuaram, na ordem em que brilham na régua de vagas */
   cartas?: CartaNoResultado[];
+  /** jogo artístico, sem placar (nenhuma regra vale pontos): o resultado não mostra "0 pontos" nem estrelas vazias */
+  semPlacar?: boolean;
 }
 
-export function NucleoResult({ codigo, resultado, onAgain, cartas = [] }: Props) {
+export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlacar = false }: Props) {
   const tx = useNucleoText();
   const estrelas = Math.max(0, Math.min(3, resultado.estrelas));
   return (
     <section className="n3d-result" aria-labelledby="n3d-result-title" data-testid="nucleo-result">
       <h2 id="n3d-result-title" className="type-h3">{tx.t("flair3d.ui.result.title")}</h2>
-      <p className="n3d-result-points tabular">{tx.pontosTotal(resultado.pontos)}</p>
-      <p className="n3d-stars" aria-label={tx.t("flair3d.ui.result.stars", { n: estrelas })}>
-        {[1, 2, 3].map((i) => (
-          <span key={i} className={cn("n3d-star", i <= estrelas && "is-on")} aria-hidden>★</span>
-        ))}
-      </p>
+      {semPlacar ? <p className="n3d-result-outcome" data-no-score>{tx.t("flair3d.ui.result.noScore")}</p> : (
+        <>
+          <p className="n3d-result-points tabular">{tx.pontosTotal(resultado.pontos)}</p>
+          <p className="n3d-stars" aria-label={tx.t("flair3d.ui.result.stars", { n: estrelas })}>
+            {[1, 2, 3].map((i) => (
+              <span key={i} className={cn("n3d-star", i <= estrelas && "is-on")} aria-hidden>★</span>
+            ))}
+          </p>
+        </>
+      )}
       {resultado.resultado && <p className="n3d-result-outcome">{tx.resultado(resultado.resultado)}</p>}
       <ul className="n3d-rules">
         {resultado.regras.map((r) => (
           <li key={r.codigo} className={r.ok ? "is-ok" : "is-miss"}>
             <span>{tx.t(r.ok ? "flair3d.ui.result.ok" : "flair3d.ui.result.notOk")}</span>
             <span>{tx.regra(codigo, r.codigo)}</span>
-            <em className="tabular">{tx.pontos(r.pontos)}</em>
+            {!semPlacar && <em className="tabular">{tx.pontos(r.pontos)}</em>}
           </li>
         ))}
       </ul>

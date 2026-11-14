@@ -10661,5 +10661,7 @@
   "search.ha_resultados_em": "Há resultados para esta busca em:",
   "sealWizard.passo_definir": "Definir selo",
   "settings.sessao_aparelho": "{navegador} no {sistema}",
-  "points.hub.valor_variavel": "varia"
+  "points.hub.valor_variavel": "varia",
+  "flair3d.ui.acao.skipWaiting": "A partida espera a sua escolha abaixo: acione ou siga sem acionar para ver o resultado.",
+  "flair3d.ui.result.noScore": "Jogo artístico: aqui não há pontos nem estrelas."
 }

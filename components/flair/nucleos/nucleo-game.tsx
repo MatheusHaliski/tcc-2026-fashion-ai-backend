@@ -41,7 +41,7 @@ import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
 import { acionamentoDe, comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
 import { classesDoQuadro, estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
-import { varianteDaCena } from "@/lib/flair/nucleos/variante";
+import { semPlacar, varianteDaCena } from "@/lib/flair/nucleos/variante";
 import { NUCLEOS } from "@/lib/flair/nucleos/registry";
 import { buildTabs, temEscolha, type Selecao } from "@/lib/flair/nucleos/selection";
 import type { AvatarTipo, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -211,7 +211,7 @@ export function NucleoGame(props: Props) {
           onComando={(c) => disparar(c)}
           onEntregar={entregar}
           acao={
-            <NucleoActionPanel nucleo={codigo} variante={variante} passos={acao.passos} mostrados={acao.mostrados} onPular={acao.pular}>
+            <NucleoActionPanel nucleo={codigo} variante={variante} passos={acao.passos} mostrados={acao.mostrados} onPular={acao.pular} esperando={acao.aberta}>
               {acao.tipo && (
                 <NucleoTrigger
                   tipo={acao.tipo}
@@ -228,7 +228,7 @@ export function NucleoGame(props: Props) {
               )}
             </NucleoActionPanel>
           }
-          resultado={resultado ? <NucleoResult codigo={codigo} resultado={resultado} cartas={pontuadas.lista} onAgain={onAgain ?? SEM_FIM} /> : null}
+          resultado={resultado ? <NucleoResult codigo={codigo} resultado={resultado} cartas={pontuadas.lista} semPlacar={semPlacar(definicao)} onAgain={onAgain ?? SEM_FIM} /> : null}
         />
         {estado.objetivo && (
           <NucleoObjectiveDetails definicao={definicao} variante={variante} onFechar={() => disparar({ acao: "VER_OBJETIVO" })}>

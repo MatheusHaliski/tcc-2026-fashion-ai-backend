@@ -10661,5 +10661,7 @@
   "search.ha_resultados_em": "There are results for this search in:",
   "sealWizard.passo_definir": "Define the seal",
   "settings.sessao_aparelho": "{navegador} on {sistema}",
-  "points.hub.valor_variavel": "varies"
+  "points.hub.valor_variavel": "varies",
+  "flair3d.ui.acao.skipWaiting": "The match is waiting for your choice below: trigger or continue without it to see the result.",
+  "flair3d.ui.result.noScore": "Creative game: there are no points or stars here."
 }
