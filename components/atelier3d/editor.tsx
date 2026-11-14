@@ -1,7 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { ApiError } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Dialog, Select } from "@/components/ui";
@@ -21,12 +20,14 @@ import type {
   SceneResponse,
   SceneVersion,
   Asset,
-  GenderEvidence,
 } from "./contracts";
 import { GarmentCreationPanel } from "./garment-creation-panel";
 import { EditorFileToolbar } from "./editor-file-toolbar";
 import { SceneInspector } from "./scene-inspector";
 import { GenderPanel } from "./gender-panel";
+import { EditorBackLink } from "./editor-back-link";
+import { useGenderEvidence } from "./use-gender-evidence";
+import { nodeLabel } from "./node-label";
 import { GuestPanel } from "./guest-panel";
 import type { Tool, View } from "./viewport";
 import styles from "./editor.module.css";
@@ -49,7 +50,6 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
     [wireframe, setWireframe] = useState(false),
     [snap, setSnap] = useState(false);
   const [ids, setIds] = useState<string[]>([]),
-    [evidence, setEvidence] = useState<GenderEvidence | null>(null),
     [confirmed, setConfirmed] = useState<string | null>(null),
     [confirmedHash, setConfirmedHash] = useState<string | null>(null),
     [sequence, setSequence] = useState(0);
@@ -69,8 +69,6 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
   const mounted = useRef(true);
   const translateRef = useRef(t);
   translateRef.current = t;
-  const effectiveConfirmed =
-    confirmed && confirmedHash === evidence?.hash ? confirmed : null;
   const canEdit = !!scene?.edit && !busy,
     canExport = !!scene?.export;
   dirtyRef.current = dirty;
@@ -103,6 +101,16 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
       setPaused(true);
     } else setError(e instanceof ApiError ? e.message : fallback);
   }, []);
+  const evidenceFailed = useCallback(
+    (e: unknown) => {
+      reportError(e, translateRef.current("atelier3d.gender.error"));
+      setPaused(true);
+    },
+    [reportError],
+  );
+  const [evidence, setEvidence] = useGenderEvidence(client.evidence, ids, evidenceFailed);
+  const effectiveConfirmed =
+    confirmed && confirmedHash === evidence?.hash ? confirmed : null;
   const reload = useCallback(async () => {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -147,24 +155,6 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
       }
     };
   }, [reload]);
-  useEffect(() => {
-    let alive = true;
-    setEvidence(null);
-    client
-      .evidence(ids)
-      .then((next) => {
-        if (alive) setEvidence(next);
-      })
-      .catch((e) => {
-        if (alive) {
-          reportError(e, translateRef.current("atelier3d.gender.error"));
-          setPaused(true);
-        }
-      });
-    return () => {
-      alive = false;
-    };
-  }, [client, JSON.stringify(ids), reportError]); // stable source identity, not array reference
   useEffect(() => {
     if (!scene) return;
     const timer = setInterval(() => {
@@ -385,11 +375,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
   }
   return (
     <div className={styles.editor}>
-      {projectId && (
-        <Link className="btn" href={`/atelier/projects/${projectId}`}>
-          {t("atelier3d.back")}
-        </Link>
-      )}
+      {projectId && <EditorBackLink projectId={projectId} dirty={dirty} />}
       <h1 className="type-h1">{scene?.title ?? t("atelier3d.title")}</h1>
       <p>{t("atelier3d.subtitle")}</p>
       <p role="status" className={styles.status}>
@@ -505,7 +491,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
                       setVertex(0);
                     }}
                   >
-                    {n.name || key}
+                    {nodeLabel(n.name, key, t)}
                   </Button>
                 ))}
               </div>

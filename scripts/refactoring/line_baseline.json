@@ -29,7 +29,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/atelier3d/editor.tsx": {
-   "max": 604,
+   "max": 590,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/avatar3d/my-avatar.test.tsx": {

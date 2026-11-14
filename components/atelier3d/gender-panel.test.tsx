@@ -33,7 +33,7 @@ it("shows catalog evidence but requires a deliberate final TipoLook choice", () 
   );
   expect(screen.getByText("Camisa · MEN")).toBeTruthy();
   const select = screen.getByRole("button", {
-    name: "TipoLook final — confirmação do criador",
+    name: "Tipo de look final (confirmação de quem cria)",
   });
   expect(select.textContent).toContain("Escolha para confirmar");
   expect(confirm).not.toHaveBeenCalled();
@@ -62,7 +62,7 @@ it("does not select unisex for missing or conflicting catalog data", () => {
   );
   expect(
     screen.getByRole("button", {
-      name: "TipoLook final — confirmação do criador",
+      name: "Tipo de look final (confirmação de quem cria)",
     }).textContent,
   ).toContain("Escolha para confirmar");
   expect(confirm).not.toHaveBeenCalled();
