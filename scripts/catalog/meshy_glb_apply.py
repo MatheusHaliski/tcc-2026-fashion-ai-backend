@@ -89,7 +89,14 @@ def apply_one(conn, storage, item: dict) -> dict:
         conn.commit()
         return {"status": params["status"], "url": url, "pieces": pieces}
     except Exception:
-        conn.rollback()
+        # conexão morta também recusa o rollback: a limpeza do bucket acontece de qualquer jeito (nada de .glb órfão)
+        try:
+            conn.rollback()
+        except Exception:   # noqa: BLE001 - o erro que importa é o original
+            pass
         for key in keys:
-            storage.client.delete_object(Bucket=storage.bucket, Key=key)
+            try:
+                storage.client.delete_object(Bucket=storage.bucket, Key=key)
+            except Exception:   # noqa: BLE001 - segue apagando as outras
+                pass
         raise
