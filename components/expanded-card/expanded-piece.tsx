@@ -70,7 +70,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
   const replaceRef = useRef<HTMLInputElement>(null);
   const auraMode = data?.piece?.background?.auraHype as string | undefined;
-  const { auraEnabled, hype, hypeState, live } = useAuraLive("PIECE", id, auraMode, false);
+  const { auraEnabled, hype, hypeState, live } = useAuraLive("PIECE", id, auraMode);
   const depth = useFashionDepth(auraEnabled && !headerExtra);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const sealsOf = usePieceSeals(p ? [p] : [], { anonymous: !user });
