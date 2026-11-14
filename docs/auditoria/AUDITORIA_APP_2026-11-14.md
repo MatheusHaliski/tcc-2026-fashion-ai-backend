@@ -145,3 +145,9 @@ Feitas em 14/11/2026, no mesmo ambiente da auditoria (banco local, backend em `l
 - **Um vínculo por emissor em cada look** e o **id do vínculo revogado** que continua na lista `seals` do look: regras e contrato da API, não mexidos.
 - **Duas áreas "FLAIR 3D"** e **busca em uma tela única**: mudança de produto.
 - **Erro intermitente "alterado em outra aba"** ao abrir um card logo depois de curtir, comentar e salvar (409 num `GET`): não foi investigado; a função tem nota 8 e ficou fora desta rodada.
+
+### 6.4 Testes depois das correções
+
+- Verificações que passam: `npx tsc --noEmit`, `node scripts/i18n/check.js --fail`, `node scripts/i18n/scan.js --fail`, `npm run lint:styles` e `python -m scripts.refactoring.line_ratchet` (0 violações).
+- Backend (Maven, módulos `fai-application` e `fai-web`): as classes de teste de Lens, busca, pontos, i18n e tratamento de erro rodaram sem falha (1.083 testes em 61 classes, contando as dependências).
+- Frontend (suíte inteira do Vitest, 452 arquivos): passam todos os testes das áreas mexidas. Continuam falhando 33 testes em 14 arquivos que **já falhavam antes destas correções** (conferido rodando os mesmos arquivos no commit da auditoria): retratos das cenas do Heist, moldes do Avatar 3D (`lib/avatar3d/human`, `matriz3d`), as 4 páginas `lab/heist*` do teste de fumaça, `nav-order-editor` e `runway-panel-filtros`. O teste `classic-modes` (DuelPanel) falha de vez em quando e passa ao repetir.
