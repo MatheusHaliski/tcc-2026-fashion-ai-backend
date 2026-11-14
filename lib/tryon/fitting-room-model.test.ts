@@ -47,6 +47,15 @@ describe("product data survives the fitting adapters",()=>{
     expect(render.imageUrl).toBe("/shirt.webp");expect(render.material).toBe("SILK");
     expect(specFor(render)).toMatchObject({placket:false,sleeve:.33,fabric:"SILK"});
   });
+  it("reauditoria: peça do guarda-roupa com a ilustração da categoria no lugar da foto é marcada como sem foto", () => {
+    const piece = { id: "saia", name: "Saia verde", category: "lower_piece", subcategory: "skirt", colorHex: "#2e8b57", imageUrl: "/assets_pecas/02_Parte_inferior/12_saia.png", defaultImage: true } as unknown as PieceView;
+    const fitting = fromWardrobe({ piece, slot: "lower_piece", wear: "BOTTOM" });
+    expect(fitting.noPhoto).toBe(true);
+    expect(fitting.thumbUrl).toMatch(/^\/api\/catalog\/default-asset\?.*color=%232e8b57/);
+    expect(toLook3d(fitting)).toMatchObject({ defaultImage: true, colorHex: "#2e8b57" });
+    const comFoto = fromWardrobe({ piece: { ...piece, imageUrl: "http://localhost/media/saia.png", defaultImage: false } as PieceView, slot: "lower_piece", wear: "BOTTOM" });
+    expect(comFoto.noPhoto).toBe(false);
+  });
   it("treats a processed-only product photograph as its own artwork, not a default", () => {
     const product = { id: "logo-shirt", brand: null, productName: "Camisa", category: "upper_piece", subcategory: "shirt", imageUrl: null, processedUrl: "/media/unique-shirt.png" } as unknown as CatalogProduct;
     const fitting = fromCatalog(product, null, undefined)!;

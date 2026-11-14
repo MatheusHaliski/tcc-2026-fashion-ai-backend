@@ -10,7 +10,7 @@ import {
   type GarmentKind, type GarmentSpec,
   HAS_COLLAR_BAND, type PhotoInfo,
 } from "@/lib/avatar3d/human/garments";
-import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
+import { DEFAULT_PIECES, ZONES, withDefaultOutfit, withRegisteredColor, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
 import { isBundledGarmentPhoto } from "@/lib/tryon/reference-photo";
 import { specFor } from "@/lib/avatar3d/human/garment-fit";
 import { publishPhotoStates, useGarmentPhotoRetries } from "@/lib/tryon/garment-status";
@@ -44,7 +44,7 @@ export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
   // molde da subcategoria ajustado pela classe de caimento e comprimentos declarados (lib/avatar3d/human/garment-fit.ts);
   // com casaco/jaqueta por cima, a camiseta padrão por baixo vira só a base escura
   const hasOuter = pieces.some((p) => ["jacket", "coat"].includes(kindOf(p) ?? ""));
-  for (const raw of withDefaultOutfit(pieces)) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const spec = specFor(p); if (spec) items.push({ key: p.id, spec, piece: p }); }
+  for (const raw of withDefaultOutfit(pieces.map(withRegisteredColor))) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const spec = specFor(p); if (spec) items.push({ key: p.id, spec, piece: p }); }
   return items.sort((a, b) => a.spec.layer - b.spec.layer);
 }
 

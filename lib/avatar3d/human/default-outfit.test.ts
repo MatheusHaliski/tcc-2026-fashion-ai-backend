@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Look3dPiece } from "@/components/three/common";
-import { DEFAULT_PIECES, missingZones, withDefaultOutfit } from "./default-outfit";
+import { DEFAULT_PIECES, missingZones, withDefaultOutfit, withRegisteredColor } from "./default-outfit";
 import { outfitOf } from "@/components/three/human-outfit";
 
 const P = (id: string, subcategory: string, slot = "upper"): Look3dPiece => ({ id, name: id, slot, subcategory, imageUrl: `/x/${id}.png` });
@@ -40,5 +40,27 @@ describe("look padrão — o avatar 3D nunca aparece sem roupa", () => {
       expect(kinds.some((k) => ["pants", "shorts", "skirt", "leggings", "dress", "jumpsuit"].includes(k))).toBe(true);
       expect(kinds.some((k) => k === "shoes" || k === "boots")).toBe(true);
     }
+  });
+});
+
+describe("reauditoria — peça sem foto veste a cor do cadastro, não a cor da ilustração da categoria", () => {
+  const preta: Look3dPiece = { id: "w1", name: "Camiseta preta", slot: "upper", subcategory: "t_shirt", colorHex: "#111111", imageUrl: "/assets_pecas/01_Parte_superior/01_camiseta_referencia.png" };
+
+  it("camiseta preta sem foto entra no corpo sem a ilustração azul, com a cor preta", () => {
+    const item = outfitOf([preta]).find((i) => i.piece.id === "w1")!;
+    expect(item.piece.imageUrl).toBeNull();
+    expect(item.piece.colorHex).toBe("#111111");
+    expect(item.piece.defaultImage).toBe(true);
+  });
+
+  it("foto de verdade, peça de loja, peça sem cor e a roupa base do FashionAI ficam como estão", () => {
+    const foto = { ...preta, imageUrl: "http://localhost:8098/media/users/u/p.png" };
+    expect(withRegisteredColor(foto)).toBe(foto);
+    const loja = { ...preta, catalogProductId: "c1" };
+    expect(withRegisteredColor(loja)).toBe(loja);
+    const semCor = { ...preta, colorHex: null };
+    expect(withRegisteredColor(semCor)).toBe(semCor);
+    expect(withRegisteredColor(DEFAULT_PIECES.upper)).toBe(DEFAULT_PIECES.upper);
+    expect(outfitOf([]).every((i) => !!i.piece.imageUrl)).toBe(true);
   });
 });

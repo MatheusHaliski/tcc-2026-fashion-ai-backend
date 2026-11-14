@@ -22,6 +22,7 @@ import { toLook3d, type Sex, type State } from "@/lib/tryon/fitting-room-model";
 import { FittingDetailControls } from "./fitting-detail-controls";
 import { FittingRemoteControls } from "./fitting-remote-controls";
 import { useSmartWheel } from "./use-smart-wheel";
+import { missingZones } from "@/lib/avatar3d/human/default-outfit";
 
 const FittingRoomScene = dynamic(
   () => retryImport(() => import("@/components/three/fitting-room-scene")),
@@ -138,6 +139,11 @@ export function FittingStage({
           <Link href="/avatar" className="btn btn-sm">
             {t("tryOn.criar_avatar")}
           </Link>
+        </p>
+      )}
+      {missingZones(look).length > 0 && (
+        <p className="px-3 pt-2 type-caption text-muted" role="note" data-base-outfit-note>
+          {t("tryOn.roupa_base_nota")}
         </p>
       )}
       <div className="grid gap-2 p-3">{children}</div>

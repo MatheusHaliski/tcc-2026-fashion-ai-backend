@@ -55,3 +55,21 @@ export function withDefaultOutfit(pieces: Look3dPiece[]): Look3dPiece[] {
   const miss = missingZones(pieces);
   return miss.length ? [...pieces, ...miss.map((z) => DEFAULT_PIECES[z])] : pieces;
 }
+
+/** Ilustração da categoria (public/assets_pecas e as versões menores): a imagem de uma peça cadastrada sem foto. */
+export function isCategoryIllustration(url?: string | null): boolean {
+  return !!url && /^\/(assets_pecas|_derived\/pecas_thumb)\//.test(url);
+}
+
+/**
+ * Peça do guarda-roupa sem foto no corpo 3D: a "foto" dela é a ilustração da categoria, que tem cor própria (camiseta
+ * azul, bota laranja, saia coral) e listras de luz. Projetada no manequim, a camiseta preta saía azul e a saia verde,
+ * coral. Com a cor do cadastro em mãos, a peça veste só o tecido nessa cor. As peças padrão do FashionAI e as peças
+ * sem cor cadastrada (acervo do laboratório) continuam com a própria imagem.
+ */
+export function withRegisteredColor(p: Look3dPiece): Look3dPiece {
+  const base = Object.values(DEFAULT_PIECES).some((d) => d.id === p.id);
+  if (base || !p.colorHex || p.catalogProductId) return p;
+  if (!isCategoryIllustration(p.imageUrl) || (p.studioUrl && !isCategoryIllustration(p.studioUrl))) return p;
+  return { ...p, imageUrl: null, studioUrl: null, defaultImage: true };
+}

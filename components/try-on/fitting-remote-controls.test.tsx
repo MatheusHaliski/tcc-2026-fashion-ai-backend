@@ -13,3 +13,17 @@ it('offers only camera rotation and zoom, with no mirror or movement controls',(
  }
  expect(screen.queryByText(/espelho|centro|andar/i)).toBeNull();
 });
+
+it('reauditoria: os botões e a etiqueta do ambiente ficam no alto do palco, sem cobrir os pés do manequim', async () => {
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync('app/(site)/_styles/15-provador-espelho.css', 'utf8');
+  const rules = [...css.matchAll(/\.fitting-(remote|stage-tag) \{([^}]*)\}/g)];
+  expect(rules.length).toBeGreaterThanOrEqual(4);
+  for (const rule of rules) {
+    expect(rule[2]).toMatch(/top: \d+px/);
+    expect(rule[2]).not.toMatch(/bottom:/);
+  }
+  const scene = readFileSync('components/three/fitting-room-scene.tsx', 'utf8');
+  expect(scene).toMatch(/className="fitting-stage-tag /);
+  expect(scene).not.toMatch(/absolute bottom-3 left-3/);
+});
