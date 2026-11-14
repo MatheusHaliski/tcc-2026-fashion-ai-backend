@@ -376,7 +376,7 @@ describe("ExpandedPiece — o dono", () => {
     await openMore();
     fireEvent.click(screen.getByRole("menuitem", { name: "Excluir" }));
     const dialog = await screen.findByRole("dialog", { name: "Excluir" });
-    expect(within(dialog).getByText("Esta peça aparece em 1 look(s).")).toBeTruthy();
+    expect(within(dialog).getByText("Esta peça aparece em 1 look.")).toBeTruthy();
     expect(within(dialog).getByText("Look afetado")).toBeTruthy();
     fireEvent.click(within(dialog).getAllByRole("button", { name: "Excluir" }).at(-1)!);
     expect(await screen.findByText("Peça excluída.")).toBeTruthy();

@@ -74,7 +74,7 @@ describe("SubmitDialog", () => {
     expect(screen.getByText("62")).toBeTruthy();   // hype arredondado
     expect(screen.getByText("Desafio NO_BUY")).toBeTruthy();
     expect(screen.getByText("+60 FAI Points")).toBeTruthy();
-    expect(screen.getByText("Só peças que você já tinha: Wardrobe Bonus.")).toBeTruthy();
+    expect(screen.getByText("Só peças que você já tinha: Bônus de guarda-roupa.")).toBeTruthy();
     expect(screen.getByText("2 peças redescobertas")).toBeTruthy();
     expect(calls.find((c) => c.path.endsWith("/preview"))!.body).toEqual({ schemeId: "l1", challengeId: "c1" });
     fireEvent.click(screen.getByRole("button", { name: "Enviar" }));

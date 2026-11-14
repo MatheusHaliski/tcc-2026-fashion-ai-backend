@@ -3373,7 +3373,7 @@
   "pieces.id.detalhe_do_logo_2": "{name} — Logo detail",
   "pieces.id.editar_foto_canvas_2d": "Edit photo (2D Canvas)",
   "pieces.id.escolha_o_fundo_a_peca": "Choose the background: the piece gains sharpness, volume, studio light and shadow.",
-  "pieces.id.esta_peca_aparece_em_look": "This piece appears in {value} look(s).",
+  "pieces.id.esta_peca_aparece_em_look": "{value, plural, one {This piece appears in # look.} other {This piece appears in # looks.}}",
   "pieces.id.estudio": "{name} — Studio",
   "pieces.id.foto_de_estudio": "studio photo",
   "pieces.id.foto_de_estudio_pronta": "Studio photo ready ✓",

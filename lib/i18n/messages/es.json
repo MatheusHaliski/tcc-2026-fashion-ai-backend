@@ -3373,7 +3373,7 @@
   "pieces.id.detalhe_do_logo_2": "{name} — Detalle del logo",
   "pieces.id.editar_foto_canvas_2d": "Editar foto (Canvas 2D)",
   "pieces.id.escolha_o_fundo_a_peca": "Elige el fondo: la prenda gana nitidez, volumen, luz de estudio y sombra.",
-  "pieces.id.esta_peca_aparece_em_look": "Esta prenda aparece en {value} look(s).",
+  "pieces.id.esta_peca_aparece_em_look": "{value, plural, one {Esta prenda aparece en # look.} other {Esta prenda aparece en # looks.}}",
   "pieces.id.estudio": "{name} — Estudio",
   "pieces.id.foto_de_estudio": "foto de estudio",
   "pieces.id.foto_de_estudio_pronta": "Foto de estudio lista ✓",
