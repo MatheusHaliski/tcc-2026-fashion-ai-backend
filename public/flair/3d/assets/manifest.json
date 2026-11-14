@@ -1,0 +1,67 @@
+[
+  {
+    "slug": "poltrona",
+    "title": "old_leather_armchair",
+    "games": [
+      "BOUTIQUE_3D"
+    ],
+    "category": "scene",
+    "triangles": 1928,
+    "bytes": 2861032,
+    "author": "VoGAn",
+    "source": "https://sketchfab.com/3d-models/none-ae47fb3d061045569f1089aaabd840ca",
+    "license": "CC BY 4.0"
+  },
+  {
+    "slug": "vaso-alto",
+    "title": "Potted Plant",
+    "games": [
+      "FASHION_DETECTIVE"
+    ],
+    "category": "scene",
+    "triangles": 2342,
+    "bytes": 754692,
+    "author": "dgeraci",
+    "source": "https://sketchfab.com/3d-models/none-988c4f83f9984c8d8f7b7418ce03efe7",
+    "license": "CC BY 4.0"
+  },
+  {
+    "slug": "bola",
+    "title": "Soccer Ball Low-Poly PBR",
+    "games": [
+      "FASHION_SPORTS"
+    ],
+    "category": "scene",
+    "triangles": 1440,
+    "bytes": 1036788,
+    "author": "MaX3Dd",
+    "source": "https://sketchfab.com/3d-models/none-1f5fb2dd91af49c99b9f8751c1291489",
+    "license": "CC BY 4.0"
+  },
+  {
+    "slug": "refletor",
+    "title": "Spotlight",
+    "games": [
+      "PERSONAGEM_FILME"
+    ],
+    "category": "scene",
+    "triangles": 2556,
+    "bytes": 146428,
+    "author": "DemonSammy",
+    "source": "https://sketchfab.com/3d-models/none-67db45ff5c554097872f6eb5ec1ae5fa",
+    "license": "CC BY 4.0"
+  },
+  {
+    "slug": "banco-rua",
+    "title": "Park Bench",
+    "games": [
+      "AROUND_THE_WORLD"
+    ],
+    "category": "scene",
+    "triangles": 2272,
+    "bytes": 259120,
+    "author": "Bora Özakaltun",
+    "source": "https://sketchfab.com/3d-models/none-7a0c2a659e2441b6b568a9d2acf8419e",
+    "license": "CC BY 4.0"
+  }
+]

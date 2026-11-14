@@ -50,3 +50,23 @@ describe("objetos GLB das salas", () => {
     expect(orcamentoDaSala(pesada, [], lerManifesto([{ slug: "vintage-camera", triangles: 70000 }])).triangulos).toBeGreaterThan(60000);
   });
 });
+
+describe("objetos GLB no repositório (public/flair/3d/assets)", () => {
+  it("cada entrada do manifesto tem arquivo GLB, crédito e um móvel procedural que ela substitui", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const pasta = join(process.cwd(), "public/flair/3d/assets");
+    const bruto = JSON.parse(readFileSync(join(pasta, "manifest.json"), "utf8")) as Record<string, unknown>[];
+    const lido = lerManifesto(bruto);
+    expect(lido.length).toBe(bruto.length);
+    expect(lido.length).toBeGreaterThan(0);
+    for (const a of bruto) {
+      expect(readFileSync(join(pasta, `${String(a.slug)}.glb`)).subarray(0, 4).toString()).toBe("glTF");
+      expect(a.license).toBe("CC BY 4.0");
+      expect(String(a.author).length).toBeGreaterThan(0);
+      expect(String(a.source)).toMatch(/^https:\/\/sketchfab\.com\//);
+      expect(Number(a.triangles)).toBeLessThanOrEqual(3000);
+      expect((a.games as string[]).length).toBe(1);
+    }
+  });
+});
