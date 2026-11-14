@@ -11,7 +11,8 @@ SCOPE = "sem esqueleto: vitrine do produto (manequim, quarto, visualizador), nã
         "Escala relativa, sem medida da marca."
 GENERATORS = {
     "meshy-6-lite": ("meshy", "Meshy (lote do Codex)"),
-    "hunyuan3d-2.1": ("hunyuan3d", "Hunyuan3D 2.1 (flat lay aprovado, frente e costas)"),
+    "hunyuan3d-2.1": ("hunyuan3d", "Hunyuan3D 2.1 (flat lay aprovado, frente)"),
+    "hunyuan3d-2mv+2.1": ("hunyuan3d", "Hunyuan3D-2mv (forma: frente e costas do flat lay aprovado) + 2.1 (textura PBR)"),
     "trellis.2-4b": ("trellis", "TRELLIS.2 4B (flat lay aprovado, frente)"),
 }
 ORIGINS = ("codex", "runpod")

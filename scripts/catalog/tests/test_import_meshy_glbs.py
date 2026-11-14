@@ -289,16 +289,16 @@ def test_runpod_hunyuan_lot_links_by_uuid_and_records_the_generator(tmp_path):
     with (tmp_path / "manifesto.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=["product_id", "glb", "generator"])
         writer.writeheader()
-        writer.writerow({"product_id": P2.upper(), "glb": f"glb/{P2}.glb", "generator": "hunyuan3d-2.1"})
+        writer.writerow({"product_id": P2.upper(), "glb": f"glb/{P2}.glb", "generator": "hunyuan3d-2mv+2.1"})
     conn, out = Conn(flat_lays=[P2]), tmp_path / "saida"
     code = imp.main(["--manifest", str(tmp_path / "manifesto.csv"), "--root", str(tmp_path), "--out-dir", str(out),
-                     "--generator", "hunyuan3d-2.1", "--origin", "runpod", "--apply"],
+                     "--generator", "hunyuan3d-2mv+2.1", "--origin", "runpod", "--apply"],
                     connect=lambda: (conn, "teste"), make_storage=Storage)
     row = next(csv.DictReader((out / "relatorio.csv").open(encoding="utf-8")))
     assert code == 0 and (row["product_id"], row["ligacao"], row["situacao"]) == (P2, "ID", "IMPORTADO")
     insert = next(w[1] for w in conn.writes if w[0] == "INSERT catalog_product_models_3d")
     imported = json.loads(insert["metrics"])["import"]
-    assert insert["generator"] == "hunyuan3d-2.1" and insert["notes"].startswith("Hunyuan3D 2.1")
+    assert insert["generator"] == "hunyuan3d-2mv+2.1" and insert["notes"].startswith("Hunyuan3D-2mv (forma")
     assert (imported["origin"], imported["generator"], imported["meshyTaskId"]) == ("runpod", "hunyuan3d", None)
 
 

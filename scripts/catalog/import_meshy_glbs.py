@@ -16,7 +16,7 @@ e ``revisar.txt`` (o subconjunto de faltam.txt que entrou como DRAFT). Por padr√
 
     python scripts/catalog/import_meshy_glbs.py --manifest manifesto.csv --root ~/glb-analise --out-dir ~/glb-analise
 
-Outro gerador (manifesto product_id, glb, generator): ``--generator hunyuan3d-2.1 --origin runpod``.
+Outro gerador (manifesto product_id, glb, generator): ``--generator hunyuan3d-2mv+2.1 --origin runpod``.
 """
 from __future__ import annotations
 

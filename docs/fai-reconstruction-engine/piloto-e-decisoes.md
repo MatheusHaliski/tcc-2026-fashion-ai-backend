@@ -188,8 +188,14 @@ proxy não deixa passar MySQL); a conferência fica com `scripts/catalog/audit_m
   aprovado. As costas são baixadas e servem só para a revisão. Usar as costas de verdade exige outro modelo de forma
   (Hunyuan3D-2mv aceita frente/costas/lados) ou uma alteração no código da pintura; nada disso entrou sem decisão.
 
-**Fluxo:** `export_glb_batch.py` (Mac, só lê o banco) → `lote.csv` → `runpod_hunyuan_runner.py` (pod, grava só no
-volume) → `~/glb-hunyuan` → `import_meshy_glbs.py --generator hunyuan3d-2.1 --origin runpod` (ensaio; `--apply` só
+**Decisão (14/11/2026): forma com o Hunyuan3D-2mv, textura com o 2.1.** A forma usa o Hunyuan3D-2mv (repositório
+Hunyuan3D-2, commit `f8db63096c8282cb27354314d896feba5ba6ff8a`, pacote `hy3dgen`, Tencent Hunyuan 3D 2.0 Community
+License, mesmo território), condicionado pela frente e pelas costas do flat lay (só pela frente quando não há costas). A
+textura vem do 2.1, pela frente. Cada etapa roda num processo (`--stage shape`, depois `--stage paint`), então os
+modelos não ficam carregados juntos: o pico esperado é o da textura (~21 GB) e uma GPU de 24 GB serve. Gerador gravado:
+`hunyuan3d-2mv+2.1`.
+
+**Fluxo:** `export_glb_batch.py` (Mac, só lê o banco) → `lote.csv` → `runpod_hunyuan_runner.py` (pod, `--stage shape` e depois `--stage paint`, grava só no volume) → `~/glb-hunyuan` → `import_meshy_glbs.py --generator hunyuan3d-2mv+2.1 --origin runpod` (ensaio; `--apply` só
 com confirmação). O gerador e a origem vão para `catalog_product_models_3d.generator` e `metrics_json.import`.
 
 **A medir no piloto:** GPU, VRAM de pico, segundos por produto, custo por hora e total, e as notas comparadas com a
