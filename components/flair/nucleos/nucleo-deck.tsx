@@ -15,7 +15,7 @@ import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects"
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
 import { seloDaCarta } from "@/lib/flair/nucleos/card-fx";
-import { alternarCarta, conferirDeck, posicoesDaRegra } from "@/lib/flair/nucleos/deck";
+import { alternarCarta, avisoDoDeck, conferirDeck, posicoesDaRegra } from "@/lib/flair/nucleos/deck";
 import { estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
 import type { DeckRegras, NucleoCodigo } from "@/lib/flair/nucleos/types";
 
@@ -26,6 +26,8 @@ interface Props {
   entrando: boolean;
   erro: ApiError | null;
   onEntrar: (deck: string[]) => void;
+  /** a rodada escolhida: os selos valem para ela */
+  rodada?: string | null;
 }
 
 type Texto = ReturnType<typeof useNucleoText>;
@@ -46,12 +48,12 @@ function faltasDoErro(erro: ApiError, tx: Texto): string[] {
   return out;
 }
 
-export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar }: Props) {
+export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar, rodada = null }: Props) {
   const tx = useNucleoText();
   const layout = useNucleoViewport();
   const [deck, setDeck] = useState<string[]>([]);
   const [foco, setFoco] = useState<FlairCollectionCard | null>(null);
-  const efeitos = useNucleoEffects(codigo, cartas);
+  const efeitos = useNucleoEffects(codigo, cartas, true, { rodada });
   const zoom = useCardZoom(foco);
   const escolhidas = cartas.filter((c) => deck.includes(c.id));
   const status = conferirDeck(regras, escolhidas);
@@ -98,6 +100,9 @@ export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar }:
           </li>
         ))}
       </ul>
+      {avisoDoDeck(codigo, rodada, escolhidas.map((c) => efeitos.porCarta.get(c.id))) && (
+        <p className="n3d-deck-warning" role="status" data-testid="nucleo-deck-warning">{tx.t("flair3d.ui.deck.noTrio")}</p>
+      )}
       {cartas.length === 0 ? (
         <p className="n3d-empty">{tx.t("flair3d.ui.deck.noCards")}</p>
       ) : (

@@ -9,6 +9,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dPercurso;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
@@ -28,6 +29,9 @@ import java.util.TreeMap;
  * Núcleo 10 — Espelho 1, "3 peças da mesma família de cor". A pessoa apresenta o look ao espelho quantas vezes quiser:
  * quando não abre, o evento FALTAM_PECAS diz quantas peças faltaram na família mais perto de fechar e a partida segue
  * ABERTA; quando abre, vale 100 na 1ª apresentação, 80 na 2ª, 60 na 3ª e 0 daí em diante (a porta abre do mesmo jeito).
+ * Depois de 2 apresentações sem abrir, a peça achada na sala entra na mala da partida e conta como uma peça da família
+ * mais perto de fechar (evento PECA_ACHADA); depois de 4, entra uma segunda. As outras rodadas estão em
+ * {@link LabirintoRodadas}.
  */
 public class LabirintoNucleo implements Flair3dNucleo {
     public static final int PECAS = 3;
@@ -47,7 +51,39 @@ public class LabirintoNucleo implements Flair3dNucleo {
     @Override
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("ESPELHO_1", new Regra("MESMA_FAMILIA", 100)),
-                List.of(Definicao.CARTAS), Definicao.VAGAS, Deck.ate(8, new Obrigatoria(CbcRules.ANY, PECAS)), true);
+                List.of(Definicao.CARTAS), Definicao.VAGAS, Deck.ate(8, new Obrigatoria(CbcRules.ANY, PECAS)), true)
+                .comRodadas(LabirintoRodadas.rodadas().toArray(Definicao.Rodada[]::new));
+    }
+
+    /** As etapas da rodada, quando ela anda em etapas. */
+    private static Flair3dPercurso.Etapas etapas(String rodada) {
+        if (LabirintoRodadas.ESCADA.equals(rodada)) {
+            return LabirintoRodadas.ESCADA_ETAPAS;
+        }
+        return LabirintoRodadas.PORTAS.equals(rodada) ? LabirintoRodadas.PORTAS_ETAPAS : null;
+    }
+
+    /** Peças achadas na sala até esta apresentação: uma a partir da 3ª, duas a partir da 5ª. */
+    public static int achadas(int tentativa) {
+        return Math.min(2, Math.max(0, (tentativa - 1) / 2));
+    }
+
+    @Override
+    public Map<String, Object> abertura(Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = etapas(contexto.rodada());
+        return etapas == null ? Map.of() : Map.of("etapa", Flair3dPercurso.primeira(etapas));
+    }
+
+    @Override
+    public Resultado previa(Entrega entrega, Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = etapas(contexto.rodada());
+        return etapas == null ? pontuar(entrega, contexto) : Flair3dPercurso.previa(entrega, contexto, etapas);
+    }
+
+    private static Resultado holofotes(Map<String, CbcRules.Card> look) {
+        List<RegraResultado> regras = LabirintoRodadas.conferir(LabirintoRodadas.HOLOFOTES_REGRAS, look, 20);
+        long acesos = regras.stream().filter(RegraResultado::ok).count();
+        return Resultado.somando(regras, List.of(new Evento("HOLOFOTES", acesos)));
     }
 
     /** Famílias de cor de uma carta (cada uma conta uma vez por carta), sem as "Especiais". */
@@ -59,18 +95,29 @@ public class LabirintoNucleo implements Flair3dNucleo {
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = etapas(contexto.rodada());
+        if (etapas != null) {
+            return Flair3dPercurso.pontuar(entrega, contexto, etapas);
+        }
         Map<String, Integer> porFamilia = new TreeMap<>();
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
+        if (LabirintoRodadas.HOLOFOTES.equals(contexto.rodada())) {
+            return holofotes(vestidas);
+        }
         vestidas.values().forEach(c -> familias(c).forEach(f -> porFamilia.merge(f, 1, Integer::sum)));
         Map.Entry<String, Integer> melhor = porFamilia.entrySet().stream().max(Map.Entry.comparingByValue()).orElse(null);
-        int maior = melhor == null ? 0 : melhor.getValue();
-        boolean abre = maior >= PECAS;
         int tentativa = Math.max(1, contexto.andamento().tentativas());
+        int daSala = melhor == null || melhor.getValue() >= PECAS ? 0 : Math.min(achadas(tentativa), PECAS - melhor.getValue());
+        int maior = melhor == null ? 0 : melhor.getValue() + daSala;
+        boolean abre = maior >= PECAS;
         List<Evento> eventos = new ArrayList<>();
         if (melhor != null) {
             eventos.add(new Evento("FAMILIA", codigoFamilia(melhor.getKey())));
         }
         eventos.add(new Evento("TENTATIVA", tentativa));
+        if (daSala > 0) {
+            eventos.add(new Evento("PECA_ACHADA", Map.of("pecas", daSala, "familia", codigoFamilia(melhor.getKey()))));
+        }
         if (!abre) {
             eventos.add(new Evento("FALTAM_PECAS", PECAS - maior));
             return Resultado.parcial(Resultado.ABERTA, "NAO_ABRE", List.of(RegraResultado.de("MESMA_FAMILIA", false, 100)), eventos);

@@ -10,6 +10,7 @@ import { Rig } from "@/components/three/fitting-camera";
 import { CameraDeAbertura } from "@/components/flair/nucleos/scene/opening-camera";
 import type { Look3dPiece } from "@/components/three/common";
 import { NucleoAvatar, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
+import { LuzDeEfeito, PecaPintada } from "@/components/flair/nucleos/scene/effects-3d";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
@@ -21,7 +22,7 @@ import { placarDaCena } from "@/lib/flair/nucleos/scene/sequences-auto";
 import { temAbertura } from "@/lib/flair/nucleos/scene/opening";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import { limiteDaCamera } from "@/lib/flair/nucleos/scene/zones";
-import type { NucleoConfig, NucleoResultado, V3 } from "@/lib/flair/nucleos/types";
+import type { NucleoConfig, NucleoResultado, V3, ZonaEscolha } from "@/lib/flair/nucleos/types";
 
 export interface NucleoScene3DProps {
   config: NucleoConfig;
@@ -35,6 +36,9 @@ export interface NucleoScene3DProps {
   resultado?: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
+  /** zonas da rodada (modos do Ateliê), na ordem, e o que a pessoa já pintou em cada uma */
+  zonasDaPeca?: string[];
+  zonas?: Record<string, ZonaEscolha>;
 }
 
 /**
@@ -48,7 +52,8 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante }: NucleoScene3DProps) {
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, zonasDaPeca, zonas }: NucleoScene3DProps) {
+  const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
   const cena = useSceneDirector({ codigo: config.codigo, avatar, resultado, reduzido, abertura: variante });
   const { dist, alvo } = enquadramento(avatar.zoom, sala);
@@ -60,6 +65,8 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
       <CenaContexto.Provider value={cena}>
         <Sala3D sala={sala} placar={placarDaCena(config.codigo, resultado)} />
         <Figurantes personagens={figurantes} />
+        <LuzDeEfeito altura={sala.zonas.avatar.altura} />
+        {manequim && zonasDaPeca && zonas && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} />
       </CenaContexto.Provider>
       <Rig view="front" target={target} dist={dist} />

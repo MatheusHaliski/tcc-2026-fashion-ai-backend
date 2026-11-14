@@ -12,6 +12,8 @@ export interface Cena {
   codigo: NucleoCodigo;
   diretor: Diretor;
   reduzido: boolean;
+  /** a cor da luz de efeito (a família de cor da última carta vestida); quem desenha lê a cada quadro */
+  efeito?: { cor: string };
 }
 
 export const CenaContexto = createContext<Cena | null>(null);

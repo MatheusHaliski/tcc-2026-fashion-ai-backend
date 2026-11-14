@@ -29,10 +29,18 @@ public class Flair3dNucleoService {
     /** Semente até 2^53, para chegar inteira ao JavaScript. */
     static final long SEMENTE_MAX = 1L << 53;
 
-    public record AbrirPartida(List<UUID> deck, String avatar) {
+    /** {@code rodada}: a rodada escolhida (nula = o objetivo mais simples do jogo). */
+    public record AbrirPartida(List<UUID> deck, String avatar, String rodada) {
+        public AbrirPartida(List<UUID> deck, String avatar) {
+            this(deck, avatar, null);
+        }
     }
 
-    public record PedidoEfeitos(List<UUID> cartas) {
+    /** {@code partida}: os selos valem para a rodada e o sorteio dela (o tema já revelado); sem ela, vale {@code rodada}. */
+    public record PedidoEfeitos(List<UUID> cartas, String rodada, UUID partida) {
+        public PedidoEfeitos(List<UUID> cartas) {
+            this(cartas, null, null);
+        }
     }
 
     private final Flair3dMatchRepository matches;
@@ -75,7 +83,7 @@ public class Flair3dNucleoService {
         Flair3dNucleo n = nucleo(codigo);
         List<UUID> ids = pedido == null || pedido.cartas() == null ? List.of() : pedido.cartas();
         Map<UUID, CbcRules.Card> minhas = cartas.daPessoa(user.id(), ids);
-        Contexto ctx = new Contexto(minhas, cartas.paises(), null);
+        Contexto ctx = contextoDosEfeitos(user, n, minhas, pedido);
         boolean deCartas = n.definicao().recursos().contains(Definicao.CARTAS);
         List<Map<String, Object>> out = new ArrayList<>();
         minhas.forEach((id, carta) -> {
@@ -103,6 +111,8 @@ public class Flair3dNucleoService {
         m.setStatus(Flair3dMatch.ABERTA);
         m.setSemente(ThreadLocalRandom.current().nextLong(SEMENTE_MAX));
         m.setDeckJson(d.deck().semDeck() ? null : Json.write(deck));
+        String rodada = rodadaPedida(d, pedido == null ? null : pedido.rodada());
+        m.setEstadoJson(rodada == null ? null : Json.write(Andamento.naRodada(rodada)));
         List<Avatares.Participante> participantes = d.avatares().participantes(user.id(), pedido == null ? null : pedido.avatar());
         m.setParticipantesJson(Json.write(participantes));
         m = matches.save(m);
@@ -113,6 +123,8 @@ public class Flair3dNucleoService {
         out.put("semente", m.getSemente());
         out.put("deck", d.deck().semDeck() ? null : deck);
         out.put("participantes", participantes);
+        out.put("rodada", rodada);
+        out.put("abertura", n.abertura(cartas.contexto(cartas.daPessoa(user.id(), deck), m.getSemente()).naRodada(rodada)));
         return out;
     }
 
@@ -153,6 +165,29 @@ public class Flair3dNucleoService {
         return n.previa(e, contexto(user, m, n, e, a)).comStatus(m.getStatus());
     }
 
+    /** A rodada pedida, quando o jogo a tem (422 RODADA_INVALIDA); sem pedido, nula: vale o objetivo mais simples. */
+    private static String rodadaPedida(Definicao d, String pedida) {
+        if (pedida == null || pedida.isBlank()) {
+            return null;
+        }
+        return d.rodada(pedida.trim()).map(Definicao.Rodada::codigo)
+                .orElseThrow(() -> Flair3dErros.invalido("RODADA_INVALIDA", "rodada_invalida"));
+    }
+
+    /** O contexto dos selos: o da partida (rodada e sorteio dela, só do dono) ou o da rodada pedida, ainda sem sorteio. */
+    private Contexto contextoDosEfeitos(CurrentUser user, Flair3dNucleo n, Map<UUID, CbcRules.Card> minhas, PedidoEfeitos pedido) {
+        Contexto base = new Contexto(minhas, cartas.paises(), null);
+        if (pedido == null) {
+            return base;
+        }
+        if (pedido.partida() == null) {
+            return base.naRodada(rodadaPedida(n.definicao(), pedido.rodada()));
+        }
+        Flair3dMatch m = matches.findById(pedido.partida()).filter(x -> x.getUserId().equals(user.id()) && x.getNucleo().equals(n.codigo()))
+                .orElseThrow(() -> Flair3dErros.naoEncontrado("PARTIDA_NAO_ENCONTRADA", "partida_nao_encontrada"));
+        return base.comSemente(m.getSemente()).comAndamento(Andamento.ler(m.getEstadoJson()));
+    }
+
     /** Os itens da carta com o efeito da cor dela no jogo no fim (Flair3dCores), quando há um e o núcleo não o mandou. */
     private static List<Efeito> comEfeitoDaCor(String nucleo, CbcRules.Card carta, List<Efeito> itens) {
         Efeito cor = Flair3dCores.efeitoDaCor(nucleo, carta);
@@ -185,8 +220,9 @@ public class Flair3dNucleoService {
         List<UUID> usadas = new ArrayList<>(e.cartas().values());
         usadas.addAll(a.cartas());
         Map<UUID, CbcRules.Card> minhas = cartas.daPessoa(user.id(), usadas);
-        Flair3dEntregas.conferir(n.definicao(), e, minhas, Flair3dDeck.ids(m.getDeckJson()), a.cartas());
-        return cartas.contexto(minhas, m.getSemente()).comAndamento(a);
+        List<UUID> deck = Flair3dDeck.ids(m.getDeckJson());
+        Flair3dEntregas.conferir(n.definicao().naRodada(a.rodada()), e, minhas, deck, a.cartas());
+        return cartas.contexto(minhas, m.getSemente()).comAndamento(a).comDeck(deck.isEmpty() ? minhas : cartas.daPessoa(user.id(), deck));
     }
 
     /** Grava a etapa: entrega, andamento e status; resultado, pontos e estrelas só quando a partida fecha. */

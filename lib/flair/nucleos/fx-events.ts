@@ -12,7 +12,7 @@ export type FxEvento =
   /** a partida mudou de momento (deck, preparação, ação, resultado) */
   | { tipo: "momento"; nucleo: NucleoCodigo; momento: Momento }
   /** uma carta foi vestida na preparação: clarão na cor do nível, selo e Aura Hype */
-  | { tipo: "entrada"; nucleo: NucleoCodigo; entrada: EntradaFx; reduzido: boolean }
+  | { tipo: "entrada"; nucleo: NucleoCodigo; entrada: EntradaFx; reduzido: boolean; /** efeitos de luz ligados nas preferências */ efeitos?: boolean }
   /** um passo da ação, na ordem do resultado do servidor (regra cumprida, round, placar...) */
   | { tipo: "acao-passo"; nucleo: NucleoCodigo; passo: PassoAcao; indice: number; total: number }
   /** a ação terminou: resultado e estrelas do servidor */

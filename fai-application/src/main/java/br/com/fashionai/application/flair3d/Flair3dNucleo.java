@@ -3,6 +3,7 @@ package br.com.fashionai.application.flair3d;
 import br.com.fashionai.application.flair.CbcRules;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * FLAIR 3D — um dos 15 núcleos (Strategy, docs/refactoring/gof/R90-flair3d-nucleos.md): cada implementação joga o
@@ -29,6 +30,14 @@ public interface Flair3dNucleo {
      */
     default Resultado previa(Entrega entrega, Contexto contexto) {
         return pontuar(entrega, contexto);
+    }
+
+    /**
+     * O que o jogo revela quando a pessoa entra na partida (o tema sorteado, as pistas, a cliente, o adversário): só
+     * códigos e números, tirados da semente. Vazio nos jogos que não escondem nada.
+     */
+    default Map<String, Object> abertura(Contexto contexto) {
+        return Map.of();
     }
 
     /**

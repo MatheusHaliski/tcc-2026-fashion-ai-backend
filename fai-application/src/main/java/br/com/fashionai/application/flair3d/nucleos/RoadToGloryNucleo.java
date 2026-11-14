@@ -13,6 +13,8 @@ import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
+import br.com.fashionai.application.flair3d.makeup.FlairMakeUpBrief;
+import br.com.fashionai.application.flair3d.makeup.FlairMakeUpBriefs;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.ArrayList;
@@ -29,6 +31,8 @@ import java.util.Set;
 public class RoadToGloryNucleo implements Flair3dNucleo {
     public static final double POR_REGRA = 25;
     public static final Set<String> OCASIOES = Set.of("casual", "beach");
+    /** As outras rodadas: os briefs do MAKE UP além do Ensaio de Verão, com as mesmas regras de lá. */
+    static final List<FlairMakeUpBrief> BRIEFS = FlairMakeUpBriefs.TODOS.stream().filter(b -> !"ENSAIO_VERAO".equals(b.codigo())).toList();
 
     @Override
     public String codigo() {
@@ -47,6 +51,8 @@ public class RoadToGloryNucleo implements Flair3dNucleo {
                         new Regra("BATOM_CORAL", POR_REGRA), new Regra("ACABAMENTO_BATOM", POR_REGRA)),
                 List.of(Definicao.CARTAS, Definicao.MAQUIAGEM), Definicao.VAGAS, Deck.SEM_DECK, false)
                 .comAreas(Definicao.AREAS)
+                .comRodadas(BRIEFS.stream().map(b -> new Definicao.Rodada(b.codigo(), new Definicao.Objetivo(b.codigo(), b.regras()), List.of(), List.of()))
+                        .toArray(Definicao.Rodada[]::new))
                 .comAvatares(new Avatares(List.of(new Avatares.Solo(Avatares.PROPRIO, Avatares.PROTAGONISTA, 1),
                         new Avatares.Solo(Avatares.MODELO_CASA, Avatares.PROTAGONISTA, 1)), null));
     }
@@ -63,6 +69,11 @@ public class RoadToGloryNucleo implements Flair3dNucleo {
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
+        for (FlairMakeUpBrief b : BRIEFS) {
+            if (b.codigo().equals(contexto.rodada())) {
+                return b.pontuar(entrega, contexto);
+            }
+        }
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
         List<RegraResultado> regras = regras(vestidas.values(), entrega);
         Flair3dRateio rateio = new Flair3dRateio(vestidas).dividirEntre(regras.get(0).pontos(), c -> true)

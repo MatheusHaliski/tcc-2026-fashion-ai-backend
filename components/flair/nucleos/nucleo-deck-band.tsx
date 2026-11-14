@@ -16,6 +16,7 @@ import type { ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
 import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
+import { respostaObrigatoria } from "@/lib/flair/nucleos/rodadas";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
 import type { EfeitoItem, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -36,6 +37,8 @@ export interface NucleoDeckBandProps {
   aviso: string | null;
   /** última apresentação que não fechou a partida (LABIRINTO: o espelho não abriu e a pessoa pode mudar o look) */
   tentativa?: NucleoResultado | null;
+  /** a etapa da vez ou o que o jogo revelou ao entrar, em uma linha (fica à vista depois que o cartão fecha) */
+  briefing?: string | null;
   onAba: (index: number) => void;
   onItem: (aba: number, item: number) => void;
   onNaoCabe: (x: ItemDaFileira) => void;
@@ -47,6 +50,18 @@ export interface NucleoDeckBandProps {
   resultado: ReactNode;
 }
 
+/**
+ * O espelho não abriu: a tentativa, quantas peças faltam, de qual família de cor e quando a peça achada na sala entra
+ * (a partir da 3ª apresentação; uma segunda a partir da 5ª).
+ */
+function textoDoEspelho(tx: ReturnType<typeof useNucleoText>, n: number, faltam: number, familia: unknown): string {
+  const base = typeof familia === "string"
+    ? tx.t("flair3d.ui.trigger.ESPELHO.retryFamily", { n, faltam, familia: tx.familiaCor(familia).toLowerCase() })
+    : tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });
+  const achada = n === 2 || n === 4 ? ` ${tx.t("flair3d.ui.trigger.ESPELHO.found")}` : "";
+  return `${base}${achada}`;
+}
+
 export function NucleoDeckBand(props: NucleoDeckBandProps) {
   const { definicao, momento, estado, pronto, entregando, erro } = props;
   const tx = useNucleoText();
@@ -55,22 +70,24 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
 
   const acionamento = acionamentoDe(definicao.codigo);
   const espelho = acionamento?.tipo === "ESPELHO";
-  const resposta = acionamento?.tipo === "RESPOSTA";
+  const resposta = respostaObrigatoria(definicao);
+  const daResposta = (chave: string, vars?: Record<string, string>) => tx.ou(`flair3d.nucleo.${definicao.codigo}.resposta.${definicao.rodada ?? ""}.${chave}`, tx.t(`flair3d.ui.trigger.RESPOSTA.${chave}`, vars), vars);
   const abaDaResposta = props.tabs.findIndex((t) => t.tipo === "resposta");
   let rotulo = tx.t(espelho ? "flair3d.ui.trigger.ESPELHO.submit" : "flair3d.ui.submit");
   if (entregando) rotulo = tx.t("flair3d.ui.submitting");
 
   let dica: string | null = null;
   if (props.aviso) dica = props.aviso;
-  else if (resposta && !estado.sel.resposta) dica = tx.t("flair3d.ui.trigger.RESPOSTA.need");
-  else if (resposta && estado.sel.resposta) dica = tx.t("flair3d.ui.trigger.RESPOSTA.done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) });
+  else if (resposta && !estado.sel.resposta) dica = [props.briefing, daResposta("need")].filter(Boolean).join(" ");
+  else if (resposta && estado.sel.resposta) dica = [props.briefing, daResposta("done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) })].filter(Boolean).join(" ");
+  else if (props.briefing) dica = props.briefing;
   else if (definicao.codigo === "FASHION_DETECTIVE") {
     const s = salaoDaVez(props.tentativa);
     dica = tx.t("flair3d.ui.detetive.hint", { n: s.numero, total: s.total, salao: tx.t(`flair3d.ui.detetive.${s.codigo}.name`), codigo: tx.t(`flair3d.ui.detetive.${s.codigo}.code`), carta: tx.t(`flair3d.ui.detetive.${s.codigo}.clue`) });
   } else if (props.tentativa) {
     const n = Number(valorDoEvento(props.tentativa, "TENTATIVA") ?? 1);
     const faltam = Number(valorDoEvento(props.tentativa, "FALTAM_PECAS") ?? 0);
-    dica = tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });
+    dica = textoDoEspelho(tx, n, faltam, valorDoEvento(props.tentativa, "FAMILIA"));
   } else if (espelho) dica = tx.t("flair3d.ui.trigger.ESPELHO.hint");
   else if (props.automatico && abaDaResposta >= 0) dica = tx.t("flair3d.ui.modalidade.hint", { modalidade: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta ?? "FUTEBOL"}`, "") });
   else if (props.automatico) dica = tx.t("flair3d.ui.auto");
@@ -105,7 +122,7 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
         {dica && <p className="n3d-hint" role="status" data-testid="nucleo-hint">{dica}</p>}
         {resposta && !estado.sel.resposta && abaDaResposta >= 0 && (
           <button type="button" className="btn btn-sm" onClick={() => props.onAba(abaDaResposta)}>
-            {tx.t("flair3d.ui.trigger.RESPOSTA.go")}
+            {daResposta("go")}
           </button>
         )}
         {erro && <p className="n3d-error" role="alert">{tx.t("flair3d.ui.submitError", { msg: erro.message })}</p>}

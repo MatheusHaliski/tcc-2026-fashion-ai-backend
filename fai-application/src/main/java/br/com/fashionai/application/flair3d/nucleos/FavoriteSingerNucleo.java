@@ -21,6 +21,21 @@ import java.util.Objects;
 public class FavoriteSingerNucleo implements Flair3dNucleo {
     public static final double POR_REGRA = 25;
     public static final List<String> ZONAS = List.of("FRENTE", "COSTAS", "MANGAS", "GOLA");
+    public static final List<String> ZONAS_JAQUETA = List.of("CORPO", "MANGAS", "FERRAGENS", "GOLA");
+    /** A "Era Acústica" (branco, um toque dourado, tudo fosco) e a Jaqueta da Banda (objetivo 50), de uma banda inventada. */
+    static final List<AtelieRodadas.Criacao> RODADAS = List.of(
+            AtelieRodadas.criacao("ERA_ACUSTICA", ZONAS,
+                    AtelieRodadas.regra("BRANCO_DOMINANTE", z -> AtelieRodadas.dominante(z, "Branco")),
+                    AtelieRodadas.regra("TOQUE_DOURADO", z -> ZONAS.stream().anyMatch(zona -> AtelieRodadas.daFamilia(z, zona, "Amarelo"))),
+                    AtelieRodadas.regra("TUDO_FOSCO", z -> !z.isEmpty() && !AtelieRodadas.algumAcabamento(z, "BRILHANTE", "METALICO", "ESPELHADO")),
+                    AtelieRodadas.regra("ATE_2_CORES", z -> AtelieRodadas.ateCores(z, 2))),
+            AtelieRodadas.criacao("JAQUETA_DA_BANDA", ZONAS_JAQUETA,
+                    AtelieRodadas.regra("CORPO_PRETO_FOSCO", z -> AtelieRodadas.daFamilia(z, "CORPO", "Preto")
+                            && !AtelieRodadas.acabamento(z, "CORPO", "BRILHANTE", "METALICO", "ESPELHADO")),
+                    AtelieRodadas.regra("DESTAQUE_NAS_MANGAS", z -> AtelieRodadas.familia(z, "MANGAS") != null
+                            && !AtelieRodadas.SEM_COR.contains(AtelieRodadas.familia(z, "MANGAS"))),
+                    AtelieRodadas.regra("FERRAGENS_METALICAS", z -> AtelieRodadas.acabamento(z, "FERRAGENS", "METALICO")),
+                    AtelieRodadas.regra("ATE_2_CORES", z -> AtelieRodadas.ateCores(z, 2))));
 
     @Override
     public String codigo() {
@@ -36,11 +51,16 @@ public class FavoriteSingerNucleo implements Flair3dNucleo {
     public Definicao definicao() {
         return Definicao.zonas(codigo(), numero(), Definicao.objetivo("ERA_NEON", new Regra("ROSA_DOMINANTE", POR_REGRA),
                 new Regra("ROXO_EM_UMA_ZONA", POR_REGRA), new Regra("ZONA_METALICA", POR_REGRA), new Regra("ATE_3_CORES", POR_REGRA)),
-                ZONAS, List.of());
+                ZONAS, List.of()).comRodadas(RODADAS.get(0).rodada(), RODADAS.get(1).rodada());
     }
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
+        for (AtelieRodadas.Criacao c : RODADAS) {
+            if (c.codigo().equals(contexto.rodada())) {
+                return c.pontuar(entrega);
+            }
+        }
         Map<String, Integer> porFamilia = new HashMap<>();
         List<Entrega.Zona> zonas = ZONAS.stream().map(entrega.zonas()::get).filter(Objects::nonNull).toList();
         zonas.stream().map(Flair3dZonas::familia).filter(Objects::nonNull).forEach(f -> porFamilia.merge(f, 1, Integer::sum));

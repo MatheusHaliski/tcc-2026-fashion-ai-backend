@@ -64,6 +64,6 @@ public class Flair3dCartas {
     }
 
     public Contexto contexto(Map<UUID, CbcRules.Card> cartas, long semente) {
-        return new Contexto(cartas, paises(), new Random(semente));
+        return new Contexto(cartas, paises(), new Random(semente), Andamento.INICIO, semente, null);
     }
 }

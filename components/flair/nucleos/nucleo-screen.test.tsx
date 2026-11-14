@@ -129,7 +129,7 @@ describe("núcleo de maquiagem (ROAD_TO_GLORY)", () => {
     fireEvent.click(within(janela).getByRole("button", { name: "Coral" }));
     await waitFor(() => expect(within(janela).getByRole("button", { name: "Coral" }).getAttribute("aria-pressed")).toBe("true"));
     fireEvent.keyDown(window, { key: "o" });
-    expect(screen.getByTestId("nucleo-objective-details").textContent).toContain("Ocasião casual ou praia");
+    expect(screen.getByTestId("nucleo-objective-details").textContent).toContain("Todas as peças na ocasião do brief");
     expect(screen.getByTestId("nucleo-objective-details").textContent).toContain("25 pts");
   });
 });

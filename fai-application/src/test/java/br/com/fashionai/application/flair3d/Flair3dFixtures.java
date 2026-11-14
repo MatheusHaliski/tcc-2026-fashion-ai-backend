@@ -36,7 +36,12 @@ public final class Flair3dFixtures {
         for (CbcRules.Card c : cartas) {
             m.put(c.id(), c);
         }
-        return new Contexto(m, marca -> MARCAS_BR.contains(marca) ? "BR" : "IT", new Random(semente));
+        return new Contexto(m, marca -> MARCAS_BR.contains(marca) ? "BR" : "IT", new Random(semente), Andamento.INICIO, semente, null);
+    }
+
+    /** O mesmo contexto, na rodada dada. */
+    public static Contexto naRodada(String rodada, long semente, CbcRules.Card... cartas) {
+        return contexto(semente, cartas).naRodada(rodada);
     }
 
     /** Entrega com as cartas por vaga (cada carta na vaga da posição dela). */

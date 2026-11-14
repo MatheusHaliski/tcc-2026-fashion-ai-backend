@@ -10,6 +10,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dPercurso;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
@@ -40,12 +41,56 @@ public class BatalhaLooksNucleo implements Flair3dNucleo {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("MONOCROMATICO_AZUL", new Regra("FAMILIA_AZUL", POR_PECA)),
                 List.of(Definicao.CARTAS), VAGAS,
                 Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF"), Obrigatoria.uma("CAL")), true)
-                .comAvatares(Avatares.solo(new Avatares.Online(1, 3, null), Avatares.figurante("ADVERSARIO", 1)));
+                .comAvatares(Avatares.solo(new Avatares.Online(1, 3, null), Avatares.figurante("ADVERSARIO", 1)))
+                .comRodadas(BatalhaLooksRodadas.rodadas().toArray(Definicao.Rodada[]::new))
+                .comRodadaNaFrente(BatalhaLooksRodadas.batalha());
+    }
+
+    /** Rodada de treino com o desafio sorteado (o convite ou o clima)? */
+    private static boolean treino(Contexto contexto) {
+        return BatalhaLooksRodadas.CONVITE.equals(contexto.rodada()) || BatalhaLooksRodadas.CLIMA.equals(contexto.rodada());
+    }
+
+    @Override
+    public Map<String, Object> abertura(Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = BatalhaLooksRodadas.etapas(contexto);
+        if (etapas != null) {
+            return Map.of("etapa", Flair3dPercurso.primeira(etapas));
+        }
+        return treino(contexto) ? Map.of("desafio", BatalhaLooksRodadas.treino(contexto).codigo()) : Map.of();
+    }
+
+    @Override
+    public Resultado previa(Entrega entrega, Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = BatalhaLooksRodadas.etapas(contexto);
+        if (etapas != null) {
+            return Flair3dPercurso.previa(entrega, contexto, etapas);
+        }
+        Resultado r = pontuar(entrega, contexto);
+        return treino(contexto) ? new Resultado(r.pontos(), r.estrelas(), Resultado.EM_PREPARO, r.regras(), List.of(), r.cartas(), r.status()) : r;
+    }
+
+    /** Treino de um desafio só contra o adversário da casa, com a nota dele tirada da semente. */
+    private static Resultado treinar(Map<String, CbcRules.Card> vestidas, Contexto contexto) {
+        BatalhaLooksRodadas.Desafio desafio = BatalhaLooksRodadas.treino(contexto);
+        List<RegraResultado> regras = BatalhaLooksRodadas.regras(desafio, vestidas);
+        double pontos = BatalhaLooksRodadas.pontos(regras);
+        int adversario = BatalhaLooksRodadas.adversario(contexto, 1);
+        return Resultado.of(pontos, pontos > adversario ? "VITORIA" : "DERROTA", regras,
+                List.of(new Evento("DESAFIO", desafio.codigo()), new Evento("ADVERSARIO", adversario)))
+                .comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, desafio.naRegra()).lista());
     }
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = BatalhaLooksRodadas.etapas(contexto);
+        if (etapas != null) {
+            return Flair3dPercurso.pontuar(entrega, contexto, etapas);
+        }
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
+        if (treino(contexto)) {
+            return treinar(vestidas, contexto);
+        }
         List<RegraResultado> regras = Flair3dPecas.porVaga(VAGAS, vestidas, "FAMILIA_AZUL", POR_PECA, BatalhaLooksNucleo::azul);
         double pontos = regras.stream().mapToDouble(RegraResultado::pontos).sum();
         return Resultado.of(pontos, pontos > ADVERSARIO ? "VITORIA" : "DERROTA", regras, List.of(new Evento("ADVERSARIO", ADVERSARIO)))
@@ -58,6 +103,13 @@ public class BatalhaLooksNucleo implements Flair3dNucleo {
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
+        if (BatalhaLooksRodadas.BATALHA.equals(contexto.rodada()) || (treino(contexto) && !contexto.emPartida())) {
+            return List.of(Efeito.conformeAEtapa());
+        }
+        if (treino(contexto)) {
+            BatalhaLooksRodadas.Desafio d = BatalhaLooksRodadas.treino(contexto);
+            return d.naRegra().test(carta) ? List.of(new Efeito("NA_REGRA", POR_PECA)) : List.of(Efeito.motivo("FORA_DA_REGRA"));
+        }
         return azul(carta) ? List.of(new Efeito("FAMILIA_AZUL", POR_PECA)) : List.of(Efeito.motivo("FORA_DA_FAMILIA"));
     }
 }
