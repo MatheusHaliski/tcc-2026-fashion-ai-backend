@@ -62,6 +62,22 @@ class LaundryServiceTest {
         assertThat(shirt.getCondition()).isEqualTo(ItemCondition.GOOD);
     }
 
+    /** Reauditoria: registrar o Look do Dia deixava as peças "limpas" e não havia como montar um lote. */
+    @Test void lookDoDiaEUsoDaPecaDeixamAPecaUsadaEAsLimpasVemListadas() {
+        LaundryWearListener listener = new LaundryWearListener(service, new br.com.fashionai.application.events.SideEffectRunner(mock(org.springframework.transaction.PlatformTransactionManager.class)));
+        listener.onDailyLook(new DomainEvents.DailyLookRegistered(ana.getId(), UUID.randomUUID(), LocalDate.of(2026, 11, 5), "MIRROR", List.of(shirt.getId(), jeans.getId())));
+        var board = service.board(actor(ana));
+        assertThat((List<?>) board.get("worn")).hasSize(2);
+        assertThat((List<?>) board.get("cleanPieces")).hasSize(1);
+        assertThat(board).containsEntry("clean", 1);
+        // repetir o registro, peça de outra pessoa e peça em lavagem não dão erro nem mudam nada
+        listener.onPieceWorn(new DomainEvents.PieceWorn(ana.getId(), shirt.getId(), LocalDate.of(2026, 11, 5), null));
+        listener.onPieceWorn(new DomainEvents.PieceWorn(bia.getId(), mystery.getId(), LocalDate.of(2026, 11, 5), null));
+        assertThat((List<?>) service.board(actor(ana)).get("worn")).hasSize(2);
+        listener.onPieceWorn(new DomainEvents.PieceWorn(ana.getId(), mystery.getId(), LocalDate.of(2026, 11, 5), null));
+        assertThat((List<?>) service.board(actor(ana)).get("worn")).hasSize(3);
+    }
+
     @Test void otherUsersPiecesAreRejectedEverywhere() {
         WardrobeItem foreign = piece(bia, "Vestido", "Seda", null);
         assertThatThrownBy(() -> service.markWorn(actor(ana), foreign.getId())).isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.status()).isEqualTo(403));

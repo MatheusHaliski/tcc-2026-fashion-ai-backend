@@ -37,4 +37,14 @@ describe("RF-PESQ-03 laundry board", () => {
     await waitFor(() => expect(calls.some((call) => call.path === "/api/me/laundry/batches/b1/finish")).toBe(true));
     expect(calls.find((call) => call.path === "/api/me/laundry/batches/b1/finish")!.body).toEqual({ expectedVersion: 2, restoreAvailability: false });
   });
+
+  it("reauditoria: as peças limpas vêm listadas e dá para marcar uma como usada na própria Lavanderia", async () => {
+    const withClean = { ...board, cleanPieces: [piece("p9", "Saia verde", { wearState: "CLEAN", changedAt: null })] };
+    const { calls } = loggedAs(undefined, { "GET /api/me/laundry": withClean, "POST /api/me/laundry/pieces/p9/worn": piece("p9", "Saia verde") });
+    renderApp(<LaundryBoard />);
+    expect(await screen.findByRole("heading", { name: "Peças limpas" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Marcar Saia verde como usada" }));
+    await waitFor(() => expect(calls.some((call) => call.method === "POST" && call.path === "/api/me/laundry/pieces/p9/worn")).toBe(true));
+    expect(await screen.findByText("Saia verde foi para “Peças usadas”.")).toBeTruthy();
+  });
 });

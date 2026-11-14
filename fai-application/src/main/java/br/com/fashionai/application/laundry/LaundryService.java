@@ -78,16 +78,17 @@ public class LaundryService {
         List<Map<String, Object>> worn = new ArrayList<>();
         List<Map<String, Object>> inWash = new ArrayList<>();
         List<WardrobeItem> wornItems = new ArrayList<>();
-        int clean = 0;
+        List<Map<String, Object>> cleanPieces = new ArrayList<>();
         for (WardrobeItem w : all) {
             PieceWearState s = byPiece.get(w.getId());
             String state = s == null ? PieceWearState.CLEAN : s.getState();
             if (PieceWearState.WORN.equals(state)) { worn.add(LaundryViews.piece(w, s)); wornItems.add(w); }
             else if (PieceWearState.IN_WASH.equals(state)) inWash.add(LaundryViews.piece(w, s));
-            else clean++;
+            else cleanPieces.add(LaundryViews.piece(w, s));
         }
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("clean", clean);
+        out.put("clean", cleanPieces.size());
+        out.put("cleanPieces", cleanPieces);
         out.put("worn", worn);
         out.put("inWash", inWash);
         out.put("batches", batches.findByOwnerIdAndStatusOrderByStartedAtDesc(user.id(), "WASHING").stream().map(b -> batchView(b, byPiece)).toList());
@@ -102,8 +103,19 @@ public class LaundryService {
 
     public Map<String, Object> markWorn(CurrentUser user, UUID pieceId) {
         WardrobeItem w = own(user, pieceId);
-        PieceWearState s = transition(user, w, PieceWearState.WORN, null);
+        PieceWearState s = transition(user.id(), w, PieceWearState.WORN, null);
         return LaundryViews.piece(w, s);
+    }
+
+    /**
+     * Uso registrado fora da Lavanderia (Look do Dia, "usei hoje" da peça): a peça limpa passa a "usada". Peça já usada,
+     * em lavagem, excluída ou de outra pessoa fica como está, sem erro.
+     */
+    public void noteWorn(UUID ownerId, UUID pieceId) {
+        WardrobeItem w = pieces.findById(pieceId).orElse(null);
+        if (w == null || !w.getUser().getId().equals(ownerId) || w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED) return;
+        String state = states.findByPieceId(pieceId).map(PieceWearState::getState).orElse(PieceWearState.CLEAN);
+        if (PieceWearState.CLEAN.equals(state)) transition(ownerId, w, PieceWearState.WORN, null);
     }
 
     /** Lavada fora de um lote (em casa): usada → limpa; a disponibilidade retida por um lote só volta pelo lote. */
@@ -113,7 +125,7 @@ public class LaundryService {
         if (current != null && PieceWearState.IN_WASH.equals(current.getState())) {
             throw ApiException.conflict("PECA_EM_LOTE", Msg.t("laundry.peca_em_lote"));
         }
-        return LaundryViews.piece(w, transition(user, w, PieceWearState.CLEAN, null));
+        return LaundryViews.piece(w, transition(user.id(), w, PieceWearState.CLEAN, null));
     }
 
     public Map<String, Object> createBatch(CurrentUser user, BatchForm form) {
@@ -129,7 +141,7 @@ public class LaundryService {
         batches.saveAndFlush(batch);
         for (UUID id : ids) {
             WardrobeItem w = own(user, id);
-            PieceWearState s = transition(user, w, PieceWearState.IN_WASH, batch.getId());
+            PieceWearState s = transition(user.id(), w, PieceWearState.IN_WASH, batch.getId());
             withhold(user, w, s);
             LaundryBatchItem item = new LaundryBatchItem();
             item.setBatchId(batch.getId()); item.setPieceId(id); items.save(item);
@@ -142,7 +154,7 @@ public class LaundryService {
         LaundryBatch batch = ownBatch(user, batchId, form.expectedVersion());
         for (PieceWearState s : states.findByBatchId(batchId)) {
             WardrobeItem w = own(user, s.getPieceId());
-            transition(user, w, PieceWearState.CLEAN, null);
+            transition(user.id(), w, PieceWearState.CLEAN, null);
             if (form.restoreAvailability()) restore(user, w, s);
         }
         batch.setStatus("DONE"); batch.setFinishedAt(clock.instant());
@@ -154,7 +166,7 @@ public class LaundryService {
         for (PieceWearState s : states.findByBatchId(batchId)) {
             WardrobeItem w = own(user, s.getPieceId());
             s.setState(PieceWearState.WORN); s.setBatchId(null); s.setChangedAt(clock.instant()); states.save(s);
-            log(user, w.getId(), PieceWearState.IN_WASH, PieceWearState.WORN, "BATCH_CANCELLED");
+            log(user.id(), w.getId(), PieceWearState.IN_WASH, PieceWearState.WORN, "BATCH_CANCELLED");
             restore(user, w, s);
         }
         batch.setStatus("CANCELLED"); batch.setFinishedAt(clock.instant());
@@ -167,17 +179,17 @@ public class LaundryService {
         return logs.findTop20ByPieceIdOrderByChangedAtDesc(pieceId).stream().map(LaundryViews::log).toList();
     }
 
-    private PieceWearState transition(CurrentUser user, WardrobeItem w, String to, UUID batchId) {
+    private PieceWearState transition(UUID ownerId, WardrobeItem w, String to, UUID batchId) {
         PieceWearState s = states.findByPieceId(w.getId()).orElseGet(() -> {
             PieceWearState fresh = new PieceWearState();
-            fresh.setPieceId(w.getId()); fresh.setOwnerId(user.id()); fresh.setState(PieceWearState.CLEAN); fresh.setChangedAt(clock.instant());
+            fresh.setPieceId(w.getId()); fresh.setOwnerId(ownerId); fresh.setState(PieceWearState.CLEAN); fresh.setChangedAt(clock.instant());
             return fresh;
         });
         if (!LaundryRules.canTransition(s.getState(), to)) throw ApiException.conflict("TRANSICAO_INVALIDA", Msg.t("laundry.transicao_invalida", s.getState(), to));
         String from = s.getState();
         s.setState(to); s.setBatchId(batchId); s.setChangedAt(clock.instant());
         states.saveAndFlush(s);
-        log(user, w.getId(), from, to, null);
+        log(ownerId, w.getId(), from, to, null);
         return s;
     }
 
@@ -197,9 +209,9 @@ public class LaundryService {
         events.publishEvent(new DomainEvents.AvailabilityChanged(user.id(), w.getId(), true));
     }
 
-    private void log(CurrentUser user, UUID pieceId, String from, String to, String note) {
+    private void log(UUID ownerId, UUID pieceId, String from, String to, String note) {
         PieceWearStateLog l = new PieceWearStateLog();
-        l.setPieceId(pieceId); l.setOwnerId(user.id()); l.setFromState(from); l.setToState(to); l.setChangedAt(clock.instant()); l.setNote(note);
+        l.setPieceId(pieceId); l.setOwnerId(ownerId); l.setFromState(from); l.setToState(to); l.setChangedAt(clock.instant()); l.setNote(note);
         logs.save(l);
     }
 

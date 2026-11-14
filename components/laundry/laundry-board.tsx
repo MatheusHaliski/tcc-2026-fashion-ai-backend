@@ -3,14 +3,16 @@
 import { useMemo, useState } from "react";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
+import { label } from "@/lib/api/taxonomy";
 import { laundryApi } from "@/lib/laundry/api";
 import type { LaundryBatch, LaundryGroup, LaundryPiece } from "@/lib/laundry/types";
 import { Badge, Button, EmptyState, ErrorState, Field, Input, Select, SkeletonGrid, Switch, useToast } from "@/components/ui";
 import { LaundryBatches, LaundryConflicts, PieceThumb } from "./laundry-batches";
+import { LaundryClean } from "./laundry-clean";
 
 function groupLabel(group: LaundryGroup, t: (key: string, params?: Record<string, unknown>) => string) {
   const [kind, value] = group.key.split(":", 2);
-  return kind === "WASH" ? t("laundry.groupByInstruction", { value }) : t("laundry.groupByMaterial", { value });
+  return kind === "WASH" ? t("laundry.groupByInstruction", { value }) : t("laundry.groupByMaterial", { value: label(value.toLowerCase()) });
 }
 
 /** RF-PESQ-03 — quadro de lavanderia: peças usadas, sugestão de lotes por instrução/composição declarada, lotes em lavagem. */
@@ -49,7 +51,7 @@ export function LaundryBoard() {
   const row = (piece: LaundryPiece, action: React.ReactNode) => <li key={piece.id} className="list-row flex items-center gap-3">
     <PieceThumb piece={piece} />
     <span className="min-w-0 flex-1"><span className="block truncate type-body-sm font-medium">{piece.name}</span>
-      <span className="block type-caption text-muted">{piece.washName ?? piece.material ?? t("laundry.missingData")}{piece.changedAt ? ` · ${fmtDate(piece.changedAt)}` : ""}{!piece.disponivel ? ` · ${t("common.unavailable")}` : ""}</span></span>
+      <span className="block type-caption text-muted">{piece.washName ?? (piece.material ? label(piece.material.toLowerCase()) : t("laundry.missingData"))}{piece.changedAt ? ` · ${fmtDate(piece.changedAt)}` : ""}{!piece.disponivel ? ` · ${t("common.unavailable")}` : ""}</span></span>
     {action}
   </li>;
   return <div className="grid gap-6">
@@ -61,7 +63,7 @@ export function LaundryBoard() {
       {data.worn.length === 0 ? <EmptyState title={t("laundry.noWorn")} hint={t("laundry.noWornHint")} /> : <ul className="grid gap-1">{data.worn.map((piece) => row(piece, <>
         {missing.has(piece.id) && <Badge tone="mark">{t("laundry.missingData")}</Badge>}
         <label className="flex items-center gap-2 type-body-sm"><input type="checkbox" checked={selected.includes(piece.id)} onChange={() => toggle(piece.id)} aria-label={t("laundry.selectPiece", { name: piece.name })} />{t("laundry.toBatch")}</label>
-        <Button size="sm" disabled={busy} onClick={() => run(() => laundryApi.clean(piece.id))}>{t("laundry.markClean")}</Button>
+        <Button size="sm" disabled={busy} onClick={() => run(() => laundryApi.clean(piece.id), t("laundry.markedClean", { name: piece.name }))}>{t("laundry.markClean")}</Button>
       </>))}</ul>}
       {selected.length > 0 && <div className="surface grid gap-3 p-4" aria-label={t("laundry.newBatch")}>
         <h3 className="type-h3">{t("laundry.newBatch")} · {t("laundry.selectedCount", { count: selected.length })}</h3>
@@ -74,6 +76,7 @@ export function LaundryBoard() {
         <div><Button variant="primary" loading={busy} disabled={!confirmed} onClick={createBatch}>{t("laundry.sendToWash")}</Button></div>
       </div>}
     </section>
+    <LaundryClean pieces={data.cleanPieces ?? []} row={row} busy={busy} onWorn={(piece) => run(() => laundryApi.worn(piece.id), t("laundry.markedWorn", { name: piece.name }))} />
     <section className="grid gap-3" aria-labelledby="laundry-batches">
       <h2 id="laundry-batches" className="type-h2">{t("laundry.batchesTitle")}</h2>
       <LaundryBatches batches={data.batches} busy={busy} onFinish={(batch: LaundryBatch, restore) => run(() => laundryApi.finishBatch(batch.id, { expectedVersion: batch.version, restoreAvailability: restore }), t("laundry.batchFinished"))} onCancel={(batch) => run(() => laundryApi.cancelBatch(batch.id, batch.version))} />
