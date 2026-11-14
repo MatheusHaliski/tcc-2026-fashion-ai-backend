@@ -10656,5 +10656,6 @@
   "flair3d.ui.acao.jogada.miss": "Jugada fallida: los uniformes distintos quedan en evidencia",
   "flair3d.ui.acao.jogada.special": "Punto y el equipo celebra",
   "flair3d.ui.acao.jogada.fail": "El equipo rival se lleva el partido",
-  "tryOn.referencia_convite": "Este es el maniquí de referencia, no tu cuerpo."
+  "tryOn.referencia_convite": "Este es el maniquí de referencia, no tu cuerpo.",
+  "tryOn.provando_status_sem_marca": "Probándote {name} en {slot}."
 }
