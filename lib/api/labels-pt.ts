@@ -51,4 +51,8 @@ export const PT_LABELS: Record<string, string> = {
   premium: "Premium", "eco-friendly": "Sustentável", trending: "Em alta", "limited-edition": "Edição limitada", exclusive: "Exclusivo", "budget-friendly": "Bom preço",
   "casual-chic": "Casual chique", "affordable-chic": "Chique acessível", "premium-look": "Visual premium", "eco-conscious": "Consciente", "trendy-combo": "Combinação em alta",
   "casual-elegance": "Elegância casual",
+  // níveis e situações de selo (aba Selos do emissor)
+  peca: "Peça", look: "Look", perfil: "Perfil", active: "Ativo", inactive: "Inativo", paused: "Pausado", archived: "Arquivado", expired: "Expirado",
+  // decorações do quarto ganhas em desafios
+  quadro_cortica: "Quadro de cortiça", fita_alfaiate: "Fita de alfaiate", calendario_parede: "Calendário de parede", tema_espelho: "Tema do espelho", etiqueta_2a_chance: "Etiqueta de 2ª chance",
 };

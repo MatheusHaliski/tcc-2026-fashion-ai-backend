@@ -4,6 +4,7 @@ import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { UserCard } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
+import { notifyNotificationsChanged } from "@/lib/notifications/use-unread-count";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton, Switch, Tabs, useToast } from "@/components/ui";
@@ -27,8 +28,8 @@ function Inbox() {
   useEffect(() => { const c = new URLSearchParams(window.location.search).get("cat"); if (c) setCat(c.toUpperCase()); }, []);
   const { data, loading, error, reload } = useApi<Inbox>((signal) => api.get("/api/notifications", { signal }), []);
   const prefs = useApi<Pref[]>((signal) => api.get("/api/notifications/preferences", { signal }), [], { enabled: tab === "prefs" });
-  async function markAll() { try { await api.post("/api/notifications/read-all"); reload(); } catch (e) { toast.fromError(e); } }
-  async function markOne(id: string) { try { await api.post("/api/notifications/read", { ids: [id] }); reload(); } catch (e) { toast.fromError(e); } }
+  async function markAll() { try { await api.post("/api/notifications/read-all"); reload(); notifyNotificationsChanged(); } catch (e) { toast.fromError(e); } }
+  async function markOne(id: string) { try { await api.post("/api/notifications/read", { ids: [id] }); reload(); notifyNotificationsChanged(); } catch (e) { toast.fromError(e); } }
   async function togglePref(p: Pref) { try { prefs.setData(await api.put<Pref[]>("/api/notifications/preferences", { changes: { [p.type]: !p.enabled } })); } catch (e) { toast.fromError(e); } }
   async function master(v: boolean) { try { prefs.setData(await api.put<Pref[]>("/api/notifications/preferences", { changes: {}, master: v })); } catch (e) { toast.fromError(e); } }
   const items = (data?.items ?? []).filter((n) => cat === "ALL" || n.category === cat);

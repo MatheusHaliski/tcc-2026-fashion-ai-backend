@@ -1,4 +1,4 @@
-"""Planilha de evidências dos jogos FLAIR 3D MAKE UP.
+"""Planilha de evidências dos jogos FLAIR 3D.
 
 Lê evidencias/resultados.json (gerado por evidence.mjs) e escreve jogos-flair-3d.xlsx com as colunas
 pedidas: Conseguiu concluir?, Cartas inseridas, Cartas utilizadas, Pré-requisitos, Recompensa ganha e Foto de evidência
@@ -25,7 +25,7 @@ def main(folder: str) -> None:
     rows = json.loads((out_dir / "resultados.json").read_text(encoding="utf-8"))
     wb = Workbook()
     ws = wb.active
-    ws.title = "Jogos FLAIR 3D MAKE UP"
+    ws.title = "Jogos FLAIR 3D"
     for i, (title, width) in enumerate(COLUMNS, start=1):
         cell = ws.cell(row=1, column=i, value=title)
         cell.font = Font(bold=True, color="FFFFFF")

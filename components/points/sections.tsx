@@ -71,7 +71,7 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
               {a.rules?.length ? (
                 <ul className="points-rules">{a.rules.map((r) => { const href = hrefFor(r.action); const label = r.description && r.description !== "null" ? r.description : r.action.toLowerCase().replace(/_/g, " "); return (
                   <li key={r.action} className="points-rule">
-                    <span className="points-rule-value"><FaiIcon id="ACT-40" size={20} decorative /><b className="tabular">+{r.points}</b></span>
+                    <span className="points-rule-value"><FaiIcon id="ACT-40" size={20} decorative /><b className="tabular">{r.points > 0 ? `+${r.points}` : t("points.hub.valor_variavel")}</b></span>
                     <span className="min-w-0 flex-1"><span className="type-body">{label}</span>{r.dailyCap ? <span className="block type-caption text-muted">{t("points.max_dia", { dailyCap: r.dailyCap }).trim()}</span> : null}</span>
                     {href && <Link href={href} className="btn btn-sm">{t("points.hub.go")}</Link>}
                   </li>); })}</ul>

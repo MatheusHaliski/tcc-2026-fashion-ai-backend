@@ -21,11 +21,11 @@
  "rule": "docs/refactoring/LINE_RULES.md",
  "files": {
   "app/(site)/(app)/pieces/new/page.tsx": {
-   "max": 341,
+   "max": 320,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/app-shell.tsx": {
-   "max": 350,
+   "max": 345,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/atelier3d/editor.tsx": {
@@ -41,7 +41,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/background-studio.tsx": {
-   "max": 346,
+   "max": 337,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/catalog/catalog-search.tsx": {
@@ -73,7 +73,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/flair/modes.tsx": {
-   "max": 427,
+   "max": 422,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/globe-hype.test.tsx": {
@@ -117,7 +117,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/piece-art-editor.tsx": {
-   "max": 263,
+   "max": 254,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/room3d/hung-garment.tsx": {
@@ -145,7 +145,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/scheme-builder.tsx": {
-   "max": 273,
+   "max": 272,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/scheme-card.test.tsx": {
@@ -170,10 +170,6 @@
   },
   "components/three/human-avatar.tsx": {
    "max": 295,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/three/human-outfit.tsx": {
-   "max": 291,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/try-on/fitting-items.tsx": {
@@ -505,7 +501,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/SchemeService.java": {
-   "max": 1271,
+   "max": 1260,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/SealService.java": {
@@ -533,7 +529,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java": {
-   "max": 995,
+   "max": 993,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/taxonomy/Taxonomy.java": {
@@ -545,7 +541,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/view/Views.java": {
-   "max": 290,
+   "max": 286,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/vision/canonical/CanonicalPhotographer.java": {
@@ -617,7 +613,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/test/java/br/com/fashionai/application/service/WardrobeServiceParsersTest.java": {
-   "max": 613,
+   "max": 612,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/test/java/br/com/fashionai/application/testkit/MemoryRepository.java": {
@@ -625,7 +621,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-domain/src/main/java/br/com/fashionai/domain/model/WardrobeItem.java": {
-   "max": 330,
+   "max": 316,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-infrastructure/persistence-mysql/src/main/java/br/com/fashionai/infrastructure/mysql/demo/MysqlDemoDataAdminAdapter.java": {

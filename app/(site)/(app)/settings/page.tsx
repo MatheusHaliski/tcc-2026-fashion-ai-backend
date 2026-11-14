@@ -4,6 +4,7 @@ import Link from "next/link";
 import { api, ApiError, mediaUrl } from "@/lib/api/client";
 import type { Me, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
+import { looksLikeUserAgent, parseSessionDevice } from "@/lib/auth/session-device";
 import { useI18n } from "@/lib/i18n/i18n";
 import { fromServerLanguage } from "@/lib/i18n/state";
 import { CURRENCIES, isCurrency } from "@/lib/i18n/money";
@@ -20,10 +21,10 @@ const currencyName = (intl: string, c: string) => { try { return `${new Intl.Dis
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
 interface Prefs { auraImpersonation?: boolean; auraHype?: boolean; theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
-interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
+interface Consent { purpose: string; granted: boolean; title?: string; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
-  const { t, locale, setLocale, locales, rich, intl, currency, currencyPref, setCurrency } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
+  const { t, locale, setLocale, locales, rich, intl, currency, currencyPref, setCurrency, fmtDateTime } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
   const [info, setInfo] = useState<{ title: string; paragraphs: ReactNode[] } | null>(null);
   const [impersonationBusy, setImpersonationBusy] = useState(false);
   const auraPermissions = useApi<{ currentTier: string; auras: Record<string, { allowed: boolean; requiredTier: string }> }>((signal) => api.get("/api/me/aura-permissions", { signal }), [me?.user.id]);
@@ -37,6 +38,13 @@ function Settings() {
   const [tab, setTab] = useState<Tab>("account");
   const server = useApi<Prefs>((signal) => api.get("/api/me/preferences", { signal }), []);
   const consents = useApi<Consent[]>((signal) => api.get("/api/me/consents", { signal }), [], { enabled: tab === "privacy" });
+  /** aparelho da sessão em palavras ("Chrome no Windows"), não o texto bruto do navegador */
+  const sessionDevice = (raw?: string) => {
+    if (!raw) return t("settings.dispositivo");
+    if (!looksLikeUserAgent(raw)) return raw;
+    const d = parseSessionDevice(raw);
+    return d.browser && d.system ? t("settings.sessao_aparelho", { navegador: d.browser, sistema: d.system }) : d.browser ?? d.system ?? t("settings.dispositivo");
+  };
   const sessions = useApi<{ sessionId: string; device?: string; ip?: string; createdAt?: string; lastUsedAt?: string; current?: boolean }[]>((signal) => api.get("/api/auth/sessions", { signal }), [], { enabled: tab === "sessions" });
   const exports = useApi<{ id: string; status: string; requestedAt?: string; expiresAt?: string }[]>((signal) => api.get("/api/me/exports", { signal }), [], { enabled: tab === "data" });
   const [profile, setProfile] = useState({ displayName: "", bio: "", country: "" }); const [username, setUsername] = useState("");
@@ -188,7 +196,7 @@ function Settings() {
             {consents.loading && <Skeleton className="h-32" />}
             {consents.error && <p role="alert" className="type-body-sm text-critical">{t("settingsHelp.consentsError")}</p>}
             <ul className="divide-y divide-line-soft">{(consents.data ?? []).map((c) => {
-              const name = (c.label ?? c.purpose.replace(/_/g, " ")).toLocaleUpperCase(locale);
+              const name = (c.title ?? c.label ?? c.purpose.replace(/_/g, " ")).toLocaleUpperCase(locale);   // o servidor manda o nome da finalidade em `title`
               return <li key={c.purpose} className="flex items-center gap-3 py-2"><div className="min-w-0 flex-1"><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); if (!v && c.purpose === "RETAIL_DEMAND_ANALYTICS") await api.delete("/api/me/retail-demand/contributions"); } catch (e) { notice.fromError(e); } }} label={name} /></div>{infoButton(name, [c.description ?? t("settingsHelp.consentMissing"), t("settingsHelp.consentChoice")])}</li>;
             })}</ul>
           </Card>
@@ -214,7 +222,7 @@ function Settings() {
         <Card>
           {heading(t("settings.sessions"), "sessions")}
           {sessions.loading && <Skeleton className="h-32" />}
-          <ul className="fai-list">{(sessions.data ?? []).map((s) => <li key={s.sessionId} className="flex items-center justify-between gap-3 py-2 type-body-sm"><span>{s.device ?? t("settings.dispositivo")} · {s.ip ?? ""} · {s.lastUsedAt?.slice(0, 16) ?? s.createdAt?.slice(0, 16)}{s.current && <b>{t("settings.esta_sessao")}</b>}</span>{!s.current && <Button size="sm" onClick={() => call(() => api.delete(`/api/auth/sessions/${s.sessionId}`), t("settings.sessao_encerrada")).then(sessions.reload)}>{t("settings.encerrar")}</Button>}</li>)}</ul>
+          <ul className="fai-list">{(sessions.data ?? []).map((s) => <li key={s.sessionId} className="flex items-center justify-between gap-3 py-2 type-body-sm"><span>{sessionDevice(s.device)}{s.ip ? ` · ${s.ip}` : ""} · {fmtDateTime(s.lastUsedAt ?? s.createdAt)}{s.current && <b>{t("settings.esta_sessao")}</b>}</span>{!s.current && <Button size="sm" onClick={() => call(() => api.delete(`/api/auth/sessions/${s.sessionId}`), t("settings.sessao_encerrada")).then(sessions.reload)}>{t("settings.encerrar")}</Button>}</li>)}</ul>
           <Button className="mt-3" variant="danger" loading={logoutBusy} onClick={logoutAll}>{t("settings.logoutAll")}</Button>
         </Card>
       )}

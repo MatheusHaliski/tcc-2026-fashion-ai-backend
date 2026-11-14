@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Gerador do catálogo FLAIR 3D MAKE UP (desenho §4, §6 R12–R16, R25): lê scripts/flair-games/data/serie-{a..e}.json,
+ * Gerador do catálogo FLAIR 3D (desenho §4, §6 R12–R16, R25): lê scripts/flair-games/data/serie-{a..e}.json,
  * valida tudo de uma vez, deriva dificuldade/raridade/níveis e grava, de forma determinística e ordenada por número:
  *   1. a migração V98__flair_3d_jogos.sql (DDL fixo + 1 INSERT de flair_challenges por jogo + colecionáveis);
  *   2. public/flair/games/<slug>.webp (miniaturas 640×400 a partir de scene_json, via scene-svg.mjs + sharp);
- *   3. docs/flair/flair-3d-make-up/catalogo.gen.md (tabela resumo e regra de derivação).
+ *   3. docs/flair/flair-3d/catalogo.gen.md (tabela resumo e regra de derivação).
  *
  * Uso: node scripts/flair-games/build.mjs [--data <dir>] [--out <dir>] [--allow-partial] [--no-thumbs]
  *   --data           pasta com serie-*.json (padrão scripts/flair-games/data)

@@ -125,3 +125,15 @@ describe("ExpandedDna — sem id na resposta", () => {
     expect(api.calls[0].path).toBe("/api/dna-schemes/d7");
   });
 });
+
+describe("ExpandedPiece — Hype da página da peça (auditoria)", () => {
+  it("pede o resumo de Hype da peça mesmo com a AURA desligada e mostra o mesmo número do card", async () => {
+    const summary = { status: "AVAILABLE", score: 79, level: "TENDENCIA", calculatedAt: "2026-11-14T03:00:00Z", dimensions: {} };
+    const api = loggedAs(undefined, { ...routes(piece()), "GET /api/hype/summaries": { type: "PIECE", algorithmVersion: "HYPE_V2", deltaWindowDays: 7, items: { p1: summary } } });
+    const { container } = renderApp(<ExpandedPiece id="p1" />);
+    await screen.findByRole("heading", { name: PIECE.name });
+    await waitFor(() => expect(api.calls.some((c) => c.path.startsWith("/api/hype/summaries?type=PIECE") && c.path.includes("p1"))).toBe(true));
+    await waitFor(() => expect(container.textContent).toContain("79"));
+    expect(container.textContent).not.toContain("Hype ainda não calculado");
+  });
+});

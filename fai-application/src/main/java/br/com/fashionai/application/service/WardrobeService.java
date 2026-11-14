@@ -30,7 +30,6 @@ import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.PhotoOrigin;
-import br.com.fashionai.domain.model.enums.ReactionType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.TargetType;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -57,7 +56,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -169,6 +167,10 @@ public class WardrobeService {
 
     private PieceConservationService conservation;
 
+    /** Coleção e intensidade térmica da peça (FKs em wardrobe_items). Opcional nos testes que montam o serviço sem Spring. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ClassificationService classification;
+
     @org.springframework.beans.factory.annotation.Autowired
     void setConservation(PieceConservationService conservation) {
         this.conservation = conservation;
@@ -178,7 +180,7 @@ public class WardrobeService {
     // Objetos sem estado, criados a cada chamada com as dependências deste serviço: leem os campos no momento da chamada
     // e não são beans. Transação, autorização, posse e auditoria continuam nos métodos públicos daqui.
     private PieceFormWriter formWriter() {
-        return new PieceFormWriter(conservation, brands, brandProfiles, ownMedia, media, brandLogos);
+        return new PieceFormWriter(conservation, brands, brandProfiles, ownMedia, media, brandLogos, classification);
     }
 
     private DraftPieceImport draftImport() {
@@ -340,8 +342,8 @@ public class WardrobeService {
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                            Map<String, Object> background, UUID captureSessionId, String variation,
-                            Map<String, List<String>> attributes, List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao) {
+                            Map<String, Object> background, UUID captureSessionId, String variation, Map<String, List<String>> attributes,
+                            List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId, UUID intensidadeTermicaId) {
         /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
         public PieceForm {
             occasion = Taxonomy.normalizeTags(occasion);
@@ -361,7 +363,7 @@ public class WardrobeService {
             this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
                     occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
                     careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
-                    variation, attributes, confirmed, null, false);
+                    variation, attributes, confirmed, null, false, null, null);
         }
 
         /**
@@ -979,10 +981,6 @@ public class WardrobeService {
 
     static <K, V> Map<K, V> enumMap(Class<K> k) {
         return new LinkedHashMap<>();
-    }
-
-    static Map<ReactionType, Long> emptyReactions() {
-        return new EnumMap<>(ReactionType.class);
     }
 
     static List<UUID> ids(List<WardrobeItem> items) {

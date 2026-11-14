@@ -1,4 +1,4 @@
-/* ── FLAIR 3D MAKE UP · cenário fotográfico (components/flair/games/photo-scene*.tsx) ─────────────────────────────────────
+/* ── FLAIR 3D · cenário fotográfico (components/flair/games/photo-scene*.tsx) ─────────────────────────────────────
    Foto real do ambiente que reage às cartas. A cena acorda (cor e luz) com o preenchimento (--gep-life); cada carta é um
    .gep-hit na vaga (--x/--y) com a luz do nível (--gep-light), a intensidade (--gep-power) e a Aura Hype da faixa de
    partida (--gep-aura). Sequência da inserção: clarão → cone → reacende a foto → Aura → efeito do servidor → legenda.

@@ -1,0 +1,116 @@
+/* ── FLAIR 3D · núcleos: janela de recursos, deck e selos (components/flair/nucleos/nucleo-resource-*.tsx e
+   nucleo-deck.tsx). Abas com ícone, grade de itens (carta, amostra de cor, acabamento, família, opção) e o deck. */
+.n3d-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.n3d-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.n3d-tab.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--thread);
+}
+
+.n3d-tab.is-filled::after {
+  content: "●";
+  color: var(--thread);
+  font-size: 0.75rem;
+}
+
+.n3d-panel {
+  padding-top: 10px;
+}
+
+.n3d-grid,
+.n3d-deck-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.n3d-res,
+.n3d-deck-card {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.n3d-res.is-focus {
+  border-color: var(--focus);
+}
+
+.n3d-res.is-on,
+.n3d-deck-card.is-on {
+  border-color: var(--thread);
+  box-shadow: 0 0 0 2px var(--thread-soft);
+}
+
+.n3d-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+}
+
+.n3d-finish.is-fosco {
+  background: #8a8f98;
+}
+
+.n3d-finish.is-brilhante,
+.n3d-finish.is-gloss {
+  background: radial-gradient(circle at 30% 30%, #fff, #8a8f98 55%);
+}
+
+.n3d-finish.is-metalico,
+.n3d-finish.is-cetim {
+  background: linear-gradient(135deg, #d9dde3, #7b818c 45%, #eef0f3 70%, #7b818c);
+}
+
+.n3d-finish.is-espelhado {
+  background: linear-gradient(135deg, #cfe8ff, #fff 40%, #9fb5c9 60%, #fff);
+}
+
+.n3d-res-label {
+  font-size: var(--text-caption);
+  text-align: center;
+}
+
+.n3d-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.n3d-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--thread-soft);
+  color: var(--thread-ink);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.n3d-badge.is-none {
+  background: var(--surface-3);
+  color: var(--muted);
+  font-weight: 400;
+}

@@ -22,4 +22,14 @@ Leia `docs/refactoring/LINE_RULES.md`. Resumo:
 - Teste de caracterização antes de extrair; mesmo contrato depois (API, DTO, URL, i18n, autorização, transação,
   schema, visual).
 - Padrões GoF só com problema concreto; registre a decisão em `docs/refactoring/gof/`.
-- Nunca: migrations em produção, `flyway clean/repair`, deploy, IA/GPU paga, dados ou contas reais, segredos em logs.
+- Nunca: migrations em produção, `flyway clean/repair`, deploy, dados ou contas reais, segredos em logs.
+
+## GPU, IA externa e API externa (permitidas)
+
+- É permitido usar GPU (inclusive alugada, como a RunPod), modelos de IA externos (Hugging Face, Meshy, SAM 3D Body e
+  outros) e APIs externas, pagas ou não, quando a tarefa pedir.
+- Chaves e tokens só por variável de ambiente ou segredo do ambiente: nunca no código, em documento versionado, no
+  chat ou em log. Não versione o id do pod, a URL do pod nem o endereço do túnel.
+- Registre em `docs/fai-reconstruction-engine/piloto-e-decisoes.md` o provedor, o modelo e o custo ou tempo medido de
+  cada uso novo.
+- Continua valendo: escrita no banco ou no bucket de produção só depois do ensaio e da confirmação do usuário.

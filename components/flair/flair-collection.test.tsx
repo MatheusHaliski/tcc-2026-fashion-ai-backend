@@ -92,11 +92,14 @@ describe("Criador de peças › Depois de salvar", () => {
     "POST /api/interactions/PIECE/nova/shares": { shareId: "s" }, "POST /api/flair/cards": CARD({ id: "f", originId: "nova", tier: "BRONZE", ovr: 52 }),
     "POST /api/flair/cards/preview": { ovr: 52, tier: "BRONZE", position: "SUP", priceVerified: false, cappedByUnverifiedPrice: false, season: "SPRING", basis: { priceUsed: 50 } } };
 
-  it("Compartilhar vem ligado e FLAIR desligado; a prévia ao lado vira a prévia do post; salvar publica sem descrição", async () => {
+  // privacidade (auditoria de 14/11/2026): as duas opções começam desligadas; a peça só vai ao feed se a pessoa ligar
+  it("Compartilhar e FLAIR vêm desligados; ligando Compartilhar, a prévia ao lado vira a prévia do post; salvar publica sem descrição", async () => {
     const { calls } = loggedAs(ME, routes);
     await fillToReview();
-    expect(screen.getByRole("switch", { name: "Compartilhar no feed do FashionAI" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("switch", { name: "Compartilhar no feed do FashionAI" }).getAttribute("aria-checked")).toBe("false");
     expect(screen.getByRole("switch", { name: "Converter para FLAIR" }).getAttribute("aria-checked")).toBe("false");
+    expect(screen.queryByText("Prévia do post")).toBeNull();
+    fireEvent.click(screen.getByRole("switch", { name: "Compartilhar no feed do FashionAI" }));
     expect(screen.getByText("Prévia do post")).toBeTruthy();
     expect(screen.queryByLabelText("Legenda (opcional)")).toBeNull();                     // o post não tem descrição
     await save();
@@ -106,10 +109,9 @@ describe("Criador de peças › Depois de salvar", () => {
     expect(calls.some((c) => c.method === "POST" && c.path === "/api/flair/cards")).toBe(false);
   });
 
-  it("desligando Compartilhar, nada vai ao feed (a peça fica só no perfil); com FLAIR ligado, a cópia é gerada", async () => {
+  it("com Compartilhar desligado (o padrão), nada vai ao feed (a peça fica só no perfil); com FLAIR ligado, a cópia é gerada", async () => {
     const { calls } = loggedAs(ME, routes);
     await fillToReview();
-    fireEvent.click(screen.getByRole("switch", { name: "Compartilhar no feed do FashionAI" }));
     expect(screen.getByText("Desligado: a peça fica só no seu perfil.")).toBeTruthy();
     fireEvent.click(screen.getByRole("switch", { name: "Converter para FLAIR" }));
     expect(await screen.findByText("Prévia da carta: Bronze 52")).toBeTruthy();

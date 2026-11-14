@@ -30,7 +30,7 @@ export interface FlairCollectionCard {
   name: string; brandName?: string | null; imageUrl?: string | null; category?: string | null; subcategory?: string | null;
   hype?: Partial<Record<(typeof HYPE_KEYS)[number], number | null>> | null; stats?: Record<string, number> | null; rarity?: string | null;
   ability?: { code?: string; name?: string; text?: string } | null; priceVerified: boolean; state: string; tradeable: boolean; acquiredVia: string;
-  createdAt?: string; basis?: { priceUsed?: number | null; priceVerified?: boolean; cappedByUnverifiedPrice?: boolean } | null;
+  tags?: { materials?: string[]; colors?: string[]; styles?: string[]; occasions?: string[] } | null; createdAt?: string; basis?: { priceUsed?: number | null; priceVerified?: boolean; cappedByUnverifiedPrice?: boolean } | null;
 }
 
 export function FlairGameCard({ card, size = "md", flip = true, interactive = true }: { card: FlairCollectionCard; size?: "sm" | "md" | "lg"; flip?: boolean;

@@ -46,7 +46,7 @@ final class LensScanProvenance {
     /** Proveniência e estado do scan a partir do resultado do detector ({@code null} = o detector falhou). */
     static void stamp(LensScan scan, MultiPieceService.PieceDetection det) {
         AiOutcome<?> outcome = det == null ? null : det.outcome();
-        scan.setAiSource(det == null ? "local" : det.source());
+        scan.setAiSource(aiSource(det));
         scan.setModelVersion(modelVersion(outcome));
         scan.setAiInferenceId(outcome == null ? null : outcome.inferenceId());
         if (det == null) {
@@ -61,9 +61,17 @@ final class LensScanProvenance {
         }
     }
 
+    /**
+     * Origem gravada no scan: só {@code ia} ou {@code local} (contrato da coluna {@code ai_source} e da UI). O detector
+     * local detalha a origem ({@code local-pessoa}, {@code local-superficie}); para o Lens tudo isso é leitura local.
+     */
+    static String aiSource(MultiPieceService.PieceDetection det) {
+        return det != null && "ia".equals(det.source()) ? "ia" : "local";
+    }
+
     /** Por que a leitura ficou local (a UI explica): consentimento ou cota da IA. Nulo quando não há o que explicar. */
     static String degradedReason(MultiPieceService.PieceDetection det) {
-        if (det == null || !"local".equals(det.source()) || det.outcome() == null) {
+        if (det == null || !"local".equals(aiSource(det)) || det.outcome() == null) {
             return null;
         }
         AiCallResult r = det.outcome().result();

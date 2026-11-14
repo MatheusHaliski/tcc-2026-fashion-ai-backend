@@ -2,7 +2,7 @@
 
 Data: 07/11/2026. Pesquisa técnica com leitura do código; nenhum código mudou. Complementa `ESTUDO_DREST.md`,
 `REUSO_PROVADOR_E_AVATAR.md` (câmeras, avatar, catálogo e módulos de reuso, cujas tabelas este documento **não repete**),
-`CINCO_JOGOS.md`, `PROTAGONISTA_E_RECURSOS.md` e `docs/plataforma/APP_NATIVO_UNREAL.md`.
+`../flair-3d/JOGOS.md`, `../flair-3d/PROTAGONISTA_E_RECURSOS.md` e `docs/plataforma/APP_NATIVO_UNREAL.md`.
 
 **Legenda:** **[D]** documentado (código do repositório com caminho, documentação oficial, texto de lei); **[P]**
 imprensa, comunidade ou material de fornecedor; **[I]** inferência e proposta deste estudo. **[decidir]** marca escolha
@@ -232,7 +232,7 @@ palavras do tema viram tags por dicionário estático em pt-BR, en e es, sem mod
   protagonista é o avatar, reduz a Lab e nunca o registra em log; com a modelo da casa, a pele é a da personagem.
 - **Integração**: o juiz devolve 0–100 e a converte em sintonia por vaga de maquiagem (0–3), que entra no placar
   existente; produto vetado segue `Flair3dPenalties` (REFUSED −2) e nada sai da carteira [D]. A montagem perfeita
-  (sintonia ≥ 2 por vaga obrigatória) continua pagando +10 FAI Points [D: `CINCO_JOGOS.md`].
+  (sintonia ≥ 2 por vaga obrigatória) continua pagando +10 FAI Points [D: `../flair-3d/JOGOS.md`].
 - **O júri nunca comenta rosto, corpo ou tom**: julga a escolha frente ao briefing. Não existe "nota de beleza".
 
 ### 4.3 Voto da comunidade, como o DREST [I]
@@ -242,7 +242,7 @@ palavras do tema viram tags por dicionário estático em pt-BR, en e es, sem mod
   (`FlairLookVoting`) que reusa `ChallengeVoteRepository`.
 - Ranking = 0,6 júri + 0,4 comunidade (média bayesiana, mínimo de 20 votos, peso por conta limitado); a reação ao vivo
   usa só o júri. Look público de menor de 18 sai na **modelo da casa**; o avatar próprio, só para amigos (o rosto de
-  13–17 já é privado por padrão em `PROTAGONISTA_E_RECURSOS.md` §6) [decidir].
+  13–17 já é privado por padrão em `../flair-3d/PROTAGONISTA_E_RECURSOS.md` §6) [decidir].
 
 ### 4.4 Da nota à reação
 

@@ -3,7 +3,7 @@
 Plano de 07/11/2026 para o segmento **FLAIR 3D MAKE UP** (antes FLAIR 3D): styling no estilo do DREST em que a pessoa
 veste e maquia uma modelo da casa ou **o próprio avatar** com itens do catálogo, num lugar 3D que reage. Além deste
 plano, nenhum arquivo muda nesta etapa. Base, nesta pasta: `ESTUDO_DREST.md` (ESTUDO), `REUSO_PROVADOR_E_AVATAR.md`
-(REUSO), `IMPLEMENTACAO.md` (IMPL), `CINCO_JOGOS.md`, `PROTAGONISTA_E_RECURSOS.md` (PROTAGONISTA); fora dela,
+(REUSO), `IMPLEMENTACAO.md` (IMPL), `../flair-3d/JOGOS.md`, `../flair-3d/PROTAGONISTA_E_RECURSOS.md` (PROTAGONISTA); fora dela,
 `docs/flair/cbc/FLAIR_CBC.md`, `docs/plataforma/APP_NATIVO_UNREAL.md` e `docs/negocio/POLITICA_DE_XP_FAI.md` (POLITICA).
 
 **Legenda.** **[DREST-D/P/C]**: fato do DREST com o nível de evidência do ESTUDO (documentado, imprensa, comunidade),
@@ -224,7 +224,7 @@ as destravas do `minLevel` e o empréstimo, e um teste de CI procura essa soluç
 
 - **Sem avatar:** "Criar meu avatar" abre o fluxo atual (`components/avatar3d/my-avatar.tsx`) e volta ao brief com o
   rascunho salvo. **Hoje o avatar real só entra com a Impersonation, no Loft** (900 FAI Points,
-  `FaiPointsService.Level.LOFT`; `CINCO_JOGOS.md`; REUSO §5.4) **[código]**. Proposta: meu avatar na **Penteadeira e nos
+  `FaiPointsService.Level.LOFT`; `../flair-3d/JOGOS.md`; REUSO §5.4) **[código]**. Proposta: meu avatar na **Penteadeira e nos
   briefs** desde o nível 1 (ESTREIA), Impersonation dos capítulos no Loft [decidir]; depois, atualizar os dois documentos.
 - **O +2 da Impersonation** (`Flair3dEffects.DEFAULT_BONUS`) **[código]** não vale em nada do MAKE UP (vaga de
   maquiagem, brief, Prestígio, liga, ranking); nos capítulos fica só nas vagas de roupa, como hoje [decidir se sai].

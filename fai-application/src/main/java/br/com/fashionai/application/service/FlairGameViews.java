@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
-/** FLAIR 3D MAKE UP — montagem dos JSONs do catálogo e do jogo sobre as projeções do CBC (§1.4 do desenho). */
+/** FLAIR 3D — montagem dos JSONs do catálogo e do jogo sobre as projeções do CBC (§1.4 do desenho). */
 final class FlairGameViews {
     private FlairGameViews() {
     }

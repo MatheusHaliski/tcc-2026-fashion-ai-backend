@@ -806,7 +806,7 @@ public class SearchService {
         if (idx != null && idx.enabled() && !term.isEmpty()) {
             base = pieces.findByIdIn(idx.search("pieces", term, Map.of(), 200));
         } else {
-            base = term.isEmpty() ? pieces.findAllPublic(page) : pieces.searchPublic(term, page);
+            base = term.isEmpty() ? pieces.findAllPublic(page) : SearchColorTerm.withColor(pieces.searchPublic(term, page), term, () -> pieces.findAllPublic(page));
         }
         HypeLevel min = parseLevel(f == null ? null : f.hypeLevel());
         Map<UUID, HypeScoreCurrent> hype = min == null ? Map.of() : hypeRows(HypeEntityType.PIECE, base.stream().map(WardrobeItem::getId).toList());

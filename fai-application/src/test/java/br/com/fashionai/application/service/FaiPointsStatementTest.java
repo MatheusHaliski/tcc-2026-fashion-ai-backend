@@ -93,7 +93,7 @@ class FaiPointsStatementTest {
         service.award(user, "SCHEME_CREATED", "SCHEME", "s1", null);
         Sent n = sent();
         assertThat(n.title()).isEqualTo("+40 FAI Points");
-        assertThat(n.body()).isEqualTo("Esquema criado");
+        assertThat(n.body()).isEqualTo("Look criado");
         assertThat(n.payload()).containsEntry("delta", 40).containsEntry("action", "SCHEME_CREATED").containsEntry("href", "/points");
     }
 
