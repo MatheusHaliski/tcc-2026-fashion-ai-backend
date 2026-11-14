@@ -40,6 +40,25 @@ describe("borrar rostos antes do upload", () => {
     expect([r.width, r.height]).toEqual([800, 600]);
   });
 
+  it("PNG de fundo transparente: o quadro é pintado de branco antes da foto (o JPEG não grava fundo preto)", async () => {
+    vi.stubGlobal("createImageBitmap", bitmap(400, 300));
+    const calls: string[] = [];
+    const real = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function spy(this: HTMLCanvasElement) {
+      const state: Record<string, unknown> = {};
+      return new Proxy(state, {
+        get: (target, key: string) => (key in target ? target[key] : (...args: unknown[]) => { calls.push(key === "fillRect" ? `fillRect ${String(target.fillStyle)} ${args.join(",")}` : key); }),
+        set: (target, key: string, value) => { target[key] = value; return true; },
+      }) as unknown as CanvasRenderingContext2D;
+    } as typeof HTMLCanvasElement.prototype.getContext;
+    try {
+      const r = await redactFaces(new Blob(["x"], { type: "image/png" }), { finder: async () => [] });
+      expect(r.blob.type).toBe("image/jpeg");
+    } finally { HTMLCanvasElement.prototype.getContext = real; }
+    expect(calls[0]).toBe("fillRect #ffffff 0,0,400,300");
+    expect(calls[1]).toBe("drawImage");
+  });
+
   it("foto grande é reduzida ao lado máximo", async () => {
     vi.stubGlobal("createImageBitmap", bitmap(6000, 3000));
     const r = await redactFaces(new Blob(["x"]), { finder: async () => [] });
