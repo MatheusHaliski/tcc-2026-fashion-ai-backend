@@ -10655,5 +10655,6 @@
   "flair3d.ui.acao.jogada.ok": "Jogada com rastro na cor do uniforme",
   "flair3d.ui.acao.jogada.miss": "Jogada errada: os uniformes diferentes ficam em destaque",
   "flair3d.ui.acao.jogada.special": "Ponto e o time comemora",
-  "flair3d.ui.acao.jogada.fail": "O time adversário leva a partida"
+  "flair3d.ui.acao.jogada.fail": "O time adversário leva a partida",
+  "tryOn.referencia_convite": "Este é o manequim de referência, não o seu corpo."
 }

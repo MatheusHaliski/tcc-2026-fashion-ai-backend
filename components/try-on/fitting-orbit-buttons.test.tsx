@@ -69,7 +69,7 @@ describe("botões de girar o palco 3D do provador (acessibilidade)", () => {
     expect(unsubscribe).toHaveBeenCalled();
   });
 
-  it("o palco mostra os botões quando a cena entrega os passos de câmera (e só com o avatar)", () => {
+  it("o palco mostra os botões quando a cena entrega os passos de câmera; sem Avatar 3D entra o manequim de referência", () => {
     const { api } = fakeApi(); scene.api = api;
     const props = { mannequin: { sex: "FEMININO" as const, build: "MEDIUM", skinTone: "media" }, pieces: [], environment: resolveEnvironment([]), scene: null, light: "store" as const, view: "front" as const, sex: "FEMININO" as const, onCanvas: vi.fn() };
     const withAvatar = ui(<FittingStage {...props} avatar={{ model: {} } as unknown as Avatar3dRef}><span /></FittingStage>);
@@ -78,7 +78,14 @@ describe("botões de girar o palco 3D do provador (acessibilidade)", () => {
     fireEvent.click(within(stage).getByRole("button", { name: "Girar para a direita" }));
     expect(api.step).toHaveBeenCalledWith("right");
     withAvatar.unmount();
+    // regressão da auditoria: conta sem Avatar 3D via o provador vazio sob o selo "Manequim de referência"
     ui(<FittingStage {...props} avatar={null}><span /></FittingStage>);
-    expect(screen.queryByRole("button", { name: "Girar para a direita" })).toBeNull();
+    const reference = screen.getByRole("region", { name: /Provador da marca/ });
+    expect(within(reference).getByTestId("fitting-scene")).toBeTruthy();
+    expect(within(reference).getByRole("button", { name: "Girar para a direita" })).toBeTruthy();
+    expect(screen.getByText("Manequim de referência · prévia")).toBeTruthy();
+    expect(screen.getByText("Este é o manequim de referência, não o seu corpo.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Criar meu Avatar 3D" }).getAttribute("href")).toBe("/avatar");
+    expect(screen.queryByText(/Crie ou revise seu Avatar 3D/)).toBeNull();
   });
 });

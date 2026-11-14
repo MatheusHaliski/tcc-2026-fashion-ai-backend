@@ -114,10 +114,6 @@ function MirrorStage3D({ slots, kelvin, mode = "3d", children }: MirrorStageProp
       <div className="mirror-glass" style={{ background: `radial-gradient(120% 90% at 50% 15%, #ffffff 0%, ${tint} 55%, #d9d4ca 100%)` }}>
         {loading ? <Skeleton className="h-full w-full" /> : error ? (
           <button type="button" onClick={reload} className="btn">{t("common.retry")}</button>
-        ) : !avatar ? (
-          <div className="grid h-full content-center justify-items-center gap-3 p-6 text-center" role="status">
-            <p>{t("tryOn.avatar_required")}</p><Link href="/avatar" className="btn btn-sm">{t("mirror.criar_avatar")}</Link>
-          </div>
         ) : mode === "2d" ? (
           <AvatarStill avatar={avatar} sex={sex} body={body} pieces={pieces} background={tint} className="mirror-still" alt={t("mirror.previa_2d_alt", { n: pieces.length })} />
         ) : (
@@ -127,6 +123,12 @@ function MirrorStage3D({ slots, kelvin, mode = "3d", children }: MirrorStageProp
         {children}
       </div>
       {!loading && avatar && pieces.length > 0 && <p className="mirror-note">{t("tryOn.previa_3d_nota")}</p>}
+      {/* sem Avatar 3D o reflexo é o manequim de referência (RF28), com o convite para criar o seu */}
+      {!loading && !error && !avatar && (
+        <p className="mirror-note" role="note" data-reference-invite>
+          {t("tryOn.referencia_convite")} <Link href="/avatar" className="underline">{t("mirror.criar_avatar")}</Link>
+        </p>
+      )}
     </div>
   );
 }

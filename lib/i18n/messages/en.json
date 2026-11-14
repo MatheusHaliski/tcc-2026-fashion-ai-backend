@@ -10655,5 +10655,6 @@
   "flair3d.ui.acao.jogada.ok": "Play with a trail in the kit colour",
   "flair3d.ui.acao.jogada.miss": "Wrong play: the mismatched kits stand out",
   "flair3d.ui.acao.jogada.special": "Point scored and the team celebrates",
-  "flair3d.ui.acao.jogada.fail": "The opposing team takes the match"
+  "flair3d.ui.acao.jogada.fail": "The opposing team takes the match",
+  "tryOn.referencia_convite": "This is the reference mannequin, not your body."
 }
