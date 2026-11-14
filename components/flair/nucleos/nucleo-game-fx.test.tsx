@@ -284,9 +284,19 @@ describe("acionamentos", () => {
     expect(screen.getByTestId("nucleo-action").textContent).toContain("Estalecas ao chegar ao mercado: 150");
     fireEvent.click(balcao);
     expect(onAcionar).toHaveBeenCalledWith({ tipo: "MERCADO", cardId: "c1" });
-    const fim: NucleoResultado = { pontos: 50, estrelas: 1, resultado: "PARCIAL", regras: [], status: "ENTREGUE", eventos: [...mercado.eventos, { codigo: "COMPRA", valor: { item: "CHAVE_MESTRA", estalecas: 500 } }] };
+    const fim: NucleoResultado = { pontos: 50, estrelas: 1, resultado: "PARCIAL", regras: [], status: "ENTREGUE", eventos: [...mercado.eventos, { codigo: "COMPRA", valor: { item: "PECA_DA_PISTA", estalecas: 500 } }] };
     rerender(<NucleoGame {...props} resultado={fim} />);
-    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("O detetive comprou a chave mestra por 500 estalecas"), { timeout: 4000 });
+    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("O detetive comprou a peça da cor da próxima pista por 500 estalecas"), { timeout: 4000 });
+  });
+
+  it("Fashion Detective: a dica mostra o salão da vez, o código de vestimenta e a carta de pista", () => {
+    loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });
+    const props = { definicao: definicao("FASHION_DETECTIVE"), cartas: CARTAS, entregando: false, erro: null, onEntregar: vi.fn() };
+    const { rerender } = renderApp(<NucleoGame {...props} />);
+    expect(screen.getByTestId("nucleo-hint").textContent).toBe("Salão 1 de 6: Entrada da gala. Código de vestimenta: 2 peças formais ou de festa. Carta de pista: \"Sua mãe costumava deixar a chave no armário com a blusa branca.\"");
+    const anterior: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "PARCIAL", regras: [], status: "ABERTA", eventos: [{ codigo: "PROXIMO_SALAO", valor: { salao: 4, codigo: "CLUBE_UNDERGROUND" } }] };
+    rerender(<NucleoGame {...props} tentativa={anterior} />);
+    expect(screen.getByTestId("nucleo-hint").textContent).toContain("Salão 4 de 6: Clube underground. Código de vestimenta: 2 peças de balada, festa ou festival.");
   });
 
   it("O Labirinto: a tentativa que não abriu o espelho vira dica, com quantas peças faltam", () => {

@@ -14,6 +14,7 @@ import type { BoardEstado } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
+import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
 import type { EfeitoItem, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -63,7 +64,10 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
   if (props.aviso) dica = props.aviso;
   else if (resposta && !estado.sel.resposta) dica = tx.t("flair3d.ui.trigger.RESPOSTA.need");
   else if (resposta && estado.sel.resposta) dica = tx.t("flair3d.ui.trigger.RESPOSTA.done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) });
-  else if (props.tentativa) {
+  else if (definicao.codigo === "FASHION_DETECTIVE") {
+    const s = salaoDaVez(props.tentativa);
+    dica = tx.t("flair3d.ui.detetive.hint", { n: s.numero, total: s.total, salao: tx.t(`flair3d.ui.detetive.${s.codigo}.name`), codigo: tx.t(`flair3d.ui.detetive.${s.codigo}.code`), carta: tx.t(`flair3d.ui.detetive.${s.codigo}.clue`) });
+  } else if (props.tentativa) {
     const n = Number(valorDoEvento(props.tentativa, "TENTATIVA") ?? 1);
     const faltam = Number(valorDoEvento(props.tentativa, "FALTAM_PECAS") ?? 0);
     dica = tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });

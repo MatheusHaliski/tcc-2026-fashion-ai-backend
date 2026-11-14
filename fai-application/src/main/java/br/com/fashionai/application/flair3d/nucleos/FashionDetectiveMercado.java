@@ -10,30 +10,30 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Mercado do FASHION_DETECTIVE (docs/flair/flair-3d/CORES_E_ACOES.md, 2.3). Estaleca é moeda só do caso: começa em zero,
- * some no fim e não é o saldo da carteira. Ganha-se com gaveta aberta por peça verde (50) e com o acesso ao salão (150).
- * No balcão, a pessoa pode deixar uma carta do deck que não está vestida, pelo nível dela; a carta sai só do deck desta
- * partida, nunca da coleção. O detetive compra sozinho o equipamento de investigação e proteção de que precisa (não há
- * arma à venda): chave mestra quando falta a chave, colete quando o desafio não passa, lanterna quando nenhuma gaveta abriu.
+ * A bolsa do detetive e o mercado do FASHION_DETECTIVE (docs/flair/flair-3d/CORES_E_ACOES.md, 2.3). Estaleca é moeda só do
+ * caso: começa em zero, some no fim e não é o saldo da carteira. Ganha-se com o acesso ao salão (150), com gaveta aberta
+ * por peça verde (50) e com a pista do salão (200). No mercado, a pessoa pode deixar no balcão uma carta do deck que não
+ * está vestida, pelo nível dela; a carta sai só do deck desta partida, nunca da coleção. O detetive compra sozinho o que
+ * precisa (não há arma à venda): a peça da cor da próxima pista quando o deck não tem uma, o colete quando o desafio não
+ * passou e a lanterna quando o móvel do salão não abriu.
  */
 final class FashionDetectiveMercado {
     static final Map<String, Integer> VALOR = Map.of("BRONZE", 100, "PRATA", 200, "OURO", 350, "ESPECIAL", 500);
     static final int POR_GAVETA = 50;
     static final int PELO_ACESSO = 150;
-    static final int CHAVE_MESTRA = 500;
+    static final int PELA_PISTA = 200;
+    static final int PECA_DA_PISTA = 500;
     static final int COLETE = 300;
     static final int LANTERNA = 150;
     static final int DEFESA_DO_COLETE = 20;
 
     private int estalecas;
-    private boolean chave;
+    private boolean pecaDaPista;
     private boolean colete;
-    private long gavetas;
+    private boolean lanterna;
 
-    FashionDetectiveMercado(long gavetas, boolean acesso, boolean chave) {
-        this.gavetas = gavetas;
-        this.chave = chave;
-        this.estalecas = (int) (POR_GAVETA * gavetas) + (acesso ? PELO_ACESSO : 0);
+    void ganhar(int valor) {
+        estalecas += valor;
     }
 
     /** A carta deixada no balcão: do deck (conferido pelo serviço) e fora do look; 422 se está vestida. */
@@ -51,15 +51,15 @@ final class FashionDetectiveMercado {
     }
 
     /** As compras automáticas, da mais cara à mais barata, uma de cada no máximo. */
-    void comprar(boolean desafioPassa, List<Evento> eventos) {
-        if (!chave && pagar("CHAVE_MESTRA", CHAVE_MESTRA, eventos)) {
-            chave = true;
+    void comprar(boolean faltaACorDaPista, boolean desafioPassou, boolean movelAbriu, List<Evento> eventos) {
+        if (faltaACorDaPista && !pecaDaPista && pagar("PECA_DA_PISTA", PECA_DA_PISTA, eventos)) {
+            pecaDaPista = true;
         }
-        if (!desafioPassa && pagar("COLETE", COLETE, eventos)) {
+        if (!desafioPassou && !colete && pagar("COLETE", COLETE, eventos)) {
             colete = true;
         }
-        if (gavetas == 0 && pagar("LANTERNA", LANTERNA, eventos)) {
-            gavetas = 1;
+        if (!movelAbriu && !lanterna && pagar("LANTERNA", LANTERNA, eventos)) {
+            lanterna = true;
         }
     }
 
@@ -76,15 +76,16 @@ final class FashionDetectiveMercado {
         return estalecas;
     }
 
-    boolean chave() {
-        return chave;
+    /** A peça da cor da pista comprada no mercado vale no salão seguinte a ele. */
+    boolean pecaDaPista() {
+        return pecaDaPista;
     }
 
     int defesaExtra() {
         return colete ? DEFESA_DO_COLETE : 0;
     }
 
-    long gavetas() {
-        return gavetas;
+    boolean lanterna() {
+        return lanterna;
     }
 }

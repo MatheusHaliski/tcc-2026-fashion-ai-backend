@@ -1,7 +1,7 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
-import br.com.fashionai.application.flair3d.Acionamento;
+import br.com.fashionai.application.flair3d.Andamento;
 import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
@@ -20,25 +20,21 @@ import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 
 /**
- * Núcleo 6 — Salão 1, "Entrada da gala": acesso com 2 peças ou mais de ocasião formal ou festa; desafio automático com
- * defesa + vida + dano ≥ 50 ou furtividade ≥ 40 (as cores do look, {@link Flair3dCores#DETETIVE}). Os dois = FAVORAVEL
- * (100), um = PARCIAL (50), nenhum = DESFAVORAVEL (0).
- *
- * <p>A partida anda em duas etapas: a entrega mostra os medidores e para no mercado (EM_ACAO); o acionamento, com no
- * máximo uma carta deixada no balcão, faz as compras ({@link FashionDetectiveMercado}) e fecha o salão.</p>
+ * Núcleo 6 — o caso em 6 salões ({@link FashionDetectiveCaso}): a cada entrega a pessoa veste o look de um salão, e o
+ * detetive entra, enfrenta o desafio e procura a pista sozinho ({@link FashionDetectiveSalao}). A partida segue ABERTA
+ * até o sexto salão; depois do terceiro ela para no mercado (EM_ACAO), onde a pessoa pode deixar uma carta no balcão
+ * ({@link FashionDetectiveMercado}). A nota é a média dos salões; com 5 pistas ou mais o caso é resolvido (FAVORAVEL), com
+ * 3 ou 4 é resolvido em parte (PARCIAL).
  */
 public class FashionDetectiveNucleo implements Flair3dNucleo {
-    public static final Set<String> GALA = Set.of("formal", "party");
-    public static final int PECAS_GALA = 2;
-    public static final int DEFESA = 50;
-    public static final int PONTOS_POR_COR = 20;
-    public static final int FURTIVIDADE = 40;
+    public static final int SALOES = FashionDetectiveCaso.SALOES.size();
+    public static final int PISTAS_DO_CASO = 5;
+    public static final int PISTAS_DE_PARTE = 3;
 
     @Override
     public String codigo() {
@@ -53,63 +49,90 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
     @Override
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(),
-                Definicao.objetivo("ENTRADA_DA_GALA", new Regra("ACESSO", 50), new Regra("DESAFIO_DEFESA", 50)),
-                List.of(Definicao.CARTAS), Definicao.VAGAS, Deck.ate(6, Obrigatoria.uma("SUP|VES")), false)
+                Definicao.objetivo("CASO_DA_GALA", new Regra("ACESSO", FashionDetectiveSalao.ACESSO),
+                        new Regra("DESAFIO_DEFESA", FashionDetectiveSalao.DESAFIO), new Regra("PISTA", FashionDetectiveSalao.PISTA)),
+                List.of(Definicao.CARTAS), Definicao.VAGAS, Deck.ate(12, Obrigatoria.uma("SUP|VES")), false)
                 .comAvatares(Avatares.solo(null, Avatares.figurante("SEGURANCA", 1)));
     }
 
-    static long cor(Collection<CbcRules.Card> pecas, String acao) {
-        return Flair3dCores.quantas(Flair3dCores.DETETIVE, pecas, acao);
+    private static Map<String, CbcRules.Card> look(Map<String, UUID> cartas, Contexto contexto) {
+        return contexto.vestidas(new Entrega(cartas, null, null, null));
     }
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
-        Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
-        Collection<CbcRules.Card> pecas = vestidas.values();
-        long gala = pecas.stream().filter(c -> Flair3dPecas.temOcasiao(c, GALA)).count();
-        int defesa = Flair3dAtributos.soma(pecas).defesa();
-        long furtividade = PONTOS_POR_COR * cor(pecas, "FURTIVIDADE");
-        long vida = PONTOS_POR_COR * cor(pecas, "VIDA");
-        long dano = PONTOS_POR_COR * cor(pecas, "DANO");
-        boolean acesso = gala >= PECAS_GALA;
-        CbcRules.Card cima = vestidas.containsKey("SUP") ? vestidas.get("SUP") : vestidas.get("VES");
-        long abre = cor(pecas, "ABRIR");
-        FashionDetectiveMercado mercado = new FashionDetectiveMercado(abre, acesso,
-                abre > 0 && "PISTA".equals(Flair3dCores.acao(Flair3dCores.DETETIVE, cima)));
-        List<Evento> eventos = new ArrayList<>(List.of(new Evento("PECAS_DE_GALA", gala), new Evento("DEFESA", defesa),
-                new Evento("FURTIVIDADE", furtividade), new Evento("VIDA", vida), new Evento("DANO", dano),
-                new Evento("MERCADO", mercado.estalecas())));
-        List<Acionamento> acionamentos = contexto.andamento().acionamentos();
-        if (acionamentos.isEmpty()) {
-            return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
+        FashionDetectiveMercado bolsa = new FashionDetectiveMercado();
+        List<Andamento.Etapa> etapas = new ArrayList<>(contexto.andamento().anteriores());
+        etapas.add(new Andamento.Etapa(entrega.cartas(), contexto.andamento().acionamentos()));
+        int numero = Math.min(etapas.size(), SALOES);
+        int soma = 0;
+        int acessos = 0;
+        int desafios = 0;
+        int pistas = 0;
+        FashionDetectiveSalao atual = null;
+        List<Evento> eventos = new ArrayList<>();
+        for (int i = 1; i <= numero; i++) {
+            Andamento.Etapa etapa = etapas.get(etapas.size() - numero + i - 1);
+            atual = new FashionDetectiveSalao(i, look(etapa.cartas(), contexto), bolsa);
+            bolsa.ganhar(atual.estalecas());
+            soma += atual.pontos();
+            acessos += atual.acesso ? 1 : 0;
+            desafios += atual.desafio ? 1 : 0;
+            pistas += atual.pista ? 1 : 0;
+            boolean ultimo = i == numero;
+            if (ultimo) {
+                eventos.addAll(atual.medidores());
+                eventos.add(new Evento("PISTA", atual.pista));
+            }
+            if (i == FashionDetectiveCaso.SALAO_DO_MERCADO) {
+                if (etapa.acionamentos().isEmpty()) {
+                    eventos.add(new Evento("MERCADO", bolsa.estalecas()));
+                    return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
+                }
+                List<Evento> compras = ultimo ? eventos : new ArrayList<>();
+                bolsa.vender(etapa.acionamentos().get(0), atual.look, contexto, compras);
+                bolsa.comprar(faltaACor(i + 1, contexto), atual.desafio, atual.movelAbriu, compras);
+            }
         }
-        mercado.vender(acionamentos.get(0), vestidas, contexto, eventos);
-        mercado.comprar(desafio(defesa, furtividade, vida, dano), eventos);
-        boolean desafio = desafio(defesa + mercado.defesaExtra(), furtividade, vida, dano);
-        eventos.add(new Evento("GAVETAS", mercado.gavetas()));
-        eventos.add(new Evento("CHAVE", mercado.chave()));
-        eventos.add(new Evento("ESTALECAS", mercado.estalecas()));
-        int ok = (acesso ? 1 : 0) + (desafio ? 1 : 0);
-        String resultado = ok == 2 ? "FAVORAVEL" : ok == 1 ? "PARCIAL" : "DESFAVORAVEL";
-        Flair3dRateio rateio = new Flair3dRateio(vestidas).dividirEntre(acesso ? 50 : 0, c -> Flair3dPecas.temOcasiao(c, GALA))
-                .dividir(desafio ? 50 : 0, c -> Flair3dAtributos.daCarta(c).defesa());
-        return Resultado.of(ok * 50, resultado,
-                List.of(RegraResultado.de("ACESSO", acesso, 50), RegraResultado.de("DESAFIO_DEFESA", desafio, 50)), eventos)
-                .comCartas(rateio.lista());
+        eventos.add(new Evento("PISTAS", pistas));
+        eventos.add(new Evento("ESTALECAS", bolsa.estalecas()));
+        if (numero < SALOES) {
+            eventos.add(new Evento("PONTOS_DO_SALAO", atual.pontos()));
+            eventos.add(new Evento("PROXIMO_SALAO", Map.of("salao", numero + 1, "codigo", FashionDetectiveCaso.salao(numero + 1).codigo())));
+            return Resultado.parcial(Resultado.ABERTA, atual.resultado(), atual.regras(), eventos);
+        }
+        double pontos = soma / (double) SALOES;
+        String resultado = pistas >= PISTAS_DO_CASO ? "FAVORAVEL" : pistas >= PISTAS_DE_PARTE ? "PARCIAL" : "DESFAVORAVEL";
+        List<RegraResultado> regras = List.of(media("ACESSO", acessos, FashionDetectiveSalao.ACESSO),
+                media("DESAFIO_DEFESA", desafios, FashionDetectiveSalao.DESAFIO), media("PISTA", pistas, FashionDetectiveSalao.PISTA));
+        FashionDetectiveCaso.Salao ultimo = atual.salao;
+        Flair3dRateio rateio = new Flair3dRateio(atual.look).dividirEntre(pontos / 2, c -> Flair3dPecas.temOcasiao(c, ultimo.ocasioes()))
+                .dividir(pontos / 2, c -> Flair3dAtributos.daCarta(c).defesa());
+        return Resultado.of(pontos, resultado, regras, eventos).comCartas(rateio.lista());
     }
 
-    /**
-     * O confronto é automático: passa quem soma {@link #DEFESA} entre defesa, vida (amarelo) e dano (azul), ou quem tem
-     * furtividade (preto) para passar sem ser visto.
-     */
-    static boolean desafio(int defesa, long furtividade, long vida, long dano) {
-        return defesa + vida + dano >= DEFESA || furtividade >= FURTIVIDADE;
+    /** A regra do caso inteiro: quantos salões a cumpriram, valendo a média. */
+    private static RegraResultado media(String codigo, int salas, int valor) {
+        return new RegraResultado(codigo, salas >= PISTAS_DO_CASO, valor * salas / (double) SALOES);
+    }
+
+    /** Nenhuma carta do deck em mãos tem a cor da pista do salão dado, numa vaga que serve. */
+    private static boolean faltaACor(int salao, Contexto contexto) {
+        FashionDetectiveCaso.Salao s = FashionDetectiveCaso.salao(salao);
+        return contexto.cartas().values().stream().noneMatch(c -> s.vagas().contains(c.position()) && Flair3dPecas.daFamilia(c, s.cor()));
+    }
+
+    /** Só os medidores do salão da vez (o caso não anda na prévia). */
+    @Override
+    public Resultado previa(Entrega entrega, Contexto contexto) {
+        int numero = Math.min(contexto.andamento().anteriores().size() + 1, SALOES);
+        FashionDetectiveSalao s = new FashionDetectiveSalao(numero, contexto.vestidas(entrega), new FashionDetectiveMercado());
+        return Resultado.parcial(null, "PREVIA", List.of(), s.medidores().subList(1, s.medidores().size()));
     }
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        List<Efeito> out = new ArrayList<>(List.of(new Efeito("ACESSO", Flair3dPecas.temOcasiao(carta, GALA) ? 1 : 0),
-                new Efeito("DEFESA", Flair3dAtributos.daCarta(carta).defesa())));
+        List<Efeito> out = new ArrayList<>(List.of(new Efeito("DEFESA", Flair3dAtributos.daCarta(carta).defesa())));
         String acao = Flair3dCores.acao(Flair3dCores.DETETIVE, carta);
         if (acao != null) {
             out.add(new Efeito("COR_" + acao, 1));
