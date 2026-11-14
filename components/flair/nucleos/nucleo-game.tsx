@@ -13,6 +13,7 @@ import { useReducedMotion } from "@/components/three/common";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { NucleoActionPanel } from "@/components/flair/nucleos/nucleo-action-panel";
 import { MODELO_CASA, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
+import { NucleoCutscene } from "@/components/flair/nucleos/nucleo-cutscene";
 import { NucleoCardZoom } from "@/components/flair/nucleos/nucleo-card-zoom";
 import { NucleoHelp } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoDeckBand } from "@/components/flair/nucleos/nucleo-deck-band";
@@ -35,10 +36,12 @@ import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
 import { boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import { vagasDaRegua, type ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
+import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
 import { acionamentoDe, comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
 import { classesDoQuadro, estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
+import { varianteDaCena } from "@/lib/flair/nucleos/variante";
 import { NUCLEOS } from "@/lib/flair/nucleos/registry";
 import { buildTabs, temEscolha, type Selecao } from "@/lib/flair/nucleos/selection";
 import type { AvatarTipo, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -113,7 +116,9 @@ export function NucleoGame(props: Props) {
   /** a ação que a cor da carta dispara ao entrar em campo (item ACAO_* do servidor) */
   const acaoDaCarta = (id: string) => {
     const item = efeitos.itens(id)?.find((i) => i.codigo.startsWith("ACAO_"));
-    return item ? tx.efeito(item) : null;
+    if (!item) return null;
+    const modalidade = estado.sel.resposta ?? "FUTEBOL";
+    return tx.ou(`flair3d.ui.acaoCor.${modalidade}.${item.codigo.slice("ACAO_".length)}`, tx.efeito(item));
   };
 
   const entregar = () => {
@@ -158,6 +163,7 @@ export function NucleoGame(props: Props) {
         objetivoAberto={estado.objetivo}
         resultado={resultado}
         previa={props.previa ?? null}
+        variante={varianteDaCena(codigo, estado.sel.resposta, props.tentativa)}
         prefs={fx.prefs}
         onPref={fx.alternar}
         entrada={entrada}
@@ -168,6 +174,7 @@ export function NucleoGame(props: Props) {
         onComando={(c) => disparar(c)}
       />
       <div className="n3d-lower">
+        {codigo === "FASHION_DETECTIVE" && preparando && <NucleoCutscene salao={salaoDaVez(props.tentativa)} />}
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
           vestidas={vestidas}

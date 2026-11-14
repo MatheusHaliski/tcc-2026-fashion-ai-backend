@@ -126,7 +126,7 @@ public class Flair3dNucleoService {
         Flair3dMatch m = partida(user, partidaId, Flair3dMatch.ABERTA);
         Flair3dNucleo n = nucleo(m.getNucleo());
         Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
-        Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa();
+        Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class));
         return gravar(m, e, a, n.pontuar(e, contexto(user, m, n, e, a)));
     }
 
@@ -149,7 +149,7 @@ public class Flair3dNucleoService {
         Flair3dMatch m = partida(user, partidaId, Flair3dMatch.ABERTA);
         Flair3dNucleo n = nucleo(m.getNucleo());
         Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
-        Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa();
+        Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class));
         return n.previa(e, contexto(user, m, n, e, a)).comStatus(m.getStatus());
     }
 

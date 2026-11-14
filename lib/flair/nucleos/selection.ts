@@ -20,6 +20,8 @@ export interface ResourceTab {
   tipo: "vaga" | "zona" | "area" | "resposta";
   icone: AbaIcone;
   items: ResourceItem[];
+  /** chave do nome da aba quando o jogo dá um nome próprio a ela (a aba de resposta do FASHION_SPORTS é "Modalidade") */
+  rotulo?: string;
 }
 
 export interface Selecao {
@@ -38,6 +40,7 @@ export interface TabsInput {
   areas: string[];
   opcoes: string[];
   paleta?: Paleta | null;
+  codigo?: string;
 }
 
 const ICONE_VAGA: Record<string, AbaIcone> = { SUP: "sup", INF: "inf", CAL: "cal", ACE: "ace", VES: "ves" };
@@ -74,7 +77,7 @@ export function buildTabs(input: TabsInput, cards: FlairCollectionCard[]): Resou
   }
   if (input.recursos.includes("RESPOSTA") && input.opcoes.length) {
     const items = input.opcoes.map((o): ResourceItem => ({ kind: "opcao", key: `op-${o}`, codigo: o }));
-    tabs.push({ id: "RESPOSTA", tipo: "resposta", icone: "resposta", items });
+    tabs.push({ id: "RESPOSTA", tipo: "resposta", icone: "resposta", items, rotulo: input.codigo && `flair3d.nucleo.${input.codigo}.tab.RESPOSTA` });
   }
   return tabs;
 }

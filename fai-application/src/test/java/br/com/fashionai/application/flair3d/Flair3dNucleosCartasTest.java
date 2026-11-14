@@ -6,7 +6,6 @@ import br.com.fashionai.application.flair3d.nucleos.BatalhaLooksNucleo;
 import br.com.fashionai.application.flair3d.nucleos.Boutique3dNucleo;
 import br.com.fashionai.application.flair3d.nucleos.DressFighterNucleo;
 import br.com.fashionai.application.flair3d.nucleos.DressTheStarNucleo;
-import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveNucleo;
 import br.com.fashionai.application.flair3d.nucleos.FashionSportsNucleo;
 import br.com.fashionai.application.flair3d.nucleos.LabirintoNucleo;
 import br.com.fashionai.application.flair3d.nucleos.PassarelaNucleo;
@@ -99,20 +98,6 @@ class Flair3dNucleosCartasTest {
         CbcRules.Card festa = card("SUP", "occasion:party", "material:leather");
         Entrega falha = comMaquiagem(vestir(festa), "LABIOS", "VERMELHO", "FOSCO");
         assertThat(jogar(new RoadToGloryNucleo(), falha, festa).pontos()).isZero();
-    }
-
-    @Test
-    void fashionDetectiveFavoravelParcialEDesfavoravel() {
-        Resultado favoravel = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:formal", "material:leather"),
-                card("INF", "occasion:party", "material:wool"));
-        assertThat(favoravel.pontos()).isEqualTo(100);
-        assertThat(favoravel.resultado()).isEqualTo("FAVORAVEL");
-        Resultado parcial = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:formal"), card("INF", "occasion:party"));
-        assertThat(parcial.pontos()).isEqualTo(50);
-        assertThat(parcial.resultado()).isEqualTo("PARCIAL");
-        Resultado nada = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:casual"));
-        assertThat(nada.resultado()).isEqualTo("DESFAVORAVEL");
-        assertThat(nada.pontos()).isZero();
     }
 
     @Test

@@ -1,8 +1,7 @@
 package br.com.fashionai.application.flair3d;
 
-import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.flair.CbcRules;
-import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveNucleo;
+import br.com.fashionai.application.flair3d.nucleos.FashionSportsModalidade;
 import br.com.fashionai.application.flair3d.nucleos.FashionSportsNucleo;
 import org.junit.jupiter.api.Test;
 
@@ -13,11 +12,11 @@ import static br.com.fashionai.application.flair3d.Flair3dFixtures.card;
 import static br.com.fashionai.application.flair3d.Flair3dFixtures.contexto;
 import static br.com.fashionai.application.flair3d.Flair3dFixtures.vestir;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 /**
  * A cor da peça decide a ação (docs/flair/flair-3d/CORES_E_ACOES.md): a tabela de cada jogo, os lances do segundo tempo do
- * FASHION_SPORTS disparados pela peça que entra e o que as cores do look dão ao detetive.
+ * FASHION_SPORTS disparados pela peça que entra.
+ * O caso do detetive está em FashionDetectiveCasoTest.
  */
 class Flair3dCoresTest {
     private static Acionamento troca(String vaga, CbcRules.Card entra) {
@@ -61,7 +60,7 @@ class Flair3dCoresTest {
 
         Resultado chute = n.pontuar(vestir(sup, inf, cal), contexto(7L, deck).comAndamento(Andamento.de(troca("SUP", verde))));
         assertThat(chute.status()).isEqualTo("EM_ACAO");
-        assertThat(valor(chute, "LANCE")).isEqualTo(Map.of("lance", 1, "acao", "CHUTE", "carta", verde.id(), "venceu", true));
+        assertThat(valor(chute, "LANCE")).isEqualTo(Map.of("lance", 1, "acao", "CHUTE", "modalidade", "FUTEBOL", "carta", verde.id(), "venceu", true));
         assertThat(chute.eventos()).extracting(Resultado.Evento::codigo).doesNotContain("PLACAR");
 
         Andamento doisLances = Andamento.de(troca("SUP", verde), troca("INF", preto), Acionamento.NENHUM);
@@ -99,70 +98,31 @@ class Flair3dCoresTest {
         assertThat(n.efeitos(verde, contexto(7L, deck))).extracting(Efeito::codigo).contains("ACAO_CHUTE");
     }
 
-    private static Resultado salao(Acionamento a, List<CbcRules.Card> look, CbcRules.Card... deck) {
-        return new FashionDetectiveNucleo().pontuar(vestir(look.toArray(CbcRules.Card[]::new)),
-                contexto(1L, deck).comAndamento(a == null ? Andamento.INICIO : Andamento.de(a)));
-    }
-
     @Test
-    void coresDoLookDaoAsAcoesDoDetetiveEAPistaDaBlusaBrancaRendeAChave() {
-        CbcRules.Card branca = card("SUP", "color:white", "occasion:formal");
-        CbcRules.Card verde = card("INF", "color:olive", "occasion:party");
-        CbcRules.Card preto = card("CAL", "color:black");
-        CbcRules.Card amarelo = card("ACE", "color:gold");
-        CbcRules.Card[] deck = {branca, verde, preto, amarelo};
-        FashionDetectiveNucleo n = new FashionDetectiveNucleo();
+    void modalidadeMudaOPesoDosAtributosEMantemOPapelDeCadaCor() {
+        Flair3dAtributos a = new Flair3dAtributos(40, 10, 5, 20, 30);
+        assertThat(FashionSportsModalidade.de(null)).isEqualTo(FashionSportsModalidade.FUTEBOL);
+        assertThat(FashionSportsModalidade.de("XADREZ")).isEqualTo(FashionSportsModalidade.FUTEBOL);
+        assertThat(FashionSportsModalidade.FUTEBOL.forca(a)).isEqualTo(FashionSportsNucleo.forca(a)).isEqualTo(24);
+        assertThat(FashionSportsModalidade.de("CORRIDA").forca(a)).isEqualTo(35);
+        assertThat(FashionSportsModalidade.de("BASQUETE").forca(a)).isEqualTo(21);
+        assertThat(FashionSportsModalidade.FUTEBOL.placar(2, 1, true)).isEqualTo("2-1");
+        assertThat(FashionSportsModalidade.de("BASQUETE").placar(2, 1, true)).isEqualTo("18-15");
+        assertThat(FashionSportsModalidade.de("SKATE").placar(0, 2, true)).isEqualTo("60-80");
+        assertThat(FashionSportsModalidade.de("VOLEI").placar(3, 2, true)).isEqualTo("2-1");
+        assertThat(FashionSportsModalidade.de("TENIS").placar(0, 1, true)).isEqualTo("0-2");
+        assertThat(FashionSportsModalidade.de("VOLEI").placar(2, 2, true)).isEqualTo("1-1");
+        assertThat(FashionSportsModalidade.de("TENIS").placar(1, 0, false)).isEqualTo("1-0");
+        assertThat(new FashionSportsNucleo().definicao().opcoes()).containsExactly("FUTEBOL", "BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE");
 
-        Resultado mercado = salao(null, List.of(deck), deck);
-        assertThat(mercado.status()).isEqualTo("EM_ACAO");
-        assertThat(valor(mercado, "FURTIVIDADE")).isEqualTo(20L);
-        assertThat(valor(mercado, "VIDA")).isEqualTo(20L);
-        assertThat(valor(mercado, "DANO")).isEqualTo(0L);
-        assertThat(valor(mercado, "MERCADO")).isEqualTo(200);
-        Resultado r = salao(Acionamento.NENHUM, List.of(deck), deck);
-        assertThat(r.fecha()).isTrue();
-        assertThat(valor(r, "GAVETAS")).isEqualTo(1L);
-        assertThat(valor(r, "CHAVE")).isEqualTo(true);
-        assertThat(valor(salao(Acionamento.NENHUM, List.of(branca, preto), branca, preto), "CHAVE")).isEqualTo(false);
-        assertThat(n.efeitos(verde, contexto(1L, verde))).extracting(Efeito::codigo).containsExactly("ACESSO", "DEFESA", "COR_ABRIR");
-        assertThat(n.efeitos(card("SUP"), contexto(1L))).extracting(Efeito::codigo).containsExactly("ACESSO", "DEFESA");
-    }
-
-    @Test
-    void medidoresDasCoresDecidemOConfrontoAutomatico() {
-        CbcRules.Card gala = card("SUP", "ovr:10", "occasion:formal");
-        CbcRules.Card festa = card("INF", "ovr:10", "occasion:party");
-        assertThat(salao(Acionamento.NENHUM, List.of(gala, festa), gala, festa).resultado()).isEqualTo("PARCIAL");
-        CbcRules.Card[] furtivo = {card("SUP", "ovr:10", "occasion:formal", "color:black"), card("INF", "ovr:10", "occasion:party", "color:charcoal")};
-        assertThat(salao(Acionamento.NENHUM, List.of(furtivo), furtivo).resultado()).isEqualTo("FAVORAVEL");
-        CbcRules.Card[] forte = {card("SUP", "ovr:10", "occasion:formal", "color:yellow"), card("INF", "ovr:10", "occasion:party", "color:blue"),
-                card("CAL", "ovr:10", "color:navy")};
-        assertThat(salao(Acionamento.NENHUM, List.of(forte), forte).resultado()).isEqualTo("FAVORAVEL");
-    }
-
-    @Test
-    void cartaDeixadaNoBalcaoViraEstalecasEODetetiveCompraOQuePrecisa() {
-        CbcRules.Card gala = card("SUP", "ovr:10", "occasion:formal");
-        CbcRules.Card festa = card("INF", "ovr:10", "occasion:party");
-        CbcRules.Card ouro = card("ACE", "tier:OURO");
-        Resultado semVenda = salao(Acionamento.NENHUM, List.of(gala, festa), gala, festa, ouro);
-        assertThat(valor(semVenda, "ESTALECAS")).isEqualTo(0);
-        assertThat(semVenda.eventos()).contains(new Resultado.Evento("COMPRA", Map.of("item", "LANTERNA", "estalecas", 150)));
-        assertThat(semVenda.resultado()).isEqualTo("PARCIAL");
-
-        Resultado comVenda = salao(new Acionamento(ouro.id(), null), List.of(gala, festa), gala, festa, ouro);
-        assertThat(comVenda.eventos()).contains(new Resultado.Evento("VENDA", Map.of("carta", ouro.id(), "estalecas", 350)),
-                new Resultado.Evento("COMPRA", Map.of("item", "CHAVE_MESTRA", "estalecas", 500)));
-        assertThat(valor(comVenda, "CHAVE")).isEqualTo(true);
-        assertThat(valor(comVenda, "ESTALECAS")).isEqualTo(0);
-
-        CbcRules.Card especial = card("ACE", "tier:ESPECIAL");
-        Resultado colete = salao(new Acionamento(especial.id(), null), List.of(gala, festa), gala, festa, especial);
-        assertThat(colete.eventos()).extracting(Resultado.Evento::codigo).containsSubsequence("VENDA", "COMPRA", "COMPRA");
-        assertThat(valor(colete, "ESTALECAS")).isEqualTo(0);
-
-        ApiException e = catchThrowableOfType(ApiException.class, () -> salao(new Acionamento(gala.id(), null), List.of(gala, festa), gala, festa));
-        assertThat(e.code()).isEqualTo("CARTA_VESTIDA");
-        assertThat(e.status()).isEqualTo(422);
+        CbcRules.Card sup = card("SUP", "ovr:60");
+        CbcRules.Card inf = card("INF", "ovr:60");
+        CbcRules.Card cal = card("CAL", "ovr:60");
+        CbcRules.Card verde = card("SUP", "ovr:60", "color:green");
+        Entrega volei = new Entrega(vestir(sup, inf, cal).cartas(), null, null, "VOLEI");
+        Resultado r = new FashionSportsNucleo().pontuar(volei, contexto(7L, sup, inf, cal, verde).comAndamento(Andamento.de(troca("SUP", verde))));
+        assertThat(valor(r, "MODALIDADE")).isEqualTo("VOLEI");
+        assertThat(lances(r, "modalidade")).containsExactly("VOLEI");
+        assertThat(lances(r, "acao")).containsExactly("CHUTE");
     }
 }
