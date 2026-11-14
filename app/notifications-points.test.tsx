@@ -18,7 +18,7 @@ const INBOX = { unread: 4, items: [
   points("p3", -180, "−180 FAI Points", "Compra na loja do quarto: Porta 60", 12),
   { id: "c1", type: "NEW_COMMENT", category: "SOCIAL", title: "Novo comentário", body: "@bia comentou no seu look", read: false, createdAt: at(11) },
   points("p2", 1, "+1 FAI Points", "Curtida recebida num look seu", 10),
-  points("p1", 40, "+40 FAI Points", "Esquema criado", 9),
+  points("p1", 40, "+40 FAI Points", "Look criado", 9),
 ] };
 
 describe("extrato dos FAI Points nas notificações", () => {
@@ -28,7 +28,7 @@ describe("extrato dos FAI Points nas notificações", () => {
     expect(await screen.findByText("3 lançamentos de FAI Points · −139 no dia")).toBeTruthy();
     expect(screen.getByText("Novo comentário")).toBeTruthy();
     expect(screen.getByText("Compra na loja do quarto: Porta 60")).toBeTruthy();   // dentro do item agrupado
-    expect(screen.getByText("Esquema criado")).toBeTruthy();
+    expect(screen.getByText("Look criado")).toBeTruthy();
   });
 
   it("?cat=POINTS abre só o extrato", async () => {

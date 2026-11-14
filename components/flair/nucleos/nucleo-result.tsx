@@ -28,7 +28,7 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [] }: Props)
   return (
     <section className="n3d-result" aria-labelledby="n3d-result-title" data-testid="nucleo-result">
       <h2 id="n3d-result-title" className="type-h3">{tx.t("flair3d.ui.result.title")}</h2>
-      <p className="n3d-result-points tabular">{tx.t("flair3d.ui.result.points", { n: resultado.pontos })}</p>
+      <p className="n3d-result-points tabular">{tx.pontosTotal(resultado.pontos)}</p>
       <p className="n3d-stars" aria-label={tx.t("flair3d.ui.result.stars", { n: estrelas })}>
         {[1, 2, 3].map((i) => (
           <span key={i} className={cn("n3d-star", i <= estrelas && "is-on")} aria-hidden>★</span>
@@ -40,7 +40,7 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [] }: Props)
           <li key={r.codigo} className={r.ok ? "is-ok" : "is-miss"}>
             <span>{tx.t(r.ok ? "flair3d.ui.result.ok" : "flair3d.ui.result.notOk")}</span>
             <span>{tx.regra(codigo, r.codigo)}</span>
-            <em className="tabular">{tx.t("flair3d.ui.points", { n: r.pontos })}</em>
+            <em className="tabular">{tx.pontos(r.pontos)}</em>
           </li>
         ))}
       </ul>

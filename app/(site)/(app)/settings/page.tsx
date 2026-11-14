@@ -20,7 +20,7 @@ const currencyName = (intl: string, c: string) => { try { return `${new Intl.Dis
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
 interface Prefs { auraImpersonation?: boolean; auraHype?: boolean; theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
-interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
+interface Consent { purpose: string; granted: boolean; title?: string; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
   const { t, locale, setLocale, locales, rich, intl, currency, currencyPref, setCurrency } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
@@ -188,7 +188,7 @@ function Settings() {
             {consents.loading && <Skeleton className="h-32" />}
             {consents.error && <p role="alert" className="type-body-sm text-critical">{t("settingsHelp.consentsError")}</p>}
             <ul className="divide-y divide-line-soft">{(consents.data ?? []).map((c) => {
-              const name = (c.label ?? c.purpose.replace(/_/g, " ")).toLocaleUpperCase(locale);
+              const name = c.title ?? c.label ?? c.purpose.replace(/_/g, " ").toLocaleUpperCase(locale);   // o servidor manda o nome da finalidade em `title`
               return <li key={c.purpose} className="flex items-center gap-3 py-2"><div className="min-w-0 flex-1"><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); if (!v && c.purpose === "RETAIL_DEMAND_ANALYTICS") await api.delete("/api/me/retail-demand/contributions"); } catch (e) { notice.fromError(e); } }} label={name} /></div>{infoButton(name, [c.description ?? t("settingsHelp.consentMissing"), t("settingsHelp.consentChoice")])}</li>;
             })}</ul>
           </Card>

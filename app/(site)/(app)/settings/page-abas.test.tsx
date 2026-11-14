@@ -183,20 +183,24 @@ describe("configurações — aparência", () => {
 describe("configurações — privacidade", () => {
   it("visibilidade, tópicos do Hype, consentimento ligado e erro ao mudar consentimento", async () => {
     let n = 0;
-    const consent = [{ purpose: "AI_RECOMMENDATION", granted: false }, { purpose: "MARKETING_EMAIL", label: "E-mails", granted: true, description: "Novidades" }];
+    // contrato do servidor (AccountService.consents): o nome da finalidade vem em `title`, já no idioma da pessoa
+    const consent = [{ purpose: "AI_RECOMMENDATION", title: "Recomendações por IA", granted: false }, { purpose: "MARKETING_EMAIL", label: "E-mails", granted: true, description: "Novidades" },
+      { purpose: "FACIAL_RECOGNITION", title: "Reconhecimento facial (dado sensível)", granted: false }];
     const { calls } = loggedAs({ ...ME, user: { ...ME.user, privateAccount: true } }, { "GET /api/me/preferences": PREFS, "GET /api/me/consents": consent, "PUT /api/me/privacy": {},
       "PUT /api/me/consents/AI_RECOMMENDATION": () => (++n === 1 ? [{ ...consent[0], granted: true }, consent[1]] : fail(500, "Consentimento falhou")()) });
     renderApp(<SettingsPage />);
     await tab("Privacidade");
-    // sem rótulo, o nome vem do propósito
-    const sw = await screen.findByRole("switch", { name: "AI RECOMMENDATION" });
+    // regressão da auditoria: nada de código em inglês ("FACIAL RECOGNITION") quando o servidor manda o nome
+    expect(await screen.findByRole("switch", { name: "Reconhecimento facial (dado sensível)" })).toBeTruthy();
+    expect(screen.queryByText(/FACIAL RECOGNITION/)).toBeNull();
+    const sw = await screen.findByRole("switch", { name: "Recomendações por IA" });
     fireEvent.click(sw);
-    await waitFor(() => expect(screen.getByRole("switch", { name: "AI RECOMMENDATION" }).getAttribute("aria-checked")).toBe("true"));
-    fireEvent.click(screen.getByRole("switch", { name: "AI RECOMMENDATION" }));
+    await waitFor(() => expect(screen.getByRole("switch", { name: "Recomendações por IA" }).getAttribute("aria-checked")).toBe("true"));
+    fireEvent.click(screen.getByRole("switch", { name: "Recomendações por IA" }));
     expect(await screen.findByText("Consentimento falhou")).toBeTruthy();
     // informação do consentimento sem descrição
-    fireEvent.click(screen.getByRole("button", { name: "Informações sobre AI RECOMMENDATION" }));
-    const dlg = await screen.findByRole("dialog", { name: "AI RECOMMENDATION" });
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre Recomendações por IA" }));
+    const dlg = await screen.findByRole("dialog", { name: "Recomendações por IA" });
     fireEvent.click(within(dlg).getAllByRole("button", { name: "Fechar" }).at(-1)!);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     // tópicos do Hype: o de notificações tem link que fecha a explicação

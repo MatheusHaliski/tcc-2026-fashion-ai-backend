@@ -45,7 +45,7 @@ export function NucleoObjectiveDetails({ definicao, onFechar, children }: { defi
         {definicao.objetivo.regras.map((r) => (
           <li key={r.codigo}>
             <span>{tx.regra(c, r.codigo)}</span>
-            {r.pontos > 0 && <em className="tabular">{tx.t("flair3d.ui.points", { n: r.pontos })}</em>}
+            {r.pontos > 0 && <em className="tabular">{tx.pontos(r.pontos)}</em>}
           </li>
         ))}
       </ul>
