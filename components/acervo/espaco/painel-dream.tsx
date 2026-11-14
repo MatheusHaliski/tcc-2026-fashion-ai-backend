@@ -21,7 +21,7 @@ export function PainelDream({ ambienteId, modulos }: { ambienteId: string | null
   }
 
   return (
-    <section className="acv-cartao acv-dream" aria-label={t("acervo.modo.dreamSpace")}>
+    <section className="acv-cartao acv-dream" aria-label={t("acervo.dream.painel")}>
       <header className="acv-cartao-cabeca">
         <h3 className="acv-cartao-titulo">{t("acervo.modo.dreamSpace")}</h3>
         <span className="acv-selo is-lima">{t("acervo.dream.conceito")}</span>
