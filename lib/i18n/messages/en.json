@@ -10603,5 +10603,10 @@
   "flair3d.ui.detetive.CLUBE_UNDERGROUND.intro": "From the market, the detective heads to a brick-and-neon club. Here, whoever stands out does not get through.",
   "flair3d.ui.detetive.ATELIE.intro": "In the atelier, workbenches and rolls of fabric. The pattern of the missing piece is kept in a drawer.",
   "flair3d.ui.detetive.ARQUIVO.intro": "Last room: the archive. Among metal filing cabinets, one folder holds the answer to the case.",
-  "pieces.new.falta_preencher": "To continue, fill in: {campos}."
+  "pieces.new.falta_preencher": "To continue, fill in: {campos}.",
+  "challenges.escolha_pecas": "Choose {total} pieces from your wardrobe",
+  "challenges.faltam_pecas": "{missing, plural, one {# more piece} other {# more pieces}} to start.",
+  "piecePicker.contagem": "{count} of {total} chosen",
+  "piecePicker.faltam_pecas": "You have {have} pieces in your wardrobe and this challenge uses {total}. Add more pieces to start.",
+  "piecePicker.limpar": "Clear selection"
 }

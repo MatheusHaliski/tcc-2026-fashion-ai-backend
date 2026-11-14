@@ -10603,5 +10603,10 @@
   "flair3d.ui.detetive.CLUBE_UNDERGROUND.intro": "Desde el mercado, el detective va a un club de ladrillo y neón. Aquí, quien llama la atención no pasa.",
   "flair3d.ui.detetive.ATELIE.intro": "En el atelier, mesas de trabajo y rollos de tela. El patrón de la prenda que falta está guardado en un cajón.",
   "flair3d.ui.detetive.ARQUIVO.intro": "Último salón: el archivo. Entre archivadores de metal, una carpeta guarda la respuesta del caso.",
-  "pieces.new.falta_preencher": "Para avanzar, completa: {campos}."
+  "pieces.new.falta_preencher": "Para avanzar, completa: {campos}.",
+  "challenges.escolha_pecas": "Elige {total} prendas de tu armario",
+  "challenges.faltam_pecas": "{missing, plural, one {Falta # prenda} other {Faltan # prendas}} para empezar.",
+  "piecePicker.contagem": "{count} de {total} elegidas",
+  "piecePicker.faltam_pecas": "Tienes {have} prendas en el armario y este desafío usa {total}. Registra más prendas para empezar.",
+  "piecePicker.limpar": "Borrar selección"
 }

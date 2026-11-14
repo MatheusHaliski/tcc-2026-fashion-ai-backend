@@ -10603,5 +10603,10 @@
   "flair3d.ui.detetive.CLUBE_UNDERGROUND.intro": "Do mercado, o detetive segue para um clube de tijolo e néon. Aqui, quem chama atenção não passa.",
   "flair3d.ui.detetive.ATELIE.intro": "No ateliê, bancadas e rolos de tecido. O molde da peça que falta está guardado numa gaveta.",
   "flair3d.ui.detetive.ARQUIVO.intro": "Último salão: o arquivo. Entre gaveteiros de metal, uma pasta guarda a resposta do caso.",
-  "pieces.new.falta_preencher": "Para avançar, preencha: {campos}."
+  "pieces.new.falta_preencher": "Para avançar, preencha: {campos}.",
+  "challenges.escolha_pecas": "Escolha {total} peças do seu guarda-roupa",
+  "challenges.faltam_pecas": "{missing, plural, one {Falta # peça} other {Faltam # peças}} para começar.",
+  "piecePicker.contagem": "{count} de {total} escolhidas",
+  "piecePicker.faltam_pecas": "Você tem {have} peças no guarda-roupa e este desafio usa {total}. Cadastre mais peças para começar.",
+  "piecePicker.limpar": "Limpar escolha"
 }
