@@ -278,14 +278,18 @@ describe("configurações — dados e sessões", () => {
 
   it("sessões: encerra outra sessão; falha ao sair de todas avisa", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/me/preferences": PREFS,
-      "GET /api/auth/sessions": [{ sessionId: "cur", current: true, createdAt: "2026-10-01T10:00:00Z" }, { sessionId: "s2", device: "Celular", ip: "1.2.3.4", lastUsedAt: "2026-10-20T08:30:00Z" }],
+      "GET /api/auth/sessions": [{ sessionId: "cur", current: true, createdAt: "2026-10-01T10:00:00Z" }, { sessionId: "s2", device: "Celular", ip: "1.2.3.4", lastUsedAt: "2026-10-20T08:30:00Z" },
+        { sessionId: "s3", device: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/140.0.0.0 Safari/537.36", lastUsedAt: "2026-10-21T08:30:00Z" }],
       "DELETE /api/auth/sessions/s2": {}, "DELETE /api/auth/sessions": fail(500, "Não deu para sair") });
     renderApp(<SettingsPage />);
     await tab("Sessões");
-    expect(await screen.findByText(/Celular · 1.2.3.4 · 2026-10-20T08:30/)).toBeTruthy();
+    // regressão da auditoria: data no formato do idioma (não "2026-10-20T08:30") e o navegador em palavras
+    expect(await screen.findByText(/Celular · 1\.2\.3\.4 · 20\/10\/2026/)).toBeTruthy();
+    expect(screen.getByText(/Chrome no Linux · 21\/10\/2026/)).toBeTruthy();
+    expect(screen.queryByText(/Mozilla\/5\.0|2026-10-2\dT/)).toBeNull();
     expect(screen.getByText("· esta sessão")).toBeTruthy();
-    expect(screen.getByText("· esta sessão").parentElement!.textContent).toBe("dispositivo ·  · 2026-10-01T10:00· esta sessão");
-    fireEvent.click(screen.getByRole("button", { name: "Encerrar" }));
+    expect(screen.getByText("· esta sessão").parentElement!.textContent).toMatch(/^dispositivo · 01\/10\/2026[^·]*· esta sessão$/);
+    fireEvent.click(screen.getAllByRole("button", { name: "Encerrar" })[0]);
     expect(await screen.findByText("Sessão encerrada.")).toBeTruthy();
     expect(calls.some((c) => c.method === "DELETE" && c.path === "/api/auth/sessions/s2")).toBe(true);
     await dismiss();
