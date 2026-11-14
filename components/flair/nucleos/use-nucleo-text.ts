@@ -92,6 +92,8 @@ export function useNucleoText() {
         if (vars.item) vars.item = ou(`flair3d.ui.mercado.${vars.item}`, vars.item);
         if (vars.acao) vars.acao = ou(`flair3d.ui.acaoCor.${vars.modalidade}.${vars.acao}`, ou(`flair3d.ui.acaoCor.${vars.acao}`, vars.acao));
         if (vars.venceu) vars.desfecho = t(`flair3d.ui.acaoCor.${vars.venceu === "true" ? "ok" : "falhou"}`);
+        // o que o lance mudou (força do time, placar, um lance a menos do adversário); servidor antigo não manda: fica vazio
+        vars.ganhoTexto = vars.efeito ? ou(`flair3d.ui.lanceEfeito.${vars.efeito}`, "", vars) : "";
         if (vars.atributo) vars.atributo = ou(`flair3d.ui.hud.attr.${vars.atributo}`, vars.atributo);
         // código novo do servidor ainda sem frase: o nome do código em letras comuns, nunca "FORCA_SEGUNDO_TEMPO"
         return ou(`flair3d.ui.evento.${e.codigo}`, `${legivel(e.codigo)}: ${vars.valor}`, vars);

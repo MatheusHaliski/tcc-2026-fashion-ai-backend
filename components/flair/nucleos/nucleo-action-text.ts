@@ -10,7 +10,9 @@ export function textoDoPasso(tx: Texto, nucleo: NucleoCodigo, passo: PassoAcao, 
   const outraModalidade = nucleo === "FASHION_SPORTS" && !!variante && variante !== "FUTEBOL";
   const efeito = outraModalidade ? "jogada" : EFEITO_ACAO[nucleo];
   if (passo.fonte === "evento") return tx.evento({ codigo: passo.codigo, valor: passo.valor });
-  if (passo.fonte === "especial") return tx.t(`flair3d.ui.acao.${efeito}.${passo.ok ? "special" : "fail"}`);
+  // empate no Fashion Sports: a legenda da cena dizia "O time adversário leva a partida" com o resultado "Empate"
+  const empate = nucleo === "FASHION_SPORTS" && passo.codigo === "EMPATE";
+  if (passo.fonte === "especial") return tx.t(`flair3d.ui.acao.${efeito}.${passo.ok ? "special" : empate ? "draw" : "fail"}`);
   const cena = tx.t(`flair3d.ui.acao.${efeito}.${passo.ok ? "ok" : "miss"}`);
   return `${cena}: ${tx.regra(nucleo, passo.codigo)}`;
 }

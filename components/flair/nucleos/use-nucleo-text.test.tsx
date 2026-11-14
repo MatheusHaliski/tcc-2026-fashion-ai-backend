@@ -81,6 +81,35 @@ describe("Fashion Sports — a modalidade escolhida aparece em todo texto", () =
   });
 });
 
+/** Reauditoria: empate com legenda de derrota, lance sem dizer o que mudou e "Pista do salão encontrada? false". */
+describe("reauditoria — legenda do empate, efeito do lance e pista do salão", () => {
+  it("no empate a cena diz que a partida terminou empatada, no futebol e nas outras modalidades", async () => {
+    const { textoDoPasso } = await import("./nucleo-action-text");
+    const tx = texto();
+    const empate = { fonte: "especial" as const, codigo: "EMPATE", ok: false, pontos: 60, vaga: null };
+    expect(textoDoPasso(tx, "FASHION_SPORTS", empate, "TENIS")).toBe("A partida termina empatada");
+    expect(textoDoPasso(tx, "FASHION_SPORTS", empate)).toBe("A partida termina empatada");
+    const derrota = { ...empate, codigo: "DERROTA", pontos: 0 };
+    expect(textoDoPasso(tx, "FASHION_SPORTS", derrota, "SKATE")).toBe("O time adversário leva a partida");
+  });
+
+  it("o lance diz o que mudou: força do time, placar ou um lance a menos do adversário", () => {
+    const tx = texto();
+    const lance = (valor: Record<string, unknown>) => tx.evento({ codigo: "LANCE", valor: { lance: 1, modalidade: "BASQUETE", carta: "c1", venceu: true, ...valor } });
+    expect(lance({ acao: "PASSE", efeito: "FORCA", ganho: 3, forca: 26 })).toBe("Lance 1: assistência, deu certo · força do seu time +3 (agora 26)");
+    expect(lance({ acao: "CHUTE", efeito: "PONTO", ganho: 0, forca: 23 })).toBe("Lance 1: arremesso, deu certo · entra no placar");
+    expect(lance({ acao: "DEFESA", efeito: "DEFESA", ganho: 0, forca: 23 })).toMatch(/toco, deu certo · o adversário perde um lance/);
+    // servidor antigo, sem o campo: a frase termina no desfecho
+    expect(lance({ acao: "PASSE" })).toBe("Lance 1: assistência, deu certo");
+  });
+
+  it("a pista do salão aparece por extenso, nunca como true ou false", () => {
+    const tx = texto();
+    expect(tx.evento({ codigo: "PISTA", valor: false })).toBe("Pista do salão: não encontrada");
+    expect(tx.evento({ codigo: "PISTA", valor: true })).toBe("Pista do salão: encontrada");
+  });
+});
+
 /** Regressão da auditoria: "Ver o resultado" ficava clicável e mudo enquanto a janela do acionamento esperava a escolha. */
 describe("painel da ação — botão Ver o resultado", () => {
   it("com a janela do acionamento aberta fica desligado e a tela explica o que falta", async () => {

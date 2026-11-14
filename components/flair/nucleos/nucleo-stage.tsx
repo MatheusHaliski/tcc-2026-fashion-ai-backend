@@ -4,6 +4,8 @@
  * livre), a camada de efeitos das cartas atrás e ao lado dela e as informações nos quatro cantos. Nenhum painel,
  * efeito ou texto entra na zona da roupa.
  */
+import { avataresDaSala } from "@/lib/flair/nucleos/avatares";
+import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import Link from "next/link";
 import type { Look3dPiece } from "@/components/three/common";
 import { NucleoActionFx } from "@/components/flair/nucleos/nucleo-action-fx";
@@ -76,7 +78,7 @@ export function NucleoStage(props: NucleoStageProps) {
           definicao.avatares ? (
             <NucleoCast
               compacto
-              avatares={definicao.avatares}
+              avatares={avataresDaSala(definicao.avatares, salaDe(definicao.codigo, props.variante).personagens)}
               efetiva={props.efetiva}
               aceitos={config.avatares.protagonista}
               temAvatar={props.temAvatar}

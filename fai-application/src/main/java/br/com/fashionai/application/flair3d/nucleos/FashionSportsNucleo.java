@@ -95,7 +95,7 @@ public class FashionSportsNucleo implements Flair3dNucleo {
         if (acionamentos.isEmpty()) {
             return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
         }
-        FashionSportsLances lances = new FashionSportsLances(uniforme, modalidade.codigo()).jogar(acionamentos, eles, contexto);
+        FashionSportsLances lances = new FashionSportsLances(uniforme, modalidade).jogar(acionamentos, eles, contexto);
         eventos.addAll(lances.eventos());
         if (lances.aberto()) {
             return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, List.of(), eventos);
@@ -108,7 +108,7 @@ public class FashionSportsNucleo implements Flair3dNucleo {
         boolean vitoria = golsNos > golsEles;
         boolean empate = golsNos == golsEles;
         eventos.add(new Evento("FORCA_SEGUNDO_TEMPO", segundoTempo));
-        eventos.add(new Evento("PLACAR", modalidade.placar(golsNos, golsEles, true)));
+        eventos.add(new Evento("PLACAR", modalidade.placar(golsNos, golsEles, true, lances.lancesDeForca())));
         List<RegraResultado> regras = List.of(RegraResultado.de("VITORIA", vitoria, 100), RegraResultado.de("EMPATE", empate, 60),
                 RegraResultado.de("COESAO", true, 0));
         double pontos = vitoria ? 100 : empate ? 60 : 0;

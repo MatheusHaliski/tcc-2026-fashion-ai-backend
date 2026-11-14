@@ -145,6 +145,8 @@ export interface Sala {
   moveis: Movel[];
   /** figurantes só de cenário (torcida, convidados), além dos personagens do arquivo do núcleo */
   figurantes: NucleoPersonagem[];
+  /** elenco próprio da sala (as modalidades do Fashion Sports): quando existe, entra no lugar dos personagens do núcleo */
+  personagens?: NucleoPersonagem[];
   luzes: {
     principal: Luz;
     recorte: Luz;

@@ -26,7 +26,7 @@ export function partesDaSala(sala: Sala): Parte[] {
 
 /** Todos os figurantes da cena: os personagens do arquivo do núcleo e os de cenário da sala. */
 export function figurantesDaCena(sala: Sala, personagens: NucleoPersonagem[]): NucleoPersonagem[] {
-  return [...personagens, ...sala.figurantes];
+  return [...(sala.personagens ?? personagens), ...sala.figurantes];
 }
 
 const soma = (partes: Parte[]) => partes.reduce((n, p) => n + triangulosDaParte(p), 0);

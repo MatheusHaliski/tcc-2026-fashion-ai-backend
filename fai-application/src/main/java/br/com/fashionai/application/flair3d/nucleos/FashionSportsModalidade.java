@@ -26,19 +26,31 @@ public record FashionSportsModalidade(String codigo, int velocidade, int tecnica
      * O placar no jeito da modalidade, a partir dos lances convertidos de cada lado (quem converte mais continua na
      * frente): gols no futebol, chegadas na corrida, pontos no basquete (12 de base e 3 por lance), nota no skate (60 de
      * base e 10 por lance) e sets no vôlei e no tênis (no fim, 2 para quem venceu e no máximo 1 para o outro; 1 a 1 no
-     * empate).
+     * empate, mesmo sem lance convertido: tênis e vôlei não terminam 0 a 0).
      */
     public String placar(int nos, int eles, boolean fim) {
+        return placar(nos, eles, fim, 0);
+    }
+
+    /**
+     * O placar com os lances de força do segundo tempo que deram certo (drible, corrida, passe): no basquete cada um
+     * vale 1 ponto de lance livre (até 2) e no skate 3 décimos de nota (até 9), sempre menos que um lance convertido,
+     * para o placar se mexer sem trocar quem venceu. Nas outras modalidades eles aparecem só na força do time.
+     */
+    public String placar(int nos, int eles, boolean fim, int lancesDeForca) {
         return switch (codigo) {
-            case "BASQUETE" -> (12 + 3 * nos) + "-" + (12 + 3 * eles);
-            case "SKATE" -> (60 + 10 * nos) + "-" + (60 + 10 * eles);
+            case "BASQUETE" -> (12 + 3 * nos + Math.min(2, lancesDeForca)) + "-" + (12 + 3 * eles);
+            case "SKATE" -> (60 + 10 * nos + 3 * Math.min(3, lancesDeForca)) + "-" + (60 + 10 * eles);
             case "VOLEI", "TENIS" -> sets(nos, eles, fim);
             default -> nos + "-" + eles;
         };
     }
 
     private static String sets(int nos, int eles, boolean fim) {
-        if (!fim || nos == eles) {
+        if (fim && nos == eles) {
+            return "1-1";
+        }
+        if (!fim) {
             return Math.min(nos, 1) + "-" + Math.min(eles, 1);
         }
         return nos > eles ? "2-" + Math.min(eles, 1) : Math.min(nos, 1) + "-2";
