@@ -5413,6 +5413,8 @@
   "lens.undo.action": "Undo",
   "lens.undo.text": "“{label}” was removed from the reading.",
   "lens.unsaved_toast": "Removed from inspirations.",
+  "lens.category_pick.title": "What kind of piece is this?",
+  "lens.category_pick.saved": "Type saved: {category}. Similar pieces were updated.",
   "mirror.adicionar_peca": "Add a piece",
   "mirror.do_guarda_roupa": "From wardrobe",
   "mirror.ja_no_espelho": "Already in the mirror",

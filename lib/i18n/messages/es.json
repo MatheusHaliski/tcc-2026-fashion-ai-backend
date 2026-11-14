@@ -5413,6 +5413,8 @@
   "lens.undo.action": "Deshacer",
   "lens.undo.text": "“{label}” salió de la lectura.",
   "lens.unsaved_toast": "Quitado de las inspiraciones.",
+  "lens.category_pick.title": "¿Qué tipo de prenda es esta?",
+  "lens.category_pick.saved": "Tipo guardado: {category}. Las prendas parecidas se actualizaron.",
   "mirror.adicionar_peca": "Añadir prenda",
   "mirror.do_guarda_roupa": "Del armario",
   "mirror.ja_no_espelho": "Ya en el espejo",

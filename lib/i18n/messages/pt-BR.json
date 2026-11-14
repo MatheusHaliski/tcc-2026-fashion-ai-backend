@@ -5413,6 +5413,8 @@
   "lens.undo.action": "Desfazer",
   "lens.undo.text": "“{label}” saiu da leitura.",
   "lens.unsaved_toast": "Removido das inspirações.",
+  "lens.category_pick.title": "Que tipo de peça é esta?",
+  "lens.category_pick.saved": "Tipo salvo: {category}. As peças parecidas foram atualizadas.",
   "mirror.adicionar_peca": "Adicionar peça",
   "mirror.do_guarda_roupa": "Do guarda-roupa",
   "mirror.ja_no_espelho": "Já no espelho",
