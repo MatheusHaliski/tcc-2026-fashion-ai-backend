@@ -28,7 +28,7 @@ export function PieceReviewStep({ value, origin, image, shareToFeed, onShareToFe
   /** aviso de falha ao salvar e a navegação da etapa */
   children?: ReactNode;
 }) {
-  const { t } = useI18n();
+  const { t, fmtNumber } = useI18n();
   const brand = value.brandName && !isNoBrand(value.brandName) ? value.brandName : null;
   const facts: [string, string][] = [
     [t("common.nome"), value.name],
@@ -38,7 +38,7 @@ export function PieceReviewStep({ value, origin, image, shareToFeed, onShareToFe
     [t("common.brand"), value.brandName || "—"],
     [t("common.occasion"), value.occasion.map((o) => label(o)).join(", ") || "—"],
     [t("common.style"), value.style.map((x) => label(x)).join(", ") || "—"],
-    [t("common.price"), value.price || "—"],
+    [t("common.price"), value.price === "" ? "—" : fmtNumber(Number(value.price), { minimumFractionDigits: 2, maximumFractionDigits: 2 })],
     [t("common.visibility"), label(savedVisibility(value.visibility, shareToFeed).toLowerCase())],
     [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")],
     [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"],

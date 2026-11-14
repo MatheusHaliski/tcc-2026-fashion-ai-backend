@@ -1,6 +1,7 @@
 "use client";
 import { Button, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { api, mediaUrl } from "@/lib/api/client";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import type { Page, PieceView } from "@/lib/api/types";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -38,7 +39,10 @@ export function PiecePicker({ value, onChange, total, label }: {
           return (
             <button key={p.id} type="button" role="checkbox" aria-checked={on} disabled={!on && full}
               className={`piece-picker-item ${on ? "is-on" : ""}`} onClick={() => toggle(p.id)}>
-              <img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" loading="lazy" />
+              {/* peça sem foto: a ilustração da categoria na cor cadastrada, como no card do guarda-roupa */}
+              {p.defaultImage
+                ? <img src={defaultGarmentUrl(p.category, p.subcategory, p.colorHex, p.color, "WHOLE")} alt="" loading="lazy" />
+                : <img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" loading="lazy" />}
               <span className="piece-picker-name">{p.name}</span>
             </button>
           );

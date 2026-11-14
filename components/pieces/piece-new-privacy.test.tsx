@@ -47,6 +47,8 @@ describe("criador de peça — o que é salvo é o que a revisão mostra", () =>
     const share = screen.getByRole("switch", { name: /Compartilhar no feed/ });
     expect(share.getAttribute("aria-checked")).toBe("false");
     expect(visibilityShown()).toBe("Privado");
+    // o preço sai com duas casas no formato do idioma (a revisão mostrava "89.9")
+    expect(screen.getByText("Preço", { selector: "dt" }).nextElementSibling?.textContent).toBe("50,00");
     save();
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces")).toBe(true), { timeout: 4000 });
     await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
