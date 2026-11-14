@@ -35,7 +35,7 @@ describe("desafios — catálogo e início", () => {
     expect(screen.getByText("5 jogando agora · por @bia · decoração: Vaso")).toBeTruthy();
     expect(screen.getByText("Anos 90")).toBeTruthy();
     expect(screen.getByText("Regra simples")).toBeTruthy();
-    expect(screen.getAllByText(/^— dias · esforço ●○○/)).toHaveLength(2);
+    expect(screen.getAllByText(/^sem prazo fixo · esforço ●○○/)).toHaveLength(2);
     expect((screen.getByRole("button", { name: "Limite atingido" }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "indisponível" }) as HTMLButtonElement).disabled).toBe(true);
     // o desafio vindo de ?start= fica realçado
@@ -50,9 +50,9 @@ describe("desafios — catálogo e início", () => {
     fireEvent.click((await screen.findAllByRole("button", { name: "Começar" }, { timeout: 4000 }))[0]);
     const dlg = await screen.findByRole("dialog", { name: "Sem compras" });
     expect(within(dlg).getByText("Use só o que tem")).toBeTruthy();
-    expect(within(dlg).queryByLabelText("Convidar (usernames ou ids, vírgula)")).toBeNull();
-    fireEvent.click(within(dlg).getByRole("button", { name: "DUELO" }));
-    fireEvent.change(within(dlg).getByLabelText("Convidar (usernames ou ids, vírgula)"), { target: { value: "ana, , bia " } });
+    expect(within(dlg).queryByLabelText("Convidar (usernames separados por vírgula)")).toBeNull();
+    fireEvent.click(within(dlg).getByRole("button", { name: "Duelo" }));
+    fireEvent.change(within(dlg).getByLabelText("Convidar (usernames separados por vírgula)"), { target: { value: "ana, , bia " } });
     fireEvent.click(within(dlg).getAllByRole("button", { name: "Começar" }).at(-1)!);
     await waitFor(() => expect(loc.href).toBe("/challenges/novo"));
     expect(calls.find((c) => c.method === "POST" && c.path === "/api/challenges")!.body).toEqual({ code: "NO_BUY", mode: "DUELO", params: {}, invitees: ["ana", "bia"] });
@@ -97,7 +97,7 @@ describe("desafios — meus desafios", () => {
     renderApp(<ChallengesPage />);
     await tab(/Meus desafios/);
     expect(await screen.findByText("Convites")).toBeTruthy();
-    expect(screen.getByText(/SOLO · ACTIVE · 3 dias · até/)).toBeTruthy();
+    expect(screen.getByText(/Solo · ACTIVE · 3 dias · até/)).toBeTruthy();
     expect(screen.getByText("2/7 looks")).toBeTruthy();
     expect(screen.getByText("7/7")).toBeTruthy();
     expect(screen.getByText("Concluídos")).toBeTruthy();
@@ -159,8 +159,8 @@ describe("desafios — votação e proposta", () => {
     fireEvent.change(document.getElementById("pname")!, { target: { value: "Só verde" } });
     fireEvent.change(document.getElementById("prule")!, { target: { value: "Um item verde" } });
     fireEvent.change(document.getElementById("pdays")!, { target: { value: "5" } });
-    fireEvent.click(screen.getByRole("button", { name: "DUELO" }));
-    fireEvent.click(screen.getByRole("button", { name: "SOLO" }));
+    fireEvent.click(screen.getByRole("button", { name: "Duelo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Solo" }));
     fireEvent.click(send);
     expect(await screen.findByText("Proposta enviada para curadoria.")).toBeTruthy();
     expect(calls.find((c) => c.path === "/api/challenges/proposals")!.body).toEqual({ name: "Só verde", blocks: [{ type: "RULE", text: "Um item verde" }], modes: ["DUELO"], durationDays: 5 });
