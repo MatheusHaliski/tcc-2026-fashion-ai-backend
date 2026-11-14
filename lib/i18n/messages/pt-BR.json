@@ -1034,7 +1034,7 @@
   "builder.step.review": "Revisar e salvar",
   "builder.stepsLabel": "Etapas da criação",
   "catalog.adicionar_com_minha_foto": "Adicionar com minha foto",
-  "catalog.brand_placeholder": "Ex.: Nike, Lacoste, Levi's",
+  "catalog.brand_placeholder": "Ex.: nome que aparece na etiqueta",
   "catalog.buscar_no_catalogo": "Buscar no catálogo",
   "catalog.buscar_pecas": "Buscar peças",
   "catalog.codigo_sku": "Código ou SKU",
@@ -10602,5 +10602,6 @@
   "flair3d.ui.detetive.CAMARIM.intro": "Atrás do palco, araras e espelhos. Alguém escondeu um recibo entre as caixas de sapato.",
   "flair3d.ui.detetive.CLUBE_UNDERGROUND.intro": "Do mercado, o detetive segue para um clube de tijolo e néon. Aqui, quem chama atenção não passa.",
   "flair3d.ui.detetive.ATELIE.intro": "No ateliê, bancadas e rolos de tecido. O molde da peça que falta está guardado numa gaveta.",
-  "flair3d.ui.detetive.ARQUIVO.intro": "Último salão: o arquivo. Entre gaveteiros de metal, uma pasta guarda a resposta do caso."
+  "flair3d.ui.detetive.ARQUIVO.intro": "Último salão: o arquivo. Entre gaveteiros de metal, uma pasta guarda a resposta do caso.",
+  "pieces.new.falta_preencher": "Para avançar, preencha: {campos}."
 }

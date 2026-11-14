@@ -1034,7 +1034,7 @@
   "builder.step.review": "Review and save",
   "builder.stepsLabel": "Creation steps",
   "catalog.adicionar_com_minha_foto": "Add with my photo",
-  "catalog.brand_placeholder": "e.g. Nike, Lacoste, Levi's",
+  "catalog.brand_placeholder": "e.g. the name on the label",
   "catalog.buscar_no_catalogo": "Search the catalog",
   "catalog.buscar_pecas": "Search pieces",
   "catalog.codigo_sku": "Code or SKU",
@@ -10602,5 +10602,6 @@
   "flair3d.ui.detetive.CAMARIM.intro": "Backstage, clothing racks and mirrors. Someone hid a receipt among the shoe boxes.",
   "flair3d.ui.detetive.CLUBE_UNDERGROUND.intro": "From the market, the detective heads to a brick-and-neon club. Here, whoever stands out does not get through.",
   "flair3d.ui.detetive.ATELIE.intro": "In the atelier, workbenches and rolls of fabric. The pattern of the missing piece is kept in a drawer.",
-  "flair3d.ui.detetive.ARQUIVO.intro": "Last room: the archive. Among metal filing cabinets, one folder holds the answer to the case."
+  "flair3d.ui.detetive.ARQUIVO.intro": "Last room: the archive. Among metal filing cabinets, one folder holds the answer to the case.",
+  "pieces.new.falta_preencher": "To continue, fill in: {campos}."
 }

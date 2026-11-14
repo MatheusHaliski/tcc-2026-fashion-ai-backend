@@ -20,12 +20,13 @@ import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
-import { CatalogPhoto } from "@/components/catalog/catalog-photo";
+import { CatalogPickSummary, LensPrefillNote, type CatalogPick } from "@/components/catalog/catalog-pick-summary";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { BrandHintNote, MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
+import { pieceStepProblem } from "@/lib/pieces/step-guard";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
 import { PieceReviewStep, savedVisibility } from "@/components/pieces/piece-review-step";
@@ -37,8 +38,6 @@ const STEPS = PIECE_CREATION_STEPS;
 /** Forma de adicionar (RF4): pela busca catalogada com o formulário, ou fotografando (uma ou várias fotos). */
 type AddMode = "catalog" | "photos";
 const GENERIC_ASSET = "/_derived/pecas_default/generic.svg";
-/** Produto do catálogo escolhido na busca (RF47): a peça é criada por referência a ele. */
-interface CatalogPick { product: CatalogProduct; variant: CatalogVariant | null }
 
 /** Tipos oferecidos pelos chips do criador: o ?category= da URL só vale se for um deles. */
 const CATEGORY_IDS = CATEGORY_CARDS.map((c) => c.id as string);
@@ -100,6 +99,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const saving = useRef(false); const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveProblem, setSaveProblem] = useState<string | null>(null);
+  const [stepProblem, setStepProblem] = useState<string | null>(null);
   // Depois de salvar: "Compartilhar no feed" vem DESLIGADO (privacidade: a peça é salva como a revisão mostra); ligado,
   // o post é o próprio card e a peça privada passa a pública (a revisão avisa). "Converter para FLAIR" (desligado) cria
   // a cópia em Minhas cartas FLAIR e não publica nada.
@@ -219,10 +219,20 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     : t("catalog.origem_sem_foto");
   const idx = STEPS.indexOf(step);
   const go = (s: Step) => { setStep(s); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
+  /** Sair da etapa Peça só com os campos obrigatórios preenchidos: senão fica nela, marca os campos e diz o que falta. */
+  function advance(s: Step) {
+    const missingPhoto = mode === "photos" && !photoPick;
+    const errors = s === "piece" || missingPhoto ? {} : validatePieceForm(value, tax);
+    const problem = s === "piece" ? null : missingPhoto ? t("pieces.new.escolha_peca_da_foto") : pieceStepProblem(errors);
+    setStepProblem(problem);
+    if (!problem) return go(s);
+    setFieldErrors(errors);
+    go("piece");
+  }
   const nav = (
     <div className="mt-4 flex justify-between gap-2">
       <Button onClick={() => go(STEPS[Math.max(0, idx - 1)])} disabled={idx === 0}>{t("common.back")}</Button>
-      {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={busy} disabled={!!done}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => go(STEPS[idx + 1])}>{t("common.next")}</Button>}
+      {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={busy} disabled={!!done}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => advance(STEPS[idx + 1])}>{t("common.next")}</Button>}
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
@@ -231,15 +241,10 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} actions={<CreatorWelcome kind="piece" />} />
       {/* RF54 — veio do "É minha" do FashionAI Lens: o que a leitura viu já está no formulário, para conferir */}
-      {pre.fromLens && (
-        <p className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-thread-soft p-3 type-body-sm" role="note" data-prefill="lens">
-          <b>{t("pieceForm.lens.veio")}</b><span>{t("pieceForm.lens.dica")}</span>
-          {pre.scan && <Link className="underline" href={`/lens/${pre.scan}`}>{t("pieceForm.lens.voltar")}</Link>}
-        </p>
-      )}
+      {pre.fromLens && <LensPrefillNote scan={pre.scan} />}
       <SegmentPicker className="mb-4" label={t("pieces.new.forma_de_adicionar")} value={mode} onChange={setMode}
         options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
-      <PieceCreationSteps value={step} onChange={go} />
+      <PieceCreationSteps value={step} onChange={advance} />
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "piece-create-layout is-art" : "piece-create-layout"}>
         <div className="piece-create-main min-w-0">
@@ -264,15 +269,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
               {mode === "catalog" && <section className="creator-section" aria-labelledby="piece-catalog-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-catalog-label" className="type-h3">{t("catalog.buscar_no_catalogo")}</h2><Badge tone="thread">{t("catalog.recomendado")}</Badge><span className="type-caption text-muted">{t("catalog.lead_busca")}</span></div>
                 {pick ? (
-                  <div className="catalog-pick" role="status">
-                    <span className="catalog-pick-art" aria-hidden>{pick.product.catalogImage ? <CatalogPhoto framing={photoFraming} image={pick.product.catalogImage} fallbackUrl={officialImg} alt="" /> : <img src={officialImg ?? asset} alt="" />}</span>
-                    <div className="min-w-0">
-                      <p className="type-caption text-muted">{t("catalog.peca_do_catalogo")}</p>
-                      <p className="type-body font-medium truncate">{pick.product.brand?.name} · {pick.product.productName}{pick.variant?.colorName ? ` — ${pick.variant.colorName}` : ""}</p>
-                      <p className="type-caption text-faint">{officialImg ? t("catalog.foto_oficial_nota") : t("catalog.sem_foto_oficial_nota")}</p>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={clearCatalog}>{t("catalog.remover_referencia")}</Button>
-                  </div>
+                  <CatalogPickSummary pick={pick} image={officialImg} fallback={asset} framing={photoFraming} onClear={clearCatalog} />
                 ) : (
                   <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onClearCategory={() => setValue((v) => ({ ...v, category: "", subcategory: "" }))} onPick={applyCatalog} resultsLayout="matrix" brandGrid
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
@@ -282,7 +279,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
-                <PieceFields compact value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
+                <PieceFields compact value={value} onChange={(v) => { setValue(v); setStepProblem(null); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
                   afterBrand={mode === "photos" && photoPick?.hint && !value.brandName ? <BrandHintNote hint={photoPick.hint} disabled={false}
                     onUse={(brandName) => setValue((v) => ({ ...v, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }))} /> : null} />
               </section>
@@ -293,6 +290,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
                 <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
               </section>}
+              {stepProblem && <p role="alert" className="error-text mt-3" data-step-problem>{stepProblem}</p>}
               {nav}
             </Card>
           )}
