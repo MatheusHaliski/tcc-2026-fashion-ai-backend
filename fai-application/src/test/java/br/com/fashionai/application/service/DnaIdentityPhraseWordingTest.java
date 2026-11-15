@@ -23,4 +23,13 @@ class DnaIdentityPhraseWordingTest {
         LocaleContextHolder.setLocale(Locale.forLanguageTag("es"));
         assertThat(DnaIdentityPhrase.silhouetteWord("layering")).isEqualTo("en capas");
     }
+
+    @Test
+    void fraseGravadaComOCodigoDaSilhuetaApareceComAPalavra() {
+        assertThat(DnaIdentityPhrase.legivel("Minimalista de silhueta layering que chega de jaqueta — com elegância serena."))
+                .isEqualTo("Minimalista de silhueta em camadas que chega de jaqueta — com elegância serena.");
+        assertThat(DnaIdentityPhrase.legivel("Clásico de silueta fitted.")).isEqualTo("Clásico de silueta ajustada.");
+        assertThat(DnaIdentityPhrase.legivel("Uma frase sem código.")).isEqualTo("Uma frase sem código.");
+        assertThat(DnaIdentityPhrase.legivel(null)).isNull();
+    }
 }

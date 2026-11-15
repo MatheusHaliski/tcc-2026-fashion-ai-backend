@@ -117,7 +117,7 @@ final class DnaSchemeViews {
         out.put("archetype", d.getArchetype() == null ? null : d.getArchetype().name());
         out.put("archetypeLabel", d.getArchetype() == null ? null : DnaViews.ARCHETYPE_LABEL.get(d.getArchetype()));
         out.put("boldnessIndex", d.getBoldnessIndex());
-        out.put("identityPhrase", d.getIdentityPhrase());
+        out.put("identityPhrase", DnaIdentityPhrase.legivel(d.getIdentityPhrase()));
         out.put("palette", Json.strings(d.getColorPaletteJson()));
         out.put("cardLayout", d.getCardLayout());
         out.put("targetElement", d.getTargetElement());

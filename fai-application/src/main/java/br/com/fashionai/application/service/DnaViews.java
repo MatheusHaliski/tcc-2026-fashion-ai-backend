@@ -47,7 +47,7 @@ final class DnaViews {
         m.put("iconPiece", d.getIconPieceName());
         m.put("styles", Json.csv(d.getStyleKeywords()));
         m.put("occasions", Json.csv(d.getOccasionKeywords()));
-        m.put("phrase", d.getIdentityPhrase());
+        m.put("phrase", DnaIdentityPhrase.legivel(d.getIdentityPhrase()));
         m.put("phraseSource", d.getPhraseSource());
         m.put("colorSeason", d.getColorSeason());
         m.put("synthesizedAt", d.getSynthesizedAt());
