@@ -11,6 +11,7 @@ import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { Cena2D, QuadroParado } from "@/components/flair/nucleos/scene/scene-2d";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
+import type { MomentoDaCamera } from "@/lib/flair/nucleos/camera/jogos";
 import type { NucleoConfig, NucleoResultado, ZonaEscolha } from "@/lib/flair/nucleos/types";
 
 const NucleoScene3D = dynamic(() => import("@/components/flair/nucleos/nucleo-scene-3d"), { ssr: false, loading: () => null });
@@ -37,6 +38,9 @@ interface Props {
   /** zonas da rodada (modos do Ateliê) e o que a pessoa já pintou: a peça aparece no manequim */
   zonasDaPeca?: string[];
   zonas?: Record<string, ZonaEscolha>;
+  /** a câmera escolhida no seletor do HUD e o momento da partida (scene/game-camera.tsx) */
+  camera?: string | null;
+  momento?: MomentoDaCamera;
 }
 
 export function NucleoScene(props: Props) {

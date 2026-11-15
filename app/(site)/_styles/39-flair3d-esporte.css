@@ -222,3 +222,22 @@
     display: none;
   }
 }
+
+.fsp-camera {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+@media (max-width: 640px) {
+  /* no celular o placar ocupa o topo: o seletor desce e mostra só o ícone */
+  .fsp-camera {
+    top: 52px;
+    padding: 0 10px;
+  }
+
+  .fsp-camera .n3d-camera-nome {
+    display: none;
+  }
+}

@@ -11764,5 +11764,22 @@
   "flair3d.esporte.estado.MARCA": "marca um adversário",
   "flair3d.esporte.estado.RETORNO": "volta para a defesa",
   "flair3d.esporte.estado.GOLEIRO": "no gol, na linha da bola",
-  "flair3d.esporte.estado.POSICAO": "na posição da formação"
+  "flair3d.esporte.estado.POSICAO": "na posição da formação",
+  "flair3d.camera.trocar": "Câmera: {nome}. Trocar de câmera",
+  "flair3d.camera.AUTO": "Automática",
+  "flair3d.camera.TRES_QUARTOS": "Três quartos",
+  "flair3d.camera.ORBITAL_360": "Giro de 360°",
+  "flair3d.camera.CLOSE_ROUPA": "Close na roupa",
+  "flair3d.camera.CLOSE_ROSTO": "Close no rosto",
+  "flair3d.camera.GRUA": "Grua",
+  "flair3d.camera.TRAVELLING": "Travelling",
+  "flair3d.camera.LATERAL": "Lateral",
+  "flair3d.camera.AEREA": "Aérea",
+  "flair3d.camera.EXPLORACAO": "Exploração",
+  "flair3d.camera.ISOMETRICA": "Diagonal de cima",
+  "flair3d.camera.FOSSO": "Fosso dos fotógrafos",
+  "flair3d.camera.PLATEIA": "Da plateia",
+  "flair3d.camera.CONTRA_PLONGEE": "De baixo para cima",
+  "flair3d.camera.ATRAS_DO_GOL": "Atrás do gol",
+  "flair3d.camera.TRANSMISSAO": "Transmissão"
 }

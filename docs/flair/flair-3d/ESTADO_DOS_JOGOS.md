@@ -32,15 +32,17 @@ O que vale para todos os jogos e não se repete abaixo:
 | --- | --- |
 | Fashion Sports com câmera de transmissão, mecânica de partida e cartas para toda ação | feito em boa parte (jogo 14, abaixo), com a mão no controle e os reinícios à vista; faltam avatares humanos e as outras modalidades no nível do futebol |
 | Estádio com arquibancada, redes que balançam, marcações claras, jogadores sem bola com movimento automático | feito em primitivas (jogo 14): o servidor decide o estado e o destino de cada jogador em cada lance, e a trave treme na bola na trave; jogadores e torcida ainda são figuras simples |
-| Câmeras pensadas para os 15 jogos (`CAMERAS.md`, sistema de câmeras compartilhado, seletor no HUD) | pendente: só o Fashion Sports tem câmera própria (transmissão); os outros 14 continuam com a câmera frontal do provador |
+| Câmeras pensadas para os 15 jogos (`CAMERAS.md`, sistema de câmeras compartilhado, seletor no HUD) | feito: rigs comuns (`lib/flair/nucleos/camera`), um conjunto de 4 a 6 câmeras por jogo com a automática por momento, seletor no HUD, reduzir movimento; visto em fotos (Passarela, Dress Fighter, Detective, Super-Herói, Boutique aérea, Dress the Star em 390×844). Falta: a câmera não desvia de móveis; a exploração só faz sentido quando o avatar andar (Detective, Labirinto, Around the World) |
 | NPCs como avatares humanos do mesmo tipo do avatar da pessoa, com níveis de detalhe | pendente em todos os jogos |
 | Cenários coerentes e bem acabados (`CENARIOS.md`, auditoria de cada sala, modelos licenciados) | pendente; só o estádio do futebol foi refeito |
 | Mundos exploráveis (`MUNDOS.md`): Fashion Detective como um lugar interligado, Around the World por bairros, Labirinto desenhado | pendente |
 | Fashion Detective: câmera de exploração, 8 salas ou mais com cutscene, desafio, quebra-cabeça, inimigos e esconderijos; 5 chaves em armários; pistas em papel e no bolso de inimigos; mapa; história (`FASHION_DETECTIVE_HISTORIA.md`) e cutscene final; celular 390×844 | pendente (o jogo continua como em 14/11: 6 salões e mercado) |
 | Dress Fighter e outros jogos de ação com câmera própria (ringue de lado, etc.) | pendente |
 
-**Câmeras e avatares hoje, jogo a jogo.** Câmera de transmissão nova: Fashion Sports (as seis modalidades). Câmera
-frontal antiga do provador: os outros 14. Avatares humanos nos NPCs: nenhum jogo (todos com figurantes simples).
+**Câmeras e avatares hoje, jogo a jogo.** Os 15 jogos usam o sistema de câmeras comum (`CAMERAS.md`): o preparo em
+três quartos e a câmera de ação do gênero; o Fashion Sports tem ainda a transmissão com cortes e quatro câmeras do campo
+no seletor. Nenhum jogo usa mais a câmera frontal do provador como única vista. Avatares humanos nos NPCs: nenhum jogo
+(todos com figurantes simples).
 
 ## Rodadas: o que mudou na base
 

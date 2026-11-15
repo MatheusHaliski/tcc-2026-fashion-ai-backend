@@ -11,7 +11,7 @@ import * as THREE from "three";
 import { Campo3D } from "@/components/flair/esporte/campo-3d";
 import { LARGURA_DO_GOL, type Batida } from "@/components/flair/esporte/gol-3d";
 import { Jogador3D } from "@/components/flair/esporte/jogador-3d";
-import { planoDaCamera, poseDaCamera, seguir, tapaOReplay, type Plano, type Pose } from "@/lib/flair/esporte/camera";
+import { planoDaCamera, poseDaCamera, poseEscolhida, seguir, tapaOReplay, type Plano, type Pose } from "@/lib/flair/esporte/camera";
 import { noMundo, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
 import { pontoNaRede } from "@/lib/flair/esporte/rede";
 import { CHEGADA_AO_GOL, gol, naTrave } from "@/lib/flair/esporte/bola";
@@ -28,14 +28,16 @@ export interface Transmissao3DProps {
   reduzido: boolean;
   uniforme: Uniforme;
   rotulo: string;
+  /** a câmera escolhida no seletor ("AUTO" = a transmissão com cortes) */
+  camera?: string;
 }
 
 interface Estado {
   quadro: Quadro;
-  plano: Plano;
+  plano: Plano | string;
 }
 
-function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: Omit<Transmissao3DProps, "rotulo">) {
+function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha }: Omit<Transmissao3DProps, "rotulo">) {
   /** a bola na rede ou na trave: depois que ela chega ao gol (k 0,72), com o ponto do impacto */
   const batida = useRef<Batida | null>(null);
   const estado = useRef<Estado>({ quadro: quadroDoLance(campo, anterior, atual, reduzido ? 1 : 0), plano: "geral" });
@@ -48,7 +50,10 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: O
   useFrame(() => {
     const k = reduzido ? 1 : Math.max(0, Math.min(1, (performance.now() - inicio) / Math.max(1, duracao)));
     const quadro = quadroDoLance(campo, anterior, atual, k);
-    const plano = planoDaCamera(atual, k, reduzido);
+    const aspecto = size.width / Math.max(1, size.height);
+    const fixa = poseEscolhida(escolha, campo, [quadro.bola.x, quadro.bola.y], performance.now() / 1000, aspecto, reduzido);
+    // com uma câmera escolhida não há cortes: o "plano" é o nome dela, e trocar de câmera é o único salto
+    const plano: Plano | string = fixa ? (escolha as string) : planoDaCamera(atual, k, reduzido);
     const cortou = plano !== estado.current.plano;
     estado.current = { quadro, plano };
     batida.current = atual && (gol(atual.tipo) || naTrave(atual.tipo)) && k >= CHEGADA_AO_GOL
@@ -63,7 +68,7 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: O
     if (plano === "replay" && ator) {
       for (const f of quadro.figuras) f.oculto = f !== ator && tapaOReplay(campo, [ator.x, ator.y], [f.x, f.y]);
     }
-    const pedida = poseDaCamera(plano, campo, [quadro.bola.x, quadro.bola.y], ator ? [ator.x, ator.y] : null, size.width / Math.max(1, size.height));
+    const pedida = fixa ?? poseDaCamera(plano as Plano, campo, [quadro.bola.x, quadro.bola.y], ator ? [ator.x, ator.y] : null, aspecto);
     pose.current = !pose.current || cortou || reduzido ? pedida : seguir(pose.current, pedida, 0.08);
     camera.position.set(...pose.current.pos);
     camera.lookAt(...pose.current.alvo);

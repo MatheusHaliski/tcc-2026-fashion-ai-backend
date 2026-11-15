@@ -12,7 +12,8 @@ import { useReducedMotion, useWebGL } from "@/components/three/common";
 import { HudIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { jogadorEmTexto, narracao, nomeDoTime } from "@/components/flair/esporte/esporte-texto";
-import { planoDaCamera } from "@/lib/flair/esporte/camera";
+import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
+import { CAMERAS_DO_CAMPO, planoDaCamera } from "@/lib/flair/esporte/camera";
 import { campoDe, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
 import { quadroDoLance } from "@/lib/flair/esporte/timeline";
 import { relogioEmTexto, type Jogada } from "@/lib/flair/esporte/types";
@@ -59,10 +60,16 @@ interface Props {
   fim: boolean;
 }
 
+/** A câmera escolhida no seletor (vale enquanto a partida está na tela). */
+function useCameraDoCampo() {
+  return useState<string>(CAMERAS_DO_CAMPO[0]);
+}
+
 export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim }: Props) {
   const tx = useNucleoText();
   const webgl = useWebGL();
   const reduzido = useReducedMotion();
+  const [camera, setCamera] = useCameraDoCampo();
   const campo = campoDe(modalidade);
   const atual = jogadas[jogadas.length - 1] ?? null;
   const anterior = jogadas[jogadas.length - 2] ?? null;
@@ -87,17 +94,18 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim }: Pr
   const planta = <CampoEmPlanta campo={campo} anterior={anterior} atual={atual} uniforme={uniforme} rotulo={rotulo} />;
   const voltar = tx.t("flair3d.ui.back");
   return (
-    <div className="n3d-stage fsp-palco" data-testid="esporte-palco" data-modalidade={modalidade} data-plano={planoDaCamera(atual, k, reduzido)}>
+    <div className="n3d-stage fsp-palco" data-testid="esporte-palco" data-modalidade={modalidade} data-plano={camera === CAMERAS_DO_CAMPO[0] || reduzido ? planoDaCamera(atual, k, reduzido) : camera}>
       {webgl === false || reduzido ? planta : webgl === null ? <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div> : (
         <Limite reserva={planta}>
           <div className="n3d-scene3d">
-            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} />
+            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} />
           </div>
         </Limite>
       )}
       <Link href="/flair/3d" className="n3d-icon-btn fsp-voltar" aria-label={voltar} title={voltar}>
         <HudIcon name="voltar" />
       </Link>
+      {webgl && !reduzido && <NucleoCameraSelector className="fsp-camera" opcoes={[...CAMERAS_DO_CAMPO]} atual={camera} onTrocar={setCamera} />}
       <div className="fsp-placar" role="status" aria-live="off" data-testid="esporte-placar">
         <span className="fsp-time"><i style={{ background: uniforme.camisa }} aria-hidden />{nomeDoTime(tx, "NOS")}</span>
         <strong className="fsp-gols tabular">{nos} <span aria-hidden>×</span> {eles}</strong>

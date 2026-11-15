@@ -5,6 +5,8 @@
  * Com "reduzir movimento" a câmera não viaja: fica no plano geral, parada, e os lances aparecem em texto. Puro.
  */
 import { noMundo, type Campo } from "@/lib/flair/esporte/campo";
+import { CAMERA_AUTOMATICA } from "@/lib/flair/nucleos/camera/jogos";
+import { poseDoRig, type Camera } from "@/lib/flair/nucleos/camera/rigs";
 import { finalizacao } from "@/lib/flair/esporte/timeline";
 import type { Jogada, Ponto } from "@/lib/flair/esporte/types";
 
@@ -69,6 +71,43 @@ function poseAberta(plano: Plano, campo: Campo, bola: Ponto): Pose {
   const limite = campo.comprimento / 2 - 4;
   const cx = Math.max(-limite, Math.min(limite, bx * 0.7));
   return { pos: [cx, 11 + campo.largura * 0.15, meia + 13], alvo: [cx + (bx - cx) * 0.5, 0, bz * 0.3] };
+}
+
+/**
+ * As câmeras do campo que a pessoa pode escolher no seletor, além da automática (a transmissão com cortes): a lateral
+ * baixa que corre com a bola, a aérea tática, a de trás do gol e a orbital do estádio. Usam os rigs comuns a todos os
+ * jogos (lib/flair/nucleos/camera/rigs.ts).
+ */
+export const CAMERAS_DO_CAMPO: readonly string[] = [CAMERA_AUTOMATICA, "LATERAL", "AEREA", "ATRAS_DO_GOL", "ORBITAL_360"];
+
+/** A pose da câmera escolhida no instante t (segundos), ou null na automática (ou em uma escolha que o campo não tem). */
+export function poseEscolhida(id: string | null | undefined, campo: Campo, bola: Ponto, t: number, aspecto = 16 / 9, parada = false): Pose | null {
+  const [bx, bz] = noMundo(campo, bola);
+  const meio = campo.comprimento / 2;
+  const meia = campo.largura / 2;
+  const centro: [number, number, number] = [0, 0, 0];
+  let camera: Camera;
+  let pos: [number, number, number] = [bx, 0, bz];
+  switch (id) {
+    case "LATERAL":
+      camera = { id, rig: "TRANSMISSAO", dist: meia + 6, altura: 2.2, mira: 0.9, acompanha: 1 };
+      break;
+    case "AEREA":
+      camera = { id, rig: "AEREA", dist: 0.5, altura: Math.max(campo.comprimento * 0.95, 16) };
+      pos = centro;
+      break;
+    case "ATRAS_DO_GOL":
+      // atrás do gol da pessoa, do alto, olhando o campo inteiro e a bola
+      return { pos: [-meio - 5.5, 5.5, 0], alvo: [bx * 0.6, 0.6, bz * 0.6] };
+    case "ORBITAL_360":
+      camera = { id, rig: "ORBITAL", dist: campo.comprimento * 0.8, altura: 9, mira: 0, velocidade: 6, angulo: 0 };
+      pos = centro;
+      break;
+    default:
+      return null;
+  }
+  const pose = poseDoRig(camera, { pos, centro }, t, aspecto, parada);
+  return { pos: pose.pos, alvo: pose.alvo };
 }
 
 /**

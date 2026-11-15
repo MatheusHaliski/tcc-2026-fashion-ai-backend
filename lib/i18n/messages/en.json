@@ -11764,5 +11764,22 @@
   "flair3d.esporte.estado.MARCA": "marks an opponent",
   "flair3d.esporte.estado.RETORNO": "tracks back",
   "flair3d.esporte.estado.GOLEIRO": "in goal, in line with the ball",
-  "flair3d.esporte.estado.POSICAO": "in formation"
+  "flair3d.esporte.estado.POSICAO": "in formation",
+  "flair3d.camera.trocar": "Camera: {nome}. Switch camera",
+  "flair3d.camera.AUTO": "Automatic",
+  "flair3d.camera.TRES_QUARTOS": "Three-quarter",
+  "flair3d.camera.ORBITAL_360": "360° orbit",
+  "flair3d.camera.CLOSE_ROUPA": "Outfit close-up",
+  "flair3d.camera.CLOSE_ROSTO": "Face close-up",
+  "flair3d.camera.GRUA": "Crane",
+  "flair3d.camera.TRAVELLING": "Tracking shot",
+  "flair3d.camera.LATERAL": "Side view",
+  "flair3d.camera.AEREA": "Top-down",
+  "flair3d.camera.EXPLORACAO": "Exploration",
+  "flair3d.camera.ISOMETRICA": "High diagonal",
+  "flair3d.camera.FOSSO": "Photographers’ pit",
+  "flair3d.camera.PLATEIA": "From the audience",
+  "flair3d.camera.CONTRA_PLONGEE": "Low angle",
+  "flair3d.camera.ATRAS_DO_GOL": "Behind the goal",
+  "flair3d.camera.TRANSMISSAO": "Broadcast"
 }
