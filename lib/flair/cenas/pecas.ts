@@ -73,15 +73,21 @@ function contorno(ctx: Ctx, a: Amostra): void {
   ctx.closePath();
 }
 
+/** Quanto a janela perde de cor: a peça solta fica cinza, a quase no lugar guarda parte da cor, a encaixada tem toda. */
+const DESBOTA: Partial<Record<EstadoDaCelula, number>> = { vermelha: 1, chegando: 1, laranja: 0.55 };
+
 /** Escurece ou tira a cor da janela conforme o estado (a área de recorte já está ativa). */
 function velar(ctx: Ctx, estado: EstadoDaCelula): void {
-  if (estado === "laranja") {
+  const desbota = DESBOTA[estado] ?? 0;
+  if (desbota > 0) {
     ctx.globalCompositeOperation = "saturation";
+    ctx.globalAlpha = desbota;
     ctx.fillStyle = "#000";
     ctx.fillRect(-20, -20, ARTE_L + 40, ARTE_A + 40);
     ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
   }
-  const veu = estado === "vermelha" ? 0.66 : estado === "chegando" ? 0.8 : estado === "laranja" ? 0.22 : estado === "moldura" ? 0.6 : 0;
+  const veu = estado === "vermelha" ? 0.6 : estado === "chegando" ? 0.72 : estado === "laranja" ? 0.12 : estado === "moldura" ? 0.6 : 0;
   if (veu > 0) {
     ctx.fillStyle = `rgba(7,8,13,${veu})`;
     ctx.fillRect(-20, -20, ARTE_L + 40, ARTE_A + 40);

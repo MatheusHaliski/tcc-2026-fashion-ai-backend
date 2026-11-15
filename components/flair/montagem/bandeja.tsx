@@ -3,13 +3,16 @@
  * Bandeja de cartas da vaga em destaque, presa embaixo da tela, ao alcance do polegar, sem cobrir o tabuleiro e sem
  * empurrar a página: tocar numa carta põe na vaga; arrastar leva a qualquer vaga. As cartas que cabem vêm primeiro
  * (com o que têm em comum com as vizinhas); as que não cabem ficam apagadas, com o motivo numa linha. No cabeçalho:
- * o que a vaga aceita, tirar a carta da vaga, desfazer a última jogada e fechar.
+ * o que a vaga aceita, tirar a carta da vaga, desfazer a última jogada e fechar. A vaga em destaque nunca fica atrás
+ * da bandeja (use-vaga-a-vista.ts).
  */
 import { useEffect, useRef } from "react";
 import type { PointerEvent, ReactNode } from "react";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { cn } from "@/components/ui";
+import { useMovimentoReduzido } from "@/components/flair/cenas/use-cena-viva";
+import { useVagaAVista } from "@/components/flair/montagem/use-vaga-a-vista";
 import type { Opcao } from "@/lib/flair/montagem/opcoes";
 
 export interface BandejaProps {
@@ -42,11 +45,13 @@ export interface BandejaProps {
 export function Bandeja(p: BandejaProps) {
   const { t } = useI18n();
   const lista = useRef<HTMLUListElement>(null);
+  const caixa = useRef<HTMLElement>(null);
+  useVagaAVista(p.vagaId, caixa, useMovimentoReduzido());
   useEffect(() => {
     if (lista.current) lista.current.scrollLeft = 0;
   }, [p.vagaId]);
   return (
-    <section className="mt-tray" role="region" aria-label={t("flair.mesa.tray", { vaga: p.vaga })} data-testid="mesa-bandeja" data-drop-remove>
+    <section ref={caixa} className="mt-tray" role="region" aria-label={t("flair.mesa.tray", { vaga: p.vaga })} data-testid="mesa-bandeja" data-drop-remove>
       <div className="mt-tray-head">
         <p className="mt-tray-title">
           <b>{p.vaga}</b>
