@@ -10,7 +10,7 @@ import { Price } from "@/components/price";
 import { useState, type ReactNode } from "react";
 import type { SchemeView } from "@/lib/api/types";
 import { api, mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
-import { label } from "@/lib/api/taxonomy";
+import { label, lookTypeName } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
@@ -258,7 +258,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       {priceLine}
       {social && !!lookSeals.length && <CardSealSummary seals={lookSeals}/>}
       {social && <CardFashionMeta brands={items.flatMap(it=>it.piece?.brandName?[{name:it.piece.brandName,logoUrl:it.piece.brandLogoUrl}]:[])} colors={items.flatMap(it=>it.piece?.color?[{name:it.piece.color,hex:it.piece.colorHex}]:[])} styles={scheme.style} occasions={scheme.occasion}/>}
-      {scheme.tipoLook && <p className="type-caption text-muted">{t("lookType.label")}: {scheme.tipoLook.nome}</p>}
+      {scheme.tipoLook && <p className="type-caption text-muted">{t("lookType.label")}: {lookTypeName(scheme.tipoLook, t)}</p>}
       {scheme.description && <p className={`c-desc ${expanded ? "is-full" : ""}`}>{scheme.description}</p>}
     </div>
   );

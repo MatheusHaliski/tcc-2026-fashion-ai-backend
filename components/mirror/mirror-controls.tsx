@@ -1,17 +1,17 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { api, ApiError, mediaUrl } from "@/lib/api/client";
+import { api, mediaUrl } from "@/lib/api/client";
 import type { TipoLook } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
-import { useApi } from "@/lib/hooks/use-api";
-import { Badge, Button, Card, Chip, Dialog, ErrorState, cn, useToast } from "@/components/ui";
+import { Badge, Button, Card, Dialog, cn, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
 import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
 import { assetStateOf } from "@/lib/room3d/mirror-session";
 import type { Illustration } from "@/lib/capture/capture-guides";
 import { VistaMeCells } from "@/components/mirror/vista-me-cells";
+import { MirrorLookType } from "@/components/mirror/mirror-look-type";
 import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
 
 /*
@@ -158,7 +158,6 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
 }) {
   const { t } = useI18n(); const toast = useToast();
   const { run, busy } = useMirrorActions<T>(setData, reload);
-  const tipos = useApi<TipoLook[]>((signal) => api.get("/api/tipos-look", { signal }), []);
   const [open, setOpen] = useState<string | null>(null);
   const ownPins = useMirrorPins(data);
   const { pinned, toggle: togglePin, anchorIds } = pins ?? ownPins;
@@ -166,7 +165,6 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   const [notice, setNotice] = useState<Notice | null>(null);
   const [grwm, setGrwm] = useState<{ steps?: { imageUrl?: string | null; caption?: string; pieceId?: string; at?: number }[]; totalMs?: number } | null>(null);
   const worn = wornOf(data);
-  const tiposMissing = tipos.error instanceof ApiError && (tipos.error.status === 404 || tipos.error.status === 405);
   const dressOn = asList(data.slots.dress).length > 0;
   const restore = async (ids: string[]) => { for (const id of ids) await run("restore", () => api.post("/api/me/mirror/pieces", { pieceId: id })); setNotice(null); };
 
@@ -261,19 +259,8 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
         {data.warnings?.length ? <ul className="mirror-warnings">{data.warnings.map((w) => <li key={w}>⚠ {w}</li>)}</ul> : null}
       </section>
 
-      <section className="mirror-section" aria-labelledby="mirror-tipo-h">
-        <h3 id="mirror-tipo-h" className="mirror-section-h">{t("mirror.para_quem")}</h3>
-        {tiposMissing ? <p className="type-body-sm text-muted" role="status">{t("lookType.unavailable")}</p>
-          : tipos.error ? <ErrorState error={tipos.error} onRetry={tipos.reload} />
-          : (
-            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-labelledby="mirror-tipo-h">
-              {(tipos.data ?? []).map((tipo) => (
-                <Chip key={tipo.id} role="radio" aria-checked={data.tipoLook?.id === tipo.id} disabled={busy === "tipo-look"}
-                  onClick={() => { if (data.tipoLook?.id !== tipo.id) void run("tipo-look", () => api.put("/api/me/mirror/tipo-look", { tipoLookId: tipo.id })); }}>{tipo.nome}</Chip>
-              ))}
-            </div>
-          )}
-      </section>
+      <MirrorLookType currentId={data.tipoLook?.id} busy={busy === "tipo-look"}
+        onChoose={(tipoLookId) => void run("tipo-look", () => api.put("/api/me/mirror/tipo-look", { tipoLookId }))} />
 
       <section className="mirror-section" aria-labelledby="mirror-vista-h">
         <div className="flex flex-wrap items-center justify-between gap-2">

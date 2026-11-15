@@ -75,3 +75,6 @@ export const subcategoryLabel = (s?: string | null) => {
   if (!hit) return label(key);
   return locale === PSEUDO_LOCALE ? pseudo(hit) : hit;
 };
+
+/** Tipo de look pelo código, no idioma de quem lê (ver look-type.ts). */
+export { lookTypeName } from "./look-type";
