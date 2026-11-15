@@ -112,26 +112,6 @@
    "max": 254,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "components/room3d/hung-garment.tsx": {
-   "max": 334,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/room3d/room-avatar-controller.tsx": {
-   "max": 292,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/room3d/room-props.tsx": {
-   "max": 471,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/room3d/room-scene.tsx": {
-   "max": 1005,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/room3d/wardrobe-creator.tsx": {
-   "max": 256,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "components/scheme-anatomies.tsx": {
    "max": 542,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -696,14 +676,6 @@
    "max": 555,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "lib/room3d/interaction.ts": {
-   "max": 350,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/room3d/mirror-session.ts": {
-   "max": 297,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "scripts/assets/aura_motion_library.py": {
    "max": 723,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -849,7 +821,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/icons/fai_icons.py": {
-   "max": 294,
+   "max": 292,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/icons/gerador/objects.py": {

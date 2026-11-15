@@ -107,13 +107,13 @@ describe("configurações — aparência", () => {
     pick("theme", "Escuro");
     fireEvent.click(screen.getByRole("switch", { name: "Alto contraste" }));
     fireEvent.click(screen.getByRole("switch", { name: "Reduzir animações" }));
-    fireEvent.click(screen.getByRole("switch", { name: "Sons do quarto" }));
-    fireEvent.click(screen.getByRole("switch", { name: "Vibração leve no celular" }));
+    // som e vibração eram das portas e gavetas do Meu Quarto, que saiu (15/11/2026): sem interruptor
+    expect(screen.queryByRole("switch", { name: "Sons do quarto" })).toBeNull();
     pick("sizeSystem", "US");
     pick("unitSystem", "IN");
-    await waitFor(() => expect(puts(calls).length).toBeGreaterThanOrEqual(7));
+    await waitFor(() => expect(puts(calls).length).toBeGreaterThanOrEqual(5));
     const all = Object.assign({}, ...puts(calls));
-    expect(all).toMatchObject({ theme: "DARK", highContrast: true, reduceMotion: true, soundEnabled: true, hapticsEnabled: false, sizeSystem: "US", unitSystem: "IN" });
+    expect(all).toMatchObject({ theme: "DARK", highContrast: true, reduceMotion: true, sizeSystem: "US", unitSystem: "IN" });
     expect(screen.getAllByText("Preferências salvas").length).toBeGreaterThan(0);
     expect(document.documentElement.dataset.theme).toBeDefined();
   });

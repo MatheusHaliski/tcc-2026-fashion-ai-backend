@@ -251,7 +251,7 @@ export function Card({ children, className, pad = true }: { children: ReactNode;
 /** Trilha (breadcrumb) acima do título: o último item é a página atual; os outros voltam (botão ou link). */
 export interface TrailItem { label: string; onClick?: () => void; href?: string }
 export function PageHeader({ title, lead, actions, kicker, trail }: { title: string; lead?: string; actions?: ReactNode; kicker?: string;
-  /** navegação derivada (ex.: Meu Quarto › Espelho) */ trail?: TrailItem[] }) {
+  /** navegação derivada (ex.: Guarda-roupa › Espelho) */ trail?: TrailItem[] }) {
   const { t } = useI18n();
   // Rótulos que são só código de requisito ("RF7 · RF31") aparecem apenas no modo apresentação.
   const devRefs = useDevRefs();

@@ -1,11 +1,10 @@
 /*
- * Lista do espelho (QUARTO-ESPELHO): as peças que a pessoa trouxe do quarto para provar, separadas do que está vestido.
+ * Lista do espelho (QUARTO-ESPELHO): as peças que a pessoa trouxe do guarda-roupa para provar, separadas do que está vestido.
  * Fonte única da verdade: o estado do espelho no servidor (GET /api/me/mirror → `rack` e `slots`); aqui só a forma da
- * peça da lista e a conversão para o 3D (o MESMO formato do provador). Os lugares do corpo, a peça na mão e as trocas
- * (o pedido mais recente vence) ficam em lib/room3d/mirror-session.ts.
+ * peça da lista e a conversão para o 3D (o MESMO formato do provador). A peça na mão e as trocas dentro do quarto
+ * saíram com o Meu Quarto (15/11/2026).
  *
  *   selecionada para prova  está na lista (rack), não vestida
- *   segurada                o avatar do quarto está com ela na mão (motor do quarto, lib/room3d/interaction.ts)
  *   vestida                 está num slot do espelho (`worn`)
  */
 import type { Look3dPiece } from "@/components/three/common";

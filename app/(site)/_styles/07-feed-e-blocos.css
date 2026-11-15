@@ -1,0 +1,20 @@
+/* O que não era do Meu Quarto e morava no mesmo arquivo (o quarto saiu em 15/11/2026): o feed compacto e os blocos
+   animados das anatomias e do cartão DNA. */
+
+/* O feed é uma sequência de posts, não uma grade de cards esticados. O limite
+   inclui o wrapper que alterna Info/Hype, mantendo a mesma largura nas duas faces. */
+.feed-compact-grid { display: grid; grid-template-columns: minmax(0, 470px); justify-content: center; align-items: start; gap: 24px; }
+.feed-compact-grid > * { width: 100%; max-width: 470px; min-width: 0; }
+.feed-compact-grid .fai-card { width: 100%; }
+
+/* LEGO (prancha 10 · C7 · narrativa B12): montagem animada — os blocos caem e encaixam de cima para baixo (60 ms entre
+   peças, via animation-delay); "montar de novo" repete. Com "reduzir movimento" o card aparece já montado. */
+.blocks-plate:not([data-play]) .brick-drop { visibility: hidden; }
+.blocks-plate[data-play] .brick-drop { animation: brick-drop .42s cubic-bezier(.2, .9, .3, 1.25) both; }
+@keyframes brick-drop { 0% { transform: translateY(-38px); opacity: 0; } 70% { transform: translateY(3px); opacity: 1; } 100% { transform: none; opacity: 1; } }
+:root[data-reduce-motion="true"] .brick-drop { animation: none; }
+@media (prefers-reduced-motion: reduce) { .brick-drop { animation: none; } }
+/* Clássica do armário: 30 usos ou mais (o acabamento vem do uso, nunca do preço) */
+.brick-classic { display: block; margin-top: 3px; background: #1F7A76; color: #fff; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; text-align: center; padding: 2px 4px; border-radius: 2px; }
+.brick-replay { grid-column: 1 / -1; justify-self: end; min-height: 32px; background: #F2CD37; color: #1B2A34; font-family: var(--font-data); font-size: 12px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 3px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.22), 0 2px 0 rgba(0,0,0,.25); text-transform: uppercase; }
+.brick-replay:hover { filter: brightness(1.05); }
