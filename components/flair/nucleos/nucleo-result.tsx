@@ -3,6 +3,7 @@
  * Resultado da entrega: pontos (0 a 100), estrelas (60, 80 e 100), resultado, regras cumpridas ou não, as cartas que
  * pontuaram (com os pontos ou o efeito de cada uma) e os eventos. Tudo como o servidor devolveu.
  */
+import type { ReactNode } from "react";
 import { cn } from "@/components/ui";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -24,12 +25,14 @@ interface Props {
   semPlacar?: boolean;
   /** a rodada jogada: o nome dela abre o resultado */
   rodada?: string | null;
+  /** bloco próprio do jogo antes do botão (o resumo da partida do Fashion Sports) */
+  children?: ReactNode;
 }
 
 /** Quantas dicas de "o que trocar" cabem no resultado. */
 const MAX_DICAS = 4;
 
-export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlacar = false, rodada = null }: Props) {
+export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlacar = false, rodada = null, children }: Props) {
   const tx = useNucleoText();
   const estrelas = Math.max(0, Math.min(3, resultado.estrelas));
   /** o que trocar: uma dica por regra não cumprida, sem repetir */
@@ -92,6 +95,7 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
           </ol>
         </>
       )}
+      {children}
       <button type="button" className="btn" onClick={onAgain}>{tx.t("flair3d.ui.result.again")}</button>
     </section>
   );

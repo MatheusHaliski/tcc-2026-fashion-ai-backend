@@ -255,24 +255,6 @@ describe("acionamentos", () => {
     expect(within(acionamento).getByRole("button", { name: "Seguir sem acionar" })).toBeTruthy();
   });
 
-  it("Fashion Sports com lances: cada troca mostra a ação da cor, e a janela reabre a cada resposta do servidor", async () => {
-    const fx = { efeitos: [{ cardId: "c5", itens: [{ codigo: "TECNICA", valor: 6 }, { codigo: "ACAO_CHUTE", valor: 1 }] }] };
-    loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_SPORTS/efeitos": fx });
-    const onAcionar = vi.fn();
-    const intervalo: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], eventos: [{ codigo: "INTERVALO", valor: "0-0" }], status: "EM_ACAO" };
-    const props = { definicao: definicao("FASHION_SPORTS"), cartas: CARTAS, entregando: false, erro: null, momento: "ACAO" as const, onEntregar: vi.fn(), onAcionar };
-    const { rerender } = renderApp(<NucleoGame {...props} resultado={intervalo} />);
-    const chute = (await screen.findByRole("button", { name: /Regata cinza · chute a gol/ })) as HTMLButtonElement;
-    await waitFor(() => expect(chute.disabled).toBe(false));
-    fireEvent.click(chute);
-    expect(onAcionar).toHaveBeenCalledWith({ tipo: "TROCA", cardId: "c5", vaga: "SUP" });
-    const lance = { codigo: "LANCE", valor: { lance: 1, acao: "CHUTE", carta: "c5", venceu: true } };
-    rerender(<NucleoGame {...props} resultado={{ ...intervalo, eventos: [...intervalo.eventos, { codigo: "TROCA", valor: { vaga: "SUP", carta: "c5" } }, lance] }} />);
-    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("Lance 1: chute a gol, deu certo"), { timeout: 4000 });
-    expect(screen.queryByRole("button", { name: /Regata cinza · chute a gol/ })).toBeNull();
-    await waitFor(() => expect((screen.getByRole("button", { name: "Seguir sem acionar" }) as HTMLButtonElement).disabled).toBe(false));
-  });
-
   it("Fashion Detective: no mercado, a carta fora do look vai ao balcão por estalecas e o detetive compra sozinho", async () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });
     const onAcionar = vi.fn();
@@ -305,23 +287,6 @@ describe("acionamentos", () => {
     expect(screen.getByTestId("nucleo-hint").textContent).toContain("Salão 4 de 6: Clube underground. Código de vestimenta: 2 peças de balada, festa ou festival.");
   });
 
-  it("Fashion Sports em outra modalidade: a mesma cor ganha o nome da ação do esporte escolhido", async () => {
-    const fx = { efeitos: [{ cardId: "c5", itens: [{ codigo: "ACAO_CHUTE", valor: 1 }] }] };
-    loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_SPORTS/efeitos": fx });
-    const base = { definicao: definicao("FASHION_SPORTS"), cartas: CARTAS, entregando: false, erro: null, onEntregar: vi.fn(), onAcionar: vi.fn() };
-    const { rerender } = renderApp(<NucleoGame {...base} />);
-    expect(screen.getByTestId("nucleo-hint").textContent).toContain("Modalidade: Futebol de 5.");
-    fireEvent.click(screen.getByRole("tab", { name: /Modalidade/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Vôlei de praia" }));
-    expect(screen.getByTestId("nucleo-hint").textContent).toContain("Modalidade: Vôlei de praia.");
-    const lance = { codigo: "LANCE", valor: { lance: 1, acao: "CHUTE", modalidade: "VOLEI", carta: "c5", venceu: true } };
-    const jogo: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], status: "EM_ACAO", eventos: [{ codigo: "MODALIDADE", valor: "VOLEI" }, lance] };
-    rerender(<NucleoGame {...base} momento="ACAO" resultado={jogo} />);
-    expect(await screen.findByRole("button", { name: /Regata cinza · cortada/ })).toBeTruthy();
-    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("Lance 1: cortada, deu certo"), { timeout: 4000 });
-    expect(screen.getByTestId("nucleo-action").textContent).toContain("Modalidade: Vôlei de praia (placar em sets)");
-  });
-
   it("O Labirinto: a tentativa que não abriu o espelho vira dica, com quantas peças faltam", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/LABIRINTO/efeitos": EFEITOS });
     const tentativa: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "NAO_ABRE", regras: [], eventos: [{ codigo: "TENTATIVA", valor: 2 }, { codigo: "FALTAM_PECAS", valor: 1 }], status: "ABERTA" };
@@ -338,13 +303,4 @@ describe("acionamentos", () => {
     expect(screen.getByTestId("nucleo-score").dataset.estado).toBe("previa");
   });
 
-  it("Fashion Sports: a troca de 1 peça no intervalo só abre quando o servidor deixa a partida EM_ACAO", () => {
-    montar({ codigo: "FASHION_SPORTS", momento: "ACAO", resultado: { pontos: 100, estrelas: 3, resultado: "VITORIA", regras: [], eventos: [{ codigo: "PLACAR", valor: "2-1" }] } });
-    const acionamento = screen.getByTestId("nucleo-trigger");
-    expect(acionamento.textContent).toContain("Trocar peça: a cor dela dispara a ação");
-    const trocas = within(acionamento).getAllByRole("button") as HTMLButtonElement[];
-    expect(trocas.length).toBeGreaterThan(0);
-    expect(trocas.every((b) => b.disabled)).toBe(true);
-    expect(acionamento.dataset.open).toBeUndefined();
-  });
 });

@@ -15,6 +15,8 @@ export interface ActionPlaybackOptions {
   /** a partida continua depois destes passos (mais passos vêm com o acionamento) */
   continua?: boolean;
   onPasso?: (passo: PassoAcao, indice: number) => void;
+  /** quanto cada passo fica na tela, em ms (padrão PASSO_MS) */
+  passoMs?: number;
   onFim: () => void;
 }
 
@@ -44,7 +46,7 @@ export function useActionPlayback(opts: ActionPlaybackOptions) {
     if (!ativo || reduzido) return;
     const fim = mostrados >= total;
     if (fim && continua) return;
-    const espera = mostrados === 0 ? ESPERA_INICIAL_MS : PASSO_MS;
+    const espera = mostrados === 0 ? ESPERA_INICIAL_MS : ref.current.passoMs ?? PASSO_MS;
     const timer = window.setTimeout(() => {
       if (fim) {
         ref.current.onFim();

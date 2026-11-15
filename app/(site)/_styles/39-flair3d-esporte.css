@@ -1,0 +1,189 @@
+/* ── FLAIR 3D · Fashion Sports jogado por cartas (components/flair/esporte): a transmissão no palco, com o placar de
+   TV em cima e a narração embaixo, e a faixa de baixo com a situação, a janela da jogada e a mão de cartas. */
+.fsp-palco {
+  position: relative;
+  background: #11141a;
+  overflow: hidden;
+}
+
+.fsp-planta {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fsp-voltar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+}
+
+.fsp-placar {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 112px);
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: #11141ae6;
+  color: #f4f7f2;
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.fsp-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fsp-time i {
+  flex: none;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid #f4f7f266;
+}
+
+.fsp-gols {
+  font-size: 1.15rem;
+}
+
+.fsp-relogio {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #f4f7f2;
+  color: #11141a;
+  font-weight: 700;
+}
+
+.fsp-narracao {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  z-index: 2;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #11141acc;
+  color: #f4f7f2;
+  text-align: center;
+}
+
+.fsp-painel {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  overflow-y: auto;
+}
+
+.fsp-lances {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.fsp-lances li:last-child {
+  color: inherit;
+}
+
+.fsp-situacao,
+.fsp-janela {
+  margin: 0;
+}
+
+.fsp-janela {
+  color: var(--mark);
+  font-weight: 700;
+}
+
+.fsp-mao {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+}
+
+.fsp-carta {
+  display: grid;
+  flex: none;
+  justify-items: center;
+  gap: 2px;
+  min-width: 76px;
+  min-height: var(--touch);
+  padding: 6px;
+  border: 2px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: inherit;
+  cursor: pointer;
+}
+
+.fsp-carta.is-foco,
+.fsp-carta:focus-visible {
+  border-color: var(--mark);
+  outline: 2px solid var(--mark);
+  outline-offset: 1px;
+}
+
+.fsp-carta:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.fsp-carta-acao {
+  font-weight: 700;
+  font-size: var(--text-caption);
+  text-align: center;
+}
+
+.fsp-carta-poder {
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.fsp-seguir {
+  justify-self: start;
+  min-height: var(--touch);
+}
+
+.fsp-aviso {
+  margin: 0;
+  font-size: var(--text-caption);
+}
+
+.fsp-espera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.fsp-resumo {
+  display: grid;
+  gap: 6px;
+}
+
+@media (max-width: 480px) {
+  .fsp-placar {
+    gap: 6px;
+    padding: 4px 8px;
+  }
+
+  .fsp-tempo {
+    display: none;
+  }
+}
