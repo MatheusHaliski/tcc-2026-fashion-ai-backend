@@ -19,9 +19,9 @@ export function SearchEntityCard({ kind, row, onSeePieces }: { kind: "MARCAS" | 
   const { t, fmtNumber } = useI18n();
   const name = row.name ?? row.slug ?? "";
   const brand = kind === "MARCAS";
-  const href = row.registered === false || !row.slug ? null : brand ? `/brands/${encodeURIComponent(row.slug)}` : `/u/${encodeURIComponent(row.slug)}`;
+  const href = row.registered === false || !row.slug ? null : brand ? `/brands/${encodeURIComponent(row.slug)}` : `/u/${encodeURIComponent(row.username ?? row.slug)}`;   // o perfil abre pelo username; o endereço com hífen dava 404
   // o endereço da marca (slug, "vento-norte") não é o @ do perfil ("vento.norte"): só mostra o @ que o servidor mandar
-  const handle = row.username ?? (brand ? null : row.slug);
+  const handle = row.username ?? null;   // celebridade também: o endereço ("maia-solano") não é o @ ("maia.solano")
   const photo = mediaUrl(row.avatarUrl ?? row.logoUrl);
   const monogram = name.trim().split(/\s+/).map((word) => word[0]).slice(0, 2).join("").toUpperCase();
   const avatar = brand

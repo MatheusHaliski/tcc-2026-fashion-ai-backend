@@ -42,4 +42,20 @@ describe("busca vazia na aba aberta", () => {
     await settle();
     expect(calls.some((c) => c.path.startsWith("/api/search"))).toBe(false);
   });
+
+  it("sem aba escolhida pela pessoa, abre sozinho a primeira aba com resultado", async () => {
+    loggedAs(ME, byTab({ PECAS: 2 }));
+    const onOpen = vi.fn();
+    renderApp(<SearchElsewhere term="jaqueta" current="LOOKS" anonymous={false} labelOf={(tab) => NAMES[tab]} onOpen={onOpen} autoOpen />);
+    await screen.findByRole("button", { name: "Peças" });
+    expect(onOpen).toHaveBeenCalledWith("PECAS");
+  });
+
+  it("com aba escolhida, só aponta (não troca sozinho)", async () => {
+    loggedAs(ME, byTab({ PECAS: 2 }));
+    const onOpen = vi.fn();
+    renderApp(<SearchElsewhere term="jaqueta" current="LOOKS" anonymous={false} labelOf={(tab) => NAMES[tab]} onOpen={onOpen} />);
+    await screen.findByRole("button", { name: "Peças" });
+    expect(onOpen).not.toHaveBeenCalled();
+  });
 });
