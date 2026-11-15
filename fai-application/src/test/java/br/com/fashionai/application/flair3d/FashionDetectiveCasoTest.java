@@ -31,7 +31,7 @@ class FashionDetectiveCasoTest {
     }
 
     private Contexto contexto() {
-        return Flair3dFixtures.contexto(1L, deck.toArray(CbcRules.Card[]::new)).comAndamento(andamento);
+        return Flair3dFixtures.contexto(1L, deck.toArray(CbcRules.Card[]::new)).comAndamento(andamento.comRodada(FashionDetectiveNucleo.SALOES_DA_GALA));
     }
 
     /** Entrega o look do salão da vez, como o serviço faz (a entrega anterior vira etapa). */
@@ -107,7 +107,7 @@ class FashionDetectiveCasoTest {
         assertThat(valor(noMercado, "MERCADO")).isEqualTo(450);
 
         ApiException e = catchThrowableOfType(ApiException.class, () -> n.pontuar(ultima,
-                contexto().comAndamento(andamento.com(new Acionamento(gala.id(), null)))));
+                contexto().comAndamento(andamento.com(new Acionamento(gala.id(), null)).comRodada(FashionDetectiveNucleo.SALOES_DA_GALA))));
         assertThat(e.code()).isEqualTo("CARTA_VESTIDA");
 
         Resultado compras = mercado(new Acionamento(especial.id(), null));
