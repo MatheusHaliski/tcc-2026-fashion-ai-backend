@@ -12,7 +12,7 @@ import { slotPosition } from "@/lib/flair/cbc";
 import { HowItWorks } from "@/components/guide/guide";
 import { GameLock } from "@/components/flair/games/game-lock";
 import { GameSidePanel, RewardList } from "@/components/flair/games/game-side-panel";
-import { RoomScenario } from "@/components/flair/games/room-scenario";
+import { RoomView } from "@/components/room3d/room-view";
 import { useGamePlay } from "@/components/flair/games/use-game-play";
 import { useGameTexts } from "@/components/flair/games/use-game-texts";
 import { useGameLabels } from "@/components/flair/games/game-card";
@@ -51,7 +51,7 @@ export function GamePlay({ slug }: { slug: string }) {
           {delivered && d.status !== "ENDED" && <p className="cbc-note" role="note">{t("cbc.note.delivered", { attempt: delivered.attempt, sintonia: delivered.sintonia, max: delivered.sintoniaMax })}</p>}
           <div className="cbc-play">
             <div className="cbc-play-stage">
-              {d.district === "SUITE" ? <RoomScenario lit={litModules(d.scene, p.placed)} night={isNightScene(d.scene)} fallback={null} /> : null}
+              {d.district === "SUITE" ? <RoomView lit={litModules(d.scene, p.placed)} night={isNightScene(d.scene)} fallback={null} note={t("games.scene.room")} /> : null}
               {stage}
               {p.allowed && p.available.length === 0 && !p.bank.loading && !p.readOnly && <EmptyState title={t("cbc.no_cards.title")} hint={t("cbc.no_cards.hint")} action={<Link href="/pieces/new" className="btn btn-sm btn-primary">{t("common.cadastrar_peca")}</Link>} />}
               {d.interpretations.length > 0 && !p.readOnly && (

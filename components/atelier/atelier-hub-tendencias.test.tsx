@@ -37,7 +37,7 @@ describe("AtelierHub", () => {
     expect(await screen.findByText(/As categorias exibem apenas concessões registradas/)).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "Conquistas & Quarto" }));
     expect(router.replace).toHaveBeenCalledWith("/atelier?tab=room&x=1", { scroll: false });
-    expect(screen.getByRole("link", { name: "Jogar na Suíte de Vidro" }).getAttribute("href")).toBe("/flair/jogos?district=SUITE");
+    expect(screen.getByRole("link", { name: "Ver o quarto em 3D" }).getAttribute("href")).toBe("/atelier?tab=room&quarto=3d");
   });
 
   it("aba inválida cai em Metamorfoses; erro mostra '—' e tentar de novo", async () => {

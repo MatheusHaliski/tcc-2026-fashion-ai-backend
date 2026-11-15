@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 /**
- * Caracterização da visão 3D do quarto (antes de sair do capítulo da Suíte de Vidro): sem WebGL cai no `fallback` sem
- * buscar o quarto; com WebGL busca GET /api/me/room uma vez e entrega os dados, os módulos acesos e a luz à cena;
- * à noite o período vira "night"; erro de carga também cai no `fallback`.
+ * Visão 3D do quarto (caracterizada no capítulo da Suíte de Vidro, agora no Atelier › Quarto): sem WebGL cai no
+ * `fallback` sem buscar o quarto; com WebGL busca GET /api/me/room uma vez e entrega os dados, os módulos acesos e a luz
+ * à cena; à noite o período vira "night"; erro de carga também cai no `fallback`; "reduzir movimento" e o módulo em
+ * foco chegam à cena.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, loggedAs, renderApp, screen } from "@/test-utils/render";
-import { RoomScenario } from "@/components/flair/games/room-scenario";
+import { cleanup, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
+import { RoomView } from "@/components/room3d/room-view";
 
 const webgl = vi.hoisted(() => ({ value: true as boolean | null }));
 const scene = vi.hoisted(() => ({ props: null as Record<string, unknown> | null }));
@@ -22,7 +23,7 @@ describe("visão 3D do quarto", () => {
   it("sem WebGL mostra o fallback e não busca o quarto", async () => {
     webgl.value = false;
     const { calls } = loggedAs(undefined, { "GET /api/me/room": ROOM });
-    renderApp(<RoomScenario lit={new Set()} fallback={<p>cena 2D</p>} />);
+    renderApp(<RoomView lit={new Set()} fallback={<p>cena 2D</p>} />);
     expect(await screen.findByText("cena 2D")).toBeTruthy();
     expect(calls.some((c) => c.path === "/api/me/room")).toBe(false);
     expect(screen.queryByTestId("room-scene")).toBeNull();
@@ -30,7 +31,7 @@ describe("visão 3D do quarto", () => {
 
   it("com WebGL busca o quarto e entrega dados, módulos acesos e luz à cena", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/me/room": ROOM });
-    renderApp(<RoomScenario lit={new Set(["door:1"])} fallback={<p>cena 2D</p>} />);
+    renderApp(<RoomView lit={new Set(["door:1"])} fallback={<p>cena 2D</p>} />);
     expect(await screen.findByTestId("room-scene")).toBeTruthy();
     expect(calls.filter((c) => c.path === "/api/me/room")).toHaveLength(1);
     expect(scene.props?.data).toEqual(ROOM);
@@ -41,15 +42,24 @@ describe("visão 3D do quarto", () => {
 
   it("à noite o período vira night e a luz acende", async () => {
     loggedAs(undefined, { "GET /api/me/room": ROOM });
-    renderApp(<RoomScenario lit={new Set()} night fallback={<p>cena 2D</p>} />);
+    renderApp(<RoomView lit={new Set()} night fallback={<p>cena 2D</p>} />);
     await screen.findByTestId("room-scene");
     expect((scene.props?.data as typeof ROOM).ambient.period).toBe("night");
     expect(scene.props?.lightOn).toBe(true);
   });
 
+  it("reduzir movimento e o módulo em foco chegam à cena", async () => {
+    vi.stubGlobal("matchMedia", (q: string) => ({ matches: q.includes("reduce"), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }));
+    loggedAs(undefined, { "GET /api/me/room": ROOM });
+    renderApp(<RoomView focusModule="door:1" fallback={<p>cena 2D</p>} />);
+    await screen.findByTestId("room-scene");
+    await waitFor(() => expect((scene.props?.data as typeof ROOM).ambient.reduceMotion).toBe(true));
+    expect(scene.props?.focusModule).toBe("door:1");
+  });
+
   it("erro ao buscar o quarto cai no fallback", async () => {
     loggedAs(undefined, { "GET /api/me/room": fail });
-    renderApp(<RoomScenario lit={new Set()} fallback={<p>cena 2D</p>} />);
+    renderApp(<RoomView lit={new Set()} fallback={<p>cena 2D</p>} />);
     expect(await screen.findByText("cena 2D")).toBeTruthy();
     expect(screen.queryByTestId("room-scene")).toBeNull();
   });
