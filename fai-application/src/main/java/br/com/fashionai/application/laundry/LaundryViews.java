@@ -20,6 +20,8 @@ final class LaundryViews {
         out.put("id", w.getId());
         out.put("name", w.getName());
         out.put("category", w.getCategory());
+        out.put("subcategory", w.getSubcategory());
+        out.put("color", w.getColor());
         out.put("thumbnailUrl", w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
         out.put("material", w.getMaterial());
         out.put("washCode", w.getTipoLavagem() == null ? null : w.getTipoLavagem().getCodigo());

@@ -8,6 +8,7 @@ import { MAT_FIGURANTE, partesDoFigurante } from "@/lib/flair/nucleos/scene/figu
 import { partesNoLugar, triangulosDaParte } from "@/lib/flair/nucleos/scene/parts";
 import { cascaDaSala } from "@/lib/flair/nucleos/scene/shell";
 import { ORCAMENTO, type Parte, type Sala } from "@/lib/flair/nucleos/scene/types";
+import { triangulosComGente } from "@/lib/flair/nucleos/gente/detalhe";
 
 /** material do texto do placar (painel de LED com números) */
 export const MAT_PLACAR = "placar";
@@ -63,4 +64,13 @@ export function estourosDoOrcamento(o: Orcamento): string[] {
   if (o.texturaPx > ORCAMENTO.texturaPx) fora.push("textura");
   if (o.luzesProprias > ORCAMENTO.luzesProprias) fora.push("luzes");
   return fora;
+}
+
+/**
+ * Triângulos da sala com gente humana (lib/flair/nucleos/gente): os figurantes simples saem da conta e entram os humanos
+ * completos e a torcida leve. O orçamento de 60 mil vale para a sala; a gente tem a conta própria, escrita em
+ * docs/flair/flair-3d/BASE_NUCLEOS.md.
+ */
+export function triangulosDaSalaComGente(sala: Sala, humanos: number, torcida: number): number {
+  return triangulosComGente(soma(partesDaSala(sala)), humanos, torcida);
 }

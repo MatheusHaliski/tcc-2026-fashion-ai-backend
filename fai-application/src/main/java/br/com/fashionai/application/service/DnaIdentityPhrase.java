@@ -58,8 +58,14 @@ final class DnaIdentityPhrase {
         d.setPhraseSource(withLife ? "STYLE_AND_LIFE" : "STYLE_ONLY");
     }
 
+    /** "layering" → "em camadas": a frase de identidade não mistura o código da silhueta com o texto. */
+    static String silhouetteWord(String silhouette) {
+        String key = "dna.silhueta." + silhouette;
+        return Msg.has(key) ? Msg.t(key) : String.valueOf(silhouette);
+    }
+
     static String localPhrase(StyleDna d, Map<String, Object> life, List<String> hidden) {
-        String base = DnaViews.ARCHETYPE_LABEL.get(d.getArchetype()) + " de silhueta " + d.getSilhouette() + (d.getIconPieceName() == null ? "" : Msg.t("dna.que_chega_de", d.getIconPieceName()));
+        String base = DnaViews.ARCHETYPE_LABEL.get(d.getArchetype()) + Msg.t("dna.de_silhueta", silhouetteWord(d.getSilhouette())) + (d.getIconPieceName() == null ? "" : Msg.t("dna.que_chega_de", d.getIconPieceName()));
         List<String> bits = new ArrayList<>();
         for (String k : List.of("objects", "places", "animals")) {
             if (!hidden.contains(k) && life.get(k) instanceof List<?> l && !l.isEmpty()) {

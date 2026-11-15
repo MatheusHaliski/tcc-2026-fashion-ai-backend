@@ -690,7 +690,7 @@ public class CopilotService {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("pieceId", w.getId());
         m.put("name", w.getName());
-        m.put("imageUrl", w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
+        br.com.fashionai.application.view.PieceImageFields.put(m, "imageUrl", w);
         m.put("available", w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE);
         m.put("address", loc == null ? null : loc.address().toString());
         m.put("addressLabel", loc == null ? null : loc.label());

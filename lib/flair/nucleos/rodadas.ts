@@ -33,6 +33,14 @@ export function respostaObrigatoria(definicao: NucleoDefinicao): boolean {
   return !!rodada?.opcoes?.length && definicao.codigo !== "FASHION_SPORTS";
 }
 
+/**
+ * As vagas do uniforme que ainda estão vazias. Só o Fashion Sports pede o uniforme inteiro (parte de cima, de baixo e
+ * calçado: o time joga com as três); nos outros jogos, qualquer escolha basta para entregar.
+ */
+export function vagasQueFaltam(definicao: Pick<NucleoDefinicao, "codigo" | "vagas">, cartas: Record<string, string>): string[] {
+  return definicao.codigo === "FASHION_SPORTS" ? definicao.vagas.filter((v) => !cartas[v]) : [];
+}
+
 export interface EtapaDaVez {
   etapa: number;
   codigo: string;

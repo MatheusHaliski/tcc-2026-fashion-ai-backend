@@ -1279,6 +1279,8 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                     "user", users.findById(n.getUserId()).map(User::getUsername).orElse("—"), "at", n.getCreatedAt())).toList());
             out.put("reactions", REACTIONS);
             out.put("presetNotes", PRESET_NOTES);
+        } else {
+            out.put("entries", entries(user, i, t, false));   // Solo: as próprias entradas, para a página mostrar o que foi enviado
         }
         out.put("result", Json.map(i.getResultJson()));
         out.put("decoration", t.getRoomDecoration());
@@ -1287,41 +1289,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
 
     /** CA09 — só os looks que cada membro publicou no desafio, nunca o guarda-roupa; CA08 — às cegas até o resultado. */
     List<Map<String, Object>> entries(CurrentUser viewer, ChallengeInstance i, ChallengeTemplate t, boolean blind) {
-        List<Map<String, Object>> out = new ArrayList<>();
-        Map<UUID, Long> voteCount = CONCLUIDO.equals(i.getState()) ? votes.findByInstanceId(i.getId()).stream()
-                .collect(Collectors.groupingBy(ChallengeVote::getEntrySchemeId, Collectors.counting())) : Map.of();
-        for (ChallengeEvent e : evidence.findByInstanceId(i.getId())) {
-            if (!"LOOK_ENTRY".equals(e.getEvidenceType())) {
-                continue;
-            }
-            Scheme s = schemes.findById(e.getRefId()).orElse(null);
-            if (s == null) {
-                continue;
-            }
-            List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(s.getId());
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("entryId", s.getId());
-            m.put("coverImageUrl", s.getCoverImageUrl());
-            m.put("title", blind ? Msg.t("challenge.look", (out.size() + 1)) : s.getTitle());
-            m.put("pieces", items.stream().map(si -> {
-                Map<String, Object> pm = new LinkedHashMap<>();
-                pm.put("imageUrl", si.getWardrobeItem().getImageUrl());
-                pm.put("category", si.getWardrobeItem().getCategory());
-                if (!blind) {
-                    pm.put("name", si.getWardrobeItem().getName());
-                    pm.put("brand", si.getWardrobeItem().getBrandName());
-                }
-                return pm;
-            }).toList());
-            m.put("author", blind ? null : users.findById(e.getUserId()).map(User::getUsername).orElse("—"));
-            m.put("mine", e.getUserId().equals(viewer.id()));
-            m.put("votedByMe", votes.existsByInstanceIdAndVoterUserIdAndEntrySchemeId(i.getId(), viewer.id(), s.getId()));
-            if (!voteCount.isEmpty()) {
-                m.put("votes", voteCount.getOrDefault(s.getId(), 0L));
-            }
-            out.add(m);
-        }
-        return out;
+        return new ChallengeEntries(evidence, votes, schemes, schemeItems, users).list(viewer, i, blind);
     }
 
     // ================================================================== inscrição de look, votação, bilhetes e reações

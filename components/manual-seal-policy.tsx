@@ -37,7 +37,7 @@ export function ManualSealPolicy({ value, onChange, tier, onTier, brandName }: {
         {(available.loading || available.error || !sealIds.length) && <p role="status" className="type-body-sm">{t("manualSeal.earnedNeeded")}</p>}
       </fieldset>}
     </>}
-    <SealPolicyEditor value={{ ...value, referenceModel: undefined }} onChange={emit} tier={tier === "PERFIL" ? target === "PECA" ? "PECA" : "LOOK" : tier} onTier={next => { if (tier !== "PERFIL") onTier(next); }} brandName={brandName} />
+    <SealPolicyEditor value={{ ...value, referenceModel: undefined }} onChange={emit} tier={tier === "PERFIL" ? target === "PECA" ? "PECA" : "LOOK" : tier} onTier={next => { if (tier !== "PERFIL") onTier(next); }} brandName={brandName} showTier={false} />
     {!cleanPolicy(value) && <p className="type-body-sm">{t("sealPolicy.sem_regras")}</p>}
   </div>;
 }

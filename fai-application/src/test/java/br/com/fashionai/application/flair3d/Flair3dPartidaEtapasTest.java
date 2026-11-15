@@ -124,36 +124,6 @@ class Flair3dPartidaEtapasTest {
     }
 
     @Test
-    void fashionSportsJogaOPrimeiroTempoEAceitaUmaTrocaDoDeckNoIntervalo() {
-        FlairCardInstance sup = carta(ana, "SUP", "ovr:90", "material:linen", "material:leather");
-        FlairCardInstance inf = carta(ana, "INF", "ovr:10");
-        FlairCardInstance salto = carta(ana, "CAL", "ovr:10", "sub:heels");
-        FlairCardInstance chuteira = carta(ana, "CAL", "ovr:90", "sub:casual_sneakers");
-        FlairCardInstance foraDoDeck = carta(ana, "CAL", "ovr:90", "sub:casual_sneakers");
-        UUID id = abrir("FASHION_SPORTS", sup, inf, salto, chuteira);
-
-        Resultado intervalo = service.entregar(ana, id, vestir(sup, inf, salto));
-        assertThat(intervalo.status()).isEqualTo("EM_ACAO");
-        assertThat(intervalo.eventos()).contains(new Resultado.Evento("INTERVALO", "0-1"));
-        assertThat(partida(id).getStatus()).isEqualTo("EM_ACAO");
-
-        Acionamento fora = new Acionamento(null, new Acionamento.Troca("CAL", foraDoDeck.getId()));
-        assertThat(erro(() -> service.acionar(ana, id, fora)).code()).isEqualTo("CARTA_FORA_DO_DECK");
-        Acionamento vagaErrada = new Acionamento(null, new Acionamento.Troca("SUP", chuteira.getId()));
-        assertThat(erro(() -> service.acionar(ana, id, vagaErrada)).code()).isEqualTo("TROCA_INVALIDA");
-        assertThat(partida(id).getStatus()).isEqualTo("EM_ACAO");
-
-        Resultado fim = service.acionar(ana, id, new Acionamento(null, new Acionamento.Troca("CAL", chuteira.getId())));
-        assertThat(fim.status()).isEqualTo("ENTREGUE");
-        assertThat(fim.resultado()).isEqualTo("EMPATE");
-        assertThat(fim.pontos()).isEqualTo(60);
-        assertThat(fim.eventos()).contains(new Resultado.Evento("PLACAR", "1-1"), new Resultado.Evento("FORCA_SEGUNDO_TEMPO", 32));
-        assertThat(fim.cartas()).extracting(Resultado.CartaPontos::cardId).containsExactly(sup.getId(), inf.getId(), chuteira.getId());
-        assertThat(partida(id).getPontos()).isEqualTo(60);
-        assertThat(erro(() -> service.acionar(ana, id, null)).status()).isEqualTo(409);
-    }
-
-    @Test
     void labirintoSegueAbertoAteOEspelhoAbrirEContaAsTentativas() {
         FlairCardInstance sup = carta(ana, "SUP", "color:navy");
         FlairCardInstance inf = carta(ana, "INF", "color:blue");

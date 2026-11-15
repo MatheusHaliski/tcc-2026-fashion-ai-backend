@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 /**
  * Núcleo 1 — vestir o tema com as cartas do deck: +10 por peça no tema, +20 se todas as vagas preenchidas estão no tema;
  * 70 vira 100. O objetivo mais simples é o tema "Brasil" (marcas brasileiras). Na rodada "tema surpresa" o tema sai da
- * semente e só aparece depois que a pessoa entra na partida; as outras rodadas são treinos de tema fixo. Em toda rodada
+ * semente (noite, monocromático ou clássico) e só aparece depois que a pessoa entra na partida; as outras rodadas são treinos de tema fixo. Em toda rodada
  * a pessoa desfila contra 3 desfiles da casa, com notas tiradas da semente, e o resultado traz a colocação.
  */
 public class PassarelaNucleo implements Flair3dNucleo {
@@ -36,6 +36,11 @@ public class PassarelaNucleo implements Flair3dNucleo {
     public static final double MAXIMO = 70;
     public static final String SURPRESA = "TEMA_SURPRESA";
     public static final List<String> TEMAS = List.of("TEMA_BRASIL", "TEMA_NOITE", "TEMA_MONOCROMATICO", "TEMA_CLASSICO");
+    /**
+     * Os temas que a surpresa sorteia: sem o Brasil, que pede marca brasileira e não tem como ser cumprido com peças sem
+     * marca (auditoria 3); ele continua como treino e como objetivo da base.
+     */
+    public static final List<String> SURPRESAS = TEMAS.subList(1, TEMAS.size());
     public static final int DESFILES_DA_CASA = 3;
     /** Notas brutas (de 0 a 70) que um desfile da casa pode tirar. */
     static final List<Integer> NOTAS_DA_CASA = List.of(20, 30, 40, 50, 60);
@@ -66,7 +71,7 @@ public class PassarelaNucleo implements Flair3dNucleo {
     static String tema(Contexto contexto) {
         String rodada = contexto.rodada();
         if (SURPRESA.equals(rodada)) {
-            return contexto.sortear("tema", TEMAS);
+            return contexto.sortear("tema", SURPRESAS);
         }
         return rodada == null ? TEMAS.get(0) : rodada;
     }

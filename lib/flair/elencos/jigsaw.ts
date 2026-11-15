@@ -2,7 +2,8 @@
  * Recorte do quebra-cabeça do elenco, puro: a arte (160 × 100, proporção 16:10) é cortada em peças com encaixe de
  * verdade (saliência de um lado, reentrância do outro). A peça i é a linha i do elenco; as células que sobram na grade
  * são a moldura. A folga diz quanto a peça fica fora do lugar: solta enquanto o link é fraco, quase no lugar no link
- * médio e encaixada (sem folga) no link forte.
+ * médio e encaixada (sem folga) no link forte. Enquanto o servidor ainda não julgou o link, a peça está chegando: mais
+ * longe ainda, sem cor de nível.
  */
 import { gradeDoQuebraCabeca, type PecaEstado } from "@/lib/flair/elencos/board";
 
@@ -73,7 +74,7 @@ export interface Folga {
 }
 
 const ENCAIXADA: Folga = { dx: 0, dy: 0, giro: 0 };
-const FRACAO: Record<PecaEstado, number> = { verde: 0, laranja: 0.4, vermelha: 1, coberta: 0 };
+const FRACAO: Record<PecaEstado, number> = { verde: 0, laranja: 0.4, vermelha: 1, chegando: 1.5, coberta: 0 };
 
 /** Quanto a peça i fica fora do lugar no estado dado (sempre a mesma folga para a mesma peça). */
 export function folgaDaPeca(i: number, estado: PecaEstado): Folga {

@@ -5,7 +5,6 @@ import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.AdminService;
 import br.com.fashionai.application.service.IssuerReviewService;
-import br.com.fashionai.application.view.Views;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
@@ -82,7 +81,7 @@ public class AdminController {
 
     @GetMapping("/users")
     @Operation(summary = "Buscar usuários")
-    public List<Views.UserCard> searchUsers(CurrentUser user, @RequestParam(required = false) String term) {
+    public List<Map<String, Object>> searchUsers(CurrentUser user, @RequestParam(required = false) String term) {
         return admin.searchUsers(user, term);
     }
 

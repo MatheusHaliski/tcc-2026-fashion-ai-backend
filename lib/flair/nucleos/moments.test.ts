@@ -65,7 +65,7 @@ describe("máquina dos momentos", () => {
 
   it("acionamento: só nos quatro jogos da tabela e só no momento de cada um", () => {
     expect(acionamentoDe("DRESS_FIGHTER")).toEqual({ tipo: "ESPECIAL", momento: "ACAO" });
-    expect(acionamentoDe("FASHION_SPORTS")).toEqual({ tipo: "TROCA", momento: "ACAO" });
+    expect(acionamentoDe("FASHION_SPORTS")).toEqual({ tipo: "CARTA", momento: "ACAO" });
     expect(acionamentoDe("LABIRINTO")).toEqual({ tipo: "ESPELHO", momento: "PREPARACAO" });
     expect(acionamentoDe("PERSONAGEM_FILME")).toEqual({ tipo: "RESPOSTA", momento: "PREPARACAO" });
     expect(acionamentoDe("PASSARELA")).toBeNull();

@@ -30,8 +30,11 @@ export const GUIDES: Record<string, GuideDef> = Object.fromEntries([
   g("games.hub", "games", 3, false, 2),
   g("flair.matches", "flairMatch", 3, true, 1, "matches"),
   g("flair.cbc", "cbc", 3, true, 1, "cbc"),
-  // FLAIR 3D reaproveita o exemplo animado do CBC (R4): mesma mecânica de vaga + carta
-  g("flair.games", "cbc", 3, true, 1, "games"),
+  // FLAIR 3D (os 15 núcleos) reaproveita o exemplo animado do CBC (R4): mesma mecânica de vaga + carta
+  g("flair.games", "cbc", 3, true, 2, "games"),
+  // elencos e MAKE UP também montam com vaga + carta: o mesmo exemplo animado do CBC
+  g("flair.squads", "cbc", 3, true, 1, "squads"),
+  g("flair.makeup", "cbc", 3, true, 1, "makeup"),
   g("moments.calendar", "calendar", 3, true, 1, "moments"),
   g("challenges.progress", "challenge", 3, true, 1, "challenges"),
   g("flair.cards", "flairCards", 3, true, 1, "cards"),

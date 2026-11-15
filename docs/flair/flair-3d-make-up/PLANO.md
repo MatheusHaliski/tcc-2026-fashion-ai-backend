@@ -1,5 +1,9 @@
 # FLAIR 3D MAKE UP: plano "Meu Rosto, Meu Estúdio"
 
+> **Nota de 15/11/2026.** A área antiga de capítulos (`/flair/jogos`, `/api/flair/games`, `FlairGameController`,
+> `scripts/flair-games/`) saiu do app; o FLAIR 3D são os 15 núcleos (`/api/flair/3d`). As referências a ela abaixo
+> são do plano original e ficam como registro. Ver `docs/flair/ENDPOINTS_FLAIR.md`.
+
 Plano de 07/11/2026 para o segmento **FLAIR 3D MAKE UP** (antes FLAIR 3D): styling no estilo do DREST em que a pessoa
 veste e maquia uma modelo da casa ou **o próprio avatar** com itens do catálogo, num lugar 3D que reage. Além deste
 plano, nenhum arquivo muda nesta etapa. Base, nesta pasta: `ESTUDO_DREST.md` (ESTUDO), `REUSO_PROVADOR_E_AVATAR.md`

@@ -26,7 +26,8 @@ const LOGOS = [
   { name: "Zara", source: "MONOGRAMA", status: "PENDING", nextAttemptAt: "2026-10-26T10:00:00Z" },
   { name: "Outra", source: "DESCONHECIDA", status: "FOUND" },
 ];
-const BACKUPS = [{ id: "b1", kind: "INCR", sizeBytes: 20480, ok: true, createdAt: "2026-10-24T03:00:00Z" }, { ok: false }];
+// primeiro como a API devolve (startedAt, status, tamanho em texto); depois um registro que falhou, sem data
+const BACKUPS = [{ id: "b1", kind: "MYSQL_FULL", status: "COMPLETED", sizeBytes: "20480", startedAt: "2026-10-24T03:00:00Z" }, { status: "FAILED" }];
 const base = { "GET /api/admin/ai": AI, "GET /api/admin/brand-logos": LOGOS, "GET /api/admin/backups": BACKUPS };
 
 describe("admin · sistema e IA", () => {
@@ -41,9 +42,9 @@ describe("admin · sistema e IA", () => {
     expect(screen.getByText("—")).toBeTruthy();
     expect(screen.getByText("job v2.1")).toBeTruthy();
     expect(screen.getByText("cobertura 2")).toBeTruthy();
-    expect(screen.getByText(/· INCR · ok/)).toBeTruthy();
+    expect(screen.getByText(/^24\/10\/2026.* · banco de dados completo · concluído$/)).toBeTruthy();
     expect(screen.getByText("20 KB")).toBeTruthy();
-    expect(screen.getByText("· FULL · falhou")).toBeTruthy();
+    expect(screen.getByText("sem data · banco de dados completo · falhou")).toBeTruthy();
     expect(screen.getByText("tag · claude · OK")).toBeTruthy();
     expect(screen.getByText("dna · local(IA local) · FALLBACK")).toBeTruthy();
     expect(screen.getByText(/^0 ms ·$/)).toBeTruthy();

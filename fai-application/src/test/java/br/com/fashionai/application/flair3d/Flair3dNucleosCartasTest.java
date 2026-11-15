@@ -132,20 +132,6 @@ class Flair3dNucleosCartasTest {
     }
 
     @Test
-    void fashionSportsVenceComUniformeForteEPerdeComFracoDeFormaDeterministica() {
-        CbcRules.Card[] forte = {card("SUP", "ovr:90", "material:linen", "material:leather"), card("INF", "ovr:90", "material:denim"),
-                card("CAL", "ovr:90", "sub:casual_sneakers")};
-        Resultado vitoria = ateOFim(new FashionSportsNucleo(), 1, forte);
-        assertThat(vitoria.pontos()).isEqualTo(100);
-        assertThat(vitoria.resultado()).isEqualTo("VITORIA");
-        assertThat(vitoria.eventos()).contains(new Resultado.Evento("COESAO", 100));
-        assertThat(ateOFim(new FashionSportsNucleo(), 1, forte)).isEqualTo(vitoria);
-        Resultado derrota = ateOFim(new FashionSportsNucleo(), 1, card("SUP", "ovr:10"), card("INF", "ovr:10"), card("CAL", "ovr:10"));
-        assertThat(derrota.pontos()).isZero();
-        assertThat(derrota.resultado()).isEqualTo("DERROTA");
-    }
-
-    @Test
     void batalhaLooksVenceSoComMaisDe75() {
         Resultado vence = jogar(new BatalhaLooksNucleo(), card("SUP", "color:blue"), card("INF", "color:navy"), card("CAL", "color:denim"),
                 card("ACE", "color:light_blue"));

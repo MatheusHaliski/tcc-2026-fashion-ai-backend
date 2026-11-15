@@ -1,6 +1,7 @@
 "use client";
 import { Button, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { api, mediaUrl } from "@/lib/api/client";
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import type { Page, PieceView } from "@/lib/api/types";
 import { useApi } from "@/lib/hooks/use-api";
@@ -42,7 +43,7 @@ export function PiecePicker({ value, onChange, total, label }: {
               {/* peça sem foto: a ilustração da categoria na cor cadastrada, como no card do guarda-roupa */}
               {p.defaultImage
                 ? <img src={defaultGarmentUrl(p.category, p.subcategory, p.colorHex, p.color, "WHOLE")} alt="" loading="lazy" />
-                : <img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" loading="lazy" />}
+                : <img src={pieceImageUrl(p, 320)} alt="" loading="lazy" />}
               <span className="piece-picker-name">{p.name}</span>
             </button>
           );

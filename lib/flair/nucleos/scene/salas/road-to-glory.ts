@@ -1,9 +1,12 @@
 /**
- * Sala 5, Road to Glory: o provador 3D com o logo e as cores do FashionAI. O avatar fica no tapete diante do espelho
- * de camarim; banco estofado e arara aos lados; paredes rosa-claro, móveis magenta, tecidos verde-petróleo.
+ * Sala 5, Road to Glory: o camarim do FashionAI, com o logo e as cores da casa. O avatar fica no tapete diante do
+ * espelho de camarim, com a penteadeira (frascos, estojo e pincéis) e a cadeira alta do maquiador (revisão de
+ * CENARIOS.md: sem bancada de maquiagem a sala não se lia como camarim); banco estofado e arara aos lados; paredes
+ * rosa-claro, móveis magenta, tecidos verde-petróleo.
  */
 import { espelhado, imagem, la, laca, luz, madeira, metalEscovado, reboco, tecido, veludo } from "@/lib/flair/nucleos/scene/materials";
 import { bancoEstofado } from "@/lib/flair/nucleos/scene/moveis/assentos";
+import { cadeiraDeCamarim, penteadeira } from "@/lib/flair/nucleos/scene/moveis/camarim-box";
 import { arara, espelho, logo } from "@/lib/flair/nucleos/scene/moveis/loja";
 import { tapeteRedondo } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { cortina } from "@/lib/flair/nucleos/scene/moveis/palco";
@@ -39,6 +42,8 @@ export const SALA_ROAD_TO_GLORY: Sala = {
   moveis: [
     tapeteRedondo({ pos: [0, 0, 0] }, "tapete", "magenta", 1.1),
     espelho({ pos: [0, 0, -3.14] }, "lacaMagenta", "espelho", "luz", 1.8, 2.4, 14),
+    penteadeira({ pos: [0, 0, -2.82] }, "lacaMagenta", "piso", "metal", "espelho", 1.7),
+    cadeiraDeCamarim({ pos: [1.05, 0, -2.0], giro: -30 }, "magenta", "metal"),
     logo({ pos: [-2.2, 2.2, -3.17] }, "logo", "lacaMagenta", 0.9),
     bancoEstofado({ pos: [-2.2, 0, -2.2], giro: 20 }, "magenta", "metal", 1.3),
     arara({ pos: [2.2, 0, -2.4], giro: -15 }, "metal", "petroleo", 1.4, 6),

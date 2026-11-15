@@ -142,6 +142,9 @@ export interface AcervoMovimento {
   pieceId: string;
   name: string;
   thumbnailUrl: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  color?: string | null;
   de: AcervoLugar;
   para: AcervoLugar;
   motivo: string;
@@ -156,7 +159,7 @@ export interface AcervoPrevia {
 export interface AcervoLook {
   id: string;
   title: string;
-  itens: { pieceId: string; name: string; thumbnailUrl: string | null; minha: boolean; compartimentoId: string | null; caminho: string | null }[];
+  itens: { pieceId: string; name: string; thumbnailUrl: string | null; category?: string | null; subcategory?: string | null; color?: string | null; minha: boolean; compartimentoId: string | null; caminho: string | null }[];
 }
 
 export type AcervoMovelForm = Partial<AcervoMovelConfig> & { nome?: string; cabideiros?: number; prateleiras?: number; gavetas?: number };

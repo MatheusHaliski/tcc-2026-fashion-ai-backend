@@ -43,6 +43,7 @@ describe("RF-PESQ-03 laundry board", () => {
     const { calls } = loggedAs(undefined, { "GET /api/me/laundry": withClean, "POST /api/me/laundry/pieces/p9/worn": piece("p9", "Saia verde") });
     renderApp(<LaundryBoard />);
     expect(await screen.findByRole("heading", { name: "Peças limpas" })).toBeTruthy();
+    expect(screen.getByText("4 limpas")).toBeTruthy();   // plural por extenso (era "4 limpa(s)")
     fireEvent.click(screen.getByRole("button", { name: "Marcar Saia verde como usada" }));
     await waitFor(() => expect(calls.some((call) => call.method === "POST" && call.path === "/api/me/laundry/pieces/p9/worn")).toBe(true));
     expect(await screen.findByText("Saia verde foi para “Peças usadas”.")).toBeTruthy();

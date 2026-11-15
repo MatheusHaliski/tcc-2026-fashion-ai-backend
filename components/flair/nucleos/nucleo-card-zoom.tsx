@@ -3,8 +3,8 @@
  * Carta ampliada (toque longo ou tecla I): aqui aparecem o nome, a marca, o nível escrito, a nota, o Hype e todos os
  * efeitos da carta neste jogo, que não cabem na carta do deck. Fecha com Esc, com I ou pelo botão.
  */
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import { cn } from "@/components/ui";
-import { mediaUrl } from "@/lib/api/client";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { HudIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
@@ -31,7 +31,7 @@ export function NucleoCardZoom({ card, itens, onFechar }: Props) {
           <span>{tx.posicao(card.position)}</span>
         </header>
         <div className="n3d-zoom-photo">
-          {card.imageUrl ? <img src={mediaUrl(card.imageUrl)} alt="" decoding="async" /> : null}
+          {card.imageUrl ? <img src={pieceImageUrl({ imageUrl: card.imageUrl, category: card.category, subcategory: card.subcategory, color: card.tags?.colors?.[0] })} alt="" decoding="async" /> : null}
         </div>
         <h3 id="n3d-zoom-name" className="n3d-zoom-name">{card.name}</h3>
         <p className="n3d-zoom-brand">{card.brandName ?? tx.t("flairCard.semMarca")}</p>

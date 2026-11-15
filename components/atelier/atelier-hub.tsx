@@ -10,6 +10,7 @@ import {ATELIER_CATEGORIES,type AtelierRewardSystem,type AtelierTab} from '@/lib
 import {Button,Dialog,ErrorState,PageHeader,Skeleton,Tabs} from '@/components/ui';
 import {ProfileLevelChip} from '@/components/profile-level-progress';
 import {useHologramMotion} from './holographic-fx';
+import {room3dHref} from '@/lib/atelier/room-3d';
 const Metamorphoses=dynamic(()=>import('./metamorphoses-panel').then(m=>m.MetamorphosesPanel),{loading:()=> <Skeleton className="h-64"/>});
 const Timeline=dynamic(()=>import('./timeline-panel').then(m=>m.TimelinePanel),{loading:()=> <Skeleton className="h-64"/>});
 const Trends=dynamic(()=>import('./trends-panel').then(m=>m.TrendsPanel),{loading:()=> <Skeleton className="h-64"/>});
@@ -21,7 +22,7 @@ export function AtelierHub(){
  function navigate(value:AtelierTab){const next=new URLSearchParams(params.toString());next.set('tab',value);router.replace(`/atelier?${next}`,{scroll:false});}
  return <div className="atelier-hub" data-motion={motion?'on':'off'}>
   {/* mesmo cabeçalho das outras abas: título, frase e ações, sem faixa azul nem legenda miúda */}
-  <PageHeader title={t('atelier.brandTitle')} lead={t('atelier.lead')} actions={<div className="flex flex-wrap items-center gap-2">{query.data&&<ProfileLevelChip progress={query.data.levelProgress}/>}<Button onClick={()=>setHelp(true)}>{t('atelier.help')}</Button><Button aria-pressed={paused} onClick={()=>setPaused(value=>!value)}>{t(paused?'atelier.resume':'atelier.pause')}</Button><Link href="/flair/jogos?district=SUITE" className="btn">{t('atelier.visitRoom')}</Link></div>}/>
+  <PageHeader title={t('atelier.brandTitle')} lead={t('atelier.lead')} actions={<div className="flex flex-wrap items-center gap-2">{query.data&&<ProfileLevelChip progress={query.data.levelProgress}/>}<Button onClick={()=>setHelp(true)}>{t('atelier.help')}</Button><Button aria-pressed={paused} onClick={()=>setPaused(value=>!value)}>{t(paused?'atelier.resume':'atelier.pause')}</Button><Link href={room3dHref()} className="btn">{t('atelier.visitRoom')}</Link></div>}/>
   {query.error&&<ErrorState error={query.error} onRetry={query.reload}/>}
   {query.loading?<Skeleton className="h-24"/>:<dl className="atelier-reward-strip" aria-label={t('atelier.rewards')}>{ATELIER_CATEGORIES.map(category=><div key={category}><dt>{t(`atelier.category.${category}`)}</dt><dd>{query.data?query.data.categories[category]?.length??0:'—'}</dd></div>)}</dl>}
   <Tabs tabs={TABS.map(id=>({id,label:t(`atelier.tab.${id}`)}))} value={tab} onChange={navigate} label={t('atelier.tabs')}/>

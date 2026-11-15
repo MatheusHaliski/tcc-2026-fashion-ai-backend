@@ -8,7 +8,6 @@ import { FaiIcon } from "@/components/fai-icon";
 import { PieceCard } from "@/components/piece-card";
 import { SealMedallion } from "@/components/seal-medallion";
 import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
-import { CbcSceneArt } from "@/components/flair/cbc-scene";
 import { FlairHubIcon } from "@/components/flair/hub-icons";
 import type { HubModeId } from "@/lib/flair/hub";
 
@@ -21,6 +20,7 @@ import type { HubModeId } from "@/lib/flair/hub";
 import { demoPiece, demoCard, DEMO_SCHEME_SEAL, DEMO_HYPE, DEMO_BRAND, POINTS_NAME, DEMO_PIECE_NAME_2 } from "./demo-data";
 export { demoPiece, demoCard, DEMO_SCHEME_SEAL } from "./demo-data";
 import { FeedGuideDemo } from "./feed-guide-demo";
+import { CbcDemo } from "./cbc-guide-demo";
 
 export function GuideDemo({ demo }: { demo: DemoId }) {
   useEffect(() => { primeHype("PIECE", DEMO_HYPE); }, []);
@@ -175,25 +175,6 @@ function FlairQuestsDemo() {
       <div className="gd-progress" role="presentation"><i className="gd-anim-progress" /></div>
       <span className="type-caption tabular">3/3</span>
       <span className="btn btn-sm btn-primary gd-anim-show">{t("common.resgatar")}</span>
-    </div>
-  );
-}
-
-function CbcDemo() {
-  const { t } = useI18n();
-  return (
-    <div className="gd-cbc">
-      <div className="gd-mosaic">
-        <CbcSceneArt scenario="primavera" />
-        <div className="gd-tiles" aria-hidden>
-          <i className="gd-tile-cover is-filled" /><i className="gd-tile-cover gd-anim-reveal" /><i className="gd-tile-cover" /><i className="gd-tile-cover" />
-        </div>
-        <span className="gd-req">{t("guide.demo.cbc.requirement")}</span>
-      </div>
-      <div className="gd-cbc-bank">
-        <div className="gd-anim-fly"><FlairGameCard card={demoCard({ tier: "PRATA", ovr: 70 })} size="sm" flip={false} /></div>
-        <span className="type-caption">{t("guide.demo.cbc.bank")}</span>
-      </div>
     </div>
   );
 }

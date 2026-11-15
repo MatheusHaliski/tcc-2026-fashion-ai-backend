@@ -17,7 +17,7 @@
  *   - Final: o lado vencedor da partida recebe a luz dourada (perfect) e o perdedor fica dessaturado.
  */
 import type { FlairCard, FlairDeck, FlairRound } from "@/components/flair/flair-card";
-import type { EffectKind } from "@/lib/flair/games";
+import type { EffectKind } from "@/lib/flair/photo-scene";
 
 export type MatchTier = "BRONZE" | "PRATA" | "OURO" | "ESPECIAL";
 export type MatchSide = "A" | "B";

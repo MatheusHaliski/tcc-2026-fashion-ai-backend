@@ -75,11 +75,11 @@ export function especialOk(r: NucleoResultado): boolean {
  * Passos da ação: nas disputas automáticas (luta, partida) os eventos contam a história; nos demais, cada regra é uma
  * peça agindo, seguida dos eventos. O último passo é o efeito especial, que só existe quando a etapa terminou: com a
  * partida EM_ACAO (esperando o acionamento) os passos são só os eventos até aqui, e a próxima resposta traz os mesmos
- * mais os novos.
+ * mais os novos. `so` limita os eventos que viram passo (no Fashion Sports, só os lances e o intervalo).
  */
-export function passosDaAcao(r: NucleoResultado, automatico = false): PassoAcao[] {
+export function passosDaAcao(r: NucleoResultado, automatico = false, so?: Set<string>): PassoAcao[] {
   const regras = r.regras.map((x): PassoAcao => ({ fonte: "regra", codigo: x.codigo, ok: x.ok, pontos: x.pontos, vaga: vagaDaRegra(x.codigo) }));
-  const eventos = r.eventos.map((e): PassoAcao => ({ fonte: "evento", codigo: e.codigo, ok: venceu(e.valor), pontos: 0, vaga: null, valor: e.valor }));
+  const eventos = r.eventos.filter((e) => !so || so.has(e.codigo)).map((e): PassoAcao => ({ fonte: "evento", codigo: e.codigo, ok: venceu(e.valor), pontos: 0, vaga: null, valor: e.valor }));
   const especial: PassoAcao = { fonte: "especial", codigo: r.resultado, ok: especialOk(r), pontos: r.pontos, vaga: null };
   const corpo = automatico && eventos.length ? eventos : [...regras, ...eventos];
   if (r.status === "EM_ACAO") return corpo;

@@ -68,7 +68,7 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
           previa.limpar();
           void m.entregar(sel, avatar);
         }}
-        onAcionar={(p) => void m.acionar({ cardId: p.cardId, vaga: p.vaga })}
+        onAcionar={(p) => void m.acionar({ cardId: p.cardId, vaga: p.vaga, alvo: p.alvo })}
         acionando={m.acionando}
         erroAcionar={m.erroAcionar}
         onFimAcao={fim}

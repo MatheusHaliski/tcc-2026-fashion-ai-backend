@@ -32,7 +32,7 @@ public interface SchemeRepository extends JpaRepository<Scheme, UUID> {
 
     List<Scheme> findByIdIn(Collection<UUID> ids);
 
-    @Query("select s from Scheme s where s.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC and s.status = br.com.fashionai.domain.model.enums.SchemeStatus.PUBLISHED and (lower(s.title) like lower(concat('%', :term, '%')) or lower(s.description) like lower(concat('%', :term, '%')) or lower(s.tags) like lower(concat('%', :term, '%')))") List<Scheme> searchPublic(@Param("term") String term, Pageable pageable);
+    @Query("select s from Scheme s where s.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC and s.status = br.com.fashionai.domain.model.enums.SchemeStatus.PUBLISHED and (lower(s.title) like lower(concat('%', :term, '%')) or lower(s.description) like lower(concat('%', :term, '%')) or lower(s.tags) like lower(concat('%', :term, '%')) or exists (select si.id from SchemeItem si where si.scheme = s and lower(si.wardrobeItem.name) like lower(concat('%', :term, '%'))))") List<Scheme> searchPublic(@Param("term") String term, Pageable pageable);
 
     @Query("select s from Scheme s where s.visibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC and s.status = br.com.fashionai.domain.model.enums.SchemeStatus.PUBLISHED order by s.publishedAt desc") List<Scheme> findPublicFeed(Pageable pageable);
 

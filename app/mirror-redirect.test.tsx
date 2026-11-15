@@ -18,7 +18,7 @@ describe("/room → links antigos redirecionados", () => {
   it("sem parâmetros: o catálogo de jogos da Suíte de Vidro", async () => {
     loggedAs(ME, {});
     renderApp(<RoomPage />);
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/flair/jogos?district=SUITE"));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/atelier?tab=room&quarto=3d"));
   });
   it("espelho com peça para vestir: /mirror?vestir=<id>", async () => {
     nav.search = new URLSearchParams("espelho=1&vestir=p1");

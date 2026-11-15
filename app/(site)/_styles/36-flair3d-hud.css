@@ -184,3 +184,18 @@
 .n3d-cast.is-compact .btn {
   min-height: var(--touch);
 }
+
+/* seletor de câmera: diz a câmera em uso e troca para a próxima do jogo */
+.n3d-camera-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch);
+  padding: 0 12px;
+  border: 1px solid #fff4;
+  border-radius: 999px;
+  background: #000a;
+  color: #fff;
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}

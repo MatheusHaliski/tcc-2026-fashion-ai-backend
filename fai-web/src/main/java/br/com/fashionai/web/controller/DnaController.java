@@ -26,7 +26,7 @@ public class DnaController {
     @GetMapping("/api/me/dna")
     @Operation(summary = "RF13 — Meu DNA: pré-requisitos, síntese, versões e card")
     public Map<String, Object> overview(CurrentUser user) {
-        return dna.overview(user);
+        return CreateOnRead.retryOnRace(() -> dna.overview(user));
     }
 
     @GetMapping("/api/me/dna/social-proof")

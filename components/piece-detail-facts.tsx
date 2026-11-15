@@ -3,6 +3,7 @@ import type {ReactNode} from "react";
 import type {PieceView} from '@/lib/api/types';
 import {label,CATEGORY_LABEL,subcategoryLabel} from '@/lib/api/taxonomy';
 import {Price} from "@/components/price";
+import {informedPrice} from '@/lib/api/piece-price';
 import {useI18n} from '@/lib/i18n/i18n';
 import {sizeLabel} from './piece-snapshot';
 import {conservationLabel,washingDetails} from '@/lib/api/piece-references';
@@ -21,7 +22,7 @@ export function PieceDetailFacts({piece}:{piece:PieceView}){
   [t('pieceReferences.intensidade.label'),piece.intensidadeTermica?.nome??null],
   [t('pieceReferences.washing'),washing],
   [t('pieceReferences.additionalCare'),additionalCare],
-  [t('common.price'),piece.price!=null&&!piece.forSale?<Price value={piece.price}/>:null],
+  [t('common.price'),!piece.forSale&&informedPrice(piece.price)!=null?<Price value={piece.price}/>:null],
  ] as [string,ReactNode][]).filter(([,v])=>v);
  return <dl className="c-facts">{rows.map(([key,value])=><div key={key}><dt>{key}</dt><dd className="whitespace-pre-wrap break-words">{value}</dd></div>)}</dl>;
 }

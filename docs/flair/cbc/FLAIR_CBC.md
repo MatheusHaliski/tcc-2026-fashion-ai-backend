@@ -58,6 +58,8 @@ número mínimo de linhas verdes e número mínimo de linhas ligadas por um atri
 - **Aura Hype**: a faixa de Hype da carta dá brilho e partículas à carta, como no FLAIR 3D.
 - **Aura Metamorfose**: carta com química 3 e permissão Loft transforma a cor das linhas dela na paleta da carta.
 - **Aura Impersonation**: com o conjunto completo e a permissão, o avatar veste o look montado.
+- **Desenho de cada elenco e desafio** [existe]: cena 2D animada que é o próprio quebra-cabeça, e a bandeja de cartas
+  direta (um toque põe); ver `CENAS_DINAMICAS.md`.
 
 ## 4. Recompensas
 
