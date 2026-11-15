@@ -199,3 +199,12 @@ pele, corpo ou rosto.
 - Celular 390×844: o caderno do caso, o mapa e o inventário abrem em folhas por cima da cena, sem cobrir o avatar.
 - Câmera de exploração em terceira pessoa, por trás do ombro (`CAMERAS.md`, jogo 6), e diagonal de cima para ler a
   sala e os cones de visão.
+
+## 11. Onde está no código
+
+- O mapa (salas, portas, chaves nos armários, quem abre sem carta verde) e o teste de que o jogo sempre se completa:
+  `fai-application/.../flair3d/nucleos/FashionDetectiveMundo.java`, `FashionDetectiveMundoTest.java`.
+- A acusação, com o culpado só no servidor: `FashionDetectiveAcusacao.java`.
+- Ainda não ligados à partida (`FashionDetectiveNucleo` continua com os 6 salões de 14/11); a tela de exploração, os
+  inimigos, as cutscenes e o caderno são as próximas etapas (`ESTADO_DOS_JOGOS.md`).
+
