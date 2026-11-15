@@ -90,8 +90,6 @@ class WardrobeEventListenersTest {
         verify(points).award(me, "PIECE_COMPLETED", "PIECE", piece.toString(), null);
         listeners.onModel3d(new DomainEvents.Model3dGenerated(me, piece));
         verify(points).award(me, "PIECE_3D", "PIECE", piece.toString(), null);
-        listeners.onRoomOrganized(new DomainEvents.RoomOrganized(me));
-        verify(points).award(me, "ROOM_ORGANIZED", "ROOM", null, null);
         assertThat(listeners.describe()).containsKey("listeners");
     }
 

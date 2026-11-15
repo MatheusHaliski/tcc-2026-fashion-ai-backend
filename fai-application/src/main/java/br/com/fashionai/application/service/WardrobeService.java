@@ -901,7 +901,7 @@ public class WardrobeService {
 
     // ------------------------------------------------------------------ compatibilidade: delegações
     // Ficam as que têm chamador fora deste arquivo: produção (MultiPieceService, CopilotService, SchemeService,
-    // AutopilotService, DnaService, MirrorService, RoomService) e as delegações anteriores ao lote R02. As regras
+    // AutopilotService, DnaService, MirrorService) e as delegações anteriores ao lote R02. As regras
     // movidas no R02 que só testes chamavam são testadas direto no colaborador dono.
     static String sealFilter(String raw) {
         return ClosetQuery.sealFilter(raw);

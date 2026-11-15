@@ -165,40 +165,6 @@ class HypePersonalDataTest {
         verify(hypeMilestones).deleteByOwnerId(u.getId());
     }
 
-    // ------------------------------------------------------------------ ilha "Compare looks" (P3-06)
-    @Test
-    @SuppressWarnings("unchecked")
-    void ilhaDoQuartoMostraOHypeV2PessoalSemPerderOCampoV1() {
-        User u = user();
-        CurrentUser me = new CurrentUser(u.getId(), "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
-        Scheme a = scheme(u);
-        Scheme b = scheme(u);
-        Guard guard = mock(Guard.class);
-        FaiPointsLedgerEntryRepository ledger = mock(FaiPointsLedgerEntryRepository.class);
-        when(ledger.lifetime(u.getId())).thenReturn(5_000L);   // nível ATELIER libera a ilha
-        HypeQueryService query = mock(HypeQueryService.class);
-        when(query.summaries(eq(me), eq(HypeEntityType.SCHEME), anyList())).thenReturn(Map.of("items",
-                Map.of(a.getId().toString(), Map.of("status", "AVAILABLE", "score", 77.0, "level", "TRENDING"))));
-        ObjectProvider<HypeQueryService> provider = mock(ObjectProvider.class);
-        when(provider.getIfAvailable()).thenReturn(query);
-        RoomService room = new RoomService(null, null, pieces, schemes, mock(SchemeItemRepository.class), null, null, null, null, null, users, ledger,
-                null, null, guard, null, null, null, null, null, provider);
-
-        Map<String, Object> out = room.island(me, List.of(a.getId(), b.getId()));
-        List<Map<String, Object>> looks = (List<Map<String, Object>>) out.get("looks");
-        assertThat(looks.get(0)).doesNotContainKey("hypeScore");   // o v1 saiu na limpeza do v1 (P3-16)
-        assertThat((Map<String, Object>) looks.get(0).get("hype")).containsEntry("level", "TRENDING").containsEntry("score", 77.0);
-        // sem cálculo: "não calculado", nunca 0
-        assertThat((Map<String, Object>) looks.get(1).get("hype")).containsEntry("status", "NOT_CALCULATED").doesNotContainKey("score");
-        verify(query).summaries(eq(me), eq(HypeEntityType.SCHEME), eq(List.of(a.getId(), b.getId())));
-
-        // look de outra pessoa: a guarda barra antes de qualquer leitura de Hype
-        Scheme alheio = scheme(user());
-        doThrow(ApiException.forbidden("não é seu")).when(guard).requireOwner(eq(me), eq(alheio.getUser().getId()), anyString());
-        assertThrows(ApiException.class, () -> room.island(me, List.of(a.getId(), alheio.getId())));
-        verify(query, org.mockito.Mockito.times(1)).summaries(any(), any(), anyList());
-    }
-
     Scheme scheme(User owner) {
         Scheme s = new Scheme();
         s.assignId(UUID.randomUUID());

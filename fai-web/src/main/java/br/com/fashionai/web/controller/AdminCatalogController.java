@@ -10,29 +10,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/catalog")
-@Tag(name = "Administração de catálogos (loja, FLAIR, selos, cupons, peças, quarto 3D)")
+@Tag(name = "Administração de catálogos (FLAIR, selos, cupons, peças)")
 public class AdminCatalogController {
     private final AdminCatalogService catalog;
     public AdminCatalogController(AdminCatalogService catalog) { this.catalog = catalog; }
-
-    @GetMapping("/store")
-    @Operation(summary = "Itens da loja Fashion AI (ativos e inativos). Filtros: qualquer atributo (ex.: active, slotType, rarity), q, page, size, sort, dir")
-    public Map<String, Object> store(CurrentUser user, @RequestParam Map<String, String> params) { return catalog.storeItems(user, params); }
-
-    @GetMapping("/store/{sku}")
-    public Map<String, Object> storeItem(CurrentUser user, @PathVariable String sku) { return catalog.storeItem(user, sku); }
-
-    @PatchMapping("/store/{sku}")
-    @Operation(summary = "Edita qualquer item da loja (nome, preço, estoque, raridade, janela de venda, etc.)")
-    public Map<String, Object> update(CurrentUser user, @PathVariable String sku, @RequestBody Map<String, Object> changes) {
-        return catalog.updateStoreItem(user, sku, changes);
-    }
-
-    @PostMapping("/store/{sku}/activate")
-    public Map<String, Object> activate(CurrentUser user, @PathVariable String sku) { return catalog.setStoreItemActive(user, sku, true); }
-
-    @PostMapping("/store/{sku}/deactivate")
-    public Map<String, Object> deactivate(CurrentUser user, @PathVariable String sku) { return catalog.setStoreItemActive(user, sku, false); }
 
     @GetMapping("/flair-games")
     @Operation(summary = "Partidas FLAIR (todos os status). Filtros: mode, status, theme, userId (criador), q…")
@@ -49,8 +30,4 @@ public class AdminCatalogController {
     @GetMapping("/garments")
     @Operation(summary = "Peças de roupa de todos os usuários. Filtros: userId, category, moderationStatus, forSale, q…")
     public Map<String, Object> garments(CurrentUser user, @RequestParam Map<String, String> params) { return catalog.garmentCatalog(user, params); }
-
-    @GetMapping("/room-items")
-    @Operation(summary = "Itens do quarto 3D dos usuários. Filtros: userId, sku, source…")
-    public Map<String, Object> roomItems(CurrentUser user, @RequestParam Map<String, String> params) { return catalog.roomItemCatalog(user, params); }
 }

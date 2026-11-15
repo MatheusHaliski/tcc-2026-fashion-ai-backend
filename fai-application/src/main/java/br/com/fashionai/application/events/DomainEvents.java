@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Eventos de domínio publicados pelos serviços (Spring ApplicationEventPublisher). Consumidos pelo quarto
- * (RF32), FAI Points (RF35), Inventory Score (RF34), Desafios (RF36) e diário de uso — sem acoplar os RFs.
+ * Eventos de domínio publicados pelos serviços (Spring ApplicationEventPublisher). Consumidos por FAI Points (RF35),
+ * Inventory Score (RF34), Desafios (RF36) e diário de uso — sem acoplar os RFs. (O Meu Quarto, RF32, saiu em 15/11/2026.)
  */
 public final class DomainEvents {
     private DomainEvents() {
@@ -74,8 +74,5 @@ public final class DomainEvents {
 
     /** Card Trello RF38 — reavaliar os direitos promocionais (cupons) do usuário depois de uma conquista. */
     public record CouponRightsCheck(UUID userId) {
-    }
-
-    public record RoomOrganized(UUID userId) {
     }
 }

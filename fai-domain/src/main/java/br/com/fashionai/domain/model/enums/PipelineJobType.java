@@ -16,5 +16,6 @@ public enum PipelineJobType {
     HYPE_SCORE_RECALC,
     DATA_EXPORT,
     THREE_D_GENERATION,
+    /** Assets do Meu Quarto (saiu em 15/11/2026): ninguém mais cria; fica para ler as linhas antigas de pipeline_jobs. */
     ROOM_ASSET_GENERATION
 }

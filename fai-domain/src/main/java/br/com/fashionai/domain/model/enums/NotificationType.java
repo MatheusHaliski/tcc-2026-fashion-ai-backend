@@ -33,7 +33,7 @@ public enum NotificationType {
     /** RF36 — convite para desafio (Equipe/Duelo) e resultado. Nunca há notificação de culpa ou de perda (ETI-02). */
     CHALLENGE_INVITE(NotificationCategory.SOCIAL, true),
     CHALLENGE_RESULT(NotificationCategory.ACHIEVEMENT, true),
-    /** RF34 §4.3 / RF35 §5.3 — conquista desbloqueada e evolução do quarto. */
+    /** RF34 §4.3 / RF35 §5.3 — conquista desbloqueada e subida de nível de FAI XP (o nome ROOM_ fica: avisos antigos). */
     ACHIEVEMENT_UNLOCKED(NotificationCategory.ACHIEVEMENT, true),
     ROOM_LEVEL_UP(NotificationCategory.ACHIEVEMENT, true),
     /**

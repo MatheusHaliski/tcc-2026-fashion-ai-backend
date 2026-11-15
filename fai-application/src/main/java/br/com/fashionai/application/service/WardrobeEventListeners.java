@@ -180,13 +180,8 @@ public class WardrobeEventListeners {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-    public void onRoomOrganized(DomainEvents.RoomOrganized ev) {
-        safe("RoomOrganized", () -> points.award(ev.userId(), "ROOM_ORGANIZED", "ROOM", null, null));
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPieceWorn(DomainEvents.PieceWorn ev) {
-        // o diário manual já foi gravado pelo RoomService; aqui só o resgate conta pontos
+        // o diário já foi gravado por quem publicou o evento; aqui só o resgate conta pontos
         safe("PieceWorn", () -> diary.findByWardrobeItemIdOrderByUsedOnDesc(ev.pieceId()).stream().filter(e -> e.getUsedOn().equals(ev.date()))
                 .findFirst().ifPresent(e -> {
                     if (e.getNote() != null && e.getNote().startsWith("resgate")) {
@@ -197,6 +192,6 @@ public class WardrobeEventListeners {
 
     public Map<String, Object> describe() {
         return Map.of("listeners", List.of("SchemeSaved", "DailyLookRegistered", "PieceCreated", "PieceUpdated", "AvailabilityChanged",
-                "Model3dGenerated", "InteractionReceived", "RoomOrganized", "PieceWorn"));
+                "Model3dGenerated", "InteractionReceived", "PieceWorn"));
     }
 }
