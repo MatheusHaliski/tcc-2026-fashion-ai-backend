@@ -5536,7 +5536,7 @@
   "multiPiece.escolha_e_avance": "Elige una prenda, revisa los datos y sigue con Siguiente — como en la búsqueda del catálogo. Tras guardar, vuelve aquí para la siguiente.",
   "multiPiece.usar_esta_peca": "Usar esta prenda",
   "multiPiece.em_edicao": "En edición",
-  "multiPiece.leitura_local": "Lectura local: no se usó la IA en línea. El color se leyó de la foto; el tipo y el nombre de la prenda los indicas tú.",
+  "multiPiece.leitura_local": "Lectura local: no se usó la IA en línea. El color se leyó de la foto. Cuando la forma del recorte lo deja claro, el tipo aparece como sugerencia para que lo confirmes; el nombre lo indicas tú.",
   "pieces.new.escolha_peca_da_foto": "Elige una de las prendas encontradas en la foto antes de guardar.",
   "pieces.new.proxima_peca_da_foto": "Prenda guardada. Elige la siguiente prenda de la foto.",
   "pieces.new.origem_foto": "Tu foto (recorte de la prenda)",
@@ -12114,5 +12114,9 @@
   "flair3d.cenas.esteira.name": "Cinta de costura",
   "flair3d.cenas.esteira.description": "camisetas y vestidos pasan por tres cintas de cristal y atraviesan los portales de las máquinas de coser.",
   "flair3d.cenas.corrida-de-contas.name": "Carrera de cuentas",
-  "flair3d.cenas.corrida-de-contas.description": "botones y cuentas bajan rodando por dos rampas de cristal en zigzag y dan la vuelta en un lazo, como en una pista de canicas."
+  "flair3d.cenas.corrida-de-contas.description": "botones y cuentas bajan rodando por dos rampas de cristal en zigzag y dan la vuelta en un lazo, como en una pista de canicas.",
+  "multiPiece.sugestao_tipo": "Por la forma del recorte, parece {category}. Revísalo antes de usarlo.",
+  "multiPiece.usar_como": "Usar como {category}",
+  "lens.category_pick.sugestao": "Sugerencia por la forma del recorte: {category}. Toca para confirmar o elige otro tipo.",
+  "lens.category_pick.sugerida": "{category} (sugerida)"
 }
