@@ -81,12 +81,12 @@ class Flair3dRodadasCartasTest {
         for (long semente = 1; semente <= 40; semente++) {
             Contexto c = naRodada(PassarelaNucleo.SURPRESA, semente, sup);
             Object tema = n.abertura(c).get("tema");
-            assertThat(PassarelaNucleo.TEMAS).contains((String) tema);
+            assertThat(PassarelaNucleo.SURPRESAS).contains((String) tema);
             assertThat(n.abertura(c).get("tema")).isEqualTo(tema);
             assertThat(simples(n.pontuar(vestir(sup), c), "TEMA")).isEqualTo(tema);
             temas.add(tema);
         }
-        assertThat(temas).hasSize(PassarelaNucleo.TEMAS.size());
+        assertThat(temas).hasSize(PassarelaNucleo.SURPRESAS.size()).doesNotContain("TEMA_BRASIL");
         Contexto foraDaPartida = new Contexto(Map.of(), null, null).naRodada(PassarelaNucleo.SURPRESA);
         assertThat(n.efeitos(sup, foraDaPartida)).containsExactly(new Efeito("TEMA_SURPRESA", 1));
         assertThat(n.efeitos(sup, new Contexto(Map.of(), null, null).naRodada("TEMA_CLASSICO"))).containsExactly(new Efeito("NO_TEMA", 10));

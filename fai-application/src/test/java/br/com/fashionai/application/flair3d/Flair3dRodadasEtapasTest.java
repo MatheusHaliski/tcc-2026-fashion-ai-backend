@@ -293,5 +293,10 @@ class Flair3dRodadasEtapasTest {
             assertThat(r.eventos()).extracting(Resultado.Evento::codigo).contains("VOTO_DA_PLATEIA");
         }
         assertThat(r.regras()).hasSize(3);
+        // cada carta com os pontos que deu nas etapas (não "vale conforme o pedido da vez")
+        double dasCartas = r.cartas().stream().mapToDouble(Resultado.CartaPontos::pontos).sum();
+        assertThat(r.cartas()).extracting(Resultado.CartaPontos::cardId).doesNotHaveDuplicates().isSubsetOf(sup.id(), inf.id());
+        assertThat(dasCartas).isLessThanOrEqualTo(r.pontos() + 0.05);
+        assertThat(r.cartas()).allSatisfy(c -> assertThat(c.pontos()).isPositive());
     }
 }

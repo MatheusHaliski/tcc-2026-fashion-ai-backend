@@ -12296,5 +12296,7 @@
   "flair3d.esporte.SKATE.lance.RIVAL_FORA": "{jogador} of {time} falls on the main trick",
   "flair3d.esporte.SKATE.lance.SEM_CARTA": "No card played: {jogador} loses the line",
   "flair3d.esporte.SKATE.lance.PROTEGE": "{jogador} keeps the line and takes no risks",
-  "flair3d.esporte.SKATE.lance.PASSE_FORA": "{jogador} leaves the course: score to {rival}"
+  "flair3d.esporte.SKATE.lance.PASSE_FORA": "{jogador} leaves the course: score to {rival}",
+  "flair3d.ui.result.media": "The final score is the average of the {n} stages: each stage counts 1/{n} of its points.",
+  "flair3d.dica.AROUND_THE_WORLD.MARCA_BR": "Wear at least one piece from a Brazilian brand: the rule adds 25."
 }

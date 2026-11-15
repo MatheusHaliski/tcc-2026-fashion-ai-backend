@@ -25,6 +25,10 @@ O que vale para todos os jogos e não se repete abaixo:
   verdade). O desenho descreve essas variações, mas a base só abre partida solo (`BASE_NUCLEOS.md`, "Os avatares de
   cada partida"). Onde o jogo pede adversário ou plateia, entra um figurante com nota tirada da semente.
 - **Fluidez do 3D:** não medida. O ambiente de desenvolvimento não tem placa de vídeo.
+- **Cor das peças e das cartas (auditoria 3):** a carta dos jogos mostra a cor cadastrada (bolinha e nome) e a foto
+  da peça sem foto vem pintada nessa cor; o corpo 3D veste a peça sem foto na cor do cadastro. Uma só fonte de cor:
+  `lib/pieces/piece-image.ts` e `defaultGarmentColor` (`lib/catalog/default-garment.ts`). As partidas clássicas e o
+  FLAIR CBC ficam com quem cuida deles.
 
 ## Pedidos da dona de 15/11/2026: onde estão
 
@@ -102,7 +106,7 @@ Cena: `lib/flair/nucleos/scene/salas/passarela.ts` (passarela, plateia, fotógra
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| Rodada "Tema surpresa": o tema só aparece depois de travar o deck, e muda de uma partida para outra | feito | não |
+| Rodada "Tema surpresa": o tema só aparece depois de travar o deck, e muda de uma partida para outra | feito; a surpresa sorteia só Noite, Monocromático ou Clássico: o Brasil pede marca brasileira, que peça sem marca não cumpre (auditoria 3 viu "Noite" no preparo e "Brasil" no resultado; a abertura e a entrega tiram o tema da mesma semente, e um teste do servidor confere os dois) | não |
 | Rodadas de treino com tema fixo: Brasil, Noite, Monocromático, Clássico | feito | não |
 | A carta do deck mostra o selo do tema só depois de entrar (antes, "tema surpresa") | feito | não |
 | Resultado com a colocação na sala (você e 3 desfiles da casa) e a nota de cada um | feito | não |
@@ -213,6 +217,7 @@ Verão. Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unha
 | O núcleo Road to Glory oferece os briefs como rodadas | feito | não |
 | Resultado diz a regra que faltou e o que trocar | pendente | não |
 | Celular: a cena e a barra de botões cabem na largura | pendente | não |
+| A peça sem foto aparece no corpo 3D na cor do cadastro (auditoria 3: a bota preta saía laranja, a cor da ilustração da categoria) | feito em todos os jogos: a carta leva a cor cadastrada ao corpo 3D, que veste o tecido nessa cor; a mesma fonte das miniaturas (`lib/pieces/piece-image.ts`) | não (só testes) |
 | Cabelo, unhas, joias, temporadas e os 30 níveis com desbloqueios | pendente | não |
 
 ## 6 · Fashion Detective
@@ -393,6 +398,7 @@ Cena: `scene/salas/around-the-world.ts` (calçadão, vitrine, mapa).
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
 | Rodada "Rio de Janeiro" (a da base) | feito | sim (auditoria de 14/11) |
+| A dica da regra de marca brasileira diz o valor certo (25 por regra; antes dizia "cada uma soma 10", auditoria 3) | feito | não |
 | Rodada "Volta ao mundo": 8 regiões em sequência; com 60 pontos a região abre a próxima; menos que isso, tenta de novo | feito | não |
 | Um cartão apresenta a região da vez, o clima, a estética e a paleta | feito | não |
 | Rodada "Elevador da Torre": 4 andares, até 2 trocas por andar, 25 por andar de primeira | feito | não |
@@ -529,6 +535,7 @@ Cena: `scene/salas/batalha-looks.ts` (passarela em Y, adversário, plateia, pain
 | O painel da cena mostra a soma dos dois | pendente | não |
 | Efeito de cor na cena 3D | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
 | Resultado com a nota de cada rodada, sua e do adversário | feito | não |
+| "Cartas que pontuaram" com os pontos de cada carta nas rodadas em etapas (antes: "vale conforme o pedido da vez", auditoria 3); o resultado explica que cada etapa entra com 1/n dos pontos (o "8,33" de uma etapa de 25 em 3) | feito para todas as rodadas em etapas (Batalha, Boutique, Volta ao mundo, Labirinto): a regra de uma vaga cumprida vale para a carta dessa vaga, com o peso da etapa | não (só testes) |
 | Duelo 1×1, sala de 4 e modos com amigos | pendente (online) | não |
 
 ## FLAIR Card Building Challenge

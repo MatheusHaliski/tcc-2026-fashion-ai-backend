@@ -36,6 +36,8 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
   const tx = useNucleoText();
   const estrelas = Math.max(0, Math.min(3, resultado.estrelas));
   /** o que trocar: uma dica por regra não cumprida, sem repetir */
+  /** rodada em etapas: cada etapa entra com 1/n dos pontos dela ("8,33" para uma etapa de 25 em 3) */
+  const etapas = resultado.eventos.filter((e) => e.codigo === "ETAPA").length;
   const dicas = Array.from(new Set(resultado.regras.filter((r) => !r.ok).map((r) => tx.dica(codigo, r.codigo, tx.regra(codigo, r.codigo))))).slice(0, MAX_DICAS);
   return (
     <section className="n3d-result" aria-labelledby="n3d-result-title" data-testid="nucleo-result">
@@ -61,6 +63,7 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
           </li>
         ))}
       </ul>
+      {etapas > 1 && !semPlacar && <p className="n3d-hint" data-testid="nucleo-result-media">{tx.t("flair3d.ui.result.media", { n: etapas })}</p>}
       {dicas.length > 0 && (
         <>
           <h3 className="type-label">{tx.t("flair3d.ui.result.hints")}</h3>

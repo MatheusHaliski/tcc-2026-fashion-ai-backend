@@ -12296,5 +12296,7 @@
   "flair3d.esporte.SKATE.lance.RIVAL_FORA": "{jogador}, do {time}, cai na manobra principal",
   "flair3d.esporte.SKATE.lance.SEM_CARTA": "Sem carta jogada: {jogador} perde a linha",
   "flair3d.esporte.SKATE.lance.PROTEGE": "{jogador} segura a linha e não arrisca",
-  "flair3d.esporte.SKATE.lance.PASSE_FORA": "{jogador} sai da pista: nota para o {rival}"
+  "flair3d.esporte.SKATE.lance.PASSE_FORA": "{jogador} sai da pista: nota para o {rival}",
+  "flair3d.ui.result.media": "A nota final é a média das {n} etapas: cada etapa entra com 1/{n} dos pontos dela.",
+  "flair3d.dica.AROUND_THE_WORLD.MARCA_BR": "Vista ao menos uma peça de marca brasileira: a regra soma 25."
 }
