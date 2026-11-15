@@ -22,6 +22,33 @@ class LocalAnalyzersTest {
     }
 
     @Test
+    void pecaLisaComSombraEDetalhePequenoNaoViraEstampada() {
+        // auditoria 10: jeans, legging, saia e camiseta lisas saíam como "Estampado" (sombra, dobra e o selo bordado)
+        java.awt.image.BufferedImage jeans = Shapes.pants(Color.BLUE);
+        java.awt.Graphics2D g = jeans.createGraphics();
+        for (int y = 40; y < 760; y++) {
+            int shade = 110 + (y - 40) * 100 / 720 - (Math.abs(y - 420) < 25 ? 70 : 0);
+            g.setColor(new Color(40 * shade / 255, 90 * shade / 255, 220 * shade / 255));
+            g.drawLine(80, y, 320, y);
+        }
+        g.setColor(new Color(240, 120, 20));
+        g.fillOval(180, 300, 40, 40);
+        g.dispose();
+        assertThat(patterns.analyze(jeans).pattern()).isEqualTo(PatternAnalyzer.Pattern.SOLID);
+
+        java.awt.image.BufferedImage florido = Shapes.pants(new Color(240, 235, 225));
+        java.awt.Graphics2D f = florido.createGraphics();
+        java.util.Random random = new java.util.Random(7);
+        Color[] tintas = {new Color(200, 30, 60), new Color(40, 120, 60), new Color(240, 180, 40), new Color(30, 60, 160)};
+        for (int i = 0; i < 900; i++) {
+            f.setColor(tintas[i % tintas.length]);
+            f.fillOval(80 + random.nextInt(240), 40 + random.nextInt(720), 14, 14);
+        }
+        f.dispose();
+        assertThat(patterns.analyze(florido).pattern()).isEqualTo(PatternAnalyzer.Pattern.PRINTED);
+    }
+
+    @Test
     void composicaoDaEtiquetaViraMaterial() {
         assertThat(labels.parse("100% ALGODÃO · Made in Brazil · TAM M").material()).isEqualTo("COTTON");
         LabelTextParser.Parsed blend = labels.parse("60% cotton 40% polyester");
