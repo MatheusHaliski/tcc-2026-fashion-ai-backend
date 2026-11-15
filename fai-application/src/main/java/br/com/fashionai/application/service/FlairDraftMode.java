@@ -49,7 +49,8 @@ final class FlairDraftMode {
 
     Map<String, Object> draftStart(CurrentUser user) {
         guard.requireCanCreate(user);
-        List<Card> pool = modeLooks.houseCards(user.id(), 20, modeLooks.seed("draft", user.id(), System.nanoTime()));
+        // comunidade pequena: o monte completa com as peças públicas de quem joga, como o deck da Casa do Duelo
+        List<Card> pool = modeLooks.houseCardsAtLeast(user.id(), 20, 12, modeLooks.seed("draft", user.id(), System.nanoTime()));
         if (pool.size() < 12) {
             throw new ApiException(409, "POUCAS_PECAS", Msg.t("flairModes.a_comunidade_ainda_nao_tem"));
         }
