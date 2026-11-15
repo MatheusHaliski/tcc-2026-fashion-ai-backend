@@ -191,16 +191,18 @@ describe("configurações — privacidade", () => {
     renderApp(<SettingsPage />);
     await tab("Privacidade");
     // regressão da auditoria: nada de código em inglês ("FACIAL RECOGNITION") quando o servidor manda o nome
-    expect(await screen.findByRole("switch", { name: "RECONHECIMENTO FACIAL (DADO SENSÍVEL)" })).toBeTruthy();
+    expect(await screen.findByRole("switch", { name: "Reconhecimento facial (dado sensível)" })).toBeTruthy();
     expect(screen.queryByText(/FACIAL RECOGNITION/)).toBeNull();
-    const sw = await screen.findByRole("switch", { name: "RECOMENDAÇÕES POR IA" });
+    const sw = await screen.findByRole("switch", { name: "Recomendações por IA" });
     fireEvent.click(sw);
-    await waitFor(() => expect(screen.getByRole("switch", { name: "RECOMENDAÇÕES POR IA" }).getAttribute("aria-checked")).toBe("true"));
-    fireEvent.click(screen.getByRole("switch", { name: "RECOMENDAÇÕES POR IA" }));
+    await waitFor(() => expect(screen.getByRole("switch", { name: "Recomendações por IA" }).getAttribute("aria-checked")).toBe("true"));
+    expect(await screen.findByText("Ligado: Recomendações por IA.")).toBeTruthy();
+    await dismissAll();
+    fireEvent.click(screen.getByRole("switch", { name: "Recomendações por IA" }));
     expect(await screen.findByText("Consentimento falhou")).toBeTruthy();
     // informação do consentimento sem descrição
-    fireEvent.click(screen.getByRole("button", { name: "Informações sobre RECOMENDAÇÕES POR IA" }));
-    const dlg = await screen.findByRole("dialog", { name: "RECOMENDAÇÕES POR IA" });
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre Recomendações por IA" }));
+    const dlg = await screen.findByRole("dialog", { name: "Recomendações por IA" });
     fireEvent.click(within(dlg).getAllByRole("button", { name: "Fechar" }).at(-1)!);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     // tópicos do Hype: o de notificações tem link que fecha a explicação
@@ -233,16 +235,22 @@ describe("configurações — dados e sessões", () => {
     const open = vi.fn(); vi.stubGlobal("open", open);
     URL.createObjectURL = vi.fn(() => "blob:pacote");
     const { calls } = loggedAs(undefined, { "GET /api/me/preferences": PREFS, "POST /api/me/exports": {}, "POST /api/me/deletion": {},
-      "GET /api/me/exports": [{ id: "e1", status: "READY", requestedAt: "2026-10-01T10:00:00Z" }, { id: "e2", status: "PENDING" }],
+      "GET /api/me/exports": [{ id: "e1", status: "READY", readyAt: "2026-10-01T10:00:00Z" }, { id: "e2", status: "PENDING" }],
       "GET /api/me/exports/e1/file": () => new Response("zip", { status: 200, headers: { "content-type": "application/zip" } }) });
     renderApp(<SettingsPage />);
     await tab("Seus dados (LGPD)");
-    expect(await screen.findByText("READY · 2026-10-01")).toBeTruthy();
+    expect(await screen.findByText("Pronto em 1 de out. de 2026")).toBeTruthy();
+    expect(screen.getByText(/^Em preparação · pedido em —$/)).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "Exportar meus dados" }).at(-1)!);
     expect(await screen.findByText("Exportação solicitada.")).toBeTruthy();
     await dismissAll();
-    fireEvent.click(screen.getByRole("link", { name: "Baixar" }));
-    await waitFor(() => expect(open).toHaveBeenCalledWith("blob:pacote"));
+    const clicked: { href: string; download: string }[] = [];
+    const realClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) { clicked.push({ href: this.href, download: this.download }); };
+    fireEvent.click(screen.getByRole("button", { name: "Baixar" }));
+    await waitFor(() => expect(clicked).toEqual([{ href: "blob:pacote", download: "fashionai-meus-dados.json" }]));
+    HTMLAnchorElement.prototype.click = realClick;
+    expect(open).not.toHaveBeenCalled();
     // exclusão: sem senha não confirma; cancelar fecha; com senha agenda
     fireEvent.click(screen.getAllByRole("button", { name: "Excluir conta" }).at(-1)!);
     let dlg = await screen.findByRole("dialog", { name: "Excluir conta" });
@@ -279,17 +287,22 @@ describe("configurações — dados e sessões", () => {
   it("sessões: encerra outra sessão; falha ao sair de todas avisa", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/me/preferences": PREFS,
       "GET /api/auth/sessions": [{ sessionId: "cur", current: true, createdAt: "2026-10-01T10:00:00Z" }, { sessionId: "s2", device: "Celular", ip: "1.2.3.4", lastUsedAt: "2026-10-20T08:30:00Z" },
-        { sessionId: "s3", device: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/140.0.0.0 Safari/537.36", lastUsedAt: "2026-10-21T08:30:00Z" }],
+        { sessionId: "s3", device: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, l", userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/140.0.0.0 Safari/537.36", lastUsedAt: "2026-10-21T08:30:00Z" },
+        { sessionId: "s4", device: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, l", lastUsedAt: "2026-10-19T08:30:00Z" }],
       "DELETE /api/auth/sessions/s2": {}, "DELETE /api/auth/sessions": fail(500, "Não deu para sair") });
     renderApp(<SettingsPage />);
     await tab("Sessões");
     // regressão da auditoria: data no formato do idioma (não "2026-10-20T08:30") e o navegador em palavras
     expect(await screen.findByText(/Celular · 1\.2\.3\.4 · 20\/10\/2026/)).toBeTruthy();
+    // o device vem cortado pelo servidor: o texto inteiro (userAgent) dá o navegador; sem ele, diz que não identificou
     expect(screen.getByText(/Chrome no Linux · 21\/10\/2026/)).toBeTruthy();
+    expect(screen.getByText(/Navegador não identificado no Linux · 19\/10\/2026/)).toBeTruthy();
+    // esta sessão no topo, depois da mais recente para a mais antiga
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent?.slice(0, 12))).toEqual(["Navegador nã", "Chrome no Li", "Celular · 1.", "Navegador nã"]);
     expect(screen.queryByText(/Mozilla\/5\.0|2026-10-2\dT/)).toBeNull();
     expect(screen.getByText("· esta sessão")).toBeTruthy();
-    expect(screen.getByText("· esta sessão").parentElement!.textContent).toMatch(/^dispositivo · 01\/10\/2026[^·]*· esta sessão$/);
-    fireEvent.click(screen.getAllByRole("button", { name: "Encerrar" })[0]);
+    expect(screen.getByText("· esta sessão").parentElement!.textContent).toMatch(/^Navegador não identificado · 01\/10\/2026[^·]*· esta sessão$/);
+    fireEvent.click(within(screen.getByText(/^Celular/).closest("li")!).getByRole("button", { name: "Encerrar" }));
     expect(await screen.findByText("Sessão encerrada.")).toBeTruthy();
     expect(calls.some((c) => c.method === "DELETE" && c.path === "/api/auth/sessions/s2")).toBe(true);
     await dismiss();
