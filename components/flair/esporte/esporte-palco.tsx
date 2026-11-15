@@ -12,6 +12,7 @@ import { useReducedMotion, useWebGL } from "@/components/three/common";
 import { HudIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { jogadorEmTexto, narracao, nomeDoTime, tempoEmTexto } from "@/components/flair/esporte/esporte-texto";
+import { EsporteMomento } from "@/components/flair/esporte/esporte-momento";
 import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
 import { CAMERAS_DO_CAMPO, planoDaCamera } from "@/lib/flair/esporte/camera";
 import { campoDe, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
@@ -119,6 +120,7 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, seme
           <span className="fsp-parcial tabular" data-testid="esporte-parcial">{tx.t("flair3d.esporte.parcial", { n: atual.tempo, nos: atual.parcial.split("-")[0], eles: atual.parcial.split("-")[1] })}</span>
         )}
       </div>
+      <EsporteMomento modalidade={modalidade} jogadas={jogadas} fim={fim} />
       {atual && <p className="fsp-narracao" data-testid="esporte-narracao">{narracao(tx, modalidade, atual)}</p>}
     </div>
   );

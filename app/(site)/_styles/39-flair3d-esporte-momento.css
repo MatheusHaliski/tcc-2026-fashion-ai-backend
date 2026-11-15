@@ -1,0 +1,52 @@
+/* A vinheta do momento-chave da transmissão (components/flair/esporte/esporte-momento.tsx): apito inicial, intervalo,
+   ponto e apito final, no alto do campo, abaixo do placar. Movimento reduzido: regra global de 01. */
+.fsp-momento {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+  margin: 0;
+  padding: 6px 16px;
+  border-radius: 10px;
+  background: #11141ae6;
+  color: #f4f7f2;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  animation: fsp-momento-entra 0.35s ease-out;
+}
+
+.fsp-momento.is-ponto_nos {
+  background: #1f7a76;
+}
+
+.fsp-momento.is-ponto_eles {
+  background: #5b2a86;
+}
+
+.fsp-momento.is-apito_final {
+  background: #c6275e;
+}
+
+@keyframes fsp-momento-entra {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .fsp-momento {
+    top: 96px;
+    font-size: 0.9rem;
+  }
+}
