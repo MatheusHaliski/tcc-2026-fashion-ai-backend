@@ -15,6 +15,8 @@ import java.util.Set;
  */
 final class DetetiveAcoes {
     static final int SEGUNDOS_DA_AJUDA = 60;
+    /** Trocar uma carta da mão: qualquer cor serve (a carta vai para o descarte e a mão é reposta). */
+    static final String QUALQUER = "QUALQUER";
     static final Set<String> COMPRAVEIS = Set.of("ABRIR", "FURTIVIDADE", "VIDA", "DANO", "PISTA");
 
     private DetetiveAcoes() {
@@ -30,6 +32,7 @@ final class DetetiveAcoes {
             case "VIDA" -> "VIDA";
             case "COMPLETAR" -> "PISTA";
             case "MERCADO" -> "MOEDA";
+            case "TROCAR" -> QUALQUER;
             case "IR", "ESPERAR", "AJUDA", "ENIGMA", "ACUSAR" -> null;
             default -> throw DetetivePartida.invalida();
         };
@@ -58,6 +61,11 @@ final class DetetiveAcoes {
                 e.ponto = destino.id();
                 e.escondido = false;
                 e.tempo += DetetivePartida.SEGUNDOS_POR_PASSO;
+                return true;
+            }
+            case "TROCAR" -> {
+                e.tempo += DetetivePartida.SEGUNDOS_POR_ACAO;
+                e.avisos.add("TROCA");
                 return true;
             }
             case "ESPERAR" -> {

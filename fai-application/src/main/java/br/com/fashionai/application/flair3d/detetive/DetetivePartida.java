@@ -16,9 +16,9 @@ import java.util.UUID;
 /**
  * A investigação do caso "A Coleção Maré" jogada passo a passo (docs/flair/flair-3d/FASHION_DETECTIVE_HISTORIA.md): cada
  * acionamento é um passo, com o alvo ("IR:ponto", "PORTA:sala", "AJUDA:sala", "ABRIR:armario", "ESCONDER",
- * "BOLSO:vigia", "CONFRONTO:vigia", "VIDA", "COMPLETAR:pista", "MERCADO:acao", "ENIGMA:opcao", "ACUSAR:numero") e, quando
+ * "BOLSO:vigia", "CONFRONTO:vigia", "VIDA", "COMPLETAR:pista", "MERCADO:acao", "TROCAR", "ENIGMA:opcao", "ACUSAR:numero") e, quando
  * a ação pede, a carta da cor certa (verde abre, preto esconde e tira do bolso, azul vence o confronto, amarelo devolve
- * vida, branco completa a pista, vermelho paga o mercado). Andar, resolver o enigma e acusar não gastam carta. Depois de
+ * vida, branco completa a pista, vermelho paga o mercado; trocar descarta qualquer carta para girar a mão). Andar, resolver o enigma e acusar não gastam carta. Depois de
  * cada passo os vigias andam; quem é visto perde uma marca de vida e 30 segundos e volta ao último esconderijo. Tudo sai
  * da semente, do look e dos passos, na ordem: refazer a partida dá sempre o mesmo estado.
  */
@@ -80,7 +80,7 @@ public final class DetetivePartida {
         String arg = partes.length > 1 ? partes[1] : "";
         String cor = DetetiveAcoes.corPedida(verbo, e, arg);
         if (cor != null) {
-            if (a.carta() == null || !cor.equals(mao.acao(a.carta()))) {
+            if (a.carta() == null || !(DetetiveAcoes.QUALQUER.equals(cor) || cor.equals(mao.acao(a.carta())))) {
                 throw Flair3dErros.invalido("CARTA_DE_OUTRA_COR", "carta_de_outra_cor");
             }
             mao.jogar(a.carta());

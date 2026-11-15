@@ -21,6 +21,8 @@ export interface AcionamentoPedido {
   cardId?: string;
   /** vaga da troca do intervalo */
   vaga?: string;
+  /** Fashion Detective: o que a pessoa faz no passo ("IR:meio", "ABRIR:MESA_DA_RECEPCAO"...) */
+  alvo?: string;
 }
 
 interface Props {

@@ -259,7 +259,7 @@ describe("acionamentos", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });
     const onAcionar = vi.fn();
     const mercado: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], eventos: [{ codigo: "MERCADO", valor: 150 }], status: "EM_ACAO" };
-    const props = { definicao: definicao("FASHION_DETECTIVE"), cartas: CARTAS, entregando: false, erro: null, momento: "ACAO" as const, onEntregar: vi.fn(), onAcionar };
+    const props = { definicao: { ...definicao("FASHION_DETECTIVE"), rodada: "SALOES_DA_GALA" }, cartas: CARTAS, entregando: false, erro: null, momento: "ACAO" as const, onEntregar: vi.fn(), onAcionar };
     const { rerender } = renderApp(<NucleoGame {...props} resultado={mercado} />);
     const balcao = screen.getByRole("button", { name: "Deixar Camisa verde no balcão: +350 estalecas" }) as HTMLButtonElement;
     await waitFor(() => expect(balcao.disabled).toBe(false));
@@ -273,7 +273,7 @@ describe("acionamentos", () => {
 
   it("Fashion Detective: a dica mostra o salão da vez, o código de vestimenta e a carta de pista", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });
-    const props = { definicao: definicao("FASHION_DETECTIVE"), cartas: CARTAS, entregando: false, erro: null, onEntregar: vi.fn() };
+    const props = { definicao: { ...definicao("FASHION_DETECTIVE"), rodada: "SALOES_DA_GALA" }, cartas: CARTAS, entregando: false, erro: null, onEntregar: vi.fn() };
     const { rerender } = renderApp(<NucleoGame {...props} />);
     const abertura = screen.getByTestId("nucleo-cutscene");
     expect(abertura.textContent).toContain("Salão 1 de 6");

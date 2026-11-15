@@ -65,14 +65,23 @@ class DetetivePartidaTest {
         throw new AssertionError("não chegou a " + caminho[caminho.length - 1]);
     }
 
-    /** Joga a primeira carta da mão com a ação dada (ABRIR, FURTIVIDADE, DANO...). */
+    /**
+     * Joga a primeira carta da mão com a ação dada (ABRIR, FURTIVIDADE, DANO...); sem ela na mão, troca as outras cartas
+     * (ação TROCAR, qualquer cor) até ela chegar. As cartas do teste têm ids aleatórios: a mão inicial muda a cada vez.
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> comCarta(String acao, String alvo) {
-        DetetivePartida p = agora();
         DetetiveMao mao = new DetetiveMao(contexto, look.stream().map(CbcRules.Card::id).toList());
-        UUID carta = ((List<String>) p.retrato().get("mao")).stream().map(UUID::fromString).filter(id -> acao.equals(mao.acao(id))).findFirst().orElseThrow();
-        passos.add(new Acionamento(carta, null, alvo));
-        return agora().retrato();
+        for (int i = 0; i < 10; i++) {
+            List<UUID> naMao = ((List<String>) agora().retrato().get("mao")).stream().map(UUID::fromString).toList();
+            UUID carta = naMao.stream().filter(id -> acao.equals(mao.acao(id))).findFirst().orElse(null);
+            if (carta != null) {
+                passos.add(new Acionamento(carta, null, alvo));
+                return agora().retrato();
+            }
+            passos.add(new Acionamento(naMao.get(0), null, "TROCAR"));
+        }
+        throw new AssertionError("sem carta " + acao);
     }
 
     @Test

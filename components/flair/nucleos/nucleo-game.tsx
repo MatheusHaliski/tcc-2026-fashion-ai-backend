@@ -11,10 +11,7 @@ import type { ApiError } from "@/lib/api/client";
 import { useMirrorAvatar } from "@/components/mirror/mirror-stage";
 import { useReducedMotion } from "@/components/three/common";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
-import { EsportePainel } from "@/components/flair/esporte/esporte-painel";
-import { EsportePalco } from "@/components/flair/esporte/esporte-palco";
 import { EsporteResumo, resultadoSemLances } from "@/components/flair/esporte/esporte-resumo";
-import { LANCE_MS, useEsporte } from "@/components/flair/esporte/use-esporte";
 import { NucleoActionSlot } from "@/components/flair/nucleos/nucleo-action-slot";
 import { MODELO_CASA, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { NucleoBriefing } from "@/components/flair/nucleos/nucleo-briefing";
@@ -36,6 +33,7 @@ import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-control
 import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
+import { SALOES_DA_GALA, useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
 import { useResultCards } from "@/components/flair/nucleos/use-result-cards";
 import { lookComTroca } from "@/lib/flair/nucleos/action-fx";
 import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
@@ -151,16 +149,17 @@ export function NucleoGame(props: Props) {
   };
 
   const doEsporte = codigo === "FASHION_SPORTS";
-  /** durante a partida do Fashion Sports o palco é a transmissão e a faixa de baixo é a mão de cartas */
-  const esporte = doEsporte && !preparando;
-  const partida = useEsporte({ resultado, escolhida: estado.sel.resposta, passos: acao.passos, mostrados: acao.mostrados, aberta: acao.aberta, cartas, vestidas: estado.sel.cartas, itens: efeitos.itens });
+  /** Fashion Sports e Fashion Detective jogados por cartas: o palco e a faixa de baixo do jogo (use-modo-por-cartas) */
+  const modo = useModoPorCartas({ codigo, rodada: definicao.rodada, momento, resultado, escolhida: estado.sel.resposta, acao, cartas, vestidas: estado.sel.cartas, itens: efeitos.itens,
+    pecas, protagonista, semente: props.partida?.semente, ocupado: !!props.acionando, erro: props.erroAcionar ?? null, acionar });
+  const partida = modo.esporte;
 
   const pontuadas = useResultCards({ momento, resultado, vestidas, cards: cartas, efeitos: efeitos.porCarta });
 
   return (
     <div className={classesDoQuadro(layout)} style={estiloDoQuadro(layout)} data-testid="nucleo-game" data-momento={momento} data-porte={layout.porte} data-quadro={layout.quadro} data-reduced={reduzido || undefined} data-fx={fx.prefs.efeitos ? "on" : "off"}>
       <p className="sr-only" role="status" data-testid="nucleo-moment">{tx.t("flair3d.ui.moment.label", { momento: tx.t(`flair3d.ui.moment.${momento}`) })}</p>
-      {esporte ? <EsportePalco modalidade={partida.modalidade} jogadas={partida.jogadas} duracao={LANCE_MS} uniforme={partida.uniforme} fim={momento === "RESULTADO"} semente={props.partida?.semente} /> : (
+      {modo.palco ?? (
         <NucleoStage
           definicao={definicao}
           config={config}
@@ -187,7 +186,7 @@ export function NucleoGame(props: Props) {
         />
       )}
       <div className="n3d-lower">
-        {codigo === "FASHION_DETECTIVE" && preparando && <NucleoCutscene salao={salaoDaVez(props.tentativa)} />}
+        {codigo === "FASHION_DETECTIVE" && definicao.rodada === SALOES_DA_GALA && preparando && <NucleoCutscene salao={salaoDaVez(props.tentativa)} />}
         {preparando && apresentacao.briefing && <NucleoBriefing briefing={apresentacao.briefing} cartas={cartas} aberto={apresentacao.aberto} onFechar={apresentacao.fechar} />}
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
@@ -224,10 +223,7 @@ export function NucleoGame(props: Props) {
           onNaoCabe={naoCabe}
           onComando={(c) => disparar(c)}
           onEntregar={entregar}
-          acao={esporte ? (
-            <EsportePainel modalidade={partida.modalidade} jogadas={partida.jogadas} situacao={partida.situacao} mao={partida.mao} ocupado={!!props.acionando}
-              erro={props.erroAcionar ?? null} onJogar={(cardId) => acionar({ tipo: "CARTA", cardId: cardId ?? undefined })} onPular={acao.pular} />
-          ) : (
+          acao={modo.acao ?? (
               <NucleoActionSlot nucleo={codigo} variante={variante} acao={acao} acionou={acionou} cartas={cartas} vestidas={vestidas}
                 vagas={vagasDaRegua(tabs).map((v) => v.tab.id)} ocupado={!!props.acionando} erro={props.erroAcionar ?? null}
                 acaoDe={SEM_ACAO_DE_COR} onAcionar={onAcionar ? acionar : undefined} />

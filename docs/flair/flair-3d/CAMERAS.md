@@ -190,9 +190,10 @@ recusadas (com o motivo) e o conjunto adotado. O conjunto é o da tabela acima; 
 
 ## 5. O que falta
 
-- Fashion Detective, O Labirinto e Around the World usam a câmera de exploração, mas ainda sobre as salas antigas, em
-  que o avatar não anda: a câmera fica atrás do avatar parado. Ela passa a fazer sentido quando esses jogos virarem
-  lugares por onde se anda (`MUNDOS.md`).
+- O Fashion Detective já é um lugar por onde se anda (caso "A Coleção Maré"): a câmera de exploração segue o avatar de
+  ponto a ponto, de trás e do alto (3,4 m), para o piso à frente mostrar os cones de visão; o seletor troca para a
+  diagonal de cima e a aérea. O Labirinto e Around the World ainda usam a câmera de exploração sobre salas em que o
+  avatar não anda (`MUNDOS.md`).
 - A câmera não desvia de móveis: um móvel alto entre a lente e o avatar pode cobrir a roupa em algumas câmeras de
   algumas salas. Só a câmera do preparo foi conferida sala a sala (por teste: dentro das paredes e de corpo inteiro).
 - Nas salas com teto (todas menos as de céu aberto), a câmera aérea fica presa abaixo do teto e vira um close de cima

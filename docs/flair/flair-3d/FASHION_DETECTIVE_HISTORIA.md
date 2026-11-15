@@ -202,9 +202,13 @@ pele, corpo ou rosto.
 
 ## 11. Onde está no código
 
-- O mapa (salas, portas, chaves nos armários, quem abre sem carta verde) e o teste de que o jogo sempre se completa:
-  `fai-application/.../flair3d/nucleos/FashionDetectiveMundo.java`, `FashionDetectiveMundoTest.java`.
-- A acusação, com o culpado só no servidor: `FashionDetectiveAcusacao.java`.
-- Ainda não ligados à partida (`FashionDetectiveNucleo` continua com os 6 salões de 14/11); a tela de exploração, os
-  inimigos, as cutscenes e o caderno são as próximas etapas (`ESTADO_DOS_JOGOS.md`).
-
+- O mapa (salas, portas, chaves, quem abre sem carta verde): `fai-application/.../flair3d/nucleos/FashionDetectiveMundo.java`;
+  a acusação, com o culpado só no servidor: `FashionDetectiveAcusacao.java`.
+- As salas (pontos, esconderijos, armários, vigias e rondas, enigmas e a pista de cada resolução):
+  `flair3d/detetive/DetetiveSalas.java`; a investigação passo a passo: `DetetivePartida.java` e `DetetiveAcoes.java`; o
+  cone de visão: `DetetiveVigias.java` (alcance 3,8 m, meia abertura 30°); a mão: `DetetiveMao.java`; a nota:
+  `DetetiveCaso.java`.
+- A tela: `components/flair/detetive` e `lib/flair/detetive`; textos `flair3d.detetive.*` (as pistas com o texto da seção 7).
+- Diferenças em relação ao texto acima: o enigma do Ateliê é o molde, o do Arquivo é o código do cofre e o do
+  Escritório é a cor da tinta (as respostas ficam no servidor); a pista P5 (bilhete de Nina) vem da resolução do enigma
+  do Camarim; a ação "trocar carta" (qualquer cor, 15 s) foi acrescentada para a mão nunca travar.

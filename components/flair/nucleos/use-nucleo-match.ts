@@ -18,10 +18,13 @@ import type { AvatarTipo, NucleoAcionamento, NucleoCodigo, NucleoPartida, Nucleo
 export interface AcionamentoDaPessoa {
   cardId?: string;
   vaga?: string;
+  /** Fashion Detective: o alvo do passo */
+  alvo?: string;
 }
 
-function corpoDoAcionamento({ cardId, vaga }: AcionamentoDaPessoa): NucleoAcionamento {
+function corpoDoAcionamento({ cardId, vaga, alvo }: AcionamentoDaPessoa): NucleoAcionamento {
   if (cardId && vaga) return { troca: { vaga, carta: cardId } };
+  if (alvo) return cardId ? { carta: cardId, alvo } : { alvo };
   return cardId ? { carta: cardId } : {};
 }
 

@@ -36,7 +36,7 @@ O que vale para todos os jogos e não se repete abaixo:
 | NPCs como avatares humanos do mesmo tipo do avatar da pessoa, com níveis de detalhe | feito no Fashion Sports (futebol e as outras modalidades da transmissão): jogadores com o corpo humano do avatar, variados pela semente, de uniforme, animados pela locomoção do avatar, com três níveis de detalhe, e a torcida em humanos leves; visto em fotos (lateral, atrás do gol, transmissão 390×844). Orçamento medido em `BASE_NUCLEOS.md`. Pendente nos outros 14 jogos (figurantes simples) |
 | Cenários coerentes e bem acabados (`CENARIOS.md`, auditoria de cada sala, modelos licenciados) | parcial: auditoria das 15 salas feita a partir de fotos (`CENARIOS.md`); refeitos o estádio (torcida humana), o camarim do Road to Glory (penteadeira e cadeira) e o box do Piloto Favorito (carro e porta de enrolar), vistos em foto; as outras 12 salas têm a lista do que falta; nenhum GLB licenciado novo |
 | Mundos exploráveis (`MUNDOS.md`): Fashion Detective como um lugar interligado, Around the World por bairros, Labirinto desenhado | pendente |
-| Fashion Detective: câmera de exploração, 8 salas ou mais com cutscene, desafio, quebra-cabeça, inimigos e esconderijos; 5 chaves em armários; pistas em papel e no bolso de inimigos; mapa; história (`FASHION_DETECTIVE_HISTORIA.md`) e cutscene final; celular 390×844 | parcial: a história está escrita (`FASHION_DETECTIVE_HISTORIA.md`: 9 personagens numerados, 4 atos, 9 salas interligadas, 5 chaves, 12 pistas com texto exato, cadeia de dedução e finais) e a mudança de definição anotada em `JOGOS.md`; no servidor, o mapa das 9 salas, portas, 5 chaves em armários e a ajuda sem carta verde (`FashionDetectiveMundo`, com teste de que o jogo sempre se completa) e a acusação com o culpado só no servidor (`FashionDetectiveAcusacao`), ainda não ligados à partida; a tela continua como em 14/11 (6 salões e mercado), com a câmera de exploração do sistema comum |
+| Fashion Detective: câmera de exploração, 8 salas ou mais com cutscene, desafio, quebra-cabeça, inimigos e esconderijos; 5 chaves em armários; pistas em papel e no bolso de inimigos; mapa; história (`FASHION_DETECTIVE_HISTORIA.md`) e cutscene final; celular 390×844 | feito em boa parte (jogo 6, abaixo): o caso "A Coleção Maré" jogável de ponta a ponta, passo a passo no servidor, com as 9 salas, cartas para cada ação, vigias com cone, bolso, 5 chaves, 12 pistas, caderno, mapa, inventário, cutscenes com legenda, acusação e final; visto em fotos a 390×844 com retratos reais do servidor. Faltam: o salvamento é por passo no servidor, não há tela de "continuar" da sala; cenários das salas novas ainda simples; cutscenes sem câmera própria |
 | Dress Fighter e outros jogos de ação com câmera própria (ringue de lado, etc.) | pendente |
 
 **Câmeras e avatares hoje, jogo a jogo.** Os 15 jogos usam o sistema de câmeras comum (`CAMERAS.md`): o preparo em
@@ -67,7 +67,7 @@ Cada jogo passa a ter **rodadas**: o objetivo mais simples (o da base) e as roda
 | 3 | Dress the Star | base: uma estrela fixa, sem pistas | 5 |
 | 4 | Personagem de Filme | base: um personagem, um título certo | 6 |
 | 5 | Road to Glory (MAKE UP) | 3 briefs e carreira pela tela do MAKE UP | por último |
-| 6 | Fashion Detective | caso de 6 salões e mercado; refação pedida em 15/11 ainda não começada | próximo |
+| 6 | Fashion Detective | refeito em 15/11: o caso "A Coleção Maré" em 9 salas exploráveis (os 6 salões viraram a rodada SALOES_DA_GALA) | feito depois do Fashion Sports |
 | 7 | Boutique 3D | base: uma cliente fixa | 2 |
 | 8 | Clube do Coração | base: um clube, sem placar | 10 |
 | 9 | My Favorite Singer | base: uma era | 11 |
@@ -217,21 +217,33 @@ Verão. Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unha
 
 ## 6 · Fashion Detective
 
-Outro agente cuida deste jogo nesta rodada (textos e celular). Só registro o estado.
+**Desenho (15/11/2026).** O caso "A Coleção Maré" (`FASHION_DETECTIVE_HISTORIA.md`): 9 salas interligadas, exploradas
+em terceira pessoa de ponto a ponto; toda ação com carta da cor certa; vigias de ronda com cone de visão; bolso; 5 chaves
+em armários; 12 pistas; acusação entre os suspeitos 2 a 9 decidida no servidor. A definição de 14/11 (6 salões e
+mercado) continua como a rodada `SALOES_DA_GALA`.
 
-**Desenho.** Caso de 6 salões, um look por salão; acesso, desafio automático e pista; mercado depois do salão 3;
-final automático com 5 pistas. Rodadas do grupo (42 a 48): Verdadeiro ou Falso, Quem Mudou?, Detetive de Tecido, Peça
-Intrusa, Quem é o Dono?.
-
-**No código.** `FashionDetectiveNucleo`, `FashionDetectiveCaso`, `FashionDetectiveSalao`, `FashionDetectiveMercado`;
-6 salões em 3D (`scene/salas/fashion-detective-saloes.ts`), cartão e câmera de abertura.
+**No código.** Servidor: `flair3d/detetive` (`DetetiveSala`, `DetetiveSalas`, `DetetivePartida`, `DetetiveAcoes`,
+`DetetiveVigias`, `DetetiveMao`, `DetetiveEstado`, `DetetiveCaso`), `FashionDetectiveMundo`, `FashionDetectiveAcusacao`;
+`Acionamento.alvo` leva o passo ("IR:meio", "ABRIR:...", "ACUSAR:2"). Tela: `components/flair/detetive` (palco, cena
+3D, sala, planta 2D, painel, folhas, cutscene), `lib/flair/detetive`, `components/flair/nucleos/use-modo-por-cartas.tsx`;
+textos `flair3d.detetive.*` em pt-BR, en e es.
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| Caso de 6 salões com mercado e final pelo número de pistas | feito | sim (reauditoria) |
-| Cutscene de resultado diferente por salão; mercado com cena própria | pendente | não |
-| Rodadas de dedução do grupo (42 a 48) | pendente | não |
-| Celular sem texto sobre a cena | com o outro agente | — |
+| A entrega veste o look da gala; cada passo vai por /acionar com a carta e o alvo; o estado está no Andamento | feito (testes do servidor) | — |
+| 9 salas com pontos, esconderijos, armários, portas e enigma; câmera de exploração por trás do ombro, diagonal de cima e aérea | feito | sim (fotos em 390×844) |
+| Toda ação com a carta da cor certa (verde, preto, azul, amarelo, branco, vermelho); trocar carta para girar a mão; andar, esperar, enigma e acusação sem carta | feito | sim (painel nas fotos) |
+| Vigias sem arma, de ronda, com cone de visão no piso (vermelho quando vê a pessoa); ser visto custa vida, 30 s e pontos e devolve ao último esconderijo | feito | sim (cone amarelo no salão) |
+| Bolso fora do cone, até um passo de distância; dá certo sem alarde ou deixa a sala em alerta | feito | sim (pista P2 do segurança e P6 de Rafa) |
+| 5 chaves em armários, portas trancadas, ajuda da casa sem carta verde (1 minuto): sempre completável | feito (teste do mundo e da partida) | — |
+| 12 pistas com o texto exato; meia folha rasgada completada pela carta branca; caderno "Pistas N de 12" | feito | sim (caderno nas fotos) |
+| Mapa das 9 salas e inventário | feito | sim (mapa nas fotos) |
+| Cutscenes de abertura e de resolução de cada sala, álibi e final, com legenda, pular e rever | feito (texto e faixas de cinema; sem câmera própria) | sim (abertura, resolução, final parcial) |
+| Acusação entre os suspeitos numerados, resposta só no servidor; finais completo, parcial e revelado | feito | sim (quadro e final parcial) |
+| Vigias e elenco como gente (corpo humano do avatar, roupa do papel) | feito | sim |
+| Reduzir movimento (planta 2D, sem deslizar), 390×844 | feito (planta testada no jsdom) | sim (390×844); a planta só em teste |
+| Salvar por sala | o servidor grava cada passo (a partida retoma de onde parou); não há tela de "continuar da sala" | não |
+| Limite de 45 minutos | feito (relógio da partida; ao passar, Iolanda chama para a passarela) | não |
 
 ## 7 · Boutique 3D
 

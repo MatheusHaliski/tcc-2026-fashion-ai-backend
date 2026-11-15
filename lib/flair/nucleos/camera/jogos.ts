@@ -29,8 +29,11 @@ const lateral = (dist = 5, altura = 1.3, angulo = 0): Camera => ({ id: "LATERAL"
 /** Nos duelos o adversário fica ao lado do avatar: a câmera vai para o lado oposto, em diagonal, e mostra os dois. */
 const DUELO = -128;
 const aerea = (altura = 7): Camera => ({ id: "AEREA", rig: "AEREA", dist: 0.6, altura, fov: 40 });
-/** A câmera de exploração: atrás e acima do ombro, olhando para onde a pessoa anda. */
-const EXPLORACAO: Camera = { id: "EXPLORACAO", rig: "SEGUE", dist: 3.2, altura: 2, mira: 1.3, angulo: 12, fov: 42 };
+/**
+ * A câmera de exploração (RPG em terceira pessoa): atrás e acima do ombro, alta o bastante para mostrar o piso à frente
+ * (os cones de visão dos vigias, os esconderijos) e olhando para onde a pessoa anda.
+ */
+const EXPLORACAO: Camera = { id: "EXPLORACAO", rig: "SEGUE", dist: 3.6, altura: 3.4, mira: 0.7, angulo: 12, fov: 48 };
 /** A câmera de RPG de cima: alta, em diagonal, parada. */
 const ISOMETRICA: Camera = { id: "ISOMETRICA", rig: "ORBITAL", dist: 5.2, altura: 5.4, angulo: 35, mira: 0.6, fov: 38 };
 /**
