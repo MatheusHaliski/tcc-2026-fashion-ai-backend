@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Badge, EmptyState, PageHeader, SkeletonGrid, UiIcon } from "@/components/ui";
 import { NucleoDeck } from "@/components/flair/nucleos/nucleo-deck";
 import { NucleoGame } from "@/components/flair/nucleos/nucleo-game";
+import { NucleoRounds } from "@/components/flair/nucleos/nucleo-rounds";
 import { useNucleoMatch } from "@/components/flair/nucleos/use-nucleo-match";
 import { useNucleoMoments } from "@/components/flair/nucleos/use-nucleo-moments";
 import { useNucleoPreview } from "@/components/flair/nucleos/use-nucleo-preview";
@@ -45,8 +46,10 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
   let corpo;
   if (m.carregando || (m.banco.loading && !m.banco.data && d.recursos.includes("CARTAS"))) {
     corpo = <SkeletonGrid n={3} />;
+  } else if (m.precisaRodada) {
+    corpo = <NucleoRounds definicao={m.inteira} onEscolher={m.escolherRodada} />;
   } else if (m.precisaDeck && d.deck) {
-    corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} onEntrar={(deck) => void m.entrar(deck)} />;
+    corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} rodada={m.rodada} onEntrar={(deck) => void m.entrar(deck)} />;
   } else {
     corpo = (
       <NucleoGame
@@ -60,6 +63,7 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
         previa={previa.previa}
         onPrevia={previa.pedir}
         tentativa={m.tentativa}
+        partida={m.partida}
         onEntregar={(sel, avatar) => {
           previa.limpar();
           void m.entregar(sel, avatar);
@@ -72,7 +76,7 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
       />
     );
   }
-  const noQuadro = !m.precisaDeck && !m.carregando;
+  const noQuadro = !m.precisaDeck && !m.precisaRodada && !m.carregando;
   return (
     <>
       {!noQuadro && cabecalho}

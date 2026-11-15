@@ -76,7 +76,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const framing = forcedFraming ?? resolveFraming(piece.background?.photoFraming, defaultFraming);
   const whole = framing === "WHOLE" ? pieceWholeSources(piece) : null;
   const wholeImage = whole?.image && (!preview || catalogWholeFrame(whole.image)) ? whole.image : null;
-  const fillFrame = preview && framing === "FABRIC";
+  // prévia com o recorte da foto que a pessoa acabou de escolher (blob:): a peça inteira, não um zoom no tecido
+  const fillFrame = preview && framing === "FABRIC" && !img.src?.startsWith("blob:");
   const mediaStyle = { aspectRatio: expanded ? (whole ? "3 / 4" : piecePhotoAspect(piece)) : "4 / 3" };
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);

@@ -11,6 +11,7 @@ import { validateBody } from "@/lib/avatar3d/body-spec";
 import type { AvatarAdjust, AvatarModel } from "@/lib/avatar3d/model";
 import type { Look3dPiece } from "@/components/three/common";
 import { mirrorLook3d } from "@/lib/mirror/mirror-list";
+import { missingZones } from "@/lib/avatar3d/human/default-outfit";
 import { Skeleton } from "@/components/ui";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
@@ -123,6 +124,7 @@ function MirrorStage3D({ slots, kelvin, mode = "3d", children }: MirrorStageProp
         {children}
       </div>
       {!loading && avatar && pieces.length > 0 && <p className="mirror-note">{t("tryOn.previa_3d_nota")}</p>}
+      {!loading && !error && missingZones(pieces).length > 0 && <p className="mirror-note" role="note" data-base-outfit-note>{t("tryOn.roupa_base_nota")}</p>}
       {/* sem Avatar 3D o reflexo é o manequim de referência (RF28), com o convite para criar o seu */}
       {!loading && !error && !avatar && (
         <p className="mirror-note" role="note" data-reference-invite>

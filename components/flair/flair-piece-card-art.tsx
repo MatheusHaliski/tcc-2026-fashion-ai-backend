@@ -24,7 +24,7 @@ export function FlairPieceCardHeader({ card, tierName, flip }: { card: FlairColl
   const locked = card.state === "LOCKED_CHALLENGE";
   return (
     <div className="c-header pc-header fpc-header">
-      <span className="fpc-ovr tabular"><LedNumber value={card.ovr} /><small aria-hidden>{card.position}</small><span className="sr-only">{card.position}</span></span>
+      <span className="fpc-ovr tabular"><LedNumber value={card.ovr} /><small>{card.position}</small></span>
       <span className="c-who">
         <b className="fpc-tier">{tierName}{card.rare ? ` · ${t("flairCard.rare")}` : ""}</b>
         {locked ? <span>{t("flairCard.locked")}</span> : null}

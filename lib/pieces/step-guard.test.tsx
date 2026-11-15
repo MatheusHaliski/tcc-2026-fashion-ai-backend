@@ -6,7 +6,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, ME } from "@/test-utils/render";
 import NewPiecePage from "@/app/(site)/(app)/pieces/new/page";
-import { pieceStepProblem } from "./step-guard";
+import { readFileSync } from "node:fs";
+import { waitFor } from "@testing-library/react";
+import { liveFieldErrors, pieceStepProblem } from "./step-guard";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -41,5 +43,37 @@ describe("etapa Peça do criador — campos obrigatórios", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Revisar/ }));
     expect(await screen.findByText(/Para avançar, preencha:/)).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Depois de salvar" })).toBeNull();
+  });
+
+  it("reauditoria: Avançar com campo faltando leva o foco ao primeiro campo com erro, em vez de voltar ao topo", async () => {
+    const scrollTo = vi.fn();
+    vi.stubGlobal("scrollTo", scrollTo);
+    loggedAs(ME, { "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] } });
+    renderApp(<NewPiecePage />);
+    await screen.findByRole("heading", { name: "Dados" });
+    next();
+    await screen.findByText("Dê um nome à peça.");
+    await waitFor(() => expect((document.activeElement as HTMLElement | null)?.id).toBe("name"));
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("reauditoria: o aviso da categoria some quando o tipo da peça é escolhido nos botões do topo", async () => {
+    loggedAs(ME, { "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] } });
+    renderApp(<NewPiecePage />);
+    await screen.findByRole("heading", { name: "Dados" });
+    next();
+    expect(await screen.findByText("Campo obrigatório: categoria.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Parte superior" }));
+    await waitFor(() => expect(screen.queryByText("Campo obrigatório: categoria.")).toBeNull());
+    expect(liveFieldErrors({ category: "x", color: "y" }, { category: "upper_piece", color: "" })).toEqual({ color: "y" });
+  });
+
+  it("reauditoria: em tela estreita a prévia do card não fica presa no topo cobrindo o formulário", () => {
+    const css = readFileSync("app/(site)/_styles/24-metamorfoses-layouts.css", "utf8");
+    const wide = css.indexOf("@media (min-width: 900px)");
+    const sticky = [...css.matchAll(/\.piece-create-preview[^{]*\{[^}]*position: sticky/g)].map((m) => m.index ?? 0);
+    expect(sticky.length).toBe(1);
+    expect(sticky[0]).toBeGreaterThan(wide);
+    expect(css.slice(0, wide)).toMatch(/\.piece-create-main \{ grid-row: 1; \}/);
   });
 });

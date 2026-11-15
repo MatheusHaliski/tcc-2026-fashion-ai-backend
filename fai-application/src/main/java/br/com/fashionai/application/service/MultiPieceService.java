@@ -13,13 +13,12 @@ import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.imaging.AiSeal;
 import br.com.fashionai.application.imaging.BrandReader;
 import br.com.fashionai.application.imaging.BrandRegions;
-import br.com.fashionai.application.imaging.WornPieceRegions;
 import br.com.fashionai.application.moderation.ImageSafetyPorts;
 import br.com.fashionai.application.imaging.FlatLayPipeline;
 import br.com.fashionai.application.imaging.ImageProviderPorts;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.imaging.LocalPieceRegions;
+import br.com.fashionai.application.imaging.Transparency;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -169,7 +168,8 @@ public class MultiPieceService {
      * as peças da foto já orientada; sem IA (consentimento, cota, orçamento, provedor), regiões locais a conferir. Usado
      * pelo cadastro de várias peças ({@link #detect}) e pelo FashionAI Lens (RF54).
      */
-    public PieceDetection detectPieces(UUID userId, BufferedImage photo) {
+    public PieceDetection detectPieces(UUID userId, BufferedImage raw) {
+        BufferedImage photo = Transparency.onWhite(raw);   // PNG transparente: lido sobre branco, não sobre preto
         LocalDetection local = localPieces(photo);
         AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(userId, AiCapability.MULTI_PIECE_DETECTOR,
                 DETECTOR_SYSTEM, detectorPrompt(),
@@ -196,39 +196,8 @@ public class MultiPieceService {
      * de cima, de baixo, calçado); sem pessoa, as regiões de superfície. A cor vem dos pixels da própria peça.
      */
     LocalDetection localPieces(BufferedImage photo) {
-        List<WornPieceRegions.Worn> worn = segmenters.stream().filter(ImageSafetyPorts.PersonSegmentationPort::available)
-                .findFirst().flatMap(s -> s.classes(photo)).map(m -> WornPieceRegions.detect(photo, m)).orElse(List.of());
-        if (!worn.isEmpty()) {
-            List<DetectedPiece> pieces = new ArrayList<>();
-            for (WornPieceRegions.Worn r : worn) {
-                String category = switch (r.kind()) {
-                    case HEADWEAR -> "accessory_piece";
-                    case UPPER -> "upper_piece";
-                    case LOWER -> "lower_piece";
-                    case FULL -> "full_body_piece";
-                    case SHOES -> "shoes_piece";
-                };
-                String sub = switch (r.kind()) {
-                    case HEADWEAR -> "cap";
-                    case UPPER -> "t_shirt";
-                    case LOWER -> r.bottomFrac() < SHORTS_BOTTOM_FRAC ? "shorts" : "casual_pants";
-                    case FULL -> "dress";
-                    case SHOES -> "casual_sneakers";
-                };
-                if (!Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of()).contains(sub)) {
-                    sub = Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of()).stream().findFirst().orElse(null);
-                }
-                pieces.add(new DetectedPiece(pieces.size(), null, category, sub, ColorMath.nearestTaxonomyColor(r.rgb()), null, null,
-                        List.of(), List.of(), new Box(r.x(), r.y(), r.width(), r.height()), 0.6));
-            }
-            return new LocalDetection(List.copyOf(pieces), "local-pessoa");
-        }
-        List<DetectedPiece> surface = surfacePieces(photo);
-        return new LocalDetection(surface, surface.size() == 1 && surface.get(0).box().width() == 100 ? "local" : "local-superficie");
+        return LocalPieceDetector.detect(photo, segmenters);
     }
-
-    /** Peça de baixo que termina acima disto (fração da altura da pessoa, do topo da cabeça à sola) é bermuda/short. */
-    static final double SHORTS_BOTTOM_FRAC = 0.80;
 
     /** Peças sem cor da IA recebem a cor dominante dos pixels da própria caixa (nunca a da foto inteira). */
     static List<DetectedPiece> fillColors(BufferedImage photo, List<DetectedPiece> pieces) {
@@ -339,7 +308,7 @@ public class MultiPieceService {
         guard.requireCanCreate(user);
         String mime = ImageOps.requireAcceptedImage(bytes);
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
-        BufferedImage photo = ImageOps.decode(bytes);
+        BufferedImage photo = Transparency.onWhite(ImageOps.decode(bytes));
 
         PieceDetection detection = detectPieces(user.id(), photo);
         AiOutcome<List<DetectedPiece>> outcome = detection.outcome();
@@ -382,14 +351,7 @@ public class MultiPieceService {
     }
 
     static List<DetectedPiece> surfacePieces(BufferedImage photo) {
-        List<LocalPieceRegions.Region> regions = LocalPieceRegions.detect(photo);
-        if (regions.isEmpty()) return List.of(localPiece());
-        List<DetectedPiece> pieces = new ArrayList<>();
-        for (LocalPieceRegions.Region region : regions) {
-            pieces.add(new DetectedPiece(pieces.size(), null, null, null, ColorMath.nearestTaxonomyColor(region.rgb()), null, null, List.of(), List.of(),
-                    new Box(region.x(), region.y(), region.width(), region.height()), 0.45));
-        }
-        return List.copyOf(pieces);
+        return LocalPieceDetector.surfacePieces(photo);
     }
 
     static final String DETECTOR_SYSTEM = """

@@ -5,6 +5,7 @@ import { estourosDoOrcamento, figurantesDaCena, orcamentoDaSala, partesDaSala } 
 import { partesDoFigurante } from "@/lib/flair/nucleos/scene/figurantes";
 import { partesNoLugar, triangulosDaParte } from "@/lib/flair/nucleos/scene/parts";
 import { SALAS, VARIANTES, salaDe } from "@/lib/flair/nucleos/scene/registry";
+import { avataresDaSala } from "@/lib/flair/nucleos/avatares";
 import { cascaDaSala } from "@/lib/flair/nucleos/scene/shell";
 import { ORCAMENTO } from "@/lib/flair/nucleos/scene/types";
 import { cobreRoupa, limiteDaCamera, movelNaZona, partesQueCobremRoupa, personagemNaZona, zonaContem, zonaInvadeRoupa } from "@/lib/flair/nucleos/scene/zones";
@@ -195,3 +196,46 @@ describe("orçamento", () => {
     expect(estourosDoOrcamento({ triangulos: 60001, materiais: 13, texturaPx: 2048, luzesProprias: 4 })).toEqual(["triangulos", "materiais", "textura", "luzes"]);
   });
 });
+
+/** Reauditoria: as seis quadras só mudavam a cor do piso e todas diziam "4 colegas · 5 adversários". */
+describe("Fashion Sports — cada quadra é reconhecível e tem o elenco da modalidade", () => {
+  const tipos = (v: string) => new Set(salaDe("FASHION_SPORTS", v).moveis.map((m) => m.tipo));
+  const elenco = (v: string, papel: string) => figurantesDaCena(salaDe("FASHION_SPORTS", v), NUCLEOS.FASHION_SPORTS.personagens).filter((p) => p.papel === papel).length;
+
+  it("rede no vôlei e no tênis, tabela no basquete, raias na corrida e pista no skate; só o futebol tem traves e círculo central", () => {
+    expect(tipos("VOLEI").has("redeDeJogo")).toBe(true);
+    expect(tipos("TENIS").has("redeDeJogo")).toBe(true);
+    expect(tipos("BASQUETE").has("tabelaDeBasquete")).toBe(true);
+    expect(tipos("CORRIDA").has("raias")).toBe(true);
+    expect(tipos("SKATE").has("pistaDeSkate")).toBe(true);
+    for (const v of ["BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"]) {
+      expect(tipos(v).has("linhasDaQuadra"), v).toBe(false);
+      expect(tipos(v).has("trave"), v).toBe(false);
+    }
+    // a rede fica entre o time da pessoa e o adversário, não na linha de fundo
+    const rede = salaDe("FASHION_SPORTS", "VOLEI").moveis.find((m) => m.tipo === "redeDeJogo")!;
+    expect(rede.partes.every((p) => p.pos[2] > -4 && p.pos[2] < -3)).toBe(true);
+  });
+
+  it("corrida e skate não têm bola: o objeto das sequências é o bastão e o skate", () => {
+    const objeto = (v: string) => salaDe("FASHION_SPORTS", v).moveis.find((m) => m.id === "bola")!.tipo;
+    expect(objeto("CORRIDA")).toBe("bastao");
+    expect(objeto("SKATE")).toBe("skate");
+    expect(objeto("TENIS")).toBe("bola");
+  });
+
+  it("colegas e adversários de acordo com a modalidade, na cena e no painel", () => {
+    expect([elenco("FUTEBOL", "COLEGA"), elenco("FUTEBOL", "ADVERSARIO")]).toEqual([4, 5]);
+    expect([elenco("BASQUETE", "COLEGA"), elenco("BASQUETE", "ADVERSARIO")]).toEqual([2, 3]);
+    expect([elenco("VOLEI", "COLEGA"), elenco("VOLEI", "ADVERSARIO")]).toEqual([1, 2]);
+    expect([elenco("TENIS", "COLEGA"), elenco("TENIS", "ADVERSARIO")]).toEqual([0, 1]);
+    const base = { solo: [{ tipo: "MODELO_CASA" as const, papel: "PROTAGONISTA", quantidade: 1 }, { tipo: "FIGURANTE" as const, papel: "COLEGA", quantidade: 4 }], online: null };
+    const painel = avataresDaSala(base, salaDe("FASHION_SPORTS", "TENIS").personagens);
+    expect(painel.solo.filter((a) => a.tipo === "FIGURANTE")).toEqual([{ tipo: "FIGURANTE", papel: "ADVERSARIO", quantidade: 1 }]);
+    expect(avataresDaSala(base, salaDe("FASHION_SPORTS", "FUTEBOL").personagens)).toBe(base);
+    for (const v of ["BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"]) {
+      for (const p of salaDe("FASHION_SPORTS", v).personagens ?? []) expect(personagemNaZona(salaDe("FASHION_SPORTS", v), p), `${v}: ${p.papel} em ${p.pos}`).toBe(true);
+    }
+  });
+});
+

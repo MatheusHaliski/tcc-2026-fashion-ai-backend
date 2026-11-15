@@ -95,10 +95,23 @@ export interface DeckRegras {
   semDeck: boolean;
 }
 
+/** Uma rodada do jogo: o objetivo dela e, quando mudam, as zonas e as opções; `etapas` > 1 = um look por etapa. */
+export interface NucleoRodada {
+  codigo: string;
+  objetivo: { codigo: string; regras: RegraObjetivo[] };
+  zonas?: string[];
+  opcoes?: string[];
+  etapas?: number;
+}
+
 export interface NucleoDefinicao {
   codigo: NucleoCodigo;
   numero: number;
   objetivo: { codigo: string; regras: RegraObjetivo[] };
+  /** as rodadas que o servidor oferece (a primeira é a padrão da tela) */
+  rodadas?: NucleoRodada[];
+  /** a rodada escolhida, quando a definição já é a dela (lib/flair/nucleos/rodadas.ts) */
+  rodada?: string | null;
   recursos: NucleoRecurso[];
   vagas: string[];
   zonas: string[];
@@ -116,6 +129,9 @@ export interface NucleoPartida {
   semente: number;
   deck?: string[];
   participantes?: { tipo: AvatarTipo; papel: string; time?: string | null; userId?: string | null }[];
+  rodada?: string | null;
+  /** o que o jogo revela ao entrar: o tema, a estrela, a cena, o desafio, o oponente, a primeira etapa, o look-alvo */
+  abertura?: Record<string, unknown> | null;
 }
 
 export interface ZonaEscolha {

@@ -18,6 +18,21 @@ const score = (scope: HTMLElement, label: string) => within(scope).getByText(lab
 beforeEach(() => { __resetHypeStore(); try { localStorage.clear(); } catch { /* sem storage */ } });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
 
+describe("Copilot › conversa", () => {
+  it("resposta do motor local avisa que a IA online não foi usada, sem o código da intenção", async () => {
+    loggedAs(undefined, { ...HYPE,
+      "GET /api/copilot/context": { userId: "u1", view: "COPILOT", pieces: 6, available: 6, ready: true, suggestedPrompts: [] },
+      "GET /api/copilot/suggestions": { readyLooks: [], forgottenPieces: [], weatherPieces: [], trendingLooks: [], newCombinations: [] },
+      "POST /api/copilot/messages": { text: "Separei 1 look.", intent: "LOOKS", looks: [], fallbackUsed: true, explanation: { provider: "local" } } });
+    renderApp(<CopilotPage />);
+    await settle();
+    fireEvent.change(await screen.findByRole("textbox", { name: "mensagem" }), { target: { value: "look para o trabalho" } });
+    fireEvent.click(screen.getByRole("button", { name: /Enviar/ }));
+    expect(await screen.findByText("Resposta pelas regras locais do app: a IA online não foi usada.")).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/LOOKS/);
+  });
+});
+
 describe("Copilot › Experimentação", () => {
   it("cada combinação nova traz os seis números lado a lado, com \"—\" para dimensão sem base", async () => {
     loggedAs(undefined, { ...HYPE,

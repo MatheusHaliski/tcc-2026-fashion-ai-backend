@@ -87,5 +87,7 @@ describe("botões de girar o palco 3D do provador (acessibilidade)", () => {
     expect(screen.getByText("Este é o manequim de referência, não o seu corpo.")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Criar meu Avatar 3D" }).getAttribute("href")).toBe("/avatar");
     expect(screen.queryByText(/Crie ou revise seu Avatar 3D/)).toBeNull();
+    // reauditoria: o manequim já vem de camiseta e calça com os lugares vazios; a tela diz que é a roupa base
+    expect(screen.getByText(/o manequim usa a roupa base do FashionAI/)).toBeTruthy();
   });
 });

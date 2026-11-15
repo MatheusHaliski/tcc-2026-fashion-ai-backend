@@ -24,5 +24,5 @@ export const AROUND_THE_WORLD: NucleoConfig = {
   opcoes: [],
   acoes: acoesDe({ cartas: true, desfile: true }),
   regras: ["CIMA_LEVE", "BAIXO_LEVE", "COR_QUENTE", "MARCA_BR"],
-  deck: deckDe(8, ["SUP", 1], ["INF", 1]),
+  deck: deckDe(12, ["SUP", 1], ["INF", 1]),
 };

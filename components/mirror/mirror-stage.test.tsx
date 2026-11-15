@@ -26,6 +26,8 @@ describe("Espelho — reflexo 3D", () => {
     expect(screen.getByText(/Este é o manequim de referência, não o seu corpo\./)).toBeTruthy();
     expect(screen.getByRole("link", { name: "Crie seu Avatar 3D para se ver no espelho" }).getAttribute("href")).toBe("/avatar");
     expect(screen.queryByText(/Crie ou revise seu Avatar 3D/)).toBeNull();
+    // reauditoria: só a camiseta foi escolhida; calça e tênis no reflexo são a roupa base, e a tela diz isso
+    expect(screen.getByText(/o manequim usa a roupa base do FashionAI/)).toBeTruthy();
   });
 
   it("com Avatar 3D mostra o corpo da pessoa, sem o convite", async () => {

@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useId,useState,type CSSProperties} from 'react';
+import { revealHypePreviewSoon } from '@/lib/hype/reveal-preview';
 import {Dialog,Button} from '@/components/ui';
 import {useI18n} from '@/lib/i18n/i18n';
 import {api} from '@/lib/api/client';
@@ -34,7 +35,7 @@ export function AuraHypePicker({value,onChange,inline=false}:{value?:string|null
  const unlocked=isUnlocked(level);
  const band=(kind:HypePresetKind)=><section className="aura-hype-preset-band" data-preset-kind={kind} aria-labelledby={`${id}-${kind}`}>
   <h4 id={`${id}-${kind}`} className="type-h3">{t(`auraHype.${kind}Title`)}</h4><p className="type-caption">{t(`auraHype.${kind}Hint`)}</p>
-  <div className="aura-hype-preset-grid" tabIndex={0} role="group" aria-label={t(`auraHype.${kind}Title`)}>{hypePresetsForTier(level).filter(p=>p.kind===kind).map(p=><button type="button" key={p.id} className="aura-hype-preset" data-preset-kind={kind} disabled={!unlocked} aria-pressed={selected?.id===p.id} onClick={()=>{if(unlocked){onChange(p.id);setOpen(false);}}} style={{'--hype-ink':p.color,'--hype-secondary':p.secondary} as CSSProperties}>
+  <div className="aura-hype-preset-grid" tabIndex={0} role="group" aria-label={t(`auraHype.${kind}Title`)}>{hypePresetsForTier(level).filter(p=>p.kind===kind).map(p=><button type="button" key={p.id} className="aura-hype-preset" data-preset-kind={kind} disabled={!unlocked} aria-pressed={selected?.id===p.id} onClick={()=>{if(unlocked){onChange(p.id);setOpen(false);revealHypePreviewSoon();}}} style={{'--hype-ink':p.color,'--hype-secondary':p.secondary} as CSSProperties}>
    <ModelDemo preset={p}/><span className="opt-name">{t(`hypeLayout.${p.layout}`)}</span>
   </button>)}</div>
  </section>;

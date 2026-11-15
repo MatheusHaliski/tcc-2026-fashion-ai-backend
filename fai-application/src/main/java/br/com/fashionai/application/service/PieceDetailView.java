@@ -1,6 +1,8 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Scheme;
@@ -29,8 +31,15 @@ final class PieceDetailView {
         this.visible = visible;
     }
 
-    /** RF7.CA03 — snapshot do momento da publicação, marcado como "não mais disponível". */
-    Map<String, Object> archived(WardrobeItem w, UUID id, UUID fromSchemeId) {
+    /**
+     * RF7.CA03 — snapshot do momento da publicação, marcado como "não mais disponível". Para o dono a peça excluída
+     * saiu do guarda-roupa: o endereço dela (ou o "Ver" de uma notificação antiga) responde "não encontrada", em vez
+     * de abrir a página inteira com as ações; só o retrato guardado num look dele continua abrindo.
+     */
+    Map<String, Object> archived(WardrobeItem w, UUID id, UUID fromSchemeId, boolean owner) {
+        if (owner && fromSchemeId == null) {
+            throw ApiException.notFound(Msg.t("common.peca"));
+        }
         Map<String, Object> out = new LinkedHashMap<>();
         SchemeItem snap = fromSchemeId == null ? null : schemeItems.findBySchemeIdOrderBySortOrder(fromSchemeId).stream()
                 .filter(si -> si.getWardrobeItem().getId().equals(id) && visible.test(si.getScheme()))

@@ -21,6 +21,7 @@ export function ElencoDrawer({ posicao, cartas, foco, atual, onEscolher, onFecha
         <h2 id="el-drawer-title" className="type-label">{tx.t("flair3d.elencos.drawer.title", { pos: tx.posicao(posicao) })}</h2>
         <button type="button" className="btn btn-sm" onClick={onFechar}>{tx.t("flair3d.elencos.drawer.close")}</button>
       </div>
+      <p className="type-caption text-muted">{tx.t("flair3d.elencos.drawer.hypeNote")}</p>
       {cartas.length === 0 ? (
         <p className="n3d-empty">{tx.t("flair3d.elencos.drawer.empty")}</p>
       ) : (

@@ -12,6 +12,7 @@ import { InsightStrip } from "@/components/insights/insight-strip";
 import { HypeItemRow } from "@/components/hype/hype-item-row";
 import type { HypeWardrobe } from "@/lib/hype/types";
 import { GuideAuto, HowItWorks } from "@/components/guide/guide";
+import { RankingsPanel, type RankingsView } from "@/components/highlights/rankings-panel";
 
 interface Highlights { eligible: boolean; pieces: number; progress?: { missing: number; target: number; message: string; steps: { label: string; done: boolean }[] }; manifesto: string; score?: number; band?: string; bands?: { min: number; max: number; label: string }[]; k?: number; kNote?: string; dimensions?: { code: string; name: string; value?: number; weight: number; rule?: string; pullingDown?: { name?: string; id?: string }[] }[]; dims?: Record<string, number>; delta?: { score?: number; previous?: number }; highlights?: { emoji?: string; title?: string; name?: string; value?: string; pieceId?: string; text?: string }[]; evolution?: { history?: { date: string; score: number }[]; title?: string }; records?: { noRepeatStreak?: number; currentStreak?: number; rescuedInAWeek?: number; uniqueLooks?: number; note?: string }; achievements?: { code: string; name?: string; emoji?: string; unlocked?: boolean; unlockedAt?: string; secret?: boolean }[]; suggestedChallenges?: { code: string; name: string }[]; rankingsOptIn?: boolean; computedAt?: string; }
 const bandColor = (s?: number) => (s ?? 0) >= 800 ? "var(--status-good)" : (s ?? 0) >= 500 ? "var(--thread)" : (s ?? 0) >= 300 ? "var(--status-warning)" : "var(--status-serious)";
@@ -44,7 +45,21 @@ function Highlights() {
   const { t, fmtDate, rich } = useI18n(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Highlights>((signal) => api.get("/api/me/highlights", { signal }), []);
   const [explain, setExplain] = useState<{ code: string; name: string; value?: number; rule?: string; pullingDown?: { name?: string; id?: string }[] } | null>(null);
-  const [rank, setRank] = useState<Record<string, unknown> | null>(null); const [city, setCity] = useState(""); const [shareCity, setShareCity] = useState(false);
+  const [rank, setRank] = useState<RankingsView | null>(null); const [rankBusy, setRankBusy] = useState(false); const [city, setCity] = useState(""); const [shareCity, setShareCity] = useState(false);
+  /** Entrar ou sair dos rankings pela janela: grava a escolha, relê a posição e avisa o que aconteceu. */
+  async function optIn(join: boolean) {
+    setRankBusy(true);
+    try {
+      await api.put("/api/me/rankings/opt-in", { optedIn: join, shareCity, city });
+      setRank(await api.get<RankingsView>("/api/me/rankings"));
+      toast.success(t(join ? "highlights.rank.entrou" : "highlights.rank.saiu"));
+      reload();
+    } catch (e) {
+      toast.fromError(e);
+    } finally {
+      setRankBusy(false);
+    }
+  }
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-80" />;
   return (
@@ -78,7 +93,7 @@ function Highlights() {
         <p className="type-body">{explain?.rule}</p>
         {explain?.pullingDown?.length ? <><p className="label mt-3">{t("highlights.puxando_para_baixo")}</p><ul className="fai-list type-body-sm">{explain.pullingDown.map((p, i) => <li key={i}>• {p.id ? <Link className="underline" href={`/pieces/${p.id}`}>{p.name}</Link> : p.name}</li>)}</ul></> : null}
       </Dialog>
-      <Dialog open={!!rank} onClose={() => setRank(null)} title={t("highlights.rankings_anonimos")}><pre className="max-h-80 overflow-auto rounded bg-surface-2 p-2 type-caption">{JSON.stringify(rank, null, 2)}</pre></Dialog>
+      <Dialog open={!!rank} onClose={() => setRank(null)} title={t("highlights.rankings_anonimos")}>{rank && <RankingsPanel data={rank} busy={rankBusy} onOptIn={optIn} />}</Dialog>
       {data.eligible && <div className="hidden"><Badge>{t("common.ok")}</Badge></div>}
     </>
   );

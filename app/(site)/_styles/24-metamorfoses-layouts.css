@@ -101,11 +101,12 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .pae-expanded-card { width: 100%; }
 .card-preview-mode-toggle { z-index: 12; }
 @media (prefers-reduced-motion: reduce) { .hype-mini-stars { animation: none; } .hype-led-track i { transition: none; } }
-/* Preview stays before controls on mobile; scrolling inside it keeps the entire final card reachable. */
+/* The art editor keeps its preview before the controls on mobile; scrolling inside it keeps the entire final card reachable. */
 .piece-create-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
-.piece-create-preview, .pae-preview { position: sticky; top: 64px; max-height: calc(100dvh - 156px); overflow: auto; min-width: 0; scroll-padding-block: 16px; }
-.piece-create-preview { grid-row: 1; }
-.piece-create-main { grid-row: 2; }
+.pae-preview { position: sticky; top: 64px; max-height: calc(100dvh - 156px); overflow: auto; min-width: 0; scroll-padding-block: 16px; }
+/* Tela estreita: a prévia da peça nova vem solta, depois do formulário. Presa no topo ela cobria os campos e o "Avançar". */
+.piece-create-preview { grid-row: 2; min-width: 0; }
+.piece-create-main { grid-row: 1; }
 .pae-preview { grid-row: 1; max-height: 58dvh; z-index: 8; background: var(--surface); }
 .pae-main { grid-row: 2; min-width: 0; }
 /* Keep the mobile sticky preview above the viewport centre so editor controls
@@ -115,6 +116,7 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
   .piece-create-layout:not(.is-art) { grid-template-columns: minmax(0, 1fr) minmax(352px, 44%); }
   .piece-create-main, .pae-main { grid-row: 1; grid-column: 1; }
   .piece-create-preview, .pae-preview { grid-row: 1; grid-column: 2; max-height: calc(100dvh - 80px); }
+  .piece-create-preview { position: sticky; top: 64px; overflow: auto; scroll-padding-block: 16px; }
 }
 @media (max-width: 639px) {
   .piece-card-expanded .pc-content { display: block; }

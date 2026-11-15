@@ -69,18 +69,23 @@ O que muda de um esporte para outro é o peso de cada atributo do uniforme na fo
 
 Cada modalidade tem o placar no jeito dela e a própria quadra [feito]:
 
-| Modalidade | Placar | Quadra |
-| --- | --- | --- |
-| Futebol de 5 | gols | piso emborrachado azul, duas traves |
-| Basquete 3×3 | pontos (12 de base e 3 por lance convertido) | piso de madeira, tabela na linha de fundo |
-| Vôlei de praia | sets (2 para quem vence, no máximo 1 para o outro; 1 a 1 no empate) | piso cor de areia, rede alta |
-| Tênis | sets, como no vôlei | piso verde, rede baixa |
-| Corrida e revezamento | chegadas | pista vermelha, barreira na linha de fundo |
-| Skate | nota (60 de base e 10 por lance convertido) | concreto, corrimão na linha de fundo |
+| Modalidade | Placar | Quadra | Time na cena |
+| --- | --- | --- | --- |
+| Futebol de 5 | gols | piso emborrachado azul, duas traves, círculo central | 4 colegas e 5 adversários |
+| Basquete 3×3 | pontos (12 de base, 3 por lance convertido e 1 por lance de força que deu certo, até 2) | piso de madeira, garrafão, tabela com aro na linha de fundo, bola laranja | 2 colegas e 3 adversários |
+| Vôlei de praia | sets (2 para quem vence, no máximo 1 para o outro; 1 a 1 no empate, nunca 0 a 0 no fim) | piso cor de areia, rede alta atravessada no meio | 1 colega e 2 adversários |
+| Tênis | sets, como no vôlei | piso verde, linhas de simples e de saque, rede baixa no meio, bolinha amarela | 1 adversário |
+| Corrida e revezamento | chegadas | pista vermelha com 5 raias, largada, chegada, duas barreiras e o bastão | 3 colegas na raia da pessoa e 4 adversários nas outras |
+| Skate | nota (60 de base, 10 por lance convertido e 3 por lance de força que deu certo, até 9) | concreto, rampa com plataforma, caixote, corrimão e o skate | 2 adversários esperando a vez |
 
-**O que ainda é igual em todos:** a partida continua em dois tempos, o ginásio (arquibancada, banco e luzes) é o mesmo,
-os figurantes são os do futebol e a bola continua em cena também na corrida e no skate. As quadras novas passam nas
-regras automáticas das salas, mas ainda não foram vistas na tela.
+Cada lance do segundo tempo diz na hora o que mudou (evento `LANCE`, campos `efeito`, `ganho` e `forca`): "força do seu
+time +3 (agora 26)", "entra no placar" ou "o adversário perde um lance no segundo tempo". O lance de força nunca vale
+tanto quanto um lance convertido, então o placar se mexe sem trocar quem venceu. No empate a legenda da cena diz "A
+partida termina empatada".
+
+**O que ainda é igual em todos:** a partida continua em dois tempos, o ginásio (arquibancada, banco e luzes) é o mesmo e
+os figurantes usam os mesmos movimentos do futebol. Na corrida e no skate o bastão e o skate ocupam o lugar da bola nas
+sequências. As seis quadras foram vistas na tela em 14/11/2026 (segunda rodada de correções).
 
 ## 2. Fashion Detective
 
@@ -158,6 +163,34 @@ arma.
   | Lanterna | 150 | o móvel do salão 3 não abriu | abre os móveis dos salões seguintes sem peça verde |
 
   A peça comprada é do caso: não vira carta da coleção.
+
+## 2-A. Os outros jogos de cartas: efeito de cena por cor [feito]
+
+Pedido da dona (14/11/2026): todo jogo 3D deve ter, para cada cor de peça do deck, um efeito ao ser inserida. Nos 9
+jogos de cartas além do esporte e do detetive, a cor dá um **efeito de cena**: ao vestir a peça aparece o nome do
+efeito e um pulso de luz na cor da família, ao lado da roupa (nunca sobre ela). No deck, a carta continua mostrando só
+o efeito principal (o que dá pontos); o efeito da cor aparece na carta ampliada e na hora de vestir.
+
+| Jogo | Preto | Verde | Amarelo | Azul | Vermelho | Branco |
+| --- | --- | --- | --- | --- | --- | --- |
+| A Passarela | a luz recorta a silhueta | brisa na passarela | holofote dourado | flashes da plateia | aplausos da plateia | a passarela acende |
+| Dress Fighter | postura de guarda | passo de esquiva | golpe rápido no ar | fôlego | golpe forte no ar | foco |
+| Dress the Star | luz de gala | luz de jardim | chuva de brilho | luz azul suave | o tapete vermelho acende | flashes dos fotógrafos |
+| Personagem de Filme | luz de suspense | luz de aventura | luz de comédia | luz de ficção científica | luz de romance | a claquete bate |
+| Road to Glory | luz de contraste | luz natural | luz dourada | luz fria | luz de destaque | rebatedor de luz |
+| Boutique 3D | vitrine em luz de noite | etiqueta de novidade | placa de destaque | a cliente olha a peça | a cliente sorri | a vitrine acende |
+| O Labirinto | sombras nos espelhos | trilha de luz no piso | luz de lanterna | reflexo azul nos espelhos | os espelhos piscam | clarão nos espelhos |
+| Around the World | noite na cidade | luz de parque | sol da tarde | brisa do mar | festa de rua | luz de inverno |
+| Batalha de Looks | batida de impacto | a torcida vibra | faíscas no palco | onda de luz azul | luz de chamas | luz estroboscópica |
+
+- **Não muda a nota.** Só no Fashion Sports e no Fashion Detective a cor entra na regra do jogo. Nos 9 jogos acima ela
+  é só efeito de cena.
+- **O que aparece hoje:** o nome do efeito e o pulso de luz colorido. A cena 3D ainda não faz a ação descrita (a
+  plateia não aplaude de verdade, a vitrine não acende): isso é o próximo passo, efeito por efeito.
+- **Jogos sem cartas** (Clube do Coração, My Favorite Singer, Meu Piloto Favorito, Meu Super-Herói Favorito): a pessoa
+  pinta zonas, não insere cartas, então não há efeito de cor por carta.
+- Onde está: `Flair3dCores.DE_CENA` e `efeitoDaCor` (servidor), `lib/flair/nucleos/card-fx.ts` e
+  `components/flair/nucleos/nucleo-card-fx.tsx` (tela).
 
 ## 3. Decisões da dona (14/11/2026: "siga o recomendado")
 

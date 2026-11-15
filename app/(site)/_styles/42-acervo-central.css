@@ -1,0 +1,247 @@
+/* ── ACERVO · view 1, Central do acervo (components/acervo/acervo-central.tsx, acervo-barra.tsx, peca-card.tsx): busca,
+   cabeçalho da lista e grade de peças com foto, nome, preço e marcador numerado. */
+.acv-central {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.acv-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.acv-busca {
+  display: flex;
+  flex: 1 1 14rem;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-md);
+  padding: 0 12px;
+  border: 1px solid var(--acv-linha);
+  border-radius: 999px;
+  background: var(--acv-cartao);
+}
+
+.acv-busca input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: var(--text-body);
+}
+
+.acv-busca:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.acv-busca input:focus-visible {
+  outline: 0;
+}
+
+.acv-barra-status {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--acv-suave);
+  font-size: var(--text-caption);
+}
+
+.acv-central-corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.acv-lista {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.acv-lista-cabeca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.acv-lista-titulo {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-size: var(--text-h3);
+  font-weight: 600;
+}
+
+.acv-lista-conta {
+  flex: 1;
+  color: var(--acv-suave);
+  font-size: var(--text-body-sm);
+}
+
+.acv-ordem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--acv-suave);
+  font-size: var(--text-body-sm);
+}
+
+.acv-modo-lista {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--acv-linha);
+  border-radius: 8px;
+}
+
+.acv-modo-lista button {
+  display: grid;
+  place-items: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  border: 0;
+  background: var(--acv-cartao);
+  color: inherit;
+  cursor: pointer;
+}
+
+.acv-modo-lista button[aria-pressed="true"] {
+  background: var(--acv-lima);
+  color: var(--acv-lima-tinta);
+}
+
+.acv-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acv-grade.is-lista {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.acv-card {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--acv-linha);
+  border-radius: 12px;
+  background: var(--acv-cartao);
+}
+
+.acv-card.is-marcada,
+.acv-card.is-achada {
+  border-color: var(--acv-tinta);
+  box-shadow: 0 0 0 2px var(--acv-lima);
+}
+
+.acv-card.is-parada {
+  border-color: var(--acv-alerta);
+}
+
+.acv-card-abrir {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0 0 var(--space-2);
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.acv-card.is-lista .acv-card-abrir {
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  padding: 0;
+}
+
+.acv-foto {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--acv-linha) 55%, var(--acv-cartao));
+}
+
+.acv-card.is-lista .acv-foto {
+  border-radius: 11px 0 0 11px;
+}
+
+.acv-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.acv-card-texto {
+  display: grid;
+  gap: 2px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-body-sm);
+}
+
+.acv-card-nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acv-card-preco {
+  color: var(--acv-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.acv-card-parada {
+  color: var(--acv-alerta);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.acv-card-marcar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--acv-linha);
+  border-radius: 50%;
+  background: var(--acv-cartao);
+  color: inherit;
+  cursor: pointer;
+}
+
+.acv-card-favorita {
+  position: absolute;
+  top: 10px;
+  left: 8px;
+  color: var(--acv-lima);
+  filter: drop-shadow(0 0 1px var(--acv-tinta));
+}
+
+@media (pointer: coarse) {
+  .acv-card-marcar,
+  .acv-modo-lista button {
+    width: var(--touch);
+    height: var(--touch);
+  }
+}
+
+@container acv (min-width: 1180px) {
+  .acv-central-corpo {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+}

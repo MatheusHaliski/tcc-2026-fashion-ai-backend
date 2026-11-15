@@ -20,6 +20,15 @@ import java.util.Set;
 public class ClubeCoracaoNucleo implements Flair3dNucleo {
     public static final List<String> ZONAS = List.of("FRENTE", "COSTAS", "MANGAS", "GOLA");
     public static final Set<String> CORES = Set.of("Azul", "Branco");
+    public static final String AURORA = "CLUBE_AURORA";
+    public static final Set<String> CORES_AURORA = Set.of("Vermelho", "Preto");
+    /** Uniforme de E-sports do time inventado "Vórtex" (roxo e preto, destaque amarelo): a rodada com nota do modo. */
+    static final List<AtelieRodadas.Criacao> RODADAS = List.of(AtelieRodadas.criacao("UNIFORME_ESPORTS", ZONAS,
+            AtelieRodadas.regra("CORES_DO_TIME", z -> List.of("FRENTE", "COSTAS", "MANGAS").stream().allMatch(zona -> AtelieRodadas.daFamilia(z, zona, "Roxo", "Preto"))
+                    && List.of("Roxo", "Preto").stream().allMatch(f -> List.of("FRENTE", "COSTAS", "MANGAS").stream().anyMatch(zona -> AtelieRodadas.daFamilia(z, zona, f)))),
+            AtelieRodadas.regra("GOLA_DESTAQUE", z -> AtelieRodadas.daFamilia(z, "GOLA", "Amarelo")),
+            AtelieRodadas.regra("COSTAS_IGUAL_FRENTE", z -> AtelieRodadas.iguais(z, "FRENTE", "COSTAS")),
+            AtelieRodadas.regra("TUDO_FOSCO", z -> AtelieRodadas.pintadas(z, ZONAS) && !AtelieRodadas.algumAcabamento(z, "BRILHANTE", "METALICO", "ESPELHADO"))));
 
     @Override
     public String codigo() {
@@ -34,23 +43,31 @@ public class ClubeCoracaoNucleo implements Flair3dNucleo {
     @Override
     public Definicao definicao() {
         return Definicao.zonas(codigo(), numero(),
-                Definicao.objetivo("CLUBE_ATLANTICO", new Regra("TODAS_AS_ZONAS", 0), new Regra("CORES_DO_CLUBE", 0)), ZONAS, List.of());
+                Definicao.objetivo("CLUBE_ATLANTICO", new Regra("TODAS_AS_ZONAS", 0), new Regra("CORES_DO_CLUBE", 0)), ZONAS, List.of())
+                .comRodadas(Definicao.Rodada.de(AURORA, new Regra("TODAS_AS_ZONAS", 0), new Regra("CORES_DO_CLUBE", 0)).comZonas(ZONAS),
+                        RODADAS.get(0).rodada());
     }
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
+        for (AtelieRodadas.Criacao c : RODADAS) {
+            if (c.codigo().equals(contexto.rodada())) {
+                return c.pontuar(entrega);
+            }
+        }
+        Set<String> doClube = AURORA.equals(contexto.rodada()) ? CORES_AURORA : CORES;
         Set<String> usadas = new HashSet<>();
         boolean todas = true;
         boolean soDoClube = true;
         for (String zona : ZONAS) {
             String familia = Flair3dZonas.familia(entrega.zonas().get(zona));
             todas &= familia != null;
-            soDoClube &= familia == null || CORES.contains(familia);
+            soDoClube &= familia == null || doClube.contains(familia);
             if (familia != null) {
                 usadas.add(familia);
             }
         }
-        boolean cores = soDoClube && usadas.containsAll(CORES);
+        boolean cores = soDoClube && usadas.containsAll(doClube);
         List<RegraResultado> regras = List.of(RegraResultado.de("TODAS_AS_ZONAS", todas, 0), RegraResultado.de("CORES_DO_CLUBE", cores, 0));
         return Resultado.of(0, todas && cores ? "CONCLUIDO" : "INCOMPLETO", regras, List.of());
     }

@@ -20,9 +20,23 @@ import java.util.Set;
 public class SuperHeroiNucleo implements Flair3dNucleo {
     public static final double POR_REGRA = 25;
     public static final List<String> ZONAS = List.of("PEITO", "CAPA", "BRACOS", "PERNAS");
-    public static final List<String> OPCOES = List.of("EMBLEMA_ESTRELA", "EMBLEMA_RAIO", "EMBLEMA_ASA", "EMBLEMA_MORCEGO", "EMBLEMA_ESCUDO_S");
-    /** Emblemas que imitam marcas registradas de heróis existentes: não podem ser usados. */
+    /** Só emblemas próprios: os que imitavam heróis existentes saíram da lista que a tela oferece. */
+    public static final List<String> OPCOES = List.of("EMBLEMA_ESTRELA", "EMBLEMA_RAIO", "EMBLEMA_ASA");
+    /** Emblemas que imitam marcas registradas de heróis existentes: o servidor continua recusando os códigos antigos. */
     public static final Set<String> PROTEGIDOS = Set.of("EMBLEMA_MORCEGO", "EMBLEMA_ESCUDO_S");
+    /** Os outros arquétipos: o traje colante (tecido, sem metal) e o vigilante da noite (capa escura, uma cor de alerta). */
+    static final List<AtelieRodadas.Criacao> RODADAS = List.of(
+            AtelieRodadas.criacao("TRAJE_COLANTE", ZONAS,
+                    AtelieRodadas.regra("BRACOS_E_PERNAS_IGUAIS", z -> AtelieRodadas.iguais(z, "BRACOS", "PERNAS")),
+                    AtelieRodadas.regra("PEITO_EM_DESTAQUE", z -> AtelieRodadas.contraste(z, "PEITO", "BRACOS")),
+                    AtelieRodadas.regra("SEM_METAL", z -> !z.isEmpty() && !AtelieRodadas.algumAcabamento(z, "METALICO", "ESPELHADO")),
+                    AtelieRodadas.regra("ATE_3_CORES", z -> AtelieRodadas.ateCores(z, 3))),
+            AtelieRodadas.criacao("VIGILANTE_DA_NOITE", ZONAS,
+                    AtelieRodadas.regra("CAPA_ESCURA", z -> AtelieRodadas.daFamilia(z, "CAPA", "Preto")),
+                    AtelieRodadas.regra("PEITO_FOSCO", z -> AtelieRodadas.familia(z, "PEITO") != null
+                            && !AtelieRodadas.acabamento(z, "PEITO", "BRILHANTE", "METALICO", "ESPELHADO")),
+                    AtelieRodadas.regra("UMA_COR_DE_ALERTA", z -> ZONAS.stream().filter(zona -> AtelieRodadas.daFamilia(z, zona, "Amarelo", "Vermelho", "Laranja")).count() == 1),
+                    AtelieRodadas.regra("ATE_2_CORES", z -> AtelieRodadas.ateCores(z, 2))));
 
     @Override
     public String codigo() {
@@ -38,11 +52,16 @@ public class SuperHeroiNucleo implements Flair3dNucleo {
     public Definicao definicao() {
         return Definicao.zonas(codigo(), numero(), Definicao.objetivo("ARMADURA", new Regra("PEITO_METALICO", POR_REGRA),
                 new Regra("ATE_2_CORES", POR_REGRA), new Regra("CAPA", POR_REGRA), new Regra("SEM_EMBLEMA_PROTEGIDO", POR_REGRA)),
-                ZONAS, OPCOES);
+                ZONAS, OPCOES).comRodadas(RODADAS.get(0).rodada(), RODADAS.get(1).rodada());
     }
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
+        for (AtelieRodadas.Criacao c : RODADAS) {
+            if (c.codigo().equals(contexto.rodada())) {
+                return c.pontuar(entrega);
+            }
+        }
         List<Entrega.Zona> zonas = ZONAS.stream().map(entrega.zonas()::get).filter(Objects::nonNull).toList();
         long cores = zonas.stream().map(Flair3dZonas::hex).filter(Objects::nonNull).distinct().count();
         return Resultado.somando(List.of(

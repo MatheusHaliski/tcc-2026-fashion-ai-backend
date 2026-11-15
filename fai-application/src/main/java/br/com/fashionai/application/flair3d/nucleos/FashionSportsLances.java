@@ -16,6 +16,8 @@ import java.util.Map;
  * hora a ação da cor dela ({@link Flair3dCores#ESPORTE}). Verde chuta (gol se a técnica do uniforme mais 5 alcança a força
  * do adversário); preto e branco tiram um gol do adversário no segundo tempo; amarelo, azul e vermelho somam força ao
  * time (6, 4 e 3). São no máximo {@link #MAX} lances; a troca de peça sem cor de ação, ou seguir sem trocar, apita o fim.
+ * Cada evento LANCE diz o que o lance mudou ({@code efeito}: FORCA, PONTO, DEFESA ou NADA), quanto ({@code ganho}) e a
+ * força do time depois dele ({@code forca}), para a tela mostrar o efeito na hora.
  */
 final class FashionSportsLances {
     static final int MAX = 3;
@@ -29,9 +31,10 @@ final class FashionSportsLances {
     private int desarmes;
     private boolean aberto = true;
 
-    private final String modalidade;
+    private int lancesDeForca;
+    private final FashionSportsModalidade modalidade;
 
-    FashionSportsLances(Map<String, CbcRules.Card> uniforme, String modalidade) {
+    FashionSportsLances(Map<String, CbcRules.Card> uniforme, FashionSportsModalidade modalidade) {
         this.uniforme = uniforme;
         this.modalidade = modalidade;
     }
@@ -52,8 +55,11 @@ final class FashionSportsLances {
                 break;
             }
             lances++;
-            eventos.add(new Evento("LANCE", Map.of("lance", lances, "acao", acao, "modalidade", modalidade,
-                    "carta", troca.carta(), "venceu", aplicar(acao, adversario))));
+            int antes = bonus;
+            boolean venceu = aplicar(acao, adversario);
+            eventos.add(new Evento("LANCE", Map.of("lance", lances, "acao", acao, "modalidade", modalidade.codigo(),
+                    "carta", troca.carta(), "venceu", venceu, "efeito", efeito(acao, venceu), "ganho", bonus - antes,
+                    "forca", FashionSportsNucleo.forca(uniforme, modalidade) + bonus)));
             if (lances == MAX) {
                 aberto = false;
             }
@@ -73,7 +79,19 @@ final class FashionSportsLances {
             return true;
         }
         bonus += FORCA.getOrDefault(acao, 0);
+        lancesDeForca++;
         return true;
+    }
+
+    /** O que o lance mudou: força do time, ponto no placar, um lance a menos do adversário ou nada (chute que não entrou). */
+    private static String efeito(String acao, boolean venceu) {
+        if (!venceu) {
+            return "NADA";
+        }
+        if ("CHUTE".equals(acao)) {
+            return "PONTO";
+        }
+        return "DEFESA".equals(acao) || "GOLEIRO".equals(acao) ? "DEFESA" : "FORCA";
     }
 
     Map<String, CbcRules.Card> uniforme() {
@@ -94,6 +112,11 @@ final class FashionSportsLances {
 
     int desarmes() {
         return desarmes;
+    }
+
+    /** Lances de força que deram certo (drible, corrida, passe): entram no placar do basquete e do skate. */
+    int lancesDeForca() {
+        return lancesDeForca;
     }
 
     /** A partida ainda espera outro lance. */

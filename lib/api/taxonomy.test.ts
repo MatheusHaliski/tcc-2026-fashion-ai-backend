@@ -23,4 +23,10 @@ describe("subcategoryLabel", () => {
     expect(subcategoryLabel("boots")).toBe("Boots");
     expect(subcategoryLabel("jeans")).toBe(label("jeans"));  // sem rótulo do servidor: tabela estática
   });
+
+  it("reauditoria: numeração de calçado aparece como o número (era \"Shoe 38\")", () => {
+    expect(label("shoe_38")).toBe("38");
+    expect(label("SHOE_41")).toBe("41");
+    expect(label("one_size")).not.toMatch(/^Shoe/);
+  });
 });

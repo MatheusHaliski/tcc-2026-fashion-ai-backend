@@ -48,4 +48,24 @@ class SearchColorTermTest {
         List<WardrobeItem> out = SearchColorTerm.withColor(List.of(byName), "Azul", () -> List.of(byName, blue, red, navy));
         assertThat(out).containsExactly(byName, blue, navy);
     }
+
+    /** Reauditoria: "camiseta azul" não achava nada, embora buscar só "azul" listasse as camisetas azuis. */
+    @Test
+    void tipoECorNaMesmaBuscaAchamAPecaDoTipoNaquelaCor() {
+        WardrobeItem camisetaAzul = piece("Camiseta Zero", "blue");
+        camisetaAzul.setSubcategory("t_shirt");
+        WardrobeItem semNome = piece("Zero", "navy");
+        semNome.setSubcategory("t_shirt");
+        WardrobeItem jeansAzul = piece("Jeans", "blue");
+        jeansAzul.setSubcategory("jeans");
+        WardrobeItem camisetaVermelha = piece("Camiseta Vermelha", "red");
+        camisetaVermelha.setSubcategory("t_shirt");
+        List<WardrobeItem> todas = List.of(camisetaAzul, semNome, jeansAzul, camisetaVermelha);
+        assertThat(SearchColorTerm.withColor(List.of(), "camiseta azul", () -> todas)).containsExactly(camisetaAzul, semNome);
+        assertThat(SearchColorTerm.withColor(List.of(), "Azul Camiseta", () -> todas)).containsExactly(camisetaAzul, semNome);
+        assertThat(SearchColorTerm.withColor(List.of(), "camiseta azul marinho", () -> todas)).containsExactly(semNome);
+        assertThat(SearchColorTerm.withColor(List.of(), "t-shirt blue", () -> todas)).containsExactly(camisetaAzul);
+        assertThat(SearchColorTerm.typeAndColor("jaqueta de couro")).isNull();
+        assertThat(SearchColorTerm.typeAndColor("azul")).isNull();
+    }
 }

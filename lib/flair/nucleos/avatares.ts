@@ -21,3 +21,15 @@ export function protagonistaEfetiva(aceitos: AvatarTipo[], escolha: AvatarTipo |
   const quer = escolha && aceitos.includes(escolha) ? escolha : aceitos[0];
   return quer === "PROPRIO" && temAvatar ? "PROPRIO" : "MODELO_CASA";
 }
+
+/**
+ * Avatares mostrados para a sala da vez: quando a sala tem elenco próprio (3 contra 3 no basquete, dupla no vôlei, um
+ * adversário no tênis), a contagem de figurantes sai dele, não da lista fixa do jogo ("4 colegas · 5 adversários").
+ */
+export function avataresDaSala(avatares: NucleoAvatares, elenco?: { papel: string }[] | null): NucleoAvatares {
+  if (!elenco) return avatares;
+  const porPapel = new Map<string, number>();
+  for (const p of elenco) porPapel.set(p.papel, (porPapel.get(p.papel) ?? 0) + 1);
+  const figurantes = Array.from(porPapel, ([papel, quantidade]): AvatarSolo => ({ tipo: "FIGURANTE", papel, quantidade }));
+  return { ...avatares, solo: [...avatares.solo.filter((a) => a.tipo !== "FIGURANTE"), ...figurantes] };
+}

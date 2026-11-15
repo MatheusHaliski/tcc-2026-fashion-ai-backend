@@ -22,14 +22,22 @@ interface Props {
   cartas?: CartaNoResultado[];
   /** jogo artístico, sem placar (nenhuma regra vale pontos): o resultado não mostra "0 pontos" nem estrelas vazias */
   semPlacar?: boolean;
+  /** a rodada jogada: o nome dela abre o resultado */
+  rodada?: string | null;
 }
 
-export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlacar = false }: Props) {
+/** Quantas dicas de "o que trocar" cabem no resultado. */
+const MAX_DICAS = 4;
+
+export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlacar = false, rodada = null }: Props) {
   const tx = useNucleoText();
   const estrelas = Math.max(0, Math.min(3, resultado.estrelas));
+  /** o que trocar: uma dica por regra não cumprida, sem repetir */
+  const dicas = Array.from(new Set(resultado.regras.filter((r) => !r.ok).map((r) => tx.dica(codigo, r.codigo, tx.regra(codigo, r.codigo))))).slice(0, MAX_DICAS);
   return (
     <section className="n3d-result" aria-labelledby="n3d-result-title" data-testid="nucleo-result">
       <h2 id="n3d-result-title" className="type-h3">{tx.t("flair3d.ui.result.title")}</h2>
+      {rodada && <p className="type-label" data-testid="nucleo-result-round">{tx.rodadaNome(codigo, rodada)}</p>}
       {semPlacar ? <p className="n3d-result-outcome" data-no-score>{tx.t("flair3d.ui.result.noScore")}</p> : (
         <>
           <p className="n3d-result-points tabular">{tx.pontosTotal(resultado.pontos)}</p>
@@ -50,6 +58,17 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
           </li>
         ))}
       </ul>
+      {dicas.length > 0 && (
+        <>
+          <h3 className="type-label">{tx.t("flair3d.ui.result.hints")}</h3>
+          <ul className="n3d-result-hints" data-testid="nucleo-result-hints">
+            {dicas.map((d) => (
+              <li key={d}>{d}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {dicas.length === 0 && resultado.regras.length > 0 && <p className="n3d-result-hints is-full" data-testid="nucleo-result-full">{tx.t("flair3d.ui.result.allRules")}</p>}
       {cartas.length > 0 && (
         <>
           <h3 className="type-label">{tx.t("flair3d.ui.result.cards")}</h3>

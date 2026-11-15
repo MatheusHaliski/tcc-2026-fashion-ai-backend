@@ -1,0 +1,144 @@
+package br.com.fashionai.application.acervo;
+
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.acervo.AcervoAmbiente;
+import br.com.fashionai.domain.model.acervo.AcervoCompartimento;
+import br.com.fashionai.domain.model.acervo.AcervoDesejo;
+import br.com.fashionai.domain.model.acervo.AcervoMovel;
+import br.com.fashionai.domain.model.acervo.AcervoPeca;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/** Projeções do ACERVO: a árvore (ambiente → móvel → compartimento, com contagens), a ficha da peça e o desejo. */
+final class AcervoViews {
+    /** Peça "em uso": vestida nos últimos 30 dias. */
+    static final int DIAS_EM_USO = 30;
+
+    private AcervoViews() {
+    }
+
+    static Map<String, Object> peca(WardrobeItem w, AcervoMapa mapa, LocalDate hoje) {
+        UUID lugar = mapa.lugar(w.getId());
+        AcervoPeca linha = mapa.linha(w.getId());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", w.getId());
+        out.put("name", w.getName());
+        out.put("category", w.getCategory());
+        out.put("subcategory", w.getSubcategory());
+        out.put("color", w.getColor());
+        out.put("size", w.getSizeLabel());
+        out.put("brand", w.getBrandName());
+        out.put("price", w.getPrice());
+        out.put("currency", w.getPriceCurrency());
+        out.put("condition", w.getCondition() == null ? null : w.getCondition().name());
+        out.put("conservacao", w.getEstadoConservacao() == null ? null : w.getEstadoConservacao().getNome());
+        out.put("thumbnailUrl", w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
+        out.put("favorite", w.isFavorite());
+        out.put("wearCount", w.getWearCount());
+        out.put("lastWornDate", w.getLastWornDate());
+        out.put("emUso", w.getLastWornDate() != null && !w.getLastWornDate().isBefore(hoje.minusDays(DIAS_EM_USO)));
+        out.put("compartimentoId", lugar);
+        out.put("caminho", mapa.caminho(lugar));
+        out.put("medidas", medidas(linha));
+        return out;
+    }
+
+    static Map<String, Object> medidas(AcervoPeca linha) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("larguraCm", linha == null ? null : linha.getLarguraCm());
+        out.put("comprimentoCm", linha == null ? null : linha.getComprimentoCm());
+        out.put("nota", linha == null ? null : linha.getMedidasNota());
+        return out;
+    }
+
+    static Map<String, Object> compartimento(AcervoCompartimento c, long pecas) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", c.getId());
+        out.put("movelId", c.getMovelId());
+        out.put("tipo", c.getTipo());
+        out.put("nome", c.getNome());
+        out.put("ordem", c.getOrdem());
+        out.put("pecas", pecas);
+        return out;
+    }
+
+    static Map<String, Object> movel(AcervoMovel m, List<Map<String, Object>> compartimentos, long pecas) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", m.getId());
+        out.put("ambienteId", m.getAmbienteId());
+        out.put("nome", m.getNome());
+        out.put("ordem", m.getOrdem());
+        out.put("modo", m.getModo());
+        out.put("larguraCm", m.getLarguraCm());
+        out.put("alturaCm", m.getAlturaCm());
+        out.put("profundidadeCm", m.getProfundidadeCm());
+        out.put("material", m.getMaterial());
+        out.put("cor", m.getCor());
+        out.put("porta", m.getPorta());
+        out.put("puxador", m.getPuxador());
+        out.put("puxadorAcabamento", m.getPuxadorAcabamento());
+        out.put("compartimentos", compartimentos);
+        out.put("pecas", pecas);
+        return out;
+    }
+
+    static Map<String, Object> ambiente(AcervoAmbiente a, List<Map<String, Object>> moveis, long pecas) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", a.getId());
+        out.put("nome", a.getNome());
+        out.put("ordem", a.getOrdem());
+        out.put("moveis", moveis);
+        out.put("pecas", pecas);
+        return out;
+    }
+
+    /** Árvore completa; {@code porCompartimento} traz quantas peças há em cada compartimento. */
+    static List<Map<String, Object>> arvore(AcervoMapa mapa, Map<UUID, Long> porCompartimento) {
+        List<Map<String, Object>> ambientes = new ArrayList<>();
+        for (AcervoAmbiente a : mapa.ambientes) {
+            List<Map<String, Object>> moveis = new ArrayList<>();
+            long noAmbiente = 0;
+            for (AcervoMovel m : mapa.moveis) {
+                if (!m.getAmbienteId().equals(a.getId())) {
+                    continue;
+                }
+                List<Map<String, Object>> compartimentos = new ArrayList<>();
+                long noMovel = 0;
+                for (AcervoCompartimento c : mapa.compartimentos) {
+                    if (!c.getMovelId().equals(m.getId())) {
+                        continue;
+                    }
+                    long pecas = porCompartimento.getOrDefault(c.getId(), 0L);
+                    compartimentos.add(compartimento(c, pecas));
+                    noMovel += pecas;
+                }
+                moveis.add(movel(m, compartimentos, noMovel));
+                noAmbiente += noMovel;
+            }
+            ambientes.add(ambiente(a, moveis, noAmbiente));
+        }
+        return ambientes;
+    }
+
+    static Map<String, Object> desejo(AcervoDesejo d, AcervoMapa mapa) {
+        UUID lugar = mapa.compartimento(d.getCompartimentoId()) == null ? null : d.getCompartimentoId();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", d.getId());
+        out.put("nome", d.getNome());
+        out.put("categoria", d.getCategoria());
+        out.put("cor", d.getCor());
+        out.put("tamanho", d.getTamanho());
+        out.put("marca", d.getMarca());
+        out.put("precoEstimado", d.getPrecoEstimado());
+        out.put("moeda", d.getMoeda());
+        out.put("estimado", true);
+        out.put("compartimentoId", lugar);
+        out.put("caminho", mapa.caminho(lugar));
+        return out;
+    }
+}

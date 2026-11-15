@@ -11,8 +11,9 @@ import type { ApiError } from "@/lib/api/client";
 import { useMirrorAvatar } from "@/components/mirror/mirror-stage";
 import { useReducedMotion } from "@/components/three/common";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
-import { NucleoActionPanel } from "@/components/flair/nucleos/nucleo-action-panel";
+import { NucleoActionSlot } from "@/components/flair/nucleos/nucleo-action-slot";
 import { MODELO_CASA, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
+import { NucleoBriefing } from "@/components/flair/nucleos/nucleo-briefing";
 import { NucleoCutscene } from "@/components/flair/nucleos/nucleo-cutscene";
 import { NucleoCardZoom } from "@/components/flair/nucleos/nucleo-card-zoom";
 import { NucleoHelp } from "@/components/flair/nucleos/nucleo-controls";
@@ -21,11 +22,12 @@ import { NucleoObjectiveDetails } from "@/components/flair/nucleos/nucleo-object
 import { NucleoResult } from "@/components/flair/nucleos/nucleo-result";
 import { NucleoSlotRuler } from "@/components/flair/nucleos/nucleo-slot-ruler";
 import { NucleoStage } from "@/components/flair/nucleos/nucleo-stage";
-import { NucleoTrigger, type AcionamentoPedido } from "@/components/flair/nucleos/nucleo-trigger";
+import type { AcionamentoPedido } from "@/components/flair/nucleos/nucleo-trigger";
 import { useCardFx } from "@/components/flair/nucleos/use-card-fx";
 import { useCardZoom } from "@/components/flair/nucleos/use-card-zoom";
 import { useFxPrefs } from "@/components/flair/nucleos/use-fx-prefs";
 import { useNucleoAction } from "@/components/flair/nucleos/use-nucleo-action";
+import { useNucleoBriefing } from "@/components/flair/nucleos/use-nucleo-briefing";
 import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-controls";
 import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
@@ -41,10 +43,11 @@ import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
 import { acionamentoDe, comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
 import { classesDoQuadro, estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
+import { respostaObrigatoria } from "@/lib/flair/nucleos/rodadas";
 import { semPlacar, varianteDaCena } from "@/lib/flair/nucleos/variante";
 import { NUCLEOS } from "@/lib/flair/nucleos/registry";
 import { buildTabs, temEscolha, type Selecao } from "@/lib/flair/nucleos/selection";
-import type { AvatarTipo, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
+import type { AvatarTipo, NucleoDefinicao, NucleoPartida, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 interface Props {
   definicao: NucleoDefinicao;
@@ -69,6 +72,8 @@ interface Props {
   onPrevia?: (sel: Selecao, avatar: AvatarTipo) => void;
   /** última apresentação que não fechou a partida (LABIRINTO) */
   tentativa?: NucleoResultado | null;
+  /** a partida aberta: a rodada e o que o jogo revelou ao entrar */
+  partida?: NucleoPartida | null;
 }
 
 const SEM_FIM = () => undefined;
@@ -88,15 +93,16 @@ export function NucleoGame(props: Props) {
   const [escolha, setEscolha] = useState<AvatarTipo | null>(null);
   const efetiva = protagonistaEfetiva(config.avatares.protagonista, escolha, !!perfil.avatar);
   const protagonista: Protagonista = efetiva === "PROPRIO" ? { avatar: perfil.avatar, sexo: perfil.sex, corpo: perfil.body } : MODELO_CASA;
-  /** o look em cena: o da entrega com a troca do intervalo que o servidor aplicou */
-  const vestidas = useMemo(() => lookComTroca(estado.sel.cartas, resultado), [estado.sel.cartas, resultado]);
+  const apresentacao = useNucleoBriefing(props.partida, props.tentativa);
+  /** o look em cena: o da entrega com a troca do intervalo que o servidor aplicou (ou o look-alvo, enquanto está à vista) */
+  const vestidas = useMemo(() => apresentacao.alvoAVista ?? lookComTroca(estado.sel.cartas, resultado), [apresentacao.alvoAVista, estado.sel.cartas, resultado]);
   const pecas = useMemo(() => pecasDoLook(vestidas, cartas), [vestidas, cartas]);
   /** a pessoa já acionou uma carta nesta partida (vale até o servidor confirmar ou recusar) */
   const [acionou, setAcionou] = useState(false);
-  const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"));
+  const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"), { partida: props.partida?.id, rodada: definicao.rodada });
   const preparando = momento === "PREPARACAO";
   const acionamento = acionamentoDe(codigo);
-  const faltaResposta = acionamento?.tipo === "RESPOSTA" && !estado.sel.resposta;
+  const faltaResposta = respostaObrigatoria(definicao) && !estado.sel.resposta;
   const pronto = temEscolha(estado.sel) && !faltaResposta;
   const emFoco = tabs[estado.aba]?.items[estado.item];
   const zoom = useCardZoom(emFoco?.kind === "carta" ? emFoco.card : null, preparando);
@@ -165,6 +171,7 @@ export function NucleoGame(props: Props) {
         resultado={resultado}
         previa={props.previa ?? null}
         variante={variante}
+        zonas={estado.sel.zonas}
         prefs={fx.prefs}
         onPref={fx.alternar}
         entrada={entrada}
@@ -176,6 +183,7 @@ export function NucleoGame(props: Props) {
       />
       <div className="n3d-lower">
         {codigo === "FASHION_DETECTIVE" && preparando && <NucleoCutscene salao={salaoDaVez(props.tentativa)} />}
+        {preparando && apresentacao.briefing && <NucleoBriefing briefing={apresentacao.briefing} cartas={cartas} aberto={apresentacao.aberto} onFechar={apresentacao.fechar} />}
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
           vestidas={vestidas}
@@ -202,6 +210,7 @@ export function NucleoGame(props: Props) {
           erro={erro}
           aviso={aviso}
           tentativa={props.tentativa}
+          briefing={apresentacao.resumo}
           onAba={(index) => dispatch({ type: "aba", index })}
           onItem={(aba, item) => {
             setAviso(null);
@@ -211,24 +220,11 @@ export function NucleoGame(props: Props) {
           onComando={(c) => disparar(c)}
           onEntregar={entregar}
           acao={
-            <NucleoActionPanel nucleo={codigo} variante={variante} passos={acao.passos} mostrados={acao.mostrados} onPular={acao.pular} esperando={acao.aberta}>
-              {acao.tipo && (
-                <NucleoTrigger
-                  tipo={acao.tipo}
-                  aberta={acao.aberta}
-                  usado={acao.usado || acionou}
-                  cartas={cartas}
-                  vestidas={vestidas}
-                  vagas={vagasDaRegua(tabs).map((v) => v.tab.id)}
-                  ocupado={!!props.acionando}
-                  erro={props.erroAcionar ?? null}
-                  acaoDe={acaoDaCarta}
-                  onAcionar={onAcionar ? acionar : undefined}
-                />
-              )}
-            </NucleoActionPanel>
+            <NucleoActionSlot nucleo={codigo} variante={variante} acao={acao} acionou={acionou} cartas={cartas} vestidas={vestidas}
+              vagas={vagasDaRegua(tabs).map((v) => v.tab.id)} ocupado={!!props.acionando} erro={props.erroAcionar ?? null}
+              acaoDe={acaoDaCarta} onAcionar={onAcionar ? acionar : undefined} />
           }
-          resultado={resultado ? <NucleoResult codigo={codigo} resultado={resultado} cartas={pontuadas.lista} semPlacar={semPlacar(definicao)} onAgain={onAgain ?? SEM_FIM} /> : null}
+          resultado={resultado ? <NucleoResult codigo={codigo} resultado={resultado} cartas={pontuadas.lista} semPlacar={semPlacar(definicao)} rodada={definicao.rodada} onAgain={onAgain ?? SEM_FIM} /> : null}
         />
         {estado.objetivo && (
           <NucleoObjectiveDetails definicao={definicao} variante={variante} onFechar={() => disparar({ acao: "VER_OBJETIVO" })}>

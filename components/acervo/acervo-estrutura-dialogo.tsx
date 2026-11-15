@@ -1,0 +1,105 @@
+"use client";
+/**
+ * ACERVO — janelas da estrutura: criar ambiente, móvel ou compartimento, renomear e apagar. Apagar avisa que as peças
+ * não somem: ficam sem lugar.
+ */
+import { useEffect, useState } from "react";
+import { Button, Dialog, Field, Input, Select } from "@/components/ui";
+import { useI18n } from "@/lib/i18n/i18n";
+import { acervoApi } from "@/lib/acervo/api";
+import { chaveTipo, movelPadrao, TIPOS } from "@/lib/acervo/opcoes";
+import type { AcervoModo, AcervoTipo } from "@/lib/acervo/types";
+import { useAcervo } from "./acervo-contexto";
+
+export type AlvoEstrutura = { classe: "AMBIENTE" | "MOVEL" | "COMPARTIMENTO"; id: string; nome: string };
+export type PedidoEstrutura =
+  | { acao: "NOVO_AMBIENTE" }
+  | { acao: "NOVO_MOVEL"; ambienteId: string; modo: AcervoModo }
+  | { acao: "NOVO_COMPARTIMENTO"; movelId: string }
+  | { acao: "RENOMEAR"; alvo: AlvoEstrutura }
+  | { acao: "APAGAR"; alvo: AlvoEstrutura };
+
+const TITULO: Record<PedidoEstrutura["acao"], string> = {
+  NOVO_AMBIENTE: "acervo.estrutura.novoAmbiente",
+  NOVO_MOVEL: "acervo.estrutura.novoMovel",
+  NOVO_COMPARTIMENTO: "acervo.estrutura.novoCompartimento",
+  RENOMEAR: "acervo.estrutura.renomear",
+  APAGAR: "acervo.estrutura.apagar",
+};
+
+export function EstruturaDialogo({ pedido, onClose }: { pedido: PedidoEstrutura | null; onClose: () => void }) {
+  const { t } = useI18n();
+  const { dados } = useAcervo();
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<AcervoTipo>("GAVETA");
+
+  useEffect(() => {
+    setNome(pedido?.acao === "RENOMEAR" ? pedido.alvo.nome : "");
+    setTipo("GAVETA");
+  }, [pedido]);
+
+  if (!pedido) return null;
+  const apagar = pedido.acao === "APAGAR";
+  const precisaNome = !apagar && pedido.acao !== "NOVO_COMPARTIMENTO";
+  const valido = !precisaNome || nome.trim().length > 0;
+
+  async function enviar() {
+    if (!pedido || !valido) return;
+    const limpo = nome.trim();
+    const ok = await dados.executar(() => acao(pedido, limpo, tipo), t(apagar ? "acervo.estrutura.apagado" : "acervo.estrutura.salvo"));
+    if (ok) onClose();
+  }
+
+  return (
+    <Dialog open onClose={onClose} title={t(TITULO[pedido.acao])} role={apagar ? "alertdialog" : "dialog"}
+      footer={<>
+        <Button variant="ghost" onClick={onClose}>{t("common.cancel")}</Button>
+        <Button variant="primary" disabled={!valido} loading={dados.ocupado} onClick={() => { void enviar(); }}>
+          {t(apagar ? "acervo.estrutura.confirmarApagar" : "common.save")}
+        </Button>
+      </>}>
+      {apagar && <p className="type-body">{t("acervo.estrutura.apagarAviso", { nome: pedido.alvo.nome })}</p>}
+      {pedido.acao === "NOVO_COMPARTIMENTO" && (
+        <Field label={t("acervo.estrutura.tipo")} id="acv-tipo">
+          <Select id="acv-tipo" value={tipo} onChange={(e) => setTipo(e.target.value as AcervoTipo)}>
+            {TIPOS.map((opcao) => <option key={opcao} value={opcao}>{t(chaveTipo(opcao))}</option>)}
+          </Select>
+        </Field>
+      )}
+      {!apagar && (
+        <Field label={t("acervo.estrutura.nome")} id="acv-nome" required={precisaNome}
+          hint={pedido.acao === "NOVO_COMPARTIMENTO" ? t("acervo.estrutura.nomeOpcional") : undefined}>
+          <Input id="acv-nome" value={nome} maxLength={80} autoFocus onChange={(e) => setNome(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void enviar(); }} />
+        </Field>
+      )}
+    </Dialog>
+  );
+}
+
+function acao(pedido: PedidoEstrutura, nome: string, tipo: AcervoTipo): Promise<unknown> {
+  switch (pedido.acao) {
+    case "NOVO_AMBIENTE":
+      return acervoApi.criarAmbiente(nome);
+    case "NOVO_MOVEL":
+      return acervoApi.criarMovel(pedido.ambienteId, movelPadrao(pedido.modo, nome));
+    case "NOVO_COMPARTIMENTO":
+      return acervoApi.criarCompartimento(pedido.movelId, tipo, nome || undefined);
+    case "RENOMEAR":
+      return renomear(pedido.alvo, nome);
+    case "APAGAR":
+      return apagar(pedido.alvo);
+  }
+}
+
+function renomear(alvo: AlvoEstrutura, nome: string): Promise<unknown> {
+  if (alvo.classe === "AMBIENTE") return acervoApi.renomearAmbiente(alvo.id, nome);
+  if (alvo.classe === "MOVEL") return acervoApi.atualizarMovel(alvo.id, { nome });
+  return acervoApi.renomearCompartimento(alvo.id, nome);
+}
+
+function apagar(alvo: AlvoEstrutura): Promise<unknown> {
+  if (alvo.classe === "AMBIENTE") return acervoApi.apagarAmbiente(alvo.id);
+  if (alvo.classe === "MOVEL") return acervoApi.apagarMovel(alvo.id);
+  return acervoApi.apagarCompartimento(alvo.id);
+}

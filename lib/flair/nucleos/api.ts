@@ -24,17 +24,26 @@ export function buscarNucleo(codigo: NucleoCodigo, signal?: AbortSignal): Promis
   return api.get<NucleoDefinicao>(`${BASE}/nucleos/${codigo}`, { signal, anonymous: true });
 }
 
+/** Para onde valem os selos: a partida aberta (rodada e sorteio dela) ou, antes de entrar, a rodada escolhida. */
+export interface OndeDosEfeitos {
+  rodada?: string | null;
+  partida?: string | null;
+}
+
 /** Efeito de cada carta da pessoa neste núcleo (logado; só cartas da própria pessoa). */
-export function efeitosDasCartas(codigo: NucleoCodigo, cartas: string[], signal?: AbortSignal): Promise<EfeitosResposta> {
-  return api.post<EfeitosResposta>(`${BASE}/nucleos/${codigo}/efeitos`, { cartas }, { signal });
+export function efeitosDasCartas(codigo: NucleoCodigo, cartas: string[], signal?: AbortSignal, onde: OndeDosEfeitos = {}): Promise<EfeitosResposta> {
+  const corpo = onde.partida ? { cartas, partida: onde.partida } : onde.rodada ? { cartas, rodada: onde.rodada } : { cartas };
+  return api.post<EfeitosResposta>(`${BASE}/nucleos/${codigo}/efeitos`, corpo, { signal });
 }
 
 /**
  * Abre a partida com o deck escolhido (o servidor confere tamanho, obrigatórias e dono: 422 DECK_INVALIDO com o que
  * falta). `avatar` = MODELO_CASA quando a pessoa joga com a modelo da casa (só onde o núcleo aceita).
  */
-export function abrirPartida(codigo: NucleoCodigo, deck: string[], avatar?: AvatarTipo | null): Promise<NucleoPartida> {
-  return api.post<NucleoPartida>(`${BASE}/nucleos/${codigo}/partidas`, avatar ? { deck, avatar } : { deck });
+export function abrirPartida(codigo: NucleoCodigo, deck: string[], avatar?: AvatarTipo | null, rodada?: string | null): Promise<NucleoPartida> {
+  const corpo: Record<string, unknown> = avatar ? { deck, avatar } : { deck };
+  if (rodada) corpo.rodada = rodada;
+  return api.post<NucleoPartida>(`${BASE}/nucleos/${codigo}/partidas`, corpo);
 }
 
 /**

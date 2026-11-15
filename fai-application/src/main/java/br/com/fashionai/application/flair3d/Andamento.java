@@ -10,17 +10,25 @@ import java.util.UUID;
 /**
  * Andamento de uma partida (coluna {@code estado_json}): quantas entregas já foram apresentadas, contando a atual, e os
  * acionamentos feitos depois da entrega, na ordem. O núcleo recalcula a partida inteira a partir da semente, da entrega e
- * deste andamento, então o resultado de cada etapa é sempre o mesmo.
+ * deste andamento, então o resultado de cada etapa é sempre o mesmo. {@code rodada} é a rodada escolhida ao abrir a partida
+ * (nula nas partidas antigas: vale o objetivo mais simples do jogo).
  */
-public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores) {
+public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada) {
     /** Primeira entrega, sem acionamento. */
     public static final Andamento INICIO = new Andamento(1, List.of());
 
-    /** Uma entrega anterior da mesma partida (FASHION_DETECTIVE: um salão já jogado): o look e o que foi acionado nele. */
-    public record Etapa(Map<String, UUID> cartas, List<Acionamento> acionamentos) {
+    /**
+     * Uma entrega anterior da mesma partida (FASHION_DETECTIVE: um salão já jogado): o look, o que foi acionado nele e a
+     * resposta que veio junto (a porta escolhida no LABIRINTO).
+     */
+    public record Etapa(Map<String, UUID> cartas, List<Acionamento> acionamentos, String resposta) {
         public Etapa {
             cartas = cartas == null ? Map.of() : Map.copyOf(cartas);
             acionamentos = acionamentos == null ? List.of() : List.copyOf(acionamentos);
+        }
+
+        public Etapa(Map<String, UUID> cartas, List<Acionamento> acionamentos) {
+            this(cartas, acionamentos, null);
         }
     }
 
@@ -30,7 +38,21 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
     }
 
     public Andamento(int tentativas, List<Acionamento> acionamentos) {
-        this(tentativas, acionamentos, List.of());
+        this(tentativas, acionamentos, List.of(), null);
+    }
+
+    public Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores) {
+        this(tentativas, acionamentos, anteriores, null);
+    }
+
+    /** Partida recém-aberta na rodada dada: ainda sem tentativa. */
+    public static Andamento naRodada(String rodada) {
+        return new Andamento(0, List.of(), List.of(), rodada);
+    }
+
+    /** O mesmo andamento, na rodada dada. */
+    public Andamento comRodada(String nova) {
+        return new Andamento(tentativas, acionamentos, anteriores, nova);
     }
 
     /** O andamento gravado na partida; partida nova ainda não tem tentativa. */
@@ -45,7 +67,7 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
     }
 
     public Andamento proximaTentativa() {
-        return new Andamento(tentativas + 1, List.of(), anteriores);
+        return new Andamento(tentativas + 1, List.of(), anteriores, rodada);
     }
 
     /** A próxima entrega, guardando a que veio antes (nula na primeira) como etapa já jogada. */
@@ -54,14 +76,14 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
             return proximaTentativa();
         }
         List<Etapa> out = new ArrayList<>(anteriores);
-        out.add(new Etapa(anterior.cartas(), acionamentos));
-        return new Andamento(tentativas + 1, List.of(), out);
+        out.add(new Etapa(anterior.cartas(), acionamentos, anterior.resposta()));
+        return new Andamento(tentativas + 1, List.of(), out, rodada);
     }
 
     public Andamento com(Acionamento novo) {
         List<Acionamento> out = new ArrayList<>(acionamentos);
         out.add(novo);
-        return new Andamento(tentativas, out, anteriores);
+        return new Andamento(tentativas, out, anteriores, rodada);
     }
 
     /** Todas as cartas usadas nos acionamentos e nas etapas anteriores. */

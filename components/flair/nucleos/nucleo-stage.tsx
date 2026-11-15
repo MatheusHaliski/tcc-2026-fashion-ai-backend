@@ -4,6 +4,8 @@
  * livre), a camada de efeitos das cartas atrás e ao lado dela e as informações nos quatro cantos. Nenhum painel,
  * efeito ou texto entra na zona da roupa.
  */
+import { avataresDaSala } from "@/lib/flair/nucleos/avatares";
+import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import Link from "next/link";
 import type { Look3dPiece } from "@/components/three/common";
 import { NucleoActionFx } from "@/components/flair/nucleos/nucleo-action-fx";
@@ -22,7 +24,7 @@ import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { FxPrefs } from "@/lib/flair/nucleos/fx-sound";
 import { comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
-import type { AvatarTipo, NucleoConfig, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
+import type { AvatarTipo, NucleoConfig, NucleoDefinicao, NucleoResultado, ZonaEscolha } from "@/lib/flair/nucleos/types";
 
 export interface NucleoStageProps {
   definicao: NucleoDefinicao;
@@ -41,6 +43,8 @@ export interface NucleoStageProps {
   previa: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
+  /** o que a pessoa já pintou em cada zona (modos do Ateliê) */
+  zonas?: Record<string, ZonaEscolha>;
   prefs: FxPrefs;
   onPref: (campo: keyof FxPrefs) => void;
   entrada: EntradaNaTela | null;
@@ -58,7 +62,8 @@ export function NucleoStage(props: NucleoStageProps) {
   const naAcao = momento === "ACAO" || momento === "RESULTADO";
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} />
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante}
+        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} variante={props.variante} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
@@ -76,7 +81,7 @@ export function NucleoStage(props: NucleoStageProps) {
           definicao.avatares ? (
             <NucleoCast
               compacto
-              avatares={definicao.avatares}
+              avatares={avataresDaSala(definicao.avatares, salaDe(definicao.codigo, props.variante).personagens)}
               efetiva={props.efetiva}
               aceitos={config.avatares.protagonista}
               temAvatar={props.temAvatar}

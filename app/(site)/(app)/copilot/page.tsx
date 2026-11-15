@@ -191,7 +191,7 @@ function Copilot() {
               {m.reply?.actions?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.actions.map((a, j) => a.type === "COMPOSE_WITH" ? <Button key={j} size="sm" variant="primary" onClick={() => accept(a)}>{a.label ?? t("scheme.create")}</Button> : a.href ? <Link key={j} href={a.href === "/add-piece" ? "/pieces/new" : a.href} className="btn btn-sm">{a.label ?? a.type}</Link> : null)}</div> : null}
               {m.reply?.challengeNotice && <p className="mt-2 type-caption text-chalk">{m.reply.challengeNotice}</p>}
               {m.reply?.momentNotice && <p className="mt-2 type-caption text-thread">{m.reply.momentNotice}{m.reply.moment && <> · <Link href={`/moments/${m.reply.moment.slug}`} className="underline">{m.reply.moment.name}</Link></>}</p>}
-              {m.reply?.explanation?.provider && <p className="mt-1 type-caption text-faint">{m.reply.fallbackUsed ? t("copilot.motor_local") : m.reply.explanation.provider} · {m.reply.intent}</p>}
+              {m.reply?.explanation?.provider && <p className="mt-1 type-caption text-faint">{m.reply.fallbackUsed ? t("copilot.motor_local") : m.reply.explanation.provider}</p>}
             </CopilotChatMessage>
           ))}
           {busy && <p className="type-body text-muted">…</p>}

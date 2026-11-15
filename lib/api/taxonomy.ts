@@ -37,7 +37,9 @@ export const label = (s?: string | null) => {
   const locale = getCurrentLocale();
   const k = key.toLowerCase();
   const hit = TABLES[baseLocale(locale)][k] ?? PT_LABELS[k];
-  const out = hit ?? key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  // numeração de calçado ("shoe_38"): só o número, nunca "Shoe 38"
+  const shoe = /^shoe_(\d+)$/.exec(k);
+  const out = hit ?? shoe?.[1] ?? key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
   return locale === PSEUDO_LOCALE ? pseudo(out) : out;
 };
 

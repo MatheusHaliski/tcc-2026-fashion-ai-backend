@@ -93,6 +93,12 @@ describe("um elenco", () => {
     expect(pecas().every((p) => p === "verde")).toBe(true);
     expect(within(reveal).getAllByRole("img").map((i) => i.getAttribute("alt"))).toEqual(["Brinco", "Camisa", "Bolsa", "Saia", "Sapato"]);
     expect(screen.getByTestId("elenco-jigsaw").textContent).toContain("edição 7");
+    // reauditoria: a entrega diz que deu certo e o que foi ganho (antes só a etiqueta "edição" e o botão desligado)
+    const entregue = screen.getByTestId("elenco-delivered");
+    expect(entregue.getAttribute("role")).toBe("status");
+    expect(entregue.textContent).toContain("Elenco entregue!");
+    expect(entregue.textContent).toContain("Você ganhou a imagem exclusiva de Primeiro Elenco, edição nº 7.");
+    expect(within(entregue).getByRole("link", { name: "Ver os outros elencos" }).getAttribute("href")).toBe("/flair/elencos");
     expect(calls.filter((c) => c.path.endsWith("/entrega"))[0].body).toEqual({ cartas: { acessorio: "a1", cima: "s1", bolsa: "b1", baixo: "i1", calcado: "c1" } });
   });
 });

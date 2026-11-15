@@ -31,6 +31,9 @@ import java.util.UUID;
  * <p>A luta anda em etapas: a entrega joga o round 1 (EM_ACAO) e cada acionamento joga o round seguinte; o terceiro round
  * fecha a partida. Entre os rounds a pessoa pode acionar UMA carta Especial do deck por luta: ela soma o poder dela
  * ({@link #poder}) ao atributo do round seguinte.</p>
+ *
+ * <p>As rodadas são arenas: a da base e duas com oponente de atributos próprios ({@link #ARENAS}). Nessas duas, cada round
+ * tem um impulso de −5 a +5 tirado da semente, igual na revisão. O oponente aparece ao entrar na partida.</p>
  */
 public class DressFighterNucleo implements Flair3dNucleo {
     public static final int OPONENTE = 40;
@@ -39,6 +42,12 @@ public class DressFighterNucleo implements Flair3dNucleo {
     public static final int PODER_BASE = 20;
     public static final List<String> VAGAS = List.of("SUP", "INF", "CAL", "ACE");
     static final String[] ATRIBUTOS = {"VELOCIDADE", "ATAQUE", "DEFESA"};
+    public static final String ARENA_VELOZ = "ARENA_VELOZ";
+    public static final String ARENA_BLINDADA = "ARENA_BLINDADA";
+    public static final int IMPULSO = 5;
+    /** Velocidade, ataque e defesa do oponente de cada arena. */
+    public static final Map<String, int[]> ARENAS = Map.of(ARENA_VELOZ, new int[]{60, 35, 45}, ARENA_BLINDADA, new int[]{40, 50, 65});
+    static final int[] PADRAO = {OPONENTE, OPONENTE, OPONENTE};
 
     @Override
     public String codigo() {
@@ -55,7 +64,29 @@ public class DressFighterNucleo implements Flair3dNucleo {
         return Definicao.cartas(codigo(), numero(),
                 Definicao.objetivo("VENCER_2_DE_3", new Regra("VITORIA", 100), new Regra("UM_ROUND", 50)),
                 List.of(Definicao.CARTAS), VAGAS, Deck.ate(6, Obrigatoria.uma("CAL")), false)
-                .comAvatares(Avatares.solo(new Avatares.Online(1, 1, null), Avatares.figurante("OPONENTE", 1)));
+                .comAvatares(Avatares.solo(new Avatares.Online(1, 1, null), Avatares.figurante("OPONENTE", 1)))
+                .comRodadas(Definicao.Rodada.de(ARENA_VELOZ, new Regra("VITORIA", 100), new Regra("UM_ROUND", 50)),
+                        Definicao.Rodada.de(ARENA_BLINDADA, new Regra("VITORIA", 100), new Regra("UM_ROUND", 50)));
+    }
+
+    /** Os atributos do oponente da arena da partida. */
+    static int[] oponente(Contexto contexto) {
+        return ARENAS.getOrDefault(String.valueOf(contexto.rodada()), PADRAO);
+    }
+
+    /** O impulso do round (0 na arena da base): de −5 a +5, tirado da semente. */
+    static int impulso(Contexto contexto, int round) {
+        return ARENAS.containsKey(String.valueOf(contexto.rodada())) ? contexto.sorteio("impulso" + round).nextInt(2 * IMPULSO + 1) - IMPULSO : 0;
+    }
+
+    @Override
+    public Map<String, Object> abertura(Contexto contexto) {
+        int[] o = oponente(contexto);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("velocidade", o[0]);
+        m.put("ataque", o[1]);
+        m.put("defesa", o[2]);
+        return Map.of("oponente", m);
     }
 
     /** O que a carta Especial soma ao atributo do round em que entra: 20 mais um décimo do OVR. */
@@ -91,16 +122,20 @@ public class DressFighterNucleo implements Flair3dNucleo {
 
     /** O round: quem ataca (no 1, o mais veloz; no 2, a pessoa; no 3, o oponente), os valores e quem venceu. */
     static Map<String, Object> round(int i, int voce) {
-        boolean venceu = voce > OPONENTE;
+        return round(i, voce, OPONENTE);
+    }
+
+    static Map<String, Object> round(int i, int voce, int oponente) {
+        boolean venceu = voce > oponente;
         boolean ataca = i == 1 || (i == 0 && venceu);
         Map<String, Object> round = new LinkedHashMap<>();
         round.put("round", i + 1);
         round.put("atributo", ATRIBUTOS[i]);
         round.put("voce", voce);
-        round.put("oponente", OPONENTE);
+        round.put("oponente", oponente);
         round.put("atacante", ataca ? "VOCE" : "OPONENTE");
-        round.put("valorAtacante", ataca ? voce : OPONENTE);
-        round.put("valorDefensor", ataca ? OPONENTE : voce);
+        round.put("valorAtacante", ataca ? voce : oponente);
+        round.put("valorDefensor", ataca ? oponente : voce);
         round.put("venceu", venceu);
         return round;
     }
@@ -125,7 +160,11 @@ public class DressFighterNucleo implements Flair3dNucleo {
                 especial.put("poder", poder(especiais[i]));
                 eventos.add(new Evento(ESPECIAL, especial));
             }
-            Map<String, Object> round = round(i, valor);
+            int impulso = impulso(contexto, i);
+            if (impulso != 0) {
+                eventos.add(new Evento("IMPULSO", Map.of("round", i + 1, "impulso", impulso)));
+            }
+            Map<String, Object> round = round(i, valor + impulso, oponente(contexto)[i]);
             vitorias += Boolean.TRUE.equals(round.get("venceu")) ? 1 : 0;
             eventos.add(new Evento("ROUND", round));
         }

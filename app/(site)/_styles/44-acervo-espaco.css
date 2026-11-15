@@ -1,0 +1,220 @@
+/* ── ACERVO · view 2, Meu espaço (components/acervo/espaco): palco com a cena 3D (ou o esquema 2D), barra da cena,
+   gaveta expandida projetada à frente do móvel, bandeja das peças sem lugar e painel de configuração. */
+.acv-espaco {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+  min-width: 0;
+}
+
+.acv-modos {
+  justify-self: center;
+}
+
+.acv-palco {
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+  border: 1px solid var(--acv-linha);
+  border-radius: var(--acv-raio);
+  background: linear-gradient(180deg, #EDE6D8 0%, #E3D9C6 62%, #D8CDBA 100%);
+}
+
+.acv-palco[data-modo="DREAM_SPACE"] {
+  background: linear-gradient(180deg, #F4F7F8 0%, #E9EDEE 100%);
+}
+
+.acv-cena3d {
+  height: clamp(420px, 58vh, 640px);
+}
+
+.acv-cena3d canvas {
+  display: block;
+}
+
+.acv-cena2d {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) 72px;
+  color: #2A2B2A;
+}
+
+.acv-cena2d .acv-dica {
+  color: #4A4B47;
+}
+
+.acv-ferramentas {
+  position: absolute;
+  bottom: var(--space-3);
+  left: 50%;
+  display: flex;
+  max-width: calc(100% - 16px);
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--acv-linha);
+  border-radius: 999px;
+  background: var(--acv-cartao);
+  box-shadow: var(--acv-sombra);
+  transform: translateX(-50%);
+}
+
+.acv-ferramentas button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--control-sm);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--acv-tinta);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.acv-ferramentas button[aria-pressed="true"] {
+  background: var(--acv-lima);
+  color: var(--acv-lima-tinta);
+  font-weight: 600;
+}
+
+.acv-expandida {
+  position: absolute;
+  right: var(--space-3);
+  bottom: 64px;
+  left: var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+  max-height: 56%;
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 2px solid var(--acv-lima);
+  border-radius: 14px;
+  background: var(--acv-cartao);
+  box-shadow: 0 0 0 1px var(--acv-tinta), 0 18px 40px -16px rgb(0 0 0 / 45%);
+  color: var(--acv-tinta);
+}
+
+.acv-expandida.is-gaveta {
+  border-bottom: 10px solid var(--acv-madeira);
+}
+
+.acv-expandida-cabeca {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.acv-expandida-cabeca h3 {
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.acv-expandida-pecas,
+.acv-bandeja ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acv-expandida-peca,
+.acv-bandeja-peca {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 0 0 4px;
+  border: 1px solid var(--acv-linha);
+  border-radius: 10px;
+  background: var(--acv-cartao);
+  color: inherit;
+  font-size: var(--text-caption);
+  text-align: left;
+  cursor: grab;
+}
+
+.acv-expandida-peca .acv-foto,
+.acv-bandeja-peca .acv-foto {
+  border-radius: 9px 9px 0 0;
+}
+
+.acv-expandida-nome,
+.acv-bandeja-peca > span:last-child {
+  overflow: hidden;
+  padding: 0 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acv-expandida-peca.is-achada {
+  box-shadow: 0 0 0 2px var(--acv-lima), 0 0 0 3px var(--acv-tinta);
+}
+
+.acv-expandida-peca.is-parada {
+  border-color: var(--acv-alerta);
+}
+
+.acv-expandida-peca.is-fantasma {
+  border-style: dashed;
+  border-color: var(--acv-tinta);
+  background: color-mix(in srgb, var(--acv-lima) 35%, var(--acv-cartao));
+  cursor: default;
+}
+
+.acv-expandida-peca .acv-marcador {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.acv-bandeja {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.acv-espaco-lateral {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.acv-config-resumo,
+.acv-dream-desejos {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-body-sm);
+  list-style: none;
+}
+
+.acv-config-resumo li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.acv-amostra {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--acv-tinta);
+  border-radius: 50%;
+  background: var(--acv-amostra);
+}
+
+@container acv (min-width: 880px) {
+  .acv-espaco {
+    grid-template-columns: minmax(0, 1fr) 264px;
+  }
+
+  .acv-expandida {
+    right: var(--space-4);
+    left: auto;
+    width: min(52%, 460px);
+  }
+}

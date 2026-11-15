@@ -83,14 +83,14 @@ it("requires reconfirmation when catalog gender changes since the saved version"
   await waitFor(() =>
     expect(
       screen.getByRole("button", {
-        name: "TipoLook final — confirmação do criador",
+        name: "Tipo de look final (confirmação de quem cria)",
       }).textContent,
     ).toContain("Escolha para confirmar"),
   );
   expect(
     (
       screen.getByRole("button", {
-        name: "Exportar GLB confirmado",
+        name: "Exportar arquivo 3D final",
       }) as HTMLButtonElement
     ).disabled,
   ).toBe(true);

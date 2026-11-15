@@ -157,6 +157,6 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
       <Rig view={view} target={target} dist={dist} yaw={cameraYaw} /><OrbitControls ref={controls} target={target} enablePan={false} minDistance={1.4} maxDistance={dist * 1.25} maxPolarAngle={Math.PI * .52} />
       <CameraSteps controls={controls} dist={dist} target={target} view={view} yaw={cameraYaw} reduced={reduced} human={human} onCamera={onCamera} />
     </Canvas>
-    <p className="pointer-events-none absolute bottom-3 left-3 rounded-md bg-white/90 px-3 py-1 text-xs text-neutral-700">{t("tryOn.studio_conceptual")}</p>
+    <p className="fitting-stage-tag pointer-events-none rounded-md bg-white/90 px-3 py-1 text-xs text-neutral-700">{t("tryOn.studio_conceptual")}</p>
   </div>;
 }

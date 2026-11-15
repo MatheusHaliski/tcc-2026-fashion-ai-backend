@@ -10,6 +10,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
+import br.com.fashionai.application.flair3d.Flair3dPercurso;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
@@ -37,7 +38,26 @@ public class Boutique3dNucleo implements Flair3dNucleo {
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("FESTA_EM_PRETO", new Regra("PEDIDO", POR_PECA)),
                 List.of(Definicao.CARTAS), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF")), false)
-                .comAvatares(Avatares.solo(null, Avatares.figurante("CLIENTE", 1)));
+                .comAvatares(Avatares.solo(null, Avatares.figurante("CLIENTE", 1)))
+                .comRodadas(Boutique3dRodadas.rodadas().toArray(Definicao.Rodada[]::new));
+    }
+
+    @Override
+    public Map<String, Object> abertura(Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = Boutique3dRodadas.etapas(contexto);
+        if (etapas == null) {
+            return Map.of();
+        }
+        // o gosto do dia vale para os 3 manequins: a tela mostra junto de cada etapa
+        return Boutique3dRodadas.VITRINE.equals(contexto.rodada())
+                ? Map.of("etapa", Flair3dPercurso.primeira(etapas), "nota", contexto.sortear("gosto", Boutique3dRodadas.GOSTOS).codigo())
+                : Map.of("etapa", Flair3dPercurso.primeira(etapas));
+    }
+
+    @Override
+    public Resultado previa(Entrega entrega, Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = Boutique3dRodadas.etapas(contexto);
+        return etapas == null ? pontuar(entrega, contexto) : Flair3dPercurso.previa(entrega, contexto, etapas);
     }
 
     static boolean bate(CbcRules.Card c) {
@@ -46,6 +66,10 @@ public class Boutique3dNucleo implements Flair3dNucleo {
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
+        Flair3dPercurso.Etapas etapas = Boutique3dRodadas.etapas(contexto);
+        if (etapas != null) {
+            return Flair3dPercurso.pontuar(entrega, contexto, etapas);
+        }
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
         List<RegraResultado> regras = Flair3dPecas.porVaga(VAGAS, vestidas, "PEDIDO", POR_PECA, Boutique3dNucleo::bate);
         boolean todas = regras.stream().allMatch(RegraResultado::ok);
@@ -56,6 +80,9 @@ public class Boutique3dNucleo implements Flair3dNucleo {
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
+        if (contexto.rodada() != null && !"FESTA_EM_PRETO".equals(contexto.rodada())) {
+            return List.of(Efeito.conformeAEtapa());
+        }
         return bate(carta) ? List.of(new Efeito("PEDIDO", POR_PECA)) : List.of(Efeito.motivo("FORA_DO_PEDIDO"));
     }
 }

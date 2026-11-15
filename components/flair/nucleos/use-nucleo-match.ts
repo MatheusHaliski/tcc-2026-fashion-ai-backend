@@ -10,6 +10,7 @@ import { useAction, useApi } from "@/lib/hooks/use-api";
 import type { FlairCollection } from "@/components/flair/flair-collection";
 import { abrirPartida, acionarPartida, buscarNucleo, entregarPartida } from "@/lib/flair/nucleos/api";
 import { mesclarDefinicao } from "@/lib/flair/nucleos/registry";
+import { definicaoDaRodada, temRodadas } from "@/lib/flair/nucleos/rodadas";
 import { toEntrega, type Selecao } from "@/lib/flair/nucleos/selection";
 import type { AvatarTipo, NucleoAcionamento, NucleoCodigo, NucleoPartida, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -26,7 +27,10 @@ function corpoDoAcionamento({ cardId, vaga }: AcionamentoDaPessoa): NucleoAciona
 
 export function useNucleoMatch(codigo: NucleoCodigo) {
   const def = useApi((signal) => buscarNucleo(codigo, signal), [codigo]);
-  const definicao = useMemo(() => mesclarDefinicao(codigo, def.data), [codigo, def.data]);
+  /** a rodada escolhida antes de entrar (jogo sem rodadas para escolher: null, vale o objetivo da definição) */
+  const [rodada, setRodada] = useState<string | null>(null);
+  const inteira = useMemo(() => mesclarDefinicao(codigo, def.data), [codigo, def.data]);
+  const definicao = useMemo(() => definicaoDaRodada(inteira, rodada), [inteira, rodada]);
   const usaCartas = definicao.recursos.includes("CARTAS");
   const semDeck = !usaCartas || !!definicao.deck?.semDeck;
   const aceitaModelo = !!definicao.avatares?.solo.some((a) => a.tipo === "MODELO_CASA");
@@ -40,7 +44,7 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
   const abertura = useRef<{ chave: string; promessa: Promise<NucleoPartida> } | null>(null);
 
   const abrir = useAction(async (escolhido: string[]) => {
-    const p = await abrirPartida(codigo, escolhido);
+    const p = await abrirPartida(codigo, escolhido, null, rodada);
     setPartida(p);
     setDeck(escolhido);
     return p;
@@ -51,9 +55,9 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
     (avatar: AvatarTipo): Promise<NucleoPartida | null> => {
       if (!semDeck) return Promise.resolve(partida);
       const modelo = aceitaModelo && avatar === "MODELO_CASA" ? avatar : null;
-      const chave = modelo ?? "";
+      const chave = `${modelo ?? ""}:${rodada ?? ""}`;
       if (abertura.current?.chave === chave) return abertura.current.promessa;
-      const promessa = abrirPartida(codigo, [], modelo).then((p) => {
+      const promessa = abrirPartida(codigo, [], modelo, rodada).then((p) => {
         setPartida(p);
         return p;
       });
@@ -63,7 +67,7 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
       });
       return promessa;
     },
-    [semDeck, partida, aceitaModelo, codigo],
+    [semDeck, partida, aceitaModelo, codigo, rodada],
   );
 
   const entrega = useAction(async (sel: Selecao, avatar: AvatarTipo) => {
@@ -97,12 +101,17 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
     setDeck(null);
     setResultado(null);
     setTentativa(null);
+    setRodada(null);
     abertura.current = null;
     acionamento.setError(null);
   };
 
   return {
     definicao,
+    inteira,
+    rodada,
+    escolherRodada: setRodada,
+    precisaRodada: temRodadas(inteira) && !rodada,
     definicaoErro: def.error,
     carregando: def.loading && !def.data,
     banco: bank,

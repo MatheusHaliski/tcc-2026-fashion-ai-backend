@@ -20,7 +20,7 @@ export function NucleoObjective({ definicao, variante, aberto, onToggle }: { def
     <section className="n3d-objective" aria-labelledby="n3d-objective-title" data-testid="nucleo-objective">
       <button type="button" className="n3d-objective-line" aria-expanded={aberto} aria-controls={PAINEL} title={acao} onClick={onToggle}>
         <span id="n3d-objective-title" className="n3d-objective-name">{tx.nome(c)}</span>
-        <span className="n3d-objective-text">{tx.daVariante(c, "objective", variante)}</span>
+        <span className="n3d-objective-text">{definicao.rodada ? tx.rodadaObjetivo(c, definicao.rodada) : tx.daVariante(c, "objective", variante)}</span>
         <span className="sr-only">{acao}</span>
       </button>
     </section>
@@ -38,7 +38,8 @@ export function NucleoObjectiveDetails({ definicao, variante, onFechar, children
           {tx.t("flair3d.ui.objective.hide")}
         </button>
       </div>
-      <p className="n3d-objective-goal">{tx.daVariante(c, "objective", variante)}</p>
+      {definicao.rodada && <p className="type-label" data-testid="nucleo-objective-round">{tx.rodadaNome(c, definicao.rodada)}</p>}
+      <p className="n3d-objective-goal">{definicao.rodada ? tx.rodadaObjetivo(c, definicao.rodada) : tx.daVariante(c, "objective", variante)}</p>
       <p>{tx.daVariante(c, "scene", variante)}</p>
       <p>{tx.daVariante(c, "characters", variante)}</p>
       <h3 className="type-label">{tx.t("flair3d.ui.objective.rules")}</h3>

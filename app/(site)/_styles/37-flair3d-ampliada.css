@@ -114,3 +114,96 @@
   top: 4px;
   right: 4px;
 }
+
+/* ── Escolha da rodada (nucleo-rounds.tsx): uma lista de botões grandes, um por rodada do jogo. */
+.n3d-rounds {
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.n3d-rounds-list {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.n3d-round {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.n3d-round:hover,
+.n3d-round:focus-visible {
+  border-color: var(--mark);
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+
+.n3d-round-name {
+  font-weight: 700;
+}
+
+.n3d-round-steps,
+.n3d-round-rules {
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.n3d-round-go {
+  justify-self: start;
+  margin-top: 4px;
+  color: var(--mark);
+  font-weight: 600;
+  font-size: var(--text-caption);
+}
+
+@media (min-width: 900px) {
+  .n3d-rounds-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── Aviso do deck, look-alvo do briefing e dicas do resultado. */
+.n3d-deck-warning {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--thread);
+  background: var(--surface-2);
+}
+
+.n3d-briefing-alvo {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.n3d-briefing-alvo li {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.n3d-result-hints {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.n3d-result-hints.is-full {
+  padding-left: 0;
+  color: var(--muted);
+}

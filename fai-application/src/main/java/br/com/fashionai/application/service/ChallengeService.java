@@ -277,12 +277,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     }
 
     void requireSlot(UUID userId) {
-        if (activeCount(userId) >= MAX_ACTIVE) {
-            List<Map<String, Object>> active = mineRaw(userId).stream().filter(m -> ATIVO.equals(m.get("state")) || AGUARDANDO.equals(m.get("state")))
-                    .map(m -> Map.<String, Object>of("id", m.get("id"), "name", m.get("name"))).toList();
-            throw new ApiException(409, "LIMITE_DESAFIOS", Msg.t("challenge.voce_ja_tem_desafios_ativos", MAX_ACTIVE),
-                    Map.of("active", active));
-        }
+        ChallengeSlotPolicy.requireSlot(activeCount(userId), MAX_ACTIVE, () -> mineRaw(userId));
     }
 
     // ================================================================== criar / iniciar (CA03/CA04)
@@ -304,6 +299,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         boolean draft = Boolean.TRUE.equals(req.draft());
         if (!draft) {
             requireSlot(user.id());
+            ChallengeSlotPolicy.requireNotPlaying(mineRaw(user.id()), t.getCode(), tplName(t));
         }
         Map<String, Object> params = validateParams(user, t, mode, req.params() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(req.params()));
         ChallengeInstance i = new ChallengeInstance();

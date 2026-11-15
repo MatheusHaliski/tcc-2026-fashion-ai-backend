@@ -1,0 +1,191 @@
+/* ── ACERVO · corpo da tela e diretório lateral (components/acervo/acervo-diretorio.tsx): Meu espaço e Dream Space →
+   ambientes → móveis → compartimentos. No celular o diretório abre e fecha por um botão. */
+.acv-corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.acv-principal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.acv-lateral-botao {
+  width: 100%;
+  min-height: var(--touch);
+  border: 1px solid var(--acv-linha);
+  border-radius: 12px;
+  background: var(--acv-cartao);
+  color: inherit;
+  font-size: var(--text-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.acv-lateral:not(.is-aberto) .acv-dir {
+  display: none;
+}
+
+.acv-dir {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.acv-dir-raiz {
+  display: grid;
+  gap: 2px;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--acv-linha);
+}
+
+.acv-dir-cabeca {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 6px 4px;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.acv-dir-lista {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acv-dir-lista.is-nivel2 {
+  padding-left: 14px;
+}
+
+.acv-dir-lista.is-nivel3 {
+  padding-left: 18px;
+}
+
+.acv-dir-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.acv-dir-item .btn-icon {
+  flex: none;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  border: 0;
+  background: none;
+}
+
+.acv-lateral {
+  min-width: 0;
+}
+
+.acv-dir-linha {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: var(--control-sm);
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font-size: var(--text-body-sm);
+  text-align: left;
+}
+
+button.acv-dir-linha {
+  cursor: pointer;
+}
+
+.acv-dir-linha.is-titulo {
+  font-weight: 600;
+}
+
+.acv-dir-linha.is-atual {
+  border-color: var(--acv-tinta);
+  background: var(--acv-lima);
+  color: var(--acv-lima-tinta);
+  font-weight: 600;
+}
+
+.acv-dir-linha.is-aceso,
+.acv-dir-linha.is-alvo {
+  border-color: var(--acv-tinta);
+  box-shadow: inset 0 0 0 2px var(--acv-lima);
+}
+
+.acv-dir-nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acv-dir-conta {
+  color: var(--acv-suave);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.acv-dir-linha.is-atual .acv-dir-conta {
+  color: inherit;
+}
+
+.acv-dir-vazio {
+  margin: 0;
+  padding: 0 8px;
+  color: var(--acv-suave);
+  font-size: var(--text-caption);
+}
+
+.acv-dir-novo {
+  min-height: var(--control-sm);
+  border: 1px dashed var(--acv-suave);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .acv-dir-linha,
+  .acv-dir-novo {
+    min-height: var(--touch);
+  }
+}
+
+@container acv (min-width: 880px) {
+  .acv-corpo {
+    grid-template-columns: 224px minmax(0, 1fr) 264px;
+  }
+
+  .acv-corpo > .acv-espaco {
+    grid-column: 2 / 4;
+  }
+
+  .acv-lateral-botao {
+    display: none;
+  }
+
+  .acv-lateral:not(.is-aberto) .acv-dir {
+    display: grid;
+  }
+
+  .acv-dir {
+    margin-top: 0;
+  }
+}

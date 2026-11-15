@@ -5,7 +5,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
+import { assinarFx } from "@/lib/flair/nucleos/fx-events";
 import { Diretor } from "@/lib/flair/nucleos/scene/director";
+import { sequenciaDaCor } from "@/lib/flair/nucleos/scene/sequences-color";
 import { sequenciaDeAbertura } from "@/lib/flair/nucleos/scene/opening";
 import { sequenciaDoResultado } from "@/lib/flair/nucleos/scene/sequences-auto";
 import { sequenciaDaPose, sequenciaDeIda, sequenciaDeVolta } from "@/lib/flair/nucleos/scene/sequences-manual";
@@ -57,5 +59,20 @@ export function useSceneDirector({ codigo, avatar, resultado, reduzido, abertura
     if (seq) diretor.tocar(seq, agora(), reduzido);
   }, [abertura, codigo, diretor, reduzido]);
 
-  return useMemo(() => ({ codigo, diretor, reduzido }), [codigo, diretor, reduzido]);
+  // efeito de cena da cor da peça: a carta vestida na preparação dispara a sequência do efeito dela neste jogo
+  const efeito = useMemo(() => ({ cor: "#ffffff" }), [codigo]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(
+    () =>
+      assinarFx((evento) => {
+        if (evento.tipo !== "entrada" || evento.nucleo !== codigo || evento.efeitos === false) return;
+        const item = evento.entrada.efeitoDaCor;
+        const seq = item ? sequenciaDaCor(codigo, item.codigo) : null;
+        if (!seq) return;
+        efeito.cor = evento.entrada.corDaPeca ?? "#ffffff";
+        diretor.tocar(seq, agora(), reduzido || evento.reduzido);
+      }),
+    [codigo, diretor, reduzido, efeito],
+  );
+
+  return useMemo(() => ({ codigo, diretor, reduzido, efeito }), [codigo, diretor, reduzido, efeito]);
 }

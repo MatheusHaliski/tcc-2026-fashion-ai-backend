@@ -6,6 +6,9 @@ import br.com.fashionai.application.taxonomy.Taxonomy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
+import java.util.TreeMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +24,16 @@ public final class Flair3dPecas {
     /** Famílias quentes da taxonomia. */
     public static final Set<String> QUENTES = Set.of("Vermelho", "Laranja", "Amarelo", "Rosa");
     public static final Set<String> FESTA = Set.of("party", "night_out");
+    public static final Set<String> TRABALHO = Set.of("work", "business", "formal");
+    public static final Set<String> CASUAL = Set.of("casual", "travel", "outdoor", "vacation", "home");
+    public static final Set<String> ESPORTE = Set.of("sport", "gym", "outdoor");
+    /** Tecidos quentes (o frio de Seul, a pista de esqui). */
+    public static final Set<String> MATERIAIS_QUENTES = Set.of("wool", "cashmere", "fleece", "knit", "corduroy", "velvet", "leather",
+            "suede", "shearling");
+    /** Materiais que seguram a chuva. */
+    public static final Set<String> IMPERMEAVEIS = Set.of("nylon", "polyester", "rubber", "leather", "faux_leather", "eva");
+    /** Famílias neutras da taxonomia. */
+    public static final Set<String> NEUTRAS = Set.of("Preto", "Branco", "Cinza", "Marrom");
 
     private Flair3dPecas() {
     }
@@ -64,6 +77,41 @@ public final class Flair3dPecas {
 
     public static boolean salto(CbcRules.Card c) {
         return subcategoria(c, Set.of("heels"));
+    }
+
+    /** Famílias de cor da carta (cada uma conta uma vez), sem as "Especiais". */
+    public static Set<String> familias(CbcRules.Card c) {
+        Set<String> out = new LinkedHashSet<>();
+        if (c != null) {
+            c.colors().stream().map(Taxonomy.COLOR_FAMILY::get).filter(f -> f != null && !"Especiais".equals(f)).forEach(out::add);
+        }
+        return out;
+    }
+
+    /** Quantas peças cumprem o teste. */
+    public static int quantas(Collection<CbcRules.Card> pecas, Predicate<CbcRules.Card> teste) {
+        return (int) pecas.stream().filter(teste).count();
+    }
+
+    /**
+     * O maior grupo de peças com uma chave em comum (a mesma família de cor, a mesma ocasião, o mesmo estilo): a chave e
+     * quantas peças a têm. Empate fica com a chave que vem antes no alfabeto, para ser sempre a mesma.
+     */
+    public static Map.Entry<String, Integer> maiorGrupo(Collection<CbcRules.Card> pecas, Function<CbcRules.Card, Set<String>> chaves) {
+        Map<String, Integer> conta = new TreeMap<>();
+        pecas.forEach(c -> chaves.apply(c).forEach(k -> conta.merge(k, 1, Integer::sum)));
+        Map.Entry<String, Integer> melhor = null;
+        for (Map.Entry<String, Integer> e : conta.entrySet()) {
+            if (melhor == null || e.getValue() > melhor.getValue()) {
+                melhor = e;
+            }
+        }
+        return melhor == null ? Map.entry("", 0) : melhor;
+    }
+
+    /** O look tem a base vestida: parte de cima e de baixo, ou uma peça inteira. */
+    public static boolean temBase(Map<String, CbcRules.Card> look) {
+        return look.containsKey("VES") || (look.containsKey("SUP") && look.containsKey("INF"));
     }
 
     /** Uma regra por vaga ("FIGURINO_SUP"): cumprida quando a peça da vaga passa no teste; vaga vazia não pontua. */

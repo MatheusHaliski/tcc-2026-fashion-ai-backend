@@ -1,4 +1,5 @@
 "use client";
+import { challengeLabel } from "@/components/challenges/challenge-detail-parts";
 import { useState } from "react";
 import { Button, Chip, Dialog, Field, Input } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
@@ -53,7 +54,7 @@ export function ChallengeStartDialog({ template, onClose, onStart }: {
       <p className="label">{t("challenges.modo")}</p>
       <div className="mb-3 flex gap-1.5">
         {template.modes.map((m) => (
-          <Chip key={m} active={mode === m} onClick={() => setMode(m)}><FaiIcon id={MODE_ICON[m] ?? "ACT-43"} size={24} decorative />{m}</Chip>
+          <Chip key={m} active={mode === m} onClick={() => setMode(m)}><FaiIcon id={MODE_ICON[m] ?? "ACT-43"} size={24} decorative />{challengeLabel(t, "mode", m)}</Chip>
         ))}
       </div>
       {mode !== "SOLO" && (
