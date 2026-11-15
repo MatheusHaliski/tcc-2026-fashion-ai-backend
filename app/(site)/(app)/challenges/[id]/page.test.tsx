@@ -80,12 +80,15 @@ describe("detalhe do desafio — ações por estado", () => {
   it("concluído: abre o card de resultado (url ou imageUrl), sem url não abre, erro avisa; mostra resultado e decoração", async () => {
     const open = vi.fn(); vi.stubGlobal("open", open);
     let n = 0;
-    show({ ...BASE, state: "CONCLUIDO", isCreator: true, startsAt: "2026-10-01T00:00:00Z", endsAt: "2026-10-08T00:00:00Z", decoration: "Vaso dourado", result: { winner: "ana" } },
+    show({ ...BASE, state: "CONCLUIDO", isCreator: true, startsAt: "2026-10-01T00:00:00Z", endsAt: "2026-10-08T00:00:00Z", decoration: "Vaso dourado", result: { concludedAt: "2026-10-08T00:00:00Z", winners: ["ana"], ranking: [{ user: "ana", score: 8.5 }, { user: "bia", score: 6 }] } },
       { "GET /api/challenges/c1/result-card": () => [{ url: "/media/card.png" }, { imageUrl: "/media/img.png" }, {}, fail(500, "Card indisponível")()][n++] });
     const card = await screen.findByRole("button", { name: "Card de resultado" }, { timeout: 4000 });
     expect(screen.getByText(/→/)).toBeTruthy();
     expect(screen.getByText("Vaso dourado")).toBeTruthy();
-    expect(screen.getByText(/"winner": "ana"/)).toBeTruthy();
+    // resultado em frases, sem o JSON cru
+    expect(screen.getByText("Venceu: @ana.")).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "Classificação" })).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["1º @ana8.5", "2º @bia6"]);
+    expect(document.body.textContent).not.toMatch(/"winners"|concludedAt/);
     expect(screen.queryByRole("button", { name: "Cancelar" })).toBeNull();
     fireEvent.click(card);
     await waitFor(() => expect(open).toHaveBeenCalledTimes(1));
@@ -163,5 +166,16 @@ describe("detalhe do desafio — ativo", () => {
     await waitFor(() => expect(input().value).toBe(""));
     fireEvent.click(await screen.findByRole("button", { name: "reagir 🔥" }));
     await waitFor(() => expect(posted(calls, "/api/challenges/c1/reactions")!.body).toEqual({ emoji: "🔥" }));
+  });
+});
+
+describe("detalhe do desafio — Solo", () => {
+  it("mostra as peças escolhidas e a entrada enviada", async () => {
+    show({ ...BASE, mode: "SOLO", state: "ATIVO", me: { value: 0, target: 10, fraction: 0, label: "looks só com as 10 peças", pieceIds: ["p1", "p2"] },
+      entries: [{ entryId: "s1", title: "Look azul", mine: true, pieces: [] }] },
+    { "GET /api/me/closet": { items: [{ id: "p1", name: "Saia verde", imageUrl: "/media/saia.png" }, { id: "p2", name: "Bota preta" }], page: 0, size: 100, total: 2, hasMore: false } });
+    const chosen = await screen.findByRole("list", { name: "As 2 peças escolhidas" }, { timeout: 4000 });
+    await waitFor(() => expect(within(chosen).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Saia verde", "Bota preta"]));
+    expect(screen.getByText("Look azul", { selector: "p" })).toBeTruthy();
   });
 });
