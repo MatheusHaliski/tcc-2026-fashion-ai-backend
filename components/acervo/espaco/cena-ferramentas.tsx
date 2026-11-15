@@ -1,18 +1,20 @@
 "use client";
-/** ACERVO — barra da cena: vista de frente ou em perspectiva, abrir as gavetas e Raio-X (portas transparentes). */
+/** ACERVO — barra da cena: vista de frente ou em perspectiva, abrir as gavetas e Raio-X (portas e frentes de gaveta transparentes). */
 import { useI18n } from "@/lib/i18n/i18n";
 import type { VistaDaCena } from "@/lib/acervo/cena/camera";
 import { useAcervo } from "../acervo-contexto";
 import { AcervoIcone } from "../acervo-icone";
 
 interface Props {
+  /** Há porta ou gaveta nos móveis da cena (sem nenhuma, o Raio-X não teria o que mostrar e sai da barra). */
+  comRaioX?: boolean;
   vista: VistaDaCena;
   onVista: (vista: VistaDaCena) => void;
   gavetasAbertas: boolean;
   onGavetas: (abertas: boolean) => void;
 }
 
-export function CenaFerramentas({ vista, onVista, gavetasAbertas, onGavetas }: Props) {
+export function CenaFerramentas({ comRaioX = true, vista, onVista, gavetasAbertas, onGavetas }: Props) {
   const { t } = useI18n();
   const { tela } = useAcervo();
   return (
@@ -29,10 +31,12 @@ export function CenaFerramentas({ vista, onVista, gavetasAbertas, onGavetas }: P
         <AcervoIcone nome="gaveta" tamanho={16} />
         {t("acervo.espaco.abrirGavetas")}
       </button>
-      <button type="button" aria-pressed={tela.raioX} onClick={() => tela.setRaioX(!tela.raioX)}>
-        <AcervoIcone nome="camadas" tamanho={16} />
-        {t("acervo.espaco.raioX")}
-      </button>
+      {comRaioX && (
+        <button type="button" aria-pressed={tela.raioX} onClick={() => tela.setRaioX(!tela.raioX)}>
+          <AcervoIcone nome="camadas" tamanho={16} />
+          {t("acervo.espaco.raioX")}
+        </button>
+      )}
     </div>
   );
 }

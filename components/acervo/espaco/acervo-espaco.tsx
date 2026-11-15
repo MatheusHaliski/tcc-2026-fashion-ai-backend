@@ -51,6 +51,7 @@ export function AcervoEspaco() {
   const movel = noModo?.movel ?? moveis[0] ?? null;
   const semLugar = arvore.pecas.filter((p) => !p.compartimentoId);
   const gavetas = moveis.reduce((soma, m) => soma + m.compartimentos.filter((c) => c.tipo === "GAVETA").length, 0);
+  const comRaioX = gavetas > 0 || moveis.some((m) => m.porta !== "SEM_PORTA");
   const mover = (ids: string[], id: string) => {
     void dados.mover(ids, id, t("acervo.mover.feito"));
   };
@@ -74,7 +75,7 @@ export function AcervoEspaco() {
               reduzido={reduzido} rotulo={t("acervo.espaco.cenaRotulo", { ambiente: ambiente?.nome ?? "" })}
               onEscolher={(id) => tela.setLocal({ tipo: "COMPARTIMENTO", id })} onSoltar={mover} onPeca={tela.abrirPeca} />
             {noModo && <GavetaExpandida compartimentoId={noModo.compartimento.id} onFechar={() => tela.setLocal({ tipo: "TODAS" })} />}
-            <CenaFerramentas vista={vista} onVista={setVista} gavetasAbertas={gavetasAbertas} onGavetas={setGavetasAbertas} />
+            <CenaFerramentas comRaioX={comRaioX} vista={vista} onVista={setVista} gavetasAbertas={gavetasAbertas} onGavetas={setGavetasAbertas} />
           </div>
         )}
         {semLugar.length > 0 && moveis.length > 0 && (
