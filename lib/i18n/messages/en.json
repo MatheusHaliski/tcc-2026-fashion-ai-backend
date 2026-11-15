@@ -12308,5 +12308,6 @@
   "size.criar_avatar": "Create my 3D Avatar",
   "history.timeline.again": "worn again (time {n})",
   "tryOn.slot_peca_unica": "One-piece (covers top and bottom)",
-  "challenges.id.como_conta_10x10": "New looks count: created after you started the challenge and using only the 10 pieces. An entry on the wall is the look you show; it only adds up if it also follows this rule."
+  "challenges.id.como_conta_10x10": "New looks count: created after you started the challenge and using only the 10 pieces. An entry on the wall is the look you show; it only adds up if it also follows this rule.",
+  "laundry.confirmFirst": "To send it, turn on “I confirm the batch” above."
 }
