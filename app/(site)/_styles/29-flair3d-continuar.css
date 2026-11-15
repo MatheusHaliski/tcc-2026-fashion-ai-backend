@@ -1,0 +1,21 @@
+/* "Continuar partida" (components/flair/nucleos/nucleo-continuar.tsx): onde a partida parou e as duas saídas. */
+.n3d-continuar {
+  display: grid;
+  gap: 8px;
+  max-width: 640px;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.n3d-continuar p {
+  margin: 0;
+}
+
+.n3d-continuar-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}

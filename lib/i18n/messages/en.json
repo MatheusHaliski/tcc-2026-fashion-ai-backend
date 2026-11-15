@@ -12310,5 +12310,15 @@
   "tryOn.slot_peca_unica": "One-piece (covers top and bottom)",
   "challenges.id.como_conta_10x10": "New looks count: created after you started the challenge and using only the 10 pieces. An entry on the wall is the look you show; it only adds up if it also follows this rule.",
   "laundry.confirmFirst": "To send it, turn on “I confirm the batch” above.",
-  "flair3d.detetive.ui.look": "Put on the investigation look and submit: the colours of the deck's pieces become the cards in your hand (each colour opens a kind of action)."
+  "flair3d.detetive.ui.look": "Put on the investigation look and submit: the colours of the deck's pieces become the cards in your hand (each colour opens a kind of action).",
+  "flair3d.ui.continuar.titulo": "Match in progress",
+  "flair3d.ui.continuar.detetive": "Room: {sala} · clues {pistas} of {total} · breath {vida} of 3 · clock {relogio}",
+  "flair3d.ui.continuar.esporte": "Score {placar}, play {jogada} of {total}.",
+  "flair3d.ui.continuar.etapa": "Stage {etapa} of {total}: the earlier ones are already closed.",
+  "flair3d.ui.continuar.acao": "The match stopped in the middle of the action.",
+  "flair3d.ui.continuar.deck": "The {n}-card deck is already chosen: you still need to dress and submit.",
+  "flair3d.ui.continuar.quando": "Last move: {quando}",
+  "flair3d.ui.continuar.sim": "Continue match",
+  "flair3d.ui.continuar.sim.FASHION_DETECTIVE": "Continue from this room",
+  "flair3d.ui.continuar.nova": "Start another match"
 }

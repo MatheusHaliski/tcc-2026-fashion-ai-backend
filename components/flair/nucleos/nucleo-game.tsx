@@ -37,7 +37,8 @@ import { SALOES_DA_GALA, useModoPorCartas } from "@/components/flair/nucleos/use
 import { useResultCards } from "@/components/flair/nucleos/use-result-cards";
 import { lookComTroca } from "@/lib/flair/nucleos/action-fx";
 import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
-import { boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
+import { boardComLook, boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
+import { lerRascunho, useRascunho } from "@/components/flair/nucleos/use-rascunho";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import { vagasDaRegua, type ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { salaoDaVez } from "@/lib/flair/nucleos/detective";
@@ -91,7 +92,7 @@ export function NucleoGame(props: Props) {
   const reduzido = useReducedMotion();
   const fx = useFxPrefs();
   const tabs = useMemo(() => buildTabs(definicao, cartas), [definicao, cartas]);
-  const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardInicial());
+  const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardComLook(boardInicial(), props.partida?.vestidas ?? lerRascunho(props.partida?.id)));
   const [aviso, setAviso] = useState<string | null>(null);
   const perfil = useMirrorAvatar();
   const [escolha, setEscolha] = useState<AvatarTipo | null>(null);
@@ -105,6 +106,7 @@ export function NucleoGame(props: Props) {
   const [acionou, setAcionou] = useState(false);
   const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"), { partida: props.partida?.id, rodada: definicao.rodada });
   const preparando = momento === "PREPARACAO";
+  useRascunho(props.partida?.id, preparando, estado.sel.cartas, !temEscolha(estado.sel));
   const acionamento = acionamentoDe(codigo);
   const faltaResposta = respostaObrigatoria(definicao) && !estado.sel.resposta;
   const pronto = temEscolha(estado.sel) && !faltaResposta && vagasQueFaltam(definicao, estado.sel.cartas).length === 0;

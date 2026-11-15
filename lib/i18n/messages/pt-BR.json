@@ -12310,5 +12310,15 @@
   "tryOn.slot_peca_unica": "Peça única (cobre cima e baixo)",
   "challenges.id.como_conta_10x10": "Contam os looks novos, criados depois de começar o desafio e só com as 10 peças. Uma entrada no mural é o look que você mostra; ela só soma se também seguir essa regra.",
   "laundry.confirmFirst": "Para enviar, ligue “Confirmo o lote” acima.",
-  "flair3d.detetive.ui.look": "Vista o look da investigação e entregue: as cores das peças do deck viram as cartas da mão (cada cor abre um tipo de ação)."
+  "flair3d.detetive.ui.look": "Vista o look da investigação e entregue: as cores das peças do deck viram as cartas da mão (cada cor abre um tipo de ação).",
+  "flair3d.ui.continuar.titulo": "Partida em andamento",
+  "flair3d.ui.continuar.detetive": "Sala: {sala} · pistas {pistas} de {total} · fôlego {vida} de 3 · relógio {relogio}",
+  "flair3d.ui.continuar.esporte": "Placar {placar}, jogada {jogada} de {total}.",
+  "flair3d.ui.continuar.etapa": "Etapa {etapa} de {total}: as anteriores já estão fechadas.",
+  "flair3d.ui.continuar.acao": "A partida parou no meio da ação.",
+  "flair3d.ui.continuar.deck": "O deck de {n} cartas já está escolhido: falta vestir e entregar.",
+  "flair3d.ui.continuar.quando": "Última jogada: {quando}",
+  "flair3d.ui.continuar.sim": "Continuar partida",
+  "flair3d.ui.continuar.sim.FASHION_DETECTIVE": "Continuar desta sala",
+  "flair3d.ui.continuar.nova": "Começar outra partida"
 }

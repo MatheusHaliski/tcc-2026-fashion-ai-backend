@@ -16,6 +16,7 @@ import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoResourceWindow } from "@/components/flair/nucleos/nucleo-resource-window";
 import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-controls";
+import { lerRascunho, useRascunho } from "@/components/flair/nucleos/use-rascunho";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { MAKEUP_ACOES } from "@/lib/flair/make-up/briefs";
 import { normalizarPaleta } from "@/lib/flair/make-up/palette";
@@ -24,7 +25,7 @@ import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
 import { boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
-import { buildTabs, temEscolha, type ResourceTab, type Selecao } from "@/lib/flair/nucleos/selection";
+import { buildTabs, SELECAO_VAZIA, temEscolha, type ResourceTab, type Selecao } from "@/lib/flair/nucleos/selection";
 import type { AvatarTipo } from "@/lib/flair/nucleos/types";
 
 const ACEITOS: AvatarTipo[] = ["PROPRIO", "MODELO_CASA"];
@@ -42,7 +43,9 @@ interface Props {
 export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Props) {
   const tx = useNucleoText();
   const tabs = useMemo(() => buildTabs({ recursos: ["CARTAS", "MAQUIAGEM"], vagas: brief.vagas, zonas: [], areas: brief.areas, opcoes: [], paleta: normalizarPaleta(brief.paleta) }, cartas), [brief, cartas]);
-  const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardInicial(2, 0));
+  // o rascunho do brief (look e maquiagem) volta ao recarregar a página ou sair e voltar
+  const rascunho = `makeup.${brief.codigo}`;
+  const [estado, dispatch] = useReducer(boardReducer, undefined, () => ({ ...boardInicial(2, 0), sel: lerRascunho<Selecao>(rascunho) ?? SELECAO_VAZIA }));
   const perfil = useMirrorAvatar();
   const [escolha, setEscolha] = useState<AvatarTipo | null>(null);
   const efetiva = protagonistaEfetiva(ACEITOS, escolha, !!perfil.avatar);
@@ -50,6 +53,7 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
   const pecas = useMemo(() => pecasDoLook(estado.sel.cartas, cartas), [estado.sel.cartas, cartas]);
   const grupo = grupoDe(tabs[estado.aba]);
   const pronto = temEscolha(estado.sel);
+  useRascunho(rascunho, !entregando, estado.sel, !pronto);
 
   const entregar = () => {
     if (pronto && !entregando) onEntregar(estado.sel);

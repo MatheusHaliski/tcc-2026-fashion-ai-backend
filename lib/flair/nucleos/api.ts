@@ -10,6 +10,7 @@ import type {
   NucleoLista,
   NucleoPartida,
   NucleoResultado,
+  NucleoRetomada,
 } from "@/lib/flair/nucleos/types";
 
 const BASE = "/api/flair/3d";
@@ -44,6 +45,12 @@ export function abrirPartida(codigo: NucleoCodigo, deck: string[], avatar?: Avat
   const corpo: Record<string, unknown> = avatar ? { deck, avatar } : { deck };
   if (rodada) corpo.rodada = rodada;
   return api.post<NucleoPartida>(`${BASE}/nucleos/${codigo}/partidas`, corpo);
+}
+
+/** A partida da pessoa que ainda não fechou neste núcleo ("Continuar partida"), ou null (204). */
+export async function buscarEmAndamento(codigo: NucleoCodigo, signal?: AbortSignal): Promise<NucleoRetomada | null> {
+  const r = await api.get<NucleoRetomada | undefined>(`${BASE}/nucleos/${codigo}/em-andamento`, { signal });
+  return r && r.partida ? r : null;
 }
 
 /**

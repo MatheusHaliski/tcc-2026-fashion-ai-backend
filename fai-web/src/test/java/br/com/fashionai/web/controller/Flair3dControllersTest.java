@@ -4,6 +4,7 @@ import br.com.fashionai.application.flair3d.Acionamento;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleoService;
+import br.com.fashionai.application.flair3d.Flair3dRetomada;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.cbc.FlairCbcSquadService;
 import br.com.fashionai.application.flair3d.makeup.FlairMakeUpService;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +34,19 @@ class Flair3dControllersTest {
     static final CurrentUser ANA = new CurrentUser(UUID.randomUUID(), "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
     static final Map<String, Object> RESPOSTA = Map.of("via", "servico");
     static final Resultado RESULTADO = Resultado.of(80, "APROVADO", List.of(), List.of());
+
+    static final class Retomadas extends Flair3dRetomada {
+        Map<String, Object> resposta;
+
+        Retomadas() {
+            super(null, null);
+        }
+
+        @Override
+        public Optional<Map<String, Object>> emAndamento(CurrentUser user, String codigo) {
+            return Optional.ofNullable(resposta);
+        }
+    }
 
     static final class Nucleos extends Flair3dNucleoService {
         final List<Object> args = new ArrayList<>();
@@ -150,7 +165,11 @@ class Flair3dControllersTest {
     @Test
     void nucleosDelegamListaDefinicaoEfeitosPartidaEntregaPreviaEAcionamento() {
         Nucleos s = new Nucleos();
-        Flair3dNucleoController c = new Flair3dNucleoController(s);
+        Retomadas r = new Retomadas();
+        Flair3dNucleoController c = new Flair3dNucleoController(s, r);
+        assertThat(c.emAndamento(ANA, "FASHION_DETECTIVE").getStatusCode().value()).isEqualTo(204);
+        r.resposta = RESPOSTA;
+        assertThat(c.emAndamento(ANA, "FASHION_DETECTIVE").getBody()).isSameAs(RESPOSTA);
         assertThat(c.lista()).isSameAs(RESPOSTA);
         assertThat(c.definicao("PASSARELA").numero()).isEqualTo(1);
         Flair3dNucleoService.PedidoEfeitos efeitos = new Flair3dNucleoService.PedidoEfeitos(List.of());
@@ -194,6 +213,7 @@ class Flair3dControllersTest {
         assertThat(get(Flair3dNucleoController.class, "definicao")).isEqualTo("/api/flair/3d/nucleos/{codigo}");
         assertThat(post(Flair3dNucleoController.class, "efeitos")).isEqualTo("/api/flair/3d/nucleos/{codigo}/efeitos");
         assertThat(post(Flair3dNucleoController.class, "abrir")).isEqualTo("/api/flair/3d/nucleos/{codigo}/partidas");
+        assertThat(get(Flair3dNucleoController.class, "emAndamento")).isEqualTo("/api/flair/3d/nucleos/{codigo}/em-andamento");
         assertThat(method(Flair3dNucleoController.class, "abrir").getAnnotation(ResponseStatus.class).value().value()).isEqualTo(201);
         assertThat(post(Flair3dNucleoController.class, "entregar")).isEqualTo("/api/flair/3d/partidas/{id}/entrega");
         assertThat(post(Flair3dNucleoController.class, "previa")).isEqualTo("/api/flair/3d/partidas/{id}/previa");

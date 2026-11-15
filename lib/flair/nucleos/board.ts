@@ -45,6 +45,11 @@ export function boardInicial(zoomMax = 3, zoomMin = -2): BoardEstado {
   };
 }
 
+/** O tabuleiro de uma partida retomada ("Continuar partida"): o look que já estava vestido volta às vagas. */
+export function boardComLook(estado: BoardEstado, cartas?: Record<string, string> | null): BoardEstado {
+  return cartas && Object.keys(cartas).length ? { ...estado, sel: { ...estado.sel, cartas: { ...cartas } } } : estado;
+}
+
 export type BoardAcao =
   | { type: "comando"; comando: Comando; tabs: ResourceTab[] }
   | { type: "aba"; index: number }

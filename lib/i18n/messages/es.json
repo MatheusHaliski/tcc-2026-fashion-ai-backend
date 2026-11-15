@@ -12310,5 +12310,15 @@
   "tryOn.slot_peca_unica": "Pieza única (cubre arriba y abajo)",
   "challenges.id.como_conta_10x10": "Cuentan los looks nuevos, creados después de empezar el desafío y solo con las 10 prendas. Una entrada en el mural es el look que muestras; solo suma si también sigue esta regla.",
   "laundry.confirmFirst": "Para enviarlo, activa “Confirmo el lote” arriba.",
-  "flair3d.detetive.ui.look": "Viste el look de la investigación y entrégalo: los colores de las prendas del mazo se vuelven las cartas de la mano (cada color abre un tipo de acción)."
+  "flair3d.detetive.ui.look": "Viste el look de la investigación y entrégalo: los colores de las prendas del mazo se vuelven las cartas de la mano (cada color abre un tipo de acción).",
+  "flair3d.ui.continuar.titulo": "Partida en curso",
+  "flair3d.ui.continuar.detetive": "Sala: {sala} · pistas {pistas} de {total} · aliento {vida} de 3 · reloj {relogio}",
+  "flair3d.ui.continuar.esporte": "Marcador {placar}, jugada {jogada} de {total}.",
+  "flair3d.ui.continuar.etapa": "Etapa {etapa} de {total}: las anteriores ya están cerradas.",
+  "flair3d.ui.continuar.acao": "La partida se detuvo en medio de la acción.",
+  "flair3d.ui.continuar.deck": "El mazo de {n} cartas ya está elegido: falta vestir y entregar.",
+  "flair3d.ui.continuar.quando": "Última jugada: {quando}",
+  "flair3d.ui.continuar.sim": "Continuar partida",
+  "flair3d.ui.continuar.sim.FASHION_DETECTIVE": "Continuar desde esta sala",
+  "flair3d.ui.continuar.nova": "Empezar otra partida"
 }
