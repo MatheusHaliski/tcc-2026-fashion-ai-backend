@@ -18,9 +18,9 @@ export default function PieceModelViewer({ url, name }: { url: string; name: str
     }, undefined, () => alive && setError(true));
     return () => { alive = false; };
   }, [url]);
-  if (error) return <div className="grid h-full place-items-center p-4 text-center type-body text-muted">{t("room3d.pieceModelViewer.nao_foi_possivel_carregar_o")}</div>;
+  if (error) return <div className="grid h-full place-items-center p-4 text-center type-body text-muted">{t("pieceModelViewer.load_failed")}</div>;
   return (
-    <Canvas shadows camera={{ position: [0, 0.6, 3], fov: 40 }} aria-label={t("room3d.pieceModelViewer.modelo_3d_de", { name })}>
+    <Canvas shadows camera={{ position: [0, 0.6, 3], fov: 40 }} aria-label={t("pieceModelViewer.model_of", { name })}>
       <color attach="background" args={["#f1eee8"]} />
       <hemisphereLight args={["#ffffff", "#d9cbb5", 1]} />
       <directionalLight position={[2, 4, 3]} intensity={1.6} castShadow />

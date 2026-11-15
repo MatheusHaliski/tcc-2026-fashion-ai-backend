@@ -35,7 +35,7 @@ it("night automatically lights the ceiling and a dimmer changes actual light int
   await r.update(<I18nProvider initial="pt-BR">{render(false, .2)}</I18nProvider>); expect(ceiling().intensity).toBe(0);
   await r.unmount();
 });
-import PieceModelViewer from "./piece-model-viewer";
+import PieceModelViewer from "@/components/piece3d/piece-model-viewer";
 import {
   ClosetLights, Cobweb, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch, RoomDoor, RoomWindow,
   deg, sketchDraw, textTex,

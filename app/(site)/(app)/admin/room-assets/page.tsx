@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { SLOT_LABELS, type CreatorBlock } from "@/components/room3d/wardrobe-creator";
 import { Badge, Button, Dialog, EmptyState, ErrorState, Field, Input, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 
-const ModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <Skeleton className="h-80" /> });
+const ModelViewer = dynamic(() => import("@/components/piece3d/piece-model-viewer"), { ssr: false, loading: () => <Skeleton className="h-80" /> });
 interface Job { id: string; status: string; input: { command: { name: string; slotType: string; pricePoints: number }; referenceUrl: string }; result: { review: string; progress: number; sku?: string }; modelUrl?: string | null; errorCode?: string | null }
 interface Assets { available: boolean; items: Job[]; blocks: CreatorBlock[]; levels: string[] }
 

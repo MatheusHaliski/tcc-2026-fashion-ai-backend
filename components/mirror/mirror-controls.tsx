@@ -9,7 +9,7 @@ import { Badge, Button, Card, cn, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
 import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
-import { assetStateOf } from "@/lib/room3d/mirror-session";
+import { assetStateOf } from "@/lib/mirror/asset-state";
 import type { Illustration } from "@/lib/capture/capture-guides";
 import { VistaMeCells } from "@/components/mirror/vista-me-cells";
 import { MirrorLookType } from "@/components/mirror/mirror-look-type";
@@ -17,13 +17,13 @@ import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
 import { MirrorGrwmDialog, type GrwmStoryboard } from "@/components/mirror/mirror-grwm";
 
 /*
- * Espelho (RF28) — o painel da prova dentro do Meu Quarto (e da vista embutida no 2.5D): só botões, células e listas,
+ * Espelho (RF28) — o painel da prova em /mirror (e da vista embutida no 2.5D): só botões, células e listas,
  * nada de formulário. O estado é o do servidor (/api/me/mirror); aqui ficam os pedidos e a apresentação.
  *  - "Para quem é o look": chips (radiogroup) com os tipos do banco.
  *  - "Partes do look": a grade de células do Provador (Parte de cima, Peça única, Parte de baixo, Calçado, Acessório). A
  *    camada externa do servidor (jaqueta, blazer…) entra na Parte de cima — não existe "Camada externa" na tela.
  *    Tocar numa célula abre a folha da parte: vestindo agora, roupas em mãos (a lista do espelho e a peça na mão),
- *    guarda-roupa e sugestões. No quarto, as roupas em mãos só aparecem aqui (a célula conta quantas há).
+ *    guarda-roupa e sugestões. As roupas em mãos só aparecem aqui (a célula conta quantas há).
  *  - Vista-me: células de ocasião + humor/clima opcionais; peças fixadas ("Manter") viram âncoras.
  *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa, GRWM e limpar (desfazíveis).
  */
@@ -127,16 +127,14 @@ export function vistaRequest(kind: "vista-me" | "another", data: MirrorData | nu
   return { path: "/api/me/mirror/vista-me", body: { prompt: prompt ?? "", anchorIds } };
 }
 
-/** Ações que o quarto faz do jeito dele (reação do avatar, luz nas portas, fecho do look); fora do quarto, o padrão. */
+/** Ações que uma tela anfitriã pode fazer do jeito dela (era o Meu Quarto, retirado em 15/11/2026); sem anfitrião, o padrão. */
 export interface MirrorHost {
   wear?: (p: MirrorPieceRef) => Promise<unknown> | void;
   takeOff?: (p: MirrorPieceRef) => Promise<unknown> | void;
   unlist?: (p: MirrorPieceRef) => Promise<unknown> | void;
-  /** "Mostrar no quarto" dentro do quarto (enquadra a posição); fora dele vira link /room?piece= */
-  showInRoom?: (p: MirrorPieceRef) => void;
-  /** resposta do Vista-me / Outra sugestão (o quarto acende as portas da sequência) */
+  /** resposta do Vista-me / Outra sugestão */
   onVista?: (r: MirrorData) => void;
-  /** "Usar este look hoje" com o fecho do quarto */
+  /** "Usar este look hoje" com o fecho do anfitrião */
   use?: () => Promise<unknown> | void;
 }
 type Notice = { text: string; actions?: { label: string; href?: string; onClick?: () => void }[] };
@@ -302,8 +300,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
           onTogglePin={togglePin}
           wear={async (p) => { if (host?.wear) await host.wear(p); else { const r = await run("place", () => api.post("/api/me/mirror/pieces", { pieceId: p.id })) as { notice?: string } | null; if (r?.notice) toast.info(r.notice); } }}
           takeOff={async (p) => { if (host?.takeOff) await host.takeOff(p); else await run("rm", () => api.delete(`/api/me/mirror/pieces/${encodeURIComponent(p.id)}`)); }}
-          unlist={async (p) => { if (host?.unlist) await host.unlist(p); else await run("unlist", () => api.delete(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`)); }}
-          showInRoom={host?.showInRoom ? (p) => { setOpen(null); host.showInRoom!(p); } : undefined} />
+          unlist={async (p) => { if (host?.unlist) await host.unlist(p); else await run("unlist", () => api.delete(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`)); }} />
       )}
       <MirrorGrwmDialog grwm={grwm} onClose={() => setGrwm(null)} />
     </div>

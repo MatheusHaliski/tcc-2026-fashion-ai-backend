@@ -12,7 +12,7 @@ import { AVAILABILITY, SLOT_LABELS, StoreSwatch, type StoreItem } from "@/compon
 
 import { FaiIcon } from "@/components/fai-icon";
 
-const ModelViewer = dynamic(() => import("./piece-model-viewer"), { ssr: false });
+const ModelViewer = dynamic(() => import("@/components/piece3d/piece-model-viewer"), { ssr: false });
 
 type ShopItem = StoreItem & { inventory?: { inventoryId: string; appliedModule?: string | null; serial?: number | null }[] };
 
