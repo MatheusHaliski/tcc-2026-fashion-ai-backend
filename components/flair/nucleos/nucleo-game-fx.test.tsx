@@ -269,8 +269,9 @@ describe("acionamentos", () => {
     expect(onAcionar).toHaveBeenCalledWith({ tipo: "MERCADO", cardId: "c1" });
     const fim: NucleoResultado = { pontos: 50, estrelas: 1, resultado: "PARCIAL", regras: [], status: "ENTREGUE", eventos: [...mercado.eventos, { codigo: "COMPRA", valor: { item: "PECA_DA_PISTA", estalecas: 500 } }] };
     rerender(<NucleoGame {...props} resultado={fim} />);
-    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("O detetive comprou a peça da cor da próxima pista por 500 estalecas"), { timeout: 4000 });
-  });
+    // cada passo dura a sua parte da sequência da cena (lib/flair/nucleos/scene/ritmo.ts)
+    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("O detetive comprou a peça da cor da próxima pista por 500 estalecas"), { timeout: 9000 });
+  }, 15000);
 
   it("Fashion Detective: a dica mostra o salão da vez, o código de vestimenta e a carta de pista", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });

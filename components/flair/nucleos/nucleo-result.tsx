@@ -6,6 +6,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/components/ui";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { desfechoDe } from "@/lib/flair/nucleos/narrativa";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
 export interface CartaNoResultado {
@@ -35,6 +36,8 @@ const MAX_DICAS = 4;
 export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlacar = false, rodada = null, children }: Props) {
   const tx = useNucleoText();
   const estrelas = Math.max(0, Math.min(3, resultado.estrelas));
+  /** o final da história do jogo, pelo desfecho (vitória, empate, derrota; aprovado com 3 estrelas, com 1 ou 2, reprovado) */
+  const desfecho = tx.ou(`flair3d.narrativa.${codigo}.final.${desfechoDe(resultado)}`, "");
   /** o que trocar: uma dica por regra não cumprida, sem repetir */
   /** rodada em etapas: cada etapa entra com 1/n dos pontos dela ("8,33" para uma etapa de 25 em 3) */
   const etapas = resultado.eventos.filter((e) => e.codigo === "ETAPA").length;
@@ -43,6 +46,7 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
     <section className="n3d-result" aria-labelledby="n3d-result-title" data-testid="nucleo-result">
       <h2 id="n3d-result-title" className="type-h3">{tx.t("flair3d.ui.result.title")}</h2>
       {rodada && <p className="type-label" data-testid="nucleo-result-round">{tx.rodadaNome(codigo, rodada)}</p>}
+      {desfecho && <p className="n3d-desfecho" data-testid="nucleo-desfecho">{desfecho}</p>}
       {semPlacar ? <p className="n3d-result-outcome" data-no-score>{tx.t("flair3d.ui.result.noScore")}</p> : (
         <>
           <p className="n3d-result-points tabular">{tx.pontosTotal(resultado.pontos)}</p>

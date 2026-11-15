@@ -1,4 +1,5 @@
-/* "Continuar partida" (components/flair/nucleos/nucleo-continuar.tsx): onde a partida parou e as duas saídas. */
+/* "Continuar partida" (components/flair/nucleos/nucleo-continuar.tsx): onde a partida parou e as duas saídas; e o
+   final da história no resultado (nucleo-result.tsx), como uma legenda de cinema. */
 .n3d-continuar {
   display: grid;
   gap: 8px;
@@ -18,4 +19,13 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 4px;
+}
+
+.n3d-desfecho {
+  margin: 4px 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--thread);
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-style: italic;
 }

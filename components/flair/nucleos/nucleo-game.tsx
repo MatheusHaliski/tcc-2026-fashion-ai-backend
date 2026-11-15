@@ -14,8 +14,7 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { EsporteResumo, resultadoSemLances } from "@/components/flair/esporte/esporte-resumo";
 import { NucleoActionSlot } from "@/components/flair/nucleos/nucleo-action-slot";
 import { MODELO_CASA, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
-import { NucleoBriefing } from "@/components/flair/nucleos/nucleo-briefing";
-import { NucleoCutscene } from "@/components/flair/nucleos/nucleo-cutscene";
+import { NucleoApresentacao } from "@/components/flair/nucleos/nucleo-apresentacao";
 import { NucleoCardZoom } from "@/components/flair/nucleos/nucleo-card-zoom";
 import { NucleoHelp } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoDeckBand } from "@/components/flair/nucleos/nucleo-deck-band";
@@ -33,7 +32,7 @@ import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-control
 import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
-import { SALOES_DA_GALA, useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
+import { useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
 import { useResultCards } from "@/components/flair/nucleos/use-result-cards";
 import { lookComTroca } from "@/lib/flair/nucleos/action-fx";
 import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
@@ -41,7 +40,6 @@ import { boardComLook, boardInicial, boardReducer } from "@/lib/flair/nucleos/bo
 import { lerRascunho, useRascunho } from "@/components/flair/nucleos/use-rascunho";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import { vagasDaRegua, type ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
-import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
 import { acionamentoDe, comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
@@ -188,8 +186,7 @@ export function NucleoGame(props: Props) {
         />
       )}
       <div className="n3d-lower">
-        {codigo === "FASHION_DETECTIVE" && definicao.rodada === SALOES_DA_GALA && preparando && <NucleoCutscene salao={salaoDaVez(props.tentativa)} />}
-        {preparando && apresentacao.briefing && <NucleoBriefing briefing={apresentacao.briefing} cartas={cartas} aberto={apresentacao.aberto} onFechar={apresentacao.fechar} />}
+        {preparando && <NucleoApresentacao definicao={definicao} partida={props.partida} tentativa={props.tentativa} apresentacao={apresentacao} cartas={cartas} />}
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
           vestidas={vestidas}
