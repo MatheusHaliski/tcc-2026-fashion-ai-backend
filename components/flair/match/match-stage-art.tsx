@@ -1,13 +1,13 @@
 "use client";
 import type { CSSProperties } from "react";
 import { cn } from "@/components/ui";
-import { PhotoSceneHit } from "@/components/flair/games/photo-scene-hit";
-import { PhotoSceneLinks } from "@/components/flair/games/photo-scene-links";
+import { PhotoSceneHit } from "@/components/flair/match/photo-scene-hit";
+import { PhotoSceneLinks } from "@/components/flair/match/photo-scene-links";
 import type { MatchScene } from "@/lib/flair/match-scene";
 import type { MatchWinner } from "@/lib/flair/match-stage";
 
 /**
- * A fotografia do palco do confronto com as inserções das cartas, reaproveitando a cena do FLAIR 3D: cada carta é
+ * A fotografia do palco do confronto com as inserções das cartas, reaproveitando a cena fotográfica: cada carta é
  * uma PhotoSceneHit (clarão → cone → a foto reacende → Aura Hype → efeito → legenda) dentro de um invólucro que diz o
  * papel dela na rodada — vencedora (inserção completa), perdedora (apagada, sem reacender a foto) ou empate (média).
  * As cartas do mesmo lado com sinergia na rodada se ligam por fios de luz (um conjunto de ligações por lado). A cena

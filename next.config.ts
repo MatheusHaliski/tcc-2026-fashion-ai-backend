@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { staticMediaRewrites } from "./lib/media/static-media";
+import { LEGACY_REDIRECTS } from "./lib/nav/legacy-redirects";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -21,7 +22,7 @@ const nextConfig: NextConfig = {
     return staticMediaRewrites(process.env);
   },
   async redirects() {
-    return [{ source: "/photos", destination: "/atelier", permanent: false }];
+    return LEGACY_REDIRECTS;
   },
   async headers() {
     const gate = (process.env.DEV_GATE_ENABLED ?? "true").toLowerCase() !== "false";
