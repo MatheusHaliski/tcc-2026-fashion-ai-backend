@@ -17,7 +17,7 @@ const ADMIN = { ...ME, role: "ADMIN" as const };
 const fail = (status: number, message: string) => () => new Response(JSON.stringify({ status, code: "ERRO", message }), { status, headers: { "content-type": "application/json" } });
 const USERS = [
   { id: "u1", username: "ana", displayName: "Ana", profileType: "PESSOAL", verified: true, country: "BR", privateAccount: false },
-  { id: "u2", username: "marca", displayName: "Marca X", profileType: "MARCA", verified: false, privateAccount: false },
+  { id: "u2", username: "marca", displayName: "Marca X", profileType: "MARCA", verified: false, privateAccount: false, status: "SUSPENDED" },
 ];
 const tab = async (name: RegExp) => fireEvent.click(await screen.findByRole("tab", { name }, { timeout: 4000 }));
 
@@ -48,13 +48,22 @@ describe("admin · usuários", () => {
     fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: "ADMIN" }));
     expect(await screen.findByText("Papel atualizado")).toBeTruthy();
     expect(calls.find((c) => c.path === "/api/admin/users/u1/role")!.body).toEqual({ role: "ADMIN" });
+    // suspender pede confirmação e motivo; cancelar não suspende
+    expect(within(row).queryByRole("button", { name: "Reativar" })).toBeNull();
     fireEvent.click(within(row).getByRole("button", { name: "Suspender" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "Suspender @ana?" }));
+    expect(calls.some((c) => c.path === "/api/admin/users/u1/status")).toBe(false);
+    fireEvent.change(dialog.getByLabelText("Motivo (vai para a auditoria)"), { target: { value: "spam repetido" } });
+    fireEvent.click(dialog.getByRole("button", { name: "Suspender conta" }));
     expect(await screen.findByText("Suspenso")).toBeTruthy();
-    fireEvent.click(within((await screen.findByText("Ana")).closest("li")!).getByRole("button", { name: "Reativar" }));
-    expect(await screen.findByText("Reativado")).toBeTruthy();
-    expect(calls.filter((c) => c.path === "/api/admin/users/u1/status").map((c) => c.body)).toEqual([{ suspend: true, reason: "Violação da política." }, { suspend: false, reason: "" }]);
-    fireEvent.click(within((await screen.findByText("Marca X")).closest("li")!).getByRole("button", { name: "Suspender" }));
+    expect(calls.find((c) => c.path === "/api/admin/users/u1/status")!.body).toEqual({ suspend: true, reason: "spam repetido" });
+    // conta já suspensa: a linha diz "Suspensa" e só oferece Reativar
+    const suspended = (await screen.findByText("Marca X")).closest("li")!;
+    expect(within(suspended).getByText("Suspensa")).toBeTruthy();
+    expect(within(suspended).queryByRole("button", { name: "Suspender" })).toBeNull();
+    fireEvent.click(within(suspended).getByRole("button", { name: "Reativar" }));
     expect(await screen.findByText("Sem permissão")).toBeTruthy();
+    expect(calls.find((c) => c.path === "/api/admin/users/u2/status")!.body).toEqual({ suspend: false, reason: "" });
   });
 
   it("auditoria: filtra por ator e mostra campos em português ou inglês", async () => {

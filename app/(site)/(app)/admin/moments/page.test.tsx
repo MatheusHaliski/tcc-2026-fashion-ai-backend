@@ -33,7 +33,7 @@ function pick(id: string, option: string) {
 
 describe("admin de Momentos", () => {
   it("lista com status, destaque, patrocínio e pontos; ações de ciclo de vida e o job manual avisam e recarregam", async () => {
-    const { calls } = loggedAs(ADMIN, { "/api/taxonomy": TAXONOMY, "GET /api/admin/moments": [ROW, DRAFT, ENDED], "POST /api/admin/moments/m1/schedule": {}, "POST /api/admin/moments/jobs/tick": {},
+    const { calls } = loggedAs(ADMIN, { "/api/taxonomy": TAXONOMY, "GET /api/admin/moments": [ROW, DRAFT, ENDED], "POST /api/admin/moments/m1/end": {}, "POST /api/admin/moments/jobs/tick": {},
       "POST /api/admin/moments/m2/archive": () => new Response(JSON.stringify({ status: 409, code: "CONFLITO", message: "Não dá para arquivar" }), { status: 409, headers: { "content-type": "application/json" } }) });
     renderApp(<AdminMomentsPage />);
     expect(await screen.findByText("Halloween 2026", { exact: false }, { timeout: 4000 })).toBeTruthy();
@@ -41,8 +41,13 @@ describe("admin de Momentos", () => {
     expect(screen.getAllByText("sem pontos")).toHaveLength(2);
     expect(screen.getByText(/· BR ·/)).toBeTruthy();
     const items = screen.getAllByRole("listitem");
-    fireEvent.click(within(items[0]).getByRole("button", { name: "Agendar" }));
-    expect(await screen.findByText("Ação aplicada: Agendar")).toBeTruthy();
+    // Momento no ar e em destaque: não oferece Agendar, Rascunho nem Destacar
+    expect(within(items[0]).queryByRole("button", { name: "Agendar" })).toBeNull();
+    expect(within(items[0]).queryByRole("button", { name: "Rascunho" })).toBeNull();
+    expect(within(items[0]).queryByRole("button", { name: "Destacar" })).toBeNull();
+    expect(within(items[0]).getByRole("button", { name: "Tirar destaque" })).toBeTruthy();
+    fireEvent.click(within(items[0]).getByRole("button", { name: "Encerrar" }));
+    expect(await screen.findByText("Ação aplicada: Encerrar")).toBeTruthy();
     fireEvent.click(within(items[1]).getByRole("button", { name: "Arquivar" }));
     expect(await screen.findByText("Não dá para arquivar")).toBeTruthy();
     await open("Rodar job agora");

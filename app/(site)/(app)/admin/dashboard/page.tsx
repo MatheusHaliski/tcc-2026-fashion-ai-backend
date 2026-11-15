@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { api, qs } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
+import { aiCapabilityName, challengeName, sealStatusName } from "@/lib/admin/dashboard-labels";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, useToast } from "@/components/ui";
@@ -144,14 +145,14 @@ function AdminDashboard() {
       case "engagement": { const rows = data.engagement ?? [];
         return card(w, <><TimeSeries data={rows} keys={[{ key: "likes", label: t("adminDash.curtidas") }, { key: "comments", label: t("adminDash.comentarios") }, { key: "shares", label: t("adminDash.compartilhamentos") }]} from={from} to={to} />
           <DataTable columns={[{ key: "day", label: t("adminDash.dia"), render: (r) => String(r.day).slice(0, 10) }, { key: "likes", label: t("adminDash.curtidas"), align: "right" }, { key: "comments", label: t("adminDash.comentarios"), align: "right" }, { key: "shares", label: t("adminDash.compartilhamentos"), align: "right" }]} rows={rows} /></>); }
-      case "seal_funnel": return card(w, data.sealFunnel.length ? <Bars data={agg(data.sealFunnel, "status", "total")} x="name" y="value" horizontal height={Math.max(140, data.sealFunnel.length * 34)} /> : empty("admin.dashboard.nenhum_vinculo_de_selo_no"));
-      case "challenges": return card(w, data.challenges.length ? <Bars data={topN(agg(data.challenges, "template", "participants", (k) => k), 8)} x="name" y="value" horizontal height={Math.max(160, Math.min(8, data.challenges.length) * 34)} /> : empty("admin.dashboard.nenhum_desafio"));
+      case "seal_funnel": return card(w, data.sealFunnel.length ? <Bars data={agg(data.sealFunnel, "status", "total", (k) => sealStatusName(k, t))} x="name" y="value" horizontal height={Math.max(140, data.sealFunnel.length * 34)} /> : empty("admin.dashboard.nenhum_vinculo_de_selo_no"));
+      case "challenges": return card(w, data.challenges.length ? <Bars data={topN(agg(data.challenges, "template", "participants", (k) => challengeName(k, t)), 8)} x="name" y="value" horizontal height={Math.max(160, Math.min(8, data.challenges.length) * 34)} /> : empty("admin.dashboard.nenhum_desafio"));
       case "points": { const rows = topN(agg(data.points, "action_code", "points", (k) => t(`adminDash.pontos.${k}`)), 8);
         return card(w, rows.length ? <Bars data={rows} x="name" y="value" horizontal height={Math.max(160, rows.length * 34)} /> : empty("admin.dashboard.nenhum_ponto_no_periodo")); }
-      case "inventory_bands": { const rows = data.inventoryBands.map((r) => ({ name: label(String(r.band)), value: num(r.total) }));
+      case "inventory_bands": { const rows = data.inventoryBands.map((r) => ({ name: t(`games.wardrobe.${String(r.band)}`), value: num(r.total) }));
         return card(w, rows.length ? <Donut data={rows} x="name" y="value" /> : empty("admin.dashboard.sem_snapshots_de_inventory_score")); }
       case "ai_cost": return card(w, <TimeSeries data={data.series.ai_cost ?? []} keys={[{ key: "value", label: "USD" }]} kind="bar" from={from} to={to} />, t("adminDash.custo_nota"));
-      case "ai_usage": { const rows = topN(agg(data.aiUsage, "capability", "calls"), 8); const all = agg(data.aiUsage, "capability", "calls");
+      case "ai_usage": { const rows = topN(agg(data.aiUsage, "capability", "calls", (k) => aiCapabilityName(k, t)), 8); const all = agg(data.aiUsage, "capability", "calls", (k) => aiCapabilityName(k, t));
         return card(w, rows.length ? <><Bars data={rows} x="name" y="value" horizontal height={Math.max(180, rows.length * 32)} /><DataTable columns={[{ key: "name", label: t("adminDash.capacidade") }, { key: "value", label: t("admin.dashboard.chamadas"), align: "right" }]} rows={all} /></> : empty("admin.dashboard.sem_chamadas_de_ia_no")); }
       case "ai_by_country": return card(w, data.aiByCountry.length === 0 ? empty("admin.dashboard.sem_chamadas_de_ia_de") : (
         <div className="overflow-x-auto"><table className="w-full type-caption"><thead><tr className="text-left text-muted"><th>{t("auth.country")}</th><th className="text-right">{t("common.usuarios")}</th><th className="text-right">{t("admin.dashboard.chamadas")}</th><th className="text-right">{t("admin.dashboard.custo")}</th><th className="text-right">{t("admin.dashboard.por_usuario")}</th></tr></thead>

@@ -1319,8 +1319,8 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.List<br.com.fashionai.application.view.Views.UserCard> searchUsers(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.List<br.com.fashionai.application.view.Views.UserCard>) Fk.call(this, "searchUsers", java.util.List.class, new Object[]{a0, a1});
+        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> searchUsers(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
+            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "searchUsers", java.util.List.class, new Object[]{a0, a1});
         }
 
         @Override

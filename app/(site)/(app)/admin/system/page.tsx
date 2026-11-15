@@ -1,6 +1,7 @@
 "use client";
 import { api } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
+import { backupSizeKb, backupState, backupWhen, type BackupRow } from "@/lib/admin/backup-row";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, PageHeader, Skeleton, useToast } from "@/components/ui";
@@ -18,7 +19,7 @@ function System() {
   const { fmtDateTime, fmtMoney, t } = useI18n(); const toast = useToast();
   const ai = useApi<AiOverview>((signal) => api.get("/api/admin/ai", { signal }), []);
   const logos = useApi<LogoRow[]>((signal) => api.get("/api/admin/brand-logos", { signal }), []);
-  const backups = useApi<{ id?: string; kind?: string; fileKey?: string; sizeBytes?: number; ok?: boolean; createdAt?: string; checksum?: string }[]>((signal) => api.get("/api/admin/backups", { signal }), []);
+  const backups = useApi<BackupRow[]>((signal) => api.get("/api/admin/backups", { signal }), []);
   const run = async (fn: () => Promise<unknown>, ok: string, after?: () => void) => { try { const r = await fn(); toast.success(ok + (r && typeof r === "object" && "message" in (r as object) ? `: ${(r as { message?: string }).message}` : "")); after?.(); } catch (e) { toast.fromError(e); } };
   return (
     <>
@@ -35,7 +36,7 @@ function System() {
               {(ai.data.hypeV2.coverage?.length ?? 0) > 0 && <HypeCoverageTable rows={ai.data.hypeV2.coverage!} />}
               <p className="type-caption text-muted">{t("hypeAdmin.sistema_nota")}</p></div>}
           </Card>
-          <Card><h2 className="type-h3 mb-2">{t("admin.system.backups_mysqldump")}</h2><Button variant="primary" size="sm" onClick={() => run(() => api.post("/api/admin/backups"), t("admin.system.backup_solicitado"), backups.reload)}>{t("admin.system.executar_backup_agora")}</Button><ul className="fai-list mt-2 type-body-sm">{(backups.data ?? []).map((b, i) => <li key={b.id ?? i} className="flex justify-between py-1"><span>{b.createdAt ? fmtDateTime(b.createdAt) : ""} · {b.kind ?? "FULL"} · {b.ok === false ? t("common.falhou") : t("common.ok")}</span><span className="type-data">{b.sizeBytes ? `${Math.round(b.sizeBytes / 1024)} KB` : ""}</span></li>)}{(backups.data ?? []).length === 0 && <li className="py-1 text-muted">{t("admin.system.nenhum_backup_registrado")}</li>}</ul></Card>
+          <Card><h2 className="type-h3 mb-2">{t("admin.system.backups_mysqldump")}</h2><Button variant="primary" size="sm" onClick={() => run(() => api.post("/api/admin/backups"), t("admin.system.backup_solicitado"), backups.reload)}>{t("admin.system.executar_backup_agora")}</Button><ul className="fai-list mt-2 type-body-sm">{(backups.data ?? []).map((b, i) => <li key={b.id ?? i} className="flex justify-between py-1"><span>{[backupWhen(b) ? fmtDateTime(backupWhen(b)!) : t("admin.system.backup_sem_data"), t(b.kind === "MYSQL_FULL" || !b.kind ? "admin.system.backup_completo" : "admin.system.backup_outro"), t(`admin.system.backup_estado.${backupState(b)}`)].join(" · ")}</span><span className="type-data">{backupSizeKb(b) != null ? `${backupSizeKb(b)} KB` : ""}</span></li>)}{(backups.data ?? []).length === 0 && <li className="py-1 text-muted">{t("admin.system.nenhum_backup_registrado")}</li>}</ul></Card>
           <Card><h2 className="type-h3 mb-2">{t("admin.system.inferencias_recentes")}</h2><ul className="fai-list type-caption">{(ai.data?.recent ?? []).slice(0, 15).map((r, i) => <li key={i} className="flex justify-between py-1"><span>{r.capability} · {r.provider}{r.fallback ? t("admin.system.fallback") : ""} · {r.result}</span><span className="type-data">{t("admin.system.ms", { value: r.latencyMs ?? 0, value2: r.costUsd != null ? fmtMoney(r.costUsd, "USD") : "" })}</span></li>)}{(ai.data?.recent ?? []).length === 0 && <li className="py-1 text-muted">{t("admin.system.sem_chamadas_ainda")}</li>}</ul></Card>
         </div>
       </div>

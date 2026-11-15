@@ -14,7 +14,6 @@ import br.com.fashionai.application.ports.AnalyticsQueryPort;
 import br.com.fashionai.application.ports.BackupPort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.BackupRecord;
 import br.com.fashionai.domain.model.ModerationQueueItem;
 import br.com.fashionai.domain.model.User;
@@ -155,9 +154,9 @@ public class AdminService {
 
     // ================================================================== contas
     @Transactional(readOnly = true)
-    public List<Views.UserCard> searchUsers(CurrentUser admin, String term) {
+    public List<Map<String, Object>> searchUsers(CurrentUser admin, String term) {
         guard.requireAdmin(admin);
-        return users.searchByUsername(term == null ? "" : term.trim(), PageRequest.of(0, 50)).stream().map(Views::user).toList();
+        return users.searchByUsername(term == null ? "" : term.trim(), PageRequest.of(0, 50)).stream().map(AdminViews::userRow).toList();
     }
 
     @Transactional
