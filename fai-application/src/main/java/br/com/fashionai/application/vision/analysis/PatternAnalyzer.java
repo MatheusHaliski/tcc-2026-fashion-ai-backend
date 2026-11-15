@@ -44,6 +44,7 @@ public final class PatternAnalyzer {
         if (side < 16) {
             return new Result(Pattern.SOLID, 0.3, Map.of());
         }
+        int background = background(s);
         double[][] lum = new double[side][side];
         boolean[][] on = new boolean[side][side];
         int[] fabric = new int[side * side];
@@ -52,7 +53,7 @@ public final class PatternAnalyzer {
         for (int y = 0; y < side; y++) {
             for (int x = 0; x < side; x++) {
                 int p = s.getRGB(x0 + x, y0 + y);
-                if ((p >>> 24) < 200) {
+                if ((p >>> 24) < 200 || nearBackground(p, background)) {
                     continue; // fora da peça (vão entre as pernas, decote): não é tecido
                 }
                 double l = ((p >> 16 & 0xFF) * 0.299 + (p >> 8 & 0xFF) * 0.587 + (p & 0xFF) * 0.114) / 255.0;
@@ -107,6 +108,42 @@ public final class PatternAnalyzer {
             return new Result(Pattern.SOLID, Math.min(0.8, 0.45 + (coverage - SOLID_COVERAGE)), scores);
         }
         return new Result(Pattern.PRINTED, Math.min(0.7, 0.4 + std), scores);
+    }
+
+    /**
+     * Cor do fundo de um recorte opaco (a caixa da peça numa foto, com o fundo à volta): a mediana da borda, quando a
+     * borda é quase toda de uma cor só; -1 quando há transparência ou a borda varia (a peça encosta na borda).
+     */
+    static int background(BufferedImage s) {
+        List<Integer> border = new ArrayList<>();
+        for (int x = 0; x < s.getWidth(); x++) {
+            border.add(s.getRGB(x, 0));
+            border.add(s.getRGB(x, s.getHeight() - 1));
+        }
+        for (int y = 0; y < s.getHeight(); y++) {
+            border.add(s.getRGB(0, y));
+            border.add(s.getRGB(s.getWidth() - 1, y));
+        }
+        if (border.stream().anyMatch(p -> (p >>> 24) < 200)) {
+            return -1;
+        }
+        int[] med = new int[3];
+        for (int c = 0; c < 3; c++) {
+            int shift = 16 - 8 * c;
+            med[c] = (int) median(border.stream().map(p -> (double) (p >> shift & 0xFF)).toList());
+        }
+        int bg = 0xFF000000 | med[0] << 16 | med[1] << 8 | med[2];
+        long close = border.stream().filter(p -> nearBackground(p, bg)).count();
+        return close >= border.size() * 0.7 ? bg : -1;
+    }
+
+    static boolean nearBackground(int p, int background) {
+        if (background == -1) {
+            return false;
+        }
+        int d = Math.abs((p >> 16 & 0xFF) - (background >> 16 & 0xFF)) + Math.abs((p >> 8 & 0xFF) - (background >> 8 & 0xFF))
+                + Math.abs((p & 0xFF) - (background & 0xFF));
+        return d < 36;
     }
 
     /** Parte mínima do miolo na cor dominante para a peça ser lida como lisa. */

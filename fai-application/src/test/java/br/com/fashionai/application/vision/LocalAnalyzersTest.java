@@ -35,6 +35,14 @@ class LocalAnalyzersTest {
         g.fillOval(180, 300, 40, 40);
         g.dispose();
         assertThat(patterns.analyze(jeans).pattern()).isEqualTo(PatternAnalyzer.Pattern.SOLID);
+        // a mesma calça recortada de uma foto (caixa opaca): o fundo bege entre as pernas não conta como estampa
+        java.awt.image.BufferedImage foto = new java.awt.image.BufferedImage(400, 800, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D fg = foto.createGraphics();
+        fg.setColor(new Color(236, 232, 224));
+        fg.fillRect(0, 0, 400, 800);
+        fg.drawImage(jeans, 0, 0, null);
+        fg.dispose();
+        assertThat(patterns.analyze(foto).pattern()).isEqualTo(PatternAnalyzer.Pattern.SOLID);
 
         java.awt.image.BufferedImage florido = Shapes.pants(new Color(240, 235, 225));
         java.awt.Graphics2D f = florido.createGraphics();
