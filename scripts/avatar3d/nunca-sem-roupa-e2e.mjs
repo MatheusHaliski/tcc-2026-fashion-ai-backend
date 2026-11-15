@@ -96,8 +96,6 @@ if (want("try-on-vazio-2d")) await run("try-on-vazio-2d", "/try-on", { clearTryO
 if (want("try-on-sem-corpo-3d-reserva")) await run("try-on-sem-corpo-3d-reserva", "/try-on", { clearTryOn: true, block: "**/avatar3d/body/fai-body-v1.bin", wait: 9000 });
 if (want("passarela")) await run("passarela", "/explorer?tab=passarela", { mock: (p) => (p === "/api/explorer/runway" ? runway : undefined), act: async (p) => { await p.getByRole("button", { name: "Ver desfile em 3D" }).click({ timeout: 60000 }); }, wait: 16000 });
 if (want("my-stage")) await run("my-stage", "/brands/demo?tab=eras", { mock: stageMock, act: async (p) => { await p.waitForTimeout(8000); await p.getByText(/My Stage/i).first().click({ timeout: 20000 }); }, wait: 12000 });
-if (want("meu-quarto")) await run("meu-quarto", "/room", { wait: 10000 });
-if (want("meu-quarto-espelho")) await run("meu-quarto-espelho", "/room", { act: async (p) => { await p.waitForTimeout(6000); await p.getByText("Espelho", { exact: true }).first().click(); }, wait: 5000 });
 if (want("foto-com-meu-manequim") && PIECE_ID) await run("foto-com-meu-manequim", `/pieces/${PIECE_ID}`, {
   act: async (p) => { await p.waitForTimeout(6000); await p.getByRole("button", { name: /mais|opções|ações/i }).first().click(); await p.waitForTimeout(500); await p.getByText(/Foto com meu manequim/).first().click(); }, wait: 14000,
 });

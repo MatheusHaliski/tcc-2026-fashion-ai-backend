@@ -793,7 +793,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/e2e/suite_3.py": {
-   "max": 312,
+   "max": 264,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/e2e/verify-card-art.mjs": {
@@ -801,7 +801,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/flair-demos/mock-api.mjs": {
-   "max": 326,
+   "max": 309,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/i18n/extract.js": {
