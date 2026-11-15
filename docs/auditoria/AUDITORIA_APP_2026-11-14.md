@@ -399,7 +399,7 @@ Feita de 14/11/2026 (19:50 UTC) a 15/11/2026, no mesmo ambiente local (MySQL loc
 
 ## 10. Terceira auditoria (depois das três rodadas de correções)
 
-**Relatório parcial, atualizado às 15:18 UTC de 15/11/2026.** As linhas marcadas "a auditar" ainda não foram refeitas nesta rodada.
+**Relatório parcial, atualizado às 15:22 UTC de 15/11/2026.** As linhas marcadas "a auditar" ainda não foram refeitas nesta rodada.
 
 **Como foi feita.** Em 15/11/2026, das 08:37 UTC em diante (com uma parada entre 08:50 e 13:27 UTC, quando a máquina foi reiniciada, e troca de auditor às 13:35 UTC), por auditores que não escreveu nenhuma das correções. Pilha local: MySQL 8.0 da própria máquina (banco `fashionai` local, com as contas de demonstração das auditorias anteriores), backend reconstruído do código atual (`mvn -o -q -Djacoco.skip=true -DskipTests package`) e religado em `localhost:8098` — o Flyway aplicou a migração V102 (ACERVO) só nesse banco —, frontend com `npm run dev` em `localhost:3000` (este checkout, commit `cba24000`). As variáveis `MYSQL_*` e `S3_*` externas foram tiradas de todos os processos; nenhum servidor externo foi acessado. Contas: @lia.demo, @bia.demo, @vento.norte, @maia.solano e @admin_auditoria (todas fictícias). Chromium pelo Playwright em 1440×900 e 390×844, refazendo o fluxo de cada funcionalidade e os passos de cada problema já apontado; as capturas citadas foram conferidas a olho. **Ficou desligado:** IA paga (`AI_REMOTE_ENABLED=false`, nenhuma chave de provedor): o que depende dela foi avaliado só com o motor local. Sem placa de vídeo, a fluidez do 3D não foi avaliada; as cenas foram julgadas em quadros parados. Nenhum código do aplicativo foi alterado.
 
@@ -429,6 +429,23 @@ Feita de 14/11/2026 (19:50 UTC) a 15/11/2026, no mesmo ambiente local (MySQL loc
 | Notificações | 7,5 | 8,5 | **8** | Lista agrupada ("69 lançamentos de FAI Points · +641 no dia", "11 novas conquistas"), filtros, "Look criado com sucesso", contador "7 não lidas" | 1. [app] A notificação de novo acesso manda encerrar a sessão em "Configurações › Conta", mas as sessões ficam na aba "Sessões".<br>2. [app] Textos de dentro do sistema: "Quest do FLAIR concluída", "Recalculamos a Camada 1 do seu DNA de Estilo", "Closet Digital" (o menu diz "Minhas peças") | [imagem](evidencias/auditoria3/not-1-d.jpg) |
 | FAI Points e Loja do quarto | 7,5 | 8 | **8** | Central sem "ambiente de teste"; saldo 651, nível Studio; loja com 451 itens, filtros, "Você tem 1: na caixa", "Montar no quarto", "Comprar outro". Compra e recusa sem saldo não refeitas (funcionavam na reauditoria) | 1. [app] "Provar" só mostra "Prévia em Porta 1: Prévia descartada ao sair — nada foi comprado" (sem prévia nenhuma).<br>2. [app] Etiqueta "BASICO" sem acento em todos os itens.<br>3. [app] O motivo do "Comprar" desligado continua só no `title` (não aparece no celular) | [imagem](evidencias/auditoria3/pts-1-loja-d.jpg) |
 
+### 10.2 Parte B (funcionalidades da seção 7.6)
+
+| Funcionalidade | Nota anterior (7.6) | Nota agora | O que foi visto | O que impede de passar de 8 | Evidência |
+|---|---|---|---|---|---|
+| Explorador | 7,5 | **8** | As 6 seções; insights com "Atualizado agora · calculado no app, sem IA online"; sem o "1627%" nem o "HYPE_V2_1" | [IA/GPU] a modelo da passarela (não refeito em quadro parado) | [imagem](evidencias/auditoria3/b-explorer-d.jpg) |
+| Histórico | 7,5 | **7,5** | Timeline, Evolução, Uso, Hype e Insights abrem sem erro de rede (o 409 de `GET /api/me/dna` sumiu); sem "Inventory Score" | [app] A timeline mostra o mesmo look "Vista-me · 14/11" em 14 e 15 de nov., os dois "sem avaliação · Hype: Dados insuficientes" | [imagem](evidencias/auditoria3/b-history-d.jpg) |
+| Destaques | 5,5 | **8** | "Rankings" abre a janela em português: nota (430), "Participe dos rankings…", botão "Participar dos rankings" e a lista dos 8 rankings pelo nome (sem JSON) | [app] Posição só depois do cálculo periódico (não visto) | [imagem](evidencias/auditoria3/b-highlights-d.jpg) |
+| Tamanhos (`/fit`) | 8 | **7,5** | Três grades (roupas, calças, calçados) e tabela de referência | [app] Escolher um tamanho continua sem confirmação; a única mensagem de status é "Crie seu avatar para ver o tamanho do corpo dele. Crie seu Avatar 3D para se ver no espelho" (repetida e falando do espelho na tela de tamanhos) | [imagem](evidencias/auditoria3/b-fit-d.jpg) |
+| Lavanderia | 4 | **7,5** | "Peças limpas" com "Marcar como usada" ("… foi para Peças usadas"), lote por composição ("Composição Algodão (2)"), "No lote", "Já lavei" ("… voltou a limpa"), contadores no plural | [app] "Enviar para lavagem" fica desligado até marcar a caixa "Confirmo o lote" — o envio do lote não foi refeito até o fim nesta auditoria; miniaturas com a ilustração da categoria | [imagem](evidencias/auditoria3/b-laundry-d.jpg) |
+| Passaporte da peça | 8 | **7** | Ver 10.3: identificador estável, "Não informado", histórico de declarações | [app] Categoria e subcategoria como código ("lower_piece", "jeans"); link público, transferência e reparo não exercitados | [imagem](evidencias/auditoria3/acv-ficha-Pass-d.jpg) |
+| Cupons | sem nota | **sem nota** | Tela com filtros e estado vazio explicado | Sem promoção com resgate no banco local | — |
+| Loja física | sem nota | **sem nota** | Categorias e "Meus resgates" vazios, explicados | Sem estoque cadastrado | — |
+| Loja de artes | sem nota | **sem nota** | "Ainda não há presets publicados para compra" | Nenhuma oferta publicada | — |
+| DNA de Estilo | 7 | **7,5** | `/dna` mostra "Seus DNAs de estilo salvos" no topo; o criador começa em Privado; passos "Looks" e "Arte de fundo" | [app] O DNA salvo antes continua com a frase "silhueta layering" no card; [IA/GPU] modo "Com IA" | [imagem](evidencias/auditoria3/b-dna-d.jpg) |
+| FAI Atelier | 5,5 | **5** | Projeto abre, "Criar base 3D" carrega a peça com Mover/Rotacionar/Escala, partes em português (Corpo, Manga esquerda, Gola) e "Suavizar malha" aplica | [app] **Continua sem salvar**: depois da mudança fica "Alterações não salvas · Versão 0", "Salvar" desligado e o bloco do catálogo em "Carregando…" por mais de 30 s, mesmo depois de "Recarregar versão". Escolher "Saia" criou "Camiseta base" | [imagem](evidencias/auditoria3/b-atelier-2-d.jpg) |
+
+Média da Parte B com nota (8 funcionalidades): **7,25** (antes 6,9 com as mesmas 8).
 
 ### 10.3 ACERVO e os três requisitos da ficha da peça
 
