@@ -63,6 +63,15 @@
   color: var(--muted);
 }
 
+/* no celular nada passa da largura (auditoria 3): as faixas da grade encolhem até a tela e as abas rolam por dentro */
+.mk-game,
+.mk-game .n3d-top,
+.mk-game .n3d-bottom,
+.mk-resources {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
 .mk-resources {
   display: grid;
   gap: 8px;

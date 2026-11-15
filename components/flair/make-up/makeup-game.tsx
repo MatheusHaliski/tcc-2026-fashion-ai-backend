@@ -65,7 +65,7 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
   };
 
   return (
-    <div className="n3d-game" data-testid="makeup-game">
+    <div className="n3d-game mk-game" data-testid="makeup-game">
       <div className="n3d-top">
         <MakeUpScene avatar={estado.avatar} pecas={pecas} maquiagem={estado.sel.maquiagem} protagonista={protagonista} />
         <NucleoCast avatares={{ solo: [{ tipo: efetiva, papel: "protagonista", quantidade: 1 }], online: null }} efetiva={efetiva} aceitos={ACEITOS}

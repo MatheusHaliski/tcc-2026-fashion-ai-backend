@@ -12309,5 +12309,6 @@
   "history.timeline.again": "{n}.ª vez con este look",
   "tryOn.slot_peca_unica": "Pieza única (cubre arriba y abajo)",
   "challenges.id.como_conta_10x10": "Cuentan los looks nuevos, creados después de empezar el desafío y solo con las 10 prendas. Una entrada en el mural es el look que muestras; solo suma si también sigue esta regla.",
-  "laundry.confirmFirst": "Para enviarlo, activa “Confirmo el lote” arriba."
+  "laundry.confirmFirst": "Para enviarlo, activa “Confirmo el lote” arriba.",
+  "flair3d.detetive.ui.look": "Viste el look de la investigación y entrégalo: los colores de las prendas del mazo se vuelven las cartas de la mano (cada color abre un tipo de acción)."
 }

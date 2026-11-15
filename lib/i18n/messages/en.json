@@ -12309,5 +12309,6 @@
   "history.timeline.again": "worn again (time {n})",
   "tryOn.slot_peca_unica": "One-piece (covers top and bottom)",
   "challenges.id.como_conta_10x10": "New looks count: created after you started the challenge and using only the 10 pieces. An entry on the wall is the look you show; it only adds up if it also follows this rule.",
-  "laundry.confirmFirst": "To send it, turn on “I confirm the batch” above."
+  "laundry.confirmFirst": "To send it, turn on “I confirm the batch” above.",
+  "flair3d.detetive.ui.look": "Put on the investigation look and submit: the colours of the deck's pieces become the cards in your hand (each colour opens a kind of action)."
 }

@@ -85,6 +85,7 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
   else if (resposta && !estado.sel.resposta) dica = [props.briefing, daResposta("need")].filter(Boolean).join(" ");
   else if (resposta && estado.sel.resposta) dica = [props.briefing, daResposta("done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) })].filter(Boolean).join(" ");
   else if (props.briefing) dica = props.briefing;
+  else if (definicao.codigo === "FASHION_DETECTIVE" && definicao.rodada !== "SALOES_DA_GALA") dica = tx.t("flair3d.detetive.ui.look");
   else if (definicao.codigo === "FASHION_DETECTIVE") {
     const s = salaoDaVez(props.tentativa);
     dica = tx.t("flair3d.ui.detetive.hint", { n: s.numero, total: s.total, salao: tx.t(`flair3d.ui.detetive.${s.codigo}.name`), codigo: tx.t(`flair3d.ui.detetive.${s.codigo}.code`), carta: tx.t(`flair3d.ui.detetive.${s.codigo}.clue`) });

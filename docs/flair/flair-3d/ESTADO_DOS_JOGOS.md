@@ -25,6 +25,10 @@ O que vale para todos os jogos e não se repete abaixo:
   verdade). O desenho descreve essas variações, mas a base só abre partida solo (`BASE_NUCLEOS.md`, "Os avatares de
   cada partida"). Onde o jogo pede adversário ou plateia, entra um figurante com nota tirada da semente.
 - **Fluidez do 3D:** não medida. O ambiente de desenvolvimento não tem placa de vídeo.
+- **Modelo cinza na ação (auditoria 3):** conferido de novo em quadros a cada 0,35 s do Dress Fighter, da entrega ao
+  resultado, sem placa de vídeo: a modelo fica vestida o tempo todo. O corpo humano só aparece com as três zonas
+  cobertas (`components/three/human-outfit.tsx`). Não reproduzido; a auditoria foi feita antes das câmeras e das
+  pessoas de cena, e a causa daqueles quadros não foi confirmada.
 - **Cor das peças e das cartas (auditoria 3):** a carta dos jogos mostra a cor cadastrada (bolinha e nome) e a foto
   da peça sem foto vem pintada nessa cor; o corpo 3D veste a peça sem foto na cor do cadastro. Uma só fonte de cor:
   `lib/pieces/piece-image.ts` e `defaultGarmentColor` (`lib/catalog/default-garment.ts`). As partidas clássicas e o
@@ -216,8 +220,8 @@ Verão. Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unha
 | Briefs do grupo: Make Monocromática (72), Make Natural (73), Make que Conversa com a Roupa (74) | pendente | não |
 | O núcleo Road to Glory oferece os briefs como rodadas | feito | não |
 | Resultado diz a regra que faltou e o que trocar | pendente | não |
-| Celular: a cena e a barra de botões cabem na largura | pendente | não |
-| A peça sem foto aparece no corpo 3D na cor do cadastro (auditoria 3: a bota preta saía laranja, a cor da ilustração da categoria) | feito em todos os jogos: a carta leva a cor cadastrada ao corpo 3D, que veste o tecido nessa cor; a mesma fonte das miniaturas (`lib/pieces/piece-image.ts`) | não (só testes) |
+| Celular: a cena e a barra de botões cabem na largura | feito: a grade do jogo encolhe até a tela (o elenco e as abas passavam para 709 px numa tela de 390) | sim (390×844, tela real com a API simulada) |
+| A peça sem foto aparece no corpo 3D na cor do cadastro (auditoria 3: a bota preta saía laranja, a cor da ilustração da categoria) | feito em todos os jogos: a carta leva a cor cadastrada ao corpo 3D, que veste o tecido nessa cor; a mesma fonte das miniaturas (`lib/pieces/piece-image.ts`) | sim (MAKE UP: camisa branca, calça marinho e bota preta no corpo; Dress Fighter: blusa vermelha, jeans e bota preta) |
 | Cabelo, unhas, joias, temporadas e os 30 níveis com desbloqueios | pendente | não |
 
 ## 6 · Fashion Detective
@@ -247,6 +251,7 @@ textos `flair3d.detetive.*` em pt-BR, en e es.
 | Acusação entre os suspeitos numerados, resposta só no servidor; finais completo, parcial e revelado | feito | sim (quadro e final parcial) |
 | Vigias e elenco como gente (corpo humano do avatar, roupa do papel) | feito | sim |
 | Reduzir movimento (planta 2D, sem deslizar), 390×844 | feito (planta testada no jsdom) | sim (390×844); a planta só em teste |
+| Celular (auditoria 3: textos sobre a cena, botões e resultado cortados) | feito: a faixa de baixo cabe na largura (antes passava 20 px), a ação quebra a linha em vez de cortar ("Pegar o papel do bolso do segurança do salão", com a contração certa em pt-BR e es), o quadro termina acima da barra de navegação, a câmera mostra só o ícone e o elenco só quem joga; o resultado rola dentro da faixa; a dica do preparo fala do caso novo (antes dizia "Salão 1 de 6") | sim (tela real do jogo em 390×844 com a API simulada no navegador: preparo, sala com enigma e ações, final parcial e resultado) |
 | Salvar por sala | o servidor grava cada passo (a partida retoma de onde parou); não há tela de "continuar da sala" | não |
 | Limite de 45 minutos | feito (relógio da partida; ao passar, Iolanda chama para a passarela) | não |
 

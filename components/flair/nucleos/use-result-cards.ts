@@ -31,7 +31,8 @@ export function useResultCards({ momento, resultado, vestidas, cards, efeitos }:
       let texto = "";
       if (p.pontos != null) texto = tx.pontos(p.pontos);
       else if (p.selo) texto = tx.efeito(p.selo);
-      brilho[p.vaga] = { ordem, texto };
+      // na régua a miniatura é estreita: os pontos inteiros ("20 pts"); a lista do resultado guarda as casas ("20,33")
+      brilho[p.vaga] = { ordem, texto: p.pontos != null ? tx.pontos(Math.round(p.pontos)) : texto };
       lista.push({ cardId: p.cardId, nome: cards.find((c) => c.id === p.cardId)?.name ?? "", texto });
     });
     return { brilho, lista };
