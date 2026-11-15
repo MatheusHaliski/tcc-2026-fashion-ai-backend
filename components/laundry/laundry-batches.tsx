@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n/i18n";
-import { mediaUrl } from "@/lib/api/client";
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import type { LaundryBatch, LaundryConflict, LaundryPiece } from "@/lib/laundry/types";
 import { Badge, Button, Switch } from "@/components/ui";
 
 export function PieceThumb({ piece }: { piece: LaundryPiece }) {
-  const url = mediaUrl(piece.thumbnailUrl);
+  const url = pieceImageUrl(piece);
   return <span className="h-10 w-10 shrink-0 overflow-hidden rounded bg-surface-2" aria-hidden>{url && <img src={url} alt="" className="h-full w-full object-cover" />}</span>;
 }
 

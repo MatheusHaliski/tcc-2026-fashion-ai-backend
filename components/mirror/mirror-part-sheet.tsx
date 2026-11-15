@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api, ApiError, mediaUrl } from "@/lib/api/client";
+import { api, ApiError } from "@/lib/api/client";
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Badge, Button, Sheet, Skeleton, cn, type MenuItem } from "@/components/ui";
 import { PieceRowCompact } from "@/components/pieces/piece-row-compact";
@@ -61,7 +62,7 @@ export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTog
   const tile = (p: MirrorPieceRef, sub: string | null | undefined, disabled = false) => (
     <button key={p.id} type="button" className="mirror-pick" disabled={disabled || busy !== null} aria-pressed={disabled ? true : undefined} onClick={() => void wear(p)}
       aria-label={t("mirror.sheet.vestir_aria", { name: p.name, part: label })}>
-      <span className="mirror-pick-art">{(p.thumbnailUrl ?? p.imageUrl) ? <img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl ?? undefined)} alt="" /> : null}</span>
+      <span className="mirror-pick-art">{(p.thumbnailUrl ?? p.imageUrl) ? <img src={pieceImageUrl(p, 320)} alt="" /> : null}</span>
       <span className="mirror-pick-name">{p.name}</span>
       {sub && <span className="mirror-pick-sub">{sub}</span>}
     </button>
@@ -81,7 +82,7 @@ export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTog
                   { label: t("mirror.sheet.tirar_da_lista"), onSelect: () => void unlist(p), danger: true },
                 ];
                 return (
-                  <PieceRowCompact key={p.id} kicker={label} thumb={p.thumbnailUrl ?? p.imageUrl} glyph={part.glyph}
+                  <PieceRowCompact key={p.id} kicker={label} thumb={pieceImageUrl(p, 320)} glyph={part.glyph}
                     source={{ label: t("tryOn.origem_guarda_roupa"), tone: "chalk" }} meta={p.addressLabel} name={p.name} href={`/pieces/${p.id}`}
                     tone={p.available === false ? "mark" : undefined}
                     state={<>

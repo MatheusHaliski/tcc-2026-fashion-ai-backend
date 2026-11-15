@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { api, mediaUrl } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import type { TipoLook } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
-import { Badge, Button, Card, Dialog, cn, useToast } from "@/components/ui";
+import { Badge, Button, Card, cn, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
 import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
@@ -13,6 +14,7 @@ import type { Illustration } from "@/lib/capture/capture-guides";
 import { VistaMeCells } from "@/components/mirror/vista-me-cells";
 import { MirrorLookType } from "@/components/mirror/mirror-look-type";
 import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
+import { MirrorGrwmDialog, type GrwmStoryboard } from "@/components/mirror/mirror-grwm";
 
 /*
  * Espelho (RF28) — o painel da prova dentro do Meu Quarto (e da vista embutida no 2.5D): só botões, células e listas,
@@ -163,7 +165,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   const { pinned, toggle: togglePin, anchorIds } = pins ?? ownPins;
   const [extras, setExtras] = useState<Pick<MirrorData, "sequence" | "fallbackMessage" | "challengeNotice" | "message"> | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [grwm, setGrwm] = useState<{ steps?: { imageUrl?: string | null; caption?: string; pieceId?: string; at?: number }[]; totalMs?: number } | null>(null);
+  const [grwm, setGrwm] = useState<GrwmStoryboard | null>(null);
   const worn = wornOf(data);
   const dressOn = asList(data.slots.dress).length > 0;
   const restore = async (ids: string[]) => { for (const id of ids) await run("restore", () => api.post("/api/me/mirror/pieces", { pieceId: id })); setNotice(null); };
@@ -239,7 +241,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
               <button key={p.id} type="button" className={cn("fitting-store mirror-part", open === p.id && "is-active", missing && "is-missing", !pieces.length && "is-empty", arrived && "is-arrived")}
                 aria-haspopup="dialog" aria-label={t("mirror.parte.aria", { part: label, value: pieces.length ? [pieces.map((x) => x.name).join(", "), under].filter(Boolean).join(" · ") : caption })} onClick={() => setOpen(p.id)}>
                 <span className="mirror-part-art" aria-hidden>
-                  {pieces.length ? pieces.slice(0, 2).map((x) => <img key={x.id} src={mediaUrl(x.thumbnailUrl ?? x.imageUrl ?? undefined)} alt="" style={{ background: x.colorHex ?? undefined }} />)
+                  {pieces.length ? pieces.slice(0, 2).map((x) => <img key={x.id} src={pieceImageUrl(x, 320)} alt="" style={{ background: x.colorHex ?? undefined }} />)
                     : <GarmentGlyph id={p.glyph} size={36} animated={false} numbered={false} />}
                 </span>
                 <span className="fitting-store-name">{label}</span>
@@ -303,17 +305,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
           unlist={async (p) => { if (host?.unlist) await host.unlist(p); else await run("unlist", () => api.delete(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`)); }}
           showInRoom={host?.showInRoom ? (p) => { setOpen(null); host.showInRoom!(p); } : undefined} />
       )}
-      <Dialog open={!!grwm} onClose={() => setGrwm(null)} title={t("mirror.grwm_storyboard")} size="lg">
-        <ol className="mirror-grwm" aria-label={t("mirror.grwm_storyboard")}>
-          {(grwm?.steps ?? []).map((s, i) => (
-            <li key={i} className="mirror-grwm-card">
-              {s.imageUrl && s.imageUrl !== "null" ? <img src={mediaUrl(s.imageUrl)} alt="" /> : <span className="mirror-grwm-end" aria-hidden>✨</span>}
-              <span className="mirror-grwm-n">{i + 1}</span>
-              <p>{s.caption}</p>
-            </li>
-          ))}
-        </ol>
-      </Dialog>
+      <MirrorGrwmDialog grwm={grwm} onClose={() => setGrwm(null)} />
     </div>
   );
 }

@@ -112,7 +112,7 @@ public class AcervoPecasService {
             Map<String, Object> linha = new LinkedHashMap<>();
             linha.put("pieceId", m.peca().getId());
             linha.put("name", m.peca().getName());
-            linha.put("thumbnailUrl", m.peca().getThumbnailUrl() != null ? m.peca().getThumbnailUrl() : m.peca().getImageUrl());
+            AcervoViews.imagemComCor(linha, m.peca());
             linha.put("de", lugar(mapa, m.de()));
             linha.put("para", lugar(mapa, m.para()));
             linha.put("motivo", Msg.t("acervo.arrumacao.motivo." + m.tipo().toLowerCase(java.util.Locale.ROOT)));

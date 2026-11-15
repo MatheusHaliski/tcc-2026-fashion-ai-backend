@@ -1,5 +1,6 @@
 "use client";
-import { api, mediaUrl } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import type { Page, PieceView } from "@/lib/api/types";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -20,7 +21,7 @@ export function ChallengeChosenPieces({ pieceIds }: { pieceIds: string[] }) {
           return (
             <li key={id} className="min-w-0 text-center">
               <div className="aspect-square overflow-hidden rounded bg-surface-2">
-                {piece?.imageUrl || piece?.thumbnailUrl ? <img src={mediaUrl(piece.thumbnailUrl ?? piece.imageUrl)} alt="" className="h-full w-full object-contain" /> : null}
+                {piece ? <img src={pieceImageUrl(piece, 320)} alt="" className="h-full w-full object-contain" /> : null}
               </div>
               <span className="type-caption block truncate" title={piece?.name}>{piece?.name ?? (closet.loading ? "…" : t("challenges.id.peca_fora"))}</span>
             </li>
