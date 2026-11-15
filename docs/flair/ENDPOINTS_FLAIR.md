@@ -191,5 +191,12 @@ Guardados para o Glass Empire (sem entrada na navegação, arquivos mantidos): `
 `gala-heist.tsx`, `heist-mods.tsx`, `lib/flair/afterparty.ts`, `lib/heist/`, `FlairAdventureController`,
 `AfterpartyEngine`, `AfterpartyMods` e os testes deles.
 
+Onde "FLAIR 3D" ainda aparece fora de `/flair/3d`: a descrição das regras `FLAIR_3D` e `FLAIR_3D_PERFECT` de
+`fai_points_rules` ("Jogo FLAIR 3D concluído (valor do jogo)"), gravada pela V98 e mostrada na lista de regras dos FAI
+Points. Trocar o texto exige uma migração nova, que fica para a dona aprovar.
+
+Fora deste corte, para a frente dos jogos: `/flair/make-up` e `/flair/elencos` também não têm entrada na Central FLAIR
+(só se chega pelo endereço).
+
 Também sem chamador, e mantido: o palco fotográfico dos confrontos (`components/flair/match/`,
 `lib/flair/match-*.ts`), em andamento desde 06/11, que reaproveita a cena fotográfica de `components/flair/games/`.
