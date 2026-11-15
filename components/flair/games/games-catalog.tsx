@@ -13,9 +13,10 @@ import { GameCard, useGameLabels } from "@/components/flair/games/game-card";
 import { GameFilters } from "@/components/flair/games/game-filters";
 
 /**
- * Catálogo do FLAIR 3D (/flair/jogos): voltar à central, faixa com o nível e o guarda-roupa da pessoa (do servidor),
- * filtros em chips (estado na URL) e a grade de jogos agrupada por série com contadores. A API devolve a lista inteira
- * com `access` por jogo; o filtro é local. Loading/erro nunca liberam nada: sem resposta não há card para jogar.
+ * Catálogo da Cidade de Vidro (/flair/jogos, os 5 capítulos do desenho anterior ao FLAIR 3D): voltar à central,
+ * faixa com o nível e o guarda-roupa da pessoa (do servidor), filtros em chips (estado na URL) e a grade de jogos
+ * agrupada por série com contadores. A API devolve a lista inteira com `access` por jogo; o filtro é local.
+ * Loading/erro nunca liberam nada: sem resposta não há card para jogar.
  */
 export function GamesCatalog() {
   const { t } = useI18n();
@@ -39,7 +40,7 @@ export function GamesCatalog() {
     <>
       <div className="flair-section-head">
         <Link href="/flair?mode=games" className="btn btn-sm"><UiIcon name="chevronLeft" size={18} />{t("flair.hub.back")}</Link>
-        <PageHeader title={t("flair.hub.mode.games.title")} kicker={t("flair.hub.mode.games.kicker")} lead={t("flair.hub.mode.games.lead")}
+        <PageHeader title={t("games.catalog.title")} kicker={t("games.catalog.kicker")} lead={t("games.catalog.lead")}
           actions={<div className="flex flex-wrap items-center gap-2"><HowItWorks id="flair.games" />{data.data && <Badge tone="thread">{t("cbc.season", { season: data.data.season })}</Badge>}</div>} />
       </div>
       {data.error ? <ErrorState error={data.error} onRetry={data.reload} /> : data.loading || !data.data ? <SkeletonGrid /> : (

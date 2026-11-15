@@ -40,7 +40,7 @@ describe("catálogo", () => {
   it("mostra nível e guarda-roupa do servidor, agrupa por série com contadores, miniaturas e selos; bloqueado tem cadeado com motivo e links", async () => {
     const { calls } = loggedAs(ME, { "GET /api/flair/games": LIST });
     renderApp(<GamesCatalog />);
-    expect(await screen.findByRole("heading", { name: "FLAIR 3D" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Cidade de Vidro" })).toBeTruthy();
     expect(screen.getByRole("link", { name: /Central FLAIR/ }).getAttribute("href")).toBe("/flair?mode=games");
     expect((await screen.findByTestId("ge-me")).textContent).toContain("Seu nível: Studio");
     expect(screen.getByTestId("ge-me").textContent).toContain("Seu guarda-roupa: Bem curado");

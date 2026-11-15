@@ -7,7 +7,6 @@ import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.moments.MomentViews;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.AuraPermissionsService.AuraType;
-import br.com.fashionai.application.service.FaiPointsService.Level;
 import br.com.fashionai.domain.model.FlairCardInstance;
 import br.com.fashionai.domain.model.FlairChallenge;
 import br.com.fashionai.domain.model.FlairChallengeSubmission;
@@ -83,27 +82,6 @@ public class FlairGameService {
     }
 
     // ================================================================== catálogo
-    /** Hub (R11): {total, playable, byTier}; visitante → playable 0. */
-    @Transactional(readOnly = true)
-    public Map<String, Object> summary(CurrentUser viewer) {
-        List<FlairChallenge> all = games();
-        Flair3dAccess.Me me = access.me(viewer == null ? null : viewer.id());
-        Map<String, Integer> byTier = new LinkedHashMap<>();
-        for (Level l : Level.values()) {
-            byTier.put(l.name(), 0);
-        }
-        int playable = 0;
-        for (FlairChallenge c : all) {
-            byTier.merge(String.valueOf(c.getRequiredLevel()), 1, Integer::sum);
-            playable += access.check(c, me, viewer != null).allowed() ? 1 : 0;
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("total", all.size());
-        out.put("playable", playable);
-        out.put("byTier", byTier);
-        return out;
-    }
-
     /** Catálogo filtrado, ordenado por número; uma leitura de nível e de guarda-roupa por requisição (R10). */
     @Transactional(readOnly = true)
     public Map<String, Object> list(CurrentUser viewer, Filters f) {

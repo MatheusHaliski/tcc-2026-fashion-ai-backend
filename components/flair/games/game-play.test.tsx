@@ -95,7 +95,7 @@ describe("partida", () => {
     const { calls } = loggedAs(ME, { "GET /api/flair/games/a01-espelho-partido": detail(), "GET /api/me/flair/cards": CARDS });
     renderApp(<GamePlay slug="a01-espelho-partido" />);
     expect(await screen.findByRole("heading", { name: "Espelho Partido" })).toBeTruthy();
-    expect(screen.getByText("FLAIR 3D · Série A · Jogo 1")).toBeTruthy();
+    expect(screen.getByText("Cidade de Vidro · Série A · Jogo 1")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Todos os jogos/ }).getAttribute("href")).toBe("/flair/jogos");
     await screen.findByRole("button", { name: /Caco central/ });
     expect(screen.getByRole("button", { name: /Porta \(opcional\)/ })).toBeTruthy();
@@ -139,7 +139,7 @@ describe("partida", () => {
     const effects = await screen.findByTestId("ge-effects");
     expect(effects.textContent).toContain("Caco central"); expect(effects.textContent).toContain("Metamorfose +1"); expect(effects.textContent).toContain("O espelho se refaz.");
     expect(screen.getByTestId("ge-hype").textContent).toContain("Relevante→Em alta +1");
-    expect(screen.getByText("Pontuação FLAIR 3D 4 de 15")).toBeTruthy();
+    expect(screen.getByText("Pontuação da partida 4 de 15")).toBeTruthy();
     expect(screen.queryByText("Partida perfeita")).toBeNull();
     expect((screen.getByRole("button", { name: "Entregar" }) as HTMLButtonElement).disabled).toBe(true);
     expect(calls.filter((c) => c.path.endsWith("/submit")).length).toBe(0);
@@ -151,7 +151,7 @@ describe("partida", () => {
     fireEvent.click((await screen.findAllByRole("button", { name: /Camisa de linho/ }))[0]);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect((screen.getByRole("button", { name: "Entregar" }) as HTMLButtonElement).disabled).toBe(false), { timeout: 3000 });
-    expect(screen.getByText("Pontuação FLAIR 3D 8 de 15")).toBeTruthy();
+    expect(screen.getByText("Pontuação da partida 8 de 15")).toBeTruthy();
     expect(screen.getAllByText("Partida perfeita").length).toBeGreaterThan(0);   /* selo + linha de pontos FLAIR_3D_PERFECT (prévia) */
     expect(screen.getByText("+35")).toBeTruthy();
     expect(screen.getByText("A suíte amanhece em cacos.")).toBeTruthy();

@@ -83,7 +83,6 @@ createServer(async (req, res) => {
   if (path === "/api/me/aura-permissions") return json(res, 200, { currentTier: TIER, auras: { AURA_BASIC: { allowed: true, requiredTier: "ESTREIA" }, AURA_DYNAMIC: { allowed: TIER !== "ESTREIA", requiredTier: "STUDIO" }, AURA_METAMORPHOSE: { allowed: TIER === "LOFT", requiredTier: "LOFT" }, AURA_IMPERSONATION: { allowed: TIER === "LOFT", requiredTier: "LOFT" } }, hypeFinishes: {}, configVersion: 2 });
   if (path === "/api/me/room") return json(res, 200, ROOM);
   if (path === "/api/me/flair/cards") { const cards = banks.get(current) ?? []; return json(res, 200, { season: "SPRING", counts: { ESPECIAL: 0, OURO: 0, PRATA: 0, BRONZE: 0 }, total: cards.length, cards: cards.map(({ pieceAddedDaysAgo, idleDays, impersonationReady, ...c }) => c) }); }
-  if (path === "/api/flair/games/summary") { const playable = games.filter((g) => access(g).allowed).length; return json(res, 200, { total: games.length, playable, byTier: counts(games, "requiredTier") }); }
   if (path === "/api/flair/games") { const list = games.map(summary); return json(res, 200, { games: list, me: { tier: TIER, wardrobeLevel: WARDROBE, wardrobeScore: 980 }, season: "SPRING", counts: { bySeries: counts(games, "series"), byDifficulty: counts(games, "difficulty"), byRarity: counts(games, "rarity"), byTier: counts(games, "requiredTier") } }); }
   const m = path.match(/^\/api\/flair\/games\/([^/]+)(?:\/(check|submit))?$/);
   if (m) {

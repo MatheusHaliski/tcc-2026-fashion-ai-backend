@@ -5,7 +5,8 @@ import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { availability, HUB_GROUPS, HUB_MODES, LEGACY_TABS, type HubSummary } from "@/lib/flair/hub";
 import type { CbcList } from "@/lib/flair/cbc";
-import type { GamesSummary } from "@/lib/flair/games";
+import { listarNucleos } from "@/lib/flair/nucleos/api";
+import type { NucleoLista } from "@/lib/flair/nucleos/types";
 import type { MomentsHome } from "@/lib/moments/types";
 import { Badge } from "@/components/ui";
 import { ModeHub, type HubModeView } from "@/components/hub/mode-hub";
@@ -25,7 +26,7 @@ export function FlairHub() {
   const decks = useApi<unknown[]>((signal) => api.get("/api/flair/decks", { signal }), []);
   const cards = useApi<{ total: number }>((signal) => api.get("/api/me/flair/cards", { signal }), []);
   const cbc = useApi<CbcList>((signal) => api.get("/api/flair/challenges", { signal }), []);
-  const games = useApi<GamesSummary>((signal) => api.get("/api/flair/games/summary", { signal }), []);
+  const games = useApi<NucleoLista>((signal) => listarNucleos(signal), []);
   const moments = useApi<MomentsHome>((signal) => api.get("/api/moments", { signal }), []);
   const challenges = useApi<{ active?: unknown[]; invites?: unknown[] }>((signal) => api.get("/api/me/challenges", { signal }), []);
   const combos = useApi<Combo[]>((signal) => api.get("/api/flair/combinations", { signal }), []);
@@ -35,7 +36,7 @@ export function FlairHub() {
     decks: decks.data ? decks.data.length : null,
     cards: cards.data ? cards.data.total : null,
     cbc: cbc.data ? { now: cbc.data.now.length, upcoming: cbc.data.upcoming.length, always: cbc.data.always.length } : null,
-    games: games.data ? { total: games.data.total, playable: games.data.playable } : null,
+    games: games.data ? { total: games.data.nucleos.length, playable: games.data.nucleos.length } : null,
     moments: moments.data ? { active: moments.data.active.length, upcoming: moments.data.upcoming.length } : null,
     challenges: challenges.data ? { active: challenges.data.active?.length ?? 0, invites: challenges.data.invites?.length ?? 0 } : null,
     combos: combos.data ? { active: combos.data.filter((c) => c.active !== false && c.available !== false).length, ready: combos.data.filter((c) => c.complete && !c.redemption).length } : null,

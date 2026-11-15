@@ -27,8 +27,8 @@ const demo = (id: HubModeId, seconds: number, recorded = true): HubDemo => ({ mp
 export const HUB_MODES: HubMode[] = [
   { id: "matches", group: "play", href: "/flair/partidas", guide: "flair.matches", demo: demo("matches", 19) },
   { id: "cbc", group: "play", href: "/flair/desafios", guide: "flair.cbc", demo: demo("cbc", 20) },
-  // FLAIR 3D: a demonstração ainda vai ser gravada (recorded:false até os arquivos media/flair/demos/games.* existirem)
-  { id: "games", group: "play", href: "/flair/jogos", guide: "flair.games", demo: demo("games", 14, false) },
+  // FLAIR 3D (os 15 núcleos): a demonstração ainda vai ser gravada (recorded:false até media/flair/demos/games.* existir)
+  { id: "games", group: "play", href: "/flair/3d", guide: "flair.games", demo: demo("games", 14, false) },
   { id: "moments", group: "calendar", href: "/moments", guide: "moments.calendar", demo: demo("moments", 13) },
   { id: "challenges", group: "challenges", href: "/challenges", guide: "challenges.progress", demo: demo("challenges", 15) },
   { id: "cards", group: "collection", href: "/flair/cartas", guide: "flair.cards", demo: demo("cards", 12) },
@@ -60,7 +60,7 @@ export const LEGACY_TABS: Record<string, { mode: HubModeId; href: string }> = {
 };
 
 /** Seção da central que cada sub-rota /flair/* representa (para o "voltar" reabrir o item certo). */
-export const SECTION_MODE: Record<string, HubModeId> = { partidas: "matches", desafios: "cbc", jogos: "games", cartas: "cards", decks: "decks", lojas: "shops", carteira: "wallet", missoes: "quests" };
+export const SECTION_MODE: Record<string, HubModeId> = { partidas: "matches", desafios: "cbc", "3d": "games", cartas: "cards", decks: "decks", lojas: "shops", carteira: "wallet", missoes: "quests" };
 
 /** A seleção fica no navegador, por conta: ao voltar de uma partida, o mesmo item continua escolhido. */
 const KEY = "fai.flair.hub.selected";
@@ -88,7 +88,7 @@ export interface HubSummary {
   decks?: number | null;
   cards?: number | null;
   cbc?: { now: number; upcoming: number; always: number } | null;
-  /** FLAIR 3D (GET /api/flair/games/summary): quantos jogos existem e quantos a pessoa já pode jogar */
+  /** FLAIR 3D (GET /api/flair/3d/nucleos): quantos jogos existem e quantos a pessoa já pode jogar (os núcleos não têm bloqueio) */
   games?: { total: number; playable: number } | null;
   moments?: { active: number; upcoming: number } | null;
   challenges?: { active: number; invites: number } | null;

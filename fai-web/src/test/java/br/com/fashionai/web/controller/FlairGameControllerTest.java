@@ -40,11 +40,6 @@ class FlairGameControllerTest {
         }
 
         @Override
-        public Map<String, Object> summary(CurrentUser viewer) {
-            return record("summary", viewer);
-        }
-
-        @Override
         public Map<String, Object> list(CurrentUser viewer, Filters f) {
             return record("list", viewer, f);
         }
@@ -70,12 +65,10 @@ class FlairGameControllerTest {
     private final CurrentUser ana = new CurrentUser(UUID.randomUUID(), "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
 
     @Test
-    void summaryEDetalheDelegamComOVisitanteMesmoNulo() {
-        assertThat(controller.summary(null)).containsEntry("via", "summary");
-        assertThat(service.lastArgs).containsExactly((Object) null);
+    void detalheDelegaComUsuarioESlug() {
         assertThat(controller.detail(ana, "a01-espelho-partido")).containsEntry("via", "detail");
         assertThat(service.lastArgs).containsExactly(ana, "a01-espelho-partido");
-        assertThat(service.calls).containsExactly("summary", "detail");
+        assertThat(service.calls).containsExactly("detail");
     }
 
     @Test
@@ -99,7 +92,6 @@ class FlairGameControllerTest {
 
     @Test
     void rotasEStatusSeguemOContrato() throws Exception {
-        assertThat(route("summary", GetMapping.class)).isEqualTo("/api/flair/games/summary");
         assertThat(route("list", GetMapping.class)).isEqualTo("/api/flair/games");
         assertThat(route("detail", GetMapping.class)).isEqualTo("/api/flair/games/{slug}");
         assertThat(route("check", PostMapping.class)).isEqualTo("/api/flair/games/{slug}/check");
@@ -107,14 +99,8 @@ class FlairGameControllerTest {
         Method submit = method("submit");
         assertThat(submit.getAnnotation(ResponseStatus.class).value().value()).isEqualTo(201);
         assertThat(method("check").getAnnotation(ResponseStatus.class)).isNull();
-        // "summary" é declarado antes de "{slug}": o literal vence a variável de caminho
-        List<String> order = new ArrayList<>();
-        for (Method m : FlairGameController.class.getDeclaredMethods()) {
-            if (m.isAnnotationPresent(GetMapping.class)) {
-                order.add(m.getAnnotation(GetMapping.class).value()[0]);
-            }
-        }
-        assertThat(order).contains("/api/flair/games/summary", "/api/flair/games/{slug}");
+        // o resumo da central (/api/flair/games/summary) saiu: a central mostra o FLAIR 3D dos núcleos
+        assertThat(FlairGameController.class.getDeclaredMethods()).extracting(Method::getName).doesNotContain("summary");
     }
 
     static Method method(String name) {

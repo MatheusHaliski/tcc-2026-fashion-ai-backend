@@ -22,7 +22,7 @@ const ROUTES = {
   "GET /api/flair/decks": [{ schemeId: "s1", title: "Look", cards: [], combos: [], brandMultiplier: 1, seasonBonus: 0, power: 100, avg: {}, abilities: [] }],
   "GET /api/me/flair/cards": { season: "SPRING", counts: { ESPECIAL: 0, OURO: 1, PRATA: 0, BRONZE: 0 }, total: 1, cards: [] },
   "GET /api/flair/challenges": { now: [{ id: "c1" }], upcoming: [], always: [{ id: "c2" }, { id: "c3" }], memories: [], groups: [], season: "SPRING" },
-  "GET /api/flair/games/summary": { total: 5, playable: 3, byTier: { ESTREIA: 3, STUDIO: 1, LOFT: 1 } },
+  "GET /api/flair/3d/nucleos": { nucleos: Array.from({ length: 15 }, (_, i) => ({ codigo: `N${i + 1}`, numero: i + 1, recursos: [], acoes: [] })) },
   "GET /api/moments": { now: "2026-10-10T12:00:00Z", active: [], upcoming: [], featured: null },
   "GET /api/me/challenges": { active: [{ id: "ch1" }], invites: [] },
   "GET /api/flair/combinations": [],
@@ -49,7 +49,7 @@ describe("modelo da central", () => {
     const ids = HUB_MODES.map((m) => m.id);
     expect(ids.indexOf("games")).toBe(ids.indexOf("cbc") + 1);
     expect(ids.indexOf("moments")).toBe(ids.indexOf("games") + 1);
-    expect(hubMode("games")).toMatchObject({ group: "play", href: "/flair/jogos", guide: "flair.games" });
+    expect(hubMode("games")).toMatchObject({ group: "play", href: "/flair/3d", guide: "flair.games" });
     expect(hubMode("games").demo.recorded).toBe(false);
     expect(Object.values(LEGACY_TABS).every((l) => l.href.startsWith("/flair/"))).toBe(true);
   });
@@ -83,12 +83,12 @@ describe("FlairHub", () => {
     expect(screen.getByRole("tabpanel").textContent).toContain("Complete o mini mapa");
     expect(push).not.toHaveBeenCalled();
     expect(readSelected(ME.user.id)).toBe("cbc");
-    // o modo FLAIR 3D aparece logo depois, com a situação vinda de /api/flair/games/summary
+    // o modo FLAIR 3D (os 15 núcleos) aparece logo depois, com a situação vinda de /api/flair/3d/nucleos
     const tabs = screen.getAllByRole("tab").map((x) => x.textContent ?? "");
     expect(tabs.findIndex((x) => x.includes("FLAIR 3D"))).toBe(tabs.findIndex((x) => x.includes("Desafios de Montagem")) + 1);
     fireEvent.click(screen.getByRole("tab", { name: /FLAIR 3D/ }));
-    await waitFor(() => expect(screen.getByText("3 de 5 jogos liberados")).toBeTruthy());
-    expect(screen.getByRole("tabpanel").textContent).toContain("5 jogos FLAIR 3D");
+    await waitFor(() => expect(screen.getByText("15 de 15 jogos liberados")).toBeTruthy());
+    expect(screen.getByRole("tabpanel").textContent).toContain("15 jogos FLAIR 3D");
     fireEvent.click(cbc);
     cleanup();
     renderApp(<FlairHub />);

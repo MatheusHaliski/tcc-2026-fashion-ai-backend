@@ -335,7 +335,7 @@ class FlairGameServiceTest {
 
     // ------------------------------------------------------------------ catálogo
     @Test
-    void summaryEListContamEInformamOAcessoSemBloquear() {
+    void listContaEInformaOAcessoSemBloquear() {
         game(1, "a01-espelho", "ESTREIA", "EM_MONTAGEM");
         game(2, "a02-vitrine", "STUDIO", "ORGANIZADO");
         game(3, "a03-loft", "LOFT", "EM_MONTAGEM");
@@ -344,11 +344,6 @@ class FlairGameServiceTest {
         kit.save(FlairChallengeRepository.class, classic);
         when(inventory.compute(eq(ana.getId()), eq(true))).thenReturn(new InventoryScoreService.Result(ana.getId(), true, 10, 1.0, 320, "x",
                 Map.of(), Map.of(), List.of(), NOW));
-
-        Map<String, Object> summary = service.summary(anaU);
-        assertThat(summary).containsEntry("total", 3).containsEntry("playable", 2);
-        assertThat(map(summary, "byTier")).containsEntry("ESTREIA", 1).containsEntry("STUDIO", 1).containsEntry("LOFT", 1);
-        assertThat(service.summary(null)).containsEntry("total", 3).containsEntry("playable", 0);
 
         Map<String, Object> list = service.list(anaU, null);
         List<Map<String, Object>> games = list(list, "games");
@@ -361,7 +356,7 @@ class FlairGameServiceTest {
         assertThat(list(games.get(0), "rewards")).hasSize(2);
         assertThat(map(list, "me")).containsEntry("tier", "STUDIO").containsEntry("wardrobeLevel", "ORGANIZADO").containsEntry("wardrobeScore", 320);
         assertThat(map(map(list, "counts"), "byTier")).containsEntry("LOFT", 1);
-        verify(inventory, Mockito.times(2)).compute(ana.getId(), true);   // uma leitura por requisição (summary + list)
+        verify(inventory, Mockito.times(1)).compute(ana.getId(), true);   // uma leitura por requisição
 
         Map<String, Object> filtered = service.list(null, new FlairGameService.Filters("loft", null, null, null, "a", null, "jogo 3"));
         assertThat(list(filtered, "games")).extracting(v -> v.get("slug")).containsExactly("a03-loft");

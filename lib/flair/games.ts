@@ -1,6 +1,6 @@
 /**
- * FLAIR 3D — os 100 jogos FLAIR (docs/flair/flair-3d) sobre /api/flair/games. Cada jogo é um Desafio
- * de Montagem com série, distrito, raridade, nível de FAI XP e nível do guarda-roupa exigidos, deck, regras de Hype,
+ * Cidade de Vidro (o antigo "FLAIR 3D", docs/flair/ENDPOINTS_FLAIR.md §1.1): os capítulos sobre /api/flair/games.
+ * Cada jogo é um Desafio de Montagem com série, distrito, raridade, nível de FAI XP e nível do guarda-roupa exigidos, deck, regras de Hype,
  * efeitos por vaga e recompensas extras. O acesso vem SEMPRE do servidor (`access`): o cliente nunca compara o nível
  * local com um valor fixo; sem resposta, o jogo fica bloqueado (fail closed). Aqui ficam o contrato TS, as constantes
  * dos filtros e os helpers puros (filtro local, URL, cadeado, miniatura, cena).
@@ -45,7 +45,6 @@ export interface GameSummary extends CbcSummary {
 export interface GameMe { tier: GameTier; wardrobeLevel: WardrobeLevel; wardrobeScore?: number | null }
 export interface GameCounts { bySeries: Record<string, number>; byDifficulty: Record<string, number>; byRarity: Record<string, number>; byTier: Record<string, number> }
 export interface GameList { games: GameSummary[]; me: GameMe | null; season: string; counts: GameCounts }
-export interface GamesSummary { total: number; playable: number; byTier?: Record<string, number> }
 
 export interface GameSlot extends CbcSlot { optional: boolean; effects: Partial<Record<"comum" | "metamorfose" | "impersonation", string | null>>; bonus?: Record<string, number> }
 export interface GameFicha { objective?: string | null; scenario?: string | null; mandatory?: string | null; sequence?: string | null; reward?: string | null; hypePlay?: string | null; hypePartial?: string | null }

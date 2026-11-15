@@ -16,20 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/** FLAIR 3D — os 100 jogos FLAIR (linhas de flair_challenges com série), com bloqueio por nível no servidor. */
+/** Cidade de Vidro (o antigo "FLAIR 3D"): os capítulos (flair_challenges com série), com bloqueio por nível. */
 @RestController
-@Tag(name = "FLAIR 3D — jogos FLAIR")
+@Tag(name = "Cidade de Vidro — capítulos FLAIR")
 public class FlairGameController {
     private final FlairGameService service;
 
     public FlairGameController(FlairGameService service) {
         this.service = service;
-    }
-
-    @GetMapping("/api/flair/games/summary")
-    @Operation(summary = "Hub: total de jogos, quantos a pessoa já pode jogar e a contagem por nível exigido")
-    public Map<String, Object> summary(CurrentUser viewer) {
-        return service.summary(viewer);
     }
 
     @GetMapping("/api/flair/games")
