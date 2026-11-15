@@ -3,7 +3,8 @@
  * A faixa de baixo do Fashion Sports durante a partida, no lugar do deck: a situação da jogada em uma frase, o relógio
  * da janela e a mão de cartas. Cada carta mostra a ação que a cor dela dispara e o poder dela. Jogar uma carta é a
  * jogada; "seguir sem carta" (ou deixar a janela acabar) deixa o time sem fazer nada de útil, e a tela diz isso antes.
- * Setas escolhem a carta, Enter ou Espaço jogam, Backspace segue sem carta; o controle usa os mesmos comandos.
+ * Setas escolhem a carta, Enter ou Espaço jogam, Backspace segue sem carta; no controle, o direcional escolhe, A ou
+ * Start jogam e B segue sem carta (use-mao-controle).
  */
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/components/ui";
@@ -12,6 +13,7 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { NucleoCard } from "@/components/flair/nucleos/nucleo-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { narracao, nomeDaAcao, situacaoEmTexto } from "@/components/flair/esporte/esporte-texto";
+import { useMaoNoControle } from "@/components/flair/esporte/use-mao-controle";
 import type { Jogada, Situacao } from "@/lib/flair/esporte/types";
 import type { EfeitoItem } from "@/lib/flair/nucleos/types";
 
@@ -74,19 +76,15 @@ export function EsportePainel({ modalidade, jogadas, situacao, mao, ocupado, err
     if (aberta && resta <= 0) jogar.current(null);
   }, [aberta, resta]);
 
-  // teclado: setas escolhem, Enter ou Espaço jogam, Backspace segue sem carta
-  useEffect(() => {
-    if (!aberta) return;
-    const tecla = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === "ArrowLeft") setFoco((f) => (f + (e.key === "ArrowRight" ? 1 : -1) + Math.max(1, mao.length)) % Math.max(1, mao.length));
-      else if ((e.key === "Enter" || e.key === " ") && mao[foco]) jogar.current(mao[foco].card.id);
-      else if (e.key === "Backspace") jogar.current(null);
-      else return;
-      e.preventDefault();
-    };
-    window.addEventListener("keydown", tecla);
-    return () => window.removeEventListener("keydown", tecla);
-  }, [aberta, mao, foco]);
+  // teclado e controle: escolher a carta, jogar a carta em foco, seguir sem carta
+  useMaoNoControle({
+    ativo: aberta,
+    onMover: (dir) => setFoco((f) => (f + dir + Math.max(1, mao.length)) % Math.max(1, mao.length)),
+    onJogar: () => {
+      if (mao[foco]) jogar.current(mao[foco].card.id);
+    },
+    onSeguir: () => jogar.current(null),
+  });
 
   const ultimos = jogadas.slice(-ULTIMOS);
   return (
@@ -122,6 +120,7 @@ export function EsportePainel({ modalidade, jogadas, situacao, mao, ocupado, err
             {tx.t("flair3d.esporte.semCarta")}
           </button>
           <p className="n3d-hint fsp-aviso">{tx.t("flair3d.esporte.semCartaAviso")}</p>
+          <p className="n3d-hint fsp-comandos">{tx.t("flair3d.esporte.comandos")}</p>
         </>
       ) : (
         <div className="fsp-espera">

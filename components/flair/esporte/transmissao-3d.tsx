@@ -11,10 +11,11 @@ import * as THREE from "three";
 import { Campo3D } from "@/components/flair/esporte/campo-3d";
 import { LARGURA_DO_GOL, type Batida } from "@/components/flair/esporte/gol-3d";
 import { Jogador3D } from "@/components/flair/esporte/jogador-3d";
-import { planoDaCamera, poseDaCamera, seguir, type Plano, type Pose } from "@/lib/flair/esporte/camera";
+import { planoDaCamera, poseDaCamera, seguir, tapaOReplay, type Plano, type Pose } from "@/lib/flair/esporte/camera";
 import { noMundo, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
 import { pontoNaRede } from "@/lib/flair/esporte/rede";
-import { gol, quadroDoLance, type Quadro } from "@/lib/flair/esporte/timeline";
+import { CHEGADA_AO_GOL, gol, naTrave } from "@/lib/flair/esporte/bola";
+import { quadroDoLance, type Quadro } from "@/lib/flair/esporte/timeline";
 import type { Jogada, Lado } from "@/lib/flair/esporte/types";
 
 export interface Transmissao3DProps {
@@ -35,12 +36,12 @@ interface Estado {
 }
 
 function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: Omit<Transmissao3DProps, "rotulo">) {
-  /** a bola na rede: no gol, depois que a bola chega ao fundo (k 0,72), com o ponto do impacto */
+  /** a bola na rede ou na trave: depois que ela chega ao gol (k 0,72), com o ponto do impacto */
   const batida = useRef<Batida | null>(null);
   const estado = useRef<Estado>({ quadro: quadroDoLance(campo, anterior, atual, reduzido ? 1 : 0), plano: "geral" });
   const pose = useRef<Pose | null>(null);
   const bola = useRef<THREE.Mesh>(null);
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   const paraOMundo = useMemo(() => (x: number, y: number) => noMundo(campo, [x, y]), [campo]);
   const lados: Lado[] = ["NOS", "ELES"];
 
@@ -50,20 +51,25 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: O
     const plano = planoDaCamera(atual, k, reduzido);
     const cortou = plano !== estado.current.plano;
     estado.current = { quadro, plano };
-    batida.current = atual && gol(atual.tipo) && k >= 0.72
-      ? { lado: atual.time === "NOS" ? 1 : -1, u: pontoNaRede(atual.para[1], LARGURA_DO_GOL, campo.largura)[0], v: 0.55, chave: atual.n }
+    batida.current = atual && (gol(atual.tipo) || naTrave(atual.tipo)) && k >= CHEGADA_AO_GOL
+      ? { lado: atual.time === "NOS" ? 1 : -1, u: pontoNaRede(atual.para[1], LARGURA_DO_GOL, campo.largura)[0], v: 0.55, chave: atual.n, naTrave: naTrave(atual.tipo) }
       : null;
     if (bola.current) {
       const [x, z] = noMundo(campo, [quadro.bola.x, quadro.bola.y]);
       bola.current.position.set(x, quadro.bola.altura, z);
     }
     const ator = atual ? quadro.figuras.find((f) => f.time === atual.time && f.n === atual.jogador) : null;
-    const pedida = poseDaCamera(plano, campo, [quadro.bola.x, quadro.bola.y], ator ? [ator.x, ator.y] : null);
+    // no replay, quem está entre a lente e o jogador da carta some até o replay acabar
+    if (plano === "replay" && ator) {
+      for (const f of quadro.figuras) f.oculto = f !== ator && tapaOReplay(campo, [ator.x, ator.y], [f.x, f.y]);
+    }
+    const pedida = poseDaCamera(plano, campo, [quadro.bola.x, quadro.bola.y], ator ? [ator.x, ator.y] : null, size.width / Math.max(1, size.height));
     pose.current = !pose.current || cortou || reduzido ? pedida : seguir(pose.current, pedida, 0.08);
     camera.position.set(...pose.current.pos);
     camera.lookAt(...pose.current.alvo);
     camera.userData.plano = plano;
-  });
+    // prioridade negativa: roda antes dos jogadores, que leem o quadro deste mesmo instante (e não tira a renderização automática)
+  }, -1);
 
   return (
     <>

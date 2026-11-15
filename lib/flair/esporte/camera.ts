@@ -21,6 +21,8 @@ export const CORTE_DO_LANCE = 0.45;
 export const CORTE_DO_REPLAY = 0.86;
 
 const DE_PERTO = new Set(["DESARME", "DESARME_FALHO"]);
+/** A proporção de quadro para a qual as distâncias foram medidas; abaixo dela a câmera recua. */
+export const ASPECTO_DE_TV = 1.5;
 /** Distância do replay até o jogador: com fov 32 o corpo inteiro (1,8 m) ocupa uns dois terços da altura do quadro. */
 export const REPLAY_DIST = 5.2;
 
@@ -36,7 +38,24 @@ export function planoDaCamera(lance: Jogada | null, k: number, reduzido: boolean
  * Onde a câmera fica e para onde olha, em metros. `bola` e `foco` (o jogador do replay) vêm nas coordenadas do
  * servidor. A câmera fica sempre do mesmo lado do campo (z positivo), como numa transmissão: nunca cruza o eixo.
  */
-export function poseDaCamera(plano: Plano, campo: Campo, bola: Ponto, foco: Ponto | null): Pose {
+export function poseDaCamera(plano: Plano, campo: Campo, bola: Ponto, foco: Ponto | null, aspecto = 16 / 9): Pose {
+  if (plano === "replay" && foco) {
+    // o jogador inteiro, da cabeça ao calçado, um pouco de cima: quem está perto dele fica fora do eixo da lente
+    const [fx, fz] = noMundo(campo, foco);
+    return { pos: [fx + 1.2, 2.4, fz + REPLAY_DIST], alvo: [fx, 1.15, fz] };
+  }
+  return afastada(poseAberta(plano, campo, bola), aspecto);
+}
+
+/** Em tela em pé (celular) o quadro é estreito: a câmera recua na mesma linha para caber a mesma largura de campo. */
+export function afastada(pose: Pose, aspecto: number): Pose {
+  const quanto = Math.max(1, Math.min(2.2, ASPECTO_DE_TV / Math.max(0.1, aspecto)));
+  if (quanto === 1) return pose;
+  const longe = (i: 0 | 1 | 2) => pose.alvo[i] + (pose.pos[i] - pose.alvo[i]) * quanto;
+  return { pos: [longe(0), longe(1), longe(2)], alvo: pose.alvo };
+}
+
+function poseAberta(plano: Plano, campo: Campo, bola: Ponto): Pose {
   const [bx, bz] = noMundo(campo, bola);
   const meia = campo.largura / 2;
   if (plano === "geral") {
@@ -44,17 +63,23 @@ export function poseDaCamera(plano: Plano, campo: Campo, bola: Ponto, foco: Pont
     const recuo = Math.max(campo.comprimento * 1.05, 16);
     return { pos: [0, recuo * 0.55, meia + recuo * 0.85], alvo: [0, 0, -meia * 0.15] };
   }
-  if (plano === "replay" && foco) {
-    // o jogador inteiro, da cabeça ao calçado, um pouco de cima: quem está perto dele fica fora do eixo da lente
-    const [fx, fz] = noMundo(campo, foco);
-    return { pos: [fx + 1.2, 2.4, fz + REPLAY_DIST], alvo: [fx, 1.15, fz] };
-  }
   if (plano === "lance") {
     return { pos: [bx * 0.9, 4.2, Math.max(bz + 9, meia + 3)], alvo: [bx, 0.8, bz] };
   }
   const limite = campo.comprimento / 2 - 4;
   const cx = Math.max(-limite, Math.min(limite, bx * 0.7));
   return { pos: [cx, 11 + campo.largura * 0.15, meia + 13], alvo: [cx + (bx - cx) * 0.5, 0, bz * 0.3] };
+}
+
+/**
+ * No replay a câmera fica a REPLAY_DIST do jogador, do lado da transmissão: quem está nesse corredor, entre a lente e
+ * ele, taparia a roupa. Diz se o outro jogador está aí (a cena o esconde só enquanto dura o replay).
+ */
+export function tapaOReplay(campo: Campo, foco: Ponto, outro: Ponto): boolean {
+  const [fx, fz] = noMundo(campo, foco);
+  const [ox, oz] = noMundo(campo, outro);
+  const frente = oz - fz;
+  return frente > 0.4 && frente < REPLAY_DIST + 1.5 && Math.abs(ox - fx - (frente / REPLAY_DIST) * 1.2) < 1.4;
 }
 
 /** Aproxima a pose atual da pose pedida (a câmera segue suave; no corte, salta). */

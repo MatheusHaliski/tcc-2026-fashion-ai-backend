@@ -8,6 +8,19 @@ import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 export type Lado = "NOS" | "ELES";
 export type Ponto = [x: number, y: number];
 
+/** O que cada jogador está fazendo no lance, decidido pelo servidor. */
+export type Estado = "BOLA" | "RECEBE" | "APOIO" | "CORRIDA" | "COBERTURA" | "PRESSAO" | "MARCA" | "RETORNO" | "GOLEIRO" | "POSICAO";
+const ESTADOS = new Set<string>(["BOLA", "RECEBE", "APOIO", "CORRIDA", "COBERTURA", "PRESSAO", "MARCA", "RETORNO", "GOLEIRO", "POSICAO"]);
+
+export interface JogadorNoLance {
+  time: Lado;
+  n: number;
+  estado: Estado;
+  /** onde ele termina o lance */
+  x: number;
+  y: number;
+}
+
 export interface Jogada {
   n: number;
   jogada: number;
@@ -25,6 +38,12 @@ export interface Jogada {
   /** carta que a pessoa jogou neste lance, e a ação que a cor dela disparou */
   carta?: string;
   acao?: string;
+  /** futebol e basquete: o estado e o destino de todos os jogadores no fim do lance (o servidor decide; a tela desenha) */
+  jogadores?: JogadorNoLance[];
+  /** o passe errado saiu pela lateral (a bola vai até a linha) */
+  saiu?: boolean;
+  /** a finalização bateu na trave: num poste ou no travessão */
+  bateu?: "TRAVE" | "TRAVESSAO";
 }
 
 export interface Situacao {
@@ -57,6 +76,17 @@ const ponto = (v: unknown): Ponto => (Array.isArray(v) ? [numero(v[0], 50), nume
 const par = (v: unknown): [number, number] => (Array.isArray(v) ? [numero(v[0]), numero(v[1])] : [0, 0]);
 const objeto = (v: unknown): Record<string, unknown> | null => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
 
+function comoJogadores(valor: unknown): JogadorNoLance[] | undefined {
+  if (!Array.isArray(valor)) return undefined;
+  const out: JogadorNoLance[] = [];
+  for (const item of valor) {
+    const v = objeto(item);
+    if (!v || typeof v.estado !== "string" || !ESTADOS.has(v.estado)) continue;
+    out.push({ time: v.time === "ELES" ? "ELES" : "NOS", n: numero(v.n, 1), estado: v.estado as Estado, x: numero(v.x, 50), y: numero(v.y, 30) });
+  }
+  return out.length ? out : undefined;
+}
+
 export function comoJogada(valor: unknown): Jogada | null {
   const v = objeto(valor);
   if (!v || typeof v.tipo !== "string") return null;
@@ -65,6 +95,8 @@ export function comoJogada(valor: unknown): Jogada | null {
     time: v.time === "ELES" ? "ELES" : "NOS", ok: v.ok === true, jogador: numero(v.jogador, 1), alvo: numero(v.alvo, 1),
     de: ponto(v.de), para: ponto(v.para), placar: texto(v.placar, "0-0"),
     carta: typeof v.carta === "string" ? v.carta : undefined, acao: typeof v.acao === "string" ? v.acao : undefined,
+    jogadores: comoJogadores(v.jogadores), saiu: v.saiu === true || undefined,
+    bateu: v.bateu === "TRAVE" || v.bateu === "TRAVESSAO" ? v.bateu : undefined,
   };
 }
 

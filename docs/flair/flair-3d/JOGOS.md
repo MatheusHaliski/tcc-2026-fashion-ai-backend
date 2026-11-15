@@ -557,6 +557,19 @@ vestimenta e isso causa um efeito dentro da partida."
     círculo e marca central, áreas em arco com as marcas de 6 m e 10 m, arcos de escanteio), bandeirinhas, bancos,
     túnel, telão, refletores, arquibancada em três lados com torcida, gols com rede de profundidade que estufa e balança
     quando a bola entra.
+  - **Jogadores sem a bola [pedido da dona, 15/11/2026]:** no futebol e no basquete o servidor decide, em cada lance, o
+    que cada jogador faz e para onde vai, e a tela só desenha o caminho. Quem ataca: com a bola, recebe o passe, dá
+    apoio ao lado da bola, corre para o espaço à frente ou fica na cobertura. Quem defende: pressiona quem tem a bola
+    (do lado do próprio gol), marca um atacante livre, cobre o meio ou volta quando ficou para trás da bola. O goleiro
+    fica na meta, na linha da bola. Ninguém termina em cima de ninguém (distância mínima de 3,2 unidades do campo de
+    100 × 60).
+  - **Reinícios [pedido da dona, 15/11/2026]:** a bola volta ao jogo do lugar certo, em um lance a mais que não gasta
+    jogada nem carta. Saída de bola do centro no começo de cada tempo e depois de cada ponto, com cada time na sua
+    metade. Só no futebol: tiro de meta depois da bola para fora ou na trave; escanteio depois da espalmada; lateral
+    quando o passe perde o duelo por mais de 10 e sai. **[proposta adotada]** A bola na trave é a finalização que perde
+    por mais de 12 e até 15: bate num poste ou no travessão, a armação treme e a bola sai em tiro de meta.
+  - **Controle:** na mão, as setas ou o direcional escolhem a carta; Enter, Espaço, A ou Start jogam; Backspace ou B
+    seguem sem carta.
   - O que está feito e o que falta: `ESTADO_DOS_JOGOS.md`, jogo 14.
 
 ## Jogo 15 · Batalha de Looks

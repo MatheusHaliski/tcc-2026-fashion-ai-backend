@@ -66,6 +66,7 @@ export function Jogador3D({ uniforme, figura, noMundo, nome }: Props) {
     const f = figura();
     if (!f || !raiz.current || !corpo.current) return;
     const [x, z] = noMundo(f.x, f.y);
+    raiz.current.visible = !f.oculto;
     const p = poseDoGesto(f.gesto, clock.elapsedTime + f.n * 0.37);
     raiz.current.position.set(x, p.altura, z);
     // giro 0 olha para +x no campo do servidor; no mundo, +x também é o comprimento do campo

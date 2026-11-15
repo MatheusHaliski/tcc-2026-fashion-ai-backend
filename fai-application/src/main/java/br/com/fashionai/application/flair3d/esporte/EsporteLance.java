@@ -2,6 +2,8 @@ package br.com.fashionai.application.flair3d.esporte;
 
 import br.com.fashionai.application.flair.CbcRules;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -17,7 +19,9 @@ import java.util.Random;
  * finalização); as outras cartas só pressionam, com metade da força. Sem carta, ou com o duelo perdido, o adversário
  * faz o que queria.</p>
  *
- * <p>Todo duelo é: força da pessoa − força do adversário + sorte de −8 a +8 (da semente). Vence com zero ou mais.</p>
+ * <p>Todo duelo é: força da pessoa − força do adversário + sorte de −8 a +8 (da semente). Vence com zero ou mais. A
+ * finalização, dos dois lados, é resolvida em {@link EsporteFinalizacao}; no futebol, o passe que perde por mais de
+ * {@link #LATERAL} sai pela lateral e o adversário repõe a bola dali ({@link EsporteReinicio}).</p>
  */
 final class EsporteLance {
     static final int FOLGA = 12;
@@ -26,6 +30,8 @@ final class EsporteLance {
     static final int GOLEIRO = 6;
     /** Desconto da finalização pela zona de onde ela sai (defesa, meio, ataque, área). */
     static final int[] DISTANCIA = {-18, -10, -3, 4};
+    /** O passe que perde por mais que isto sai pela lateral (só no futebol). */
+    static final int LATERAL = 10;
     private static final int VELOCIDADE = 0;
     private static final int TECNICA = 1;
     private static final int DEFESA = 2;
@@ -79,7 +85,10 @@ final class EsporteLance {
             case EsporteForcas.PASSE -> avancar("PASSE", p.nossa(acao, carta) + embalo - p.rival(DEFESA) + sorte(), false);
             case EsporteForcas.CORRIDA -> avancar("CONDUCAO", p.nossa(acao, carta) + embalo - p.rival(VELOCIDADE) + sorte(), false);
             case EsporteForcas.DRIBLE -> avancar("DRIBLE", p.nossa(acao, carta) + embalo - (p.rival(DEFESA) + p.rival(FISICO)) / 2 + sorte(), true);
-            case EsporteForcas.CHUTE -> finalizar(embalo);
+            case EsporteForcas.CHUTE -> {
+                double margem = p.nossa(acao, carta) + embalo + DISTANCIA[p.zona] - (p.rival(DEFESA) + GOLEIRO) + sorte();
+                new EsporteFinalizacao(p, sorteio).resolver(true, carta, acao, margem);
+            }
             default -> p.lance("PROTEGE", true, true, carta, acao, z, z);
         }
     }
@@ -91,9 +100,12 @@ final class EsporteLance {
             p.resumo.passe(ok);
         }
         if (!ok) {
-            p.lance(tipo + "_PERDIDO", true, false, carta, acao, z, z);
+            Map<String, Object> lance = p.lance(tipo + "_PERDIDO", true, false, carta, acao, z, z);
             p.resumo.desarme(false);
             trocaDePosse();
+            if ("PASSE".equals(tipo) && margem < -LATERAL && p.regras.comTrave()) {
+                paraFora(lance);
+            }
             return;
         }
         int destino = Math.min(3, z + ("CONDUCAO".equals(tipo) && margem >= FOLGA ? 2 : 1));
@@ -102,31 +114,13 @@ final class EsporteLance {
         p.bonus = drible ? EMBALO : 0;
     }
 
-    /** A finalização da pessoa: gol, defesa do goleiro, espalmada (a bola sobra na área) ou para fora. */
-    private void finalizar(int embalo) {
-        int z = p.zona;
-        double margem = p.nossa(acao, carta) + embalo + DISTANCIA[z] - (p.rival(DEFESA) + GOLEIRO) + sorte();
-        p.resumo.chute(true, margem >= -12);
-        if (margem >= 0) {
-            p.pontos[0][p.tempo() - 1] += p.regras.pontosDaZona()[z];
-            p.lance("CHUTE_GOL", true, true, carta, acao, z, EsportePartida.GOL);
-            p.nossa = false;
-            p.zona = 1;
-            return;
-        }
-        if (margem >= -6) {
-            p.resumo.defesa(false);
-            p.lance("CHUTE_DEFENDIDO", true, false, carta, acao, z, EsportePartida.GOL);
-        } else if (margem >= -12) {
-            p.resumo.defesa(false);
-            p.lance("CHUTE_ESPALMADO", true, false, carta, acao, z, EsportePartida.GOL);
-            p.zona = 3;
-            return;
-        } else {
-            p.lance("CHUTE_FORA", true, false, carta, acao, z, EsportePartida.GOL);
-        }
-        p.nossa = false;
-        p.zona = 0;
+    /** O passe errado que sai pela lateral: a bola vai até a linha e o adversário cobra o lateral dali. */
+    private void paraFora(Map<String, Object> lance) {
+        boolean emCima = sorteio.nextBoolean();
+        double x = ((Number) ((List<?>) lance.get("de")).get(0)).doubleValue() + 8;
+        lance.put("para", EsporteCampo.ponto(new double[]{x, emCima ? 0 : 60}));
+        lance.put("saiu", true);
+        p.reinicio = () -> EsporteReinicio.lateral(p, false, x, emCima);
     }
 
     private void semABola() {
@@ -173,30 +167,9 @@ final class EsporteLance {
 
     /** A finalização do adversário contra o goleiro da pessoa (mais forte quando uma carta branca o preparou). */
     private void rivalFinaliza() {
-        int z = p.zona;
         double goleiro = p.time.defesa() * p.time.folego(p.jogada) + (p.goleiroPronto ? GOLEIRO_PRONTO : 0);
-        double margem = (p.rival(TECNICA) + p.rival(FISICO)) / 2 + DISTANCIA[z] - goleiro + sorte();
+        double margem = (p.rival(TECNICA) + p.rival(FISICO)) / 2 + DISTANCIA[p.zona] - goleiro + sorte();
         p.goleiroPronto = false;
-        p.resumo.chute(false, margem >= -12);
-        if (margem >= 0) {
-            p.pontos[1][p.tempo() - 1] += p.regras.pontosDaZona()[z];
-            p.lance("RIVAL_GOL", false, true, null, null, z, EsportePartida.GOL);
-            p.nossa = true;
-            p.zona = 1;
-            return;
-        }
-        if (margem >= -6) {
-            p.resumo.defesa(true);
-            p.lance("RIVAL_DEFENDIDO", false, false, null, null, z, EsportePartida.GOL);
-        } else if (margem >= -12) {
-            p.resumo.defesa(true);
-            p.lance("RIVAL_ESPALMADO", false, false, null, null, z, EsportePartida.GOL);
-            p.zona = 3;
-            return;
-        } else {
-            p.lance("RIVAL_FORA", false, false, null, null, z, EsportePartida.GOL);
-        }
-        p.nossa = true;
-        p.zona = 0;
+        new EsporteFinalizacao(p, sorteio).resolver(false, null, null, margem);
     }
 }

@@ -130,7 +130,7 @@ class EsportePartidaTest {
         assertThat(r.resultado()).isEqualTo(gols > sofridos ? "VITORIA" : gols == sofridos ? "EMPATE" : "DERROTA");
         assertThat(r.pontos()).isEqualTo(gols > sofridos ? 100 : gols == sofridos ? 60 : 0);
         // a segunda saída é do adversário
-        assertThat(jogadas.stream().filter(j -> "SAIDA".equals(j.get("tipo"))).map(j -> j.get("time")).toList()).containsExactly("NOS", "ELES");
+        assertThat(jogadas.stream().filter(j -> "SAIDA".equals(j.get("tipo")) && (int) j.get("relogio") % 1200 == 0).map(j -> j.get("time")).toList()).startsWith("NOS").contains("ELES");
     }
 
     @Test

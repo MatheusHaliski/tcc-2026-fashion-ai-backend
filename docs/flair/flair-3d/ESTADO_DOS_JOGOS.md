@@ -30,8 +30,8 @@ O que vale para todos os jogos e não se repete abaixo:
 
 | Pedido | Estado |
 | --- | --- |
-| Fashion Sports com câmera de transmissão, mecânica de partida e cartas para toda ação | feito em boa parte (jogo 14, abaixo); falta controle por gamepad na mão, avatares humanos, reinícios visíveis e as outras modalidades no nível do futebol |
-| Estádio com arquibancada, redes que balançam, marcações claras, jogadores sem bola com movimento automático | feito em primitivas (jogo 14); jogadores e torcida ainda são figuras simples |
+| Fashion Sports com câmera de transmissão, mecânica de partida e cartas para toda ação | feito em boa parte (jogo 14, abaixo), com a mão no controle e os reinícios à vista; faltam avatares humanos e as outras modalidades no nível do futebol |
+| Estádio com arquibancada, redes que balançam, marcações claras, jogadores sem bola com movimento automático | feito em primitivas (jogo 14): o servidor decide o estado e o destino de cada jogador em cada lance, e a trave treme na bola na trave; jogadores e torcida ainda são figuras simples |
 | Câmeras pensadas para os 15 jogos (`CAMERAS.md`, sistema de câmeras compartilhado, seletor no HUD) | pendente: só o Fashion Sports tem câmera própria (transmissão); os outros 14 continuam com a câmera frontal do provador |
 | NPCs como avatares humanos do mesmo tipo do avatar da pessoa, com níveis de detalhe | pendente em todos os jogos |
 | Cenários coerentes e bem acabados (`CENARIOS.md`, auditoria de cada sala, modelos licenciados) | pendente; só o estádio do futebol foi refeito |
@@ -422,18 +422,28 @@ jogo 14; a tabela de cores em `CORES_E_ACOES.md`, 1.2.
 **No código.**
 - Servidor: `fai-application/.../flair3d/esporte/` — `EsporteRegras` (6 modalidades: jogadas, relógio, jogadores,
   unidade do placar), `EsporteForcas` (atributos, físico novo, poder da carta, cansaço), `EsporteMao` (mão de 5 pela
-  semente), `EsportePartida` e `EsporteLance` (posse, 4 zonas, passe, condução, drible, finalização, desarme,
-  recomposição, pressão, goleiro, finalização do adversário), `EsporteResumo`. `FashionSportsNucleo` liga tudo.
+  semente), `EsportePartida` e `EsporteLance` (posse, 4 zonas, passe, condução, drible, desarme, recomposição,
+  pressão, goleiro), `EsporteFinalizacao` (gol, defesa, espalmada, trave, fora), `EsporteReinicio` (saída de bola, tiro
+  de meta, escanteio, lateral), `EsporteCampo` (estado e destino de cada jogador), `EsporteResumo`.
+  `FashionSportsNucleo` liga tudo.
 - Tela: `components/flair/esporte/` (transmissão 3D, estádio, gols com rede, jogadores articulados, placar de TV,
-  narração, mão de cartas, resumo) e `lib/flair/esporte/` (leitura dos eventos, campo de cada modalidade, linha do
-  tempo dos lances, câmera, rede).
+  narração, mão de cartas no teclado e no controle, resumo) e `lib/flair/esporte/` (leitura dos eventos, campo de cada
+  modalidade, caminho da bola, linha do tempo dos lances, formação de reserva, câmera, rede).
 
 **Simulado no servidor × só na tela.** O servidor decide cada jogada: quem tem a bola, em que zona, se o passe, a
 condução, o drible, o desarme ou a finalização deram certo, os gols, o relógio, o placar e o resumo. A tela só desenha:
-o caminho da bola e dos jogadores entre o ponto de saída e o de chegada de cada lance (o servidor manda os dois pontos),
-a formação que sobe e desce com a bola, a marcação, o goleiro acompanhando a finalização, os gestos e a rede que
-balança. Os "estados" sem bola da tela (formação, marcador, goleiro) são derivados de cada lance do servidor, não um
-estado próprio do servidor por jogador.
+o caminho da bola e dos jogadores entre o ponto de saída e o de chegada de cada lance, os gestos, a rede que balança e
+a trave que treme. No futebol e no basquete cada lance leva a lista `jogadores`, com o estado e o destino de cada um no
+fim do lance, decididos em `EsporteCampo`: BOLA, RECEBE, APOIO, CORRIDA e COBERTURA para quem ataca; PRESSAO, MARCA,
+COBERTURA e RETORNO para quem defende; GOLEIRO; POSICAO na saída de bola. A tela leva cada jogador de onde ele estava
+até esse destino e não inventa posição. No vôlei, no tênis, na corrida e no skate o servidor não manda essa lista, e a
+tela mantém a formação derivada de cada lance, como antes (`lib/flair/esporte/formacao.ts`).
+
+**Reinícios.** São lances a mais, sem carta e sem gastar jogada: a saída de bola do centro no começo de cada tempo e
+depois de cada ponto (nas modalidades com bola), com os dois times nas próprias metades; e, só no futebol, o tiro de
+meta (o goleiro repõe da área depois da bola para fora ou na trave), o escanteio (do canto, depois da espalmada) e o
+lateral (da linha, quando o passe perde por mais de 10 e sai). O reinício que cairia depois do fim de um tempo não
+aparece. A bola na trave existe só no futebol: a finalização que perde por mais de 12 e até 15.
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
@@ -444,20 +454,22 @@ estado próprio do servidor por jogador.
 | Atributo físico (OVR e material firme) e cansaço pela resistência no segundo tempo | feito | não |
 | Mesma semente e mesmas cartas dão a mesma partida; a prévia não gasta o sorteio | feito (testes do servidor) | — |
 | Placar final, vitória/empate/derrota e resumo (posse, finalizações, defesas, desarmes, passes) saem dos lances | feito | não |
-| Câmera de transmissão (alto da lateral, segue a bola), corte para perto no chute, na defesa e no desarme, replay de quem jogou a carta | feito | sim, em quadros parados (página de laboratório, sem banco) |
+| Câmera de transmissão (alto da lateral, segue a bola), corte para perto no chute, na defesa e no desarme, replay de quem jogou a carta | feito; no replay, quem ficaria entre a lente e o jogador da carta é escondido; em tela em pé a câmera recua para caber a mesma largura de campo | sim, em quadros parados (tela real do jogo em servidor local, com a API simulada no navegador, sem banco) |
 | Reduzir movimento: plano geral parado, campo no fim de cada lance | feito | sim (quadro parado) |
 | Placar de TV com os times, o placar, o relógio e o tempo; narração de cada lance em pt-BR, en e es | feito | não (só testes da tela) |
-| Mão de cartas com a ação e o poder; teclado (setas, Enter, Backspace) e toque | feito | não |
-| Controle (gamepad) escolhendo a carta | pendente | — |
+| Mão de cartas com a ação e o poder; teclado (setas, Enter, Backspace) e toque | feito | sim: a mão aparece inteira em 1440×900 e as cinco cartas cabem lado a lado em 390×844 (antes desta correção a mão aparecia cortada, com 4 px de altura) |
+| Controle (gamepad) escolhendo a carta: direcional escolhe, A ou Start jogam, B segue sem carta | feito (`use-mao-controle`) | não (só testes com um controle simulado; nenhum controle de verdade foi ligado) |
+| Tela da partida em 390×844 e em 1440×900 | conferida: sem rolagem lateral, placar, narração, mão e botão dentro do quadro; no celular a régua de vagas sai durante a partida e a linha dos comandos do teclado não aparece | sim |
 | Estádio: listras de corte, marcações do futebol de 5, bandeirinhas, bancos, túnel, telão, refletores, arquibancada em três lados com torcida | feito (primitivas) | sim (quadro parado) |
 | Gols com rede de profundidade que estufa e balança quando a bola entra; quadro estufado parado com reduzir movimento | feito | a rede e a bola dentro dela sim; o balanço só nos testes |
-| Trave que treme no chute na trave | pendente (o servidor ainda não tem o lance "na trave") | — |
+| Trave que treme no chute na trave | feito: o servidor tem os lances CHUTE_NA_TRAVE e RIVAL_NA_TRAVE (poste ou travessão); a bola sobe até onde bate, volta e cai; a armação do gol treme 0,9 s e para; com reduzir movimento não treme | não (só testes; a partida usada na conferência da tela não teve bola na trave) |
 | Os 10 jogadores e a bola se movem pelos lances: passe, condução, drible, chute, goleiro mergulhando, comemoração | feito | sim, em quadros parados |
-| Ninguém fica em cima de ninguém, todos dentro do campo, o goleiro quase não sai do gol | feito (testes) | — |
+| Estado e destino de cada jogador sem a bola decididos pelo servidor (apoio, corrida, marcação, pressão, cobertura, retorno) | feito no futebol e no basquete; a planta de cima (sem WebGL ou com reduzir movimento) diz o estado de cada jogador em texto | sim, em quadros parados (escanteio com o time na área; saída de bola com cada time na sua metade) |
+| Ninguém fica em cima de ninguém, todos dentro do campo, o goleiro não sai da meta | feito (testes do servidor em 30 partidas) | na área, vistos de longe, os jogadores ficam próximos uns dos outros |
 | O time da pessoa veste as cores das peças do uniforme | feito (cor da família de cada peça) | sim |
 | Torcida e jogadores como avatares humanos de verdade (pedido da dona sobre os NPCs) | pendente: hoje são figuras articuladas simples sem rosto | sim (são simples) |
 | Telão com o placar escrito | pendente | — |
-| Escanteio, lateral e tiro de meta como reinício visível | pendente (o servidor não modela bola fora com reinício) | — |
+| Saída de bola do centro depois de cada gol; escanteio, lateral e tiro de meta como reinício visível, do lugar certo | feito | saída de bola depois do gol e escanteio: sim; tiro de meta e lateral: não (só testes) |
 | Outras modalidades: câmera de transmissão, placar, relógio, jogadores e bola em movimento | feito (mesmo motor; campo, pontas e narração próprios) | não |
 | Outras modalidades no nível do futebol (arena própria, gestos do esporte: arremesso, cortada, saque, largada) | pendente | — |
 | Fluidez do 3D | não medida (sem placa de vídeo) | — |

@@ -45,7 +45,9 @@ public final class EsportePartida {
     int jogada;
     int bonus;
     boolean goleiroPronto;
-    private int lances;
+    int lances;
+    /** O reinício que o último lance deixou para depois (saída de bola, tiro de meta, escanteio, lateral). */
+    Runnable reinicio;
 
     public EsportePartida(EsporteRegras regras, Map<String, CbcRules.Card> uniforme, Contexto contexto) {
         this.regras = regras;
@@ -56,7 +58,7 @@ public final class EsportePartida {
         for (int i = 0; i < rival.length; i++) {
             rival[i] = 20 + r.nextInt(11);
         }
-        lance("SAIDA", true, true, null, null, 1, 1);
+        EsporteReinicio.saida(this, true);
     }
 
     /** Força do adversário num atributo (0 velocidade, 1 técnica, 2 defesa, 3 físico), já com o cansaço da jogada. */
@@ -83,9 +85,22 @@ public final class EsportePartida {
         return doNosso ? base : 100 - base;
     }
 
-    /** Registra um lance: quem agiu, de que zona para que zona, com que carta, e o placar depois dele. */
-    void lance(String tipo, boolean doNosso, boolean ok, CbcRules.Card carta, String acao, int deZona, int paraZona) {
+    /** Registra um lance pelas zonas: quem agiu, de que zona para que zona, com que carta, e o placar depois dele. */
+    Map<String, Object> lance(String tipo, boolean doNosso, boolean ok, CbcRules.Card carta, String acao, int deZona, int paraZona) {
         Random r = contexto.sorteio("lance" + lances);
+        int jogador = "GOLEIRO_PRONTO".equals(tipo) && regras.comTrave() ? 1 : jogadorDa(deZona, r);
+        int alvo = jogadorDa(Math.min(3, deZona + 1), r);
+        double[] de = {x(doNosso, deZona), 12 + r.nextInt(37)};
+        double[] para = {x(doNosso, paraZona), paraZona >= GOL ? 26 + r.nextInt(9) : 12 + r.nextInt(37)};
+        return registrar(tipo, doNosso, ok, carta, acao, new int[]{jogador, alvo}, de, para);
+    }
+
+    /**
+     * Registra um lance pelos pontos do campo (os reinícios saem de um ponto certo: o centro, o canto, a linha lateral).
+     * Nas modalidades de invasão o lance leva o estado e o destino de cada jogador ({@link EsporteCampo}); quem ataca é
+     * quem tem a bola na hora do lance.
+     */
+    Map<String, Object> registrar(String tipo, boolean doNosso, boolean ok, CbcRules.Card carta, String acao, int[] quem, double[] de, double[] para) {
         lances++;
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("n", lances);
@@ -96,20 +111,24 @@ public final class EsportePartida {
         m.put("tipo", tipo);
         m.put("time", doNosso ? "NOS" : "ELES");
         m.put("ok", ok);
-        m.put("jogador", jogadorDa(deZona, r));
-        m.put("alvo", jogadorDa(Math.min(3, deZona + 1), r));
-        m.put("de", List.of(x(doNosso, deZona), 12 + r.nextInt(37)));
-        m.put("para", List.of(x(doNosso, paraZona), paraZona >= GOL ? 26 + r.nextInt(9) : 12 + r.nextInt(37)));
+        m.put("jogador", quem[0]);
+        m.put("alvo", quem[1]);
+        m.put("de", EsporteCampo.ponto(de));
+        m.put("para", EsporteCampo.ponto(para));
         m.put("placar", placar());
         if (carta != null) {
             m.put("carta", carta.id());
             m.put("acao", acao);
         }
+        if (regras.deInvasao()) {
+            m.put("jogadores", new EsporteCampo(regras, nossa).jogadores(tipo, doNosso, ok, quem, de, para));
+        }
         eventos.add(new Evento("JOGADA", m));
+        return m;
     }
 
     /** O jogador que age numa zona: 1 é o goleiro; os de trás agem na defesa, os da frente no ataque. */
-    private int jogadorDa(int z, Random r) {
+    int jogadorDa(int z, Random r) {
         int n = regras.jogadores();
         if (n <= 2) {
             return 1 + r.nextInt(n);
@@ -133,12 +152,16 @@ public final class EsportePartida {
             }
             new EsporteLance(this, carta).resolver();
             jogada++;
+            Runnable pendente = reinicio;
+            reinicio = null;
             if (jogada == regras.jogadasPorTempo()) {
                 eventos.add(new Evento("INTERVALO", placar()));
                 nossa = false;
                 zona = 1;
                 bonus = 0;
-                lance("SAIDA", false, true, null, null, 1, 1);
+                EsporteReinicio.saida(this, false);
+            } else if (pendente != null && !encerrada()) {
+                pendente.run();
             }
         }
         if (encerrada()) {

@@ -2,7 +2,8 @@
 /**
  * O gol do futebol de 5: duas traves, travessão, a rede com profundidade (teto, laterais e o fundo) e o fundo da rede
  * como uma grade que balança quando a bola entra (lib/flair/esporte/rede.ts). A rede é desenhada em linhas, como uma
- * rede de verdade, e nunca cobre o jogador: ela fica atrás da linha do gol.
+ * rede de verdade, e nunca cobre o jogador: ela fica atrás da linha do gol. Quando a bola bate na trave, a armação
+ * (postes e travessão) treme e para sozinha; com "reduzir movimento" ela não treme.
  */
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
@@ -13,6 +14,14 @@ export const LARGURA_DO_GOL = 3;
 export const ALTURA_DO_GOL = 2;
 export const FUNDO_DO_GOL = 1.1;
 const TRAVE = "#F4F7F2";
+/** O tremor da trave: quanto ela inclina no pico (rad), quantas vezes por segundo e em quanto tempo para. */
+export const TREMOR = { amplitude: 0.035, frequencia: 9, duracao: 0.9 };
+
+/** A inclinação da armação t segundos depois da batida (0 quando já parou). */
+export function tremorDaTrave(t: number): number {
+  if (t < 0 || t >= TREMOR.duracao) return 0;
+  return TREMOR.amplitude * Math.sin(2 * Math.PI * TREMOR.frequencia * t) * (1 - t / TREMOR.duracao) ** 2;
+}
 
 /** Linhas da grade do fundo da rede, no espaço do gol (x para o fundo, y para cima, z na largura). */
 function linhasDaGrade(desloca: Float32Array, posicoes: Float32Array): void {
@@ -42,6 +51,8 @@ export interface Batida {
   u: number;
   v: number;
   chave: number;
+  /** a bola bateu na trave em vez de entrar: a armação treme e a rede não se mexe */
+  naTrave?: boolean;
 }
 
 const SEGMENTOS = LINHAS * (COLUNAS - 1) + COLUNAS * (LINHAS - 1);
@@ -65,6 +76,9 @@ export function Gol3D({ x, lado, batida, reduzido, nome }: Props) {
   }, []);
   const material = useMemo(() => new THREE.LineBasicMaterial({ color: TRAVE, transparent: true, opacity: 0.55 }), []);
   const vista = useRef<number | null>(null);
+  const armacao = useRef<THREE.Group>(null);
+  /** há quantos segundos a bola bateu na trave (null = não bateu) */
+  const tremendo = useRef<number | null>(null);
   useEffect(() => () => {
     geometria.dispose();
     material.dispose();
@@ -75,8 +89,16 @@ export function Gol3D({ x, lado, batida, reduzido, nome }: Props) {
     // só a bola que entra neste gol mexe nesta rede
     if (b && b.lado === lado && vista.current !== b.chave) {
       vista.current = b.chave;
-      if (reduzido) estufar(rede, b.u, b.v);
+      if (b.naTrave) tremendo.current = 0;
+      else if (reduzido) estufar(rede, b.u, b.v);
       else bater(rede, b.u, b.v);
+    }
+    if (tremendo.current !== null && armacao.current) {
+      tremendo.current += dt;
+      const giro = reduzido ? 0 : tremorDaTrave(tremendo.current);
+      armacao.current.rotation.z = giro;
+      armacao.current.userData.tremor = giro;
+      if (tremendo.current >= TREMOR.duracao) tremendo.current = null;
     }
     if (!reduzido) avancar(rede, dt);
     const attr = geometria.getAttribute("position") as THREE.BufferAttribute;
@@ -87,16 +109,18 @@ export function Gol3D({ x, lado, batida, reduzido, nome }: Props) {
   const m = LARGURA_DO_GOL / 2;
   return (
     <group name={nome} position={[x, 0, 0]} scale={[lado, 1, 1]}>
-      {[-m, m].map((z) => (
-        <mesh key={z} position={[0, ALTURA_DO_GOL / 2, z]} castShadow>
-          <cylinderGeometry args={[0.06, 0.06, ALTURA_DO_GOL, 12]} />
+      <group ref={armacao} name={`${nome}-trave`}>
+        {[-m, m].map((z) => (
+          <mesh key={z} position={[0, ALTURA_DO_GOL / 2, z]} castShadow>
+            <cylinderGeometry args={[0.06, 0.06, ALTURA_DO_GOL, 12]} />
+            <meshStandardMaterial color={TRAVE} roughness={0.35} metalness={0.2} />
+          </mesh>
+        ))}
+        <mesh position={[0, ALTURA_DO_GOL, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.06, 0.06, LARGURA_DO_GOL + 0.12, 12]} />
           <meshStandardMaterial color={TRAVE} roughness={0.35} metalness={0.2} />
         </mesh>
-      ))}
-      <mesh position={[0, ALTURA_DO_GOL, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.06, 0.06, LARGURA_DO_GOL + 0.12, 12]} />
-        <meshStandardMaterial color={TRAVE} roughness={0.35} metalness={0.2} />
-      </mesh>
+      </group>
       {/* teto e laterais da rede: telas finas, presas nas traves e nos ferros do fundo */}
       <mesh position={[FUNDO_DO_GOL / 2, ALTURA_DO_GOL, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[FUNDO_DO_GOL, LARGURA_DO_GOL, 6, 9]} />

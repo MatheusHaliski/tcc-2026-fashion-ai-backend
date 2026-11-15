@@ -79,11 +79,17 @@
   text-align: center;
 }
 
+/* a faixa de baixo (.n3d-band) é quem rola: as linhas do painel nunca encolhem, e a mão aparece inteira */
 .fsp-painel {
   display: grid;
+  grid-auto-rows: max-content;
   gap: 6px;
   padding: 8px 10px;
-  overflow-y: auto;
+}
+
+/* durante a partida a régua de vagas do uniforme sai: o espaço é da mão de cartas */
+.n3d-lower:has(.fsp-painel) .n3d-ruler {
+  display: none;
 }
 
 .fsp-lances {
@@ -160,9 +166,17 @@
   min-height: var(--touch);
 }
 
-.fsp-aviso {
+.fsp-aviso,
+.fsp-comandos {
   margin: 0;
   font-size: var(--text-caption);
+}
+
+/* os comandos do teclado e do controle só interessam onde há teclado: no celular a linha sai */
+@media (pointer: coarse) {
+  .fsp-comandos {
+    display: none;
+  }
 }
 
 .fsp-espera {
@@ -178,6 +192,27 @@
 }
 
 @media (max-width: 480px) {
+  /* no celular as cinco cartas da mão cabem lado a lado, sem rolar: o nome da ação quebra em linhas */
+  .fsp-mao {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    overflow-x: visible;
+  }
+
+  .fsp-carta {
+    min-width: 0;
+    padding: 3px 1px;
+    overflow: hidden;
+  }
+
+  .fsp-carta-acao,
+  .fsp-carta-poder {
+    font-size: 0.68rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
   .fsp-placar {
     gap: 6px;
     padding: 4px 8px;

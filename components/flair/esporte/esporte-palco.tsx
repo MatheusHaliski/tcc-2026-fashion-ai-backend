@@ -11,7 +11,7 @@ import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion, useWebGL } from "@/components/three/common";
 import { HudIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
-import { narracao, nomeDoTime } from "@/components/flair/esporte/esporte-texto";
+import { jogadorEmTexto, narracao, nomeDoTime } from "@/components/flair/esporte/esporte-texto";
 import { planoDaCamera } from "@/lib/flair/esporte/camera";
 import { campoDe, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
 import { quadroDoLance } from "@/lib/flair/esporte/timeline";
@@ -31,6 +31,7 @@ class Limite extends Component<{ children: ReactNode; reserva: ReactNode }, { fa
 
 /** O campo visto de cima (sem WebGL): os dois times, a bola e as linhas, no fim do lance da vez. */
 export function CampoEmPlanta({ campo, anterior, atual, uniforme, rotulo }: { campo: Campo; anterior: Jogada | null; atual: Jogada | null; uniforme: Uniforme; rotulo: string }) {
+  const tx = useNucleoText();
   const quadro = quadroDoLance(campo, anterior, atual, 1);
   return (
     <svg className="fsp-planta" viewBox="-4 -4 108 68" role="img" aria-label={rotulo} data-testid="esporte-planta">
@@ -38,7 +39,9 @@ export function CampoEmPlanta({ campo, anterior, atual, uniforme, rotulo }: { ca
       <line x1={50} y1={0} x2={50} y2={60} stroke={campo.linha} strokeWidth={0.5} />
       {quadro.figuras.map((f) => (
         <circle key={`${f.time}-${f.n}`} cx={f.x} cy={f.y} r={1.9} fill={f.time === "NOS" ? uniforme.camisa : UNIFORME_VISITANTE.camisa} stroke="#11141A" strokeWidth={0.4}
-          data-time={f.time} data-jogador={f.n} data-gesto={f.gesto} />
+          data-time={f.time} data-jogador={f.n} data-gesto={f.gesto} data-estado={f.estado}>
+          <title>{jogadorEmTexto(tx, f.time, f.n, f.estado)}</title>
+        </circle>
       ))}
       {campo.bola && <circle cx={quadro.bola.x} cy={quadro.bola.y} r={1} fill="#F4F7F2" stroke="#11141A" strokeWidth={0.3} data-testid="esporte-bola" />}
     </svg>

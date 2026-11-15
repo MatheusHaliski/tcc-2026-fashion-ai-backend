@@ -21,12 +21,25 @@ export function nomeDaAcao(tx: Texto, modalidade: string, acao: string): string 
   return tx.ou(`flair3d.ui.acaoCor.${modalidade}.${acao}`, tx.ou(`flair3d.ui.acaoCor.${acao}`, tx.t("flair3d.esporte.acao.TOQUE")));
 }
 
+/** O tipo do lance para a narração: o passe que saiu pela lateral e a bola no travessão têm a sua frase. */
+function tipoNarrado(j: Jogada): string {
+  if (j.saiu) return "PASSE_FORA";
+  return j.bateu === "TRAVESSAO" ? j.tipo.replace("NA_TRAVE", "NO_TRAVESSAO") : j.tipo;
+}
+
+/** O que o jogador está fazendo no lance, em palavras ("Lia (Seu time): dá apoio ao lado da bola"). */
+export function jogadorEmTexto(tx: Texto, lado: Lado, n: number, estado: string | undefined): string {
+  const nome = nomeDoJogador(tx, lado, n);
+  return estado ? tx.t("flair3d.esporte.jogador", { nome, time: nomeDoTime(tx, lado), estado: tx.ou(`flair3d.esporte.estado.${estado}`, estado) }) : nome;
+}
+
 /** A narração do lance, com o minuto do relógio na frente. */
 export function narracao(tx: Texto, modalidade: string, j: Jogada): string {
   const outro: Lado = j.time === "NOS" ? "ELES" : "NOS";
   const vars = { jogador: nomeDoJogador(tx, j.time, j.jogador), alvo: nomeDoJogador(tx, j.time, j.alvo), rival: nomeDoTime(tx, outro), time: nomeDoTime(tx, j.time) };
-  const comum = tx.ou(`flair3d.esporte.lance.${j.tipo}`, tx.t("flair3d.esporte.lance.OUTRO"), vars);
-  const frase = tx.ou(`flair3d.esporte.${modalidade}.lance.${j.tipo}`, comum, vars);
+  const tipo = tipoNarrado(j);
+  const comum = tx.ou(`flair3d.esporte.lance.${tipo}`, tx.t("flair3d.esporte.lance.OUTRO"), vars);
+  const frase = tx.ou(`flair3d.esporte.${modalidade}.lance.${tipo}`, comum, vars);
   return tx.t("flair3d.esporte.minuto", { min: Math.floor(j.relogio / 60), frase });
 }
 

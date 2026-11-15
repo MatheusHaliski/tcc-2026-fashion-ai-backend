@@ -29,6 +29,21 @@ public record EsporteRegras(String codigo, int jogadasPorTempo, int segundosPorJ
         return TODAS.stream().filter(m -> m.codigo.equals(resposta)).findFirst().orElse(FUTEBOL);
     }
 
+    /** Há trave e goleiro (futebol de 5): só aqui a bola bate na trave e há tiro de meta, escanteio e lateral. */
+    public boolean comTrave() {
+        return "FUTEBOL".equals(codigo);
+    }
+
+    /** Os dois times dividem o campo inteiro (futebol e basquete): o servidor diz onde cada jogador vai em cada lance. */
+    public boolean deInvasao() {
+        return "FUTEBOL".equals(codigo) || "BASQUETE".equals(codigo);
+    }
+
+    /** Há bola em jogo e, depois de cada ponto, ela volta ao jogo com quem sofreu (corrida e skate não têm). */
+    public boolean comBola() {
+        return !"CORRIDA".equals(codigo) && !"SKATE".equals(codigo);
+    }
+
     public int jogadas() {
         return jogadasPorTempo * TEMPOS;
     }
