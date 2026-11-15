@@ -132,7 +132,7 @@ mostra as cartas da **vaga em destaque**. A primeira vaga vazia já começa em d
 | Qualquer vaga | 2 toques + rolagem | 2 toques (vaga, carta) ou 1 arrasto |
 
 Telas: `cenas/tela-desafio-celular-inicio.jpg`, `-2-cartas.jpg`, `-5-cartas.jpg`, `cenas/tela-desafio-computador.jpg`
-(1440×900), `cenas/tela-elenco-celular-inicio.jpg`, `-completo.jpg`, `cenas/tela-desafio-tema-escuro.jpg`,
+(1440×900), `cenas/tela-elenco-celular-inicio.jpg`, `-completo.jpg`, `cenas/tela-elenco-computador.jpg`, `cenas/tela-desafio-tema-escuro.jpg`,
 `cenas/tela-desafio-alto-contraste.jpg`. Quebra-cabeça: `cenas/quebra-cabeca-vazio.jpg`, `-parcial.jpg`,
 `-completo.jpg`.
 
