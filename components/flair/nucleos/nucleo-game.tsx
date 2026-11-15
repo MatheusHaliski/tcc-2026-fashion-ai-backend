@@ -90,7 +90,9 @@ export function NucleoGame(props: Props) {
   const reduzido = useReducedMotion();
   const fx = useFxPrefs();
   const tabs = useMemo(() => buildTabs(definicao, cartas), [definicao, cartas]);
-  const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardComLook(boardInicial(), props.partida?.vestidas ?? lerRascunho(props.partida?.id)));
+  // o rascunho da preparação: por partida nos jogos de deck; por jogo e rodada nos de zonas (a partida abre na prévia)
+  const rascunho = definicao.deck && !definicao.deck.semDeck ? props.partida?.id : `${codigo}.${definicao.rodada ?? ""}`;
+  const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardComLook(boardInicial(), props.partida?.vestidas, lerRascunho<Selecao>(rascunho)));
   const [aviso, setAviso] = useState<string | null>(null);
   const perfil = useMirrorAvatar();
   const [escolha, setEscolha] = useState<AvatarTipo | null>(null);
@@ -104,7 +106,7 @@ export function NucleoGame(props: Props) {
   const [acionou, setAcionou] = useState(false);
   const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"), { partida: props.partida?.id, rodada: definicao.rodada });
   const preparando = momento === "PREPARACAO";
-  useRascunho(props.partida?.id, preparando, estado.sel.cartas, !temEscolha(estado.sel));
+  useRascunho(rascunho, preparando, estado.sel, !temEscolha(estado.sel), resultado?.status === "ENTREGUE");
   const acionamento = acionamentoDe(codigo);
   const faltaResposta = respostaObrigatoria(definicao) && !estado.sel.resposta;
   const pronto = temEscolha(estado.sel) && !faltaResposta && vagasQueFaltam(definicao, estado.sel.cartas).length === 0;

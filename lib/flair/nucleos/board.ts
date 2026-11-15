@@ -45,9 +45,13 @@ export function boardInicial(zoomMax = 3, zoomMin = -2): BoardEstado {
   };
 }
 
-/** O tabuleiro de uma partida retomada ("Continuar partida"): o look que já estava vestido volta às vagas. */
-export function boardComLook(estado: BoardEstado, cartas?: Record<string, string> | null): BoardEstado {
-  return cartas && Object.keys(cartas).length ? { ...estado, sel: { ...estado.sel, cartas: { ...cartas } } } : estado;
+/**
+ * O tabuleiro de uma partida retomada ("Continuar partida"): o look que o servidor guardou volta às vagas; sem ele, o
+ * rascunho do navegador (as peças, as zonas pintadas, a maquiagem e a resposta que a pessoa já tinha escolhido).
+ */
+export function boardComLook(estado: BoardEstado, cartas?: Record<string, string> | null, rascunho?: Partial<Selecao> | null): BoardEstado {
+  if (cartas && Object.keys(cartas).length) return { ...estado, sel: { ...estado.sel, cartas: { ...cartas } } };
+  return rascunho ? { ...estado, sel: { ...estado.sel, ...rascunho } } : estado;
 }
 
 export type BoardAcao =

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { withRegisteredColor } from "@/lib/avatar3d/human/default-outfit";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
+import { boardComLook, boardInicial } from "@/lib/flair/nucleos/board";
 
 const carta = (id: string, position: string, imageUrl: string | null, colors?: string[]) =>
   ({ id, position, name: id, imageUrl, category: "Calçados", subcategory: "Bota", tags: colors ? { colors } : null }) as unknown as FlairCollectionCard;
@@ -24,5 +25,15 @@ describe("peças do look no corpo 3D (auditoria 3: a bota preta aparecia laranja
     expect(pecas[1]).toMatchObject({ imageUrl: "/media/pieces/abc/foto.jpg" });
     expect(pecas[1].colorHex).toBeUndefined();
     expect(pecas[2].colorHex).toBeUndefined();
+  });
+});
+
+describe("look da partida retomada (critério da dona: a partida volta onde estava)", () => {
+  it("o look que o servidor guardou volta às vagas; sem ele, o rascunho inteiro (peças, zonas, resposta); sem nada, vazio", () => {
+    const base = boardInicial();
+    expect(boardComLook(base, { SUP: "c1" }, { cartas: { INF: "x" } }).sel.cartas).toEqual({ SUP: "c1" });
+    const doRascunho = boardComLook(base, null, { cartas: { CAL: "c3" }, zonas: { FRENTE: { cor: "#1E4FBF" } }, resposta: "EMBLEMA_ASA" });
+    expect(doRascunho.sel).toMatchObject({ cartas: { CAL: "c3" }, zonas: { FRENTE: { cor: "#1E4FBF" } }, resposta: "EMBLEMA_ASA" });
+    expect(boardComLook(base, null, null)).toBe(base);
   });
 });
