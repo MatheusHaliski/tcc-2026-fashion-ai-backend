@@ -1,6 +1,7 @@
 package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.acervo.AcervoLugares;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -201,7 +202,8 @@ public class CopilotService {
     private final DailyLookRepository dailyLooks;
     private final StyleDnaRepository dnas;
     private final UserPreferencesRepository preferences;
-    private final RoomService room;
+    private final AcervoLugares lugares;
+    private final PieceUsageDiary usage;
     private final MirrorService mirror;
     private final InventoryScoreService inventory;
     private final ChallengeService challenges;
@@ -221,7 +223,7 @@ public class CopilotService {
     private final Map<UUID, Deque<String>> shown = new ConcurrentHashMap<>();
 
     public CopilotService(WardrobeService wardrobe, WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
-                          DailyLookRepository dailyLooks, StyleDnaRepository dnas, UserPreferencesRepository preferences, RoomService room,
+                          DailyLookRepository dailyLooks, StyleDnaRepository dnas, UserPreferencesRepository preferences, AcervoLugares lugares, PieceUsageDiary usage,
                           MirrorService mirror, InventoryScoreService inventory, ChallengeService challenges, AutopilotService autopilot,
                           DailyLookService dailyLookService, WeatherService weather, AiEngine ai, Audit audit, SchemeService schemeService,
                           BackgroundStudioService backgroundStudio, HypeQueryService hype, InsightService insights) {
@@ -237,7 +239,8 @@ public class CopilotService {
         this.dailyLooks = dailyLooks;
         this.dnas = dnas;
         this.preferences = preferences;
-        this.room = room;
+        this.lugares = lugares;
+        this.usage = usage;
         this.mirror = mirror;
         this.inventory = inventory;
         this.challenges = challenges;
@@ -252,7 +255,6 @@ public class CopilotService {
     static List<String> promptsFor(String view) {
         return switch (view == null ? "" : view.toUpperCase(Locale.ROOT)) {
             case "GRADE" -> List.of(Msg.t("copilot.prompt_monte_um_look"), Msg.t("copilot.prompt_roupa_sem_uso"), Msg.t("copilot.prompt_o_que_falta"));
-            case "QUARTO" -> List.of(Msg.t("copilot.prompt_onde_esta_tenis"), Msg.t("copilot.prompt_vista_me_trabalho"), Msg.t("copilot.prompt_organize_gavetas"));
             case "DESTAQUES" -> List.of(Msg.t("copilot.prompt_melhorar_inventario"), Msg.t("copilot.prompt_qual_desafio"), Msg.t("copilot.prompt_utilizacao_baixa"));
             default -> List.of(Msg.t("copilot.prompt_sugira_3_looks"), Msg.t("copilot.prompt_algo_diferente"), Msg.t("copilot.prompt_esta_frio"));
         };
@@ -324,10 +326,10 @@ public class CopilotService {
         // (média v2 das peças), novidade, reutilização, uso e sustentabilidade, lado a lado e nunca somados. Sem modo
         // escolhido, a ordem do motor local fica como está; dimensão sem base vem nula ("—"), nunca 0.
         out.put("newCombinations", fresh.isEmpty() ? fresh : scoreLooks(user, fresh, null));
-        // 3) peças esquecidas: a MESMA régua do app inteiro (RoomService.forgotten — 60+ dias desde o último uso ou, se
+        // 3) peças esquecidas: a MESMA régua do app inteiro (ForgottenPieces.forgotten — 60+ dias desde o último uso ou, se
         //    nunca usada, desde o cadastro). Antes era 30 dias aqui e "nunca usada" contava até para peça cadastrada ontem.
         LocalDate todayZ = LocalDate.now(FaiPointsService.ZONE);
-        out.put("forgottenPieces", eligible.stream().filter(x -> RoomService.forgotten(x, x.getLastWornDate(), todayZ))
+        out.put("forgottenPieces", eligible.stream().filter(x -> ForgottenPieces.forgotten(x, x.getLastWornDate(), todayZ))
                 .sorted(Comparator.comparingLong((WardrobeItem x) -> -HypeQueryService.idleDays(x, todayZ)))
                 .limit(6).map(x -> Views.piece(x, null, null)).toList());
         // 4) peças para o clima: mesma régua do Autopiloto (faixa de temperatura → descarta peças inadequadas; camadas no frio)
@@ -685,15 +687,15 @@ public class CopilotService {
         return false;
     }
 
-    Map<String, Object> chip(WardrobeItem w, Map<UUID, RoomService.Location> where) {
-        RoomService.Location loc = where.get(w.getId());
+    Map<String, Object> chip(WardrobeItem w, Map<UUID, AcervoLugares.Lugar> where) {
+        AcervoLugares.Lugar loc = where.get(w.getId());
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("pieceId", w.getId());
         m.put("name", w.getName());
         br.com.fashionai.application.view.PieceImageFields.put(m, "imageUrl", w);
         m.put("available", w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE);
-        m.put("address", loc == null ? null : loc.address().toString());
-        m.put("addressLabel", loc == null ? null : loc.label());
+        m.put("address", loc == null ? null : loc.compartimentoId().toString());
+        m.put("addressLabel", loc == null ? null : loc.caminho());
         m.put("actions", List.of("VER_PECA", "MONTAR_NO_ESPELHO", "CRIAR_LOOK"));
         return m;
     }
@@ -731,10 +733,10 @@ public class CopilotService {
         return challenges.restriction(user.id()).map(r -> Msg.t("copilot.estou_respeitando_o_desafio_so", r.challengeName(), r.allowedPieceIds().size()));
     }
 
-    /** CA09 — "Onde está meu tênis branco?" → endereço e destaque no quarto. */
+    /** CA09 — "Onde está meu tênis branco?" → o lugar da peça no ACERVO (o Meu Quarto saiu em 15/11/2026). */
     Map<String, Object> whereIs(CurrentUser user, String message, String view) {
         List<WardrobeItem> found = searchPieces(user.id(), message);
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
         if (found.isEmpty()) {
             out.put("text", Msg.t("copilot.nao_encontrei_essa_peca_no"));
@@ -745,30 +747,18 @@ public class CopilotService {
         List<Map<String, Object>> chips = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         for (WardrobeItem w : found) {
-            RoomService.Location loc = where.get(w.getId());
-            if (loc == null) {
-                loc = room.locate(user.id(), w.getId()).orElse(null);
-                if (loc != null) {
-                    where.put(w.getId(), loc);
-                }
-            }
+            AcervoLugares.Lugar loc = where.get(w.getId());
             chips.add(chip(w, where));
             if (sb.length() > 0) {
                 sb.append(' ');
             }
-            sb.append(Msg.t("copilot.sua")).append(w.getName()).append(Msg.t("copilot.esta_em")).append(loc == null ? Msg.t("common.posicao_desconhecida") : loc.label()).append("**.");
+            sb.append(Msg.t("copilot.sua")).append(w.getName()).append(Msg.t("copilot.esta_em")).append(loc == null ? Msg.t("common.posicao_desconhecida") : loc.caminho()).append("**.");
             if (!w.isDisponivel()) {
                 sb.append(Msg.t("copilot.esta_no_cesto_indisponivel"));
             }
         }
         out.put("text", sb.toString());
         out.put("chips", chips);
-        WardrobeItem first = found.get(0);
-        RoomService.Location loc = where.get(first.getId());
-        if (loc != null) {
-            out.put("roomHighlight", Map.of("pieceId", first.getId(), "address", loc.address().toString(), "moduleId", loc.moduleId(),
-                    "applyNow", "QUARTO".equalsIgnoreCase(view)));
-        }
         out.put("tools", List.of("buscar_pecas", "localizar_peca"));
         return out;
     }
@@ -776,13 +766,13 @@ public class CopilotService {
     /** CA11 — peças esquecidas ordenadas por tempo sem uso + [Criar look com elas]. */
     Map<String, Object> forgotten(CurrentUser user) {
         LocalDate today = LocalDate.now(FaiPointsService.ZONE);
-        Map<UUID, LocalDate> last = room.lastDiaryDates(user.id(), today.minusYears(10));
+        Map<UUID, LocalDate> last = usage.lastDiaryDates(user.id(), today.minusYears(10));
         List<WardrobeItem> list = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
-                .filter(w -> RoomService.forgotten(w, RoomService.lastUse(w, last), today))
-                .sorted(Comparator.comparing((WardrobeItem w) -> Optional.ofNullable(RoomService.lastUse(w, last))
+                .filter(w -> ForgottenPieces.forgotten(w, ForgottenPieces.lastUse(w, last), today))
+                .sorted(Comparator.comparing((WardrobeItem w) -> Optional.ofNullable(ForgottenPieces.lastUse(w, last))
                         .orElse(LocalDate.ofInstant(w.getCreatedAt(), FaiPointsService.ZONE))))
                 .toList();
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
         if (list.isEmpty()) {
             out.put("text", Msg.t("copilot.boa_noticia_nenhuma_peca_esta"));
@@ -792,7 +782,7 @@ public class CopilotService {
         List<Map<String, Object>> chips = new ArrayList<>();
         StringBuilder sb = new StringBuilder(Msg.t("copilot.estas_pecas_estao_paradas_ha"));
         for (WardrobeItem w : list.stream().limit(8).toList()) {
-            LocalDate ref = Optional.ofNullable(RoomService.lastUse(w, last)).orElse(LocalDate.ofInstant(w.getCreatedAt(), FaiPointsService.ZONE));
+            LocalDate ref = Optional.ofNullable(ForgottenPieces.lastUse(w, last)).orElse(LocalDate.ofInstant(w.getCreatedAt(), FaiPointsService.ZONE));
             Map<String, Object> c = chip(w, where);
             c.put("daysUnused", ChronoUnit.DAYS.between(ref, today));
             chips.add(c);
@@ -852,7 +842,7 @@ public class CopilotService {
             look.removeIf(w -> !MirrorService.slotOf(w).equals("shoes"));
             ranked.stream().filter(w -> MirrorService.slotOf(w).equals("dress")).findFirst().ifPresent(look::add);
         }
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("text", look.isEmpty() ? Msg.t("copilot.nao_consegui_montar_algo_diferente") : Msg.t("copilot.fugindo_do_seu_habitual_que", String.join(", ", usual), look.stream().map(WardrobeItem::getName).collect(Collectors.joining(" + "))));
         out.put("chips", look.stream().map(w -> chip(w, where)).toList());
@@ -1000,7 +990,7 @@ public class CopilotService {
                 prev.removeFirst();
             }
         });
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         for (Map<String, Object> s : suggestions) {
             @SuppressWarnings("unchecked") List<UUID> ids = (List<UUID>) s.get("pieceIds");
             List<WardrobeItem> look = pieces.findByIdIn(ids);
@@ -1143,7 +1133,7 @@ public class CopilotService {
         LocalDate today = LocalDate.now(FaiPointsService.ZONE);
         Map<String, Object> out = new LinkedHashMap<>();
         StyleCompatibility.Profile dna = dnas.findByUserId(user.id()).map(HypeQueryService::profileOf).orElse(null);
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         boolean looksAsked = t.matches(".*\\b(look|looks|esquema|esquemas|outfit)\\b.*");
         if (looksAsked) {
             List<Scheme> mine = schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(user.id(), SchemeStatus.ARCHIVED);
@@ -1189,7 +1179,7 @@ public class CopilotService {
                     .sorted(Comparator.comparing((WardrobeItem w) -> h.get(w.getId()).getDimensions().getRarity()).reversed()).limit(5).toList();
         } else if (t.matches(".*(voltando|volta a ser|voltar a ser|comeback|coming back|volviendo|vuelve a ser).*")) {
             header = Msg.t("copilot.hype.comeback");
-            picked = own.stream().filter(w -> h.containsKey(w.getId()) && HypeQueryService.idleDays(w, today) >= RoomService.FORGOTTEN_DAYS && comeback(h.get(w.getId())))
+            picked = own.stream().filter(w -> h.containsKey(w.getId()) && HypeQueryService.idleDays(w, today) >= ForgottenPieces.FORGOTTEN_DAYS && comeback(h.get(w.getId())))
                     .sorted(Comparator.comparingDouble((WardrobeItem w) -> similarGrowth(h.get(w.getId()))).reversed()).limit(5).toList();
         } else if (t.matches(".*(crescend|subindo|growing|rising|creciendo|em crescimento|aumentando).*")) {
             header = Msg.t("copilot.hype.rising", hype.config().deltaWindowDays());
@@ -1303,7 +1293,7 @@ public class CopilotService {
                 text -> text == null || text.isBlank() ? null : text, () -> localText, null));
         Answer answer = plainAnswer(outcome.value() == null ? localText : outcome.value());
         String raw = answer.text();
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         List<Map<String, Object>> chips = new ArrayList<>();
         Set<UUID> cited = new LinkedHashSet<>();
         // peças citadas só na lista "pecas" de uma resposta em JSON também viram chips
