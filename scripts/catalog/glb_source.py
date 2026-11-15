@@ -12,10 +12,11 @@ SCOPE = "sem esqueleto: vitrine do produto (manequim, quarto, visualizador), nã
 GENERATORS = {
     "meshy-6-lite": ("meshy", "Meshy (lote do Codex)"),
     "hunyuan3d-2.1": ("hunyuan3d", "Hunyuan3D 2.1 (flat lay aprovado, frente)"),
-    "hunyuan3d-2mv+2.1": ("hunyuan3d", "Hunyuan3D-2mv (forma: frente e costas do flat lay aprovado) + 2.1 (textura PBR)"),
+    "hunyuan3d-2mv+2.1": ("hunyuan3d", "Hunyuan3D-2mv (forma, frente e costas quando há) + 2.1 (textura PBR)"),
+    "hunyuan3d-2mv+2.0": ("hunyuan3d", "Hunyuan3D-2mv (forma, frente e costas quando há) + 2.0 (textura, T4)"),
     "trellis.2-4b": ("trellis", "TRELLIS.2 4B (flat lay aprovado, frente)"),
 }
-ORIGINS = ("codex", "runpod")
+ORIGINS = ("codex", "runpod", "gcp")
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,4 @@
-"""runpod_hunyuan_runner (sem GPU: pipelines falsas): forma (frente + costas) e textura em etapas separadas, manifesto
+"""hunyuan_glb_runner (sem GPU: pipelines falsas): forma (frente + costas) e textura em etapas separadas, manifesto
 no formato do import_meshy_glbs.py, falhas sem parar o lote, retomada sem refazer etapa e download só de imagem https."""
 import csv
 import io
@@ -9,7 +9,7 @@ import pytest
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from scripts.catalog import runpod_hunyuan_runner as runner  # noqa: E402
+from scripts.catalog import hunyuan_glb_runner as runner  # noqa: E402
 
 A, B, C = (f"{n}" * 8 + "-1111-4111-8111-" + f"{n}" * 12 for n in "abc")
 URL = "https://app.example/media/catalog/flatlay/"
@@ -76,7 +76,7 @@ def test_two_stages_write_manifest_record_failures_and_resume(tmp_path):
     assert paint.calls == [A]                                                   # B ainda não tem forma
     manifest = list(csv.DictReader((out / "manifesto.csv").open(encoding="utf-8")))
     assert manifest == [{"product_id": A, "glb": f"glb/{A}.glb", "generator": "hunyuan3d-2mv+2.1", "segundos": "10.0",
-                         "vistas": "frente+costas"}]
+                         "vistas": "frente+costas", "fonte": "FLAT_LAY", "recorte": ""}]
     assert (out / "glb" / f"{A}.glb").read_bytes() == b"glTF-fake"
     again = Shape()
     assert runner.run("shape", lot, out, again, fetch=fake_fetch, clock=ticking())["feitos"] == 1
@@ -126,6 +126,40 @@ def test_main_loads_the_stage_backend_once_and_fails_when_any_product_fails(tmp_
     write_lot(tmp_path / "lote.csv", [{"product_id": A, "front_url": URL + "a.jpg", "back_url": ""}])
     monkeypatch.setattr(runner, "download", fake_fetch)
     made = []
-    code = runner.main(["--stage", "shape", "--lot", str(tmp_path / "lote.csv"), "--out", str(tmp_path / "o")],
-                       make_backend=lambda stage, repo, seed: made.append((stage, repo, seed)) or Shape(fail=[A]))
-    assert code == 1 and made == [("shape", runner.REPOS["shape"], 1234)]
+    code = runner.main(["--stage", "shape", "--lot", str(tmp_path / "lote.csv"), "--out", str(tmp_path / "o"),
+                        "--shape-turbo"], make_backend=lambda a: made.append((a.stage, a.shape_turbo, a.seed)) or
+                       Shape(fail=[A]), make_cutter=lambda w: pytest.fail("sem FOTO, sem recorte"))
+    assert code == 1 and made == [("shape", True, 1234)]
+
+
+class Cutter:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, photo, category, subcategory, dest):
+        self.calls.append((photo.name, category, subcategory))
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(b"rgba")
+        (dest.parent / "recorte.json").write_text('{"modo": "parser+birefnet", "pessoa": true}')
+        return dest
+
+
+def test_photo_source_is_cut_before_shape_and_recorded_with_paint_20(tmp_path):
+    lot = [{"product_id": A, "fonte": "FOTO", "front_url": URL + "foto.jpg", "back_url": "", "category": "lower_piece",
+            "subcategory": "jeans"},
+           {"product_id": B, "fonte": "WHOLE", "front_url": URL + "whole.png", "back_url": "", "category": "upper_piece"}]
+    shape, cutter = Shape(), Cutter()
+    runner.run("shape", lot, tmp_path, shape, fetch=fake_fetch, clock=ticking(), cutter=cutter)
+    assert cutter.calls == [(f"{A}-front", "lower_piece", "jeans")]
+    assert shape.calls == [{"front": "front_cut.png"}, {"front": f"{B}-front"}]
+    runner.run("paint", lot, tmp_path, Paint(), fetch=fake_fetch, clock=ticking(), generator=runner.generator_name("2.0"))
+    rows = {r["product_id"]: r for r in csv.DictReader((tmp_path / "manifesto.csv").open(encoding="utf-8"))}
+    assert (rows[A]["fonte"], rows[A]["recorte"], rows[A]["generator"]) == ("FOTO", "parser+birefnet", "hunyuan3d-2mv+2.0")
+    assert (rows[B]["fonte"], rows[B]["recorte"]) == ("WHOLE", "")
+
+
+def test_photo_without_cutter_fails_instead_of_keeping_the_person(tmp_path):
+    lot = [{"product_id": A, "fonte": "FOTO", "front_url": URL + "foto.jpg", "back_url": ""}]
+    shape = Shape()
+    assert runner.run("shape", lot, tmp_path, shape, fetch=fake_fetch, clock=ticking())["falhas"] == 1
+    assert shape.calls == [] and "RECORTE_INDISPONIVEL" in (tmp_path / "falhas.csv").read_text()
