@@ -17,12 +17,12 @@ import java.util.UUID;
 /** Projeções da loja física (oferta, pedido, lançamento de pontos). Sem transação nem autorização. */
 final class PhysicalStoreViews {
     private final CatalogService catalog;
-    private final WardrobeCreatorService creator;
+    private final SellerIdentity sellers;
     private final UserRepository users;
 
-    PhysicalStoreViews(CatalogService catalog, WardrobeCreatorService creator, UserRepository users) {
+    PhysicalStoreViews(CatalogService catalog, SellerIdentity sellers, UserRepository users) {
         this.catalog = catalog;
-        this.creator = creator;
+        this.sellers = sellers;
         this.users = users;
     }
 
@@ -45,7 +45,7 @@ final class PhysicalStoreViews {
         out.put("affordable", balance >= listing.getPricePoints());
         out.put("stock", sellableStock(listing, variants));
         out.put("active", listing.isActive());
-        out.put("seller", creator.identity(users.findById(listing.getSellerUserId()).orElseThrow()));
+        out.put("seller", sellers.identity(users.findById(listing.getSellerUserId()).orElseThrow()));
         out.put("createdAt", listing.getCreatedAt());
         // RF-PESQ-01 — "sem variantes cadastradas" é informação ausente, não indisponibilidade.
         long activeVariants = variants.stream().filter(PhysicalStoreVariant::isActive).count();
@@ -77,7 +77,7 @@ final class PhysicalStoreViews {
         out.put("id", order.getId());
         out.put("listingId", order.getListing().getId());
         out.put("product", catalog.product(order.getListing().getProduct().getId()));
-        out.put("seller", creator.identity(users.findById(order.getListing().getSellerUserId()).orElseThrow()));
+        out.put("seller", sellers.identity(users.findById(order.getListing().getSellerUserId()).orElseThrow()));
         out.put("pricePoints", order.getPricePoints());
         out.put("status", order.getStatus());
         out.put("trackingCode", order.getTrackingCode());

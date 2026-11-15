@@ -67,7 +67,7 @@ public class PhysicalStoreService {
     public PhysicalStoreService(PhysicalStoreListingRepository listings, PhysicalStoreOrderRepository orders,
                                 PhysicalStoreVariantRepository variants, CatalogProductRepository products, BrandRepository brands,
                                 FaiPointsLedgerEntryRepository ledger, UserRepository users, Guard guard, CatalogService catalog,
-                                WardrobeCreatorService creator) {
+                                SellerIdentity sellers) {
         this.listings = listings;
         this.orders = orders;
         this.variants = variants;
@@ -77,7 +77,7 @@ public class PhysicalStoreService {
         this.users = users;
         this.guard = guard;
         this.catalog = catalog;
-        this.views = new PhysicalStoreViews(catalog, creator, users);
+        this.views = new PhysicalStoreViews(catalog, sellers, users);
     }
 
     @Transactional(readOnly = true)

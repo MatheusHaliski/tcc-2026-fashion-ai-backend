@@ -75,7 +75,7 @@ class PhysicalStorePurchaseTest {
         when(orders.findById(any())).thenAnswer(inv -> created.stream().filter(o -> o.getId().equals(inv.getArgument(0))).findFirst());
         store = new PhysicalStoreService(listings, orders, mock(br.com.fashionai.domain.repository.PhysicalStoreVariantRepository.class),
                 mock(CatalogProductRepository.class), mock(BrandRepository.class), ledger, users,
-                mock(Guard.class), mock(CatalogService.class), mock(WardrobeCreatorService.class));
+                mock(Guard.class), mock(CatalogService.class), mock(SellerIdentity.class));
         this.listingId = listingId;
     }
 
