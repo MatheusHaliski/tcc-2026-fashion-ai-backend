@@ -12,7 +12,7 @@ import { CURRENCIES, isCurrency } from "@/lib/i18n/money";
 import { CHROME_BACKGROUNDS, CONTAINER_PRESETS, chromeTile, useTheme } from "@/lib/theme/theme";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
-import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useNotice } from "@/components/ui";
+import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useNotice, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 import { NavOrderEditor } from "@/components/nav-order-editor";
@@ -21,11 +21,14 @@ import { NavOrderEditor } from "@/components/nav-order-editor";
 const currencyName = (intl: string, c: string) => { try { return `${new Intl.DisplayNames(intl, { type: "currency" }).of(c) ?? c} (${c})`; } catch { return c; } };
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
+const TABS: Tab[] = ["account", "appearance", "privacy", "data", "sessions"];
 interface Prefs { auraImpersonation?: boolean; auraHype?: boolean; theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
 interface Consent { purpose: string; granted: boolean; title?: string; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
   const { t, locale, setLocale, locales, rich, intl, currency, currencyPref, setCurrency, fmtDateTime } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
+  // consentimento: o próprio interruptor mostra a mudança; o aviso vem em toast, sem janela a cada troca
+  const toast = useToast();
   const [info, setInfo] = useState<{ title: string; paragraphs: ReactNode[] } | null>(null);
   const [impersonationBusy, setImpersonationBusy] = useState(false);
   const auraPermissions = useApi<{ currentTier: string; auras: Record<string, { allowed: boolean; requiredTier: string }> }>((signal) => api.get("/api/me/aura-permissions", { signal }), [me?.user.id]);
@@ -37,6 +40,8 @@ function Settings() {
   const [auraLocal, setAuraLocal] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [tab, setTab] = useState<Tab>("account");
+  // ?tab=sessions (link da notificação de novo acesso) abre direto na aba; lido depois de montar, sem divergir do servidor
+  useEffect(() => { const pedida = new URLSearchParams(window.location.search).get("tab"); if (pedida && TABS.includes(pedida as Tab)) setTab(pedida as Tab); }, []);
   const server = useApi<Prefs>((signal) => api.get("/api/me/preferences", { signal }), []);
   const consents = useApi<Consent[]>((signal) => api.get("/api/me/consents", { signal }), [], { enabled: tab === "privacy" });
   const exports = useApi<ExportRow[]>((signal) => api.get("/api/me/exports", { signal }), [], { enabled: tab === "data" });
@@ -190,7 +195,7 @@ function Settings() {
             {consents.error && <p role="alert" className="type-body-sm text-critical">{t("settingsHelp.consentsError")}</p>}
             <ul className="divide-y divide-line-soft">{(consents.data ?? []).map((c) => {
               const name = c.title ?? c.label ?? c.purpose.replace(/_/g, " ").toLocaleLowerCase(locale);   // o servidor manda o nome da finalidade em `title`
-              return <li key={c.purpose} className="flex items-center gap-3 py-2"><div className="min-w-0 flex-1"><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); notice.success(t(v ? "settings.consentimento_ligado" : "settings.consentimento_desligado", { name })); if (!v && c.purpose === "RETAIL_DEMAND_ANALYTICS") await api.delete("/api/me/retail-demand/contributions"); } catch (e) { notice.fromError(e); } }} label={name} /></div>{infoButton(name, [c.description ?? t("settingsHelp.consentMissing"), t("settingsHelp.consentChoice")])}</li>;
+              return <li key={c.purpose} className="flex items-center gap-3 py-2"><div className="min-w-0 flex-1"><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); toast.success(t(v ? "settings.consentimento_ligado" : "settings.consentimento_desligado", { name })); if (!v && c.purpose === "RETAIL_DEMAND_ANALYTICS") await api.delete("/api/me/retail-demand/contributions"); } catch (e) { toast.fromError(e); } }} label={name} /></div>{infoButton(name, [c.description ?? t("settingsHelp.consentMissing"), t("settingsHelp.consentChoice")])}</li>;
             })}</ul>
           </Card>
         </div>

@@ -28,6 +28,16 @@ const dismiss = async () => fireEvent.click(await screen.findByRole("button", { 
 async function dismissAll() { await settle(); while (screen.queryByRole("button", { name: "Entendi" })) { fireEvent.click(screen.getByRole("button", { name: "Entendi" })); await settle(); } }
 const puts = (calls: { method: string; path: string; body?: unknown }[]) => calls.filter((c) => c.method === "PUT" && c.path === "/api/me/preferences").map((c) => c.body as Record<string, unknown>);
 
+describe("configurações — endereço da aba", () => {
+  it("?tab=sessions (link da notificação de novo acesso) abre direto em Sessões", async () => {
+    window.history.replaceState({}, "", "/settings?tab=sessions");
+    loggedAs(ME, { "GET /api/me/preferences": PREFS, "GET /api/auth/sessions": [] });
+    renderApp(<SettingsPage />);
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Sessões" }).getAttribute("aria-selected")).toBe("true"));
+    window.history.replaceState({}, "", "/");
+  });
+});
+
 describe("configurações — conta", () => {
   it("passarela, capa, país, dados sensíveis e confirmação do novo e-mail", async () => {
     const { calls } = loggedAs(ME_FULL as typeof ME, { "GET /api/me/preferences": PREFS, "PATCH /api/me/profile": {}, "POST /api/me/cover": {}, "PATCH /api/me/sensitive": {}, "POST /api/me/email-change/confirm": {} });
@@ -197,7 +207,8 @@ describe("configurações — privacidade", () => {
     fireEvent.click(sw);
     await waitFor(() => expect(screen.getByRole("switch", { name: "Recomendações por IA" }).getAttribute("aria-checked")).toBe("true"));
     expect(await screen.findByText("Ligado: Recomendações por IA.")).toBeTruthy();
-    await dismissAll();
+    // o aviso do consentimento é um toast: nenhuma janela "Entendi" a cada troca (auditoria 10.6, item 15)
+    expect(screen.queryByRole("button", { name: "Entendi" })).toBeNull();
     fireEvent.click(screen.getByRole("switch", { name: "Recomendações por IA" }));
     expect(await screen.findByText("Consentimento falhou")).toBeTruthy();
     // informação do consentimento sem descrição
