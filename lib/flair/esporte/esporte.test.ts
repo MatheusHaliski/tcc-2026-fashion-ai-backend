@@ -3,6 +3,7 @@ import { CORTE_DO_LANCE, CORTE_DO_REPLAY, planoDaCamera, poseDaCamera, seguir } 
 import { CAMPOS, campoDe, noMundo, repouso } from "@/lib/flair/esporte/campo";
 import { bolaNoLance, FOLGA, quadroDoLance } from "@/lib/flair/esporte/timeline";
 import { comoJogada, jogadasDe, modalidadeDe, relogioEmTexto, resumoDe, situacaoDe, type Jogada } from "@/lib/flair/esporte/types";
+import ptBR from "@/lib/i18n/messages/pt-BR.json";
 
 const lance = (over: Partial<Jogada>): Jogada => ({ n: 1, jogada: 1, tempo: 1, relogio: 150, tipo: "PASSE", time: "NOS", ok: true, jogador: 3, alvo: 4, de: [45, 20], para: [70, 34], placar: "0-0", ...over });
 const FUTEBOL = CAMPOS.FUTEBOL;
@@ -153,5 +154,22 @@ describe("câmera de transmissão", () => {
     expect(distancia).toBeLessThan(6);
     const meio = seguir(transmissao, replay, 0.5);
     expect(meio.pos[1]).toBeCloseTo((transmissao.pos[1] + replay.pos[1]) / 2, 5);
+  });
+});
+
+describe("textos de cada modalidade (auditoria 3: basquete e vôlei falavam de meio-campo e goleiro)", () => {
+  const pt = ptBR as Record<string, string>;
+  it.each(["BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"])("%s tem a sua situação de cada zona, sem palavra do futebol", (m) => {
+    for (const lado of ["NOS", "ELES"]) {
+      for (const zona of [0, 1, 2, 3]) {
+        const frase = pt[`flair3d.esporte.${m}.situacao.${lado}.${zona}`];
+        expect(frase, `${m} ${lado} ${zona}`).toBeTruthy();
+        expect(frase).not.toMatch(/meio-campo|goleiro|drible|gol\b/i);
+      }
+    }
+    for (const tipo of ["PASSE_PERDIDO", "CHUTE_ESPALMADO", "GOLEIRO_PRONTO", "SEM_CARTA", "PASSE_FORA"]) {
+      const frase = pt[`flair3d.esporte.${m}.lance.${tipo}`] ?? pt[`flair3d.esporte.lance.${tipo}`];
+      expect(frase, `${m} ${tipo}`).not.toMatch(/goleiro/i);
+    }
   });
 });

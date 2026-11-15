@@ -243,6 +243,6 @@ class EsportePartidaTest {
         Resultado basquete = ateOFim(9L, "BASQUETE", true);
         long cestas = jogadas(basquete).stream().filter(j -> "CHUTE_GOL".equals(j.get("tipo"))).count();
         int pontos = Integer.parseInt(((String) basquete.eventos().get(basquete.eventos().size() - 1).valor()).split("-")[0]);
-        assertThat(pontos).isBetween((int) cestas, (int) cestas * 2);
+        assertThat(pontos).isBetween((int) cestas * 2, (int) cestas * 3);
     }
 }

@@ -97,7 +97,7 @@ export function EsportePainel({ modalidade, jogadas, situacao, mao, ocupado, err
       {situacao ? (
         <>
           <p className="fsp-situacao" role="status" data-testid="esporte-situacao">
-            <strong>{tx.t("flair3d.esporte.jogada", { n: situacao.jogada, total: situacao.total })}</strong> {situacaoEmTexto(tx, situacao)}
+            <strong>{tx.t("flair3d.esporte.jogada", { n: situacao.jogada, total: situacao.total })}</strong> {situacaoEmTexto(tx, situacao, modalidade)}
           </p>
           <p className="fsp-janela tabular" data-testid="esporte-janela">{tx.t("flair3d.esporte.janela", { n: Math.max(0, resta) })}</p>
           {mao.length === 0 ? <p className="n3d-hint">{tx.t("flair3d.esporte.semMao")}</p> : (

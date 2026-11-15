@@ -45,7 +45,7 @@ import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
 import { acionamentoDe, comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
 import { classesDoQuadro, estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
-import { respostaObrigatoria } from "@/lib/flair/nucleos/rodadas";
+import { respostaObrigatoria, vagasQueFaltam } from "@/lib/flair/nucleos/rodadas";
 import { semPlacar, varianteDaCena } from "@/lib/flair/nucleos/variante";
 import { NUCLEOS } from "@/lib/flair/nucleos/registry";
 import { buildTabs, temEscolha, type Selecao } from "@/lib/flair/nucleos/selection";
@@ -107,7 +107,7 @@ export function NucleoGame(props: Props) {
   const preparando = momento === "PREPARACAO";
   const acionamento = acionamentoDe(codigo);
   const faltaResposta = respostaObrigatoria(definicao) && !estado.sel.resposta;
-  const pronto = temEscolha(estado.sel) && !faltaResposta;
+  const pronto = temEscolha(estado.sel) && !faltaResposta && vagasQueFaltam(definicao, estado.sel.cartas).length === 0;
   const emFoco = tabs[estado.aba]?.items[estado.item];
   const zoom = useCardZoom(emFoco?.kind === "carta" ? emFoco.card : null, preparando);
   const entrada = useCardFx({ nucleo: codigo, vestidas: estado.sel.cartas, cards: cartas, itens: efeitos.itens, ativo: preparando, reduzido, prefs: fx.prefs });

@@ -11,7 +11,7 @@ import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion, useWebGL } from "@/components/three/common";
 import { HudIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
-import { jogadorEmTexto, narracao, nomeDoTime } from "@/components/flair/esporte/esporte-texto";
+import { jogadorEmTexto, narracao, nomeDoTime, tempoEmTexto } from "@/components/flair/esporte/esporte-texto";
 import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
 import { CAMERAS_DO_CAMPO, planoDaCamera } from "@/lib/flair/esporte/camera";
 import { campoDe, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
@@ -113,7 +113,11 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, seme
         <strong className="fsp-gols tabular">{nos} <span aria-hidden>×</span> {eles}</strong>
         <span className="fsp-time"><i style={{ background: UNIFORME_VISITANTE.camisa }} aria-hidden />{nomeDoTime(tx, "ELES")}</span>
         <span className="fsp-relogio tabular" data-testid="esporte-relogio">{relogioEmTexto(relogio)}</span>
-        <span className="fsp-tempo">{fim ? tx.t("flair3d.esporte.fim") : tx.t("flair3d.esporte.tempo", { n: atual?.tempo ?? 1 })}</span>
+        <span className="fsp-tempo">{fim ? tx.t("flair3d.esporte.fim") : tempoEmTexto(tx, modalidade, atual?.tempo ?? 1)}</span>
+        <span className="fsp-unidade">{tx.ou(`flair3d.ui.modalidade.unidade.${modalidade}`, "")}</span>
+        {atual?.parcial && !fim && (
+          <span className="fsp-parcial tabular" data-testid="esporte-parcial">{tx.t("flair3d.esporte.parcial", { n: atual.tempo, nos: atual.parcial.split("-")[0], eles: atual.parcial.split("-")[1] })}</span>
+        )}
       </div>
       {atual && <p className="fsp-narracao" data-testid="esporte-narracao">{narracao(tx, modalidade, atual)}</p>}
     </div>

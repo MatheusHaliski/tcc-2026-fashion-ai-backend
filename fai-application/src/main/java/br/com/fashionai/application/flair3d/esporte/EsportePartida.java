@@ -116,6 +116,10 @@ public final class EsportePartida {
         m.put("de", EsporteCampo.ponto(de));
         m.put("para", EsporteCampo.ponto(para));
         m.put("placar", placar());
+        if (regras.sets()) {
+            // o placar em sets só muda no fim do set: os pontos do set da vez vão à parte
+            m.put("parcial", pontos[0][tempo() - 1] + "-" + pontos[1][tempo() - 1]);
+        }
         if (carta != null) {
             m.put("carta", carta.id());
             m.put("acao", acao);

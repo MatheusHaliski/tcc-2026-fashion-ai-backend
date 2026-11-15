@@ -35,6 +35,8 @@ export interface Jogada {
   de: Ponto;
   para: Ponto;
   placar: string;
+  /** no vôlei e no tênis (placar em sets): os pontos de cada lado no set da vez */
+  parcial?: string;
   /** carta que a pessoa jogou neste lance, e a ação que a cor dela disparou */
   carta?: string;
   acao?: string;
@@ -94,6 +96,7 @@ export function comoJogada(valor: unknown): Jogada | null {
     n: numero(v.n), jogada: numero(v.jogada, 1), tempo: numero(v.tempo, 1), relogio: numero(v.relogio), tipo: v.tipo,
     time: v.time === "ELES" ? "ELES" : "NOS", ok: v.ok === true, jogador: numero(v.jogador, 1), alvo: numero(v.alvo, 1),
     de: ponto(v.de), para: ponto(v.para), placar: texto(v.placar, "0-0"),
+    parcial: typeof v.parcial === "string" ? v.parcial : undefined,
     carta: typeof v.carta === "string" ? v.carta : undefined, acao: typeof v.acao === "string" ? v.acao : undefined,
     jogadores: comoJogadores(v.jogadores), saiu: v.saiu === true || undefined,
     bateu: v.bateu === "TRAVE" || v.bateu === "TRAVESSAO" ? v.bateu : undefined,

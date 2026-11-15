@@ -25,7 +25,7 @@ export function EsporteResumo({ esporte, cartas }: { esporte: EsporteNaTela; car
     <div className="fsp-resumo" data-testid="esporte-resumo">
       <h3 className="type-label">{tx.t("flair3d.esporte.resumo.titulo")}</h3>
       <ul className="n3d-events">
-        {linhasDoResumo(tx, esporte.resumo).map((linha) => (
+        {linhasDoResumo(tx, esporte.resumo, esporte.modalidade).map((linha) => (
           <li key={linha}>{linha}</li>
         ))}
       </ul>

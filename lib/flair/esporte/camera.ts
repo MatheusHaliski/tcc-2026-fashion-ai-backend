@@ -65,8 +65,15 @@ function poseAberta(plano: Plano, campo: Campo, bola: Ponto): Pose {
     const recuo = Math.max(campo.comprimento * 1.05, 16);
     return { pos: [0, recuo * 0.55, meia + recuo * 0.85], alvo: [0, 0, -meia * 0.15] };
   }
+  // quadra pequena (basquete, vôlei, tênis): a transmissão mostra a quadra inteira, e o lance não cola no jogador
+  const quadra = campo.comprimento < 30;
   if (plano === "lance") {
-    return { pos: [bx * 0.9, 4.2, Math.max(bz + 9, meia + 3)], alvo: [bx, 0.8, bz] };
+    const recuo = quadra ? meia + campo.comprimento * 0.45 : Math.max(bz + 9, meia + 3);
+    return { pos: [bx * 0.9, quadra ? 3.6 + campo.largura * 0.15 : 4.2, recuo], alvo: [bx, 0.8, bz] };
+  }
+  if (quadra) {
+    const cx = bx * 0.35;
+    return { pos: [cx, 3 + campo.comprimento * 0.4, meia + campo.comprimento * 0.85], alvo: [cx + (bx - cx) * 0.4, 0, bz * 0.2] };
   }
   const limite = campo.comprimento / 2 - 4;
   const cx = Math.max(-limite, Math.min(limite, bx * 0.7));

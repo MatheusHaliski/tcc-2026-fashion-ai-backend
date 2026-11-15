@@ -422,6 +422,7 @@ traços genéricos. Sem licença: nenhum uniforme, emblema ou nome protegido.
 | Rodada "Traje colante" | feito | não |
 | Rodada "Vigilante da noite" | feito | não |
 | A lista de emblemas só tem emblemas próprios | feito | não |
+| A escolha do emblema fala em emblema (auditoria 3: dizia "Escolha o título do filme") | feito: "Escolha o emblema do traje antes de entregar", botão "Escolher o emblema" | não (só testes) |
 | As zonas pintadas aparecem no manequim na hora | feito (faixas no busto de costura, não a malha da peça) | não |
 | Resultado diz a regra que faltou | feito | não |
 | Copilot de heróis, emblema desenhado pela pessoa | pendente | não |
@@ -463,7 +464,7 @@ aparece. A bola na trave existe só no futebol: a finalização que perde por ma
 | --- | --- | --- |
 | Toda ação do time da pessoa por carta; a cor decide a ação e o poder decide o duelo | feito | não (só testes) |
 | Sem carta (ou janela de 30 s vencida): o time perde a bola ou deixa o adversário seguir, e a tela avisa antes | feito | não (só testes) |
-| Deck de até 15, uniforme de 3 peças, mão de 5 reposta pela semente; 422 com carta fora da mão | feito | não |
+| Deck de até 15, uniforme de 3 peças, mão de 5 reposta pela semente; 422 com carta fora da mão | feito; a tela só entrega com as 3 peças do uniforme vestidas e diz o que falta ("falta parte de baixo, calçado"); antes entregava só com a parte de cima (auditoria 3, 10.6 item 8) | não (só testes) |
 | Relógio mm:ss, dois tempos de 8 jogadas, intervalo, saída de bola de cada tempo | feito | não |
 | Atributo físico (OVR e material firme) e cansaço pela resistência no segundo tempo | feito | não |
 | Mesma semente e mesmas cartas dão a mesma partida; a prévia não gasta o sorteio | feito (testes do servidor) | — |
@@ -485,6 +486,9 @@ aparece. A bola na trave existe só no futebol: a finalização que perde por ma
 | Telão com o placar escrito | pendente | — |
 | Saída de bola do centro depois de cada gol; escanteio, lateral e tiro de meta como reinício visível, do lugar certo | feito | saída de bola depois do gol e escanteio: sim; tiro de meta e lateral: não (só testes) |
 | Outras modalidades: câmera de transmissão, placar, relógio, jogadores e bola em movimento | feito (mesmo motor; campo, pontas e narração próprios) | não |
+| Textos próprios de cada modalidade (auditoria 3: basquete e vôlei usavam "meio-campo", "drible", "goleiro") | feito: situação de cada zona, narração de cada tipo de lance, nome do tempo ("2º set", "1ª bateria") e linhas do resumo ("Arremessos", "Bloqueios") em pt-BR, en e es; sem a frase da modalidade vale a do futebol | não (só testes) |
+| Placar de cada modalidade | feito: o placar diz a unidade (gols, pontos, sets, chegadas, nota); no vôlei e no tênis os pontos do set da vez aparecem ao lado ("Set 1: 3 × 2"), porque o placar em sets só muda no fim do set | não (só testes) |
+| Câmera e bola de cada modalidade (auditoria 3: câmera colada e bola branca gigante no basquete e no vôlei) | feito: em quadra pequena (basquete, vôlei, tênis) a transmissão mostra a quadra inteira e o lance não cola no jogador; a bola tem o tamanho e a cor da modalidade (laranja no basquete, amarela no vôlei, verde-limão no tênis) | não |
 | Outras modalidades no nível do futebol (arena própria, gestos do esporte: arremesso, cortada, saque, largada) | pendente | — |
 | Fluidez do 3D | não medida (sem placa de vídeo) | — |
 
@@ -493,7 +497,7 @@ aparece. A bola na trave existe só no futebol: a finalização que perde por ma
 | Modalidade | Jogada por cartas, relógio, placar | Câmera de transmissão e movimento | Arena |
 | --- | --- | --- | --- |
 | Futebol de 5 | feito | feito | estádio |
-| Basquete 3×3 | feito (cesta de 2 e de 1) | feito | quadra com cestas e uma arquibancada |
+| Basquete 3×3 | feito (3 pontos de fora do garrafão, 2 de dentro; antes 2 e 1) | feito | quadra com cestas e uma arquibancada |
 | Vôlei de praia | feito (sets por tempo) | feito, cada dupla na sua metade | quadra com rede e uma arquibancada |
 | Tênis | feito (sets por tempo) | feito | quadra com rede e uma arquibancada |
 | Corrida e revezamento | feito (chegadas) | feito, sem bola | pista com raias e linha de chegada |

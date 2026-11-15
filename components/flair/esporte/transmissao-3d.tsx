@@ -110,8 +110,8 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
       <Elenco3D pessoas={elenco} atores={atores} prontos={prontos} reduzido={reduzido} />
       {campo.bola && (
         <mesh ref={bola} name="bola" castShadow>
-          <sphereGeometry args={[0.2, 16, 12]} />
-          <meshStandardMaterial color="#F4F7F2" roughness={0.5} />
+          <sphereGeometry args={[campo.bolaRaio, 16, 12]} />
+          <meshStandardMaterial color={campo.bolaCor} roughness={0.5} />
         </mesh>
       )}
     </>

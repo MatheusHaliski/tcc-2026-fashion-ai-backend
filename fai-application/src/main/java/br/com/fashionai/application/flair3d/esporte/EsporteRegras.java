@@ -8,7 +8,8 @@ import java.util.List;
  * placar é escrito. O motor é o mesmo em todas (posse, quatro zonas, finalização e defesa, {@link EsportePartida}); o
  * futebol de 5 é a modalidade de referência, e as outras trocam os números e as palavras.
  *
- * @param pontosDaZona pontos de uma finalização convertida, pela zona de onde ela sai (defesa, meio, ataque, área)
+ * @param pontosDaZona pontos de uma finalização convertida, pela zona de onde ela sai (defesa, meio, ataque, área); no
+ *                     basquete, 3 de fora do garrafão e 2 de dentro
  * @param sets         o placar final conta os tempos vencidos (vôlei e tênis: cada tempo é um set)
  * @param base         nota de partida do placar (skate: a nota começa em 50) e quanto cada ponto soma a ela
  */
@@ -17,7 +18,7 @@ public record EsporteRegras(String codigo, int jogadasPorTempo, int segundosPorJ
     public static final int TEMPOS = 2;
     public static final EsporteRegras FUTEBOL = new EsporteRegras("FUTEBOL", 8, 150, 5, new int[]{1, 1, 1, 1}, false, 0, 1);
     public static final List<EsporteRegras> TODAS = List.of(FUTEBOL,
-            new EsporteRegras("BASQUETE", 8, 75, 3, new int[]{2, 2, 2, 1}, false, 0, 1),
+            new EsporteRegras("BASQUETE", 8, 75, 3, new int[]{3, 3, 3, 2}, false, 0, 1),
             new EsporteRegras("VOLEI", 8, 60, 2, new int[]{1, 1, 1, 1}, true, 0, 1),
             new EsporteRegras("TENIS", 8, 60, 1, new int[]{1, 1, 1, 1}, true, 0, 1),
             new EsporteRegras("CORRIDA", 6, 15, 4, new int[]{1, 1, 1, 1}, false, 0, 1),

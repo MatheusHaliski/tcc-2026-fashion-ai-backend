@@ -39,8 +39,8 @@ async function vestirEEntregar() {
   deck.querySelectorAll<HTMLButtonElement>(".n3d-deck-card").forEach((b) => fireEvent.click(b));
   fireEvent.click(within(deck).getByRole("button", { name: "Entrar na partida" }));
   await screen.findByTestId("nucleo-game");
-  fireEvent.keyDown(window, { key: " " });
-  fireEvent.keyDown(window, { key: "Enter" });
+  // o uniforme inteiro: parte de cima, de baixo e calçado (uma aba por vaga)
+  for (const tecla of [" ", "e", " ", "e", " ", "Enter"]) fireEvent.keyDown(window, { key: tecla });
 }
 
 describe("partida jogada por cartas", () => {
@@ -115,6 +115,24 @@ describe("partida jogada por cartas", () => {
     expect(result.textContent).not.toContain("JOGADA");
     expect(screen.getByTestId("esporte-placar").textContent).toContain("Fim de jogo");
   }, 20000);
+
+  it("só entra em campo com o uniforme inteiro: com a parte de cima, o botão fica desligado e diz o que falta", async () => {
+    loggedAs(ME, {
+      "GET /api/flair/3d/nucleos/FASHION_SPORTS": DEF,
+      "GET /api/me/flair/cards": CARDS,
+      "POST /api/flair/3d/nucleos/FASHION_SPORTS/efeitos": EFEITOS,
+      "POST /api/flair/3d/nucleos/FASHION_SPORTS/partidas": { id: "m15", nucleo: "FASHION_SPORTS", status: "ABERTA", semente: 7 },
+      "POST /api/flair/3d/partidas/m15/previa": { pontos: 0, estrelas: 0, resultado: "PREVIA", regras: [], eventos: [], status: "ABERTA" },
+    });
+    renderApp(<NucleoScreen nucleo="fashion-sports" />);
+    const deck = await screen.findByTestId("nucleo-deck");
+    deck.querySelectorAll<HTMLButtonElement>(".n3d-deck-card").forEach((b) => fireEvent.click(b));
+    fireEvent.click(within(deck).getByRole("button", { name: "Entrar na partida" }));
+    await screen.findByTestId("nucleo-game");
+    fireEvent.keyDown(window, { key: " " });
+    expect((await screen.findByTestId("nucleo-hint")).textContent).toContain("falta parte de baixo, calçado");
+    expect(screen.getByRole("button", { name: "Entregar o look" }).hasAttribute("disabled")).toBe(true);
+  });
 
   it("a mão lê a ação e o poder dos selos do servidor; carta sem selo de cor joga o toque curto", () => {
     const itens = (id: string) => EFEITOS.efeitos.find((e) => e.cardId === id)?.itens;
