@@ -399,9 +399,9 @@ Feita de 14/11/2026 (19:50 UTC) a 15/11/2026, no mesmo ambiente local (MySQL loc
 
 ## 10. Terceira auditoria (depois das três rodadas de correções)
 
-**Relatório parcial, atualizado às 15:24 UTC de 15/11/2026.** As linhas marcadas "a auditar" ainda não foram refeitas nesta rodada.
+**Relatório parcial, atualizado às 15:25 UTC de 15/11/2026.** As linhas marcadas "a auditar" ainda não foram refeitas nesta rodada.
 
-**Como foi feita.** Em 15/11/2026, das 08:37 UTC em diante (com uma parada entre 08:50 e 13:27 UTC, quando a máquina foi reiniciada, e troca de auditor às 13:35 UTC), por auditores que não escreveu nenhuma das correções. Pilha local: MySQL 8.0 da própria máquina (banco `fashionai` local, com as contas de demonstração das auditorias anteriores), backend reconstruído do código atual (`mvn -o -q -Djacoco.skip=true -DskipTests package`) e religado em `localhost:8098` — o Flyway aplicou a migração V102 (ACERVO) só nesse banco —, frontend com `npm run dev` em `localhost:3000` (este checkout, commit `cba24000`). As variáveis `MYSQL_*` e `S3_*` externas foram tiradas de todos os processos; nenhum servidor externo foi acessado. Contas: @lia.demo, @bia.demo, @vento.norte, @maia.solano e @admin_auditoria (todas fictícias). Chromium pelo Playwright em 1440×900 e 390×844, refazendo o fluxo de cada funcionalidade e os passos de cada problema já apontado; as capturas citadas foram conferidas a olho. **Ficou desligado:** IA paga (`AI_REMOTE_ENABLED=false`, nenhuma chave de provedor): o que depende dela foi avaliado só com o motor local. Sem placa de vídeo, a fluidez do 3D não foi avaliada; as cenas foram julgadas em quadros parados. Nenhum código do aplicativo foi alterado.
+**Como foi feita.** Em 15/11/2026, das 08:37 UTC em diante (com uma parada entre 08:50 e 13:27 UTC, quando a máquina foi reiniciada, e troca de auditor às 13:35 UTC), por auditores que não escreveu nenhuma das correções. Pilha local: MySQL 8.0 da própria máquina (banco `fashionai` local, com as contas de demonstração das auditorias anteriores), backend reconstruído do código atual (`mvn -o -q -Djacoco.skip=true -DskipTests package`) e religado em `localhost:8098` — o Flyway aplicou a migração V102 (ACERVO) só nesse banco —, frontend com `npm run dev` em `localhost:3000` (este checkout, commit `cba24000`). As variáveis `MYSQL_*` e `S3_*` externas foram tiradas de todos os processos; nenhum servidor externo foi acessado. Contas: @lia.demo, @bia.demo, @vento.norte, @maia.solano e @admin_auditoria (todas fictícias). Chromium pelo Playwright em 1440×900 e 390×844, refazendo o fluxo de cada funcionalidade e os passos de cada problema já apontado; as capturas citadas foram conferidas a olho. O celular (390×844) foi refeito em Lens, Provador, FLAIR CBC, Desafios, Busca, Adicionar peça, Espelho, Fashion Detective, MAKE UP e ACERVO; nas demais funcionalidades só o computador foi refeito. **Ficou desligado:** IA paga (`AI_REMOTE_ENABLED=false`, nenhuma chave de provedor): o que depende dela foi avaliado só com o motor local. Sem placa de vídeo, a fluidez do 3D não foi avaliada; as cenas foram julgadas em quadros parados. Nenhum código do aplicativo foi alterado.
 
 ### 10.1 As 21 funcionalidades que estavam abaixo de 8 na primeira auditoria
 
@@ -526,6 +526,8 @@ Marcação: **resolvido**, **parcial** ou **continua**, pelo que foi visto nesta
 
 **FAI Points.** "Provar" sem prévia: continua. "BASICO": continua. Motivo do botão desligado só no `title`: continua. "Rediscovery Bonus": resolvido. "Gravado no app em ambiente de teste": resolvido.
 
+**Os 10 problemas da seção 4.** 1 Lens com 409: resolvido. 2 Provador vazio sem avatar: resolvido. 3 Peça pública com a revisão dizendo "Privado": não refeito nesta auditoria (resolvido na reauditoria). 4 Selo de marca sem revisão: continua (decisão da dona). 5 10×10 não começa: resolvido. 6 Página da peça sem Hype: resolvido. 7 Desfazer curtida não reduz o Hype: continua (decisão da dona, agora explicada). 8 Reconhecimento por foto no motor local: parcial (1 peça por foto e cor certa; tipo não sugerido). 9 Textos técnicos: parcial (sumiram os da lista; apareceram ou restam "lower_piece", "MULTI_PIECE_DETECTOR", "FALLBACK_LOCAL", "LEITURA: TOTAL-DENIM", "Quest do FLAIR", "SYNC/RANGE/GLOW", "BASICO"). 10 Marcas reais: parcial ("Semana Chanel" continua no catálogo de desafios; a miniatura com o logotipo não foi reconferida).
+
 ### 10.6 Problemas novos ou regressões
 
 1. **Fashion Sports: basquete e vôlei usam as frases do futebol (atrapalha, regressão da partida por cartas).** Passos: `/flair/3d/fashion-sports` → deck → Entrar → aba Modalidade → "Basquete 3×3" ou "Vôlei de praia" → vestir → Entregar. A jogada 1 diz "Você tem a bola no meio-campo. Marcador perto: passe, corra ou drible (amarelo)"; depois "prepare o goleiro (branco)", "Caio corre com a bola e avança", "Rui corre com a bola" no vôlei; o placar termina 0-1 no basquete. [imagem](evidencias/auditoria3/view-bas.jpg) [imagem](evidencias/auditoria3/view-vol.jpg)
@@ -553,7 +555,7 @@ Mesmo método da seção 2: média simples das 33 funcionalidades com nota, usan
 | | Primeira auditoria | Reauditoria | Agora |
 |---|---|---|---|
 | Média das 33 funcionalidades (método da seção 2) | **7,2** (7,17) | **7,6** (7,59) | **7,9** (7,86) |
-| Média só das 21 que estavam abaixo de 8 | 6,4 | 7,2 | **7,6** (7,62) |
+| Média só das 21 que estavam abaixo de 8 | 6,5 | 7,2 | **7,6** (7,62) |
 | Média com tudo o que recebeu nota nesta auditoria (as 33, as 8 da Parte B, ACERVO e seus 3 requisitos, os 12 jogos FLAIR 3D que não são linha própria da tabela 10.1 e as partidas clássicas; 58 notas) | — | 7,4 (41 notas) | **7,5** (7,50) |
 
 O segundo número da última linha conta duas vezes os jogos (a linha "os 15 jogos" e cada jogo); está aí só para mostrar que a Parte B, o Editor 3D e o Atelier puxam para baixo.
