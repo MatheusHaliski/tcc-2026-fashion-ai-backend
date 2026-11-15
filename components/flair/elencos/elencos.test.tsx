@@ -202,7 +202,9 @@ describe("um elenco", () => {
     expect(naVaga("bolsa")).toBe("vaga vazia");
   });
 
-  it("o elenco em montagem volta ao reabrir (também o rascunho antigo) e a legenda explica cores e letras", async () => {
+  it("o elenco em montagem volta ao reabrir (também o rascunho antigo), a vaga escolhida fica à vista e a legenda explica cores e letras", async () => {
+    const rolar = vi.fn();
+    window.scrollBy = rolar as unknown as typeof window.scrollBy;
     localStorage.setItem("fai:cbc:rascunho:PRIMEIRO_ELENCO", JSON.stringify({ bolsa: "b1" }));
     loggedAs(ME, { "GET /api/me/flair/cards": CARDS, "POST /api/flair/elencos/PRIMEIRO_ELENCO/conferir": conferir });
     const first = renderApp(<ElencoScreen elenco="primeiro-elenco" />);
@@ -210,7 +212,16 @@ describe("um elenco", () => {
     // o rascunho do formato anterior entra na mesa e é apagado
     await waitFor(() => expect(board.querySelector("[data-slot=bolsa]")?.textContent).toContain("Bolsa"));
     expect(localStorage.getItem("fai:cbc:rascunho:PRIMEIRO_ELENCO")).toBeNull();
+    // a vaga escolhida que ficaria atrás da bandeja: a página rola até ela
+    const caixa = (top: number, bottom: number) => ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      if (this.getAttribute("data-testid") === "mesa-bandeja") return caixa(600, 780);
+      return this.getAttribute("data-slot") === "cima" ? caixa(640, 700) : caixa(100, 160);
+    };
     fireEvent.click(board.querySelector<HTMLElement>("[data-slot=cima]")!);
+    Element.prototype.getBoundingClientRect = original;
+    expect(rolar).toHaveBeenCalled();
     fireEvent.click(within(screen.getByTestId("mesa-bandeja")).getByRole("button", { name: /^Pôr Camisa/ }));
     expect(screen.getByText(/verde: 2 ou mais coisas em comum/)).toBeTruthy();
     expect(screen.getByText(/E = estilo/)).toBeTruthy();
