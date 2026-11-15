@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CenaViva } from "@/components/flair/cenas/cena-viva";
-import { larguraDaTela } from "@/components/flair/cenas/use-cena-viva";
+import { criarRitmo, larguraDaTela } from "@/components/flair/cenas/use-cena-viva";
 import { inscritos } from "@/lib/flair/cenas/batida";
 import { CENAS } from "@/lib/flair/cenas/catalogo";
 import { criarCtxFalso } from "@/lib/flair/cenas/ctx-falso";
@@ -110,5 +110,30 @@ describe("CenaViva", () => {
     expect(larguraDaTela(900, 2)).toBe(1280);
     expect(larguraDaTela(0, 1)).toBe(320);
     expect(larguraDaTela(40, 1)).toBe(160);
+  });
+
+  it("taxa adaptativa: pintura barata a cada batida; cara, um quadro sim, outro não, sempre no instante do relógio", () => {
+    let agora = 0;
+    let custo = 2;
+    const ritmo = criarRitmo(() => agora);
+    const pintados: number[] = [];
+    const bater = (relogio: number) => ritmo(relogio, () => {
+      pintados.push(relogio);
+      agora += custo;
+    });
+    for (let i = 0; i < 30; i++) bater(i / 60);
+    expect(pintados).toHaveLength(30);
+    custo = 20;
+    pintados.length = 0;
+    for (let i = 30; i < 90; i++) bater(i / 60);
+    // depois de a média subir, metade das batidas não pinta; as que pintam usam o próprio instante
+    expect(pintados.length).toBeGreaterThan(30);
+    expect(pintados.length).toBeLessThan(45);
+    expect(pintados.every((r) => Number.isFinite(r))).toBe(true);
+    custo = 1;
+    pintados.length = 0;
+    for (let i = 90; i < 300; i++) bater(i / 60);
+    // barata de novo: a média desce e volta a pintar todas
+    expect(pintados.slice(-20).map((r, i, a) => (i ? r - a[i - 1] : 1 / 60)).every((d) => d < 0.02)).toBe(true);
   });
 });

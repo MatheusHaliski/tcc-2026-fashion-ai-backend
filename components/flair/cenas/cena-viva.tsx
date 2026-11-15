@@ -40,7 +40,7 @@ export function useRotuloDaCena(cena: Cena, pecas?: PecaEstado[] | null, complet
 }
 
 export function CenaViva({ cena, pecas = null, completa = false, parada = false, decorativa = false, className }: Props) {
-  const ref = useCenaViva(cena, pecas, completa, parada);
+  const ref = useCenaViva(cena, pecas, completa, parada, decorativa && !pecas);
   const rotulo = useRotuloDaCena(cena, pecas, completa);
   return (
     <canvas

@@ -44,7 +44,28 @@ export function larguraDaTela(elemento: number, densidade: number): number {
   return Math.min(1280, Math.max(160, alvo));
 }
 
-export function useCenaViva(cena: Cena, pecas: PecaEstado[] | null, completa: boolean, parada = false) {
+/** Custo médio de pintura (ms) acima do qual a cena passa a ~30 quadros por segundo (o tempo segue o relógio). */
+export const CUSTO_PARA_MEIA_TAXA = 9;
+
+/**
+ * Taxa adaptativa: acompanha o custo de cada pintura (média móvel) e, num aparelho em que pintar sai caro, pinta um
+ * quadro sim, outro não. O movimento continua no ritmo certo porque cada quadro mostra o instante do relógio.
+ */
+export function criarRitmo(medir: () => number = () => performance.now()) {
+  let media = 0;
+  let ultimo = -Infinity;
+  return (relogio: number, pintar: () => void): boolean => {
+    if (media > CUSTO_PARA_MEIA_TAXA && relogio - ultimo < 0.03) return false;
+    const t0 = medir();
+    pintar();
+    media = media * 0.9 + (medir() - t0) * 0.1;
+    ultimo = relogio;
+    return true;
+  };
+}
+
+/** `leve`: miniatura (lista), pintada na densidade 1, que basta ao tamanho dela. */
+export function useCenaViva(cena: Cena, pecas: PecaEstado[] | null, completa: boolean, parada = false, leve = false) {
   const ref = useRef<HTMLCanvasElement>(null);
   const palco = useRef<Palco | null>(null);
   const pintar = useRef<(relogio: number) => void>(() => {});
@@ -61,8 +82,9 @@ export function useCenaViva(cena: Cena, pecas: PecaEstado[] | null, completa: bo
     let visivel = typeof IntersectionObserver === "undefined";
     let sair: (() => void) | null = null;
     pintar.current = (relogio) => palco.current?.pintar(ctx, relogio, parado);
+    const ritmo = criarRitmo();
     const quadro = (relogio: number) => {
-      pintar.current(relogio);
+      if (!ritmo(relogio, () => pintar.current(relogio))) return;
       // parada, a cena só precisa de novos quadros enquanto uma peça ainda se move
       if (parado && !palco.current?.emMovimento(relogio)) desligar();
     };
@@ -77,7 +99,7 @@ export function useCenaViva(cena: Cena, pecas: PecaEstado[] | null, completa: bo
       canvas.dataset.animando = parado ? "nao" : "sim";
     };
     const montar = () => {
-      const largura = larguraDaTela(canvas.clientWidth, window.devicePixelRatio);
+      const largura = larguraDaTela(canvas.clientWidth, leve ? 1 : window.devicePixelRatio);
       if (palco.current?.largura === largura) return;
       const novo = criarPalco(cena, criarTela, largura, ligar);
       if (!novo) return;
@@ -103,7 +125,7 @@ export function useCenaViva(cena: Cena, pecas: PecaEstado[] | null, completa: bo
       vista?.disconnect();
       palco.current = null;
     };
-  }, [cena, parado]);
+  }, [cena, parado, leve]);
 
   useEffect(() => {
     palco.current?.definir(entrada.current.pecas, completa, agora(), parado);
