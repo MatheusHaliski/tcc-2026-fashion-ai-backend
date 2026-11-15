@@ -1,5 +1,6 @@
 "use client";
 /** Gaveta de cartas de uma vaga: as cartas FLAIR da pessoa filtradas pela posição da vaga; escolher põe a carta. */
+import { useEffect, useRef } from "react";
 import { cn } from "@/components/ui";
 import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useElencoText } from "@/components/flair/elencos/use-elenco-text";
@@ -15,8 +16,11 @@ interface Props {
 
 export function ElencoDrawer({ posicao, cartas, foco, atual, onEscolher, onFechar }: Props) {
   const tx = useElencoText();
+  const ref = useRef<HTMLElement>(null);
+  // a gaveta abre embaixo do tabuleiro: rola até ela para as cartas aparecerem inteiras (antes ficavam abaixo da dobra)
+  useEffect(() => { ref.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" }); }, [posicao]);
   return (
-    <section className="el-drawer" role="dialog" aria-modal="false" aria-labelledby="el-drawer-title" data-testid="elenco-drawer">
+    <section ref={ref} className="el-drawer" role="dialog" aria-modal="false" aria-labelledby="el-drawer-title" data-testid="elenco-drawer">
       <div className="n3d-objective-head">
         <h2 id="el-drawer-title" className="type-label">{tx.t("flair3d.elencos.drawer.title", { pos: tx.posicao(posicao) })}</h2>
         <button type="button" className="btn btn-sm" onClick={onFechar}>{tx.t("flair3d.elencos.drawer.close")}</button>

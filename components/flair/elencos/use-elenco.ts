@@ -3,25 +3,32 @@
  * Um elenco do FLAIR Card Building Challenge: formação (API, completada pela formação local), cartas da pessoa, as
  * cartas postas por vaga, a conferência no servidor a cada mudança (/conferir) e a entrega com a edição.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useAction, useApi } from "@/lib/hooks/use-api";
 import type { FlairCollection } from "@/components/flair/flair-collection";
 import { buscarElenco, conferirElenco, entregarElenco } from "@/lib/flair/elencos/api";
 import { mesclarElenco } from "@/lib/flair/elencos/formacoes";
 import type { ElencoEntregaResultado } from "@/lib/flair/elencos/types";
+import { gravarRascunho, lerRascunho } from "@/lib/flair/elencos/rascunho";
 
 export function useElenco(codigo: string) {
   const def = useApi((signal) => buscarElenco(codigo, signal), [codigo]);
   const elenco = useMemo(() => mesclarElenco(codigo, def.data), [codigo, def.data]);
   const bank = useApi<FlairCollection>((signal) => api.get("/api/me/flair/cards", { signal }), []);
   const [cartas, setCartas] = useState<Record<string, string>>({});
+  // o elenco em montagem volta depois de recarregar (lido no navegador, depois da primeira pintura)
+  // grava só depois que as cartas lidas já estão no estado (no mesmo ciclo o estado ainda é {} e apagaria o rascunho)
+  const [lido, setLido] = useState<string | null>(null);
+  useEffect(() => { setCartas(lerRascunho(codigo)); setLido(codigo); }, [codigo]);
+  useEffect(() => { if (lido === codigo) gravarRascunho(codigo, cartas); }, [lido, codigo, cartas]);
   const chave = JSON.stringify(cartas);
   const temCartas = Object.keys(cartas).length > 0;
   const conf = useApi((signal) => conferirElenco(codigo, cartas, signal), [codigo, chave], { enabled: temCartas });
   const [resultado, setResultado] = useState<ElencoEntregaResultado | null>(null);
   const entrega = useAction(async () => {
     const r = await entregarElenco(codigo, cartas);
+    gravarRascunho(codigo, {});   // entregue: o rascunho não precisa mais ser lembrado
     setResultado(r);
     return r;
   });

@@ -11,6 +11,7 @@ import Link from "next/link";
 import { EmptyState, PageHeader, SkeletonGrid, UiIcon } from "@/components/ui";
 import { ElencoBoard } from "@/components/flair/elencos/elenco-board";
 import { ElencoDrawer } from "@/components/flair/elencos/elenco-drawer";
+import { ElencoLegend } from "@/components/flair/elencos/elenco-legend";
 import { ElencoJigsaw } from "@/components/flair/elencos/elenco-jigsaw";
 import { ElencoRequirements } from "@/components/flair/elencos/elenco-requirements";
 import { useElenco } from "@/components/flair/elencos/use-elenco";
@@ -83,6 +84,7 @@ function Elenco({ codigo }: { codigo: string }) {
       {m.offline && <p className="n3d-offline" role="status">{tx.t("flair3d.ui.offline")}</p>}
       <ElencoJigsaw arte={arteDoElenco(codigo)} nome={tx.elenco(codigo)} estados={estadoDasPecas(m.elenco.linhas, m.cartas, m.conferencia)} revelado={revelado} />
       <ElencoBoard elenco={m.elenco} cartas={m.cartas} banco={m.banco} conf={m.conferencia} selecionada={atual.chave} onVaga={abrir} />
+      <ElencoLegend />
       {gaveta && (
         <ElencoDrawer posicao={atual.posicao} cartas={doDrawer} foco={foco} atual={m.cartas[atual.chave] ?? null}
           onEscolher={(c) => escolher(c.id)} onFechar={() => setGaveta(false)} />

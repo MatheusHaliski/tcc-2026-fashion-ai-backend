@@ -210,3 +210,26 @@
 .el-list-name {
   font-weight: 700;
 }
+
+/* Legenda das linhas do tabuleiro (cor = quantos atributos as duas cartas têm em comum; letras = quais). */
+.el-legend {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.el-legend-cores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+}
+
+.el-legend-cores li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

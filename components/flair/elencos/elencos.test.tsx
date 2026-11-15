@@ -101,4 +101,21 @@ describe("um elenco", () => {
     expect(within(entregue).getByRole("link", { name: "Ver os outros elencos" }).getAttribute("href")).toBe("/flair/elencos");
     expect(calls.filter((c) => c.path.endsWith("/entrega"))[0].body).toEqual({ cartas: { acessorio: "a1", cima: "s1", bolsa: "b1", baixo: "i1", calcado: "c1" } });
   });
+
+  it("o elenco em montagem volta ao reabrir, a gaveta rola até as cartas e a legenda explica cores e letras", async () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    loggedAs(ME, { "GET /api/me/flair/cards": CARDS, "POST /api/flair/elencos/PRIMEIRO_ELENCO/conferir": conferir });
+    const first = renderApp(<ElencoScreen elenco="primeiro-elenco" />);
+    const board = await screen.findByTestId("elenco-board");
+    fireEvent.click(board.querySelector("[data-slot=cima]")!);
+    expect(scroll).toHaveBeenCalled();
+    fireEvent.click(within(screen.getByTestId("elenco-drawer")).getByRole("button", { name: "Pôr Camisa" }));
+    expect(screen.getByText(/verde: 2 ou mais coisas em comum/)).toBeTruthy();
+    expect(screen.getByText(/E = estilo/)).toBeTruthy();
+    first.unmount();
+    renderApp(<ElencoScreen elenco="primeiro-elenco" />);
+    const again = await screen.findByTestId("elenco-board");
+    await waitFor(() => expect(again.querySelector("[data-slot=cima]")?.textContent).toContain("Camisa"));
+  });
 });
