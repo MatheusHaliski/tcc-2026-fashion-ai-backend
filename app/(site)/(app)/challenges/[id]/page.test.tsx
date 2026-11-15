@@ -84,7 +84,8 @@ describe("detalhe do desafio — ações por estado", () => {
       { "GET /api/challenges/c1/result-card": () => [{ url: "/media/card.png" }, { imageUrl: "/media/img.png" }, {}, fail(500, "Card indisponível")()][n++] });
     const card = await screen.findByRole("button", { name: "Card de resultado" }, { timeout: 4000 });
     expect(screen.getByText(/→/)).toBeTruthy();
-    expect(screen.getByText("Vaso dourado")).toBeTruthy();
+    // a decoração no quarto saiu com o Meu Quarto (15/11/2026): mesmo vinda de um servidor antigo, não aparece
+    expect(screen.queryByText("Vaso dourado")).toBeNull();
     // resultado em frases, sem o JSON cru
     expect(screen.getByText("Venceu: @ana.")).toBeTruthy();
     expect(within(screen.getByRole("list", { name: "Classificação" })).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["1º @ana8.5", "2º @bia6"]);

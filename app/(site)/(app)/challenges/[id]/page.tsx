@@ -3,7 +3,6 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
-import { label } from "@/lib/api/taxonomy";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Avatar, Badge, Button, Card, ErrorState, Input, Select, Skeleton, useToast } from "@/components/ui";
@@ -12,7 +11,7 @@ import { ChallengeResult, type ChallengeResultData } from "@/components/challeng
 import { ChallengeChosenPieces } from "@/components/challenges/challenge-chosen-pieces";
 import { CancelChallenge, challengeLabel, isWaiting, noteDate, noteText, progressOf } from "@/components/challenges/challenge-detail-parts";
 
-interface Detail { id: string; code: string; name: string; rule: string; mode: string; state: string; startsAt?: string; endsAt?: string; acceptDeadline?: string; daysLeft?: number | null; improves: string[]; reward: number; isCreator: boolean; theme?: string; me?: { pieceIds?: string[]; fraction?: number; status?: string; value?: number; target?: number; label?: string | null; progress?: { value: number; target: number; label?: string } }; members?: { user: { id: string; username: string; avatarUrl?: string }; status: string; team?: string; fraction: number }[] | null; teamFraction?: number; playing?: number; entries?: { entryId: string; title: string; coverImageUrl?: string; pieces?: { imageUrl?: string; name?: string }[]; author?: string | null; mine: boolean; votedByMe?: boolean; votes?: number }[]; notes?: { id?: string; user?: string; text?: string; content?: string; createdAt?: string; at?: string }[]; reactions?: string[]; presetNotes?: string[]; result?: ChallengeResultData; decoration?: string; }
+interface Detail { id: string; code: string; name: string; rule: string; mode: string; state: string; startsAt?: string; endsAt?: string; acceptDeadline?: string; daysLeft?: number | null; improves: string[]; reward: number; isCreator: boolean; theme?: string; me?: { pieceIds?: string[]; fraction?: number; status?: string; value?: number; target?: number; label?: string | null; progress?: { value: number; target: number; label?: string } }; members?: { user: { id: string; username: string; avatarUrl?: string }; status: string; team?: string; fraction: number }[] | null; teamFraction?: number; playing?: number; entries?: { entryId: string; title: string; coverImageUrl?: string; pieces?: { imageUrl?: string; name?: string }[]; author?: string | null; mine: boolean; votedByMe?: boolean; votes?: number }[]; notes?: { id?: string; user?: string; text?: string; content?: string; createdAt?: string; at?: string }[]; reactions?: string[]; presetNotes?: string[]; result?: ChallengeResultData; }
 
 export default function ChallengePage({ params }: { params: Promise<{ id: string }> }) {
   const id = encodeURIComponent(use(params).id);   /* vai direto para caminhos da API: nada de "../" vindo da URL */ const { t, fmtDate, relative } = useI18n(); const toast = useToast();
@@ -42,7 +41,6 @@ export default function ChallengePage({ params }: { params: Promise<{ id: string
         <div className="grid gap-3">
           {progress && <Card><p className="label">{t("challenges.id.meu_progresso")}</p><div className="hype-bar"><i style={{ width: `${Math.min(100, (d.me?.fraction ?? 0) * 100)}%`, background: "var(--thread)" }} /></div><p className="type-body tabular mt-1">{progress.value}/{progress.target} {progress.label}</p>{d.code === "TEN_X_TEN" && <p className="type-caption text-muted mt-1">{t("challenges.id.como_conta_10x10")}</p>}</Card>}
           {d.members ? <Card><p className="label">{t("challenges.id.participantes")}</p><ul className="fai-list">{d.members.map((m) => <li key={m.user.id} className="flex items-center gap-2 py-1.5"><Avatar src={mediaUrl(m.user.avatarUrl)} name={m.user.username} size={26} /><span className="flex-1 type-body-sm">@{m.user.username}{m.team ? <Badge className="ml-1">{m.team}</Badge> : null}</span><span className="type-data tabular">{Math.round(m.fraction * 100)}%</span></li>)}</ul>{d.teamFraction != null && <p className="mt-2 type-caption">{t("challenges.id.equipe", { Math: Math.round(d.teamFraction * 100) })}</p>}</Card> : (d.playing != null || d.mode === "COMUNIDADE") && <Card><p className="label">{t("challenges.id.jogando")}</p><p className="hero-number text-3xl">{d.playing ?? 0}</p><p className="type-caption text-muted">{t("challenges.id.participantes_anonimos")}</p></Card>}
-          {d.decoration && <Card><p className="label">{t("challenges.id.decoracao_do_quarto")}</p><p className="type-body">{label(String(d.decoration))}</p></Card>}
           <ChallengeResult result={d.result} />
           <ChallengeChosenPieces pieceIds={d.me?.pieceIds ?? []} />
         </div>
