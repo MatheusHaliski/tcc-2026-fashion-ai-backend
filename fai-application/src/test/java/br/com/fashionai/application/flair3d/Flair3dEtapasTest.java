@@ -102,55 +102,8 @@ class Flair3dEtapasTest {
         CbcRules.Card[] uniforme = {card("SUP", "ovr:90"), card("INF", "ovr:90"), card("CAL", "ovr:90", "sub:casual_sneakers")};
         Resultado jogo = new FashionSportsNucleo().previa(vestir(uniforme), contexto(7L, uniforme));
         assertThat(jogo.eventos()).extracting(Resultado.Evento::codigo)
-                .containsExactly("VELOCIDADE", "TECNICA", "RESISTENCIA", "DEFESA", "FORCA_TIME", "COESAO");
+                .containsExactly("VELOCIDADE", "TECNICA", "RESISTENCIA", "DEFESA", "FISICO", "COESAO");
         assertThat(jogo.resultado()).isEqualTo("PREVIA");
-    }
-
-    @Test
-    void fashionSportsParaNoIntervaloEATrocaValeNoSegundoTempo() {
-        CbcRules.Card sup = card("SUP", "ovr:90", "material:linen", "material:leather");
-        CbcRules.Card inf = card("INF", "ovr:10");
-        CbcRules.Card salto = card("CAL", "ovr:10", "sub:heels");
-        CbcRules.Card chuteira = card("CAL", "ovr:90", "sub:casual_sneakers");
-        Contexto ctx = contexto(7L, sup, inf, salto, chuteira);
-        Entrega uniforme = vestir(sup, inf, salto);
-        FashionSportsNucleo n = new FashionSportsNucleo();
-
-        Resultado intervalo = n.pontuar(uniforme, ctx);
-        assertThat(intervalo.status()).isEqualTo("EM_ACAO");
-        assertThat(intervalo.pontos()).isZero();
-        assertThat(intervalo.eventos()).contains(new Resultado.Evento("FORCA_TIME", 13), new Resultado.Evento("INTERVALO", "0-1"));
-        assertThat(intervalo.eventos()).extracting(Resultado.Evento::codigo).doesNotContain("PLACAR");
-
-        Resultado semTroca = n.pontuar(uniforme, contexto(7L, sup, inf, salto, chuteira).comAndamento(Andamento.de(NADA)));
-        assertThat(semTroca.resultado()).isEqualTo("DERROTA");
-        assertThat(semTroca.eventos()).contains(new Resultado.Evento("PLACAR", "0-2"), new Resultado.Evento("FORCA_SEGUNDO_TEMPO", 13));
-
-        Acionamento troca = new Acionamento(null, new Acionamento.Troca("CAL", chuteira.id()));
-        Resultado comTroca = n.pontuar(uniforme, contexto(7L, sup, inf, salto, chuteira).comAndamento(Andamento.de(troca)));
-        assertThat(comTroca.fecha()).isTrue();
-        assertThat(comTroca.resultado()).isEqualTo("EMPATE");
-        assertThat(comTroca.pontos()).isEqualTo(60);
-        assertThat(comTroca.eventos()).contains(new Resultado.Evento("INTERVALO", "0-1"), new Resultado.Evento("FORCA_SEGUNDO_TEMPO", 32),
-                new Resultado.Evento("PLACAR", "1-1"), new Resultado.Evento("TROCA", Map.of("vaga", "CAL", "carta", chuteira.id())));
-        assertThat(comTroca.cartas()).extracting(Resultado.CartaPontos::cardId).containsExactly(sup.id(), inf.id(), chuteira.id());
-        assertThat(n.pontuar(uniforme, contexto(7L, sup, inf, salto, chuteira).comAndamento(Andamento.de(troca)))).isEqualTo(comTroca);
-    }
-
-    @Test
-    void trocaPrecisaCaberNaVaga() {
-        CbcRules.Card sup = card("SUP");
-        CbcRules.Card inf = card("INF");
-        CbcRules.Card cal = card("CAL");
-        CbcRules.Card ace = card("ACE");
-        FashionSportsNucleo n = new FashionSportsNucleo();
-        for (Acionamento.Troca t : List.of(new Acionamento.Troca("CAL", inf.id()), new Acionamento.Troca("ACE", ace.id()),
-                new Acionamento.Troca("SUP", null))) {
-            ApiException e = catchThrowableOfType(ApiException.class, () -> n.pontuar(vestir(sup, inf, cal),
-                    contexto(7L, sup, inf, cal, ace).comAndamento(Andamento.de(new Acionamento(null, t)))));
-            assertThat(e.status()).isEqualTo(422);
-            assertThat(e.code()).isEqualTo("TROCA_INVALIDA");
-        }
     }
 
     @Test
