@@ -173,6 +173,10 @@ Todos com chamador no app, menos dois (abaixo). Testes: `classic-modes.test.tsx`
 - Backend: saiu `GET /api/flair/games/summary` (controller, `FlairGameService.summary`, a regra em
   `SecurityConfig`, os testes dela e a rota do mock `scripts/flair-games/mock-games-api.mjs`).
 
+Tabelas de endpoints: `docs/testes/TABELA_ENDPOINTS_POR_RF.md` não listava `/api/flair/games` nem `/api/flair/3d`
+(nenhum dos dois tem passo no e2e), e o inventário do e2e (`scripts/e2e/inventory.py`) lê os controllers, então a
+saída do resumo entra sozinha na próxima geração. `docs/plataforma/BACKEND_PARA_APP_NATIVO.md` foi atualizado à mão.
+
 Redirecionamentos: nenhuma rota do frontend saiu, então não há endereço antigo para redirecionar; `/room` continua
 levando à Suíte de Vidro.
 

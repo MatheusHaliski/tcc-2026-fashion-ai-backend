@@ -2,7 +2,7 @@
 
 Os jogos 1 a 5 foram definidos pela dona do projeto em 08/11/2026 e substituem os anteriores (Espelho Partido,
 Prova com a Estrela, Rooftop ao Pôr do Sol, Cinco Clientes e Chefe: Vellard), que ainda estão nos dados do app até a
-implementação destes. Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
+implementação destes (desde 15/11/2026 com o nome Cidade de Vidro, fora da Central; ver `../ENDPOINTS_FLAIR.md`). Depois ela pediu mais modos: o jogo 3 virou **Dress the Star**, com três variações, e entraram
 **Fashion Detective** (jogo 6) e **Boutique 3D** (jogo 7, antes Boutique Tycoon). Por último ela criou dois modos ligados ao
 editor de peças 3D do FAI Atelier: **Clube do Coração** (8, um modo artístico com Copilot) e **My Favorite Singer** (9). Depois vieram **O Labirinto** (jogo 10),
 **Meu Piloto Favorito** (11, também com o editor 3D e o Copilot), **Around the World** (jogo 12) , **Meu Super-Herói

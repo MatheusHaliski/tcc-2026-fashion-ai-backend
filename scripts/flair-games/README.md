@@ -1,4 +1,7 @@
-# FLAIR 3D — gerador do catálogo dos 100 jogos
+# Cidade de Vidro (antigo FLAIR 3D) — gerador do catálogo dos 100 jogos
+
+> Desde 15/11/2026 os capítulos que este gerador produz (V98) aparecem no app como Cidade de Vidro; o FLAIR 3D são os
+> 15 núcleos (`docs/flair/flair-3d/BASE_NUCLEOS.md`). Ver `docs/flair/ENDPOINTS_FLAIR.md`.
 
 Os 100 jogos FLAIR (docs/flair/flair-3d) são **dados**: cada série vive em `data/serie-{a..e}.json`
 (20 jogos por arquivo, schema no desenho §4) e tudo o que o app precisa é **gerado** daqui, de forma determinística:
