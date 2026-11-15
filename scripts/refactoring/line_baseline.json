@@ -60,10 +60,6 @@
    "max": 605,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "components/expanded-card/expanded-piece.tsx": {
-   "max": 253,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "components/flair/cbc.tsx": {
    "max": 374,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
