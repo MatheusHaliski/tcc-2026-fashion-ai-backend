@@ -1134,7 +1134,7 @@
   "challenges.decoracao": " · decoración: {roomDecoration}",
   "challenges.desafio_iniciado": "¡Desafío iniciado!",
   "challenges.dias": " · {daysLeft, plural, one {# día} other {# días}}",
-  "challenges.dias_esforco": "{durationDays} días · esfuerzo {repeat}{repeat2} · {reward}",
+  "challenges.dias_esforco": "{durationDays, plural, one {# día} other {# días}} · esfuerzo {repeat}{repeat2} · {reward}",
   "challenges.duracao_dias": "Duración (días)",
   "challenges.id.aceite_ate": "aceptar hasta {date}",
   "challenges.id.anon": "anón",
@@ -12306,5 +12306,7 @@
   "acervo.tamanhos.daPeca": "Talla de esta prenda: {size}.",
   "acervo.tamanhos.escolhidoSem3d": "Talla {size} elegida. Esta prenda no tiene representación 3D por talla.",
   "size.criar_avatar": "Crear mi Avatar 3D",
-  "history.timeline.again": "{n}.ª vez con este look"
+  "history.timeline.again": "{n}.ª vez con este look",
+  "tryOn.slot_peca_unica": "Pieza única (cubre arriba y abajo)",
+  "challenges.id.como_conta_10x10": "Cuentan los looks nuevos, creados después de empezar el desafío y solo con las 10 prendas. Una entrada en el mural es el look que muestras; solo suma si también sigue esta regla."
 }

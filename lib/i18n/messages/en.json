@@ -1134,7 +1134,7 @@
   "challenges.decoracao": " · decoration: {roomDecoration}",
   "challenges.desafio_iniciado": "Challenge started!",
   "challenges.dias": " · {daysLeft, plural, one {# day} other {# days}}",
-  "challenges.dias_esforco": "{durationDays} days · effort {repeat}{repeat2} · {reward}",
+  "challenges.dias_esforco": "{durationDays, plural, one {# day} other {# days}} · effort {repeat}{repeat2} · {reward}",
   "challenges.duracao_dias": "Duration (days)",
   "challenges.id.aceite_ate": "accept by {date}",
   "challenges.id.anon": "anon",
@@ -12306,5 +12306,7 @@
   "acervo.tamanhos.daPeca": "This piece's size: {size}.",
   "acervo.tamanhos.escolhidoSem3d": "Size {size} selected. This piece has no 3D representation per size.",
   "size.criar_avatar": "Create my 3D Avatar",
-  "history.timeline.again": "worn again (time {n})"
+  "history.timeline.again": "worn again (time {n})",
+  "tryOn.slot_peca_unica": "One-piece (covers top and bottom)",
+  "challenges.id.como_conta_10x10": "New looks count: created after you started the challenge and using only the 10 pieces. An entry on the wall is the look you show; it only adds up if it also follows this rule."
 }

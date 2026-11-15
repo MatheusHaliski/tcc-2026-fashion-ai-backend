@@ -18,6 +18,7 @@ const CATALOG = { activeCount: 1, maxActive: 3, note: "Escolha um desafio",
     { code: "NO_BUY", name: "Sem compras", rule: "Use só o que tem", todayRule: "Hoje: só preto", durationDays: 7, modes: ["SOLO", "DUELO"], improves: ["Criatividade"], effortDots: 2, reward: "+40 pts", playingNow: 5, author: "bia", roomDecoration: "Vaso", highlight: "Novo" },
     { code: "WEEK", name: "Tema da semana", rule: "Regra base", weeklyTheme: "Anos 90", modes: ["EQUIPE"], improves: [], eligible: false, reason: "Limite atingido" },
     { code: "PLAIN", name: "Simples", rule: "Regra simples", modes: ["GRUPO"], improves: [], eligible: false },
+    { code: "DAY", name: "Desafio do Dia", rule: "Um look hoje", durationDays: 1, modes: ["SOLO"], improves: [], effortDots: 1, reward: "+10 pts" },
   ] };
 const INSTANCE = { id: "i1", code: "NO_BUY", name: "Sem compras ativo", mode: "SOLO", state: "ACTIVE", daysLeft: 3, endsAt: "2026-11-01T00:00:00Z", progress: { value: 2, target: 7, fraction: 2 / 7, label: "looks" } };
 const tab = async (name: RegExp) => fireEvent.click(await screen.findByRole("tab", { name }, { timeout: 4000 }));
@@ -32,6 +33,7 @@ describe("desafios — catálogo e início", () => {
     expect(screen.getByText("1/3 ativos")).toBeTruthy();
     expect(screen.getByText("Novo")).toBeTruthy();
     expect(screen.getByText("7 dias · esforço ●●○ · +40 pts")).toBeTruthy();
+    expect(screen.getByText("1 dia · esforço ●○○ · +10 pts")).toBeTruthy();   // auditoria 10.1: era "1 dias"
     expect(screen.getByText("5 jogando agora · por @bia · decoração: Vaso")).toBeTruthy();
     expect(screen.getByText("Anos 90")).toBeTruthy();
     expect(screen.getByText("Regra simples")).toBeTruthy();

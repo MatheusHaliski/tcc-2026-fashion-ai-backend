@@ -647,7 +647,7 @@ export function useNotice() {
       if (!(e instanceof ApiError)) { push("error", fallback, o); return; }
       if (e.code === "IMAGEM_EM_REVISAO") { push("info", e.message, o); return; }   // foto retida pela moderação: não é erro de quem enviou
       const fields = Object.values(e.fields).filter((v): v is string => typeof v === "string" && v !== e.message);
-      const support = e.correlationId ? [tr("notice.codigo_de_suporte", { id: e.correlationId.slice(0, 8) })] : [];
+      const support = e.correlationId && e.status !== 409 && e.status !== 422 ? [tr("notice.codigo_de_suporte", { id: e.correlationId.slice(0, 8) })] : [];   // regra recusada (409/422) não é falha: sem código
       push("error", e.message, { ...o, details: [...fields, ...(o?.details ?? []), ...support] });
     },
   };
