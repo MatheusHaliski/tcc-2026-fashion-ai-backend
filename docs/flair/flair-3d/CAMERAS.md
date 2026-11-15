@@ -195,3 +195,6 @@ recusadas (com o motivo) e o conjunto adotado. O conjunto é o da tabela acima; 
   lugares por onde se anda (`MUNDOS.md`).
 - A câmera não desvia de móveis: um móvel alto entre a lente e o avatar pode cobrir a roupa em algumas câmeras de
   algumas salas. Só a câmera do preparo foi conferida sala a sala (por teste: dentro das paredes e de corpo inteiro).
+- Nas salas com teto (todas menos as de céu aberto), a câmera aérea fica presa abaixo do teto e vira um close de cima
+  do avatar (visto em foto no Piloto Favorito e na Boutique). Ela só mostra o lugar inteiro no estádio e nas salas de
+  céu aberto; nas outras, falta abrir a lente (campo de visão maior) quando o teto limita a altura.
