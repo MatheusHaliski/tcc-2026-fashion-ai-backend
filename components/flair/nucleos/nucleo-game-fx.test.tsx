@@ -231,9 +231,10 @@ describe("acionamentos", () => {
     expect(within(acionamento).getByRole("status").textContent).toContain("O acionamento ainda não está disponível.");
     expect((within(acionamento).getByRole("button", { name: "Acionar Tênis azul" }) as HTMLButtonElement).disabled).toBe(true);
     expect(within(acionamento).queryByRole("button", { name: "Seguir sem acionar" })).toBeNull();
-    await waitFor(() => expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem").length).toBeGreaterThanOrEqual(2), { timeout: 3000 });
+    // cada round fica na tela o tempo dele na luta da cena (lib/flair/nucleos/scene/ritmo.ts)
+    await waitFor(() => expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem").length).toBeGreaterThanOrEqual(2), { timeout: 6000 });
     expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem")[0].textContent).toBe("Round 1, Velocidade: você 52 × oponente 40");
-  });
+  }, 10000);
 
   it("Dress Fighter com acionamento: a janela abre entre os rounds, a luta espera e 1 carta Especial vale por luta", async () => {
     const onAcionar = vi.fn();

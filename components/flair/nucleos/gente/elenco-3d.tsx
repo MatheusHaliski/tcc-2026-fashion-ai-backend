@@ -19,6 +19,8 @@ import { animate, cloneRig, newMotionState, type MotionState, type Rig } from "@
 import type { Motion } from "@/lib/avatar3d/human/locomotion-model";
 import { nivelDeDetalhe, QUADROS_POR_NIVEL, type NivelDeDetalhe } from "@/lib/flair/nucleos/gente/detalhe";
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
+import { aplicarGesto } from "@/lib/flair/nucleos/gente/gestos";
+import { agora as relogioDaCena } from "@/components/flair/nucleos/scene/stage-context";
 import { sorteio, type PessoaDoElenco } from "@/lib/flair/nucleos/gente/elenco";
 
 interface Clone {
@@ -140,6 +142,8 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido }: Props) {
       animate(c.rig, c.st, { anim: a.anim, animT: agora - c.desde, speed: reduzido ? 0 : a.velocidade, time: agora }, passo);
       c.acumulado = 0;
       if (a.chute) c.rig.bones[c.rig.k.RightUpLeg].rotateX(RAD_CHUTE * a.chute);
+      // o gesto do momento (aplaudir, lamentar, a guarda): com "reduzir movimento", parado no meio
+      if (a.gesto) aplicarGesto(c.rig, a.gesto, reduzido ? 0.6 : relogioDaCena() - (a.gestoDesde ?? 0), c.st.seed);
     }
   });
 
