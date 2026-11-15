@@ -5,7 +5,7 @@
  */
 import type { Ctx } from "@/lib/flair/cenas/tipos";
 
-/** Tom: número de -1 (quase preto) a 1 (quase branco) sobre a cor base, ou uma tinta fixa ("w", "k", "m", "g"), com ":alfa". */
+/** Tom: número de -1 (quase preto) a 1 (quase branco) sobre a cor base, ou uma tinta fixa (w branco, k preto, m metal, g ouro, r coral), com ":alfa". */
 export type Tom = number | string;
 
 export type Op =
@@ -18,7 +18,7 @@ export type Op =
 
 export type Forma = Op[];
 
-const TINTAS: Record<string, string> = { w: "#ffffff", k: "#0a0c12", m: "#c5cbd6", g: "#e7c98b" };
+const TINTAS: Record<string, string> = { w: "#ffffff", k: "#0a0c12", m: "#c5cbd6", g: "#e7c98b", r: "#ff7a6b" };
 
 export function rgb(hex: string): [number, number, number] {
   const h = hex.replace("#", "");

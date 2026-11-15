@@ -66,10 +66,12 @@ export function criarPalco(cena: Cena, criar: CriarTela, largura: number, aoCarr
     completa = agoraCompleta;
   }
 
+  const soltas = () => !!estados && folgas.some((f, i) => !assentada(f, alvoDaCelula(i, estados![i])));
+
   function emMovimento(relogio: number): boolean {
     if (floreio != null && relogio - floreio < FLOREIO_S) return true;
     if (completa && corte > 0.01) return true;
-    return !!estados && folgas.some((f, i) => !assentada(f, alvoDaCelula(i, estados![i])));
+    return soltas();
   }
 
   function pintar(ctx: Ctx, relogio: number, parado: boolean): void {
@@ -77,7 +79,8 @@ export function criarPalco(cena: Cena, criar: CriarTela, largura: number, aoCarr
     ultimo = relogio;
     const t = parado ? cena.quadro : tempoDaCena(relogio, floreio);
     const brilho = parado || floreio == null ? 0 : brilhoDoFloreio(relogio - floreio);
-    if (!estados || !recortes || (completa && corte <= 0.01)) {
+    // a arte completa, com as linhas de corte apagadas e todas as peças no lugar, é a cena inteira: sem recorte
+    if (!estados || !recortes || (completa && corte <= 0.01 && !soltas())) {
       pintor!.quadro(ctx, t, brilho);
       return;
     }

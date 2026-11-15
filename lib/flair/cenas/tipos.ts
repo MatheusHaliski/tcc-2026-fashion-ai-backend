@@ -79,6 +79,8 @@ export interface Grupo {
   sentido?: 1 | -1;
   /** balanço lateral em graus (só em "reto") */
   balanco?: number;
+  /** quanto o viajante fica abaixo do trilho, em múltiplos da escala (o cabide pendurado no fio) */
+  pendura?: number;
 }
 
 /** Elemento que gira no lugar (engrenagem, carretel). */
@@ -123,6 +125,8 @@ export interface Viajante {
   escala: number;
   z: number;
   alfa: number;
+  /** deslocamento vertical já somado a y (o que pendura abaixo do trilho) */
+  desvio: number;
   espelho: boolean;
   trilho: string;
   u: number;

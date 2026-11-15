@@ -84,9 +84,11 @@ export function viajantesEm(p: CenaPronta, t: number): Viajante[] {
         espelho = Math.cos(direcao) < 0;
         giro = espelho ? direcao - Math.PI : direcao;
       }
+      const desvio = (g.pendura ?? 0) * g.escala;
       sai.push({
         x: ponto.x,
-        y: ponto.y,
+        y: ponto.y + desvio,
+        desvio,
         giro,
         espelho,
         forma: g.formas[i % g.formas.length],
