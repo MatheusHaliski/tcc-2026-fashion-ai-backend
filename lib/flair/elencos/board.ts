@@ -27,17 +27,22 @@ export function linkDaLinha(linha: ElencoLinha, conf: ElencoConferencia | null):
   return conf?.links.find((l) => (l.a === linha.a && l.b === linha.b) || (l.a === linha.b && l.b === linha.a)) ?? null;
 }
 
-export type PecaEstado = "verde" | "laranja" | "vermelha" | "coberta";
+export type PecaEstado = "verde" | "laranja" | "vermelha" | "chegando" | "coberta";
 
-/** Peça i = linha i: verde em cor, laranja em traço, vermelha escura; sem link (vaga vazia) fica coberta. */
-export function estadoDasPecas(linhas: ElencoLinha[], cartas: Record<string, string>, conf: ElencoConferencia | null): PecaEstado[] {
+/**
+ * Peça i = linha i. Sem as duas cartas, coberta (o lugar vazio). Com as duas cartas e o link julgado pelo servidor:
+ * verde, laranja ou vermelha. Com as duas cartas e o link ainda sem julgamento (o /conferir não voltou, ou voltou para
+ * outras cartas: `conferidas` é o que ele julgou), a peça está chegando, sem cor de nível: nunca mostra um nível errado.
+ */
+export function estadoDasPecas(linhas: ElencoLinha[], cartas: Record<string, string>, conf: ElencoConferencia | null, conferidas?: Record<string, string>): PecaEstado[] {
   return linhas.map((linha) => {
     if (!cartas[linha.a] || !cartas[linha.b]) return "coberta";
+    if (conferidas && (conferidas[linha.a] !== cartas[linha.a] || conferidas[linha.b] !== cartas[linha.b])) return "chegando";
     const nivel = nivelDe(linkDaLinha(linha, conf)?.nivel);
     if (nivel === "GREEN") return "verde";
     if (nivel === "ORANGE") return "laranja";
     if (nivel === "RED") return "vermelha";
-    return "coberta";
+    return "chegando";
   });
 }
 

@@ -52,8 +52,9 @@
 }
 
 .el-board {
+  --el-pitch: clamp(78px, 21vw, 104px);
   position: relative;
-  height: calc(var(--el-rows, 4) * 104px);
+  height: calc(var(--el-rows, 4) * var(--el-pitch));
   border-radius: var(--radius);
   border: 1px solid var(--line-soft);
   background: var(--surface-2);
@@ -68,23 +69,46 @@
 
 .el-line {
   stroke-width: 4;
-  stroke: var(--line);
+  stroke: var(--line-soft);
   stroke-dasharray: 6 6;
+}
+
+/* as duas cartas estão postas e o servidor ainda julga o link */
+.el-line.is-pending {
+  stroke: var(--muted);
+  stroke-dasharray: 2 6;
+  animation: el-line-wait 0.9s linear infinite;
 }
 
 .el-line.is-red {
   stroke: #d93a3a;
-  stroke-dasharray: none;
 }
 
 .el-line.is-orange {
   stroke: #f08a24;
-  stroke-dasharray: none;
 }
 
 .el-line.is-green {
   stroke: #2e9e5b;
+}
+
+/* a linha julgada se desenha de uma vaga à outra */
+.el-line:is(.is-red, .is-orange, .is-green) {
   stroke-dasharray: none;
+  transform-box: view-box;
+  animation: el-line-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes el-line-in {
+  from {
+    transform: scale(0);
+  }
+}
+
+@keyframes el-line-wait {
+  to {
+    stroke-dashoffset: -16;
+  }
 }
 
 .el-attrs {
@@ -104,63 +128,6 @@
   font-weight: 700;
 }
 
-.el-slot {
-  position: absolute;
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  width: 17%;
-  max-width: 120px;
-  padding: 4px;
-  transform: translate(-50%, -50%);
-  border-radius: var(--radius-sm);
-  border: 2px solid var(--line-soft);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--text-caption);
-}
-
-.el-slot.is-filled {
-  border-color: var(--thread);
-}
-
-.el-slot.is-selected {
-  outline: 3px solid var(--focus);
-}
-
-.el-slot img {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
-.el-slot-pos {
-  color: var(--muted);
-}
-
-.el-slot-name {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.el-chem {
-  display: flex;
-  gap: 2px;
-}
-
-.el-chem b {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--line);
-}
-
-.el-chem b.is-on {
-  background: #2e9e5b;
-}
-
 .el-meter {
   height: 10px;
   border-radius: 999px;
@@ -172,13 +139,6 @@
   display: block;
   height: 100%;
   background: linear-gradient(90deg, #c6275e, #1f7a76);
-}
-
-.el-drawer {
-  padding: 12px;
-  border-radius: var(--radius);
-  border: 1px solid var(--thread);
-  background: var(--surface);
 }
 
 .el-list {
@@ -198,13 +158,6 @@
   border: 1px solid var(--line-soft);
   background: var(--surface);
   color: var(--ink);
-}
-
-.el-list-item img {
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
 }
 
 .el-list-name {
@@ -232,4 +185,34 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* tela larga: o quebra-cabeça e os requisitos à esquerda, o tabuleiro à direita, tudo à vista de uma vez */
+@media (min-width: 1100px) {
+  .el-game {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .el-game > * {
+    grid-column: 1 / -1;
+  }
+
+  .el-game > .el-jigsaw {
+    grid-column: 1;
+    width: 100%;
+  }
+
+  .el-game > .el-board {
+    grid-column: 2;
+    grid-row: span 2;
+  }
+
+  .el-game > .el-req {
+    grid-column: 1;
+  }
+
+  .el-game > .el-legend {
+    grid-column: 2;
+  }
 }

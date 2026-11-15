@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CbcList, CbcPlay } from "@/components/flair/cbc";
-import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
+import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 
 /**
  * Desafios de Montagem (Card Building Challenges): lista por janela, montagem vaga a vaga, conferência no servidor
@@ -47,7 +47,57 @@ describe("lista", () => {
   });
 });
 
+const vaga = (slot: string) => document.querySelector(`.cbv-slot[data-slot=${slot}]`) as HTMLElement;
+const naVaga = (slot: string) => vaga(slot).querySelector(".cbv-pos")?.textContent;
+const carta = (nome: string) => within(screen.getByTestId("mesa-bandeja")).getByRole("button", { name: new RegExp(`^Pôr ${nome}`) });
+const pecas = () => document.querySelector(".cbc-stage-art canvas")?.getAttribute("data-pecas");
+function arrastar(origem: Element, destino: Element) {
+  const doc = document as unknown as { elementFromPoint?: (x: number, y: number) => Element | null };
+  doc.elementFromPoint = () => destino;
+  fireEvent(origem, new MouseEvent("pointerdown", { bubbles: true, clientX: 10, clientY: 10, button: 0 }));
+  fireEvent(window, new MouseEvent("pointermove", { bubbles: true, clientX: 60, clientY: 80 }));
+  fireEvent(window, new MouseEvent("pointerup", { bubbles: true, clientX: 60, clientY: 80 }));
+  delete doc.elementFromPoint;
+}
+
 describe("montagem", () => {
+  it("arrastar põe e troca, a bandeja tira, desfazer volta e a montagem fica guardada entre visitas", async () => {
+    loggedAs(ME, {
+      "GET /api/flair/challenges/verao-em-ipanema": detail(),
+      "GET /api/me/flair/cards": CARDS,
+      "POST /api/flair/challenges/verao-em-ipanema/check": (_u: URL, init: RequestInit) => evaluation((JSON.parse(String(init.body)) as { slots: Record<string, string> }).slots, false),
+    });
+    const tela = renderApp(<CbcPlay slug="verao-em-ipanema" />);
+    await screen.findByRole("heading", { name: "Verão em Ipanema" });
+    // arrasta a carta da bandeja direto para a vaga 3, sem escolher a vaga antes
+    arrastar(carta("Camisa de linho"), vaga("quiosque"));
+    expect(naVaga("quiosque")).toBe("Camisa de linho");
+    arrastar(carta("Tênis Aero"), vaga("calcadao"));
+    // de vaga para vaga: as cartas trocam de lugar
+    arrastar(vaga("calcadao").querySelector(".cbv-card")!, vaga("quiosque"));
+    expect([naVaga("calcadao"), naVaga("quiosque")]).toEqual(["Camisa de linho", "Tênis Aero"]);
+    // da vaga para a bandeja: tira; Z desfaz
+    arrastar(vaga("quiosque").querySelector(".cbv-card")!, screen.getByTestId("mesa-bandeja"));
+    expect(naVaga("quiosque")).toBe("Parte de cima");
+    fireEvent.keyDown(window, { key: "z" });
+    expect(naVaga("quiosque")).toBe("Tênis Aero");
+    // (o clique que o navegador dispara logo depois de soltar é engolido por um instante: espera passar)
+    await new Promise((r) => setTimeout(r, 80));
+    fireEvent.click(screen.getAllByRole("button", { name: "Desfazer" })[0]);
+    expect([naVaga("calcadao"), naVaga("quiosque")]).toEqual(["Tênis Aero", "Camisa de linho"]);
+    // tirar pela bandeja: a vaga e o botão
+    fireEvent.click(vaga("calcadao"));
+    fireEvent.click(within(screen.getByTestId("mesa-bandeja")).getByRole("button", { name: "Tirar" }));
+    expect(naVaga("calcadao")).toBe("Calçado");
+    expect(JSON.parse(localStorage.getItem("fai.flair.montagem.cbc.verao-em-ipanema") ?? "{}")).toEqual({ quiosque: "c3" });
+    // sai e volta: a carta continua na vaga
+    tela.unmount();
+    renderApp(<CbcPlay slug="verao-em-ipanema" />);
+    await screen.findByRole("heading", { name: "Verão em Ipanema" });
+    await waitFor(() => expect(naVaga("quiosque")).toBe("Camisa de linho"));
+    await settle();
+  });
+
   it("coloca cartas vaga a vaga, confere no servidor sem gravar, entrega e mostra a recompensa creditada", async () => {
     let submitted = false;
     const { calls } = loggedAs(ME, {
@@ -61,25 +111,26 @@ describe("montagem", () => {
     const submit = screen.getByRole("button", { name: "Entregar" }) as HTMLButtonElement;
     expect(submit.disabled).toBe(true);
     expect(screen.getByText("0/3")).toBeTruthy();
-    // vaga 1 (calçado): abre a escolha e a carta de calçado vem primeiro
-    fireEvent.click(screen.getByRole("button", { name: /Calçadão/ }));
-    const dialog = await screen.findByRole("dialog");
-    expect(dialog.textContent).toContain("Carta para: Calçadão");
-    const options = screen.getAllByRole("button", { name: /Tênis Aero|Bolsa transversal|Camisa de linho/ });
-    expect(options[0].textContent).toContain("Tênis Aero");
+    // a bandeja já está aberta na vaga 1 (calçado): a carta que cabe vem primeiro, as outras apagadas com o motivo
+    const bandeja = screen.getByTestId("mesa-bandeja");
+    expect(vaga("calcadao").getAttribute("aria-current")).toBe("true");
+    const options = within(bandeja).getAllByRole("button", { name: /^Pôr/ });
+    expect(options[0].getAttribute("aria-label")).toBe("Pôr Tênis Aero · 70 · Calçado");
+    expect(options[1].getAttribute("aria-label")).toContain("a vaga pede Calçado");
+    expect(pecas()).toBe("coberta,coberta,coberta");
+    // um toque põe a carta (sem janela no meio): a peça entra na hora, sem sintonia até o servidor responder
     fireEvent.click(options[0]);
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(pecas()).toBe("chegando,coberta,coberta");
+    expect(vaga("guarda_sol").getAttribute("aria-current")).toBe("true");
     await waitFor(() => expect(calls.filter((c) => c.path.endsWith("/check")).length).toBe(1), { timeout: 3000 });
     expect(calls.filter((c) => c.path.endsWith("/submit")).length).toBe(0);
+    await waitFor(() => expect(pecas()).toBe("vermelha,coberta,coberta"));
     expect(screen.getByText("1/3")).toBeTruthy();
     expect(screen.getByText("Previsto")).toBeTruthy();
-    // vagas 2 e 3
-    fireEvent.click(screen.getByRole("button", { name: /Guarda-sol/ }));
-    fireEvent.click((await screen.findAllByRole("button", { name: /Bolsa transversal/ }))[0]);
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    fireEvent.click(screen.getByRole("button", { name: /Quiosque/ }));
-    fireEvent.click((await screen.findAllByRole("button", { name: /Camisa de linho/ }))[0]);
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    // vagas 2 e 3: um toque cada, porque o destaque já passou para a próxima vaga vazia
+    fireEvent.click(carta("Bolsa transversal"));
+    fireEvent.click(carta("Camisa de linho"));
     await waitFor(() => expect((screen.getByRole("button", { name: "Entregar" }) as HTMLButtonElement).disabled).toBe(false), { timeout: 3000 });
     expect(screen.getByText("3/3")).toBeTruthy();
     expect(screen.getByText(/No calçadão, Tênis Aero da Atelier Lumi/)).toBeTruthy();
