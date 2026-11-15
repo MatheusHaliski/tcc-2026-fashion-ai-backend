@@ -13,6 +13,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { clone as clonarComOssos } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { corpoLeve } from "@/components/flair/nucleos/gente/corpo-leve";
 import { MoldeHumano, type Molde } from "@/components/flair/nucleos/gente/molde-humano";
 import { animate, cloneRig, newMotionState, type MotionState, type Rig } from "@/lib/avatar3d/human/locomotion";
 import type { Motion } from "@/lib/avatar3d/human/locomotion-model";
@@ -22,6 +23,9 @@ import { sorteio, type PessoaDoElenco } from "@/lib/flair/nucleos/gente/elenco";
 
 interface Clone {
   grupo: THREE.Group;
+  /** o corpo completo e o corpo leve (nível LONGE): um dos dois aparece */
+  raiz: THREE.Object3D;
+  leve: THREE.Group;
   rig: Rig;
   st: MotionState;
   malhas: THREE.Mesh[];
@@ -38,7 +42,7 @@ const PARALELO = 2;
 const DETALHE = /^(córnea|linha-dagua|pelos-sobrancelhas|barra-|punho-|costura-|botoes-|gola-ponta-|cadarco-|colarinho-)/;
 const RAD_CHUTE = -1.15;
 
-function clonar(m: Molde, id: string, semente: number): Clone {
+function clonar(m: Molde, pessoa: PessoaDoElenco, id: string, semente: number): Clone {
   const raiz = clonarComOssos(m.raiz);
   let corpo: THREE.SkinnedMesh | null = null;
   raiz.traverse((o) => {
@@ -60,8 +64,10 @@ function clonar(m: Molde, id: string, semente: number): Clone {
   const grupo = new THREE.Group();
   grupo.name = `pessoa-${id}`;
   grupo.add(raiz);
+  const leve = corpoLeve(pessoa);
+  grupo.add(leve);
   const rig = cloneRig(m.rig, raiz);
-  return { grupo, rig, st: newMotionState(rig, semente, "idle"), malhas, detalhes, nivel: null, quadro: semente % 4, acumulado: 0, anim: "idle", desde: 0 };
+  return { grupo, raiz, leve, rig, st: newMotionState(rig, semente, "idle"), malhas, detalhes, nivel: null, quadro: semente % 4, acumulado: 0, anim: "idle", desde: 0 };
 }
 
 interface Props {
@@ -105,7 +111,7 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido }: Props) {
       const molde = pessoa && moldes.current.get(pessoa.chave);
       let c = clones.current.get(a.id);
       if (!c && molde) {
-        c = clonar(molde, a.id, Math.floor(sorteio(1, a.id) * 1000));
+        c = clonar(molde, pessoa, a.id, Math.floor(sorteio(1, a.id) * 1000));
         clones.current.set(a.id, c);
         grupo.add(c.grupo);
         prontos.current.add(a.id);
@@ -123,7 +129,11 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido }: Props) {
         c.nivel = nivel;
         for (const m of c.malhas) m.castShadow = nivel === "COMPLETO";
         for (const o of c.detalhes) o.visible = nivel === "COMPLETO";
+        c.raiz.visible = nivel !== "LONGE";
+        c.leve.visible = nivel === "LONGE";
       }
+      // de longe, o corpo leve não tem esqueleto: nada a animar
+      if (nivel === "LONGE") continue;
       c.acumulado += dt;
       if (++c.quadro % QUADROS_POR_NIVEL[nivel] !== 0 && c.st.t > 0) continue;
       const passo = reduzido ? 0 : c.acumulado;

@@ -5,7 +5,8 @@
  *   Vale perto da câmera e para quem está na jogada, a qualquer distância.
  * - LEVE: o mesmo corpo, sem os acabamentos de poucos pixels (costuras, cadarço, córnea), sem sombra e animado a cada
  *   dois quadros.
- * - LONGE: o mesmo corpo, animado a cada quatro quadros. Continua gente: braços, pernas e cabeça se mexem.
+ * - LONGE: o corpo leve (components/flair/nucleos/gente/corpo-leve.ts): o humano leve da torcida com as cores da roupa,
+ *   da pele e do cabelo da pessoa e a altura dela. Continua gente, sem o custo do corpo completo.
  * - TORCIDA: multidão de arquibancada ou plateia, em humanos leves instanciados (cabeça, cabelo, tronco, braços e
  *   pernas), com a cor da roupa e da pele de cada um. Poucas chamadas de desenho para centenas de pessoas.
  *
@@ -15,7 +16,7 @@ export type NivelDeDetalhe = "COMPLETO" | "LEVE" | "LONGE";
 
 /** Até onde (metros da câmera) vale cada nível. */
 export const DISTANCIA_COMPLETO = 16;
-export const DISTANCIA_LEVE = 34;
+export const DISTANCIA_LEVE = 26;
 
 export function nivelDeDetalhe(distancia: number, naJogada = false): NivelDeDetalhe {
   if (naJogada || distancia < DISTANCIA_COMPLETO) return "COMPLETO";

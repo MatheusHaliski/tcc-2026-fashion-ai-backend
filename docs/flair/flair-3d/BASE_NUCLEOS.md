@@ -160,8 +160,9 @@ jogadores. Os dois times têm o mesmo sexo, sorteado pela semente; pele, altura,
 por jogador. Nada disto entra na nota. Os rostos são pintados por regras (sem foto de ninguém).
 
 **Níveis.** COMPLETO (até 16 m da câmera, ou quem está na jogada a qualquer distância): corpo inteiro, acabamentos,
-sombra, animação a cada quadro. LEVE (16 a 34 m): sem os acabamentos de poucos pixels e sem sombra, animado a cada dois
-quadros. LONGE (além de 34 m): o mesmo corpo, animado a cada quatro quadros. TORCIDA: humano leve instanciado (cabeça,
+sombra, animação a cada quadro. LEVE (16 a 26 m): sem os acabamentos de poucos pixels e sem sombra, animado a cada dois
+quadros. LONGE (além de 26 m): o corpo leve (`components/flair/nucleos/gente/corpo-leve.ts`), o humano leve da torcida
+com as cores da roupa, da pele e do cabelo da pessoa e a altura dela, sem esqueleto para animar. TORCIDA: humano leve instanciado (cabeça,
 pescoço, cabelo, tronco, braços e pernas, 364 triângulos), cinco chamadas de desenho por setor de arquibancada, um terço
 acenando de braços para cima. Enquanto o molde de um jogador monta (dois por vez, o mais perto da câmera primeiro), a
 figura articulada antiga dele aparece no lugar.
@@ -183,7 +184,8 @@ fotógrafos): 1,44 milhão de triângulos e 399 chamadas por quadro; na Boutique
 Um jogador humano custa cerca de 40 mil triângulos por quadro com a passada de sombra (de 6 para 10 jogadores: +162 mil).
 O orçamento de 60 mil triângulos das salas não vale para o estádio: a gente tem conta própria
 (`triangulosComGente`, `triangulosDaSalaComGente` em `lib/flair/nucleos/scene/budget.ts`). A fluidez num celular não foi
-medida (o ambiente não tem placa de vídeo). Falta um corpo de menos triângulos para o nível LONGE.
+medida (o ambiente não tem placa de vídeo). Com o corpo leve no nível LONGE, a transmissão automática do futebol (câmera
+alta da lateral, os 10 jogadores além de 26 m) caiu para 181 mil triângulos e 166 chamadas por quadro (antes, 769 mil).
 
 ## Ações do personagem e comandos do controle
 
