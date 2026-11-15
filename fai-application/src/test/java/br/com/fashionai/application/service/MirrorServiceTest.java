@@ -14,6 +14,14 @@ import br.com.fashionai.domain.repository.TipoLookRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.MirrorStateRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
+import br.com.fashionai.domain.model.acervo.AcervoAmbiente;
+import br.com.fashionai.domain.model.acervo.AcervoCompartimento;
+import br.com.fashionai.domain.model.acervo.AcervoMovel;
+import br.com.fashionai.domain.model.acervo.AcervoPeca;
+import br.com.fashionai.domain.repository.acervo.AcervoAmbienteRepository;
+import br.com.fashionai.domain.repository.acervo.AcervoCompartimentoRepository;
+import br.com.fashionai.domain.repository.acervo.AcervoMovelRepository;
+import br.com.fashionai.domain.repository.acervo.AcervoPecaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +57,7 @@ class MirrorServiceTest {
         kit.real(WardrobeService.class);
         kit.real(BackgroundStudioService.class);
         kit.real(SchemeCardRenderer.class);
-        kit.real(RoomService.class);
+        kit.real(br.com.fashionai.application.acervo.AcervoLugares.class);
         kit.real(SchemeService.class);
         mirror = kit.build(MirrorService.class);
         ana = Kit.as(world.me);
@@ -220,5 +228,42 @@ class MirrorServiceTest {
         assertThatThrownBy(() -> mirror.takeOneOff(ana)).isInstanceOf(ApiException.class);
         assertThat(MirrorService.missing(map(Map.of()))).isNotEmpty();
         assertThat(MirrorService.complete(Map.of("dress", piece("dress").toString(), "shoes", piece("oxford_shoes").toString()))).isTrue();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void oLugarDaPecaVemDoAcervoESemLugarFicaSemEndereco() {
+        // o Meu Quarto saiu (15/11/2026): o espelho mostra onde a peça está guardada no ACERVO, com as mesmas chaves
+        UUID guardada = piece("t_shirt"), solta = piece("shirt");
+        AcervoAmbiente closet = new AcervoAmbiente();
+        closet.setUserId(world.me.getId());
+        closet.setNome("Closet");
+        kit.save(AcervoAmbienteRepository.class, closet);
+        AcervoMovel armario = new AcervoMovel();
+        armario.setUserId(world.me.getId());
+        armario.setAmbienteId(closet.getId());
+        armario.setNome("Armário 01");
+        kit.save(AcervoMovelRepository.class, armario);
+        AcervoCompartimento gaveta = new AcervoCompartimento();
+        gaveta.setUserId(world.me.getId());
+        gaveta.setMovelId(armario.getId());
+        gaveta.setTipo(AcervoCompartimento.GAVETA);
+        gaveta.setNome("Gaveta 1");
+        kit.save(AcervoCompartimentoRepository.class, gaveta);
+        AcervoPeca linha = new AcervoPeca();
+        linha.setUserId(world.me.getId());
+        linha.setPieceId(guardada);
+        linha.setCompartimentoId(gaveta.getId());
+        kit.save(AcervoPecaRepository.class, linha);
+
+        List<Map<String, Object>> pecas = (List<Map<String, Object>>) mirror.wardrobe(ana, "upper").get("pieces");
+        Map<String, Object> comLugar = pecas.stream().filter(p -> guardada.equals(p.get("id"))).findFirst().orElseThrow();
+        Map<String, Object> semLugar = pecas.stream().filter(p -> solta.equals(p.get("id"))).findFirst().orElseThrow();
+        assertThat(comLugar.get("addressLabel")).isEqualTo("Closet / Armário 01 / Gaveta 1");
+        assertThat(comLugar.get("address")).isEqualTo(gaveta.getId().toString());
+        assertThat(comLugar.get("moduleId")).isEqualTo(armario.getId().toString());
+        assertThat(semLugar.get("address")).isNull();
+        assertThat(semLugar.get("addressLabel")).isNull();
+        assertThat(semLugar.get("moduleId")).isNull();
     }
 }

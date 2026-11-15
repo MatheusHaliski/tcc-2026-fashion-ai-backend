@@ -132,7 +132,7 @@ class MirrorScoresTest {
         events = mock(ApplicationEventPublisher.class);
         ai = mock(AiEngine.class);
         ObjectProvider<MirrorService.PieceRestrictionProvider> restrictions = mock(ObjectProvider.class);
-        mirror = new MirrorService(mirrors, pieces, wardrobe, mock(RoomService.class), mock(SchemeService.class), schemes,
+        mirror = new MirrorService(mirrors, pieces, wardrobe, mock(br.com.fashionai.application.acervo.AcervoLugares.class), mock(SchemeService.class), schemes,
                 mock(SchemeItemRepository.class), mock(DailyLookService.class), dnas, restrictions, ai, new Audit(e -> { }), events, hype, mock(br.com.fashionai.domain.repository.TipoLookRepository.class));
         state.setUserId(uid);
         state.setSlotsJson("{}");
