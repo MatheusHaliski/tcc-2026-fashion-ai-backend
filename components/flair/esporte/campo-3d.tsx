@@ -1,10 +1,12 @@
 "use client";
 /**
- * O campo da transmissão: piso, linhas, o que há nas pontas de cada modalidade (traves, cestas, rede no meio, linha de
+ * O campo da transmissão (o futebol tem o estádio próprio, components/flair/esporte/estadio-3d.tsx): piso, linhas, o que há nas pontas de cada modalidade (traves, cestas, rede no meio, linha de
  * chegada, rampa), a arquibancada do outro lado e as placas da lateral, nas cores do FashionAI (sem marca real). Tudo
  * em primitivas, com as medidas de lib/flair/esporte/campo.ts.
  */
 import { useMemo } from "react";
+import { Estadio3D } from "@/components/flair/esporte/estadio-3d";
+import { Gol3D, type Batida } from "@/components/flair/esporte/gol-3d";
 import type { Campo } from "@/lib/flair/esporte/campo";
 
 const BRANCO = "#F4F7F2";
@@ -15,28 +17,6 @@ function Linha({ x, z, largura, fundo, cor }: { x: number; z: number; largura: n
       <planeGeometry args={[largura, fundo]} />
       <meshBasicMaterial color={cor} />
     </mesh>
-  );
-}
-
-function Trave({ x, lado }: { x: number; lado: 1 | -1 }) {
-  const fundo = x + lado * 0.9;
-  return (
-    <group name="trave">
-      {[-1.5, 1.5].map((z) => (
-        <mesh key={z} position={[x, 1, z]} castShadow>
-          <boxGeometry args={[0.1, 2, 0.1]} />
-          <meshStandardMaterial color={BRANCO} />
-        </mesh>
-      ))}
-      <mesh position={[x, 2, 0]} castShadow>
-        <boxGeometry args={[0.1, 0.1, 3.1]} />
-        <meshStandardMaterial color={BRANCO} />
-      </mesh>
-      <mesh position={[fundo, 1, 0]}>
-        <boxGeometry args={[0.04, 2, 3]} />
-        <meshStandardMaterial color={BRANCO} transparent opacity={0.28} />
-      </mesh>
-    </group>
   );
 }
 
@@ -59,9 +39,16 @@ function Cesta({ x, lado }: { x: number; lado: 1 | -1 }) {
   );
 }
 
-function Pontas({ campo }: { campo: Campo }) {
+function Pontas({ campo, batida, reduzido }: { campo: Campo; batida: () => Batida | null; reduzido: boolean }) {
   const meio = campo.comprimento / 2;
-  if (campo.alvo === "trave") return <><Trave x={-meio} lado={-1} /><Trave x={meio} lado={1} /></>;
+  if (campo.alvo === "trave") {
+    return (
+      <>
+        <Gol3D nome="gol-esquerda" x={-meio} lado={-1} batida={batida} reduzido={reduzido} />
+        <Gol3D nome="gol-direita" x={meio} lado={1} batida={batida} reduzido={reduzido} />
+      </>
+    );
+  }
   if (campo.alvo === "cesta") return <><Cesta x={-meio} lado={-1} /><Cesta x={meio} lado={1} /></>;
   if (campo.alvo === "rede") {
     const altura = campo.codigo === "TENIS" ? 0.95 : 2.3;
@@ -117,7 +104,22 @@ function Arquibancada({ campo }: { campo: Campo }) {
   );
 }
 
-export function Campo3D({ campo }: { campo: Campo }) {
+const SEM_BATIDA = () => null;
+
+/** `batida`: a bola na rede (só no futebol); `reduzido`: a rede estufa sem balançar. */
+export function Campo3D({ campo, batida = SEM_BATIDA, reduzido = false }: { campo: Campo; batida?: () => Batida | null; reduzido?: boolean }) {
+  if (campo.alvo === "trave") {
+    return (
+      <group name="campo">
+        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[campo.comprimento + 30, campo.largura + 30]} />
+          <meshStandardMaterial color="#20242B" roughness={1} />
+        </mesh>
+        <Estadio3D campo={campo} />
+        <Pontas campo={campo} batida={batida} reduzido={reduzido} />
+      </group>
+    );
+  }
   const { comprimento: c, largura: l } = campo;
   return (
     <group name="campo">
@@ -134,22 +136,8 @@ export function Campo3D({ campo }: { campo: Campo }) {
       <Linha x={-c / 2} z={0} largura={0.1} fundo={l} cor={campo.linha} />
       <Linha x={c / 2} z={0} largura={0.1} fundo={l} cor={campo.linha} />
       <Linha x={0} z={0} largura={0.1} fundo={l} cor={campo.linha} />
-      {campo.alvo === "trave" && (
-        <>
-          <mesh position={[0, 0.013, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[2.9, 3, 48]} />
-            <meshBasicMaterial color={campo.linha} />
-          </mesh>
-          {[-1, 1].map((lado) => (
-            <mesh key={lado} position={[(lado * c) / 2, 0.013, 0]} rotation={[-Math.PI / 2, 0, lado === 1 ? Math.PI / 2 : -Math.PI / 2]}>
-              <ringGeometry args={[5.9, 6, 48, 1, 0, Math.PI]} />
-              <meshBasicMaterial color={campo.linha} />
-            </mesh>
-          ))}
-        </>
-      )}
       {campo.alvo === "chegada" && [1, 2, 3].map((i) => <Linha key={i} x={0} z={-l / 2 + (i * l) / 4} largura={c} fundo={0.06} cor={campo.linha} />)}
-      <Pontas campo={campo} />
+      <Pontas campo={campo} batida={batida} reduzido={reduzido} />
       <Arquibancada campo={campo} />
     </group>
   );

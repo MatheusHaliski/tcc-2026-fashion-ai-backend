@@ -82,7 +82,8 @@ describe("linha do tempo da transmissão", () => {
 
   it("na finalização a bola vai ao gol, o goleiro mergulha na defesa e o time comemora o gol", () => {
     const gol = lance({ tipo: "CHUTE_GOL", jogador: 5, de: [88, 30], para: [100, 28] });
-    expect(bolaNoLance(gol, 1).x).toBe(100);
+    expect(bolaNoLance(gol, 1).x).toBeGreaterThan(100);
+    expect(bolaNoLance(gol, 0.6).x).toBeLessThanOrEqual(100);
     const fim = quadroDoLance(FUTEBOL, null, gol, 0.95);
     expect(fim.figuras.filter((f) => f.time === "NOS").every((f) => f.gesto === "comemora")).toBe(true);
     expect(fim.figuras.filter((f) => f.time === "ELES").every((f) => f.gesto === "lamenta")).toBe(true);
@@ -146,7 +147,10 @@ describe("câmera de transmissão", () => {
     expect(transmissao.pos[1]).toBeGreaterThan(8);
     expect(transmissao.alvo[0]).toBeGreaterThan(0);
     const replay = poseDaCamera("replay", FUTEBOL, [90, 30], [80, 20]);
-    expect(Math.hypot(replay.pos[0] - replay.alvo[0], replay.pos[2] - replay.alvo[2])).toBeLessThan(4);
+    const distancia = Math.hypot(replay.pos[0] - replay.alvo[0], replay.pos[2] - replay.alvo[2]);
+    // perto o bastante para ver a roupa, longe o bastante para o corpo inteiro caber no quadro (fov 32)
+    expect(distancia).toBeGreaterThan(1.8 / (2 * Math.tan((16 * Math.PI) / 180)));
+    expect(distancia).toBeLessThan(6);
     const meio = seguir(transmissao, replay, 0.5);
     expect(meio.pos[1]).toBeCloseTo((transmissao.pos[1] + replay.pos[1]) / 2, 5);
   });

@@ -34,6 +34,8 @@ const GOLS = new Set(["CHUTE_GOL", "RIVAL_GOL"]);
 const DEFESAS = new Set(["CHUTE_DEFENDIDO", "CHUTE_ESPALMADO", "RIVAL_DEFENDIDO", "RIVAL_ESPALMADO"]);
 /** Distância mínima entre dois jogadores, nas unidades do campo do servidor. */
 export const FOLGA = 3.2;
+/** Quanto a bola entra na rede depois da linha do gol, nas unidades do campo do servidor. */
+export const DENTRO_DA_REDE = 2.2;
 
 export const finalizacao = (tipo: string) => FINALIZACOES.has(tipo);
 export const gol = (tipo: string) => GOLS.has(tipo);
@@ -55,6 +57,8 @@ export function bolaNoLance(lance: Jogada, k: number): { x: number; y: number; a
   if (finalizacao(lance.tipo)) {
     const t = suave(fase(k, 0.3, 0.72));
     if (lance.tipo.endsWith("_FORA")) y1 += y1 < 30 ? -16 : 16;
+    // no gol a bola passa da linha e vai ao fundo da rede (1 m de fundo = 2,5 unidades no campo de 40 m)
+    if (gol(lance.tipo)) x1 += x1 >= 50 ? DENTRO_DA_REDE : -DENTRO_DA_REDE;
     const ate = defesaDoGoleiro(lance.tipo) ? 0.93 : 1;
     const volta = lance.tipo.endsWith("_ESPALMADO") ? fase(k, 0.72, 1) * 0.12 : 0;
     const alcance = t * ate - volta;

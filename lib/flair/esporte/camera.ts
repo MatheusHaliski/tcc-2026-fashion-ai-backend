@@ -17,9 +17,12 @@ export interface Pose {
 
 /** A partir de quanto do lance a câmera corta para perto, e para o replay da carta. */
 export const CORTE_DO_LANCE = 0.45;
-export const CORTE_DO_REPLAY = 0.74;
+/** O replay vem depois de a bola chegar à rede (0,72): antes dele, o plano do lance mostra a rede balançando. */
+export const CORTE_DO_REPLAY = 0.86;
 
 const DE_PERTO = new Set(["DESARME", "DESARME_FALHO"]);
+/** Distância do replay até o jogador: com fov 32 o corpo inteiro (1,8 m) ocupa uns dois terços da altura do quadro. */
+export const REPLAY_DIST = 5.2;
 
 /** O plano da câmera no instante k do lance. */
 export function planoDaCamera(lance: Jogada | null, k: number, reduzido: boolean): Plano {
@@ -37,12 +40,14 @@ export function poseDaCamera(plano: Plano, campo: Campo, bola: Ponto, foco: Pont
   const [bx, bz] = noMundo(campo, bola);
   const meia = campo.largura / 2;
   if (plano === "geral") {
-    const recuo = Math.max(campo.comprimento * 0.62, 14);
-    return { pos: [0, recuo * 0.62, meia + recuo * 0.72], alvo: [0, 0, 0] };
+    // o campo inteiro, as duas traves e a arquibancada do outro lado (fov 32: o comprimento cabe a 1,25 × de distância)
+    const recuo = Math.max(campo.comprimento * 1.05, 16);
+    return { pos: [0, recuo * 0.55, meia + recuo * 0.85], alvo: [0, 0, -meia * 0.15] };
   }
   if (plano === "replay" && foco) {
+    // o jogador inteiro, da cabeça ao calçado, um pouco de cima: quem está perto dele fica fora do eixo da lente
     const [fx, fz] = noMundo(campo, foco);
-    return { pos: [fx + 0.6, 1.5, fz + 3.4], alvo: [fx, 1.0, fz] };
+    return { pos: [fx + 1.2, 2.4, fz + REPLAY_DIST], alvo: [fx, 1.15, fz] };
   }
   if (plano === "lance") {
     return { pos: [bx * 0.9, 4.2, Math.max(bz + 9, meia + 3)], alvo: [bx, 0.8, bz] };

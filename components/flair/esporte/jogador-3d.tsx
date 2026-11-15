@@ -38,7 +38,7 @@ export function poseDoGesto(gesto: Gesto, t: number): PoseDoJogador {
     case "comemora":
       return { ...base, abertura: 2.7, altura: Math.abs(Math.sin(t * 7)) * 0.18 };
     case "lamenta":
-      return { ...base, curva: 0.45, bracos: [0.2, 0.2] };
+      return { ...base, curva: 0.3, bracos: [0.2, 0.2] };
     default:
       return base;
   }

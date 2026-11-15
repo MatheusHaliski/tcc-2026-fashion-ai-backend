@@ -9,10 +9,12 @@ import { useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { Campo3D } from "@/components/flair/esporte/campo-3d";
+import { LARGURA_DO_GOL, type Batida } from "@/components/flair/esporte/gol-3d";
 import { Jogador3D } from "@/components/flair/esporte/jogador-3d";
 import { planoDaCamera, poseDaCamera, seguir, type Plano, type Pose } from "@/lib/flair/esporte/camera";
 import { noMundo, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
-import { quadroDoLance, type Quadro } from "@/lib/flair/esporte/timeline";
+import { pontoNaRede } from "@/lib/flair/esporte/rede";
+import { gol, quadroDoLance, type Quadro } from "@/lib/flair/esporte/timeline";
 import type { Jogada, Lado } from "@/lib/flair/esporte/types";
 
 export interface Transmissao3DProps {
@@ -33,6 +35,8 @@ interface Estado {
 }
 
 function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: Omit<Transmissao3DProps, "rotulo">) {
+  /** a bola na rede: no gol, depois que a bola chega ao fundo (k 0,72), com o ponto do impacto */
+  const batida = useRef<Batida | null>(null);
   const estado = useRef<Estado>({ quadro: quadroDoLance(campo, anterior, atual, reduzido ? 1 : 0), plano: "geral" });
   const pose = useRef<Pose | null>(null);
   const bola = useRef<THREE.Mesh>(null);
@@ -46,6 +50,9 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: O
     const plano = planoDaCamera(atual, k, reduzido);
     const cortou = plano !== estado.current.plano;
     estado.current = { quadro, plano };
+    batida.current = atual && gol(atual.tipo) && k >= 0.72
+      ? { lado: atual.time === "NOS" ? 1 : -1, u: pontoNaRede(atual.para[1], LARGURA_DO_GOL, campo.largura)[0], v: 0.55, chave: atual.n }
+      : null;
     if (bola.current) {
       const [x, z] = noMundo(campo, [quadro.bola.x, quadro.bola.y]);
       bola.current.position.set(x, quadro.bola.altura, z);
@@ -64,7 +71,7 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: O
       <directionalLight position={[8, 18, 12]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]}>
         <orthographicCamera attach="shadow-camera" args={[-30, 30, 20, -20, 1, 60]} />
       </directionalLight>
-      <Campo3D campo={campo} />
+      <Campo3D campo={campo} batida={() => batida.current} reduzido={reduzido} />
       {lados.flatMap((time) =>
         Array.from({ length: campo.jogadores }, (_, i) => (
           <Jogador3D
@@ -88,7 +95,7 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme }: O
 
 export default function Transmissao3D({ rotulo, ...cena }: Transmissao3DProps) {
   return (
-    <Canvas shadows camera={{ fov: 32, position: [0, 14, 26], near: 0.1, far: 140 }} dpr={[1, 2]} aria-label={rotulo}>
+    <Canvas shadows camera={{ fov: 32, position: [0, 14, 26], near: 0.1, far: 160 }} dpr={[1, 2]} aria-label={rotulo}>
       <color attach="background" args={["#11141A"]} />
       <Cena {...cena} />
     </Canvas>

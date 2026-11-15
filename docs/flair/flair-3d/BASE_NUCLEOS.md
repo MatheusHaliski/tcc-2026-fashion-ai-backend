@@ -40,7 +40,7 @@ semente fixa por partida). A nota nunca usa pele, corpo ou rosto; errar nunca ti
 | 11 | `PILOTO_FAVORITO` | zonas do editor | Capacete da "Equipe Aurora" (amarelo e verde) | 25 por regra: topo amarelo; laterais amarelas; faixa da viseira verde; viseira espelhada |
 | 12 | `AROUND_THE_WORLD` | cartas | Região 1, Rio de Janeiro | 25 por regra: parte de cima leve; parte de baixo leve; cor quente; marca brasileira |
 | 13 | `SUPER_HEROI` | zonas do editor | Arquétipo "armadura" | 25 por regra: peito metálico; até 2 cores; capa presente; nenhum emblema protegido |
-| 14 | `FASHION_SPORTS` | cartas | Futebol de 5: um uniforme para os 4 de linha contra o time-padrão | Atributos de chuteira e camisa; coesão 100% (uniforme único); vitória = 100, empate = 60, derrota = 0. Seis modalidades, escolhidas na aba Modalidade, cada uma com placar e quadra próprios (`CORES_E_ACOES.md`). Em etapas: primeiro tempo, intervalo e segundo tempo com até 3 lances (cada troca de peça dispara a ação da cor da peça que entra); em cada tempo, mais de 1 ponto de força acima do adversário vale um gol e mais de 1 abaixo, um gol contra |
+| 14 | `FASHION_SPORTS` | cartas | Futebol de 5 jogado por cartas: o uniforme dá os atributos e cada jogada é uma carta da mão (definição de 15/11/2026, `JOGOS.md`, jogo 14) | Duelo de cada jogada: força do time × fôlego + poder da carta contra o adversário, mais sorte da semente; vitória = 100, empate = 60, derrota = 0. Seis modalidades, cada uma com as suas jogadas, relógio e placar |
 | 15 | `BATALHA_LOOKS` | cartas | Rodada "Look Monocromático" em azul contra o adversário-padrão (75) | 25 por peça da família azul; vence com mais de 75 |
 
 **Recursos:**
@@ -65,7 +65,7 @@ partida, só as cartas do deck aparecem na janela de recursos e só elas podem s
 | `CLUBE_CORACAO`, `FAVORITE_SINGER`, `PILOTO_FAVORITO`, `SUPER_HEROI` | sem deck: zonas do editor | nenhuma | — |
 | `LABIRINTO` | até 8 | 3 cartas quaisquer | família de cor que a carta traz para o espelho |
 | `AROUND_THE_WORLD` | até 8 | 1 parte de cima, 1 parte de baixo | regras da região que a carta cumpre |
-| `FASHION_SPORTS` | até 6 | 1 camisa, 1 calção, 1 chuteira | velocidade, técnica, resistência e defesa do uniforme |
+| `FASHION_SPORTS` | até 15 | 1 camisa, 1 calção, 1 chuteira | o uniforme dá velocidade, técnica, resistência, defesa e físico; as outras cartas são a mão, e cada uma mostra a ação da cor e o poder |
 | `BATALHA_LOOKS` | até 8 | 1 parte de cima, 1 parte de baixo, 1 calçado | +25 se é da família de cor da rodada |
 
 **Na tela [frontend]:** antes da partida, a tela do deck mostra as cartas da pessoa com o efeito de cada uma neste
@@ -197,7 +197,7 @@ partir da semente a cada etapa, então repetir uma etapa dá sempre o mesmo resu
 | Núcleo | Entrega | Acionar | Eventos |
 | --- | --- | --- | --- |
 | `DRESS_FIGHTER` | joga o round 1 e devolve `EM_ACAO` | cada chamada joga o round seguinte; a 2ª fecha a luta. `carta` é a carta Especial (nível `ESPECIAL`, do deck), uma por luta: soma 20 + OVR/10 ao atributo do round que vem. 422 `CARTA_NAO_ESPECIAL` ou `ESPECIAL_JA_USADA` | `ROUND {round, atributo, voce, oponente, atacante, valorAtacante, valorDefensor, venceu}`; `ESPECIAL {round, carta, atributo, poder}` antes do round em que entra |
-| `FASHION_SPORTS` | joga o primeiro tempo e devolve `EM_ACAO` | uma chamada: aplica `troca` (no máximo uma; carta do deck na vaga da posição dela, 422 `TROCA_INVALIDA`), joga o segundo tempo e fecha | `FORCA_TIME`, `FORCA_ADVERSARIO`, `COESAO`, `INTERVALO` (placar do primeiro tempo, "1-0"); no fim, `TROCA {vaga, carta}`, `FORCA_SEGUNDO_TEMPO` e `PLACAR` |
+| `FASHION_SPORTS` | veste o uniforme, joga a saída de bola e devolve `EM_ACAO` | cada chamada é uma jogada: `carta` é a carta jogada da mão (ou nada: o time não faz nada de útil); 422 `CARTA_FORA_DA_MAO`; a 16ª jogada fecha | `JOGADA {n, jogada, tempo, relogio, tipo, time, ok, jogador, alvo, de, para, placar, carta?, acao?}`, `SITUACAO {jogada, total, tempo, relogio, posse, zona, goleiroPronto, mao, baralho, placar}`, `INTERVALO`, `RESUMO` e `PLACAR` |
 | `LABIRINTO` | apresenta ao espelho: se não abre, devolve `ABERTA` com `resultado:"NAO_ABRE"` e a partida aceita outra entrega; se abre, fecha com os pontos da tentativa | não tem | `FAMILIA`, `TENTATIVA` (1 na primeira apresentação) e, sem abrir, `FALTAM_PECAS` |
 
 No `ROUND`, `atacante` é `VOCE` ou `OPONENTE` (no round 1, o mais veloz; no 2, a pessoa; no 3, o oponente), com o valor

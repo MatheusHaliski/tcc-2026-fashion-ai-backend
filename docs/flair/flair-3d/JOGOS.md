@@ -517,6 +517,48 @@ vestimenta e isso causa um efeito dentro da partida."
   (`CORES_E_ACOES.md`).
 - [decidir] As peças vêm do deck da partida?
 
+- **Partida jogada por cartas (definição da dona de 15/11/2026).** "Copie uma mecânica semelhante ao eFootball, porém
+  integre a mecânica de cartas como componente essencial para realizar qualquer ação." O jogo deixou de rodar sozinho
+  com até 3 trocas: toda ação do time da pessoa precisa de uma carta. A referência é o gênero dos simuladores de futebol
+  (troca de passes, corrida em espaço, drible no um contra um, desarme, finalização, defesa do goleiro, cansaço,
+  transmissão de TV), nunca um jogo comercial: nada de nomes, logos, times, menus ou termos de outro título. Os times
+  são cores e nomes inventados.
+  - **O que a pessoa faz.** Veste o uniforme do time (camisa, calção e calçado) na preparação; as outras cartas do deck
+    (até 15) viram a mão de 5. Em cada jogada a tela diz a situação ("Você tem a bola no meio-campo. Marcador perto.") e
+    a pessoa joga uma carta em até 30 segundos. Jogar a carta é vestir a peça no jogador que age: a pessoa continua só
+    escolhendo roupa, e é a roupa que joga. Ninguém controla jogador.
+  - **A cor decide a ação** (`CORES_E_ACOES.md`, 1.1): vermelho passa, azul corre com a bola (sem a bola, recompõe),
+    amarelo dribla, verde finaliza, preto desarma, branco prepara o goleiro. A carta sem cor de ação dá um toque curto
+    que segura a bola. **[proposta adotada]** Não há sétima cor para o físico: o físico é um atributo (abaixo) que pesa
+    no chute, no desarme e na pressão.
+  - **O poder da carta decide o duelo:** um décimo do OVR, o bônus do nível (Bronze 0, Prata 3, Ouro 6, Especial 10), o
+    que a peça soma ao atributo da ação (tênis na corrida, couro e jeans na defesa) e +3 com Hype 80 ou mais. O time
+    tem os atributos do uniforme: velocidade, técnica, resistência, defesa e **físico** (novo: um décimo do OVR de cada
+    peça, mais 7 com material firme: couro, jeans, lona, veludo cotelê, nylon, borracha). Cada duelo é força da pessoa
+    (base do time × fôlego + poder da carta) contra a do adversário, mais uma sorte de −8 a +8 tirada da semente.
+  - **Cansaço.** A cada jogada o time perde de 0,4% a 2,2% da força de base, menos quanto maior a resistência do
+    uniforme; o adversário cansa 1,2% por jogada. O segundo tempo pesa para quem veste tecido sem resistência.
+  - **Sem carta, ou com a janela vencida,** o time não faz nada de útil: perde a bola se a tinha, ou deixa o adversário
+    avançar ou finalizar. A tela avisa isso antes de a pessoa seguir sem carta.
+  - **Forma da partida:** 2 tempos de 8 jogadas; o relógio anda 2:30 por jogada (40 minutos de jogo, mostrados como
+    mm:ss). O campo tem 4 zonas na visão de quem tem a bola (defesa, meio, ataque, área); passar e correr avançam uma
+    zona, a corrida com folga avança duas, o drible avança e dá embalo à jogada seguinte; a finalização perde força
+    longe do gol. O adversário é jogado pelo servidor: avança ou, perto do gol, finaliza contra o goleiro da pessoa.
+  - **Mão:** 5 cartas, repostas do baralho; o descarte volta embaralhado (pela semente) quando o baralho acaba. Carta
+    fora da mão é recusada (422 `CARTA_FORA_DA_MAO`).
+  - **Contrato:** a entrega veste o uniforme e devolve `EM_ACAO` com a saída de bola; cada `/acionar` com `{carta}` (ou
+    vazio) é uma jogada; a partida fecha no fim do segundo tempo. A prévia só mostra os atributos e não gasta o
+    sorteio. Mesma semente e mesmas cartas dão sempre a mesma partida. Vitória 100, empate 60, derrota 0.
+  - **Na tela:** câmera de transmissão (do alto da lateral, acompanhando a bola), corte para perto na finalização, na
+    defesa e no desarme, e o replay do jogador que agiu com a carta (onde a roupa aparece); placar de TV com os times,
+    o placar, o relógio e o tempo; narração de cada lance ("12' Passe de Caio para Bia"); resumo final com posse,
+    finalizações, defesas, desarmes, passes e que peça fez cada lance. "Reduzir movimento": plano geral parado.
+  - **Estádio [pedido da dona, 15/11/2026]:** gramado com listras de corte, marcações do futebol de 5 (linhas, meio,
+    círculo e marca central, áreas em arco com as marcas de 6 m e 10 m, arcos de escanteio), bandeirinhas, bancos,
+    túnel, telão, refletores, arquibancada em três lados com torcida, gols com rede de profundidade que estufa e balança
+    quando a bola entra.
+  - O que está feito e o que falta: `ESTADO_DOS_JOGOS.md`, jogo 14.
+
 ## Jogo 15 · Batalha de Looks
 
 **Pedido da dona:** um jogo que agrupe os objetivos de "vestir por regra clara".
@@ -551,6 +593,6 @@ vestimenta e isso causa um efeito dentro da partida."
 10. Meu Piloto Favorito: construir as bases de capacete e macacão e a estampa (número e faixas) no editor.
 11. Around the World: as 8 regiões e se o look-guia usa marcas reais.
 12. Meu Super-Herói Favorito: licença com Disney ou Warner, ou só arquétipos e heróis próprios.
-13. Fashion Sports: deck da partida. (Lances, medidores do detetive, mercado e estalecas: decididos em 14/11/2026,
+13. Fashion Sports: deck da partida (decidido em 15/11/2026: deck de até 15, uniforme mais a mão). (Lances, medidores do detetive, mercado e estalecas: decididos em 14/11/2026,
     `CORES_E_ACOES.md`, seção 3.)
 14. Qual jogo detalhar primeiro.
