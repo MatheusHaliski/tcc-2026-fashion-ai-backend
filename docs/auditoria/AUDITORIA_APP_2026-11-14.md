@@ -396,3 +396,35 @@ Feita de 14/11/2026 (19:50 UTC) a 15/11/2026, no mesmo ambiente local (MySQL loc
 **Não feito nesta rodada (por tempo):** Provador (jaqueta aberta mostra a base escura), Espelho (dica de proporção cortada, aviso de combinação sem código de suporte), Momentos (plurais e "LEITURA: TOTAL-DENIM"), FAI Points (motivo do "Comprar" desligado à vista, "Provar"), Notificações ("Closet Digital"), Explorador (a modelo na passarela sem placa de vídeo). Os itens [IA/GPU] continuam dependentes da IA remota ou de placa de vídeo.
 
 **Verificações no fim desta rodada:** `npx tsc --noEmit`, `node scripts/i18n/check.js --fail`, `node scripts/i18n/scan.js --fail`, `npm run lint:styles` e `python -m scripts.refactoring.line_ratchet` (0 violações; tetos baixados em `editor.tsx`, `ChallengeService.java`, `SearchService.java`, `AdminService.java`, `expanded-piece.tsx` e `mirror-controls.tsx`; um arquivo saiu do baseline). Vitest das pastas mexidas: 116 arquivos, 799 testes; os 2 que falharam (`admin/room-assets`, não mexido) passam sozinhos (falta de memória na máquina durante a rodada). Maven: `Copilot*Test`, `Local*Test`, `Dna*Test`, `Insight*Test`, `Admin*Test`, `Challenge*Test`, `Search*Test`, `DnaControllerRaceTest`, `ControllerDelegacaoTest` passam. Nada foi para produção; IA paga não foi usada; nenhuma migração.
+
+## 10. Terceira auditoria (depois das três rodadas de correções)
+
+**Relatório parcial, atualizado às 13:37 UTC de 15/11/2026.** As linhas marcadas "a auditar" ainda não foram refeitas nesta rodada.
+
+**Como foi feita.** Em 15/11/2026, das 08:37 UTC em diante (com uma parada entre 08:50 e 13:27 UTC, quando a máquina foi reiniciada, e troca de auditor às 13:35 UTC), por auditores que não escreveu nenhuma das correções. Pilha local: MySQL 8.0 da própria máquina (banco `fashionai` local, com as contas de demonstração das auditorias anteriores), backend reconstruído do código atual (`mvn -o -q -Djacoco.skip=true -DskipTests package`) e religado em `localhost:8098` — o Flyway aplicou a migração V102 (ACERVO) só nesse banco —, frontend com `npm run dev` em `localhost:3000` (este checkout, commit `cba24000`). As variáveis `MYSQL_*` e `S3_*` externas foram tiradas de todos os processos; nenhum servidor externo foi acessado. Contas: @lia.demo, @bia.demo, @vento.norte, @maia.solano e @admin_auditoria (todas fictícias). Chromium pelo Playwright em 1440×900 e 390×844, refazendo o fluxo de cada funcionalidade e os passos de cada problema já apontado; as capturas citadas foram conferidas a olho. **Ficou desligado:** IA paga (`AI_REMOTE_ENABLED=false`, nenhuma chave de provedor): o que depende dela foi avaliado só com o motor local. Sem placa de vídeo, a fluidez do 3D não foi avaliada; as cenas foram julgadas em quadros parados. Nenhum código do aplicativo foi alterado.
+
+### 10.1 As 21 funcionalidades que estavam abaixo de 8 na primeira auditoria
+
+| Funcionalidade | Nota da 1ª auditoria | Nota da reauditoria | Nota agora | O que melhorou | O que ainda impede a nota de passar de 8 | Evidência |
+|---|---|---|---|---|---|---|
+| FashionAI Lens | 2 | 6 | **7,5** | PNG com fundo transparente (`01_jeans.png`) agora dá 1 peça, cor Azul, sem recorte preto. Legging e saia em JPG: 1 peça cada (antes 3 a 5 pedaços). Peça sem categoria mostra "Que tipo de peça é esta?" com os 5 tipos; um toque grava ("Tipo salvo: Parte inferior. As peças parecidas foram atualizadas"), o cartão fica "CORRIGIDA" e passa a mostrar "Parecida no seu guarda-roupa: 94%". Abas Seu guarda-roupa, Recriar (3 looks, "Salvar como look"), Estilo & Hype e Descobrir abrem. 5 análises seguidas sem erro na rede. Celular sem rolagem lateral | 1. [app] Toda peça lisa sai como "Estampado" (jeans, legging, saia e camiseta lisas). Conferir: `01_jeans.png` não deve dizer "Estampado".<br>2. [app] O tipo nunca é sugerido: a leitura local sempre devolve "Peça" e depende do toque da pessoa.<br>3. [IA/GPU] Categoria certa, estilo ("Estilo ainda não lido") e peças de um look com várias roupas dependem da IA remota | [imagem](evidencias/auditoria3/lens-corrigida-d.jpg) [imagem](evidencias/auditoria3/lens-jeanspng-d.jpg) [imagem](evidencias/auditoria3/lens-m.jpg) |
+| Provador virtual | 4 | 7 | a auditar | | | |
+| Adicionar peça por foto (motor local) | 5 | 5 | a auditar | | | |
+| FLAIR CBC (elencos) | 6 | 7 | a auditar | | | |
+| Desafios | 6 | 7 | a auditar | | | |
+| Administração: demais painéis | 6,5 | 7,5 | a auditar | | | |
+| Busca | 6,5 | 7,5 | a auditar | | | |
+| Hype (nota de relevância) e painéis | 6,5 | 7 | a auditar | | | |
+| FLAIR 3D: Fashion Sports | 6,5 | 7 | a auditar | | | |
+| Minhas peças e página da peça | 7 | 7,5 | a auditar | | | |
+| Configurações | 7 | 8 | a auditar | | | |
+| Copilot | 7 | 7 | a auditar | | | |
+| Adicionar peça preenchendo os dados | 7 | 5 | a auditar | | | |
+| Selos (todos os tipos) | 7 | 7,5 | a auditar | | | |
+| FLAIR 3D: Fashion Detective | 7,5 | 7,5 | a auditar | | | |
+| Espelho e Vista-me | 7,5 | 7,5 | a auditar | | | |
+| FLAIR: central, cartas, decks, missões, carteira | 7,5 | 7,5 | a auditar | | | |
+| FLAIR 3D: os 15 jogos | 7,5 | não reauditada | a auditar | | | |
+| Momentos | 7,5 | 8 | a auditar | | | |
+| Notificações | 7,5 | 8,5 | a auditar | | | |
+| FAI Points e Loja do quarto | 7,5 | 8 | a auditar | | | |
