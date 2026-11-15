@@ -1,5 +1,7 @@
 # Auditoria de IHC/UX — Loja FAI, Meu Quarto, selos de marcas/celebridades e selos Hype (2026-10-25)
 
+> **Retirado em 15/11/2026.** O Quarto 3D (Meu Quarto) saiu do app por decisão da dona ("Retire totalmente o Quarto 3D do app FashionAI"); o guarda-roupa em perspectiva é o ACERVO (`/acervo`). Este documento fica como histórico do desenho. O que saiu, o que ficou e os dados que ficaram sem uso: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`.
+
 Auditoria feita pelo código (base: commit `0b1ee4a`), seguida das correções deste branch. Cada pergunta recebe
 **Aprovado**, **Parcial**, **Reprovado** ou **Sem evidência**. Os itens marcados como **Corrigido** foram reprovados
 na leitura e corrigidos neste branch, com teste. "Sem evidência" significa que o comportamento não foi encontrado no

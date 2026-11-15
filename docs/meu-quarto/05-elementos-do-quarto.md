@@ -1,5 +1,7 @@
 # 05 — Elementos do Meu Quarto
 
+> **Retirado em 15/11/2026.** O Quarto 3D (Meu Quarto) saiu do app por decisão da dona ("Retire totalmente o Quarto 3D do app FashionAI"); o guarda-roupa em perspectiva é o ACERVO (`/acervo`). Este documento fica como histórico do desenho. O que saiu, o que ficou e os dados que ficaram sem uso: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`.
+
 Todos os elementos físicos do Meu Quarto espalhados pelas especificações (RF27 a RF32 do Trello e os detalhes de
 engajamento). As especificações anteriores estão em [`docs/meu_guarda_roupa/`](../meu_guarda_roupa/) (`01` a `04`).
 As fases são as do plano de entrega: 1 = núcleo útil, 2 = inteligência, 3 = gamificação, 4 = comunidade.

@@ -10,8 +10,8 @@ guarda-roupa em perspectiva. Ficam: o Espelho (`/mirror`), o Guarda-roupa e as l
 o Provador (`/try-on`), o visualizador e o editor 3D da peça, o editor de roupas do FAI Atelier, os jogos FLAIR e o
 código do Heist/Afterparty (jogo de console Glass Empire). As "salas" dos jogos são cenas de jogo, não o quarto.
 
-Este documento foi escrito **antes** de apagar qualquer coisa (inventário primeiro) e é atualizado no fim com os números
-finais (seção 16). Veredito: **remover**, **manter** (com quem usa) ou **mover** (para onde).
+Este documento foi escrito **antes** de apagar qualquer coisa (inventário primeiro) e foi atualizado no fim com o que
+mudou durante a execução e os números finais (seção 17). Veredito: **remover**, **manter** (com quem usa) ou **mover** (para onde).
 
 ## 1. Rotas do frontend
 
@@ -87,7 +87,7 @@ tabelas de endpoints dos docs (seção 13).
 | `components/mirror/mirror-controls.tsx`, `mirror-part-sheet.tsx` | **manter**; sai a opção "Mostrar no quarto" (`showInRoom`), que só o quarto preenchia |
 | `app/(site)/(app)/challenges/page.tsx` | **manter**; sai o texto "decoração no quarto" do desafio |
 | `app/(site)/(app)/admin/dashboard/page.tsx` | **manter**; sai o link "Assets do quarto" |
-| `app/(site)/(app)/settings/page.tsx` | **manter**; o "som do quarto" (`soundEnabled`) é preferência do servidor usada por outras telas: só o texto muda se citar o quarto |
+| `app/(site)/(app)/settings/page.tsx` | **manter**; saem "Sons do quarto" e "Vibração leve": só as portas e gavetas do quarto tocavam (`lib/sensory.ts`, que sai junto). As preferências `soundEnabled`/`hapticsEnabled` continuam gravadas no servidor |
 | `components/guide/guide-demos.tsx`, `lib/guides/registry.ts` | **manter**; sai o guia `shop.room` (Loja do quarto) e o exemplo `ShopDemo` |
 | `components/studio.tsx` | **manter**; usa chaves `room3d.wardrobeCreator.*`/`room.composicao` como rótulos: as que o estúdio usa ficam |
 | `lib/fashion-card/aura-gating.ts` (`RoomTier`) | **manter**: é o nome do tipo dos níveis de FAI XP (Básico/Studio/Loft), não o quarto |
@@ -152,7 +152,7 @@ Cada uma ganha (ou reaproveita) um teste de caracterização antes da mudança. 
 | Demonstração gravada `public/points/demos/store.{mp4,webm,jpg}` (mostra a loja do quarto) | **remover**; o modo Loja fica sem vídeo ("demonstração indisponível") até gravar a loja física |
 | Tutorial de controles do quarto (`room-controls-tutorial.tsx`) | **remover** |
 | Menu lateral | `/room` já não estava no menu; o Guarda-roupa já tem `/acervo` (`lib/nav/nav-items.ts`): sem mudança |
-| Ícone `lib/icons/fai-icons.json` (glyph `room`, rota `/room`; ação `showInRoom`) | **manter** o ícone (catálogo de ícones), rota trocada para `/acervo` |
+| Ícones NAV-16 "Meu Quarto" e ACT-31 "Mostrar no quarto" (`lib/icons/fai-icons.json`, cópia em `fai-web`, gerador `scripts/icons/fai_icons.py`, planilha de prompts) | **remover**: nenhum código os usava; saem do catálogo e os 16 PNGs (457 KB) |
 | Onboarding (`components/onboarding.tsx`) | Não cita o quarto: sem mudança |
 
 ## 8. i18n
@@ -168,10 +168,10 @@ loja usavam.
 ## 9. CSS
 
 `app/(site)/_styles/07-meu-quarto.css`: **remover** as regras do quarto (`.room3d*`, `.room-pad-*`, `.room-gamepad`,
-`.room-settings*`, `.room-key`, `.room-context-prompt`, `.room-view*`, `.mirror-hands*`, `.atelier-room-3d*`). As regras
+`.room-settings*`, `.room-key`, `.room-context-prompt`, `.room-view*`, `.mirror-hands*`, `.atelier-room-3d*`) e, em
+`10-dashboard-detalhes.css`, o modo foto do quarto (`.room3d-stage[data-filter]`, `.room3d-dof`, `.photo-mode*`). As regras
 que não são do quarto e moravam no mesmo arquivo (`.feed-compact-grid` do feed e `.blocks-plate`/`.brick-*` das anatomias
-e do cartão DNA) **ficam**, e o arquivo passa a se chamar `07-feed-e-blocos.css`. `.room3d-stage[data-filter]` e
-`.room3d-dof` em `10-dashboard-detalhes.css` (modo foto do quarto): **remover**. `.room-flat-mirror*` em
+e do cartão DNA) **ficam**, e o arquivo passa a se chamar `07-feed-e-blocos.css`. `.room-flat-mirror*` em
 `15-provador-espelho.css` é o palco do Espelho em `/mirror`: **manter**.
 
 ## 10. Assets
@@ -292,3 +292,43 @@ Apagar as tabelas `room_*` fica para depois, numa migração própria, só se a 
 - **Chave de sessão `sai_room_look_draft`** (rascunho de look do Espelho e do Copilot para o Criar Look): o nome cita o
   quarto, mas é o contrato com o Criar Look; **fica**.
 - **Nível de FAI XP**: os nomes Básico/Studio/Loft vieram do quarto, mas os níveis liberam outras coisas; **ficam**.
+
+## 17. Resultado (o que foi feito)
+
+Branch `wip/sem-quarto`, a partir de `f591d2c0` (`origin/claude/adoring-davinci-mufbri`). Números contra essa base:
+
+| Medida | Valor |
+|---|---|
+| Arquivos apagados | 96 (50 do frontend, 25 do backend, 21 binários; 33 deles são testes). O CSS do quarto conta aqui: o que não era do quarto foi para `07-feed-e-blocos.css` (20 linhas) |
+| Arquivos criados | 14: `AcervoLugares`, `ForgottenPieces`, `PieceUsageDiary`, `SellerIdentity`, `components/atelier/rewards-panel.tsx`, `components/three/scene-props.tsx`, `lib/mirror/asset-state.ts`, seus testes, este documento e o CSS acima |
+| Arquivos movidos | 2 (`piece-model-viewer` e o teste, para `components/piece3d`) |
+| Linhas | 15.890 removidas, 1.468 acrescentadas (líquido: −14.422); 12.255 linhas de código nos arquivos apagados |
+| Endpoints removidos | 39 (seção 2) |
+| Telas | `/admin/room-assets` saiu; a aba Quarto do Atelier virou "Conquistas"; a aba Guarda-roupa 3D da marca saiu; `/room` ficou só como redirecionamento |
+| Chaves de texto | frontend: 505 removidas, 10 novas (12.045 → 11.550 por língua); backend: 167 removidas, 6 novas (2.911 → 2.750 por língua) |
+| Disco liberado | 23,3 MB nos arquivos apagados: GLBs do quarto 21,2 MB, ícones 0,46 MB, gravação da loja 0,81 MB e 0,84 MB de código |
+
+Diferenças em relação ao inventário inicial, decididas durante a execução:
+
+- **Configurações:** além do texto, saíram os dois interruptores (som e vibração), porque só o quarto os usava.
+- **Ícones:** NAV-16 e ACT-31 saíram do catálogo em vez de só trocar a rota.
+- **Copilot:** saíram também as sugestões da vista `QUARTO` (nenhuma tela manda essa vista) e as três chaves delas.
+- **FAI Points:** a conta deixa de mandar `aesthetic` em cada nível (era a cor do móvel do quarto; nenhuma tela lia); os
+  textos de "o que o nível libera" falam de auras, acabamentos do Hype, itens da loja física e Metamorfose.
+- **Testes que já falhavam:** `components/nav-order-editor.test.tsx` esperava "Meu Quarto" no menu do Guarda-roupa (o
+  item já não existia antes desta mudança; confirmado rodando o teste na base) e passou a usar o Espelho.
+- **E2E:** `scripts/e2e/suite_3.py` passa a seguir o convidado antes do duelo, porque o convite pela chave do quarto saiu.
+- **Dados de demonstração:** `MysqlDemoDataAdminAdapter.globalCounts` deixa de contar `room_catalog`.
+
+O que ficou e por quê:
+
+- O redirecionamento `/room` (página de 24 linhas): os links antigos com `?espelho=1` e `?piece=` dependem dos parâmetros.
+- `NotificationType.ROOM_LEVEL_UP`, `PipelineJobType.ROOM_ASSET_GENERATION` e o campo `ChallengeTemplate.roomDecoration`:
+  linhas antigas no banco ainda têm esses valores; apagar a constante quebraria a leitura delas.
+- A chave de sessão `sai_room_look_draft` (contrato do Espelho e do Copilot com o Criar Look).
+- `MirrorHost` (o mecanismo de anfitrião do Espelho, sem a opção "Mostrar no quarto") e `lib/nav/active-override.ts`
+  (sub-item do menu): genéricos, o app ainda os usa ou testa.
+- Chaves `room.mirror.*`, `room.composicao`, `room.outra_sugestao`, `room3d.wardrobeCreator.logo*` e `roomAssets.mould*`:
+  o Espelho, o estúdio e o laboratório de moldes usam. O nome cita o quarto; renomear fica para outra hora.
+- Os inventários gerados (`docs/refactoring/gof/all-*-routes.csv`) e os registros datados (diagramas, aulas antigas,
+  evidências) continuam como estavam: são fotografias de uma data.

@@ -1,6 +1,6 @@
 # ACERVO — o guarda-roupa como um espaço navegável
 
-Primeira versão funcional. Rota `/acervo`, no menu Guarda-roupa. Tudo aqui é privado da dona das peças: nada vai para o
+Primeira versão funcional. Rota `/acervo`, no menu Guarda-roupa. Desde 15/11/2026 é o **único** lugar do app para ver o guarda-roupa em perspectiva: o Quarto 3D saiu (`docs/quarto/RETIRADA_DO_QUARTO_3D.md`), e `/room` e `/atelier?tab=room…` levam para cá. O Espelho, o Copilot ("onde está…?") e o Inventory Score (dimensão Organização) leem daqui o lugar de cada peça (`AcervoLugares`). Tudo aqui é privado da dona das peças: nada vai para o
 feed, e a API só responde a quem é dona (o que é de outra pessoa responde "não encontrado").
 
 ## 1. O conceito, nas palavras da dona
