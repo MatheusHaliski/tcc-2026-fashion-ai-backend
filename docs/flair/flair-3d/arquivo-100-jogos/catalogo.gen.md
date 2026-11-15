@@ -1,5 +1,8 @@
 # FLAIR 3D — catálogo gerado dos 5 jogos
 
+> **Arquivo.** Os cinco capítulos e o gerador (`scripts/flair-games/`) saíram do app em 15/11/2026
+> (`../../ENDPOINTS_FLAIR.md`); este catálogo fica como registro.
+
 Arquivo GERADO por `scripts/flair-games/build.mjs` a partir de `scripts/flair-games/data/serie-*.json`: não editar à mão.
 Jogos no catálogo: 5.
 

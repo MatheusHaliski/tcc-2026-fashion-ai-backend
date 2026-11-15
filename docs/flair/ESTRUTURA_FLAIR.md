@@ -17,13 +17,12 @@ Inventário completo, com chamadores, testes e veredito: `ENDPOINTS_FLAIR.md` (1
 
 | Segmento | Telas | API |
 | --- | --- | --- |
-| FLAIR Card Building Challenge | `/flair/desafios`, `/flair/desafios/[slug]`, `/flair/elencos`, `/flair/elencos/[elenco]` | `/api/flair/challenges/...`, `/api/flair/elencos/...` |
+| FLAIR Card Building Challenge | `/flair/desafios`, `/flair/desafios/[slug]`, `/flair/elencos`, `/flair/elencos/[elenco]`; na Central FLAIR, os modos "Desafios de Montagem" e "Elencos" | `/api/flair/challenges/...`, `/api/flair/elencos/...` |
 | FLAIR 3D | `/flair/3d`, `/flair/3d/[nucleo]`; na Central FLAIR, o modo "FLAIR 3D" | `/api/flair/3d/...` (`Flair3dNucleoController`) |
-| FLAIR 3D MAKE UP | `/flair/make-up`, `/flair/make-up/[brief]` | `/api/flair/make-up/...` |
+| FLAIR 3D MAKE UP | `/flair/make-up`, `/flair/make-up/[brief]`; na Central FLAIR, o modo "FLAIR 3D MAKE UP" | `/api/flair/make-up/...` |
 
 Só `/flair/3d` se chama FLAIR 3D. Os cinco capítulos do desenho anterior (Espelho Partido, Prova com a Estrela, Rooftop
-ao Pôr do Sol, Cinco Clientes e Chefe: Vellard, em `/flair/jogos` sobre `/api/flair/games/...`) ficam no app como
-**Cidade de Vidro**, fora dos três segmentos e fora da Central, porque o capítulo da Suíte de Vidro é o único lugar que
-mostra o quarto em 3D e os capítulos são a única fonte das recompensas deles (`ENDPOINTS_FLAIR.md` §1.1). Os modos
-clássicos (`/flair/partidas`) e a coleção (`/flair/cartas`, `/decks`, `/lojas`, `/carteira`, `/missoes`) continuam na
-Central.
+ao Pôr do Sol, Cinco Clientes e Chefe: Vellard, em `/flair/jogos` sobre `/api/flair/games/...`) saíram do app em
+15/11/2026, por decisão da dona; os endereços antigos levam ao FLAIR 3D, e o quarto em 3D, que só se via no capítulo
+da Suíte de Vidro, ficou no Atelier › Quarto (`ENDPOINTS_FLAIR.md` §1.2). Os modos clássicos (`/flair/partidas`) e a
+coleção (`/flair/cartas`, `/decks`, `/lojas`, `/carteira`, `/missoes`) continuam na Central.

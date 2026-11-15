@@ -1,5 +1,9 @@
 # FLAIR 3D MAKE UP: como implementar a maquiagem, o júri e o palco que reage
 
+> **Nota de 15/11/2026.** A área antiga de capítulos (`/flair/jogos`, `/api/flair/games`, `FlairGameController`,
+> `scripts/flair-games/`) saiu do app; o FLAIR 3D são os 15 núcleos (`/api/flair/3d`). As referências a ela abaixo
+> são do plano original e ficam como registro. Ver `docs/flair/ENDPOINTS_FLAIR.md`.
+
 Data: 07/11/2026. Pesquisa técnica com leitura do código; nenhum código mudou. Complementa `ESTUDO_DREST.md`,
 `REUSO_PROVADOR_E_AVATAR.md` (câmeras, avatar, catálogo e módulos de reuso, cujas tabelas este documento **não repete**),
 `../flair-3d/JOGOS.md`, `../flair-3d/PROTAGONISTA_E_RECURSOS.md` e `docs/plataforma/APP_NATIVO_UNREAL.md`.

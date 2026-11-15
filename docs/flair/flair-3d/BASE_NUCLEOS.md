@@ -2,8 +2,8 @@
 
 O FLAIR 3D são os 15 núcleos (os jogos 1 a 15 de `JOGOS.md`), em `/flair/3d` sobre `/api/flair/3d/...`. Cada núcleo
 ganha uma base que já joga a modalidade mais simples dele, para os jogos derivados copiarem o mesmo esqueleto. Este
-documento é o contrato entre backend e frontend. A API `/api/flair/games/...` não é do FLAIR 3D: é a da Cidade de Vidro,
-os capítulos do desenho anterior (`../ENDPOINTS_FLAIR.md`).
+documento é o contrato entre backend e frontend. A API antiga `/api/flair/games/...`, dos capítulos do desenho
+anterior, saiu do app em 15/11/2026 (`../ENDPOINTS_FLAIR.md`).
 
 ## Camadas
 
