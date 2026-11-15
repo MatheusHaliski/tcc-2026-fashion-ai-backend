@@ -2,7 +2,8 @@
 /**
  * Montagem de um Desafio de Montagem (/flair/desafios/[slug]): em cima, a cena dinâmica do desafio como quebra-cabeça
  * (uma peça por vaga: entra quando a carta é posta e encaixa conforme a sintonia que o servidor dá); embaixo, as vagas
- * em grade; ao pé da tela, a bandeja com as cartas da vaga em destaque. Pôr uma carta é um toque ou um arrasto.
+ * em grade; ao pé da tela, a bandeja com as cartas da vaga em destaque. Pôr uma carta é um toque, um arrasto ou
+ * Espaço/A no teclado e no controle (use-cbc-controle.ts).
  * A lista está em cbc.tsx; os dados e a conferência, em use-cbc-mesa.ts; a jogada, em use-cbc-jogo.ts.
  */
 import Link from "next/link";
@@ -15,6 +16,7 @@ import { CbcRewardDialog, Story, SubmissionView } from "@/components/flair/cbc-p
 import { CbcVagas } from "@/components/flair/cbc-vagas";
 import { CenaViva } from "@/components/flair/cenas/cena-viva";
 import { Bandeja } from "@/components/flair/montagem/bandeja";
+import { useCbcControle } from "@/components/flair/use-cbc-controle";
 import { useCbcJogo } from "@/components/flair/use-cbc-jogo";
 import { useCbcLabels, windowOf } from "@/components/flair/use-cbc-labels";
 import { useCbcMesa } from "@/components/flair/use-cbc-mesa";
@@ -27,6 +29,7 @@ export function CbcPlay({ slug }: { slug: string }) {
   const m = useCbcMesa(slug);
   const j = useCbcJogo(m);
   const d = m.d;
+  const foco = useCbcControle(j, d?.slots.map((s) => s.key) ?? [], !!d && !m.readOnly);
 
   if (m.detail.error) return <ErrorState error={m.detail.error} onRetry={m.detail.reload} />;
   if (m.detail.loading || !d) return <Skeleton className="h-96" />;
@@ -73,7 +76,7 @@ export function CbcPlay({ slug }: { slug: string }) {
             )}
             {m.check && m.check.story.length > 0 && <Story lines={m.check.story} text={storyText} />}
             {bandeja && j.atual && (
-              <Bandeja vagaId={j.atual.key} vaga={j.nomeDaVaga(j.atual.key)} aceita={posicao(j.atual.position)} opcoes={j.opcoes} estrita={false} foco={null}
+              <Bandeja vagaId={j.atual.key} vaga={j.nomeDaVaga(j.atual.key)} aceita={posicao(j.atual.position)} opcoes={j.opcoes} estrita={false} foco={foco}
                 temCarta={!!m.placed[j.atual.key]} podeDesfazer={m.mesa.podeDesfazer} onEscolher={j.escolher} onTirar={() => j.atual && j.tirar(j.atual.key)}
                 onDesfazer={j.desfazer} onFechar={j.fechar} pegar={j.pegar} posicao={posicao} atributo={(a) => t(`flair3d.elencos.attr.${a}`)} aviso={j.aviso} />
             )}

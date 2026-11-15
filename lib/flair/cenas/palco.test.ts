@@ -30,8 +30,13 @@ describe("peças como janelas do mesmo quadro", () => {
     const copias = tela.chamadas.filter((c) => c.metodo === "drawImage");
     expect(copias).toHaveLength(5);
     expect(copias.every((c) => c.args[0] === quadro)).toBe(true);
-    // todas copiam o quadro inteiro na mesma posição: a emenda entre duas peças encaixadas não existe
-    expect(new Set(copias.map((c) => c.args.slice(1).join(","))).size).toBe(1);
+    // cada janela copia só a caixa da peça, sem escala nem deslocamento (origem = destino × 2 px por unidade):
+    // a emenda entre duas peças encaixadas não existe
+    for (const c of copias) {
+      const [sx, sy, sw, sh, dx, dy, dw, dh] = c.args.slice(1) as number[];
+      expect([sx, sy, sw, sh]).toEqual([dx * 2, dy * 2, dw * 2, dh * 2]);
+      expect(dw * dh).toBeLessThan(160 * 100 * 0.4);
+    }
     expect(tela.chamadas.filter((c) => c.metodo === "setLineDash" && (c.args[0] as number[]).length > 0)).toHaveLength(1);
     // a peça encaixada não sai do lugar; a solta é deslocada e girada com a janela
     const giros = tela.chamadas.filter((c) => c.metodo === "rotate").map((c) => c.args[0] as number);
@@ -99,7 +104,7 @@ describe("palco", () => {
     let relogio = 0;
     for (let i = 0; i < 300; i++) palco.pintar(tela.ctx, (relogio += 1 / 60), false);
     expect(palco.emMovimento(relogio)).toBe(false);
-    // enquanto há peça faltando, a cena é pintada por janelas
+    // enquanto há peça faltando, a cena é pintada por janelas (uma por peça, cada uma no seu lugar)
     tela.limpar();
     palco.pintar(tela.ctx, (relogio += 1 / 60), false);
     expect(tela.conta("clip")).toBeGreaterThanOrEqual(2);

@@ -8,6 +8,10 @@ import { ARTE_A, ARTE_L } from "@/lib/flair/cenas/enfeites";
 import type { Ctx } from "@/lib/flair/cenas/tipos";
 import type { PecaEstado } from "@/lib/flair/elencos/board";
 import { folgaDaPeca, recortesDoQuebraCabeca, type Folga, type Recorte } from "@/lib/flair/elencos/jigsaw";
+import { DESBOTA_DO_TOM, ESCALA_DOS_TONS, type Tom, type Tons } from "@/lib/flair/cenas/tons";
+
+/** Caixa [x, y, largura, altura] em unidades da arte. */
+export type Caixa = [number, number, number, number];
 
 /** Estado de uma célula do recorte: o da peça da linha, ou "moldura" nas células que sobram na grade. */
 export type EstadoDaCelula = PecaEstado | "moldura";
@@ -15,11 +19,26 @@ export type EstadoDaCelula = PecaEstado | "moldura";
 export interface Recortes {
   recortes: Recorte[];
   contornos: Amostra[];
+  /** caixa de cada peça [x, y, largura, altura], com as abas e uma folga: só essa parte do quadro é copiada */
+  caixas: Caixa[];
+}
+
+function caixaDe(a: Amostra): Caixa {
+  let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < a.pontos.length; i += 2) {
+    x0 = Math.min(x0, a.pontos[i]);
+    x1 = Math.max(x1, a.pontos[i]);
+    y0 = Math.min(y0, a.pontos[i + 1]);
+    y1 = Math.max(y1, a.pontos[i + 1]);
+  }
+  const [x, y] = [Math.max(0, Math.floor(x0 - 1)), Math.max(0, Math.floor(y0 - 1))];
+  return [x, y, Math.min(ARTE_L, Math.ceil(x1 + 1)) - x, Math.min(ARTE_A, Math.ceil(y1 + 1)) - y];
 }
 
 export function prepararRecortes(n: number): Recortes {
   const { recortes } = recortesDoQuebraCabeca(n);
-  return { recortes, contornos: recortes.map((r) => amostrar(r.d)) };
+  const contornos = recortes.map((r) => amostrar(r.d));
+  return { recortes, contornos, caixas: contornos.map(caixaDe) };
 }
 
 /** Folga em movimento de uma peça: onde está agora e a velocidade (a mola leva até o alvo). */
@@ -73,24 +92,29 @@ function contorno(ctx: Ctx, a: Amostra): void {
   ctx.closePath();
 }
 
-/** Quanto a janela perde de cor: a peça solta fica cinza, a quase no lugar guarda parte da cor, a encaixada tem toda. */
-const DESBOTA: Partial<Record<EstadoDaCelula, number>> = { vermelha: 1, chegando: 1, laranja: 0.55 };
+/** Tom de cada estado: a peça solta e a que chega ficam cinza, a quase no lugar guarda parte da cor, a encaixada tem toda. */
+const TOM: Partial<Record<EstadoDaCelula, Tom>> = { vermelha: "cinza", chegando: "cinza", laranja: "meio" };
 
-/** Escurece ou tira a cor da janela conforme o estado (a área de recorte já está ativa). */
-function velar(ctx: Ctx, estado: EstadoDaCelula): void {
-  const desbota = DESBOTA[estado] ?? 0;
-  if (desbota > 0) {
+/** Tons que os estados pedem (os que nenhuma peça usa não são pintados). */
+export function tonsPedidos(estados: EstadoDaCelula[]): Set<Tom> {
+  return new Set(estados.map((e) => TOM[e]).filter((t): t is Tom => !!t));
+}
+
+/** Escurece a janela conforme o estado e, sem `tons` prontos, também tira a cor (a área de recorte já está ativa). */
+function velar(ctx: Ctx, estado: EstadoDaCelula, [x, y, w, h]: Caixa, semTons: boolean): void {
+  const tom = TOM[estado];
+  if (tom && semTons) {
     ctx.globalCompositeOperation = "saturation";
-    ctx.globalAlpha = desbota;
+    ctx.globalAlpha = DESBOTA_DO_TOM[tom];
     ctx.fillStyle = "#000";
-    ctx.fillRect(-20, -20, ARTE_L + 40, ARTE_A + 40);
+    ctx.fillRect(x, y, w, h);
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
   }
   const veu = estado === "vermelha" ? 0.6 : estado === "chegando" ? 0.72 : estado === "laranja" ? 0.12 : estado === "moldura" ? 0.6 : 0;
   if (veu > 0) {
     ctx.fillStyle = `rgba(7,8,13,${veu})`;
-    ctx.fillRect(-20, -20, ARTE_L + 40, ARTE_A + 40);
+    ctx.fillRect(x, y, w, h);
   }
 }
 
@@ -103,9 +127,9 @@ export interface Composicao {
 
 /**
  * Pinta em `ctx` (largura em pixels dada) o tabuleiro do quebra-cabeça com as peças no estado e na folga dados, todas
- * copiando o mesmo `quadro` da cena.
+ * copiando o mesmo `quadro` da cena (ou o tom dele já sem cor, com `tons` pintados por tons.ts neste quadro).
  */
-export function comporPecas(ctx: Ctx, quadro: CanvasImageSource, r: Recortes, c: Composicao, largura: number): void {
+export function comporPecas(ctx: Ctx, quadro: CanvasImageSource, r: Recortes, c: Composicao, largura: number, tons?: Tons | null): void {
   const s = largura / ARTE_L;
   ctx.setTransform(s, 0, 0, s, 0, 0);
   ctx.globalAlpha = 1;
@@ -138,10 +162,14 @@ export function comporPecas(ctx: Ctx, quadro: CanvasImageSource, r: Recortes, c:
         ctx.lineWidth = 2.2;
         ctx.stroke();
       }
+      // só a caixa da peça: copiar o quadro inteiro por peça custava uma tela cheia por peça a cada quadro
+      const [x, y, w, h] = r.caixas[i];
       ctx.save();
       ctx.clip();
-      ctx.drawImage(quadro, 0, 0, ARTE_L, ARTE_A);
-      velar(ctx, estado);
+      const tom = TOM[estado];
+      const [fonte, k] = tom && tons ? [tons[tom].canvas, s * ESCALA_DOS_TONS] : [quadro, s];
+      ctx.drawImage(fonte, x * k, y * k, w * k, h * k, x, y, w, h);
+      velar(ctx, estado, r.caixas[i], !tons);
       ctx.restore();
       const forca = estado === "moldura" ? 1 : c.corte;
       if (forca > 0.01) {

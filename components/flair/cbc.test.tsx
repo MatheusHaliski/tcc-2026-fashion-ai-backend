@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CbcList, CbcPlay } from "@/components/flair/cbc";
+import { act } from "@testing-library/react";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 
 /**
@@ -159,6 +160,70 @@ describe("montagem", () => {
     expect(screen.getByRole("note").textContent).toContain("ainda não abriu");
     expect((screen.getByRole("button", { name: "Entrega abre com o desafio" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText("Você ainda não tem cartas FLAIR disponíveis")).toBeTruthy();
+    await settle();
+  });
+});
+
+describe("teclado e controle", () => {
+  const rotas = () => loggedAs(ME, {
+    "GET /api/flair/challenges/verao-em-ipanema": detail(),
+    "GET /api/me/flair/cards": CARDS,
+    "POST /api/flair/challenges/verao-em-ipanema/check": (_u: URL, init: RequestInit) => evaluation((JSON.parse(String(init.body)) as { slots: Record<string, string> }).slots, false),
+  });
+
+  it("setas escolhem a vaga, Espaço entra na bandeja e põe, Backspace sai da bandeja ou tira", async () => {
+    rotas();
+    renderApp(<CbcPlay slug="verao-em-ipanema" />);
+    await screen.findByRole("heading", { name: "Verão em Ipanema" });
+    await waitFor(() => expect(carta("Tênis Aero")).toBeTruthy());
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(vaga("guarda_sol").getAttribute("aria-current")).toBe("true");
+    fireEvent.keyDown(window, { key: " " });
+    expect(carta("Bolsa transversal").className).toContain("is-focus");
+    fireEvent.keyDown(window, { key: " " });
+    expect(naVaga("guarda_sol")).toBe("Bolsa transversal");
+    // o destaque segue para a próxima vaga vazia, ainda dentro da bandeja: Espaço põe a primeira carta dela
+    expect(vaga("quiosque").getAttribute("aria-current")).toBe("true");
+    fireEvent.keyDown(window, { key: " " });
+    expect(naVaga("quiosque")).toBe("Camisa de linho");
+    // a próxima vaga vazia agora é a primeira; Backspace sai da bandeja, as setas voltam ao quiosque e Backspace tira
+    expect(vaga("calcadao").getAttribute("aria-current")).toBe("true");
+    fireEvent.keyDown(window, { key: "Backspace" });
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(vaga("calcadao").getAttribute("aria-current")).toBe("true");
+    fireEvent.keyDown(window, { key: "ArrowDown" });
+    expect(vaga("quiosque").getAttribute("aria-current")).toBe("true");
+    expect(naVaga("quiosque")).toBe("Camisa de linho");
+    fireEvent.keyDown(window, { key: "Backspace" });
+    expect(naVaga("quiosque")).toBe("Parte de cima");
+    await settle();
+  });
+
+  it("controle: direcional escolhe a vaga, A entra e põe, B sai", async () => {
+    const frames = new Map<number, FrameRequestCallback>();
+    let seq = 0;
+    vi.stubGlobal("requestAnimationFrame", (f: FrameRequestCallback) => { frames.set(++seq, f); return seq; });
+    vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
+    const pad = { index: 0, mapping: "standard", axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
+    vi.stubGlobal("navigator", { ...navigator, getGamepads: () => [pad] });
+    const quadro = () => act(() => { const todos = [...frames.values()]; frames.clear(); todos.forEach((f) => f(performance.now())); });
+    const apertar = (botao: number) => { pad.buttons[botao].pressed = true; quadro(); pad.buttons[botao].pressed = false; quadro(); };
+    rotas();
+    renderApp(<CbcPlay slug="verao-em-ipanema" />);
+    await screen.findByRole("heading", { name: "Verão em Ipanema" });
+    await waitFor(() => expect(carta("Tênis Aero")).toBeTruthy());
+    act(() => { window.dispatchEvent(new Event("gamepadconnected")); });
+    quadro();
+    apertar(15);
+    expect(vaga("guarda_sol").getAttribute("aria-current")).toBe("true");
+    apertar(0);
+    apertar(0);
+    expect(naVaga("guarda_sol")).toBe("Bolsa transversal");
+    apertar(1);
+    apertar(14);
+    expect(vaga("guarda_sol").getAttribute("aria-current")).toBe("true");
+    apertar(1);
+    expect(naVaga("guarda_sol")).toBe("Acessório");
     await settle();
   });
 });

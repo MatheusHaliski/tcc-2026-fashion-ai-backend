@@ -4,10 +4,11 @@
  */
 import { FORMAS } from "@/lib/flair/cenas/catalogo-formas";
 import { preparar } from "@/lib/flair/cenas/motor";
-import { alvoDaCelula, aproximar, assentada, comporPecas, PARADA, prepararRecortes, type EstadoDaCelula, type FolgaViva, type Recortes } from "@/lib/flair/cenas/pecas";
+import { alvoDaCelula, aproximar, assentada, comporPecas, PARADA, prepararRecortes, tonsPedidos, type EstadoDaCelula, type FolgaViva, type Recortes } from "@/lib/flair/cenas/pecas";
 import { criarPintor } from "@/lib/flair/cenas/pintura";
 import { brilhoDoFloreio, FLOREIO_S, tempoDaCena } from "@/lib/flair/cenas/relogio";
 import type { CriarTela } from "@/lib/flair/cenas/sprites";
+import { criarTons, pintarTons, type Tons } from "@/lib/flair/cenas/tons";
 import type { Cena, Ctx } from "@/lib/flair/cenas/tipos";
 import type { PecaEstado } from "@/lib/flair/elencos/board";
 
@@ -35,6 +36,8 @@ export function criarPalco(cena: Cena, criar: CriarTela, largura: number, aoCarr
   const pintor = criarPintor(preparar(cena), FORMAS, criar, largura, aoCarregar);
   const quadro = pintor ? criar(pintor.largura, pintor.altura) : null;
   if (!pintor || !quadro) return null;
+  // os tons sem cor só existem no quebra-cabeça (as miniaturas, cena inteira, não pagam por eles)
+  let tons: Tons | null = null;
   let estados: EstadoDaCelula[] | null = null;
   let recortes: Recortes | null = null;
   let numero = -1;
@@ -87,7 +90,9 @@ export function criarPalco(cena: Cena, criar: CriarTela, largura: number, aoCarr
     pintor!.quadro(quadro!.ctx, t, brilho);
     folgas = folgas.map((f, i) => aproximar(f, alvoDaCelula(i, estados![i]), dt));
     if (completa) corte = Math.max(0, corte - dt / 0.9);
-    comporPecas(ctx, quadro!.canvas, recortes, { estados, folgas, corte }, pintor!.largura);
+    tons ??= criarTons(criar, pintor!.largura, pintor!.altura);
+    if (tons) pintarTons(tons, quadro!.canvas, tonsPedidos(estados));
+    comporPecas(ctx, quadro!.canvas, recortes, { estados, folgas, corte }, pintor!.largura, tons);
   }
 
   return { largura: pintor.largura, altura: pintor.altura, definir, pintar, emMovimento };

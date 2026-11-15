@@ -64,13 +64,13 @@ export function useCbcJogo(m: CbcMesa) {
   };
   const pegar = useArrastar((cardId, alvo, origem) => (alvo ? porCarta(alvo, cardId) : origem && tirar(origem)));
 
-  // Z desfaz; Backspace ou Delete tira a carta da vaga em destaque
+  // Z desfaz; Delete tira a carta da vaga em destaque (Backspace e o controle ficam com use-cbc-controle.ts)
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
       const alvo = e.target as HTMLElement | null;
       if (e.altKey || alvo?.tagName === "INPUT" || alvo?.tagName === "TEXTAREA" || m.readOnly) return;
       if (e.key.toLowerCase() === "z") desfazer();
-      else if ((e.key === "Backspace" || e.key === "Delete") && atual) tirar(atual.key);
+      else if (e.key === "Delete" && atual) tirar(atual.key);
     };
     window.addEventListener("keydown", tecla);
     return () => window.removeEventListener("keydown", tecla);

@@ -50,6 +50,9 @@ export function Bandeja(p: BandejaProps) {
   useEffect(() => {
     if (lista.current) lista.current.scrollLeft = 0;
   }, [p.vagaId]);
+  useEffect(() => {
+    if (p.foco != null) lista.current?.children[p.foco]?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [p.foco]);
   return (
     <section ref={caixa} className="mt-tray" role="region" aria-label={t("flair.mesa.tray", { vaga: p.vaga })} data-testid="mesa-bandeja" data-drop-remove>
       <div className="mt-tray-head">
