@@ -77,7 +77,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/guide/guide-demos.tsx": {
-   "max": 379,
+   "max": 360,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/interactions.tsx": {
