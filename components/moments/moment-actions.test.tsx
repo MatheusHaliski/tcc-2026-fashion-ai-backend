@@ -68,7 +68,7 @@ describe("SubmitDialog", () => {
     fireEvent.click(screen.getByRole("radio", { name: /No-Buy · \+40/ }));
     fireEvent.click(preview);
     expect(await screen.findByText("82", { selector: "b" })).toBeTruthy();
-    expect(screen.getByText("leitura: dark")).toBeTruthy();
+    expect(screen.getByText("leitura: Dark")).toBeTruthy();   // a chave vira nome, não o código cru
     expect(screen.getByText("Estilos")).toBeTruthy();
     expect(screen.getByText("Forte associação ao tema pelos estilos Ousado.")).toBeTruthy();
     expect(screen.getByText("62")).toBeTruthy();   // hype arredondado

@@ -5740,7 +5740,7 @@
   "moments.mine_saved_empty": "Nada guardado todavía.",
   "moments.mine_completed": "Concluidos",
   "moments.mine_completed_empty": "Los Momentos que vivas quedan aquí, para siempre.",
-  "moments.participants_count": "{n} participantes",
+  "moments.participants_count": "{n, plural, one {# participante} other {# participantes}}",
   "moments.looks_count": "{n, plural, one {# look} other {# looks}}",
   "moments.points_bonus_pct": "+{pct}% FAI Points",
   "moments.points_enabled": "FAI Points",

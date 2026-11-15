@@ -5740,7 +5740,7 @@
   "moments.mine_saved_empty": "Nothing saved yet.",
   "moments.mine_completed": "Completed",
   "moments.mine_completed_empty": "The Moments you live stay here, forever.",
-  "moments.participants_count": "{n} participants",
+  "moments.participants_count": "{n, plural, one {# participant} other {# participants}}",
   "moments.looks_count": "{n, plural, one {# look} other {# looks}}",
   "moments.points_bonus_pct": "+{pct}% FAI Points",
   "moments.points_enabled": "FAI Points",
