@@ -83,6 +83,15 @@ function Armario({ x, z, aberto, cor }: { x: number; z: number; aberto: boolean;
 function Porta({ x, z, estado }: { x: number; z: number; estado: "aberta" | "trancada" | "barrada" }) {
   const [px, pz, giro] = contraParede(x, z);
   const cor = estado === "aberta" ? "#4FB36A" : estado === "barrada" ? "#E0A030" : "#C9443A";
+  if (giro === 180) {
+    // porta na frente aberta da sala (do lado da câmera): só a soleira acesa no piso, para não tapar a pessoa
+    return (
+      <mesh position={[px, 0.015, pz - 0.3]} rotation={[-Math.PI / 2, 0, 0]} name={`porta-${estado}`}>
+        <planeGeometry args={[1.4, 0.5]} />
+        <meshStandardMaterial color={cor} emissive={cor} emissiveIntensity={0.6} />
+      </mesh>
+    );
+  }
   return (
     <group position={[px, 0, pz]} rotation={[0, (giro * Math.PI) / 180, 0]} name={`porta-${estado}`}>
       <mesh position={[0, 1.15, 0]}>
