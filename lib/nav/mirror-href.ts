@@ -1,6 +1,6 @@
 /*
- * O Espelho (RF28) tem casa própria: /mirror. O Meu Quarto deixou de ser uma tela (o quarto continua como dados e como
- * cenário dos jogos da Suíte de Vidro), e os links do app — detalhe da peça, insights, lookbook — apontam direto ao espelho.
+ * O Espelho (RF28) tem casa própria: /mirror. O Meu Quarto saiu do app em 15/11/2026 (o guarda-roupa em perspectiva é o
+ * ACERVO), e os links do app — detalhe da peça, insights, lookbook — apontam direto ao espelho.
  *
  *   /mirror                       o espelho com o look de agora
  *   /mirror?vestir=<id>           veste a peça ao abrir (parâmetro de uma vez só: sai da URL depois)
