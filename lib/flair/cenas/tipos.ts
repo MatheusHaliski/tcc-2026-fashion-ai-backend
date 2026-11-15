@@ -105,6 +105,8 @@ export type Enfeite =
 
 export interface Cena {
   id: string;
+  /** nome do uso quando a cena é uma variante (outra luz, espelhada) de uma cena do catálogo */
+  variante?: string;
   paleta: Paleta;
   fundo: Enfeite[];
   trilhos: Trilho[];

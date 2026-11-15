@@ -49,6 +49,7 @@ export function CenaViva({ cena, pecas = null, completa = false, parada = false,
       width={640}
       height={400}
       data-cena={cena.id}
+      data-variante={cena.variante}
       data-pecas={pecas ? pecas.join(",") : undefined}
       data-completa={completa || undefined}
       role={decorativa ? undefined : "img"}
