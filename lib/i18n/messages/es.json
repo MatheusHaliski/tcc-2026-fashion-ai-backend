@@ -37,7 +37,6 @@
   "atelier3d.create.skirt": "Falda",
   "atelier3d.create.trousers": "Pantalón",
   "atelier3d.create.color": "Color de la prenda base",
-  "atelier3d.create.action": "Crear base 3D",
   "atelier3d.create.error": "No se pudo crear la prenda base. Inténtelo de nuevo.",
   "atelier3d.create.replaceTitle": "¿Reemplazar borrador?",
   "atelier3d.create.replaceWarning": "Crear una nueva base reemplaza los cambios sin guardar del editor. Guarde la versión actual para conservarlos.",
@@ -12043,5 +12042,6 @@
   "multiPiece.sugestao_tipo": "Por la forma del recorte, parece {category}. Revísalo antes de usarlo.",
   "multiPiece.usar_como": "Usar como {category}",
   "lens.category_pick.sugestao": "Sugerencia por la forma del recorte: {category}. Toca para confirmar o elige otro tipo.",
-  "lens.category_pick.sugerida": "{category} (sugerida)"
+  "lens.category_pick.sugerida": "{category} (sugerida)",
+  "atelier3d.create.actionKind": "Crear base 3D: {kind}"
 }

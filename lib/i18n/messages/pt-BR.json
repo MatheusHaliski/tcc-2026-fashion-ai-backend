@@ -37,7 +37,6 @@
   "atelier3d.create.skirt": "Saia",
   "atelier3d.create.trousers": "Calça",
   "atelier3d.create.color": "Cor da peça base",
-  "atelier3d.create.action": "Criar base 3D",
   "atelier3d.create.error": "Não foi possível criar a peça base. Tente novamente.",
   "atelier3d.create.replaceTitle": "Substituir rascunho?",
   "atelier3d.create.replaceWarning": "Criar uma nova base substitui as alterações não salvas no editor. Salve a versão atual para preservá-las.",
@@ -12043,5 +12042,6 @@
   "multiPiece.sugestao_tipo": "Pela forma do recorte, parece {category}. Confira antes de usar.",
   "multiPiece.usar_como": "Usar como {category}",
   "lens.category_pick.sugestao": "Sugestão pela forma do recorte: {category}. Toque para confirmar ou escolha outro tipo.",
-  "lens.category_pick.sugerida": "{category} (sugerida)"
+  "lens.category_pick.sugerida": "{category} (sugerida)",
+  "atelier3d.create.actionKind": "Criar base 3D: {kind}"
 }

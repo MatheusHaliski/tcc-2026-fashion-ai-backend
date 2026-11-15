@@ -37,7 +37,6 @@
   "atelier3d.create.skirt": "Skirt",
   "atelier3d.create.trousers": "Trousers",
   "atelier3d.create.color": "Garment base color",
-  "atelier3d.create.action": "Create 3D base",
   "atelier3d.create.error": "Unable to create the garment base. Try again.",
   "atelier3d.create.replaceTitle": "Replace draft?",
   "atelier3d.create.replaceWarning": "Creating a new base replaces unsaved changes in the editor. Save the current version to preserve them.",
@@ -12043,5 +12042,6 @@
   "multiPiece.sugestao_tipo": "From the shape of the crop, it looks like {category}. Check before using it.",
   "multiPiece.usar_como": "Use as {category}",
   "lens.category_pick.sugestao": "Suggestion from the shape of the crop: {category}. Tap to confirm or pick another type.",
-  "lens.category_pick.sugerida": "{category} (suggested)"
+  "lens.category_pick.sugerida": "{category} (suggested)",
+  "atelier3d.create.actionKind": "Create 3D base: {kind}"
 }

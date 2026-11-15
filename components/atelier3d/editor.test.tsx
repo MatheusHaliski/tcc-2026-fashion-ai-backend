@@ -113,3 +113,36 @@ it("requires reconfirmation when catalog gender changes since the saved version"
   expect(saved.materials["n0.p0"]).toMatchObject({ color: "#2266aa", repeat: [3, 3] });
   expect(saved.vertices["n0.p0"][0]).toEqual([0, 0, 0.2]);
 });
+
+it("sem versão salva, a conferência que chega antes da cena não é apagada: o Salvar liga depois da mudança", async () => {
+  loggedAs(ME);
+  const evidence: GenderEvidence = { sources: [], status: "INCOMPLETE", suggestion: null, hash: "h0", options: [] };
+  let answer!: (scene: SceneResponse) => void;
+  client.get.mockImplementation(() => new Promise<SceneResponse>((resolve) => { answer = resolve; }));
+  client.bytes.mockResolvedValue(triangle());
+  client.evidence.mockReset().mockResolvedValue(evidence);
+  client.save.mockReset().mockImplementation(async (body) => ({
+    id: "v1", sequence: 1, assetId: "a1", author: "test", createdAt: "2026-11-15T00:00:00Z",
+    document: body.document, gender: evidence, confirmedTipoLookId: null,
+  }));
+  renderApp(<Atelier3dEditor projectId="project" />);
+  // a conferência da composição responde primeiro (auditoria 10: "Carregando…" sem fim e Salvar desligado)
+  await waitFor(() => expect(client.evidence).toHaveBeenCalled());
+  await new Promise((r) => setTimeout(r, 0));
+  answer({
+    title: "Saia teste", edit: true, export: true, manageGuests: false,
+    asset: { id: "a1", filename: "fai-skirt-prototype.glb", bytes: 500, sha256: "a".repeat(64),
+      inspection: { nodes: 1, meshes: 1, materials: 1, vertices: 3, skinned: false, morphs: false, animated: false, primitives: { "n0.p0": 3 }, extensions: [] } },
+    current: null, history: [],
+  } as unknown as SceneResponse);
+  fireEvent.click(await screen.findByRole("checkbox", { name: "Salvar automaticamente" }));
+  const input = await screen.findByLabelText("Posição — unidades do arquivo X");
+  expect(await screen.findByText(/Ainda não há sugestão/)).toBeTruthy();
+  fireEvent.change(input, { target: { value: "0.12" } });
+  const save = screen.getByRole("button", { name: "Salvar", exact: true }) as HTMLButtonElement;
+  await waitFor(() => expect(save.disabled).toBe(false));
+  fireEvent.click(save);
+  await waitFor(() => expect(client.save).toHaveBeenCalledOnce());
+  expect(client.save.mock.calls[0][0].genderEvidenceHash).toBe("h0");
+  await waitFor(() => expect(screen.getAllByRole("status")[0].textContent).toContain("Versão 1"));
+});
