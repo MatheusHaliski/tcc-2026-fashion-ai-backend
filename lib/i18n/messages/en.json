@@ -12302,5 +12302,9 @@
   "editor3d.noCustomization": "No customisation saved yet",
   "editor3d.noModelTitle": "This piece has no 3D model yet",
   "editor3d.noModelHint": "The editor customises the piece's 3D model: colour, material, position, rotation and scale. The model comes from the catalogue product, when the brand published one, or from turning the piece's photo into 3D. This piece has no model yet, so there is nothing to edit. Nothing was changed on the piece.",
-  "editor3d.backToPiece": "See the piece"
+  "editor3d.backToPiece": "See the piece",
+  "acervo.tamanhos.daPeca": "This piece's size: {size}.",
+  "acervo.tamanhos.escolhidoSem3d": "Size {size} selected. This piece has no 3D representation per size.",
+  "size.criar_avatar": "Create my 3D Avatar",
+  "history.timeline.again": "worn again (time {n})"
 }

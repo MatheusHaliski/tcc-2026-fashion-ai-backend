@@ -12302,5 +12302,9 @@
   "editor3d.noCustomization": "Todavía sin personalización guardada",
   "editor3d.noModelTitle": "Esta prenda todavía no tiene modelo 3D",
   "editor3d.noModelHint": "El editor personaliza el modelo 3D de la prenda: color, material, posición, rotación y escala. El modelo viene del producto del catálogo, cuando la marca publicó uno, o de convertir la foto de la prenda en 3D. Esta prenda todavía no tiene modelo, así que no hay nada que editar. No se cambió nada en la prenda.",
-  "editor3d.backToPiece": "Ver la prenda"
+  "editor3d.backToPiece": "Ver la prenda",
+  "acervo.tamanhos.daPeca": "Talla de esta prenda: {size}.",
+  "acervo.tamanhos.escolhidoSem3d": "Talla {size} elegida. Esta prenda no tiene representación 3D por talla.",
+  "size.criar_avatar": "Crear mi Avatar 3D",
+  "history.timeline.again": "{n}.ª vez con este look"
 }

@@ -12302,5 +12302,9 @@
   "editor3d.noCustomization": "Ainda sem personalização salva",
   "editor3d.noModelTitle": "Esta peça ainda não tem modelo 3D",
   "editor3d.noModelHint": "O editor personaliza o modelo 3D da peça: cor, material, posição, rotação e escala. O modelo vem do produto do catálogo, quando a marca publicou um, ou da conversão da foto da peça em 3D. Esta peça ainda não tem modelo, então não há o que editar. Nada foi alterado na peça.",
-  "editor3d.backToPiece": "Ver a peça"
+  "editor3d.backToPiece": "Ver a peça",
+  "acervo.tamanhos.daPeca": "Tamanho desta peça: {size}.",
+  "acervo.tamanhos.escolhidoSem3d": "Tamanho {size} escolhido. Esta peça não tem representação 3D por tamanho.",
+  "size.criar_avatar": "Criar meu Avatar 3D",
+  "history.timeline.again": "{n}ª vez com este look"
 }

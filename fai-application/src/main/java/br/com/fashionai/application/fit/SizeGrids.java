@@ -1,6 +1,8 @@
 package br.com.fashionai.application.fit;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -26,6 +28,27 @@ public final class SizeGrids {
         if ("lower_piece".equals(c)) return NUMERIC_SUBS.contains(s) ? "numeric" : "letter";
         if ("upper_piece".equals(c) || "full_body_piece".equals(c)) return "letter";
         return null;
+    }
+
+    /** Letras do cadastro (internacionais, como o provador mostra ao lado) → letras da grade brasileira. */
+    private static final Map<String, String> LETTER_OF_CODE = Map.of("xs", "PP", "s", "P", "m", "M", "l", "G", "xl", "GG", "xxl", "XG");
+
+    /**
+     * Tamanho da peça como aparece na grade: o código do cadastro ("m", "l", "br_40", "shoe_38") vira o rótulo da grade
+     * ("M", "G", "40", "38"); o que não tem equivalente sai em maiúsculas, sem o prefixo.
+     */
+    public static String labelOf(String code) {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+        String k = code.trim().toLowerCase(Locale.ROOT);
+        if ("one_size".equals(k)) {
+            return k;   // tamanho único: a tela escreve no idioma de quem lê
+        }
+        if (LETTER_OF_CODE.containsKey(k)) {
+            return LETTER_OF_CODE.get(k);
+        }
+        return k.replaceFirst("^(br|shoe)_", "").toUpperCase(Locale.ROOT);
     }
 
     public static List<String> labels(String grid) {

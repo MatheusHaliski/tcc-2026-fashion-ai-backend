@@ -87,6 +87,24 @@ class DigitalPassportServiceTest {
         assertThat(service.sheet(actor(ana), piece.getId())).containsEntry("access", "OWNER");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test void tamanhoDoCadastroEncontraALinhaDaGradeSemLinhaAMais() {
+        piece.setCatalogProductId(null);
+        piece.setSizeLabel("m");
+        var rows = (List<Map<String, Object>>) sizes.forPiece(piece).get("sizes");
+        assertThat(rows).extracting(r -> r.get("label")).containsExactly("PP", "P", "M", "G", "GG", "XG");
+        assertThat(rows.get(2)).containsEntry("ownerDeclared", true);
+        piece.setSizeLabel("l");
+        assertThat((List<Map<String, Object>>) sizes.forPiece(piece).get("sizes")).filteredOn(r -> Boolean.TRUE.equals(r.get("ownerDeclared")))
+                .extracting(r -> r.get("label")).containsExactly("G");
+        piece.setCategory("lower_piece"); piece.setSubcategory("jeans"); piece.setSizeLabel("br_40");
+        var jeans = (List<Map<String, Object>>) sizes.forPiece(piece).get("sizes");
+        assertThat(jeans).hasSize(9).filteredOn(r -> Boolean.TRUE.equals(r.get("ownerDeclared"))).extracting(r -> r.get("label")).containsExactly("40");
+        piece.setSizeLabel("m");   // calça cadastrada em letra: a linha da peça vem em maiúscula, fora da numeração
+        var letra = (List<Map<String, Object>>) sizes.forPiece(piece).get("sizes");
+        assertThat(letra).hasSize(10).last().satisfies(r -> assertThat(r).containsEntry("label", "M").containsEntry("source", "OWNER").containsEntry("ownerDeclared", true));
+    }
+
     @Test void sizesDistinguishCommercialAvailabilityMeasurementProvenanceAndVisualApproximation() {
         PhysicalStoreListing listing = new PhysicalStoreListing(); listing.setProduct(product); listing.setSellerUserId(UUID.randomUUID()); listing.setPricePoints(1); listing.setActive(true); listings.save(listing);
         PhysicalStoreVariant m = new PhysicalStoreVariant(); m.setListingId(listing.getId()); m.setVariantKey("|m"); m.setSizeLabel("M"); m.setStockQuantity(2); variants.save(m);
