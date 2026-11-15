@@ -108,8 +108,10 @@ export function Movel3D(props: Props) {
     <group name={`movel-${movel.id}`} position={[props.x, modelo.elevacao, 0]}>
       {fixas.map((p) => <Parte key={p.id} parte={p} materiais={materiais} />)}
       {modelo.planta.celulas.map((c) => {
-        const aberta = c.tipo !== "GAVETA" || props.gavetasAbertas || props.selecionado === c.id;
-        const roupas = roupasDaCelula(modelo.planta, c, props.itensDe(c.id)).map((r) => roupa(r, c.tipo === "CABIDEIRO", aberta));
+        const itens = props.itensDe(c.id);
+        // a gaveta com uma peça simulada abre sozinha: a simulação de compra precisa aparecer na cena
+        const aberta = c.tipo !== "GAVETA" || props.gavetasAbertas || props.selecionado === c.id || itens.some((i) => i.fantasma);
+        const roupas = roupasDaCelula(modelo.planta, c, itens).map((r) => roupa(r, c.tipo === "CABIDEIRO", aberta));
         if (c.tipo !== "GAVETA") return <group key={c.id}>{roupas}{alvo(c)}</group>;
         const partes = modelo.partes.filter((p) => p.compartimentoId === c.id && (p.papel === "gaveta" || p.papel === "puxador"));
         return (

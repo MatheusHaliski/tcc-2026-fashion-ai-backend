@@ -131,7 +131,7 @@ a própria cena no outro modo. O sino e o perfil no topo são os do app. O chip 
 
 | Diferencial | Situação | Como funciona |
 |---|---|---|
-| Raio-X | feito | Botão na barra da cena: as portas ficam quase transparentes (3D) ou somem do esquema (2D). |
+| Raio-X | feito | Botão na barra da cena: as portas e as frentes das gavetas ficam quase transparentes (3D) ou as portas somem do esquema (2D). Sem porta e sem gaveta nos móveis da cena, o botão não aparece. |
 | Busca espacial | feito | A caixa de busca acende os compartimentos no diretório, no mapa e na cena, e lista as peças achadas. |
 | Gaveta expandida | feito | O compartimento escolhido abre num painel ampliado à frente do móvel; no 3D a gaveta também sai do móvel. |
 | Modo arrumação | feito | "Arrumar" mostra lugar atual e proposto lado a lado; dá para tirar itens; só a confirmação grava. A proposta é por regra simples (não é IA). |

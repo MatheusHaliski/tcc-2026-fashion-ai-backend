@@ -166,4 +166,24 @@ describe("ACERVO · cena 3D (renderizador de teste)", () => {
     expect(malha("gaveta-c-gav2").instance.parent?.position.z).toBe(0);
     expect(material(malha("fantasma-d1")).opacity).toBeLessThan(1);
   });
+
+  it("Raio-X num móvel sem porta deixa ver dentro das gavetas fechadas (auditoria 10.3, ACERVO item 4)", async () => {
+    const sem = await mount3d(<CenaConteudo {...base} moveis={[ARMARIO_1]} rotulos={false} />);
+    await frames(sem);
+    expect(material(meshes(sem).find((m) => m.instance.name === "gaveta-c-gav1")!).opacity).toBe(1);
+    const com = await mount3d(<CenaConteudo {...base} moveis={[ARMARIO_1]} rotulos={false} raioX />);
+    await frames(com);
+    const frente = material(meshes(com).find((m) => m.instance.name === "gaveta-c-gav1")!);
+    expect(frente.transparent).toBe(true);
+    expect(frente.opacity).toBeLessThan(0.3);
+  });
+
+  it("a gaveta com a peça simulada abre sozinha: a simulação aparece na cena", async () => {
+    const cena = await mount3d(<CenaConteudo {...base} moveis={[ARMARIO_1]} rotulos={false}
+      itensDe={(id) => (id === "c-gav2" ? [{ id: "d1", categoria: "upper_piece", cor: "#DDF247", fantasma: true }] : base.itensDe(id))} />);
+    await frames(cena);
+    const malha = (nome: string) => meshes(cena).find((m) => m.instance.name === nome)!;
+    expect(malha("gaveta-c-gav2").instance.parent?.position.z).toBeCloseTo(0.42);
+    expect(malha("gaveta-c-gav1").instance.parent?.position.z).toBe(0);
+  });
 });

@@ -65,4 +65,8 @@ it("Meus tamanhos sem avatar: a grade continua escolhível e o convite para cria
   expect(within(numeric).getAllByRole("radio").every((r) => r.getAttribute("aria-checked") === "false")).toBe(true);
   fireEvent.click(within(numeric).getByRole("radio", { name: /^42/ }));
   expect(readMySizes()).toEqual({ numeric: "42" });
+  // a escolha é confirmada no cartão e o convite fala do avatar, não do espelho (auditoria 10.2, Tamanhos)
+  expect(screen.getAllByRole("status").map((s) => s.textContent)).toContain(tr("size.salvo", { size: "42" }));
+  expect(screen.getByRole("link", { name: tr("size.criar_avatar") }).getAttribute("href")).toBe("/avatar");
+  expect(screen.queryByText(/espelho/)).toBeNull();
 });

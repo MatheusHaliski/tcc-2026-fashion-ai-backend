@@ -676,7 +676,7 @@ public class IdentityService {
         audit.log(u.getId().toString(), AuditActions.LOGIN_SUCESSO, "auth", "SUCESSO", ip, userAgent, Map.of("newDevice", newDevice));
         if (newDevice && u.getLastLoginAt() != null) {
             notifications.notify(u.getId(), null, NotificationType.NEW_LOGIN_DEVICE, "SESSION", null,
-                    Msg.k("identity.novo_acesso_a_sua_conta"), Msg.k("identity.login_em_se_nao_foi", (userAgent == null ? "dispositivo desconhecido" : shortAgent(userAgent))), Map.of("ip", ip == null ? "" : ip));
+                    Msg.k("identity.novo_acesso_a_sua_conta"), Msg.k("identity.login_em_se_nao_foi", (userAgent == null ? "dispositivo desconhecido" : shortAgent(userAgent))), Map.of("ip", ip == null ? "" : ip, "href", "/settings?tab=sessions"));
         }
         return openSession(u, cmd.rememberMe(), ip, userAgent, cmd.deviceName());
     }
