@@ -7,7 +7,7 @@ import br.com.fashionai.application.hype.StyleCompatibility;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.CopilotService;
 import br.com.fashionai.application.service.LookbookService;
-import br.com.fashionai.application.service.RoomService;
+import br.com.fashionai.application.service.ForgottenPieces;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
@@ -60,7 +60,7 @@ import static br.com.fashionai.application.insights.InsightMath.round1;
 /**
  * Insights pessoais (Cápsula, Copilot, Autopiloto, Histórico, Guarda-roupa e Looks). Regras do produto, sempre:
  * o Hype aparece AO LADO da compatibilidade com o DNA e/ou do uso real (nunca sozinho, nunca como critério único);
- * redescoberta do que está parado (a régua única {@link RoomService#FORGOTTEN_DAYS}) vem antes de qualquer compra; a
+ * redescoberta do que está parado (a régua única {@link ForgottenPieces#FORGOTTEN_DAYS}) vem antes de qualquer compra; a
  * sugestão de compra é genérica (subcategoria + cor, nunca marca) e só entra no fim; texto descritivo, sem juízo de valor.
  */
 final class PersonalInsights {
@@ -111,12 +111,12 @@ final class PersonalInsights {
 
         /** "Esquecida": a régua única do app (60+ dias desde o último uso ou, se nunca usada, desde o cadastro). */
         boolean idle(WardrobeItem w) {
-            return RoomService.forgotten(w, w.getLastWornDate(), today) && HypeQueryService.idleDays(w, today) >= RoomService.FORGOTTEN_DAYS;
+            return ForgottenPieces.forgotten(w, w.getLastWornDate(), today) && HypeQueryService.idleDays(w, today) >= ForgottenPieces.FORGOTTEN_DAYS;
         }
     }
 
     Personal load(CurrentUser user) {
-        LocalDate today = LocalDate.now(RoomService.ZONE);
+        LocalDate today = LocalDate.now(br.com.fashionai.application.service.FaiPointsService.ZONE);
         List<WardrobeItem> all = Optional.ofNullable(pieces.findByUserIdOrderByCreatedAtDesc(user.id())).orElse(List.of()).stream()
                 .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList();
         List<WardrobeItem> available = all.stream().filter(w -> w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE).toList();
@@ -450,7 +450,7 @@ final class PersonalInsights {
         }
         List<String> basis = new ArrayList<>(List.of(extraBasis));
         basis.add(WARDROBE_USAGE);
-        return Optional.of(insight(code, ATTENTION, rel, "insights.idle_pieces.text", args(n, RoomService.FORGOTTEN_DAYS),
+        return Optional.of(insight(code, ATTENTION, rel, "insights.idle_pieces.text", args(n, ForgottenPieces.FORGOTTEN_DAYS),
                 metric("insights.metric.pecas", n, "peças"), action("insights.action.ver_paradas", "/closet?sort=idle"), basis.toArray(String[]::new)));
     }
 
@@ -461,11 +461,11 @@ final class PersonalInsights {
             return Optional.empty();
         }
         long active = p.available().stream().filter(w -> w.getLastWornDate() != null
-                && ChronoUnit.DAYS.between(w.getLastWornDate(), p.today()) < RoomService.FORGOTTEN_DAYS).count();
+                && ChronoUnit.DAYS.between(w.getLastWornDate(), p.today()) < ForgottenPieces.FORGOTTEN_DAYS).count();
         double pct = 100.0 * active / total;
         Insight.Tone tone = pct >= 60 ? POSITIVE : pct < 30 ? ATTENTION : NEUTRAL;
         return Optional.of(insight("WARDROBE_ACTIVE_SHARE", tone, rel, "insights.wardrobe_active_share.text",
-                args(fmt0(pct), RoomService.FORGOTTEN_DAYS, active, total), metric("insights.metric.usadas", round(pct), "%"), null, WARDROBE_USAGE));
+                args(fmt0(pct), ForgottenPieces.FORGOTTEN_DAYS, active, total), metric("insights.metric.usadas", round(pct), "%"), null, WARDROBE_USAGE));
     }
 
     Optional<Insight> dnaStatus(Personal p, double rel, boolean alignment) {

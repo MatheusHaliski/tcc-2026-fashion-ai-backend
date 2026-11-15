@@ -74,7 +74,7 @@ public class WardrobeEventListeners {
             }
             LocalDate last = lastUseBefore(w, day);
             LocalDate ref = last != null ? last : w.getCreatedAt() == null ? day : LocalDate.ofInstant(w.getCreatedAt(), FaiPointsService.ZONE);
-            boolean wasForgotten = ChronoUnit.DAYS.between(ref, day) >= RoomService.FORGOTTEN_DAYS;
+            boolean wasForgotten = ChronoUnit.DAYS.between(ref, day) >= ForgottenPieces.FORGOTTEN_DAYS;
             PieceUsageDiaryEntry e = new PieceUsageDiaryEntry();
             e.setWardrobeItemId(id);
             e.setUserId(userId);
