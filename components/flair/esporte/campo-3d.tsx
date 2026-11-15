@@ -115,7 +115,7 @@ export function Campo3D({ campo, batida = SEM_BATIDA, reduzido = false }: { camp
           <planeGeometry args={[campo.comprimento + 30, campo.largura + 30]} />
           <meshStandardMaterial color="#20242B" roughness={1} />
         </mesh>
-        <Estadio3D campo={campo} />
+        <Estadio3D campo={campo} reduzido={reduzido} />
         <Pontas campo={campo} batida={batida} reduzido={reduzido} />
       </group>
     );

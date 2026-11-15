@@ -81,6 +81,101 @@ passo e sobe a mira até o rosto.
 | 14 Fashion Sports (partida) | transmissão com cortes para o lance e o replay | lateral baixa, aérea tática, atrás do gol, giro do estádio | esporte na TV; a aérea mostra a posição dos dez jogadores |
 | 15 Batalha de Looks | três quartos → lateral em diagonal → giro de 360° | da plateia, grua, close na roupa | dois looks lado a lado, com os dois no quadro |
 
+## 3a. Jogo a jogo: o que a pessoa precisa ver, o que foi considerado e o que ficou
+
+Em cada jogo: o que a pessoa precisa ver em cada momento (preparo, ação, resultado), as câmeras consideradas e
+recusadas (com o motivo) e o conjunto adotado. O conjunto é o da tabela acima; a frontal fixa foi recusada em todos.
+
+### 1. A Passarela
+- **Precisa ver:** no preparo, o look inteiro e a passarela atrás; na ação, o andar e o caimento em movimento; no
+  resultado, a modelo no fim da passarela com a plateia.
+- **Consideradas e recusadas:** exploração por trás do ombro (mostra as costas o desfile inteiro); aérea (a roupa vira
+  um ponto); lateral fixa (a modelo sai do quadro ao andar).
+- **Adotado:** três quartos, travelling ao lado da passarela, grua no fim; fosso dos fotógrafos, giro de 360° e close
+  na roupa no seletor.
+
+### 2. Dress Fighter
+- **Precisa ver:** os dois lutadores no mesmo quadro, quem ataca e o efeito da carta; o look inteiro no fim do round.
+- **Consideradas e recusadas:** por trás do ombro (o adversário tapa a pessoa); close (perde o adversário); grua
+  (lenta para um duelo).
+- **Adotado:** três quartos, lateral em diagonal do lado oposto ao adversário, giro de 360° no resultado; aérea e
+  close na roupa no seletor.
+
+### 3. Dress the Star
+- **Precisa ver:** a estrela no tapete vermelho, de corpo inteiro, como os fotógrafos a veem; o painel de fundo.
+- **Consideradas e recusadas:** aérea (sem sentido em tapete); exploração (não há para onde andar); lateral (mostra o
+  perfil, que esconde metade do look).
+- **Adotado:** três quartos, fosso dos fotógrafos de baixo para cima, giro de 360°; travelling, grua e close.
+
+### 4. Personagem de Filme
+- **Precisa ver:** o figurino inteiro dentro do set; a relação com o cenário do filme.
+- **Consideradas e recusadas:** close no rosto (o jogo é de figurino, não de maquiagem); aérea (perde o figurino).
+- **Adotado:** três quartos, travelling, grua no resultado; lateral e close na roupa.
+
+### 5. Road to Glory (MAKE UP)
+- **Precisa ver:** o rosto de perto ao aplicar a maquiagem; o look inteiro com a maquiagem no resultado.
+- **Consideradas e recusadas:** travelling e grua (o rosto sai do quadro); aérea (inútil para maquiagem).
+- **Adotado:** três quartos, close no rosto na ação, giro de 360° no resultado; lateral perto e close na roupa.
+
+### 6. Fashion Detective
+- **Precisa ver:** para onde anda, as portas, armários, esconderijos e os cones de visão dos guardas; a sala inteira
+  ao entrar; o mapa.
+- **Consideradas e recusadas:** frontal (não deixa ver o caminho); close (perde a sala); transmissão (feita para
+  campo aberto).
+- **Adotado:** três quartos, exploração por trás do ombro na ação, close na roupa no desfecho; diagonal de cima (ler a
+  sala e os cones) e aérea (mapa) no seletor.
+
+### 7. Boutique 3D
+- **Precisa ver:** a cliente, a arara e a vitrine; o look montado de todos os lados.
+- **Consideradas e recusadas:** exploração (a loja é pequena: a câmera bate nas paredes); contra-plongée (deforma
+  a roupa de perto).
+- **Adotado:** três quartos, travelling pela loja, giro de 360°; lateral, aérea e close na roupa.
+
+### 8. Clube do Coração
+- **Precisa ver:** o uniforme criado de frente, de costas (número e nome) e de lado.
+- **Consideradas e recusadas:** aérea e exploração (não mostram o uniforme); travelling (o vestiário é estreito).
+- **Adotado:** três quartos, giro de 360° na ação, grua no resultado; lateral e close na roupa.
+
+### 9. My Favorite Singer
+- **Precisa ver:** o figurino no palco, com as luzes; o palco visto do público no resultado.
+- **Consideradas e recusadas:** por trás do ombro (de costas para a plateia o tempo todo); aérea.
+- **Adotado:** três quartos, grua varrendo o palco, da plateia no resultado; giro de 360°, lateral e close.
+
+### 10. O Labirinto
+- **Precisa ver:** o corredor à frente, as bifurcações e o espelho; o desenho do labirinto quando se perde.
+- **Consideradas e recusadas:** frontal e lateral (não mostram o caminho); grua (sem uso).
+- **Adotado:** três quartos, exploração por trás do ombro, giro de 360° no resultado; aérea (o desenho), diagonal de
+  cima e close na roupa.
+
+### 11. Meu Piloto Favorito
+- **Precisa ver:** o macacão e o capacete com o carro no box; o pódio no fim.
+- **Consideradas e recusadas:** exploração (o box não se percorre); travelling (o carro tapa a roupa em metade do
+  trilho).
+- **Adotado:** três quartos, giro de 360°, grua no pódio; lateral baixa, aérea e close.
+
+### 12. Around the World
+- **Precisa ver:** o bairro, para onde ir e a roupa no lugar de cada região.
+- **Consideradas e recusadas:** frontal fixa (o lugar fica atrás do avatar, sem caminho); close (perde o lugar).
+- **Adotado:** três quartos, exploração, giro de 360° no resultado; travelling, aérea e close.
+
+### 13. Meu Super-Herói Favorito
+- **Precisa ver:** o traje inteiro com a cidade atrás, no ângulo de herói; a capa.
+- **Consideradas e recusadas:** aérea (o herói visto de cima perde a imponência); close no rosto (o rosto não é
+  avaliado).
+- **Adotado:** três quartos, de baixo para cima (com os pés no quadro), grua mostrando a cidade; giro de 360°, lateral
+  e close.
+
+### 14. Fashion Sports
+- **Precisa ver:** na partida, a bola, os dez jogadores e os gols; no lance, quem joga; no replay, a roupa do autor.
+- **Consideradas e recusadas:** por trás do ombro de um jogador (perde o resto do time); frontal (não existe no campo).
+- **Adotado:** transmissão com cortes para o lance e o replay; lateral baixa, aérea tática, atrás do gol e giro do
+  estádio no seletor. No preparo do uniforme (vestiário), o conjunto do Clube do Coração.
+
+### 15. Batalha de Looks
+- **Precisa ver:** os dois looks lado a lado, com a mesma escala; o vencedor de todos os lados.
+- **Consideradas e recusadas:** close (um look só); exploração e aérea (sem uso num palco).
+- **Adotado:** três quartos, lateral em diagonal com os dois no quadro, giro de 360°; da plateia, grua e close.
+
 ## 4. Onde está no código
 
 - Rigs: `lib/flair/nucleos/camera/rigs.ts`. Conjuntos: `lib/flair/nucleos/camera/jogos.ts`. Sala e zoom:

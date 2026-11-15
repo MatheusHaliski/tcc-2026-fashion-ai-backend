@@ -3,12 +3,14 @@
  * O estádio do futebol de 5 (pedido da dona de 15/11/2026): gramado com listras de corte, todas as marcações do
  * futebol de 5 (linhas laterais e de fundo, meio-campo, círculo e marca central, as duas áreas em arco com a marca do
  * pênalti e a do segundo pênalti, os arcos de escanteio), bandeirinhas de escanteio, os dois bancos, o túnel, o telão
- * do placar, quatro torres de refletores e arquibancada em três lados com a torcida em degraus. As placas trazem só as
+ * do placar, quatro torres de refletores e arquibancada em três lados com a torcida em degraus (gente leve, com roupa, pele e cabelo de cada um). As placas trazem só as
  * marcas inventadas do FashionAI. As medidas são as do campo (lib/flair/esporte/campo.ts) e das regras de futsal.
  */
 import { useMemo } from "react";
 import * as THREE from "three";
+import { Torcida3D } from "@/components/flair/nucleos/gente/torcida-3d";
 import type { Campo } from "@/lib/flair/esporte/campo";
+import { torcidaEmDegraus } from "@/lib/flair/nucleos/gente/torcida";
 
 /** Raio da área (arco de 6 m), marca do pênalti (6 m) e do segundo pênalti (10 m), círculo central (3 m), escanteio (0,25 m). */
 export const MARCAS = { area: 6, penalti: 6, segundoPenalti: 10, circulo: 3, escanteio: 0.25, faixa: 0.08 };
@@ -135,18 +137,9 @@ function Refletor({ x, z }: { x: number; z: number }) {
   );
 }
 
-/** Um setor da arquibancada: degraus e a torcida, sem rosto, em blocos de cor. */
-function Setor({ x, z, giro, comprimento }: { x: number; z: number; giro: number; comprimento: number }) {
-  const torcida = useMemo(() => {
-    const out: { x: number; y: number; z: number; cor: string; alto: number }[] = [];
-    const quantos = Math.floor(comprimento / 0.9);
-    for (let d = 0; d < 5; d++) {
-      for (let i = 0; i < quantos; i++) {
-        out.push({ x: -comprimento / 2 + 0.45 + i * 0.9, y: 0.95 + d * 0.7, z: -0.4 - d * 0.95, cor: CORES_DA_TORCIDA[(i * 5 + d * 3) % CORES_DA_TORCIDA.length], alto: 0.55 + ((i * 7 + d) % 3) * 0.06 });
-      }
-    }
-    return out;
-  }, [comprimento]);
+/** Um setor da arquibancada: degraus e a torcida em humanos leves (components/flair/nucleos/gente/torcida-3d.tsx). */
+function Setor({ x, z, giro, comprimento, semente, reduzido }: { x: number; z: number; giro: number; comprimento: number; semente: number; reduzido: boolean }) {
+  const torcida = useMemo(() => torcidaEmDegraus(semente, comprimento, 5, CORES_DA_TORCIDA), [semente, comprimento]);
   return (
     <group name="setor" position={[x, 0, z]} rotation={[0, giro, 0]}>
       {[0, 1, 2, 3, 4].map((d) => (
@@ -155,18 +148,7 @@ function Setor({ x, z, giro, comprimento }: { x: number; z: number; giro: number
           <meshStandardMaterial color={d % 2 ? "#2F3440" : "#363C49"} roughness={0.95} />
         </mesh>
       ))}
-      {torcida.map((t, i) => (
-        <group key={i} position={[t.x, t.y, t.z]}>
-          <mesh position={[0, t.alto / 2, 0]}>
-            <boxGeometry args={[0.42, t.alto, 0.32]} />
-            <meshStandardMaterial color={t.cor} roughness={0.9} />
-          </mesh>
-          <mesh position={[0, t.alto + 0.13, 0]}>
-            <sphereGeometry args={[0.12, 8, 6]} />
-            <meshStandardMaterial color="#C9B8A6" roughness={0.9} />
-          </mesh>
-        </group>
-      ))}
+      <Torcida3D pessoas={torcida} reduzido={reduzido} />
       <mesh name="placas" position={[0, 0.45, 0.35]}>
         <boxGeometry args={[comprimento, 0.9, 0.1]} />
         <meshStandardMaterial color="#C6275E" emissive="#C6275E" emissiveIntensity={0.3} />
@@ -175,7 +157,7 @@ function Setor({ x, z, giro, comprimento }: { x: number; z: number; giro: number
   );
 }
 
-export function Estadio3D({ campo }: { campo: Campo }) {
+export function Estadio3D({ campo, reduzido = false }: { campo: Campo; reduzido?: boolean }) {
   const { comprimento: c, largura: l } = campo;
   const fundo = l / 2 + 2.6;
   const lateral = c / 2 + 3.4;
@@ -189,9 +171,9 @@ export function Estadio3D({ campo }: { campo: Campo }) {
         <boxGeometry args={[3, 2.4, 1.6]} />
         <meshStandardMaterial color="#1F7A76" roughness={0.7} />
       </mesh>
-      <Setor x={0} z={-fundo} giro={0} comprimento={c + 4} />
-      <Setor x={-lateral} z={0} giro={Math.PI / 2} comprimento={l + 2} />
-      <Setor x={lateral} z={0} giro={-Math.PI / 2} comprimento={l + 2} />
+      <Setor x={0} z={-fundo} giro={0} comprimento={c + 4} semente={1} reduzido={reduzido} />
+      <Setor x={-lateral} z={0} giro={Math.PI / 2} comprimento={l + 2} semente={2} reduzido={reduzido} />
+      <Setor x={lateral} z={0} giro={-Math.PI / 2} comprimento={l + 2} semente={3} reduzido={reduzido} />
       {([[-1, -1], [1, -1], [-1, 1], [1, 1]] as const).map(([a, b]) => <Refletor key={`${a}${b}`} x={a * (c / 2 + 5)} z={b * (l / 2 + 5)} />)}
       <group name="telao" position={[0, 9, -fundo - 5.2]}>
         <mesh>

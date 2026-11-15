@@ -11,6 +11,8 @@ import * as THREE from "three";
 import { Campo3D } from "@/components/flair/esporte/campo-3d";
 import { LARGURA_DO_GOL, type Batida } from "@/components/flair/esporte/gol-3d";
 import { Jogador3D } from "@/components/flair/esporte/jogador-3d";
+import { Elenco3D } from "@/components/flair/nucleos/gente/elenco-3d";
+import { atorDoJogador, elencoDaPartida } from "@/lib/flair/esporte/elenco";
 import { planoDaCamera, poseDaCamera, poseEscolhida, seguir, tapaOReplay, type Plano, type Pose } from "@/lib/flair/esporte/camera";
 import { noMundo, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
 import { pontoNaRede } from "@/lib/flair/esporte/rede";
@@ -30,6 +32,8 @@ export interface Transmissao3DProps {
   rotulo: string;
   /** a câmera escolhida no seletor ("AUTO" = a transmissão com cortes) */
   camera?: string;
+  /** semente da partida: o elenco (corpo, pele, cabelo de cada jogador) sai dela */
+  semente?: number;
 }
 
 interface Estado {
@@ -37,7 +41,7 @@ interface Estado {
   plano: Plano | string;
 }
 
-function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha }: Omit<Transmissao3DProps, "rotulo">) {
+function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha, semente = 1 }: Omit<Transmissao3DProps, "rotulo">) {
   /** a bola na rede ou na trave: depois que ela chega ao gol (k 0,72), com o ponto do impacto */
   const batida = useRef<Batida | null>(null);
   const estado = useRef<Estado>({ quadro: quadroDoLance(campo, anterior, atual, reduzido ? 1 : 0), plano: "geral" });
@@ -46,6 +50,14 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
   const { camera, size } = useThree();
   const paraOMundo = useMemo(() => (x: number, y: number) => noMundo(campo, [x, y]), [campo]);
   const lados: Lado[] = ["NOS", "ELES"];
+  const elenco = useMemo(() => elencoDaPartida(semente, campo, uniforme), [semente, campo, uniforme]);
+  /** quem já é gente (o corpo humano montou): a figura simples dele sai de cena */
+  const prontos = useRef(new Set<string>());
+  const atores = () => {
+    const { quadro } = estado.current;
+    const vez = atual ? `${atual.time}-${atual.jogador}` : "";
+    return quadro.figuras.map((f) => atorDoJogador(f, paraOMundo, `${f.time}-${f.n}` === vez));
+  };
 
   useFrame(() => {
     const k = reduzido ? 1 : Math.max(0, Math.min(1, (performance.now() - inicio) / Math.max(1, duracao)));
@@ -91,9 +103,11 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
             uniforme={time === "NOS" ? uniforme : UNIFORME_VISITANTE}
             noMundo={paraOMundo}
             figura={() => estado.current.quadro.figuras.find((f) => f.time === time && f.n === i + 1)}
+            pronto={() => prontos.current.has(`${time}-${i + 1}`)}
           />
         )),
       )}
+      <Elenco3D pessoas={elenco} atores={atores} prontos={prontos} reduzido={reduzido} />
       {campo.bola && (
         <mesh ref={bola} name="bola" castShadow>
           <sphereGeometry args={[0.2, 16, 12]} />

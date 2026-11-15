@@ -160,7 +160,7 @@ export function NucleoGame(props: Props) {
   return (
     <div className={classesDoQuadro(layout)} style={estiloDoQuadro(layout)} data-testid="nucleo-game" data-momento={momento} data-porte={layout.porte} data-quadro={layout.quadro} data-reduced={reduzido || undefined} data-fx={fx.prefs.efeitos ? "on" : "off"}>
       <p className="sr-only" role="status" data-testid="nucleo-moment">{tx.t("flair3d.ui.moment.label", { momento: tx.t(`flair3d.ui.moment.${momento}`) })}</p>
-      {esporte ? <EsportePalco modalidade={partida.modalidade} jogadas={partida.jogadas} duracao={LANCE_MS} uniforme={partida.uniforme} fim={momento === "RESULTADO"} /> : (
+      {esporte ? <EsportePalco modalidade={partida.modalidade} jogadas={partida.jogadas} duracao={LANCE_MS} uniforme={partida.uniforme} fim={momento === "RESULTADO"} semente={props.partida?.semente} /> : (
         <NucleoStage
           definicao={definicao}
           config={config}

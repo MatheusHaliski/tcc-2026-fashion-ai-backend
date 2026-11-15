@@ -140,6 +140,44 @@ núcleo e cada variação diz quais avatares entram na partida. Ninguém precisa
 a partida guarda `participantes:[{tipo, papel, time, userId}]`. Esta base só abre partidas solo; o salão online
 (convite, fila e sincronização) é a próxima etapa.
 
+## Pessoas de cena: gente humana com níveis de detalhe
+
+Pedido da dona (15/11/2026): os NPCs passam a ser avatares humanos do mesmo tipo do avatar da pessoa, variados, vestidos
+pelo papel e animados, com níveis de detalhe; de longe continuam gente, nunca pinos. Primeiro jogo com isso: Fashion
+Sports (os jogadores dos dois times e a torcida do estádio).
+
+| Peça | Onde |
+| --- | --- |
+| Pessoa do elenco (sexo, corpo, altura, pele, cabelo, rosto sintético, roupa do papel) e sorteio pela semente | `lib/flair/nucleos/gente/elenco.ts` |
+| Elenco do Fashion Sports (uniformes, goleiro de manga longa, o gesto da linha do tempo na locomoção) | `lib/flair/esporte/elenco.ts` |
+| Níveis de detalhe e triângulos por pessoa | `lib/flair/nucleos/gente/detalhe.ts` |
+| Molde: o corpo humano do avatar (`HumanAvatar`) vestido uma vez, escondido | `components/flair/nucleos/gente/molde-humano.tsx` |
+| Clones na cena (SkeletonUtils), locomoção procedural do avatar, nível pela distância da câmera | `components/flair/nucleos/gente/elenco-3d.tsx` |
+| Torcida em humanos leves instanciados | `lib/flair/nucleos/gente/torcida.ts`, `components/flair/nucleos/gente/torcida-3d.tsx` |
+
+**Determinismo.** O elenco sai da semente da partida (`NucleoPartida.semente`): a mesma partida tem sempre os mesmos
+jogadores. Os dois times têm o mesmo sexo, sorteado pela semente; pele, altura, compleição, corte e cor de cabelo variam
+por jogador. Nada disto entra na nota. Os rostos são pintados por regras (sem foto de ninguém).
+
+**Níveis.** COMPLETO (até 16 m da câmera, ou quem está na jogada a qualquer distância): corpo inteiro, acabamentos,
+sombra, animação a cada quadro. LEVE (16 a 34 m): sem os acabamentos de poucos pixels e sem sombra, animado a cada dois
+quadros. LONGE (além de 34 m): o mesmo corpo, animado a cada quatro quadros. TORCIDA: humano leve instanciado (cabeça,
+pescoço, cabelo, tronco, braços e pernas, 364 triângulos), cinco chamadas de desenho por setor de arquibancada, um terço
+acenando de braços para cima. Enquanto o molde de um jogador monta (dois por vez, o mais perto da câmera primeiro), a
+figura articulada antiga dele aparece no lugar.
+
+**Orçamento medido** (transmissão do futebol, `renderer.info` no navegador sem placa de vídeo, swiftshader):
+
+| Cena | Triângulos por quadro | Chamadas de desenho |
+| --- | --- | --- |
+| Estádio com 10 jogadores humanos e a torcida em blocos | 596 mil | 530 |
+| Estádio com 10 jogadores humanos e a torcida em humanos leves (cerca de 490 pessoas) | 618 mil a 769 mil, conforme a câmera | 160 a 204 |
+
+Um jogador humano custa cerca de 40 mil triângulos por quadro com a passada de sombra (de 6 para 10 jogadores: +162 mil).
+O orçamento de 60 mil triângulos das salas não vale para o estádio: a gente tem conta própria
+(`triangulosComGente`, `triangulosDaSalaComGente` em `lib/flair/nucleos/scene/budget.ts`). A fluidez num celular não foi
+medida (o ambiente não tem placa de vídeo). Falta um corpo de menos triângulos para o nível LONGE.
+
 ## Ações do personagem e comandos do controle
 
 O personagem só faz movimentos simples. Toda ação tem teclado, toque (botão na tela) e gamepad (Gamepad API, layout

@@ -90,7 +90,8 @@ export function poseEscolhida(id: string | null | undefined, campo: Campo, bola:
   let pos: [number, number, number] = [bx, 0, bz];
   switch (id) {
     case "LATERAL":
-      camera = { id, rig: "TRANSMISSAO", dist: meia + 6, altura: 2.2, mira: 0.9, acompanha: 1 };
+      // alta o bastante para passar por cima do túnel e dos bancos na beira do campo
+      camera = { id, rig: "TRANSMISSAO", dist: meia + 6, altura: 4.5, mira: 0.9, acompanha: 1 };
       break;
     case "AEREA":
       camera = { id, rig: "AEREA", dist: 0.5, altura: Math.max(campo.comprimento * 0.95, 16) };

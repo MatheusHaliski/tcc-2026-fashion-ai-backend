@@ -58,6 +58,8 @@ interface Props {
   uniforme: Uniforme;
   /** a partida fechou: o placar mostra "fim de jogo" */
   fim: boolean;
+  /** semente da partida: o elenco de cada time sai dela */
+  semente?: number;
 }
 
 /** A câmera escolhida no seletor (vale enquanto a partida está na tela). */
@@ -65,7 +67,7 @@ function useCameraDoCampo() {
   return useState<string>(CAMERAS_DO_CAMPO[0]);
 }
 
-export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim }: Props) {
+export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, semente }: Props) {
   const tx = useNucleoText();
   const webgl = useWebGL();
   const reduzido = useReducedMotion();
@@ -98,7 +100,7 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim }: Pr
       {webgl === false || reduzido ? planta : webgl === null ? <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div> : (
         <Limite reserva={planta}>
           <div className="n3d-scene3d">
-            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} />
+            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} semente={semente} />
           </div>
         </Limite>
       )}

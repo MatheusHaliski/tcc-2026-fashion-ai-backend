@@ -53,9 +53,11 @@ interface Props {
   /** ponto do servidor → metros */
   noMundo: (x: number, y: number) => [number, number];
   nome: string;
+  /** o corpo humano deste jogador já está em cena (components/flair/nucleos/gente): a figura simples some */
+  pronto?: () => boolean;
 }
 
-export function Jogador3D({ uniforme, figura, noMundo, nome }: Props) {
+export function Jogador3D({ uniforme, figura, noMundo, nome, pronto }: Props) {
   const raiz = useRef<THREE.Group>(null);
   const corpo = useRef<THREE.Group>(null);
   const pernaE = useRef<THREE.Group>(null);
@@ -66,7 +68,7 @@ export function Jogador3D({ uniforme, figura, noMundo, nome }: Props) {
     const f = figura();
     if (!f || !raiz.current || !corpo.current) return;
     const [x, z] = noMundo(f.x, f.y);
-    raiz.current.visible = !f.oculto;
+    raiz.current.visible = !f.oculto && !pronto?.();
     const p = poseDoGesto(f.gesto, clock.elapsedTime + f.n * 0.37);
     raiz.current.position.set(x, p.altura, z);
     // giro 0 olha para +x no campo do servidor; no mundo, +x também é o comprimento do campo

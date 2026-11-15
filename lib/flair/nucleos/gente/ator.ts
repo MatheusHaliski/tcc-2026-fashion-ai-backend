@@ -1,0 +1,20 @@
+/** O que a cena de gente (components/flair/nucleos/gente/elenco-3d.tsx) lê de cada ator a cada quadro. Puro. */
+import type { Motion } from "@/lib/avatar3d/human/locomotion-model";
+
+/** Onde um ator está e o que faz neste quadro. */
+export interface AtorDeCena {
+  id: string;
+  x: number;
+  z: number;
+  /** giro no eixo vertical, em radianos (0 = olhando para +z) */
+  giro: number;
+  anim: Motion;
+  velocidade: number;
+  oculto?: boolean;
+  /** quem está na jogada fica completo a qualquer distância */
+  naJogada?: boolean;
+  /** depois da animação: tombo do corpo (rad, para o lado; o mergulho do goleiro) e a perna do chute (0–1) */
+  tombo?: number;
+  chute?: number;
+  altura?: number;
+}

@@ -30,10 +30,10 @@ O que vale para todos os jogos e não se repete abaixo:
 
 | Pedido | Estado |
 | --- | --- |
-| Fashion Sports com câmera de transmissão, mecânica de partida e cartas para toda ação | feito em boa parte (jogo 14, abaixo), com a mão no controle e os reinícios à vista; faltam avatares humanos e as outras modalidades no nível do futebol |
-| Estádio com arquibancada, redes que balançam, marcações claras, jogadores sem bola com movimento automático | feito em primitivas (jogo 14): o servidor decide o estado e o destino de cada jogador em cada lance, e a trave treme na bola na trave; jogadores e torcida ainda são figuras simples |
+| Fashion Sports com câmera de transmissão, mecânica de partida e cartas para toda ação | feito em boa parte (jogo 14, abaixo), com a mão no controle, os reinícios à vista e jogadores humanos; faltam as outras modalidades no nível do futebol |
+| Estádio com arquibancada, redes que balançam, marcações claras, jogadores sem bola com movimento automático | feito (jogo 14): o servidor decide o estado e o destino de cada jogador em cada lance, e a trave treme na bola na trave; jogadores humanos e torcida de gente leve desde a etapa das pessoas de cena |
 | Câmeras pensadas para os 15 jogos (`CAMERAS.md`, sistema de câmeras compartilhado, seletor no HUD) | feito: rigs comuns (`lib/flair/nucleos/camera`), um conjunto de 4 a 6 câmeras por jogo com a automática por momento, seletor no HUD, reduzir movimento; visto em fotos (Passarela, Dress Fighter, Detective, Super-Herói, Boutique aérea, Dress the Star em 390×844). Falta: a câmera não desvia de móveis; a exploração só faz sentido quando o avatar andar (Detective, Labirinto, Around the World) |
-| NPCs como avatares humanos do mesmo tipo do avatar da pessoa, com níveis de detalhe | pendente em todos os jogos |
+| NPCs como avatares humanos do mesmo tipo do avatar da pessoa, com níveis de detalhe | feito no Fashion Sports (futebol e as outras modalidades da transmissão): jogadores com o corpo humano do avatar, variados pela semente, de uniforme, animados pela locomoção do avatar, com três níveis de detalhe, e a torcida em humanos leves; visto em fotos (lateral, atrás do gol, transmissão 390×844). Orçamento medido em `BASE_NUCLEOS.md`. Pendente nos outros 14 jogos (figurantes simples) |
 | Cenários coerentes e bem acabados (`CENARIOS.md`, auditoria de cada sala, modelos licenciados) | pendente; só o estádio do futebol foi refeito |
 | Mundos exploráveis (`MUNDOS.md`): Fashion Detective como um lugar interligado, Around the World por bairros, Labirinto desenhado | pendente |
 | Fashion Detective: câmera de exploração, 8 salas ou mais com cutscene, desafio, quebra-cabeça, inimigos e esconderijos; 5 chaves em armários; pistas em papel e no bolso de inimigos; mapa; história (`FASHION_DETECTIVE_HISTORIA.md`) e cutscene final; celular 390×844 | pendente (o jogo continua como em 14/11: 6 salões e mercado) |
@@ -41,8 +41,8 @@ O que vale para todos os jogos e não se repete abaixo:
 
 **Câmeras e avatares hoje, jogo a jogo.** Os 15 jogos usam o sistema de câmeras comum (`CAMERAS.md`): o preparo em
 três quartos e a câmera de ação do gênero; o Fashion Sports tem ainda a transmissão com cortes e quatro câmeras do campo
-no seletor. Nenhum jogo usa mais a câmera frontal do provador como única vista. Avatares humanos nos NPCs: nenhum jogo
-(todos com figurantes simples).
+no seletor. Nenhum jogo usa mais a câmera frontal do provador como única vista. Avatares humanos nos NPCs: Fashion
+Sports (jogadores e torcida); os outros 14 ainda com figurantes simples.
 
 ## Rodadas: o que mudou na base
 
@@ -469,7 +469,7 @@ aparece. A bola na trave existe só no futebol: a finalização que perde por ma
 | Estado e destino de cada jogador sem a bola decididos pelo servidor (apoio, corrida, marcação, pressão, cobertura, retorno) | feito no futebol e no basquete; a planta de cima (sem WebGL ou com reduzir movimento) diz o estado de cada jogador em texto | sim, em quadros parados (escanteio com o time na área; saída de bola com cada time na sua metade) |
 | Ninguém fica em cima de ninguém, todos dentro do campo, o goleiro não sai da meta | feito (testes do servidor em 30 partidas) | na área, vistos de longe, os jogadores ficam próximos uns dos outros |
 | O time da pessoa veste as cores das peças do uniforme | feito (cor da família de cada peça) | sim |
-| Torcida e jogadores como avatares humanos de verdade (pedido da dona sobre os NPCs) | pendente: hoje são figuras articuladas simples sem rosto | sim (são simples) |
+| Torcida e jogadores como avatares humanos de verdade (pedido da dona sobre os NPCs) | feito: jogadores com o corpo humano do avatar (elenco da semente, uniforme, goleiro de manga longa, locomoção, três níveis de detalhe); torcida em humanos leves instanciados que acenam. A figura articulada antiga só aparece enquanto o corpo do jogador monta. Falta um corpo mais leve para o nível LONGE | sim (fotos da lateral, de trás do gol e da transmissão em 390×844, em uma página de laboratório com a cena da transmissão; não numa partida de verdade com servidor) |
 | Telão com o placar escrito | pendente | — |
 | Saída de bola do centro depois de cada gol; escanteio, lateral e tiro de meta como reinício visível, do lugar certo | feito | saída de bola depois do gol e escanteio: sim; tiro de meta e lateral: não (só testes) |
 | Outras modalidades: câmera de transmissão, placar, relógio, jogadores e bola em movimento | feito (mesmo motor; campo, pontas e narração próprios) | não |
