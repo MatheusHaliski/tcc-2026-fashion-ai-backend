@@ -16,7 +16,7 @@ interface Quest { done: boolean }
 interface Combo { active: boolean; available: boolean; complete: boolean; redemption?: unknown }
 
 /**
- * Central FLAIR (/flair): os 10 modos em 4 grupos (Jogar · Calendário · Desafios · Coleção) sobre a tela de seleção
+ * Central FLAIR (/flair): os 12 modos em 4 grupos (Jogar · Calendário · Desafios · Coleção) sobre a tela de seleção
  * comum (components/hub/mode-hub.tsx). A situação de cada modo vem dos mesmos endpoints das telas; sem resposta, o
  * modo fica "aberto" sem situação (erro de rede nunca bloqueia).
  */
