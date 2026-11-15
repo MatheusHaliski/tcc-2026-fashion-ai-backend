@@ -43,7 +43,7 @@ describe("extrato dos FAI Points nas notificações", () => {
   });
 
   it("a página FAI Points leva ao extrato nas notificações", async () => {
-    loggedAs(undefined, { "GET /api/me/points": { balance: 120, lifetime: 300, level: "ESTREIA", levels: [], rules: [] }, "GET /api/points/shop": [] });
+    loggedAs(undefined, { "GET /api/me/points": { balance: 120, lifetime: 300, level: "ESTREIA", levels: [], rules: [] } });
     renderApp(<PointsPage />);
     fireEvent.click(await screen.findByRole("tab", { name: /Extrato/ }));
     fireEvent.click(await screen.findByRole("button", { name: /Abrir/ }));

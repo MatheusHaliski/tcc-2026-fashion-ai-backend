@@ -42,9 +42,8 @@
 .gd-callouts, .gd-reasons, .gd-week, .gd-states, .gd-ledger { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: var(--text-body-sm); }
 .gd-callouts li { display: flex; gap: 8px; align-items: center; }
 .gd-dot { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; background: var(--mark); color: #fff; font-family: var(--font-data); font-size: var(--text-label); }
-.gd-seal, .gd-shop { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
-.gd-seal-step, .gd-shop-step { display: grid; justify-items: center; gap: 6px; text-align: center; }
-.gd-shop-step { padding: 10px; min-width: 130px; }
+.gd-seal { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+.gd-seal-step { display: grid; justify-items: center; gap: 6px; text-align: center; }
 .gd-seal-locked { filter: grayscale(1); opacity: .55; }
 .gd-arrow { color: var(--muted); font-size: 1.25rem; }
 .gd-thumbs { display: flex; gap: 6px; }
