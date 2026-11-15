@@ -9930,7 +9930,7 @@
   "editor3d.showcaseOnly": "Showcase model (generated from the photo): not approved for the fitting room",
   "editor3d.viewOnly": "View only",
   "editor3d.baseChanged": "The base model changed since the customization",
-  "editor3d.revision": "customization v{revision}",
+  "editor3d.revision": "Customisation saved · version {revision}",
   "editor3d.restore": "Restore original",
   "editor3d.restoreConfirm": "Discard changes and restore",
   "editor3d.restoreHint": "There are unsaved changes. Restoring returns to the original model's initial configuration.",
@@ -12298,5 +12298,9 @@
   "flair3d.esporte.SKATE.lance.PROTEGE": "{jogador} keeps the line and takes no risks",
   "flair3d.esporte.SKATE.lance.PASSE_FORA": "{jogador} leaves the course: score to {rival}",
   "flair3d.ui.result.media": "The final score is the average of the {n} stages: each stage counts 1/{n} of its points.",
-  "flair3d.dica.AROUND_THE_WORLD.MARCA_BR": "Wear at least one piece from a Brazilian brand: the rule adds 25."
+  "flair3d.dica.AROUND_THE_WORLD.MARCA_BR": "Wear at least one piece from a Brazilian brand: the rule adds 25.",
+  "editor3d.noCustomization": "No customisation saved yet",
+  "editor3d.noModelTitle": "This piece has no 3D model yet",
+  "editor3d.noModelHint": "The editor customises the piece's 3D model: colour, material, position, rotation and scale. The model comes from the catalogue product, when the brand published one, or from turning the piece's photo into 3D. This piece has no model yet, so there is nothing to edit. Nothing was changed on the piece.",
+  "editor3d.backToPiece": "See the piece"
 }

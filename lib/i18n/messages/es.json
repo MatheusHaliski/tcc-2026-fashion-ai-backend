@@ -9930,7 +9930,7 @@
   "editor3d.showcaseOnly": "Modelo de vitrina (generado de la foto): no aprobado para el probador",
   "editor3d.viewOnly": "Solo visualización",
   "editor3d.baseChanged": "El modelo base cambió desde la personalización",
-  "editor3d.revision": "personalización v{revision}",
+  "editor3d.revision": "Personalización guardada · versión {revision}",
   "editor3d.restore": "Restaurar original",
   "editor3d.restoreConfirm": "Descartar cambios y restaurar",
   "editor3d.restoreHint": "Hay cambios sin guardar. Restaurar vuelve a la configuración inicial del modelo original.",
@@ -12298,5 +12298,9 @@
   "flair3d.esporte.SKATE.lance.PROTEGE": "{jogador} mantiene la línea y no arriesga",
   "flair3d.esporte.SKATE.lance.PASSE_FORA": "{jogador} se sale de la pista: nota para {rival}",
   "flair3d.ui.result.media": "La nota final es la media de las {n} etapas: cada etapa cuenta 1/{n} de sus puntos.",
-  "flair3d.dica.AROUND_THE_WORLD.MARCA_BR": "Viste al menos una prenda de marca brasileña: la regla suma 25."
+  "flair3d.dica.AROUND_THE_WORLD.MARCA_BR": "Viste al menos una prenda de marca brasileña: la regla suma 25.",
+  "editor3d.noCustomization": "Todavía sin personalización guardada",
+  "editor3d.noModelTitle": "Esta prenda todavía no tiene modelo 3D",
+  "editor3d.noModelHint": "El editor personaliza el modelo 3D de la prenda: color, material, posición, rotación y escala. El modelo viene del producto del catálogo, cuando la marca publicó uno, o de convertir la foto de la prenda en 3D. Esta prenda todavía no tiene modelo, así que no hay nada que editar. No se cambió nada en la prenda.",
+  "editor3d.backToPiece": "Ver la prenda"
 }
