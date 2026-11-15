@@ -170,6 +170,14 @@ recursos e itens promocionais (a unica diferença do meu app para o DREST é jus
 
 ## Jogo 6 · Fashion Detective
 
+**Definição trocada pela dona em 15/11/2026.** O jogo deixa de ser uma série de salões com cutscenes automáticas e
+passa a ser um mundo interligado de pelo menos 8 salas, explorado em terceira pessoa com movimento ponto a ponto, em que
+toda ação exige carta (verde abre, preto esconde e tira papel do bolso, amarelo é a vida, azul vence o confronto
+estilizado, branco é a peça de pista, vermelho é a moeda do mercado), com inimigos de patrulha não violentos e cones de
+visão, cinco chaves em armários, pistas em papel, caderno do caso, mapa, inventário e acusação entre suspeitos numerados
+decidida no servidor. A história, o elenco, as salas, as pistas e os finais estão em `FASHION_DETECTIVE_HISTORIA.md`.
+O texto abaixo é a definição anterior (14/11), mantida como registro do que está no código até a refação.
+
 **Modo pedido pela dona (texto que ela trouxe):** investigação urbana em que a roupa é o passe de acesso. Para entrar
 num evento de gala de luxo, o avatar precisa vestir peças de alta-costura de determinado designer; para entrar num clube
 underground, a estética streetwear ou alternativa. O jogador analisa tecidos, desgaste das roupas e marcas deixadas nos
