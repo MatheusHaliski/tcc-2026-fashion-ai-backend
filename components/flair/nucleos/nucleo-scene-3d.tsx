@@ -5,7 +5,7 @@
  * do jogo (scene/game-camera.tsx, docs/flair/flair-3d/CAMERAS.md): a escolhida no seletor ou a do momento da partida; o
  * zoom aproxima e mira mais alto (até o rosto).
  */
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { CameraDeAbertura } from "@/components/flair/nucleos/scene/opening-camera";
 import type { Look3dPiece } from "@/components/three/common";
@@ -13,6 +13,7 @@ import { NucleoAvatar, type Protagonista } from "@/components/flair/nucleos/nucl
 import { LuzDeEfeito, PecaPintada } from "@/components/flair/nucleos/scene/effects-3d";
 import { CameraDoJogo } from "@/components/flair/nucleos/scene/game-camera";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
+import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
 import { useSceneDirector } from "@/components/flair/nucleos/scene/use-scene-director";
@@ -69,12 +70,15 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
     return { pos: pose.pos, alvo: pose.alvo };
   }, [config.codigo, camera, avatar.zoom, sala]);
   const figurantes = useMemo(() => figurantesDaCena(sala, config.personagens), [sala, config.personagens]);
+  /** os figurantes que já são gente (o corpo humano montou): a silhueta deles sai de cena */
+  const prontos = useRef(new Set<string>());
   return (
     <Canvas shadows camera={{ fov: 35, position: [1.7, 1.35, 3.8], near: 0.1, far: 60 }} dpr={[1, 2]} aria-label={rotulo}>
       <color attach="background" args={[sala.fundo]} />
       <CenaContexto.Provider value={cena}>
         <Sala3D sala={sala} placar={placarDaCena(config.codigo, resultado)} />
-        <Figurantes personagens={figurantes} />
+        <Figurantes personagens={figurantes} prontos={prontos} />
+        <FigurantesHumanos codigo={config.codigo} personagens={figurantes} prontos={prontos} reduzido={reduzido} />
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
         {manequim && zonasDaPeca && zonas && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} />

@@ -88,3 +88,19 @@ describe("torcida", () => {
     expect(new Set(t.map((p) => p.pele)).size).toBeGreaterThanOrEqual(5);
   });
 });
+
+describe("figurantes das salas como gente", () => {
+  const lista = [
+    { papel: "PLATEIA", tipo: "silhueta", pos: [2, 0, -1], cor: "#3A3550", giro: -90, postura: "sentada" },
+    { papel: "PLATEIA", tipo: "silhueta", pos: [-2, 0, -1], cor: "#3A3550", giro: 90, postura: "sentada" },
+    { papel: "MANEQUIM", tipo: "manequim", pos: [0, 0, -2], cor: "#fff", postura: "busto" },
+    { papel: "COLEGA", tipo: "silhueta", pos: [1, 0, -3], cor: "#1F7A76" },
+  ] as const;
+  it("cada pessoa tem o id de ator do diretor, a roupa do papel e o movimento; manequim continua objeto", async () => {
+    const { atoresDosFigurantes, pessoasDosFigurantes } = await import("@/lib/flair/nucleos/gente/figurantes");
+    const pessoas = pessoasDosFigurantes(3, [...lista]);
+    expect([...pessoas.keys()]).toEqual(["fig:PLATEIA:0", "fig:PLATEIA:1", "fig:COLEGA:0"]);
+    expect(atoresDosFigurantes([...lista]).map((a) => [a.id, a.anim])).toEqual([["fig:PLATEIA:0", "sit"], ["fig:PLATEIA:1", "sit"], ["fig:COLEGA:0", "idle"]]);
+    expect(pessoasDosFigurantes(3, [...lista], true).get("fig:COLEGA:0")?.pecas.map((p) => p.subcategory)).toEqual(["t_shirt", "shorts", "casual_sneakers"]);
+  });
+});

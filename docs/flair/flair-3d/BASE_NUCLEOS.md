@@ -173,6 +173,13 @@ figura articulada antiga dele aparece no lugar.
 | Estádio com 10 jogadores humanos e a torcida em blocos | 596 mil | 530 |
 | Estádio com 10 jogadores humanos e a torcida em humanos leves (cerca de 490 pessoas) | 618 mil a 769 mil, conforme a câmera | 160 a 204 |
 
+**Figurantes das salas dos outros jogos** (`lib/flair/nucleos/gente/figurantes.ts`,
+`components/flair/nucleos/gente/figurantes-humanos.tsx`): cada personagem do arquivo do núcleo que é gente (não o
+manequim, a câmera nem a claquete) vira uma pessoa do elenco, com a roupa do papel na cor do arquivo, o corpo tirado
+da semente do jogo (o código do núcleo; a cena das salas não recebe a semente da partida) e o movimento do papel
+(sentada, torcendo, fotografando, conversando, parada). Medido na Passarela com as 14 pessoas (12 na plateia e 2
+fotógrafos): 1,44 milhão de triângulos e 399 chamadas por quadro; na Boutique (1 cliente), 179 mil e 63.
+
 Um jogador humano custa cerca de 40 mil triângulos por quadro com a passada de sombra (de 6 para 10 jogadores: +162 mil).
 O orçamento de 60 mil triângulos das salas não vale para o estádio: a gente tem conta própria
 (`triangulosComGente`, `triangulosDaSalaComGente` em `lib/flair/nucleos/scene/budget.ts`). A fluidez num celular não foi
