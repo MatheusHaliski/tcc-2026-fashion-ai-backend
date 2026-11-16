@@ -49,7 +49,7 @@ export type AcaoDeCarta =
   | "PULAR";
 
 /** Acionamento pela pessoa: um por jogo, no momento em que a tabela do desenho permite. */
-export type AcionamentoTipo = "ESPECIAL" | "ESPELHO" | "TROCA" | "RESPOSTA" | "MERCADO" | "CARTA";
+export type AcionamentoTipo = "ESPECIAL" | "ESPELHO" | "TROCA" | "RESPOSTA" | "MERCADO" | "CARTA" | "JOGADA";
 
 export interface Acionamento {
   tipo: AcionamentoTipo;
@@ -63,6 +63,11 @@ export const ACIONAMENTOS: Partial<Record<NucleoCodigo, Acionamento>> = {
   // a partida é jogada por cartas: cada jogada é uma carta da mão
   FASHION_SPORTS: { tipo: "CARTA", momento: "ACAO" },
   FASHION_DETECTIVE: { tipo: "MERCADO", momento: "ACAO" },
+  // a jogada de cena: depois do look avaliado, uma carta do deck fora do look dispara a ação da cor dela
+  PASSARELA: { tipo: "JOGADA", momento: "ACAO" },
+  DRESS_THE_STAR: { tipo: "JOGADA", momento: "ACAO" },
+  BOUTIQUE_3D: { tipo: "JOGADA", momento: "ACAO" },
+  AROUND_THE_WORLD: { tipo: "JOGADA", momento: "ACAO" },
 };
 
 export function acionamentoDe(codigo: NucleoCodigo): Acionamento | null {

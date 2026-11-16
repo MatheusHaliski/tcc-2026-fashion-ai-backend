@@ -8,7 +8,7 @@
 import { useCallback, useMemo } from "react";
 import { useActionPlayback } from "@/components/flair/nucleos/use-action-playback";
 import { LANCE_MS, PASSOS_DO_ESPORTE } from "@/components/flair/esporte/use-esporte";
-import { janelaDoAcionamento, passosDaAcao, type PassoAcao } from "@/lib/flair/nucleos/action-fx";
+import { janelaDoAcionamento, passosDaAcao, valorDoEvento, type PassoAcao } from "@/lib/flair/nucleos/action-fx";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { tocarFx, type FxPrefs } from "@/lib/flair/nucleos/fx-sound";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
@@ -54,11 +54,13 @@ export function useNucleoAction(opts: NucleoActionOptions) {
   const mostrados = momento === "RESULTADO" ? passos.length : tocador.mostrados;
 
   const naAcao = acionamento?.momento === "ACAO" ? acionamento.tipo : null;
-  const tipo = naAcao === "ESPECIAL" || naAcao === "TROCA" || naAcao === "MERCADO" ? naAcao : null;
+  const tipo = naAcao === "ESPECIAL" || naAcao === "TROCA" || naAcao === "MERCADO" || naAcao === "JOGADA" ? naAcao : null;
   /** a janela abre quando o servidor espera o acionamento e tudo o que ele já mandou apareceu */
   const aberta = (!!tipo || porCartas) && momento === "ACAO" && janelaDoAcionamento(resultado?.status, passos, tocador.mostrados);
   /** a carta Especial vale 1 por luta (evento ESPECIAL do servidor); a troca vale 1 por lance, até o apito */
-  const usado = tipo === "ESPECIAL" && !!resultado?.eventos.some((e) => e.codigo === tipo);
+  const usado = (tipo === "ESPECIAL" || tipo === "JOGADA") && !!resultado?.eventos.some((e) => e.codigo === (tipo === "JOGADA" ? "JOGADA_DE_CENA" : tipo));
+  /** a jogada de cena: a cor que a cena pede agora (o servidor sorteia) */
+  const pedido = valorDoEvento(resultado, "PEDIDO_DE_CENA") as { familia?: string; acao?: string } | undefined;
 
-  return { passos, mostrados, pular: tocador.pular, tipo, aberta, usado };
+  return { passos, mostrados, pular: tocador.pular, tipo, aberta, usado, pedido };
 }

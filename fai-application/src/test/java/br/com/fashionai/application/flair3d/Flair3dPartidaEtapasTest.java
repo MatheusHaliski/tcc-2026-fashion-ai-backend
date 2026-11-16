@@ -190,7 +190,8 @@ class Flair3dPartidaEtapasTest {
         assertThat(erro(() -> service.previa(ana, UUID.randomUUID(), vestir(sup))).status()).isEqualTo(404);
         assertThat(erro(() -> service.previa(ana, id, vestir(foraDoDeck))).code()).isEqualTo("CARTA_FORA_DO_DECK");
 
-        Resultado entrega = service.entregar(ana, id, vestir(sup, inf, cal));
+        service.entregar(ana, id, vestir(sup, inf, cal));
+        Resultado entrega = service.acionar(ana, id, Acionamento.NENHUM);
         assertThat(entrega.status()).isEqualTo("ENTREGUE");
         assertThat(entrega.cartas()).extracting(Resultado.CartaPontos::pontos).containsExactly(14.29, 14.29, 0.0);
         assertThat(erro(() -> service.previa(ana, id, vestir(sup))).status()).isEqualTo(409);

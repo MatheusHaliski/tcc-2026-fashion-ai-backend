@@ -236,6 +236,19 @@ describe("acionamentos", () => {
     expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem")[0].textContent).toBe("Round 1, Velocidade: você 52 × oponente 40");
   }, 10000);
 
+  it("jogada de cena (Passarela): depois do look avaliado, a cena pede uma cor e a carta fora do look dispara a ação dela", async () => {
+    const onAcionar = vi.fn();
+    loggedAs(ME, { "POST /api/flair/3d/nucleos/PASSARELA/efeitos": { efeitos: [{ cardId: "c2", itens: [{ codigo: "COR_FLASHES", valor: 4 }] }] } });
+    const pede: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "EM_ACAO", status: "EM_ACAO", regras: [], eventos: [{ codigo: "PEDIDO_DE_CENA", valor: { familia: "Azul", acao: "FLASHES" } }] };
+    renderApp(<NucleoGame definicao={definicao("PASSARELA")} cartas={CARTAS} entregando={false} erro={null} momento="ACAO" resultado={pede} onEntregar={vi.fn()} onAcionar={onAcionar} />);
+    const jogada = screen.getByTestId("nucleo-trigger");
+    expect(jogada.textContent).toContain("Jogada de cena");
+    await waitFor(() => expect(within(jogada).getByRole("status").textContent).toBe("A cena pede flashes da plateia: uma carta azul soma 10. Outra cor só faz a cena."), { timeout: 6000 });
+    const carta = await within(jogada).findByRole("button", { name: "Jogar Calça linho: flashes da plateia" });
+    fireEvent.click(carta);
+    expect(onAcionar).toHaveBeenCalledWith({ tipo: "JOGADA", cardId: "c2" });
+  }, 10000);
+
   it("Dress Fighter com acionamento: a janela abre entre os rounds, a luta espera e 1 carta Especial vale por luta", async () => {
     const onAcionar = vi.fn();
     const primeiroRound: NucleoResultado = { ...RESULTADO_LUTA, eventos: RESULTADO_LUTA.eventos.slice(0, 1), status: "EM_ACAO" };

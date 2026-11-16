@@ -227,7 +227,7 @@ export function NucleoGame(props: Props) {
           acao={modo.acao ?? (
               <NucleoActionSlot nucleo={codigo} variante={variante} acao={acao} acionou={acionou} cartas={cartas} vestidas={vestidas}
                 vagas={vagasDaRegua(tabs).map((v) => v.tab.id)} ocupado={!!props.acionando} erro={props.erroAcionar ?? null}
-                acaoDe={SEM_ACAO_DE_COR} onAcionar={onAcionar ? acionar : undefined} />
+                acaoDe={SEM_ACAO_DE_COR} itens={efeitos.itens} onAcionar={onAcionar ? acionar : undefined} />
           )}
           resultado={resultado ? (
             <NucleoResult codigo={codigo} resultado={doEsporte ? resultadoSemLances(resultado) : resultado} cartas={pontuadas.lista} semPlacar={semPlacar(definicao)} rodada={definicao.rodada} onAgain={onAgain ?? SEM_FIM}>

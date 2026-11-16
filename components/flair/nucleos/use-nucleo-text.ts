@@ -102,9 +102,10 @@ export function useNucleoText() {
         if (vars.codigo) vars.salaoNome = ou(`flair3d.ui.detetive.${vars.codigo}.name`, vars.codigo);
         if (vars.codigo) vars.nome = nomeDaEtapa(ou, vars.codigo);
         if (typeof v === "string" && e.codigo !== "FAMILIA") vars.valor = nomeDoValor(ou, v);
-        if (vars.familia) vars.familia = familiaCor(vars.familia).toLowerCase();
+        if (vars.familia) vars.familia = familiaCor(vars.familia.toUpperCase()).toLowerCase();
         if (vars.item) vars.item = ou(`flair3d.ui.mercado.${vars.item}`, vars.item);
-        if (vars.acao) vars.acao = ou(`flair3d.ui.acaoCor.${vars.modalidade}.${vars.acao}`, ou(`flair3d.ui.acaoCor.${vars.acao}`, vars.acao));
+        // a ação da cor: no esporte, a ação do lance; nos efeitos de cena (jogada de cena), o nome do efeito
+        if (vars.acao) vars.acao = ou(`flair3d.ui.acaoCor.${vars.modalidade}.${vars.acao}`, ou(`flair3d.ui.acaoCor.${vars.acao}`, ou(`flair3d.ui.efeito.COR_${vars.acao}`, vars.acao)));
         if (vars.venceu) vars.desfecho = t(`flair3d.ui.acaoCor.${vars.venceu === "true" ? "ok" : "falhou"}`);
         // o que o lance mudou (força do time, placar, um lance a menos do adversário); servidor antigo não manda: fica vazio
         vars.ganhoTexto = vars.efeito ? ou(`flair3d.ui.lanceEfeito.${vars.efeito}`, "", vars) : "";

@@ -11930,5 +11930,16 @@
   "admin.users.papel_admin": "Administrador",
   "admin.users.sua_conta": "Tu cuenta (no se suspende desde la lista)",
   "flair3d.detetive.aviso.ESCAPOU": "Despistaste al guardia: mira alrededor y vuelve a su ronda.",
-  "flair3d.detetive.aviso.PEGO": "¡Atrapado! −1 vida y 30 s; de vuelta a la puerta de la sala."
+  "flair3d.detetive.aviso.PEGO": "¡Atrapado! −1 vida y 30 s; de vuelta a la puerta de la sala.",
+  "flair3d.ui.trigger.JOGADA.name": "Jugada de escena",
+  "flair3d.ui.trigger.JOGADA.none": "No hay carta fuera del look en el mazo: sigue sin jugada.",
+  "flair3d.ui.trigger.JOGADA.wait": "La jugada de escena llega después de evaluar el look.",
+  "flair3d.ui.trigger.JOGADA.open": "Juega una carta del mazo que no esté en el look: su color dispara la acción en la escena.",
+  "flair3d.ui.trigger.JOGADA.pede": "La escena pide {acao}: una carta {familia} suma 10. Otro color solo hace la escena.",
+  "flair3d.ui.trigger.JOGADA.use": "Jugar {nome}: {acao}",
+  "flair3d.ui.trigger.JOGADA.semCor": "Jugar {nome} (sin acción de color)",
+  "flair3d.regra.JOGADA_DE_CENA": "Jugada de escena en el color pedido: 10",
+  "flair3d.ui.evento.PEDIDO_DE_CENA": "La escena pide una carta {familia}",
+  "flair3d.ui.evento.JOGADA_DE_CENA": "Jugada de escena: {acao}",
+  "flair3d.ui.trigger.error.CARTA_NO_LOOK": "Esa carta está en el look: juega una del mazo que quedó fuera."
 }

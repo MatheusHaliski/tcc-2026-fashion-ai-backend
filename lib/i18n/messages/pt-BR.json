@@ -11930,5 +11930,16 @@
   "admin.users.papel_admin": "Administrador",
   "admin.users.sua_conta": "Sua conta (não se suspende pela lista)",
   "flair3d.detetive.aviso.ESCAPOU": "Você despistou o segurança: ele procura em volta e volta à ronda.",
-  "flair3d.detetive.aviso.PEGO": "Pego! −1 vida e 30 s; de volta à porta da sala."
+  "flair3d.detetive.aviso.PEGO": "Pego! −1 vida e 30 s; de volta à porta da sala.",
+  "flair3d.ui.trigger.JOGADA.name": "Jogada de cena",
+  "flair3d.ui.trigger.JOGADA.none": "Não há carta fora do look no deck: siga sem jogada.",
+  "flair3d.ui.trigger.JOGADA.wait": "A jogada de cena vem depois que o look é avaliado.",
+  "flair3d.ui.trigger.JOGADA.open": "Jogue uma carta do deck que não está no look: a cor dela dispara a ação na cena.",
+  "flair3d.ui.trigger.JOGADA.pede": "A cena pede {acao}: uma carta {familia} soma 10. Outra cor só faz a cena.",
+  "flair3d.ui.trigger.JOGADA.use": "Jogar {nome}: {acao}",
+  "flair3d.ui.trigger.JOGADA.semCor": "Jogar {nome} (sem ação de cor)",
+  "flair3d.regra.JOGADA_DE_CENA": "Jogada de cena na cor pedida: 10",
+  "flair3d.ui.evento.PEDIDO_DE_CENA": "A cena pede uma carta {familia}",
+  "flair3d.ui.evento.JOGADA_DE_CENA": "Jogada de cena: {acao}",
+  "flair3d.ui.trigger.error.CARTA_NO_LOOK": "Essa carta está no look: jogue uma do deck que ficou de fora."
 }
