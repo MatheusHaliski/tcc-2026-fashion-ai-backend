@@ -1,4 +1,10 @@
 {
+  "pieceReferences.tipoLavagem.label": "Washing type",
+  "pieceReferences.tipoLavagem.unselected": "Not specified",
+  "pieceReferences.tipoLavagem.unavailable": "Saved washing type unavailable",
+  "pieceReferences.tipoLavagem.loadError": "Could not load washing types.",
+  "pieceReferences.tipoLavagem.empty": "No washing types available.",
+  "pieceReferences.tipoLavagem.hint": "Choose the washing instruction for this piece.",
   "pieceReferences.colecao.label": "Collection",
   "pieceReferences.colecao.unselected": "No collection",
   "pieceReferences.colecao.unavailable": "Saved collection unavailable",
