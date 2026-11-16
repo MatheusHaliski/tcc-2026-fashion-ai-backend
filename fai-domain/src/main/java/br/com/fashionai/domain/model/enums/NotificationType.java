@@ -53,7 +53,9 @@ public enum NotificationType {
     MOMENT_STARTING(NotificationCategory.SOCIAL, true),
     MOMENT_GROUP_CREATED(NotificationCategory.SOCIAL, true),
     MOMENT_DEADLINE(NotificationCategory.SOCIAL, true),
-    MOMENT_COMPLETED(NotificationCategory.ACHIEVEMENT, true);
+    MOMENT_COMPLETED(NotificationCategory.ACHIEVEMENT, true),
+    /** FashionAI Garment Delivery: a encomenda à Fábrica FashionAI (fictícia) foi expedida ou entregue. */
+    GARMENT_DELIVERY(NotificationCategory.SYSTEM, true);
 
     private final NotificationCategory category;
     private final boolean optOutAllowed;

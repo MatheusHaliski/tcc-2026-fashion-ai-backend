@@ -10,7 +10,7 @@ import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
 import java.util.Map;
 
 /** Imagem da peça sem foto da pessoa: foto oficial do catálogo (RF47) ou a imagem padrão da subcategoria. */
-final class PieceImages {
+public final class PieceImages {
     private PieceImages() {
     }
 
@@ -42,7 +42,7 @@ final class PieceImages {
     }
 
     /** Imagem padrão da peça ({@code /public/assets_pecas}) quando a pessoa deixa a foto vazia. */
-    static void useDefault(WardrobeItem w, AssetCatalogService assets) {
+    public static void useDefault(WardrobeItem w, AssetCatalogService assets) {
         String url = assets.defaultPieceImage(w.getCategory(), w.getSubcategory());
         w.setImageUrl(url);
         w.setThumbnailUrl(url);

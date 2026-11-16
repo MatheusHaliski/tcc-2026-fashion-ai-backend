@@ -56,6 +56,11 @@ public class SizeOptionsService {
         return build(w.getCategory(), w.getSubcategory(), p, w);
     }
 
+    /** Grade de um tipo de peça que ainda não existe (encomenda do Atelier à Fábrica FashionAI): sem loja, tabela nem 3D. */
+    public Map<String, Object> forTaxonomy(String category, String subcategory) {
+        return build(category, subcategory, null, null);
+    }
+
     Map<String, Object> build(String category, String subcategory, CatalogProduct product, WardrobeItem piece) {
         String grid = SizeGrids.gridOf(category, subcategory);
         Map<String, Map<String, Object>> rows = new LinkedHashMap<>();

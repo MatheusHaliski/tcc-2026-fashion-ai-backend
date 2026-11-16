@@ -47,6 +47,8 @@ public class PassportAccountDataCleanup implements AccountDataCleanup {
         for(GarmentPassport p:passports.findByOwnerId(userId)) {
             // User row remains anonymized by AccountService; no account identity is invented for the physical unit.
             p.setComposition(null); p.setCare(null); p.setOrigin("UNKNOWN"); p.setPendingTransferId(null); p.setStateUpdatedAt(now);
+            // Registro de fabricação (série, lote, designers, medidas) sai junto com as declarações privadas.
+            p.setManufacturingJson(null);
             for(PassportShare s:shares.findByPassportId(p.getId())) { s.setRevokedAt(now); shares.save(s); }
             passports.save(p);
         }
