@@ -17,6 +17,8 @@ export interface CenaProps {
   raioX: boolean;
   gavetasAbertas: boolean;
   vista: VistaDaCena;
+  /** clique na barra da cena: {@code vez} muda a cada clique; {@code giro} em graus (0 = voltar ao enquadramento da vista) */
+  comandoDeCamera?: { vez: number; giro: number };
   reduzido: boolean;
   rotulo: string;
   onEscolher: (compartimentoId: string) => void;

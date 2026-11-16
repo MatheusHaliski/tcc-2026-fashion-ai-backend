@@ -10576,6 +10576,8 @@
   "acervo.espaco.perspectiva": "Perspective",
   "acervo.espaco.abrirGavetas": "Open drawers",
   "acervo.espaco.raioX": "X-ray",
+  "acervo.espaco.girarEsquerda": "Turn the view to the left",
+  "acervo.espaco.girarDireita": "Turn the view to the right",
   "acervo.espaco.painel": "Space settings",
   "acervo.espaco.bandeja": "{count, plural, one {# piece without a place} other {# pieces without a place}}",
   "acervo.espaco.bandejaDica": "Drag to a compartment, or open the piece and use “Move to…”.",

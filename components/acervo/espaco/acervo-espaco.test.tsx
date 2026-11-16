@@ -5,12 +5,18 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
+import { useThree } from "@react-three/fiber";
+import { I18nProvider } from "@/lib/i18n/i18n";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
 import { ARMARIO_1, ARMARIO_2, ARVORE, rotasDoAcervo } from "@/test-utils/acervo";
-import { frames, meshes, mount3d } from "@/test-utils/three";
+import { frames, meshes, mount3d, ReactThreeTestRenderer } from "@/test-utils/three";
 import { AcervoApp } from "../acervo-app";
 import { CenaConteudo } from "./cena-conteudo";
 import type { CenaProps } from "./cena-tipos";
+
+// as fotos são carregadas pelo navegador; aqui a peça com foto recebe direto uma textura
+const FOTO = vi.hoisted(() => ({ textura: null as unknown }));
+vi.mock("./use-foto-da-peca", () => ({ useFotoDaPeca: (url?: string | null) => (url ? FOTO.textura : null) }));
 
 beforeEach(() => {
   localStorage.clear();
@@ -185,5 +191,60 @@ describe("ACERVO · cena 3D (renderizador de teste)", () => {
     const malha = (nome: string) => meshes(cena).find((m) => m.instance.name === nome)!;
     expect(malha("gaveta-c-gav2").instance.parent?.position.z).toBeCloseTo(0.42);
     expect(malha("gaveta-c-gav1").instance.parent?.position.z).toBe(0);
+  });
+
+  it("a câmera gira pelos botões (alternativa ao arrasto) até o limite e Frontal/Perspectiva voltam ao quadro pronto", async () => {
+    const vista: { camera: THREE.Camera | null; controles: { enabled: boolean; target: THREE.Vector3 } | null } = { camera: null, controles: null };
+    function Espia() {
+      const estado = useThree();
+      vista.camera = estado.camera;
+      vista.controles = estado.controls as unknown as { enabled: boolean; target: THREE.Vector3 };
+      return null;
+    }
+    const cena = (comando?: { vez: number; giro: number }) => (
+      <I18nProvider initial="pt-BR"><CenaConteudo {...base} rotulos={false} comandoDeCamera={comando} /><Espia /></I18nProvider>
+    );
+    const r = await mount3d(cena());
+    await frames(r);
+    const alvo = vista.controles!.target;
+    const azimute = (p = vista.camera!.position) => Math.atan2(p.x - alvo.x, p.z - alvo.z);
+    const inicio = vista.camera!.position.clone();
+    expect(vista.controles?.enabled).toBe(true);
+    await ReactThreeTestRenderer.act(async () => r.update(cena({ vez: 1, giro: 15 })));
+    await frames(r);
+    expect(azimute() - azimute(inicio)).toBeCloseTo((15 * Math.PI) / 180, 2);
+    for (let vez = 2; vez < 10; vez++) {
+      await ReactThreeTestRenderer.act(async () => r.update(cena({ vez, giro: 15 })));
+      await frames(r);
+    }
+    expect(azimute()).toBeCloseTo((55 * Math.PI) / 180, 2);
+    await ReactThreeTestRenderer.act(async () => r.update(cena({ vez: 10, giro: 0 })));
+    await frames(r);
+    expect(vista.camera!.position.distanceTo(inicio)).toBeLessThan(0.01);
+    // segurar uma peça para arrastar não gira a câmera; soltar devolve o giro
+    await r.fireEvent(meshes(r).find((m) => m.instance.name === "roupa-p1")!, "onPointerDown");
+    expect(vista.controles?.enabled).toBe(false);
+    await ReactThreeTestRenderer.act(async () => {
+      window.dispatchEvent(new Event("pointerup"));
+      await new Promise((fim) => setTimeout(fim, 5));
+    });
+    expect(vista.controles?.enabled).toBe(true);
+  });
+
+  it("a peça com foto mostra a foto nas faces grandes; sem foto, segue o bloco na cor", async () => {
+    FOTO.textura = new THREE.Texture();
+    const cena = await mount3d(<CenaConteudo {...base} moveis={[ARMARIO_1]} rotulos={false} gavetasAbertas
+      itensDe={(id) => base.itensDe(id).map((item) => (item.id === "p1" || item.id === "p2" ? { ...item, foto: `/fotos/${item.id}.webp` } : item))} />);
+    await frames(cena);
+    const malha = (nome: string) => meshes(cena).find((m) => m.instance.name === nome)!.instance as THREE.Mesh;
+    const pendurada = malha("roupa-p1").material as THREE.MeshStandardMaterial[];
+    expect(pendurada.map((m) => m.map === FOTO.textura)).toEqual([true, true, false, false, false, false]);
+    expect(pendurada[4].color.getHexString()).toBe("335577");
+    const dobrada = malha("roupa-p2").material as THREE.MeshStandardMaterial[];
+    expect(dobrada.map((m) => m.map === FOTO.textura)).toEqual([false, false, true, false, false, false]);
+    const semFoto = malha("roupa-p3").material as THREE.MeshStandardMaterial;
+    expect(Array.isArray(semFoto)).toBe(false);
+    expect(semFoto.map).toBeNull();
+    FOTO.textura = null;
   });
 });

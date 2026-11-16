@@ -10576,6 +10576,8 @@
   "acervo.espaco.perspectiva": "Perspectiva",
   "acervo.espaco.abrirGavetas": "Abrir gavetas",
   "acervo.espaco.raioX": "Raio-X",
+  "acervo.espaco.girarEsquerda": "Girar a vista para a esquerda",
+  "acervo.espaco.girarDireita": "Girar a vista para a direita",
   "acervo.espaco.painel": "Configuração do espaço",
   "acervo.espaco.bandeja": "{count, plural, one {# peça sem lugar} other {# peças sem lugar}}",
   "acervo.espaco.bandejaDica": "Arraste para um compartimento, ou abra a peça e use “Mover para…”.",

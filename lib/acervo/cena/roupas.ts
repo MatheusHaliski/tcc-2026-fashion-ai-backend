@@ -1,6 +1,6 @@
 /**
- * ACERVO — as peças dentro dos compartimentos, como formas simples e coloridas: penduradas no cabideiro, dobradas em
- * pilhas na prateleira e em fileiras dentro da gaveta. Um item da lista de desejos em simulação entra como
+ * ACERVO — as peças dentro dos compartimentos, como formas simples na cor da peça (com a foto, quando ela tem):
+ * penduradas no cabideiro, dobradas em pilhas na prateleira e em fileiras dentro da gaveta. Um item da lista de desejos em simulação entra como
  * peça-fantasma. Medidas em metros, no mesmo sistema do móvel (lib/acervo/cena/modelo.ts).
  */
 import type { Celula, Planta } from "@/lib/acervo/planta";
@@ -12,6 +12,8 @@ export interface RoupaNaCena {
   fantasma: boolean;
   categoria: string;
   cor: string;
+  /** miniatura da foto da peça (só peça com foto própria) */
+  foto?: string;
   tam: V3;
   pos: V3;
   compartimentoId: string;
@@ -21,6 +23,7 @@ export interface ItemDoCompartimento {
   id: string;
   categoria: string;
   cor: string;
+  foto?: string;
   fantasma?: boolean;
 }
 
@@ -44,8 +47,8 @@ function penduradas(p: Planta, c: Celula, itens: ItemDoCompartimento[]): RoupaNa
   const fundura = Math.min(0.42, p.profundidade * M - 0.12);
   return visiveis.map((item, i) => {
     const altura = alturaPendurada(item.categoria, h);
-    return { id: item.id, fantasma: !!item.fantasma, categoria: item.categoria, cor: item.cor, compartimentoId: c.id,
-      tam: [0.034, altura, fundura], pos: [inicio + i * passo, y + h - 0.1 - altura / 2, -p.profundidade * M / 2] };
+    return { id: item.id, fantasma: !!item.fantasma, categoria: item.categoria, cor: item.cor, foto: item.foto,
+      compartimentoId: c.id, tam: [0.034, altura, fundura], pos: [inicio + i * passo, y + h - 0.1 - altura / 2, -p.profundidade * M / 2] };
   });
 }
 
@@ -61,7 +64,8 @@ function dobradas(p: Planta, c: Celula, itens: ItemDoCompartimento[], naGaveta: 
     const calcado = item.categoria === "shoes_piece";
     const tam = calcado ? CALCADO : DOBRADA;
     const base = y + (naGaveta ? 0.02 : 0.012);
-    out.push({ id: item.id, fantasma: !!item.fantasma, categoria: item.categoria, cor: item.cor, compartimentoId: c.id, tam,
+    out.push({ id: item.id, fantasma: !!item.fantasma, categoria: item.categoria, cor: item.cor, foto: item.foto,
+      compartimentoId: c.id, tam,
       pos: [x + 0.02 + passo * (coluna + 0.5), base + tam[1] / 2 + andar * (tam[1] + 0.004), -p.profundidade * M / 2 + (naGaveta ? 0 : 0.04)] });
   });
   return out;

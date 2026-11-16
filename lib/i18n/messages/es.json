@@ -10576,6 +10576,8 @@
   "acervo.espaco.perspectiva": "Perspectiva",
   "acervo.espaco.abrirGavetas": "Abrir cajones",
   "acervo.espaco.raioX": "Rayos X",
+  "acervo.espaco.girarEsquerda": "Girar la vista a la izquierda",
+  "acervo.espaco.girarDireita": "Girar la vista a la derecha",
   "acervo.espaco.painel": "Configuración del espacio",
   "acervo.espaco.bandeja": "{count, plural, one {# prenda sin lugar} other {# prendas sin lugar}}",
   "acervo.espaco.bandejaDica": "Arrastra a un compartimento, o abre la prenda y usa «Mover a…».",

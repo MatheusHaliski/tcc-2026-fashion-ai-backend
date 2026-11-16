@@ -83,6 +83,12 @@
   font-weight: 600;
 }
 
+.acv-ferramentas .acv-ferramenta-icone {
+  justify-content: center;
+  min-width: var(--control-sm);
+  padding: 0 8px;
+}
+
 .acv-expandida {
   position: absolute;
   right: var(--space-3);
