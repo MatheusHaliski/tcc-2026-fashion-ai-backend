@@ -4,36 +4,49 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Dialog } from "@/components/ui";
+import { orderHref } from "@/components/garment-delivery/factory-order-card";
 
-/** "Voltar ao projeto": com alterações não salvas, pergunta antes de sair (o aviso do navegador só cobre fechar a aba). */
+/**
+ * Saídas do editor ("Voltar ao projeto" e "Encomendar à Fábrica FashionAI"): com alterações não salvas, pergunta antes
+ * de sair (o aviso do navegador só cobre fechar a aba). O checkout confere se a ficha da revisão está completa.
+ */
 export function EditorBackLink({ projectId, dirty }: { projectId: string; dirty: boolean }) {
   const { t } = useI18n();
   const router = useRouter();
-  const [asking, setAsking] = useState(false);
-  const href = `/atelier/projects/${projectId}`;
+  const [leavingTo, setLeavingTo] = useState<string | null>(null);
+  const back = `/atelier/projects/${projectId}`;
+  const exits = [
+    { href: back, label: t("atelier3d.back"), className: "btn" },
+    { href: orderHref(projectId), label: t("garmentDelivery.cta.order"), className: "btn btn-ghost" },
+  ];
   return (
     <>
-      <Link
-        className="btn"
-        href={href}
-        onClick={(event) => {
-          if (!dirty) return;
-          event.preventDefault();
-          setAsking(true);
-        }}
-      >
-        {t("atelier3d.back")}
-      </Link>
+      <div className="flex flex-wrap gap-2">
+        {exits.map((exit) => (
+          <Link
+            key={exit.href}
+            className={exit.className}
+            href={exit.href}
+            onClick={(event) => {
+              if (!dirty) return;
+              event.preventDefault();
+              setLeavingTo(exit.href);
+            }}
+          >
+            {exit.label}
+          </Link>
+        ))}
+      </div>
       <Dialog
-        open={asking}
+        open={leavingTo !== null}
         title={t("atelier3d.leave.title")}
-        onClose={() => setAsking(false)}
+        onClose={() => setLeavingTo(null)}
         footer={
           <>
-            <Button variant="primary" onClick={() => setAsking(false)}>
+            <Button variant="primary" onClick={() => setLeavingTo(null)}>
               {t("atelier3d.leave.stay")}
             </Button>
-            <Button onClick={() => router.push(href)}>{t("atelier3d.leave.go")}</Button>
+            <Button onClick={() => router.push(leavingTo ?? back)}>{t("atelier3d.leave.go")}</Button>
           </>
         }
       >
