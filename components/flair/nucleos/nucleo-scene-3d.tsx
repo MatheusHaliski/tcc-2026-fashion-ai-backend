@@ -41,6 +41,8 @@ export interface NucleoScene3DProps {
   resultado?: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
+  /** semente da partida: o corpo de cada pessoa de cena sai dela (sem partida, o do jogo) */
+  semente?: number;
   /** zonas da rodada (modos do Ateliê), na ordem, e o que a pessoa já pintou em cada uma */
   zonasDaPeca?: string[];
   zonas?: Record<string, ZonaEscolha>;
@@ -60,7 +62,7 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, zonasDaPeca, zonas, camera, momento = "PREPARO" }: NucleoScene3DProps) {
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, camera, momento = "PREPARO" }: NucleoScene3DProps) {
   const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
   // a abertura toca no começo da partida (e a cada salão da gala); quem volta a uma partida já na ação não a revê
@@ -80,7 +82,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
       <CenaContexto.Provider value={cena}>
         <Sala3D sala={sala} placar={placarDaCena(config.codigo, resultado)} />
         <Figurantes personagens={figurantes} prontos={prontos} />
-        <FigurantesHumanos codigo={config.codigo} personagens={figurantes} prontos={prontos} reduzido={reduzido} />
+        <FigurantesHumanos codigo={config.codigo} semente={semente} personagens={figurantes} prontos={prontos} reduzido={reduzido} />
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
         {manequim && zonasDaPeca && zonas && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} />

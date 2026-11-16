@@ -117,3 +117,13 @@ describe("corpos inteiros com limite (passe de desempenho da Passarela)", () => 
     expect(corposCheios(plateia, Infinity).size).toBe(14);
   });
 });
+
+describe("corpos das pessoas de cena pela semente da partida", () => {
+  it("a mesma partida dá as mesmas pessoas; outra partida, outra plateia", async () => {
+    const { pessoasDosFigurantes } = await import("@/lib/flair/nucleos/gente/figurantes");
+    const plateia = Array.from({ length: 6 }, () => ({ papel: "PLATEIA", tipo: "manequim", pos: [0, 0, 0], cor: "#5B2A86" })) as never;
+    const corpo = (semente: number) => [...pessoasDosFigurantes(semente, plateia).values()].map((p) => `${p.estatura}:${p.pele}:${p.sexo}`);
+    expect(corpo(41)).toEqual(corpo(41));
+    expect(corpo(41)).not.toEqual(corpo(42));
+  });
+});

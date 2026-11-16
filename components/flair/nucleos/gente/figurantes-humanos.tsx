@@ -17,13 +17,15 @@ import type { NucleoPersonagem } from "@/lib/flair/nucleos/types";
 
 interface Props {
   codigo: string;
+  /** semente da partida: outra partida, outras pessoas na plateia (sem partida, a do jogo) */
+  semente?: number;
   personagens: NucleoPersonagem[];
   prontos: React.MutableRefObject<Set<string>>;
   reduzido: boolean;
 }
 
-export function FigurantesHumanos({ codigo, personagens, prontos, reduzido }: Props) {
-  const pessoas = useMemo(() => pessoasDosFigurantes(sementeDoTexto(codigo), personagens, codigo === "FASHION_SPORTS"), [codigo, personagens]);
+export function FigurantesHumanos({ codigo, semente, personagens, prontos, reduzido }: Props) {
+  const pessoas = useMemo(() => pessoasDosFigurantes(semente ?? sementeDoTexto(codigo), personagens, codigo === "FASHION_SPORTS"), [codigo, semente, personagens]);
   const atores = useMemo(() => atoresDosFigurantes(personagens), [personagens]);
   const cena = useContext(CenaContexto);
   const antes = useRef(new Map<string, { x: number; z: number; t: number }>());

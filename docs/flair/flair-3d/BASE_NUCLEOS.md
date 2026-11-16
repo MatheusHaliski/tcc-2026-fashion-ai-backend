@@ -178,7 +178,7 @@ figura articulada antiga dele aparece no lugar.
 **Figurantes das salas dos outros jogos** (`lib/flair/nucleos/gente/figurantes.ts`,
 `components/flair/nucleos/gente/figurantes-humanos.tsx`): cada personagem do arquivo do núcleo que é gente (não o
 manequim, a câmera nem a claquete) vira uma pessoa do elenco, com a roupa do papel na cor do arquivo, o corpo tirado
-da semente do jogo (o código do núcleo; a cena das salas não recebe a semente da partida) e o movimento do papel
+da semente da partida (sem partida aberta, da semente do jogo) e o movimento do papel
 (sentada, torcendo, fotografando, conversando, parada). Medido na Passarela com as 14 pessoas (12 na plateia e 2
 fotógrafos): 1,44 milhão de triângulos e 399 chamadas por quadro; na Boutique (1 cliente), 179 mil e 63.
 

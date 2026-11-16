@@ -175,7 +175,7 @@ export function NucleoGame(props: Props) {
           objetivoAberto={estado.objetivo}
           resultado={resultado}
           previa={props.previa ?? null}
-          variante={variante}
+          variante={variante} semente={props.partida?.semente}
           zonas={estado.sel.zonas}
           prefs={fx.prefs}
           onPref={fx.alternar}

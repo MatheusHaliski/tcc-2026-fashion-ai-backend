@@ -47,6 +47,8 @@ export interface NucleoStageProps {
   previa: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
+  /** semente da partida: o corpo de cada pessoa de cena sai dela */
+  semente?: number;
   /** o que a pessoa já pintou em cada zona (modos do Ateliê) */
   zonas?: Record<string, ZonaEscolha>;
   prefs: FxPrefs;
@@ -67,7 +69,7 @@ export function NucleoStage(props: NucleoStageProps) {
   const [camera, setCamera] = useState<string>(CAMERA_AUTOMATICA);
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante}
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
