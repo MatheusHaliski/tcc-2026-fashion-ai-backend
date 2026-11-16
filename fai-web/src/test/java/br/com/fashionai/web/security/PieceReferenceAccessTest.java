@@ -4,13 +4,16 @@ import br.com.fashionai.application.audit.AuditService;
 import br.com.fashionai.domain.model.Colecao;
 import br.com.fashionai.domain.model.EstadoConservacao;
 import br.com.fashionai.domain.model.IntensidadeTermica;
+import br.com.fashionai.domain.model.Origem;
 import br.com.fashionai.domain.model.TipoLavagem;
 import br.com.fashionai.domain.repository.ColecaoRepository;
 import br.com.fashionai.domain.repository.EstadoConservacaoRepository;
 import br.com.fashionai.domain.repository.IntensidadeTermicaRepository;
+import br.com.fashionai.domain.repository.OrigemRepository;
 import br.com.fashionai.domain.repository.TipoLavagemRepository;
 import br.com.fashionai.web.config.SecurityConfig;
 import br.com.fashionai.web.controller.PieceReferenceController;
+import br.com.fashionai.web.controller.OrigemReferenceController;
 import br.com.fashionai.web.error.ErrorWriter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,15 +42,15 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PieceReferenceController.class)
-@Import({PieceReferenceController.class, SecurityConfig.class, FashionAuthorization.class,
-        AuditAccessDeniedHandler.class, AuditAuthenticationEntryPoint.class, ErrorWriter.class,
-        PieceReferenceAccessTest.CampoNovo.class})
+@WebMvcTest({PieceReferenceController.class, OrigemReferenceController.class})
+@Import({PieceReferenceController.class, OrigemReferenceController.class, SecurityConfig.class, FashionAuthorization.class,
+        AuditAccessDeniedHandler.class, AuditAuthenticationEntryPoint.class, ErrorWriter.class})
 class PieceReferenceAccessTest {
     private static final UUID STATE_ID = UUID.fromString("a32ea7a1-b97c-4ff9-b47d-72c219667453");
     private static final UUID WASH_ID = UUID.fromString("3333666f-6b13-4cc9-913f-c7e5d529eb79");
     private static final UUID COLLECTION_ID = UUID.fromString("7d0b3a52-6c1e-4f0a-9a43-2f1d5e8c9b10");
     private static final UUID THERMAL_ID = UUID.fromString("c4f1e0d2-8b3a-4e6f-9d21-5a7b8c9d0e11");
+    private static final UUID ORIGIN_ID = UUID.fromString("05aa203c-8b3a-4e6f-9d21-5a7b8c9d0e11");
 
     @Autowired
     private MockMvc mvc;
@@ -76,12 +79,17 @@ class PieceReferenceAccessTest {
                 .andExpect(jsonPath("$[0].codigo").value("ALTA"))
                 .andExpect(jsonPath("$[0].nome").value("Alta (dias frios)"))
                 .andExpect(jsonPath("$[0].updatedAt").doesNotExist());
+        mvc.perform(get("/api/origens")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(ORIGIN_ID.toString()))
+                .andExpect(jsonPath("$[0].codigo").value("ADQUIRIDA"))
+                .andExpect(jsonPath("$[0].nome").value("Adquirida"))
+                .andExpect(jsonPath("$[0].createdAt").doesNotExist());
     }
 
     @Test
     void anonymousMutationsAndUnrelatedRoutesRemainProtected() throws Exception {
         for (String path : List.of("/api/estados-conservacao", "/api/opcoes/estados-conservacao", "/api/tipos-lavagem",
-                "/api/colecoes", "/api/intensidades-termicas")) {
+                "/api/colecoes", "/api/intensidades-termicas", "/api/origens")) {
             mvc.perform(post(path)).andExpect(status().isUnauthorized());
             mvc.perform(put(path)).andExpect(status().isUnauthorized());
             mvc.perform(patch(path)).andExpect(status().isUnauthorized());
@@ -190,6 +198,15 @@ class PieceReferenceAccessTest {
         }
 
         @Bean
+        OrigemRepository origens() {
+            Origem origin = new Origem();
+            origin.assignId(ORIGIN_ID);
+            origin.setCodigo("ADQUIRIDA");
+            origin.setNome("Adquirida");
+            return repository(OrigemRepository.class, List.of(origin));
+        }
+
+        @Bean
         AuditService auditService() { return event -> {}; }
 
         @Bean
@@ -199,7 +216,8 @@ class PieceReferenceAccessTest {
 
         private static <T> T repository(Class<T> type, List<?> rows) {
             return type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, (proxy, method, args) -> {
-                if ((method.getName().equals("findAllByOrderByNomeAsc") || method.getName().equals("findAllByAtivoTrueOrderByNomeAsc"))) return rows;
+                if ((method.getName().equals("findAllByOrderByNomeAsc") || method.getName().equals("findAllByAtivoTrueOrderByNomeAsc")
+                        || method.getName().equals("findAllByOrderByCodigoAsc"))) return rows;
                 if (method.getDeclaringClass() == Object.class) return switch (method.getName()) {
                     case "hashCode" -> System.identityHashCode(proxy);
                     case "equals" -> proxy == args[0];

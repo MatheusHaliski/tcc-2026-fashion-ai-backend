@@ -166,7 +166,15 @@ public class WardrobeService {
     }
 
     private PieceConservationService conservation;
-
+    private TipoLavagemService tipoLavagem;
+    @org.springframework.beans.factory.annotation.Autowired
+    void setTipoLavagem(TipoLavagemService tipoLavagem) {
+        this.tipoLavagem = tipoLavagem;
+    }
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public TipoLavagemService getTipoLavagem() {
+        return tipoLavagem;
+    }
     /** Coleção e intensidade térmica da peça (FKs em wardrobe_items). Opcional nos testes que montam o serviço sem Spring. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private ClassificationService classification;
@@ -180,7 +188,7 @@ public class WardrobeService {
     // Objetos sem estado, criados a cada chamada com as dependências deste serviço: leem os campos no momento da chamada
     // e não são beans. Transação, autorização, posse e auditoria continuam nos métodos públicos daqui.
     private PieceFormWriter formWriter() {
-        return new PieceFormWriter(conservation, brands, brandProfiles, ownMedia, media, brandLogos, classification);
+        return new PieceFormWriter(conservation, tipoLavagem, brands, brandProfiles, ownMedia, media, brandLogos, classification);
     }
 
     private DraftPieceImport draftImport() {
@@ -325,8 +333,7 @@ public class WardrobeService {
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
                             Map<String, Object> background, UUID captureSessionId, String variation, Map<String, List<String>> attributes,
-                            List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId, UUID intensidadeTermicaId,
-                            UUID tipoLavagemId, Boolean clearTipoLavagem) {
+                            List<String> confirmed, UUID estadoConservacaoId, Boolean tipoLavagemId, Boolean clearEstadoConservacao, UUID colecaoId, UUID intensidadeTermicaId) {
         /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
         public PieceForm {
             occasion = Taxonomy.normalizeTags(occasion);
@@ -360,7 +367,7 @@ public class WardrobeService {
             this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
                     occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
                     careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
-                    variation, attributes, confirmed, null, false, null, null);
+                    variation, attributes, confirmed, null,  null, false, null, null);
         }
 
         /**
