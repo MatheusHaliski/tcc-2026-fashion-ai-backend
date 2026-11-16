@@ -1,6 +1,6 @@
 # Auditoria dos jogos do FLAIR (15/11/2026)
 
-> **Relatório parcial, atualizado às 20:12 UTC.** A auditoria ainda está em andamento; jogos sem seção ainda não foram jogados.
+> **Relatório parcial, atualizado às 13:36 UTC.** A auditoria ainda está em andamento; jogos sem seção ainda não foram jogados.
 
 ## 1. Como a auditoria foi feita
 
@@ -54,9 +54,10 @@ provisório), **Rec** recursos, **Deck** cartas do deck, **Lóg** lógica, **Enr
 
 | Jogo | Cam | Car | Flu | Rec | Deck | Lóg | Enr | Est | Sal | NPC | Zerado? | Final |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Dress Fighter | 4 | 2 | 2 | 4 | 4 | 5 | 3 | 3 | 1 | 1 | parcial (3 arenas jogadas; vitória impossível com as cartas da conta) | **2,9** |
-
-Os outros jogos ainda estão sendo jogados.
+| Passarela | 5 | 4 | 1 | 5 | 6 | 6 | 3 | 5 | 5 | 2 | sim (5 de 5) | **4,2** |
+| Dress Fighter | 4 | 2 | 2 | 4 | 4 | 5 | 3 | 4 | 6 | 3 | parcial (3 arenas jogadas; vitória impossível com as cartas da conta) | **3,7** |
+| Dress the Star | 5 | 4 | 2 | 5 | 5 | 4 | 4 | 5 | 5 | 1 | sim (3 de 3) | **4,0** |
+| Personagem de Filme | 4 | 4 | 1 | 5 | 5 | 6 | 5 | 4 | 5 | 1 | parcial (2 de 3) | **4,0** |
 
 ## 4. Jogo a jogo
 
@@ -75,6 +76,16 @@ velocidade 40, ataque 20 e defesa 20. No empate o round é do oponente. Resultad
 40 no round 1 perde), Arena veloz sempre 0, Arena blindada no máximo 50 (só o round 1, e só quando o impulso sorteado é
 positivo). A vitória e a animação de vitória nunca aparecem. Não há carta Especial em nenhuma conta, então a única ação
 entre os rounds nunca pôde ser usada.
+
+**Refeito no código atual (16/11, commit `b6d26431`).** Depois da troca de código (abertura e final por jogo,
+"Continuar partida", pessoas de cena seguindo o diretor) voltei ao Dress Fighter: a tela abriu com **"Partida em
+andamento · Arena blindada · Continuar partida / Começar outra partida"**, retomei a luta da véspera do ponto em que ela
+parou (round 2 já jogado) e terminei com 50 pontos, igual ao que o servidor gravou. Agora a oponente anda até a avatar no
+começo, faz gestos e **comemora com o braço erguido** quando a avatar cai no fim; enquanto os corpos carregam aparecem
+uma cápsula branca e um boneco roxo no lugar das duas ([quadros](evidencias/jogos/df-11-continuar-partida.jpg),
+[fim](evidencias/jogos/df-10-codigo-novo-round3-oponente-comemora.jpg)). O roteiro da luta continua montando a queda da
+avatar sempre que o resultado não é VITORIA (`sequences-match.ts`, sem mudança nessa parte), então o defeito DF-1 segue
+no código atual. As notas abaixo já contam o código atual: salvamento e NPCs subiram.
 
 #### Dress Fighter: mecânica de combate e cartas
 
@@ -122,10 +133,10 @@ ataque = chute, defesa = golpe especial), não da cor.
 
 | Item | Resposta | O que vi |
 | --- | --- | --- |
-| Movimento de lutadora | não | em todos os rounds de todas as lutas ela fica parada de frente para a câmera, braços para baixo; não gira para a avatar, não se aproxima, não recua |
+| Movimento de lutadora | parcial | no código de 15/11 ficava parada; no atual ela anda até a avatar no começo e gesticula, mas fica ao lado dela, de frente para a câmera, sem guarda de luta, sem circular nem recuar |
 | Mecânica de combate | não | ela nunca ataca nem defende: o roteiro pede "guarda", "soco", "recuo" e "comemora", mas o corpo humano não toca nenhum desses movimentos (o próprio `ESTADO_DOS_JOGOS.md` admite que as sequências só animam as silhuetas antigas) |
 | Furtividade/esquiva | não | nada |
-| Reação | não | não reage ao round ganho pela pessoa nem à derrota dela; a legenda "O oponente fica de pé" é a única reação |
+| Reação | parcial | no código atual ela comemora (braço erguido) quando a avatar cai no fim; não reage ao round que perde |
 | Dano | não | não há barra, número de dano, clarão nem recuo no contato; não existe contato |
 
 Evidência: [round 2 quadro a quadro](evidencias/jogos/df-04-round2-oponente-parado.jpg) e [round 1 vencido](evidencias/jogos/df-03-round1-vencido-avatar-cai.jpg).
@@ -173,7 +184,7 @@ ordem de cartas, por cor, por rounds seguidos ou por tempo. A oponente também n
 6. Uma vista lateral de luta de verdade (as duas de perfil, câmera acompanhando de lado), cortes no impacto, e a
    câmera nunca dentro do corpo nem do piso.
 7. Combos: bônus por sequência de cores ou de rounds ganhos, com contador na tela.
-8. Retomar a luta depois de recarregar a página; marcar a arena já vencida.
+8. Marcar a arena já vencida (a retomada já existe no código atual).
 9. Recusar no deck a peça que o jogo não deixa vestir (peça inteira).
 10. Equilíbrio: com cartas Bronze sem couro, jeans ou metal a luta não pode ser vencida em duas das três arenas, e o
     jogo não avisa isso antes de entrar.
@@ -189,10 +200,10 @@ ordem de cartas, por cor, por rounds seguidos ou por tempo. A oponente também n
 | Cartas do deck | 4 | regra do calçado clara, cor do cadastro certa na carta; a carta só mostra "velocidade" e nunca o nome da peça; peça inteira aceita no deck e ausente na mão |
 | Lógica | 5 | o servidor é coerente e determinístico (refiz o sorteio do impulso fora do jogo e bateu); o texto do resultado bate com a resposta; mas a cena contradiz o resultado (quem vence cai) e duas arenas são impossíveis com as cartas da conta |
 | Enredo | 3 | três arenas com uma frase cada; nenhuma progressão entre elas |
-| Estrutura da partida | 3 | preparo, três rounds e resultado; sem apresentação, sem anúncio de round, sem nocaute; o final de derrota toca depois de cada round |
-| Salvamento | 1 | recarregar no meio da luta volta à escolha da arena e a luta fica aberta para sempre no servidor ([tela](evidencias/jogos/df-09-recarregar-perde-luta.jpg)); arena vencida não fica marcada |
-| NPCs | 1 | a oponente fica parada em todas as lutas; não há outros NPCs |
-| **Final** | **2,9** | |
+| Estrutura da partida | 4 | preparo, três rounds e resultado com frase de desfecho ("O oponente leva a luta..."); sem anúncio de round nem nocaute; o final de derrota toca depois de cada round |
+| Salvamento | 6 | no código de 15/11 recarregar perdia a luta ([tela](evidencias/jogos/df-09-recarregar-perde-luta.jpg)); no atual "Continuar partida" retomou a luta do round em que parou, com o mesmo resultado no servidor; a arena já jogada ainda não fica marcada e a retomada mostra corpos provisórios e um 409 na prévia |
+| NPCs | 3 | a oponente agora anda até a avatar, gesticula e comemora no fim; não ataca, não defende, não recua; não há juiz nem plateia |
+| **Final** | **3,7** | média das dez |
 
 **Defeitos.**
 
@@ -202,8 +213,86 @@ ordem de cartas, por cor, por rounds seguidos ou por tempo. A oponente também n
 | DF-2 | A oponente não se mexe em nenhum round | qualquer luta; observar a oponente durante os três rounds | atrapalha |
 | DF-3 | Duas arenas impossíveis com cartas Bronze sem couro, jeans, lã ou metal, sem aviso | @lia.demo, qualquer deck: Arena do bairro e Arena veloz sempre 0 | atrapalha |
 | DF-4 | Peça inteira entra no deck mas não aparece na mão da partida | deck com "Vestido preto"; entrar: a mão tem 5 cartas | atrapalha |
-| DF-5 | Recarregar a página no meio da luta perde a luta | entregar o look, recarregar | atrapalha |
+| DF-5 | (corrigido no código atual) Recarregar a página no meio da luta perdia a luta; agora há "Continuar partida" | entregar o look, recarregar | — |
 | DF-6 | A câmera do fim entra no corpo e no piso e mostra a saia de baixo | luta com saia; câmera Automática; fim do round 3 | atrapalha |
 | DF-7 | No celular o botão de câmera cobre as pernas da avatar e os cartões de texto cobrem a esquerda da cena | 390×844, qualquer momento da partida | atrapalha |
 | DF-8 | A carta do deck mostra só "velocidade +N"; ataque, defesa e a cor só aparecem ao vestir | tela do deck | detalhe |
 | DF-9 | "A ação 2 de 2", "4 de 4": o contador conta eventos (impulso e round), não rounds | Arena veloz, depois do round 2 | detalhe |
+
+### 4.1 A Passarela (núcleo 1)
+
+**O que joguei.** As cinco rodadas até o resultado, com deck de 8 cartas: Tema surpresa (o tema sorteado foi
+Monocromático), Treino Brasil, Treino Noite, Treino Monocromático e Treino Clássico. Cerca de 2,5 a 3 minutos por rodada.
+
+**Zerado?** Sim, as cinco rodadas foram até o resultado. Pontos: Surpresa 86 (1º de 4), Brasil 0 (4º), Noite 0 (4º),
+Monocromático 86 (1º), Clássico 0 (4º). Brasil, Noite e Clássico não têm como pontuar com as cartas da conta (nenhuma
+peça tem marca brasileira, ocasião festa ou estilo clássico), e o jogo não avisa isso antes.
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 5 | três quartos no preparo e vista do fim da passarela no resultado, seletor no HUD; com 0,2 quadro/s não deu para ver o travelling e a grua em movimento |
+| Gameplay com cartas | 4 | a carta é a peça vestida; depois de entrar a carta mostra o efeito no tema ("+1 família azul"); não há ação de carta durante o desfile, e o contador "A ação 0 de 8" não leva a nada |
+| Fluidez (sem GPU, provisório) | 1 | 0,3 quadro/s no preparo e 0,2 no desfile (2,4 a 4,4 s entre quadros): a sala mais pesada dos jogos; cena jogável 70 s depois de entrar ([quadros](evidencias/jogos/pas-01-desfile-0-2-qps.jpg)) |
+| Recursos | 5 | painel do tema, efeito por carta, pontos por carta, estrelas, colocação na sala |
+| Cartas do deck | 6 | tema escondido até travar o deck e revelado na carta; cor do cadastro certa; o vestido (peça inteira) aparece na mão |
+| Lógica | 6 | servidor coerente (prévia 71 com 3 peças, final 86 com 4); mas o resultado mostra "40 pts + 20 pts" e o total "86" sem dizer que 60 de 70 vira 86 de 100 |
+| Enredo | 3 | tema e três desfiles da casa com nota; nenhuma história |
+| Estrutura da partida | 5 | preparo, desfile até a ponta, telão com a nota, legenda de reação e colocação |
+| Salvamento | 5 | não testado nesta sala; a retomada "Continuar partida" do código atual foi conferida no Dress Fighter |
+| NPCs | 2 | 12 pessoas sentadas e 2 fotógrafos, parados; a legenda diz "a plateia levanta" e a plateia continua sentada ([resultado](evidencias/jogos/pas-02-resultado-plateia-sentada.jpg)) |
+| **Final** | **4,2** | |
+
+**Defeitos.** PAS-1 (atrapalha): legenda "Flashes dos fotógrafos e a plateia levanta" com a plateia sentada — tema
+Monocromático, entregar 4 peças azuis. PAS-2 (atrapalha): três temas impossíveis com cartas sem marca, festa ou clássico,
+sem aviso no deck. PAS-3 (detalhe): soma das regras (60) diferente do total (86) sem explicação. PAS-4 (atrapalha):
+0,2 quadro/s sem GPU — a sala pede um nível de detalhe menor para a plateia.
+
+### 4.3 Dress the Star (núcleo 3)
+
+**O que joguei.** As três rodadas até o resultado: Estrela Pop dos anos 2000 (0 pontos: nenhuma peça rosa, prata, y2k ou
+glam), Modo Stylist (sorteou "Estrela do Rock dos anos 80", 25 pontos, 3 pistas abertas) e Look Relâmpago (o look-alvo
+aparece e some; 50 pontos com 2 vagas iguais). Cerca de 1,5 a 2 minutos por rodada.
+
+**Zerado?** Sim (as três rodadas até o resultado, nenhuma aprovada com as cartas da conta).
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 5 | palco visto um pouco de baixo, a avatar posa; sem cortes durante a apresentação ([quadros](evidencias/jogos/dts-01-palco.jpg)) |
+| Gameplay com cartas | 4 | só vestir; a carta diz "+25 figurino" ou "sem efeito aqui" conforme a estrela |
+| Fluidez (sem GPU, provisório) | 2 | 0,7 quadro/s no preparo e 1,3 na apresentação; cena jogável 73 s depois de entrar |
+| Recursos | 5 | perfil da estrela, pistas, aviso por vaga ("Essa parte da silhueta fica escura") |
+| Cartas do deck | 5 | efeito certo por estrela; a carta não mostra o nome da peça |
+| Lógica | 4 | pontos coerentes; o Look Relâmpago termina com a frase do perfil da estrela ("o perfil dela pedia outra coisa"), que não existe nessa rodada, e 50 pontos saem "Reprovado" sem dizer o mínimo |
+| Enredo | 4 | arquétipos de estrela com pistas e época; o Stylist tem um mistério pequeno |
+| Estrutura da partida | 5 | cartão de começo ("COMEÇO DA PARTIDA"), look-alvo por 10 s, desfecho em frase |
+| Salvamento | 5 | igual ao Dress Fighter (não testado nesta sala) |
+| NPCs | 1 | não vi plateia nem fotógrafos se mexendo no palco |
+| **Final** | **4,0** | |
+
+**Defeitos.** DTS-1 (atrapalha): frase de final errada no Look Relâmpago. DTS-2 (detalhe): sem nota mínima dita para
+"Aprovado".
+
+### 4.4 Personagem de Filme (núcleo 4)
+
+**O que joguei.** Detetive noir até o resultado (título certo "Sombras na Chuva": 63 pontos, 50 do título e 12,5 da
+bota preta), Cena sorteada até o resultado (sorteou a cena 4, do salão com flores; título errado: 13 pontos) e Adivinhe a
+Década (pistas dos anos 80) só até o preparo: a página caiu por falta de memória da máquina duas vezes e a rodada ficou
+aberta no servidor.
+
+**Zerado?** Parcial (2 de 3).
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 4 | três quartos; um refletor do cenário ocupa o terço esquerdo do quadro em todo o preparo ([quadro](evidencias/jogos/pf-01-set.jpg)) |
+| Gameplay com cartas | 4 | vestir mais a resposta numa aba ("Resposta"); a carta mostra "+12,5 figurino" quando bate |
+| Fluidez (sem GPU, provisório) | 1 | 6 quadros em 18 s gravados (cerca de 0,3 quadro/s) |
+| Recursos | 5 | cena descrita, figurino pedido, aba de resposta, aviso "Escolha o título antes de entregar" |
+| Cartas do deck | 5 | como nos outros; o vestido não aparece na mão (7 de 8 cartas) |
+| Lógica | 6 | título 50 e 12,5 por peça, coerente com o servidor |
+| Enredo | 5 | cenas curtas e boas de ler, gênero e figurino |
+| Estrutura da partida | 4 | claquete e cena no começo; final em texto; nenhum momento de filmagem |
+| Salvamento | 5 | as rodadas que caíram ficaram "abertas" no servidor e a tela oferece continuar |
+| NPCs | 1 | set sem equipe nem elenco |
+| **Final** | **4,0** | |
+
+**Defeitos.** PF-1 (atrapalha): o vestido entra no deck e some da mão. PF-2 (detalhe): refletor tapa parte do quadro.
