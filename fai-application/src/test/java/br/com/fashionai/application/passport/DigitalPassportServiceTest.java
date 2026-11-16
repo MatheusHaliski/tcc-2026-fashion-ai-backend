@@ -128,4 +128,24 @@ class DigitalPassportServiceTest {
         assertThat(options).containsEntry("fitClaim", "NONE").containsEntry("avatarMeasurementsChanged", false).containsEntry("visualApproximationNote", "SIZES_ON_3D_ARE_RELATIVE_VISUAL_APPROXIMATIONS");
         assertThat(sizes.forProduct(product.getId())).containsEntry("grid", "letter");
     }
+
+    /** RF tamanhos #6: medida de tabela sem fonte autorizada vem como "outro método", nunca como oficial. */
+    @Test void measurementsFromAnUnauthorizedChartAreOtherMethodNotOfficial() {
+        ProductSizeChart chart = new ProductSizeChart();
+        chart.setProductId(product.getId());
+        chart.setRevision(1);
+        chart.setReviewerId(UUID.randomUUID());
+        chart.setChartJson("{\"type\":\"GARMENT_MEASUREMENT\",\"family\":\"TSHIRT\",\"market\":\"BR\",\"sourceName\":\"Medida da vendedora\","
+                + "\"sourceAuthorized\":false,\"options\":[{\"label\":\"M\",\"order\":1,"
+                + "\"measurements\":[{\"region\":\"CHEST\",\"protocol\":\"GARMENT_FLAT_WIDTH_V1\",\"min\":50,\"max\":51}]}]}");
+        charts.save(chart);
+        var rows = (List<Map<String, Object>>) sizes.forPiece(piece).get("sizes");
+        Map<String, Object> rowM = rows.stream().filter(r -> "M".equals(r.get("label"))).findFirst().orElseThrow();
+        var measurement = ((List<Map<String, Object>>) rowM.get("measurements")).getFirst();
+        assertThat(measurement)
+                .containsEntry("provenance", "OTHER_METHOD")
+                .containsEntry("sourceName", "Medida da vendedora")
+                .containsEntry("unit", "cm")
+                .containsEntry("chartRevision", 1);
+    }
 }
