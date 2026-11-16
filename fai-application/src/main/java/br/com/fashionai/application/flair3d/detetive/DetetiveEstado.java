@@ -43,6 +43,9 @@ final class DetetiveEstado {
     final Set<String> resolvidas = new LinkedHashSet<>();
     final Set<String> visitadas = new LinkedHashSet<>(List.of(FashionDetectiveMundo.INICIO));
     final Map<String, Integer> erros = new HashMap<>();
+    /** os vigias fora da ronda (perseguindo, procurando, voltando) na sala de agora ({@link DetetivePerseguicao}) */
+    final Map<String, DetetivePerseguicao.Alerta> alertas = new LinkedHashMap<>();
+    String salaDosAlertas = FashionDetectiveMundo.INICIO;
     /** a cutscene que a tela mostra agora ("ABERTURA:SALAO", "RESOLUCAO:CAMARIM", "ALIBI:4", "FINAL:COMPLETO") */
     String cutscene = "ABERTURA:" + FashionDetectiveMundo.INICIO;
     /** o que acabou de acontecer (VISTO, BOLSO_OK, CHAVE:K1, PISTA:P3...) */
@@ -117,16 +120,17 @@ final class DetetiveEstado {
             return m;
         }).toList());
         l.put("vigias", s.vigias().stream().map(v -> {
-            Ponto onde = DetetiveVigias.onde(s, v, passo);
+            Ponto onde = DetetivePerseguicao.onde(this, s, v);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", v.id());
             m.put("papel", v.papel());
             m.put("ponto", onde.id());
             m.put("x", onde.x());
             m.put("z", onde.z());
-            m.put("olhar", DetetiveVigias.olhar(s, v, passo));
-            Ponto depois = DetetiveVigias.onde(s, v, passo + 1);
+            m.put("olhar", DetetivePerseguicao.olhar(this, s, v));
+            Ponto depois = alertas.containsKey(v.id()) ? onde : DetetiveVigias.onde(s, v, passo + 1);
             m.put("proximo", List.of(depois.x(), depois.z()));
+            m.put("modo", DetetivePerseguicao.modo(this, v));
             m.put("vigia", v.barra() == null);
             m.put("barra", v.barra());
             m.put("convencido", convencidos.contains(v.id()));

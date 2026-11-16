@@ -14,7 +14,7 @@ import { Elenco3D } from "@/components/flair/nucleos/gente/elenco-3d";
 import { Sala3D } from "@/components/flair/detetive/sala-3d";
 import { noCone } from "@/lib/flair/detetive/acoes";
 import { ELENCO_DAS_SALAS, pessoaDoPapel } from "@/lib/flair/detetive/elenco";
-import type { Retrato } from "@/lib/flair/detetive/types";
+import type { Retrato, VigiaDaSala } from "@/lib/flair/detetive/types";
 import { cameraEmUso } from "@/lib/flair/nucleos/camera/jogos";
 import { aproximar, poseDoRig, type Pose } from "@/lib/flair/nucleos/camera/rigs";
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
@@ -86,6 +86,25 @@ function Camera({ escolha, alvo, reduzido }: { escolha: string; alvo: React.Muta
   return null;
 }
 
+/** O corpo do vigia pelo modo: corre atrás de quem viu, aponta quando alcança, olha em volta quando perde, anda na ronda. */
+function movimentoDoVigia(v: VigiaDaSala, andando: boolean): AtorDeCena["anim"] {
+  if (v.convencido) return "talk";
+  if (v.modo === "PERSEGUE") return andando ? "run" : "point";
+  if (v.modo === "PROCURA") return "look";
+  return andando ? "walk" : "idle";
+}
+
+/** Acima da cabeça de quem está fora da ronda: vermelho perseguindo, amarelo procurando (sem texto na cena). */
+function Alerta({ v }: { v: VigiaDaSala }) {
+  if (v.modo !== "PERSEGUE" && v.modo !== "PROCURA") return null;
+  return (
+    <mesh position={[v.x, 2.25, v.z]} name={`alerta-${v.id}`}>
+      <sphereGeometry args={[0.11, 12, 8]} />
+      <meshBasicMaterial color={v.modo === "PERSEGUE" ? "#E5484D" : "#F2C230"} />
+    </mesh>
+  );
+}
+
 function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, semente }: Omit<DetetiveCena3DProps, "rotulo">) {
   /** onde o avatar está e para onde olha: começa virado para o fundo da sala (a câmera fica atrás, do lado da porta) */
   const alvo = useRef({ x: 0, z: 0, giro: 180 });
@@ -102,11 +121,13 @@ function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, sement
   const atores = (): AtorDeCena[] => {
     const out: AtorDeCena[] = r.layout.vigias.map((v) => {
       const antes = mostrados.current.get(v.id) ?? { x: v.x, z: v.z };
-      const k = reduzido ? 1 : 0.05;
+      // quem persegue corre até o novo lugar; os outros andam
+      const persegue = v.modo === "PERSEGUE";
+      const k = reduzido ? 1 : persegue ? 0.09 : 0.05;
       const agora = { x: antes.x + (v.x - antes.x) * k, z: antes.z + (v.z - antes.z) * k };
       mostrados.current.set(v.id, agora);
       const andando = Math.hypot(v.x - agora.x, v.z - agora.z) > 0.05;
-      return { id: v.id, x: agora.x, z: agora.z, giro: (v.olhar * Math.PI) / 180, anim: andando ? "walk" : v.convencido ? "talk" : "idle", velocidade: andando ? 1.2 : 0, naJogada: v.temBolso };
+      return { id: v.id, x: agora.x, z: agora.z, giro: (v.olhar * Math.PI) / 180, anim: movimentoDoVigia(v, andando), velocidade: andando ? (persegue ? 3.2 : 1.2) : 0, naJogada: v.temBolso || !!v.modo && v.modo !== "RONDA" };
     });
     for (const [papel, x, z, giro] of elenco) out.push({ id: `${r.sala}-${papel}`, x, z, giro: (giro * Math.PI) / 180, anim: "idle", velocidade: 0 });
     return out;
@@ -117,8 +138,9 @@ function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, sement
       <directionalLight position={[3, 7, 5]} intensity={1.4} castShadow shadow-mapSize={[1024, 1024]} />
       <Sala3D r={r} vizinhos={vizinhos} onIr={onIr} />
       {r.layout.vigias.filter((v) => v.vigia && !v.convencido).map((v) => (
-        <Cone key={v.id} r={r} x={v.x} z={v.z} olhar={v.olhar} visto={!r.escondido && noCone(r, v, aqui.x, aqui.z)} />
+        <Cone key={v.id} r={r} x={v.x} z={v.z} olhar={v.olhar} visto={v.modo === "PERSEGUE" || (!r.escondido && noCone(r, v, aqui.x, aqui.z))} />
       ))}
+      {r.layout.vigias.map((v) => <Alerta key={`alerta-${v.id}`} v={v} />)}
       <Elenco3D pessoas={pessoas} atores={atores} prontos={prontos} reduzido={reduzido} />
       <Jogador r={r} pecas={pecas} protagonista={protagonista} reduzido={reduzido} alvo={alvo} />
       <Camera escolha={camera} alvo={alvo} reduzido={reduzido} />

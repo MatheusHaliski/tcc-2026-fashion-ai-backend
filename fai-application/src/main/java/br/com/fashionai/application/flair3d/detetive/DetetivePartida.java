@@ -3,8 +3,6 @@ package br.com.fashionai.application.flair3d.detetive;
 import br.com.fashionai.application.flair3d.Acionamento;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Flair3dErros;
-import br.com.fashionai.application.flair3d.detetive.DetetiveSala.Ponto;
-import br.com.fashionai.application.flair3d.detetive.DetetiveSala.Vigia;
 import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveAcusacao;
 import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveMundo;
 
@@ -19,7 +17,8 @@ import java.util.UUID;
  * "BOLSO:vigia", "CONFRONTO:vigia", "VIDA", "COMPLETAR:pista", "MERCADO:acao", "TROCAR", "ENIGMA:opcao", "ACUSAR:numero") e, quando
  * a ação pede, a carta da cor certa (verde abre, preto esconde e tira do bolso, azul vence o confronto, amarelo devolve
  * vida, branco completa a pista, vermelho paga o mercado; trocar descarta qualquer carta para girar a mão). Andar, resolver o enigma e acusar não gastam carta. Depois de
- * cada passo os vigias andam; quem é visto perde uma marca de vida e 30 segundos e volta ao último esconderijo. Tudo sai
+ * cada passo os vigias andam: quem é visto é perseguido até se esconder ou sair do alcance, e quem é pego perde uma marca
+ * de vida e 30 segundos e volta à porta da sala ({@link DetetivePerseguicao}). Tudo sai
  * da semente, do look e dos passos, na ordem: refazer a partida dá sempre o mesmo estado.
  */
 public final class DetetivePartida {
@@ -90,26 +89,11 @@ public final class DetetivePartida {
         boolean andam = DetetiveAcoes.fazer(verbo, arg, e, mao);
         if (andam) {
             e.passo++;
-            vigiar();
+            DetetivePerseguicao.depoisDoPasso(e);
         }
         if (e.tempo >= DetetiveEstado.LIMITE_DE_TEMPO && !"PASSARELA".equals(e.sala) && e.fim == null) {
             DetetiveAcoes.entrar(e, FashionDetectiveMundo.FINAL);
             e.avisos.add("TEMPO_ESGOTADO");
-        }
-    }
-
-    /** Depois do passo: algum vigia da sala vê a pessoa? */
-    private void vigiar() {
-        DetetiveSala s = e.salaAtual();
-        Ponto p = e.pontoAtual();
-        if (p.esconderijo() && e.escondido) {
-            e.ultimaCobertura = p.id();
-        }
-        for (Vigia v : s.vigias()) {
-            if (!e.convencidos.contains(v.id()) && DetetiveVigias.ve(s, v, e.passo, p, e.escondido)) {
-                DetetiveAcoes.visto(e, v.id());
-                return;
-            }
         }
     }
 

@@ -115,7 +115,7 @@ final class DetetiveAcoes {
             }
             case "CONFRONTO" -> {
                 Vigia v = s.vigia(arg).orElse(null);
-                DetetivePartida.conferir(v != null && !e.convencidos.contains(v.id()) && DetetiveVigias.aoLado(s, v, e.passo, e.pontoAtual()));
+                DetetivePartida.conferir(v != null && !e.convencidos.contains(v.id()) && DetetivePerseguicao.aoLado(e, s, v));
                 e.convencidos.add(v.id());
                 e.avisos.add("CONFRONTO_OK:" + v.id());
                 e.tempo += DetetivePartida.SEGUNDOS_POR_ACAO;
@@ -150,15 +150,15 @@ final class DetetiveAcoes {
         Vigia v = s.vigia(arg).orElse(null);
         DetetivePartida.conferir(v != null && v.bolso() != null && !e.furtados.contains(v.id()));
         e.tempo += DetetivePartida.SEGUNDOS_POR_ACAO;
-        boolean perto = DetetiveVigias.aoLado(s, v, e.passo, e.pontoAtual());
-        if (perto && !DetetiveVigias.noCone(s, v, e.passo, e.pontoAtual())) {
+        boolean perto = DetetivePerseguicao.aoLado(e, s, v);
+        if (perto && !DetetivePerseguicao.nota(e, s, v)) {
             e.furtados.add(v.id());
             e.avisos.add("BOLSO_OK:" + v.id());
             achar(e, v.bolso());
             return true;
         }
         e.avisos.add("BOLSO_FALHOU:" + v.id());
-        visto(e, v.id());
+        DetetivePerseguicao.pegar(e, v.id());
         return false;
     }
 
@@ -227,23 +227,5 @@ final class DetetiveAcoes {
         if (FashionDetectiveMundo.FINAL.equals(para)) {
             achar(e, DetetiveSalas.PISTA_DA_PASSARELA);
         }
-    }
-
-    /** Visto: uma marca de vida, 30 segundos e de volta ao último esconderijo (ou à porta da sala, sem vida). */
-    static void visto(DetetiveEstado e, String quem) {
-        e.penalidades++;
-        e.tempo += DetetivePartida.SEGUNDOS_DE_PENALIDADE;
-        e.vida--;
-        e.avisos.add("VISTO:" + quem);
-        if (e.vida <= 0) {
-            e.vida = DetetiveEstado.VIDA;
-            e.tempo += 2 * DetetivePartida.SEGUNDOS_DE_PENALIDADE;
-            e.ponto = e.chegada;
-            e.escondido = false;
-            e.avisos.add("SEM_VIDA");
-            return;
-        }
-        e.ponto = e.ultimaCobertura != null ? e.ultimaCobertura : e.chegada;
-        e.escondido = e.ultimaCobertura != null;
     }
 }

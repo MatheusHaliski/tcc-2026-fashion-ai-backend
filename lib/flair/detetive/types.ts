@@ -41,6 +41,8 @@ export interface VigiaDaSala {
   barra: string | null;
   convencido: boolean;
   temBolso: boolean;
+  /** RONDA; PERSEGUE (viu a pessoa e vem atrás); PROCURA (perdeu a pessoa de vista); VOLTA (voltando à ronda) */
+  modo?: "RONDA" | "PERSEGUE" | "PROCURA" | "VOLTA";
 }
 
 export interface LayoutDaSala {

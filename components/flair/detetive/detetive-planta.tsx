@@ -40,7 +40,7 @@ export function DetetivePlanta({ r, vizinhos, onIr }: { r: Retrato; vizinhos: st
           </g>
         );
       })}
-      {r.layout.vigias.map((v) => <circle key={v.id} cx={px(v.x)} cy={pz(v.z)} r={7} fill={v.vigia ? "#E0A030" : "#9AA6B4"} />)}
+      {r.layout.vigias.map((v) => <circle key={v.id} cx={px(v.x)} cy={pz(v.z)} r={7} fill={!v.vigia ? "#9AA6B4" : v.modo === "PERSEGUE" ? "#E5484D" : "#E0A030"} data-modo={v.modo ?? "RONDA"} />)}
       {aqui && <circle cx={px(aqui.x)} cy={pz(aqui.z)} r={8} fill="#F2C230" stroke="#111" strokeWidth={2} data-testid="detetive-eu" />}
     </svg>
   );

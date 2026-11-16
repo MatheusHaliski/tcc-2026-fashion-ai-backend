@@ -57,8 +57,9 @@ export function acoesPossiveis(r: Retrato): AcaoPossivel[] {
   for (const a of r.layout.armarios.filter((x) => x.ponto === r.ponto && !x.aberto)) out.push(acao("ABRIR", a.id, "ABRIR"));
   if (aqui?.esconderijo && !r.escondido) out.push(acao("ESCONDER", "", "FURTIVIDADE"));
   for (const v of r.layout.vigias.filter((x) => pertoDe(r, x))) {
-    if (v.temBolso) out.push(acao("BOLSO", v.id, "FURTIVIDADE"));
-    if (v.barra && !v.convencido) out.push(acao("CONFRONTO", v.id, "DANO"));
+    // o bolso só de quem está na ronda (quem persegue ou procura está atento); quem persegue pode ser convencido (azul)
+    if (v.temBolso && (v.modo ?? "RONDA") === "RONDA") out.push(acao("BOLSO", v.id, "FURTIVIDADE"));
+    if ((v.barra || v.modo === "PERSEGUE") && !v.convencido) out.push(acao("CONFRONTO", v.id, "DANO"));
   }
   if (r.vida < 3) out.push(acao("VIDA", "", "VIDA"));
   for (const p of r.pistas.filter((x) => !x.completa)) out.push(acao("COMPLETAR", p.id, "PISTA"));
