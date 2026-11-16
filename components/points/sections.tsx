@@ -7,7 +7,6 @@ import { levelNameKey, POINTS_MODES, POINTS_SECTION_MODE, type PointsAccount } f
 import { Card, ErrorState, PageHeader, Skeleton, UiIcon } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { FlairHubIcon } from "@/components/flair/hub-icons";
-import { RoomStore } from "@/components/room3d/room-store";
 import { HowItWorks } from "@/components/guide/guide";
 
 export type PointsSectionId = "saldo" | "ganhar" | "loja";
@@ -24,7 +23,7 @@ function hrefFor(action: string): string | null {
 
 /**
  * Sub-rotas de FAI Points (/points/saldo, /ganhar, /loja): cada uma é uma parte da antiga página única, com o caminho
- * de volta à central, o nome do modo e "Como funciona". A loja continua sendo o componente RoomStore (RF35 + RF39).
+ * de volta à central, o nome do modo e "Como funciona". A loja é a loja física (a loja do quarto saiu com o Meu Quarto).
  */
 export function PointsSection({ section }: { section: PointsSectionId }) {
   const { t, fmtNumber, rich } = useI18n();
@@ -53,7 +52,7 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
                 <p className="type-caption text-muted">{rich("points.acumulado_nivel", { number: fmtNumber(a.lifetime), level }, { 0: ($c) => <b>{$c}</b> })}</p>
                 {a.nextLevel && <><div className="hype-bar mt-3"><i style={{ width: `${progressPercent}%`, background: "var(--chalk)" }} /></div><p className="mt-1 type-caption">{t("points.faltam_para", { missing: a.nextLevel.missing, level: t(levelNameKey(a.nextLevel.level)), unlocks: a.nextLevel.unlocks })}</p></>}
                 {a.note && <p className="mt-2 type-caption text-faint">{a.note}</p>}
-                <div className="mt-3 flex flex-wrap justify-center gap-2"><Link href="/notifications?cat=POINTS" className="btn btn-sm">{t("points.ver_extrato")}</Link><Link href="/points/loja" className="btn btn-sm btn-primary">{t("points.loja_do_quarto")}</Link></div>
+                <div className="mt-3 flex flex-wrap justify-center gap-2"><Link href="/notifications?cat=POINTS" className="btn btn-sm">{t("points.ver_extrato")}</Link><Link href="/points/loja" className="btn btn-sm btn-primary">{t("points.hub.mode.store.title")}</Link></div>
               </Card>
               <Card>
                 <div className="flex items-center gap-2"><FlairHubIcon id="balance" size={20} /><h2 className="type-h3">{t("points.niveis")}</h2></div>
@@ -81,7 +80,6 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
           )}
           {section === "loja" && <div className="grid gap-4">
             <Card><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><FlairHubIcon id="store" size={20} /><h2 className="type-h3">{t("physicalStore.title")}</h2></div><Link href="/points/physical-store" className="btn btn-sm btn-primary">{t("physicalStore.browse")}</Link></div><p className="type-body-sm text-muted">{t("physicalStore.lead")}</p></Card>
-            <Card><div className="mb-3 flex items-center gap-2"><FlairHubIcon id="store" size={20} /><h2 className="type-h3">{t("points.loja_do_quarto")}</h2></div><RoomStore onChanged={acc.reload} /></Card>
           </div>}
         </>
       )}

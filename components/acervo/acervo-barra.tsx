@@ -1,7 +1,7 @@
 "use client";
 /**
  * ACERVO — barra comum às duas views: busca espacial ("camisa branca M" acende os compartimentos certos), mapa de uso
- * e modo arrumação.
+ * (peças paradas e combinações pouco exploradas) e modo arrumação.
  */
 import { useState } from "react";
 import { UiIcon } from "@/components/ui";
@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useAcervo } from "./acervo-contexto";
 import { AcervoIcone } from "./acervo-icone";
 import { ArrumacaoDialogo } from "./arrumacao-dialogo";
+import { UsoCombinacoes } from "./uso-combinacoes";
 
 export function AcervoBarra() {
   const { t } = useI18n();
@@ -39,6 +40,7 @@ export function AcervoBarra() {
       {tela.usoLigado && uso && (
         <p className="acv-barra-status" role="status">{t("acervo.uso.resumo", { count: paradas, dias: uso.dias })}</p>
       )}
+      {tela.usoLigado && <UsoCombinacoes />}
       <ArrumacaoDialogo aberto={arrumando} onClose={() => setArrumando(false)} />
     </div>
   );

@@ -3,11 +3,13 @@
  * modo escolhido (título, objetivo, demonstração gravada e a ação para começar). Escolher um item nunca inicia o jogo:
  * só a ação principal leva à rota do modo.
  *
- * Os modos estão agrupados pela função real: jogáveis (partidas FLAIR e Desafios de Montagem), calendário (Momentos),
- * desafios com prazo (Desafios do guarda-roupa) e coleção (cartas, decks, combinações das lojas, carteira, missões).
+ * Os modos estão agrupados pela função real: jogáveis (partidas FLAIR e os três segmentos de docs/flair/ESTRUTURA_FLAIR.md:
+ * Card Building Challenge com desafios e elencos, FLAIR 3D e FLAIR 3D MAKE UP), calendário (Momentos), desafios com prazo
+ * (Desafios do guarda-roupa) e coleção (cartas, decks, combinações das lojas, carteira, missões).
  */
 export type HubGroup = "play" | "calendar" | "challenges" | "collection";
-export type HubModeId = "matches" | "cbc" | "games" | "moments" | "challenges" | "cards" | "decks" | "shops" | "wallet" | "quests";
+export type HubModeId = "matches" | "cbc" | "squads" | "games" | "makeup" | "moments" | "challenges" | "cards" | "decks" | "shops" | "wallet"
+  | "quests";
 
 /** Demonstração gravada: vídeo otimizado (MP4 + WebM), capa e duração. `recorded` = gravação do app em ambiente de teste. */
 export interface HubDemo { mp4: string; webm: string; poster: string; seconds: number; recorded: boolean }
@@ -27,8 +29,11 @@ const demo = (id: HubModeId, seconds: number, recorded = true): HubDemo => ({ mp
 export const HUB_MODES: HubMode[] = [
   { id: "matches", group: "play", href: "/flair/partidas", guide: "flair.matches", demo: demo("matches", 19) },
   { id: "cbc", group: "play", href: "/flair/desafios", guide: "flair.cbc", demo: demo("cbc", 20) },
-  // FLAIR 3D: a demonstração ainda vai ser gravada (recorded:false até os arquivos media/flair/demos/games.* existirem)
-  { id: "games", group: "play", href: "/flair/jogos", guide: "flair.games", demo: demo("games", 14, false) },
+  // elencos, FLAIR 3D (os 15 núcleos) e MAKE UP: as demonstrações ainda vão ser gravadas (recorded:false até os arquivos
+  // media/flair/demos/<id>.* existirem)
+  { id: "squads", group: "play", href: "/flair/elencos", guide: "flair.squads", demo: demo("squads", 12, false) },
+  { id: "games", group: "play", href: "/flair/3d", guide: "flair.games", demo: demo("games", 14, false) },
+  { id: "makeup", group: "play", href: "/flair/make-up", guide: "flair.makeup", demo: demo("makeup", 12, false) },
   { id: "moments", group: "calendar", href: "/moments", guide: "moments.calendar", demo: demo("moments", 13) },
   { id: "challenges", group: "challenges", href: "/challenges", guide: "challenges.progress", demo: demo("challenges", 15) },
   { id: "cards", group: "collection", href: "/flair/cartas", guide: "flair.cards", demo: demo("cards", 12) },
@@ -60,7 +65,10 @@ export const LEGACY_TABS: Record<string, { mode: HubModeId; href: string }> = {
 };
 
 /** Seção da central que cada sub-rota /flair/* representa (para o "voltar" reabrir o item certo). */
-export const SECTION_MODE: Record<string, HubModeId> = { partidas: "matches", desafios: "cbc", jogos: "games", cartas: "cards", decks: "decks", lojas: "shops", carteira: "wallet", missoes: "quests" };
+export const SECTION_MODE: Record<string, HubModeId> = {
+  partidas: "matches", desafios: "cbc", elencos: "squads", "3d": "games", "make-up": "makeup",
+  cartas: "cards", decks: "decks", lojas: "shops", carteira: "wallet", missoes: "quests",
+};
 
 /** A seleção fica no navegador, por conta: ao voltar de uma partida, o mesmo item continua escolhido. */
 const KEY = "fai.flair.hub.selected";
@@ -88,7 +96,7 @@ export interface HubSummary {
   decks?: number | null;
   cards?: number | null;
   cbc?: { now: number; upcoming: number; always: number } | null;
-  /** FLAIR 3D (GET /api/flair/games/summary): quantos jogos existem e quantos a pessoa já pode jogar */
+  /** FLAIR 3D (GET /api/flair/3d/nucleos): quantos jogos existem e quantos a pessoa já pode jogar (os núcleos não têm bloqueio) */
   games?: { total: number; playable: number } | null;
   moments?: { active: number; upcoming: number } | null;
   challenges?: { active: number; invites: number } | null;
@@ -115,6 +123,10 @@ export function availability(id: HubModeId, s: HubSummary): HubAvailability {
       if (g.total === 0) return { available: false, status: { key: "flair.hub.status.games_none" }, action: "open" };
       return { available: true, status: { key: "flair.hub.status.games", vars: { n: g.playable, total: g.total } }, action: g.playable > 0 ? "play" : "open" };
     }
+    case "squads":
+    case "makeup":
+      // elencos e MAKE UP: sem situação na central (cada tela mostra a sua); sempre abertos para jogar
+      return { available: true, status: null, action: "play" };
     case "moments": {
       const m = s.moments;
       if (!m) return { available: true, status: null, action: "open" };

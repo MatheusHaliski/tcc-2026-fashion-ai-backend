@@ -63,16 +63,18 @@ describe("máquina dos momentos", () => {
     expect(pode("RESULTADO")).toEqual(["CAMERA"]);
   });
 
-  it("acionamento: só nos quatro jogos da tabela e só no momento de cada um", () => {
-    expect(acionamentoDe("DRESS_FIGHTER")).toEqual({ tipo: "ESPECIAL", momento: "ACAO" });
-    expect(acionamentoDe("FASHION_SPORTS")).toEqual({ tipo: "TROCA", momento: "ACAO" });
+  it("acionamento: só nos jogos da tabela e só no momento de cada um (a jogada de cena na ação)", () => {
+    expect(acionamentoDe("DRESS_FIGHTER")).toEqual({ tipo: "LANCE", momento: "ACAO" });
+    expect(acionamentoDe("FASHION_SPORTS")).toEqual({ tipo: "CARTA", momento: "ACAO" });
     expect(acionamentoDe("LABIRINTO")).toEqual({ tipo: "ESPELHO", momento: "PREPARACAO" });
     expect(acionamentoDe("PERSONAGEM_FILME")).toEqual({ tipo: "RESPOSTA", momento: "PREPARACAO" });
-    expect(acionamentoDe("PASSARELA")).toBeNull();
+    for (const jogo of ["PASSARELA", "DRESS_THE_STAR", "BOUTIQUE_3D", "AROUND_THE_WORLD"] as const) expect(acionamentoDe(jogo)).toEqual({ tipo: "JOGADA", momento: "ACAO" });
+    expect(acionamentoDe("CLUBE_CORACAO")).toBeNull();
     expect(permitido("ACAO", "ACIONAR", "DRESS_FIGHTER")).toBe(true);
     expect(permitido("PREPARACAO", "ACIONAR", "DRESS_FIGHTER")).toBe(false);
     expect(permitido("PREPARACAO", "ACIONAR", "LABIRINTO")).toBe(true);
-    expect(permitido("ACAO", "ACIONAR", "PASSARELA")).toBe(false);
+    expect(permitido("ACAO", "ACIONAR", "PASSARELA")).toBe(true);
+    expect(permitido("ACAO", "ACIONAR", "CLUBE_CORACAO")).toBe(false);
     expect(permitido("ACAO", "ACIONAR")).toBe(false);
   });
 

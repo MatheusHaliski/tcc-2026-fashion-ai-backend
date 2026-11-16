@@ -16,7 +16,8 @@ describe("preenchimento a partir da peça detectada (criador em etapas)", () => 
   it("leitura local sem tipo: tipo, subtipo e nome vazios; a cor medida entra", () => {
     const v = detectedPrefill({ name: null, category: null, subcategory: null, color: "blue" }, TAX);
     expect(v).toMatchObject({ name: "", category: "", subcategory: "", color: "blue", useDefaultImage: false });
-    expect(v.occasion).toEqual(["casual"]);
+    // o card de prévia não pode inventar "Casual", "Básico" e "Algodão" antes da escolha (auditoria 10.6, item 9)
+    expect(v).toMatchObject({ occasion: [], style: [], material: "" });
   });
 
   it("tipo fora da taxonomia ou subtipo de outro tipo não entram", () => {

@@ -146,8 +146,9 @@
   gap: 0 var(--space-3);
 }
 
+/* três quantidades lado a lado só quando o rótulo inteiro cabe; senão uma por linha */
 .acv-form.is-tres {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
 }
 
 @media (pointer: coarse) {

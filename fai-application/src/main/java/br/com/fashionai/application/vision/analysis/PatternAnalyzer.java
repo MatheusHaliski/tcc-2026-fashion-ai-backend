@@ -4,7 +4,11 @@ import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.vision.ModelRef;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,19 +44,22 @@ public final class PatternAnalyzer {
         if (side < 16) {
             return new Result(Pattern.SOLID, 0.3, Map.of());
         }
+        int background = background(s);
         double[][] lum = new double[side][side];
         boolean[][] on = new boolean[side][side];
+        int[] fabric = new int[side * side];
         double sum = 0, sumSq = 0;
         int n = 0;
         for (int y = 0; y < side; y++) {
             for (int x = 0; x < side; x++) {
                 int p = s.getRGB(x0 + x, y0 + y);
-                if ((p >>> 24) < 200) {
+                if ((p >>> 24) < 200 || nearBackground(p, background)) {
                     continue; // fora da peça (vão entre as pernas, decote): não é tecido
                 }
                 double l = ((p >> 16 & 0xFF) * 0.299 + (p >> 8 & 0xFF) * 0.587 + (p & 0xFF) * 0.114) / 255.0;
                 lum[y][x] = l;
                 on[y][x] = true;
+                fabric[n] = p;
                 sum += l;
                 sumSq += l * l;
                 n++;
@@ -94,7 +101,99 @@ public final class PatternAnalyzer {
         if (rowStripes || colStripes) {
             return new Result(Pattern.STRIPED, Math.min(0.85, Math.max(perRows, perCols)), scores);
         }
+        double coverage = dominantCoverage(Arrays.copyOf(fabric, n));
+        scores.put("dominantCoverage", round(coverage));
+        if (coverage >= SOLID_COVERAGE) {
+            // tecido de uma cor só com sombra, dobras, costuras ou um detalhe pequeno (botão, etiqueta): liso
+            return new Result(Pattern.SOLID, Math.min(0.8, 0.45 + (coverage - SOLID_COVERAGE)), scores);
+        }
         return new Result(Pattern.PRINTED, Math.min(0.7, 0.4 + std), scores);
+    }
+
+    /**
+     * Cor do fundo de um recorte opaco (a caixa da peça numa foto, com o fundo à volta): a mediana da borda, quando a
+     * borda é quase toda de uma cor só; -1 quando há transparência ou a borda varia (a peça encosta na borda).
+     */
+    static int background(BufferedImage s) {
+        List<Integer> border = new ArrayList<>();
+        for (int x = 0; x < s.getWidth(); x++) {
+            border.add(s.getRGB(x, 0));
+            border.add(s.getRGB(x, s.getHeight() - 1));
+        }
+        for (int y = 0; y < s.getHeight(); y++) {
+            border.add(s.getRGB(0, y));
+            border.add(s.getRGB(s.getWidth() - 1, y));
+        }
+        if (border.stream().anyMatch(p -> (p >>> 24) < 200)) {
+            return -1;
+        }
+        int[] med = new int[3];
+        for (int c = 0; c < 3; c++) {
+            int shift = 16 - 8 * c;
+            med[c] = (int) median(border.stream().map(p -> (double) (p >> shift & 0xFF)).toList());
+        }
+        int bg = 0xFF000000 | med[0] << 16 | med[1] << 8 | med[2];
+        long close = border.stream().filter(p -> nearBackground(p, bg)).count();
+        return close >= border.size() * 0.7 ? bg : -1;
+    }
+
+    static boolean nearBackground(int p, int background) {
+        if (background == -1) {
+            return false;
+        }
+        int d = Math.abs((p >> 16 & 0xFF) - (background >> 16 & 0xFF)) + Math.abs((p >> 8 & 0xFF) - (background >> 8 & 0xFF))
+                + Math.abs((p & 0xFF) - (background & 0xFF));
+        return d < 36;
+    }
+
+    /** Parte mínima do miolo na cor dominante para a peça ser lida como lisa. */
+    static final double SOLID_COVERAGE = 0.75;
+
+    /**
+     * Fração dos pixels do tecido na cor dominante. Compara a cromaticidade (r/(r+g+b), g/(r+g+b)), que quase não muda
+     * com a sombra e as dobras, e só conta como fora quem também foge muito da luminância mediana (estampa clara num
+     * tecido escuro). Pixels muito escuros não têm cromaticidade confiável e contam como da cor dominante.
+     */
+    static double dominantCoverage(int[] pixels) {
+        int n = pixels.length;
+        if (n == 0) {
+            return 1;
+        }
+        double[] cr = new double[n], cg = new double[n], lum = new double[n];
+        boolean[] lit = new boolean[n];
+        List<Double> litR = new ArrayList<>(), litG = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            int r = pixels[i] >> 16 & 0xFF, g = pixels[i] >> 8 & 0xFF, b = pixels[i] & 0xFF;
+            double sum = r + g + b + 1e-6;
+            cr[i] = r / sum;
+            cg[i] = g / sum;
+            lum[i] = (r * 0.299 + g * 0.587 + b * 0.114) / 255.0;
+            lit[i] = Math.max(r, Math.max(g, b)) > 38;
+            if (lit[i]) {
+                litR.add(cr[i]);
+                litG.add(cg[i]);
+            }
+        }
+        double medR = litR.isEmpty() ? 1 / 3.0 : median(litR), medG = litG.isEmpty() ? 1 / 3.0 : median(litG);
+        List<Double> lums = new ArrayList<>();
+        for (double l : lum) {
+            lums.add(l);
+        }
+        double medL = median(lums);
+        int match = 0;
+        for (int i = 0; i < n; i++) {
+            boolean sameHue = !lit[i] || Math.max(Math.abs(cr[i] - medR), Math.abs(cg[i] - medG)) < 0.06;
+            if (sameHue && Math.abs(lum[i] - medL) < 0.35) {
+                match++;
+            }
+        }
+        return match / (double) n;
+    }
+
+    private static double median(List<Double> v) {
+        List<Double> sorted = new ArrayList<>(v);
+        Collections.sort(sorted);
+        return sorted.get(sorted.size() / 2);
     }
 
     /** Maior autocorrelação normalizada para defasagens entre 3 e metade do sinal (≈1 = periódico). */

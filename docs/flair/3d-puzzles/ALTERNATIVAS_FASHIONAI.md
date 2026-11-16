@@ -1,5 +1,9 @@
 # Cenários 3D com encaixe de cartas: o que o FashionAI já tem e como chegar lá
 
+> **Nota de 15/11/2026.** A área antiga de capítulos (`/flair/jogos`, `/api/flair/games`, `FlairGameController`,
+> `scripts/flair-games/`) saiu do app; o FLAIR 3D são os 15 núcleos (`/api/flair/3d`). As referências a ela abaixo
+> são do plano original e ficam como registro. Ver `docs/flair/ENDPOINTS_FLAIR.md`.
+
 Data: 06/11/2026. Escopo: estudo do código e proposta. Nenhum código do app mudou. Este documento complementa o
 estudo de design de puzzles da Insomniac (`docs/flair/3d-puzzles/ESTUDO_INSOMNIAC.md`, escrito em paralelo).
 

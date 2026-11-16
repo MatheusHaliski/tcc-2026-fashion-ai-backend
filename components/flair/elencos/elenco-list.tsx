@@ -5,7 +5,9 @@ import { Badge, PageHeader, UiIcon } from "@/components/ui";
 import { useApi } from "@/lib/hooks/use-api";
 import { useElencoText } from "@/components/flair/elencos/use-elenco-text";
 import { listarElencos } from "@/lib/flair/elencos/api";
-import { arteDoElenco, FORMACOES, rotaDoElenco } from "@/lib/flair/elencos/formacoes";
+import { CenaViva } from "@/components/flair/cenas/cena-viva";
+import { cenaDoElenco } from "@/lib/flair/cenas/catalogo";
+import { FORMACOES, rotaDoElenco } from "@/lib/flair/elencos/formacoes";
 import type { ElencoResumo } from "@/lib/flair/elencos/types";
 
 const LOCAL: ElencoResumo[] = FORMACOES.map((f) => ({ codigo: f.codigo, vagas: f.vagas.length, linhas: f.linhas.length, concluido: false, edicao: null }));
@@ -24,7 +26,7 @@ export function ElencoList() {
         {elencos.map((e) => (
           <li key={e.codigo}>
             <Link href={rotaDoElenco(e.codigo)} className="el-list-item">
-              <img src={arteDoElenco(e.codigo)} alt="" loading="lazy" />
+              <span className="cena-thumb"><CenaViva cena={cenaDoElenco(e.codigo)} decorativa /></span>
               <span className="el-list-name">{tx.elenco(e.codigo)}</span>
               <span className="text-muted">{tx.t("flair3d.elencos.counts", { vagas: e.vagas, linhas: e.linhas })}</span>
               {e.concluido ? <Badge tone="thread">{tx.t("flair3d.elencos.done", { n: e.edicao ?? 0 })}</Badge> : <Badge>{tx.t("flair3d.elencos.todo")}</Badge>}

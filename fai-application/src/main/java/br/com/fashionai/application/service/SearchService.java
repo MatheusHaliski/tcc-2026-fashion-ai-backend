@@ -658,7 +658,7 @@ public class SearchService {
             case "MARCAS" -> brandResults(needle, want);
             default -> celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                     .filter(c -> term.isEmpty() || c.getStageName().toLowerCase(Locale.ROOT).contains(needle))
-                    .limit(want).map(c -> Map.of("userId", c.getOwner().getId(), "name", c.getStageName(), "slug", c.getSlug(), "avatarUrl", String.valueOf(c.getAvatarUrl()))).toList();
+                    .limit(want).map(c -> Map.of("userId", c.getOwner().getId(), "username", c.getOwner().getUsername(), "name", c.getStageName(), "slug", c.getSlug(), "avatarUrl", String.valueOf(c.getAvatarUrl()))).toList();
         };
         List<?> results = all.size() <= offset ? List.of() : all.subList(offset, Math.min(all.size(), offset + limit));
         String nextCursor = all.size() > offset + limit ? encodeOffset(offset + limit) : null;
@@ -673,13 +673,8 @@ public class SearchService {
         if (results.isEmpty() && offset == 0) {
             // A people search has no reason to hydrate unrelated look owners (and their private account attributes).
             List<Views.SchemeView> hot = "PESSOAS".equals(t) ? List.of() : trending(viewer, blocked);
+            // só termos parecidos com o digitado; sem nenhum, nada de "Tente" (antes vinham estilos sem relação, como "Caramelo")
             List<String> alts = alternatives(term);
-            if (alts.isEmpty()) {
-                // nenhum termo parecido: sugere os estilos e ocasiões que mais aparecem nos looks em alta
-                Map<String, Long> freq = new LinkedHashMap<>();
-                hot.forEach(v -> { v.style().forEach(x -> freq.merge(x, 1L, Long::sum)); v.occasion().forEach(x -> freq.merge(x, 1L, Long::sum)); });
-                alts = freq.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).limit(5).map(Map.Entry::getKey).toList();
-            }
             out.put("empty", Map.of("message", Msg.t("search.nada_encontrado_para", term), "alternatives", alts, "trending", hot));
         }
         return out;
@@ -826,9 +821,7 @@ public class SearchService {
         vocab.addAll(Taxonomy.COLORS.keySet());
         Taxonomy.SUBCATEGORIES.values().forEach(vocab::addAll);
         brands.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).forEach(b -> vocab.add(b.getBrandName().toLowerCase(Locale.ROOT)));
-        String n = LocalAdvisors.normalize(term);
-        return vocab.stream().map(v -> Map.entry(v, LocalAdvisors.jaroWinkler(n, LocalAdvisors.normalize(v.replace('_', ' ')))))
-                .filter(e -> e.getValue() >= 0.75).sorted(Map.Entry.<String, Double>comparingByValue().reversed()).limit(5).map(Map.Entry::getKey).toList();
+        return SearchSuggestions.similar(term, vocab);
     }
 
     /**

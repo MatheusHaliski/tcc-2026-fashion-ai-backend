@@ -68,5 +68,16 @@ class MetamorphoseInventoryServiceTest {
   reward.setExpiresAt(null);reward.setRevoked(true);assertThat(service.mine(user)).isEmpty();
   reward.setRevoked(false);reward.setRewardCode("SYNERGY_UNKNOWN");assertThat(service.mine(user)).isEmpty();
  }
+ /** Regressão dos criadores: a aba AURA Metamorfose lista as artes da pessoa; com e-mail pendente respondia 403 e o "Tentar novamente" não saía do erro. */
+ @Test void pendingEmailReadsOwnArtsButCannotEquipThem(){
+  FollowRepository follows=mock(FollowRepository.class);when(follows.findByFollowerIdAndFollowingId(any(),any())).thenReturn(Optional.empty());
+  var realGuard=new MetamorphoseInventoryService(offers,licenses,rewards,new Guard(event->{},follows));
+  var pending=new CurrentUser(user.id(),"ana","USER",ProfileType.PESSOAL,false,AccountStatus.PENDING_EMAIL_VERIFICATION,null,null);
+  var license=new AuraIssuerLicense();license.setPresetCode("CREATOR_PRISMA");when(licenses.findByOwnerIdOrderByPurchasedAtDesc(user.id())).thenReturn(List.of(license));
+  assertThat(realGuard.mine(pending)).extracting(MetamorphoseInventoryService.Art::code).containsExactly("CREATOR_PRISMA");
+  assertThatThrownBy(()->realGuard.require(pending,Map.of("auraMetamorphose","PRISMA","auraEntitlementCode","CREATOR_PRISMA")))
+   .isInstanceOf(ApiException.class).extracting(e->((ApiException)e).code()).isEqualTo("EMAIL_NAO_CONFIRMADO");
+  assertThatThrownBy(()->realGuard.mine(null)).isInstanceOf(ApiException.class).extracting(e->((ApiException)e).status()).isEqualTo(401);
+ }
  @Test void publicCompositionCannotBypassOwnership(){assertThatThrownBy(()->service.require(user,Map.of("compositionPreset",Map.of("family","METAMORPHOSE","id","public-demo")))).isInstanceOf(ApiException.class);service.require(user,Map.of("auraMetamorphose","OFF"));}
 }

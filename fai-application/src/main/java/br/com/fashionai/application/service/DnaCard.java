@@ -76,7 +76,7 @@ final class DnaCard {
         }
         g.setColor(new Color(0x1E1B18));
         g.setFont(new Font("Serif", Font.ITALIC, 44));
-        drawWrapped(g, "“" + d.getIdentityPhrase() + "”", 110, 560, w - 220, 58);
+        drawWrapped(g, "“" + DnaIdentityPhrase.legivel(d.getIdentityPhrase()) + "”", 110, 560, w - 220, 58);
         g.setFont(new Font("SansSerif", Font.PLAIN, 32));
         g.drawString(Msg.resolve(Msg.t("dna.peca_icone", (d.getIconPieceName() == null ? "—" : d.getIconPieceName()))), 110, 900);
         Map<String, Object> life = Json.map(d.getLifeIdentityJson());

@@ -161,3 +161,24 @@ describe("resultado de jogo artístico (sem placar)", () => {
     expect(comPlacar.container.textContent).toMatch(/0 pontos/);
   });
 });
+
+describe("auditoria dos jogos (15/11) — tela de resultado", () => {
+  it("nunca mostra o estado do caso em JSON; mostra a conta da nota e o final da rodada", async () => {
+    const { NucleoResult } = await import("./nucleo-result");
+    const detetive = { pontos: 75, estrelas: 1, resultado: "FAVORAVEL", status: "ENTREGUE", eventos: [{ codigo: "DETETIVE", valor: { sala: "passarela", vida: 2 } }],
+      regras: [{ codigo: "PISTAS", ok: true, pontos: 45 }, { codigo: "ENIGMAS", ok: true, pontos: 18 }, { codigo: "ACUSACAO", ok: true, pontos: 26 }, { codigo: "PENALIDADES", ok: false, pontos: -14 }], cartas: [] } as never;
+    const r = renderApp(<NucleoResult codigo="FASHION_DETECTIVE" resultado={detetive} onAgain={vi.fn()} />);
+    expect(r.container.textContent).not.toMatch(/[{}]|"sala"/);
+    expect(r.container.textContent).toMatch(/Vezes que os vigias pegaram você/);
+    r.unmount();
+    const passarela = { pontos: 85.71, estrelas: 2, resultado: "APROVADO", status: "ENTREGUE", eventos: [{ codigo: "CONTA", valor: { soma: 60, maximo: 70 } }],
+      regras: [{ codigo: "NO_TEMA", ok: true, pontos: 40 }, { codigo: "TUDO_NO_TEMA", ok: true, pontos: 20 }], cartas: [] } as never;
+    const p = renderApp(<NucleoResult codigo="PASSARELA" resultado={passarela} onAgain={vi.fn()} />);
+    expect(p.container.querySelector("[data-testid=nucleo-result-conta]")?.textContent).toBe("As regras somam 60 de 70 pontos; a nota é essa soma levada a 100.");
+    p.unmount();
+    const relampago = { pontos: 50, estrelas: 0, resultado: "REPROVADO", status: "ENTREGUE", eventos: [], regras: [], cartas: [] } as never;
+    const d = renderApp(<NucleoResult codigo="DRESS_THE_STAR" resultado={relampago} rodada="LOOK_RELAMPAGO" onAgain={vi.fn()} />);
+    expect(d.container.querySelector("[data-testid=nucleo-desfecho]")?.textContent).toMatch(/look-alvo/);
+    expect(d.container.textContent).not.toMatch(/perfil dela/);
+  });
+});

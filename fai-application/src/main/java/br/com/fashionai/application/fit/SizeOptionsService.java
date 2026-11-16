@@ -56,6 +56,11 @@ public class SizeOptionsService {
         return build(w.getCategory(), w.getSubcategory(), p, w);
     }
 
+    /** Grade de um tipo de peça que ainda não existe (encomenda do Atelier à Fábrica FashionAI): sem loja, tabela nem 3D. */
+    public Map<String, Object> forTaxonomy(String category, String subcategory) {
+        return build(category, subcategory, null, null);
+    }
+
     Map<String, Object> build(String category, String subcategory, CatalogProduct product, WardrobeItem piece) {
         String grid = SizeGrids.gridOf(category, subcategory);
         Map<String, Map<String, Object>> rows = new LinkedHashMap<>();
@@ -79,8 +84,10 @@ public class SizeOptionsService {
             }
             charts.findByProductId(product.getId()).ifPresent(chart -> applyChart(chart, rows, approximations));
         }
-        if (piece != null && piece.getSizeLabel() != null && !piece.getSizeLabel().isBlank()) {
-            Map<String, Object> row = rows.computeIfAbsent(piece.getSizeLabel(), label -> row(label, "OWNER", "UNKNOWN"));
+        String own = piece == null ? null : SizeGrids.labelOf(piece.getSizeLabel());
+        if (own != null) {
+            // o código do cadastro ("m") encontra a linha da grade ("M") em vez de virar uma linha a mais
+            Map<String, Object> row = rows.computeIfAbsent(own, label -> row(label, "OWNER", "UNKNOWN"));
             row.put("ownerDeclared", true);
             if (!row.containsKey("representation")) row.put("representation", approximations ? "VISUAL_APPROXIMATION" : "NONE");
         }

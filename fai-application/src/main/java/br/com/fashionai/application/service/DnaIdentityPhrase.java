@@ -58,8 +58,32 @@ final class DnaIdentityPhrase {
         d.setPhraseSource(withLife ? "STYLE_AND_LIFE" : "STYLE_ONLY");
     }
 
+    /** Frases gravadas antes de a silhueta virar palavra ("de silhueta layering"), no idioma em que foram escritas. */
+    private static final Map<String, String> CODIGO_ANTIGO = Map.of(
+            "silhueta layering", "silhueta em camadas", "silhueta oversized", "silhueta ampla", "silhueta fitted", "silhueta ajustada",
+            "silueta layering", "silueta en capas", "silueta oversized", "silueta amplia", "silueta fitted", "silueta ajustada",
+            "a layering silhouette", "a layered silhouette");
+
+    /** Frase de identidade para mostrar: a gravada com o código da silhueta sai com a palavra (o DNA salvo não é refeito). */
+    static String legivel(String phrase) {
+        if (phrase == null) {
+            return null;
+        }
+        String out = phrase;
+        for (Map.Entry<String, String> e : CODIGO_ANTIGO.entrySet()) {
+            out = out.replace(e.getKey(), e.getValue());
+        }
+        return out;
+    }
+
+    /** "layering" → "em camadas": a frase de identidade não mistura o código da silhueta com o texto. */
+    static String silhouetteWord(String silhouette) {
+        String key = "dna.silhueta." + silhouette;
+        return Msg.has(key) ? Msg.t(key) : String.valueOf(silhouette);
+    }
+
     static String localPhrase(StyleDna d, Map<String, Object> life, List<String> hidden) {
-        String base = DnaViews.ARCHETYPE_LABEL.get(d.getArchetype()) + " de silhueta " + d.getSilhouette() + (d.getIconPieceName() == null ? "" : Msg.t("dna.que_chega_de", d.getIconPieceName()));
+        String base = DnaViews.ARCHETYPE_LABEL.get(d.getArchetype()) + Msg.t("dna.de_silhueta", silhouetteWord(d.getSilhouette())) + (d.getIconPieceName() == null ? "" : Msg.t("dna.que_chega_de", d.getIconPieceName()));
         List<String> bits = new ArrayList<>();
         for (String k : List.of("objects", "places", "animals")) {
             if (!hidden.contains(k) && life.get(k) instanceof List<?> l && !l.isEmpty()) {

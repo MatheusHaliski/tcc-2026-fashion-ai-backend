@@ -1,0 +1,107 @@
+/* ── FLAIR 3D · Fashion Detective: a cutscene com faixas de cinema e legenda, e as folhas do caso (caderno, mapa,
+   inventário), que sobem do pé do palco sem cobrir o HUD. */
+.dtv-cena {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.dtv-cena-faixa {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 12%;
+  background: #000;
+}
+
+.dtv-cena-faixa.is-baixo {
+  top: auto;
+  bottom: 0;
+}
+
+.dtv-cena-legenda {
+  position: relative;
+  margin: 0 12px 12px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #000d;
+  color: #fff;
+  font-size: var(--text-body);
+  text-align: left;
+  pointer-events: auto;
+}
+
+.dtv-cena-conta {
+  display: block;
+  margin-top: 4px;
+  color: #fff9;
+  font-size: var(--text-caption);
+}
+
+.dtv-cena-botoes {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.dtv-folha {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 4;
+  max-height: 82%;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f6f2ea;
+  color: #1a1a1e;
+}
+
+.dtv-folha header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dtv-caderno {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dtv-caderno li {
+  padding: 8px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dtv-caderno li.is-faltando {
+  opacity: 0.55;
+}
+
+.dtv-caderno p {
+  margin: 4px 0 0;
+  font-family: "Courier New", monospace;
+}
+
+.dtv-mapa {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 8px auto 0;
+  background: #0e0f14;
+  border-radius: 8px;
+}

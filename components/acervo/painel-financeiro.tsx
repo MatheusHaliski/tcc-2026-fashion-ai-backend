@@ -44,7 +44,7 @@ export function PainelFinanceiro() {
             <li key={g.grupo}>
               <AcervoIcone nome={ICONE_GRUPO[g.grupo]} tamanho={16} />
               <span>{t(`acervo.fin.grupo.${g.grupo.toLowerCase()}`)}</span>
-              <span className="acv-fin-valor">{preco(g.valor)}</span>
+              <span className="acv-fin-valor">{g.valor > 0 ? preco(g.valor) : t("acervo.semPreco")}</span>
             </li>
           ))}
         </ul>

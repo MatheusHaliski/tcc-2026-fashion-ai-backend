@@ -8,6 +8,7 @@ import { arara, balcao, cabineProvador, espelho, vitrine } from "@/lib/flair/nuc
 import { tapeteRedondo } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { luminariaDeTeto } from "@/lib/flair/nucleos/scene/moveis/set";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
+import { prateleiraDeBolsas } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 export const SALA_BOUTIQUE_3D: Sala = {
   codigo: "BOUTIQUE_3D",
@@ -46,6 +47,8 @@ export const SALA_BOUTIQUE_3D: Sala = {
     poltrona({ pos: [3.0, 0, 0.9], giro: -70 }, "estofado", "metalPreto"),
     luminariaDeTeto({ pos: [-1.6, 2.9, -1.5] }, "metalPreto", "luz", 2.2),
     luminariaDeTeto({ pos: [1.6, 2.9, -1.5] }, "metalPreto", "luz", 2.2),
+    // a segunda revisão dos cenários: a prateleira de bolsas e sapatos
+    prateleiraDeBolsas({ pos: [3.75, 0, -3.6], giro: -90 }, "madeira", "estofado", "metalPreto", 1.4),
   ],
   figurantes: [],
   luzes: {

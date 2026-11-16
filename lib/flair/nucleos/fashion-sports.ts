@@ -35,6 +35,6 @@ export const FASHION_SPORTS: NucleoConfig = {
   opcoes: ["FUTEBOL", "BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"],
   acoes: acoesDe({ cartas: true, desfile: false }),
   regras: ["VITORIA", "EMPATE", "COESAO"],
-  deck: deckDe(6, ["SUP", 1], ["INF", 1], ["CAL", 1]),
+  deck: deckDe(15, ["SUP", 1], ["INF", 1], ["CAL", 1]),
   automatico: true,
 };

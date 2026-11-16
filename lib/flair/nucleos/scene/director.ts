@@ -114,6 +114,24 @@ export class Diretor {
     return out;
   }
 
+  /**
+   * O clipe que o ator faz agora (o passo começado mais recente que ainda dura, ou mantido depois do fim), ou null:
+   * as pessoas de cena traduzem o clipe num movimento do corpo humano (lib/flair/nucleos/gente/reacoes.ts).
+   */
+  clipeDoAtor(ator: string, agora: number): { clip: string; desde: number } | null {
+    let achado: { clip: string; desde: number } | null = null;
+    for (const t of this.fila) {
+      for (const p of t.seq.passos) {
+        if (!passoDoAtor(p, ator)) continue;
+        const desde = t.inicio + p.inicio;
+        const local = agora - desde;
+        if (local < 0 || (local > duracaoDoPasso(p) && !p.mantem)) continue;
+        if (!achado || desde >= achado.desde) achado = { clip: p.clip, desde };
+      }
+    }
+    return achado;
+  }
+
   /** Onde o ator está agora, partindo de `origem` (o lugar dele na sala). */
   lugar(ator: string, agora: number, origem: Lugar): Lugar {
     let atual: Lugar = { ...origem, ...this.lugares.get(ator) };

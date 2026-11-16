@@ -15,7 +15,7 @@ import {Mannequin} from '@/components/three/mannequin';
 import {useReducedMotion,type Look3d} from '@/components/three/common';
 import type {HumanParts} from '@/components/three/human-avatar';
 import {applyIdle} from '@/lib/avatar3d/human/pose';
-import {FaiNeonSign,FaiRug,Label3D,Lamp,RoomDoor,RoomWindow,Sparkles} from '@/components/room3d/room-props';
+import {FaiNeonSign,FaiRug,Label3D,Lamp,RoomDoor,RoomWindow,Sparkles} from '@/components/three/scene-props';
 import {useI18n} from '@/lib/i18n/i18n';
 import {modsOf,vipRouteLeft,type AdventureMods,type AdventureSession} from '@/lib/flair/afterparty';
 

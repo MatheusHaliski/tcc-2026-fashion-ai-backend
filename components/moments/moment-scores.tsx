@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label as taxLabel } from "@/lib/api/taxonomy";
-import type { MatchExplanation, MomentContext, MomentMatchResult, MomentScores } from "@/lib/moments/types";
+import type { Interpretation, MatchExplanation, MomentContext, MomentMatchResult, MomentScores } from "@/lib/moments/types";
+import { nomeDaLeitura } from "@/lib/moments/leitura";
 import { cn } from "@/components/ui";
 
 /**
@@ -21,13 +22,13 @@ export function MomentScoreGrid({ scores, compatibility }: { scores?: MomentScor
   );
 }
 
-export function MomentMatchBreakdown({ match, explanation }: { match?: Partial<MomentMatchResult> | null; explanation?: MatchExplanation[] }) {
+export function MomentMatchBreakdown({ match, explanation, interpretations }: { match?: Partial<MomentMatchResult> | null; explanation?: MatchExplanation[]; interpretations?: Interpretation[] }) {
   const { t } = useI18n();
   if (!match || match.score == null) return <p className="type-caption text-muted">{t("moments.match.no_base")}</p>;
   const parts = Object.entries(match.parts ?? {});
   return (
     <div className="moment-match">
-      <div className="flex items-baseline gap-2"><b className="hero-number text-3xl tabular">{match.score}</b><span className="type-caption text-muted">{t("moments.match.label")}</span>{match.interpretation && <span className="badge">{t("moments.match.reading", { key: match.interpretation })}</span>}</div>
+      <div className="flex items-baseline gap-2"><b className="hero-number text-3xl tabular">{match.score}</b><span className="type-caption text-muted">{t("moments.match.label")}</span>{match.interpretation && <span className="badge">{t("moments.match.reading", { key: nomeDaLeitura(match.interpretation, interpretations) })}</span>}</div>
       {parts.length > 0 && <ul className="hype-breakdown mt-2" aria-label={t("moments.match.parts")}>{parts.map(([k, v]) => <li key={k} className="hype-metric"><span className="hype-metric-label">{t(`moments.match.part.${k}`)}</span><span className="hype-metric-value tabular">{v}</span><span className="hype-bar hype-metric-bar" aria-hidden><i style={{ width: `${Math.max(0, Math.min(100, v))}%` }} /></span></li>)}</ul>}
       {explanation && explanation.length > 0 && <p className="type-body-sm mt-2">{explanation.map((e) => t(`moments.match.explain.${e.kind}`, { values: e.values.map(taxLabel).join(", ") })).join(" ")}</p>}
       <p className="type-caption text-muted mt-1">{t("moments.match.disclaimer")}</p>
@@ -54,7 +55,7 @@ export function MomentContextRows({ type, id, className }: { type: "PIECE" | "SC
       <ul className="hype-breakdown">
         {data.moments.map((m) => (
           <li key={m.momentId} className="hype-metric">
-            <span className="hype-metric-label"><span aria-hidden>{m.icon ?? "◌"}</span> {m.name}{m.interpretation ? <span className="hype-metric-hint">{t("moments.match.reading", { key: m.interpretation })}</span> : null}</span>
+            <span className="hype-metric-label"><span aria-hidden>{m.icon ?? "◌"}</span> {m.name}{m.interpretation ? <span className="hype-metric-hint">{t("moments.match.reading", { key: nomeDaLeitura(m.interpretation) })}</span> : null}</span>
             <span className="hype-metric-value tabular">{m.match == null ? <><span aria-hidden>—</span><span className="sr-only">{t("hype.dimension.missing")}</span></> : m.match}{m.contextualHype != null && <span className="hype-metric-weight" title={t("moments.scores.contextual_hype_hint")}>{t("moments.context.hype_short", { n: m.contextualHype })}</span>}</span>
             <span className="hype-bar hype-metric-bar" aria-hidden><i style={{ width: `${m.match ?? 0}%` }} /></span>
           </li>

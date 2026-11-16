@@ -1,0 +1,25 @@
+/* A cor cadastrada na carta dos jogos: bolinha e nome, abaixo do ícone da vaga (o selo do efeito fica embaixo). */
+.n3d-card-cor {
+  position: absolute;
+  top: 24px;
+  left: 2px;
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  max-width: calc(100% - 4px);
+  padding: 0 4px 0 2px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #000a;
+  color: #fff;
+  font-size: 0.62rem;
+  white-space: nowrap;
+}
+
+.n3d-card-cor i {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border: 1px solid #fff9;
+  border-radius: 50%;
+}

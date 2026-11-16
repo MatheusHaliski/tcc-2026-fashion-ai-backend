@@ -22,13 +22,15 @@ const GRID_ORDER: { grid: SizeGrid; category: string }[] = [
 export function FitPage() {
   const { t } = useI18n();
   const [mine, setMine] = useState(readMySizes);
+  // a escolha mais recente ganha uma confirmação no próprio cartão (antes nada dizia que o tamanho foi guardado)
+  const [salvo, setSalvo] = useState<SizeGrid | null>(null);
   const state = useApi<State>((signal) => api.get("/api/try-on", { signal }), []);
   const sex: "FEMININO" | "MASCULINO" = state.data?.avatar?.model?.sex ?? (state.data?.mannequin.sex === "FEMININO" ? "FEMININO" : "MASCULINO");
   const measures = state.data?.avatar ? bodyMeasures(mannequinBody(sex, state.data.mannequin.build, state.data.avatar.model?.body), sex) : null;
   return <div>
     <PageHeader title={t("size.pagina_titulo")} lead={t("size.pagina_lead")} />
     <div className="grid gap-5">
-      {!measures && !state.loading && <p className="type-body text-muted" role="status">{t("size.sem_avatar")} <Link className="underline" href="/avatar">{t("mirror.criar_avatar")}</Link></p>}
+      {!measures && !state.loading && <p className="type-body text-muted" role="status">{t("size.sem_avatar")} <Link className="underline" href="/avatar">{t("size.criar_avatar")}</Link></p>}
       {GRID_ORDER.map(({ grid, category }) => {
         const position = measures ? bodyPosition(grid, sex, measures, category) : null;
         const natural = position == null ? null : naturalSize(grid, position);
@@ -38,7 +40,8 @@ export function FitPage() {
           <h2 className="type-h3 mb-2">{t(`size.grade.${grid}`)}</h2>
           {natural && <p className="type-body-sm text-muted mb-2">{t("size.avatar_veste", { size: natural })}</p>}
           <SizePicker grid={grid} options={GRIDS[grid]} chosen={chosen} natural={natural} fit={steps == null ? null : sizeFit(grid, steps)}
-            label={t(`size.grade.${grid}`)} onPick={(label) => { writeMySize(grid, label); setMine((current) => ({ ...current, [grid]: label })); }} />
+            label={t(`size.grade.${grid}`)} onPick={(label) => { writeMySize(grid, label); setMine((current) => ({ ...current, [grid]: label })); setSalvo(grid); }} />
+          {salvo === grid && chosen && <p className="type-body-sm mt-2" role="status">{t("size.salvo", { size: chosen })}</p>}
           <div className="mt-3"><SizeReferenceTable grid={grid} sex={sex} highlight={chosen ?? natural} /></div>
         </Card>;
       })}

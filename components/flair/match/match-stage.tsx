@@ -2,8 +2,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/i18n";
 import { cn } from "@/components/ui";
-import { useGameLabels } from "@/components/flair/games/game-card";
-import { PhotoCredit } from "@/components/flair/games/photo-scene";
+import { useSceneLabels } from "@/components/flair/match/scene-labels";
+import { PhotoCredit } from "@/components/flair/match/photo-scene";
 import { MatchStageArt } from "@/components/flair/match/match-stage-art";
 import { useAuraPermissions, useMatchReveal } from "@/components/flair/match/use-match-reveal";
 import { buildScene, photoUrl, stageConfig, type SceneHit } from "@/lib/flair/match-scene";
@@ -20,7 +20,7 @@ import type { MatchData, MatchMoment, MatchWinner } from "@/lib/flair/match-stag
 export function MatchStage({ data, labelA, labelB, overlay }: {
   data: MatchData | null; labelA: string; labelB: string; overlay?: (revealed: number, final: boolean) => ReactNode;
 }) {
-  const { t } = useI18n(); const L = useGameLabels();
+  const { t } = useI18n(); const L = useSceneLabels();
   const perms = useAuraPermissions();
   const [broken, setBroken] = useState(false);
   const signature = data ? `${data.mode}|${data.moments.map((m) => `${m.a?.id ?? ""}:${m.b?.id ?? ""}:${m.winner}`).join(",")}` : "";

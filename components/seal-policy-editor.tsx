@@ -112,8 +112,9 @@ export function describePolicy(p: SealPolicy | null, tier: SealTierId): string {
   return [head, tags].filter(Boolean).join(" · ");
 }
 
-export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
+export function SealPolicyEditor({ value, onChange, tier, onTier, brandName, showTier = true }: {
   value: SealPolicy; onChange: (p: SealPolicy) => void; tier: SealTierId; onTier: (t: SealTierId) => void; brandName?: string | null;
+  /** false no modo Manual, que já escolhe o nível no campo de cima */ showTier?: boolean;
 }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
@@ -145,12 +146,13 @@ export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
 
   return (
     <div className="space-y-4">
-      <div>
+      {/* no modo Manual o nível já é escolhido no campo de cima: aqui não repete "Nível do selo" */}
+      {showTier && <div>
         <p className="label mb-1">{t("sealPolicy.nivel")}</p>
         <SegmentPicker label={t("sealPolicy.nivel")} value={tier} onChange={(v) => { onTier(v); onChange({ ...value, rules: value.rules.map((r) => ({ ...r, quantifier: v === "PECA" ? (r.quantifier === "NONE" ? "NONE" : "ALL") : r.quantifier })) }); }}
           options={[{ id: "LOOK", label: t("sealPolicy.nivel_look") }, { id: "PECA", label: t("sealPolicy.nivel_peca") }]} />
         <p className="help mt-1">{tier === "PECA" ? t("sealPolicy.nivel_peca_dica") : t("sealPolicy.nivel_look_dica")}</p>
-      </div>
+      </div>}
 
       <section aria-labelledby="sp-rules">
         <p id="sp-rules" className="label mb-1">{t("sealPolicy.regras")}</p>

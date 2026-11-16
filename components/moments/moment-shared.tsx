@@ -75,7 +75,7 @@ export function useLocalRange() {
 
 /** Card de lista (home, próximos, calendário, meus). Momentos privados não mostram contagem de participantes (§28). */
 export function MomentCard({ m, receivedAt, compact }: { m: MomentCardData; receivedAt: number; compact?: boolean }) {
-  const { t, fmtNumber } = useI18n(); const range = useLocalRange(); const now = useMomentClock();
+  const { t } = useI18n(); const range = useLocalRange(); const now = useMomentClock();
   const status = statusAt(m.time, receivedAt, now); const me = participationLabel(t, m.me); const bonus = pointsBonusLabel(t, m);
   return (
     <MomentThemed as="article" theme={m.theme} className={cn("moment-card", compact && "is-compact", status === "ENDED" && "is-ended")} aria-labelledby={`mc-${m.id}`}>
@@ -91,7 +91,7 @@ export function MomentCard({ m, receivedAt, compact }: { m: MomentCardData; rece
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 type-caption">
         <MomentCountdown time={m.time} receivedAt={receivedAt} />
         {bonus && status !== "ENDED" && <span className="moment-bonus">{bonus}</span>}
-        {m.participantCount != null && m.participantCount > 0 && <span>{t("moments.participants_count", { n: fmtNumber(m.participantCount) })}</span>}
+        {m.participantCount != null && m.participantCount > 0 && <span>{t("moments.participants_count", { n: m.participantCount })}</span>}
         {me && <span className="moment-me">{me}</span>}
       </div>
       {!compact && <div className="mt-2"><MomentTypeBadge m={m} /></div>}

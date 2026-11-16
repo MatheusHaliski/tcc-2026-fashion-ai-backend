@@ -80,7 +80,7 @@ class SealPolicyChatTest {
     void ordinaryCopilotRoutePassesTheSealContextInsteadOfDiscardingIt() {
         SealService sealDrafts = mock(SealService.class);
         CopilotService copilot = new CopilotService(null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null);
         copilot.setSealPolicyService(sealDrafts);
         var history = List.of(new SealPolicyCopilot.Message("user", "#createsealpolicy Peça azul"));
         var previous = Map.<String, Object>of("match", "ALL");

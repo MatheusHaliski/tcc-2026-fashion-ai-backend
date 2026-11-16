@@ -10,6 +10,7 @@ import { SealSuggestionHype } from "@/components/hype/hype-seals";
 import type { HypeLevel } from "@/lib/hype/types";
 import { TipoLavagemField } from "@/components/tipo-lavagem-field";
 import { PieceConservationField } from "@/components/piece-conservation-field";
+import { TipoLavagemField } from "@/components/tipo-lavagem-field";
 import { PieceColecaoField } from "@/components/piece-colecao-field";
 import { PieceIntensidadeTermicaField } from "@/components/piece-intensidade-termica-field";
 import { PieceOrigemField } from "@/components/piece-origem-field";
@@ -20,6 +21,7 @@ export interface PieceFormValue {
   color: string; material: string; size: string; market?: string; occasion: string[]; style: string[]; seals: string[]; price: string; visibility: string;
   tags: string; colecaoId?: string | null; tipoLavagemId?: string | null; intensidadeTermicaId?: string | null; origemId?: string | null; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
   estadoConservacaoId?: string | null; estadoConservacaoNome?: string | null; clearEstadoConservacao?: boolean;
+  tipoLavagemId?: string | null; tipoLavagemNome?: string | null; clearTipoLavagem?: boolean;
   /** RF4 · Estúdio: false = salvar sem a foto de estúdio gerada no rascunho */
   studio?: boolean;
   /** RF4 · buscador web de marcas: logo filtrado (fundo branco, letras pretas), fonte e referência externa */

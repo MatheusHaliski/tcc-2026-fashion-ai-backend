@@ -33,11 +33,11 @@ final class AcervoViews {
         out.put("color", w.getColor());
         out.put("size", w.getSizeLabel());
         out.put("brand", w.getBrandName());
-        out.put("price", w.getPrice());
+        out.put("price", AcervoFinanceiro.preco(w));
         out.put("currency", w.getPriceCurrency());
         out.put("condition", w.getCondition() == null ? null : w.getCondition().name());
         out.put("conservacao", w.getEstadoConservacao() == null ? null : w.getEstadoConservacao().getNome());
-        out.put("thumbnailUrl", w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
+        out.put("thumbnailUrl", imagem(w));
         out.put("favorite", w.isFavorite());
         out.put("wearCount", w.getWearCount());
         out.put("lastWornDate", w.getLastWornDate());
@@ -46,6 +46,21 @@ final class AcervoViews {
         out.put("caminho", mapa.caminho(lugar));
         out.put("medidas", medidas(linha));
         return out;
+    }
+
+    static String imagem(WardrobeItem w) {
+        return w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl();
+    }
+
+    /**
+     * Imagem e o que a tela precisa para pintar a ilustração de uma peça sem foto na cor do cadastro (a miniatura da
+     * linha de arrumação e dos looks vinculados não fica azul para uma camiseta preta).
+     */
+    static void imagemComCor(Map<String, Object> linha, WardrobeItem w) {
+        linha.put("thumbnailUrl", imagem(w));
+        linha.put("category", w.getCategory());
+        linha.put("subcategory", w.getSubcategory());
+        linha.put("color", w.getColor());
     }
 
     static Map<String, Object> medidas(AcervoPeca linha) {

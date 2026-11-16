@@ -7,6 +7,7 @@ import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
 
 import { Price } from "@/components/price";
+import { informedPrice } from "@/lib/api/piece-price";
 import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import { pieceCatalogCrop, pieceCatalogSource } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
@@ -27,7 +28,9 @@ import { BrandLogo } from "@/components/brand-logo";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoDialog } from "@/components/mannequin-photo";
 import { Model3dAction, Model3dTechnical, useModel3d } from "@/components/model3d-panel";
-import { EditImageDialog, hasRealLogo, studioMeta, studioNeedsReview, studioVersion } from "@/components/edit-image";
+import { EditImageDialog, hasRealLogo, studioMeta, studioNeedsReview } from "@/components/edit-image";
+import { usePieceStudio } from "./use-piece-studio";
+import { flagMessage } from "./piece-flag-message";
 import { Generate3DDialog } from "@/components/generate-3d";
 import { emitPieceUpdate } from "@/lib/pieces/piece-events";
 import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
@@ -53,7 +56,7 @@ import { useAuraLive } from "@/lib/hype/use-aura-live";
 import { PieceGallery, type Slide } from "./piece-gallery";
 interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }
 
-const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
+const PieceModelViewer = dynamic(() => import("@/components/piece3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
 function LookHype({ id }: { id: string }) {
   const { summary, loading, error } = useHypeSummary("SCHEME", id);
@@ -64,7 +67,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const { t, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
   const [editImage, setEditImage] = useState(false); const [editArt, setEditArt] = useState(false);
-  const [studioBusy, setStudioBusy] = useState(false); const [view3d, setView3d] = useState(false); const [mannequin3d, setMannequin3d] = useState(false); const [mannequinPhoto, setMannequinPhoto] = useState(false);
+  const [view3d, setView3d] = useState(false); const [mannequin3d, setMannequin3d] = useState(false); const [mannequinPhoto, setMannequinPhoto] = useState(false);
   const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null); const savingRef = useRef(false); const [editErrors, setEditErrors] = useState<Record<string, string>>({}); const tax = useTaxonomy();
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
@@ -79,30 +82,15 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   useEffect(() => { if (startEditing && p && mine && !editing) startEdit(); }, [startEditing, p?.id, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const setPiece = (np: PieceView) => { setData((d) => (d ? { ...d, piece: np } : d)); emitPieceUpdate(np); };
   // "à venda" e "para doar" são exclusivos: marcar um limpa o outro no backend, que devolve a peça já atualizada
-  async function flag(field: "favorite" | "disponivel" | "forSale" | "forDonation") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
-  async function studioShot(backdrop: string) {
-    setStudioBusy(true);
-    try {
-      const np = await api.post<PieceView>(`/api/pieces/${id}/studio?backdrop=${encodeURIComponent(backdrop)}`); setPiece(np);
-      // com uma foto aprovada no ar, a nova versão espera a aprovação (nada troca no feed sozinho)
-      if (studioVersion(np).pending) toast.info(t("editImage.nova_para_revisar")); else toast.success(t("pieces.id.foto_de_estudio_pronta"));
-    } catch (e) { toast.fromError(e); } finally { setStudioBusy(false); }
-  }
-  const [approvalBusy, setApprovalBusy] = useState(false);
-  async function decideStudio(approve: boolean) {
-    setApprovalBusy(true);
-    try {
-      setPiece(approve ? await api.post<PieceView>(`/api/pieces/${id}/studio/approve`) : await api.delete<PieceView>(`/api/pieces/${id}/studio/pending`));
-      toast.success(approve ? t("editImage.aprovada_ok") : t("editImage.descartada_ok"));
-    } catch (e) { toast.fromError(e); } finally { setApprovalBusy(false); }
-  }
+  async function flag(field: "favorite" | "disponivel" | "forSale" | "forDonation") { if (!p) return; try { const np = await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] }); setPiece(np); toast.success(flagMessage(field, np, t)); } catch (e) { toast.fromError(e); } }
+  const { studioBusy, approvalBusy, studioShot, decideStudio } = usePieceStudio(id, setPiece);
   async function replaceImage(file: File) { const fd = new FormData(); fd.append("file", file); try { setPiece(await api.upload<PieceView>(`/api/pieces/${id}/image`, fd, "PUT")); toast.success(t("closet.replaceImage") + " ✓"); } catch (e) { toast.fromError(e); } }
   async function copyToWardrobe() { if (!user) { router.push("/login"); return; } try { const np = await api.post<PieceView>(`/api/pieces/${id}/copy`); toast.success(t("closet.addToWardrobe") + " ✓"); router.push(`/pieces/${np.id}`); } catch (e) { toast.fromError(e); } }
   async function askDelete() { try { const impact = await api.get<{ schemes?: SchemeView[]; count?: number; message?: string }>(`/api/pieces/${id}/deletion-impact`); setConfirmDelete({ open: true, impact }); } catch (e) { toast.fromError(e); } }
   async function doDelete() { try { await api.delete(`/api/pieces/${id}`); toast.success(t("expanded.peca_excluida")); setConfirmDelete({ open: false }); if (window.location.pathname.startsWith("/pieces/")) router.push("/closet"); else window.location.reload(); } catch (e) { toast.fromError(e); } }
   function startEdit() {
     if (!p) return;
-    setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? "", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? "", size: p.size ?? "m", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? "", visibility: p.visibility, forSale: p.forSale, seals: p.seals ?? [], condition: p.condition ?? "", estadoConservacaoId: p.estadoConservacao?.id ?? null, estadoConservacaoNome: p.estadoConservacao?.nome ?? null, colecaoId: p.colecao?.id ?? null, intensidadeTermicaId: p.intensidadeTermica?.id ?? null, careInstructions: p.careInstructions ?? "", background: p.background ?? null });
+    setForm({ ...EMPTY_PIECE, name: p.name, category: p.category, subcategory: p.subcategory, sex: p.sex, brandName: p.brandName ?? "", brandId: p.brandId ?? null, brandLogoUrl: p.brandLogoUrl ?? null, brandSource: null, color: p.color, material: p.material ?? "", size: p.size ?? "m", occasion: p.occasion ?? [], style: p.style ?? [], price: p.price?.toString() ?? "", visibility: p.visibility, forSale: p.forSale, seals: p.seals ?? [], condition: p.condition ?? "", estadoConservacaoId: p.estadoConservacao?.id ?? null, estadoConservacaoNome: p.estadoConservacao?.nome ?? null, tipoLavagemId: p.tipoLavagem?.id ?? null, tipoLavagemNome: p.tipoLavagem?.nome ?? null, colecaoId: p.colecao?.id ?? null, intensidadeTermicaId: p.intensidadeTermica?.id ?? null, careInstructions: p.careInstructions ?? "", background: p.background ?? null });
     setEditing(true);
   }
   // edição: mesma regra do cadastro — uma tentativa por ação (trava síncrona) e validação antes de enviar
@@ -140,7 +128,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     [t("common.material"), label((p.material ?? "").toLowerCase()) || null],
     [t("common.occasion"), (p.occasion ?? []).map(label).join(", ") || null],
     [t("common.style"), (p.style ?? []).map(label).join(", ") || null],
-    [t("common.price"), p.price != null && !p.forSale ? <Price key="price" value={p.price} /> : null],
+    [t("common.price"), !p.forSale && informedPrice(p.price) != null ? <Price key="price" value={p.price} /> : null],
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
     [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
     [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],

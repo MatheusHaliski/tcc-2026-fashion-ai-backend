@@ -122,7 +122,9 @@ class Flair3dNucleoServiceTest {
         UUID id = (UUID) service.abrir(ana, "PASSARELA", deck(sup, inf, cal)).get("id");
 
         assertThat(status(() -> service.entregar(bia, id, vestir(sup)))).isEqualTo(403);
-        Resultado r = service.entregar(ana, id, vestir(sup, inf, cal));
+        assertThat(service.entregar(ana, id, vestir(sup, inf, cal)).status()).isEqualTo("EM_ACAO");
+        // a jogada de cena: seguir sem carta fecha a partida com a nota do look
+        Resultado r = service.acionar(ana, id, Acionamento.NENHUM);
         assertThat(r.pontos()).isEqualTo(71);
         assertThat(r.estrelas()).isEqualTo(1);
         Flair3dMatch salva = kit.dep(Flair3dMatchRepository.class).findById(id).orElseThrow();

@@ -7,24 +7,28 @@ import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.repository.ColecaoRepository;
 import br.com.fashionai.domain.repository.IntensidadeTermicaRepository;
+import br.com.fashionai.domain.repository.TipoLavagemRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Coleção e intensidade térmica da peça e do look: o formulário manda só o ID da opção; aqui ele é conferido na tabela
- * e vira a FK (wardrobe_items / schemes). Chamado depois que o WardrobeService/SchemeService autorizou a gravação.
- * ID nulo mantém o valor atual; ID inexistente responde 400 com o campo a corrigir.
+ * Referências de coleção e intensidade térmica da peça e do look, e tipo de lavagem da peça. O formulário manda o ID
+ * da opção, que é conferido na tabela e vira uma FK. Chamado após autorização pelo WardrobeService/SchemeService.
+ * ID nulo mantém o valor atual, salvo remoção explícita; ID inexistente responde 400 com o campo a corrigir.
  */
 @Service
 public class ClassificationService {
     private final ColecaoRepository colecoes;
     private final IntensidadeTermicaRepository intensidades;
+    private final TipoLavagemRepository lavagens;
 
-    public ClassificationService(ColecaoRepository colecoes, IntensidadeTermicaRepository intensidades) {
+    public ClassificationService(ColecaoRepository colecoes, IntensidadeTermicaRepository intensidades,
+                                 TipoLavagemRepository lavagens) {
         this.colecoes = colecoes;
         this.intensidades = intensidades;
+        this.lavagens = lavagens;
     }
 
     public void apply(WardrobeItem piece, UUID colecaoId, UUID intensidadeTermicaId) {
@@ -42,6 +46,18 @@ public class ClassificationService {
         }
         if (intensidadeTermicaId != null) {
             look.setIntensidadeTermica(intensidade(intensidadeTermicaId));
+        }
+    }
+
+    public void applyWashing(WardrobeItem piece, UUID id, boolean clear) {
+        if (id != null && clear) {
+            throw invalid("TIPO_LAVAGEM_INVALIDO", "tipoLavagemId", "Tipo de lavagem inválido");
+        }
+        if (clear) {
+            piece.setTipoLavagem(null);
+        } else if (id != null) {
+            piece.setTipoLavagem(lavagens.findById(id).orElseThrow(() ->
+                    invalid("TIPO_LAVAGEM_INVALIDO", "tipoLavagemId", "Tipo de lavagem inválido")));
         }
     }
 

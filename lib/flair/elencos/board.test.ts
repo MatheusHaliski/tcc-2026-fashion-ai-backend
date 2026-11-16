@@ -32,9 +32,14 @@ describe("tabuleiro e quebra-cabeça", () => {
     quimicaCartas: {}, quimica: 30, requisitos: [], ok: false,
   };
 
-  it("peças na ordem das linhas: verde, laranja, vermelha e coberta sem link", () => {
+  it("peças na ordem das linhas: verde, laranja, vermelha; sem as duas cartas, coberta; sem julgamento, chegando", () => {
     const cartas = { acessorio: "a", cima: "b", bolsa: "c", baixo: "d" };
-    expect(estadoDasPecas(f.linhas, cartas, conf)).toEqual(["verde", "laranja", "vermelha", "coberta", "coberta"]);
+    // bolsa–baixo tem as duas cartas, mas o servidor não devolveu o link: a peça chega, sem cor de nível
+    expect(estadoDasPecas(f.linhas, cartas, conf)).toEqual(["verde", "laranja", "vermelha", "chegando", "coberta"]);
+    expect(estadoDasPecas(f.linhas, cartas, null)).toEqual(["chegando", "chegando", "chegando", "chegando", "coberta"]);
+    // a conferência julgou outra carta na vaga "cima": as linhas dela ainda não valem
+    expect(estadoDasPecas(f.linhas, cartas, conf, { ...cartas, cima: "outra" })).toEqual(["chegando", "chegando", "chegando", "chegando", "coberta"]);
+    expect(estadoDasPecas(f.linhas, cartas, conf, cartas)).toEqual(["verde", "laranja", "vermelha", "chegando", "coberta"]);
     expect(nivelDe("verde")).toBe("GREEN");
     expect(nivelDe("x")).toBeNull();
     expect(gradeDoQuebraCabeca(5)).toEqual({ colunas: 3, fileiras: 2 });

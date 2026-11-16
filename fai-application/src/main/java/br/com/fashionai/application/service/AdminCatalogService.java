@@ -1,6 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -14,7 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -22,67 +20,28 @@ import java.time.LocalDate;
 import java.util.*;
 
 /**
- * Administração do catálogo da loja Fashion AI e visões administrativas (sem filtro de status) de jogos FLAIR, selos,
- * cupons, peças de roupa e itens do quarto 3D. Os filtros aceitam qualquer atributo básico da entidade (igualdade),
- * o usuário (userId/ownerId) e busca textual (q).
+ * Visões administrativas (sem filtro de status) de jogos FLAIR, selos, cupons e peças de roupa. Os filtros aceitam
+ * qualquer atributo básico da entidade (igualdade), o usuário (userId/ownerId) e busca textual (q). A loja do quarto e
+ * os itens do quarto 3D saíram com o Meu Quarto (15/11/2026).
  */
 @Service
 public class AdminCatalogService {
     private static final Set<String> RESERVED = Set.of("page", "size", "sort", "dir", "q");
-    private static final Set<String> STORE_EDITABLE = Set.of("name", "moldId", "slotType", "widthCm", "finishJson", "rarity",
-            "pricePoints", "requiredLevel", "stockLimit", "active", "kind", "material", "colorName", "description", "sealId",
-            "logoUrl", "artUrl", "labelText", "bundleJson", "availableFrom", "availableUntil", "perUserLimit", "requiresSeal");
 
     private final Guard guard;
-    private final Audit audit;
-    private final RoomCatalogItemRepository store;
-    private final RoomInventoryItemRepository roomItems;
     private final FlairMatchRepository matches;
     private final SealRepository seals;
     private final CouponRightRepository coupons;
     private final WardrobeItemRepository garments;
 
-    public AdminCatalogService(Guard guard, Audit audit, RoomCatalogItemRepository store, RoomInventoryItemRepository roomItems,
-                               FlairMatchRepository matches, SealRepository seals, CouponRightRepository coupons,
+    public AdminCatalogService(Guard guard, FlairMatchRepository matches, SealRepository seals, CouponRightRepository coupons,
                                WardrobeItemRepository garments) {
-        this.guard = guard; this.audit = audit; this.store = store; this.roomItems = roomItems;
+        this.guard = guard;
         this.matches = matches; this.seals = seals; this.coupons = coupons; this.garments = garments;
     }
 
-    // ---- Loja Fashion AI: listar / editar qualquer item à venda ----
-
-    public Map<String, Object> storeItems(CurrentUser user, Map<String, String> params) {
-        guard.requireAdmin(user);
-        return page(store.findAll(spec(params, null), pageable(params, "createdAt")), AdminCatalogService::view);
-    }
-
-    public Map<String, Object> storeItem(CurrentUser user, String sku) {
-        guard.requireAdmin(user);
-        return view(store.findById(sku).orElseThrow(() -> notFound("STORE_ITEM_NOT_FOUND")));
-    }
-
-    @Transactional
-    public Map<String, Object> updateStoreItem(CurrentUser user, String sku, Map<String, Object> changes) {
-        guard.requireAdmin(user);
-        RoomCatalogItem item = store.lockBySku(sku).orElseThrow(() -> notFound("STORE_ITEM_NOT_FOUND"));
-        apply(item, changes);
-        validate(item);
-        store.save(item);
-        audit.log(user, "ADMIN_STORE_ITEM_UPDATE", "room_catalog:" + sku, Map.of("fields", new TreeSet<>(changes.keySet())));
-        return view(item);
-    }
-
-    @Transactional
-    public Map<String, Object> setStoreItemActive(CurrentUser user, String sku, boolean active) {
-        guard.requireAdmin(user);
-        RoomCatalogItem item = store.lockBySku(sku).orElseThrow(() -> notFound("STORE_ITEM_NOT_FOUND"));
-        item.setActive(active);
-        store.save(item);
-        audit.log(user, active ? "ADMIN_STORE_ITEM_ACTIVATE" : "ADMIN_STORE_ITEM_DEACTIVATE", "room_catalog:" + sku, Map.of());
-        return view(item);
-    }
-
     // ---- Catálogos administrativos (todos os status) ----
+
 
     public Map<String, Object> flairGames(CurrentUser user, Map<String, String> params) {
         guard.requireAdmin(user);
@@ -104,11 +63,6 @@ public class AdminCatalogService {
     public Map<String, Object> garmentCatalog(CurrentUser user, Map<String, String> params) {
         guard.requireAdmin(user);
         return page(garments.findAll(spec(params, "user"), pageable(params, "createdAt")), AdminCatalogService::view);
-    }
-
-    public Map<String, Object> roomItemCatalog(CurrentUser user, Map<String, String> params) {
-        guard.requireAdmin(user);
-        return page(roomItems.findAll(spec(params, null), pageable(params, "acquiredAt")), AdminCatalogService::view);
     }
 
     // ---- Internos ----
@@ -209,34 +163,4 @@ public class AdminCatalogService {
         }
         return m;
     }
-
-    private static void apply(RoomCatalogItem item, Map<String, Object> changes) {
-        if (changes == null || changes.isEmpty()) throw new ApiException(400, "STORE_ITEM_EMPTY_UPDATE", "No changes");
-        for (var e : changes.entrySet()) {
-            if (!STORE_EDITABLE.contains(e.getKey())) throw new ApiException(400, "STORE_ITEM_FIELD_NOT_EDITABLE", "Field not editable: " + e.getKey());
-            Method setter = Arrays.stream(RoomCatalogItem.class.getMethods())
-                    .filter(m -> m.getName().equals("set" + Character.toUpperCase(e.getKey().charAt(0)) + e.getKey().substring(1)) && m.getParameterCount() == 1)
-                    .findFirst().orElseThrow(() -> new ApiException(400, "STORE_ITEM_FIELD_NOT_EDITABLE", "Field not editable: " + e.getKey()));
-            Class<?> t = setter.getParameterTypes()[0];
-            Object v = e.getValue();
-            try {
-                setter.invoke(item, v == null ? (t.isPrimitive() ? fail(e.getKey()) : null) : coerce(t, v.toString()));
-            } catch (ReflectiveOperationException ex) {
-                throw new ApiException(400, "STORE_ITEM_FIELD_INVALID", "Invalid value for " + e.getKey());
-            }
-        }
-    }
-
-    private static Object fail(String field) { throw new ApiException(400, "STORE_ITEM_FIELD_INVALID", "Invalid value for " + field); }
-
-    private static void validate(RoomCatalogItem i) {
-        if (i.getName() == null || i.getName().isBlank() || i.getName().length() > 120 || i.getPricePoints() < 0
-                || i.getStockLimit() != null && i.getStockLimit() < i.getSoldCount()
-                || i.getPerUserLimit() != null && i.getPerUserLimit() < 1
-                || i.getAvailableFrom() != null && i.getAvailableUntil() != null && i.getAvailableUntil().isBefore(i.getAvailableFrom())) {
-            throw new ApiException(400, "STORE_ITEM_INVALID", "Invalid store item");
-        }
-    }
-
-    private static ApiException notFound(String code) { return new ApiException(404, code, "Not found"); }
 }

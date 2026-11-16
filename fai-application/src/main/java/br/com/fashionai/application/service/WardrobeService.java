@@ -238,11 +238,7 @@ public class WardrobeService {
                         AiOutcome.Quota quota, Map<String, Object> studio, String backgroundWarning,
                         Map<String, Object> rejection) {
         static Draft rejected(ApiException e) {
-            Map<String, Object> r = new LinkedHashMap<>(e.details() == null ? Map.of() : e.details());
-            r.put("code", e.code());
-            r.put("message", e.getMessage());
-            return new Draft(null, null, null, null, null, null, null, null, List.of(), BigDecimal.ZERO, 0, false, false, null,
-                    e.getMessage(), null, null, null, r);
+            return PieceBatchAnalysis.rejected(e);
         }
     }
 
@@ -326,21 +322,7 @@ public class WardrobeService {
     // depois de jobs.save(job) (resultJson, estágios, custo) se perdiam com open-in-view desligado
     @Transactional(noRollbackFor = PhotoRejectedException.class)
     public List<Draft> analyzeBatch(CurrentUser user, List<byte[]> files, String category) {
-        if (files == null || files.isEmpty()) {
-            throw ApiException.badRequest("SEM_FOTOS", Msg.t("wardrobe.envie_ao_menos_uma_foto"));
-        }
-        if (files.size() > 12) {
-            throw ApiException.badRequest("LOTE_GRANDE", Msg.t("wardrobe.envie_no_maximo_12_fotos"));
-        }
-        List<Draft> drafts = new ArrayList<>();
-        for (byte[] f : files) {
-            try {
-                drafts.add(analyze(user, f, category));
-            } catch (PhotoRejectedException e) {
-                drafts.add(Draft.rejected(e));
-            }
-        }
-        return drafts;
+        return PieceBatchAnalysis.analyze(files, file -> analyze(user, file, category));
     }
 
     // ================================================================== RF4 — salvar
@@ -357,6 +339,20 @@ public class WardrobeService {
             occasion = Taxonomy.normalizeTags(occasion);
             style = Taxonomy.normalizeTags(style);
             variation = variation == null || variation.isBlank() ? null : variation.trim().toUpperCase(java.util.Locale.ROOT);
+        }
+
+        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
+                         String sex, UUID brandId, String brandName, String color, String material, String size,
+                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
+                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
+                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
+                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                         Map<String, Object> background, UUID captureSessionId, String variation, Map<String, List<String>> attributes,
+                         List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId, UUID intensidadeTermicaId) {
+            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
+                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
+                    variation, attributes, confirmed, estadoConservacaoId, clearEstadoConservacao, colecaoId, intensidadeTermicaId, null, false);
         }
 
         /** Compatibility constructor: old callers do not set or clear the conservation FK. */
@@ -909,7 +905,7 @@ public class WardrobeService {
 
     // ------------------------------------------------------------------ compatibilidade: delegações
     // Ficam as que têm chamador fora deste arquivo: produção (MultiPieceService, CopilotService, SchemeService,
-    // AutopilotService, DnaService, MirrorService, RoomService) e as delegações anteriores ao lote R02. As regras
+    // AutopilotService, DnaService, MirrorService) e as delegações anteriores ao lote R02. As regras
     // movidas no R02 que só testes chamavam são testadas direto no colaborador dono.
     static String sealFilter(String raw) {
         return ClosetQuery.sealFilter(raw);

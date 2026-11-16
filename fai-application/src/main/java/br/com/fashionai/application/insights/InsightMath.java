@@ -86,7 +86,7 @@ final class InsightMath {
 
     /**
      * Crescimento por recorte, do maior para o menor (empate: chave). Só entra recorte com {@code minItems} itens e
-     * atividade atual ≥ {@code minCurrent} — um item isolado ou dois eventos não fazem "tendência".
+     * atividade atual e anterior ≥ {@code minCurrent} — um item isolado ou dois eventos não fazem "tendência".
      */
     static List<Growth> growthBy(Collection<HypeScoreCurrent> rows, Function<HypeScoreCurrent, Collection<String>> keys, int window, int windowDays,
                                  double alpha, int minItems, double minCurrent) {
@@ -106,7 +106,8 @@ final class InsightMath {
         }
         List<Growth> out = new ArrayList<>();
         acc.forEach((k, s) -> {
-            if (s[2] >= minItems && s[0] >= minCurrent) {
+            // sem base no período anterior, a razão explode ("cresceu 1627%" com cinco peças): não é tendência medível
+            if (s[2] >= minItems && s[0] >= minCurrent && s[1] >= minCurrent) {
                 out.add(new Growth(k, (int) s[2], s[0], s[1], ((s[0] + alpha) / (s[1] + alpha) - 1) * 100, days));
             }
         });

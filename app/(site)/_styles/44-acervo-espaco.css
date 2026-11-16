@@ -44,19 +44,22 @@
   color: #4A4B47;
 }
 
+/* centrada pela margem (não por translate): no celular os botões quebram em duas linhas, todos à vista */
 .acv-ferramentas {
   position: absolute;
+  right: 8px;
   bottom: var(--space-3);
-  left: 50%;
+  left: 8px;
   display: flex;
-  max-width: calc(100% - 16px);
-  overflow-x: auto;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: fit-content;
+  margin-inline: auto;
   padding: 4px;
   border: 1px solid var(--acv-linha);
-  border-radius: 999px;
+  border-radius: 22px;
   background: var(--acv-cartao);
   box-shadow: var(--acv-sombra);
-  transform: translateX(-50%);
 }
 
 .acv-ferramentas button {
@@ -78,6 +81,12 @@
   background: var(--acv-lima);
   color: var(--acv-lima-tinta);
   font-weight: 600;
+}
+
+.acv-ferramentas .acv-ferramenta-icone {
+  justify-content: center;
+  min-width: var(--control-sm);
+  padding: 0 8px;
 }
 
 .acv-expandida {

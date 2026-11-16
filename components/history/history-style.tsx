@@ -15,6 +15,11 @@ export function chronological<T extends { date: string }>(rows: T[] = []) {
   return [...rows].sort((a, b) => String(a.date).localeCompare(String(b.date)));
 }
 
+/** Por que a versão do DNA existe ("criado", "atualizado com o seu uso"): duas versões com a mesma frase não parecem repetidas. */
+export function dnaReason(reason: string | undefined, t: (key: string) => string) {
+  return reason === "GERACAO" || reason === "EVOLUCAO" ? ` · ${t(`history.style.dna_reason.${reason}`)}` : "";
+}
+
 /** Histórico → Evolução do estilo: Inventory Score ao longo do tempo e as versões do DNA de estilo. */
 export function HistoryStyle() {
   const { t, fmtDate } = useI18n();
@@ -37,7 +42,7 @@ export function HistoryStyle() {
           : <ol className="history-list">{versions.map((v) => (
             <li key={v.id} className="history-row">
               <time className="history-date tabular" dateTime={v.createdAt}>{fmtDate(v.createdAt, { day: "2-digit", month: "short", year: "2-digit" })}</time>
-              <span className="history-title">{v.snapshot?.archetype ? label(v.snapshot.archetype.toLowerCase()) : "—"}</span>
+              <span className="history-title">{v.snapshot?.archetype ? label(v.snapshot.archetype.toLowerCase()) : "—"}{dnaReason(v.snapshot?.reason, t)}</span>
               <span className="history-meta">{v.snapshot?.phrase && v.snapshot.phrase !== "null" ? v.snapshot.phrase : (v.snapshot?.palette ?? []).map((c) => label(c)).join(" · ")}</span>
             </li>))}</ol>}
       </Card>

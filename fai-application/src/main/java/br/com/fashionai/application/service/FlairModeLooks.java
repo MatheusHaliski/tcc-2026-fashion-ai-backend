@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -109,16 +110,58 @@ final class FlairModeLooks {
                 break;
             }
         }
+        if (out.size() < n) {
+            out.addAll(houseOutfits(exclude, n - out.size(), seed));
+        }
+        return out;
+    }
+
+    /**
+     * Sem looks públicos bastantes na comunidade (banco novo, comunidade pequena), a Casa veste looks montados com as
+     * peças públicas, uma de cada lugar do corpo, como o deck da Casa do Duelo ({@link FlairService#houseDeck}).
+     */
+    List<Look> houseOutfits(UUID player, int n, long seed) {
+        Map<String, List<WardrobeItem>> porLugar = new LinkedHashMap<>();
+        for (WardrobeItem w : publicPieces(player, seed, true)) {
+            porLugar.computeIfAbsent(w.getCategory(), k -> new ArrayList<>()).add(w);
+        }
+        int variedade = porLugar.values().stream().mapToInt(List::size).max().orElse(0);
+        List<Look> out = new ArrayList<>();
+        for (int i = 0; i < Math.min(n, variedade); i++) {
+            List<WardrobeItem> look = new ArrayList<>();
+            for (String lugar : List.of("upper_piece", "lower_piece", "shoes_piece", "accessory_piece")) {
+                List<WardrobeItem> doLugar = porLugar.getOrDefault(lugar, List.of());
+                if (!doLugar.isEmpty()) {
+                    look.add(doLugar.get(i % doLugar.size()));
+                }
+            }
+            if (!look.isEmpty()) {
+                out.add(lookOfCards(flair.cardsOf(look), Msg.t("flairModes.look_da_casa_n", i + 1), Msg.t("flairModes.pecas_publicas")));
+            }
+        }
         return out;
     }
 
     List<Card> houseCards(UUID exclude, int n, long seed) {
+        return flair.cardsOf(publicPieces(exclude, seed, false).stream().limit(n).toList());
+    }
+
+    /** Cartas da Casa; quando a comunidade tem menos de {@code min} peças públicas, entram também as de quem joga. */
+    List<Card> houseCardsAtLeast(UUID player, int n, int min, long seed) {
+        List<WardrobeItem> outras = publicPieces(player, seed, false);
+        return flair.cardsOf((outras.size() >= min ? outras : publicPieces(player, seed, true)).stream().limit(n).toList());
+    }
+
+    /** Peças públicas sorteadas pela semente, as de outras pessoas antes; sem arquivadas e sem quem tem bloqueio. */
+    private List<WardrobeItem> publicPieces(UUID player, long seed, boolean comAsProprias) {
         // findAllPublic já respeita privacidade do perfil, moderação e arquivamento; o bloqueio depende de quem joga
         List<WardrobeItem> pub = new ArrayList<>(pieces.findAllPublic(PageRequest.of(0, 400)).stream()
-                .filter(w -> !w.getUser().getId().equals(exclude) && w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
-                .filter(w -> !guard.blocked(exclude, w.getUser().getId())).toList());
+                .filter(w -> comAsProprias || !w.getUser().getId().equals(player))
+                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
+                .filter(w -> w.getUser().getId().equals(player) || !guard.blocked(player, w.getUser().getId())).toList());
         java.util.Collections.shuffle(pub, new Random(seed));
-        return flair.cardsOf(pub.stream().limit(n).toList());
+        pub.sort(Comparator.comparing((WardrobeItem w) -> w.getUser().getId().equals(player)));
+        return pub;
     }
 
     User opponentUser(CurrentUser user, String opponent) {

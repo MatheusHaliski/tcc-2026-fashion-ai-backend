@@ -10,6 +10,7 @@ import { SceneInspector } from '@/components/atelier3d/scene-inspector';
 import type { Tool, View } from '@/components/atelier3d/viewport';
 import { Button, Dialog, ErrorState, Skeleton, useToast } from '@/components/ui';
 import { PieceEditorBadges, PieceEditorToolbar } from './piece-editor-toolbar';
+import { PieceEditorNoModel } from './piece-editor-empty';
 
 const Viewport = dynamic(() => import('@/components/atelier3d/viewport'), { ssr: false, loading: () => <Skeleton className="h-96" /> });
 
@@ -27,6 +28,7 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
   const [selected, setSelected] = useState('');
   const [tool, setTool] = useState<Tool>('translate'); const [view, setView] = useState<View>('perspective'); const [fit, setFit] = useState(0);
   const [vertex, setVertex] = useState(0); const [dirty, setDirty] = useState(false); const [busy, setBusy] = useState(false); const [confirmRestore, setConfirmRestore] = useState(false);
+  const [noModel, setNoModel] = useState(false);
   const asset = useRef<LoadedAsset | null>(null);
   const requestId = useRef<string>('');
 
@@ -37,7 +39,7 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
         const next = await customizationApi.get(pieceId);
         if (!alive) return;
         setInfo(next); setHistory(createSceneHistory(structuredClone(next.document)));
-        if (!next.modelAvailable || !next.baseModelUrl) { setError(t('editor3d.noModel')); return; }
+        if (!next.modelAvailable || !next.baseModelUrl) { setNoModel(true); return; }
         const response = await fetch(mediaUrl(next.baseModelUrl) ?? next.baseModelUrl);
         if (!response.ok) throw new Error('GLB');
         const glb = await loadGlb(await response.arrayBuffer());
@@ -72,6 +74,7 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
     } catch (failure) { toast.fromError(failure); if (failure instanceof ApiError && failure.status === 409) setError(t('editor3d.conflict')); }
     finally { setBusy(false); }
   }
+  if (noModel) return <PieceEditorNoModel pieceId={pieceId} />;
   if (error && !loaded) return <div className="grid gap-3">{info && <PieceEditorBadges info={info} />}<ErrorState error={new Error(error)} /></div>;
   if (!info || !loaded) return <Skeleton className="h-96" />;
   return <div className="grid gap-3">

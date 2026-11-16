@@ -1,5 +1,7 @@
 # Prova no espelho dentro do quarto (RF27 ↔ RF28)
 
+> **Retirado em 15/11/2026.** O Quarto 3D (Meu Quarto) saiu do app por decisão da dona ("Retire totalmente o Quarto 3D do app FashionAI"); o guarda-roupa em perspectiva é o ACERVO (`/acervo`). Este documento fica como histórico do desenho. O que saiu, o que ficou e os dados que ficaram sem uso: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`.
+
 As abas **Meu Quarto** e **Espelho** passam a ser um fluxo só: o personagem caminha até o espelho e a prova abre sozinha,
 sem sair do quarto e sem trocar de tela; afastar-se volta ao quarto. Desde 11/10 o **Espelho não tem mais tela própria**:
 `/mirror` só redireciona para `/room?espelho=1` (ver "Espelho como navegação derivada" no fim).

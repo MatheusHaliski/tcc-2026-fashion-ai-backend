@@ -16,7 +16,7 @@ import type { ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
 import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
-import { respostaObrigatoria } from "@/lib/flair/nucleos/rodadas";
+import { respostaObrigatoria, vagasQueFaltam } from "@/lib/flair/nucleos/rodadas";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
 import type { EfeitoItem, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -71,16 +71,21 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
   const acionamento = acionamentoDe(definicao.codigo);
   const espelho = acionamento?.tipo === "ESPELHO";
   const resposta = respostaObrigatoria(definicao);
-  const daResposta = (chave: string, vars?: Record<string, string>) => tx.ou(`flair3d.nucleo.${definicao.codigo}.resposta.${definicao.rodada ?? ""}.${chave}`, tx.t(`flair3d.ui.trigger.RESPOSTA.${chave}`, vars), vars);
+  // a frase da rodada, a do jogo (o emblema do Super-Herói) ou a comum (o título do filme)
+  const doJogo = (chave: string, vars?: Record<string, string>) => tx.ou(`flair3d.nucleo.${definicao.codigo}.resposta.${chave}`, tx.t(`flair3d.ui.trigger.RESPOSTA.${chave}`, vars), vars);
+  const daResposta = (chave: string, vars?: Record<string, string>) => tx.ou(`flair3d.nucleo.${definicao.codigo}.resposta.${definicao.rodada ?? ""}.${chave}`, doJogo(chave, vars), vars);
+  const faltam = vagasQueFaltam(definicao, estado.sel.cartas);
   const abaDaResposta = props.tabs.findIndex((t) => t.tipo === "resposta");
   let rotulo = tx.t(espelho ? "flair3d.ui.trigger.ESPELHO.submit" : "flair3d.ui.submit");
   if (entregando) rotulo = tx.t("flair3d.ui.submitting");
 
   let dica: string | null = null;
   if (props.aviso) dica = props.aviso;
+  else if (faltam.length && Object.keys(estado.sel.cartas).length) dica = tx.t("flair3d.ui.uniforme.falta", { vagas: faltam.map((v) => tx.ou(`flair3d.ui.tab.${v}`, v).toLowerCase()).join(", ") });
   else if (resposta && !estado.sel.resposta) dica = [props.briefing, daResposta("need")].filter(Boolean).join(" ");
   else if (resposta && estado.sel.resposta) dica = [props.briefing, daResposta("done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) })].filter(Boolean).join(" ");
   else if (props.briefing) dica = props.briefing;
+  else if (definicao.codigo === "FASHION_DETECTIVE" && definicao.rodada !== "SALOES_DA_GALA") dica = tx.t("flair3d.detetive.ui.look");
   else if (definicao.codigo === "FASHION_DETECTIVE") {
     const s = salaoDaVez(props.tentativa);
     dica = tx.t("flair3d.ui.detetive.hint", { n: s.numero, total: s.total, salao: tx.t(`flair3d.ui.detetive.${s.codigo}.name`), codigo: tx.t(`flair3d.ui.detetive.${s.codigo}.code`), carta: tx.t(`flair3d.ui.detetive.${s.codigo}.clue`) });

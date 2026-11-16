@@ -3,6 +3,7 @@ const PARTS: Record<string, string> = {
   fai_tee_prototype: "atelier3d.part.tee",
   fai_skirt_prototype: "atelier3d.part.skirt",
   fai_pants_prototype: "atelier3d.part.pants",
+  fai_trousers_prototype: "atelier3d.part.pants",
   body: "atelier3d.part.body",
   sleeve_left: "atelier3d.part.sleeveLeft",
   sleeve_right: "atelier3d.part.sleeveRight",

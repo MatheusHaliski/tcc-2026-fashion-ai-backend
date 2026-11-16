@@ -48,6 +48,15 @@ class Flair3dCartasPontosTest {
     }
 
     @Test
+    void passarelaDizAContaDaNotaQuandoAsRegrasSomamAte70() {
+        CbcRules.Card sup = card("SUP", "brand:Farm");
+        CbcRules.Card inf = card("INF", "brand:Osklen");
+        Resultado r = new PassarelaNucleo().pontuar(vestir(sup, inf), contexto(7L, sup, inf));
+        assertThat(r.eventos()).contains(new Resultado.Evento("CONTA", java.util.Map.of("soma", 40.0, "maximo", 70.0)));
+        assertThat(r.regras().stream().mapToDouble(Resultado.RegraResultado::pontos).sum() * 100 / 70).isCloseTo(r.pontos(), org.assertj.core.data.Offset.offset(0.5));
+    }
+
+    @Test
     void nucleosDePontoPorPecaDaoOValorDaRegraACadaCartaQueBate() {
         CbcRules.Card y2k = card("SUP", "style:y2k");
         CbcRules.Card classica = card("INF", "style:classic", "color:black");

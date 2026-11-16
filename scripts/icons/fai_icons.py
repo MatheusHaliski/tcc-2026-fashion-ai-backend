@@ -93,7 +93,6 @@ NAV = [
     ("NAV-13", "RF16", "Temas Futuros", "Future Topics", "Temas futuros", "a small telescope whose barrel is a spool of thread", "funcionalidades que vêm por aí", "an orange lens", "telescope", "/future-topics", False),
     ("NAV-14", "RF23", "Configurações", "Settings", "Configuración", "a gear wheel with a four-hole sewing button at its center", "preferências e privacidade", "an orange button", "gear", "/profile/settings", False),
     ("NAV-15", "RF6", "Perfil Lookbook", "Lookbook Profile", "Perfil Lookbook", "an open lookbook magazine with a round blank avatar cutout on the left page", "a vitrine pessoal: closet digital e looks salvos (RF6)", "an orange avatar ring", "lookbook", "/profile", False),
-    ("NAV-16", "RF32", "Meu Quarto", "My Room", "Mi cuarto", "a wardrobe next to a tall standing mirror", "o guarda-roupa espacial com o Smart Mirror", "an orange mirror frame", "room", "/room", False),
 ]
 ACT = [
     ("ACT-01", "RF1", "Criar conta", "Create account", "Crear cuenta", "a blank clothing name tag with a small plus sign stitched on it", "ativo", "an orange plus sign", "tagplus", "signup", False),
@@ -126,7 +125,6 @@ ACT = [
     ("ACT-28", "RF23", "Tema claro/escuro", "Light/dark theme", "Tema claro/oscuro", "a wall light switch, half of it lit", "ativo", "an orange lit half", "switch", "theme", False),
     ("ACT-29", "RF23", "Idioma", "Language", "Idioma", "a small globe wrapped by a measuring tape", "ativo", "an orange measuring tape", "globe", "language", False),
     ("ACT-30", "RF32", "Organizar o quarto", "Organize room", "Organizar el cuarto", "a chest of drawers with one drawer pulled open", "ativo", "an orange drawer", "drawers", "organizeRoom", False),
-    ("ACT-31", "RF32", "Mostrar no quarto", "Show in room", "Mostrar en el cuarto", "a single drawer with a small spotlight cone shining on it", "ativo", "an orange spotlight cone", "drawerspot", "showInRoom", False),
     ("ACT-32", "RF33", "Vista-me", "Dress me", "Vísteme", "a tall oval standing mirror with a four-point sparkle in its glass", "ativo", "an orange sparkle", "mirrorsparkle", "vistaMe", True),
     ("ACT-33", "RF33", "Tira uma coisa", "Take one thing off", "Quita una cosa", "a necklace lifting off a hanger, with a small minus sign beside it", "ativo", "an orange minus sign", "necklaceminus", "takeOneOff", False),
     ("ACT-34", "RF33", "Trocar uma peça", "Swap a piece", "Cambiar una prenda", "two clothes hangers with two curved arrows swapping them", "ativo", "orange arrows", "swap", "swapPiece", False),

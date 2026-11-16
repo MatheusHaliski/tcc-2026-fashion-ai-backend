@@ -70,7 +70,10 @@ const readSub = (p: Read, tax: Taxonomy | null, cat: string) => (p.subcategory &
 export function detectedPrefill(p: Read, tax: Taxonomy | null): PieceFormValue {
   const cat = p.category && tax?.subcategories?.[p.category] ? p.category : "";
   const sub = cat ? readSub(p, tax, cat) : "";
-  return { ...prefill(p, tax, cat, sub, p.name || (sub ? subcategoryLabel(sub) : "")), color: p.color ?? "" };
+  const base = prefill(p, tax, cat, sub, p.name || (sub ? subcategoryLabel(sub) : ""));
+  // sem tipo lido, o que dependeria dele (ocasião, estilo) e o material não lido ficam vazios: a prévia mostra "—"
+  if (!cat) return { ...base, color: p.color ?? "", material: p.material ?? "", occasion: keepAllowed(p.occasion, tax?.occasions), style: keepAllowed(p.style, tax?.styles) };
+  return { ...base, color: p.color ?? "" };
 }
 
 /**

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Chip, ErrorState, Skeleton } from "@/components/ui";
 import { SizeTable } from "@/components/passport/digital-passport";
+import { sizeLabel } from "@/components/piece-snapshot";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { digitalPassportApi, type SizeRow } from "@/lib/passport/digital";
@@ -29,9 +30,12 @@ export function PecaFichaTamanhos({ pieceId }: { pieceId: string }) {
   if (tamanhos.sizes.length === 0) return <p className="acv-dica">{t("acervo.tamanhos.vazio")}</p>;
 
   const linha = tamanhos.sizes.find((row) => row.label === escolhido);
+  // o tamanho da peça fora da grade (calça cadastrada em letra) vem primeiro, não perdido no meio da numeração
+  const ordem = [...tamanhos.sizes].sort((a, b) => Number(b.source === "OWNER") - Number(a.source === "OWNER"));
+  const daPeca = tamanhos.sizes.find((row) => row.ownerDeclared);
   const tem3d = tamanhos.representation3d.kind !== "NONE";
   const nome = (row: SizeRow) => [
-    row.label,
+    sizeLabel(row.label),
     row.ownerDeclared ? t("sheet.ownerSize") : null,
     row.availability === "UNAVAILABLE" ? t("acervo.tamanhos.indisponivel") : null,
   ].filter(Boolean).join(" · ");
@@ -39,23 +43,24 @@ export function PecaFichaTamanhos({ pieceId }: { pieceId: string }) {
   return (
     <section className="acv-tamanhos" aria-label={t("acervo.integracoes.tamanhos")} data-testid="acervo-tamanhos">
       <div className="acv-tamanhos-lista" role="radiogroup" aria-label={t("acervo.tamanhos.comerciais")}>
-        {tamanhos.sizes.map((row) => {
+        {ordem.map((row) => {
           const indisponivel = row.availability === "UNAVAILABLE";
           return (
             <Chip key={row.label} role="radio" aria-checked={escolhido === row.label} active={escolhido === row.label} blocked={indisponivel}
               disabled={indisponivel} title={nome(row)} onClick={() => setEscolhido(row.label)}>
-              <span aria-hidden>{row.label}</span>
+              <span aria-hidden>{sizeLabel(row.label)}</span>
               <span className="sr-only">{nome(row)}</span>
             </Chip>
           );
         })}
       </div>
+      {daPeca && <p className="acv-dica">{t("acervo.tamanhos.daPeca", { size: sizeLabel(daPeca.label) })}</p>}
       {!tamanhos.availabilityKnown && <p className="acv-dica">{t("acervo.tamanhos.semDisponibilidade")}</p>}
       <p className="acv-tamanhos-estado" role="status">
         {!linha && t("acervo.tamanhos.escolha")}
-        {linha && !tem3d && t("size.sem_representacao_3d")}
-        {linha && tem3d && linha.representation === "NONE" && t("size.sem_3d_para_tamanho", { size: linha.label })}
-        {linha && tem3d && linha.representation !== "NONE" && t("size.aproximacao_visual", { size: linha.label })}
+        {linha && !tem3d && t("acervo.tamanhos.escolhidoSem3d", { size: sizeLabel(linha.label) })}
+        {linha && tem3d && linha.representation === "NONE" && t("size.sem_3d_para_tamanho", { size: sizeLabel(linha.label) })}
+        {linha && tem3d && linha.representation !== "NONE" && t("size.aproximacao_visual", { size: sizeLabel(linha.label) })}
       </p>
       {tem3d && <p className="acv-dica"><span className="acv-selo">{t("acervo.tamanhos.aproximacao")}</span> {t(`sheet.note.${tamanhos.visualApproximationNote}`)}</p>}
       {tem3d && !tamanhos.representation3d.approvedForTryOn && <p className="acv-dica">{t("sheet.notApprovedForTryOn")}</p>}

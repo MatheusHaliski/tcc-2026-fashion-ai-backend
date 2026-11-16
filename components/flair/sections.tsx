@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api/client";
@@ -9,6 +9,7 @@ import { Badge, Button, Card, Chip, EmptyState, ErrorState, PageHeader, Skeleton
 import { UiIcon } from "@/components/ui";
 import { DeckSummary, FlairCardView, RARITY_META, SEASON_LABEL, type FlairCard, type FlairDeck } from "@/components/flair/flair-card";
 import { FlairModes } from "@/components/flair/modes";
+import { ledgerLabel } from "@/lib/flair/ledger-label";
 import { MODE_LABEL, OUTCOME, type FlairMe } from "@/components/flair/classic-modes";
 import { checkLabel, couponText, GAME_TYPE_LABEL, VoucherDialog, type Combination, type Voucher } from "@/components/flair/flair-shared";
 import { FlairHubIcon } from "@/components/flair/hub-icons";
@@ -159,12 +160,13 @@ function WalletSection({ me, busy, run, onVoucher }: { me: { data: FlairMe | nul
         <p className="type-caption text-muted mb-2">{t("flair.coins_so_compram_itens_cosmeticos", { ethics: m?.ethics })}</p>
         {m && Object.entries(m.skinShop).map(([s, price]) => {
           const owned = m.skins.includes(s); const active = m.activeSkin === s;
-          return <div key={s} className="mb-2 flex items-center justify-between gap-2"><span className="type-body-sm">{SKIN_LABEL[s] ?? s}</span>
+          return <Fragment key={s}><div className="mb-2 flex items-center justify-between gap-2"><span className="type-body-sm">{SKIN_LABEL[s] ?? s}</span>
             <Button size="sm" variant={active ? "default" : "primary"} disabled={active || (!owned && m.coins < price)} loading={busy === s}
-              onClick={() => run(s, () => api.post<FlairMe>(`/api/flair/skins/${s}`), (r) => me.setData(r))}>{active ? t("flair.ativa") : owned ? t("flair.usar") : t("flair.coins", { price })}</Button></div>;
+              onClick={() => run(s, () => api.post<FlairMe>(`/api/flair/skins/${s}`), (r) => me.setData(r))}>{active ? t("flair.ativa") : owned ? t("flair.usar") : t("flair.comprar_por", { price })}</Button></div>
+            {!owned && m.coins < price && <p className="type-caption text-muted -mt-1 mb-2">{t("flair.faltam_coins", { n: price - m.coins })}</p>}</Fragment>;
         })}
         <h3 className="label mt-3">{t("common.extrato")}</h3>
-        <ul className="fai-list">{(m?.ledger ?? []).slice(0, 12).map((e, i) => <li key={i} className="flex justify-between type-caption"><span className="truncate">{e.reason.replace(/_/g, " ").toLowerCase()}</span><b className={`tabular ${e.delta < 0 ? "text-mark" : ""}`}>{e.delta > 0 ? "+" : ""}{e.delta}</b></li>)}</ul>
+        <ul className="fai-list">{(m?.ledger ?? []).slice(0, 12).map((e, i) => <li key={i} className="flex justify-between type-caption"><span className="truncate">{ledgerLabel(e.reason, t, (mode) => MODE_LABEL[mode])}</span><b className={`tabular ${e.delta < 0 ? "text-mark" : ""}`}>{e.delta > 0 ? "+" : ""}{e.delta}</b></li>)}</ul>
         <h3 className="label mt-3">{t("flair.partidas_recentes")}</h3>
         <ul className="fai-list">{(m?.recent ?? []).map((e) => <li key={e.matchId} className="flex justify-between gap-2 type-caption"><span className="truncate">{MODE_LABEL[e.mode] ?? e.mode} · {e.theme ? label(e.theme.replace(/^@/, "@")) : ""}</span>{e.outcome ? <Badge tone={OUTCOME[e.outcome]?.tone}>{OUTCOME[e.outcome]?.label}</Badge> : <span className="tabular">{e.score}</span>}</li>)}</ul>
       </Card>
@@ -173,7 +175,7 @@ function WalletSection({ me, busy, run, onVoucher }: { me: { data: FlairMe | nul
 }
 
 function QuestsSection({ busy, run, onMe }: { busy: string | null; run: Run; onMe: (m: FlairMe) => void }) {
-  const { t } = useI18n();
+  const { t } = useI18n(); const toast = useToast();
   const quests = useApi<Quest[]>((signal) => api.get("/api/flair/quests", { signal }), []);
   if (quests.error) return <ErrorState error={quests.error} onRetry={quests.reload} />;
   if (quests.loading) return <Skeleton className="h-48" />;
@@ -185,7 +187,7 @@ function QuestsSection({ busy, run, onMe }: { busy: string | null; run: Run; onM
         <div className="hype-bar mt-2"><i style={{ width: `${Math.min(100, (q.progress / q.target) * 100)}%`, background: q.done ? "var(--thread)" : "var(--mark)" }} /></div>
         <p className="type-caption tabular">{Math.round(q.progress)}/{q.target}</p>
         <Button size="sm" className="mt-2" variant="primary" disabled={!q.done || q.claimed} loading={busy === q.code}
-          onClick={() => run(q.code, () => api.post<FlairMe>(`/api/flair/quests/${q.code}/claim`), (r) => { onMe(r); quests.reload(); })}>{q.claimed ? t("flair.resgatada") : q.done ? t("common.resgatar") : t("flair.em_andamento")}</Button>
+          onClick={() => run(q.code, () => api.post<FlairMe>(`/api/flair/quests/${q.code}/claim`), (r) => { onMe(r); quests.reload(); toast.success(t("flair.missao_resgatada", { coins: q.coins })); })}>{q.claimed ? t("flair.resgatada") : q.done ? t("common.resgatar") : t("flair.em_andamento")}</Button>
       </Card>))}</div>
   );
 }

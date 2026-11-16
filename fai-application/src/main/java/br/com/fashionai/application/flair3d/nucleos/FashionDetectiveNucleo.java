@@ -18,6 +18,7 @@ import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.detetive.DetetiveCaso;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Núcleo 6 — o caso em 6 salões ({@link FashionDetectiveCaso}): a cada entrega a pessoa veste o look de um salão, e o
+ * Núcleo 6 — desde 15/11/2026 o caso "A Coleção Maré" (docs/flair/flair-3d/FASHION_DETECTIVE_HISTORIA.md): a entrega
+ * veste o look da gala e a partida fica EM_ACAO; cada acionamento é um passo da investigação pelas nove salas
+ * ({@link DetetivePartida}), até a acusação na passarela. A definição de 14/11 continua como a rodada
+ * {@link #SALOES_DA_GALA}: o caso em 6 salões ({@link FashionDetectiveCaso}): a cada entrega a pessoa veste o look de um salão, e o
  * detetive entra, enfrenta o desafio e procura a pista sozinho ({@link FashionDetectiveSalao}). A partida segue ABERTA
  * até o sexto salão; depois do terceiro ela para no mercado (EM_ACAO), onde a pessoa pode deixar uma carta no balcão
  * ({@link FashionDetectiveMercado}). A nota é a média dos salões; com 5 pistas ou mais o caso é resolvido (FAVORAVEL), com
@@ -35,6 +39,8 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
     public static final int SALOES = FashionDetectiveCaso.SALOES.size();
     public static final int PISTAS_DO_CASO = 5;
     public static final int PISTAS_DE_PARTE = 3;
+    /** A rodada da definição de 14/11 (6 salões automáticos e o mercado). */
+    public static final String SALOES_DA_GALA = "SALOES_DA_GALA";
 
     @Override
     public String codigo() {
@@ -49,10 +55,10 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
     @Override
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(),
-                Definicao.objetivo("CASO_DA_GALA", new Regra("ACESSO", FashionDetectiveSalao.ACESSO),
-                        new Regra("DESAFIO_DEFESA", FashionDetectiveSalao.DESAFIO), new Regra("PISTA", FashionDetectiveSalao.PISTA)),
-                List.of(Definicao.CARTAS), Definicao.VAGAS, Deck.ate(12, Obrigatoria.uma("SUP|VES")), false)
-                .comAvatares(Avatares.solo(null, Avatares.figurante("SEGURANCA", 1)));
+                DetetiveCaso.OBJETIVO, List.of(Definicao.CARTAS), Definicao.VAGAS, Deck.ate(12, Obrigatoria.uma("SUP|VES")), false)
+                .comAvatares(Avatares.solo(null, Avatares.figurante("SEGURANCA", 1)))
+                .comRodadas(new Definicao.Rodada(SALOES_DA_GALA, Definicao.objetivo("CASO_DA_GALA", new Regra("ACESSO", FashionDetectiveSalao.ACESSO),
+                        new Regra("DESAFIO_DEFESA", FashionDetectiveSalao.DESAFIO), new Regra("PISTA", FashionDetectiveSalao.PISTA)), null, null));
     }
 
     private static Map<String, CbcRules.Card> look(Map<String, UUID> cartas, Contexto contexto) {
@@ -61,6 +67,9 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
 
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
+        if (!SALOES_DA_GALA.equals(contexto.rodada())) {
+            return DetetiveCaso.pontuar(look(entrega.cartas(), contexto), contexto);
+        }
         FashionDetectiveMercado bolsa = new FashionDetectiveMercado();
         List<Andamento.Etapa> etapas = new ArrayList<>(contexto.andamento().anteriores());
         etapas.add(new Andamento.Etapa(entrega.cartas(), contexto.andamento().acionamentos()));

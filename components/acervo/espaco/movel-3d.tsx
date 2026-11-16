@@ -17,6 +17,7 @@ import type { Celula } from "@/lib/acervo/planta";
 import type { AcervoMovel } from "@/lib/acervo/types";
 import type { CenaProps } from "./cena-tipos";
 import { EncaixeGlb } from "./glb-encaixe";
+import { Roupa3D } from "./roupa-3d";
 import { Marcador3D } from "./marcador-3d";
 import { useMateriaisDoMovel, type MateriaisDoMovel } from "./use-materiais-do-movel";
 
@@ -65,13 +66,7 @@ export function Movel3D(props: Props) {
 
   const roupa = (r: RoupaNaCena, pendurada: boolean, interativa: boolean) => (
     <EncaixeGlb key={r.id} encaixe={encaixeDaRoupa(r.categoria, pendurada)} manifesto={manifesto} tam={r.tam} pos={r.pos}>
-      <mesh name={`${r.fantasma ? "fantasma" : "roupa"}-${r.id}`} position={r.pos} castShadow={!r.fantasma}
-        onClick={r.fantasma || !interativa ? undefined : (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); props.onPeca(r.id); }}
-        onPointerDown={r.fantasma || !interativa ? undefined : () => props.onCarregar(r.id)}>
-        <boxGeometry args={r.tam} />
-        <meshStandardMaterial color={r.fantasma ? COR_LIMA : r.cor} roughness={0.85} transparent={r.fantasma} opacity={r.fantasma ? 0.45 : 1}
-          emissive={r.fantasma ? COR_LIMA : "#000000"} emissiveIntensity={r.fantasma ? 0.5 : 0} />
-      </mesh>
+      <Roupa3D roupa={r} pendurada={pendurada} interativa={interativa} onPeca={props.onPeca} onCarregar={props.onCarregar} />
     </EncaixeGlb>
   );
 
@@ -108,8 +103,10 @@ export function Movel3D(props: Props) {
     <group name={`movel-${movel.id}`} position={[props.x, modelo.elevacao, 0]}>
       {fixas.map((p) => <Parte key={p.id} parte={p} materiais={materiais} />)}
       {modelo.planta.celulas.map((c) => {
-        const aberta = c.tipo !== "GAVETA" || props.gavetasAbertas || props.selecionado === c.id;
-        const roupas = roupasDaCelula(modelo.planta, c, props.itensDe(c.id)).map((r) => roupa(r, c.tipo === "CABIDEIRO", aberta));
+        const itens = props.itensDe(c.id);
+        // a gaveta com uma peça simulada abre sozinha: a simulação de compra precisa aparecer na cena
+        const aberta = c.tipo !== "GAVETA" || props.gavetasAbertas || props.selecionado === c.id || itens.some((i) => i.fantasma);
+        const roupas = roupasDaCelula(modelo.planta, c, itens).map((r) => roupa(r, c.tipo === "CABIDEIRO", aberta));
         if (c.tipo !== "GAVETA") return <group key={c.id}>{roupas}{alvo(c)}</group>;
         const partes = modelo.partes.filter((p) => p.compartimentoId === c.id && (p.papel === "gaveta" || p.papel === "puxador"));
         return (

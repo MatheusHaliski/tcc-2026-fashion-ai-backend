@@ -23,6 +23,8 @@ const TRACOS = {
   outros: "M4 10a3 3 0 1 0 6 0 3 3 0 0 0-6 0zM14 10a3 3 0 1 0 6 0 3 3 0 0 0-6 0zM10 10h4",
   vassoura: "M14 3l-4 9M7 12h7l2 9H5l2-9zM9 16v5M12 16v5",
   lapis: "M4 20l1-4L16 5l3 3L8 19l-4 1zM14 7l3 3",
+  girarEsquerda: "M4 4v5h5M4.6 9A8 8 0 1 1 4 13",
+  girarDireita: "M20 4v5h-5M19.4 9A8 8 0 1 0 20 13",
 } as const;
 
 export type AcervoIconeNome = keyof typeof TRACOS;

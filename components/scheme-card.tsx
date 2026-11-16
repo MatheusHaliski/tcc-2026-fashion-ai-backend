@@ -63,12 +63,10 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const l = layout ?? (anatomy === "GRADE_PECAS" ? "grade" : anatomy === "HERO_LISTA" ? "lateral" : "lista");
   const ownArt = hasOwnArt(anatomy);
   const items = scheme.items ?? [];
-  const coverRaw = scheme.coverImageUrl ? null : (items[0]?.piece?.imageUrl ?? (items[0]?.imageUrl as string));
-  const cover = mediaUrl(scheme.coverImageUrl) ?? thumbUrl(coverRaw, 640);
-  const coverSet = coverRaw ? thumbSrcSet(coverRaw) : undefined;
+  const { src: cover, srcSet: coverSet } = lookCover(scheme);
   const link = href ?? `/schemes/${scheme.id}`;
-  const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: thumbUrl(it.piece?.thumbnailUrl ?? it.piece?.imageUrl ?? (it.imageUrl as string), 320), brand: it.piece?.brandName, price: it.piece?.price, size: it.piece?.size, color: it.piece?.color, slot: it.slot }));
-  const total = scheme.totalPrice ?? (pieces.some((p) => p.price != null) ? pieces.reduce((a, p) => a + (p.price ?? 0), 0) : null);
+  const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: lookItemImage(it, 320), brand: it.piece?.brandName, price: lookPiecePrice(it.piece?.price), size: it.piece?.size, color: it.piece?.color, slot: it.slot }));
+  const total = lookTotal(scheme.totalPrice, pieces.map((p) => p.price));
   // Posição do selo segue a anatomia escolhida na etapa 4 (SEAL_PLACEMENT); o espaço fica reservado mesmo sem selo.
   const placement = sealPlacement(anatomy === "LISTA_VERTICAL" && l !== "lista" ? (l === "grade" ? "GRADE_PECAS" : "HERO_LISTA") : anatomy);
   const badges: SealBadge[] = seals ?? (scheme.sealBadges?.length ? toSealBadges(scheme.sealBadges) : (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x })));

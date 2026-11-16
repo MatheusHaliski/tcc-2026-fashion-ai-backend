@@ -26,7 +26,10 @@ function corpo(movel: AcervoMovel): MaterialDesc {
   }
 }
 
-/** Material de cada papel do móvel. Com o Raio-X ligado, as portas ficam quase invisíveis. */
+/**
+ * Material de cada papel do móvel. Com o Raio-X ligado, as portas e as frentes das gavetas ficam quase invisíveis:
+ * num móvel sem porta (o padrão) o Raio-X mostra o que está nas gavetas fechadas.
+ */
 export function materiaisDoMovel(movel: AcervoMovel, raioX: boolean): Record<MaterialDaParte, MaterialDesc> {
   const base = corpo(movel);
   const dream = movel.modo === "DREAM_SPACE";
@@ -34,7 +37,7 @@ export function materiaisDoMovel(movel: AcervoMovel, raioX: boolean): Record<Mat
   const porta = movel.porta === "VIDRO" ? vidro : base;
   return {
     corpo: base,
-    frente: base,
+    frente: raioX ? { ...base, px: 0, textura: "liso", opacidade: 0.16 } : base,
     fundo: { textura: "liso", cor: COR_HEX[movel.cor].veio, rugosidade: 0.8, metal: 0, px: 0, opacidade: movel.material === "VIDRO" ? 0.3 : undefined },
     porta: raioX ? { ...porta, px: 0, textura: "liso", opacidade: 0.12 } : porta,
     metal: { textura: "metal", cor: "#C9CED3", rugosidade: 0.25, metal: 0.9, px: 0 },

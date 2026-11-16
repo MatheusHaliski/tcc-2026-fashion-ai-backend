@@ -164,7 +164,7 @@ public class AcervoConsultaService {
                 Map<String, Object> linha = new LinkedHashMap<>();
                 linha.put("pieceId", w.getId());
                 linha.put("name", w.getName());
-                linha.put("thumbnailUrl", w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
+                AcervoViews.imagemComCor(linha, w);
                 linha.put("minha", minha);
                 linha.put("compartimentoId", lugar);
                 linha.put("caminho", mapa.caminho(lugar));

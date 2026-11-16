@@ -34,4 +34,9 @@ public class GarmentPassport extends VersionedAuditableEntity {
 
     @Column(name = "state_updated_at", nullable = false)
     private Instant stateUpdatedAt;
+
+    /** Registro de fabricação (peça sob encomenda da Fábrica FashionAI): série, lote, revisão de origem, medidas, etiqueta. */
+    @Lob
+    @Column(name = "manufacturing_json", columnDefinition = "LONGTEXT")
+    private String manufacturingJson;
 }

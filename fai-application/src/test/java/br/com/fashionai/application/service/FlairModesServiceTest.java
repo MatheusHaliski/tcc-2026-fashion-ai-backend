@@ -100,6 +100,30 @@ class FlairModesServiceTest {
     }
 
     @Test
+    void semLooksPublicosNaComunidadeACasaJogaComLooksDasPecasPublicas() {
+        // banco novo: só quem joga tem looks; antes Battle of Looks, Combo e Squad respondiam 409 (auditoria 10.6, item 4)
+        MemoryRepository.<Scheme>rows(kit.dep(br.com.fashionai.domain.repository.SchemeRepository.class)).stream()
+                .filter(s -> !s.getUser().getId().equals(world.me.getId()))
+                .forEach(s -> s.setStatus(br.com.fashionai.domain.model.enums.SchemeStatus.DRAFT));
+        Map<String, Object> battle = modes.battle(ana, looks.get(0), null, null);
+        assertFinished(battle, "BATTLE");
+        assertThat(String.valueOf(map(battle.get("opponent")).get("label"))).contains("A Casa");
+        assertThat(String.valueOf(map(map(battle.get("opponent")).get("look")).get("title"))).startsWith("Look da Casa");
+        assertFinished(modes.combo(ana, looks.get(0), null), "COMBO");
+        assertFinished(modes.squad(ana, null, null), "SQUAD");
+    }
+
+    @Test
+    void draftComPoucasPecasNaComunidadeCompletaOMonteComAsDeQuemJoga() {
+        // a comunidade fica com menos de 12 peças públicas: o draft não responde mais 409
+        List<WardrobeItem> outras = MemoryRepository.<WardrobeItem>rows(kit.dep(br.com.fashionai.domain.repository.WardrobeItemRepository.class)).stream()
+                .filter(w -> !w.getUser().getId().equals(world.me.getId())).toList();
+        outras.stream().skip(5).forEach(w -> w.setVisibility(br.com.fashionai.domain.model.enums.Visibility.PRIVATE));
+        Map<String, Object> d = modes.draftStart(ana);
+        assertThat((List<?>) d.get("pool")).hasSizeGreaterThanOrEqualTo(12);
+    }
+
+    @Test
     void squadEscolheOsCincoLooksQueCobremAsSituacoes() {
         assertFinished(modes.squad(ana, null, null), "SQUAD");
         assertFinished(modes.squad(ana, looks.subList(0, 3), "bia"), "SQUAD");

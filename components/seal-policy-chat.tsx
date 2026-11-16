@@ -58,7 +58,7 @@ export function SealPolicyChat({ tier, onTier, previousPolicy, brandName, onAppl
     {tier === "PERFIL" && <p className="help">{t("sealCopilot.profile_hint")}</p>}
     <div className="surface flex min-h-72 flex-col">
       <div role="log" aria-live="polite" aria-label={t("sealChat.conversation")} className="flex-1 space-y-3 overflow-auto p-4">
-        <CopilotChatMessage role="copilot"><p className="type-body whitespace-pre-wrap">{t("sealChat.greeting", { name: user?.displayName || brandName || t("sealChat.issuer") })}</p><p className="mt-1 type-caption text-muted">#createsealpolicy</p></CopilotChatMessage>
+        <CopilotChatMessage role="copilot"><p className="type-body whitespace-pre-wrap">{t("sealChat.greeting", { name: user?.displayName || brandName || t("sealChat.issuer") })}</p></CopilotChatMessage>
         {messages.map((message, index) => <CopilotChatMessage key={index} role={message.role}>
           <p className="type-body whitespace-pre-wrap">{message.text}</p>
           {message.draft?.fallbackUsed && <p role="note" className="type-caption text-muted">{t("sealChat.local_fallback")}</p>}

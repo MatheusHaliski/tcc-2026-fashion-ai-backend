@@ -27,7 +27,7 @@ export function displayDesign(d: SealDesign, name: string): SealDesign {
 export function SealWizard({ form, setForm, premium, brandName, onSave }: { form: SealFormState; setForm: Dispatch<SetStateAction<SealFormState>>; premium?: boolean; brandName?: string | null; onSave: () => Promise<boolean> }) {
   const { t } = useI18n();
   const editing = !!form.id;
-  const [creationMode, setCreationMode] = useState<"MANUAL" | "COPILOT" | "HYPE">(form.policy.mode === "HYPE" ? "HYPE" : form.policy.generationMode === "MANUAL" ? "MANUAL" : "COPILOT");
+  const [creationMode, setCreationMode] = useState<"MANUAL" | "COPILOT" | "HYPE">(form.policy.mode === "HYPE" ? "HYPE" : form.policy.generationMode === "MANUAL" || !editing ? "MANUAL" : "COPILOT");   // selo novo abre no Manual: o Copilot precisa da IA online
   const policies = useRef<Record<"MANUAL" | "COPILOT" | "HYPE", { policy: SealPolicy; tier: SealTierId }>>({
     MANUAL: { policy: { ...EMPTY_POLICY, generationMode: "MANUAL" }, tier: form.tier },
     COPILOT: { policy: form.policy.mode === "HYPE" ? EMPTY_POLICY : form.policy, tier: form.tier },
@@ -86,7 +86,7 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
               {form.policy.referenceModel && <SealReferencePreview model={form.policy.referenceModel} />}
               {(creationMode === "HYPE" || creationMode === "MANUAL") && <p className="type-body-sm">{describePolicy(form.policy, form.tier)}</p>}
               {sources.length > 0 && <div className="mt-2"><p className="label">{t("sealCopilot.sources")}</p><ul className="help">{sources.map((source) => <li key={source}>{source}</li>)}</ul></div>}
-              <Button type="button" className="mt-2" onClick={() => setStep(0)}>{t(creationMode === "HYPE" ? "sealHypeIssuer.adjust" : "sealCopilot.adjust")}</Button>
+              <Button type="button" className="mt-2" onClick={() => setStep(0)}>{t(creationMode === "HYPE" ? "sealHypeIssuer.adjust" : creationMode === "MANUAL" ? "sealWizard.ajustar_regras" : "sealCopilot.adjust")}</Button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label={t("common.disponivel_a_partir_de")} id="sfrom" hint={t("common.vazio_imediato")}><Input id="sfrom" type="datetime-local" value={form.availableFrom} onChange={(e) => setForm((f) => ({ ...f, availableFrom: e.target.value }))} /></Field>

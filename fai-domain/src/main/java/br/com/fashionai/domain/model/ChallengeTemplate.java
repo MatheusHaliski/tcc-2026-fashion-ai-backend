@@ -57,6 +57,7 @@ public class ChallengeTemplate {
     @Column(name = "author_user_id", length = 36)
     private UUID authorUserId;
 
+    /** Decoração do desafio no Meu Quarto (saiu em 15/11/2026): a coluna fica, nenhuma tela a mostra mais. */
     @Column(name = "room_decoration", length = 60)
     private String roomDecoration;
 

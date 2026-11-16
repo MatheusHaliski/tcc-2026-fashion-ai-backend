@@ -7,12 +7,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Badge, EmptyState, PageHeader, SkeletonGrid, UiIcon } from "@/components/ui";
+import { NucleoContinuar } from "@/components/flair/nucleos/nucleo-continuar";
 import { NucleoDeck } from "@/components/flair/nucleos/nucleo-deck";
 import { NucleoGame } from "@/components/flair/nucleos/nucleo-game";
 import { NucleoRounds } from "@/components/flair/nucleos/nucleo-rounds";
 import { useNucleoMatch } from "@/components/flair/nucleos/use-nucleo-match";
 import { useNucleoMoments } from "@/components/flair/nucleos/use-nucleo-moments";
 import { useNucleoPreview } from "@/components/flair/nucleos/use-nucleo-preview";
+import { useNucleoRetomada } from "@/components/flair/nucleos/use-nucleo-retomada";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { codigoDaRota } from "@/lib/flair/nucleos/registry";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
@@ -20,6 +22,7 @@ import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 function Partida({ codigo }: { codigo: NucleoCodigo }) {
   const tx = useNucleoText();
   const m = useNucleoMatch(codigo);
+  const retomada = useNucleoRetomada(codigo);
   const d = m.definicao;
   /** cada "jogar de novo" começa uma tela de jogo nova (seleção, câmera e efeitos zerados) */
   const [rodada, setRodada] = useState(0);
@@ -44,12 +47,18 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
     </div>
   );
   let corpo;
-  if (m.carregando || (m.banco.loading && !m.banco.data && d.recursos.includes("CARTAS"))) {
+  const aRetomar = !m.partida ? retomada.retomada : null;
+  if (m.carregando || retomada.carregando || (m.banco.loading && !m.banco.data && d.recursos.includes("CARTAS"))) {
     corpo = <SkeletonGrid n={3} />;
+  } else if (aRetomar) {
+    corpo = <NucleoContinuar codigo={codigo} retomada={aRetomar} onNova={retomada.decidir} onContinuar={() => {
+      m.continuar(aRetomar);
+      retomada.decidir();
+    }} />;
   } else if (m.precisaRodada) {
     corpo = <NucleoRounds definicao={m.inteira} onEscolher={m.escolherRodada} />;
   } else if (m.precisaDeck && d.deck) {
-    corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} rodada={m.rodada} onEntrar={(deck) => void m.entrar(deck)} />;
+    corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} rodada={m.rodada} regrasDaRodada={d.objetivo.regras.map((r) => r.codigo)} onEntrar={(deck) => void m.entrar(deck)} />;
   } else {
     corpo = (
       <NucleoGame
@@ -68,7 +77,7 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
           previa.limpar();
           void m.entregar(sel, avatar);
         }}
-        onAcionar={(p) => void m.acionar({ cardId: p.cardId, vaga: p.vaga })}
+        onAcionar={(p) => void m.acionar({ cardId: p.cardId, vaga: p.vaga, alvo: p.alvo })}
         acionando={m.acionando}
         erroAcionar={m.erroAcionar}
         onFimAcao={fim}
@@ -76,7 +85,7 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
       />
     );
   }
-  const noQuadro = !m.precisaDeck && !m.precisaRodada && !m.carregando;
+  const noQuadro = !m.precisaDeck && !m.precisaRodada && !m.carregando && !aRetomar;
   return (
     <>
       {!noQuadro && cabecalho}

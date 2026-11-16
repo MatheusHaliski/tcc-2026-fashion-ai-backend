@@ -83,6 +83,7 @@ final class PieceFormWriter {
         }
         if (classification != null) {
             classification.apply(w, f.colecaoId(), f.intensidadeTermicaId());
+            classification.applyWashing(w, f.tipoLavagemId(), Boolean.TRUE.equals(f.clearTipoLavagem()));
         }
         BackgroundStudioService.validateMotionWrite(w.getBackgroundConfigJson(), f.background());
         w.setName(InputSanitizer.moderated("name", f.name(), 120));

@@ -1,5 +1,7 @@
 # Quarto, criador e feed
 
+> **Retirado em 15/11/2026.** O Quarto 3D (Meu Quarto) saiu do app por decisão da dona ("Retire totalmente o Quarto 3D do app FashionAI"); o guarda-roupa em perspectiva é o ACERVO (`/acervo`). Este documento fica como histórico do desenho. O que saiu, o que ficou e os dados que ficaram sem uso: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`.
+
 ## Entrega
 
 - A análise de várias fotografias apresenta progresso pelo número real de análises finalizadas. Falhas são contabilizadas como tentativas finalizadas e continuam identificadas na fotografia correspondente.

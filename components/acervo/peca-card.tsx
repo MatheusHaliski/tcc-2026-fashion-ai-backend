@@ -4,7 +4,7 @@
  * marcador numerado, o mesmo que aparece no móvel); a estrela mostra a favorita. O cartão pode ser arrastado para um
  * compartimento.
  */
-import { thumbUrl } from "@/lib/api/client";
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import { UiIcon } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 import { iniciarArrasto } from "@/lib/acervo/arrasto";
@@ -21,8 +21,11 @@ interface Props {
   onMarcar: (peca: AcervoPeca) => void;
 }
 
-export function PecaFoto({ peca, tamanho = 320 }: { peca: Pick<AcervoPeca, "thumbnailUrl">; tamanho?: 320 | 640 }) {
-  const url = thumbUrl(peca.thumbnailUrl, tamanho);
+type FotoDaPeca = Pick<AcervoPeca, "thumbnailUrl"> & { category?: string | null; subcategory?: string | null; color?: string | null };
+
+/** Peça sem foto: a ilustração da categoria na cor cadastrada (a mesma fonte de cor das outras telas). */
+export function PecaFoto({ peca, tamanho = 320 }: { peca: FotoDaPeca; tamanho?: 320 | 640 }) {
+  const url = pieceImageUrl({ thumbnailUrl: peca.thumbnailUrl, category: peca.category, subcategory: peca.subcategory, color: peca.color }, tamanho);
   return <span className="acv-foto" aria-hidden>{url && <img src={url} alt="" loading="lazy" draggable={false} />}</span>;
 }
 

@@ -87,7 +87,8 @@ class Flair3dPartidaRodadasTest {
         assertThat(previa2).isEqualTo(previa1);
         assertThat(previa1.eventos()).isEmpty();
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isZero();
-        Resultado r = service.entregar(ana, id, vestir(null, sup, inf, cal));
+        service.entregar(ana, id, vestir(null, sup, inf, cal));
+        Resultado r = service.acionar(ana, id, Acionamento.NENHUM);
         assertThat(r.pontos()).isEqualTo(previa1.pontos());
         assertThat(r.eventos().get(0)).isEqualTo(new Resultado.Evento("TEMA", tema));
         assertThat(r.status()).isEqualTo("ENTREGUE");
@@ -132,7 +133,8 @@ class Flair3dPartidaRodadasTest {
         Resultado segunda = service.entregar(ana, id, vestir(null, sup, inf));
         assertThat(segunda.status()).isEqualTo("ABERTA");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).anteriores()).hasSize(1);
-        Resultado fim = service.entregar(ana, id, vestir(null, sup, inf));
+        assertThat(service.entregar(ana, id, vestir(null, sup, inf)).status()).isEqualTo("EM_ACAO");
+        Resultado fim = service.acionar(ana, id, Acionamento.NENHUM);
         assertThat(fim.status()).isEqualTo("ENTREGUE");
         assertThat(fim.regras()).hasSize(3);
         assertThat(partida(id).getPontos()).isEqualTo(fim.pontos());

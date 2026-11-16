@@ -23,13 +23,16 @@ const passarela: Montagem = (r, res) => {
   r.depois(AVATAR, "CAMINHADA_DE_PASSARELA", { repete: 2, mover: { z: PONTA_DA_PASSARELA } });
   r.junto(fig("PLATEIA"), reacaoDaPlateia(res.estrelas)).junto(luzId("flash"), "L_FLASH");
   if (res.estrelas >= 2) r.junto(luzId("flash"), "L_FLASH", {}, 1.3);
+  // sem estrela, os fotógrafos baixam a câmera em vez de seguir fotografando
+  if (res.estrelas === 0) r.junto(fig("FOTOGRAFO"), "F_LAMENTA");
   r.depois(AVATAR, "PARADA_NA_PONTA");
 };
 
 const dressTheStar: Montagem = (r, res) => {
   r.depois(AVATAR, "ENTRADA_NO_PALCO", { repete: 2, mover: { z: 0.9 } });
   r.junto(fig("ESTRELA", 0), "F_REVELA").junto(luzId("estrela"), "L_ACENDE", { mantem: true }).depois(AVATAR, "POSE_DE_ESTRELA");
-  r.junto(fig("PLATEIA"), reacaoDaPlateia(res.estrelas)).depois(AVATAR, "REVERENCIA");
+  // a estrela reage ao look que vestiu: comemora, aplaude ou devolve com desânimo
+  r.junto(fig("ESTRELA", 0), reacaoDaPlateia(res.estrelas)).junto(fig("PLATEIA"), reacaoDaPlateia(res.estrelas)).depois(AVATAR, "REVERENCIA");
 };
 
 const personagemFilme: Montagem = (r, res) => {
@@ -37,7 +40,8 @@ const personagemFilme: Montagem = (r, res) => {
   r.junto(luzId("set"), "L_ACENDE", { mantem: true }).junto(luzId("set2"), "L_ACENDE", { mantem: true }, 0.4).depois(movelId("claquete"), "M_CLAQUETE");
   r.depois(AVATAR, "ACAO").depois(AVATAR, "POSE_DE_CENA_1");
   if (tituloCerto) r.junto(luzId("genero"), "L_ACENDE", { mantem: true }).depois(movelId("claquete"), "M_CLAQUETE");
-  r.depois(AVATAR, "CORTA");
+  // a equipe do set reage ao "corta": aplaude a cena com o título certo, lamenta a que não fechou
+  r.junto(fig("CAMERA"), tituloCerto ? "F_APLAUSO" : "F_LAMENTA").junto(fig("CLAQUETE"), tituloCerto ? "F_APLAUSO" : "F_LAMENTA").depois(AVATAR, "CORTA");
 };
 
 const roadToGlory: Montagem = (r) => {
@@ -90,7 +94,9 @@ const labirinto: Montagem = (r, res) => {
 
 const aroundTheWorld: Montagem = (r, res) => {
   r.depois(AVATAR, "CAMINHADA_DE_RUA", { repete: 2, mover: { z: 1.2 } });
-  r.junto(fig("PASSANTE"), "F_ACENA").depois(AVATAR, "ACENAR");
+  // os passantes reagem ao look pela nota: aplaudem, acenam ou seguem o caminho deles
+  if (res.estrelas >= 2) r.junto(fig("PASSANTE"), "F_APLAUSO").depois(AVATAR, "ACENAR");
+  else if (res.estrelas === 1) r.junto(fig("PASSANTE", 0), "F_ACENA").depois(AVATAR, "ACENAR");
   if (res.estrelas >= 1) r.junto(luzId("mapa"), "L_ACENDE", { mantem: true }).depois(movelId("marcador"), "M_MAPA_AVANCA", { mantem: true });
 };
 
@@ -99,7 +105,8 @@ const batalha: Montagem = (r, res) => {
   r.depois(AVATAR, "ENTRADA_NO_PALCO", { mover: { z: 0.5 } });
   r.junto(fig("ADVERSARIO", 0), "F_POSE").depois(AVATAR, "POSE_LADO_A_LADO");
   r.junto(fig("PLATEIA"), reacaoDaPlateia(res.estrelas));
-  if (venceu) r.junto(luzId("vencedor"), "L_ACENDE", { mantem: true }).depois(AVATAR, "VENCEDOR_LEVANTA_O_BRACO");
+  // o braço que sobe é o de quem venceu; quem perdeu lamenta
+  if (venceu) r.junto(fig("ADVERSARIO", 0), "F_LAMENTA").junto(luzId("vencedor"), "L_ACENDE", { mantem: true }).depois(AVATAR, "VENCEDOR_LEVANTA_O_BRACO");
   else r.depois(fig("ADVERSARIO", 0), "F_LEVANTA_O_BRACO");
 };
 
@@ -130,7 +137,8 @@ export function sequenciaDoResultado(codigo: NucleoCodigo, resultado: NucleoResu
   } else {
     MONTAGENS[codigo]?.(r, resultado);
   }
-  if (!saiuDeCena(codigo, resultado)) r.depois(AVATAR, reacaoPorEstrelas(resultado.estrelas));
+  // no meio da disputa (EM_ACAO) ainda não há estrelas: a reação fica para o fim
+  if (!saiuDeCena(codigo, resultado) && resultado.status !== "EM_ACAO" && resultado.resultado !== "EM_ACAO") r.depois(AVATAR, reacaoPorEstrelas(resultado.estrelas));
   return r.fim();
 }
 

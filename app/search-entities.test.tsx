@@ -65,14 +65,15 @@ describe("Buscar: Marcas e Celebridades em cards", () => {
 
   it("celebridades: o mesmo card, com @, selo verificada e link para o perfil da pessoa", async () => {
     nav.search = new URLSearchParams("q=n&tab=CELEBRIDADES");
-    mockApi({ "GET /api/search": { results: [{ name: "Bia", slug: "bia", userId: "u2", avatarUrl: "/media/bia.jpg" }], nextCursor: null } });
+    // o @ é o username da conta ("bia.oficial"), nunca o endereço da página ("bia-oficial")
+    mockApi({ "GET /api/search": { results: [{ name: "Bia", slug: "bia-oficial", username: "bia.oficial", userId: "u2", avatarUrl: "/media/bia.jpg" }], nextCursor: null } });
     const { container } = renderApp(<Suspense fallback={null}><SearchPage /></Suspense>);
     const card = await waitFor(() => { const c = container.querySelector("ul.institutional-profile-feed article.institutional-profile-card"); expect(c).toBeTruthy(); return c!; });
     expect(card.querySelector("h2")?.textContent).toBe("Bia");
-    expect(card.querySelector(".institutional-profile-username")?.textContent).toBe("@bia");
+    expect(card.querySelector(".institutional-profile-username")?.textContent).toBe("@bia.oficial");
     expect(card.textContent).toContain("Celebridade");
     expect(card.textContent).toContain("verificado");
-    expect((card.querySelector("a.btn") as HTMLAnchorElement).getAttribute("href")).toBe("/u/bia");
+    expect((card.querySelector("a.btn") as HTMLAnchorElement).getAttribute("href")).toBe("/u/bia.oficial");
     expect(card.querySelector(".institutional-profile-avatar img")?.getAttribute("src")).toContain("bia.jpg");
   });
 });

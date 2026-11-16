@@ -40,6 +40,8 @@ describe("quebra-cabeça do elenco", () => {
       expect(Math.abs(perto.giro)).toBeLessThanOrEqual(Math.abs(solta.giro));
       expect(Math.abs(solta.dx)).toBeLessThanOrEqual(8);
       expect(Math.abs(solta.giro)).toBeLessThanOrEqual(16);
+      // a peça que ainda espera o julgamento fica mais longe que a solta
+      expect(Math.abs(folgaDaPeca(i, "chegando").dx)).toBeGreaterThanOrEqual(Math.abs(solta.dx));
     }
     expect(Array.from({ length: 17 }, (_, i) => folgaDaPeca(i, "vermelha")).some((f) => f.dx !== 0 || f.dy !== 0 || f.giro !== 0)).toBe(true);
   });

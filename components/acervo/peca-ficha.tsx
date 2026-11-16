@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, Sheet, Tabs } from "@/components/ui";
 import { DigitalPassportSheet } from "@/components/passport/digital-passport";
+import { sizeLabel } from "@/components/piece-snapshot";
 import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAcervo } from "./acervo-contexto";
@@ -40,7 +41,7 @@ export function PecaFicha() {
   const usoDaPeca = uso?.pecas.find((p) => p.id === peca.id);
   const linhas: [string, string | null][] = [
     [t("acervo.ficha.tipo"), peca.subcategory ? subcategoryLabel(peca.subcategory) : label(peca.category)],
-    [t("common.size"), peca.size],
+    [t("common.size"), peca.size ? sizeLabel(peca.size) : null],
     [t("acervo.ficha.medidas"), medidas],
     [t("common.color"), peca.color ? label(peca.color) : null],
     [t("common.brand"), peca.brand],

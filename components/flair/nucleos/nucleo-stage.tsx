@@ -4,12 +4,17 @@
  * livre), a camada de efeitos das cartas atrás e ao lado dela e as informações nos quatro cantos. Nenhum painel,
  * efeito ou texto entra na zona da roupa.
  */
+import { useState } from "react";
 import { avataresDaSala } from "@/lib/flair/nucleos/avatares";
+import { CAMERA_AUTOMATICA, opcoesDeCamera } from "@/lib/flair/nucleos/camera/jogos";
+import { momentoDaCamera } from "@/lib/flair/nucleos/camera/sala";
 import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import Link from "next/link";
 import type { Look3dPiece } from "@/components/three/common";
 import { NucleoActionFx } from "@/components/flair/nucleos/nucleo-action-fx";
+import { NucleoBarrasDeVida } from "@/components/flair/nucleos/nucleo-barras-de-vida";
 import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
+import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
 import { NucleoCardFx } from "@/components/flair/nucleos/nucleo-card-fx";
 import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
@@ -43,6 +48,8 @@ export interface NucleoStageProps {
   previa: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
+  /** semente da partida: o corpo de cada pessoa de cena sai dela */
+  semente?: number;
   /** o que a pessoa já pintou em cada zona (modos do Ateliê) */
   zonas?: Record<string, ZonaEscolha>;
   prefs: FxPrefs;
@@ -60,12 +67,15 @@ export function NucleoStage(props: NucleoStageProps) {
   const tx = useNucleoText();
   const voltar = tx.t("flair3d.ui.back");
   const naAcao = momento === "ACAO" || momento === "RESULTADO";
+  const [camera, setCamera] = useState<string>(CAMERA_AUTOMATICA);
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante}
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} semente={props.semente}
+        camera={camera} momento={momentoDaCamera(momento)}
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
+      {naAcao && definicao.codigo === "DRESS_FIGHTER" && <NucleoBarrasDeVida resultado={props.resultado} />}
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} variante={props.variante} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
       <NucleoHud
         topoEsquerda={
@@ -91,13 +101,10 @@ export function NucleoStage(props: NucleoStageProps) {
           ) : null
         }
         baseDireita={
-          <NucleoControls
-            grupo="camera"
-            acoes={definicao.acoes}
-            gamepad={props.gamepad}
-            permitido={(a) => comandoPermitido(momento, a)}
-            onComando={props.onComando}
-          />
+          <>
+            {!reduzido && <NucleoCameraSelector opcoes={opcoesDeCamera(definicao.codigo)} atual={camera} onTrocar={setCamera} />}
+            <NucleoControls grupo="camera" acoes={definicao.acoes} gamepad={props.gamepad} permitido={(a) => comandoPermitido(momento, a)} onComando={props.onComando} />
+          </>
         }
       />
     </div>

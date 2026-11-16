@@ -1,8 +1,9 @@
 # FLAIR 3D: a base dos 15 núcleos
 
-Os 100 jogos do FLAIR 3D derivam de 15 núcleos (os jogos 1 a 15 de `JOGOS.md`). Cada núcleo ganha uma base que já
-joga a modalidade mais simples dele, para os jogos derivados copiarem o mesmo esqueleto. Este documento é o contrato
-entre backend e frontend.
+O FLAIR 3D são os 15 núcleos (os jogos 1 a 15 de `JOGOS.md`), em `/flair/3d` sobre `/api/flair/3d/...`. Cada núcleo
+ganha uma base que já joga a modalidade mais simples dele, para os jogos derivados copiarem o mesmo esqueleto. Este
+documento é o contrato entre backend e frontend. A API antiga `/api/flair/games/...`, dos capítulos do desenho
+anterior, saiu do app em 15/11/2026 (`../ENDPOINTS_FLAIR.md`).
 
 ## Camadas
 
@@ -40,7 +41,7 @@ semente fixa por partida). A nota nunca usa pele, corpo ou rosto; errar nunca ti
 | 11 | `PILOTO_FAVORITO` | zonas do editor | Capacete da "Equipe Aurora" (amarelo e verde) | 25 por regra: topo amarelo; laterais amarelas; faixa da viseira verde; viseira espelhada |
 | 12 | `AROUND_THE_WORLD` | cartas | Região 1, Rio de Janeiro | 25 por regra: parte de cima leve; parte de baixo leve; cor quente; marca brasileira |
 | 13 | `SUPER_HEROI` | zonas do editor | Arquétipo "armadura" | 25 por regra: peito metálico; até 2 cores; capa presente; nenhum emblema protegido |
-| 14 | `FASHION_SPORTS` | cartas | Futebol de 5: um uniforme para os 4 de linha contra o time-padrão | Atributos de chuteira e camisa; coesão 100% (uniforme único); vitória = 100, empate = 60, derrota = 0. Seis modalidades, escolhidas na aba Modalidade, cada uma com placar e quadra próprios (`CORES_E_ACOES.md`). Em etapas: primeiro tempo, intervalo e segundo tempo com até 3 lances (cada troca de peça dispara a ação da cor da peça que entra); em cada tempo, mais de 1 ponto de força acima do adversário vale um gol e mais de 1 abaixo, um gol contra |
+| 14 | `FASHION_SPORTS` | cartas | Futebol de 5 jogado por cartas: o uniforme dá os atributos e cada jogada é uma carta da mão (definição de 15/11/2026, `JOGOS.md`, jogo 14) | Duelo de cada jogada: força do time × fôlego + poder da carta contra o adversário, mais sorte da semente; vitória = 100, empate = 60, derrota = 0. Seis modalidades, cada uma com as suas jogadas, relógio e placar |
 | 15 | `BATALHA_LOOKS` | cartas | Rodada "Look Monocromático" em azul contra o adversário-padrão (75) | 25 por peça da família azul; vence com mais de 75 |
 
 **Recursos:**
@@ -65,7 +66,7 @@ partida, só as cartas do deck aparecem na janela de recursos e só elas podem s
 | `CLUBE_CORACAO`, `FAVORITE_SINGER`, `PILOTO_FAVORITO`, `SUPER_HEROI` | sem deck: zonas do editor | nenhuma | — |
 | `LABIRINTO` | até 8 | 3 cartas quaisquer | família de cor que a carta traz para o espelho |
 | `AROUND_THE_WORLD` | até 8 | 1 parte de cima, 1 parte de baixo | regras da região que a carta cumpre |
-| `FASHION_SPORTS` | até 6 | 1 camisa, 1 calção, 1 chuteira | velocidade, técnica, resistência e defesa do uniforme |
+| `FASHION_SPORTS` | até 15 | 1 camisa, 1 calção, 1 chuteira | o uniforme dá velocidade, técnica, resistência, defesa e físico; as outras cartas são a mão, e cada uma mostra a ação da cor e o poder |
 | `BATALHA_LOOKS` | até 8 | 1 parte de cima, 1 parte de baixo, 1 calçado | +25 se é da família de cor da rodada |
 
 **Na tela [frontend]:** antes da partida, a tela do deck mostra as cartas da pessoa com o efeito de cada uma neste
@@ -140,6 +141,64 @@ núcleo e cada variação diz quais avatares entram na partida. Ninguém precisa
 a partida guarda `participantes:[{tipo, papel, time, userId}]`. Esta base só abre partidas solo; o salão online
 (convite, fila e sincronização) é a próxima etapa.
 
+## Pessoas de cena: gente humana com níveis de detalhe
+
+Pedido da dona (15/11/2026): os NPCs passam a ser avatares humanos do mesmo tipo do avatar da pessoa, variados, vestidos
+pelo papel e animados, com níveis de detalhe; de longe continuam gente, nunca pinos. Primeiro jogo com isso: Fashion
+Sports (os jogadores dos dois times e a torcida do estádio).
+
+| Peça | Onde |
+| --- | --- |
+| Pessoa do elenco (sexo, corpo, altura, pele, cabelo, rosto sintético, roupa do papel) e sorteio pela semente | `lib/flair/nucleos/gente/elenco.ts` |
+| Elenco do Fashion Sports (uniformes, goleiro de manga longa, o gesto da linha do tempo na locomoção) | `lib/flair/esporte/elenco.ts` |
+| Níveis de detalhe e triângulos por pessoa | `lib/flair/nucleos/gente/detalhe.ts` |
+| Molde: o corpo humano do avatar (`HumanAvatar`) vestido uma vez, escondido | `components/flair/nucleos/gente/molde-humano.tsx` |
+| Clones na cena (SkeletonUtils), locomoção procedural do avatar, nível pela distância da câmera | `components/flair/nucleos/gente/elenco-3d.tsx` |
+| Torcida em humanos leves instanciados | `lib/flair/nucleos/gente/torcida.ts`, `components/flair/nucleos/gente/torcida-3d.tsx` |
+
+**Determinismo.** O elenco sai da semente da partida (`NucleoPartida.semente`): a mesma partida tem sempre os mesmos
+jogadores. Os dois times têm o mesmo sexo, sorteado pela semente; pele, altura, compleição, corte e cor de cabelo variam
+por jogador. Nada disto entra na nota. Os rostos são pintados por regras (sem foto de ninguém).
+
+**Níveis.** COMPLETO (até 16 m da câmera, ou quem está na jogada a qualquer distância): corpo inteiro, acabamentos,
+sombra, animação a cada quadro. LEVE (16 a 26 m): sem os acabamentos de poucos pixels e sem sombra, animado a cada dois
+quadros. LONGE (além de 26 m): o corpo leve (`components/flair/nucleos/gente/corpo-leve.ts`), o humano leve da torcida
+com as cores da roupa, da pele e do cabelo da pessoa e a altura dela, sem esqueleto para animar. TORCIDA: humano leve instanciado (cabeça,
+pescoço, cabelo, tronco, braços e pernas, 364 triângulos), cinco chamadas de desenho por setor de arquibancada, um terço
+acenando de braços para cima. Enquanto o molde de um jogador monta (dois por vez, o mais perto da câmera primeiro), a
+figura articulada antiga dele aparece no lugar.
+
+**Orçamento medido** (transmissão do futebol, `renderer.info` no navegador sem placa de vídeo, swiftshader):
+
+| Cena | Triângulos por quadro | Chamadas de desenho |
+| --- | --- | --- |
+| Estádio com 10 jogadores humanos e a torcida em blocos | 596 mil | 530 |
+| Estádio com 10 jogadores humanos e a torcida em humanos leves (cerca de 490 pessoas) | 618 mil a 769 mil, conforme a câmera | 160 a 204 |
+
+**Figurantes das salas dos outros jogos** (`lib/flair/nucleos/gente/figurantes.ts`,
+`components/flair/nucleos/gente/figurantes-humanos.tsx`): cada personagem do arquivo do núcleo que é gente (não o
+manequim, a câmera nem a claquete) vira uma pessoa do elenco, com a roupa do papel na cor do arquivo, o corpo tirado
+da semente da partida (sem partida aberta, da semente do jogo) e o movimento do papel
+(sentada, torcendo, fotografando, conversando, parada). Medido na Passarela com as 14 pessoas (12 na plateia e 2
+fotógrafos): 1,44 milhão de triângulos e 399 chamadas por quadro; na Boutique (1 cliente), 179 mil e 63.
+
+**Passe de desempenho da Passarela (16/11/2026).** Nas salas com figurantes, no máximo `CORPOS_CHEIOS` (5) pessoas
+têm o corpo inteiro ao mesmo tempo: quem está na jogada e as mais perto da câmera (`corposCheios` em
+`lib/flair/nucleos/gente/detalhe.ts`); as outras ficam no corpo leve, que agora também senta (pernas encolhidas e o
+corpo de cima no assento) e não monta o molde do corpo inteiro (sem esqueleto, sem roupa costurada, sem o custo da
+montagem). O estádio e o Fashion Detective seguem sem limite. Na Passarela, isso tira 9 dos 14 corpos inteiros.
+**Estimativa, não medida:** pelos números medidos acima (cerca de 40 mil triângulos e 26 chamadas por corpo inteiro,
+364 triângulos e 5 chamadas por corpo leve), a Passarela cai de 1,44 milhão de triângulos e 399 chamadas para cerca
+de 0,52 milhão e 210 chamadas por quadro. A medida no navegador sem placa de vídeo não pôde ser refeita: a máquina
+compartilhada estava sem memória e o renderizador de software caiu em todas as salas, inclusive na Boutique, que
+antes rodava.
+
+Um jogador humano custa cerca de 40 mil triângulos por quadro com a passada de sombra (de 6 para 10 jogadores: +162 mil).
+O orçamento de 60 mil triângulos das salas não vale para o estádio: a gente tem conta própria
+(`triangulosComGente`, `triangulosDaSalaComGente` em `lib/flair/nucleos/scene/budget.ts`). A fluidez num celular não foi
+medida (o ambiente não tem placa de vídeo). Com o corpo leve no nível LONGE, a transmissão automática do futebol (câmera
+alta da lateral, os 10 jogadores além de 26 m) caiu para 181 mil triângulos e 166 chamadas por quadro (antes, 769 mil).
+
 ## Ações do personagem e comandos do controle
 
 O personagem só faz movimentos simples. Toda ação tem teclado, toque (botão na tela) e gamepad (Gamepad API, layout
@@ -197,7 +256,7 @@ partir da semente a cada etapa, então repetir uma etapa dá sempre o mesmo resu
 | Núcleo | Entrega | Acionar | Eventos |
 | --- | --- | --- | --- |
 | `DRESS_FIGHTER` | joga o round 1 e devolve `EM_ACAO` | cada chamada joga o round seguinte; a 2ª fecha a luta. `carta` é a carta Especial (nível `ESPECIAL`, do deck), uma por luta: soma 20 + OVR/10 ao atributo do round que vem. 422 `CARTA_NAO_ESPECIAL` ou `ESPECIAL_JA_USADA` | `ROUND {round, atributo, voce, oponente, atacante, valorAtacante, valorDefensor, venceu}`; `ESPECIAL {round, carta, atributo, poder}` antes do round em que entra |
-| `FASHION_SPORTS` | joga o primeiro tempo e devolve `EM_ACAO` | uma chamada: aplica `troca` (no máximo uma; carta do deck na vaga da posição dela, 422 `TROCA_INVALIDA`), joga o segundo tempo e fecha | `FORCA_TIME`, `FORCA_ADVERSARIO`, `COESAO`, `INTERVALO` (placar do primeiro tempo, "1-0"); no fim, `TROCA {vaga, carta}`, `FORCA_SEGUNDO_TEMPO` e `PLACAR` |
+| `FASHION_SPORTS` | veste o uniforme, joga a saída de bola e devolve `EM_ACAO` | cada chamada é uma jogada: `carta` é a carta jogada da mão (ou nada: o time não faz nada de útil); 422 `CARTA_FORA_DA_MAO`; a 16ª jogada fecha | `JOGADA {n, jogada, tempo, relogio, tipo, time, ok, jogador, alvo, de, para, placar, carta?, acao?}`, `SITUACAO {jogada, total, tempo, relogio, posse, zona, goleiroPronto, mao, baralho, placar}`, `INTERVALO`, `RESUMO` e `PLACAR` |
 | `LABIRINTO` | apresenta ao espelho: se não abre, devolve `ABERTA` com `resultado:"NAO_ABRE"` e a partida aceita outra entrega; se abre, fecha com os pontos da tentativa | não tem | `FAMILIA`, `TENTATIVA` (1 na primeira apresentação) e, sem abrir, `FALTAM_PECAS` |
 
 No `ROUND`, `atacante` é `VOCE` ou `OPONENTE` (no round 1, o mais veloz; no 2, a pessoa; no 3, o oponente), com o valor

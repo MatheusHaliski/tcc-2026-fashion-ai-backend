@@ -22,10 +22,12 @@ import java.util.Optional;
 
 /** Os 15 núcleos do FLAIR 3D, por número (o conjunto de estratégias que o {@link Flair3dNucleoService} escolhe pelo código). */
 public final class Flair3dNucleos {
-    public static final List<Flair3dNucleo> TODOS = List.of(new PassarelaNucleo(), new DressFighterNucleo(), new DressTheStarNucleo(),
-            new PersonagemFilmeNucleo(), new RoadToGloryNucleo(), new FashionDetectiveNucleo(), new Boutique3dNucleo(),
-            new ClubeCoracaoNucleo(), new FavoriteSingerNucleo(), new LabirintoNucleo(), new PilotoFavoritoNucleo(),
-            new AroundTheWorldNucleo(), new SuperHeroiNucleo(), new FashionSportsNucleo(), new BatalhaLooksNucleo());
+    /** Passarela, Dress the Star, Boutique e Around the World terminam com a jogada de cena ({@link Flair3dJogadaDeCena}). */
+    public static final List<Flair3dNucleo> TODOS = List.of(new Flair3dJogadaDeCena(new PassarelaNucleo()), new DressFighterNucleo(),
+            new Flair3dJogadaDeCena(new DressTheStarNucleo()), new PersonagemFilmeNucleo(), new RoadToGloryNucleo(), new FashionDetectiveNucleo(),
+            new Flair3dJogadaDeCena(new Boutique3dNucleo()), new ClubeCoracaoNucleo(), new FavoriteSingerNucleo(), new LabirintoNucleo(),
+            new PilotoFavoritoNucleo(), new Flair3dJogadaDeCena(new AroundTheWorldNucleo()), new SuperHeroiNucleo(), new FashionSportsNucleo(),
+            new BatalhaLooksNucleo());
 
     private Flair3dNucleos() {
     }

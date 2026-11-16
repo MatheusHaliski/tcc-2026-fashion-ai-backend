@@ -39,7 +39,7 @@ describe("FlairSection — cabeçalho e cartas", () => {
     expect(screen.getByLabelText("coletada").textContent).toBe("✓");
     expect(screen.getByLabelText("faltando").textContent).toBe("");
     expect(await screen.findByText("120 coins")).toBeTruthy();
-    expect(screen.getByText("4 vitórias · 1 empates · 2 derrotas")).toBeTruthy();
+    expect(screen.getByText("4 vitórias · 1 empate · 2 derrotas")).toBeTruthy();   // auditoria 10.1: era "1 empates"
     expect(screen.getByRole("link", { name: /Central FLAIR/ }).getAttribute("href")).toBe("/flair?mode=cards");
     expect(screen.getByLabelText(/^Carta Carta a, Rare/)).toBeTruthy();
     cleanup();
@@ -138,9 +138,11 @@ describe("FlairSection — carteira", () => {
     expect(screen.getByText("Campeão")).toBeTruthy();
     expect(screen.getByText("NOVA")).toBeTruthy();
     expect((screen.getByRole("button", { name: "Ativa" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "500 coins" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "10 coins" }) as HTMLButtonElement).disabled).toBe(false);
-    expect(screen.getByText("duel win")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Comprar por 500 coins" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/^Faltam \d+ coins para comprar\.$/)).toBeTruthy();   // o motivo do botão desligado fica à vista
+    expect((screen.getByRole("button", { name: "Comprar por 10 coins" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByText("Vitória em duelo")).toBeTruthy();
+    expect(screen.getByText("Compra de skin de carta")).toBeTruthy();
     expect(screen.getByText("+40")).toBeTruthy();
     expect(screen.getByText("-50")).toBeTruthy();
     expect(screen.getByText("Vitória")).toBeTruthy();
@@ -180,6 +182,7 @@ describe("FlairSection — missões", () => {
     expect((screen.getByRole("button", { name: "Resgatada" }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Resgatar" }));
     expect(await screen.findByText("140 coins")).toBeTruthy();
+    expect(await screen.findByText("Missão resgatada: +20 coins na carteira.")).toBeTruthy();
     expect(calls.some((c) => c.method === "POST" && c.path === "/api/flair/quests/q1/claim")).toBe(true);
   });
 

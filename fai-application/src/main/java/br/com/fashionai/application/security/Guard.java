@@ -32,6 +32,16 @@ public class Guard {
         this.follows = follows;
     }
 
+    /**
+     * Leitura dos próprios dados de conta (nível de FAI XP, artes que a pessoa já tem): basta a sessão. E-mail ainda não
+     * confirmado também lê — só não cria nem grava ({@link #requireCanCreate}), e quem grava continua conferindo tudo.
+     */
+    public void requireSession(CurrentUser user) {
+        if (user == null) {
+            throw ApiException.unauthorized(Msg.t("common.faca_login_para_continuar"));
+        }
+    }
+
     public void requireCanCreate(CurrentUser user) {
         if (user == null) {
             throw ApiException.unauthorized(Msg.t("common.faca_login_para_continuar"));

@@ -24,9 +24,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -34,6 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -89,9 +94,52 @@ class PieceReferenceAccessTest {
             mvc.perform(put(path)).andExpect(status().isUnauthorized());
             mvc.perform(patch(path)).andExpect(status().isUnauthorized());
             mvc.perform(delete(path)).andExpect(status().isUnauthorized());
-            mvc.perform(get(path + "/private")).andExpect(status().isUnauthorized());
+            // sob /api/opcoes/** a leitura é pública por convenção: rota inexistente dá 404, sem handler a expor
+            mvc.perform(get(path + "/private")).andExpect(path.startsWith("/api/opcoes/") ? status().isNotFound() : status().isUnauthorized());
         }
         mvc.perform(get("/api/me/closet")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/tipo-lavagem")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/tipo-lavagem").with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(WASH_ID.toString()));
+    }
+
+    /**
+     * Campo novo dos criadores (ex.: Origem): o GET novo não está em PUBLIC_GET e nada em SecurityConfig muda. Com a
+     * sessão, que o campo compartilhado dos criadores manda, ele carrega; sem sessão continua 401 (não vira público).
+     */
+    @Test
+    void aNewOptionsEndpointLoadsWithTheSessionWithoutTouchingSecurity() throws Exception {
+        mvc.perform(get("/api/exemplo/origens")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/exemplo/origens").with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].codigo").value("HERDADA"));
+    }
+
+    /** Convenção /api/opcoes/**: GET público também para páginas sem sessão; escrita continua exigindo sessão. */
+    @Test
+    void optionsConventionIsPublicOnlyForReads() throws Exception {
+        mvc.perform(get("/api/opcoes/exemplo-origens")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].codigo").value("ADQUIRIDA"));
+        mvc.perform(delete("/api/opcoes/exemplo-origens")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/opcoes/exemplo-origens")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/opcoes-privadas")).andExpect(status().isUnauthorized());
+    }
+
+    /** Endpoints de exemplo de um campo novo, fora de PUBLIC_GET. */
+    @RestController
+    static class CampoNovo {
+        @GetMapping("/api/exemplo/origens")
+        List<Map<String, String>> origens() { return List.of(Map.of("codigo", "HERDADA", "nome", "Herdada")); }
+
+        @GetMapping("/api/opcoes/exemplo-origens")
+        List<Map<String, String>> origensPorConvencao() { return List.of(Map.of("codigo", "ADQUIRIDA", "nome", "Adquirida")); }
+
+        @DeleteMapping("/api/opcoes/exemplo-origens")
+        void apagar() { }
+
+        @GetMapping("/api/opcoes-privadas")
+        List<String> fora() { return List.of("privado"); }
     }
 
     @Test

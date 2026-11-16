@@ -1,5 +1,7 @@
 # Meu Guarda-Roupa: Grade · Meu Quarto · Destaques · Desafios + Copilot Contextual
 
+> **Retirado em 15/11/2026.** O Quarto 3D (Meu Quarto) saiu do app por decisão da dona ("Retire totalmente o Quarto 3D do app FashionAI"); o guarda-roupa em perspectiva é o ACERVO (`/acervo`). Este documento fica como histórico do desenho. O que saiu, o que ficou e os dados que ficaram sem uso: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`.
+
 **Projeto:** FashionAI (SAI-TCC-2026)
 **Status:** proposta de especificação (v0.3), para revisão do time
 **Requisitos novos:** RF32 (Meu Quarto) · RF33 (Smart Mirror e Vista-me) · RF34 (Destaques do Meu Inventário) · RF35 (FAI Points e progressão do quarto) · RF36 (Desafios & Games, em [`03-desafios-e-games.md`](03-desafios-e-games.md))

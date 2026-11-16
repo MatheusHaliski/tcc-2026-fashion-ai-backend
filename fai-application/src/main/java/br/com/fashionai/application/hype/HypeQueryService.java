@@ -65,8 +65,8 @@ import java.util.stream.Collectors;
 @Service
 public class HypeQueryService {
     public static final int MAX_BATCH = 100;
-    /** Peça esquecida: a régua única do app (RoomService.FORGOTTEN_DAYS, também usada pelo Copilot e pelo Meu Quarto). */
-    static final int FORGOTTEN_DAYS = br.com.fashionai.application.service.RoomService.FORGOTTEN_DAYS;
+    /** Peça esquecida: a régua única do app (ForgottenPieces.FORGOTTEN_DAYS, também usada pelo Copilot e pelos desafios). */
+    static final int FORGOTTEN_DAYS = br.com.fashionai.application.service.ForgottenPieces.FORGOTTEN_DAYS;
 
     private final HypeScoreConfig config;
     private final HypeScoreCurrentRepository current;

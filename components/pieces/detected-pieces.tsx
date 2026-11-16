@@ -5,6 +5,7 @@ import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, cn } from "@/components/ui";
 import type { PieceFormValue } from "@/components/piece-form";
 import { FULL_BOX, cropBox, detectedPrefill, type BrandHint, type DetectedPiece, type MultiDetection } from "@/components/pieces/detected-piece";
+import { suggestCategoryFromImage, type SuggestedCategory } from "@/lib/pieces/type-suggestion";
 
 /**
  * Peça detectada escolhida para seguir pelo criador em etapas (sem modal): o recorte (ou a foto inteira), o rascunho da
@@ -26,6 +27,8 @@ export interface PhotoItem {
 export function DetectedPieces({ items, onPick, picked, savedKeys, onAvailable }: { items: PhotoItem[]; onPick: (p: PhotoPick) => void; picked: string | null; savedKeys: string[]; onAvailable?: (keys: string[]) => void }) {
   const { t } = useI18n(); const tax = useTaxonomy();
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  // leitura local sem tipo: sugestão pela forma do recorte, que a pessoa confirma ("Usar como …")
+  const [hints, setHints] = useState<Record<string, SuggestedCategory | null>>({});
   const urls = useRef<string[]>([]);
   useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
   const ready = items.filter((i) => i.detection);
@@ -41,14 +44,17 @@ export function DetectedPieces({ items, onPick, picked, savedKeys, onAvailable }
       if (thumbs[e.key]) return;
       (e.p.index < 0 ? Promise.resolve(e.it.file as Blob) : cropBox(e.it.file, e.p.box, 240))
         .then((b) => { const u = URL.createObjectURL(b); urls.current.push(u); setThumbs((m) => ({ ...m, [e.key]: u })); }).catch(() => undefined);
+      if (!e.p.category && e.it.detection!.source !== "ia" && !(e.key in hints)) {
+        void suggestCategoryFromImage(e.it.file, e.p.box).then((c) => setHints((m) => ({ ...m, [e.key]: c })));
+      }
     });
   }, [keys]); // eslint-disable-line react-hooks/exhaustive-deps
-  async function use(e: (typeof entries)[number]) {
+  async function use(e: (typeof entries)[number], category?: SuggestedCategory) {
     const blob = e.p.index < 0 ? e.it.file : await cropBox(e.it.file, e.p.box);
     const file = blob instanceof File ? blob : new File([blob], `peca-${e.photo}-${e.piece}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type });
     const preview = URL.createObjectURL(file); urls.current.push(preview);
     onPick({ key: e.key, file, preview, draftId: e.it.detection!.draftId, index: e.p.index, photo: e.photo, piece: e.piece,
-      value: detectedPrefill(e.p, tax), hint: e.p.brandHint ?? null });
+      value: category ? { ...detectedPrefill(e.p, tax), category } : detectedPrefill(e.p, tax), hint: e.p.brandHint ?? null });
   }
   const local = ready.some((i) => i.detection!.source !== "ia");
   return (
@@ -66,10 +72,14 @@ export function DetectedPieces({ items, onPick, picked, savedKeys, onAvailable }
               <div className="min-w-[6rem] flex-1" data-testid="detected-piece-text">
                 <p className="type-body-sm font-medium truncate">{e.p.name || t("multiPiece.peca_n", { n: e.piece })}</p>
                 <p className="type-caption text-muted">{t("multiPiece.foto_n", { n: e.photo })}{e.p.category ? ` · ${CATEGORY_LABEL[e.p.category] ?? label(e.p.category)}` : ""}</p>
+                {hints[e.key] && !saved && !active && <p className="type-caption" data-testid="type-suggestion">{t("multiPiece.sugestao_tipo", { category: CATEGORY_LABEL[hints[e.key]!] })}</p>}
               </div>
               {saved ? <span className="shrink-0 type-caption font-medium" data-testid="detected-piece-state">✓ {t("multiPiece.salva")}</span>
                 : active ? <span className="shrink-0 type-caption font-medium" data-testid="detected-piece-state">{t("multiPiece.em_edicao")}</span>
-                : <Button size="sm" className="shrink-0" onClick={() => void use(e)}>{t("multiPiece.usar_esta_peca")}</Button>}
+                : <span className="flex w-full flex-wrap gap-1 sm:w-auto sm:shrink-0">
+                  {hints[e.key] && <Button size="sm" variant="primary" onClick={() => void use(e, hints[e.key]!)}>{t("multiPiece.usar_como", { category: CATEGORY_LABEL[hints[e.key]!] })}</Button>}
+                  <Button size="sm" onClick={() => void use(e)}>{t("multiPiece.usar_esta_peca")}</Button>
+                </span>}
             </li>
           );
         })}

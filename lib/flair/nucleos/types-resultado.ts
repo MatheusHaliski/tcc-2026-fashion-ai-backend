@@ -37,6 +37,8 @@ export interface NucleoResultado {
 export interface NucleoAcionamento {
   carta?: string | null;
   troca?: { vaga: string; carta: string } | null;
+  /** Fashion Detective: o que a pessoa faz no passo ("IR:meio", "ACUSAR:2"...) */
+  alvo?: string | null;
 }
 
 export interface EfeitoItem {

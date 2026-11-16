@@ -8,6 +8,7 @@ import { passarela } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { painelLed, trilhoSpots } from "@/lib/flair/nucleos/scene/moveis/palco";
 import { grade } from "@/lib/flair/nucleos/scene/moveis/urbano";
 import type { Movel, Sala } from "@/lib/flair/nucleos/scene/types";
+import { arcoDoBackstage, gradeDoFosso } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 /** x das duas fileiras e z de cada cadeira (os personagens da plateia sentam nelas). */
 export const PASSARELA_FILEIRA_X = 2.0;
@@ -52,6 +53,10 @@ export const SALA_PASSARELA: Sala = {
     trilhoSpots({ pos: [1.3, 4.7, -2.5] }, "metal", "luz", 9, 6),
     grade({ pos: [-1.9, 0, -7.0] }, "metal", 1.3, 0.9),
     grade({ pos: [1.9, 0, -7.0] }, "metal", 1.3, 0.9),
+    // a segunda revisão dos cenários: o arco do backstage e a grade do fosso dos fotógrafos
+    arcoDoBackstage({ pos: [0, 0, -8.45] }, "metal", "led", 2.6, 3),
+    gradeDoFosso({ pos: [-2.6, 0, 2.4] }, "metal", 2.4),
+    gradeDoFosso({ pos: [2.6, 0, 2.4] }, "metal", 2.4),
   ],
   figurantes: [],
   luzes: {

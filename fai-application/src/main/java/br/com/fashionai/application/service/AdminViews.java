@@ -3,10 +3,12 @@ package br.com.fashionai.application.service;
 import br.com.fashionai.application.ai.AiCatalog;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.moderation.UploadQuarantine;
+import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.AiInferenceLog;
 import br.com.fashionai.domain.model.AuditLog;
 import br.com.fashionai.domain.model.BackupRecord;
 import br.com.fashionai.domain.model.ModerationQueueItem;
+import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 
 import java.util.LinkedHashMap;
@@ -25,6 +27,23 @@ import java.util.function.Function;
  */
 final class AdminViews {
     private AdminViews() {
+    }
+
+    /** Linha da lista de contas: o cartão público mais o papel e o estado (ativa, suspensa), que só o admin vê. */
+    static Map<String, Object> userRow(User u) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        Views.UserCard card = Views.user(u);
+        m.put("id", card.id());
+        m.put("username", card.username());
+        m.put("displayName", card.displayName());
+        m.put("avatarUrl", card.avatarUrl());
+        m.put("profileType", card.profileType());
+        m.put("verified", card.verified());
+        m.put("country", card.country());
+        m.put("privateAccount", card.privateAccount());
+        m.put("role", u.getRole());
+        m.put("status", u.getStatus() == null ? null : u.getStatus().name());
+        return m;
     }
 
     /**

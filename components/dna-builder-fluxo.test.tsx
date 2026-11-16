@@ -194,12 +194,12 @@ describe("DnaBuilder — looks do DNA", () => {
 });
 
 describe("DnaBuilder — dados, layout e narrativa", () => {
-  it("dados: título obrigatório, visibilidade padrão da conta e selo inválido trava o avançar", async () => {
+  it("dados: título obrigatório, visibilidade começa em Privado (mesmo com perfil aberto) e selo inválido trava o avançar", async () => {
     setup();
     await twoLooks();
     click(/^Avançar/);
     expect(screen.getByText("Verificação de selos dos looks")).toBeTruthy();
-    expect(screen.getByLabelText("Visibilidade").textContent).toBe("Seguidores");
+    expect(screen.getByLabelText("Visibilidade").textContent).toBe("Privado");
     const next = () => screen.getAllByRole("button", { name: "Avançar" }).at(-1) as HTMLButtonElement;
     expect(next().disabled).toBe(true);
     fireEvent.change(screen.getByLabelText(/^Título/), { target: { value: "Minha história" } });

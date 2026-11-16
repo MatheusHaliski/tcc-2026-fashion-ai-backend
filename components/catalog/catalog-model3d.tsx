@@ -6,7 +6,7 @@ import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Dialog } from "@/components/ui";
 
-const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false });
+const PieceModelViewer = dynamic(() => import("@/components/piece3d/piece-model-viewer"), { ssr: false });
 
 /**
  * Etapa 3 — "Ver em 3D" no card do produto do catálogo: o modelo de vitrine publicado do produto, no mesmo visualizador

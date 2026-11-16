@@ -1,5 +1,9 @@
 # FLAIR 3D MAKE UP: reuso das câmeras do provador, do avatar e do catálogo
 
+> **Nota de 15/11/2026.** A área antiga de capítulos (`/flair/jogos`, `/api/flair/games`, `FlairGameController`,
+> `scripts/flair-games/`) saiu do app; o FLAIR 3D são os 15 núcleos (`/api/flair/3d`). As referências a ela abaixo
+> são do plano original e ficam como registro. Ver `docs/flair/ENDPOINTS_FLAIR.md`.
+
 Estudo do código (07/11/2026) para o FLAIR 3D MAKE UP, jogo de styling no estilo DREST (`ESTUDO_DREST.md`, nesta
 pasta): a pessoa veste uma modelo ou o próprio avatar com itens do catálogo numa cena 3D que **reaproveita as câmeras do
 provador**, num lugar coerente com o desafio (passarela com plateia, provador com uma amiga virtual). Nenhum código foi

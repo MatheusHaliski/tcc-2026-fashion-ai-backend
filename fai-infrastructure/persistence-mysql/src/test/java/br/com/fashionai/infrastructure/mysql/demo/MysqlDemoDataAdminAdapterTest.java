@@ -231,7 +231,7 @@ class MysqlDemoDataAdminAdapterTest {
     void contagensGlobais() {
         counts(sql -> sql.contains("catalog_origin = 'DEMO'") ? 2L : 1L);
         Map<String, Long> out = adapter.globalCounts();
-        assertThat(out).containsKeys("users_real", "users_test", "brands", "catalog_products", "dataset_sources");
+        assertThat(out).containsKeys("users_real", "users_test", "brands", "catalog_products", "dataset_sources").doesNotContainKey("room_catalog");
         assertThat(out.get("brands_demo")).isEqualTo(2L);
         assertThat(out.get("users_real")).isEqualTo(1L);
     }

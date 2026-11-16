@@ -216,7 +216,7 @@ public class Flair3dNucleoService {
     }
 
     /** Cartas da entrega e dos acionamentos, todas da pessoa e do deck (422), no contexto semeado da partida. */
-    private Contexto contexto(CurrentUser user, Flair3dMatch m, Flair3dNucleo n, Entrega e, Andamento a) {
+    Contexto contexto(CurrentUser user, Flair3dMatch m, Flair3dNucleo n, Entrega e, Andamento a) {
         List<UUID> usadas = new ArrayList<>(e.cartas().values());
         usadas.addAll(a.cartas());
         Map<UUID, CbcRules.Card> minhas = cartas.daPessoa(user.id(), usadas);

@@ -368,7 +368,7 @@ public class MysqlDemoDataAdminAdapter implements DemoDataAdminPort {
         out.put("users_test", count("SELECT COUNT(*) FROM users WHERE " + TEST_ORIGINS, new MapSqlParameterSource()));
         out.put("brands", count("SELECT COUNT(*) FROM brands", new MapSqlParameterSource()));
         out.put("brands_demo", count("SELECT COUNT(*) FROM brands WHERE catalog_origin = 'DEMO'", new MapSqlParameterSource()));
-        for (String t : List.of("catalog_products", "room_catalog", "challenge_templates", "dataset_sources")) {
+        for (String t : List.of("catalog_products", "challenge_templates", "dataset_sources")) {   // room_catalog saiu com o Meu Quarto
             out.put(t, count("SELECT COUNT(*) FROM `" + t + "`", new MapSqlParameterSource()));
         }
         return out;

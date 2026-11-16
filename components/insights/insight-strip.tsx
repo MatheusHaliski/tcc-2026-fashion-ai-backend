@@ -42,7 +42,7 @@ export function InsightStrip({ context, params, preset, collapsible, className }
   ) : items.length === 0 ? <p className="insight-empty">{t("insights.empty")}</p> : (
     <ul className="insight-list" aria-busy={loading || undefined}>{items.map((item, i) => <InsightCard key={`${item.code}-${i}`} item={item} />)}</ul>
   );
-  const foot = [meta?.generatedAt ? t("insights.updated", { when: relative(meta.generatedAt) }) : null, meta?.algorithmVersion ? t("insights.algorithm", { version: meta.algorithmVersion }) : null,
+  const foot = [meta?.generatedAt ? t("insights.updated", { when: relative(meta.generatedAt) }) : null,
     meta?.source ? t(meta.source === "ia" ? "insights.source.ia" : "insights.source.local") : null].filter(Boolean).join(" · ");
   return (
     <section className={cn("insight-strip", className)} aria-labelledby={`${id}-h`} data-context={context}>
