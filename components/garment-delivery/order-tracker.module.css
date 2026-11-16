@@ -35,7 +35,7 @@
 
 /* unboxing: a caixa abre e o cartão da peça sobe */
 .unboxing { display: grid; gap: 1rem; justify-items: center; text-align: center; }
-.box { position: relative; width: min(18rem, 80vw); aspect-ratio: 1.15; margin-top: 2.5rem; }
+.box { position: relative; width: min(18rem, 80vw); aspect-ratio: 1.15; margin-top: 7rem; }
 .boxBody { position: absolute; inset: 35% 0 0; border-radius: .4rem; background: linear-gradient(180deg, #c99f6b, #a87c4a);
   box-shadow: inset 0 -10px 0 rgb(0 0 0 / .08); }
 .boxLid { position: absolute; left: -4%; right: -4%; top: 26%; height: 14%; border-radius: .4rem; background: #d8b07d; transform-origin: left bottom;
@@ -50,12 +50,12 @@
 @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 var(--chalk-soft); } 50% { box-shadow: 0 0 0 .45rem var(--chalk-soft); } }
 @keyframes rise { from { opacity: 0; transform: translateY(.4rem); } to { opacity: 1; transform: none; } }
-@keyframes lid { from { transform: none; } to { transform: translateY(-2.6rem) rotate(-14deg); } }
-@keyframes pop { from { opacity: 0; transform: translateY(40%) scale(.85); } to { opacity: 1; transform: translateY(-38%) scale(1); } }
+@keyframes lid { from { transform: none; } to { transform: translate(-38%, -1.5rem) rotate(-28deg); } }
+@keyframes pop { from { opacity: 0; transform: translateY(40%) scale(.85); } to { opacity: 1; transform: translateY(-78%) scale(1); } }
 
 @media (prefers-reduced-motion: reduce) {
   .fill, .fill::after, .item[data-state="CURRENT"] .dot, .body, .boxLid, .card { animation: none; transition: none; }
-  .card { transform: translateY(-38%); }
-  .boxLid { transform: translateY(-2.6rem) rotate(-14deg); }
+  .card { transform: translateY(-78%); }
+  .boxLid { transform: translate(-38%, -1.5rem) rotate(-28deg); }
 }
 @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }

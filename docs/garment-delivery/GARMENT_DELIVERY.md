@@ -293,3 +293,34 @@ tamanho-base além de M/40.
    o sino avisa a expedição e a entrega.
 4. "Confirmar recebimento" → unboxing → abrir a peça, o passaporte (registro de fabricação, eventos do sistema,
    etiqueta) e o ACERVO; a Lavanderia mostra a peça no grupo do tipo de lavagem quando ela for marcada como usada.
+
+## 13. Verificação no navegador (2026-11-16)
+
+Stack local: API na porta 8097 com banco próprio `fashionai_gd` (MySQL local; a V103 foi aplicada pelo Flyway junto
+com as anteriores), mídia local, Next na porta 3007; conta de demonstração local `marina.costa`; projeto "Camisa Aurora
+de linho" com ficha completa, revisão nº 1 publicada e BOM (linho lavado 1,6 m e entretela de algodão 0,2 m). Fluxo
+percorrido em velocidade **Demonstração** com Playwright (Chromium), desktop 1360×900 e celular 390×844, escala 2.
+Resultado: tipo Camisa, composição 89% linho e 11% algodão (da BOM), perfil Resistente, `TipoLavagem` `MAQUINA_40`,
+preço fictício R$ 232,90 + frete SP R$ 14,90, ciclo completo em 3 minutos, notificações de expedição e entrega no sino,
+peça no guarda-roupa, no ACERVO e na Lavanderia (grupo "Instrução MAQUINA_40" ao marcar a peça como usada).
+
+| # | Captura | O que mostra |
+|---|---|---|
+| 1 | ![](capturas/01-projeto-entrada-fabrica-desktop.jpg) | Cartão "Fábrica FashionAI" no projeto, habilitado pela ficha completa |
+| 2 | ![](capturas/02-checkout-desktop.jpg) | Checkout: prévia da peça, passaporte previsto, tamanho G com medidas graduadas |
+| 3 | ![](capturas/03-checkout-resumo-desktop.jpg) | Entrega só com CEP e apelido, velocidade Demonstração, preço fictício e o botão "simulação, sem cobrança" |
+| 4 | ![](capturas/04-checkout-etiqueta-celular.jpg) | Composição e etiqueta de cuidados no celular |
+| 5 | ![](capturas/05-acompanhamento-producao-desktop.jpg) | Acompanhamento durante a produção |
+| 6 | ![](capturas/06-acompanhamento-celular.jpg) | Progresso e previsão no celular |
+| 7 | ![](capturas/07-linha-do-tempo-celular.jpg) | Linha do tempo das etapas com o que a fábrica faz |
+| 8 | ![](capturas/08-entregue-desktop.jpg) | Entregue, com rastreio e "Confirmar recebimento" |
+| 9 | ![](capturas/09-unboxing-desktop.jpg) | Unboxing: série, lote, tamanho, etiqueta e links para peça, passaporte e ACERVO |
+| 10 | ![](capturas/10-passaporte-registro-de-fabricacao-desktop.jpg) | Passaporte: registro de fabricação com revisão/digest, designers, medidas conferidas |
+| 11 | ![](capturas/11-passaporte-eventos-da-fabrica-desktop.jpg) | Passaporte: eventos de cada etapa "Registrado pelo sistema" |
+| 12 | ![](capturas/12-ficha-da-peca-etiqueta-celular.jpg) | Ficha da peça com a etiqueta de cuidados (celular) |
+| 13 | ![](capturas/13-acervo-desktop.jpg) | A peça recebida no ACERVO |
+| 14 | ![](capturas/14-lavanderia-tipo-de-lavagem-desktop.jpg) | Lavanderia agrupando pela instrução `MAQUINA_40` |
+| 15 | ![](capturas/15-encomendas-desktop.jpg) | Lista "Encomendas" do Atelier |
+
+Limitações vistas: a imagem da peça é a ilustração padrão do tipo (a cor da ficha aparece na amostra ao lado); o
+`TipoLavagem` aparece pelo código nos grupos da Lavanderia, como para qualquer opção cadastrada.

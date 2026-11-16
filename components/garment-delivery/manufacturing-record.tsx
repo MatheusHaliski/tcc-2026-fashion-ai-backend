@@ -32,7 +32,7 @@ export function ManufacturingRecordView({ record, owner = false }: { record: Man
       {designers.length > 0 && <><dt>{t('garmentDelivery.passport.designers')}</dt><dd>{designers.map(d => designerRole(t, d)).join(', ')}</dd></>}
       <dt>{t('garmentDelivery.preview.size')}</dt><dd>{text(record.sizeLabel)}</dd>
       {text(record.producedAt) && <><dt>{t('garmentDelivery.record.producedAt')}</dt><dd>{fmtDateTime(text(record.producedAt))}</dd></>}
-      {text(record.trackingCode) && <><dt>{t('garmentDelivery.tracking')}</dt><dd className={styles.mono}>{text(record.trackingCode)}</dd></>}
+      {text(record.trackingCode) && <><dt>{t('garmentDelivery.passport.tracking')}</dt><dd className={styles.mono}>{text(record.trackingCode)}</dd></>}
       {owner && text(record.orderId) && <><dt>{t('garmentDelivery.record.order')}</dt><dd><Link href={`/atelier/orders/${text(record.orderId)}`}>{t('garmentDelivery.orders.open')}</Link></dd></>}
     </dl>
     {measures.length > 0 && <MeasuresTable measures={measures} showChecked />}

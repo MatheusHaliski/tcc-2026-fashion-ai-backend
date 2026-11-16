@@ -12485,7 +12485,7 @@
   "garmentDelivery.measures.title": "Key measurements",
   "garmentDelivery.measures.point": "Point",
   "garmentDelivery.measures.value": "In your size",
-  "garmentDelivery.measures.tolerance": "Tolerance (cm)",
+  "garmentDelivery.measures.tolerance": "± cm",
   "garmentDelivery.measures.checked": "Checked",
   "garmentDelivery.measures.none": "The tech pack has no measurements.",
   "garmentDelivery.missing.title": "The tech pack is not complete yet",
@@ -12659,5 +12659,6 @@
   "passport.event.FACTORY_SHIPPED": "Factory: shipped",
   "passport.event.FACTORY_OUT_FOR_DELIVERY": "Delivery: on the way",
   "passport.event.FACTORY_DELIVERED": "Delivery: delivered",
-  "passport.event.FACTORY_RECEIVED": "Receipt confirmed"
+  "passport.event.FACTORY_RECEIVED": "Receipt confirmed",
+  "garmentDelivery.passport.tracking": "Tracking code"
 }

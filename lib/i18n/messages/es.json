@@ -12485,7 +12485,7 @@
   "garmentDelivery.measures.title": "Medidas clave",
   "garmentDelivery.measures.point": "Punto",
   "garmentDelivery.measures.value": "En tu talla",
-  "garmentDelivery.measures.tolerance": "Tolerancia (cm)",
+  "garmentDelivery.measures.tolerance": "± cm",
   "garmentDelivery.measures.checked": "Verificada",
   "garmentDelivery.measures.none": "La ficha no tiene medidas.",
   "garmentDelivery.missing.title": "La ficha técnica todavía no está completa",
@@ -12659,5 +12659,6 @@
   "passport.event.FACTORY_SHIPPED": "Fábrica: enviada",
   "passport.event.FACTORY_OUT_FOR_DELIVERY": "Entrega: en ruta",
   "passport.event.FACTORY_DELIVERED": "Entrega: entregada",
-  "passport.event.FACTORY_RECEIVED": "Recepción confirmada"
+  "passport.event.FACTORY_RECEIVED": "Recepción confirmada",
+  "garmentDelivery.passport.tracking": "Código de seguimiento"
 }
