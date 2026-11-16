@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CAMERAS_DO_CAMPO, poseEscolhida } from "@/lib/flair/esporte/camera";
 import { CAMPOS } from "@/lib/flair/esporte/campo";
 import { CAMERA_AUTOMATICA, CAMERAS, cameraEmUso, camerasDe, opcoesDeCamera, proximaCamera } from "@/lib/flair/nucleos/camera/jogos";
-import { andaSozinha, aproximar, dentroDoLugar, poseDoRig, recuada, RIGS, type Assunto, type Camera } from "@/lib/flair/nucleos/camera/rigs";
+import { afastadaDoCorpo, andaSozinha, aproximar, dentroDoLugar, DISTANCIA_MINIMA, poseDoRig, recuada, RIGS, type Assunto, type Camera } from "@/lib/flair/nucleos/camera/rigs";
 import { comZoom, DIST_MINIMA, limitesDaSala, MIRA_NO_ROSTO, momentoDaCamera } from "@/lib/flair/nucleos/camera/sala";
 import { SALAS, salaDe } from "@/lib/flair/nucleos/scene/registry";
 import { NUCLEO_CODIGOS } from "@/lib/flair/nucleos/types";
@@ -151,6 +151,17 @@ describe("câmera dentro da sala", () => {
     expect(momentoDaCamera("PREPARACAO")).toBe("PREPARO");
     expect(momentoDaCamera("ACAO")).toBe("ACAO");
     expect(momentoDaCamera("RESULTADO")).toBe("RESULTADO");
+  });
+
+  it("quando a parede empurra a lente para perto do corpo, ela sobe em vez de entrar nele (auditoria: fim da luta, calçada do Rio)", () => {
+    const limites = { x: [-3, 3] as [number, number], z: [-3, 0.6] as [number, number], teto: 8 };
+    const segue = cam({ rig: "SEGUE", dist: 3.6, altura: 1.2, mira: 1.1 });
+    const pose = poseDoRig(segue, { pos: [0, 0, 0], giro: 180, limites }, 0);
+    const longe = Math.hypot(pose.pos[0], pose.pos[1] - 1.1, pose.pos[2]);
+    expect(longe).toBeGreaterThanOrEqual(DISTANCIA_MINIMA - 1e-6);
+    expect(afastadaDoCorpo([0, 1, 3], { pos: [0, 0, 0] }, 1.1)).toEqual([0, 1, 3]);
+    // o zoom de propósito continua perto
+    expect(poseDoRig(cam({ dist: 0.6, altura: 1.5, mira: 1.5 }), { pos: [0, 0, 0] }, 0).pos[1]).toBeCloseTo(1.5, 5);
   });
 
   it("em toda sala a câmera do preparo fica dentro das paredes e vê o avatar de corpo inteiro", () => {

@@ -107,8 +107,17 @@ public class PassarelaNucleo implements Flair3dNucleo {
         double pontos = Math.min(100, bruto * 100 / MAXIMO);
         double fator = 100 / MAXIMO;
         Flair3dRateio rateio = new Flair3dRateio(vestidas).cada(POR_PECA * fator, noTema).dividirEntre(todas ? TODAS * fator : 0, noTema);
-        List<Evento> eventos = contexto.rodada() == null ? List.of() : sala(contexto, (int) Math.round(pontos));
+        List<Evento> eventos = new ArrayList<>(contexto.rodada() == null ? List.of() : sala(contexto, (int) Math.round(pontos)));
+        eventos.add(conta(bruto));
         return Resultado.of(pontos, pontos >= 60 ? "APROVADO" : "REPROVADO", regras, eventos).comCartas(rateio.lista());
+    }
+
+    /** A conta da nota: as regras somam até 70 e a nota é essa soma em 100 (60 de 70 vira 86). */
+    static Evento conta(double bruto) {
+        Map<String, Object> conta = new LinkedHashMap<>();
+        conta.put("soma", bruto);
+        conta.put("maximo", MAXIMO);
+        return new Evento("CONTA", conta);
     }
 
     /** A prévia não mostra os desfiles da casa: a colocação só sai na entrega. */

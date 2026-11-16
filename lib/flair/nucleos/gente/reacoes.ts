@@ -33,7 +33,7 @@ export const REACAO_DO_CLIPE: Record<string, Reacao> = {
   F_PROVA_E_GIRA: { anim: "change" },
   F_DEVOLVE: { anim: "interact" },
   F_BARRA: { anim: "guard" },
-  F_POSE: { anim: "wave" },
+  F_POSE: { anim: "idle", gesto: "pensar" },
   F_LEVANTA_O_BRACO: { anim: "cheer" },
   F_REVELA: { anim: "wave" },
 };

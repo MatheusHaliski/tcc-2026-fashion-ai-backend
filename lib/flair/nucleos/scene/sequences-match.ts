@@ -31,10 +31,19 @@ const OPONENTE = fig("OPONENTE", 0);
 /** Onde o oponente luta: a um passo largo do avatar, de frente para ele (de onde fica no preparo, ele vem andando). */
 const DISTANCIA_DA_LUTA = { x: 1.1, z: -0.3 };
 
+/** A luta acabou? No meio dela (EM_ACAO) o servidor ainda não disse quem venceu: não há queda nem comemoração. */
+export const lutaEncerrada = (resultado: NucleoResultado): boolean => resultado.resultado === "VITORIA" || resultado.resultado === "DERROTA";
+
+/**
+ * A luta na cena. No meio dela, só o round que acabou de ser jogado (os anteriores já passaram na tela), sem desfecho;
+ * no fim, os três rounds e o desfecho de quem venceu a luta: a queda é de quem perdeu, nunca depois de um round vencido.
+ */
 export function sequenciaDaLuta(resultado: NucleoResultado): Sequencia {
   const r = new Roteiro("luta");
+  const encerrada = lutaEncerrada(resultado);
+  const rounds = roundsDaLuta(resultado);
   r.junto(OPONENTE, "F_GUARDA", { mover: DISTANCIA_DA_LUTA }).depois(AVATAR, "MEIA_VOLTA", { mover: { giro: 75 } });
-  for (const round of roundsDaLuta(resultado)) {
+  for (const round of encerrada ? rounds : rounds.slice(-1)) {
     r.junto(OPONENTE, "F_GUARDA").depois(AVATAR, "GUARDA");
     if (round.venceu) {
       const golpe = GOLPE[round.atributo] ?? "SOCO";
@@ -44,9 +53,8 @@ export function sequenciaDaLuta(resultado: NucleoResultado): Sequencia {
       r.junto(OPONENTE, "F_SOCO").depois(AVATAR, round.atributo === "VELOCIDADE" ? "ESQUIVA" : "DEFESA");
     }
   }
-  const venceu = resultado.resultado === "VITORIA";
-  if (venceu) r.depois(OPONENTE, "F_QUEDA");
-  else r.junto(OPONENTE, "F_COMEMORA").depois(AVATAR, "QUEDA");
+  if (resultado.resultado === "VITORIA") r.depois(OPONENTE, "F_QUEDA");
+  else if (encerrada) r.junto(OPONENTE, "F_COMEMORA").depois(AVATAR, "QUEDA");
   return r.depois(AVATAR, "MEIA_VOLTA", { mover: { giro: 0 } }).fim();
 }
 

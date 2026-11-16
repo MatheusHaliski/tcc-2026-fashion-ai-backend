@@ -126,6 +126,22 @@ describe("sequências automáticas", () => {
     expect(clipsDe(derrota, "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "ESQUIVA", "GUARDA", "DEFESA", "GUARDA", "DEFESA", "QUEDA", "MEIA_VOLTA"]);
   });
 
+  it("no meio da luta (EM_ACAO) só o round novo, sem queda nem reação: quem vence o round não cai (auditoria DF-1)", () => {
+    const meio = resultado({ resultado: "EM_ACAO", status: "EM_ACAO", estrelas: 0, pontos: 0, eventos: [round(1, "VELOCIDADE", true)] });
+    expect(clipsDe(sequenciaDaLuta(meio), "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "SOCO", "MEIA_VOLTA"]);
+    expect(clipsDe(sequenciaDaLuta(meio), "fig:OPONENTE:0")).not.toContain("F_COMEMORA");
+    const segundo = resultado({ resultado: "EM_ACAO", status: "EM_ACAO", estrelas: 0, pontos: 0, eventos: [round(1, "VELOCIDADE", true), round(2, "ATAQUE", false)] });
+    const seq = sequenciaDoResultado("DRESS_FIGHTER", segundo);
+    expect(clipsDe(seq, "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "DEFESA", "MEIA_VOLTA"]);
+  });
+
+  it("na batalha vencida o braço que sobe é o da pessoa; o adversário lamenta", () => {
+    const seq = sequenciaDoResultado("BATALHA_LOOKS", resultado({ resultado: "VITORIA", estrelas: 3 }));
+    expect(clipsDe(seq, "fig:ADVERSARIO:0")).toContain("F_LAMENTA");
+    expect(clipsDe(seq, "fig:ADVERSARIO:0")).not.toContain("F_LEVANTA_O_BRACO");
+    expect(clipsDe(seq, "avatar")).toContain("VENCEDOR_LEVANTA_O_BRACO");
+  });
+
   it("a partida mostra os gols do placar e o passe errado quando falta coesão", () => {
     const vitoria = resultado({ resultado: "VITORIA", eventos: [{ codigo: "PLACAR", valor: "2-1" }, { codigo: "COESAO", valor: 100 }] });
     expect(golsDaPartida(vitoria)).toEqual([2, 1]);

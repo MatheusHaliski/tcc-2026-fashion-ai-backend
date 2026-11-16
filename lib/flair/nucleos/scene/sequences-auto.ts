@@ -99,7 +99,8 @@ const batalha: Montagem = (r, res) => {
   r.depois(AVATAR, "ENTRADA_NO_PALCO", { mover: { z: 0.5 } });
   r.junto(fig("ADVERSARIO", 0), "F_POSE").depois(AVATAR, "POSE_LADO_A_LADO");
   r.junto(fig("PLATEIA"), reacaoDaPlateia(res.estrelas));
-  if (venceu) r.junto(luzId("vencedor"), "L_ACENDE", { mantem: true }).depois(AVATAR, "VENCEDOR_LEVANTA_O_BRACO");
+  // o braço que sobe é o de quem venceu; quem perdeu lamenta
+  if (venceu) r.junto(fig("ADVERSARIO", 0), "F_LAMENTA").junto(luzId("vencedor"), "L_ACENDE", { mantem: true }).depois(AVATAR, "VENCEDOR_LEVANTA_O_BRACO");
   else r.depois(fig("ADVERSARIO", 0), "F_LEVANTA_O_BRACO");
 };
 
@@ -130,7 +131,8 @@ export function sequenciaDoResultado(codigo: NucleoCodigo, resultado: NucleoResu
   } else {
     MONTAGENS[codigo]?.(r, resultado);
   }
-  if (!saiuDeCena(codigo, resultado)) r.depois(AVATAR, reacaoPorEstrelas(resultado.estrelas));
+  // no meio da disputa (EM_ACAO) ainda não há estrelas: a reação fica para o fim
+  if (!saiuDeCena(codigo, resultado) && resultado.status !== "EM_ACAO" && resultado.resultado !== "EM_ACAO") r.depois(AVATAR, reacaoPorEstrelas(resultado.estrelas));
   return r.fim();
 }
 

@@ -110,8 +110,10 @@ export function useNucleoText() {
         // o que o lance mudou (força do time, placar, um lance a menos do adversário); servidor antigo não manda: fica vazio
         vars.ganhoTexto = vars.efeito ? ou(`flair3d.ui.lanceEfeito.${vars.efeito}`, "", vars) : "";
         if (vars.atributo) vars.atributo = ou(`flair3d.ui.hud.attr.${vars.atributo}`, vars.atributo);
-        // código novo do servidor ainda sem frase: o nome do código em letras comuns, nunca "FORCA_SEGUNDO_TEMPO"
-        return ou(`flair3d.ui.evento.${e.codigo}`, `${legivel(e.codigo)}: ${vars.valor}`, vars);
+        // código novo do servidor ainda sem frase: o nome do código em letras comuns, nunca "FORCA_SEGUNDO_TEMPO"; um
+        // valor de estrutura (o estado do caso do Detective) não vira texto: a linha fica vazia e o resultado a pula
+        const semFrase = v != null && typeof v === "object" ? "" : `${legivel(e.codigo)}: ${vars.valor}`;
+        return ou(`flair3d.ui.evento.${e.codigo}`, semFrase, vars);
       },
       resultado: (r: string) => ou(`flair3d.ui.result.resultado.${r}`, r),
       papel: (p: string) => ou(`flair3d.ui.papel.${p}`, p),
