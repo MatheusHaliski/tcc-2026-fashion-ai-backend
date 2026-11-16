@@ -28,26 +28,29 @@ O que vale para todas as salas:
 
 | Nº | Sala | Não pertence | Falta para se ler como o lugar | Revisão |
 | --- | --- | --- | --- | --- |
-| 1 | Passarela (salão de desfile) | nada fora do lugar | fotógrafos no fim da passarela; arco de entrada do backstage; a primeira fila é de pinos | pendente |
-| 2 | Dress Fighter (beco com ringue) | nada fora do lugar | grafite e cartazes na parede de tijolo; o adversário é um pino roxo | pendente |
-| 3 | Dress the Star (tapete vermelho) | o tablado de madeira e a cortina de teatro dizem "palco", não "tapete" | parede de imprensa (painel com a marca repetida), cordões de isolamento, fotógrafos | pendente |
-| 4 | Personagem de Filme (set) | o refletor de cinema à esquerda está grande demais para a distância e tapa o canto | monitor de vídeo, cabos no chão, cadeira do diretor à vista | pendente |
+| 1 | Passarela (salão de desfile) | nada fora do lugar | fotógrafos no fim da passarela; arco de entrada do backstage; a primeira fila é de pinos | feito em parte: arco do backstage no começo da passarela e grade do fosso dos fotógrafos no pé dela; a plateia já é gente (não visto em foto: a cena pesada derruba o renderizador sem placa de vídeo) |
+| 2 | Dress Fighter (beco com ringue) | nada fora do lugar | grafite e cartazes na parede de tijolo; o adversário é um pino roxo | feito: cartazes colados na parede de tijolo e grafite na parede da direita; o adversário já é gente (cartazes vistos em foto) |
+| 3 | Dress the Star (tapete vermelho) | o tablado de madeira e a cortina de teatro dizem "palco", não "tapete" | parede de imprensa (painel com a marca repetida), cordões de isolamento, fotógrafos | feito em parte: parede de imprensa com o losango repetido e pedestais com cordão ao lado do palco (fora do quadro do preparo); o tablado e a cortina ficam |
+| 4 | Personagem de Filme (set) | o refletor de cinema à esquerda está grande demais para a distância e tapa o canto | monitor de vídeo, cabos no chão, cadeira do diretor à vista | feito: o refletor da esquerda menor e mais para trás, a câmera no tripé à esquerda, o monitor do video assist e os cabos no chão (visto em foto) |
 | 5 | Road to Glory (camarim) | nada fora do lugar | **penteadeira com produtos e cadeira de maquiagem** (sem elas a sala era um provador) | **feito**: penteadeira com gaveteiros, frascos, estojo e pincéis, e cadeira alta, diante do espelho de lâmpadas (visto em foto) |
-| 6 | Fashion Detective (hall da gala) | nada fora do lugar | quadros e vitrines de acervo nas paredes; a refação do jogo (8 salas) traz salas novas (`FASHION_DETECTIVE_HISTORIA.md`) | pendente (com a refação) |
-| 7 | Boutique 3D | nada fora do lugar | balcão do caixa à vista, prateleira de bolsas e sapatos; a cliente é um pino | pendente |
+| 6 | Fashion Detective (hall da gala) | nada fora do lugar | quadros e vitrines de acervo nas paredes; a refação do jogo (8 salas) traz salas novas (`FASHION_DETECTIVE_HISTORIA.md`) | feito no hall: quadros nas paredes e vitrine do acervo com o busto (visto em foto); as salas do caso novo seguem simples |
+| 7 | Boutique 3D | nada fora do lugar | balcão do caixa à vista, prateleira de bolsas e sapatos; a cliente é um pino | feito: prateleira de bolsas e sapatos na parede da direita (vista em foto, na borda do quadro); a cliente já é gente |
 | 8 | Clube do Coração (ateliê e arquibancada) | o céu azul direto na parede do ateliê, sem a borda do estádio | grade e cobertura da arquibancada, placar, bandeiras do clube inventado | pendente |
 | 9 | Favorite Singer (ateliê e palco) | nada fora do lugar | treliça de luz completa, caixas de retorno no palco, plateia | pendente |
-| 10 | O Labirinto (corredor de espelhos) | nada fora do lugar | espelhos de verdade nas paredes (hoje são portas), sensação de corredor que continua | pendente (com `MUNDOS.md`) |
+| 10 | O Labirinto (corredor de espelhos) | nada fora do lugar | espelhos de verdade nas paredes (hoje são portas), sensação de corredor que continua | feito em parte: quatro espelhos de parede com moldura dourada nas laterais (fora do quadro do preparo); o corredor que continua fica para `MUNDOS.md` |
 | 11 | Piloto Favorito (ateliê e box) | nada fora do lugar | **o carro e a porta do box** (o fundo se lia como uma oficina qualquer) | **feito**: carro de corrida estilizado sem marca e porta de enrolar com trilhos e caixa do rolo (visto em foto) |
 | 12 | Around the World (rua de bairro) | nada fora do lugar | fachadas com mais de um andar; a rua acaba numa parede bege lisa | pendente (com `MUNDOS.md`) |
 | 13 | Super-Herói (ateliê e terraço) | nada fora do lugar | caixa d'água e antenas no terraço, mais profundidade na cidade | pendente |
 | 14 | Fashion Sports (quadra do preparo) | nada fora do lugar | os jogadores do preparo ainda são pinos (na partida já são humanos) | pendente |
 | 14 | Fashion Sports (estádio da partida) | nada fora do lugar | — | feito na etapa das pessoas: torcida humana leve e jogadores humanos (`BASE_NUCLEOS.md`) |
-| 15 | Batalha de Looks (palco duplo) | nada fora do lugar | plateia e jurados; a parede de cortina metálica precisa de luz de recorte | pendente |
+| 15 | Batalha de Looks (palco duplo) | nada fora do lugar | plateia e jurados; a parede de cortina metálica precisa de luz de recorte | feito em parte: mesa dos jurados com placas acesas ao lado da passarela (não visto em foto); os jurados ainda não estão sentados |
 
 ## Onde está no código
 
 - Peças novas desta revisão: `lib/flair/nucleos/scene/moveis/camarim-box.ts` (penteadeira, cadeira de camarim, carro de
   corrida, porta de enrolar).
 - Salas revistas: `salas/road-to-glory.ts`, `salas/piloto-favorito.ts`.
+- Segunda revisão: `lib/flair/nucleos/scene/moveis/cenarios.ts` (cartaz, grafite, parede de imprensa, pedestais com
+  cordão, monitor de vídeo, cabos, quadro, vitrine de acervo, prateleira de bolsas, arco do backstage, grade do fosso,
+  espelho de parede, mesa dos jurados), com os materiais que cada sala já tinha (o hall ganhou o vidro).
 - O orçamento de cada sala continua conferido por `lib/flair/nucleos/scene/scene.test.ts`.
