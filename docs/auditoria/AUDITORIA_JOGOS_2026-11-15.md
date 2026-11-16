@@ -1,7 +1,5 @@
 # Auditoria dos jogos do FLAIR (15/11/2026)
 
-> **Relatório parcial, atualizado às 13:36 UTC.** A auditoria ainda está em andamento; jogos sem seção ainda não foram jogados.
-
 ## 1. Como a auditoria foi feita
 
 **Pedido da dona.** Jogar cada jogo do FLAIR até o fim ("zerar" cada conjunto: rodadas, níveis, modalidades, o caso
@@ -37,7 +35,7 @@ lidas na rede do navegador para conferir a lógica.
 
 **Limitação: não há placa de vídeo.** A máquina não tem GPU e divide 4 núcleos de CPU com outras três pilhas em uso.
 A fluidez foi medida mesmo assim (quadros por segundo com `requestAnimationFrame` durante a jogada, quadros longos,
-sequências de quadros a cada 100 ms para ver saltos, tempo até a cena jogável, e com a CPU 4× mais lenta), mas a nota
+sequências de quadros gravadas como o navegador as pinta (pedidas a cada 100 ms, mas sem GPU os quadros saíram de 0,4 a 4 s um do outro), tempo até a cena jogável; a medida com a CPU 4× mais lenta não foi feita, ver seção 5), mas a nota
 de fluidez é **provisória**: num aparelho com GPU o número será outro. Os quadros servem principalmente para comparar
 os jogos entre si e para achar saltos e teletransportes, que não dependem da GPU.
 
@@ -46,24 +44,46 @@ A nota final do jogo é a média simples das dimensões que se aplicam, com uma 
 **bloqueia** (impede de terminar ou dá resultado errado), **atrapalha** (dá para seguir, mas engana ou cansa),
 **detalhe**.
 
+**Duas sessões e troca de código.** A primeira sessão (15/11, 19:23 a 20:30 UTC) jogou o commit `e87e8f4e`. A máquina foi
+reiniciada e a segunda sessão (16/11, a partir de 12:52 UTC) reconstruiu backend e frontend no commit `b6d26431`, que
+trouxe "Continuar partida", abertura e final por jogo e reação das pessoas de cena; o Flyway aplicou a V103 só no banco
+local. Onde a nota mudou com o código novo, a seção do jogo diz. O Dress Fighter foi jogado nos dois códigos.
+
+**Falta de memória.** A máquina tem 16 GB divididos com três outras pilhas (servidores Next de 2,5 a 4 GB cada, testes
+Maven). O sistema matou por falta de memória o renderizador do navegador da auditoria mais de dez vezes, o servidor
+Next da auditoria duas vezes e, uma vez, o backend da auditoria foi desligado por fora. Cada queda custou a partida em
+curso e um novo login. Por isso nem todos os jogos foram jogados: o que ficou de fora está na seção 5, com o motivo.
+
 ## 2. Resumo
 
 Notas de 0 a 10. Dimensões: **Cam** câmera, **Car** gameplay com cartas, **Flu** fluidez (medido sem GPU,
 provisório), **Rec** recursos, **Deck** cartas do deck, **Lóg** lógica, **Enr** enredo, **Est** estrutura da partida,
-**Sal** salvamento, **NPC** NPCs. "n/a" = não se aplica (motivo na seção do jogo).
+**Sal** salvamento, **NPC** NPCs. "n/a" = não se aplica (motivo na seção do jogo). Dez dos quinze jogos do FLAIR 3D
+receberam nota; os outros cinco, o MAKE UP, os desafios e elencos do CBC e os modos clássicos ficaram de fora (seção 5).
 
 | Jogo | Cam | Car | Flu | Rec | Deck | Lóg | Enr | Est | Sal | NPC | Zerado? | Final |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Passarela | 5 | 4 | 1 | 5 | 6 | 6 | 3 | 5 | 5 | 2 | sim (5 de 5) | **4,2** |
-| Dress Fighter | 4 | 2 | 2 | 4 | 4 | 5 | 3 | 4 | 6 | 3 | parcial (3 arenas jogadas; vitória impossível com as cartas da conta) | **3,7** |
-| Dress the Star | 5 | 4 | 2 | 5 | 5 | 4 | 4 | 5 | 5 | 1 | sim (3 de 3) | **4,0** |
-| Personagem de Filme | 4 | 4 | 1 | 5 | 5 | 6 | 5 | 4 | 5 | 1 | parcial (2 de 3) | **4,0** |
+| 1 Passarela | 5 | 4 | 1 | 5 | 6 | 6 | 3 | 5 | 5 | 2 | sim (5 de 5) | **4,2** |
+| 2 Dress Fighter | 4 | 2 | 2 | 4 | 4 | 5 | 3 | 4 | 6 | 3 | parcial (3 arenas jogadas; vitória impossível com as cartas da conta) | **3,7** |
+| 3 Dress the Star | 5 | 4 | 2 | 5 | 5 | 4 | 4 | 5 | 5 | 1 | sim (3 de 3) | **4,0** |
+| 4 Personagem de Filme | 4 | 4 | 1 | 5 | 5 | 6 | 5 | 4 | 5 | 1 | parcial (2 de 3) | **4,0** |
+| 6 Fashion Detective | 5 | 8 | 2 | 8 | 6 | 5 | 8 | 7 | 7 | 4 | parcial (caso até o final completo, 9 de 12 pistas; outros finais e "Seis salões" não) | **6,0** |
+| 7 Boutique 3D | 5 | 4 | 2 | 5 | 5 | 5 | 4 | 5 | 5 | 4 | parcial (1 de 4) | **4,4** |
+| 10 O Labirinto | 4 | 4 | 2 | 5 | 5 | 4 | 3 | 4 | 5 | n/a | parcial (2 de 4) | **4,0** |
+| 12 Around the World | 3 | 4 | 2 | 5 | 5 | 5 | 4 | 5 | 5 | 3 | parcial (1 de 5) | **4,1** |
+| 14 Fashion Sports | 7 | 7 | 2 | 7 | 6 | 6 | 4 | 7 | 5 | 6 | parcial (futebol completo; 5 modalidades não) | **5,7** |
+| 15 Batalha de Looks | 5 | 4 | 2 | 5 | 5 | 5 | 4 | 6 | 5 | 4 | parcial (1 de 4 e meia) | **4,5** |
+| 5 Road to Glory, 8 Clube do Coração, 9 Favorite Singer, 11 Piloto Favorito, 13 Super-Herói | — | — | — | — | — | — | — | — | — | — | não jogados | — |
+| **Média** | **4,7** | **4,5** | **1,8** | **5,4** | **5,2** | **5,1** | **4,2** | **5,2** | **5,3** | **3,1** | | **4,5** |
 
-## 4. Jogo a jogo
+**Nota geral dos jogos auditados: 4,5** (média das dez notas finais). A média de NPCs usa nove jogos (o Labirinto não tem
+personagens no desenho).
+
+## 3. Jogo a jogo
 
 Ordem: o Dress Fighter primeiro (a dona pediu uma auditoria própria dele), depois os outros na ordem da lista.
 
-### 4.2 Dress Fighter (núcleo 2)
+### 3.2 Dress Fighter (núcleo 2)
 
 **O que joguei.** As três arenas até o resultado: Arena do bairro (oponente 40/40/40), Arena veloz (60/35/45, com
 impulso sorteado) e Arena blindada (40/50/65, com impulso), com quatro decks diferentes e peças das seis famílias de cor
@@ -219,7 +239,7 @@ ordem de cartas, por cor, por rounds seguidos ou por tempo. A oponente também n
 | DF-8 | A carta do deck mostra só "velocidade +N"; ataque, defesa e a cor só aparecem ao vestir | tela do deck | detalhe |
 | DF-9 | "A ação 2 de 2", "4 de 4": o contador conta eventos (impulso e round), não rounds | Arena veloz, depois do round 2 | detalhe |
 
-### 4.1 A Passarela (núcleo 1)
+### 3.1 A Passarela (núcleo 1)
 
 **O que joguei.** As cinco rodadas até o resultado, com deck de 8 cartas: Tema surpresa (o tema sorteado foi
 Monocromático), Treino Brasil, Treino Noite, Treino Monocromático e Treino Clássico. Cerca de 2,5 a 3 minutos por rodada.
@@ -247,7 +267,7 @@ Monocromático, entregar 4 peças azuis. PAS-2 (atrapalha): três temas impossí
 sem aviso no deck. PAS-3 (detalhe): soma das regras (60) diferente do total (86) sem explicação. PAS-4 (atrapalha):
 0,2 quadro/s sem GPU — a sala pede um nível de detalhe menor para a plateia.
 
-### 4.3 Dress the Star (núcleo 3)
+### 3.3 Dress the Star (núcleo 3)
 
 **O que joguei.** As três rodadas até o resultado: Estrela Pop dos anos 2000 (0 pontos: nenhuma peça rosa, prata, y2k ou
 glam), Modo Stylist (sorteou "Estrela do Rock dos anos 80", 25 pontos, 3 pistas abertas) e Look Relâmpago (o look-alvo
@@ -272,7 +292,7 @@ aparece e some; 50 pontos com 2 vagas iguais). Cerca de 1,5 a 2 minutos por roda
 **Defeitos.** DTS-1 (atrapalha): frase de final errada no Look Relâmpago. DTS-2 (detalhe): sem nota mínima dita para
 "Aprovado".
 
-### 4.4 Personagem de Filme (núcleo 4)
+### 3.4 Personagem de Filme (núcleo 4)
 
 **O que joguei.** Detetive noir até o resultado (título certo "Sombras na Chuva": 63 pontos, 50 do título e 12,5 da
 bota preta), Cena sorteada até o resultado (sorteou a cena 4, do salão com flores; título errado: 13 pontos) e Adivinhe a
@@ -296,3 +316,199 @@ aberta no servidor.
 | **Final** | **4,0** | |
 
 **Defeitos.** PF-1 (atrapalha): o vestido entra no deck e some da mão. PF-2 (detalhe): refletor tapa parte do quadro.
+
+### 3.7 Boutique 3D (núcleo 7)
+
+**O que joguei.** Só a rodada "Festa em preto" até o resultado (0 pontos: nenhuma peça de festa em preto). Personal
+Stylist, Vitrine que Vende e Provador Lotado não foram jogadas (seção 5). **Zerado?** Parcial (1 de 4).
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 5 | três quartos com leve travelling pela loja; arara, espelho e cliente no quadro ([quadros](evidencias/jogos/bou-01-cliente.jpg)) |
+| Gameplay com cartas | 4 | só vestir; 33 por peça |
+| Fluidez (sem GPU, provisório) | 2 | cerca de 1 a 2 quadros/s nos quadros gravados |
+| Recursos | 5 | pedido da cliente, aviso por vaga ("A peça volta para o balcão"), resultado com o que faltou |
+| Cartas do deck | 5 | como nos outros jogos |
+| Lógica | 5 | coerente; o pedido não é cumprível com as cartas da conta e o deck não avisa |
+| Enredo | 4 | cliente com pedido e prazo, frase de desfecho ("A cliente devolve as peças no balcão") |
+| Estrutura da partida | 5 | cartão de começo, cliente que se aproxima, desfecho |
+| Salvamento | 5 | "Continuar partida" do código atual (visto no Dress Fighter e no Detective) |
+| NPCs | 4 | a cliente (gente, vestido lilás) anda até perto e reage com as mãos na cintura quando o look não serve |
+| **Final** | **4,4** | |
+
+### 3.15 Batalha de Looks (núcleo 15)
+
+**O que joguei.** Treino Look Monocromático até o resultado (100 × 75 do adversário: vitória) e a Batalha de 3
+rodadas até a rodada 3 (100 × 25 na rodada 2; a rodada 3, "Convite black tie", ficou aberta quando o roteiro de teste
+parou). Dress Code e Vista o Clima não foram jogados. **Zerado?** Parcial (1 de 4 completo, 1 pela metade).
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 5 | os dois looks lado a lado, troca para frente no resultado ([quadros](evidencias/jogos/bat-01-monocromatico-placar-cortado.jpg)) |
+| Gameplay com cartas | 4 | vestir por etapa; a carta mostra "+1 família azul" |
+| Fluidez (sem GPU, provisório) | 2 | cerca de 1 a 2 quadros/s |
+| Recursos | 5 | objetivo da rodada, "Etapa 3 de 3", placar no painel |
+| Cartas do deck | 5 | como nos outros jogos |
+| Lógica | 5 | soma por rodada coerente; o painel de LED mostra "00 × 7" para um placar de 100 × 75 (dígitos cortados) |
+| Enredo | 4 | duelo contra o adversário da casa, convites sorteados |
+| Estrutura da partida | 6 | etapas com objetivo, frase de vitória ("A plateia escolhe você: o braço sobe") e o adversário ergue o braço |
+| Salvamento | 5 | retomada pelo mecanismo comum |
+| NPCs | 4 | o adversário (gente) gesticula e ergue o braço; ergueu o braço mesmo quando a pessoa venceu |
+| **Final** | **4,5** | |
+
+### 3.10 O Labirinto (núcleo 10)
+
+**O que joguei.** Espelho 1 (abriu de primeira: 100) e Corredor de Holofotes (3 de 5 holofotes: 60). Escada de Espelhos e
+Três Portas não foram jogadas. **Zerado?** Parcial (2 de 4).
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 4 | sala com portas vista de trás e do alto; a avatar dá poucos passos ([quadros](evidencias/jogos/lab-01-espelho1.jpg)) |
+| Gameplay com cartas | 4 | só vestir; a carta diz a família de cor |
+| Fluidez (sem GPU, provisório) | 2 | cerca de 1 a 2 quadros/s |
+| Recursos | 5 | regra do espelho e "família mais forte" na legenda |
+| Cartas do deck | 5 | como nos outros jogos |
+| Lógica | 4 | pontos certos, mas o Corredor de Holofotes, entregue na primeira vez, termina com "O espelho cede depois de muitas tentativas" |
+| Enredo | 3 | espelhos e portas, sem história |
+| Estrutura da partida | 4 | começo e desfecho em frase; o "labirinto" ainda é uma sala |
+| Salvamento | 5 | retomada pelo mecanismo comum |
+| NPCs | não se aplica | o desenho do jogo não tem personagens |
+| **Final** | **4,0** | média das 9 que se aplicam |
+
+### 3.12 Around the World (núcleo 12)
+
+**O que joguei.** Só a rodada Rio de Janeiro (75 pontos, aprovado: a regra da marca brasileira não é cumprível). Volta ao
+mundo (8 regiões), Elevador da Torre, Metrô de Moda e Shopping não foram jogados. **Zerado?** Parcial (1 de 5).
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 3 | exploração por trás da avatar no calçadão; durante vários segundos a lente fica colada no tronco dela e corta o corpo ([quadros 012 a 030](evidencias/jogos/atw-01-rio-camera-colada.jpg)) |
+| Gameplay com cartas | 4 | só vestir; 25 por regra |
+| Fluidez (sem GPU, provisório) | 2 | cerca de 1 a 2 quadros/s |
+| Recursos | 5 | região, clima, paleta, legenda por regra cumprida |
+| Cartas do deck | 5 | como nos outros jogos |
+| Lógica | 5 | coerente; a regra da marca brasileira não tem como ser cumprida com peças sem marca |
+| Enredo | 4 | região com clima e estética; "o caminho para a próxima região se desenha no mapa" |
+| Estrutura da partida | 5 | começo, caminhada e desfecho com o passaporte |
+| Salvamento | 5 | retomada pelo mecanismo comum |
+| NPCs | 3 | seis passantes (gente); um acena no fim; os outros ficam parados |
+| **Final** | **4,1** | |
+
+### 3.14 Fashion Sports (núcleo 14)
+
+**O que joguei.** Uma partida completa de futebol de 5 jogada por cartas, do apito inicial ao apito final: 16 jogadas,
+uma carta em cada (deck com as 13 cartas da conta, uniforme Blusa + Calça azul + Tênis azul). Resultado 0 × 1, derrota,
+0 pontos; intervalo 0 × 0; posse 75 %. As outras cinco modalidades (basquete, vôlei, tênis, corrida, skate) não foram
+jogadas (seção 5). **Zerado?** Parcial (1 de 6 modalidades). Tempo da partida: cerca de 20 minutos sem GPU.
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 7 | transmissão de TV do alto da lateral com cortes para perto no lance; seletor com as câmeras do campo ([telas](evidencias/jogos/esp-01-futebol-apitos-transmissao.jpg)) |
+| Gameplay com cartas | 7 | toda jogada pede carta; a situação diz o que cada cor faz ("É a hora de finalizar (verde)"); a cor decide a ação e a narração diz qual peça fez cada lance; com a mão sem verde a pessoa fica cinco jogadas na área sem poder chutar |
+| Fluidez (sem GPU, provisório) | 2 | 10 a 15 s de tela vazia enquanto o estádio carrega (só o placar e "APITO INICIAL" aparecem); depois cerca de 1 quadro/s |
+| Recursos | 7 | placar de TV com tempo e relógio, situação, janela de 30 s, mão com ação e poder, narração, resumo final completo |
+| Cartas do deck | 6 | deck de até 15, regra do uniforme clara, carta com ação e poder na partida |
+| Lógica | 6 | placar, posse e resumo batem com os lances; "Coesão: uniforme único — cumprida — 0 pts" confunde |
+| Enredo | 4 | times inventados, sem campanha nem rivalidade |
+| Estrutura da partida | 7 | apito inicial, saída de bola, intervalo, apito final com "DERROTA" na tela; o gol do adversário não foi capturado |
+| Salvamento | 5 | retomada pelo mecanismo comum (não testada nesta partida) |
+| NPCs | 6 | 10 jogadores humanos se posicionam a cada lance, torcida na arquibancada; nos cortes para perto os jogadores ficam parados ao lado da bola |
+| **Final** | **5,7** | |
+
+**Defeitos.** ESP-1 (atrapalha): tela vazia de 10 a 15 s entre o preparo e o estádio. ESP-2 (detalhe): regra
+"Coesão" cumprida com 0 pontos.
+
+### 3.6 Fashion Detective (núcleo 6)
+
+**O que joguei.** O caso "A Coleção Maré" do começo à acusação, na tela: deck de 12 cartas, look da investigação
+(Blusa, Calça azul, Tênis azul, Cinto azul), cutscene de abertura com legenda ("Iolanda Varela puxa você de lado..."),
+e cerca de 90 ações clicadas no painel (andar ponto a ponto, abrir armários com a carta verde, tirar papel do bolso com
+a preta, confronto com a azul, completar pista com a branca, vida com a amarela, trocar carta, pedir ajuda da casa na
+porta trancada), os enigmas de 6 salas, e a acusação do suspeito 2 (Bento) na Passarela. Para andar mais depressa usei
+um roteiro que lê o estado devolvido pelo servidor e clica nos mesmos botões que a pessoa clicaria; as respostas dos
+enigmas foram as que as dicas e a história indicam. Fui visto por um vigia uma vez (perdi uma marca de vida e voltei ao
+esconderijo). Tempo de jogo no relógio do caso: 25:25 de 45:00.
+
+**Zerado?** Parcial. O caso terminou no **final completo** ("Caso resolvido: a coleção volta para Iolanda e a gala
+aplaude o detetive"), com 9 de 12 pistas (fiquei sem P4, P5 e P6: o roteiro não passou pelo Clube nem resolveu o
+Camarim), 75 pontos e 1 estrela. O final parcial e o final com suspeito errado não foram tentados; a rodada "Seis
+salões" não foi jogada.
+
+| Dimensão | Nota | Por quê |
+| --- | --- | --- |
+| Câmera | 5 | exploração em diagonal de cima, que mostra a sala, os pontos e os cones; as cutscenes usam faixas de cinema e legenda, sem câmera própria ([abertura](evidencias/jogos/dtv-01-entrada-cutscene.jpg)) |
+| Gameplay com cartas | 8 | toda ação pede a carta da cor certa e o botão diz qual; a mão gira (trocar carta, 15 s); a carta errada não serve e a tela avisa |
+| Fluidez (sem GPU, provisório) | 2 | cerca de 1 a 2 quadros/s; a ação responde em 1 a 3 s |
+| Recursos | 8 | vida (três marcas), relógio do caso, "Pistas N de 12", mapa, inventário, enigma com dica, "Rever a cena" |
+| Cartas do deck | 6 | a mão mostra nome, cor e ação ("azul (confronto)"); o deck mostra "defesa +5" em todas, o que não diz nada sobre a cor |
+| Lógica | 5 | o caso é completável e o servidor decide o final; mas o resultado soma 45 + 18 + 26 = 89 e mostra **75 pontos** sem explicar, e a seção "O que aconteceu" despeja o estado bruto do jogo em JSON na tela ([tela](evidencias/jogos/dtv-02-fim-json-na-tela.jpg)) |
+| Enredo | 8 | história original com elenco numerado, pistas com texto exato, motivo e cadeia de dedução justa |
+| Estrutura da partida | 7 | cutscene de abertura, cutscene ao entrar nas salas, acusação e cutscene final; as salas são caixas simples e a Passarela final é uma prancha cinza no escuro |
+| Salvamento | 7 | ao voltar à página a tela oferece "Continuar desta sala" (havia uma partida de 15/11 guardada) |
+| NPCs | 4 | vigias de ronda com cone de visão e uma captura de verdade; Iolanda, Bento e o elenco aparecem como gente, mas parados; ninguém reage à acusação na cena |
+| **Final** | **6,0** | |
+
+**Defeitos.** DTV-1 (atrapalha): JSON do estado na tela de resultado — terminar o caso e rolar até "O que aconteceu".
+DTV-2 (atrapalha): soma das regras (89) diferente do total (75). DTV-3 (detalhe): cenários das salas muito simples.
+
+## 4. Visão geral
+
+**Os defeitos mais graves.**
+
+| # | Defeito | Jogo | Severidade |
+| --- | --- | --- | --- |
+| 1 | A cena contradiz o resultado: a avatar cai depois de todo round, inclusive do round que venceu (o roteiro monta a queda sempre que o resultado não é VITORIA; no meio da luta é `EM_ACAO`) | Dress Fighter | bloqueia |
+| 2 | O estado bruto do jogo aparece em JSON na tela de resultado | Fashion Detective | atrapalha |
+| 3 | Soma das regras diferente do total sem explicação (Detective 89 → 75; Passarela 60 → 86) | Detective, Passarela | atrapalha |
+| 4 | Rodadas impossíveis com as cartas da conta e nenhum aviso antes de entrar (duas arenas do Dress Fighter, temas Brasil, Noite e Clássico, marca brasileira do Rio, pedido da Boutique) | vários | atrapalha |
+| 5 | Pessoas de cena que não fazem o que a legenda diz ("a plateia levanta" com a plateia sentada; adversário erguendo o braço quando a pessoa venceu) | Passarela, Batalha | atrapalha |
+| 6 | Oponente sem mecânica de luta: não ataca, não defende, não recua; não há barra de vida | Dress Fighter | atrapalha |
+| 7 | Câmera dentro do corpo ou do piso (fim da luta no Dress Fighter; calçadão do Rio) | Dress Fighter, Around the World | atrapalha |
+| 8 | Peça inteira aceita no deck e ausente na mão da partida | Dress Fighter, Personagem de Filme | atrapalha |
+| 9 | Frase de final que não combina com a rodada ("o perfil dela pedia outra coisa" no Look Relâmpago; "depois de muitas tentativas" na primeira tentativa) | Dress the Star, Labirinto | atrapalha |
+| 10 | 10 a 15 s de tela vazia entre o vestiário e o estádio; Passarela a 0,2 quadro/s sem GPU | Fashion Sports, Passarela | atrapalha |
+| 11 | Placar de LED com dígitos cortados ("00 × 7" para 100 × 75) | Batalha de Looks | detalhe |
+| 12 | Botão de câmera e cartões de texto cobrindo a avatar em 390×844 | Dress Fighter (e o HUD comum) | atrapalha |
+
+**As dez mudanças que mais subiriam as notas.**
+
+1. **Corrigir o roteiro da luta** (queda e comemoração só no fim, e de acordo com quem venceu cada round) e dar ao
+   oponente os movimentos de luta no corpo humano: guarda, golpe, recuo ao apanhar, queda. Sobe Lógica, NPCs e Estrutura
+   do Dress Fighter.
+2. **Uma decisão por carta dentro do round no Dress Fighter**, como o Fashion Sports já faz: a cor vira a ação
+   (guarda, esquiva, golpe rápido, golpe forte, fôlego, foco), o poder decide o duelo, com barra de vida que desce no
+   contato. É o que transforma o jogo em jogo de luta.
+3. **Avisar no deck quando a rodada não é cumprível** com as cartas escolhidas (sem marca, sem festa, sem couro) e dizer o
+   que falta; hoje a pessoa só descobre no resultado.
+4. **Explicar a nota final**: mostrar a conta (60 de 70 vira 86; 89 menos o desconto vira 75) e nunca mostrar o estado
+   em JSON.
+5. **Fazer as pessoas de cena cumprirem a legenda** em todos os jogos (plateia que levanta, fotógrafos que disparam,
+   adversário que lamenta), já que o diretor de cena agora chega aos corpos humanos.
+6. **Câmera que não entra no corpo nem no piso** (limite de distância e colisão) e uma vista lateral de luta no Dress
+   Fighter.
+7. **Nível de detalhe menor para a plateia** (a Passarela roda a 0,2 quadro/s sem GPU) e uma tela de carga com imagem
+   no lugar dos 10 a 15 s vazios do estádio.
+8. **Recusar no deck a peça que o jogo não deixa vestir** (peça inteira) e mostrar na carta todos os efeitos dela, não só
+   o primeiro.
+9. **Marcar as rodadas já vencidas** na escolha de rodada e dar uma progressão entre elas (desbloqueio, estrelas
+   somadas), o que sobe Enredo e Estrutura dos jogos sem história.
+10. **Revisar as frases de final por rodada** e o placar de LED, para o texto sempre bater com o que aconteceu.
+
+## 5. O que não foi auditado e por quê
+
+A máquina da auditoria não tem GPU e, na segunda sessão, dividiu 16 GB de memória com três outras pilhas em uso. O
+navegador da auditoria foi derrubado por falta de memória mais de dez vezes (cada vez perdendo a partida em curso e a
+sessão), o servidor Next da auditoria caiu duas vezes e a sala mais leve rodou a 1 ou 2 quadros por segundo. Com isso,
+cada rodada levou de 1,5 a 3 minutos e uma partida de futebol cerca de 20 minutos. Ficou de fora:
+
+| O quê | Motivo |
+| --- | --- |
+| Road to Glory (núcleo 5) e FLAIR 3D MAKE UP (`/flair/make-up`) | não houve tempo de máquina; ficaram por último na ordem pedida |
+| Clube do Coração, My Favorite Singer, Meu Piloto Favorito, Meu Super-Herói Favorito (jogos de zonas) | não houve tempo; nenhuma rodada jogada, sem nota |
+| Fashion Sports: basquete, vôlei, tênis, corrida e skate | só o futebol foi jogado |
+| Rodadas restantes: Personagem de Filme (Década), Boutique (3), Batalha (2 e meia), Labirinto (2), Around the World (4) | tempo e quedas do navegador |
+| FLAIR Card Building Challenges (`/flair/desafios`, `/flair/elencos`) e modos clássicos (`/flair/partidas`) | não alcançados nesta auditoria |
+| Fluidez com CPU 4× mais lenta | não medida; a 390×844 só o Dress Fighter foi medido (1,8 a 2,3 quadros/s); a 1440×900 a cena já estava entre 0,2 e 2,4 quadros/s |
+| Vitória no Dress Fighter, carta Especial, temas Brasil/Noite/Clássico com nota | impossíveis com as cartas da única conta com cartas (todas Bronze, sem marca, sem couro, jeans ou metal) |
+
+Os jogos sem nota não entram nas médias da seção 2.
