@@ -17,7 +17,7 @@ export function PieceOrigemField({ value, selectedName, onChange, error, disable
   useEffect(() => {
     const controller = new AbortController();
     setStatus("loading");
-    api.get<ReferenceOption[]>("/api/origens", { signal: controller.signal, anonymous: true })
+    api.get<ReferenceOption[]>("/api/origens", { signal: controller.signal })
       .then(rows => { if (!controller.signal.aborted) { setOptions(rows); setStatus("ready"); } })
       .catch(() => { if (!controller.signal.aborted) setStatus("error"); });
     return () => controller.abort();

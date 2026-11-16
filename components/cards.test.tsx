@@ -213,6 +213,16 @@ describe("ações sociais do card (RF8)", () => {
 });
 
 describe("card da peça (RF7)", () => {
+  it("mantém os detalhes da peça ampliada na aba Info", () => {
+    mockApi({});
+    const { container } = renderApp(<PieceCard piece={PIECE} href="#" expanded />);
+    const panel = container.querySelector('[role="tabpanel"]');
+    expect(panel?.querySelector(".c-facts")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /^Hype/ }));
+    expect(container.querySelector('[role="tabpanel"] .fashion-hype-matrix')).toBeTruthy();
+    expect(container.querySelector(".c-facts")).toBeNull();
+  });
+
   it("reduz a altura da foto no feed e na prévia, preservando o enquadramento original no ampliado", () => {
     mockApi({});
     const pants = { ...PIECE, category: "lower_piece", studioFeedUrl: "/pants.feed.jpg", flatLayMetadata: { studio: { feed: { aspect: "2:1" } } } };

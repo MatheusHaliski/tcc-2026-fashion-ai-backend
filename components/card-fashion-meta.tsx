@@ -4,7 +4,6 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { label } from "@/lib/api/taxonomy";
 import { BrandLogo } from "@/components/brand-logo";
 
-/** Real catalogue/wardrobe attributes remain visible even when the Hype tab is selected. */
 export function CardFashionMeta({ styles, occasions, brands, colors }: {
  styles?: string[] | null; occasions?: string[] | null;
  brands?: { name: string; logoUrl?: string | null }[];

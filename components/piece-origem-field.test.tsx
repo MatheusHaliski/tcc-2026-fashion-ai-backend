@@ -1,13 +1,26 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
+import { tokenStore } from "@/lib/api/client";
 import { PieceOrigemField } from "./piece-origem-field";
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); tokenStore.clear(); vi.unstubAllGlobals(); });
 const route = "/api/origens";
 const rows = ["COMPRA", "HERANÇA", "PRESENTE", "BRECHÓ"].map((codigo, i) => ({
   id: `00000000-0000-4000-8000-00000000001${i}`, codigo, nome: ["Compra", "Herança", "Presente", "Brechó"][i],
 }));
+
+it("sends the signed-in session when the origins endpoint requires authentication", async () => {
+  tokenStore.set("session-token");
+  const api = mockApi({ [route]: (_url, init) =>
+    (init.headers as Record<string, string>).Authorization === "Bearer session-token"
+      ? rows : new Response(null, { status: 401 }),
+  });
+  renderApp(<PieceOrigemField value="" onChange={vi.fn()} />);
+  await waitFor(() => expect(screen.getByLabelText("Origem").hasAttribute("disabled")).toBe(false));
+  const call = api.fetchMock.mock.calls.find(([url]) => String(url).endsWith(route));
+  expect((call?.[1]?.headers as Record<string, string>).Authorization).toBe("Bearer session-token");
+});
 
 it.each(rows)("selects $codigo using its UUID, never its label", async row => {
   mockApi({ [route]: rows });

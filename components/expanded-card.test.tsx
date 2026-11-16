@@ -355,7 +355,7 @@ describe("ExpandedPiece — o dono", () => {
     expect(await within(modal).findByRole("img", { name: `selos: ${badge.name}` })).toBeTruthy();
     expect(modal.querySelector(`.card-seals .seal-medallion[title="${badge.name} · @${badge.owner} · PECA"]`)).toBeTruthy();
     expect(within(modal).queryByText("SUSTAINABLE")).toBeNull();
-    expect(within(modal).queryByText("nao-aprovada")).toBeNull();
+    expect(within(modal).getByText("nao-aprovada")).toBeTruthy();
     expect(api.calls.some(call => call.path === "/api/pieces/seals?ids=p1")).toBe(true);
     fireEvent.click(within(modal).getByRole("button", { name: "Fechar" }));
     fireEvent.click(screen.getByRole("button", { name: "Abrir peça azul" }));

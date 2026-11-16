@@ -21,13 +21,27 @@ const CATALOG: Partial<BgCatalog> = {
 };
 const api = () => mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": { recommended: ["atelier"] } });
 
-function Editor({ onBg, initial = {} }: { onBg: (b: Record<string, unknown>) => void; initial?: Record<string, unknown> }) {
+function Editor({ onBg, initial = {}, previewInDialog = false }: { onBg: (b: Record<string, unknown>) => void; initial?: Record<string, unknown>; previewInDialog?: boolean }) {
   const [bg, setBg] = useState<Record<string, unknown>>(initial);
-  return <PieceArtEditor value={bg} onChange={(b) => { setBg(b); onBg(b); }} piece={PIECE} styles={["basic"]} occasions={["casual"]} />;
+  return <PieceArtEditor value={bg} onChange={(b) => { setBg(b); onBg(b); }} piece={PIECE} styles={["basic"]} occasions={["casual"]} previewInDialog={previewInDialog} />;
 }
 const openLayout = async () => fireEvent.click(await screen.findByRole("radio", { name: "Layout & Estilo" }));
 
 describe("arte da peça — Cartela sazonal no padrão do Background Studio", () => {
+  it("no cadastro, abre a prévia da arte em modal com os controles do card", async () => {
+    api();
+    renderApp(<Editor onBg={() => undefined} previewInDialog />);
+    await screen.findByRole("group", { name: "Cor" });
+    expect(screen.queryByRole("complementary", { name: "Prévia no feed" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
+    const dialog = screen.getByRole("dialog", { name: "Prévia do card" });
+    expect(within(dialog).getByRole("button", { name: "Limpar arte" })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ampliado" }));
+    expect(within(dialog).getByRole("button", { name: "Feed" })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByRole("dialog", { name: "Prévia do card" })).toBeNull();
+  });
+
   it("cartela e animação não aparecem mais no segmento Cor", async () => {
     api();
     renderApp(<Editor onBg={() => undefined} />);
