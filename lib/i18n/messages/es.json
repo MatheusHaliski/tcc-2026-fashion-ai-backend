@@ -1,4 +1,10 @@
 {
+  "pieceReferences.tipoLavagem.label": "Tipo de lavado",
+  "pieceReferences.tipoLavagem.unselected": "No informado",
+  "pieceReferences.tipoLavagem.unavailable": "Lavado guardado no disponible",
+  "pieceReferences.tipoLavagem.loadError": "No se pudieron cargar los tipos de lavado.",
+  "pieceReferences.tipoLavagem.empty": "No hay tipos de lavado disponibles.",
+  "pieceReferences.tipoLavagem.hint": "Elige la instrucción de lavado de la prenda.",
   "pieceReferences.colecao.label": "Colección",
   "pieceReferences.colecao.unselected": "Sin colección",
   "pieceReferences.colecao.unavailable": "Colección guardada no disponible",

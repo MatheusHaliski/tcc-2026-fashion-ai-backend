@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -83,6 +84,10 @@ class PieceReferenceAccessTest {
             mvc.perform(get(path + "/private")).andExpect(status().isUnauthorized());
         }
         mvc.perform(get("/api/me/closet")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/tipo-lavagem")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/tipo-lavagem").with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(WASH_ID.toString()));
     }
 
     @Test
