@@ -35,6 +35,7 @@ import { FashionMotionButton } from "@/components/hype/fashion-motion-button";
 import { PieceDetailFacts } from "@/components/piece-detail-facts";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
 import { PieceCardPanels } from "@/components/piece-card-panels";
+import { selectedPieceSealNames } from "@/lib/seals/selected-seals";
 import { fashionCardLevel } from "@/lib/hype/fashion-card";
 import { conservationLabel } from "@/lib/api/piece-references";
 
@@ -114,6 +115,15 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   );
 
   const name = <span className="pc-name">{piece.name}</span>;
+  const identity = <div className="pc-window is-identity">
+    <span className="seal-row">
+      {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
+      {expanded && zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
+    </span>
+    <span className="pc-sub">{secondary}{expanded && zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>
+    {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
+    {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular"><Price value={piece.price} /></b></span>}
+  </div>;
   
   const card = (
     <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode={expanded ? "expanded" : "feed"} className={`fai-card piece-card ${expanded ? "piece-card-expanded" : selectable ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
@@ -140,23 +150,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 ? <div className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</div>
                 : <Link href={link} onClick={openModal} className="pc-media" data-photo-framing={framing} style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <div className="pc-id">
-                {/* janela 1 · identidade: nome, marca/categoria, selos, moda (marca, cor, ocasião, estilo) e preço */}
-                <div className="pc-window is-identity">
-                <span className="seal-row">
-                  {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
-                  {expanded && zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
-                </span>
-                <span className="pc-sub">
-                  {secondary}
-                  {expanded && zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}
-                </span>
-                {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
-                {!expanded && <CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} />}
-                {expanded && <PieceDetailFacts piece={piece}/>}
-                {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{<Price value={piece.price} />}</b></span>}
-                </div>
-                {/* janela 2 · Info | Hype (o 🔥 e o score ficam no rótulo da aba Hype) */}
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} live={live} />
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} selectedSealNames={selectedPieceSealNames(piece.seals)} infoBefore={<>{identity}<CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} /></>} infoContent={expanded ? <PieceDetailFacts piece={piece} excludeFashionMeta /> : undefined} replaceInfoRows={expanded} live={live} />
                 {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>
             </>

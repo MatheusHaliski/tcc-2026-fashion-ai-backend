@@ -39,21 +39,43 @@ describe("RF5/RF13 seal verification", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /imagem/i }));
     expect(JSON.parse(screen.getByTestId("requests").textContent!)).toEqual([{ targetOwnerId: "celeb1", imageRightsConsent: true }]);
   });
-  it("RF5 exposes verification in Details and sends only the selected brand after saving", async () => {
+  it("RF5 saves a selected celebrity without consent or an approval request", async () => {
     const { calls } = loggedAs(undefined, {
       "GET /api/schemes/builder": { totalPieces: 2, status: "OK", lists: { upper: [PIECE], lower: [PIECE_2] }, defaultVisibility: "PRIVATE" },
-      "POST /api/seal-suggestions/preview": { suggestions: [brand] },
+      "POST /api/seal-suggestions/preview": { suggestions: [celeb] },
       "PUT /api/schemes/s1": { scheme: SCHEME },
       "POST /api/schemes/s1/seal-bonds": { status: "PENDING_REVIEW" },
     });
     renderApp(<SchemeBuilder initial={SCHEME} />);
     fireEvent.click(await screen.findByRole("button", { name: /Detalhes/ }));
-    fireEvent.click(await screen.findByRole("checkbox", { name: /Marca teste/ }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Celebridade teste/ }));
+    expect(screen.queryByRole("checkbox", { name: /imagem/i })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Ver prévia do card/ }));
+    expect(screen.getByRole("dialog").textContent).toContain("Celebridade teste");
+    fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
     fireEvent.click(screen.getAllByRole("button", { name: /Revisar/ }).find(b => b.classList.contains("btn-primary"))!);
     const save = screen.getAllByRole("button", { name: /Salvar/ }).find((b) => b.classList.contains("btn-primary"))!;
     fireEvent.click(save);
-    await waitFor(() => expect(calls.some((c) => c.path === "/api/schemes/s1/seal-bonds")).toBe(true));
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT" && c.path === "/api/schemes/s1")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT" && c.path === "/api/schemes/s1")?.body).toMatchObject({ background: { selectedSeals: [{ targetOwnerId: "celeb1", kind: "CELEBRITY", name: "Celebridade teste" }] } });
+    expect(calls.some((c) => c.path === "/api/schemes/s1/seal-bonds")).toBe(false);
     expect(calls.find((c) => c.path === "/api/seal-suggestions/preview")?.body).toMatchObject({ pieceIds: ["p1", "p2"], occasion: SCHEME.occasion, style: SCHEME.style, background: { cardSkin: "atelier", layoutAnatomy: "LISTA_VERTICAL" } });
+  });
+  it("restores saved selections and allows removal when suggestions fail", async () => {
+    const saved = { targetOwnerId: "celeb1", kind: "CELEBRITY", name: "Celebridade teste" };
+    const { calls } = loggedAs(undefined, {
+      "GET /api/schemes/builder": { totalPieces: 2, status: "OK", lists: { upper: [PIECE], lower: [PIECE_2] }, defaultVisibility: "PRIVATE" },
+      "POST /api/seal-suggestions/preview": new Response("offline", { status: 503 }),
+      "PUT /api/schemes/s1": { scheme: SCHEME },
+    });
+    renderApp(<SchemeBuilder initial={{ ...SCHEME, background: { selectedSeals: [saved] } }} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Detalhes/ }));
+    const checkbox = await screen.findByRole("checkbox", { name: /Celebridade teste/ });
+    expect(checkbox.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getAllByRole("button", { name: /Revisar/ }).find((button) => button.classList.contains("btn-primary"))!);
+    fireEvent.click(screen.getAllByRole("button", { name: /Salvar/ }).find((button) => button.classList.contains("btn-primary"))!);
+    await waitFor(() => expect(calls.find((call) => call.method === "PUT" && call.path === "/api/schemes/s1")?.body).toMatchObject({ background: { selectedSeals: [] } }));
   });
   it("RF13 checks both looks, shows existing approval, and sends the selected bond on save", async () => {
     const { calls } = loggedAs(undefined, {

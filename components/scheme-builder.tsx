@@ -10,17 +10,18 @@ import { SchemeTags } from "@/components/scheme-tags";
 import { SchemeDetailFields } from "@/components/scheme-detail-fields";
 import { AiCompositionCard } from "@/components/ai-compositions";
 import { useUndo } from "@/lib/hooks/use-undo";
-import { PieceCard } from "@/components/piece-card";
-import { SchemeCard } from "@/components/scheme-card";
-import { CardPreviewModeToggle } from "@/components/card-preview-mode-toggle";
+import { SchemeBuilderPieces } from "@/components/scheme-builder-pieces";
+import { SchemeBuilderPreview } from "@/components/scheme-builder-preview";
+import { CreatorWelcome, SuppressCreatorWelcome } from "@/components/creator-welcome";
 import type { BgConfig } from "@/components/background-studio";
 import dynamic from "next/dynamic";
 const BackgroundStudio = dynamic(() => import("@/components/background-studio").then((m) => m.BackgroundStudio), { loading: () => <Skeleton className="h-40" /> });
 import { FaiIcon } from "@/components/fai-icon";
-import { BrandLogo } from "@/components/brand-logo";
+import { SchemeBuilderSlots, SlotBrand } from "@/components/scheme-builder-slots";
+export { SlotBrand } from "@/components/scheme-builder-slots";
 import { SealSuggestions, useLookSeals } from "@/components/look-seal-verification";
-import { LookHypePreview, PieceHypeTag } from "@/components/hype/look-hype-preview";
-import { InsightStrip } from "@/components/insights/insight-strip";
+import { useSelectedLookSeals } from "@/lib/seals/use-selected-look-seals";
+import { PieceHypeTag } from "@/components/hype/look-hype-preview";
 import type { LookScoreValues } from "@/components/hype/look-scores";
 import { studioOf } from "@/lib/card-art";
 import { CreationSuccess } from "@/components/expanded-card";
@@ -50,18 +51,6 @@ export function onePerType<T extends { id: string }>(list: T[], pieceOf: (id: st
   return out;
 }
 
-/**
- * Marca do slot: o esquema não tem campo de marca — ao inserir a peça do guarda-roupa no slot, a marca (nome + logo
- * buscado na internet no RF4) vem da própria peça e não é editável aqui.
- */
-export function SlotBrand({ piece }: { piece?: PieceView | null }) {
-  const { t } = useI18n();
-  if (!piece) return null;
-  return piece.brandName
-    ? <span className="slot-brand" title={t("schemeBuilder.marca_preenchida_automaticamente_pela")}><BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={22} /><span className="truncate">{piece.brandName}</span><span className="lock" aria-hidden>🔒</span><span className="sr-only">{t("schemeBuilder.preenchida_pela_peca")}</span></span>
-    : <span className="slot-brand text-muted" title={t("schemeBuilder.a_peca_nao_tem_marca")}>{t("schemeBuilder.sem_marca_na_peca")}</span>;
-}
-
 /** Construtor de looks (RF5 criar / RF9 editar): modo → peças → dados → Background Studio → pré-visualização → salvar. */
 export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const { t, rich } = useI18n(); const toast = useToast(); const tax = useTaxonomy();
@@ -73,9 +62,10 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const artUndo = useUndo(bg, setBg); // "Desfazer" acima do preview: volta a arte ao estado anterior
   // foto do conjunto (como um post): o sistema só a verifica (formato e políticas da FAI Network) — nunca edita a foto do look
   const [photo, setPhoto] = useState<{ url?: string | null }>(() => ({ url: studioOf(initial?.background).photo?.url ?? null })); const [skin, setSkin] = useState(initial?.cardSkin ?? "atelier"); const [anatomy, setAnatomy] = useState(initial?.layoutAnatomy ?? "LISTA_VERTICAL"); const [pieceAnatomy, setPieceAnatomy] = useState<string>(((initial?.background as { pieces?: { anatomy?: string } })?.pieces?.anatomy) ?? "PECA_AMPLIADO");
-  const [comps, setComps] = useState<Composition[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [prompt, setPrompt] = useState(""); const [orientationNote, setOrientationNote] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [preview, setPreview] = useState<string | null>(null); const [previewExpanded, setPreviewExpanded] = useState(false); const [step, setStep] = useState(0);
+  const [comps, setComps] = useState<Composition[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [prompt, setPrompt] = useState(""); const [orientationNote, setOrientationNote] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [step, setStep] = useState(0);
   const [artNote, setArtNote] = useState<string | null>(null); const [done, setDone] = useState<string | null>(null);
   const sealVerification = useLookSeals({ pieceIds: selected.map((s) => s.id), occasion: form.occasion, style: form.style, background: { ...bg, cardSkin: skin, layoutAnatomy: anatomy }, enabled: step >= 2 });
+  const selectedSeals = useSelectedLookSeals(initial?.background, sealVerification.search);
   const all = useMemo(() => Object.values(b?.lists ?? {}).flat(), [b]);
   const byId = useMemo(() => new Map(all.map((p) => [p.id, p])), [all]);
   useEffect(() => { if (b && b.defaultVisibility && !initial) setForm((f) => ({ ...f, visibility: b.defaultVisibility })); }, [b, initial]);
@@ -92,11 +82,20 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
     setSelected((s) => [...s.filter((x) => !out.some((o) => o.id === x.id)), { id: p.id, slot: slotOf(p) }]);
     if (out.length) toast.info(t("schemeBuilder.troca_mesmo_tipo", { old: out.map((o) => byId.get(o.id)?.name ?? "").join(", "), name: p.name }));
   };
+  const moveSlot = (id: string, targetId: string) => setSelected((current) => {
+    const from = current.findIndex((item) => item.id === id);
+    const to = current.findIndex((item) => item.id === targetId);
+    if (from < 0 || to < 0 || from === to) return current;
+    const next = [...current];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    return next;
+  });
   const go = (i: number) => { if (i === 2 && !form.title.trim()) setForm((f) => ({ ...f, title: selected.map((s) => byId.get(s.id)?.name).filter(Boolean).slice(0, 3).join(" + ").slice(0, 120) })); setStep(i); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
   // navegação livre (RF5): voltar sempre; avançar para qualquer etapa cujo pré-requisito já está cumprido
   const enoughPieces = selected.length >= 2 || selected.length === 1 && selected[0].slot === "FULL_BODY";
   const canGo = (i: number) => i < step || i <= 1 || (enoughPieces && (i === 2 || !!form.title.trim()));
-  const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy } }, cardSkin: skin, layoutAnatomy: anatomy });
+  const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy }, selectedSeals: selectedSeals.selected }, cardSkin: skin, layoutAnatomy: anatomy });
   async function uploadPhoto(file: File) {
     const fd = new FormData(); fd.append("file", file);
     try { const r = await api.upload<{ url: string }>("/api/schemes/photos", fd); setPhoto({ url: r.url }); toast.success(t("schemeBuilder.foto_verificada")); } catch (e) { toast.fromError(e); }
@@ -149,22 +148,13 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
     }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
-  async function doPreview() { setBusy(true); try { const blob = await api.post<Blob>("/api/schemes/preview", payload(), { headers: { Accept: "image/png" } }); setPreview(URL.createObjectURL(blob)); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
   async function save(publish: boolean) {
-    if (!sealVerification.valid) { go(2); return; }
     setBusy(true);
     try {
       const body = { ...payload(), publish, visibility: publish && form.visibility === "PRIVATE" ? "PUBLIC" : form.visibility };
       const r = initial ? await api.put<{ scheme: SchemeView }>(`/api/schemes/${initial.id}`, body) : await api.post<{ scheme: SchemeView; warnings?: string[] }>("/api/schemes", body);
       (r as { warnings?: string[] }).warnings?.forEach((w) => toast.info(w));
       const id = r.scheme?.id ?? initial?.id ?? null;
-      // os selos marcados viram pedidos de vínculo (a marca ou a celebridade aprova); um pedido recusado não desfaz o look
-      let requested = 0;
-      if (id) for (const request of sealVerification.requests) {
-        try { await api.post(`/api/schemes/${id}/seal-bonds`, request); requested++; }
-        catch (e) { toast.fromError(e); }
-      }
-      if (requested) toast.info(t("schemeBuilder.selos_pedidos", { count: requested }));
       setDone(id);
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
@@ -172,11 +162,13 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   if (loading || !b) return <Skeleton className="h-96" />;
   if (b.status === "INSUFICIENTE" && !initial) return <EmptyState title={t("scheme.insufficient")} hint={b.message} action={<Link href={b.action?.href === "/add-piece" ? "/pieces/new" : b.action?.href ?? "/pieces/new"} className="btn btn-primary">{b.action?.label ?? t("closet.addPiece")}</Link>} />;
   // prévia ao vivo: leva também o layout das peças (seção C), senão o card não reage à escolha no Background Studio
-  const draft: SchemeView = { id: initial?.id ?? "preview", owner: initial?.owner ?? { id: "", username: t("common.voce"), displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: [], tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo, pieces: { anatomy: pieceAnatomy } } as Record<string, unknown> };
+  const draft: SchemeView = { id: initial?.id ?? "preview", owner: initial?.owner ?? { id: "", username: t("common.voce"), displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: [], tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo, pieces: { anatomy: pieceAnatomy }, selectedSeals: selectedSeals.selected } as Record<string, unknown> };
   const steps = [t("builder.step.mode"), t("builder.step.pieces"), t("builder.step.details"), `${t("builder.step.appearance")} · ${t("common.optional")}`, t("builder.step.review")];
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+    <div className="grid gap-5">
+      {!initial && <CreatorWelcome kind="scheme" onEntry />}
       <div>
+        <div className="mb-4 flex justify-end"><SchemeBuilderPreview draft={draft} bg={bg} undo={artUndo} onClear={() => setBg({})} schemeId={initial?.id ?? null} /></div>
         <Stepper steps={steps} current={step} onStep={go} label={t("builder.stepsLabel")} canGo={canGo} />
         {step === 0 && (
           <div className="surface p-4">
@@ -201,18 +193,9 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
         )}
         {step === 1 && (
           <div>
-            {selected.length > 0 && (
-              <section className="surface mb-4 p-3" aria-label={t("schemeBuilder.slots_do_look")}>
-                <p className="label">{t("schemeBuilder.slots_do_look_a_marca")}</p>
-                <div className="grid gap-2 sm:grid-cols-2">{selected.map((s) => { const p = byId.get(s.id); return (
-                  <div key={s.id} className="list-row flex min-w-0 items-center gap-2"><span className="badge shrink-0">{SLOT_LABEL[s.slot] ?? s.slot}</span><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-9 w-9 shrink-0 rounded bg-surface-2 object-contain" /><span className="min-w-0 flex-1"><span className="block truncate type-body-sm">{p?.name ?? s.id}</span><PieceHypeTag id={s.id} /></span><SlotBrand piece={p} /></div>); })}</div>
-                <p className="mt-2 type-caption text-muted">{t("schemeBuilder.o_esquema_nao_tem_campo")} {t("schemeBuilder.uma_peca_por_tipo")}</p>
-              </section>
-            )}
+            <SchemeBuilderSlots selected={selected} byId={byId} slotLabels={SLOT_LABEL} onRemove={(id) => setSelected((current) => current.filter((item) => item.id !== id))} onMove={moveSlot} />
             <p className="type-body text-muted mb-3">{rich("schemeBuilder.pecas_do_seu_guarda_roupa", { eligiblePieces: b.eligiblePieces, txt: t("common.pieces"), value: (b.hiddenPieces ?? 0) > 0 ? t("schemeBuilder.indisponiveis_ou_em_moderacao_ficam", { hiddenPieces: b.hiddenPieces }) : "", txt2: t("schemeBuilder.cadastrar_nova_peca") }, { 0: ($c) => <Link href="/pieces/new" className="underline">{$c}</Link> })}</p>
-            {Object.entries(b.lists).map(([cat, list]) => list.length > 0 && (
-              <section key={cat} className="mb-5"><h3 className="type-h3 mb-2">{label(cat)}</h3><div className="grid-cards">{list.map((p) => <PieceCard key={p.id} piece={p} selectable selected={selected.some((s) => s.id === p.id)} onSelect={toggle} />)}</div></section>
-            ))}
+            <SchemeBuilderPieces lists={b.lists} selected={selected} onSelect={toggle} />
             <div className="flex justify-between"><Button onClick={() => go(0)}>{t("common.back")}</Button><Button variant="primary" disabled={!enoughPieces} onClick={() => go(2)}>{t("common.next")}</Button></div>
           </div>
         )}
@@ -225,7 +208,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <SchemeDetailFields form={form} setForm={setForm} />
             <Field label={t("common.visibility")} id="visibility"><Select id="visibility" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
 
-            <Field label={t("schemeBuilder.selos_do_look")} className="sm:col-span-2"><SealSuggestions {...sealVerification} /></Field>
+            <Field label={t("schemeBuilder.selos_do_look")} className="sm:col-span-2"><SealSuggestions {...sealVerification} {...selectedSeals} selectionOnly /></Field>
             <Field label={t("schemeBuilder.foto_do_look_opcional_como")} className="sm:col-span-2" hint={t("schemeBuilder.foto_so_verificada")}>
               <div className="flex flex-wrap items-start gap-3">
                 <div className="h-40 w-32 overflow-hidden rounded-md border border-line-soft bg-surface-2">{photo.url ? <img src={mediaUrl(photo.url)} alt={t("schemeBuilder.foto_do_look")} className="h-full w-full object-cover" /> : <span className="flex h-full items-center justify-center p-2 text-center type-caption text-muted">{t("schemeBuilder.sem_foto_a_capa_usa")}</span>}</div>
@@ -233,10 +216,10 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
               </div>
             </Field>
             <div className="sm:col-span-2"><Switch checked={form.lookDoDia} onChange={(v) => setForm({ ...form, lookDoDia: v })} label={t("scheme.dailyLook")} /></div>
-            <div className="sm:col-span-2 flex flex-wrap justify-between gap-2"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim() || !sealVerification.valid} onClick={() => go(4)}>{t("builder.step.review")}</Button></div>
+            <div className="sm:col-span-2 flex flex-wrap justify-between gap-2"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim()} onClick={() => go(4)}>{t("builder.step.review")}</Button></div>
           </div>
         )}
-        {step === 3 && (<div>{artNote && <p className="mb-3 type-body-sm text-muted" aria-live="polite">{artNote}</p>}<BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} season={form.season || null} /><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => go(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => go(4)}>{t("builder.step.review")}</Button></div></div>)}
+        {step === 3 && (<div>{artNote && <p className="mb-3 type-body-sm text-muted" aria-live="polite">{artNote}</p>}<SuppressCreatorWelcome active={!initial}><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} season={form.season || null} /></SuppressCreatorWelcome><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => go(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => go(4)}>{t("builder.step.review")}</Button></div></div>)}
         {step === 4 && (
           <div className="surface p-4">
             <h3 className="type-h3 mb-2">{t("scheme.pieces")} ({selected.length})</h3>
@@ -246,26 +229,13 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => go(2)}>{t("common.back")}</Button>
               <Button onClick={() => go(3)}>{t("builder.step.appearance")}</Button>
-              <Button onClick={doPreview} loading={busy}>{t("schemeBuilder.png", { txt: t("scheme.preview") })}</Button>
               <Button variant="primary" onClick={() => save(false)} loading={busy}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button>
               <Button variant="accent" onClick={() => save(true)} loading={busy}><FaiIcon id="ACT-11" size={24} decorative />{t("common.publish")}</Button>
             </div>
             <ProfileVisibilityNotice />
-            {preview && <img src={preview} alt={t("schemeBuilder.pre_visualizacao_do_card")} className="mt-4 max-w-sm rounded border border-line-soft" />}
           </div>
         )}
       </div>
-      <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start">
-        <div className="mb-1 flex items-center justify-between gap-2"><p className="label mb-0">{t("scheme.card")}</p>
-          {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, container); layout, skin e peças ficam */}
-          <span className="flex gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={Object.keys(bg).length === 0} onClick={() => setBg({})}>{t("backgroundStudio.limpar_arte")}</Button></span></div>
-        <CardPreviewModeToggle expanded={previewExpanded} onToggle={() => setPreviewExpanded(current => !current)} feedLabel={t("pieceArt.previa_feed")} expandedLabel={t("pieceArt.previa_ampliado")}>
-          <SchemeCard scheme={draft} href="#" expanded={previewExpanded} />
-        </CardPreviewModeToggle>
-        {/* RF53 (P1-08): os seis números do rascunho — o Hype aqui é a média das peças; nada é salvo nem vira sinal */}
-        <LookHypePreview pieceIds={selected.map((x) => x.id)} occasion={form.occasion} style={form.style} schemeId={initial?.id ?? null} />
-        {/* RF53 · Lote A5 (P3-15): leitura pessoal das peças escolhidas (Hype ao lado do DNA e do uso) e redescobertas; fechada até abrir */}
-        <InsightStrip context="LOOK_EDITOR" params={{ pieces: selected.map((x) => x.id).sort().join(",") }} collapsible className="mt-3" /></aside>
       {done && <CreationSuccess kind="scheme" id={done} edited={!!initial} />}
     </div>
   );
