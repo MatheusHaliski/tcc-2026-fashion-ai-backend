@@ -512,3 +512,27 @@ cada rodada levou de 1,5 a 3 minutos e uma partida de futebol cerca de 20 minuto
 | Vitória no Dress Fighter, carta Especial, temas Brasil/Noite/Clássico com nota | impossíveis com as cartas da única conta com cartas (todas Bronze, sem marca, sem couro, jeans ou metal) |
 
 Os jogos sem nota não entram nas médias da seção 2.
+
+## 6. Correções da auditoria dos jogos
+
+As correções depois desta auditoria (16/11/2026). Nenhuma foi vista na tela: a máquina não tinha memória para o navegador
+com renderização de software. Todas têm teste do servidor ou da tela.
+
+| Defeito | Correção | Commit |
+| --- | --- | --- |
+| DF-1: a avatar cai depois de um round vencido | no meio da luta a cena mostra só o lance novo, sem queda nem reação; a queda é de quem perdeu a luta | `439f4b7a` |
+| DTV-1: o estado do caso em JSON na tela de resultado | um evento com valor de estrutura e sem frase não vira texto | `439f4b7a` |
+| DTV-2 e PAS-3: soma das regras diferente do total (89 → 75; 60 → 86) | regra PENALIDADES (−2 por captura) no Detective; a Passarela manda a conta (60 de 70 vira 86) e a tela a explica | `439f4b7a` |
+| PAS-1: "a plateia levanta" com a plateia sentada | a legenda diz "aplaude"; com 3 estrelas a plateia se levanta | `439f4b7a` |
+| Batalha: o adversário ergue o braço quando a pessoa vence | o adversário lamenta e a pose dele não acena mais | `439f4b7a` |
+| DTS-1 e Labirinto: final que não combina com a rodada | final próprio do Look Relâmpago e do Corredor de Holofotes; o final médio do Labirinto sem "muitas tentativas" | `439f4b7a` |
+| Placar de LED "00 × 7" para 100 × 75 | a fonte diminui até o placar caber | `439f4b7a` |
+| DF-6 e Around the World: câmera dentro do corpo | quando a parede traz a lente para perto, ela sobe em vez de entrar no corpo (o close e o zoom continuam perto) | `439f4b7a` |
+| DF-7: botão de câmera cobrindo a avatar em 390 px | no celular a câmera e os controles dela ficam numa coluna estreita na borda direita | `439f4b7a` |
+| Dress Fighter, perguntas 1 a 7, DF-2, DF-4, DF-8 | luta lance a lance: vida 100 das duas com barras na tela, a cor da carta jogada é o golpe (vermelho forte, amarelo rápido, preto guarda, verde esquiva, azul fôlego, branco foco), a oponente ataca, guarda, esquiva e recua, leitura do próximo golpe dela, combos (Relâmpago, Contragolpe, Muralha), nocaute, câmeras "Luta de lado" (arcade) e "Por trás do ombro", peça inteira no look e na mão; tudo no servidor, da semente | `acb1ecaa` |
+| DF-3, PAS-2 e o defeito 4: rodadas impossíveis sem aviso | aviso na escolha do deck e no começo da partida quando nenhuma carta pontua ou uma regra de peça não tem carta; as arenas do Dress Fighter ficaram vencíveis jogando bem com cartas Bronze (14, 12 e 13 vitórias em 20 sementes) | `be68234e`, `acb1ecaa` |
+| NPCs (média 3,1): reação que não bate com o desfecho | fotógrafos da Passarela, estrela do Dress the Star, equipe do set do Filme e passantes do Around the World reagem pela nota | `97f4ff80` |
+
+Ficou para depois: PF-1 (o vestido no Personagem de Filme), PF-2 (o refletor), ESP-1 (a tela vazia antes do estádio),
+ESP-2 ("Coesão" com 0 pontos), DF-9 (o contador de passos), marcar a arena já vencida, a reação do elenco à acusação
+no Fashion Detective e a medida da fluidez com GPU.
