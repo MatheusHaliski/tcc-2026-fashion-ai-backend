@@ -135,6 +135,20 @@ describe("sequências automáticas", () => {
     expect(clipsDe(seq, "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "DEFESA", "MEIA_VOLTA"]);
   });
 
+  it("as pessoas de cena reagem ao desfecho (auditoria dos jogos: NPCs 3,1)", () => {
+    const ruim = resultado({ estrelas: 0, pontos: 0, resultado: "REPROVADO" });
+    const bom = resultado({ estrelas: 3, pontos: 100, resultado: "APROVADO" });
+    expect(clipsDe(sequenciaDoResultado("PASSARELA", ruim), "fig:FOTOGRAFO:*")).toEqual(["F_LAMENTA"]);
+    expect(clipsDe(sequenciaDoResultado("PASSARELA", bom), "fig:FOTOGRAFO:*")).toEqual([]);
+    expect(clipsDe(sequenciaDoResultado("DRESS_THE_STAR", ruim), "fig:ESTRELA:0")).toContain("F_LAMENTA");
+    expect(clipsDe(sequenciaDoResultado("DRESS_THE_STAR", bom), "fig:ESTRELA:0")).toContain("F_COMEMORA");
+    const titulo = resultado({ regras: [{ codigo: "TITULO", ok: true, pontos: 50 }] });
+    expect(clipsDe(sequenciaDoResultado("PERSONAGEM_FILME", titulo), "fig:CAMERA:*")).toEqual(["F_APLAUSO"]);
+    expect(clipsDe(sequenciaDoResultado("PERSONAGEM_FILME", ruim), "fig:CAMERA:*")).toEqual(["F_LAMENTA"]);
+    expect(clipsDe(sequenciaDoResultado("AROUND_THE_WORLD", bom), "fig:PASSANTE:*")).toEqual(["F_APLAUSO"]);
+    expect(clipsDe(sequenciaDoResultado("AROUND_THE_WORLD", ruim), "fig:PASSANTE:*")).toEqual([]);
+  });
+
   it("na batalha vencida o braço que sobe é o da pessoa; o adversário lamenta", () => {
     const seq = sequenciaDoResultado("BATALHA_LOOKS", resultado({ resultado: "VITORIA", estrelas: 3 }));
     expect(clipsDe(seq, "fig:ADVERSARIO:0")).toContain("F_LAMENTA");
