@@ -24,6 +24,7 @@ interface Props {
 
 export function Camera3D({ largura, altura, vista, reduzido, comando }: Props) {
   const { camera, size, gl } = useThree();
+  const conectado = useThree((s) => s.events.connected) as HTMLElement | undefined;
   const controles = useRef<OrbitControlsImpl>(null);
   const aspecto = size.width / Math.max(1, size.height);
   const quadro = useMemo(() => enquadrar(largura, altura, vista, aspecto), [largura, altura, vista, aspecto]);
@@ -45,10 +46,12 @@ export function Camera3D({ largura, altura, vista, reduzido, comando }: Props) {
     // só um comando novo move a câmera aqui; mudança de quadro já é tratada acima
   }, [comando?.vez]);
 
-  // o OrbitControls pede touch-action: none; com pan-y, deslizar na vertical sobre a cena ainda rola a página no celular
+  // o OrbitControls põe touch-action: none no elemento que escuta; com pan-y, deslizar na vertical sobre a cena ainda
+  // rola a página no celular (o giro fica no deslize lateral)
   useEffect(() => {
-    gl.domElement.style.touchAction = "pan-y";
-  }, [gl]);
+    const alvo = conectado?.style ? conectado : gl.domElement;
+    if (alvo?.style) alvo.style.touchAction = "pan-y";
+  }, [conectado, gl]);
 
   useFrame((_, dt) => {
     const alvo = destino.current;
