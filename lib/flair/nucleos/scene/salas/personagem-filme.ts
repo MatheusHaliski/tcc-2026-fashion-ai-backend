@@ -9,6 +9,7 @@ import { bracoClaquete, cameraTripe, claquete, refletor } from "@/lib/flair/nucl
 import { cenarioDeTresParedes } from "@/lib/flair/nucleos/scene/moveis/set";
 import { noLugar } from "@/lib/flair/nucleos/scene/parts";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
+import { cabos, monitorDeVideo } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 const CLAQUETE = { pos: [-2.1, 0, 1.0] as [number, number, number], giro: 35 };
 
@@ -45,12 +46,15 @@ export const SALA_PERSONAGEM_FILME: Sala = {
   moveis: [
     marcaNoPiso({ pos: [0, 0, 0] }, "fita", 0.55),
     cenarioDeTresParedes({ pos: [0, 0, -3.2] }, "cenario", "madeira", "luz"),
-    cameraTripe({ pos: [2.5, 0, 1.4], giro: -119 }, "metal", "metal", "lente"),
+    cameraTripe({ pos: [-3.3, 0, 2.3], giro: 125 }, "metal", "metal", "lente"),
     cadeiraDiretor({ pos: [3.6, 0, 0.5], giro: -100 }, "madeira", "lona"),
-    refletor({ pos: [-3.1, 0, 0.5], giro: 101 }, "metal", "luz", 2.2),
+    refletor({ pos: [-4.4, 0, -0.9], giro: 70 }, "metal", "luz", 1.7),
     refletor({ pos: [3.5, 0, -1.7], giro: -65 }, "metal", "luz", 2.0),
     claquete({ pos: CLAQUETE.pos, giro: CLAQUETE.giro }, "metal", "madeira"),
     bracoClaquete({ pos: noLugar([-0.17, 0.565, 0], CLAQUETE.pos, CLAQUETE.giro), giro: CLAQUETE.giro, id: "claquete" }, "listras"),
+    // a segunda revisão dos cenários: o monitor do video assist e os cabos no chão do set
+    monitorDeVideo({ pos: [4.3, 0, -0.6], giro: -40 }, "metal", "lente"),
+    cabos({ pos: [3.6, 0, 2.3] }, "tecidoPreto", 3),
   ],
   figurantes: [],
   luzes: {

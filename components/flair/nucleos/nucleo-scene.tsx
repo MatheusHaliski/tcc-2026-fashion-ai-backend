@@ -35,6 +35,8 @@ interface Props {
   resultado?: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
+  /** semente da partida (os corpos das pessoas de cena) */
+  semente?: number;
   /** zonas da rodada (modos do Ateliê) e o que a pessoa já pintou: a peça aparece no manequim */
   zonasDaPeca?: string[];
   zonas?: Record<string, ZonaEscolha>;

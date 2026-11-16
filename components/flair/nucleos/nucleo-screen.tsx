@@ -58,7 +58,7 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
   } else if (m.precisaRodada) {
     corpo = <NucleoRounds definicao={m.inteira} onEscolher={m.escolherRodada} />;
   } else if (m.precisaDeck && d.deck) {
-    corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} rodada={m.rodada} onEntrar={(deck) => void m.entrar(deck)} />;
+    corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} rodada={m.rodada} regrasDaRodada={d.objetivo.regras.map((r) => r.codigo)} onEntrar={(deck) => void m.entrar(deck)} />;
   } else {
     corpo = (
       <NucleoGame

@@ -17,6 +17,7 @@ import type { Celula } from "@/lib/acervo/planta";
 import type { AcervoMovel } from "@/lib/acervo/types";
 import type { CenaProps } from "./cena-tipos";
 import { EncaixeGlb } from "./glb-encaixe";
+import { Roupa3D } from "./roupa-3d";
 import { Marcador3D } from "./marcador-3d";
 import { useMateriaisDoMovel, type MateriaisDoMovel } from "./use-materiais-do-movel";
 
@@ -65,13 +66,7 @@ export function Movel3D(props: Props) {
 
   const roupa = (r: RoupaNaCena, pendurada: boolean, interativa: boolean) => (
     <EncaixeGlb key={r.id} encaixe={encaixeDaRoupa(r.categoria, pendurada)} manifesto={manifesto} tam={r.tam} pos={r.pos}>
-      <mesh name={`${r.fantasma ? "fantasma" : "roupa"}-${r.id}`} position={r.pos} castShadow={!r.fantasma}
-        onClick={r.fantasma || !interativa ? undefined : (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); props.onPeca(r.id); }}
-        onPointerDown={r.fantasma || !interativa ? undefined : () => props.onCarregar(r.id)}>
-        <boxGeometry args={r.tam} />
-        <meshStandardMaterial color={r.fantasma ? COR_LIMA : r.cor} roughness={0.85} transparent={r.fantasma} opacity={r.fantasma ? 0.45 : 1}
-          emissive={r.fantasma ? COR_LIMA : "#000000"} emissiveIntensity={r.fantasma ? 0.5 : 0} />
-      </mesh>
+      <Roupa3D roupa={r} pendurada={pendurada} interativa={interativa} onPeca={props.onPeca} onCarregar={props.onCarregar} />
     </EncaixeGlb>
   );
 

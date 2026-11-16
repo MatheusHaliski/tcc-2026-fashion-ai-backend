@@ -107,6 +107,24 @@ export function dentroDoLugar(pos: V3, limites: Assunto["limites"]): V3 {
   ];
 }
 
+/** A menor distância da lente ao assunto (fora do close): mais perto que isso ela entra no corpo. */
+export const DISTANCIA_MINIMA = 1.7;
+
+/**
+ * Quando a parede empurra a câmera para perto do assunto (canto da sala, calçada estreita, a queda no fim da luta), a
+ * lente sobe até ficar a `minima` do peito, olhando de cima, em vez de entrar no corpo; nunca acima do teto.
+ */
+export function afastadaDoCorpo(pos: V3, s: Assunto, mira: number, minima = DISTANCIA_MINIMA): V3 {
+  const dx = pos[0] - s.pos[0];
+  const dz = pos[2] - s.pos[2];
+  const horizontal = Math.hypot(dx, dz);
+  if (horizontal >= minima) return pos;
+  const peito = s.pos[1] + mira;
+  const y = Math.max(pos[1], peito + Math.sqrt(minima * minima - horizontal * horizontal));
+  const teto = s.limites ? s.limites.teto - 0.25 : Infinity;
+  return [pos[0], Math.min(teto, y), pos[2]];
+}
+
 /** Em tela em pé o quadro é estreito: a câmera recua na mesma linha para caber a mesma largura (o close não recua). */
 export function recuada(pos: V3, alvo: V3, aspecto: number): V3 {
   const quanto = Math.max(1, Math.min(2.2, ASPECTO_DE_REFERENCIA / Math.max(0.1, aspecto)));
@@ -120,7 +138,11 @@ export function recuada(pos: V3, alvo: V3, aspecto: number): V3 {
 export function poseDoRig(c: Camera, s: Assunto, t: number, aspecto = ASPECTO_DE_REFERENCIA, parada = false): Pose {
   const { pos, alvo } = crua(c, s, parada ? 0 : t);
   const longe = c.rig === "CLOSE" ? pos : recuada(pos, alvo, aspecto);
-  return { pos: dentroDoLugar(longe, s.limites), alvo, fov: c.fov ?? FOV_PADRAO };
+  const dentro = dentroDoLugar(longe, s.limites);
+  // só quando a parede trouxe a lente para perto: o close e o zoom pedidos de propósito continuam perto
+  const pedida = Math.hypot(longe[0] - s.pos[0], longe[2] - s.pos[2]);
+  const minima = Math.min(DISTANCIA_MINIMA, pedida);
+  return { pos: c.rig === "CLOSE" ? dentro : afastadaDoCorpo(dentro, s, c.mira ?? 1.1, minima), alvo, fov: c.fov ?? FOV_PADRAO };
 }
 
 /** Aproxima a pose atual da pedida (a câmera segue suave; na troca de câmera, quem chama salta para a nova). */

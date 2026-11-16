@@ -136,6 +136,18 @@ describe("ACERVO · ficha da peça: Passaporte, Editor 3D e Tamanhos", () => {
     expect(within(aba).getByRole("status").textContent).toBe("Tamanho 40 escolhido. Esta peça não tem representação 3D por tamanho.");
   });
 
+  it("Tamanhos: medida oficial e medida por outro método aparecem com origens diferentes (RF tamanhos #6)", async () => {
+    const outro = { ...medida, min: 50, max: 51, provenance: "OTHER_METHOD", sourceName: "Medida da vendedora", chartRevision: 1 };
+    const sizes = { ...passaporte.sizes, sizes: [tamanho("P", { measurements: [outro] }), tamanho("M", { ownerDeclared: true, measurements: [medida] })] };
+    const { ficha } = await abrirFicha({ "GET /api/pieces/p1/digital-passport": { ...passaporte, sizes } });
+    fireEvent.click(within(ficha).getByRole("tab", { name: "Tamanhos" }));
+    const aba = await within(ficha).findByTestId("acervo-tamanhos");
+    await waitFor(() => expect(aba.textContent).toContain("medida oficial autorizada (Tabela oficial)"));
+    fireEvent.click(within(aba).getByRole("radio", { name: "P" }));
+    expect(aba.textContent).toContain("CHEST · 50–51 cm · GARMENT_FLAT_WIDTH_V1 · medida obtida por outro método (Medida da vendedora)");
+    expect(aba.textContent).not.toContain("medida oficial autorizada");
+  });
+
   it("Tamanhos: peça sem tamanhos nem medidas aparece como não informado", async () => {
     const { ficha } = await abrirFicha({ "GET /api/pieces/p1/digital-passport": { ...passaporte, sizes: { ...passaporte.sizes, sizes: [] } } });
     fireEvent.click(within(ficha).getByRole("tab", { name: "Tamanhos" }));

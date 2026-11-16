@@ -11,18 +11,21 @@ import { Elenco3D } from "@/components/flair/nucleos/gente/elenco-3d";
 import { sementeDoTexto } from "@/lib/flair/nucleos/gente/elenco";
 import { atoresDosFigurantes, pessoasDosFigurantes } from "@/lib/flair/nucleos/gente/figurantes";
 import { atorNoMomento } from "@/lib/flair/nucleos/gente/reacoes";
+import { CORPOS_CHEIOS } from "@/lib/flair/nucleos/gente/detalhe";
 import { agora, CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
 import type { NucleoPersonagem } from "@/lib/flair/nucleos/types";
 
 interface Props {
   codigo: string;
+  /** semente da partida: outra partida, outras pessoas na plateia (sem partida, a do jogo) */
+  semente?: number;
   personagens: NucleoPersonagem[];
   prontos: React.MutableRefObject<Set<string>>;
   reduzido: boolean;
 }
 
-export function FigurantesHumanos({ codigo, personagens, prontos, reduzido }: Props) {
-  const pessoas = useMemo(() => pessoasDosFigurantes(sementeDoTexto(codigo), personagens, codigo === "FASHION_SPORTS"), [codigo, personagens]);
+export function FigurantesHumanos({ codigo, semente, personagens, prontos, reduzido }: Props) {
+  const pessoas = useMemo(() => pessoasDosFigurantes(semente ?? sementeDoTexto(codigo), personagens, codigo === "FASHION_SPORTS"), [codigo, semente, personagens]);
   const atores = useMemo(() => atoresDosFigurantes(personagens), [personagens]);
   const cena = useContext(CenaContexto);
   const antes = useRef(new Map<string, { x: number; z: number; t: number }>());
@@ -40,5 +43,5 @@ export function FigurantesHumanos({ codigo, personagens, prontos, reduzido }: Pr
     });
   }, [atores, cena]);
   if (pessoas.size === 0) return null;
-  return <Elenco3D pessoas={pessoas} atores={noMomento} prontos={prontos} reduzido={reduzido} />;
+  return <Elenco3D pessoas={pessoas} atores={noMomento} prontos={prontos} reduzido={reduzido} limite={CORPOS_CHEIOS} />;
 }

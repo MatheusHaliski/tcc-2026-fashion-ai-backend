@@ -7,6 +7,7 @@ import { ringue } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { neon } from "@/lib/flair/nucleos/scene/moveis/palco";
 import { caixote, calcada, grade, tambor } from "@/lib/flair/nucleos/scene/moveis/urbano";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
+import { cartaz, grafite } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 export const SALA_DRESS_FIGHTER: Sala = {
   codigo: "DRESS_FIGHTER",
@@ -49,6 +50,10 @@ export const SALA_DRESS_FIGHTER: Sala = {
     caixote({ pos: [-3.3, 0.86, -3.6], giro: 24 }, "madeira", 0.55),
     tambor({ pos: [3.25, 0.14, -4.6] }, "grade"),
     tambor({ pos: [3.3, 0.14, -5.4] }, "placa"),
+    // a segunda revisão dos cenários: cartazes colados e grafite nas paredes do beco
+    cartaz({ pos: [-3.97, 1.1, -1.4], giro: 90 }, "tinta", "placa", 0.7, 1),
+    cartaz({ pos: [-3.97, 1.2, -2.3], giro: 90 }, "tinta", "placa", 0.6, 0.85),
+    grafite({ pos: [3.97, 0.2, -1.8], giro: -90 }, "neonRosa", "tinta", 2.4),
   ],
   figurantes: [],
   luzes: {

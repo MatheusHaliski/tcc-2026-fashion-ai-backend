@@ -34,11 +34,26 @@ export function corpoLeve(p: PessoaDoElenco): THREE.Group {
   const c = coresDoCorpoLeve(p);
   const grupo = new THREE.Group();
   grupo.name = "corpo-leve";
-  grupo.add(new THREE.Mesh(g.tronco, material(c.roupa)), new THREE.Mesh(g.pernas, material(c.calca)), new THREE.Mesh(g.cabeca, material(c.pele)), new THREE.Mesh(g.cabelo, material(c.cabelo)));
+  const pernas = new THREE.Mesh(g.pernas, material(c.calca));
+  pernas.name = "pernas";
+  grupo.add(new THREE.Mesh(g.tronco, material(c.roupa)), pernas, new THREE.Mesh(g.cabeca, material(c.pele)), new THREE.Mesh(g.cabelo, material(c.cabelo)));
   const bracos = new THREE.Mesh(g.bracos, material(c.roupa));
   bracos.position.y = OMBRO;
   grupo.add(bracos);
   grupo.scale.setScalar(p.estatura / 1.7);
   grupo.visible = false;
   return grupo;
+}
+
+/** Quanto o corpo de cima desce quando a pessoa leve está sentada (o quadril chega à altura do assento). */
+const ASSENTO = 0.43;
+
+/** A pessoa leve sentada (a plateia de longe): as pernas encolhem e o corpo de cima desce até o assento. */
+export function sentarCorpoLeve(grupo: THREE.Group, sentada: boolean): void {
+  if (grupo.userData.sentada === sentada) return;
+  grupo.userData.sentada = sentada;
+  for (const filho of grupo.children) {
+    if (filho.name === "pernas") filho.scale.y = sentada ? 0.5 : 1;
+    else filho.position.y += sentada ? -ASSENTO : ASSENTO;
+  }
 }

@@ -102,19 +102,34 @@ export function useNucleoText() {
         if (vars.codigo) vars.salaoNome = ou(`flair3d.ui.detetive.${vars.codigo}.name`, vars.codigo);
         if (vars.codigo) vars.nome = nomeDaEtapa(ou, vars.codigo);
         if (typeof v === "string" && e.codigo !== "FAMILIA") vars.valor = nomeDoValor(ou, v);
-        if (vars.familia) vars.familia = familiaCor(vars.familia).toLowerCase();
+        if (vars.familia) vars.familia = familiaCor(vars.familia.toUpperCase()).toLowerCase();
         if (vars.item) vars.item = ou(`flair3d.ui.mercado.${vars.item}`, vars.item);
-        if (vars.acao) vars.acao = ou(`flair3d.ui.acaoCor.${vars.modalidade}.${vars.acao}`, ou(`flair3d.ui.acaoCor.${vars.acao}`, vars.acao));
+        // a ação da cor: no esporte, a ação do lance; nos efeitos de cena (jogada de cena), o nome do efeito
+        if (vars.acao) vars.acao = ou(`flair3d.ui.acaoCor.${vars.modalidade}.${vars.acao}`, ou(`flair3d.ui.acaoCor.${vars.acao}`, ou(`flair3d.ui.efeito.COR_${vars.acao}`, vars.acao)));
         if (vars.venceu) vars.desfecho = t(`flair3d.ui.acaoCor.${vars.venceu === "true" ? "ok" : "falhou"}`);
         // o que o lance mudou (força do time, placar, um lance a menos do adversário); servidor antigo não manda: fica vazio
         vars.ganhoTexto = vars.efeito ? ou(`flair3d.ui.lanceEfeito.${vars.efeito}`, "", vars) : "";
         if (vars.atributo) vars.atributo = ou(`flair3d.ui.hud.attr.${vars.atributo}`, vars.atributo);
-        // código novo do servidor ainda sem frase: o nome do código em letras comuns, nunca "FORCA_SEGUNDO_TEMPO"
-        return ou(`flair3d.ui.evento.${e.codigo}`, `${legivel(e.codigo)}: ${vars.valor}`, vars);
+        // a luta lance a lance: os golpes e o combo pelo nome; o nocaute diz quem caiu
+        if (e.codigo === "LANCE_DA_LUTA") Object.assign(vars, golpesDoLance(v as Record<string, unknown>, ou, t));
+        if (e.codigo === "NOCAUTE") return t(`flair3d.ui.luta.nocaute.${String(v) === "VOCE" ? "VOCE" : "OPONENTE"}`);
+        // código novo do servidor ainda sem frase: o nome do código em letras comuns, nunca "FORCA_SEGUNDO_TEMPO"; um
+        // valor de estrutura (o estado do caso do Detective) não vira texto: a linha fica vazia e o resultado a pula
+        const semFrase = v != null && typeof v === "object" ? "" : `${legivel(e.codigo)}: ${vars.valor}`;
+        return ou(`flair3d.ui.evento.${e.codigo}`, semFrase, vars);
       },
       resultado: (r: string) => ou(`flair3d.ui.result.resultado.${r}`, r),
       papel: (p: string) => ou(`flair3d.ui.papel.${p}`, p),
       posicao: (p: string) => ou(`flair3d.ui.tab.${p}`, p),
     };
   }, [t, locale]);
+}
+
+type Ou = (chave: string, padrao: string, vars?: Record<string, string>) => string;
+
+/** Os nomes dos golpes de um lance da luta e o combo, quando fechou ("; combo Relâmpago"). */
+function golpesDoLance(v: Record<string, unknown>, ou: Ou, t: (chave: string, vars?: Record<string, string>) => string): Record<string, string> {
+  const golpe = (g: unknown) => ou(`flair3d.ui.golpe.${String(g)}`, String(g));
+  const combo = typeof v.combo === "string" ? ou(`flair3d.ui.combo.${v.combo}`, v.combo) : "";
+  return { golpe: golpe(v.golpe), golpeOponente: golpe(v.golpeOponente), comboTexto: combo ? `; ${t("flair3d.ui.luta.combo", { combo })}` : "" };
 }

@@ -50,6 +50,11 @@ export function useSceneDirector({ codigo, avatar, resultado, reduzido, abertura
       diretor.limpar();
       return;
     }
+    // a jogada de cena espera a carta: a cena do resultado só toca quando a partida fecha, com o efeito da cor jogada
+    if (atual.status === "EM_ACAO" && codigo !== "DRESS_FIGHTER") return;
+    const jogada = atual.eventos.find((e) => e.codigo === "JOGADA_DE_CENA")?.valor as { acao?: string } | undefined;
+    const daCor = jogada?.acao ? sequenciaDaCor(codigo, `COR_${jogada.acao}`) : null;
+    if (daCor) diretor.tocar(daCor, agora(), reduzido);
     diretor.tocar(sequenciaDoResultado(codigo, atual), agora(), reduzido);
   }, [resultado, codigo, diretor, reduzido]);
 

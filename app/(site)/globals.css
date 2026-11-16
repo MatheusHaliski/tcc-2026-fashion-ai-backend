@@ -43,6 +43,7 @@
 @import "./_styles/34-flair3d-cartas-cor.css";
 @import "./_styles/35-flair3d-efeitos.css";
 @import "./_styles/36-flair3d-hud.css";
+@import "./_styles/36-flair3d-luta.css";
 @import "./_styles/37-flair3d-ampliada.css";
 @import "./_styles/38-flair3d-acao.css";
 @import "./_styles/39-flair3d-esporte.css";
@@ -59,6 +60,7 @@
 @import "./_styles/44-acervo-espaco.css";
 @import "./_styles/45-acervo-ficha.css";
 @import "./_styles/46-acervo-desejos.css";
+@import "./_styles/46-acervo-uso.css";
 @import "./_styles/47-flair-mesa.css";
 @import "./_styles/48-flair-elencos-vagas.css";
 @import "./_styles/49-flair-cbc-vagas.css";

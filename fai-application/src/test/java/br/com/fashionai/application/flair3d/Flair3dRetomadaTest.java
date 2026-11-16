@@ -70,6 +70,9 @@ class Flair3dRetomadaTest {
         assertThat(retomada.emAndamento(bia, "PASSARELA")).isEmpty();
 
         service.entregar(ana, id, new Entrega(Map.of("SUP", sup.getId()), null, null, null));
+        // a jogada de cena espera a carta: a partida ainda volta; seguir sem carta a fecha
+        assertThat(partida(retomada.emAndamento(ana, "PASSARELA").orElseThrow())).containsEntry("status", "EM_ACAO");
+        service.acionar(ana, id, Acionamento.NENHUM);
         assertThat(retomada.emAndamento(ana, "PASSARELA")).isEmpty();
     }
 

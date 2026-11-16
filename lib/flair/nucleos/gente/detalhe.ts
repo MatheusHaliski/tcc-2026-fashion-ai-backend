@@ -23,6 +23,19 @@ export function nivelDeDetalhe(distancia: number, naJogada = false): NivelDeDeta
   return distancia < DISTANCIA_LEVE ? "LEVE" : "LONGE";
 }
 
+/**
+ * Quantas pessoas de cena têm o corpo inteiro ao mesmo tempo (passe de desempenho da Passarela: 14 corpos inteiros
+ * davam 1,44 milhão de triângulos e 399 chamadas por quadro). As mais perto da câmera e quem está na jogada ficam
+ * inteiras; as outras usam o corpo leve, como se estivessem longe.
+ */
+export const CORPOS_CHEIOS = 5;
+
+/** Os ids de quem fica com o corpo inteiro: quem está na jogada e, depois, os mais perto da câmera, até CORPOS_CHEIOS. */
+export function corposCheios(atores: { id: string; naJogada?: boolean; distancia: number }[], limite = CORPOS_CHEIOS): Set<string> {
+  const ordem = [...atores].sort((a, b) => Number(!!b.naJogada) - Number(!!a.naJogada) || a.distancia - b.distancia);
+  return new Set(ordem.slice(0, Math.max(limite, ordem.filter((a) => a.naJogada).length)).map((a) => a.id));
+}
+
 /** De quantos em quantos quadros a pessoa é animada. */
 export const QUADROS_POR_NIVEL: Record<NivelDeDetalhe, number> = { COMPLETO: 1, LEVE: 2, LONGE: 4 };
 

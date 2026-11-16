@@ -49,7 +49,8 @@ public final class DetetiveCaso {
         };
         List<RegraResultado> regras = List.of(new RegraResultado("PISTAS", p.pistas() >= FashionDetectiveAcusacao.PISTAS_DO_FINAL_COMPLETO, p.pistas() * POR_PISTA),
                 new RegraResultado("ENIGMAS", p.salasResolvidas() > 0, p.salasResolvidas() * POR_ENIGMA),
-                new RegraResultado("ACUSACAO", bonus > 0, bonus));
+                new RegraResultado("ACUSACAO", bonus > 0, bonus),
+                new RegraResultado("PENALIDADES", p.penalidades() == 0, -p.penalidades() * POR_PENALIDADE));
         return Resultado.of(pontos, resultado, regras, eventos).comCartas(new Flair3dRateio(look).dividir(pontos, c -> 1.0).lista());
     }
 }

@@ -126,6 +126,12 @@ button.acv-dir-linha {
   box-shadow: inset 0 0 0 2px var(--acv-lima);
 }
 
+/* reordenar: a linha sob o arrasto mostra onde o item entra (use-ordem-do-diretorio.ts) */
+.acv-dir li[data-alvo-ordem="true"] {
+  border-radius: 10px;
+  box-shadow: inset 0 3px 0 var(--acv-tinta), inset 0 0 0 2px var(--acv-lima);
+}
+
 .acv-dir-nome {
   flex: 1;
   min-width: 0;

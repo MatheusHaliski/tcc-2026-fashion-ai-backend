@@ -7,6 +7,7 @@ import { cadeira } from "@/lib/flair/nucleos/scene/moveis/assentos";
 import { passarelaEmY, pontoDePose } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { painelLed, trilhoSpots } from "@/lib/flair/nucleos/scene/moveis/palco";
 import type { Movel, Sala } from "@/lib/flair/nucleos/scene/types";
+import { mesaDosJurados } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 /** Altura da passarela e distância entre os dois pontos de pose (o adversário fica em x = BATALHA_VAO). */
 export const BATALHA_ALTURA = 0.25;
@@ -59,6 +60,8 @@ export const SALA_BATALHA_LOOKS: Sala = {
     painelLed({ pos: [CENTRO, 0, -6.85] }, "led", "metal", 4.4, 2.2, 1.2),
     trilhoSpots({ pos: [CENTRO, 4.7, -1.5] }, "metal", "luz", 6, 5),
     ...cadeiras,
+    // a segunda revisão dos cenários: a mesa dos jurados ao lado da passarela
+    mesaDosJurados({ pos: [-5, 0, 1.5], giro: 90 }, "laca", "estofado", "led", 2.4),
   ],
   figurantes: [],
   luzes: {

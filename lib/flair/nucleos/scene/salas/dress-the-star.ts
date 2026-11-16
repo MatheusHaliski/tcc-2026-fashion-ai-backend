@@ -7,6 +7,7 @@ import { cadeira } from "@/lib/flair/nucleos/scene/moveis/assentos";
 import { marcaNoPiso, passarela } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { canhaoLuz, cortina, telao } from "@/lib/flair/nucleos/scene/moveis/palco";
 import type { Movel, Sala } from "@/lib/flair/nucleos/scene/types";
+import { paredeDeImprensa, pedestaisComCordao } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 /** Altura do palco e lugares da plateia (x, z), de costas para a câmera. */
 export const PALCO_ALTURA = 0.5;
@@ -60,6 +61,9 @@ export const SALA_DRESS_THE_STAR: Sala = {
     canhaoLuz({ pos: [-4.5, 0, 2.2], giro: 116 }, "metal", "luz"),
     canhaoLuz({ pos: [4.5, 0, 2.2], giro: -116 }, "metal", "luz"),
     ...cadeiras,
+    // a segunda revisão dos cenários: parede de imprensa e cordões de isolamento ao lado do palco
+    paredeDeImprensa({ pos: [-5.4, 0, 1.6], giro: 90 }, "escuro", "dourado", 3.2, 2.4),
+    pedestaisComCordao({ pos: [4.4, 0, 2.6], giro: 90 }, "dourado", "veludo", 3, 1.1),
   ],
   figurantes: [],
   luzes: {

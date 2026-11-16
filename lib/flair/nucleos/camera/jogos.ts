@@ -34,6 +34,12 @@ const aerea = (altura = 7): Camera => ({ id: "AEREA", rig: "AEREA", dist: 0.6, a
  * (os cones de visão dos vigias, os esconderijos) e olhando para onde a pessoa anda.
  */
 const EXPLORACAO: Camera = { id: "EXPLORACAO", rig: "SEGUE", dist: 3.6, altura: 3.4, mira: 0.7, angulo: 12, fov: 48 };
+/**
+ * A luta de arcade: de lado, as duas de perfil no mesmo plano, lente longa (quase sem perspectiva) e parada; e a de
+ * terceira pessoa por trás do ombro da avatar, olhando para a oponente (auditoria dos jogos, pergunta 6).
+ */
+const ARCADE: Camera = { id: "ARCADE", rig: "LATERAL", dist: 6, altura: 1.15, angulo: -90, mira: 1.0, fov: 28 };
+const OMBRO: Camera = { id: "OMBRO", rig: "SEGUE", dist: 2.2, altura: 1.75, angulo: 18, mira: 1.3, fov: 50 };
 /** A câmera de RPG de cima: alta, em diagonal, parada. */
 const ISOMETRICA: Camera = { id: "ISOMETRICA", rig: "ORBITAL", dist: 5.2, altura: 5.4, angulo: 35, mira: 0.6, fov: 38 };
 /**
@@ -49,7 +55,7 @@ const jogo = (acao: string, resultado: string, ...cameras: Camera[]): CamerasDoJ
 
 export const CAMERAS: Record<NucleoCodigo, CamerasDoJogo> = {
   PASSARELA: jogo("TRAVELLING", "GRUA", travelling(), FOSSO, grua(), ORBITAL_360, CLOSE_ROUPA),
-  DRESS_FIGHTER: jogo("LATERAL", "ORBITAL_360", lateral(5.6, 1.3, DUELO), ORBITAL_360, aerea(6.5), CLOSE_ROUPA),
+  DRESS_FIGHTER: jogo("ARCADE", "ORBITAL_360", ARCADE, OMBRO, lateral(5.6, 1.3, DUELO), ORBITAL_360, aerea(6.5), CLOSE_ROUPA),
   DRESS_THE_STAR: jogo("FOSSO", "ORBITAL_360", FOSSO, travelling(4.4, -30, 30), ORBITAL_360, grua(), CLOSE_ROUPA),
   PERSONAGEM_FILME: jogo("TRAVELLING", "GRUA", travelling(4.8, -45, 30, 1.2), grua(5.2, 1.2, 3.8, 25), lateral(4.6), CLOSE_ROUPA),
   ROAD_TO_GLORY: jogo("CLOSE_ROSTO", "ORBITAL_360", CLOSE_ROSTO, ORBITAL_360, lateral(3.2, 1.5), CLOSE_ROUPA),

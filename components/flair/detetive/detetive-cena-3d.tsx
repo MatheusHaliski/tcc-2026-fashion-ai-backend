@@ -15,6 +15,7 @@ import { Sala3D } from "@/components/flair/detetive/sala-3d";
 import { noCone } from "@/lib/flair/detetive/acoes";
 import { ELENCO_DAS_SALAS, pessoaDoPapel } from "@/lib/flair/detetive/elenco";
 import type { Retrato, VigiaDaSala } from "@/lib/flair/detetive/types";
+import { DURACAO_DA_TOMADA, tomadaDaCena } from "@/lib/flair/detetive/camera-da-cena";
 import { cameraEmUso } from "@/lib/flair/nucleos/camera/jogos";
 import { aproximar, poseDoRig, type Pose } from "@/lib/flair/nucleos/camera/rigs";
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
@@ -33,6 +34,8 @@ export interface DetetiveCena3DProps {
   camera: string;
   semente: number;
   rotulo: string;
+  /** a cutscene na tela: a câmera dela vale sobre a de exploração enquanto a legenda está aberta */
+  cutscene?: string | null;
 }
 
 /** Cone de visão no piso: um leque de raio = alcance, aberto 2 × meia abertura, virado para onde o vigia olha. */
@@ -67,13 +70,21 @@ function Jogador({ r, pecas, protagonista, reduzido, alvo }: { r: Retrato; pecas
   );
 }
 
-function Camera({ escolha, alvo, reduzido }: { escolha: string; alvo: React.MutableRefObject<{ x: number; z: number; giro: number }>; reduzido: boolean }) {
+function Camera({ escolha, alvo, reduzido, cutscene }: { escolha: string; alvo: React.MutableRefObject<{ x: number; z: number; giro: number }>; reduzido: boolean; cutscene?: string | null }) {
   const { camera, size } = useThree();
   const pose = useRef<Pose | null>(null);
+  const cena = useRef<{ id: string; desde: number } | null>(null);
   useFrame(({ clock }) => {
     const c = cameraEmUso("FASHION_DETECTIVE", escolha, "ACAO");
     const a = alvo.current;
-    const pedida = poseDoRig(c, { pos: [a.x, 0, a.z], giro: a.giro, limites: LIMITES }, clock.elapsedTime, size.width / Math.max(1, size.height), reduzido);
+    let pedida = poseDoRig(c, { pos: [a.x, 0, a.z], giro: a.giro, limites: LIMITES }, clock.elapsedTime, size.width / Math.max(1, size.height), reduzido);
+    // cutscene: a tomada dela (com "reduzir movimento", o último quadro, parado)
+    if (cutscene && cena.current?.id !== cutscene) cena.current = { id: cutscene, desde: clock.elapsedTime };
+    if (!cutscene) cena.current = null;
+    if (cena.current) {
+      const tomada = tomadaDaCena(cena.current.id, reduzido ? DURACAO_DA_TOMADA : clock.elapsedTime - cena.current.desde, a);
+      pedida = { ...pedida, pos: tomada.pos, alvo: tomada.alvo };
+    }
     pose.current = !pose.current || reduzido ? pedida : aproximar(pose.current, pedida, 0.08);
     camera.position.set(...pose.current.pos);
     camera.lookAt(...pose.current.alvo);
@@ -105,7 +116,7 @@ function Alerta({ v }: { v: VigiaDaSala }) {
   );
 }
 
-function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, semente }: Omit<DetetiveCena3DProps, "rotulo">) {
+function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, semente, cutscene }: Omit<DetetiveCena3DProps, "rotulo">) {
   /** onde o avatar está e para onde olha: começa virado para o fundo da sala (a câmera fica atrás, do lado da porta) */
   const alvo = useRef({ x: 0, z: 0, giro: 180 });
   const elenco = ELENCO_DAS_SALAS[r.sala] ?? [];
@@ -143,7 +154,7 @@ function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, sement
       {r.layout.vigias.map((v) => <Alerta key={`alerta-${v.id}`} v={v} />)}
       <Elenco3D pessoas={pessoas} atores={atores} prontos={prontos} reduzido={reduzido} />
       <Jogador r={r} pecas={pecas} protagonista={protagonista} reduzido={reduzido} alvo={alvo} />
-      <Camera escolha={camera} alvo={alvo} reduzido={reduzido} />
+      <Camera escolha={camera} alvo={alvo} reduzido={reduzido} cutscene={cutscene} />
     </>
   );
 }

@@ -178,9 +178,20 @@ figura articulada antiga dele aparece no lugar.
 **Figurantes das salas dos outros jogos** (`lib/flair/nucleos/gente/figurantes.ts`,
 `components/flair/nucleos/gente/figurantes-humanos.tsx`): cada personagem do arquivo do núcleo que é gente (não o
 manequim, a câmera nem a claquete) vira uma pessoa do elenco, com a roupa do papel na cor do arquivo, o corpo tirado
-da semente do jogo (o código do núcleo; a cena das salas não recebe a semente da partida) e o movimento do papel
+da semente da partida (sem partida aberta, da semente do jogo) e o movimento do papel
 (sentada, torcendo, fotografando, conversando, parada). Medido na Passarela com as 14 pessoas (12 na plateia e 2
 fotógrafos): 1,44 milhão de triângulos e 399 chamadas por quadro; na Boutique (1 cliente), 179 mil e 63.
+
+**Passe de desempenho da Passarela (16/11/2026).** Nas salas com figurantes, no máximo `CORPOS_CHEIOS` (5) pessoas
+têm o corpo inteiro ao mesmo tempo: quem está na jogada e as mais perto da câmera (`corposCheios` em
+`lib/flair/nucleos/gente/detalhe.ts`); as outras ficam no corpo leve, que agora também senta (pernas encolhidas e o
+corpo de cima no assento) e não monta o molde do corpo inteiro (sem esqueleto, sem roupa costurada, sem o custo da
+montagem). O estádio e o Fashion Detective seguem sem limite. Na Passarela, isso tira 9 dos 14 corpos inteiros.
+**Estimativa, não medida:** pelos números medidos acima (cerca de 40 mil triângulos e 26 chamadas por corpo inteiro,
+364 triângulos e 5 chamadas por corpo leve), a Passarela cai de 1,44 milhão de triângulos e 399 chamadas para cerca
+de 0,52 milhão e 210 chamadas por quadro. A medida no navegador sem placa de vídeo não pôde ser refeita: a máquina
+compartilhada estava sem memória e o renderizador de software caiu em todas as salas, inclusive na Boutique, que
+antes rodava.
 
 Um jogador humano custa cerca de 40 mil triângulos por quadro com a passada de sombra (de 6 para 10 jogadores: +162 mil).
 O orçamento de 60 mil triângulos das salas não vale para o estádio: a gente tem conta própria

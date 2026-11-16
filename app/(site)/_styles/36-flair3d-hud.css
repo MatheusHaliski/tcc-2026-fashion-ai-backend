@@ -44,6 +44,21 @@
   display: none;
 }
 
+/* celular: câmera e controles de câmera numa coluna estreita colada à borda direita, sem cobrir as pernas da avatar
+   no meio da cena (auditoria dos jogos, DF-7) */
+.n3d-frame.is-celular .n3d-hud-br,
+.n3d-frame.is-celular .n3d-pad.is-camera {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.n3d-frame.is-celular .n3d-camera-btn {
+  justify-content: center;
+  width: var(--touch);
+  padding: 0;
+  background: #0006;
+}
+
 .n3d-frame.is-paisagem .n3d-hud-tl {
   flex-direction: row;
   align-items: center;

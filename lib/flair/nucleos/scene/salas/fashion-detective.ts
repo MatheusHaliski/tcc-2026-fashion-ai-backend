@@ -2,10 +2,11 @@
  * Sala 6, Fashion Detective: hall de entrada de gala em mármore, latão e veludo vinho. A passadeira leva à porta
  * dupla do fundo; cordões de isolamento dos dois lados e diante da porta, dois vasos altos e o lustre.
  */
-import { laca, luz, madeiraEncerada, marmore, metalEscovado, reboco, tecido, veludo } from "@/lib/flair/nucleos/scene/materials";
+import { laca, luz, madeiraEncerada, marmore, metalEscovado, reboco, tecido, veludo, vidro } from "@/lib/flair/nucleos/scene/materials";
 import { cordao, folhaPorta, portal, tapete, vasoAlto } from "@/lib/flair/nucleos/scene/moveis/loja";
 import { lustre } from "@/lib/flair/nucleos/scene/moveis/palco";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
+import { quadro, vitrineDeAcervo } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 const PORTA_Z = -6.9;
 
@@ -16,6 +17,7 @@ export const SALA_FASHION_DETECTIVE: Sala = {
   cobertura: "teto",
   casca: { piso: "marmore", parede: "parede", teto: "parede", rodape: "porta" },
   materiais: {
+    vidro: vidro(),
     marmore: marmore("#D6CCBB", "#8E826F"),
     parede: reboco("#CFC3AE"),
     latao: metalEscovado("#C9A04A", 0.25),
@@ -51,6 +53,10 @@ export const SALA_FASHION_DETECTIVE: Sala = {
     vasoAlto({ pos: [-2.7, 0, -6.4] }, "vaso", "folhas"),
     vasoAlto({ pos: [2.7, 0, -6.4] }, "vaso", "folhas"),
     lustre({ pos: [0, 4.2, -2.4] }, "latao", "luz", 0.75),
+    // a segunda revisão dos cenários: quadros e uma vitrine do acervo da casa no hall
+    quadro({ pos: [-4.97, 1, -3.6], giro: 90 }, "latao", "veludo", 1, 1.3),
+    quadro({ pos: [4.97, 1, -3.6], giro: -90 }, "latao", "veludo", 1, 1.3),
+    vitrineDeAcervo({ pos: [-3.6, 0, 0.6] }, "marmore", "latao", "vidro"),
   ],
   figurantes: [
     { papel: "CONVIDADO", tipo: "silhueta", pos: [-3.2, 0, -3.6], cor: "#3A2A3F", giro: 70 },

@@ -54,17 +54,15 @@ class Flair3dNucleosCartasTest {
     }
 
     @Test
-    void dressFighterVenceComAtributosDasPecasEPerdeComSalto() {
-        Resultado vence = ateOFim(new DressFighterNucleo(), 2, card("SUP", "material:leather"), card("INF", "material:denim"),
+    @SuppressWarnings("unchecked")
+    void dressFighterOLookDeCouroJeansEMetalAguentaMaisQueOLookComum() {
+        Resultado blindado = ateOFim(new DressFighterNucleo(), 9, card("SUP", "material:leather"), card("INF", "material:denim"),
                 card("CAL", "sub:casual_sneakers"), card("ACE", "material:metal"));
-        assertThat(vence.pontos()).isEqualTo(100);
-        assertThat(vence.resultado()).isEqualTo("VITORIA");
-        assertThat(vence.eventos()).hasSize(3).allMatch(e -> e.codigo().equals("ROUND"));
-        Resultado umRound = ateOFim(new DressFighterNucleo(), 2, card("SUP"), card("INF"), card("CAL", "sub:casual_sneakers"), card("ACE"));
-        assertThat(umRound.pontos()).isEqualTo(50);
-        Resultado perde = ateOFim(new DressFighterNucleo(), 2, card("SUP"), card("INF"), card("CAL", "sub:heels"), card("ACE"));
-        assertThat(perde.pontos()).isZero();
-        assertThat(perde.resultado()).isEqualTo("DERROTA");
+        Resultado comum = ateOFim(new DressFighterNucleo(), 9, card("SUP"), card("INF"), card("CAL", "sub:casual_sneakers"), card("ACE"));
+        java.util.function.Function<Resultado, Integer> vida = r -> (Integer) ((java.util.Map<String, Object>) r.eventos().stream()
+                .filter(e -> e.codigo().equals("LUTA")).findFirst().orElseThrow().valor()).get("vidaVoce");
+        assertThat(blindado.fecha()).isTrue();
+        assertThat(vida.apply(blindado)).isGreaterThan(vida.apply(comum));
     }
 
     @Test

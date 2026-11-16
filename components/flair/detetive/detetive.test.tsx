@@ -36,6 +36,17 @@ const carta = (id: string, name: string, acao: CartaDoDetetive["acao"]): CartaDo
 const MAO = [carta("v1", "Lenço verde", "ABRIR"), carta("p1", "Luva preta", "FURTIVIDADE")];
 
 describe("ações do ponto (puro)", () => {
+  it("vigia que persegue: sem bolso (ele está atento), mas dá para convencê-lo com a carta azul", () => {
+    const base = retrato();
+    const vigia = { ...base.layout.vigias[0], x: -3, z: -1.5, temBolso: true };
+    const naRonda = retrato({ layout: { ...base.layout, vigias: [{ ...vigia, modo: "RONDA" }] } });
+    expect(acoesPossiveis(naRonda).map((a) => a.alvo)).toContain("BOLSO:SEG_ENTRADA");
+    const persegue = retrato({ layout: { ...base.layout, vigias: [{ ...vigia, modo: "PERSEGUE" }] } });
+    const alvos = acoesPossiveis(persegue).map((a) => [a.alvo, a.cor]);
+    expect(alvos.map(([a]) => a)).not.toContain("BOLSO:SEG_ENTRADA");
+    expect(alvos).toContainEqual(["CONFRONTO:SEG_ENTRADA", "DANO"]);
+  });
+
   it("o armário pede verde, o vizinho é o meio, e o cone vê na frente do vigia", () => {
     const r = retrato();
     expect(acoesPossiveis(r).map((a) => [a.alvo, a.cor])).toEqual([["ABRIR:ARMARIO_DE_CASACOS", "ABRIR"], ["VIDA", "VIDA"], ["TROCAR", "QUALQUER"]]);
