@@ -11316,7 +11316,7 @@
   "flair3d.detetive.verbo.VIDA": "Recuperar o fôlego",
   "flair3d.detetive.verbo.COMPLETAR": "Completar a pista {assunto}",
   "flair3d.detetive.verbo.MERCADO": "Comprar carta {assunto}",
-  "flair3d.detetive.aviso.VISTO": "Você foi visto! −1 vida e 30 s; de volta ao último esconderijo.",
+  "flair3d.detetive.aviso.VISTO": "Você foi visto! O segurança vem atrás: esconda-se, saia do alcance ou convença-o com uma carta azul.",
   "flair3d.detetive.aviso.SEM_VIDA": "Sem fôlego: Iolanda chama você de volta à porta da sala.",
   "flair3d.detetive.aviso.BOLSO_OK": "Papel pego sem ninguém notar.",
   "flair3d.detetive.aviso.BOLSO_FALHOU": "Notaram a sua mão! A sala ficou em alerta.",
@@ -11928,5 +11928,7 @@
   "admin.system.resultado.ERROR": "erro",
   "admin.users.papel_usuario": "Usuário",
   "admin.users.papel_admin": "Administrador",
-  "admin.users.sua_conta": "Sua conta (não se suspende pela lista)"
+  "admin.users.sua_conta": "Sua conta (não se suspende pela lista)",
+  "flair3d.detetive.aviso.ESCAPOU": "Você despistou o segurança: ele procura em volta e volta à ronda.",
+  "flair3d.detetive.aviso.PEGO": "Pego! −1 vida e 30 s; de volta à porta da sala."
 }

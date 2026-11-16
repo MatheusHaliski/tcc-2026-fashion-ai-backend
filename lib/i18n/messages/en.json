@@ -11316,7 +11316,7 @@
   "flair3d.detetive.verbo.VIDA": "Catch your breath",
   "flair3d.detetive.verbo.COMPLETAR": "Complete clue {assunto}",
   "flair3d.detetive.verbo.MERCADO": "Buy a {assunto} card",
-  "flair3d.detetive.aviso.VISTO": "You were seen! −1 life and 30 s; back to the last cover.",
+  "flair3d.detetive.aviso.VISTO": "You were spotted! The guard is coming after you: hide, get out of reach or convince him with a blue card.",
   "flair3d.detetive.aviso.SEM_VIDA": "Out of breath: Iolanda calls you back to the room door.",
   "flair3d.detetive.aviso.BOLSO_OK": "Paper taken without anyone noticing.",
   "flair3d.detetive.aviso.BOLSO_FALHOU": "They noticed your hand! The room is on alert.",
@@ -11928,5 +11928,7 @@
   "admin.system.resultado.ERROR": "error",
   "admin.users.papel_usuario": "User",
   "admin.users.papel_admin": "Administrator",
-  "admin.users.sua_conta": "Your account (cannot be suspended from the list)"
+  "admin.users.sua_conta": "Your account (cannot be suspended from the list)",
+  "flair3d.detetive.aviso.ESCAPOU": "You shook off the guard: he looks around and goes back to his round.",
+  "flair3d.detetive.aviso.PEGO": "Caught! −1 life and 30 s; back to the room's door."
 }

@@ -11316,7 +11316,7 @@
   "flair3d.detetive.verbo.VIDA": "Recuperar el aliento",
   "flair3d.detetive.verbo.COMPLETAR": "Completar la pista {assunto}",
   "flair3d.detetive.verbo.MERCADO": "Comprar carta {assunto}",
-  "flair3d.detetive.aviso.VISTO": "¡Te vieron! −1 vida y 30 s; de vuelta al último escondite.",
+  "flair3d.detetive.aviso.VISTO": "¡Te vieron! El guardia va tras de ti: escóndete, sal de su alcance o convéncelo con una carta azul.",
   "flair3d.detetive.aviso.SEM_VIDA": "Sin aliento: Iolanda te llama de vuelta a la puerta de la sala.",
   "flair3d.detetive.aviso.BOLSO_OK": "Papel tomado sin que nadie lo note.",
   "flair3d.detetive.aviso.BOLSO_FALHOU": "¡Notaron tu mano! La sala está en alerta.",
@@ -11928,5 +11928,7 @@
   "admin.system.resultado.ERROR": "error",
   "admin.users.papel_usuario": "Usuario",
   "admin.users.papel_admin": "Administrador",
-  "admin.users.sua_conta": "Tu cuenta (no se suspende desde la lista)"
+  "admin.users.sua_conta": "Tu cuenta (no se suspende desde la lista)",
+  "flair3d.detetive.aviso.ESCAPOU": "Despistaste al guardia: mira alrededor y vuelve a su ronda.",
+  "flair3d.detetive.aviso.PEGO": "¡Atrapado! −1 vida y 30 s; de vuelta a la puerta de la sala."
 }

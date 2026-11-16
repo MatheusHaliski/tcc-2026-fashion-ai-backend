@@ -67,7 +67,7 @@ export function DetetivePalco({ r, pecas, protagonista, semente, ocupado, onAcao
     <div className="n3d-stage dtv-palco" data-testid="detetive-palco" data-sala={r.sala} data-ponto={r.ponto}>
       {webgl === false || reduzido ? planta : webgl === null ? <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div> : (
         <div className="n3d-scene3d">
-          <Cena3D r={r} vizinhos={vizinhos} onIr={ir} pecas={pecas} protagonista={protagonista} reduzido={reduzido} camera={camera} semente={semente} rotulo={rotulo} />
+          <Cena3D r={r} vizinhos={vizinhos} onIr={ir} pecas={pecas} protagonista={protagonista} reduzido={reduzido} camera={camera} semente={semente} rotulo={rotulo} cutscene={cena} />
         </div>
       )}
       <div className="dtv-hud" role="status" aria-live="off">
