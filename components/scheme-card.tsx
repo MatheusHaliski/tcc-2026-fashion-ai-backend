@@ -9,8 +9,9 @@ import { MediaImage } from "@/components/media-image";
 import { Price } from "@/components/price";
 import { useState, type ReactNode } from "react";
 import type { SchemeView } from "@/lib/api/types";
-import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
-import { label } from "@/lib/api/taxonomy";
+import { mediaUrl } from "@/lib/api/client";
+import { lookCover, lookItemImage, lookPiecePrice, lookTotal } from "@/lib/looks/look-media";
+import { label, lookTypeName } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
 import { FRAME_BAND_VARS, containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
@@ -102,7 +103,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       <h3 className="c-title">{titleText}</h3>
       {priceLine}
       {social && !!lookSeals.length && <CardSealSummary seals={lookSeals}/>}
-      {scheme.tipoLook && <p className="type-caption text-muted">{t("lookType.label")}: {scheme.tipoLook.nome}</p>}
+      {scheme.tipoLook && <p className="type-caption text-muted">{t("lookType.label")}: {lookTypeName(scheme.tipoLook, t)}</p>}
       {scheme.description && <p className={`c-desc ${expanded ? "is-full" : ""}`}>{scheme.description}</p>}
     </div>
   );

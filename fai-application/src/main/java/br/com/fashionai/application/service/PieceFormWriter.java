@@ -11,7 +11,7 @@ import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.ItemCondition;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.application.service.TipoLavagemService;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -27,7 +27,6 @@ import static br.com.fashionai.application.service.PieceTaxonomyWriter.applyTaxo
  */
 final class PieceFormWriter {
     private final PieceConservationService conservation;
-    private final TipoLavagemService tipoLavagem;
     private final BrandRepository brands;
     private final BrandProfileRepository brandProfiles;
     private final OwnMedia ownMedia;
@@ -35,11 +34,10 @@ final class PieceFormWriter {
     private final BrandLogoService brandLogos;
     private final ClassificationService classification;
 
-    PieceFormWriter(PieceConservationService conservation, TipoLavagemService tipoLavagem, BrandRepository brands, BrandProfileRepository brandProfiles,
+    PieceFormWriter(PieceConservationService conservation, BrandRepository brands, BrandProfileRepository brandProfiles,
                     OwnMedia ownMedia, MediaService media, BrandLogoService brandLogos,
                     ClassificationService classification) {
         this.conservation = conservation;
-        this.tipoLavagem = tipoLavagem;
         this.brands = brands;
         this.brandProfiles = brandProfiles;
         this.ownMedia = ownMedia;

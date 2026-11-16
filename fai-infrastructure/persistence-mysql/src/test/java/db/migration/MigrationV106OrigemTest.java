@@ -7,10 +7,10 @@ import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class MigrationV105OrigemTest {
+class MigrationV106OrigemTest {
     @Test
     void adicionaCamposAusentesEPreservaNomesExistentes() throws Exception {
-        String sql = new ClassPathResource("db/migration/V105__origem_campos_referencia.sql")
+        String sql = new ClassPathResource("db/migration/V106__origem_campos_referencia.sql")
                 .getContentAsString(StandardCharsets.UTF_8).replaceAll("\\s+", " ");
 
         assertThat(sql).contains("COLUMN_NAME = 'nome'", "COLUMN_NAME = 'ativo'",

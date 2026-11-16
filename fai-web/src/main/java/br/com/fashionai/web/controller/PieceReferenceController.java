@@ -49,7 +49,7 @@ public class PieceReferenceController {
     public List<Views.ReferenceOptionView> intensidadesTermicas() {
         return intensidades.findAllByOrderByNomeAsc().stream().map(PieceReferenceViews::intensidadeTermica).toList();
     }
-    
+
     @GetMapping({"/api/tipos-lavagem", "/api/tipo-lavagem"})
     @Transactional(readOnly = true)
     @Operation(summary = "Instruções de lavagem cadastradas em TipoLavagem")

@@ -44,7 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest({PieceReferenceController.class, OrigemReferenceController.class})
 @Import({PieceReferenceController.class, OrigemReferenceController.class, SecurityConfig.class, FashionAuthorization.class,
-        AuditAccessDeniedHandler.class, AuditAuthenticationEntryPoint.class, ErrorWriter.class})
+        AuditAccessDeniedHandler.class, AuditAuthenticationEntryPoint.class, ErrorWriter.class,
+        PieceReferenceAccessTest.CampoNovo.class})
 class PieceReferenceAccessTest {
     private static final UUID STATE_ID = UUID.fromString("a32ea7a1-b97c-4ff9-b47d-72c219667453");
     private static final UUID WASH_ID = UUID.fromString("3333666f-6b13-4cc9-913f-c7e5d529eb79");
