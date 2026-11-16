@@ -1,7 +1,6 @@
 package br.com.fashionai.application.garmentdelivery;
 
 import br.com.fashionai.application.assets.AssetCatalogService;
-import br.com.fashionai.application.atelierproject.AtelierAccountDataCleanup;
 import br.com.fashionai.application.atelierproject.AtelierProjectService;
 import br.com.fashionai.application.atelierproject.AtelierProjectViews.Specification;
 import br.com.fashionai.application.common.ApiException;
@@ -12,11 +11,8 @@ import br.com.fashionai.application.garmentdelivery.GarmentCompositionRules.BomM
 import br.com.fashionai.application.garmentdelivery.GarmentDeliveryViews.*;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.atelierproject.DesignProject;
-import br.com.fashionai.domain.model.atelierproject.DesignProjectMember;
 import br.com.fashionai.domain.model.atelierproject.DesignRevision;
-import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.garmentdelivery.GarmentOrder;
 import br.com.fashionai.domain.model.garmentdelivery.GarmentOrderEvent;
 import br.com.fashionai.domain.repository.UserRepository;
@@ -31,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -46,11 +41,10 @@ import java.util.UUID;
 public class GarmentDeliveryService {
     private final AtelierProjectService projects;
     private final DesignRevisionRepository revisions;
-    private final DesignProjectMemberRepository members;
     private final AtelierBomItemRepository bom;
     private final GarmentOrderRepository orders;
     private final GarmentOrderEventRepository events;
-    private final UserRepository users;
+    private final GarmentDesigners credits;
     private final Guard guard;
     private final GarmentOrderProgress progress;
     private final GarmentOrderReceipt receipt;
@@ -71,11 +65,10 @@ public class GarmentDeliveryService {
                            GarmentQuoter quoter, Clock clock) {
         this.projects = projects;
         this.revisions = revisions;
-        this.members = members;
         this.bom = bom;
         this.orders = orders;
         this.events = events;
-        this.users = users;
+        this.credits = new GarmentDesigners(members, users);
         this.guard = guard;
         this.progress = progress;
         this.receipt = receipt;
@@ -122,13 +115,13 @@ public class GarmentDeliveryService {
 
     @Transactional(readOnly = true)
     public List<OrderSummary> list(CurrentUser user) {
-        authenticated(user);
+        GarmentOrderChecks.authenticated(user);
         Instant now = clock.instant();
         return orders.findTop50ByOwnerIdOrderByPlacedAtDesc(user.id()).stream().map(o -> GarmentOrderViews.summary(o, now)).toList();
     }
 
     public OrderDetail detail(CurrentUser user, UUID id) {
-        authenticated(user);
+        GarmentOrderChecks.authenticated(user);
         return detail(owned(user, id));
     }
 
@@ -139,7 +132,7 @@ public class GarmentDeliveryService {
         if (order.getCancelledAt() != null) {
             return detail(order);
         }
-        version(order, cmd);
+        GarmentOrderChecks.version(order, cmd);
         Instant now = clock.instant();
         progress.materialize(order, now);
         if (order.getReceivedAt() != null || !FactoryPlanRules.CANCELLABLE.contains(FactoryPlanRules.stageAt(GarmentOrderViews.plan(order), now))) {
@@ -159,7 +152,7 @@ public class GarmentDeliveryService {
         if (order.getReceivedAt() != null) {
             return detail(order);
         }
-        version(order, cmd);
+        GarmentOrderChecks.version(order, cmd);
         if (order.getCancelledAt() != null) {
             throw ApiException.conflict("GARMENT_ORDER_CANCELLED", Msg.t("garmentDelivery.erro.cancelada"));
         }
@@ -216,7 +209,7 @@ public class GarmentDeliveryService {
     private OrderDetail detail(GarmentOrder order) {
         Instant now = clock.instant();
         List<GarmentOrderEvent> rows = progress.materialize(order, now);
-        List<Designer> designers = GarmentOrderViews.named(GarmentOrderViews.frozen(order).designers(), this::username);
+        List<Designer> designers = GarmentOrderViews.named(GarmentOrderViews.frozen(order).designers(), credits::username);
         return GarmentOrderViews.detail(order, rows, designers, now);
     }
 
@@ -232,46 +225,11 @@ public class GarmentDeliveryService {
         List<BomMaterial> materials = bom.findByRevisionIdAndRemovedAtIsNullOrderByCreatedAtAsc(revisionId).stream()
                 .filter(item -> "MATERIAL".equals(item.getKind())).map(item -> new BomMaterial(item.getName(), item.getQuantity())).toList();
         return new GarmentQuoter.Source(projectId, revisionId, revision.getNumber(), revision.getTitle(), revision.getSpecificationJson(),
-                spec, materials, GarmentOrderViews.named(designers(project, revision), this::username));
-    }
-
-    private List<Designer> designers(DesignProject project, DesignRevision revision) {
-        List<Designer> out = new ArrayList<>();
-        out.add(new Designer(project.getOwnerId(), null, "OWNER"));
-        for (DesignProjectMember m : members.findByProjectIdOrderByCreatedAtAsc(project.getId())) {
-            if (m.getStatus() == DesignProjectMember.Status.ACCEPTED && m.getRole() == DesignProjectMember.Role.EDITOR) {
-                out.add(new Designer(m.getUserId(), null, "EDITOR"));
-            }
-        }
-        UUID author = revision.getAuthorId();
-        if (!AtelierAccountDataCleanup.ANONYMOUS_AUTHOR.equals(author) && out.stream().noneMatch(d -> d.userId().equals(author))) {
-            out.add(new Designer(author, null, "REVISION_AUTHOR"));
-        }
-        return out;
-    }
-
-    private String username(UUID id) {
-        return users.findById(id).filter(u -> u.getStatus() != AccountStatus.DELETED).map(User::getUsername)
-                .orElse(Msg.t("account.conta_excluida"));
+                spec, materials, GarmentOrderViews.named(credits.of(project, revision), credits::username));
     }
 
     private GarmentOrder owned(CurrentUser user, UUID id) {
         return orders.lockById(id).filter(o -> o.getOwnerId().equals(user.id()))
                 .orElseThrow(() -> ApiException.notFound(Msg.t("garmentDelivery.encomenda")));
-    }
-
-    private static void version(GarmentOrder order, VersionCmd cmd) {
-        if (cmd == null || order.getVersion() != cmd.expectedVersion()) {
-            throw ApiException.conflict("GARMENT_ORDER_VERSION_CONFLICT", Msg.t("garmentDelivery.erro.versao"));
-        }
-    }
-
-    private static void authenticated(CurrentUser user) {
-        if (user == null) {
-            throw ApiException.unauthorized(Msg.t("common.faca_login_para_continuar"));
-        }
-        if (user.status() == AccountStatus.DELETED) {
-            throw ApiException.notFound(Msg.t("garmentDelivery.encomenda"));
-        }
     }
 }
