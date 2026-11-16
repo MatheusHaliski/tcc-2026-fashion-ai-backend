@@ -43,7 +43,9 @@ public class SecurityConfig {
             "/actuator/health", "/actuator/info", "/media/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
             "/api/usernames/*/availability", "/api/preferences/options", "/api/exchange-rates", "/api/client/config", "/api/taxonomy", "/api/assets/**",
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
-            "/api/estados-conservacao", "/api/opcoes/estados-conservacao", "/api/tipos-lavagem", "/api/colecoes", "/api/intensidades-termicas",
+            // catálogos de opções: /api/opcoes/** é público por convenção (só GET, sem dado de usuário — OpcoesConvencaoTest);
+            // os campos dos criadores mandam a sessão, então um GET novo fora daqui também carrega sem mexer nesta lista
+            "/api/opcoes/**", "/api/estados-conservacao", "/api/tipos-lavagem", "/api/colecoes", "/api/intensidades-termicas",
             "/api/passport-shares/*",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",

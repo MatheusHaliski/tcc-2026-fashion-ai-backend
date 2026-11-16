@@ -363,6 +363,14 @@ curl --noproxy '*' -i http://127.0.0.1:8080/api/origens
 
 ## Diagnóstico: campo Origem bloqueado ou erro 401
 
+> **Atualização (16/11/2026) — a trava foi removida de forma geral.** Os campos de opções dos criadores de peça e de look
+> usam um componente só, `components/reference-select-field.tsx` (hook `lib/hooks/use-reference-options.ts`), que manda a
+> sessão de quem está criando. Um GET novo de opções (como `GET /api/origens`) carrega sem entrar em `PUBLIC_GET` e sem
+> mexer em `SecurityConfig`; os passos 1 e 2 abaixo deixam de ser necessários. Escreva o campo como
+> `<ReferenceSelectField id="origemId" path="/api/origens" messages="pieceReferences.origem" … />`. Rotas em
+> `/api/opcoes/**` também são públicas para leitura, por convenção. Receita completa:
+> [CRIADORES_ORIGEM_401](../correcoes/CRIADORES_ORIGEM_401.md).
+
 O campo em `components/piece-origem-field.tsx` só é habilitado quando `GET /api/origens` retorna com sucesso uma lista não vazia. Enquanto carrega, quando a requisição falha ou quando a lista está vazia, ele permanece desabilitado. A seleção usa o **ID da opção**, não o nome exibido.
 
 **Situação observada em 16/11/2026:** a API na porta 8080 respondeu `UP` ao health check, mas o acesso **sem autenticação** a `/api/origens` retornou `401 NAO_AUTENTICADO`. Isso não demonstra, por si só, que a chamada autenticada do navegador também falhe nem identifica qual JAR está rodando. A correção está no código-fonte local, mas ainda precisa ser confirmada na API em execução:
