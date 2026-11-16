@@ -2,6 +2,7 @@
 import { api } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { backupSizeKb, backupState, backupWhen, type BackupRow } from "@/lib/admin/backup-row";
+import { aiCapabilityName, aiResultName } from "@/lib/admin/dashboard-labels";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, PageHeader, Skeleton, useToast } from "@/components/ui";
@@ -37,7 +38,7 @@ function System() {
               <p className="type-caption text-muted">{t("hypeAdmin.sistema_nota")}</p></div>}
           </Card>
           <Card><h2 className="type-h3 mb-2">{t("admin.system.backups_mysqldump")}</h2><Button variant="primary" size="sm" onClick={() => run(() => api.post("/api/admin/backups"), t("admin.system.backup_solicitado"), backups.reload)}>{t("admin.system.executar_backup_agora")}</Button><ul className="fai-list mt-2 type-body-sm">{(backups.data ?? []).map((b, i) => <li key={b.id ?? i} className="flex justify-between py-1"><span>{[backupWhen(b) ? fmtDateTime(backupWhen(b)!) : t("admin.system.backup_sem_data"), t(b.kind === "MYSQL_FULL" || !b.kind ? "admin.system.backup_completo" : "admin.system.backup_outro"), t(`admin.system.backup_estado.${backupState(b)}`)].join(" · ")}</span><span className="type-data">{backupSizeKb(b) != null ? `${backupSizeKb(b)} KB` : ""}</span></li>)}{(backups.data ?? []).length === 0 && <li className="py-1 text-muted">{t("admin.system.nenhum_backup_registrado")}</li>}</ul></Card>
-          <Card><h2 className="type-h3 mb-2">{t("admin.system.inferencias_recentes")}</h2><ul className="fai-list type-caption">{(ai.data?.recent ?? []).slice(0, 15).map((r, i) => <li key={i} className="flex justify-between py-1"><span>{r.capability} · {r.provider}{r.fallback ? t("admin.system.fallback") : ""} · {r.result}</span><span className="type-data">{t("admin.system.ms", { value: r.latencyMs ?? 0, value2: r.costUsd != null ? fmtMoney(r.costUsd, "USD") : "" })}</span></li>)}{(ai.data?.recent ?? []).length === 0 && <li className="py-1 text-muted">{t("admin.system.sem_chamadas_ainda")}</li>}</ul></Card>
+          <Card><h2 className="type-h3 mb-2">{t("admin.system.inferencias_recentes")}</h2><ul className="fai-list type-caption">{(ai.data?.recent ?? []).slice(0, 15).map((r, i) => <li key={i} className="flex justify-between py-1"><span>{r.capability ? aiCapabilityName(r.capability, t) : "—"} · {r.provider}{r.fallback && r.result !== "FALLBACK_LOCAL" ? t("admin.system.fallback") : ""} · {r.result ? aiResultName(r.result, t) : "—"}</span><span className="type-data">{t("admin.system.ms", { value: r.latencyMs ?? 0, value2: r.costUsd != null ? fmtMoney(r.costUsd, "USD") : "" })}</span></li>)}{(ai.data?.recent ?? []).length === 0 && <li className="py-1 text-muted">{t("admin.system.sem_chamadas_ainda")}</li>}</ul></Card>
         </div>
       </div>
       <Card className="mt-4">

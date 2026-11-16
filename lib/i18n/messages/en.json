@@ -12411,5 +12411,16 @@
   "flair3d.esporte.momento.SKATE.INTERVALO": "End of run 1 · run 2 begins",
   "flair3d.esporte.momento.SKATE.PONTO_NOS": "Trick landed!",
   "flair3d.esporte.momento.SKATE.PONTO_ELES": "The opponent lands the trick",
-  "flair3d.esporte.momento.SKATE.APITO_FINAL": "Final scores · {desfecho}"
+  "flair3d.esporte.momento.SKATE.APITO_FINAL": "Final scores · {desfecho}",
+  "admin.system.resultado.SUCCESS": "done",
+  "admin.system.resultado.FALLBACK_LOCAL": "done in the app (no online AI)",
+  "admin.system.resultado.TIMEOUT": "timed out",
+  "admin.system.resultado.CIRCUIT_OPEN": "provider paused after failures",
+  "admin.system.resultado.RATE_LIMITED": "rate limit reached",
+  "admin.system.resultado.CONSENT_DENIED": "no consent",
+  "admin.system.resultado.PROMPT_REJECTED": "request rejected",
+  "admin.system.resultado.ERROR": "error",
+  "admin.users.papel_usuario": "User",
+  "admin.users.papel_admin": "Administrator",
+  "admin.users.sua_conta": "Your account (cannot be suspended from the list)"
 }

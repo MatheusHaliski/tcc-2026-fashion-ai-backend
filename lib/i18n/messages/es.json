@@ -12411,5 +12411,16 @@
   "flair3d.esporte.momento.SKATE.INTERVALO": "Fin de la 1.ª vuelta · empieza la 2.ª",
   "flair3d.esporte.momento.SKATE.PONTO_NOS": "¡Truco acertado!",
   "flair3d.esporte.momento.SKATE.PONTO_ELES": "El rival acierta el truco",
-  "flair3d.esporte.momento.SKATE.APITO_FINAL": "Notas finales · {desfecho}"
+  "flair3d.esporte.momento.SKATE.APITO_FINAL": "Notas finales · {desfecho}",
+  "admin.system.resultado.SUCCESS": "completada",
+  "admin.system.resultado.FALLBACK_LOCAL": "hecha en la app (sin IA en línea)",
+  "admin.system.resultado.TIMEOUT": "tiempo agotado",
+  "admin.system.resultado.CIRCUIT_OPEN": "proveedor pausado por fallos",
+  "admin.system.resultado.RATE_LIMITED": "límite de llamadas alcanzado",
+  "admin.system.resultado.CONSENT_DENIED": "sin consentimiento",
+  "admin.system.resultado.PROMPT_REJECTED": "pedido rechazado",
+  "admin.system.resultado.ERROR": "error",
+  "admin.users.papel_usuario": "Usuario",
+  "admin.users.papel_admin": "Administrador",
+  "admin.users.sua_conta": "Tu cuenta (no se suspende desde la lista)"
 }

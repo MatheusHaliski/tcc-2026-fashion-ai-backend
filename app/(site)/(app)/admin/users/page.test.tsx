@@ -39,13 +39,13 @@ describe("admin · usuários", () => {
     renderApp(<AdminUsersPage />);
     await tab(/Usuários/);
     expect(await screen.findByText("@ana", { exact: false })).toBeTruthy();
-    expect(screen.getByText("PESSOAL· verificado · BR")).toBeTruthy();
+    expect(screen.getByText("Pessoal· verificado · BR")).toBeTruthy();   // tipo de perfil por extenso (era "PESSOAL")
     expect(screen.getByText("MARCA")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("buscar"), { target: { value: "an a" } });
     await waitFor(() => expect(calls.some((c) => c.path === "/api/admin/users?term=an%20a")).toBe(true));
     const row = (await screen.findByText("Ana")).closest("li")!;
     fireEvent.click(within(row).getByRole("button", { name: /^papel/ }));
-    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: "ADMIN" }));
+    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: "Administrador" }));
     expect(await screen.findByText("Papel atualizado")).toBeTruthy();
     expect(calls.find((c) => c.path === "/api/admin/users/u1/role")!.body).toEqual({ role: "ADMIN" });
     // suspender pede confirmação e motivo; cancelar não suspende

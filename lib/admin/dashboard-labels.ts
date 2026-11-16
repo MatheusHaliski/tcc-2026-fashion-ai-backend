@@ -20,3 +20,6 @@ export const challengeName = (code: string, t: Translate) => named("adminDash.de
 
 /** Capacidade de IA (uso e custo por capacidade). */
 export const aiCapabilityName = (code: string, t: Translate) => named("adminDash.ia", code, t);
+
+/** Resultado de uma inferência (lista do sistema): "Feita no app (sem IA online)" no lugar de FALLBACK_LOCAL. */
+export const aiResultName = (code: string, t: Translate) => named("admin.system.resultado", code, t);
