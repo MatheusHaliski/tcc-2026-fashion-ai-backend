@@ -2,6 +2,7 @@
  * FLAIR 3D, base dos 15 núcleos (docs/flair/flair-3d/BASE_NUCLEOS.md): tipos da API e do arquivo de cada núcleo.
  * A API devolve só códigos; os textos ficam nos catálogos de i18n (flair3d.nucleo.<CODIGO>.* e flair3d.ui.*).
  */
+import type { NucleoResultado } from "@/lib/flair/nucleos/types-resultado";
 
 export const NUCLEO_CODIGOS = [
   "PASSARELA",
@@ -132,6 +133,20 @@ export interface NucleoPartida {
   rodada?: string | null;
   /** o que o jogo revela ao entrar: o tema, a estrela, a cena, o desafio, o oponente, a primeira etapa, o look-alvo */
   abertura?: Record<string, unknown> | null;
+  /** partida retomada: o look que já estava vestido (vaga → carta) */
+  vestidas?: Record<string, string> | null;
+}
+
+/**
+ * A partida que ficou em andamento ("Continuar partida"): a abertura dela, o look vestido e o ponto em que parou — o
+ * resultado de agora (EM_ACAO) ou a última entrega (ABERTA, rodada em etapas), refeitos pelo servidor.
+ */
+export interface NucleoRetomada {
+  partida: NucleoPartida;
+  vestidas: Record<string, string> | null;
+  resultado: NucleoResultado | null;
+  tentativa: NucleoResultado | null;
+  atualizadaEm?: string;
 }
 
 export interface ZonaEscolha {

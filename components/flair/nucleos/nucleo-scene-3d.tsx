@@ -63,7 +63,9 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
 export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, zonasDaPeca, zonas, camera, momento = "PREPARO" }: NucleoScene3DProps) {
   const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
-  const cena = useSceneDirector({ codigo: config.codigo, avatar, resultado, reduzido, abertura: variante });
+  // a abertura toca no começo da partida (e a cada salão da gala); quem volta a uma partida já na ação não a revê
+  const abertura = momento === "PREPARO" ? variante ?? config.codigo : variante;
+  const cena = useSceneDirector({ codigo: config.codigo, avatar, resultado, reduzido, abertura });
   // onde a abertura do salão termina: a câmera do preparo, parada
   const fim = useMemo(() => {
     const pose = poseDoRig(comZoom(cameraEmUso(config.codigo, camera, "PREPARO"), avatar.zoom), { pos: [0, sala.zonas.avatar.altura, 0], limites: limitesDaSala(sala) }, 0, 1.5, true);
@@ -84,7 +86,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} />
         <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} />
       </CenaContexto.Provider>
-      {temAbertura(config.codigo) && <CameraDeAbertura chave={variante} sala={sala} fim={fim} reduzido={reduzido} />}
+      {temAbertura(config.codigo) && <CameraDeAbertura chave={abertura} sala={sala} fim={fim} reduzido={reduzido} />}
     </Canvas>
   );
 }

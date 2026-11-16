@@ -33,7 +33,15 @@
 .n3d-hud-br {
   right: 8px;
   bottom: 8px;
+  align-items: flex-end;
   justify-content: flex-end;
+}
+
+/* celular: a câmera mostra só o ícone e o elenco só quem joga, para não entrar na zona da roupa (auditoria 3) */
+.n3d-frame.is-celular .n3d-camera-nome,
+.n3d-frame.is-celular .n3d-cast.is-compact .n3d-cast-note,
+.n3d-frame.is-celular .n3d-cast.is-compact .n3d-cast-list {
+  display: none;
 }
 
 .n3d-frame.is-paisagem .n3d-hud-tl {

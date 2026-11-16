@@ -41,6 +41,7 @@ Consultar a lista Requisitos Funcionais do Trello e usar os próximos números l
 | FashionAI Vision: shows ao vivo imersivos | [Proposta](PROPOSTA_FASHIONAI_VISION.md) | Especificada; publicação no Trello pendente |
 | Minha Loja / My Store para marcas | [Proposta](PROPOSTA_MINHA_LOJA.md) | Especificada; publicação no Trello pendente |
 | FAI ATELIER: projetos, identidade e recompensas criativas | [Proposta](PROPOSTA_FAI_ATELIER.md) | Especificada; publicação no Trello pendente |
+| FashionAI Garment Delivery: peça do Atelier produzida sob encomenda pela Fábrica FashionAI (fictícia), com passaporte e cuidados | [Proposta](../garment-delivery/GARMENT_DELIVERY.md) | Implementada (RF-GD-01 a RF-GD-07); publicação no Trello pendente |
 
 | FLAIR METAMORFOSE | [Proposta](PROPOSTA_FLAIR_METAMORFOSE.md) | Aceita para esta edição; publicação no Trello pendente |
 

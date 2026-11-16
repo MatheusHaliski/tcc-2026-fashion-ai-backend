@@ -122,7 +122,7 @@ describe("MomentTrending e MomentMemoryView", () => {
     expect(screen.getByText("Em alta neste Momento")).toBeTruthy();
     expect(screen.getByText("Estilos")).toBeTruthy();
     expect(screen.queryByText("Cores")).toBeNull();
-    expect(screen.getByText("dark")).toBeTruthy();
+    expect(screen.getByText("Dark")).toBeTruthy();
     expect(screen.getByText("Hype 70")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Look Y/ }).getAttribute("href")).toBe("/schemes/x2");
     expect(screen.getByText("com base em 5 looks enviados")).toBeTruthy();
@@ -140,7 +140,7 @@ describe("MomentTrending e MomentMemoryView", () => {
     expect(screen.getByText("Mais criativo")).toBeTruthy();
     expect(screen.getByText("Look")).toBeTruthy();
     expect(screen.queryByText("Mais elegante")).toBeNull();
-    expect(screen.getByText("Leituras do tema: dark (4)")).toBeTruthy();
+    expect(screen.getByText("Leituras do tema: Dark (4)")).toBeTruthy();
     cleanup();
     renderApp(<MomentMemoryView moment={{ ...M, cooperative: true }} memory={{ goalReached: false, interpretations: [] }} />);
     expect(screen.getByText("meta não alcançada")).toBeTruthy();

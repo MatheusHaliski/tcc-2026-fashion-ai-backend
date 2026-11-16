@@ -28,9 +28,12 @@ export function roundsDaLuta(resultado: NucleoResultado): Round[] {
 const GOLPE: Record<string, string> = { VELOCIDADE: "SOCO", ATAQUE: "CHUTE", DEFESA: "GOLPE_ESPECIAL" };
 const OPONENTE = fig("OPONENTE", 0);
 
+/** Onde o oponente luta: a um passo largo do avatar, de frente para ele (de onde fica no preparo, ele vem andando). */
+const DISTANCIA_DA_LUTA = { x: 1.1, z: -0.3 };
+
 export function sequenciaDaLuta(resultado: NucleoResultado): Sequencia {
   const r = new Roteiro("luta");
-  r.depois(AVATAR, "MEIA_VOLTA", { mover: { giro: 75 } });
+  r.junto(OPONENTE, "F_GUARDA", { mover: DISTANCIA_DA_LUTA }).depois(AVATAR, "MEIA_VOLTA", { mover: { giro: 75 } });
   for (const round of roundsDaLuta(resultado)) {
     r.junto(OPONENTE, "F_GUARDA").depois(AVATAR, "GUARDA");
     if (round.venceu) {

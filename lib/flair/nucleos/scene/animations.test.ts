@@ -118,7 +118,9 @@ describe("sequências automáticas", () => {
     expect(roundsDaLuta(LUTA).map((r) => r.venceu)).toEqual([true, false, true]);
     const luta = sequenciaDaLuta(LUTA);
     expect(clipsDe(luta, "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "SOCO", "GUARDA", "DEFESA", "GUARDA", "GOLPE_ESPECIAL", "MEIA_VOLTA"]);
-    expect(clipsDe(luta, "fig:OPONENTE:0")).toEqual(["F_GUARDA", "F_RECUO", "F_GUARDA", "F_SOCO", "F_GUARDA", "F_RECUO", "F_QUEDA"]);
+    // o oponente vem em guarda até a distância da luta antes do primeiro round
+    expect(clipsDe(luta, "fig:OPONENTE:0")).toEqual(["F_GUARDA", "F_GUARDA", "F_RECUO", "F_GUARDA", "F_SOCO", "F_GUARDA", "F_RECUO", "F_QUEDA"]);
+    expect(luta.passos.find((p) => p.ator === "fig:OPONENTE:0")?.mover).toEqual({ x: 1.1, z: -0.3 });
     expect(clipsDe(luta, "luz:rastro")).toEqual(["L_RASTRO"]);
     const derrota = sequenciaDaLuta(resultado({ resultado: "DERROTA", estrelas: 0, eventos: [round(1, "VELOCIDADE", false), round(2, "ATAQUE", false), round(3, "DEFESA", false)] }));
     expect(clipsDe(derrota, "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "ESQUIVA", "GUARDA", "DEFESA", "GUARDA", "DEFESA", "QUEDA", "MEIA_VOLTA"]);

@@ -45,10 +45,6 @@
 .atelier-earned h3 { color: var(--ink); font-weight: 650; margin-bottom: 10px; }
 .atelier-earned h4 { margin-top: 15px; font-weight: 600; }
 .atelier-earned p { font-size: 14px; line-height: 1.6; color: var(--ink); }
-.atelier-inventory-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
-.atelier-inventory-item { display: flex; flex-direction: column; align-items: start; gap: 12px; border: 1px solid var(--line-soft); padding: 20px; background: var(--surface-2); border-radius: 14px; }
-.atelier-inventory-item img { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; }
-.atelier-inventory-icon { color: var(--ink); font-size: 35px; }
 .atelier-help-steps { display: grid; gap: 24px; }
 .atelier-hub[data-motion="off"] *, .atelier-hub[data-motion="off"] *::before, .atelier-hub[data-motion="off"] *::after, .atelier-fx[data-paused="true"] * { animation: none !important; transition: none !important; }
 .atelier-hub[data-motion="off"] .atelier-shifting-card { transform: none; }
@@ -56,8 +52,8 @@
 @keyframes atelier-arrow { 0%, 100% { opacity: .15; transform: translateX(-4px); } 50% { opacity: .8; transform: translateX(4px); } }
 @keyframes atelier-card-enter { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
 @keyframes atelier-orbit { to { transform: rotate(360deg); } }
-@media (max-width: 1050px) { .atelier-reward-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } .atelier-shifting-grid, .atelier-inventory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 650px) { .atelier-hero, .atelier-workbench { grid-template-columns: minmax(0, 1fr); } .atelier-hero { gap: 18px; } .atelier-shifting-grid, .atelier-inventory-grid, .atelier-trend-matrix, .atelier-earned-grid { grid-template-columns: minmax(0, 1fr); } .atelier-reward-strip { gap: 6px; } .atelier-reward-strip > div { padding: 10px; } .atelier-reward-strip dt { font-size: 12px; min-height: 70px; } .atelier-workbench-controls { padding: 15px; } }
+@media (max-width: 1050px) { .atelier-reward-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } .atelier-shifting-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 650px) { .atelier-hero, .atelier-workbench { grid-template-columns: minmax(0, 1fr); } .atelier-hero { gap: 18px; } .atelier-shifting-grid, .atelier-trend-matrix, .atelier-earned-grid { grid-template-columns: minmax(0, 1fr); } .atelier-reward-strip { gap: 6px; } .atelier-reward-strip > div { padding: 10px; } .atelier-reward-strip dt { font-size: 12px; min-height: 70px; } .atelier-workbench-controls { padding: 15px; } }
 @media (prefers-reduced-motion: reduce) { .atelier-hub *, .atelier-hub *::before, .atelier-hub *::after { animation: none !important; transition: none !important; } .atelier-shifting-card { transform: none; } }
 html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] .atelier-hub *::before, html[data-reduce-motion="true"] .atelier-hub *::after { animation: none !important; transition: none !important; }
 .atelier-trend-delta { grid-column: 1 / -1; font-size: 12px; color: var(--ink); }

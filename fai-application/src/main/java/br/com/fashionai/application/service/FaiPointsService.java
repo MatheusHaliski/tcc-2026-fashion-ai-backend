@@ -1,19 +1,12 @@
 package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.FaiPointsLedgerEntry;
 import br.com.fashionai.domain.model.FaiPointsRule;
-import br.com.fashionai.domain.model.RoomCatalogItem;
-import br.com.fashionai.domain.model.RoomInventoryItem;
-import br.com.fashionai.domain.model.RoomLayout;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository;
 import br.com.fashionai.domain.repository.FaiPointsRuleRepository;
-import br.com.fashionai.domain.repository.RoomCatalogItemRepository;
-import br.com.fashionai.domain.repository.RoomInventoryItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,19 +25,18 @@ import java.util.UUID;
 public class FaiPointsService {
     public static final ZoneId ZONE = ZoneId.of("America/Sao_Paulo");
 
+    /** Níveis de FAI XP. O que cada um libera hoje: auras, acabamentos do Hype, itens da loja física e a Metamorfose. */
     public enum Level {
-        ESTREIA(0, Msg.k("faiPoints.fai_origem_smart_mirror_vista"), Msg.k("faiPoints.branco_de_fabrica")),
-        STUDIO(300, Msg.k("faiPoints.iluminacao_guiada_personalizavel_e"), Msg.k("faiPoints.primeiros_acabamentos_e_materiais")),
-        LOFT(900, Msg.k("faiPoints.n2_modulos_e_mais_categorias"), "quarto maior");
+        ESTREIA(0, Msg.k("faiPoints.nivel_libera.ESTREIA")),
+        STUDIO(300, Msg.k("faiPoints.nivel_libera.STUDIO")),
+        LOFT(900, Msg.k("faiPoints.nivel_libera.LOFT"));
 
         public final int threshold;
         public final String unlocks;
-        public final String aesthetic;
 
-        Level(int threshold, String unlocks, String aesthetic) {
+        Level(int threshold, String unlocks) {
             this.threshold = threshold;
             this.unlocks = unlocks;
-            this.aesthetic = aesthetic;
         }
 
         public static Level of(long lifetime) {
@@ -81,21 +73,11 @@ public class FaiPointsService {
 
     private final FaiPointsLedgerEntryRepository ledger;
     private final FaiPointsRuleRepository rules;
-    private final RoomCatalogItemRepository catalog;
-    private final RoomInventoryItemRepository inventory;
-    private final RoomLayoutAccess layouts;
     private final NotificationService notifications;
-    private final WardrobeCreatorService creator;
 
-    public FaiPointsService(FaiPointsLedgerEntryRepository ledger, FaiPointsRuleRepository rules,
-                            RoomCatalogItemRepository catalog, RoomInventoryItemRepository inventory, RoomLayoutAccess layouts,
-                            NotificationService notifications, WardrobeCreatorService creator) {
-        this.creator = creator;
+    public FaiPointsService(FaiPointsLedgerEntryRepository ledger, FaiPointsRuleRepository rules, NotificationService notifications) {
         this.ledger = ledger;
         this.rules = rules;
-        this.catalog = catalog;
-        this.inventory = inventory;
-        this.layouts = layouts;
         this.notifications = notifications;
     }
 
@@ -142,8 +124,8 @@ public class FaiPointsService {
         Level after = level(userId);
         boolean up = after.ordinal() > before.ordinal();
         if (up) {
-            layouts.setLevel(userId, after.name());
-            notifications.notify(userId, null, NotificationType.ROOM_LEVEL_UP, "ROOM", null, Msg.k("faiPoints.seu_quarto_evoluiu", after.name()),
+            // o tipo ROOM_LEVEL_UP fica (avisos antigos no banco); o texto fala do nível, não mais do quarto (saiu em 15/11/2026)
+            notifications.notify(userId, null, NotificationType.ROOM_LEVEL_UP, "ROOM", null, Msg.k("faiPoints.subiu_de_nivel", after.name()),
                     Msg.k("faiPoints.nivel_liberado", after.name(), after.unlocks), Map.of("level", after.name()));
         }
         return new Award(true, points, false, Msg.t("faiPoints.fai_pts", points), after, up);
@@ -198,8 +180,7 @@ public class FaiPointsService {
                 "unlocks", next.unlocks));
         List<Map<String, Object>> levels = new ArrayList<>();
         for (Level l : Level.values()) {
-            levels.add(Map.of("level", l.name(), "threshold", l.threshold, "unlocks", l.unlocks, "aesthetic", l.aesthetic,
-                    "reached", life >= l.threshold));
+            levels.add(Map.of("level", l.name(), "threshold", l.threshold, "unlocks", l.unlocks, "reached", life >= l.threshold));
         }
         m.put("levels", levels);
         m.put("rules", rules.findAll().stream().filter(FaiPointsRule::isActive).map(r -> Map.of("action", r.getActionCode(),
@@ -210,202 +191,8 @@ public class FaiPointsService {
         return m;
     }
 
-    // ------------------------------------------------------------------ loja do quarto (Molde de Fábrica)
-  
-    @Transactional(readOnly = true)
-    public List<Map<String, Object>> shop(CurrentUser user) {
-        Level lvl = level(user.id());
-        long bal = balance(user.id());
-        Map<String, List<Map<String, Object>>> mine = new java.util.HashMap<>();
-        for (RoomInventoryItem i : inventory.findByUserId(user.id())) {
-            Map<String, Object> e = new LinkedHashMap<>();
-            e.put("inventoryId", i.getId());
-            e.put("appliedModule", i.getAppliedModule());
-            e.put("serial", i.getSerial());
-            e.put("acquiredAt", i.getAcquiredAt());
-            mine.computeIfAbsent(i.getSku(), k -> new ArrayList<>()).add(e);
-        }
-        return catalog.findByActiveTrueOrderByPricePoints().stream()
-                .filter(c -> !"EXPIRADO".equals(WardrobeCreatorService.availability(c, Instant.now())) || mine.containsKey(c.getSku()))
-                .filter(c -> mine.containsKey(c.getSku()) || creator.sellerActive(c))   // criador pendente/suspenso sai da vitrine
-                .map(c -> {
-                    Map<String, Object> m = creator.view(c, user.id());
-                    m.put("levelOk", lvl.atLeast(Level.parse(c.getRequiredLevel())));
-                    m.put("affordable", bal >= c.getPricePoints());
-                    m.put("owned", mine.containsKey(c.getSku()));
-                    m.put("inventory", mine.getOrDefault(c.getSku(), List.of()));   // unidades compradas e onde estão aplicadas
-                    m.put("compatibleModules", layouts.compatibleModules(user.id(), c));
-                    return m;
-                }).toList();
-    }
-
-    /** RF35.CA06 — "Provar no meu quarto": prévia aplicada na cena, sem compra, saldo intacto. */
-    public Map<String, Object> tryOn(CurrentUser user, String sku, String moduleId) {
-        RoomCatalogItem c = catalog.findById(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
-        List<String> compatible = layouts.compatibleModules(user.id(), c);
-        if (moduleId != null && !compatible.contains(moduleId)) {
-            throw new ApiException(409, "ENCAIXE_INCOMPATIVEL", Msg.t("faiPoints.este_item_nao_cabe_no", (compatible.isEmpty() ? Msg.t("faiPoints.nenhum_modulo_do_seu_nivel") : String.join(", ", compatible))));
-        }
-        return Map.of("preview", true, "sku", sku, "module", moduleId == null ? (compatible.isEmpty() ? "" : compatible.get(0)) : moduleId,
-                "finish", Json.map(c.getFinishJson()), "balance", balance(user.id()), "note", Msg.t("faiPoints.previa_descartada_ao_sair_nada"));
-    }
-
-
-    public Map<String, Object> buy(CurrentUser user, String sku) {
-        return buy(user, sku, null);
-    }
-
-    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
-    public Map<String, Object> buy(CurrentUser user, String sku, String requestKey) {
-        // Read creator identity without loading a managed SKU, then lock all wallets in UUID order.
-        UUID seller = catalog.sellerOf(sku).orElse(null);
-        if (user.id().equals(seller)) throw new ApiException(409, "COMPRA_PROPRIA", Msg.t("faiPoints.compra_propria"));
-        java.util.stream.Stream.of(user.id(), seller).filter(java.util.Objects::nonNull).distinct().sorted()
-                .forEach(id -> ledger.lockOwner(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
-        String requestRef = requestRef(requestKey);
-        if (requestRef != null) {
-            var done = ledger.findByIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + requestRef);
-            if (done.isPresent()) return repeatedPurchase(user, done.get().getRefId());
-        }
-        RoomCatalogItem c = catalog.lockBySku(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
-        if (!java.util.Objects.equals(seller, c.getCreatorUserId()))
-            throw new ApiException(409, "OFERTA_ALTERADA", Msg.t("faiPoints.oferta_alterada"));
-        String purchaseRef = requestRef != null ? requestRef : UUID.randomUUID().toString();
-        Level lvl = level(user.id());
-        if (!lvl.atLeast(Level.parse(c.getRequiredLevel()))) {
-            throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("faiPoints.disponivel_a_partir_do_nivel", c.getRequiredLevel()));
-        }
-        if (c.getStockLimit() != null && c.getSoldCount() >= c.getStockLimit()) {
-            throw new ApiException(409, "ESGOTADO", Msg.t("faiPoints.edicao_limitada_esgotada_item_cosmetico"));
-        }
-        String blocker = creator.blocker(user.id(), c);
-        if (blocker != null) {
-            throw new ApiException(409, "CONDICAO_DE_COMPRA", blocker);
-        }
-        long bal = balance(user.id());
-        if (bal < c.getPricePoints()) {
-            throw new ApiException(409, "SALDO_INSUFICIENTE", Msg.t("faiPoints.saldo_de_fai_pts_o", bal, c.getPricePoints()));
-        }
-        // item gratuito também deixa o lançamento (de 0 pontos) quando há chave: é ele que reconhece o pedido repetido
-        if (c.getPricePoints() > 0 || requestRef != null) {
-            FaiPointsLedgerEntry e = new FaiPointsLedgerEntry();
-            e.setUserId(user.id());
-            e.setDelta(-c.getPricePoints());
-            e.setActionCode("SHOP_PURCHASE");
-            e.setRefType("SKU");
-            e.setRefId(sku);
-            e.setIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + purchaseRef);
-            e.setCountsLifetime(false);
-            ledger.save(e);
-            if (c.getPricePoints() > 0) statement(e, WardrobeCreatorService.displayName(c));
-        }
-        c.setSoldCount(c.getSoldCount() + 1);
-        RoomInventoryItem item = new RoomInventoryItem();
-        item.setUserId(user.id());
-        item.setSku(sku);
-        item.setSerial(c.getStockLimit() == null ? null : c.getSoldCount());
-        item.setSource("PURCHASE");
-        item.setAcquiredAt(Instant.now());
-        inventory.save(item);
-        if (seller != null && c.getPricePoints() > 0) {
-            FaiPointsLedgerEntry credit = new FaiPointsLedgerEntry();
-            credit.setUserId(seller);
-            credit.setDelta(c.getPricePoints()); // zero platform fee; no cash conversion
-            credit.setActionCode("SHOP_SALE");
-            credit.setRefType("SHOP_PURCHASE");
-            credit.setRefId(purchaseRef);
-            credit.setIdempotencyKey(seller + ":SHOP_SALE:" + purchaseRef);
-            credit.setCountsLifetime(false); // sales never farm progression levels
-            ledger.save(credit);
-            statement(credit, WardrobeCreatorService.displayName(c));
-        }
-        return Map.of("inventoryId", item.getId(), "sku", sku, "balance", balance(user.id()), "lifetime", lifetime(user.id()),
-                "level", level(user.id()).name(), "serial", String.valueOf(item.getSerial()));
-    }
-
     /** Chave de pedido aceita: só letras, números e hífen (um UUID do navegador cabe), para caber na chave do ledger. */
     static String requestRef(String key) {
         return key != null && key.matches("[A-Za-z0-9-]{16,64}") ? key : null;
-    }
-
-    /** Resposta da compra já feita: o item mais recente desse SKU no inventário da pessoa e o saldo atual. */
-    private Map<String, Object> repeatedPurchase(CurrentUser user, String sku) {
-        RoomInventoryItem item = inventory.findByUserId(user.id()).stream().filter(i -> sku.equals(i.getSku()))
-                .max(java.util.Comparator.comparing(RoomInventoryItem::getAcquiredAt, java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
-                .orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
-        return Map.of("inventoryId", item.getId(), "sku", sku, "balance", balance(user.id()), "lifetime", lifetime(user.id()),
-                "level", level(user.id()).name(), "serial", String.valueOf(item.getSerial()), "repeated", true);
-    }
-
-    @Transactional
-    public Map<String, Object> apply(CurrentUser user, UUID inventoryId, String moduleId) {
-        RoomInventoryItem item = inventory.findById(inventoryId).orElseThrow(() -> ApiException.notFound("Item"));
-        if (!item.getUserId().equals(user.id())) {
-            throw ApiException.forbidden(Msg.t("faiPoints.item_de_outro_usuario"));
-        }
-        RoomCatalogItem c = catalog.findById(item.getSku()).orElseThrow();
-        List<String> compatible = layouts.compatibleModules(user.id(), c);
-        if (!compatible.contains(moduleId)) {
-            throw new ApiException(409, "ENCAIXE_INCOMPATIVEL", Msg.t("faiPoints.o_item_cabe_em_rf35", String.join(", ", compatible)));
-        }
-        item.setAppliedModule(moduleId);
-        layouts.applyFinish(user.id(), moduleId, c);
-        releaseDisplaced(user.id(), item);
-        return Map.of("applied", true, "module", moduleId, "sku", c.getSku());
-    }
-
-    /**
-     * Retira do quarto um item comprado: o módulo volta ao acabamento de fábrica e o item continua no inventário (a
-     * propriedade nunca depende de estar aplicado).
-     */
-    @Transactional
-    public Map<String, Object> unapply(CurrentUser user, UUID inventoryId) {
-        RoomInventoryItem item = inventory.findById(inventoryId).orElseThrow(() -> ApiException.notFound("Item"));
-        if (!item.getUserId().equals(user.id())) {
-            throw ApiException.forbidden(Msg.t("faiPoints.item_de_outro_usuario"));
-        }
-        if (item.getAppliedModule() == null) {
-            throw new ApiException(409, "ITEM_NAO_APLICADO", Msg.t("room.item_not_applied"));
-        }
-        RoomCatalogItem c = catalog.findById(item.getSku()).orElseThrow();
-        String module = item.getAppliedModule();
-        layouts.resetFinish(user.id(), module, c);
-        item.setAppliedModule(null);
-        return Map.of("applied", false, "module", module, "sku", c.getSku(), "inventoryId", item.getId());
-    }
-
-    /**
-     * Um módulo mostra um único item: depois de aplicar {@code applied}, as outras unidades que ocupavam o mesmo lugar (ou
-     * cujo acabamento foi sobrescrito, como num guarda-roupa inteiro) deixam de constar como aplicadas — continuam no
-     * inventário e podem ser reaplicadas.
-     */
-    void releaseDisplaced(UUID userId, RoomInventoryItem applied) {
-        RoomLayout layout = layouts.layout(userId);
-        List<Map<String, Object>> modules = layout == null ? List.of() : Json.list(layout.getModulesJson());
-        for (RoomInventoryItem other : inventory.findByUserId(userId)) {
-            if (other.getId() == null || other.getId().equals(applied.getId()) || other.getAppliedModule() == null) {
-                continue;
-            }
-            String where = other.getAppliedModule();
-            boolean present = !where.equals(applied.getAppliedModule()) && modules.stream()
-                    .anyMatch(m -> other.getSku().equals(m.get("sku")) && ("ALL".equals(where) || where.equals(String.valueOf(m.get("id")))));
-            if (!present) {
-                other.setAppliedModule(null);
-            }
-        }
-    }
-
-    /** Porta de acesso ao layout (implementada pelo RoomService) — evita dependência circular. */
-    public interface RoomLayoutAccess {
-        void setLevel(UUID userId, String level);
-
-        List<String> compatibleModules(UUID userId, RoomCatalogItem item);
-
-        void applyFinish(UUID userId, String moduleId, RoomCatalogItem item);
-
-        /** Volta ao acabamento de fábrica os módulos que mostram {@code item} ({@code "ALL"} = guarda-roupa inteiro). */
-        void resetFinish(UUID userId, String moduleId, RoomCatalogItem item);
-
-        RoomLayout layout(UUID userId);
     }
 }

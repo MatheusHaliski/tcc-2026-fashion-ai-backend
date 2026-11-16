@@ -1,6 +1,7 @@
 package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.acervo.AcervoLugares;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
@@ -59,7 +60,7 @@ import java.util.stream.Collectors;
 /**
  * RF33 — Smart Mirror e "Vista-me". O espelho é mais uma interface para iniciar o Criar Look (RF5), não uma
  * cópia dele: montagem manual por slots (§2.1), completude determinística sem IA, Vista-me com interpretação,
- * elegibilidade, validação anti-alucinação (CA09), localização no quarto (CA10), "Usar este look" que sempre
+ * elegibilidade, validação anti-alucinação (CA09), lugar da peça no ACERVO (CA10), "Usar este look" que sempre
  * materializa um Esquema (§2.3) e entrega para o RF5 via RoomLookDraft (§2.4).
  * <p>
  * RF53 · P3-07 — o look no espelho traz os mesmos seis números do Copilot e do Autopiloto ({@link LookScorer}):
@@ -71,6 +72,7 @@ public class MirrorService {
     public static final int MAX_ACCESSORIES = 4;
     public static final int MAX_SHOWN = 50;
     static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("dd/MM");
+    static final Set<String> OUTERWEAR = Set.of("jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "kimono"); // camada externa
 
     /** RF36.CA14 — desafios com conjunto de peças (10×10, Cápsula) restringem o Vista-me; implementado pelo ChallengeService. */
     public interface PieceRestrictionProvider {
@@ -86,7 +88,7 @@ public class MirrorService {
     private final MirrorStateRepository mirrors;
     private final WardrobeItemRepository pieces;
     private final WardrobeService wardrobe;
-    private final RoomService room;
+    private final AcervoLugares lugares;
     private final TipoLookRepository tiposLook;
     private final SchemeService schemeService;
     private final SchemeRepository schemes;
@@ -100,7 +102,7 @@ public class MirrorService {
     /** P3-07 — a mesma régua de looks do Copilot e do Autopiloto (só lê o Hype gravado; nada recalcula nem vira sinal). */
     private final LookScorer scorer;
 
-    public MirrorService(MirrorStateRepository mirrors, WardrobeItemRepository pieces, WardrobeService wardrobe, RoomService room,
+    public MirrorService(MirrorStateRepository mirrors, WardrobeItemRepository pieces, WardrobeService wardrobe, AcervoLugares lugares,
                          SchemeService schemeService, SchemeRepository schemes, SchemeItemRepository schemeItems,
                          DailyLookService dailyLooks, StyleDnaRepository dnas, ObjectProvider<PieceRestrictionProvider> restrictions,
                          AiEngine ai, Audit audit, ApplicationEventPublisher events, HypeQueryService hype,
@@ -109,7 +111,7 @@ public class MirrorService {
         this.mirrors = mirrors;
         this.pieces = pieces;
         this.wardrobe = wardrobe;
-        this.room = room;
+        this.lugares = lugares;
         this.schemeService = schemeService;
         this.schemes = schemes;
         this.schemeItems = schemeItems;
@@ -126,7 +128,7 @@ public class MirrorService {
     public static String slotOf(WardrobeItem w) {
         String cat = w.getCategory() == null ? "" : w.getCategory();
         return switch (cat) {
-            case "upper_piece" -> w.getSubcategory() != null && RoomService.OUTERWEAR.contains(w.getSubcategory()) ? "outer_layer" : "upper";
+            case "upper_piece" -> w.getSubcategory() != null && OUTERWEAR.contains(w.getSubcategory()) ? "outer_layer" : "upper";
             case "lower_piece" -> "lower";
             case "full_body_piece" -> "dress";
             case "shoes_piece" -> "shoes";
@@ -290,7 +292,7 @@ public class MirrorService {
         return Map.of("letter", letter, "rule", thirds, "toggle", true);
     }
 
-    Map<String, Object> pieceView(WardrobeItem w, Map<UUID, RoomService.Location> where) {
+    Map<String, Object> pieceView(WardrobeItem w, Map<UUID, AcervoLugares.Lugar> where) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", w.getId());
         m.put("name", w.getName());
@@ -310,10 +312,10 @@ public class MirrorService {
         m.put("attributes", attrs);
         m.put("available", available(w));
         m.put("slot", slotOf(w));
-        RoomService.Location loc = where.get(w.getId());
-        m.put("address", loc == null ? null : loc.address().toString());
-        m.put("addressLabel", loc == null ? null : loc.label());
-        m.put("moduleId", loc == null ? null : loc.moduleId());
+        AcervoLugares.Lugar loc = where.get(w.getId());
+        m.put("address", loc == null ? null : loc.compartimentoId().toString());
+        m.put("addressLabel", loc == null ? null : loc.caminho());
+        m.put("moduleId", loc == null ? null : loc.movelId().toString());
         // estado dos assets da peça (RF16 e foto): o espelho mostra "Modelo 3D", "Foto em processamento" etc. de verdade
         m.put("model3dUrl", w.getModel3dUrl());
         m.put("model3dStatus", w.getModel3dStatus() == null ? null : w.getModel3dStatus().name());
@@ -366,7 +368,7 @@ public class MirrorService {
             s.setSlotsJson(Json.write(slots));
             mirrors.save(s);
         }
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         Map<String, Object> out = new LinkedHashMap<>();
         Map<String, Object> slotViews = new LinkedHashMap<>();
         for (String slot : List.of("outer_layer", "upper", "dress", "lower", "shoes")) {
@@ -465,7 +467,7 @@ public class MirrorService {
         MirrorState s = stateEntity(user.id());
         Map<String, Object> slots = slots(s);
         String slot = slotOf(w);
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         List<Map<String, Object>> returned = new ArrayList<>();
         if (slot.equals("accessory")) {
             List<String> acc = accessories(slots).stream().map(UUID::toString).collect(Collectors.toCollection(ArrayList::new));
@@ -592,13 +594,11 @@ public class MirrorService {
         return restrictions.orderedStream().map(p -> p.restriction(userId)).filter(Optional::isPresent).map(Optional::get).findFirst();
     }
 
-    /** Só peças disponíveis (RF31.CA02), dentro da estação (Penthouse) e permitidas pelo desafio ativo (RF36.CA14). */
+    /** Só peças disponíveis (RF31.CA02) e permitidas pelo desafio ativo (RF36.CA14). */
     public List<WardrobeItem> eligible(UUID userId) {
-        Set<UUID> outOfSeason = room.outOfSeason(userId);
         Optional<PieceRestrictionProvider.Restriction> r = restriction(userId);
         return wardrobe.eligible(userId).stream()
                 .filter(w -> !w.isForSale())
-                .filter(w -> !outOfSeason.contains(w.getId()))
                 .filter(w -> r.isEmpty() || r.get().allowedPieceIds().contains(w.getId()))
                 .toList();
     }
@@ -665,7 +665,7 @@ public class MirrorService {
                 },
                 () -> localAlternatives(candidates, context), null));
         List<Map<String, Object>> alternatives = outcome.value() == null ? localAlternatives(candidates, context) : outcome.value();
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         List<Map<String, Object>> view = new ArrayList<>();
         for (Map<String, Object> alt : alternatives) {
             WardrobeItem w = candidates.stream().filter(c -> c.getId().equals(alt.get("pieceId"))).findFirst().orElse(null);
@@ -688,7 +688,7 @@ public class MirrorService {
     // ================================================================== escolher do guarda-roupa (WARDROBE-FIX)
     /**
      * Todas as peças que podem ir para o slot, para a pessoa escolher à mão: sem IA e sem custo. As mesmas regras do
-     * Vista-me valem aqui (só disponíveis, dentro da estação, permitidas pelo desafio ativo); as que já estão no espelho
+     * Vista-me valem aqui (só disponíveis e permitidas pelo desafio ativo); as que já estão no espelho
      * vêm marcadas.
      */
     @Transactional(readOnly = true)
@@ -697,7 +697,7 @@ public class MirrorService {
             throw ApiException.badRequest("SLOT_INVALIDO", "Slots: " + SLOTS);
         }
         Set<UUID> inMirror = new HashSet<>(mirrors.findByUserId(user.id()).map(s -> allIds(slots(s))).orElse(List.of()));
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         List<Map<String, Object>> pieces = new ArrayList<>();
         for (WardrobeItem w : eligible(user.id())) {
             if (slotOf(w).equals(slot)) {
@@ -1011,13 +1011,13 @@ public class MirrorService {
         int hour = LocalDateTime.now(FaiPointsService.ZONE).getHour();
         events.publishEvent(new DomainEvents.MirrorAction(user.id(), hour < 5 ? "VISTA_ME_MADRUGADA" : "VISTA_ME"));
 
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         List<Map<String, Object>> sequence = new ArrayList<>();
         for (WardrobeItem w : look) {
-            RoomService.Location loc = where.get(w.getId());
-            sequence.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "address", loc == null ? "" : loc.address().toString(),
-                    "label", loc == null ? "" : loc.label(), "moduleId", loc == null ? "" : loc.moduleId(),
-                    "legend", w.getName() + " — " + (loc == null ? Msg.t("common.posicao_desconhecida") : loc.label())));
+            AcervoLugares.Lugar loc = where.get(w.getId());
+            sequence.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "address", loc == null ? "" : loc.compartimentoId().toString(),
+                    "label", loc == null ? "" : loc.caminho(), "moduleId", loc == null ? "" : loc.movelId().toString(),
+                    "legend", w.getName() + " — " + (loc == null ? Msg.t("common.posicao_desconhecida") : loc.caminho())));
         }
         Map<String, Object> extra = new LinkedHashMap<>();
         extra.put("sequence", sequence);
@@ -1098,7 +1098,7 @@ public class MirrorService {
         Map<String, Object> state = remove(user, removeId);
         events.publishEvent(new DomainEvents.MirrorAction(user.id(), "TIRA_UMA_COISA"));
         Map<String, Object> out = new LinkedHashMap<>(state);
-        out.put("removed", pieceView(removed, room.locateAll(user.id())));
+        out.put("removed", pieceView(removed, lugares.deUsuario(user.id())));
         out.put("why", pick.get("why"));
         out.put("fallbackUsed", outcome.fallbackUsed());
         out.put("explanation", outcome.explanation());
@@ -1232,7 +1232,7 @@ public class MirrorService {
             throw new ApiException(409, "ESPELHO_VAZIO", Msg.t("mirror.monte_um_look_no_espelho"));
         }
         Map<UUID, WardrobeItem> loaded = load(user.id(), ids);
-        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(user.id());
         int per = Math.min(2500, 12000 / Math.max(1, ids.size()));
         List<Map<String, Object>> steps = new ArrayList<>();
         int t = 0;
@@ -1241,9 +1241,9 @@ public class MirrorService {
             if (w == null) {
                 continue;
             }
-            RoomService.Location loc = where.get(id);
-            steps.add(Map.of("at", t, "durationMs", per, "moduleId", loc == null ? "" : loc.moduleId(), "address", loc == null ? "" : loc.address().toString(),
-                    "pieceId", id, "imageUrl", String.valueOf(w.getImageUrl()), "caption", w.getName() + (loc == null ? "" : " — " + loc.label())));
+            AcervoLugares.Lugar loc = where.get(id);
+            steps.add(Map.of("at", t, "durationMs", per, "moduleId", loc == null ? "" : loc.movelId().toString(), "address", loc == null ? "" : loc.compartimentoId().toString(),
+                    "pieceId", id, "imageUrl", String.valueOf(w.getImageUrl()), "caption", w.getName() + (loc == null ? "" : " — " + loc.caminho())));
             t += per;
         }
         steps.add(Map.of("at", t, "durationMs", 3000, "moduleId", "mirror", "caption", Msg.t("mirror.look_pronto")));

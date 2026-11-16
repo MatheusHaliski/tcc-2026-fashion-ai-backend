@@ -62,6 +62,15 @@ describe("grade de marcas na busca catalogada", () => {
     expect((screen.getByLabelText(/De qual marca/) as HTMLInputElement).value).toBe("");
   });
 
+  it("catálogo sem lojas: uma linha diz isso, sem o bloco vazio de marcas ocupando a tela (auditoria 10.1, Adicionar peça)", async () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/stores": { stores: [] }, "GET /api/catalog/brands": { brands: [] },
+      "GET /api/catalog/summary": { products: 0, brands: 0 }, "GET /api/catalog/products": { items: [], page: 0, size: 48, total: 0, hasMore: false } });
+    renderApp(<CatalogSearch onPick={vi.fn()} category="" />);
+    expect(await screen.findByTestId("catalogo-sem-lojas")).toBeTruthy();
+    expect(screen.queryByText(/Marcas do catálogo \(0\)/)).toBeNull();
+    expect(document.querySelector(".catalog-brand-stage")).toBeNull();
+  });
+
   it("pagina a grade de marcas sem rolagem vertical", async () => {
     const stores = { stores: Array.from({ length: 13 }, (_, i) => ({
       brandId: `b${i}`, slug: `marca-${i + 1}`, name: `Marca ${i + 1}`, logoUrl: null, catalogProducts: i + 1, categories: ["upper_piece"],

@@ -77,7 +77,11 @@ describe("quadro por porte", () => {
     expect(within(canto("tr")).getByRole("img", { name: "Pontos e estrelas saem depois da entrega" })).toBeTruthy();
     expect(within(canto("bl")).getByTestId("nucleo-cast").textContent).toContain("A modelo da casa");
     expect(within(canto("br")).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Câmera: Automática. Trocar de câmera", "Girar à esquerda", "Girar à direita", "Aproximar", "Afastar", "Posar"]);
+    // o começo da partida: a premissa do jogo sobre a régua e o deck, até a pessoa seguir
     const baixo = quadro().querySelector(".n3d-lower")!;
+    expect(Array.from(baixo.children).map((el) => el.className)).toEqual(["n3d-cutscene n3d-premissa", "n3d-ruler", "n3d-band is-prep"]);
+    expect(screen.getByTestId("nucleo-premissa").textContent).toContain("Noite de desfile");
+    fireEvent.click(screen.getByRole("button", { name: "Montar o look" }));
     expect(Array.from(baixo.children).map((el) => el.className)).toEqual(["n3d-ruler", "n3d-band is-prep"]);
   });
 

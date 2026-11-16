@@ -73,9 +73,26 @@ function doServidor(campo: Campo, anterior: Jogada | null, atual: Jogada, t: num
   return pontos;
 }
 
+/** Depois do gol, os colegas correm para abraçar quem marcou (o goleiro fica na meta). */
+export const COMEMORACAO = 0.78;
+const ABRACO = 0.12;
+
+function juntarNaComemoracao(campo: Campo, atual: Jogada | null, t: number, pontos: Map<string, Ponto>): Map<string, Ponto> {
+  if (!atual || !gol(atual.tipo) || t <= COMEMORACAO) return pontos;
+  const autor = pontos.get(`${atual.time}:${atual.jogador}`);
+  if (!autor) return pontos;
+  const w = suave(Math.min(1, (t - COMEMORACAO) / ABRACO)) * 0.65;
+  pontos.forEach((p, chave) => {
+    const [time, n] = chave.split(":");
+    if (time !== atual.time || Number(n) === atual.jogador || goleiro(campo, Number(n))) return;
+    pontos.set(chave, [entre(p[0], autor[0], w), entre(p[1], autor[1], w)]);
+  });
+  return pontos;
+}
+
 /** As posições de todos no instante t (do servidor quando ele manda; da formação quando não). */
 function posicoes(campo: Campo, anterior: Jogada | null, atual: Jogada | null, t: number): Map<string, Ponto> {
-  if (atual?.jogadores) return doServidor(campo, anterior, atual, t);
+  if (atual?.jogadores) return juntarNaComemoracao(campo, atual, t, doServidor(campo, anterior, atual, t));
   const agora = alvosDaFormacao(campo, atual, t);
   const antes = noFim(campo, anterior);
   const chegada = suave(Math.min(1, t / 0.25));
@@ -84,14 +101,18 @@ function posicoes(campo: Campo, anterior: Jogada | null, atual: Jogada | null, t
     const de = antes.get(chave) ?? p;
     pontos.set(chave, [entre(de[0], p[0], chegada), entre(de[1], p[1], chegada)]);
   });
-  separar(pontos, atual ? `${atual.time}:${atual.jogador}` : null);
+  separar(juntarNaComemoracao(campo, atual, t, pontos), atual ? `${atual.time}:${atual.jogador}` : null);
   return pontos;
 }
 
 function gestoDe(campo: Campo, lance: Jogada | null, time: Lado, n: number, k: number, andando: boolean): Gesto {
   if (!lance) return "parado";
   const ator = lance.time === time && lance.jogador === n;
-  if (gol(lance.tipo) && k > 0.78) return lance.time === time ? "comemora" : "lamenta";
+  // o gol: quem marcou comemora; os colegas correm até ele e comemoram juntos; o outro time baixa a cabeça
+  if (gol(lance.tipo) && k > COMEMORACAO) {
+    if (lance.time !== time) return "lamenta";
+    return !ator && !goleiro(campo, n) && k < COMEMORACAO + ABRACO ? "corre" : "comemora";
+  }
   if (ator && (lancamento(lance) || finalizacao(lance.tipo)) && k > 0.18 && k < 0.42) return "chuta";
   if (finalizacao(lance.tipo) && lance.time !== time && goleiro(campo, n) && k > 0.5) return defesaDoGoleiro(lance.tipo) ? "mergulha" : "defende";
   if (ator && (lance.tipo === "DESARME" || lance.tipo === "DESARME_FALHO") && k > 0.3 && k < 0.7) return "defende";

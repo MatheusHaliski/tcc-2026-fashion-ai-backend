@@ -39,11 +39,11 @@ class ControllerDelegacaoTest {
             AdminController.class, br.com.fashionai.web.atelierproject.AtelierProjectController.class,
             PhysicalStoreController.class, br.com.fashionai.web.passport.GarmentPassportController.class,
             SealHypeOffersController.class, EraStudioController.class, ProfileController.class, SealController.class,
-            AdminRoomAssetController.class, MultiplatformController.class, MeController.class, ShowcaseController.class,
+            MultiplatformController.class, MeController.class, ShowcaseController.class,
             PhotoController.class, NotificationController.class, PreferencesController.class,
-            FlairChallengeController.class, DnaController.class, WardrobeController.class, RoomController.class,
+            FlairChallengeController.class, DnaController.class, WardrobeController.class,
             AuraPieceMediaController.class, CommentController.class, DashboardController.class,
-            AutopilotController.class, FlairController.class, RoomCreatorController.class,
+            AutopilotController.class, FlairController.class,
             FlairCollectionController.class, Avatar3dController.class, TryOnController.class, GuideController.class,
             MomentController.class, BackgroundController.class, TryOnPersonPhotoController.class,
             AdminPhysicalStoreController.class, AnatomicalTryOnController.class, HypeController.class,
@@ -82,8 +82,7 @@ class ControllerDelegacaoTest {
      * Endpoints que passaram a ter regra própria antes de delegar (permissão de criador, nível Loft do FLAIR, item que
      * precisa existir): este teste genérico só sabe exercitar repasse puro, então ficam de fora dele.
      */
-    static final Set<String> COM_REGRA = Set.of("CatalogController.textureImage", "FlairAdventureController.preview",
-            "HighlightsController.unapply");
+    static final Set<String> COM_REGRA = Set.of("CatalogController.textureImage", "FlairAdventureController.preview");
 
     static boolean generico(Class<?> type, java.lang.reflect.Method m) {
         String id = type.getSimpleName() + "." + m.getName();

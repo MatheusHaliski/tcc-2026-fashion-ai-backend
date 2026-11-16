@@ -310,7 +310,7 @@ public class WardrobeItem extends PieceStudioMedia {
     @Column(name = "last_viewed_at")
     private Instant lastViewedAt;
 
-    /** DET-M07 — origem da peça: COMPRADA, GARIMPADA, HERDADA, PRESENTE, FEITA_A_MAO, TROCADA. */
+    /** DET-M07 — origem da peça: COMPRADA, GARIMPADA, HERDADA, PRESENTE, FEITA_A_MAO, TROCADA, SOB_ENCOMENDA. */
     @Column(name = "piece_origin", length = 20)
     private String pieceOrigin;
 }

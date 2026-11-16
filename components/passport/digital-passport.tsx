@@ -10,7 +10,7 @@ import { Badge, Button, Card, ErrorState, Skeleton } from '@/components/ui';
 import { label, subcategoryLabel } from '@/lib/api/taxonomy';
 import { sizeLabel } from '@/components/piece-snapshot';
 
-const PieceModelViewer = dynamic(() => import('@/components/room3d/piece-model-viewer'), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr('pieces.id.carregando_o_modelo_3d')}</div> });
+const PieceModelViewer = dynamic(() => import('@/components/piece3d/piece-model-viewer'), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr('pieces.id.carregando_o_modelo_3d')}</div> });
 
 /** Código do cadastro ("lower_piece", "COTTON", "GOOD") no idioma de quem lê; texto livre fica como veio. */
 const codigo = (value: unknown) => { const v = String(value); return /^[a-z]+(_[a-z]+)*$|^[A-Z]+(_[A-Z]+)*$/.test(v) ? label(v) : v; };

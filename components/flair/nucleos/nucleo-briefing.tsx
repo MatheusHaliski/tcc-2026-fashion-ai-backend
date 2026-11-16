@@ -34,9 +34,11 @@ interface Props {
   cartas: FlairCollectionCard[];
   aberto: boolean;
   onFechar: () => void;
+  /** a premissa do jogo, no começo da partida: abre o cartão, antes do que a rodada revela */
+  premissa?: string | null;
 }
 
-export function NucleoBriefing({ briefing, cartas, aberto, onFechar }: Props) {
+export function NucleoBriefing({ briefing, cartas, aberto, onFechar, premissa = null }: Props) {
   const tx = useNucleoText();
   const prazo = briefing.tipo === "alvo" ? (briefing.segundos ?? 10) * 1000 : ABERTURA_MS;
 
@@ -55,6 +57,7 @@ export function NucleoBriefing({ briefing, cartas, aberto, onFechar }: Props) {
 
   return (
     <section className="n3d-cutscene n3d-briefing" role="dialog" aria-label={tx.t("flair3d.ui.briefing.title")} data-testid="nucleo-briefing" data-tipo={briefing.tipo}>
+      {premissa && <p className="n3d-premissa-texto" data-testid="nucleo-premissa">{premissa}</p>}
       <p className="type-label">{etiqueta}</p>
       {briefing.codigo && <h3>{tx.etapaNome(briefing.codigo)}</h3>}
       {briefing.codigo && tx.etapaTexto(briefing.codigo) && <p>{tx.etapaTexto(briefing.codigo)}</p>}

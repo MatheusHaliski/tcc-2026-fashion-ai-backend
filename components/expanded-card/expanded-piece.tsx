@@ -56,7 +56,7 @@ import { useAuraLive } from "@/lib/hype/use-aura-live";
 import { PieceGallery, type Slide } from "./piece-gallery";
 interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }
 
-const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
+const PieceModelViewer = dynamic(() => import("@/components/piece3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
 function LookHype({ id }: { id: string }) {
   const { summary, loading, error } = useHypeSummary("SCHEME", id);

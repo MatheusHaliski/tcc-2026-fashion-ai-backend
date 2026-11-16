@@ -54,7 +54,7 @@ class PhysicalStoreVariantTest {
         when(ledger.balance(any())).thenReturn(1000L);
         CatalogService catalog = mock(CatalogService.class);
         when(catalog.product(any())).thenReturn(Map.of("id", product.getId()));
-        WardrobeCreatorService creator = mock(WardrobeCreatorService.class);
+        SellerIdentity creator = mock(SellerIdentity.class);
         when(creator.identity(any())).thenReturn(Map.of("name", "Marca"));
         store = new PhysicalStoreService(listings, orders, variants, MemoryRepository.of(CatalogProductRepository.class), MemoryRepository.of(BrandRepository.class), ledger, users, guard, catalog, creator);
         service = new PhysicalStoreVariantService(listings, variants, catalogVariants, guard);

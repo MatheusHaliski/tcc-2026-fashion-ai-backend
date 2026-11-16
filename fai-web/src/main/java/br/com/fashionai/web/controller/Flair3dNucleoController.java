@@ -4,11 +4,13 @@ import br.com.fashionai.application.flair3d.Acionamento;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleoService;
+import br.com.fashionai.application.flair3d.Flair3dRetomada;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,9 +26,11 @@ import java.util.UUID;
 @Tag(name = "FLAIR 3D — núcleos")
 public class Flair3dNucleoController {
     private final Flair3dNucleoService service;
+    private final Flair3dRetomada retomada;
 
-    public Flair3dNucleoController(Flair3dNucleoService service) {
+    public Flair3dNucleoController(Flair3dNucleoService service, Flair3dRetomada retomada) {
         this.service = service;
+        this.retomada = retomada;
     }
 
     @GetMapping("/api/flair/3d/nucleos")
@@ -54,6 +58,12 @@ public class Flair3dNucleoController {
     public Map<String, Object> abrir(CurrentUser user, @PathVariable String codigo,
                                      @RequestBody(required = false) Flair3dNucleoService.AbrirPartida body) {
         return service.abrir(user, codigo, body);
+    }
+
+    @GetMapping("/api/flair/3d/nucleos/{codigo}/em-andamento")
+    @Operation(summary = "A partida da pessoa que ainda não fechou neste núcleo, com o ponto em que parou (204 sem nenhuma)")
+    public ResponseEntity<Map<String, Object>> emAndamento(CurrentUser user, @PathVariable String codigo) {
+        return retomada.emAndamento(user, codigo).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PostMapping("/api/flair/3d/partidas/{id}/entrega")

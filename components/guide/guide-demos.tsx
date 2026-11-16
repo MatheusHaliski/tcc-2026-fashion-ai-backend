@@ -39,7 +39,6 @@ export function GuideDemo({ demo }: { demo: DemoId }) {
     case "brandVisitor": return <BrandDemo operator={false} />;
     case "brandOperator": return <BrandDemo operator />;
     case "points": return <PointsDemo />;
-    case "shop": return <ShopDemo />;
     case "pointsEarn": return <PointsEarnDemo />;
     case "highlights": return <HighlightsDemo />;
     case "flairMatch": return <FlairMatchDemo />;
@@ -346,15 +345,3 @@ function PointsDemo() {
   );
 }
 
-function ShopDemo() {
-  const { t } = useI18n();
-  return (
-    <div className="gd-shop">
-      <div className="gd-shop-step surface"><b>{t("guide.demo.shop.item")}</b><span className="gd-price"><FaiIcon id="ACT-40" size={20} decorative /> <b className="tabular">180</b></span><span className="type-caption">{t("guide.demo.shop.requirement")}</span></div>
-      <span className="gd-arrow" aria-hidden>→</span>
-      <div className="gd-shop-step surface gd-anim-show"><b>{t("guide.demo.shop.confirm")}</b><span className="type-caption">{t("guide.demo.shop.effect")}</span></div>
-      <span className="gd-arrow" aria-hidden>→</span>
-      <div className="gd-shop-step surface gd-anim-show2"><b>{t("guide.demo.shop.delivered")}</b><span className="type-caption">{t("guide.demo.shop.balance")}</span></div>
-    </div>
-  );
-}

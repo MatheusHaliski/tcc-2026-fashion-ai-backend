@@ -12,6 +12,7 @@ import { janelaDoAcionamento, passosDaAcao, type PassoAcao } from "@/lib/flair/n
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { tocarFx, type FxPrefs } from "@/lib/flair/nucleos/fx-sound";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
+import { passoDaCena } from "@/lib/flair/nucleos/scene/ritmo";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 export interface NucleoActionOptions {
@@ -47,7 +48,9 @@ export function useNucleoAction(opts: NucleoActionOptions) {
     onFim();
   }, [nucleo, resultado, onFim]);
 
-  const tocador = useActionPlayback({ ativo: momento === "ACAO", passos, reduzido, continua: emAcao, onPasso, onFim: fim, passoMs: porCartas ? LANCE_MS : undefined });
+  // cada passo dura a sua parte da sequência da cena: a cena acaba junto com a ação
+  const passoMs = useMemo(() => (porCartas ? LANCE_MS : resultado ? passoDaCena(nucleo, resultado, passos.length) : undefined), [porCartas, resultado, nucleo, passos.length]);
+  const tocador = useActionPlayback({ ativo: momento === "ACAO", passos, reduzido, continua: emAcao, onPasso, onFim: fim, passoMs });
   const mostrados = momento === "RESULTADO" ? passos.length : tocador.mostrados;
 
   const naAcao = acionamento?.momento === "ACAO" ? acionamento.tipo : null;

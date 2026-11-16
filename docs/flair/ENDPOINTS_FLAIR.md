@@ -1,5 +1,7 @@
 # Rotas e endpoints FLAIR: inventário e conjunto mínimo
 
+> **Atualização de 15/11/2026, mais tarde no mesmo dia:** o Quarto 3D saiu do app (`docs/quarto/RETIRADA_DO_QUARTO_3D.md`). O que esta página conta sobre o quarto no Atelier › Quarto é história: `/room`, `/atelier?tab=room…` e os links da Suíte de Vidro levam ao ACERVO (`/acervo`), e a aba do Atelier virou "Conquistas" (`?tab=rewards`).
+
 Levantamento de 15/11/2026, feito no código (branch de trabalho a partir de `claude/adoring-davinci-mufbri`), para a
 decisão da dona do projeto sobre as duas áreas chamadas "FLAIR 3D" (auditoria de 14/11, seções 9 e 10): "Crie
 endpoints mínimos e necessários para funcionamento, delete redundantes."
@@ -93,7 +95,7 @@ redirecionam).
 | `/flair/missoes` | `flair/missoes/page.tsx` | Central (Missões) | `sections.test.tsx` | manter |
 | `/flair/aventura` | `flair/aventura/page.tsx` → `AfterpartyAdventure` | nenhum link | `afterparty-*.test.tsx` | guardado para o Glass Empire |
 | `/flair/heist` | `flair/heist/page.tsx` → `GalaHeist` | nenhum link | `heist-deck.test.tsx` | guardado para o Glass Empire |
-| `/room` | `room/page.tsx` (só redireciona) | links antigos | `app/mirror-redirect.test.tsx` | manter; leva ao quarto em 3D do Atelier (`/atelier?tab=room&quarto=3d`) |
+| `/room` | `room/page.tsx` (só redireciona) | links antigos | `app/mirror-redirect.test.tsx` | manter; leva ao ACERVO (`/acervo`) desde a retirada do Quarto 3D (15/11/2026) |
 
 Central FLAIR (`lib/flair/hub.ts`), grupo Jogar, na ordem dos segmentos de `ESTRUTURA_FLAIR.md`: Partidas FLAIR,
 Desafios de Montagem, **Elencos** (`/flair/elencos`, novo), FLAIR 3D (`/flair/3d`), **FLAIR 3D MAKE UP**
@@ -217,11 +219,12 @@ Em `lib/nav/legacy-redirects.ts` (lido por `next.config.ts`, testado em `legacy-
 
 | Endereço antigo | Vai para |
 | --- | --- |
-| `/flair/jogos?district=SUITE` | `/atelier?tab=room&quarto=3d` (o quarto) |
-| `/flair/jogos/a01-espelho-partido` (o capítulo da Suíte de Vidro) | `/atelier?tab=room&quarto=3d` |
+| `/flair/jogos?district=SUITE` | `/acervo` (era o quarto em 3D do Atelier, que saiu em 15/11/2026) |
+| `/flair/jogos/a01-espelho-partido` (o capítulo da Suíte de Vidro) | `/acervo` |
 | `/flair/jogos` (com outros filtros ou sem) | `/flair/3d` |
 | `/flair/jogos/<qualquer outro>` | `/flair/3d` |
-| `/room` | `/atelier?tab=room&quarto=3d` (a página `room/page.tsx`; `?espelho=1` e `?piece=` continuam indo ao Espelho e ao Guarda-roupa) |
+| `/room` | `/acervo` (a página `room/page.tsx`; `?espelho=1` e `?piece=` continuam indo ao Espelho e ao Guarda-roupa) |
+| `/atelier?tab=room…` | `/acervo` (a aba Quarto do Atelier saiu com o Quarto 3D) |
 
 ### 4.4 Tabelas de endpoints
 
@@ -241,7 +244,7 @@ depende da aprovação da dona):
 | Tabela `flair_game_rewards` (V98) | inteira: as recompensas dos capítulos já entregues e o estado delas |
 | `flair_challenges` (colunas da V98) | `series`, `game_number`, `district`, `rarity`, `required_level`, `required_wardrobe_level`, `deck_json`, `hype_json`, `ficha_json`, `scene_json`, `rewards_json`, `thumbnail`; `series` ainda é lida pela lista do CBC e pelo `find`, só para esconder as linhas abaixo |
 | `flair_challenges` (linhas) | as 5 linhas com `series` (slugs `a01-espelho-partido`, `b31-prova-com-a-estrela`, `c43-rooftop-ao-por-do-sol`, `d70-cinco-clientes`, `e96-chefe-vellard`) e as entregas delas em `flair_challenge_submissions`, que seguem no histórico de quem jogou |
-| `room_catalog` (linhas) | os 4 itens `F3D-*` (inativos na loja); as unidades já ganhas continuam no inventário de quem as ganhou, instaláveis e visíveis no quarto 3D |
+| `room_catalog` (linhas) | os 4 itens `F3D-*` (inativos na loja); as unidades já ganhas continuam no inventário de quem as ganhou, sem uso desde a retirada do Quarto 3D (15/11/2026) |
 | `fai_points_rules` (linhas) | `FLAIR_3D` e `FLAIR_3D_PERFECT`: ninguém mais lança esses pontos (o CBC lança sempre `FLAIR_CBC`); os lançamentos antigos seguem no extrato |
 
 As recompensas já entregues ficam com os donos: nada as remove, e as cartas e itens continuam nas coleções.

@@ -14,8 +14,7 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { EsporteResumo, resultadoSemLances } from "@/components/flair/esporte/esporte-resumo";
 import { NucleoActionSlot } from "@/components/flair/nucleos/nucleo-action-slot";
 import { MODELO_CASA, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
-import { NucleoBriefing } from "@/components/flair/nucleos/nucleo-briefing";
-import { NucleoCutscene } from "@/components/flair/nucleos/nucleo-cutscene";
+import { NucleoApresentacao } from "@/components/flair/nucleos/nucleo-apresentacao";
 import { NucleoCardZoom } from "@/components/flair/nucleos/nucleo-card-zoom";
 import { NucleoHelp } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoDeckBand } from "@/components/flair/nucleos/nucleo-deck-band";
@@ -33,14 +32,14 @@ import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-control
 import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
-import { SALOES_DA_GALA, useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
+import { useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
 import { useResultCards } from "@/components/flair/nucleos/use-result-cards";
 import { lookComTroca } from "@/lib/flair/nucleos/action-fx";
 import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
-import { boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
+import { boardComLook, boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
+import { lerRascunho, useRascunho } from "@/components/flair/nucleos/use-rascunho";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import { vagasDaRegua, type ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
-import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
 import { acionamentoDe, comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
@@ -91,7 +90,9 @@ export function NucleoGame(props: Props) {
   const reduzido = useReducedMotion();
   const fx = useFxPrefs();
   const tabs = useMemo(() => buildTabs(definicao, cartas), [definicao, cartas]);
-  const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardInicial());
+  // o rascunho da preparação: por partida nos jogos de deck; por jogo e rodada nos de zonas (a partida abre na prévia)
+  const rascunho = definicao.deck && !definicao.deck.semDeck ? props.partida?.id : `${codigo}.${definicao.rodada ?? ""}`;
+  const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardComLook(boardInicial(), props.partida?.vestidas, lerRascunho<Selecao>(rascunho)));
   const [aviso, setAviso] = useState<string | null>(null);
   const perfil = useMirrorAvatar();
   const [escolha, setEscolha] = useState<AvatarTipo | null>(null);
@@ -105,6 +106,7 @@ export function NucleoGame(props: Props) {
   const [acionou, setAcionou] = useState(false);
   const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"), { partida: props.partida?.id, rodada: definicao.rodada });
   const preparando = momento === "PREPARACAO";
+  useRascunho(rascunho, preparando, estado.sel, !temEscolha(estado.sel), resultado?.status === "ENTREGUE");
   const acionamento = acionamentoDe(codigo);
   const faltaResposta = respostaObrigatoria(definicao) && !estado.sel.resposta;
   const pronto = temEscolha(estado.sel) && !faltaResposta && vagasQueFaltam(definicao, estado.sel.cartas).length === 0;
@@ -186,8 +188,7 @@ export function NucleoGame(props: Props) {
         />
       )}
       <div className="n3d-lower">
-        {codigo === "FASHION_DETECTIVE" && definicao.rodada === SALOES_DA_GALA && preparando && <NucleoCutscene salao={salaoDaVez(props.tentativa)} />}
-        {preparando && apresentacao.briefing && <NucleoBriefing briefing={apresentacao.briefing} cartas={cartas} aberto={apresentacao.aberto} onFechar={apresentacao.fechar} />}
+        {preparando && <NucleoApresentacao definicao={definicao} partida={props.partida} tentativa={props.tentativa} apresentacao={apresentacao} cartas={cartas} />}
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
           vestidas={vestidas}

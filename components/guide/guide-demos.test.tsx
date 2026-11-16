@@ -15,7 +15,7 @@ function show(demo: DemoId) {
 }
 
 const ALL: DemoId[] = ["games", "cbc", "calendar", "challenge", "feed", "schemeSeal", "seal", "copilot", "autopilot", "explore", "hype", "brandVisitor", "brandOperator",
-  "points", "shop", "pointsEarn", "highlights", "flairMatch", "flairCards", "flairDecks", "flairShops", "flairWallet", "flairQuests"];
+  "points", "pointsEarn", "highlights", "flairMatch", "flairCards", "flairDecks", "flairShops", "flairWallet", "flairQuests"];
 
 describe("exemplos ilustrados dos tutoriais", () => {
   it.each(ALL)("o exemplo %s desenha texto traduzido e não chama a API", (demo) => {

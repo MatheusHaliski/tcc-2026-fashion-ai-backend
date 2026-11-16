@@ -231,9 +231,10 @@ describe("acionamentos", () => {
     expect(within(acionamento).getByRole("status").textContent).toContain("O acionamento ainda não está disponível.");
     expect((within(acionamento).getByRole("button", { name: "Acionar Tênis azul" }) as HTMLButtonElement).disabled).toBe(true);
     expect(within(acionamento).queryByRole("button", { name: "Seguir sem acionar" })).toBeNull();
-    await waitFor(() => expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem").length).toBeGreaterThanOrEqual(2), { timeout: 3000 });
+    // cada round fica na tela o tempo dele na luta da cena (lib/flair/nucleos/scene/ritmo.ts)
+    await waitFor(() => expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem").length).toBeGreaterThanOrEqual(2), { timeout: 6000 });
     expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem")[0].textContent).toBe("Round 1, Velocidade: você 52 × oponente 40");
-  });
+  }, 10000);
 
   it("Dress Fighter com acionamento: a janela abre entre os rounds, a luta espera e 1 carta Especial vale por luta", async () => {
     const onAcionar = vi.fn();
@@ -268,8 +269,9 @@ describe("acionamentos", () => {
     expect(onAcionar).toHaveBeenCalledWith({ tipo: "MERCADO", cardId: "c1" });
     const fim: NucleoResultado = { pontos: 50, estrelas: 1, resultado: "PARCIAL", regras: [], status: "ENTREGUE", eventos: [...mercado.eventos, { codigo: "COMPRA", valor: { item: "PECA_DA_PISTA", estalecas: 500 } }] };
     rerender(<NucleoGame {...props} resultado={fim} />);
-    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("O detetive comprou a peça da cor da próxima pista por 500 estalecas"), { timeout: 4000 });
-  });
+    // cada passo dura a sua parte da sequência da cena (lib/flair/nucleos/scene/ritmo.ts)
+    await waitFor(() => expect(screen.getByTestId("nucleo-action").textContent).toContain("O detetive comprou a peça da cor da próxima pista por 500 estalecas"), { timeout: 9000 });
+  }, 15000);
 
   it("Fashion Detective: a dica mostra o salão da vez, o código de vestimenta e a carta de pista", () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });

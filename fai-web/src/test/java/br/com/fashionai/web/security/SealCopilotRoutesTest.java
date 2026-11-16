@@ -87,7 +87,7 @@ class SealCopilotRoutesTest {
         private final SealService seals;
         StubCopilot(SealService seals) {
             super(null, null, null, null, null, null, null, null, null, null,
-                    null, null, null, null, null, null, null, null, null, null);
+                    null, null, null, null, null, null, null, null, null, null, null);
             this.seals = seals;
         }
         @Override public Map<String, Object> ask(CurrentUser user, AskRequest request) {

@@ -47,15 +47,6 @@
 .before-after-range { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
 .before-after-range:focus-visible + .before-after-tag, .before-after:focus-within .before-after-divider { outline: 2px solid var(--mark); outline-offset: 2px; }
 
-/* DET-G04 — modo foto do quarto: filtros e profundidade de campo na prévia (a exportação aplica os mesmos) */
-.room3d-stage[data-filter="editorial"] canvas { filter: contrast(1.1) saturate(0.88) brightness(1.02); }
-.room3d-stage[data-filter="filme"] canvas { filter: sepia(0.22) contrast(1.05) brightness(1.04) saturate(1.05); }
-.room3d-stage[data-filter="pb"] canvas { filter: grayscale(1) contrast(1.15); }
-.room3d-dof { position: absolute; inset: 0; pointer-events: none; backdrop-filter: blur(var(--dof-blur, 3px)); -webkit-backdrop-filter: blur(var(--dof-blur, 3px));
-  mask-image: radial-gradient(ellipse 42% 48% at 50% 50%, transparent 55%, #000 100%); -webkit-mask-image: radial-gradient(ellipse 42% 48% at 50% 50%, transparent 55%, #000 100%); }
-.room3d-stage.is-photo .room3d-hint { display: none; }
-.photo-mode { display: grid; gap: 12px; padding: 12px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--surface); }
-.photo-mode-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
 /* DET-C06 — quiz "Qual é o seu core?" */
 .core-quiz-options { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }

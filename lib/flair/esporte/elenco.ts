@@ -69,5 +69,7 @@ export function atorDoJogador(f: Figura, noMundo: (x: number, y: number) => [num
     tombo: f.gesto === "mergulha" ? 1.15 : 0,
     altura: f.gesto === "mergulha" ? 0.25 : 0,
     chute: f.gesto === "chuta" ? 1 : 0,
+    // quem sofre o gol baixa a cabeça (gesto por cima do corpo cansado)
+    gesto: f.gesto === "lamenta" ? "lamentar" : undefined,
   };
 }

@@ -39,7 +39,7 @@ describe("FlairSection — cabeçalho e cartas", () => {
     expect(screen.getByLabelText("coletada").textContent).toBe("✓");
     expect(screen.getByLabelText("faltando").textContent).toBe("");
     expect(await screen.findByText("120 coins")).toBeTruthy();
-    expect(screen.getByText("4 vitórias · 1 empates · 2 derrotas")).toBeTruthy();
+    expect(screen.getByText("4 vitórias · 1 empate · 2 derrotas")).toBeTruthy();   // auditoria 10.1: era "1 empates"
     expect(screen.getByRole("link", { name: /Central FLAIR/ }).getAttribute("href")).toBe("/flair?mode=cards");
     expect(screen.getByLabelText(/^Carta Carta a, Rare/)).toBeTruthy();
     cleanup();

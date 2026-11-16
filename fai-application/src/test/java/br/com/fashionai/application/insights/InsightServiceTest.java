@@ -10,7 +10,7 @@ import br.com.fashionai.application.ports.RenderCachePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.ExplorerService;
 import br.com.fashionai.application.service.LookbookService;
-import br.com.fashionai.application.service.RoomService;
+import br.com.fashionai.application.service.ForgottenPieces;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.domain.model.HypeDimensions;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
@@ -81,7 +81,7 @@ class InsightServiceTest {
 
     private final UUID uid = UUID.randomUUID();
     private final CurrentUser me = new CurrentUser(uid, "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
-    private final LocalDate today = LocalDate.now(RoomService.ZONE);
+    private final LocalDate today = LocalDate.now(br.com.fashionai.application.service.FaiPointsService.ZONE);
 
     @BeforeEach
     void setUp() {
@@ -283,8 +283,8 @@ class InsightServiceTest {
 
     @Test
     void rediscoveryFollowsTheSixtyDayRule() {
-        WardrobeItem recent = piece("Jaqueta jeans", "upper_piece", "jacket", 4, RoomService.FORGOTTEN_DAYS - 1);
-        WardrobeItem idle = piece("Blazer xadrez", "upper_piece", "blazer", 2, RoomService.FORGOTTEN_DAYS + 1);
+        WardrobeItem recent = piece("Jaqueta jeans", "upper_piece", "jacket", 4, ForgottenPieces.FORGOTTEN_DAYS - 1);
+        WardrobeItem idle = piece("Blazer xadrez", "upper_piece", "blazer", 2, ForgottenPieces.FORGOTTEN_DAYS + 1);
         when(pieces.findByUserIdOrderByCreatedAtDesc(uid)).thenReturn(List.of(recent, idle));
         when(hype.currentOf(eq(HypeEntityType.PIECE), anyCollection())).thenReturn(Map.of(recent.getId(), own(recent, 50, 50, "STABLE", 0.0),
                 idle.getId(), own(idle, 45, 50, "STABLE", 0.0)));

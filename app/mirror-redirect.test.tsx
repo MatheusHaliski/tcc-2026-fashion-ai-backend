@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * O Meu Quarto deixou de ser uma tela e o Espelho ganhou casa própria (/mirror). A rota /room só redireciona os links
- * antigos: /room → catálogo da Suíte de Vidro; /room?espelho=1[&vestir=X][&vista=2d] → /mirror com os mesmos parâmetros;
+ * O Meu Quarto saiu do app (15/11/2026) e o Espelho tem casa própria (/mirror). A rota /room só redireciona os links
+ * antigos: /room → o ACERVO; /room?espelho=1[&vestir=X][&vista=2d] → /mirror com os mesmos parâmetros;
  * /room?piece=X ("Mostrar no quarto") → o Guarda-roupa. mirrorHref (lib/nav/mirror-href.ts) é o contrato dos links do app.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,10 +15,10 @@ beforeEach(() => { router.replace.mockClear(); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); nav.search = new URLSearchParams(); });
 
 describe("/room → links antigos redirecionados", () => {
-  it("sem parâmetros: o catálogo de jogos da Suíte de Vidro", async () => {
+  it("sem parâmetros: o ACERVO (o guarda-roupa em perspectiva)", async () => {
     loggedAs(ME, {});
     renderApp(<RoomPage />);
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/atelier?tab=room&quarto=3d"));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/acervo"));
   });
   it("espelho com peça para vestir: /mirror?vestir=<id>", async () => {
     nav.search = new URLSearchParams("espelho=1&vestir=p1");

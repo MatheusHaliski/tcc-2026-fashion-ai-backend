@@ -6,14 +6,14 @@ import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Badge, Button, Sheet, Skeleton, cn, type MenuItem } from "@/components/ui";
 import { PieceRowCompact } from "@/components/pieces/piece-row-compact";
-import { assetStateOf } from "@/lib/room3d/mirror-session";
+import { assetStateOf } from "@/lib/mirror/asset-state";
 import type { MirrorData, MirrorPart, MirrorPieceRef } from "@/components/mirror/mirror-controls";
 
 /*
  * Folha de uma parte do look (Parte de cima, Peça única, Parte de baixo, Calçado, Acessório): tudo em botões e listas.
  *  - Vestindo agora: o card compacto de peça (o mesmo do Provador) com Tirar, Manter (âncora do Vista-me) e, no menu ⋯,
- *    Provar no provador e Tirar da lista do espelho (Mostrar no quarto só quando um anfitrião com cena o oferece).
- *  - Roupas em mãos (vocabulário do quarto): a lista do espelho — peças trazidas do quarto para esta parte, ainda não
+ *    Provar no provador e Tirar da lista do espelho.
+ *  - Roupas em mãos: a lista do espelho — peças trazidas do guarda-roupa para esta parte, ainda não
  *    vestidas (tocar veste; "Tirar da lista" devolve ao guarda-roupa) — e a peça segurada pelo personagem.
  *  - Do guarda-roupa: todas as peças que servem nesta parte (a Parte de cima junta camisetas e jaquetas/blazers).
  *  - Sugestões: até 3 com o porquê; sem candidatas, o caminho para cadastrar.
@@ -23,13 +23,12 @@ interface Pick { pieces: MirrorPieceRef[]; message?: string | null; href?: strin
 const asList = (v: MirrorPieceRef | MirrorPieceRef[] | null | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
 const ASSET_TONE = { PENDING: "mark", IMAGE_2D: "chalk", MOULD_3D: undefined, MODEL_3D: "thread" } as const;
 
-export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTogglePin, wear, takeOff, unlist, showInRoom }: {
+export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTogglePin, wear, takeOff, unlist }: {
   part: MirrorPart; data: MirrorData;
   /** roupas em mãos desta parte, ainda não vestidas (inHandOf): `listed` = na lista do espelho; senão, na mão */
   hand: (MirrorPieceRef & { listed: boolean })[];
   pinned: Set<string>; busy: string | null; onClose: () => void; onTogglePin: (id: string) => void;
   wear: (p: MirrorPieceRef) => Promise<void>; takeOff: (p: MirrorPieceRef) => Promise<void>; unlist: (p: MirrorPieceRef) => Promise<void>;
-  showInRoom?: (p: MirrorPieceRef) => void;
 }) {
   const { t } = useI18n();
   const label = t(part.label);
@@ -77,7 +76,6 @@ export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTog
               {worn.map((p) => {
                 const asset = assetStateOf(p); const pin = pinned.has(p.id);
                 const menu: MenuItem[] = [
-                  ...(showInRoom ? [{ label: t("mirror.sheet.mostrar_no_quarto"), onSelect: () => showInRoom(p) }] : []),
                   { label: t("mirror.provar_no_provador"), href: `/try-on?provar=w.${encodeURIComponent(p.id)}` },
                   { label: t("mirror.sheet.tirar_da_lista"), onSelect: () => void unlist(p), danger: true },
                 ];

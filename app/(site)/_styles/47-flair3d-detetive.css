@@ -83,7 +83,16 @@
 
 .dtv-painel {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
+  min-width: 0;
+}
+
+/* a ação diz o alvo inteiro ("Pegar o papel do bolso do segurança do salão"): quebra a linha em vez de cortar */
+.dtv-acao {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
 }
 
 .dtv-bloco h4 {

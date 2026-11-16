@@ -9,6 +9,8 @@ import { useState } from "react";
 import type { ApiError } from "@/lib/api/client";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { useI18n } from "@/lib/i18n/i18n";
+import { contrair } from "@/lib/flair/detetive/contracao";
 import { acoesPossiveis, vizinhos, type AcaoDeCor, type AcaoPossivel } from "@/lib/flair/detetive/acoes";
 import { SUSPEITOS, type Retrato } from "@/lib/flair/detetive/types";
 import { corDoEfeito, efeitoDaCor } from "@/lib/flair/nucleos/card-fx";
@@ -41,12 +43,13 @@ interface Props {
 
 export function DetetivePainel({ r, mao, ocupado, erro, onAcao }: Props) {
   const tx = useNucleoText();
+  const { locale } = useI18n();
   const [pedida, setPedida] = useState<AcaoPossivel | null>(null);
   const nomeDe = (a: AcaoPossivel) => {
     const assunto = a.verbo === "IR" ? tx.t(`flair3d.detetive.ponto.${a.assunto}`) : a.verbo === "PORTA" || a.verbo === "AJUDA" ? tx.t(`flair3d.detetive.sala.${a.assunto}`)
       : a.verbo === "ABRIR" ? tx.t(`flair3d.detetive.armario.${a.assunto}`) : a.verbo === "BOLSO" || a.verbo === "CONFRONTO" ? tx.ou(`flair3d.detetive.vigia.${a.assunto}`, a.assunto)
         : a.verbo === "MERCADO" ? tx.t(`flair3d.detetive.compra.${a.assunto}`) : a.assunto;
-    return tx.t(`flair3d.detetive.verbo.${a.verbo}`, { assunto });
+    return contrair(tx.t(`flair3d.detetive.verbo.${a.verbo}`, { assunto }), locale);
   };
   const fazer = (a: AcaoPossivel, cardId?: string) => {
     setPedida(null);

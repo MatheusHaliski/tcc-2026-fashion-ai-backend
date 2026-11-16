@@ -12,7 +12,7 @@ import { projectApi } from './project-api';
 import { ProjectForm } from './project-form';
 import styles from './atelier-projects.module.css';
 const AtelierHub = dynamic(() => import('@/components/atelier/atelier-hub').then(module => module.AtelierHub));
-const TABS = ['projects', 'metamorphoses', 'timeline', 'trends', 'room'] as const;
+const TABS = ['projects', 'metamorphoses', 'timeline', 'trends', 'rewards'] as const;
 export function AtelierWorkspace() {
   const { t, fmtDate } = useI18n(); const router = useRouter(); const params = useSearchParams();
   const legacy = TABS.slice(1).includes(params.get('tab') as typeof TABS[1]);

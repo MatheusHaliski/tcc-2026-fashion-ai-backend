@@ -11,7 +11,7 @@
 @import "./_styles/04-dna-capsula.css";
 @import "./_styles/05-palco-anatomias.css";
 @import "./_styles/06-shell-navegacao.css";
-@import "./_styles/07-meu-quarto.css";
+@import "./_styles/07-feed-e-blocos.css";
 @import "./_styles/08-layout-secao-c.css";
 @import "./_styles/09-flair-cartas-modos.css";
 @import "./_styles/10-dashboard-detalhes.css";
@@ -34,6 +34,7 @@
 @import "./_styles/28-flair-match-stage.css";
 @import "./_styles/29-card-compacto-camadas.css";
 @import "./_styles/29-flair3d-nucleos.css";
+@import "./_styles/29-flair3d-continuar.css";
 @import "./_styles/30-flair3d-recursos.css";
 @import "./_styles/31-flair3d-makeup.css";
 @import "./_styles/32-flair-elencos.css";
@@ -45,6 +46,7 @@
 @import "./_styles/37-flair3d-ampliada.css";
 @import "./_styles/38-flair3d-acao.css";
 @import "./_styles/39-flair3d-esporte.css";
+@import "./_styles/39-flair3d-esporte-momento.css";
 @import "./_styles/47-flair3d-detetive.css";
 @import "./_styles/48-flair3d-detetive-cenas.css";
 @import "./_styles/39-flair-elencos-quebra-cabeca.css";
