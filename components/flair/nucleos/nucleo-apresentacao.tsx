@@ -6,13 +6,15 @@
  */
 import { useEffect, useState } from "react";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
+import { NucleoAvisoDaRodada } from "@/components/flair/nucleos/nucleo-aviso-da-rodada";
 import { NucleoBriefing } from "@/components/flair/nucleos/nucleo-briefing";
 import { NucleoCutscene } from "@/components/flair/nucleos/nucleo-cutscene";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { useNucleoBriefing } from "@/components/flair/nucleos/use-nucleo-briefing";
 import { SALOES_DA_GALA } from "@/components/flair/nucleos/use-modo-por-cartas";
 import { salaoDaVez } from "@/lib/flair/nucleos/detective";
-import type { NucleoDefinicao, NucleoPartida, NucleoResultado } from "@/lib/flair/nucleos/types";
+import { viabilidade } from "@/lib/flair/nucleos/viabilidade";
+import type { EfeitoItem, NucleoDefinicao, NucleoPartida, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 /** Quanto a premissa fica na tela, em ms, se a pessoa não fechar antes. */
 export const PREMISSA_MS = 12000;
@@ -23,9 +25,11 @@ interface Props {
   tentativa?: NucleoResultado | null;
   apresentacao: ReturnType<typeof useNucleoBriefing>;
   cartas: FlairCollectionCard[];
+  /** os selos de cada carta da partida: o aviso de rodada que o deck não cumpre */
+  efeitos?: (cardId: string) => EfeitoItem[] | undefined;
 }
 
-export function NucleoApresentacao({ definicao, partida, tentativa, apresentacao, cartas }: Props) {
+export function NucleoApresentacao({ definicao, partida, tentativa, apresentacao, cartas, efeitos }: Props) {
   const tx = useNucleoText();
   const codigo = definicao.codigo;
   // a premissa abre a partida uma vez; a partida retomada no meio (tentativa já feita) não a repete; na gala do
@@ -38,6 +42,8 @@ export function NucleoApresentacao({ definicao, partida, tentativa, apresentacao
     const timer = window.setTimeout(() => setLida(true), PREMISSA_MS);
     return () => window.clearTimeout(timer);
   }, [lida, texto, partida?.id]);
+  const aviso = efeitos ? viabilidade(definicao.objetivo.regras.map((r) => r.codigo), cartas.map((c) => efeitos(c.id))) : null;
+  const avisoNaTela = <NucleoAvisoDaRodada codigo={codigo} escopo="partida" viabilidade={aviso} />;
   // com um briefing (tema, etapa, oponente), a premissa abre o mesmo cartão; sem ele, ganha o cartão dela
   if (apresentacao.briefing) {
     const fechar = () => {
@@ -47,7 +53,7 @@ export function NucleoApresentacao({ definicao, partida, tentativa, apresentacao
     return (
       <>
         {gala && <NucleoCutscene salao={salaoDaVez(tentativa)} />}
-        <NucleoBriefing briefing={apresentacao.briefing} cartas={cartas} aberto={apresentacao.aberto} onFechar={fechar} premissa={lida ? null : texto} />
+        <NucleoBriefing briefing={apresentacao.briefing} cartas={cartas} aberto={apresentacao.aberto} onFechar={fechar} premissa={lida ? null : texto} aviso={avisoNaTela} />
       </>
     );
   }
@@ -57,9 +63,16 @@ export function NucleoApresentacao({ definicao, partida, tentativa, apresentacao
         <p className="type-label">{tx.t("flair3d.narrativa.ui.comeco")}</p>
         <h3>{tx.nome(codigo)}</h3>
         <p>{texto}</p>
+        {avisoNaTela}
         <button type="button" className="btn btn-sm btn-primary" onClick={() => setLida(true)}>{tx.t("flair3d.narrativa.ui.seguir")}</button>
       </section>
     );
   }
-  return gala ? <NucleoCutscene salao={salaoDaVez(tentativa)} /> : null;
+  // fechada a premissa, o aviso de rodada que o deck não cumpre continua à vista sobre a faixa do deck
+  return (
+    <>
+      {gala && <NucleoCutscene salao={salaoDaVez(tentativa)} />}
+      {avisoNaTela}
+    </>
+  );
 }

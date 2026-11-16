@@ -12711,5 +12711,9 @@
   "flair3d.camera.ARCADE": "Side-on fight",
   "flair3d.camera.OMBRO": "Over the shoulder",
   "flair3d.ui.evento.LANCE_DA_LUTA": "Lance {lance}: you, {golpe}; the opponent, {golpeOponente}. Damage {dano}, taken {sofrido}{comboTexto}",
-  "flair3d.ui.evento.LUTA": "Health at the end: you {vidaVoce}, opponent {vidaOponente}"
+  "flair3d.ui.evento.LUTA": "Health at the end: you {vidaVoce}, opponent {vidaOponente}",
+  "flair3d.ui.viabilidade.semPontos.colecao": "None of your cards scores in this round: the score will be 0. Pick another round or play knowing that.",
+  "flair3d.ui.viabilidade.semPontos.deck": "None of the chosen cards scores in this round: swap in a card with a points seal.",
+  "flair3d.ui.viabilidade.semPontos.partida": "Heads up: no card in your deck scores in this round, the score will be 0.",
+  "flair3d.ui.viabilidade.regras": "None of your cards meets: {regras}. Those points are out of reach."
 }

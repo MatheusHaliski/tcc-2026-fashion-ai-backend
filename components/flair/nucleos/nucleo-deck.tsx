@@ -8,6 +8,7 @@ import { useState } from "react";
 import { cn } from "@/components/ui";
 import type { ApiError } from "@/lib/api/client";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
+import { NucleoAvisoDaRodada } from "@/components/flair/nucleos/nucleo-aviso-da-rodada";
 import { NucleoCard } from "@/components/flair/nucleos/nucleo-card";
 import { NucleoCardZoom } from "@/components/flair/nucleos/nucleo-card-zoom";
 import { useCardZoom } from "@/components/flair/nucleos/use-card-zoom";
@@ -17,6 +18,7 @@ import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewpor
 import { seloDaCarta } from "@/lib/flair/nucleos/card-fx";
 import { alternarCarta, avisoDoDeck, conferirDeck, posicoesDaRegra } from "@/lib/flair/nucleos/deck";
 import { estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
+import { semPontosNoDeck, viabilidade } from "@/lib/flair/nucleos/viabilidade";
 import type { DeckRegras, NucleoCodigo } from "@/lib/flair/nucleos/types";
 
 interface Props {
@@ -28,6 +30,8 @@ interface Props {
   onEntrar: (deck: string[]) => void;
   /** a rodada escolhida: os selos valem para ela */
   rodada?: string | null;
+  /** os códigos das regras da rodada: o aviso diz quais nenhuma carta cumpre */
+  regrasDaRodada?: string[];
 }
 
 type Texto = ReturnType<typeof useNucleoText>;
@@ -48,7 +52,7 @@ function faltasDoErro(erro: ApiError, tx: Texto): string[] {
   return out;
 }
 
-export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar, rodada = null }: Props) {
+export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar, rodada = null, regrasDaRodada = [] }: Props) {
   const tx = useNucleoText();
   const layout = useNucleoViewport();
   const [deck, setDeck] = useState<string[]>([]);
@@ -57,6 +61,9 @@ export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar, r
   const zoom = useCardZoom(foco);
   const escolhidas = cartas.filter((c) => deck.includes(c.id));
   const status = conferirDeck(regras, escolhidas);
+  // a rodada cumprível? para a coleção inteira e, quando a coleção pontua, para as cartas escolhidas
+  const naColecao = viabilidade(regrasDaRodada, cartas.map((c) => efeitos.itens(c.id)));
+  const noDeck = escolhidas.length && !naColecao?.semPontos ? semPontosNoDeck(viabilidade(regrasDaRodada, escolhidas.map((c) => efeitos.itens(c.id)))) : null;
   const posicoes = (p: string[]) => (p.length ? p.map(tx.posicao).join(" / ") : tx.t("flair3d.ui.deck.any"));
 
   const alternar = (c: FlairCollectionCard) => {
@@ -103,6 +110,8 @@ export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar, r
       {avisoDoDeck(codigo, rodada, escolhidas.map((c) => efeitos.porCarta.get(c.id))) && (
         <p className="n3d-deck-warning" role="status" data-testid="nucleo-deck-warning">{tx.t("flair3d.ui.deck.noTrio")}</p>
       )}
+      <NucleoAvisoDaRodada codigo={codigo} escopo="colecao" viabilidade={naColecao} />
+      <NucleoAvisoDaRodada codigo={codigo} escopo="deck" viabilidade={noDeck} />
       {cartas.length === 0 ? (
         <p className="n3d-empty">{tx.t("flair3d.ui.deck.noCards")}</p>
       ) : (

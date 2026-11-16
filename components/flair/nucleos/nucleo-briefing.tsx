@@ -5,7 +5,7 @@
  * Fecha no botão ou sozinho depois de ABERTURA_MS e reabre quando a etapa muda. O look-alvo do Look Relâmpago fica à
  * vista só pelos segundos que o servidor mandou e não volta: depois disso a pessoa recria de memória.
  */
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { Briefing } from "@/lib/flair/nucleos/briefing";
@@ -36,9 +36,11 @@ interface Props {
   onFechar: () => void;
   /** a premissa do jogo, no começo da partida: abre o cartão, antes do que a rodada revela */
   premissa?: string | null;
+  /** o aviso de rodada que o deck não cumpre (nucleo-aviso-da-rodada) */
+  aviso?: ReactNode;
 }
 
-export function NucleoBriefing({ briefing, cartas, aberto, onFechar, premissa = null }: Props) {
+export function NucleoBriefing({ briefing, cartas, aberto, onFechar, premissa = null, aviso = null }: Props) {
   const tx = useNucleoText();
   const prazo = briefing.tipo === "alvo" ? (briefing.segundos ?? 10) * 1000 : ABERTURA_MS;
 
@@ -58,6 +60,7 @@ export function NucleoBriefing({ briefing, cartas, aberto, onFechar, premissa = 
   return (
     <section className="n3d-cutscene n3d-briefing" role="dialog" aria-label={tx.t("flair3d.ui.briefing.title")} data-testid="nucleo-briefing" data-tipo={briefing.tipo}>
       {premissa && <p className="n3d-premissa-texto" data-testid="nucleo-premissa">{premissa}</p>}
+      {aviso}
       <p className="type-label">{etiqueta}</p>
       {briefing.codigo && <h3>{tx.etapaNome(briefing.codigo)}</h3>}
       {briefing.codigo && tx.etapaTexto(briefing.codigo) && <p>{tx.etapaTexto(briefing.codigo)}</p>}

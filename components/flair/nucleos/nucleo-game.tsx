@@ -188,7 +188,7 @@ export function NucleoGame(props: Props) {
         />
       )}
       <div className="n3d-lower">
-        {preparando && <NucleoApresentacao definicao={definicao} partida={props.partida} tentativa={props.tentativa} apresentacao={apresentacao} cartas={cartas} />}
+        {preparando && <NucleoApresentacao definicao={definicao} partida={props.partida} tentativa={props.tentativa} apresentacao={apresentacao} cartas={cartas} efeitos={efeitos.itens} />}
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
           vestidas={vestidas}

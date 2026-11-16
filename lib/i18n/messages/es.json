@@ -12711,5 +12711,9 @@
   "flair3d.camera.ARCADE": "Pelea de lado",
   "flair3d.camera.OMBRO": "Por detrás del hombro",
   "flair3d.ui.evento.LANCE_DA_LUTA": "Lance {lance}: tú, {golpe}; la oponente, {golpeOponente}. Daño {dano}, recibido {sofrido}{comboTexto}",
-  "flair3d.ui.evento.LUTA": "Vida al final: tú {vidaVoce}, oponente {vidaOponente}"
+  "flair3d.ui.evento.LUTA": "Vida al final: tú {vidaVoce}, oponente {vidaOponente}",
+  "flair3d.ui.viabilidade.semPontos.colecao": "Ninguna de tus cartas puntúa en esta ronda: la nota será 0. Elige otra ronda o juega sabiéndolo.",
+  "flair3d.ui.viabilidade.semPontos.deck": "Ninguna carta elegida puntúa en esta ronda: cambia por una carta con sello de puntos.",
+  "flair3d.ui.viabilidade.semPontos.partida": "Atención: ninguna carta de tu mazo puntúa en esta ronda, la nota será 0.",
+  "flair3d.ui.viabilidade.regras": "Ninguna carta tuya cumple: {regras}. Esos puntos quedan fuera."
 }
