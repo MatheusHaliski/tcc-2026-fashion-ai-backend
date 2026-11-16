@@ -104,3 +104,16 @@ describe("figurantes das salas como gente", () => {
     expect(pessoasDosFigurantes(3, [...lista], true).get("fig:COLEGA:0")?.pecas.map((p) => p.subcategory)).toEqual(["t_shirt", "shorts", "casual_sneakers"]);
   });
 });
+
+describe("corpos inteiros com limite (passe de desempenho da Passarela)", () => {
+  it("quem está na jogada e os mais perto da câmera ficam inteiros; o resto vai para o corpo leve", async () => {
+    const { corposCheios, CORPOS_CHEIOS } = await import("@/lib/flair/nucleos/gente/detalhe");
+    const plateia = Array.from({ length: 14 }, (_, i) => ({ id: `p${i}`, distancia: 3 + i }));
+    const cheios = corposCheios([...plateia, { id: "cliente", naJogada: true, distancia: 30 }]);
+    expect(cheios.size).toBe(CORPOS_CHEIOS);
+    expect(cheios.has("cliente")).toBe(true);
+    expect(cheios.has("p0")).toBe(true);
+    expect(cheios.has("p13")).toBe(false);
+    expect(corposCheios(plateia, Infinity).size).toBe(14);
+  });
+});
