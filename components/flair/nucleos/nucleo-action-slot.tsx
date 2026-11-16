@@ -45,6 +45,7 @@ export function NucleoActionSlot({ nucleo, variante, acao, acionou, cartas, vest
           acaoDe={acaoDe}
           itens={itens}
           pedidoDaCena={acao.pedido}
+          luta={acao.luta}
           onAcionar={onAcionar}
         />
       )}

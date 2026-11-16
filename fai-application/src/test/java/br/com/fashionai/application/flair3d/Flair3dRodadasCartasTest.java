@@ -94,24 +94,21 @@ class Flair3dRodadasCartasTest {
     }
 
     @Test
-    void arenasDoDressFighterTemOponenteProprioEImpulsoDaSemente() {
+    void arenasDoDressFighterTemOponenteProprioEEstiloDeGolpesProprio() {
         DressFighterNucleo n = new DressFighterNucleo();
         CbcRules.Card[] look = {card("SUP", "material:leather"), card("INF", "material:denim"), card("CAL", "sub:casual_sneakers"), card("ACE", "material:metal")};
         assertThat(n.abertura(naRodada(null, 3L, look)).get("oponente")).isEqualTo(Map.of("velocidade", 40, "ataque", 40, "defesa", 40));
         assertThat(n.abertura(naRodada(DressFighterNucleo.ARENA_BLINDADA, 3L, look)).get("oponente"))
                 .isEqualTo(Map.of("velocidade", 40, "ataque", 50, "defesa", 65));
-        Andamento fim = new Andamento(1, List.of(Acionamento.NENHUM, Acionamento.NENHUM), List.of(), DressFighterNucleo.ARENA_BLINDADA);
-        Contexto ctx = Flair3dFixtures.contexto(3L, look).comAndamento(fim);
+        List<Acionamento> nove = java.util.Collections.nCopies(9, Acionamento.NENHUM);
+        Contexto ctx = Flair3dFixtures.contexto(3L, look).comAndamento(new Andamento(1, nove, List.of(), DressFighterNucleo.ARENA_BLINDADA));
         Resultado r = n.pontuar(vestir(look), ctx);
         assertThat(r.fecha()).isTrue();
-        List<Resultado.Evento> rounds = r.eventos().stream().filter(e -> e.codigo().equals("ROUND")).toList();
-        assertThat(rounds).hasSize(3);
-        assertThat(rounds).extracting(e -> (Object) ((Map<?, ?>) e.valor()).get("oponente")).containsExactly(40, 50, 65);
-        r.eventos().stream().filter(e -> e.codigo().equals("IMPULSO"))
-                .forEach(e -> assertThat((int) ((Map<?, ?>) e.valor()).get("impulso")).isBetween(-DressFighterNucleo.IMPULSO, DressFighterNucleo.IMPULSO));
         assertThat(n.pontuar(vestir(look), ctx)).isEqualTo(r);
-        Resultado base = n.pontuar(vestir(look), Flair3dFixtures.contexto(3L, look).comAndamento(new Andamento(1, List.of(Acionamento.NENHUM, Acionamento.NENHUM))));
-        assertThat(base.eventos()).extracting(Resultado.Evento::codigo).containsOnly("ROUND");
+        // a blindada guarda mais que a veloz: nos 100 números do sorteio, mais guardas
+        long guardasBlindada = java.util.stream.IntStream.range(0, 100).filter(i -> br.com.fashionai.application.flair3d.nucleos.DressFighterGolpes.GUARDA.equals(br.com.fashionai.application.flair3d.nucleos.DressFighterGolpes.daOponente(DressFighterNucleo.ARENA_BLINDADA, i))).count();
+        long guardasVeloz = java.util.stream.IntStream.range(0, 100).filter(i -> br.com.fashionai.application.flair3d.nucleos.DressFighterGolpes.GUARDA.equals(br.com.fashionai.application.flair3d.nucleos.DressFighterGolpes.daOponente(DressFighterNucleo.ARENA_VELOZ, i))).count();
+        assertThat(guardasBlindada).isGreaterThan(guardasVeloz);
     }
 
     @Test

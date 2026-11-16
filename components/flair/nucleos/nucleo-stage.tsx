@@ -12,6 +12,7 @@ import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import Link from "next/link";
 import type { Look3dPiece } from "@/components/three/common";
 import { NucleoActionFx } from "@/components/flair/nucleos/nucleo-action-fx";
+import { NucleoBarrasDeVida } from "@/components/flair/nucleos/nucleo-barras-de-vida";
 import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
 import { NucleoCardFx } from "@/components/flair/nucleos/nucleo-card-fx";
@@ -74,6 +75,7 @@ export function NucleoStage(props: NucleoStageProps) {
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
+      {naAcao && definicao.codigo === "DRESS_FIGHTER" && <NucleoBarrasDeVida resultado={props.resultado} />}
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} variante={props.variante} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
       <NucleoHud
         topoEsquerda={

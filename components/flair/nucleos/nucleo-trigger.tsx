@@ -12,6 +12,7 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { efeitoDaCor } from "@/lib/flair/nucleos/card-fx";
 import type { AcionamentoTipo } from "@/lib/flair/nucleos/moments";
+import type { EstadoDaLuta } from "@/lib/flair/nucleos/luta";
 import type { EfeitoItem } from "@/lib/flair/nucleos/types";
 
 /** Quanto o balcão do mercado paga pela carta, pelo nível dela (o servidor decide; aqui é só o rótulo). */
@@ -28,7 +29,7 @@ export interface AcionamentoPedido {
 }
 
 interface Props {
-  tipo: "ESPECIAL" | "TROCA" | "MERCADO" | "JOGADA";
+  tipo: "ESPECIAL" | "TROCA" | "MERCADO" | "JOGADA" | "LANCE";
   /** a janela do acionamento está aberta neste ponto da ação */
   aberta: boolean;
   /** já foi usado nesta partida (1 por luta, 1 por intervalo) */
@@ -49,16 +50,20 @@ interface Props {
   itens?: (cardId: string) => EfeitoItem[] | undefined;
   /** a jogada de cena: a cor que a cena pede (vale +10) e a ação dela */
   pedidoDaCena?: { familia?: string; acao?: string };
+  /** a luta do Dress Fighter: a carta do último lance (não repete) e a leitura do próximo golpe da oponente */
+  luta?: EstadoDaLuta | null;
   /** ausente quando o servidor não aceita acionamento: o painel só explica */
   onAcionar?: (pedido: AcionamentoPedido) => void;
 }
 
-export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, ocupado, erro, acaoDe, itens, pedidoDaCena, onAcionar }: Props) {
+export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, ocupado, erro, acaoDe, itens, pedidoDaCena, luta, onAcionar }: Props) {
   const tx = useNucleoText();
   const noLook = new Set(Object.values(vestidas));
   let opcoes: FlairCollectionCard[];
   if (tipo === "ESPECIAL") opcoes = cartas.filter((c) => c.tier === "ESPECIAL");
   else if (tipo === "MERCADO" || tipo === "JOGADA") opcoes = cartas.filter((c) => !noLook.has(c.id));
+  // na luta a mão é o deck inteiro (a peça inteira também), menos a carta do lance anterior
+  else if (tipo === "LANCE") opcoes = cartas.filter((c) => c.id !== luta?.ultimaCarta);
   else opcoes = cartas.filter((c) => vagas.includes(c.position) && vestidas[c.position] !== c.id);
   const pode = !!onAcionar && aberta && !usado && !ocupado;
   let aviso: string;
@@ -71,11 +76,13 @@ export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, oc
     const { familia, acao = "" } = pedidoDaCena;
     aviso = tx.t("flair3d.ui.trigger.JOGADA.pede", { familia: tx.familiaCor(familia.toUpperCase()).toLowerCase(), acao: tx.ou(`flair3d.ui.efeito.COR_${acao}`, acao) });
   }
+  else if (tipo === "LANCE" && luta?.proximo) aviso = tx.t("flair3d.ui.trigger.LANCE.leitura", { golpe: tx.ou(`flair3d.ui.golpe.${luta.proximo}`, luta.proximo) });
   else aviso = tx.t(`flair3d.ui.trigger.${tipo}.open`);
 
   const rotulo = (c: FlairCollectionCard) => {
     if (tipo === "ESPECIAL") return tx.t("flair3d.ui.trigger.ESPECIAL.use", { nome: c.name });
     if (tipo === "MERCADO") return tx.t("flair3d.ui.trigger.MERCADO.use", { nome: c.name, n: ESTALECAS_DO_NIVEL[c.tier] ?? 100 });
+    if (tipo === "LANCE") return rotuloDoLance(tx, c, efeitoDaCor(itens?.(c.id)));
     if (tipo === "JOGADA") {
       const cor = efeitoDaCor(itens?.(c.id));
       return cor ? tx.t("flair3d.ui.trigger.JOGADA.use", { nome: c.name, acao: tx.efeito(cor) }) : tx.t("flair3d.ui.trigger.JOGADA.semCor", { nome: c.name });
@@ -107,10 +114,16 @@ export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, oc
         ))}
         {aberta && onAcionar && (
           <button type="button" className="btn btn-sm btn-primary" disabled={ocupado} onClick={() => onAcionar({ tipo })}>
-            {tx.t("flair3d.ui.trigger.skip")}
+            {tx.t(tipo === "LANCE" ? "flair3d.ui.trigger.LANCE.skip" : "flair3d.ui.trigger.skip")}
           </button>
         )}
       </div>
     </section>
   );
+}
+
+/** O botão da carta na luta: o nome e o golpe da cor dela (a Especial é o golpe especial; sem cor de golpe, o básico). */
+function rotuloDoLance(tx: ReturnType<typeof useNucleoText>, c: FlairCollectionCard, cor: EfeitoItem | null): string {
+  const golpe = c.tier === "ESPECIAL" ? "ESPECIAL" : cor ? cor.codigo.replace(/^COR_/, "") : "GOLPE_BASICO";
+  return tx.t("flair3d.ui.trigger.LANCE.use", { nome: c.name, golpe: tx.ou(`flair3d.ui.golpe.${golpe}`, golpe) });
 }

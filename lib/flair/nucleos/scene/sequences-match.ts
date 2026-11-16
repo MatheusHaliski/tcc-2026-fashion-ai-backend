@@ -5,6 +5,7 @@
  */
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 import type { Sequencia } from "@/lib/flair/nucleos/scene/director";
+import { lancesDaLuta, type LanceDaLuta } from "@/lib/flair/nucleos/luta";
 import { QUADRA_GOL_Z } from "@/lib/flair/nucleos/scene/salas/fashion-sports";
 import { AVATAR, fig, luzId, movelId, Roteiro } from "@/lib/flair/nucleos/scene/script";
 
@@ -34,24 +35,50 @@ const DISTANCIA_DA_LUTA = { x: 1.1, z: -0.3 };
 /** A luta acabou? No meio dela (EM_ACAO) o servidor ainda não disse quem venceu: não há queda nem comemoração. */
 export const lutaEncerrada = (resultado: NucleoResultado): boolean => resultado.resultado === "VITORIA" || resultado.resultado === "DERROTA";
 
+/** O movimento da avatar para cada golpe (a cor da carta jogada no lance). */
+const CLIPE_DO_GOLPE: Record<string, string> = {
+  GOLPE_FORTE: "CHUTE", GOLPE_RAPIDO: "SOCO", GOLPE_BASICO: "SOCO", GUARDA: "DEFESA", GUARDA_BASICA: "DEFESA",
+  ESQUIVA: "ESQUIVA", FOLEGO: "GUARDA", FOCO: "DEFESA", ESPECIAL: "GOLPE_ESPECIAL",
+};
+/** O movimento da oponente para o golpe dela. */
+const CLIPE_DA_OPONENTE: Record<string, string> = { GOLPE_FORTE: "F_SOCO", GOLPE_RAPIDO: "F_SOCO", GUARDA: "F_DEFESA", ESQUIVA: "F_ESQUIVA" };
+
+/** Um lance na cena: os dois golpes juntos, depois quem levou dano recua; o foco devolve com um soco. */
+function lanceNaCena(r: Roteiro, l: LanceDaLuta): void {
+  r.junto(OPONENTE, "F_GUARDA").depois(AVATAR, "GUARDA");
+  if (l.golpe === "ESPECIAL" || l.combo) r.junto(luzId("rastro"), "L_RASTRO");
+  r.junto(OPONENTE, CLIPE_DA_OPONENTE[l.golpeOponente] ?? "F_GUARDA").depois(AVATAR, CLIPE_DO_GOLPE[l.golpe] ?? "GUARDA");
+  if (l.golpe === "FOCO" && l.dano > 0) r.depois(AVATAR, "SOCO");
+  if (l.dano > 0 && l.sofrido > 0) r.junto(OPONENTE, "F_RECUO").depois(AVATAR, "RECUO");
+  else if (l.dano > 0) r.depois(OPONENTE, "F_RECUO");
+  else if (l.sofrido > 0) r.depois(AVATAR, "RECUO");
+}
+
+/** O formato antigo (um round por atributo, sem lances): resultados guardados antes da luta lance a lance. */
+function roundNaCena(r: Roteiro, round: Round): void {
+  r.junto(OPONENTE, "F_GUARDA").depois(AVATAR, "GUARDA");
+  if (round.venceu) {
+    const golpe = GOLPE[round.atributo] ?? "SOCO";
+    if (golpe === "GOLPE_ESPECIAL") r.junto(luzId("rastro"), "L_RASTRO");
+    r.junto(OPONENTE, "F_RECUO", {}, 0.3).depois(AVATAR, golpe);
+  } else {
+    r.junto(OPONENTE, "F_SOCO").depois(AVATAR, round.atributo === "VELOCIDADE" ? "ESQUIVA" : "DEFESA");
+  }
+}
+
 /**
- * A luta na cena. No meio dela, só o round que acabou de ser jogado (os anteriores já passaram na tela), sem desfecho;
- * no fim, os três rounds e o desfecho de quem venceu a luta: a queda é de quem perdeu, nunca depois de um round vencido.
+ * A luta na cena. Lance a lance, só o lance novo (os anteriores já passaram na tela); no fim, o desfecho de quem venceu
+ * a luta: a queda é de quem perdeu, nunca depois de um lance ou round vencido. No meio da luta não há desfecho.
  */
 export function sequenciaDaLuta(resultado: NucleoResultado): Sequencia {
   const r = new Roteiro("luta");
   const encerrada = lutaEncerrada(resultado);
-  const rounds = roundsDaLuta(resultado);
+  const lances = lancesDaLuta(resultado);
   r.junto(OPONENTE, "F_GUARDA", { mover: DISTANCIA_DA_LUTA }).depois(AVATAR, "MEIA_VOLTA", { mover: { giro: 75 } });
-  for (const round of encerrada ? rounds : rounds.slice(-1)) {
-    r.junto(OPONENTE, "F_GUARDA").depois(AVATAR, "GUARDA");
-    if (round.venceu) {
-      const golpe = GOLPE[round.atributo] ?? "SOCO";
-      if (golpe === "GOLPE_ESPECIAL") r.junto(luzId("rastro"), "L_RASTRO");
-      r.junto(OPONENTE, "F_RECUO", {}, 0.3).depois(AVATAR, golpe);
-    } else {
-      r.junto(OPONENTE, "F_SOCO").depois(AVATAR, round.atributo === "VELOCIDADE" ? "ESQUIVA" : "DEFESA");
-    }
+  if (lances.length) lanceNaCena(r, lances[lances.length - 1]);
+  else {
+    const rounds = roundsDaLuta(resultado);
+    for (const round of encerrada ? rounds : rounds.slice(-1)) roundNaCena(r, round);
   }
   if (resultado.resultado === "VITORIA") r.depois(OPONENTE, "F_QUEDA");
   else if (encerrada) r.junto(OPONENTE, "F_COMEMORA").depois(AVATAR, "QUEDA");

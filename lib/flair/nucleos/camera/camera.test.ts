@@ -107,7 +107,8 @@ describe("câmeras de cada jogo", () => {
       const preparo = poseDoRig(cameraEmUso(codigo, null, "PREPARO"), AVATAR, 0);
       expect(horizontal(preparo), codigo).toBeGreaterThan(1.8 / (2 * Math.tan((preparo.fov / 2) * (Math.PI / 180))));
     }
-    expect(camerasDe("DRESS_FIGHTER").momento.ACAO).toBe("LATERAL");
+    expect(camerasDe("DRESS_FIGHTER").momento.ACAO).toBe("ARCADE");
+    expect(camerasDe("DRESS_FIGHTER").cameras.map((c) => c.id)).toContain("OMBRO");
     expect(camerasDe("FASHION_DETECTIVE").momento.ACAO).toBe("EXPLORACAO");
     expect(camerasDe("PASSARELA").momento.ACAO).toBe("TRAVELLING");
   });

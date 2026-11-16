@@ -6,13 +6,19 @@ import { assinarFx, type FxEvento } from "@/lib/flair/nucleos/fx-events";
 import { FX_PREFS_CHAVE } from "@/lib/flair/nucleos/fx-sound";
 import type { Momento } from "@/lib/flair/nucleos/moments";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
-import { CARTAS, EFEITOS, RESULTADO_LUTA, RESULTADO_PASSARELA, definicao, viewport } from "@/test-utils/flair-nucleos";
+import { CARTAS, EFEITOS, RESULTADO_PASSARELA, definicao, viewport } from "@/test-utils/flair-nucleos";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
 
 /**
  * O efeito de cada carta no cenário (seção 4 do desenho): os quatro momentos e o que vale em cada um, o efeito de
  * entrada (carta que pontua e que não pontua, Aura Hype, som), "reduzir movimento" e os acionamentos de cada jogo.
  */
+/** A luta depois do primeiro lance: a pessoa jogou a Camisa verde (golpe simples) e a oponente guardou. */
+const LUTA_EM_ACAO: NucleoResultado = { pontos: 0, estrelas: 0, resultado: "EM_ACAO", status: "EM_ACAO", regras: [], eventos: [
+  { codigo: "LANCE_DA_LUTA", valor: { lance: 1, round: 1, carta: "c1", golpe: "GOLPE_BASICO", golpeOponente: "GUARDA", dano: 3, sofrido: 0, cura: 0, combo: null, vidaVoce: 100, vidaOponente: 97 } },
+  { codigo: "LUTA", valor: { vidaVoce: 100, vidaOponente: 97, vida: 100, lance: 1, lances: 9, round: 1, proximo: "GOLPE_FORTE" } },
+] };
+
 interface Opcoes {
   codigo?: NucleoCodigo;
   momento?: Momento;
@@ -225,15 +231,15 @@ describe("acionamentos", () => {
     expect(eventos.some((e) => e.tipo === "acionamento" && e.acionamento === "ESPELHO")).toBe(true);
   });
 
-  it("Dress Fighter sem acionamento no servidor: o painel diz por quê, a carta Especial fica desligada e a luta segue", async () => {
-    montar({ codigo: "DRESS_FIGHTER", momento: "ACAO", resultado: RESULTADO_LUTA });
+  it("Dress Fighter sem acionamento no servidor: o painel diz por quê, as cartas ficam desligadas e o lance aparece", async () => {
+    montar({ codigo: "DRESS_FIGHTER", momento: "ACAO", resultado: LUTA_EM_ACAO });
     const acionamento = screen.getByTestId("nucleo-trigger");
     expect(within(acionamento).getByRole("status").textContent).toContain("O acionamento ainda não está disponível.");
-    expect((within(acionamento).getByRole("button", { name: "Acionar Tênis azul" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(within(acionamento).queryByRole("button", { name: "Seguir sem acionar" })).toBeNull();
-    // cada round fica na tela o tempo dele na luta da cena (lib/flair/nucleos/scene/ritmo.ts)
-    await waitFor(() => expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem").length).toBeGreaterThanOrEqual(2), { timeout: 6000 });
-    expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem")[0].textContent).toBe("Round 1, Velocidade: você 52 × oponente 40");
+    expect((within(acionamento).getByRole("button", { name: "Tênis azul: golpe especial" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(within(acionamento).queryByRole("button", { name: "Guarda sem carta" })).toBeNull();
+    await waitFor(() => expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem").length).toBeGreaterThanOrEqual(1), { timeout: 6000 });
+    expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem")[0].textContent).toBe("Lance 1: você, golpe simples; a oponente, guarda. Dano 3, sofrido 0");
+    expect(screen.getByTestId("vida-oponente").getAttribute("aria-valuenow")).toBe("97");
   }, 10000);
 
   it("jogada de cena (Passarela): depois do look avaliado, a cena pede uma cor e a carta fora do look dispara a ação dela", async () => {
@@ -249,25 +255,20 @@ describe("acionamentos", () => {
     expect(onAcionar).toHaveBeenCalledWith({ tipo: "JOGADA", cardId: "c2" });
   }, 10000);
 
-  it("Dress Fighter com acionamento: a janela abre entre os rounds, a luta espera e 1 carta Especial vale por luta", async () => {
+  it("Dress Fighter com acionamento: a janela abre depois do lance, diz o próximo golpe e a carta da mão é o golpe", async () => {
     const onAcionar = vi.fn();
-    const primeiroRound: NucleoResultado = { ...RESULTADO_LUTA, eventos: RESULTADO_LUTA.eventos.slice(0, 1), status: "EM_ACAO" };
-    montar({ codigo: "DRESS_FIGHTER", momento: "ACAO", resultado: primeiroRound, onAcionar });
+    montar({ codigo: "DRESS_FIGHTER", momento: "ACAO", resultado: LUTA_EM_ACAO, onAcionar });
     const acionamento = screen.getByTestId("nucleo-trigger");
-    const especial = within(acionamento).getByRole("button", { name: "Acionar Tênis azul" }) as HTMLButtonElement;
-    expect(especial.disabled).toBe(true);
-    expect(within(acionamento).getByRole("status").textContent).toBe("A carta Especial só pode ser acionada entre os rounds.");
-    await waitFor(() => expect(especial.disabled).toBe(false));
-    expect(within(acionamento).getByRole("status").textContent).toBe("Entre os rounds: acione uma carta Especial ou siga.");
-    await new Promise((r) => setTimeout(r, 900));
-    expect(within(screen.getByTestId("nucleo-action")).getAllByRole("listitem")).toHaveLength(1);
+    const especial = within(acionamento).getByRole("button", { name: "Tênis azul: golpe especial" }) as HTMLButtonElement;
+    await waitFor(() => expect(especial.disabled).toBe(false), { timeout: 6000 });
+    expect(within(acionamento).getByRole("status").textContent).toBe("Leitura: a oponente prepara golpe forte. Jogue a carta que responde.");
+    // a carta do lance anterior não entra no seguinte
+    expect(within(acionamento).queryByRole("button", { name: /Camisa verde/ })).toBeNull();
     fireEvent.click(especial);
-    expect(onAcionar).toHaveBeenCalledWith({ tipo: "ESPECIAL", cardId: "c3" });
-    expect(eventos.some((e) => e.tipo === "acionamento" && e.acionamento === "ESPECIAL" && e.cardId === "c3")).toBe(true);
-    expect(especial.disabled).toBe(true);
-    expect(within(acionamento).getByRole("status").textContent).toBe("Acionamento já usado nesta partida.");
-    expect(within(acionamento).getByRole("button", { name: "Seguir sem acionar" })).toBeTruthy();
-  });
+    expect(onAcionar).toHaveBeenCalledWith({ tipo: "LANCE", cardId: "c3" });
+    expect(eventos.some((e) => e.tipo === "acionamento" && e.acionamento === "LANCE" && e.cardId === "c3")).toBe(true);
+    expect(within(acionamento).getByRole("button", { name: "Guarda sem carta" })).toBeTruthy();
+  }, 10000);
 
   it("Fashion Detective: no mercado, a carta fora do look vai ao balcão por estalecas e o detetive compra sozinho", async () => {
     loggedAs(ME, { "POST /api/flair/3d/nucleos/FASHION_DETECTIVE/efeitos": EFEITOS });

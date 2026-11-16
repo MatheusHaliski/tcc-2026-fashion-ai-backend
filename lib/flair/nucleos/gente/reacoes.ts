@@ -27,6 +27,7 @@ export const REACAO_DO_CLIPE: Record<string, Reacao> = {
   F_SOCO: { anim: "melee" },
   F_DEFESA: { anim: "idle", gesto: "defender" },
   F_RECUO: { anim: "idle", gesto: "recuar" },
+  F_ESQUIVA: { anim: "idle", gesto: "recuar" },
   F_QUEDA: { anim: "knockedOut" },
   F_CHUTAR: { anim: "idle", chute: 1 },
   F_CORRER: { anim: "run", velocidade: 3.2 },
