@@ -100,8 +100,6 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 /* The art editor keeps its preview before the controls on mobile; scrolling inside it keeps the entire final card reachable. */
 .piece-create-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
 .pae-preview { position: sticky; top: 64px; max-height: calc(100dvh - 156px); overflow: auto; min-width: 0; scroll-padding-block: 16px; }
-/* Tela estreita: a prévia da peça nova vem solta, depois do formulário. Presa no topo ela cobria os campos e o "Avançar". */
-.piece-create-preview { grid-row: 2; min-width: 0; }
 .piece-create-main { grid-row: 1; }
 .pae-preview { grid-row: 1; max-height: 58dvh; z-index: 8; background: var(--surface); }
 .pae-main { grid-row: 2; min-width: 0; }
@@ -109,17 +107,19 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
    scrolled into view remain clickable; the full card stays accessible inside it. */
 @media (max-width: 899px) { .pae-preview { max-height: min(36dvh, 320px); } }
 @media (min-width: 900px) {
-  .piece-create-layout:not(.is-art) { grid-template-columns: minmax(0, 1fr) minmax(352px, 44%); }
   .piece-create-main, .pae-main { grid-row: 1; grid-column: 1; }
-  .piece-create-preview, .pae-preview { grid-row: 1; grid-column: 2; max-height: calc(100dvh - 80px); }
-  .piece-create-preview { position: sticky; top: 64px; overflow: auto; scroll-padding-block: 16px; }
+  .pae-preview { grid-row: 1; grid-column: 2; max-height: calc(100dvh - 80px); }
 }
+.pae.pae-modal { grid-template-columns: minmax(0, 1fr); }
+.pae.pae-modal .pae-main { grid-row: 1; grid-column: 1; }
+.pae-modal-trigger { grid-row: 2; grid-column: 1; }
 @media (max-width: 639px) {
   .piece-card-expanded .pc-content { display: block; }
   .piece-card-expanded .c-facts { gap: 10px 16px; }
   .piece-card-expanded .pc-seg { flex-wrap: wrap; }
   .piece-card-expanded .pc-seg-btn { min-width: 0; flex: 1; }
 }
+.card-preview-mode[data-preview-mode="expanded"] { width: min(100%, 420px); margin-inline: auto; }
 .card-preview-mode > .pae-expanded-card { width: 100%; }
 .piece-card-expanded .c-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); }
 .fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dt { order: 0; grid-column: 1; }

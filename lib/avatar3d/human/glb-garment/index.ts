@@ -1,16 +1,19 @@
 /**
  * Veste o avatar com o .glb pronto da peça (modelo de vitrine do produto, catalog_product_models_3d) em vez do molde
- * paramétrico: encaixe (align.ts) → colisão, pesos e repouso (wrap.ts) → SkinnedMesh no esqueleto do corpo.
+ * paramétrico: encaixe (align.ts) → largura, profundidade, colisão, pesos e repouso (wrap.ts) → SkinnedMesh no
+ * esqueleto do corpo. A pele que a peça cobre deixa de ser desenhada (cover.ts), como nos jogos: sem pele por baixo,
+ * nada atravessa o pano.
  *
  * Tamanho (P/M/G/GG): a folga e o comprimento vêm do mesmo GarmentSpec do molde (applySize em garment-fit.ts: cada
  * número acima do tamanho do corpo soma folga radial e alonga barra e manga); a peça mantém as proporções do .glb.
  *
- * Aceite: se o encaixe não achar âncora, ou a colisão deixar a peça dentro do corpo ou esticada demais, devolve null e o
- * provador usa o molde (nunca uma peça quebrada no avatar).
+ * Aceite: se o encaixe não achar âncora, ou a peça ficar dentro do corpo, esticada demais ou com a pele atravessando
+ * o pano, devolve null e o provador usa o molde (nunca uma peça quebrada no avatar).
  */
 import * as THREE from "three";
 import type { GarmentSpec } from "../garments";
 import { alignGarment, classOf, groupsOf } from "./align";
+import { coverOf } from "./cover";
 import type { BodyFrame } from "./frame";
 import { wrapGarment, type WrapMetrics } from "./wrap";
 
@@ -26,12 +29,20 @@ export interface GlbSource {
   materials: THREE.Material[];
 }
 
-/** Aceite: dentro do corpo, esticamento (p95 das arestas) e distância máxima até a pele. */
-export const LIMITS = { inside: 0.03, stretch: 1.8, far: 0.25 };
+/**
+ * Aceite: dentro do corpo, esticamento visto de frente (p95 das arestas), distância máxima até a pele e pele
+ * atravessando o pano (fração da pele debaixo da peça).
+ */
+export const LIMITS = { inside: 0.03, stretch: 1.8, far: 0.25, pierced: 0.03 };
 
-export interface GlbGarment { geometry: THREE.BufferGeometry; metrics: WrapMetrics & { scale: number } }
-/** Resultado com o motivo da recusa (laboratório e diagnóstico): SEM_CLASSE, SEM_ANCORA, DENTRO_DO_CORPO, ESTICADA, ESPINHO. */
-export type GlbFit = (GlbGarment & { ok: true }) | { ok: false; reason: string; metrics?: WrapMetrics & { scale: number } };
+export type FitMetrics = WrapMetrics & { scale: number; pierced: number };
+/** `covered`: 1 para cada vértice de pele que a peça cobre (o corpo deixa de desenhar esses triângulos). */
+export interface GlbGarment { geometry: THREE.BufferGeometry; metrics: FitMetrics; covered: Uint8Array }
+/**
+ * Resultado com o motivo da recusa (laboratório e diagnóstico): SEM_CLASSE, SEM_ANCORA, DENTRO_DO_CORPO, ESTICADA,
+ * ESPINHO, FURADA.
+ */
+export type GlbFit = (GlbGarment & { ok: true }) | { ok: false; reason: string; metrics?: FitMetrics };
 
 /** Folga da peça sobre a pele: a do caimento + tamanho, mais as camadas que estão por baixo. */
 export function clearanceOf(spec: GarmentSpec, below: GarmentSpec[]): number {
@@ -72,16 +83,18 @@ export function buildGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec,
 export function fitGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec, below: GarmentSpec[] = []): GlbFit {
   const cls = classOf(spec.kind); if (!cls) return { ok: false, reason: "SEM_CLASSE" };
   const clearance = clearanceOf(spec, below);
-  const aligned = alignGarment(src.position, f, cls, clearance, spec.sizeFold?.length ?? 0);
+  const aligned = alignGarment(src.position, f, cls, clearance, spec.sizeFold?.length ?? 0, src.index);
   if (!aligned) return { ok: false, reason: "SEM_ANCORA" };
   const armpitY = (f.joint("LeftArm").y + f.joint("RightArm").y) / 2 - 0.05;
   const crotchY = Math.min(f.joint("LeftUpLeg").y, f.joint("RightUpLeg").y) - 0.08;
   src = splitFused(src, aligned.part, aligned.pos, armpitY, crotchY);
   const wrapped = wrapGarment(aligned.pos, aligned.part, src.index, f, groupsOf(cls), clearance);
-  const metrics = { ...wrapped.metrics, scale: aligned.scale };
+  const cover = coverOf(wrapped.posed, src.index, aligned.part, f);
+  const metrics = { ...wrapped.metrics, scale: aligned.scale, pierced: cover.pierced };
   if (metrics.inside > LIMITS.inside) return { ok: false, reason: "DENTRO_DO_CORPO", metrics };
   if (metrics.stretch > LIMITS.stretch) return { ok: false, reason: "ESTICADA", metrics };
   if (metrics.far > LIMITS.far) return { ok: false, reason: "ESPINHO", metrics };
+  if (metrics.pierced > LIMITS.pierced) return { ok: false, reason: "FURADA", metrics };
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(wrapped.rest, 3));
   if (src.uv) g.setAttribute("uv", new THREE.Float32BufferAttribute(src.uv, 2));
@@ -91,7 +104,7 @@ export function fitGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec, b
   for (const gr of src.groups) g.addGroup(gr.start, gr.count, gr.materialIndex);
   g.computeVertexNormals();
   g.userData = { buildPath: "GLB_WRAP", metrics, part: aligned.part };
-  return { ok: true, geometry: g, metrics };
+  return { ok: true, geometry: g, metrics, covered: cover.covered };
 }
 
 /** Materiais do .glb para vestir: frente e verso visíveis e na frente das camadas de baixo (como o molde). */

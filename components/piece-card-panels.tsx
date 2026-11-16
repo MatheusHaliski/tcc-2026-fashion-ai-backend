@@ -12,6 +12,8 @@ import { HypeGuideIcon } from "@/components/hype/hype-guide";
 import { BrandLogo } from "@/components/brand-logo";
 import { hypePreset } from "@/lib/hype/aura-hype-presets";
 import { conservationLabel } from "@/lib/api/piece-references";
+import { SelectedSealLabels } from "@/components/selected-seal-labels";
+import { selectedPieceSealNames } from "@/lib/seals/selected-seals";
 
 type Tab = "info" | "hype";
 
@@ -24,9 +26,9 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], live }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao">>; summary?: HypeSummary | null; initial?: Tab;
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], infoBefore, infoContent, replaceInfoRows = false, selectedSealNames = selectedPieceSealNames(piece.seals), live }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao"|"seals">>; summary?: HypeSummary | null; initial?: Tab;
   /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
-  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][];
+  auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][]; infoBefore?: ReactNode; infoContent?: ReactNode; replaceInfoRows?: boolean; selectedSealNames?: string[];
   /** memória e sinal do Hype desta pessoa (deltas do painel desde a última visita) */
   live?: HypeLive }) {
   const { t } = useI18n();
@@ -73,9 +75,10 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
           </button>
         ))}
       </div>
+      <SelectedSealLabels names={selectedSealNames} />
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="pc-panel">
         {tab === "info"
-          ? <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+          ? <div className="pc-info-content">{infoBefore}{!replaceInfoRows && <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}{infoContent}</div>
           : <FashionCardStats summary={summary} type={type} layout={preset?.layout} context={piece} live={live} />}
       </div>
     </div>

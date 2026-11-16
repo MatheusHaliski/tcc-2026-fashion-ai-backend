@@ -12,6 +12,7 @@
 import * as THREE from "three";
 import type { GarmentKind } from "../garments";
 import { bandExtent, type BodyFrame } from "./frame";
+import { labelParts } from "./parts";
 
 export type GarmentClass = "upper" | "lower" | "full";
 
@@ -105,8 +106,11 @@ function inflate(p: Float32Array, part: Int8Array, label: number, f: BodyFrame, 
   }
 }
 
-/** Encaixa a peça no corpo. `clearance` é a folga (m) da classe de caimento + tamanho; `lengthSteps` o comprimento. */
-export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0): Aligned | null {
+/**
+ * Encaixa a peça no corpo. `clearance` é a folga (m) da classe de caimento + tamanho; `lengthSteps` o comprimento;
+ * `index` (os triângulos) deixa o rótulo da manga enxergar o vão entre manga e tronco (parts.ts).
+ */
+export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0, index?: ArrayLike<number>): Aligned | null {
   const { lo, hi } = bounds(src); const height = hi[1] - lo[1];
   if (!(height > 0)) return null;
   const shL = f.joint("LeftArm"), shR = f.joint("RightArm");
@@ -135,24 +139,12 @@ export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass,
   if (!(s > 0.05 && s < 20)) return null;
   // tamanho maior: barra e manga um pouco mais compridas (a mesma regra do molde, 2% por número), a partir do topo
   if (lengthSteps) { let top = -Infinity; for (let i = 1; i < pos.length; i += 3) top = Math.max(top, pos[i]); const k = 1 + 0.02 * lengthSteps; for (let i = 1; i < pos.length; i += 3) pos[i] = top - (top - pos[i]) * k; }
-  // partes: manga = abaixo do ombro, fora da largura do TRONCO naquela altura (o quadril é mais largo que a cintura: o
-  // punho caído ao lado do quadril é manga, a barra que cobre o quadril é tronco), até o punho; perna = abaixo do gancho
-  const part = new Int8Array(pos.length / 3);
-  const half = new Map<number, number>(); const STEP = 0.02;
-  const torsoHalf = (y: number) => {
-    const b = Math.round(y / STEP); if (!half.has(b)) { const e = bandExtent(f, b * STEP, STEP, [1]); half.set(b, e ? Math.max(-e.x0, e.x1) : 0.15); }
-    return half.get(b)!;
-  };
-  const crotch = Math.min(hipL.y, hipR.y) - 0.06, wrist = Math.min(f.joint("LeftHand").y, f.joint("RightHand").y) - 0.06;
-  for (let v = 0; v < part.length; v++) {
-    const x = pos[v * 3], y = pos[v * 3 + 1];
-    const sleeve = y > wrist && (y < shL.y ? Math.abs(x) > torsoHalf(Math.min(y, shL.y - 0.12)) + clearance + 0.012 : Math.abs(x) > Math.abs(shL.x) + 0.02);
-    if (cls !== "lower" && sleeve) part[v] = x > 0 ? 1 : -1;
-    else if (cls !== "upper" && y < crotch) part[v] = x > 0 ? 2 : -2;
-  }
+  const part = labelParts(pos, f, cls, clearance, index);
   if (cls !== "lower") { alignLimb(pos, part, 1, shL, f.joint("LeftHand")); alignLimb(pos, part, -1, shR, f.joint("RightHand")); }
   if (cls !== "upper") { alignLimb(pos, part, 2, hipL, f.joint("LeftFoot")); alignLimb(pos, part, -2, hipR, f.joint("RightFoot")); }
   inflate(pos, part, 0, f, cls === "lower" ? [1, 3] : [1], clearance);
   if (cls !== "upper") { inflate(pos, part, 2, f, [3], clearance, (x) => x > 0); inflate(pos, part, -2, f, [3], clearance, (x) => x < 0); }
+  // manga: a Meshy também a faz rasa e nem sempre na profundidade do braço; centra no braço e dá a espessura dele
+  if (cls !== "lower") { inflate(pos, part, 1, f, [2], clearance, (x) => x > 0); inflate(pos, part, -1, f, [2], clearance, (x) => x < 0); }
   return { pos, part, scale: s };
 }

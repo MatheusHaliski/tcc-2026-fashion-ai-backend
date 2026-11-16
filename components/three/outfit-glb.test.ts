@@ -62,6 +62,22 @@ describe("provador veste pelo .glb do produto", () => {
     expect(m.parent).toBe(p.human.root);
   });
 
+  it("a pele debaixo da camisa de .glb deixa de ser desenhada e volta inteira ao vestir de novo", () => {
+    const p = parts(); const P = bodyParam(p.asset, p.composed); const meshes: THREE.SkinnedMesh[] = [];
+    const all = p.human.body.geometry.getIndex()!.count;
+    expect(wearGlb(p, item("shirt"), shirt(), [], lazyFrame(p, P), meshes)).toBe(true);
+    const dressed = p.human.body.geometry.getIndex()!.count;
+    expect(dressed).toBeLessThan(all - 3 * 500);                 // o tronco coberto saiu do índice do corpo
+    expect(dressed).toBeGreaterThan(all / 3);                    // cabeça, mãos, pernas e pés continuam
+    // no lugar da pele entrou o forro da peça, com os mesmos triângulos, preso ao esqueleto do corpo
+    const lining = meshes.find((m) => m.userData.buildPath === "GLB_LINING")!;
+    expect(lining.name).toBe("forro-p-shirt");
+    expect(lining.geometry.getIndex()!.count).toBe(all - dressed);
+    expect(lining.skeleton).toBe(p.human.skeleton);
+    lazyFrame(p, P);                                             // vestir de novo começa com a pele inteira
+    expect(p.human.body.geometry.getIndex()!.count).toBe(all);
+  });
+
   it("sem .glb, calçado ou recusa do aceite: false (o molde veste)", () => {
     const p = parts(); const P = bodyParam(p.asset, p.composed); const meshes: THREE.SkinnedMesh[] = [];
     const frame = lazyFrame(p, P);
