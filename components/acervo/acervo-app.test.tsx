@@ -202,6 +202,25 @@ describe("ACERVO · Central do acervo", () => {
     expect(document.querySelector('.acv-mapa [data-compartimento="c-gav1"]')?.className).toContain("is-parado");
   });
 
+  it("o mapa de uso mostra as combinações pouco exploradas: peças em nenhum look, com atalho para montar um look", async () => {
+    loggedAs(undefined, rotasDoAcervo({ "GET /api/me/acervo/uso": { dias: 180,
+      pecas: [
+        { id: "p2", diasSemUso: 400, nuncaUsada: false, esquecida: true, semLook: true },
+        { id: "p4", diasSemUso: null, nuncaUsada: true, esquecida: false, semLook: true },
+        { id: "p1", diasSemUso: 6, nuncaUsada: false, esquecida: false, semLook: false },
+      ],
+      compartimentos: [] } }));
+    renderApp(<AcervoApp />);
+    expect(screen.queryByRole("region", { name: "Combinações pouco exploradas" })).toBeNull();
+    fireEvent.click(await screen.findByRole("button", { name: "Mapa de uso" }));
+    const painel = await screen.findByRole("region", { name: "Combinações pouco exploradas" });
+    expect(texto(painel)).toContain("2 peças ainda não estão em nenhum look.");
+    expect(within(painel).queryByRole("button", { name: /Jaqueta de couro/ })).toBeNull();
+    expect(within(painel).getByRole("link", { name: "Montar um look com Camisa branca" }).getAttribute("href")).toBe("/schemes/new?pieces=p4");
+    fireEvent.click(within(painel).getByRole("button", { name: "Abrir a ficha de Camiseta básica (sem look)" }));
+    expect(await screen.findByRole("dialog", { name: /Camiseta básica/ })).toBeTruthy();
+  });
+
   it("soltar uma peça num compartimento do mapa move a peça", async () => {
     const { calls } = loggedAs(undefined, rotasDoAcervo({ "POST /api/me/acervo/pecas/mover": { movidas: 1, compartimentoId: "c-pra" } }));
     renderApp(<AcervoApp />);

@@ -1,0 +1,67 @@
+/* ── ACERVO · mapa de uso, "combinações pouco exploradas" (components/acervo/uso-combinacoes.tsx): as peças que ainda
+   não estão em nenhum look, cada uma com o atalho para montar um look com ela. Ocupa a largura da barra. */
+.acv-combinacoes {
+  display: grid;
+  flex-basis: 100%;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--acv-linha);
+  border-radius: var(--acv-raio);
+  background: var(--acv-cartao);
+  box-shadow: var(--acv-sombra);
+}
+
+.acv-combinacoes .acv-cartao-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.acv-combinacoes .acv-dica {
+  margin: 0;
+}
+
+.acv-combinacoes ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acv-combinacoes li {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-width: 0;
+}
+
+.acv-combinacao-peca {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 0 0 4px;
+  border: 1px solid var(--acv-linha);
+  border-radius: 10px;
+  background: var(--acv-cartao);
+  color: inherit;
+  font-size: var(--text-caption);
+  text-align: left;
+  cursor: pointer;
+}
+
+.acv-combinacao-peca .acv-foto {
+  border-radius: 9px 9px 0 0;
+}
+
+.acv-combinacao-peca > span:last-child {
+  overflow: hidden;
+  padding: 0 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acv-combinacoes .acv-link {
+  font-size: var(--text-caption);
+}
