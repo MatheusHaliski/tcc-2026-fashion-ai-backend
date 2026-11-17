@@ -73,6 +73,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class WardrobeService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private LookTypePreferencesService lookTypePreferences;
     private final WardrobeItemRepository pieces;
     private final UserRepository users;
     private final BrandRepository brands;
@@ -459,11 +461,7 @@ public class WardrobeService {
                 return Views.piece(existing.get(), viewerState(user, existing.get()), Map.of());
             }
         }
-        WardrobeItem w = new WardrobeItem();
-        w.setUser(owner);
-        // a origem da variação (IA × pessoa) é deduzida do pré-preenchimento guardado no rascunho, nunca declarada
-        Map<?, ?> aiPrefill = draft != null && Json.map(draft.getResultJson()).get("prefill") instanceof Map<?, ?> prefill ? prefill : null;
-        formWriter().apply(w, form, true, aiPrefill);
+        WardrobeItem w = CreationLookDefaults.piece(owner, form, draft, formWriter(), lookTypePreferences);
         w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
         if (draft == null && !form.useDefaultImage() && pick == null) {
             throw ApiException.badRequest("FOTO_OBRIGATORIA", Msg.t("wardrobe.envie_uma_foto_ou_escolha"));

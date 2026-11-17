@@ -5,7 +5,7 @@
  *    "Camada externa" na tela); tocar abre a folha da parte (vestindo agora, guarda-roupa, sugestões).
  *  - "Para quem é o look" em chips; tipos fora do ar viram um aviso curto.
  *  - Vista-me por células de ocasião (+ humor/clima) e peças fixadas como âncoras; "Outra sugestão" depois do Vista-me.
- *  - Salvar em um toque, abrir no editor, provar no Provador, tira uma coisa / limpar com desfazer, GRWM com imagens.
+ *  - Salvar em um toque, abrir no editor, provar no Provador, tira uma coisa / limpar com desfazer, sem ação GRWM.
  */
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -182,7 +182,7 @@ describe("MirrorControls — sem formulário", () => {
     expect(screen.getAllByText(/Look do Dia registrado/)).toHaveLength(1);
   });
 
-  it("tira uma coisa (liberado pelo servidor) e limpar têm desfazer; GRWM mostra o roteiro com imagem e legenda", async () => {
+  it("tira uma coisa (liberado pelo servidor) e limpar têm desfazer e GRWM não é exibido", async () => {
     const full = state({ upper: TEE, lower: JEANS, accessory: [RING(1)] }, { complete: true, actions: ["TIRA_UMA_COISA"] });
     const { calls } = loggedAs(undefined, {
       "GET /api/tipos-look": [],
@@ -196,12 +196,8 @@ describe("MirrorControls — sem formulário", () => {
     expect(await screen.findByText("Tirei Anel 1. Menos é mais.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Desfazer" }));
     await waitFor(() => expect(calls.find((c) => c.method === "POST" && c.path === "/api/me/mirror/pieces")?.body).toEqual({ pieceId: "r1" }));
-    fireEvent.click(screen.getByRole("button", { name: "GRWM" }));
-    const story = within(await screen.findByRole("dialog", { name: "GRWM · storyboard" }));
-    expect(story.getByText("Camiseta preta — Porta 1")).toBeTruthy();
-    expect(story.getByText("Look pronto")).toBeTruthy();
-    expect(document.querySelectorAll(".mirror-grwm-card img")).toHaveLength(1);              // a peça tem foto; o fecho não
-    fireEvent.click(story.getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByRole("button", { name: "GRWM" })).toBeNull();
+    expect(calls.some((c) => c.path === "/api/me/mirror/grwm")).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "Limpar" }));
     expect(await screen.findByText(/Espelho limpo/)).toBeTruthy();
     expect(calls.some((c) => c.method === "DELETE" && c.path === "/api/me/mirror")).toBe(true);

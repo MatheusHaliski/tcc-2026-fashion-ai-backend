@@ -86,6 +86,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SchemeService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private LookTypePreferencesService lookTypePreferences;
     private final SchemeRepository schemes;
     private final SchemeItemRepository schemeItems;
     private final WardrobeItemRepository pieces;
@@ -414,11 +416,7 @@ public class SchemeService {
         if (form.items() == null || form.items().isEmpty()) {
             throw ApiException.badRequest("SEM_PECAS", Msg.t("scheme.adicione_ao_menos_1_peca"));
         }
-        Scheme s = new Scheme();
-        s.setUser(owner);
-        s.setCreationMode(form.creationMode() == null ? CreationMode.MANUAL : form.creationMode());
-        s.setOrigin(form.origin() == null ? SchemeOrigin.CRIAR_LOOK : form.origin());
-        s.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
+        Scheme s = CreationLookDefaults.scheme(owner, form, lookTypePreferences);
         applyForm(s, form);
         if (form.remixedFromId() != null) {
             Scheme src = schemes.findById(form.remixedFromId()).orElseThrow(() -> ApiException.notFound(Msg.t("scheme.esquema_de_origem")));

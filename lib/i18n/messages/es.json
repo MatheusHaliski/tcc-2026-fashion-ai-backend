@@ -12727,5 +12727,8 @@
   "flair3d.ui.viabilidade.semPontos.colecao": "Ninguna de tus cartas puntúa en esta ronda: la nota será 0. Elige otra ronda o juega sabiéndolo.",
   "flair3d.ui.viabilidade.semPontos.deck": "Ninguna carta elegida puntúa en esta ronda: cambia por una carta con sello de puntos.",
   "flair3d.ui.viabilidade.semPontos.partida": "Atención: ninguna carta de tu mazo puntúa en esta ronda, la nota será 0.",
-  "flair3d.ui.viabilidade.regras": "Ninguna carta tuya cumple: {regras}. Esos puntos quedan fuera."
+  "flair3d.ui.viabilidade.regras": "Ninguna carta tuya cumple: {regras}. Esos puntos quedan fuera.",
+  "settings.autoLookType": "Tipo de look automático",
+  "settings.autoLookTypeHint": "Elige el tipo de look aplicado automáticamente a las nuevas prendas y looks.",
+  "settings.autoLookTypeOff": "Desactivado"
 }

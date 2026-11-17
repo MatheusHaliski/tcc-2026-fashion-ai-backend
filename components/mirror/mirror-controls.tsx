@@ -14,7 +14,6 @@ import type { Illustration } from "@/lib/capture/capture-guides";
 import { VistaMeCells } from "@/components/mirror/vista-me-cells";
 import { MirrorLookType } from "@/components/mirror/mirror-look-type";
 import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
-import { MirrorGrwmDialog, type GrwmStoryboard } from "@/components/mirror/mirror-grwm";
 
 /*
  * Espelho (RF28) — o painel da prova em /mirror (e da vista embutida no 2.5D): só botões, células e listas,
@@ -25,7 +24,7 @@ import { MirrorGrwmDialog, type GrwmStoryboard } from "@/components/mirror/mirro
  *    Tocar numa célula abre a folha da parte: vestindo agora, roupas em mãos (a lista do espelho e a peça na mão),
  *    guarda-roupa e sugestões. As roupas em mãos só aparecem aqui (a célula conta quantas há).
  *  - Vista-me: células de ocasião + humor/clima opcionais; peças fixadas ("Manter") viram âncoras.
- *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa, GRWM e limpar (desfazíveis).
+ *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa e limpar (desfazíveis).
  */
 export interface MirrorPieceRef {
   id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; category?: string | null; subcategory?: string | null; colorHex?: string | null;
@@ -163,7 +162,6 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   const { pinned, toggle: togglePin, anchorIds } = pins ?? ownPins;
   const [extras, setExtras] = useState<Pick<MirrorData, "sequence" | "fallbackMessage" | "challengeNotice" | "message"> | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [grwm, setGrwm] = useState<GrwmStoryboard | null>(null);
   const worn = wornOf(data);
   const dressOn = asList(data.slots.dress).length > 0;
   const restore = async (ids: string[]) => { for (const id of ids) await run("restore", () => api.post("/api/me/mirror/pieces", { pieceId: id })); setNotice(null); };

@@ -1,4 +1,5 @@
 "use client";
+import { usePieceCreationState } from "@/lib/hooks/use-piece-creation-state";
 import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import { CreatorWelcome } from "@/components/creator-welcome";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -27,7 +28,7 @@ import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
 import { liveFieldErrors, pieceStepProblem, scrollAfterStep } from "@/lib/pieces/step-guard";
-import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
+import { readPiecePrefill, validPieceCategory, type PiecePrefillParams } from "@/lib/pieces/prefill";
 import { PieceReviewStep, savedVisibility } from "@/components/pieces/piece-review-step";
 import { resolveFraming, usePhotoFraming } from "@/lib/photo-framing";
 
@@ -69,24 +70,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const [photoPick, setPhotoPick] = useState<PhotoPick | null>(null);
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
-  // pré-preenchimento (Lens): validado na taxonomia já na primeira renderização quando ela está em cache; senão, o efeito
-  // abaixo completa assim que ela chega
-  const [pre] = useState(() => validPiecePrefill(prefill, tax, CATEGORY_IDS));
-  const [value, setValue] = useState<PieceFormValue>(() => ({ ...EMPTY_PIECE, useDefaultImage: true, category: initial.category ?? "", subcategory: pre.subcategory || (initial.subcategory ?? ""), brandName: initial.brand ?? "",
-    name: pre.name, color: pre.color, material: pre.material, style: pre.style }));
-  // subtipo inicial da busca catalogada (ela lê o `initial` só ao montar: com o subtipo chegando depois, remonta uma vez);
-  // só vale enquanto o formulário continua nele (ao voltar de um produto do catálogo de outro tipo, a busca abre sem subtipo)
-  const [catalogSub, setCatalogSub] = useState(pre.subcategory);
-  const lateApplied = useRef(!!tax);
-  useEffect(() => {
-    if (lateApplied.current || !tax) return;
-    lateApplied.current = true;
-    const late = validPiecePrefill(prefill, tax, CATEGORY_IDS);
-    // só completa o que ainda está vazio (e o subtipo só se o tipo continua o mesmo): nada do que a pessoa já mexeu muda
-    setValue((v) => ({ ...v, subcategory: v.subcategory || (v.category === late.category ? late.subcategory : ""), color: v.color || late.color,
-      material: v.material || late.material, style: v.style.length ? v.style : late.style }));
-    if (late.subcategory) setCatalogSub(late.subcategory);
-  }, [tax]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { value, setValue, pre, catalogSub } = usePieceCreationState(initial, prefill, tax, CATEGORY_IDS);
   // arte do card (RF11 v2 + campos do Background Studio): um só config, o mesmo que o detalhe grava depois
   const [background, setBackground] = useState<Record<string, unknown>>({ skin: "atelier" });
   // Total frame: o enquadramento escolhido aqui vai com a arte da peça (background.photoFraming) e vale em todo card dela

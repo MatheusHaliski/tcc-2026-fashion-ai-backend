@@ -12727,5 +12727,8 @@
   "flair3d.ui.viabilidade.semPontos.colecao": "None of your cards scores in this round: the score will be 0. Pick another round or play knowing that.",
   "flair3d.ui.viabilidade.semPontos.deck": "None of the chosen cards scores in this round: swap in a card with a points seal.",
   "flair3d.ui.viabilidade.semPontos.partida": "Heads up: no card in your deck scores in this round, the score will be 0.",
-  "flair3d.ui.viabilidade.regras": "None of your cards meets: {regras}. Those points are out of reach."
+  "flair3d.ui.viabilidade.regras": "None of your cards meets: {regras}. Those points are out of reach.",
+  "settings.autoLookType": "Automatic look type",
+  "settings.autoLookTypeHint": "Choose the look type applied automatically to new clothing pieces and looks.",
+  "settings.autoLookTypeOff": "Disabled"
 }

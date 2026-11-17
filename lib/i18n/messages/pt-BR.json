@@ -12727,5 +12727,8 @@
   "pieceReferences.origem.unavailable": "Origem salva indisponível",
   "pieceReferences.origem.loadError": "Não foi possível carregar as origens.",
   "pieceReferences.origem.empty": "Nenhuma origem disponível.",
-  "pieceReferences.origem.hint": "Escolha a origem desta peça (compra, herança, presente, etc)."
+  "pieceReferences.origem.hint": "Escolha a origem desta peça (compra, herança, presente, etc).",
+  "settings.autoLookType": "Tipo Look automático",
+  "settings.autoLookTypeHint": "Escolha o tipo de look aplicado automaticamente às novas peças de roupa e esquemas de look.",
+  "settings.autoLookTypeOff": "Desativado"
 }
