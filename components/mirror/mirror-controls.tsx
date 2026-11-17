@@ -292,7 +292,6 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
         {worn.length ? <Link href={`/schemes/new?pieces=${worn.map((w) => encodeURIComponent(w.p.id)).join(",")}`} className="btn">{t("mirror.abrir_no_editor")}</Link> : <Button disabled>{t("mirror.abrir_no_editor")}</Button>}
         {worn.length ? <Link href={`/try-on?provar=${provar}`} className="btn"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("mirror.provar_look_no_provador")}</Link> : <Button disabled>{t("mirror.provar_look_no_provador")}</Button>}
         <Button disabled={!canTakeOneOff(data) || busy === "one"} onClick={() => void takeOneOff()}><FaiIcon id="ACT-33" size={20} className="ico-text" decorative />{t("mirror.tira_uma_coisa")}</Button>
-        <Button disabled={worn.length === 0 || busy === "grwm"} onClick={async () => { const r = await run("grwm", () => api.get("/api/me/mirror/grwm")); if (r) setGrwm(r as typeof grwm); }}>{t("mirror.grwm")}</Button>
       </div>
 
       {part && (
@@ -302,7 +301,6 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
           takeOff={async (p) => { if (host?.takeOff) await host.takeOff(p); else await run("rm", () => api.delete(`/api/me/mirror/pieces/${encodeURIComponent(p.id)}`)); }}
           unlist={async (p) => { if (host?.unlist) await host.unlist(p); else await run("unlist", () => api.delete(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`)); }} />
       )}
-      <MirrorGrwmDialog grwm={grwm} onClose={() => setGrwm(null)} />
     </div>
   );
 }
