@@ -91,7 +91,7 @@ describe("Momentos — a aba do tempo da moda", () => {
     expect(await screen.findByText("Halloween 2026")).toBeTruthy();
     expect(screen.getByText("88")).toBeTruthy();
     expect(screen.getByText("Hype 86")).toBeTruthy();
-    expect(screen.getByText("leitura: dark")).toBeTruthy();
+    expect(screen.getByText("leitura: Dark")).toBeTruthy();   // a leitura aparece pelo nome, não pelo código
     expect(screen.getByText("Primavera 2026")).toBeTruthy();
   });
 

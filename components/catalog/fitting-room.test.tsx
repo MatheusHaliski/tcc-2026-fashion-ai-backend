@@ -147,7 +147,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     expect(screen.getByText("Coberta por Vestido floral")).toBeTruthy();
     expect(sceneItems()).toEqual([{ id: "w:dress", slot: "dress" }]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Remover Vestido floral de Parte de cima" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remover Vestido floral de Peça única (cobre cima e baixo)" }));
     await waitFor(() => expect(sceneItems()).toEqual([{ id: "w:jeans", slot: "lower" }]));
     expect(persistedItems()).toEqual([expect.objectContaining({ key: "w:jeans", slot: "lower_piece", wear: "BOTTOM" })]);
     expect(screen.queryByText(/Coberta por Vestido floral/)).toBeNull();

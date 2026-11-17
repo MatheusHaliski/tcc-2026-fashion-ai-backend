@@ -113,7 +113,7 @@ describe("RunwayPanel — você, vazio e 3D", () => {
     cleanup();
     loggedAs(undefined, { "GET /api/explorer/runway": base({ you: { optedOut: false, hasLook: false, position: null } }) });
     renderApp(<RunwayPanel />);
-    expect((await screen.findByRole("link", { name: "Marcar meu Look do Dia" })).getAttribute("href")).toContain("espelho=1");
+    expect((await screen.findByRole("link", { name: "Marcar meu Look do Dia" })).getAttribute("href")).toBe("/mirror");   // o Espelho tem casa própria desde que o Meu Quarto saiu
   });
 
   it("vazio: sem filtros 'ninguém desfilou'; com filtro 'nenhum look com esses filtros'", async () => {

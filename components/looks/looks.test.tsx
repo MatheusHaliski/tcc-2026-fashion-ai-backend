@@ -200,6 +200,7 @@ describe("Editor de look — Hype das peças e prévia (P1-08, P2-14, P3-08)", (
     const api = loggedAs(undefined, { "GET /api/hype/summaries": summaries, "GET /api/schemes/builder": BUILDER, "POST /api/schemes/scores": PREVIEW });
     renderApp(<SchemeBuilder initial={SCHEME} />);
     await settle();
+    fireEvent.click(await screen.findByRole("button", { name: "Ver prévia do card" }));   // a prévia do look abre numa janela
     expect(await screen.findByText("Prévia do look")).toBeTruthy();
     expect(await screen.findByText("Hype = média do HypeScore das peças com dados (1 de 2).", {}, { timeout: 3000 })).toBeTruthy();
     expect(screen.getByText(/nunca uma nota do look/)).toBeTruthy();

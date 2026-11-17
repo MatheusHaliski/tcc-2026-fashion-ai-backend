@@ -37,7 +37,7 @@ describe("Tipo de look no Espelho", () => {
     });
     const panel = await openMirror();
     const group = within(panel.getByRole("radiogroup", { name: "Para quem é o look" }));
-    expect(await group.findByRole("radio", { name: "Unisex" })).toBeTruthy();
+    expect(await group.findByRole("radio", { name: "Unissex" })).toBeTruthy();   // código UNISEX no idioma de quem lê
     expect(group.getByRole("radio", { name: "Feminino" }).getAttribute("aria-checked")).toBe("false");
     fireEvent.click(group.getByRole("radio", { name: "Masculino" }));
     await waitFor(() => expect(calls.find(c => c.method === "PUT" && c.path === "/api/me/mirror/tipo-look")?.body).toEqual({ tipoLookId: "t2" }));

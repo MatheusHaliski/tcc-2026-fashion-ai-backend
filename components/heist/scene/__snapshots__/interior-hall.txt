@@ -17,7 +17,7 @@ low B salao MeshStandardMaterial/ffffff/0.35/0/map/0.18/1//0 c0r1 6:79600fcc5fa6
 low B salao solid-mossBase/1f2a1b/1/0//1/1//0 c0r1 384:42009d803796fe49:4739231639e0f45b:0e3d3a4cfa50c627
 low B salao solid-ribMat/203222/0.95/0//1/1//0 c0r1 11520:2d38435c669f59bb:df5cb79ed01c32d5:16bad5f111afa7f8
 low B salao solid-goldBright/e0b85a/0.2/1//1/1//0 c0r1 744:70e9065f3aa51b3d:4ae1a7e2b2898120:2468db4a42b35c1b
-low I salao baluster plainwall-limestone-low-#d9d0bf/d9d0bf/1/0/map/1/1//0 n262 77:5130449191fc5564:5149e0e4b910a82e:f89962e72b0c3ce8 mc02cce43341cb1a5 c-
+low I salao baluster plainwall-limestone-low-#d9d0bf/d9d0bf/1/0/map/1/1//0 n262 77:5130449191fc5564:5149e0e4b910a82e:eba3e55d76dc9512 mc02cce43341cb1a5 c-
 low I salao downlight glow-bulbWarm/ffffe4/-/-//-/1//0 n40 14:19e5ded7fbfe074c:da0bfb381c6672c0:a68346a643fa5b97 mfbfdf23d3486ce04 c-
 low I salao uplight glow-ledAmber/fffd45/-/-//-/1//0 n4 24:3eb973d358fee50e:ab7eeb31c5494e92:dfc18c7fbd8cf432 m75e0edd55ca928bd c-
 low I salao candle solid-candle/f3ead6/0.7/0//0.4/1//0 n90 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m279476e832dcc4aa c-
@@ -124,7 +124,7 @@ high B salao MeshStandardMaterial/ffffff/0.35/0/map/0.18/1//0 c0r1 6:79600fcc5fa
 high B salao solid-mossBase/1f2a1b/1/0//1/1//0 c0r1 384:42009d803796fe49:4739231639e0f45b:0e3d3a4cfa50c627
 high B salao solid-ribMat/203222/0.95/0//1/1//0 c0r1 11520:2d38435c669f59bb:df5cb79ed01c32d5:16bad5f111afa7f8
 high B salao solid-goldBright/e0b85a/0.2/1//1/1//0 c0r1 744:70e9065f3aa51b3d:4ae1a7e2b2898120:2468db4a42b35c1b
-high I salao baluster plainwall-limestone-high-#d9d0bf/d9d0bf/1/0/map/1/1//0 n262 77:5130449191fc5564:5149e0e4b910a82e:f89962e72b0c3ce8 mc02cce43341cb1a5 c-
+high I salao baluster plainwall-limestone-high-#d9d0bf/d9d0bf/1/0/map/1/1//0 n262 77:5130449191fc5564:5149e0e4b910a82e:eba3e55d76dc9512 mc02cce43341cb1a5 c-
 high I salao downlight glow-bulbWarm/ffffe4/-/-//-/1//0 n40 14:19e5ded7fbfe074c:da0bfb381c6672c0:a68346a643fa5b97 mfbfdf23d3486ce04 c-
 high I salao uplight glow-ledAmber/fffd45/-/-//-/1//0 n4 24:3eb973d358fee50e:ab7eeb31c5494e92:dfc18c7fbd8cf432 m75e0edd55ca928bd c-
 high I salao candle solid-candle/f3ead6/0.7/0//0.4/1//0 n90 52:94bbf847694b9b02:5acd8a26134ebde2:3d0c12041a585ce3 m279476e832dcc4aa c-

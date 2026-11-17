@@ -5,7 +5,7 @@
  * salvar, o recorte vai ao rascunho da análise e a peça é criada com ele; havendo outra peça na foto, volta à etapa Peça.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { loggedAs, renderApp, ME } from "@/test-utils/render";
 import { PIECE } from "@/test-utils/fixtures";
 import { router } from "@/test-utils/setup";
@@ -35,6 +35,8 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); router.push.mockClear(); });
 
+// o guia do criador abre toda vez que se entra na página (onEntry): fecha antes de usar as etapas do formulário
+const closeGuide = async () => fireEvent.click(within(await screen.findByRole("dialog", { name: "Bem-vindo ao criador de peças" })).getByRole("button", { name: "Fechar" }));
 const next = () => fireEvent.click(screen.getAllByRole("button").find((b) => /^Próximo$|^Avançar$/.test(b.textContent?.trim() ?? ""))!);
 
 describe("criador de peças — modo Fotografar sem modal", () => {
@@ -47,6 +49,7 @@ describe("criador de peças — modo Fotografar sem modal", () => {
       "POST /api/interactions/PIECE/nova-saia/shares": {},
     });
     const { container } = renderApp(<NewPiecePage />);
+    await closeGuide();
     fireEvent.click(await screen.findByRole("radio", { name: /Fotografar/ }));
     // as etapas do criador continuam visíveis no modo Fotografar
     expect(screen.getByRole("radio", { name: /Mais detalhes/ })).toBeTruthy();
@@ -75,6 +78,7 @@ describe("criador de peças — modo Fotografar sem modal", () => {
   it("sem escolher uma peça da foto, a etapa Peça não deixa avançar e avisa, em vez de criar a peça com a ilustração", async () => {
     const { calls } = loggedAs(ME, { "GET /api/taxonomy": TAXONOMY });
     renderApp(<NewPiecePage />);
+    await closeGuide();
     fireEvent.click(await screen.findByRole("radio", { name: /Fotografar/ }));
     fireEvent.click(screen.getByRole("radio", { name: /Revisar/ }));
     expect(await screen.findByText(/Escolha uma das peças encontradas na foto/)).toBeTruthy();

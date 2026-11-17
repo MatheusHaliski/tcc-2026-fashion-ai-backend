@@ -72,7 +72,9 @@ describe("telas do app abrem sem quebrar", () => {
       await waitFor(() => expect(container.textContent).not.toBe("carregando"), { timeout: 3000 });
       // tela que quebra é desmontada pelo React e o contêiner fica vazio: exige conteúdo na tela. Espera o conteúdo (até
       // 3 s) em vez de uma pausa fixa: com a suíte inteira em paralelo, telas com import dinâmico demoram mais a pintar
-      await waitFor(() => expect(container.textContent?.trim().length ?? 0).toBeGreaterThan(0), { timeout: 3000 });
+      // laboratórios do heist são só a cena 3D (canvas ou next/dynamic, que o setup troca por um vazio): sem texto no DOM do
+      // jsdom; para eles vale só "renderiza sem erro". A cena é coberta pelos retratos em components/heist/scene
+      if (!path.includes("/lab/heist")) await waitFor(() => expect(container.textContent?.trim().length ?? 0).toBeGreaterThan(0), { timeout: 3000 });
       spy.mockRestore();
       expect(errors).toEqual([]);
     });

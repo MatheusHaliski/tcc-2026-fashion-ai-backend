@@ -6,7 +6,7 @@
  * no perfil.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
+import { act, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 import { ME } from "@/test-utils/render";
 import NewPiecePage from "@/app/(site)/(app)/pieces/new/page";
 import { FlairGameCard, type FlairCollectionCard } from "./flair-game-card";
@@ -100,7 +100,9 @@ describe("Criador de peças › Depois de salvar", () => {
     expect(screen.getByRole("switch", { name: "Converter para FLAIR" }).getAttribute("aria-checked")).toBe("false");
     expect(screen.queryByText("Prévia do post")).toBeNull();
     fireEvent.click(screen.getByRole("switch", { name: "Compartilhar no feed do FashionAI" }));
-    expect(screen.getByText("Prévia do post")).toBeTruthy();
+    // a prévia abre numa janela pelo botão; com Compartilhar ligado, ela é a prévia do post
+    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
+    fireEvent.click(within(await screen.findByRole("dialog", { name: "Prévia do post" })).getByRole("button", { name: "Fechar" }));
     expect(screen.queryByLabelText("Legenda (opcional)")).toBeNull();                     // o post não tem descrição
     await save();
     await waitFor(() => expect(shares(calls)).toHaveLength(1), { timeout: 4000 });
