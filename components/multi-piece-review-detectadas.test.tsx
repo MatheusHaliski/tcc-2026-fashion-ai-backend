@@ -90,7 +90,7 @@ describe("MultiPieceUpload no criador em etapas (onPick)", () => {
     const { container, unmount } = renderApp(<MultiPieceUpload onPick={onPick} />);
     fireEvent.change(input(container), { target: { files: [jpg()] } });
     fireEvent.click(screen.getByRole("button", { name: /Analisar peças/ }));
-    expect((await screen.findByTestId("local-reading-note")).textContent).toBe("Leitura local: a IA online não foi usada. A cor foi lida da foto; o tipo e o nome da peça ficam para você informar.");
+    expect((await screen.findByTestId("local-reading-note")).textContent).toBe("Leitura local: a IA online não foi usada. A cor foi lida da foto. Quando a forma do recorte deixa claro, o tipo aparece como sugestão para você confirmar; o nome fica para você informar.");
     expect(screen.getAllByTestId("detected-piece")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Usar esta peça" }));
     await waitFor(() => expect(onPick).toHaveBeenCalled());

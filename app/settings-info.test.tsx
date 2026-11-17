@@ -12,16 +12,16 @@ it("opens an explanation for each consent without granting it and restores focus
   ] });
   renderApp(<SettingsPage />);
   fireEvent.click(await screen.findByRole("tab", { name: "Privacidade" }));
-  const info = await screen.findByRole("button", { name: "Informações sobre RECOMENDAÇÕES POR IA" });
+  const info = await screen.findByRole("button", { name: "Informações sobre Recomendações por IA" });
   info.focus(); fireEvent.click(info);
-  const dialog = await screen.findByRole("dialog", { name: "RECOMENDAÇÕES POR IA" });
+  const dialog = await screen.findByRole("dialog", { name: "Recomendações por IA" });
   expect(within(dialog).getByText("Usa os dados das peças para recomendar looks.")).toBeTruthy();
   fireEvent.keyDown(dialog, { key: "Escape" });
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(document.activeElement).toBe(info);
   expect(calls.some(c => c.method === "PUT" && c.path.includes("consents"))).toBe(false);
-  fireEvent.click(screen.getByRole("button", { name: "Informações sobre LOCALIZAÇÃO PARA CLIMA" }));
-  expect(await screen.findByRole("dialog", { name: "LOCALIZAÇÃO PARA CLIMA" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Informações sobre Localização para clima" }));
+  expect(await screen.findByRole("dialog", { name: "Localização para clima" })).toBeTruthy();
 });
 it("activates AURA locally when an older backend omits the preference, instead of silently resetting it", async () => {
   loggedAs(undefined, { "GET /api/me/preferences": PREFS, "PUT /api/me/preferences": PREFS });

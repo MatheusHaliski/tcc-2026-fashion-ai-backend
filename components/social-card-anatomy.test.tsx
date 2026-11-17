@@ -14,8 +14,11 @@ it('keeps garment awards and readable fashion facts outside the Hype tab',()=>{
  const meta=container.querySelector('.card-fashion-meta')!;
  expect([...meta.querySelectorAll('dt')].map(e=>e.textContent)).toEqual(['Marca','Cor','Ocasião','Estilo']);
  expect(meta.textContent).toContain('Nike');expect(meta.textContent).toContain('Casual');
- fireEvent.click(screen.getByRole('tab',{name:/^Hype/}));expect(meta.closest('[role="tabpanel"]')).toBeNull();
- expect(meta.isConnected).toBe(true);expect(screen.getByTitle('Seleção oficial · @marca · PECA').isConnected).toBe(true);
+ // fatos de moda e selos ficam na aba Info: saem na aba Hype e voltam ao abrir Info de novo
+ expect(meta.closest('[role="tabpanel"]')).toBeTruthy();expect(screen.getByTitle('Seleção oficial · @marca · PECA')).toBeTruthy();
+ fireEvent.click(screen.getByRole('tab',{name:/^Hype/}));expect(screen.getByRole('tabpanel').querySelector('.card-fashion-meta')).toBeNull();
+ expect(screen.queryByTitle('Seleção oficial · @marca · PECA')).toBeNull();
+ fireEvent.click(screen.getByRole('tab',{name:/info/i}));expect(screen.getByTitle('Seleção oficial · @marca · PECA')).toBeTruthy();
 });
 it('shortens outfit posts without losing the full item list in expanded view',()=>{
  mockApi({});const {container,unmount}=renderApp(<SchemeCard scheme={SCHEME} seals={seals} flip={false}/>);

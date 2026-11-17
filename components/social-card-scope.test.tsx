@@ -21,7 +21,8 @@ it.each([
  const card=container.querySelector("article.scheme-card")!;
  expect(card.getAttribute("data-card-mode")).toBe(mode);
  expect(card.classList.contains("scheme-card-social")).toBe(!expanded&&!compact);
- if(compact)expect(card.querySelector(".card-fashion-meta")).toBeNull();
+ // compacto não traz os fatos de moda; ampliado (mesmo vindo de um compacto) mostra na aba Info (scheme-card-info.test.tsx)
+ if(compact&&!expanded)expect(card.querySelector(".card-fashion-meta")).toBeNull();
 });
 
 it("announces only undisplayed awards in the overflow count",()=>{

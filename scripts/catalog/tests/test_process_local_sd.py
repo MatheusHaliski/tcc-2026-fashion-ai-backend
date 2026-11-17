@@ -151,7 +151,8 @@ class LenientCleanupTest(unittest.TestCase):
         self.assertEqual(str(strict.exception), "UNCLASSIFIED_THIN_CONTOUR")
         t, _, metrics = sd.measure(im, masks(target, empty, "lower_piece", "jeans"), "lower_piece", "jeans", im.size)
         self.assertEqual(metrics["cleanup"]["cleanupMode"], "LENIENT_OPENING"); self.assertEqual(metrics["cleanup"]["strictReason"], "UNCLASSIFIED_THIN_CONTOUR")
-        self.assertEqual(metrics["cleanup"]["retainedParts"], 2); self.assertFalse(t[300, 380]); self.assertTrue(t[300, 150]); self.assertTrue(t[300, 250])
+        # o fio preso à perna é reconstruído junto (pixels originais ligados ao núcleo); o modo LENIENT_OPENING manda o set para revisão
+        self.assertEqual(metrics["cleanup"]["retainedParts"], 2); self.assertTrue(t[300, 380]); self.assertTrue(t[300, 150]); self.assertTrue(t[300, 250])
         clean = Image.new("L", im.size, 0); ImageDraw.Draw(clean).rectangle((120, 100, 280, 500), fill=255)
         self.assertEqual(sd.measure(im, masks(clean, empty, "upper_piece", "t_shirt"), "upper_piece", "t_shirt", im.size)[2]["cleanup"]["cleanupMode"], "STRICT")
 
@@ -417,17 +418,25 @@ class FashnOpenEngineTest(unittest.TestCase):
         class Provider:
             """Fusão da fixture (sem o risco externo) com a evidência que o engine real traria."""
 
-            def __init__(self, evidence):
-                self.evidence = evidence
+            def __init__(self, evidence, person=False):
+                self.evidence, self.person = evidence, person
 
             def analyse(self, image, category, subcategory):
                 t = np.asarray(target.convert("L")) >= 128; t[:150] = False
                 f = np.asarray(forbidden.convert("L")) >= 128
-                return fo.Fusion(t, f, t.astype(np.float32), "parser+birefnet", True, ("top",), self.evidence)
+                return fo.Fusion(t, f, t.astype(np.float32), "parser+birefnet", self.person, ("top",), self.evidence)
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
+            # peça vestida (pessoa detectada): o postflight manda para revisão e as imagens ficam só como prévia local
+            worn = Provider({"touchesBorder": False, "bodyInsideFraction": 0.01, "occluderFraction": 0.0}, person=True)
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "w", engine="fashn-open", dry_run=True, photo_set=True), fetch=fetch,
+                                       open_provider=worn, filler=FakeFiller()).run([row])
+            ps = results[0]["photoSet"]; self.assertEqual((ps["status"], ps["reason"]), ("REVIEW", "HUMAN_SOURCE_REVIEW_REQUIRED"))
+            data = json.loads((Path(ps["dir"]) / "set.json").read_text(encoding="utf-8"))
+            self.assertNotIn("files", data); self.assertEqual(data["reviewPreviewFiles"], {"whole": "whole.png", "fabric": "fabric.png"})
+            # sem pessoa e sem região reconstruída pela IA (ghostPixels = 0): o postflight mantém READY
             ok = Provider({"touchesBorder": False, "bodyInsideFraction": 0.01, "occluderFraction": 0.0})
-            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "a", engine="fashn-open", dry_run=True, photo_set=True), fetch=fetch,
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "a", engine="fashn-open", dry_run=True, photo_set=True, no_ai=True), fetch=fetch,
                                        open_provider=ok, filler=FakeFiller()).run([row])
             self.assertEqual(results[0]["status"], "RENDERED"); self.assertEqual(results[0]["metrics"]["preflight"]["status"], "PASS")
             ps = results[0]["photoSet"]; self.assertEqual(ps["status"], "READY")
