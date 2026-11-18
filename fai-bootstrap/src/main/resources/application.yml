@@ -23,6 +23,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    out-of-order: true   # V103 (garment_delivery) ficou para trás de V104 em produção; permite aplicá-la fora de ordem
   servlet:
     multipart:
       max-file-size: 15MB
