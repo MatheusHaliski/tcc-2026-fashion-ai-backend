@@ -165,7 +165,9 @@ class Flair3dNucleoServiceTest {
         assertThat(partida.get("deck")).isNull();
         assertThat(partida.get("participantes")).isEqualTo(List.of(new Avatares.Participante("MODELO_CASA", "PROTAGONISTA", "A", null)));
         Entrega e = Flair3dFixtures.comMaquiagem(vestir(sup), "LABIOS", "CORAL", "CETIM");
-        assertThat(service.entregar(ana, (UUID) partida.get("id"), e).pontos()).isEqualTo(100);
+        // o look avaliado abre a sessão de fotos (EM_ACAO); seguir sem jogar carta fecha com a nota do look
+        assertThat(service.entregar(ana, (UUID) partida.get("id"), e).status()).isEqualTo("EM_ACAO");
+        assertThat(service.acionar(ana, (UUID) partida.get("id"), Acionamento.NENHUM).pontos()).isEqualTo(100);
     }
 
     @Test

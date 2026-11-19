@@ -92,10 +92,10 @@ class Flair3dNucleosCartasTest {
         CbcRules.Card sup = card("SUP", "occasion:casual", "material:linen");
         CbcRules.Card inf = card("INF", "occasion:beach", "material:cotton");
         Entrega e = comMaquiagem(vestir(sup, inf), "LABIOS", "coral", "GLOSS");
-        assertThat(jogar(new RoadToGloryNucleo(), e, sup, inf).pontos()).isEqualTo(100);
+        assertThat(new RoadToGloryNucleo().previa(e, Flair3dFixtures.contexto(1, sup, inf)).pontos()).isEqualTo(100);
         CbcRules.Card festa = card("SUP", "occasion:party", "material:leather");
         Entrega falha = comMaquiagem(vestir(festa), "LABIOS", "VERMELHO", "FOSCO");
-        assertThat(jogar(new RoadToGloryNucleo(), falha, festa).pontos()).isZero();
+        assertThat(new RoadToGloryNucleo().previa(falha, Flair3dFixtures.contexto(1, festa)).pontos()).isZero();
     }
 
     @Test

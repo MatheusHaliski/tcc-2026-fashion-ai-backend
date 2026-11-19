@@ -79,7 +79,8 @@ class Flair3dCartasPontosTest {
         CbcRules.Card sup = card("SUP", "occasion:casual", "material:linen");
         CbcRules.Card inf = card("INF", "occasion:beach", "material:leather");
         Entrega ensaio = comMaquiagem(vestir(sup, inf), "LABIOS", "CORAL", "GLOSS");
-        assertThat(cartas(new RoadToGloryNucleo(), ensaio, sup, inf)).containsExactly(de(sup, 12.5), de(inf, 12.5));
+        // a nota do look (a prévia): a entrega ainda abre a sessão de fotos
+        assertThat(new RoadToGloryNucleo().previa(ensaio, Flair3dFixtures.contexto(1, sup, inf)).cartas()).containsExactly(de(sup, 12.5), de(inf, 12.5));
 
         CbcRules.Card cima = card("SUP", "material:linen", "color:red", "brand:Farm");
         CbcRules.Card baixo = card("INF", "material:cotton", "color:orange");
