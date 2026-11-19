@@ -200,3 +200,11 @@ com confirmação). O gerador e a origem vão para `catalog_product_models_3d.ge
 
 **A medir no piloto:** GPU, VRAM de pico, segundos por produto, custo por hora e total, e as notas comparadas com a
 Meshy (mesma régua do `glb_quality.py`, renders de frente, lado e costas).
+
+## Provador com os `.glb` da Meshy (19/11/2026)
+
+Uso dos 46 modelos já gerados na Meshy (um por subcategoria, `meshy-7.1`, lidos do bucket só para leitura) no
+provador. **Nenhum uso novo de provedor, modelo ou GPU:** normalização, encaixe, pesos e tamanhos rodam na CPU, em
+código do repositório (`lib/avatar3d/meshy`, `docs/provador/MESHY_GLB.md`). Custo de geração já registrado na tarefa
+de cada modelo (30 créditos, ~3 min por modelo, no `tarefa.json` do lote). Tempo medido no preparo offline: ~10 s
+para os 46 manifestos; no provador, a roupa leva o mesmo do glb-garment (~0,5–1,5 s por peça na CPU).

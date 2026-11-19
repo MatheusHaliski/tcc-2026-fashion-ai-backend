@@ -34,7 +34,7 @@ const page = await browser.newPage({ viewport: { width: 1300, height: 1200 } });
 const errors = []; page.on("pageerror", (e) => errors.push(e.message));
 const logs = []; page.on("console", (m) => { if (/FashionAI|glb/i.test(m.text())) logs.push(m.text()); });
 const shot = async (name) => {
-  await page.waitForFunction(() => !!window.__lab?.canvas?.(), null, { timeout: 60000 });
+  await page.waitForFunction(() => !!window.__lab?.canvas?.(), null, { timeout: 240000 });
   const d = await page.evaluate(() => window.__lab.canvas()); writeFileSync(join(OUT, `${name}.png`), Buffer.from(d.split(",")[1], "base64"));
 };
 mkdirSync(OUT, { recursive: true });

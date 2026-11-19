@@ -39,13 +39,14 @@ const shoe = (sole: number, extra: Partial<SlotRule> = {}): SlotRule => ({ slot:
 const acc = (slot: MeshySlot, bone: string, extra: Partial<SlotRule> = {}): SlotRule => ({ slot, attach: "rigid", bone, estado: "veste", ...extra });
 
 const RAGGED_HEM = "veste, mas a malha rala da Meshy nos bolsos e na barra abre furos (aparece o forro e a camada de baixo)";
+const THIN_CHEST = "veste, mas a malha rala do peito deixa o forro aparecer em placas";
 const PUFFED = "blusa de ombro caído com babado: a manga bufante da foto vira pano rasgado em volta do braço";
 const SHORT_SLEEVE = "manga curta aberta da foto: ao girar até o braço a borda da manga fica serrilhada, solta do tronco";
 const FLAT_FOOT = "o pé do avatar é plano: o salto fica sob o calcanhar sem a pose de ponta de pé";
 
 export const SLOT_RULES: Record<string, SlotRule> = {
   hoodie: top(undefined, { esticada: 1.95 }), sweater: top(undefined, { furada: 0.05 }), parka: top(undefined, { espinho: 0.3 }),
-  windbreaker: top(undefined, { esticada: 1.9, furada: 0.05 }), sweatshirt: top(undefined, { esticada: 2.2 }),
+  windbreaker: top(THIN_CHEST, { esticada: 1.9, furada: 0.05 }), sweatshirt: top(undefined, { esticada: 2.2 }),
   blazer: top(RAGGED_HEM, { esticada: 1.9, furada: 0.07 }),
   blouse: top(PUFFED, { esticada: 2.2, furada: 0.07, espinho: 0.35 }), shirt: top(SHORT_SLEEVE, { esticada: 2.15, furada: 0.045 }),
   cargo_pants: bottom(), casual_pants: bottom(), jogger_pants: bottom(), sweatpants: bottom(),
