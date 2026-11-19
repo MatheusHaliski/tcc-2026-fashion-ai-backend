@@ -184,8 +184,11 @@ exibir **um card único de vestimenta por dia**, com o Contexto do Dia e a coer�
 | Testes | `DailyLookContextServiceTest`, `DailyLookCalendarServiceTest`, `DailyLookServiceTest` (inalterado, contexto nulo), contrato de rotas por tag atualizado (`rotas-por-tag-r60a.txt`); frontend: `context-picker.test.tsx`, `expanded-card-daily-look.test.tsx` (extraído do arquivo congelado), `history-timeline.test.tsx`, `moment-calendar.test.tsx`. |
 
 Fora da F1 (ficam para F2/F3): carrossel "quem mais está vivendo isso hoje", `outcomeNote` no feedback, filtro da Passarela por
-propósito, fase pessoal como Momento PERSONAL, "mesma data, outro ano". A aba Look do Dia (`lookbook-tabs.tsx`, arquivo
-congelado) ainda não mostra o contexto: exige extrair uma responsabilidade antes. Feriados nacionais não entram como marca
-(não há tabela); os Momentos oficiais cobrem as datas do calendário. A tela não pede a posição do navegador: a API já
-aceita `latitude/longitude/city` para a marca de clima, a captura fica para a F2.
+propósito, fase pessoal como Momento PERSONAL, "mesma data, outro ano". Feriados nacionais não entram como marca (não há
+tabela); os Momentos oficiais cobrem as datas do calendário.
 
+Complemento de 19/11/2026 (pedido da dona): a aba Look do Dia foi extraída de `lookbook-tabs.tsx` para
+`components/lookbook/daily-tab.tsx` (o arquivo congelado diminuiu e o baseline foi apertado) e passou a mostrar o Contexto do
+Dia de hoje sob o card e o de cada linha do histórico. O diálogo "Hoje eu vesti isso para…" ganhou o botão **"Usar minha posição
+para o clima"**: só ao tocar, a posição do navegador vai para `suggest-context` (a marca de clima aparece na hora) e segue no
+registro como `latitude/longitude`; nada da posição é guardado, e posição negada ou indisponível não impede o registro.

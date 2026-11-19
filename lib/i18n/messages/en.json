@@ -12750,5 +12750,11 @@
   "momentDayLook.coherence": "Coherence with the Moments of the day",
   "momentDayLook.coherent": "In tune with {name} · {match}",
   "momentDayLook.off_theme": "Off the theme of {name} · {match}",
-  "momentDayLook.legend": "{days, plural, one {# day with a Look of the Day} other {# days with a Look of the Day}} · {coherent} in tune with a Moment"
+  "momentDayLook.legend": "{days, plural, one {# day with a Look of the Day} other {# days with a Look of the Day}} · {coherent} in tune with a Moment",
+  "dailyLookContext.today_context": "Context of the day",
+  "dailyLookContext.use_location": "Use my location for the weather",
+  "dailyLookContext.location_hint": "Your location is only used for the weather mark and is not stored.",
+  "dailyLookContext.location_denied": "No location permission; the weather stays out.",
+  "dailyLookContext.location_unavailable": "Location unavailable on this device; the weather stays out.",
+  "dailyLookContext.location_no_weather": "Weather unavailable for this location right now."
 }

@@ -65,4 +65,32 @@ describe("DailyLookContextPicker", () => {
     fireEvent.click(screen.getByRole("button", { name: "Registrar Look do Dia" }));
     await waitFor(() => expect(onConfirm).toHaveBeenCalledWith({ purpose: null, purposeNote: null, audience: null }));
   });
+
+  it("'Usar minha posição' pede a posição ao navegador, recarrega as sugestões com o clima e manda as coordenadas no registro", async () => {
+    const api = loggedAs(undefined, { "GET /api/me/daily-looks/suggest-context": (url: URL) => (url.searchParams.get("latitude") ? SUGGEST : { ...SUGGEST, marks: SUGGEST.marks.filter((m) => m.kind !== "WEATHER") }) });
+    const getCurrentPosition = vi.fn((ok: (p: { coords: { latitude: number; longitude: number } }) => void) => ok({ coords: { latitude: -23.55, longitude: -46.63 } }));
+    vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition } });
+    const onConfirm = vi.fn();
+    renderApp(<DailyLookContextPicker open onClose={() => {}} onConfirm={onConfirm} />);
+    const marks = await screen.findByRole("list", { name: "Marcas do dia" });
+    expect(marks.textContent).not.toContain("9 °C");
+    fireEvent.click(screen.getByRole("button", { name: "Usar minha posição para o clima" }));
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.getByRole("list", { name: "Marcas do dia" }).textContent).toContain("9 °C · chuva"));
+    expect(api.calls.some((c) => c.path === "/api/me/daily-looks/suggest-context?latitude=-23.55&longitude=-46.63")).toBe(true);
+    expect(screen.queryByRole("button", { name: "Usar minha posição para o clima" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Registrar Look do Dia" }));
+    expect(onConfirm).toHaveBeenCalledWith({ purpose: null, purposeNote: null, audience: null, latitude: -23.55, longitude: -46.63 });
+  });
+
+  it("posição negada: avisa e o clima fica de fora, sem travar o registro", async () => {
+    loggedAs(undefined, { "GET /api/me/daily-looks/suggest-context": { ...SUGGEST, marks: SUGGEST.marks.filter((m) => m.kind !== "WEATHER") } });
+    vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition: (_ok: unknown, err: (e: { code: number }) => void) => err({ code: 1 }) } });
+    const onConfirm = vi.fn();
+    renderApp(<DailyLookContextPicker open onClose={() => {}} onConfirm={onConfirm} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Usar minha posição para o clima" }));
+    expect(await screen.findByText("Sem permissão de posição; o clima fica de fora.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Registrar Look do Dia" }));
+    expect(onConfirm).toHaveBeenCalledWith({ purpose: null, purposeNote: null, audience: null });
+  });
 });

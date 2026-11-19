@@ -12750,5 +12750,11 @@
   "momentDayLook.coherence": "Coherencia con los Momentos del día",
   "momentDayLook.coherent": "En sintonía con {name} · {match}",
   "momentDayLook.off_theme": "Fuera del tema de {name} · {match}",
-  "momentDayLook.legend": "{days, plural, one {# día con Look del Día} other {# días con Look del Día}} · {coherent} en sintonía con un Momento"
+  "momentDayLook.legend": "{days, plural, one {# día con Look del Día} other {# días con Look del Día}} · {coherent} en sintonía con un Momento",
+  "dailyLookContext.today_context": "Contexto del día",
+  "dailyLookContext.use_location": "Usar mi ubicación para el clima",
+  "dailyLookContext.location_hint": "La ubicación solo sirve para la marca de clima y no se guarda.",
+  "dailyLookContext.location_denied": "Sin permiso de ubicación; el clima queda fuera.",
+  "dailyLookContext.location_unavailable": "Ubicación no disponible en este dispositivo; el clima queda fuera.",
+  "dailyLookContext.location_no_weather": "Clima no disponible para esta ubicación ahora."
 }

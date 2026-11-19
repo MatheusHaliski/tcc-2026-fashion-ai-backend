@@ -11,10 +11,15 @@ import { DailyLookMarks } from "./context-chips";
  * "Hoje eu vesti isso para…" (Look do Dia Vivido F1, §7): ao marcar o Look do Dia, 3 propósitos sugeridos pelo que o app já
  * sabe (plano da semana, Momentos do dia, dia da semana), os demais numa lista, para quem, uma frase curta e as marcas do dia.
  * Tudo opcional: dá para registrar sem contar nada. Sem sugestão carregada, o registro continua possível.
+ * A marca de clima só entra se a pessoa tocar "Usar minha posição": a posição vai para a API (WeatherService) e não é guardada.
  */
+type Geo = { status: "idle" | "locating" | "ok" | "denied" | "unavailable"; latitude?: number; longitude?: number };
+
 export function DailyLookContextPicker({ open, onClose, onConfirm, busy }: { open: boolean; onClose: () => void; onConfirm: (ctx: DailyLookContextInput) => void; busy?: boolean }) {
   const { t } = useI18n();
-  const sug = useApi<ContextSuggestion>((signal) => api.get("/api/me/daily-looks/suggest-context", { signal }), [], { enabled: open });
+  const [geo, setGeo] = useState<Geo>({ status: "idle" });
+  const coords = geo.status === "ok" ? `?latitude=${geo.latitude}&longitude=${geo.longitude}` : "";
+  const sug = useApi<ContextSuggestion>((signal) => api.get(`/api/me/daily-looks/suggest-context${coords}`, { signal }), [coords], { enabled: open });
   const [purpose, setPurpose] = useState<string | null>(null);
   const [audience, setAudience] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -23,10 +28,18 @@ export function DailyLookContextPicker({ open, onClose, onConfirm, busy }: { ope
   const others = (s?.purposes ?? []).filter((p) => !suggested.some((x) => x.code === p.code));
   const chosen = (s?.purposes ?? []).find((p) => p.code === purpose);
   const pick = (code: string) => setPurpose((cur) => (cur === code ? null : code));
+  const hasWeather = (s?.marks ?? []).some((m) => m.kind === "WEATHER");
+  function locate() {
+    const g = typeof navigator !== "undefined" ? navigator.geolocation : undefined;
+    if (!g) { setGeo({ status: "unavailable" }); return; }
+    setGeo({ status: "locating" });
+    g.getCurrentPosition((pos) => setGeo({ status: "ok", latitude: pos.coords.latitude, longitude: pos.coords.longitude }), (e) => setGeo({ status: e.code === 1 ? "denied" : "unavailable" }), { timeout: 10_000, maximumAge: 600_000 });
+  }
+  const position = geo.status === "ok" ? { latitude: geo.latitude ?? null, longitude: geo.longitude ?? null } : {};
   const footer = (
     <>
       <Button variant="ghost" onClick={() => onConfirm({})} disabled={busy}>{t("dailyLookContext.skip")}</Button>
-      <Button variant="primary" onClick={() => onConfirm({ purpose, purposeNote: note.trim() || null, audience })} loading={busy}>{t("dailyLookContext.confirm")}</Button>
+      <Button variant="primary" onClick={() => onConfirm({ purpose, purposeNote: note.trim() || null, audience, ...position })} loading={busy}>{t("dailyLookContext.confirm")}</Button>
     </>
   );
   return (
@@ -60,6 +73,11 @@ export function DailyLookContextPicker({ open, onClose, onConfirm, busy }: { ope
             <Input id="dl-note" value={note} maxLength={140} onChange={(e) => setNote(e.target.value)} />
           </Field>
           <DailyLookMarks marks={s.marks} />
+          {!hasWeather && geo.status !== "ok" && <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" onClick={locate} loading={geo.status === "locating"} disabled={geo.status === "locating"}>{t("dailyLookContext.use_location")}</Button>
+            <span className="type-caption text-muted">{geo.status === "denied" ? t("dailyLookContext.location_denied") : geo.status === "unavailable" ? t("dailyLookContext.location_unavailable") : t("dailyLookContext.location_hint")}</span>
+          </div>}
+          {geo.status === "ok" && !hasWeather && !sug.loading && <p className="type-caption text-muted">{t("dailyLookContext.location_no_weather")}</p>}
         </div>
       )}
     </Dialog>
