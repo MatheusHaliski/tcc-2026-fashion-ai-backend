@@ -513,6 +513,9 @@ cada rodada levou de 1,5 a 3 minutos e uma partida de futebol cerca de 20 minuto
 
 Os jogos sem nota não entram nas médias da seção 2.
 
+Em 19/11/2026 o Road to Glory / MAKE UP e os quatro jogos de zonas foram auditados por código e por partidas simuladas
+em teste (sem tela): seção 7. As notas de lá não entram nas médias da seção 2.
+
 ## 6. Correções da auditoria dos jogos
 
 As correções depois desta auditoria (16/11/2026). Nenhuma foi vista na tela: a máquina não tinha memória para o navegador
@@ -545,7 +548,141 @@ com renderização de software. Todas têm teste do servidor ou da tela.
 | Salvamento (média 5,3): a tela não dizia o que estava salvo; o look da preparação ficava só no navegador | o look em montagem vai para o servidor e volta às vagas na retomada, em qualquer aparelho; "Continuar partida" lista o que está guardado (deck, look entregue, look em montagem, etapas, jogadas) e quando; na partida e no resultado a linha "Salvo no servidor às HH:MM" diz o que foi salvo; a retomada na preparação foi testada nos dez jogos | `535324e0`, `66a1ced8` |
 
 As linhas de 19/11/2026 (as oito das pendências e as três de campanha, enredo e salvamento) também não foram vistas na
-tela; cada uma tem teste. O tempo da tela de carga do estádio não foi medido: ela cobre a espera, não a encurta. A trava
-em sequência pode deixar parada a conta sem carta para vencer uma rodada (o deck avisa antes de entrar).
+tela; cada uma tem teste. O tempo da tela de carga do estádio não foi medido: ela cobre a espera, não a encurta. Para a
+trava em sequência não deixar parada a conta sem carta para vencer uma rodada, três partidas na mesma rodada abrem a
+seguinte (`9e751513`).
 
 Ficou para depois: a medida da fluidez com GPU.
+
+## 7. Jogos de zonas e MAKE UP (auditoria por código, 19/11/2026)
+
+**O que é esta seção.** Os cinco jogos que a seção 5 deixou sem nota: Road to Glory / FLAIR 3D MAKE UP (núcleo 5),
+Clube do Coração (8), My Favorite Singer (9), Meu Piloto Favorito (11) e Meu Super-Herói Favorito (13). Ramo
+`claude/adoring-davinci-mufbri`, commit `321b22c5`.
+
+**Como foi feita, e o que ela não é.** Não é uma auditoria na tela: a máquina continua sem GPU e sem memória para o
+navegador. Li o código do servidor e da tela e joguei **partidas simuladas em teste do servidor**, com a regra de
+verdade (`AtelieZonasPartidasTest`, `RoadToGloryPartidasTest`): 20 sementes por rodada, com um guarda-roupa só de cartas
+Bronze (13 cartas de OVR 52 a 57 como as da @lia.demo: sem marca, sem festa, sem couro), com o pior guarda-roupa Bronze
+(sem etiqueta nenhuma de ocasião ou material) e com um guarda-roupa bom (Ouro). Nos jogos de zonas só usei o que a tela
+oferece: as 10 cores e os 4 acabamentos de `lib/flair/nucleos/palette.ts`. **Nada aqui foi visto na tela.**
+
+**O que muda nas notas por causa disso.** Câmera e fluidez não têm nota: estão descritas pelo código e marcadas "não
+visto na tela". A nota final é a média das dimensões com nota. Uma nota desta seção vale menos que uma nota da seção 3:
+ela diz que a regra está certa e explicada, não que a partida é boa de jogar.
+
+**Duas coisas que valem para os quatro jogos de zonas.**
+- **Não há cartas.** O desenho da dona é o editor de peças ("todos criam peças no mesmo editor", `docs/JOGOS.md`): a
+  pessoa pinta zonas com cor e acabamento, sem deck. Por isso "gameplay com cartas" e "cartas do deck" são "não se
+  aplica", e "vencível com cartas Bronze" vira "a paleta da tela chega a 100 em toda rodada". A decisão dentro da
+  rodada é a cor e o acabamento de cada zona. Pôr carta nesses jogos mudaria o desenho: ficou para a dona decidir.
+- **Não há sorteio.** A semente não muda nada nesses jogos: a mesma pintura dá sempre a mesma nota. As "20 sementes"
+  do teste são 20 pinturas ao acaso, para mostrar que a rodada não passa sozinha.
+
+### 7.1 Notas antes e depois
+
+"Antes" é o commit `321b22c5`; "depois" é o código com as correções da seção 7.3. **n.v.** = não visto na tela (sem
+nota); **n/a** = não se aplica.
+
+| Jogo | | Cam | Car | Flu | Rec | Deck | Lóg | Enr | Est | Sal | NPC | Final |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 5 Road to Glory / MAKE UP | antes | n.v. | 3 | n.v. | 5 | 4 | 4 | 4 | 4 | 6 | 3 | **4,1** |
+| | depois | n.v. | 7 | n.v. | 7 | 6 | 8 | 5 | 6 | 6 | 3 | **6,0** |
+| 8 Clube do Coração | antes | n.v. | n/a | n.v. | 5 | n/a | 6 | 4 | 4 | 6 | n/a | **5,0** |
+| | depois | n.v. | n/a | n.v. | 6 | n/a | 8 | 5 | 4 | 6 | n/a | **5,8** |
+| 9 My Favorite Singer | antes | n.v. | n/a | n.v. | 5 | n/a | 4 | 4 | 4 | 6 | n/a | **4,6** |
+| | depois | n.v. | n/a | n.v. | 6 | n/a | 8 | 5 | 4 | 6 | n/a | **5,8** |
+| 11 Meu Piloto Favorito | antes | n.v. | n/a | n.v. | 5 | n/a | 3 | 3 | 3 | 6 | n/a | **4,0** |
+| | depois | n.v. | n/a | n.v. | 6 | n/a | 8 | 5 | 3 | 6 | n/a | **5,6** |
+| 13 Meu Super-Herói Favorito | antes | n.v. | n/a | n.v. | 5 | n/a | 3 | 5 | 4 | 6 | n/a | **4,6** |
+| | depois | n.v. | n/a | n.v. | 6 | n/a | 7 | 5 | 4 | 6 | n/a | **5,6** |
+
+Nenhum dos cinco chega a 8,0 na média. O que subiu foi o que um teste consegue provar (lógica, conta da nota, aviso,
+decisão por carta no Road to Glory). O que segura as notas está na seção 7.4.
+
+**Por que cada nota (depois).**
+
+| Dimensão | Road to Glory / MAKE UP | Jogos de zonas (8, 9, 11, 13) |
+| --- | --- | --- |
+| Câmera (n.v.) | pelo código: três quartos no preparo, close no rosto na ação e giro de 360° no resultado; lateral e close na roupa no seletor | pelo código: três quartos no preparo, giro de 360° na ação (grua na Cantora, contra-plongée no Super-Herói) e grua no resultado; não sei se a peça pintada fica bem no quadro |
+| Gameplay com cartas | 7: a carta veste e, na sessão de fotos, uma carta fora do look acende a luz da cor dela (a cor pedida soma 10). É uma jogada por partida, não uma por carta; a tela do MAKE UP (a carreira) não tem a sessão | n/a: o desenho não tem cartas |
+| Fluidez (n.v.) | não medida | não medida |
+| Recursos | 7: objetivo, prévia da nota, selo de cada carta, aviso da regra sem carta, dica por regra, explicação da peça que derrubou a regra | 6: objetivo, 10 cores e 4 acabamentos por zona, prévia, dica por regra e o aviso de zonas sem pintar; só as 10 cores da paleta |
+| Cartas do deck | 6: sem deck (guarda-roupa liberado); o selo agora é o do brief da rodada, no núcleo e na tela do MAKE UP | n/a |
+| Lógica | 8: a nota é a soma das regras, cada regra perdida tem motivo dito, e 110 vira 100 com explicação; 2 estrelas só saem com a sessão de fotos (75 + 10) | 8 (7 no Super-Herói): toda rodada chega a 100 com a paleta, peça pela metade não leva 3 estrelas e o resultado diz o que faltou; no Super-Herói o emblema vale 25 só por ser escolhido |
+| Enredo | 5: premissa e três finais; a carreira com Prestígio só existe na tela do MAKE UP, e os dois caminhos não se falam | 5 (cada jogo): premissa e final por desfecho, agora com o final da rodada jogada; não há progressão entre as rodadas |
+| Estrutura | 6: preparo, flashes, pedido da fotógrafa, carta, resultado | 4 (3 no Piloto): preparo e resultado; não há meio de partida, e a peça aparece como faixas de cor num busto, seja camisa, jaqueta, capacete ou tênis |
+| Salvamento | 6: rascunho do look no navegador e "Continuar partida" na sessão de fotos (teste do servidor); na retomada o servidor devolve só as cartas do look (a maquiagem volta se o rascunho do navegador ainda existir) | 6: rascunho por jogo e rodada no navegador; a partida só existe no servidor depois da primeira prévia |
+| NPCs | 3: uma fotógrafa parada; ela não reage à nota | n/a: a sala só tem o manequim ("Ninguém além de você") |
+
+### 7.2 Defeitos achados
+
+Classes procuradas: rodada impossível sem aviso; soma diferente do total; frase de final que não bate; carta que é só
+soma; estado bruto na tela; pessoas de cena que contradizem o resultado; peça aceita e ausente.
+
+| # | Defeito | Como aparece (teste) | Severidade | Situação |
+| --- | --- | --- | --- | --- |
+| RTG-1 | O selo da carta era sempre o do Ensaio de Verão: na Entrevista e no Primeiro Encontro a carta casual mostrava "+25 ocasião do brief" e, vestida, tirava os pontos da regra | `oSeloDaCartaEhODoBriefDaRodada` | bloqueia (a tela manda fazer o contrário) | corrigido |
+| RTG-2 | A carta só vestia: nenhuma decisão de carta depois de entregar | `todaRodadaEhVencivel...`: só seguindo, o Ensaio reprova | atrapalha | corrigido (sessão de fotos) |
+| RTG-3 | As regras "todas as peças" caem por causa de uma peça só e o resultado não dizia qual; sem peça nenhuma, também não dizia | `oResultadoDizQualPeca...` | atrapalha | corrigido |
+| RTG-4 | Guarda-roupa sem carta para uma regra de roupa: nenhum aviso (o aviso geral diria "a nota vai sair 0", que é falso aqui, porque a maquiagem vale 50) | `viabilidade.test.ts` | atrapalha | corrigido |
+| RTG-5 | O final bom dizia "o Prestígio sobe e o próximo brief se abre", mas o núcleo 5 não dá Prestígio nem trava brief | leitura do código | atrapalha | corrigido (texto) |
+| RTG-6 | Na Entrevista e no Primeiro Encontro o resultado não dizia quanto cada carta rendeu | `oResultadoDizQualPeca...` | detalhe | corrigido |
+| MK-1 | Tela do MAKE UP: as cartas não tinham selo, não havia aviso e o resultado não explicava a regra perdida | `makeup.test.tsx` | atrapalha | corrigido |
+| MK-2 | Com regras de 25, a nota é 0, 25, 50, 75 ou 100: 2 estrelas (80) nunca saem. Na carreira do MAKE UP o nível 2 pede 60 de Prestígio (3 estrelas): só com um brief em 100, ou seja, com pelo menos uma carta que cumpra todas as regras de roupa | conta das regras | atrapalha | **aberto** (ver 7.4) |
+| ZON-1 | Peça pela metade aprovada: capa preta e peito amarelo davam **100** no Vigilante com braços e pernas sem pintar; uma zona rosa metálica dava 75 na Era Neon; uma sola branca espelhada, 75 no Tênis | `pecaPelaMetade...` | bloqueia (resultado errado) | corrigido |
+| ZON-2 | Acabamento sem cor contava: "peito metálico" e "viseira espelhada" cumpridos numa zona sem pintar | `acabamentoSemCor...` | atrapalha | corrigido |
+| ZON-3 | Tênis dos Sonhos: "até 3 cores" numa peça de 3 zonas saía cumprida sempre; pintando ao acaso a rodada dava 76 de média e 100 em 4 de 20 | `pintarAoAcaso...` | atrapalha (regra que é só soma) | corrigido (até 2 cores) |
+| ZON-4 | Super-Herói: a regra do emblema dava 25 sem emblema nenhum (e com qualquer código); nas rodadas Traje e Vigilante a aba do emblema aparecia sem ser pedida | `oEmblemaSoPontua...` | atrapalha | corrigido em parte: o emblema é pedido nas 3 rodadas e só pontua (na Armadura) se for da lista; continua valendo 25 só por ser escolhido |
+| ZON-5 | Final que não bate com a rodada: o Macacão e o Tênis terminavam com "O capacete vai para a pista"; a Jaqueta da Banda, com "o público reconhece a era"; a premissa do Piloto só falava do capacete | `nucleo-zonas-makeup.test.tsx` | atrapalha | corrigido |
+| ZON-6 | Os finais falam de torcida, público, equipe e cidade, e a sala só tem o manequim | leitura do código | detalhe | **aberto** |
+| ZON-7 | A peça pintada aparece como faixas de cor num busto, igual para camisa, jaqueta, capacete, macacão e tênis | `effects-3d.tsx` (`PecaPintada`) | atrapalha | **aberto** |
+
+Não achei: estado bruto ou JSON na tela (os eventos novos têm frase nos 3 idiomas; teste), peça aceita e ausente (no
+servidor as cinco vagas, com a peça inteira, valem no Road to Glory), nem rodada impossível com a paleta da tela (as 10
+amostras caem nas famílias que as regras esperam: `cadaAmostraDaTela...`).
+
+### 7.3 Correções e commits
+
+| Defeito | Correção | Commit |
+| --- | --- | --- |
+| ZON-1, ZON-2 | regras da peça inteira (quantas cores, cor dominante, tudo fosco, sem metal, uma só zona de alerta) só valem com todas as zonas pintadas; acabamento só conta em zona com cor; o resultado traz "Faltou pintar N de M zonas" | `d4f2a8da` (servidor), `cb189970` (texto) |
+| ZON-3 | Tênis dos Sonhos com até 2 cores | `d4f2a8da` |
+| ZON-4 | emblema pedido nas 3 rodadas; a regra só pontua com emblema da lista | `d4f2a8da` |
+| ZON-5 | finais próprios do Macacão, do Tênis, da Jaqueta e do Uniforme de E-sports; premissas do Piloto e da Cantora que valem para todas as rodadas | `cb189970` |
+| RTG-1, RTG-6 | o selo e os pontos por carta vêm do brief da rodada | `131db2e1` |
+| RTG-2 | sessão de fotos: a fotógrafa pede uma luz (da semente), a carta do guarda-roupa fora do look acende a cor dela e a cor pedida soma 10; quando as regras passam de 100 o resultado diz | `131db2e1` (servidor), `cb189970` (tela), `92036db3` (retomada) |
+| RTG-3 | o resultado diz a vaga da peça fora da ocasião ou que não é leve, e quando não há peça vestida; dica por regra | `131db2e1`, `cb189970` |
+| RTG-4 | aviso das regras de roupa sem carta, no começo da partida | `cb189970` |
+| RTG-5 | premissa e final sem a promessa de Prestígio | `cb189970` |
+| MK-1 | selo de cada carta no brief, aviso da regra sem carta e explicação no resultado do MAKE UP | `131db2e1` (servidor), `cb189970` (tela) |
+
+**As provas pedidas.**
+- **Vencível com cartas Bronze, jogando bem, em 20 sementes** (`RoadToGloryPartidasTest`): com o guarda-roupa Bronze,
+  as 3 rodadas saem aprovadas com 85 ou mais nas 20 sementes (o Ensaio de Verão chega a 100); com o pior guarda-roupa
+  Bronze (sem etiqueta de ocasião nem de material) ainda saem aprovadas nas 20, pela sessão de fotos; com o guarda-roupa
+  bom, 100 nas 20. Só seguindo (a primeira peça de cada vaga, sem carta na sessão), a nota fica sempre abaixo, e o
+  Ensaio reprova com 50.
+- **Jogos de zonas** (`AtelieZonasPartidasTest`): as 10 rodadas com nota chegam a 100 só com a paleta da tela; pintando
+  ao acaso em 20 sementes a média de cada rodada fica abaixo de 60 e no máximo uma pintura chega a 100.
+- Testes rodados: servidor (`fai-application` e `fai-web`, pacotes do FLAIR 3D, do MAKE UP, do esporte, do detetive e
+  do CBC) 162 testes, 0 falhas; tela (`components/flair/make-up`, `components/flair/nucleos`, `lib/flair`) 361 testes,
+  0 falhas.
+
+**Código comum tocado (o mínimo).** `lib/flair/nucleos/moments.ts` (uma linha: o Road to Glory entra na lista da jogada
+de cena), `lib/flair/nucleos/viabilidade.ts` (quatro códigos de regra de roupa e um parâmetro opcional para os jogos em
+que a nota não vem só das cartas) e `components/flair/nucleos/nucleo-apresentacao.tsx` (passa esse parâmetro).
+`Flair3dJogadaDeCena` e `Flair3dNucleos` não mudaram: o Road to Glory compõe o decorator por dentro.
+
+### 7.4 O que ficou aberto e por quê
+
+| O quê | Por quê |
+| --- | --- |
+| Câmera e fluidez dos cinco jogos | não vistas na tela (sem GPU); precisam da mesma medição da seção 3 |
+| Carta nos jogos de zonas | o desenho da dona não tem cartas nesses modos; uma jogada de carta ali é decisão dela |
+| MK-2: 2 estrelas impossíveis com regras de 25, e a carreira do MAKE UP presa no nível 1 sem um brief em 100 | mexe na escala de estrelas comum a todos os jogos (`Resultado.estrelas`) ou na curva de Prestígio do plano da dona; a tela do MAKE UP também não tem a sessão de fotos, que no núcleo dá os 85 |
+| ZON-4: o emblema vale 25 só por ser escolhido | falta uma regra em que o emblema importe (por exemplo, ligado ao arquétipo) |
+| ZON-6 e NPCs: sala sem gente, final que fala de torcida e público; fotógrafa que não reage | pessoas de cena são de outra frente (NPCs, câmera e LOD) |
+| ZON-7 e a estrutura: peça como faixas num busto, sem meio de partida | pede modelo 3D por tipo de peça (capacete, tênis, jaqueta) e uma sequência de apresentação |
+| Enredo: os dois caminhos do Road to Glory (núcleo 5 sem Prestígio, MAKE UP com carreira) e as rodadas dos jogos de zonas sem progressão | progressão e enredo são de outra frente |
+| Na retomada do Road to Glory o servidor devolve só as cartas do look, não a maquiagem | a retomada comum é assim; a nota não muda (o servidor guarda a entrega inteira) e não conferi na tela o que aparece |
