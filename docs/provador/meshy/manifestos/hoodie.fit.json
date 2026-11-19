@@ -1,0 +1,47 @@
+{
+  "versao": 1,
+  "categoria": "upper_piece",
+  "subcategoria": "hoodie",
+  "slot": "upper",
+  "attach": "wrap",
+  "osso": "Spine2",
+  "giroY": 0,
+  "centro": [
+    0.00078,
+    -0.00009,
+    -0.00178
+  ],
+  "caixa": [
+    1.7084,
+    1.902,
+    0.3659
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0,
+    "aceite": {
+      "esticada": 1.95
+    }
+  },
+  "tamanhos": {
+    "grade": "letter",
+    "porPasso": {
+      "largura": 0.04,
+      "comprimento": 0.02,
+      "manga": 0.015
+    },
+    "limite": [
+      -3,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

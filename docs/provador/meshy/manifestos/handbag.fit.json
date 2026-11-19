@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "categoria": "accessory_piece",
+  "subcategoria": "handbag",
+  "slot": "hand",
+  "attach": "rigid",
+  "osso": "LeftHand",
+  "giroY": 0,
+  "centro": [
+    0.01614,
+    0.00115,
+    0.0015
+  ],
+  "caixa": [
+    1.8666,
+    1.8081,
+    1.1054
+  ],
+  "escalaNominal": 0.182148,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0
+  },
+  "tamanhos": {
+    "grade": null,
+    "porPasso": {
+      "largura": 0,
+      "comprimento": 0,
+      "manga": 0
+    },
+    "limite": [
+      -3,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { mediaUrl } from "@/lib/api/client";
 import { sourceOf, type GlbSource } from "@/lib/avatar3d/human/glb-garment";
+import { manifestUrlOf, parseManifest, type MeshyManifest } from "@/lib/avatar3d/meshy/manifest";
+import { clampTextures } from "@/lib/avatar3d/meshy/texture-budget";
 
 /**
  * Só o modelo de vitrine do produto do catálogo (catalog_product_models_3d → /media/catalog/model3d/…) veste o avatar:
@@ -15,11 +17,23 @@ export function isProductModel(url: string | null | undefined): url is string {
 /** .glb já lidos: a mesma peça em outro look ou outro tamanho não baixa de novo. Falha também fica guardada (null). */
 const sources = new Map<string, Promise<GlbSource | null>>();
 
+/** Manifesto de encaixe ao lado do .glb (`.fit.json`); ausente ou inválido: null (o encaixe mede o .glb). */
+export async function loadManifest(glbUrl: string): Promise<MeshyManifest | null> {
+  const url = manifestUrlOf(glbUrl); if (!url) return null;
+  try {
+    const res = await fetch(url, { credentials: "omit" });
+    return res.ok ? parseManifest(await res.json()) : null;
+  } catch { return null; }
+}
+
 export function loadGarmentGlb(url: string): Promise<GlbSource | null> {
   const resolved = mediaUrl(url); if (!resolved) return Promise.resolve(null);
   let pending = sources.get(resolved);
   if (!pending) {
-    pending = new GLTFLoader().loadAsync(resolved).then((g) => sourceOf(g.scene)).catch(() => null);
+    // texturas acima de 1024 px são reduzidas antes da GPU (orçamento do provador)
+    pending = Promise.all([new GLTFLoader().loadAsync(resolved), loadManifest(resolved)])
+      .then(([g, manifest]) => { clampTextures(g.scene); const src = sourceOf(g.scene); return src && { ...src, manifest }; })
+      .catch(() => null);
     sources.set(resolved, pending);
     if (sources.size > 24) sources.delete(sources.keys().next().value!);
   }

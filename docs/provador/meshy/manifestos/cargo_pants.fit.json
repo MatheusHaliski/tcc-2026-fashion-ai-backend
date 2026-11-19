@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "categoria": "lower_piece",
+  "subcategoria": "cargo_pants",
+  "slot": "lower",
+  "attach": "wrap",
+  "osso": "Hips",
+  "giroY": 0,
+  "centro": [
+    -0.00132,
+    0.00158,
+    -0.00189
+  ],
+  "caixa": [
+    1.074,
+    1.8987,
+    0.534
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0
+  },
+  "tamanhos": {
+    "grade": "numeric",
+    "porPasso": {
+      "largura": 0.022,
+      "comprimento": 0.012,
+      "manga": 0
+    },
+    "limite": [
+      -3,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

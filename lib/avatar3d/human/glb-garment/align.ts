@@ -61,7 +61,7 @@ function transform(p: Float32Array, s: number, from: number[], to: number[]) {
 }
 
 /** Gira os vértices do membro em torno do pivô até o eixo do corpo, entrando aos poucos perto da junta. */
-function alignLimb(p: Float32Array, part: Int8Array, label: number, pivot: THREE.Vector3, target: THREE.Vector3) {
+function alignLimb(p: Float32Array, part: Int8Array, label: number, pivot: THREE.Vector3, target: THREE.Vector3, maxAngle = 1.4) {
   const idx: number[] = []; for (let v = 0; v < part.length; v++) if (part[v] === label) idx.push(v);
   if (idx.length < 30) return;
   // eixo do membro da peça: pivô → centro do terço mais distante (punho/barra)
@@ -72,7 +72,7 @@ function alignLimb(p: Float32Array, part: Int8Array, label: number, pivot: THREE
   const axis = tip.divideScalar(m).sub(pivot).normalize();
   const want = target.clone().sub(pivot).normalize();
   const angle = axis.angleTo(want);
-  if (angle < 0.02 || angle > 1.4) return;   // já alinhado, ou longe demais para ser o mesmo membro: não força
+  if (angle < 0.02 || angle > maxAngle) return;   // já alinhado, ou longe demais para ser o mesmo membro: não força
   const full = new THREE.Quaternion().setFromUnitVectors(axis, want); const q = new THREE.Quaternion(), r = new THREE.Vector3();
   const ramp = 0.35 * Math.max(...dist);
   idx.forEach((v, i) => {
@@ -109,8 +109,9 @@ function inflate(p: Float32Array, part: Int8Array, label: number, f: BodyFrame, 
 /**
  * Encaixa a peça no corpo. `clearance` é a folga (m) da classe de caimento + tamanho; `lengthSteps` o comprimento;
  * `index` (os triângulos) deixa o rótulo da manga enxergar o vão entre manga e tronco (parts.ts).
+ * `sleeveAngle` (rad): até quanto a manga gira até o braço (1,4 por padrão; 1,8 para a peça de braços abertos).
  */
-export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0, index?: ArrayLike<number>): Aligned | null {
+export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0, index?: ArrayLike<number>, sleeveAngle = 1.4): Aligned | null {
   const { lo, hi } = bounds(src); const height = hi[1] - lo[1];
   if (!(height > 0)) return null;
   const shL = f.joint("LeftArm"), shR = f.joint("RightArm");
@@ -140,7 +141,8 @@ export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass,
   // tamanho maior: barra e manga um pouco mais compridas (a mesma regra do molde, 2% por número), a partir do topo
   if (lengthSteps) { let top = -Infinity; for (let i = 1; i < pos.length; i += 3) top = Math.max(top, pos[i]); const k = 1 + 0.02 * lengthSteps; for (let i = 1; i < pos.length; i += 3) pos[i] = top - (top - pos[i]) * k; }
   const part = labelParts(pos, f, cls, clearance, index);
-  if (cls !== "lower") { alignLimb(pos, part, 1, shL, f.joint("LeftHand")); alignLimb(pos, part, -1, shR, f.joint("RightHand")); }
+  // `sleeveAngle`: giro máximo da manga; a peça da Meshy de braços abertos (manifesto) traz a manga na horizontal
+  if (cls !== "lower") { alignLimb(pos, part, 1, shL, f.joint("LeftHand"), sleeveAngle); alignLimb(pos, part, -1, shR, f.joint("RightHand"), sleeveAngle); }
   if (cls !== "upper") { alignLimb(pos, part, 2, hipL, f.joint("LeftFoot")); alignLimb(pos, part, -2, hipR, f.joint("RightFoot")); }
   inflate(pos, part, 0, f, cls === "lower" ? [1, 3] : [1], clearance);
   if (cls !== "upper") { inflate(pos, part, 2, f, [3], clearance, (x) => x > 0); inflate(pos, part, -2, f, [3], clearance, (x) => x < 0); }
