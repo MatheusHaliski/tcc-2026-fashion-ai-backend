@@ -25,9 +25,11 @@ interface Props {
   reduzido: boolean;
   /** quantos corpos inteiros a cena aguenta agora (o orçamento da cena, que cai com a qualidade); sem ele, CORPOS_CHEIOS */
   limite?: () => number;
+  /** até que distância da câmera um figurante faz sombra (metros) */
+  sombraAte?: () => number;
 }
 
-export function FigurantesHumanos({ codigo, semente, personagens, prontos, reduzido, limite }: Props) {
+export function FigurantesHumanos({ codigo, semente, personagens, prontos, reduzido, limite, sombraAte }: Props) {
   const raiz = semente ?? sementeDoTexto(codigo);
   const pessoas = useMemo(() => pessoasDosFigurantes(raiz, personagens, codigo === "FASHION_SPORTS"), [codigo, raiz, personagens]);
   // cada pessoa reage no próprio instante, com a própria força: a plateia não se mexe como um bloco
@@ -49,5 +51,5 @@ export function FigurantesHumanos({ codigo, semente, personagens, prontos, reduz
     });
   }, [atores, cena, variacoes]);
   if (pessoas.size === 0) return null;
-  return <Elenco3D pessoas={pessoas} atores={noMomento} prontos={prontos} reduzido={reduzido} limite={limite ?? CORPOS_CHEIOS} />;
+  return <Elenco3D pessoas={pessoas} atores={noMomento} prontos={prontos} reduzido={reduzido} limite={limite ?? CORPOS_CHEIOS} sombraAte={sombraAte} />;
 }

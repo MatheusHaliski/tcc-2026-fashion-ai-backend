@@ -30,10 +30,20 @@ export function nivelDeDetalhe(distancia: number, naJogada = false): NivelDeDeta
  */
 export const CORPOS_CHEIOS = 5;
 
-/** Os ids de quem fica com o corpo inteiro: quem está na jogada e, depois, os mais perto da câmera, até CORPOS_CHEIOS. */
-export function corposCheios(atores: { id: string; naJogada?: boolean; distancia: number }[], limite = CORPOS_CHEIOS): Set<string> {
-  const ordem = [...atores].sort((a, b) => Number(!!b.naJogada) - Number(!!a.naJogada) || a.distancia - b.distancia);
+/**
+ * Os ids de quem fica com o corpo inteiro: quem está na jogada e, depois, os mais perto da câmera, até CORPOS_CHEIOS.
+ * Quem está fora do quadro (`noQuadro` falso) não entra: o corpo inteiro dele não é montado nem carregado enquanto a
+ * câmera não o mostra (o carregamento adiado); só quem está na jogada entra mesmo fora do quadro.
+ */
+export function corposCheios(atores: { id: string; naJogada?: boolean; distancia: number; noQuadro?: boolean }[], limite = CORPOS_CHEIOS): Set<string> {
+  const candidatos = atores.filter((a) => a.naJogada || a.noQuadro !== false);
+  const ordem = candidatos.sort((a, b) => Number(!!b.naJogada) - Number(!!a.naJogada) || a.distancia - b.distancia);
   return new Set(ordem.slice(0, Math.max(limite, ordem.filter((a) => a.naJogada).length)).map((a) => a.id));
+}
+
+/** O figurante de corpo inteiro faz sombra? Só quem está na jogada ou perto da câmera (`ate` metros; 0 = ninguém). */
+export function fazSombraDeLonge(distancia: number, naJogada: boolean, ate: number): boolean {
+  return ate > 0 && (naJogada || distancia <= ate);
 }
 
 /** De quantos em quantos quadros a pessoa é animada. */

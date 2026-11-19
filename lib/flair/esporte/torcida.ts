@@ -8,6 +8,13 @@ import { CHEGADA_AO_GOL, gol, naTrave } from "@/lib/flair/esporte/bola";
 import { desfechoDoPlacar } from "@/lib/flair/esporte/momentos";
 import type { Jogada, Lado } from "@/lib/flair/esporte/types";
 import type { HumorDaTorcida } from "@/lib/flair/nucleos/gente/torcida";
+import type { Qualidade } from "@/lib/flair/nucleos/scene/qualidade";
+
+/**
+ * Quantos jogadores têm o corpo inteiro ao mesmo tempo na transmissão, pela qualidade da cena: todos na alta; na média
+ * e na baixa, os mais perto da câmera (quem está na jogada entra sempre); os outros ficam de corpo leve, que corre junto.
+ */
+export const CORPOS_DA_TRANSMISSAO: Record<Qualidade, number> = { ALTA: Infinity, MEDIA: 6, BAIXA: 2 };
 
 const DO_DESFECHO = { VITORIA: "comemora", EMPATE: "aplaude", DERROTA: "lamenta" } as const;
 

@@ -17,7 +17,7 @@ import { MultidaoLeve } from "@/components/flair/nucleos/gente/corpo-leve";
 import { MoldeHumano, type Molde } from "@/components/flair/nucleos/gente/molde-humano";
 import { animate, cloneRig, newMotionState, type MotionState, type Rig } from "@/lib/avatar3d/human/locomotion";
 import type { Motion } from "@/lib/avatar3d/human/locomotion-model";
-import { corposCheios, nivelDeDetalhe, QUADROS_POR_NIVEL, type NivelDeDetalhe } from "@/lib/flair/nucleos/gente/detalhe";
+import { corposCheios, fazSombraDeLonge, nivelDeDetalhe, QUADROS_POR_NIVEL, type NivelDeDetalhe } from "@/lib/flair/nucleos/gente/detalhe";
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
 import { aplicarGesto } from "@/lib/flair/nucleos/gente/gestos";
 import { poseLeveAnimada, poseLeveDoAtor } from "@/lib/flair/nucleos/gente/leve";
@@ -33,6 +33,7 @@ interface Clone {
   malhas: THREE.Mesh[];
   detalhes: THREE.Object3D[];
   nivel: NivelDeDetalhe | null;
+  sombra: boolean | null;
   quadro: number;
   acumulado: number;
   anim: Motion;
@@ -67,7 +68,7 @@ function clonar(m: Molde, id: string, semente: number): Clone {
   grupo.name = `pessoa-${id}`;
   grupo.add(raiz);
   const rig = cloneRig(m.rig, raiz);
-  return { grupo, raiz, rig, st: newMotionState(rig, semente, "idle"), malhas, detalhes, nivel: null, quadro: semente % 4, acumulado: 0, anim: "idle", desde: 0 };
+  return { grupo, raiz, rig, st: newMotionState(rig, semente, "idle"), malhas, detalhes, nivel: null, sombra: null, quadro: semente % 4, acumulado: 0, anim: "idle", desde: 0 };
 }
 
 interface Props {
@@ -78,12 +79,18 @@ interface Props {
   reduzido: boolean;
   /** quantos corpos inteiros ao mesmo tempo (o orçamento da cena, que cai com a qualidade); sem limite, todos pela distância */
   limite?: number | (() => number);
+  /** até que distância da câmera um figurante faz sombra (metros); sem ele, todos os de nível completo fazem */
+  sombraAte?: () => number;
 }
+
+const NO_QUADRO = new THREE.Frustum();
+const PROJECAO = new THREE.Matrix4();
+const CORPO = new THREE.Sphere(new THREE.Vector3(), 1.2);
 
 /** De quantos em quantos quadros a pessoa leve que reage (palmas, braços para cima) é reposta. */
 const QUADROS_DO_LEVE = 2;
 
-export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity }: Props) {
+export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity, sombraAte }: Props) {
   const grupo = useMemo(() => new THREE.Group(), []);
   const moldes = useRef(new Map<string, Molde>());
   const clones = useRef(new Map<string, Clone>());
@@ -91,6 +98,8 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
   const ultimoPlano = useRef(-1);
   /** quem pode ter o corpo inteiro agora: os mais perto da câmera e quem está na jogada (detalhe.ts) */
   const cheios = useRef<Set<string> | null>(null);
+  /** quem a câmera não mostra agora: não monta corpo inteiro e não gasta animação de esqueleto */
+  const foraDoQuadro = useRef(new Set<string>());
   /** as pessoas leves, todas em cinco malhas instanciadas: a vaga de cada uma e a pose que já está na malha */
   const vagas = useMemo(() => new Map([...pessoas.keys()].map((id, i) => [id, i] as const)), [pessoas]);
   const multidao = useMemo(() => {
@@ -123,7 +132,10 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
     // plano de montagem: os moldes de quem está mais perto da câmera primeiro, dois por vez
     if (agora - ultimoPlano.current > 0.4) {
       ultimoPlano.current = agora;
-      cheios.current = corposCheios(lista.map((a) => ({ id: a.id, naJogada: a.naJogada, distancia: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) })), typeof limite === "function" ? limite() : limite);
+      NO_QUADRO.setFromProjectionMatrix(PROJECAO.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+      foraDoQuadro.current = new Set(lista.filter((a) => !NO_QUADRO.intersectsSphere(CORPO.set(CORPO.center.set(a.x, (a.altura ?? 0) + 0.9, a.z), 1.2))).map((a) => a.id));
+      const fora = foraDoQuadro.current;
+      cheios.current = corposCheios(lista.map((a) => ({ id: a.id, naJogada: a.naJogada, noQuadro: !fora.has(a.id), distancia: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) })), typeof limite === "function" ? limite() : limite);
       const faltam = lista
         .map((a) => ({ p: pessoas.get(a.id), d: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) }))
         .filter((x): x is { p: PessoaDoElenco; d: number } => !!x.p && !moldes.current.has(x.p.chave) && !montando.some((m) => m.chave === x.p!.chave))
@@ -170,10 +182,16 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
         c.anim = a.anim;
         c.desde = agora;
       }
-      const nivel = cheio ? nivelDeDetalhe(Math.hypot(a.x - camera.position.x, a.z - camera.position.z), a.naJogada) : "LONGE";
+      const distancia = Math.hypot(a.x - camera.position.x, a.z - camera.position.z);
+      const nivel = cheio ? nivelDeDetalhe(distancia, a.naJogada) : "LONGE";
+      // sombra só de quem está perto ou na jogada (figurante distante não faz sombra)
+      const sombra = nivel === "COMPLETO" && (!sombraAte || fazSombraDeLonge(distancia, !!a.naJogada, sombraAte()));
+      if (sombra !== c.sombra) {
+        c.sombra = sombra;
+        for (const m of c.malhas) m.castShadow = sombra;
+      }
       if (nivel !== c.nivel) {
         c.nivel = nivel;
-        for (const m of c.malhas) m.castShadow = nivel === "COMPLETO";
         for (const o of c.detalhes) o.visible = nivel === "COMPLETO";
         c.raiz.visible = nivel !== "LONGE";
       }
@@ -185,6 +203,8 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
       const vaga = vagas.get(a.id);
       if (vaga != null) multidao.esconder(vaga);
       c.acumulado += dt;
+      // fora do quadro o esqueleto não é animado (o corpo fica onde o diretor o pôs e retoma ao voltar à tela)
+      if (foraDoQuadro.current.has(a.id) && !a.naJogada && c.st.t > 0) continue;
       if (++c.quadro % QUADROS_POR_NIVEL[nivel] !== 0 && c.st.t > 0) continue;
       const passo = reduzido ? 0 : c.acumulado;
       animate(c.rig, c.st, { anim: a.anim, animT: agora - c.desde, speed: reduzido ? 0 : a.velocidade, time: agora }, passo);

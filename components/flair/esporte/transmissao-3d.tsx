@@ -12,6 +12,9 @@ import { Campo3D } from "@/components/flair/esporte/campo-3d";
 import { LARGURA_DO_GOL, type Batida } from "@/components/flair/esporte/gol-3d";
 import { Jogador3D } from "@/components/flair/esporte/jogador-3d";
 import { Elenco3D } from "@/components/flair/nucleos/gente/elenco-3d";
+import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
+import { CORPOS_DA_TRANSMISSAO } from "@/lib/flair/esporte/torcida";
+import type { Qualidade } from "@/lib/flair/nucleos/scene/qualidade";
 import { atorDoJogador, elencoDaPartida } from "@/lib/flair/esporte/elenco";
 import { planoDaCamera, poseDaCamera, poseEscolhida, seguir, tapaOReplay, type Plano, type Pose } from "@/lib/flair/esporte/camera";
 import { noMundo, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
@@ -63,6 +66,8 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
   const elenco = useMemo(() => elencoDaPartida(semente, campo, uniforme), [semente, campo, uniforme]);
   /** quem já é gente (o corpo humano montou): a figura simples dele sai de cena */
   const prontos = useRef(new Set<string>());
+  /** a qualidade em uso (cai sozinha quando a máquina é lenta): menos jogadores de corpo inteiro ao mesmo tempo */
+  const qualidade = useRef<Qualidade>("ALTA");
   const atores = () => {
     const { quadro } = estado.current;
     const vez = atual ? `${atual.time}-${atual.jogador}` : "";
@@ -104,7 +109,7 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
   return (
     <>
       <ambientLight intensity={0.75} />
-      <directionalLight position={[8, 18, 12]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]}>
+      <directionalLight name="luz-principal" position={[8, 18, 12]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]}>
         <orthographicCamera attach="shadow-camera" args={[-30, 30, 20, -20, 1, 60]} />
       </directionalLight>
       <Campo3D campo={campo} batida={() => batida.current} reduzido={reduzido} humor={() => humor.current} camisa={uniforme.camisa} />
@@ -120,7 +125,8 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
           />
         )),
       )}
-      <Elenco3D pessoas={elenco} atores={atores} prontos={prontos} reduzido={reduzido} />
+      <Elenco3D pessoas={elenco} atores={atores} prontos={prontos} reduzido={reduzido} limite={() => CORPOS_DA_TRANSMISSAO[qualidade.current]} />
+      <QualidadeDaCena nivel={qualidade} />
       {campo.bola && (
         <mesh ref={bola} name="bola" castShadow>
           <sphereGeometry args={[campo.bolaRaio, 16, 12]} />
