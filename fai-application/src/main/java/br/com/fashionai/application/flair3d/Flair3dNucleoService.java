@@ -201,7 +201,7 @@ public class Flair3dNucleoService {
     }
 
     /** A partida da pessoa (404, 403) no status que a operação pede (409). */
-    private Flair3dMatch partida(CurrentUser user, UUID partidaId, String status) {
+    Flair3dMatch partida(CurrentUser user, UUID partidaId, String status) {
         Flair3dMatch m = matches.findById(partidaId)
                 .orElseThrow(() -> Flair3dErros.naoEncontrado("PARTIDA_NAO_ENCONTRADA", "partida_nao_encontrada"));
         if (!m.getUserId().equals(user.id())) {
