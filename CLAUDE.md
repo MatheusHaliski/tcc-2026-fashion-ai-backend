@@ -32,4 +32,5 @@ Leia `docs/refactoring/LINE_RULES.md`. Resumo:
   chat ou em log. Não versione o id do pod, a URL do pod nem o endereço do túnel.
 - Registre em `docs/fai-reconstruction-engine/piloto-e-decisoes.md` o provedor, o modelo e o custo ou tempo medido de
   cada uso novo.
-- Continua valendo: escrita no banco ou no bucket de produção só depois do ensaio e da confirmação do usuário.
+- Escrita no banco e no bucket de produção é permitida quando a tarefa pedir (decisão da dona em 19/11/2026: o projeto é
+  acadêmico, não um produto comercial). Antes de apagar ou sobrescrever dados em produção, diga o que vai mudar.
