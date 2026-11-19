@@ -540,8 +540,12 @@ com renderização de software. Todas têm teste do servidor ou da tela.
 | ESP-2: "Coesão" cumprida com 0 pontos | a Coesão saiu das regras da nota (era sempre cumprida e valia 0); continua como atributo do time no preparo. A nota é só o placar | `546e19b4`, `d1a80473` |
 | DF-9: o contador conta eventos, não rounds | na luta o contador mostra "Round 2 · lance 4 de 9" | `d1a80473` |
 | Fashion Detective: ninguém reage à acusação | na passarela Iolanda e Bento reagem pelo final (comemora, baixa a cabeça, nega e recua, aponta); na acusação errada o acusado entra em cena com o álibi | `95d78c12` |
+| Mudança 9 e "marcar a arena já vencida" (Estrutura, média 5,2): rodadas sem marca nem progressão | campanha por pessoa e por jogo no servidor, lida das partidas fechadas (sem tabela nova): a escolha de rodada marca as vencidas, mostra as estrelas e a melhor nota de cada uma e o total do jogo; a primeira rodada sempre aberta, a seguinte abre ao vencer a anterior (422 `RODADA_BLOQUEADA` no servidor), nada pago; no Fashion Sports a trilha são as modalidades, todas abertas (núcleos 1, 2, 3, 4, 6, 7, 10, 12, 14 e 15) | `535324e0`, `66a1ced8` |
+| Enredo (média 4,2): jogos sem história nem progressão entre as rodadas | cada um dos dez jogos tem abertura (quem a pessoa é e o que está em jogo), transição entre rodadas e fecho, nos três idiomas; a transição cita a última rodada jogada com os pontos e as estrelas que o servidor gravou (vitória e derrota têm frases próprias) e o fecho só aparece com tudo vencido | `66a1ced8` |
+| Salvamento (média 5,3): a tela não dizia o que estava salvo; o look da preparação ficava só no navegador | o look em montagem vai para o servidor e volta às vagas na retomada, em qualquer aparelho; "Continuar partida" lista o que está guardado (deck, look entregue, look em montagem, etapas, jogadas) e quando; na partida e no resultado a linha "Salvo no servidor às HH:MM" diz o que foi salvo; a retomada na preparação foi testada nos dez jogos | `535324e0`, `66a1ced8` |
 
-As oito últimas linhas (19/11/2026) também não foram vistas na tela; cada uma tem teste. O tempo da tela de carga do
-estádio não foi medido: ela cobre a espera, não a encurta.
+As linhas de 19/11/2026 (as oito das pendências e as três de campanha, enredo e salvamento) também não foram vistas na
+tela; cada uma tem teste. O tempo da tela de carga do estádio não foi medido: ela cobre a espera, não a encurta. A trava
+em sequência pode deixar parada a conta sem carta para vencer uma rodada (o deck avisa antes de entrar).
 
-Ficou para depois: marcar a arena já vencida e a medida da fluidez com GPU.
+Ficou para depois: a medida da fluidez com GPU.

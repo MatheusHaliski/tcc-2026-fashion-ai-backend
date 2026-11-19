@@ -101,6 +101,47 @@ Cada jogo passa a ter **rodadas**: o objetivo mais simples (o da base) e as roda
 | Sorteio por nome a partir da semente (a prévia não gasta) | `Contexto.sorteio(nome)` |
 | Escolha da rodada na tela | `components/flair/nucleos/nucleo-rounds.tsx` |
 
+## Campanha, enredo e salvamento (19/11/2026)
+
+Resposta à auditoria dos jogos de 15/11/2026 (`docs/auditoria/AUDITORIA_JOGOS_2026-11-15.md`, mudança 9 e as dimensões
+Enredo, Estrutura da partida e Salvamento). Vale para os núcleos 1, 2, 3, 4, 6, 7, 10, 12, 14 e 15. Nada foi visto na
+tela (máquina sem GPU): está provado por teste do servidor e da tela.
+
+**Campanha (progresso por pessoa e por jogo, no servidor).** `GET /api/flair/3d/nucleos/{codigo}/progresso` devolve as
+rodadas na ordem, com `aberta`, `vencida`, as estrelas e a melhor nota de cada uma, o total do jogo (`estrelas` de
+`maximo`), a última partida fechada e o ponto da história. Sai das partidas fechadas da tabela `flair3d_matches` (V101):
+não há tabela nem migration nova. Regras (`Flair3dCampanha`):
+
+- a primeira rodada está sempre aberta; a seguinte abre quando a anterior é vencida; nada é pago;
+- rodada vencida = partida fechada com pelo menos 1 estrela (60 pontos) e resultado que não seja derrota, empate,
+  reprovado ou "não abre"; nos jogos artísticos sem placar, concluir já conta;
+- as estrelas de uma rodada são as da melhor partida nela; perder depois não tira estrela nem fecha o que já abriu;
+- abrir partida numa rodada fechada devolve 422 `RODADA_BLOQUEADA` com a rodada que a abre (`Flair3dProgresso`,
+  conferido no controller antes de abrir);
+- no Fashion Sports (uma rodada só) a trilha são as modalidades, pela resposta da entrega, todas abertas;
+- a sequência só está ligada nos nove jogos de rodadas desta lista (`Flair3dCampanha.EM_SEQUENCIA`). Os núcleos 5, 8,
+  9, 11 e 13 já recebem as marcas e as estrelas com tudo aberto; para ligar a sequência neles basta incluir o código.
+
+Na tela, a escolha de rodada mostra a campanha em cima (estrelas do jogo, rodadas vencidas) e, em cada rodada, a marca
+de vencida, as estrelas, a melhor nota e a data, ou "Fechada: vença «X» para abrir"; a rodada fechada não se escolhe.
+
+**Enredo.** Cada jogo tem, nos catálogos dos três idiomas (`flair3d.enredo.<JOGO>.*`), uma abertura (quem a pessoa é e
+o que está em jogo), duas transições (`transicao.VENCEU` e `transicao.NAO_VENCEU`) e um fecho. A tela escolhe a frase
+pelo que o servidor gravou (`lib/flair/nucleos/progresso.ts`): a transição cita o nome da última rodada jogada, os
+pontos e as estrelas dela e a rodada que falta vencer; o fecho só aparece com todas as rodadas vencidas. A frase fica
+acima da escolha de rodada (ou do deck, no Fashion Sports) e volta no resultado, já com a partida que acabou de fechar.
+
+**Salvamento.** Além do "Continuar partida" (`Flair3dRetomada`), o look em montagem da preparação passa a ir para o
+servidor (`PUT /api/flair/3d/partidas/{id}/rascunho`, guardado no andamento da partida; não conta tentativa nem muda a
+nota; a entrega seguinte o descarta). A retomada devolve esse look às vagas em qualquer aparelho e lista o que está
+guardado (`salvo`: deck, look entregue, look em montagem, etapas e jogadas) com a data. Durante a partida e no
+resultado, a linha "Salvo no servidor às HH:MM: ..." diz o que o servidor confirmou por último.
+
+**Limites conhecidos.** A sequência pode deixar parada a conta que não tem carta para vencer uma rodada (por exemplo,
+"Treino: tema Brasil" sem peça de marca brasileira): o aviso do deck já diz isso antes de entrar, mas as rodadas
+seguintes ficam fechadas até a vitória. No Fashion Sports não há trava entre modalidades. Os jogos de zonas (8, 9, 11,
+13) e o MAKE UP continuam com o rascunho só no navegador.
+
 ## Resumo
 
 | Nº | Jogo | Estado ao escrever este documento | Mais incompleto primeiro (ordem de trabalho) |
