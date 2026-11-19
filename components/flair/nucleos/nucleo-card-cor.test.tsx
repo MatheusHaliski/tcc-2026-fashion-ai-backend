@@ -26,7 +26,7 @@ describe("efeito da cor ao inserir a carta", () => {
     ] };
     loggedAs(ME, { "POST /api/flair/3d/nucleos/PASSARELA/efeitos": fx });
     renderApp(<NucleoGame definicao={definicao("PASSARELA")} cartas={CARTAS} entregando={false} erro={null} onEntregar={vi.fn()} />);
-    await waitFor(() => expect(fileira()[0].querySelector(".n3d-card-fx")?.textContent).toBe("+10 marca BR"));
+    await waitFor(() => expect(fileira()[0].querySelector(".n3d-card-fx")?.textContent).toBe("+10 marca BR\nflashes da plateia"));
     fireEvent.click(fileira()[0]);
     const cor = screen.getByTestId("nucleo-fx-color");
     expect(cor.textContent).toBe("flashes da plateia");

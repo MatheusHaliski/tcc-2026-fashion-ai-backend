@@ -83,3 +83,13 @@ export function estadoDaLuta(r: NucleoResultado | null | undefined): EstadoDaLut
 
 /** A fração da barra de vida (0 a 1). */
 export const fracaoDaVida = (vida: number, total: number) => Math.max(0, Math.min(1, total > 0 ? vida / total : 0));
+
+/**
+ * O contador da faixa da ação na luta: o round e o lance que já apareceram na tela. Conta lances, não eventos (o
+ * fim de round e o nocaute também são passos: "4 de 4" não dizia em que round a luta estava).
+ */
+export function contadorDaLuta(passos: { codigo: string; valor?: unknown }[], mostrados: number, lances = 9): { round: number; lance: number; lances: number } {
+  const vistos = passos.slice(0, mostrados).filter((p) => p.codigo === "LANCE_DA_LUTA");
+  const v = (vistos[vistos.length - 1]?.valor ?? {}) as Record<string, unknown>;
+  return { round: numero(v.round, 1), lance: numero(v.lance, vistos.length), lances };
+}

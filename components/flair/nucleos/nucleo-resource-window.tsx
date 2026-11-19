@@ -12,7 +12,7 @@ import { NucleoIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { NucleoResourceIcon } from "@/components/flair/nucleos/nucleo-resource-icon";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { CardZoom } from "@/components/flair/nucleos/use-card-zoom";
-import { pontua, seloDaCarta } from "@/lib/flair/nucleos/card-fx";
+import { pontua, selosDaCarta } from "@/lib/flair/nucleos/card-fx";
 import { abasVisiveis, abaVisivelAtual, itensDaFileira, type AbaVisivel, type ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { isApplied, type ResourceTab, type Selecao } from "@/lib/flair/nucleos/selection";
 import type { AbaIcone, EfeitoItem } from "@/lib/flair/nucleos/types";
@@ -73,14 +73,14 @@ export function NucleoResourceWindow(props: Props) {
 
   const desenhar = (x: ItemDaFileira) => {
     const itens = x.it.kind === "carta" ? efeitos?.(x.it.card.id) : undefined;
-    const achado = seloDaCarta(itens);
+    const achados = selosDaCarta(itens);
     const semEfeito = pontua(itens) === false;
-    const selo = achado ? tx.efeito(achado) : semEfeito ? tx.t("flair3d.ui.deck.noEffect") : null;
+    const selo = achados.length ? achados.map(tx.efeito).join("\n") : semEfeito ? tx.t("flair3d.ui.deck.noEffect") : null;
     return (
       <NucleoResourceIcon
         key={`${x.tab.id}-${x.it.key}`}
         item={x.it}
-        rotulo={rotuloDoItem(x, selo)}
+        rotulo={rotuloDoItem(x, selo ? selo.replace(/\n/g, ", ") : null)}
         foco={x.aba === aba && x.item === item}
         aplicado={isApplied(sel, x.tab, x.it)}
         cabe={x.cabe}

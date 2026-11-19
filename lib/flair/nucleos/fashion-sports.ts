@@ -34,7 +34,8 @@ export const FASHION_SPORTS: NucleoConfig = {
   // a modalidade da partida; sem escolha, o servidor joga o futebol de 5
   opcoes: ["FUTEBOL", "BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"],
   acoes: acoesDe({ cartas: true, desfile: false }),
-  regras: ["VITORIA", "EMPATE", "COESAO"],
+  // a coesão do uniforme é atributo do time (aparece no preparo), não regra da nota
+  regras: ["VITORIA", "EMPATE"],
   deck: deckDe(15, ["SUP", 1], ["INF", 1], ["CAL", 1]),
   automatico: true,
 };

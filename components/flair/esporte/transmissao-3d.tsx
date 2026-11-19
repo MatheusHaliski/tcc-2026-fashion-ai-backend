@@ -34,6 +34,8 @@ export interface Transmissao3DProps {
   camera?: string;
   /** semente da partida: o elenco (corpo, pele, cabelo de cada jogador) sai dela */
   semente?: number;
+  /** a carga do estádio: "CAMPO" quando a cena 3D entra na tela, "PRONTA" depois do primeiro quadro pintado */
+  onEtapa?: (etapa: "CAMPO" | "PRONTA") => void;
 }
 
 interface Estado {
@@ -41,7 +43,9 @@ interface Estado {
   plano: Plano | string;
 }
 
-function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha, semente = 1 }: Omit<Transmissao3DProps, "rotulo">) {
+function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha, semente = 1, onEtapa }: Omit<Transmissao3DProps, "rotulo">) {
+  /** quadros já pintados: no segundo, o primeiro já está na tela e a tela de carga pode sair */
+  const quadros = useRef(0);
   /** a bola na rede ou na trave: depois que ela chega ao gol (k 0,72), com o ponto do impacto */
   const batida = useRef<Batida | null>(null);
   const estado = useRef<Estado>({ quadro: quadroDoLance(campo, anterior, atual, reduzido ? 1 : 0), plano: "geral" });
@@ -60,6 +64,7 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
   };
 
   useFrame(() => {
+    if (quadros.current < 2 && ++quadros.current === 2) onEtapa?.("PRONTA");
     const k = reduzido ? 1 : Math.max(0, Math.min(1, (performance.now() - inicio) / Math.max(1, duracao)));
     const quadro = quadroDoLance(campo, anterior, atual, k);
     const aspecto = size.width / Math.max(1, size.height);
@@ -120,7 +125,7 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
 
 export default function Transmissao3D({ rotulo, ...cena }: Transmissao3DProps) {
   return (
-    <Canvas shadows camera={{ fov: 32, position: [0, 14, 26], near: 0.1, far: 160 }} dpr={[1, 2]} aria-label={rotulo}>
+    <Canvas shadows camera={{ fov: 32, position: [0, 14, 26], near: 0.1, far: 160 }} dpr={[1, 2]} aria-label={rotulo} onCreated={() => cena.onEtapa?.("CAMPO")}>
       <color attach="background" args={["#11141A"]} />
       <Cena {...cena} />
     </Canvas>

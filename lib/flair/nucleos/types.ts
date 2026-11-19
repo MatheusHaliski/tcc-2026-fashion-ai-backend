@@ -94,6 +94,8 @@ export interface DeckRegras {
   tamanhoMax: number | null;
   obrigatorias: DeckObrigatoria[];
   semDeck: boolean;
+  /** posições de carta que o jogo usa (as vagas do look); vazio ou ausente = qualquer uma */
+  posicoes?: string[];
 }
 
 /** Uma rodada do jogo: o objetivo dela e, quando mudam, as zonas e as opções; `etapas` > 1 = um look por etapa. */

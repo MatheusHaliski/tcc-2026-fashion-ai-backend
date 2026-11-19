@@ -59,7 +59,7 @@ partida, só as cartas do deck aparecem na janela de recursos e só elas podem s
 | `PASSARELA` | até 8 | 1 parte de cima, 1 parte de baixo, 1 calçado | +10 se a marca é brasileira |
 | `DRESS_FIGHTER` | até 6 | 1 calçado | velocidade, ataque e defesa que a carta soma |
 | `DRESS_THE_STAR` | até 8 | 1 parte de cima, 1 parte de baixo | +25 se bate estilo ou cor da estrela |
-| `PERSONAGEM_FILME` | até 8 | 1 casaco ou parte de cima | +12,5 se bate o figurino do personagem |
+| `PERSONAGEM_FILME` | até 8 | 1 casaco, parte de cima ou peça inteira | +12,5 se bate o figurino do personagem |
 | `ROAD_TO_GLORY` | sem deck: guarda-roupa e catálogo liberado | nenhuma | regras do brief que a carta cumpre |
 | `FASHION_DETECTIVE` | até 12 | 1 parte de cima ou peça inteira | conta no acesso (ocasião), na defesa e na ação da cor |
 | `BOUTIQUE_3D` | até 8 | 1 parte de cima, 1 parte de baixo | +33 se cumpre ocasião festa e cor preta |
@@ -74,7 +74,12 @@ núcleo (selos como "+10 marca BR" ou "defesa +12"), o contador do deck, a lista
 botão "Entrar na partida", que só fica ativo com o deck válido.
 
 **Na API [backend]:**
-- A definição do núcleo ganha `deck: {tamanhoMax, obrigatorias:[{posicao, quantidade}], semDeck}`.
+- A definição do núcleo ganha `deck: {tamanhoMax, obrigatorias:[{posicao, quantidade}], semDeck, posicoes}`.
+- `posicoes` são as posições de carta que o jogo usa (as vagas do look; vazio = qualquer uma). A carta de outra
+  posição não teria onde vestir: a tela a mostra apagada e não a deixa entrar, e o servidor recusa o deck com 422
+  `DECK_INVALIDO` e o detalhe `semVaga:[{cardId, posicao}]`. No `FASHION_SPORTS` toda carta entra (fora do uniforme,
+  ela é jogada na mão). No `PERSONAGEM_FILME` a peça inteira (`VES`) veste e conta como a parte de cima e a de baixo
+  que estiverem vazias (12,5 cada); o deck dele pede 1 parte de cima ou peça inteira.
 - `POST /api/flair/3d/nucleos/{codigo}/efeitos` com `{cartas:[cardId]}` devolve `{efeitos:[{cardId, itens:[{codigo,
   valor, motivo}]}]}`: o efeito de cada carta da pessoa neste núcleo (logado; só cartas da própria pessoa). Carta que
   não pontua leva um item com `motivo: true`, valor 0 e o código do motivo (tabela na seção "API"), nunca a lista vazia.
