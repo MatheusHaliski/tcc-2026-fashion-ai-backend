@@ -28,7 +28,7 @@ public class ClubeCoracaoNucleo implements Flair3dNucleo {
                     && List.of("Roxo", "Preto").stream().allMatch(f -> List.of("FRENTE", "COSTAS", "MANGAS").stream().anyMatch(zona -> AtelieRodadas.daFamilia(z, zona, f)))),
             AtelieRodadas.regra("GOLA_DESTAQUE", z -> AtelieRodadas.daFamilia(z, "GOLA", "Amarelo")),
             AtelieRodadas.regra("COSTAS_IGUAL_FRENTE", z -> AtelieRodadas.iguais(z, "FRENTE", "COSTAS")),
-            AtelieRodadas.regra("TUDO_FOSCO", z -> AtelieRodadas.pintadas(z, ZONAS) && !AtelieRodadas.algumAcabamento(z, "BRILHANTE", "METALICO", "ESPELHADO"))));
+            AtelieRodadas.conjunto("TUDO_FOSCO", z -> !AtelieRodadas.algumAcabamento(z, "BRILHANTE", "METALICO", "ESPELHADO"))));
 
     @Override
     public String codigo() {
