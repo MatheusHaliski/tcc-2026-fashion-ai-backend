@@ -54,6 +54,13 @@ export function quadroParado(s: Sequencia): Sequencia {
   return { id: s.id, passos: [...ultimo.values()] };
 }
 
+/** O clipe que um ator faz agora, quando começou e se o passo é de grupo ("fig:PLATEIA:*": todos do papel). */
+export interface ClipeDoAtor {
+  clip: string;
+  desde: number;
+  grupo: boolean;
+}
+
 interface Tocando {
   seq: Sequencia;
   inicio: number;
@@ -118,15 +125,15 @@ export class Diretor {
    * O clipe que o ator faz agora (o passo começado mais recente que ainda dura, ou mantido depois do fim), ou null:
    * as pessoas de cena traduzem o clipe num movimento do corpo humano (lib/flair/nucleos/gente/reacoes.ts).
    */
-  clipeDoAtor(ator: string, agora: number): { clip: string; desde: number } | null {
-    let achado: { clip: string; desde: number } | null = null;
+  clipeDoAtor(ator: string, agora: number): ClipeDoAtor | null {
+    let achado: ClipeDoAtor | null = null;
     for (const t of this.fila) {
       for (const p of t.seq.passos) {
         if (!passoDoAtor(p, ator)) continue;
         const desde = t.inicio + p.inicio;
         const local = agora - desde;
         if (local < 0 || (local > duracaoDoPasso(p) && !p.mantem)) continue;
-        if (!achado || desde >= achado.desde) achado = { clip: p.clip, desde };
+        if (!achado || desde >= achado.desde) achado = { clip: p.clip, desde, grupo: p.ator.endsWith(":*") };
       }
     }
     return achado;

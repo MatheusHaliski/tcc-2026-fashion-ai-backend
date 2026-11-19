@@ -34,6 +34,17 @@ const torcida: NucleoPersonagem[] = lugares.map(([x, degrau], i) => ({
   postura: "sentada",
 }));
 
+/** O banco de reservas, do outro lado da quadra, e os três reservas sentados nele com o uniforme do time. */
+const BANCO = { pos: [5.6, 0, -1.5] as [number, number, number], giro: -90 };
+const reservas: NucleoPersonagem[] = [-0.9, 0, 0.9].map((x) => ({
+  papel: "RESERVA",
+  tipo: "silhueta",
+  pos: noLugar([x, 0, -0.1], BANCO.pos, BANCO.giro),
+  cor: "#1F7A76",
+  giro: BANCO.giro,
+  postura: "sentada",
+}));
+
 export const SALA_FASHION_SPORTS: Sala = {
   codigo: "FASHION_SPORTS",
   dim: { largura: 14, fundo: 9, frente: 7, altura: 7 },
@@ -58,6 +69,7 @@ export const SALA_FASHION_SPORTS: Sala = {
       { x: [1, 4], z: [-6.5, 1] },
       { x: [-4, 4], z: [-6.5, -1.5] },
       { x: [-7, -4.4], z: [-6.5, 3.5] },
+      { x: [4.4, 7], z: [-3.2, 0.2] },
     ],
     decoracao: [
       { x: [-7, -4.4], z: [-9, 7] },
@@ -74,13 +86,13 @@ export const SALA_FASHION_SPORTS: Sala = {
     redeProtecao({ pos: [0, 0, -7.6] }, "traves", "rede", 10, 4.5),
     redeProtecao({ pos: [-4.45, 0, -1.5], giro: 90 }, "traves", "rede", 10, 3.2),
     arquibancada({ pos: ARQUIBANCADA.pos, giro: ARQUIBANCADA.giro }, "concreto", "assento", 9, 3),
-    bancoReservas({ pos: [5.6, 0, -1.5], giro: -90 }, "estrutura", "assento", "estrutura", 3.2),
+    bancoReservas(BANCO, "estrutura", "assento", "estrutura", 3.2),
     painelLed({ pos: [0, 3.6, -8.9] }, "led", "estrutura", 3.2, 1.2, 0),
     luminariaDeTeto({ pos: [-2.5, 6.4, -3] }, "estrutura", "luz", 3),
     luminariaDeTeto({ pos: [2.5, 6.4, -3] }, "estrutura", "luz", 3),
     luminariaDeTeto({ pos: [0, 6.4, 1.5] }, "estrutura", "luz", 3),
   ],
-  figurantes: torcida,
+  figurantes: [...torcida, ...reservas],
   luzes: {
     principal: { cor: "#FFFFFF", intensidade: 1.9, pos: [3.6, 6.6, 3.4] },
     recorte: { cor: "#CFE6FF", intensidade: 1.5, pos: [-3, 6, -6] },

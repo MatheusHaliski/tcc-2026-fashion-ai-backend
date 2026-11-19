@@ -19,7 +19,7 @@ const peca = (id: string, slot: string, category: string, subcategory: string, c
 
 /** A roupa do papel, com a cor do arquivo do núcleo na peça principal; no esporte, colegas e adversários de uniforme. */
 export function roupaDoPapel(id: string, papel: string, cor: string, sexo: Sex, esporte = false): Look3dPiece[] {
-  if (esporte && (papel === "COLEGA" || papel === "ADVERSARIO")) {
+  if (esporte && (papel === "COLEGA" || papel === "ADVERSARIO" || papel === "RESERVA")) {
     return [peca(`${id}-c`, "upper", "UPPER", "t_shirt", cor), peca(`${id}-l`, "lower", "LOWER", "shorts", "#F5F4F0", { attributes: { LENGTH: ["MID_THIGH"] } }), peca(`${id}-s`, "shoes", "SHOES", "casual_sneakers", "#151515")];
   }
   switch (papel) {
@@ -27,9 +27,13 @@ export function roupaDoPapel(id: string, papel: string, cor: string, sexo: Sex, 
     case "FOTOGRAFA":
       return [peca(`${id}-c`, "upper", "UPPER", "t_shirt", "#1B1C1F"), peca(`${id}-j`, "outer", "UPPER", "jacket", cor), peca(`${id}-l`, "lower", "LOWER", "cargo_pants", "#3B3E44"), peca(`${id}-s`, "shoes", "SHOES", "casual_sneakers", "#1C1C1C")];
     case "TORCIDA":
+    case "TORCEDOR":
       return [peca(`${id}-c`, "upper", "UPPER", "t_shirt", cor), peca(`${id}-l`, "lower", "LOWER", "jeans", "#26324A"), peca(`${id}-s`, "shoes", "SHOES", "casual_sneakers", "#EDEBE6")];
     case "SEGURANCA":
       return [peca(`${id}-c`, "upper", "UPPER", "shirt", "#F2F0EA"), peca(`${id}-p`, "outer", "UPPER", "blazer", "#121216"), peca(`${id}-l`, "lower", "LOWER", "tailored_pants", "#121216"), peca(`${id}-s`, "shoes", "SHOES", "oxford_shoes", "#0A0A0A")];
+    case "VENDEDORA":
+      // o uniforme da loja: camisa clara, calça de alfaiataria na cor da casa e sapato baixo, para qualquer pessoa
+      return [peca(`${id}-c`, "upper", "UPPER", "shirt", "#F4EFE6"), peca(`${id}-l`, "lower", "LOWER", "tailored_pants", cor), peca(`${id}-s`, "shoes", "SHOES", "loafers", "#1A1A1C")];
     case "ESTRELA":
       return [peca(`${id}-v`, "full", "FULL_BODY", "dress", cor, { material: "SATIN", attributes: { LENGTH: ["FLOOR_LENGTH"] } }), peca(`${id}-s`, "shoes", "SHOES", "heels", "#141414")];
     default:
@@ -66,7 +70,8 @@ export function movimentoDoPapel(p: NucleoPersonagem): Motion {
   if (p.postura === "sentada") return "sit";
   if (p.papel === "TORCIDA") return "cheer";
   if (p.papel === "FOTOGRAFO" || p.papel === "FOTOGRAFA") return "photo";
-  if (p.papel === "PLATEIA" || p.papel === "CONVIDADO") return "talk";
+  if (p.papel === "PLATEIA" || p.papel === "CONVIDADO" || p.papel === "TORCEDOR") return "talk";
+  if (p.papel === "CLIENTE_DA_LOJA") return "look";
   return "idle";
 }
 

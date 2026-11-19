@@ -13,21 +13,21 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { clone as clonarComOssos } from "three/examples/jsm/utils/SkeletonUtils.js";
-import { corpoLeve, sentarCorpoLeve } from "@/components/flair/nucleos/gente/corpo-leve";
+import { MultidaoLeve } from "@/components/flair/nucleos/gente/corpo-leve";
 import { MoldeHumano, type Molde } from "@/components/flair/nucleos/gente/molde-humano";
 import { animate, cloneRig, newMotionState, type MotionState, type Rig } from "@/lib/avatar3d/human/locomotion";
 import type { Motion } from "@/lib/avatar3d/human/locomotion-model";
 import { corposCheios, nivelDeDetalhe, QUADROS_POR_NIVEL, type NivelDeDetalhe } from "@/lib/flair/nucleos/gente/detalhe";
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
 import { aplicarGesto } from "@/lib/flair/nucleos/gente/gestos";
+import { poseLeveAnimada, poseLeveDoAtor } from "@/lib/flair/nucleos/gente/leve";
 import { agora as relogioDaCena } from "@/components/flair/nucleos/scene/stage-context";
 import { sorteio, type PessoaDoElenco } from "@/lib/flair/nucleos/gente/elenco";
 
 interface Clone {
   grupo: THREE.Group;
-  /** o corpo completo e o corpo leve (nível LONGE): um dos dois aparece */
+  /** o corpo completo; no nível LONGE ele some e a pessoa aparece na multidão leve */
   raiz: THREE.Object3D;
-  leve: THREE.Group;
   rig: Rig;
   st: MotionState;
   malhas: THREE.Mesh[];
@@ -44,7 +44,7 @@ const PARALELO = 2;
 const DETALHE = /^(córnea|linha-dagua|pelos-sobrancelhas|barra-|punho-|costura-|botoes-|gola-ponta-|cadarco-|colarinho-)/;
 const RAD_CHUTE = -1.15;
 
-function clonar(m: Molde, pessoa: PessoaDoElenco, id: string, semente: number): Clone {
+function clonar(m: Molde, id: string, semente: number): Clone {
   const raiz = clonarComOssos(m.raiz);
   let corpo: THREE.SkinnedMesh | null = null;
   raiz.traverse((o) => {
@@ -66,10 +66,8 @@ function clonar(m: Molde, pessoa: PessoaDoElenco, id: string, semente: number): 
   const grupo = new THREE.Group();
   grupo.name = `pessoa-${id}`;
   grupo.add(raiz);
-  const leve = corpoLeve(pessoa);
-  grupo.add(leve);
   const rig = cloneRig(m.rig, raiz);
-  return { grupo, raiz, leve, rig, st: newMotionState(rig, semente, "idle"), malhas, detalhes, nivel: null, quadro: semente % 4, acumulado: 0, anim: "idle", desde: 0 };
+  return { grupo, raiz, rig, st: newMotionState(rig, semente, "idle"), malhas, detalhes, nivel: null, quadro: semente % 4, acumulado: 0, anim: "idle", desde: 0 };
 }
 
 interface Props {
@@ -78,9 +76,12 @@ interface Props {
   /** quem já é gente na cena (quem chama esconde a figura simples dessas) */
   prontos: React.MutableRefObject<Set<string>>;
   reduzido: boolean;
-  /** quantos corpos inteiros ao mesmo tempo (as salas com plateia: CORPOS_CHEIOS); sem limite, todos pela distância */
-  limite?: number;
+  /** quantos corpos inteiros ao mesmo tempo (o orçamento da cena, que cai com a qualidade); sem limite, todos pela distância */
+  limite?: number | (() => number);
 }
+
+/** De quantos em quantos quadros a pessoa leve que reage (palmas, braços para cima) é reposta. */
+const QUADROS_DO_LEVE = 2;
 
 export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity }: Props) {
   const grupo = useMemo(() => new THREE.Group(), []);
@@ -90,12 +91,27 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
   const ultimoPlano = useRef(-1);
   /** quem pode ter o corpo inteiro agora: os mais perto da câmera e quem está na jogada (detalhe.ts) */
   const cheios = useRef<Set<string> | null>(null);
-  /** quem fica de corpo leve sem nunca montar o corpo inteiro (fora dos cheios): sem molde, sem esqueleto */
-  const soLeves = useRef(new Map<string, THREE.Group>());
+  /** as pessoas leves, todas em cinco malhas instanciadas: a vaga de cada uma e a pose que já está na malha */
+  const vagas = useMemo(() => new Map([...pessoas.keys()].map((id, i) => [id, i] as const)), [pessoas]);
+  const multidao = useMemo(() => {
+    const m = new MultidaoLeve(pessoas.size);
+    for (const [id, p] of pessoas) m.vestir(vagas.get(id)!, p);
+    return m;
+  }, [pessoas, vagas]);
+  const posta = useRef(new Map<string, string>());
+  const quadro = useRef(0);
+  useEffect(() => {
+    grupo.add(multidao.grupo);
+    const postas = posta.current;
+    return () => {
+      grupo.remove(multidao.grupo);
+      multidao.descartar();
+      postas.clear();
+    };
+  }, [grupo, multidao]);
   useEffect(() => () => {
     grupo.clear();
     clones.current.clear();
-    soLeves.current.clear();
   }, [grupo]);
 
   useFrame(({ camera, clock, gl }, dtCru) => {
@@ -107,7 +123,7 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
     // plano de montagem: os moldes de quem está mais perto da câmera primeiro, dois por vez
     if (agora - ultimoPlano.current > 0.4) {
       ultimoPlano.current = agora;
-      cheios.current = corposCheios(lista.map((a) => ({ id: a.id, naJogada: a.naJogada, distancia: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) })), limite);
+      cheios.current = corposCheios(lista.map((a) => ({ id: a.id, naJogada: a.naJogada, distancia: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) })), typeof limite === "function" ? limite() : limite);
       const faltam = lista
         .map((a) => ({ p: pessoas.get(a.id), d: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) }))
         .filter((x): x is { p: PessoaDoElenco; d: number } => !!x.p && !moldes.current.has(x.p.chave) && !montando.some((m) => m.chave === x.p!.chave))
@@ -118,36 +134,35 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
       const novos = faltam.slice(0, Math.max(0, PARALELO - ocupados)).map((x) => x.p);
       if (novos.length) setMontando((m) => [...m, ...novos.filter((p, i) => !m.some((x) => x.chave === p.chave) && novos.findIndex((x) => x.chave === p.chave) === i)]);
     }
-    /** o corpo leve sozinho de quem não tem (nem vai ter agora) o corpo inteiro: no lugar, no giro, sentado ou de pé */
-    const soLeve = (a: AtorDeCena, pessoa: PessoaDoElenco): THREE.Group => {
-      let g = soLeves.current.get(a.id);
-      if (!g) {
-        g = corpoLeve(pessoa);
-        soLeves.current.set(a.id, g);
-        grupo.add(g);
-        prontos.current.add(a.id);
-      }
-      g.visible = !a.oculto;
-      g.position.set(a.x, a.altura ?? 0, a.z);
-      g.rotation.set(0, a.giro, 0);
-      sentarCorpoLeve(g, a.anim === "sit");
-      return g;
+    const t = relogioDaCena();
+    const repor = ++quadro.current % QUADROS_DO_LEVE === 0;
+    /** a pessoa leve na vaga dela: reposta só quando mudou de lugar ou de reação, ou enquanto o gesto mexe */
+    const leve = (a: AtorDeCena) => {
+      const i = vagas.get(a.id);
+      if (i == null) return;
+      if (a.oculto) return multidao.esconder(i);
+      const chave = `${a.x.toFixed(3)}|${a.z.toFixed(3)}|${a.giro.toFixed(3)}|${a.altura ?? 0}|${a.anim}|${a.gesto ?? ""}`;
+      if (multidao.visivel(i) && posta.current.get(a.id) === chave && !(repor && poseLeveAnimada(a) && !reduzido)) return;
+      posta.current.set(a.id, chave);
+      multidao.posar(i, { x: a.x, y: a.altura ?? 0, z: a.z, giro: a.giro }, poseLeveDoAtor(a, t, sorteio(1, a.id), reduzido));
+      prontos.current.add(a.id);
     };
     for (const a of lista) {
       const pessoa = pessoas.get(a.id);
       const molde = pessoa && moldes.current.get(pessoa.chave);
       let c = clones.current.get(a.id);
-      const leve = !c && pessoa && cheios.current && !cheios.current.has(a.id) ? soLeve(a, pessoa) : null;
-      if (leve) continue;
-      const sobra = soLeves.current.get(a.id);
-      if (sobra) sobra.visible = false;
+      const cheio = !cheios.current || cheios.current.has(a.id);
       if (!c && molde) {
-        c = clonar(molde, pessoa, a.id, Math.floor(sorteio(1, a.id) * 1000));
+        c = clonar(molde, a.id, Math.floor(sorteio(1, a.id) * 1000));
         clones.current.set(a.id, c);
         grupo.add(c.grupo);
         prontos.current.add(a.id);
       }
-      if (!c) continue;
+      // sem corpo inteiro (fora dos cheios, ou o molde ainda monta): a pessoa leve fica no lugar dela
+      if (!c) {
+        leve(a);
+        continue;
+      }
       c.grupo.visible = !a.oculto;
       c.grupo.position.set(a.x, a.altura ?? 0, a.z);
       c.grupo.rotation.set(0, a.giro, a.tombo ?? 0);
@@ -155,18 +170,20 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
         c.anim = a.anim;
         c.desde = agora;
       }
-      const cheio = !cheios.current || cheios.current.has(a.id);
       const nivel = cheio ? nivelDeDetalhe(Math.hypot(a.x - camera.position.x, a.z - camera.position.z), a.naJogada) : "LONGE";
-      sentarCorpoLeve(c.leve, a.anim === "sit");
       if (nivel !== c.nivel) {
         c.nivel = nivel;
         for (const m of c.malhas) m.castShadow = nivel === "COMPLETO";
         for (const o of c.detalhes) o.visible = nivel === "COMPLETO";
         c.raiz.visible = nivel !== "LONGE";
-        c.leve.visible = nivel === "LONGE";
       }
-      // de longe, o corpo leve não tem esqueleto: nada a animar
-      if (nivel === "LONGE") continue;
+      // de longe, a pessoa leve não tem esqueleto: nada a animar além da matriz dela
+      if (nivel === "LONGE") {
+        leve(a);
+        continue;
+      }
+      const vaga = vagas.get(a.id);
+      if (vaga != null) multidao.esconder(vaga);
       c.acumulado += dt;
       if (++c.quadro % QUADROS_POR_NIVEL[nivel] !== 0 && c.st.t > 0) continue;
       const passo = reduzido ? 0 : c.acumulado;
@@ -174,8 +191,9 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
       c.acumulado = 0;
       if (a.chute) c.rig.bones[c.rig.k.RightUpLeg].rotateX(RAD_CHUTE * a.chute);
       // o gesto do momento (aplaudir, lamentar, a guarda): com "reduzir movimento", parado no meio
-      if (a.gesto) aplicarGesto(c.rig, a.gesto, reduzido ? 0.6 : relogioDaCena() - (a.gestoDesde ?? 0), c.st.seed);
+      if (a.gesto) aplicarGesto(c.rig, a.gesto, reduzido ? 0.6 : t - (a.gestoDesde ?? 0), c.st.seed, a.intensidade, a.ritmo);
     }
+    multidao.fechar();
   });
 
   return (

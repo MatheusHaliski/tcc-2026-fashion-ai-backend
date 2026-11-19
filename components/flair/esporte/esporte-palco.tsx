@@ -106,7 +106,7 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, seme
       {webgl === false || reduzido ? planta : webgl === null ? <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div> : (
         <Limite reserva={planta}>
           <div className="n3d-scene3d">
-            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} semente={semente} onEtapa={setEtapa} />
+            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} semente={semente} fim={fim} onEtapa={setEtapa} />
           </div>
           {carregando(etapa) && <EsporteCarga etapa={etapa} modalidade={modalidade} campo={campo} uniforme={uniforme} />}
         </Limite>

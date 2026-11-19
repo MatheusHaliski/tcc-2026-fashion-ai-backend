@@ -27,13 +27,16 @@ function guarda(r: Rig, alta: number) {
   curl(r, 1, 0.9);
 }
 
-/** Aplica o gesto no esqueleto já animado. `t`: segundos desde o começo do gesto; `semente`: desencontra a plateia. */
-export function aplicarGesto(r: Rig, gesto: Gesto, t: number, semente: number): void {
+/**
+ * Aplica o gesto no esqueleto já animado. `t`: segundos desde o começo do gesto; `semente`: desencontra a plateia;
+ * `forca` (0,55 a 1) e `ritmo` (0,85 a 1,15): o tamanho e a velocidade do gesto desta pessoa (variacao.ts).
+ */
+export function aplicarGesto(r: Rig, gesto: Gesto, t: number, semente: number, forca = 1, ritmo = 1): void {
   switch (gesto) {
     case "aplaudir": {
       // as palmas se encontram à frente do peito umas duas vezes por segundo
-      const abre = 0.5 + 0.5 * Math.sin((t + semente * 0.37) * 13);
-      const x = 0.015 + 0.075 * abre;
+      const abre = 0.5 + 0.5 * Math.sin((t + semente * 0.37) * 13 * ritmo);
+      const x = 0.015 + 0.075 * abre * forca;
       chest(r, x, -0.1, 0.3, A);
       arm(r, 0, A, 0.6, -1, -0.5);
       handTo(r, 0, -0.15, 0.6, 0.8, -1, 0, 0);
@@ -45,10 +48,10 @@ export function aplicarGesto(r: Rig, gesto: Gesto, t: number, semente: number): 
     }
     case "lamentar": {
       // a cabeça cai e balança devagar, os ombros vêm para a frente; os braços ficam soltos (sem levantar o paletó)
-      lean(r, r.k.Spine2, 12 * D);
-      lean(r, r.k.Neck, 18 * D);
-      lean(r, r.k.Head, 22 * D);
-      twist(r, r.k.Head, 9 * D * Math.sin((t + semente * 0.21) * 2.2));
+      lean(r, r.k.Spine2, 12 * D * forca);
+      lean(r, r.k.Neck, 18 * D * forca);
+      lean(r, r.k.Head, 22 * D * forca);
+      twist(r, r.k.Head, 9 * D * Math.sin((t + semente * 0.21) * 2.2 * ritmo));
       return;
     }
     case "guarda":

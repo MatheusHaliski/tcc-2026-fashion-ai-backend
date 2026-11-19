@@ -9,8 +9,16 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { Torcida3D } from "@/components/flair/nucleos/gente/torcida-3d";
-import type { Campo } from "@/lib/flair/esporte/campo";
-import { torcidaEmDegraus } from "@/lib/flair/nucleos/gente/torcida";
+import { UNIFORME_VISITANTE, type Campo } from "@/lib/flair/esporte/campo";
+import { humorDoLado } from "@/lib/flair/esporte/torcida";
+import type { Lado } from "@/lib/flair/esporte/types";
+import { reservasNoBanco, torcidaEmDegraus, type HumorDaTorcida } from "@/lib/flair/nucleos/gente/torcida";
+
+/** O humor da torcida agora (lido a cada quadro pela arquibancada e pelos bancos). */
+export type Humor = () => HumorDaTorcida | null;
+const SEM_HUMOR: Humor = () => null;
+/** Quantos reservas sentam em cada banco. */
+export const RESERVAS_POR_BANCO = 4;
 
 /** Raio da área (arco de 6 m), marca do pênalti (6 m) e do segundo pênalti (10 m), círculo central (3 m), escanteio (0,25 m). */
 export const MARCAS = { area: 6, penalti: 6, segundoPenalti: 10, circulo: 3, escanteio: 0.25, faixa: 0.08 };
@@ -101,9 +109,14 @@ function Bandeira({ x, z }: { x: number; z: number }) {
   );
 }
 
-function Banco({ x, z }: { x: number; z: number }) {
+/** O banco de um time, com os reservas sentados de frente para o campo: reagem ao lance como a torcida (o visitante, ao contrário). */
+function Banco({ x, z, lado, camisa, humor, reduzido }: { x: number; z: number; lado: Lado; camisa: string; humor: Humor; reduzido: boolean }) {
+  const reservas = useMemo(() => reservasNoBanco(lado === "NOS" ? 11 : 12, RESERVAS_POR_BANCO, camisa), [lado, camisa]);
   return (
     <group name="banco" position={[x, 0, z]}>
+      <group name={`reservas-${lado}`} rotation={[0, Math.PI, 0]}>
+        <Torcida3D pessoas={reservas} reduzido={reduzido} humor={() => humorDoLado(humor(), lado)} />
+      </group>
       <mesh position={[0, 0.45, 0]} castShadow>
         <boxGeometry args={[4, 0.12, 0.6]} />
         <meshStandardMaterial color="#3A3F47" roughness={0.6} />
@@ -138,7 +151,7 @@ function Refletor({ x, z }: { x: number; z: number }) {
 }
 
 /** Um setor da arquibancada: degraus e a torcida em humanos leves (components/flair/nucleos/gente/torcida-3d.tsx). */
-function Setor({ x, z, giro, comprimento, semente, reduzido }: { x: number; z: number; giro: number; comprimento: number; semente: number; reduzido: boolean }) {
+export function Setor({ x, z, giro, comprimento, semente, reduzido, humor = SEM_HUMOR }: { x: number; z: number; giro: number; comprimento: number; semente: number; reduzido: boolean; humor?: Humor }) {
   const torcida = useMemo(() => torcidaEmDegraus(semente, comprimento, 5, CORES_DA_TORCIDA), [semente, comprimento]);
   return (
     <group name="setor" position={[x, 0, z]} rotation={[0, giro, 0]}>
@@ -148,7 +161,7 @@ function Setor({ x, z, giro, comprimento, semente, reduzido }: { x: number; z: n
           <meshStandardMaterial color={d % 2 ? "#2F3440" : "#363C49"} roughness={0.95} />
         </mesh>
       ))}
-      <Torcida3D pessoas={torcida} reduzido={reduzido} />
+      <Torcida3D pessoas={torcida} reduzido={reduzido} humor={humor} />
       <mesh name="placas" position={[0, 0.45, 0.35]}>
         <boxGeometry args={[comprimento, 0.9, 0.1]} />
         <meshStandardMaterial color="#C6275E" emissive="#C6275E" emissiveIntensity={0.3} />
@@ -157,7 +170,7 @@ function Setor({ x, z, giro, comprimento, semente, reduzido }: { x: number; z: n
   );
 }
 
-export function Estadio3D({ campo, reduzido = false }: { campo: Campo; reduzido?: boolean }) {
+export function Estadio3D({ campo, reduzido = false, humor = SEM_HUMOR, camisa = "#1F7A76" }: { campo: Campo; reduzido?: boolean; humor?: Humor; camisa?: string }) {
   const { comprimento: c, largura: l } = campo;
   const fundo = l / 2 + 2.6;
   const lateral = c / 2 + 3.4;
@@ -165,15 +178,15 @@ export function Estadio3D({ campo, reduzido = false }: { campo: Campo; reduzido?
     <group name="estadio">
       <Marcacoes campo={campo} />
       {([[-1, -1], [-1, 1], [1, -1], [1, 1]] as const).map(([a, b]) => <Bandeira key={`${a}${b}`} x={(a * c) / 2} z={(b * l) / 2} />)}
-      <Banco x={-5} z={l / 2 + 1.4} />
-      <Banco x={5} z={l / 2 + 1.4} />
+      <Banco x={-5} z={l / 2 + 1.4} lado="NOS" camisa={camisa} humor={humor} reduzido={reduzido} />
+      <Banco x={5} z={l / 2 + 1.4} lado="ELES" camisa={UNIFORME_VISITANTE.camisa} humor={humor} reduzido={reduzido} />
       <mesh name="tunel" position={[0, 1.2, l / 2 + 2.2]}>
         <boxGeometry args={[3, 2.4, 1.6]} />
         <meshStandardMaterial color="#1F7A76" roughness={0.7} />
       </mesh>
-      <Setor x={0} z={-fundo} giro={0} comprimento={c + 4} semente={1} reduzido={reduzido} />
-      <Setor x={-lateral} z={0} giro={Math.PI / 2} comprimento={l + 2} semente={2} reduzido={reduzido} />
-      <Setor x={lateral} z={0} giro={-Math.PI / 2} comprimento={l + 2} semente={3} reduzido={reduzido} />
+      <Setor x={0} z={-fundo} giro={0} comprimento={c + 4} semente={1} reduzido={reduzido} humor={humor} />
+      <Setor x={-lateral} z={0} giro={Math.PI / 2} comprimento={l + 2} semente={2} reduzido={reduzido} humor={humor} />
+      <Setor x={lateral} z={0} giro={-Math.PI / 2} comprimento={l + 2} semente={3} reduzido={reduzido} humor={humor} />
       {([[-1, -1], [1, -1], [-1, 1], [1, 1]] as const).map(([a, b]) => <Refletor key={`${a}${b}`} x={a * (c / 2 + 5)} z={b * (l / 2 + 5)} />)}
       <group name="telao" position={[0, 9, -fundo - 5.2]}>
         <mesh>

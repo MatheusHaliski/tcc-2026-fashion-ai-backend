@@ -21,4 +21,7 @@ export interface AtorDeCena {
   /** gesto por cima do movimento (aplaudir, lamentar, guarda) e quando ele começou (relógio da cena) */
   gesto?: Gesto;
   gestoDesde?: number;
+  /** força (0,55 a 1) e ritmo (0,85 a 1,15) da reação desta pessoa: a plateia não reage toda igual (variacao.ts) */
+  intensidade?: number;
+  ritmo?: number;
 }

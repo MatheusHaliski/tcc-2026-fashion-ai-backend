@@ -18,6 +18,8 @@ import { noMundo, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/fl
 import { pontoNaRede } from "@/lib/flair/esporte/rede";
 import { CHEGADA_AO_GOL, gol, naTrave } from "@/lib/flair/esporte/bola";
 import { quadroDoLance, type Quadro } from "@/lib/flair/esporte/timeline";
+import { humorDaTorcida } from "@/lib/flair/esporte/torcida";
+import type { HumorDaTorcida } from "@/lib/flair/nucleos/gente/torcida";
 import type { Jogada, Lado } from "@/lib/flair/esporte/types";
 
 export interface Transmissao3DProps {
@@ -36,6 +38,8 @@ export interface Transmissao3DProps {
   semente?: number;
   /** a carga do estádio: "CAMPO" quando a cena 3D entra na tela, "PRONTA" depois do primeiro quadro pintado */
   onEtapa?: (etapa: "CAMPO" | "PRONTA") => void;
+  /** a partida fechou: a torcida e os bancos reagem ao placar final */
+  fim?: boolean;
 }
 
 interface Estado {
@@ -43,9 +47,11 @@ interface Estado {
   plano: Plano | string;
 }
 
-function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha, semente = 1, onEtapa }: Omit<Transmissao3DProps, "rotulo">) {
+function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha, semente = 1, onEtapa, fim = false }: Omit<Transmissao3DProps, "rotulo">) {
   /** quadros já pintados: no segundo, o primeiro já está na tela e a tela de carga pode sair */
   const quadros = useRef(0);
+  /** o que a torcida e os bancos fazem agora: o ponto, a bola na trave, o apito final */
+  const humor = useRef<HumorDaTorcida | null>(null);
   /** a bola na rede ou na trave: depois que ela chega ao gol (k 0,72), com o ponto do impacto */
   const batida = useRef<Batida | null>(null);
   const estado = useRef<Estado>({ quadro: quadroDoLance(campo, anterior, atual, reduzido ? 1 : 0), plano: "geral" });
@@ -67,6 +73,8 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
     if (quadros.current < 2 && ++quadros.current === 2) onEtapa?.("PRONTA");
     const k = reduzido ? 1 : Math.max(0, Math.min(1, (performance.now() - inicio) / Math.max(1, duracao)));
     const quadro = quadroDoLance(campo, anterior, atual, k);
+    const novo = humorDaTorcida(atual, k, fim);
+    if (novo?.chave !== humor.current?.chave || novo?.reacao !== humor.current?.reacao) humor.current = novo;
     const aspecto = size.width / Math.max(1, size.height);
     const fixa = poseEscolhida(escolha, campo, [quadro.bola.x, quadro.bola.y], performance.now() / 1000, aspecto, reduzido);
     // com uma câmera escolhida não há cortes: o "plano" é o nome dela, e trocar de câmera é o único salto
@@ -99,7 +107,7 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
       <directionalLight position={[8, 18, 12]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]}>
         <orthographicCamera attach="shadow-camera" args={[-30, 30, 20, -20, 1, 60]} />
       </directionalLight>
-      <Campo3D campo={campo} batida={() => batida.current} reduzido={reduzido} />
+      <Campo3D campo={campo} batida={() => batida.current} reduzido={reduzido} humor={() => humor.current} camisa={uniforme.camisa} />
       {lados.flatMap((time) =>
         Array.from({ length: campo.jogadores }, (_, i) => (
           <Jogador3D
