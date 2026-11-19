@@ -6,6 +6,7 @@
  * desce em arco), transmissão (do alto da lateral, acompanhando), lateral (de lado, na altura do corpo), aérea (de
  * cima) e close (bem perto, na roupa ou no rosto). Tudo em metros; y para cima. Puro: o tempo vem de quem chama.
  */
+import { foraDosCorpos, foraDosMoveis, porCimaDosMoveis } from "@/lib/flair/nucleos/camera/colisao";
 import type { V3 } from "@/lib/flair/nucleos/types";
 
 export type RigTipo = "ORBITAL" | "SEGUE" | "TRILHO" | "GRUA" | "TRANSMISSAO" | "LATERAL" | "AEREA" | "CLOSE";
@@ -41,6 +42,16 @@ export interface Assunto {
   centro?: V3;
   /** paredes: a câmera nunca sai desta caixa (x mínimo e máximo, z mínimo e máximo, teto) */
   limites?: { x: [number, number]; z: [number, number]; teto: number };
+  /** as pessoas de cena (os pés e a altura de cada uma): a lente nunca fica dentro do corpo delas (colisao.ts) */
+  evita?: { pos: V3; altura: number }[];
+  /** os móveis do lugar, como caixas (mínimo e máximo em x, y e z): a lente nunca fica dentro de um */
+  caixas?: Caixa[];
+}
+
+export interface Caixa {
+  x: [number, number];
+  y: [number, number];
+  z: [number, number];
 }
 
 export interface Pose {
@@ -138,11 +149,13 @@ export function recuada(pos: V3, alvo: V3, aspecto: number): V3 {
 export function poseDoRig(c: Camera, s: Assunto, t: number, aspecto = ASPECTO_DE_REFERENCIA, parada = false): Pose {
   const { pos, alvo } = crua(c, s, parada ? 0 : t);
   const longe = c.rig === "CLOSE" ? pos : recuada(pos, alvo, aspecto);
-  const dentro = dentroDoLugar(longe, s.limites);
+  const dentro = foraDosMoveis(dentroDoLugar(longe, s.limites), alvo, s);
   // só quando a parede trouxe a lente para perto: o close e o zoom pedidos de propósito continuam perto
   const pedida = Math.hypot(longe[0] - s.pos[0], longe[2] - s.pos[2]);
   const minima = Math.min(DISTANCIA_MINIMA, pedida);
-  return { pos: c.rig === "CLOSE" ? dentro : afastadaDoCorpo(dentro, s, c.mira ?? 1.1, minima), alvo, fov: c.fov ?? FOV_PADRAO };
+  const livre = c.rig === "CLOSE" ? dentro : afastadaDoCorpo(dentro, s, c.mira ?? 1.1, minima);
+  // a ordem importa: paredes, móveis, o corpo de quem é filmado, as pessoas de cena; o que subiu não volta a entrar em móvel
+  return { pos: porCimaDosMoveis(foraDosCorpos(livre, s), s), alvo, fov: c.fov ?? FOV_PADRAO };
 }
 
 /** Aproxima a pose atual da pedida (a câmera segue suave; na troca de câmera, quem chama salta para a nova). */
