@@ -21,6 +21,7 @@ import { placeOnBody } from "./place";
 
 const DIR = process.env.MESHY_GLB_DIR;
 /** Parte de cima vestida por cima de uma calça (como no provador: a folga soma a camada de baixo). */
+const SHOE = specFor({ id: "tenis", name: "tenis", slot: "shoes_piece", category: "shoes_piece", subcategory: "running_shoes" } as never)!;
 const UNDER = specFor({ id: "calca", name: "calca", slot: "lower_piece", category: "lower_piece", subcategory: process.env.MESHY_UNDER ?? "casual_pants" } as never)!;
 
 /** Corpo padrão na pose de exibição do provador: o braço abre conforme as peças (armOutFor), como no dress(). */
@@ -51,7 +52,7 @@ describe.skipIf(!DIR || !existsSync(DIR))("Meshy real no corpo padrão", () => {
         const fits = sizes.map((label, k) => {
           const steps = sizes.length === 3 && sizes[0] === "36" ? [-2, 0, 3][k] : [-1, 0, 2][k];
           const spec = specFor({ id: sub, name: sub, slot: m.slot, category: m.categoria, subcategory: sub, sizeLabel: label, sizeSteps: steps } as never)!;
-          const below = m.slot === "upper" ? [UNDER] : [];
+          const below = m.slot === "upper" ? [UNDER, SHOE] : [SHOE];
           return fitGlbGarment(src, frameFor([...below, spec]), spec, below, { sizes: process.env.MESHY_SEM_TAMANHO ? null : m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos });
         });
         if (fits[1].ok) accepted++;

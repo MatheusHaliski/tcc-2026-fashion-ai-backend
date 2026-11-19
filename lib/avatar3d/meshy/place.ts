@@ -26,7 +26,7 @@ export interface Placed {
 }
 
 /** Quanto a cabeça entra em cada peça (fração da altura da cabeça, do topo do cabelo para baixo). */
-const HEAD_DEPTH: Record<string, number> = { beanie: 0.42, cap: 0.36, hat: 0.4 };
+const HEAD_DEPTH: Record<string, number> = { beanie: 0.34, cap: 0.36, hat: 0.4 };
 const HAIR = 0.012;
 
 interface Item { vertices: number[]; c: Float32Array }

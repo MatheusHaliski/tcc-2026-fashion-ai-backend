@@ -16,7 +16,7 @@ export const CASES = [
   { id: "camisa-calca-oxford", pieces: look("shirt", "casual_pants", "oxford_shoes") },
   { id: "parka-jogger-bota", pieces: look("parka", "jogger_pants", "ankle_boots") },
   { id: "blusa-saia-sapatilha", pieces: look("blouse", "skirt", "flats") },
-  { id: "suéter-bermuda-mocassim", pieces: look("sweater", "bermuda_shorts", "loafers") },
+  { id: "sueter-bermuda-mocassim", pieces: look("sweater", "bermuda_shorts", "loafers") },
   { id: "blazer-shorts-salto", pieces: look("blazer", "shorts", "heels") },
   { id: "moletom-sem-capuz-sweatpants-chinelo", pieces: look("sweatshirt", "sweatpants", "flip_flops") },
   { id: "corta-vento-calca-bota-alta", pieces: look("windbreaker", "casual_pants", "long_boots") },
@@ -25,8 +25,8 @@ export const CASES = [
   { id: "chapeu-gravata-mochila", pieces: look("shirt", "cargo_pants", "derby_shoes", "hat", "bow_tie", "backpack") },
   { id: "oculos-grau-cachecol-transversal", pieces: look("parka", "casual_pants", "skate_shoes", "eyeglasses", "scarf", "crossbody_bag") },
   { id: "clutch-sandalia-espadrille", pieces: look("blouse", "skirt", "sandals", "clutch") },
-  { id: "tamanho-P", pieces: look("shirt", "cargo_pants", "running_shoes"), sizes: "letter:P,numeric:36,shoes:35" },
-  { id: "tamanho-GG", pieces: look("shirt", "cargo_pants", "running_shoes"), sizes: "letter:GG,numeric:46,shoes:41" },
+  { id: "tamanho-P", pieces: look("hoodie", "cargo_pants", "running_shoes"), sizes: "letter:P,numeric:36,shoes:35" },
+  { id: "tamanho-GG", pieces: look("hoodie", "cargo_pants", "running_shoes"), sizes: "letter:GG,numeric:46,shoes:41" },
 ].filter((c) => !process.env.ONLY || process.env.ONLY.split(",").includes(c.id));
 
 const browser = await pw.chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });

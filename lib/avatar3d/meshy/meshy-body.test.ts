@@ -73,7 +73,7 @@ describe("calçado no pé", () => {
     expect(s2.x / s0.x).toBeCloseTo(1 + 2 * m.tamanhos.porPasso.largura, 5);
     expect(s9.z).toBeCloseTo(shoeScale(foot, 1.9, 0.6, m, m.tamanhos.limite[1]).z, 6);
   });
-  it("fechado esconde a pele do pé (vira forro); aberto não esconde", () => {
+  it("fechado esconde a pele do pé; aberto não esconde", () => {
     const src = pair(), placed = placeOnBody(src.position, shoeManifest(src), A.f)[0];
     const covered = coveredByShoe(placed, shoeManifest(src), A.f)!;
     let feet = 0, hidden = 0; for (let v = 0; v < A.f.n; v++) if (A.f.group[v] === 4 && A.f.pos[v * 3] > 0) { feet++; hidden += covered[v]; }
@@ -118,6 +118,7 @@ describe("acessórios no osso certo", () => {
     expect(c.distanceTo(w.center)).toBeLessThan(0.01);
     let inner = Infinity; for (let i = 0; i < p.pos.length; i += 3) { v.set(p.pos[i], p.pos[i + 1], p.pos[i + 2]).sub(w.center); inner = Math.min(inner, v.addScaledVector(w.dir, -v.dot(w.dir)).length()); }
     expect(inner).toBeGreaterThan(w.radius);
+    expect(w.radius).toBeLessThan(0.05);   // punho, não o braço inteiro cortado pelo plano
   });
   it("colar flexível: encosta fora do tronco e herda pesos da pele (somando 1)", () => {
     const src = source(new THREE.PlaneGeometry(0.5, 1.9, 10, 40));
@@ -163,9 +164,9 @@ describe("tamanho por região (aproximação visual relativa)", () => {
 
 describe("encaixe da roupa da Meshy", () => {
   const spec = (category: string, subcategory: string) => specFor({ id: "x", name: "x", category, subcategory } as never)!;
-  it("a calça por baixo não engorda o peito da parte de cima; a camiseta por baixo, sim", () => {
+  it("a calça e o tênis por baixo não engordam o peito da parte de cima; a camiseta por baixo, sim", () => {
     const top = spec("upper_piece", "hoodie");
-    expect(clearanceOf(top, [spec("lower_piece", "cargo_pants")])).toBe(clearanceOf(top, []));
+    expect(clearanceOf(top, [spec("lower_piece", "cargo_pants"), spec("shoes_piece", "running_shoes")])).toBe(clearanceOf(top, []));
     expect(clearanceOf(top, [spec("upper_piece", "t_shirt")])).toBeGreaterThan(clearanceOf(top, []));
   });
   it("peça de braços abertos (manga na horizontal, foto em T): a manga desce até o eixo do braço", () => {

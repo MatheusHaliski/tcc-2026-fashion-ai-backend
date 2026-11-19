@@ -16,6 +16,8 @@ import type { MeshyManifest } from "./manifest";
 import type { Placed } from "./place";
 
 const TORSO = 1, LEG = 3, FOOT = 4;
+/** Folga (m) do acessório flexível até a pele: por cima da roupa. */
+export const OVER_CLOTHES = 0.035;
 
 /** Triângulos da fonte cujos três vértices estão na peça posta, já no índice local dela (com a ordem invertida se espelhada). */
 export function subsetOf(src: GlbSource, placed: Placed) {
@@ -53,7 +55,8 @@ export function wornGeometry(src: GlbSource, placed: Placed, m: MeshyManifest, f
   const { index, groups } = subsetOf(src, placed); if (!index.length) return null;
   const n = placed.vertices.length; let rest: Float32Array, skinIndex: Uint16Array, skinWeight: Float32Array;
   if (m.attach === "conform") {
-    const c = conformGarment(placed.pos, index, f, [TORSO], 0.006);
+    // colar e cachecol vão por cima da roupa: a folga até a pele é a de um casaco (a roupa da Meshy fica a 1–3 cm)
+    const c = conformGarment(placed.pos, index, f, [TORSO], OVER_CLOTHES);
     rest = c.rest; skinIndex = c.skinIndex; skinWeight = c.skinWeight;
   } else {
     const b = boneIndex(placed.bone); if (b < 0 || !f.bone[b]) return null;

@@ -54,7 +54,8 @@ export type GlbFit = (GlbGarment & { ok: true }) | { ok: false; reason: string; 
  * baixo/inteira); na cintura, onde as duas se cruzam, a ordem de desenho das camadas resolve.
  */
 export function clearanceOf(spec: GarmentSpec, below: GarmentSpec[]): number {
-  const cls = classOf(spec.kind), overlaps = (b: GarmentSpec) => { const k = classOf(b.kind); return !cls || !k || k === cls || k === "full" || cls === "full"; };
+  // calçado (sem classe) nunca está debaixo da roupa; peça sem classe conhecida conta tudo (como antes)
+  const cls = classOf(spec.kind), overlaps = (b: GarmentSpec) => { const k = classOf(b.kind); return !cls || (!!k && (k === cls || k === "full" || cls === "full")); };
   const under = below.filter((b) => b.layer < spec.layer && overlaps(b)).reduce((s, b) => s + Math.max(0.002, b.ease) * 0.7, 0);
   return Math.min(0.06, Math.max(0.004, spec.ease) + under);
 }

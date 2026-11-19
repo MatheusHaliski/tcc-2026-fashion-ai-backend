@@ -1,8 +1,8 @@
 /**
  * Calçado e acessório vestidos pelo .glb da Meshy (lib/avatar3d/meshy): o manifesto `.fit.json` do modelo diz onde a
  * peça vai e como ela está no arquivo; sem manifesto, a mesma medida roda aqui no .glb (analyze.ts). A peça é posta
- * no ponto do corpo (place.ts), presa ao osso (rigid.ts) e, no calçado fechado, a pele do pé vira forro na cor da
- * peça — nada da pele atravessa o sapato.
+ * no ponto do corpo (place.ts), presa ao osso (rigid.ts) e, no calçado fechado, a pele do pé deixa de ser desenhada —
+ * nada da pele atravessa o sapato.
  *
  * Acessório não tem molde: sem .glb (ou sem como prender), ele simplesmente não aparece no avatar.
  */
@@ -73,9 +73,11 @@ export function wearMeshy(parts: HumanParts, it: MeshyItem, src: GlbSource | nul
     mesh.userData = { buildPath: "MESHY_GLB", sharedTextures: true, soleLift: m.slot === "feet" ? m.dicas.sola : 0 };
     parts.human.root.add(mesh); mesh.bind(parts.human.skeleton, parts.human.body.bindMatrix);
     meshes.push(mesh); worn++;
+    // pé dentro do calçado fechado: some sem forro — a malha da Meshy é fechada, e o forro na cor do calçado aparecia
+    // como dedos onde o bico de uma bota de salto não alcança o pé plano do avatar
     const covered = coveredByShoe(p, m, f);
     const lining = covered && hideSkin(parts, covered, fabricColor(map ?? null, it.piece.colorHex), layer);
-    if (lining) { lining.name = `forro-${it.piece.id}`; meshes.push(lining); }
+    if (lining) { lining.removeFromParent(); lining.geometry.dispose(); (lining.material as THREE.Material).dispose(); }
   }
   return worn > 0;
 }

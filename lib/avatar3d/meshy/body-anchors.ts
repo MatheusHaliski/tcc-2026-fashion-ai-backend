@@ -76,8 +76,9 @@ export function wristOf(f: BodyFrame, side: Side) {
   for (let i = 0; i < f.n; i++) {
     if (f.group[i] !== ARM) continue;
     v.set(f.pos[i * 3], f.pos[i * 3 + 1], f.pos[i * 3 + 2]).sub(center);
+    // o plano do punho é infinito: só a pele perto do eixo (o antebraço) conta, não o braço ou o ombro que ele corta
     const along = v.dot(dir); if (Math.abs(along) > 0.012) continue;
-    radius = Math.max(radius, v.addScaledVector(dir, -along).length());
+    const r = v.addScaledVector(dir, -along).length(); if (r < 0.06) radius = Math.max(radius, r);
   }
   return radius > 0 ? { center, dir, radius } : null;
 }
