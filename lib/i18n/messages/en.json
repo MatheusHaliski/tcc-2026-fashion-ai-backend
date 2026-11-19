@@ -11984,7 +11984,7 @@
   "flair3d.ui.rounds.melhor": "Best score: {pontos}",
   "flair3d.ui.rounds.vencidaEm": "Won on {quando}",
   "flair3d.ui.rounds.semVitoria": "{n, plural, one {Played # time, not won yet} other {Played # times, not won yet}}",
-  "flair3d.ui.rounds.fechada": "Locked: win “{rodada}” to open it",
+  "flair3d.ui.rounds.fechada": "Locked: win “{rodada}” (or play it 3 times) to open it",
   "flair3d.ui.rounds.proxima": "Next in the campaign",
   "flair3d.ui.salvo.linha": "Saved on the server at {hora}: {oQue}.",
   "flair3d.ui.salvo.oQue.partida": "match opened with the chosen deck",

@@ -11984,7 +11984,7 @@
   "flair3d.ui.rounds.melhor": "Mejor nota: {pontos}",
   "flair3d.ui.rounds.vencidaEm": "Ganada el {quando}",
   "flair3d.ui.rounds.semVitoria": "{n, plural, one {Jugada # vez, aún sin victoria} other {Jugada # veces, aún sin victoria}}",
-  "flair3d.ui.rounds.fechada": "Cerrada: gana «{rodada}» para abrirla",
+  "flair3d.ui.rounds.fechada": "Cerrada: gana «{rodada}» (o juégala 3 veces) para abrirla",
   "flair3d.ui.rounds.proxima": "La siguiente de la campaña",
   "flair3d.ui.salvo.linha": "Guardado en el servidor a las {hora}: {oQue}.",
   "flair3d.ui.salvo.oQue.partida": "partida abierta con el mazo elegido",

@@ -48,7 +48,7 @@ describe("escolha de arena com a campanha do servidor (DRESS_FIGHTER)", () => {
     expect(botao("VENCER_2_DE_3").dataset.estado).toBe("aberta");
     expect(botao("ARENA_VELOZ").dataset.estado).toBe("fechada");
     expect(botao("ARENA_VELOZ").getAttribute("aria-disabled")).toBe("true");
-    expect(botao("ARENA_VELOZ").textContent).toContain("Fechada: vença «Arena do bairro» para abrir");
+    expect(botao("ARENA_VELOZ").textContent).toContain("Fechada: vença «Arena do bairro» (ou jogue 3 vezes) para abrir");
     fireEvent.click(botao("ARENA_VELOZ"));
     expect(screen.queryByTestId("nucleo-deck")).toBeNull();
     fireEvent.click(botao("VENCER_2_DE_3"));

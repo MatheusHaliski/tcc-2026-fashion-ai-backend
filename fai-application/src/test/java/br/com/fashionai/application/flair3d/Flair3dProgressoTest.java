@@ -119,6 +119,19 @@ class Flair3dProgressoTest {
     }
 
     @Test
+    void tresTentativasSemVencerAbremASeguinteSemMarcarARodadaComoVencida() {
+        fechada(ana, "PASSARELA", "TEMA_SURPRESA", 40, "REPROVADO", null);
+        fechada(ana, "PASSARELA", "TEMA_SURPRESA", 45, "REPROVADO", null);
+        assertThat(etapa(progresso.doJogo(ana, "PASSARELA"), "TEMA_BRASIL").aberta()).isFalse();
+        fechada(ana, "PASSARELA", "TEMA_SURPRESA", 50, "REPROVADO", null);
+        Flair3dCampanha.Progresso p = progresso.doJogo(ana, "PASSARELA");
+        assertThat(etapa(p, "TEMA_BRASIL").aberta()).isTrue();
+        assertThat(etapa(p, "TEMA_SURPRESA").vencida()).isFalse();
+        assertThat(etapa(p, "TEMA_NOITE").aberta()).isFalse();
+        assertThat(p.completo()).isFalse();
+    }
+
+    @Test
     void oProgressoEDeCadaPessoaEDeCadaJogo() {
         fechada(ana, "PASSARELA", "TEMA_SURPRESA", 100, "APROVADO", null);
         assertThat(progresso.doJogo(bia, "PASSARELA").vencidas()).isZero();

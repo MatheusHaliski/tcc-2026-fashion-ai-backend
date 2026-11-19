@@ -124,15 +124,24 @@ class Flair3dRascunhoTest {
         FlairCardInstance cal = carta("CAL", "color:blue");
         FlairCardInstance ace = carta("ACE", "color:blue");
         String primeira = Flair3dNucleoService.nucleo(nucleo).definicao().rodadas().get(0).codigo();
-        UUID id = abrir(nucleo, primeira, sup, inf, cal, ace);
+        // o deck recusa a carta sem vaga no jogo (a Boutique não tem acessório): só entram as posições que o jogo veste
+        List<String> vagas = Flair3dNucleoService.nucleo(nucleo).definicao().deck().posicoes();
+        Map<String, FlairCardInstance> porVaga = new java.util.LinkedHashMap<>();
+        porVaga.put("SUP", sup);
+        porVaga.put("INF", inf);
+        porVaga.put("CAL", cal);
+        porVaga.put("ACE", ace);
+        List<FlairCardInstance> deck = porVaga.entrySet().stream().filter(e -> vagas.isEmpty() || vagas.contains(e.getKey()))
+                .map(Map.Entry::getValue).toList();
+        UUID id = abrir(nucleo, primeira, deck.toArray(FlairCardInstance[]::new));
         Entrega look = new Entrega(Map.of("SUP", sup.getId(), "INF", inf.getId()), null, null, null);
         rascunho.guardar(ana, id, look);
 
         Map<String, Object> r = retomada.emAndamento(ana, nucleo).orElseThrow();
         assertThat(mapa(r.get("partida"))).containsEntry("id", id).containsEntry("rodada", primeira).containsEntry("status", "ABERTA")
-                .containsEntry("deck", List.of(sup.getId(), inf.getId(), cal.getId(), ace.getId()));
+                .containsEntry("deck", deck.stream().map(FlairCardInstance::getId).toList());
         assertThat(((Entrega) r.get("rascunho")).cartas()).isEqualTo(look.cartas());
-        assertThat(mapa(r.get("salvo"))).containsEntry("deck", 4).containsEntry("rascunho", 2);
+        assertThat(mapa(r.get("salvo"))).containsEntry("deck", deck.size()).containsEntry("rascunho", 2);
         assertThat(retomada.emAndamento(bia, nucleo)).isEmpty();
 
         // depois da entrega a retomada volta no ponto em que a partida ficou, com o look entregue (ou não volta: fechou)

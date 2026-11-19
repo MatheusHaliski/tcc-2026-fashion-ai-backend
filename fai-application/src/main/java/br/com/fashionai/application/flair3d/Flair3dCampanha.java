@@ -9,7 +9,8 @@ import java.util.Set;
 /**
  * A campanha de um jogo do FLAIR 3D (auditoria de 15/11/2026, mudança 9): as rodadas na ordem da definição, quais já
  * foram vencidas, as estrelas de cada uma, o total do jogo e o que abre a seguir. Sai só das partidas fechadas da
- * pessoa: nada é pago, a primeira rodada está sempre aberta e a seguinte abre quando a anterior é vencida. Também diz
+ * pessoa: nada é pago, a primeira rodada está sempre aberta e a seguinte abre quando a anterior é vencida (ou depois de
+ * três tentativas nela, para ninguém ficar preso). Também diz
  * em que ponto da história a pessoa está (abertura, transição depois da última partida, fecho), sempre pelo resultado
  * que o servidor gravou. Puro: quem lê o banco é o {@link Flair3dProgresso}.
  */
@@ -19,6 +20,11 @@ public final class Flair3dCampanha {
     public static final String FECHO = "FECHO";
     /** Estrelas possíveis por rodada. */
     public static final int ESTRELAS_POR_RODADA = 3;
+    /**
+     * Saída para quem não tem carta para vencer uma rodada (a conta sem marca brasileira no tema Brasil): depois de
+     * tantas partidas fechadas nela sem vencer, a seguinte abre mesmo assim. A rodada continua sem a marca de vencida.
+     */
+    public static final int TENTATIVAS_QUE_ABREM = 3;
 
     /**
      * Jogos em que a rodada seguinte só abre com a anterior vencida. Os outros já recebem as marcas e as estrelas, com
@@ -94,7 +100,7 @@ public final class Flair3dCampanha {
             etapas.add(new Etapa(codigo, i + 1, aberta, vencida, dela.stream().mapToInt(Jogada::estrelas).max().orElse(0),
                     dela.stream().mapToInt(Jogada::pontos).max().orElse(0), dela.size(), vencida ? vitoria.toString() : null,
                     aberta ? null : codigos.get(i - 1)));
-            anteriorVencida = vencida;
+            anteriorVencida = vencida || dela.size() >= TENTATIVAS_QUE_ABREM;
         }
         int vencidas = (int) etapas.stream().filter(Etapa::vencida).count();
         boolean completo = !etapas.isEmpty() && vencidas == etapas.size();

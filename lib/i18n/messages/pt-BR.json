@@ -11978,7 +11978,7 @@
   "flair3d.ui.rounds.melhor": "Melhor nota: {pontos}",
   "flair3d.ui.rounds.vencidaEm": "Vencida em {quando}",
   "flair3d.ui.rounds.semVitoria": "{n, plural, one {Jogada # vez, ainda sem vitória} other {Jogada # vezes, ainda sem vitória}}",
-  "flair3d.ui.rounds.fechada": "Fechada: vença «{rodada}» para abrir",
+  "flair3d.ui.rounds.fechada": "Fechada: vença «{rodada}» (ou jogue 3 vezes) para abrir",
   "flair3d.ui.rounds.proxima": "A próxima da campanha",
   "flair3d.ui.salvo.linha": "Salvo no servidor às {hora}: {oQue}.",
   "flair3d.ui.salvo.oQue.partida": "partida aberta com o deck escolhido",
