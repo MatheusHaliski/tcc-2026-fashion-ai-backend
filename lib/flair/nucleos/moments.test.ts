@@ -68,7 +68,7 @@ describe("máquina dos momentos", () => {
     expect(acionamentoDe("FASHION_SPORTS")).toEqual({ tipo: "CARTA", momento: "ACAO" });
     expect(acionamentoDe("LABIRINTO")).toEqual({ tipo: "ESPELHO", momento: "PREPARACAO" });
     expect(acionamentoDe("PERSONAGEM_FILME")).toEqual({ tipo: "RESPOSTA", momento: "PREPARACAO" });
-    for (const jogo of ["PASSARELA", "DRESS_THE_STAR", "BOUTIQUE_3D", "AROUND_THE_WORLD"] as const) expect(acionamentoDe(jogo)).toEqual({ tipo: "JOGADA", momento: "ACAO" });
+    for (const jogo of ["PASSARELA", "DRESS_THE_STAR", "BOUTIQUE_3D", "AROUND_THE_WORLD", "ROAD_TO_GLORY"] as const) expect(acionamentoDe(jogo)).toEqual({ tipo: "JOGADA", momento: "ACAO" });
     expect(acionamentoDe("CLUBE_CORACAO")).toBeNull();
     expect(permitido("ACAO", "ACIONAR", "DRESS_FIGHTER")).toBe(true);
     expect(permitido("PREPARACAO", "ACIONAR", "DRESS_FIGHTER")).toBe(false);

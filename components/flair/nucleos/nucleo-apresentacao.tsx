@@ -42,7 +42,7 @@ export function NucleoApresentacao({ definicao, partida, tentativa, apresentacao
     const timer = window.setTimeout(() => setLida(true), PREMISSA_MS);
     return () => window.clearTimeout(timer);
   }, [lida, texto, partida?.id]);
-  const aviso = efeitos ? viabilidade(definicao.objetivo.regras.map((r) => r.codigo), cartas.map((c) => efeitos(c.id))) : null;
+  const aviso = efeitos ? viabilidade(definicao.objetivo.regras.map((r) => r.codigo), cartas.map((c) => efeitos(c.id)), definicao.recursos.includes("MAQUIAGEM")) : null;
   const avisoNaTela = <NucleoAvisoDaRodada codigo={codigo} escopo="partida" viabilidade={aviso} />;
   // com um briefing (tema, etapa, oponente), a premissa abre o mesmo cartão; sem ele, ganha o cartão dela
   if (apresentacao.briefing) {

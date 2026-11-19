@@ -9,7 +9,7 @@ import { pontua } from "@/lib/flair/nucleos/card-fx";
 import type { EfeitoItem } from "@/lib/flair/nucleos/types";
 
 /** Regras que uma peça cumpre sozinha e cujo efeito tem o mesmo código da regra. */
-export const REGRAS_DE_PECA = new Set(["MARCA_BR", "CIMA_LEVE", "BAIXO_LEVE", "COR_QUENTE"]);
+export const REGRAS_DE_PECA = new Set(["MARCA_BR", "CIMA_LEVE", "BAIXO_LEVE", "COR_QUENTE", "OCASIAO", "MATERIAL_LEVE", "CALCADO_FECHADO", "ACESSORIO"]);
 
 export interface Viabilidade {
   /** nenhuma carta pontua nesta rodada: a nota sai 0 */
@@ -26,14 +26,16 @@ function cartaPontua(itens: EfeitoItem[], regras: Set<string>): boolean {
 /**
  * A viabilidade da rodada com estas cartas. `regras` são os códigos das regras da rodada; `efeitos`, os selos de cada
  * carta (undefined enquanto o servidor não respondeu). Nulo quando não há o que dizer (sem cartas ou sem resposta).
+ * `outrosRecursos`: a nota não vem só das cartas (a maquiagem do Road to Glory vale metade): mesmo sem carta que pontue a
+ * nota não sai 0, então o aviso é sempre o das regras de roupa que nenhuma carta cumpre.
  */
-export function viabilidade(regras: string[], efeitos: (EfeitoItem[] | undefined)[]): Viabilidade | null {
+export function viabilidade(regras: string[], efeitos: (EfeitoItem[] | undefined)[], outrosRecursos = false): Viabilidade | null {
   if (efeitos.length === 0 || efeitos.some((e) => e === undefined)) return null;
   const lista = efeitos as EfeitoItem[][];
   const codigos = new Set(regras);
   // jogos de zonas e artísticos não mandam selo nenhum: ali não há o que avisar
   const comSelo = lista.filter((itens) => itens.length > 0);
-  const semPontos = comSelo.length > 0 && !comSelo.some((itens) => cartaPontua(itens, codigos));
+  const semPontos = !outrosRecursos && comSelo.length > 0 && !comSelo.some((itens) => cartaPontua(itens, codigos));
   const temEfeito = (codigo: string) => lista.some((itens) => itens.some((i) => i.codigo === codigo && !i.motivo));
   const regrasSemCarta = semPontos ? [] : regras.filter((r) => REGRAS_DE_PECA.has(r) && !temEfeito(r));
   return semPontos || regrasSemCarta.length ? { semPontos, regrasSemCarta } : null;

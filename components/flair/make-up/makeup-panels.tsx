@@ -61,7 +61,23 @@ export function MakeUpResult({ codigo, resultado, onAgain }: { codigo: string; r
           </li>
         ))}
       </ul>
+      <MakeUpExplicacao resultado={resultado} />
       <button type="button" className="btn" onClick={onAgain}>{tx.t("flair3d.ui.result.again")}</button>
     </section>
+  );
+}
+
+/** Por que as regras de roupa não pontuaram (a peça fora da ocasião, nenhuma peça vestida), como o servidor explicou. */
+function MakeUpExplicacao({ resultado }: { resultado: MakeUpResultado }) {
+  const tx = useBriefText();
+  const linhas = (resultado.eventos ?? []).map((e) => tx.evento(e)).filter((texto) => texto.trim() !== "");
+  if (linhas.length === 0) return null;
+  return (
+    <>
+      <h3 className="type-label">{tx.t("flair3d.ui.result.events")}</h3>
+      <ol className="n3d-events" data-testid="makeup-result-events">
+        {linhas.map((texto, i) => <li key={i}>{texto}</li>)}
+      </ol>
+    </>
   );
 }

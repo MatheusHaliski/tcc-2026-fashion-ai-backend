@@ -31,6 +31,17 @@ describe("viabilidade da rodada", () => {
     expect(viabilidade(["NO_TEMA"], [[efeito("TEMA_SURPRESA", 1)]])).toBeNull();
   });
 
+  it("Road to Glory: a maquiagem vale metade, então o aviso diz as regras de roupa sem carta e nunca que a nota sai 0", () => {
+    const ensaio = ["OCASIAO", "MATERIAL_LEVE", "BATOM_CORAL", "ACABAMENTO_BATOM"];
+    const semBonus = [motivo("SEM_BONUS"), efeito("COR_LUZ_FRIA", 4)];
+    expect(viabilidade(ensaio, [semBonus, semBonus], true)).toEqual({ semPontos: false, regrasSemCarta: ["OCASIAO", "MATERIAL_LEVE"] });
+    expect(viabilidade(ensaio, [[efeito("MATERIAL_LEVE", 25)], semBonus], true)).toEqual({ semPontos: false, regrasSemCarta: ["OCASIAO"] });
+    expect(viabilidade(ensaio, [[efeito("OCASIAO", 25), efeito("MATERIAL_LEVE", 25)]], true)).toBeNull();
+    // Entrevista e Primeiro Encontro: o calçado fechado e o acessório também são regras de carta
+    expect(viabilidade(["OCASIAO", "CALCADO_FECHADO"], [[efeito("OCASIAO", 25)]], true)?.regrasSemCarta).toEqual(["CALCADO_FECHADO"]);
+    expect(viabilidade(["OCASIAO", "ACESSORIO"], [[efeito("ACESSORIO", 25)]], true)?.regrasSemCarta).toEqual(["OCASIAO"]);
+  });
+
   it("no deck escolhido só vale o aviso de nenhuma carta pontuar", () => {
     expect(semPontosNoDeck({ semPontos: false, regrasSemCarta: ["MARCA_BR"] })).toBeNull();
     expect(semPontosNoDeck({ semPontos: true, regrasSemCarta: [] })).toEqual({ semPontos: true, regrasSemCarta: [] });
