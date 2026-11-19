@@ -9,7 +9,7 @@ import { readGlbGeometry } from "./glb-read";
 import { manifestUrlOf, parseManifest } from "./manifest";
 import { SLOT_RULES, isAccessoryRule, slotRuleOf } from "./slots";
 import { budgetSize } from "./texture-budget";
-import { hemOf, tuckedIndex } from "./tuck";
+import { hemOf, hemProfile, tuckedBySector, tuckedIndex } from "./tuck";
 
 const positions = (g: THREE.BufferGeometry) => Float32Array.from(g.getAttribute("position").array as ArrayLike<number>);
 function merge(...gs: THREE.BufferGeometry[]): Float32Array {
@@ -151,5 +151,14 @@ describe("calça debaixo da peça de cima", () => {
     expect(Array.from(tuckedIndex([0, 1, 2, 2, 3, 4, 3, 4, 5], y, 0.8)!)).toEqual([3, 4, 5]);
     expect(tuckedIndex([3, 4, 5], y, 0.8)).toBeNull();
     expect(hemOf([0.9, 0.7, 0.4], [0, 0, 1])).toBe(0.7);
+  });
+  it("barra torta: a saia some só no setor em que a peça de cima a cobre; onde a blusa é curta, ela fica", () => {
+    // peça de cima: barra a 0,5 do lado +x e a 0,9 do lado −x (posições xyz; tudo tronco)
+    const top = [0.2, 1.2, 0.01, 0.2, 0.5, 0.01, -0.2, 1.2, 0.01, -0.2, 0.9, 0.01];
+    const profile = hemProfile(top, [0, 0, 0, 0])!;
+    // peça de baixo: um triângulo a 0,8 de cada lado
+    const low = [0.2, 0.8, 0.01, 0.21, 0.8, 0.01, 0.2, 0.81, 0.01, -0.2, 0.8, 0.01, -0.21, 0.8, 0.01, -0.2, 0.81, 0.01];
+    expect(Array.from(tuckedBySector([0, 1, 2, 3, 4, 5], low, profile)!)).toEqual([3, 4, 5]);
+    expect(hemProfile(top, [1, 1, 1, 1])).toBeNull();
   });
 });

@@ -13,7 +13,7 @@ import type { BodyFrame } from "@/lib/avatar3d/human/glb-garment/frame";
 import { fabricColor, type BodyParam } from "@/lib/avatar3d/human/garments";
 import { hideSkin, showSkin } from "@/components/three/outfit-skin";
 import { wearMeshy } from "@/components/three/outfit-meshy";
-import { hemOf, tuckedIndex } from "@/lib/avatar3d/meshy/tuck";
+import { hemProfile, tuckedBySector } from "@/lib/avatar3d/meshy/tuck";
 
 const fits = new WeakMap<object, Map<string, GlbFit>>();
 const ids = new WeakMap<GlbSource, number>(); let nextId = 0;
@@ -82,12 +82,12 @@ export function wearGlb(parts: HumanParts, it: OutfitItem, src: GlbSource | null
 
 /** A parte de baixo de .glb já vestida some onde a peça de cima (`top`) a cobre: acima da barra dela. */
 function tuckUnder(meshes: THREE.SkinnedMesh[], top: THREE.BufferGeometry) {
-  const hem = hemOf(top.userData.posedY, top.userData.part);
-  if (!Number.isFinite(hem)) return;
+  const hem = hemProfile(top.userData.posed, top.userData.part);
+  if (!hem) return;
   for (const low of meshes) {
     const g = low.geometry, index = g.getIndex();
     if (low.userData.buildPath !== "GLB_WRAP" || g.userData.cls !== "lower" || !index) continue;
-    const kept = tuckedIndex(index.array, g.userData.posedY, hem); if (!kept) continue;
+    const kept = tuckedBySector(index.array, g.userData.posed, hem); if (!kept) continue;
     g.setIndex(new THREE.BufferAttribute(kept, 1));
     // grupos por material: recortados pela mesma conta não valem mais; um grupo só cobre o índice novo
     if (g.groups.length) { const mat = g.groups[0].materialIndex ?? 0; g.clearGroups(); g.addGroup(0, kept.length, mat); }

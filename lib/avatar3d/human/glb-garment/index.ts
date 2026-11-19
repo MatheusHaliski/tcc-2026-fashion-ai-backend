@@ -128,7 +128,7 @@ export function fitGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec, b
   g.computeVertexNormals();
   // altura posada por vértice e a classe: a peça de cima esconde o que da de baixo fica debaixo dela (meshy/tuck.ts)
   const posedY = Float32Array.from({ length: wrapped.posed.length / 3 }, (_, v) => wrapped.posed[v * 3 + 1]);
-  g.userData = { buildPath: "GLB_WRAP", metrics, part: aligned.part, size, cls, posedY };
+  g.userData = { buildPath: "GLB_WRAP", metrics, part: aligned.part, size, cls, posedY, posed: wrapped.posed };
   return { ok: true, geometry: g, metrics, covered: cover.covered };
 }
 

@@ -16,7 +16,7 @@ import { DEFAULT_BODY, BODY_KEYS, type BodySources } from "../../body-spec";
 import { LIMITS, bodyFrame, fitGlbGarment, splitFused, type GlbSource } from "./index";
 import { alignGarment } from "./align";
 import { coverOf } from "./cover";
-import { depthAt, depthField, pressOut } from "./depth";
+import { INNER_GAP, depthAt, depthField, pressOut } from "./depth";
 import { labelParts } from "./parts";
 import { wrapGarment } from "./wrap";
 
@@ -122,6 +122,17 @@ describe("glb-garment: peça estática vestida no avatar", () => {
     const src: GlbSource = { position: pos, uv: null, index: new Uint32Array([0, 1, 2, 3, 4, 5, 6, 7, 8]), groups: [], materials: [] };
     const out = splitFused(src, part, pos, 1.5, -1);
     expect(Array.from(out.index)).toEqual([3, 4, 5]);           // a de cima da axila fica; a de baixo e a do gancho saem
+  });
+
+  it("avesso da peça (forro do blazer) para atrás do direito: os dois não ficam no mesmo z", () => {
+    const a = avatar(); const f = a.frame(); const chest = f.joint("Neck").y - 0.2;
+    const skinAt = depthAt(depthField(f, [1])!, 0, chest)!; const mid = (skinAt.front + skinAt.back) / 2;
+    // direito e avesso da frente do blazer, os dois dentro do corpo: o avesso é a segunda placa
+    const plate = (z: number) => new THREE.PlaneGeometry(0.06, 0.06, 12, 12).translate(0, chest, z);
+    const src = source([plate(mid + 0.03), plate(mid + 0.02)]); const p = src.position.slice(), n = p.length / 3;
+    const inner = new Uint8Array(n).fill(1, n / 2);
+    pressOut(p, new Int8Array(n), src.index, f, [1, 2], 0.01, inner);
+    for (let v = 0; v < n / 2; v++) expect(p[v * 3 + 2] - p[(v + n / 2) * 3 + 2]).toBeCloseTo(INNER_GAP, 4);
   });
 
   it("profundidade: o pano raso que ficou dentro do corpo sai só em z, para a frente e para trás da pele", () => {
