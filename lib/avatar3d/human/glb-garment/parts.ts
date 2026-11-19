@@ -96,6 +96,32 @@ function bodyLimit(f: BodyFrame, side: number, clearance: number): Limit {
   };
 }
 
+/**
+ * Linha da manga da peça de braços abertos (pose T): olhando de frente, a coluna do tronco desce até a barra e a da
+ * manga acaba logo abaixo do ombro. A manga começa na primeira coluna, de dentro para fora, cujo ponto mais baixo
+ * fica na metade de cima da peça e assim segue por 3 cm (a axila); a linha é vertical e só vale na metade de cima (a
+ * barra em sino, mais larga que a axila, é tronco). Null se a manga não está aberta
+ * (o punho da manga caída chega perto da barra) — aí valem o vão e a largura do corpo.
+ */
+function spreadLimit(pos: Float32Array, side: number, inner: number): Limit | null {
+  const cell = 0.01, low = new Map<number, number>(); let top = -Infinity, hem = Infinity, reach = 0;
+  for (let i = 0; i < pos.length; i += 3) {
+    const x = pos[i] * side, y = pos[i + 1]; top = Math.max(top, y);
+    if (x < 0) continue;
+    const c = Math.floor(x / cell); low.set(c, Math.min(low.get(c) ?? Infinity, y)); reach = Math.max(reach, c);
+    if (x < inner) hem = Math.min(hem, y);
+  }
+  if (!(hem < top)) return null;
+  const line = hem + 0.5 * (top - hem), first = Math.ceil(inner / cell);
+  for (let c = first; c + 3 <= reach; c++) {
+    if ([0, 1, 2].every((k) => (low.get(c + k) ?? -Infinity) > line)) {
+      // manga curta demais para girar (alça, cava): não é manga aberta
+      return (reach - c) * cell > 0.12 ? (y) => (y > line ? c * cell : Infinity) : null;
+    }
+  }
+  return null;
+}
+
 export function labelParts(pos: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, index?: ArrayLike<number>): Int8Array {
   const part = new Int8Array(pos.length / 3);
   const crotch = Math.min(f.joint("LeftUpLeg").y, f.joint("RightUpLeg").y) - 0.06;
@@ -103,7 +129,7 @@ export function labelParts(pos: Float32Array, f: BodyFrame, cls: GarmentClass, c
   if (cls !== "lower") for (const side of [1, -1]) {
     const shoulder = f.joint(side > 0 ? "LeftArm" : "RightArm");
     const inner = 0.5 * torsoHalfOf(f)(shoulder.y - 0.12);
-    limits.set(side, (index && gapLimit(pos, index, side, shoulder.y, inner)) || bodyLimit(f, side, clearance));
+    limits.set(side, spreadLimit(pos, side, inner) || (index && gapLimit(pos, index, side, shoulder.y, inner)) || bodyLimit(f, side, clearance));
   }
   for (let v = 0; v < part.length; v++) {
     const x = pos[v * 3], y = pos[v * 3 + 1], side = x > 0 ? 1 : -1;

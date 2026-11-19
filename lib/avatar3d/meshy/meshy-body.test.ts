@@ -182,4 +182,15 @@ describe("encaixe da roupa da Meshy", () => {
     expect(tip.y).toBeLessThan(shoulder.y - 0.15);
     expect(new THREE.Line3(shoulder, hand).closestPointToPoint(tip, false, new THREE.Vector3()).distanceTo(tip)).toBeLessThan(0.08);
   });
+  it("peça em T com a barra mais larga que o corpo: a lateral e a barra ficam no tronco, só a manga gira", () => {
+    // tronco em sino (barra larga, como a blusa solta) e mangas na horizontal: a barra não pode ser rotulada manga
+    const torso = new THREE.CylinderGeometry(0.45, 0.62, 1.3, 48, 26, true).scale(1, 1, 0.3).translate(0, 0.25, 0);
+    const arm = (x: number) => new THREE.CylinderGeometry(0.15, 0.13, 0.8, 20, 16, true).rotateZ(Math.PI / 2).scale(1, 1, 0.5).translate(x, 0.78, 0);
+    const src = source(torso, arm(0.85), arm(-0.85)), torsoVertices = torso.getAttribute("position").count;
+    const a = alignGarment(src.position, A.f, "upper", 0.01, 0, src.index, 1.8)!;
+    let hemAsSleeve = 0, sleeve = 0;
+    for (let v = 0; v < a.part.length; v++) { if (a.part[v] === 0) continue; sleeve++; if (v < torsoVertices && src.position[v * 3 + 1] < 0) hemAsSleeve++; }
+    expect(sleeve).toBeGreaterThan(200);
+    expect(hemAsSleeve).toBe(0);
+  });
 });
