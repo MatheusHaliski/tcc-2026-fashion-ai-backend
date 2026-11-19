@@ -58,6 +58,30 @@ class Flair3dRetomadaTest {
     }
 
     @Test
+    void aSessaoDeFotosDoRoadToGloryVoltaNoPedidoDaFotografaEFechaComACartaDaCor() {
+        FlairCardInstance sup = carta("SUP", "occasion:work");
+        FlairCardInstance cal = carta("CAL", "sub:boots", "occasion:formal");
+        Map<String, FlairCardInstance> porCor = new java.util.LinkedHashMap<>();
+        Map.of("Preto", "black", "Verde", "green", "Amarelo", "yellow", "Azul", "blue", "Vermelho", "red", "Branco", "white")
+                .forEach((familia, cor) -> porCor.put(familia, carta("ACE", "color:" + cor)));
+        UUID id = abrir("ROAD_TO_GLORY", "ENTREVISTA");
+        Entrega look = Flair3dFixtures.comMaquiagem(new Entrega(Map.of("SUP", sup.getId(), "CAL", cal.getId()), null, null, null), "LABIOS", "NUDE", "FOSCO");
+        assertThat(service.entregar(ana, id, look).status()).isEqualTo("EM_ACAO");
+
+        Map<String, Object> r = retomada.emAndamento(ana, "ROAD_TO_GLORY").orElseThrow();
+        assertThat(partida(r)).containsEntry("id", id).containsEntry("rodada", "ENTREVISTA").containsEntry("status", "EM_ACAO");
+        Resultado espera = (Resultado) r.get("resultado");
+        String pedida = (String) ((Map<?, ?>) espera.eventos().stream().filter(e -> e.codigo().equals("PEDIDO_DE_CENA")).findFirst().orElseThrow().valor()).get("familia");
+
+        // sem deck: a carta da sessão é qualquer carta da pessoa fora do look; as 4 regras (100) e a luz (10) dão 100
+        Resultado fim = service.acionar(ana, id, new Acionamento(porCor.get(pedida).getId(), null));
+        assertThat(fim.status()).isEqualTo("ENTREGUE");
+        assertThat(fim.pontos()).isEqualTo(100);
+        assertThat(fim.eventos()).anyMatch(e -> e.codigo().equals("TETO"));
+        assertThat(retomada.emAndamento(ana, "ROAD_TO_GLORY")).isEmpty();
+    }
+
+    @Test
     void oDeckJaEscolhidoVoltaParaAPreparacaoEAPartidaFechadaNao() {
         FlairCardInstance sup = carta("SUP", "occasion:party");
         FlairCardInstance inf = carta("INF");
