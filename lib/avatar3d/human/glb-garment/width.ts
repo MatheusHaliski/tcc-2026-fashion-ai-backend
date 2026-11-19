@@ -46,6 +46,9 @@ function bandsOf(p: Float32Array, idx: number[], label: number, f: BodyFrame, gr
       out.set(b, { scale, from: inner, to: inner });
       continue;
     }
+    // faixa que não atravessa o meio do corpo, ou que já passa da pele de um lado (a barra ao lado do punho na peça
+    // da Meshy): alargar em volta do centro dela jogaria o pano longe do corpo; a colisão cuida do lado que falta
+    if (label === 0 && (g0 > 0 || g1 < 0 || g0 < b0 - 0.02 || g1 > b1 + 0.02)) continue;
     const scale = Math.min(MAX_WIDEN, Math.max(1, (b1 - b0) / have));
     const half = (have * scale) / 2, centre = (g0 + g1) / 2;
     // o centro só anda o que falta para cobrir os dois lados (peça já larga o bastante: não anda)

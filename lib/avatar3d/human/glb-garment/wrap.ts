@@ -14,6 +14,9 @@ import { pressOut } from "./depth";
 import type { BodyFrame, Groups } from "./frame";
 import { widen } from "./width";
 
+/** Abaixo disso (m) o vértice não é candidato a espinho: dispensa a segunda busca, com a cabeça. */
+const LIMIT_FAR_CHECK = 0.15;
+
 export interface WrapMetrics {
   /** fração dos vértices dentro do corpo na pose de exibição, depois da colisão */
   inside: number;
@@ -167,12 +170,30 @@ export function wrapGarment(posedIn: Float32Array, partIn: Int8Array, indexIn: A
   const moved = Math.max(widen(posed, part, f, groups, clearance), pressOut(posed, part, index, f, groups, clearance));
   const pushed = Math.max(moved, collide(posed, f, groups, clearance, adj));
   let inside = 0, far = 0;
+  // espinho: distância até a pele mais próxima, CABEÇA incluída — o capuz caído nas costas fica perto da cabeça e da
+  // nuca, não do tronco (sem ela, todo moletom com capuz da Meshy seria recusado como espinho)
+  const reach = groups.includes(0) ? groups : [...groups, 0];
   for (let v = 0; v < n; v++) {
     const { d } = signedDistance(f, posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2], groups);
-    if (d < 0) inside++; if (Number.isFinite(d)) far = Math.max(far, d);
+    if (d < 0) inside++;
+    if (!Number.isFinite(d) || d <= LIMIT_FAR_CHECK) { if (Number.isFinite(d)) far = Math.max(far, d); continue; }
+    const head = signedDistance(f, posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2], reach).d;
+    far = Math.max(far, Number.isFinite(head) ? Math.min(d, Math.abs(head)) : d);
   }
   const { skinIndex, skinWeight } = transferWeights(posed, part, f, groups, adj, f.bone.length);
   const rest = unskin(posed, f, skinIndex, skinWeight);
   return { rest: expand(rest, w.map, 3), posed: expand(posed, w.map, 3), skinIndex: expand(skinIndex, w.map, 4), skinWeight: expand(skinWeight, w.map, 4),
     metrics: { inside: inside / n, stretch: edgeStretch(before, posed, index), pushed, far } };
+}
+
+/**
+ * Acessório flexível (colar, cachecol da Meshy): só colisão pela normal e pesos da pele mais próxima — sem alargar
+ * nem dar volume (a peça não é um tubo em volta do corpo). Encosta na pele com a folga e segue o tronco na pose.
+ */
+export function conformGarment(posedIn: Float32Array, indexIn: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number) {
+  const w = weld(posedIn, indexIn); const posed = w.pos, n = posed.length / 3; const adj = neighbours(w.index, n);
+  const pushed = collide(posed, f, groups, clearance, adj);
+  const { skinIndex, skinWeight } = transferWeights(posed, new Int8Array(n), f, groups, adj, f.bone.length);
+  const rest = unskin(posed, f, skinIndex, skinWeight);
+  return { rest: expand(rest, w.map, 3), posed: expand(posed, w.map, 3), skinIndex: expand(skinIndex, w.map, 4), skinWeight: expand(skinWeight, w.map, 4), pushed };
 }
