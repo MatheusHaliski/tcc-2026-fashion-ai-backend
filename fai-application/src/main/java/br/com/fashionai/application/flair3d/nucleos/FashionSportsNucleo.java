@@ -29,7 +29,8 @@ import java.util.Map;
  * ação"). A entrega veste o uniforme do time (camisa, calção e chuteira), que dá os atributos de base; as outras cartas
  * do deck viram a mão. A partida fica EM_ACAO, e cada acionamento é uma jogada: a carta jogada (a cor decide a ação, o
  * poder decide o duelo) ou nenhuma. No fim do segundo tempo a partida fecha: mais pontos = vitória (100); iguais =
- * empate (60); menos = derrota (0). A simulação está em {@link EsportePartida}.
+ * empate (60); menos = derrota (0). A simulação está em {@link EsportePartida}. O deck aceita carta de qualquer
+ * posição: fora do uniforme, toda carta é jogada na mão.
  */
 public class FashionSportsNucleo implements Flair3dNucleo {
     public static final List<String> VAGAS = List.of("SUP", "INF", "CAL");
@@ -48,8 +49,8 @@ public class FashionSportsNucleo implements Flair3dNucleo {
     @Override
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(), Definicao.objetivo("FUTEBOL_DE_5", new Regra("VITORIA", 100),
-                new Regra("EMPATE", 60), new Regra("COESAO", 0)), List.of(Definicao.CARTAS, Definicao.RESPOSTA), VAGAS,
-                Deck.ate(DECK, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF"), Obrigatoria.uma("CAL")), false)
+                new Regra("EMPATE", 60)), List.of(Definicao.CARTAS, Definicao.RESPOSTA), VAGAS,
+                Deck.ate(DECK, Obrigatoria.uma("SUP"), Obrigatoria.uma("INF"), Obrigatoria.uma("CAL")).so(Definicao.VAGAS), false)
                 .comOpcoes(EsporteRegras.CODIGOS).comAvatares(Avatares.solo(new Avatares.Online(2, 10, 5), Avatares.figurante("COLEGA", 4), Avatares.figurante("ADVERSARIO", 5)));
     }
 
@@ -71,8 +72,8 @@ public class FashionSportsNucleo implements Flair3dNucleo {
         }
         boolean vitoria = partida.saldo() > 0;
         boolean empate = partida.saldo() == 0;
-        List<RegraResultado> regrasDoJogo = List.of(RegraResultado.de("VITORIA", vitoria, 100), RegraResultado.de("EMPATE", empate, 60),
-                RegraResultado.de("COESAO", true, 0));
+        // a coesão do uniforme é um atributo do time (a prévia a mostra), não uma regra da nota: a nota é só o placar
+        List<RegraResultado> regrasDoJogo = List.of(RegraResultado.de("VITORIA", vitoria, 100), RegraResultado.de("EMPATE", empate, 60));
         double pontos = vitoria ? 100 : empate ? 60 : 0;
         return Resultado.of(pontos, vitoria ? "VITORIA" : empate ? "EMPATE" : "DERROTA", regrasDoJogo, eventos)
                 .comCartas(new Flair3dRateio(uniforme).dividir(pontos, FashionSportsNucleo::peso).lista());
