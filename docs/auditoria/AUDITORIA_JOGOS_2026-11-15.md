@@ -532,7 +532,16 @@ com renderização de software. Todas têm teste do servidor ou da tela.
 | Dress Fighter, perguntas 1 a 7, DF-2, DF-4, DF-8 | luta lance a lance: vida 100 das duas com barras na tela, a cor da carta jogada é o golpe (vermelho forte, amarelo rápido, preto guarda, verde esquiva, azul fôlego, branco foco), a oponente ataca, guarda, esquiva e recua, leitura do próximo golpe dela, combos (Relâmpago, Contragolpe, Muralha), nocaute, câmeras "Luta de lado" (arcade) e "Por trás do ombro", peça inteira no look e na mão; tudo no servidor, da semente | `acb1ecaa` |
 | DF-3, PAS-2 e o defeito 4: rodadas impossíveis sem aviso | aviso na escolha do deck e no começo da partida quando nenhuma carta pontua ou uma regra de peça não tem carta; as arenas do Dress Fighter ficaram vencíveis jogando bem com cartas Bronze (14, 12 e 13 vitórias em 20 sementes) | `be68234e`, `acb1ecaa` |
 | NPCs (média 3,1): reação que não bate com o desfecho | fotógrafos da Passarela, estrela do Dress the Star, equipe do set do Filme e passantes do Around the World reagem pela nota | `97f4ff80` |
+| PF-1: o vestido entra no deck e some da mão no Personagem de Filme | a peça inteira veste e conta como a parte de cima e a de baixo do figurino (25); o deck aceita o vestido no lugar da parte de cima | `546e19b4`, `d1a80473` |
+| Mudança 8 (deck): peça que o jogo não deixa vestir aceita no deck | a carta sem vaga no jogo fica apagada, não entra no deck e o toque diz por quê; o servidor recusa o deck dizendo a posição (no Fashion Sports toda carta entra: fora do uniforme ela é jogada na mão) | `546e19b4`, `d1a80473` |
+| Mudança 8 (carta): a carta só mostrava o primeiro efeito | a carta do deck e da mão mostra todos os efeitos, um por linha, com o da cor no fim; o rótulo de leitura de tela lê todos | `d1a80473` |
+| PF-2: o refletor do set tapa um terço do quadro | o objeto do refletor era ajustado à altura de um tripé e ficava com 2 m de largura; agora tem o tamanho de um canhão de chão (75 cm) | `98f55a9e` |
+| ESP-1: 10 a 15 s de tela vazia antes do estádio | tela de carga com a arte do campo nas cores dos dois times e a lista do que está sendo carregado, até o primeiro quadro da partida | `d1a80473` |
+| ESP-2: "Coesão" cumprida com 0 pontos | a Coesão saiu das regras da nota (era sempre cumprida e valia 0); continua como atributo do time no preparo. A nota é só o placar | `546e19b4`, `d1a80473` |
+| DF-9: o contador conta eventos, não rounds | na luta o contador mostra "Round 2 · lance 4 de 9" | `d1a80473` |
+| Fashion Detective: ninguém reage à acusação | na passarela Iolanda e Bento reagem pelo final (comemora, baixa a cabeça, nega e recua, aponta); na acusação errada o acusado entra em cena com o álibi | `95d78c12` |
 
-Ficou para depois: PF-1 (o vestido no Personagem de Filme), PF-2 (o refletor), ESP-1 (a tela vazia antes do estádio),
-ESP-2 ("Coesão" com 0 pontos), DF-9 (o contador de passos), marcar a arena já vencida, a reação do elenco à acusação
-no Fashion Detective e a medida da fluidez com GPU.
+As oito últimas linhas (19/11/2026) também não foram vistas na tela; cada uma tem teste. O tempo da tela de carga do
+estádio não foi medido: ela cobre a espera, não a encurta.
+
+Ficou para depois: marcar a arena já vencida e a medida da fluidez com GPU.
