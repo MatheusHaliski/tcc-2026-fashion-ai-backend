@@ -186,7 +186,31 @@ recusadas (com o motivo) e o conjunto adotado. O conjunto é o da tabela acima; 
   girar e de zoom; na partida do Fashion Sports, no canto de cima à direita).
 - Fashion Sports: `lib/flair/esporte/camera.ts` (a transmissão com cortes e as câmeras do campo).
 - Textos: `flair3d.camera.*` em pt-BR, en e es.
-- Testes: `lib/flair/nucleos/camera/camera.test.ts`.
+- A lente e os obstáculos: `lib/flair/nucleos/camera/colisao.ts` (pessoas de cena, móveis, a troca de câmera por fora
+  do corpo, o tempo da troca em segundos) e `lib/flair/nucleos/camera/enquadramento.ts` (o que cai no quadro, os limites
+  de distância e de ângulo, quem importa na rodada).
+- Testes: `lib/flair/nucleos/camera/camera.test.ts` e `lib/flair/nucleos/camera/enquadramento.test.ts`.
+
+### Regras conferidas por teste nos dez jogos da auditoria (19/11/2026)
+
+- **Enquadramento inicial.** A câmera do preparo mostra a avatar inteira (pés e cabeça, com 4% de respiro) na tela
+  deitada, quase quadrada e em pé (390 × 844). No Dress Fighter e na Batalha o preparo vem do lado oposto ao do
+  adversário (`TRES_QUARTOS` com ângulo −24): a avatar fica no centro e a oponente ou o adversário cabem inteiros; na
+  Boutique, a cliente. A automática da ação e do resultado também mostra a avatar inteira em qualquer instante.
+- **Limites.** Ângulo de altura entre −25° (de baixo para cima) e 89° (aérea), distância à mira de até 16 m, sempre
+  dentro das paredes e a mais de 20 cm do piso.
+- **Nunca dentro de corpo, móvel, piso ou parede.** Para toda câmera de todo jogo, com o zoom todo afastado, normal e
+  todo aproximado, na tela deitada e em pé, a cada 1,5 s durante 30 s, com a avatar em todo lugar por onde as
+  sequências a levam. Quando a lente cairia dentro de um móvel, ela avança na direção do que filma até ficar livre;
+  em cima de uma pessoa de cena, sai para o lado ou sobe acima da cabeça. O teste achou e corrigiu: o giro de 360°
+  dentro do painel de LED (Passarela, Batalha), do telão e da cortina (Dress the Star), do provador e da prateleira
+  (Boutique), do portal (Labirinto), das vitrines e do banco (Around the World), da trave e da rede (Fashion Sports) e
+  de um caixote (Dress Fighter); o close dentro do portal e do mapa.
+- **Troca de câmera.** A lente vai de uma câmera à outra por fora da avatar (antes ia em linha reta e passava por
+  dentro dela: a lente "colada no tronco" do calçadão do Rio) e a troca dura o mesmo tempo de relógio em qualquer
+  máquina (antes era uma fração por quadro: a 1 quadro por segundo levava vários segundos).
+- **Duas vistas com nome.** Todo jogo tem de quatro a seis câmeras com nome nos três idiomas, além da automática; o
+  campo do Fashion Sports, quatro.
 
 ## 5. O que falta
 
@@ -194,8 +218,11 @@ recusadas (com o motivo) e o conjunto adotado. O conjunto é o da tabela acima; 
   ponto a ponto, de trás e do alto (3,4 m), para o piso à frente mostrar os cones de visão; o seletor troca para a
   diagonal de cima e a aérea. O Labirinto e Around the World ainda usam a câmera de exploração sobre salas em que o
   avatar não anda (`MUNDOS.md`).
-- A câmera não desvia de móveis: um móvel alto entre a lente e o avatar pode cobrir a roupa em algumas câmeras de
-  algumas salas. Só a câmera do preparo foi conferida sala a sala (por teste: dentro das paredes e de corpo inteiro).
+- A lente não entra mais em móvel nem em pessoa de cena (seção 4), mas um móvel alto **entre** a lente e o avatar ainda
+  pode cobrir a roupa em algumas câmeras escolhidas à mão (o giro de 360° em salas com móveis atrás); a automática foi
+  conferida de corpo inteiro nos dez jogos da auditoria.
+- A abertura do salão (`opening-camera.tsx`) e a transmissão automática do Fashion Sports não passam pelo desvio de
+  obstáculos; a transmissão fica sempre fora do campo, acima de 2 m (conferido por teste).
 - Nas salas com teto (todas menos as de céu aberto), a câmera aérea fica presa abaixo do teto e vira um close de cima
   do avatar (visto em foto no Piloto Favorito e na Boutique). Ela só mostra o lugar inteiro no estádio e nas salas de
   céu aberto; nas outras, falta abrir a lente (campo de visão maior) quando o teto limita a altura.

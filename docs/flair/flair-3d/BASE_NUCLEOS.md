@@ -198,6 +198,60 @@ de 0,52 milhão e 210 chamadas por quadro. A medida no navegador sem placa de v�
 compartilhada estava sem memória e o renderizador de software caiu em todas as salas, inclusive na Boutique, que
 antes rodava.
 
+**Orçamento por cena e qualidade que cai sozinha (19/11/2026).** Cada cena tem a conta própria de triângulos e de
+chamadas de desenho por quadro (`lib/flair/nucleos/scene/orcamento-da-cena.ts`), com o teto de cada nível de qualidade
+(`lib/flair/nucleos/scene/qualidade.ts`): ALTA 180 mil triângulos e 140 chamadas; MÉDIA 80 mil e 75; BAIXA 35 mil e 36.
+Como não há placa de vídeo no ambiente, a conta é conferida por teste, que monta a sala, os objetos de cena e as pessoas
+leves e conta a geometria de verdade, com a passada de sombra (`components/flair/nucleos/scene/orcamento.test.tsx`; o
+corpo inteiro entra pela medida de cima: 20 mil triângulos e 13 chamadas, o dobro quando faz sombra).
+
+- **Corpos inteiros por cena** (`CORPOS_CHEIOS_DA_CENA`): Passarela 2, Dress Fighter 1, Dress the Star 2, Fashion
+  Detective 3, Boutique 2, Around the World 2, Fashion Sports (quadra) 3, Batalha 2; Filme e Labirinto, nenhum. Quem
+  reage sozinho por roteiro (a cliente, a oponente) entra além do limite. O resto é corpo leve.
+- **Corpo leve instanciado.** Todas as pessoas leves de uma cena são cinco malhas instanciadas
+  (`components/flair/nucleos/gente/corpo-leve.ts`): cinco chamadas para a plateia inteira (antes, cinco por pessoa), sem
+  sombra. A pessoa leve agora reage (palmas, braços para cima, cabeça baixa, senta e levanta) pela matriz dela
+  (`lib/flair/nucleos/gente/leve.ts`), reposta a cada dois quadros só enquanto o gesto mexe.
+- **A reação de grupo não promove a plateia.** Antes, quando o resultado mandava "a plateia aplaude", todos entravam
+  "na jogada" e ganhavam corpo inteiro ao mesmo tempo (14 moldes montando no meio do resultado da Passarela). Agora só
+  quem reage sozinho por roteiro é promovido.
+- **Qualidade.** A cena mede os próprios quadros (`components/flair/nucleos/scene/scene-quality.tsx`): abaixo de 24
+  quadros por segundo desce um nível, abaixo de 10 vai ao mais baixo; os 3 primeiros segundos (a carga) não contam; não
+  volta a subir na mesma partida. Quando o navegador informa que desenha por software (SwiftShader, llvmpipe), já larga
+  no nível baixo. MÉDIA: 1 ponto de tela por pixel, um corpo inteiro de figurante, só a avatar faz sombra. BAIXA: 0,75
+  ponto por pixel (7 vezes menos pontos que a tela de 2), sem sombra, nenhum corpo inteiro de figurante. Na transmissão do
+  Fashion Sports: todos os jogadores inteiros na ALTA, 6 na MÉDIA, 2 na BAIXA (quem está na jogada, sempre).
+- **Carregamento adiado.** Quem está fora do quadro da câmera não monta corpo inteiro (o molde nem é carregado) e não
+  anima o esqueleto; entra quando a câmera o mostra.
+- **Sombra.** Figurante de corpo inteiro só faz sombra a até 7 m da câmera ou na jogada, e só na qualidade alta.
+
+Conta por cena, em milhares de triângulos / chamadas de desenho por quadro (a avatar incluída). "Antes" = 15/11, com até
+5 corpos inteiros, todos com sombra, e cinco chamadas por pessoa leve; "antes, no resultado" = a plateia inteira
+promovida a corpo inteiro pela reação de grupo.
+
+| Cena | Pessoas (antes → agora) | Antes | Antes, no resultado | Agora, ALTA | MÉDIA | BAIXA |
+| --- | --- | --- | --- | --- | --- | --- |
+| Passarela | 14 → 14 | 253 mil / 214 | 610 mil / 403 | 134 mil / 96 | 75 mil / 57 | 30 mil / 27 |
+| Dress Fighter | 1 → 7 | 88 mil / 67 | 88 mil / 67 | 90 mil / 72 | 70 mil / 59 | 27 mil / 28 |
+| Dress the Star | 7 → 7 | 247 mil / 180 | 326 mil / 222 | 128 mil / 97 | 68 mil / 58 | 26 mil / 27 |
+| Personagem de Filme | 0 → 0 | 46 mil / 56 | 46 mil / 56 | 46 mil / 56 | 46 mil / 56 | 23 mil / 30 |
+| Fashion Detective (porta da gala) | 4 → 4 | 212 mil / 157 | 212 mil / 157 | 172 mil / 136 | 73 mil / 71 | 28 mil / 34 |
+| Boutique 3D | 1 → 3 | 86 mil / 71 | 86 mil / 71 | 126 mil / 102 | 66 mil / 63 | 24 mil / 30 |
+| O Labirinto | 0 → 0 | 46 mil / 43 | 46 mil / 43 | 46 mil / 43 | 46 mil / 43 | 23 mil / 24 |
+| Around the World | 3 → 3 | 165 mil / 122 | 165 mil / 122 | 125 mil / 101 | 66 mil / 62 | 24 mil / 30 |
+| Fashion Sports (quadra) | 15 → 18 | 255 mil / 223 | 652 mil / 433 | 177 mil / 126 | 78 mil / 61 | 32 mil / 29 |
+| Batalha de Looks | 7 → 10 | 246 mil / 176 | 325 mil / 218 | 128 mil / 93 | 68 mil / 54 | 27 mil / 25 |
+
+A Boutique e o Dress Fighter sobem um pouco na qualidade alta porque ganharam gente (vendedora e outra cliente; a
+torcida do beco); nas outras duas qualidades caem. O campo da transmissão do Fashion Sports, sem os jogadores
+(`components/flair/esporte/estadio.test.tsx`): futebol 180 mil triângulos e 112 chamadas (488 pessoas na arquibancada e
+nos bancos); basquete 52 mil / 24, vôlei 40 mil / 19, tênis 57 mil / 19, corrida 129 mil / 22, skate 67 mil / 19 — nestas
+cinco a torcida era um bloco por pessoa (de 46 a 166 malhas) e agora é gente leve instanciada.
+
+**Não medido na tela.** Estes números são a geometria que a cena manda por quadro, contada por teste. Os quadros por
+segundo de verdade (com e sem placa de vídeo) não foram medidos nesta rodada: a máquina não tem placa de vídeo nem
+memória para o navegador com desenho por software.
+
 Um jogador humano custa cerca de 40 mil triângulos por quadro com a passada de sombra (de 6 para 10 jogadores: +162 mil).
 O orçamento de 60 mil triângulos das salas não vale para o estádio: a gente tem conta própria
 (`triangulosComGente`, `triangulosDaSalaComGente` em `lib/flair/nucleos/scene/budget.ts`). A fluidez num celular não foi
