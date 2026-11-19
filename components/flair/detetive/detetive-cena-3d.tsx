@@ -12,8 +12,10 @@ import type { Look3dPiece } from "@/components/three/common";
 import { NucleoAvatar, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { Elenco3D } from "@/components/flair/nucleos/gente/elenco-3d";
 import { Sala3D } from "@/components/flair/detetive/sala-3d";
+import { agora as relogioDaCena } from "@/components/flair/nucleos/scene/stage-context";
 import { noCone } from "@/lib/flair/detetive/acoes";
-import { ELENCO_DAS_SALAS, pessoaDoPapel } from "@/lib/flair/detetive/elenco";
+import { pessoaDoPapel } from "@/lib/flair/detetive/elenco";
+import { elencoDaCena } from "@/lib/flair/detetive/reacao-do-elenco";
 import type { Retrato, VigiaDaSala } from "@/lib/flair/detetive/types";
 import { DURACAO_DA_TOMADA, tomadaDaCena } from "@/lib/flair/detetive/camera-da-cena";
 import { cameraEmUso } from "@/lib/flair/nucleos/camera/jogos";
@@ -119,17 +121,22 @@ function Alerta({ v }: { v: VigiaDaSala }) {
 function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, semente, cutscene }: Omit<DetetiveCena3DProps, "rotulo">) {
   /** onde o avatar está e para onde olha: começa virado para o fundo da sala (a câmera fica atrás, do lado da porta) */
   const alvo = useRef({ x: 0, z: 0, giro: 180 });
-  const elenco = ELENCO_DAS_SALAS[r.sala] ?? [];
+  // o elenco da sala, já com a reação à acusação (o final ou o álibi que o servidor mandou)
+  const elenco = useMemo(() => elencoDaCena({ sala: r.sala, final: r.final, cutscene: r.cutscene }), [r.sala, r.final, r.cutscene]);
+  const reacaoDesde = useRef({ chave: "", t: 0 });
   const pessoas = useMemo(() => {
     const m = new Map<string, PessoaDoElenco>();
     for (const v of r.layout.vigias) m.set(v.id, pessoaDoPapel(semente, v.id, v.papel));
-    for (const [papel] of elenco) m.set(`${r.sala}-${papel}`, pessoaDoPapel(semente, papel, papel));
+    for (const { papel } of elenco) m.set(`${r.sala}-${papel}`, pessoaDoPapel(semente, papel, papel));
     return m;
   }, [r.sala, r.layout.vigias, elenco, semente]);
   const prontos = useRef(new Set<string>());
   const mostrados = useRef(new Map<string, { x: number; z: number }>());
   const aqui = r.layout.pontos.find((p) => p.id === r.ponto) ?? { x: 0, z: 0 };
   const atores = (): AtorDeCena[] => {
+    // o gesto da reação começa quando o desfecho chega (e não recomeça a cada quadro)
+    const chave = `${r.final ?? ""}|${r.cutscene ?? ""}`;
+    if (reacaoDesde.current.chave !== chave) reacaoDesde.current = { chave, t: relogioDaCena() };
     const out: AtorDeCena[] = r.layout.vigias.map((v) => {
       const antes = mostrados.current.get(v.id) ?? { x: v.x, z: v.z };
       // quem persegue corre até o novo lugar; os outros andam
@@ -140,7 +147,9 @@ function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, sement
       const andando = Math.hypot(v.x - agora.x, v.z - agora.z) > 0.05;
       return { id: v.id, x: agora.x, z: agora.z, giro: (v.olhar * Math.PI) / 180, anim: movimentoDoVigia(v, andando), velocidade: andando ? (persegue ? 3.2 : 1.2) : 0, naJogada: v.temBolso || !!v.modo && v.modo !== "RONDA" };
     });
-    for (const [papel, x, z, giro] of elenco) out.push({ id: `${r.sala}-${papel}`, x, z, giro: (giro * Math.PI) / 180, anim: "idle", velocidade: 0 });
+    for (const p of elenco) {
+      out.push({ id: `${r.sala}-${p.papel}`, x: p.x, z: p.z, giro: (p.giro * Math.PI) / 180, anim: p.anim, velocidade: 0, gesto: p.gesto, gestoDesde: reacaoDesde.current.t, naJogada: p.anim !== "idle" || !!p.gesto });
+    }
     return out;
   };
   return (
