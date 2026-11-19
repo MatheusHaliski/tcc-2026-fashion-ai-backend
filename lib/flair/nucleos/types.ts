@@ -3,6 +3,7 @@
  * A API devolve só códigos; os textos ficam nos catálogos de i18n (flair3d.nucleo.<CODIGO>.* e flair3d.ui.*).
  */
 import type { NucleoResultado } from "@/lib/flair/nucleos/types-resultado";
+import type { RetomadaSalva } from "@/lib/flair/nucleos/progresso";
 
 export const NUCLEO_CODIGOS = [
   "PASSARELA",
@@ -137,13 +138,15 @@ export interface NucleoPartida {
   abertura?: Record<string, unknown> | null;
   /** partida retomada: o look que já estava vestido (vaga → carta) */
   vestidas?: Record<string, string> | null;
+  /** partida retomada na preparação: o look em montagem que o servidor guardou */
+  rascunho?: RetomadaSalva["rascunho"];
 }
 
 /**
  * A partida que ficou em andamento ("Continuar partida"): a abertura dela, o look vestido e o ponto em que parou — o
  * resultado de agora (EM_ACAO) ou a última entrega (ABERTA, rodada em etapas), refeitos pelo servidor.
  */
-export interface NucleoRetomada {
+export interface NucleoRetomada extends RetomadaSalva {
   partida: NucleoPartida;
   vestidas: Record<string, string> | null;
   resultado: NucleoResultado | null;

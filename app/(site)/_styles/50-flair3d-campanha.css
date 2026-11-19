@@ -1,0 +1,85 @@
+/* Campanha do jogo (components/flair/nucleos/nucleo-campanha.tsx): a história, as estrelas do jogo e a trilha; as marcas
+   de rodada vencida e fechada na escolha de rodada (nucleo-rounds.tsx); e a linha "Salvo no servidor" (nucleo-salvo.tsx). */
+.n3d-campanha {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-left: 3px solid var(--thread);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.n3d-campanha p,
+.n3d-campanha h2 {
+  margin: 0;
+}
+
+.n3d-campanha.is-compacta {
+  margin: 8px 0;
+  background: var(--surface-2);
+}
+
+.n3d-campanha-enredo {
+  font-style: italic;
+}
+
+.n3d-campanha-total {
+  font-weight: 600;
+}
+
+.n3d-campanha-total .n3d-star {
+  color: var(--chalk);
+}
+
+.n3d-campanha-trilha {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.n3d-campanha-trilha li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.n3d-campanha-trilha li.is-vencida {
+  color: inherit;
+  font-weight: 600;
+}
+
+.n3d-stars.n3d-round-stars .n3d-star {
+  font-size: 1.1rem;
+}
+
+.n3d-round-estado {
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.n3d-round.is-vencida {
+  border-color: var(--thread);
+}
+
+.n3d-round.is-fechada {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.n3d-round.is-fechada:hover {
+  border-color: var(--line-soft);
+  outline: none;
+}
+
+.n3d-salvo {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-caption);
+}

@@ -10,6 +10,7 @@ import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoResourceWindow } from "@/components/flair/nucleos/nucleo-resource-window";
 import type { CardZoom } from "@/components/flair/nucleos/use-card-zoom";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { NucleoSalvo } from "@/components/flair/nucleos/nucleo-salvo";
 import type { BoardEstado } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
@@ -125,6 +126,7 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
       />
       <div className="n3d-band-foot">
         {dica && <p className="n3d-hint" role="status" data-testid="nucleo-hint">{dica}</p>}
+        <NucleoSalvo />
         {resposta && !estado.sel.resposta && abaDaResposta >= 0 && (
           <button type="button" className="btn btn-sm" onClick={() => props.onAba(abaDaResposta)}>
             {daResposta("go")}
