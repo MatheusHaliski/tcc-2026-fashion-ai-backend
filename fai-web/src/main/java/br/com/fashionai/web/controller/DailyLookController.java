@@ -1,6 +1,8 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.DailyLookCalendarService;
+import br.com.fashionai.application.service.DailyLookContextService;
 import br.com.fashionai.application.service.DailyLookService;
 import br.com.fashionai.domain.model.enums.DailyLookFeedback;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,23 +13,44 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.Year;
 import java.util.List;
 import java.util.Map;
 
 /**
  * RF6/RF10 — histórico dos Looks do Dia, look anterior aguardando feedback e o feedback que alimenta as preferências.
  * A marcação do Look do Dia e a aba com o painel de Hype ficam em {@link LookbookController}; mesma tag do OpenAPI.
+ * Look do Dia Vivido F1: sugestão do Contexto do Dia e o calendário (look + contexto + coerência com os Momentos do dia).
  */
 @RestController
 @Tag(name = "RF6 — Lookbook, Look do Dia e HypeScore (painel em v2; agrupamentos por similaridade)")
 public class DailyLookController {
     private final DailyLookService dailyLooks;
+    private final DailyLookContextService context;
+    private final DailyLookCalendarService calendar;
 
-    public DailyLookController(DailyLookService dailyLooks) {
+    public DailyLookController(DailyLookService dailyLooks, DailyLookContextService context, DailyLookCalendarService calendar) {
         this.dailyLooks = dailyLooks;
+        this.context = context;
+        this.calendar = calendar;
+    }
+
+    @GetMapping("/api/me/daily-looks/suggest-context")
+    @Operation(summary = "Look do Dia Vivido — Sugerir o Contexto do Dia (propósitos, marcas do calendário; clima só com local)")
+    public Map<String, Object> suggestContext(CurrentUser user, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                              @RequestParam(required = false) Double latitude, @RequestParam(required = false) Double longitude,
+                                              @RequestParam(required = false) String city) {
+        return context.suggest(user, date, latitude, longitude, city);
+    }
+
+    @GetMapping("/api/me/daily-looks/calendar")
+    @Operation(summary = "Look do Dia Vivido — Calendário: dias com Look do Dia, contexto e coerência com os Momentos do dia")
+    public Map<String, Object> calendar(CurrentUser user, @RequestParam(required = false) Integer year, @RequestParam(required = false) Integer month) {
+        return calendar.calendar(user, year == null ? Year.now(br.com.fashionai.application.service.FaiPointsService.ZONE).getValue() : year, month);
     }
 
     @GetMapping("/api/me/daily-looks")

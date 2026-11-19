@@ -40,19 +40,30 @@ public class DailyLookService {
     private final UserRepository users;
     private final Guard guard;
     private final ApplicationEventPublisher events;
+    private final DailyLookContextService context;
 
     public DailyLookService(DailyLookRepository dailyLooks, SchemeItemRepository schemeItems, UserRepository users, Guard guard,
-                            ApplicationEventPublisher events) {
+                            ApplicationEventPublisher events, DailyLookContextService context) {
         this.dailyLooks = dailyLooks;
         this.schemeItems = schemeItems;
         this.users = users;
         this.guard = guard;
         this.events = events;
+        this.context = context;
     }
 
-    /** Registra (ou substitui) o Look do Dia da data. Peças indisponíveis não viram Look do Dia (RF33.CA05). */
-    @Transactional(noRollbackFor = ApiException.class)   // chamada em try/catch pelo SchemeService: recusa vira aviso, não erro 500
+    /** Registra (ou substitui) o Look do Dia da data sem Contexto do Dia (Autopiloto, Copilot, Espelho, Vista-me). */
+    @Transactional(noRollbackFor = ApiException.class)
     public DailyLook register(CurrentUser user, Scheme scheme, DailyLookSource source, LocalDate date) {
+        return register(user, scheme, source, date, null);
+    }
+
+    /**
+     * Registra (ou substitui) o Look do Dia da data. Peças indisponíveis não viram Look do Dia (RF33.CA05). Com
+     * {@code ctx} (Look do Dia Vivido F1), grava o propósito, a nota e o público e congela as marcas do calendário.
+     */
+    @Transactional(noRollbackFor = ApiException.class)   // chamada em try/catch pelo SchemeService: recusa vira aviso, não erro 500
+    public DailyLook register(CurrentUser user, Scheme scheme, DailyLookSource source, LocalDate date, DailyLookContext ctx) {
         guard.requireOwner(user, scheme.getUser().getId(), "scheme:" + scheme.getId());
         List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(scheme.getId());
         List<WardrobeItem> unavailable = items.stream().map(SchemeItem::getWardrobeItem)
@@ -66,6 +77,9 @@ public class DailyLookService {
         boolean replaced = dl.getScheme() != null && !dl.getScheme().getId().equals(scheme.getId());
         dl.setScheme(scheme);
         dl.setSource(source);
+        if (ctx != null) {
+            context.freeze(dl, ctx, user, day);
+        }
         dailyLooks.save(dl);
         scheme.setLookDoDia(true);
         if (!replaced || dl.getId() == null) {
@@ -152,6 +166,7 @@ public class DailyLookService {
         m.put("feedbackAt", dl.getFeedbackAt());
         m.put("materialized", dl.getMaterializedFrom() != null);
         m.put("weekPlanDayId", dl.getWeekPlanDayId());
+        m.put("context", context.view(dl));
         return m;
     }
 }

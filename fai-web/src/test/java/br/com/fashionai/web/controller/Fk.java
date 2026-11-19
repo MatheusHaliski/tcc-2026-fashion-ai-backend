@@ -26,6 +26,10 @@ final class Fk {
 
     static final List<Call> calls = new ArrayList<>();
 
+    /** Dublês de serviço: o arquivo gerado e os separados por domínio (ServiceFakesLookDoDia). */
+    static final List<Class<?>> FAKES = Stream.of(ServiceFakes.class, ServiceFakesLookDoDia.class)
+            .flatMap(h -> Arrays.stream(h.getDeclaredClasses())).toList();
+
     private Fk() {
     }
 
@@ -44,7 +48,7 @@ final class Fk {
         if (type.isInterface()) return proxy(type);
         if (type.isPrimitive()) return primitive(type);
         if (type == String.class) return "";
-        for (Class<?> fake : ServiceFakes.class.getDeclaredClasses()) {
+        for (Class<?> fake : FAKES) {
             if (fake.getSuperclass() == type) {
                 try {
                     Constructor<?> k = fake.getDeclaredConstructor();

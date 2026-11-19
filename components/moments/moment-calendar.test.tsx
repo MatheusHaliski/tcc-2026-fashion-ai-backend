@@ -95,4 +95,28 @@ describe("MomentCalendar", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Linha do tempo" }));
     expect(screen.getByText("Nenhum Momento neste ano.")).toBeTruthy();
   });
+
+  it("looks do dia: card único por dia na grade e na semana, com o contexto e a coerência com o Momento do dia", () => {
+    const ctx = { purpose: "ENTREVISTA", purposeLabel: "Entrevista", purposeNote: "agência", audience: "TRABALHO", audienceLabel: "Trabalho", sensitive: false, privateOnly: false, marks: [{ kind: "WEEKDAY" as const, code: "SUNDAY", label: "Domingo", weekend: true }] };
+    const looks = [
+      { date: "2026-10-25", coherent: true, moments: [{ momentId: "m1", code: "halloween", label: "Halloween", type: "CULTURAL", nature: "CULTURAL", icon: "🎃", match: 72, interpretation: "dark", reasons: [], coherent: true }, { momentId: "m2", code: "a1", label: "Alfa", type: "EVENT", nature: "CULTURAL", match: 12, coherent: false }], dailyLook: { id: "d1", date: "2026-10-25", source: "MANUAL", schemeId: "s1", title: "Look preto e laranja", coverImageUrl: "/media/x.png", context: ctx } },
+      { date: "2026-10-27", coherent: false, moments: [{ momentId: "m1", code: "halloween", label: "Halloween", type: "CULTURAL", nature: "CULTURAL", icon: "🎃" }], dailyLook: { id: "d2", date: "2026-10-27", source: "MANUAL", schemeId: "s2", title: "Look de casa", context: { ...ctx, purpose: "CUIDADO", purposeLabel: "Dia de cuidado", purposeNote: null, audienceLabel: null, sensitive: true } } },
+    ];
+    renderApp(<MomentCalendar data={DATA} receivedAt={Date.now()} looks={looks} />);
+    const grid = screen.getByRole("grid", { name: "Calendário do mês" });
+    const today = grid.querySelector("[aria-current=date]") as HTMLElement;
+    const card = within(today).getByRole("article", { name: "Look do Dia de 25 de out." });
+    expect(within(card).getByRole("link", { name: /Look preto e laranja/ }).getAttribute("href")).toBe("/schemes/s1");
+    expect(card.textContent).toContain("Entrevista");
+    expect(card.textContent).toContain("Coerente com Halloween · 72");
+    expect(card.textContent).not.toContain("Alfa");   // compacto: só o primeiro Momento
+    expect(screen.getByText("2 dias com Look do Dia · 1 em sintonia com um Momento")).toBeTruthy();
+    // semana: card cheio, com todos os Momentos; dia de cuidado sem comparação
+    fireEvent.click(screen.getByRole("radio", { name: "Semana" }));
+    const full = screen.getByRole("article", { name: "Look do Dia de 25 de out." });
+    expect(full.textContent).toContain("Fora do tema de Alfa · 12");
+    const care = screen.getByRole("article", { name: "Look do Dia de 27 de out." });
+    expect(care.textContent).toContain("Dia de cuidado: sem comparação com o Momento.");
+    expect(care.textContent).not.toContain("Coerente");
+  });
 });

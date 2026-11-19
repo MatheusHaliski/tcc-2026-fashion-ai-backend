@@ -7,9 +7,8 @@ import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { HypeBadge } from "@/components/hype/hype-badge";
-
-/** Registro de Look do Dia como o backend devolve (DailyLookService.view). */
-interface DailyLookRow { id: string; date: string; source: string; schemeId: string; title: string; coverImageUrl?: string | null; feedback?: string | null }
+import { DailyLookContextChips } from "@/components/daily-look/context-chips";
+import type { DailyLookRow } from "@/lib/daily-look/types";
 
 const FEEDBACK: Record<string, string> = { ADOREI: "lookbookTabs.adorei", NAO_USEI: "lookbookTabs.nao_usei", NAO_GOSTEI: "lookbookTabs.nao_gostei" };
 
@@ -37,11 +36,12 @@ function Row({ r, vez }: { r: DailyLookRow; vez: number }) {
         {vez > 1 && ` · ${t("history.timeline.again", { n: vez })}`}
       </span>
       <HypeBadge state={hypeViewState(hype.summary, hype)} summary={hype.summary} />
+      <DailyLookContextChips context={r.context} compact className="history-context" />
     </li>
   );
 }
 
-/** Histórico → Timeline: os looks do dia em ordem, com a avaliação e o Hype atual de cada um. */
+/** Histórico → Timeline: os looks do dia em ordem, com a avaliação, o Hype atual e o Contexto do Dia congelado de cada um. */
 export function HistoryTimeline() {
   const { t, fmtDate } = useI18n();
   const { data, loading, error, reload } = useApi<DailyLookRow[]>((signal) => api.get("/api/me/daily-looks", { signal }), []);

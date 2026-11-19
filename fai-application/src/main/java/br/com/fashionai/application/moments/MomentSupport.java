@@ -122,21 +122,9 @@ abstract class MomentSupport {
         return Instant.now(ctx.clock);
     }
 
-    /** Quem pode ver: PUBLIC = todos; GROUP/INVITE_ONLY/FRIENDS/PRIVATE = criador, membros do grupo e administração. */
+    /** Quem pode ver (regra em {@link MomentRules#canSee}). */
     boolean canSee(CurrentUser viewer, Moment m) {
-        if (m.getStatus() == MomentStatus.DRAFT || m.getStatus() == MomentStatus.CANCELLED) {
-            return viewer != null && (viewer.admin() || viewer.id().equals(m.getCreatedByUserId()));
-        }
-        if (m.getVisibility().discoverable()) {
-            return true;
-        }
-        if (viewer == null) {
-            return false;
-        }
-        if (viewer.admin() || viewer.id().equals(m.getCreatedByUserId())) {
-            return true;
-        }
-        return m.getGroupId() != null && isMember(viewer.id(), m.getGroupId());
+        return MomentRules.canSee(viewer, m, this::isMember);
     }
 
     boolean isMember(UUID userId, UUID teamId) {
@@ -206,7 +194,7 @@ abstract class MomentSupport {
         return m.getType() == MomentType.FLAIR_EVENT || m.getType() == MomentType.PRIVATE_GROUP || m.getGroupId() != null;
     }
 
-    MomentMatch.Context contextOf(Moment m, MomentChallenge chosen) {
+    static MomentMatch.Context contextOf(Moment m, MomentChallenge chosen) {
         List<String> styles = new ArrayList<>(Json.csv(m.getStyleTags()));
         List<String> colors = new ArrayList<>(Json.csv(m.getColorTags()));
         List<String> occasions = new ArrayList<>(Json.csv(m.getOccasionTags()));

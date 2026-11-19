@@ -390,9 +390,9 @@ public class LookbookService {
 
     /** Marca um esquema salvo como Look do Dia (registro datado, source = manual). */
     @Transactional
-    public Map<String, Object> markDailyLook(CurrentUser user, UUID schemeId) {
+    public Map<String, Object> markDailyLook(CurrentUser user, UUID schemeId, DailyLookContext context) {
         Scheme s = schemeService.owned(user, schemeId);
-        DailyLook dl = dailyLooks.register(user, s, DailyLookSource.MANUAL, LocalDate.now(FaiPointsService.ZONE));
+        DailyLook dl = dailyLooks.register(user, s, DailyLookSource.MANUAL, LocalDate.now(FaiPointsService.ZONE), context);
         return dailyLooks.view(dl);
     }
 

@@ -114,7 +114,7 @@ class LookbookServiceTest {
         assertThat(lookbook.setPanelVersion(ana, HypeScorePanelVersion.PASSARELA)).containsEntry("panelVersion", "PASSARELA");
         assertThat(lookbook.setPanelVersion(ana, null)).containsEntry("panelVersion", "SPOTLIGHT_CLASSICO");
         assertThat(LookbookService.panelVersions()).hasSize(6);
-        lookbook.markDailyLook(ana, world.lookIds(world.me).get(1));
+        lookbook.markDailyLook(ana, world.lookIds(world.me).get(1), null);
     }
 
     @Test

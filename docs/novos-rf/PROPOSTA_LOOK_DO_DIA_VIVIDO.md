@@ -1,6 +1,7 @@
 # Proposta — Look do Dia Vivido: o look que a pessoa realmente vestiu, no dia em que viveu
 
-**Estado:** proposta (ideia), sem número oficial; confirmar no Trello antes de publicar o cartão.
+**Estado:** F1 implementada em 19/11/2026 (contexto no registro + Look do Dia no calendário de Momentos, ver §11); F2 e F3
+propostas. Sem número oficial; confirmar no Trello antes de publicar o cartão.
 **Toca:** `schemes.look_do_dia` (hoje um booleano), `daily_looks`, Momentos, Autopiloto (`week_plan_days`),
 Clima (`WeatherService`), HypeScore v2 (`LOOK_WORN`), FAI Points (`LOOK_DO_DIA`), Passarela 3D.
 **Data:** 2026-11-19.
@@ -166,3 +167,25 @@ transforma a roupa em motivo de conversa entre pessoas que estão passando pela 
 Cada fase respeita `docs/refactoring/LINE_RULES.md`: `DailyLookService` já está perto do limite; o contexto entra em
 `DailyLookContextService` (sugestão e congelamento das marcas) e `DailyLookLivingTodayQuery` (carrossel), com
 `DailyLookService` só delegando.
+
+## 11. F1 entregue (19/11/2026) — contexto no registro e o look no calendário de Momentos
+
+Pedido da dona na mesma data: integrar ao calendário de Momentos (Momentos, desafios de comunidade, eventos), que passa a
+exibir **um card único de vestimenta por dia**, com o Contexto do Dia e a coerência com o Momento daquele dia.
+
+| Camada | O que entrou |
+|---|---|
+| Banco | `V104__daily_look_context.sql`: `daily_looks.purpose`, `purpose_note`, `audience`, `calendar_marks_json` (aditivo, tudo nulo) e o índice `(purpose, look_date)` para a F2. |
+| Domínio | `DailyLookPurpose` (`sensitive()` = CUIDADO), `DailyLookAudience` (`privateOnly()` = SO_EU); campos em `DailyLook`; `DailyLookRepository.findByUserIdAndLookDateBetweenOrderByLookDate`. |
+| Aplicação | `DailyLookContext` (o que a pessoa conta), `DailyLookContextService` (sugestão, congelamento das marcas e leitura), `DailyLookPurposeWords` (palavras do plano da semana → propósito), `MomentDays` (Momentos de um dia + MomentMatch do look), `DailyLookCalendarService` (dias do ano com look, contexto e coerência). `DailyLookService.register(…, ctx)` e `view()` com `context`. `LookbookService.markDailyLook(user, schemeId, context)`. |
+| API | `POST /api/me/daily-look` aceita `context {purpose, purposeNote, audience, latitude, longitude, city}`; `GET /api/me/daily-looks/suggest-context?date&latitude&longitude&city`; `GET /api/me/daily-looks/calendar?year[&month]`. Toda leitura do Look do Dia (`/api/me/daily-looks`, aba, histórico) passa a trazer `context` (nulo quando não há). |
+| Telas | "Marcar como Look do Dia" abre **"Hoje eu vesti isso para…"** (`components/daily-look/context-picker.tsx`): 3 chips sugeridos, lista com os demais, para quem, frase curta e as marcas do dia; dá para registrar sem contexto. Histórico › Timeline mostra o contexto congelado (`context-chips.tsx`). O calendário de Momentos (`/moments?tab=calendar`) recebe os Looks do Dia do ano: na grade do mês um card compacto por dia (capa, título, propósito, "Coerente com X · 72"); na semana o card cheio com todos os Momentos do dia (`moment-day-look.tsx`); legenda "N dias com Look do Dia · M em sintonia com um Momento". |
+| Regras | Marcas congeladas no dia: WEEKDAY, SEASON (hemisfério pelo país da pessoa), WEATHER (só com local informado; nada da posição é guardado), MOMENT (um por Momento visível que toca a data, inclusive desafios e eventos). Coerência = MomentMatch ≥ 40 (mesma régua de MOMENT_LOOK). Propósito **CUIDADO**: o Momento aparece como marca, sem match, sem coerência. Público **SO_EU**: só no perfil da pessoa (a F2 respeita isso no carrossel). |
+| Testes | `DailyLookContextServiceTest`, `DailyLookCalendarServiceTest`, `DailyLookServiceTest` (inalterado, contexto nulo), contrato de rotas por tag atualizado (`rotas-por-tag-r60a.txt`); frontend: `context-picker.test.tsx`, `expanded-card-daily-look.test.tsx` (extraído do arquivo congelado), `history-timeline.test.tsx`, `moment-calendar.test.tsx`. |
+
+Fora da F1 (ficam para F2/F3): carrossel "quem mais está vivendo isso hoje", `outcomeNote` no feedback, filtro da Passarela por
+propósito, fase pessoal como Momento PERSONAL, "mesma data, outro ano". A aba Look do Dia (`lookbook-tabs.tsx`, arquivo
+congelado) ainda não mostra o contexto: exige extrair uma responsabilidade antes. Feriados nacionais não entram como marca
+(não há tabela); os Momentos oficiais cobrem as datas do calendário. A tela não pede a posição do navegador: a API já
+aceita `latitude/longitude/city` para a marca de clima, a captura fica para a F2.
+

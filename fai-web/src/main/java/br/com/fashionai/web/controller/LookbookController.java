@@ -1,6 +1,7 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.DailyLookContext;
 import br.com.fashionai.application.service.LookbookService;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
@@ -103,13 +104,14 @@ public class LookbookController {
         return lookbook.setPanelVersion(user, body.version());
     }
 
-    public record DailyLookRequest(@NotNull UUID schemeId) {
+    /** {@code context} (Look do Dia Vivido F1): propósito, nota, público e local para a marca de clima — tudo opcional. */
+    public record DailyLookRequest(@NotNull UUID schemeId, DailyLookContext context) {
     }
 
     @PostMapping("/api/me/daily-look")
-    @Operation(summary = "RF6.CA05 — Marcar esquema como Look do Dia")
+    @Operation(summary = "RF6.CA05 — Marcar esquema como Look do Dia (com o Contexto do Dia opcional)")
     public Map<String, Object> markDailyLook(CurrentUser user, @RequestBody DailyLookRequest body) {
-        return lookbook.markDailyLook(user, body.schemeId());
+        return lookbook.markDailyLook(user, body.schemeId(), body.context());
     }
 
     @GetMapping("/api/me/capsule")

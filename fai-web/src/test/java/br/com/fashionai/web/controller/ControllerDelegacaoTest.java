@@ -136,7 +136,7 @@ class ControllerDelegacaoTest {
         if (type == ClientIpResolver.class) return new ClientIpResolver("", "X-Edge-Secret");
         if (type == boolean.class) return false;
         if (type.isInterface()) return Fk.proxy(type);
-        for (Class<?> fake : ServiceFakes.class.getDeclaredClasses()) {
+        for (Class<?> fake : Fk.FAKES) {
             if (fake.getSuperclass() == type) {
                 try {
                     Constructor<?> k = fake.getDeclaredConstructor();

@@ -6,6 +6,7 @@ import br.com.fashionai.domain.model.Moment;
 import br.com.fashionai.domain.model.MomentParticipation;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.enums.MomentParticipationStatus;
+import br.com.fashionai.domain.model.enums.MomentStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -73,6 +75,26 @@ final class MomentRules {
      * Elegível para o que fica PÚBLICO sem um observador (ranking final, vencedor e destaques da Memória): em Momentos
      * públicos, só looks PUBLIC; em Momentos de grupo ou não descobríveis, todos (só membros/administração os veem).
      */
+    /**
+     * Quem pode ver (§28): PUBLIC = todos; GROUP/INVITE_ONLY/FRIENDS/PRIVATE = criador, membros do grupo e administração;
+     * DRAFT/CANCELLED só o criador e a administração. {@code isMember(userId, teamId)} consulta o grupo FLAIR.
+     */
+    static boolean canSee(CurrentUser viewer, Moment m, BiPredicate<UUID, UUID> isMember) {
+        if (m.getStatus() == MomentStatus.DRAFT || m.getStatus() == MomentStatus.CANCELLED) {
+            return viewer != null && (viewer.admin() || viewer.id().equals(m.getCreatedByUserId()));
+        }
+        if (m.getVisibility().discoverable()) {
+            return true;
+        }
+        if (viewer == null) {
+            return false;
+        }
+        if (viewer.admin() || viewer.id().equals(m.getCreatedByUserId())) {
+            return true;
+        }
+        return m.getGroupId() != null && isMember.test(viewer.id(), m.getGroupId());
+    }
+
     static boolean publiclyListed(Moment m, Scheme sc) {
         return sc != null && (m.getGroupId() != null || !m.getVisibility().discoverable() || sc.getVisibility() == Visibility.PUBLIC);
     }

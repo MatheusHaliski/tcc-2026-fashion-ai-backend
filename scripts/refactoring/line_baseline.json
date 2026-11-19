@@ -57,7 +57,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/expanded-card.test.tsx": {
-   "max": 605,
+   "max": 583,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/flair/modes-paineis.test.tsx": {
@@ -577,7 +577,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-web/src/test/java/br/com/fashionai/web/controller/ServiceFakes.java": {
-   "max": 4310,
+   "max": 4163,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/api/client.ts": {

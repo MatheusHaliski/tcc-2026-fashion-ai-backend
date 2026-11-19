@@ -31,4 +31,6 @@ public interface DailyLookRepository extends JpaRepository<DailyLook, UUID> {
 
     /** Passarela 3D — quem registrou Look do Dia na última semana (materializa o de hoje de forma preguiçosa). */
     List<DailyLook> findByLookDateGreaterThanEqual(LocalDate since);
+    /** Look do Dia Vivido — calendário do ano/mês da pessoa (dias com registro, em ordem). */
+    List<DailyLook> findByUserIdAndLookDateBetweenOrderByLookDate(UUID userId, LocalDate from, LocalDate to);
 }

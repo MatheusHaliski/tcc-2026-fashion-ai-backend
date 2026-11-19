@@ -7,6 +7,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { MomentsCalendar, MomentsHome, MyMoments } from "@/lib/moments/types";
+import type { DailyLookCalendar } from "@/lib/daily-look/types";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton, Tabs } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
@@ -33,6 +34,8 @@ function MomentsInner() {
   const year = new Date().getFullYear();
   const cal = useApi<MomentsCalendar>((signal) => api.get(`/api/moments/calendar?year=${year}&tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}`, { signal, anonymous: !user }), [year, !!user], { enabled: tab === "calendar" });
   const mine = useApi<MyMoments>((signal) => api.get("/api/me/moments", { signal }), [], { enabled: tab === "mine" && !!user });
+  // Look do Dia Vivido: os Looks do Dia do ano entram no calendário como cards por dia (só da própria pessoa)
+  const looks = useApi<DailyLookCalendar>((signal) => api.get(`/api/me/daily-looks/calendar?year=${year}`, { signal }), [year], { enabled: tab === "calendar" && !!user });
   const [at, setAt] = useState(Date.now()); useEffect(() => { if (home.data) setAt(Date.now()); }, [home.data]);
   const h = home.data;
   const tabs = [{ id: "now" as Tab, label: t("moments.tab.now"), count: h?.active.length }, { id: "upcoming" as Tab, label: t("moments.tab.upcoming"), count: h?.upcoming.length }, { id: "calendar" as Tab, label: t("moments.tab.calendar") },
@@ -54,7 +57,7 @@ function MomentsInner() {
         </div>
       ))}
       {tab === "upcoming" && (home.loading ? <Skeleton className="h-48" /> : h && (h.upcoming.length === 0 ? <EmptyState title={t("moments.upcoming_empty")} hint={t("moments.upcoming_empty_hint")} /> : <div className="grid-looks">{h.upcoming.map((m) => <MomentCard key={m.id} m={m} receivedAt={at} />)}</div>))}
-      {tab === "calendar" && (cal.error ? <ErrorState error={cal.error} onRetry={cal.reload} /> : cal.loading || !cal.data ? <Skeleton className="h-96" /> : <MomentCalendar data={cal.data} receivedAt={at} />)}
+      {tab === "calendar" && (cal.error ? <ErrorState error={cal.error} onRetry={cal.reload} /> : cal.loading || !cal.data ? <Skeleton className="h-96" /> : <MomentCalendar data={cal.data} receivedAt={at} looks={looks.data?.days} />)}
       {tab === "mine" && user && (mine.error ? <ErrorState error={mine.error} onRetry={mine.reload} /> : mine.loading || !mine.data ? <Skeleton className="h-64" /> : (
         <div className="grid gap-4">
           <div className="flex flex-wrap gap-2"><Badge tone="thread">{t("moments.mine_badges", { n: mine.data.badges.length })}</Badge><Badge>{t("moments.mine_points", { n: mine.data.summary.points })}</Badge><Link href="/lookbook?tab=moments" className="btn btn-sm">{t("moments.see_timeline")}</Link></div>

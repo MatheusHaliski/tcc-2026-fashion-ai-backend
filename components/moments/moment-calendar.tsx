@@ -5,8 +5,10 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { dayKey, daysInMonth, todayIn, touchesDay, weekOf, weekday, ymd } from "@/lib/moments/time";
 import { momentIcon, momentStyle } from "@/lib/moments/theme";
 import type { MomentCard as MomentCardData, MomentsCalendar } from "@/lib/moments/types";
+import type { DailyLookCalendarDay } from "@/lib/daily-look/types";
 import { Button, SegmentPicker, cn } from "@/components/ui";
 import { MomentCard } from "./moment-shared";
+import { DayLookCard } from "./moment-day-look";
 
 export type CalendarView = "year" | "month" | "week" | "timeline";
 
@@ -14,9 +16,12 @@ export type CalendarView = "year" | "month" | "week" | "timeline";
  * CALENDÁRIO VISUAL (§19, §48, §49): ANO (12 meses em lista), MÊS (grade de dias com faixas), SEMANA e LINHA DO TEMPO.
  * Nada depende só de cor: cada faixa tem nome e ícone; a grade é uma tabela com cabeçalhos; tudo navegável pelo teclado.
  * No celular, o padrão é MÊS/SEMANA — o ano inteiro só no desktop ou como lista.
+ * `looks` (Look do Dia Vivido §4): os Looks do Dia da pessoa no ano, um card por dia na grade do mês e na semana, com o
+ * Contexto do Dia e a coerência com os Momentos daquele dia.
  */
-export function MomentCalendar({ data, receivedAt, initialView = "month", initialMonth }: { data: MomentsCalendar; receivedAt: number; initialView?: CalendarView; initialMonth?: number }) {
+export function MomentCalendar({ data, receivedAt, initialView = "month", initialMonth, looks }: { data: MomentsCalendar; receivedAt: number; initialView?: CalendarView; initialMonth?: number; looks?: DailyLookCalendarDay[] }) {
   const { t, fmtDate } = useI18n();
+  const lookByDay = useMemo(() => new Map((looks ?? []).map((d) => [d.date, d] as const)), [looks]);
   const today = todayIn(data.timezone); const { y: ty, m: tm, d: td } = ymd(today);
   const [view, setView] = useState<CalendarView>(initialView);
   const [month, setMonth] = useState(initialMonth ?? (data.year === ty ? tm : 1));
@@ -33,8 +38,8 @@ export function MomentCalendar({ data, receivedAt, initialView = "month", initia
         {view === "week" && <div className="ml-auto flex items-center gap-1"><Button size="sm" variant="ghost" onClick={() => setWeekAnchor(shift(weekAnchor, -7))} aria-label={t("moments.calendar.prev_week")}>‹</Button><Button size="sm" onClick={() => setWeekAnchor(today)}>{t("moments.calendar.today")}</Button><Button size="sm" variant="ghost" onClick={() => setWeekAnchor(shift(weekAnchor, 7))} aria-label={t("moments.calendar.next_week")}>›</Button></div>}
       </div>
       <p className="type-caption text-muted mb-2">{t("moments.calendar.timezone_note", { tz: data.timezone })}</p>
-      {view === "month" && <MonthGrid year={data.year} month={month} items={items} today={today} dayName={dayName} />}
-      {view === "week" && <WeekList days={weekOf(...(Object.values(ymd(weekAnchor)) as [number, number, number]))} items={items} today={today} dayName={dayName} receivedAt={receivedAt} />}
+      {view === "month" && <MonthGrid year={data.year} month={month} items={items} today={today} dayName={dayName} looks={lookByDay} />}
+      {view === "week" && <WeekList days={weekOf(...(Object.values(ymd(weekAnchor)) as [number, number, number]))} items={items} today={today} dayName={dayName} receivedAt={receivedAt} looks={lookByDay} />}
       {view === "year" && <YearList year={data.year} months={data.months} monthName={monthName} today={today} />}
       {view === "timeline" && <Timeline items={items} receivedAt={receivedAt} />}
       <p className="sr-only">{t("moments.calendar.today_is", { date: fmtDate(`${ty}-${String(tm).padStart(2, "0")}-${String(td).padStart(2, "0")}T12:00:00Z`, { timeZone: "UTC" }) })}</p>
@@ -52,8 +57,11 @@ function shift(key: string, days: number): string {
   return dayKey(x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate());
 }
 
-function MonthGrid({ year, month, items, today, dayName }: { year: number; month: number; items: MomentCardData[]; today: string; dayName: (k: string) => string }) {
+type LookMap = Map<string, DailyLookCalendarDay>;
+
+function MonthGrid({ year, month, items, today, dayName, looks }: { year: number; month: number; items: MomentCardData[]; today: string; dayName: (k: string) => string; looks: LookMap }) {
   const { t } = useI18n();
+  const monthLooks = [...looks.values()].filter((d) => d.date.startsWith(dayKey(year, month, 1).slice(0, 7)));
   const n = daysInMonth(year, month); const lead = weekday(year, month, 1);
   const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: n }, (_, i) => i + 1)];
   while (cells.length % 7) cells.push(null);
@@ -77,6 +85,7 @@ function MonthGrid({ year, month, items, today, dayName }: { year: number; month
                       {here.slice(0, 3).map((m) => <li key={m.id} style={momentStyle(m.theme)}><Link href={`/moments/${m.slug}`} className="moment-day-pill" title={m.name}><span aria-hidden>{momentIcon(m.theme)}</span><span className="moment-day-pill-name">{m.name}</span></Link></li>)}
                       {here.length > 3 && <li className="type-caption text-muted">+{here.length - 3}</li>}
                     </ul>}
+                    {looks.get(key) && <DayLookCard day={looks.get(key)!} compact />}
                   </td>
                 );
               })}
@@ -86,11 +95,12 @@ function MonthGrid({ year, month, items, today, dayName }: { year: number; month
       </table>
       {inMonth.length > 0 && <ul className="moment-month-legend" aria-label={t("moments.calendar.legend")}>{inMonth.map((m) => <li key={m.id} style={momentStyle(m.theme)}><Link href={`/moments/${m.slug}`} className="moment-day-pill"><span aria-hidden>{momentIcon(m.theme)}</span>{m.name} <span className="type-caption text-muted">{m.time.localStart.slice(8)}–{m.time.localEnd.slice(8)}</span></Link></li>)}</ul>}
       {inMonth.length === 0 && <p className="type-body-sm text-muted mt-2">{t("moments.calendar.empty_month")}</p>}
+      {monthLooks.length > 0 && <p className="moment-month-looks">{t("momentDayLook.legend", { days: monthLooks.length, coherent: monthLooks.filter((d) => d.coherent).length })}</p>}
     </>
   );
 }
 
-function WeekList({ days, items, today, dayName, receivedAt }: { days: string[]; items: MomentCardData[]; today: string; dayName: (k: string) => string; receivedAt: number }) {
+function WeekList({ days, items, today, dayName, receivedAt, looks }: { days: string[]; items: MomentCardData[]; today: string; dayName: (k: string) => string; receivedAt: number; looks: LookMap }) {
   const { t } = useI18n();
   const seen = new Set<string>();
   return (
@@ -101,6 +111,7 @@ function WeekList({ days, items, today, dayName, receivedAt }: { days: string[];
           <li key={key} className={cn("moment-week-day", key === today && "is-today")} aria-current={key === today ? "date" : undefined}>
             <p className="type-label">{dayName(key)} <b className="tabular">{key.slice(8)}</b>{key === today ? ` · ${t("moments.calendar.today")}` : ""}</p>
             {here.length === 0 ? <p className="type-caption text-faint">—</p> : <div className="grid gap-2">{here.map((m) => { const first = !seen.has(m.id); seen.add(m.id); return first ? <MomentCard key={m.id} m={m} receivedAt={receivedAt} compact /> : <p key={m.id} className="type-caption text-muted" style={momentStyle(m.theme)}><span aria-hidden>{momentIcon(m.theme)}</span> {m.name} · {t("moments.calendar.continues")}</p>; })}</div>}
+            {looks.get(key) && <DayLookCard day={looks.get(key)!} />}
           </li>
         );
       })}
