@@ -15,6 +15,11 @@ documento de design: tudo aqui é **proposta** para a dona do projeto aprovar, t
 | [04-roda-de-recursos.md](04-roda-de-recursos.md) | Roda de recursos: armas, munição, mobilidade e kits de vida |
 | [05-vestimentas.md](05-vestimentas.md) | Vestimentas em formato de card: mecânica, superpoder, recurso único e onde são obrigatórias |
 | [cutscenes/](cutscenes/) | Roteiros das cutscenes de abertura e das cenas curtas de cada história |
+| [06-mundo-de-vitrea.md](06-mundo-de-vitrea.md) | A cidade sob Sterling Vale: lacres, classes de licença, leis e vida diária |
+| [07-categorias-de-vestimenta.md](07-categorias-de-vestimenta.md) | Seis categorias de vestimenta, subcategorias, posição, material e química |
+| [08-personagens-e-trajes.md](08-personagens-e-trajes.md) | Personagens fictícios, chefes e inimigos, cada um com traje próprio |
+| [09-objetos-lojas-e-itens.md](09-objetos-lojas-e-itens.md) | Objetos do cenário, lojas, itens característicos e animações dos kits |
+| [10-identidade-do-jogo.md](10-identidade-do-jogo.md) | Assinaturas do jogo, dose dos efeitos, som e mistura de inimigos por fase |
 
 ## Conceito
 
