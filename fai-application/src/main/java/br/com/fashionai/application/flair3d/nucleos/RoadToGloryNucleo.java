@@ -1,20 +1,16 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
-import br.com.fashionai.application.flair3d.Avatares;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
-import br.com.fashionai.application.flair3d.Definicao.Deck;
-import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dBeleza;
+import br.com.fashionai.application.flair3d.Flair3dJogadaDeCena;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
-import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
-import br.com.fashionai.application.flair3d.makeup.FlairMakeUpBrief;
-import br.com.fashionai.application.flair3d.makeup.FlairMakeUpBriefs;
+import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.ArrayList;
@@ -24,37 +20,34 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Núcleo 5 — brief "Ensaio de Verão", 25 por regra: todas as peças de ocasião casual ou praia; todas de material leve;
- * batom da família coral; acabamento do batom gloss ou cetim. Sem deck (guarda-roupa liberado). As mesmas regras valem
- * no brief ENSAIO_VERAO do MAKE UP ({@link #regras}).
+ * Núcleo 5 — Road to Glory. O look (roupa e maquiagem, 25 por regra do brief da rodada: {@link RoadToGloryLook}) e, depois
+ * dele, a sessão de fotos: a fotógrafa pede uma luz (a cor sai da semente) e a pessoa joga uma carta do guarda-roupa
+ * que não está no look; a cor da carta é a luz que acende (tabela ROAD_TO_GLORY de Flair3dCores), e a cor pedida soma 10
+ * ({@link Flair3dJogadaDeCena}, o mesmo Decorator da Passarela). Quando as regras somam mais de 100, o evento TETO diz
+ * que a nota fica em 100. Sem deck (guarda-roupa liberado). As 4 regras do Ensaio de Verão ({@link #regras}) valem também
+ * no brief ENSAIO_VERAO do MAKE UP.
  */
 public class RoadToGloryNucleo implements Flair3dNucleo {
     public static final double POR_REGRA = 25;
     public static final Set<String> OCASIOES = Set.of("casual", "beach");
-    /** As outras rodadas: os briefs do MAKE UP além do Ensaio de Verão, com as mesmas regras de lá. */
-    static final List<FlairMakeUpBrief> BRIEFS = FlairMakeUpBriefs.TODOS.stream().filter(b -> !"ENSAIO_VERAO".equals(b.codigo())).toList();
+    public static final String TETO = "TETO";
+
+    private final Flair3dNucleo look = new RoadToGloryLook();
+    private final Flair3dNucleo sessao = new Flair3dJogadaDeCena(look);
 
     @Override
     public String codigo() {
-        return "ROAD_TO_GLORY";
+        return look.codigo();
     }
 
     @Override
     public int numero() {
-        return 5;
+        return look.numero();
     }
 
     @Override
     public Definicao definicao() {
-        return Definicao.cartas(codigo(), numero(),
-                Definicao.objetivo("ENSAIO_VERAO", new Regra("OCASIAO", POR_REGRA), new Regra("MATERIAL_LEVE", POR_REGRA),
-                        new Regra("BATOM_CORAL", POR_REGRA), new Regra("ACABAMENTO_BATOM", POR_REGRA)),
-                List.of(Definicao.CARTAS, Definicao.MAQUIAGEM), Definicao.VAGAS, Deck.SEM_DECK, false)
-                .comAreas(Definicao.AREAS)
-                .comRodadas(BRIEFS.stream().map(b -> new Definicao.Rodada(b.codigo(), new Definicao.Objetivo(b.codigo(), b.regras()), List.of(), List.of()))
-                        .toArray(Definicao.Rodada[]::new))
-                .comAvatares(new Avatares(List.of(new Avatares.Solo(Avatares.PROPRIO, Avatares.PROTAGONISTA, 1),
-                        new Avatares.Solo(Avatares.MODELO_CASA, Avatares.PROTAGONISTA, 1)), null));
+        return look.definicao();
     }
 
     /** As 4 regras do Ensaio de Verão sobre as peças vestidas e a maquiagem. */
@@ -67,29 +60,30 @@ public class RoadToGloryNucleo implements Flair3dNucleo {
         return out;
     }
 
+    /** O look e a sessão de fotos; a prévia ({@link #previa}) mostra só a nota do look, sem abrir a sessão. */
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
-        for (FlairMakeUpBrief b : BRIEFS) {
-            if (b.codigo().equals(contexto.rodada())) {
-                return b.pontuar(entrega, contexto);
-            }
-        }
-        Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
-        List<RegraResultado> regras = regras(vestidas.values(), entrega);
-        Flair3dRateio rateio = new Flair3dRateio(vestidas).dividirEntre(regras.get(0).pontos(), c -> true)
-                .dividirEntre(regras.get(1).pontos(), c -> true);
-        return Resultado.somando(regras, List.of()).comCartas(rateio.lista());
+        return comTeto(sessao.pontuar(entrega, contexto));
+    }
+
+    @Override
+    public Resultado previa(Entrega entrega, Contexto contexto) {
+        return look.pontuar(entrega, contexto);
     }
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        List<Efeito> out = new ArrayList<>();
-        if (Flair3dPecas.temOcasiao(carta, OCASIOES)) {
-            out.add(new Efeito("OCASIAO", POR_REGRA));
+        return look.efeitos(carta, contexto);
+    }
+
+    /** A conta da nota quando o look perfeito ainda acerta a luz: as regras somam 110 e a nota fica em 100. */
+    static Resultado comTeto(Resultado r) {
+        double soma = r.regras().stream().mapToDouble(RegraResultado::pontos).sum();
+        if (!r.fecha() || soma <= 100) {
+            return r;
         }
-        if (Flair3dPecas.leve(carta)) {
-            out.add(new Efeito("MATERIAL_LEVE", POR_REGRA));
-        }
-        return out;
+        List<Evento> eventos = new ArrayList<>(r.eventos());
+        eventos.add(new Evento(TETO, Map.of("soma", soma)));
+        return new Resultado(r.pontos(), r.estrelas(), r.resultado(), r.regras(), eventos, r.cartas(), r.status());
     }
 }

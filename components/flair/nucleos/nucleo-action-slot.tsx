@@ -31,7 +31,7 @@ interface Props {
 
 export function NucleoActionSlot({ nucleo, variante, acao, acionou, cartas, vestidas, vagas, ocupado, erro, acaoDe, itens, onAcionar }: Props) {
   return (
-    <NucleoActionPanel nucleo={nucleo} variante={variante} passos={acao.passos} mostrados={acao.mostrados} onPular={acao.pular} esperando={acao.aberta}>
+    <NucleoActionPanel nucleo={nucleo} variante={variante} passos={acao.passos} mostrados={acao.mostrados} onPular={acao.pular} esperando={acao.aberta} luta={acao.luta}>
       {acao.tipo && (
         <NucleoTrigger
           tipo={acao.tipo}

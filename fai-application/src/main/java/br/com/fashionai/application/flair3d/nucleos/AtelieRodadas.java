@@ -5,6 +5,7 @@ import br.com.fashionai.application.flair3d.Definicao.Rodada;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dZonas;
 import br.com.fashionai.application.flair3d.Resultado;
+import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.ArrayList;
@@ -24,8 +25,11 @@ final class AtelieRodadas {
     static final double POR_REGRA = 25;
     static final Set<String> SEM_COR = Set.of("Preto", "Branco", "Cinza");
 
-    /** Uma regra da rodada: o código e o teste sobre as zonas entregues. */
-    record Condicao(String codigo, Predicate<Map<String, Entrega.Zona>> teste) {
+    /**
+     * Uma regra da rodada: o código e o teste sobre as zonas entregues. Regra {@code conjunto} fala da peça inteira (quantas
+     * cores, a cor dominante, tudo fosco): só vale com todas as zonas da rodada pintadas.
+     */
+    record Condicao(String codigo, Predicate<Map<String, Entrega.Zona>> teste, boolean conjunto) {
     }
 
     /** Uma rodada de zonas: código, zonas que se pintam e as regras. */
@@ -43,13 +47,14 @@ final class AtelieRodadas {
                     z.put(nome, entrega.zonas().get(nome));
                 }
             });
+            boolean inteira = pintadas(z, zonas);
             List<RegraResultado> out = new ArrayList<>();
-            condicoes.forEach(c -> out.add(RegraResultado.de(c.codigo(), c.teste().test(z), valor)));
+            condicoes.forEach(c -> out.add(RegraResultado.de(c.codigo(), (inteira || !c.conjunto()) && c.teste().test(z), valor)));
             return out;
         }
 
         Resultado pontuar(Entrega entrega) {
-            return Resultado.somando(conferir(entrega), List.of());
+            return Resultado.somando(conferir(entrega), faltas(entrega, zonas));
         }
     }
 
@@ -61,7 +66,27 @@ final class AtelieRodadas {
     }
 
     static Condicao regra(String codigo, Predicate<Map<String, Entrega.Zona>> teste) {
-        return new Condicao(codigo, teste);
+        return new Condicao(codigo, teste, false);
+    }
+
+    /** Regra da peça inteira: só vale com todas as zonas da rodada pintadas. */
+    static Condicao conjunto(String codigo, Predicate<Map<String, Entrega.Zona>> teste) {
+        return new Condicao(codigo, teste, true);
+    }
+
+    /**
+     * A explicação da nota de uma peça incompleta: o evento ZONAS_SEM_PINTAR diz quantas zonas ficaram sem cor (zona só com
+     * acabamento conta como sem pintar). Vazio com a peça inteira pintada.
+     */
+    static List<Evento> faltas(Entrega entrega, List<String> zonas) {
+        long faltam = zonas.stream().filter(zona -> Flair3dZonas.hex(entrega.zonas().get(zona)) == null).count();
+        if (faltam == 0) {
+            return List.of();
+        }
+        Map<String, Object> valor = new java.util.LinkedHashMap<>();
+        valor.put("faltam", faltam);
+        valor.put("total", zonas.size());
+        return List.of(new Evento("ZONAS_SEM_PINTAR", valor));
     }
 
     static String familia(Map<String, Entrega.Zona> z, String zona) {

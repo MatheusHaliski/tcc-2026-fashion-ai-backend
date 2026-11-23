@@ -66,6 +66,16 @@ export function seloDaCarta(itens: EfeitoItem[] | undefined): EfeitoItem | null 
   return itens?.find(vale) ?? null;
 }
 
+/**
+ * Todos os efeitos da carta neste jogo, na ordem do servidor: os que valem alguma coisa e, no fim, o efeito da cor
+ * (a carta do deck mostrava só o primeiro: auditoria dos jogos, mudança 8).
+ */
+export function selosDaCarta(itens: EfeitoItem[] | undefined): EfeitoItem[] {
+  const cor = efeitoDaCor(itens);
+  const valem = (itens ?? []).filter((i) => vale(i) && i !== cor);
+  return cor ? [...valem, cor] : valem;
+}
+
 /** A carta pontua neste jogo? Sem a resposta dos efeitos, não se afirma nada (null). */
 export function pontua(itens: EfeitoItem[] | undefined): boolean | null {
   if (!itens) return null;

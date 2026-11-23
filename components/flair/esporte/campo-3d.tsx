@@ -1,11 +1,11 @@
 "use client";
 /**
  * O campo da transmissão (o futebol tem o estádio próprio, components/flair/esporte/estadio-3d.tsx): piso, linhas, o que há nas pontas de cada modalidade (traves, cestas, rede no meio, linha de
- * chegada, rampa), a arquibancada do outro lado e as placas da lateral, nas cores do FashionAI (sem marca real). Tudo
- * em primitivas, com as medidas de lib/flair/esporte/campo.ts.
+ * chegada, rampa), a arquibancada do outro lado com a torcida em gente leve instanciada (a mesma do estádio: reage ao
+ * lance) e as placas da lateral, nas cores do FashionAI (sem marca real). Tudo em primitivas, com as medidas de
+ * lib/flair/esporte/campo.ts.
  */
-import { useMemo } from "react";
-import { Estadio3D } from "@/components/flair/esporte/estadio-3d";
+import { Estadio3D, Setor, type Humor } from "@/components/flair/esporte/estadio-3d";
 import { Gol3D, type Batida } from "@/components/flair/esporte/gol-3d";
 import type { Campo } from "@/lib/flair/esporte/campo";
 
@@ -68,46 +68,10 @@ function Pontas({ campo, batida, reduzido }: { campo: Campo; batida: () => Batid
   );
 }
 
-/** Torcida sem rosto: blocos de cor em três degraus, do lado de lá do campo. */
-function Arquibancada({ campo }: { campo: Campo }) {
-  const lugares = useMemo(() => {
-    const out: { x: number; y: number; z: number; cor: string }[] = [];
-    const cores = ["#C6275E", "#1F7A76", "#FBE7EE", "#3A3550", "#F2C230"];
-    const quantos = Math.floor(campo.comprimento / 1.1);
-    for (let degrau = 0; degrau < 3; degrau++) {
-      for (let i = 0; i < quantos; i++) {
-        out.push({ x: -campo.comprimento / 2 + 0.6 + i * 1.1, y: 1.3 + degrau * 0.8, z: -campo.largura / 2 - 3.6 - degrau * 1.1, cor: cores[(i * 3 + degrau * 2) % cores.length] });
-      }
-    }
-    return out;
-  }, [campo]);
-  const z = -campo.largura / 2 - 4.7;
-  return (
-    <group name="arquibancada">
-      {[0, 1, 2].map((d) => (
-        <mesh key={d} position={[0, 0.4 + d * 0.8, z + 1.1 - d * 1.1]} receiveShadow>
-          <boxGeometry args={[campo.comprimento + 4, 0.8, 1.1]} />
-          <meshStandardMaterial color="#2A2633" roughness={0.95} />
-        </mesh>
-      ))}
-      {lugares.map((l, i) => (
-        <mesh key={i} position={[l.x, l.y, l.z]}>
-          <boxGeometry args={[0.5, 0.7, 0.4]} />
-          <meshStandardMaterial color={l.cor} roughness={0.9} />
-        </mesh>
-      ))}
-      <mesh name="placas" position={[0, 0.45, -campo.largura / 2 - 1.6]}>
-        <boxGeometry args={[campo.comprimento + 2, 0.9, 0.12]} />
-        <meshStandardMaterial color="#C6275E" emissive="#C6275E" emissiveIntensity={0.25} />
-      </mesh>
-    </group>
-  );
-}
-
 const SEM_BATIDA = () => null;
 
-/** `batida`: a bola na rede (só no futebol); `reduzido`: a rede estufa sem balançar. */
-export function Campo3D({ campo, batida = SEM_BATIDA, reduzido = false }: { campo: Campo; batida?: () => Batida | null; reduzido?: boolean }) {
+/** `batida`: a bola na rede (só no futebol); `reduzido`: a rede estufa sem balançar; `humor`: o que a torcida faz agora. */
+export function Campo3D({ campo, batida = SEM_BATIDA, reduzido = false, humor, camisa }: { campo: Campo; batida?: () => Batida | null; reduzido?: boolean; humor?: Humor; camisa?: string }) {
   if (campo.alvo === "trave") {
     return (
       <group name="campo">
@@ -115,7 +79,7 @@ export function Campo3D({ campo, batida = SEM_BATIDA, reduzido = false }: { camp
           <planeGeometry args={[campo.comprimento + 30, campo.largura + 30]} />
           <meshStandardMaterial color="#20242B" roughness={1} />
         </mesh>
-        <Estadio3D campo={campo} reduzido={reduzido} />
+        <Estadio3D campo={campo} reduzido={reduzido} humor={humor} camisa={camisa} />
         <Pontas campo={campo} batida={batida} reduzido={reduzido} />
       </group>
     );
@@ -138,7 +102,7 @@ export function Campo3D({ campo, batida = SEM_BATIDA, reduzido = false }: { camp
       <Linha x={0} z={0} largura={0.1} fundo={l} cor={campo.linha} />
       {campo.alvo === "chegada" && [1, 2, 3].map((i) => <Linha key={i} x={0} z={-l / 2 + (i * l) / 4} largura={c} fundo={0.06} cor={campo.linha} />)}
       <Pontas campo={campo} batida={batida} reduzido={reduzido} />
-      <Arquibancada campo={campo} />
+      <Setor x={0} z={-l / 2 - 2.6} giro={0} comprimento={c + 4} semente={4} reduzido={reduzido} humor={humor} />
     </group>
   );
 }

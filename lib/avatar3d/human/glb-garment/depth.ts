@@ -94,6 +94,9 @@ export function depthAt(d: DepthField, x: number, y: number): { front: number; b
   return Number.isNaN(front) ? null : { front, back: d.back[j * d.w + i] };
 }
 
+/** Quanto o avesso da peça fica debaixo do direito depois da colisão (m). */
+export const INNER_GAP = 0.006;
+
 /** Rótulo interno do tronco acima da axila: ali o ombro (pele do braço) também é coberto pelo tronco da peça. */
 const YOKE = 9;
 
@@ -122,7 +125,9 @@ export function torsoZone(f: BodyFrame, groups: Groups) {
  * lisas), os três vértices ficam fora da pele e o triângulo ainda atravessa uma curva do corpo.
  * Devolve o maior deslocamento (m).
  */
-export function pressOut(p: Float32Array, part: Int8Array, index: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number): number {
+export function pressOut(p: Float32Array, part: Int8Array, index: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number, inner?: Uint8Array): number {
+  // o avesso da peça (inner) para um pouco antes do direito: os dois no mesmo z piscam um por cima do outro
+  const gap = (v: number) => (inner?.[v] ? Math.max(0.002, clearance - INNER_GAP) : clearance);
   const fields = new Map<number, DepthField | null>();
   const fieldOf = (label: number) => {
     // a pala e o tronco valem para os dois lados do corpo; só manga e perna olham a pele do próprio lado
@@ -144,7 +149,7 @@ export function pressOut(p: Float32Array, part: Int8Array, index: ArrayLike<numb
     if (!skin) continue;
     const z = p[v * 3 + 2];
     half[v] = z >= (skin.front + skin.back) / 2 ? 1 : -1;
-    const want = half[v] > 0 ? Math.max(z, skin.front + clearance) : Math.min(z, skin.back - clearance);
+    const want = half[v] > 0 ? Math.max(z, skin.front + gap(v)) : Math.min(z, skin.back - gap(v));
     most = Math.max(most, Math.abs(want - z));
     p[v * 3 + 2] = want;
   }
@@ -156,7 +161,8 @@ export function pressOut(p: Float32Array, part: Int8Array, index: ArrayLike<numb
       const skin = skinAt(part[a], (p[a * 3] + p[b * 3] + p[c * 3]) / 3, (p[a * 3 + 1] + p[b * 3 + 1] + p[c * 3 + 1]) / 3);
       if (!skin) continue;
       const z = (p[a * 3 + 2] + p[b * 3 + 2] + p[c * 3 + 2]) / 3;
-      const short = half[a] > 0 ? skin.front + clearance - z : z - (skin.back - clearance);
+      const room = Math.min(gap(a), gap(b), gap(c));
+      const short = half[a] > 0 ? skin.front + room - z : z - (skin.back - room);
       if (short > 0) for (const v of [a, b, c]) lift[v] = Math.max(lift[v], short);
     }
     for (let v = 0; v < part.length; v++) {

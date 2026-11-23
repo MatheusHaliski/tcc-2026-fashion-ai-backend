@@ -23,8 +23,10 @@ import java.util.Optional;
  *   <li>EM_ACAO (a ação começou: a investigação, a partida por cartas, a carta Especial): o resultado de agora;</li>
  *   <li>ABERTA com entregas (rodadas em etapas, o espelho do Labirinto): a última entrega como "tentativa", com a etapa
  *   da vez e as etapas já fechadas;</li>
- *   <li>ABERTA sem entrega, nos jogos com deck: o deck já escolhido, para voltar à preparação.</li>
+ *   <li>ABERTA sem entrega, nos jogos com deck: o deck já escolhido e o look que estava em montagem
+ *   ({@link Flair3dRascunho}), para voltar à preparação com as peças nas vagas.</li>
  * </ul>
+ * A resposta diz também o que está guardado ({@code salvo}) e quando ({@code atualizadaEm}).
  * Só a partida da própria pessoa; partida fechada (ENTREGUE) não volta.
  */
 @Service
@@ -87,6 +89,9 @@ public class Flair3dRetomada {
         Resultado agora = e == null ? null : n.pontuar(e, contexto).comStatus(m.getStatus());
         out.put("resultado", Flair3dMatch.EM_ACAO.equals(m.getStatus()) ? agora : null);
         out.put("tentativa", Flair3dMatch.ABERTA.equals(m.getStatus()) ? agora : null);
+        Entrega rascunho = Flair3dMatch.ABERTA.equals(m.getStatus()) ? Flair3dRascunho.doAndamento(a, Flair3dDeck.ids(m.getDeckJson())) : null;
+        out.put("rascunho", rascunho);
+        out.put("salvo", Flair3dRascunho.salvo(m, e, a, rascunho));
         out.put("atualizadaEm", quando(m).toString());
         return out;
     }

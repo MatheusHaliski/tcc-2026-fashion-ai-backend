@@ -49,7 +49,7 @@ O que vale para todos os jogos e não se repete abaixo:
 | Dress Fighter e outros jogos de ação com câmera própria (ringue de lado, etc.) | parcial: o Dress Fighter tem a luta de lado (arcade, automática da ação) e a câmera por trás do ombro; os outros jogos de ação continuam com as câmeras de `CAMERAS.md` |
 | Começo, desenvolvimento e final de cada partida (critério da dona: abertura, cutscenes nos momentos-chave, final com cutscene que segue o desfecho) | parcial: nos 15 jogos a partida abre com a câmera da abertura (plano aberto do lugar, lateral, enquadramento do avatar), o avatar entrando até a marca e as pessoas de cena recebendo pelo papel (a plateia aplaude, a torcida comemora, o oponente dá a guarda, a cliente acena, o segurança barra) (`lib/flair/nucleos/scene/opening.ts`), e a premissa do jogo em duas linhas sobre o deck, uma vez por partida (no cartão do briefing, quando há); o meio é a sequência automática de cada jogo (desfile e reação da plateia, luta em rounds, a cliente que prova, a porta do espelho, o mapa); o final é a reação de quem está em cena ao desfecho e um texto de fim no resultado, um para cada desfecho (bom, médio, ruim: `lib/flair/nucleos/narrativa.ts`, `flair3d.narrativa.<JOGO>.final.*`). Visto em fotos: a abertura e o final da Boutique e do Dress Fighter. Falta: cutscene com câmera própria no final (hoje é a câmera do resultado do jogo); progressão de história entre rodadas além do Detective |
 | Rodada que as cartas não cumprem nunca fica em silêncio (auditoria dos jogos de 15/11, defeito 4: temas Brasil, Noite e Clássico, pedido da Boutique, marca brasileira do Rio, arenas do Dress Fighter) | feito: na escolha do deck, para a coleção e para as cartas escolhidas, e no começo da partida (premissa ou briefing), o aviso diz quando nenhuma carta pontua ou qual regra de peça nenhuma carta cumpre (`lib/flair/nucleos/viabilidade.ts`, a partir dos selos que o servidor já manda); o Dress Fighter passou a ser vencível jogando bem com cartas Bronze (a luta lance a lance) | não (testes da tela) |
-| Cartas como ação além de vestir (critério da dona: a escolha da carta move a mecânica) | feito na Passarela, Dress the Star, Boutique e Around the World: a jogada de cena (`Flair3dJogadaDeCena`, decorator do núcleo): o look avaliado deixa a partida EM_ACAO com o pedido de cor da cena sorteado da semente; a pessoa joga uma carta do deck fora do look e a cor dela dispara a ação de cena da tabela de `Flair3dCores` (flashes, holofote, a cliente que sorri, o sol da tarde) na cena; a cor pedida soma 10 (regra JOGADA_DE_CENA no resultado); seguir sem carta fecha como estava. Já eram por carta: Fashion Sports, Fashion Detective e a carta Especial do Dress Fighter. Ficam de fora: Filme e Labirinto (a decisão é a resposta da rodada), Batalha (a soma contra o adversário) e os jogos de zonas | não (testes do servidor e da tela) |
+| Cartas como ação além de vestir (critério da dona: a escolha da carta move a mecânica) | feito na Passarela, Dress the Star, Boutique e Around the World: a jogada de cena (`Flair3dJogadaDeCena`, decorator do núcleo): o look avaliado deixa a partida EM_ACAO com o pedido de cor da cena sorteado da semente; a pessoa joga uma carta do deck fora do look e a cor dela dispara a ação de cena da tabela de `Flair3dCores` (flashes, holofote, a cliente que sorri, o sol da tarde) na cena; a cor pedida soma 10 (regra JOGADA_DE_CENA no resultado); seguir sem carta fecha como estava. Já eram por carta: Fashion Sports, Fashion Detective e a carta Especial do Dress Fighter. Em 19/11 o Road to Glory ganhou a mesma jogada como sessão de fotos (a fotógrafa pede a luz; `RoadToGloryNucleo` compõe o decorator sobre `RoadToGloryLook`). Ficam de fora: Filme e Labirinto (a decisão é a resposta da rodada), Batalha (a soma contra o adversário) e os jogos de zonas (não têm cartas: a decisão é a cor e o acabamento de cada zona) | não (testes do servidor e da tela) |
 | Salvamento da partida (critério da dona: a partida em andamento sobrevive a recarregar, sair e voltar, sair da conta e entrar) | feito nos 15 jogos: `GET /api/flair/3d/nucleos/{codigo}/em-andamento` devolve a partida mais recente que não fechou, refeita da semente e do que o servidor gravou (`Flair3dRetomada`); a tela abre com "Continuar partida" (no Fashion Detective, "Continuar desta sala") e volta ao ponto: a investigação no último passo, a partida por cartas na jogada da vez, a rodada em etapas na etapa da vez com as anteriores fechadas, ou o deck já escolhido. O que a pessoa escolheu na preparação e ainda não entregou fica no navegador: nos jogos de deck, por partida; nos jogos de zonas (Clube, Cantora, Piloto, Super-Herói), por jogo e rodada, com as zonas pintadas e a resposta; no MAKE UP, por brief (roupa e maquiagem); o rascunho sai quando a partida fecha. Partida fechada não volta; carta que saiu do guarda-roupa faz a partida não ser oferecida. Visto só em testes (servidor e tela) |
 
 **Câmeras e avatares hoje, jogo a jogo.** Os 15 jogos usam o sistema de câmeras comum (`CAMERAS.md`): o preparo em
@@ -71,7 +71,7 @@ quer dizer visto em fotos da tela real com a API simulada (sem placa de vídeo);
 | 2 · Dress Fighter | abertura com o oponente em guarda, premissa, atributos no briefing | nove lances em três rounds, cada um com a carta da mão (cor = golpe), barras de vida e a leitura do próximo golpe | nocaute estilizado ou vitória nos rounds; queda só de quem perdeu a luta; texto de fim | a luta parada no lance volta (EM_ACAO) | cada lance é uma carta da mão; combos por sequência de cores | oponente ataca, guarda, esquiva, recua no dano, cai ou comemora no fim (testes) |
 | 3 · Dress the Star | abertura, premissa, estrela e pistas no briefing | entrada no palco, a estrela se revela, luz acende | reverência, plateia pela nota, texto de fim | deck e rodadas em etapas (servidor) | vestir; depois do look avaliado, a jogada de cena: uma carta do deck fora do look dispara a ação da cor dela (a cena pede uma cor sorteada; a cor pedida soma 10, no servidor) | plateia reage |
 | 4 · Personagem de Filme | abertura, premissa, a cena no briefing | claquete, ação, pose de cena, luz do gênero quando o título está certo, corta | texto de fim | deck (servidor) | vestir e escolher o título | — |
-| 5 · Road to Glory (núcleo) | abertura, premissa | flashes e poses para a câmera | texto de fim | rascunho (sem deck) | vestir e maquiar | fotógrafa |
+| 5 · Road to Glory (núcleo) | abertura, premissa | flashes e poses para a câmera; a fotógrafa pede uma luz | texto de fim | rascunho (sem deck) | vestir e maquiar; depois do look avaliado, a sessão de fotos (uma carta do guarda-roupa fora do look acende a luz da cor dela) | fotógrafa |
 | 5b · FLAIR 3D MAKE UP (briefs) | o brief na tela | — | resultado com Prestígio; sem texto de fim próprio | carreira no servidor; rascunho do brief no navegador | vestir e maquiar | — |
 | 6 · Fashion Detective | caso novo: cutscene de abertura com legenda; gala: abertura de cada salão | cutscenes de cada sala, álibi, enigma, vigias | cutscene final pelo desfecho da acusação; texto de fim | "Continuar desta sala" (servidor, cada passo) | toda ação por carta da cor certa | vigias de ronda com cone; bolso; suspeitos na acusação |
 | 7 · Boutique 3D | abertura com a cliente acenando, premissa, pedido no briefing | a peça vai da arara, a cliente prova e gira, espelho acende | a cliente comemora ou devolve; texto de fim | etapas (a cliente da vez) no servidor | vestir; depois do look avaliado, a jogada de cena: uma carta do deck fora do look dispara a ação da cor dela (a cena pede uma cor sorteada; a cor pedida soma 10, no servidor) | cliente que prova e reage (visto) |
@@ -100,6 +100,47 @@ Cada jogo passa a ter **rodadas**: o objetivo mais simples (o da base) e as roda
 | Rodada em etapas (um look por etapa, a partida segue aberta) | `Flair3dPercurso` |
 | Sorteio por nome a partir da semente (a prévia não gasta) | `Contexto.sorteio(nome)` |
 | Escolha da rodada na tela | `components/flair/nucleos/nucleo-rounds.tsx` |
+
+## Campanha, enredo e salvamento (19/11/2026)
+
+Resposta à auditoria dos jogos de 15/11/2026 (`docs/auditoria/AUDITORIA_JOGOS_2026-11-15.md`, mudança 9 e as dimensões
+Enredo, Estrutura da partida e Salvamento). Vale para os núcleos 1, 2, 3, 4, 6, 7, 10, 12, 14 e 15. Nada foi visto na
+tela (máquina sem GPU): está provado por teste do servidor e da tela.
+
+**Campanha (progresso por pessoa e por jogo, no servidor).** `GET /api/flair/3d/nucleos/{codigo}/progresso` devolve as
+rodadas na ordem, com `aberta`, `vencida`, as estrelas e a melhor nota de cada uma, o total do jogo (`estrelas` de
+`maximo`), a última partida fechada e o ponto da história. Sai das partidas fechadas da tabela `flair3d_matches` (V101):
+não há tabela nem migration nova. Regras (`Flair3dCampanha`):
+
+- a primeira rodada está sempre aberta; a seguinte abre quando a anterior é vencida; nada é pago;
+- rodada vencida = partida fechada com pelo menos 1 estrela (60 pontos) e resultado que não seja derrota, empate,
+  reprovado ou "não abre"; nos jogos artísticos sem placar, concluir já conta;
+- as estrelas de uma rodada são as da melhor partida nela; perder depois não tira estrela nem fecha o que já abriu;
+- abrir partida numa rodada fechada devolve 422 `RODADA_BLOQUEADA` com a rodada que a abre (`Flair3dProgresso`,
+  conferido no controller antes de abrir);
+- no Fashion Sports (uma rodada só) a trilha são as modalidades, pela resposta da entrega, todas abertas;
+- a sequência só está ligada nos nove jogos de rodadas desta lista (`Flair3dCampanha.EM_SEQUENCIA`). Os núcleos 5, 8,
+  9, 11 e 13 já recebem as marcas e as estrelas com tudo aberto; para ligar a sequência neles basta incluir o código.
+
+Na tela, a escolha de rodada mostra a campanha em cima (estrelas do jogo, rodadas vencidas) e, em cada rodada, a marca
+de vencida, as estrelas, a melhor nota e a data, ou "Fechada: vença «X» para abrir"; a rodada fechada não se escolhe.
+
+**Enredo.** Cada jogo tem, nos catálogos dos três idiomas (`flair3d.enredo.<JOGO>.*`), uma abertura (quem a pessoa é e
+o que está em jogo), duas transições (`transicao.VENCEU` e `transicao.NAO_VENCEU`) e um fecho. A tela escolhe a frase
+pelo que o servidor gravou (`lib/flair/nucleos/progresso.ts`): a transição cita o nome da última rodada jogada, os
+pontos e as estrelas dela e a rodada que falta vencer; o fecho só aparece com todas as rodadas vencidas. A frase fica
+acima da escolha de rodada (ou do deck, no Fashion Sports) e volta no resultado, já com a partida que acabou de fechar.
+
+**Salvamento.** Além do "Continuar partida" (`Flair3dRetomada`), o look em montagem da preparação passa a ir para o
+servidor (`PUT /api/flair/3d/partidas/{id}/rascunho`, guardado no andamento da partida; não conta tentativa nem muda a
+nota; a entrega seguinte o descarta). A retomada devolve esse look às vagas em qualquer aparelho e lista o que está
+guardado (`salvo`: deck, look entregue, look em montagem, etapas e jogadas) com a data. Durante a partida e no
+resultado, a linha "Salvo no servidor às HH:MM: ..." diz o que o servidor confirmou por último.
+
+**Limites conhecidos.** A sequência pode deixar parada a conta que não tem carta para vencer uma rodada (por exemplo,
+"Treino: tema Brasil" sem peça de marca brasileira): o aviso do deck já diz isso antes de entrar, mas as rodadas
+seguintes ficam fechadas até a vitória. No Fashion Sports não há trava entre modalidades. Os jogos de zonas (8, 9, 11,
+13) e o MAKE UP continuam com o rascunho só no navegador.
 
 ## Resumo
 
@@ -252,8 +293,8 @@ avaliado. A diferença é a câmera 3D com zoom no rosto. Sem deck. Rodadas do g
 e 5 de estilo e temporada (95 a 100).
 
 **No código hoje.** `FlairMakeUpService`, 3 briefs (`makeup/briefs/`: Ensaio de Verão, Entrevista, Primeiro
-Encontro), Prestígio e carreira, tela em `components/flair/make-up/`. O núcleo `ROAD_TO_GLORY` joga só o Ensaio de
-Verão. Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unhas, joias nem zoom nas mãos.
+Encontro), Prestígio e carreira, tela em `components/flair/make-up/`. O núcleo `ROAD_TO_GLORY` joga os três briefs como
+rodadas e termina com a sessão de fotos (carta do guarda-roupa na cor que a fotógrafa pede, +10). Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unhas, joias nem zoom nas mãos.
 
 **[proposta adotada]**
 - Os briefs novos usam só o que a paleta de hoje tem (lábios, bochechas, olhos). Cabelo e unhas dependem de recursos
@@ -266,7 +307,8 @@ Verão. Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unha
 | 3 briefs com nível mínimo, Prestígio e subida de nível | feito | sim (auditoria de 14/11) |
 | Briefs do grupo: Make Monocromática (72), Make Natural (73), Make que Conversa com a Roupa (74) | pendente | não |
 | O núcleo Road to Glory oferece os briefs como rodadas | feito | não |
-| Resultado diz a regra que faltou e o que trocar | pendente | não |
+| Resultado diz a regra que faltou e o que trocar | feito (19/11): o servidor diz qual peça derrubou a regra de "todas as peças" (`FlairMakeUpPecas`), no núcleo e na tela do MAKE UP; o núcleo dá a dica de cada regra | não (testes do servidor e da tela) |
+| Selo de cada carta no brief e aviso da regra de roupa que nenhuma carta cumpre | feito (19/11): o selo é o do brief da rodada (antes era sempre o do Ensaio de Verão); o aviso aparece no começo da partida do núcleo e na tela do brief do MAKE UP | não (testes do servidor e da tela) |
 | Celular: a cena e a barra de botões cabem na largura | feito: a grade do jogo encolhe até a tela (o elenco e as abas passavam para 709 px numa tela de 390) | sim (390×844, tela real com a API simulada) |
 | A peça sem foto aparece no corpo 3D na cor do cadastro (auditoria 3: a bota preta saía laranja, a cor da ilustração da categoria) | feito em todos os jogos: a carta leva a cor cadastrada ao corpo 3D, que veste o tecido nessa cor; a mesma fonte das miniaturas (`lib/pieces/piece-image.ts`) | sim (MAKE UP: camisa branca, calça marinho e bota preta no corpo; Dress Fighter: blusa vermelha, jeans e bota preta) |
 | Cabelo, unhas, joias, temporadas e os 30 níveis com desbloqueios | pendente | não |

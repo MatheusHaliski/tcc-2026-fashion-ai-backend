@@ -89,7 +89,7 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
 
   /** "Continuar partida": a partida que ficou aberta volta com o deck, o look vestido e o ponto em que parou */
   const continuar = (r: NucleoRetomada) => {
-    const p = { ...r.partida, vestidas: r.vestidas };
+    const p = { ...r.partida, vestidas: r.vestidas, rascunho: r.rascunho };
     const modelo = p.participantes?.some((x) => x.tipo === "MODELO_CASA") ? "MODELO_CASA" : "";
     abertura.current = { chave: `${modelo}:${p.rodada ?? ""}`, promessa: Promise.resolve(p) };
     setRodada(p.rodada ?? null);

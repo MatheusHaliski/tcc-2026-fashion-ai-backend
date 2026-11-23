@@ -3,6 +3,7 @@
  * A API devolve só códigos; os textos ficam nos catálogos de i18n (flair3d.nucleo.<CODIGO>.* e flair3d.ui.*).
  */
 import type { NucleoResultado } from "@/lib/flair/nucleos/types-resultado";
+import type { RetomadaSalva } from "@/lib/flair/nucleos/progresso";
 
 export const NUCLEO_CODIGOS = [
   "PASSARELA",
@@ -94,6 +95,8 @@ export interface DeckRegras {
   tamanhoMax: number | null;
   obrigatorias: DeckObrigatoria[];
   semDeck: boolean;
+  /** posições de carta que o jogo usa (as vagas do look); vazio ou ausente = qualquer uma */
+  posicoes?: string[];
 }
 
 /** Uma rodada do jogo: o objetivo dela e, quando mudam, as zonas e as opções; `etapas` > 1 = um look por etapa. */
@@ -135,13 +138,15 @@ export interface NucleoPartida {
   abertura?: Record<string, unknown> | null;
   /** partida retomada: o look que já estava vestido (vaga → carta) */
   vestidas?: Record<string, string> | null;
+  /** partida retomada na preparação: o look em montagem que o servidor guardou */
+  rascunho?: RetomadaSalva["rascunho"];
 }
 
 /**
  * A partida que ficou em andamento ("Continuar partida"): a abertura dela, o look vestido e o ponto em que parou — o
  * resultado de agora (EM_ACAO) ou a última entrega (ABERTA, rodada em etapas), refeitos pelo servidor.
  */
-export interface NucleoRetomada {
+export interface NucleoRetomada extends RetomadaSalva {
   partida: NucleoPartida;
   vestidas: Record<string, string> | null;
   resultado: NucleoResultado | null;
@@ -176,71 +181,5 @@ export type {
   RegraResultado,
 } from "@/lib/flair/nucleos/types-resultado";
 
-// ------------------------------------------------------------------ arquivo do núcleo (cenário, personagens, recursos)
-
-export type V3 = [number, number, number];
-
-/** Prop do cenário como primitiva simples (unidades em metros; o avatar fica na origem, de frente para +z). */
-export interface CenaProp {
-  forma: "caixa" | "cilindro" | "esfera" | "plano";
-  pos: V3;
-  tam: V3;
-  cor: string;
-  emissiva?: boolean;
-}
-
-export interface NucleoCena {
-  fundo: string;
-  piso: string;
-  luz: string;
-  props: CenaProp[];
-}
-
-/** Personagem sem rosto: sempre atrás (z < 0) ou ao lado (|x| ≥ 1) do avatar, nunca na frente da roupa. */
-export interface NucleoPersonagem {
-  papel: string;
-  tipo: "manequim" | "silhueta";
-  pos: V3;
-  cor: string;
-  escala?: number;
-  /** rotação em y, em graus (0 = de frente para a câmera) */
-  giro?: number;
-  /** como a silhueta aparece: em pé (padrão), sentada (plateia) ou busto de costura (manequim do ateliê) */
-  postura?: "em_pe" | "sentada" | "busto";
-}
-
-export type AbaIcone =
-  | "sup"
-  | "inf"
-  | "cal"
-  | "ace"
-  | "ves"
-  | "zona"
-  | "labios"
-  | "olhos"
-  | "bochechas"
-  | "resposta";
-
-export interface NucleoConfig {
-  codigo: NucleoCodigo;
-  numero: number;
-  recursos: NucleoRecurso[];
-  cena: NucleoCena;
-  personagens: NucleoPersonagem[];
-  /** abas padrão da janela de recursos (a definição da API, quando chega, manda nas vagas, zonas e áreas) */
-  vagas: Vaga[];
-  zonas: string[];
-  areas: AreaMaquiagem[];
-  opcoes: string[];
-  acoes: NucleoAcao[];
-  /** códigos das regras do objetivo mais simples (textos em flair3d.nucleo.<CODIGO>.rules.<REGRA>) */
-  regras: string[];
-  deck: DeckRegras;
-  /**
-   * protagonista: tipos aceitos (o primeiro é o padrão; MODELO_CASA também é a reserva de quem não tem avatar);
-   * online: variações futuras (só dado nesta base). Os figurantes saem de `personagens`.
-   */
-  avatares: { protagonista: AvatarTipo[]; online: AvatarOnline | null };
-  /** a luta/partida roda sozinha depois da entrega (DRESS_FIGHTER, FASHION_SPORTS) */
-  automatico?: boolean;
-}
+// O arquivo do núcleo (cenário, personagens, recursos) fica em ./types-cena.
+export type { V3, CenaProp, NucleoCena, NucleoPersonagem, AbaIcone, NucleoConfig } from "./types-cena";

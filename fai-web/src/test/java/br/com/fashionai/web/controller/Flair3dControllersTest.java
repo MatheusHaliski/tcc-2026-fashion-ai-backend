@@ -48,6 +48,38 @@ class Flair3dControllersTest {
         }
     }
 
+    /** O progresso de mentira: guarda a rodada conferida na abertura e devolve uma campanha vazia. */
+    static final class Progressos extends br.com.fashionai.application.flair3d.Flair3dProgresso {
+        final List<Object> conferidas = new ArrayList<>();
+        static final br.com.fashionai.application.flair3d.Flair3dCampanha.Progresso VAZIO =
+                new br.com.fashionai.application.flair3d.Flair3dCampanha.Progresso("PASSARELA", true, false, 0, 0, 0, 0, false, List.of(), null, null);
+
+        Progressos() {
+            super(null);
+        }
+
+        @Override
+        public br.com.fashionai.application.flair3d.Flair3dCampanha.Progresso doJogo(CurrentUser user, String codigo) {
+            return VAZIO;
+        }
+
+        @Override
+        public void conferirAberta(CurrentUser user, String codigo, String rodada) {
+            conferidas.addAll(Arrays.asList(user, codigo, rodada));
+        }
+    }
+
+    static final class Rascunhos extends br.com.fashionai.application.flair3d.Flair3dRascunho {
+        Rascunhos() {
+            super(null, null);
+        }
+
+        @Override
+        public Map<String, Object> guardar(CurrentUser user, UUID partidaId, Entrega look) {
+            return RESPOSTA;
+        }
+    }
+
     static final class Nucleos extends Flair3dNucleoService {
         final List<Object> args = new ArrayList<>();
 
@@ -166,7 +198,10 @@ class Flair3dControllersTest {
     void nucleosDelegamListaDefinicaoEfeitosPartidaEntregaPreviaEAcionamento() {
         Nucleos s = new Nucleos();
         Retomadas r = new Retomadas();
-        Flair3dNucleoController c = new Flair3dNucleoController(s, r);
+        Progressos p = new Progressos();
+        Flair3dNucleoController c = new Flair3dNucleoController(s, r, p, new Rascunhos());
+        assertThat(c.progresso(ANA, "PASSARELA")).isSameAs(Progressos.VAZIO);
+        assertThat(c.rascunho(ANA, UUID.randomUUID(), null)).isSameAs(RESPOSTA);
         assertThat(c.emAndamento(ANA, "FASHION_DETECTIVE").getStatusCode().value()).isEqualTo(204);
         r.resposta = RESPOSTA;
         assertThat(c.emAndamento(ANA, "FASHION_DETECTIVE").getBody()).isSameAs(RESPOSTA);
@@ -176,6 +211,8 @@ class Flair3dControllersTest {
         assertThat(c.efeitos(ANA, "PASSARELA", efeitos)).isSameAs(RESPOSTA);
         Flair3dNucleoService.AbrirPartida abrir = new Flair3dNucleoService.AbrirPartida(List.of(), null);
         assertThat(c.abrir(ANA, "PASSARELA", abrir)).isSameAs(RESPOSTA);
+        // a trava da rodada é conferida antes de abrir a partida
+        assertThat(p.conferidas).containsExactly(ANA, "PASSARELA", null);
         UUID id = UUID.randomUUID();
         Entrega entrega = new Entrega(null, null, null, null);
         assertThat(c.entregar(ANA, id, entrega)).isSameAs(RESULTADO);

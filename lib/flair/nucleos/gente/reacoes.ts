@@ -8,6 +8,7 @@
 import type { Motion } from "@/lib/avatar3d/human/locomotion-model";
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
 import type { Gesto } from "@/lib/flair/nucleos/gente/gestos";
+import { reacaoComVariacao, type Variacao } from "@/lib/flair/nucleos/gente/variacao";
 
 export interface Reacao {
   /** o movimento do corpo; "base" = o movimento do papel (sentada continua sentada) */
@@ -52,11 +53,20 @@ export interface NoMomento {
   giro: number;
   /** quanto o ator andou desde o quadro anterior (m/s) */
   velocidade: number;
+  /** o relógio da cena agora e se o passo é de grupo ("fig:PLATEIA:*"): só o grupo reage com atraso */
+  agora?: number;
+  grupo?: boolean;
+  /** a variação desta pessoa (atraso, força e ritmo) */
+  variacao?: Variacao;
 }
 
 /** O ator de base (lugar e movimento do papel) no momento da cena: o clipe da sequência e o lugar do diretor. */
 export function atorNoMomento(base: AtorDeCena, m: NoMomento): AtorDeCena {
-  const r = m.clip ? REACAO_DO_CLIPE[m.clip] : undefined;
+  const v = m.variacao;
+  // numa reação de grupo cada um começa no próprio instante: antes dele, a pessoa segue no movimento do papel
+  const esperando = !!v && !!m.grupo && m.agora != null && m.agora - m.desde < v.atraso;
+  const doClipe = m.clip && !esperando ? REACAO_DO_CLIPE[m.clip] : undefined;
+  const r = doClipe && v && m.grupo ? reacaoComVariacao(doClipe, v) : doClipe;
   // quem o diretor leva de um lugar a outro anda (ou corre), com o gesto do momento por cima: os pés não deslizam
   const corre = r?.anim === "run";
   const anda = !corre && m.velocidade > ANDANDO;
@@ -69,8 +79,12 @@ export function atorNoMomento(base: AtorDeCena, m: NoMomento): AtorDeCena {
     anim,
     velocidade: corre ? Math.max(m.velocidade, r?.velocidade ?? 0) : anda ? m.velocidade : r?.velocidade ?? base.velocidade,
     chute: anda ? undefined : r?.chute,
-    naJogada: base.naJogada || !!r,
+    // quem reage sozinho por roteiro entra na jogada (corpo inteiro); a reação de grupo não puxa a plateia toda para o
+    // corpo inteiro no meio do resultado: quem está de corpo leve reage de corpo leve (leve.ts)
+    naJogada: base.naJogada || (!!r && !m.grupo),
     gesto: r?.gesto,
-    gestoDesde: m.desde,
+    gestoDesde: m.desde + (m.grupo ? v?.atraso ?? 0 : 0),
+    intensidade: v?.intensidade,
+    ritmo: v?.ritmo,
   };
 }

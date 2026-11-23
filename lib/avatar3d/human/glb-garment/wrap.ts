@@ -10,7 +10,7 @@
  *    presa ao MESMO esqueleto e bindMatrix do corpo (como o molde): anda, senta e levanta o braço com o avatar.
  */
 import * as THREE from "three";
-import { pressOut } from "./depth";
+import { INNER_GAP, pressOut } from "./depth";
 import type { BodyFrame, Groups } from "./frame";
 import { widen } from "./width";
 
@@ -26,6 +26,25 @@ export interface WrapMetrics {
   pushed: number;
   /** maior distância de um vértice até a pele (m): espinho, peça fora do lugar */
   far: number;
+}
+
+/**
+ * Avesso da peça: vértices cuja normal aponta para o corpo. A Meshy modela o lado de dentro (forro do blazer); a
+ * colisão levava o direito e o avesso para a mesma distância da pele e o forro atravessava o pano da frente.
+ */
+function innerFaces(p: Float32Array, index: ArrayLike<number>, f: BodyFrame, groups: Groups): Uint8Array {
+  const n = p.length / 3, nrm = new Float32Array(p.length), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for (let t = 0; t < index.length; t += 3) {
+    a.fromArray(p, index[t] * 3); b.fromArray(p, index[t + 1] * 3).sub(a); c.fromArray(p, index[t + 2] * 3).sub(a); b.cross(c);
+    for (const v of [index[t], index[t + 1], index[t + 2]]) { nrm[v * 3] += b.x; nrm[v * 3 + 1] += b.y; nrm[v * 3 + 2] += b.z; }
+  }
+  const inner = new Uint8Array(n);
+  for (let v = 0; v < n; v++) {
+    const s = f.near(p[v * 3], p[v * 3 + 1], p[v * 3 + 2], groups); if (s < 0) continue;
+    const len = Math.hypot(nrm[v * 3], nrm[v * 3 + 1], nrm[v * 3 + 2]) || 1;
+    if ((nrm[v * 3] * f.nrm[s * 3] + nrm[v * 3 + 1] * f.nrm[s * 3 + 1] + nrm[v * 3 + 2] * f.nrm[s * 3 + 2]) / len < -0.3) inner[v] = 1;
+  }
+  return inner;
 }
 
 /** `posed`: a peça ajustada na pose de exibição (depois da colisão); `rest`: a mesma na pose de repouso. */
@@ -61,15 +80,17 @@ function signedDistance(f: BodyFrame, x: number, y: number, z: number, groups: G
  * Empurra para fora da pele o que ficou dentro ou perto demais; devolve o maior deslocamento. A suavização só espalha o
  * empurrão para os vizinhos (evita bico): cada vértice sai pelo menos o que precisa, nunca menos.
  */
-function collide(p: Float32Array, f: BodyFrame, groups: Groups, clearance: number, adj: number[][]): number {
+function collide(p: Float32Array, f: BodyFrame, groups: Groups, clearance: number, adj: number[][], inner?: Uint8Array): number {
   let maxPush = 0;
   for (let it = 0; it < 5; it++) {
     const need = new Float32Array(p.length); let any = false;
     for (let v = 0; v < p.length / 3; v++) {
       const { d, v: s } = signedDistance(f, p[v * 3], p[v * 3 + 1], p[v * 3 + 2], groups);
-      if (!(d < clearance)) continue;
+      // o avesso da peça (inner) para um pouco antes do direito: os dois na mesma casca piscam um por cima do outro
+      const gap = inner?.[v] ? Math.max(0.002, clearance - INNER_GAP) : clearance;
+      if (!(d < gap)) continue;
       // no máximo 3 cm por passada: um vértice longe da pele certa (barra, punho) não vira bico atravessando a cena
-      any = true; const k = Math.min(0.03, clearance - d); for (let a = 0; a < 3; a++) need[v * 3 + a] = k * f.nrm[s * 3 + a];
+      any = true; const k = Math.min(0.03, gap - d); for (let a = 0; a < 3; a++) need[v * 3 + a] = k * f.nrm[s * 3 + a];
     }
     if (!any) break;
     const push = need.slice(); smooth(push, 3, adj, 2);
@@ -167,12 +188,14 @@ export function wrapGarment(posedIn: Float32Array, partIn: Int8Array, indexIn: A
   const n = posed.length / 3; const adj = neighbours(index, n); const before = posed.slice();
   // a peça mais estreita que o corpo alarga (width.ts) e o pano que ficou dentro do corpo sai só em z (depth.ts);
   // a colisão pela normal fica com o resto (laterais, axila)
-  const moved = Math.max(widen(posed, part, f, groups, clearance), pressOut(posed, part, index, f, groups, clearance));
-  const pushed = Math.max(moved, collide(posed, f, groups, clearance, adj));
+  const inner = innerFaces(posed, index, f, groups);
+  const moved = Math.max(widen(posed, part, f, groups, clearance), pressOut(posed, part, index, f, groups, clearance, inner));
+  const pushed = Math.max(moved, collide(posed, f, groups, clearance, adj, inner));
   let inside = 0, far = 0;
   // espinho: distância até a pele mais próxima, CABEÇA incluída — o capuz caído nas costas fica perto da cabeça e da
   // nuca, não do tronco (sem ela, todo moletom com capuz da Meshy seria recusado como espinho)
-  const reach = groups.includes(0) ? groups : [...groups, 0];
+  // e PERNAS incluídas: a barra do casaco comprido (parka) fica perto da coxa, não do tronco
+  const reach = [...new Set([...groups, 0, 3])];
   for (let v = 0; v < n; v++) {
     const { d } = signedDistance(f, posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2], groups);
     if (d < 0) inside++;

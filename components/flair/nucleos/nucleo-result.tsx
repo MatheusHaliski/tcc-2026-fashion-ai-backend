@@ -5,6 +5,7 @@
  */
 import type { ReactNode } from "react";
 import { cn } from "@/components/ui";
+import { NucleoResultCampanha } from "@/components/flair/nucleos/nucleo-result-campanha";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { desfechoDe } from "@/lib/flair/nucleos/narrativa";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -109,6 +110,7 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
         </>
       )}
       {children}
+      <NucleoResultCampanha codigo={codigo} fechou={!resultado.status || resultado.status === "ENTREGUE"} />
       <button type="button" className="btn" onClick={onAgain}>{tx.t("flair3d.ui.result.again")}</button>
     </section>
   );

@@ -36,3 +36,9 @@ acionamento (`EM_ACAO`) ou aceita outra entrega (`ABERTA`); o serviço só grava
 descartada: State com uma classe por etapa e o estado da luta serializado, que duplicaria a regra do round em cada
 estado e abriria espaço para o estado gravado divergir da semente. A prévia é um método `default` da Strategy
 (`previa`), que só os dois jogos automáticos sobrescrevem para devolver os atributos em vez do desfecho.
+
+**Road to Glory com a jogada de cena (19/11/2026).** Problema concreto: no núcleo 5 a carta só vestia (auditoria dos
+jogos, seção 7) e a tabela de cores do jogo já existia em `Flair3dCores`. `RoadToGloryNucleo` passou a compor o mesmo
+Decorator (`Flair3dJogadaDeCena`) sobre a estratégia do look (`RoadToGloryLook`, que delega a nota ao brief da rodada) e
+acrescenta só o que é dele: o evento `TETO` quando as regras somam mais de 100. Alternativa descartada: copiar a jogada
+para dentro do núcleo (duplicaria o sorteio do pedido e a conferência da carta).

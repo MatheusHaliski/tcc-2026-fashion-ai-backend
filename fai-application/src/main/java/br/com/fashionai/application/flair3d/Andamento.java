@@ -11,9 +11,10 @@ import java.util.UUID;
  * Andamento de uma partida (coluna {@code estado_json}): quantas entregas já foram apresentadas, contando a atual, e os
  * acionamentos feitos depois da entrega, na ordem. O núcleo recalcula a partida inteira a partir da semente, da entrega e
  * deste andamento, então o resultado de cada etapa é sempre o mesmo. {@code rodada} é a rodada escolhida ao abrir a partida
- * (nula nas partidas antigas: vale o objetivo mais simples do jogo).
+ * (nula nas partidas antigas: vale o objetivo mais simples do jogo). {@code rascunho} é o look que a pessoa estava montando
+ * antes de entregar ({@link Flair3dRascunho}); a entrega seguinte o descarta.
  */
-public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada) {
+public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada, Entrega rascunho) {
     /** Primeira entrega, sem acionamento. */
     public static final Andamento INICIO = new Andamento(1, List.of());
 
@@ -37,6 +38,10 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
         anteriores = anteriores == null ? List.of() : List.copyOf(anteriores);
     }
 
+    public Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada) {
+        this(tentativas, acionamentos, anteriores, rodada, null);
+    }
+
     public Andamento(int tentativas, List<Acionamento> acionamentos) {
         this(tentativas, acionamentos, List.of(), null);
     }
@@ -52,7 +57,12 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
 
     /** O mesmo andamento, na rodada dada. */
     public Andamento comRodada(String nova) {
-        return new Andamento(tentativas, acionamentos, anteriores, nova);
+        return new Andamento(tentativas, acionamentos, anteriores, nova, rascunho);
+    }
+
+    /** O mesmo andamento, com o look em montagem guardado (nulo apaga). */
+    public Andamento comRascunho(Entrega novo) {
+        return new Andamento(tentativas, acionamentos, anteriores, rodada, novo);
     }
 
     /** O andamento gravado na partida; partida nova ainda não tem tentativa. */

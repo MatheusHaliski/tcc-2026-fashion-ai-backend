@@ -69,6 +69,8 @@ export const ACIONAMENTOS: Partial<Record<NucleoCodigo, Acionamento>> = {
   DRESS_THE_STAR: { tipo: "JOGADA", momento: "ACAO" },
   BOUTIQUE_3D: { tipo: "JOGADA", momento: "ACAO" },
   AROUND_THE_WORLD: { tipo: "JOGADA", momento: "ACAO" },
+  // a sessão de fotos: a fotógrafa pede uma luz e a carta do guarda-roupa fora do look acende a cor dela
+  ROAD_TO_GLORY: { tipo: "JOGADA", momento: "ACAO" },
 };
 
 export function acionamentoDe(codigo: NucleoCodigo): Acionamento | null {

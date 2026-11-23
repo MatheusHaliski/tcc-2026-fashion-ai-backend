@@ -5,12 +5,9 @@ import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
-import br.com.fashionai.application.flair3d.Flair3dZonas;
 import br.com.fashionai.application.flair3d.Resultado;
-import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Núcleo 11 — capacete da "Equipe Aurora" (amarelo e verde), 25 por regra: topo amarelo; laterais amarelas; faixa da
@@ -21,7 +18,16 @@ public class PilotoFavoritoNucleo implements Flair3dNucleo {
     public static final List<String> ZONAS = List.of("TOPO", "LATERAIS", "FAIXA_VISEIRA", "VISEIRA");
     public static final List<String> ZONAS_MACACAO = List.of("TRONCO", "MANGAS", "PERNAS", "GOLA", "CINTO");
     public static final List<String> ZONAS_TENIS = List.of("CABEDAL", "SOLA", "CADARCO");
-    /** O macacão da "Equipe Boreal" e o Tênis dos Sonhos (objetivo 49: "tênis para correr à noite"). */
+    /** A rodada padrão: cada regra olha uma zona do capacete. */
+    static final AtelieRodadas.Criacao EQUIPE_AURORA = AtelieRodadas.criacao("EQUIPE_AURORA", ZONAS,
+            AtelieRodadas.regra("TOPO_AMARELO", z -> AtelieRodadas.daFamilia(z, "TOPO", "Amarelo")),
+            AtelieRodadas.regra("LATERAIS_AMARELAS", z -> AtelieRodadas.daFamilia(z, "LATERAIS", "Amarelo")),
+            AtelieRodadas.regra("FAIXA_VERDE", z -> AtelieRodadas.daFamilia(z, "FAIXA_VISEIRA", "Verde")),
+            AtelieRodadas.regra("VISEIRA_ESPELHADA", z -> AtelieRodadas.acabamento(z, "VISEIRA", "ESPELHADO")));
+    /**
+     * O macacão da "Equipe Boreal" e o Tênis dos Sonhos (objetivo 49: "tênis para correr à noite"). O tênis tem 3 zonas: o
+     * limite é de 2 cores (com 3, a regra saía cumprida em qualquer pintura).
+     */
     static final List<AtelieRodadas.Criacao> RODADAS = List.of(
             AtelieRodadas.criacao("MACACAO_BOREAL", ZONAS_MACACAO,
                     AtelieRodadas.regra("TRONCO_AZUL", z -> AtelieRodadas.daFamilia(z, "TRONCO", "Azul")),
@@ -32,7 +38,7 @@ public class PilotoFavoritoNucleo implements Flair3dNucleo {
                     AtelieRodadas.regra("SOLA_CLARA", z -> AtelieRodadas.daFamilia(z, "SOLA", "Branco", "Cinza")),
                     AtelieRodadas.regra("ZONA_REFLETIVA", z -> AtelieRodadas.algumAcabamento(z, "ESPELHADO", "METALICO")),
                     AtelieRodadas.regra("CADARCO_EM_CONTRASTE", z -> AtelieRodadas.contraste(z, "CADARCO", "CABEDAL")),
-                    AtelieRodadas.regra("ATE_3_CORES", z -> AtelieRodadas.ateCores(z, 3))));
+                    AtelieRodadas.conjunto("ATE_2_CORES", z -> AtelieRodadas.ateCores(z, 2))));
 
     @Override
     public String codigo() {
@@ -58,12 +64,6 @@ public class PilotoFavoritoNucleo implements Flair3dNucleo {
                 return c.pontuar(entrega);
             }
         }
-        Map<String, Entrega.Zona> z = entrega.zonas();
-        return Resultado.somando(List.of(
-                RegraResultado.de("TOPO_AMARELO", Flair3dZonas.daFamilia(z.get("TOPO"), "Amarelo"), POR_REGRA),
-                RegraResultado.de("LATERAIS_AMARELAS", Flair3dZonas.daFamilia(z.get("LATERAIS"), "Amarelo"), POR_REGRA),
-                RegraResultado.de("FAIXA_VERDE", Flair3dZonas.daFamilia(z.get("FAIXA_VISEIRA"), "Verde"), POR_REGRA),
-                RegraResultado.de("VISEIRA_ESPELHADA", Flair3dZonas.acabamento(z.get("VISEIRA"), Flair3dZonas.ESPELHADO), POR_REGRA)),
-                List.of());
+        return EQUIPE_AURORA.pontuar(entrega);
     }
 }

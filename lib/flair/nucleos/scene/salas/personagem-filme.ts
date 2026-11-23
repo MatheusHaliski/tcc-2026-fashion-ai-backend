@@ -7,9 +7,18 @@ import { cadeiraDiretor } from "@/lib/flair/nucleos/scene/moveis/assentos";
 import { marcaNoPiso } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { bracoClaquete, cameraTripe, claquete, refletor } from "@/lib/flair/nucleos/scene/moveis/palco";
 import { cenarioDeTresParedes } from "@/lib/flair/nucleos/scene/moveis/set";
-import { noLugar } from "@/lib/flair/nucleos/scene/parts";
+import { comGlb, noLugar } from "@/lib/flair/nucleos/scene/parts";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import { cabos, monitorDeVideo } from "@/lib/flair/nucleos/scene/moveis/cenarios";
+
+/**
+ * O refletor licenciado (public/flair/3d/assets/refletor.glb) é um canhão de chão, largo e baixo. Ajustado à altura do
+ * refletor de tripé (2 m), ele ficava com 2 m de largura e tapava um terço do quadro do preparo (auditoria dos jogos,
+ * PF-2). Com escala fixa ele fica do tamanho de um canhão de chão de verdade: cerca de 75 cm de altura.
+ */
+export const ESCALA_DO_REFLETOR = 0.24;
+const canhaoDeChao = (em: { pos: [number, number, number]; giro: number }, altura: number) =>
+  comGlb(refletor(em, "metal", "luz", altura), "refletor", { escala: ESCALA_DO_REFLETOR });
 
 const CLAQUETE = { pos: [-2.1, 0, 1.0] as [number, number, number], giro: 35 };
 
@@ -48,8 +57,8 @@ export const SALA_PERSONAGEM_FILME: Sala = {
     cenarioDeTresParedes({ pos: [0, 0, -3.2] }, "cenario", "madeira", "luz"),
     cameraTripe({ pos: [-3.3, 0, 2.3], giro: 125 }, "metal", "metal", "lente"),
     cadeiraDiretor({ pos: [3.6, 0, 0.5], giro: -100 }, "madeira", "lona"),
-    refletor({ pos: [-4.4, 0, -0.9], giro: 70 }, "metal", "luz", 1.7),
-    refletor({ pos: [3.5, 0, -1.7], giro: -65 }, "metal", "luz", 2.0),
+    canhaoDeChao({ pos: [-4.4, 0, -0.9], giro: 70 }, 1.7),
+    canhaoDeChao({ pos: [3.5, 0, -1.7], giro: -65 }, 2.0),
     claquete({ pos: CLAQUETE.pos, giro: CLAQUETE.giro }, "metal", "madeira"),
     bracoClaquete({ pos: noLugar([-0.17, 0.565, 0], CLAQUETE.pos, CLAQUETE.giro), giro: CLAQUETE.giro, id: "claquete" }, "listras"),
     // a segunda revisão dos cenários: o monitor do video assist e os cabos no chão do set

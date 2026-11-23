@@ -227,3 +227,27 @@ Total: **37 vestem**, **8 com ajuste manual**, **1 sem suporte** (+ peça inteir
    Os manifestos do piloto estão em `docs/provador/meshy/manifestos/` (por subcategoria; o importador ainda não os
    envia — falta ligar o `preparar-glb.mjs` ao `--apply`).
 3. Acessórios só aparecem no avatar quando a peça do look tem `model3d_url` (não há molde de acessório).
+
+## Lote em pose T (19 a 23/11/2026)
+
+As oito peças de cima foram geradas de novo na Meshy em formato de vestida: só a roupa, em manequim invisível, de
+frente, com os braços abertos na horizontal e as mangas separadas do tronco (prefixo
+`catalog/model3d/meshy-2026-11-19-pose-t/`, 300 créditos: 90 no piloto de blazer e blusa, 210 nas outras seis). O lote
+de 18/11 trazia a manga colada ao tronco e a malha rasgava ao abrir a manga até o braço do avatar.
+
+O que o provador passou a fazer para essas peças (tudo com teste; os 46 modelos de 18/11 mantêm o mesmo aceite):
+
+| Problema visto na tela | Correção | Arquivo |
+|---|---|---|
+| a lateral e a barra largas eram rotuladas manga e giravam junto | a manga é o trecho de fora em que toda coluna acaba na metade de cima da peça | `glb-garment/parts.ts` (`spreadLimit`) |
+| o forro do blazer atravessava o pano da frente | o avesso para 6 mm antes do direito na colisão | `glb-garment/depth.ts`, `wrap.ts` |
+| a saia sumia onde a blusa de barra torta é curta | a peça de baixo some por setor em volta do corpo | `meshy/tuck.ts` |
+| o moletom largo encolhia até o peito e a manga parava no cotovelo | escala pelo comprimento da manga (ombro ao punho), até 1,5 × a do tronco; a manga estica até 35% | `glb-garment/align.ts` |
+| a parka comprida era recusada como espinho | a distância da barra até a pele conta a perna | `glb-garment/wrap.ts` |
+
+Aceite no corpo padrão (P, M e GG por cima de calça e tênis): as oito passam nos três tamanhos, com esticamento entre
+1,00 e 1,26 (camisa de manga curta: 1,59). Evidências em `docs/provador/meshy/pose-t/`; manifestos em
+`docs/provador/meshy/pose-t/manifestos/`.
+
+O que ainda aparece: a camisa de manga curta fica com a borda do ombro serrilhada; o suéter fica volumoso no tronco; a
+barra do blazer tem uma linha fina em arco; a blusa tem riscos verticais do laço.

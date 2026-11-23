@@ -18,11 +18,12 @@ export const PERSONAGEM_FILME: NucleoConfig = {
     { papel: "CAMERA", tipo: "silhueta", pos: [3.0, 0, 1.9], cor: "#3B3B40", giro: -125 },
   ],
   avatares: { protagonista: ["PROPRIO"], online: { min: 2, max: 4 } },
-  vagas: ["SUP", "INF", "CAL", "ACE"],
+  // a peça inteira (VES) veste e conta como a parte de cima e a de baixo do figurino
+  vagas: ["SUP", "INF", "CAL", "ACE", "VES"],
   zonas: [],
   areas: [],
   opcoes: ["FILME_SOMBRAS_NA_CHUVA", "FILME_VERAO_EM_NEON", "FILME_GALAXIA_DOURADA", "FILME_BAILE_DAS_FLORES"],
   acoes: acoesDe({ cartas: true, desfile: false }),
   regras: ["TITULO", "FIGURINO"],
-  deck: deckDe(8, ["SUP", 1]),
+  deck: deckDe(8, ["SUP|VES", 1]),
 };

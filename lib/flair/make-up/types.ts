@@ -39,6 +39,8 @@ export interface MakeUpResultado {
   pontos: number;
   estrelas: number;
   regras: RegraResultado[];
+  /** a explicação das regras de roupa (qual peça derrubou "todas as peças"); servidor antigo não manda */
+  eventos?: { codigo: string; valor?: unknown }[];
   prestigioGanho: number;
   carreira?: MakeUpCarreira | null;
 }

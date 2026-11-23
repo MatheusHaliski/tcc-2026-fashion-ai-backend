@@ -7,7 +7,28 @@ import { ringue } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { neon } from "@/lib/flair/nucleos/scene/moveis/palco";
 import { caixote, calcada, grade, tambor } from "@/lib/flair/nucleos/scene/moveis/urbano";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
+import type { NucleoPersonagem } from "@/lib/flair/nucleos/types";
 import { cartaz, grafite } from "@/lib/flair/nucleos/scene/moveis/cenarios";
+
+/** Altura da calçada, onde a torcida do beco fica de pé, e o centro do ringue, para onde ela olha. */
+const CALCADA = 0.14;
+const RINGUE: [number, number] = [0.5, -0.3];
+const TORCIDA_DO_BECO: [number, number, string][] = [
+  [-3.1, 0.6, "#C6275E"],
+  [-3.3, -0.5, "#2FE6FF"],
+  [-3.0, -1.6, "#F2C230"],
+  [3.2, 0.7, "#E8E2CF"],
+  [3.3, -1.5, "#FF3EA5"],
+  [3.1, -2.7, "#3A8F5A"],
+];
+/** A torcida da arena: seis pessoas nas duas calçadas, viradas para o ringue. */
+const torcida: NucleoPersonagem[] = TORCIDA_DO_BECO.map(([x, z, cor]) => ({
+  papel: "TORCEDOR",
+  tipo: "silhueta",
+  pos: [x, CALCADA, z],
+  cor,
+  giro: Math.round((Math.atan2(RINGUE[0] - x, RINGUE[1] - z) * 180) / Math.PI),
+}));
 
 export const SALA_DRESS_FIGHTER: Sala = {
   codigo: "DRESS_FIGHTER",
@@ -29,7 +50,11 @@ export const SALA_DRESS_FIGHTER: Sala = {
   },
   zonas: {
     avatar: { x: [-0.9, 0.9], z: [-2.1, 2.1], marca: "marca", altura: 0 },
-    personagens: [{ x: [1, 2.6], z: [-2.1, 1] }],
+    personagens: [
+      { x: [1, 2.6], z: [-2.1, 1] },
+      { x: [-3.6, -2.8], z: [-2, 1] },
+      { x: [2.8, 3.6], z: [-3, 1] },
+    ],
     decoracao: [
       { x: [-4, -2.6], z: [-8, 3] },
       { x: [2.6, 4], z: [-8, 3] },
@@ -55,7 +80,7 @@ export const SALA_DRESS_FIGHTER: Sala = {
     cartaz({ pos: [-3.97, 1.2, -2.3], giro: 90 }, "tinta", "placa", 0.6, 0.85),
     grafite({ pos: [3.97, 0.2, -1.8], giro: -90 }, "neonRosa", "tinta", 2.4),
   ],
-  figurantes: [],
+  figurantes: torcida,
   luzes: {
     principal: { cor: "#DCD3FF", intensidade: 2.1, pos: [2.6, 5.6, 3.4] },
     recorte: { cor: "#FF3EA5", intensidade: 2.3, pos: [-3, 4, -4.5] },

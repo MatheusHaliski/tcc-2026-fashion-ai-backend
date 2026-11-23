@@ -153,7 +153,7 @@ class Flair3dPartidaRodadasTest {
         assertThat(Andamento.ler(partida(id).getEstadoJson()).anteriores()).extracting(Andamento.Etapa::resposta).containsExactly("PORTA_MEDIA");
 
         UUID tenis = (UUID) service.abrir(ana, "PILOTO_FAVORITO", new Flair3dNucleoService.AbrirPartida(List.of(), null, "TENIS_DOS_SONHOS")).get("id");
-        Entrega doTenis = Flair3dFixtures.zonas(null, "CABEDAL=#1E4FBF/ESPELHADO", "SOLA=#F5F4F0", "CADARCO=#F2C230");
+        Entrega doTenis = Flair3dFixtures.zonas(null, "CABEDAL=#1E4FBF/ESPELHADO", "SOLA=#F5F4F0", "CADARCO=#F5F4F0");
         assertThat(service.entregar(ana, tenis, doTenis).pontos()).isEqualTo(100);
         UUID capacete = (UUID) service.abrir(ana, "PILOTO_FAVORITO", new Flair3dNucleoService.AbrirPartida(List.of(), null)).get("id");
         assertThat(erro(() -> service.entregar(ana, capacete, doTenis)).code()).isEqualTo("ENTREGA_INVALIDA");

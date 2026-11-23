@@ -23,3 +23,17 @@
   border: 1px solid #fff9;
   border-radius: 50%;
 }
+
+/* a carta com mais de um efeito mostra todos, um por linha (antes só o primeiro aparecia) */
+.n3d-card-fx.is-todos {
+  display: block;
+  max-height: 62%;
+  overflow: hidden;
+  font-size: 0.62rem;
+  white-space: pre-line;
+}
+
+/* a carta que o jogo não tem onde vestir: fica à vista, apagada, e o toque explica por que não entra no deck */
+.n3d-deck-card.is-sem-vaga {
+  opacity: 0.55;
+}

@@ -15,6 +15,7 @@ import { CameraDoJogo } from "@/components/flair/nucleos/scene/game-camera";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
 import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
+import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
 import { CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
 import { useSceneDirector } from "@/components/flair/nucleos/scene/use-scene-director";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
@@ -22,6 +23,8 @@ import { cameraEmUso, type MomentoDaCamera } from "@/lib/flair/nucleos/camera/jo
 import { poseDoRig } from "@/lib/flair/nucleos/camera/rigs";
 import { comZoom, limitesDaSala } from "@/lib/flair/nucleos/camera/sala";
 import { figurantesDaCena } from "@/lib/flair/nucleos/scene/budget";
+import { corposCheiosDaCena } from "@/lib/flair/nucleos/scene/orcamento-da-cena";
+import { AJUSTES, type Qualidade } from "@/lib/flair/nucleos/scene/qualidade";
 import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import { placarDaCena } from "@/lib/flair/nucleos/scene/sequences-auto";
 import { temAbertura } from "@/lib/flair/nucleos/scene/opening";
@@ -76,17 +79,21 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
   const figurantes = useMemo(() => figurantesDaCena(sala, config.personagens), [sala, config.personagens]);
   /** os figurantes que já são gente (o corpo humano montou): a silhueta deles sai de cena */
   const prontos = useRef(new Set<string>());
+  /** a qualidade em uso (cai sozinha quando a máquina é lenta): manda nos corpos inteiros e na sombra dos figurantes */
+  const qualidade = useRef<Qualidade>("ALTA");
   return (
     <Canvas shadows camera={{ fov: 35, position: [1.7, 1.35, 3.8], near: 0.1, far: 60 }} dpr={[1, 2]} aria-label={rotulo}>
       <color attach="background" args={[sala.fundo]} />
       <CenaContexto.Provider value={cena}>
         <Sala3D sala={sala} placar={placarDaCena(config.codigo, resultado)} />
         <Figurantes personagens={figurantes} prontos={prontos} />
-        <FigurantesHumanos codigo={config.codigo} semente={semente} personagens={figurantes} prontos={prontos} reduzido={reduzido} />
+        <FigurantesHumanos codigo={config.codigo} semente={semente} personagens={figurantes} prontos={prontos} reduzido={reduzido}
+          limite={() => corposCheiosDaCena(config.codigo, qualidade.current)} sombraAte={() => AJUSTES[qualidade.current].sombraDeFiguranteAte} />
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
         {manequim && zonasDaPeca && zonas && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} />
-        <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} />
+        <QualidadeDaCena nivel={qualidade} />
+        <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} pessoas={figurantes} />
       </CenaContexto.Provider>
       {temAbertura(config.codigo) && <CameraDeAbertura chave={abertura} sala={sala} fim={fim} reduzido={reduzido} />}
     </Canvas>

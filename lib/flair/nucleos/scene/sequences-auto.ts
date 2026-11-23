@@ -10,6 +10,7 @@ import { LABIRINTO_ESPELHO, LABIRINTO_PORTA } from "@/lib/flair/nucleos/scene/sa
 import { AVATAR, fig, luzId, movelId, Roteiro } from "@/lib/flair/nucleos/scene/script";
 import { giroPara, PONTA_DA_PASSARELA } from "@/lib/flair/nucleos/scene/sequences-manual";
 import { sequenciaDaLuta, sequenciaDaPartida } from "@/lib/flair/nucleos/scene/sequences-match";
+import { desfechoDe } from "@/lib/flair/nucleos/narrativa";
 
 /** Reação da plateia pela nota: levanta com 3 estrelas, aplaude com 1 ou 2, lamenta com 0. */
 export function reacaoDaPlateia(estrelas: number): string {
@@ -72,7 +73,10 @@ const fashionDetective: Montagem = (r, res) => {
 const boutique: Montagem = (r, res) => {
   const aprovou = res.resultado === "APROVADO";
   r.depois(AVATAR, "ENTREGAR_A_PECA");
-  r.junto(luzId("espelho"), "L_ACENDE").depois(fig("CLIENTE", 0), "F_PROVA_E_GIRA");
+  // a vendedora acompanha a prova de mão no queixo; a outra cliente só olha quando o look agrada
+  r.junto(fig("VENDEDORA", 0), "F_POSE").junto(luzId("espelho"), "L_ACENDE").depois(fig("CLIENTE", 0), "F_PROVA_E_GIRA");
+  if (aprovou) r.junto(fig("VENDEDORA", 0), "F_APLAUSO").junto(fig("CLIENTE_DA_LOJA", 0), "F_APLAUSO", {}, 0.5);
+  else r.junto(fig("VENDEDORA", 0), "F_LAMENTA", {}, 0.4);
   r.depois(fig("CLIENTE", 0), aprovou ? "F_COMEMORA" : "F_DEVOLVE");
 };
 
@@ -100,11 +104,23 @@ const aroundTheWorld: Montagem = (r, res) => {
   if (res.estrelas >= 1) r.junto(luzId("mapa"), "L_ACENDE", { mantem: true }).depois(movelId("marcador"), "M_MAPA_AVANCA", { mantem: true });
 };
 
+/**
+ * A plateia da batalha segue o desfecho, não só a nota: comemora ou aplaude quando escolhe a pessoa, hesita na batalha
+ * apertada e, na derrota, aplaude o desafiante se o look da pessoa foi bom (2 estrelas ou mais) ou lamenta.
+ */
+export function plateiaDaBatalha(res: NucleoResultado): string {
+  const desfecho = desfechoDe(res);
+  if (desfecho === "BOM") return res.estrelas >= 3 ? "F_COMEMORA" : "F_APLAUSO";
+  if (desfecho === "MEDIO") return "F_POSE";
+  return res.estrelas >= 2 ? "F_APLAUSO" : "F_LAMENTA";
+}
+
 const batalha: Montagem = (r, res) => {
   const venceu = res.resultado === "VITORIA";
   r.depois(AVATAR, "ENTRADA_NO_PALCO", { mover: { z: 0.5 } });
-  r.junto(fig("ADVERSARIO", 0), "F_POSE").depois(AVATAR, "POSE_LADO_A_LADO");
-  r.junto(fig("PLATEIA"), reacaoDaPlateia(res.estrelas));
+  // os jurados avaliam os dois looks de mão no queixo; depois, plateia e jurados reagem ao desfecho de verdade
+  r.junto(fig("JURADO"), "F_POSE").junto(fig("ADVERSARIO", 0), "F_POSE").depois(AVATAR, "POSE_LADO_A_LADO");
+  r.junto(fig("PLATEIA"), plateiaDaBatalha(res)).junto(fig("JURADO"), desfechoDe(res) === "MEDIO" ? "F_POSE" : "F_APLAUSO");
   // o braço que sobe é o de quem venceu; quem perdeu lamenta
   if (venceu) r.junto(fig("ADVERSARIO", 0), "F_LAMENTA").junto(luzId("vencedor"), "L_ACENDE", { mantem: true }).depois(AVATAR, "VENCEDOR_LEVANTA_O_BRACO");
   else r.depois(fig("ADVERSARIO", 0), "F_LEVANTA_O_BRACO");

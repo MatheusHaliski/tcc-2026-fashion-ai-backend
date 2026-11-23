@@ -4,6 +4,9 @@
  * grupos Roupas (vestir a vaga) e Maquiagem (maquiar a área), os comandos (os do contrato, menos desfilar) e a entrega.
  * Reaproveita a janela de recursos, os controles e o estado da tela dos núcleos.
  */
+import { NucleoAvisoDaRodada } from "@/components/flair/nucleos/nucleo-aviso-da-rodada";
+import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
+import { viabilidade } from "@/lib/flair/nucleos/viabilidade";
 import { useMemo, useReducer, useState } from "react";
 import { cn } from "@/components/ui";
 import type { ApiError } from "@/lib/api/client";
@@ -53,6 +56,9 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
   const pecas = useMemo(() => pecasDoLook(estado.sel.cartas, cartas), [estado.sel.cartas, cartas]);
   const grupo = grupoDe(tabs[estado.aba]);
   const pronto = temEscolha(estado.sel);
+  // os selos de cada carta neste brief (o brief é uma rodada do Road to Glory) e o aviso das regras de roupa sem carta
+  const efeitos = useNucleoEffects("ROAD_TO_GLORY", cartas, true, { rodada: brief.codigo });
+  const aviso = viabilidade(brief.regras.map((r) => r.codigo), cartas.map((c) => efeitos.itens(c.id)), true);
   useRascunho(rascunho, !entregando, estado.sel, !pronto);
 
   const entregar = () => {
@@ -77,6 +83,7 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
       </div>
       <div className="n3d-bottom">
         <MakeUpObjective brief={brief} aberto={estado.objetivo} onToggle={() => disparar({ acao: "VER_OBJETIVO" })} />
+        <NucleoAvisoDaRodada codigo="ROAD_TO_GLORY" escopo="colecao" viabilidade={aviso} />
         <div className="mk-resources">
           <div className="mk-groups" role="group" aria-label={tx.t("flair3d.makeup.groups")}>
             {(["ROUPAS", "MAQUIAGEM"] as Grupo[]).map((g) => (
@@ -86,7 +93,7 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
             ))}
           </div>
           <p className="mk-effect">{tx.t(`flair3d.makeup.effect.${grupo}`)}</p>
-          <NucleoResourceWindow nucleo="ROAD_TO_GLORY" tabs={tabs} aba={estado.aba} item={estado.item} sel={estado.sel} mostrar={(t) => grupoDe(t) === grupo}
+          <NucleoResourceWindow nucleo="ROAD_TO_GLORY" tabs={tabs} aba={estado.aba} item={estado.item} sel={estado.sel} mostrar={(t) => grupoDe(t) === grupo} efeitos={efeitos.itens}
             onAba={(index) => dispatch({ type: "aba", index })} onItem={(aba, item) => dispatch({ type: "aplicar", aba, item, tabs })} />
         </div>
         <NucleoControls acoes={MAKEUP_ACOES} gamepad={gamepad} onComando={(c) => disparar(c)} />

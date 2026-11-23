@@ -1,7 +1,9 @@
 package br.com.fashionai.application.flair3d.makeup;
 
+import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
+import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Resultado;
 
@@ -21,4 +23,7 @@ public interface FlairMakeUpBrief {
     List<Definicao.Regra> regras();
 
     Resultado pontuar(Entrega entrega, Contexto contexto);
+
+    /** O selo da carta neste brief: as regras de roupa que ela cumpre (vazio quando não cumpre nenhuma). */
+    List<Efeito> efeitos(CbcRules.Card carta);
 }

@@ -45,8 +45,8 @@ const SHORT_SLEEVE = "manga curta aberta da foto: ao girar até o braço a borda
 const FLAT_FOOT = "o pé do avatar é plano: o salto fica sob o calcanhar sem a pose de ponta de pé";
 
 export const SLOT_RULES: Record<string, SlotRule> = {
-  hoodie: top(undefined, { esticada: 1.95 }), sweater: top(undefined, { furada: 0.05 }), parka: top(undefined, { espinho: 0.3 }),
-  windbreaker: top(THIN_CHEST, { esticada: 1.9, furada: 0.05 }), sweatshirt: top(undefined, { esticada: 2.2 }),
+  hoodie: top(undefined, { esticada: 1.95, furada: 0.05 }), sweater: top(undefined, { furada: 0.05 }), parka: top(undefined, { espinho: 0.3 }),
+  windbreaker: top(THIN_CHEST, { esticada: 1.9, furada: 0.06 }), sweatshirt: top(undefined, { esticada: 2.2, furada: 0.09 }),
   blazer: top(RAGGED_HEM, { esticada: 1.9, furada: 0.07 }),
   blouse: top(PUFFED, { esticada: 2.2, furada: 0.07, espinho: 0.35 }), shirt: top(SHORT_SLEEVE, { esticada: 2.15, furada: 0.045 }),
   cargo_pants: bottom(), casual_pants: bottom(), jogger_pants: bottom(), sweatpants: bottom(),

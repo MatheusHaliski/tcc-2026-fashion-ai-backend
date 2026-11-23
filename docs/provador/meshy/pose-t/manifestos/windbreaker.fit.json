@@ -1,0 +1,49 @@
+{
+  "versao": 1,
+  "categoria": "upper_piece",
+  "subcategoria": "windbreaker",
+  "slot": "upper",
+  "attach": "wrap",
+  "osso": "Spine2",
+  "giroY": 0,
+  "centro": [
+    -0.00039,
+    0.00172,
+    -0.00031
+  ],
+  "caixa": [
+    1.9039,
+    1.0639,
+    0.598
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": true,
+    "aberto": false,
+    "sola": 0,
+    "aceite": {
+      "esticada": 1.9,
+      "furada": 0.06
+    }
+  },
+  "tamanhos": {
+    "grade": "letter",
+    "porPasso": {
+      "largura": 0.035,
+      "comprimento": 0.02,
+      "manga": 0.015
+    },
+    "limite": [
+      -3,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "ajuste_manual",
+  "motivo": "veste, mas a malha rala do peito deixa o forro aparecer em placas"
+}

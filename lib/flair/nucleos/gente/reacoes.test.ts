@@ -16,7 +16,7 @@ describe("pessoas de cena seguem o diretor (critério da dona: animação coeren
       { ator: "fig:OPONENTE:0", clip: "F_SOCO", inicio: 1 },
       { ator: "luz:vencedor", clip: "L_ACENDE", inicio: 0, mantem: true },
     ] }, 100);
-    expect(d.clipeDoAtor("fig:PLATEIA:3", 101)).toEqual({ clip: "F_APLAUSO", desde: 100 });
+    expect(d.clipeDoAtor("fig:PLATEIA:3", 101)).toEqual({ clip: "F_APLAUSO", desde: 100, grupo: true });
     expect(d.clipeDoAtor("fig:OPONENTE:0", 101.5)?.clip).toBe("F_SOCO");
     expect(d.clipeDoAtor("fig:OPONENTE:0", 99)).toBeNull();
     expect(d.clipeDoAtor("fig:PLATEIA:0", 120)).toBeNull();
