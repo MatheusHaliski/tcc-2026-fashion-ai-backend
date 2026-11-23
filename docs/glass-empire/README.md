@@ -14,6 +14,7 @@ documento de design: tudo aqui é **proposta** para a dona do projeto aprovar, t
 | [03-elenco-e-inimigos.md](03-elenco-e-inimigos.md) | Por história: personagens reais da moda e inimigos únicos (chefes, polícia, bandidos) |
 | [04-roda-de-recursos.md](04-roda-de-recursos.md) | Roda de recursos: armas, munição, mobilidade e kits de vida |
 | [05-vestimentas.md](05-vestimentas.md) | Vestimentas em formato de card: mecânica, superpoder, recurso único e onde são obrigatórias |
+| [cutscenes/](cutscenes/) | Roteiros das cutscenes de abertura e das cenas curtas de cada história |
 
 ## Conceito
 

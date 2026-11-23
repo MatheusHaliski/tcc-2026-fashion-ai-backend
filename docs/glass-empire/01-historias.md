@@ -37,16 +37,19 @@ por baixo da cidade até o topo dela (fases 9 e 10).
 **Protagonista:** Nico Reyes, alfaiate de rua que destrava roupas.
 
 - **Introdução.** Toda roupa em Vítrea tem licença: se a mensalidade atrasa, o tecido endurece, perde a cor e se
-  desfaz. Nico ganha a vida destravando peças no Bairro dos Retalhos. Uma noite, a jaqueta de sua irmã vence no meio do
+  desfaz. Nico ganha a vida destravando peças no Bairro dos Retalhos. Uma noite, a jaqueta de sua irmã, Inés, vence no meio do
   inverno e ela é presa por "uso indevido de padrão". Nico volta do exílio escondido no porto para tirá-la da cadeia.
 - **Conflito.** Para soltar a irmã, Nico precisa da Licença-Mestra, a chave que autoriza qualquer peça. Ela pertence ao
   Chanceler Sterling Vale e é renovada fisicamente na Fábrica dos Teares. A Divisão Antipirataria caça Nico pela
   cidade, e os Falsários, que vendem cópias ruins, querem a chave para lucrar. Nico percebe que roubar a chave só troca
   o dono do cadeado.
 - **Clímax.** Na Coroa de Vidro, Vale revoga a licença das armas e das roupas de Nico durante a luta. Só funciona o que
-  ele mesmo fabricou. Em vez de ficar com a Licença-Mestra, Nico a publica em todas as vitrines da cidade.
+  ele mesmo fabricou. Em vez de ficar com a Licença-Mestra, Nico a publica em todas as vitrines da cidade. Com todas
+  as licenças válidas, vestir uma peça vencida deixa de ser crime, e a acusação contra a irmã é anulada.
 - **Desfecho.** As roupas de Vítrea deixam de expirar. O crédito de autoria permanece, mas ninguém perde o casaco por
-  atraso. A irmã de Nico é solta e os dois abrem uma oficina onde ensinar a costurar é de graça.
+  atraso. Inés é solta sem ser fugitiva. Nico perde o ofício de destravador, já que não há mais nada para destravar,
+  e os dois abrem uma oficina onde ensinar a costurar é de graça. Roteiro das cutscenes:
+  [cutscenes/historia-2-licenca-vencida.md](cutscenes/historia-2-licenca-vencida.md).
 
 ## História 3 — Antivitrine
 
