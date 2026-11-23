@@ -51,4 +51,13 @@ describe("ExpandedScheme — Look do Dia com Contexto do Dia", () => {
     fireEvent.click(screen.getByRole("button", { name: "Publicar" }));
     expect(await screen.findByText("Falta foto")).toBeTruthy();
   });
+
+  it("selo de experiência do look (dono, look já usado): usos e acertos por propósito", async () => {
+    loggedAs(undefined, { ...HYPE, "GET /api/schemes/s1": { scheme: { ...SCHEME, lookDoDia: true } }, "GET /api/me/daily-looks/experience": [{ purpose: "ENTREVISTA", label: "Entrevista", times: 3, worked: 2 }, { purpose: "FESTA", label: "Festa", times: 1, worked: 0 }] });
+    renderApp(<ExpandedScheme id="s1" />);
+    const list = await screen.findByRole("list", { name: "Experiência com este look" });
+    expect(list.textContent).toContain("Usado 3 vezes para entrevista · 2 deram certo");
+    expect(list.textContent).toContain("Usado 1 vez para festa");
+    expect(list.textContent).not.toContain("0 deram certo");
+  });
 });

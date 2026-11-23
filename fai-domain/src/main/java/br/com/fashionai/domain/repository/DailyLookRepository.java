@@ -33,4 +33,10 @@ public interface DailyLookRepository extends JpaRepository<DailyLook, UUID> {
     List<DailyLook> findByLookDateGreaterThanEqual(LocalDate since);
     /** Look do Dia Vivido — calendário do ano/mês da pessoa (dias com registro, em ordem). */
     List<DailyLook> findByUserIdAndLookDateBetweenOrderByLookDate(UUID userId, LocalDate from, LocalDate to);
+    /** F2 — "quem mais está vivendo isso hoje": mesma data e mesmo propósito. */
+    List<DailyLook> findByLookDateAndPurpose(LocalDate date, br.com.fashionai.domain.model.enums.DailyLookPurpose purpose);
+    /** F2 — selo de experiência do look: todos os dias em que ele foi o Look do Dia. */
+    List<DailyLook> findBySchemeIdOrderByLookDate(UUID schemeId);
+    /** F3 — dias vividos numa fase pessoal. */
+    List<DailyLook> findByPersonalMomentIdOrderByLookDate(UUID personalMomentId);
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { PURPOSES } from "@/lib/daily-look/types";
 import dynamic from "next/dynamic";
 import { retryImport } from "@/lib/chunk-recovery";
 import Link from "next/link";
@@ -47,12 +48,14 @@ export function RunwayPanel() {
   const [ranking, setRanking] = useState("TOP100_GLOBAL"); const [region, setRegion] = useState(""); const [country, setCountry] = useState("");
   const [colors, setColors] = useState<string[]>([]); const [occasions, setOccasions] = useState<string[]>([]); const [styles, setStyles] = useState<string[]>([]);
   const [sex, setSex] = useState(""); const [offset, setOffset] = useState(0);
+  const [purpose, setPurpose] = useState(""); const [worked, setWorked] = useState("");   // Look do Dia Vivido F2: "looks que funcionaram para X"
   const query = useMemo(() => {
     const q = new URLSearchParams({ limit: String(BATCH), offset: String(offset), ranking });
     if (region) q.set("region", region); if (country) q.set("country", country); if (sex) q.set("sex", sex);
     colors.forEach((c) => q.append("colors", c)); occasions.forEach((c) => q.append("occasions", c)); styles.forEach((c) => q.append("styles", c));
+    if (purpose) q.set("purpose", purpose); if (worked) q.set("worked", "true");
     return q.toString();
-  }, [ranking, region, country, colors, occasions, styles, sex, offset]);
+  }, [ranking, region, country, colors, occasions, styles, sex, offset, purpose, worked]);
   const { data, loading, error, reload } = useApi<Runway>((signal) => api.get(`/api/explorer/runway?${query}`, { signal, anonymous: !user }), [!!user, query]);
   const [sel, setSel] = useState<RunwayEntry | null>(null);
   // O 3D é pesado para celular: a passarela abre em 2D e o desfile em 3D carrega quando a pessoa pede (e fica lembrado).
@@ -63,7 +66,7 @@ export function RunwayPanel() {
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (!data) return <Skeleton className="h-[520px]" />;
   const picked = sel && data.looks.some((l) => l.look.schemeId === sel.look.schemeId) ? sel : data.looks[0] ?? null;
-  const anyFilter = region || country || colors.length || occasions.length || styles.length || sex;
+  const anyFilter = region || country || colors.length || occasions.length || styles.length || sex || purpose || worked;
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -81,8 +84,10 @@ export function RunwayPanel() {
           { key: "colors", label: t("showcase.runwayPanel.cores"), multi: true, options: data.facets.colors.slice(0, 16).map((c) => ({ value: c.value, label: `${label(c.value)} (${c.count})` })) },
           { key: "occasions", label: t("common.ocasioes"), multi: true, options: data.facets.occasions.slice(0, 16).map((c) => ({ value: c.value, label: `${label(c.value)} (${c.count})` })) },
           { key: "styles", label: t("common.estilos"), multi: true, options: data.facets.styles.slice(0, 16).map((c) => ({ value: c.value, label: `${label(c.value)} (${c.count})` })) },
+          { key: "purpose", label: t("showcase.runwayPanel.proposito_do_dia"), options: PURPOSES.map((p) => ({ value: p, label: t(`dailyLook.purpose.${p}`) })) },
+          { key: "worked", label: t("showcase.runwayPanel.deram_certo"), options: [{ value: "true", label: t("showcase.runwayPanel.so_os_que_deram_certo") }] },
         ]}
-        values={{ ranking, region, country, sex, colors: colors.join(","), occasions: occasions.join(","), styles: styles.join(",") }}
+        values={{ ranking, region, country, sex, colors: colors.join(","), occasions: occasions.join(","), styles: styles.join(","), purpose, worked }}
         onChange={(k, v) => {
           setOffset(0);
           const list = v ? v.split(",") : [];
@@ -93,6 +98,8 @@ export function RunwayPanel() {
           else if (k === "colors") setColors(list);
           else if (k === "occasions") setOccasions(list);
           else if (k === "styles") setStyles(list);
+          else if (k === "purpose") setPurpose(v);
+          else if (k === "worked") setWorked(v);
         }}
         resultCount={data.total} />
       {data.looks.length === 0 ? <EmptyState title={anyFilter || ranking !== "TOP100_GLOBAL" ? t("showcase.runwayPanel.nenhum_look_com_esses_filtros") : t("showcase.runwayPanel.ninguem_desfilou_hoje_ainda")} hint={t("showcase.runwayPanel.marque_um_look_do_dia")} /> : (

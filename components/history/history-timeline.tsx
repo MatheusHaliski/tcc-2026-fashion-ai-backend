@@ -49,10 +49,12 @@ export function HistoryTimeline() {
   if (loading || !data) return <Skeleton className="h-64" />;
   if (data.length === 0) return <EmptyState title={t("history.timeline.empty")} hint={t("history.timeline.empty_hint")} action={<Link href="/lookbook?tab=daily" className="btn btn-primary">{t("history.timeline.mark_today")}</Link>} />;
   const vezes = vezesDoLook(data);
+  const firsts = data.filter((r) => r.context?.purpose === "PRIMEIRO_DIA");   // §4.3: "primeiro dia" fica fixo na linha do tempo
   const months = new Map<string, DailyLookRow[]>();
   data.forEach((r) => { const k = String(r.date).slice(0, 7); months.set(k, [...(months.get(k) ?? []), r]); });
   return (
     <div className="grid gap-4">
+      {firsts.length > 0 && <Card><h2 className="type-h3 mb-2">{t("history.timeline.first_days")}</h2><ol className="history-list">{firsts.map((r) => <Row key={"first-" + r.id} r={r} vez={vezes.get(r.id) ?? 1} />)}</ol></Card>}
       {[...months.entries()].map(([month, rows]) => (
         <Card key={month}>
           <h2 className="type-h3 mb-2">{fmtDate(`${month}-01`, { month: "long", year: "numeric" })}</h2>

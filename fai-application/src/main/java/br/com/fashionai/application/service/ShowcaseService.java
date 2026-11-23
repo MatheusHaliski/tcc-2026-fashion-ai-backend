@@ -388,9 +388,9 @@ public class ShowcaseService {
     static final int RUNWAY_TOP = 100;
 
     public record RunwayFilter(String ranking, String region, String country, List<String> colors, List<String> occasions, List<String> styles,
-                               String sex, Integer limit, Integer offset) {
+                               String sex, Integer limit, Integer offset, String purpose, Boolean worked) {   // purpose/worked: Look do Dia Vivido F2 (RunwayPurpose)
         public static RunwayFilter of(Integer limit) {
-            return new RunwayFilter(null, null, null, List.of(), List.of(), List.of(), null, limit, 0);
+            return new RunwayFilter(null, null, null, List.of(), List.of(), List.of(), null, limit, 0, null, null);
         }
     }
 
@@ -446,7 +446,7 @@ public class ShowcaseService {
         User me = viewer == null ? null : users.findById(viewer.id()).orElse(null);
         List<RunwayEntry> pool = dailyLooks.findByLookDate(today).stream()
                 .filter(dl -> dl.getUser().getStatus() == AccountStatus.ACTIVE && !dl.getUser().isRunwayOptOut() && SearchService.showcaseAllows(viewer, dl.getUser()))
-                .filter(dl -> dl.getScheme().getStatus() != SchemeStatus.ARCHIVED && schemeService.canView(viewer, dl.getScheme()))
+                .filter(dl -> dl.getScheme().getStatus() != SchemeStatus.ARCHIVED && schemeService.canView(viewer, dl.getScheme()) && RunwayPurpose.matches(dl, f))
                 .map(this::entry).toList();
 
         // escopo do ranking

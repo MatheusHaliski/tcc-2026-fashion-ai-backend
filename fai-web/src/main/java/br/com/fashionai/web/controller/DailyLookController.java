@@ -3,6 +3,9 @@ package br.com.fashionai.web.controller;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.DailyLookCalendarService;
 import br.com.fashionai.application.service.DailyLookContextService;
+import br.com.fashionai.application.service.DailyLookExperienceService;
+import br.com.fashionai.application.service.DailyLookLivingTodayService;
+import br.com.fashionai.application.service.DailyLookMemoryService;
 import br.com.fashionai.application.service.DailyLookService;
 import br.com.fashionai.domain.model.enums.DailyLookFeedback;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +23,7 @@ import java.time.LocalDate;
 import java.time.Year;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * RF6/RF10 — histórico dos Looks do Dia, look anterior aguardando feedback e o feedback que alimenta as preferências.
@@ -32,11 +36,42 @@ public class DailyLookController {
     private final DailyLookService dailyLooks;
     private final DailyLookContextService context;
     private final DailyLookCalendarService calendar;
+    private final DailyLookLivingTodayService living;
+    private final DailyLookExperienceService experience;
+    private final DailyLookMemoryService memory;
 
-    public DailyLookController(DailyLookService dailyLooks, DailyLookContextService context, DailyLookCalendarService calendar) {
+    public DailyLookController(DailyLookService dailyLooks, DailyLookContextService context, DailyLookCalendarService calendar,
+                               DailyLookLivingTodayService living, DailyLookExperienceService experience, DailyLookMemoryService memory) {
         this.dailyLooks = dailyLooks;
         this.context = context;
         this.calendar = calendar;
+        this.living = living;
+        this.experience = experience;
+        this.memory = memory;
+    }
+
+    @GetMapping("/api/me/daily-looks/living-today")
+    @Operation(summary = "Look do Dia Vivido — Quem mais está vivendo isso hoje (mesmo propósito, mesma data; ≥ 5 pessoas)")
+    public Map<String, Object> livingToday(CurrentUser user, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return living.livingToday(user, date);
+    }
+
+    @GetMapping("/api/me/daily-looks/experience")
+    @Operation(summary = "Look do Dia Vivido — Selo de experiência do look: por propósito, quantas vezes foi usado e quantas deram certo")
+    public List<Map<String, Object>> experience(CurrentUser user, @RequestParam UUID schemeId) {
+        return experience.experience(user, schemeId);
+    }
+
+    @GetMapping("/api/me/daily-looks/on-this-day")
+    @Operation(summary = "Look do Dia Vivido — Mesma data, outro ano: o look vestido nesta data em anos anteriores, com o contexto da época")
+    public Map<String, Object> onThisDay(CurrentUser user, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return memory.onThisDay(user, date);
+    }
+
+    @GetMapping("/api/me/daily-looks/tomorrow")
+    @Operation(summary = "Look do Dia Vivido — Véspera: o que a pessoa vive amanhã (plano da semana ou Momento) e o convite para preparar o look")
+    public Map<String, Object> tomorrow(CurrentUser user, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return memory.tomorrow(user, date);
     }
 
     @GetMapping("/api/me/daily-looks/suggest-context")
@@ -65,13 +100,14 @@ public class DailyLookController {
         return dailyLooks.pendingFeedback(user);
     }
 
-    public record FeedbackRequest(@NotNull DailyLookFeedback feedback) {
+    /** {@code outcomeNote} (Look do Dia Vivido F2): "deu certo?" em poucas palavras, opcional. */
+    public record FeedbackRequest(@NotNull DailyLookFeedback feedback, String outcomeNote) {
     }
 
     @PutMapping("/api/me/daily-looks/{date}/feedback")
-    @Operation(summary = "RF10 — Feedback do look (ADOREI / OK / NAO_CURTI) alimenta as preferências")
+    @Operation(summary = "RF10 — Feedback do look (ADOREI / OK / NAO_CURTI) alimenta as preferências; com a nota de desfecho (F2)")
     public Map<String, Object> feedback(CurrentUser user, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                         @RequestBody FeedbackRequest body) {
-        return dailyLooks.feedback(user, date, body.feedback());
+        return dailyLooks.feedback(user, date, body.feedback(), body.outcomeNote());
     }
 }

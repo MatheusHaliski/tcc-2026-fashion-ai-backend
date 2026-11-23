@@ -127,10 +127,10 @@ class ShowcaseServiceTest {
         assertThat(r).isNotEmpty();
         for (String ranking : ShowcaseService.RUNWAY_RANKINGS) {
             assertThat(showcase.runway(ana, new ShowcaseService.RunwayFilter(ranking, "SA", "BR", List.of("Branco"), List.of("casual"),
-                    List.of("streetwear"), null, 6, 0))).isNotEmpty();
+                    List.of("streetwear"), null, 6, 0, null, null))).isNotEmpty();
         }
-        assertThat(showcase.runway(null, new ShowcaseService.RunwayFilter(null, null, null, List.of(), List.of(), List.of(), "FEMININO", null, 1))).isNotEmpty();
-        assertThatThrownBy(() -> showcase.runway(ana, new ShowcaseService.RunwayFilter("NADA", null, null, List.of(), List.of(), List.of(), null, 6, 0)))
+        assertThat(showcase.runway(null, new ShowcaseService.RunwayFilter(null, null, null, List.of(), List.of(), List.of(), "FEMININO", null, 1, null, null))).isNotEmpty();
+        assertThatThrownBy(() -> showcase.runway(ana, new ShowcaseService.RunwayFilter("NADA", null, null, List.of(), List.of(), List.of(), null, 6, 0, null, null)))
                 .isInstanceOf(ApiException.class);
         assertThat(ShowcaseService.count(List.of("a", "b", "a"))).hasSize(2);
     }

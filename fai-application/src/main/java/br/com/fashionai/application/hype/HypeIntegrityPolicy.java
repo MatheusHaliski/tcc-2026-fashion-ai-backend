@@ -29,7 +29,7 @@ import java.util.UUID;
  */
 @Component
 public class HypeIntegrityPolicy {
-    static final Set<HypeSignalType> OWNER_ACTIONS = Set.of(HypeSignalType.PIECE_USED, HypeSignalType.PIECE_IN_LOOK, HypeSignalType.LOOK_WORN);
+    static final Set<HypeSignalType> OWNER_ACTIONS = Set.of(HypeSignalType.PIECE_USED, HypeSignalType.PIECE_IN_LOOK, HypeSignalType.LOOK_WORN, HypeSignalType.LOOK_WORKED);
     private static final Duration DEDUPE_TTL = Duration.ofHours(26);
 
     private final RenderCachePort cache;

@@ -40,6 +40,7 @@ public class AchievementService {
 
     public static final List<Def> CATALOG = List.of(
             new Def("CURADOR", "Curador", "🏆", Msg.k("achievement.catalogacao_95"), 200, false),
+            new Def("SEMANA_VESTIDA", Msg.k("achievement.semana_vestida"), "📅", Msg.k("achievement.look_do_dia_de_segunda_a_sexta"), 100, false),
             new Def("SEGUNDA_CHANCE", Msg.k("common.segunda_chance"), "♻️", Msg.k("achievement.n10_pecas_esquecidas_reutilizadas"), 300, false),
             new Def("CAMALEAO", Msg.k("achievement.camaleao"), "🎨", Msg.k("achievement.looks_em_10_estilos_diferentes"), 200, false),
             new Def("SIGNATURE_CLOSET", Msg.k("common.signature_closet"), "👑", Msg.k("achievement.inventory_score_900"), 500, false),

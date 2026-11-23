@@ -87,4 +87,12 @@ public class DailyLook extends VersionedAuditableEntity {
     /** Marcas do calendário congeladas no dia: [{kind: WEEKDAY|SEASON|WEATHER|MOMENT, code, label, …}]. */
     @Column(name = "calendar_marks_json", columnDefinition = "json")
     private String calendarMarksJson;
+
+    /** F2 §4.2 — "deu certo?": a resposta do fim do dia, com o contexto ("a entrevista foi bem"). */
+    @Column(name = "outcome_note", length = 140)
+    private String outcomeNote;
+
+    /** F3 §4.4 — fase pessoal (Momento PERSONAL da própria pessoa) em que este dia foi vivido; nulo = fora de fase. */
+    @Column(name = "personal_moment_id", length = 36)
+    private java.util.UUID personalMomentId;
 }

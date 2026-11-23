@@ -53,8 +53,9 @@ public class ShowcaseController {
                                       @RequestParam(required = false) String ranking, @RequestParam(required = false) String region,
                                       @RequestParam(required = false) String country, @RequestParam(required = false) List<String> colors,
                                       @RequestParam(required = false) List<String> occasions, @RequestParam(required = false) List<String> styles,
-                                      @RequestParam(required = false) String sex) {
-        return showcase.runway(viewer, new ShowcaseService.RunwayFilter(ranking, region, country, colors, occasions, styles, sex, limit, offset));
+                                      @RequestParam(required = false) String sex, @RequestParam(required = false) String purpose,
+                                      @RequestParam(required = false) Boolean worked) {
+        return showcase.runway(viewer, new ShowcaseService.RunwayFilter(ranking, region, country, colors, occasions, styles, sex, limit, offset, purpose, worked));
     }
 
     @GetMapping("/api/institutional/{slug}/showcase/{kind}")

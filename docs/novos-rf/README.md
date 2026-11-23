@@ -44,7 +44,7 @@ Consultar a lista Requisitos Funcionais do Trello e usar os próximos números l
 | FashionAI Garment Delivery: peça do Atelier produzida sob encomenda pela Fábrica FashionAI (fictícia), com passaporte e cuidados | [Proposta](../garment-delivery/GARMENT_DELIVERY.md) | Implementada (RF-GD-01 a RF-GD-07); publicação no Trello pendente |
 
 | FLAIR METAMORFOSE | [Proposta](PROPOSTA_FLAIR_METAMORFOSE.md) | Aceita para esta edição; publicação no Trello pendente |
-| Look do Dia Vivido: contexto do dia (propósito, calendário, fase pessoal, para quem) no registro do Look do Dia, agrupamento "quem mais está vivendo isso hoje" e memórias por fase | [Proposta](PROPOSTA_LOOK_DO_DIA_VIVIDO.md) | F1 implementada (contexto no registro + look no calendário de Momentos, V104); F2/F3 propostas; publicação no Trello pendente |
+| Look do Dia Vivido: contexto do dia (propósito, calendário, fase pessoal, para quem) no registro do Look do Dia, agrupamento "quem mais está vivendo isso hoje" e memórias por fase | [Proposta](PROPOSTA_LOOK_DO_DIA_VIVIDO.md) | F1 (V104), F2 e F3 (V105) implementadas; anatomia dos cards em `docs/anatomias/`; publicação no Trello pendente |
 
 ### Complemento de RF existente
 

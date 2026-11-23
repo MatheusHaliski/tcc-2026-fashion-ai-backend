@@ -189,6 +189,10 @@ public class Moment extends AuditableEntity {
     @Column(name = "memory_json", columnDefinition = "json")
     private String memoryJson;
 
+    /** Look do Dia Vivido F3 — fase pessoal (type = PERSONAL) cuja Memória a dona publicou no perfil. */
+    @Column(name = "phase_public_on_profile", nullable = false)
+    private boolean phasePublicOnProfile;
+
     /** Badge concedida a quem conclui (§40): código curto; nulo = sem badge. */
     @Column(name = "badge_code", length = 40)
     private String badgeCode;

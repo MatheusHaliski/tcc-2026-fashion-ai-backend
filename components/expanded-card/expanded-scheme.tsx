@@ -18,6 +18,7 @@ import { MannequinPhotoButton } from "@/components/mannequin-photo";
 
 import { SchemeImprovementDialog } from "@/components/scheme-improvement-dialog";
 import { DailyLookContextPicker } from "@/components/daily-look/context-picker";
+import { ExperienceBadges } from "@/components/daily-look/experience-badges";
 import type { DailyLookContextInput } from "@/lib/daily-look/types";
 
 interface SchemeDetail { scheme: SchemeView; canEdit?: boolean }
@@ -56,6 +57,7 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
   return (
     <>
       <SchemeCard scheme={s} href={`/schemes/${s.id}`} expanded footer={footer} headerExtra={headerExtra} />
+      {mine && s.lookDoDia && <ExperienceBadges schemeId={s.id} />}
       {improve && <SchemeImprovementDialog key={s.id} id={s.id} onClose={() => setImprove(false)} onSaved={reload} />}
       {pickDaily && <DailyLookContextPicker open onClose={() => setPickDaily(false)} onConfirm={dailyLook} busy={dailyBusy} />}
       <Dialog open={!!sealSuggest} onClose={() => setSealSuggest(null)} title={t("schemes.id.vinculos_de_selo_sugeridos_rf21")}>

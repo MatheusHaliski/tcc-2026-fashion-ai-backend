@@ -30,3 +30,25 @@
 .moment-day .day-look { margin-top: 4px; }
 .moment-month-looks { margin: 8px 0 0; font-size: var(--text-caption); color: var(--muted); }
 .history-row .history-context { grid-column: 1 / -1; }
+
+/* F2/F3: carrossel "vivendo hoje", selo de experiência, véspera, mesma data, fases */
+.living-today-rail { display: flex; gap: 10px; overflow-x: auto; margin: 0; padding: 2px 0 6px; list-style: none; scroll-snap-type: x mandatory; }
+.living-today-item { flex: 0 0 200px; scroll-snap-align: start; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.dl-experience { display: grid; gap: 2px; margin: 8px 0 0; padding: 0; list-style: none; font-size: var(--text-body-sm); }
+.dl-experience-row { padding: 2px 8px; border-left: 3px solid var(--thread); }
+.on-this-day-item { padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+.on-this-day-item:last-child { border-bottom: 0; }
+.phase-row { display: grid; gap: 4px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.phase-row:last-child { border-bottom: 0; }
+.phase-pieces { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; }
+.phase-piece { display: grid; justify-items: center; gap: 2px; width: 72px; text-align: center; }
+.phase-piece .day-look-thumb { width: 44px; height: 56px; }
+
+/* Anatomia (docs/anatomias/look-do-dia-vivido-cards-2026-11-23.md): medidas do card cheio e do card na célula do mês */
+.day-look { min-width: 0; }
+.moment-week-day .day-look { max-width: 360px; }
+.moment-day:has(.day-look) { min-height: 112px; vertical-align: top; }
+.day-look .day-look-text > .type-caption { font-variant: small-caps; letter-spacing: 0.02em; }
+@media (max-width: 640px) {
+  .day-look.is-compact .day-look-moments, .day-look.is-compact .dl-marks { display: none; }
+}

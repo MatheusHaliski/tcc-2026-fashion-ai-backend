@@ -21,5 +21,7 @@ public enum HypeSignalType {
     /** peça incluída num look salvo */
     PIECE_IN_LOOK,
     /** look marcado como look do dia */
-    LOOK_WORN
+    LOOK_WORN,
+    /** Look do Dia Vivido F2: o look "deu certo" num propósito (feedback ADOREI com contexto não sensível) */
+    LOOK_WORKED
 }

@@ -41,7 +41,7 @@ public class HypeScoreConfig {
      * esforço valem mais (mesma lógica do v1: L=1, C=3, S=5, R=8, aqui suavizada); visualização quase não pesa.
      */
     static final String DEFAULT_SIGNAL_WEIGHTS = "LIKE_CREATED=1,COMMENT_CREATED=2,SAVE_CREATED=2,SHARE_CREATED=3,FAVORITE_CREATED=1.5,"
-            + "LOOK_REMIXED=4,PIECE_REMIXED=3,LOOK_VIEWED=0.1,PIECE_VIEWED=0.1,PIECE_USED=1,PIECE_IN_LOOK=1.5,LOOK_WORN=1";
+            + "LOOK_REMIXED=4,PIECE_REMIXED=3,LOOK_VIEWED=0.1,PIECE_VIEWED=0.1,PIECE_USED=1,PIECE_IN_LOOK=1.5,LOOK_WORN=1,LOOK_WORKED=1.5";
 
     private final String algorithmVersion;
     private final Map<Dimension, Double> pieceWeights;

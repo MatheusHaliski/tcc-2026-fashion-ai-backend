@@ -25,4 +25,6 @@ public interface MomentRepository extends JpaRepository<Moment, UUID> {
     List<Moment> findByStatusInAndStartAtBetweenOrderByStartAtAsc(Collection<MomentStatus> statuses, Instant from, Instant to);
 
     List<Moment> findAllByOrderByStartAtDesc();
+    /** Look do Dia Vivido F3 — fases pessoais (type = PERSONAL) de uma pessoa. */
+    List<Moment> findByCreatedByUserIdAndTypeOrderByStartAtDesc(UUID createdByUserId, br.com.fashionai.domain.model.enums.MomentType type);
 }

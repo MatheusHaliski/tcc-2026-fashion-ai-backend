@@ -12,10 +12,13 @@ import { HypeInline } from "@/components/hype/hype-inline";
 import { HypeStateNotice } from "@/components/hype/hype-state-notice";
 import { HypeTrendIndicator } from "@/components/hype/hype-trend-indicator";
 import { InsightStrip } from "@/components/insights/insight-strip";
-import { Button, Card, Dropdown, EmptyState, Skeleton, useToast } from "@/components/ui";
+import { Button, Card, Dropdown, EmptyState, Input, Skeleton, useToast } from "@/components/ui";
 import { SchemeCard } from "@/components/scheme-card";
 import { LookExports } from "@/components/look-exports";
 import { DailyLookContextChips } from "@/components/daily-look/context-chips";
+import { LivingToday, OnThisDay, TomorrowInvite } from "@/components/lookbook/daily-tab-extras";
+import { PhasesPanel } from "@/components/lookbook/daily-phases";
+export { PublishedPhases } from "@/components/lookbook/daily-phases";   // lookbook-tabs.tsx (congelado) importa daqui
 import { DIMENSION_ORDER, displayScore, hypeViewState, levelTone } from "@/lib/hype/model";
 import { primeHype, useHypeSummary } from "@/lib/hype/use-hype";
 import type { HypeLevel, HypeSummary } from "@/lib/hype/types";
@@ -27,7 +30,7 @@ import type { HypeLevel, HypeSummary } from "@/lib/hype/types";
  */
 interface DailyPanel { v2?: HypeSummary | null; magazineCover?: { unlocked: boolean; minLevel: HypeLevel } | null; tip?: string | null; aiExplanation?: unknown }
 /** Linha do histórico (DailyLookService.view): `schemeId` é a chave do Hype v2 (P1-06). */
-interface DailyHistoryRow { date: string; schemeId?: string; title?: string; scheme?: SchemeView; feedback?: string | null; context?: DailyLookContextView | null }
+interface DailyHistoryRow { date: string; schemeId?: string; title?: string; scheme?: SchemeView; feedback?: string | null; context?: DailyLookContextView | null; outcomeNote?: string | null }
 interface DailyTabData { panelVersion: string; panelVersions: { code: string; name: string; emphasis?: string; hype?: string; bestFor?: string }[]; today?: { date?: string; feedback?: string | null; source?: string; context?: DailyLookContextView | null } | null; scheme?: SchemeView; panel?: DailyPanel; empty?: { message: string; actions?: { label: string; href: string }[] }; history?: DailyHistoryRow[]; feedbackReminder?: { show?: boolean; message?: string }; feedbackOptions?: string[] }
 
 /** HypeBadge v2 de uma linha do histórico (lote: todas as linhas viram uma requisição a /api/hype/summaries). */
@@ -45,6 +48,7 @@ function DailyHistoryHype({ id }: { id?: string }) {
  */
 export function DailyTab() {
   const { t, fmtDate } = useI18n(); const toast = useToast(); const [withAi, setWithAi] = useState(false);
+  const [outcomeNote, setOutcomeNote] = useState("");   // F2 §4.2: "deu certo?" em poucas palavras
   const { data, loading, reload } = useApi<DailyTabData>((signal) => api.get(`/api/me/daily-look-tab?withAi=${withAi}`, { signal }), [withAi]);
   // o painel já traz o resumo v2 do look: alimenta o cache para o card e a análise não pedirem de novo
   const primed = data?.scheme?.id && data.panel?.v2 ? { id: data.scheme.id, v2: data.panel.v2 } : null;
@@ -57,7 +61,7 @@ export function DailyTab() {
   const level = state.kind === "available" ? state.level : null;
   const version = data.panelVersion;
   const bar = score != null ? <div className="hype-bar mt-2"><i style={{ width: `${Math.max(0, Math.min(100, score))}%`, background: "var(--thread)" }} /></div> : null;
-  async function feedback(fb: string) { if (!data?.today?.date) return; try { await api.put(`/api/me/daily-looks/${data.today.date}/feedback`, { feedback: fb }); toast.success(t("lookbookTabs.obrigado_isso_melhora_suas_recomendacoes")); reload(); } catch (e) { toast.fromError(e); } }
+  async function feedback(fb: string) { if (!data?.today?.date) return; try { await api.put(`/api/me/daily-looks/${data.today.date}/feedback`, { feedback: fb, outcomeNote: outcomeNote.trim() || null }); toast.success(t("lookbookTabs.obrigado_isso_melhora_suas_recomendacoes")); reload(); } catch (e) { toast.fromError(e); } }
   return (<>
     <InsightStrip context="HISTORY" collapsible className="mb-4" />
     <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
@@ -84,8 +88,12 @@ export function DailyTab() {
             </div>
           ) : <p className="type-body text-muted">{t("lookbookTabs.marque_um_look_como_look")}</p>}
         </Card>
-        {data.today && (data.today.feedback == null) && <Card className="mb-4"><p className="type-body mb-2">{data.feedbackReminder?.message ?? t("lookbookTabs.como_foi_o_look_de")}</p><div className="flex gap-2">{(data.feedbackOptions ?? ["ADOREI", "NAO_USEI", "NAO_GOSTEI"]).map((o) => <Button key={o} onClick={() => feedback(o)}>{o === "ADOREI" ? t("lookbookTabs.adorei") : o === "NAO_USEI" ? t("lookbookTabs.nao_usei") : t("lookbookTabs.nao_gostei")}</Button>)}</div></Card>}
-        <Card><h2 className="type-h3 mb-2">{t("common.historico")}</h2>{(data.history ?? []).length === 0 ? <p className="type-body text-muted">{t("common.empty")}</p> : <ul className="fai-list">{(data.history ?? []).map((h) => <li key={h.date} className="py-2 type-body-sm"><div className="flex items-center justify-between gap-2"><span>{fmtDate(h.date)} · {h.title ?? h.scheme?.title ?? ""}</span><span className="flex items-center gap-2"><span className="type-data">{h.feedback ?? "—"}</span><DailyHistoryHype id={h.schemeId ?? h.scheme?.id} /></span></div><DailyLookContextChips context={h.context} compact className="mt-1" /></li>)}</ul>}</Card>
+        <TomorrowInvite />
+        {data.today && (data.today.feedback == null) && <Card className="mb-4"><p className="type-body mb-2">{data.feedbackReminder?.message ?? t("lookbookTabs.como_foi_o_look_de")}</p><Input className="mb-2" value={outcomeNote} maxLength={140} placeholder={t("dailyLookContext.outcome_note")} aria-label={t("dailyLookContext.outcome_note")} onChange={(e) => setOutcomeNote(e.target.value)} /><div className="flex gap-2">{(data.feedbackOptions ?? ["ADOREI", "NAO_USEI", "NAO_GOSTEI"]).map((o) => <Button key={o} onClick={() => feedback(o)}>{o === "ADOREI" ? t("lookbookTabs.adorei") : o === "NAO_USEI" ? t("lookbookTabs.nao_usei") : t("lookbookTabs.nao_gostei")}</Button>)}</div></Card>}
+        <LivingToday />
+        <OnThisDay />
+        <PhasesPanel />
+        <Card><h2 className="type-h3 mb-2">{t("common.historico")}</h2>{(data.history ?? []).length === 0 ? <p className="type-body text-muted">{t("common.empty")}</p> : <ul className="fai-list">{(data.history ?? []).map((h) => <li key={h.date} className="py-2 type-body-sm"><div className="flex items-center justify-between gap-2"><span>{fmtDate(h.date)} · {h.title ?? h.scheme?.title ?? ""}</span><span className="flex items-center gap-2"><span className="type-data">{h.feedback ?? "—"}</span><DailyHistoryHype id={h.schemeId ?? h.scheme?.id} /></span></div>{h.outcomeNote && <p className="type-caption text-muted mt-1">✓ {h.outcomeNote}</p>}<DailyLookContextChips context={h.context} compact className="mt-1" /></li>)}</ul>}</Card>
       </div>
     </div>
   </>);

@@ -69,6 +69,14 @@ public class HypeSignalRecorder {
         });
     }
 
+    /** Look do Dia Vivido F2: o look "deu certo" no propósito do dia (peso 1,5; nunca em propósito sensível — o evento já filtra). */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onDailyLookWorked(DomainEvents.DailyLookWorked ev) {
+        LocalDate day = signalDay(ev.date());
+        sideEffects.run("HypeSignal:DailyLookWorked", () ->
+                record(new DomainEvents.HypeSignal(HypeSignalType.LOOK_WORKED, HypeEntityType.SCHEME, ev.schemeId(), ev.userId(), ev.userId()), day));
+    }
+
     void record(DomainEvents.HypeSignal s) {
         record(s, LocalDate.now(ZONE));
     }

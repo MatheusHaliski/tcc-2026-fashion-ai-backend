@@ -155,7 +155,7 @@ public class DailyLookContextService {
         };
     }
 
-    private Optional<WeekPlanDay> plannedDay(CurrentUser user, LocalDate day) {
+    Optional<WeekPlanDay> plannedDay(CurrentUser user, LocalDate day) {
         return weekPlans.findFirstByUserIdAndStatusOrderByWeekStartDesc(user.id(), WeekPlanStatus.ACTIVE)
                 .flatMap(p -> weekPlanDays.findByWeekPlanIdOrderByDayDate(p.getId()).stream().filter(d -> day.equals(d.getDayDate())).findFirst());
     }

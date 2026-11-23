@@ -4,7 +4,7 @@
  * na linha; sem contexto, nada é inventado. O painel e o histórico seguem como antes (lookbook-hype.test.tsx).
  */
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { cleanup, loggedAs, renderApp, screen, settle, within } from "@/test-utils/render";
+import { cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 import { SCHEME } from "@/test-utils/fixtures";
 import { __resetHypeStore } from "@/lib/hype/use-hype";
 import { DailyTab } from "./daily-tab";
@@ -44,4 +44,16 @@ it("sem contexto registrado, a aba não mostra o bloco do contexto", async () =>
   await settle();
   expect(await screen.findByRole("heading", { name: "Histórico" })).toBeTruthy();
   expect(screen.queryByRole("region", { name: "Contexto do dia" })).toBeNull();
+});
+
+it("'deu certo?': a pergunta leva o contexto e a nota vai junto com a avaliação", async () => {
+  const api = loggedAs(undefined, { ...BASE, "GET /api/me/daily-look-tab": { ...TAB, today: { ...TAB.today, feedback: null }, feedbackReminder: { show: true, message: "Como foi entrevista com esse look? Conte antes da meia-noite." }, history: [{ date: "2026-11-22", schemeId: "s2", title: "Look de domingo", feedback: "ADOREI", outcomeNote: "O jantar foi ótimo", context: null }] },
+    "PUT /api/me/daily-looks/2026-11-23/feedback": { ok: true } });
+  renderApp(<DailyTab />);
+  await settle();
+  expect(await screen.findByText("Como foi entrevista com esse look? Conte antes da meia-noite.")).toBeTruthy();
+  expect(screen.getByText("✓ O jantar foi ótimo")).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Deu certo? Conte em poucas palavras (opcional)"), { target: { value: "  A entrevista foi bem " } });
+  fireEvent.click(screen.getByRole("button", { name: "😍 Adorei" }));
+  await waitFor(() => expect(api.calls.find((c) => c.path === "/api/me/daily-looks/2026-11-23/feedback")?.body).toEqual({ feedback: "ADOREI", outcomeNote: "A entrevista foi bem" }));
 });

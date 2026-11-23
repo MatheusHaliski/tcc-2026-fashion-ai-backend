@@ -41,15 +41,20 @@ public class DailyLookService {
     private final Guard guard;
     private final ApplicationEventPublisher events;
     private final DailyLookContextService context;
+    private final DailyLookPhaseService phases;
+    private final DailyLookExperienceService experience;
 
     public DailyLookService(DailyLookRepository dailyLooks, SchemeItemRepository schemeItems, UserRepository users, Guard guard,
-                            ApplicationEventPublisher events, DailyLookContextService context) {
+                            ApplicationEventPublisher events, DailyLookContextService context, DailyLookPhaseService phases,
+                            DailyLookExperienceService experience) {
         this.dailyLooks = dailyLooks;
         this.schemeItems = schemeItems;
         this.users = users;
         this.guard = guard;
         this.events = events;
         this.context = context;
+        this.phases = phases;
+        this.experience = experience;
     }
 
     /** Registra (ou substitui) o Look do Dia da data sem Contexto do Dia (Autopiloto, Copilot, Espelho, Vista-me). */
@@ -80,6 +85,9 @@ public class DailyLookService {
         if (ctx != null) {
             context.freeze(dl, ctx, user, day);
         }
+        if (dl.getPersonalMomentId() == null) {   // F3: o dia entra na fase pessoal que o cobre
+            phases.phaseOn(user.id(), day).ifPresent(m -> dl.setPersonalMomentId(m.getId()));
+        }
         dailyLooks.save(dl);
         scheme.setLookDoDia(true);
         if (!replaced || dl.getId() == null) {
@@ -94,6 +102,7 @@ public class DailyLookService {
             }
         }
         events.publishEvent(new DomainEvents.DailyLookRegistered(user.id(), scheme.getId(), day, source.name(), pieceIds));
+        experience.weekCheck(user.id(), day);   // F2: "Semana vestida" (seg–sex com propósito de trabalho/estudo)
         return dl;
     }
 
@@ -119,12 +128,22 @@ public class DailyLookService {
     /** HU19 — avaliação do Look do Dia (adorei / não usei / não gostei); sem look → orienta o Autopiloto (C3). */
     @Transactional
     public Map<String, Object> feedback(CurrentUser user, LocalDate date, DailyLookFeedback feedback) {
+        return feedback(user, date, feedback, null);
+    }
+
+    /** F2 §4.2 — "deu certo?": com a nota de desfecho; ADOREI num propósito não sensível vira o sinal LOOK_WORKED do Hype. */
+    @Transactional
+    public Map<String, Object> feedback(CurrentUser user, LocalDate date, DailyLookFeedback feedback, String outcomeNote) {
         LocalDate day = date == null ? LocalDate.now(FaiPointsService.ZONE) : date;
         DailyLook dl = (day.equals(LocalDate.now(FaiPointsService.ZONE)) ? today(user.id()) : dailyLooks.findByUserIdAndLookDate(user.id(), day))
                 .orElseThrow(() -> new ApiException(404, "SEM_LOOK_DO_DIA", Msg.t("dailyLook.nao_ha_look_do_dia", day), Map.of("href", "/autopilot")));
         dl.setFeedback(feedback);
         dl.setFeedbackAt(Instant.now());
+        dl.setOutcomeNote(outcomeNote == null || outcomeNote.isBlank() ? null : outcomeNote.strip().substring(0, Math.min(outcomeNote.strip().length(), DailyLookContext.NOTE_MAX)));
         dailyLooks.save(dl);
+        if (feedback == DailyLookFeedback.ADOREI && dl.getPurpose() != null && !dl.getPurpose().sensitive()) {
+            events.publishEvent(new DomainEvents.DailyLookWorked(user.id(), dl.getScheme().getId(), day, dl.getPurpose().name()));
+        }
         return view(dl);
     }
 
@@ -144,7 +163,9 @@ public class DailyLookService {
         out.put("pending", pending);
         out.put("evening", hour >= 18);
         out.put("show", pending && hour >= 18);
-        out.put("message", pending ? Msg.t("dailyLook.como_foi_o_look_de") : "");
+        // F2 §4.2 — a pergunta do fim do dia leva o contexto ("Como foi a entrevista com esse look?")
+        out.put("message", !pending ? "" : dl.get().getPurpose() == null ? Msg.t("dailyLook.como_foi_o_look_de")
+                : Msg.t("dailyLook.como_foi_com_esse_look", Msg.t("dailyLook.purpose." + dl.get().getPurpose().name()).toLowerCase(Msg.locale())));
         out.put("dailyLook", dl.map(this::view).orElse(null));
         return out;
     }
@@ -167,6 +188,8 @@ public class DailyLookService {
         m.put("materialized", dl.getMaterializedFrom() != null);
         m.put("weekPlanDayId", dl.getWeekPlanDayId());
         m.put("context", context.view(dl));
+        m.put("outcomeNote", dl.getOutcomeNote());
+        m.put("personalMomentId", dl.getPersonalMomentId());
         return m;
     }
 }

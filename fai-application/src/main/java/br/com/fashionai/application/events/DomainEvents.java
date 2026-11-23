@@ -43,6 +43,10 @@ public final class DomainEvents {
     public record DailyLookRegistered(UUID userId, UUID schemeId, LocalDate date, String source, List<UUID> pieceIds) {
     }
 
+    /** Look do Dia Vivido F2 — o look "deu certo" (feedback ADOREI) num propósito não sensível. */
+    public record DailyLookWorked(UUID userId, UUID schemeId, LocalDate date, String purpose) {
+    }
+
     public record InteractionReceived(UUID ownerId, UUID actorId, String kind, UUID targetId) {
     }
 

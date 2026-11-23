@@ -41,3 +41,16 @@ it("mostra o Contexto do Dia congelado de cada registro (propósito, para quem e
   expect(linhas[1].textContent).not.toContain("Marcas do dia");
   expect(within(linhas[1]).queryByRole("list")).toBeNull();
 });
+
+it("o 'primeiro dia' fica fixo no alto da linha do tempo", async () => {
+  loggedAs(undefined, {
+    "GET /api/me/daily-looks": [
+      { id: "d2", date: "2026-11-23", source: "MANUAL", schemeId: "s2", title: "Look de segunda", context: null },
+      { id: "d1", date: "2026-11-02", source: "MANUAL", schemeId: "s1", title: "Look do primeiro dia no estágio", context: { purpose: "PRIMEIRO_DIA", purposeLabel: "Primeiro dia", sensitive: false, privateOnly: false, marks: [] } },
+    ],
+  });
+  renderApp(<HistoryTimeline />);
+  const firsts = (await screen.findByRole("heading", { name: "Primeiros dias" })).parentElement as HTMLElement;
+  expect(within(firsts).getByRole("link", { name: "Look do primeiro dia no estágio" })).toBeTruthy();
+  expect(within(firsts).queryByRole("link", { name: "Look de segunda" })).toBeNull();
+});

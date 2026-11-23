@@ -17,7 +17,7 @@ vi.mock("@/components/filter-bar", () => ({
       <p data-testid="values">{JSON.stringify(values)}</p>
       <p data-testid="quick">{quick.options.map((o) => o.label).join("|")}</p>
       <p data-testid="opts">{filters.map((f) => `${f.key}:${f.options.map((o) => o.label).join("/")}`).join(";")}</p>
-      {[["ranking", "TOP100_PAIS"], ["ranking", ""], ["ranking", "TOP100_REGIONAL"], ["region", "SA"], ["region", ""], ["country", "BR"], ["sex", "MASCULINO"], ["colors", "black,red"], ["occasions", "party"], ["styles", "edgy"], ["styles", ""]].map(([k, v]) =>
+      {[["purpose", "ENTREVISTA"], ["worked", "true"], ["purpose", ""], ["worked", ""], ["ranking", "TOP100_PAIS"], ["ranking", ""], ["ranking", "TOP100_REGIONAL"], ["region", "SA"], ["region", ""], ["country", "BR"], ["sex", "MASCULINO"], ["colors", "black,red"], ["occasions", "party"], ["styles", "edgy"], ["styles", ""]].map(([k, v]) =>
         <button key={k + v} type="button" onClick={() => onChange(k, v)}>{`set ${k}=${v}`}</button>)}
     </div>
   ),
@@ -146,5 +146,20 @@ describe("RunwayPanel — você, vazio e 3D", () => {
     mockApi({ "GET /api/explorer/runway": () => new Response(JSON.stringify({ status: 500, message: "Passarela fora" }), { status: 500, headers: { "content-type": "application/json" } }) });
     renderApp(<RunwayPanel />);
     expect(await screen.findByText("Passarela fora")).toBeTruthy();
+  });
+
+  it("propósito do dia e 'deram certo' viram purpose e worked na query; as opções vêm do catálogo de propósitos", async () => {
+    const { calls } = mockApi({ "GET /api/explorer/runway": base() });
+    renderApp(<RunwayPanel />);
+    expect((await screen.findByTestId("opts")).textContent).toContain("purpose:Entrevista/Primeiro dia/");
+    expect(screen.getByTestId("opts").textContent).toContain("worked:Só os que deram certo");
+    fireEvent.click(screen.getByRole("button", { name: "set purpose=ENTREVISTA" }));
+    await waitFor(() => expect(lastQuery(calls).get("purpose")).toBe("ENTREVISTA"));
+    fireEvent.click(screen.getByRole("button", { name: "set worked=true" }));
+    await waitFor(() => expect(lastQuery(calls).get("worked")).toBe("true"));
+    fireEvent.click(screen.getByRole("button", { name: "set purpose=" }));
+    fireEvent.click(screen.getByRole("button", { name: "set worked=" }));
+    await waitFor(() => expect(lastQuery(calls).has("purpose")).toBe(false));
+    expect(lastQuery(calls).has("worked")).toBe(false);
   });
 });

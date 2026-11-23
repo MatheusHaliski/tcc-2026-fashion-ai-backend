@@ -1,7 +1,8 @@
 # Proposta — Look do Dia Vivido: o look que a pessoa realmente vestiu, no dia em que viveu
 
-**Estado:** F1 implementada em 19/11/2026 (contexto no registro + Look do Dia no calendário de Momentos, ver §11); F2 e F3
-propostas. Sem número oficial; confirmar no Trello antes de publicar o cartão.
+**Estado:** F1 implementada em 19/11/2026 (§11); F2 e F3 implementadas em 23/11/2026 (§12). Anatomia dos cards em
+[docs/anatomias/look-do-dia-vivido-cards-2026-11-23.md](../anatomias/look-do-dia-vivido-cards-2026-11-23.md). Sem número
+oficial; confirmar no Trello antes de publicar o cartão.
 **Toca:** `schemes.look_do_dia` (hoje um booleano), `daily_looks`, Momentos, Autopiloto (`week_plan_days`),
 Clima (`WeatherService`), HypeScore v2 (`LOOK_WORN`), FAI Points (`LOOK_DO_DIA`), Passarela 3D.
 **Data:** 2026-11-19.
@@ -192,3 +193,20 @@ Complemento de 19/11/2026 (pedido da dona): a aba Look do Dia foi extraída de `
 Dia de hoje sob o card e o de cada linha do histórico. O diálogo "Hoje eu vesti isso para…" ganhou o botão **"Usar minha posição
 para o clima"**: só ao tocar, a posição do navegador vai para `suggest-context` (a marca de clima aparece na hora) e segue no
 registro como `latitude/longitude`; nada da posição é guardado, e posição negada ou indisponível não impede o registro.
+
+## 12. F2 e F3 entregues (23/11/2026)
+
+| Camada | O que entrou |
+|---|---|
+| Banco | `V105__daily_look_lived_f2_f3.sql`: `daily_looks.outcome_note`, `daily_looks.personal_moment_id` (FK `moments`, SET NULL), índices por fase e por look/propósito; `moments.phase_public_on_profile`. |
+| Domínio | `HypeSignalType.LOOK_WORKED`; campos em `DailyLook` e `Moment`; consultas por data+propósito, por look e por fase. |
+| F2 — vivendo hoje | `DailyLookLivingTodayService`: mesma data e mesmo propósito, só looks visíveis, nunca sensível nem "só eu", carrossel a partir de 5 pessoas. `DailyLookService.feedback(…, outcomeNote)`: "deu certo?" com nota; a pergunta do fim do dia leva o contexto ("Como foi entrevista com esse look?"); ADOREI em propósito não sensível publica `DailyLookWorked` → sinal `LOOK_WORKED` (peso 1,5, ação do dono). `DailyLookExperienceService`: selo "Usado N vezes para X · M deram certo" e o marco **Semana vestida** (conquista `SEMANA_VESTIDA`, 100 pontos, uma vez: seg–sex com propósito de trabalho/estudo). `RunwayPurpose`: Passarela com `purpose` e `worked`. |
+| F3 — fases e memória | `DailyLookPhaseService` + `DailyLookPhaseMemory`: fase = Momento `PERSONAL`/`PRIVATE` da pessoa (sem pontos), liga os Looks do Dia do período (os já registrados ao criar e os novos ao registrar), Memória (dias, looks, propósitos, 5 peças que mais acompanharam) e publicação no perfil por fase (`phase_public_on_profile`; resumo público só com peças PUBLIC). `DailyLookMemoryService`: "mesma data, outro ano" (até 5 anos) e o convite da véspera (plano da semana ou Momento que começa amanhã), sem notificação. |
+| API | `GET /api/me/daily-looks/living-today`, `/experience?schemeId`, `/on-this-day`, `/tomorrow`; `PUT /api/me/daily-looks/{date}/feedback` com `outcomeNote`; `POST/GET /api/me/daily-looks/phases`, `GET …/phases/{id}/memory`, `PUT …/phases/{id}/visibility`; `GET /api/users/{id}/daily-looks/phases` (público, filtrado pelo perfil); `GET /api/explorer/runway?purpose&worked`. |
+| Telas | Aba Look do Dia: convite da véspera, "deu certo?" com nota, "Quem mais está vivendo isso hoje" (trilho), "Mesma data, outro ano", painel **Fases** (criar, memória, publicar). Card ampliado: selo de experiência (dono, look já usado). Histórico › Timeline: "Primeiros dias" fixo no alto. Passarela: filtros "Propósito do dia" e "Deram certo". Perfil › Momentos: Memórias de fase publicadas. |
+| Testes | `DailyLookLivedF2Test`, `DailyLookLivedF3Test`, contrato de rotas por tag atualizado, delegação dos controllers do Look do Dia (43 endpoints); frontend: `daily-tab-extras.test.tsx`, `daily-phases.test.tsx`, casos novos em `daily-tab`, `history-timeline`, `runway-panel-filtros` e `expanded-card-daily-look`. |
+
+Decisões: feriados nacionais continuam fora (sem tabela; os Momentos oficiais cobrem as datas). O convite da véspera é
+uma pergunta na aba, não uma notificação push (evita ruído; pode virar notificação opt-in depois). "Semana vestida" é
+conquista única, não pontos semanais, para não criar farming.
+

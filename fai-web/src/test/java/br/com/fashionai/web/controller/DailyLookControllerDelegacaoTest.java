@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * serviço respondeu — inclusive os novos {@code suggest-context}, {@code calendar} e o corpo com {@code context}.
  */
 class DailyLookControllerDelegacaoTest {
-    static final List<Class<?>> CONTROLLERS = List.of(DailyLookController.class, LookbookController.class);
+    static final List<Class<?>> CONTROLLERS = List.of(DailyLookController.class, DailyLookPhaseController.class, LookbookController.class);
 
     @TestFactory
     Stream<DynamicTest> endpointsDoLookDoDiaDelegamAoServico() {

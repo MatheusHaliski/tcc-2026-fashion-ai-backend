@@ -22,7 +22,7 @@ import { SavedLooks } from "@/components/looks/saved-looks";
 import { FlairCollectionTab } from "@/components/flair/flair-collection";
 import { MyArts } from "@/components/my-arts";
 import { MomentsTimelineSection } from "@/components/moments/moment-timeline";
-import { DailyTab } from "@/components/lookbook/daily-tab";
+import { DailyTab, PublishedPhases } from "@/components/lookbook/daily-tab";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
 /**
@@ -77,7 +77,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
       {tab === "capsule" && ov.self && <CapsuleTab />}
       {tab === "insights" && ov.self && <><InsightStrip context="CLOSET" className="mb-4" /><HypeWardrobeInsights /></>}
       {tab === "groups" && <GroupsTab ownerId={ownerId} self={ov.self} suggestions={!!ov.groupingSuggestionsAvailable} />}
-      {tab === "moments" && <MomentsTimelineSection userId={ownerId} self={ov.self} />}
+      {tab === "moments" && <><MomentsTimelineSection userId={ownerId} self={ov.self} /><PublishedPhases userId={ownerId} /></>}
     </>
   );
 }

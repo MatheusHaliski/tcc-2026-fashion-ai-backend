@@ -58,9 +58,93 @@ final class ServiceFakesLookDoDia {
         }
     }
 
+    static final class FakeDailyLookLivingTodayService extends br.com.fashionai.application.service.DailyLookLivingTodayService {
+        FakeDailyLookLivingTodayService() {
+            super((br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class));
+        }
+
+        @Override
+        public java.util.Map<java.lang.String, java.lang.Object> livingToday(br.com.fashionai.application.security.CurrentUser a0, java.time.LocalDate a1) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "livingToday", java.util.Map.class, new Object[]{a0, a1});
+        }
+    }
+
+    static final class FakeDailyLookExperienceService extends br.com.fashionai.application.service.DailyLookExperienceService {
+        FakeDailyLookExperienceService() {
+            super((br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.application.service.AchievementService) Fk.arg(br.com.fashionai.application.service.AchievementService.class));
+        }
+
+        @Override
+        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> experience(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
+            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "experience", java.util.List.class, new Object[]{a0, a1});
+        }
+
+        @Override
+        public boolean weekCheck(java.util.UUID a0, java.time.LocalDate a1) {
+            return (boolean) Fk.call(this, "weekCheck", boolean.class, new Object[]{a0, a1});
+        }
+    }
+
+    static final class FakeDailyLookMemoryService extends br.com.fashionai.application.service.DailyLookMemoryService {
+        FakeDailyLookMemoryService() {
+            super((br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.application.service.DailyLookContextService) Fk.arg(br.com.fashionai.application.service.DailyLookContextService.class), (br.com.fashionai.application.moments.MomentDays) Fk.arg(br.com.fashionai.application.moments.MomentDays.class));
+        }
+
+        @Override
+        public java.util.Map<java.lang.String, java.lang.Object> onThisDay(br.com.fashionai.application.security.CurrentUser a0, java.time.LocalDate a1) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "onThisDay", java.util.Map.class, new Object[]{a0, a1});
+        }
+
+        @Override
+        public java.util.Map<java.lang.String, java.lang.Object> tomorrow(br.com.fashionai.application.security.CurrentUser a0, java.time.LocalDate a1) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "tomorrow", java.util.Map.class, new Object[]{a0, a1});
+        }
+    }
+
+    static final class FakeDailyLookPhaseService extends br.com.fashionai.application.service.DailyLookPhaseService {
+        FakeDailyLookPhaseService() {
+            super((br.com.fashionai.domain.repository.MomentRepository) Fk.arg(br.com.fashionai.domain.repository.MomentRepository.class), (br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.application.service.DailyLookPhaseMemory) Fk.arg(br.com.fashionai.application.service.DailyLookPhaseMemory.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class));
+        }
+
+        @Override
+        public java.util.Map<java.lang.String, java.lang.Object> create(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.time.LocalDate a2, java.time.LocalDate a3) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "create", java.util.Map.class, new Object[]{a0, a1, a2, a3});
+        }
+
+        @Override
+        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> mine(br.com.fashionai.application.security.CurrentUser a0) {
+            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "mine", java.util.List.class, new Object[]{a0});
+        }
+
+        @Override
+        public java.util.Map<java.lang.String, java.lang.Object> memory(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "memory", java.util.Map.class, new Object[]{a0, a1});
+        }
+
+        @Override
+        public java.util.Map<java.lang.String, java.lang.Object> setPublicOnProfile(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, boolean a2) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "setPublicOnProfile", java.util.Map.class, new Object[]{a0, a1, a2});
+        }
+
+        @Override
+        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> published(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
+            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "published", java.util.List.class, new Object[]{a0, a1});
+        }
+
+        @Override
+        public java.util.Optional<br.com.fashionai.domain.model.Moment> phaseOn(java.util.UUID a0, java.time.LocalDate a1) {
+            return (java.util.Optional<br.com.fashionai.domain.model.Moment>) Fk.call(this, "phaseOn", java.util.Optional.class, new Object[]{a0, a1});
+        }
+    }
+
     static final class FakeDailyLookService extends br.com.fashionai.application.service.DailyLookService {
         FakeDailyLookService() {
-            super((br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.service.DailyLookContextService) Fk.arg(br.com.fashionai.application.service.DailyLookContextService.class));
+            super((br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.service.DailyLookContextService) Fk.arg(br.com.fashionai.application.service.DailyLookContextService.class), (br.com.fashionai.application.service.DailyLookPhaseService) Fk.arg(br.com.fashionai.application.service.DailyLookPhaseService.class), (br.com.fashionai.application.service.DailyLookExperienceService) Fk.arg(br.com.fashionai.application.service.DailyLookExperienceService.class));
+        }
+
+        @Override
+        public java.util.Map<java.lang.String, java.lang.Object> feedback(br.com.fashionai.application.security.CurrentUser a0, java.time.LocalDate a1, br.com.fashionai.domain.model.enums.DailyLookFeedback a2, java.lang.String a3) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "feedback", java.util.Map.class, new Object[]{a0, a1, a2, a3});
         }
 
         @Override
