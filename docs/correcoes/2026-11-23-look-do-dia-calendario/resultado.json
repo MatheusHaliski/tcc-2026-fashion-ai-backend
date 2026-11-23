@@ -1,0 +1,209 @@
+{
+  "mes-desktop": {
+    "cards": 6,
+    "labels": [
+      "Look do Dia de 16 de nov.",
+      "Look do Dia de 18 de nov.",
+      "Look do Dia de 21 de nov.",
+      "Look do Dia de 23 de nov.",
+      "Look do Dia de 24 de nov.",
+      "Look do Dia de 25 de nov."
+    ],
+    "coherentBorders": 2,
+    "thumb": {
+      "w": 28,
+      "h": 36
+    },
+    "cardWidths": [
+      137,
+      137,
+      137,
+      137,
+      137,
+      137
+    ],
+    "cellMinHeight": 230,
+    "coherenceLines": [
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "careDay": true,
+    "legend": "6 dias com Look do Dia · 2 em sintonia com um Momento",
+    "horizontalScroll": false,
+    "unnamedLinks": 0
+  },
+  "semana-desktop": {
+    "cards": 3,
+    "labels": [
+      "Look do Dia de 23 de nov.",
+      "Look do Dia de 24 de nov.",
+      "Look do Dia de 25 de nov."
+    ],
+    "coherentBorders": 1,
+    "thumb": {
+      "w": 44,
+      "h": 56
+    },
+    "cardWidths": [
+      360,
+      360,
+      360
+    ],
+    "cellMinHeight": null,
+    "coherenceLines": [
+      1,
+      1,
+      0
+    ],
+    "careDay": true,
+    "legend": null,
+    "horizontalScroll": false,
+    "unnamedLinks": 0
+  },
+  "erros-desktop": [],
+  "sem-mock-desktop": [
+    "/api/me/preferences"
+  ],
+  "mes-celular": {
+    "cards": 6,
+    "labels": [
+      "Look do Dia de 16 de nov.",
+      "Look do Dia de 18 de nov.",
+      "Look do Dia de 21 de nov.",
+      "Look do Dia de 23 de nov.",
+      "Look do Dia de 24 de nov.",
+      "Look do Dia de 25 de nov."
+    ],
+    "coherentBorders": 2,
+    "thumb": {
+      "w": 24,
+      "h": 30
+    },
+    "cardWidths": [
+      37,
+      37,
+      37,
+      37,
+      37,
+      37
+    ],
+    "cellMinHeight": 91,
+    "coherenceLines": [
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "careDay": true,
+    "legend": "6 dias com Look do Dia · 2 em sintonia com um Momento",
+    "horizontalScroll": false,
+    "unnamedLinks": 0
+  },
+  "semana-celular": {
+    "cards": 3,
+    "labels": [
+      "Look do Dia de 23 de nov.",
+      "Look do Dia de 24 de nov.",
+      "Look do Dia de 25 de nov."
+    ],
+    "coherentBorders": 1,
+    "thumb": {
+      "w": 44,
+      "h": 56
+    },
+    "cardWidths": [
+      318,
+      318,
+      318
+    ],
+    "cellMinHeight": null,
+    "coherenceLines": [
+      1,
+      1,
+      0
+    ],
+    "careDay": true,
+    "legend": null,
+    "horizontalScroll": false,
+    "unnamedLinks": 0
+  },
+  "erros-celular": [],
+  "sem-mock-celular": [
+    "/api/me/preferences"
+  ],
+  "mes-desktop-escuro": {
+    "cards": 6,
+    "labels": [
+      "Look do Dia de 16 de nov.",
+      "Look do Dia de 18 de nov.",
+      "Look do Dia de 21 de nov.",
+      "Look do Dia de 23 de nov.",
+      "Look do Dia de 24 de nov.",
+      "Look do Dia de 25 de nov."
+    ],
+    "coherentBorders": 2,
+    "thumb": {
+      "w": 28,
+      "h": 36
+    },
+    "cardWidths": [
+      137,
+      137,
+      137,
+      137,
+      137,
+      137
+    ],
+    "cellMinHeight": 230,
+    "coherenceLines": [
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "careDay": true,
+    "legend": "6 dias com Look do Dia · 2 em sintonia com um Momento",
+    "horizontalScroll": false,
+    "unnamedLinks": 0
+  },
+  "semana-desktop-escuro": {
+    "cards": 3,
+    "labels": [
+      "Look do Dia de 23 de nov.",
+      "Look do Dia de 24 de nov.",
+      "Look do Dia de 25 de nov."
+    ],
+    "coherentBorders": 1,
+    "thumb": {
+      "w": 44,
+      "h": 56
+    },
+    "cardWidths": [
+      360,
+      360,
+      360
+    ],
+    "cellMinHeight": null,
+    "coherenceLines": [
+      1,
+      1,
+      0
+    ],
+    "careDay": true,
+    "legend": null,
+    "horizontalScroll": false,
+    "unnamedLinks": 0
+  },
+  "erros-desktop-escuro": [],
+  "sem-mock-desktop-escuro": [
+    "/api/me/preferences"
+  ]
+}

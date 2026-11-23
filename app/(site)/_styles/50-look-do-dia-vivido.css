@@ -52,3 +52,11 @@
 @media (max-width: 640px) {
   .day-look.is-compact .day-look-moments, .day-look.is-compact .dl-marks { display: none; }
 }
+
+/* Auditoria 23/11/2026: no celular a célula do mês tem ~37 px — o card compacto vira só a foto (a leitura do dia fica na Semana) */
+@media (max-width: 640px) {
+  .moment-day .day-look.is-compact { padding: 2px; border-radius: 6px; gap: 0; }
+  .moment-day .day-look.is-compact .day-look-text, .moment-day .day-look.is-compact .dl-context, .moment-day .day-look.is-compact .day-look-moments { display: none; }
+  .moment-day .day-look.is-compact .day-look-main { justify-content: center; }
+  .moment-day .day-look.is-compact .day-look-thumb { width: 24px; height: 30px; }
+}

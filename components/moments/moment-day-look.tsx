@@ -26,7 +26,7 @@ export function DayLookCard({ day, compact }: { day: DailyLookCalendarDay; compa
       </Link>
       <DailyLookContextChips context={dl.context} compact={compact} />
       {!compact && day.moments.length === 0 && <p className="type-caption text-faint">{t("momentDayLook.no_moment")}</p>}
-      {sensitive && day.moments.length > 0 && <p className="type-caption text-muted">{t("momentDayLook.sensitive")}</p>}
+      {sensitive && !compact && day.moments.length > 0 && <p className="type-caption text-muted">{t("momentDayLook.sensitive")}</p>}
       {!sensitive && scored.length > 0 && (
         <ul className="day-look-moments" aria-label={t("momentDayLook.coherence")}>
           {scored.slice(0, compact ? 1 : 4).map((m) => (

@@ -35,7 +35,7 @@ it("mostra o Contexto do Dia congelado de cada registro (propósito, para quem e
   renderApp(<HistoryTimeline />);
   const linhas = await screen.findAllByRole("listitem");
   expect(linhas[0].textContent).toContain("Entrevista");
-  expect(linhas[0].textContent).toContain("para Trabalho");
+  expect(linhas[0].textContent).not.toContain("para Trabalho");   // compacto: sem "para quem" (anatomia)
   expect(within(linhas[0]).getByRole("list", { name: "Marcas do dia" }).textContent).toContain("Denim Week");
   expect(linhas[0].textContent).toContain("Primavera");
   expect(linhas[1].textContent).not.toContain("Marcas do dia");

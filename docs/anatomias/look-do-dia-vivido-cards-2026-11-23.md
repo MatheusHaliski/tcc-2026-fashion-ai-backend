@@ -25,7 +25,8 @@ sempre vem acompanhada do texto.
 | 4 | Coerência | `.day-look-moments` | uma linha por Momento do dia: ícone + "Coerente com {Momento} · {match}" (negrito) ou "Fora do tema de {Momento} · {match}" (muted); até 4 | 12 px, gap 2 |
 
 Estados da zona 4: **sem Momento** → "Sem Momento neste dia" (12 px, faint); **dia de cuidado** → "Dia de cuidado: sem
-comparação com o Momento." no lugar das linhas; **sem contexto** → zona 3 ausente, zona 4 normal.
+comparação com o Momento." no lugar das linhas (no compacto fica só o chip com cadeado); **sem contexto** → zona 3 ausente,
+zona 4 normal.
 
 ## Card no painel do calendário (`.day-look.is-compact`)
 
@@ -36,9 +37,9 @@ Entra **dentro da célula do dia** (`.moment-day`), abaixo das faixas dos Moment
 | Moldura | padding 4, raio 8, gap 3 | largura = célula (≥ 96 px no desktop); a célula com card tem altura mín. 112 px |
 | Fotografia | reduzida | 28 × 36 |
 | Identidade | some o rótulo "Look do Dia"; título em 12 px, 1 linha | — |
-| Contexto | só o chip do propósito e as marcas compactas (sem nota, sem "para quem") | chips com padding 0 4, entrelinha 1,4 |
+| Contexto | só o chip do propósito e as marcas compactas (sem nota, sem "para quem"); a marca de clima mostra só a temperatura (rótulo completo no `title`) | chips com padding 0 4, entrelinha 1,4 |
 | Coerência | **só o primeiro Momento** (o mais relevante do dia) | 1 linha |
-| Celular (≤ 640 px) | coerência e marcas ocultas; ficam foto + título + propósito; o dia inteiro continua na visão **Semana** | — |
+| Celular (≤ 640 px) | a célula tem ~37 px: o card vira **só a foto** (24 × 30) com a moldura (sólida = coerente, tracejada = sem Momento); título, contexto e coerência ficam na visão **Semana** | padding 2, raio 6 |
 
 Abaixo da grade, a legenda do mês: "{N} dias com Look do Dia · {M} em sintonia com um Momento" (`.moment-month-looks`).
 
@@ -60,6 +61,10 @@ esquerda das marcas de Momento (`--moment-accent`); o restante segue a identidad
 
 ## Verificação
 
-Testes: `components/moments/moment-calendar.test.tsx` (card compacto na grade e cheio na semana, dia de cuidado, legenda),
-`components/lookbook/daily-tab-extras.test.tsx` (trilho "vivendo hoje"), `components/lookbook/daily-phases.test.tsx`
-(peças da fase). Medidas aplicadas no CSS citado; capturas ficam para a próxima rodada de auditoria visual.
+Auditoria visual de 23/11/2026 com capturas em desktop, celular e tema escuro:
+[LOOK_DO_DIA_CALENDARIO_2026-11-23](../auditoria/LOOK_DO_DIA_CALENDARIO_2026-11-23.md) (script
+`scripts/e2e/verify-daily-look-calendar.mjs`, capturas em `docs/correcoes/2026-11-23-look-do-dia-calendario/`). Medidas
+conferidas: foto 28 × 36 no compacto e 44 × 56 no cheio, card = célula (137 px em 1440) e 360 px na semana; no celular
+24 × 30 e célula de 91 px, sem rolagem horizontal. Testes: `components/moments/moment-calendar.test.tsx`,
+`components/daily-look/context-chips.test.tsx`, `components/lookbook/daily-tab-extras.test.tsx`,
+`components/lookbook/daily-phases.test.tsx`.
