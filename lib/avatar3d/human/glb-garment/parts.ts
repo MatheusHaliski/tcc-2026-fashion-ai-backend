@@ -98,9 +98,8 @@ function bodyLimit(f: BodyFrame, side: number, clearance: number): Limit {
 
 /**
  * Linha da manga da peça de braços abertos (pose T): olhando de frente, a coluna do tronco desce até a barra e a da
- * manga acaba logo abaixo do ombro. A manga começa na primeira coluna, de dentro para fora, cujo ponto mais baixo
- * fica na metade de cima da peça e assim segue por 3 cm (a axila); a linha é vertical e só vale na metade de cima (a
- * barra em sino, mais larga que a axila, é tronco). Null se a manga não está aberta
+ * manga acaba logo abaixo do ombro. A manga é o trecho de fora em que toda coluna tem o ponto mais baixo na metade de
+ * cima da peça; a linha é vertical e só vale na metade de cima. Null se a manga não está aberta
  * (o punho da manga caída chega perto da barra) — aí valem o vão e a largura do corpo.
  */
 function spreadLimit(pos: Float32Array, side: number, inner: number): Limit | null {
@@ -113,13 +112,13 @@ function spreadLimit(pos: Float32Array, side: number, inner: number): Limit | nu
   }
   if (!(hem < top)) return null;
   const line = hem + 0.5 * (top - hem), first = Math.ceil(inner / cell);
-  for (let c = first; c + 3 <= reach; c++) {
-    if ([0, 1, 2].every((k) => (low.get(c + k) ?? -Infinity) > line)) {
-      // manga curta demais para girar (alça, cava): não é manga aberta
-      return (reach - c) * cell > 0.12 ? (y) => (y > line ? c * cell : Infinity) : null;
-    }
-  }
-  return null;
+  // de fora para dentro: a manga é o trecho em que TODA coluna acaba na metade de cima (a barra em sino, mais larga que
+  // a axila, desce abaixo da linha e interrompe o trecho — ela é tronco)
+  let c = reach + 1;
+  while (c - 1 >= first && (low.get(c - 1) ?? Infinity) > line) c--;
+  // manga curta demais para girar (alça, cava), ou nenhuma coluna de tronco: não é manga aberta
+  if (c <= first || (reach - c) * cell <= 0.12) return null;
+  return (y) => (y > line ? c * cell : Infinity);
 }
 
 export function labelParts(pos: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, index?: ArrayLike<number>): Int8Array {

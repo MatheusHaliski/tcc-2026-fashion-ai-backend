@@ -194,7 +194,8 @@ export function wrapGarment(posedIn: Float32Array, partIn: Int8Array, indexIn: A
   let inside = 0, far = 0;
   // espinho: distância até a pele mais próxima, CABEÇA incluída — o capuz caído nas costas fica perto da cabeça e da
   // nuca, não do tronco (sem ela, todo moletom com capuz da Meshy seria recusado como espinho)
-  const reach = groups.includes(0) ? groups : [...groups, 0];
+  // e PERNAS incluídas: a barra do casaco comprido (parka) fica perto da coxa, não do tronco
+  const reach = [...new Set([...groups, 0, 3])];
   for (let v = 0; v < n; v++) {
     const { d } = signedDistance(f, posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2], groups);
     if (d < 0) inside++;
