@@ -135,7 +135,7 @@ class WardrobeServiceCadastroTest {
         j.setResultJson(resultJson);
         j = kit.dep(PipelineJobRepository.class).save(j);
         PipelineJob saved = j;
-        when(kit.dep(PipelineJobRepository.class).findByIdForUpdate(saved.getId())).thenReturn(Optional.of(saved));
+        when(kit.dep(PipelineJobRepository.class).findDraftForUpdate(saved.getId(), world.me.getId())).thenReturn(Optional.of(saved));
         return saved;
     }
 
@@ -163,6 +163,7 @@ class WardrobeServiceCadastroTest {
         verify(media).register(any(), any(), eq(w.getId()), any(), eq("/o.jpg"), eq("/t.png"), any(), eq(10), eq(12), any(), any(), any());
         verify(events).publishEvent(any(DomainEvents.PieceCapturedFromSession.class));
         assertThat(d.getTargetType()).isEqualTo("PIECE");
+        assertThat(w.getDraftId()).as("a peça guarda o rascunho de origem (único no banco)").isEqualTo(d.getId());
 
         // segundo envio do mesmo rascunho devolve a mesma peça
         Views.PieceView again = service.create(ana, form(d.getId(), false, "Camiseta", BigDecimal.TEN, null, null, null, null, null, null, null, null));
@@ -214,8 +215,10 @@ class WardrobeServiceCadastroTest {
         PipelineJob bloqueado = draft("{\"moderation\":{\"status\":\"REJECTED_POLICY\"}}");
         assertThatThrownBy(() -> service.create(ana, form(bloqueado.getId(), false, "C", BigDecimal.ONE, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(ApiException.class).satisfies(e -> assertThat(((ApiException) e).code()).isEqualTo("CONTEUDO_BLOQUEADO"));
-        PipelineJob alheio = draft("{}");
+        // rascunho de outra pessoa: a busca por (id, dono) não devolve linha, e o id existente é negado (403), nunca usado
+        PipelineJob alheio = new PipelineJob();
         alheio.setUser(world.rival);
+        kit.dep(PipelineJobRepository.class).save(alheio);
         assertThatThrownBy(() -> service.create(ana, form(alheio.getId(), false, "C", BigDecimal.ONE, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(ApiException.class).satisfies(e -> assertThat(((ApiException) e).status()).isEqualTo(403));
     }

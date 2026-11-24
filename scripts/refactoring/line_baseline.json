@@ -477,7 +477,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java": {
-   "max": 737,
+   "max": 735,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/taxonomy/Taxonomy.java": {
@@ -565,7 +565,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-domain/src/main/java/br/com/fashionai/domain/model/WardrobeItem.java": {
-   "max": 306,
+   "max": 302,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-infrastructure/persistence-mysql/src/main/java/br/com/fashionai/infrastructure/mysql/demo/MysqlDemoDataAdminAdapter.java": {

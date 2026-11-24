@@ -232,11 +232,8 @@ public class WardrobeService {
 
     /** Rascunho de análise do próprio usuário (404 se não existe; negado e auditado se é de outra pessoa). */
     private PipelineJob ownedDraft(CurrentUser user, UUID draftId) {
-        PipelineJob draft = jobs.findById(draftId).orElseThrow(() -> ApiException.notFound("Rascunho"));
-        if (!draft.getUser().getId().equals(user.id())) {
-            throw guard.deny(user, "draft:" + draftId, Msg.t("wardrobe.rascunho_de_outro_usuario"));
-        }
-        return draft;
+        return jobs.findByIdAndUserId(draftId, user.id()).orElseThrow(() -> jobs.existsById(draftId)
+                ? guard.deny(user, "draft:" + draftId, Msg.t("wardrobe.rascunho_de_outro_usuario")) : ApiException.notFound("Rascunho"));
     }
 
     /** RF4.CA05 — várias fotos: um rascunho por foto; a foto recusada volta com o motivo e as demais seguem. */
@@ -282,8 +279,9 @@ public class WardrobeService {
         form = PieceTaxonomyWriter.resolveLegacy(form);
         PieceFormWriter.validate(form);
         // o rascunho é travado (SELECT … FOR UPDATE): dois envios simultâneos do mesmo rascunho são atendidos um depois do outro
-        PipelineJob draft = form.draftId() == null ? null : jobs.findByIdForUpdate(form.draftId()).orElse(null);
-        if (draft != null && !draft.getUser().getId().equals(owner.getId())) {
+        // a busca é por (id, dono): o id de um rascunho alheio não devolve linha — é negado e auditado, nunca usado
+        PipelineJob draft = form.draftId() == null ? null : jobs.findDraftForUpdate(form.draftId(), owner.getId()).orElse(null);
+        if (draft == null && form.draftId() != null && jobs.existsById(form.draftId())) {
             throw guard.deny(user, "draft:" + form.draftId(), Msg.t("wardrobe.rascunho_de_outro_usuario"));
         }
         // idempotência: um rascunho de foto vira UMA peça. Duplo clique ou nova tentativa depois de uma resposta perdida
