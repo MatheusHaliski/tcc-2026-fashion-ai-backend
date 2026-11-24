@@ -60,6 +60,9 @@ export interface MeshyManifest {
   tamanhos: MeshySizes;
   estado: MeshyState;
   motivo?: string;
+  /** peça do motor Blender (services/garment_blender): em metros, com as medidas reais do tamanho gerado */
+  medidaReal?: true;
+  tamanhoGerado?: string;
 }
 
 const SLOTS = ["upper", "lower", "full", "feet", "head", "eyes", "ears", "neck", "wrist", "waist", "back", "hand", "hip"];
@@ -113,6 +116,8 @@ export function parseManifest(raw: unknown): MeshyManifest | null {
     osso: m.osso, giroY: m.giroY, centro: m.centro, caixa: m.caixa, escalaNominal: m.escalaNominal,
     dicas: { par: d.par, corteX: d.corteX, abertura: d.abertura, bracosAbertos: d.bracosAbertos, aberto: d.aberto, sola: d.sola, ...(aceite ? { aceite } : {}) },
     tamanhos, estado: m.estado as MeshyState, ...(text(m.motivo, 240) ? { motivo: m.motivo } : {}),
+    ...(m.medidaReal === true ? { medidaReal: true as const } : {}),
+    ...(typeof m.tamanhoGerado === "string" && /^(PP|P|M|G|GG|XG)$/.test(m.tamanhoGerado) ? { tamanhoGerado: m.tamanhoGerado } : {}),
   };
 }
 

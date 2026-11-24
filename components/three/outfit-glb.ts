@@ -26,7 +26,8 @@ function fitKey(src: GlbSource, spec: GarmentSpec, below: GarmentSpec[]): string
 
 /** Dicas do manifesto da Meshy para o encaixe (tamanho por região, aceite do modelo, braços abertos). */
 function meshyFitOf(src: GlbSource) {
-  const m = src.manifest; return m ? { sizes: m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos } : {};
+  const m = src.manifest;
+  return m ? { sizes: m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos, realScale: m.medidaReal === true } : {};
 }
 
 /** Ajuste em cache por corpo composto (outra medida = outro corpo composto = refaz). */

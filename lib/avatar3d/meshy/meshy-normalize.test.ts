@@ -114,6 +114,8 @@ describe("manifest: validação do dado do bucket", () => {
   const good = () => JSON.parse(JSON.stringify(analyzeGlb(sideShoe(), SLOT_RULES.running_shoes, "shoes_piece", "running_shoes", "shoes")));
   it("recusa versão desconhecida, osso inventado, número fora da faixa e tamanho sem fatores", () => {
     expect(parseManifest(good())).not.toBeNull();
+    expect(parseManifest({ ...good(), medidaReal: true, tamanhoGerado: "P" })).toMatchObject({ medidaReal: true, tamanhoGerado: "P" });
+    expect(parseManifest({ ...good(), medidaReal: "sim", tamanhoGerado: "<b>" })).not.toHaveProperty("medidaReal");
     expect(parseManifest({ ...good(), versao: 2 })).toBeNull();
     expect(parseManifest({ ...good(), osso: "constructor" })).toBeNull();
     expect(parseManifest({ ...good(), escalaNominal: 1e9 })).toBeNull();

@@ -141,8 +141,11 @@ function inflate(p: Float32Array, part: Int8Array, label: number, f: BodyFrame, 
  * Encaixa a peça no corpo. `clearance` é a folga (m) da classe de caimento + tamanho; `lengthSteps` o comprimento;
  * `index` (os triângulos) deixa o rótulo da manga enxergar o vão entre manga e tronco (parts.ts).
  * `sleeveAngle` (rad): até quanto a manga gira até o braço (1,4 por padrão; 1,8 para a peça de braços abertos).
+ * `realScale`: a peça já está em metros com as medidas do tamanho (motor Blender, manifesto `medidaReal`): escala 1,
+ * só posicionada pela linha dos ombros (calça: pelo topo do cós) — o corpo não reescala a peça (era isso que fazia
+ * o suéter P sair enorme).
  */
-export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0, index?: ArrayLike<number>, sleeveAngle = 1.4): Aligned | null {
+export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0, index?: ArrayLike<number>, sleeveAngle = 1.4, realScale = false): Aligned | null {
   const { lo, hi } = bounds(src); const height = hi[1] - lo[1];
   if (!(height > 0)) return null;
   const shL = f.joint("LeftArm"), shR = f.joint("RightArm");
@@ -153,7 +156,7 @@ export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass,
     const yTop = (hipL.y + hipR.y) / 2 + 0.18 * (neck.y - (hipL.y + hipR.y) / 2);   // cós de cintura média
     const body = bandExtent(f, yTop, 0.012, [1]); if (!body) return null;
     const top = widthAt(src, hi[1] - 0.04 * height, hi[1]); if (!top) return null;
-    s = (body.x1 - body.x0 + 2 * clearance) / top;
+    s = realScale ? 1 : (body.x1 - body.x0 + 2 * clearance) / top;
     pos = transform(src, s, [cx, hi[1], cz], [0, yTop, (body.z0 + body.z1) / 2]);
     // calça mais comprida que a perna: a barra para no tornozelo (o resto da peça mantém a proporção)
     const ankle = (f.joint("LeftFoot").y + f.joint("RightFoot").y) / 2 - 0.03; const bottom = yTop - height * s;
@@ -165,8 +168,8 @@ export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass,
     // peça fotografada com a manga aberta (camiseta estendida): a largura do topo é a envergadura das mangas, não os
     // ombros; aí o encaixe é pelo tronco abaixo da axila (a menor largura entre 35% e 70% da altura) × peito do corpo
     let torso = Infinity; for (let i = 0; i < 12; i++) { const y = hi[1] - height * (0.35 + 0.03 * i); const w = widthAt(src, y - 0.01 * height, y + 0.01 * height); if (w) torso = Math.min(torso, w); }
-    s = sh.width > 1.35 * torso ? (chest.x1 - chest.x0 + 2 * clearance) / torso : (body.x1 - body.x0 + 2 * clearance) / sh.width;
-    const open = sh.width > 1.35 * torso ? openSleeveScale(src, s, torso, cx, sh.y, hi[0], shL.distanceTo(f.joint("LeftHand"))) : null;
+    s = realScale ? 1 : sh.width > 1.35 * torso ? (chest.x1 - chest.x0 + 2 * clearance) / torso : (body.x1 - body.x0 + 2 * clearance) / sh.width;
+    const open = !realScale && sh.width > 1.35 * torso ? openSleeveScale(src, s, torso, cx, sh.y, hi[0], shL.distanceTo(f.joint("LeftHand"))) : null;
     if (open !== null) { s = open; longOpen = true; }
     pos = transform(src, s, [cx, sh.y, cz], [0, shY + 0.01, (chest.z0 + chest.z1) / 2]);
   }

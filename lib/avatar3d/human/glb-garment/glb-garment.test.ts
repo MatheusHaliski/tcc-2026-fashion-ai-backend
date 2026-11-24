@@ -88,6 +88,16 @@ describe("glb-garment: peça estática vestida no avatar", () => {
     expect(err).toBeLessThan(0.001);
   });
 
+  it("escala real (motor Blender): a peça em metros não é reescalada pelo corpo e encaixa pelos ombros", () => {
+    const a = avatar(); const f = a.frame(); const src = shirt();
+    const fitted = alignGarment(src.position, f, "upper", 0.01)!;
+    const real = alignGarment(src.position, f, "upper", 0.01, 0, src.index, 1.8, true)!;
+    expect(fitted.scale).not.toBeCloseTo(1, 2);
+    expect(real.scale).toBe(1);
+    const width = (p: Float32Array) => { let lo = Infinity, hi = -Infinity; for (let i = 0; i < p.length; i += 3) { lo = Math.min(lo, p[i]); hi = Math.max(hi, p[i]); } return hi - lo; };
+    expect(width(real.pos)).toBeCloseTo(width(src.position), 1);   // a envergadura fica a da peça (o giro da manga só a reduz)
+  });
+
   it("tamanho: cada número acima do corpo deixa a peça mais larga (mesma folga do molde)", () => {
     const a = avatar(); const f = a.frame(); const src = shirt();
     const scale = (steps: number) => { const r = fitGlbGarment(src, f, piece("upper_piece", "shirt", steps)); return r.ok ? r.metrics.scale : r.metrics?.scale ?? NaN; };

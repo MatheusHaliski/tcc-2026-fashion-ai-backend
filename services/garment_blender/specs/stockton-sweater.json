@@ -1,0 +1,15 @@
+{
+  "produto": "Stockton Sweater",
+  "marca": "Carhartt WIP",
+  "url_oficial": "https://www.carhartt-wip.com/p/stockton-sweater-gentle-green-316",
+  "subcategoria": "sweater",
+  "tamanho": "M",
+  "sexo": "MASCULINO",
+  "caimento": "regular",
+  "tecido": {"tipo": "malha_la", "cor": "#a6a56f", "gramatura": 360},
+  "gola": "careca",
+  "fechamento": "nenhum",
+  "bolsos": [],
+  "ribana": true,
+  "observacao": "cor: mediana dos pixels da peça na foto de entrada do lote meshy-2026-11-19-pose-t; medidas: grade padrão (sizes.py), sem tabela da marca"
+}

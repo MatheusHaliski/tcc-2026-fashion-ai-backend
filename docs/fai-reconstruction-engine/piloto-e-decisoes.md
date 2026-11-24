@@ -208,3 +208,22 @@ provador. **Nenhum uso novo de provedor, modelo ou GPU:** normalização, encaix
 código do repositório (`lib/avatar3d/meshy`, `docs/provador/MESHY_GLB.md`). Custo de geração já registrado na tarefa
 de cada modelo (30 créditos, ~3 min por modelo, no `tarefa.json` do lote). Tempo medido no preparo offline: ~10 s
 para os 46 manifestos; no provador, a roupa leva o mesmo do glb-garment (~0,5–1,5 s por peça na CPU).
+
+## Motor próprio em Blender no lugar da Meshy (24/11/2026)
+
+**Decisão da dona (24/11/2026): parar de usar a API paga da Meshy** e modelar as peças do zero num motor próprio em
+Blender, com medidas reais, tecido e detalhes de construção (gola, manga, barra, cós, costura, capuz, zíper, bolsos,
+aberturas). Motivo imediato: o Stockton Sweater importado da Meshy saía enorme no provador mesmo no tamanho P, porque o
+`.glb` da Meshy não tem medida e o provador o escala pelo corpo (a manga em pose T era esticada até o punho, até
+1,5 × a escala do tronco).
+
+- **Provedor/modelo:** Blender 4.2.0 como módulo Python (`bpy`, PyPI), na CPU. Nenhuma IA, nenhuma API, nenhuma GPU.
+- **Custo:** zero. **Tempo medido** (4 vCPU): 1,5 s por peça e tamanho (malha, texturas, `.glb`, manifesto e
+  relatório); 12,5 s com a prévia renderizada em Cycles (48 amostras, frente e ¾).
+- **Código:** `services/garment_blender/` (README com a ficha técnica e o estado no provador). No provador, o manifesto
+  `medidaReal` faz o encaixe usar escala 1 (`realScale` em `lib/avatar3d/human/glb-garment/align.ts`).
+- **Cor:** mediana dos pixels da peça na foto de entrada ou na textura de cor do lote da Meshy já no bucket (só
+  leitura); quando não há imagem, a cor da variante, dita na ficha (`observacao`).
+- **Medido no provador (corpo padrão):** calças (cargo e joelho duplo) vestem em 36, 40 e 46; o suéter em P, M e GG; o
+  moletom careca e a camiseta em dois de três tamanhos; os moletons com capuz são recusados (o capuz é furado pela
+  cabeça). O giro da manga no provador ainda deixa o ombro quadrado nas peças de cima.

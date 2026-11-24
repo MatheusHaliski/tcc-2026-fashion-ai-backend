@@ -91,19 +91,20 @@ export function buildGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec,
 }
 
 /** Dicas do manifesto da Meshy para o encaixe da roupa (meshy/manifest.ts). */
-export interface MeshyFit { sizes?: MeshySizes | null; accept?: MeshyManifest["dicas"]["aceite"]; armsSpread?: boolean }
+export interface MeshyFit { sizes?: MeshySizes | null; accept?: MeshyManifest["dicas"]["aceite"]; armsSpread?: boolean; realScale?: boolean }
 
 /**
  * `sizes` (manifesto da Meshy): o tamanho entra por região (meshy/size.ts) em vez de alongar e escalar a peça inteira;
  * o encaixe pelos ombros/cós usa a peça sem a parte comum do tamanho. `accept` afrouxa o aceite daquele modelo e
- * `armsSpread` deixa a manga horizontal (foto de braços abertos) girar até o braço.
+ * `armsSpread` deixa a manga horizontal (foto de braços abertos) girar até o braço; `realScale` (peça do motor Blender,
+ * em metros e no tamanho escolhido) dispensa a escala pelo corpo.
  */
 export function fitGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec, below: GarmentSpec[] = [], meshy: MeshyFit = {}): GlbFit {
   const { sizes, accept } = meshy;
   const cls = classOf(spec.kind); if (!cls) return { ok: false, reason: "SEM_CLASSE" };
   // com o tamanho por região, a folga da colisão é a da peça sem o tamanho: a sobra vem da largura da própria peça
   const base = sizes ? unsizedSpec(spec, cls === "lower") : spec, clearance = clearanceOf(base, below);
-  const aligned = alignGarment(src.position, f, cls, clearance, base.sizeFold?.length ?? 0, src.index, meshy.armsSpread ? 1.8 : 1.4);
+  const aligned = alignGarment(src.position, f, cls, clearance, base.sizeFold?.length ?? 0, src.index, meshy.armsSpread ? 1.8 : 1.4, meshy.realScale === true);
   if (!aligned) return { ok: false, reason: "SEM_ANCORA" };
   const size = sizes ? { ...SIZE_CONVENTION, ...applyRegionSize(aligned.pos, aligned.part, f, spec, sizes) } : null;
   const armpitY = (f.joint("LeftArm").y + f.joint("RightArm").y) / 2 - 0.05;
