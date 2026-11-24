@@ -88,6 +88,7 @@ public final class PieceTaxonomyWriter {
                 f.tags(), f.notes(), f.condition(), f.purchaseDate(), f.purchaseLocation(), f.sku(), f.careInstructions(),
                 f.forSale(), f.studio(), f.brandLogoUrl(), f.brandSource(), f.brandRef(), f.background(), f.captureSessionId(),
                 f.variation() != null ? f.variation() : r.variation(), attrs, f.confirmed(), f.estadoConservacaoId(),
-                f.clearEstadoConservacao(), f.colecaoId(), f.intensidadeTermicaId(), f.tipoLavagemId(), f.clearTipoLavagem());
+                f.clearEstadoConservacao(), f.colecaoId(), f.intensidadeTermicaId(), f.tipoLavagemId(), f.clearTipoLavagem(),
+                f.origemId(), f.corteId());
     }
 }

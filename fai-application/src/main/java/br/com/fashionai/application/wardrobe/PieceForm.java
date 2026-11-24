@@ -20,11 +20,28 @@ public record PieceForm(UUID draftId, boolean useDefaultImage, String name, Stri
                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
                         Map<String, Object> background, UUID captureSessionId, String variation, Map<String, List<String>> attributes,
                         List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId, UUID intensidadeTermicaId,
-                        UUID tipoLavagemId, Boolean clearTipoLavagem) {
+                        UUID tipoLavagemId, Boolean clearTipoLavagem, UUID origemId, UUID corteId) {
     /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
     public PieceForm {
         occasion = Taxonomy.normalizeTags(occasion);
         style = Taxonomy.normalizeTags(style);
         variation = variation == null || variation.isBlank() ? null : variation.trim().toUpperCase(Locale.ROOT);
+    }
+
+    /** Compatibilidade: quem monta o formulário por código (catálogo, testes) não escolhe origem nem corte. */
+    public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
+                     String sex, UUID brandId, String brandName, String color, String material, String size,
+                     String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
+                     Visibility visibility, List<String> tags, String notes, ItemCondition condition,
+                     LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
+                     Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                     Map<String, Object> background, UUID captureSessionId, String variation, Map<String, List<String>> attributes,
+                     List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId,
+                     UUID intensidadeTermicaId, UUID tipoLavagemId, Boolean clearTipoLavagem) {
+        this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
+                occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
+                variation, attributes, confirmed, estadoConservacaoId, clearEstadoConservacao, colecaoId,
+                intensidadeTermicaId, tipoLavagemId, clearTipoLavagem, null, null);
     }
 }

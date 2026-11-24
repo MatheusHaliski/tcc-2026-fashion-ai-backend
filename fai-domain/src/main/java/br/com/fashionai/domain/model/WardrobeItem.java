@@ -6,8 +6,6 @@ import br.com.fashionai.domain.model.enums.Model3dStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.model.Origem;
-import br.com.fashionai.domain.model.Cortes;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -41,7 +39,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "wardrobe_items")
-public class WardrobeItem extends PieceStudioMedia {
+public class WardrobeItem extends PieceClassification {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -167,16 +165,6 @@ public class WardrobeItem extends PieceStudioMedia {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "estado_de_conservacao")
     private EstadoConservacao estadoConservacao;
-
-    /** Coleção escolhida pelo dono (FK para a tabela colecao). */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "colecao_id")
-    private Colecao colecao;
-
-    /** Intensidade térmica da peça (leve, moderada, alta), escolhida pelo dono (FK para a tabela intensidade_termica). */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "intensidade_termica_id")
-    private IntensidadeTermica intensidadeTermica;
 
     /** Instrução estruturada, sem substituir o campo livre careInstructions. */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -313,11 +301,6 @@ public class WardrobeItem extends PieceStudioMedia {
     private Instant lastViewedAt;
 
     /** DET-M07 — origem da peça: COMPRADA, GARIMPADA, HERDADA, PRESENTE, FEITA_A_MAO, TROCADA, SOB_ENCOMENDA. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "origem")
-    private Origem origem;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cortes")
-    private Cortes cortes;
+    @Column(name = "piece_origin", length = 20)
+    private String pieceOrigin;
 }

@@ -278,7 +278,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
-                <PieceFields compact value={value} onChange={(v) => { setValue(v); setStepProblem(null); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={liveFieldErrors(fieldErrors, value)}
+                <PieceFields value={value} onChange={(v) => { setValue(v); setStepProblem(null); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={liveFieldErrors(fieldErrors, value)}
                   afterBrand={mode === "photos" && photoPick?.hint && !value.brandName ? <BrandHintNote hint={photoPick.hint} disabled={false}
                     onUse={(brandName) => setValue((v) => ({ ...v, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }))} /> : null} />
               </section>
