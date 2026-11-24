@@ -10,19 +10,20 @@ import { liveFieldErrors } from "@/lib/pieces/step-guard";
  * coleção, intensidade térmica, origem, corte), ocasião e estilo, seguidos de selos, visibilidade e venda. Tudo
  * aberto, sem seção recolhida.
  */
-export function PieceMoreStep({ value, onChange, onDetails, fieldErrors, hint, problem, nav }: {
+export function PieceMoreStep({ value, onChange, onDetails, fieldErrors, hint, problem, nav, autoSex }: {
   value: PieceFormValue;
   /** edição de um campo (limpa o aviso da etapa e os erros já resolvidos) */ onChange: (v: PieceFormValue) => void;
   /** selos, visibilidade e venda */ onDetails: (v: PieceFormValue) => void;
   fieldErrors: Record<string, string>;
   /** marca lida com incerteza na foto ("Usar {marca}"), só enquanto o campo Marca está vazio */ hint?: PhotoPick["hint"] | null;
   problem: string | null; nav: ReactNode;
+  /** Tipo Look automático do perfil: esconde o campo no criador */ autoSex?: string | null;
 }) {
   const useBrand = (brandName: string) => onChange({ ...value, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null,
     brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null });
   return <Card>
     <div id="piece-form-fields" className="grid gap-x-4 sm:grid-cols-2">
-      <PieceAdditionalFields value={value} onChange={onChange} fieldErrors={liveFieldErrors(fieldErrors, value)}
+      <PieceAdditionalFields value={value} onChange={onChange} fieldErrors={liveFieldErrors(fieldErrors, value)} autoSex={autoSex}
         afterBrand={hint && !value.brandName ? <BrandHintNote hint={hint} disabled={false} onUse={useBrand} /> : null} />
     </div>
     <PieceMoreDetails value={value} onChange={onDetails} error={null} />

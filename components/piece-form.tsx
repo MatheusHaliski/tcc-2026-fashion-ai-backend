@@ -137,13 +137,15 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, w
 }
 
 /** Material, tamanho, marca, preço, referências (conservação, lavagem, coleção, intensidade, origem, corte), ocasião e estilo. */
-export function PieceAdditionalFields({ value, onChange, error, fieldErrors, afterBrand }: PieceFieldsProps) {
+export function PieceAdditionalFields({ value, onChange, error, fieldErrors, afterBrand, autoSex }: PieceFieldsProps & {
+  /** Tipo Look automático do perfil: com ele ligado o criador não pede o campo (o servidor aplica o tipo) */ autoSex?: string | null;
+}) {
   const { t } = useI18n(); const tax = useTaxonomy(); const err: Record<string, string> = { ...(error?.fields ?? {}), ...(fieldErrors ?? {}) };
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   const occasions = (value.category ? tax?.allowedOccasionsByCategory?.[value.category] : undefined) ?? tax?.occasions ?? [];
   return <>
       <Field label={t("common.material")} id="material" required error={err.material}><Select id="material" value={value.material} onChange={(e) => set("material", e.target.value)}><option value="">—</option>{(tax?.materials ?? []).map((m) => <option key={m} value={m}>{label(m.toLowerCase())}</option>)}</Select></Field>
-      <Field label={t("pieceForm.sexo")} id="sex" required error={err.sex}><Select id="sex" value={value.sex} onChange={(e) => set("sex", e.target.value)}>{(tax?.sexes ?? ["MASCULINO", "FEMININO", "UNISSEX"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>
+      {!autoSex && <Field label={t("pieceForm.sexo")} id="sex" required error={err.sex}><Select id="sex" value={value.sex} onChange={(e) => set("sex", e.target.value)}>{(tax?.sexes ?? ["MASCULINO", "FEMININO", "UNISSEX"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>}
       <Field label={t("common.size")} id="size" required error={err.size}><Select id="size" value={value.size} onChange={(e) => set("size", e.target.value)}>{(tax?.sizes ?? ["m"]).map((s) => <option key={s} value={s}>{s.toUpperCase().replace("BR_", "BR ")}</option>)}</Select></Field>
       <Field label={t("common.brand")} id="brand" error={err.brandName} className="sm:col-span-2">
         <BrandSearchInput error={err.brandName}

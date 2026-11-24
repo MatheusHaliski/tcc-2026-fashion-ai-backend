@@ -4,7 +4,7 @@
  * referências (coleção, corte...), ocasião e estilo ficam abertos em "2 · Mais detalhes", sem seção recolhida.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, renderApp, screen, ME } from "@/test-utils/render";
+import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, ME } from "@/test-utils/render";
 import { router } from "@/test-utils/setup";
 import NewPiecePage from "@/app/(site)/(app)/pieces/new/page";
 
@@ -48,5 +48,27 @@ describe("criador de peça — campos adicionais na etapa 2 · Mais detalhes", (
     next();
     expect(stepChecked(/2 · Mais detalhes/)).toBe("true");
     expect(document.querySelector("[data-step-problem]")?.textContent).toMatch(/material/i);
+  });
+  it("com o Tipo Look automático do perfil ligado, o criador não pede o campo Sexo e envia o tipo do perfil", async () => {
+    loggedAs(ME, { ...ROUTES, "GET /api/me/preferences/tipo-look": { tipoLook: { id: "t1", codigo: "UNISEX", nome: "Unisex" } } });
+    renderApp(<NewPiecePage />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Parte superior$/ }));
+    fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: "Camiseta branca" } });
+    pick("subcategory", "Camiseta");
+    pick("color", "Branco");
+    next();
+    expect(document.getElementById("material")).toBeTruthy();
+    await waitFor(() => expect(document.getElementById("sex")).toBeNull());
+  });
+
+  it("sem o automático, o campo Sexo continua no criador", async () => {
+    loggedAs(ME, { ...ROUTES, "GET /api/me/preferences/tipo-look": { tipoLook: null } });
+    renderApp(<NewPiecePage />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Parte superior$/ }));
+    fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: "Camiseta branca" } });
+    pick("subcategory", "Camiseta");
+    pick("color", "Branco");
+    next();
+    expect(document.getElementById("sex")).toBeTruthy();
   });
 });

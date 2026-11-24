@@ -48,6 +48,8 @@ import br.com.fashionai.domain.repository.*;
  */
 @Service
 public class WardrobeService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private LookTypePreferencesService lookTypePreferences;
     private final WardrobeItemRepository pieces;
     private final UserRepository users;
     private final BrandRepository brands;
@@ -293,11 +295,7 @@ public class WardrobeService {
                 return Views.piece(piece, viewerState(user, piece), Map.of());
             }
         }
-        WardrobeItem w = new WardrobeItem();
-        w.setUser(owner);
-        // a origem da variação (IA × pessoa) é deduzida do pré-preenchimento guardado no rascunho, nunca declarada
-        Map<?, ?> aiPrefill = draft != null && Json.map(draft.getResultJson()).get("prefill") instanceof Map<?, ?> prefill ? prefill : null;
-        formWriter().apply(w, form, true, aiPrefill);
+        WardrobeItem w = CreationLookDefaults.piece(owner, form, draft, formWriter(), lookTypePreferences);
         w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
         if (draft != null) {
             draftImport.importDraft(owner, w, draft, form);
