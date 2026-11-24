@@ -1,4 +1,10 @@
-{
+{ 
+  "pieceReferences.corte.label": "Tipo de Corte da peça",
+  "pieceReferences.corte.unselected": "Não informado",
+  "pieceReferences.corte.unavailable": " Corte de peça indisponível",
+  "pieceReferences.corte.loadError": "Não foi possível carregar os tipos de corte.",
+  "pieceReferences.corte.empty": "Nenhum tipo de  Corte disponível.",
+  "pieceReferences.corte.hint": "Escolha o tipo de corte da peça.",
   "pieceReferences.tipoLavagem.label": "Tipo de lavagem",
   "pieceReferences.tipoLavagem.unselected": "Não informado",
   "pieceReferences.tipoLavagem.unavailable": "Lavagem salva indisponível",
