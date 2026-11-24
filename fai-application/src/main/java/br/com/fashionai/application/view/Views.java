@@ -147,7 +147,7 @@ public final class Views {
                            String thumbnailUrl, BigDecimal price, boolean notAvailableAnymore, UUID ownerId,
                            String material, int wearCount, long likes,
                            String condition, String careInstructions,
-                           ReferenceOptionView estadoConservacao, ReferenceOptionView tipoLavagem) {
+                           ReferenceOptionView estadoConservacao, ReferenceOptionView tipoLavagem,ReferenceOptionView cortes ) {
     }
 
     public static PieceRow row(SchemeItem si) {
