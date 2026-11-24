@@ -18,6 +18,51 @@ creditado. **Este quadro é o crédito e precisa aparecer também numa tela de c
 | `refletor.glb` | Spotlight | DemonSammy | [Sketchfab](https://sketchfab.com/3d-models/none-67db45ff5c554097872f6eb5ec1ae5fa) | CC BY 4.0 | 2556 | 143 KB | PERSONAGEM_FILME |
 | `banco-rua.glb` | Park Bench | Bora Özakaltun | [Sketchfab](https://sketchfab.com/3d-models/none-7a0c2a659e2441b6b568a9d2acf8419e) | CC BY 4.0 | 2272 | 253 KB | AROUND_THE_WORLD |
 
+## Objetos gerados pelo motor Blender do projeto
+
+Desde 25/11/2026 os objetos que faltavam são **modelados por código no Blender**, sem API de terceiros e sem IA paga
+(`scripts/blender3d`). Cada receita é uma função Python que monta o objeto com as formas do núcleo (`core.py`: caixa
+chanfrada, cilindro, sólido torneado, anel, haste entre dois pontos) e materiais PBR; o comando exporta o `.glb` e
+escreve a linha do manifesto com `license: "Própria"` e `source: "scripts/blender3d/receitas"`.
+
+```bash
+pip install bpy                                   # ou use o Blender instalado
+python -m scripts.blender3d.build                 # gera todos em public/flair/3d/assets e atualiza o manifest.json
+python -m scripts.blender3d.build --so trave      # só um
+python -m scripts.blender3d.build --listar
+python -m scripts.blender3d.preview --pasta /tmp/previas   # folha de contato renderizada (Cycles na CPU)
+```
+
+| Arquivo | Substitui o móvel | Triângulos |
+| --- | --- | --- |
+| `cadeira.glb` | `cadeira` | 872 |
+| `cadeira-diretor.glb` | `cadeiraDiretor` | 808 |
+| `cadeira-de-camarim.glb` | `cadeiraDeCamarim` | 1504 |
+| `penteadeira.glb` | `penteadeira` | 2084 |
+| `luminaria.glb` | `luminaria` | 720 |
+| `camera-tripe.glb` | `cameraTripe` | 1916 |
+| `canhao-luz.glb` | `canhaoLuz` | 1996 |
+| `poste.glb` | `poste` | 1220 |
+| `caixote.glb` | `caixote` | 1948 |
+| `tambor.glb` | `tambor` | 1296 |
+| `pilha-de-pneus-2/3/4.glb` | `pilhaDePneus` (um arquivo por altura da pilha) | 1488 / 2232 / 2976 |
+| `trave.glb` | `trave` | 616 |
+| `skate.glb` | `skate` | 1344 |
+
+Regras do motor:
+
+- Origem no piso, centrado; a frente do objeto é `-Y` no Blender (vira `+Z` no glTF, a frente dos móveis das salas).
+- Teto de 3 mil triângulos por objeto (o mesmo do teste do manifesto); acima disso o comando recusa.
+- A sala ajusta a escala pela altura do móvel procedural, então a receita só precisa acertar as proporções.
+- **As cores são fixas no arquivo.** O móvel procedural usava a paleta da sala (ex.: penteadeira magenta no Road to
+  Glory); o objeto gerado tem a cor da receita. Para variar por sala, crie outra receita com outro slug e aponte-a no
+  móvel com `comGlb(...)`.
+- Receita apagada ou renomeada: o próximo `build` completo tira o `.glb` e a linha órfã do manifesto.
+- Para conferir um objeto dentro da sala: `/lab/salas?jogo=PERSONAGEM_FILME` (só em desenvolvimento).
+
+Conferido: a folha de contato dos 15 arquivos e a sala `PERSONAGEM_FILME` no navegador (câmera no tripé e cadeira de
+diretor no lugar, na escala e apoiadas no piso). **Não conferido: as demais salas**, uma a uma.
+
 ## O que foi conferido e o que não foi
 
 - Conferido: cada arquivo abre como GLB, tem menos de 3 mil triângulos, e foi visto numa folha de contato renderizada

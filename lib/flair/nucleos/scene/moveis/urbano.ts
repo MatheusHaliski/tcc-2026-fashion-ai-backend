@@ -2,7 +2,7 @@
  * Móveis de rua, quadra e box: grade, caixote, tambor, calçada, fachada com vitrine, placa da região, mapa, trave,
  * rede de proteção, linhas da quadra, pneus, armário de ferramentas, capacete no suporte, parapeito e prédio.
  */
-import { caixa, chanfrada, cilindro, esfera, movel, plano, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
+import { caixa, chanfrada, cilindro, comGlb, esfera, movel, plano, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
 /** Grade metálica: quadro, barras verticais e duas travessas. */
@@ -143,7 +143,8 @@ export function bola(em: Em, couro: string): Movel {
 export function pilhaDePneus(em: Em, borracha: string, quantos = 4): Movel {
   const partes: Parte[] = [];
   for (let i = 0; i < quantos; i++) partes.push(toro(borracha, 0.24, 0.1, [0, 0.1 + i * 0.2, 0], [90, 0, 0], 18));
-  return movel("pilhaDePneus", em, partes);
+  // objeto do motor Blender, um arquivo por altura da pilha (public/flair/3d/assets/pilha-de-pneus-<n>.glb)
+  return comGlb(movel("pilhaDePneus", em, partes), `pilha-de-pneus-${quantos}`);
 }
 
 /** Armário de ferramentas com gavetas e tampo. */

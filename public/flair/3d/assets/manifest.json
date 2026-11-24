@@ -63,5 +63,245 @@
     "author": "Bora Özakaltun",
     "source": "https://sketchfab.com/3d-models/none-7a0c2a659e2441b6b568a9d2acf8419e",
     "license": "CC BY 4.0"
+  },
+  {
+    "slug": "cadeira",
+    "title": "Cadeira da plateia",
+    "category": "scene",
+    "triangles": 872,
+    "bytes": 29828,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.44,
+      0.953,
+      0.465
+    ],
+    "movel": "cadeira"
+  },
+  {
+    "slug": "cadeira-diretor",
+    "title": "Cadeira de diretor",
+    "category": "scene",
+    "triangles": 808,
+    "bytes": 38528,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.59,
+      1.032,
+      0.5
+    ],
+    "movel": "cadeiraDiretor"
+  },
+  {
+    "slug": "cadeira-de-camarim",
+    "title": "Cadeira giratória de camarim",
+    "category": "scene",
+    "triangles": 1504,
+    "bytes": 51684,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.629,
+      0.943,
+      0.604
+    ],
+    "movel": "cadeiraDeCamarim"
+  },
+  {
+    "slug": "penteadeira",
+    "title": "Penteadeira de camarim com espelho iluminado",
+    "category": "scene",
+    "triangles": 2084,
+    "bytes": 56448,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      1.64,
+      1.71,
+      0.513
+    ],
+    "movel": "penteadeira"
+  },
+  {
+    "slug": "luminaria",
+    "title": "Luminária de piso",
+    "category": "scene",
+    "triangles": 720,
+    "bytes": 27020,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.4,
+      1.62,
+      0.4
+    ],
+    "movel": "luminaria"
+  },
+  {
+    "slug": "camera-tripe",
+    "title": "Câmera de cinema no tripé",
+    "category": "scene",
+    "triangles": 1916,
+    "bytes": 71772,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.779,
+      1.709,
+      1.028
+    ],
+    "movel": "cameraTripe"
+  },
+  {
+    "slug": "canhao-luz",
+    "title": "Canhão de luz no pedestal",
+    "category": "scene",
+    "triangles": 1996,
+    "bytes": 73804,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.675,
+      1.825,
+      0.726
+    ],
+    "movel": "canhaoLuz"
+  },
+  {
+    "slug": "poste",
+    "title": "Poste de rua com lanterna",
+    "category": "scene",
+    "triangles": 1220,
+    "bytes": 47800,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.4,
+      4.022,
+      1.05
+    ],
+    "movel": "poste"
+  },
+  {
+    "slug": "caixote",
+    "title": "Caixote de madeira ripado",
+    "category": "scene",
+    "triangles": 1948,
+    "bytes": 65696,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.73,
+      0.719,
+      0.754
+    ],
+    "movel": "caixote"
+  },
+  {
+    "slug": "tambor",
+    "title": "Tambor de aço",
+    "category": "scene",
+    "triangles": 1296,
+    "bytes": 35632,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.604,
+      0.884,
+      0.604
+    ],
+    "movel": "tambor"
+  },
+  {
+    "slug": "trave",
+    "title": "Trave de futebol de 5 com rede",
+    "category": "scene",
+    "triangles": 616,
+    "bytes": 53108,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      3.08,
+      2.04,
+      0.96
+    ],
+    "movel": "trave"
+  },
+  {
+    "slug": "skate",
+    "title": "Skate de rua",
+    "category": "scene",
+    "triangles": 1344,
+    "bytes": 39608,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.212,
+      0.131,
+      0.808
+    ],
+    "movel": "skate"
+  },
+  {
+    "slug": "pilha-de-pneus-2",
+    "title": "Pilha de 2 pneus do box",
+    "category": "scene",
+    "triangles": 1488,
+    "bytes": 47676,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.857,
+      0.4,
+      0.845
+    ],
+    "movel": "pilhaDePneus"
+  },
+  {
+    "slug": "pilha-de-pneus-3",
+    "title": "Pilha de 3 pneus do box",
+    "category": "scene",
+    "triangles": 2232,
+    "bytes": 69196,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.962,
+      0.6,
+      0.96
+    ],
+    "movel": "pilhaDePneus"
+  },
+  {
+    "slug": "pilha-de-pneus-4",
+    "title": "Pilha de 4 pneus do box",
+    "category": "scene",
+    "triangles": 2976,
+    "bytes": 90756,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.962,
+      0.8,
+      0.96
+    ],
+    "movel": "pilhaDePneus"
   }
 ]

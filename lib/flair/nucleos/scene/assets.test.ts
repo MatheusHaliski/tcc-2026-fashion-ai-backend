@@ -62,11 +62,18 @@ describe("objetos GLB no repositório (public/flair/3d/assets)", () => {
     expect(lido.length).toBeGreaterThan(0);
     for (const a of bruto) {
       expect(readFileSync(join(pasta, `${String(a.slug)}.glb`)).subarray(0, 4).toString()).toBe("glTF");
-      expect(a.license).toBe("CC BY 4.0");
       expect(String(a.author).length).toBeGreaterThan(0);
-      expect(String(a.source)).toMatch(/^https:\/\/sketchfab\.com\//);
+      expect(Number(a.triangles)).toBeGreaterThan(0);
       expect(Number(a.triangles)).toBeLessThanOrEqual(3000);
-      expect((a.games as string[]).length).toBe(1);
+      if (String(a.source).startsWith("scripts/blender3d")) {
+        // gerado pelo motor Blender do projeto (scripts/blender3d): autoria própria; diz qual móvel procedural substitui
+        expect(a.license).toBe("Própria");
+        expect(String(a.movel ?? "").length).toBeGreaterThan(0);
+      } else {
+        expect(a.license).toBe("CC BY 4.0");
+        expect(String(a.source)).toMatch(/^https:\/\/sketchfab\.com\//);
+        expect((a.games as string[]).length).toBe(1);
+      }
     }
   });
 });
