@@ -78,7 +78,7 @@
       0.953,
       0.465
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 484,
     "movel": "cadeira"
   },
@@ -96,7 +96,7 @@
       1.032,
       0.5
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 568,
     "movel": "cadeiraDiretor"
   },
@@ -114,7 +114,7 @@
       1.232,
       0.521
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 850,
     "movel": "cadeiraDeCamarim"
   },
@@ -132,7 +132,7 @@
       1.082,
       0.513
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 602,
     "movel": "penteadeira"
   },
@@ -150,7 +150,7 @@
       0.722,
       0.439
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "movel": "luminaria"
   },
   {
@@ -167,7 +167,7 @@
       1.709,
       1.028
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1082,
     "movel": "cameraTripe"
   },
@@ -185,7 +185,7 @@
       1.825,
       0.699
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1110,
     "movel": "canhaoLuz"
   },
@@ -203,7 +203,7 @@
       4.12,
       0.22
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 684,
     "movel": "poste"
   },
@@ -221,7 +221,7 @@
       0.719,
       0.754
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 938,
     "movel": "caixote"
   },
@@ -239,7 +239,7 @@
       0.884,
       0.604
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 594,
     "movel": "tambor"
   },
@@ -257,7 +257,7 @@
       2.04,
       0.96
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "movel": "trave"
   },
   {
@@ -274,7 +274,7 @@
       0.131,
       0.808
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 632,
     "movel": "skate"
   },
@@ -292,7 +292,7 @@
       0.4,
       0.845
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 748,
     "movel": "pilhaDePneus"
   },
@@ -310,7 +310,7 @@
       0.6,
       0.96
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1122,
     "movel": "pilhaDePneus"
   },
@@ -328,7 +328,7 @@
       0.8,
       0.96
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1496,
     "movel": "pilhaDePneus"
   },
@@ -346,7 +346,7 @@
       1.02,
       0.8
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 642,
     "movel": "bancada"
   },
@@ -364,7 +364,7 @@
       1.02,
       0.8
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 642,
     "movel": "bancada"
   },
@@ -382,7 +382,7 @@
       1.02,
       0.8
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 642,
     "movel": "bancada"
   },
@@ -400,7 +400,7 @@
       1.554,
       0.75
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 558,
     "movel": "rolosDeTecido"
   },
@@ -418,7 +418,7 @@
       1.327,
       1.244
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1456,
     "movel": "lustre"
   },
@@ -436,7 +436,7 @@
       1.327,
       1.544
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1456,
     "movel": "lustre"
   },
@@ -454,7 +454,7 @@
       0.61,
       2.2
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "movel": "luminariaDeTeto"
   },
   {
@@ -471,7 +471,7 @@
       0.61,
       2.4
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "movel": "luminariaDeTeto"
   },
   {
@@ -488,7 +488,7 @@
       0.61,
       2.6
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "movel": "luminariaDeTeto"
   },
   {
@@ -505,7 +505,7 @@
       0.61,
       3.0
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "movel": "luminariaDeTeto"
   },
   {
@@ -522,7 +522,7 @@
       0.373,
       6.262
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1100,
     "movel": "trilhoSpots"
   },
@@ -540,7 +540,7 @@
       0.373,
       9.262
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1352,
     "movel": "trilhoSpots"
   },
@@ -558,7 +558,7 @@
       1.626,
       0.5
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 940,
     "movel": "arara"
   },
@@ -576,7 +576,7 @@
       1.626,
       0.5
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1046,
     "movel": "arara"
   },
@@ -594,7 +594,7 @@
       1.626,
       0.5
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 834,
     "movel": "arara"
   },
@@ -612,7 +612,7 @@
       1.626,
       0.5
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 940,
     "movel": "arara"
   },
@@ -630,7 +630,7 @@
       1.626,
       0.5
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1046,
     "movel": "arara"
   },
@@ -648,7 +648,7 @@
       2.08,
       0.079
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 536,
     "movel": "espelho"
   },
@@ -666,7 +666,7 @@
       2.98,
       0.079
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 536,
     "movel": "espelho"
   },
@@ -684,7 +684,7 @@
       2.58,
       0.138
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 1544,
     "movel": "espelho"
   },
@@ -702,7 +702,7 @@
       0.478,
       0.45
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 678,
     "movel": "bancoEstofado"
   },
@@ -720,7 +720,7 @@
       0.478,
       0.45
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "leve": 718,
     "movel": "bancoEstofado"
   },
@@ -738,7 +738,24 @@
       0.997,
       0.55
     ],
-    "hash": "6eb589c656cbeaf3",
+    "hash": "d67cfd44fbd3f852",
     "movel": "armarioFerramentas"
+  },
+  {
+    "slug": "pessoa-leve",
+    "title": "Corpo humano leve das pessoas de cena",
+    "category": "gente",
+    "triangles": 1072,
+    "bytes": 68768,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.538,
+      1.795,
+      0.299
+    ],
+    "hash": "d67cfd44fbd3f852",
+    "leve": 590
   }
 ]

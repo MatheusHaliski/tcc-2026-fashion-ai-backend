@@ -3,13 +3,17 @@
  * Laboratório das salas (FLAIR 3D): desenha a sala de um jogo sem partida nem avatar, para conferir os objetos GLB
  * gerados pelo motor Blender (scripts/blender3d) no lugar dos móveis procedurais — escala, apoio no piso e para onde
  * cada um fica virado. `?jogo=PERSONAGEM_FILME` escolhe a sala; `?olho=x,y,z` e `?alvo=x,y,z` fixam a câmera;
- * `?glb=0` mostra a sala só com os móveis procedurais, para comparar; `?variante=` escolhe a variante da sala.
+ * `?glb=0` mostra a sala só com os móveis procedurais, para comparar; `?variante=` escolhe a variante da sala;
+ * `?gente=N` põe os figurantes (N de corpo inteiro, os outros no corpo humano leve).
  */
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
+import { NUCLEOS } from "@/lib/flair/nucleos/registry";
+import { figurantesDaCena } from "@/lib/flair/nucleos/scene/budget";
 import { Diretor } from "@/lib/flair/nucleos/scene/director";
 import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
@@ -21,15 +25,19 @@ const tripla = (texto: string | null, padrao: V3): V3 => {
 };
 
 export default function SalasLab() {
-  const [cena, setCena] = useState<{ jogo: NucleoCodigo; olho: V3; alvo: V3; semObjetos: boolean; variante: string | null } | null>(null);
+  const [cena, setCena] = useState<{ jogo: NucleoCodigo; olho: V3; alvo: V3; semObjetos: boolean; variante: string | null; gente: number | null } | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(location.search);
-    setCena({ jogo: (q.get("jogo") ?? "PERSONAGEM_FILME") as NucleoCodigo, olho: tripla(q.get("olho"), [0, 2.4, 7.5]), alvo: tripla(q.get("alvo"), [0, 1, 0]), semObjetos: q.get("glb") === "0", variante: q.get("variante") });
+    setCena({ jogo: (q.get("jogo") ?? "PERSONAGEM_FILME") as NucleoCodigo, olho: tripla(q.get("olho"), [0, 2.4, 7.5]), alvo: tripla(q.get("alvo"), [0, 1, 0]), semObjetos: q.get("glb") === "0", variante: q.get("variante"), gente: q.has("gente") ? Number(q.get("gente")) : null });
   }, []);
   // a sala lê o diretor das sequências a cada quadro: aqui, um diretor parado (nenhuma sequência tocando)
   const contexto = useMemo(() => (cena ? { codigo: cena.jogo, diretor: new Diretor(), reduzido: true } : null), [cena]);
+  const prontos = useRef(new Set<string>());
   if (!cena || !contexto) return null;
   const sala = salaDe(cena.jogo, cena.variante);
+  // `?gente=N`: os figurantes da sala, N deles de corpo inteiro e os outros no corpo humano leve
+  const figurantes = sala && cena.gente != null ? figurantesDaCena(sala, NUCLEOS[cena.jogo]?.personagens ?? []) : [];
+  const inteiros = cena.gente ?? 0;
   return (
     <main className="p-4">
       <h1 className="type-h3 mb-2">Laboratório de salas · {cena.jogo}</h1>
@@ -38,6 +46,7 @@ export default function SalasLab() {
           <ambientLight intensity={0.6} />
           <CenaContexto.Provider value={contexto}>
             <Suspense fallback={null}>{sala && <Sala3D sala={sala} placar={null} semObjetos={cena.semObjetos} />}</Suspense>
+            {figurantes.length > 0 && <FigurantesHumanos codigo={cena.jogo} personagens={figurantes} prontos={prontos} reduzido limite={() => inteiros} />}
           </CenaContexto.Provider>
           <OrbitControls target={cena.alvo} />
         </Canvas>

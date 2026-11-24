@@ -14,16 +14,18 @@ class Receita:
     movel: str | None = None
     #: códigos dos jogos em que serve; vazio = todos
     jogos: tuple[str, ...] = ()
+    #: "scene" = objeto de sala (substitui um móvel); "gente" = corpo das pessoas de cena
+    categoria: str = "scene"
 
 
 RECEITAS: dict[str, Receita] = {}
 
 
-def receita(slug: str, titulo: str, movel: str | None = None, jogos: tuple[str, ...] = ()):
+def receita(slug: str, titulo: str, movel: str | None = None, jogos: tuple[str, ...] = (), categoria: str = "scene"):
     def registrar(modelar: Callable[[], None]) -> Callable[[], None]:
         if slug in RECEITAS:
             raise ValueError(f"receita repetida: {slug}")
-        RECEITAS[slug] = Receita(slug, titulo, modelar, movel, jogos)
+        RECEITAS[slug] = Receita(slug, titulo, modelar, movel, jogos, categoria)
         return modelar
     return registrar
 
@@ -43,5 +45,5 @@ def variantes(base: str, titulo: str, opcoes: dict[str, dict], movel: str | None
 
 def carregar() -> dict[str, Receita]:
     """Importa os módulos de receita (o registro acontece na importação) e devolve o catálogo."""
-    from . import atelie, iluminacao, interior, mobilia, palco, urbano  # noqa: F401
+    from . import atelie, gente, iluminacao, interior, mobilia, palco, urbano  # noqa: F401
     return RECEITAS
