@@ -187,7 +187,7 @@ public class PhotoService {
         @SuppressWarnings("unchecked") Map<String, Long> months = (Map<String, Long>) facets.get("month");
         AiOutcome<List<String>> outcome = ai.local(user.id(), AiCapability.STYLE_INSIGHT,
                 List.of(Msg.t("photo.insight_entrada", all.size())),
-                () -> PhotoInsights.sentences(color, occasion, style, months, all.size(), WardrobeService::humanize));
+                () -> PhotoInsights.sentences(color, occasion, style, months, all.size(), br.com.fashionai.application.wardrobe.PiecePrefill::humanize));
         Map<String, Object> out = new LinkedHashMap<>(facets);
         out.put("total", all.size());
         out.put("keyMoments", all.stream().filter(Photo::isKeyMoment).count());

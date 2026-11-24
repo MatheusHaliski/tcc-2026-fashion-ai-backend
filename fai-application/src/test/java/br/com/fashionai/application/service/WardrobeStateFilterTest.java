@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.wardrobe.ClosetQuery;
 import org.junit.jupiter.api.Test;
 
 import br.com.fashionai.application.wardrobe.PieceFormWriter;
@@ -23,23 +24,23 @@ class WardrobeStateFilterTest {
         WardrobeItem on = item(true, false, false);
         WardrobeItem off = item(false, false, false);
         for (String s : new String[]{"disponivel", "disponiveis", "available"}) {
-            assertTrue(WardrobeService.stateMatches(on, s), s);
-            assertFalse(WardrobeService.stateMatches(off, s), s);
+            assertTrue(ClosetQuery.stateMatches(on, s), s);
+            assertFalse(ClosetQuery.stateMatches(off, s), s);
         }
         for (String s : new String[]{"indisponivel", "indisponiveis", "unavailable"}) {
-            assertFalse(WardrobeService.stateMatches(on, s), s);
-            assertTrue(WardrobeService.stateMatches(off, s), s);
+            assertFalse(ClosetQuery.stateMatches(on, s), s);
+            assertTrue(ClosetQuery.stateMatches(off, s), s);
         }
     }
 
     @Test
     void aVendaSoTrazPecasMarcadasNoFormulario() {
-        assertTrue(WardrobeService.stateMatches(item(true, true, false), "venda"));
-        assertTrue(WardrobeService.stateMatches(item(true, true, false), "a_venda"));
-        assertFalse(WardrobeService.stateMatches(item(true, false, false), "venda"));
-        assertTrue(WardrobeService.stateMatches(item(true, false, true), "favoritos"));
-        assertTrue(WardrobeService.stateMatches(item(false, false, false), ""));
-        assertTrue(WardrobeService.stateMatches(item(false, false, false), null));
+        assertTrue(ClosetQuery.stateMatches(item(true, true, false), "venda"));
+        assertTrue(ClosetQuery.stateMatches(item(true, true, false), "a_venda"));
+        assertFalse(ClosetQuery.stateMatches(item(true, false, false), "venda"));
+        assertTrue(ClosetQuery.stateMatches(item(true, false, true), "favoritos"));
+        assertTrue(ClosetQuery.stateMatches(item(false, false, false), ""));
+        assertTrue(ClosetQuery.stateMatches(item(false, false, false), null));
     }
 
     @Test
@@ -49,13 +50,13 @@ class WardrobeStateFilterTest {
         assertTrue(w.isForDonation());
         assertFalse(w.isForSale());
         for (String s : new String[]{"doar", "para_doar", "for_donation"}) {
-            assertTrue(WardrobeService.stateMatches(w, s), s);
+            assertTrue(ClosetQuery.stateMatches(w, s), s);
         }
-        assertFalse(WardrobeService.stateMatches(w, "venda"));
+        assertFalse(ClosetQuery.stateMatches(w, "venda"));
         PieceFormWriter.applyListing(w, true, null);   // e o contrário
         assertTrue(w.isForSale());
         assertFalse(w.isForDonation());
-        assertFalse(WardrobeService.stateMatches(w, "doar"));
+        assertFalse(ClosetQuery.stateMatches(w, "doar"));
         PieceFormWriter.applyListing(w, false, null);  // desmarcar não liga o outro
         assertFalse(w.isForSale());
         assertFalse(w.isForDonation());

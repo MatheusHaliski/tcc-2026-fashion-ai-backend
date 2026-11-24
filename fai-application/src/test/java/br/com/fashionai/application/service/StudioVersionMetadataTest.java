@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.studio.StudioVersionMetadata;
 import br.com.fashionai.domain.model.WardrobeItem;
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
@@ -13,11 +14,11 @@ class StudioVersionMetadataTest {
     @Test
     void copiesTheStudioContainerWithoutMutatingItsSource() {
         Map<String, Object> studio = new LinkedHashMap<>(Map.of("url", "/approved.png"));
-        Map<String, Object> result = WardrobeService.studioMeta(Map.of("studio", studio));
+        Map<String, Object> result = StudioVersionMetadata.copyFrom(Map.of("studio", studio));
         result.put("pending", Map.of("version", 2));
         assertThat(studio).containsOnlyKeys("url");
-        assertThat(WardrobeService.studioMeta(Map.of("studio", "invalid"))).isNull();
-        assertThat(WardrobeService.studioMeta(Map.of())).isNull();
+        assertThat(StudioVersionMetadata.copyFrom(Map.of("studio", "invalid"))).isNull();
+        assertThat(StudioVersionMetadata.copyFrom(Map.of())).isNull();
     }
 
     @Test
@@ -43,7 +44,7 @@ class StudioVersionMetadataTest {
         info.put("provider", 42);
         info.put("previous", Map.of("private", "not-for-new-version"));
         info.put("pending", Map.of("version", 99));
-        Map<String, Object> result = WardrobeService.studioSummary(info, 8, false);
+        Map<String, Object> result = StudioVersionMetadata.summary(info, 8, false);
         assertThat(result).containsEntry("provider", "42").containsEntry("version", 8).containsEntry("approved", false);
         assertThat(result).doesNotContainKeys("previous", "pending", "approvedAt");
         info.forEach((key, value) -> {
@@ -58,7 +59,7 @@ class StudioVersionMetadataTest {
     void usesOneTimestampForApprovedSummaryAndOmitsNullDerivatives() {
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("url", "/new.png"); info.put("detailUrl", null);
-        Map<String, Object> result = WardrobeService.studioSummary(info, 2, true);
+        Map<String, Object> result = StudioVersionMetadata.summary(info, 2, true);
         assertThat(result).containsEntry("url", "/new.png").doesNotContainKey("detailUrl");
         assertThat(result.get("approvedAt")).isEqualTo(result.get("createdAt"));
     }

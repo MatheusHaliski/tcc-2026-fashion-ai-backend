@@ -12,7 +12,7 @@ import br.com.fashionai.application.imaging.*;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.MediaService;
-import br.com.fashionai.application.service.WardrobeService.CaptureAnalysis;
+import br.com.fashionai.application.wardrobe.draft.CaptureAnalysis;
 import br.com.fashionai.application.service.WardrobeService.Draft;
 import br.com.fashionai.application.service.WardrobeService.Prefill;
 import br.com.fashionai.application.studio.PieceStudioHints;

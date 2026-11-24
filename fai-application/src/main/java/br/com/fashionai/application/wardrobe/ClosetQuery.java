@@ -51,7 +51,7 @@ public final class ClosetQuery {
      * Filtros de atributo escolhidos na tela (categoria, cor/família, estação, ocasião, estilo, estado e busca).
      * Não decide arquivamento, visibilidade nem moderação.
      */
-    public static boolean matches(WardrobeItem w, WardrobeService.ClosetFilter f) {
+    public static boolean matches(WardrobeItem w, ClosetFilter f) {
         return (blank(f.category()) || f.category().equals(w.getCategory()))
                 && (blank(f.color()) || f.color().equals(w.getColor()) || f.color().equalsIgnoreCase(Taxonomy.COLOR_FAMILY.get(w.getColor())))
                 && (blank(f.season()) || (w.getMarket() != null && w.getMarket().startsWith(f.season().toLowerCase(Locale.ROOT))))

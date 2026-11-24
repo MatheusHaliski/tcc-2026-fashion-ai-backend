@@ -1,5 +1,7 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.wardrobe.ClosetQuery;
+import br.com.fashionai.application.wardrobe.ClosetFilter;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
@@ -152,7 +154,7 @@ class ClosetSealFilterTest {
     }
 
     private List<String> names(String seal) {
-        WardrobeService.ClosetFilter f = new WardrobeService.ClosetFilter(null, null, null, null, null, null, null, "name", 0, 30, null, seal);
+        ClosetFilter f = new ClosetFilter(null, null, null, null, null, null, null, "name", 0, 30, null, seal);
         Views.Page<Views.PieceView> page = wardrobe.closet(me, me.id(), f);
         return page.items().stream().map(Views.PieceView::name).toList();
     }
@@ -168,9 +170,9 @@ class ClosetSealFilterTest {
 
     @Test
     void valoresAceitosDoFiltro() {
-        assertThat(WardrobeService.sealFilter("HYPE")).isEqualTo("hype");
-        assertThat(WardrobeService.sealFilter("marca")).isEqualTo("brand");
-        assertThat(WardrobeService.sealFilter("qualquer")).isEqualTo("any");
-        assertThat(WardrobeService.sealFilter(" ")).isNull();
+        assertThat(ClosetQuery.sealFilter("HYPE")).isEqualTo("hype");
+        assertThat(ClosetQuery.sealFilter("marca")).isEqualTo("brand");
+        assertThat(ClosetQuery.sealFilter("qualquer")).isEqualTo("any");
+        assertThat(ClosetQuery.sealFilter(" ")).isNull();
     }
 }

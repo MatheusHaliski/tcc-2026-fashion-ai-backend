@@ -69,10 +69,10 @@ class WardrobeAnalysisTest {
 
     @Test
     void marcaQueNaoEhMarcaVoltaNula() {
-        assertThat(WardrobeService.brandName("null")).isNull();
-        assertThat(WardrobeService.brandName("Sem marca")).isNull();
-        assertThat(WardrobeService.brandName("  ")).isNull();
-        assertThat(WardrobeService.brandName(" Nike ")).isEqualTo("Nike");
+        assertThat(PieceAnalysisParser.brandName("null")).isNull();
+        assertThat(PieceAnalysisParser.brandName("Sem marca")).isNull();
+        assertThat(PieceAnalysisParser.brandName("  ")).isNull();
+        assertThat(PieceAnalysisParser.brandName(" Nike ")).isEqualTo("Nike");
         assertThat(PieceAnalysisParser.isNoBrandPlaceholder("No brand")).isTrue();
         assertThat(PieceAnalysisParser.isNoBrandPlaceholder("Sin marca")).isTrue();
         assertThat(PieceAnalysisParser.isNoBrandPlaceholder("Zara")).isFalse();

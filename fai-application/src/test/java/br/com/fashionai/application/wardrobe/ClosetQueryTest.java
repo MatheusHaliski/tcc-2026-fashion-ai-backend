@@ -10,7 +10,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.WardrobeItem;
 
@@ -31,8 +30,8 @@ class ClosetQueryTest {
         return w;
     }
 
-    static WardrobeService.ClosetFilter filter(String category, String color, String state, String q) {
-        return new WardrobeService.ClosetFilter(category, color, null, null, null, state, q, null, 0, 0, null, null);
+    static ClosetFilter filter(String category, String color, String state, String q) {
+        return new ClosetFilter(category, color, null, null, null, state, q, null, 0, 0, null, null);
     }
 
     static HypeScoreCurrent score(Double s) {

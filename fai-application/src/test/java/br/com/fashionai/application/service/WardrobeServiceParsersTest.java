@@ -1,5 +1,7 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.taxonomy.TaxonomyView;
+import br.com.fashionai.application.studio.StudioVersionMetadata;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -259,31 +261,30 @@ class WardrobeServiceParsersTest {
 
     @Test
     void utilitariosDeTextoENumeros() {
-        assertThat(WardrobeService.oneOf("a", List.of("a"))).isEqualTo("a");
-        assertThat(WardrobeService.oneOf("b", List.of("a"))).isNull();
-        assertThat(WardrobeService.oneOf(null, List.of("a"))).isNull();
-        assertThat(WardrobeService.brandName(null)).isNull();
-        assertThat(WardrobeService.brandName("  ")).isNull();
-        assertThat(WardrobeService.brandName("x".repeat(61))).isNull();
-        assertThat(WardrobeService.brandName("Unknown")).isNull();
-        assertThat(WardrobeService.brandName("sem marca")).isNull();
-        assertThat(WardrobeService.brandName(" Osklen ")).isEqualTo("Osklen");
-        assertThat(WardrobeService.strings(List.of("a", 1))).containsExactly("a", "1");
-        assertThat(WardrobeService.strings("x")).containsExactly("x");
-        assertThat(WardrobeService.strings(" ")).isEmpty();
-        assertThat(WardrobeService.strings(5)).isEmpty();
+        assertThat(AiResponseJson.oneOf("a", List.of("a"))).isEqualTo("a");
+        assertThat(AiResponseJson.oneOf("b", List.of("a"))).isNull();
+        assertThat(AiResponseJson.oneOf(null, List.of("a"))).isNull();
+        assertThat(PieceAnalysisParser.brandName(null)).isNull();
+        assertThat(PieceAnalysisParser.brandName("  ")).isNull();
+        assertThat(PieceAnalysisParser.brandName("x".repeat(61))).isNull();
+        assertThat(PieceAnalysisParser.brandName("Unknown")).isNull();
+        assertThat(PieceAnalysisParser.brandName("sem marca")).isNull();
+        assertThat(PieceAnalysisParser.brandName(" Osklen ")).isEqualTo("Osklen");
+        assertThat(AiResponseJson.strings(List.of("a", 1))).containsExactly("a", "1");
+        assertThat(AiResponseJson.strings("x")).containsExactly("x");
+        assertThat(AiResponseJson.strings(" ")).isEmpty();
+        assertThat(AiResponseJson.strings(5)).isEmpty();
         assertThat(PiecePrefill.firstNonBlank(null, " ", "a")).isEqualTo("a");
         assertThat(PiecePrefill.firstNonBlank(null, "")).isNull();
-        assertThat(WardrobeService.str(null)).isNull();
-        assertThat(WardrobeService.str(" a ")).isEqualTo("a");
+        assertThat(AiResponseJson.str(null)).isNull();
+        assertThat(AiResponseJson.str(" a ")).isEqualTo("a");
         assertThat(WardrobeService.blank(null)).isTrue();
         assertThat(WardrobeService.blank("x")).isFalse();
         assertThat(WardrobeService.contains("Camiseta", "MISE")).isTrue();
         assertThat(WardrobeService.contains(null, "a")).isFalse();
         assertThat(WardrobeService.contains("a", null)).isFalse();
-        assertThat(WardrobeService.extractJson(null)).isEmpty();
-        assertThat(WardrobeService.extractJson("{\"a\":1}")).containsEntry("a", 1);
-        assertThat(WardrobeService.enumMap(String.class)).isEmpty();
+        assertThat(AiResponseJson.extractJson(null)).isEmpty();
+        assertThat(AiResponseJson.extractJson("{\"a\":1}")).containsEntry("a", 1);
         WardrobeItem semId = new WardrobeItem();
         WardrobeItem comId = new WardrobeItem();
         UUID id = UUID.randomUUID();
@@ -293,9 +294,9 @@ class WardrobeServiceParsersTest {
         assertThat(page.getPageNumber()).isZero();
         assertThat(page.getPageSize()).isEqualTo(60);
         assertThat(WardrobeService.page(2, 0).getPageSize()).isEqualTo(1);
-        assertThat(WardrobeService.humanize("tank_top")).isEqualTo("Tank top");
-        assertThat(WardrobeService.label("t_shirt")).isEqualTo("Camiseta");
-        assertThat(WardrobeService.label("codigo_sem_rotulo")).isEqualTo("Codigo sem rotulo");
+        assertThat(PiecePrefill.humanize("tank_top")).isEqualTo("Tank top");
+        assertThat(PiecePrefill.label("t_shirt")).isEqualTo("Camiseta");
+        assertThat(PiecePrefill.label("codigo_sem_rotulo")).isEqualTo("Codigo sem rotulo");
         assertThat(PiecePrefill.pieceName("t_shirt", "white")).isEqualTo("Camiseta branco");
     }
 
@@ -313,24 +314,23 @@ class WardrobeServiceParsersTest {
 
     @Test
     void moderacaoPelaRespostaDaIa() {
-        WardrobeService s = new Kit().build(WardrobeService.class);
-        assertThat(s.parseModeration("sem json")).isNull();
-        assertThat(s.parseModeration("{\"isClothing\":true,\"safe\":false,\"confidence\":0.9,\"categories\":[\"nudity\"]}"))
+        assertThat(PieceAnalysisParser.parseModeration("sem json")).isNull();
+        assertThat(PieceAnalysisParser.parseModeration("{\"isClothing\":true,\"safe\":false,\"confidence\":0.9,\"categories\":[\"nudity\"]}"))
                 .satisfies(v -> {
                     assertThat(v.status()).isEqualTo(ModerationStatus.REJECTED_POLICY);
                     assertThat(v.reasons()).containsExactly("nudity");
                     assertThat(v.needsHumanReview()).isTrue();
                 });
-        var duvida = s.parseModeration("{\"isClothing\":true,\"safe\":false,\"confidence\":0.5}");
+        var duvida = PieceAnalysisParser.parseModeration("{\"isClothing\":true,\"safe\":false,\"confidence\":0.5}");
         assertThat(duvida.status()).isEqualTo(ModerationStatus.PENDING);
         assertThat(duvida.reasons()).hasSize(1);
-        assertThat(s.parseModeration("{\"isClothing\":false,\"safe\":true,\"confidence\":0.95}").status())
+        assertThat(PieceAnalysisParser.parseModeration("{\"isClothing\":false,\"safe\":true,\"confidence\":0.95}").status())
                 .isEqualTo(ModerationStatus.REJECTED_NOT_CLOTHING);
-        assertThat(s.parseModeration("{\"isClothing\":false,\"safe\":true}").status()).isEqualTo(ModerationStatus.PENDING);
-        var ok = s.parseModeration("{\"isClothing\":true,\"safe\":true,\"confidence\":0.7}");
+        assertThat(PieceAnalysisParser.parseModeration("{\"isClothing\":false,\"safe\":true}").status()).isEqualTo(ModerationStatus.PENDING);
+        var ok = PieceAnalysisParser.parseModeration("{\"isClothing\":true,\"safe\":true,\"confidence\":0.7}");
         assertThat(ok.status()).isEqualTo(ModerationStatus.APPROVED);
         assertThat(ok.needsHumanReview()).isFalse();
-        var incerto = s.parseModeration("{\"isClothing\":true,\"safe\":true,\"confidence\":0.4}");
+        var incerto = PieceAnalysisParser.parseModeration("{\"isClothing\":true,\"safe\":true,\"confidence\":0.4}");
         assertThat(incerto.status()).isEqualTo(ModerationStatus.PENDING);
         assertThat(incerto.needsHumanReview()).isTrue();
     }
@@ -412,16 +412,16 @@ class WardrobeServiceParsersTest {
 
     @Test
     void filtroDeSeloAceitaSinonimos() {
-        assertThat(WardrobeService.sealFilter(null)).isNull();
-        assertThat(WardrobeService.sealFilter(" HYPE ")).isEqualTo("hype");
-        assertThat(WardrobeService.sealFilter("celebridade")).isEqualTo("brand");
-        assertThat(WardrobeService.sealFilter("qualquer")).isEqualTo("any");
-        assertThat(WardrobeService.sealFilter("outro")).isNull();
+        assertThat(ClosetQuery.sealFilter(null)).isNull();
+        assertThat(ClosetQuery.sealFilter(" HYPE ")).isEqualTo("hype");
+        assertThat(ClosetQuery.sealFilter("celebridade")).isEqualTo("brand");
+        assertThat(ClosetQuery.sealFilter("qualquer")).isEqualTo("any");
+        assertThat(ClosetQuery.sealFilter("outro")).isNull();
         WardrobeItem w = new WardrobeItem();
         w.setForDonation(true);
-        assertThat(WardrobeService.stateMatches(w, "todos")).isTrue();
-        assertThat(WardrobeService.stateMatches(w, "donation")).isTrue();
-        assertThat(WardrobeService.stateMatches(w, "desconhecido")).isTrue();
+        assertThat(ClosetQuery.stateMatches(w, "todos")).isTrue();
+        assertThat(ClosetQuery.stateMatches(w, "donation")).isTrue();
+        assertThat(ClosetQuery.stateMatches(w, "desconhecido")).isTrue();
     }
 
     @Test
@@ -461,8 +461,8 @@ class WardrobeServiceParsersTest {
     @Test
     void versoesDoEstudio() {
         WardrobeItem w = new WardrobeItem();
-        assertThat(WardrobeService.studioMeta(Map.of())).isNull();
-        assertThat(WardrobeService.studioMeta(Map.of("studio", Map.of("version", 2)))).containsEntry("version", 2);
+        assertThat(StudioVersionMetadata.copyFrom(Map.of())).isNull();
+        assertThat(StudioVersionMetadata.copyFrom(Map.of("studio", Map.of("version", 2)))).containsEntry("version", 2);
         assertThat(WardrobeService.studioVersion(Map.of("version", 3), w)).isEqualTo(3);
         assertThat(WardrobeService.studioVersion(null, w)).isZero();
         assertThat(WardrobeService.studioApproved(null, w)).isFalse();
@@ -472,10 +472,10 @@ class WardrobeServiceParsersTest {
         assertThat(WardrobeService.studioApproved(Map.of("approved", false), w)).isFalse();
         assertThat(WardrobeService.studioApproved(Map.of("approved", true), w)).isTrue();
         Map<String, Object> info = new LinkedHashMap<>(Map.of("url", "/a.jpg", "provider", 7, "ghost", true));
-        var s = WardrobeService.studioSummary(info, 2, true);
+        var s = StudioVersionMetadata.summary(info, 2, true);
         assertThat(s).containsEntry("url", "/a.jpg").containsEntry("provider", "7").containsEntry("version", 2)
                 .containsEntry("approved", true).containsKey("approvedAt").doesNotContainKey("ghost");
-        assertThat(WardrobeService.studioSummary(info, 1, false)).doesNotContainKey("approvedAt");
+        assertThat(StudioVersionMetadata.summary(info, 1, false)).doesNotContainKey("approvedAt");
     }
 
     @Test
@@ -492,7 +492,7 @@ class WardrobeServiceParsersTest {
 
     @Test
     void taxonomiaV2TrazVariacoesDimensoesELegado() {
-        Map<String, Object> t = WardrobeService.taxonomyV2();
+        Map<String, Object> t = TaxonomyView.extended();
         assertThat(t).containsKeys("variationsBySubcategory", "variations", "dimensions", "legacySubcategories", "subcategoryLabels");
         assertThat(((Map<?, ?>) t.get("variationsBySubcategory")).containsKey("t_shirt")).isTrue();
         assertThat((List<?>) t.get("dimensions")).isNotEmpty();
@@ -605,7 +605,7 @@ class WardrobeServiceParsersTest {
         assertThat(comSessao.attributes()).isNull();
         var pick = new CatalogPick(UUID.randomUUID(), null, "/img.png");
         assertThat(pick.thumbnailUrl()).isNull();
-        assertThat(new WardrobeService.ClosetFilter(null, null, null, null, null, null, null, null, 0, 0).seal()).isNull();
-        assertThat(new WardrobeService.ClosetFilter(null, null, null, null, null, null, null, null, 0, 0, "HOT").hypeLevel()).isEqualTo("HOT");
+        assertThat(new ClosetFilter(null, null, null, null, null, null, null, null, 0, 0, null, null).seal()).isNull();
+        assertThat(new ClosetFilter(null, null, null, null, null, null, null, null, 0, 0, "HOT", null).hypeLevel()).isEqualTo("HOT");
     }
 }

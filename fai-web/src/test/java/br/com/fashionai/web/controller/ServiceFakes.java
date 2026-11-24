@@ -4128,8 +4128,8 @@ final class ServiceFakes {
         }
 
         @Override
-        public br.com.fashionai.application.service.WardrobeService.CaptureAnalysis analyzeForCapture(br.com.fashionai.application.security.CurrentUser a0, byte[] a1, java.lang.String a2, boolean a3) {
-            return (br.com.fashionai.application.service.WardrobeService.CaptureAnalysis) Fk.call(this, "analyzeForCapture", br.com.fashionai.application.service.WardrobeService.CaptureAnalysis.class, new Object[]{a0, a1, a2, a3});
+        public br.com.fashionai.application.wardrobe.draft.CaptureAnalysis analyzeForCapture(br.com.fashionai.application.security.CurrentUser a0, byte[] a1, java.lang.String a2, boolean a3) {
+            return (br.com.fashionai.application.wardrobe.draft.CaptureAnalysis) Fk.call(this, "analyzeForCapture", br.com.fashionai.application.wardrobe.draft.CaptureAnalysis.class, new Object[]{a0, a1, a2, a3});
         }
 
         @Override
@@ -4153,7 +4153,7 @@ final class ServiceFakes {
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.PieceView> closet(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.WardrobeService.ClosetFilter a2) {
+        public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.PieceView> closet(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.wardrobe.ClosetFilter a2) {
             return (br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.PieceView>) Fk.call(this, "closet", br.com.fashionai.application.view.Views.Page.class, new Object[]{a0, a1, a2});
         }
 

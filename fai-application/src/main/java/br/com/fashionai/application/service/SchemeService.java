@@ -301,7 +301,7 @@ public class SchemeService {
 
     List<LocalSchemeComposer.Composition> parseCompositions(String text, Map<String, WardrobeItem> byRef, ComposeRequest req,
                                                             Set<String> exclude) {
-        Map<String, Object> m = WardrobeService.extractJson(text);
+        Map<String, Object> m = AiResponseJson.extractJson(text);
         if (!(m.get("compositions") instanceof List<?> list)) {
             return null;
         }
@@ -937,7 +937,7 @@ public class SchemeService {
     }
 
     List<LocalAdvisors.FieldChange> parseDiff(String text, Map<String, Object> current) {
-        Map<String, Object> m = WardrobeService.extractJson(text);
+        Map<String, Object> m = AiResponseJson.extractJson(text);
         if (!(m.get("changes") instanceof List<?> list)) {
             return null;
         }
@@ -1109,7 +1109,7 @@ public class SchemeService {
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 34));
         // Nome da peça (escrito pelo usuário) em vez do código da subcategoria, que é em inglês.
         String label = w.getName() != null && !w.getName().isBlank() ? (w.getName().length() > 22 ? w.getName().substring(0, 21) + "…" : w.getName())
-                : WardrobeService.humanize(w.getSubcategory() == null ? Msg.t("scheme.peca_2") : w.getSubcategory());
+                : br.com.fashionai.application.wardrobe.PiecePrefill.humanize(w.getSubcategory() == null ? Msg.t("scheme.peca_2") : w.getSubcategory());
         g.drawString(Msg.resolve(label), 210 - g.getFontMetrics().stringWidth(label) / 2, 220);
         g.dispose();
         return img;
