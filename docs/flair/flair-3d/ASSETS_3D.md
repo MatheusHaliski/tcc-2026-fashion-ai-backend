@@ -37,12 +37,12 @@ python -m scripts.blender3d.preview --pasta /tmp/previas   # folha de contato re
 | --- | --- | --- |
 | `cadeira.glb` | `cadeira` | 872 |
 | `cadeira-diretor.glb` | `cadeiraDiretor` | 808 |
-| `cadeira-de-camarim.glb` | `cadeiraDeCamarim` | 1504 |
-| `penteadeira.glb` | `penteadeira` | 2084 |
-| `luminaria.glb` | `luminaria` | 720 |
+| `cadeira-de-camarim.glb` | `cadeiraDeCamarim` | 1532 |
+| `penteadeira.glb` | `penteadeira` | 1100 |
+| `luminaria.glb` | `luminaria` | 616 |
 | `camera-tripe.glb` | `cameraTripe` | 1916 |
 | `canhao-luz.glb` | `canhaoLuz` | 1996 |
-| `poste.glb` | `poste` | 1220 |
+| `poste.glb` | `poste` | 1188 |
 | `caixote.glb` | `caixote` | 1948 |
 | `tambor.glb` | `tambor` | 1296 |
 | `pilha-de-pneus-2/3/4.glb` | `pilhaDePneus` (um arquivo por altura da pilha) | 1488 / 2232 / 2976 |
@@ -53,15 +53,25 @@ Regras do motor:
 
 - Origem no piso, centrado; a frente do objeto é `-Y` no Blender (vira `+Z` no glTF, a frente dos móveis das salas).
 - Teto de 3 mil triângulos por objeto (o mesmo do teste do manifesto); acima disso o comando recusa.
-- A sala ajusta a escala pela altura do móvel procedural, então a receita só precisa acertar as proporções.
-- **As cores são fixas no arquivo.** O móvel procedural usava a paleta da sala (ex.: penteadeira magenta no Road to
-  Glory); o objeto gerado tem a cor da receita. Para variar por sala, crie outra receita com outro slug e aponte-a no
-  móvel com `comGlb(...)`.
+- A sala encaixa o objeto na caixa do móvel procedural (altura, e base, teto ou parede conforme o móvel), então a
+  receita precisa acertar as **proporções** do móvel que substitui: `glb-proporcao.test.ts` falha se não acertar.
+- **Cores da sala.** Material criado com `papel="estofado"` sai como `sala:estofado`; no jogo ele recebe o material que
+  o móvel procedural usava naquele papel (`Movel.papeis`), então a mesma penteadeira é magenta no Road to Glory e
+  branca no camarim. Material sem papel mantém a cor da receita.
+- **Texturas.** `textura="madeira" | "tecido" | "escovado" | "borracha"` usa um mapa de cor gerado por código
+  (`texturas.py`), repetido a cada metro. Só cor, sem relevo.
+- **Versão leve.** Objeto de 800 triângulos ou mais ganha `slug-leve.glb` (Decimate), carregada quando o navegador
+  desenha por software.
+- **Arquivo igual à receita.** O manifesto guarda o resumo dos arquivos do motor (`hash`); `assets.test.ts` falha se
+  o motor mudou e o `build` completo não foi rodado.
 - Receita apagada ou renomeada: o próximo `build` completo tira o `.glb` e a linha órfã do manifesto.
-- Para conferir um objeto dentro da sala: `/lab/salas?jogo=PERSONAGEM_FILME` (só em desenvolvimento).
+- Para conferir um objeto dentro da sala: `/lab/salas?jogo=PERSONAGEM_FILME` (só em desenvolvimento); com `&glb=0` a
+  mesma sala aparece só com os móveis procedurais, para comparar.
 
-Conferido: a folha de contato dos 15 arquivos e a sala `PERSONAGEM_FILME` no navegador (câmera no tripé e cadeira de
-diretor no lugar, na escala e apoiadas no piso). **Não conferido: as demais salas**, uma a uma.
+Conferido: a folha de contato dos arquivos; no navegador, as salas `PERSONAGEM_FILME` (câmera no tripé e cadeira de
+diretor) e `ROAD_TO_GLORY` (penteadeira e cadeira com o magenta da sala, versão leve carregada). **Não conferido: as
+demais salas**, uma a uma, nem a luminária, a cadeira de camarim, o canhão de luz e o poste dentro da sala depois de
+refeitos (só na folha de contato e no teste de proporção).
 
 ## O que foi conferido e o que não foi
 

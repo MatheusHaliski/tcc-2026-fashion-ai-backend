@@ -31,14 +31,43 @@ def exportar(slug: str, pasta: Path) -> Path:
 
     destino = pasta / f"{slug}.glb"
     bpy.ops.export_scene.gltf(filepath=str(destino), export_format="GLB", export_apply=True, export_yup=True,
-                              use_selection=False, export_cameras=False, export_lights=False)
+                              use_selection=False, export_cameras=False, export_lights=False,
+                              export_image_format="JPEG", export_jpeg_quality=82)
     return destino
+
+
+#: abaixo disto a versão leve não compensa o arquivo a mais
+MIN_PARA_LEVE = 800
+#: quanto da malha sobra na versão leve (modificador Decimate)
+RAZAO_LEVE = 0.45
+
+
+def exportar_leve(slug: str, pasta: Path) -> int:
+    """Versão leve (``<slug>-leve.glb``) para máquina sem placa de vídeo: mesma forma, menos triângulos."""
+    import bpy
+
+    vistas: set[str] = set()
+    for obj in bpy.context.scene.objects:
+        # a malha dividida por várias cópias recebe o modificador em cada objeto; só peças com faces o bastante
+        if obj.type == "MESH" and len(obj.data.polygons) >= 24:
+            obj.modifiers.new("leve", "DECIMATE").ratio = RAZAO_LEVE
+            vistas.add(obj.name)
+    grafo = bpy.context.evaluated_depsgraph_get()
+    triangulos = 0
+    for obj in bpy.context.scene.objects:
+        if obj.type == "MESH":
+            avaliada = obj.evaluated_get(grafo).to_mesh()
+            triangulos += sum(len(f.vertices) - 2 for f in avaliada.polygons)
+            obj.evaluated_get(grafo).to_mesh_clear()
+    exportar(f"{slug}-leve", pasta)
+    return triangulos
 
 
 def gerar(slug: str, pasta: Path) -> dict:
     """Modela um objeto do zero, confere o orçamento, exporta o ``.glb`` e devolve a linha do manifesto."""
     from . import core
     from .receitas import carregar
+    from .resumo import resumo_do_motor
 
     receita = carregar()[slug]
     core.nova_cena()
@@ -51,7 +80,13 @@ def gerar(slug: str, pasta: Path) -> dict:
     arquivo = exportar(slug, pasta)
     linha = {"slug": slug, "title": receita.titulo, "category": "scene", "triangles": triangulos,
              "bytes": arquivo.stat().st_size, "author": "FashionAI", "source": f"{GERADOR}/receitas", "license": "Própria",
-             "size": [round(maximo.x - minimo.x, 3), round(maximo.z - minimo.z, 3), round(maximo.y - minimo.y, 3)]}
+             "size": [round(maximo.x - minimo.x, 3), round(maximo.z - minimo.z, 3), round(maximo.y - minimo.y, 3)],
+             "hash": resumo_do_motor()}
+    leve = pasta / f"{slug}-leve.glb"
+    if triangulos >= MIN_PARA_LEVE:
+        linha["leve"] = exportar_leve(slug, pasta)
+    else:
+        leve.unlink(missing_ok=True)
     if receita.movel:
         linha["movel"] = receita.movel
     if receita.jogos:
@@ -70,6 +105,7 @@ def atualizar_manifesto(linhas: list[dict], manifesto: Path = MANIFESTO, receita
         orfaos = [i for i in atual if str(i.get("source", "")).startswith(GERADOR) and i["slug"] not in receitas]
         for item in orfaos:
             (manifesto.parent / f"{item['slug']}.glb").unlink(missing_ok=True)
+            (manifesto.parent / f"{item['slug']}-leve.glb").unlink(missing_ok=True)
         atual = [i for i in atual if i not in orfaos]
     novas = {linha["slug"]: linha for linha in linhas}
     resultado = [novas.pop(item["slug"], item) for item in atual]
@@ -99,7 +135,8 @@ def main(argv: list[str] | None = None) -> int:
     linhas = [gerar(slug, args.pasta) for slug in slugs]
     atualizar_manifesto(linhas, args.pasta / "manifest.json", set(receitas))
     for linha in linhas:
-        print(f"{linha['slug']:22} {linha['triangles']:5} triângulos  {linha['bytes'] / 1024:6.0f} KB")
+        print(f"{linha['slug']:22} {linha['triangles']:5} triângulos  {linha['bytes'] / 1024:6.0f} KB"
+              + (f"  leve: {linha['leve']}" if "leve" in linha else ""))
     return 0
 
 

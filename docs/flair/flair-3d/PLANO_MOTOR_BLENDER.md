@@ -88,6 +88,22 @@ material e versão leve). Nenhum jogo muda de aparência nesta fase, fora a volt
 
 Aceite: a penteadeira do Road to Glory volta a ser magenta com o mesmo arquivo que é branco no camarim.
 
+**Estado: entregue.** O que entrou e onde ficou diferente do planejado:
+
+| # | Entregue | Diferença em relação ao plano |
+| --- | --- | --- |
+| 1 | material `sala:<papel>` na receita, `Movel.papeis` nas 13 fábricas, pintura em `glb-prop.tsx` | — |
+| 2 | o objeto é encaixado na caixa exata do móvel procedural (base, topo ou parede saem dela) | não há campo `apoio` no manifesto: a caixa do móvel já diz onde ele fica |
+| 3 | `variantes()` em `receitas/__init__.py` (slug com a medida) | ainda sem receita de módulo de arquitetura: entra no lote 2 da fase 1 |
+| 4 | móvel animado pelo diretor usa o objeto do motor inteiro | os nós internos (`folha`, `braco`) ainda não são entregues separados: entra com as portas da fase 2 |
+| 5 | mapas de cor gerados por código (`texturas.py`: madeira, tecido, escovado, borracha) e mapeamento em metros | só cor, sem relevo; concreto e a casca da sala ficam para o lote 3 da fase 1 |
+| 6 | `slug-leve.glb` (Decimate) para objeto de 800 triângulos ou mais | a versão leve é escolhida quando o navegador desenha por software, não pela qualidade do jogo |
+
+Garantias: o manifesto guarda o resumo do motor e `assets.test.ts` falha se uma receita mudou sem gerar de novo;
+`glb-proporcao.test.ts` falha se o objeto não tem a proporção do móvel que substitui (foi ele que apontou a luminária,
+a cadeira de camarim, o canhão de luz e o poste, refeitos nesta fase). A conferência visual é manual:
+`/lab/salas?jogo=<id>` e `/lab/salas?jogo=<id>&glb=0`; ainda não há comando que salve as duas capturas lado a lado.
+
 ### Fase 1: os 15 jogos FLAIR 3D
 
 Em três lotes, do que mais aparece para o que menos aparece.

@@ -29,7 +29,7 @@ export function caixote(em: Em, madeira: string, lado = 0.7): Movel {
     chanfrada(madeira, [lado + 0.03, 0.07, lado + 0.03], [0, 0.06, 0]),
     chanfrada(madeira, [lado + 0.03, 0.07, lado + 0.03], [0, lado - 0.06, 0]),
     caixa(madeira, [0.07, lado * 1.25, 0.02], [0, r, r + 0.012], [0, 0, 42]),
-  ]);
+  ], { madeira });
 }
 
 /** Tambor de metal pintado, com dois aros. */
@@ -38,7 +38,7 @@ export function tambor(em: Em, metal: string): Movel {
     cilindro(metal, 0.29, 0.88, [0, 0.44, 0], undefined, 16),
     toro(metal, 0.29, 0.016, [0, 0.3, 0], [90, 0, 0], 16),
     toro(metal, 0.29, 0.016, [0, 0.6, 0], [90, 0, 0], 16),
-  ]);
+  ], { metal });
 }
 
 /** Calçada elevada com meio-fio, ao longo de z. */
@@ -100,7 +100,7 @@ export function trave(em: Em, metal: string, rede: string): Movel {
     plano(rede, [3.0, 2.2], [0, 1.0, -0.45], [-24, 0, 0]),
     plano(rede, [0.9, 2.0], [-1.5, 1.0, -0.45], [0, 90, 0]),
     plano(rede, [0.9, 2.0], [1.5, 1.0, -0.45], [0, 90, 0]),
-  ]);
+  ], { metal, rede });
 }
 
 /** Rede de proteção esticada entre dois postes. */
@@ -144,7 +144,7 @@ export function pilhaDePneus(em: Em, borracha: string, quantos = 4): Movel {
   const partes: Parte[] = [];
   for (let i = 0; i < quantos; i++) partes.push(toro(borracha, 0.24, 0.1, [0, 0.1 + i * 0.2, 0], [90, 0, 0], 18));
   // objeto do motor Blender, um arquivo por altura da pilha (public/flair/3d/assets/pilha-de-pneus-<n>.glb)
-  return comGlb(movel("pilhaDePneus", em, partes), `pilha-de-pneus-${quantos}`);
+  return comGlb(movel("pilhaDePneus", em, partes, { borracha }), `pilha-de-pneus-${quantos}`);
 }
 
 /** Armário de ferramentas com gavetas e tampo. */

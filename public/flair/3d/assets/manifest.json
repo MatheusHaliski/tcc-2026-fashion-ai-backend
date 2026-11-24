@@ -69,7 +69,7 @@
     "title": "Cadeira da plateia",
     "category": "scene",
     "triangles": 872,
-    "bytes": 29828,
+    "bytes": 45576,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -78,6 +78,8 @@
       0.953,
       0.465
     ],
+    "hash": "697298983954345f",
+    "leve": 484,
     "movel": "cadeira"
   },
   {
@@ -85,7 +87,7 @@
     "title": "Cadeira de diretor",
     "category": "scene",
     "triangles": 808,
-    "bytes": 38528,
+    "bytes": 52824,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -94,54 +96,61 @@
       1.032,
       0.5
     ],
+    "hash": "697298983954345f",
+    "leve": 568,
     "movel": "cadeiraDiretor"
   },
   {
     "slug": "cadeira-de-camarim",
-    "title": "Cadeira giratória de camarim",
+    "title": "Cadeira alta de maquiagem",
     "category": "scene",
-    "triangles": 1504,
-    "bytes": 51684,
+    "triangles": 1532,
+    "bytes": 76492,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
     "size": [
-      0.629,
-      0.943,
-      0.604
+      0.488,
+      1.232,
+      0.521
     ],
+    "hash": "697298983954345f",
+    "leve": 850,
     "movel": "cadeiraDeCamarim"
   },
   {
     "slug": "penteadeira",
-    "title": "Penteadeira de camarim com espelho iluminado",
+    "title": "Penteadeira de camarim",
     "category": "scene",
-    "triangles": 2084,
-    "bytes": 56448,
+    "triangles": 1100,
+    "bytes": 66724,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
     "size": [
       1.64,
-      1.71,
+      1.082,
       0.513
     ],
+    "hash": "697298983954345f",
+    "leve": 602,
     "movel": "penteadeira"
   },
   {
     "slug": "luminaria",
-    "title": "Luminária de piso",
+    "title": "Luminária de braço articulado",
     "category": "scene",
-    "triangles": 720,
-    "bytes": 27020,
+    "triangles": 616,
+    "bytes": 34740,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
     "size": [
-      0.4,
-      1.62,
-      0.4
+      0.216,
+      0.722,
+      0.439
     ],
+    "hash": "697298983954345f",
     "movel": "luminaria"
   },
   {
@@ -149,7 +158,7 @@
     "title": "Câmera de cinema no tripé",
     "category": "scene",
     "triangles": 1916,
-    "bytes": 71772,
+    "bytes": 99012,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -158,6 +167,8 @@
       1.709,
       1.028
     ],
+    "hash": "697298983954345f",
+    "leve": 1082,
     "movel": "cameraTripe"
   },
   {
@@ -165,31 +176,35 @@
     "title": "Canhão de luz no pedestal",
     "category": "scene",
     "triangles": 1996,
-    "bytes": 73804,
+    "bytes": 105352,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
     "size": [
-      0.675,
+      0.433,
       1.825,
-      0.726
+      0.699
     ],
+    "hash": "697298983954345f",
+    "leve": 1110,
     "movel": "canhaoLuz"
   },
   {
     "slug": "poste",
     "title": "Poste de rua com lanterna",
     "category": "scene",
-    "triangles": 1220,
-    "bytes": 47800,
+    "triangles": 1188,
+    "bytes": 64668,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
     "size": [
-      0.4,
-      4.022,
-      1.05
+      0.9,
+      4.12,
+      0.22
     ],
+    "hash": "697298983954345f",
+    "leve": 684,
     "movel": "poste"
   },
   {
@@ -197,7 +212,7 @@
     "title": "Caixote de madeira ripado",
     "category": "scene",
     "triangles": 1948,
-    "bytes": 65696,
+    "bytes": 102288,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -206,6 +221,8 @@
       0.719,
       0.754
     ],
+    "hash": "697298983954345f",
+    "leve": 938,
     "movel": "caixote"
   },
   {
@@ -213,7 +230,7 @@
     "title": "Tambor de aço",
     "category": "scene",
     "triangles": 1296,
-    "bytes": 35632,
+    "bytes": 47840,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -222,6 +239,8 @@
       0.884,
       0.604
     ],
+    "hash": "697298983954345f",
+    "leve": 594,
     "movel": "tambor"
   },
   {
@@ -229,7 +248,7 @@
     "title": "Trave de futebol de 5 com rede",
     "category": "scene",
     "triangles": 616,
-    "bytes": 53108,
+    "bytes": 68460,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -238,6 +257,7 @@
       2.04,
       0.96
     ],
+    "hash": "697298983954345f",
     "movel": "trave"
   },
   {
@@ -245,7 +265,7 @@
     "title": "Skate de rua",
     "category": "scene",
     "triangles": 1344,
-    "bytes": 39608,
+    "bytes": 55668,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -254,6 +274,8 @@
       0.131,
       0.808
     ],
+    "hash": "697298983954345f",
+    "leve": 632,
     "movel": "skate"
   },
   {
@@ -261,7 +283,7 @@
     "title": "Pilha de 2 pneus do box",
     "category": "scene",
     "triangles": 1488,
-    "bytes": 47676,
+    "bytes": 69688,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -270,6 +292,8 @@
       0.4,
       0.845
     ],
+    "hash": "697298983954345f",
+    "leve": 748,
     "movel": "pilhaDePneus"
   },
   {
@@ -277,7 +301,7 @@
     "title": "Pilha de 3 pneus do box",
     "category": "scene",
     "triangles": 2232,
-    "bytes": 69196,
+    "bytes": 101572,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -286,6 +310,8 @@
       0.6,
       0.96
     ],
+    "hash": "697298983954345f",
+    "leve": 1122,
     "movel": "pilhaDePneus"
   },
   {
@@ -293,7 +319,7 @@
     "title": "Pilha de 4 pneus do box",
     "category": "scene",
     "triangles": 2976,
-    "bytes": 90756,
+    "bytes": 133488,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -302,6 +328,8 @@
       0.8,
       0.96
     ],
+    "hash": "697298983954345f",
+    "leve": 1496,
     "movel": "pilhaDePneus"
   }
 ]

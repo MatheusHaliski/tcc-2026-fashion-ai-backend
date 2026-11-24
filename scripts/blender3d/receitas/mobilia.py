@@ -3,14 +3,14 @@ from __future__ import annotations
 
 import math
 
-from ..core import barra, caixa, cilindro, duplicar, esfera, material, toro, torneado
+from ..core import barra, caixa, cilindro, esfera, material, toro, torneado
 from . import receita
 
 
 @receita("cadeira", "Cadeira da plateia", movel="cadeira")
 def cadeira() -> None:
-    madeira = material("madeira", "#3B2A20", aspereza=0.45)
-    estofado = material("estofado", "#7A1F2B", aspereza=0.85)
+    madeira = material("madeira", "#3B2A20", aspereza=0.45, papel="metal", textura="madeira")   # a estrutura segue o "metal" da sala
+    estofado = material("estofado", "#7A1F2B", aspereza=0.85, papel="estofado", textura="tecido")
     for x in (-0.19, 0.19):
         barra("pe-frente", madeira, (x, -0.17, 0), (x * 0.95, -0.16, 0.43), 0.018)
         barra("pe-tras", madeira, (x, 0.19, 0), (x * 0.92, 0.23, 0.92), 0.018)        # o pé de trás sobe e vira o encosto
@@ -25,8 +25,8 @@ def cadeira() -> None:
 
 @receita("cadeira-diretor", "Cadeira de diretor", movel="cadeiraDiretor")
 def cadeira_diretor() -> None:
-    madeira = material("madeira-clara", "#B8834A", aspereza=0.5)
-    lona = material("lona", "#1B1B1F", aspereza=0.95)
+    madeira = material("madeira-clara", "#B8834A", aspereza=0.5, papel="madeira", textura="madeira")
+    lona = material("lona", "#1B1B1F", aspereza=0.95, papel="lona", textura="tecido")
     ferragem = material("ferragem", "#A8ABB0", metal=1.0, aspereza=0.35)
     for x in (-0.27, 0.27):
         barra("perna-a", madeira, (x, -0.22, 0), (x, 0.22, 0.5), 0.017)             # as duas pernas cruzam em X
@@ -42,50 +42,41 @@ def cadeira_diretor() -> None:
     caixa("encosto-lona", lona, (0.56, 0.012, 0.2), (0, 0.232, 0.9), giro=(-4, 0, 0), chanfro=0.004)
 
 
-@receita("cadeira-de-camarim", "Cadeira giratória de camarim", movel="cadeiraDeCamarim")
+@receita("cadeira-de-camarim", "Cadeira alta de maquiagem", movel="cadeiraDeCamarim")
 def cadeira_de_camarim() -> None:
-    cromado = material("cromado", "#C9CCD1", metal=1.0, aspereza=0.18)
-    couro = material("couro", "#E9D9C6", aspereza=0.55)
+    cromado = material("cromado", "#C9CCD1", metal=1.0, aspereza=0.18, papel="metal")
+    couro = material("couro", "#E9D9C6", aspereza=0.55, papel="estofado")
     borracha = material("borracha", "#17171A", aspereza=0.9)
-    for i in range(5):
+    for i in range(5):                                                  # base em estrela, do tamanho do disco da sala
         a = math.radians(72 * i + 18)
-        ponta = (0.3 * math.cos(a), 0.3 * math.sin(a), 0.07)
-        barra("pata", cromado, (0, 0, 0.11), ponta, 0.018)
-        esfera("rodizio", borracha, 0.032, (ponta[0], ponta[1], 0.032), lados=10)
-    cilindro("cubo", cromado, 0.05, 0.06, (0, 0, 0.11), lados=14, chanfro=0.008)
-    cilindro("coluna", cromado, 0.028, 0.36, (0, 0, 0.3), lados=12)
-    toro("apoio-pes", cromado, 0.2, 0.011, (0, 0, 0.26), lados=24, lados_tubo=6)
+        ponta = (0.23 * math.cos(a), 0.23 * math.sin(a), 0.06)
+        barra("pata", cromado, (0, 0, 0.1), ponta, 0.017)
+        esfera("rodizio", borracha, 0.028, (ponta[0], ponta[1], 0.028), lados=10)
+    cilindro("cubo", cromado, 0.045, 0.06, (0, 0, 0.1), lados=14, chanfro=0.008)
+    cilindro("coluna", cromado, 0.03, 0.54, (0, 0, 0.38), lados=12)
+    toro("apoio-pes", cromado, 0.2, 0.012, (0, 0, 0.36), lados=24, lados_tubo=6)
     for a in (0, 120, 240):
         r = math.radians(a)
-        barra("raio-apoio", cromado, (0, 0, 0.26), (0.2 * math.cos(r), 0.2 * math.sin(r), 0.26), 0.007, 6)
-    torneado("assento", couro, [(0, 0.47), (0.19, 0.47), (0.215, 0.49), (0.22, 0.53), (0.2, 0.56), (0, 0.565)], lados=24)
-    barra("haste-encosto", cromado, (0, 0.17, 0.5), (0, 0.24, 0.76), 0.012)
-    caixa("encosto", couro, (0.36, 0.06, 0.2), (0, 0.25, 0.84), giro=(-8, 0, 0), chanfro=0.03, seg=3)
+        barra("raio-apoio", cromado, (0, 0, 0.36), (0.2 * math.cos(r), 0.2 * math.sin(r), 0.36), 0.007, 6)
+    torneado("assento", couro, [(0, 0.64), (0.2, 0.64), (0.225, 0.66), (0.23, 0.7), (0.21, 0.725), (0, 0.73)], lados=24)
+    for x in (-0.13, 0.13):
+        barra("haste-encosto", cromado, (x, 0.19, 0.68), (x, 0.225, 0.98), 0.011)
+    caixa("encosto", couro, (0.44, 0.065, 0.46), (0, 0.235, 1.0), giro=(6, 0, 0), chanfro=0.03, seg=3)
 
 
-@receita("penteadeira", "Penteadeira de camarim com espelho iluminado", movel="penteadeira")
+# só a bancada: o espelho iluminado é outro móvel da sala (`espelho`), como no móvel procedural
+@receita("penteadeira", "Penteadeira de camarim", movel="penteadeira")
 def penteadeira() -> None:
-    corpo = material("laca", "#F4EFE8", aspereza=0.3)
-    tampo = material("tampo", "#2A2320", aspereza=0.25)
-    latao = material("latao", "#C9A24A", metal=1.0, aspereza=0.3)
-    espelho = material("espelho", "#DDE6EE", metal=1.0, aspereza=0.04)
-    luz = material("lampada", "#FFE9B8", emissao=4.0)
-    vidro = material("frasco", "#C6275E", aspereza=0.15)
+    corpo = material("laca", "#F4EFE8", aspereza=0.3, papel="corpo")
+    tampo = material("tampo", "#2A2320", aspereza=0.25, papel="tampo")
+    latao = material("latao", "#C9A24A", metal=1.0, aspereza=0.3, papel="metal", textura="escovado")
+    vidro = material("frasco", "#C6275E", aspereza=0.15, papel="produtos")
     for x in (-0.58, 0.58):
         caixa("gaveteiro", corpo, (0.44, 0.46, 0.77), (x, 0, 0.385), chanfro=0.012)
         for z in (0.18, 0.42, 0.62):
             caixa("frente-gaveta", corpo, (0.4, 0.014, 0.2), (x, -0.236, z), chanfro=0.006, seg=1)
             barra("puxador", latao, (x - 0.06, -0.255, z), (x + 0.06, -0.255, z), 0.008, 6)
     caixa("tampo", tampo, (1.64, 0.5, 0.045), (0, 0, 0.795), chanfro=0.012)
-    caixa("moldura", corpo, (1.2, 0.05, 0.86), (0, 0.22, 1.28), chanfro=0.015)
-    caixa("espelho", espelho, (1.02, 0.01, 0.68), (0, 0.192, 1.28))
-    lampada = esfera("lampada", luz, 0.034, (-0.55, 0.18, 0.92), lados=8)
-    for i in range(1, 6):
-        duplicar(lampada, (-0.55, 0.18, 0.92 + i * 0.144))
-    for i in range(6):
-        duplicar(lampada, (0.55, 0.18, 0.92 + i * 0.144))
-    for i in range(1, 7):
-        duplicar(lampada, (-0.55 + i * 0.157, 0.18, 1.64))
     for i, x in enumerate((-0.5, -0.38, -0.27)):
         altura = 0.14 + i * 0.03
         torneado("frasco", vidro, [(0, 0), (0.035 - i * 0.005, 0), (0.035 - i * 0.005, altura * 0.7), (0.012, altura * 0.85), (0.012, altura), (0, altura)],
@@ -95,16 +86,18 @@ def penteadeira() -> None:
         barra("pincel", tampo, (0.42 + dx, -0.06, 0.87), (0.42 + dx * 4, -0.06 + dx, 1.08), 0.006, 6)
 
 
-@receita("luminaria", "Luminária de piso", movel="luminaria")
+@receita("luminaria", "Luminária de braço articulado", movel="luminaria")
 def luminaria() -> None:
-    latao = material("latao", "#B08A3E", metal=1.0, aspereza=0.32)
-    cupula = material("cupula", "#F2E6CF", aspereza=0.9, emissao=0.6)
-    luz = material("lampada", "#FFE2A8", emissao=6.0)
-    torneado("base", latao, [(0, 0), (0.17, 0), (0.17, 0.02), (0.1, 0.045), (0.03, 0.06), (0.02, 0.1), (0, 0.1)], lados=24)
-    cilindro("haste", latao, 0.014, 1.32, (0, 0, 0.74), lados=10)
-    toro("anel", latao, 0.02, 0.008, (0, 0, 0.75), lados=12, lados_tubo=6)
-    torneado("cupula", cupula, [(0.2, 1.3), (0.125, 1.62), (0.118, 1.62), (0.192, 1.305)], lados=24)
-    for a in (0, 120, 240):
-        r = math.radians(a)
-        barra("aranha", latao, (0, 0, 1.4), (0.16 * math.cos(r), 0.16 * math.sin(r), 1.47), 0.004, 4)
-    esfera("lampada", luz, 0.05, (0, 0, 1.46), escala=(1, 1, 1.25), lados=12)
+    metal = material("latao", "#B08A3E", metal=1.0, aspereza=0.32, papel="metal", textura="escovado")
+    luz = material("lampada", "#FFE2A8", emissao=6.0, papel="luz")
+    # presa na bancada: a base fica atrás e o braço avança para a frente (-Y), como no móvel da sala
+    torneado("base", metal, [(0, 0), (0.09, 0), (0.09, 0.012), (0.07, 0.03), (0.02, 0.036), (0, 0.036)], lados=20)
+    cotovelo, punho = (0, -0.14, 0.45), (0, -0.2, 0.6)
+    barra("braco-baixo", metal, (0, 0, 0.03), cotovelo, 0.011)
+    barra("braco-cima", metal, cotovelo, punho, 0.011)
+    for ponto in ((0, 0, 0.04), cotovelo, punho):
+        cilindro("junta", metal, 0.02, 0.03, ponto, giro=(0, 90, 0), lados=10)
+    barra("mola", metal, (0, -0.02, 0.12), (0, -0.115, 0.42), 0.004, 4)
+    torneado("cupula", metal, [(0.035, 0), (0.04, 0.03), (0.1, 0.14), (0.108, 0.14), (0.045, 0.025), (0.035, 0.004)],
+             pos=(0, -0.18, 0.66), giro=(145, 0, 0), lados=20)
+    esfera("lampada", luz, 0.04, (0, -0.232, 0.585), lados=10)

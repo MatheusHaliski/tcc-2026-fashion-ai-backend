@@ -9,7 +9,7 @@ from . import receita
 
 def _tripe(metal, topo: float, abertura: float, raio: float = 0.016) -> None:
     """Três pernas em duas seções (a de baixo mais fina), com sapata de borracha e a travessa de trava."""
-    borracha = material("borracha", "#141416", aspereza=0.9)
+    borracha = material("borracha", "#141416", aspereza=0.9, textura="borracha")
     for i in range(3):
         a = math.radians(120 * i + 90)
         pe = (abertura * math.cos(a), abertura * math.sin(a), 0.02)
@@ -22,9 +22,9 @@ def _tripe(metal, topo: float, abertura: float, raio: float = 0.016) -> None:
 
 @receita("camera-tripe", "Câmera de cinema no tripé", movel="cameraTripe")
 def camera_tripe() -> None:
-    preto = material("corpo", "#1C1C20", aspereza=0.5)
-    metal = material("aluminio", "#8E9298", metal=1.0, aspereza=0.35)
-    lente = material("lente", "#0B1A2E", metal=0.6, aspereza=0.05)
+    preto = material("corpo", "#1C1C20", aspereza=0.5, papel="corpo")
+    metal = material("aluminio", "#8E9298", metal=1.0, aspereza=0.35, papel="metal", textura="escovado")
+    lente = material("lente", "#0B1A2E", metal=0.6, aspereza=0.05, papel="lente")
     vermelho = material("rec", "#E0202A", emissao=3.0)
     _tripe(metal, topo=1.14, abertura=0.42)
     cilindro("cabeca", metal, 0.07, 0.07, (0, 0, 1.18), lados=14, chanfro=0.008)
@@ -48,9 +48,9 @@ def camera_tripe() -> None:
 @receita("canhao-luz", "Canhão de luz no pedestal", movel="canhaoLuz")
 def canhao_luz() -> None:
     preto = material("carcaca", "#202024", metal=0.4, aspereza=0.45)
-    metal = material("aco", "#7C8087", metal=1.0, aspereza=0.4)
-    luz = material("facho", "#FFF4D6", emissao=8.0)
-    _tripe(metal, topo=0.92, abertura=0.36)
+    metal = material("aco", "#7C8087", metal=1.0, aspereza=0.4, papel="metal", textura="escovado")
+    luz = material("facho", "#FFF4D6", emissao=8.0, papel="luz")
+    _tripe(metal, topo=0.92, abertura=0.2)
     cilindro("mastro", metal, 0.022, 0.62, (0, 0, 1.22), lados=10)
     for x in (-0.19, 0.19):
         caixa("garfo", metal, (0.02, 0.05, 0.3), (x, 0, 1.68), chanfro=0.006)
@@ -68,20 +68,21 @@ def canhao_luz() -> None:
 
 @receita("poste", "Poste de rua com lanterna", movel="poste")
 def poste() -> None:
-    ferro = material("ferro", "#22262B", metal=0.8, aspereza=0.5)
-    luz = material("lanterna", "#FFE7B0", emissao=7.0)
-    torneado("base", ferro, [(0, 0), (0.17, 0), (0.17, 0.08), (0.12, 0.14), (0.12, 0.42), (0.09, 0.5), (0.075, 0.56), (0.065, 0.6), (0, 0.6)], lados=16)
-    cilindro("fuste", ferro, 0.055, 3.0, (0, 0, 2.1), lados=12, raio_topo=0.04)
-    for z in (0.62, 1.1, 3.55):
-        toro("anel", ferro, 0.058 if z < 3 else 0.046, 0.014, (0, 0, z), lados=14, lados_tubo=6)
-    pontos = [(0, 0, 3.6), (0, -0.1, 3.86), (0, -0.3, 4.0), (0, -0.55, 3.98), (0, -0.68, 3.86)]   # o braço em curva
+    ferro = material("ferro", "#22262B", metal=0.8, aspereza=0.5, papel="ferro")
+    luz = material("lanterna", "#FFE7B0", emissao=7.0, papel="luz")
+    torneado("base", ferro, [(0, 0), (0.11, 0), (0.11, 0.07), (0.085, 0.12), (0.085, 0.4), (0.07, 0.47), (0.06, 0.52), (0, 0.52)], lados=16)
+    cilindro("fuste", ferro, 0.05, 3.1, (0, 0, 2.05), lados=12, raio_topo=0.036)
+    for z in (0.54, 1.05, 3.55):
+        toro("anel", ferro, 0.053 if z < 3 else 0.042, 0.012, (0, 0, z), lados=14, lados_tubo=6)
+    # o braço sai para o lado (+X), como no móvel da sala: é para lá que a rua fica
+    pontos = [(0, 0, 3.6), (0.1, 0, 3.9), (0.3, 0, 4.08), (0.55, 0, 4.1), (0.68, 0, 4.02)]
     for de, ate in zip(pontos, pontos[1:]):
-        barra("braco", ferro, de, ate, 0.022)
-    barra("voluta", ferro, (0, 0, 3.3), (0, -0.3, 3.86), 0.012, 6)
-    torneado("chapeu", ferro, [(0.2, 0), (0.12, 0.07), (0.05, 0.1), (0.02, 0.16), (0, 0.16)], pos=(0, -0.68, 3.78), lados=16)
-    torneado("vidro", luz, [(0.07, -0.3), (0.16, 0), (0.15, 0), (0.065, -0.29)], pos=(0, -0.68, 3.78), lados=16)
-    cilindro("fundo", ferro, 0.075, 0.02, (0, -0.68, 3.47), lados=16)
+        barra("braco", ferro, de, ate, 0.02)
+    barra("voluta", ferro, (0, 0, 3.3), (0.3, 0, 3.92), 0.011, 6)
+    torneado("chapeu", ferro, [(0.11, 0), (0.07, 0.05), (0.03, 0.08), (0.012, 0.13), (0, 0.13)], pos=(0.68, 0, 3.95), lados=16)
+    torneado("vidro", luz, [(0.045, -0.24), (0.095, 0), (0.088, 0), (0.04, -0.232)], pos=(0.68, 0, 3.95), lados=16)
+    cilindro("fundo", ferro, 0.05, 0.018, (0.68, 0, 3.7), lados=16)
     for i in range(4):
         a = math.radians(90 * i + 45)
-        barra("montante", ferro, (0.072 * math.cos(a), -0.68 + 0.072 * math.sin(a), 3.48),
-              (0.16 * math.cos(a), -0.68 + 0.16 * math.sin(a), 3.78), 0.007, 4)
+        barra("montante", ferro, (0.68 + 0.047 * math.cos(a), 0.047 * math.sin(a), 3.71),
+              (0.68 + 0.095 * math.cos(a), 0.095 * math.sin(a), 3.95), 0.006, 4)

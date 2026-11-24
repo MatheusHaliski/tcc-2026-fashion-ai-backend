@@ -70,7 +70,7 @@ export function canhaoLuz(em: Em, metal: string, luz: string): Movel {
     chanfrada(metal, [0.1, 0.24, 0.1], [0, 1.6, 0]),
     cilindro(metal, [0.16, 0.12], 0.7, [0, 1.78, 0.05], [70, 0, 0], 12),
     cilindro(luz, 0.15, 0.02, [0, 1.9, 0.39], [70, 0, 0], 12),
-  ]);
+  ], { metal, luz });
 }
 
 /** Refletor de set: tripé, caixa de luz e abas pretas. */
@@ -104,7 +104,7 @@ export function cameraTripe(em: Em, metal: string, corpo: string, lente: string)
     cilindro(lente, 0.085, 0.02, [0, 1.4, 0.49], [90, 0, 0], 12),
     chanfrada(corpo, [0.1, 0.16, 0.3], [0, 1.6, -0.02]),
     caixa(metal, [0.03, 0.03, 0.5], [0.2, 1.22, -0.28], [20, 0, 0]),
-  ]);
+  ], { metal, corpo, lente });
 }
 
 /** Corpo da claquete num caixote de set; o braço que bate é um móvel à parte (`bracoClaquete`). */
@@ -149,7 +149,7 @@ export function luminaria(em: Em, metal: string, luz: string): Movel {
     cilindro(metal, 0.012, 0.45, [0, 0.52, 0.02], [-55, 0, 0], 6),
     cilindro(metal, [0.04, 0.11], 0.14, [0, 0.6, 0.22], [35, 0, 0], 12),
     esfera(luz, 0.04, [0, 0.56, 0.25], 8),
-  ]);
+  ], { metal, luz });
 }
 
 /** Poste de rua com braço curvo e luminária. */
@@ -160,7 +160,7 @@ export function poste(em: Em, ferro: string, luz: string, altura = 4): Movel {
     cilindro(ferro, 0.03, 0.7, [0.3, altura + 0.05, 0], [0, 0, -75], 8),
     chanfrada(ferro, [0.36, 0.1, 0.2], [0.68, altura + 0.1, 0]),
     caixa(luz, [0.28, 0.02, 0.14], [0.68, altura + 0.04, 0]),
-  ]);
+  ], { ferro, luz });
 }
 
 /** Letreiro de neon: placa escura com um contorno e barras de tubo aceso. */

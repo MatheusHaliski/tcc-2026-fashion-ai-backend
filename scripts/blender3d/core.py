@@ -3,7 +3,10 @@
 Convenções de todo objeto gerado:
 - unidades em metros; origem no piso (z = 0), centrado em x/y;
 - a FRENTE do objeto aponta para -Y no Blender, que vira +Z no glTF (a mesma frente dos móveis das salas);
-- materiais Principled BSDF (cor, metal, aspereza, emissão), que o exportador grava como PBR do glTF.
+- materiais Principled BSDF (cor, metal, aspereza, emissão), que o exportador grava como PBR do glTF;
+- material com ``papel`` sai nomeado ``sala:<papel>``: no jogo ele é pintado com o material da sala que o móvel
+  procedural usava (lib/flair/nucleos/scene/assets.ts), então um arquivo serve a todas as salas;
+- toda face ganha mapeamento de textura em metros (projeção em caixa), para as texturas do motor e as da sala.
 
 As formas são criadas com bmesh (sem depender de contexto de janela), então rodam no Blender em modo ``--background``
 e no módulo ``bpy`` instalado por pip.
@@ -22,12 +25,22 @@ _materiais: dict[str, bpy.types.Material] = {}
 
 def nova_cena() -> None:
     """Zera o arquivo: nenhum objeto, malha ou material de uma receita vaza para a seguinte."""
+    from . import texturas
+
     bpy.ops.wm.read_factory_settings(use_empty=True)
     _materiais.clear()
+    texturas.limpar()
 
 
-def material(nome: str, cor: str, metal: float = 0.0, aspereza: float = 0.6, emissao: float = 0.0) -> bpy.types.Material:
-    """Material PBR pelo nome (reaproveitado na receita). ``cor`` em hexadecimal sRGB; ``emissao`` em intensidade."""
+def material(nome: str, cor: str, metal: float = 0.0, aspereza: float = 0.6, emissao: float = 0.0,
+             papel: str | None = None, textura: str | None = None) -> bpy.types.Material:
+    """Material PBR pelo nome (reaproveitado na receita). ``cor`` em hexadecimal sRGB; ``emissao`` em intensidade.
+
+    ``papel``: papel de cor do móvel (``estofado``, ``metal``...): o material sai como ``sala:<papel>`` e, no jogo,
+    recebe o material da sala; a cor daqui vale na prévia e fora das salas. ``textura``: desenho gerado pelo motor
+    (``madeira``, ``tecido``, ``escovado``, ``borracha``), já tingido com a cor.
+    """
+    nome = f"sala:{papel}" if papel else nome
     if nome in _materiais:
         return _materiais[nome]
     mat = bpy.data.materials.new(nome)
@@ -36,6 +49,12 @@ def material(nome: str, cor: str, metal: float = 0.0, aspereza: float = 0.6, emi
     r, g, b = (int(cor.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4))
     linear = tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in (r, g, b))
     bsdf.inputs["Base Color"].default_value = (*linear, 1.0)
+    if textura:
+        from . import texturas
+
+        no = mat.node_tree.nodes.new("ShaderNodeTexImage")
+        no.image = texturas.imagem(textura, (r, g, b))
+        mat.node_tree.links.new(no.outputs["Color"], bsdf.inputs["Base Color"])
     bsdf.inputs["Metallic"].default_value = metal
     bsdf.inputs["Roughness"].default_value = aspereza
     if emissao > 0:
@@ -45,7 +64,22 @@ def material(nome: str, cor: str, metal: float = 0.0, aspereza: float = 0.6, emi
     return mat
 
 
+def _mapear(bm: bmesh.types.BMesh) -> None:
+    """Mapeamento de textura em metros, por projeção em caixa: cada face usa os dois eixos em que é mais larga."""
+    from .texturas import REPETE_A_CADA
+
+    uv = bm.loops.layers.uv.verify()
+    for face in bm.faces:
+        n = face.normal
+        eixo = max(range(3), key=lambda i: abs(n[i]))
+        a, b = [i for i in range(3) if i != eixo]
+        for laco in face.loops:
+            laco[uv].uv = (laco.vert.co[a] / REPETE_A_CADA, laco.vert.co[b] / REPETE_A_CADA)
+
+
 def _objeto(bm: bmesh.types.BMesh, nome: str, mat: bpy.types.Material, pos: V3, giro: V3, liso: bool) -> bpy.types.Object:
+    bm.normal_update()
+    _mapear(bm)
     malha = bpy.data.meshes.new(nome)
     bm.to_mesh(malha)
     bm.free()

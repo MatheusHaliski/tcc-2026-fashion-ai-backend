@@ -12,7 +12,7 @@ export function cadeira(em: Em, estofado: string, metal: string): Movel {
     chanfrada(estofado, [0.46, 0.07, 0.44], [0, 0.455, 0]),
     chanfrada(estofado, [0.44, 0.42, 0.05], [0, 0.72, -0.21], [-8, 0, 0]),
     ...pes,
-  ]);
+  ], { estofado, metal });
 }
 
 /** Banco estofado comprido (provador). */
@@ -53,7 +53,7 @@ export function cadeiraDiretor(em: Em, madeira: string, lona: string): Movel {
     ...pernas,
     chanfrada(lona, [0.54, 0.02, 0.4], [0, 0.56, 0]),
     chanfrada(lona, [0.54, 0.2, 0.02], [0, 1.06, -0.2]),
-  ]);
+  ], { madeira, lona });
 }
 
 /** Banco de rua: ripas de madeira num pé de ferro. */

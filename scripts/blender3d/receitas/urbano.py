@@ -4,13 +4,13 @@ from __future__ import annotations
 import math
 
 from ..core import barra, caixa, cilindro, duplicar, material, toro, torneado
-from . import receita
+from . import receita, variantes
 
 
 @receita("caixote", "Caixote de madeira ripado", movel="caixote")
 def caixote() -> None:
-    madeira = material("pinho", "#B98F5A", aspereza=0.8)
-    escura = material("pinho-escuro", "#8B6538", aspereza=0.85)
+    madeira = material("pinho", "#B98F5A", aspereza=0.8, papel="madeira", textura="madeira")
+    escura = material("pinho-escuro", "#8B6538", aspereza=0.85, textura="madeira")
     prego = material("prego", "#5A5D62", metal=1.0, aspereza=0.5)
     lado, meio = 0.7, 0.35
     for x in (-1, 1):
@@ -35,7 +35,7 @@ def caixote() -> None:
 
 @receita("tambor", "Tambor de aço", movel="tambor")
 def tambor() -> None:
-    lata = material("lata", "#1F5E7A", metal=0.7, aspereza=0.45)
+    lata = material("lata", "#1F5E7A", metal=0.7, aspereza=0.45, papel="metal")
     aro = material("aro", "#9AA0A6", metal=1.0, aspereza=0.35)
     perfil = [(0, 0), (0.28, 0), (0.29, 0.012), (0.29, 0.27)]
     for z in (0.3, 0.58):                                               # as duas nervuras roladas do corpo
@@ -61,23 +61,20 @@ def _pneu(nome: str, borracha, z: float, giro: float, desvio: tuple[float, float
               giro=(0, 0, math.degrees(a)))
 
 
+# as salas empilham 2, 3 ou 4 pneus: um arquivo por altura (a sala aponta o slug certo; a escala segue a altura)
+@variantes("pilha-de-pneus", "Pilha de {quantos} pneus do box", {str(n): {"quantos": n} for n in (2, 3, 4)}, movel="pilhaDePneus")
 def _pilha(quantos: int) -> None:
-    borracha = material("borracha", "#17171A", aspereza=0.85)
+    borracha = material("borracha", "#17171A", aspereza=0.85, papel="borracha", textura="borracha")
     desalinho = ((0, (0, 0)), (17, (0.015, -0.01)), (41, (-0.012, 0.014)), (8, (0.01, 0.008)))
     for i, (giro, desvio) in enumerate(desalinho[:quantos]):
         _pneu(f"pneu-{i}", borracha, 0.1 + i * 0.2, giro, desvio)
 
 
-# as salas empilham 2, 3 ou 4 pneus: um arquivo por altura (a sala aponta o slug certo; a escala segue a altura)
-for _quantos in (2, 3, 4):
-    receita(f"pilha-de-pneus-{_quantos}", f"Pilha de {_quantos} pneus do box", movel="pilhaDePneus")(
-        lambda quantos=_quantos: _pilha(quantos))
-
 
 @receita("trave", "Trave de futebol de 5 com rede", movel="trave")
 def trave() -> None:
-    branco = material("trave", "#F4F4F0", metal=0.3, aspereza=0.35)
-    rede = material("rede", "#E8ECEF", aspereza=0.9)
+    branco = material("trave", "#F4F4F0", metal=0.3, aspereza=0.35, papel="metal")
+    rede = material("rede", "#E8ECEF", aspereza=0.9, papel="rede")
     for x in (-1.5, 1.5):
         cilindro("poste", branco, 0.04, 2.0, (x, 0, 1.0), lados=12)
         barra("esteio", branco, (x, 0, 2.0), (x, 0.9, 0.03), 0.02, 6)
@@ -96,10 +93,10 @@ def trave() -> None:
 
 @receita("skate", "Skate de rua", movel="skate")
 def skate() -> None:
-    shape = material("shape", "#D9A066", aspereza=0.55)
+    shape = material("shape", "#D9A066", aspereza=0.55, papel="shape", textura="madeira")
     lixa = material("lixa", "#121214", aspereza=1.0)
-    truck = material("truck", "#B4B8BD", metal=1.0, aspereza=0.3)
-    roda = material("roda", "#F2EFE6", aspereza=0.4)
+    truck = material("truck", "#B4B8BD", metal=1.0, aspereza=0.3, papel="metal")
+    roda = material("roda", "#F2EFE6", aspereza=0.4, papel="roda")
     caixa("deck", shape, (0.2, 0.56, 0.012), (0, 0, 0.09), chanfro=0.005)
     caixa("lixa", lixa, (0.196, 0.555, 0.002), (0, 0, 0.097))
     for y, giro in ((-0.34, -16), (0.34, 16)):                          # nose e tail levantados, colados ao deck
