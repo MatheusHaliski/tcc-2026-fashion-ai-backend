@@ -163,6 +163,7 @@ public final class Views {
                     w == null ? null : w.getUser().getId(), (String) snap.get("material"), 0, 0,
                     (String) snap.get("condition"), (String) snap.get("careInstructions"),
                     Json.read(Json.write(snap.get("estadoConservacao")), ReferenceOptionView.class),
+                    Json.read(Json.write(snap.get("cortes")), ReferenceOptionView.class),
                     Json.read(Json.write(snap.get("tipoLavagem")), ReferenceOptionView.class));
         }
         return new PieceRow(w.getId(), w.getName(), w.getBrand() != null ? w.getBrand().getName() : w.getBrandName(),
@@ -170,7 +171,7 @@ public final class Views {
                 w.getSex(), w.getColor(), Taxonomy.hex(w.getColor()), w.getImageUrl(), w.getThumbnailUrl(), w.getPrice(), gone,
                 w.getUser().getId(), w.getMaterial(), w.getWearCount(), w.getLikesCount(),
                 w.getCondition() == null ? null : w.getCondition().name(), w.getCareInstructions(),
-                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()));
+                estadoConservacao(w.getEstadoConservacao()),cortes(w.getcortes()), tipoLavagem(w.getTipoLavagem()));
     }
 
     public static Map<String, Object> snapshot(WardrobeItem w) {
@@ -191,6 +192,7 @@ public final class Views {
         m.put("condition", w.getCondition() == null ? null : w.getCondition().name());
         m.put("careInstructions", w.getCareInstructions());
         m.put("estadoConservacao", estadoConservacao(w.getEstadoConservacao()));
+        m.put("cortes", cortes(w.getcortes()));
         m.put("tipoLavagem", tipoLavagem(w.getTipoLavagem()));
         m.put("capturedAt", Instant.now().toString());
         return m;
