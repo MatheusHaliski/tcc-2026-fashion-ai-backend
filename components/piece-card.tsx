@@ -35,7 +35,6 @@ import { FashionMotionButton } from "@/components/hype/fashion-motion-button";
 import { PieceDetailFacts } from "@/components/piece-detail-facts";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
 import { PieceCardPanels } from "@/components/piece-card-panels";
-import { selectedPieceSealNames } from "@/lib/seals/selected-seals";
 import { fashionCardLevel } from "@/lib/hype/fashion-card";
 import { conservationLabel } from "@/lib/api/piece-references";
 
@@ -120,7 +119,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
       {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
       {expanded && zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
     </span>
-    <span className="pc-sub">{secondary}{expanded && zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>
+    {expanded && <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>}
     {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
     {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular"><Price value={piece.price} /></b></span>}
   </div>;
@@ -150,7 +149,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 ? <div className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</div>
                 : <Link href={link} onClick={openModal} className="pc-media" data-photo-framing={framing} style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <div className="pc-id">
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} selectedSealNames={selectedPieceSealNames(piece.seals)} infoBefore={<>{identity}<CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} /></>} infoContent={expanded ? <PieceDetailFacts piece={piece} excludeFashionMeta /> : undefined} replaceInfoRows={expanded} live={live} />
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} infoBefore={<>{identity}<CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} /></>} infoContent={expanded ? <PieceDetailFacts piece={piece} excludeFashionMeta /> : undefined} replaceInfoRows={expanded} live={live} />
                 {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>
             </>

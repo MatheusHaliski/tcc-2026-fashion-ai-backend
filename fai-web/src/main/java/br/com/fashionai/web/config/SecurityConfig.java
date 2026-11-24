@@ -46,7 +46,7 @@ public class SecurityConfig {
             // catálogos de opções: /api/opcoes/** é público por convenção (só GET, sem dado de usuário — OpcoesConvencaoTest);
             // os campos dos criadores mandam a sessão, então um GET novo fora daqui também carrega sem mexer nesta lista
             "/api/opcoes/**", "/api/estados-conservacao", "/api/tipos-lavagem", "/api/colecoes", "/api/cortes", "/api/intensidades-termicas", "/api/origens",
-            "/api/passport-shares/*",
+            "/api/passport-shares/*", "/api/seals/art",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",
             "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/aura-media/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
