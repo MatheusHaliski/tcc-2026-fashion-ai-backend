@@ -2,6 +2,7 @@ package br.com.fashionai.application.view;
 
 import br.com.fashionai.application.view.Views.ReferenceOptionView;
 import br.com.fashionai.domain.model.Colecao;
+import br.com.fashionai.domain.model.Corte;
 import br.com.fashionai.domain.model.EstadoConservacao;
 import br.com.fashionai.domain.model.IntensidadeTermica;
 import br.com.fashionai.domain.model.Origem;
@@ -32,7 +33,12 @@ public final class PieceReferenceViews {
     public static ReferenceOptionView origem(Origem origem) {
         return origem == null ? null : new ReferenceOptionView(origem.getId(), origem.getCodigo(), origem.getNome());
     }
-      public static ReferenceOptionView cortes(Cortes cortes) {
-        return cortes == null ? null : new ReferenceOptionView(cortes.getId(), cortes.getCodigo(), cortes.getNome());
+
+    public static Views.TipoLookView tipoLook(br.com.fashionai.domain.model.TipoLook tipo) {
+        return tipo == null ? null : new Views.TipoLookView(tipo.getId(), tipo.getCodigo(), tipo.getNome());
+    }
+
+    public static ReferenceOptionView corte(Corte corte) {
+        return corte == null ? null : new ReferenceOptionView(corte.getId(), corte.getCodigo(), corte.getNome());
     }
 }

@@ -365,7 +365,7 @@ public class MirrorService {
             v.put("worn", worn.contains(id));
             return v;
         }).toList());
-        out.put("tipoLook", Views.tipoLook(s.getTipoLook()));
+        out.put("tipoLook", br.com.fashionai.application.view.PieceReferenceViews.tipoLook(s.getTipoLook()));
         List<WardrobeItem> look = allIds(slots).stream().map(loaded::get).filter(Objects::nonNull).toList();
         boolean complete = complete(slots);
         out.put("complete", complete);
@@ -1193,7 +1193,7 @@ public class MirrorService {
             }
         }
         d.put("slots", ss);
-        d.put("tipoLook", Views.tipoLook(s.getTipoLook()));
+        d.put("tipoLook", br.com.fashionai.application.view.PieceReferenceViews.tipoLook(s.getTipoLook()));
         d.put("accessories", accessories(slots).stream().map(UUID::toString).toList());
         if (slots.get("interpretation") instanceof Map<?, ?> m && m.get("occasion") instanceof List<?> l && !l.isEmpty()) {
             d.put("occasion", String.valueOf(l.get(0)));

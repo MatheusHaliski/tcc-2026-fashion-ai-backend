@@ -11,7 +11,7 @@ import type { HypeLevel } from "@/lib/hype/types";
 import { PieceConservationField } from "@/components/piece-conservation-field";
 import { TipoLavagemField } from "@/components/tipo-lavagem-field";
 import { PieceColecaoField } from "@/components/piece-colecao-field";
-import { CortesField } from "@/components/piece-cortes-field";
+import { PieceCorteField } from "@/components/piece-cortes-field";
 import { PieceIntensidadeTermicaField } from "@/components/piece-intensidade-termica-field";
 import { PieceOrigemField } from "@/components/piece-origem-field";
 import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
@@ -19,8 +19,8 @@ import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
   color: string; material: string; size: string; market?: string; occasion: string[]; style: string[]; seals: string[]; price: string; visibility: string;
-  tags: string; colecaoId?: string | null; intensidadeTermicaId?: string | null; origemId?: string | null; cortesId?: string | null; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
-  estadoConservacaoId?: string | null; estadoConservacaoNome?: string | null; clearEstadoConservacao?: boolean;clearcortes?:boolean;
+  tags: string; colecaoId?: string | null; intensidadeTermicaId?: string | null; origemId?: string | null; corteId?: string | null; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
+  estadoConservacaoId?: string | null; estadoConservacaoNome?: string | null; clearEstadoConservacao?: boolean;
   tipoLavagemId?: string | null; tipoLavagemNome?: string | null; clearTipoLavagem?: boolean;
   /** RF4 · Estúdio: false = salvar sem a foto de estúdio gerada no rascunho */
   studio?: boolean;
@@ -40,7 +40,7 @@ export const PIECE_CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "a
 export function toPayload(v: PieceFormValue) {
   // só o que o backend guarda: o logo largo, o domínio e a medida de nitidez são apenas do slot do formulário
   const { brandLogoWideUrl: _w, brandDomain: _d, brandEdgePx: _e, estadoConservacaoNome: _cn, tipoLavagemNome: _tn, ...rest } = v; void _w; void _d; void _e; void _cn; void _tn;
-  return { ...rest, estadoConservacaoId: v.estadoConservacaoId || null, clearEstadoConservacao: v.clearEstadoConservacao ?? false, clearcortes: v.clearcortes ?? false, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null, background: v.background ?? null };
+  return { ...rest, estadoConservacaoId: v.estadoConservacaoId || null, clearEstadoConservacao: v.clearEstadoConservacao ?? false, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null, background: v.background ?? null };
 }
 
 /** `hype`: HypeScore atual da peça avaliada (RF53); sem cálculo ainda, vem null e nada aparece. */
@@ -101,17 +101,12 @@ export function PieceMoreDetails({ value, onChange, error, idPrefix = "" }: { va
 }
 
 /** Dados da peça (RF4/RF7) dirigidos pela taxonomia oficial; até 2 ocasiões e 2 estilos; cor sempre com nome (acessível). */
-export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, compact = false }: {
+export function PieceFields({ value, onChange, error, fieldErrors, afterBrand }: {
   value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null; fieldErrors?: Record<string, string>;
   /** nota logo abaixo do campo Marca (ex.: marca lida com incerteza na foto, com "Usar {marca}") */
   afterBrand?: React.ReactNode;
-  /** Creator: show identity/color first; supplementary fields stay available in a disclosure. */
-  compact?: boolean;
 }) {
   const { t } = useI18n(); const tax = useTaxonomy(); const err: Record<string, string> = { ...(error?.fields ?? {}), ...(fieldErrors ?? {}) };
-  const [expanded, setExpanded] = useState(false);
-  const additionalError = ["material", "sex", "size", "brandName", "price", "occasion", "style", "estadoConservacaoId", "tipoLavagemId", "colecaoId", "intensidadeTermicaId", "origemId"].some(k => !!err[k]);
-  useEffect(() => { if (additionalError) setExpanded(true); }, [additionalError]);
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   const allowedOccasions = (category: string) => (category ? tax?.allowedOccasionsByCategory?.[category] : undefined) ?? tax?.occasions;
   const occasions = allowedOccasions(value.category) ?? [];
@@ -131,8 +126,7 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, c
         error={err.estadoConservacaoId} onChange={id => onChange({ ...value, estadoConservacaoId: id || null, clearEstadoConservacao: !id })} />
       <TipoLavagemField value={value.tipoLavagemId ?? ""} selectedName={value.tipoLavagemNome}
         error={err.tipoLavagemId} onChange={id => onChange({ ...value, tipoLavagemId: id || null, clearTipoLavagem: !id })} />
-    <CortesField value={value.cortesId ?? ""} selectedName={value.cortesId}
-        error={err.cortesId} onChange={id => onChange({ ...value, cortesId: id || null, clearcortes: !id })} />
+      <PieceCorteField value={value.corteId ?? ""} error={err.corteId} onChange={id => onChange({ ...value, corteId: id || null })} />
       <PieceColecaoField value={value.colecaoId ?? ""} error={err.colecaoId} onChange={id => onChange({ ...value, colecaoId: id || null })} />
       <PieceIntensidadeTermicaField value={value.intensidadeTermicaId ?? ""} error={err.intensidadeTermicaId}
         onChange={id => onChange({ ...value, intensidadeTermicaId: id || null })} />
@@ -158,10 +152,7 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, c
           <Select id="color" value={value.color} onChange={(e) => set("color", e.target.value)}><option value="">—</option>{Object.entries(tax?.colors ?? {}).map(([k]) => <option key={k} value={k}>{label(k)}</option>)}</Select>
         </div>
       </Field>
-      {compact ? <details className="sm:col-span-2" open={expanded} onToggle={(e) => setExpanded(e.currentTarget.open)}>
-        <summary className="cursor-pointer py-3 font-semibold min-h-11">{t("pieceForm.moreDetails")}</summary>
-        <div className="grid gap-x-4 sm:grid-cols-2">{additional}</div>
-      </details> : additional}
+      {additional}
     </div>
   );
 }
@@ -184,7 +175,7 @@ export function tagProblem(field: "occasion" | "style", v: string, tax: ReturnTy
 /** Campos da peça em cada etapa do criador (para levar a pessoa ao campo com problema). */
 export const PIECE_FIELD_STEP: Record<string, "data" | "more"> = {
   name: "data", category: "data", subcategory: "data", color: "data", material: "data", sex: "data", size: "data", brandName: "data",
-  estadoConservacaoId: "data", tipoLavagemId: "data", colecaoId: "data", intensidadeTermicaId: "data", origemId: "data", price: "data", occasion: "data", style: "data", seals: "more", visibility: "more", forSale: "more", market: "data",
+  estadoConservacaoId: "data", tipoLavagemId: "data", colecaoId: "data", intensidadeTermicaId: "data", origemId: "data", corteId: "data", price: "data", occasion: "data", style: "data", seals: "more", visibility: "more", forSale: "more", market: "data",
 };
 
 /** Validação no cliente, antes de enviar — as mesmas regras do servidor, com as mesmas mensagens compreensíveis. */

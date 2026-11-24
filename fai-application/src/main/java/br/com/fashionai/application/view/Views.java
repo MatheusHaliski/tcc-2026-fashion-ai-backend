@@ -19,11 +19,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import static br.com.fashionai.application.view.PieceReferenceViews.estadoConservacao;
-import static br.com.fashionai.application.view.PieceReferenceViews.origem;
-import static br.com.fashionai.application.view.PieceReferenceViews.colecao;
 import static br.com.fashionai.application.view.PieceReferenceViews.tipoLavagem;
-import static br.com.fashionai.application.view.PieceReferenceViews.intensidadeTermica;
-import static br.com.fashionai.application.view.PieceReferenceViews.cortes;
+import static br.com.fashionai.application.view.PieceReferenceViews.tipoLook;
+
 /** Visões expostas pela API (o frontend nunca recebe entidade JPA nem campo cifrado cru). */
 public final class Views {
     private Views() {
@@ -65,8 +63,9 @@ public final class Views {
                             String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
                             String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl,
                             boolean aiGeneratedImage, boolean forDonation,
-                            String variation, Map<String, List<String>> attributes, ReferenceOptionView estadoConservacao, Cortes cortes,
-                            ReferenceOptionView tipoLavagem, ReferenceOptionView colecao,ReferenceOptionView origem, ReferenceOptionView intensidadeTermica) {
+                            String variation, Map<String, List<String>> attributes, ReferenceOptionView estadoConservacao,
+                            ReferenceOptionView tipoLavagem, ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica,
+                            ReferenceOptionView origem, ReferenceOptionView corte) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -119,8 +118,9 @@ public final class Views {
                 // taxonomia nova: variação da peça e atributos por dimensão; cor, material, sexo, estilo e ocasião já têm
                 // campo próprio na view e não se repetem aqui
                 w.getVariationCode(), TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS),
-                estadoConservacao(w.getEstadoConservacao()),cortes(w.getcortes()), tipoLavagem(w.getTipoLavagem()),
-                PieceReferenceViews.colecao(w.getColecao()), PieceReferenceViews.origem(w.getOrigem()), PieceReferenceViews.intensidadeTermica(w.getIntensidadeTermica()));
+                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()),
+                PieceReferenceViews.colecao(w.getColecao()), PieceReferenceViews.intensidadeTermica(w.getIntensidadeTermica()),
+                PieceReferenceViews.origem(w.getOrigem()), PieceReferenceViews.corte(w.getCorte()));
     }
 
     /**
@@ -147,7 +147,7 @@ public final class Views {
                            String thumbnailUrl, BigDecimal price, boolean notAvailableAnymore, UUID ownerId,
                            String material, int wearCount, long likes,
                            String condition, String careInstructions,
-                           ReferenceOptionView estadoConservacao, ReferenceOptionView tipoLavagem,ReferenceOptionView cortes ) {
+                           ReferenceOptionView estadoConservacao, ReferenceOptionView tipoLavagem) {
     }
 
     public static PieceRow row(SchemeItem si) {
@@ -163,7 +163,6 @@ public final class Views {
                     w == null ? null : w.getUser().getId(), (String) snap.get("material"), 0, 0,
                     (String) snap.get("condition"), (String) snap.get("careInstructions"),
                     Json.read(Json.write(snap.get("estadoConservacao")), ReferenceOptionView.class),
-                    Json.read(Json.write(snap.get("cortes")), ReferenceOptionView.class),
                     Json.read(Json.write(snap.get("tipoLavagem")), ReferenceOptionView.class));
         }
         return new PieceRow(w.getId(), w.getName(), w.getBrand() != null ? w.getBrand().getName() : w.getBrandName(),
@@ -171,7 +170,7 @@ public final class Views {
                 w.getSex(), w.getColor(), Taxonomy.hex(w.getColor()), w.getImageUrl(), w.getThumbnailUrl(), w.getPrice(), gone,
                 w.getUser().getId(), w.getMaterial(), w.getWearCount(), w.getLikesCount(),
                 w.getCondition() == null ? null : w.getCondition().name(), w.getCareInstructions(),
-                estadoConservacao(w.getEstadoConservacao()),cortes(w.getcortes()), tipoLavagem(w.getTipoLavagem()));
+                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()));
     }
 
     public static Map<String, Object> snapshot(WardrobeItem w) {
@@ -192,7 +191,6 @@ public final class Views {
         m.put("condition", w.getCondition() == null ? null : w.getCondition().name());
         m.put("careInstructions", w.getCareInstructions());
         m.put("estadoConservacao", estadoConservacao(w.getEstadoConservacao()));
-        m.put("cortes", cortes(w.getcortes()));
         m.put("tipoLavagem", tipoLavagem(w.getTipoLavagem()));
         m.put("capturedAt", Instant.now().toString());
         return m;
@@ -214,10 +212,6 @@ public final class Views {
 
     /** Opção de catálogo, sem timestamps/autoria internos da entidade JPA. */
     public record ReferenceOptionView(UUID id, String codigo, String nome) { }
-
-    public static TipoLookView tipoLook(br.com.fashionai.domain.model.TipoLook tipo) {
-        return tipo == null ? null : new TipoLookView(tipo.getId(), tipo.getCodigo(), tipo.getNome());
-    }
 
     public record SchemeView(UUID id, UserCard owner, String title, String description, String creationMode,
                              String origin, List<String> style, List<String> occasion, String season, String mood,

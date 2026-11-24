@@ -3,7 +3,7 @@ package br.com.fashionai.web.controller;
 import br.com.fashionai.application.view.PieceReferenceViews;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.repository.ColecaoRepository;
-import br.com.fashionai.domain.repository.CortesRepository;
+import br.com.fashionai.domain.repository.CorteRepository;
 import br.com.fashionai.domain.repository.EstadoConservacaoRepository;
 import br.com.fashionai.domain.repository.IntensidadeTermicaRepository;
 import br.com.fashionai.domain.repository.TipoLavagemRepository;
@@ -20,11 +20,12 @@ public class PieceReferenceController {
     private final EstadoConservacaoRepository estados;
     private final TipoLavagemRepository lavagens;
     private final ColecaoRepository colecoes;
-    private final CortesRepository cortes;
+    private final CorteRepository cortes;
     private final IntensidadeTermicaRepository intensidades;
 
     public PieceReferenceController(EstadoConservacaoRepository estados, TipoLavagemRepository lavagens,
-                                    ColecaoRepository colecoes, IntensidadeTermicaRepository intensidades, CortesRepository cortes) {
+                                    ColecaoRepository colecoes, IntensidadeTermicaRepository intensidades,
+                                    CorteRepository cortes) {
         this.estados = estados;
         this.lavagens = lavagens;
         this.colecoes = colecoes;
@@ -48,11 +49,11 @@ public class PieceReferenceController {
 
     @GetMapping("/api/cortes")
     @Transactional(readOnly = true)
-    @Operation(summary = "Cortes cadastradas na tabela cortes")
+    @Operation(summary = "Cortes de peça ativos na tabela cortes")
     public List<Views.ReferenceOptionView> cortes() {
-        return cortes.findAllByOrderByNomeAsc().stream().map(PieceReferenceViews::cortes).toList();
+        return cortes.findAllByAtivoTrueOrderByNomeAsc().stream().map(PieceReferenceViews::corte).toList();
     }
-    
+
     @GetMapping("/api/intensidades-termicas")
     @Transactional(readOnly = true)
     @Operation(summary = "Intensidades térmicas cadastradas na tabela intensidade_termica")
