@@ -117,6 +117,12 @@ Em três lotes, do que mais aparece para o que menos aparece.
 
 Aceite: nenhuma das 18 salas tem móvel de objeto ou de arquitetura desenhado só com caixas e cilindros.
 
+**Estado do lote 1: 9 de 22 tipos entregues** (os que aparecem em mais salas): arara, espelho, bancoEstofado,
+armarioFerramentas, lustre, luminariaDeTeto, trilhoSpots, bancada e rolosDeTecido, em 23 arquivos por causa das
+medidas. Faltam os 13 de uma sala só: mesaDosJurados, balcao, prateleiraDeBolsas, pedestaisComCordao, bastao,
+tabelaDeBasquete, bancoReservas, espelhoDeParede, bracoClaquete, claquete, monitorDeVideo, capaceteNoSuporte e
+carroDeCorrida.
+
 ### Fase 2: Detetive e Esporte
 
 Estas duas telas têm código próprio. O trabalho é trocar esse código pelo mesmo caminho da família A, não escrever um

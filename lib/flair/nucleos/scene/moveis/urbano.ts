@@ -154,7 +154,7 @@ export function armarioFerramentas(em: Em, corpo: string, metal: string, largura
     chanfrada(corpo, [largura, 0.95, 0.5], [0, 0.475, 0]),
     chanfrada(metal, [largura + 0.04, 0.04, 0.54], [0, 0.97, 0]),
     ...gavetas,
-  ]);
+  ], { corpo, metal });
 }
 
 /** Capacete num suporte de metal: casco, viseira e a base. */

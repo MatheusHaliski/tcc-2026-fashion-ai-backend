@@ -48,6 +48,18 @@ python -m scripts.blender3d.preview --pasta /tmp/previas   # folha de contato re
 | `pilha-de-pneus-2/3/4.glb` | `pilhaDePneus` (um arquivo por altura da pilha) | 1488 / 2232 / 2976 |
 | `trave.glb` | `trave` | 616 |
 | `skate.glb` | `skate` | 1344 |
+| `arara-<largura>-<peças>.glb` (14-6, 15-7, 16-5, 16-6, 16-7) | `arara` | 1572 a 2012 |
+| `espelho-7x19.glb`, `espelho-13x28.glb`, `espelho-18x24-luz.glb` | `espelho` | 1192 / 1192 / 2816 |
+| `banco-estofado-13.glb`, `banco-estofado-16.glb` | `bancoEstofado` | 1148 / 1244 |
+| `armario-ferramentas.glb` | `armarioFerramentas` | 668 |
+| `lustre-60.glb`, `lustre-75.glb` | `lustre` | 2392 |
+| `luminaria-de-teto-22/24/26/30.glb` | `luminariaDeTeto` | 476 a 512 |
+| `trilho-spots-6-5.glb`, `trilho-spots-9-6.glb` | `trilhoSpots` | 1760 / 2144 |
+| `bancada-20/22/24.glb` | `bancada` | 1180 |
+| `rolos-de-tecido.glb` | `rolosDeTecido` | 964 |
+
+Móvel que muda de medida por sala tem um arquivo por medida: a fábrica do móvel monta o slug com as medidas
+(por exemplo `arara-16-7`: 1,6 m e 7 peças) e o aponta com `comGlb`. Medida sem arquivo cai no móvel procedural, sem erro.
 
 Regras do motor:
 
@@ -67,6 +79,11 @@ Regras do motor:
 - Receita apagada ou renomeada: o próximo `build` completo tira o `.glb` e a linha órfã do manifesto.
 - Para conferir um objeto dentro da sala: `/lab/salas?jogo=PERSONAGEM_FILME` (só em desenvolvimento); com `&glb=0` a
   mesma sala aparece só com os móveis procedurais, para comparar.
+
+Conferido com captura de antes e depois (`glb=0`): `BOUTIQUE_3D` (arara, espelho, luminárias de teto), `ROAD_TO_GLORY`
+(espelho com lâmpadas, banco, arara, penteadeira e cadeira no magenta da sala) e `FASHION_DETECTIVE` (lustre).
+**Não conferido no navegador:** armário de gavetas, bancada, rolos de tecido, trilho de spots e as outras medidas
+(só folha de contato e teste de proporção).
 
 Conferido: a folha de contato dos arquivos; no navegador, as salas `PERSONAGEM_FILME` (câmera no tripé e cadeira de
 diretor) e `ROAD_TO_GLORY` (penteadeira e cadeira com o magenta da sala, versão leve carregada). **Não conferido: as

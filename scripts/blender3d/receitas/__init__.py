@@ -43,5 +43,5 @@ def variantes(base: str, titulo: str, opcoes: dict[str, dict], movel: str | None
 
 def carregar() -> dict[str, Receita]:
     """Importa os módulos de receita (o registro acontece na importação) e devolve o catálogo."""
-    from . import mobilia, palco, urbano  # noqa: F401
+    from . import atelie, iluminacao, interior, mobilia, palco, urbano  # noqa: F401
     return RECEITAS

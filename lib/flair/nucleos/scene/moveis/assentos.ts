@@ -2,7 +2,7 @@
  * Móveis de sentar e de público: cadeira de plateia, banco estofado, poltrona, cadeira de diretor, banco de rua,
  * banco de reservas e arquibancada. Medidas reais, em metros; a frente do móvel aponta para +z.
  */
-import { caixa, chanfrada, cilindro, movel, type Em } from "@/lib/flair/nucleos/scene/parts";
+import { caixa, chanfrada, cilindro, comGlb, movel, type Em } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
 /** Cadeira de plateia: assento e encosto estofados, pés de metal. */
@@ -17,14 +17,15 @@ export function cadeira(em: Em, estofado: string, metal: string): Movel {
 
 /** Banco estofado comprido (provador). */
 export function bancoEstofado(em: Em, estofado: string, base: string, largura = 1.3): Movel {
-  return movel("bancoEstofado", em, [
+  const banco = movel("bancoEstofado", em, [
     chanfrada(estofado, [largura, 0.14, 0.45], [0, 0.4, 0]),
     chanfrada(base, [largura - 0.08, 0.06, 0.38], [0, 0.3, 0]),
     cilindro(base, [0.025, 0.018], 0.28, [-largura / 2 + 0.1, 0.14, 0.14], undefined, 8),
     cilindro(base, [0.025, 0.018], 0.28, [largura / 2 - 0.1, 0.14, 0.14], undefined, 8),
     cilindro(base, [0.025, 0.018], 0.28, [-largura / 2 + 0.1, 0.14, -0.14], undefined, 8),
     cilindro(base, [0.025, 0.018], 0.28, [largura / 2 - 0.1, 0.14, -0.14], undefined, 8),
-  ]);
+  ], { estofado, base });
+  return comGlb(banco, `banco-estofado-${Math.round(largura * 10)}`);
 }
 
 /** Poltrona baixa de loja: assento, encosto e dois braços. */

@@ -2,7 +2,7 @@
  * Móveis de palco e de luz: painel de LED, telão, trilho de spots, cortina de pregas, canhão de luz, refletor,
  * câmera no tripé, claquete, lustre, luminária de braço, poste e letreiro de neon. A frente aponta para +z.
  */
-import { caixa, chanfrada, cilindro, esfera, extrusao, movel, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
+import { caixa, chanfrada, cilindro, comGlb, esfera, extrusao, movel, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
 /** Painel de LED com moldura fina; `pos` é o pé do painel. */
@@ -40,7 +40,7 @@ export function trilhoSpots(em: Em, metal: string, luz: string, comprimento = 6,
     partes.push(cilindro(metal, [0.09, 0.07], 0.22, [0, -0.2, z], [25, 0, 0], 10));
     partes.push(cilindro(luz, 0.08, 0.02, [0, -0.3, z + 0.05], [25, 0, 0], 10));
   }
-  return movel("trilhoSpots", em, partes);
+  return comGlb(movel("trilhoSpots", em, partes, { metal, luz }), `trilho-spots-${comprimento}-${spots}`);
 }
 
 /** Perfil ondulado de uma cortina vista de cima: ida pela frente das pregas, volta por trás. */
@@ -132,13 +132,14 @@ export function lustre(em: Em, latao: string, luz: string, raio = 0.7): Movel {
     const a = (i / 6) * Math.PI * 2 + 0.3;
     lampadas.push(esfera(luz, 0.05, [Math.cos(a) * raio * 0.5, -0.18, Math.sin(a) * raio * 0.5], 8));
   }
-  return movel("lustre", em, [
+  const pendente = movel("lustre", em, [
     cilindro(latao, 0.02, 0.9, [0, 0.6, 0], undefined, 8),
     esfera(latao, [0.09, 0.12, 0.09], [0, 0.12, 0], 10),
     toro(latao, raio, 0.022, [0, 0, 0], [90, 0, 0], 28),
     toro(latao, raio * 0.5, 0.02, [0, -0.26, 0], [90, 0, 0], 20),
     ...lampadas,
-  ]);
+  ], { latao, luz });
+  return comGlb(pendente, `lustre-${Math.round(raio * 100)}`);
 }
 
 /** Luminária de braço articulado presa na bancada. */
