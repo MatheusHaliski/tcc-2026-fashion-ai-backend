@@ -119,7 +119,7 @@ public final class Views {
                 // taxonomia nova: variação da peça e atributos por dimensão; cor, material, sexo, estilo e ocasião já têm
                 // campo próprio na view e não se repetem aqui
                 w.getVariationCode(), TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS),
-                estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()),
+                estadoConservacao(w.getEstadoConservacao()),cortes(w.getcortes()), tipoLavagem(w.getTipoLavagem()),
                 PieceReferenceViews.colecao(w.getColecao()), PieceReferenceViews.origem(w.getOrigem()), PieceReferenceViews.intensidadeTermica(w.getIntensidadeTermica()));
     }
 
