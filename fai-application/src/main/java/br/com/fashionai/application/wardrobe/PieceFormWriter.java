@@ -71,9 +71,17 @@ public final class PieceFormWriter {
     }
 
     public void apply(WardrobeItem w, PieceForm f, boolean creating) {
+           if (f.colecaoId() != null) {
+    w.setColecao(colecoes.findById(f.colecaoId())
+        .orElseThrow(() -> ApiException.badRequest("COLECAO_INVALIDA", "Coleção inválida", Map.of())));
+    }
+    if (f.origemId() != null) {
+    w.setOrigem(origem.findById(f.origemId())
+        .orElseThrow(() -> ApiException.badRequest("ORIGEM_INVALIDA", "Origem inválida", Map.of())));
+    }
         apply(w, f, creating, null);
     }
-
+ 
     public void apply(WardrobeItem w, PieceForm f, boolean creating, Map<?, ?> aiPrefill) {
         if (f.estadoConservacaoId() != null || Boolean.TRUE.equals(f.clearEstadoConservacao())) {
             conservation.apply(w, f.estadoConservacaoId(), Boolean.TRUE.equals(f.clearEstadoConservacao()));
