@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.ai.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,9 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.fashionai.application.acervo.AcervoLugares;
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.ai.local.LocalSchemeComposer;
 import br.com.fashionai.application.ai.local.Similarity;
 import br.com.fashionai.application.audit.Audit;
@@ -626,7 +624,7 @@ public class MirrorService {
                 "Slot: " + slot + "\nNo espelho: " + Json.write(ctx) + "\nCandidatas: " + Json.write(catalog),
                 List.of(), 500, List.of(Msg.t("mirror.pecas_ja_no_espelho_e")),
                 text -> {
-                    Map<String, Object> m = WardrobeService.extractJson(text);
+                    Map<String, Object> m = AiResponseJson.extractJson(text);
                     if (!(m.get("alternatives") instanceof List<?> list)) {
                         return null;
                     }
@@ -792,7 +790,7 @@ public class MirrorService {
                 "Pedido: " + prompt + "\nPeças do acervo (refs): " + Json.write(names) + "\nÂncoras já escolhidas: " + anchors,
                 List.of(), 400, List.of(Msg.t("mirror.texto_do_pedido"), Msg.t("mirror.nomes_subcategorias_das_pecas")),
                 text -> {
-                    Map<String, Object> m = WardrobeService.extractJson(text);
+                    Map<String, Object> m = AiResponseJson.extractJson(text);
                     if (m.isEmpty()) {
                         return null;
                     }
@@ -848,7 +846,7 @@ public class MirrorService {
                         "season", String.valueOf(it.season()))), Json.write(catalog), (mirrorContext.isEmpty() ? "" : "\nJá no espelho (prefira manter): " + mirrorContext.stream().map(WardrobeItem::getName).toList()), (shown.isEmpty() ? "" : "\nNÃO repita estas combinações (ids ordenados): " + shown)),
                 List.of(), 700, List.of("acervo elegível (metadados, sem fotos)", "pedido interpretado", Msg.t("mirror.combinacoes_ja_mostradas_na_sessao")),
                 text -> {
-                    Map<String, Object> m = WardrobeService.extractJson(text);
+                    Map<String, Object> m = AiResponseJson.extractJson(text);
                     if (!(m.get("refs") instanceof List<?> refs)) {
                         return null;
                     }
@@ -1071,7 +1069,7 @@ public class MirrorService {
                 "Look: " + look.stream().map(w -> w.getName() + " (" + w.getSubcategory() + ", " + w.getColor() + ")").toList() + "\nRemovíveis: " + Json.write(cands),
                 List.of(), 200, List.of(Msg.t("mirror.pecas_do_look_no_espelho")),
                 text -> {
-                    Map<String, Object> m = WardrobeService.extractJson(text);
+                    Map<String, Object> m = AiResponseJson.extractJson(text);
                     WardrobeItem w = byRef.get(String.valueOf(m.get("remove_ref")));
                     return w == null ? null : Map.of("pieceId", w.getId(), "why", InputSanitizer.clean((m.get("why") == null ? "" : String.valueOf(m.get("why"))), 160));
                 },

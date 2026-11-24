@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.wardrobe.ClosetFilter;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.hype.HypeScoreConfig;
@@ -65,12 +66,12 @@ class WardrobeServiceClosetTest {
         world.piecesOf(world.me).forEach(w -> w.setModerationStatus(ModerationStatus.APPROVED));
     }
 
-    static WardrobeService.ClosetFilter filter(String category, String color, String season, String occasion, String style,
+    static ClosetFilter filter(String category, String color, String season, String occasion, String style,
                                                String state, String q, String sort, int page, int size, String hype, String seal) {
-        return new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hype, seal);
+        return new ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hype, seal);
     }
 
-    static WardrobeService.ClosetFilter sort(String sort) {
+    static ClosetFilter sort(String sort) {
         return filter(null, null, null, null, null, null, null, sort, 0, 0, null, null);
     }
 

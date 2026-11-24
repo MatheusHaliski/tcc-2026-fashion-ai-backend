@@ -52,33 +52,33 @@ public class WardrobeService {
     private final UserRepository users;
     private final BrandRepository brands;
     private final PipelineJobRepository jobs;
-    private final ProcessingJobLogRepository processingLogs;
-    private final QualityScoreRepository qualityScores;
-    private final ModerationQueueRepository moderationQueue;
     private final SchemeItemRepository schemeItems;
     private final SchemeRepository schemes;
     private final ReactionRepository reactions;
     private final SavedItemRepository saved;
     private final PhotoRepository photos;
     private final FlatLayPipeline flatLay;
-    private final br.com.fashionai.application.imaging.StudioPipeline studio;
     private final AiEngine ai;
     private final MediaService media;
     private final AssetCatalogService assets;
     private final ProjectionService projections;
     private final NotificationService notifications;
-    private final JobQueuePort queue;
     private final Model3dService model3d;
     private final Guard guard;
     private final Audit audit;
     private final ApplicationEventPublisher events;
     /** HypeScore v2 — estado atual (ordenações e filtro por faixa de Hype do closet) */
-    private final br.com.fashionai.domain.repository.HypeScoreCurrentRepository hypeScores;
     private final br.com.fashionai.application.hype.HypeScoreConfig hypeConfig;
     private final BrandLogoService brandLogos;
     private final br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles;
     private final PieceReferenceCatalog pieceReferences;
     private final OwnMedia ownMedia;
+    private final DraftPieceImport draftImport;
+    private final ClosetHype closetHype;
+    private final StudioShots shots;
+    private final StudioVersionFlow versions;
+    private final WardrobeStudio studios;
+    private final PieceImageEdits imageEdits;
     /** OCR local da marca (RF4): lê o logo quando a IA de visão não leu (ou está fora do ar). Opcional nos testes. */
     private br.com.fashionai.application.imaging.BrandReader brandReader;
 
@@ -108,28 +108,22 @@ public class WardrobeService {
                            PieceReferenceCatalog pieceReferences, OwnMedia ownMedia,
                            br.com.fashionai.domain.repository.HypeScoreCurrentRepository hypeScores,
                            br.com.fashionai.application.hype.HypeScoreConfig hypeConfig) {
-        this.hypeScores = hypeScores;
         this.hypeConfig = hypeConfig;
         this.pieces = pieces;
         this.users = users;
         this.brands = brands;
         this.jobs = jobs;
-        this.processingLogs = processingLogs;
-        this.qualityScores = qualityScores;
-        this.moderationQueue = moderationQueue;
         this.schemeItems = schemeItems;
         this.schemes = schemes;
         this.reactions = reactions;
         this.saved = saved;
         this.photos = photos;
         this.flatLay = flatLay;
-        this.studio = studio;
         this.ai = ai;
         this.media = media;
         this.assets = assets;
         this.projections = projections;
         this.notifications = notifications;
-        this.queue = queue;
         this.model3d = model3d;
         this.guard = guard;
         this.audit = audit;
@@ -138,6 +132,12 @@ public class WardrobeService {
         this.brandProfiles = brandProfiles;
         this.pieceReferences = pieceReferences;
         this.ownMedia = ownMedia;
+        this.draftImport = new DraftPieceImport(pieces, jobs, qualityScores, processingLogs, moderationQueue, media, queue);
+        this.closetHype = new ClosetHype(hypeScores, hypeConfig);
+        this.shots = new StudioShots(ai, studio, media);
+        this.versions = new StudioVersionFlow(media);
+        this.studios = new WardrobeStudio(pieces, assets, media, shots, versions);
+        this.imageEdits = new PieceImageEdits(media, shots, versions, studios);
     }
 
     private PieceConservationService conservation;
@@ -151,35 +151,8 @@ public class WardrobeService {
         this.conservation = conservation;
     }
 
-    // ------------------------------------------------------------------ colaboradores (Facade)
-    // Objetos sem estado, criados a cada chamada com as dependências deste serviço: leem os campos no momento da chamada
-    // e não são beans. Transação, autorização, posse e auditoria continuam nos métodos públicos daqui.
     private PieceFormWriter formWriter() {
         return new PieceFormWriter(conservation, brands, brandProfiles, ownMedia, media, brandLogos, classification);
-    }
-
-    private DraftPieceImport draftImport() {
-        return new DraftPieceImport(pieces, jobs, qualityScores, processingLogs, moderationQueue, media, queue);
-    }
-
-    private ClosetHype closetHype() {
-        return new ClosetHype(hypeScores, hypeConfig);
-    }
-
-    private StudioShots shots() {
-        return new StudioShots(ai, studio, media);
-    }
-
-    private StudioVersionFlow versions() {
-        return new StudioVersionFlow(media);
-    }
-
-    private WardrobeStudio studios() {
-        return new WardrobeStudio(pieces, assets, media, shots(), versions());
-    }
-
-    private PieceImageEdits imageEdits() {
-        return new PieceImageEdits(media, shots(), versions(), studios());
     }
 
     // ================================================================== RF4 — análise da foto (rascunho)
@@ -237,27 +210,11 @@ public class WardrobeService {
         return analyzeInternal(user, bytes, category, lenient);
     }
 
-    /**
-     * Resultado completo da análise para a sessão de captura.
-     *
-     * @param studioSource  peça endireitada e recortada em alta resolução (fonte do canônico e das zonas)
-     * @param logoBox       caixa do logo relativa a {@code studioSource} (x0, y0, x1, y1 em 0–1) ou null
-     * @param failedChecks  critérios de foto reprovados (só no modo lenient)
-     * @param allChecks     todos os critérios avaliados (aprovados e reprovados)
-     */
-    public record CaptureAnalysis(Draft draft, java.awt.image.BufferedImage studioSource, Set<String> truncated,
-                                  double[] logoBox, String logoSource, LocalVision.PieceGuess guess,
-                                  br.com.fashionai.application.imaging.BrandReader.Found ocr,
-                                  List<PhotoAcceptance.Check> failedChecks, List<PhotoAcceptance.Check> allChecks,
-                                  double rotationDeg, double backgroundConfidence, int originalWidth, int originalHeight,
-                                  boolean aiRan) {
-    }
-
     private CaptureAnalysis analyzeInternal(CurrentUser user, byte[] bytes, String category, boolean lenient) {
         guard.requireCanCreate(user);
         PieceDraftAnalyzer.Detection detection = new PieceDraftAnalyzer(users, ai, flatLay, pieceReferences, brandReader)
                 .detect(user, bytes, category, lenient);
-        return new DraftRecorder(jobs, media, shots()).record(user, bytes, detection);
+        return new DraftRecorder(jobs, media, shots).record(user, bytes, detection);
     }
 
     /**
@@ -332,7 +289,8 @@ public class WardrobeService {
         if (draft != null && "PIECE".equals(draft.getTargetType()) && draft.getInputResourceId() != null) {
             Optional<WardrobeItem> existing = pieces.findById(draft.getInputResourceId()).filter(p -> p.getUser().getId().equals(owner.getId()));
             if (existing.isPresent()) {
-                return Views.piece(existing.get(), viewerState(user, existing.get()), Map.of());
+                WardrobeItem piece = existing.get();
+                return Views.piece(piece, viewerState(user, piece), Map.of());
             }
         }
         WardrobeItem w = new WardrobeItem();
@@ -341,19 +299,20 @@ public class WardrobeService {
         Map<?, ?> aiPrefill = draft != null && Json.map(draft.getResultJson()).get("prefill") instanceof Map<?, ?> prefill ? prefill : null;
         formWriter().apply(w, form, true, aiPrefill);
         w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
-        if (draft == null && !form.useDefaultImage() && pick == null) {
-            throw ApiException.badRequest("FOTO_OBRIGATORIA", Msg.t("wardrobe.envie_uma_foto_ou_escolha"));
-        }
-        if (draft == null && pick != null) {
-            PieceImages.fromCatalog(w, pick, assets);
-            pieces.save(w);
-        } else if (draft == null) {
-            // imagem padrão da peça (/public/assets_pecas) quando o usuário deixa a foto vazia.
-            PieceImages.useDefault(w, assets);
-            pieces.save(w);
-            defaultStudio(w);                       // a imagem padrão também sai de estúdio: quadro cheio, foco no logo FAI
+        if (draft != null) {
+            draftImport.importDraft(owner, w, draft, form);
         } else {
-            draftImport().importDraft(owner, w, draft, form);
+            if (pick != null) {
+                PieceImages.fromCatalog(w, pick, assets);
+            } else if (form.useDefaultImage()) {
+                PieceImages.useDefault(w, assets);
+            } else {
+                throw ApiException.badRequest("FOTO_OBRIGATORIA", Msg.t("wardrobe.envie_uma_foto_ou_escolha"));
+            }
+            pieces.save(w);
+            if (pick == null) {
+                defaultStudio(w);
+            }
         }
         projections.piece(w);
         notifications.notify(owner.getId(), null, NotificationType.PIECE_CREATED, "PIECE", w.getId(),
@@ -403,25 +362,6 @@ public class WardrobeService {
     }
 
     // ================================================================== RF6 — Closet Digital
-    /**
-     * Filtros do closet. {@code hypeLevel} é FILTRO (faixa mínima: NICHE, RELEVANT, HOT, TRENDING, VIRAL), não aba.
-     * Ordenações: recent, name, price, worn (mais usada), least_worn, idle (mais tempo sem uso) e, do HypeScore v2,
-     * hype/hype_desc, hype_asc, growth (maior crescimento) e rarity (mais rara). {@code seal} (RF53) também é FILTRO:
-     * {@code hype} (peças com selo de Hype FashionAI), {@code brand} (com selo de marca/celebridade aprovado na peça) ou
-     * {@code any} (qualquer um dos dois).
-     */
-    public record ClosetFilter(String category, String color, String season, String occasion, String style, String state,
-                               String q, String sort, int page, int size, String hypeLevel, String seal) {
-        public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort, int page, int size) {
-            this(category, color, season, occasion, style, state, q, sort, page, size, null, null);
-        }
-
-        public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort,
-                            int page, int size, String hypeLevel) {
-            this(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, null);
-        }
-    }
-
     @Transactional(readOnly = true)
     public Views.Page<Views.PieceView> closet(CurrentUser viewer, UUID ownerId, ClosetFilter f) {
         UUID owner = ownerId == null ? viewer.id() : ownerId;
@@ -433,9 +373,9 @@ public class WardrobeService {
                 .filter(w -> ClosetQuery.matches(w, f))
                 .collect(Collectors.toCollection(ArrayList::new));
         String sort = ClosetQuery.sortKey(f.sort());
-        String seal = sealFilter(f.seal());
+        String seal = ClosetQuery.sealFilter(f.seal());
         Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = ClosetQuery.needsHype(sort, f.hypeLevel(), seal)
-                ? closetHype().scores(all, self) : Map.of();
+                ? closetHype.scores(all, self) : Map.of();
         if (!blank(f.hypeLevel()) && hypeConfig != null) {
             int min = hypeMinimum(f.hypeLevel());
             all.removeIf(w -> ClosetQuery.belowMinimum(hype.get(w.getId()), min));
@@ -457,7 +397,7 @@ public class WardrobeService {
 
     /** Faixa mínima de Hype → score mínimo (limiares centralizados no HypeScoreConfig). */
     int hypeMinimum(String level) {
-        return closetHype().minimum(level);
+        return closetHype.minimum(level);
     }
 
     // ================================================================== RF7 — detalhe
@@ -623,7 +563,7 @@ public class WardrobeService {
     public Views.PieceView replaceImage(CurrentUser user, UUID id, byte[] bytes, UUID editedFromPhotoId) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
-        imageEdits().replaceImage(user.id(), id, w, bytes, editedFromPhotoId);
+        imageEdits.replaceImage(user.id(), id, w, bytes, editedFromPhotoId);
         audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("field", "image"));
         return Views.piece(w, viewerState(user, w), null);
     }
@@ -636,13 +576,13 @@ public class WardrobeService {
         byte[] bytes = media.read(w.getOriginalImageUrl() != null ? w.getOriginalImageUrl() : w.getImageUrl())
                 .orElseThrow(() -> new ApiException(422, "SEM_IMAGEM", Msg.t("wardrobe.esta_peca_nao_tem_foto")));
         FlatLayPipeline.Result r = governedFlatLay(user.id(), bytes);
-        return imageEdits().removedBackground(user.id(), id, w, r);
+        return imageEdits.removedBackground(user.id(), id, w, r);
     }
 
     /** Job (RF4.CA06): reprocessa peças salvas com a foto original quando a remoção de fundo volta. */
     @Transactional
     public int reprocessPending() {
-        return new FlatLayReprocessor(jobs, pieces, flatLay, ai, media, notifications, imageEdits()).run();
+        return new FlatLayReprocessor(jobs, pieces, flatLay, ai, media, notifications, imageEdits).run();
     }
 
     // ================================================================== RF4 · Estúdio: versões e aprovação da foto de estúdio
@@ -654,7 +594,7 @@ public class WardrobeService {
 
     /** Resultado novo do estúdio: pendente (com aprovada no ar e mesma origem) ou no ar aguardando aprovação. */
     String offerStudio(WardrobeItem w, Map<String, Object> info, boolean sourceChanged) {
-        return versions().offerStudio(w, info, sourceChanged);
+        return versions.offerStudio(w, info, sourceChanged);
     }
 
     /** Aprova a foto de estúdio: a pendente vai ao ar (a anterior fica no histórico) ou a atual é marcada como aprovada. */
@@ -662,7 +602,7 @@ public class WardrobeService {
     public Views.PieceView approveStudio(CurrentUser user, UUID id) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
-        versions().approve(w);
+        versions.approve(w);
         audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("field", "studio", "action", "approve"));
         return Views.piece(w, viewerState(user, w), null);
     }
@@ -672,13 +612,13 @@ public class WardrobeService {
     public Views.PieceView discardStudio(CurrentUser user, UUID id) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
-        versions().discard(w);
+        versions.discard(w);
         audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("field", "studio", "action", "discard"));
         return Views.piece(w, viewerState(user, w), null);
     }
 
     void defaultStudio(WardrobeItem w) {
-        studios().defaultStudio(w);
+        studios.defaultStudio(w);
     }
 
     /** Peças com imagem padrão cadastradas antes do estúdio da imagem padrão: 20 por rodada, a cada 10 min. */
@@ -702,7 +642,7 @@ public class WardrobeService {
     @Transactional
     public Map<String, Object> studioDraft(CurrentUser user, UUID draftId, String backdrop, boolean force) {
         PipelineJob draft = ownedDraft(user, draftId);
-        return studios().forDraft(user.id(), draftId, draft, backdrop, force);
+        return studios.forDraft(user.id(), draftId, draft, backdrop, force);
     }
 
     /** Gera (ou refaz) a foto de estúdio de uma peça já cadastrada a partir do recorte (em alta, quando guardado). */
@@ -710,7 +650,7 @@ public class WardrobeService {
     public Views.PieceView studioPiece(CurrentUser user, UUID id, String backdrop) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
-        studios().forPiece(user.id(), id, w, backdrop);
+        studios.forPiece(user.id(), id, w, backdrop);
         return Views.piece(w, viewerState(user, w), null);
     }
 
@@ -718,7 +658,7 @@ public class WardrobeService {
     @Transactional
     public Map<String, Object> studioAll(CurrentUser user, String backdrop) {
         guard.requireCanCreate(user);
-        return studios().forAll(user.id(), backdrop);
+        return studios.forAll(user.id(), backdrop);
     }
 
     // ================================================================== RF16 — 3D (job assíncrono; ver Model3dService)
@@ -772,75 +712,12 @@ public class WardrobeService {
         return WardrobeTaxonomyCatalog.build(assets, brands);
     }
 
-    // ------------------------------------------------------------------ compatibilidade: delegações
-    // Ficam as que têm chamador fora deste arquivo: produção (MultiPieceService, CopilotService, SchemeService,
-    // AutopilotService, DnaService, MirrorService) e as delegações anteriores ao lote R02. As regras
-    // movidas no R02 que só testes chamavam são testadas direto no colaborador dono.
-    static String sealFilter(String raw) {
-        return ClosetQuery.sealFilter(raw);
-    }
-
-    static boolean stateMatches(WardrobeItem w, String state) {
-        return ClosetQuery.stateMatches(w, state);
-    }
-
-    static Map<String, Object> studioMeta(Map<String, Object> meta) {
-        return StudioVersionMetadata.copyFrom(meta);
-    }
-
     static int studioVersion(Map<String, Object> cur, WardrobeItem w) {
         return StudioVersionMetadata.version(cur, () -> w.getStudioImageUrl());
     }
 
     static boolean studioApproved(Map<String, Object> cur, WardrobeItem w) {
         return StudioVersionMetadata.approved(cur, w.getStudioImageUrl());
-    }
-
-    static Map<String, Object> studioSummary(Map<String, Object> info, int version, boolean approved) {
-        return StudioVersionMetadata.summary(info, version, approved);
-    }
-
-    /**
-     * Taxonomia CATEGORY → SUBCATEGORY → VARIATION + dimensões (docs/taxonomia, seções C e H): variações por subcategoria
-     * (CORE primeiro), catálogo de variações com rótulos e descrição, dimensões com escopo e valores (sem os de legado),
-     * subcategorias LEGACY com o equivalente novo e os rótulos dos códigos novos em pt-BR/en/es.
-     */
-    static Map<String, Object> taxonomyV2() {
-        return br.com.fashionai.application.taxonomy.TaxonomyView.extended();
-    }
-
-    static final String MODERATION_SYSTEM = PieceAnalyzerPrompts.MODERATION_SYSTEM;
-
-    LocalVision.ModerationVerdict parseModeration(String text) {
-        return PieceAnalysisParser.parseModeration(text);
-    }
-
-    static String brandName(String raw) {
-        return PieceAnalysisParser.brandName(raw);
-    }
-
-    static String oneOf(String value, java.util.Collection<String> allowed) {
-        return AiResponseJson.oneOf(value, allowed);
-    }
-
-    static List<String> strings(Object o) {
-        return AiResponseJson.strings(o);
-    }
-
-    static Map<String, Object> extractJson(String text) {
-        return AiResponseJson.extractJson(text);
-    }
-
-    static String str(Object o) {
-        return AiResponseJson.str(o);
-    }
-
-    static String label(String code) {
-        return PiecePrefill.label(code);
-    }
-
-    static String humanize(String code) {
-        return PiecePrefill.humanize(code);
     }
 
     // ------------------------------------------------------------------ util
@@ -850,10 +727,6 @@ public class WardrobeService {
 
     static boolean contains(String hay, String needle) {
         return hay != null && needle != null && hay.toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
-    }
-
-    static <K, V> Map<K, V> enumMap(Class<K> k) {
-        return new LinkedHashMap<>();
     }
 
     static List<UUID> ids(List<WardrobeItem> items) {

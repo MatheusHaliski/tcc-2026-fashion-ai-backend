@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.wardrobe.*;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
@@ -41,8 +42,6 @@ import br.com.fashionai.application.seal.SealPolicyCopilot;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
-import br.com.fashionai.application.wardrobe.ForgottenPieces;
-import br.com.fashionai.application.wardrobe.PieceUsageDiary;
 import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
 import br.com.fashionai.domain.repository.*;
@@ -1322,7 +1321,7 @@ public class CopilotService {
         if (!t.startsWith("{")) {
             return new Answer(text.trim(), List.of());
         }
-        Map<String, Object> m = WardrobeService.extractJson(t);
+        Map<String, Object> m = AiResponseJson.extractJson(t);
         String body = ANSWER_FIELDS.stream().map(m::get).filter(v -> v instanceof String s && !s.isBlank())
                 .map(String::valueOf).findFirst().orElse(null);
         if (body == null) {
@@ -1342,7 +1341,7 @@ public class CopilotService {
         if (occasions == null || occasions.isEmpty()) {
             return Msg.t("copilot.separei_looks_com_pecas_do", count, "");
         }
-        String labels = String.join("/", occasions.stream().map(o -> WardrobeService.label(o).toLowerCase(Msg.locale())).toList());
+        String labels = String.join("/", occasions.stream().map(o -> PiecePrefill.label(o).toLowerCase(Msg.locale())).toList());
         return Msg.t("copilot.separei_looks_para", count, labels);
     }
 

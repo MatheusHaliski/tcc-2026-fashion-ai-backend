@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.wardrobe.draft.CaptureAnalysis;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
@@ -181,7 +182,7 @@ class WardrobeAnalyzeSyntheticFlowTest {
                 .isInstanceOf(PhotoRejectedException.class);
         verify(jobs, never()).save(any());
 
-        WardrobeService.CaptureAnalysis c = service.analyzeForCapture(user, syntheticTee(), "upper_piece", true);
+        CaptureAnalysis c = service.analyzeForCapture(user, syntheticTee(), "upper_piece", true);
 
         assertThat(c.aiRan()).isTrue();
         assertThat(c.failedChecks()).extracting(br.com.fashionai.application.imaging.PhotoAcceptance.Check::id)

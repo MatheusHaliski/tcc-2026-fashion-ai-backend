@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.ai.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -19,9 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.ai.local.LocalAdvisors;
 import br.com.fashionai.application.ai.local.LocalSchemeComposer;
 import br.com.fashionai.application.common.*;
@@ -252,7 +250,7 @@ public class AutopilotService {
                 Msg.t("autopilot.ocasiao_humor_clima_candidatas", occasions, mood, (ctx != null && ctx.available() ? ctx.note() : Msg.t("autopilot.nao_informado")), Json.write(list)), List.of(), 600,
                 List.of(Msg.t("autopilot.candidatas_ja_validadas_do_proprio"), Msg.t("autopilot.ocasiao_humor"), ctx != null && ctx.available() ? "clima local" : "sem clima"),
                 text -> {
-                    Map<String, Object> m = WardrobeService.extractJson(text);
+                    Map<String, Object> m = AiResponseJson.extractJson(text);
                     if (!(m.get("picks") instanceof List<?> picks)) {
                         return null;
                     }
