@@ -180,6 +180,9 @@ export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass,
   // `sleeveAngle`: giro máximo da manga; a peça da Meshy de braços abertos (manifesto) traz a manga na horizontal
   if (cls !== "lower") { alignLimb(pos, part, 1, shL, f.joint("LeftHand"), sleeveAngle, longOpen); alignLimb(pos, part, -1, shR, f.joint("RightHand"), sleeveAngle, longOpen); }
   if (cls !== "upper") { alignLimb(pos, part, 2, hipL, f.joint("LeftFoot")); alignLimb(pos, part, -2, hipR, f.joint("RightFoot")); }
+  // escala real: a peça já tem a profundidade de verdade (o motor Blender a constrói pelos perímetros); esticar por faixa
+  // de altura, feito para a Meshy rasa, estufaria o tronco em faixas. Só a colisão (wrap.ts) a tira de dentro da pele.
+  if (realScale) return { pos, part, scale: s };
   inflate(pos, part, 0, f, cls === "lower" ? [1, 3] : [1], clearance);
   if (cls !== "upper") { inflate(pos, part, 2, f, [3], clearance, (x) => x > 0); inflate(pos, part, -2, f, [3], clearance, (x) => x < 0); }
   // manga: a Meshy também a faz rasa e nem sempre na profundidade do braço; centra no braço e dá a espessura dele

@@ -16,10 +16,13 @@ produto quando havia) e detalhes de construção.
 
 - `00-pecas-geradas-frente.jpg` e `<peça>-frente.jpg` / `<peça>-tres-quartos.jpg`: prévias em Cycles com a manga caída
   (`--angulo 80`).
-- `01-provador-folha.jpg` e `provador-*.jpg`: as peças vestidas no laboratório do provador (corpo padrão), em escala
-  real, nos tamanhos indicados no nome. O `.glb` do provador sai com a manga na horizontal: com ela caída, o provador
-  recusa as peças de cima (furos na axila).
+- `01-provador-folha.jpg` e `provador-*.jpg`: as peças vestidas no laboratório do provador (corpo de referência), em
+  escala real e sem o estiramento em profundidade da Meshy, nos tamanhos indicados no nome. O `.glb` do provador sai
+  com a manga na horizontal.
+- `02-provador-manga-caida-recusada-na-tela.jpg`: a manga caída feita no Blender com o aceite de furos afrouxado para
+  8 %: passa no número, mas a tela mostra o tronco estufado e a camiseta serrilhada — por isso o aceite não foi
+  afrouxado.
 
-O que ainda está errado: nas peças de cima o giro da manga do provador deixa o ombro quadrado e a manga larga (a
-camiseta fica com a manga em aba); os moletons com capuz são recusados (o capuz é furado pela cabeça); o bordado e as
+O que ainda está errado: nas peças de cima o giro da manga do provador deixa a ponta do ombro em bico e a manga larga
+(a camiseta fica com a manga em aba); os moletons com capuz são recusados (o capuz é furado pela cabeça); o bordado e as
 etiquetas não são modelados.

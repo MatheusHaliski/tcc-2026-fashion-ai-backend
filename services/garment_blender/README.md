@@ -44,14 +44,18 @@ Cada tamanho gera, em `saida/<tamanho>/`: o `modelo.glb` (metros, Y para cima, f
 
 ## Estado no provador (24/11/2026, corpo padrão, manga gerada na horizontal)
 
+Com `medidaReal`, o provador usa escala 1 e não estica a peça em profundidade por faixa (o passo feito para a Meshy
+rasa estufava o tronco em faixas); só a colisão a tira de dentro da pele. Medido offline (`meshy-real.test.ts`):
+
 | Peça | P / 36 | M / 40 | GG / 46 |
 |---|---|---|---|
 | Calça cargo, calça joelho duplo | veste | veste | veste |
-| Suéter (Stockton) | veste | veste | veste |
-| Moletom careca (Script) | veste | veste | recusado (ESPINHO, longe 0,25 m) |
-| Camiseta (sacai) | veste | recusado (FURADA 3,6 %) | veste |
+| Moletom careca (Script) | veste | veste | veste |
+| Suéter (Stockton) | veste | veste | furos 3,3 % (limite 3 %) |
+| Camiseta (sacai) | veste | furos 3,3 % | furos 3,2 % |
 | Moletom com capuz | recusado: o capuz é furado pela cabeça (5–15 %) e estica | | |
 
-As peças de cima vestem, mas o giro da manga feito pelo provador ainda deixa o ombro quadrado e a manga larga; a
-manga caída feita no Blender (`--angulo 80`) fica certa na prévia, mas é recusada (furos na axila). Evidências em
-`docs/provador/garment-blender/2026-11-24/`.
+No laboratório (corpo de referência), as cinco capturas de cima vestiram. O que ainda está errado: o giro da manga
+feito pelo provador deixa a ponta do ombro em bico e a manga larga. A manga caída feita no Blender (`--angulo 80`)
+fica certa na prévia, mas no provador fura na axila (5–7 %) e, com o aceite afrouxado, a tela mostrou a peça
+deformada: o aceite não foi afrouxado. Evidências em `docs/provador/garment-blender/2026-11-24/`.
