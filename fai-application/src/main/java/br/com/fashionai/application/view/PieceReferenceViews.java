@@ -32,4 +32,7 @@ public final class PieceReferenceViews {
     public static ReferenceOptionView origem(Origem origem) {
         return origem == null ? null : new ReferenceOptionView(origem.getId(), origem.getCodigo(), origem.getNome());
     }
+      public static ReferenceOptionView cortes(Cortes cortes) {
+        return cortes == null ? null : new ReferenceOptionView(cortes.getId(), cortes.getCodigo(), cortes.getNome());
+    }
 }
