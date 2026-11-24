@@ -1,11 +1,13 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.imaging.LocalVision;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.wardrobe.PiecePrefill;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

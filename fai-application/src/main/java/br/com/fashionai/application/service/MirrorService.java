@@ -1,45 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.acervo.AcervoLugares;
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.ai.local.LocalSchemeComposer;
-import br.com.fashionai.application.ai.local.Similarity;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.hype.RecommendationScoring;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.MirrorState;
-import br.com.fashionai.domain.model.TipoLook;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.CreationMode;
-import br.com.fashionai.domain.model.enums.DailyLookSource;
-import br.com.fashionai.domain.model.enums.SchemeOrigin;
-import br.com.fashionai.domain.model.enums.SchemeSlot;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.MirrorStateRepository;
-import br.com.fashionai.domain.repository.TipoLookRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -56,6 +16,30 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.acervo.AcervoLugares;
+import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.ai.local.LocalSchemeComposer;
+import br.com.fashionai.application.ai.local.Similarity;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.RecommendationScoring;
+import br.com.fashionai.application.looks.LookScorer;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF33 — Smart Mirror e "Vista-me". O espelho é mais uma interface para iniciar o Criar Look (RF5), não uma

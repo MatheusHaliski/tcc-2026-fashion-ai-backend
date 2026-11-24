@@ -1,45 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.events.SideEffectRunner;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.ai.local.ColorMath;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.acervo.AcervoLugares;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.domain.model.ChallengeTemplate;
-import br.com.fashionai.domain.model.InventoryScoreSnapshot;
-import br.com.fashionai.domain.model.PieceUsageDiaryEntry;
-import br.com.fashionai.domain.model.RankingOptIn;
-import br.com.fashionai.domain.model.RankingPosition;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.StyleDna;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeAvailabilityChange;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.ChallengeTemplateRepository;
-import br.com.fashionai.domain.repository.InventoryScoreSnapshotRepository;
-import br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository;
-import br.com.fashionai.domain.repository.RankingOptInRepository;
-import br.com.fashionai.domain.repository.RankingPositionRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeAvailabilityChangeRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -61,6 +21,26 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.acervo.AcervoLugares;
+import br.com.fashionai.application.ai.local.ColorMath;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.events.SideEffectRunner;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.wardrobe.ForgottenPieces;
+import br.com.fashionai.application.wardrobe.InventoryComboCounter;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.AvailabilityStatus;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
+import br.com.fashionai.domain.model.enums.SchemeStatus;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF34 — FAI Inventory Score (02-inventory-score-calculo.md): rubrica absoluta 0–1000 de 7 dimensões (0–100),
@@ -221,7 +201,7 @@ public class InventoryScoreService {
         return w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE;
     }
 
-    static double entropy(Collection<String> values, int m) {
+    public static double entropy(Collection<String> values, int m) {
         if (values.isEmpty() || m <= 1) {
             return 0;
         }

@@ -1,11 +1,12 @@
 package br.com.fashionai.application.seal;
 
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.SealTier;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.SealTier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,7 +37,7 @@ class SealDraftsTest {
         assertThat(map(design.get("element"))).containsEntry("text", "ZAR").containsEntry("id", "BAG");
         assertThat(list(d.get("reasons"))).isNotEmpty();
         // a sugestão é válida para o próprio validador da política
-        assertThat(br.com.fashionai.application.service.SealPolicies.normalize(policy)).isNotNull();
+        assertThat(br.com.fashionai.application.seal.SealPolicies.normalize(policy)).isNotNull();
     }
 
     @Test

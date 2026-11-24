@@ -1,19 +1,22 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.testkit.Kit;
-import br.com.fashionai.domain.model.TipoLavagem;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.repository.TipoLavagemRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.testkit.Kit;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.application.wardrobe.PieceTaxonomyWriter;
+import br.com.fashionai.domain.model.TipoLavagem;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.repository.TipoLavagemRepository;
+import br.com.fashionai.domain.repository.WardrobeItemRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

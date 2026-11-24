@@ -1,7 +1,13 @@
 package br.com.fashionai.application.service;
 
+import java.util.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import br.com.fashionai.application.catalog.CatalogService;
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.physicalstore.SellerIdentity;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.testkit.MemoryRepository;
@@ -9,10 +15,6 @@ import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

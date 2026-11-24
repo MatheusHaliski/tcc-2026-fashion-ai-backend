@@ -1,31 +1,5 @@
 package br.com.fashionai.application.insights;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.hype.HypeScoreConfig;
-import br.com.fashionai.application.hype.StyleCompatibility;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.CopilotService;
-import br.com.fashionai.application.service.LookbookService;
-import br.com.fashionai.application.service.ForgottenPieces;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.UserPreferences;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.HypeMomentum;
-import br.com.fashionai.domain.model.enums.HypeStatus;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -39,6 +13,21 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.hype.StyleCompatibility;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.CopilotService;
+import br.com.fashionai.application.service.LookbookService;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.application.wardrobe.ForgottenPieces;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static br.com.fashionai.application.insights.Insight.CAPSULE;
 import static br.com.fashionai.application.insights.Insight.HYPE_V2;

@@ -1,12 +1,14 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.local.LocalAdvisors;
-import org.junit.jupiter.api.Test;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.ai.local.LocalAdvisors;
+import br.com.fashionai.application.dashboard.DashboardAlerts;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

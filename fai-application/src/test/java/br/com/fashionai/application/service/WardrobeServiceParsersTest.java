@@ -1,24 +1,23 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.imaging.BrandReader;
-import br.com.fashionai.application.imaging.BrandRegions;
-import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.imaging.PhotoAcceptance;
-import br.com.fashionai.application.imaging.SubtypeReferences;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
-import br.com.fashionai.application.testkit.Kit;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+import br.com.fashionai.application.ai.AiResponseJson;
+import br.com.fashionai.application.catalog.CatalogPick;
+import br.com.fashionai.application.imaging.*;
+import br.com.fashionai.application.studio.PieceStudioHints;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
+import br.com.fashionai.application.testkit.Kit;
+import br.com.fashionai.application.wardrobe.*;
+import br.com.fashionai.application.wardrobe.draft.DraftEvidence;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -1,18 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.hype.HypeScoreConfig;
-import br.com.fashionai.application.imaging.FlatLayPipeline;
-import br.com.fashionai.application.imaging.StudioPipeline;
-import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.ItemCondition;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
-import org.junit.jupiter.api.Test;
-
 import java.awt.image.BufferedImage;
 import java.lang.reflect.RecordComponent;
 import java.math.BigDecimal;
@@ -21,6 +8,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.hype.ClosetHype;
+import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.imaging.FlatLayPipeline;
+import br.com.fashionai.application.imaging.FlatLayRemoteStep;
+import br.com.fashionai.application.imaging.StudioPipeline;
+import br.com.fashionai.application.studio.PieceStudioHints;
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
+import br.com.fashionai.application.wardrobe.PieceCopy;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.application.wardrobe.PieceTaxonomyWriter;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

@@ -1,9 +1,12 @@
 package br.com.fashionai.application.service;
+import java.util.*;
+
+import org.springframework.stereotype.Service;
+
 import br.com.fashionai.application.ai.*;
 import br.com.fashionai.application.common.*;
 import br.com.fashionai.application.security.*;
-import org.springframework.stereotype.Service;
-import java.util.*;
+import br.com.fashionai.application.studio.EraEditorial;
 @Service
 public class EraStudioService {
  private final AiEngine ai;private final Guard guard;private final MediaService media;

@@ -1,16 +1,17 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.imaging.BrandRegions;
-import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.imaging.PhotoAcceptance;
-import br.com.fashionai.application.imaging.SubtypeReferences;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.imaging.*;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.application.wardrobe.PiecePrefill;
+import br.com.fashionai.application.wardrobe.draft.DraftEvidence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;

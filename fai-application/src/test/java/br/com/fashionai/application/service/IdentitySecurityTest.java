@@ -1,33 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.audit.AuditActions;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Hashing;
-import br.com.fashionai.application.identity.PasswordHasherPort;
-import br.com.fashionai.application.ports.EmailSenderPort;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.ports.RateLimitPort;
-import br.com.fashionai.application.ports.TokenIssuerPort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.domain.model.RefreshToken;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.VerificationCode;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.MannequinSex;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.VerificationPurpose;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
-import br.com.fashionai.domain.repository.RefreshTokenRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.VerificationCodeRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.time.Duration;
@@ -46,11 +18,30 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.audit.AuditActions;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Hashing;
+import br.com.fashionai.application.identity.PasswordHasherPort;
+import br.com.fashionai.application.ports.*;
+import br.com.fashionai.application.seal.IssuerVerificationPolicy;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.domain.model.RefreshToken;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.VerificationCode;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

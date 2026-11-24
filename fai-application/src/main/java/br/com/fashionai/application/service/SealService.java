@@ -1,42 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.hype.HypeCache;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.Promotion;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.Seal;
-import br.com.fashionai.domain.model.SealBond;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.PromotionStatus;
-import br.com.fashionai.domain.model.enums.PromotionType;
-import br.com.fashionai.domain.model.enums.SealBondBasis;
-import br.com.fashionai.domain.model.enums.SealStatus;
-import br.com.fashionai.domain.model.enums.SealTier;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
-import br.com.fashionai.domain.repository.PromotionRedemptionRepository;
-import br.com.fashionai.domain.repository.PromotionRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.SealBondRepository;
-import br.com.fashionai.domain.repository.SealRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -45,6 +8,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.hype.*;
+import br.com.fashionai.application.seal.*;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF20 / RF21 (docs/rf20-rf21-vinculo-marca-celebridade.md, CA01–CA23), RF25 (selos de marca/celebridade com

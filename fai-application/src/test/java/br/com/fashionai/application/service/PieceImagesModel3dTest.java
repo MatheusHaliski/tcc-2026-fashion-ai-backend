@@ -1,12 +1,15 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.assets.AssetCatalogService;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.Model3dStatus;
-import org.junit.jupiter.api.Test;
-
 import java.util.Map;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.assets.AssetCatalogService;
+import br.com.fashionai.application.catalog.CatalogPick;
+import br.com.fashionai.application.wardrobe.PieceImages;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.Model3dStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

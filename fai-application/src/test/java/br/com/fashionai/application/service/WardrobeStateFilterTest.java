@@ -1,7 +1,9 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.domain.model.WardrobeItem;
 import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.wardrobe.PieceFormWriter;
+import br.com.fashionai.domain.model.WardrobeItem;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -1,5 +1,16 @@
 package br.com.fashionai.application.service;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.imaging.ImageProviderPorts;
@@ -8,21 +19,12 @@ import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.World;
+import br.com.fashionai.application.wardrobe.PieceForm;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.BackgroundAnimation;
 import br.com.fashionai.domain.model.enums.ContainerOrigin;
 import br.com.fashionai.domain.model.enums.Season;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static br.com.fashionai.application.testkit.World.map;
 import static org.assertj.core.api.Assertions.assertThat;

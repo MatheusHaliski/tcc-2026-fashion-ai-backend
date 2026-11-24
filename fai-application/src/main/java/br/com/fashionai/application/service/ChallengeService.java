@@ -1,59 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import org.springframework.transaction.event.TransactionalEventListener;
-import org.springframework.transaction.event.TransactionPhase;
-import br.com.fashionai.application.events.SideEffectRunner;
-import br.com.fashionai.application.ai.local.ColorMath;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.imaging.ImageOps;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.domain.model.ChallengeEvent;
-import br.com.fashionai.domain.model.ChallengeInstance;
-import br.com.fashionai.domain.model.ChallengeNote;
-import br.com.fashionai.domain.model.ChallengeParticipant;
-import br.com.fashionai.domain.model.ChallengeTemplate;
-import br.com.fashionai.domain.model.ChallengeVote;
-import br.com.fashionai.domain.model.DailyLook;
-import br.com.fashionai.domain.model.PieceUsageDiaryEntry;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.FollowStatus;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.PhotoOrigin;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.ChallengeEventRepository;
-import br.com.fashionai.domain.repository.ChallengeInstanceRepository;
-import br.com.fashionai.domain.repository.ChallengeNoteRepository;
-import br.com.fashionai.domain.repository.ChallengeParticipantRepository;
-import br.com.fashionai.domain.repository.ChallengeTemplateRepository;
-import br.com.fashionai.domain.repository.ChallengeVoteRepository;
-import br.com.fashionai.domain.repository.DailyLookRepository;
-import br.com.fashionai.domain.repository.FollowRepository;
-import br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -61,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
@@ -81,6 +26,32 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import br.com.fashionai.application.ai.local.ColorMath;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.challenge.*;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.events.SideEffectRunner;
+import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.wardrobe.ForgottenPieces;
+import br.com.fashionai.application.wardrobe.PieceUsageDiary;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF36 — Desafios & Games do Guarda-Roupa (03-desafios-e-games.md). Modos Solo, Equipe (metas proporcionais),
@@ -1135,7 +1106,7 @@ public class ChallengeService implements MirrorService.PieceRestrictionProvider 
         return out;
     }
 
-    static double round2(double v) {
+    public static double round2(double v) {
         return Math.round(v * 100) / 100.0;
     }
 

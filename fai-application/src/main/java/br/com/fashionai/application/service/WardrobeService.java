@@ -1,55 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.assets.AssetCatalogService;
-import br.com.fashionai.application.assets.PieceReferenceCatalog;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.audit.AuditActions;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.imaging.FlatLayPipeline;
-import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.imaging.PhotoAcceptance;
-import br.com.fashionai.application.ports.JobQueuePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.PipelineJob;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.HypeSignalType;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.PhotoOrigin;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.model.enums.TargetType;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.ModerationQueueRepository;
-import br.com.fashionai.domain.repository.PhotoRepository;
-import br.com.fashionai.domain.repository.PipelineJobRepository;
-import br.com.fashionai.domain.repository.ProcessingJobLogRepository;
-import br.com.fashionai.domain.repository.QualityScoreRepository;
-import br.com.fashionai.domain.repository.ReactionRepository;
-import br.com.fashionai.domain.repository.SavedItemRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import br.com.fashionai.application.events.DomainEvents;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -63,6 +13,33 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.*;
+import br.com.fashionai.application.assets.AssetCatalogService;
+import br.com.fashionai.application.assets.PieceReferenceCatalog;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.audit.AuditActions;
+import br.com.fashionai.application.catalog.CatalogPick;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.hype.ClosetHype;
+import br.com.fashionai.application.imaging.*;
+import br.com.fashionai.application.ports.JobQueuePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.studio.*;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.application.wardrobe.*;
+import br.com.fashionai.application.wardrobe.draft.*;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF4 (adicionar peça por foto + formulário, com IA e pipeline Flat Lay), RF6 Closet Digital, RF7 detalhe,
@@ -227,7 +204,7 @@ public class WardrobeService {
                         boolean reprocessPending, AiOutcome.Explanation explanation, String aiMessage,
                         AiOutcome.Quota quota, Map<String, Object> studio, String backgroundWarning,
                         Map<String, Object> rejection) {
-        static Draft rejected(ApiException e) {
+        public static Draft rejected(ApiException e) {
             return PieceBatchAnalysis.rejected(e);
         }
     }

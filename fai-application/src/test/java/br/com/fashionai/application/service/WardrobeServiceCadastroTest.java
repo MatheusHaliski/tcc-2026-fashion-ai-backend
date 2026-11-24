@@ -1,46 +1,30 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.assets.AssetCatalogService;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.ports.JobQueuePort;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.testkit.Kit;
-import br.com.fashionai.application.testkit.MemoryRepository;
-import br.com.fashionai.application.testkit.World;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Brand;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.ModerationQueueItem;
-import br.com.fashionai.domain.model.Photo;
-import br.com.fashionai.domain.model.PipelineJob;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.ImageOrigin;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
-import br.com.fashionai.domain.model.enums.PipelineJobStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.ModerationQueueRepository;
-import br.com.fashionai.domain.repository.PipelineJobRepository;
-import br.com.fashionai.domain.repository.ProcessingJobLogRepository;
-import br.com.fashionai.domain.repository.QualityScoreRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationEventPublisher;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
+
+import br.com.fashionai.application.assets.AssetCatalogService;
+import br.com.fashionai.application.catalog.CatalogPick;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.imaging.PhotoRejectedException;
+import br.com.fashionai.application.ports.JobQueuePort;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.testkit.*;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

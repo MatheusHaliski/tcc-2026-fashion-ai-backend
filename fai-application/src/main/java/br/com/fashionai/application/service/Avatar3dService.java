@@ -1,10 +1,20 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.ai.AiRequest;
+import java.awt.image.BufferedImage;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import br.com.fashionai.application.ai.*;
 import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.avatar.Avatar3dBodyRules;
+import br.com.fashionai.application.avatar.Avatar3dModelRules;
 import br.com.fashionai.application.avatar.IdentityQuality;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
@@ -20,17 +30,6 @@ import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.repository.AvatarIdentityVersionRepository;
 import br.com.fashionai.domain.repository.UserAvatar3dRepository;
 import br.com.fashionai.domain.repository.UserRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.awt.image.BufferedImage;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * RF40 — Meu Avatar 3D. O rosto é reconstruído no navegador (lib/avatar3d); aqui só chega o resultado: a forma em pose
