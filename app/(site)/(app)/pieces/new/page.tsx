@@ -14,7 +14,7 @@ import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "
 import { useApi } from "@/lib/hooks/use-api";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import type { FlairPreview } from "@/components/flair/flair-collection";
-import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
+import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCreationPreview } from "@/components/pieces/piece-creation-preview";
 import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
@@ -22,7 +22,8 @@ import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogPickSummary, LensPrefillNote, type CatalogPick } from "@/components/catalog/catalog-pick-summary";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
-import { BrandHintNote, MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
+import { MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
+import { PieceMoreStep } from "@/components/piece-more-step";
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
@@ -218,15 +219,16 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     : t("catalog.origem_sem_foto");
   const idx = STEPS.indexOf(step);
   const go = (s: Step, toProblem = false) => { setStep(s); scrollAfterStep(toProblem); };
-  /** Sair da etapa Peça só com os campos obrigatórios preenchidos: senão fica nela, marca os campos e diz o que falta. */
+  const editValue = (v: PieceFormValue) => { setValue(v); setStepProblem(null); if (Object.keys(fieldErrors).length) setFieldErrors({}); };
+  /** Ir para "2 · Mais detalhes" exige só os campos da etapa 1; ir além exige todos. Falta algo: volta à etapa do campo. */
   function advance(s: Step) {
     const missingPhoto = mode === "photos" && !photoPick;
-    const errors = s === "piece" || missingPhoto ? {} : validatePieceForm(value, tax);
+    const errors = s === "piece" || missingPhoto ? {} : Object.fromEntries(Object.entries(validatePieceForm(value, tax)).filter(([k]) => s !== "more" || PIECE_FIELD_STEP[k] !== "more"));
     const problem = s === "piece" ? null : missingPhoto ? t("pieces.new.escolha_peca_da_foto") : pieceStepProblem(errors);
     setStepProblem(problem);
     if (!problem) return go(s);
     setFieldErrors(errors);
-    go("piece", true);
+    go(PIECE_FIELD_STEP[Object.keys(errors)[0]] === "more" ? "more" : "piece", true);
   }
   const nav = (
     <div className="mt-4 flex justify-between gap-2">
@@ -278,9 +280,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
-                <PieceFields value={value} onChange={(v) => { setValue(v); setStepProblem(null); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={liveFieldErrors(fieldErrors, value)}
-                  afterBrand={mode === "photos" && photoPick?.hint && !value.brandName ? <BrandHintNote hint={photoPick.hint} disabled={false}
-                    onUse={(brandName) => setValue((v) => ({ ...v, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }))} /> : null} />
+                <PieceFields withAdditional={false} value={value} onChange={editValue} fieldErrors={liveFieldErrors(fieldErrors, value)} />
               </section>
               {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
                   atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
@@ -293,7 +293,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
               {nav}
             </Card>
           )}
-          {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={null} />{Object.entries(fieldErrors).filter(([k]) => PIECE_FIELD_STEP[k] === "more").map(([k, m]) => <p key={k} role="alert" className="error-text">{m}</p>)}{nav}</Card>}
+          {step === "more" && <PieceMoreStep value={value} onChange={editValue} onDetails={setValue} fieldErrors={fieldErrors} hint={mode === "photos" ? photoPick?.hint : null} problem={stepProblem} nav={nav} />}
           {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} previewInDialog />{nav}</Card>}
           {step === "review" && (
             <Card>
