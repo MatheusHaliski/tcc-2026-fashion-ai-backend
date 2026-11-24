@@ -21,6 +21,8 @@ public interface CelebrityProfileRepository extends JpaRepository<CelebrityProfi
 
     Optional<CelebrityProfile> findBySlug(String slug);
 
+    List<CelebrityProfile> findByStageNameIgnoreCaseAndVerificationStatus(String stageName, ApprovalStatus status);
+
     boolean existsByAvatarUrlEndingWithOrIdentityProofUrlEndingWith(String avatarSuffix, String proofSuffix);
 
     List<CelebrityProfile> findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus status);

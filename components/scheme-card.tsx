@@ -23,7 +23,7 @@ import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
 import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
 import {PieceCardPanels} from "@/components/piece-card-panels";
-import { selectedSealsFromBackground } from "@/lib/seals/selected-seals";
+import { selectedLookSeals } from "@/lib/seals/selected-seals";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 
@@ -122,7 +122,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       </div>
     ));
   const fashionMeta = <CardFashionMeta brands={items.flatMap(it=>it.piece?.brandName?[{name:it.piece.brandName,logoUrl:it.piece.brandLogoUrl}]:[])} colors={items.flatMap(it=>it.piece?.color?[{name:it.piece.color,hex:it.piece.colorHex}]:[])} styles={scheme.style} occasions={scheme.occasion}/>;
-  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} selectedSealNames={selectedSealsFromBackground(scheme.background).map((seal) => seal.name)} infoBefore={social ? <>{titleBlock}{fashionMeta}</> : expanded ? fashionMeta : undefined} infoContent={expanded ? <div className="scheme-info-pieces">{pieceList}</div> : undefined} replaceInfoRows={expanded} infoRows={social?[[t("common.pecas"),pieces.map((piece) => piece.name).join(" · ") || String(items.length)],...(scheme.season?[[t("common.season"),label(scheme.season.toLowerCase())] as [string,ReactNode]]:[])]:[]}/>;
+  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} selectedSeals={selectedLookSeals(scheme.background)} infoBefore={social ? <>{titleBlock}{fashionMeta}</> : expanded ? fashionMeta : undefined} infoContent={expanded ? <div className="scheme-info-pieces">{pieceList}</div> : undefined} replaceInfoRows={expanded} infoRows={social?[[t("common.pecas"),pieces.map((piece) => piece.name).join(" · ") || String(items.length)],...(scheme.season?[[t("common.season"),label(scheme.season.toLowerCase())] as [string,ReactNode]]:[])]:[]}/>;
   const card = (
     <article data-card-mode={expanded?"expanded":social?"feed":"compact"} className={`fai-card scheme-card ${social?"scheme-card-social":""} ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}

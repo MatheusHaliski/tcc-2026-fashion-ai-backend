@@ -11,9 +11,16 @@ export function selectedSealsFromBackground(background?: Record<string, unknown>
     (item.kind === "BRAND" || item.kind === "CELEBRITY") && typeof item.name === "string" && !!item.name.trim());
 }
 
-export function selectedPieceSealNames(seals?: string[] | null): string[] {
+/** Selo escolhido como o card o mostra: a chave "BRAND:Nome" / "CELEBRITY:Nome" (busca a arte) e o nome. */
+export interface SelectedSealRef { key: string; name: string }
+
+export function selectedPieceSeals(seals?: string[] | null): SelectedSealRef[] {
   return (seals ?? []).flatMap((seal) => {
     const match = /^(?:BRAND|CELEBRITY):(.+)$/.exec(seal);
-    return match ? [match[1]] : [];
+    return match ? [{ key: seal, name: match[1] }] : [];
   });
+}
+
+export function selectedLookSeals(background?: Record<string, unknown> | null): SelectedSealRef[] {
+  return selectedSealsFromBackground(background).map((seal) => ({ key: `${seal.kind}:${seal.name}`, name: seal.name }));
 }
