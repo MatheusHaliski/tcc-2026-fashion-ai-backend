@@ -20,7 +20,7 @@ export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
   color: string; material: string; size: string; market?: string; occasion: string[]; style: string[]; seals: string[]; price: string; visibility: string;
   tags: string; colecaoId?: string | null; intensidadeTermicaId?: string | null; origemId?: string | null; cortesId?: string | null; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
-  estadoConservacaoId?: string | null; estadoConservacaoNome?: string | null; clearEstadoConservacao?: boolean;
+  estadoConservacaoId?: string | null; estadoConservacaoNome?: string | null; clearEstadoConservacao?: boolean;clearcortes?:boolean;
   tipoLavagemId?: string | null; tipoLavagemNome?: string | null; clearTipoLavagem?: boolean;
   /** RF4 · Estúdio: false = salvar sem a foto de estúdio gerada no rascunho */
   studio?: boolean;
@@ -40,7 +40,7 @@ export const PIECE_CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "a
 export function toPayload(v: PieceFormValue) {
   // só o que o backend guarda: o logo largo, o domínio e a medida de nitidez são apenas do slot do formulário
   const { brandLogoWideUrl: _w, brandDomain: _d, brandEdgePx: _e, estadoConservacaoNome: _cn, tipoLavagemNome: _tn, ...rest } = v; void _w; void _d; void _e; void _cn; void _tn;
-  return { ...rest, estadoConservacaoId: v.estadoConservacaoId || null, clearEstadoConservacao: v.clearEstadoConservacao ?? false, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null, background: v.background ?? null };
+  return { ...rest, estadoConservacaoId: v.estadoConservacaoId || null, clearEstadoConservacao: v.clearEstadoConservacao ?? false, clearcortes: v.clearcortes ?? false, brandLogoUrl: v.brandLogoUrl || null, brandSource: v.brandSource || null, brandRef: v.brandRef || null, price: v.price === "" ? null : Number(v.price), tags: v.tags.split(",").map((s) => s.trim()).filter(Boolean), brandId: v.brandId || null, purchaseDate: v.purchaseDate || null, condition: v.condition || null, market: v.market || null, background: v.background ?? null };
 }
 
 /** `hype`: HypeScore atual da peça avaliada (RF53); sem cálculo ainda, vem null e nada aparece. */
