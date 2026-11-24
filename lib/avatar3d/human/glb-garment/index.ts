@@ -91,7 +91,11 @@ export function buildGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec,
 }
 
 /** Dicas do manifesto da Meshy para o encaixe da roupa (meshy/manifest.ts). */
-export interface MeshyFit { sizes?: MeshySizes | null; accept?: MeshyManifest["dicas"]["aceite"]; armsSpread?: boolean; realScale?: boolean }
+export interface MeshyFit {
+  sizes?: MeshySizes | null; accept?: MeshyManifest["dicas"]["aceite"]; armsSpread?: boolean; realScale?: boolean;
+  /** com `realScale`: tamanho escolhido menos o gerado, em passos da grade (meshy/size.ts generatedSizeShift) */
+  sizeShift?: number;
+}
 
 /**
  * `sizes` (manifesto da Meshy): o tamanho entra por região (meshy/size.ts) em vez de alongar e escalar a peça inteira;
@@ -106,7 +110,9 @@ export function fitGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec, b
   const base = sizes ? unsizedSpec(spec, cls === "lower") : spec, clearance = clearanceOf(base, below);
   const aligned = alignGarment(src.position, f, cls, clearance, base.sizeFold?.length ?? 0, src.index, meshy.armsSpread ? 1.8 : 1.4, meshy.realScale === true);
   if (!aligned) return { ok: false, reason: "SEM_ANCORA" };
-  const size = sizes ? { ...SIZE_CONVENTION, ...applyRegionSize(aligned.pos, aligned.part, f, spec, sizes) } : null;
+  // escala real: o tamanho entra a partir do tamanho gerado, nunca do corpo (a mesma peça não muda com o avatar)
+  const sized = meshy.realScale ? { ...spec, sizeSteps: meshy.sizeShift ?? 0, sizeFold: undefined } : spec;
+  const size = sizes ? { ...SIZE_CONVENTION, ...applyRegionSize(aligned.pos, aligned.part, f, sized, sizes) } : null;
   const armpitY = (f.joint("LeftArm").y + f.joint("RightArm").y) / 2 - 0.05;
   const crotchY = Math.min(f.joint("LeftUpLeg").y, f.joint("RightUpLeg").y) - 0.08;
   src = splitFused(src, aligned.part, aligned.pos, armpitY, crotchY);

@@ -42,11 +42,11 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("ficha", type=Path)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--tamanhos", nargs="+", default=["M"])
+    ap.add_argument("--tamanhos", nargs="+", help="tamanhos a gerar (padrão: o da ficha)")
     ap.add_argument("--previa", action="store_true", help="renderiza frente e ¾ (Cycles, CPU)")
     ap.add_argument("--angulo", type=float, help="ângulo da manga abaixo da horizontal (troca o da ficha)")
     args = ap.parse_args(argv)
-    for size in args.tamanhos:
+    for size in args.tamanhos or [load(args.ficha).tamanho]:
         r = build(args.ficha, size, args.out, args.previa, args.angulo)
         print(json.dumps({k: r[k] for k in ("tamanho", "vertices", "bytes", "medido_no_modelo_cm")}, ensure_ascii=False),
               flush=True)

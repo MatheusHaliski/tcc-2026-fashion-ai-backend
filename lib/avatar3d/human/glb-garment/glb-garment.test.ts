@@ -102,6 +102,20 @@ describe("glb-garment: peça estática vestida no avatar", () => {
     expect(grown(real)).toBeLessThan(grown(fitted));
   });
 
+  it("escala real com tamanho: a diferença vem do tamanho gerado, não do corpo (a mesma peça não muda com o avatar)", () => {
+    const a = avatar(); const f = a.frame(); const src = shirt();
+    const sizes = { grade: "letter" as const, porPasso: { largura: 0.04, comprimento: 0.02, manga: 0.015 }, limite: [-3, 4] as [number, number],
+      convencao: "RELATIVE_VISUAL_APPROXIMATION" as const, alegacaoDeCaimento: "NONE" as const, medidasDoAvatarAlteradas: false as const };
+    const metrics = (sizeShift: number, bodySteps: number) =>
+      fitGlbGarment(src, f, piece("upper_piece", "shirt", bodySteps), [], { sizes, realScale: true, armsSpread: true, sizeShift }).metrics!;
+    // GG escolhido de uma peça M (+2) num corpo M ou num corpo bem maior: a mesma peça, o mesmo encaixe
+    const [gg, ggBig, p] = [metrics(2, 0), metrics(2, 3), metrics(-1, 0)];
+    expect(gg.scale).toBe(1);
+    expect(gg.stretch).toBeCloseTo(ggBig.stretch, 6);
+    expect(gg.far).toBeCloseTo(ggBig.far, 6);
+    expect(gg.far).not.toBeCloseTo(p.far, 3);   // o tamanho escolhido ainda muda a peça
+  }, 30_000);
+
   it("tamanho: cada número acima do corpo deixa a peça mais larga (mesma folga do molde)", () => {
     const a = avatar(); const f = a.frame(); const src = shirt();
     const scale = (steps: number) => { const r = fitGlbGarment(src, f, piece("upper_piece", "shirt", steps)); return r.ok ? r.metrics.scale : r.metrics?.scale ?? NaN; };
