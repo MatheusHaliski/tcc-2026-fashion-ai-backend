@@ -1,38 +1,5 @@
 package br.com.fashionai.application.catalog;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.CatalogPick;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Brand;
-import br.com.fashionai.domain.model.BrandAlias;
-import br.com.fashionai.domain.model.CatalogImage;
-import br.com.fashionai.domain.model.CatalogProduct;
-import br.com.fashionai.domain.model.TaxonomyAttribute;
-import br.com.fashionai.domain.model.CatalogProductAlias;
-import br.com.fashionai.domain.model.CatalogSource;
-import br.com.fashionai.domain.model.CatalogVariant;
-import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
-import br.com.fashionai.domain.model.enums.ItemCondition;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandAliasRepository;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.CatalogImageRepository;
-import br.com.fashionai.application.catalog.image.CatalogImagePipelineService;
-import br.com.fashionai.application.catalog.image.CatalogImageIdentity;
-import br.com.fashionai.domain.repository.CatalogProductAliasRepository;
-import br.com.fashionai.domain.repository.CatalogProductRepository;
-import br.com.fashionai.domain.repository.CatalogSourceRepository;
-import br.com.fashionai.domain.repository.CatalogVariantRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -47,6 +14,25 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.catalog.image.CatalogImageIdentity;
+import br.com.fashionai.application.catalog.image.CatalogImagePipelineService;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
+import br.com.fashionai.domain.model.enums.ItemCondition;
+import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF47 · Acervo & Busca Catalogada (catalog-first). Fluxo: categoria + subcategoria + marca + nome/modelo →
@@ -691,7 +677,7 @@ public class CatalogService {
         }
         // Unapproved/original photos and another color never become the wardrobe image by fallback.
         String image = card!=null&&!"DEFAULT".equals(card.get("mode")) ? String.valueOf(card.get("url")) : null;
-        br.com.fashionai.application.service.PieceForm form = new br.com.fashionai.application.service.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
+        br.com.fashionai.application.wardrobe.PieceForm form = new br.com.fashionai.application.wardrobe.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
                 b.getId(), b.getName(), color, material, size, null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
                 a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),

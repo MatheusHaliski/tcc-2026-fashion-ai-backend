@@ -1,24 +1,11 @@
 package br.com.fashionai.web.security;
 
-import br.com.fashionai.application.audit.AuditService;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.SealDesignService;
-import br.com.fashionai.application.service.AutopilotService;
-import br.com.fashionai.application.service.CopilotService;
-import br.com.fashionai.application.service.SealPolicyCopilot;
-import br.com.fashionai.application.service.SealService;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SealTier;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.web.config.JsonCompatConfig;
-import br.com.fashionai.web.config.SecurityConfig;
-import br.com.fashionai.web.config.WebConfig;
-import br.com.fashionai.web.controller.SealController;
-import br.com.fashionai.web.controller.AutopilotController;
-import br.com.fashionai.web.error.ErrorWriter;
-import br.com.fashionai.web.error.GlobalExceptionHandler;
+import java.lang.reflect.Proxy;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -29,11 +16,22 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.lang.reflect.Proxy;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import br.com.fashionai.application.audit.AuditService;
+import br.com.fashionai.application.seal.SealPolicyCopilot;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.*;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.enums.AccountStatus;
+import br.com.fashionai.domain.model.enums.ProfileType;
+import br.com.fashionai.domain.model.enums.SealTier;
+import br.com.fashionai.domain.repository.UserRepository;
+import br.com.fashionai.web.config.JsonCompatConfig;
+import br.com.fashionai.web.config.SecurityConfig;
+import br.com.fashionai.web.config.WebConfig;
+import br.com.fashionai.web.controller.AutopilotController;
+import br.com.fashionai.web.controller.SealController;
+import br.com.fashionai.web.error.ErrorWriter;
+import br.com.fashionai.web.error.GlobalExceptionHandler;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

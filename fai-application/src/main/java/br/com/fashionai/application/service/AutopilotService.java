@@ -1,52 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.ai.local.LocalAdvisors;
-import br.com.fashionai.application.ai.local.LocalSchemeComposer;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.hype.RecommendationScoring;
-import br.com.fashionai.application.insights.InsightContext;
-import br.com.fashionai.application.insights.InsightService;
-import br.com.fashionai.application.imaging.MannequinGeometry;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.DailyLook;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.WeekPlan;
-import br.com.fashionai.domain.model.WeekPlanDay;
-import br.com.fashionai.domain.model.enums.CreationMode;
-import br.com.fashionai.domain.model.enums.DailyLookSource;
-import br.com.fashionai.domain.model.enums.MannequinSex;
-import br.com.fashionai.domain.model.enums.Mood;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.Season;
-import br.com.fashionai.domain.model.enums.SchemeOrigin;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.model.enums.WeekPlanStatus;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import br.com.fashionai.domain.repository.WeekPlanDayRepository;
-import br.com.fashionai.domain.repository.WeekPlanRepository;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -61,6 +14,31 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.ai.local.LocalAdvisors;
+import br.com.fashionai.application.ai.local.LocalSchemeComposer;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.RecommendationScoring;
+import br.com.fashionai.application.imaging.MannequinGeometry;
+import br.com.fashionai.application.insights.InsightContext;
+import br.com.fashionai.application.insights.InsightService;
+import br.com.fashionai.application.looks.LookScorer;
+import br.com.fashionai.application.preference.PreferenceModel;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * HU17 — Autopiloto de Looks e HU18 — Semana Planejada (autopiloto-architecture.md). Mesmo motor do Copilot e do

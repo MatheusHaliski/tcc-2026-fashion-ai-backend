@@ -1,23 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.local.LocalSchemeComposer;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.hype.RecommendationScoring;
-import br.com.fashionai.application.hype.StyleCompatibility;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,6 +12,23 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.local.LocalSchemeComposer;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.RecommendationScoring;
+import br.com.fashionai.application.hype.StyleCompatibility;
+import br.com.fashionai.application.looks.LookScorer;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
+import br.com.fashionai.domain.model.Scheme;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF53 — prévia do look no editor (P1-08) e números das composições da IA (P2-14): os seis números de

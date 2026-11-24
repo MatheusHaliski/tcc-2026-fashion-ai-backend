@@ -1,10 +1,9 @@
 package br.com.fashionai.web.controller;
 
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.PieceForm;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.web.support.Uploads;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -12,9 +11,11 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.web.support.Uploads;
 
 /**
  * RF4/RF7/RF15/RF16 — peças do guarda-roupa: análise em lote, cadastro, closet, detalhe, edição, estados, foto, marca,

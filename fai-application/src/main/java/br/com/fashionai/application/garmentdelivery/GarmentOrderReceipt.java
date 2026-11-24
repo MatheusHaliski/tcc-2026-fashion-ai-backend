@@ -1,13 +1,22 @@
 package br.com.fashionai.application.garmentdelivery;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
+
 import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.garmentdelivery.GarmentDeliveryViews.Frozen;
 import br.com.fashionai.application.passport.FactoryPassportIssuer;
 import br.com.fashionai.application.passport.FactoryPassportIssuer.SystemEvent;
-import br.com.fashionai.application.service.PieceImages;
 import br.com.fashionai.application.service.ProjectionService;
+import br.com.fashionai.application.wardrobe.PieceImages;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.garmentdelivery.GarmentOrder;
@@ -15,14 +24,6 @@ import br.com.fashionai.domain.model.garmentdelivery.GarmentOrderEvent;
 import br.com.fashionai.domain.repository.TipoLavagemRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Component;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Recebimento confirmado: a peça entra no guarda-roupa (e, por ser peça da dona, no ACERVO, sem lugar) com o tipo de

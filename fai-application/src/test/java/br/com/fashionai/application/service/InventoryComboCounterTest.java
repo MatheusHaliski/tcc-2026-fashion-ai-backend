@@ -1,11 +1,13 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.domain.model.WardrobeItem;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.wardrobe.InventoryComboCounter;
+import br.com.fashionai.domain.model.WardrobeItem;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

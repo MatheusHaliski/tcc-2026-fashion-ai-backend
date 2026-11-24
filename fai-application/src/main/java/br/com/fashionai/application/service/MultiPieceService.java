@@ -1,24 +1,24 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.ai.AiRequest;
+import java.awt.image.BufferedImage;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.*;
 import br.com.fashionai.application.ai.local.ColorMath;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Hashing;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.imaging.AiSeal;
-import br.com.fashionai.application.imaging.BrandReader;
-import br.com.fashionai.application.imaging.BrandRegions;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.imaging.*;
 import br.com.fashionai.application.moderation.ImageSafetyPorts;
-import br.com.fashionai.application.imaging.FlatLayPipeline;
-import br.com.fashionai.application.imaging.ImageProviderPorts;
-import br.com.fashionai.application.imaging.ImageOps;
-import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.imaging.Transparency;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -30,19 +30,6 @@ import br.com.fashionai.domain.model.enums.PipelineJobStatus;
 import br.com.fashionai.domain.model.enums.PipelineJobType;
 import br.com.fashionai.domain.repository.PipelineJobRepository;
 import br.com.fashionai.domain.repository.UserRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.awt.image.BufferedImage;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * RF4 · Várias peças numa foto. Duas etapas, para a pessoa revisar entre elas:

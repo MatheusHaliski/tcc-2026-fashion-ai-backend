@@ -1,31 +1,22 @@
 package br.com.fashionai.application.catalog;
 
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.CatalogPick;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.testkit.Kit;
-import br.com.fashionai.application.testkit.MemoryRepository;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Brand;
-import br.com.fashionai.domain.model.CatalogProduct;
-import br.com.fashionai.domain.model.CatalogProductModel3d;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.enums.BrandSource;
-import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
-import br.com.fashionai.domain.model.enums.CatalogModelStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.CatalogProductModel3dRepository;
-import br.com.fashionai.domain.repository.CatalogProductRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.testkit.Kit;
+import br.com.fashionai.application.testkit.MemoryRepository;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

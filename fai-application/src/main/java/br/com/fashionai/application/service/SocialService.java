@@ -1,48 +1,27 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.ports.CounterStorePort;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Comment;
-import br.com.fashionai.domain.model.DnaScheme;
-import br.com.fashionai.domain.model.Reaction;
-import br.com.fashionai.domain.model.SavedItem;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.Share;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.HypeSignalType;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.ReactionType;
-import br.com.fashionai.domain.model.enums.ShareChannel;
-import br.com.fashionai.domain.model.enums.TargetType;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.CommentRepository;
-import br.com.fashionai.domain.repository.DnaSchemeRepository;
-import br.com.fashionai.domain.repository.ReactionRepository;
-import br.com.fashionai.domain.repository.SavedItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.ShareRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import br.com.fashionai.application.events.DomainEvents;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.ports.CounterStorePort;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.social.InteractionCounters;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF19 — curtir/descurtir (sem duplicata), reações qualitativas trend/elegante/criativo com contador próprio,

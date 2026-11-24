@@ -1,26 +1,5 @@
 package br.com.fashionai.application.demand;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.service.PhysicalStoreReturnEvents;
-import br.com.fashionai.domain.model.CatalogProduct;
-import br.com.fashionai.domain.model.PhysicalStoreVariant;
-import br.com.fashionai.domain.model.RetailDemandEvent;
-import br.com.fashionai.domain.model.UserConsent;
-import br.com.fashionai.domain.model.enums.ConsentPurpose;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.CatalogProductRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreVariantRepository;
-import br.com.fashionai.domain.repository.RetailDemandEventRepository;
-import br.com.fashionai.domain.repository.UserConsentRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -30,6 +9,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.physicalstore.PhysicalStoreReturnEvents;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.ConsentPurpose;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF-PESQ-10 — painel de demanda agregado e consentido. Só grava eventos de quem consentiu a finalidade

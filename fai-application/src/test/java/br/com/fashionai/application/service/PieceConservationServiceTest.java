@@ -1,22 +1,24 @@
 package br.com.fashionai.application.service;
 
+import java.util.Map;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.view.Views;
+import br.com.fashionai.application.wardrobe.PieceForm;
 import br.com.fashionai.domain.model.EstadoConservacao;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.ItemCondition;
 import br.com.fashionai.domain.repository.EstadoConservacaoRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-
-import java.util.Map;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;

@@ -1,32 +1,22 @@
 package br.com.fashionai.application.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.dna.*;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.DnaScheme;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.enums.DnaCell;
-import br.com.fashionai.domain.model.enums.NarrativeType;
-import br.com.fashionai.domain.model.enums.Season;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.DailyLookRepository;
-import br.com.fashionai.domain.repository.DnaSchemeItemRepository;
-import br.com.fashionai.domain.repository.DnaSchemeRepository;
-import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.StyleDnaVersionRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF13 / HU20 — DNA de Estilo: sempre disponível (bloco 12 — não precisa ser destravado; ≥ 10 peças e ≥ 5 avaliações
@@ -67,7 +57,7 @@ public class DnaService {
     }
 
     /** Célula do DNA (persistida ou transitória na pré-visualização): esquema referenciado + rótulo de época + marco. */
-    record CellRef(DnaCell cell, Scheme scheme, String eraLabel, boolean milestone) {
+    public record CellRef(DnaCell cell, Scheme scheme, String eraLabel, boolean milestone) {
     }
 
     public record DnaComposeRequest(String prompt, List<String> occasion, List<String> style, NarrativeType narrativeType, Season season) {

@@ -1,40 +1,5 @@
 package br.com.fashionai.application.insights;
 
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.hype.HypeCache;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.hype.HypeScoreConfig;
-import br.com.fashionai.application.ports.RenderCachePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.ExplorerService;
-import br.com.fashionai.application.service.LookbookService;
-import br.com.fashionai.application.service.ForgottenPieces;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.domain.model.HypeDimensions;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.StyleDna;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.HypeMomentum;
-import br.com.fashionai.domain.model.enums.HypeStatus;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -45,6 +10,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeCache;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.ports.RenderCachePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.ExplorerService;
+import br.com.fashionai.application.service.LookbookService;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.wardrobe.ForgottenPieces;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

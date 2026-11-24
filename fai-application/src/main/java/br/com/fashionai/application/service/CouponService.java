@@ -1,40 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.CelebrityProfile;
-import br.com.fashionai.domain.model.CouponRight;
-import br.com.fashionai.domain.model.FlairCombination;
-import br.com.fashionai.domain.model.FlairRedemption;
-import br.com.fashionai.domain.model.Promotion;
-import br.com.fashionai.domain.model.PromotionRedemption;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.PromotionStatus;
-import br.com.fashionai.domain.model.enums.RedemptionStatus;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
-import br.com.fashionai.domain.repository.CouponRightRepository;
-import br.com.fashionai.domain.repository.FlairCombinationRepository;
-import br.com.fashionai.domain.repository.FlairRedemptionRepository;
-import br.com.fashionai.domain.repository.PromotionRedemptionRepository;
-import br.com.fashionai.domain.repository.PromotionRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,6 +10,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.seal.PromotionRules;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * Card Trello RF38 — Cupons Fashion AI. Une numa só carteira os cupons que qualquer funcionalidade concede:
