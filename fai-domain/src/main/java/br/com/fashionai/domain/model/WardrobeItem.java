@@ -7,6 +7,7 @@ import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.model.Origem;
+import br.com.fashionai.domain.model.Cortes;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -315,4 +316,8 @@ public class WardrobeItem extends PieceStudioMedia {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "origem")
     private Origem origem;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cortes")
+    private Cortes cortes;
 }
