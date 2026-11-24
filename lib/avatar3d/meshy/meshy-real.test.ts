@@ -53,7 +53,7 @@ describe.skipIf(!DIR || !existsSync(DIR))("Meshy real no corpo padrão", () => {
           const steps = sizes.length === 3 && sizes[0] === "36" ? [-2, 0, 3][k] : [-1, 0, 2][k];
           const spec = specFor({ id: sub, name: sub, slot: m.slot, category: m.categoria, subcategory: sub, sizeLabel: label, sizeSteps: steps } as never)!;
           const below = m.slot === "upper" ? [UNDER, SHOE] : [SHOE];
-          return fitGlbGarment(src, frameFor([...below, spec]), spec, below, { sizes: process.env.MESHY_SEM_TAMANHO ? null : m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos });
+          return fitGlbGarment(src, frameFor([...below, spec]), spec, below, { sizes: process.env.MESHY_SEM_TAMANHO ? null : m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos, realScale: m.medidaReal === true });
         });
         if (fits[1].ok) accepted++;
         rows.push(`${sub.padEnd(18)} ${fits.map((x, k) => `${sizes[k]}:${x.ok ? "ok" : x.reason}${x.metrics ? ` e${x.metrics.stretch.toFixed(2)} d${(100 * x.metrics.inside).toFixed(1)}% f${(100 * x.metrics.pierced).toFixed(1)}% l${x.metrics.far.toFixed(2)}` : ""}`).join("  ")}`);

@@ -16,10 +16,23 @@ import type { GarmentSpec } from "../human/garments";
 import type { BodyFrame } from "../human/glb-garment/frame";
 import type { FootAnchor } from "./body-anchors";
 import type { MeshyManifest, MeshySizes } from "./manifest";
+import { GRIDS } from "@/lib/tryon/sizes";
 
 export const SIZE_CONVENTION = { sizeVariants: "RELATIVE_VISUAL_APPROXIMATION", fitClaim: "NONE", avatarMeasurementsChanged: false } as const;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/**
+ * Peça em escala real (motor Blender, `medidaReal`): ela já É o tamanho gerado; o tamanho escolhido entra como a
+ * diferença para ele, em tamanhos da grade (GG escolhido de uma peça M = +2), nunca relativa ao corpo do avatar.
+ * Sem rótulo, sem tamanho gerado ou fora da grade: 0 (a peça como foi gerada).
+ */
+export function generatedSizeShift(m: Pick<MeshyManifest, "tamanhoGerado" | "tamanhos"> | null, label?: string | null): number {
+  const grid = m?.tamanhos.grade ? GRIDS[m.tamanhos.grade].map((o) => o.label) : null;
+  if (!grid || !m?.tamanhoGerado || !label) return 0;
+  const from = grid.indexOf(m.tamanhoGerado), to = grid.indexOf(label);
+  return from < 0 || to < 0 ? 0 : to - from;
+}
 
 /** Passos por região (do GarmentSpec já com o tamanho), limitados pela faixa do manifesto. */
 export function regionSteps(spec: GarmentSpec, sizes: MeshySizes) {

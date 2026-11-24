@@ -14,28 +14,31 @@ import { fabricColor, type BodyParam } from "@/lib/avatar3d/human/garments";
 import { hideSkin, showSkin } from "@/components/three/outfit-skin";
 import { wearMeshy } from "@/components/three/outfit-meshy";
 import { hemProfile, tuckedBySector } from "@/lib/avatar3d/meshy/tuck";
+import { generatedSizeShift } from "@/lib/avatar3d/meshy/size";
 
 const fits = new WeakMap<object, Map<string, GlbFit>>();
 const ids = new WeakMap<GlbSource, number>(); let nextId = 0;
 const idOf = (src: GlbSource) => ids.get(src) ?? (ids.set(src, ++nextId), nextId);
 
-function fitKey(src: GlbSource, spec: GarmentSpec, below: GarmentSpec[]): string {
+function fitKey(src: GlbSource, spec: GarmentSpec, below: GarmentSpec[], label?: string | null): string {
   const under = below.map((b) => `${b.kind}:${b.layer}:${b.ease.toFixed(4)}`).join(",");
-  return [idOf(src), spec.kind, spec.layer, spec.ease.toFixed(4), spec.sizeFold?.length ?? 0, under].join("|");
+  return [idOf(src), spec.kind, spec.layer, spec.ease.toFixed(4), spec.sizeFold?.length ?? 0, label ?? "", under].join("|");
 }
 
-/** Dicas do manifesto da Meshy para o encaixe (tamanho por região, aceite do modelo, braços abertos). */
-function meshyFitOf(src: GlbSource) {
-  const m = src.manifest; return m ? { sizes: m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos } : {};
+/** Dicas do manifesto para o encaixe (tamanho por região, aceite do modelo, braços abertos, escala real). */
+function meshyFitOf(src: GlbSource, label?: string | null) {
+  const m = src.manifest; if (!m) return {};
+  return { sizes: m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos, realScale: m.medidaReal === true,
+    sizeShift: generatedSizeShift(m, label) };
 }
 
 /** Ajuste em cache por corpo composto (outra medida = outro corpo composto = refaz). */
-export function cachedFit(parts: HumanParts, frame: () => BodyFrame, src: GlbSource, spec: GarmentSpec, below: GarmentSpec[]): GlbFit {
+export function cachedFit(parts: HumanParts, frame: () => BodyFrame, src: GlbSource, spec: GarmentSpec, below: GarmentSpec[], label?: string | null): GlbFit {
   let byBody = fits.get(parts.composed); if (!byBody) fits.set(parts.composed, (byBody = new Map()));
-  const key = fitKey(src, spec, below);
+  const key = fitKey(src, spec, below, label);
   let hit = byBody.get(key);
-  // manifesto da Meshy: o tamanho entra por região (lib/avatar3d/meshy/size.ts)
-  if (!hit) { hit = fitGlbGarment(src, frame(), spec, below, meshyFitOf(src)); byBody.set(key, hit); }
+  // manifesto: o tamanho entra por região (lib/avatar3d/meshy/size.ts); na escala real, a partir do tamanho gerado
+  if (!hit) { hit = fitGlbGarment(src, frame(), spec, below, meshyFitOf(src, label)); byBody.set(key, hit); }
   return hit;
 }
 
@@ -55,7 +58,7 @@ export function wearGlb(parts: HumanParts, it: OutfitItem, src: GlbSource | null
   // calçado: preso ao osso do pé, na medida do pé e no número escolhido (o molde fica de reserva)
   if (it.spec.kind === "shoes" || it.spec.kind === "boots") return wearMeshy(parts, it, src, frame, meshes, it.spec.sizeSteps ?? 0, it.spec.layer);
   if (!classOf(it.spec.kind)) return false;
-  const fit = cachedFit(parts, frame, src, it.spec, below);
+  const fit = cachedFit(parts, frame, src, it.spec, below, it.piece.sizeLabel);
   if (!fit.ok) {
     // as medidas vão junto com o motivo: é com elas que o limite do aceite é conferido no corpo de cada pessoa
     const m = fit.metrics;

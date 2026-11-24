@@ -10,6 +10,7 @@ import { manifestUrlOf, parseManifest } from "./manifest";
 import { SLOT_RULES, isAccessoryRule, slotRuleOf } from "./slots";
 import { budgetSize } from "./texture-budget";
 import { hemOf, hemProfile, tuckedBySector, tuckedIndex } from "./tuck";
+import { generatedSizeShift } from "./size";
 
 const positions = (g: THREE.BufferGeometry) => Float32Array.from(g.getAttribute("position").array as ArrayLike<number>);
 function merge(...gs: THREE.BufferGeometry[]): Float32Array {
@@ -39,6 +40,18 @@ function tinyGlb(translation = [1, 2, 3]): ArrayBuffer {
   v.setUint32(20 + jb.length, bin.length, true); v.setUint32(24 + jb.length, 0x004e4942, true); new Uint8Array(out, 28 + jb.length).set(bin);
   return out;
 }
+
+describe("escala real: tamanho escolhido a partir do tamanho gerado", () => {
+  it("passos da grade entre o gerado e o escolhido; sem rótulo ou fora da grade, 0", () => {
+    const m = (grade: "letter" | "numeric", tamanhoGerado?: string) => ({ tamanhoGerado, tamanhos: { grade } }) as never;
+    expect(generatedSizeShift(m("letter", "M"), "P")).toBe(-1);
+    expect(generatedSizeShift(m("letter", "M"), "GG")).toBe(2);
+    expect(generatedSizeShift(m("numeric", "40"), "46")).toBe(3);
+    expect(generatedSizeShift(m("letter", "M"), null)).toBe(0);
+    expect(generatedSizeShift(m("letter"), "GG")).toBe(0);
+    expect(generatedSizeShift(m("letter", "M"), "44")).toBe(0);
+  });
+});
 
 describe("glb-read", () => {
   it("lê posições e triângulos com a transformação do nó", () => {
@@ -114,6 +127,8 @@ describe("manifest: validação do dado do bucket", () => {
   const good = () => JSON.parse(JSON.stringify(analyzeGlb(sideShoe(), SLOT_RULES.running_shoes, "shoes_piece", "running_shoes", "shoes")));
   it("recusa versão desconhecida, osso inventado, número fora da faixa e tamanho sem fatores", () => {
     expect(parseManifest(good())).not.toBeNull();
+    expect(parseManifest({ ...good(), medidaReal: true, tamanhoGerado: "P" })).toMatchObject({ medidaReal: true, tamanhoGerado: "P" });
+    expect(parseManifest({ ...good(), medidaReal: "sim", tamanhoGerado: "<b>" })).not.toHaveProperty("medidaReal");
     expect(parseManifest({ ...good(), versao: 2 })).toBeNull();
     expect(parseManifest({ ...good(), osso: "constructor" })).toBeNull();
     expect(parseManifest({ ...good(), escalaNominal: 1e9 })).toBeNull();

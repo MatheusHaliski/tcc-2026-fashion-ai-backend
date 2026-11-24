@@ -88,6 +88,34 @@ describe("glb-garment: peça estática vestida no avatar", () => {
     expect(err).toBeLessThan(0.001);
   });
 
+  it("escala real (motor Blender): a peça em metros não é reescalada pelo corpo e encaixa pelos ombros", () => {
+    const a = avatar(); const f = a.frame(); const src = shirt();
+    const fitted = alignGarment(src.position, f, "upper", 0.01)!;
+    const real = alignGarment(src.position, f, "upper", 0.01, 0, src.index, 1.8, true)!;
+    expect(fitted.scale).not.toBeCloseTo(1, 2);
+    expect(real.scale).toBe(1);
+    const width = (p: Float32Array) => { let lo = Infinity, hi = -Infinity; for (let i = 0; i < p.length; i += 3) { lo = Math.min(lo, p[i]); hi = Math.max(hi, p[i]); } return hi - lo; };
+    expect(width(real.pos)).toBeCloseTo(width(src.position), 1);   // a envergadura fica a da peça (o giro da manga só a reduz)
+    // a profundidade também é a da peça: a camisa rasa de teste não é esticada por faixa (o tronco não estufa)
+    const depth = (p: Float32Array) => { let lo = Infinity, hi = -Infinity; for (let i = 2; i < p.length; i += 3) { lo = Math.min(lo, p[i]); hi = Math.max(hi, p[i]); } return hi - lo; };
+    const grown = (al: { pos: Float32Array; scale: number }) => depth(al.pos) / (al.scale * depth(src.position));
+    expect(grown(real)).toBeLessThan(grown(fitted));
+  });
+
+  it("escala real com tamanho: a diferença vem do tamanho gerado, não do corpo (a mesma peça não muda com o avatar)", () => {
+    const a = avatar(); const f = a.frame(); const src = shirt();
+    const sizes = { grade: "letter" as const, porPasso: { largura: 0.04, comprimento: 0.02, manga: 0.015 }, limite: [-3, 4] as [number, number],
+      convencao: "RELATIVE_VISUAL_APPROXIMATION" as const, alegacaoDeCaimento: "NONE" as const, medidasDoAvatarAlteradas: false as const };
+    const metrics = (sizeShift: number, bodySteps: number) =>
+      fitGlbGarment(src, f, piece("upper_piece", "shirt", bodySteps), [], { sizes, realScale: true, armsSpread: true, sizeShift }).metrics!;
+    // GG escolhido de uma peça M (+2) num corpo M ou num corpo bem maior: a mesma peça, o mesmo encaixe
+    const [gg, ggBig, p] = [metrics(2, 0), metrics(2, 3), metrics(-1, 0)];
+    expect(gg.scale).toBe(1);
+    expect(gg.stretch).toBeCloseTo(ggBig.stretch, 6);
+    expect(gg.far).toBeCloseTo(ggBig.far, 6);
+    expect(gg.far).not.toBeCloseTo(p.far, 3);   // o tamanho escolhido ainda muda a peça
+  }, 30_000);
+
   it("tamanho: cada número acima do corpo deixa a peça mais larga (mesma folga do molde)", () => {
     const a = avatar(); const f = a.frame(); const src = shirt();
     const scale = (steps: number) => { const r = fitGlbGarment(src, f, piece("upper_piece", "shirt", steps)); return r.ok ? r.metrics.scale : r.metrics?.scale ?? NaN; };
